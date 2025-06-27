@@ -707,7 +707,7 @@ func TestExportArtifactsToBigQuery(t *testing.T) {
 		rows := []*bqpb.TextArtifactRow{}
 		// Insert 3 artifacts, each of size ~4MB to rowC.
 		// With the batch size of ~10MB, we will need 2 batches.
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			row := &bqpb.TextArtifactRow{
 				Project:             "project",
 				Realm:               "realm",

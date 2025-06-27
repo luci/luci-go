@@ -50,7 +50,7 @@ func TestInvertible(t *testing.T) {
 				assert.Loosely(t, inv.String(), should.Equal("abcde"))
 
 				t.Run("ReadByte", func(t *ftt.Test) {
-					for i := 0; i < 5; i++ {
+					for i := range 5 {
 						b, err := inv.ReadByte()
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, b, should.Equal(byte('a')+byte(i)))
@@ -80,7 +80,7 @@ func TestInvertible(t *testing.T) {
 				assert.Loosely(t, inv.String(), should.Equal("\x9e\x9d\x9c\x9b\x9a"))
 
 				t.Run("ReadByte", func(t *ftt.Test) {
-					for i := 0; i < 5; i++ {
+					for i := range 5 {
 						b, err := inv.ReadByte()
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, b, should.Equal(byte('a')+byte(i))) // inverted back to normal

@@ -591,7 +591,7 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 			projectCount := 3 * maxReevaluationRevisions
 			latest := make([]*RealmsCfgRev, projectCount)
 			stored := make([]*RealmsCfgRev, projectCount)
-			for i := 0; i < projectCount; i++ {
+			for i := range projectCount {
 				projectID := fmt.Sprintf("test-project-%d", i)
 				latest[i] = makeFetchedCfgRev(projectID)
 				stored[i] = makeStoredCfgRev(projectID)

@@ -176,7 +176,7 @@ func (bo *BuildOutputProperties) chunkProp(c context.Context) ([]*PropertyChunk,
 	pk := datastore.KeyForObj(c, &BuildOutputProperties{
 		Build: datastore.KeyForObj(c, &Build{ID: bo.Build.IntID()}),
 	})
-	for i := 0; i < count; i++ {
+	for i := range count {
 		idxStart := i * maxPropertySize
 		idxEnd := idxStart + maxPropertySize
 		if idxEnd > len(compressed) {
@@ -209,7 +209,7 @@ func (bo *BuildOutputProperties) Get(c context.Context) error {
 	// entity caching back on.
 	const preFetchedChunkCnt = 0
 	chunks := make([]*PropertyChunk, preFetchedChunkCnt)
-	for i := 0; i < preFetchedChunkCnt; i++ {
+	for i := range preFetchedChunkCnt {
 		chunks[i] = &PropertyChunk{
 			ID:     i + 1, // ID starts from 1.
 			Parent: pk,

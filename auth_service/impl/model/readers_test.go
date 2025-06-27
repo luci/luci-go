@@ -132,7 +132,7 @@ func TestAuthorizeReader(t *testing.T) {
 		t.Run("respects max reader count", func(t *ftt.Test) {
 			// Set up lots of existing readers.
 			dummyReaders := make([]*AuthDBReader, MaxReaders)
-			for i := 0; i < MaxReaders; i++ {
+			for i := range MaxReaders {
 				dummyReaders[i] = testReader(ctx,
 					fmt.Sprintf("user-%d@example.com", i))
 			}

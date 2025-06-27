@@ -305,7 +305,7 @@ func TestBatch(t *testing.T) {
 	ftt.Run("Test batch", t, func(t *ftt.Test) {
 		rowLimit := 2
 		rows := make([]*Row, 3)
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			rows[i] = &Row{}
 		}
 

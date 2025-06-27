@@ -630,7 +630,7 @@ func TestRPCServers(t *testing.T) {
 					cs, err := rpcClient.ClientServerStream(context.Background())
 					assert.Loosely(t, err, should.BeNil)
 
-					for i := 0; i < 5; i++ {
+					for i := range 5 {
 						ping := fmt.Sprintf("ping-%d", i)
 						assert.Loosely(t, cs.Send(&testpb.Request{Text: ping}), should.BeNil)
 						res, err := cs.Recv()
@@ -913,7 +913,7 @@ func BenchmarkServer(b *testing.B) {
 	// The route we are going to hit from the benchmark.
 	srv.Routes.GET("/test", nil, func(c *router.Context) {
 		logging.Infof(c.Request.Context(), "Hello, world")
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			// E.g. calling bunch of Cloud APIs.
 			ts, _ := auth.GetTokenSource(c.Request.Context(), auth.AsSelf, auth.WithScopes("A", "B", "C"))
 			ts.Token()

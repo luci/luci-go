@@ -599,7 +599,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		positions := make([]int, 2000)
 		total := make([]int, 2000)
 		hasUnexpected := make([]int, 2000)
-		for i := 0; i < 2000; i++ {
+		for i := range 2000 {
 			positions[i] = i + 1
 			total[i] = 1
 			if i >= 100 {
@@ -788,7 +788,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 
 		// Set up 110 finalized segments.
 		finalizedSegments := []*cpb.Segment{}
-		for i := 0; i < 110; i++ {
+		for i := range 110 {
 			finalizedSegments = append(finalizedSegments, &cpb.Segment{
 				EndHour:         timestamppb.New(time.Unix(int64(i*3600), 0)),
 				FinalizedCounts: &cpb.Counts{},
@@ -967,7 +967,7 @@ func fetchInvocations(ctx context.Context, t testing.TB) []Invocation {
 
 func testVariants(n int) []*rdbpb.TestVariant {
 	tvs := make([]*rdbpb.TestVariant, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		testID := fmt.Sprintf("test_%d", i)
 		tvs[i] = &rdbpb.TestVariant{
 			TestId:      fmt.Sprintf("test_%d", i),

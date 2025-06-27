@@ -382,7 +382,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 
 				t.Run("too many test variant branch requested", func(t *ftt.Test) {
 					names := []string{}
-					for i := 0; i < 200; i++ {
+					for range 200 {
 						names = append(names, "projects/myproject/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368")
 					}
 					req := &pb.BatchGetTestVariantBranchRequest{

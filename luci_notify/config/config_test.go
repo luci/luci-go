@@ -302,7 +302,7 @@ func TestConfigIngestion(t *testing.T) {
 			`
 			var config strings.Builder
 			config.WriteString("tree_closing_enabled: true\n")
-			for i := 0; i < 1000; i++ {
+			for i := range 1000 {
 				config.WriteString(fmt.Sprintf(configTemplate, i, i))
 			}
 

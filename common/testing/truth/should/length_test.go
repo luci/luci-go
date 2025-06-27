@@ -34,7 +34,7 @@ func TestHaveLength(t *testing.T) {
 	t.Run("*array", shouldPass(HaveLength(5)(&[5]int{})))
 
 	ch := make(chan int, 5)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		ch <- i
 	}
 	t.Run("chan", shouldPass(HaveLength(5)(ch)))

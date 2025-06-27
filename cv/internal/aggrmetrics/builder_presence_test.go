@@ -133,7 +133,7 @@ func TestBuilderPresenceAggregator(t *testing.T) {
 			var builderCount int
 			genBuilders := func(count int) []*cfgpb.Verifiers_Tryjob_Builder {
 				ret := make([]*cfgpb.Verifiers_Tryjob_Builder, count)
-				for i := 0; i < count; i++ {
+				for i := range count {
 					ret[i] = &cfgpb.Verifiers_Tryjob_Builder{
 						Name: fmt.Sprintf("%s/test-bucket/builder-%04d", lProject, builderCount+i),
 					}

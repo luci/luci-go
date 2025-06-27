@@ -245,16 +245,16 @@ func TestStress(t *testing.T) {
 		lock := sync.Mutex{}
 		var consumed []string
 
-		for i := 0; i < producers; i++ {
+		for range producers {
 			go func() {
-				for j := 0; j < items; j++ {
+				for j := range items {
 					set.Add(c, []Item{{ID: fmt.Sprintf("%d", j)}})
 					// Wake up 3 consumers, so they "fight".
 					wakeups <- "wake"
 					wakeups <- "wake"
 					wakeups <- "wake"
 				}
-				for i := 0; i < consumers; i++ {
+				for range consumers {
 					wakeups <- "done"
 				}
 			}()
@@ -289,7 +289,7 @@ func TestStress(t *testing.T) {
 
 		wg := sync.WaitGroup{}
 		wg.Add(consumers)
-		for i := 0; i < consumers; i++ {
+		for range consumers {
 			go func() {
 				defer wg.Done()
 				done := false

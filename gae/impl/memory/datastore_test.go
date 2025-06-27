@@ -603,7 +603,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 		t.Run("Testable.Consistent", func(t *ftt.Test) {
 			t.Run("false", func(t *ftt.Test) {
 				ds.GetTestable(c).Consistent(false) // the default
-				for i := 0; i < 10; i++ {
+				for i := range 10 {
 					assert.Loosely(t, ds.Put(c, &Foo{ID: int64(i + 1), Val: i + 1}), should.BeNil)
 				}
 				q := ds.NewQuery("Foo").Gt("Val", 3)
@@ -625,7 +625,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 
 			t.Run("true", func(t *ftt.Test) {
 				ds.GetTestable(c).Consistent(true)
-				for i := 0; i < 10; i++ {
+				for i := range 10 {
 					assert.Loosely(t, ds.Put(c, &Foo{ID: int64(i + 1), Val: i + 1}), should.BeNil)
 				}
 				q := ds.NewQuery("Foo").Gt("Val", 3)
@@ -722,7 +722,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 			ds.GetTestable(c).ShowSpecialProperties(true)
 
 			var ents []Foo
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				ent := &Foo{}
 				assert.Loosely(t, ds.Put(c, ent), should.BeNil)
 				ents = append(ents, *ent)
@@ -750,7 +750,7 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 		})
 
 		t.Run("Query by __scatter__", func(t *ftt.Test) {
-			for i := 0; i < 100; i++ {
+			for range 100 {
 				assert.Loosely(t, ds.Put(c, &Foo{}), should.BeNil)
 			}
 			ds.GetTestable(c).CatchupIndexes()
@@ -933,11 +933,11 @@ func TestConcurrentTxn(t *testing.T) {
 
 		var successes int64
 
-		for round := 0; round < 1000; round++ {
+		for round := range 1000 {
 			barrier := make(chan struct{})
 			wg := sync.WaitGroup{}
 
-			for track := 0; track < 5; track++ {
+			for track := range 5 {
 				wg.Add(1)
 				go func(round, track int) {
 					defer wg.Done()

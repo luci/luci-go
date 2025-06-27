@@ -167,7 +167,7 @@ func TestQueries(t *testing.T) {
 
 		t.Run("absurd numbers of filters are prohibited", func(t *ftt.Test) {
 			q := nq().Ancestor(key("thing", "wat"))
-			for i := 0; i < 100; i++ {
+			for i := range 100 {
 				q = q.Eq("something", i)
 			}
 			fq, err := q.Finalize()

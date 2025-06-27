@@ -185,7 +185,7 @@ func TestValidate(t *testing.T) {
 		// Produce tokens of various length to ensure base64 padding stripping
 		// works.
 		ctx := testContext()
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			data := map[string]string{
 				"k": strings.Repeat("a", i),
 			}

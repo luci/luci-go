@@ -186,13 +186,13 @@ func TestCreateNewTasks(t *testing.T) {
 
 	ftt.Run(`Test many success`, t, func(t *ftt.Test) {
 		reqs := make([]*swarmingv2.NewTaskRequest, 0, 12)
-		for i := 0; i < 12; i++ {
+		for range 12 {
 			reqs = append(reqs, req)
 		}
 		results, err := createNewTasks(ctx, goodService, reqs)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, results, should.HaveLength(12))
-		for i := 0; i < 12; i++ {
+		for i := range 12 {
 			assert.Loosely(t, results[i].Request, should.Match(expectReq))
 		}
 	})

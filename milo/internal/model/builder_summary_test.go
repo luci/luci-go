@@ -41,7 +41,7 @@ func TestUpdateBuilder(t *testing.T) {
 
 		// Populate a few BuildSummaries. For convenience, ordered by creation time.
 		builds := make([]*BuildSummary, 10)
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			builds[i] = &BuildSummary{
 				BuildKey:  datastore.MakeKey(c, "fakeBuild", i),
 				BuilderID: builder.BuilderID,

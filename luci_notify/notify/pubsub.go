@@ -140,7 +140,7 @@ func putWithRetry(c context.Context, entity any) error {
 
 	// Retry up to 4 times. Past that point the delay is becoming too long to be
 	// reasonable.
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		err = datastore.Put(c, entity)
 		if err == nil {
 			return nil

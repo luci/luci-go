@@ -215,7 +215,7 @@ func TestValidateInvocation(t *testing.T) {
 			})
 			t.Run(`Too many`, func(t *ftt.Test) {
 				sources.Changelists = nil
-				for i := 0; i < 11; i++ {
+				for i := range 11 {
 					sources.Changelists = append(sources.Changelists,
 						&pb.GerritChange{
 							Host:     "chromium-review.googlesource.com",
@@ -229,7 +229,7 @@ func TestValidateInvocation(t *testing.T) {
 			})
 			t.Run(`Duplicates`, func(t *ftt.Test) {
 				sources.Changelists = nil
-				for i := 0; i < 2; i++ {
+				for i := range 2 {
 					sources.Changelists = append(sources.Changelists,
 						&pb.GerritChange{
 							Host:     "chromium-review.googlesource.com",

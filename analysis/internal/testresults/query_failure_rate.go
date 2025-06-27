@@ -281,7 +281,7 @@ func defineIntervals(asAtTime time.Time) []interval {
 	const intervalCount = 5
 	result := make([]interval, 0, intervalCount)
 	endTime := asAtTime.In(time.UTC)
-	for i := 0; i < intervalCount; i++ {
+	for range intervalCount {
 		startTime := jumpBack24WeekdayHours(endTime)
 		result = append(result, interval{
 			startTime: startTime,

@@ -570,7 +570,7 @@ func TestScheduleBuild(t *testing.T) {
 			t.Run("Decreasing build ID", func(t *ftt.Test) {
 				const N = 10
 				var prevBuildID int64 = math.MaxInt64
-				for i := 0; i < N; i++ {
+				for i := range N {
 					builder := builderNoProp
 					if i%2 == 1 {
 						builder = builderWithProp

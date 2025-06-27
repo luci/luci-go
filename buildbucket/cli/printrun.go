@@ -262,7 +262,7 @@ func (r *printRun) runOrdered(ctx context.Context, jobs int, argC <-chan string,
 	work := make(chan *workItem)
 
 	// Prepare concurrent workers.
-	for i := 0; i < jobs; i++ {
+	for range jobs {
 		go func() {
 			for item := range work {
 				var err error

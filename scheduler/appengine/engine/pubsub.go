@@ -99,7 +99,7 @@ func configureTopic(c context.Context, topic, sub, pushURL, publisher, pubSubURL
 	// Do two attempts, to account for possible race condition. Two attempts
 	// should be enough to handle concurrent calls to 'configureTopic': second
 	// attempt will read already correct IAM policy and will just end right away.
-	for attempt := 0; attempt < 2; attempt++ {
+	for range 2 {
 		err = modifyTopicIAMPolicy(c, service, topic, func(policy iamPolicy) error {
 			policy.grantRole("roles/pubsub.publisher", publisher)
 			return nil

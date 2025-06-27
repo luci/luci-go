@@ -70,7 +70,7 @@ func Hash(fieldVals []any) uint64 {
 			h.Write([]byte(v))
 		case int64:
 			b := [8]byte{}
-			for i := 0; i < 8; i++ {
+			for i := range 8 {
 				b[i] = byte(v & 0xFF)
 				v >>= 8
 			}

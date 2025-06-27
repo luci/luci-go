@@ -267,7 +267,7 @@ func (s *storageImpl) download(ctx context.Context, url string, output io.WriteS
 	}
 
 	// Download the actual data (several attempts).
-	for attempt := 0; attempt < downloadMaxAttempts; attempt++ {
+	for range downloadMaxAttempts {
 		// Context canceled?
 		if err := ctx.Err(); err != nil {
 			return err

@@ -56,7 +56,7 @@ func (i *Inserter) Put(ctx context.Context, rows []*bq.Row) error {
 func (i *Inserter) batch(rows []*bq.Row) [][]*bq.Row {
 	var result [][]*bq.Row
 	pages := (len(rows) + (i.batchSize - 1)) / i.batchSize
-	for p := 0; p < pages; p++ {
+	for p := range pages {
 		start := p * i.batchSize
 		end := start + i.batchSize
 		if end > len(rows) {

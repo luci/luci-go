@@ -69,7 +69,7 @@ func TestQPSSampler(t *testing.T) {
 		}
 
 		sampled := 0
-		for i := 0; i < 10000; i++ {
+		for range 10000 {
 			// Note: TraceID is not used in the current implementation, but we supply
 			// it nonetheless to make the test also work with other implementations.
 			params := trace.SamplingParameters{}

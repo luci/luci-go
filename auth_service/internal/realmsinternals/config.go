@@ -340,7 +340,7 @@ func toNormalizedBindings(permsToPrincipal map[string]stringset.Set, indexMappin
 
 func sliceCompare[T string | uint32](sli []T, slj []T) bool {
 	sliceLen := int(math.Min(float64(len(sli)), float64(len(slj))))
-	for idx := 0; idx < sliceLen; idx++ {
+	for idx := range sliceLen {
 		if sli[idx] != slj[idx] {
 			return sli[idx] < slj[idx]
 		}

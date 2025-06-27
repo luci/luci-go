@@ -319,7 +319,7 @@ func TestGenerateInvocationID(t *testing.T) {
 
 		// Bunch of ids generated at the exact same moment in time do not collide.
 		ids := map[int64]struct{}{}
-		for i := 0; i < 20; i++ {
+		for range 20 {
 			id, err := generateInvocationID(c)
 			assert.Loosely(t, err, should.BeNil)
 			ids[id] = struct{}{}
@@ -724,7 +724,7 @@ func TestTrimDebugLog(t *testing.T) {
 			DebugLog: genLines(0, 500),
 		}
 		inv.trimDebugLog()
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			inv.debugLog(ctx, "Line %d - %s", i, junk)
 			inv.trimDebugLog()
 		}

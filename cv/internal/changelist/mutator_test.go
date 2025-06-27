@@ -535,7 +535,7 @@ func TestMutatorConcurrent(t *testing.T) {
 
 		wg := sync.WaitGroup{}
 		wg.Add(N)
-		for d := 0; d < N; d++ {
+		for d := range N {
 			// Simulate each worker trying to update Snapshot and DependentMeta to
 			// at least pre-determined timestamp.
 			// For extra coverage, use different timestamps for them.
@@ -550,7 +550,7 @@ func TestMutatorConcurrent(t *testing.T) {
 				snap := makeSnapshot(lProject, snapTS)
 				acc := makeAccess(lProject, accTS)
 				var err error
-				for i := 0; i < R; i++ {
+				for i := range R {
 					// Make this thing a little more robust against flakiness and sleep for a millisecond
 					// every so often.
 					if i%1000 == 0 {

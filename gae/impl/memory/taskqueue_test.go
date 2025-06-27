@@ -350,7 +350,7 @@ func TestTaskQueue(t *testing.T) {
 				task.Name = ""
 
 				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
-					for i := 0; i < 5; i++ {
+					for range 5 {
 						assert.Loosely(t, tq.Add(c, "", task.Duplicate()), should.BeNil)
 					}
 					assert.Loosely(t, tq.Add(c, "", task).Error(), should.ContainSubstring("BAD_REQUEST"))
@@ -702,7 +702,7 @@ func TestTaskQueue(t *testing.T) {
 					now := clock.Now(c)
 
 					tasks := []*tq.Task{}
-					for i := 0; i < 5; i++ {
+					for i := range 5 {
 						tasks = append(tasks, &tq.Task{
 							Method: "PULL",
 							Name:   fmt.Sprintf("task-%d", i),
@@ -733,7 +733,7 @@ func TestTaskQueue(t *testing.T) {
 					leased, err = tq.Lease(c, 100, "pull", time.Minute)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, len(leased), should.Equal(4))
-					for i := 0; i < 4; i++ {
+					for i := range 4 {
 						assert.Loosely(t, leased[i].Name, should.Equal(fmt.Sprintf("task-%d", i+1)))
 					}
 				})
@@ -742,7 +742,7 @@ func TestTaskQueue(t *testing.T) {
 			t.Run("Lease and forget (no tags)", func(t *ftt.Test) {
 				now := clock.Now(c)
 
-				for i := 0; i < 5; i++ {
+				for i := range 5 {
 					err := tq.Add(c, "pull", &tq.Task{
 						Method: "PULL",
 						Name:   fmt.Sprintf("task-%d", i),
@@ -776,7 +776,7 @@ func TestTaskQueue(t *testing.T) {
 			t.Run("Modify lease moves the task (no tags)", func(t *ftt.Test) {
 				now := clock.Now(c)
 
-				for i := 0; i < 5; i++ {
+				for i := range 5 {
 					err := tq.Add(c, "pull", &tq.Task{
 						Method: "PULL",
 						Name:   fmt.Sprintf("task-%d", i),
@@ -813,7 +813,7 @@ func TestTaskQueue(t *testing.T) {
 			t.Run("Delete task deletes from the middle", func(t *ftt.Test) {
 				now := clock.Now(c)
 
-				for i := 0; i < 5; i++ {
+				for i := range 5 {
 					err := tq.Add(c, "pull", &tq.Task{
 						Method: "PULL",
 						Name:   fmt.Sprintf("task-%d", i),
@@ -848,7 +848,7 @@ func TestTaskQueue(t *testing.T) {
 			t.Run("Tags work", func(t *ftt.Test) {
 				now := clock.Now(c)
 
-				for i := 0; i < 5; i++ {
+				for i := range 5 {
 					err := tq.Add(c, "pull",
 						&tq.Task{
 							Method: "PULL",
@@ -891,7 +891,7 @@ func TestTaskQueue(t *testing.T) {
 				leased, err = tq.LeaseByTag(c, 100, "pull", time.Minute, "a")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(leased), should.Equal(4))
-				for i := 0; i < 4; i++ {
+				for i := range 4 {
 					assert.Loosely(t, leased[i].Name, should.Equal(fmt.Sprintf("task-a-%d", i+1)))
 				}
 
@@ -899,7 +899,7 @@ func TestTaskQueue(t *testing.T) {
 				leased, err = tq.Lease(c, 100, "pull", time.Minute)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(leased), should.Equal(8))
-				for i := 0; i < 4; i++ {
+				for i := range 4 {
 					assert.Loosely(t, leased[i*2].Name, should.Equal(fmt.Sprintf("task-%d", i+1)))
 					assert.Loosely(t, leased[i*2+1].Name, should.Equal(fmt.Sprintf("task-b-%d", i+1)))
 				}
@@ -913,7 +913,7 @@ func TestTaskQueue(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(leased), should.BeZero)
 
-				for i := 0; i < 5; i++ {
+				for i := range 5 {
 					err := tq.Add(c, "pull",
 						&tq.Task{
 							Method: "PULL",
@@ -940,7 +940,7 @@ func TestTaskQueue(t *testing.T) {
 				leased, err = tq.LeaseByTag(c, 100, "pull", time.Minute, "")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(leased), should.Equal(5))
-				for i := 0; i < 5; i++ {
+				for i := range 5 {
 					assert.Loosely(t, leased[i].Name, should.Equal(fmt.Sprintf("task-a-%d", i)))
 				}
 			})
@@ -948,7 +948,7 @@ func TestTaskQueue(t *testing.T) {
 			t.Run("LeaseByTag with empty tag, hitting untagged first", func(t *ftt.Test) {
 				now := clock.Now(c)
 
-				for i := 0; i < 5; i++ {
+				for i := range 5 {
 					err := tq.Add(c, "pull",
 						&tq.Task{
 							Method: "PULL",
@@ -970,7 +970,7 @@ func TestTaskQueue(t *testing.T) {
 				leased, err := tq.LeaseByTag(c, 100, "pull", time.Minute, "")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, len(leased), should.Equal(5))
-				for i := 0; i < 5; i++ {
+				for i := range 5 {
 					assert.Loosely(t, leased[i].Name, should.Equal(fmt.Sprintf("task-%d", i)))
 				}
 			})

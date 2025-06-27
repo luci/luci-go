@@ -98,7 +98,7 @@ func TestLoadSaveCompression(t *testing.T) {
 
 		many16Ki := 16 * 1024
 		tags := make(map[string]string, many16Ki)
-		for i := 0; i < many16Ki; i++ {
+		for i := range many16Ki {
 			ref := "refs/tags/" + strconv.FormatInt(int64(i), 20)
 			hsh := fmt.Sprintf("%x", sha256.Sum256([]byte(ref)))[:40]
 			tags[ref] = hsh

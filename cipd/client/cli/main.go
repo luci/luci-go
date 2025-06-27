@@ -1112,7 +1112,7 @@ func callConcurrently(pkgs []string, callback func(pkg string) pinInfo) []pinInf
 		}(idx, pkg)
 	}
 	pins := make([]pinInfo, len(pkgs))
-	for i := 0; i < len(pkgs); i++ {
+	for range pkgs {
 		res := <-ch
 		pins[res.int] = res.pinInfo
 	}

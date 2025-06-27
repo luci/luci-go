@@ -87,21 +87,21 @@ func testConcurrentAccess(t *ftt.Test, r *rand.Rand) {
 
 		startC := make(chan struct{})
 		doneC := make(chan struct{}, goroutines)
-		for g := 0; g < goroutines; g++ {
+		for range goroutines {
 			go func() {
 				defer func() {
 					doneC <- struct{}{}
 				}()
 
 				<-startC
-				for i := 0; i < rounds; i++ {
+				for range rounds {
 					Int(ctx)
 				}
 			}()
 		}
 
 		close(startC)
-		for reap := 0; reap < goroutines; reap++ {
+		for range goroutines {
 			<-doneC
 		}
 	})
@@ -128,7 +128,7 @@ func calcStats(n int, gen func() float64) (avg float64, std float64) {
 	var m1 float64
 	var m2 float64
 
-	for i := 0; i < n; i++ {
+	for range n {
 		x := gen()
 		m1 += x
 		m2 += x * x

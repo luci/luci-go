@@ -264,7 +264,7 @@ func TestFailureDetection(t *testing.T) {
 
 		t.Run("No recent passed build", func(t *ftt.Test) {
 			failedBuilds := make([]*buildbucketpb.Build, 100)
-			for i := 0; i < 100; i++ {
+			for i := range 100 {
 				failedBuilds[i] = &buildbucketpb.Build{
 					Id:     int64(123 - i),
 					Status: buildbucketpb.Status_FAILURE,
@@ -279,7 +279,7 @@ func TestFailureDetection(t *testing.T) {
 
 			// Mock the return of older builds in batches, setting the response's
 			// NextPageToken value to signify there are more results available
-			for i := 0; i < 5; i++ {
+			for i := range 5 {
 				res := &buildbucketpb.SearchBuildsResponse{
 					Builds:        failedBuilds[20*i : 20*(i+1)],
 					NextPageToken: "test-token",

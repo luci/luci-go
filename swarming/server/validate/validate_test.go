@@ -301,7 +301,7 @@ func TestCaches(t *testing.T) {
 				Path: "path",
 			}
 			var caches []*apipb.CacheEntry
-			for i := 0; i < maxCacheCount+1; i++ {
+			for range maxCacheCount + 1 {
 				caches = append(caches, cache)
 			}
 			_, err := Caches(caches, "task_cache")
@@ -390,7 +390,7 @@ func TestCIPDPackages(t *testing.T) {
 	ftt.Run("CIPDPackages", t, func(t *ftt.Test) {
 		t.Run("too_many", func(t *ftt.Test) {
 			var pkgs []*apipb.CipdPackage
-			for i := 0; i < maxCIPDPackageCount+1; i++ {
+			for range maxCIPDPackageCount + 1 {
 				pkgs = append(pkgs, &apipb.CipdPackage{})
 			}
 			err := CIPDPackages(pkgs, false, directoryocclusion.NewChecker(""), "task_cipd_packages")

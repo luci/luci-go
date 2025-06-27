@@ -66,7 +66,7 @@ func fixMultiError(err error) error {
 
 func idxCallbacker(err error, amt int, cb func(idx int, err error)) error {
 	if err == nil {
-		for i := 0; i < amt; i++ {
+		for i := range amt {
 			cb(i, nil)
 		}
 		return nil

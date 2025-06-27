@@ -860,7 +860,7 @@ func setupTestAnalysisForTesting(ctx context.Context, t testing.TB, numTest int)
 	// Set up test failures
 	tfs := make([]*model.TestFailure, numTest)
 	results := make([]model.RerunSingleTestResult, numTest)
-	for i := 0; i < numTest; i++ {
+	for i := range numTest {
 		isPrimary := (i == 0)
 		tfs[i] = testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
 			ID:          1000 + int64(i),

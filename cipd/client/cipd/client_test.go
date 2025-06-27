@@ -1113,7 +1113,7 @@ func TestEnsurePackage(t *testing.T) {
 	// we have enough bytes to corrupt to trigger flate errors later in the test.
 	buf := strings.Builder{}
 	src := rand.NewSource(42)
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		fmt.Fprintf(&buf, "%d\n", src.Int63())
 	}
 	testFileBody := buf.String()

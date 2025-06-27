@@ -103,7 +103,7 @@ func TestQueryFailureRate(t *testing.T) {
 			// remain correct even when there are multiple batches.
 			var expandedInput []*pb.QueryTestVariantFailureRateRequest_TestVariant
 			var expectedOutput []*pb.TestVariantFailureRateAnalysis
-			for i := 0; i < batchSize; i++ {
+			for i := range batchSize {
 				testID := fmt.Sprintf("test_id_%v", i)
 				expandedInput = append(expandedInput, &pb.QueryTestVariantFailureRateRequest_TestVariant{
 					TestId:  testID,

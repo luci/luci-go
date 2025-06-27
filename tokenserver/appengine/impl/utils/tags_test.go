@@ -32,7 +32,7 @@ func TestValidateTags(t *testing.T) {
 
 	ftt.Run("ValidateTags errors", t, func(t *ftt.Test) {
 		var many []string
-		for i := 0; i < maxTagCount+1; i++ {
+		for range maxTagCount + 1 {
 			many = append(many, "k:v")
 		}
 		assert.Loosely(t, ValidateTags(many), should.ErrLike("too many tags given"))

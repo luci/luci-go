@@ -275,7 +275,7 @@ func TestGenerateChanges(t *testing.T) {
 			}
 
 			// Check each actual and exxpected changes are similar.
-			for i := 0; i < changeCount; i++ {
+			for i := range changeCount {
 				// Set the expected AuthDB revision to the given value.
 				expectedChanges[i].AuthDBRev = authDBRev
 

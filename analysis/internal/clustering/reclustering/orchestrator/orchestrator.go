@@ -507,7 +507,7 @@ func workerSplits(count int) []string {
 	// keyspaceSize = 1 << 128  (for 128-bits of keyspace).
 	keyspaceSize.Lsh(big.NewInt(1), 128)
 
-	for i := 0; i < count; i++ {
+	for i := range count {
 		// Identify the split point between two partitions.
 		// split = keyspaceSize * (i + 1) / count
 		var split big.Int

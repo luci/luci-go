@@ -86,7 +86,7 @@ func TestBuffer(t *testing.T) {
 			b.Maximum = 10
 
 			errC := b.Run(func(taskC chan<- func() error) {
-				for i := 0; i < iters; i++ {
+				for i := range iters {
 					taskC <- func() error {
 						return numberError(i)
 					}
@@ -126,7 +126,7 @@ func TestBuffer(t *testing.T) {
 				// still running because it's blocked on `wait` channel.
 				<-workerStarted
 				// Add `iters` tasks which should be executed in the right order.
-				for i := 0; i < iters; i++ {
+				for i := range iters {
 					taskC <- func() error {
 						workerStarted <- i
 						return numberError(i)
@@ -175,7 +175,7 @@ func TestBuffer(t *testing.T) {
 			workCount := int32(0)
 			unblockC := make(chan struct{})
 			finishedC := make(chan struct{})
-			for i := 0; i < iters; i++ {
+			for range iters {
 				b.WorkC() <- WorkItem{F: func() error {
 					<-unblockC
 					atomic.AddInt32(&workCount, 1)

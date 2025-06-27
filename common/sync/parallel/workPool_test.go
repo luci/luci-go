@@ -28,7 +28,7 @@ import (
 func ExampleWorkPool() {
 	val := int32(0)
 	err := WorkPool(16, func(workC chan<- func() error) {
-		for i := 0; i < 256; i++ {
+		for range 256 {
 			workC <- func() error {
 				atomic.AddInt32(&val, 1)
 				return nil
@@ -53,7 +53,7 @@ func TestWorkPool(t *testing.T) {
 
 			t.Run("single goroutine", func(t *ftt.Test) {
 				WorkPool(1, func(ch chan<- func() error) {
-					for i := 0; i < 100; i++ {
+					for range 100 {
 						ch <- func() error { atomic.AddInt32(&val, 1); return nil }
 					}
 				})
@@ -63,7 +63,7 @@ func TestWorkPool(t *testing.T) {
 
 			t.Run("multiple goroutines", func(t *ftt.Test) {
 				WorkPool(10, func(ch chan<- func() error) {
-					for i := 0; i < 100; i++ {
+					for range 100 {
 						ch <- func() error { atomic.AddInt32(&val, 1); return nil }
 					}
 				})

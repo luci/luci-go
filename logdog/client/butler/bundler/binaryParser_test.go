@@ -95,7 +95,7 @@ func TestBinaryParser(t *testing.T) {
 		})
 
 		t.Run(`Loaded with 8 bytes of data from different times.`, func(t *ftt.Test) {
-			for i := 0; i < 8; i++ {
+			for i := range 8 {
 				p.Append(data(s.now.Add(time.Duration(i)*time.Second), byte(i)))
 			}
 

@@ -120,7 +120,7 @@ func TestDistributed(t *testing.T) {
 		})
 
 		t.Run("With follow up tasks", func(t *ftt.Test) {
-			for i := 0; i < 64; i++ {
+			for i := range 64 {
 				assert.Loosely(t, db.SaveReminder(ctx, mkReminder(i, false, "")), should.BeNil)
 			}
 
@@ -142,7 +142,7 @@ func TestDistributed(t *testing.T) {
 		})
 
 		t.Run("With batching", func(t *ftt.Test) {
-			for i := 0; i < 100; i++ {
+			for i := range 100 {
 				assert.Loosely(t, db.SaveReminder(ctx, mkReminder(i, false, "")), should.BeNil)
 			}
 
@@ -166,7 +166,7 @@ func TestDistributed(t *testing.T) {
 		})
 
 		t.Run("Partial lease", func(t *ftt.Test) {
-			for i := 0; i < 100; i++ {
+			for i := range 100 {
 				assert.Loosely(t, db.SaveReminder(ctx, mkReminder(i, false, fmt.Sprintf("%04d", i))), should.BeNil)
 			}
 

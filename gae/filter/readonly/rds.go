@@ -61,7 +61,7 @@ func (r *readOnlyDatastore) run(keys []*ds.Key, impl implCB, cb perKeyCB) error 
 	}
 
 	cur := 0 // cursor inside 'mutable' array
-	for idx := 0; idx < len(keys); idx++ {
+	for idx := range keys {
 		if cur != len(mutable) && idx == mutable[cur] {
 			cur++
 			continue // results for 'idx' was already delivered above

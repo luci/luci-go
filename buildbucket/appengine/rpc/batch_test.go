@@ -637,7 +637,7 @@ func TestBatch(t *testing.T) {
 
 		t.Run("exceed max read reqs amount", func(t *ftt.Test) {
 			req := &pb.BatchRequest{}
-			for i := 0; i < readReqsSizeLimit+1; i++ {
+			for range readReqsSizeLimit + 1 {
 				req.Requests = append(req.Requests, &pb.BatchRequest_Request{Request: &pb.BatchRequest_Request_GetBuild{}})
 			}
 			_, err := srv.Batch(ctx, req)
@@ -646,7 +646,7 @@ func TestBatch(t *testing.T) {
 
 		t.Run("exceed max write reqs amount", func(t *ftt.Test) {
 			req := &pb.BatchRequest{}
-			for i := 0; i < writeReqsSizeLimit+1; i++ {
+			for range writeReqsSizeLimit + 1 {
 				req.Requests = append(req.Requests, &pb.BatchRequest_Request{Request: &pb.BatchRequest_Request_ScheduleBuild{}})
 			}
 			_, err := srv.Batch(ctx, req)

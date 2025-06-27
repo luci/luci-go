@@ -38,7 +38,7 @@ func TestRunMulti(t *testing.T) {
 		go func() {
 			defer close(tokensOutC)
 
-			for i := 0; i < n; i++ {
+			for range n {
 				tokenC <- struct{}{}
 			}
 		}()
@@ -49,7 +49,7 @@ func TestRunMulti(t *testing.T) {
 				// executed. This will consume the total number of workers. In a normal
 				// Runner, this would prevent the top-level dispatchers' dispatched
 				// routines from running.
-				for i := 0; i < n; i++ {
+				for i := range n {
 					workC <- func() error {
 						// Take one token.
 						<-tokenC
@@ -59,7 +59,7 @@ func TestRunMulti(t *testing.T) {
 
 						// Dispatch a bunch of sub-work.
 						return mr.RunMulti(func(workC chan<- func() error) {
-							for j := 0; j < inner; j++ {
+							for j := range inner {
 								index := (i * inner) + j
 								workC <- func() error { return numberError(index) }
 							}
@@ -96,7 +96,7 @@ func TestRunMulti(t *testing.T) {
 		c, cancelFunc := context.WithCancel(context.Background())
 		err := RunMulti(c, 1, func(mr MultiRunner) error {
 			return mr.RunMulti(func(workC chan<- func() error) {
-				for i := 0; i < n; i++ {
+				for i := range n {
 					if i == cancelPoint {
 						// This and all future work should not be dispatched. Our previous
 						// work item *may* execute depending on whether it was dispatched
@@ -124,7 +124,7 @@ func TestRunMulti(t *testing.T) {
 		go func() {
 			defer close(tokensOutC)
 
-			for i := 0; i < n; i++ {
+			for range n {
 				tokenC <- struct{}{}
 			}
 		}()
@@ -132,7 +132,7 @@ func TestRunMulti(t *testing.T) {
 		err := RunMulti(context.Background(), 0, func(mr MultiRunner) error {
 			// This will deadlock if all n workers can't run simultaneously.
 			return mr.RunMulti(func(workC chan<- func() error) {
-				for i := 0; i < n; i++ {
+				for range n {
 					workC <- func() error {
 						<-tokenC
 						<-tokensOutC

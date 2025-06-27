@@ -60,7 +60,7 @@ func TestBatching(t *testing.T) {
 		}
 
 		var r []*reminder.Reminder
-		for i := 0; i < 100; i++ {
+		for i := range 100 {
 			r = append(r, makeRem(fmt.Sprintf("rem-%d", i)))
 		}
 		assert.Loosely(t, db.AllReminders(), should.HaveLength(len(r)))

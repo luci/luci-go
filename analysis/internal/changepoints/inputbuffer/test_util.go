@@ -54,7 +54,7 @@ func VerdictsWithRetries(positions, total, hasUnexpected, retried, unexpectedAft
 			CommitPosition: int64(positions[i]),
 			Hour:           time.Unix(int64(3600*(positions[i])), 0),
 		}
-		for i := 0; i < totalCount; i++ {
+		for i := range totalCount {
 			run := baseRun
 			if i < unexpectedAfterRetryCount {
 				run.Unexpected = ResultCounts{

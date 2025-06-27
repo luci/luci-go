@@ -35,7 +35,7 @@ import (
 
 func CreateBlamelist(nCommits int) *pb.BlameList {
 	blamelist := &pb.BlameList{}
-	for i := 0; i < nCommits; i++ {
+	for i := range nCommits {
 		blamelist.Commits = append(blamelist.Commits, &pb.BlameListSingleCommit{
 			Commit:     fmt.Sprintf("commit%d", i),
 			CommitTime: timestamppb.New(time.Unix(int64(i+1000), 0)),

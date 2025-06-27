@@ -44,7 +44,7 @@ func subtractList(a, b *structpb.ListValue) (empty bool) {
 				if empty := subtractList(lhs.ListValue, rhs); !empty {
 					if leftover == nil {
 						leftover = make([]*structpb.Value, i, len(a.Values))
-						for j := 0; j < i; j++ {
+						for j := range i {
 							leftover[j] = null
 						}
 					}
@@ -57,7 +57,7 @@ func subtractList(a, b *structpb.ListValue) (empty bool) {
 				if empty := subtractStruct(lhs.StructValue, rhs); !empty {
 					if leftover == nil {
 						leftover = make([]*structpb.Value, i, len(a.Values))
-						for j := 0; j < i; j++ {
+						for j := range i {
 							leftover[j] = null
 						}
 					}

@@ -665,7 +665,7 @@ func TestCompute(t *testing.T) {
 			selected := 0
 
 			baseCLID := int(in.CLs[0].ID)
-			for i := 0; i < 1000; i++ {
+			for i := range 1000 {
 				in.CLs[0].ID = common.CLID(baseCLID + i)
 				res, err := Compute(ctx, *in)
 				assert.NoErr(t, err)
@@ -687,7 +687,7 @@ func TestCompute(t *testing.T) {
 			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:optional-builder")
 
 			baseCLID := int(in.CLs[0].ID)
-			for i := 0; i < 10; i++ { // should include the definition all the time.
+			for i := range 10 { // should include the definition all the time.
 				in.CLs[0].ID = common.CLID(baseCLID + i)
 				res, err := Compute(ctx, *in)
 				assert.NoErr(t, err)

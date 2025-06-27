@@ -234,7 +234,7 @@ func TestLogStream(t *testing.T) {
 				t.Run(`A timestamp inequality query for all records returns them in reverse order.`, func(t *ftt.Test) {
 					// Reverse "streamPaths".
 					si := make([]string, len(streamPaths))
-					for i := 0; i < len(streamPaths); i++ {
+					for i := range streamPaths {
 						si[i] = streamPaths[len(streamPaths)-i-1]
 					}
 

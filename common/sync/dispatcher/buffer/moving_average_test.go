@@ -46,7 +46,7 @@ func TestMovingAverage(t *testing.T) {
 			})
 
 			t.Run(`adding a lot of data is fine`, func(t *ftt.Test) {
-				for i := 0; i < 100; i++ {
+				for range 100 {
 					ma.record(100)
 				}
 				assert.Loosely(t, ma.get(), should.Equal(100.0))

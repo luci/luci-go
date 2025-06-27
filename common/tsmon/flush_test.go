@@ -82,7 +82,7 @@ func TestFlush(t *testing.T) {
 			s.DT = defaultTarget
 			m.CS = 42
 
-			for i := 0; i < 43; i++ {
+			for i := range 43 {
 				s.Cells[i] = types.Cell{
 					types.MetricInfo{
 						Name:      "foo",
@@ -111,7 +111,7 @@ func TestFlush(t *testing.T) {
 			s.DT = defaultTarget
 			m.CS = 0
 
-			for i := 0; i < 43; i++ {
+			for i := range 43 {
 				s.Cells[i] = types.Cell{
 					types.MetricInfo{
 						Name:      "foo",

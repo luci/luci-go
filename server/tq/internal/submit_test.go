@@ -88,7 +88,7 @@ func TestSubmit(t *testing.T) {
 		})
 
 		t.Run("Batch", func(t *ftt.Test) {
-			for i := 0; i < 5; i++ {
+			for i := range 5 {
 				makeRem(fmt.Sprintf("more-%d", i))
 			}
 

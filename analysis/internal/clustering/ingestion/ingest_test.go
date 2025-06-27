@@ -449,9 +449,9 @@ func TestIngest(t *testing.T) {
 			// - The test failed on all tries.
 			var expectedCFs []*bqpb.ClusteredFailureRow
 			var expectedCFsByTestRun [][]*bqpb.ClusteredFailureRow
-			for t := 0; t < testRunsPerVariant; t++ {
+			for t := range testRunsPerVariant {
 				var testRunExp []*bqpb.ClusteredFailureRow
-				for j := 0; j < resultsPerTestRun; j++ {
+				for j := range resultsPerTestRun {
 					regexpCF := expectedClusteredFailure(uniqifier, testRunsPerVariant, t, resultsPerTestRun, j)
 					setRegexpClustered(cfg, regexpCF)
 					testnameCF := expectedClusteredFailure(uniqifier, testRunsPerVariant, t, resultsPerTestRun, j)
@@ -498,11 +498,11 @@ func TestIngest(t *testing.T) {
 			const variantCount = 20
 			const testRunsPerVariant = 10
 			const resultsPerTestRun = 10
-			for uniqifier := 0; uniqifier < variantCount; uniqifier++ {
+			for uniqifier := range variantCount {
 				tv := newTestVerdict(uniqifier, testRunsPerVariant, resultsPerTestRun, nil)
 				tvs = append(tvs, tv)
-				for t := 0; t < testRunsPerVariant; t++ {
-					for j := 0; j < resultsPerTestRun; j++ {
+				for t := range testRunsPerVariant {
+					for j := range resultsPerTestRun {
 						regexpCF := expectedClusteredFailure(uniqifier, testRunsPerVariant, t, resultsPerTestRun, j)
 						setRegexpClustered(cfg, regexpCF)
 						testnameCF := expectedClusteredFailure(uniqifier, testRunsPerVariant, t, resultsPerTestRun, j)
@@ -567,8 +567,8 @@ func newTestVerdict(uniqifier, testRunCount, resultsPerTestRun int, bugComponent
 			BugComponent: bugComponent,
 		},
 	}
-	for i := 0; i < testRunCount; i++ {
-		for j := 0; j < resultsPerTestRun; j++ {
+	for i := range testRunCount {
+		for j := range resultsPerTestRun {
 			tr := newTestResult(uniqifier, i, j)
 			// Test ID, Variant, VariantHash are not populated on the test
 			// results of a Test Variant as it is present on the parent record.

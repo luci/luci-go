@@ -256,7 +256,7 @@ func TestErrors(t *testing.T) {
 		}
 		t.Run("Write Errors", func(t *ftt.Test) {
 			// Test each error return location in writeSignMag
-			for count := 0; count < 3; count++ {
+			for count := range 3 {
 				fw := &fakeWriter{count}
 				_, err := WriteInt(fw, -10000)
 				assert.Loosely(t, err.Error(), should.ContainSubstring("nope"))

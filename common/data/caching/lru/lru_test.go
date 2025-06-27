@@ -218,14 +218,14 @@ func TestUnboundedCache(t *testing.T) {
 		cache := New[int, string](0)
 
 		t.Run(`Grows indefinitely`, func(t *ftt.Test) {
-			for i := 0; i < 1000; i++ {
+			for i := range 1000 {
 				cache.Put(ctx, i, "hey", 0)
 			}
 			assert.Loosely(t, cache.Len(), should.Equal(1000))
 		})
 
 		t.Run(`Grows indefinitely even if elements have an (ignored) expiry`, func(t *ftt.Test) {
-			for i := 0; i < 1000; i++ {
+			for i := range 1000 {
 				cache.Put(ctx, i, "hey", time.Second)
 			}
 			assert.Loosely(t, cache.Len(), should.Equal(1000))
@@ -244,7 +244,7 @@ func TestUnboundedCacheWithExpiry(t *testing.T) {
 		cache := New[int, string](0)
 
 		t.Run(`Grows indefinitely`, func(t *ftt.Test) {
-			for i := 0; i < 1000; i++ {
+			for i := range 1000 {
 				cache.Put(ctx, i, "hey", 0)
 			}
 			assert.Loosely(t, cache.Len(), should.Equal(1000))
@@ -330,8 +330,8 @@ func TestGetOrCreate(t *testing.T) {
 
 			var wg sync.WaitGroup
 			vals := make([]int, count)
-			for i := 0; i < count; i++ {
-				for j := 0; j < contention; j++ {
+			for i := range count {
+				for range contention {
 					i := i
 					wg.Add(1)
 					go func(t testing.TB) {
@@ -348,7 +348,7 @@ func TestGetOrCreate(t *testing.T) {
 			}
 
 			wg.Wait()
-			for i := 0; i < count; i++ {
+			for i := range count {
 				v, ok := cache.Get(ctx, i)
 				assert.Loosely(t, ok, should.BeTrue)
 				assert.Loosely(t, v, should.BeZero)

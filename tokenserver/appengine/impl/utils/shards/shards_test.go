@@ -27,12 +27,12 @@ func TestShards(t *testing.T) {
 	ftt.Run("Build shards, serialize and deserialize", t, func(t *ftt.Test) {
 		// Build sharded set of 500 strings.
 		set := make(Set, 10)
-		for i := 0; i < 500; i++ {
+		for i := range 500 {
 			set.Insert([]byte(fmt.Sprintf("blob #%d", i)))
 		}
 
 		// Read same strings. Should be noop, they are already in the set.
-		for i := 0; i < 500; i++ {
+		for i := range 500 {
 			set.Insert([]byte(fmt.Sprintf("blob #%d", i)))
 		}
 

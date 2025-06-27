@@ -293,7 +293,7 @@ func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, ins inse
 		defer close(rowC)
 
 		subEg, ctx := errgroup.WithContext(ctx)
-		for w := 0; w < artifactWorkers; w++ {
+		for range artifactWorkers {
 			subEg.Go(func() error {
 				for a := range artifactC {
 					if err := b.downloadArtifactContent(ctx, a, rowC); err != nil {

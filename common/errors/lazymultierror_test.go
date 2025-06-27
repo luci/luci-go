@@ -46,7 +46,7 @@ func TestLazyMultiError(t *testing.T) {
 			lme := NewLazyMultiError(64)
 			t.Run("all nils", func(t *ftt.Test) {
 				wg := sync.WaitGroup{}
-				for i := 0; i < 64; i++ {
+				for i := range 64 {
 					wg.Add(1)
 					go func(i int) {
 						lme.Assign(i, nil)
@@ -59,7 +59,7 @@ func TestLazyMultiError(t *testing.T) {
 			t.Run("every other", func(t *ftt.Test) {
 				wow := errors.New("wow")
 				wg := sync.WaitGroup{}
-				for i := 0; i < 64; i++ {
+				for i := range 64 {
 					wg.Add(1)
 					go func(i int) {
 						e := error(nil)
@@ -82,7 +82,7 @@ func TestLazyMultiError(t *testing.T) {
 			t.Run("all", func(t *ftt.Test) {
 				wow := errors.New("wow")
 				wg := sync.WaitGroup{}
-				for i := 0; i < 64; i++ {
+				for i := range 64 {
 					wg.Add(1)
 					go func(i int) {
 						lme.Assign(i, wow)

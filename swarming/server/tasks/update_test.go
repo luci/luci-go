@@ -179,7 +179,7 @@ func TestUpdateOutput(t *testing.T) {
 			}
 
 			chunks := make([]*model.TaskOutputChunk, stdoutChunks)
-			for i := int64(0); i < stdoutChunks; i++ {
+			for i := range stdoutChunks {
 				content := bytes.Repeat([]byte("a"), model.ChunkSize)
 				if i == stdoutChunks-1 {
 					content = content[:lastChunkLegth]

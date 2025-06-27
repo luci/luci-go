@@ -657,7 +657,7 @@ func TestCLsTriage(t *testing.T) {
 
 			t.Run("CqReady if all voted", func(t *ftt.Test) {
 				// Vote on all the CLs.
-				for i := 0; i < 4; i++ {
+				for i := range 4 {
 					sup.pb.Pcls[i].Triggers = &run.Triggers{CqVoteTrigger: fullRun(epoch)}
 					sup.pb.Pcls[i].Triggers.CqVoteTrigger.Email = voter
 				}

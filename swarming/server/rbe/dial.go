@@ -68,7 +68,7 @@ func Dial(ctx context.Context, count int) ([]grpc.ClientConnInterface, error) {
 	}
 	logging.Infof(ctx, "Dialing %d RBE backend connections...", count)
 	conns := make([]grpc.ClientConnInterface, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		conns[i], err = grpc.NewClient("remotebuildexecution.googleapis.com:443",
 			grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 			grpc.WithPerRPCCredentials(creds),

@@ -354,7 +354,7 @@ func resolveServiceIDs(c context.Context, urls []string, out *identityset.Set) e
 		}(url)
 	}
 
-	for i := 0; i < len(urls); i++ {
+	for range urls {
 		result := <-ch
 		if result.Err != nil {
 			if transient.Tag.In(result.Err) {

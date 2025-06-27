@@ -301,7 +301,7 @@ func TestDSCache(t *testing.T) {
 				assert.Loosely(t, ds.Get(c, s), should.BeNil)
 
 				assert.That(t, numMemcacheItems(), should.Equal[uint64](1))
-				for i := 0; i < 20; i++ {
+				for range 20 {
 					assert.Loosely(t, ds.Get(c, s), should.BeNil)
 				}
 				assert.That(t, numMemcacheItems(), should.Equal[uint64](4))
@@ -398,7 +398,7 @@ func TestDSCache(t *testing.T) {
 				mr := mathrand.Get(c)
 				numRounds := (internalValueSizeLimit / 8) * 2
 				buf := bytes.Buffer{}
-				for i := 0; i < numRounds; i++ {
+				for range numRounds {
 					assert.Loosely(t, binary.Write(&buf, binary.LittleEndian, mr.Int63()), should.BeNil)
 				}
 				o.BigData = buf.Bytes()

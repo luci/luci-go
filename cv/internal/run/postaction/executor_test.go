@@ -246,7 +246,7 @@ func TestExecutePostActionOp(t *testing.T) {
 			exe := newExecutor(ctx, makeRunWithCLs(gf.CI(gChange1)))
 			newRCLs := func(n int) []*run.RunCL {
 				var ret []*run.RunCL
-				for i := 0; i < n; i++ {
+				for i := range n {
 					ret = append(ret, &run.RunCL{
 						ExternalID: changelist.MustGobID("example.com", int64(i+1)),
 					})

@@ -308,7 +308,7 @@ func TestSpanner(t *testing.T) {
 			})
 			t.Run(`At least 100 chunks`, func(t *ftt.Test) {
 				var entries []*Entry
-				for i := 0; i < 200; i++ {
+				for i := range 200 {
 					entries = append(entries, NewEntry(i).Build())
 				}
 				_, err := CreateEntriesForTesting(ctx, entries)

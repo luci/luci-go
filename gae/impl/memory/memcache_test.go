@@ -195,7 +195,7 @@ func TestMemcache(t *testing.T) {
 				expiration: time.Second * 2,
 			})
 
-			for i := 0; i < 4; i++ {
+			for range 4 {
 				_, err := mc.GetKey(c, "sup")
 				assert.Loosely(t, err, should.BeNil)
 			}

@@ -138,7 +138,7 @@ func TestFake(t *testing.T) {
 	ftt.Run("Linear commits", t, func(t *ftt.Test) {
 		// Commit structure: 9 -> 8 -> 7 -> 6 -> 5 -> 4 -> 3 -> 2 -> 1 -> 0
 		commits := make([]*git.Commit, 10)
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			commits[i] = &git.Commit{
 				Id: strconv.Itoa(i),
 			}
@@ -216,7 +216,7 @@ func TestFake(t *testing.T) {
 		// Commit structure: 9 -> 8 -> 7 -> 6 -> 5 -> 4 -> 3 -> 2 -> 1 -> 0
 		//                          \_ b2      ->     b1  /
 		commits := make([]*git.Commit, 12)
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			commits[i] = &git.Commit{
 				Id: strconv.Itoa(i),
 			}

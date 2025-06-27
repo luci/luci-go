@@ -79,7 +79,7 @@ func TestRedisCacheSmoke(t *testing.T) {
 
 		entities := func() []testEntity {
 			ents := make([]testEntity, entitiesCount)
-			for i := 0; i < entitiesCount; i++ {
+			for i := range entitiesCount {
 				ents[i].ID = i + 1
 			}
 			return ents
@@ -91,12 +91,12 @@ func TestRedisCacheSmoke(t *testing.T) {
 		}
 
 		runManyParallel := func(cb func(*state)) {
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
 					s := &state{}
-					for j := 0; j < 200; j++ {
+					for range 200 {
 						cb(s)
 					}
 				}()
@@ -110,7 +110,7 @@ func TestRedisCacheSmoke(t *testing.T) {
 			if err := datastore.Get(ctx, ents); err != nil {
 				panic(err)
 			}
-			for i := 0; i < entitiesCount; i++ {
+			for i := range entitiesCount {
 				if ents[i].Val < s.last[i] {
 					panic(fmt.Sprintf("%d: %d < %d", i, ents[i].Val, s.last[i]))
 				}
@@ -126,7 +126,7 @@ func TestRedisCacheSmoke(t *testing.T) {
 				if err := datastore.Get(ctx, ents); err != nil {
 					return err
 				}
-				for i := 0; i < entitiesCount; i++ {
+				for i := range entitiesCount {
 					ents[i].Val++
 				}
 				randomSleep(2 * time.Millisecond)

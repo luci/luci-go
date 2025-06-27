@@ -190,7 +190,7 @@ func TestPlugins(t *testing.T) {
 		t.Run("Multiple plugins", func(t *ftt.Test) {
 			proc := make([]*PluginProcess, 5)
 			wg := sync.WaitGroup{}
-			for i := 0; i < len(proc); i++ {
+			for i := range proc {
 				wg.Add(1)
 				go func(i int) {
 					defer wg.Done()

@@ -409,7 +409,7 @@ func simpleVerdicts(verdictCount int, startPos int, unexpectedIndices []int) []R
 	positions := make([]int, verdictCount)
 	total := make([]int, verdictCount)
 	hasUnexpected := make([]int, verdictCount)
-	for i := 0; i < verdictCount; i++ {
+	for i := range verdictCount {
 		positions[i] = i + startPos
 		total[i] = 1
 	}

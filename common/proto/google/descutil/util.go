@@ -272,7 +272,7 @@ func At(descProto proto.Message, path []int32) (any, error) {
 		return fmt.Sprintf("[%s]", strings.Join(s, ","))
 	}
 
-	for i := 0; i < len(path); i++ {
+	for i := range path {
 		if cur.Kind() == reflect.Slice {
 			index := int(path[i])
 			if index < 0 || index >= cur.Len() {

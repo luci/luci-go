@@ -68,7 +68,7 @@ func TestSearchInstances(t *testing.T) {
 
 		t.Run("Search by one tag works", func(t *ftt.Test) {
 			expectedIIDs := make([]string, 10)
-			for i := 0; i < 10; i++ {
+			for i := range 10 {
 				put(i, iid(i), "k:v0")
 				expectedIIDs[9-i] = iid(i) // sorted by creation time, most recent first
 			}
@@ -126,7 +126,7 @@ func TestSearchInstances(t *testing.T) {
 
 		t.Run("Search by many tags works", func(t *ftt.Test) {
 			expectedIIDs := make([]string, 10)
-			for i := 0; i < 10; i++ {
+			for i := range 10 {
 				tags := []string{"k:v0"}
 				if i%2 == 0 {
 					tags = append(tags, "k:v1")

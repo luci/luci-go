@@ -37,7 +37,7 @@ func TestTaskResults(t *testing.T) {
 	t.Parallel()
 
 	genTasks := func(start, count int) (out []string) {
-		for i := 0; i < count; i++ {
+		for i := range count {
 			out = append(out, fmt.Sprintf("task-%d", start+i))
 		}
 		return

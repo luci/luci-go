@@ -794,14 +794,14 @@ func EncodeCaseName(components ...string) string {
 
 	var result strings.Builder
 	sizeRequired := 0
-	for i := 0; i < len(components); i++ {
+	for i := range components {
 		sizeRequired += sizeEscapedCaseNameComponent(components[i])
 	}
 	// For N-1 separating forward slashes.
 	sizeRequired += len(components) - 1
 	result.Grow(sizeRequired)
 
-	for i := 0; i < len(components); i++ {
+	for i := range components {
 		if i > 0 {
 			result.WriteRune(':')
 		}

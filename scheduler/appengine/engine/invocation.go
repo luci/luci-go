@@ -300,7 +300,7 @@ func (e *Invocation) trimDebugLog() {
 	// Find debugLogTailLines-th "\n" from the end, e.DebugLog[tailStart:] is the
 	// log tail.
 	tailStart := len(e.DebugLog)
-	for i := 0; i < debugLogTailLines; i++ {
+	for range debugLogTailLines {
 		tailStart = strings.LastIndex(e.DebugLog[:tailStart-1], "\n")
 		if tailStart <= 0 {
 			giveUp()

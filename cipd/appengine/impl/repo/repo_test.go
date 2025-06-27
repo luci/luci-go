@@ -1306,7 +1306,7 @@ func TestListInstances(t *testing.T) {
 		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/b"}), should.BeNil)
 		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/empty"}), should.BeNil)
 
-		for i := 0; i < 4; i++ {
+		for i := range 4 {
 			assert.Loosely(t, datastore.Put(ctx, &model.Instance{
 				InstanceID:   fmt.Sprintf("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa%d", i),
 				Package:      model.PackageKey(ctx, "a/b"),
@@ -1462,7 +1462,7 @@ func TestSearchInstances(t *testing.T) {
 		}
 
 		expectedIIDs := make([]string, 10)
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			put(i, iid(i), "a:b")
 			expectedIIDs[9-i] = iid(i) // sorted by creation time, most recent first
 		}

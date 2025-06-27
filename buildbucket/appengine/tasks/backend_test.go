@@ -200,7 +200,7 @@ func TestCipdClient(t *testing.T) {
 				numCipdCalls = 0
 				// call extractCipdDetails function 10 times.
 				// The test asserts that numCipdCalls should always be 1
-				for i := 0; i < 10; i++ {
+				for range 10 {
 					helpTestCipdCall(c, ctx, infra, 1)
 				}
 			})

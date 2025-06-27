@@ -64,7 +64,7 @@ func testCacheSemantics(ctx context.Context, cache TokenCache, t testing.TB) {
 	assert.Loosely(t, tok, should.Resemble(tok1))
 
 	// Put a bunch more.
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		assert.Loosely(t, cache.PutToken(&CacheKey{Key: fmt.Sprintf("k%d", i)}, tok1), should.BeNil)
 	}
 
@@ -88,7 +88,7 @@ func testCacheSemantics(ctx context.Context, cache TokenCache, t testing.TB) {
 	assert.Loosely(t, tok, should.BeNil)
 
 	// The rest is still there. Remove it.
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		k := &CacheKey{Key: fmt.Sprintf("k%d", i)}
 		tok, err = cache.GetToken(k)
 		assert.Loosely(t, err, should.BeNil)
@@ -115,11 +115,11 @@ func testCacheInParallel(ctx context.Context, cache TokenCache, t testing.TB) {
 	// successful, even if its results are later silently discarded.
 	wg := sync.WaitGroup{}
 	errs := make(chan error, threads*attempts)
-	for i := 0; i < threads; i++ {
+	for range threads {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for j := 0; j < attempts; j++ {
+			for j := range attempts {
 				err := cache.PutToken(&CacheKey{Key: fmt.Sprintf("%d", j)}, tok)
 				if err != nil {
 					errs <- err

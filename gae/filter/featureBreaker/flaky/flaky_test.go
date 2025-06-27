@@ -31,7 +31,7 @@ func TestFlakyErrors(t *testing.T) {
 
 	sample := func(cb featureBreaker.BreakFeatureCallback, feature string) map[error]int {
 		out := map[error]int{}
-		for i := 0; i < 1000; i++ {
+		for range 1000 {
 			out[cb(context.Background(), feature)]++
 		}
 		return out

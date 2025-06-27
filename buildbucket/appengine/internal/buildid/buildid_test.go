@@ -64,7 +64,7 @@ func TestNewBuildIDs(t *testing.T) {
 		})
 
 		t.Run("many", func(t *ftt.Test) {
-			for i := 0; i < 2^16; i++ {
+			for i := range 2 ^ 16 {
 				ids := NewBuildIDs(ctx, ts, i)
 				assert.Loosely(t, ids, should.HaveLength(i))
 				prev := BuildIDMax

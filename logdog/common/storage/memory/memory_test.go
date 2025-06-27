@@ -67,7 +67,7 @@ func TestBigTable(t *testing.T) {
 					Path:    path,
 					Index:   start,
 				}
-				for i := 0; i < count; i++ {
+				for i := range count {
 					index := start + types.MessageIndex(i)
 					req.Values = append(req.Values, numRec(index).data)
 					indices = append(indices, index)

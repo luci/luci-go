@@ -674,7 +674,7 @@ func pseudoRand() string {
 // Additionally, this allows you to pass mode (which will respect the process
 // umask). To get ioutils.TempDir behavior, pass 0700 for the mode.
 func TempDir(dir string, prefix string, mode os.FileMode) (name string, err error) {
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		try := filepath.Join(dir, prefix+pseudoRand())
 		err = os.Mkdir(try, mode)
 		if os.IsExist(err) {

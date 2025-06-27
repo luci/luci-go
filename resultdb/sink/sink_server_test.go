@@ -421,7 +421,7 @@ func TestReportTestResults(t *testing.T) {
 					var b strings.Builder
 					// Make a string that exceeds the 1024-byte length limit
 					// (when encoded as UTF-8).
-					for i := 0; i < 1025; i++ {
+					for range 1025 {
 						b.WriteRune('.')
 					}
 					tr.FailureReason = &pb.FailureReason{
@@ -498,7 +498,7 @@ func TestReportTestResults(t *testing.T) {
 				var b strings.Builder
 				// Make a string that exceeds the 1024-byte length limit
 				// (when encoded as UTF-8).
-				for i := 0; i < 1025; i++ {
+				for range 1025 {
 					b.WriteRune('.')
 				}
 				tr.FailureReason = &pb.FailureReason{

@@ -480,7 +480,7 @@ func TestSerializationReadMisc(t *testing.T) {
 
 			t.Run("too many", func(t *ftt.Test) {
 				id := IndexDefinition{Kind: "wat"}
-				for i := 0; i < maxIndexColumns+1; i++ {
+				for range maxIndexColumns + 1 {
 					id.SortBy = append(id.SortBy, IndexColumn{Property: "Hi", Descending: true})
 				}
 				data := Serialize.ToBytes(*id.PrepForIdxTable())

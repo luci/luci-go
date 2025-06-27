@@ -36,14 +36,14 @@ func TestRace(t *testing.T) {
 	c := FilterRDS(memory.Use(context.Background()))
 
 	wg := sync.WaitGroup{}
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		id := int64(i + 1)
 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			err := ds.RunInTransaction(c, func(c context.Context) error {
-				for i := 0; i < 100; i++ {
+				for range 100 {
 					err := ds.RunInTransaction(c, func(c context.Context) error {
 						ctr := &Counter{ID: id}
 						if err := ds.Get(c, ctr); err != nil && err != ds.ErrNoSuchEntity {

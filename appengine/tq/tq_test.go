@@ -165,7 +165,7 @@ func TestDispatcher(t *testing.T) {
 			installRoutes()
 
 			tasks := []*Task{}
-			for i := 0; i < 200; i++ {
+			for i := range 200 {
 				var task *Task
 
 				if i%2 == 0 {

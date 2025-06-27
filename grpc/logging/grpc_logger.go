@@ -154,7 +154,7 @@ func stacks(all bool) []byte {
 		n = 100000
 	}
 	var trace []byte
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		trace = make([]byte, n)
 		nbytes := runtime.Stack(trace, all)
 		if nbytes < len(trace) {

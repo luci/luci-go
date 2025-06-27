@@ -101,7 +101,7 @@ func (a *Amount) validateSchedules(c *validation.Context) {
 	}
 	sort.Slice(schs, func(i, j int) bool { return schs[i].sortKey.Before(schs[j].sortKey) })
 	prevEnd := time.Time{}
-	for i := 0; i < len(schs); i++ {
+	for i := range schs {
 		c.Enter("change %d", schs[i].index)
 		start := schs[i].sortKey
 		if schs[i].sortKey.Before(prevEnd) {

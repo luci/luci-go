@@ -90,7 +90,7 @@ func TestMapRangeSorted(t *testing.T) {
 			t.Run(`int32`, func(t *ftt.Test) {
 				msg.Int32Map = map[int32]string{}
 				expect := []item{}
-				for i := int64(0); i < 100; i++ {
+				for i := range int64(100) {
 					entry := item{i, strconv.FormatInt(i, 10)}
 					msg.Int32Map[int32(i)] = entry.v
 					expect = append(expect, entry)
@@ -106,7 +106,7 @@ func TestMapRangeSorted(t *testing.T) {
 			t.Run(`int64`, func(t *ftt.Test) {
 				msg.Int64Map = map[int64]string{}
 				expect := []item{}
-				for i := int64(0); i < 100; i++ {
+				for i := range int64(100) {
 					entry := item{i, strconv.FormatInt(i, 10)}
 					msg.Int64Map[i] = entry.v
 					expect = append(expect, entry)
@@ -134,7 +134,7 @@ func TestMapRangeSorted(t *testing.T) {
 			t.Run(`uint32`, func(t *ftt.Test) {
 				msg.Uint32Map = map[uint32]string{}
 				expect := []item{}
-				for i := uint64(0); i < 100; i++ {
+				for i := range uint64(100) {
 					entry := item{i, strconv.FormatUint(i, 10)}
 					msg.Uint32Map[uint32(i)] = entry.v
 					expect = append(expect, entry)
@@ -150,7 +150,7 @@ func TestMapRangeSorted(t *testing.T) {
 			t.Run(`uint64`, func(t *ftt.Test) {
 				msg.Uint64Map = map[uint64]string{}
 				expect := []item{}
-				for i := uint64(0); i < 100; i++ {
+				for i := range uint64(100) {
 					entry := item{i, strconv.FormatUint(i, 10)}
 					msg.Uint64Map[i] = entry.v
 					expect = append(expect, entry)
@@ -171,7 +171,7 @@ func TestMapRangeSorted(t *testing.T) {
 
 			msg.StringMap = map[string]string{}
 			expect := []string{}
-			for i := uint64(0); i < 100; i++ {
+			for i := range uint64(100) {
 				entry := strconv.FormatUint(i, 10)
 				msg.StringMap[entry] = entry
 				expect = append(expect, entry)

@@ -445,7 +445,7 @@ func TestArchive(t *testing.T) {
 			t.Run("Skip, if sum(tags) is too big", func(t *ftt.Test) {
 				ts.add(123)
 				str := make([]byte, maxTagSum/2+100)
-				for i := 0; i < len(str); i++ {
+				for i := range str {
 					str[i] = "1234567890"[i%10]
 				}
 				desc.Tags = map[string]string{

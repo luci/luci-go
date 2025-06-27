@@ -504,7 +504,7 @@ type chunk struct {
 // start launches internal goroutines that upload data.
 func (f *asyncFlusher) start(numParallel int) {
 	f.chunks = make(chan chunk)
-	for i := 0; i < numParallel; i++ {
+	for range numParallel {
 		f.wg.Add(1)
 		go func() {
 			defer f.wg.Done()

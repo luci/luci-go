@@ -64,7 +64,7 @@ func TestLoopbackHTTPExecutor(t *testing.T) {
 
 	// Emit a bunch of tasks via the submitter assigned to the server (it lives
 	// in the server's context).
-	for i := time.Duration(0); i < time.Duration(TaskCount); i++ {
+	for i := range time.Duration(TaskCount) {
 		err = disp.AddTask(srv.Context(), &tq.Task{Payload: durationpb.New(i)})
 		if err != nil {
 			t.Fatalf("failed to add a task: %s", err)
@@ -73,7 +73,7 @@ func TestLoopbackHTTPExecutor(t *testing.T) {
 
 	// Make sure they eventually are handled.
 	seen := map[time.Duration]struct{}{}
-	for i := 0; i < TaskCount; i++ {
+	for range TaskCount {
 		select {
 		case got := <-incomingTasks:
 			seen[got.(*durationpb.Duration).AsDuration()] = struct{}{}

@@ -213,7 +213,7 @@ func testAuthDBSnapshotSharded(ctx context.Context, rev int64, shardCount int) (
 
 	var expectedBlob []byte
 
-	for i := 0; i < shardCount; i++ {
+	for i := range shardCount {
 		blobShard := []byte(fmt.Sprintf("test-authdb-shard-%v", i))
 		expectedBlob = append(expectedBlob, blobShard...)
 		hash := sha256.Sum256(blobShard)

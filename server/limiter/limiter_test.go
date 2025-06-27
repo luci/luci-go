@@ -97,7 +97,7 @@ func makeConcurrentRequests(ctx context.Context, t testing.TB, l *Limiter, count
 
 	// Note: this test tries to simulate real server environment where calls to
 	// CheckRequest happen from multiple goroutines.
-	for i := 0; i < count; i++ {
+	for range count {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -116,7 +116,7 @@ func makeConcurrentRequests(ctx context.Context, t testing.TB, l *Limiter, count
 	}
 
 	// Collect the verdicts.
-	for i := 0; i < count; i++ {
+	for range count {
 		err := <-verdicts
 		if err == nil {
 			accepted++

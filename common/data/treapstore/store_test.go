@@ -245,7 +245,7 @@ func TestStoreParallel(t *testing.T) {
 		// Dispatch readers.
 		doReads := func() int {
 			readDoneC := make(chan int, readers)
-			for i := 0; i < readers; i++ {
+			for range readers {
 				go func() {
 					var (
 						doneC = make(chan int, 1+len(snaps))
@@ -272,7 +272,7 @@ func TestStoreParallel(t *testing.T) {
 			}
 
 			total := 0
-			for i := 0; i < readers; i++ {
+			for range readers {
 				total += <-readDoneC
 			}
 			return total
@@ -281,20 +281,20 @@ func TestStoreParallel(t *testing.T) {
 		// Dispatch writers.
 		doWrite := func(base string) {
 			writeDoneC := make(chan struct{}, writers)
-			for i := 0; i < writers; i++ {
+			for i := range writers {
 				go func(idx int) {
 					head.GetCollection("").Put(fmt.Sprintf("%s.%d", base, idx))
 					writeDoneC <- struct{}{}
 				}(i)
 			}
 
-			for i := 0; i < writers; i++ {
+			for range writers {
 				<-writeDoneC
 			}
 		}
 
 		// Main loop.
-		for i := 0; i < rounds; i++ {
+		for i := range rounds {
 			writeDoneC := make(chan struct{})
 			readDoneC := make(chan int)
 			go func() {

@@ -750,7 +750,7 @@ func (c *processedCondition) matchConfigs(configVariablesIndex map[string]int, a
 	boundSubsetsCount := int64(1) << uint(len(configVariablesIndex))
 	okConfigs := map[string][]variableValue{}
 	// boundBits represents current subset of configVariables which are bound.
-	for boundBits := int64(0); boundBits < boundSubsetsCount; boundBits++ {
+	for boundBits := range boundSubsetsCount {
 		for _, config := range allConfigs {
 			isTrue, err := c.evaluate(func(varName string) variableValue {
 				i := configVariablesIndex[varName]
@@ -761,7 +761,7 @@ func (c *processedCondition) matchConfigs(configVariablesIndex map[string]int, a
 			})
 			if err == nil && isTrue {
 				okConfig := make([]variableValue, len(config))
-				for i := 0; i < len(config); i++ {
+				for i := range config {
 					if (boundBits & (int64(1) << uint(i))) != 0 {
 						okConfig[i] = config[i]
 					}

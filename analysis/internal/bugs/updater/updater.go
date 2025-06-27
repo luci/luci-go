@@ -336,7 +336,7 @@ func batch[K any](items []K, batchSize int) [][]K {
 
 	batchCount := (len(items) + batchSize - 1) / batchSize
 	result := make([][]K, 0, batchCount)
-	for i := 0; i < batchCount; i++ {
+	for i := range batchCount {
 		batchStartIndex := i * batchSize             // inclusive
 		batchEndIndex := batchStartIndex + batchSize // exclusive
 		if batchEndIndex > len(items) {
@@ -891,7 +891,7 @@ func (b *BugUpdater) resolveMergedIntoBug(ctx context.Context, bug bugs.BugID) (
 	isResolved := false
 	mergedIntoBug := bug
 	const maxResolutionSteps = 5
-	for i := 0; i < maxResolutionSteps; i++ {
+	for range maxResolutionSteps {
 		system := mergedIntoBug.System
 		manager, ok := b.managers[system]
 		if !ok {

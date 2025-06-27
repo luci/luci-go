@@ -257,7 +257,7 @@ func (o *options) unmarshalMessage(dec *msgpack.Decoder, to protoreflect.Message
 
 	var unknownFields map[int32]msgpack.RawMessage
 
-	for i := 0; i < msgItemLen; i++ {
+	for i := range msgItemLen {
 		tag, err := getNextMsgTag(dec, nextKey)
 		if err != nil {
 			return errors.Fmt("reading message tag: %w", err)
@@ -372,7 +372,7 @@ func (o *options) unmarshalMessage(dec *msgpack.Decoder, to protoreflect.Message
 			// ok, we're a map and they're a map, do the decode
 			keyFD := fd.MapKey()
 			mapp := to.Mutable(fd).Map()
-			for i := 0; i < mapLen; i++ {
+			for i := range mapLen {
 				var key protoreflect.Value
 				if nextKey == nil {
 					if key, err = o.unmarshalScalar(dec, keyFD); err != nil {

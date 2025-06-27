@@ -54,7 +54,7 @@ func CronHandler(ctx context.Context, gcpProject string) (retErr error) {
 
 func scheduleGroupingTasks(ctx context.Context) error {
 	currentWeek := changepoints.StartOfWeek(clock.Now(ctx))
-	for i := 0; i < weeksPerRun; i++ {
+	for i := range weeksPerRun {
 		week := currentWeek.Add(-time.Duration(i) * 7 * 24 * time.Hour)
 		if err := changepointgrouper.Schedule(ctx, week); err != nil {
 			return errors.Fmt("schedule group changepoint task week %s: %w", week, err)

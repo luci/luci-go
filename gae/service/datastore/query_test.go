@@ -738,7 +738,7 @@ func TestQueryConcurrencySafety(t *testing.T) {
 
 		err := parallel.FanOutIn(func(outerC chan<- func() error) {
 
-			for i := 0; i < rounds; i++ {
+			for i := range rounds {
 				outerQ := q.Gt("Field", i)
 
 				// Finalize the original query.
@@ -750,7 +750,7 @@ func TestQueryConcurrencySafety(t *testing.T) {
 				// Finalize the derivative query a lot.
 				outerC <- func() error {
 					return parallel.FanOutIn(func(innerC chan<- func() error) {
-						for i := 0; i < rounds; i++ {
+						for range rounds {
 							innerC <- func() error {
 								_, err := outerQ.Finalize()
 								return err

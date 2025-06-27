@@ -203,7 +203,7 @@ func TestTestTimer(t *testing.T) {
 			})
 
 			resultC := make(chan clock.TimerResult)
-			for i := time.Duration(0); i < 5; i++ {
+			for i := range time.Duration(5) {
 				go func(d time.Duration) {
 					timer := clk.NewTimer(ctx)
 					timer.Reset(d)

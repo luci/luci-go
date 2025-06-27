@@ -49,7 +49,7 @@ func makeTestResultsWithVariants(invID, testID string, nPassingVariants, nFailed
 	// For every variant we'll generate two rows.
 	statuses := []pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_PASS}
 	trs := make([]*pb.TestResult, nVariants*len(statuses))
-	for v := 0; v < nVariants; v++ {
+	for v := range nVariants {
 		// We'll generate all passing variants first, so we only have to change the
 		// list of statuses once.
 		if v == nPassingVariants {
@@ -85,11 +85,11 @@ func insertInvocation(ctx context.Context, t testing.TB, invID invocations.ID, n
 
 	// Insert test results and artifacts.
 	inserts := []*spanner.Mutation{}
-	for i := 0; i < nTests; i++ {
+	for i := range nTests {
 		results := makeTestResultsWithVariants(string(invID), fmt.Sprintf("Test%d", i), nPassingVariants, nFailedVariants)
 		inserts = append(inserts, insert.TestResultMessages(t, results)...)
 		for _, res := range results {
-			for j := 0; j < nArtifactsPerResult; j++ {
+			for j := range nArtifactsPerResult {
 				inserts = append(inserts, spanutil.InsertMap("Artifacts", map[string]any{
 					"InvocationId": invID,
 					"ParentId":     artifacts.ParentID(res.TestId, res.ResultId),

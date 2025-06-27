@@ -53,7 +53,7 @@ func TestBlocksLRU(t *testing.T) {
 		})
 
 		t.Run("Basic eviction works", func(t *ftt.Test) {
-			for i := 0; i < 5; i++ {
+			for i := range 5 {
 				lru.add(makeBlock(i))
 			}
 			// Evicted two oldest ones.

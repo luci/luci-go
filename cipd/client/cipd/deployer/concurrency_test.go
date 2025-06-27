@@ -46,7 +46,7 @@ func TestMultipleDeployProcesses(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(procs)
-	for p := 0; p < procs; p++ {
+	for p := range procs {
 		go func() {
 			defer wg.Done()
 			// Run a crashing process first, to emulate an unowned lock.
@@ -112,7 +112,7 @@ func TestDeployHelperProcess(t *testing.T) {
 	ctx = logging.SetLevel(ctx, logging.Debug)
 
 	// Do multiple rounds to increase the chance of collision.
-	for r := 0; r < 20; r++ {
+	for r := range 20 {
 		instID := (int(idx) + r) % 5
 
 		logging.Infof(ctx, "------------------------------------------------------")

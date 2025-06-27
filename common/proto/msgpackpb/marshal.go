@@ -117,7 +117,7 @@ func (o *options) appendRawMsgpackMsg(raw []byte, to *[]fieldVal, tf takenFields
 		return errors.Fmt("expected message length: %w", err)
 	}
 
-	for i := 0; i < msgItemLen; i++ {
+	for i := range msgItemLen {
 		tag, err := getNextMsgTag(dec, nextKey)
 		if err != nil {
 			return errors.Fmt("reading message %d'th tag: %w", i, err)

@@ -1453,7 +1453,7 @@ func BenchmarkDecodeStatistics(b *testing.B) {
 
 func testStatistics() *cpb.Statistics {
 	var buckets []*cpb.Statistics_HourBucket
-	for i := 0; i < StatisticsRetentionDays*24; i++ {
+	for i := range StatisticsRetentionDays * 24 {
 		buckets = append(buckets, &cpb.Statistics_HourBucket{
 			Hour:                     int64(i),
 			UnexpectedSourceVerdicts: int64(i + 1),
@@ -1466,7 +1466,7 @@ func testStatistics() *cpb.Statistics {
 
 func testSegments() *cpb.Segments {
 	var segments []*cpb.Segment
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		segments = append(segments, &cpb.Segment{
 			State:                          cpb.SegmentState_FINALIZED,
 			HasStartChangepoint:            true,

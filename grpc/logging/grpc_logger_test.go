@@ -105,7 +105,7 @@ func TestGRPCLogger(t *testing.T) {
 
 					assert.Loosely(t, base.Messages(), should.Match(expected))
 
-					for i := 0; i < 3; i++ {
+					for i := range 3 {
 						exp := i <= translateLevel(l)
 						t.Logf("Testing %q V(%d) => %v", name, i, exp)
 						assert.Loosely(t, grpclog.V(i), should.Equal(exp))

@@ -244,7 +244,7 @@ func TestQPSLimit(t *testing.T) {
 		expected := []int{}
 
 		start := time.Now()
-		for i := 0; i < 20; i++ {
+		for i := range 20 {
 			ch.C <- i
 			expected = append(expected, i)
 		}
@@ -285,7 +285,7 @@ func TestQPSLimitParallel(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		start := time.Now()
-		for i := 0; i < 20; i++ {
+		for i := range 20 {
 			ch.C <- i
 		}
 		ch.CloseAndDrain(ctx)
@@ -337,7 +337,7 @@ func TestExplicitDrops(t *testing.T) {
 		})
 		assert.Loosely(t, err, should.BeNil)
 
-		for i := 0; i < 20; i++ {
+		for i := range 20 {
 			ch.C <- i
 		}
 		ch.CloseAndDrain(ctx)
@@ -376,7 +376,7 @@ func TestImplicitDrops(t *testing.T) {
 		// Stuff a bunch of crap into the channel. We have 100ms to do this until
 		// the channel is able to send something. Should be plenty of time (running
 		// this on my laptop takes 3-4ms with verbose logs).
-		for i := 0; i < 20; i++ {
+		for i := range 20 {
 			ch.C <- i
 		}
 		// At this point we can start draining the channel.
@@ -468,7 +468,7 @@ func TestCloseDeadlockRegression(t *testing.T) {
 	// to the production code, which makes us nervous :).
 	//
 	// This code should never hang if the coordinator code is correct.
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		ftt.Run(fmt.Sprintf(`ensure that the channel can shutdown cleanly (%d)`, i), t, func(t *ftt.Test) {
 			ctx := context.Background() // uses real time!
 			ctx, dbg := dbgIfVerbose(ctx)
@@ -630,7 +630,7 @@ func TestSizeBasedChannel(t *testing.T) {
 		mu.Lock()
 		needUnlock = true
 
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			ch.C <- bigString
 		}
 
@@ -698,7 +698,7 @@ func TestMinQPS(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.BeNil)
 
-			for i := 0; i < 20; i++ {
+			for i := range 20 {
 				switch i {
 				case 9:
 					time.Sleep(2 * time.Second) // to make a gap that ch is empty.
@@ -736,7 +736,7 @@ func TestMinQPS(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.BeNil)
 
-			for i := 0; i < 20; i++ {
+			for i := range 20 {
 				ch.C <- i
 			}
 			ch.CloseAndDrain(ctx)

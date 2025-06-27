@@ -135,7 +135,7 @@ func TestBundler(t *testing.T) {
 			}
 
 			b.Start(ctx, writer)
-			for i := 0; i < 1000; i++ {
+			for i := range 1000 {
 				b.Log(ctx, &durationpb.Duration{Seconds: int64(i)})
 			}
 

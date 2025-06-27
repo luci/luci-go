@@ -66,7 +66,7 @@ func ReadF(ctx context.Context, ks []Key, f func(i int, e *Entry) error) error {
 
 	// Create the keyset.
 	spannerKeys := make([]spanner.Key, len(ks))
-	for i := 0; i < len(ks); i++ {
+	for i := range ks {
 		spannerKeys[i] = spanner.Key{ks[i].Project, ks[i].TestID, ks[i].VariantHash, []byte(ks[i].RefHash)}
 		keyMap[ks[i]] = i
 	}

@@ -92,7 +92,7 @@ func msgpackpbDeterministicEncode(val reflect.Value) (msgpack.RawMessage, error)
 		if val.Kind() == reflect.Slice {
 			sliceLen := val.Len()
 			must(enc.EncodeArrayLen(sliceLen))
-			for i := 0; i < sliceLen; i++ {
+			for i := range sliceLen {
 				if err := process(val.Index(i)); err != nil {
 					return err
 				}

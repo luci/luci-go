@@ -35,7 +35,7 @@ func TestPool(t *testing.T) {
 			var wg sync.WaitGroup
 
 			wg.Add(total)
-			for i := 0; i < total; i++ {
+			for range total {
 				go func() {
 					pool.WithMutex("foo", func() {
 						value++

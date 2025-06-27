@@ -213,7 +213,7 @@ func upToDateScenario(size int) *scenario {
 			TestID: "ninja://test_name/1",
 		},
 	}
-	for i := 0; i < size; i++ {
+	for range size {
 		failures = append(failures,
 			&clustering.Failure{
 				TestID: "ninja://test_name/2",
@@ -239,7 +239,7 @@ func upToDateScenario(size int) *scenario {
 			},
 		},
 	}
-	for i := 0; i < size; i++ {
+	for range size {
 		clusters := []clustering.ClusterID{
 			failureReasonClusterID(cfg, failures[1]),
 			testNameClusterID(cfg, failures[1]),
@@ -268,7 +268,7 @@ func upToDateScenario(size int) *scenario {
 			},
 		},
 	}
-	for i := 0; i < size; i++ {
+	for range size {
 		clusters := []clustering.ClusterID{
 			failureReasonClusterID(cfg, failures[1]),
 			testNameClusterID(cfg, failures[1]),

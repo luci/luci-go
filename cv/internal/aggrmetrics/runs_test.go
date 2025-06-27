@@ -177,11 +177,11 @@ func TestRunAggregator(t *testing.T) {
 		})
 
 		putManyRuns := func(n, numProject, numConfigGroup int) {
-			for projectID := 0; projectID < numProject; projectID++ {
+			for projectID := range numProject {
 				cfg := &cfgpb.Config{
 					ConfigGroups: make([]*cfgpb.ConfigGroup, numConfigGroup),
 				}
-				for cgID := 0; cgID < numConfigGroup; cgID++ {
+				for cgID := range numConfigGroup {
 					cfg.ConfigGroups[cgID] = &cfgpb.ConfigGroup{
 						Name: fmt.Sprintf("cg-%03d", cgID),
 					}
@@ -189,7 +189,7 @@ func TestRunAggregator(t *testing.T) {
 				prjcfgtest.Create(ctx, fmt.Sprintf("p-%03d", projectID), cfg)
 			}
 
-			for i := 0; i < n; i++ {
+			for i := range n {
 				project := fmt.Sprintf("p-%03d", i%numProject)
 				configGroup := fmt.Sprintf("cg-%03d", (i/numProject)%numConfigGroup)
 				created := ct.Clock.Now().Add(-time.Duration(i) * time.Second)
@@ -206,8 +206,8 @@ func TestRunAggregator(t *testing.T) {
 			mustReport()
 
 			reportedCnt := 0
-			for projectID := 0; projectID < numProject; projectID++ {
-				for cgID := 0; cgID < numConfigGroup; cgID++ {
+			for projectID := range numProject {
+				for cgID := range numConfigGroup {
 					project := fmt.Sprintf("p-%03d", projectID)
 					configGroup := fmt.Sprintf("cg-%03d", cgID)
 					assert.Loosely(t, activeRunCountSent(project, configGroup, run.DryRun), should.BeGreaterThan(0))

@@ -422,7 +422,7 @@ func TestAnalyzer(t *testing.T) {
 			// E.g. version 2 was limited to 2000 verdicts (not runs).
 
 			var hotRuns []inputbuffer.Run
-			for i := 0; i < 300; i++ {
+			for i := range 300 {
 				hotRuns = append(hotRuns, inputbuffer.Run{
 					CommitPosition: int64(i + 1000),
 					Hour:           time.Unix(int64(i)*3600, 0),
@@ -430,7 +430,7 @@ func TestAnalyzer(t *testing.T) {
 				})
 			}
 			var coldRuns []inputbuffer.Run
-			for i := 0; i < 6000; i++ {
+			for i := range 6000 {
 				coldRuns = append(coldRuns, inputbuffer.Run{
 					CommitPosition: int64(i + 1300),
 					Hour:           time.Unix(int64(i+1300)*3600, 0),
@@ -513,7 +513,7 @@ func BenchmarkAnalyzer(b *testing.B) {
 	// Tests analysis on a consistently passing test, which is most
 	// test variants.
 	var hotRuns []inputbuffer.Run
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		hotRuns = append(hotRuns, inputbuffer.Run{
 			CommitPosition: int64(i + 1000),
 			Hour:           time.Unix(int64(i)*3600, 0),
@@ -521,7 +521,7 @@ func BenchmarkAnalyzer(b *testing.B) {
 		})
 	}
 	var coldRuns []inputbuffer.Run
-	for i := 0; i < 2000; i++ {
+	for i := range 2000 {
 		coldRuns = append(coldRuns, inputbuffer.Run{
 			CommitPosition: int64(i + 1300),
 			Hour:           time.Unix(int64(i+1300)*3600, 0),
@@ -600,7 +600,7 @@ func BenchmarkAnalyzerWithChangepoint(b *testing.B) {
 	var a Analyzer
 	var hotRuns []inputbuffer.Run
 	var coldRuns []inputbuffer.Run
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		hotRuns = append(hotRuns, inputbuffer.Run{
 			CommitPosition: int64(i + 3000),
 			Hour:           time.Unix(int64(i)*3600, 0),
@@ -608,7 +608,7 @@ func BenchmarkAnalyzerWithChangepoint(b *testing.B) {
 		})
 	}
 
-	for i := 0; i < 2000; i++ {
+	for i := range 2000 {
 		coldRuns = append(coldRuns, inputbuffer.Run{
 			CommitPosition: int64(i + 1000),
 			Hour:           time.Unix(int64(i+1300)*3600, 0),

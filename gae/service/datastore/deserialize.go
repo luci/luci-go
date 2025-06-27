@@ -243,7 +243,7 @@ func (d Deserializer) propertyMap(buf cmpbin.ReadableBytesBuffer, populateKey bo
 	pm = make(PropertyMap, capacity)
 
 	name, prop := "", Property{}
-	for i := uint64(0); i < numRows; i++ {
+	for range numRows {
 		name, _, e = cmpbin.ReadString(buf)
 		panicIf(e)
 
@@ -270,7 +270,7 @@ func (d Deserializer) propertyMap(buf cmpbin.ReadableBytesBuffer, populateKey bo
 
 		default:
 			props := make(PropertySlice, 0, numProps)
-			for j := int64(0); j < numProps; j++ {
+			for range numProps {
 				prop, err = d.Property(buf)
 				panicIf(err)
 				props = append(props, prop)

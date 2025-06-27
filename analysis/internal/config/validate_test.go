@@ -343,7 +343,7 @@ func TestProjectConfigValidator(t *testing.T) {
 				})
 				t.Run("too many", func(t *ftt.Test) {
 					m.DefaultFieldValues = make([]*configpb.MonorailFieldValue, 0, 51)
-					for i := 0; i < 51; i++ {
+					for i := range 51 {
 						m.DefaultFieldValues = append(m.DefaultFieldValues, &configpb.MonorailFieldValue{
 							FieldId: int64(i + 1),
 							Value:   "value",
@@ -388,7 +388,7 @@ func TestProjectConfigValidator(t *testing.T) {
 			})
 			t.Run("too many", func(t *ftt.Test) {
 				bm.Policies = []*configpb.BugManagementPolicy{}
-				for i := 0; i < 51; i++ {
+				for i := range 51 {
 					policy := CreatePlaceholderBugManagementPolicy(fmt.Sprintf("extra-%v", i))
 					bm.Policies = append(bm.Policies, policy)
 				}
@@ -436,7 +436,7 @@ func TestProjectConfigValidator(t *testing.T) {
 				})
 				t.Run("too many", func(t *ftt.Test) {
 					policy.Owners = []string{}
-					for i := 0; i < 11; i++ {
+					for range 11 {
 						policy.Owners = append(policy.Owners, "blah@google.com")
 					}
 					assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): exceeds maximum of 10 owners`))
@@ -501,7 +501,7 @@ func TestProjectConfigValidator(t *testing.T) {
 					})
 					t.Run("too many", func(t *ftt.Test) {
 						policy.Metrics = []*configpb.BugManagementPolicy_Metric{}
-						for i := 0; i < 11; i++ {
+						for i := range 11 {
 							policy.Metrics = append(policy.Metrics, &configpb.BugManagementPolicy_Metric{
 								MetricId: fmt.Sprintf("metric-%v", i),
 								ActivationThreshold: &configpb.MetricThreshold{
@@ -713,7 +713,7 @@ func TestProjectConfigValidator(t *testing.T) {
 						})
 						t.Run("too many", func(t *ftt.Test) {
 							buganizer.Hotlists = make([]int64, 0, 11)
-							for i := 0; i < 11; i++ {
+							for range 11 {
 								buganizer.Hotlists = append(buganizer.Hotlists, 1)
 							}
 							assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): exceeds maximum of 5 hotlists`))
@@ -743,7 +743,7 @@ func TestProjectConfigValidator(t *testing.T) {
 						})
 						t.Run("too many", func(t *ftt.Test) {
 							monorail.Labels = make([]string, 0, 11)
-							for i := 0; i < 11; i++ {
+							for i := range 11 {
 								monorail.Labels = append(monorail.Labels, fmt.Sprintf("label-%v", i))
 							}
 							assert.Loosely(t, validate(project, cfg), should.ErrLike(`(`+path+`): exceeds maximum of 5 labels`))

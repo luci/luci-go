@@ -430,7 +430,7 @@ func TestRunManager(t *testing.T) {
 			assert.NoErr(t, notifier.PokeNow(ctx, runID))
 			assert.That(t, runtest.Runs(ct.TQ.Tasks()), should.Match(common.RunIDs{runID}))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				now := clock.Now(ctx)
 				runtest.AssertInEventbox(t, ctx, runID, &eventpb.Event{
 					Event: &eventpb.Event_Poke{

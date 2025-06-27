@@ -139,7 +139,7 @@ func loadCacheFromDS(c context.Context, host, project, excludeRef string, limit 
 		}
 
 		log := make([]*gitpb.Commit, 0, numCommits)
-		for j := uint64(0); j < numCommits; j++ {
+		for range numCommits {
 			var commit gitpb.Commit
 			if err = buf.DecodeMessage(&commit); err != nil {
 				continue

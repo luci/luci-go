@@ -33,7 +33,7 @@ func readInvocations(ctx context.Context, project string, invocationIDs []string
 	result := map[string]string{}
 	// Create the keyset.
 	keys := make([]spanner.Key, len(invocationIDs))
-	for i := 0; i < len(keys); i++ {
+	for i := range keys {
 		keys[i] = spanner.Key{project, invocationIDs[i]}
 	}
 	keyset := spanner.KeySetFromKeys(keys...)

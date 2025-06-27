@@ -164,8 +164,8 @@ func TestTokenHelpers(t *testing.T) {
 			},
 		}
 		hist := make([]int, 600)
-		for s := 0; s < 600; s++ {
-			for i := 0; i < 100; i++ {
+		for s := range 600 {
+			for range 100 {
 				if TokenExpiresInRnd(ctx, tok, requestedLifetime) {
 					hist[s]++
 				}

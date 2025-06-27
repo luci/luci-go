@@ -173,7 +173,7 @@ func TestServiceConfigValidator(t *testing.T) {
 		t.Run("Collection too Large", func(t *ftt.Test) {
 			t.Run("By size", func(t *ftt.Test) {
 				cfg.Schemes = make([]*configpb.Scheme, 0, 1001)
-				for i := 0; i < 1000; i++ {
+				for i := range 1000 {
 					// Each scheme is >100 bytes, and there are 1000, so
 					// the total size will be over 100 KB.
 					cfg.Schemes = append(cfg.Schemes, &configpb.Scheme{
@@ -188,7 +188,7 @@ func TestServiceConfigValidator(t *testing.T) {
 			})
 			t.Run("By elements", func(t *ftt.Test) {
 				cfg.Schemes = make([]*configpb.Scheme, 0, 1001)
-				for i := 0; i < 1001; i++ {
+				for i := range 1001 {
 					cfg.Schemes = append(cfg.Schemes, &configpb.Scheme{
 						Id:                fmt.Sprintf("scheme%d", i),
 						HumanReadableName: fmt.Sprintf("Scheme %d", i),

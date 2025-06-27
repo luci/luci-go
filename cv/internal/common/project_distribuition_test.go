@@ -33,7 +33,7 @@ func TestProjectOffset(t *testing.T) {
 		testIntervalOf100x := func(d time.Duration) {
 			t.Run((100 * d).String(), func(t *ftt.Test) {
 				offsets := make([]time.Duration, 101)
-				for i := 0; i < 101; i++ {
+				for i := range 101 {
 					project := fmt.Sprintf("project-%d", i*i)
 					offsets[i] = DistributeOffset(100*d, "kind", project)
 				}

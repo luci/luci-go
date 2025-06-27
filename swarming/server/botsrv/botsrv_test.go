@@ -412,7 +412,7 @@ func TestPythonProxying(t *testing.T) {
 		}))
 
 		// Routes with random splitting.
-		for i := 0; i < 5; i++ {
+		for range 5 {
 			post("/swarming/api/v1/bot/rand")
 			post("/swarming/api/v1/bot/rand/arg")
 		}

@@ -29,14 +29,14 @@ func TestCacheContext(t *testing.T) {
 	ftt.Run(`A caching Context populated with values`, t, func(t *ftt.Test) {
 		const count = 3
 		c := context.Background()
-		for i := 0; i < count; i++ {
+		for i := range count {
 			c = context.WithValue(c, i, i)
 		}
 		c = Wrap(c)
 
 		t.Run(`Successfully caches values.`, func(t *ftt.Test) {
 			// Perform initial lookup to cache.
-			for i := 0; i < count; i++ {
+			for i := range count {
 				_ = c.Value(i)
 			}
 
@@ -48,7 +48,7 @@ func TestCacheContext(t *testing.T) {
 			assert.Loosely(t, func() { c.Value("not cached") }, should.Panic)
 
 			// Confirm that lookups happen from cache.
-			for i := 0; i < count; i++ {
+			for i := range count {
 				assert.Loosely(t, c.Value(i), should.Equal(i))
 			}
 			assert.Loosely(t, c.Value("missing"), should.BeNil)
@@ -71,7 +71,7 @@ func runLookupBenchmark(b *testing.B, depth int, cache bool) {
 
 	for round := 0; round < b.N; round++ {
 		// Lookup the value up a few times.
-		for i := 0; i < 5; i++ {
+		for range 5 {
 			v, ok := c.Value(0).(int)
 			if !ok {
 				b.Fatal("failed to lookup 0")
@@ -95,7 +95,7 @@ func runParallelLookupBenchmark(b *testing.B, depth int, cache bool) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			// Lookup the value up a few times.
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				v, ok := c.Value(0).(int)
 				if !ok {
 					b.Fatal("failed to lookup 0")

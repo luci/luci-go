@@ -32,7 +32,7 @@ func TestFrameHeaderSize(t *testing.T) {
 
 		t.Run(`Matches actual written frame size`, func(t *ftt.Test) {
 			prev := -1
-			for i := 0; i < 3; i++ {
+			for i := range 3 {
 				base := 1 << uint64(7*i)
 				for _, delta := range []int{-1, 0, 1} {
 					base += delta
@@ -58,7 +58,7 @@ func TestFrameHeaderSize(t *testing.T) {
 
 		t.Run(`Matches written frame header size (no alloc)`, func(t *ftt.Test) {
 			prev, first := int64(0), true
-			for i := 0; i < 9; i++ {
+			for i := range 9 {
 				for _, delta := range []int64{-1, 0, 1} {
 					base := int64(1<<uint64(7*i)) + delta
 					if (!first) && base <= prev {

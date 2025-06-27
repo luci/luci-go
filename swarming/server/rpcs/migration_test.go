@@ -109,7 +109,7 @@ func TestConfigureMigration(t *testing.T) {
 
 	ftt.Run("Sends to Python by default", t, func(t *ftt.Test) {
 		// Send a bunch to make sure it is not just unlucky random routing.
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			_, err := botsClient.GetBot(ctx, &apipb.BotRequest{})
 			assert.NoErr(t, err)
 			assert.Loosely(t, seen(), should.Match([]string{"py:GetBot"}))
@@ -118,7 +118,7 @@ func TestConfigureMigration(t *testing.T) {
 
 	ftt.Run("RouteToGoPercent == 100 => sends all requests to Go", t, func(t *ftt.Test) {
 		// Send a bunch to make sure it is not just unlucky random routing.
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			_, err := botsClient.DeleteBot(ctx, &apipb.BotRequest{})
 			assert.NoErr(t, err)
 			assert.Loosely(t, seen(), should.Match([]string{"go:DeleteBot"}))
@@ -151,7 +151,7 @@ func TestConfigureMigration(t *testing.T) {
 	})
 
 	ftt.Run("RouteToGoPercent == 20 => some requests are sent to Go, some to Python", t, func(t *ftt.Test) {
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			_, err := botsClient.ListBots(ctx, &apipb.BotsRequest{})
 			assert.NoErr(t, err)
 		}
@@ -174,7 +174,7 @@ func TestConfigureMigration(t *testing.T) {
 			LastBotId: "zzz",
 		})
 		assert.NoErr(t, err)
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			_, err := botsClient.ListBots(ctx, &apipb.BotsRequest{Cursor: cur})
 			assert.NoErr(t, err)
 			assert.Loosely(t, seen(), should.Match([]string{"go:ListBots"}))
@@ -183,7 +183,7 @@ func TestConfigureMigration(t *testing.T) {
 
 	ftt.Run("Non-go pagination cursor => requests are sent to Python", t, func(t *ftt.Test) {
 		assert.NoErr(t, err)
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			_, err := botsClient.ListBots(ctx, &apipb.BotsRequest{Cursor: "i-am-not-a-go-cursor"})
 			assert.NoErr(t, err)
 			assert.Loosely(t, seen(), should.Match([]string{"py:ListBots"}))

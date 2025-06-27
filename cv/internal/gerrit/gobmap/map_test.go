@@ -406,7 +406,7 @@ func TestGobMapConcurrentUpdates(t *testing.T) {
 		// Each task is retried until it succeeds.
 		eg, egCtx := errgroup.WithContext(ctx)
 		retries := make([]int, workers)
-		for w := 0; w < workers; w++ {
+		for w := range workers {
 			eg.Go(func() error {
 				for i := w; i < len(tasks); i += workers {
 				retryLoop:

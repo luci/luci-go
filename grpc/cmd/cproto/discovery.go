@@ -123,7 +123,7 @@ func genDiscoveryFile(output, goPkg string, desc []*descriptorpb.FileDescriptorP
 func asByteArray(blob []byte) string {
 	out := &bytes.Buffer{}
 	fmt.Fprintf(out, "[]byte{")
-	for i := 0; i < len(blob); i++ {
+	for i := range blob {
 		fmt.Fprintf(out, "%d, ", blob[i])
 		if i%14 == 1 {
 			fmt.Fprintln(out)

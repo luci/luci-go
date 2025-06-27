@@ -172,7 +172,7 @@ func (d *PositionDistribution) Serialize() []int64 {
 func SimpleDistribution(center int64, width int64) *PositionDistribution {
 	var result PositionDistribution
 
-	for i := 0; i < len(result); i++ {
+	for i := range len(result) {
 		if TailLikelihoods[i] < 0.005 {
 			result[i] = center - width*2
 		} else if TailLikelihoods[i] == 0.005 {

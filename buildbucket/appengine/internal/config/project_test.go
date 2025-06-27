@@ -2301,7 +2301,7 @@ func TestUpdateProject(t *testing.T) {
 
 			t.Run("to put 499 builders", func(t *ftt.Test) {
 				bldrsCfg := ""
-				for i := 0; i < 499; i++ {
+				for i := range 499 {
 					bldrsCfg += fmt.Sprintf("builders {name: \"builder%d\"}\n", i)
 				}
 				cfgClient.dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
@@ -2319,7 +2319,7 @@ func TestUpdateProject(t *testing.T) {
 
 			t.Run("to put 500 builders", func(t *ftt.Test) {
 				bldrsCfg := ""
-				for i := 0; i < 500; i++ {
+				for i := range 500 {
 					bldrsCfg += fmt.Sprintf("builders {name: \"builder%d\"}\n", i)
 				}
 				cfgClient.dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
@@ -2337,7 +2337,7 @@ func TestUpdateProject(t *testing.T) {
 
 			t.Run("to put 1105 builders", func(t *ftt.Test) {
 				bldrsCfg := ""
-				for i := 0; i < 1105; i++ {
+				for i := range 1105 {
 					bldrsCfg += fmt.Sprintf("builders {name: \"builder%d\"}\n", i)
 				}
 				cfgClient.dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try"swarming {%s}}`, bldrsCfg)
@@ -2354,7 +2354,7 @@ func TestUpdateProject(t *testing.T) {
 
 				t.Run("delete 111 and update 994", func(t *ftt.Test) {
 					bldrsCfg := ""
-					for i := 0; i < 1105; i++ {
+					for i := range 1105 {
 						// delete builders which the name ends with "1".
 						if i%10 == 1 {
 							continue
@@ -2380,7 +2380,7 @@ func TestUpdateProject(t *testing.T) {
 
 				t.Run("delete 994 and update 111", func(t *ftt.Test) {
 					bldrsCfg := ""
-					for i := 0; i < 1105; i++ {
+					for i := range 1105 {
 						// only keep builders which the name ends with "1" and update them.
 						if i%10 == 1 {
 							bldrsCfg += fmt.Sprintf("builders {name: \"builder%d\" \n dimensions: \"pool:newly_added\"}\n", i)
@@ -2426,7 +2426,7 @@ func TestUpdateProject(t *testing.T) {
 
 			t.Run("a single too large", func(t *ftt.Test) {
 				large := ""
-				for i := 0; i < 30; i++ {
+				for range 30 {
 					large += "0123456789"
 				}
 				cfgClient.dartBuildbucketCfg = fmt.Sprintf(`buckets {name: "try" swarming {builders {name: "%s"}}}`, large)
@@ -2438,7 +2438,7 @@ func TestUpdateProject(t *testing.T) {
 
 			t.Run("the sum > maxBatchSize while builders count < 500", func(t *ftt.Test) {
 				bldrsCfg := ""
-				for i := 0; i < 212; i++ {
+				for i := range 212 {
 					bldrsCfg += fmt.Sprintf("builders {name: \"medium_size_builder_%d\"}\n", i)
 				}
 

@@ -123,10 +123,10 @@ func TestTagCacheWorks(t *testing.T) {
 			tc := NewTagCache(fs, "service.example.com")
 
 			// Fill up to capacity.
-			for i := 0; i < tagCacheMaxSize; i++ {
+			for i := range tagCacheMaxSize {
 				assert.Loosely(t, tc.AddTag(ctx, cannedPin, fmt.Sprintf("tag:%d", i)), should.BeNil)
 			}
-			for i := 0; i < tagCacheMaxExeSize; i++ {
+			for i := range tagCacheMaxExeSize {
 				assert.Loosely(t, tc.AddExtractedObjectRef(ctx, numberedPin(i), "filename", numberedObjRef(i)), should.BeNil)
 			}
 			assert.Loosely(t, tc.Save(ctx), should.BeNil)

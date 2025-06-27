@@ -629,7 +629,7 @@ func TestPassedTriggers(t *testing.T) {
 				},
 			})
 		}
-		for i := 0; i < maxTriggersAsSchedulerProperty; i++ {
+		for i := range maxTriggersAsSchedulerProperty {
 			add(i)
 		}
 

@@ -77,7 +77,7 @@ func TestTaskQueue(t *testing.T) {
 			var leasedTasks []*logdog.ArchiveTask
 			// We have to retry a couple times to collect all the tasks b/c
 			// randomness. This is sensitive to the math.NewSource() value above.
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				tasks, err := svr.LeaseArchiveTasks(c, &logdog.LeaseRequest{
 					MaxTasks:  10,
 					LeaseTime: durationpb.New(10 * time.Minute),
@@ -120,7 +120,7 @@ func TestTaskQueue(t *testing.T) {
 			var leasedTasks []*logdog.ArchiveTask
 			// We have to retry a couple times to collect all the tasks b/c
 			// randomness. This is sensitive to the math.NewSource() value above.
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				tasks, err := svr.LeaseArchiveTasks(c, &logdog.LeaseRequest{
 					MaxTasks:  1,
 					LeaseTime: durationpb.New(10 * time.Minute),

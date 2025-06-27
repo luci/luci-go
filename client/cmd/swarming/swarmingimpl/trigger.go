@@ -113,7 +113,7 @@ func listToStringListPairArray(m stringlistflag.Flag) []*swarmingv2.StringListPa
 func namePartFromDimensions(m stringmapflag.Value) string {
 	a := mapToArray(m)
 	pairs := make([]string, 0, len(a))
-	for i := 0; i < len(a); i++ {
+	for i := range a {
 		pairs = append(pairs, fmt.Sprintf("%s=%s", a[i].Key, a[i].Value))
 	}
 	return strings.Join(pairs, "_")

@@ -143,7 +143,7 @@ func TestSplitIntoRanges(t *testing.T) {
 		t.Run("With evenly distributed int keys", func(t *ftt.Test) {
 			ints := []int{}
 			maxID := 1024
-			for i := 0; i < maxID; i++ {
+			for i := range maxID {
 				ints = append(ints, i)
 			}
 			putIntEntities(ctx, nil, ints)
@@ -188,7 +188,7 @@ func TestSplitIntoRanges(t *testing.T) {
 		t.Run("With normally distributed int keys", func(t *ftt.Test) {
 			ints := []int{}
 			seen := map[int]bool{}
-			for i := 0; i < 1000; i++ {
+			for range 1000 {
 				key := int(rnd.NormFloat64()*2000 + 50000)
 				if key > 0 && !seen[key] {
 					ints = append(ints, key)
@@ -259,7 +259,7 @@ func TestSplitIntoRanges(t *testing.T) {
 
 		t.Run("Handles arbitrary keys", func(t *ftt.Test) {
 			entities := make([]any, 1000)
-			for i := 0; i < len(entities); i++ {
+			for i := range entities {
 				blob := make([]byte, 10)
 				_, err := rnd.Read(blob)
 				assert.Loosely(t, err, should.BeNil)

@@ -573,7 +573,7 @@ func TestClient(t *testing.T) {
 
 				// Execute a bunch of requests concurrently.
 				wg := sync.WaitGroup{}
-				for i := 0; i < totalRequests; i++ {
+				for range totalRequests {
 					wg.Add(1)
 					go func() {
 						defer wg.Done()
@@ -584,7 +584,7 @@ func TestClient(t *testing.T) {
 				wg.Wait()
 
 				// Make sure concurrency limit wasn't violated.
-				for i := 0; i < totalRequests; i++ {
+				for range totalRequests {
 					select {
 					case concur := <-reports:
 						assert.Loosely(t, concur, should.BeLessThanOrEqual(maxConcurrentRequests))

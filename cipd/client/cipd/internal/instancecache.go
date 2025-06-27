@@ -589,7 +589,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 			}
 		}
 		heap.Init(&g)
-		for i := 0; i < moreGarbage; i++ {
+		for range moreGarbage {
 			item := heap.Pop(&g).(*garbageCandidate)
 			garbage.Add(item.instanceID)
 			logging.Debugf(ctx, "Purging cached instance %q (age %s)", item.instanceID, now.Sub(item.lastAccessTime))

@@ -67,7 +67,7 @@ func initialize() context.Context {
 
 func main() {
 	c := initialize()
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		// Create a context with a dummy project target.
 		tc := target.Set(c, &dummy_project.DummyProject{
 			Project:   fmt.Sprintf("MyProject-%d", i),

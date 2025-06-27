@@ -68,7 +68,7 @@ func makeReasonCluster(t testing.TB, config *compiledcfg.ProjectConfig, uniqifie
 	// when clustering failure reasons, it is better not to use the
 	// uniqifier directly in the reason, to avoid cluster ID collisions.
 	var foo strings.Builder
-	for i := 0; i < uniqifier; i++ {
+	for range uniqifier {
 		foo.WriteString("foo")
 	}
 	reason := fmt.Sprintf("want %s, got bar", foo.String())

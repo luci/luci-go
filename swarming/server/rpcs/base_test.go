@@ -124,7 +124,7 @@ func SetupTestBots(ctx context.Context) *MockedRequestState {
 	testBots := []testBot{}
 	addMany := func(num int, pfx testBot) {
 		id := pfx.id
-		for i := 0; i < num; i++ {
+		for i := range num {
 			pfx.id = fmt.Sprintf("%s-%d", id, i)
 			pfx.dims = []string{fmt.Sprintf("idx:%d", i), fmt.Sprintf("dup:%d", i)}
 			testBots = append(testBots, pfx)
@@ -318,7 +318,7 @@ func SetupTestTasks(ctx context.Context) (*MockedRequestState, map[string]string
 	}
 
 	putMany := func(pfx string, state apipb.TaskState, failure, dedup, bbtask bool) {
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			putTask(
 				fmt.Sprintf("%s-%d", pfx, i),
 				[]string{

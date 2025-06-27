@@ -398,7 +398,7 @@ func TestStreamSmoke(t *testing.T) {
 				s.Close()
 			}()
 
-			for i := 0; i < 512; i++ {
+			for i := range 512 {
 				s.Append(data(tc.Now(), []byte(fmt.Sprintf("%d", i))...))
 
 				// Note that data has been sent.
@@ -409,7 +409,7 @@ func TestStreamSmoke(t *testing.T) {
 		// The consumer goroutine will consume bundles from the stream.
 		consumerC := make(chan struct{})
 		bundleC := make(chan *logpb.ButlerLogBundle)
-		for i := 0; i < 32; i++ {
+		for range 32 {
 			go func() {
 				defer func() {
 					consumerC <- struct{}{}
@@ -453,14 +453,14 @@ func TestStreamSmoke(t *testing.T) {
 
 		// Awaken all sleeping goroutines.
 		tc.Add(32 * time.Second)
-		for i := 0; i < 32; i++ {
+		for range 32 {
 			<-consumerC
 		}
 		close(bundleC)
 
 		// Did we get them all?
 		<-collectDoneC
-		for i := 0; i < 512; i++ {
+		for i := range 512 {
 			_, ok := gotIt[i]
 			assert.Loosely(t, ok, should.BeTrue)
 		}

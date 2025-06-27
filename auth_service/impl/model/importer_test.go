@@ -429,7 +429,7 @@ func makeGroupBundle(system string, size int) (map[string]GroupBundle, []string)
 	bundle := map[string]GroupBundle{}
 	groupsBundled := stringset.New(0)
 	bundle[system] = make(GroupBundle, size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		group := fmt.Sprintf("%s/group-%d", system, i)
 		bundle[system][group] = []identity.Identity{"user:a@example.com"}
 		groupsBundled.Add(group)

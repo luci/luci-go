@@ -770,12 +770,12 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			wg := sync.WaitGroup{}
 			f := func(n int) {
 				defer wg.Done()
-				for i := 0; i < numIterations; i++ {
+				for range numIterations {
 					s.Incr(ctx, m, []any{}, int64(1))
 				}
 			}
 
-			for n := 0; n < numGoroutines; n++ {
+			for n := range numGoroutines {
 				wg.Add(1)
 				go f(n)
 			}

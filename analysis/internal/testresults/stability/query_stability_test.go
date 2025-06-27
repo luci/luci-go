@@ -121,7 +121,7 @@ func TestQueryStability(t *testing.T) {
 			// remain correct even when there are multiple batches.
 			var expandedInput []*pb.QueryTestVariantStabilityRequest_TestVariantPosition
 			var expectedOutput []*pb.TestVariantStabilityAnalysis
-			for i := 0; i < batchSize; i++ {
+			for i := range batchSize {
 				testID := fmt.Sprintf("test_id_%v", i)
 				expandedInput = append(expandedInput, &pb.QueryTestVariantStabilityRequest_TestVariantPosition{
 					TestId:  testID,
@@ -629,7 +629,7 @@ func TestQueryStabilityHelpers(t *testing.T) {
 
 func unexpectedRuns(count int) []run {
 	var result []run
-	for i := 0; i < count; i++ {
+	for range count {
 		result = append(result, run{expected: false})
 	}
 	return result
@@ -637,7 +637,7 @@ func unexpectedRuns(count int) []run {
 
 func expectedRuns(count int) []run {
 	var result []run
-	for i := 0; i < count; i++ {
+	for range count {
 		result = append(result, run{expected: true})
 	}
 	return result

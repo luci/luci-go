@@ -826,7 +826,7 @@ func TestUpdateBuild(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
 			v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
-			for i := 0; i < 10000; i++ {
+			for i := range 10000 {
 				largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
 					Kind: &structpb.Value_StringValue{
 						StringValue: v,

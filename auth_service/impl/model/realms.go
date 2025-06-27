@@ -255,7 +255,7 @@ func min(x, y int) int {
 
 func sliceCompare[T string | uint32](sliceA []T, sliceB []T) bool {
 	maxCommonIndex := min(len(sliceA), len(sliceB))
-	for idx := 0; idx < maxCommonIndex; idx++ {
+	for idx := range maxCommonIndex {
 		if sliceA[idx] != sliceB[idx] {
 			return sliceA[idx] < sliceB[idx]
 		}

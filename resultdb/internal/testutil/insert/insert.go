@@ -249,7 +249,7 @@ func TestResultMessagesLegacy(t testing.TB, trs []*pb.TestResult) []*spanner.Mut
 // TestExonerations returns Spanner mutations to insert test exonerations.
 func TestExonerations(invID invocations.ID, testID string, variant *pb.Variant, reasons ...pb.ExonerationReason) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, len(reasons))
-	for i := 0; i < len(reasons); i++ {
+	for i := range reasons {
 		ms[i] = spanutil.InsertMap("TestExonerations", map[string]any{
 			"InvocationId":    invID,
 			"TestId":          testID,

@@ -30,7 +30,7 @@ func TestPack(t *testing.T) {
 	ftt.Run(`Simple test for pack.`, t, func(t *ftt.Test) {
 		t.Run(`1m 1`, func(t *ftt.Test) {
 			var array []int64
-			for i := 0; i < 1000000; i++ {
+			for i := range 1000000 {
 				array = append(array, int64(i))
 			}
 
@@ -45,7 +45,7 @@ func TestPack(t *testing.T) {
 
 		t.Run(`1m 1000`, func(t *ftt.Test) {
 			var array []int64
-			for i := 0; i < 1000000; i++ {
+			for i := range 1000000 {
 				array = append(array, int64(i*1000))
 			}
 
@@ -61,7 +61,7 @@ func TestPack(t *testing.T) {
 		t.Run(`1m pseudo`, func(t *ftt.Test) {
 			var array []int64
 			r := rand.New(rand.NewSource(0))
-			for i := 0; i < 1000000; i++ {
+			for range 1000000 {
 				array = append(array, r.Int63n(1000000))
 			}
 			sort.Slice(array, func(i, j int) bool {

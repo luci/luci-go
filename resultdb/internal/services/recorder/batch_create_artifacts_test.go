@@ -240,7 +240,7 @@ func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
 		})
 
 		t.Run("sum() of artifact.Contents is too big", func(t *ftt.Test) {
-			for i := 0; i < 11; i++ {
+			for i := range 11 {
 				req := newTestArtReq(fmt.Sprintf("art%d", i))
 				req.Artifact.Contents = make([]byte, 1024*1024)
 				bReq.Requests = append(bReq.Requests, req)

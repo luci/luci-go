@@ -164,7 +164,7 @@ func TestQueryBatch(t *testing.T) {
 					outerCount int32
 					cursor     Cursor
 				)
-				for i := int32(0); i < rounds; i++ {
+				for range rounds {
 					// Fetch "outerFetchSize" items from our Batcher.
 					q := NewQuery("").Limit(outerFetchSize)
 					if cursor != nil {

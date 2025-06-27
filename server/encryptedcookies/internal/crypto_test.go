@@ -73,7 +73,7 @@ func TestCrypto(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, dec, should.Match(priv))
 
-			for i := 0; i < 8; i++ {
+			for i := range 8 {
 				enc[i] = 0
 			}
 			_, err = DecryptPrivate(ae, enc)

@@ -594,7 +594,7 @@ func makeTestDB(users, groups int) *protocol.AuthDB {
 	}
 
 	seenGroups := stringset.New(groups)
-	for i := 0; i < groups; i++ {
+	for range groups {
 		s := rand.Intn(len(members))
 		l := rand.Intn(len(members) - s)
 		db.Groups = append(db.Groups, &protocol.AuthGroup{

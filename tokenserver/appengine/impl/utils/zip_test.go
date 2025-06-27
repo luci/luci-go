@@ -25,7 +25,7 @@ import (
 func TestZip(t *testing.T) {
 	ftt.Run("ZlibCompress/ZlibDecompress roundtrip", t, func(t *ftt.Test) {
 		data := "blah-blah"
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			data += data
 		}
 

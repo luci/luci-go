@@ -525,7 +525,7 @@ func UpdateProjects(c context.Context) error {
 	knownProjects := map[string]map[string]*projectconfigpb.Console{}
 	merr := errors.MultiError{}
 	resultsList := make([]result, 0, len(cfgs))
-	for i := 0; i < len(cfgs); i++ {
+	for range cfgs {
 		res := <-results
 		if res.err == nil {
 			knownProjects[res.projectID] = getConsolesFromMiloCfg(res.miloCfg)

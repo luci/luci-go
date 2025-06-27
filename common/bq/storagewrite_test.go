@@ -32,7 +32,7 @@ func TestToBatches(t *testing.T) {
 	ftt.Run(`ToBatches`, t, func(t *ftt.Test) {
 		t.Run(`Non-empty`, func(t *ftt.Test) {
 			var rows []proto.Message
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				// Rows of ~1 MB each.
 				row := &bqpb.TestVerdictRow{
 					TestId: strings.Repeat("a", 999950),

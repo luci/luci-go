@@ -75,7 +75,7 @@ func TestPrinter(t *testing.T) {
 			}
 
 			expected := make([]string, endLine-startLine+1)
-			for i := 0; i < len(expected); i++ {
+			for i := range expected {
 				expected[i] = protoFileLines[int(startLine)+i][unindent:]
 			}
 

@@ -35,7 +35,7 @@ func TestShorten(t *testing.T) {
 	tmp := t.TempDir()
 
 	longDir := tmp
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		longDir = filepath.Join(longDir, "0123456789")
 	}
 	assert.NoErr(t, os.MkdirAll(longDir, 0777))

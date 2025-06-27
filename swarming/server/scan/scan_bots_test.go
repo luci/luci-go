@@ -52,7 +52,7 @@ func TestBots(t *testing.T) {
 
 	// Many-many bots to make sure we engage logic related to multiple shards.
 	const botCount = 10000
-	for i := 0; i < botCount; i++ {
+	for i := range botCount {
 		putBot(FakeBot{ID: fmt.Sprintf("bot %d", i)})
 	}
 

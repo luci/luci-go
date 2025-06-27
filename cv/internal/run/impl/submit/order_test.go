@@ -268,7 +268,7 @@ func genFullGraph(numCLs int) []*run.RunCL {
 				Deps: make([]*changelist.Dep, 0, numCLs-1),
 			},
 		}
-		for j := 0; j < numCLs; j++ {
+		for j := range numCLs {
 			if i != j {
 				dep := &changelist.Dep{
 					Clid: int64(j),

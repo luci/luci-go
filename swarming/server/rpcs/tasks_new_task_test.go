@@ -389,7 +389,7 @@ func TestValidateNewTask(t *testing.T) {
 		t.Run("tags", func(t *ftt.Test) {
 			t.Run("too_many", func(t *ftt.Test) {
 				req := simpliestValidRequest("pool")
-				for i := 0; i < maxTagCount+1; i++ {
+				for range maxTagCount + 1 {
 					req.Tags = append(req.Tags, "k:v")
 				}
 				err := validateNewTask(ctx, req, "pool")
@@ -547,7 +547,7 @@ func TestValidateNewTask(t *testing.T) {
 					})
 					t.Run("too_many_args", func(t *ftt.Test) {
 						req := simpliestValidRequest("pool")
-						for i := 0; i < maxCmdArgs+1; i++ {
+						for range maxCmdArgs + 1 {
 							req.TaskSlices[0].Properties.Command = append(req.TaskSlices[0].Properties.Command, "arg")
 						}
 						err := validateNewTask(ctx, req, "pool")
@@ -562,7 +562,7 @@ func TestValidateNewTask(t *testing.T) {
 							Key:   "key",
 							Value: "value",
 						}
-						for i := 0; i < validate.MaxEnvVarCount+1; i++ {
+						for range validate.MaxEnvVarCount + 1 {
 							req.TaskSlices[0].Properties.Env = append(req.TaskSlices[0].Properties.Env, envItem)
 						}
 						err := validateNewTask(ctx, req, "pool")
@@ -618,7 +618,7 @@ func TestValidateNewTask(t *testing.T) {
 								"value",
 							},
 						}
-						for i := 0; i < validate.MaxEnvVarCount+1; i++ {
+						for range validate.MaxEnvVarCount + 1 {
 							req.TaskSlices[0].Properties.EnvPrefixes = append(req.TaskSlices[0].Properties.EnvPrefixes, epItem)
 						}
 						err := validateNewTask(ctx, req, "pool")
@@ -714,7 +714,7 @@ func TestValidateNewTask(t *testing.T) {
 				t.Run("outputs", func(t *ftt.Test) {
 					t.Run("too_many", func(t *ftt.Test) {
 						req := simpliestValidRequest("pool")
-						for i := 0; i < maxOutputCount+1; i++ {
+						for range maxOutputCount + 1 {
 							req.TaskSlices[0].Properties.Outputs = append(req.TaskSlices[0].Properties.Outputs, "output")
 						}
 						err := validateNewTask(ctx, req, "pool")
@@ -803,7 +803,7 @@ func TestValidateNewTask(t *testing.T) {
 				t.Run("dimensions", func(t *ftt.Test) {
 					t.Run("too_many_dimensions", func(t *ftt.Test) {
 						req := simpliestValidRequest("pool")
-						for i := 0; i < model.MaxDimensionChecks+1; i++ {
+						for i := range model.MaxDimensionChecks + 1 {
 							req.TaskSlices[0].Properties.Dimensions = append(
 								req.TaskSlices[0].Properties.Dimensions, &apipb.StringPair{
 									Key:   fmt.Sprintf("key%d", i),

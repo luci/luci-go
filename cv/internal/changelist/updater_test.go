@@ -970,7 +970,7 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 			const clCount = 1024
 			depCLMap := make(map[ExternalID]DepKind, clCount)
 			depCLs := make([]*CL, clCount)
-			for i := 0; i < clCount; i++ {
+			for i := range clCount {
 				depCLs[i] = ExternalID(fmt.Sprintf("high-dep-cl/%04d", i)).MustCreateIfNotExists(ctx)
 				depCLMap[depCLs[i].ExternalID] = DepKind_HARD
 			}

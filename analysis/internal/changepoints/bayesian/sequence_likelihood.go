@@ -194,7 +194,7 @@ func addLogLikelihoods(x []float64) float64 {
 		return x[0]
 	}
 	maxValue := -math.MaxFloat64
-	for i := 0; i < len(x); i++ {
+	for i := range x {
 		if x[i] > maxValue {
 			maxValue = x[i]
 		}
@@ -212,7 +212,7 @@ func addLogLikelihoods(x []float64) float64 {
 	// (e.g. max exponent of 10^(+/-308)) when
 	// adding very small (or very large) values.
 	sum := 0.0
-	for i := 0; i < len(x); i++ {
+	for i := range x {
 		sum += math.Exp(x[i] - maxValue)
 	}
 	return maxValue + math.Log(sum)

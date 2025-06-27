@@ -35,7 +35,7 @@ func TestMap(t *testing.T) {
 	ctx := memory.Use(context.Background())
 
 	const count = 1000
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if err := datastore.Put(ctx, &intEnt{ID: int64(i + 1)}); err != nil {
 			t.Fatalf("Storing entity: %s", err)
 		}

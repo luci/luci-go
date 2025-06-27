@@ -103,7 +103,7 @@ func TestEncodeAndDecode(t *testing.T) {
 	ftt.Run(`Encode and decode long history should not have error`, t, func(t *ftt.Test) {
 		history := History{}
 		history.Runs = make([]Run, 2000)
-		for i := 0; i < 2000; i++ {
+		for i := range 2000 {
 			history.Runs[i] = Run{
 				CommitPosition: int64(i),
 				Hour:           time.Unix(int64(i*3600), 0),
@@ -186,8 +186,8 @@ func TestEncodeAndDecode(t *testing.T) {
 		})
 		t.Run(`Long history`, func(t *ftt.Test) {
 			var expectedRuns []Run
-			for i := 0; i < 2000; i++ {
-				for j := 0; j < 3; j++ {
+			for i := range 2000 {
+				for range 3 {
 					expectedRuns = append(expectedRuns, Run{
 						CommitPosition: int64(i),
 						Hour:           time.Unix(int64(i*3600), 0),
@@ -280,7 +280,7 @@ func TestInputBuffer(t *testing.T) {
 		ib := NewWithCapacity(10, 100)
 		coldBufferDirtyCount := 0
 		evictionCount := 0
-		for i := 0; i < 1000; i++ {
+		for i := range 1000 {
 			ib.InsertRun(createTestRun(i, i))
 			ib.CompactIfRequired()
 

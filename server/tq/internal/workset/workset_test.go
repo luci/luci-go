@@ -31,7 +31,7 @@ func TestWorkSet(t *testing.T) {
 		const N = 100
 
 		items := []Item{}
-		for i := 0; i < N; i++ {
+		for i := range N {
 			items = append(items, i)
 		}
 		ws := New(items, nil)
@@ -80,7 +80,7 @@ func TestWorkSet(t *testing.T) {
 		t.Run("Many workers", func(t *ftt.Test) {
 			wg := sync.WaitGroup{}
 			wg.Add(5)
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				go func() {
 					defer wg.Done()
 					worker(context.Background())
@@ -101,7 +101,7 @@ func TestWorkSet(t *testing.T) {
 		// Consumer goroutines.
 		wg := sync.WaitGroup{}
 		wg.Add(5)
-		for i := 0; i < 5; i++ {
+		for range 5 {
 			go func() {
 				defer wg.Done()
 				<-startConsumers

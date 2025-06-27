@@ -346,7 +346,7 @@ func TestDetails(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
 				v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
-				for i := 0; i < 10000; i++ {
+				for i := range 10000 {
 					larger.Fields[k+strconv.Itoa(i)] = &structpb.Value{
 						Kind: &structpb.Value_StringValue{
 							StringValue: v,
@@ -371,7 +371,7 @@ func TestDetails(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
 			v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
-			for i := 0; i < 10000; i++ {
+			for i := range 10000 {
 				largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
 					Kind: &structpb.Value_StringValue{
 						StringValue: v,
@@ -420,7 +420,7 @@ func TestDetails(t *testing.T) {
 			t.Run("large -> larger", func(t *ftt.Test) {
 				larger := proto.Clone(largeProps).(*structpb.Struct)
 				curLen := len(larger.Fields)
-				for i := 0; i < 10; i++ {
+				for i := range 10 {
 					larger.Fields[k+strconv.Itoa(curLen+i)] = &structpb.Value{
 						Kind: &structpb.Value_StringValue{
 							StringValue: v,
@@ -457,7 +457,7 @@ func TestDetails(t *testing.T) {
 			v := "largeeeeeee_value"
 
 			t.Run(">1 and <4 chunks", func(t *ftt.Test) {
-				for i := 0; i < 60; i++ {
+				for i := range 60 {
 					largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
 						Kind: &structpb.Value_StringValue{
 							StringValue: v,
@@ -485,7 +485,7 @@ func TestDetails(t *testing.T) {
 			})
 
 			t.Run("~4 chunks", func(t *ftt.Test) {
-				for i := 0; i < 120; i++ {
+				for i := range 120 {
 					largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
 						Kind: &structpb.Value_StringValue{
 							StringValue: v,
@@ -513,7 +513,7 @@ func TestDetails(t *testing.T) {
 			})
 
 			t.Run("> 4 chunks", func(t *ftt.Test) {
-				for i := 0; i < 500; i++ {
+				for i := range 500 {
 					largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
 						Kind: &structpb.Value_StringValue{
 							StringValue: v,
@@ -590,7 +590,7 @@ func TestDetails(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
 			v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
-			for i := 0; i < 10000; i++ {
+			for i := range 10000 {
 				largeProps.Fields[k+strconv.Itoa(i)] = &structpb.Value{
 					Kind: &structpb.Value_StringValue{
 						StringValue: v,

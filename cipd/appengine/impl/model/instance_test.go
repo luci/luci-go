@@ -176,7 +176,7 @@ func TestListInstances(t *testing.T) {
 				RegisteredTs: testutil.TestTime.Add(time.Duration(i) * time.Minute),
 			}
 		}
-		for i := 0; i < 4; i++ {
+		for i := range 4 {
 			assert.Loosely(t, datastore.Put(ctx, inst(i)), should.BeNil)
 		}
 

@@ -340,7 +340,7 @@ func TestReachable(t *testing.T) {
 			nodes := [][]*spanner.Mutation{}
 			nodeSet := []invocations.ID{}
 			childInvs := []invocations.ID{}
-			for i := 0; i < 100; i++ {
+			for i := range 100 {
 				name := invocations.ID("b" + strconv.FormatInt(int64(i), 10))
 				childInvs = append(childInvs, name)
 				nodes = append(nodes, node(name, nil))
@@ -386,7 +386,7 @@ func BenchmarkChainFetch(b *testing.B) {
 
 	var ms []*spanner.Mutation
 	var prev invocations.ID
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		var included []invocations.ID
 		if prev != "" {
 			included = append(included, prev)
@@ -410,7 +410,7 @@ func BenchmarkChainFetch(b *testing.B) {
 	}
 
 	// Run fetch a few times before starting measuring.
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		read()
 	}
 

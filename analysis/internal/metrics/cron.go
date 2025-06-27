@@ -179,13 +179,13 @@ func reportJoinStats(ctx context.Context, metric metric.NonCumulativeDistributio
 		joinedDist := distribution.New(metric.Bucketer())
 		unjoinedDist := distribution.New(metric.Bucketer())
 
-		for hoursAgo := 0; hoursAgo < control.JoinStatsHours; hoursAgo++ {
+		for hoursAgo := range control.JoinStatsHours {
 			joinedBuilds := stats.JoinedByHour[hoursAgo]
 			unjoinedBuilds := stats.TotalByHour[hoursAgo] - joinedBuilds
-			for i := int64(0); i < joinedBuilds; i++ {
+			for range joinedBuilds {
 				joinedDist.Add(float64(hoursAgo))
 			}
-			for i := int64(0); i < unjoinedBuilds; i++ {
+			for range unjoinedBuilds {
 				unjoinedDist.Add(float64(hoursAgo))
 			}
 		}

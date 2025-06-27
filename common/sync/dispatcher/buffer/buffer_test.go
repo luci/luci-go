@@ -270,7 +270,7 @@ func TestBuffer(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 
 				expect := make([]int, 20)
-				for i := 0; i < 20; i++ {
+				for i := range 20 {
 					expect[i] = i
 					assert.Loosely(t, must(addNoBlockZero(b, clock.Now(ctx), i)), should.BeNil)
 					tclock.Add(time.Millisecond)
@@ -496,7 +496,7 @@ func TestBuffer(t *testing.T) {
 							assert.Loosely(t, b.CanAddItem(), should.BeTrue)
 							assert.Loosely(t, b.stats, should.Resemble(Stats{UnleasedItemCount: 11}))
 
-							for i := 0; i < 10; i++ {
+							for i := range 10 {
 								assert.Loosely(t, must(addNoBlockZero(b, clock.Now(ctx), 100+i)), should.BeNil)
 							}
 

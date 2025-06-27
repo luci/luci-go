@@ -76,7 +76,7 @@ func TestCountingWriter(t *testing.T) {
 		t.Run(`When using 32 sequential WriteByte, uses underlying WriteByte and registers a count of 32.`, func(t *ftt.Test) {
 			written := bytes.Buffer{}
 
-			for i := 0; i < 32; i++ {
+			for i := range 32 {
 				assert.Loosely(t, cw.WriteByte(byte(i)), should.BeNil)
 				assert.Loosely(t, cw.Count, should.Equal(i+1))
 

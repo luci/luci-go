@@ -28,7 +28,7 @@ import (
 type infiniteReader struct{}
 
 func (r infiniteReader) Read(b []byte) (int, error) {
-	for idx := 0; idx < len(b); idx++ {
+	for idx := range b {
 		b[idx] = 0x55
 	}
 	return len(b), nil

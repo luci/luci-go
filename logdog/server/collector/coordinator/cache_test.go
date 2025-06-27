@@ -211,13 +211,13 @@ func TestStreamStateCache(t *testing.T) {
 				tcc.errC = make(chan error)
 
 				errs := make(errors.MultiError, 256)
-				for i := 0; i < len(errs); i++ {
+				for range errs {
 					go req(&st)
 				}
 
 				<-tcc.callC
 				tcc.errC <- nil
-				for i := 0; i < len(errs); i++ {
+				for range errs {
 					<-resultC
 				}
 
@@ -370,7 +370,7 @@ func TestStreamStateCache(t *testing.T) {
 			errs := make(errors.MultiError, count)
 			state := make([]*LogStreamState, count)
 			wg.Add(count)
-			for i := 0; i < count; i++ {
+			for i := range count {
 				st := st
 				st.Path = types.StreamPath(fmt.Sprintf("ID:%d", i))
 
@@ -381,12 +381,12 @@ func TestStreamStateCache(t *testing.T) {
 			}
 
 			// Wait for all of them to simultaneously call.
-			for i := 0; i < count; i++ {
+			for range count {
 				<-tcc.callC
 			}
 
 			// They're all blocked on errC; allow them to continue.
-			for i := 0; i < count; i++ {
+			for range count {
 				tcc.errC <- nil
 			}
 
@@ -397,7 +397,7 @@ func TestStreamStateCache(t *testing.T) {
 			assert.Loosely(t, errors.SingleError(errs), should.BeNil)
 
 			remotes := 0
-			for i := 0; i < count; i++ {
+			for i := range count {
 				if state[i].ProtoVersion == "remote" {
 					remotes++
 				}

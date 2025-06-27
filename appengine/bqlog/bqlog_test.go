@@ -130,7 +130,7 @@ func TestFlush(t *testing.T) {
 			testingLog.MaxParallelUploads = 1
 			testingLog.BatchesPerRequest = 20
 
-			for i := 0; i < 3; i++ {
+			for i := range 3 {
 				err := testingLog.Insert(ctx, testEntry{
 					Data: map[string]bigquery.Value{"i": i},
 				})
@@ -188,7 +188,7 @@ func TestFlush(t *testing.T) {
 			testingLog.MaxParallelUploads = 5
 			testingLog.BatchesPerRequest = 2
 
-			for i := 0; i < 20; i++ {
+			for i := range 20 {
 				err := testingLog.Insert(ctx, testEntry{
 					Data: map[string]bigquery.Value{"i": i},
 				})
@@ -228,7 +228,7 @@ func TestFlush(t *testing.T) {
 			testingLog.BatchesPerRequest = 1
 			testingLog.FlushTimeout = 5 * time.Second
 
-			for i := 0; i < 10; i++ {
+			for i := range 10 {
 				err := testingLog.Insert(ctx, testEntry{
 					Data: map[string]bigquery.Value{"i": i},
 				})
@@ -267,7 +267,7 @@ func TestFlush(t *testing.T) {
 			testingLog.MaxParallelUploads = 5
 			testingLog.BatchesPerRequest = 2
 
-			for i := 0; i < 20; i++ {
+			for i := range 20 {
 				err := testingLog.Insert(ctx, testEntry{
 					Data: map[string]bigquery.Value{"i": i},
 				})
@@ -295,7 +295,7 @@ func TestFlush(t *testing.T) {
 			testingLog.MaxParallelUploads = 1
 			testingLog.BatchesPerRequest = 2
 
-			for i := 0; i < 20; i++ {
+			for i := range 20 {
 				err := testingLog.Insert(ctx, testEntry{
 					Data: map[string]bigquery.Value{"i": i},
 				})
@@ -328,7 +328,7 @@ func TestFlush(t *testing.T) {
 			testingLog.MaxParallelUploads = 5
 			testingLog.BatchesPerRequest = 2
 
-			for i := 0; i < 20; i++ {
+			for i := range 20 {
 				err := testingLog.Insert(ctx, testEntry{
 					Data: map[string]bigquery.Value{"i": i},
 				})

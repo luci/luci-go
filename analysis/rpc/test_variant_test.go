@@ -309,7 +309,7 @@ func TestValidateQueryFailureRateRequest(t *testing.T) {
 
 		t.Run("too many test variants", func(t *ftt.Test) {
 			req.TestVariants = make([]*pb.QueryTestVariantFailureRateRequest_TestVariant, 0, 101)
-			for i := 0; i < 101; i++ {
+			for i := range 101 {
 				req.TestVariants = append(req.TestVariants, &pb.QueryTestVariantFailureRateRequest_TestVariant{
 					TestId: fmt.Sprintf("test_id%v", i),
 				})
@@ -396,7 +396,7 @@ func TestValidateQueryTestVariantStabilityRequest(t *testing.T) {
 
 		t.Run("too many test variants", func(t *ftt.Test) {
 			req.TestVariants = make([]*pb.QueryTestVariantStabilityRequest_TestVariantPosition, 0, 101)
-			for i := 0; i < 101; i++ {
+			for i := range 101 {
 				req.TestVariants = append(req.TestVariants, &pb.QueryTestVariantStabilityRequest_TestVariantPosition{
 					TestId:  fmt.Sprintf("test_id%v", i),
 					Sources: testSources(),

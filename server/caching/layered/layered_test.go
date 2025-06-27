@@ -239,14 +239,14 @@ func TestCache(t *testing.T) {
 			{61 * time.Minute, 10 * time.Minute, 0},   // outside item expiration => always expired
 		}
 
-		for i := 0; i < len(testCases); i++ {
+		for i := range testCases {
 			now := testCases[i].now
 			threshold := testCases[i].threshold
 			expectedHitRate := testCases[i].expectedHitRate
 
 			t.Run(fmt.Sprintf("WithRandomizedExpiration (now = %s)", now), func(t *ftt.Test) {
 				cacheHits := 0
-				for i := 0; i < 100; i++ {
+				for range 100 {
 					if oneRandomizedTrial(now, threshold) {
 						cacheHits++
 					}

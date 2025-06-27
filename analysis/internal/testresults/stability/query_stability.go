@@ -555,7 +555,7 @@ func consecutiveUnexpectedCount(afterRuns, onRuns, beforeRuns []run) int {
 	// The number of consecutive runs in beforeRuns, starting from
 	// the side of the queried source position.
 	beforeRunsConsecutive := len(beforeRuns)
-	for i := 0; i < len(beforeRuns); i++ {
+	for i := range beforeRuns {
 		if beforeRuns[i].expected {
 			// We encountered an expected run.
 			beforeRunsConsecutive = i

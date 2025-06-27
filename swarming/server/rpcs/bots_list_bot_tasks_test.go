@@ -130,7 +130,7 @@ func TestListBotTasks(t *testing.T) {
 
 	// A mix of completed and killed tasks.
 	var now time.Duration
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		var state apipb.TaskState
 		var old bool
 		if i%2 == 0 {

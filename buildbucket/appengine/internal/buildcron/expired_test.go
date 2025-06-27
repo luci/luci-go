@@ -137,7 +137,7 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 			bss := make([]*model.BuildStatus, len(bs))
 			infs := make([]*model.BuildInfra, len(bs))
 			createTime := now.Add(-model.BuildMaxCompletionTime - time.Minute)
-			for i := 0; i < len(bs); i++ {
+			for i := range bs {
 				bs[i], bss[i] = newBuildAndStatus(ctx, pb.Status_SCHEDULED, createTime)
 				infs[i] = newInfraFromBuild(ctx, bs[i])
 			}

@@ -132,7 +132,7 @@ func (srv *TaskBackend) fetchTasks(ctx context.Context, taskIDs []*bbpb.TaskID, 
 
 	// Convert to FetchTasksResponse.
 	checker := State(ctx).ACL
-	for i := 0; i < len(resultSummaries); i++ {
+	for i := range resultSummaries {
 		// Check errors.
 		if entMerr != nil && entMerr[i] != nil {
 			tasks[idxMap[i]] = &buildTask{err: entMerr[i]}
@@ -183,7 +183,7 @@ func fetchBuildTaskEntities(ctx context.Context, reqKeys []*datastore.Key) ([]*m
 		}
 	}
 
-	for i := 0; i < len(reqKeys); i++ {
+	for i := range reqKeys {
 		tID := model.RequestKeyToTaskID(reqKeys[i], model.AsRequest)
 		switch {
 		case rsErrs != nil && rsErrs[i] != nil:

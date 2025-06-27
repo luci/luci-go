@@ -274,7 +274,7 @@ func TestReportBuilderMetrics(t *testing.T) {
 
 				// Generate pendingTime distribution
 				// The calcuations can be found below
-				for i := 0; i < 6; i++ {
+				for i := range 6 {
 					pendingTime := -(math.Pow(2, float64(i)))
 
 					B := func(status pb.Status, changedAt time.Time) *model.Build {
@@ -319,7 +319,7 @@ func TestReportBuilderMetrics(t *testing.T) {
 
 				// Generate pendingTime distribution
 				// The calcuations can be found below
-				for i := 0; i < 6; i++ {
+				for i := range 6 {
 					pendingTime := -(math.Pow(2, float64(i)))
 
 					B := func(status pb.Status, changedAt time.Time) *model.Build {

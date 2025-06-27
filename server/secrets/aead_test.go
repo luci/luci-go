@@ -177,7 +177,7 @@ func TestMergedKeyset(t *testing.T) {
 
 func genTestKeySet(keys int) ([]byte, *tinkpb.KeysetInfo) {
 	ksm := keyset.NewManager()
-	for i := 0; i < keys; i++ {
+	for range keys {
 		keyID, err := ksm.Add(aead.AES256GCMKeyTemplate())
 		if err != nil {
 			panic(err)

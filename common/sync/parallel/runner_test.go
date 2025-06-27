@@ -49,7 +49,7 @@ func TestRunner(t *testing.T) {
 			resultC := make(chan int32)
 
 			// Dispatch iters tasks.
-			for i := 0; i < iters; i++ {
+			for i := range iters {
 				errC := r.RunOne(func() error {
 					atomic.AddInt32(&ac, int32(i))
 					return numberError(i)
@@ -63,7 +63,7 @@ func TestRunner(t *testing.T) {
 
 			// Reap the results and compare.
 			result := int32(0)
-			for i := 0; i < iters; i++ {
+			for range iters {
 				result += <-resultC
 			}
 			assert.That(t, result, should.Equal(atomic.LoadInt32(&ac)))
@@ -137,7 +137,7 @@ func TestRunner(t *testing.T) {
 		t.Run("Ignore consumes the errors and blocks", func(t *ftt.Test) {
 			count := new(int32)
 			Ignore(r.Run(func(ch chan<- func() error) {
-				for i := 0; i < 100; i++ {
+				for range 100 {
 					ch <- func() error {
 						atomic.AddInt32(count, 1)
 						return fmt.Errorf("whaaattt")
@@ -163,7 +163,7 @@ func TestRunner(t *testing.T) {
 
 			assert.Loosely(t, func() {
 				errC = r.Run(func(ch chan<- func() error) {
-					for i := 0; i < 100; i++ {
+					for i := range 100 {
 						ch <- func() error {
 							atomic.AddInt32(count, 1)
 							return fmt.Errorf("whaaattt: %d", i)

@@ -291,7 +291,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		assert.NoErr(t, pmNotifier.NotifyCLsUpdated(ctx, lProject, changelist.ToUpdatedEvents(cl43, cl44)))
 
 		const n = 20
-		for i := 0; i < n; i++ {
+		for range n {
 			assert.NoErr(t, pmNotifier.UpdateConfig(ctx, lProject))
 			assert.NoErr(t, pmNotifier.Poke(ctx, lProject))
 			// Simulate updating a CL.
@@ -313,7 +313,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		errs := make(errors.MultiError, w)
 		wg := sync.WaitGroup{}
 		wg.Add(w)
-		for i := 0; i < w; i++ {
+		for i := range w {
 			go func() {
 				defer wg.Done()
 				errs[i] = pm.manageProject(ctx, lProject, now)

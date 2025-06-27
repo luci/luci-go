@@ -58,7 +58,7 @@ func WriteBytes(buf io.ByteWriter, data []byte) (n int, err error) {
 	}
 
 	acc := byte(0)
-	for i := 0; i < len(data); i++ {
+	for i := range data {
 		m := uint(i % 7)
 		b := data[i]
 		if err = wb(acc | 1 | ((b & (0xff << (m + 1))) >> m)); err != nil {

@@ -226,7 +226,7 @@ func TestInstanceCache(t *testing.T) {
 			defer cache.Close(ctx)
 
 			var reqs []*InstanceRequest
-			for i := 0; i < 100; i++ {
+			for i := range 100 {
 				reqs = append(reqs, &InstanceRequest{
 					Context: ctx,
 					Pin:     pin(i),
@@ -275,7 +275,7 @@ func TestInstanceCache(t *testing.T) {
 
 				// Make errCount fetches fail and rest succeed.
 				const errCount = 10
-				for i := 0; i < errCount; i++ {
+				for i := range errCount {
 					fetchErr <- fmt.Errorf("boom %d", i)
 				}
 				for i := errCount; i < len(reqs); i++ {
@@ -298,7 +298,7 @@ func TestInstanceCache(t *testing.T) {
 
 		t.Run("GC respects MaxSize", func(t *ftt.Test) {
 			// Add twice more the limit.
-			for i := 0; i < testInstanceCacheMaxSize*2; i++ {
+			for i := range testInstanceCacheMaxSize * 2 {
 				putNew(cache, pin(i))
 				tc.Add(time.Second)
 			}
@@ -311,14 +311,14 @@ func TestInstanceCache(t *testing.T) {
 				testHas(cache, pin(i))
 			}
 			// The rest are missing and can be recreated.
-			for i := 0; i < testInstanceCacheMaxSize; i++ {
+			for i := range testInstanceCacheMaxSize {
 				putNew(cache, pin(i))
 			}
 		})
 
 		t.Run("GC respects MaxAge", func(t *ftt.Test) {
 			cache.maxAge = 2500 * time.Millisecond
-			for i := 0; i < 8; i++ {
+			for i := range 8 {
 				if i != 0 {
 					tc.Add(time.Second)
 				}
@@ -336,14 +336,14 @@ func TestInstanceCache(t *testing.T) {
 			testHas(cache, pin(7))
 
 			// The rest are missing and can be recreated.
-			for i := 0; i < 5; i++ {
+			for i := range 5 {
 				putNew(cache, pin(i))
 			}
 		})
 
 		t.Run("RequestInstancesDoesNotEvictEntriesToBeFetched", func(t *ftt.Test) {
 			cache.maxAge = 2 * time.Second
-			for i := 0; i < 8; i++ {
+			for i := range 8 {
 				putNew(cache, pin(i))
 			}
 			// At this point, 8 fetches have been done.
@@ -357,12 +357,12 @@ func TestInstanceCache(t *testing.T) {
 			var ir []*InstanceRequest
 			// A new download will trigger gc
 			ir = append(ir, &InstanceRequest{Context: ctx, Pin: pin(10)})
-			for i := 0; i < 8; i++ {
+			for i := range 8 {
 				ir = append(ir, &InstanceRequest{Context: ctx, Pin: pin(i)})
 			}
 			cache.RequestInstances(ctx, ir)
 
-			for i := 0; i < 9; i++ {
+			for range 9 {
 				res := cache.WaitInstance()
 				assert.Loosely(t, res.Err, should.BeNil)
 				assert.Loosely(t, res.Source.Close(ctx, false), should.BeNil)
@@ -378,14 +378,14 @@ func TestInstanceCache(t *testing.T) {
 
 			testSync := func(causeResync func()) {
 				// Add instances.
-				for i := 0; i < count; i++ {
+				for i := range count {
 					putNew(cache, pin(i))
 				}
 
 				causeResync()
 
 				// state.db must be restored.
-				for i := 0; i < count; i++ {
+				for i := range count {
 					lastAccess, ok := accessTime(cache, pin(i))
 					assert.Loosely(t, ok, should.BeTrue)
 					assert.Loosely(t, lastAccess.UnixNano(), should.Equal(clock.Now(ctx).UnixNano()))

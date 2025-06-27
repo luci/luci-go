@@ -117,7 +117,7 @@ func TestPromiseSmoke(t *testing.T) {
 		})
 
 		finishedC := make(chan string)
-		for i := uint(0); i < 100; i++ {
+		for range uint(100) {
 			go func() {
 				data, _ := p.Get(ctx)
 				finishedC <- data.(string)
@@ -131,7 +131,7 @@ func TestPromiseSmoke(t *testing.T) {
 		}
 
 		dataC <- "DATA"
-		for i := uint(0); i < 200; i++ {
+		for range uint(200) {
 			assert.Loosely(t, <-finishedC, should.Equal("DATA"))
 		}
 	})

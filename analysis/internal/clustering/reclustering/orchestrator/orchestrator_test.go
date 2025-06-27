@@ -296,7 +296,7 @@ func TestOrchestrator(t *testing.T) {
 					ShardCount:        10,
 				}
 				var previousShards []shards.ReclusteringShard
-				for i := 0; i < 10; i++ {
+				for i := range 10 {
 					previousShards = append(previousShards, shards.ReclusteringShard{
 						ShardNumber:      int64(50 + i),
 						AttemptTimestamp: expectedRunEndTime.Add(-1 * time.Minute),

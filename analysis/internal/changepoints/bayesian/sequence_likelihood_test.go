@@ -142,7 +142,7 @@ func TestAddLogLikelihood(t *testing.T) {
 
 		t.Run("Many small elements", func(t *ftt.Test) {
 			var eles = make([]float64, 10)
-			for i := 0; i < 10; i++ {
+			for i := range 10 {
 				eles[i] = math.Log(0.0000001)
 			}
 			assert.Loosely(t, addLogLikelihoods(eles), should.AlmostEqual(math.Log(0.000001)))

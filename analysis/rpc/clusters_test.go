@@ -276,7 +276,7 @@ func TestClusters(t *testing.T) {
 			})
 			t.Run("With too many test results", func(t *ftt.Test) {
 				var testResults []*pb.ClusterRequest_TestResult
-				for i := 0; i < 1001; i++ {
+				for range 1001 {
 					testResults = append(testResults, &pb.ClusterRequest_TestResult{
 						TestId: "AnotherTest",
 					})

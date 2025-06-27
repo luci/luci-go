@@ -362,7 +362,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 		t.Run("is invalid task detail", func(t *ftt.Test) {
 
 			details := make(map[string]*structpb.Value)
-			for i := 0; i < 10000; i++ {
+			for i := range 10000 {
 				v, _ := structpb.NewValue("my really long detail, but it's not that long.")
 				details[strconv.Itoa(i)] = v
 			}

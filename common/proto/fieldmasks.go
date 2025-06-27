@@ -239,7 +239,7 @@ func getFieldTypes(t reflect.Type) map[string]reflect.Type {
 
 	n := t.NumField()
 	fields := make(map[string]reflect.StructField, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		f := t.Field(i)
 		fields[f.Name] = f
 	}

@@ -397,7 +397,7 @@ func (op *triageOp) processTriggers(c context.Context, job *Job) (*dsset.PopOp, 
 	if len(triggers) > op.maxAllowedTriggers {
 		dropping := len(triggers) - op.maxAllowedTriggers
 		op.debugErrLog(c, nil, "Too many pending triggers (>%d), dropping %d oldest", op.maxAllowedTriggers, dropping)
-		for i := 0; i < dropping; i++ {
+		for i := range dropping {
 			popOp.Pop(triggers[i].Id)
 		}
 		triggers = triggers[dropping:]

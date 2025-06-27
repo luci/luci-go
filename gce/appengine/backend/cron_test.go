@@ -139,7 +139,7 @@ func TestCron(t *testing.T) {
 			})
 
 			t.Run("many", func(t *ftt.Test) {
-				for i := 0; i < 100; i++ {
+				for i := range 100 {
 					datastore.Put(c, &model.Config{
 						ID: fmt.Sprintf("id-%d", i),
 					})

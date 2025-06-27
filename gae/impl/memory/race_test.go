@@ -34,7 +34,7 @@ func TestRaceGetPut(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -85,7 +85,7 @@ func TestRaceNonConflictingPuts(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

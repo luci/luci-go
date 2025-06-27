@@ -57,7 +57,7 @@ func TestFindGaps(t *testing.T) {
 
 			// Read 5 numbers from the channel.
 			var got []int
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				got = append(got, nextNum())
 			}
 
@@ -129,7 +129,7 @@ func TestAssignTaskNumbers(t *testing.T) {
 		for _, count := range []int{1, taskQueryBatchSize + 1} {
 			t.Run(fmt.Sprintf("Count: %d", count), func(t *ftt.Test) {
 				// Request a bunch of task numbers.
-				for i := 0; i < count; i++ {
+				for i := range count {
 					_, err := allocator.NotifyTaskIsAlive(c, &task1, fmt.Sprintf("%d", i))
 					assert.Loosely(t, err, should.Equal(srvtsmon.ErrNoTaskNumber))
 				}
@@ -139,7 +139,7 @@ func TestAssignTaskNumbers(t *testing.T) {
 
 				// Yep. Assigned.
 				numbers := map[int]struct{}{}
-				for i := 0; i < count; i++ {
+				for i := range count {
 					num, err := allocator.NotifyTaskIsAlive(c, &task1, fmt.Sprintf("%d", i))
 					assert.Loosely(t, err, should.BeNil)
 					numbers[num] = struct{}{}
@@ -151,7 +151,7 @@ func TestAssignTaskNumbers(t *testing.T) {
 				assert.Loosely(t, AssignTaskNumbers(c), should.BeNil)
 
 				// Yep. Expired.
-				for i := 0; i < count; i++ {
+				for i := range count {
 					_, err := allocator.NotifyTaskIsAlive(c, &task1, fmt.Sprintf("%d", i))
 					assert.Loosely(t, err, should.Equal(srvtsmon.ErrNoTaskNumber))
 				}

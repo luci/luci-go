@@ -244,7 +244,7 @@ func TestRules(t *testing.T) {
 func BenchmarkRules(b *testing.B) {
 	// Setup 1000 rules.
 	var rules []*Expr
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		rule := `test LIKE "%arc.Boot` + fmt.Sprintf("%v", i) + `.%" AND reason LIKE "%failed` + fmt.Sprintf("%v", i) + `.%"`
 		expr, err := Parse(rule)
 		if err != nil {
@@ -254,13 +254,13 @@ func BenchmarkRules(b *testing.B) {
 	}
 	var testText strings.Builder
 	var reasonText strings.Builder
-	for j := 0; j < 100; j++ {
+	for range 100 {
 		testText.WriteString("blah")
 		reasonText.WriteString("blah")
 	}
 	testText.WriteString("arc.Boot0.")
 	reasonText.WriteString("failed0.")
-	for j := 0; j < 100; j++ {
+	for range 100 {
 		testText.WriteString("blah")
 		reasonText.WriteString("blah")
 	}

@@ -65,7 +65,7 @@ func TestBatchHeap(t *testing.T) {
 
 			t.Run(`test push-pop yields sorted`, func(t *ftt.Test) {
 				now := time.Now().UTC()
-				for i := uint64(0); i < 20; i++ {
+				for i := range uint64(20) {
 					h.data = append(h.data, &Batch[any]{nextSend: now, id: i})
 				}
 				shuffled := batchHeap[any]{data: make([]*Batch[any], h.Len())}

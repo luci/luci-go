@@ -88,7 +88,7 @@ func QueryTryjobIDsUpdatedBefore(ctx context.Context, before time.Time) (common.
 	var retMu sync.Mutex
 	eg, ectx := errgroup.WithContext(ctx)
 	eg.SetLimit(10)
-	for shard := 0; shard < retentionKeyShards; shard++ {
+	for shard := range retentionKeyShards {
 		eg.Go(func() error {
 			q := datastore.NewQuery(TryjobKind).
 				Lt("RetentionKey", fmt.Sprintf("%02d/%010d", shard, before.Unix())).

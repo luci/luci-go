@@ -890,7 +890,7 @@ func TestHandleArchive(t *testing.T) {
 
 				t.Run("Too long", func(t *ftt.Test) {
 					longID := make([]rune, 512)
-					for i := 0; i < 512; i++ {
+					for i := range 512 {
 						longID[i] = '1'
 					}
 

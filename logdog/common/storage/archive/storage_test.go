@@ -381,7 +381,7 @@ func testArchiveStorage(t *testing.T, limit int64) {
 					client.indexErr = errors.New("not using a cache")
 					assert.Loosely(t, tc.fn(), should.ErrLike(client.indexErr))
 
-					for i := 0; i < 10; i++ {
+					for i := range 10 {
 						if i == 0 {
 							// First time successfully reads the index.
 							client.indexErr = nil

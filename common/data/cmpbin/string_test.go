@@ -230,7 +230,7 @@ func TestConcatenatedStringSortability(t *testing.T) {
 		r := rand.New(rand.NewSource(*seed))
 		for i := range orig {
 			count := r.Intn(10)
-			for j := 0; j < count; j++ {
+			for range count {
 				buf := make([]byte, r.Intn(100))
 				for j := range buf {
 					buf[j] = byte(r.Uint32()) // watch me not care!

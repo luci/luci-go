@@ -52,7 +52,7 @@ func TestInProcSweeper(t *testing.T) {
 
 		sub := &submitter{}
 
-		for i := 0; i < count; i++ {
+		for i := range count {
 			num := fmt.Sprintf("%d", i)
 			hash := sha256.Sum256([]byte(num))
 			r := &reminder.Reminder{

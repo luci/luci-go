@@ -135,7 +135,7 @@ func TestNewestFirst(t *testing.T) {
 				// This extra trigger will be discarded.
 				extra := 1
 				addTriggers(noDelay, 1+extra)
-				for i := 0; i < N; i++ {
+				for i := range N {
 					assert.Loosely(t, s.Invocations, should.HaveLength(i+1))
 					assert.Loosely(t, s.Last().Request.TriggerIDs(), should.Match([]string{fmt.Sprintf("t-%03d", i+1+extra)}))
 					assert.Loosely(t, s.Last().Request.StringProperty("noop_trigger_data"), should.Equal(fmt.Sprintf("data-%03d", i+1+extra)))
@@ -155,7 +155,7 @@ func TestNewestFirst(t *testing.T) {
 				s.Policy, err = NewestFirstPolicy(1, time.Nanosecond)
 				assert.Loosely(t, err, should.BeNil)
 
-				for i := 0; i < 3; i++ {
+				for i := range 3 {
 					addTriggers(invocationDuration, 2)
 					assert.Loosely(t, s.Invocations, should.HaveLength(i+1))
 					assert.Loosely(t, s.PendingTriggers, should.HaveLength(1))

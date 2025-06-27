@@ -358,7 +358,7 @@ func genRandomSortedNodeSet(rnd *rand.Rand, l int, f func(NodeIndex) NodeIndex) 
 		f = func(i NodeIndex) NodeIndex { return i }
 	}
 	var last NodeIndex
-	for i := 0; i < l; i++ {
+	for range l {
 		ns = append(ns, f(last))
 		last += NodeIndex(rnd.Intn(10))
 	}
