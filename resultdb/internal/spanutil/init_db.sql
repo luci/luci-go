@@ -15,14 +15,301 @@
 --------------------------------------------------------------------------------
 -- This script initializes a ResultDB Spanner database.
 
+-- Stores root invocations, the top-level container of test results in ResultDB.
+--
+-- Currently, each root invocation also has a corresponding record in the Invocations
+-- table. This is to support compatibility with some legacy query RPCs. This table
+-- will remain the source of truth, however.
+CREATE TABLE RootInvocations (
+  -- Identifies a root invocation.
+  -- Format: "${hex(sha256(user_provided_id)[:8])}:${user_provided_id}".
+  -- SQL query construction: "CONCAT(SUBSTR(TO_HEX(SHA256(${user_provided_id})), 0, 8), ':', ${user_provided_id})"
+  RootInvocationId STRING(MAX) NOT NULL,
+
+  -- A random value in [0, Shards) where Shards constant is
+  -- defined in code.
+  -- Used in global secondary indexes, to prevent hot spots.
+  ShardId INT64 NOT NULL,
+
+  -- Root invocation state. One of:
+  -- - Active (1): the root invocation is mutable.
+  -- - Finalizing (2): the root invocation record is immutable, but
+  --   directly or indirectly contained work units (or invocations)
+  --   may still be mutable.
+  -- - Finalized (3): the root invocation and all directly and indirectly
+  --   contained work units (and invocations) are immutable.
+  State INT64 NOT NULL,
+
+  -- Security realm this root invocation belongs to.
+  -- Used to enforce ACLs.
+  Realm STRING(64) NOT NULL,
+
+  -- When the root invocation was created.
+  CreateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+
+  -- LUCI identity who created the root invocation, typically "user:<email>".
+  CreatedBy STRING(MAX) NOT NULL,
+
+  -- When the root invocation started finalizing (state was set to
+  -- Finalizing).
+  -- This means the root invocation became immutable but directly or
+  -- indirectly included invocations may still be mutable.
+  FinalizeStartTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
+
+  -- When the root invocation finished finalizing (state set to
+  -- Finalized).
+  -- This means the root invocation and all its directly or indirectly
+  -- included invocations became immutable.
+  FinalizeTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
+
+  -- When to force root invocation finalization.
+  Deadline TIMESTAMP NOT NULL,
+
+  -- When to delete passed and skipped test verdicts from this invocation.
+  -- When passed and skipped verdicts are removed, this column is set to NULL.
+  UninterestingTestVerdictsExpirationTime TIMESTAMP,
+
+  -- Value of CreateRootInvocationRequest.request_id.
+  -- Used to dedup root invocation creation requests.
+  CreateRequestId STRING(MAX) NOT NULL,
+
+  -- Value of RootInvocation.producer_resource. See its documentation.
+  ProducerResource STRING(MAX) NOT NULL,
+
+  -- List of colon-separated key-value tags.
+  -- Corresponds to RootInvocation.tags in root_invocation.proto.
+  Tags ARRAY<STRING(MAX)> NOT NULL,
+
+  -- A serialized then compressed google.protobuf.Struct that stores structured,
+  -- domain-specific properties of the root invocation.
+  -- See spanutil.Compressed type for details of compression.
+  Properties BYTES(MAX) NOT NULL,
+
+  -- A serialized luci.resultdb.v1.Sources message describing the source information for the
+  -- root invocation.
+  Sources BYTES(MAX) NOT NULL,
+
+  -- Whether the root invocation's source information (denoted by 'Sources') is immutable.
+  -- Setting this early is desirable as it enables test result exports from work units
+  -- to commence.
+  IsSourcesFinal BOOL NOT NULL,
+
+  -- The test baseline that this root invocation should contribute to.
+  --
+  -- This is a user-specified identifier. Typically, this identifier is generated
+  -- from the name of the source that generated the test result, such as the
+  -- builder name for Chromium. For example, `try:linux-rel`.
+  --
+  -- The supported syntax for a baseline identifier is
+  -- ^[a-z0-9\-_.]{1,100}:[a-zA-Z0-9\-_.\(\) ]{1,128}$. This syntax was selected
+  -- to allow <buildbucket bucket name>:<buildbucket builder name> as a valid
+  -- baseline ID.
+  -- See go/src/go.chromium.org/luci/buildbucket/proto/builder_common.proto for
+  -- character lengths for buildbucket bucket name and builder name.
+  --
+  -- Baselines are used to identify new tests; subtracting from the tests in the
+  -- root invocation the set of test variants in the baseline yields the new
+  -- tests run in the invocation. Those tests can then be e.g. subject to additional
+  -- presubmit checks, such as for flakiness.
+  BaselineId STRING(229) NOT NULL,
+
+  -- Whether this root invocation is testing code that is has been submitted (merged)
+  -- into the source repository.
+  --
+  -- A root invocation being marked submitted indicates that the test variants from
+  -- this invocation are added to the set of test variants for its baseline.
+  --
+  -- If the root invocation is not yet finalized at the time it is being marked
+  -- submitted, it will be scheduled for handling after being finalized.
+  -- Finalization does not make this field immutable - it can can be updated
+  -- after the invocation has been finalized.
+  Submitted BOOL NOT NULL,
+) PRIMARY KEY (RootInvocationId),
+  -- Apply 1.5 year TTL to root invocations. The deletion policy applied here will
+  -- apply to interleaved child tables. Leave 30 days for Spanner to actually
+  -- delete data from storage after the row is deleted.
+  ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 510 DAY));
+
+-- Index of root invocations by uninteresting test verdicts expiration.
+-- Used by a cron job that periodically removes passing and skipped test verdicts.
+CREATE NULL_FILTERED INDEX RootInvocationsByUninterestingTestVerdictsExpiration
+  ON RootInvocations (ShardId DESC, UninterestingTestVerdictsExpirationTime, RootInvocationId);
+
+-- Stores an entry for each shard of a root invocation.
+--
+-- The contents of root invocations (work units, test results, test exonerations and
+-- artifacts) are stored sharded to avoid hotspotting for large, concurrently uploaded
+-- root invocations.
+--
+-- This table exists as a root table to facilitate TTLing all data in a root invocation.
+CREATE TABLE RootInvocationShards (
+  -- A unique identifier for the root invocation-shard.
+  -- Format: "${hex(shard_key)}:${user_provided_invocation_id}"
+  --
+  -- Where shard_key is a 32-bit unsigned integer, computed as:
+  -- shard_key = shard_base + shard_index * shard_step
+  -- Where:
+  -- - N is the number of shards in the invocation. Currently, N is
+  --   fixed to be 16.
+  -- - shard_index is the shard number we are trying to access [0, N-1].
+  -- - shard_step is (2^32 / N)
+  -- - shard_base is Mod(ToIntBigEndian(sha256(invocation_id)[:4]), shard_step).
+  --
+  -- This provides the following desired properties:
+  -- - Shards of the invocation are distributed uniformly throughout the keyspace
+  -- - It is possible to alter the number of shards an invocation has in future
+  --   without creating hot spots, either at the end of the table or
+  --   at points in the middle. (Which would occur if simply used ShardId here).
+  --
+  -- The following SQL can be used to compute the ID of a particular invocation
+  -- shard (provided here for debug use) for N = 16:
+  -- SELECT
+  --  CONCAT(
+  --   -- Hash component
+  --   -- Format 4-byte integer as hexadecimal.
+  --   (SELECT STRING_AGG(FORMAT('%02x', (
+  --     -- Hash of Root Invocation Id as 32-bit integer, modulo 2^32/N.
+  --     MOD(
+  --       CAST(CONCAT('0x', SUBSTR(TO_HEX(SHA256('<UserProvidedRootInvocationId>')), 0, 8)) AS INT64),
+  --       DIV(1<<32, 16) – Assumes N = 16
+  --     )
+  --     -- Add offset of given shard.
+  --     + <ShardIndex> * DIV(1<<32, 16) -- Assumes N = 16
+  --   ) >> (byteIndex * 8) & 0xff), '') FROM UNNEST(GENERATE_ARRAY(3, 0, -1)) byteIndex),
+  --   -- Id Component
+  --   ':',
+  --   '<UserProvidedRootInvocationId>'
+  -- )
+  RootInvocationShardId STRING(MAX) NOT NULL,
+
+  -- The shard index. This is a number from 0 to N-1, where N is
+  -- the number of shards. Currently N is always 16.
+  -- Provided here for debugging purposes.
+  ShardIndex INT64 NOT NULL,
+
+  -- The root invocation ID. Stored hash-prefixed so that it can be joined
+  -- with the root invocations table and included in secondary indexes without
+  -- hotspotting.
+  RootInvocationId STRING(MAX) NOT NULL,
+
+  -- When the invocation was created. This is the same timestamp as
+  -- RootInvocations.CreateTime. Used for TTL enforcement.
+  CreateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+) PRIMARY KEY (RootInvocationShardId),
+  -- Apply 1.5 year TTL to root invocations. The deletion policy applied here will
+  -- apply to interleaved child tables. Leave 30 days for Spanner to actually
+  -- delete data from storage after the row is deleted.
+  ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 510 DAY));
+
+-- Work units represent a process step that contributes results to
+-- a root invocation. Work units contain test results, artifacts and
+-- exonerations. Work units may also contain other work units and
+-- (legacy) invocations.
+--
+-- Currently, each work unit also has a corresponding records in the Invocations
+-- table (and child tables). This is to support compatibility with some legacy
+-- query RPCs. This table will remain the source of truth.
+CREATE TABLE WorkUnits (
+  -- The root invocation-shard this work unit is created in.
+  --
+  -- Work units are stored sharded to avoid root invocations with many
+  -- concurrently uploaded work units causing hotspotting at upload time.
+  -- A work unit is deterministically assigned to one of the shards
+  -- of a root invocation based on its WorkUnitId.
+  RootInvocationShardId STRING(MAX) NOT NULL,
+
+  -- The identifier of the work unit. E.g. 'build-123456789'.
+  WorkUnitId STRING(MAX) NOT NULL,
+
+  -- The identifier of the parent work unit. For the root work unit,
+  -- this field is left as NULL.
+  ParentWorkUnitId STRING(MAX),
+
+  -- A random value in [0, Shards) where Shards constant is
+  -- defined in code. This value is independent of RootInvocationShardId.
+  -- Used in global secondary indexes, to prevent hot spots.
+  ShardId INT64 NOT NULL,
+
+  -- Work unit state. One of:
+  -- - Active (1): the work unit is mutable.
+  -- - Finalizing (2): the work unit record is immutable, but
+  --   directly or indirectly included work units (or invocations)
+  --   may still be mutable.
+  -- - Finalized (3): the work unit and all directly and indirectly
+  --   included work units (and invocations) are immutable.
+  State INT64 NOT NULL,
+
+  -- Security realm this work unit (including its test results, exonerations and
+  -- artifacts) belongs to. Used to enforce ACLs.
+  Realm STRING(64) NOT NULL,
+
+  -- When the work unit was created.
+  CreateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+
+  -- LUCI identity who created the work unit, typically "user:<email>".
+  CreatedBy STRING(MAX) NOT NULL,
+
+  -- When the work unit started finalizing (state was set to
+  -- Finalizing).
+  -- This means the work unit became immutable but directly or
+  -- indirectly included work units (or invocations) may still be mutable.
+  FinalizeStartTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
+
+  -- When the work unit finished finalizing (state set to
+  -- Finalized).
+  -- This means the work unit and all its directly or indirectly
+  -- included work units (and invocations) became immutable.
+  FinalizeTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
+
+  -- When to force work unit finalization.
+  Deadline TIMESTAMP NOT NULL,
+
+  -- Value of CreateWorkUnitRequest.request_id.
+  -- Used to dedup work unit creation requests.
+  CreateRequestId STRING(MAX) NOT NULL,
+
+  -- Value of Invocation.producer_resource. See its documentation.
+  ProducerResource STRING(MAX) NOT NULL,
+
+  -- List of colon-separated key-value tags.
+  -- Corresponds to Invocation.tags in invocation.proto.
+  Tags ARRAY<STRING(MAX)> NOT NULL,
+
+  -- A serialized then compressed google.protobuf.Struct that stores structured,
+  -- domain-specific properties of the invocation.
+  -- See spanutil.Compressed type for details of compression.
+  Properties BYTES(MAX) NOT NULL,
+
+  -- A serialized luci.resultdb.v1.Instructions describing instructions for this invocation.
+  -- It may contains instructions for steps (for build-level invocation) and test results.
+  -- It may contain instructions to test results directly contained in this invocation,
+  -- and test results in included invocations.
+  Instructions BYTES(MAX) NOT NULL,
+
+  -- A compressed, serialized luci.resultdb.internal.invocations.ExtendedProperties message.
+  ExtendedProperties BYTES(MAX) NOT NULL,
+) PRIMARY KEY (RootInvocationShardId, WorkUnitId),
+  INTERLEAVE IN PARENT RootInvocationShards ON DELETE CASCADE;
+
 -- Stores the invocations.
--- This is the root table for much of the other data and tables, which define the
--- hierarchy (dependency graph, subsets of interest) for invocations.
+-- Invocations are a legacy concept, representing a container of test results.
+-- This is the root table for much of the other legacy data and tables, which define
+-- the hierarchy (dependency graph) for invocations.
 CREATE TABLE Invocations (
   -- Identifies an invocation.
   -- Format: "${hex(sha256(user_provided_id)[:8])}:${user_provided_id}".
   -- SQL query construction: "CONCAT(SUBSTR(TO_HEX(SHA256(${user_provided_id})), 0, 8), ':', ${user_provided_id})"
+  --
+  -- For root invocations and legacy invocations, the user_provided_id is the user-provided invocation / root invocation ID.
+  -- For work units, the user_provided_id is the '${root_invocation_id}:${work_unit_id}'.
   InvocationId STRING(MAX) NOT NULL,
+
+  -- The invocation type.
+  -- One of the following values:
+  -- - Root Invocation = 1
+  -- - Work Unit = 2
+  -- - Legacy (mixed) = 3
+  Type INT64 NOT NULL DEFAULT (3),
 
   -- A random value in [0, Shards) where Shards constant is
   -- defined in code.
