@@ -189,6 +189,8 @@ type WorkUnit struct {
 	ProducerResource string `protobuf:"bytes,13,opt,name=producer_resource,json=producerResource,proto3" json:"producer_resource,omitempty"`
 	// Work unit-level string key-value pairs.
 	// A key can be repeated.
+	//
+	// Total size (as measured by proto.Size()) must be <= 16 KB.
 	Tags []*StringPair `protobuf:"bytes,14,rep,name=tags,proto3" json:"tags,omitempty"`
 	// Arbitrary JSON object that contains structured, domain-specific properties
 	// of the work unit.

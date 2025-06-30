@@ -423,4 +423,43 @@ func TestValidate(t *testing.T) {
 			assert.Loosely(t, ValidateSourceSpec(sourceSpec), should.ErrLike(`sources: gitiles_commit: host: does not match`))
 		})
 	})
+	ftt.Run(`ValidateFullResourceName`, t, func(t *ftt.Test) {
+		t.Run("Valid", func(t *ftt.Test) {
+			assert.Loosely(t, ValidateFullResourceName("//chromium-swarm.appspot.com/tasks/deadbeef"), should.BeNil)
+			assert.Loosely(t, ValidateFullResourceName("//cr-buildbucket.appspot.com/builds/1234567890"), should.BeNil)
+			assert.Loosely(t, ValidateFullResourceName("//resultdb.api.luci.app/rootInvocations/inv/workUnits/root"), should.BeNil)
+			assert.Loosely(t, ValidateFullResourceName("//some-service.googleapis.com/some/resource/name"), should.BeNil)
+			// "café" in NFC
+			assert.Loosely(t, ValidateFullResourceName("//service/r/caf\u00e9"), should.BeNil)
+		})
+		t.Run("Invalid", func(t *ftt.Test) {
+			t.Run("Does not start with //", func(t *ftt.Test) {
+				err := ValidateFullResourceName("resultdb.api.luci.app/rootInvocations/inv")
+				assert.Loosely(t, err, should.ErrLike(`resource name "resultdb.api.luci.app/rootInvocations/inv" does not start with '//'`))
+			})
+			t.Run("Too long", func(t *ftt.Test) {
+				longName := "//" + strings.Repeat("a", 2000) + "/a"
+				err := ValidateFullResourceName(longName)
+				assert.Loosely(t, err, should.ErrLike(`resource name exceeds 2000 characters`))
+			})
+			t.Run("Missing service name", func(t *ftt.Test) {
+				err := ValidateFullResourceName("///invocations/inv")
+				assert.Loosely(t, err, should.ErrLike(`resource name "///invocations/inv" is missing a service name`))
+			})
+			t.Run("Missing resource path", func(t *ftt.Test) {
+				err := ValidateFullResourceName("//resultdb.googleapis.com")
+				assert.Loosely(t, err, should.ErrLike(`resource name "//resultdb.googleapis.com" is missing a resource path`))
+			})
+			t.Run("Missing resource path with slash", func(t *ftt.Test) {
+				err := ValidateFullResourceName("//resultdb.googleapis.com/")
+				assert.Loosely(t, err, should.ErrLike(`resource name "//resultdb.googleapis.com/" is missing a resource path`))
+			})
+			t.Run("Not in NFC", func(t *ftt.Test) {
+				// "e" followed by a combining acute accent.
+				name := "//service/r/cafe\u0301"
+				err := ValidateFullResourceName(name)
+				assert.Loosely(t, err, should.ErrLike(`is not in Unicode Normal Form C`))
+			})
+		})
+	})
 }

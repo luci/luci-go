@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/common/testing/truth/check"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/validate"
-
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -597,37 +596,45 @@ func TestValidateTestResult(t *testing.T) {
 				})
 				t.Run("with too big properties", func(t *ftt.Test) {
 					msg.TestMetadata = &pb.TestMetadata{
-						PropertiesSchema: "package.message",
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
-								"key": structpb.NewStringValue(strings.Repeat("1", MaxSizeTestMetadataProperties)),
+								"@type": structpb.NewStringValue("luci.chromium.org/package.message"),
+								"key":   structpb.NewStringValue(strings.Repeat("1", MaxSizeTestMetadataProperties)),
 							},
 						},
 					}
 					assert.Loosely(t, validateTR(msg), should.ErrLike("exceeds the maximum size"))
 				})
-				t.Run("no properties_schema with non-empty properties", func(t *ftt.Test) {
+				t.Run("no @type with non-empty properties", func(t *ftt.Test) {
 					msg.TestMetadata = &pb.TestMetadata{
 						Properties: &structpb.Struct{
-							Fields: map[string]*structpb.Value{
-								"key": structpb.NewStringValue("1"),
-							},
+							Fields: map[string]*structpb.Value{},
 						},
 					}
-					assert.Loosely(t, validateTR(msg), should.ErrLike("properties_schema must be specified with non-empty properties"))
+					assert.Loosely(t, validateTR(msg), should.ErrLike(`properties: must have a field "@type"`))
 				})
-				t.Run("invalid properties_schema", func(t *ftt.Test) {
+				t.Run("non-empty properties_schema", func(t *ftt.Test) {
 					msg.TestMetadata = &pb.TestMetadata{
 						PropertiesSchema: "package",
 					}
-					assert.Loosely(t, validateTR(msg), should.ErrLike("properties_schema: does not match"))
+					assert.Loosely(t, validateTR(msg), should.ErrLike("properties_schema: may not be set"))
+				})
+				t.Run("invalid @type", func(t *ftt.Test) {
+					msg.TestMetadata = &pb.TestMetadata{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"@type": structpb.NewStringValue("package.message"),
+							},
+						},
+					}
+					assert.Loosely(t, validateTR(msg), should.ErrLike(`properties: "@type" value "package.message" must contain at least one "/" character`))
 				})
 				t.Run("valid properties_schema and non-empty properties", func(t *ftt.Test) {
 					msg.TestMetadata = &pb.TestMetadata{
-						PropertiesSchema: "package.message",
 						Properties: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
-								"key": structpb.NewStringValue("1"),
+								"@type": structpb.NewStringValue("luci.chromium.org/package.message"),
+								"key":   structpb.NewStringValue("1"),
 							},
 						},
 					}

@@ -163,6 +163,9 @@ type RootInvocation struct {
 	// Typical examples:
 	// - Swarming task: "//chromium-swarm.appspot.com/tasks/deadbeef"
 	// - Buildbucket build: "//cr-buildbucket.appspot.com/builds/1234567890".
+	//
+	// Total length limited to 2000 bytes. Resource names must be in Unicode
+	// normalization form C.
 	ProducerResource string `protobuf:"bytes,10,opt,name=producer_resource,json=producerResource,proto3" json:"producer_resource,omitempty"`
 	// The code sources which were tested by this root invocation.
 	// This is used to index test results for test history, and for
@@ -182,6 +185,8 @@ type RootInvocation struct {
 	SourcesFinal bool `protobuf:"varint,12,opt,name=sources_final,json=sourcesFinal,proto3" json:"sources_final,omitempty"`
 	// Root invocation-level string key-value pairs.
 	// A key can be repeated.
+	//
+	// Total size (as measured by proto.Size()) must be <= 16 KB.
 	Tags []*StringPair `protobuf:"bytes,13,rep,name=tags,proto3" json:"tags,omitempty"`
 	// Arbitrary JSON object that contains structured, domain-specific properties
 	// of the root invocation.

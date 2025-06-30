@@ -16,18 +16,23 @@ package pbutil
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
+
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
-
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 const maxStringPairKeyLength = 64
 const maxStringPairValueLength = 256
+
+const maxRootInvocationTagsSize = 16 * 1024 // 16 KiB
+const maxWorkUnitTagsSize = 16 * 1024       // 16 KiB
 
 const stringPairKeyPattern = `[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*`
 
@@ -75,27 +80,51 @@ func SortStringPairs(tags []*pb.StringPair) {
 }
 
 // ValidateStringPair returns an error if p is invalid.
-func ValidateStringPair(p *pb.StringPair) error {
+// If strict is set, then the value must be valid UTF-8, be in Normalization Form C
+// and consist only of printable characters.
+func ValidateStringPair(p *pb.StringPair, strict bool) error {
 	if err := validate.SpecifiedWithRe(stringPairKeyRe, p.Key); err != nil {
 		return errors.Fmt("key: %w", err)
 	}
 	if len(p.Key) > maxStringPairKeyLength {
-		return errors.Fmt("key length must be less or equal to %d", maxStringPairKeyLength)
+		return errors.Fmt("key: length must be less or equal to %d bytes", maxStringPairKeyLength)
 	}
 	if len(p.Value) > maxStringPairValueLength {
-		return errors.Fmt("value length must be less or equal to %d", maxStringPairValueLength)
+		return errors.Fmt("value: length must be less or equal to %d bytes", maxStringPairValueLength)
+	}
+	if strict {
+		if err := ValidateUTF8PrintableStrict(p.Value, maxStringPairValueLength); err != nil {
+			return errors.Fmt("value: %w", err)
+		}
+	}
+	return nil
+}
+
+func validateStringPairsInternal(pairs []*pb.StringPair, sizeLimitBytes int, strict bool) error {
+	var size int
+	for _, p := range pairs {
+		if err := ValidateStringPair(p, strict); err != nil {
+			return errors.Fmt("%q:%q: %w", p.Key, p.Value, err)
+		}
+		size += proto.Size(p)
+	}
+	if size > sizeLimitBytes {
+		return errors.Fmt("got %v bytes; exceeds the maximum size of %d bytes", size, sizeLimitBytes)
 	}
 	return nil
 }
 
 // ValidateStringPairs returns an error if any of the pairs is invalid.
 func ValidateStringPairs(pairs []*pb.StringPair) error {
-	for _, p := range pairs {
-		if err := ValidateStringPair(p); err != nil {
-			return errors.Fmt("%q:%q: %w", p.Key, p.Value, err)
-		}
-	}
-	return nil
+	return validateStringPairsInternal(pairs, math.MaxInt, false)
+}
+
+func ValidateRootInvocationTags(tags []*pb.StringPair) error {
+	return validateStringPairsInternal(tags, maxRootInvocationTagsSize, true)
+}
+
+func ValidateWorkUnitTags(tags []*pb.StringPair) error {
+	return validateStringPairsInternal(tags, maxWorkUnitTagsSize, true)
 }
 
 // StringPairFromString creates a pb.StringPair from the given key:val string.

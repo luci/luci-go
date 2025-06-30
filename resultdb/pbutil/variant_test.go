@@ -15,12 +15,13 @@
 package pbutil
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -35,6 +36,22 @@ func TestValidateVariant(t *testing.T) {
 		t.Run(`invalid`, func(t *ftt.Test) {
 			err := ValidateVariant(Variant("1", "b"))
 			assert.Loosely(t, err, should.ErrLike(`key: does not match`))
+		})
+		t.Run(`non-printables`, func(t *ftt.Test) {
+			err := ValidateVariant(Variant("a", "a\nb"))
+			assert.Loosely(t, err, should.ErrLike(`value: non-printable rune '\n' at byte index 1`))
+		})
+		t.Run(`too large`, func(t *ftt.Test) {
+			// 64 (key) + 256 (value) + 8 (overhead) = 328 bytes per tag.
+			// maxVariantLength = 1024 bytes.
+			// So, we can fit about 1024 / 328 = 3.12 tags.
+			// Let's create 4 tags to exceed the limit.
+			v := &pb.Variant{Def: make(map[string]string)}
+			for i := 0; i < 4; i++ {
+				v.Def[strings.Repeat("k", 64-1)+fmt.Sprintf("%d", i)] = strings.Repeat("v", 256)
+			}
+			err := ValidateVariant(v)
+			assert.Loosely(t, err, should.ErrLike("got 1312 bytes; exceeds the maximum size of 1024 bytes"))
 		})
 	})
 }

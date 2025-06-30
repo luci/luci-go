@@ -22,14 +22,18 @@ import (
 	"io"
 	"sort"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
-
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // EmptyJSON corresponds to a serialized, empty JSON object.
 const EmptyJSON = "{}"
+
+// The maximum size of a variant, in bytes.
+const maxVariantLength = 1024
 
 // ValidateVariant returns an error if vr is invalid.
 func ValidateVariant(vr *pb.Variant) error {
@@ -41,9 +45,12 @@ func ValidateVariant(vr *pb.Variant) error {
 	}
 	for k, v := range vr.Def {
 		p := pb.StringPair{Key: k, Value: v}
-		if err := ValidateStringPair(&p); err != nil {
+		if err := ValidateStringPair(&p, true); err != nil {
 			return errors.Fmt("%q:%q: %w", k, v, err)
 		}
+	}
+	if proto.Size(vr) > maxStringPairValueLength {
+		return errors.Fmt("got %v bytes; exceeds the maximum size of %d bytes", proto.Size(vr), maxVariantLength)
 	}
 	return nil
 }

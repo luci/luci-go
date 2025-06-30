@@ -15,31 +15,25 @@
 package pbutil
 
 import (
-	"net/url"
-	"strings"
-
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
-
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 const (
-	invocationIDPattern                       = `[a-z][a-z0-9_\-.]{0,99}`
-	invocationExtendedPropertyKeyPattern      = `[a-z]([a-z0-9_]{0,61}[a-z0-9])?`
-	invocationExtendedPropertyTypeNamePattern = `[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+`
-	MaxSizeInvocationExtendedPropertyValue    = 512 * 1024      // 512 KB
-	MaxSizeInvocationExtendedProperties       = 2 * 1024 * 1024 // 2 MB
+	invocationIDPattern                    = `[a-z][a-z0-9_\-.]{0,99}`
+	invocationExtendedPropertyKeyPattern   = `[a-z]([a-z0-9_]{0,61}[a-z0-9])?`
+	MaxSizeInvocationExtendedPropertyValue = 512 * 1024      // 512 KB
+	MaxSizeInvocationExtendedProperties    = 2 * 1024 * 1024 // 2 MB
 )
 
 var invocationIDRe = regexpf("^%s$", invocationIDPattern)
 var invocationNameRe = regexpf("^invocations/(%s)$", invocationIDPattern)
 var invocationExtendedPropertyKeyRe = regexpf("^%s$", invocationExtendedPropertyKeyPattern)
-var invocationExtendedPropertyTypeNameRe = regexpf("^%s$", invocationExtendedPropertyTypeNamePattern)
 
 // ValidateInvocationID returns a non-nil error if id is invalid.
 func ValidateInvocationID(id string) error {
@@ -110,10 +104,10 @@ func ValidateInvocationExtendedProperties(extendedProperties map[string]*structp
 		if err := ValidateInvocationExtendedPropertyKey(key); err != nil {
 			return errors.Fmt("key %q: %w", key, err)
 		}
-		if err := validateProperties(value, MaxSizeInvocationExtendedPropertyValue); err != nil {
-			return errors.Fmt("[%q]: %w", key, err)
+		if value == nil {
+			return errors.Fmt("[%q]: value unspecified", key)
 		}
-		if err := validateInvocationExtendedPropertyTypeField(value); err != nil {
+		if err := validateProperties(value, MaxSizeInvocationExtendedPropertyValue, true /* requiresType */); err != nil {
 			return errors.Fmt("[%q]: %w", key, err)
 		}
 	}
@@ -122,26 +116,6 @@ func ValidateInvocationExtendedProperties(extendedProperties map[string]*structp
 	}
 	if proto.Size(internalExtendedProperties) > MaxSizeInvocationExtendedProperties {
 		return errors.Fmt("exceeds the maximum size of %d bytes", MaxSizeInvocationExtendedProperties)
-	}
-	return nil
-}
-
-func validateInvocationExtendedPropertyTypeField(value *structpb.Struct) error {
-	typeVal, typeExist := value.Fields["@type"]
-	if !typeExist {
-		return errors.New(`must have a field "@type"`)
-	}
-	typeStr := typeVal.GetStringValue()
-	slashIndex := strings.LastIndex(typeStr, "/")
-	if slashIndex == -1 {
-		return errors.Fmt(`"@type" value %q must contain at least one "/" character`, typeStr)
-	}
-	if _, err := url.Parse(typeStr); err != nil {
-		return errors.Fmt(`"@type" value %q: %w`, typeStr, err)
-	}
-	typeName := typeStr[slashIndex+1:]
-	if err := validate.SpecifiedWithRe(invocationExtendedPropertyTypeNameRe, typeName); err != nil {
-		return errors.Fmt(`"@type" type name %q: %w`, typeName, err)
 	}
 	return nil
 }

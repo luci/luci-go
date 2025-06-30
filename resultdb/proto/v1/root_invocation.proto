@@ -135,6 +135,9 @@ message RootInvocation {
   // Typical examples:
   // - Swarming task: "//chromium-swarm.appspot.com/tasks/deadbeef"
   // - Buildbucket build: "//cr-buildbucket.appspot.com/builds/1234567890".
+  //
+  // Total length limited to 2000 bytes. Resource names must be in Unicode
+  // normalization form C.
   string producer_resource = 10;
 
   // The code sources which were tested by this root invocation.
@@ -157,6 +160,8 @@ message RootInvocation {
 
   // Root invocation-level string key-value pairs.
   // A key can be repeated.
+  //
+  // Total size (as measured by proto.Size()) must be <= 16 KB.
   repeated StringPair tags = 13;
 
   // Arbitrary JSON object that contains structured, domain-specific properties

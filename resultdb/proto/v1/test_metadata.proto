@@ -70,18 +70,25 @@ message TestMetadata {
   // Bugs related to the test may be filed here.
   BugComponent bug_component = 3;
 
-  // Identifies the schema of the JSON object in the properties field.
-  // Use the fully-qualified name of the source protocol buffer.
-  // eg. chromiumos.test.api.TestCaseInfo
-  // ResultDB will *not* validate the properties field with respect to this
-  // schema. Downstream systems may however use this field to inform how the
-  // properties field is interpreted.
-  string properties_schema = 4;
+  // Deprecated: No longer required. Do not set.
+  string properties_schema = 4 [ deprecated = true ];
 
   // Arbitrary JSON object that contains structured, domain-specific properties
   // of the test.
   //
   // The serialized size must be <= 4096 bytes.
+  //
+  // The value must contain a field '@type' which is a URL/resource name
+  // that uniquely identifies the type of the source protocol buffer message.
+  // This string must contain at least one "/" character. The last segment of
+  // the URL's path must represent the fully qualified name of the type (e.g.
+  // foo.com/x/some.package.MyMessage). See
+  // https://protobuf.dev/reference/protobuf/google.protobuf/#any for details
+  // about the expected '@type' field.
+  //
+  // ResultDB will not validate the contents with respect to this schema, but
+  // downstream systems may depend on the '@type' field to inform how the
+  // contents are interpreted.
   //
   // If this field is specified, properties_schema must also be specified.
   google.protobuf.Struct properties = 5;

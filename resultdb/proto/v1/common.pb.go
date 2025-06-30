@@ -142,6 +142,8 @@ type Variant struct {
 	// These values must be the same for all tests in a given execution of
 	// a module. Variants specific to a particular test case should be
 	// encoded in the test method name (see TestIdentifier.method).
+	//
+	// The total size (as measured by proto.Size) must be less than 1,024 bytes.
 	Def           map[string]string `protobuf:"bytes,1,rep,name=def,proto3" json:"def,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -188,9 +190,11 @@ func (x *Variant) GetDef() map[string]string {
 type StringPair struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
-	// Max length: 64.
+	// Max length: 64 bytes.
 	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	// Max length: 256.
+	// Must be valid UTF-8, Unicode Normalization Form C, printable characters
+	// only.
+	// Max length: 256 bytes.
 	Value         string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

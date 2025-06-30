@@ -30,7 +30,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
-
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -305,14 +304,9 @@ func ValidateTestMetadata(tmd *pb.TestMetadata) error {
 		}
 	}
 	if tmd.PropertiesSchema != "" {
-		if err := ValidatePropertiesSchema(tmd.PropertiesSchema); err != nil {
-			return errors.Fmt("properties_schema: %w", err)
-		}
+		return errors.Fmt("properties_schema: may not be set")
 	}
 	if tmd.Properties != nil {
-		if tmd.PropertiesSchema == "" {
-			return errors.New("properties_schema must be specified with non-empty properties")
-		}
 		if err := ValidateTestMetadataProperties(tmd.Properties); err != nil {
 			return errors.Fmt("properties: %w", err)
 		}

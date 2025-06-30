@@ -54,16 +54,20 @@ message Variant {
   // These values must be the same for all tests in a given execution of
   // a module. Variants specific to a particular test case should be
   // encoded in the test method name (see TestIdentifier.method).
+  //
+  // The total size (as measured by proto.Size) must be less than 1,024 bytes.
   map<string, string> def = 1;
 }
 
 // A string key-value pair. Typically used for tagging, see Invocation.tags
 message StringPair {
   // Regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
-  // Max length: 64.
+  // Max length: 64 bytes.
   string key = 1;
 
-  // Max length: 256.
+  // Must be valid UTF-8, Unicode Normalization Form C, printable characters
+  // only.
+  // Max length: 256 bytes.
   string value = 2;
 }
 

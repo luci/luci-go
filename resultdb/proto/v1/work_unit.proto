@@ -173,6 +173,8 @@ message WorkUnit {
 
   // Work unit-level string key-value pairs.
   // A key can be repeated.
+  //
+  // Total size (as measured by proto.Size()) must be <= 16 KB.
   repeated StringPair tags = 14;
 
   // Arbitrary JSON object that contains structured, domain-specific properties

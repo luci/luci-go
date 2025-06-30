@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -73,35 +72,81 @@ func TestStringPairs(t *testing.T) {
 
 func TestValidateStringPair(t *testing.T) {
 	t.Parallel()
-	ftt.Run(`TestValidateStringPairs`, t, func(t *ftt.Test) {
+	ftt.Run(`ValidateStringPair`, t, func(t *ftt.Test) {
 		t.Run(`empty`, func(t *ftt.Test) {
-			err := ValidateStringPair(StringPair("", ""))
+			err := ValidateStringPair(StringPair("", ""), false)
 			assert.Loosely(t, err, should.ErrLike(`key: unspecified`))
 		})
 
 		t.Run(`invalid key`, func(t *ftt.Test) {
-			err := ValidateStringPair(StringPair("1", ""))
+			err := ValidateStringPair(StringPair("1", ""), false)
 			assert.Loosely(t, err, should.ErrLike(`key: does not match`))
 		})
 
 		t.Run(`long key`, func(t *ftt.Test) {
-			err := ValidateStringPair(StringPair(strings.Repeat("a", 1000), ""))
-			assert.Loosely(t, err, should.ErrLike(`key length must be less or equal to 64`))
+			err := ValidateStringPair(StringPair(strings.Repeat("a", 1000), ""), false)
+			assert.Loosely(t, err, should.ErrLike(`key: length must be less or equal to 64 bytes`))
 		})
 
 		t.Run(`long value`, func(t *ftt.Test) {
-			err := ValidateStringPair(StringPair("a", strings.Repeat("a", 1000)))
-			assert.Loosely(t, err, should.ErrLike(`value length must be less or equal to 256`))
+			err := ValidateStringPair(StringPair("a", strings.Repeat("a", 1000)), false)
+			assert.Loosely(t, err, should.ErrLike(`value: length must be less or equal to 256 bytes`))
 		})
 
 		t.Run(`multiline value`, func(t *ftt.Test) {
-			err := ValidateStringPair(StringPair("a", "multi\nline\nvalue"))
+			t.Run(`strict mode`, func(t *ftt.Test) {
+				err := ValidateStringPair(StringPair("a", "multi\nline\nvalue"), true)
+				assert.Loosely(t, err, should.ErrLike(`value: non-printable rune '\n' at byte index 5`))
+			})
+			t.Run(`non-strict mode`, func(t *ftt.Test) {
+				err := ValidateStringPair(StringPair("a", "multi\nline\nvalue"), false)
+				assert.Loosely(t, err, should.BeNil)
+			})
+		})
+		t.Run(`valid`, func(t *ftt.Test) {
+			err := ValidateStringPair(StringPair("a", "b"), false)
 			assert.Loosely(t, err, should.BeNil)
 		})
-
+	})
+	ftt.Run(`ValidateRootInvocationTags`, t, func(t *ftt.Test) {
 		t.Run(`valid`, func(t *ftt.Test) {
-			err := ValidateStringPair(StringPair("a", "b"))
+			tags := []*pb.StringPair{
+				StringPair("a", "b"),
+				StringPair("c", "d"),
+			}
+			err := ValidateRootInvocationTags(tags)
 			assert.Loosely(t, err, should.BeNil)
+		})
+		t.Run(`too large`, func(t *ftt.Test) {
+			// Create a tag that is just under the limit for a single tag.
+			// The proto.Size(p) calculation includes overhead for the StringPair message itself,
+			// plus the key and value strings.
+			// A key of 64 bytes and a value of 256 bytes is 320 bytes of data.
+			// To this we add the overhead for this StringPair message (5 bytes),
+			// giving a total size of 325 bytes.
+			// maxRootInvocationTagsSize = 16 * 1024 = 16384 bytes.
+			// So, we can fit about 16384 / 325 = 50.4 tags.
+			// Let's create 51 tags to exceed the limit.
+			tags := make([]*pb.StringPair, 51)
+			for i := 0; i < 51; i++ {
+				tags[i] = StringPair(strings.Repeat("k", 64), strings.Repeat("v", 256))
+			}
+			err := ValidateRootInvocationTags(tags)
+			assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("got 16575 bytes; exceeds the maximum size of %d bytes", maxRootInvocationTagsSize)))
+		})
+	})
+	ftt.Run(`ValidateWorkUnitTags`, t, func(t *ftt.Test) {
+		t.Run(`too large`, func(t *ftt.Test) {
+			// 64 (key) + 256 (value) + 5 (overhead) = 325 bytes per tag.
+			// maxRootInvocationTagsSize = 16 * 1024 = 16384 bytes.
+			// So, we can fit about 16384 / 325 = 50.4 tags.
+			// Let's create 51 tags to exceed the limit.
+			tags := make([]*pb.StringPair, 51)
+			for i := 0; i < 51; i++ {
+				tags[i] = StringPair(strings.Repeat("k", 64), strings.Repeat("v", 256))
+			}
+			err := ValidateRootInvocationTags(tags)
+			assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("got 16575 bytes; exceeds the maximum size of %d bytes", maxWorkUnitTagsSize)))
 		})
 	})
 }
