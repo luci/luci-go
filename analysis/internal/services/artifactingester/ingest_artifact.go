@@ -25,8 +25,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
-	antsexporter "go.chromium.org/luci/analysis/internal/ants/artifacts/exporter"
-	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -37,7 +35,9 @@ import (
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	antsexporter "go.chromium.org/luci/analysis/internal/ants/artifacts/exporter"
 	"go.chromium.org/luci/analysis/internal/checkpoints"
+	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb" // Import the new taskspb
 	"go.chromium.org/luci/analysis/internal/tracing"

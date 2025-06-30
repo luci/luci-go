@@ -14,15 +14,15 @@
 
 package notify
 
-import(
+import (
 	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"

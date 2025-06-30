@@ -23,10 +23,11 @@ import (
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"google.golang.org/protobuf/types/descriptorpb"
 
-	bqpb "go.chromium.org/luci/analysis/proto/bq"
-	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/common/bq"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+
+	bqpb "go.chromium.org/luci/analysis/proto/bq"
+	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 // tableName is the name of the exported BigQuery table.

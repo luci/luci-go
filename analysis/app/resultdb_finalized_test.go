@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -26,10 +28,10 @@ import (
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/tq"
-	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 
 	_ "go.chromium.org/luci/analysis/internal/services/verdictingester" // Needed to ensure task class is registered.
-	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
 func TestInvocationFinalizedHandler(t *testing.T) {
