@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { IconButton } from '@mui/material';
 import { GridColDef } from '@mui/x-data-grid';
 import { Duration } from 'luxon';
 
@@ -106,11 +108,46 @@ const renderDateCellWithOverdueIndicator = (date: DateWithOverdueData) => {
 
 export const RRI_COLUMNS = [
   {
+    id: 'resource_details',
+    gridColDef: {
+      field: 'resource_details',
+      headerName: 'Resource Details',
+      flex: 2,
+      renderCell: (params) => {
+        return (
+          <div
+            css={{
+              display: 'flex',
+            }}
+          >
+            <span>
+              <sup>
+                <IconButton
+                  href={
+                    'http://' +
+                    (params.row as RriGridRow).resource_request_bug_id
+                  }
+                  target="_blank"
+                  color="primary"
+                >
+                  <OpenInNewIcon sx={{ width: 14, height: 14 }} />
+                </IconButton>
+              </sup>
+              {params.value}
+            </span>
+          </div>
+        );
+      },
+    },
+    assignValue: (rr, row) => (row.resource_details = rr.resourceDetails),
+    isDefault: true,
+  },
+  {
     id: 'rr_id',
     gridColDef: {
       field: 'rrId',
       headerName: 'RR ID',
-      flex: 1,
+      flex: 0.5,
     },
     assignValue: (rr, row) => (row.rrId = rr.rrId),
     isDefault: true,
@@ -125,17 +162,7 @@ export const RRI_COLUMNS = [
     },
     assignValue: (rr, row) =>
       (row.resource_request_bug_id = rr.resourceRequestBugId ?? ''),
-    isDefault: true,
-  },
-  {
-    id: 'resource_details',
-    gridColDef: {
-      field: 'resource_details',
-      headerName: 'Resource Details',
-      flex: 1,
-    },
-    assignValue: (rr, row) => (row.resource_details = rr.resourceDetails),
-    isDefault: true,
+    isDefault: false,
   },
   {
     id: 'expected_eta',
@@ -163,7 +190,7 @@ export const RRI_COLUMNS = [
               ] as keyof typeof ResourceRequest_Status
             ]
           : ''),
-    isDefault: true,
+    isDefault: false,
   },
   {
     id: 'material_sourcing_actual_delivery_date',
@@ -182,7 +209,7 @@ export const RRI_COLUMNS = [
         rr.procurementActualDeliveryDate,
         rr.procurementTargetDeliveryDate,
       )),
-    isDefault: true,
+    isDefault: false,
   },
   {
     id: 'build_actual_delivery_date',
@@ -202,7 +229,7 @@ export const RRI_COLUMNS = [
         rr.buildTargetDeliveryDate,
       );
     },
-    isDefault: true,
+    isDefault: false,
   },
   {
     id: 'qa_actual_delivery_date',
@@ -221,7 +248,7 @@ export const RRI_COLUMNS = [
         rr.qaActualDeliveryDate,
         rr.qaTargetDeliveryDate,
       )),
-    isDefault: true,
+    isDefault: false,
   },
   {
     id: 'config_actual_delivery_date',
@@ -240,7 +267,7 @@ export const RRI_COLUMNS = [
         rr.configActualDeliveryDate,
         rr.configTargetDeliveryDate,
       )),
-    isDefault: true,
+    isDefault: false,
   },
   {
     id: 'customer',
@@ -267,7 +294,7 @@ export const RRI_COLUMNS = [
     gridColDef: {
       field: 'accepted_quantity',
       headerName: 'Accepted Quantity',
-      flex: 1,
+      flex: 0.5,
       type: 'number',
     },
     assignValue: (rr, row) =>
@@ -282,7 +309,7 @@ export const RRI_COLUMNS = [
       flex: 1,
     },
     assignValue: (rr, row) => (row.criticality = rr.criticality ?? ''),
-    isDefault: true,
+    isDefault: false,
   },
   {
     id: 'request_approval',
@@ -313,7 +340,7 @@ export const RRI_COLUMNS = [
     },
     assignValue: (rr, row) =>
       (row.fulfillment_channel = rr.fulfillmentChannel ?? ''),
-    isDefault: true,
+    isDefault: false,
   },
   {
     id: 'execution_status',
@@ -341,7 +368,7 @@ export const RRI_COLUMNS = [
 export type ResourceRequestColumnKey = (typeof RRI_COLUMNS)[number]['id'];
 
 export const DEFAULT_SORT_COLUMN: RriColumnDescriptor =
-  RRI_COLUMNS.find((c) => c.id === 'rr_id') ?? RRI_COLUMNS[0];
+  RRI_COLUMNS.find((c) => c.id === 'resource_details') ?? RRI_COLUMNS[0];
 
 export const getColumnByField = (
   field: string,
