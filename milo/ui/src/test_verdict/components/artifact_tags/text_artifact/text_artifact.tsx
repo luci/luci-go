@@ -117,7 +117,7 @@ export function TextArtifact({
   }
 
   return (
-    <pre data-testid="text-artifact-content" style={{ whiteSpace: 'pre-wrap' }}>
+    <pre data-testid="text-artifact-content">
       {experimentalANSISupport && contentType === 'text/x-ansi' ? (
         <ANSIText content={content} />
       ) : (

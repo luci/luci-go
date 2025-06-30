@@ -294,7 +294,7 @@ ${reasonMsg}</pre
     return html`
       <milo-expandable-entry .contentRuler="none" .expanded=${true}>
         <span slot="header">Summary:</span>
-        <div slot="content">
+        <div slot="content" id="summary-html-content">
           <milo-artifact-tag-context-provider
             result-name=${this.testResult.name}
           >
@@ -542,6 +542,14 @@ ${reasonMsg}</pre
         font-size: 12px;
         white-space: pre-wrap;
         overflow-wrap: break-word;
+      }
+
+      #summary-html-content {
+        padding: 10px;
+      }
+
+      #summary-html {
+        word-break: break-word;
       }
 
       #summary-html p:first-child {
