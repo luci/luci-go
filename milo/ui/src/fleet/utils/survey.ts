@@ -24,8 +24,13 @@ declare global {
   }
 }
 
-const isValidCfg = (cfg: HaTSConfig) => {
-  return cfg.productId !== 0 && cfg.apiKey !== '' && cfg.triggerId !== '';
+const isValidCfg = (cfg: HaTSConfig | undefined) => {
+  return (
+    cfg !== undefined &&
+    cfg.productId !== 0 &&
+    cfg.apiKey !== '' &&
+    cfg.triggerId !== ''
+  );
 };
 
 export const requestSurvey = (cfg: HaTSConfig, auth: AuthState) => {
