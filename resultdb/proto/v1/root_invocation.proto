@@ -1,0 +1,195 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
+option java_package = "com.google.luci.resultdb.v1";
+option java_multiple_files = true;
+
+// A top-level container of test results.
+message RootInvocation {
+  // The resource name of this root invocation.
+  // Format: `rootInvocations/{ROOT_INVOCATION_ID}`
+  // See also https://aip.dev/122.
+  //
+  // Output only.
+  string name = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
+  // The root invocation ID.
+  //
+  // Output only.
+  string root_invocation_id = 2 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
+  enum State {
+    // The default value. This value is used if the state is omitted.
+    STATE_UNSPECIFIED = 0;
+
+    // The root invocation is mutable.
+    ACTIVE = 1;
+
+    // The root invocation is in the process of moving to the FINALIZED state.
+    // This will happen automatically soon after all of its directly or
+    // indirectly included invocations become inactive.
+    //
+    // In this state, the root invocation record itself is immutable, but its
+    // contained work units may still be mutable.
+    FINALIZING = 2;
+
+    // The invocation is immutable and no longer accepts new results
+    // directly or indirectly.
+    FINALIZED = 3;
+  }
+
+  // Current state of the root invocation.
+  //
+  // At creation time, this can be set to ACTIVE or FINALIZING (if all fields
+  // are known at creation time). When updating or via the FinalizeRootInvocation
+  // RPC, the state can also be updated from ACTIVE to FINALIZING.
+  //
+  // In all other cases, this field should be treated as output only. ResultDB
+  // will automatically transition the invocation to FINALIZING when the provided
+  // `deadline` expires (if the invocation is not already in FINALIZING state).
+  // FINALIZING invocations will transition onward to FINALIZED when all included
+  // work units are FINALIZED.
+  State state = 3;
+
+  // The realm of the root invocation. This controls the ACLs that apply to the
+  // root invocation and its contents.
+  //
+  // For example, 'chromium:try'.
+  //
+  // See go/luci-authorization for more information.
+  string realm = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
+  // When the invocation was created.
+  // Output only.
+  google.protobuf.Timestamp create_time = 5 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
+  // LUCI identity (e.g. "user:<email>") who created the invocation.
+  // Typically, a LUCI service account (e.g.
+  // "user:cr-buildbucket@appspot.gserviceaccount.com"), but can also be a user
+  // (e.g. "user:johndoe@example.com").
+  //
+  // Output only.
+  string creator = 6 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
+  // == Finalization ===========================================================
+
+  // When the invocation started to finalize, i.e. transitioned to FINALIZING
+  // state. This means the invocation is immutable but directly or indirectly
+  // included invocations may not be.
+  //
+  // Output only.
+  google.protobuf.Timestamp finalize_start_time = 7
+      [ (google.api.field_behavior) = OUTPUT_ONLY ];
+
+  // When the invocation was finalized, i.e. transitioned to FINALIZED state.
+  // If this field is set, implies that the invocation is finalized. This
+  // means the invocation and directly or indirectly included invocations
+  // are immutable.
+  //
+  // Output only.
+  google.protobuf.Timestamp finalize_time = 8
+      [ (google.api.field_behavior) = OUTPUT_ONLY ];
+
+  // Timestamp when the invocation will be forcefully finalized.
+  // Can be extended with UpdateRootInvocation until finalized.
+  google.protobuf.Timestamp deadline = 9;
+
+  // Full name of the resource that produced results in this root invocation.
+  // See also https://aip.dev/122#full-resource-names
+  // Typical examples:
+  // - Swarming task: "//chromium-swarm.appspot.com/tasks/deadbeef"
+  // - Buildbucket build: "//cr-buildbucket.appspot.com/builds/1234567890".
+  string producer_resource = 10;
+
+  // The code sources which were tested by this root invocation.
+  // This is used to index test results for test history, and for
+  // related analyses (e.g. culprit analysis / changepoint analyses).
+  Sources sources = 11;
+
+  // Whether the code sources specified by sources are final (immutable).
+  //
+  // To facilitate rapid export of invocations inheriting sources from this
+  // root invocation, this property should be set to true as soon as possible
+  // after the root invocation's sources are fixed. In most cases, clients
+  // will want to set this property to true at the same time as they set
+  // sources.
+  //
+  // This field is client owned. Consistent with https://google.aip.dev/129,
+  // it will not be forced to true when the invocation starts to finalize, even
+  // if its effective value will always be true at that point.
+  bool sources_final = 12;
+
+  // Root invocation-level string key-value pairs.
+  // A key can be repeated.
+  repeated StringPair tags = 13;
+
+  // Arbitrary JSON object that contains structured, domain-specific properties
+  // of the root invocation.
+  //
+  // The value must contain a field "@type" which is a URL/resource name that
+  // uniquely identifies the type of the source protocol buffer message that
+  // defines the schema of these properties. This string must contain at least
+  // one "/" character. The last segment of the URL's path must represent the
+  // fully qualified name of the type (e.g. foo.com/x/some.package.MyMessage).
+  // See google.protobuf.Any for more information.
+  //
+  // N.B. We do not use google.protobuf.Any here to remove a requirement for
+  // ResultDB to know the schema of customer-defined protos. We do however use
+  // a format equivalent to google.protobuf.Any's JSON representation.
+  //
+  // The serialized size must be <= 16 KB.
+  google.protobuf.Struct properties = 14;
+
+  // The test baseline that this root invocation should contribute to.
+  //
+  // This is a user-specified identifier. Typically, this identifier is generated
+  // from the name of the source that generated the test result, such as the
+  // builder name for Chromium. For example, `try:linux-rel`.
+  //
+  // The supported syntax for a baseline identifier is
+  // ^[a-z0-9\-_.]{1,100}:[a-zA-Z0-9\-_.\(\) ]{1,128}$. This syntax was selected
+  // to allow <buildbucket bucket name>:<buildbucket builder name> as a valid
+  // baseline ID.
+  //
+  // Baselines are used to identify new tests; subtracting from the tests in the
+  // root invocation the set of test variants in the baseline yields the new
+  // tests run in the invocation. Those tests can then be e.g. subject to additional
+  // presubmit checks, such as to validate they are not flaky.
+  string baseline_id = 15;
+}

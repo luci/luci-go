@@ -16,8 +16,6 @@ syntax = "proto3";
 
 package luci.resultdb.v1;
 
-import "google/protobuf/timestamp.proto";
-
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 option java_package = "com.google.luci.resultdb.v1";
 option java_multiple_files = true;
@@ -378,6 +376,34 @@ message GerritChange {
   int64 patchset = 4;
 }
 
+// Specifies the source code that was tested.
+message Sources {
+  // The base version of code sources checked out. Mandatory.
+  // If necessary, we could add support for non-gitiles sources here in
+  // future, using a oneof statement. E.g.
+  // oneof system {
+  //    GitilesCommit gitiles_commit = 1;
+  //    SubversionRevision svn_revision = 4;
+  //    ...
+  // }
+  GitilesCommit gitiles_commit = 1;
+
+  // The changelist(s) which were applied upon the base version of sources
+  // checked out. E.g. in commit queue tryjobs.
+  //
+  // At most 10 changelist(s) may be specified here. If there
+  // are more, only include the first 10 and set is_dirty.
+  repeated GerritChange changelists = 2;
+
+  // Whether there were any changes made to the sources, not described above.
+  // For example, a version of a dependency was upgraded before testing (e.g.
+  // in an autoroller recipe).
+  //
+  // Cherry-picking a changelist on top of the base checkout is not considered
+  // making the sources dirty as it is reported separately above.
+  bool is_dirty = 3;
+}
+
 // Deprecated: Use GitilesCommit instead.
 message CommitPosition {
   // The following fields identify a git repository and a ref within which the
@@ -390,27 +416,6 @@ message CommitPosition {
   // above.
   int64 position = 4;
 }
-
-// Deprecated: Do not use.
-message CommitPositionRange {
-  // The lowest commit position to include in the range.
-  CommitPosition earliest = 1;
-
-  // Include only commit positions that that are strictly lower than this.
-  CommitPosition latest = 2;
-}
-
-// A range of timestamps.
-//
-// Currently unused.
-message TimeRange {
-  // The oldest timestamp to include in the range.
-  google.protobuf.Timestamp earliest = 1;
-
-  // Include only timestamps that are strictly older than this.
-  google.protobuf.Timestamp latest = 2;
-}
-
 
 // Represents a reference in a source control system.
 message SourceRef {

@@ -752,87 +752,6 @@ func (x *SourceSpec) GetInherit() bool {
 	return false
 }
 
-// Specifies the source code that was tested.
-type Sources struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The base version of code sources checked out. Mandatory.
-	// If necessary, we could add support for non-gitiles sources here in
-	// future, using a oneof statement. E.g.
-	//
-	//	oneof system {
-	//	   GitilesCommit gitiles_commit = 1;
-	//	   SubversionRevision svn_revision = 4;
-	//	   ...
-	//	}
-	GitilesCommit *GitilesCommit `protobuf:"bytes,1,opt,name=gitiles_commit,json=gitilesCommit,proto3" json:"gitiles_commit,omitempty"`
-	// The changelist(s) which were applied upon the base version of sources
-	// checked out. E.g. in commit queue tryjobs.
-	//
-	// At most 10 changelist(s) may be specified here. If there
-	// are more, only include the first 10 and set is_dirty.
-	Changelists []*GerritChange `protobuf:"bytes,2,rep,name=changelists,proto3" json:"changelists,omitempty"`
-	// Whether there were any changes made to the sources, not described above.
-	// For example, a version of a dependency was upgraded before testing (e.g.
-	// in an autoroller recipe).
-	//
-	// Cherry-picking a changelist on top of the base checkout is not considered
-	// making the sources dirty as it is reported separately above.
-	IsDirty       bool `protobuf:"varint,3,opt,name=is_dirty,json=isDirty,proto3" json:"is_dirty,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Sources) Reset() {
-	*x = Sources{}
-	mi := &file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Sources) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Sources) ProtoMessage() {}
-
-func (x *Sources) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Sources.ProtoReflect.Descriptor instead.
-func (*Sources) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *Sources) GetGitilesCommit() *GitilesCommit {
-	if x != nil {
-		return x.GitilesCommit
-	}
-	return nil
-}
-
-func (x *Sources) GetChangelists() []*GerritChange {
-	if x != nil {
-		return x.Changelists
-	}
-	return nil
-}
-
-func (x *Sources) GetIsDirty() bool {
-	if x != nil {
-		return x.IsDirty
-	}
-	return false
-}
-
 // TestResults indicates that test results should be exported.
 type BigQueryExport_TestResults struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -845,7 +764,7 @@ type BigQueryExport_TestResults struct {
 
 func (x *BigQueryExport_TestResults) Reset() {
 	*x = BigQueryExport_TestResults{}
-	mi := &file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -857,7 +776,7 @@ func (x *BigQueryExport_TestResults) String() string {
 func (*BigQueryExport_TestResults) ProtoMessage() {}
 
 func (x *BigQueryExport_TestResults) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -894,7 +813,7 @@ type BigQueryExport_TextArtifacts struct {
 
 func (x *BigQueryExport_TextArtifacts) Reset() {
 	*x = BigQueryExport_TextArtifacts{}
-	mi := &file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -906,7 +825,7 @@ func (x *BigQueryExport_TextArtifacts) String() string {
 func (*BigQueryExport_TextArtifacts) ProtoMessage() {}
 
 func (x *BigQueryExport_TextArtifacts) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1086,23 +1005,12 @@ var file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_rawDesc = strin
 	0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x73,
 	0x52, 0x07, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x73, 0x12, 0x18, 0x0a, 0x07, 0x69, 0x6e, 0x68,
 	0x65, 0x72, 0x69, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x69, 0x6e, 0x68, 0x65,
-	0x72, 0x69, 0x74, 0x22, 0xae, 0x01, 0x0a, 0x07, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x73, 0x12,
-	0x46, 0x0a, 0x0e, 0x67, 0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x5f, 0x63, 0x6f, 0x6d, 0x6d, 0x69,
-	0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72,
-	0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x69, 0x74, 0x69, 0x6c,
-	0x65, 0x73, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x52, 0x0d, 0x67, 0x69, 0x74, 0x69, 0x6c, 0x65,
-	0x73, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x12, 0x40, 0x0a, 0x0b, 0x63, 0x68, 0x61, 0x6e, 0x67,
-	0x65, 0x6c, 0x69, 0x73, 0x74, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x6c,
-	0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e,
-	0x47, 0x65, 0x72, 0x72, 0x69, 0x74, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x0b, 0x63, 0x68,
-	0x61, 0x6e, 0x67, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x73, 0x12, 0x19, 0x0a, 0x08, 0x69, 0x73, 0x5f,
-	0x64, 0x69, 0x72, 0x74, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x69, 0x73, 0x44,
-	0x69, 0x72, 0x74, 0x79, 0x42, 0x50, 0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x6f, 0x6f, 0x67,
-	0x6c, 0x65, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62,
-	0x2e, 0x76, 0x31, 0x50, 0x01, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69,
-	0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75,
-	0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65,
-	0x73, 0x75, 0x6c, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x69, 0x74, 0x42, 0x50, 0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
+	0x65, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e,
+	0x76, 0x31, 0x50, 0x01, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75,
+	0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c,
+	0x74, 0x64, 0x62, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x73,
+	0x75, 0x6c, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 })
 
 var (
@@ -1118,56 +1026,52 @@ func file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_rawDescGZIP() 
 }
 
 var file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_goTypes = []any{
 	(Invocation_State)(0),                // 0: luci.resultdb.v1.Invocation.State
 	(*Invocation)(nil),                   // 1: luci.resultdb.v1.Invocation
 	(*BigQueryExport)(nil),               // 2: luci.resultdb.v1.BigQueryExport
 	(*HistoryOptions)(nil),               // 3: luci.resultdb.v1.HistoryOptions
 	(*SourceSpec)(nil),                   // 4: luci.resultdb.v1.SourceSpec
-	(*Sources)(nil),                      // 5: luci.resultdb.v1.Sources
-	nil,                                  // 6: luci.resultdb.v1.Invocation.ExtendedPropertiesEntry
-	(*BigQueryExport_TestResults)(nil),   // 7: luci.resultdb.v1.BigQueryExport.TestResults
-	(*BigQueryExport_TextArtifacts)(nil), // 8: luci.resultdb.v1.BigQueryExport.TextArtifacts
-	(*timestamppb.Timestamp)(nil),        // 9: google.protobuf.Timestamp
-	(*StringPair)(nil),                   // 10: luci.resultdb.v1.StringPair
-	(*structpb.Struct)(nil),              // 11: google.protobuf.Struct
-	(*Instructions)(nil),                 // 12: luci.resultdb.v1.Instructions
-	(*Variant)(nil),                      // 13: luci.resultdb.v1.Variant
-	(*CommitPosition)(nil),               // 14: luci.resultdb.v1.CommitPosition
-	(*GitilesCommit)(nil),                // 15: luci.resultdb.v1.GitilesCommit
-	(*GerritChange)(nil),                 // 16: luci.resultdb.v1.GerritChange
-	(*TestResultPredicate)(nil),          // 17: luci.resultdb.v1.TestResultPredicate
-	(*ArtifactPredicate)(nil),            // 18: luci.resultdb.v1.ArtifactPredicate
+	nil,                                  // 5: luci.resultdb.v1.Invocation.ExtendedPropertiesEntry
+	(*BigQueryExport_TestResults)(nil),   // 6: luci.resultdb.v1.BigQueryExport.TestResults
+	(*BigQueryExport_TextArtifacts)(nil), // 7: luci.resultdb.v1.BigQueryExport.TextArtifacts
+	(*timestamppb.Timestamp)(nil),        // 8: google.protobuf.Timestamp
+	(*StringPair)(nil),                   // 9: luci.resultdb.v1.StringPair
+	(*structpb.Struct)(nil),              // 10: google.protobuf.Struct
+	(*Instructions)(nil),                 // 11: luci.resultdb.v1.Instructions
+	(*Variant)(nil),                      // 12: luci.resultdb.v1.Variant
+	(*CommitPosition)(nil),               // 13: luci.resultdb.v1.CommitPosition
+	(*Sources)(nil),                      // 14: luci.resultdb.v1.Sources
+	(*TestResultPredicate)(nil),          // 15: luci.resultdb.v1.TestResultPredicate
+	(*ArtifactPredicate)(nil),            // 16: luci.resultdb.v1.ArtifactPredicate
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_depIdxs = []int32{
 	0,  // 0: luci.resultdb.v1.Invocation.state:type_name -> luci.resultdb.v1.Invocation.State
-	9,  // 1: luci.resultdb.v1.Invocation.create_time:type_name -> google.protobuf.Timestamp
-	10, // 2: luci.resultdb.v1.Invocation.tags:type_name -> luci.resultdb.v1.StringPair
-	9,  // 3: luci.resultdb.v1.Invocation.finalize_start_time:type_name -> google.protobuf.Timestamp
-	9,  // 4: luci.resultdb.v1.Invocation.finalize_time:type_name -> google.protobuf.Timestamp
-	9,  // 5: luci.resultdb.v1.Invocation.deadline:type_name -> google.protobuf.Timestamp
+	8,  // 1: luci.resultdb.v1.Invocation.create_time:type_name -> google.protobuf.Timestamp
+	9,  // 2: luci.resultdb.v1.Invocation.tags:type_name -> luci.resultdb.v1.StringPair
+	8,  // 3: luci.resultdb.v1.Invocation.finalize_start_time:type_name -> google.protobuf.Timestamp
+	8,  // 4: luci.resultdb.v1.Invocation.finalize_time:type_name -> google.protobuf.Timestamp
+	8,  // 5: luci.resultdb.v1.Invocation.deadline:type_name -> google.protobuf.Timestamp
 	2,  // 6: luci.resultdb.v1.Invocation.bigquery_exports:type_name -> luci.resultdb.v1.BigQueryExport
 	3,  // 7: luci.resultdb.v1.Invocation.history_options:type_name -> luci.resultdb.v1.HistoryOptions
-	11, // 8: luci.resultdb.v1.Invocation.properties:type_name -> google.protobuf.Struct
+	10, // 8: luci.resultdb.v1.Invocation.properties:type_name -> google.protobuf.Struct
 	4,  // 9: luci.resultdb.v1.Invocation.source_spec:type_name -> luci.resultdb.v1.SourceSpec
-	12, // 10: luci.resultdb.v1.Invocation.instructions:type_name -> luci.resultdb.v1.Instructions
-	13, // 11: luci.resultdb.v1.Invocation.TestResultVariantUnion:type_name -> luci.resultdb.v1.Variant
-	6,  // 12: luci.resultdb.v1.Invocation.extended_properties:type_name -> luci.resultdb.v1.Invocation.ExtendedPropertiesEntry
-	7,  // 13: luci.resultdb.v1.BigQueryExport.test_results:type_name -> luci.resultdb.v1.BigQueryExport.TestResults
-	8,  // 14: luci.resultdb.v1.BigQueryExport.text_artifacts:type_name -> luci.resultdb.v1.BigQueryExport.TextArtifacts
-	14, // 15: luci.resultdb.v1.HistoryOptions.commit:type_name -> luci.resultdb.v1.CommitPosition
-	5,  // 16: luci.resultdb.v1.SourceSpec.sources:type_name -> luci.resultdb.v1.Sources
-	15, // 17: luci.resultdb.v1.Sources.gitiles_commit:type_name -> luci.resultdb.v1.GitilesCommit
-	16, // 18: luci.resultdb.v1.Sources.changelists:type_name -> luci.resultdb.v1.GerritChange
-	11, // 19: luci.resultdb.v1.Invocation.ExtendedPropertiesEntry.value:type_name -> google.protobuf.Struct
-	17, // 20: luci.resultdb.v1.BigQueryExport.TestResults.predicate:type_name -> luci.resultdb.v1.TestResultPredicate
-	18, // 21: luci.resultdb.v1.BigQueryExport.TextArtifacts.predicate:type_name -> luci.resultdb.v1.ArtifactPredicate
-	22, // [22:22] is the sub-list for method output_type
-	22, // [22:22] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	11, // 10: luci.resultdb.v1.Invocation.instructions:type_name -> luci.resultdb.v1.Instructions
+	12, // 11: luci.resultdb.v1.Invocation.TestResultVariantUnion:type_name -> luci.resultdb.v1.Variant
+	5,  // 12: luci.resultdb.v1.Invocation.extended_properties:type_name -> luci.resultdb.v1.Invocation.ExtendedPropertiesEntry
+	6,  // 13: luci.resultdb.v1.BigQueryExport.test_results:type_name -> luci.resultdb.v1.BigQueryExport.TestResults
+	7,  // 14: luci.resultdb.v1.BigQueryExport.text_artifacts:type_name -> luci.resultdb.v1.BigQueryExport.TextArtifacts
+	13, // 15: luci.resultdb.v1.HistoryOptions.commit:type_name -> luci.resultdb.v1.CommitPosition
+	14, // 16: luci.resultdb.v1.SourceSpec.sources:type_name -> luci.resultdb.v1.Sources
+	10, // 17: luci.resultdb.v1.Invocation.ExtendedPropertiesEntry.value:type_name -> google.protobuf.Struct
+	15, // 18: luci.resultdb.v1.BigQueryExport.TestResults.predicate:type_name -> luci.resultdb.v1.TestResultPredicate
+	16, // 19: luci.resultdb.v1.BigQueryExport.TextArtifacts.predicate:type_name -> luci.resultdb.v1.ArtifactPredicate
+	20, // [20:20] is the sub-list for method output_type
+	20, // [20:20] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_init() }
@@ -1188,7 +1092,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_rawDesc), len(file_go_chromium_org_luci_resultdb_proto_v1_invocation_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   8,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

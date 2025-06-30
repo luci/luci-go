@@ -1,0 +1,225 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/instruction.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
+option java_package = "com.google.luci.resultdb.v1";
+option java_multiple_files = true;
+
+// A process step that contributes results to a root invocation.
+// Work units contain test results, artifacts and exonerations. Work units may
+// also contain other work units and (legacy) invocations.
+message WorkUnit {
+  // The resource name of this work unit.
+  // Format: `rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}`
+  // See also https://aip.dev/122.
+  //
+  // Output only.
+  string name = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
+  // The work unit identifier. This identifier is unique within
+  // an enclosing root invocation, but not necessarily globally unique.
+  //
+  // Output only.
+  string work_unit_id = 2 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
+  enum State {
+    // The default value. This value is used if the state is omitted.
+    STATE_UNSPECIFIED = 0;
+
+    // The work unit is mutable.
+    ACTIVE = 1;
+
+    // The work unit is in the process of moving to the FINALIZED state.
+    // This will happen automatically soon after all of its directly or
+    // indirectly included work units become inactive.
+    //
+    // In this state, the work unit itself is immutable, but its
+    // contained work units may still be mutable. When the work unit
+    // is immutable, the work unit record may not be updated, and
+    // no test results, exonerations or artifacts be created
+    // inside it.
+    FINALIZING = 2;
+
+    // The work unit is immutable and no longer accepts new results
+    // directly or indirectly.
+    FINALIZED = 3;
+  }
+
+  // Current state of the work unit.
+  //
+  // At creation time, this can be set to ACTIVE or FINALIZING (if all fields
+  // are known at creation time). When updating or via the FinalizeWorkUnit
+  // RPC, the state can also be updated from ACTIVE to FINALIZING.
+  //
+  // In all other cases, this field should be treated as output only. ResultDB
+  // will automatically transition the work unit to FINALIZING when the provided
+  // `deadline` expires (if the work unit is not already in FINALIZING state).
+  // FINALIZING work units will transition onward to FINALIZED when all included
+  // work units are FINALIZED.
+  State state = 3;
+
+  // The realm of the work unit. This controls the ACLs that apply to the
+  // work unit and its contents.
+  //
+  // For example, 'chromium:try'.
+  //
+  // See go/luci-authorization for more information.
+  string realm = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
+  // When the work unit was created.
+  // Output only.
+  google.protobuf.Timestamp create_time = 5 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
+  // LUCI identity (e.g. "user:<email>") who created the work unit.
+  // Typically, a LUCI service account (e.g.
+  // "user:cr-buildbucket@appspot.gserviceaccount.com"), but can also be a user
+  // (e.g. "user:johndoe@example.com").
+  //
+  // Output only.
+  string creator = 6 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
+  // == Finalization ===========================================================
+
+  // When the work unit started to finalize, i.e. transitioned to FINALIZING
+  // state. This means the work unit is immutable but directly or indirectly
+  // included work units may not be.
+  //
+  // Output only.
+  google.protobuf.Timestamp finalize_start_time = 7
+      [ (google.api.field_behavior) = OUTPUT_ONLY ];
+
+  // When the work unit was finalized, i.e. transitioned to FINALIZED state.
+  // If this field is set, implies that the work units is finalized. This
+  // means the work units and directly or indirectly included work units
+  // are immutable.
+  //
+  // Output only.
+  google.protobuf.Timestamp finalize_time = 8
+      [ (google.api.field_behavior) = OUTPUT_ONLY ];
+
+  // Timestamp when the work unit will be forcefully finalized.
+  // Can be extended with UpdateWorkUnit until finalized.
+  google.protobuf.Timestamp deadline = 9;
+
+  // == Hierarchy ==============================================================
+
+  // The parent resource of this work unit. This is typically
+  // another work unit, except for the root work unit, for which
+  // it is the root invocation.
+  string parent = 10 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
+  // Resource names of child work units.
+  //
+  // This field only covers children; to find grandchildren, great
+  // grandchildren, etc. traverse recursively.
+  //
+  // To create a new child work unit, use Recorder.CreateWorkUnit
+  // and specify this work unit as the parent.
+  repeated string child_work_units = 11
+      [ (google.api.field_behavior) = OUTPUT_ONLY ];
+
+  // Resource names of child (legacy) invocations.
+  //
+  // This field only covers children; to find grandchildren, great
+  // grandchildren, etc. traverse recursively.
+  repeated string child_invocations = 12
+      [ (google.api.field_behavior) = OUTPUT_ONLY ];
+
+  // Full name of the resource that produced results in this work unit.
+  // See also https://aip.dev/122#full-resource-names
+  // Typical examples:
+  // - Swarming task: "//chromium-swarm.appspot.com/tasks/deadbeef"
+  // - Buildbucket build: "//cr-buildbucket.appspot.com/builds/1234567890".
+  string producer_resource = 13;
+
+  // Work unit-level string key-value pairs.
+  // A key can be repeated.
+  repeated StringPair tags = 14;
+
+  // Arbitrary JSON object that contains structured, domain-specific properties
+  // of the work unit.
+  //
+  // The value must contain a field "@type" which is a URL/resource name that
+  // uniquely identifies the type of the source protocol buffer message that
+  // defines the schema of these properties. This string must contain at least
+  // one "/" character. The last segment of the URL's path must represent the
+  // fully qualified name of the type (e.g. foo.com/x/some.package.MyMessage).
+  // See google.protobuf.Any for more information.
+  //
+  // N.B. We do not use google.protobuf.Any here to remove a requirement for
+  // ResultDB to know the schema of customer-defined protos. We do however use
+  // a format equivalent to google.protobuf.Any's JSON representation.
+  //
+  // The serialized size must be <= 16 KB.
+  google.protobuf.Struct properties = 15;
+
+  // Additional JSON object(s) that contain additional structured data about the
+  // work unit. Unlike `properties` this field is not included (denormalized)
+  // in the test results export, it is only available in the finalized
+  // work units BigQuery export.
+  //
+  // All google.protobuf.Struct values must contain a field '@type' which is
+  // a URL/resource name that uniquely identifies the type of the source
+  // protocol buffer message. This string must contain at least
+  // one "/" character. The last segment of the URL's path must represent the
+  // fully qualified name of the type (e.g. foo.com/x/some.package.MyMessage)
+  //
+  // ResultDB will not validate the contents with respect to this schema, but
+  // downstream systems may depend on the '@type' field to inform how the
+  // contents are interpreted.
+  //
+  // Each key is limited to 63 characters matching
+  // ^[a-z]([a-z0-9_]{0,61}[a-z0-9])?$.
+  // The size of each value is limited to <= 512 KB.
+  // The total size of the map (as measured by proto.Size())
+  // is limited to <= 2 MB.
+  //
+  // The following paths can be used for field masks:
+  // * "extended_properties" to target the whole extended_properties,
+  // * "extended_properties.some_key" to target one key of extended_properties.
+  map<string, google.protobuf.Struct> extended_properties = 16;
+
+  // Reproduction instructions for steps and test results represented by
+  // this work unit. It may also contain instructions for test results in
+  // included work units.
+  Instructions instructions = 17;
+}

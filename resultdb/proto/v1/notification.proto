@@ -17,7 +17,7 @@ syntax = "proto3";
 package luci.resultdb.v1;
 
 import "google/protobuf/timestamp.proto";
-import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 option java_package = "com.google.luci.resultdb.v1";

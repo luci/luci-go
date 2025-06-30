@@ -115,6 +115,66 @@ func (mr *MockRecorderClientMockRecorder) BatchCreateTestResults(ctx, in interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchCreateTestResults", reflect.TypeOf((*MockRecorderClient)(nil).BatchCreateTestResults), varargs...)
 }
 
+// BatchCreateWorkUnits mocks base method.
+func (m *MockRecorderClient) BatchCreateWorkUnits(ctx context.Context, in *BatchCreateWorkUnitsRequest, opts ...grpc.CallOption) (*BatchCreateWorkUnitsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BatchCreateWorkUnits", varargs...)
+	ret0, _ := ret[0].(*BatchCreateWorkUnitsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchCreateWorkUnits indicates an expected call of BatchCreateWorkUnits.
+func (mr *MockRecorderClientMockRecorder) BatchCreateWorkUnits(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchCreateWorkUnits", reflect.TypeOf((*MockRecorderClient)(nil).BatchCreateWorkUnits), varargs...)
+}
+
+// BatchFinalizeWorkUnits mocks base method.
+func (m *MockRecorderClient) BatchFinalizeWorkUnits(ctx context.Context, in *BatchFinalizeWorkUnitsRequest, opts ...grpc.CallOption) (*BatchFinalizeWorkUnitsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BatchFinalizeWorkUnits", varargs...)
+	ret0, _ := ret[0].(*BatchFinalizeWorkUnitsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchFinalizeWorkUnits indicates an expected call of BatchFinalizeWorkUnits.
+func (mr *MockRecorderClientMockRecorder) BatchFinalizeWorkUnits(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchFinalizeWorkUnits", reflect.TypeOf((*MockRecorderClient)(nil).BatchFinalizeWorkUnits), varargs...)
+}
+
+// BatchUpdateWorkUnits mocks base method.
+func (m *MockRecorderClient) BatchUpdateWorkUnits(ctx context.Context, in *BatchUpdateWorkUnitsRequest, opts ...grpc.CallOption) (*BatchUpdateWorkUnitsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BatchUpdateWorkUnits", varargs...)
+	ret0, _ := ret[0].(*BatchUpdateWorkUnitsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchUpdateWorkUnits indicates an expected call of BatchUpdateWorkUnits.
+func (mr *MockRecorderClientMockRecorder) BatchUpdateWorkUnits(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchUpdateWorkUnits", reflect.TypeOf((*MockRecorderClient)(nil).BatchUpdateWorkUnits), varargs...)
+}
+
 // CreateInvocation mocks base method.
 func (m *MockRecorderClient) CreateInvocation(ctx context.Context, in *CreateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
 	m.ctrl.T.Helper()
@@ -133,6 +193,26 @@ func (mr *MockRecorderClientMockRecorder) CreateInvocation(ctx, in interface{}, 
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInvocation", reflect.TypeOf((*MockRecorderClient)(nil).CreateInvocation), varargs...)
+}
+
+// CreateRootInvocation mocks base method.
+func (m *MockRecorderClient) CreateRootInvocation(ctx context.Context, in *CreateRootInvocationRequest, opts ...grpc.CallOption) (*CreateRootInvocationResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CreateRootInvocation", varargs...)
+	ret0, _ := ret[0].(*CreateRootInvocationResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateRootInvocation indicates an expected call of CreateRootInvocation.
+func (mr *MockRecorderClientMockRecorder) CreateRootInvocation(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRootInvocation", reflect.TypeOf((*MockRecorderClient)(nil).CreateRootInvocation), varargs...)
 }
 
 // CreateTestExoneration mocks base method.
@@ -175,6 +255,26 @@ func (mr *MockRecorderClientMockRecorder) CreateTestResult(ctx, in interface{}, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTestResult", reflect.TypeOf((*MockRecorderClient)(nil).CreateTestResult), varargs...)
 }
 
+// CreateWorkUnit mocks base method.
+func (m *MockRecorderClient) CreateWorkUnit(ctx context.Context, in *CreateWorkUnitRequest, opts ...grpc.CallOption) (*WorkUnit, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CreateWorkUnit", varargs...)
+	ret0, _ := ret[0].(*WorkUnit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateWorkUnit indicates an expected call of CreateWorkUnit.
+func (mr *MockRecorderClientMockRecorder) CreateWorkUnit(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWorkUnit", reflect.TypeOf((*MockRecorderClient)(nil).CreateWorkUnit), varargs...)
+}
+
 // FinalizeInvocation mocks base method.
 func (m *MockRecorderClient) FinalizeInvocation(ctx context.Context, in *FinalizeInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
 	m.ctrl.T.Helper()
@@ -193,6 +293,46 @@ func (mr *MockRecorderClientMockRecorder) FinalizeInvocation(ctx, in interface{}
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeInvocation", reflect.TypeOf((*MockRecorderClient)(nil).FinalizeInvocation), varargs...)
+}
+
+// FinalizeRootInvocation mocks base method.
+func (m *MockRecorderClient) FinalizeRootInvocation(ctx context.Context, in *FinalizeRootInvocationRequest, opts ...grpc.CallOption) (*RootInvocation, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FinalizeRootInvocation", varargs...)
+	ret0, _ := ret[0].(*RootInvocation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FinalizeRootInvocation indicates an expected call of FinalizeRootInvocation.
+func (mr *MockRecorderClientMockRecorder) FinalizeRootInvocation(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeRootInvocation", reflect.TypeOf((*MockRecorderClient)(nil).FinalizeRootInvocation), varargs...)
+}
+
+// FinalizeWorkUnit mocks base method.
+func (m *MockRecorderClient) FinalizeWorkUnit(ctx context.Context, in *FinalizeWorkUnitRequest, opts ...grpc.CallOption) (*WorkUnit, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FinalizeWorkUnit", varargs...)
+	ret0, _ := ret[0].(*WorkUnit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FinalizeWorkUnit indicates an expected call of FinalizeWorkUnit.
+func (mr *MockRecorderClientMockRecorder) FinalizeWorkUnit(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeWorkUnit", reflect.TypeOf((*MockRecorderClient)(nil).FinalizeWorkUnit), varargs...)
 }
 
 // MarkInvocationSubmitted mocks base method.
@@ -253,6 +393,46 @@ func (mr *MockRecorderClientMockRecorder) UpdateInvocation(ctx, in interface{}, 
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateInvocation", reflect.TypeOf((*MockRecorderClient)(nil).UpdateInvocation), varargs...)
+}
+
+// UpdateRootInvocation mocks base method.
+func (m *MockRecorderClient) UpdateRootInvocation(ctx context.Context, in *UpdateRootInvocationRequest, opts ...grpc.CallOption) (*RootInvocation, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateRootInvocation", varargs...)
+	ret0, _ := ret[0].(*RootInvocation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateRootInvocation indicates an expected call of UpdateRootInvocation.
+func (mr *MockRecorderClientMockRecorder) UpdateRootInvocation(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRootInvocation", reflect.TypeOf((*MockRecorderClient)(nil).UpdateRootInvocation), varargs...)
+}
+
+// UpdateWorkUnit mocks base method.
+func (m *MockRecorderClient) UpdateWorkUnit(ctx context.Context, in *UpdateWorkUnitRequest, opts ...grpc.CallOption) (*WorkUnit, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateWorkUnit", varargs...)
+	ret0, _ := ret[0].(*WorkUnit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateWorkUnit indicates an expected call of UpdateWorkUnit.
+func (mr *MockRecorderClientMockRecorder) UpdateWorkUnit(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateWorkUnit", reflect.TypeOf((*MockRecorderClient)(nil).UpdateWorkUnit), varargs...)
 }
 
 // MockRecorderServer is a mock of RecorderServer interface.
@@ -338,6 +518,51 @@ func (mr *MockRecorderServerMockRecorder) BatchCreateTestResults(arg0, arg1 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchCreateTestResults", reflect.TypeOf((*MockRecorderServer)(nil).BatchCreateTestResults), arg0, arg1)
 }
 
+// BatchCreateWorkUnits mocks base method.
+func (m *MockRecorderServer) BatchCreateWorkUnits(arg0 context.Context, arg1 *BatchCreateWorkUnitsRequest) (*BatchCreateWorkUnitsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchCreateWorkUnits", arg0, arg1)
+	ret0, _ := ret[0].(*BatchCreateWorkUnitsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchCreateWorkUnits indicates an expected call of BatchCreateWorkUnits.
+func (mr *MockRecorderServerMockRecorder) BatchCreateWorkUnits(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchCreateWorkUnits", reflect.TypeOf((*MockRecorderServer)(nil).BatchCreateWorkUnits), arg0, arg1)
+}
+
+// BatchFinalizeWorkUnits mocks base method.
+func (m *MockRecorderServer) BatchFinalizeWorkUnits(arg0 context.Context, arg1 *BatchFinalizeWorkUnitsRequest) (*BatchFinalizeWorkUnitsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchFinalizeWorkUnits", arg0, arg1)
+	ret0, _ := ret[0].(*BatchFinalizeWorkUnitsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchFinalizeWorkUnits indicates an expected call of BatchFinalizeWorkUnits.
+func (mr *MockRecorderServerMockRecorder) BatchFinalizeWorkUnits(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchFinalizeWorkUnits", reflect.TypeOf((*MockRecorderServer)(nil).BatchFinalizeWorkUnits), arg0, arg1)
+}
+
+// BatchUpdateWorkUnits mocks base method.
+func (m *MockRecorderServer) BatchUpdateWorkUnits(arg0 context.Context, arg1 *BatchUpdateWorkUnitsRequest) (*BatchUpdateWorkUnitsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchUpdateWorkUnits", arg0, arg1)
+	ret0, _ := ret[0].(*BatchUpdateWorkUnitsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchUpdateWorkUnits indicates an expected call of BatchUpdateWorkUnits.
+func (mr *MockRecorderServerMockRecorder) BatchUpdateWorkUnits(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchUpdateWorkUnits", reflect.TypeOf((*MockRecorderServer)(nil).BatchUpdateWorkUnits), arg0, arg1)
+}
+
 // CreateInvocation mocks base method.
 func (m *MockRecorderServer) CreateInvocation(arg0 context.Context, arg1 *CreateInvocationRequest) (*Invocation, error) {
 	m.ctrl.T.Helper()
@@ -351,6 +576,21 @@ func (m *MockRecorderServer) CreateInvocation(arg0 context.Context, arg1 *Create
 func (mr *MockRecorderServerMockRecorder) CreateInvocation(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInvocation", reflect.TypeOf((*MockRecorderServer)(nil).CreateInvocation), arg0, arg1)
+}
+
+// CreateRootInvocation mocks base method.
+func (m *MockRecorderServer) CreateRootInvocation(arg0 context.Context, arg1 *CreateRootInvocationRequest) (*CreateRootInvocationResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateRootInvocation", arg0, arg1)
+	ret0, _ := ret[0].(*CreateRootInvocationResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateRootInvocation indicates an expected call of CreateRootInvocation.
+func (mr *MockRecorderServerMockRecorder) CreateRootInvocation(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRootInvocation", reflect.TypeOf((*MockRecorderServer)(nil).CreateRootInvocation), arg0, arg1)
 }
 
 // CreateTestExoneration mocks base method.
@@ -383,6 +623,21 @@ func (mr *MockRecorderServerMockRecorder) CreateTestResult(arg0, arg1 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTestResult", reflect.TypeOf((*MockRecorderServer)(nil).CreateTestResult), arg0, arg1)
 }
 
+// CreateWorkUnit mocks base method.
+func (m *MockRecorderServer) CreateWorkUnit(arg0 context.Context, arg1 *CreateWorkUnitRequest) (*WorkUnit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateWorkUnit", arg0, arg1)
+	ret0, _ := ret[0].(*WorkUnit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateWorkUnit indicates an expected call of CreateWorkUnit.
+func (mr *MockRecorderServerMockRecorder) CreateWorkUnit(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWorkUnit", reflect.TypeOf((*MockRecorderServer)(nil).CreateWorkUnit), arg0, arg1)
+}
+
 // FinalizeInvocation mocks base method.
 func (m *MockRecorderServer) FinalizeInvocation(arg0 context.Context, arg1 *FinalizeInvocationRequest) (*Invocation, error) {
 	m.ctrl.T.Helper()
@@ -396,6 +651,36 @@ func (m *MockRecorderServer) FinalizeInvocation(arg0 context.Context, arg1 *Fina
 func (mr *MockRecorderServerMockRecorder) FinalizeInvocation(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeInvocation", reflect.TypeOf((*MockRecorderServer)(nil).FinalizeInvocation), arg0, arg1)
+}
+
+// FinalizeRootInvocation mocks base method.
+func (m *MockRecorderServer) FinalizeRootInvocation(arg0 context.Context, arg1 *FinalizeRootInvocationRequest) (*RootInvocation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FinalizeRootInvocation", arg0, arg1)
+	ret0, _ := ret[0].(*RootInvocation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FinalizeRootInvocation indicates an expected call of FinalizeRootInvocation.
+func (mr *MockRecorderServerMockRecorder) FinalizeRootInvocation(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeRootInvocation", reflect.TypeOf((*MockRecorderServer)(nil).FinalizeRootInvocation), arg0, arg1)
+}
+
+// FinalizeWorkUnit mocks base method.
+func (m *MockRecorderServer) FinalizeWorkUnit(arg0 context.Context, arg1 *FinalizeWorkUnitRequest) (*WorkUnit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FinalizeWorkUnit", arg0, arg1)
+	ret0, _ := ret[0].(*WorkUnit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FinalizeWorkUnit indicates an expected call of FinalizeWorkUnit.
+func (mr *MockRecorderServerMockRecorder) FinalizeWorkUnit(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeWorkUnit", reflect.TypeOf((*MockRecorderServer)(nil).FinalizeWorkUnit), arg0, arg1)
 }
 
 // MarkInvocationSubmitted mocks base method.
@@ -441,4 +726,34 @@ func (m *MockRecorderServer) UpdateInvocation(arg0 context.Context, arg1 *Update
 func (mr *MockRecorderServerMockRecorder) UpdateInvocation(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateInvocation", reflect.TypeOf((*MockRecorderServer)(nil).UpdateInvocation), arg0, arg1)
+}
+
+// UpdateRootInvocation mocks base method.
+func (m *MockRecorderServer) UpdateRootInvocation(arg0 context.Context, arg1 *UpdateRootInvocationRequest) (*RootInvocation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateRootInvocation", arg0, arg1)
+	ret0, _ := ret[0].(*RootInvocation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateRootInvocation indicates an expected call of UpdateRootInvocation.
+func (mr *MockRecorderServerMockRecorder) UpdateRootInvocation(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRootInvocation", reflect.TypeOf((*MockRecorderServer)(nil).UpdateRootInvocation), arg0, arg1)
+}
+
+// UpdateWorkUnit mocks base method.
+func (m *MockRecorderServer) UpdateWorkUnit(arg0 context.Context, arg1 *UpdateWorkUnitRequest) (*WorkUnit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateWorkUnit", arg0, arg1)
+	ret0, _ := ret[0].(*WorkUnit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateWorkUnit indicates an expected call of UpdateWorkUnit.
+func (mr *MockRecorderServerMockRecorder) UpdateWorkUnit(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateWorkUnit", reflect.TypeOf((*MockRecorderServer)(nil).UpdateWorkUnit), arg0, arg1)
 }

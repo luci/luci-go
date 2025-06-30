@@ -25,6 +25,159 @@ type DecoratedRecorder struct {
 	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
+func (s *DecoratedRecorder) CreateRootInvocation(ctx context.Context, req *CreateRootInvocationRequest) (rsp *CreateRootInvocationResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "CreateRootInvocation", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.CreateRootInvocation(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "CreateRootInvocation", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedRecorder) UpdateRootInvocation(ctx context.Context, req *UpdateRootInvocationRequest) (rsp *RootInvocation, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "UpdateRootInvocation", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.UpdateRootInvocation(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "UpdateRootInvocation", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedRecorder) FinalizeRootInvocation(ctx context.Context, req *FinalizeRootInvocationRequest) (rsp *RootInvocation, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "FinalizeRootInvocation", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.FinalizeRootInvocation(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "FinalizeRootInvocation", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedRecorder) CreateWorkUnit(ctx context.Context, req *CreateWorkUnitRequest) (rsp *WorkUnit, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "CreateWorkUnit", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.CreateWorkUnit(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "CreateWorkUnit", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedRecorder) BatchCreateWorkUnits(ctx context.Context, req *BatchCreateWorkUnitsRequest) (rsp *BatchCreateWorkUnitsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "BatchCreateWorkUnits", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.BatchCreateWorkUnits(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "BatchCreateWorkUnits", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedRecorder) UpdateWorkUnit(ctx context.Context, req *UpdateWorkUnitRequest) (rsp *WorkUnit, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "UpdateWorkUnit", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.UpdateWorkUnit(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "UpdateWorkUnit", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedRecorder) BatchUpdateWorkUnits(ctx context.Context, req *BatchUpdateWorkUnitsRequest) (rsp *BatchUpdateWorkUnitsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "BatchUpdateWorkUnits", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.BatchUpdateWorkUnits(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "BatchUpdateWorkUnits", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedRecorder) FinalizeWorkUnit(ctx context.Context, req *FinalizeWorkUnitRequest) (rsp *WorkUnit, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "FinalizeWorkUnit", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.FinalizeWorkUnit(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "FinalizeWorkUnit", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedRecorder) BatchFinalizeWorkUnits(ctx context.Context, req *BatchFinalizeWorkUnitsRequest) (rsp *BatchFinalizeWorkUnitsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "BatchFinalizeWorkUnits", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.BatchFinalizeWorkUnits(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "BatchFinalizeWorkUnits", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedRecorder) CreateInvocation(ctx context.Context, req *CreateInvocationRequest) (rsp *Invocation, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
