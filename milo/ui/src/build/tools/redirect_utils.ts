@@ -78,21 +78,29 @@ export function parseDeepLinkQuery(q: string | null): {
     for (let i = 1; i < foundKeys.length; i++) {
       const current = foundKeys[i];
       const previous = effectiveBoundaries[effectiveBoundaries.length - 1];
-      if (getPropertyGroup(current.key) === getPropertyGroup(previous.key)) {
+      const prevGroup = getPropertyGroup(previous.key);
+
+      // Only merge if the previous key is a "singleton" type and the current
+      // key is in the same group. V: keys will not be merged.
+      if (
+        (prevGroup === 'testId' || prevGroup === 'vhash') &&
+        prevGroup === getPropertyGroup(current.key)
+      ) {
         continue;
       }
       effectiveBoundaries.push(current);
     }
   }
 
-  const processedGroups = new Set<string>();
+  const processedSingletonGroups = new Set<string>();
 
   for (let i = 0; i < effectiveBoundaries.length; i++) {
     const currentBoundary = effectiveBoundaries[i];
     const nextBoundary = effectiveBoundaries[i + 1];
     const group = getPropertyGroup(currentBoundary.key);
 
-    if (processedGroups.has(group)) {
+    // If we have already processed a singleton group, skip subsequent ones.
+    if (processedSingletonGroups.has(group)) {
       continue;
     }
 
@@ -119,7 +127,10 @@ export function parseDeepLinkQuery(q: string | null): {
       }
     }
 
-    processedGroups.add(group);
+    // Mark singleton groups as processed to prevent overwrites.
+    if (group === 'testId' || group === 'vhash') {
+      processedSingletonGroups.add(group);
+    }
   }
 
   const hasVariantDef = Object.keys(variantDef).length > 0;
