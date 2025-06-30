@@ -99,54 +99,6 @@ func NormalizeInvocation(inv *pb.Invocation) {
 	SortGerritChanges(changelists)
 }
 
-// ValidateSourceSpec validates a source specification.
-func ValidateSourceSpec(sourceSpec *pb.SourceSpec) error {
-	// Treat nil sourceSpec message as empty message.
-	if sourceSpec.GetInherit() && sourceSpec.GetSources() != nil {
-		return errors.New("only one of inherit and sources may be set")
-	}
-	if sourceSpec.GetSources() != nil {
-		if err := ValidateSources(sourceSpec.Sources); err != nil {
-			return errors.Fmt("sources: %w", err)
-		}
-	}
-	return nil
-}
-
-// ValidateSources validates a set of sources.
-func ValidateSources(sources *pb.Sources) error {
-	if sources == nil {
-		return errors.New("unspecified")
-	}
-	if err := ValidateGitilesCommit(sources.GetGitilesCommit()); err != nil {
-		return errors.Fmt("gitiles_commit: %w", err)
-	}
-
-	if len(sources.Changelists) > 10 {
-		return errors.New("changelists: exceeds maximum of 10 changelists")
-	}
-	type distinctChangelist struct {
-		host   string
-		change int64
-	}
-	clToIndex := make(map[distinctChangelist]int)
-
-	for i, cl := range sources.Changelists {
-		if err := ValidateGerritChange(cl); err != nil {
-			return errors.Fmt("changelists[%v]: %w", i, err)
-		}
-		cl := distinctChangelist{
-			host:   cl.Host,
-			change: cl.Change,
-		}
-		if duplicateIndex, ok := clToIndex[cl]; ok {
-			return errors.Fmt("changelists[%v]: duplicate change modulo patchset number; same change at changelists[%v]", i, duplicateIndex)
-		}
-		clToIndex[cl] = i
-	}
-	return nil
-}
-
 // ValidateInvocationExtendedPropertyKey returns a non-nil error if key is invalid.
 func ValidateInvocationExtendedPropertyKey(key string) error {
 	return validate.SpecifiedWithRe(invocationExtendedPropertyKeyRe, key)

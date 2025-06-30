@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -62,7 +61,6 @@ func TestInvocationName(t *testing.T) {
 			_, ok := TryParseInvocationName("")
 			assert.Loosely(t, ok, should.BeFalse)
 		})
-
 	})
 }
 
@@ -168,121 +166,6 @@ func TestInvocationUtils(t *testing.T) {
 
 func TestValidateInvocation(t *testing.T) {
 	t.Parallel()
-	ftt.Run(`ValidateSources`, t, func(t *ftt.Test) {
-		sources := &pb.Sources{
-			GitilesCommit: &pb.GitilesCommit{
-				Host:       "chromium.googlesource.com",
-				Project:    "chromium/src",
-				Ref:        "refs/heads/branch",
-				CommitHash: "123456789012345678901234567890abcdefabcd",
-				Position:   1,
-			},
-			Changelists: []*pb.GerritChange{
-				{
-					Host:     "chromium-review.googlesource.com",
-					Project:  "infra/luci-go",
-					Change:   12345,
-					Patchset: 321,
-				},
-			},
-			IsDirty: true,
-		}
-		t.Run(`Valid with sources`, func(t *ftt.Test) {
-			assert.Loosely(t, ValidateSources(sources), should.BeNil)
-		})
-		t.Run(`Nil`, func(t *ftt.Test) {
-			assert.Loosely(t, ValidateSources(nil), should.ErrLike(`unspecified`))
-		})
-		t.Run(`Gitiles commit`, func(t *ftt.Test) {
-			t.Run(`Missing`, func(t *ftt.Test) {
-				sources.GitilesCommit = nil
-				assert.Loosely(t, ValidateSources(sources), should.ErrLike(`gitiles_commit: unspecified`))
-			})
-			t.Run(`Invalid`, func(t *ftt.Test) {
-				// protocol prefix should not be included.
-				sources.GitilesCommit.Host = "https://service"
-				assert.Loosely(t, ValidateSources(sources), should.ErrLike(`gitiles_commit: host: does not match`))
-			})
-		})
-		t.Run(`Changelists`, func(t *ftt.Test) {
-			t.Run(`Zero length`, func(t *ftt.Test) {
-				sources.Changelists = nil
-				assert.Loosely(t, ValidateSources(sources), should.BeNil)
-			})
-			t.Run(`Invalid`, func(t *ftt.Test) {
-				sources.Changelists[0].Change = -1
-				assert.Loosely(t, ValidateSources(sources), should.ErrLike(`changelists[0]: change: cannot be negative`))
-			})
-			t.Run(`Too many`, func(t *ftt.Test) {
-				sources.Changelists = nil
-				for i := range 11 {
-					sources.Changelists = append(sources.Changelists,
-						&pb.GerritChange{
-							Host:     "chromium-review.googlesource.com",
-							Project:  "infra/luci-go",
-							Change:   int64(i + 1),
-							Patchset: 321,
-						},
-					)
-				}
-				assert.Loosely(t, ValidateSources(sources), should.ErrLike(`changelists: exceeds maximum of 10 changelists`))
-			})
-			t.Run(`Duplicates`, func(t *ftt.Test) {
-				sources.Changelists = nil
-				for i := range 2 {
-					sources.Changelists = append(sources.Changelists,
-						&pb.GerritChange{
-							Host:     "chromium-review.googlesource.com",
-							Project:  "infra/luci-go",
-							Change:   12345,
-							Patchset: int64(i + 1),
-						},
-					)
-				}
-				assert.Loosely(t, ValidateSources(sources), should.ErrLike(`changelists[1]: duplicate change modulo patchset number; same change at changelists[0]`))
-			})
-		})
-	})
-	ftt.Run(`ValidateSourceSpec`, t, func(t *ftt.Test) {
-		sourceSpec := &pb.SourceSpec{
-			Sources: &pb.Sources{
-				GitilesCommit: &pb.GitilesCommit{
-					Host:       "chromium.googlesource.com",
-					Project:    "chromium/src",
-					Ref:        "refs/heads/branch",
-					CommitHash: "123456789012345678901234567890abcdefabcd",
-					Position:   1,
-				},
-			},
-			Inherit: false,
-		}
-		t.Run(`Valid`, func(t *ftt.Test) {
-			t.Run(`Sources only`, func(t *ftt.Test) {
-				assert.Loosely(t, ValidateSourceSpec(sourceSpec), should.BeNil)
-			})
-			t.Run(`Empty`, func(t *ftt.Test) {
-				sourceSpec.Sources = nil
-				assert.Loosely(t, ValidateSourceSpec(sourceSpec), should.BeNil)
-			})
-			t.Run(`Inherit only`, func(t *ftt.Test) {
-				sourceSpec.Sources = nil
-				sourceSpec.Inherit = true
-				assert.Loosely(t, ValidateSourceSpec(sourceSpec), should.BeNil)
-			})
-			t.Run(`Nil`, func(t *ftt.Test) {
-				assert.Loosely(t, ValidateSourceSpec(nil), should.BeNil)
-			})
-		})
-		t.Run(`Cannot specify inherit concurrently with sources`, func(t *ftt.Test) {
-			assert.Loosely(t, sourceSpec.Sources, should.NotBeNil)
-			sourceSpec.Inherit = true
-			assert.Loosely(t, ValidateSourceSpec(sourceSpec), should.ErrLike(`only one of inherit and sources may be set`))
-		})
-		t.Run(`Invalid Sources`, func(t *ftt.Test) {
-			sourceSpec.Sources.GitilesCommit.Host = "b@d"
-			assert.Loosely(t, ValidateSourceSpec(sourceSpec), should.ErrLike(`sources: gitiles_commit: host: does not match`))
-		})
-	})
 	ftt.Run(`ValidateInvocationExtendedPropertyKey`, t, func(t *ftt.Test) {
 		t.Run(`Invalid key`, func(t *ftt.Test) {
 			err := ValidateInvocationExtendedPropertyKey("mykey_")
