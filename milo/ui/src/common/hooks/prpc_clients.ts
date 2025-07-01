@@ -15,6 +15,7 @@
 import { ChangepointsClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/changepoints.pb';
 import { TestHistoryClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 import { TestVariantBranchesClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { TestVariantsClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 import { AnalysesClientImpl } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { MiloInternalClientImpl } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 import { ResultDBClientImpl } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
@@ -63,6 +64,13 @@ export function useTestVariantBranchesClient() {
   return usePrpcServiceClient({
     host: SETTINGS.luciAnalysis.host,
     ClientImpl: TestVariantBranchesClientImpl,
+  });
+}
+
+export function useTestVariantsClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.luciAnalysis.host,
+    ClientImpl: TestVariantsClientImpl,
   });
 }
 

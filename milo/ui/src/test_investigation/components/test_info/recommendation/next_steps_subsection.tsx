@@ -14,24 +14,80 @@
 
 import BugReportIcon from '@mui/icons-material/BugReport';
 import { Box, CircularProgress, Link, Typography } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 
 import { StyledActionBlock } from '@/common/components/gm3_styled_components';
+import { useTestVariantsClient } from '@/common/hooks/prpc_clients';
+import { getStatusStyle } from '@/common/styles/status_styles';
+import { Sources } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
+import { QueryTestVariantStabilityRequest_TestVariantPosition } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
+import {
+  useInvocation,
+  useProject,
+  useTestVariant,
+} from '@/test_investigation/context';
 
 import { useAssociatedBugs, useIsLoadingAssociatedBugs } from '../context';
+
+import { getNextStepsInfo } from './next_steps_utills';
 
 export function NextStepsSubsection() {
   const associatedBugs = useAssociatedBugs();
   const isLoadingAssociatedBugs = useIsLoadingAssociatedBugs();
+  const testVariant = useTestVariant();
+  const project = useProject();
+  const client = useTestVariantsClient();
+  const invocation = useInvocation();
 
+  const testVariantReq =
+    QueryTestVariantStabilityRequest_TestVariantPosition.fromPartial({
+      testId: testVariant.testId,
+      variant: {
+        def: testVariant.variant?.def || {},
+      },
+      sources: Sources.fromPartial(invocation?.sourceSpec?.sources || {}),
+    });
+  const { data } = useQuery({
+    ...client.QueryStability.query({
+      project: project || '',
+      testVariants: [testVariantReq],
+    }),
+  });
+
+  const nextStepsInfo = getNextStepsInfo(data, testVariant);
   return (
     <Box
       sx={{
         flex: 1,
-        padding: 1,
+        padding: 2,
         borderRadius: '8px',
         background: 'var(--blue-50, #E8F0FE)',
       }}
     >
+      {nextStepsInfo && (
+        <Box
+          sx={{
+            mb: 1.5,
+            padding: 1,
+            borderRadius: '8px',
+            background: '#FFF',
+            gap: '10px',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <Typography
+            variant="body2"
+            color={getStatusStyle(nextStepsInfo.status).textColor}
+            sx={{
+              fontWeight: 'bold',
+            }}
+          >
+            {nextStepsInfo.title}
+          </Typography>
+          <Typography variant="body2">{nextStepsInfo.subtitle}</Typography>
+        </Box>
+      )}
       {associatedBugs && associatedBugs.length > 0 ? (
         associatedBugs.map((bug) => (
           <StyledActionBlock
