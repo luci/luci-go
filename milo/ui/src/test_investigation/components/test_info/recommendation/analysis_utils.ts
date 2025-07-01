@@ -142,8 +142,7 @@ export const invocationNotInSegment: AnalysisPointGenerator = (data) => {
     return [
       {
         text: `The source postion of this invocation does not belong to any test result segment
-                so no history analysis is possible.  Please report this as a bug with the following
-                information: ${JSON.stringify({ sourceSpec: invocation.sourceSpec, segments })}`,
+                so no history analysis is possible.  Please report this as a bug.`,
         status: 'warning',
       },
     ];

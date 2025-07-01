@@ -26,8 +26,6 @@ import {
 
 import { SourceInfoTooltipContent } from './source_info_tooltip_content';
 
-const compareLink = '#compare-todo';
-
 export function OverviewActionsSection() {
   const testVariant = useTestVariant();
   const invocation = useInvocation();
@@ -61,9 +59,6 @@ export function OverviewActionsSection() {
         justifyContent: 'flex-start',
       }}
     >
-      <Button variant="outlined" size="small" href={compareLink}>
-        Add comparison
-      </Button>
       <Button
         variant="outlined"
         size="small"

@@ -77,9 +77,6 @@ export function ArtifactContentView({
     }
     return (
       <Box>
-        <Typography variant="h6" gutterBottom>
-          {selectedArtifactForDisplay.name}
-        </Typography>
         <Box
           sx={{
             display: 'flex',
@@ -90,19 +87,24 @@ export function ArtifactContentView({
             justifyContent: 'space-between',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              Content Type:{' '}
-              {artifactContentData?.contentType ||
-                artifact.contentType ||
-                'N/A'}
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Typography variant="h6" gutterBottom>
+              {selectedArtifactForDisplay.name}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Size:{' '}
-              {artifact.sizeBytes !== null
-                ? `${artifact.sizeBytes} bytes`
-                : 'N/A'}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Content Type:{' '}
+                {artifactContentData?.contentType ||
+                  artifact.contentType ||
+                  'N/A'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Size:{' '}
+                {artifact.sizeBytes !== null
+                  ? `${artifact.sizeBytes} bytes`
+                  : 'N/A'}
+              </Typography>
+            </Box>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

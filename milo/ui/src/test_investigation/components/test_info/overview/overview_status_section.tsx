@@ -174,16 +174,6 @@ export function OverviewStatusSection() {
             gap: 1,
           }}
         >
-          <Typography
-            component="div"
-            sx={{ fontSize: '20px', fontWeight: '400' }}
-          >
-            Overview
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Test Result
-          </Typography>
-
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <VerdictStatusIcon
               statusV2={testVariant.statusV2}
@@ -199,6 +189,7 @@ export function OverviewStatusSection() {
         </Box>
         <Box
           sx={{
+            mt: '16px',
             display: 'flex',
             flexDirection: 'row',
             gap: 3,
@@ -208,6 +199,7 @@ export function OverviewStatusSection() {
             sx={{
               display: 'flex',
               flexDirection: 'column',
+              flexGrow: 1,
             }}
           >
             <Typography variant="body2" color="text.secondary">

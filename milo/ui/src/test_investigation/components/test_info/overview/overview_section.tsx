@@ -26,7 +26,7 @@ export function OverviewSection() {
         sx={{
           display: 'flex',
           flexDirection: 'column',
-          gap: '32px',
+          gap: '16px',
           p: 3,
           height: '100%',
           boxSizing: 'border-box',

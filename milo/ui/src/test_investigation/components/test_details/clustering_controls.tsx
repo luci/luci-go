@@ -103,7 +103,6 @@ export function ClusteringControls({
         display: 'flex',
         alignItems: 'center',
         gap: 2,
-        mb: 2,
         flexWrap: 'wrap',
       }}
     >

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { SelectChangeEvent } from '@mui/material';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { VirtuosoMockContext } from 'react-virtuoso';
@@ -55,6 +56,21 @@ describe('<ArtifactTreeView />', () => {
             invArtifacts={invArtifacts}
             artifactsLoading={false}
             updateSelectedArtifact={() => {}}
+            clusteredFailures={[]}
+            selectedClusterIndex={0}
+            onClusterChange={function (
+              _event: SelectChangeEvent<number>,
+            ): void {
+              throw new Error('Function not implemented.');
+            }}
+            currentAttempts={[]}
+            selectedAttemptIndex={0}
+            onAttemptChange={function (
+              _event: SelectChangeEvent<number>,
+            ): void {
+              throw new Error('Function not implemented.');
+            }}
+            hasRenderableResults={false}
           />
         </FakeContextProvider>
       </VirtuosoMockContext.Provider>,
@@ -83,6 +99,21 @@ describe('<ArtifactTreeView />', () => {
             invArtifacts={invArtifacts}
             artifactsLoading={false}
             updateSelectedArtifact={() => {}}
+            clusteredFailures={[]}
+            selectedClusterIndex={0}
+            onClusterChange={function (
+              _event: SelectChangeEvent<number>,
+            ): void {
+              throw new Error('Function not implemented.');
+            }}
+            currentAttempts={[]}
+            selectedAttemptIndex={0}
+            onAttemptChange={function (
+              _event: SelectChangeEvent<number>,
+            ): void {
+              throw new Error('Function not implemented.');
+            }}
+            hasRenderableResults={false}
           />
         </FakeContextProvider>
       </VirtuosoMockContext.Provider>,

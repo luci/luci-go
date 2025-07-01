@@ -19,6 +19,8 @@ import {
   InputAdornment,
   LinearProgress,
   TextField,
+  SelectChangeEvent,
+  Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -29,7 +31,10 @@ import {
 } from '@/common/components/log_viewer';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
-import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+
+import { ClusteringControls } from '../clustering_controls';
+import { ClusteredResult } from '../types';
 
 import { ArtifactTreeNode } from './artifact_tree_node';
 import { ArtifactTreeNodeData, SelectedArtifactSource } from './types';
@@ -124,7 +129,15 @@ interface ArtifactTreeViewProps {
   artifactsLoading: boolean;
   selectedArtifact?: ArtifactTreeNodeData | null;
   updateSelectedArtifact: (artifact: ArtifactTreeNodeData | null) => void;
-  currentResult?: TestResult;
+  clusteredFailures: readonly ClusteredResult[];
+  selectedClusterIndex: number;
+  onClusterChange: (event: SelectChangeEvent<number>) => void;
+  currentAttempts: readonly TestResultBundle[];
+  selectedAttemptIndex: number;
+  onAttemptChange: (event: SelectChangeEvent<number>) => void;
+  currentCluster?: ClusteredResult;
+  currentResult?: TestResultBundle['result'];
+  hasRenderableResults: boolean;
 }
 
 export function ArtifactTreeView({
@@ -133,10 +146,20 @@ export function ArtifactTreeView({
   artifactsLoading,
   selectedArtifact: selectedArtifactNode,
   updateSelectedArtifact,
+  clusteredFailures,
+  selectedClusterIndex,
+  onClusterChange,
+  currentAttempts,
+  selectedAttemptIndex,
+  onAttemptChange,
+  currentCluster,
   currentResult,
+  hasRenderableResults,
 }: ArtifactTreeViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  const noFailuresToClusterMessage = 'No failures to cluster.';
 
   useEffect(() => {
     const timerId = setTimeout(() => {
@@ -265,7 +288,26 @@ export function ArtifactTreeView({
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box
+        sx={{ p: 1, pb: 0, display: 'flex', flexDirection: 'column', gap: 2 }}
+      >
+        {clusteredFailures.length > 0 ? (
+          <ClusteringControls
+            clusteredFailures={clusteredFailures}
+            selectedClusterIndex={selectedClusterIndex}
+            onClusterChange={onClusterChange}
+            currentAttempts={currentAttempts}
+            selectedAttemptIndex={selectedAttemptIndex}
+            onAttemptChange={onAttemptChange}
+            currentCluster={currentCluster}
+          />
+        ) : (
+          hasRenderableResults && (
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              {noFailuresToClusterMessage}
+            </Typography>
+          )
+        )}
         <TextField
           placeholder="Search artifacts"
           variant="outlined"

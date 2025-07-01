@@ -25,6 +25,7 @@ import {
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 
 import { CollapsibleArtifactSummarySection } from './collapsible_artifact_summary_section';
+import { PropertiesSection } from './properties_section';
 import { TextDiffArtifactView } from './text_diff_artifact_view';
 
 interface ArtifactSummaryViewProps {
@@ -123,6 +124,8 @@ export function ArtifactSummaryView({
           </Box>
         </CollapsibleArtifactSummarySection>
       )}
+
+      <PropertiesSection currentResult={currentResult} />
     </>
   );
 }

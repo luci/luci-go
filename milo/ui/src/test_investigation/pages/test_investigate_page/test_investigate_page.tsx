@@ -48,7 +48,7 @@ import {
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestVerdict_StatusOverride } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { RedirectBackBanner } from '@/test_investigation/components/redirect_back_banner';
-import { TestDetails } from '@/test_investigation/components/test_details';
+import { ArtifactsSection } from '@/test_investigation/components/test_details/artifacts/artifacts_section';
 import { TestInfo } from '@/test_investigation/components/test_info';
 import { isPresubmitRun } from '@/test_investigation/components/test_info/recommendation/analysis_utils';
 import { TestNavigationDrawer } from '@/test_investigation/components/test_navigation_drawer';
@@ -234,26 +234,22 @@ export function TestInvestigatePage() {
             invocation={invocation}
             testVariant={testVariant}
           />
-          <Box
-            sx={{ position: 'relative', height: '100vh', overflowY: 'auto' }}
-          >
-            <Box component="main" sx={{ height: '100%' }}>
-              <Box
-                sx={{
-                  padding: { xs: 1, sm: 2 },
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 4,
-                  maxWidth: '100%',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <TestInfo />
-                <TestDetails />
-              </Box>
+          <Box component="main" sx={{ height: '100%' }}>
+            <Box
+              sx={{
+                padding: { xs: 1, sm: 2 },
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+              }}
+            >
+              <TestInfo />
+              <ArtifactsSection />
             </Box>
-            <TestNavigationDrawer />
           </Box>
+          <TestNavigationDrawer />
         </ThemeProvider>
       </TestVariantProvider>
     </InvocationProvider>
