@@ -1010,6 +1010,10 @@ func TestRevertCulprit(t *testing.T) {
 							Reviewer: "esmith@example.com",
 							State:    gerritpb.ReviewerInput_REVIEWER_INPUT_STATE_REVIEWER,
 						},
+						{
+							Reviewer: "rubber-stamper@appspot.gserviceaccount.com",
+							State:    gerritpb.ReviewerInput_REVIEWER_INPUT_STATE_REVIEWER,
+						},
 					},
 				},
 			)).Times(1)
@@ -1113,6 +1117,10 @@ func TestRevertCulprit(t *testing.T) {
 						},
 						{
 							Reviewer: "esmith@example.com",
+							State:    gerritpb.ReviewerInput_REVIEWER_INPUT_STATE_REVIEWER,
+						},
+						{
+							Reviewer: "rubber-stamper@appspot.gserviceaccount.com",
 							State:    gerritpb.ReviewerInput_REVIEWER_INPUT_STATE_REVIEWER,
 						},
 					},

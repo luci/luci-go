@@ -183,6 +183,11 @@ func sendRevertForReview(ctx context.Context, gerritClient *gerrit.Client,
 		return errors.Fmt("failed getting reviewers for manual review: %w", err)
 	}
 
+	// Add Rubber stamper so it can review a clean revert.
+	// So we will only need 1 human reviewer instead of 2.
+	// See b/428617738.
+	reviewerEmails = append(reviewerEmails, "rubber-stamper@appspot.gserviceaccount.com")
+
 	// For now, no accounts are additionally CC'd
 	ccEmails := []string{}
 
