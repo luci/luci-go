@@ -1,0 +1,9 @@
+// To update this file run `update.sh`.
+
+module protoc-gen-go-env.example.com
+
+go 1.24.0
+
+tool google.golang.org/protobuf/cmd/protoc-gen-go
+
+require google.golang.org/protobuf v1.36.6 // indirect

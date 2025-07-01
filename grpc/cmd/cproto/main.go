@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/proto/protoc"
+	"go.chromium.org/luci/common/proto/protocgengo"
 	"go.chromium.org/luci/common/system/exitcode"
 )
 
@@ -64,6 +65,10 @@ var (
 		"enable-pgv", false,
 		"enable protoc-gen-validate generation. Makes 'validate/validate.proto' and annotations available.",
 	)
+	useModernProtocGenGo = flag.Bool(
+		"use-modern-protoc-gen-go", false,
+		"use google.golang.org/protobuf/cmd/protoc-gen-go for generation, implies -use-grpc-plugin",
+	)
 )
 
 func run(ctx context.Context, inputDir string) error {
@@ -79,6 +84,11 @@ func run(ctx context.Context, inputDir string) error {
 			logging.Infof(ctx, "adding -go-root-module %s", goRootModules)
 			goRootModules = append(goRootModules, protocGenValidatePkg)
 		}
+	}
+
+	if *useModernProtocGenGo && !*useGRPCPlugin {
+		logging.Infof(ctx, "implicitly enabling -use-grpc-plugin since it is required when using modern protoc-gen-go")
+		*useGRPCPlugin = true
 	}
 
 	// Stage all requested Go modules under a single root.
@@ -99,6 +109,17 @@ func run(ctx context.Context, inputDir string) error {
 		descPath = filepath.Join(tmpDir, "package.desc")
 	}
 
+	// Prepare a path with a modern version of protoc-gen-go.
+	var prependBinPath []string
+	if *useModernProtocGenGo {
+		path, err := protocgengo.Bootstrap()
+		if err != nil {
+			return errors.Fmt("could not setup protoc-gen-go: %w", err)
+		}
+		defer os.RemoveAll(path)
+		prependBinPath = []string{path}
+	}
+
 	// Compile all .proto files.
 	err = protoc.Compile(ctx, &protoc.CompileParams{
 		Inputs:                 inputs,
@@ -108,6 +129,7 @@ func run(ctx context.Context, inputDir string) error {
 		GoDeprecatedGRPCPlugin: !*disableGRPC && !*useGRPCPlugin,
 		GoGRPCEnabled:          !*disableGRPC && *useGRPCPlugin,
 		GoPGVEnabled:           *enablePGV,
+		PrependBinPath:         prependBinPath,
 	})
 	if err != nil {
 		return err
@@ -211,7 +233,7 @@ func loadDescriptorSet(path string) (map[string]*descriptorpb.FileDescriptorProt
 		return nil, nil, err
 	}
 	set := &descriptorpb.FileDescriptorSet{}
-	if proto.Unmarshal(blob, set); err != nil {
+	if err := proto.Unmarshal(blob, set); err != nil {
 		return nil, nil, err
 	}
 	mapping := make(map[string]*descriptorpb.FileDescriptorProto, len(set.File))
@@ -226,7 +248,7 @@ func setupLogging(ctx context.Context) context.Context {
 	if *verbose {
 		lvl = logging.Debug
 	}
-	return logging.SetLevel(gologger.StdConfig.Use(context.Background()), lvl)
+	return logging.SetLevel(gologger.StdConfig.Use(ctx), lvl)
 }
 
 func usage() {

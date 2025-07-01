@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/system/environ"
 )
 
 // CompileParams are passed to Compile.
@@ -37,6 +38,7 @@ type CompileParams struct {
 	GoDeprecatedGRPCPlugin bool              // true to use deprecated grpc protoc-gen-go plugin
 	GoGRPCEnabled          bool              // true to use protoc-gen-go-grpc
 	GoPGVEnabled           bool              // enable protoc-gen-validate support
+	PrependBinPath         []string          // extra directories to prepend to PATH (for discovering plugins in)
 }
 
 // Compile runs protoc over staged inputs.
@@ -84,5 +86,16 @@ func Compile(ctx context.Context, p *CompileParams) error {
 	protoc := exec.Command("protoc", args...)
 	protoc.Stdout = os.Stdout
 	protoc.Stderr = os.Stderr
+
+	if len(p.PrependBinPath) != 0 {
+		env := environ.System()
+		env.Set("PATH", fmt.Sprintf("%s%s%s",
+			strings.Join(p.PrependBinPath, string(os.PathListSeparator)),
+			string(os.PathListSeparator),
+			env.Get("PATH"),
+		))
+		protoc.Env = env.Sorted()
+	}
+
 	return protoc.Run()
 }
