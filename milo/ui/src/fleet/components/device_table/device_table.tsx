@@ -39,6 +39,8 @@ import { getVisibilityModel } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+import { CopySnackbar } from '../actions/copy/copy_snackbar';
+
 import { ColumnMenu } from './column_menu';
 import { getColumns, orderColumns } from './columns';
 import {
@@ -162,6 +164,8 @@ export function DeviceTable({
     );
   };
 
+  const [showCopySuccess, setShowCopySuccess] = useState(false);
+
   if (isError)
     return (
       <Alert severity="error">
@@ -170,44 +174,51 @@ export function DeviceTable({
     );
 
   return (
-    <StyledGrid
-      slots={{
-        pagination: Pagination,
-        columnMenu: ColumnMenu,
-        toolbar: FleetToolbar,
-      }}
-      slotProps={{
-        pagination: {
-          pagerCtx: pagerCtx,
-          nextPageToken: nextPageToken,
-          totalRowCount: totalRowCount,
-        },
-        toolbar: {
-          selectedRows: computeSelectedRows(rowSelectionModel, rows),
-          isLoadingColumns: isLoadingColumns,
-        },
-      }}
-      disableRowSelectionOnClick
-      checkboxSelection
-      onRowSelectionModelChange={(newRowSelectionModel) => {
-        setRowSelectionModel(newRowSelectionModel);
-      }}
-      rowSelectionModel={rowSelectionModel}
-      sortModel={sortModel}
-      onSortModelChange={onSortModelChange}
-      rowCount={UNKNOWN_ROW_COUNT}
-      sortingMode="server"
-      paginationMode="server"
-      pageSizeOptions={pagerCtx.options.pageSizeOptions}
-      paginationModel={{
-        page: getCurrentPageIndex(pagerCtx),
-        pageSize: getPageSize(pagerCtx, searchParams),
-      }}
-      columnVisibilityModel={getVisibilityModel(columnIds, visibleColumns)}
-      onColumnVisibilityModelChange={onColumnVisibilityModelChange}
-      rows={rows}
-      columns={columns}
-      loading={isLoading}
-    />
+    <>
+      <StyledGrid
+        slots={{
+          pagination: Pagination,
+          columnMenu: ColumnMenu,
+          toolbar: FleetToolbar,
+        }}
+        slotProps={{
+          pagination: {
+            pagerCtx: pagerCtx,
+            nextPageToken: nextPageToken,
+            totalRowCount: totalRowCount,
+          },
+          toolbar: {
+            selectedRows: computeSelectedRows(rowSelectionModel, rows),
+            isLoadingColumns: isLoadingColumns,
+          },
+        }}
+        disableRowSelectionOnClick
+        checkboxSelection
+        onRowSelectionModelChange={(newRowSelectionModel) => {
+          setRowSelectionModel(newRowSelectionModel);
+        }}
+        rowSelectionModel={rowSelectionModel}
+        sortModel={sortModel}
+        onSortModelChange={onSortModelChange}
+        rowCount={UNKNOWN_ROW_COUNT}
+        sortingMode="server"
+        paginationMode="server"
+        pageSizeOptions={pagerCtx.options.pageSizeOptions}
+        paginationModel={{
+          page: getCurrentPageIndex(pagerCtx),
+          pageSize: getPageSize(pagerCtx, searchParams),
+        }}
+        columnVisibilityModel={getVisibilityModel(columnIds, visibleColumns)}
+        onColumnVisibilityModelChange={onColumnVisibilityModelChange}
+        rows={rows}
+        columns={columns}
+        loading={isLoading}
+        onClipboardCopy={() => setShowCopySuccess(true)}
+      />
+      <CopySnackbar
+        open={showCopySuccess}
+        onClose={() => setShowCopySuccess(false)}
+      />
+    </>
   );
 }

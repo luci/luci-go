@@ -22,6 +22,7 @@ import {
 import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
 
 import { RunAutorepair } from '../actions/autorepair/run_autorepair';
+import { CopyButton } from '../actions/copy/copy_button';
 import { ColumnsButton } from '../columns/columns_button';
 
 import { ExportButton } from './export_button';
@@ -47,7 +48,10 @@ export function FleetToolbar({
   return (
     <GridToolbarContainer>
       {selectedRows.length ? (
-        <RunAutorepair selectedDuts={selectedDuts} />
+        <>
+          <RunAutorepair selectedDuts={selectedDuts} />
+          <CopyButton />
+        </>
       ) : (
         <></>
       )}
