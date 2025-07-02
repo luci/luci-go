@@ -82,7 +82,7 @@ func (g *logStreamGenerator) generate(lines ...string) {
 	g.indexBuf.Reset()
 	g.streamBuf.Reset()
 	src := renderer.StaticSource(logEntries)
-	err := archive.Archive(archive.Manifest{
+	_, err := archive.Archive(archive.Manifest{
 		Desc: &logpb.LogStreamDescriptor{
 			Prefix: "prefix",
 			Name:   "name",

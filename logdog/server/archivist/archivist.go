@@ -118,6 +118,13 @@ var (
 		nil,
 		field.String("project"),
 		field.String("stream"))
+
+	// tsTotalTruncatedLogs tracks the total number of log entries that have
+	// been truncated by this instance.
+	tsTotalTruncatedLogs = metric.NewCounter("logdog/archivist/archive/truncations",
+		"The total number of log files truncated while being exported.",
+		nil,
+		field.String("project"))
 )
 
 // Settings defines the archival parameters for a specific archival operation.
@@ -700,9 +707,14 @@ func (sa *stagedArchival) stage() (err error) {
 		)
 	}
 
-	if err = archive.Archive(m); err != nil {
+	truncated, err := archive.Archive(m)
+	if err != nil {
 		logging.WithError(err).Errorf(sa.ctx, "Failed to archive log stream.")
 		return err
+	}
+	if truncated {
+		tsTotalTruncatedLogs.Add(sa.ctx, 1, sa.project)
+		logging.Warningf(sa.ctx, "Log file was truncated because it exceeded %v bytes.", archive.MaxLogContentSize)
 	}
 
 	if ss.logEntryCount == 0 {

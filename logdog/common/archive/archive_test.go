@@ -231,7 +231,8 @@ func TestArchive(t *testing.T) {
 
 		t.Run(`A sequence of logs will build a complete index.`, func(t *ftt.Test) {
 			ts.add(0, 1, 2, 3, 4, 5, 6)
-			assert.Loosely(t, Archive(m), should.BeNil)
+			_, err := Archive(m)
+			assert.Loosely(t, err, should.BeNil)
 
 			ic.shouldContainIndexFor(t, &indexB, desc, &logB)
 			assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
@@ -244,7 +245,8 @@ func TestArchive(t *testing.T) {
 
 		t.Run(`A sequence of non-contiguous logs will build a complete index.`, func(t *ftt.Test) {
 			ts.add(0, 1, 3, 6)
-			assert.Loosely(t, Archive(m), should.BeNil)
+			_, err := Archive(m)
+			assert.Loosely(t, err, should.BeNil)
 
 			ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 1, 3, 6)
 			assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
@@ -258,7 +260,8 @@ func TestArchive(t *testing.T) {
 		t.Run(`Out of order logs are ignored`, func(t *ftt.Test) {
 			t.Run(`When StreamIndex is out of order.`, func(t *ftt.Test) {
 				ts.add(0, 2, 1, 3)
-				assert.Loosely(t, Archive(m), should.BeNil)
+				_, err := Archive(m)
+				assert.Loosely(t, err, should.BeNil)
 
 				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 2, 3)
 				assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
@@ -275,7 +278,8 @@ func TestArchive(t *testing.T) {
 				le.PrefixIndex = 1
 				ts.addEntries(le)
 				ts.add(3, 4)
-				assert.Loosely(t, Archive(m), should.BeNil)
+				_, err := Archive(m)
+				assert.Loosely(t, err, should.BeNil)
 
 				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 1, 3, 4)
 				assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
@@ -292,7 +296,8 @@ func TestArchive(t *testing.T) {
 				le.Sequence = 0
 				ts.addEntries(le)
 				ts.add(3, 4)
-				assert.Loosely(t, Archive(m), should.BeNil)
+				_, err := Archive(m)
+				assert.Loosely(t, err, should.BeNil)
 
 				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 1, 3, 4)
 				assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
@@ -310,7 +315,8 @@ func TestArchive(t *testing.T) {
 			le.TimeOffset = nil // 0
 			ts.addEntries(le)
 			ts.add(3, 4)
-			assert.Loosely(t, Archive(m), should.BeNil)
+			_, err := Archive(m)
+			assert.Loosely(t, err, should.BeNil)
 
 			ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 1, 2, 3, 4)
 			assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
@@ -324,13 +330,15 @@ func TestArchive(t *testing.T) {
 		t.Run(`Source errors will be returned`, func(t *ftt.Test) {
 			t.Run(`nil LogEntry`, func(t *ftt.Test) {
 				ts.addLogEntry(nil)
-				assert.Loosely(t, Archive(m), should.ErrLike("nil LogEntry"))
+				_, err := Archive(m)
+				assert.Loosely(t, err, should.ErrLike("nil LogEntry"))
 			})
 
 			t.Run(`Error returned`, func(t *ftt.Test) {
 				ts.add(0, 1, 2, 3, 4, 5)
 				ts.err = errors.New("test error")
-				assert.Loosely(t, Archive(m), should.ErrLike("test error"))
+				_, err := Archive(m)
+				assert.Loosely(t, err, should.ErrLike("test error"))
 			})
 		})
 
@@ -339,18 +347,21 @@ func TestArchive(t *testing.T) {
 
 			t.Run(`For log writer errors.`, func(t *ftt.Test) {
 				m.LogWriter = &errWriter{m.LogWriter, errors.New("test error")}
-				assert.Loosely(t, errors.SingleError(Archive(m)), should.ErrLike("test error"))
+				_, err := Archive(m)
+				assert.Loosely(t, errors.SingleError(err), should.ErrLike("test error"))
 			})
 
 			t.Run(`For index writer errors.`, func(t *ftt.Test) {
 				m.IndexWriter = &errWriter{m.IndexWriter, errors.New("test error")}
-				assert.Loosely(t, errors.SingleError(Archive(m)), should.ErrLike("test error"))
+				_, err := Archive(m)
+				assert.Loosely(t, errors.SingleError(err), should.ErrLike("test error"))
 			})
 
 			t.Run(`When all Writers fail.`, func(t *ftt.Test) {
 				m.LogWriter = &errWriter{m.LogWriter, errors.New("test error")}
 				m.IndexWriter = &errWriter{m.IndexWriter, errors.New("test error")}
-				assert.Loosely(t, Archive(m), should.NotBeNil)
+				_, err := Archive(m)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 		})
 
@@ -359,7 +370,8 @@ func TestArchive(t *testing.T) {
 
 			t.Run(`Can build an index for every 3 StreamIndex.`, func(t *ftt.Test) {
 				m.StreamIndexRange = 3
-				assert.Loosely(t, Archive(m), should.BeNil)
+				_, err := Archive(m)
+				assert.Loosely(t, err, should.BeNil)
 
 				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 3, 5)
 				assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
@@ -372,7 +384,8 @@ func TestArchive(t *testing.T) {
 
 			t.Run(`Can build an index for every 3 PrefixIndex.`, func(t *ftt.Test) {
 				m.PrefixIndexRange = 3
-				assert.Loosely(t, Archive(m), should.BeNil)
+				_, err := Archive(m)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Note that in our generated logs, PrefixIndex = 2*StreamIndex.
 				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 2, 4, 5)
@@ -391,7 +404,8 @@ func TestArchive(t *testing.T) {
 					// Stub all LogEntry to be 5 bytes.
 					return 5
 				}
-				assert.Loosely(t, Archive(m), should.BeNil)
+				_, err := Archive(m)
+				assert.Loosely(t, err, should.BeNil)
 
 				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 2, 5)
 				assert.Loosely(t, indexParams(indexB.Bytes()), should.Match(&logpb.LogIndex{
@@ -416,7 +430,8 @@ func TestArchive(t *testing.T) {
 
 			t.Run(`With nil LogEntry`, func(t *ftt.Test) {
 				ts.addLogEntry(nil)
-				assert.Loosely(t, Archive(m), should.ErrLike("nil LogEntry"))
+				_, err := Archive(m)
+				assert.Loosely(t, err, should.ErrLike("nil LogEntry"))
 				assert.Loosely(t, clogger.entry, should.HaveLength(0))
 			})
 
@@ -431,7 +446,8 @@ func TestArchive(t *testing.T) {
 					line("line.", "\n"),
 				}
 
-				assert.Loosely(t, Archive(m), should.BeNil)
+				_, err := Archive(m)
+				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, clogger.entry, should.HaveLength(3))
 				assert.Loosely(t, clogger.entry[0].Payload, should.Equal("this\nis"))
 				assert.Loosely(t, clogger.entry[1].Payload, should.Equal("a complete"))
@@ -451,7 +467,8 @@ func TestArchive(t *testing.T) {
 				desc.Tags = map[string]string{
 					string(str): string(str),
 				}
-				assert.Loosely(t, Archive(m), should.BeNil)
+				_, err := Archive(m)
+				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, clogger.entry, should.HaveLength(0))
 			})
 		})

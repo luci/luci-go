@@ -302,7 +302,7 @@ func testGetImpl(t *testing.T, archived bool) {
 						IndexWriter:      &ibuf,
 						StreamIndexRange: 2,
 					}
-					if err := archive.Archive(m); err != nil {
+					if _, err := archive.Archive(m); err != nil {
 						panic(err)
 					}
 

@@ -53,6 +53,8 @@ const (
 	maxTagSum = 96 * 1024
 )
 
+const MaxLogContentSize = 5 * 1024 * 1024 * 1024 // 5 GB
+
 // CLLogger is a general interface for CloudLogging logger and intended to enable
 // unit tests and stub out CloudLogging.
 type CLLogger interface {
@@ -110,7 +112,7 @@ func (m *Manifest) logger() logging.Logger {
 }
 
 // Archive performs the log archival described in the supplied Manifest.
-func Archive(m Manifest) error {
+func Archive(m Manifest) (truncated bool, err error) {
 	// Wrap our log source in a safeLogEntrySource to protect our index order.
 	m.Source = &safeLogEntrySource{
 		Manifest: &m,
@@ -123,7 +125,7 @@ func Archive(m Manifest) error {
 	}
 
 	if m.LogWriter == nil {
-		return nil
+		return false, nil
 	}
 
 	// If we're constructing an index, allocate a stateful index builder.
@@ -145,7 +147,7 @@ func Archive(m Manifest) error {
 	sha.Write([]byte(m.Desc.Name))
 	streamIDHash := sha.Sum(nil)
 
-	return parallel.FanOutIn(func(taskC chan<- func() error) {
+	err = parallel.FanOutIn(func(taskC chan<- func() error) {
 		logC := make(chan *logpb.LogEntry)
 
 		taskC <- func() error {
@@ -165,10 +167,19 @@ func Archive(m Manifest) error {
 		taskC <- func() error {
 			defer close(logC)
 
+			var bytesRead int64
 			for {
 				le, err := m.Source.NextLogEntry()
 				if le != nil {
 					logC <- le
+
+					bytesRead += int64(proto.Size(le))
+					if bytesRead > MaxLogContentSize {
+						// Cut off the log file because it is too large. If we keep going,
+						// we may timeout and get stuck in a retry loop.
+						truncated = true
+						return nil
+					}
 				}
 
 				switch err {
@@ -181,6 +192,7 @@ func Archive(m Manifest) error {
 			}
 		}
 	})
+	return truncated, err
 }
 
 func archiveLogs(w io.Writer, d *logpb.LogStreamDescriptor, logC <-chan *logpb.LogEntry, idx *indexBuilder, cloudLogger CLLogger, streamIDHash []byte, logger logging.Logger) error {
