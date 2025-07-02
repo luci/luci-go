@@ -34,10 +34,12 @@ import {
   stringifyFilters,
 } from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { colors } from '@/fleet/theme/colors';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
@@ -127,22 +129,28 @@ export const DeviceListPage = () => {
     ? ''
     : stringifyFilters(selectedOptions.filters);
 
+  const platform = usePlatform();
+
   const client = useFleetConsoleClient();
 
   const repairMetricsList = useQuery({
     ...client.ListRepairMetrics.query({
-      platform: Platform.ANDROID, // TODO: read from url
+      platform: platform.platform!, // the query is only enabled if the platform is valid
       filter: stringifiedSelectedOptions,
       pageSize: getPageSize(pagerCtx, searchParams),
       pageToken: getPageToken(pagerCtx, searchParams),
       orderBy: orderByParam,
     }),
     placeholderData: keepPreviousData,
+    enabled: platform.isValid,
   });
 
-  const repairMetricsFilterValues = useQuery(
-    client.GetRepairMetricsDimensions.query({}),
-  );
+  const repairMetricsFilterValues = useQuery({
+    ...client.GetRepairMetricsDimensions.query({
+      platform: platform.platform!, // the query is only enabled if the platform is valid
+    }),
+    enabled: platform.isValid,
+  });
 
   const [warnings, addWarning] = useWarnings();
   useEffect(() => {
@@ -167,6 +175,10 @@ export const DeviceListPage = () => {
     addWarning('Invalid filters');
     setSearchParams(filtersUpdater({}));
   }, [addWarning, selectedOptions.error, setSearchParams]);
+
+  if (!platform.isValid || platform.platform !== Platform.ANDROID) {
+    return <PlatformNotAvailable availablePlatforms={[Platform.ANDROID]} />;
+  }
 
   return (
     <div
@@ -267,13 +279,15 @@ export const DeviceListPage = () => {
 };
 
 function Metrics({ filters }: { filters: string }) {
+  const platform = usePlatform();
   const client = useFleetConsoleClient();
-  const countQuery = useQuery(
-    client.CountRepairMetrics.query({
-      platform: Platform.ANDROID, // TODO: read from url
+  const countQuery = useQuery({
+    ...client.CountRepairMetrics.query({
+      platform: platform.platform!, // the query is only enabled if the platform is valid
       filter: filters,
     }),
-  );
+    enabled: platform.isValid,
+  });
 
   const getContent = () => {
     if (countQuery.isError) {

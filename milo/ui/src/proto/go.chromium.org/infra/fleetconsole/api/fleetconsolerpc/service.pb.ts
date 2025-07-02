@@ -89,6 +89,7 @@ export function deviceStateToJSON(object: DeviceState): string {
 
 export enum Platform {
   ANDROID = 0,
+  CHROMEOS = 1,
 }
 
 export function platformFromJSON(object: any): Platform {
@@ -96,6 +97,9 @@ export function platformFromJSON(object: any): Platform {
     case 0:
     case "ANDROID":
       return Platform.ANDROID;
+    case 1:
+    case "CHROMEOS":
+      return Platform.CHROMEOS;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Platform");
   }
@@ -105,6 +109,8 @@ export function platformToJSON(object: Platform): string {
   switch (object) {
     case Platform.ANDROID:
       return "ANDROID";
+    case Platform.CHROMEOS:
+      return "CHROMEOS";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Platform");
   }
@@ -585,6 +591,10 @@ export interface CountRepairMetricsResponse {
   readonly offlineHosts: number;
   readonly totalDevices: number;
   readonly offlineDevices: number;
+}
+
+export interface GetRepairMetricsDimensionsRequest {
+  readonly platform: Platform;
 }
 
 export interface GetRepairMetricsDimensionsResponse {
@@ -5088,6 +5098,64 @@ export const CountRepairMetricsResponse: MessageFns<CountRepairMetricsResponse> 
   },
 };
 
+function createBaseGetRepairMetricsDimensionsRequest(): GetRepairMetricsDimensionsRequest {
+  return { platform: 0 };
+}
+
+export const GetRepairMetricsDimensionsRequest: MessageFns<GetRepairMetricsDimensionsRequest> = {
+  encode(message: GetRepairMetricsDimensionsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.platform !== 0) {
+      writer.uint32(8).int32(message.platform);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetRepairMetricsDimensionsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetRepairMetricsDimensionsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.platform = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetRepairMetricsDimensionsRequest {
+    return { platform: isSet(object.platform) ? platformFromJSON(object.platform) : 0 };
+  },
+
+  toJSON(message: GetRepairMetricsDimensionsRequest): unknown {
+    const obj: any = {};
+    if (message.platform !== 0) {
+      obj.platform = platformToJSON(message.platform);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetRepairMetricsDimensionsRequest>): GetRepairMetricsDimensionsRequest {
+    return GetRepairMetricsDimensionsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetRepairMetricsDimensionsRequest>): GetRepairMetricsDimensionsRequest {
+    const message = createBaseGetRepairMetricsDimensionsRequest() as any;
+    message.platform = object.platform ?? 0;
+    return message;
+  },
+};
+
 function createBaseGetRepairMetricsDimensionsResponse(): GetRepairMetricsDimensionsResponse {
   return { dimensions: {} };
 }
@@ -5363,7 +5431,7 @@ export interface FleetConsole {
   UpdateAndroidDevices(request: UpdateAndroidDevicesRequest): Promise<UpdateAndroidDevicesResponse>;
   ListRepairMetrics(request: ListRepairMetricsRequest): Promise<ListRepairMetricsResponse>;
   CountRepairMetrics(request: CountRepairMetricsRequest): Promise<CountRepairMetricsResponse>;
-  GetRepairMetricsDimensions(request: Empty): Promise<GetRepairMetricsDimensionsResponse>;
+  GetRepairMetricsDimensions(request: GetRepairMetricsDimensionsRequest): Promise<GetRepairMetricsDimensionsResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -5504,8 +5572,8 @@ export class FleetConsoleClientImpl implements FleetConsole {
     return promise.then((data) => CountRepairMetricsResponse.fromJSON(data));
   }
 
-  GetRepairMetricsDimensions(request: Empty): Promise<GetRepairMetricsDimensionsResponse> {
-    const data = Empty.toJSON(request);
+  GetRepairMetricsDimensions(request: GetRepairMetricsDimensionsRequest): Promise<GetRepairMetricsDimensionsResponse> {
+    const data = GetRepairMetricsDimensionsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetRepairMetricsDimensions", data);
     return promise.then((data) => GetRepairMetricsDimensionsResponse.fromJSON(data));
   }

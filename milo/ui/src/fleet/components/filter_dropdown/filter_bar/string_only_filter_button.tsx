@@ -61,7 +61,7 @@ export function StringOnlyFilterButton({
             option.label,
           );
           return {
-            score: Math.max(sortedChildren[0].score, parentScore),
+            score: Math.max(sortedChildren[0]?.score, parentScore),
             matches: parentMatches,
           };
         },

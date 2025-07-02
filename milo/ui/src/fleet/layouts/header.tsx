@@ -24,6 +24,7 @@ import { useAuthState } from '@/common/components/auth_state_provider';
 import { getLoginUrl, getLogoutUrl } from '@/common/tools/url_utils';
 import { genFeedbackUrl } from '@/common/tools/utils';
 import fleetConsoleMascot from '@/fleet/assets/pngs/fleet-console-mascot.png';
+import { PlatformSelector } from '@/fleet/components/platform_selector';
 import { colors } from '@/fleet/theme/colors';
 
 import { FEEDBACK_BUGANIZER_BUG_ID } from '../constants/feedback';
@@ -89,6 +90,7 @@ export const Header = ({
         <Typography variant="h5" sx={{ color: colors.grey[700] }}>
           Fleet Console
         </Typography>
+        <PlatformSelector />
       </div>
 
       <div
