@@ -167,7 +167,7 @@ describe('<AnalysisSubsection />', () => {
     renderComponent();
 
     expect(screen.getByText('Single analysis point.')).toBeInTheDocument();
-    expect(screen.getByTestId('CheckCircleOutlineIcon')).toBeInTheDocument(); // MUI icons often have data-testid
+    expect(screen.getByTestId('CheckCircleIcon')).toBeInTheDocument(); // MUI icons often have data-testid
   });
 
   it('should render multiple analysis items correctly', () => {
@@ -180,9 +180,9 @@ describe('<AnalysisSubsection />', () => {
     renderComponent();
 
     expect(screen.getByText('First item.')).toBeInTheDocument();
-    expect(screen.getByTestId('WarningAmberIcon')).toBeInTheDocument();
+    expect(screen.getByTestId('WarningIcon')).toBeInTheDocument();
     expect(screen.getByText('Second item.')).toBeInTheDocument();
-    expect(screen.getByTestId('ErrorOutlineIcon')).toBeInTheDocument();
+    expect(screen.getByTestId('ErrorIcon')).toBeInTheDocument();
   });
 
   it('should render analysis item with default icon if status is undefined', () => {

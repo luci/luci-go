@@ -13,12 +13,15 @@
 // limitations under the License.
 
 import CancelPresentationIcon from '@mui/icons-material/CancelPresentation';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
+import ErrorIcon from '@mui/icons-material/Error';
+import ErrorOutlinedIcon from '@mui/icons-material/ErrorOutlined';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import InfoIcon from '@mui/icons-material/Info';
 import RepeatOnIcon from '@mui/icons-material/RepeatOn';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
+import WarningIcon from '@mui/icons-material/Warning';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 import { Invocation_State } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
@@ -67,13 +70,17 @@ export interface StatusStyle {
  * Colors are CSS variable strings (e.g., 'var(--gm3-color-success)')
  * which are defined in global CSS (e.g., style.css).
  */
-export function getStatusStyle(statusType: SemanticStatusType): StatusStyle {
+export function getStatusStyle(
+  statusType: SemanticStatusType,
+  iconStyle: 'filled' | 'outlined' = 'filled',
+): StatusStyle {
   switch (statusType) {
     case 'success':
     case 'expected':
     case 'passed':
       return {
-        icon: CheckCircleOutlineIcon,
+        icon:
+          iconStyle === 'filled' ? CheckCircleIcon : CheckCircleOutlinedIcon,
         textColor: 'var(--gm3-color-success, var(--success-color))',
         backgroundColor:
           'var(--gm3-color-success-container, var(--success-bg-color))',
@@ -85,7 +92,7 @@ export function getStatusStyle(statusType: SemanticStatusType): StatusStyle {
     case 'error':
     case 'failed':
       return {
-        icon: ErrorOutlineIcon,
+        icon: iconStyle === 'filled' ? ErrorIcon : ErrorOutlinedIcon,
         textColor: 'var(--gm3-color-error, var(--failure-color))',
         backgroundColor:
           'var(--gm3-color-error-container, var(--failure-bg-color))',
@@ -98,7 +105,7 @@ export function getStatusStyle(statusType: SemanticStatusType): StatusStyle {
     case 'unexpectedly_skipped':
     case 'execution_errored':
       return {
-        icon: ErrorOutlineIcon,
+        icon: iconStyle === 'filled' ? ErrorIcon : ErrorOutlinedIcon,
         textColor: 'var(--critical-failure-color)',
         backgroundColor: 'var(--critical-failure-bg-color)',
         borderColor: 'var(--critical-failure-color)',
@@ -107,7 +114,7 @@ export function getStatusStyle(statusType: SemanticStatusType): StatusStyle {
       };
     case 'warning':
       return {
-        icon: WarningAmberIcon,
+        icon: iconStyle === 'filled' ? WarningIcon : WarningAmberIcon,
         textColor: 'var(--gm3-color-warning, var(--warning-color))',
         backgroundColor:
           'var(--gm3-color-warning-container, var(--warning-bg-color))',
@@ -151,7 +158,8 @@ export function getStatusStyle(statusType: SemanticStatusType): StatusStyle {
       };
     case 'exonerated':
       return {
-        icon: CheckCircleOutlineIcon,
+        icon:
+          iconStyle === 'filled' ? CheckCircleIcon : CheckCircleOutlinedIcon,
         textColor: 'var(--exonerated-color)',
         backgroundColor: 'var(--gm3-color-surface-container-low, #f0f4f8)',
         borderColor: 'var(--exonerated-color)',

@@ -23,6 +23,7 @@ import {
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { isPresubmitRun } from '@/test_investigation/utils/test_info_utils';
 
 export interface AnalysisItemContent {
   status?: SemanticStatusType;
@@ -43,14 +44,6 @@ export type AnalysisPointGenerator = (
 ) => AnalysisItemContent[];
 
 // Helper functions.
-/**
- * Checks if the current invocation is for a presubmit (CL) run.
- */
-export function isPresubmitRun(invocation: Invocation | null): boolean {
-  if (!invocation) return false;
-  return (invocation.sourceSpec?.sources?.changelists?.length || 0) > 0;
-}
-
 /**
  * Finds the segment corresponding to the invocation's commit position.
  * Returns the segment's index in the segments array.

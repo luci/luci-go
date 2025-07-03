@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import BugReportIcon from '@mui/icons-material/BugReport';
 import { Box, CircularProgress, Link, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
@@ -95,7 +94,6 @@ export function NextStepsSubsection() {
             key={`track-${bug.system}-${bug.id}`}
             sx={{ mb: 1.5 }}
           >
-            <BugReportIcon sx={{ mr: 1 }} />
             <Typography variant="body2">
               <Link
                 href={bug.url || `https://${bug.system}.com/${bug.id}`}

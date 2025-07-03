@@ -37,7 +37,7 @@ function AnalysisItem({ item }: AnalysisItemProps) {
         <StatusIcon
           iconType={style.icon}
           sx={{
-            fontSize: 16,
+            fontSize: 20,
             color: style.iconColor || 'inherit',
           }}
         />
@@ -55,13 +55,19 @@ function AnalysisItem({ item }: AnalysisItemProps) {
 
   return (
     <Box
-      sx={{ display: 'flex', alignItems: 'flex-start', width: '100%', mb: 1 }}
+      sx={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        width: '100%',
+        mb: 2,
+      }}
     >
       {iconElement && <Box sx={{ mr: 1, mt: '3px' }}>{iconElement}</Box>}
       <Box sx={{ flexGrow: 1 }}>
         <Typography
           variant="body2"
           component="div"
+          color="text.secondary"
           sx={{ '& > p': { margin: 0 }, whiteSpace: 'pre-line' }}
         >
           {item.text}
@@ -99,7 +105,7 @@ export function AnalysisSubsection({
         flex: 1,
         borderRadius: '8px',
         background: 'var(--grey-50, #F8F9FA)',
-        padding: 1,
+        padding: 1.5,
         wordBreak: 'break-all',
       }}
     >

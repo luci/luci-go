@@ -50,12 +50,12 @@ import { TestVerdict_StatusOverride } from '@/proto/go.chromium.org/luci/resultd
 import { RedirectBackBanner } from '@/test_investigation/components/redirect_back_banner';
 import { ArtifactsSection } from '@/test_investigation/components/test_details/artifacts/artifacts_section';
 import { TestInfo } from '@/test_investigation/components/test_info';
-import { isPresubmitRun } from '@/test_investigation/components/test_info/recommendation/analysis_utils';
 import { TestNavigationDrawer } from '@/test_investigation/components/test_navigation_drawer';
 import {
   InvocationProvider,
   TestVariantProvider,
 } from '@/test_investigation/context/provider';
+import { isPresubmitRun } from '@/test_investigation/utils/test_info_utils';
 import { getProjectFromRealm } from '@/test_investigation/utils/test_variant_utils';
 
 export function TestInvestigatePage() {

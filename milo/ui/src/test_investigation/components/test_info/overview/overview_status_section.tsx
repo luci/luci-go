@@ -26,7 +26,9 @@ import {
 } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { AnalysisStatus as BisectionAnalysisStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
 import { useProject, useTestVariant } from '@/test_investigation/context';
+import { useInvocation } from '@/test_investigation/context';
 import { useDisplayStatusString } from '@/test_investigation/context/context';
+import { isPresubmitRun } from '@/test_investigation/utils/test_info_utils';
 
 import {
   NO_ASSOCIATED_BUGS_TEXT,
@@ -36,6 +38,7 @@ import {
 import { useAssociatedBugs, useTestVariantBranch } from '../context';
 
 export function OverviewStatusSection() {
+  const invocation = useInvocation();
   const bisectionClient = useLuciBisectionClient();
   const testVariant = useTestVariant();
   const project = useProject();
@@ -247,30 +250,32 @@ export function OverviewStatusSection() {
               </Typography>
             )}
           </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              flexGrow: 1,
-            }}
-          >
-            <Typography variant="body2" color="text.secondary">
-              Culprit Searching
-            </Typography>
-            <Typography>{bisectionDisplayInfo.textElement}</Typography>
-            {isLoadingBisectionAnalysis && <CircularProgress />}
-            {bisectionDisplayInfo.link && (
-              <Link
-                href={bisectionDisplayInfo.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                variant="caption"
-                sx={{ ml: 0.5 }}
-              >
-                (View Bisection)
-              </Link>
-            )}
-          </Box>
+          {!isPresubmitRun(invocation) && (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                flexGrow: 1,
+              }}
+            >
+              <Typography variant="body2" color="text.secondary">
+                Culprit Searching
+              </Typography>
+              <Typography>{bisectionDisplayInfo.textElement}</Typography>
+              {isLoadingBisectionAnalysis && <CircularProgress />}
+              {bisectionDisplayInfo.link && (
+                <Link
+                  href={bisectionDisplayInfo.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="caption"
+                  sx={{ ml: 0.5 }}
+                >
+                  (View Bisection)
+                </Link>
+              )}
+            </Box>
+          )}
         </Box>
       </Box>
     </>

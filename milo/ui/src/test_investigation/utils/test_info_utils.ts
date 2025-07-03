@@ -247,3 +247,11 @@ export function constructCodesearchUrl(
   params.append('q', query);
   return `https://source.corp.google.com/search?${params.toString()}`;
 }
+
+/**
+ * Checks if the current invocation is for a presubmit (CL) run.
+ */
+export function isPresubmitRun(invocation: Invocation | null): boolean {
+  if (!invocation) return false;
+  return (invocation.sourceSpec?.sources?.changelists?.length || 0) > 0;
+}
