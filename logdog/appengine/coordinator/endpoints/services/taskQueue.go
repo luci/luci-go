@@ -181,6 +181,8 @@ func archiveTask(task *taskqueue.Task, queueNumber int32) (*logdog.ArchiveTask, 
 	// queue number we pulled from plus `task.Name` which is the auto-generated
 	// task id assigned by the taskqueue service.
 	result.TaskName = fmt.Sprintf("%d:%s", queueNumber, task.Name)
+	// The retry count of the task.
+	result.RetryCount = int64(task.RetryCount)
 	return &result, err
 }
 

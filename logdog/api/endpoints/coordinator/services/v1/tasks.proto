@@ -21,7 +21,9 @@ message ArchiveTask {
   // The realm name (within the project) that the prefix of the stream is
   // associated with.
   string realm = 8;
-
+  // The number of times this task has been retried. Do not set this field
+  // when submitting a new task; it is populated when leasing a task.
+  int64 retry_count = 9;
   // TODO(hinoka): Remove this after crbug.com/923557
   // The archival key of the log stream. If this key doesn't match the key in
   // the log stream state, the request is superfluous and should be deleted.

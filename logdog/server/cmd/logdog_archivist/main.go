@@ -169,8 +169,9 @@ func runForever(ctx context.Context, ar *archivist.Archivist, flags *CommandLine
 		defer cancel()
 
 		nc = logging.SetFields(nc, logging.Fields{
-			"project": job.task.Project,
-			"id":      job.task.Id,
+			"project":        job.task.Project,
+			"id":             job.task.Id,
+			"taskRetryCount": job.task.RetryCount,
 		})
 
 		startTime := clock.Now(nc)
