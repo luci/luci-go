@@ -17,13 +17,14 @@ package bigtable
 import (
 	"bytes"
 	"context"
-	"errors"
+	goerrs "errors"
 	"fmt"
 
 	"cloud.google.com/go/bigtable"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/data/recordio"
+	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/logdog/common/storage"
@@ -47,7 +48,7 @@ var (
 var (
 	// errStop is an internal sentinel error used to indicate "stop iteration"
 	// to btTable.getLogData iterator.
-	errStop = errors.New("bigtable: stop iteration")
+	errStop = goerrs.New("bigtable: stop iteration")
 )
 
 // Storage is a BigTable storage configuration client.
@@ -214,8 +215,7 @@ func (s *Storage) Get(c context.Context, r storage.GetRequest, cb storage.GetCal
 		return nil
 
 	default:
-		log.WithError(err).Errorf(c, "Failed to retrieve row range.")
-		return err
+		return errors.Fmt("retrieve row range (project: %q, path: %q, index: %v, startRowKey: %q): %w", r.Project, r.Path, r.Index, startKey, err)
 	}
 }
 

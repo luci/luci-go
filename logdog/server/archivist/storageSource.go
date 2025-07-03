@@ -18,6 +18,7 @@ import (
 	"context"
 	"io"
 
+	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -71,8 +72,7 @@ func (s *storageSource) NextLogEntry() (*logpb.LogEntry, error) {
 				return nil, io.EOF
 			}
 
-			log.WithError(err).Errorf(s, "Failed to retrieve log stream from storage.")
-			return nil, err
+			return nil, errors.Fmt("retrieve from storage: %w", err)
 		}
 	}
 

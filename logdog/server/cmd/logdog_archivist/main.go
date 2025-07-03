@@ -187,7 +187,7 @@ func runForever(ctx context.Context, ar *archivist.Archivist, flags *CommandLine
 			}
 		} else {
 			tsNackCount.Add(ctx, 1)
-			logging.Errorf(nc, "Failed to archive task %v: %s", job.task, err)
+			logging.Errorf(nc, "Failed to archive task %v after %v: %s", job.task, duration, err)
 		}
 
 		return nil

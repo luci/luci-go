@@ -225,7 +225,7 @@ func (a *Archivist) archiveTaskImpl(ctx context.Context, task *logdog.ArchiveTas
 		// If this is a transient error, exit immediately and do not delete the
 		// archival task.
 		logging.WithError(err).Warningf(ctx, "TRANSIENT error during loading the project config.")
-		return err
+		return errors.Fmt("loading project config: %w", err)
 	case err != nil:
 		// This project has bad or no archival settings, this is non-transient,
 		// discard the task.
@@ -242,11 +242,9 @@ func (a *Archivist) archiveTaskImpl(ctx context.Context, task *logdog.ArchiveTas
 	})
 	switch {
 	case err != nil:
-		logging.WithError(err).Errorf(ctx, "Failed to load log stream.")
-		return err
+		return errors.Fmt("load log stream: %w", err)
 
 	case ls.State == nil:
-		logging.Errorf(ctx, "Log stream did not include state.")
 		return errors.New("log stream did not include state")
 
 	case ls.State.Purged:
@@ -267,7 +265,6 @@ func (a *Archivist) archiveTaskImpl(ctx context.Context, task *logdog.ArchiveTas
 		return errors.New("unsupported log stream protobuf version")
 
 	case ls.Desc == nil:
-		logging.Errorf(ctx, "Log stream did not include a descriptor.")
 		return errors.New("log stream did not include a descriptor")
 	}
 
@@ -279,8 +276,7 @@ func (a *Archivist) archiveTaskImpl(ctx context.Context, task *logdog.ArchiveTas
 	// Build our staged archival plan. This doesn't actually do any archiving.
 	staged, err := a.makeStagedArchival(ctx, task.Project, task.Realm, settings, ls)
 	if err != nil {
-		logging.WithError(err).Errorf(ctx, "Failed to create staged archival plan.")
-		return err
+		return errors.Fmt("create staged archival plan: %w", err)
 	}
 
 	// TODO(crbug.com/1164124) - handle the error from clClient.Close()
@@ -298,7 +294,7 @@ func (a *Archivist) archiveTaskImpl(ctx context.Context, task *logdog.ArchiveTas
 		// If this is a transient error, exit immediately and do not delete the
 		// archival task.
 		logging.WithError(err).Warningf(ctx, "TRANSIENT error during archival operation.")
-		return err
+		return errors.Fmt("staging archival: %w", err)
 
 	case err != nil:
 		// This is a non-transient error, so we are confident that any future
@@ -318,8 +314,7 @@ func (a *Archivist) archiveTaskImpl(ctx context.Context, task *logdog.ArchiveTas
 
 		// Finalize the archival.
 		if err := staged.finalize(&ar); err != nil {
-			logging.WithError(err).Errorf(ctx, "Failed to finalize archival.")
-			return err
+			return errors.Fmt("finalize archival: %w", err)
 		}
 
 		// Add metrics for this successful archival.
@@ -333,8 +328,7 @@ func (a *Archivist) archiveTaskImpl(ctx context.Context, task *logdog.ArchiveTas
 	}
 
 	if _, err := a.Service.ArchiveStream(ctx, &ar); err != nil {
-		logging.WithError(err).Errorf(ctx, "Failed to report archive state.")
-		return err
+		return errors.Fmt("report archive state: %w", err)
 	}
 	a.expungeStorage(ctx, task.Project, ls.Desc, ar.TerminalIndex)
 
@@ -710,7 +704,7 @@ func (sa *stagedArchival) stage() (err error) {
 	truncated, err := archive.Archive(m)
 	if err != nil {
 		logging.WithError(err).Errorf(sa.ctx, "Failed to archive log stream.")
-		return err
+		return errors.Fmt("archiving log stream: %w", err)
 	}
 	if truncated {
 		tsTotalTruncatedLogs.Add(sa.ctx, 1, sa.project)

@@ -26,6 +26,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/recordio"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
@@ -152,7 +153,7 @@ func Archive(m Manifest) (truncated bool, err error) {
 
 		taskC <- func() error {
 			if err := archiveLogs(m.LogWriter, m.Desc, logC, idx, m.CloudLogger, streamIDHash, m.logger()); err != nil {
-				return err
+				return errors.Fmt("archive log entry: %w", err)
 			}
 
 			// If we're building an index, emit it now that the log stream has
@@ -187,7 +188,7 @@ func Archive(m Manifest) (truncated bool, err error) {
 				case io.EOF:
 					return nil
 				default:
-					return err
+					return errors.Fmt("read next log entry: %w", err)
 				}
 			}
 		}
