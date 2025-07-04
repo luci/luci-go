@@ -21,8 +21,8 @@ import (
 	"github.com/golang/mock/gomock"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -160,7 +160,147 @@ func TestNotifyOwnersHelper(t *testing.T) {
 			task := tasks["test@google.com"]
 			assert.Loosely(t, task.Recipients, should.Match([]string{"test@google.com"}))
 			assert.Loosely(t, task.Subject, should.Equal("Builder Health For test@google.com - 2 of 4 Are in Bad Health"))
-			expectedBody := "\n\t<html>\n\t<head>\n\t\t<meta charset=\"utf-8\">\n\t</head>\n\t<body>\n\t\t<p>Hello,</p>\n\t\t<p>You are receiving this because builders owned by <strong>test@google.com</strong> contain an unhealthy builder score. <strong>2</strong> of your <strong>4</strong> builders are in bad health.</p>\n\n\t\t<p><strong>Unhealthy Builders:</strong></p>\n\t\t<ul><li><strong><a href=\"https://ci.chromium.org/ui/p/chromium/builders/ci/builder2\">chromium.ci:builder2</a>:</strong><li>Your builder is not healthy with health score of 0</li></li><li><strong><a href=\"https://ci.chromium.org/ui/p/chromium/builders/ci/builder3\">chromium.ci:builder3</a>:</strong><li>Your builder is not healthy</li></li></ul>\n\n\t\t<p><strong>Healthy Builders:</strong></p>\n\t\t<ul><li><strong><a href=\"https://ci.chromium.org/ui/p/chromium/builders/ci/builder2\">chromium.ci:builder2</a>:</strong><li>Your builder is not healthy with health score of 0</li></li><li><strong><a href=\"https://ci.chromium.org/ui/p/chromium/builders/ci/builder3\">chromium.ci:builder3</a>:</strong><li>Your builder is not healthy</li></li></ul>\n\n\t\t<p>For more information on builder health, please see the <a href=\"https://chromium.googlesource.com/chromium/src/+/HEAD/docs/infra/builder_health_indicators.md\">Builder Health Documentation</a>.</p>\n\t</body>\n\t</html>\n\t"
+			expectedBody :=`
+	<html>
+	<head>
+		<meta charset="utf-8">
+	</head>
+	<body>
+		<p>Hello,</p>
+		<p>You are receiving this because <strong>test@google.com</strong> is subscribed to builder health notifier. <strong>2</strong> of your <strong>4</strong> builders are in bad health.</p>
+
+		<p><strong>Unhealthy Builders:</strong></p><ul><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/builder2">chromium.ci:builder2</a></strong><p style="margin-left:30px;">Your builder is not healthy with health score of 0</p></li><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/builder3">chromium.ci:builder3</a></strong><p style="margin-left:30px;">Your builder is not healthy</p></li></ul><p><strong>Healthy Builders:</strong></p><ul><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/builder1">chromium.ci:builder1</a></strong><p style="margin-left:30px;">Your builder is healthy</p></li><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/builder4">chromium.ci:builder4</a></strong><p style="margin-left:30px;">Your builder is healthy</p></li></ul>
+
+		<p>For more information on builder health, please see the <a href="https://chromium.googlesource.com/chromium/src/+/HEAD/docs/infra/builder_health_indicators.md">Builder Health Documentation</a>.</p>
+	</body>
+	</html>
+	`
+			assert.Loosely(t, string(task.BodyGzip), should.Equal(expectedBody))
+		})
+
+		t.Run("No metadata or healthstatus", func(t *ftt.Test) {
+			mockBHN := []*notifypb.BuilderHealthNotifier{
+				&notifypb.BuilderHealthNotifier{
+					OwnerEmail: "test@google.com",
+					Builders: []*notifypb.Builder{
+						&notifypb.Builder{
+							Bucket: "ci",
+							Name:   "healthyBuilder1",
+						},
+						&notifypb.Builder{
+							Bucket: "ci",
+							Name:   "unhealthyBuilder2",
+						},
+						&notifypb.Builder{
+							Bucket: "ci",
+							Name:   "missingMetaBuilder3",
+						},
+						&notifypb.Builder{
+							Bucket: "ci",
+							Name:   "missingHealthBuilder4",
+						},
+					},
+				},
+			}
+			expectedReq1 := &buildbucketpb.GetBuilderRequest{
+				Id: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+					Builder: "healthyBuilder1",
+				},
+				Mask: &buildbucketpb.BuilderMask{
+					Type: 2,
+				},
+			}
+			mockBuildersClient.
+				EXPECT().
+				GetBuilder(gomock.Any(), proto.MatcherEqual(expectedReq1)).
+				MaxTimes(1).
+				Return(&buildbucketpb.BuilderItem{
+					Metadata: &buildbucketpb.BuilderMetadata{
+						Health: &buildbucketpb.HealthStatus{
+							HealthScore: 10,
+							Description: "Your builder is healthy",
+						},
+					},
+				}, nil)
+			expectedReq2 := &buildbucketpb.GetBuilderRequest{
+				Id: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+					Builder: "unhealthyBuilder2",
+				},
+				Mask: &buildbucketpb.BuilderMask{
+					Type: 2,
+				},
+			}
+			mockBuildersClient.
+				EXPECT().
+				GetBuilder(gomock.Any(), proto.MatcherEqual(expectedReq2)).
+				MaxTimes(1).
+				Return(&buildbucketpb.BuilderItem{
+					Metadata: &buildbucketpb.BuilderMetadata{
+						Health: &buildbucketpb.HealthStatus{
+							HealthScore: 0,
+							Description: "Your builder is not healthy",
+						},
+					},
+				}, nil)
+			expectedReq3 := &buildbucketpb.GetBuilderRequest{
+				Id: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+					Builder: "missingMetaBuilder3",
+				},
+				Mask: &buildbucketpb.BuilderMask{
+					Type: 2,
+				},
+			}
+			mockBuildersClient.
+				EXPECT().
+				GetBuilder(gomock.Any(), proto.MatcherEqual(expectedReq3)).
+				MaxTimes(1).
+				Return(&buildbucketpb.BuilderItem{
+					Metadata: &buildbucketpb.BuilderMetadata{
+					},
+				}, nil)
+			expectedReq4 := &buildbucketpb.GetBuilderRequest{
+				Id: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+					Builder: "missingHealthBuilder4",
+				},
+				Mask: &buildbucketpb.BuilderMask{
+					Type: 2,
+				},
+			}
+			mockBuildersClient.
+				EXPECT().
+				GetBuilder(gomock.Any(), proto.MatcherEqual(expectedReq4)).
+				MaxTimes(1).
+				Return(&buildbucketpb.BuilderItem{
+
+				}, nil)
+			tasks, err := getNotifyOwnersTasks(c, mockBHN, mockBuildersClient, "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			task := tasks["test@google.com"]
+			assert.Loosely(t, task.Recipients, should.Match([]string{"test@google.com"}))
+			assert.Loosely(t, task.Subject, should.Equal("Builder Health For test@google.com - 1 of 4 Are in Bad Health"))
+			expectedBody := `
+	<html>
+	<head>
+		<meta charset="utf-8">
+	</head>
+	<body>
+		<p>Hello,</p>
+		<p>You are receiving this because <strong>test@google.com</strong> is subscribed to builder health notifier. <strong>1</strong> of your <strong>4</strong> builders are in bad health.</p>
+
+		<p><strong>Unhealthy Builders:</strong></p><ul><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/unhealthyBuilder2">chromium.ci:unhealthyBuilder2</a></strong><p style="margin-left:30px;">Your builder is not healthy</p></li></ul><p><strong>Healthy Builders:</strong></p><ul><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/healthyBuilder1">chromium.ci:healthyBuilder1</a></strong><p style="margin-left:30px;">Your builder is healthy</p></li></ul><p><strong>Unknown Health Builders:</strong></p><ul><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/missingMetaBuilder3">chromium.ci:missingMetaBuilder3</a></strong></li><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/missingHealthBuilder4">chromium.ci:missingHealthBuilder4</a></strong></li></ul>
+
+		<p>For more information on builder health, please see the <a href="https://chromium.googlesource.com/chromium/src/+/HEAD/docs/infra/builder_health_indicators.md">Builder Health Documentation</a>.</p>
+	</body>
+	</html>
+	`
 			assert.Loosely(t, string(task.BodyGzip), should.Equal(expectedBody))
 		})
 	})

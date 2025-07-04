@@ -102,8 +102,7 @@ func generateEmail(
 	ownerEmail string,
 	unhealthyCount int,
 	totalBuilders int,
-	unhealthyBuildersHTML string,
-	healthyBuildersHTML string,
+	builderDescriptionsHTML string,
 	healthDocLink string,
 ) []byte {
 	htmlBody := fmt.Sprintf(`
@@ -113,23 +112,18 @@ func generateEmail(
 	</head>
 	<body>
 		<p>Hello,</p>
-		<p>You are receiving this because builders owned by <strong>%[1]s</strong> contain an unhealthy builder score. <strong>%[2]d</strong> of your <strong>%[3]d</strong> builders are in bad health.</p>
+		<p>You are receiving this because <strong>%[1]s</strong> is subscribed to builder health notifier. <strong>%[2]d</strong> of your <strong>%[3]d</strong> builders are in bad health.</p>
 
-		<p><strong>Unhealthy Builders:</strong></p>
 		%[4]s
 
-		<p><strong>Healthy Builders:</strong></p>
-		%[5]s
-
-		<p>For more information on builder health, please see the <a href="%[6]s">Builder Health Documentation</a>.</p>
+		<p>For more information on builder health, please see the <a href="%[5]s">Builder Health Documentation</a>.</p>
 	</body>
 	</html>
 	`,
 		ownerEmail,
 		unhealthyCount,
 		totalBuilders,
-		unhealthyBuildersHTML,
-		healthyBuildersHTML,
+		builderDescriptionsHTML,
 		healthDocLink,
 	)
 	return []byte(htmlBody)
@@ -142,6 +136,23 @@ type BuilderInfo struct {
 	Description string
 }
 
+func generateBuilderDescriptionHTML(unhealthyBuilders []BuilderInfo, healthyBuilders []BuilderInfo, unknownHealthBuilders []BuilderInfo) string {
+	htmlOutput := ""
+	if len(unhealthyBuilders) != 0 {
+		htmlOutput += "<p><strong>Unhealthy Builders:</strong></p>" + formatBuildersToHTML(unhealthyBuilders)
+
+	}
+	if len(healthyBuilders) != 0 {
+		htmlOutput += "<p><strong>Healthy Builders:</strong></p>" + formatBuildersToHTML(healthyBuilders)
+
+	}
+	if len(unknownHealthBuilders) != 0 {
+		htmlOutput += "<p><strong>Unknown Health Builders:</strong></p>" + formatBuildersToHTML(unknownHealthBuilders)
+
+	}
+	return htmlOutput
+}
+
 func formatBuildersToHTML(builders []BuilderInfo) string {
 	if len(builders) == 0 {
 		return ""
@@ -151,10 +162,12 @@ func formatBuildersToHTML(builders []BuilderInfo) string {
 		htmlOutput += "<li>" // Start list item
 
 		// Add builder name and link
-		htmlOutput += fmt.Sprintf(`<strong><a href="%s">%s</a>:</strong>`, builder.Link, builder.Name)
+		htmlOutput += fmt.Sprintf(`<strong><a href="%s">%s</a></strong>`, builder.Link, builder.Name)
 
-		for _, description := range strings.Split(builder.Description, ";") {
-			htmlOutput += fmt.Sprintf(`<li>%s</li>`, description)
+		if builder.Description != "" {
+			for _, description := range strings.Split(builder.Description, ";") {
+			htmlOutput += fmt.Sprintf(`<p style="margin-left:30px;">%s</p>`, description)
+		}
 		}
 		htmlOutput += "</li>" // End list item
 	}
@@ -169,6 +182,7 @@ func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifi
 		email := builderHealthNotifier.OwnerEmail
 		healthyBuilders := []BuilderInfo{}
 		unhealthyBuilders := []BuilderInfo{}
+		unknownHealthBuilders := []BuilderInfo{}
 		builderSize := len(builderHealthNotifier.Builders)
 		for _, builder := range builderHealthNotifier.Builders {
 			req := &buildbucketpb.GetBuilderRequest{
@@ -184,6 +198,16 @@ func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifi
 			builderItem, err := bbclient.GetBuilder(c, req)
 			if err != nil {
 				return nil, err
+			}
+			// Check if metadata or health exists
+			// If not, add into unknown category
+			if (builderItem.Metadata == nil || builderItem.Metadata.Health == nil) {
+				unknownHealthBuilders = append(unknownHealthBuilders,
+					BuilderInfo{
+						Name:        fmt.Sprintf("%s.%s:%s", project, builder.Bucket, builder.Name),
+						Link:        fmt.Sprintf("https://ci.chromium.org/ui/p/%s/builders/%s/%s", project, builder.Bucket, builder.Name),
+					})
+				continue
 			}
 			healthStatus := builderItem.Metadata.Health
 			if healthStatus.HealthScore == 10 {
@@ -207,7 +231,7 @@ func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifi
 		task := &internal.EmailTask{
 			Recipients: []string{email},
 			Subject:    fmt.Sprintf("Builder Health For %s - %d of %d Are in Bad Health", email, unhealthyBuilderSize, builderSize),
-			BodyGzip:   generateEmail(email, unhealthyBuilderSize, builderSize, formatBuildersToHTML(unhealthyBuilders), formatBuildersToHTML(unhealthyBuilders), "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/infra/builder_health_indicators.md"),
+			BodyGzip:   generateEmail(email, unhealthyBuilderSize, builderSize, generateBuilderDescriptionHTML(unhealthyBuilders, healthyBuilders, unknownHealthBuilders), "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/infra/builder_health_indicators.md"),
 		}
 		tasks[email] = task
 	}
