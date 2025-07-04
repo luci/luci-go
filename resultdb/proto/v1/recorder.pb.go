@@ -75,10 +75,14 @@ type CreateRootInvocationRequest struct {
 	//
 	// Do not set the realm or producer_resource fields, these will be inherited
 	// from the root invocation.
+	//
+	// Required.
 	RootWorkUnit *WorkUnit `protobuf:"bytes,3,opt,name=root_work_unit,json=rootWorkUnit,proto3" json:"root_work_unit,omitempty"`
 	// A unique identifier for this request. Restricted to 36 ASCII characters.
 	// A random UUID is recommended.
-	// This request is only idempotent if a `request_id` is provided.
+	//
+	// If the same request is replayed (see "Retry policy" at the top of this doc),
+	// the request_id guarantees idempotence. Required.
 	RequestId     string `protobuf:"bytes,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -360,7 +364,9 @@ type CreateWorkUnitRequest struct {
 	WorkUnit *WorkUnit `protobuf:"bytes,3,opt,name=work_unit,json=workUnit,proto3" json:"work_unit,omitempty"`
 	// A unique identifier for this request. Restricted to 36 ASCII characters.
 	// A random UUID is recommended.
-	// This request is only idempotent if a `request_id` is provided.
+	//
+	// If the same request is replayed (see "Retry policy" at the top of this doc),
+	// the request_id guarantees idempotence. Required.
 	RequestId     string `protobuf:"bytes,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -500,8 +506,8 @@ type BatchCreateWorkUnitsRequest struct {
 	Requests []*CreateWorkUnitRequest `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
 	// A unique identifier for this request. Restricted to 36 ASCII characters.
 	// A random UUID is recommended.
-	// This request is only idempotent if a `request_id` is provided, so it is
-	// strongly recommended to populate this field.
+	// If the same request is replayed, the request_id guarantees idempotence.
+	// Required.
 	RequestId     string `protobuf:"bytes,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

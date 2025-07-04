@@ -19,6 +19,10 @@ import (
 )
 
 var (
+	permCreateRootInvocation = realms.RegisterPermission("resultdb.rootInvocations.create")
+
+	permCreateWorkUnit = realms.RegisterPermission("resultdb.workUnits.create")
+
 	permPutBaseline = realms.RegisterPermission("resultdb.baselines.put")
 
 	permCreateInvocation       = realms.RegisterPermission("resultdb.invocations.create")
@@ -26,8 +30,10 @@ var (
 	permSetSubmittedInvocation = realms.RegisterPermission("resultdb.invocations.setSubmitted")
 
 	// Internal permissions
-	permCreateWithReservedID = realms.RegisterPermission("resultdb.invocations.createWithReservedID")
-	permExportToBigQuery     = realms.RegisterPermission("resultdb.invocations.exportToBigQuery")
-	permSetProducerResource  = realms.RegisterPermission("resultdb.invocations.setProducerResource")
-	permSetExportRoot        = realms.RegisterPermission("resultdb.invocations.setExportRoot")
+	permCreateWithReservedID               = realms.RegisterPermission("resultdb.invocations.createWithReservedID")
+	permExportToBigQuery                   = realms.RegisterPermission("resultdb.invocations.exportToBigQuery")
+	permSetProducerResource                = realms.RegisterPermission("resultdb.invocations.setProducerResource")
+	permSetExportRoot                      = realms.RegisterPermission("resultdb.invocations.setExportRoot")
+	permCreateRootInvocationWithReservedID = realms.RegisterPermission("resultdb.rootInvocations.createWithReservedID")
+	permSetRootInvocationProducerResource  = realms.RegisterPermission("resultdb.rootInvocations.setProducerResource")
 )

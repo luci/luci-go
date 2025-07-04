@@ -154,6 +154,8 @@ message WorkUnit {
   //
   // To create a new child work unit, use Recorder.CreateWorkUnit
   // and specify this work unit as the parent.
+  //
+  // Output only (append via (Batch)CreateWorkUnit(s)).
   repeated string child_work_units = 11
       [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
@@ -161,6 +163,8 @@ message WorkUnit {
   //
   // This field only covers children; to find grandchildren, great
   // grandchildren, etc. traverse recursively.
+  //
+  // Output only (append via UpdateIncludedInvocations).
   repeated string child_invocations = 12
       [ (google.api.field_behavior) = OUTPUT_ONLY ];
 

@@ -31,13 +31,25 @@ option java_multiple_files = true;
 
 // Service to record test results.
 //
+// RPCs that mutate an root invocation, work unit or invocation return
+// FAILED_PRECONDITION error code if the resource is finalized (or finalizing).
+//
+// # Authorisation
+//
 // The responses to CreateRootInvocation, CreateWorkUnit and CreateInvocation
 // include a metadata key "update-token".
 // It MUST be passed to all other mutation RPCs, such as CreateTestResult.
 // Otherwise the request will fail with UNAUTHENTICATED error code.
 //
-// RPCs that mutate an root invocation, work unit or invocation return
-// FAILED_PRECONDITION error code if the resource is finalized (or finalizing).
+// # Retry policy
+//
+// To ensure reliable recording of test results, please retry any error of type
+// INTERNAL, UNKNOWN or UNAVAILABLE with the following parameters:
+// - Initial backoff of 1 second (minimum).
+// - For each consecutive error, increase the minimum back-off period
+//   by a factor 2, exponentially up to 32 seconds.
+// For a minimum of 6 retries over 63 (=1+2+4+8+16+32) seconds.
+//
 //
 // Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
 // and [Privacy Policy](https://policies.google.com/privacy).
@@ -197,11 +209,17 @@ message CreateRootInvocationRequest {
   //
   // Do not set the realm or producer_resource fields, these will be inherited
   // from the root invocation.
+  //
+  // Required.
   WorkUnit root_work_unit = 3;
 
   // A unique identifier for this request. Restricted to 36 ASCII characters.
   // A random UUID is recommended.
-  // This request is only idempotent if a `request_id` is provided.
+  //
+  // If the same request is replayed (see "Retry policy" at the top of this doc),
+  // this request_id guarantees idempotence.
+  //
+  // Required.
   string request_id = 4;
 }
 
@@ -295,7 +313,11 @@ message CreateWorkUnitRequest {
 
   // A unique identifier for this request. Restricted to 36 ASCII characters.
   // A random UUID is recommended.
-  // This request is only idempotent if a `request_id` is provided.
+  //
+  // If the same request is replayed (see "Retry policy" at the top of this doc),
+  // this request_id guarantees idempotence.
+  //
+  // Required.
   string request_id = 4;
 }
 
@@ -372,8 +394,8 @@ message BatchCreateWorkUnitsRequest {
 
   // A unique identifier for this request. Restricted to 36 ASCII characters.
   // A random UUID is recommended.
-  // This request is only idempotent if a `request_id` is provided, so it is
-  // strongly recommended to populate this field.
+  // If the same request is replayed, the request_id guarantees idempotence.
+  // Required.
   string request_id = 2;
 }
 

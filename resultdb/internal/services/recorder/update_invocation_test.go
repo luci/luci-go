@@ -35,6 +35,12 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
+
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
@@ -44,11 +50,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/span"
-	"go.chromium.org/luci/server/tq"
 )
 
 func TestValidateUpdateInvocationRequest(t *testing.T) {

@@ -175,11 +175,15 @@ type WorkUnit struct {
 	//
 	// To create a new child work unit, use Recorder.CreateWorkUnit
 	// and specify this work unit as the parent.
+	//
+	// Output only (append via (Batch)CreateWorkUnit(s)).
 	ChildWorkUnits []string `protobuf:"bytes,11,rep,name=child_work_units,json=childWorkUnits,proto3" json:"child_work_units,omitempty"`
 	// Resource names of child (legacy) invocations.
 	//
 	// This field only covers children; to find grandchildren, great
 	// grandchildren, etc. traverse recursively.
+	//
+	// Output only (append via UpdateIncludedInvocations).
 	ChildInvocations []string `protobuf:"bytes,12,rep,name=child_invocations,json=childInvocations,proto3" json:"child_invocations,omitempty"`
 	// Full name of the resource that produced results in this work unit.
 	// See also https://aip.dev/122#full-resource-names
