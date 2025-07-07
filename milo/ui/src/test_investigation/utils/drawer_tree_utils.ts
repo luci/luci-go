@@ -132,7 +132,7 @@ export function buildHierarchyTree(
   return result;
 }
 
-enum StructuredTreeLevel {
+export enum StructuredTreeLevel {
   Module,
   Variant,
   Coarse,
@@ -164,13 +164,12 @@ export function buildStructuredTree(
   level: StructuredTreeLevel,
   variants: TestVariant[],
 ): TestNavigationTreeNode[] {
-  if (!variants || variants.length === 0) {
+  if (!variants || variants.length === 0 || level > StructuredTreeLevel.Case) {
     return [];
   }
   const groups = new Map<string, TestVariant[]>();
   variants.forEach((tv) => {
-    const data = structuredTreeLevelData(level, tv);
-    if (!data) return;
+    const data = structuredTreeLevelData(level, tv) ?? '';
     if (!groups.has(data)) {
       groups.set(data, []);
     }
@@ -179,16 +178,31 @@ export function buildStructuredTree(
 
   const nodes: TestNavigationTreeNode[] = [];
   if (level < StructuredTreeLevel.Case) {
-    groups.forEach((variants, data) => {
-      const children = buildStructuredTree(level + 1, variants);
-      nodes.push({
-        id: `${level}-${data}`,
-        label: data,
-        level: level,
-        children: children,
-        failedTests: 0,
-        totalTests: 0,
-      });
+    groups.forEach((groupVariants, data) => {
+      const children = buildStructuredTree(level + 1, groupVariants);
+      if (children.length > 0) {
+        if (data === '') {
+          // This level was skipped for this group of variants.
+          // Instead of creating a node with an empty label,
+          // just add its children to the current list of nodes.
+          nodes.push(...children);
+        } else {
+          nodes.push({
+            id: `${level}-${data}`,
+            label: data,
+            level: level,
+            children: children,
+            failedTests: children.reduce(
+              (sum, child) => sum + child.failedTests,
+              0,
+            ),
+            totalTests: children.reduce(
+              (sum, child) => sum + child.totalTests,
+              0,
+            ),
+          });
+        }
+      }
     });
   } else {
     groups.forEach((variants, data) => {
