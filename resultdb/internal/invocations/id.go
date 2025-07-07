@@ -15,8 +15,6 @@
 package invocations
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"sort"
 
@@ -61,7 +59,7 @@ func MustParseName(name string) ID {
 
 // IDFromRowID converts a Spanner-level row ID to an ID.
 func IDFromRowID(rowID string) ID {
-	return ID(stripHashPrefix(rowID))
+	return ID(spanutil.StripHashPrefix(rowID))
 }
 
 // Name returns an invocation name.
@@ -75,7 +73,7 @@ func (id ID) RowID() string {
 	if id == "" {
 		return ""
 	}
-	return prefixWithHash(string(id))
+	return spanutil.PrefixWithHash(string(id))
 }
 
 // Key returns a invocation spanner key.
@@ -235,7 +233,7 @@ func (s IDSet) SortByRowID() []ID {
 
 	ret := make([]ID, len(rowIDs))
 	for i, rowID := range rowIDs {
-		ret[i] = ID(stripHashPrefix(rowID))
+		ret[i] = ID(spanutil.StripHashPrefix(rowID))
 	}
 	return ret
 }
@@ -258,22 +256,4 @@ func (s IDSet) Batch(batchSize int) []IDSet {
 		result = append(result, NewIDSet(ids[start:end]...))
 	}
 	return result
-}
-
-// hashPrefixBytes is the number of bytes of sha256 to prepend to a PK
-// to achieve even distribution.
-const hashPrefixBytes = 4
-
-func prefixWithHash(s string) string {
-	h := sha256.Sum256([]byte(s))
-	prefix := hex.EncodeToString(h[:hashPrefixBytes])
-	return fmt.Sprintf("%s:%s", prefix, s)
-}
-
-func stripHashPrefix(s string) string {
-	expectedPrefixLen := hex.EncodedLen(hashPrefixBytes) + 1 // +1 for separator
-	if len(s) < expectedPrefixLen {
-		panic(fmt.Sprintf("%q is too short", s))
-	}
-	return s[expectedPrefixLen:]
 }

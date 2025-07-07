@@ -26,6 +26,20 @@ import (
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 )
 
+// Type represents the type column in the Invocations spanner table.
+type Type int64
+
+const (
+	// Root invocation.
+	Root Type = 1
+
+	// Work unit.
+	WorkUnit Type = 2
+
+	// Legacy invocation.
+	Legacy Type = 3
+)
+
 // Shards is the sharding level for the Invocations table.
 // Column Invocations.ShardId is a value in range [0, Shards).
 const Shards = 100
