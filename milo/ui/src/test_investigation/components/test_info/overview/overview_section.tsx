@@ -19,26 +19,45 @@ import { HistoryRateDisplaySection } from './history_rate_display';
 import { OverviewActionsSection } from './overview_actions_section';
 import { OverviewStatusSection } from './overview_status_section';
 
-export function OverviewSection() {
+interface OverviewSectionProps {
+  expanded: boolean;
+}
+
+export function OverviewSection({ expanded }: OverviewSectionProps) {
   return (
-    <Box sx={{ flex: { md: 1 }, minWidth: { md: 300 } }}>
+    <Box
+      sx={{
+        flex: expanded ? { md: 3 } : { md: 9 },
+      }}
+    >
       <Card
         sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px',
           p: 3,
           height: '100%',
           boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        <OverviewStatusSection />
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: expanded ? 'column' : 'row',
+            gap: expanded ? '16px' : '40px',
+          }}
+        >
+          <OverviewStatusSection expanded={expanded} />
+          <AssociatedCLsSection expanded={expanded} />
 
-        <HistoryRateDisplaySection />
+          <HistoryRateDisplaySection />
 
-        <AssociatedCLsSection />
-
-        <OverviewActionsSection />
+          {expanded && <OverviewActionsSection />}
+        </Box>
+        {!expanded && (
+          <Box sx={{ mt: 'auto' }}>
+            <OverviewActionsSection />
+          </Box>
+        )}
       </Card>
     </Box>
   );

@@ -37,7 +37,13 @@ import {
 } from '../constants';
 import { useAssociatedBugs, useTestVariantBranch } from '../context';
 
-export function OverviewStatusSection() {
+interface OverviewStatusSectionProps {
+  expanded: boolean;
+}
+
+export function OverviewStatusSection({
+  expanded,
+}: OverviewStatusSectionProps) {
   const invocation = useInvocation();
   const bisectionClient = useLuciBisectionClient();
   const testVariant = useTestVariant();
@@ -169,7 +175,13 @@ export function OverviewStatusSection() {
 
   return (
     <>
-      <Box>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: expanded ? 'column' : 'row',
+          gap: expanded ? 0 : '80px',
+        }}
+      >
         <Box
           sx={{
             display: 'flex',
@@ -177,6 +189,10 @@ export function OverviewStatusSection() {
             gap: 1,
           }}
         >
+          <Typography variant="body2" color="text.secondary">
+            Test Result
+          </Typography>
+
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <VerdictStatusIcon
               statusV2={testVariant.statusV2}
@@ -192,7 +208,7 @@ export function OverviewStatusSection() {
         </Box>
         <Box
           sx={{
-            mt: '16px',
+            mt: expanded ? '16px' : 0,
             display: 'flex',
             flexDirection: 'row',
             gap: 3,
@@ -205,7 +221,11 @@ export function OverviewStatusSection() {
               flexGrow: 1,
             }}
           >
-            <Typography variant="body2" color="text.secondary">
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mb: expanded ? 0 : '16px' }}
+            >
               Related bug(s)
             </Typography>
             {associatedBugs && associatedBugs.length > 0 ? (
@@ -258,7 +278,11 @@ export function OverviewStatusSection() {
                 flexGrow: 1,
               }}
             >
-              <Typography variant="body2" color="text.secondary">
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: expanded ? 0 : '16px' }}
+              >
                 Culprit Searching
               </Typography>
               <Typography>{bisectionDisplayInfo.textElement}</Typography>

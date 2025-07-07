@@ -30,7 +30,11 @@ import { useAssociatedBugs, useIsLoadingAssociatedBugs } from '../context';
 
 import { getNextStepsInfo } from './next_steps_utills';
 
-export function NextStepsSubsection() {
+interface NextStepsSubsectionProps {
+  expanded: boolean;
+}
+
+export function NextStepsSubsection({ expanded }: NextStepsSubsectionProps) {
   const associatedBugs = useAssociatedBugs();
   const isLoadingAssociatedBugs = useIsLoadingAssociatedBugs();
   const testVariant = useTestVariant();
@@ -55,67 +59,101 @@ export function NextStepsSubsection() {
 
   const nextStepsInfo = getNextStepsInfo(data, testVariant);
   return (
-    <Box
-      sx={{
-        flex: 1,
-        padding: 2,
-        borderRadius: '8px',
-        background: 'var(--blue-50, #E8F0FE)',
-      }}
-    >
-      {nextStepsInfo && (
+    <>
+      {expanded ? (
         <Box
           sx={{
-            mb: 1.5,
-            padding: 1,
+            flex: 1,
+            padding: 2,
             borderRadius: '8px',
-            background: '#FFF',
-            gap: '10px',
-            display: 'flex',
-            flexDirection: 'column',
+            background: 'var(--blue-50, #E8F0FE)',
           }}
         >
-          <Typography
-            variant="body2"
-            color={getStatusStyle(nextStepsInfo.status).textColor}
-            sx={{
-              fontWeight: 'bold',
-            }}
-          >
-            {nextStepsInfo.title}
-          </Typography>
-          <Typography variant="body2">{nextStepsInfo.subtitle}</Typography>
-        </Box>
-      )}
-      {associatedBugs && associatedBugs.length > 0 ? (
-        associatedBugs.map((bug) => (
-          <StyledActionBlock
-            severity="info"
-            key={`track-${bug.system}-${bug.id}`}
-            sx={{ mb: 1.5 }}
-          >
-            <Typography variant="body2">
-              <Link
-                href={bug.url || `https://${bug.system}.com/${bug.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
+          {nextStepsInfo && (
+            <Box
+              sx={{
+                mb: 1.5,
+                padding: 1,
+                borderRadius: '8px',
+                background: '#FFF',
+                gap: '10px',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Typography
+                variant="body2"
+                color={getStatusStyle(nextStepsInfo.status).textColor}
+                sx={{
+                  fontWeight: 'bold',
+                }}
               >
-                Track {bug.linkText || `${bug.system}/${bug.id}`}
-              </Link>
+                {nextStepsInfo.title}
+              </Typography>
+              <Typography variant="body2">{nextStepsInfo.subtitle}</Typography>
+            </Box>
+          )}
+          {associatedBugs && associatedBugs.length > 0 ? (
+            associatedBugs.map((bug) => (
+              <StyledActionBlock
+                severity="info"
+                key={`track-${bug.system}-${bug.id}`}
+                sx={{ mb: 1.5 }}
+              >
+                <Typography variant="body2">
+                  <Link
+                    href={bug.url || `https://${bug.system}.com/${bug.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Track {bug.linkText || `${bug.system}/${bug.id}`}
+                  </Link>
+                </Typography>
+              </StyledActionBlock>
+            ))
+          ) : isLoadingAssociatedBugs ? (
+            <CircularProgress />
+          ) : (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                mb: 1.5,
+                padding: 1,
+                borderRadius: '8px',
+                background: '#FFF',
+              }}
+            >
+              No associated bugs found for next steps.
             </Typography>
-          </StyledActionBlock>
-        ))
-      ) : isLoadingAssociatedBugs ? (
-        <CircularProgress />
+          )}
+        </Box>
       ) : (
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ mb: 1.5, padding: 1, borderRadius: '8px', background: '#FFF' }}
-        >
-          No associated bugs found for next steps.
-        </Typography>
+        <>
+          {nextStepsInfo && (
+            <Box
+              sx={{
+                padding: 1,
+                borderRadius: '8px',
+                background: '#FFF',
+                gap: '10px',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Typography
+                variant="body2"
+                color={getStatusStyle(nextStepsInfo.status).textColor}
+                sx={{
+                  fontWeight: 'bold',
+                }}
+              >
+                {nextStepsInfo.title}
+              </Typography>
+            </Box>
+          )}
+        </>
       )}
-    </Box>
+    </>
   );
 }

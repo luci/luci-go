@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, ButtonBase, Link, Typography } from '@mui/material';
+import { Box, Link, Typography } from '@mui/material';
 import React, { useCallback, useState } from 'react';
 
 import { CLsPopover } from '@/test_investigation/components/test_info/cls_popver';
@@ -21,7 +21,11 @@ import { useFormattedCLs } from '../context';
 
 const clHistoryLinkSuffix = '/+log';
 
-export function AssociatedCLsSection() {
+interface AssociatedCLsSectionProps {
+  expanded: boolean;
+}
+
+export function AssociatedCLsSection({ expanded }: AssociatedCLsSectionProps) {
   const formattedCLs = useFormattedCLs() || [];
 
   const [clPopoverAnchorEl, setClPopoverAnchorEl] =
@@ -44,14 +48,22 @@ export function AssociatedCLsSection() {
   return (
     <Box>
       <Typography
-        gutterBottom
         variant="body2"
         color="text.secondary"
         component="div"
+        sx={{ mb: expanded ? 1 : 2 }}
       >
         CLs
       </Typography>
-      {formattedCLs.length === 1 && (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: expanded ? 'row' : 'column',
+          gap: '5px',
+          alignItems: 'left',
+          justifyContent: 'start',
+        }}
+      >
         <Link
           href={formattedCLs[0].url}
           target="_blank"
@@ -60,47 +72,33 @@ export function AssociatedCLsSection() {
         >
           {formattedCLs[0].display}
         </Link>
-      )}
-      <>
-        <Link
-          href={formattedCLs[0].url}
-          target="_blank"
-          rel="noopener noreferrer"
-          underline="hover"
-        >
-          {formattedCLs[0].display}
-        </Link>
-        <ButtonBase
-          onClick={handleCLPopoverOpen}
-          aria-describedby="cl-popover-assoc-cls"
-          sx={{
-            ml: 0.5,
-            textDecoration: 'underline',
-            color: 'primary.main',
-            cursor: 'pointer',
-            typography: 'body2',
-          }}
-        >
-          + {formattedCLs.length - 1} more
-        </ButtonBase>
-      </>
-      {formattedCLs[0].url && (
-        <Link
-          href={formattedCLs[0].url + clHistoryLinkSuffix}
-          target="_blank"
-          rel="noopener noreferrer"
-          underline="hover"
-          sx={{ ml: 0.5 }}
-        >
-          (View history)
-        </Link>
-      )}
-      <CLsPopover
-        anchorEl={clPopoverAnchorEl}
-        open={clPopoverOpen}
-        onClose={handleCLPopoverClose}
-        id="cl-popover-assoc-cls"
-      />
+        {formattedCLs.length > 1 && (
+          <Link
+            onClick={handleCLPopoverOpen}
+            aria-describedby="cl-popover-assoc-cls"
+            style={{ cursor: 'pointer' }}
+          >
+            + {formattedCLs.length - 1} more in same topic
+          </Link>
+        )}
+        {formattedCLs[0].url && (
+          <Link
+            href={formattedCLs[0].url + clHistoryLinkSuffix}
+            target="_blank"
+            rel="noopener noreferrer"
+            underline="hover"
+            sx={{ ml: 0.5 }}
+          >
+            (View history)
+          </Link>
+        )}
+        <CLsPopover
+          anchorEl={clPopoverAnchorEl}
+          open={clPopoverOpen}
+          onClose={handleCLPopoverClose}
+          id="cl-popover-assoc-cls"
+        />
+      </Box>
     </Box>
   );
 }

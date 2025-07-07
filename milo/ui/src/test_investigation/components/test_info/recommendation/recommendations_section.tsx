@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Card, Typography } from '@mui/material';
+import ArrowOutwardIcon from '@mui/icons-material/ArrowOutward';
+import CallReceivedIcon from '@mui/icons-material/CallReceived';
+import { Box, Button, Card, Typography } from '@mui/material';
 import { DateTime } from 'luxon';
 import { useMemo } from 'react';
 
@@ -29,7 +31,15 @@ function isoStringToLuxonDateTime(isoString?: string): DateTime | undefined {
   return dt.isValid ? dt : undefined;
 }
 
-export function RecommendationsSection() {
+interface RecommendationsSectionProps {
+  expanded: boolean;
+  setExpanded: (isExpanded: boolean) => void;
+}
+
+export function RecommendationsSection({
+  expanded,
+  setExpanded,
+}: RecommendationsSectionProps) {
   const invocation = useInvocation();
 
   const now = useMemo(() => DateTime.now(), []);
@@ -47,7 +57,7 @@ export function RecommendationsSection() {
   }, [invocation.finalizeTime, now]);
 
   return (
-    <Box sx={{ flex: { md: 2 } }}>
+    <Box sx={{ flex: expanded ? { md: 9 } : { md: 3 } }}>
       <Card
         sx={{
           display: 'flex',
@@ -56,6 +66,7 @@ export function RecommendationsSection() {
           p: 3,
           height: '100%',
           boxSizing: 'border-box',
+          backgroundColor: expanded ? '#FFF' : 'var(--blue-50, #E8F0FE)',
         }}
       >
         <Box
@@ -82,9 +93,34 @@ export function RecommendationsSection() {
             alignItems: 'flex-start',
           }}
         >
-          <NextStepsSubsection />
-          <AnalysisSubsection currentTimeForAgoDt={now} />
+          <NextStepsSubsection expanded={expanded} />
+          {expanded && <AnalysisSubsection currentTimeForAgoDt={now} />}
         </Box>
+        {expanded ? (
+          <>
+            <Button
+              variant="text"
+              sx={{ textTransform: 'none', width: '120px', p: 0 }}
+              startIcon={<ArrowOutwardIcon />}
+              onClick={() => {
+                setExpanded(false);
+              }}
+            >
+              Hide details
+            </Button>
+          </>
+        ) : (
+          <Button
+            variant="text"
+            sx={{ textTransform: 'none', width: '120px', p: 0 }}
+            startIcon={<CallReceivedIcon />}
+            onClick={() => {
+              setExpanded(true);
+            }}
+          >
+            View details
+          </Button>
+        )}
       </Card>
     </Box>
   );

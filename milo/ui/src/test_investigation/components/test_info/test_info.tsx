@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { Box } from '@mui/material';
+import { useState } from 'react';
 
 import { TestInfoProvider } from './context/provider';
 import { OverviewSection } from './overview';
@@ -20,6 +21,7 @@ import { RecommendationsSection } from './recommendation';
 import { TestInfoHeader } from './test_info_header';
 
 export function TestInfo() {
+  const [expanded, setExpanded] = useState(false);
   return (
     <TestInfoProvider>
       <TestInfoHeader />
@@ -30,8 +32,8 @@ export function TestInfo() {
           gap: 4,
         }}
       >
-        <OverviewSection />
-        <RecommendationsSection />
+        <OverviewSection expanded={expanded} />
+        <RecommendationsSection expanded={expanded} setExpanded={setExpanded} />
       </Box>
     </TestInfoProvider>
   );
