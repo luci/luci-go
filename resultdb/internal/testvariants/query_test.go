@@ -26,6 +26,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/data/aip160"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -105,6 +106,7 @@ func TestQueryTestVariants(t *testing.T) {
 			ResultLimit:          10,
 			ResponseLimitBytes:   DefaultResponseLimitBytes,
 			AccessLevel:          AccessLevelUnrestricted,
+			Filter:               &aip160.Filter{},
 		}
 
 		fetch := func(q *Query) (Page, error) {
@@ -567,6 +569,20 @@ func TestQueryTestVariants(t *testing.T) {
 					"40/T2/e3b0c44298fc1c14/FLAKY/",
 				}))
 			})
+		})
+
+		t.Run(`aip filter works`, func(t *ftt.Test) {
+			filter, err := aip160.ParseFilter(`variant.a = "b"`)
+			assert.Loosely(t, err, should.BeNil)
+			q.Filter = filter
+			defer func() { q.Filter = nil }()
+
+			page := mustFetch(q)
+			assert.Loosely(t, tvStrings(page.TestVariants), should.Match([]string{
+				"10/T4/c467ccce5a16dc72/FAILED/",
+				"30/T5/c467ccce5a16dc72/FLAKY/",
+			}))
+			assert.Loosely(t, page.NextPageToken, should.NotBeEmpty)
 		})
 
 		t.Run(`ResultLimit works`, func(t *ftt.Test) {

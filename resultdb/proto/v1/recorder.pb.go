@@ -82,7 +82,9 @@ type CreateRootInvocationRequest struct {
 	// A random UUID is recommended.
 	//
 	// If the same request is replayed (see "Retry policy" at the top of this doc),
-	// the request_id guarantees idempotence. Required.
+	// this request_id guarantees idempotence.
+	//
+	// Required.
 	RequestId     string `protobuf:"bytes,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -366,7 +368,9 @@ type CreateWorkUnitRequest struct {
 	// A random UUID is recommended.
 	//
 	// If the same request is replayed (see "Retry policy" at the top of this doc),
-	// the request_id guarantees idempotence. Required.
+	// this request_id guarantees idempotence.
+	//
+	// Required.
 	RequestId     string `protobuf:"bytes,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

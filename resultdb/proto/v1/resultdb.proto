@@ -650,6 +650,36 @@ message QueryTestVariantsRequest {
   //   It can be requested by "status_v2_effective" or "status_v2_effective asc"
   //   where status_v2_effective is a virtual field representing the above sort order.
   string order_by = 9;
+
+  // An AIP-160 style filter to select test variants to return.
+  //
+  // Filtering supports a subset of [AIP-160 filtering](https://google.aip.dev/160).
+  //
+  // All values are case-sensitive.
+  //
+  // A bare value is searched for in the column test_id. E.g. ninja.
+  //
+  // You can use AND, OR and NOT (case sensitive) logical operators, along
+  // with grouping. '-' is equivalent to NOT. Multiple bare values are
+  // considered to be AND separated.  E.g. These are equivalent:
+  // hello world
+  // and:
+  // hello AND world
+  //
+  // More examples:
+  // a OR b
+  // a AND NOT(b or -c)
+  //
+  // You can filter particular columns with '=', '!=' and ':' (has) operators.
+  // The right hand side of the operator must be a simple value. E.g:
+  // test_id:telemetry
+  // -variant.os:mac
+  //
+  // Supported columns to search on:
+  // - test_id
+  // - variant_hash
+  // - variant
+  string filter = 10;
 }
 
 // A response message for QueryTestVariants RPC.

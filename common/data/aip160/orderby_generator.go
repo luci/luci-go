@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package aip
+package aip160
 
 import (
 	"fmt"
@@ -47,7 +47,7 @@ func MergeWithDefaultOrder(defaultOrder []aip132.OrderBy, order []aip132.OrderBy
 //
 // The returned order clause is safe against SQL injection; only
 // strings appearing from Table appear in the output.
-func (t *Table) OrderByClause(order []aip132.OrderBy) (string, error) {
+func (t *SqlTable) OrderByClause(order []aip132.OrderBy) (string, error) {
 	if len(order) == 0 {
 		return "", nil
 	}

@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/aip132"
+	"go.chromium.org/luci/common/data/aip160"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
@@ -101,6 +102,11 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 		return nil, appstatus.BadRequest(err)
 	}
 
+	filter, err := aip160.ParseFilter(in.Filter)
+	if err != nil {
+		return nil, appstatus.BadRequest(errors.Fmt("filter: %w", err))
+	}
+
 	orderByClause, err := aip132.ParseOrderBy(in.OrderBy)
 	if err != nil {
 		// This shouldn't happen, it should already be validated in
@@ -130,6 +136,7 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 	q := testvariants.Query{
 		ReachableInvocations: invs,
 		Predicate:            in.Predicate,
+		Filter:               filter,
 		ResultLimit:          testvariants.AdjustResultLimit(in.ResultLimit),
 		PageSize:             pagination.AdjustPageSize(in.PageSize),
 		ResponseLimitBytes:   testvariants.DefaultResponseLimitBytes,

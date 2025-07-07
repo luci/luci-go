@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/data/aip160"
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/analysis/internal/aip"
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
@@ -39,20 +38,20 @@ import (
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-var ClusteredFailuresTable = aip.NewTable().WithColumns(
-	aip.NewColumn().WithFieldPath("test_id").WithDatabaseName("test_id").FilterableImplicitly().Build(),
-	aip.NewColumn().WithFieldPath("failure_reason").WithDatabaseName("failure_reason.primary_error_message").FilterableImplicitly().Build(),
-	aip.NewColumn().WithFieldPath("realm").WithDatabaseName("realm").Filterable().Build(),
-	aip.NewColumn().WithFieldPath("ingested_invocation_id").WithDatabaseName("ingested_invocation_id").Filterable().Build(),
-	aip.NewColumn().WithFieldPath("cluster_algorithm").WithDatabaseName("cluster_algorithm").Filterable().WithArgumentSubstitutor(resolveAlgorithm).Build(),
-	aip.NewColumn().WithFieldPath("cluster_id").WithDatabaseName("cluster_id").Filterable().Build(),
-	aip.NewColumn().WithFieldPath("variant_hash").WithDatabaseName("variant_hash").Filterable().Build(),
-	aip.NewColumn().WithFieldPath("test_run_id").WithDatabaseName("test_run_id").Filterable().Build(),
-	aip.NewColumn().WithFieldPath("variant").WithDatabaseName("variant").KeyValue().Filterable().Build(),
-	aip.NewColumn().WithFieldPath("tags").WithDatabaseName("tags").KeyValue().Filterable().Build(),
-	aip.NewColumn().WithFieldPath("is_test_run_blocked").WithDatabaseName("is_test_run_blocked").Bool().Filterable().Build(),
-	aip.NewColumn().WithFieldPath("is_ingested_invocation_blocked").WithDatabaseName("is_ingested_invocation_blocked").Bool().Filterable().Build(),
-	aip.NewColumn().WithFieldPath("build_gardener_rotations").WithDatabaseName("build_gardener_rotations").Array().Filterable().Build(),
+var ClusteredFailuresTable = aip160.NewSqlTable().WithColumns(
+	aip160.NewSqlColumn().WithFieldPath("test_id").WithDatabaseName("test_id").FilterableImplicitly().Build(),
+	aip160.NewSqlColumn().WithFieldPath("failure_reason").WithDatabaseName("failure_reason.primary_error_message").FilterableImplicitly().Build(),
+	aip160.NewSqlColumn().WithFieldPath("realm").WithDatabaseName("realm").Filterable().Build(),
+	aip160.NewSqlColumn().WithFieldPath("ingested_invocation_id").WithDatabaseName("ingested_invocation_id").Filterable().Build(),
+	aip160.NewSqlColumn().WithFieldPath("cluster_algorithm").WithDatabaseName("cluster_algorithm").Filterable().WithArgumentSubstitutor(resolveAlgorithm).Build(),
+	aip160.NewSqlColumn().WithFieldPath("cluster_id").WithDatabaseName("cluster_id").Filterable().Build(),
+	aip160.NewSqlColumn().WithFieldPath("variant_hash").WithDatabaseName("variant_hash").Filterable().Build(),
+	aip160.NewSqlColumn().WithFieldPath("test_run_id").WithDatabaseName("test_run_id").Filterable().Build(),
+	aip160.NewSqlColumn().WithFieldPath("variant").WithDatabaseName("variant").KeyValue().Filterable().Build(),
+	aip160.NewSqlColumn().WithFieldPath("tags").WithDatabaseName("tags").KeyValue().Filterable().Build(),
+	aip160.NewSqlColumn().WithFieldPath("is_test_run_blocked").WithDatabaseName("is_test_run_blocked").Bool().Filterable().Build(),
+	aip160.NewSqlColumn().WithFieldPath("is_ingested_invocation_blocked").WithDatabaseName("is_ingested_invocation_blocked").Bool().Filterable().Build(),
+	aip160.NewSqlColumn().WithFieldPath("build_gardener_rotations").WithDatabaseName("build_gardener_rotations").Array().Filterable().Build(),
 ).Build()
 
 func resolveAlgorithm(algorithm string) string {
@@ -160,13 +159,13 @@ func defaultOrder(ms []metrics.Definition) []aip132.OrderBy {
 // ClusterSummariesTable returns the schema of the table returned by
 // the cluster summaries query. This can be used to generate and
 // validate the order by clause.
-func ClusterSummariesTable(queriedMetrics []metrics.Definition) *aip.Table {
-	var columns []*aip.Column
+func ClusterSummariesTable(queriedMetrics []metrics.Definition) *aip160.SqlTable {
+	var columns []*aip160.SqlColumn
 	for _, metric := range queriedMetrics {
 		metricColumnName := metric.ColumnName(MetricValueColumnSuffix)
-		columns = append(columns, aip.NewColumn().WithFieldPath("metrics", string(metric.ID), "value").WithDatabaseName(metricColumnName).Sortable().Build())
+		columns = append(columns, aip160.NewSqlColumn().WithFieldPath("metrics", string(metric.ID), "value").WithDatabaseName(metricColumnName).Sortable().Build())
 	}
-	return aip.NewTable().WithColumns(columns...).Build()
+	return aip160.NewSqlTable().WithColumns(columns...).Build()
 }
 
 // QueryClusterSummaries queries a summary of clusters in the project.
@@ -200,7 +199,7 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 
 	resultTable := ClusterSummariesTable(options.Metrics)
 
-	order := aip.MergeWithDefaultOrder(defaultOrder(options.Metrics), options.OrderBy)
+	order := aip160.MergeWithDefaultOrder(defaultOrder(options.Metrics), options.OrderBy)
 	orderByClause, err := resultTable.OrderByClause(order)
 	if err != nil {
 		return nil, InvalidArgumentTag.Apply(errors.Fmt("order_by: %w", err))
@@ -274,7 +273,7 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 	return clusters, nil
 }
 
-func toBigQueryParameters(pars []aip.QueryParameter) []bigquery.QueryParameter {
+func toBigQueryParameters(pars []aip160.SqlQueryParameter) []bigquery.QueryParameter {
 	result := make([]bigquery.QueryParameter, 0, len(pars))
 	for _, p := range pars {
 		result = append(result, bigquery.QueryParameter{

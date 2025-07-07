@@ -16,7 +16,7 @@
 // Proposals (AIPs) from https://google.aip.dev/. This includes
 // an AIP-160 filter parser and SQL generator and AIP-132 order by
 // clause parser and SQL generator.
-package aip
+package aip160
 
 import (
 	"fmt"
@@ -26,28 +26,28 @@ import (
 )
 
 const (
-	// ColumnTypeString is a column of type string.
-	ColumnTypeString ColumnType = iota
-	// ColumnTypeBool is a column of type boolean.  NULL values are mapped to FALSE.
-	ColumnTypeBool = iota
+	// SqlColumnTypeString is a column of type string.
+	SqlColumnTypeString SqlColumnType = iota
+	// SqlColumnTypeBool is a column of type boolean.  NULL values are mapped to FALSE.
+	SqlColumnTypeBool = iota
 )
 
-// ColumnType is an enum for the type of a column.  Valid values are in the const block above.
-type ColumnType int32
+// SqlColumnType is an enum for the type of a column.  Valid values are in the const block above.
+type SqlColumnType int32
 
-func (t ColumnType) String() string {
+func (t SqlColumnType) String() string {
 	switch t {
-	case ColumnTypeString:
+	case SqlColumnTypeString:
 		return "STRING"
-	case ColumnTypeBool:
+	case SqlColumnTypeBool:
 		return "BOOL"
 	default:
 		return "UNKNOWN"
 	}
 }
 
-// Column represents the schema of a Database column.
-type Column struct {
+// SqlColumn represents the schema of a Database column.
+type SqlColumn struct {
 	// The externally-visible field path this column maps to.
 	// This path may be referenced in AIP-160 filters and AIP-132 order by clauses.
 	fieldPath aip132.FieldPath
@@ -70,31 +70,38 @@ type Column struct {
 	implicitFilter bool
 
 	// Whether this column is an array of structs with two string members: key and value.
+	// Note that repeated keys are not supported and may lead to undefined filtering behaviour if present.
+	// If you use this option, columnType represents the type of the values associated with each key and must be ColumnType_STRING.
 	keyValue bool
+
+	// Whether this column is an array of "key:value" strings.
+	// Note that repeated keys are not supported and may lead to undefined filtering behaviour if present.
+	// If you use this option, columnType represents the type of the values associated with each key and must be ColumnType_STRING.
+	stringArrayKeyValue bool
 
 	// Whether this column is an array.
 	array bool
 
 	// The type of the column, defaults to ColumnType_STRING.
-	columnType ColumnType
+	columnType SqlColumnType
 
 	// The function which is applied to the filter arguments.
 	argSubstitute func(sub string) string
 }
 
-// Table represents the schema of a Database table, view or query.
-type Table struct {
+// SqlTable represents the schema of a Database table, view or query.
+type SqlTable struct {
 	// The columns in the database table.
-	columns []*Column
+	columns []*SqlColumn
 
 	// A mapping from externally-visible field path to the column
 	// definition. The column name used as a key is in lowercase.
-	columnByFieldPath map[string]*Column
+	columnByFieldPath map[string]*SqlColumn
 }
 
 // FilterableColumnByFieldPath returns the database name of the filterable column
 // with the given field path.
-func (t *Table) FilterableColumnByFieldPath(path aip132.FieldPath) (*Column, error) {
+func (t *SqlTable) FilterableColumnByFieldPath(path aip132.FieldPath) (*SqlColumn, error) {
 	col := t.columnByFieldPath[path.String()]
 	if col != nil && col.filterable {
 		return col, nil
@@ -111,7 +118,7 @@ func (t *Table) FilterableColumnByFieldPath(path aip132.FieldPath) (*Column, err
 
 // SortableColumnByFieldPath returns the sortable database column
 // with the given externally-visible field path.
-func (t *Table) SortableColumnByFieldPath(path aip132.FieldPath) (*Column, error) {
+func (t *SqlTable) SortableColumnByFieldPath(path aip132.FieldPath) (*SqlColumn, error) {
 	col := t.columnByFieldPath[path.String()]
 	if col != nil && col.sortable {
 		return col, nil

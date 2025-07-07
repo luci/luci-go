@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package aip
+package aip160
 
 import (
 	"testing"
@@ -27,11 +27,11 @@ import (
 
 func TestOrderByClause(t *testing.T) {
 	ftt.Run("OrderByClause", t, func(t *ftt.Test) {
-		table := NewTable().WithColumns(
-			NewColumn().WithFieldPath("foo").WithDatabaseName("db_foo").Sortable().Build(),
-			NewColumn().WithFieldPath("bar").WithDatabaseName("db_bar").Sortable().Build(),
-			NewColumn().WithFieldPath("baz").WithDatabaseName("db_baz").Sortable().Build(),
-			NewColumn().WithFieldPath("unsortable").WithDatabaseName("unsortable").Build(),
+		table := NewSqlTable().WithColumns(
+			NewSqlColumn().WithFieldPath("foo").WithDatabaseName("db_foo").Sortable().Build(),
+			NewSqlColumn().WithFieldPath("bar").WithDatabaseName("db_bar").Sortable().Build(),
+			NewSqlColumn().WithFieldPath("baz").WithDatabaseName("db_baz").Sortable().Build(),
+			NewSqlColumn().WithFieldPath("unsortable").WithDatabaseName("unsortable").Build(),
 		).Build()
 
 		t.Run("Empty order by", func(t *ftt.Test) {

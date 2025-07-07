@@ -25,8 +25,10 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/data/aip160"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/server/auth"
 
@@ -56,6 +58,22 @@ const (
 
 // AllFields is a field mask that selects all TestVariant fields.
 var AllFields = mask.All(&pb.TestVariant{})
+
+// InvalidArgumentTag is used to indicate that one of the query options
+// is invalid.
+var InvalidArgumentTag = errtag.Make("invalid argument", true)
+
+// TestVariantsVirtualTable are the columns available for filtering through the aip160 filter string.
+// Note that this is a virtual table, as there is no physical test variants table, only a test results
+// table.
+//
+// Because this is used for querying both test results and test variants, only fields that exist in
+// both can be added here.
+var TestVariantsVirtualTable = aip160.NewSqlTable().WithColumns(
+	aip160.NewSqlColumn().WithFieldPath("test_id").WithDatabaseName("TestId").FilterableImplicitly().Build(),
+	aip160.NewSqlColumn().WithFieldPath("variant_hash").WithDatabaseName("VariantHash").Filterable().Build(),
+	aip160.NewSqlColumn().WithFieldPath("variant").WithDatabaseName("Variant").StringArrayKeyValue().Filterable().Build(),
+).Build()
 
 // QueryMask returns mask.Mask converted from field_mask.FieldMask.
 // It returns a default mask with all fields if readMask is empty.
@@ -153,6 +171,8 @@ type Query struct {
 	// the results returned by the query, which is subject to truncation according
 	// to the the `ResultLimit` parameter.
 	OrderBy SortOrder
+
+	Filter *aip160.Filter
 
 	decompressBuf []byte         // buffer for decompressing blobs
 	params        map[string]any // query parameters
@@ -510,11 +530,22 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 		panic("PageSize < 0")
 	}
 
+	// Note that the content of the filter clause is untrusted
+	// user input and is validated as part of the Where clause
+	// generation here.
+	const parameterPrefix = "w_"
+	whereClause, aip_parameters, err := TestVariantsVirtualTable.WhereClause(q.Filter, parameterPrefix)
+	if err != nil {
+		return InvalidArgumentTag.Apply(errors.Fmt("filter: %w", err))
+	}
+
 	st, err := spanutil.GenerateStatement(testVariantsWithUnexpectedResultsSQLTmpl, map[string]any{
 		"ResultColumns":            strings.Join(q.resultSelectColumns(), ", "),
 		"HasTestIds":               len(q.TestIDs) > 0,
 		"StatusFilter":             q.Predicate.GetStatus() != 0 && q.Predicate.GetStatus() != pb.TestVariantStatus_UNEXPECTED_MASK,
 		"OrderByStatusV2Effective": q.OrderBy == SortOrderStatusV2Effective,
+		"HasAipFilterClause":       q.Filter != nil,
+		"AipFilterClause":          whereClause,
 	})
 	if err != nil {
 		return
@@ -522,6 +553,9 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	st.Params = q.params
 	st.Params["limit"] = q.PageSize
 	st.Params["testResultLimit"] = q.ResultLimit
+	for _, p := range aip_parameters {
+		st.Params[p.Name] = p.Value
+	}
 
 	var b spanutil.Buffer
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
@@ -717,13 +751,28 @@ func (q *Query) queryTestResults(ctx context.Context, limit int, f func(testId, 
 		attribute.Int("cr.dev.invocations", len(q.ReachableInvocations.Invocations)),
 	)
 	defer func() { tracing.End(ts, err) }()
+
+	// Note that the content of the filter clause is untrusted
+	// user input and is validated as part of the Where clause
+	// generation here.
+	const parameterPrefix = "w_"
+	whereClause, aip_parameters, err := TestVariantsVirtualTable.WhereClause(q.Filter, parameterPrefix)
+	if err != nil {
+		return InvalidArgumentTag.Apply(errors.Fmt("filter: %w", err))
+	}
+
 	st, err := spanutil.GenerateStatement(allTestResultsSQLTmpl, map[string]any{
 		"ResultColumns":            strings.Join(q.resultSelectColumns(), ", "),
 		"HasTestIds":               len(q.TestIDs) > 0,
 		"OrderByStatusV2Effective": q.OrderBy == SortOrderStatusV2Effective,
+		"HasAipFilterClause":       q.Filter != nil,
+		"AipFilterClause":          whereClause,
 	})
 	st.Params = q.params
 	st.Params["limit"] = limit
+	for _, p := range aip_parameters {
+		st.Params[p.Name] = p.Value
+	}
 
 	var b spanutil.Buffer
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
@@ -1307,6 +1356,9 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 	{{if .HasTestIds}}
 		TestId in UNNEST(@testIDs) AND
 	{{end}}
+	{{if .HasAipFilterClause}}
+		({{.AipFilterClause}}) AND
+	{{end}}
 	{{if .StatusFilter}}
 		(
 			(TvStatus = @status AND TestId > @afterTestId) OR
@@ -1353,6 +1405,9 @@ var allTestResultsSQLTmpl = template.Must(template.New("allTestResultsSQL").Pars
 	WHERE InvocationId in UNNEST(@testResultInvIDs)
 	{{if .HasTestIds}}
 		AND TestId in UNNEST(@testIDs)
+	{{end}}
+	{{if .HasAipFilterClause}}
+		AND ({{.AipFilterClause}})
 	{{end}}
 	AND (
 		(TestId > @afterTestId) OR
