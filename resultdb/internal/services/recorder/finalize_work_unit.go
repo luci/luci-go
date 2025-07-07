@@ -19,12 +19,26 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // FinalizeWorkUnit implements pb.RecorderServer.
 func (s *recorderServer) FinalizeWorkUnit(ctx context.Context, in *pb.FinalizeWorkUnitRequest) (*pb.WorkUnit, error) {
+	if err := validateFinalizeWorkUnitRequest(in); err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+	// TODO: Validate update token.
+
 	return nil, appstatus.Error(codes.Unimplemented, "not yet implemented")
+}
+
+func validateFinalizeWorkUnitRequest(req *pb.FinalizeWorkUnitRequest) error {
+	if err := pbutil.ValidateWorkUnitName(req.Name); err != nil {
+		return errors.Fmt("name: %w", err)
+	}
+	return nil
 }

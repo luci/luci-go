@@ -19,12 +19,26 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // FinalizeRootInvocation implements pb.RecorderServer.
 func (s *recorderServer) FinalizeRootInvocation(ctx context.Context, in *pb.FinalizeRootInvocationRequest) (*pb.RootInvocation, error) {
+	if err := validateFinalizeRootInvocationRequest(in); err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+	// TODO: Validate update token.
+
 	return nil, appstatus.Error(codes.Unimplemented, "not yet implemented")
+}
+
+func validateFinalizeRootInvocationRequest(req *pb.FinalizeRootInvocationRequest) error {
+	if err := pbutil.ValidateRootInvocationName(req.Name); err != nil {
+		return errors.Fmt("name: %w", err)
+	}
+	return nil
 }
