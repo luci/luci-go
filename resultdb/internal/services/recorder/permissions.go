@@ -21,7 +21,8 @@ import (
 var (
 	permCreateRootInvocation = realms.RegisterPermission("resultdb.rootInvocations.create")
 
-	permCreateWorkUnit = realms.RegisterPermission("resultdb.workUnits.create")
+	permCreateWorkUnit  = realms.RegisterPermission("resultdb.workUnits.create")
+	permIncludeWorkUnit = realms.RegisterPermission("resultdb.workUnits.include")
 
 	permPutBaseline = realms.RegisterPermission("resultdb.baselines.put")
 
@@ -36,4 +37,6 @@ var (
 	permSetExportRoot                      = realms.RegisterPermission("resultdb.invocations.setExportRoot")
 	permCreateRootInvocationWithReservedID = realms.RegisterPermission("resultdb.rootInvocations.createWithReservedID")
 	permSetRootInvocationProducerResource  = realms.RegisterPermission("resultdb.rootInvocations.setProducerResource")
+	permCreateWorkUnitWithReservedID       = realms.RegisterPermission("resultdb.workUnits.createWithReservedID")
+	permSetWorkUnitProducerResource        = realms.RegisterPermission("resultdb.workUnits.setProducerResource")
 )

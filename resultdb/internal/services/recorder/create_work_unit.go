@@ -16,15 +16,181 @@ package recorder
 
 import (
 	"context"
+	"strings"
+	"time"
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // CreateWorkUnit implements pb.RecorderServer.
 func (s *recorderServer) CreateWorkUnit(ctx context.Context, in *pb.CreateWorkUnitRequest) (*pb.WorkUnit, error) {
+	if err := verifyCreateWorkUnitPermissions(ctx, in); err != nil {
+		return nil, err
+	}
+	if err := validateCreateWorkUnitRequest(in); err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+	// TODO: Validate we have the update-token for the parent work unit and that
+	// work unit is not FINALIZED.
+
 	return nil, appstatus.Error(codes.Unimplemented, "not yet implemented")
+}
+
+func verifyCreateWorkUnitPermissions(ctx context.Context, req *pb.CreateWorkUnitRequest) error {
+	// Only perform validation that is necessary for performing authorisation checks,
+	// the full set of validation will occur if these checks pass.
+	wu := req.WorkUnit
+	if wu == nil {
+		return appstatus.BadRequest(errors.New("work_unit: unspecified"))
+	}
+	realm := wu.Realm
+	if realm == "" {
+		return appstatus.BadRequest(errors.New("work_unit: realm: unspecified"))
+	}
+	if err := realms.ValidateRealmName(realm, realms.GlobalScope); err != nil {
+		return appstatus.BadRequest(errors.Fmt("work_unit: realm: %w", err))
+	}
+
+	// Check we have permission to create the work unit.
+	// This permission exists to authorises the "risk to realm data integrity" posed by this operation.
+	if allowed, err := auth.HasPermission(ctx, permCreateWorkUnit, realm, nil); err != nil {
+		return err
+	} else if !allowed {
+		return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %q in realm %q`, permCreateWorkUnit, realm)
+	}
+
+	// Check we have permission to include this work unit into a root invocation (of possibly different
+	// realm). This permission authorises the "risk to realm data confidentiality" posed by this operation,
+	// because data in this new work unit may be implicitly shared with readers of the root invocation.
+	if allowed, err := auth.HasPermission(ctx, permIncludeWorkUnit, realm, nil); err != nil {
+		return err
+	} else if !allowed {
+		return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %q in realm %q`, permIncludeWorkUnit, realm)
+	}
+
+	// if an ID not starting with "u-" is specified,
+	// resultdb.workUnits.createWithReservedID permission is required.
+	if !strings.HasPrefix(req.WorkUnitId, "u-") {
+		project, _ := realms.Split(realm)
+		rootRealm := realms.Join(project, realms.RootRealm)
+		allowed, err := checkPermissionOrGroupMember(ctx, rootRealm, permCreateWorkUnitWithReservedID, trustedCreatorGroup)
+		if err != nil {
+			return err
+		}
+		if !allowed {
+			return appstatus.Errorf(codes.PermissionDenied, `only work units created by trusted systems may have id not starting with "u-"; please generate "u-{GUID}" or reach out to ResultDB owners`)
+		}
+	}
+
+	// if the producer resource is set,
+	// resultdb.workUnits.setProducerResource permission is required.
+	if wu.ProducerResource != "" {
+		project, _ := realms.Split(realm)
+		rootRealm := realms.Join(project, realms.RootRealm)
+		allowed, err := checkPermissionOrGroupMember(ctx, rootRealm, permSetWorkUnitProducerResource, trustedCreatorGroup)
+		if err != nil {
+			return err
+		}
+		if !allowed {
+			return appstatus.Errorf(codes.PermissionDenied, `only work units created by trusted system may have a populated producer_resource field`)
+		}
+	}
+	return nil
+}
+
+func validateCreateWorkUnitRequest(req *pb.CreateWorkUnitRequest) error {
+	if err := pbutil.ValidateWorkUnitName(req.Parent); err != nil {
+		return errors.Fmt("parent: %w", err)
+	}
+	if err := pbutil.ValidateWorkUnitID(req.WorkUnitId); err != nil {
+		return errors.Fmt("work_unit_id: %w", err)
+	}
+	if err := validateWorkUnitForCreate(req.WorkUnit); err != nil {
+		return errors.Fmt("work_unit: %w", err)
+	}
+	if req.RequestId == "" {
+		// Request ID is required to ensure requests are treated idempotently
+		// in case of inevitable retries.
+		return errors.Fmt("request_id: unspecified (please provide a per-request UUID to ensure idempotence)")
+	}
+	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
+		return errors.Fmt("request_id: %w", err)
+	}
+	return nil
+}
+
+// validateWorkUnitForCreate validates the fields of a pb.WorkUnit message
+// for a creation request within a root invocation.
+func validateWorkUnitForCreate(wu *pb.WorkUnit) error {
+	if wu == nil {
+		return errors.New("unspecified")
+	}
+	// This method attempts to validate fields in the order that they are specified in the proto.
+
+	// Name and WorkUnitId is output only and should be ignored
+	// as per https://google.aip.dev/203.
+
+	// Validate state.
+	switch wu.State {
+	case pb.WorkUnit_STATE_UNSPECIFIED, pb.WorkUnit_ACTIVE, pb.WorkUnit_FINALIZING:
+		// Allowed states for creation.
+	default:
+		return errors.Fmt("state: cannot be created in the state %s", wu.State)
+	}
+
+	// Validate realm.
+	if wu.Realm == "" {
+		return errors.New("realm: unspecified")
+	}
+	if err := realms.ValidateRealmName(wu.Realm, realms.GlobalScope); err != nil {
+		return errors.Fmt("realm: %w", err)
+	}
+
+	// CreateTime, Creator, FinalizeStartTime, FinalizeTime are output only and should be ignored
+	// as per https://google.aip.dev/203.
+
+	// Validate deadline.
+	if wu.Deadline != nil {
+		// Using time.Now() for validation, actual commit time will be used for storage.
+		assumedCreateTime := time.Now().UTC()
+		if err := validateDeadline(wu.Deadline, assumedCreateTime); err != nil {
+			return errors.Fmt("deadline: %w", err)
+		}
+	}
+
+	// Parent, ChildWorkUnits and ChildInvocations are output only fields and should be ignored
+	// as per https://google.aip.dev/203.
+
+	if wu.ProducerResource != "" {
+		if err := pbutil.ValidateFullResourceName(wu.ProducerResource); err != nil {
+			return errors.Fmt("producer_resource: %w", err)
+		}
+	}
+	if err := pbutil.ValidateWorkUnitTags(wu.Tags); err != nil {
+		return errors.Fmt("tags: %w", err)
+	}
+	if wu.Properties != nil {
+		if err := pbutil.ValidateWorkUnitProperties(wu.Properties); err != nil {
+			return errors.Fmt("properties: %w", err)
+		}
+	}
+	if wu.ExtendedProperties != nil {
+		if err := pbutil.ValidateInvocationExtendedProperties(wu.ExtendedProperties); err != nil {
+			return errors.Fmt("extended_properties: %w", err)
+		}
+	}
+	if wu.Instructions != nil {
+		if err := pbutil.ValidateInstructions(wu.Instructions); err != nil {
+			return errors.Fmt("instructions: %w", err)
+		}
+	}
+	return nil
 }
