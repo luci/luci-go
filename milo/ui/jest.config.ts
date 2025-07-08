@@ -50,6 +50,10 @@ const config: Config = {
 
   reporters: [
     'default',
+    [
+      'jest-slow-test-reporter',
+      { numTests: 10, warnOnSlowerThan: 300, color: true },
+    ],
     // Enable ResultDB integration. This is experimental. If you want to use
     // this, please contact chops-luci-test@google.com.
     [
