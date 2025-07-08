@@ -36,7 +36,7 @@ export function generateSidebarSections(): SidebarSection[] {
     generateFleetConsoleSection(),
     generateChromeOSSection(),
     generateChromeSection(),
-    generateDocsSection(),
+    generateFleetManagementSection(),
   ];
 }
 
@@ -44,6 +44,11 @@ function generateFleetConsoleSection(): SidebarSection {
   return {
     title: 'Fleet Console',
     pages: [
+      {
+        label: 'Metrics',
+        url: '/ui/fleet/labs/metrics',
+        icon: <DashboardIcon />,
+      },
       {
         label: 'Devices',
         url: '/ui/fleet/labs/devices',
@@ -87,18 +92,12 @@ function generateChromeSection(): SidebarSection {
   };
 }
 
-function generateDocsSection(): SidebarSection {
+function generateFleetManagementSection(): SidebarSection {
   return {
     title: 'Fleet Management',
     pages: [
       {
-        label: 'Fleet metrics',
-        url: 'http://go/fleet-north-star',
-        icon: <DashboardIcon />,
-        external: true,
-      },
-      {
-        label: 'Fleet operations',
+        label: 'FLOPS Docs',
         url: 'http://go/flops-docs',
         icon: <TopicIcon />,
         external: true,
