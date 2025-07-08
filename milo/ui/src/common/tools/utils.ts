@@ -17,6 +17,7 @@ export type GenFeedbackUrlArgs =
       errMsg?: string;
       stacktrace?: string;
       bugComponent?: string;
+      customComment?: string;
     }
   | undefined;
 /**
@@ -26,22 +27,24 @@ export function genFeedbackUrl({
   errMsg,
   stacktrace,
   bugComponent,
+  customComment,
 }: GenFeedbackUrlArgs = {}) {
   const feedbackComment =
+    customComment ||
     `# Basic Info\n\n` +
-    `Version: ${UI_VERSION}\n\n` +
-    `From Link: ${self.location.href}\n\n` +
-    (errMsg ? `Error Message:\n  ${errMsg}\n\n` : '') +
-    (stacktrace ? `Stacktrace:\n  ${stacktrace}\n\n` : '') +
-    // TODO: Ideally, we should not require users to record the network calls
-    // themselves. We can add OTEL integration and include a trace ID here.
-    '# Network Calls\n\n' +
-    `It would be very helpful if you can take a screenshot of your ` +
-    `[network tab](https://developer.chrome.com/docs/devtools/network).\n` +
-    `**Note that you should open your network tab before you load the page.**\n` +
-    `Only network calls occurred after you open the network tab are recorded.\n\n` +
-    '# Problem Description\n\n' +
-    'Please enter a description of the problem, with steps to reproduce if applicable.\n';
+      `Version: ${UI_VERSION}\n\n` +
+      `From Link: ${self.location.href}\n\n` +
+      (errMsg ? `Error Message:\n  ${errMsg}\n\n` : '') +
+      (stacktrace ? `Stacktrace:\n  ${stacktrace}\n\n` : '') +
+      // TODO: Ideally, we should not require users to record the network calls
+      // themselves. We can add OTEL integration and include a trace ID here.
+      '# Network Calls\n\n' +
+      `It would be very helpful if you can take a screenshot of your ` +
+      `[network tab](https://developer.chrome.com/docs/devtools/network).\n` +
+      `**Note that you should open your network tab before you load the page.**\n` +
+      `Only network calls occurred after you open the network tab are recorded.\n\n` +
+      '# Problem Description\n\n' +
+      'Please enter a description of the problem, with steps to reproduce if applicable.\n';
 
   const searchParams = new URLSearchParams({
     // Public Trackers > Chromium Public Trackers > Chromium > Infra > LUCI > UserInterface

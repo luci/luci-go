@@ -200,7 +200,7 @@ export function HistoryRateDisplaySection({
                   pl: 1,
                 }}
               >
-                View full postsubmit history
+                View full history
               </Link>
             </Box>
           )}

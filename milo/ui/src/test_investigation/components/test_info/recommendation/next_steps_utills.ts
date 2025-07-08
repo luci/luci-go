@@ -38,8 +38,8 @@ export function getNextStepsInfo(
   if (isExonerated) {
     return {
       status: 'success',
-      title: 'Test has been exonerated.',
-      subtitle: 'No further investigation needed for this failure.',
+      title: 'No further investigation needed for this failure.',
+      subtitle: 'Test has been exonerated.',
     };
   }
 
@@ -48,18 +48,22 @@ export function getNextStepsInfo(
   if (isBroken) {
     return {
       status: 'warning',
-      title: 'Try contacting someone or try again later.',
-      subtitle:
+      title:
         'This test failure appears to be broken due to other code submitted to codebase.',
+      subtitle: 'Try contacting someone or try again later.',
     };
   }
   if (isFlaky) {
     return {
       status: 'warning',
-      title: 'Try contacting someone.',
-      subtitle:
+      title:
         'This test failure appears to be flaky due to other code submitted to codebase.',
+      subtitle: 'Try contacting someone.',
     };
   }
-  return undefined;
+  return {
+    status: 'info',
+    title: 'No next steps identified from test analysis.',
+    subtitle: 'If you think there should be next steps, please file feedback.',
+  };
 }

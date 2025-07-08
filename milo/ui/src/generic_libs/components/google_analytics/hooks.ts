@@ -48,6 +48,9 @@ export interface EventPayload {
    * The name of the active tab on the page when the event is sent.
    */
   activeTab?: string;
+
+  /** The name of the feature flag being opted in or out. */
+  featureFlag?: string;
 }
 
 /**

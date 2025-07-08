@@ -19,6 +19,7 @@ export {
   useFeatureFlag,
   useGetFlagStatus,
   useRemoveFlagFromAvailableFlags,
+  useSetFeatureFlag,
 } from './context';
 
 export type {

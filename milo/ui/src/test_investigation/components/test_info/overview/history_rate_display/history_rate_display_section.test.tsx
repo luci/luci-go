@@ -247,7 +247,7 @@ describe('<HistoryRateDisplaySection />', () => {
     expect(screen.queryByText(/Test added/)).not.toBeInTheDocument();
   });
 
-  it('should render the "View full postsubmit history" link correctly', () => {
+  it('should render the "View full history" link correctly', () => {
     const segmentsData = [createMockSegment('s1', '100', '110', 10, 100)];
     renderComponent(undefined, undefined, undefined, {
       testVariantBranch: TestVariantBranch.fromPartial({
@@ -256,7 +256,7 @@ describe('<HistoryRateDisplaySection />', () => {
       }),
     });
     const link = screen.getByRole('link', {
-      name: /View full postsubmit history/i,
+      name: /View full history/i,
     });
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute(

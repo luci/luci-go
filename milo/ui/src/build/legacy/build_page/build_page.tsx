@@ -56,7 +56,11 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
-import { NEW_TEST_INVESTIGATION_PAGE_FLAG } from '@/test_investigation/pages/features';
+import { RedirectToNewPageBanner } from '@/test_investigation/components/redirect_back_banner';
+import {
+  NEW_TEST_INVESTIGATION_PAGE_FLAG,
+  SHOW_TEST_INVESTIGATION_PAGE_OPT_IN_BANNER_FLAG,
+} from '@/test_investigation/pages/features';
 import {
   PERM_TEST_RESULTS_LIST_LIMITED,
   PERM_TEST_EXONERATIONS_LIST_LIMITED,
@@ -191,6 +195,9 @@ export const BuildPage = observer(() => {
   const isTestResultsTabActive = location.pathname.endsWith('/test-results');
   const [searchParams] = useSyncedSearchParams();
   const forceLegacyView = searchParams.get('view') === 'legacy';
+  const showOptInBanner = useFeatureFlag(
+    SHOW_TEST_INVESTIGATION_PAGE_OPT_IN_BANNER_FLAG,
+  );
 
   const { testId, variantHash, variantDef } = useMemo(
     () => parseDeepLinkQuery(searchParams.get('q')),
@@ -264,6 +271,9 @@ export const BuildPage = observer(() => {
             open={showConfigDialog}
             onClose={() => setShowConfigDialog(false)}
           />
+          {isTestResultsTabActive && showOptInBanner ? (
+            <RedirectToNewPageBanner project={project} />
+          ) : null}
           <BuildIdBar builderId={builderId} buildNumOrId={buildNumOrId} />
           <LinearProgress
             value={100}

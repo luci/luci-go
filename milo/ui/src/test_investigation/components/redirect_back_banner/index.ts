@@ -13,3 +13,4 @@
 // limitations under the License.
 
 export * from './redirect_back_banner';
+export * from './redirect_to_new_page_banner';

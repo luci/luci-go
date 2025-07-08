@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Feedback as FeedbackIcon } from '@mui/icons-material';
+import { Box, Button, Link } from '@mui/material';
 import Alert, { AlertProps } from '@mui/material/Alert';
-import Link from '@mui/material/Link';
 import { useMemo } from 'react';
 import { Link as RouterLink } from 'react-router';
 
 import { useFeatureFlag } from '@/common/feature_flags';
+import { genFeedbackUrl } from '@/common/tools/utils';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import { NEW_TEST_INVESTIGATION_PAGE_FLAG } from '@/test_investigation/pages/features';
@@ -83,14 +85,46 @@ export function RedirectBackBanner({
     return null;
   }
 
+  const feedbackBugtemplateComment = `You can use this entry to log an issue or provide a recommendation for the new Test Results Page.
+
+Please include a short description of the issue or suggestion and, if applicable, describe steps to reproduce and attach a screenshot.
+
+From Link: ${self.location.href}`;
+
   return (
-    <Alert severity="info" {...alertProps}>
-      You are viewing the new test results UI. If you encounter any issues, you
-      can{' '}
-      <Link component={RouterLink} to={legacyUrl} sx={{ fontWeight: 'bold' }}>
-        go back to the old view
-      </Link>
-      .
+    <Alert
+      severity="info"
+      action={
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            onClick={() =>
+              window.open(
+                genFeedbackUrl({
+                  bugComponent: '1838234',
+                  customComment: feedbackBugtemplateComment,
+                }),
+              )
+            }
+            color="primary"
+            size="small"
+            variant="contained"
+            startIcon={<FeedbackIcon />}
+          >
+            File a bug
+          </Button>
+          <Link
+            component={RouterLink}
+            to={legacyUrl}
+            underline="always"
+            sx={{ display: 'flex', alignItems: 'center' }}
+          >
+            Go back to old view
+          </Link>
+        </Box>
+      }
+      {...alertProps}
+    >
+      You are viewing the new test results UI.
     </Alert>
   );
 }

@@ -16,6 +16,7 @@ import {
   createContext,
   Dispatch,
   SetStateAction,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -257,4 +258,18 @@ export function useFeatureFlag(featureFlag: FeatureFlag): boolean {
     return false;
   }
   return flagStatus;
+}
+
+export function useSetFeatureFlag(flag: FeatureFlag) {
+  const availableFlags = useAvailableFlags();
+
+  return useCallback(
+    (value: boolean) => {
+      const activeFlag = availableFlags.get(flag);
+      activeFlag?.observers.forEach((observer) =>
+        observer(value ? 'on' : 'off'),
+      );
+    },
+    [availableFlags, flag],
+  );
 }
