@@ -26,10 +26,9 @@ CREATE TABLE RootInvocations (
   -- SQL query construction: "CONCAT(SUBSTR(TO_HEX(SHA256(${user_provided_id})), 0, 8), ':', ${user_provided_id})"
   RootInvocationId STRING(MAX) NOT NULL,
 
-  -- A random value in [0, Shards) where Shards constant is
-  -- defined in code.
-  -- Used in global secondary indexes, to prevent hot spots.
-  ShardId INT64 NOT NULL,
+  -- A shard id used in global secondary indexes, to prevent hot spots.
+  -- This value is independent of RootInvocationShardId.
+  SecondaryIndexShardId INT64 NOT NULL,
 
   -- Root invocation state. One of:
   -- - Active (1): the root invocation is mutable.
@@ -133,7 +132,7 @@ CREATE TABLE RootInvocations (
 -- Index of root invocations by uninteresting test verdicts expiration.
 -- Used by a cron job that periodically removes passing and skipped test verdicts.
 CREATE NULL_FILTERED INDEX RootInvocationsByUninterestingTestVerdictsExpiration
-  ON RootInvocations (ShardId DESC, UninterestingTestVerdictsExpirationTime, RootInvocationId);
+  ON RootInvocations (SecondaryIndexShardId DESC, UninterestingTestVerdictsExpirationTime, RootInvocationId);
 
 -- Stores an entry for each shard of a root invocation.
 --
@@ -225,10 +224,9 @@ CREATE TABLE WorkUnits (
   -- this field is left as NULL.
   ParentWorkUnitId STRING(MAX),
 
-  -- A random value in [0, Shards) where Shards constant is
-  -- defined in code. This value is independent of RootInvocationShardId.
-  -- Used in global secondary indexes, to prevent hot spots.
-  ShardId INT64 NOT NULL,
+  -- A shard id used in global secondary indexes, to prevent hot spots.
+  -- This value is independent of RootInvocationShardId.
+  SecondaryIndexShardId INT64 NOT NULL,
 
   -- Work unit state. One of:
   -- - Active (1): the work unit is mutable.

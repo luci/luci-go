@@ -57,15 +57,15 @@ func TestSpannerConversion(t *testing.T) {
 
 		t.Run(`ShardID`, func(t *ftt.Test) {
 			id := ID("a")
-			assert.Loosely(t, id.ShardID(10), should.Equal(0))
+			assert.Loosely(t, id.shardID(10), should.Equal(0))
 			id = ID("b")
-			assert.Loosely(t, id.ShardID(10), should.Equal(6))
+			assert.Loosely(t, id.shardID(10), should.Equal(6))
 			id = ID("c")
-			assert.Loosely(t, id.ShardID(10), should.Equal(3))
+			assert.Loosely(t, id.shardID(10), should.Equal(3))
 			id = ID("d")
-			assert.Loosely(t, id.ShardID(10), should.Equal(3))
+			assert.Loosely(t, id.shardID(10), should.Equal(3))
 			id = ID("e")
-			assert.Loosely(t, id.ShardID(10), should.Equal(9))
+			assert.Loosely(t, id.shardID(10), should.Equal(9))
 		})
 	})
 }

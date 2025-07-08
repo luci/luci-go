@@ -49,11 +49,11 @@ func (id *ID) FromSpanner(b *spanutil.Buffer) error {
 	return nil
 }
 
-// ShardID returns a value in [0,shardRange) deterministically based on the ID value.
-func (id ID) ShardID(shardRange int) int64 {
+// shardID returns a value in [0,shardCount) deterministically based on the ID value.
+func (id ID) shardID(shardCount int) int64 {
 	hash := sha256.Sum256([]byte(id))
 	val := binary.BigEndian.Uint32(hash[:4])
-	return int64(val % uint32(shardRange))
+	return int64(val % uint32(shardCount))
 }
 
 // IDFromRowID converts a Spanner-level row ID to an ID.

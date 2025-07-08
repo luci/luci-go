@@ -31,13 +31,13 @@ import (
 )
 
 const (
-	// numShards is the fixed number of shards for RootInvocationShards.
-	// As per the schema, this is currently 16.
-	numShards = 16
+	// rootInvocationShardCount is the fixed number of shards per Root Invocation
+	// for RootInvocationShards. As per the schema, this is currently 16.
+	rootInvocationShardCount = 16
 
-	// shardIdRange is the range for the ShardId column in the RootInvocations table
-	// used for preventing hotspots in global secondary indexes.
-	shardIdRange = 100
+	// secondaryIndexShardCount is the number of values for the SecondaryIndexShardId column in the RootInvocations table
+	// used for preventing hotspots in global secondary indexes. The range of values is [0, secondaryIndexShardCount-1].
+	secondaryIndexShardCount = 100
 )
 
 // Create creates mutations of the following records.
@@ -84,7 +84,7 @@ func Create(rootInvocation *RootInvocationRow) []*spanner.Mutation {
 // The values for the output only fields are ignored during writing.
 type RootInvocationRow struct {
 	RootInvocationId                        ID
-	ShardId                                 int64 // Output only.
+	SecondaryIndexShardId                   int64 // Output only.
 	State                                   pb.RootInvocation_State
 	Realm                                   string
 	CreateTime                              time.Time // Output only.
@@ -113,13 +113,13 @@ func (r *RootInvocationRow) Normalize() {
 
 func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 	row := map[string]interface{}{
-		"RootInvocationId": r.RootInvocationId,
-		"ShardId":          r.RootInvocationId.ShardID(shardIdRange),
-		"State":            r.State,
-		"Realm":            r.Realm,
-		"CreateTime":       spanner.CommitTimestamp,
-		"CreatedBy":        r.CreatedBy,
-		"Deadline":         r.Deadline,
+		"RootInvocationId":      r.RootInvocationId,
+		"SecondaryIndexShardId": r.RootInvocationId.shardID(secondaryIndexShardCount),
+		"State":                 r.State,
+		"Realm":                 r.Realm,
+		"CreateTime":            spanner.CommitTimestamp,
+		"CreatedBy":             r.CreatedBy,
+		"Deadline":              r.Deadline,
 		"UninterestingTestVerdictsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
 		"CreateRequestId":                         r.CreateRequestId,
 		"ProducerResource":                        r.ProducerResource,
@@ -142,7 +142,7 @@ func (r *RootInvocationRow) toLegacyInvocationMutation() *spanner.Mutation {
 	row := map[string]interface{}{
 		"InvocationId":                      invocations.ID(fmt.Sprintf("root:%s", r.RootInvocationId)),
 		"Type":                              invocations.Root,
-		"ShardId":                           r.RootInvocationId.ShardID(invocations.Shards),
+		"ShardId":                           r.RootInvocationId.shardID(invocations.Shards),
 		"State":                             r.State,
 		"Realm":                             r.Realm,
 		"InvocationExpirationTime":          time.Unix(0, 0), // unused field, but spanner schema enforce it to be not null.
@@ -170,8 +170,8 @@ func (r *RootInvocationRow) toLegacyInvocationMutation() *spanner.Mutation {
 }
 
 func (r *RootInvocationRow) toShardsMutations() []*spanner.Mutation {
-	mutations := make([]*spanner.Mutation, numShards)
-	for i := 0; i < numShards; i++ {
+	mutations := make([]*spanner.Mutation, rootInvocationShardCount)
+	for i := 0; i < rootInvocationShardCount; i++ {
 		row := map[string]interface{}{
 			"RootInvocationShardId": computeRootInvocationShardID(r.RootInvocationId, i),
 			"ShardIndex":            i,
@@ -186,12 +186,12 @@ func (r *RootInvocationRow) toShardsMutations() []*spanner.Mutation {
 // computeRootInvocationShardID implements the shard ID generation logic
 // described in the RootInvocationShards schema.
 func computeRootInvocationShardID(id ID, shardIndex int) string {
-	if shardIndex < 0 || shardIndex >= numShards {
-		panic(fmt.Sprintf("shardIndex %d out of range [0, %d)", shardIndex, numShards))
+	if shardIndex < 0 || shardIndex >= rootInvocationShardCount {
+		panic(fmt.Sprintf("shardIndex %d out of range [0, %d)", shardIndex, rootInvocationShardCount))
 	}
 
 	// shard_step is (2^32 / N)
-	const shardStep = uint32(1 << 32 / numShards)
+	const shardStep = uint32(1 << 32 / rootInvocationShardCount)
 
 	// shard_base is Mod(ToIntBigEndian(sha256(invocation_id)[:4]), shard_step).
 	h := sha256.Sum256([]byte(id))

@@ -59,7 +59,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 	}
 	cols := []string{
 		"RootInvocationId",
-		"ShardId",
+		"SecondaryIndexShardId",
 		"State",
 		"Realm",
 		"CreateTime",
@@ -87,7 +87,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 
 		dest := []any{
 			&inv.RootInvocationId,
-			&inv.ShardId,
+			&inv.SecondaryIndexShardId,
 			&inv.State,
 			&inv.Realm,
 			&inv.CreateTime,

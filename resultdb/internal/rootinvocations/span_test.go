@@ -88,7 +88,7 @@ func TestWriteRootInvocation(t *testing.T) {
 		readRootInv, err := Read(ctx, ID(id))
 		assert.Loosely(t, err, should.BeNil)
 		row.CreateTime = commitTime
-		row.ShardId = row.RootInvocationId.ShardID(shardIdRange)
+		row.SecondaryIndexShardId = row.RootInvocationId.shardID(secondaryIndexShardCount)
 		assert.Loosely(t, readRootInv, should.Match(row))
 
 		// Validate Legacy Invocations table entry.
@@ -136,7 +136,7 @@ func TestWriteRootInvocation(t *testing.T) {
 		assert.Loosely(t, submitted, should.Equal(row.Submitted))
 
 		// Validate RootInvocationShards table entries.
-		for i := 0; i < numShards; i++ {
+		for i := 0; i < rootInvocationShardCount; i++ {
 			shardID := computeRootInvocationShardID(ID(id), i)
 			var shardIndex int64
 			var rootInvID ID
