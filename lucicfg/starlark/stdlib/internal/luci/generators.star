@@ -1466,6 +1466,7 @@ def gen_notify_cfg(ctx):
     for n in builder_health_notifiers:
         # Get all project + builder pairs belonging to email
         owner_email = n.props.owner_email
+        ignore_buckets = n.props.ignore_buckets
         cfg = None
         for f in ctx.output:
             if f.startswith("luci/cr-buildbucket"):
@@ -1474,6 +1475,8 @@ def gen_notify_cfg(ctx):
         builders = []
         for bucket in cfg.buckets:
             if not proto.has(bucket, "swarming"):
+                continue
+            if bucket.name in ignore_buckets:
                 continue
             for builder in bucket.swarming.builders:
                 if builder.contact_team_email == owner_email:
