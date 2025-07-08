@@ -63,7 +63,7 @@ export function RecommendationsSection({
           display: 'flex',
           flexDirection: 'column',
           gap: 2,
-          p: 3,
+          p: 2,
           height: '100%',
           boxSizing: 'border-box',
           backgroundColor: expanded ? '#FFF' : 'var(--blue-50, #E8F0FE)',
@@ -77,7 +77,7 @@ export function RecommendationsSection({
             gap: 0.5,
           }}
         >
-          <Typography variant="h6" component="div">
+          <Typography variant="h6" component="div" sx={{ lineHeight: '24px' }}>
             Suggested next steps
           </Typography>
           <Typography variant="body1" color="text.secondary">

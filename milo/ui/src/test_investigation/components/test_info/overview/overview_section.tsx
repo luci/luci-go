@@ -32,7 +32,7 @@ export function OverviewSection({ expanded }: OverviewSectionProps) {
     >
       <Card
         sx={{
-          p: 3,
+          p: 2,
           height: '100%',
           boxSizing: 'border-box',
           display: 'flex',

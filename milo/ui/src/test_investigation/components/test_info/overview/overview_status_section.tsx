@@ -248,6 +248,7 @@ export function OverviewStatusSection({
                         padding: '2px 8px 2px 8px',
                         borderRadius: '4px',
                         backgroundColor: '#E8F0FE',
+                        width: '85px',
                       }}
                     >
                       <Link

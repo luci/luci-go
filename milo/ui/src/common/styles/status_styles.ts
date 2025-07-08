@@ -13,12 +13,13 @@
 // limitations under the License.
 
 import CancelPresentationIcon from '@mui/icons-material/CancelPresentation';
+import CheckIcon from '@mui/icons-material/Check';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import ErrorIcon from '@mui/icons-material/Error';
-import ErrorOutlinedIcon from '@mui/icons-material/ErrorOutlined';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import InfoIcon from '@mui/icons-material/Info';
+import RepeatIcon from '@mui/icons-material/Repeat';
 import RepeatOnIcon from '@mui/icons-material/RepeatOn';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -79,8 +80,7 @@ export function getStatusStyle(
     case 'expected':
     case 'passed':
       return {
-        icon:
-          iconStyle === 'filled' ? CheckCircleIcon : CheckCircleOutlinedIcon,
+        icon: iconStyle === 'filled' ? CheckCircleIcon : CheckIcon,
         textColor: 'var(--gm3-color-success, var(--success-color))',
         backgroundColor:
           'var(--gm3-color-success-container, var(--success-bg-color))',
@@ -92,7 +92,7 @@ export function getStatusStyle(
     case 'error':
     case 'failed':
       return {
-        icon: iconStyle === 'filled' ? ErrorIcon : ErrorOutlinedIcon,
+        icon: iconStyle === 'filled' ? ErrorIcon : ErrorOutlineIcon,
         textColor: 'var(--gm3-color-error, var(--failure-color))',
         backgroundColor:
           'var(--gm3-color-error-container, var(--failure-bg-color))',
@@ -105,7 +105,7 @@ export function getStatusStyle(
     case 'unexpectedly_skipped':
     case 'execution_errored':
       return {
-        icon: iconStyle === 'filled' ? ErrorIcon : ErrorOutlinedIcon,
+        icon: iconStyle === 'filled' ? ErrorIcon : ErrorOutlineIcon,
         textColor: 'var(--critical-failure-color)',
         backgroundColor: 'var(--critical-failure-bg-color)',
         borderColor: 'var(--critical-failure-color)',
@@ -125,7 +125,7 @@ export function getStatusStyle(
       };
     case 'flaky':
       return {
-        icon: RepeatOnIcon,
+        icon: iconStyle === 'filled' ? RepeatOnIcon : RepeatIcon,
         textColor: 'var(--gm3-color-warning, var(--warning-color))',
         backgroundColor:
           'var(--gm3-color-warning-container, var(--warning-bg-color))',
@@ -158,8 +158,7 @@ export function getStatusStyle(
       };
     case 'exonerated':
       return {
-        icon:
-          iconStyle === 'filled' ? CheckCircleIcon : CheckCircleOutlinedIcon,
+        icon: iconStyle === 'filled' ? CheckCircleIcon : CheckIcon,
         textColor: 'var(--exonerated-color)',
         backgroundColor: 'var(--gm3-color-surface-container-low, #f0f4f8)',
         borderColor: 'var(--exonerated-color)',

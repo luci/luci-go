@@ -240,7 +240,7 @@ export function TestInvestigatePage() {
                 padding: { xs: 1, sm: 2 },
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 1,
+                gap: 3,
                 maxWidth: '100%',
                 boxSizing: 'border-box',
               }}

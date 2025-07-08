@@ -53,7 +53,7 @@ export function TestInfoHeader() {
   );
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, pl: 3 }}>
       <TestInfoBreadcrumbs
         invocation={invocation.name}
         testIdStructured={testVariant?.testIdStructured || undefined}

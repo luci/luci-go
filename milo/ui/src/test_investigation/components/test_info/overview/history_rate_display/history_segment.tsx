@@ -193,7 +193,10 @@ export const HistorySegment = memo(function HistorySegment({
   blamelistBaseUrl,
 }: HistorySegmentProps) {
   const formattedRate = getFormattedFailureRateFromSegment(segment);
-  const style = getStatusStyle(getFailureRateStatusTypeFromSegment(segment));
+  const style = getStatusStyle(
+    getFailureRateStatusTypeFromSegment(segment),
+    'outlined',
+  );
   const IconComponent = style.icon;
 
   let descriptiveText: string;
