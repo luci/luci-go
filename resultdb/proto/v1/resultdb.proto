@@ -24,11 +24,13 @@ import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/instruction.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/predicate.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/root_invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_aggregation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_variant.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_verdict.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/work_unit.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 option java_package = "com.google.luci.resultdb.v1";
@@ -39,6 +41,17 @@ option java_multiple_files = true;
 // Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
 // and [Privacy Policy](https://policies.google.com/privacy).
 service ResultDB {
+  // == Root invocations and work units ========================================
+  // Retrieves a root invocation.
+  rpc GetRootInvocation(GetRootInvocationRequest) returns (RootInvocation) {};
+
+  // Retrieves a work unit.
+  rpc GetWorkUnit(GetWorkUnitRequest) returns (WorkUnit) {};
+
+  // Retrieves a list of work units.
+  rpc BatchGetWorkUnits(BatchGetWorkUnitsRequest) returns (BatchGetWorkUnitsResponse) {};
+
+  // == Invocations ============================================================
   // Retrieves an invocation.
   rpc GetInvocation(GetInvocationRequest) returns (Invocation) {};
 
@@ -210,6 +223,66 @@ service ResultDB {
   // Queries invocation artifacts that match a search_string for given variant_union_hash and artifact_id.
   rpc QueryInvocationVariantArtifacts(QueryInvocationVariantArtifactsRequest) returns (
     QueryInvocationVariantArtifactsResponse) {}
+}
+
+// A request message for the GetRootInvocation RPC.
+message GetRootInvocationRequest {
+  // The name of the root invocation to read, see RootInvocation.name.
+  string name = 1 [ (google.api.field_behavior) = REQUIRED ];
+}
+
+// A request message for the GetWorkUnit RPC.
+message GetWorkUnitRequest {
+  // The name of the work unit to read, see WorkUnit.name.
+  string name = 1 [ (google.api.field_behavior) = REQUIRED ];
+
+  // The view to apply to the returned work unit. Defaults to BASIC.
+  WorkUnitView view = 2;
+}
+
+// A request message for the BatchGetWorkUnits RPC.
+//
+// As per google.aip.dev/231, this request will be handled atomically:
+// either it will succeed in reading all nominated work units or it will fail.
+message BatchGetWorkUnitsRequest {
+  // The parent root invocation shared by all work units being retrieved.
+  // Format: rootInvocations/{root_invocation_id}
+  // The parent of all work units specified in `names` must match this
+  // field.
+  // Required.
+  string parent = 1 [ (google.api.field_behavior) = REQUIRED ];
+
+  // The names of the work units to retrieve.
+  // A maximum of 500 work units can be retrieved in a batch.
+  // Format: rootInvocations/{root_invocation_id}/workUnits/{work_unit_id}
+  repeated string names = 2 [ (google.api.field_behavior) = REQUIRED ];
+
+  // The view to apply to returned work units. Using the view BASIC is
+  // strongly recommended as response size limits could be easily exceeded
+  // if FULL is used (as each work unit's extended properties may be up to
+  // ~2MB). Defaults to BASIC.
+  WorkUnitView view = 3;
+}
+
+// WorkUnitView represents the set of work unit fields to be retrieved.
+// See https://google.aip.dev/157.
+enum WorkUnitView {
+  // The default / unset value. The API will default to the basic view.
+  WORK_UNIT_VIEW_UNSPECIFIED = 0;
+
+  // Include basic information about the work unit. Excludes
+  // extended_properties.
+  WORK_UNIT_VIEW_BASIC = 1;
+
+  // Include all fields, including extended_properties.
+  WORK_UNIT_VIEW_FULL = 2;
+}
+
+// A response message for the BatchGetWorkUnits RPC.
+message BatchGetWorkUnitsResponse {
+  // The work units requested. These will appear in the same order as
+  // names in the request, i.e. work_units[i] corresponds to names[i].
+  repeated WorkUnit work_units = 1;
 }
 
 // A request message for GetInvocation RPC.

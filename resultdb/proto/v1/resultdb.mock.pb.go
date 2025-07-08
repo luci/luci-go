@@ -124,6 +124,26 @@ func (mr *MockResultDBClientMockRecorder) BatchGetTestVariants(ctx, in interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetTestVariants", reflect.TypeOf((*MockResultDBClient)(nil).BatchGetTestVariants), varargs...)
 }
 
+// BatchGetWorkUnits mocks base method.
+func (m *MockResultDBClient) BatchGetWorkUnits(ctx context.Context, in *BatchGetWorkUnitsRequest, opts ...grpc.CallOption) (*BatchGetWorkUnitsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BatchGetWorkUnits", varargs...)
+	ret0, _ := ret[0].(*BatchGetWorkUnitsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGetWorkUnits indicates an expected call of BatchGetWorkUnits.
+func (mr *MockResultDBClientMockRecorder) BatchGetWorkUnits(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetWorkUnits", reflect.TypeOf((*MockResultDBClient)(nil).BatchGetWorkUnits), varargs...)
+}
+
 // GetArtifact mocks base method.
 func (m *MockResultDBClient) GetArtifact(ctx context.Context, in *GetArtifactRequest, opts ...grpc.CallOption) (*Artifact, error) {
 	m.ctrl.T.Helper()
@@ -184,6 +204,26 @@ func (mr *MockResultDBClientMockRecorder) GetInvocation(ctx, in interface{}, opt
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInvocation", reflect.TypeOf((*MockResultDBClient)(nil).GetInvocation), varargs...)
 }
 
+// GetRootInvocation mocks base method.
+func (m *MockResultDBClient) GetRootInvocation(ctx context.Context, in *GetRootInvocationRequest, opts ...grpc.CallOption) (*RootInvocation, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetRootInvocation", varargs...)
+	ret0, _ := ret[0].(*RootInvocation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRootInvocation indicates an expected call of GetRootInvocation.
+func (mr *MockResultDBClientMockRecorder) GetRootInvocation(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRootInvocation", reflect.TypeOf((*MockResultDBClient)(nil).GetRootInvocation), varargs...)
+}
+
 // GetTestExoneration mocks base method.
 func (m *MockResultDBClient) GetTestExoneration(ctx context.Context, in *GetTestExonerationRequest, opts ...grpc.CallOption) (*TestExoneration, error) {
 	m.ctrl.T.Helper()
@@ -222,6 +262,26 @@ func (mr *MockResultDBClientMockRecorder) GetTestResult(ctx, in interface{}, opt
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTestResult", reflect.TypeOf((*MockResultDBClient)(nil).GetTestResult), varargs...)
+}
+
+// GetWorkUnit mocks base method.
+func (m *MockResultDBClient) GetWorkUnit(ctx context.Context, in *GetWorkUnitRequest, opts ...grpc.CallOption) (*WorkUnit, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetWorkUnit", varargs...)
+	ret0, _ := ret[0].(*WorkUnit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWorkUnit indicates an expected call of GetWorkUnit.
+func (mr *MockResultDBClientMockRecorder) GetWorkUnit(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkUnit", reflect.TypeOf((*MockResultDBClient)(nil).GetWorkUnit), varargs...)
 }
 
 // ListArtifactLines mocks base method.
@@ -682,6 +742,21 @@ func (mr *MockResultDBServerMockRecorder) BatchGetTestVariants(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetTestVariants", reflect.TypeOf((*MockResultDBServer)(nil).BatchGetTestVariants), arg0, arg1)
 }
 
+// BatchGetWorkUnits mocks base method.
+func (m *MockResultDBServer) BatchGetWorkUnits(arg0 context.Context, arg1 *BatchGetWorkUnitsRequest) (*BatchGetWorkUnitsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchGetWorkUnits", arg0, arg1)
+	ret0, _ := ret[0].(*BatchGetWorkUnitsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGetWorkUnits indicates an expected call of BatchGetWorkUnits.
+func (mr *MockResultDBServerMockRecorder) BatchGetWorkUnits(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetWorkUnits", reflect.TypeOf((*MockResultDBServer)(nil).BatchGetWorkUnits), arg0, arg1)
+}
+
 // GetArtifact mocks base method.
 func (m *MockResultDBServer) GetArtifact(arg0 context.Context, arg1 *GetArtifactRequest) (*Artifact, error) {
 	m.ctrl.T.Helper()
@@ -727,6 +802,21 @@ func (mr *MockResultDBServerMockRecorder) GetInvocation(arg0, arg1 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInvocation", reflect.TypeOf((*MockResultDBServer)(nil).GetInvocation), arg0, arg1)
 }
 
+// GetRootInvocation mocks base method.
+func (m *MockResultDBServer) GetRootInvocation(arg0 context.Context, arg1 *GetRootInvocationRequest) (*RootInvocation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRootInvocation", arg0, arg1)
+	ret0, _ := ret[0].(*RootInvocation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRootInvocation indicates an expected call of GetRootInvocation.
+func (mr *MockResultDBServerMockRecorder) GetRootInvocation(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRootInvocation", reflect.TypeOf((*MockResultDBServer)(nil).GetRootInvocation), arg0, arg1)
+}
+
 // GetTestExoneration mocks base method.
 func (m *MockResultDBServer) GetTestExoneration(arg0 context.Context, arg1 *GetTestExonerationRequest) (*TestExoneration, error) {
 	m.ctrl.T.Helper()
@@ -755,6 +845,21 @@ func (m *MockResultDBServer) GetTestResult(arg0 context.Context, arg1 *GetTestRe
 func (mr *MockResultDBServerMockRecorder) GetTestResult(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTestResult", reflect.TypeOf((*MockResultDBServer)(nil).GetTestResult), arg0, arg1)
+}
+
+// GetWorkUnit mocks base method.
+func (m *MockResultDBServer) GetWorkUnit(arg0 context.Context, arg1 *GetWorkUnitRequest) (*WorkUnit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWorkUnit", arg0, arg1)
+	ret0, _ := ret[0].(*WorkUnit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetWorkUnit indicates an expected call of GetWorkUnit.
+func (mr *MockResultDBServerMockRecorder) GetWorkUnit(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWorkUnit", reflect.TypeOf((*MockResultDBServer)(nil).GetWorkUnit), arg0, arg1)
 }
 
 // ListArtifactLines mocks base method.

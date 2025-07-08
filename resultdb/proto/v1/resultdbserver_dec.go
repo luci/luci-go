@@ -23,6 +23,57 @@ type DecoratedResultDB struct {
 	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
+func (s *DecoratedResultDB) GetRootInvocation(ctx context.Context, req *GetRootInvocationRequest) (rsp *RootInvocation, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "GetRootInvocation", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.GetRootInvocation(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "GetRootInvocation", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedResultDB) GetWorkUnit(ctx context.Context, req *GetWorkUnitRequest) (rsp *WorkUnit, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "GetWorkUnit", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.GetWorkUnit(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "GetWorkUnit", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedResultDB) BatchGetWorkUnits(ctx context.Context, req *BatchGetWorkUnitsRequest) (rsp *BatchGetWorkUnitsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "BatchGetWorkUnits", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.BatchGetWorkUnits(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "BatchGetWorkUnits", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedResultDB) GetInvocation(ctx context.Context, req *GetInvocationRequest) (rsp *Invocation, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
