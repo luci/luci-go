@@ -14,10 +14,38 @@
 
 import type { RouteObject } from 'react-router';
 
+import { obtainAuthState } from '../common/api/auth_state';
+
 // IMPORTANT:
 // When adding new routes, ensure that the path param does not contain PII.
 // If you need PII in the path param, document it and scrub the URL param from
 // GA4 tracking. See http://go/ooga-config#scrub-urls.
+
+// The return type of a dynamic import.
+type LazyModule = Promise<{ readonly [s: string]: unknown }>;
+
+const loadNotFoundRoute = () => import('@/fleet/pages/not_found_page');
+
+/**
+ * A higher-order function that returns a lazy-loading function for a route.
+ * The returned function only loads the route if the user is a Googler.
+ * Otherwise, it loads a "not found" page or a custom fallback.
+ */
+export const loadRouteForGooglersOnly = (
+  onSuccess: () => LazyModule,
+  onFail: () => LazyModule = loadNotFoundRoute,
+) => {
+  return async () => {
+    const isGoogler = await obtainAuthState()
+      .then((s) => s.email?.endsWith('@google.com') ?? false)
+      .catch(() => false);
+    if (isGoogler) {
+      return onSuccess();
+    }
+    return onFail();
+  };
+};
+
 export const fleetRoutes: RouteObject[] = [
   {
     path: '',
@@ -70,6 +98,12 @@ export const fleetRoutes: RouteObject[] = [
               },
             ],
           },
+          {
+            path: 'metrics',
+            lazy: loadRouteForGooglersOnly(
+              () => import('@/fleet/pages/metrics_page'),
+            ),
+          },
           { path: 'sandbox', lazy: () => import('@/fleet/pages/sandbox_page') },
           {
             path: 'repairs/:platform',
@@ -79,10 +113,8 @@ export const fleetRoutes: RouteObject[] = [
       },
       {
         path: '*',
-        lazy: () => import('@/fleet/pages/not_found_page'),
+        lazy: loadNotFoundRoute,
       },
     ],
   },
-  // Prototype of a new unified UI for fleet management.
-  // See: go/streamline-fleet-UI
 ];
