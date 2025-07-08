@@ -77,7 +77,7 @@ type PackageChunkDef struct {
 
 // LoadPackageDef loads package definition from a YAML source code.
 //
-// It substitutes %{...} strings in the definition with corresponding values
+// It substitutes ${...} strings in the definition with corresponding values
 // from 'vars' map.
 func LoadPackageDef(r io.Reader, vars map[string]string) (PackageDef, error) {
 	data, err := io.ReadAll(r)
