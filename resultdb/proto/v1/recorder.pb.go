@@ -506,7 +506,7 @@ type BatchCreateWorkUnitsRequest struct {
 	// requests[i].request_id MUST be either empty or equal to request_id in
 	// this message.
 	//
-	// A maximum of 1000 work units can be created in one request.
+	// A maximum of 500 work units can be created in one request.
 	Requests []*CreateWorkUnitRequest `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
 	// A unique identifier for this request. Restricted to 36 ASCII characters.
 	// A random UUID is recommended.

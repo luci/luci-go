@@ -103,7 +103,7 @@ func TestVerifyCreateWorkUnitPermissions(t *testing.T) {
 			t.Run("disallowed", func(t *ftt.Test) {
 				err := verifyCreateWorkUnitPermissions(ctx, request)
 				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike(`only work units created by trusted systems may have id not starting with "u-"`))
+				assert.Loosely(t, err, should.ErrLike(`work_unit_id: only work units created by trusted systems may have id not starting with "u-"`))
 			})
 
 			t.Run("allowed with realm permission", func(t *ftt.Test) {
@@ -126,7 +126,7 @@ func TestVerifyCreateWorkUnitPermissions(t *testing.T) {
 			t.Run("disallowed", func(t *ftt.Test) {
 				err := verifyCreateWorkUnitPermissions(ctx, request)
 				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike(`only work units created by trusted system may have a populated producer_resource field`))
+				assert.Loosely(t, err, should.ErrLike(`work_unit: producer_resource: only work units created by trusted system may have a populated producer_resource field`))
 			})
 
 			t.Run("allowed with realm permission", func(t *ftt.Test) {
@@ -158,38 +158,42 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 			},
 			RequestId: "request-id",
 		}
+		// This is always true for single create work unit requests,
+		// for batch requests it may be false as the request_id can be
+		// set on the parent request object.
+		requireRequestID := true
 
 		t.Run("valid", func(t *ftt.Test) {
-			err := validateCreateWorkUnitRequest(req)
+			err := validateCreateWorkUnitRequest(req, requireRequestID)
 			assert.Loosely(t, err, should.BeNil)
 		})
 
 		t.Run("parent", func(t *ftt.Test) {
 			t.Run("unspecified", func(t *ftt.Test) {
 				req.Parent = ""
-				err := validateCreateWorkUnitRequest(req)
+				err := validateCreateWorkUnitRequest(req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike("parent: unspecified"))
 			})
 			t.Run("invalid", func(t *ftt.Test) {
 				req.Parent = "invalid"
-				err := validateCreateWorkUnitRequest(req)
+				err := validateCreateWorkUnitRequest(req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike("parent: does not match"))
 			})
 		})
 		t.Run("work_unit_id", func(t *ftt.Test) {
 			t.Run("empty", func(t *ftt.Test) {
 				req.WorkUnitId = ""
-				err := validateCreateWorkUnitRequest(req)
+				err := validateCreateWorkUnitRequest(req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike("work_unit_id: unspecified"))
 			})
 			t.Run("reserved", func(t *ftt.Test) {
 				req.WorkUnitId = "build-1234567890"
-				err := validateCreateWorkUnitRequest(req)
+				err := validateCreateWorkUnitRequest(req, requireRequestID)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run("invalid", func(t *ftt.Test) {
 				req.WorkUnitId = "INVALID"
-				err := validateCreateWorkUnitRequest(req)
+				err := validateCreateWorkUnitRequest(req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike("work_unit_id: does not match"))
 			})
 		})
@@ -197,41 +201,41 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 		t.Run("work_unit", func(t *ftt.Test) {
 			t.Run("unspecified", func(t *ftt.Test) {
 				req.WorkUnit = nil
-				err := validateCreateWorkUnitRequest(req)
+				err := validateCreateWorkUnitRequest(req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike("work_unit: unspecified"))
 			})
 			t.Run("state", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					// If it is unset, we will populate a default value.
 					req.WorkUnit.State = pb.WorkUnit_STATE_UNSPECIFIED
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("active", func(t *ftt.Test) {
 					req.WorkUnit.State = pb.WorkUnit_ACTIVE
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("finalizing", func(t *ftt.Test) {
 					req.WorkUnit.State = pb.WorkUnit_FINALIZING
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.WorkUnit.State = pb.WorkUnit_FINALIZED
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.ErrLike("work_unit: state: cannot be created in the state FINALIZED"))
 				})
 			})
 			t.Run("realm", func(t *ftt.Test) {
 				t.Run("unspecified", func(t *ftt.Test) {
 					req.WorkUnit.Realm = ""
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.ErrLike("work_unit: realm: unspecified"))
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.WorkUnit.Realm = "invalid:"
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.ErrLike("work_unit: realm: bad global realm name"))
 				})
 			})
@@ -239,46 +243,46 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 				t.Run("empty", func(t *ftt.Test) {
 					// Empty is valid, the deadline will be defaulted.
 					req.WorkUnit.Deadline = nil
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.WorkUnit.Deadline = pbutil.MustTimestampProto(now.Add(-time.Hour))
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.ErrLike("work_unit: deadline: must be at least 10 seconds in the future"))
 				})
 			})
 			t.Run("producer_resource", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.WorkUnit.ProducerResource = ""
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("valid", func(t *ftt.Test) {
 					req.WorkUnit.ProducerResource = "//cr-buildbucket.appspot.com/builds/1234567890"
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.WorkUnit.ProducerResource = "invalid"
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.ErrLike("work_unit: producer_resource: resource name \"invalid\" does not start with '//'"))
 				})
 			})
 			t.Run("tags", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.WorkUnit.Tags = nil
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("valid", func(t *ftt.Test) {
 					req.WorkUnit.Tags = pbutil.StringPairs("key", "value")
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.WorkUnit.Tags = pbutil.StringPairs("1", "a")
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.ErrLike(`work_unit: tags: "1":"a": key: does not match`))
 				})
 				t.Run("too large", func(t *ftt.Test) {
@@ -287,14 +291,14 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 						tags[i] = pbutil.StringPair(strings.Repeat("k", 64), strings.Repeat("v", 256))
 					}
 					req.WorkUnit.Tags = tags
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.ErrLike("work_unit: tags: got 16575 bytes; exceeds the maximum size of 16384 bytes"))
 				})
 			})
 			t.Run("properties", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.WorkUnit.Properties = nil
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("valid", func(t *ftt.Test) {
@@ -304,7 +308,7 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 							"key_1": structpb.NewStringValue("value_1"),
 						},
 					}
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
@@ -313,7 +317,7 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 							"key_1": structpb.NewStringValue("value_1"),
 						},
 					}
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.ErrLike(`work_unit: properties: must have a field "@type"`))
 				})
 				t.Run("too large", func(t *ftt.Test) {
@@ -323,27 +327,27 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 							"a":     structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationProperties)),
 						},
 					}
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.ErrLike("work_unit: properties: the size of properties (16448) exceeds the maximum size of 16384 bytes"))
 				})
 			})
 			t.Run("extended_properties", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.WorkUnit.ExtendedProperties = nil
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid key", func(t *ftt.Test) {
 					req.WorkUnit.ExtendedProperties = testutil.TestInvocationExtendedProperties()
 					req.WorkUnit.ExtendedProperties["invalid_key@"] = &structpb.Struct{}
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.ErrLike(`work_unit: extended_properties: key "invalid_key@"`))
 				})
 			})
 			t.Run("instructions", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.WorkUnit.Instructions = nil
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("valid", func(t *ftt.Test) {
@@ -372,7 +376,7 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 							},
 						},
 					}
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
@@ -381,7 +385,7 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 							{},
 						},
 					}
-					err := validateCreateWorkUnitRequest(req)
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
 					assert.Loosely(t, err, should.ErrLike("work_unit: instructions: instructions[0]: id: unspecified"))
 				})
 			})
@@ -389,12 +393,18 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 		t.Run("request_id", func(t *ftt.Test) {
 			t.Run("empty", func(t *ftt.Test) {
 				req.RequestId = ""
-				err := validateCreateWorkUnitRequest(req)
+				err := validateCreateWorkUnitRequest(req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike("request_id: unspecified (please provide a per-request UUID to ensure idempotence)"))
+			})
+			t.Run("empty but not required", func(t *ftt.Test) {
+				requireRequestID = false
+				req.RequestId = ""
+				err := validateCreateWorkUnitRequest(req, requireRequestID)
+				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run("invalid", func(t *ftt.Test) {
 				req.RequestId = "😃"
-				err := validateCreateWorkUnitRequest(req)
+				err := validateCreateWorkUnitRequest(req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike("request_id: does not match"))
 			})
 		})

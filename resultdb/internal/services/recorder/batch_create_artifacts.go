@@ -200,8 +200,11 @@ func parseBatchCreateArtifactsRequest(in *pb.BatchCreateArtifactsRequest, cfg *c
 	var tSize int64
 	var invID invocations.ID
 
-	if err := pbutil.ValidateBatchRequestCount(len(in.Requests)); err != nil {
-		return "", nil, err
+	// TODO: Try to get rid of this case if we can and always expect in.Requests has at least one entry.
+	if len(in.Requests) > 0 {
+		if err := pbutil.ValidateBatchRequestCount(len(in.Requests)); err != nil {
+			return "", nil, err
+		}
 	}
 
 	if in.Parent != "" {

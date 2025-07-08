@@ -38,8 +38,11 @@ func validateBatchCreateTestExonerationsRequest(req *pb.BatchCreateTestExonerati
 		return errors.Fmt("request_id: %w", err)
 	}
 
-	if err := pbutil.ValidateBatchRequestCount(len(req.Requests)); err != nil {
-		return err
+	// TODO: Try to get rid of this case if we can and always expect in.Requests has at least one entry.
+	if len(req.Requests) > 0 {
+		if err := pbutil.ValidateBatchRequestCount(len(req.Requests)); err != nil {
+			return err
+		}
 	}
 
 	for i, sub := range req.Requests {

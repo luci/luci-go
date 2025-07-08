@@ -35,7 +35,7 @@ func (s *recorderServer) CreateWorkUnit(ctx context.Context, in *pb.CreateWorkUn
 	if err := verifyCreateWorkUnitPermissions(ctx, in); err != nil {
 		return nil, err
 	}
-	if err := validateCreateWorkUnitRequest(in); err != nil {
+	if err := validateCreateWorkUnitRequest(in, true); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 	// TODO: Validate we have the update-token for the parent work unit and that
@@ -86,7 +86,7 @@ func verifyCreateWorkUnitPermissions(ctx context.Context, req *pb.CreateWorkUnit
 			return err
 		}
 		if !allowed {
-			return appstatus.Errorf(codes.PermissionDenied, `only work units created by trusted systems may have id not starting with "u-"; please generate "u-{GUID}" or reach out to ResultDB owners`)
+			return appstatus.Errorf(codes.PermissionDenied, `work_unit_id: only work units created by trusted systems may have id not starting with "u-"; please generate "u-{GUID}" or reach out to ResultDB owners`)
 		}
 	}
 
@@ -100,13 +100,17 @@ func verifyCreateWorkUnitPermissions(ctx context.Context, req *pb.CreateWorkUnit
 			return err
 		}
 		if !allowed {
-			return appstatus.Errorf(codes.PermissionDenied, `only work units created by trusted system may have a populated producer_resource field`)
+			return appstatus.Errorf(codes.PermissionDenied, `work_unit: producer_resource: only work units created by trusted system may have a populated producer_resource field`)
 		}
 	}
 	return nil
 }
 
-func validateCreateWorkUnitRequest(req *pb.CreateWorkUnitRequest) error {
+// validateCreateWorkUnitRequest validates the given create work unit request.
+// requireRequestID should be set to true for all single work unit creation requests.
+// It should only be false for batch work unit creations where the request ID is set
+// on the parent.
+func validateCreateWorkUnitRequest(req *pb.CreateWorkUnitRequest, requireRequestID bool) error {
 	if err := pbutil.ValidateWorkUnitName(req.Parent); err != nil {
 		return errors.Fmt("parent: %w", err)
 	}
@@ -116,7 +120,7 @@ func validateCreateWorkUnitRequest(req *pb.CreateWorkUnitRequest) error {
 	if err := validateWorkUnitForCreate(req.WorkUnit); err != nil {
 		return errors.Fmt("work_unit: %w", err)
 	}
-	if req.RequestId == "" {
+	if requireRequestID && req.RequestId == "" {
 		// Request ID is required to ensure requests are treated idempotently
 		// in case of inevitable retries.
 		return errors.Fmt("request_id: unspecified (please provide a per-request UUID to ensure idempotence)")

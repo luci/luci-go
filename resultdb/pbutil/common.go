@@ -124,6 +124,9 @@ func ValidateRequestID(requestID string) error {
 // request.
 func ValidateBatchRequestCount(count int) error {
 	const limit = 500
+	if count <= 0 {
+		return errors.New("must have at least one request")
+	}
 	if count > limit {
 		return errors.Fmt("the number of requests in the batch (%d) exceeds %d", count, limit)
 	}

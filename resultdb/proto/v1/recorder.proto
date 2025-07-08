@@ -389,7 +389,7 @@ message BatchCreateWorkUnitsRequest {
   // requests[i].request_id MUST be either empty or equal to request_id in
   // this message.
   //
-  // A maximum of 1000 work units can be created in one request.
+  // A maximum of 500 work units can be created in one request.
   repeated CreateWorkUnitRequest requests = 1;
 
   // A unique identifier for this request. Restricted to 36 ASCII characters.
