@@ -89,16 +89,19 @@ const getDateWithOverdueData = (
 };
 
 const renderDateCellWithOverdueIndicator = (date: DateWithOverdueData) => {
+  const overdueDays = date.overdue.shiftTo('days').days;
+
+  const getOverdueColor = (overdueDays: number) => {
+    return overdueDays < 30 ? 'orange' : 'red';
+  };
+
   return (
     <>
       <span>{date.value}</span>
-      {date.overdue.days > 0 && (
-        <span css={{ color: 'red', marginLeft: 20 }}>
+      {overdueDays > 0 && (
+        <span css={{ color: getOverdueColor(overdueDays), marginLeft: 20 }}>
           {'('}
-          {date.overdue
-            .shiftTo('years', 'months', 'weeks', 'days')
-            .rescale()
-            .toHuman({ unitDisplay: 'narrow' })}
+          {date.overdue.shiftTo('days').toHuman({ unitDisplay: 'narrow' })}
           {')'}
         </span>
       )}
