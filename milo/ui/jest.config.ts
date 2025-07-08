@@ -36,6 +36,10 @@ const config: Config = {
   transformIgnorePatterns: ['/node_modules/?!(lodash-es|lit)'],
   globalSetup: './src/testing_tools/global_setup.ts',
   setupFilesAfterEnv: ['./src/testing_tools/setup_after_env.ts'],
+
+  // Reduce the time of test runs by caching unchanged test results.
+  cacheDirectory: '.cache/jest',
+
   moduleNameMapper: {
     '\\.(css|less)$': 'identity-obj-proxy',
     '\\.(svg|md|png)($|\\?)': '<rootDir>/src/testing_tools/asset_module_stub',

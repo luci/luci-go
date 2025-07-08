@@ -6,3 +6,4 @@
 /cypress/videos
 coverage
 .idea
+.cache
