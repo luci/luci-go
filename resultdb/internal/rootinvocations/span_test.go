@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -130,40 +131,44 @@ func TestWriteRootInvocation(t *testing.T) {
 			"Submitted":                         &submitted,
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, legacyCreateRequestID.StringVal, should.Equal(row.CreateRequestID))
+		assert.That(t, legacyCreateRequestID.StringVal, should.Equal(row.CreateRequestID))
 		assert.Loosely(t, invocationType, should.Equal(invocations.Root))
-		assert.Loosely(t, expectedTestResultsExpirationTime.Time, should.Match(row.UninterestingTestVerdictsExpirationTime.Time))
-		assert.Loosely(t, submitted, should.Equal(row.Submitted))
+		assert.That(t, expectedTestResultsExpirationTime.Time, should.Match(row.UninterestingTestVerdictsExpirationTime.Time))
+		assert.That(t, submitted, should.Equal(row.Submitted))
 
 		// Validate RootInvocationShards table entries.
 		for i := 0; i < RootInvocationShardCount; i++ {
-			shardID := ComputeRootInvocationShardID(ID(id), i)
+			shardID := ShardID{RootInvocationID: ID(id), ShardIndex: i}
 			var shardIndex int64
 			var rootInvID ID
+			var state pb.RootInvocation_State
+			var realm string
 			var createTime time.Time
-			err := spanutil.ReadRow(ctx, "RootInvocationShards", spanner.Key{shardID}, map[string]any{
+			var sourcesCmp spanutil.Compressed
+			var sourcesFinal bool
+			err := spanutil.ReadRow(ctx, "RootInvocationShards", shardID.Key(), map[string]any{
 				"ShardIndex":       &shardIndex,
 				"RootInvocationId": &rootInvID,
+				"State":            &state,
+				"Realm":            &realm,
 				"CreateTime":       &createTime,
+				"Sources":          &sourcesCmp,
+				"IsSourcesFinal":   &sourcesFinal,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, shardIndex, should.Equal(i))
-			assert.Loosely(t, createTime, should.Match(commitTime))
-			assert.That(t, rootInvID, should.Equal(ID(id)))
-		}
-	})
-}
 
-func TestComputeRootInvocationShardID(t *testing.T) {
-	ftt.Run("ComputeRootInvocationShardID", t, func(t *ftt.Test) {
-		t.Run(`Works`, func(t *ftt.Test) {
-			assert.That(t, ComputeRootInvocationShardID("abc", 0), should.Equal("0a7816bf:abc"))
-			assert.That(t, ComputeRootInvocationShardID("abc", 1), should.Equal("1a7816bf:abc"))
-			assert.That(t, ComputeRootInvocationShardID("abc", 2), should.Equal("2a7816bf:abc"))
-			assert.That(t, ComputeRootInvocationShardID("abc", 3), should.Equal("3a7816bf:abc"))
-			assert.That(t, ComputeRootInvocationShardID("abc", 10), should.Equal("aa7816bf:abc"))
-			assert.That(t, ComputeRootInvocationShardID("abc", 11), should.Equal("ba7816bf:abc"))
-			assert.That(t, ComputeRootInvocationShardID("abc", 15), should.Equal("fa7816bf:abc"))
-		})
+			sources := &pb.Sources{}
+			if err := proto.Unmarshal(sourcesCmp, sources); err != nil {
+				assert.Loosely(t, err, should.BeNil)
+			}
+
+			assert.Loosely(t, shardIndex, should.Equal(i))
+			assert.That(t, rootInvID, should.Equal(ID(id)))
+			assert.That(t, state, should.Equal(row.State))
+			assert.That(t, realm, should.Equal(row.Realm))
+			assert.That(t, createTime, should.Match(commitTime))
+			assert.That(t, sources, should.Match(row.Sources))
+			assert.That(t, sourcesFinal, should.Equal(row.IsSourcesFinal))
+		}
 	})
 }

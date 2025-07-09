@@ -97,7 +97,7 @@ type WorkUnitRow struct {
 func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 
 	row := map[string]interface{}{
-		"RootInvocationShardId": w.ID.rootInvocationShardID(),
+		"RootInvocationShardId": w.ID.RootInvocationShardID(),
 		"WorkUnitId":            w.ID.WorkUnitID,
 		"ParentWorkUnitId":      w.ParentWorkUnitID,
 		"SecondaryIndexShardId": w.ID.shardID(secondaryIndexShardCount),

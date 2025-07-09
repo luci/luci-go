@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 )
 
 func TestIDConversion(t *testing.T) {
@@ -61,7 +62,7 @@ func TestIDConversion(t *testing.T) {
 		})
 
 		t.Run(`RootInvocationShardID`, func(t *ftt.Test) {
-			assert.That(t, id.rootInvocationShardID(), should.Equal("8d2c0941:root-inv-id"))
+			assert.That(t, id.RootInvocationShardID(), should.Equal(rootinvocations.ShardID{RootInvocationID: "root-inv-id", ShardIndex: 8}))
 		})
 
 		t.Run(`Name`, func(t *ftt.Test) {

@@ -556,10 +556,14 @@ func RootInvocation(r rootinvocations.RootInvocationRow) []*spanner.Mutation {
 
 	for i := 0; i < 16; i++ {
 		ms = append(ms, spanutil.InsertMap("RootInvocationShards", map[string]any{
-			"RootInvocationShardId": rootinvocations.ComputeRootInvocationShardID(r.RootInvocationID, i),
+			"RootInvocationShardId": rootinvocations.ShardID{RootInvocationID: r.RootInvocationID, ShardIndex: i},
 			"ShardIndex":            i,
 			"RootInvocationId":      r.RootInvocationID,
+			"State":                 r.State,
+			"Realm":                 r.Realm,
 			"CreateTime":            r.CreateTime,
+			"Sources":               spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
+			"IsSourcesFinal":        r.IsSourcesFinal,
 		}))
 	}
 	return ms

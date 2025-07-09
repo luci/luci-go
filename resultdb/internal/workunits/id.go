@@ -19,7 +19,6 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
-	"strings"
 
 	"cloud.google.com/go/spanner"
 
@@ -37,7 +36,7 @@ type ID struct {
 
 // Returns the spanner primary key of this work unit.
 func (id ID) key() spanner.Key {
-	return spanner.Key{id.rootInvocationShardID(), id.WorkUnitID}
+	return spanner.Key{id.RootInvocationShardID().RowID(), id.WorkUnitID}
 }
 
 // shardID returns a value in [0,shardCount) deterministically based on the ID value.
@@ -53,15 +52,18 @@ func (id ID) LegacyInvocationID() invocations.ID {
 	return invocations.ID(legacyInvocationID)
 }
 
-// Determine which root invocation shard this work unit is stored in.
-// rootInvocationShardID is part of the primary key in the spanner table.
-func (id ID) rootInvocationShardID() string {
+// RootInvocationShardID returns the identifier of the root invocation shard this work unit
+// is stored in. rootInvocationShardID is part of the primary key in the spanner table.
+func (id ID) RootInvocationShardID() rootinvocations.ShardID {
 	// Use %q instead of %s which convert string to escaped Go string literal.
 	// If we ever let these invocation IDs use colons, this make sure the input to the hashing is unique
 	hash := sha256.Sum256([]byte(fmt.Sprintf("%q:%q", id.RootInvocationID, id.WorkUnitID)))
 	val := binary.BigEndian.Uint32(hash[:4])
 	shardIdx := val % uint32(rootinvocations.RootInvocationShardCount)
-	return rootinvocations.ComputeRootInvocationShardID(id.RootInvocationID, int(shardIdx))
+	return rootinvocations.ShardID{
+		RootInvocationID: id.RootInvocationID,
+		ShardIndex:       int(shardIdx),
+	}
 }
 
 // Return the resource name of a work unit.
@@ -71,12 +73,9 @@ func (id ID) Name() string {
 
 // IDFromRowID converts a Spanner-level row ID to an ID.
 func IDFromRowID(rootInvocationShardID string, workUnitID string) ID {
-	parts := strings.SplitN(rootInvocationShardID, ":", 2)
-	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-		panic(fmt.Sprintf("invalid rootInvocationShardID format: %q", rootInvocationShardID))
-	}
+	shardID := rootinvocations.ShardIDFromRowID(rootInvocationShardID)
 	return ID{
-		RootInvocationID: rootinvocations.ID(parts[1]),
+		RootInvocationID: shardID.RootInvocationID,
 		WorkUnitID:       workUnitID,
 	}
 }

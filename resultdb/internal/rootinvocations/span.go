@@ -16,8 +16,6 @@
 package rootinvocations
 
 import (
-	"crypto/sha256"
-	"encoding/binary"
 	"fmt"
 	"time"
 
@@ -31,10 +29,6 @@ import (
 )
 
 const (
-	// RootInvocationShardCount is the fixed number of shards per Root Invocation
-	// for RootInvocationShards. As per the schema, this is currently 16.
-	RootInvocationShardCount = 16
-
 	// secondaryIndexShardCount is the number of values for the SecondaryIndexShardId column in the RootInvocations table
 	// used for preventing hotspots in global secondary indexes. The range of values is [0, secondaryIndexShardCount-1].
 	secondaryIndexShardCount = 100
@@ -173,38 +167,16 @@ func (r *RootInvocationRow) toShardsMutations() []*spanner.Mutation {
 	mutations := make([]*spanner.Mutation, RootInvocationShardCount)
 	for i := 0; i < RootInvocationShardCount; i++ {
 		row := map[string]interface{}{
-			"RootInvocationShardId": ComputeRootInvocationShardID(r.RootInvocationID, i),
+			"RootInvocationShardId": ShardID{RootInvocationID: r.RootInvocationID, ShardIndex: i},
 			"ShardIndex":            i,
 			"RootInvocationId":      r.RootInvocationID,
+			"State":                 r.State,
+			"Realm":                 r.Realm,
 			"CreateTime":            spanner.CommitTimestamp,
+			"Sources":               spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
+			"IsSourcesFinal":        r.IsSourcesFinal,
 		}
 		mutations[i] = spanutil.InsertMap("RootInvocationShards", row)
 	}
 	return mutations
-}
-
-// ComputeRootInvocationShardID implements the shard ID generation logic
-// described in the RootInvocationShards schema.
-func ComputeRootInvocationShardID(id ID, shardIndex int) string {
-	if shardIndex < 0 || shardIndex >= RootInvocationShardCount {
-		panic(fmt.Sprintf("shardIndex %d out of range [0, %d)", shardIndex, RootInvocationShardCount))
-	}
-
-	// shard_step is (2^32 / N)
-	const shardStep = uint32(1 << 32 / RootInvocationShardCount)
-
-	// shard_base is Mod(ToIntBigEndian(sha256(invocation_id)[:4]), shard_step).
-	h := sha256.Sum256([]byte(id))
-	hashPrefixAsInt := binary.BigEndian.Uint32(h[:4])
-	shardBase := hashPrefixAsInt % shardStep
-
-	// shard_key = shard_base + shard_index * shard_step
-	shardKey := shardBase + uint32(shardIndex)*shardStep
-
-	// Format the 4-byte shardKey as an 8-character hex string.
-	var shardKeyBytes [4]byte
-	binary.BigEndian.PutUint32(shardKeyBytes[:], shardKey)
-
-	// Final Format: "${hex(shard_key)}:${user_provided_invocation_id}"
-	return fmt.Sprintf("%x:%s", shardKeyBytes, id)
 }

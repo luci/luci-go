@@ -191,9 +191,37 @@ CREATE TABLE RootInvocationShards (
   -- hotspotting.
   RootInvocationId STRING(MAX) NOT NULL,
 
+  -- Replica of root invocation state, to avoid hotspotting the root invocation
+  -- in operations that don't need the whole root invocation, such as test result
+  -- uploads or work unit reads.
+  --
+  -- See RootInvocations.State for more information.
+  State INT64 NOT NULL,
+
+  -- Replicate of root invocation realm, to avoid hotspotting the root invocation
+  -- in operations that don't need the whole root invocation, such as test result
+  -- uploads or work unit reads.
+  --
+  -- See RootInvocations.Realm for more information.
+  Realm STRING(64) NOT NULL,
+
   -- When the invocation was created. This is the same timestamp as
   -- RootInvocations.CreateTime. Used for TTL enforcement.
   CreateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+
+  -- Replica of root invocation sources, to avoid hotspotting the root invocation
+  -- in operations that don't need the whole root invocation, such as low-latency
+  -- exports.
+  --
+  -- See RootInvocations.Sources for more information.
+  Sources BYTES(MAX) NOT NULL,
+
+  -- Replica of the root invocation field, to avoid hotspotting the root invocation
+  -- in operations that don't need the whole root invocation, such as low-latency
+  -- exports.
+  --
+  -- See RootInvocations.IsSourcesFinal for more information.
+  IsSourcesFinal BOOL NOT NULL,
 ) PRIMARY KEY (RootInvocationShardId),
   -- Apply 1.5 year TTL to root invocations. The deletion policy applied here will
   -- apply to interleaved child tables. Leave 30 days for Spanner to actually
