@@ -19,6 +19,7 @@ import { StyledActionBlock } from '@/common/components/gm3_styled_components';
 import { useTestVariantsClient } from '@/common/hooks/prpc_clients';
 import { getStatusStyle } from '@/common/styles/status_styles';
 import { Sources } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
+import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { QueryTestVariantStabilityRequest_TestVariantPosition } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 import {
   useInvocation,
@@ -26,7 +27,11 @@ import {
   useTestVariant,
 } from '@/test_investigation/context';
 
-import { useAssociatedBugs, useIsLoadingAssociatedBugs } from '../context';
+import {
+  useAssociatedBugs,
+  useIsLoadingAssociatedBugs,
+  useTestVariantBranch,
+} from '../context';
 
 import { getNextStepsInfo } from './next_steps_utills';
 
@@ -41,6 +46,7 @@ export function NextStepsSubsection({ expanded }: NextStepsSubsectionProps) {
   const project = useProject();
   const client = useTestVariantsClient();
   const invocation = useInvocation();
+  const testVariantBranch = useTestVariantBranch();
 
   const testVariantReq =
     QueryTestVariantStabilityRequest_TestVariantPosition.fromPartial({
@@ -57,7 +63,12 @@ export function NextStepsSubsection({ expanded }: NextStepsSubsectionProps) {
     }),
   });
 
-  const nextStepsInfo = getNextStepsInfo(data, testVariant);
+  const nextStepsInfo = getNextStepsInfo(
+    data,
+    testVariant,
+    invocation,
+    testVariantBranch?.segments as Segment[],
+  );
   return (
     <>
       {expanded ? (

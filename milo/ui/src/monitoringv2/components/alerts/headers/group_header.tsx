@@ -23,7 +23,7 @@ import { useState } from 'react';
 import { BugCard } from '@/common/components/bug_card';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
-import { displayApproxDuartion } from '@/common/tools/time_utils';
+import { displayApproxDuration } from '@/common/tools/time_utils';
 
 import { AlertGroup } from '../alerts';
 
@@ -92,7 +92,7 @@ export const GroupHeader = ({
           {group.updated ? (
             <RelativeTimestamp
               timestamp={DateTime.fromISO(group.updated)}
-              formatFn={displayApproxDuartion}
+              formatFn={displayApproxDuration}
             ></RelativeTimestamp>
           ) : null}
           .

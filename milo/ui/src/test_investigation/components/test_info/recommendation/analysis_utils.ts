@@ -15,7 +15,7 @@
 import { DateTime } from 'luxon';
 
 import { SemanticStatusType } from '@/common/styles/status_styles';
-import { displayApproxDuartion } from '@/common/tools/time_utils';
+import { displayApproxDuration } from '@/common/tools/time_utils';
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import {
   TestVerdict_Status,
@@ -286,7 +286,7 @@ export const postsubmitCurrentStatus: AnalysisPointGenerator = (data) => {
       if (failureRate === undefined) continue;
       if (failureRate <= 5) {
         const time = segments[i].startHour
-          ? displayApproxDuartion(
+          ? displayApproxDuration(
               data.now.diff(DateTime.fromISO(segments[i].startHour!)),
             )
           : '';

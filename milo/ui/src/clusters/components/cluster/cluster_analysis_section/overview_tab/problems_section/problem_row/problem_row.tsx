@@ -22,7 +22,7 @@ import { useContext } from 'react';
 
 import { Problem } from '@/clusters/tools/problems';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
-import { displayApproxDuartion } from '@/common/tools/time_utils';
+import { displayApproxDuration } from '@/common/tools/time_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { OverviewTabContextData } from '../../overview_tab_context';
@@ -82,7 +82,7 @@ export const ProblemRow = ({ problem, openProblemDialog }: Props) => {
       <TableCell sx={{ fontSize: '1rem' }}>
         {problem.state.isActive ? (
           <RelativeTimestamp
-            formatFn={displayApproxDuartion}
+            formatFn={displayApproxDuration}
             timestamp={DateTime.fromISO(problem.state.lastActivationTime || '')}
           />
         ) : (

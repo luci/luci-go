@@ -39,7 +39,7 @@ import {
 import { testHistoryLink } from '@/clusters/tools/urlHandling/links';
 import { variantAsPairs } from '@/clusters/tools/variant_tools';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
-import { displayApproxDuartion } from '@/common/tools/time_utils';
+import { displayApproxDuration } from '@/common/tools/time_utils';
 
 import ExonerationExplanationSection from '../exoneration_explanation_section/exoneration_explanation_section';
 
@@ -162,7 +162,7 @@ const ExonerationsTableRow = ({ criteria, project, testVariant }: Props) => {
       </WrappingTableCell>
       <WrappingTableCell>
         <RelativeTimestamp
-          formatFn={displayApproxDuartion}
+          formatFn={displayApproxDuration}
           timestamp={DateTime.fromISO(testVariant.lastExoneration)}
         />
       </WrappingTableCell>

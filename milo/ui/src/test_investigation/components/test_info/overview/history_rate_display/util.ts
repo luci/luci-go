@@ -14,7 +14,7 @@
 
 import { DateTime } from 'luxon';
 
-import { displayApproxDuartion } from '@/common/tools/time_utils';
+import { displayApproxDuration } from '@/common/tools/time_utils';
 
 /**
  * Given an ISO string, returns a human-readable string representing how long
@@ -30,7 +30,7 @@ export function formatSegmentTimestamp(
   if (!isoString) return undefined;
   const pastDateTime = DateTime.fromISO(isoString, { zone: 'utc' });
   if (!pastDateTime.isValid) return undefined;
-  const approxDurationText = displayApproxDuartion(
+  const approxDurationText = displayApproxDuration(
     nowDateTime.diff(pastDateTime),
   );
   return approxDurationText && approxDurationText !== 'N/A'

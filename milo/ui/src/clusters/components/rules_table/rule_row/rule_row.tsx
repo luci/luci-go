@@ -26,7 +26,7 @@ import {
 } from '@/clusters/tools/problems';
 import { linkToRule } from '@/clusters/tools/urlHandling/links';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
-import { displayApproxDuartion } from '@/common/tools/time_utils';
+import { displayApproxDuration } from '@/common/tools/time_utils';
 import { BugManagement } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
 import { Rule } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 
@@ -77,7 +77,7 @@ const RuleRow = ({
                   <>
                     Active since{' '}
                     <RelativeTimestamp
-                      formatFn={displayApproxDuartion}
+                      formatFn={displayApproxDuration}
                       timestamp={DateTime.fromISO(
                         p.state.lastActivationTime || '',
                       )}
@@ -87,7 +87,7 @@ const RuleRow = ({
                   <>
                     Resolved since{' '}
                     <RelativeTimestamp
-                      formatFn={displayApproxDuartion}
+                      formatFn={displayApproxDuration}
                       timestamp={DateTime.fromISO(
                         p.state.lastDeactivationTime || '',
                       )}
@@ -117,7 +117,7 @@ const RuleRow = ({
       </TableCell>
       <TableCell>
         <RelativeTimestamp
-          formatFn={displayApproxDuartion}
+          formatFn={displayApproxDuration}
           timestamp={DateTime.fromISO(rule.lastAuditableUpdateTime || '')}
         />
       </TableCell>

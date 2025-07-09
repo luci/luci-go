@@ -126,7 +126,7 @@ export function displayCompactDuration(
  *
  * The caller should add "ago" or another suitable term after the duration string.
  */
-export function displayApproxDuartion(duration: Duration | null): string {
+export function displayApproxDuration(duration: Duration | null): string {
   if (!duration) {
     return 'N/A';
   }

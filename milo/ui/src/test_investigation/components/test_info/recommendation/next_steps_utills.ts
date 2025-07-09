@@ -13,9 +13,16 @@
 // limitations under the License.
 
 import { SemanticStatusType } from '@/common/styles/status_styles';
+import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { QueryTestVariantStabilityResponse } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 import { TestVerdict_StatusOverride } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
+import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+
+import {
+  findInvocationSegment,
+  segmentFailureRatePercent,
+} from './analysis_utils';
 
 export interface NextStepsInfo {
   status: SemanticStatusType;
@@ -29,9 +36,18 @@ export interface NextStepsInfo {
 export function getNextStepsInfo(
   testStability: QueryTestVariantStabilityResponse | undefined,
   testVariant: TestVariant,
+  invocation: Invocation,
+  segments: Segment[],
 ): NextStepsInfo | undefined {
   if (!testStability) {
     return undefined;
+  }
+  if (isAlreadyFixed(invocation, segments)) {
+    return {
+      status: 'success',
+      title: 'Try running the test again. It should pass.',
+      subtitle: 'This test is already fixed.',
+    };
   }
   const isExonerated =
     testVariant.statusOverride === TestVerdict_StatusOverride.EXONERATED;
@@ -66,4 +82,33 @@ export function getNextStepsInfo(
     title: 'No next steps identified from test analysis.',
     subtitle: 'If you think there should be next steps, please file feedback.',
   };
+}
+
+function isAlreadyFixed(invocation: Invocation, segments: Segment[]): boolean {
+  const invocationSegment = findInvocationSegment(segments, invocation);
+  if (invocationSegment === -1 || !segments || segments.length === 0) {
+    return false;
+  }
+  const invocationSegmentFailureRate = segmentFailureRatePercent(
+    segments[invocationSegment],
+  );
+  if (invocationSegmentFailureRate === undefined) {
+    return false;
+  }
+
+  if (invocationSegmentFailureRate > 5) {
+    // Check latest segment is passing. If not, it may not be fixed.
+    const latestFailureRate = segmentFailureRatePercent(segments[0]);
+    if (latestFailureRate === undefined || latestFailureRate > 5) {
+      return false;
+    }
+    for (let i = invocationSegment; i >= 0; i--) {
+      const failureRate = segmentFailureRatePercent(segments[i]);
+      if (failureRate === undefined) continue;
+      if (failureRate <= 5) {
+        return true;
+      }
+    }
+  }
+  return false;
 }

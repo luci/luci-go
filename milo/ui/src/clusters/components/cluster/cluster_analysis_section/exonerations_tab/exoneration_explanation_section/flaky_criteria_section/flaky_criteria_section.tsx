@@ -32,7 +32,7 @@ import {
   failureLink,
 } from '@/clusters/tools/urlHandling/links';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
-import { displayApproxDuartion } from '@/common/tools/time_utils';
+import { displayApproxDuration } from '@/common/tools/time_utils';
 import { TestVariantFailureRateAnalysis_VerdictExample } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 
 import { ExplanationChip } from '../explanation_chip/explanation_chip';
@@ -150,7 +150,7 @@ const FlakyCriteriaSection = ({ criteria, testVariant }: Props) => {
                   </TableCell>
                   <TableCell>
                     <RelativeTimestamp
-                      formatFn={displayApproxDuartion}
+                      formatFn={displayApproxDuration}
                       timestamp={DateTime.fromISO(verdict.partitionTime || '')}
                     />
                   </TableCell>

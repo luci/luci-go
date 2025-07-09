@@ -38,7 +38,7 @@ import {
   presubmitRunLink,
 } from '@/clusters/tools/urlHandling/links';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
-import { displayApproxDuartion } from '@/common/tools/time_utils';
+import { displayApproxDuration } from '@/common/tools/time_utils';
 import {
   DistinctClusterFailure,
   DistinctClusterFailure_PresubmitRun,
@@ -311,7 +311,7 @@ const FailuresTableRows = ({
         <NarrowTableCell className="number">{group.failures}</NarrowTableCell>
         <NarrowTableCell>
           <RelativeTimestamp
-            formatFn={displayApproxDuartion}
+            formatFn={displayApproxDuration}
             timestamp={DateTime.fromISO(group.latestFailureTime)}
           />
         </NarrowTableCell>

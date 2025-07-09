@@ -19,7 +19,7 @@ import Link from '@mui/material/Link';
 import { DateTime } from 'luxon';
 
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
-import { displayApproxDuartion } from '@/common/tools/time_utils';
+import { displayApproxDuration } from '@/common/tools/time_utils';
 
 interface Props {
   createUsername: string | undefined;
@@ -68,7 +68,7 @@ const TimestampInfoBar = ({
             <> by {<FormattedUsername username={createUsername} />}</>
           )}{' '}
           <RelativeTimestamp
-            formatFn={displayApproxDuartion}
+            formatFn={displayApproxDuration}
             timestamp={DateTime.fromISO(createTime || '')}
           />
           .
@@ -83,7 +83,7 @@ const TimestampInfoBar = ({
             <> by {<FormattedUsername username={updateUsername} />}</>
           )}{' '}
           <RelativeTimestamp
-            formatFn={displayApproxDuartion}
+            formatFn={displayApproxDuration}
             timestamp={DateTime.fromISO(updateTime || '')}
           />
           .

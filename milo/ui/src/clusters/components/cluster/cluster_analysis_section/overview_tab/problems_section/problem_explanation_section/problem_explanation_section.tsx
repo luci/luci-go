@@ -19,7 +19,7 @@ import HelpTooltip from '@/clusters/components/help_tooltip/help_tooltip';
 import { Problem } from '@/clusters/tools/problems';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
-import { displayApproxDuartion } from '@/common/tools/time_utils';
+import { displayApproxDuration } from '@/common/tools/time_utils';
 
 import { PriorityChip } from '../priority_chip/priority_chip';
 import { StatusChip } from '../status_chip/status_chip';
@@ -111,7 +111,7 @@ export const ProblemExplanationSection = ({ problem }: Props) => {
           </Typography>
           <Typography gutterBottom>
             <RelativeTimestamp
-              formatFn={displayApproxDuartion}
+              formatFn={displayApproxDuration}
               timestamp={DateTime.fromISO(
                 problem.state.lastActivationTime || '',
               )}
@@ -145,7 +145,7 @@ export const ProblemExplanationSection = ({ problem }: Props) => {
           </Typography>
           <Typography gutterBottom>
             <RelativeTimestamp
-              formatFn={displayApproxDuartion}
+              formatFn={displayApproxDuration}
               timestamp={DateTime.fromISO(
                 problem.state.lastDeactivationTime || '',
               )}

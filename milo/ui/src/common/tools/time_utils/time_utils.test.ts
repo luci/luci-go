@@ -17,7 +17,7 @@ import { Duration } from 'luxon';
 import {
   displayCompactDuration,
   displayDuration,
-  displayApproxDuartion,
+  displayApproxDuration,
 } from './time_utils';
 
 describe('displayDuration', () => {
@@ -93,9 +93,9 @@ describe('displayCompactDuration', () => {
   });
 });
 
-describe('displayApproxDuartion', () => {
+describe('displayApproxDuration', () => {
   it('should return "N/A" for null duration', () => {
-    expect(displayApproxDuartion(null)).toBe('N/A');
+    expect(displayApproxDuration(null)).toBe('N/A');
   });
 
   it.each([
@@ -105,7 +105,7 @@ describe('displayApproxDuartion', () => {
   ])(
     'should handle seconds less that 45 returning "a few seconds"',
     (duration, expected) => {
-      expect(displayApproxDuartion(duration)).toBe(expected);
+      expect(displayApproxDuration(duration)).toBe(expected);
     },
   );
 
@@ -116,7 +116,7 @@ describe('displayApproxDuartion', () => {
   ])(
     'should return "a minute" for durations between 45 and 89 seconds',
     (duration, expected) => {
-      expect(displayApproxDuartion(duration)).toBe(expected);
+      expect(displayApproxDuration(duration)).toBe(expected);
     },
   );
 
@@ -127,7 +127,7 @@ describe('displayApproxDuartion', () => {
   ])(
     'should return "X minutes" for durations between 90 seconds and 44 minutes',
     (duration, expected) => {
-      expect(displayApproxDuartion(duration)).toBe(expected);
+      expect(displayApproxDuration(duration)).toBe(expected);
     },
   );
 
@@ -138,7 +138,7 @@ describe('displayApproxDuartion', () => {
   ])(
     'should return "an hour" for durations between 45 and 89 minutes',
     (duration, expected) => {
-      expect(displayApproxDuartion(duration)).toBe(expected);
+      expect(displayApproxDuration(duration)).toBe(expected);
     },
   );
 
@@ -149,7 +149,7 @@ describe('displayApproxDuartion', () => {
   ])(
     'should return "X hours" for durations between 90 minutes and 21 hours',
     (duration, expected) => {
-      expect(displayApproxDuartion(duration)).toBe(expected);
+      expect(displayApproxDuration(duration)).toBe(expected);
     },
   );
 
@@ -160,7 +160,7 @@ describe('displayApproxDuartion', () => {
   ])(
     'should return "a day" for durations between 22 and 35 hours',
     (duration, expected) => {
-      expect(displayApproxDuartion(duration)).toBe(expected);
+      expect(displayApproxDuration(duration)).toBe(expected);
     },
   );
 
@@ -171,7 +171,7 @@ describe('displayApproxDuartion', () => {
   ])(
     'should return "X days" for durations between 36 hours and 25 days',
     (duration, expected) => {
-      expect(displayApproxDuartion(duration)).toBe(expected);
+      expect(displayApproxDuration(duration)).toBe(expected);
     },
   );
 
@@ -182,7 +182,7 @@ describe('displayApproxDuartion', () => {
   ])(
     'should return "a month" for durations between 26 and 45 days',
     (duration, expected) => {
-      expect(displayApproxDuartion(duration)).toBe(expected);
+      expect(displayApproxDuration(duration)).toBe(expected);
     },
   );
 
@@ -193,7 +193,7 @@ describe('displayApproxDuartion', () => {
   ])(
     'should return "X months" for durations between 46 and 304 days',
     (duration, expected) => {
-      expect(displayApproxDuartion(duration)).toBe(expected);
+      expect(displayApproxDuration(duration)).toBe(expected);
     },
   );
 
@@ -204,7 +204,7 @@ describe('displayApproxDuartion', () => {
   ])(
     'should return "a year" for durations between 305 and 547 days',
     (duration, expected) => {
-      expect(displayApproxDuartion(duration)).toBe(expected);
+      expect(displayApproxDuration(duration)).toBe(expected);
     },
   );
 
@@ -215,7 +215,7 @@ describe('displayApproxDuartion', () => {
   ])(
     'should return "X years" for durations greater than 547 days',
     (duration, expected) => {
-      expect(displayApproxDuartion(duration)).toBe(expected);
+      expect(displayApproxDuration(duration)).toBe(expected);
     },
   );
 });
