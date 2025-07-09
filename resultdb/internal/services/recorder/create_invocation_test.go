@@ -803,7 +803,7 @@ func TestCreateInvocation(t *testing.T) {
 			}))
 
 			expected := proto.Clone(req.Invocation).(*pb.Invocation)
-			expected.Instructions = instructionutil.InstructionsWithNames(expected.Instructions, "u-inv")
+			expected.Instructions = instructionutil.InstructionsWithNames(expected.Instructions, "invocations/u-inv")
 			proto.Merge(expected, &pb.Invocation{
 				Name:      "invocations/u-inv",
 				CreatedBy: "user:someone@example.com",

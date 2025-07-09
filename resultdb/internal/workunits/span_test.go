@@ -116,6 +116,7 @@ func TestWriteWorkUnit(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		row.CreateTime = commitTime
 		row.SecondaryIndexShardID = id.shardID(secondaryIndexShardCount)
+		row.Instructions.Instructions[0].Name = "rootInvocations/root-inv-id/workUnits/work-unit-id/instructions/step"
 		assert.Loosely(t, readWorkUnit, should.Match(row))
 
 		// Validate Legacy Invocations table entry.

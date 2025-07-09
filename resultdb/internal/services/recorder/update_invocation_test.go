@@ -1134,7 +1134,7 @@ func TestUpdateInvocation(t *testing.T) {
 				IsSourceSpecFinal: true,
 				BaselineId:        "try:linux-rel",
 				Realm:             "testproject:newrealm",
-				Instructions:      instructionutil.InstructionsWithNames(instructions, "inv"),
+				Instructions:      instructionutil.InstructionsWithNames(instructions, "invocations/inv"),
 				Tags: []*pb.StringPair{
 					{Key: "key", Value: "value"},
 				},

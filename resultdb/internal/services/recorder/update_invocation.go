@@ -386,7 +386,7 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 			case "instructions":
 				ins := instructionutil.RemoveInstructionsName(in.Invocation.GetInstructions())
 				values["Instructions"] = spanutil.Compressed(pbutil.MustMarshal(ins))
-				ret.Instructions = instructionutil.InstructionsWithNames(in.Invocation.GetInstructions(), string(invID))
+				ret.Instructions = instructionutil.InstructionsWithNames(in.Invocation.GetInstructions(), invID.Name())
 
 			case "extended_properties":
 				extendedProperties := in.Invocation.GetExtendedProperties()

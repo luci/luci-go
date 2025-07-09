@@ -317,7 +317,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			expected := proto.Clone(req.Requests[0].Invocation).(*pb.Invocation)
-			expected.Instructions = instructionutil.InstructionsWithNames(expected.Instructions, "u-batch-inv")
+			expected.Instructions = instructionutil.InstructionsWithNames(expected.Instructions, "invocations/u-batch-inv")
 			proto.Merge(expected, &pb.Invocation{
 				Name:      "invocations/u-batch-inv",
 				State:     pb.Invocation_ACTIVE,
@@ -329,7 +329,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 				TestResultVariantUnion: &pb.Variant{},
 			})
 			expected2 := proto.Clone(req.Requests[1].Invocation).(*pb.Invocation)
-			expected2.Instructions = instructionutil.InstructionsWithNames(expected2.Instructions, "u-batch-inv2")
+			expected2.Instructions = instructionutil.InstructionsWithNames(expected2.Instructions, "invocations/u-batch-inv2")
 			proto.Merge(expected2, &pb.Invocation{
 				Name:      "invocations/u-batch-inv2",
 				State:     pb.Invocation_ACTIVE,

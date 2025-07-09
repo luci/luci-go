@@ -167,7 +167,7 @@ func (r ReachableInvocations) InstructionMap() (map[invocations.ID]*pb.VerdictIn
 				if instruction.Type != pb.InstructionType_TEST_RESULT_INSTRUCTION {
 					continue
 				}
-				instructionName := instructionutil.InstructionName(string(invID), instruction.Id)
+				instructionName := instructionutil.InstructionName(invID.Name(), instruction.Id)
 				filter := instruction.InstructionFilter
 				// If there is no filter, the instruction is for this invocation and
 				// all included invocations (recursively).

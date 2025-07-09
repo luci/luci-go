@@ -210,7 +210,7 @@ func readMulti(ctx context.Context, ids IDSet, mask ReadMask, f func(id ID, inv 
 			if err := proto.Unmarshal(instructions, inv.Instructions); err != nil {
 				return err
 			}
-			inv.Instructions = instructionutil.InstructionsWithNames(inv.Instructions, string(id))
+			inv.Instructions = instructionutil.InstructionsWithNames(inv.Instructions, id.Name())
 		}
 
 		// Conditionally process ExtendedProperties.

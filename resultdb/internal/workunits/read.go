@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -136,7 +137,7 @@ func readMulti(ctx context.Context, ids []ID, f func(wu *WorkUnitRow) error) err
 			if err := proto.Unmarshal(instructions, wu.Instructions); err != nil {
 				return err
 			}
-			// TODO: attach instruction name.
+			wu.Instructions = instructionutil.InstructionsWithNames(wu.Instructions, wu.ID.Name())
 		}
 
 		if len(extendedProperties) > 0 {

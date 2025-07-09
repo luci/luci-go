@@ -167,7 +167,7 @@ func TestRead(t *testing.T) {
 			},
 			IsSourceSpecFinal:      true,
 			BaselineId:             "try:linux-rel",
-			Instructions:           instructionutil.InstructionsWithNames(instructions, "including"),
+			Instructions:           instructionutil.InstructionsWithNames(instructions, "invocations/including"),
 			ExtendedProperties:     extendedProperties,
 			TestResultVariantUnion: &pb.Variant{},
 		}))
@@ -194,7 +194,7 @@ func TestRead(t *testing.T) {
 			},
 			IsSourceSpecFinal:      true,
 			BaselineId:             "try:linux-rel",
-			Instructions:           instructionutil.InstructionsWithNames(instructions, "including"),
+			Instructions:           instructionutil.InstructionsWithNames(instructions, "invocations/including"),
 			TestResultVariantUnion: &pb.Variant{},
 		}))
 		// Double check the ExtendedProperties is nil

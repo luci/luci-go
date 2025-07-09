@@ -338,7 +338,7 @@ func TestQueryInstruction(t *testing.T) {
 				res, err := srv.QueryInstruction(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res, should.Match(&pb.QueryInstructionResponse{
-					Instruction: instructionutil.InstructionWithNames(myInstruction, "build-12345"),
+					Instruction: instructionutil.InstructionWithNames(myInstruction, "invocations/build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
 							Target: pb.InstructionTarget_LOCAL,
@@ -363,7 +363,7 @@ func TestQueryInstruction(t *testing.T) {
 				res, err := srv.QueryInstruction(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res, should.Match(&pb.QueryInstructionResponse{
-					Instruction: instructionutil.InstructionWithNames(instructionDependingOnRestrictedInvocation, "build-12345"),
+					Instruction: instructionutil.InstructionWithNames(instructionDependingOnRestrictedInvocation, "invocations/build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
 							Target: pb.InstructionTarget_LOCAL,
@@ -385,7 +385,7 @@ func TestQueryInstruction(t *testing.T) {
 				res, err := srv.QueryInstruction(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res, should.Match(&pb.QueryInstructionResponse{
-					Instruction: instructionutil.InstructionWithNames(instructionCycle1, "build-12345"),
+					Instruction: instructionutil.InstructionWithNames(instructionCycle1, "invocations/build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
 							Target: pb.InstructionTarget_LOCAL,
@@ -413,7 +413,7 @@ func TestQueryInstruction(t *testing.T) {
 				res, err := srv.QueryInstruction(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res, should.Match(&pb.QueryInstructionResponse{
-					Instruction: instructionutil.InstructionWithNames(instructionDepNotFound, "build-12345"),
+					Instruction: instructionutil.InstructionWithNames(instructionDepNotFound, "invocations/build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
 							Target: pb.InstructionTarget_REMOTE,
@@ -435,7 +435,7 @@ func TestQueryInstruction(t *testing.T) {
 				res, err := srv.QueryInstruction(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res, should.Match(&pb.QueryInstructionResponse{
-					Instruction: instructionutil.InstructionWithNames(instructionDependingOnNonStepInstruction, "build-12345"),
+					Instruction: instructionutil.InstructionWithNames(instructionDependingOnNonStepInstruction, "invocations/build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
 							Target: pb.InstructionTarget_LOCAL,
@@ -459,7 +459,7 @@ func TestQueryInstruction(t *testing.T) {
 				res, err := srv.QueryInstruction(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res, should.Match(&pb.QueryInstructionResponse{
-					Instruction: instructionutil.InstructionWithNames(instruction1, "build-12345"),
+					Instruction: instructionutil.InstructionWithNames(instruction1, "invocations/build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
 							Target: pb.InstructionTarget_LOCAL,
@@ -497,7 +497,7 @@ func TestQueryInstruction(t *testing.T) {
 				res, err := srv.QueryInstruction(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res, should.Match(&pb.QueryInstructionResponse{
-					Instruction: instructionutil.InstructionWithNames(instruction1, "build-12345"),
+					Instruction: instructionutil.InstructionWithNames(instruction1, "invocations/build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
 							Target: pb.InstructionTarget_LOCAL,

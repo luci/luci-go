@@ -102,7 +102,7 @@ func fetchDependencyNodes(ctx context.Context, invID invocations.ID, rootInstruc
 	// Of the form {"instruction_name": "descriptive_name"}
 	// This is to detect dependency cycle.
 	processedInstructionName := map[string]string{}
-	processedInstructionName[instructionutil.InstructionName(string(invID), rootInstruction.Id)] = rootInstruction.DescriptiveName
+	processedInstructionName[instructionutil.InstructionName(invID.Name(), rootInstruction.Id)] = rootInstruction.DescriptiveName
 	depth := 0
 	results := []*pb.InstructionDependencyChain_Node{}
 	for depth < maxDepth {
@@ -113,7 +113,7 @@ func fetchDependencyNodes(ctx context.Context, invID invocations.ID, rootInstruc
 		}
 		// We only support at most 1 dependency.
 		dependency := dependencies[0]
-		instructionName := instructionutil.InstructionName(dependency.InvocationId, dependency.InstructionId)
+		instructionName := instructionutil.InstructionName(pbutil.InvocationName(dependency.InvocationId), dependency.InstructionId)
 		// Check for permission.
 		err := permissions.VerifyInvocation(ctx, invocations.ID(dependency.InvocationId), rdbperms.PermGetInstruction)
 		// The user does not have permission to access the instruction for this dependency.

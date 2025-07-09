@@ -207,7 +207,7 @@ func TestInstructionsName(t *testing.T) {
 					},
 				},
 			}
-			result := InstructionsWithNames(instructions, "inv")
+			result := InstructionsWithNames(instructions, "invocations/inv")
 			assert.Loosely(t, result, should.Match(&pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{

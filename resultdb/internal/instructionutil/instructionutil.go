@@ -60,33 +60,32 @@ func RemoveInstructionsContent(instructions *pb.Instructions) *pb.Instructions {
 }
 
 // InstructionsWithNames populates the instructions with names.
-// We used string instead of invocations.ID to avoid circular import with the invocations package.
-func InstructionsWithNames(instructions *pb.Instructions, invocationID string) *pb.Instructions {
+func InstructionsWithNames(instructions *pb.Instructions, parentName string) *pb.Instructions {
 	if instructions == nil {
 		return nil
 	}
 	result := proto.Clone(instructions).(*pb.Instructions)
 	for _, instruction := range result.GetInstructions() {
-		instruction.Name = InstructionName(invocationID, instruction.Id)
+		instruction.Name = InstructionName(parentName, instruction.Id)
 	}
 	return result
 }
 
 // InstructionWithNames populates the instruction with names.
-// We used string instead of invocations.ID to avoid circular import with the invocations package.
-func InstructionWithNames(instruction *pb.Instruction, invocationID string) *pb.Instruction {
+func InstructionWithNames(instruction *pb.Instruction, parentName string) *pb.Instruction {
 	if instruction == nil {
 		return nil
 	}
 	result := proto.Clone(instruction).(*pb.Instruction)
-	result.Name = InstructionName(invocationID, instruction.Id)
+	result.Name = InstructionName(parentName, instruction.Id)
 	return result
 }
 
-// InstructionName returns instruction name given invocationID and instructionID.
-// We used string instead of invocations.ID to avoid circular import with the invocations package.
-func InstructionName(invocationID string, instructionID string) string {
-	return fmt.Sprintf("invocations/%s/instructions/%s", invocationID, instructionID)
+// InstructionName returns instruction name given parentName and instructionID.
+// parentName is the name of the parent resource of the instruction
+// i.e. an invocation name or a work unit name.
+func InstructionName(parentName string, instructionID string) string {
+	return fmt.Sprintf("%s/instructions/%s", parentName, instructionID)
 }
 
 // RemoveInstructionsName removes all names from instructions.
