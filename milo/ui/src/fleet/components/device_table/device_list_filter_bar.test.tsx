@@ -22,6 +22,7 @@ import {
 } from '@testing-library/react';
 import { useEffect, useState } from 'react';
 
+import { mockVirtualizedListDomProperties } from '@/fleet/testing_tools/dom_mocks';
 import { SelectedOptions } from '@/fleet/types';
 
 import { DeviceListFilterBar } from './device_list_filter_bar';
@@ -50,22 +51,6 @@ function click(texts: string[]) {
 function keyDown(key: object) {
   fireEvent.keyDown(document.activeElement!, key);
 }
-
-// following https://github.com/TanStack/virtual/issues/641
-// we are using virtualized list, measuring height of each element in a DOM
-// which doesn't exist in the scope of tests, so we can mock it instead
-const mockMenuItemDomProperties = () => {
-  Element.prototype.getBoundingClientRect = jest.fn(() => {
-    return {
-      width: 120,
-      height: 32,
-      top: 0,
-      left: 0,
-      bottom: 0,
-      right: 0,
-    } as DOMRect;
-  });
-};
 
 const DOWN_KEY = {
   key: 'ArrowDown',
@@ -108,15 +93,18 @@ const CTRL_K_KEY = {
 };
 
 describe('<DeviceListFilterBar />', () => {
+  let cleanupDomMocks: () => void;
+
   beforeEach(() => {
     jest.useFakeTimers();
-    mockMenuItemDomProperties();
+    cleanupDomMocks = mockVirtualizedListDomProperties();
   });
 
   afterEach(() => {
     jest.useRealTimers();
     cleanup();
     mockSelectedOptions.mockClear();
+    cleanupDomMocks();
   });
 
   it('should be able to select options', async () => {

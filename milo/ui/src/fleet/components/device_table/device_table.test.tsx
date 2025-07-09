@@ -27,6 +27,7 @@ import {
   getPrevFullRowCount,
   usePagerContext,
 } from '@/common/components/params_pager';
+import { mockVirtualizedListDomProperties } from '@/fleet/testing_tools/dom_mocks';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   Device,
@@ -269,14 +270,18 @@ const selectNthRow = async (index: number) => {
 };
 
 describe('<DeviceTable />', () => {
+  let cleanupDomMocks: () => void;
+
   beforeEach(() => {
     jest.useFakeTimers();
+    cleanupDomMocks = mockVirtualizedListDomProperties();
   });
 
   afterEach(() => {
     jest.useRealTimers();
     jest.clearAllMocks();
     cleanup();
+    cleanupDomMocks();
   });
 
   it('should start with default columns when no specified columns in the url', async () => {
