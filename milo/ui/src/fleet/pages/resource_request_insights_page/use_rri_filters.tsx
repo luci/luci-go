@@ -18,6 +18,10 @@ import { useMemo } from 'react';
 import { OptionComponent } from '@/fleet/components/filter_dropdown/filter_dropdown';
 import { FILTERS_PARAM_KEY } from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import {
+  multiselectFilterToUrlString,
+  parseMultiselectFilter,
+} from '@/fleet/pages/resource_request_insights_page/rri_url_utils';
 import { OptionValue } from '@/fleet/types/option';
 import { toIsoString } from '@/fleet/utils/dates';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
@@ -165,8 +169,8 @@ const getFiltersFromSearchParam = (
   );
 
   return {
-    rr_id: rec['rr_id']?.split(','),
-    resource_details: rec['resource_details']?.split(','),
+    rr_id: parseMultiselectFilter(rec['rr_id']),
+    resource_details: parseMultiselectFilter(rec['resource_details']),
     expected_eta: parseDateOnlyFromUrl(rec, 'expected_eta'),
     material_sourcing_actual_delivery_date: parseDateOnlyFromUrl(
       rec,
@@ -184,15 +188,15 @@ const getFiltersFromSearchParam = (
       rec,
       'config_actual_delivery_date',
     ),
-    fulfillment_status: rec['fulfillment_status']?.split(','),
-    customer: rec['customer']?.split(','),
-    resource_name: rec['resource_name']?.split(','),
+    fulfillment_status: parseMultiselectFilter(rec['fulfillment_status']),
+    customer: parseMultiselectFilter(rec['customer']),
+    resource_name: parseMultiselectFilter(rec['resource_name']),
     accepted_quantity: parseRangeFromUrl(rec, 'accepted_quantity'),
-    criticality: rec['criticality']?.split(','),
-    request_approval: rec['request_approval']?.split(','),
-    resource_pm: rec['resource_pm']?.split(','),
-    fulfillment_channel: rec['fulfillment_channel']?.split(','),
-    execution_status: rec['execution_status']?.split(','),
+    criticality: parseMultiselectFilter(rec['criticality']),
+    request_approval: parseMultiselectFilter(rec['request_approval']),
+    resource_pm: parseMultiselectFilter(rec['resource_pm']),
+    fulfillment_channel: parseMultiselectFilter(rec['fulfillment_channel']),
+    execution_status: parseMultiselectFilter(rec['execution_status']),
   } satisfies Record<RriFilterKey, unknown>;
 };
 
@@ -216,7 +220,7 @@ const filtersToUrlString = (filters: RriFilters): string => {
     if (type === 'multi-select') {
       const values = filters[key] as string[] | undefined;
       if (values) {
-        parts.push(`${key}=${values.join(',')}`);
+        parts.push(`${key}=${multiselectFilterToUrlString(values)}`);
       }
     }
     if (type === 'range') {
