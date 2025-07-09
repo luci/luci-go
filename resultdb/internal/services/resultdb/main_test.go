@@ -20,6 +20,9 @@ import (
 
 	"google.golang.org/genproto/googleapis/bytestream"
 
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
+
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	artifactcontenttest "go.chromium.org/luci/resultdb/internal/artifactcontent/testutil"
@@ -61,4 +64,14 @@ func newTestResultDBServiceWithCASReader(casReader *artifactcontenttest.FakeCASR
 		Service:  svr,
 		Postlude: internal.CommonPostlude,
 	}
+}
+
+func removePermission(perms []authtest.RealmPermission, permission realms.Permission) []authtest.RealmPermission {
+	var result []authtest.RealmPermission
+	for _, p := range perms {
+		if p.Permission != permission {
+			result = append(result, p)
+		}
+	}
+	return result
 }

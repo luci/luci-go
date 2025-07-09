@@ -79,6 +79,16 @@ func (id ID) Key(suffix ...any) spanner.Key {
 	return ret
 }
 
+// MustParseName parses a root invocation resource name.
+// If parsing fails, the method panics.
+func MustParseName(name string) ID {
+	id, err := pbutil.ParseRootInvocationName(name)
+	if err != nil {
+		panic(err)
+	}
+	return ID(id)
+}
+
 // IDSet is an unordered set of root invocation ids.
 type IDSet map[ID]struct{}
 

@@ -487,49 +487,79 @@ func Checkpoint(ctx context.Context, project, resourceID, processID, uniquifier 
 	return spanutil.InsertMap("Checkpoints", values)
 }
 
-// Insert the rootInvocation record and all the RootInvocationShards records
-// for a root invocation.
-func RootInvocationAndShards(id rootinvocations.ID) []*spanner.Mutation {
-	ms := make([]*spanner.Mutation, 0, 16+1) // 16 shard and 1 root invocation
-	properties := &structpb.Struct{
-		Fields: map[string]*structpb.Value{
-			"key": structpb.NewStringValue("value"),
-		},
-	}
-	sources := &pb.Sources{
-		GitilesCommit: &pb.GitilesCommit{
-			Host:       "chromium.googlesource.com",
-			Project:    "chromium/src",
-			Ref:        "refs/heads/main",
-			CommitHash: "1234567890abcdef1234567890abcdef12345678",
-			Position:   123,
-		},
-	}
+// MakeRootInvocation returns a root invocation row for testing.
+func MakeRootInvocation(id rootinvocations.ID, state pb.RootInvocation_State) rootinvocations.RootInvocationRow {
+	row := rootinvocations.RootInvocationRow{
+		RootInvocationID: id,
+		State:            state,
+		Realm:            TestRealm,
+		CreateTime:       time.Date(2025, 4, 25, 1, 2, 3, 4000, time.UTC),
+		CreatedBy:        "user:test@example.com",
 
+		// Spanner stores times in microsecond precision. Round times to this resolution to avoid roundtrip failures.
+		Deadline:                                time.Date(2025, 4, 28, 1, 2, 3, 4000, time.UTC),
+		UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: time.Date(2025, 6, 28, 1, 2, 3, 4000, time.UTC)},
+		CreateRequestID:                         "test-request-id",
+		ProducerResource:                        "//builds.example.com/builds/123",
+		Tags:                                    pbutil.StringPairs("k1", "v1"),
+		Properties: &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"key": structpb.NewStringValue("value"),
+			},
+		},
+		Sources: &pb.Sources{
+			GitilesCommit: &pb.GitilesCommit{
+				Host:       "chromium.googlesource.com",
+				Project:    "chromium/src",
+				Ref:        "refs/heads/main",
+				CommitHash: "1234567890abcdef1234567890abcdef12345678",
+				Position:   123,
+			},
+		},
+		IsSourcesFinal: true,
+		BaselineID:     "baseline",
+		Submitted:      false,
+	}
+	if state == pb.RootInvocation_FINALIZED || state == pb.RootInvocation_FINALIZING {
+		row.FinalizeStartTime = spanner.NullTime{Valid: true, Time: time.Date(2025, 4, 26, 1, 2, 3, 4000, time.UTC)}
+	}
+	if state == pb.RootInvocation_FINALIZED {
+		row.FinalizeTime = spanner.NullTime{Valid: true, Time: time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)}
+	}
+	return row
+}
+
+// RootInvocation inserts the rootInvocation record and all the
+// RootInvocationShards records for a root invocation.
+func RootInvocation(r rootinvocations.RootInvocationRow) []*spanner.Mutation {
+	ms := make([]*spanner.Mutation, 0, 16+1) // 16 shard and 1 root invocation
 	ms = append(ms, spanutil.InsertMap("RootInvocations", map[string]any{
-		"RootInvocationId":      id,
-		"SecondaryIndexShardId": 1,
-		"State":                 pb.RootInvocation_ACTIVE,
-		"Realm":                 TestRealm,
-		"CreateTime":            spanner.CommitTimestamp,
-		"CreatedBy":             "user:test@example.com",
-		"Deadline":              clock.Now(context.Background()).Add(24 * time.Hour),
-		"UninterestingTestVerdictsExpirationTime": spanner.NullTime{Valid: true, Time: clock.Now(context.Background()).Add(24 * time.Hour)},
-		"CreateRequestId":                         "test-request-id",
-		"ProducerResource":                        "//builds.example.com/builds/123",
-		"Tags":                                    pbutil.StringPairs("k1", "v1"),
-		"Properties":                              spanutil.Compressed(pbutil.MustMarshal(properties)),
-		"Sources":                                 spanutil.Compressed(pbutil.MustMarshal(sources)),
-		"IsSourcesFinal":                          true,
-		"BaselineId":                              "baseline",
-		"Submitted":                               false,
+		"RootInvocationId":      r.RootInvocationID,
+		"SecondaryIndexShardId": r.SecondaryIndexShardID,
+		"State":                 r.State,
+		"Realm":                 r.Realm,
+		"CreateTime":            r.CreateTime,
+		"CreatedBy":             r.CreatedBy,
+		"FinalizeStartTime":     r.FinalizeStartTime,
+		"FinalizeTime":          r.FinalizeTime,
+		"Deadline":              r.Deadline,
+		"UninterestingTestVerdictsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
+		"CreateRequestId":                         r.CreateRequestID,
+		"ProducerResource":                        r.ProducerResource,
+		"Tags":                                    r.Tags,
+		"Properties":                              spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
+		"Sources":                                 spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
+		"IsSourcesFinal":                          r.IsSourcesFinal,
+		"BaselineId":                              r.BaselineID,
+		"Submitted":                               r.Submitted,
 	}))
+
 	for i := 0; i < 16; i++ {
 		ms = append(ms, spanutil.InsertMap("RootInvocationShards", map[string]any{
-			"RootInvocationShardId": rootinvocations.ComputeRootInvocationShardID(id, i),
+			"RootInvocationShardId": rootinvocations.ComputeRootInvocationShardID(r.RootInvocationID, i),
 			"ShardIndex":            i,
-			"RootInvocationId":      id,
-			"CreateTime":            spanner.CommitTimestamp,
+			"RootInvocationId":      r.RootInvocationID,
+			"CreateTime":            r.CreateTime,
 		}))
 	}
 	return ms

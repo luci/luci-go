@@ -214,16 +214,17 @@ func spannerTestMain(m *testing.M) (exitCode int, err error) {
 // cleanupDatabase deletes all data from all tables.
 func cleanupDatabase(ctx context.Context, client *spanner.Client) error {
 	_, err := client.Apply(ctx, []*spanner.Mutation{
-		// Tables that are not interleaved in Invocations table.
+		// Tables that are not interleaved in Invocations or RootInvocationShards table.
 		spanner.Delete("TQReminders", spanner.AllKeys()),
 		spanner.Delete("TestMetadata", spanner.AllKeys()),
-
-		// All other tables are interleaved in Invocations table.
-		spanner.Delete("Invocations", spanner.AllKeys()),
-
 		spanner.Delete("Baselines", spanner.AllKeys()),
 		spanner.Delete("BaselineTestVariants", spanner.AllKeys()),
 		spanner.Delete("Checkpoints", spanner.AllKeys()),
+		spanner.Delete("RootInvocations", spanner.AllKeys()),
+
+		// All other tables are interleaved in RootInvocationShards or Invocation tables.
+		spanner.Delete("RootInvocationShards", spanner.AllKeys()),
+		spanner.Delete("Invocations", spanner.AllKeys()),
 	})
 	return err
 }

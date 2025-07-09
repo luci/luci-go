@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tracing"
 )
 
@@ -63,6 +64,32 @@ func VerifyInvocations(ctx context.Context, ids invocations.IDSet, permissions .
 		return appstatus.Errorf(codes.PermissionDenied, desc)
 	}
 
+	return nil
+}
+
+// VerifyRootInvocation verifies the caller has the given permissions in
+// the realm of the given root invocation. If the root invocation is not
+// found, a NotFound appstatus error is returned (thus disclosing the
+// non-existence of the root invocation to all callers).
+func VerifyRootInvocation(ctx context.Context, id rootinvocations.ID, permissions ...realms.Permission) (err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.permissions.VerifyRootInvocation")
+	defer func() { tracing.End(ts, err) }()
+
+	realm, err := rootinvocations.ReadRealm(ctx, id)
+	if err != nil {
+		// If the root invocation is not found, returns NotFound appstatus error.
+		return err
+	}
+
+	// Note: HasPermission does not make RPCs.
+	for _, permission := range permissions {
+		switch allowed, err := auth.HasPermission(ctx, permission, realm, nil); {
+		case err != nil:
+			return err
+		case !allowed:
+			return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s in realm of root invocation %s`, permission, id)
+		}
+	}
 	return nil
 }
 
