@@ -165,4 +165,37 @@ func TestScanForRoots(t *testing.T) {
 			"file.star",
 		}))
 	})
+
+	t.Run("FindRootForFile", func(t *testing.T) {
+		for _, tc := range []struct {
+			path string
+			root string
+		}{
+			{
+				path: abs("repo a/deeper/file.star"),
+				root: "repo a",
+			},
+			{
+				path: abs("repo a/inner/file.star"),
+				root: "repo a/inner",
+			},
+			{
+				path: abs("repo a/nonexistent.star"),
+				root: "repo a",
+			},
+			{
+				path: abs("repo a/inner/path/to/nonexistent.star"),
+				root: "repo a/inner",
+			},
+		} {
+			res, err := FindRootForFile(tc.path, "")
+			assert.NoErr(t, err)
+			assert.That(t, rebasePath(res), should.Match(tc.root))
+		}
+		res, err := FindRootForFile("/not/in/a/repo/nonexistent.star", "")
+		assert.NoErr(t, err)
+		// On unix, this should equal /
+		// On windows, this should equal C:\, or whatever the drive name is.
+		assert.That(t, res, should.Match(filepath.Dir(res)))
+	})
 }

@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -56,6 +57,11 @@ to just check formatting without overwriting files.
 			fr.Flags.BoolVar(&fr.dryRun, "dry-run", false,
 				"If set, just check the formatting without rewriting files and "+
 					"return non-zero exit code if some files need to be formatted")
+			fr.Flags.BoolVar(&fr.stdio, "stdio", false,
+				"If set, file content will be read from stdin and output to "+
+					"stdout. Exactly one filename is required when using stdio. "+
+					"It will be assumed that the stdin content belongs to this file. "+
+					"The file does not need to exist")
 			return fr
 		},
 	}
@@ -65,6 +71,7 @@ type fmtRun struct {
 	base.Subcommand
 
 	dryRun bool
+	stdio  bool
 }
 
 // fmtResult is returned as JSON output.
@@ -90,6 +97,44 @@ func (fr *fmtRun) Run(a subcommands.Application, args []string, env subcommands.
 }
 
 func (fr *fmtRun) run(ctx context.Context, inputs []string) (*fmtResult, error) {
+	if fr.stdio {
+		if len(inputs) != 1 {
+			return nil, fmt.Errorf("-stdin requires exactly one file containing the name of the file being formatted")
+		}
+		path := inputs[0]
+		root, err := pkg.FindRootForFile(path, "")
+		if err != nil {
+			return nil, err
+		}
+		local, err := pkg.PackageOnDisk(ctx, root)
+		if err == nil && local.Formatter != nil {
+			err = local.Formatter.CheckValid(ctx)
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		unformatted, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			return nil, err
+		}
+		buildFile, err := build.ParseDefault(path, unformatted)
+		if err != nil {
+			return nil, err
+		}
+		formatted, err := buildifier.Format(ctx, buildFile, local.Formatter)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, err := io.Copy(os.Stdout, bytes.NewReader(formatted)); err != nil {
+			return nil, err
+		}
+		// No need to distinguish between formatted files and already formatted ones.
+		// It's not relevant for this particular mode.
+		return &fmtResult{Formatted: inputs}, nil
+	}
+
 	roots, err := pkg.ScanForRoots(inputs)
 	if err != nil {
 		return nil, err

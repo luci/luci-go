@@ -145,6 +145,15 @@ func scanForRoots(paths []string, stopDir string) ([]*ScanResult, error) {
 	return results, nil
 }
 
+// FindRootForFile finds the root directory for a single file.
+func FindRootForFile(path, stopDir string) (string, error) {
+	root, _, err := findAnyRoot(filepath.Dir(path), stopDir, nil)
+	if err != nil {
+		return "", err
+	}
+	return root, nil
+}
+
 // findAnyRoot finds either a root with PACKAGE.star or a legacy config or
 // the stopDir, or a repo root.
 //
