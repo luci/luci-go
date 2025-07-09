@@ -136,8 +136,8 @@ func TestWriteRootInvocation(t *testing.T) {
 		assert.Loosely(t, submitted, should.Equal(row.Submitted))
 
 		// Validate RootInvocationShards table entries.
-		for i := 0; i < rootInvocationShardCount; i++ {
-			shardID := computeRootInvocationShardID(ID(id), i)
+		for i := 0; i < RootInvocationShardCount; i++ {
+			shardID := ComputeRootInvocationShardID(ID(id), i)
 			var shardIndex int64
 			var rootInvID ID
 			var createTime time.Time
@@ -157,13 +157,13 @@ func TestWriteRootInvocation(t *testing.T) {
 func TestComputeRootInvocationShardID(t *testing.T) {
 	ftt.Run("ComputeRootInvocationShardID", t, func(t *ftt.Test) {
 		t.Run(`Works`, func(t *ftt.Test) {
-			assert.That(t, computeRootInvocationShardID("abc", 0), should.Equal("0a7816bf:abc"))
-			assert.That(t, computeRootInvocationShardID("abc", 1), should.Equal("1a7816bf:abc"))
-			assert.That(t, computeRootInvocationShardID("abc", 2), should.Equal("2a7816bf:abc"))
-			assert.That(t, computeRootInvocationShardID("abc", 3), should.Equal("3a7816bf:abc"))
-			assert.That(t, computeRootInvocationShardID("abc", 10), should.Equal("aa7816bf:abc"))
-			assert.That(t, computeRootInvocationShardID("abc", 11), should.Equal("ba7816bf:abc"))
-			assert.That(t, computeRootInvocationShardID("abc", 15), should.Equal("fa7816bf:abc"))
+			assert.That(t, ComputeRootInvocationShardID("abc", 0), should.Equal("0a7816bf:abc"))
+			assert.That(t, ComputeRootInvocationShardID("abc", 1), should.Equal("1a7816bf:abc"))
+			assert.That(t, ComputeRootInvocationShardID("abc", 2), should.Equal("2a7816bf:abc"))
+			assert.That(t, ComputeRootInvocationShardID("abc", 3), should.Equal("3a7816bf:abc"))
+			assert.That(t, ComputeRootInvocationShardID("abc", 10), should.Equal("aa7816bf:abc"))
+			assert.That(t, ComputeRootInvocationShardID("abc", 11), should.Equal("ba7816bf:abc"))
+			assert.That(t, ComputeRootInvocationShardID("abc", 15), should.Equal("fa7816bf:abc"))
 		})
 	})
 }

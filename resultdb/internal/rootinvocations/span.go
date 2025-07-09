@@ -31,9 +31,9 @@ import (
 )
 
 const (
-	// rootInvocationShardCount is the fixed number of shards per Root Invocation
+	// RootInvocationShardCount is the fixed number of shards per Root Invocation
 	// for RootInvocationShards. As per the schema, this is currently 16.
-	rootInvocationShardCount = 16
+	RootInvocationShardCount = 16
 
 	// secondaryIndexShardCount is the number of values for the SecondaryIndexShardId column in the RootInvocations table
 	// used for preventing hotspots in global secondary indexes. The range of values is [0, secondaryIndexShardCount-1].
@@ -170,10 +170,10 @@ func (r *RootInvocationRow) toLegacyInvocationMutation() *spanner.Mutation {
 }
 
 func (r *RootInvocationRow) toShardsMutations() []*spanner.Mutation {
-	mutations := make([]*spanner.Mutation, rootInvocationShardCount)
-	for i := 0; i < rootInvocationShardCount; i++ {
+	mutations := make([]*spanner.Mutation, RootInvocationShardCount)
+	for i := 0; i < RootInvocationShardCount; i++ {
 		row := map[string]interface{}{
-			"RootInvocationShardId": computeRootInvocationShardID(r.RootInvocationId, i),
+			"RootInvocationShardId": ComputeRootInvocationShardID(r.RootInvocationId, i),
 			"ShardIndex":            i,
 			"RootInvocationId":      r.RootInvocationId,
 			"CreateTime":            spanner.CommitTimestamp,
@@ -183,15 +183,15 @@ func (r *RootInvocationRow) toShardsMutations() []*spanner.Mutation {
 	return mutations
 }
 
-// computeRootInvocationShardID implements the shard ID generation logic
+// ComputeRootInvocationShardID implements the shard ID generation logic
 // described in the RootInvocationShards schema.
-func computeRootInvocationShardID(id ID, shardIndex int) string {
-	if shardIndex < 0 || shardIndex >= rootInvocationShardCount {
-		panic(fmt.Sprintf("shardIndex %d out of range [0, %d)", shardIndex, rootInvocationShardCount))
+func ComputeRootInvocationShardID(id ID, shardIndex int) string {
+	if shardIndex < 0 || shardIndex >= RootInvocationShardCount {
+		panic(fmt.Sprintf("shardIndex %d out of range [0, %d)", shardIndex, RootInvocationShardCount))
 	}
 
 	// shard_step is (2^32 / N)
-	const shardStep = uint32(1 << 32 / rootInvocationShardCount)
+	const shardStep = uint32(1 << 32 / RootInvocationShardCount)
 
 	// shard_base is Mod(ToIntBigEndian(sha256(invocation_id)[:4]), shard_step).
 	h := sha256.Sum256([]byte(id))

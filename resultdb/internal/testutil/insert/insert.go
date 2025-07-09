@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testmetadata"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -484,4 +485,52 @@ func Checkpoint(ctx context.Context, project, resourceID, processID, uniquifier 
 		"CreationTime": spanner.CommitTimestamp,
 	}
 	return spanutil.InsertMap("Checkpoints", values)
+}
+
+// Insert the rootInvocation record and all the RootInvocationShards records
+// for a root invocation.
+func RootInvocationAndShards(id rootinvocations.ID) []*spanner.Mutation {
+	ms := make([]*spanner.Mutation, 0, 16+1) // 16 shard and 1 root invocation
+	properties := &structpb.Struct{
+		Fields: map[string]*structpb.Value{
+			"key": structpb.NewStringValue("value"),
+		},
+	}
+	sources := &pb.Sources{
+		GitilesCommit: &pb.GitilesCommit{
+			Host:       "chromium.googlesource.com",
+			Project:    "chromium/src",
+			Ref:        "refs/heads/main",
+			CommitHash: "1234567890abcdef1234567890abcdef12345678",
+			Position:   123,
+		},
+	}
+
+	ms = append(ms, spanutil.InsertMap("RootInvocations", map[string]any{
+		"RootInvocationId":      id,
+		"SecondaryIndexShardId": 1,
+		"State":                 pb.RootInvocation_ACTIVE,
+		"Realm":                 TestRealm,
+		"CreateTime":            spanner.CommitTimestamp,
+		"CreatedBy":             "user:test@example.com",
+		"Deadline":              clock.Now(context.Background()).Add(24 * time.Hour),
+		"UninterestingTestVerdictsExpirationTime": spanner.NullTime{Valid: true, Time: clock.Now(context.Background()).Add(24 * time.Hour)},
+		"CreateRequestId":                         "test-request-id",
+		"ProducerResource":                        "//builds.example.com/builds/123",
+		"Tags":                                    pbutil.StringPairs("k1", "v1"),
+		"Properties":                              spanutil.Compressed(pbutil.MustMarshal(properties)),
+		"Sources":                                 spanutil.Compressed(pbutil.MustMarshal(sources)),
+		"IsSourcesFinal":                          true,
+		"BaselineId":                              "baseline",
+		"Submitted":                               false,
+	}))
+	for i := 0; i < 16; i++ {
+		ms = append(ms, spanutil.InsertMap("RootInvocationShards", map[string]any{
+			"RootInvocationShardId": rootinvocations.ComputeRootInvocationShardID(id, i),
+			"ShardIndex":            i,
+			"RootInvocationId":      id,
+			"CreateTime":            spanner.CommitTimestamp,
+		}))
+	}
+	return ms
 }

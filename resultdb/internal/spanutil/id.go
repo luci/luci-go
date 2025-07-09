@@ -16,6 +16,7 @@ package spanutil
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 )
@@ -36,4 +37,11 @@ func StripHashPrefix(s string) string {
 		panic(fmt.Sprintf("%q is too short", s))
 	}
 	return s[expectedPrefixLen:]
+}
+
+// ShardID returns a value in [0,shardCount) deterministically based on the ID value.
+func ShardID(id string, shardCount int) int64 {
+	hash := sha256.Sum256([]byte(id))
+	val := binary.BigEndian.Uint32(hash[:4])
+	return int64(val % uint32(shardCount))
 }
