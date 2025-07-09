@@ -58,19 +58,19 @@ func TestWriteRootInvocation(t *testing.T) {
 		}
 		id := "root-inv-id"
 		row := &RootInvocationRow{
-			RootInvocationId:                        ID(id),
+			RootInvocationID:                        ID(id),
 			State:                                   pb.RootInvocation_ACTIVE,
 			Realm:                                   "testproject:testrealm",
 			CreatedBy:                               "user:test@example.com",
 			Deadline:                                now.Add(2 * 24 * time.Hour),
 			UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: now.Add(2 * 24 * time.Hour)},
-			CreateRequestId:                         "test-request-id",
+			CreateRequestID:                         "test-request-id",
 			ProducerResource:                        "//builds.example.com/builds/123",
 			Tags:                                    pbutil.StringPairs("k2", "v2", "k1", "v1"),
 			Properties:                              properties,
 			Sources:                                 sources,
 			IsSourcesFinal:                          true,
-			BaselineId:                              "try:linux-rel",
+			BaselineID:                              "try:linux-rel",
 			Submitted:                               false,
 		}
 		commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
@@ -88,7 +88,7 @@ func TestWriteRootInvocation(t *testing.T) {
 		readRootInv, err := Read(ctx, ID(id))
 		assert.Loosely(t, err, should.BeNil)
 		row.CreateTime = commitTime
-		row.SecondaryIndexShardId = row.RootInvocationId.shardID(secondaryIndexShardCount)
+		row.SecondaryIndexShardID = row.RootInvocationID.shardID(secondaryIndexShardCount)
 		assert.Loosely(t, readRootInv, should.Match(row))
 
 		// Validate Legacy Invocations table entry.
@@ -108,7 +108,7 @@ func TestWriteRootInvocation(t *testing.T) {
 			ProducerResource: row.ProducerResource,
 			Properties:       row.Properties,
 			IsExportRoot:     true,
-			BaselineId:       row.BaselineId,
+			BaselineId:       row.BaselineID,
 			SourceSpec: &pb.SourceSpec{
 				Sources: row.Sources,
 				Inherit: false,
@@ -130,7 +130,7 @@ func TestWriteRootInvocation(t *testing.T) {
 			"Submitted":                         &submitted,
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, legacyCreateRequestID.StringVal, should.Equal(row.CreateRequestId))
+		assert.Loosely(t, legacyCreateRequestID.StringVal, should.Equal(row.CreateRequestID))
 		assert.Loosely(t, invocationType, should.Equal(invocations.Root))
 		assert.Loosely(t, expectedTestResultsExpirationTime.Time, should.Match(row.UninterestingTestVerdictsExpirationTime.Time))
 		assert.Loosely(t, submitted, should.Equal(row.Submitted))

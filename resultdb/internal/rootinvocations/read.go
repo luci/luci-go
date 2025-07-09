@@ -86,8 +86,8 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 		)
 
 		dest := []any{
-			&inv.RootInvocationId,
-			&inv.SecondaryIndexShardId,
+			&inv.RootInvocationID,
+			&inv.SecondaryIndexShardID,
 			&inv.State,
 			&inv.Realm,
 			&inv.CreateTime,
@@ -96,13 +96,13 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 			&inv.FinalizeTime,
 			&inv.Deadline,
 			&inv.UninterestingTestVerdictsExpirationTime,
-			&inv.CreateRequestId,
+			&inv.CreateRequestID,
 			&inv.ProducerResource,
 			&inv.Tags,
 			&properties,
 			&sources,
 			&inv.IsSourcesFinal,
-			&inv.BaselineId,
+			&inv.BaselineID,
 			&inv.Submitted,
 		}
 

@@ -45,7 +45,7 @@ const (
 //   - the corresponding legacy invocation record
 //   - sharding records in RootInvocationShards
 func Create(rootInvocation *RootInvocationRow) []*spanner.Mutation {
-	if rootInvocation.RootInvocationId == "" {
+	if rootInvocation.RootInvocationID == "" {
 		panic("do not create root invocations with empty id")
 	}
 	if rootInvocation.State != pb.RootInvocation_FINALIZING && rootInvocation.State != pb.RootInvocation_ACTIVE {
@@ -83,8 +83,8 @@ func Create(rootInvocation *RootInvocationRow) []*spanner.Mutation {
 // RootInvocationRow corresponds to the schema of the RootInvocations Spanner table.
 // The values for the output only fields are ignored during writing.
 type RootInvocationRow struct {
-	RootInvocationId                        ID
-	SecondaryIndexShardId                   int64 // Output only.
+	RootInvocationID                        ID
+	SecondaryIndexShardID                   int64 // Output only.
 	State                                   pb.RootInvocation_State
 	Realm                                   string
 	CreateTime                              time.Time // Output only.
@@ -93,13 +93,13 @@ type RootInvocationRow struct {
 	FinalizeTime                            spanner.NullTime // Output only.
 	Deadline                                time.Time
 	UninterestingTestVerdictsExpirationTime spanner.NullTime
-	CreateRequestId                         string
+	CreateRequestID                         string
 	ProducerResource                        string
 	Tags                                    []*pb.StringPair
 	Properties                              *structpb.Struct
 	Sources                                 *pb.Sources
 	IsSourcesFinal                          bool
-	BaselineId                              string
+	BaselineID                              string
 	Submitted                               bool
 }
 
@@ -113,21 +113,21 @@ func (r *RootInvocationRow) Normalize() {
 
 func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 	row := map[string]interface{}{
-		"RootInvocationId":      r.RootInvocationId,
-		"SecondaryIndexShardId": r.RootInvocationId.shardID(secondaryIndexShardCount),
+		"RootInvocationId":      r.RootInvocationID,
+		"SecondaryIndexShardId": r.RootInvocationID.shardID(secondaryIndexShardCount),
 		"State":                 r.State,
 		"Realm":                 r.Realm,
 		"CreateTime":            spanner.CommitTimestamp,
 		"CreatedBy":             r.CreatedBy,
 		"Deadline":              r.Deadline,
 		"UninterestingTestVerdictsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
-		"CreateRequestId":                         r.CreateRequestId,
+		"CreateRequestId":                         r.CreateRequestID,
 		"ProducerResource":                        r.ProducerResource,
 		"Tags":                                    r.Tags,
 		"Properties":                              spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
 		"Sources":                                 spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
 		"IsSourcesFinal":                          r.IsSourcesFinal,
-		"BaselineId":                              r.BaselineId,
+		"BaselineId":                              r.BaselineID,
 		"Submitted":                               r.Submitted,
 	}
 
@@ -140,9 +140,9 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 
 func (r *RootInvocationRow) toLegacyInvocationMutation() *spanner.Mutation {
 	row := map[string]interface{}{
-		"InvocationId":                      invocations.ID(fmt.Sprintf("root:%s", r.RootInvocationId)),
+		"InvocationId":                      invocations.ID(fmt.Sprintf("root:%s", r.RootInvocationID)),
 		"Type":                              invocations.Root,
-		"ShardId":                           r.RootInvocationId.shardID(invocations.Shards),
+		"ShardId":                           r.RootInvocationID.shardID(invocations.Shards),
 		"State":                             r.State,
 		"Realm":                             r.Realm,
 		"InvocationExpirationTime":          time.Unix(0, 0), // unused field, but spanner schema enforce it to be not null.
@@ -151,14 +151,14 @@ func (r *RootInvocationRow) toLegacyInvocationMutation() *spanner.Mutation {
 		"CreatedBy":                         r.CreatedBy,
 		"Deadline":                          r.Deadline,
 		"Tags":                              r.Tags,
-		"CreateRequestId":                   r.CreateRequestId,
+		"CreateRequestId":                   r.CreateRequestID,
 		"ProducerResource":                  r.ProducerResource,
 		"Properties":                        spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
 		"InheritSources":                    spanner.NullBool{Bool: false, Valid: true}, // A root invocation defines its own sources.
 		"Sources":                           spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
 		"IsSourceSpecFinal":                 r.IsSourcesFinal,
 		"IsExportRoot":                      spanner.NullBool{Bool: true, Valid: true}, // Root invocations are always export roots.
-		"BaselineId":                        r.BaselineId,
+		"BaselineId":                        r.BaselineID,
 		"Submitted":                         r.Submitted,
 	}
 
@@ -173,9 +173,9 @@ func (r *RootInvocationRow) toShardsMutations() []*spanner.Mutation {
 	mutations := make([]*spanner.Mutation, RootInvocationShardCount)
 	for i := 0; i < RootInvocationShardCount; i++ {
 		row := map[string]interface{}{
-			"RootInvocationShardId": ComputeRootInvocationShardID(r.RootInvocationId, i),
+			"RootInvocationShardId": ComputeRootInvocationShardID(r.RootInvocationID, i),
 			"ShardIndex":            i,
-			"RootInvocationId":      r.RootInvocationId,
+			"RootInvocationId":      r.RootInvocationID,
 			"CreateTime":            spanner.CommitTimestamp,
 		}
 		mutations[i] = spanutil.InsertMap("RootInvocationShards", row)
