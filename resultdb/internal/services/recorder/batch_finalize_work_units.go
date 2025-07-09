@@ -19,12 +19,30 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // BatchFinalizeWorkUnits implements pb.RecorderServer.
 func (s *recorderServer) BatchFinalizeWorkUnits(ctx context.Context, in *pb.BatchFinalizeWorkUnitsRequest) (*pb.BatchFinalizeWorkUnitsResponse, error) {
+	if err := validateBatchFinalizeWorkUnitsRequest(in); err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+
 	return nil, appstatus.Error(codes.Unimplemented, "not yet implemented")
+}
+
+func validateBatchFinalizeWorkUnitsRequest(req *pb.BatchFinalizeWorkUnitsRequest) error {
+	if err := pbutil.ValidateBatchRequestCount(len(req.Requests)); err != nil {
+		return errors.Fmt("requests: %w", err)
+	}
+	for i, r := range req.Requests {
+		if err := validateFinalizeWorkUnitRequest(r); err != nil {
+			return errors.Fmt("requests[%d]: %w", i, err)
+		}
+	}
+	return nil
 }

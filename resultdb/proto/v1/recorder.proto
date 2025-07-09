@@ -435,13 +435,15 @@ message UpdateWorkUnitRequest {
 message BatchUpdateWorkUnitsRequest {
   // The request messages specifying the work unit updates.
   //
-  // A maximum of 1000 work units can be modified in one request.
+  // A maximum of 500 work units can be modified in one request.
   repeated UpdateWorkUnitRequest requests = 1;
 }
 
 // A response message for BatchUpdateWorkUnits RPC.
 message BatchUpdateWorkUnitsResponse {
   // The updated work units.
+  // To limit response size, the `extended_properties` field is elided
+  // from work units.
   repeated WorkUnit work_units = 1;
 }
 
@@ -462,13 +464,15 @@ message FinalizeWorkUnitRequest {
 message BatchFinalizeWorkUnitsRequest {
   // The request messages specifying the work units to finalize.
   //
-  // A maximum of 1000 work units can be finalized in one request.
+  // A maximum of 500 work units can be finalized in one request.
   repeated FinalizeWorkUnitRequest requests = 1;
 }
 
 // A response message for BatchFinalizeWorkUnits RPC.
 message BatchFinalizeWorkUnitsResponse {
   // The finalized work units.
+  // To limit response size, the `extended_properties` field is elided
+  // from work units.
   repeated WorkUnit work_units = 1;
 }
 

@@ -690,7 +690,7 @@ type BatchUpdateWorkUnitsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The request messages specifying the work unit updates.
 	//
-	// A maximum of 1000 work units can be modified in one request.
+	// A maximum of 500 work units can be modified in one request.
 	Requests      []*UpdateWorkUnitRequest `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -737,6 +737,8 @@ func (x *BatchUpdateWorkUnitsRequest) GetRequests() []*UpdateWorkUnitRequest {
 type BatchUpdateWorkUnitsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The updated work units.
+	// To limit response size, the `extended_properties` field is elided
+	// from work units.
 	WorkUnits     []*WorkUnit `protobuf:"bytes,1,rep,name=work_units,json=workUnits,proto3" json:"work_units,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -837,7 +839,7 @@ type BatchFinalizeWorkUnitsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The request messages specifying the work units to finalize.
 	//
-	// A maximum of 1000 work units can be finalized in one request.
+	// A maximum of 500 work units can be finalized in one request.
 	Requests      []*FinalizeWorkUnitRequest `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -884,6 +886,8 @@ func (x *BatchFinalizeWorkUnitsRequest) GetRequests() []*FinalizeWorkUnitRequest
 type BatchFinalizeWorkUnitsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The finalized work units.
+	// To limit response size, the `extended_properties` field is elided
+	// from work units.
 	WorkUnits     []*WorkUnit `protobuf:"bytes,1,rep,name=work_units,json=workUnits,proto3" json:"work_units,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
