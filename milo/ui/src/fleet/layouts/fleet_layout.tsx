@@ -14,6 +14,7 @@
 
 import { ThemeProvider, styled } from '@mui/material';
 import { NotificationsProvider } from '@toolpad/core/useNotifications';
+import { Settings } from 'luxon';
 import { Helmet } from 'react-helmet';
 import { Outlet } from 'react-router';
 import { useLocalStorage } from 'react-use';
@@ -50,6 +51,8 @@ export const FleetLayout = () => {
   const [sidebarOpen = false, setSidebarOpen] = useLocalStorage<boolean>(
     SIDE_BAR_OPEN_CACHE_KEY,
   );
+
+  Settings.defaultLocale = 'en';
 
   return (
     <UnhandledErrorLogger>
