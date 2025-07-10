@@ -421,6 +421,9 @@ export interface ResourceRequest {
   readonly executionStatus?: string | undefined;
   readonly resourceGroups: readonly string[];
   readonly resourceRequestBugId?: string | undefined;
+  readonly resourceRequestActualDeliveryDate?: DateOnly | undefined;
+  readonly resourceRequestTargetDeliveryDate?: DateOnly | undefined;
+  readonly resourceRequestStatus?: ResourceRequest_Status | undefined;
 }
 
 export enum ResourceRequest_Status {
@@ -3135,6 +3138,9 @@ function createBaseResourceRequest(): ResourceRequest {
     executionStatus: undefined,
     resourceGroups: [],
     resourceRequestBugId: undefined,
+    resourceRequestActualDeliveryDate: undefined,
+    resourceRequestTargetDeliveryDate: undefined,
+    resourceRequestStatus: undefined,
   };
 }
 
@@ -3247,6 +3253,15 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     }
     if (message.resourceRequestBugId !== undefined) {
       writer.uint32(322).string(message.resourceRequestBugId);
+    }
+    if (message.resourceRequestActualDeliveryDate !== undefined) {
+      DateOnly.encode(message.resourceRequestActualDeliveryDate, writer.uint32(330).fork()).join();
+    }
+    if (message.resourceRequestTargetDeliveryDate !== undefined) {
+      DateOnly.encode(message.resourceRequestTargetDeliveryDate, writer.uint32(338).fork()).join();
+    }
+    if (message.resourceRequestStatus !== undefined) {
+      writer.uint32(344).int32(message.resourceRequestStatus);
     }
     return writer;
   },
@@ -3546,6 +3561,30 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
           message.resourceRequestBugId = reader.string();
           continue;
         }
+        case 41: {
+          if (tag !== 330) {
+            break;
+          }
+
+          message.resourceRequestActualDeliveryDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 42: {
+          if (tag !== 338) {
+            break;
+          }
+
+          message.resourceRequestTargetDeliveryDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 43: {
+          if (tag !== 344) {
+            break;
+          }
+
+          message.resourceRequestStatus = reader.int32() as any;
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3628,6 +3667,15 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
         : [],
       resourceRequestBugId: isSet(object.resourceRequestBugId)
         ? globalThis.String(object.resourceRequestBugId)
+        : undefined,
+      resourceRequestActualDeliveryDate: isSet(object.resourceRequestActualDeliveryDate)
+        ? DateOnly.fromJSON(object.resourceRequestActualDeliveryDate)
+        : undefined,
+      resourceRequestTargetDeliveryDate: isSet(object.resourceRequestTargetDeliveryDate)
+        ? DateOnly.fromJSON(object.resourceRequestTargetDeliveryDate)
+        : undefined,
+      resourceRequestStatus: isSet(object.resourceRequestStatus)
+        ? resourceRequest_StatusFromJSON(object.resourceRequestStatus)
         : undefined,
     };
   },
@@ -3742,6 +3790,15 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     if (message.resourceRequestBugId !== undefined) {
       obj.resourceRequestBugId = message.resourceRequestBugId;
     }
+    if (message.resourceRequestActualDeliveryDate !== undefined) {
+      obj.resourceRequestActualDeliveryDate = DateOnly.toJSON(message.resourceRequestActualDeliveryDate);
+    }
+    if (message.resourceRequestTargetDeliveryDate !== undefined) {
+      obj.resourceRequestTargetDeliveryDate = DateOnly.toJSON(message.resourceRequestTargetDeliveryDate);
+    }
+    if (message.resourceRequestStatus !== undefined) {
+      obj.resourceRequestStatus = resourceRequest_StatusToJSON(message.resourceRequestStatus);
+    }
     return obj;
   },
 
@@ -3830,6 +3887,15 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     message.executionStatus = object.executionStatus ?? undefined;
     message.resourceGroups = object.resourceGroups?.map((e) => e) || [];
     message.resourceRequestBugId = object.resourceRequestBugId ?? undefined;
+    message.resourceRequestActualDeliveryDate =
+      (object.resourceRequestActualDeliveryDate !== undefined && object.resourceRequestActualDeliveryDate !== null)
+        ? DateOnly.fromPartial(object.resourceRequestActualDeliveryDate)
+        : undefined;
+    message.resourceRequestTargetDeliveryDate =
+      (object.resourceRequestTargetDeliveryDate !== undefined && object.resourceRequestTargetDeliveryDate !== null)
+        ? DateOnly.fromPartial(object.resourceRequestTargetDeliveryDate)
+        : undefined;
+    message.resourceRequestStatus = object.resourceRequestStatus ?? undefined;
     return message;
   },
 };

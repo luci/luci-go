@@ -60,6 +60,7 @@ export interface RriGridRow {
   fulfillment_channel: string;
   execution_status: string;
   resource_groups: string;
+  resource_request_status: string;
 }
 
 const getDateWithOverdueData = (
@@ -190,6 +191,24 @@ export const RRI_COLUMNS = [
           ? fulfillmentStatusDisplayValueMap[
               ResourceRequest_Status[
                 rr.fulfillmentStatus
+              ] as keyof typeof ResourceRequest_Status
+            ]
+          : ''),
+    isDefault: false,
+  },
+  {
+    id: 'resource_request_status',
+    gridColDef: {
+      field: 'resource_request_status',
+      headerName: 'Resource Request Status',
+      flex: 1,
+    },
+    assignValue: (rr, row) =>
+      (row.resource_request_status =
+        rr.resourceRequestStatus !== undefined
+          ? fulfillmentStatusDisplayValueMap[
+              ResourceRequest_Status[
+                rr.resourceRequestStatus
               ] as keyof typeof ResourceRequest_Status
             ]
           : ''),
