@@ -228,11 +228,7 @@ export function MainMetrics({
               loading={labstationsQuery.isPending}
               filterUrl={getFilterQueryString({
                 'labels.dut_state': ['ready'],
-                'labels.label-pool': [
-                  'labstation_tryjob',
-                  'labstation_main',
-                  'labstation_canary',
-                ],
+                ...LABSTATION_FILTERS,
               })}
             />
             <SingleMetric
@@ -243,11 +239,7 @@ export function MainMetrics({
               loading={labstationsQuery.isPending}
               filterUrl={getFilterQueryString({
                 'labels.dut_state': ['repair_failed'],
-                'labels.label-pool': [
-                  'labstation_tryjob',
-                  'labstation_main',
-                  'labstation_canary',
-                ],
+                ...LABSTATION_FILTERS,
               })}
             />
             <SingleMetric
@@ -258,11 +250,7 @@ export function MainMetrics({
               loading={needsDeployLabstationsQuery.isPending}
               filterUrl={getFilterQueryString({
                 'labels.dut_state': ['needs_deploy'],
-                'labels.label-pool': [
-                  'labstation_tryjob',
-                  'labstation_main',
-                  'labstation_canary',
-                ],
+                ...LABSTATION_FILTERS,
               })}
             />
           </div>
@@ -303,13 +291,18 @@ export function MainMetricsContainer({
     }),
   );
 
-  // TODO(b/398857588): remove this once needs_deploy is added to the device state counts
+  // TODO(b/398857588): remove this once needs_deploy is added to the device
+  // state counts.
+  // NOTE: Because we are using filters for needs_deploy and filters do not
+  // have AND support, there is a known issue where needs_deploy shows an
+  // incorrect count in the case when selectedOptions includes a
+  // labels.dut_state selection other than needs_deploy.
   const needsDeployLabstationsQuery = useQuery(
     client.CountDevices.query({
       filter: stringifyFilters({
-        'labels.dut_state': ['needs_deploy'],
         ...selectedOptions,
         ...LABSTATION_FILTERS,
+        'labels.dut_state': ['needs_deploy'],
       }),
     }),
   );
