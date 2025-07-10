@@ -233,7 +233,7 @@ export const DeviceDetailsPage = () => {
                 },
               ]}
             />
-            <SshTip deviceId={id} />
+            <SshTip hostname={id} dutId={dutId} />
           </div>
           <TabContext value={selectedTab || TabValue.TASKS}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>

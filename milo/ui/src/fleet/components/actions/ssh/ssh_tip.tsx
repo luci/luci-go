@@ -23,10 +23,18 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
+import { useBot } from '@/fleet/hooks/swarming_hooks';
+import { getDimensionValue } from '@/fleet/utils/bots';
+import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
+import { useBotsClient } from '@/swarming/hooks/prpc_clients';
+
 import CodeSnippet from '../../code_snippet/code_snippet';
 
+const ZONE_SATLAB = 'ZONE_SATLAB';
+
 interface SshTipProps {
-  deviceId: string;
+  hostname: string;
+  dutId: string;
 }
 
 /**
@@ -35,9 +43,27 @@ interface SshTipProps {
 // TODO: b/408052902 - Based on usage of this component, we can determine if,
 // long-term, it makes sense to add more integrated support for SSHing into
 // devices.
-export function SshTip({ deviceId }: SshTipProps) {
+export function SshTip({ hostname, dutId }: SshTipProps) {
   const [open, setOpen] = useState<boolean>(false);
-  const command = `ssh ${deviceId}`;
+
+  const client = useBotsClient(DEVICE_TASKS_SWARMING_HOST);
+
+  const { info: botInfo } = useBot(client, dutId);
+
+  const isUfsZoneSatlab =
+    getDimensionValue(botInfo, 'ufs_zone') === ZONE_SATLAB;
+  const isHostnameSatlab = hostname.includes('satlab');
+  const isSatlab = isUfsZoneSatlab || isHostnameSatlab;
+
+  const droneServer = getDimensionValue(botInfo, 'drone_server');
+
+  const command =
+    isSatlab && droneServer
+      ? `ssh -o ProxyJump=moblab@${droneServer} root@${hostname}`
+      : `ssh ${hostname}`;
+
+  const showWarning = isSatlab && !droneServer;
+
   return (
     <>
       <Button
@@ -49,19 +75,27 @@ export function SshTip({ deviceId }: SshTipProps) {
         SSH
       </Button>
       <Dialog onClose={() => setOpen(false)} open={open}>
-        <DialogTitle>SSH into {deviceId}</DialogTitle>
+        <DialogTitle>SSH into {hostname}</DialogTitle>
         <DialogContent>
-          <Alert severity="info">
-            When you first SSH into a ChromeOS device, you will need to follow{' '}
-            <a
-              href="http://go/chromeos-lab-duts-ssh#setup-private-key-and-ssh-config"
-              target="_blank"
-              rel="noreferrer"
-            >
-              these setup instructions
-            </a>
-            .
-          </Alert>
+          {showWarning && (
+            <Alert severity="warning">
+              This device is a Satlab device, but we were unable to determine
+              the drone server. The following SSH instructions may be incorrect.
+            </Alert>
+          )}
+          {!isSatlab && (
+            <Alert severity="info">
+              When you first SSH into a ChromeOS device, you will need to follow{' '}
+              <a
+                href="http://go/chromeos-lab-duts-ssh#setup-private-key-and-ssh-config"
+                target="_blank"
+                rel="noreferrer"
+              >
+                these setup instructions
+              </a>
+              .
+            </Alert>
+          )}
           <p>
             To learn how to SSH into a ChromeOS device, see:{' '}
             <a

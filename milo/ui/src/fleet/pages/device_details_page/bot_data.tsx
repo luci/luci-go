@@ -35,14 +35,13 @@ import CentralizedProgress from '@/clusters/components/centralized_progress/cent
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { DEFAULT_CODE_MIRROR_CONFIG } from '@/fleet/constants/component_config';
+import { useBot } from '@/fleet/hooks/swarming_hooks';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { prettyDateTime } from '@/fleet/utils/dates';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { getTaskURL } from '@/fleet/utils/swarming';
 import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
 import { useBotsClient } from '@/swarming/hooks/prpc_clients';
-
-import { useBot } from './hooks';
 
 // Copied from go.chromium.org/luci/swarming/server/ui2/modules/bot-page/bot-page-helpers.js
 const quarantineMessage = (state: {

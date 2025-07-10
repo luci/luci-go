@@ -30,6 +30,7 @@ import {
   TASK_ONGOING_STATES,
   TASK_EXCEPTIONAL_STATES,
 } from '@/fleet/constants/tasks';
+import { useBot, useTasks } from '@/fleet/hooks/swarming_hooks';
 import { colors } from '@/fleet/theme/colors';
 import {
   DEVICE_TASKS_MILO_HOST,
@@ -45,8 +46,6 @@ import {
   taskStateToJSON,
 } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 import { useBotsClient } from '@/swarming/hooks/prpc_clients';
-
-import { useBot, useTasks } from './hooks';
 
 const UNKNOWN_ROW_COUNT = -1;
 const DEFAULT_PAGE_SIZE = 50;
