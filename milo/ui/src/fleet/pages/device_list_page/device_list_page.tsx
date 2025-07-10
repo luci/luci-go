@@ -39,7 +39,7 @@ import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useDevices } from '@/fleet/hooks/use_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import { MainMetrics } from '@/fleet/pages/device_list_page/main_metrics';
+import { MainMetricsContainer } from '@/fleet/pages/device_list_page/main_metrics';
 import { SelectedOptions } from '@/fleet/types';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
@@ -98,6 +98,7 @@ export const DeviceListPage = () => {
       }),
     ),
   });
+
   const request = ListDevicesRequest.fromPartial({
     pageSize: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
@@ -190,7 +191,7 @@ export const DeviceListPage = () => {
       }}
     >
       <WarningNotifications warnings={warnings} />
-      <MainMetrics countQuery={countQuery} />
+      <MainMetricsContainer selectedOptions={selectedOptions.filters || {}} />
       <div
         css={{
           marginTop: 24,
