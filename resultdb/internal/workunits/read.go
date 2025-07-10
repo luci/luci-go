@@ -57,6 +57,20 @@ func readColumns(ctx context.Context, id ID, ptrMap map[string]any) error {
 	}
 }
 
+// ReadRealm reads the realm of the given work unit. If the work unit
+// is not found, returns a NotFound appstatus error. Otherwise returns the internal
+// error.
+func ReadRealm(ctx context.Context, id ID) (string, error) {
+	var realm string
+	err := readColumns(ctx, id, map[string]any{
+		"Realm": &realm,
+	})
+	if err != nil {
+		return "", err
+	}
+	return realm, nil
+}
+
 // readMulti reads multiple work units from Spanner.
 func readMulti(ctx context.Context, ids []ID, f func(wu *WorkUnitRow) error) error {
 	if len(ids) == 0 {

@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tracing"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 )
 
 // VerifyInvocation checks if the caller has the specified permissions on the
@@ -91,6 +92,86 @@ func VerifyRootInvocation(ctx context.Context, id rootinvocations.ID, permission
 		}
 	}
 	return nil
+}
+
+type AccessLevel int
+
+const (
+	// The user has no access to the resource.
+	NoAccess AccessLevel = iota
+	// The user has limited access to the resource (e.g. only masked access).
+	LimitedAccess
+	// The user has full access to the resource.
+	FullAccess
+)
+
+// QueryWorkUnitAccessOptions defines the permissions required to reach a certain access level
+// on the work unit.
+type QueryWorkUnitAccessOptions struct {
+	// The permission required to reach FullAccess access level.
+	// To obtain FullAccess, this permission must be granted on the realm of the
+	// root invocation.
+	Full realms.Permission
+	// The permission required to reach LimitedAccess access level.
+	// This permission must be granted on the realm of the root invocation.
+	Limited realms.Permission
+	// The permission required to upgrade limited access to full access. This
+	// permission must be granted on the realm of the work unit.
+	UpgradeLimitedToFull realms.Permission
+}
+
+// QueryWorkUnitAccess determines the access the user has to the given work unit.
+//
+// A NotFound appstatus error is returned if the root invocation is not found (thereby
+// disclosing its existence, even to unauthenticated callers). A NotFound appstatus error
+// may also be returned if the work unit is not found, if it was necessary to check the
+// work unit realm.
+func QueryWorkUnitAccess(ctx context.Context, id workunits.ID, opts QueryWorkUnitAccessOptions) (accessLevel AccessLevel, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.permissions.QueryWorkUnitAccess")
+	defer func() { tracing.End(ts, err) }()
+
+	// Avoid hotspotting the root invocation record by reading the realm from the same
+	// shard as the work unit.
+	rootInvRealm, err := rootinvocations.ReadRealmFromShard(ctx, id.RootInvocationShardID())
+	if err != nil {
+		// If the root invocation is not found, returns NotFound appstatus error.
+		return NoAccess, err
+	}
+
+	// Note: HasPermission does not make RPCs.
+	allowed, err := auth.HasPermission(ctx, opts.Full, rootInvRealm, nil)
+	if err != nil {
+		// Some sort of internal error doing the permission check.
+		return NoAccess, err
+	}
+	if allowed {
+		// Break out early, we have all the access we need.
+		return FullAccess, nil
+	}
+
+	allowed, err = auth.HasPermission(ctx, opts.Limited, rootInvRealm, nil)
+	if err != nil {
+		// Some sort of internal error doing the permission check.
+		return NoAccess, err
+	}
+	if allowed {
+		// We have limited access. Try to see if we can upgrade it to full access.
+		workUnitRealm, err := workunits.ReadRealm(ctx, id)
+		if err != nil {
+			// If the work unit is not found, returns NotFound appstatus error.
+			return NoAccess, err
+		}
+
+		allowed, err := auth.HasPermission(ctx, opts.UpgradeLimitedToFull, workUnitRealm, nil)
+		if err != nil {
+			return NoAccess, err
+		}
+		if allowed {
+			return FullAccess, nil
+		}
+		return LimitedAccess, nil
+	}
+	return NoAccess, nil
 }
 
 // VerifyInvocationsByName does the same as VerifyInvocations but accepts

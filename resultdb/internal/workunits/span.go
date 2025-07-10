@@ -95,6 +95,7 @@ type WorkUnitRow struct {
 }
 
 func (w *WorkUnitRow) toMutation() *spanner.Mutation {
+	// TODO: Normalise instruction names before writing.
 
 	row := map[string]interface{}{
 		"RootInvocationShardId": w.ID.RootInvocationShardID(),
@@ -126,6 +127,7 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 }
 
 func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *spanner.Mutation {
+	// TODO: Normalise instruction names before writing.
 
 	row := map[string]interface{}{
 		"InvocationId":                      w.ID.LegacyInvocationID(),

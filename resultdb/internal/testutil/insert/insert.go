@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testmetadata"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -487,84 +488,12 @@ func Checkpoint(ctx context.Context, project, resourceID, processID, uniquifier 
 	return spanutil.InsertMap("Checkpoints", values)
 }
 
-// MakeRootInvocation returns a root invocation row for testing.
-func MakeRootInvocation(id rootinvocations.ID, state pb.RootInvocation_State) rootinvocations.RootInvocationRow {
-	row := rootinvocations.RootInvocationRow{
-		RootInvocationID: id,
-		State:            state,
-		Realm:            TestRealm,
-		CreateTime:       time.Date(2025, 4, 25, 1, 2, 3, 4000, time.UTC),
-		CreatedBy:        "user:test@example.com",
-
-		// Spanner stores times in microsecond precision. Round times to this resolution to avoid roundtrip failures.
-		Deadline:                                time.Date(2025, 4, 28, 1, 2, 3, 4000, time.UTC),
-		UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: time.Date(2025, 6, 28, 1, 2, 3, 4000, time.UTC)},
-		CreateRequestID:                         "test-request-id",
-		ProducerResource:                        "//builds.example.com/builds/123",
-		Tags:                                    pbutil.StringPairs("k1", "v1"),
-		Properties: &structpb.Struct{
-			Fields: map[string]*structpb.Value{
-				"key": structpb.NewStringValue("value"),
-			},
-		},
-		Sources: &pb.Sources{
-			GitilesCommit: &pb.GitilesCommit{
-				Host:       "chromium.googlesource.com",
-				Project:    "chromium/src",
-				Ref:        "refs/heads/main",
-				CommitHash: "1234567890abcdef1234567890abcdef12345678",
-				Position:   123,
-			},
-		},
-		IsSourcesFinal: true,
-		BaselineID:     "baseline",
-		Submitted:      false,
-	}
-	if state == pb.RootInvocation_FINALIZED || state == pb.RootInvocation_FINALIZING {
-		row.FinalizeStartTime = spanner.NullTime{Valid: true, Time: time.Date(2025, 4, 26, 1, 2, 3, 4000, time.UTC)}
-	}
-	if state == pb.RootInvocation_FINALIZED {
-		row.FinalizeTime = spanner.NullTime{Valid: true, Time: time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)}
-	}
-	return row
+// RootInvocation returns Spanner mtuations to create the given root invocation.
+func RootInvocation(row rootinvocations.RootInvocationRow) []*spanner.Mutation {
+	return rootinvocations.InsertForTesting(row)
 }
 
-// RootInvocation inserts the rootInvocation record and all the
-// RootInvocationShards records for a root invocation.
-func RootInvocation(r rootinvocations.RootInvocationRow) []*spanner.Mutation {
-	ms := make([]*spanner.Mutation, 0, 16+1) // 16 shard and 1 root invocation
-	ms = append(ms, spanutil.InsertMap("RootInvocations", map[string]any{
-		"RootInvocationId":      r.RootInvocationID,
-		"SecondaryIndexShardId": r.SecondaryIndexShardID,
-		"State":                 r.State,
-		"Realm":                 r.Realm,
-		"CreateTime":            r.CreateTime,
-		"CreatedBy":             r.CreatedBy,
-		"FinalizeStartTime":     r.FinalizeStartTime,
-		"FinalizeTime":          r.FinalizeTime,
-		"Deadline":              r.Deadline,
-		"UninterestingTestVerdictsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
-		"CreateRequestId":                         r.CreateRequestID,
-		"ProducerResource":                        r.ProducerResource,
-		"Tags":                                    r.Tags,
-		"Properties":                              spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
-		"Sources":                                 spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
-		"IsSourcesFinal":                          r.IsSourcesFinal,
-		"BaselineId":                              r.BaselineID,
-		"Submitted":                               r.Submitted,
-	}))
-
-	for i := 0; i < 16; i++ {
-		ms = append(ms, spanutil.InsertMap("RootInvocationShards", map[string]any{
-			"RootInvocationShardId": rootinvocations.ShardID{RootInvocationID: r.RootInvocationID, ShardIndex: i},
-			"ShardIndex":            i,
-			"RootInvocationId":      r.RootInvocationID,
-			"State":                 r.State,
-			"Realm":                 r.Realm,
-			"CreateTime":            r.CreateTime,
-			"Sources":               spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
-			"IsSourcesFinal":        r.IsSourcesFinal,
-		}))
-	}
-	return ms
+// WorkUnit returns Spanner mutations to create the given work unit.
+func WorkUnit(row workunits.WorkUnitRow) []*spanner.Mutation {
+	return workunits.InsertForTesting(row)
 }

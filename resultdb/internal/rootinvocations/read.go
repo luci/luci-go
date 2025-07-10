@@ -52,12 +52,50 @@ func readColumns(ctx context.Context, id ID, ptrMap map[string]any) error {
 	}
 }
 
+// readColumnsFromShard reads the specified columns from a root invocation shard Spanner row.
+// If the root invocation shard does not exist, the returned error is annotated with
+// NotFound GRPC code.
+// For ptrMap see ReadRow comment in span/util.go.
+func readColumnsFromShard(ctx context.Context, id ShardID, ptrMap map[string]any) error {
+	if id.RootInvocationID == "" {
+		return errors.New("root invocation id is unspecified")
+	}
+	err := spanutil.ReadRow(ctx, "RootInvocationShards", id.Key(), ptrMap)
+	switch {
+	case spanner.ErrCode(err) == codes.NotFound:
+		return appstatus.Attachf(err, codes.NotFound, "%s not found", id.RootInvocationID.Name())
+
+	case err != nil:
+		return errors.Fmt("fetch %s (shard %v): %w", id.RootInvocationID.Name(), id.ShardIndex, err)
+
+	default:
+		return nil
+	}
+}
+
 // ReadRealm reads the realm of the given root invocation. If the root invocation
 // is not found, returns a NotFound appstatus error. Otherwise returns the internal
 // error.
 func ReadRealm(ctx context.Context, id ID) (string, error) {
 	var realm string
 	err := readColumns(ctx, id, map[string]any{
+		"Realm": &realm,
+	})
+	if err != nil {
+		return "", err
+	}
+	return realm, nil
+}
+
+// ReadRealmFromShard reads the realm of the given root invocation shard. If the
+// root invocation is not found, returns a NotFound appstatus error. Otherwise
+// returns the internal error.
+//
+// This will return identical results to ReadRealm but can be used to avoid hotspotting
+// the root invocation record.
+func ReadRealmFromShard(ctx context.Context, id ShardID) (string, error) {
+	var realm string
+	err := readColumnsFromShard(ctx, id, map[string]any{
 		"Realm": &realm,
 	})
 	if err != nil {

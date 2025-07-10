@@ -19,22 +19,23 @@ import (
 )
 
 var (
+	PermGetArtifact        = realms.RegisterPermission("resultdb.artifacts.get")
+	PermGetBaseline        = realms.RegisterPermission("resultdb.baselines.get")
+	PermGetInstruction     = realms.RegisterPermission("resultdb.instructions.get")
 	PermGetInvocation      = realms.RegisterPermission("resultdb.invocations.get")
 	PermGetRootInvocation  = realms.RegisterPermission("resultdb.rootInvocations.get")
 	PermGetTestExoneration = realms.RegisterPermission("resultdb.testExonerations.get")
 	PermGetTestResult      = realms.RegisterPermission("resultdb.testResults.get")
-	PermGetArtifact        = realms.RegisterPermission("resultdb.artifacts.get")
-	PermGetBaseline        = realms.RegisterPermission("resultdb.baselines.get")
-	// TODO (nqmtuan): Add resultdb.instructions.get to resultdb.reader role.
-	// https://source.corp.google.com/h/chromium/infra/infra_superproject/+/main:data/config/configs/chrome-infra-auth/permissions.cfg;l=192;bpv=0
-	PermGetInstruction = realms.RegisterPermission("resultdb.instructions.get")
+	PermGetWorkUnit        = realms.RegisterPermission("resultdb.workUnits.get")
 
+	PermListArtifacts               = realms.RegisterPermission("resultdb.artifacts.list")
 	PermListTestExonerations        = realms.RegisterPermission("resultdb.testExonerations.list")
 	PermListLimitedTestExonerations = realms.RegisterPermission("resultdb.testExonerations.listLimited")
 	PermListTestResults             = realms.RegisterPermission("resultdb.testResults.list")
 	PermListLimitedTestResults      = realms.RegisterPermission("resultdb.testResults.listLimited")
-	PermListArtifacts               = realms.RegisterPermission("resultdb.artifacts.list")
 	PermListTestMetadata            = realms.RegisterPermission("resultdb.testMetadata.list")
+	PermListWorkUnits               = realms.RegisterPermission("resultdb.workUnits.list")
+	PermListLimitedWorkUnits        = realms.RegisterPermission("resultdb.workUnits.listLimited")
 )
 
 func init() {

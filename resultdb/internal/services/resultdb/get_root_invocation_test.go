@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -39,8 +40,9 @@ func TestGetRootInvocation(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		// Insert a root invocation.
-		testData := insert.MakeRootInvocation("root-inv-id", pb.RootInvocation_FINALIZED)
-		testData.Realm = realm
+		testData := rootinvocations.NewBuilder("root-inv-id").
+			WithState(pb.RootInvocation_FINALIZED).
+			WithRealm(realm).Build()
 		testutil.MustApply(ctx, t, insert.RootInvocation(testData)...)
 
 		// Setup authorisation.

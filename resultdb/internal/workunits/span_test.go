@@ -30,8 +30,8 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
-	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -97,7 +97,7 @@ func TestWriteWorkUnit(t *testing.T) {
 		// Insert rows in the parent RootInvocationShards table.
 		testutil.MustApply(
 			ctx, t,
-			insert.RootInvocation(insert.MakeRootInvocation("root-inv-id", pb.RootInvocation_ACTIVE))...,
+			rootinvocations.InsertForTesting(rootinvocations.NewBuilder("root-inv-id").Build())...,
 		)
 		commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 			mutations := Create(row, LegacyCreateOptions)
