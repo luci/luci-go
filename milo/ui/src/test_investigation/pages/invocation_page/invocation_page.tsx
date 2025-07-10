@@ -19,7 +19,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -48,22 +48,6 @@ import { TestNavigationTreeNode } from '@/test_investigation/components/test_nav
 import { InvocationProvider } from '@/test_investigation/context/provider';
 import { buildHierarchyTree } from '@/test_investigation/utils/drawer_tree_utils';
 import { getProjectFromRealm } from '@/test_investigation/utils/test_variant_utils';
-
-/**
- * A helper to check if a test variant's definition includes all key-value
- * pairs from a filter definition.
- */
-function variantContains(
-  variantDef: Readonly<Record<string, string>>,
-  filterDef: Readonly<Record<string, string>>,
-): boolean {
-  for (const key in filterDef) {
-    if (variantDef[key] !== filterDef[key]) {
-      return false;
-    }
-  }
-  return true;
-}
 
 /**
  * Recursively filters the tree data based on a set of selected statuses.
@@ -100,6 +84,7 @@ export function InvocationPage() {
   const { invocationId } = useParams<{ invocationId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSyncedSearchParams();
+  const hasPerformedInitialRedirect = useRef(false);
 
   const resultDbClient = useResultDbClient();
 
@@ -146,8 +131,21 @@ export function InvocationPage() {
   });
 
   const queryRequest = useMemo(() => {
-    // TODO: Extend or replace API to support filtering by variant, testId, etc.
-    // In the meantime we fetch all test variants for the invocation and filter on the client.
+    const filterParts: string[] = [];
+    if (parsedTestId) {
+      // The proto doc says a bare value is searched in test_id. Using an
+      // explicit `test_id:` with the "has" operator for a substring search.
+      filterParts.push(`test_id:${JSON.stringify(parsedTestId)}`);
+    }
+    if (parsedVariantDef) {
+      Object.entries(parsedVariantDef).forEach(([key, value]) => {
+        // The example `-variant.os:mac` in the proto suggests that filtering
+        // on variant key-value pairs is supported. We use `=` for an exact
+        // match on the value.
+        filterParts.push(`variant.${key} = ${JSON.stringify(value)}`);
+      });
+    }
+    const filter = filterParts.join(' AND ') || undefined;
     return QueryTestVariantsRequest.fromPartial({
       invocations: [`invocations/${invocationId}`],
       pageSize: 10000,
@@ -159,19 +157,22 @@ export function InvocationPage() {
         'variant.def',
         'status_v2',
       ],
+      filter,
     });
-  }, [invocationId]);
+  }, [invocationId, parsedTestId, parsedVariantDef]);
 
   const {
     data: testVariantsResponse,
-    isPending: isLoadingTestVariants,
+    isFetching: isFetchingTestVariants,
     isSuccess,
     error,
     isError,
   } = useQuery<QueryTestVariantsResponse | null>({
     ...resultDbClient.QueryTestVariants.query(queryRequest),
     staleTime:
-      invocation?.state === Invocation_State.FINALIZED ? 0 : 5 * 60 * 1000,
+      invocation?.state === Invocation_State.FINALIZED
+        ? Infinity
+        : 5 * 60 * 1000,
   });
 
   const { finalFilteredVariants, finalFilteredTree } = useMemo(() => {
@@ -179,45 +180,39 @@ export function InvocationPage() {
       return { finalFilteredVariants: [], finalFilteredTree: [] };
     }
 
-    let variants = testVariantsResponse.testVariants;
-
-    if (parsedVariantDef) {
-      variants = variants.filter(
-        (tv) =>
-          tv.variant?.def && variantContains(tv.variant.def, parsedVariantDef),
-      );
-    }
-    if (parsedTestId) {
-      variants = variants.filter((tv) => tv.testId === parsedTestId);
-    }
-    const linkFilteredVariants = variants;
-
+    const linkFilteredVariants = testVariantsResponse.testVariants;
     const { tree } = buildHierarchyTree(linkFilteredVariants);
     const statusFilteredTree = filterTreeByStatus(tree, selectedStatuses);
-
     return {
       finalFilteredVariants: linkFilteredVariants,
       finalFilteredTree: statusFilteredTree,
     };
-  }, [testVariantsResponse, parsedVariantDef, parsedTestId, selectedStatuses]);
+  }, [testVariantsResponse, selectedStatuses]);
 
   // If there is a unique match (excluding status filtering) navigate directly to
   // it, skipping the invocation page.
   useEffect(() => {
-    if (!isSuccess || (!parsedTestId && !parsedVariantDef)) {
-      return;
-    }
-    const isUniqueResult = finalFilteredVariants.length === 1;
+    if (isSuccess && !hasPerformedInitialRedirect.current) {
+      // Once we have the first successful response, we can check for redirection.
+      // We should only do this once per page load to avoid redirecting the
+      // user when they are actively changing filters.
+      hasPerformedInitialRedirect.current = true;
 
-    if (isUniqueResult) {
-      const variantHash = finalFilteredVariants[0].variantHash;
-      const resolvedTestId = finalFilteredVariants[0].testId;
+      if (!parsedTestId && !parsedVariantDef) {
+        return;
+      }
+      const isUniqueResult = finalFilteredVariants.length === 1;
 
-      const newPath =
-        `/ui/test-investigate/invocations/${invocationId}` +
-        `/tests/${encodeURIComponent(resolvedTestId)}` +
-        `/variants/${variantHash}`;
-      navigate(newPath, { replace: true });
+      if (isUniqueResult) {
+        const variantHash = finalFilteredVariants[0].variantHash;
+        const resolvedTestId = finalFilteredVariants[0].testId;
+
+        const newPath =
+          `/ui/test-investigate/invocations/${invocationId}` +
+          `/tests/${encodeURIComponent(resolvedTestId)}` +
+          `/variants/${variantHash}`;
+        navigate(newPath, { replace: true });
+      }
     }
   }, [
     isSuccess,
@@ -239,11 +234,15 @@ export function InvocationPage() {
     (parsedTestId || parsedVariantDef) &&
     finalFilteredVariants.length === 1;
 
-  if (
-    isLoadingInvocation ||
-    (isLoadingTestVariants && (parsedTestId || parsedVariantDef)) ||
-    isUniqueResult
-  ) {
+  // Show the full-page loader on the initial load while we don't have data yet.
+  const showInitialLoader =
+    isFetchingTestVariants && !hasPerformedInitialRedirect.current;
+
+  // Also keep the loader if we are about to redirect, to avoid flashing content.
+  // This should only happen on the initial load.
+  const isRedirecting = isUniqueResult && !hasPerformedInitialRedirect.current;
+
+  if (isLoadingInvocation || showInitialLoader || isRedirecting) {
     return (
       <Box
         sx={{
@@ -290,11 +289,12 @@ export function InvocationPage() {
           <InvocationCounts
             invocation={invocation}
             testVariants={finalFilteredVariants}
-            isLoadingTestVariants={isLoadingTestVariants}
+            isLoadingTestVariants={isFetchingTestVariants}
           />
           <Box sx={{ mt: '24px' }}>
             <TestVariantsTable
               treeData={finalFilteredTree}
+              isLoading={isFetchingTestVariants}
               parsedTestId={parsedTestId}
               parsedVariantDef={parsedVariantDef}
               selectedStatuses={selectedStatuses}

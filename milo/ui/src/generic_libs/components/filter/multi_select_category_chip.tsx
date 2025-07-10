@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import AddIcon from '@mui/icons-material/Add';
-import { Checkbox, Chip, ListItemText, Menu, MenuItem } from '@mui/material';
-import React, { JSX, useState } from 'react';
+import { Checkbox, ListItemText, Menu, MenuItem } from '@mui/material';
+import React, { useState } from 'react';
+
+import { BaseFilterChip } from './base_filter_chip';
 
 export interface CategoryOption {
   value: string; // The internal value/key for the option
@@ -65,41 +66,25 @@ export function MultiSelectCategoryChip({
   };
 
   let chipLabel: string;
-  let chipIcon: JSX.Element | undefined = undefined;
-  let chipVariant: 'filled' | 'outlined' = 'outlined';
-  let chipColor: 'default' | 'primary' = 'default';
-  let chipOnDelete: (() => void) | undefined = undefined;
 
   if (selectedItems.size === 0) {
     chipLabel = `${categoryName}`;
-    chipIcon = <AddIcon fontSize="small" />;
-    chipVariant = 'outlined';
-    chipColor = 'default';
   } else if (selectedItems.size === 1) {
     const singleItemValue = textForOption(availableOptions, selectedItems, 0);
     chipLabel = `${categoryName}: ${singleItemValue}`;
-    chipVariant = 'filled';
-    chipColor = 'primary';
-    chipOnDelete = handleClearFilter;
   } else {
     const firstValue = textForOption(availableOptions, selectedItems, 0);
     const secondValue = textForOption(availableOptions, selectedItems, 1);
     chipLabel = `${selectedItems.size} | ${categoryName}: ${firstValue}, ${secondValue}${selectedItems.size > 2 ? ', ...' : ''}`;
-    chipVariant = 'filled';
-    chipColor = 'primary';
-    chipOnDelete = handleClearFilter;
   }
 
   return (
     <>
-      <Chip
+      <BaseFilterChip
         label={chipLabel}
-        icon={chipIcon}
-        variant={chipVariant}
-        color={chipColor}
+        active={selectedItems.size > 0}
         onClick={handleClickChip}
-        onDelete={chipOnDelete}
-        size="small"
+        onClear={selectedItems.size > 0 ? handleClearFilter : undefined}
       />
       <Menu
         id={`${categoryName.toLowerCase().replace(/\s+/g, '-')}-filter-menu`}

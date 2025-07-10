@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Chip, Link } from '@mui/material';
+import { Box, Chip, Link, CircularProgress } from '@mui/material';
 import { useMemo, useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 
@@ -25,6 +25,7 @@ import {
   CategoryOption,
   AppliedFilterChip,
   MultiSelectCategoryChip,
+  TextInputFilterChip,
 } from '@/generic_libs/components/filter';
 import { FilterBarContainer } from '@/generic_libs/components/filter/filter_bar_container';
 import {
@@ -53,6 +54,7 @@ function getIdsOfAllNodes(nodes: TestNavigationTreeNode[]): string[] {
 
 interface TestVariantsTableProps {
   treeData: TestNavigationTreeNode[];
+  isLoading: boolean;
   parsedTestId: string | null;
   parsedVariantDef: Readonly<Record<string, string>> | null;
   selectedStatuses: Set<SemanticStatusType>;
@@ -66,6 +68,7 @@ interface TestVariantsTableProps {
  */
 export function TestVariantsTable({
   treeData,
+  isLoading,
   parsedTestId,
   parsedVariantDef,
   selectedStatuses,
@@ -77,13 +80,20 @@ export function TestVariantsTable({
   const [_, setSearchParams] = useSyncedSearchParams();
   const filteredHierarchyTreeData = treeData;
 
-  const handleRemoveTestIdFilter = useCallback(() => {
-    setSearchParams((prev) => {
-      const newParams = new URLSearchParams(prev);
-      newParams.delete('testId');
-      return newParams;
-    });
-  }, [setSearchParams]);
+  const handleTestIdChange = useCallback(
+    (testId: string | null) => {
+      setSearchParams((prev) => {
+        const newParams = new URLSearchParams(prev);
+        if (testId) {
+          newParams.set('testId', testId);
+        } else {
+          newParams.delete('testId');
+        }
+        return newParams;
+      });
+    },
+    [setSearchParams],
+  );
 
   const handleRemoveVariantFilter = useCallback(
     (keyToRemove: string) => {
@@ -201,58 +211,75 @@ export function TestVariantsTable({
     (parsedVariantDef && Object.keys(parsedVariantDef).length > 0);
 
   return (
-    <TreeTable
-      data={rows}
-      columns={columns}
-      expandedRowIds={expandedNodes}
-      onExpandedRowIdsChange={setExpandedNodes}
-      headerChildren={
-        <FilterBarContainer
-          showClearAll={
-            selectedStatuses.size > 0 || !!parsedTestId || !!parsedVariantDef
-          }
-          onClearAll={() => {
-            setSelectedStatuses(new Set());
-            if (parsedTestId) {
-              handleRemoveTestIdFilter();
-            }
-            if (parsedVariantDef) {
-              Object.keys(parsedVariantDef).forEach(handleRemoveVariantFilter);
-            }
+    <Box sx={{ position: 'relative' }}>
+      {isLoading && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.5)',
+            zIndex: 1,
           }}
         >
-          {/* Render chips for active Test ID and Variant filters. */}
-          {parsedTestId && (
-            <AppliedFilterChip
-              filterKey="Test ID"
-              filterValue={parsedTestId}
-              onRemove={handleRemoveTestIdFilter}
-            />
-          )}
-          {parsedVariantDef &&
-            Object.entries(parsedVariantDef).map(([key, value]) => (
-              <AppliedFilterChip
-                key={key}
-                filterKey={key}
-                filterValue={value}
-                onRemove={() => handleRemoveVariantFilter(key)}
-              />
-            ))}
-          <MultiSelectCategoryChip
-            categoryName="Test Status"
-            availableOptions={statusFilterOptions}
-            selectedItems={selectedStatuses}
-            onSelectedItemsChange={(value) =>
-              setSelectedStatuses(value as Set<SemanticStatusType>)
+          <CircularProgress />
+        </Box>
+      )}
+      <TreeTable
+        data={rows}
+        columns={columns}
+        expandedRowIds={expandedNodes}
+        onExpandedRowIdsChange={setExpandedNodes}
+        headerChildren={
+          <FilterBarContainer
+            showClearAll={
+              selectedStatuses.size > 0 || !!parsedTestId || !!parsedVariantDef
             }
-          />
-        </FilterBarContainer>
-      }
-      placeholder={
-        selectedStatuses.size > 0 || hasActiveFilters
-          ? 'No tests match the applied filters. Please remove the filters to see any available tests.'
-          : 'All tests in the invocation passed.'
-      }
-    />
+            onClearAll={() => {
+              setSelectedStatuses(new Set());
+              handleTestIdChange(null);
+              if (parsedVariantDef) {
+                Object.keys(parsedVariantDef).forEach(
+                  handleRemoveVariantFilter,
+                );
+              }
+            }}
+          >
+            <TextInputFilterChip
+              categoryName="Test ID"
+              value={parsedTestId}
+              onValueChange={handleTestIdChange}
+            />
+            {parsedVariantDef &&
+              Object.entries(parsedVariantDef).map(([key, value]) => (
+                <AppliedFilterChip
+                  key={key}
+                  filterKey={key}
+                  filterValue={value}
+                  onRemove={() => handleRemoveVariantFilter(key)}
+                />
+              ))}
+            <MultiSelectCategoryChip
+              categoryName="Test Status"
+              availableOptions={statusFilterOptions}
+              selectedItems={selectedStatuses}
+              onSelectedItemsChange={(value) =>
+                setSelectedStatuses(value as Set<SemanticStatusType>)
+              }
+            />
+          </FilterBarContainer>
+        }
+        placeholder={
+          selectedStatuses.size > 0 || hasActiveFilters
+            ? 'No tests match the applied filters. Please remove the filters to see any available tests.'
+            : 'All tests in the invocation passed.'
+        }
+      />
+    </Box>
   );
 }

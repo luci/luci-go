@@ -2,32 +2,33 @@
 // versions:
 //   protoc-gen-ts_proto  v2.2.5
 //   protoc               v6.31.1
-// source: go.chromium.org/chromiumos/config/proto/chromiumos/test/lab/api/pasit_host.proto
+// source: go.chromium.org/infra/unifiedfleet/api/v1/models/chromeos/lab/pasit.proto
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { OSRPM } from "./rpm.pb";
 
-export const protobufPackage = "chromiumos.test.lab.api";
+export const protobufPackage = "unifiedfleet.api.v1.models.chromeos.lab";
 
 /**
  * PASIT is a connected set of peripheral components used in interop testing.
- * The components connected are controlled via an external host. PasitHost
+ * The components connected are controlled via an external host. Pasit
  * describes the devices in the testbed and their connection topology.
  */
-export interface PasitHost {
+export interface Pasit {
   /** The name of the host that controls the devices (e.g. switches) */
   readonly hostname: string;
   /**
    * The components/devices in the PASIT testbed (e.g. docks, switches, cameras,
    * monitors, etc)
    */
-  readonly devices: readonly PasitHost_Device[];
+  readonly devices: readonly Pasit_Device[];
   /** The connections between devices/components in the testbed. */
-  readonly connections: readonly PasitHost_Connection[];
+  readonly connections: readonly Pasit_Connection[];
 }
 
 /** A single connection between two components in the topology. */
-export interface PasitHost_Connection {
+export interface Pasit_Connection {
   /**
    * If the parent device has multiple connection ports/slots,
    * this is the name or id of the port.
@@ -46,7 +47,7 @@ export interface PasitHost_Connection {
 }
 
 /** A single device/component in the testbed. */
-export interface PasitHost_Device {
+export interface Pasit_Device {
   /**
    * The unique ID of the device. This is not unique across all devices,
    * in the lab but is unique within a testbed.
@@ -55,16 +56,20 @@ export interface PasitHost_Device {
   /** The the make/model of the device. */
   readonly model: string;
   /** The type of device represented. */
-  readonly type: PasitHost_Device_Type;
+  readonly type: Pasit_Device_Type;
   /**
    * Additional power supply information for devices that provide
    * power to the DUT.
    */
-  readonly powerSupply: PasitHost_Device_PowerSupply | undefined;
+  readonly powerSupply:
+    | Pasit_Device_PowerSupply
+    | undefined;
+  /** Optional RPM if one exists */
+  readonly rpm: OSRPM | undefined;
 }
 
 /** The type of device represented. */
-export enum PasitHost_Device_Type {
+export enum Pasit_Device_Type {
   UNKNOWN = 0,
   DUT = 1,
   SWITCH_FIXTURE = 2,
@@ -77,117 +82,111 @@ export enum PasitHost_Device_Type {
   HEADPHONE = 9,
   SPEAKER = 10,
   IP_POWER = 11,
-  USB_TESTER = 12,
 }
 
-export function pasitHost_Device_TypeFromJSON(object: any): PasitHost_Device_Type {
+export function pasit_Device_TypeFromJSON(object: any): Pasit_Device_Type {
   switch (object) {
     case 0:
     case "UNKNOWN":
-      return PasitHost_Device_Type.UNKNOWN;
+      return Pasit_Device_Type.UNKNOWN;
     case 1:
     case "DUT":
-      return PasitHost_Device_Type.DUT;
+      return Pasit_Device_Type.DUT;
     case 2:
     case "SWITCH_FIXTURE":
-      return PasitHost_Device_Type.SWITCH_FIXTURE;
+      return Pasit_Device_Type.SWITCH_FIXTURE;
     case 3:
     case "DOCKING_STATION":
-      return PasitHost_Device_Type.DOCKING_STATION;
+      return Pasit_Device_Type.DOCKING_STATION;
     case 4:
     case "MONITOR":
-      return PasitHost_Device_Type.MONITOR;
+      return Pasit_Device_Type.MONITOR;
     case 5:
     case "CAMERA":
-      return PasitHost_Device_Type.CAMERA;
+      return Pasit_Device_Type.CAMERA;
     case 6:
     case "STORAGE":
-      return PasitHost_Device_Type.STORAGE;
+      return Pasit_Device_Type.STORAGE;
     case 7:
     case "HID":
-      return PasitHost_Device_Type.HID;
+      return Pasit_Device_Type.HID;
     case 8:
     case "NETWORK":
-      return PasitHost_Device_Type.NETWORK;
+      return Pasit_Device_Type.NETWORK;
     case 9:
     case "HEADPHONE":
-      return PasitHost_Device_Type.HEADPHONE;
+      return Pasit_Device_Type.HEADPHONE;
     case 10:
     case "SPEAKER":
-      return PasitHost_Device_Type.SPEAKER;
+      return Pasit_Device_Type.SPEAKER;
     case 11:
     case "IP_POWER":
-      return PasitHost_Device_Type.IP_POWER;
-    case 12:
-    case "USB_TESTER":
-      return PasitHost_Device_Type.USB_TESTER;
+      return Pasit_Device_Type.IP_POWER;
     default:
-      throw new globalThis.Error("Unrecognized enum value " + object + " for enum PasitHost_Device_Type");
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Pasit_Device_Type");
   }
 }
 
-export function pasitHost_Device_TypeToJSON(object: PasitHost_Device_Type): string {
+export function pasit_Device_TypeToJSON(object: Pasit_Device_Type): string {
   switch (object) {
-    case PasitHost_Device_Type.UNKNOWN:
+    case Pasit_Device_Type.UNKNOWN:
       return "UNKNOWN";
-    case PasitHost_Device_Type.DUT:
+    case Pasit_Device_Type.DUT:
       return "DUT";
-    case PasitHost_Device_Type.SWITCH_FIXTURE:
+    case Pasit_Device_Type.SWITCH_FIXTURE:
       return "SWITCH_FIXTURE";
-    case PasitHost_Device_Type.DOCKING_STATION:
+    case Pasit_Device_Type.DOCKING_STATION:
       return "DOCKING_STATION";
-    case PasitHost_Device_Type.MONITOR:
+    case Pasit_Device_Type.MONITOR:
       return "MONITOR";
-    case PasitHost_Device_Type.CAMERA:
+    case Pasit_Device_Type.CAMERA:
       return "CAMERA";
-    case PasitHost_Device_Type.STORAGE:
+    case Pasit_Device_Type.STORAGE:
       return "STORAGE";
-    case PasitHost_Device_Type.HID:
+    case Pasit_Device_Type.HID:
       return "HID";
-    case PasitHost_Device_Type.NETWORK:
+    case Pasit_Device_Type.NETWORK:
       return "NETWORK";
-    case PasitHost_Device_Type.HEADPHONE:
+    case Pasit_Device_Type.HEADPHONE:
       return "HEADPHONE";
-    case PasitHost_Device_Type.SPEAKER:
+    case Pasit_Device_Type.SPEAKER:
       return "SPEAKER";
-    case PasitHost_Device_Type.IP_POWER:
+    case Pasit_Device_Type.IP_POWER:
       return "IP_POWER";
-    case PasitHost_Device_Type.USB_TESTER:
-      return "USB_TESTER";
     default:
-      throw new globalThis.Error("Unrecognized enum value " + object + " for enum PasitHost_Device_Type");
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Pasit_Device_Type");
   }
 }
 
 /** Information on the power capabilities of the device. */
-export interface PasitHost_Device_PowerSupply {
+export interface Pasit_Device_PowerSupply {
   readonly current: number;
   readonly voltage: number;
   readonly power: number;
 }
 
-function createBasePasitHost(): PasitHost {
+function createBasePasit(): Pasit {
   return { hostname: "", devices: [], connections: [] };
 }
 
-export const PasitHost: MessageFns<PasitHost> = {
-  encode(message: PasitHost, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const Pasit: MessageFns<Pasit> = {
+  encode(message: Pasit, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.hostname !== "") {
       writer.uint32(10).string(message.hostname);
     }
     for (const v of message.devices) {
-      PasitHost_Device.encode(v!, writer.uint32(18).fork()).join();
+      Pasit_Device.encode(v!, writer.uint32(18).fork()).join();
     }
     for (const v of message.connections) {
-      PasitHost_Connection.encode(v!, writer.uint32(26).fork()).join();
+      Pasit_Connection.encode(v!, writer.uint32(26).fork()).join();
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): PasitHost {
+  decode(input: BinaryReader | Uint8Array, length?: number): Pasit {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBasePasitHost() as any;
+    const message = createBasePasit() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -204,7 +203,7 @@ export const PasitHost: MessageFns<PasitHost> = {
             break;
           }
 
-          message.devices.push(PasitHost_Device.decode(reader, reader.uint32()));
+          message.devices.push(Pasit_Device.decode(reader, reader.uint32()));
           continue;
         }
         case 3: {
@@ -212,7 +211,7 @@ export const PasitHost: MessageFns<PasitHost> = {
             break;
           }
 
-          message.connections.push(PasitHost_Connection.decode(reader, reader.uint32()));
+          message.connections.push(Pasit_Connection.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -224,50 +223,50 @@ export const PasitHost: MessageFns<PasitHost> = {
     return message;
   },
 
-  fromJSON(object: any): PasitHost {
+  fromJSON(object: any): Pasit {
     return {
       hostname: isSet(object.hostname) ? globalThis.String(object.hostname) : "",
       devices: globalThis.Array.isArray(object?.devices)
-        ? object.devices.map((e: any) => PasitHost_Device.fromJSON(e))
+        ? object.devices.map((e: any) => Pasit_Device.fromJSON(e))
         : [],
       connections: globalThis.Array.isArray(object?.connections)
-        ? object.connections.map((e: any) => PasitHost_Connection.fromJSON(e))
+        ? object.connections.map((e: any) => Pasit_Connection.fromJSON(e))
         : [],
     };
   },
 
-  toJSON(message: PasitHost): unknown {
+  toJSON(message: Pasit): unknown {
     const obj: any = {};
     if (message.hostname !== "") {
       obj.hostname = message.hostname;
     }
     if (message.devices?.length) {
-      obj.devices = message.devices.map((e) => PasitHost_Device.toJSON(e));
+      obj.devices = message.devices.map((e) => Pasit_Device.toJSON(e));
     }
     if (message.connections?.length) {
-      obj.connections = message.connections.map((e) => PasitHost_Connection.toJSON(e));
+      obj.connections = message.connections.map((e) => Pasit_Connection.toJSON(e));
     }
     return obj;
   },
 
-  create(base?: DeepPartial<PasitHost>): PasitHost {
-    return PasitHost.fromPartial(base ?? {});
+  create(base?: DeepPartial<Pasit>): Pasit {
+    return Pasit.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<PasitHost>): PasitHost {
-    const message = createBasePasitHost() as any;
+  fromPartial(object: DeepPartial<Pasit>): Pasit {
+    const message = createBasePasit() as any;
     message.hostname = object.hostname ?? "";
-    message.devices = object.devices?.map((e) => PasitHost_Device.fromPartial(e)) || [];
-    message.connections = object.connections?.map((e) => PasitHost_Connection.fromPartial(e)) || [];
+    message.devices = object.devices?.map((e) => Pasit_Device.fromPartial(e)) || [];
+    message.connections = object.connections?.map((e) => Pasit_Connection.fromPartial(e)) || [];
     return message;
   },
 };
 
-function createBasePasitHost_Connection(): PasitHost_Connection {
+function createBasePasit_Connection(): Pasit_Connection {
   return { parentPort: "", parentId: "", childId: "", speed: 0, type: "", tags: [] };
 }
 
-export const PasitHost_Connection: MessageFns<PasitHost_Connection> = {
-  encode(message: PasitHost_Connection, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const Pasit_Connection: MessageFns<Pasit_Connection> = {
+  encode(message: Pasit_Connection, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.parentPort !== "") {
       writer.uint32(10).string(message.parentPort);
     }
@@ -289,10 +288,10 @@ export const PasitHost_Connection: MessageFns<PasitHost_Connection> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): PasitHost_Connection {
+  decode(input: BinaryReader | Uint8Array, length?: number): Pasit_Connection {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBasePasitHost_Connection() as any;
+    const message = createBasePasit_Connection() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -353,7 +352,7 @@ export const PasitHost_Connection: MessageFns<PasitHost_Connection> = {
     return message;
   },
 
-  fromJSON(object: any): PasitHost_Connection {
+  fromJSON(object: any): Pasit_Connection {
     return {
       parentPort: isSet(object.parentPort) ? globalThis.String(object.parentPort) : "",
       parentId: isSet(object.parentId) ? globalThis.String(object.parentId) : "",
@@ -364,7 +363,7 @@ export const PasitHost_Connection: MessageFns<PasitHost_Connection> = {
     };
   },
 
-  toJSON(message: PasitHost_Connection): unknown {
+  toJSON(message: Pasit_Connection): unknown {
     const obj: any = {};
     if (message.parentPort !== "") {
       obj.parentPort = message.parentPort;
@@ -387,11 +386,11 @@ export const PasitHost_Connection: MessageFns<PasitHost_Connection> = {
     return obj;
   },
 
-  create(base?: DeepPartial<PasitHost_Connection>): PasitHost_Connection {
-    return PasitHost_Connection.fromPartial(base ?? {});
+  create(base?: DeepPartial<Pasit_Connection>): Pasit_Connection {
+    return Pasit_Connection.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<PasitHost_Connection>): PasitHost_Connection {
-    const message = createBasePasitHost_Connection() as any;
+  fromPartial(object: DeepPartial<Pasit_Connection>): Pasit_Connection {
+    const message = createBasePasit_Connection() as any;
     message.parentPort = object.parentPort ?? "";
     message.parentId = object.parentId ?? "";
     message.childId = object.childId ?? "";
@@ -402,12 +401,12 @@ export const PasitHost_Connection: MessageFns<PasitHost_Connection> = {
   },
 };
 
-function createBasePasitHost_Device(): PasitHost_Device {
-  return { id: "", model: "", type: 0, powerSupply: undefined };
+function createBasePasit_Device(): Pasit_Device {
+  return { id: "", model: "", type: 0, powerSupply: undefined, rpm: undefined };
 }
 
-export const PasitHost_Device: MessageFns<PasitHost_Device> = {
-  encode(message: PasitHost_Device, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const Pasit_Device: MessageFns<Pasit_Device> = {
+  encode(message: Pasit_Device, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.id !== "") {
       writer.uint32(10).string(message.id);
     }
@@ -418,15 +417,18 @@ export const PasitHost_Device: MessageFns<PasitHost_Device> = {
       writer.uint32(24).int32(message.type);
     }
     if (message.powerSupply !== undefined) {
-      PasitHost_Device_PowerSupply.encode(message.powerSupply, writer.uint32(34).fork()).join();
+      Pasit_Device_PowerSupply.encode(message.powerSupply, writer.uint32(34).fork()).join();
+    }
+    if (message.rpm !== undefined) {
+      OSRPM.encode(message.rpm, writer.uint32(42).fork()).join();
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): PasitHost_Device {
+  decode(input: BinaryReader | Uint8Array, length?: number): Pasit_Device {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBasePasitHost_Device() as any;
+    const message = createBasePasit_Device() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -459,7 +461,15 @@ export const PasitHost_Device: MessageFns<PasitHost_Device> = {
             break;
           }
 
-          message.powerSupply = PasitHost_Device_PowerSupply.decode(reader, reader.uint32());
+          message.powerSupply = Pasit_Device_PowerSupply.decode(reader, reader.uint32());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.rpm = OSRPM.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -471,16 +481,17 @@ export const PasitHost_Device: MessageFns<PasitHost_Device> = {
     return message;
   },
 
-  fromJSON(object: any): PasitHost_Device {
+  fromJSON(object: any): Pasit_Device {
     return {
       id: isSet(object.id) ? globalThis.String(object.id) : "",
       model: isSet(object.model) ? globalThis.String(object.model) : "",
-      type: isSet(object.type) ? pasitHost_Device_TypeFromJSON(object.type) : 0,
-      powerSupply: isSet(object.powerSupply) ? PasitHost_Device_PowerSupply.fromJSON(object.powerSupply) : undefined,
+      type: isSet(object.type) ? pasit_Device_TypeFromJSON(object.type) : 0,
+      powerSupply: isSet(object.powerSupply) ? Pasit_Device_PowerSupply.fromJSON(object.powerSupply) : undefined,
+      rpm: isSet(object.rpm) ? OSRPM.fromJSON(object.rpm) : undefined,
     };
   },
 
-  toJSON(message: PasitHost_Device): unknown {
+  toJSON(message: Pasit_Device): unknown {
     const obj: any = {};
     if (message.id !== "") {
       obj.id = message.id;
@@ -489,35 +500,39 @@ export const PasitHost_Device: MessageFns<PasitHost_Device> = {
       obj.model = message.model;
     }
     if (message.type !== 0) {
-      obj.type = pasitHost_Device_TypeToJSON(message.type);
+      obj.type = pasit_Device_TypeToJSON(message.type);
     }
     if (message.powerSupply !== undefined) {
-      obj.powerSupply = PasitHost_Device_PowerSupply.toJSON(message.powerSupply);
+      obj.powerSupply = Pasit_Device_PowerSupply.toJSON(message.powerSupply);
+    }
+    if (message.rpm !== undefined) {
+      obj.rpm = OSRPM.toJSON(message.rpm);
     }
     return obj;
   },
 
-  create(base?: DeepPartial<PasitHost_Device>): PasitHost_Device {
-    return PasitHost_Device.fromPartial(base ?? {});
+  create(base?: DeepPartial<Pasit_Device>): Pasit_Device {
+    return Pasit_Device.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<PasitHost_Device>): PasitHost_Device {
-    const message = createBasePasitHost_Device() as any;
+  fromPartial(object: DeepPartial<Pasit_Device>): Pasit_Device {
+    const message = createBasePasit_Device() as any;
     message.id = object.id ?? "";
     message.model = object.model ?? "";
     message.type = object.type ?? 0;
     message.powerSupply = (object.powerSupply !== undefined && object.powerSupply !== null)
-      ? PasitHost_Device_PowerSupply.fromPartial(object.powerSupply)
+      ? Pasit_Device_PowerSupply.fromPartial(object.powerSupply)
       : undefined;
+    message.rpm = (object.rpm !== undefined && object.rpm !== null) ? OSRPM.fromPartial(object.rpm) : undefined;
     return message;
   },
 };
 
-function createBasePasitHost_Device_PowerSupply(): PasitHost_Device_PowerSupply {
+function createBasePasit_Device_PowerSupply(): Pasit_Device_PowerSupply {
   return { current: 0, voltage: 0, power: 0 };
 }
 
-export const PasitHost_Device_PowerSupply: MessageFns<PasitHost_Device_PowerSupply> = {
-  encode(message: PasitHost_Device_PowerSupply, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const Pasit_Device_PowerSupply: MessageFns<Pasit_Device_PowerSupply> = {
+  encode(message: Pasit_Device_PowerSupply, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.current !== 0) {
       writer.uint32(13).float(message.current);
     }
@@ -530,10 +545,10 @@ export const PasitHost_Device_PowerSupply: MessageFns<PasitHost_Device_PowerSupp
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): PasitHost_Device_PowerSupply {
+  decode(input: BinaryReader | Uint8Array, length?: number): Pasit_Device_PowerSupply {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBasePasitHost_Device_PowerSupply() as any;
+    const message = createBasePasit_Device_PowerSupply() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -570,7 +585,7 @@ export const PasitHost_Device_PowerSupply: MessageFns<PasitHost_Device_PowerSupp
     return message;
   },
 
-  fromJSON(object: any): PasitHost_Device_PowerSupply {
+  fromJSON(object: any): Pasit_Device_PowerSupply {
     return {
       current: isSet(object.current) ? globalThis.Number(object.current) : 0,
       voltage: isSet(object.voltage) ? globalThis.Number(object.voltage) : 0,
@@ -578,7 +593,7 @@ export const PasitHost_Device_PowerSupply: MessageFns<PasitHost_Device_PowerSupp
     };
   },
 
-  toJSON(message: PasitHost_Device_PowerSupply): unknown {
+  toJSON(message: Pasit_Device_PowerSupply): unknown {
     const obj: any = {};
     if (message.current !== 0) {
       obj.current = message.current;
@@ -592,11 +607,11 @@ export const PasitHost_Device_PowerSupply: MessageFns<PasitHost_Device_PowerSupp
     return obj;
   },
 
-  create(base?: DeepPartial<PasitHost_Device_PowerSupply>): PasitHost_Device_PowerSupply {
-    return PasitHost_Device_PowerSupply.fromPartial(base ?? {});
+  create(base?: DeepPartial<Pasit_Device_PowerSupply>): Pasit_Device_PowerSupply {
+    return Pasit_Device_PowerSupply.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<PasitHost_Device_PowerSupply>): PasitHost_Device_PowerSupply {
-    const message = createBasePasitHost_Device_PowerSupply() as any;
+  fromPartial(object: DeepPartial<Pasit_Device_PowerSupply>): Pasit_Device_PowerSupply {
+    const message = createBasePasit_Device_PowerSupply() as any;
     message.current = object.current ?? 0;
     message.voltage = object.voltage ?? 0;
     message.power = object.power ?? 0;

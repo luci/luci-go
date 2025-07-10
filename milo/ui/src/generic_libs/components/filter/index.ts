@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+export * from './base_filter_chip';
 export * from './multi_select_category_chip';
 export * from './filter_bar_container';
 export * from './applied_filter_chip';
+export * from './text_input_filter_chip';

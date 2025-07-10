@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Chip } from '@mui/material';
+import { BaseFilterChip } from './base_filter_chip';
 
 interface AppliedFilterChipProps {
   filterKey: string;
@@ -29,12 +29,10 @@ export function AppliedFilterChip({
   onRemove,
 }: AppliedFilterChipProps) {
   return (
-    <Chip
+    <BaseFilterChip
       label={`${filterKey}: ${filterValue}`}
-      onDelete={onRemove}
-      size="small"
-      color="primary"
-      variant="filled"
+      active={true}
+      onClear={onRemove}
     />
   );
 }

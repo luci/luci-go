@@ -21,7 +21,7 @@ import {
 } from 'react';
 
 import { OutputTestVerdict } from '@/common/types/verdict';
-import { Sources } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
+import { Sources } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 
 interface TestVerdictContext {
   readonly invocationID: string;

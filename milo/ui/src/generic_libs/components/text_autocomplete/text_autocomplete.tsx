@@ -47,6 +47,9 @@ const RootContainer = styled(Box)`
     border-width: 1px;
   }
 
+  .options-container {
+    z-index: 100;
+  }
   &:not(.showing-options) .options-container {
     display: none;
   }

@@ -14,7 +14,10 @@
 
 import { render, screen } from '@testing-library/react';
 
-import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import {
+  TestResult_Status,
+  TestStatus,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { LogSnippetRow } from './log_snippet_row';
@@ -32,6 +35,7 @@ describe('<LogSnippetRow />', () => {
           artifact={{
             name: 'invocations/inv/tests/t/results/r/artifacts/a',
             testStatus: TestStatus.PASS,
+            testStatusV2: TestResult_Status.PASSED,
             partitionTime: '2024-08-20T14:30:00Z',
             snippet: 'abc',
             matches: [
@@ -60,6 +64,7 @@ describe('<LogSnippetRow />', () => {
           artifact={{
             name: 'invocations/inv/tests/t/results/r/artifacts/a',
             testStatus: TestStatus.PASS,
+            testStatusV2: TestResult_Status.PASSED,
             partitionTime: '2024-08-20T14:30:00Z',
             snippet: 'abcdef',
             matches: [{ startIndex: 1, endIndex: 3 }],
@@ -87,6 +92,7 @@ describe('<LogSnippetRow />', () => {
           artifact={{
             name: 'invocations/inv/tests/t/results/r/artifacts/a',
             testStatus: TestStatus.PASS,
+            testStatusV2: TestResult_Status.PASSED,
             partitionTime: '2024-08-20T14:30:00Z',
             snippet: '😊🌞',
             matches: [{ startIndex: 4, endIndex: 8 }],

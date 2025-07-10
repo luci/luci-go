@@ -54,7 +54,9 @@ export function InvocationCounts({
       }),
     ),
     staleTime:
-      invocation.state === Invocation_State.FINALIZED ? 0 : 5 * 60 * 1000,
+      invocation.state === Invocation_State.FINALIZED
+        ? Infinity
+        : 5 * 60 * 1000,
   });
 
   const statusCounts = useMemo(() => {
