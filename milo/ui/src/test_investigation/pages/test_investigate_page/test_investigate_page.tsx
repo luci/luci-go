@@ -241,7 +241,7 @@ export function TestInvestigatePage() {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 3,
-                maxWidth: '100%',
+                maxWidth: `calc(100vw - 16px)`,
                 boxSizing: 'border-box',
               }}
             >

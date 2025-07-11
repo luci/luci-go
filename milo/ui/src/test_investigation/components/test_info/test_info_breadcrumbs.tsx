@@ -39,7 +39,7 @@ export function TestInfoBreadcrumbs({
       separator={<NavigateNextIcon fontSize="small"></NavigateNextIcon>}
     >
       <Typography variant="caption">
-        Invocation:
+        Invocation:{' '}
         {invID && (
           <Link
             target="_blank"
