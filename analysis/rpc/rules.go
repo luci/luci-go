@@ -359,7 +359,7 @@ func (s *rulesServer) checkComponentAccess(ctx context.Context, component *pb.Is
 }
 
 func prepareBuganizerIssueRequest(request *pb.CreateRuleWithNewIssueRequest_Issue, ruleLink string, userEmail string) *issuetracker.CreateIssueRequest {
-	comment := fmt.Sprintf("%s\n\nView example failures and modify the failures associated with this bug in LUCI Analysis: %s. Filed on behalf of %s.",
+	comment := fmt.Sprintf("%s\n\nView example failures and modify the failures associated with this bug in LUCI Analysis: %s.\n\nFiled on behalf of %s.",
 		request.Comment,
 		ruleLink,
 		userEmail,

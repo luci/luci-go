@@ -1195,7 +1195,7 @@ func TestRules(t *testing.T) {
 					assert.Loosely(t, issue.Issue.IssueState.ComponentId, should.Equal(123456))
 					assert.Loosely(t, issue.Issue.IssueState.Title, should.Equal("Issue title."))
 					assert.Loosely(t, issue.Comments[0].Comment, should.Equal("Description.\n\n"+
-						"View example failures and modify the failures associated with this bug in LUCI Analysis: https://analysis.luci.app/p/testproject/rules/"+rule.RuleId+". "+
+						"View example failures and modify the failures associated with this bug in LUCI Analysis: https://analysis.luci.app/p/testproject/rules/"+rule.RuleId+".\n\n"+
 						"Filed on behalf of someone@example.com."))
 					assert.Loosely(t, issue.Issue.IssueState.AccessLimit.AccessLevel, should.Equal(issuetracker.IssueAccessLimit_LIMIT_VIEW_TRUSTED))
 					assert.Loosely(t, issue.Issue.IssueState.Priority, should.Equal(pb.BuganizerPriority_P1))
@@ -1241,7 +1241,7 @@ func TestRules(t *testing.T) {
 					assert.Loosely(t, issue.Issue.IssueState.ComponentId, should.Equal(123456))
 					assert.Loosely(t, issue.Issue.IssueState.Title, should.Equal("Issue title."))
 					assert.Loosely(t, issue.Comments[0].Comment, should.Equal("Description.\n\n"+
-						"View example failures and modify the failures associated with this bug in LUCI Analysis: https://analysis.luci.app/p/testproject/rules/"+rule.RuleId+". "+
+						"View example failures and modify the failures associated with this bug in LUCI Analysis: https://analysis.luci.app/p/testproject/rules/"+rule.RuleId+".\n\n"+
 						"Filed on behalf of someone@example.com."))
 					assert.Loosely(t, issue.Issue.IssueState.AccessLimit.AccessLevel, should.Equal(issuetracker.IssueAccessLimit_LIMIT_VIEW_TRUSTED))
 					assert.Loosely(t, issue.Issue.IssueState.Priority, should.Equal(pb.BuganizerPriority_P1))
