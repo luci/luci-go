@@ -45,7 +45,8 @@ export interface RriGridRow {
   rrId: string;
   resource_request_bug_id: string;
   resource_details: string;
-  expected_eta: string;
+  resource_request_target_delivery_date: string;
+  resource_request_actual_delivery_date: string;
   fulfillment_status: string;
   material_sourcing_actual_delivery_date: DateWithOverdueData;
   build_actual_delivery_date: DateWithOverdueData;
@@ -169,13 +170,29 @@ export const RRI_COLUMNS = [
     isDefault: false,
   },
   {
-    id: 'expected_eta',
+    id: 'resource_request_target_delivery_date',
     gridColDef: {
-      field: 'expected_eta',
-      headerName: 'Estimated Delivery Date',
+      field: 'resource_request_target_delivery_date',
+      headerName: 'Target Delivery Date',
       flex: 1,
     },
-    assignValue: (rr, row) => (row.expected_eta = toIsoString(rr.expectedEta)),
+    assignValue: (rr, row) =>
+      (row.resource_request_target_delivery_date = toIsoString(
+        rr.resourceRequestTargetDeliveryDate,
+      )),
+    isDefault: true,
+  },
+  {
+    id: 'resource_request_actual_delivery_date',
+    gridColDef: {
+      field: 'resource_request_actual_delivery_date',
+      headerName: 'Actual Delivery Date',
+      flex: 1,
+    },
+    assignValue: (rr, row) =>
+      (row.resource_request_actual_delivery_date = toIsoString(
+        rr.resourceRequestActualDeliveryDate,
+      )),
     isDefault: true,
   },
   {

@@ -60,7 +60,8 @@ export const filterDescriptors = {
   rr_id: 'multi-select',
   resource_details: 'multi-select',
   fulfillment_status: 'multi-select',
-  expected_eta: 'date-range',
+  resource_request_target_delivery_date: 'date-range',
+  resource_request_actual_delivery_date: 'date-range',
   material_sourcing_actual_delivery_date: 'date-range',
   build_actual_delivery_date: 'date-range',
   qa_actual_delivery_date: 'date-range',
@@ -171,7 +172,14 @@ const getFiltersFromSearchParam = (
   return {
     rr_id: parseMultiselectFilter(rec['rr_id']),
     resource_details: parseMultiselectFilter(rec['resource_details']),
-    expected_eta: parseDateOnlyFromUrl(rec, 'expected_eta'),
+    resource_request_target_delivery_date: parseDateOnlyFromUrl(
+      rec,
+      'resource_request_target_delivery_date',
+    ),
+    resource_request_actual_delivery_date: parseDateOnlyFromUrl(
+      rec,
+      'resource_request_actual_delivery_date',
+    ),
     material_sourcing_actual_delivery_date: parseDateOnlyFromUrl(
       rec,
       'material_sourcing_actual_delivery_date',
@@ -384,7 +392,11 @@ export const useRriFilters = () => {
       optionsComponent: FulfillmentStatusFilter,
     },
     {
-      value: 'expected_eta',
+      value: 'resource_request_target_delivery_date',
+      optionsComponent: DateFilter,
+    },
+    {
+      value: 'resource_request_actual_delivery_date',
       optionsComponent: DateFilter,
     },
     {
@@ -511,7 +523,10 @@ export const useRriFilters = () => {
         .map((value) => fulfillmentStatusDisplayValueMap[value])
         .join(', ');
     },
-    expected_eta: (v) => mapDateFilterToSelectedChipLabel(v as DateFilterData),
+    resource_request_target_delivery_date: (v) =>
+      mapDateFilterToSelectedChipLabel(v as DateFilterData),
+    resource_request_actual_delivery_date: (v) =>
+      mapDateFilterToSelectedChipLabel(v as DateFilterData),
     material_sourcing_actual_delivery_date: (v) =>
       mapDateFilterToSelectedChipLabel(v as DateFilterData),
     build_actual_delivery_date: (v) =>

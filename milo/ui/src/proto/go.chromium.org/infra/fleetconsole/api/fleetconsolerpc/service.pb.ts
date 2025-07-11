@@ -343,6 +343,70 @@ export interface ExportDevicesToCSVResponse {
   readonly csvData: string;
 }
 
+export interface ScheduleAutorepairRequest {
+  /** The list of device names to schedule autorepair for. */
+  readonly unitNames: readonly string[];
+  /** The list of autorepair flags to apply to the devices. */
+  readonly flags: readonly ScheduleAutorepairRequest_AutorepairFlag[];
+}
+
+export enum ScheduleAutorepairRequest_AutorepairFlag {
+  FLAG_UNSPECIFIED = 0,
+  DEEP_REPAIR = 1,
+}
+
+export function scheduleAutorepairRequest_AutorepairFlagFromJSON(
+  object: any,
+): ScheduleAutorepairRequest_AutorepairFlag {
+  switch (object) {
+    case 0:
+    case "FLAG_UNSPECIFIED":
+      return ScheduleAutorepairRequest_AutorepairFlag.FLAG_UNSPECIFIED;
+    case 1:
+    case "DEEP_REPAIR":
+      return ScheduleAutorepairRequest_AutorepairFlag.DEEP_REPAIR;
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum ScheduleAutorepairRequest_AutorepairFlag",
+      );
+  }
+}
+
+export function scheduleAutorepairRequest_AutorepairFlagToJSON(
+  object: ScheduleAutorepairRequest_AutorepairFlag,
+): string {
+  switch (object) {
+    case ScheduleAutorepairRequest_AutorepairFlag.FLAG_UNSPECIFIED:
+      return "FLAG_UNSPECIFIED";
+    case ScheduleAutorepairRequest_AutorepairFlag.DEEP_REPAIR:
+      return "DEEP_REPAIR";
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum ScheduleAutorepairRequest_AutorepairFlag",
+      );
+  }
+}
+
+export interface ScheduleAutorepairResult {
+  readonly unitName: string;
+  /** The task URL of the scheduled task if successful. */
+  readonly taskUrl?:
+    | string
+    | undefined;
+  /** The error message if the task failed to schedule. */
+  readonly errorMessage?: string | undefined;
+}
+
+export interface ScheduleAutorepairResponse {
+  /** The ID of the admin session. */
+  readonly sessionId: string;
+  /**
+   * The results for each device in the request
+   * The order of the results is the same as the order of the unit_names in the request.
+   */
+  readonly results: readonly ScheduleAutorepairResult[];
+}
+
 export interface ListResourceRequestsRequest {
   /**
    * The maximum number of Resource Requests to return. The service may return fewer than
@@ -2914,6 +2978,268 @@ export const ExportDevicesToCSVResponse: MessageFns<ExportDevicesToCSVResponse> 
   },
 };
 
+function createBaseScheduleAutorepairRequest(): ScheduleAutorepairRequest {
+  return { unitNames: [], flags: [] };
+}
+
+export const ScheduleAutorepairRequest: MessageFns<ScheduleAutorepairRequest> = {
+  encode(message: ScheduleAutorepairRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.unitNames) {
+      writer.uint32(10).string(v!);
+    }
+    writer.uint32(18).fork();
+    for (const v of message.flags) {
+      writer.int32(v);
+    }
+    writer.join();
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ScheduleAutorepairRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseScheduleAutorepairRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.unitNames.push(reader.string());
+          continue;
+        }
+        case 2: {
+          if (tag === 16) {
+            message.flags.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 18) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.flags.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ScheduleAutorepairRequest {
+    return {
+      unitNames: globalThis.Array.isArray(object?.unitNames)
+        ? object.unitNames.map((e: any) => globalThis.String(e))
+        : [],
+      flags: globalThis.Array.isArray(object?.flags)
+        ? object.flags.map((e: any) => scheduleAutorepairRequest_AutorepairFlagFromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ScheduleAutorepairRequest): unknown {
+    const obj: any = {};
+    if (message.unitNames?.length) {
+      obj.unitNames = message.unitNames;
+    }
+    if (message.flags?.length) {
+      obj.flags = message.flags.map((e) => scheduleAutorepairRequest_AutorepairFlagToJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ScheduleAutorepairRequest>): ScheduleAutorepairRequest {
+    return ScheduleAutorepairRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ScheduleAutorepairRequest>): ScheduleAutorepairRequest {
+    const message = createBaseScheduleAutorepairRequest() as any;
+    message.unitNames = object.unitNames?.map((e) => e) || [];
+    message.flags = object.flags?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseScheduleAutorepairResult(): ScheduleAutorepairResult {
+  return { unitName: "", taskUrl: undefined, errorMessage: undefined };
+}
+
+export const ScheduleAutorepairResult: MessageFns<ScheduleAutorepairResult> = {
+  encode(message: ScheduleAutorepairResult, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.unitName !== "") {
+      writer.uint32(10).string(message.unitName);
+    }
+    if (message.taskUrl !== undefined) {
+      writer.uint32(18).string(message.taskUrl);
+    }
+    if (message.errorMessage !== undefined) {
+      writer.uint32(26).string(message.errorMessage);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ScheduleAutorepairResult {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseScheduleAutorepairResult() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.unitName = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.taskUrl = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.errorMessage = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ScheduleAutorepairResult {
+    return {
+      unitName: isSet(object.unitName) ? globalThis.String(object.unitName) : "",
+      taskUrl: isSet(object.taskUrl) ? globalThis.String(object.taskUrl) : undefined,
+      errorMessage: isSet(object.errorMessage) ? globalThis.String(object.errorMessage) : undefined,
+    };
+  },
+
+  toJSON(message: ScheduleAutorepairResult): unknown {
+    const obj: any = {};
+    if (message.unitName !== "") {
+      obj.unitName = message.unitName;
+    }
+    if (message.taskUrl !== undefined) {
+      obj.taskUrl = message.taskUrl;
+    }
+    if (message.errorMessage !== undefined) {
+      obj.errorMessage = message.errorMessage;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ScheduleAutorepairResult>): ScheduleAutorepairResult {
+    return ScheduleAutorepairResult.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ScheduleAutorepairResult>): ScheduleAutorepairResult {
+    const message = createBaseScheduleAutorepairResult() as any;
+    message.unitName = object.unitName ?? "";
+    message.taskUrl = object.taskUrl ?? undefined;
+    message.errorMessage = object.errorMessage ?? undefined;
+    return message;
+  },
+};
+
+function createBaseScheduleAutorepairResponse(): ScheduleAutorepairResponse {
+  return { sessionId: "", results: [] };
+}
+
+export const ScheduleAutorepairResponse: MessageFns<ScheduleAutorepairResponse> = {
+  encode(message: ScheduleAutorepairResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.sessionId !== "") {
+      writer.uint32(10).string(message.sessionId);
+    }
+    for (const v of message.results) {
+      ScheduleAutorepairResult.encode(v!, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ScheduleAutorepairResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseScheduleAutorepairResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.sessionId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.results.push(ScheduleAutorepairResult.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ScheduleAutorepairResponse {
+    return {
+      sessionId: isSet(object.sessionId) ? globalThis.String(object.sessionId) : "",
+      results: globalThis.Array.isArray(object?.results)
+        ? object.results.map((e: any) => ScheduleAutorepairResult.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ScheduleAutorepairResponse): unknown {
+    const obj: any = {};
+    if (message.sessionId !== "") {
+      obj.sessionId = message.sessionId;
+    }
+    if (message.results?.length) {
+      obj.results = message.results.map((e) => ScheduleAutorepairResult.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ScheduleAutorepairResponse>): ScheduleAutorepairResponse {
+    return ScheduleAutorepairResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ScheduleAutorepairResponse>): ScheduleAutorepairResponse {
+    const message = createBaseScheduleAutorepairResponse() as any;
+    message.sessionId = object.sessionId ?? "";
+    message.results = object.results?.map((e) => ScheduleAutorepairResult.fromPartial(e)) || [];
+    return message;
+  },
+};
+
 function createBaseListResourceRequestsRequest(): ListResourceRequestsRequest {
   return { pageSize: 0, pageToken: "", orderBy: "", filter: "" };
 }
@@ -5481,6 +5807,8 @@ export interface FleetConsole {
   CleanExit(request: CleanExitRequest): Promise<CleanExitResponse>;
   /** ExportDevicesToCSV exports the devices in the csv format. */
   ExportDevicesToCSV(request: ExportDevicesToCSVRequest): Promise<ExportDevicesToCSVResponse>;
+  /** ScheduleAutorepair schedules an autorepair for the specified devices. */
+  ScheduleAutorepair(request: ScheduleAutorepairRequest): Promise<ScheduleAutorepairResponse>;
   /** ListResourceRequests returns Resource Requests provided by BigQuery */
   ListResourceRequests(request: ListResourceRequestsRequest): Promise<ListResourceRequestsResponse>;
   /** CountResourceRequests provides counts for RRI summary header */
@@ -5520,6 +5848,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.PingDB = this.PingDB.bind(this);
     this.CleanExit = this.CleanExit.bind(this);
     this.ExportDevicesToCSV = this.ExportDevicesToCSV.bind(this);
+    this.ScheduleAutorepair = this.ScheduleAutorepair.bind(this);
     this.ListResourceRequests = this.ListResourceRequests.bind(this);
     this.CountResourceRequests = this.CountResourceRequests.bind(this);
     this.GetResourceRequestsMultiselectFilterValues = this.GetResourceRequestsMultiselectFilterValues.bind(this);
@@ -5598,6 +5927,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = ExportDevicesToCSVRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ExportDevicesToCSV", data);
     return promise.then((data) => ExportDevicesToCSVResponse.fromJSON(data));
+  }
+
+  ScheduleAutorepair(request: ScheduleAutorepairRequest): Promise<ScheduleAutorepairResponse> {
+    const data = ScheduleAutorepairRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ScheduleAutorepair", data);
+    return promise.then((data) => ScheduleAutorepairResponse.fromJSON(data));
   }
 
   ListResourceRequests(request: ListResourceRequestsRequest): Promise<ListResourceRequestsResponse> {
