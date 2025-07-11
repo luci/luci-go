@@ -39,9 +39,6 @@ export function getNextStepsInfo(
   invocation: Invocation,
   segments: Segment[],
 ): NextStepsInfo | undefined {
-  if (!testStability) {
-    return undefined;
-  }
   if (isAlreadyFixed(invocation, segments)) {
     return {
       status: 'success',
@@ -49,6 +46,15 @@ export function getNextStepsInfo(
       subtitle: 'This test is already fixed.',
     };
   }
+
+  if (failingSinceAdded(segments)) {
+    return {
+      status: 'warning',
+      title: 'This test has been failing since it was added.',
+      subtitle: 'Try contacting the test author.',
+    };
+  }
+
   const isExonerated =
     testVariant.statusOverride === TestVerdict_StatusOverride.EXONERATED;
   if (isExonerated) {
@@ -82,6 +88,13 @@ export function getNextStepsInfo(
     title: 'No next steps identified from test analysis.',
     subtitle: 'If you think there should be next steps, please file feedback.',
   };
+}
+
+function failingSinceAdded(segments: Segment[]): boolean {
+  if (segments === undefined) return false;
+  return (
+    segments.length === 1 && segmentFailureRatePercent(segments[0]) === 100
+  );
 }
 
 function isAlreadyFixed(invocation: Invocation, segments: Segment[]): boolean {

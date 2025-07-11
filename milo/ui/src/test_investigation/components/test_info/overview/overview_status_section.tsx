@@ -224,14 +224,13 @@ export function OverviewStatusSection({
             <Typography
               variant="body2"
               color="text.secondary"
-              sx={{ mb: expanded ? 0 : '16px' }}
+              sx={{ mb: expanded ? 1 : 2 }}
             >
               Related bug(s)
             </Typography>
             {associatedBugs && associatedBugs.length > 0 ? (
-              associatedBugs.map((bug, index) => (
+              associatedBugs.map((bug) => (
                 <React.Fragment key={bug.id}>
-                  {index > 0 && <Typography component="span">, </Typography>}
                   <HtmlTooltip
                     title={
                       project && (
@@ -249,6 +248,7 @@ export function OverviewStatusSection({
                         borderRadius: '4px',
                         backgroundColor: '#E8F0FE',
                         width: '85px',
+                        mb: 0.5,
                       }}
                     >
                       <Link
