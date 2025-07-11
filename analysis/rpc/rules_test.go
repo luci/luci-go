@@ -1274,6 +1274,48 @@ func TestRules(t *testing.T) {
 					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: false}
 					assert.Loosely(t, rule, should.Match(createRulePB(expectedRule, cfg, mask)))
 				})
+				t.Run("Comment with newlines, carriage returns and tabs is allowed", func(t *ftt.Test) {
+					request.Issue.Comment = "Description with\nnewline, \r\ncarriage return and\ttab."
+
+					rule, err := srv.CreateWithNewIssue(ctx, request)
+					assert.Loosely(t, err, should.BeNil)
+
+					// Verify the issue that was filed.
+					assert.Loosely(t, buganizerClient.FakeStore.Issues, should.HaveLength(1))
+					issue := buganizerClient.FakeStore.Issues[1]
+					assert.Loosely(t, issue, should.NotBeNil)
+					assert.Loosely(t, issue.Comments[0].Comment, should.Equal("Description with\nnewline, \r\ncarriage return and\ttab.\n\n"+
+						"View example failures and modify the failures associated with this bug in LUCI Analysis: https://analysis.luci.app/p/testproject/rules/"+rule.RuleId+". "+
+						"Filed on behalf of someone@example.com."))
+
+					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
+					assert.Loosely(t, err, should.BeNil)
+
+					expectedRule := expectedRuleBuilder.
+						// Accept the randomly generated rule ID.
+						WithRuleID(rule.RuleId).
+						// Accept the ID of the filed bug.
+						WithBug(bugs.BugID{System: "buganizer", ID: "1"}).
+						WithCreateUser("someone@example.com").
+						WithLastAuditableUpdateUser("someone@example.com").
+						// Accept whatever CreationTime was assigned, as it
+						// is determined by Spanner commit time.
+						// Rule spanner data access code tests already validate
+						// this is populated correctly.
+						WithCreateTime(storedRule.CreateTime).
+						WithLastAuditableUpdateTime(storedRule.CreateTime).
+						WithLastUpdateTime(storedRule.CreateTime).
+						WithPredicateLastUpdateTime(storedRule.CreateTime).
+						WithBugPriorityManagedLastUpdateTime(storedRule.CreateTime).
+						Build()
+
+					// Verify the rule was correctly created in the database.
+					assert.Loosely(t, storedRule, should.Match(expectedRule))
+
+					// Verify the returned rule matches our expectations.
+					mask := ruleMask{IncludeDefinition: true, IncludeAuditUsers: true}
+					assert.Loosely(t, rule, should.Match(createRulePB(expectedRule, cfg, mask)))
+				})
 			})
 		})
 		t.Run("LookupBug", func(t *ftt.Test) {

@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -844,10 +845,14 @@ func validateNewIssue(issue *pb.CreateRuleWithNewIssueRequest_Issue) error {
 	if issue == nil {
 		return errors.New("unspecified")
 	}
-	if err := validateMandatoryString(issue.Title, maxTitleLengthBytes); err != nil {
+	if err := validateMandatoryString(issue.Title, maxTitleLengthBytes, validationOptions{}); err != nil {
 		return errors.Fmt("title: %w", err)
 	}
-	if err := validateMandatoryString(issue.Comment, maxCommentLengthBytes); err != nil {
+	// Allow newlines, carriage returns, and tabs in comments.
+	commentValidationOpts := validationOptions{
+		allowedNonPrintableRunes: []rune{'\n', '\r', '\t'},
+	}
+	if err := validateMandatoryString(issue.Comment, maxCommentLengthBytes, commentValidationOpts); err != nil {
 		return errors.Fmt("comment: %w", err)
 	}
 	if err := validateBugComponent(issue.Component); err != nil {
@@ -862,7 +867,17 @@ func validateNewIssue(issue *pb.CreateRuleWithNewIssueRequest_Issue) error {
 	return nil
 }
 
-func validateMandatoryString(s string, maxLengthBytes int) error {
+// validationOptions specifies options for string validation.
+type validationOptions struct {
+	// allowedNonPrintableRunes specifies a list of runes that are permitted in
+	// the string, in addition to unicode.IsPrint.
+	allowedNonPrintableRunes []rune
+}
+
+// validateMandatoryString validates that the specified string is not empty,
+// is a valid UTF-8 string, is in NFC form, and does not contain any non-printable
+// runes, except for those specified in opts.allowedRunes.
+func validateMandatoryString(s string, maxLengthBytes int, opts validationOptions) error {
 	if s == "" {
 		return errors.New("unspecified")
 	}
@@ -880,7 +895,8 @@ func validateMandatoryString(s string, maxLengthBytes int) error {
 		return errors.New("not in unicode normalized form C")
 	}
 	for i, rune := range s {
-		if !unicode.IsPrint(rune) {
+		isAllowed := unicode.IsPrint(rune) || slices.Contains(opts.allowedNonPrintableRunes, rune)
+		if !isAllowed {
 			return fmt.Errorf("non-printable rune %+q at byte index %d", rune, i)
 		}
 	}
