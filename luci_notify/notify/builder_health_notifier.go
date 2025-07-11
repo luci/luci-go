@@ -15,8 +15,11 @@
 package notify
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -126,7 +129,13 @@ func generateEmail(
 		builderDescriptionsHTML,
 		healthDocLink,
 	)
-	return []byte(htmlBody)
+	buf := &bytes.Buffer{}
+	gz := gzip.NewWriter(buf)
+	io.WriteString(gz, htmlBody)
+	if err := gz.Close(); err != nil {
+		panic("failed to gzip HTML body in memory")
+	}
+	return buf.Bytes()
 }
 
 // BuilderInfo represents a single builder in the health report.

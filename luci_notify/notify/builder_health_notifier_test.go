@@ -15,7 +15,10 @@
 package notify
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"io/ioutil"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -175,7 +178,10 @@ func TestNotifyOwnersHelper(t *testing.T) {
 	</body>
 	</html>
 	`
-			assert.Loosely(t, string(task.BodyGzip), should.Equal(expectedBody))
+			reader, _ := gzip.NewReader(bytes.NewReader(task.BodyGzip))
+			decompressedBytes, _ := ioutil.ReadAll(reader)
+			finalBody := string(decompressedBytes)
+			assert.Loosely(t, finalBody, should.Equal(expectedBody))
 		})
 
 		t.Run("No metadata or healthstatus", func(t *ftt.Test) {
@@ -301,7 +307,10 @@ func TestNotifyOwnersHelper(t *testing.T) {
 	</body>
 	</html>
 	`
-			assert.Loosely(t, string(task.BodyGzip), should.Equal(expectedBody))
+			reader, _ := gzip.NewReader(bytes.NewReader(task.BodyGzip))
+			decompressedBytes, _ := ioutil.ReadAll(reader)
+			finalBody := string(decompressedBytes)
+			assert.Loosely(t, finalBody, should.Equal(expectedBody))
 		})
 	})
 }
