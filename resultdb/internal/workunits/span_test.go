@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -42,53 +41,11 @@ func TestWriteWorkUnit(t *testing.T) {
 		now := testclock.TestRecentTimeUTC
 		ctx, _ = testclock.UseTime(ctx, now)
 
-		properties := &structpb.Struct{
-			Fields: map[string]*structpb.Value{
-				"key": structpb.NewStringValue("value"),
-			},
-		}
-		instructions := &pb.Instructions{
-			Instructions: []*pb.Instruction{
-				{
-					Id:   "step",
-					Type: pb.InstructionType_STEP_INSTRUCTION,
-					TargetedInstructions: []*pb.TargetedInstruction{
-						{
-							Targets: []pb.InstructionTarget{
-								pb.InstructionTarget_LOCAL,
-								pb.InstructionTarget_REMOTE,
-							},
-							Content: "step instruction",
-						},
-					},
-				},
-			},
-		}
-		extendedProperties := map[string]*structpb.Struct{
-			"mykey": {
-				Fields: map[string]*structpb.Value{
-					"@type":       structpb.NewStringValue("foo.bar.com/x/_some.package.MyMessage"),
-					"child_key_1": structpb.NewStringValue("child_value_1"),
-				},
-			},
-		}
 		id := ID{
 			RootInvocationID: "root-inv-id",
 			WorkUnitID:       "work-unit-id",
 		}
-		row := &WorkUnitRow{
-			ID:                 id,
-			State:              pb.WorkUnit_ACTIVE,
-			Realm:              "testproject:testrealm",
-			CreatedBy:          "user:test@example.com",
-			Deadline:           now.Add(2 * 24 * time.Hour),
-			CreateRequestID:    "test-request-id",
-			ProducerResource:   "//builds.example.com/builds/123",
-			Tags:               pbutil.StringPairs("k2", "v2", "k1", "v1"),
-			Properties:         properties,
-			Instructions:       instructions,
-			ExtendedProperties: extendedProperties,
-		}
+		row := NewBuilder("root-inv-id", "work-unit-id").WithState(pb.WorkUnit_ACTIVE).Build()
 
 		LegacyCreateOptions := LegacyCreateOptions{
 			ExpectedTestResultsExpirationTime: now.Add(2 * 24 * time.Hour),
@@ -100,7 +57,7 @@ func TestWriteWorkUnit(t *testing.T) {
 			rootinvocations.InsertForTesting(rootinvocations.NewBuilder("root-inv-id").Build())...,
 		)
 		commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-			mutations := Create(row, LegacyCreateOptions)
+			mutations := Create(row.Clone(), LegacyCreateOptions)
 			span.BufferWrite(ctx, mutations...)
 			return nil
 		})
@@ -111,11 +68,10 @@ func TestWriteWorkUnit(t *testing.T) {
 		defer cancel()
 
 		// Validate WorkUnits table entry.
-		readWorkUnit, err := Read(ctx, id)
+		readWorkUnit, err := Read(ctx, id, AllFields)
 		assert.Loosely(t, err, should.BeNil)
-		row.CreateTime = commitTime
+		row.CreateTime = commitTime.In(time.UTC)
 		row.SecondaryIndexShardID = id.shardID(secondaryIndexShardCount)
-		row.Instructions.Instructions[0].Name = "rootInvocations/root-inv-id/workUnits/work-unit-id/instructions/step"
 		assert.Loosely(t, readWorkUnit, should.Match(row))
 
 		// Validate Legacy Invocations table entry.

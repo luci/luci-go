@@ -19,8 +19,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -94,9 +96,31 @@ type WorkUnitRow struct {
 	ExtendedProperties    map[string]*structpb.Struct
 }
 
-func (w *WorkUnitRow) toMutation() *spanner.Mutation {
-	// TODO: Normalise instruction names before writing.
+// Clone makes a deep copy of the row.
+func (w *WorkUnitRow) Clone() *WorkUnitRow {
+	ret := *w
+	if w.Tags != nil {
+		ret.Tags = make([]*pb.StringPair, len(w.Tags))
+		for i, tp := range w.Tags {
+			ret.Tags[i] = proto.Clone(tp).(*pb.StringPair)
+		}
+	}
+	if w.Properties != nil {
+		ret.Properties = proto.Clone(w.Properties).(*structpb.Struct)
+	}
+	if w.Instructions != nil {
+		ret.Instructions = proto.Clone(w.Instructions).(*pb.Instructions)
+	}
+	if w.ExtendedProperties != nil {
+		ret.ExtendedProperties = make(map[string]*structpb.Struct, len(w.ExtendedProperties))
+		for k, v := range w.ExtendedProperties {
+			ret.ExtendedProperties[k] = proto.Clone(v).(*structpb.Struct)
+		}
+	}
+	return &ret
+}
 
+func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 	row := map[string]interface{}{
 		"RootInvocationShardId": w.ID.RootInvocationShardID(),
 		"WorkUnitId":            w.ID.WorkUnitID,
@@ -111,7 +135,7 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 		"ProducerResource":      w.ProducerResource,
 		"Tags":                  w.Tags,
 		"Properties":            spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
-		"Instructions":          spanutil.Compressed(pbutil.MustMarshal(w.Instructions)),
+		"Instructions":          spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
 	}
 	// Wrap into luci.resultdb.internal.invocations.ExtendedProperties so that
 	// it can be serialized as a single value to spanner.
@@ -127,8 +151,6 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 }
 
 func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *spanner.Mutation {
-	// TODO: Normalise instruction names before writing.
-
 	row := map[string]interface{}{
 		"InvocationId":                      w.ID.LegacyInvocationID(),
 		"Type":                              invocations.WorkUnit,
@@ -148,7 +170,7 @@ func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *span
 		"InheritSources": spanner.NullBool{Valid: false},
 		// Work units are not export roots.
 		"IsExportRoot": spanner.NullBool{Bool: false, Valid: true},
-		"Instructions": spanutil.Compressed(pbutil.MustMarshal(w.Instructions)),
+		"Instructions": spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
 	}
 
 	// Wrap into luci.resultdb.internal.invocations.ExtendedProperties so that

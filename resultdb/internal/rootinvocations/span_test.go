@@ -21,7 +21,6 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -43,37 +42,9 @@ func TestWriteRootInvocation(t *testing.T) {
 		now := testclock.TestRecentTimeUTC
 		ctx, _ = testclock.UseTime(ctx, now)
 
-		properties := &structpb.Struct{
-			Fields: map[string]*structpb.Value{
-				"key": structpb.NewStringValue("value"),
-			},
-		}
-		sources := &pb.Sources{
-			GitilesCommit: &pb.GitilesCommit{
-				Host:       "chromium.googlesource.com",
-				Project:    "chromium/src",
-				Ref:        "refs/heads/main",
-				CommitHash: "1234567890abcdef1234567890abcdef12345678",
-				Position:   123,
-			},
-		}
 		id := "root-inv-id"
-		row := &RootInvocationRow{
-			RootInvocationID:                        ID(id),
-			State:                                   pb.RootInvocation_ACTIVE,
-			Realm:                                   "testproject:testrealm",
-			CreatedBy:                               "user:test@example.com",
-			Deadline:                                now.Add(2 * 24 * time.Hour),
-			UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: now.Add(2 * 24 * time.Hour)},
-			CreateRequestID:                         "test-request-id",
-			ProducerResource:                        "//builds.example.com/builds/123",
-			Tags:                                    pbutil.StringPairs("k2", "v2", "k1", "v1"),
-			Properties:                              properties,
-			Sources:                                 sources,
-			IsSourcesFinal:                          true,
-			BaselineID:                              "try:linux-rel",
-			Submitted:                               false,
-		}
+		row := NewBuilder("root-inv-id").WithState(pb.RootInvocation_ACTIVE).Build()
+
 		commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 			mutations := Create(row)
 			span.BufferWrite(ctx, mutations...)
@@ -90,7 +61,7 @@ func TestWriteRootInvocation(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		row.CreateTime = commitTime
 		row.SecondaryIndexShardID = row.RootInvocationID.shardID(secondaryIndexShardCount)
-		assert.Loosely(t, readRootInv, should.Match(row))
+		assert.That(t, readRootInv, should.Match(row))
 
 		// Validate Legacy Invocations table entry.
 		legacyInvID := invocations.ID(fmt.Sprintf("root:%s", id))

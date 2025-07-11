@@ -1176,7 +1176,7 @@ func (q *Query) Fetch(ctx context.Context) (Page, error) {
 		"passedOrSkippedVerdictEff":  int(statusV2EffectivePassedOrSkipped),
 
 		"exoneratedOverride": int(pb.TestVerdict_EXONERATED),
-		"notOverriden":       int(pb.TestVerdict_NOT_OVERRIDDEN),
+		"notOverridden":      int(pb.TestVerdict_NOT_OVERRIDDEN),
 
 		"status": status,
 	}
@@ -1306,11 +1306,11 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 				ELSE @precludedVerdict
 			END TvStatusV2,
 			CASE
-				WHEN num_passed > 0 THEN @notOverriden -- Flaky and passed verdicts cannot be exonerated.
-				WHEN num_failed = 0 AND num_passed = 0 AND num_skipped > 0 THEN @notOverriden -- Skipped verdicts cannot be exonerated.
+				WHEN num_passed > 0 THEN @notOverridden -- Flaky and passed verdicts cannot be exonerated.
+				WHEN num_failed = 0 AND num_passed = 0 AND num_skipped > 0 THEN @notOverridden -- Skipped verdicts cannot be exonerated.
 				-- The verdict is eligible for exoneration, i.e. one of failed, execution errored or precluded.
 				WHEN exonerated.TestId IS NOT NULL THEN @exoneratedOverride
-				ELSE @notOverriden
+				ELSE @notOverridden
 			END TvStatusOverride,
 		{{if .OrderByStatusV2Effective}}
 			CASE

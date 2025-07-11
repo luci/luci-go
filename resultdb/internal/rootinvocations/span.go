@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -95,6 +96,24 @@ type RootInvocationRow struct {
 	IsSourcesFinal                          bool
 	BaselineID                              string
 	Submitted                               bool
+}
+
+// Clone makes a deep copy of the row.
+func (r *RootInvocationRow) Clone() *RootInvocationRow {
+	ret := *r
+	if r.Tags != nil {
+		ret.Tags = make([]*pb.StringPair, len(r.Tags))
+		for i, tp := range r.Tags {
+			ret.Tags[i] = proto.Clone(tp).(*pb.StringPair)
+		}
+	}
+	if r.Properties != nil {
+		ret.Properties = proto.Clone(r.Properties).(*structpb.Struct)
+	}
+	if r.Sources != nil {
+		ret.Sources = proto.Clone(r.Sources).(*pb.Sources)
+	}
+	return &ret
 }
 
 // Convert the root invocation row to the canonical form.

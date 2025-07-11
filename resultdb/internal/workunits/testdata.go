@@ -18,9 +18,9 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
@@ -39,6 +39,8 @@ type Builder struct {
 func NewBuilder(rootInvocationID rootinvocations.ID, workUnitID string) *Builder {
 	id := ID{RootInvocationID: rootInvocationID, WorkUnitID: workUnitID}
 	return &Builder{
+		// Default to populating all fields (except parent work unit ID as it is not known),
+		// this helps maximise test coverage.
 		row: WorkUnitRow{
 			ID:                    id,
 			SecondaryIndexShardID: id.shardID(secondaryIndexShardCount),
@@ -75,6 +77,30 @@ func NewBuilder(rootInvocationID rootinvocations.ID, workUnitID string) *Builder
 			},
 		},
 	}
+}
+
+// WithMinimalFields clears as many fields as possible on the work unit while keeping
+// it a valid work unit. This helps test code handles unset fields.
+func (b *Builder) WithMinimalFields() *Builder {
+	b.row = WorkUnitRow{
+		ID:                    b.row.ID,
+		ParentWorkUnitID:      b.row.ParentWorkUnitID,
+		SecondaryIndexShardID: b.row.SecondaryIndexShardID,
+		// Means the finalized time and start time will be cleared in Build() unless state is
+		// subsequently overridden.
+		State:             pb.WorkUnit_ACTIVE,
+		Realm:             b.row.Realm,
+		CreateTime:        b.row.CreateTime,
+		CreatedBy:         b.row.CreatedBy,
+		FinalizeStartTime: b.row.FinalizeStartTime,
+		FinalizeTime:      b.row.FinalizeTime,
+		Deadline:          b.row.Deadline,
+		CreateRequestID:   b.row.CreateRequestID,
+		// Prefer to use empty slice rather than nil (even though semantically identical)
+		// as this what we always report in reads.
+		Tags: []*pb.StringPair{},
+	}
+	return b
 }
 
 // WithID sets the work unit ID.
@@ -169,25 +195,14 @@ func (b *Builder) WithExtendedProperties(ep map[string]*structpb.Struct) *Builde
 }
 
 // Build returns the constructed WorkUnitRow.
-func (b *Builder) Build() WorkUnitRow {
-	// Return a copy.
-	r := b.row
-	if r.Tags != nil {
-		r.Tags = append([]*pb.StringPair(nil), r.Tags...)
-	}
-	if r.Properties != nil {
-		r.Properties = proto.Clone(r.Properties).(*structpb.Struct)
-	}
-	if r.Instructions != nil {
-		r.Instructions = proto.Clone(r.Instructions).(*pb.Instructions)
-	}
-	if r.ExtendedProperties != nil {
-		newEP := make(map[string]*structpb.Struct, len(r.ExtendedProperties))
-		for k, v := range r.ExtendedProperties {
-			newEP[k] = proto.Clone(v).(*structpb.Struct)
-		}
-		r.ExtendedProperties = newEP
-	}
+func (b *Builder) Build() *WorkUnitRow {
+	// Return a copy to avoid changes to the returned object
+	// flowing back into the builder.
+	r := b.row.Clone()
+
+	// Populate output-only fields on instructions.
+	r.Instructions = instructionutil.InstructionsWithNames(r.Instructions, r.ID.Name())
+
 	if r.State == pb.WorkUnit_ACTIVE {
 		r.FinalizeStartTime = spanner.NullTime{}
 		r.FinalizeTime = spanner.NullTime{}
@@ -200,7 +215,7 @@ func (b *Builder) Build() WorkUnitRow {
 
 // InsertForTesting inserts the work unit record and its corresponding
 // legacy invocation record for testing purposes.
-func InsertForTesting(w WorkUnitRow) []*spanner.Mutation {
+func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 	workUnitMutation := spanutil.InsertMap("WorkUnits", map[string]any{
 		"RootInvocationShardId": w.ID.RootInvocationShardID(),
 		"WorkUnitId":            w.ID.WorkUnitID,
@@ -217,7 +232,7 @@ func InsertForTesting(w WorkUnitRow) []*spanner.Mutation {
 		"ProducerResource":      w.ProducerResource,
 		"Tags":                  w.Tags,
 		"Properties":            spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
-		"Instructions":          spanutil.Compressed(pbutil.MustMarshal(w.Instructions)),
+		"Instructions":          spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
 		"ExtendedProperties":    spanutil.Compressed(pbutil.MustMarshal(&invocationspb.ExtendedProperties{ExtendedProperties: w.ExtendedProperties})),
 	})
 
@@ -240,7 +255,7 @@ func InsertForTesting(w WorkUnitRow) []*spanner.Mutation {
 		"Properties":                        spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
 		"InheritSources":                    spanner.NullBool{Valid: false},
 		"IsExportRoot":                      spanner.NullBool{Bool: false, Valid: true},
-		"Instructions":                      spanutil.Compressed(pbutil.MustMarshal(w.Instructions)),
+		"Instructions":                      spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
 		"ExtendedProperties":                spanutil.Compressed(pbutil.MustMarshal(&invocationspb.ExtendedProperties{ExtendedProperties: w.ExtendedProperties})),
 	})
 

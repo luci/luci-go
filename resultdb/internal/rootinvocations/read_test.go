@@ -33,15 +33,30 @@ func TestReadFunctions(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		const realm = "testproject:testrealm"
+
+		// Prepare a root invocation with all fields set.
 		const id = ID("root-inv-id")
 		testData := NewBuilder(id).WithRealm(realm).Build()
-		testutil.MustApply(ctx, t, InsertForTesting(testData)...)
+		ms := InsertForTesting(testData)
+
+		// Prepare a root invocation with minimal fields set.
+		const idMinimal = ID("root-inv-id-minimal")
+		testDataMinimal := NewBuilder("root-inv-id-minimal").WithRealm(realm).WithMinimalFields().Build()
+		ms = append(ms, InsertForTesting(testDataMinimal)...)
+		testutil.MustApply(ctx, t, ms...)
 
 		t.Run("Read", func(t *ftt.Test) {
 			t.Run("happy path", func(t *ftt.Test) {
-				row, err := Read(span.Single(ctx), id)
-				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, row, should.Match(&testData))
+				t.Run("maximal fields", func(t *ftt.Test) {
+					row, err := Read(span.Single(ctx), id)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, row, should.Match(testData))
+				})
+				t.Run("minimal fields", func(t *ftt.Test) {
+					row, err := Read(span.Single(ctx), idMinimal)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, row, should.Match(testDataMinimal))
+				})
 			})
 
 			t.Run("not found", func(t *ftt.Test) {

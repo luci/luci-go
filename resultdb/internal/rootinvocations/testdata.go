@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -36,6 +35,7 @@ type Builder struct {
 func NewBuilder(id ID) *Builder {
 	return &Builder{
 		row: RootInvocationRow{
+			// Set all fields by default. This helps optimise test coverage.
 			RootInvocationID:                        id,
 			SecondaryIndexShardID:                   id.shardID(secondaryIndexShardCount),
 			State:                                   pb.RootInvocation_FINALIZED,
@@ -65,9 +65,32 @@ func NewBuilder(id ID) *Builder {
 			},
 			IsSourcesFinal: true,
 			BaselineID:     "baseline",
-			Submitted:      false,
+			Submitted:      true,
 		},
 	}
+}
+
+// WithMinimalFields clears as many fields as possible on the root invocation while
+// keeping it valid. This is useful for testing null and empty value handling.
+func (b *Builder) WithMinimalFields() *Builder {
+	b.row = RootInvocationRow{
+		RootInvocationID:      b.row.RootInvocationID,
+		SecondaryIndexShardID: b.row.SecondaryIndexShardID,
+		// Means the finalized time and start time will be cleared in Build() unless state is
+		// subsequently overridden.
+		State:             pb.RootInvocation_ACTIVE,
+		Realm:             b.row.Realm,
+		CreateTime:        b.row.CreateTime,
+		CreatedBy:         b.row.CreatedBy,
+		FinalizeStartTime: b.row.FinalizeStartTime,
+		FinalizeTime:      b.row.FinalizeTime,
+		Deadline:          b.row.Deadline,
+		CreateRequestID:   b.row.CreateRequestID,
+		// Prefer to use empty slice rather than nil (even though semantically identical)
+		// as this what we always report in reads.
+		Tags: []*pb.StringPair{},
+	}
+	return b
 }
 
 // WithRootInvocationID sets the root invocation ID.
@@ -174,18 +197,11 @@ func (b *Builder) WithSubmitted(submitted bool) *Builder {
 }
 
 // Build returns the constructed RootInvocationRow.
-func (b *Builder) Build() RootInvocationRow {
-	// Return a copy.
-	r := b.row
-	if r.Tags != nil {
-		r.Tags = append([]*pb.StringPair(nil), r.Tags...)
-	}
-	if r.Properties != nil {
-		r.Properties = proto.Clone(r.Properties).(*structpb.Struct)
-	}
-	if r.Sources != nil {
-		r.Sources = proto.Clone(r.Sources).(*pb.Sources)
-	}
+func (b *Builder) Build() *RootInvocationRow {
+	// Return a copy to avoid changes to the returned row
+	// flowing back into the builder.
+	r := b.row.Clone()
+
 	if r.State == pb.RootInvocation_ACTIVE {
 		r.FinalizeStartTime = spanner.NullTime{}
 		r.FinalizeTime = spanner.NullTime{}
@@ -198,7 +214,7 @@ func (b *Builder) Build() RootInvocationRow {
 
 // InsertForTesting inserts the rootInvocation record and all the
 // RootInvocationShards records for a root invocation for testing purposes.
-func InsertForTesting(r RootInvocationRow) []*spanner.Mutation {
+func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, 0, 16+1) // 16 shard and 1 root invocation
 	ms = append(ms, spanutil.InsertMap("RootInvocations", map[string]any{
 		"RootInvocationId":      r.RootInvocationID,

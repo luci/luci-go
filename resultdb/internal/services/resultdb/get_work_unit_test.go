@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -64,6 +63,7 @@ func TestGetWorkUnit(t *testing.T) {
 		childWu := workunits.NewBuilder(rootInvID, childWuID.WorkUnitID).
 			WithRealm(wuRealm).
 			WithParentWorkUnitID(rootWorkUnitID.WorkUnitID).
+			WithMinimalFields().
 			Build()
 		testutil.MustApply(ctx, t, insert.WorkUnit(childWu)...)
 
@@ -97,7 +97,7 @@ func TestGetWorkUnit(t *testing.T) {
 				ProducerResource:  wu.ProducerResource,
 				Tags:              wu.Tags,
 				Properties:        wu.Properties,
-				Instructions:      instructionutil.InstructionsWithNames(wu.Instructions, rootWorkUnitID.Name()),
+				Instructions:      wu.Instructions,
 				IsMasked:          false,
 			}
 

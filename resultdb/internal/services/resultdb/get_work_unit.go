@@ -67,8 +67,13 @@ func (s *resultDBServer) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequ
 		return nil, appstatus.BadRequest(err)
 	}
 
+	readMask := workunits.ExcludeExtendedProperties
+	if in.View == pb.WorkUnitView_WORK_UNIT_VIEW_FULL && accessLevel == permissions.FullAccess {
+		readMask = workunits.AllFields
+	}
+
 	// Read the work unit.
-	wu, err := workunits.Read(ctx, id)
+	wu, err := workunits.Read(ctx, id, readMask)
 	if err != nil {
 		return nil, err
 	}

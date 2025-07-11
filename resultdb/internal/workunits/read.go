@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -37,11 +38,8 @@ import (
 // NotFound GRPC code.
 // For ptrMap see ReadRow comment in span/util.go.
 func readColumns(ctx context.Context, id ID, ptrMap map[string]any) error {
-	if id.RootInvocationID == "" {
-		return errors.New("rootInvocationID is unspecified")
-	}
-	if id.WorkUnitID == "" {
-		return errors.New("workUnitID is unspecified")
+	if err := validateID(id); err != nil {
+		return err
 	}
 
 	err := spanutil.ReadRow(ctx, "WorkUnits", id.key(), ptrMap)
@@ -58,11 +56,12 @@ func readColumns(ctx context.Context, id ID, ptrMap map[string]any) error {
 }
 
 // ReadRealm reads the realm of the given work unit. If the work unit
-// is not found, returns a NotFound appstatus error. Otherwise returns the internal
-// error.
-func ReadRealm(ctx context.Context, id ID) (string, error) {
-	var realm string
-	err := readColumns(ctx, id, map[string]any{
+// is not found, returns a NotFound appstatus error.
+func ReadRealm(ctx context.Context, id ID) (realm string, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadRealm")
+	defer func() { tracing.End(ts, err) }()
+
+	err = readColumns(ctx, id, map[string]any{
 		"Realm": &realm,
 	})
 	if err != nil {
@@ -71,8 +70,93 @@ func ReadRealm(ctx context.Context, id ID) (string, error) {
 	return realm, nil
 }
 
-// readMulti reads multiple work units from Spanner.
-func readMulti(ctx context.Context, ids []ID, f func(wu *WorkUnitRow) error) error {
+func validateID(id ID) error {
+	if id.RootInvocationID == "" {
+		return errors.New("rootInvocationID: unspecified")
+	}
+	if id.WorkUnitID == "" {
+		return errors.New("workUnitID: unspecified")
+	}
+	return nil
+}
+
+func validateIDs(ids []ID) error {
+	for i, id := range ids {
+		if err := validateID(id); err != nil {
+			return errors.Fmt("ids[%d]: %w", i, err)
+		}
+	}
+	return nil
+}
+
+// ReadRealms reads the realm of the given work units. If any of the work
+// units are not found, returns a NotFound appstatus error. Returned realms
+// match 1:1 with the requested ids, i.e. result[i] corresponds to ids[i].
+// Duplicate IDs are allowed.
+func ReadRealms(ctx context.Context, ids []ID) (realms []string, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadRealms")
+	defer func() { tracing.End(ts, err) }()
+
+	if err := validateIDs(ids); err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	realms = make([]string, len(ids))
+
+	// No need to dedup keys going into Spanner, Cloud Spanner always behaves
+	// as if the key is only specified once.
+	var keys []spanner.Key
+	for _, id := range ids {
+		keys = append(keys, id.key())
+	}
+
+	resultMap := make(map[ID]string, len(ids))
+
+	var b spanutil.Buffer
+	columns := []string{"RootInvocationShardId", "WorkUnitId", "Realm"}
+	err = span.Read(ctx, "WorkUnits", spanner.KeySetFromKeys(keys...), columns).Do(func(r *spanner.Row) error {
+		var rootInvocationShardID string
+		var workUnitID string
+		var realm string
+		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &realm)
+		if err != nil {
+			return errors.Fmt("read spanner row for work unit: %w", err)
+		}
+		id := IDFromRowID(rootInvocationShardID, workUnitID)
+		resultMap[id] = realm
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for i, id := range ids {
+		realm, ok := resultMap[id]
+		if !ok {
+			return nil, appstatus.Errorf(codes.NotFound, "%s not found", id.Name())
+		}
+		realms[i] = realm
+	}
+	return realms, nil
+}
+
+// ReadMask controls what fields to read.
+type ReadMask int
+
+const (
+	// Read all work unit properties.
+	AllFields ReadMask = iota
+	// Read all work unit fields, except extended properties.
+	// As extended properties can be quite large (megabytes per row), when
+	// reading many rows this can be too much data to query.
+	ExcludeExtendedProperties
+)
+
+// readBatchInternal reads multiple work units from Spanner.
+func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *WorkUnitRow) error) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -94,7 +178,9 @@ func readMulti(ctx context.Context, ids []ID, f func(wu *WorkUnitRow) error) err
 		"Tags",
 		"Properties",
 		"Instructions",
-		"ExtendedProperties",
+	}
+	if mask == AllFields {
+		cols = append(cols, "ExtendedProperties")
 	}
 
 	keys := spanner.KeySets()
@@ -131,33 +217,36 @@ func readMulti(ctx context.Context, ids []ID, f func(wu *WorkUnitRow) error) err
 			&wu.Tags,
 			&properties,
 			&instructions,
-			&extendedProperties,
+		}
+		if mask == AllFields {
+			dest = append(dest, &extendedProperties)
 		}
 
 		if err := b.FromSpanner(row, dest...); err != nil {
-			return err
+			return errors.Fmt("read spanner row for work unit: %w", err)
 		}
 		wu.ID = IDFromRowID(rootInvocationShardID, workUnitID)
 
 		if len(properties) > 0 {
 			wu.Properties = &structpb.Struct{}
 			if err := proto.Unmarshal(properties, wu.Properties); err != nil {
-				return err
+				return errors.Fmt("unmarshal properties for work unit %s: %w", wu.ID.Name(), err)
 			}
 		}
 
 		if len(instructions) > 0 {
 			wu.Instructions = &pb.Instructions{}
 			if err := proto.Unmarshal(instructions, wu.Instructions); err != nil {
-				return err
+				return errors.Fmt("unmarshal instructions for work unit %s: %w", wu.ID.Name(), err)
 			}
+			// Populate output-only fields.
 			wu.Instructions = instructionutil.InstructionsWithNames(wu.Instructions, wu.ID.Name())
 		}
 
 		if len(extendedProperties) > 0 {
 			internalExtendedProperties := &invocationspb.ExtendedProperties{}
 			if err := proto.Unmarshal(extendedProperties, internalExtendedProperties); err != nil {
-				return errors.Fmt("unmarshal ExtendedProperties for work unit %s: %w", wu.ID.Name(), err)
+				return errors.Fmt("unmarshal extended properties for work unit %s: %w", wu.ID.Name(), err)
 			}
 			wu.ExtendedProperties = internalExtendedProperties.ExtendedProperties
 		}
@@ -169,9 +258,14 @@ func readMulti(ctx context.Context, ids []ID, f func(wu *WorkUnitRow) error) err
 // Read reads one work unit from Spanner.
 // If the work unit does not exist, the returned error is annotated with
 // NotFound GRPC code.
-func Read(ctx context.Context, id ID) (*WorkUnitRow, error) {
-	var ret *WorkUnitRow
-	err := readMulti(ctx, []ID{id}, func(wu *WorkUnitRow) error {
+func Read(ctx context.Context, id ID, mask ReadMask) (ret *WorkUnitRow, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.workunits.Read")
+	defer func() { tracing.End(ts, err) }()
+	if err := validateID(id); err != nil {
+		return nil, err
+	}
+
+	err = readBatchInternal(ctx, []ID{id}, mask, func(wu *WorkUnitRow) error {
 		ret = wu
 		return nil
 	})
@@ -184,4 +278,38 @@ func Read(ctx context.Context, id ID) (*WorkUnitRow, error) {
 	default:
 		return ret, nil
 	}
+}
+
+// ReadBatch reads the given work units. If any of the work units are not found,
+// returns a NotFound appstatus error. Returned realms match 1:1 with the requested
+// ids, i.e. result[i] corresponds to ids[i].
+// Duplicate IDs are allowed.
+func ReadBatch(ctx context.Context, ids []ID, mask ReadMask) (ret []*WorkUnitRow, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadBatch")
+	defer func() { tracing.End(ts, err) }()
+	if err := validateIDs(ids); err != nil {
+		return nil, err
+	}
+
+	resultMap := make(map[ID]*WorkUnitRow, len(ids))
+	err = readBatchInternal(ctx, ids, mask, func(wu *WorkUnitRow) error {
+		resultMap[wu.ID] = wu
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ret = make([]*WorkUnitRow, len(ids))
+	for i, id := range ids {
+		row, ok := resultMap[id]
+		if !ok {
+			return nil, appstatus.Errorf(codes.NotFound, "%s not found", id.Name())
+		}
+		// Clone the row to avoid aliasing the same result row object in
+		// result twice (in case of the same ID being requested twice),
+		// as the caller might not expect aliasing.
+		ret[i] = row.Clone()
+	}
+	return ret, err
 }

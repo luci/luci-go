@@ -82,11 +82,11 @@ CREATE TABLE RootInvocations (
   -- A serialized then compressed google.protobuf.Struct that stores structured,
   -- domain-specific properties of the root invocation.
   -- See spanutil.Compressed type for details of compression.
-  Properties BYTES(MAX) NOT NULL,
+  Properties BYTES(MAX),
 
   -- A serialized luci.resultdb.v1.Sources message describing the source information for the
   -- root invocation.
-  Sources BYTES(MAX) NOT NULL,
+  Sources BYTES(MAX),
 
   -- Whether the root invocation's source information (denoted by 'Sources') is immutable.
   -- Setting this early is desirable as it enables test result exports from work units
@@ -214,7 +214,7 @@ CREATE TABLE RootInvocationShards (
   -- exports.
   --
   -- See RootInvocations.Sources for more information.
-  Sources BYTES(MAX) NOT NULL,
+  Sources BYTES(MAX),
 
   -- Replica of the root invocation field, to avoid hotspotting the root invocation
   -- in operations that don't need the whole root invocation, such as low-latency
@@ -304,16 +304,16 @@ CREATE TABLE WorkUnits (
   -- A serialized then compressed google.protobuf.Struct that stores structured,
   -- domain-specific properties of the invocation.
   -- See spanutil.Compressed type for details of compression.
-  Properties BYTES(MAX) NOT NULL,
+  Properties BYTES(MAX),
 
   -- A serialized luci.resultdb.v1.Instructions describing instructions for this invocation.
   -- It may contains instructions for steps (for build-level invocation) and test results.
   -- It may contain instructions to test results directly contained in this invocation,
   -- and test results in included invocations.
-  Instructions BYTES(MAX) NOT NULL,
+  Instructions BYTES(MAX),
 
   -- A compressed, serialized luci.resultdb.internal.invocations.ExtendedProperties message.
-  ExtendedProperties BYTES(MAX) NOT NULL,
+  ExtendedProperties BYTES(MAX),
 ) PRIMARY KEY (RootInvocationShardId, WorkUnitId),
   INTERLEAVE IN PARENT RootInvocationShards ON DELETE CASCADE;
 

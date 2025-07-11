@@ -489,11 +489,11 @@ func Checkpoint(ctx context.Context, project, resourceID, processID, uniquifier 
 }
 
 // RootInvocation returns Spanner mtuations to create the given root invocation.
-func RootInvocation(row rootinvocations.RootInvocationRow) []*spanner.Mutation {
+func RootInvocation(row *rootinvocations.RootInvocationRow) []*spanner.Mutation {
 	return rootinvocations.InsertForTesting(row)
 }
 
 // WorkUnit returns Spanner mutations to create the given work unit.
-func WorkUnit(row workunits.WorkUnitRow) []*spanner.Mutation {
+func WorkUnit(row *workunits.WorkUnitRow) []*spanner.Mutation {
 	return workunits.InsertForTesting(row)
 }
