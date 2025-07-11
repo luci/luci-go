@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/validate"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 const (
@@ -93,4 +94,14 @@ func TryParseWorkUnitName(name string) (rootInvocationID string, workUnitID stri
 // ValidateWorkUnitID to do so.
 func WorkUnitName(rootInvocationID, workUnitID string) string {
 	return "rootInvocations/" + rootInvocationID + "/workUnits/" + workUnitID
+}
+
+// ValidateWorkUnitView validates the work unit view is valid.
+func ValidateWorkUnitView(view pb.WorkUnitView) error {
+	switch view {
+	case pb.WorkUnitView_WORK_UNIT_VIEW_UNSPECIFIED, pb.WorkUnitView_WORK_UNIT_VIEW_FULL, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC:
+		return nil
+	default:
+		return fmt.Errorf("unrecognized view %q", view)
+	}
 }

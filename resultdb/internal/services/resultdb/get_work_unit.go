@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
@@ -32,21 +33,23 @@ import (
 )
 
 func (s *resultDBServer) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
-	return nil, appstatus.Error(codes.Unimplemented, "not yet implemented")
-}
-
-// verifyGetWorkUnitPermissions verifies the user has access to the
-// work unit specified in the request.
-func verifyGetWorkUnitPermissions(ctx context.Context, req *pb.GetRootInvocationRequest) (permissions.AccessLevel, error) {
-	rootInvocationID, workUnitID, err := pbutil.ParseWorkUnitName(req.Name)
+	rootInvocationID, workUnitID, err := pbutil.ParseWorkUnitName(in.Name)
 	if err != nil {
-		return permissions.NoAccess, appstatus.BadRequest(errors.Fmt("name: %w", err))
+		return nil, appstatus.BadRequest(errors.Fmt("name: %w", err))
 	}
 	id := workunits.ID{
 		RootInvocationID: rootinvocations.ID(rootInvocationID),
 		WorkUnitID:       workUnitID,
 	}
-	// Check access on the root invocation.
+
+	// Use one transaction for the entire RPC so that we work with a
+	// consistent snapshot of the system state. This is important to
+	// prevent subtle bugs and TOC-TOU vulnerabilities.
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
+	// Check permissions. As per google.aip.dev/211
+	// this should happen before any other request validation.
 	opts := permissions.QueryWorkUnitAccessOptions{
 		Full:                 rdbperms.PermGetWorkUnit,
 		Limited:              rdbperms.PermListLimitedWorkUnits,
@@ -54,18 +57,37 @@ func verifyGetWorkUnitPermissions(ctx context.Context, req *pb.GetRootInvocation
 	}
 	accessLevel, err := permissions.QueryWorkUnitAccess(ctx, id, opts)
 	if err != nil {
-		// Root invocation does not exist or internal error querying permissions.
-		return permissions.NoAccess, err
+		return nil, err
 	}
 	if accessLevel == permissions.NoAccess {
-		return permissions.NoAccess, appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s (or %s) on root invocation %s`, rdbperms.PermGetWorkUnit, rdbperms.PermListLimitedWorkUnits, id.RootInvocationID.Name())
+		return nil, appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s (or %s) on root invocation %s`, rdbperms.PermGetWorkUnit, rdbperms.PermListLimitedWorkUnits, id.RootInvocationID.Name())
 	}
-	return accessLevel, nil
+
+	if err := validateGetWorkUnitRequest(in); err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+
+	// Read the work unit.
+	wu, err := workunits.Read(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return toWorkUnitProto(wu, accessLevel, in.View), nil
+}
+
+func validateGetWorkUnitRequest(in *pb.GetWorkUnitRequest) error {
+	// Name is already validated in GetWorkUnit.
+	if err := pbutil.ValidateWorkUnitView(in.View); err != nil {
+		return errors.Fmt("view: %w", err)
+	}
+	return nil
 }
 
 func toWorkUnitProto(in *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, view pb.WorkUnitView) *pb.WorkUnit {
 	// TODO: child work units, child invocations.
 	result := &pb.WorkUnit{
+		// Include metadata-only fields by default.
 		Name:             in.ID.Name(),
 		WorkUnitId:       in.ID.WorkUnitID,
 		State:            in.State,
@@ -74,10 +96,19 @@ func toWorkUnitProto(in *workunits.WorkUnitRow, accessLevel permissions.AccessLe
 		Creator:          in.CreatedBy,
 		Deadline:         pbutil.MustTimestampProto(in.Deadline),
 		ProducerResource: in.ProducerResource,
-		Tags:             in.Tags,
-		Properties:       in.Properties,
-		Instructions:     in.Instructions,
+		IsMasked:         true,
 	}
+	if accessLevel == permissions.FullAccess {
+		result.Tags = in.Tags
+		result.Properties = in.Properties
+		result.Instructions = in.Instructions
+		result.IsMasked = false
+
+		if view == pb.WorkUnitView_WORK_UNIT_VIEW_FULL {
+			result.ExtendedProperties = in.ExtendedProperties
+		}
+	}
+
 	if in.ID.WorkUnitID == "root" {
 		result.Parent = in.ID.RootInvocationID.Name()
 	} else {
@@ -89,22 +120,11 @@ func toWorkUnitProto(in *workunits.WorkUnitRow, accessLevel permissions.AccessLe
 			WorkUnitID:       in.ParentWorkUnitID.StringVal,
 		}.Name()
 	}
-	if view == pb.WorkUnitView_WORK_UNIT_VIEW_FULL {
-		result.ExtendedProperties = in.ExtendedProperties
-	}
 	if in.FinalizeStartTime.Valid {
 		result.FinalizeStartTime = pbutil.MustTimestampProto(in.FinalizeStartTime.Time)
 	}
 	if in.FinalizeTime.Valid {
 		result.FinalizeTime = pbutil.MustTimestampProto(in.FinalizeTime.Time)
-	}
-
-	if accessLevel == permissions.LimitedAccess {
-		// TODO: Add output only field on work unit to indicate fields have been masked.
-		result.Properties = nil
-		result.Tags = nil
-		result.Instructions = nil
-		result.ExtendedProperties = nil
 	}
 	return result
 }

@@ -168,6 +168,8 @@ message WorkUnit {
   repeated string child_invocations = 12
       [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
+  // == General ================================================================
+
   // Full name of the resource that produced results in this work unit.
   // See also https://aip.dev/122#full-resource-names
   // Typical examples:
@@ -228,4 +230,23 @@ message WorkUnit {
   // this work unit. It may also contain instructions for test results in
   // included work units.
   Instructions instructions = 17;
+
+  // Whether the work unit has been masked so that it includes only metadata.
+  // The metadata fields for a WorkUnit are:
+  // * name
+  // * work_unit_id
+  // * state
+  // * realm
+  // * create_time
+  // * creator
+  // * finalize_start_time
+  // * finalize_time
+  // * deadline
+  // * parent
+  // * child_work_units
+  // * child_invocations
+  // * producer_resource
+  //
+  // Output only.
+  bool is_masked = 18 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
