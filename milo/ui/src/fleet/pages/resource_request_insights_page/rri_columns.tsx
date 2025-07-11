@@ -46,7 +46,7 @@ export interface RriGridRow {
   resource_request_bug_id: string;
   resource_details: string;
   resource_request_target_delivery_date: string;
-  resource_request_actual_delivery_date: string;
+  resource_request_actual_delivery_date: DateWithOverdueData;
   fulfillment_status: string;
   material_sourcing_actual_delivery_date: DateWithOverdueData;
   build_actual_delivery_date: DateWithOverdueData;
@@ -186,12 +186,18 @@ export const RRI_COLUMNS = [
     id: 'resource_request_actual_delivery_date',
     gridColDef: {
       field: 'resource_request_actual_delivery_date',
-      headerName: 'Actual Delivery Date',
+      headerName: 'Estimated Delivery Date',
       flex: 1,
+      renderCell: (params) =>
+        renderDateCellWithOverdueIndicator(
+          (params.row as RriGridRow).resource_request_actual_delivery_date,
+        ),
     },
     assignValue: (rr, row) =>
-      (row.resource_request_actual_delivery_date = toIsoString(
+      (row.resource_request_actual_delivery_date = getDateWithOverdueData(
+        rr,
         rr.resourceRequestActualDeliveryDate,
+        rr.resourceRequestTargetDeliveryDate,
       )),
     isDefault: true,
   },
