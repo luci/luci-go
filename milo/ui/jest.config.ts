@@ -33,10 +33,14 @@ const config: Config = {
   testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/*.test.[jt]s?(x)'],
   // Some modules use `es6` modules, which is not compatible with jest, so we
   // need to transform them.
-  transformIgnorePatterns: ['/node_modules/?!(lodash-es|lit)'],
+  transformIgnorePatterns: ['/node_modules/(?!lodash-es|lit|markdown-it)/'],
   globalSetup: './src/testing_tools/global_setup.ts',
   setupFilesAfterEnv: ['./src/testing_tools/setup_after_env.ts'],
 
+  transform: {
+    // The default transform from `ts-jest` preset doesn't handle `.mjs` files.
+    '\\.mjs$': 'babel-jest',
+  },
   // Reduce the time of test runs by caching unchanged test results.
   cacheDirectory: '.cache/jest',
 

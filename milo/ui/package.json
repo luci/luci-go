@@ -157,5 +157,12 @@
   },
   "engines": {
     "node": "^20.10.0"
+  },
+  "overrides": {
+    "@mui/lab": {
+      "react": "$react",
+      "@types/react": "$@types/react",
+      "react-dom": "$react-dom"
+    }
   }
 }
