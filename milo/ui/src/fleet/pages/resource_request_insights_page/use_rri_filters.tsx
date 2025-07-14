@@ -74,6 +74,7 @@ export const filterDescriptors = {
   resource_pm: 'multi-select',
   fulfillment_channel: 'multi-select',
   execution_status: 'multi-select',
+  rr_bug_status: 'multi-select',
 } as const satisfies Partial<
   Record<ResourceRequestColumnKey, 'multi-select' | 'date-range' | 'range'>
 >;
@@ -205,6 +206,7 @@ const getFiltersFromSearchParam = (
     resource_pm: parseMultiselectFilter(rec['resource_pm']),
     fulfillment_channel: parseMultiselectFilter(rec['fulfillment_channel']),
     execution_status: parseMultiselectFilter(rec['execution_status']),
+    rr_bug_status: parseMultiselectFilter(rec['rr_bug_status']),
   } satisfies Record<RriFilterKey, unknown>;
 };
 
@@ -340,7 +342,7 @@ const getElements = (
   data: GetResourceRequestsMultiselectFilterValuesResponse,
   option: RriFilterKey,
 ) => {
-  const map = {
+  const map: Partial<Record<RriFilterKey, readonly string[]>> = {
     rr_id: data.rrIds,
     resource_details: data.resourceDetails,
     customer: data.customer,
@@ -350,9 +352,10 @@ const getElements = (
     resource_pm: data.resourcePm,
     fulfillment_channel: data.fulfillmentChannel,
     execution_status: data.executionStatus,
-  } as Record<RriFilterKey, string[]>;
+    rr_bug_status: data.resourceRequestBugStatus,
+  };
 
-  return map[option];
+  return map[option] ?? [];
 };
 
 export const useRriFilters = () => {
@@ -382,6 +385,18 @@ export const useRriFilters = () => {
               'resource_details',
               searchQuery,
             )[0].score
+          : 0,
+      optionsComponent: MultiSelectFilter,
+    },
+    {
+      value: 'rr_bug_status',
+      getChildrenSearchScore: (searchQuery: string) =>
+        query.data
+          ? getSortedMultiselectElements(
+              query.data,
+              'rr_bug_status',
+              searchQuery,
+            )[0]?.score
           : 0,
       optionsComponent: MultiSelectFilter,
     },
@@ -555,6 +570,7 @@ export const useRriFilters = () => {
     resource_pm: (v) => (v as string[]).join(', '),
     fulfillment_channel: (v) => (v as string[]).join(', '),
     execution_status: (v) => (v as string[]).join(', '),
+    rr_bug_status: (v) => (v as string[]).join(', '),
   } as const satisfies Record<
     RriFilterKey,
     (filterValue: RriFilters[RriFilterKey]) => string

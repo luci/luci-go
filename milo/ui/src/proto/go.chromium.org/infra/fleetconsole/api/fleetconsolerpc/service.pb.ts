@@ -488,6 +488,7 @@ export interface ResourceRequest {
   readonly resourceRequestActualDeliveryDate?: DateOnly | undefined;
   readonly resourceRequestTargetDeliveryDate?: DateOnly | undefined;
   readonly resourceRequestStatus?: ResourceRequest_Status | undefined;
+  readonly resourceRequestBugStatus?: string | undefined;
 }
 
 export enum ResourceRequest_Status {
@@ -566,6 +567,7 @@ export interface GetResourceRequestsMultiselectFilterValuesResponse {
    * across all resource requests.
    */
   readonly resourceGroups: readonly string[];
+  readonly resourceRequestBugStatus: readonly string[];
 }
 
 /** ************* REPAIR METRICS ********************* */
@@ -3467,6 +3469,7 @@ function createBaseResourceRequest(): ResourceRequest {
     resourceRequestActualDeliveryDate: undefined,
     resourceRequestTargetDeliveryDate: undefined,
     resourceRequestStatus: undefined,
+    resourceRequestBugStatus: undefined,
   };
 }
 
@@ -3588,6 +3591,9 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     }
     if (message.resourceRequestStatus !== undefined) {
       writer.uint32(344).int32(message.resourceRequestStatus);
+    }
+    if (message.resourceRequestBugStatus !== undefined) {
+      writer.uint32(354).string(message.resourceRequestBugStatus);
     }
     return writer;
   },
@@ -3911,6 +3917,14 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
           message.resourceRequestStatus = reader.int32() as any;
           continue;
         }
+        case 44: {
+          if (tag !== 354) {
+            break;
+          }
+
+          message.resourceRequestBugStatus = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4002,6 +4016,9 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
         : undefined,
       resourceRequestStatus: isSet(object.resourceRequestStatus)
         ? resourceRequest_StatusFromJSON(object.resourceRequestStatus)
+        : undefined,
+      resourceRequestBugStatus: isSet(object.resourceRequestBugStatus)
+        ? globalThis.String(object.resourceRequestBugStatus)
         : undefined,
     };
   },
@@ -4125,6 +4142,9 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
     if (message.resourceRequestStatus !== undefined) {
       obj.resourceRequestStatus = resourceRequest_StatusToJSON(message.resourceRequestStatus);
     }
+    if (message.resourceRequestBugStatus !== undefined) {
+      obj.resourceRequestBugStatus = message.resourceRequestBugStatus;
+    }
     return obj;
   },
 
@@ -4222,6 +4242,7 @@ export const ResourceRequest: MessageFns<ResourceRequest> = {
         ? DateOnly.fromPartial(object.resourceRequestTargetDeliveryDate)
         : undefined;
     message.resourceRequestStatus = object.resourceRequestStatus ?? undefined;
+    message.resourceRequestBugStatus = object.resourceRequestBugStatus ?? undefined;
     return message;
   },
 };
@@ -4509,6 +4530,7 @@ function createBaseGetResourceRequestsMultiselectFilterValuesResponse(): GetReso
     fulfillmentChannel: [],
     executionStatus: [],
     resourceGroups: [],
+    resourceRequestBugStatus: [],
   };
 }
 
@@ -4565,6 +4587,9 @@ export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
     }
     for (const v of message.resourceGroups) {
       writer.uint32(122).string(v!);
+    }
+    for (const v of message.resourceRequestBugStatus) {
+      writer.uint32(130).string(v!);
     }
     return writer;
   },
@@ -4706,6 +4731,14 @@ export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
           message.resourceGroups.push(reader.string());
           continue;
         }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.resourceRequestBugStatus.push(reader.string());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4755,6 +4788,9 @@ export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
         : [],
       resourceGroups: globalThis.Array.isArray(object?.resourceGroups)
         ? object.resourceGroups.map((e: any) => globalThis.String(e))
+        : [],
+      resourceRequestBugStatus: globalThis.Array.isArray(object?.resourceRequestBugStatus)
+        ? object.resourceRequestBugStatus.map((e: any) => globalThis.String(e))
         : [],
     };
   },
@@ -4806,6 +4842,9 @@ export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
     if (message.resourceGroups?.length) {
       obj.resourceGroups = message.resourceGroups;
     }
+    if (message.resourceRequestBugStatus?.length) {
+      obj.resourceRequestBugStatus = message.resourceRequestBugStatus;
+    }
     return obj;
   },
 
@@ -4833,6 +4872,7 @@ export const GetResourceRequestsMultiselectFilterValuesResponse: MessageFns<
     message.fulfillmentChannel = object.fulfillmentChannel?.map((e) => e) || [];
     message.executionStatus = object.executionStatus?.map((e) => e) || [];
     message.resourceGroups = object.resourceGroups?.map((e) => e) || [];
+    message.resourceRequestBugStatus = object.resourceRequestBugStatus?.map((e) => e) || [];
     return message;
   },
 };

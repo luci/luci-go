@@ -62,6 +62,7 @@ export interface RriGridRow {
   execution_status: string;
   resource_groups: string;
   resource_request_status: string;
+  resource_request_bug_status: string;
 }
 
 const getDateWithOverdueData = (
@@ -235,6 +236,17 @@ export const RRI_COLUMNS = [
               ] as keyof typeof ResourceRequest_Status
             ]
           : ''),
+    isDefault: false,
+  },
+  {
+    id: 'rr_bug_status',
+    gridColDef: {
+      field: 'resource_request_bug_status',
+      headerName: 'Resource Request Bug Status',
+      flex: 1,
+    },
+    assignValue: (rr, row) =>
+      (row.resource_request_bug_status = rr.resourceRequestBugStatus ?? ''),
     isDefault: false,
   },
   {
