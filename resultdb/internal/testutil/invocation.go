@@ -75,3 +75,30 @@ func TestInvocationExtendedProperties() map[string]*structpb.Struct {
 		},
 	}
 }
+
+func TestInstructions() *pb.Instructions {
+	return &pb.Instructions{
+		Instructions: []*pb.Instruction{
+			{
+				Id:              "step",
+				Type:            pb.InstructionType_STEP_INSTRUCTION,
+				DescriptiveName: "Step Instruction",
+				TargetedInstructions: []*pb.TargetedInstruction{
+					{
+						Targets: []pb.InstructionTarget{
+							pb.InstructionTarget_LOCAL,
+							pb.InstructionTarget_REMOTE,
+						},
+						Content: "step instruction",
+						Dependencies: []*pb.InstructionDependency{
+							{
+								InvocationId:  "dep_inv_id",
+								InstructionId: "dep_ins_id",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}

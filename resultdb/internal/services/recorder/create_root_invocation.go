@@ -19,22 +19,37 @@ import (
 	"strings"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// maxDeadlineDuration is the maximum amount of time a root invocation or
-// work unit can spend in the ACTIVE state before it should be finalized.
-const maxDeadlineDuration = 5 * 24 * time.Hour // 5 days
+const (
+	// maxDeadlineDuration is the maximum amount of time a root invocation or
+	// work unit can spend in the ACTIVE state before it should be finalized.
+	maxDeadlineDuration = 5 * 24 * time.Hour // 5 days
+
+	// By default, finalize the root invocation 2d after creation if it is still
+	// not finalized.
+	defaultDeadlineDuration = 2 * 24 * time.Hour // 2 days
+
+	rootWorkUnitID = "root"
+)
 
 // CreateRootInvocation implements pb.RecorderServer.
 func (s *recorderServer) CreateRootInvocation(ctx context.Context, in *pb.CreateRootInvocationRequest) (*pb.CreateRootInvocationResponse, error) {
@@ -47,7 +62,163 @@ func (s *recorderServer) CreateRootInvocation(ctx context.Context, in *pb.Create
 		return nil, appstatus.BadRequest(err)
 	}
 
-	return nil, appstatus.Error(codes.Unimplemented, "not yet implemented")
+	if err := createIdempotentRootInvocation(ctx, in, s.ExpectedResultsExpiration); err != nil {
+		return nil, err
+	}
+
+	// TODO: The response is read in a separate transaction
+	// from the creation. This means a duplicate request may not receive an
+	// identical response if the invocation was updated in the meantime.
+	// While AIP-155 (https://google.aip.dev/155#stale-success-responses)
+	// permits returning the most current data, we could instead construct the
+	// response from the request data for better consistency.
+	rootInvocationID := rootinvocations.ID(in.RootInvocationId)
+	rootInvocation, err := rootinvocations.Read(span.Single(ctx), rootInvocationID)
+	if err != nil {
+		// Error is already annotated with NotFound appstatus if record is not found.
+		// Otherwise it is an internal error.
+		return nil, err
+	}
+
+	workUnitID := workunits.ID{
+		RootInvocationID: rootInvocationID,
+		WorkUnitID:       rootWorkUnitID,
+	}
+	workUnitRow, err := workunits.Read(span.Single(ctx), workUnitID, workunits.AllFields)
+	if err != nil {
+		// Error is already annotated with NotFound appstatus if record is not found.
+		// Otherwise it is an internal error.
+		return nil, err
+	}
+
+	// RootInvocation and root work unit share the same update token.
+	// Use the update token generated from root work unit id.
+	token, err := generateWorkUnitToken(ctx, workUnitID)
+	if err != nil {
+		return nil, err
+	}
+	md := metadata.MD{}
+	md.Set(pb.UpdateTokenMetadataKey, token)
+	prpc.SetHeader(ctx, md)
+	return &pb.CreateRootInvocationResponse{
+		RootInvocation: rootInvocation.ToProto(),
+		RootWorkUnit:   workUnitRow.ToCompleteProto(),
+	}, nil
+}
+
+func createIdempotentRootInvocation(
+	ctx context.Context,
+	req *pb.CreateRootInvocationRequest,
+	UninterestingTestVerdictsExpirationTime time.Duration,
+) error {
+	now := clock.Now(ctx)
+	createdBy := string(auth.CurrentIdentity(ctx))
+
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		rootInvocationID := rootinvocations.ID(req.RootInvocationId)
+		deduped, err := deduplicateCreateRootInvocations(ctx, rootInvocationID, req.RequestId, createdBy)
+		if err != nil {
+			return err
+		}
+		if deduped {
+			// This call should be deduplicated, do not write to database.
+			return nil
+		}
+		// Root invocation doesn't exist, create it.
+		state := req.RootInvocation.State
+		if state == pb.RootInvocation_STATE_UNSPECIFIED {
+			state = pb.RootInvocation_ACTIVE
+		}
+		deadline := req.RootInvocation.Deadline.AsTime()
+		if req.RootInvocation.Deadline == nil {
+			deadline = now.Add(defaultDeadlineDuration)
+		}
+
+		rootInvocationRow := &rootinvocations.RootInvocationRow{
+			RootInvocationID:                        rootInvocationID,
+			State:                                   state,
+			Realm:                                   req.RootInvocation.Realm,
+			CreatedBy:                               createdBy,
+			Deadline:                                deadline,
+			UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: now.Add(UninterestingTestVerdictsExpirationTime)},
+			CreateRequestID:                         req.RequestId,
+			ProducerResource:                        req.RootInvocation.ProducerResource,
+			Tags:                                    req.RootInvocation.Tags,
+			Properties:                              req.RootInvocation.Properties,
+			Sources:                                 req.RootInvocation.Sources,
+			IsSourcesFinal:                          req.RootInvocation.SourcesFinal,
+			BaselineID:                              req.RootInvocation.BaselineId,
+			Submitted:                               false, // Submitted is set in separate MarkInvocationSubmitted call.
+		}
+		span.BufferWrite(ctx, rootinvocations.Create(rootInvocationRow)...)
+
+		// Root work unit and Root invocation are always created in the same transaction,
+		// so the idempotency check on the root invocation is sufficient.
+		wuRow := &workunits.WorkUnitRow{
+			ID: workunits.ID{
+				RootInvocationID: rootInvocationID,
+				WorkUnitID:       rootWorkUnitID,
+			},
+			// Root work unit has parent work unit set to null.
+			ParentWorkUnitID: spanner.NullString{Valid: false},
+			// Fields should be the same as root invocation.
+			State:            rootInvocationStateToWorkUnitState(rootInvocationRow.State),
+			Realm:            rootInvocationRow.Realm,
+			CreatedBy:        createdBy,
+			Deadline:         rootInvocationRow.Deadline,
+			CreateRequestID:  req.RequestId,
+			ProducerResource: rootInvocationRow.ProducerResource,
+			// Fields should be set with value in request.RootWorkUnit.
+			Tags:               req.RootWorkUnit.Tags,
+			Properties:         req.RootWorkUnit.Properties,
+			Instructions:       req.RootWorkUnit.Instructions,
+			ExtendedProperties: req.RootWorkUnit.ExtendedProperties,
+		}
+		legacyCreateOpts := workunits.LegacyCreateOptions{
+			ExpectedTestResultsExpirationTime: now.Add(UninterestingTestVerdictsExpirationTime),
+		}
+		span.BufferWrite(ctx, workunits.Create(wuRow, legacyCreateOpts)...)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	// TODO: increment row count metrics on new record creation.
+	return nil
+}
+
+// deduplicateCreateRootInvocations returns whether the CreateRootInvocation call should be deduplicated.
+func deduplicateCreateRootInvocations(ctx context.Context, id rootinvocations.ID, requestID, createdBy string) (bool, error) {
+	curRequestID, curCreatedBy, err := rootinvocations.ReadRequestIDAndCreatedBy(ctx, id)
+	if err != nil {
+		st, ok := appstatus.Get(err)
+		if ok && st.Code() == codes.NotFound {
+			// root invocation doesn't exist yet, do not deduplicate this call.
+			return false, nil
+		}
+		return false, err
+	}
+	if requestID != curRequestID || curCreatedBy != createdBy {
+		// Root invocation with the same id exist, and is not created with the same requestID and creator.
+		return false, appstatus.Errorf(codes.AlreadyExists, "%s already exists", id.Name())
+	}
+	// Root invocation with the same id, requestID and creator exist.
+	// Could happen if someone sent two different calls with the same request ID, eg. retry.
+	// This call should be deduplicated.
+	return true, nil
+}
+
+func rootInvocationStateToWorkUnitState(state pb.RootInvocation_State) pb.WorkUnit_State {
+	switch state {
+	case pb.RootInvocation_ACTIVE:
+		return pb.WorkUnit_ACTIVE
+	case pb.RootInvocation_FINALIZING:
+		return pb.WorkUnit_FINALIZING
+	case pb.RootInvocation_FINALIZED:
+		return pb.WorkUnit_FINALIZED
+	default:
+		return pb.WorkUnit_STATE_UNSPECIFIED
+	}
 }
 
 func verifyCreateRootInvocationPermissions(ctx context.Context, req *pb.CreateRootInvocationRequest) error {

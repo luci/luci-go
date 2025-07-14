@@ -56,7 +56,7 @@ func (id ID) LegacyInvocationID() invocations.ID {
 // is stored in. rootInvocationShardID is part of the primary key in the spanner table.
 func (id ID) RootInvocationShardID() rootinvocations.ShardID {
 	// Use %q instead of %s which convert string to escaped Go string literal.
-	// If we ever let these invocation IDs use colons, this make sure the input to the hashing is unique
+	// If we ever let these invocation IDs use colons, this make sure the input to the hashing is unique.
 	hash := sha256.Sum256([]byte(fmt.Sprintf("%q:%q", id.RootInvocationID, id.WorkUnitID)))
 	val := binary.BigEndian.Uint32(hash[:4])
 	shardIdx := val % uint32(rootinvocations.RootInvocationShardCount)

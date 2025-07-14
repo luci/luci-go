@@ -16,6 +16,7 @@ package recorder
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -25,7 +26,9 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/tokens"
 
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -42,6 +45,43 @@ func (s *recorderServer) CreateWorkUnit(ctx context.Context, in *pb.CreateWorkUn
 	// work unit is not FINALIZED.
 
 	return nil, appstatus.Error(codes.Unimplemented, "not yet implemented")
+}
+
+// workUnitTokenKind generates and validates tokens issued to authorize
+// updating a given work unit or root invocation.
+var workUnitTokenKind = tokens.TokenKind{
+	Algo:      tokens.TokenAlgoHmacSHA256,
+	SecretKey: "work_unit_tokens_secret",
+	Version:   1,
+}
+
+// generateWorkUnitToken generates an update token for a given work unit or root invocation.
+func generateWorkUnitToken(ctx context.Context, id workunits.ID) (string, error) {
+	// TODO: If a work unit ID has a colon-separated prefix
+	// (e.g., "swarming:task1"), the update token should be generated
+	// using only the prefix ("swarming"). This would allow multiple work
+	// units from the same logical task to share an update token.
+
+	// Use %q instead of %s which convert string to escaped Go string literal.
+	// If we ever let these invocation IDs use colons, this make sure the input is unique.
+	state := fmt.Sprintf("%q:%q", id.RootInvocationID, id.WorkUnitID)
+	// The token should last as long as a build is allowed to run.
+	// Buildbucket has a max of 2 days, so one week should be enough even
+	// for other use cases.
+	return workUnitTokenKind.Generate(ctx, []byte(state), nil, 7*day) // One week.
+}
+
+// validateWorkUnitToken validates an update token for a work unit or root invocation.
+//
+// For a root invocation, use the ID of its corresponding root work unit
+// (WorkUnitID: "root"), as they share the same update token.
+// Returns an error if the token is invalid, nil otherwise.
+func validateWorkUnitToken(ctx context.Context, token string, id workunits.ID) error {
+	// TODO: take care of work unit ID with colon-separated prefix.
+
+	state := fmt.Sprintf("%q:%q", id.RootInvocationID, id.WorkUnitID)
+	_, err := workUnitTokenKind.Validate(ctx, token, []byte(state))
+	return err
 }
 
 func verifyCreateWorkUnitPermissions(ctx context.Context, req *pb.CreateWorkUnitRequest) error {

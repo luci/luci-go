@@ -16,7 +16,6 @@ package resultdb
 
 import (
 	"context"
-	"fmt"
 
 	"google.golang.org/grpc/codes"
 
@@ -25,6 +24,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/permissions"
+	"go.chromium.org/luci/resultdb/internal/permissions/permissionstype"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -59,7 +59,7 @@ func (s *resultDBServer) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequ
 	if err != nil {
 		return nil, err
 	}
-	if accessLevel == permissions.NoAccess {
+	if accessLevel == permissionstype.NoAccess {
 		return nil, appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s (or %s) on root invocation %s`, rdbperms.PermGetWorkUnit, rdbperms.PermListLimitedWorkUnits, id.RootInvocationID.Name())
 	}
 
@@ -68,7 +68,7 @@ func (s *resultDBServer) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequ
 	}
 
 	readMask := workunits.ExcludeExtendedProperties
-	if in.View == pb.WorkUnitView_WORK_UNIT_VIEW_FULL && accessLevel == permissions.FullAccess {
+	if in.View == pb.WorkUnitView_WORK_UNIT_VIEW_FULL && accessLevel == permissionstype.FullAccess {
 		readMask = workunits.AllFields
 	}
 
@@ -78,7 +78,7 @@ func (s *resultDBServer) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequ
 		return nil, err
 	}
 
-	return toWorkUnitProto(wu, accessLevel, in.View), nil
+	return wu.ToProto(accessLevel, in.View), nil
 }
 
 func validateGetWorkUnitRequest(in *pb.GetWorkUnitRequest) error {
@@ -87,49 +87,4 @@ func validateGetWorkUnitRequest(in *pb.GetWorkUnitRequest) error {
 		return errors.Fmt("view: %w", err)
 	}
 	return nil
-}
-
-func toWorkUnitProto(in *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, view pb.WorkUnitView) *pb.WorkUnit {
-	// TODO: child work units, child invocations.
-	result := &pb.WorkUnit{
-		// Include metadata-only fields by default.
-		Name:             in.ID.Name(),
-		WorkUnitId:       in.ID.WorkUnitID,
-		State:            in.State,
-		Realm:            in.Realm,
-		CreateTime:       pbutil.MustTimestampProto(in.CreateTime),
-		Creator:          in.CreatedBy,
-		Deadline:         pbutil.MustTimestampProto(in.Deadline),
-		ProducerResource: in.ProducerResource,
-		IsMasked:         true,
-	}
-	if accessLevel == permissions.FullAccess {
-		result.Tags = in.Tags
-		result.Properties = in.Properties
-		result.Instructions = in.Instructions
-		result.IsMasked = false
-
-		if view == pb.WorkUnitView_WORK_UNIT_VIEW_FULL {
-			result.ExtendedProperties = in.ExtendedProperties
-		}
-	}
-
-	if in.ID.WorkUnitID == "root" {
-		result.Parent = in.ID.RootInvocationID.Name()
-	} else {
-		if !in.ParentWorkUnitID.Valid {
-			panic(fmt.Sprintf("invariant violated: parent work unit ID not set on non-root work unit %q", in.ID.Name()))
-		}
-		result.Parent = workunits.ID{
-			RootInvocationID: in.ID.RootInvocationID,
-			WorkUnitID:       in.ParentWorkUnitID.StringVal,
-		}.Name()
-	}
-	if in.FinalizeStartTime.Valid {
-		result.FinalizeStartTime = pbutil.MustTimestampProto(in.FinalizeStartTime.Time)
-	}
-	if in.FinalizeTime.Valid {
-		result.FinalizeTime = pbutil.MustTimestampProto(in.FinalizeTime.Time)
-	}
-	return result
 }

@@ -199,3 +199,28 @@ func (r *RootInvocationRow) toShardsMutations() []*spanner.Mutation {
 	}
 	return mutations
 }
+
+func (r *RootInvocationRow) ToProto() *pb.RootInvocation {
+	result := &pb.RootInvocation{
+		Name:             r.RootInvocationID.Name(),
+		RootInvocationId: string(r.RootInvocationID),
+		State:            r.State,
+		Realm:            r.Realm,
+		CreateTime:       pbutil.MustTimestampProto(r.CreateTime),
+		Creator:          r.CreatedBy,
+		Deadline:         pbutil.MustTimestampProto(r.Deadline),
+		ProducerResource: r.ProducerResource,
+		Sources:          r.Sources,
+		SourcesFinal:     r.IsSourcesFinal,
+		Tags:             r.Tags,
+		Properties:       r.Properties,
+		BaselineId:       r.BaselineID,
+	}
+	if r.FinalizeStartTime.Valid {
+		result.FinalizeStartTime = pbutil.MustTimestampProto(r.FinalizeStartTime.Time)
+	}
+	if r.FinalizeTime.Valid {
+		result.FinalizeTime = pbutil.MustTimestampProto(r.FinalizeTime.Time)
+	}
+	return result
+}

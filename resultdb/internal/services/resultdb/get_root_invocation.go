@@ -46,7 +46,7 @@ func (s *resultDBServer) GetRootInvocation(ctx context.Context, in *pb.GetRootIn
 		return nil, err
 	}
 
-	return toRootInvocationProto(row), nil
+	return row.ToProto(), nil
 }
 
 // verifyGetRootInvocationPermissions verifies the user has access to the
@@ -58,29 +58,4 @@ func verifyGetRootInvocationPermissions(ctx context.Context, req *pb.GetRootInvo
 	}
 	// Lookup the root invocation and check permissions on its realm.
 	return permissions.VerifyRootInvocation(ctx, rootinvocations.ID(id), rdbperms.PermGetRootInvocation)
-}
-
-func toRootInvocationProto(in *rootinvocations.RootInvocationRow) *pb.RootInvocation {
-	result := &pb.RootInvocation{
-		Name:             in.RootInvocationID.Name(),
-		RootInvocationId: string(in.RootInvocationID),
-		State:            in.State,
-		Realm:            in.Realm,
-		CreateTime:       pbutil.MustTimestampProto(in.CreateTime),
-		Creator:          in.CreatedBy,
-		Deadline:         pbutil.MustTimestampProto(in.Deadline),
-		ProducerResource: in.ProducerResource,
-		Sources:          in.Sources,
-		SourcesFinal:     in.IsSourcesFinal,
-		Tags:             in.Tags,
-		Properties:       in.Properties,
-		BaselineId:       in.BaselineID,
-	}
-	if in.FinalizeStartTime.Valid {
-		result.FinalizeStartTime = pbutil.MustTimestampProto(in.FinalizeStartTime.Time)
-	}
-	if in.FinalizeTime.Valid {
-		result.FinalizeTime = pbutil.MustTimestampProto(in.FinalizeTime.Time)
-	}
-	return result
 }

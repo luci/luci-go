@@ -87,6 +87,22 @@ func ReadRealm(ctx context.Context, id ID) (string, error) {
 	return realm, nil
 }
 
+// ReadRequestIDAndCreatedBy reads the request id and createdBy of the given root invocation.
+// If the root invocation is not found, returns a NotFound appstatus error.
+// Otherwise returns the internal error.
+func ReadRequestIDAndCreatedBy(ctx context.Context, id ID) (string, string, error) {
+	var requestID string
+	var createdBy string
+	err := readColumns(ctx, id, map[string]any{
+		"CreateRequestId": &requestID,
+		"CreatedBy":       &createdBy,
+	})
+	if err != nil {
+		return "", "", err
+	}
+	return requestID, createdBy, nil
+}
+
 // ReadRealmFromShard reads the realm of the given root invocation shard. If the
 // root invocation is not found, returns a NotFound appstatus error. Otherwise
 // returns the internal error.

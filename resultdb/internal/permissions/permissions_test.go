@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/permissions/permissionstype"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -167,7 +168,7 @@ func TestQueryWorkUnitAccess(t *testing.T) {
 		t.Run("no access on root invocation", func(t *ftt.Test) {
 			level, err := QueryWorkUnitAccess(ctx, workUnitID, opts)
 			assert.Loosely(t, err, should.BeNil)
-			assert.That(t, level, should.Equal(NoAccess))
+			assert.That(t, level, should.Equal(permissionstype.NoAccess))
 		})
 		t.Run("full access on root invocation", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{
@@ -175,7 +176,7 @@ func TestQueryWorkUnitAccess(t *testing.T) {
 			}
 			level, err := QueryWorkUnitAccess(ctx, workUnitID, opts)
 			assert.Loosely(t, err, should.BeNil)
-			assert.That(t, level, should.Equal(FullAccess))
+			assert.That(t, level, should.Equal(permissionstype.FullAccess))
 		})
 		t.Run("limited access on root invocation", func(t *ftt.Test) {
 			t.Run("baseline (no upgrade permission)", func(t *ftt.Test) {
@@ -184,7 +185,7 @@ func TestQueryWorkUnitAccess(t *testing.T) {
 				}
 				level, err := QueryWorkUnitAccess(ctx, workUnitID, opts)
 				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, level, should.Equal(LimitedAccess))
+				assert.That(t, level, should.Equal(permissionstype.LimitedAccess))
 			})
 			t.Run("upgrade to full access", func(t *ftt.Test) {
 				authState.IdentityPermissions = []authtest.RealmPermission{
@@ -193,7 +194,7 @@ func TestQueryWorkUnitAccess(t *testing.T) {
 				}
 				level, err := QueryWorkUnitAccess(ctx, workUnitID, opts)
 				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, level, should.Equal(FullAccess))
+				assert.That(t, level, should.Equal(permissionstype.FullAccess))
 			})
 			t.Run("work unit not found", func(t *ftt.Test) {
 				authState.IdentityPermissions = []authtest.RealmPermission{

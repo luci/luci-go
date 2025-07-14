@@ -20,18 +20,30 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -574,6 +586,303 @@ func TestValidateDeadline(t *testing.T) {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			err := validateDeadline(deadline, now)
 			assert.Loosely(t, err, should.BeNil)
+		})
+	})
+}
+
+func TestCreateRootInvocation(t *testing.T) {
+	ftt.Run(`TestCreateRootInvocation`, t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:testrealm", Permission: permCreateRootInvocation},
+				{Realm: "testproject:testrealm", Permission: permCreateWorkUnit},
+				{Realm: "testproject:@root", Permission: permCreateRootInvocationWithReservedID},
+				{Realm: "testproject:@project", Permission: permPutBaseline},
+				{Realm: "testproject:@root", Permission: permSetRootInvocationProducerResource},
+			},
+		})
+
+		// set test clock
+		start := testclock.TestRecentTimeUTC
+		ctx, _ = testclock.UseTime(ctx, start)
+
+		// Setup a full HTTP server in order to retrieve response headers.
+		server := &prpctest.Server{}
+		pb.RegisterRecorderServer(server, newTestRecorderServer())
+		server.Start(ctx)
+		defer server.Close()
+		client, err := server.NewClient()
+		assert.Loosely(t, err, should.BeNil)
+		recorder := pb.NewRecorderPRPCClient(client)
+
+		req := &pb.CreateRootInvocationRequest{
+			RootInvocationId: "root-inv-id",
+			RootInvocation:   &pb.RootInvocation{Realm: "testproject:testrealm"},
+			RootWorkUnit:     &pb.WorkUnit{},
+			RequestId:        "request-id",
+		}
+
+		t.Run("invalid request", func(t *ftt.Test) {
+			// Request validation exhaustively tested in test cases for validateCreateRootInvocationRequest.
+			// These tests only exist to ensure that method is called.
+
+			t.Run("empty request", func(t *ftt.Test) {
+				_, err := recorder.CreateRootInvocation(ctx, &pb.CreateRootInvocationRequest{})
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike("root_invocation: unspecified"))
+			})
+
+			t.Run("invalid root invocation id", func(t *ftt.Test) {
+				req.RootInvocationId = "invalid id"
+
+				_, err := recorder.CreateRootInvocation(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike("root_invocation_id: does not match"))
+			})
+
+			t.Run("missing realm", func(t *ftt.Test) {
+				req.RootInvocation.Realm = ""
+
+				_, err := recorder.CreateRootInvocation(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike("realm: unspecified"))
+			})
+
+			t.Run("root work unit invalid", func(t *ftt.Test) {
+				req.RootWorkUnit.Realm = "secretproject:testrealm"
+
+				_, err := recorder.CreateRootInvocation(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike("root_work_unit: realm: must not be set; always inherited from root invocation"))
+			})
+		})
+
+		// Request authorisation exhaustively tested in test cases for verifyCreateRootInvocationPermissions.
+		// This test case only exists to verify that method is called.
+		t.Run("permission denied for create", func(t *ftt.Test) {
+			req.RootInvocation.Realm = "secretproject:testrealm"
+
+			_, err := recorder.CreateRootInvocation(ctx, req)
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.That(t, err, should.ErrLike("caller does not have permission \"resultdb.rootInvocations.create\" in realm \"secretproject:testrealm\""))
+		})
+		t.Run("already exists with different request id", func(t *ftt.Test) {
+			testData := rootinvocations.NewBuilder("u-already-exists").Build()
+			testutil.MustApply(ctx, t, insert.RootInvocation(testData)...)
+			req.RootInvocationId = "u-already-exists"
+
+			_, err := recorder.CreateRootInvocation(ctx, req)
+			assert.That(t, err, grpccode.ShouldBe(codes.AlreadyExists))
+			assert.That(t, err, should.ErrLike("rootInvocations/u-already-exists already exists"))
+		})
+
+		t.Run("create is idempotent", func(t *ftt.Test) {
+			res1, err := recorder.CreateRootInvocation(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+
+			// Send the exact same request again.
+			res2, err := recorder.CreateRootInvocation(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, res2, should.Match(res1))
+		})
+
+		t.Run("end to end success", func(t *ftt.Test) {
+			// Set all fields helps optimise test coverage.
+			invProperties := &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"@type": structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
+					"key":   structpb.NewStringValue("rootinvocation"),
+				},
+			}
+			wuProperties := &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"@type": structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
+					"key":   structpb.NewStringValue("workunit"),
+				},
+			}
+			extendedProperties := map[string]*structpb.Struct{
+				"mykey": {
+					Fields: map[string]*structpb.Value{
+						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
+						"child_key_1": structpb.NewStringValue("child_value_1"),
+					},
+				},
+			}
+			instructions := testutil.TestInstructions()
+			workUnitTags := pbutil.StringPairs("wu_key", "wu_value")
+			invTags := pbutil.StringPairs("tag_key", "tag_value")
+			sources := &pb.Sources{GitilesCommit: &pb.GitilesCommit{
+				Host:       "chromium.googlesource.com",
+				Project:    "chromium/src",
+				Ref:        "refs/heads/main",
+				CommitHash: "1234567890abcdef1234567890abcdef12345678",
+				Position:   12345,
+			}}
+			req := &pb.CreateRootInvocationRequest{
+				RootInvocationId: "u-e2e-success",
+				RequestId:        "e2e-request",
+				RootInvocation: &pb.RootInvocation{
+					Realm:            "testproject:testrealm",
+					ProducerResource: "//builds.example.com/builds/1",
+					Sources:          sources,
+					SourcesFinal:     true,
+					Tags:             invTags,
+					Properties:       invProperties,
+					BaselineId:       "testrealm:test-builder",
+				},
+				RootWorkUnit: &pb.WorkUnit{
+					Tags:               workUnitTags,
+					Properties:         wuProperties,
+					ExtendedProperties: extendedProperties,
+					Instructions:       instructions,
+				},
+			}
+
+			// Expected Response.
+			expectedInv := proto.Clone(req.RootInvocation).(*pb.RootInvocation)
+			proto.Merge(expectedInv, &pb.RootInvocation{
+				Name:             "rootInvocations/u-e2e-success",
+				RootInvocationId: "u-e2e-success",
+				State:            pb.RootInvocation_ACTIVE, // State is overridden to ACTIVE.
+				Creator:          "user:someone@example.com",
+				Deadline:         timestamppb.New(start.Add(defaultDeadlineDuration)),
+			})
+			wuID := workunits.ID{
+				RootInvocationID: "u-e2e-success",
+				WorkUnitID:       "root",
+			}
+			expectedWU := proto.Clone(req.RootWorkUnit).(*pb.WorkUnit)
+			proto.Merge(expectedWU, &pb.WorkUnit{
+				Name:             "rootInvocations/u-e2e-success/workUnits/root",
+				Parent:           "rootInvocations/u-e2e-success",
+				WorkUnitId:       "root",
+				State:            pb.WorkUnit_ACTIVE,
+				Realm:            "testproject:testrealm",
+				Creator:          "user:someone@example.com",
+				Deadline:         timestamppb.New(start.Add(defaultDeadlineDuration)),
+				ProducerResource: "//builds.example.com/builds/1",
+			})
+			expectedWU.Instructions = instructionutil.InstructionsWithNames(instructions, wuID.Name())
+
+			rootInvocationID := rootinvocations.ID("u-e2e-success")
+			expectInvRow := &rootinvocations.RootInvocationRow{
+				RootInvocationID:                        rootInvocationID,
+				State:                                   pb.RootInvocation_ACTIVE,
+				Realm:                                   "testproject:testrealm",
+				CreatedBy:                               "user:someone@example.com",
+				FinalizeStartTime:                       spanner.NullTime{},
+				FinalizeTime:                            spanner.NullTime{},
+				Deadline:                                start.Add(defaultDeadlineDuration),
+				UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: start.Add(expectedResultExpiration)},
+				CreateRequestID:                         "e2e-request",
+				ProducerResource:                        "//builds.example.com/builds/1",
+				Tags:                                    invTags,
+				Properties:                              invProperties,
+				Sources:                                 sources,
+				IsSourcesFinal:                          true,
+				BaselineID:                              "testrealm:test-builder",
+				Submitted:                               false,
+			}
+
+			expectWURow := &workunits.WorkUnitRow{
+				ID:                 wuID,
+				ParentWorkUnitID:   spanner.NullString{Valid: false},
+				State:              pb.WorkUnit_ACTIVE,
+				Realm:              "testproject:testrealm",
+				CreatedBy:          "user:someone@example.com",
+				FinalizeStartTime:  spanner.NullTime{},
+				FinalizeTime:       spanner.NullTime{},
+				Deadline:           start.Add(defaultDeadlineDuration),
+				CreateRequestID:    "e2e-request",
+				ProducerResource:   "//builds.example.com/builds/1",
+				Tags:               pbutil.StringPairs("wu_key", "wu_value"),
+				Properties:         wuProperties,
+				Instructions:       instructionutil.InstructionsWithNames(instructions, wuID.Name()),
+				ExtendedProperties: extendedProperties,
+			}
+			t.Run("active root invocation", func(t *ftt.Test) {
+				var headers metadata.MD
+				res, err := recorder.CreateRootInvocation(ctx, req, grpc.Header(&headers))
+				assert.Loosely(t, err, should.BeNil)
+				proto.Merge(expectedInv, &pb.RootInvocation{
+					CreateTime: res.RootInvocation.CreateTime,
+				})
+				assert.That(t, res.RootInvocation, should.Match(expectedInv))
+				proto.Merge(expectedWU, &pb.WorkUnit{
+					CreateTime: res.RootWorkUnit.CreateTime,
+				})
+				assert.That(t, res.RootWorkUnit, should.Match(expectedWU))
+
+				// Check the update token in headers.
+				token := headers.Get(pb.UpdateTokenMetadataKey)
+				assert.Loosely(t, token, should.HaveLength(1))
+				assert.Loosely(t, token[0], should.NotBeEmpty)
+
+				// Check the database.
+				ctx, cancel := span.ReadOnlyTransaction(ctx)
+				defer cancel()
+				row, err := rootinvocations.Read(ctx, rootInvocationID)
+				assert.Loosely(t, err, should.BeNil)
+				expectInvRow.SecondaryIndexShardID = row.SecondaryIndexShardID
+				expectInvRow.CreateTime = row.CreateTime
+				assert.That(t, row, should.Match(expectInvRow))
+
+				wuRow, err := workunits.Read(ctx, wuID, workunits.AllFields)
+				assert.Loosely(t, err, should.BeNil)
+				expectWURow.SecondaryIndexShardID = wuRow.SecondaryIndexShardID
+				expectWURow.CreateTime = wuRow.CreateTime
+				assert.That(t, wuRow, should.Match(expectWURow))
+			})
+
+			t.Run("finalizing root invocation", func(t *ftt.Test) {
+				req.RootInvocation.State = pb.RootInvocation_FINALIZING
+
+				var headers metadata.MD
+				res, err := recorder.CreateRootInvocation(ctx, req, grpc.Header(&headers))
+				assert.Loosely(t, err, should.BeNil)
+				proto.Merge(expectedInv, &pb.RootInvocation{
+					State:             pb.RootInvocation_FINALIZING,
+					CreateTime:        res.RootInvocation.CreateTime,
+					FinalizeStartTime: res.RootInvocation.FinalizeStartTime,
+				})
+				assert.That(t, res.RootInvocation, should.Match(expectedInv))
+				proto.Merge(expectedWU, &pb.WorkUnit{
+					State:             pb.WorkUnit_FINALIZING,
+					CreateTime:        res.RootWorkUnit.CreateTime,
+					FinalizeStartTime: res.RootWorkUnit.FinalizeStartTime,
+				})
+				assert.That(t, res.RootWorkUnit, should.Match(expectedWU))
+
+				// Check the update token in headers.
+				token := headers.Get(pb.UpdateTokenMetadataKey)
+				assert.Loosely(t, token, should.HaveLength(1))
+				assert.Loosely(t, token[0], should.NotBeEmpty)
+
+				// Check the database.
+				ctx, cancel := span.ReadOnlyTransaction(ctx)
+				defer cancel()
+				row, err := rootinvocations.Read(ctx, rootInvocationID)
+				assert.Loosely(t, err, should.BeNil)
+				expectInvRow.SecondaryIndexShardID = row.SecondaryIndexShardID
+				expectInvRow.CreateTime = row.CreateTime
+				expectInvRow.State = pb.RootInvocation_FINALIZING
+				expectInvRow.FinalizeStartTime = row.FinalizeStartTime
+				assert.That(t, row, should.Match(expectInvRow))
+				// Check finalize start time is set.
+				assert.That(t, row.FinalizeStartTime.Valid, should.BeTrue)
+
+				wuRow, err := workunits.Read(ctx, wuID, workunits.AllFields)
+				assert.Loosely(t, err, should.BeNil)
+				expectWURow.SecondaryIndexShardID = wuRow.SecondaryIndexShardID
+				expectWURow.CreateTime = wuRow.CreateTime
+				expectWURow.State = pb.WorkUnit_FINALIZING
+				expectWURow.FinalizeStartTime = wuRow.FinalizeStartTime
+				assert.That(t, wuRow, should.Match(expectWURow))
+				// Check finalize start time is set.
+				assert.That(t, row.FinalizeStartTime.Valid, should.BeTrue)
+			})
 		})
 	})
 }

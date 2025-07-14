@@ -33,15 +33,26 @@ func TestReadFunctions(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		const realm = "testproject:testrealm"
+		const createdBy = "test-user"
+		const requestID = "test-request-id"
 
 		// Prepare a root invocation with all fields set.
 		const id = ID("root-inv-id")
-		testData := NewBuilder(id).WithRealm(realm).Build()
+		testData := NewBuilder(id).
+			WithRealm(realm).
+			WithCreatedBy(createdBy).
+			WithCreateRequestID(requestID).
+			Build()
 		ms := InsertForTesting(testData)
 
 		// Prepare a root invocation with minimal fields set.
 		const idMinimal = ID("root-inv-id-minimal")
-		testDataMinimal := NewBuilder("root-inv-id-minimal").WithRealm(realm).WithMinimalFields().Build()
+		testDataMinimal := NewBuilder("root-inv-id-minimal").
+			WithRealm(realm).
+			WithCreatedBy(createdBy).
+			WithCreateRequestID(requestID).
+			WithMinimalFields().
+			Build()
 		ms = append(ms, InsertForTesting(testDataMinimal)...)
 		testutil.MustApply(ctx, t, ms...)
 
@@ -107,6 +118,28 @@ func TestReadFunctions(t *testing.T) {
 				shardID := ShardID{RootInvocationID: "", ShardIndex: 0}
 				_, err := ReadRealmFromShard(span.Single(ctx), shardID)
 				assert.That(t, err, should.ErrLike("root invocation id is unspecified"))
+			})
+		})
+
+		t.Run("ReadRequestIDAndCreatedBy", func(t *ftt.Test) {
+			t.Run("happy path", func(t *ftt.Test) {
+				requestID, createdBy, err := ReadRequestIDAndCreatedBy(span.Single(ctx), id)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, requestID, should.Equal(requestID))
+				assert.That(t, createdBy, should.Equal(createdBy))
+			})
+
+			t.Run("not found", func(t *ftt.Test) {
+				_, _, err := ReadRequestIDAndCreatedBy(span.Single(ctx), "non-existent-id")
+				st, ok := appstatus.Get(err)
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, st.Code(), should.Equal(codes.NotFound))
+				assert.Loosely(t, st.Message(), should.ContainSubstring("rootInvocations/non-existent-id not found"))
+			})
+
+			t.Run("empty ID", func(t *ftt.Test) {
+				_, _, err := ReadRequestIDAndCreatedBy(span.Single(ctx), "")
+				assert.That(t, err, should.ErrLike("id is unspecified"))
 			})
 		})
 	})
