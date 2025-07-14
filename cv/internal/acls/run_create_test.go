@@ -286,6 +286,11 @@ func TestCheckRunCLs(t *testing.T) {
 					mustFailWith(cl, notSubmittableSuspicious)
 				})
 			})
+			t.Run("missing triggerer but voted", func(t *ftt.Test) {
+				tr, owner := "", "o@example.org"
+				cl, _ := addCL(tr, owner, m)
+				mustFailWith(cl, "CV cannot start a Run for `%s` because the user is neither the CL owner nor a committer", tr)
+			})
 		})
 
 		t.Run("mode == DryRun", func(t *ftt.Test) {
@@ -485,6 +490,11 @@ func TestCheckRunCLs(t *testing.T) {
 					setAllowNonOwnerDryRunner(true)
 					testCases()
 				})
+			})
+			t.Run("missing triggerer but voted", func(t *ftt.Test) {
+				tr, owner := "", "o@example.org"
+				cl, _ := addCL(tr, owner, m)
+				mustFailWith(cl, "CV cannot start a Run for `%s` because the user is neither the CL owner nor a committer", tr)
 			})
 		})
 

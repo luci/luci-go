@@ -72,6 +72,13 @@ func TestMembership(t *testing.T) {
 				assert.NoErr(t, err)
 				assert.Loosely(t, ok, should.BeFalse)
 			})
+
+			t.Run("IsMember returns false for empty identity", func(t *ftt.Test) {
+				var empty identity.Identity
+				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, empty, groups)
+				assert.NoErr(t, err)
+				assert.Loosely(t, ok, should.BeFalse)
+			})
 		})
 
 		t.Run("gerrit returns error", func(t *ftt.Test) {

@@ -359,9 +359,22 @@ func evaluateCLs(ctx context.Context, gf gerrit.Factory, cg *prjcfg.ConfigGroup,
 	trustedDeps := make(common.CLIDsSet, len(cls))
 	for i, cl := range cls {
 		tr := trs[i]
-		triggerer, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, tr.Email))
-		if err != nil {
-			return nil, errors.Fmt("CL(%d): triggerer %q: %w", cl.ID, tr.Email, err)
+		var err error
+		var triggerer identity.Identity
+
+		// Gerrit may return CL info with no voter email, even if the CQ value
+		// is set. It causes retry failure loops so that the Run is stuck
+		// in the creation stage, and a new CL event doesn't cut the retry loop.
+		// For more info, b/428754990.
+		//
+		// If so, just leaves the voter identity empty if the triggerer Email
+		// is empty. The CQ run will be rejected by
+		// isDryRunner() or isCommitter().
+		if tr.Email != "" {
+			triggerer, err = identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, tr.Email))
+			if err != nil {
+				return nil, errors.Fmt("CL(%d): triggerer %q: %w", cl.ID, tr.Email, err)
+			}
 		}
 		owner, err := cl.Snapshot.OwnerIdentity()
 		if err != nil {

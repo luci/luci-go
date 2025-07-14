@@ -136,6 +136,9 @@ func shouldHonorGerritLinkedAccounts(ctx context.Context, project string) (bool,
 // function will also return true if any of the linked accounts in the provided
 // gerrit host is a member of provided groups.
 func IsMember(ctx context.Context, gf gerrit.Factory, gerritHost string, luciProject string, id identity.Identity, groups []string) (bool, error) {
+	if id == "" {
+		return false, nil
+	}
 	switch yes, err := auth.GetState(ctx).DB().IsMember(ctx, id, groups); {
 	case err != nil:
 		return false, err
