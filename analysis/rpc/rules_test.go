@@ -1285,7 +1285,7 @@ func TestRules(t *testing.T) {
 					issue := buganizerClient.FakeStore.Issues[1]
 					assert.Loosely(t, issue, should.NotBeNil)
 					assert.Loosely(t, issue.Comments[0].Comment, should.Equal("Description with\nnewline, \r\ncarriage return and\ttab.\n\n"+
-						"View example failures and modify the failures associated with this bug in LUCI Analysis: https://analysis.luci.app/p/testproject/rules/"+rule.RuleId+". "+
+						"View example failures and modify the failures associated with this bug in LUCI Analysis: https://analysis.luci.app/p/testproject/rules/"+rule.RuleId+".\n\n"+
 						"Filed on behalf of someone@example.com."))
 
 					storedRule, err := rules.Read(span.Single(ctx), testProject, rule.RuleId)
