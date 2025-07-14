@@ -14,7 +14,7 @@
 
 import '@testing-library/jest-dom';
 
-import { screen } from '@testing-library/react';
+import { screen, waitForElementToBeRemoved } from '@testing-library/react';
 import fetchMock from 'fetch-mock-jest';
 
 import { ClusterContextProvider } from '@/clusters/components/cluster/cluster_context';
@@ -88,6 +88,9 @@ describe('Test OverviewTab component', () => {
         <OverviewTab value="test" />
       </ClusterContextProvider>,
     );
+
+    // Wait for the progress bar to disappear.
+    await waitForElementToBeRemoved(() => screen.queryByRole('progressbar'));
 
     await screen.findByTestId('policy-row-exonerations');
     expect(
