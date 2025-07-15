@@ -23,6 +23,7 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
+import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
 import { SshTip } from '@/fleet/components/actions/ssh/ssh_tip';
 import { RecoverableLoggerErrorBoundary } from '@/fleet/components/error_handling';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
@@ -146,6 +147,17 @@ export const DeviceDetailsPage = () => {
   }
 
   const dutId = extractDutId(device);
+  const toRepair = [
+    {
+      name: id,
+      // Confusingly, dutID, which is the asset tag of the DUT is
+      // different from "id", which is the internal ID used within
+      // the Fleet Console. For ChromeOS DUTs, the Fleet Console
+      // populates the "ID" for a DUT using the DUT's hostname.
+      dutId,
+      state: extractDutState(device),
+    },
+  ];
 
   return (
     <div
@@ -220,19 +232,8 @@ export const DeviceDetailsPage = () => {
               gap: '8px',
             }}
           >
-            <RunAutorepair
-              selectedDuts={[
-                {
-                  name: id,
-                  // Confusingly, dutID, which is the asset tag of the DUT is
-                  // different from "id", which is the internal ID used within
-                  // the Fleet Console. For ChromeOS DUTs, the Fleet Console
-                  // populates the "ID" for a DUT using the DUT's hostname.
-                  dutId,
-                  state: extractDutState(device),
-                },
-              ]}
-            />
+            <RunAutorepair selectedDuts={toRepair} />
+            <RequestRepair selectedDuts={toRepair} />
             <SshTip hostname={id} dutId={dutId} />
           </div>
           <TabContext value={selectedTab || TabValue.TASKS}>

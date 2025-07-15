@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 import { Box } from '@mui/material';
 import {
   GridRowModel,
@@ -23,6 +22,7 @@ import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
 
 import { RunAutorepair } from '../actions/autorepair/run_autorepair';
 import { CopyButton } from '../actions/copy/copy_button';
+import { RequestRepair } from '../actions/request_repair/request_repair';
 import { ColumnsButton } from '../columns/columns_button';
 
 import { ExportButton } from './export_button';
@@ -51,6 +51,7 @@ export function FleetToolbar({
         <>
           <RunAutorepair selectedDuts={selectedDuts} />
           <CopyButton />
+          <RequestRepair selectedDuts={selectedDuts} />
         </>
       ) : (
         <></>

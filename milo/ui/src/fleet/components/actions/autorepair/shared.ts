@@ -18,6 +18,8 @@ import {
   BatchResponse,
 } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 
+import { DutToRepair } from '../../actions/shared/types';
+
 // Based on: https://source.chromium.org/chromium/infra/infra_superproject/+/main:infra/go/src/infra/libs/skylab/buildbucket/bb.go;l=26
 export const TASK_PRIORITY = 4;
 
@@ -38,19 +40,6 @@ const DEV_BUILDER = {
   bucket: 'ci',
   builder: 'linux-rel-buildbucket',
 };
-
-// Simplified type containing the minimal DUT info required for running an
-// autorepair job.
-export interface DutToRepair {
-  // Same as dut_name label. dut_name is used for 1.) the main identifier for
-  // which DUT we are referring to and 2.) populating tags shown in UIs like
-  // LUCI or read by downstream services.
-  name: string;
-  // DUT ID is used to schedule a task against a particular DUT in Swarming.
-  // DUT ID is also often referred to as "asset tag".
-  dutId: string;
-  state?: string;
-}
 
 /**
  * Generates a set of batched requests to BuildBucket based on dut names.

@@ -21,12 +21,10 @@ import { useBuildsClient } from '@/build/hooks/prpc_clients';
 import { DutStatusesNotEligibleForAutorepair } from '@/fleet/constants/dut';
 import { BatchRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 
+import { DutToRepair } from '../../actions/shared/types';
+
 import AutorepairDialog, { SessionInfo } from './autorepair_dialog';
-import {
-  autorepairRequestsFromDuts,
-  DutToRepair,
-  extractBuildIdentifiers,
-} from './shared';
+import { autorepairRequestsFromDuts, extractBuildIdentifiers } from './shared';
 
 interface RunAutorepairProps {
   selectedDuts: DutToRepair[];
