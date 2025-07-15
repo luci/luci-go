@@ -49,7 +49,7 @@ func ValidateVariant(vr *pb.Variant) error {
 			return errors.Fmt("%q:%q: %w", k, v, err)
 		}
 	}
-	if proto.Size(vr) > maxStringPairValueLength {
+	if proto.Size(vr) > maxVariantLength {
 		return errors.Fmt("got %v bytes; exceeds the maximum size of %d bytes", proto.Size(vr), maxVariantLength)
 	}
 	return nil
