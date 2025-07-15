@@ -18,6 +18,8 @@ package luci.auth.credhelper;
 
 option go_package = "go.chromium.org/luci/auth/credhelperpb";
 
+import "google/protobuf/duration.proto";
+
 
 // Supported credential helper protocols.
 enum Protocol {
@@ -57,4 +59,9 @@ message Config {
 
   // Extra command line arguments to pass to the credential helper binary.
   repeated string args = 3;
+
+  // Timeout is how long to wait for the credential helper to finish running.
+  //
+  // If unset, the default is 1 min.
+  google.protobuf.Duration timeout = 4;
 }

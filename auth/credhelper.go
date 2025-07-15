@@ -109,7 +109,11 @@ func (p *credHelperTokenProvider) RefreshToken(ctx context.Context, _, _ *intern
 
 // MintToken implements internal.TokenProvider.
 func (p *credHelperTokenProvider) MintToken(ctx context.Context, _ *internal.Token) (*internal.Token, error) {
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	timeout := time.Minute
+	if p.cfg.Timeout != nil {
+		timeout = max(time.Second, p.cfg.Timeout.AsDuration())
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	var stdout, stderr bytes.Buffer
