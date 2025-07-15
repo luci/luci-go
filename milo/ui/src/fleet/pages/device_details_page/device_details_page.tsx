@@ -195,7 +195,7 @@ export const DeviceDetailsPage = () => {
         />
       </div>
       <>
-        {device === null && (
+        {device === undefined && (
           <AlertWithFeedback
             title="Device not found!"
             bugErrorMessage={`Device not found: ${id}`}

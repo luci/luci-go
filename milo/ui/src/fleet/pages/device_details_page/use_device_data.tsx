@@ -23,10 +23,10 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 export type UseDeviceDataResult = {
-  error: unknown;
+  error?: unknown;
   isError: boolean;
   isLoading: boolean;
-  device: Device | null;
+  device?: Device;
 };
 
 /**
@@ -45,7 +45,6 @@ export const useDeviceData = (deviceId: string): UseDeviceDataResult => {
 
   const request = ListDevicesRequest.fromPartial({
     pageSize: 1,
-    pageToken: undefined,
     filter: stringifyFilters({ id: [deviceId] }),
   });
   const { data, error, isError, isLoading } = useDevices(request);
@@ -55,7 +54,7 @@ export const useDeviceData = (deviceId: string): UseDeviceDataResult => {
       error,
       isError,
       isLoading,
-      device: data.devices[0] ?? null,
+      device: data.devices[0] ?? undefined,
     };
   }
 
@@ -64,10 +63,9 @@ export const useDeviceData = (deviceId: string): UseDeviceDataResult => {
     for (const device of query[1].devices) {
       if (device.id === deviceId) {
         return {
-          error: null,
           isError: false,
           isLoading: false,
-          device: device,
+          device,
         };
       }
     }
@@ -77,6 +75,5 @@ export const useDeviceData = (deviceId: string): UseDeviceDataResult => {
     error,
     isError,
     isLoading,
-    device: null,
   };
 };
