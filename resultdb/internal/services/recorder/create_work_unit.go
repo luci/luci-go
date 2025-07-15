@@ -57,18 +57,10 @@ var workUnitTokenKind = tokens.TokenKind{
 
 // generateWorkUnitToken generates an update token for a given work unit or root invocation.
 func generateWorkUnitToken(ctx context.Context, id workunits.ID) (string, error) {
-	// TODO: If a work unit ID has a colon-separated prefix
-	// (e.g., "swarming:task1"), the update token should be generated
-	// using only the prefix ("swarming"). This would allow multiple work
-	// units from the same logical task to share an update token.
-
-	// Use %q instead of %s which convert string to escaped Go string literal.
-	// If we ever let these invocation IDs use colons, this make sure the input is unique.
-	state := fmt.Sprintf("%q:%q", id.RootInvocationID, id.WorkUnitID)
 	// The token should last as long as a build is allowed to run.
 	// Buildbucket has a max of 2 days, so one week should be enough even
 	// for other use cases.
-	return workUnitTokenKind.Generate(ctx, []byte(state), nil, 7*day) // One week.
+	return workUnitTokenKind.Generate(ctx, []byte(workUnitTokenState(id)), nil, 7*day) // One week.
 }
 
 // validateWorkUnitToken validates an update token for a work unit or root invocation.
@@ -77,11 +69,22 @@ func generateWorkUnitToken(ctx context.Context, id workunits.ID) (string, error)
 // (WorkUnitID: "root"), as they share the same update token.
 // Returns an error if the token is invalid, nil otherwise.
 func validateWorkUnitToken(ctx context.Context, token string, id workunits.ID) error {
-	// TODO: take care of work unit ID with colon-separated prefix.
-
-	state := fmt.Sprintf("%q:%q", id.RootInvocationID, id.WorkUnitID)
-	_, err := workUnitTokenKind.Validate(ctx, token, []byte(state))
+	_, err := workUnitTokenKind.Validate(ctx, token, []byte(workUnitTokenState(id)))
 	return err
+}
+
+func workUnitTokenState(id workunits.ID) string {
+	// A work unit can share an update token with an ancestor by using a prefixed ID
+	// format: "ancestorID:suffix". For example, a work unit with ID "wu0:s1" is
+	// should have the same update token as the work unit "wu0".
+	prefix, ok := workUnitIDPrefix(id.WorkUnitID)
+	if ok {
+		// Use %q instead of %s which convert string to escaped Go string literal.
+		// If we ever let these invocation IDs use colons, this make sure the input is unique.
+		return fmt.Sprintf("%q:%q", id.RootInvocationID, prefix)
+	} else {
+		return fmt.Sprintf("%q:%q", id.RootInvocationID, id.WorkUnitID)
+	}
 }
 
 func verifyCreateWorkUnitPermissions(ctx context.Context, req *pb.CreateWorkUnitRequest) error {
@@ -155,6 +158,11 @@ func validateCreateWorkUnitRequest(req *pb.CreateWorkUnitRequest, requireRequest
 		return errors.Fmt("parent: %w", err)
 	}
 	if err := pbutil.ValidateWorkUnitID(req.WorkUnitId); err != nil {
+		return errors.Fmt("work_unit_id: %w", err)
+	}
+
+	parentID := workunits.MustParseName(req.Parent)
+	if err := validateWorkUnitIDPrefix(parentID.WorkUnitID, req.WorkUnitId); err != nil {
 		return errors.Fmt("work_unit_id: %w", err)
 	}
 	if err := validateWorkUnitForCreate(req.WorkUnit); err != nil {
@@ -237,4 +245,49 @@ func validateWorkUnitForCreate(wu *pb.WorkUnit) error {
 		}
 	}
 	return nil
+}
+
+// validateWorkUnitIDPrefix ensures that update tokens are shared correctly down a
+// work unit hierarchy.
+//
+// This function enforces a work unit can only share an ancestor's token if its direct parent is either
+// that ancestor itself or is also sharing that same ancestor's token.
+//
+// Example Hierarchy:
+//
+//	wu0 (has its own token)
+//	├── wu0:s1 (Allowed: direct child of wu0, shares wu0's token)
+//	│    └── wu0:s2 (Allowed: child of wu0:s1, continues sharing wu0's token)
+//	│
+//	└── wu2 (Allowed: child of wu0, not prefixed, so it has its own token)
+//	     └── wu0:s3 (NOT Allowed: attempts to share wu0's token, but its parent wu2 doesn't share update token with wu0).
+func validateWorkUnitIDPrefix(parentID, workUnitID string) error {
+	prefix, ok := workUnitIDPrefix(workUnitID)
+	if !ok {
+		// Not a prefixed work unit ID.
+		return nil
+	}
+	parentPrefix, ok := workUnitIDPrefix(parentID)
+	if !ok {
+		// Parent work unit id is not prefixed.
+		if parentID != prefix {
+			return errors.Fmt("work unit ID prefix %q must match parent work unit ID %q", prefix, parentID)
+		}
+	} else {
+		// Parent work unit id is prefixed.
+		if parentPrefix != prefix {
+			return errors.Fmt("work unit ID prefix %q must match parent work unit ID prefix %q", prefix, parentPrefix)
+		}
+	}
+	return nil
+}
+
+// workUnitIDPrefix returns the prefix of a work unit ID and a boolean indicating if a prefix
+// was present. It assumes the work unit ID has already been validated.
+func workUnitIDPrefix(workUnitID string) (prefix string, ok bool) {
+	parts := strings.SplitN(workUnitID, ":", 2)
+	if len(parts) > 1 {
+		return parts[0], true
+	}
+	return "", false
 }

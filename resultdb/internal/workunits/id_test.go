@@ -73,5 +73,15 @@ func TestIDConversion(t *testing.T) {
 			id := IDFromRowID("fd2c0941:root-inv-id", "work-unit-id")
 			assert.That(t, id, should.Match(id))
 		})
+
+		t.Run(`MustParseName`, func(t *ftt.Test) {
+			t.Run(`Valid`, func(t *ftt.Test) {
+				assert.That(t, MustParseName("rootInvocations/root-inv-id/workUnits/work-unit-id"), should.Match(id))
+				assert.That(t, MustParseName("rootInvocations/build123/workUnits/swarming213:a"), should.Match(ID{RootInvocationID: "build123", WorkUnitID: "swarming213:a"}))
+			})
+			t.Run(`Invalid`, func(t *ftt.Test) {
+				assert.Loosely(t, func() { MustParseName("rootInvocations/root-inv-id/workUnits") }, should.Panic)
+			})
+		})
 	})
 }

@@ -79,3 +79,14 @@ func IDFromRowID(rootInvocationShardID string, workUnitID string) ID {
 		WorkUnitID:       workUnitID,
 	}
 }
+
+func MustParseName(name string) ID {
+	rootInvocationID, workUnitID, err := pbutil.ParseWorkUnitName(name)
+	if err != nil {
+		panic(err)
+	}
+	return ID{
+		RootInvocationID: rootinvocations.ID(rootInvocationID),
+		WorkUnitID:       workUnitID,
+	}
+}

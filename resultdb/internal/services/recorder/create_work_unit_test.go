@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -195,6 +196,42 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 				req.WorkUnitId = "INVALID"
 				err := validateCreateWorkUnitRequest(req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike("work_unit_id: does not match"))
+			})
+
+			t.Run("prefix", func(t *ftt.Test) {
+				t.Run("not prefixed", func(t *ftt.Test) {
+					req.WorkUnitId = "u-my-work-unit-id"
+					err := validateCreateWorkUnitRequest(req, requireRequestID)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("parent is prefixed", func(t *ftt.Test) {
+					t.Run("valid", func(t *ftt.Test) {
+						req.WorkUnitId = "swarming123:a2"
+						req.Parent = "rootInvocations/u-my-root-id/workUnits/swarming123:a"
+						err := validateCreateWorkUnitRequest(req, requireRequestID)
+						assert.Loosely(t, err, should.BeNil)
+					})
+					t.Run("invalid", func(t *ftt.Test) {
+						req.WorkUnitId = "swarming2:a2"
+						req.Parent = "rootInvocations/u-my-root-id/workUnits/swarming1:a"
+						err := validateCreateWorkUnitRequest(req, requireRequestID)
+						assert.Loosely(t, err, should.ErrLike("must match parent work unit ID prefix"))
+					})
+				})
+				t.Run("parent is not prefix", func(t *ftt.Test) {
+					t.Run("valid", func(t *ftt.Test) {
+						req.WorkUnitId = "root:a"
+						req.Parent = "rootInvocations/u-my-root-id/workUnits/root"
+						err := validateCreateWorkUnitRequest(req, requireRequestID)
+						assert.Loosely(t, err, should.BeNil)
+					})
+					t.Run("invalid", func(t *ftt.Test) {
+						req.WorkUnitId = "swarming2:a"
+						req.Parent = "rootInvocations/u-my-root-id/workUnits/swarming1"
+						err := validateCreateWorkUnitRequest(req, requireRequestID)
+						assert.Loosely(t, err, should.ErrLike("must match parent work unit ID"))
+					})
+				})
 			})
 		})
 
@@ -406,6 +443,57 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 				req.RequestId = "😃"
 				err := validateCreateWorkUnitRequest(req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike("request_id: does not match"))
+			})
+		})
+	})
+}
+
+func TestWorkUnitToken(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("WorkUnitToken", t, func(t *ftt.Test) {
+		ctx := testutil.TestingContext()
+		t.Run("round-trip", func(t *ftt.Test) {
+			t.Run("work unit id not prefixed", func(t *ftt.Test) {
+				id := workunits.ID{
+					RootInvocationID: "root-inv-id",
+					WorkUnitID:       "work-unit-id",
+				}
+				token, err := generateWorkUnitToken(ctx, id)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.NotBeEmpty)
+
+				err = validateWorkUnitToken(ctx, token, id)
+				assert.Loosely(t, err, should.BeNil)
+			})
+			t.Run("work unit ID prefixed", func(t *ftt.Test) {
+				idWithPrefix := workunits.ID{
+					RootInvocationID: "root-inv-id",
+					WorkUnitID:       "base:a2",
+				}
+				token, err := generateWorkUnitToken(ctx, idWithPrefix)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.NotBeEmpty)
+
+				idWithPrefix.WorkUnitID = "base:a1"
+				err = validateWorkUnitToken(ctx, token, idWithPrefix)
+				assert.Loosely(t, err, should.BeNil)
+			})
+		})
+		t.Run("workUnitTokenState", func(t *ftt.Test) {
+			t.Run("work unit id not prefixed", func(t *ftt.Test) {
+				id := workunits.ID{
+					RootInvocationID: "root-inv-id",
+					WorkUnitID:       "work-unit-id",
+				}
+				assert.Loosely(t, workUnitTokenState(id), should.Equal(`"root-inv-id":"work-unit-id"`))
+			})
+			t.Run("work unit ID prefixed", func(t *ftt.Test) {
+				id := workunits.ID{
+					RootInvocationID: "root-inv-id",
+					WorkUnitID:       "base:a2",
+				}
+				assert.Loosely(t, workUnitTokenState(id), should.Equal(`"root-inv-id":"base"`))
 			})
 		})
 	})
