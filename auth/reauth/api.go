@@ -17,6 +17,7 @@ package reauth
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -137,8 +138,8 @@ type skProposal struct {
 }
 
 type deviceChallenge struct {
-	KeyHandle []byte `json:"keyHandle"`
-	Challenge []byte `json:"challenge"`
+	KeyHandle string `json:"keyHandle"`
+	Challenge string `json:"challenge"`
 }
 
 func continueSession(ctx context.Context, c *http.Client, sessionID string, req *continueRequest) (*sessionResponse, error) {
@@ -179,9 +180,18 @@ type proposalReply struct {
 
 type skReply struct {
 	AppID             string `json:"applicationId"`
-	ClientData        []byte `json:"clientData"`
-	SignatureData     []byte `json:"signatureData"`
-	KeyHandle         []byte `json:"keyHandle"`
-	ReplyType         string `json:"securityKeyReplyType"`
-	AuthenticatorData []byte `json:"authenticatorData"`
+	ClientData        string `json:"clientData"`
+	SignatureData     string `json:"signatureData"`
+	KeyHandle         string `json:"keyHandle"`
+	ReplyType         any    `json:"securityKeyReplyType"`
+	AuthenticatorData string `json:"authenticatorData"`
 }
+
+const (
+	// Values for [skReply.ReplyType].
+	skU2F      = "U2F"
+	skWebAuthn = 2
+)
+
+// base64 encoding used by ReAuth.
+var reauthEncoding = base64.StdEncoding

@@ -16,11 +16,11 @@ package reauth
 
 import (
 	"context"
-	"encoding/base64"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/common/webauthn"
 )
 
 func TestPluginEncode(t *testing.T) {
@@ -40,41 +40,30 @@ func TestPluginEncode(t *testing.T) {
 
 func TestPluginDecode(t *testing.T) {
 	t.Parallel()
-	d := []byte("\xc6\x00\x00\x00" + `{"type":"sign_helper_reply","code":0,"errorDetail":"","responseData":{"appIdHash":"book","challengeHash":"whatami","keyHandle":"dalian","version":"2","signatureData":"theworld"},"nonexistence":"me"}`)
-	got, err := pluginDecode(d)
-	if err != nil {
+	d := []byte("\x1e\x00\x00\x00" + `{"type":"get","origin":"seia"}`)
+	var got map[string]string
+	if err := pluginDecode(d, &got); err != nil {
 		t.Fatal(err)
 	}
-	want := &pluginResponse{
-		Type:        "sign_helper_reply",
-		Code:        0,
-		ErrorDetail: "",
-		ResponseData: pluginResponseData{
-			AppIDHash:     "book",
-			ChallengeHash: "whatami",
-			KeyHandle:     "dalian",
-			Version:       "2",
-			SignatureData: "theworld",
-		},
+	want := map[string]string{
+		"type":   "get",
+		"origin": "seia",
 	}
 	assert.That(t, got, should.Match(want))
 }
 
 func TestPluginHandler(t *testing.T) {
 	t.Parallel()
-	const kh = "dalian"
-	const ch = "whatami"
-	const facetID = "sartre"
-	const sig = "theworld"
-	clientData := newClientDataJSON([]byte(ch), facetID)
-	resp, err := pluginEncode(&pluginResponse{
-		Type: "sign_helper_reply",
-		ResponseData: pluginResponseData{
-			AppIDHash:     "book",
-			ChallengeHash: base64.RawURLEncoding.EncodeToString(sha256hash(clientData)),
-			KeyHandle:     base64.RawURLEncoding.EncodeToString([]byte(kh)),
-			Version:       "U2F_V2",
-			SignatureData: base64.RawURLEncoding.EncodeToString([]byte(sig)),
+	resp, err := pluginEncode(&webauthn.GetAssertionResponse{
+		Type: "getResponse",
+		ResponseData: webauthn.GetAssertionResponseData{
+			Type: "public-key",
+			ID:   "dalian-__A",
+			Response: webauthn.AuthenticatorAssertionResponse{
+				ClientData:        "ronova-_",
+				AuthenticatorData: "naberius-_",
+				Signature:         "istaroth-_",
+			},
 		},
 	})
 	if err != nil {
@@ -83,17 +72,19 @@ func TestPluginHandler(t *testing.T) {
 	p := dummyPlugin{
 		resp: resp,
 	}
+
 	h := pluginHandler{
-		facetID: facetID,
+		facetID: "sartre",
 		send:    p.send,
 	}
 	ctx := context.Background()
 	c := challenge{
 		SecurityKey: skProposal{
-			AppID: "https://www.gstatic.com/securitykey/a/google.com/origins.json",
+			AppID:          "google.com",
+			RelyingPartyID: "google.com",
 			DeviceChallenges: []deviceChallenge{{
-				KeyHandle: []byte(kh),
-				Challenge: []byte(ch),
+				KeyHandle: "dalian+//A==",
+				Challenge: "whatami+/A==",
 			}},
 		},
 	}
@@ -103,24 +94,29 @@ func TestPluginHandler(t *testing.T) {
 	}
 	want := &proposalReply{
 		SecurityKey: skReply{
-			AppID:         "https://www.gstatic.com/securitykey/a/google.com/origins.json",
-			ClientData:    clientData,
-			SignatureData: []byte(sig),
-			KeyHandle:     []byte(kh),
-			ReplyType:     "U2F",
+			AppID:             "google.com",
+			ClientData:        "ronova-_",
+			SignatureData:     "istaroth-_",
+			KeyHandle:         "dalian-__A",
+			AuthenticatorData: "naberius-_",
+			ReplyType:         skWebAuthn,
 		},
 	}
 	assert.That(t, got, should.Match(want))
-	sendWant, err := pluginEncode(&pluginRequest{
-		Type: "sign_helper_request",
-		SignData: []pluginSignData{{
-			AppIDHash:     "ZEZHL99u7Xvzwzcg8jZnbDbhtF6-BIXbiaPN_dJL1p8",
-			ChallengeHash: base64.RawURLEncoding.EncodeToString(sha256hash(clientData)),
-			KeyHandle:     base64.RawURLEncoding.EncodeToString([]byte(kh)),
-			Version:       "U2F_V2",
-		}},
-		TimeoutSecs: 30,
-		LocalAlways: true,
+	sendWant, err := pluginEncode(&webauthn.GetAssertionRequest{
+		Type:   "get",
+		Origin: "sartre",
+		RequestData: webauthn.GetAssertionRequestData{
+			RPID:          "google.com",
+			Challenge:     "whatami-_A",
+			TimeoutMillis: 30_000,
+			AllowCredentials: []webauthn.PublicKeyCredentialDescriptor{{
+				Type: "public-key",
+				ID:   "dalian-__A",
+			}},
+			UserVerification: "required",
+			Extensions:       map[string]any{"appid": "google.com"},
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
