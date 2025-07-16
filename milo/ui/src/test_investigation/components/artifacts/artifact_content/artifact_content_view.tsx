@@ -26,10 +26,9 @@ import { useState } from 'react';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 
-import { FetchedArtifactContent } from '../types';
+import { FetchedArtifactContent, ArtifactTreeNodeData } from '../types';
 
 import { TextDiffArtifactView } from './text_diff_artifact_view';
-import { ArtifactTreeNodeData } from './types';
 
 interface ArtifactContentViewProps {
   selectedArtifactForDisplay: ArtifactTreeNodeData;

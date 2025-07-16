@@ -47,8 +47,8 @@ import {
   BatchGetTestVariantsRequest,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestVerdict_StatusOverride } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
+import { ArtifactsSection } from '@/test_investigation/components/artifacts/artifacts_section';
 import { RedirectBackBanner } from '@/test_investigation/components/redirect_back_banner';
-import { ArtifactsSection } from '@/test_investigation/components/test_details/artifacts/artifacts_section';
 import { TestInfo } from '@/test_investigation/components/test_info';
 import { TestNavigationDrawer } from '@/test_investigation/components/test_navigation_drawer';
 import {

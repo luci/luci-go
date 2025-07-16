@@ -13,6 +13,12 @@
 // limitations under the License.
 
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
+import { FailureReason_Kind } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/failure_reason.pb';
+import {
+  SkippedReason_Kind,
+  TestResult_Status,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
 export type SelectedArtifactSource = 'result' | 'invocation';
 
@@ -77,4 +83,33 @@ export interface ArtifactTreeNodeData {
    * Whether this is a summary node, which displays the summary in the side panel.
    */
   isSummary?: boolean;
+}
+
+export interface CustomArtifactTreeNode {
+  id: string;
+  name: string;
+  children?: CustomArtifactTreeNode[];
+  isSummary?: boolean;
+  isLeaf?: boolean;
+  artifact?: Artifact;
+  level: number;
+  isRootChild?: boolean;
+}
+
+export interface ClusteredResult {
+  clusterKey: string; // The composite key: statusV2Str|failureKindStr|skippedKindStr|normalizedReason
+  results: TestResultBundle[];
+  originalFailureReason: string;
+  normalizedReasonKeyPart: string;
+  failureKindKeyPart: FailureReason_Kind;
+  skippedKindKeyPart: SkippedReason_Kind;
+  statusV2KeyPart: TestResult_Status;
+}
+
+export interface FetchedArtifactContent {
+  data: string | null;
+  isText: boolean;
+  contentType: string | null;
+  error: Error | null;
+  sizeBytes?: number | string;
 }

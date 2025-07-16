@@ -26,7 +26,7 @@ import React, { ReactNode } from 'react';
 import { TreeData } from '@/common/components/log_viewer/virtual_tree/types';
 import { VirtualTreeNodeActions } from '@/common/components/log_viewer/virtual_tree/virtual_tree';
 
-import { ArtifactTreeNodeData } from '../types';
+import { ArtifactTreeNodeData } from '../../types';
 
 import { FolderIcon } from './folder_icon';
 

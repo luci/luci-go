@@ -34,10 +34,13 @@ import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifac
 import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
 import { ClusteringControls } from '../clustering_controls';
-import { ClusteredResult } from '../types';
+import {
+  ClusteredResult,
+  ArtifactTreeNodeData,
+  SelectedArtifactSource,
+} from '../types';
 
 import { ArtifactTreeNode } from './artifact_tree_node';
-import { ArtifactTreeNodeData, SelectedArtifactSource } from './types';
 
 // Helper functions (addArtifactsToTree, buildArtifactsTree) remain unchanged.
 function addArtifactsToTree(

@@ -41,12 +41,9 @@ import { useTestVariant } from '@/test_investigation/context';
 import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries';
 import { normalizeFailureReason } from '@/test_investigation/utils/test_variant_utils';
 
-import { ClusteredResult } from '../types';
-
-import { ArtifactContentView } from './artifact_content_view';
-import { ArtifactSummaryView } from './artifact_summary_view';
-import { ArtifactTreeView } from './artifact_tree_view';
-import { ArtifactTreeNodeData } from './types';
+import { ArtifactContentView, ArtifactSummaryView } from './artifact_content';
+import { ArtifactTreeView } from './artifact_tree';
+import { ClusteredResult, ArtifactTreeNodeData } from './types';
 
 interface ClusterGroupData {
   results: TestResultBundle[];

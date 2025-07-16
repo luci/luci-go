@@ -22,7 +22,7 @@ import {
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { ArtifactTreeNodeData } from '../types';
+import { ArtifactTreeNodeData } from '../../types';
 
 import { ArtifactTreeNode } from './artifact_tree_node';
 

@@ -16,7 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 
-import { FetchedArtifactContent } from '../components/test_details/types';
+import { FetchedArtifactContent } from '../components/artifacts/types';
 
 interface Props {
   artifactContentQueryEnabled: boolean;
