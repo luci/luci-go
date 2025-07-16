@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"strings"
 	"testing"
 	"time"
 
@@ -192,6 +193,32 @@ func TestStream(t *testing.T) {
 			rc.err = errors.New("test error")
 			s.closeStream()
 			assert.Loosely(t, bs.closedAndReleased(), should.BeTrue)
+		})
+
+		t.Run(`Will truncate stream when it exceeds maxStreamBytes.`, func(t *ftt.Test) {
+			s.maxStreamBytesOverride = 256
+			rc.data = []byte(strings.Repeat("a", 128))
+			assert.Loosely(t, s.readChunk(), should.BeTrue)
+
+			tc.Add(time.Second)
+			assert.Loosely(t, s.readChunk(), should.BeTrue)
+
+			assert.Loosely(t, s.totalSize, should.Equal(256))
+			// This read should trigger truncation.
+			assert.Loosely(t, s.readChunk(), should.BeTrue)
+			// This chunk also gets truncated.
+			assert.Loosely(t, s.readChunk(), should.BeTrue)
+			// Close the stream.
+			s.closeStream()
+			assert.Loosely(t, s.readChunk(), should.BeFalse)
+
+			// Verify the content. The last two chunks should not have been appended.
+			// The truncation message should have been appended.
+			assert.Loosely(t, int64(len(bs.appended)), should.Equal(423))
+			assert.Loosely(t, string(bs.appended[256:]), should.Equal("\nStream size limit of 256 bytes reached. Truncating."+
+				"\n*** LOG TRUNCATED: Log stream exceeded LogDog's 256-byte limit,omitted 256 bytes, total stream size 512 bytes ***\n"))
+			assert.Loosely(t, bs.closedAndReleased(), should.BeTrue)
+
 		})
 	})
 }

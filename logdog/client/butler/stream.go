@@ -15,44 +15,81 @@
 package butler
 
 import (
+	"fmt"
 	"io"
 	"time"
 
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/logdog/client/butler/bundler"
+	"go.chromium.org/luci/logdog/common/archive"
 	"go.chromium.org/luci/logdog/common/types"
+)
+
+const (
+	// maxStreamBytes is the maximum number of bytes that will be saved for a
+	// single stream. If a stream exceeds this size, it will be truncated.
+	// This limit is 90% of the limit set in LogDog backend (archivist).
+	maxStreamBytes = int64(archive.MaxLogContentSize * 0.9)
 )
 
 type stream struct {
 	log logging.Logger
 	now func() time.Time
 
-	name types.StreamName
+	name          types.StreamName
+	totalSize     int64
+	truncatedSize int64
+	// Set for testing, override the maxStreamBytes.
+	maxStreamBytesOverride int64
 
 	r  io.Reader
 	c  io.Closer
 	bs bundler.Stream
 }
 
+// readChunk reads a chunk of data from the stream's reader and appends it to
+// the bundler stream.
+//
+// Returns true if stream could return more data at a later time.
 func (s *stream) readChunk() bool {
 	d := s.bs.LeaseData()
 
 	amount, err := s.r.Read(d.Bytes())
+
+	streamBytesLimit := int64(maxStreamBytes)
+	if s.maxStreamBytesOverride > 0 {
+		streamBytesLimit = s.maxStreamBytesOverride
+	}
+	// Process the n > 0 bytes returned before considering the error.
 	if amount > 0 {
-		d.Bind(amount, s.now())
+		if s.totalSize+int64(amount) > streamBytesLimit {
+			d.Release() // The data we just read is being discarded.
+			d = nil
+			if s.truncatedSize == 0 {
+				// Only log the message at the first truncated chunk.
+				truncationMsg := fmt.Sprintf("Stream size limit of %d bytes reached. Truncating.", streamBytesLimit)
+				s.log.Warningf(truncationMsg)
+				if appendErr := s.appendText("\n" + truncationMsg); appendErr != nil {
+					s.log.Errorf("truncation start message: %s", appendErr)
+					return false
+				}
+			}
+			s.truncatedSize += int64(amount)
+		} else {
+			d.Bind(amount, s.now())
 
-		s.log.Debugf("Read %d bytes", amount)
+			// Add the data to our bundler endpoint. This may block waiting for the
+			// bundler to consume data.
 
-		// Add the data to our bundler endpoint. This may block waiting for the
-		// bundler to consume data.
-
-		err := s.bs.Append(d)
-		d = nil // Append takes ownership of "d" regardless of error.
-		if err != nil {
-			s.log.Errorf("Failed to Append to the stream: %s", err)
-			return false
+			err := s.bs.Append(d)
+			d = nil // Append takes ownership of "d" regardless of error.
+			if err != nil {
+				s.log.Errorf("Failed to append to the stream: %s", err)
+				return false
+			}
 		}
+		s.totalSize += int64(amount)
 	}
 
 	// If we haven't consumed our data, release it.
@@ -67,6 +104,14 @@ func (s *stream) readChunk() bool {
 
 	case io.EOF:
 		s.log.Debugf("Stream encountered EOF.")
+		if s.truncatedSize > 0 {
+			truncationMsg := fmt.Sprintf("\n*** LOG TRUNCATED: Log stream exceeded LogDog's %d-byte limit,"+
+				"omitted %d bytes, total stream size %d bytes ***\n", streamBytesLimit, s.truncatedSize, s.totalSize)
+			if appendErr := s.appendText(truncationMsg); appendErr != nil {
+				s.log.Errorf("truncation summary: %s", appendErr)
+				return false
+			}
+		}
 		return false
 
 	default:
@@ -77,9 +122,21 @@ func (s *stream) readChunk() bool {
 	return true
 }
 
+func (s *stream) appendText(text string) error {
+	msgData := s.bs.LeaseData()
+	n := copy(msgData.Bytes(), text)
+	msgData.Bind(n, s.now())
+	err := s.bs.Append(msgData)
+	msgData = nil
+	if err != nil {
+		return fmt.Errorf("Failed to append text to the stream: %s", err)
+	}
+	return nil
+}
+
 func (s *stream) closeStream() {
 	if err := s.c.Close(); err != nil {
-		s.log.Warningf("Error closing stream: ", err)
+		s.log.Warningf("Error closing stream: %s", err)
 	}
 	s.bs.Close()
 }
