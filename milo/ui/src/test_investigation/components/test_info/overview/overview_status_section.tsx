@@ -12,7 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, CircularProgress, Link, Typography } from '@mui/material';
+import InfoOutlineIcon from '@mui/icons-material/InfoOutlined';
+import {
+  Box,
+  CircularProgress,
+  IconButton,
+  Link,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
 
@@ -20,11 +28,13 @@ import { BugCard } from '@/common/components/bug_card';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { VerdictStatusIcon } from '@/common/components/verdict_status_icon';
 import { useAnalysesClient as useLuciBisectionClient } from '@/common/hooks/prpc_clients';
+import { exonerationReasonToJSON } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 import {
   AnalysisRunStatus,
   BatchGetTestAnalysesRequest,
 } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { AnalysisStatus as BisectionAnalysisStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
+import { TestVerdict_StatusOverride } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { useProject, useTestVariant } from '@/test_investigation/context';
 import { useInvocation } from '@/test_investigation/context';
 import { useDisplayStatusString } from '@/test_investigation/context/context';
@@ -173,6 +183,18 @@ export function OverviewStatusSection({
     return { textElement, link: bisectionLink };
   }, [bisectionAnalysis, project]);
 
+  let exonerationExplanation = '';
+  let exonerationReason = '';
+  if (
+    testVariant.statusOverride === TestVerdict_StatusOverride.EXONERATED &&
+    testVariant.exonerations[0]
+  ) {
+    exonerationExplanation = testVariant.exonerations[0].explanationHtml;
+    exonerationReason = exonerationReasonToJSON(
+      testVariant.exonerations[0].reason,
+    );
+  }
+
   return (
     <>
       <Box
@@ -204,6 +226,30 @@ export function OverviewStatusSection({
             >
               {displayStatusString}
             </Typography>
+            {(exonerationReason || exonerationExplanation) && (
+              <Tooltip
+                title={
+                  <Box
+                    sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
+                  >
+                    {exonerationExplanation && (
+                      <Typography variant="caption">
+                        Explanation: {exonerationExplanation}
+                      </Typography>
+                    )}
+                    {exonerationReason && (
+                      <Typography variant="caption">
+                        Reason: {exonerationReason}
+                      </Typography>
+                    )}
+                  </Box>
+                }
+              >
+                <IconButton sx={{ p: 0 }}>
+                  <InfoOutlineIcon />
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
         </Box>
         <Box
