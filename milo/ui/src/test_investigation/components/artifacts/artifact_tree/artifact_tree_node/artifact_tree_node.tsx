@@ -89,6 +89,14 @@ const getNodeBackground = (
 };
 
 function getFileTypeFromName(fileName: string): string | null {
+  // Handle specific image file names.
+  if (
+    fileName === 'image_diff' ||
+    fileName === 'expected_image' ||
+    fileName === 'actual_image'
+  ) {
+    return 'image';
+  }
   const lastDot = fileName.lastIndexOf('.');
   if (lastDot === -1 || lastDot === 0 || lastDot === fileName.length - 1) {
     return 'text';
