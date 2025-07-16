@@ -15,19 +15,35 @@
 import { render, screen } from '@testing-library/react';
 import fetchMock from 'fetch-mock-jest';
 
+import { useUfsClient } from '@/fleet/hooks/prpc_clients';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 
 import { SandboxPage } from './sandbox_page';
 
+jest.mock('@/fleet/hooks/prpc_clients', () => ({
+  useUfsClient: jest.fn(),
+}));
+
+const mockedUseUfsClient = useUfsClient as jest.Mock;
+
 describe('<SandboxPage />', () => {
   beforeEach(() => {
     mockFetchAuthState();
+    mockedUseUfsClient.mockReturnValue({
+      ListMachines: {
+        query: jest.fn().mockReturnValue({
+          queryKey: ['ListMachines'],
+          queryFn: () => Promise.resolve({ machines: [{ name: 'machine-1' }] }),
+        }),
+      },
+    });
   });
 
   afterEach(() => {
     fetchMock.mockClear();
     fetchMock.reset();
+    jest.clearAllMocks();
   });
 
   it('should render', async () => {
@@ -38,5 +54,6 @@ describe('<SandboxPage />', () => {
     );
 
     expect(screen.getByText(/This is a sandbox page/)).toBeVisible();
+    expect(await screen.findByText(/"name": "machine-1"/)).toBeVisible();
   });
 });
