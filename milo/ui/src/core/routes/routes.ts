@@ -234,11 +234,6 @@ export const routes: RouteObject[] = [
     lazy: () => import('@/common/layouts/labs_layout'),
     children: [
       {
-        // TODO(b/308856913): Fix all outstanding todo's before promoting the page to production.
-        path: 'p/:project/inv/:invID/test/:testID/variant/:vHash',
-        lazy: () => import('@/test_verdict/pages/test_verdict_page'),
-      },
-      {
         path: 'monitoring',
         lazy: () => import('@/monitoring/pages/monitoring_page'),
       },

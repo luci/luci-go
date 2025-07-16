@@ -91,19 +91,6 @@ export class TestVariantEntryElement
   @observable.ref private shouldRenderContent = false;
 
   @computed
-  private get testVerdictPageUrl() {
-    if (!this.project || !this.invId || !this.invId.startsWith('build-')) {
-      return '';
-    }
-
-    return `/ui/labs/p/${this.project}/inv/${
-      this.invId
-    }/test/${encodeURIComponent(this.variant.testId)}/variant/${
-      this.variant.variantHash
-    }`;
-  }
-
-  @computed
   private get shortName() {
     if (this.variant.testMetadata?.name) {
       return this.variant.testMetadata.name;
@@ -338,12 +325,6 @@ export class TestVariantEntryElement
           : ''}
         ${this.sourceUrl
           ? html`<a href=${this.sourceUrl} target="_blank">source</a>`
-          : ''}
-        ${this.testVerdictPageUrl
-          ? html` |
-              <a href=${this.testVerdictPageUrl} target="_blank">
-                view in new test verdict page</a
-              >`
           : ''}
       </div>
       ${this.variant.results?.length === RESULT_LIMIT
