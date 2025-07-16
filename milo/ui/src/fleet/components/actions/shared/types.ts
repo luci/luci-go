@@ -25,4 +25,11 @@ export interface DutToRepair {
   // DUT ID is also often referred to as "asset tag".
   dutId: string;
   state?: string;
+
+  // Optional extra data fields used for filing repair bugs.
+  board?: string;
+  model?: string;
+
+  // Note that this is label-pool, not Swarming pool.
+  pool?: string;
 }

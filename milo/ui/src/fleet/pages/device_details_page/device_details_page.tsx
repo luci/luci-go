@@ -29,7 +29,11 @@ import { RecoverableLoggerErrorBoundary } from '@/fleet/components/error_handlin
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import { extractDutState, extractDutId } from '@/fleet/utils/devices';
+import {
+  extractDutState,
+  extractDutId,
+  extractDutLabel,
+} from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -156,6 +160,9 @@ export const DeviceDetailsPage = () => {
       // populates the "ID" for a DUT using the DUT's hostname.
       dutId,
       state: extractDutState(device),
+      pool: extractDutLabel('label-pool', device),
+      board: extractDutLabel('label-board', device),
+      model: extractDutLabel('label-model', device),
     },
   ];
 

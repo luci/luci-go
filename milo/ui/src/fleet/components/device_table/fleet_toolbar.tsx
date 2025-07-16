@@ -43,6 +43,9 @@ export function FleetToolbar({
     name: `${row.dut_name}`,
     dutId: `${row.dut_id}`,
     state: row.dut_state,
+    pool: row['label-pool'],
+    board: row['label-board'],
+    model: row['label-model'],
   }));
 
   return (

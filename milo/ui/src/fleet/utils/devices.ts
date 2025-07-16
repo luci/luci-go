@@ -22,16 +22,23 @@ import {
  * @param device Device data type from the Fleet Console backend.
  * @returns String with the state of the DUT.
  */
-export const extractDutState = (device?: Device): string => {
+export const extractDutLabel = (label: string, device?: Device): string => {
   if (
-    !device ||
-    !device.deviceSpec ||
-    !device.deviceSpec.labels ||
-    !('dut_state' in device.deviceSpec.labels) ||
-    !device.deviceSpec.labels['dut_state'].values.length
+    !device?.deviceSpec?.labels ||
+    !(label in device.deviceSpec.labels) ||
+    !device.deviceSpec.labels[label]?.values?.length
   )
     return '';
-  return device.deviceSpec.labels['dut_state'].values[0];
+  return device.deviceSpec.labels[label].values[0];
+};
+
+/**
+ * Gets the state of a DUT from a device object if it exists.
+ * @param device Device data type from the Fleet Console backend.
+ * @returns String with the state of the DUT.
+ */
+export const extractDutState = (device?: Device): string => {
+  return extractDutLabel('dut_state', device);
 };
 
 /**
@@ -39,23 +46,9 @@ export const extractDutState = (device?: Device): string => {
  * @param device Device data type from the Fleet Console backend.
  * @returns String with the id of the DUT.
  */
-export const extractDutId = (device?: Device | null): string => {
-  if (!device) {
-    return '';
-  }
-
-  if (device.dutId) {
-    return device.dutId;
-  }
-
-  if (
-    !device.deviceSpec ||
-    !device.deviceSpec.labels ||
-    !('dut_id' in device.deviceSpec.labels) ||
-    !device.deviceSpec.labels['dut_id'].values.length
-  )
-    return '';
-  return device.deviceSpec.labels['dut_id'].values[0];
+export const extractDutId = (device?: Device): string => {
+  if (device?.dutId) return device?.dutId;
+  return extractDutLabel('dut_id', device);
 };
 
 /**
@@ -63,8 +56,10 @@ export const extractDutId = (device?: Device | null): string => {
  * @param device Device data type from the Fleet Console backend.
  * @returns Human-readable state string.
  */
-export const getDeviceStateString = (device?: Device | undefined): string => {
-  return device !== undefined
-    ? DeviceState[device.state].replace('DEVICE_STATE_', '')
-    : '';
+export const getDeviceStateString = (device?: Device): string => {
+  if (device === undefined || DeviceState[device.state] === undefined) {
+    return '';
+  }
+
+  return DeviceState[device.state].replace('DEVICE_STATE_', '');
 };

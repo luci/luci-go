@@ -19,14 +19,38 @@ import { DutToRepair } from '../shared/types';
 
 interface RequestRepairProps {
   selectedDuts: DutToRepair[];
-  // This is optional since it's only ever modified here
 }
 
+const ALLOWED_STATES = ['needs_manual_repair'];
+const TITLE_LOCATION_PLACEHOLDER = 'Location Unknown';
+const DESCRIPTION_LOCATION_PLACEHOLDER = '<Please add if known>';
 const REPAIR_COMPONENT_ID = '575445';
 const REPAIR_TEMPLATE_ID = '1509031';
 const LOCATION_MAP: { [key: string]: string[] } = {
   EM25: ['chromeos8'],
   '946': ['chromeos15', 'chromeos7', 'chromeos5', 'chromeos3'],
+};
+
+const getLocationForDut = (dutName: string): string | undefined => {
+  for (const [lab, prefixes] of Object.entries(LOCATION_MAP)) {
+    if (prefixes.some((prefix) => dutName.includes(prefix))) {
+      return lab;
+    }
+  }
+
+  return undefined;
+};
+
+const generateIssueTitle = (duts: DutToRepair[]): string => {
+  if (!duts.length) throw new Error('No DUTs specified');
+
+  const dutName = duts[0].name;
+  const board = duts[0].board;
+  const model = duts[0].model;
+  const pool = duts[0].pool;
+  const extraDuts = duts.length > 1 ? ` and ${duts.length - 1} more` : '';
+  const location = getLocationForDut(dutName) || TITLE_LOCATION_PLACEHOLDER;
+  return `[${location}][Repair][${board}.${model}] Pool: [${pool}] [${dutName}]${extraDuts}`;
 };
 
 export const generateIssueDescription = (dutInfo: string) => {
@@ -36,9 +60,6 @@ export const generateIssueDescription = (dutInfo: string) => {
       'Please do not explicitly assign bugs to individuals without prior ' +
       'discussion with said individuals',
     '------------------------------------------------------------------------------------',
-    'Location key (zone - location):',
-    '',
-    '---------------------------------------------',
     '',
     '**DUT Link(s) / Locations:**:',
     '',
@@ -55,31 +76,39 @@ export const generateIssueDescription = (dutInfo: string) => {
   return encodeURIComponent(description);
 };
 
-const getLocationForDut = (dutName: string): string => {
-  for (const [location, prefixes] of Object.entries(LOCATION_MAP)) {
-    if (prefixes.some((prefix) => dutName.includes(prefix))) {
-      return location;
-    }
-  }
-
-  return '<Please add if known>';
-};
+const generateDutInfo = (selectedDuts: DutToRepair[]): string =>
+  selectedDuts
+    .map(({ name, board, model, pool }) => {
+      const extraInfo = [
+        `Location: ${getLocationForDut(name) || DESCRIPTION_LOCATION_PLACEHOLDER}`,
+        board && `Board: ${board}`,
+        model && `Model: ${model}`,
+        pool && `Pool: ${pool}`,
+      ];
+      return ` * http://go/fcdut/${name} (${extraInfo.join(', ')})`;
+    })
+    .join('\n');
 
 export const RequestRepair: React.FC<RequestRepairProps> = ({
   selectedDuts,
 }) => {
-  const dutInfo = selectedDuts.map((dut) => {
-    return ` * http://go/fcdut/${dut.name} (Location: ${getLocationForDut(
-      dut.name,
-    )})`;
-  });
+  const showButton =
+    selectedDuts?.length > 0 &&
+    selectedDuts.every((dut) =>
+      ALLOWED_STATES.includes(dut?.state?.toLowerCase() || ''),
+    );
+
+  if (!showButton) {
+    return <></>;
+  }
 
   const fileDutRepairRequest = () => {
-    const description = generateIssueDescription(dutInfo.join('\n'));
-    const url = `http://b/issues/new?component=${REPAIR_COMPONENT_ID}&template=${REPAIR_TEMPLATE_ID}&description=${description}&markdown=true`;
+    const dutInfo = generateDutInfo(selectedDuts);
+    const description = generateIssueDescription(dutInfo);
+    const title = encodeURIComponent(generateIssueTitle(selectedDuts));
+    const url = `http://b/issues/new?markdown=true&component=${REPAIR_COMPONENT_ID}&template=${REPAIR_TEMPLATE_ID}&title=${title}&description=${description}`;
     window.open(url, '_blank');
   };
-
   return (
     <Button
       data-testid="file-repair-bug-button"
