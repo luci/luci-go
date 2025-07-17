@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import BugReportOutlinedIcon from '@mui/icons-material/BugReportOutlined';
+import { Feedback } from '@mui/icons-material';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -113,7 +113,7 @@ export const Header = ({
           }
         >
           <Tooltip title="File a bug">
-            <BugReportOutlinedIcon sx={{ color: colors.grey[700] }} />
+            <Feedback sx={{ color: colors.grey[700] }} />
           </Tooltip>
         </IconButton>
         {!authState.identity || authState.identity === ANONYMOUS_IDENTITY ? (
