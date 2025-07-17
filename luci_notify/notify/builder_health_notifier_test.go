@@ -31,10 +31,62 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
+	"go.chromium.org/luci/luci_notify/internal"
 	"go.chromium.org/luci/luci_notify/common"
 )
+
+func mockUnhealthyResponse(mockBuildersClient *buildbucketpb.MockBuildersClient, builderName string) {
+	expectedReq1 := &buildbucketpb.GetBuilderRequest{
+				Id: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+					Builder: builderName,
+				},
+				Mask: &buildbucketpb.BuilderMask{
+					Type: 2,
+				},
+			}
+	mockBuildersClient.
+		EXPECT().
+		GetBuilder(gomock.Any(), proto.MatcherEqual(expectedReq1)).
+		MaxTimes(1).
+		Return(&buildbucketpb.BuilderItem{
+			Metadata: &buildbucketpb.BuilderMetadata{
+				Health: &buildbucketpb.HealthStatus{
+					HealthScore: 0,
+					Description: "Your builder is not healthy with health score of 0",
+				},
+			},
+		}, nil)
+}
+
+func mockHealthyResponse(mockBuildersClient *buildbucketpb.MockBuildersClient, builderName string) {
+	expectedReq1 := &buildbucketpb.GetBuilderRequest{
+				Id: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+					Builder: builderName,
+				},
+				Mask: &buildbucketpb.BuilderMask{
+					Type: 2,
+				},
+			}
+	mockBuildersClient.
+		EXPECT().
+		GetBuilder(gomock.Any(), proto.MatcherEqual(expectedReq1)).
+		MaxTimes(1).
+		Return(&buildbucketpb.BuilderItem{
+			Metadata: &buildbucketpb.BuilderMetadata{
+				Health: &buildbucketpb.HealthStatus{
+					HealthScore: 10,
+					Description: "Your builder is healthy with health score of 10",
+				},
+			},
+		}, nil)
+}
 
 func TestNotifyOwnersHelper(t *testing.T) {
 	ftt.Run("Test environment", t, func(t *ftt.Test) {
@@ -44,9 +96,9 @@ func TestNotifyOwnersHelper(t *testing.T) {
 		datastore.GetTestable(c).Consistent(true)
 		c = memlogger.Use(c)
 		mockBuildersClient := buildbucketpb.NewMockBuildersClient(gomock.NewController(t))
+		c, sched := tq.TestingContext(c, nil)
 
-		t.Run("Success", func(t *ftt.Test) {
-			mockBHN := []*notifypb.BuilderHealthNotifier{
+		mockBHN := []*notifypb.BuilderHealthNotifier{
 				&notifypb.BuilderHealthNotifier{
 					OwnerEmail: "test@google.com",
 					Builders: []*notifypb.Builder{
@@ -69,95 +121,12 @@ func TestNotifyOwnersHelper(t *testing.T) {
 					},
 				},
 			}
-			expectedReq1 := &buildbucketpb.GetBuilderRequest{
-				Id: &buildbucketpb.BuilderID{
-					Project: "chromium",
-					Bucket:  "ci",
-					Builder: "builder2",
-				},
-				Mask: &buildbucketpb.BuilderMask{
-					Type: 2,
-				},
-			}
-			mockBuildersClient.
-				EXPECT().
-				GetBuilder(gomock.Any(), proto.MatcherEqual(expectedReq1)).
-				MaxTimes(1).
-				Return(&buildbucketpb.BuilderItem{
-					Metadata: &buildbucketpb.BuilderMetadata{
-						Health: &buildbucketpb.HealthStatus{
-							HealthScore: 0,
-							Description: "Your builder is not healthy with health score of 0",
-						},
-					},
-				}, nil)
-			expectedReq2 := &buildbucketpb.GetBuilderRequest{
-				Id: &buildbucketpb.BuilderID{
-					Project: "chromium",
-					Bucket:  "ci",
-					Builder: "builder3",
-				},
-				Mask: &buildbucketpb.BuilderMask{
-					Type: 2,
-				},
-			}
-			mockBuildersClient.
-				EXPECT().
-				GetBuilder(gomock.Any(), proto.MatcherEqual(expectedReq2)).
-				MaxTimes(1).
-				Return(&buildbucketpb.BuilderItem{
-					Metadata: &buildbucketpb.BuilderMetadata{
-						Health: &buildbucketpb.HealthStatus{
-							HealthScore: 5,
-							Description: "Your builder is not healthy",
-						},
-					},
-				}, nil)
-			expectedReq3 := &buildbucketpb.GetBuilderRequest{
-				Id: &buildbucketpb.BuilderID{
-					Project: "chromium",
-					Bucket:  "ci",
-					Builder: "builder1",
-				},
-				Mask: &buildbucketpb.BuilderMask{
-					Type: 2,
-				},
-			}
-			mockBuildersClient.
-				EXPECT().
-				GetBuilder(gomock.Any(), proto.MatcherEqual(expectedReq3)).
-				MaxTimes(1).
-				Return(&buildbucketpb.BuilderItem{
-					Metadata: &buildbucketpb.BuilderMetadata{
-						Health: &buildbucketpb.HealthStatus{
-							HealthScore: 10,
-							Description: "Your builder is healthy",
-						},
-					},
-				}, nil)
-			expectedReq4 := &buildbucketpb.GetBuilderRequest{
-				Id: &buildbucketpb.BuilderID{
-					Project: "chromium",
-					Bucket:  "ci",
-					Builder: "builder4",
-				},
-				Mask: &buildbucketpb.BuilderMask{
-					Type: 2,
-				},
-			}
-			mockBuildersClient.
-				EXPECT().
-				GetBuilder(gomock.Any(), proto.MatcherEqual(expectedReq4)).
-				MaxTimes(1).
-				Return(&buildbucketpb.BuilderItem{
-					Metadata: &buildbucketpb.BuilderMetadata{
-						Health: &buildbucketpb.HealthStatus{
-							HealthScore: 10,
-							Description: "Your builder is healthy",
-						},
-					},
-				}, nil)
 
+		t.Run("Success", func(t *ftt.Test) {
+			mockUnhealthyResponse(mockBuildersClient, "builder2")
+			mockUnhealthyResponse(mockBuildersClient, "builder3")
+			mockHealthyResponse(mockBuildersClient, "builder1")
+			mockHealthyResponse(mockBuildersClient, "builder4")
 			tasks, err := getNotifyOwnersTasks(c, mockBHN, mockBuildersClient, "chromium")
 			assert.Loosely(t, err, should.BeNil)
 			task := tasks["test@google.com"]
@@ -172,7 +141,7 @@ func TestNotifyOwnersHelper(t *testing.T) {
 		<p>Hello,</p>
 		<p>You are receiving this because <strong>test@google.com</strong> is subscribed to builder health notifier. <strong>2</strong> of your <strong>4</strong> builders are in bad health.</p>
 
-		<p><strong>Unhealthy Builders:</strong></p><ul><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/builder2">chromium.ci:builder2</a></strong><p style="margin-left:30px;">Your builder is not healthy with health score of 0</p></li><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/builder3">chromium.ci:builder3</a></strong><p style="margin-left:30px;">Your builder is not healthy</p></li></ul><p><strong>Healthy Builders:</strong></p><ul><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/builder1">chromium.ci:builder1</a></strong><p style="margin-left:30px;">Your builder is healthy</p></li><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/builder4">chromium.ci:builder4</a></strong><p style="margin-left:30px;">Your builder is healthy</p></li></ul>
+		<p><strong>Unhealthy Builders:</strong></p><ul><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/builder2">chromium.ci:builder2</a></strong><p style="margin-left:30px;">Your builder is not healthy with health score of 0</p></li><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/builder3">chromium.ci:builder3</a></strong><p style="margin-left:30px;">Your builder is not healthy with health score of 0</p></li></ul><p><strong>Healthy Builders:</strong></p><ul><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/builder1">chromium.ci:builder1</a></strong><p style="margin-left:30px;">Your builder is healthy with health score of 10</p></li><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/builder4">chromium.ci:builder4</a></strong><p style="margin-left:30px;">Your builder is healthy with health score of 10</p></li></ul>
 
 		<p>For more information on builder health, please see the <a href="https://chromium.googlesource.com/chromium/src/+/HEAD/docs/infra/builder_health_indicators.md">Builder Health Documentation</a>.</p>
 	</body>
@@ -182,32 +151,26 @@ func TestNotifyOwnersHelper(t *testing.T) {
 			decompressedBytes, _ := ioutil.ReadAll(reader)
 			finalBody := string(decompressedBytes)
 			assert.Loosely(t, finalBody, should.Equal(expectedBody))
+
+			err = addNotifyOwnerTasksToQueue(c, tasks)
+			assert.Loosely(t, err, should.BeNil)
+
+			// Verify tasks were scheduled.
+			var actualEmails []string
+			for _, t := range sched.Tasks() {
+				et := t.Payload.(*internal.EmailTask)
+				actualEmails = append(actualEmails, et.Recipients...)
+			}
+			expectedEmails := []string{"test@google.com"}
+			assert.Loosely(t, actualEmails, should.Match(expectedEmails))
 		})
 
 		t.Run("No metadata or healthstatus", func(t *ftt.Test) {
-			mockBHN := []*notifypb.BuilderHealthNotifier{
-				&notifypb.BuilderHealthNotifier{
-					OwnerEmail: "test@google.com",
-					Builders: []*notifypb.Builder{
-						&notifypb.Builder{
-							Bucket: "ci",
-							Name:   "healthyBuilder1",
-						},
-						&notifypb.Builder{
-							Bucket: "ci",
-							Name:   "unhealthyBuilder2",
-						},
-						&notifypb.Builder{
-							Bucket: "ci",
-							Name:   "missingMetaBuilder3",
-						},
-						&notifypb.Builder{
-							Bucket: "ci",
-							Name:   "missingHealthBuilder4",
-						},
-					},
-				},
-			}
+			mockBHN[0].Builders[0].Name = "healthyBuilder1"
+			mockBHN[0].Builders[1].Name = "unhealthyBuilder2"
+			mockBHN[0].Builders[2].Name = "missingMetaBuilder3"
+			mockBHN[0].Builders[3].Name = "missingHealthBuilder4"
+
 			expectedReq1 := &buildbucketpb.GetBuilderRequest{
 				Id: &buildbucketpb.BuilderID{
 					Project: "chromium",
@@ -311,6 +274,25 @@ func TestNotifyOwnersHelper(t *testing.T) {
 			decompressedBytes, _ := ioutil.ReadAll(reader)
 			finalBody := string(decompressedBytes)
 			assert.Loosely(t, finalBody, should.Equal(expectedBody))
+
+			err = addNotifyOwnerTasksToQueue(c, tasks)
+			assert.Loosely(t, err, should.BeNil)
+
+			// Verify tasks were scheduled.
+			var actualEmails []string
+			for _, t := range sched.Tasks() {
+				et := t.Payload.(*internal.EmailTask)
+				actualEmails = append(actualEmails, et.Recipients...)
+			}
+			expectedEmails := []string{"test@google.com"}
+			assert.Loosely(t, actualEmails, should.Match(expectedEmails))
+		})
+		t.Run("Not allowed recipient", func(t *ftt.Test) {
+			mockBHN[0].OwnerEmail = "test@random.com"
+
+			tasks, err := getNotifyOwnersTasks(c, mockBHN, mockBuildersClient, "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(tasks), should.Equal(0))
 		})
 	})
 }

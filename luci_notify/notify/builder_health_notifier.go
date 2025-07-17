@@ -41,6 +41,8 @@ const (
 	BuildBucketHost = "cr-buildbucket.appspot.com"
 )
 
+var bhnValidRecipents = []string{"@chromium.org", "@google.com", "@rotations.google.com"}
+
 func NotifyOwners(c context.Context) error {
 	c, cancel := context.WithTimeout(c, time.Minute)
 	defer cancel()
@@ -90,6 +92,7 @@ func notifyOwner(c context.Context, bhn []*notifypb.BuilderHealthNotifier, proje
 
 func addNotifyOwnerTasksToQueue(c context.Context, tasks map[string]*internal.EmailTask) error {
 	for emailKey, task := range tasks {
+		logging.Debugf(c, "Adding tq email task for %s", emailKey)
 		if err := tq.AddTask(c, &tq.Task{
 			Payload:          task,
 			Title:            emailKey,
@@ -102,6 +105,7 @@ func addNotifyOwnerTasksToQueue(c context.Context, tasks map[string]*internal.Em
 }
 
 func generateEmail(
+	c context.Context,
 	ownerEmail string,
 	unhealthyCount int,
 	totalBuilders int,
@@ -135,6 +139,8 @@ func generateEmail(
 	if err := gz.Close(); err != nil {
 		panic("failed to gzip HTML body in memory")
 	}
+	logging.Debugf(c, "Completed generating email for %s", ownerEmail)
+
 	return buf.Bytes()
 }
 
@@ -185,10 +191,24 @@ func formatBuildersToHTML(builders []BuilderInfo) string {
 	return htmlOutput
 }
 
+// shouldIgnoreRecipient returns true if the given email recipient is not safe to send to.
+func shouldIgnoreRecipient(c context.Context, email string) bool {
+	for _, suffix := range validRecipientSuffixes {
+		if strings.HasSuffix(email, suffix) {
+			return false
+		}
+	}
+	logging.Warningf(c, "Email %q is not allowed to be notified", email)
+	return true
+}
+
 func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifier, bbclient buildbucketpb.BuildersClient, project string) (map[string]*internal.EmailTask, error) {
 	tasks := make(map[string]*internal.EmailTask)
 	for _, builderHealthNotifier := range bhn {
 		email := builderHealthNotifier.OwnerEmail
+		if shouldIgnoreRecipient(c, email) {
+			continue
+		}
 		healthyBuilders := []BuilderInfo{}
 		unhealthyBuilders := []BuilderInfo{}
 		unknownHealthBuilders := []BuilderInfo{}
@@ -240,7 +260,7 @@ func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifi
 		task := &internal.EmailTask{
 			Recipients: []string{email},
 			Subject:    fmt.Sprintf("Builder Health For %s - %d of %d Are in Bad Health", email, unhealthyBuilderSize, builderSize),
-			BodyGzip:   generateEmail(email, unhealthyBuilderSize, builderSize, generateBuilderDescriptionHTML(unhealthyBuilders, healthyBuilders, unknownHealthBuilders), "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/infra/builder_health_indicators.md"),
+			BodyGzip:   generateEmail(c, email, unhealthyBuilderSize, builderSize, generateBuilderDescriptionHTML(unhealthyBuilders, healthyBuilders, unknownHealthBuilders), "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/infra/builder_health_indicators.md"),
 		}
 		tasks[email] = task
 	}
