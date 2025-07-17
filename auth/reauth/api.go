@@ -46,6 +46,7 @@ const (
 )
 
 type reauthConfig struct {
+	Flow                  int32    `json:"flow"`
 	Method                []method `json:"method"`
 	ProofTokenLifetimeSec int64    `json:"proofTokenLifetimeSec"`
 }
@@ -59,6 +60,7 @@ var startSessionBody = sync.OnceValue(func() string {
 	b := startSessionRequest{
 		SupportedChallengeTypes: []string{"SECURITY_KEY"},
 		ReauthConfig: reauthConfig{
+			Flow:                  5500, // code for GoB
 			Method:                []method{method_SECURE_DEVICE_USER_PRESENCE},
 			ProofTokenLifetimeSec: int64(ProofTokenLifetime / time.Second),
 		},
