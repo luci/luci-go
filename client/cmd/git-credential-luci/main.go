@@ -150,8 +150,7 @@ func main() {
 				os.Exit(1)
 			}
 			logging.Debugf(ctx, "Got ReAuth check result %+v", res)
-			// TODO(ayatane): Temporarily override check for testing
-			if res.NeedsRAPT || true {
+			if res.NeedsRAPT || forceReAuth() {
 				if !attrs.HasAuthtypeCapability() {
 					fmt.Fprintf(os.Stderr, "Git client does not support authtype capability, so cannot continue with ReAuth\n")
 					os.Exit(1)
@@ -234,4 +233,11 @@ func main() {
 
 func reAuthEnabled() bool {
 	return os.Getenv("LUCI_ENABLE_REAUTH") != ""
+}
+
+// forceReAuth will force providing a RAPT even if Gerrit reports that
+// a RAPT isn't needed for the repo.  This is for testing and working
+// around bugs.
+func forceReAuth() bool {
+	return os.Getenv("LUCI_FORCE_REAUTH") != ""
 }
