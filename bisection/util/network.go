@@ -29,8 +29,7 @@ func SendHTTPRequest(c context.Context, req *http.Request, timeout time.Duration
 	c, cancel := context.WithTimeout(c, timeout)
 	defer cancel()
 
-	project := LUCIProject(c)
-	transport, err := auth.GetRPCTransport(c, auth.AsProject, auth.WithProject(project))
+	transport, err := auth.GetRPCTransport(c, auth.NoAuth)
 	if err != nil {
 		return "", err
 	}
