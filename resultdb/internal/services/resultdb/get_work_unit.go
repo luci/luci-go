@@ -33,15 +33,6 @@ import (
 )
 
 func (s *resultDBServer) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
-	rootInvocationID, workUnitID, err := pbutil.ParseWorkUnitName(in.Name)
-	if err != nil {
-		return nil, appstatus.BadRequest(errors.Fmt("name: %w", err))
-	}
-	id := workunits.ID{
-		RootInvocationID: rootinvocations.ID(rootInvocationID),
-		WorkUnitID:       workUnitID,
-	}
-
 	// Use one transaction for the entire RPC so that we work with a
 	// consistent snapshot of the system state. This is important to
 	// prevent subtle bugs and TOC-TOU vulnerabilities.
@@ -50,17 +41,13 @@ func (s *resultDBServer) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequ
 
 	// Check permissions. As per google.aip.dev/211
 	// this should happen before any other request validation.
-	opts := permissions.QueryWorkUnitAccessOptions{
-		Full:                 rdbperms.PermGetWorkUnit,
-		Limited:              rdbperms.PermListLimitedWorkUnits,
-		UpgradeLimitedToFull: rdbperms.PermGetWorkUnit,
-	}
-	accessLevel, err := permissions.QueryWorkUnitAccess(ctx, id, opts)
+	id, accessLevel, err := queryWorkUnitAccess(ctx, in)
 	if err != nil {
 		return nil, err
 	}
 	if accessLevel == permissionstype.NoAccess {
-		return nil, appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s (or %s) on root invocation %s`, rdbperms.PermGetWorkUnit, rdbperms.PermListLimitedWorkUnits, id.RootInvocationID.Name())
+		return nil, appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s (or %s) on root invocation %q`,
+			rdbperms.PermGetWorkUnit, rdbperms.PermListLimitedWorkUnits, id.RootInvocationID.Name())
 	}
 
 	if err := validateGetWorkUnitRequest(in); err != nil {
@@ -79,6 +66,28 @@ func (s *resultDBServer) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequ
 	}
 
 	return wu.ToProto(accessLevel, in.View), nil
+}
+
+func queryWorkUnitAccess(ctx context.Context, in *pb.GetWorkUnitRequest) (id workunits.ID, accessLevel permissionstype.AccessLevel, err error) {
+	rootInvocationID, workUnitID, err := pbutil.ParseWorkUnitName(in.Name)
+	if err != nil {
+		return workunits.ID{}, permissionstype.NoAccess, appstatus.BadRequest(errors.Fmt("name: %w", err))
+	}
+	id = workunits.ID{
+		RootInvocationID: rootinvocations.ID(rootInvocationID),
+		WorkUnitID:       workUnitID,
+	}
+
+	opts := permissions.QueryWorkUnitAccessOptions{
+		Full:                 rdbperms.PermGetWorkUnit,
+		Limited:              rdbperms.PermListLimitedWorkUnits,
+		UpgradeLimitedToFull: rdbperms.PermGetWorkUnit,
+	}
+	accessLevel, err = permissions.QueryWorkUnitAccess(ctx, id, opts)
+	if err != nil {
+		return workunits.ID{}, permissionstype.NoAccess, err
+	}
+	return id, accessLevel, nil
 }
 
 func validateGetWorkUnitRequest(in *pb.GetWorkUnitRequest) error {

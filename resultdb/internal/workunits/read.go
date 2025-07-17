@@ -45,7 +45,7 @@ func readColumns(ctx context.Context, id ID, ptrMap map[string]any) error {
 	err := spanutil.ReadRow(ctx, "WorkUnits", id.key(), ptrMap)
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
-		return appstatus.Attachf(err, codes.NotFound, "%s not found", id.Name())
+		return appstatus.Attachf(err, codes.NotFound, "%q not found", id.Name())
 
 	case err != nil:
 		return errors.Fmt("fetch %s: %w", id.Name(), err)
@@ -136,7 +136,7 @@ func ReadRealms(ctx context.Context, ids []ID) (realms []string, err error) {
 	for i, id := range ids {
 		realm, ok := resultMap[id]
 		if !ok {
-			return nil, appstatus.Errorf(codes.NotFound, "%s not found", id.Name())
+			return nil, appstatus.Errorf(codes.NotFound, "%q not found", id.Name())
 		}
 		realms[i] = realm
 	}
@@ -274,7 +274,7 @@ func Read(ctx context.Context, id ID, mask ReadMask) (ret *WorkUnitRow, err erro
 	case err != nil:
 		return nil, err
 	case ret == nil:
-		return nil, appstatus.Errorf(codes.NotFound, "%s not found", id.Name())
+		return nil, appstatus.Errorf(codes.NotFound, "%q not found", id.Name())
 	default:
 		return ret, nil
 	}
@@ -304,7 +304,7 @@ func ReadBatch(ctx context.Context, ids []ID, mask ReadMask) (ret []*WorkUnitRow
 	for i, id := range ids {
 		row, ok := resultMap[id]
 		if !ok {
-			return nil, appstatus.Errorf(codes.NotFound, "%s not found", id.Name())
+			return nil, appstatus.Errorf(codes.NotFound, "%q not found", id.Name())
 		}
 		// Clone the row to avoid aliasing the same result row object in
 		// result twice (in case of the same ID being requested twice),

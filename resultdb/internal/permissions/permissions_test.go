@@ -163,7 +163,7 @@ func TestQueryWorkUnitAccess(t *testing.T) {
 			st, ok := appstatus.Get(err)
 			assert.That(t, ok, should.BeTrue)
 			assert.That(t, st.Code(), should.Equal(codes.NotFound))
-			assert.That(t, st.Message(), should.ContainSubstring("rootInvocations/not-exists not found"))
+			assert.That(t, st.Message(), should.ContainSubstring(`"rootInvocations/not-exists" not found`))
 		})
 		t.Run("no access on root invocation", func(t *ftt.Test) {
 			level, err := QueryWorkUnitAccess(ctx, workUnitID, opts)
@@ -205,7 +205,102 @@ func TestQueryWorkUnitAccess(t *testing.T) {
 				st, ok := appstatus.Get(err)
 				assert.That(t, ok, should.BeTrue)
 				assert.That(t, st.Code(), should.Equal(codes.NotFound))
-				assert.That(t, st.Message(), should.ContainSubstring("rootInvocations/root-inv/workUnits/not-exists not found"))
+				assert.That(t, st.Message(), should.ContainSubstring(`"rootInvocations/root-inv/workUnits/not-exists" not found`))
+			})
+		})
+	})
+}
+
+func TestQueryWorkUnitsAccess(t *testing.T) {
+	ftt.Run(`QueryWorkUnitsAccess`, t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+
+		rootInvID := rootinvocations.ID("root-inv")
+		workUnitIDs := []workunits.ID{
+			{RootInvocationID: rootInvID, WorkUnitID: "work-unit-1"},
+			{RootInvocationID: rootInvID, WorkUnitID: "work-unit-2"},
+		}
+
+		// Insert root invocation and work units for subsequent tests.
+		var ms []*spanner.Mutation
+		ms = append(ms, insert.RootInvocation(
+			rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:root").Build(),
+		)...)
+		ms = append(ms, insert.WorkUnit(
+			workunits.NewBuilder(rootInvID, "work-unit-1").WithRealm("testproject:workunit1").Build(),
+		)...)
+		ms = append(ms, insert.WorkUnit(
+			workunits.NewBuilder(rootInvID, "work-unit-2").WithRealm("testproject:workunit2").Build(),
+		)...)
+		testutil.MustApply(ctx, t, ms...)
+
+		opts := QueryWorkUnitAccessOptions{
+			Full:                 rdbperms.PermListWorkUnits,
+			Limited:              rdbperms.PermListLimitedWorkUnits,
+			UpgradeLimitedToFull: rdbperms.PermGetWorkUnit,
+		}
+
+		authState := &authtest.FakeState{
+			Identity: "user:someone@example.com",
+		}
+		ctx = auth.WithState(ctx, authState)
+
+		ctx, cancel := span.ReadOnlyTransaction(ctx)
+		defer cancel()
+
+		t.Run("work units in different root invocation", func(t *ftt.Test) {
+			workUnitIDs[1] = workunits.ID{RootInvocationID: rootinvocations.ID("other-root"), WorkUnitID: "work-unit-1"}
+			_, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
+			assert.That(t, err, should.ErrLike("all work units must belong to the same root invocation"))
+		})
+		t.Run("root invocation not found", func(t *ftt.Test) {
+			workUnitIDs = []workunits.ID{
+				{RootInvocationID: rootinvocations.ID("not-exists"), WorkUnitID: "work-unit-1"},
+			}
+			_, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
+			st, ok := appstatus.Get(err)
+			assert.That(t, ok, should.BeTrue)
+			assert.That(t, st.Code(), should.Equal(codes.NotFound))
+			assert.That(t, st.Message(), should.ContainSubstring(`"rootInvocations/not-exists" not found`))
+		})
+		t.Run("no access on root invocation", func(t *ftt.Test) {
+			authState.IdentityPermissions = nil
+			levels, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, levels, should.Match([]permissionstype.AccessLevel{permissionstype.NoAccess, permissionstype.NoAccess}))
+		})
+		t.Run("full access on root invocation", func(t *ftt.Test) {
+			authState.IdentityPermissions = []authtest.RealmPermission{
+				{Realm: "testproject:root", Permission: rdbperms.PermListWorkUnits},
+			}
+			levels, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, levels, should.Match([]permissionstype.AccessLevel{permissionstype.FullAccess, permissionstype.FullAccess}))
+		})
+		t.Run("limited access on root invocation", func(t *ftt.Test) {
+			authState.IdentityPermissions = []authtest.RealmPermission{
+				{Realm: "testproject:root", Permission: rdbperms.PermListLimitedWorkUnits},
+			}
+			t.Run("baseline (no upgrade permission)", func(t *ftt.Test) {
+				levels, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, levels, should.Match([]permissionstype.AccessLevel{permissionstype.LimitedAccess, permissionstype.LimitedAccess}))
+			})
+			t.Run("upgrade to full access for some", func(t *ftt.Test) {
+				authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+					Realm: "testproject:workunit1", Permission: rdbperms.PermGetWorkUnit,
+				})
+				levels, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, levels, should.Match([]permissionstype.AccessLevel{permissionstype.FullAccess, permissionstype.LimitedAccess}))
+			})
+			t.Run("work unit not found", func(t *ftt.Test) {
+				workUnitIDs[1] = workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "not-exists"}
+				_, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
+				st, ok := appstatus.Get(err)
+				assert.That(t, ok, should.BeTrue)
+				assert.That(t, st.Code(), should.Equal(codes.NotFound))
+				assert.That(t, st.Message(), should.ContainSubstring(`"rootInvocations/root-inv/workUnits/not-exists" not found`))
 			})
 		})
 	})

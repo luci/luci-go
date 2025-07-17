@@ -89,7 +89,7 @@ func VerifyRootInvocation(ctx context.Context, id rootinvocations.ID, permission
 		case err != nil:
 			return err
 		case !allowed:
-			return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s in realm of root invocation %s`, permission, id)
+			return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s in realm of root invocation %q`, permission, id.Name())
 		}
 	}
 	return nil
@@ -117,51 +117,92 @@ type QueryWorkUnitAccessOptions struct {
 // may also be returned if the work unit is not found, if it was necessary to check the
 // work unit realm.
 func QueryWorkUnitAccess(ctx context.Context, id workunits.ID, opts QueryWorkUnitAccessOptions) (accessLevel permissionstype.AccessLevel, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.permissions.QueryWorkUnitAccess")
+	result, err := QueryWorkUnitsAccess(ctx, []workunits.ID{id}, opts)
+	if err != nil {
+		return permissionstype.NoAccess, err
+	}
+	return result[0], nil
+}
+
+// QueryWorkUnitsAccess determines the access the user has to the given work units.
+// All work units must belong to the same root invocation.
+//
+// A NotFound appstatus error is returned if the root invocation is not found (thereby
+// disclosing its existence, even to unauthenticated callers). A NotFound appstatus error
+// may also be returned if any work unit is not found, if it was necessary to check the
+// work unit realm.
+func QueryWorkUnitsAccess(ctx context.Context, ids []workunits.ID, opts QueryWorkUnitAccessOptions) (accessLevels []permissionstype.AccessLevel, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.permissions.QueryWorkUnitsAccess")
 	defer func() { tracing.End(ts, err) }()
+
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	rootInvID := ids[0].RootInvocationID
+
+	// Check all IDs have the same root invocation, to ensure integrity of the
+	// permission checks that follow.
+	for _, id := range ids {
+		if id.RootInvocationID != rootInvID {
+			return nil, fmt.Errorf("all work units must belong to the same root invocation")
+		}
+	}
 
 	// Avoid hotspotting the root invocation record by reading the realm from the same
 	// shard as the work unit.
-	rootInvRealm, err := rootinvocations.ReadRealmFromShard(ctx, id.RootInvocationShardID())
+	rootInvRealm, err := rootinvocations.ReadRealmFromShard(ctx, ids[0].RootInvocationShardID())
 	if err != nil {
 		// If the root invocation is not found, returns NotFound appstatus error.
-		return permissionstype.NoAccess, err
+		return nil, err
 	}
 
 	// Note: HasPermission does not make RPCs.
 	allowed, err := auth.HasPermission(ctx, opts.Full, rootInvRealm, nil)
 	if err != nil {
 		// Some sort of internal error doing the permission check.
-		return permissionstype.NoAccess, err
+		return nil, err
 	}
 	if allowed {
-		// Break out early, we have all the access we need.
-		return permissionstype.FullAccess, nil
+		// Break out early, we have full access to all work units.
+		return repeatAccessLevel(permissionstype.FullAccess, len(ids)), nil
 	}
-
 	allowed, err = auth.HasPermission(ctx, opts.Limited, rootInvRealm, nil)
 	if err != nil {
 		// Some sort of internal error doing the permission check.
-		return permissionstype.NoAccess, err
+		return nil, err
 	}
 	if allowed {
 		// We have limited access. Try to see if we can upgrade it to full access.
-		workUnitRealm, err := workunits.ReadRealm(ctx, id)
+		workUnitRealms, err := workunits.ReadRealms(ctx, ids)
 		if err != nil {
-			// If the work unit is not found, returns NotFound appstatus error.
-			return permissionstype.NoAccess, err
+			// If any work unit is not found, returns NotFound appstatus error.
+			return nil, err
 		}
 
-		allowed, err := auth.HasPermission(ctx, opts.UpgradeLimitedToFull, workUnitRealm, nil)
-		if err != nil {
-			return permissionstype.NoAccess, err
+		accessLevels = make([]permissionstype.AccessLevel, len(ids))
+		for i := range ids {
+			allowed, err := auth.HasPermission(ctx, opts.UpgradeLimitedToFull, workUnitRealms[i], nil)
+			if err != nil {
+				// Some sort of internal error doing the permission check.
+				return nil, err
+			}
+			if allowed {
+				accessLevels[i] = permissionstype.FullAccess
+			} else {
+				accessLevels[i] = permissionstype.LimitedAccess
+			}
 		}
-		if allowed {
-			return permissionstype.FullAccess, nil
-		}
-		return permissionstype.LimitedAccess, nil
+		return accessLevels, nil
 	}
-	return permissionstype.NoAccess, nil
+	return repeatAccessLevel(permissionstype.NoAccess, len(ids)), nil
+}
+
+func repeatAccessLevel(accessLevel permissionstype.AccessLevel, n int) []permissionstype.AccessLevel {
+	ret := make([]permissionstype.AccessLevel, n)
+	for i := range ret {
+		ret[i] = accessLevel
+	}
+	return ret
 }
 
 // VerifyInvocationsByName does the same as VerifyInvocations but accepts

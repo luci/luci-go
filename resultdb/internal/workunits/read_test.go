@@ -86,7 +86,7 @@ func TestReadFunctions(t *testing.T) {
 				}
 				_, err := Read(span.Single(ctx), nonExistentID, AllFields)
 				assert.That(t, appstatus.Code(err), should.Equal(codes.NotFound))
-				assert.That(t, err, should.ErrLike("rootInvocations/root-inv-id/workUnits/non-existent-id not found"))
+				assert.That(t, err, should.ErrLike(`"rootInvocations/root-inv-id/workUnits/non-existent-id" not found`))
 			})
 			t.Run("empty root invocation ID", func(t *ftt.Test) {
 				id.RootInvocationID = ""
@@ -156,7 +156,7 @@ func TestReadFunctions(t *testing.T) {
 				}
 				_, err := ReadBatch(span.Single(ctx), ids, AllFields)
 				assert.That(t, appstatus.Code(err), should.Equal(codes.NotFound))
-				assert.That(t, err, should.ErrLike("rootInvocations/root-inv-id/workUnits/non-existent-id not found"))
+				assert.That(t, err, should.ErrLike(`"rootInvocations/root-inv-id/workUnits/non-existent-id" not found`))
 			})
 			t.Run("empty root invocation ID", func(t *ftt.Test) {
 				ids := []ID{
@@ -192,7 +192,7 @@ func TestReadFunctions(t *testing.T) {
 				st, ok := appstatus.Get(err)
 				assert.Loosely(t, ok, should.BeTrue)
 				assert.Loosely(t, st.Code(), should.Equal(codes.NotFound))
-				assert.Loosely(t, st.Message(), should.ContainSubstring("rootInvocations/root-inv-id/workUnits/non-existent-id not found"))
+				assert.Loosely(t, st.Message(), should.ContainSubstring(`"rootInvocations/root-inv-id/workUnits/non-existent-id" not found`))
 			})
 
 			t.Run("empty root invocation ID", func(t *ftt.Test) {
@@ -248,7 +248,7 @@ func TestReadFunctions(t *testing.T) {
 				st, ok := appstatus.Get(err)
 				assert.Loosely(t, ok, should.BeTrue)
 				assert.Loosely(t, st.Code(), should.Equal(codes.NotFound))
-				assert.Loosely(t, st.Message(), should.ContainSubstring("rootInvocations/root-inv-id/workUnits/non-existent-id not found"))
+				assert.Loosely(t, st.Message(), should.ContainSubstring(`"rootInvocations/root-inv-id/workUnits/non-existent-id" not found`))
 			})
 
 			t.Run("empty root invocation ID", func(t *ftt.Test) {

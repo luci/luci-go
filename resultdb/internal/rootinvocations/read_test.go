@@ -88,7 +88,7 @@ func TestReadFunctions(t *testing.T) {
 				st, ok := appstatus.Get(err)
 				assert.Loosely(t, ok, should.BeTrue)
 				assert.Loosely(t, st.Code(), should.Equal(codes.NotFound))
-				assert.Loosely(t, st.Message(), should.ContainSubstring("rootInvocations/non-existent-id not found"))
+				assert.Loosely(t, st.Message(), should.ContainSubstring(`"rootInvocations/non-existent-id" not found`))
 			})
 
 			t.Run("empty ID", func(t *ftt.Test) {
@@ -111,7 +111,7 @@ func TestReadFunctions(t *testing.T) {
 				st, ok := appstatus.Get(err)
 				assert.Loosely(t, ok, should.BeTrue)
 				assert.Loosely(t, st.Code(), should.Equal(codes.NotFound))
-				assert.Loosely(t, st.Message(), should.ContainSubstring("rootInvocations/non-existent-id not found"))
+				assert.Loosely(t, st.Message(), should.ContainSubstring(`"rootInvocations/non-existent-id" not found`))
 			})
 
 			t.Run("empty ID", func(t *ftt.Test) {
@@ -134,7 +134,7 @@ func TestReadFunctions(t *testing.T) {
 				st, ok := appstatus.Get(err)
 				assert.Loosely(t, ok, should.BeTrue)
 				assert.Loosely(t, st.Code(), should.Equal(codes.NotFound))
-				assert.Loosely(t, st.Message(), should.ContainSubstring("rootInvocations/non-existent-id not found"))
+				assert.Loosely(t, st.Message(), should.ContainSubstring(`"rootInvocations/non-existent-id" not found`))
 			})
 
 			t.Run("empty ID", func(t *ftt.Test) {

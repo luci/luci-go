@@ -119,7 +119,7 @@ func reachable(ctx context.Context, roots invocations.IDSet, useRootCache bool) 
 		}
 		state, err := invocations.ReadState(ctx, root)
 		if err != nil {
-			logging.Warningf(ctx, "reachable: failed to read root invocation %s: %s", root, err)
+			logging.Warningf(ctx, "reachable: failed to read root invocation %q: %s", root, err)
 		} else if state == pb.Invocation_FINALIZED {
 			// Only populate the cache if the invocation exists and is
 			// finalized.

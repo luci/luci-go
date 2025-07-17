@@ -84,7 +84,7 @@ func TestGetRootInvocation(t *testing.T) {
 			req.Name = "rootInvocations/non-existent"
 			_, err := srv.GetRootInvocation(ctx, req)
 			assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
-			assert.That(t, err, should.ErrLike("rootInvocations/non-existent not found"))
+			assert.That(t, err, should.ErrLike(`"rootInvocations/non-existent" not found`))
 		})
 
 		t.Run("permission denied", func(t *ftt.Test) {

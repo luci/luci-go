@@ -42,7 +42,7 @@ func readColumns(ctx context.Context, id ID, ptrMap map[string]any) error {
 	err := spanutil.ReadRow(ctx, "RootInvocations", id.Key(), ptrMap)
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
-		return appstatus.Attachf(err, codes.NotFound, "%s not found", id.Name())
+		return appstatus.Attachf(err, codes.NotFound, "%q not found", id.Name())
 
 	case err != nil:
 		return errors.Fmt("fetch %s: %w", id.Name(), err)
@@ -63,7 +63,7 @@ func readColumnsFromShard(ctx context.Context, id ShardID, ptrMap map[string]any
 	err := spanutil.ReadRow(ctx, "RootInvocationShards", id.Key(), ptrMap)
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
-		return appstatus.Attachf(err, codes.NotFound, "%s not found", id.RootInvocationID.Name())
+		return appstatus.Attachf(err, codes.NotFound, "%q not found", id.RootInvocationID.Name())
 
 	case err != nil:
 		return errors.Fmt("fetch %s (shard %v): %w", id.RootInvocationID.Name(), id.ShardIndex, err)
@@ -210,7 +210,7 @@ func Read(ctx context.Context, id ID) (*RootInvocationRow, error) {
 	case err != nil:
 		return nil, err
 	case ret == nil:
-		return nil, appstatus.Errorf(codes.NotFound, "%s not found", pbutil.RootInvocationName(string(id)))
+		return nil, appstatus.Errorf(codes.NotFound, "%q not found", pbutil.RootInvocationName(string(id)))
 	default:
 		return ret, nil
 	}

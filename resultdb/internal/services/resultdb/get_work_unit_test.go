@@ -82,7 +82,7 @@ func TestGetWorkUnit(t *testing.T) {
 
 		srv := newTestResultDBService()
 
-		t.Run("valid", func(t *ftt.Test) {
+		t.Run("happy path", func(t *ftt.Test) {
 			expectedRsp := &pb.WorkUnit{
 				Name:              rootWorkUnitID.Name(),
 				WorkUnitId:        rootWorkUnitID.WorkUnitID,
@@ -178,14 +178,14 @@ func TestGetWorkUnit(t *testing.T) {
 			req.Name = "rootInvocations/root-inv-id/workUnits/non-existent"
 			_, err := srv.GetWorkUnit(ctx, req)
 			assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
-			assert.That(t, err, should.ErrLike("rootInvocations/root-inv-id/workUnits/non-existent not found"))
+			assert.That(t, err, should.ErrLike(`"rootInvocations/root-inv-id/workUnits/non-existent" not found`))
 		})
 
 		t.Run("permission denied", func(t *ftt.Test) {
 			authState.IdentityPermissions = nil
 			_, err := srv.GetWorkUnit(ctx, req)
 			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.That(t, err, should.ErrLike("caller does not have permission resultdb.workUnits.get (or resultdb.workUnits.listLimited) on root invocation rootInvocations/root-inv-id"))
+			assert.That(t, err, should.ErrLike(`caller does not have permission resultdb.workUnits.get (or resultdb.workUnits.listLimited) on root invocation "rootInvocations/root-inv-id"`))
 		})
 
 		t.Run("invalid request", func(t *ftt.Test) {
