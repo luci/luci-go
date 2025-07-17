@@ -212,7 +212,7 @@ func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifi
 		healthyBuilders := []BuilderInfo{}
 		unhealthyBuilders := []BuilderInfo{}
 		unknownHealthBuilders := []BuilderInfo{}
-		builderSize := len(builderHealthNotifier.Builders)
+		builderCount := len(builderHealthNotifier.Builders)
 		for _, builder := range builderHealthNotifier.Builders {
 			req := &buildbucketpb.GetBuilderRequest{
 				Id: &buildbucketpb.BuilderID{
@@ -255,12 +255,17 @@ func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifi
 					})
 			}
 		}
-		unhealthyBuilderSize := len(unhealthyBuilders)
+		unhealthyBuilderCount := len(unhealthyBuilders)
+
+		// Check if we need to send an email if all builders are healthy.
+		if unhealthyBuilderCount == 0 && !builderHealthNotifier.NotifyAllHealthy {
+			continue
+		}
 
 		task := &internal.EmailTask{
 			Recipients: []string{email},
-			Subject:    fmt.Sprintf("Builder Health For %s - %d of %d Are in Bad Health", email, unhealthyBuilderSize, builderSize),
-			BodyGzip:   generateEmail(c, email, unhealthyBuilderSize, builderSize, generateBuilderDescriptionHTML(unhealthyBuilders, healthyBuilders, unknownHealthBuilders), "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/infra/builder_health_indicators.md"),
+			Subject:    fmt.Sprintf("Builder Health For %s - %d of %d Are in Bad Health", email, unhealthyBuilderCount, builderCount),
+			BodyGzip:   generateEmail(c, email, unhealthyBuilderCount, builderCount, generateBuilderDescriptionHTML(unhealthyBuilders, healthyBuilders, unknownHealthBuilders), "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/infra/builder_health_indicators.md"),
 		}
 		tasks[email] = task
 	}

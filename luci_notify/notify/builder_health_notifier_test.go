@@ -294,5 +294,44 @@ func TestNotifyOwnersHelper(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(tasks), should.Equal(0))
 		})
+		t.Run("Notify all when healthy true - all builders healthy", func(t *ftt.Test) {
+			mockBHN[0].NotifyAllHealthy = true
+			mockBHN[0].Builders = mockBHN[0].Builders[0:1]
+			mockHealthyResponse(mockBuildersClient, "builder1")
+
+			tasks, err := getNotifyOwnersTasks(c, mockBHN, mockBuildersClient, "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			task := tasks["test@google.com"]
+			assert.Loosely(t, task.Recipients, should.Match([]string{"test@google.com"}))
+			assert.Loosely(t, task.Subject, should.Equal("Builder Health For test@google.com - 0 of 1 Are in Bad Health"))
+			expectedBody :=`
+	<html>
+	<head>
+		<meta charset="utf-8">
+	</head>
+	<body>
+		<p>Hello,</p>
+		<p>You are receiving this because <strong>test@google.com</strong> is subscribed to builder health notifier. <strong>0</strong> of your <strong>1</strong> builders are in bad health.</p>
+
+		<p><strong>Healthy Builders:</strong></p><ul><li><strong><a href="https://ci.chromium.org/ui/p/chromium/builders/ci/builder1">chromium.ci:builder1</a></strong><p style="margin-left:30px;">Your builder is healthy with health score of 10</p></li></ul>
+
+		<p>For more information on builder health, please see the <a href="https://chromium.googlesource.com/chromium/src/+/HEAD/docs/infra/builder_health_indicators.md">Builder Health Documentation</a>.</p>
+	</body>
+	</html>
+	`
+			reader, _ := gzip.NewReader(bytes.NewReader(task.BodyGzip))
+			decompressedBytes, _ := ioutil.ReadAll(reader)
+			finalBody := string(decompressedBytes)
+			assert.Loosely(t, finalBody, should.Equal(expectedBody))
+		})
+		t.Run("Notify all when healthy false - all builders healthy", func(t *ftt.Test) {
+			mockBHN[0].NotifyAllHealthy = false
+			mockBHN[0].Builders = mockBHN[0].Builders[0:1]
+			mockHealthyResponse(mockBuildersClient, "builder1")
+			tasks, err := getNotifyOwnersTasks(c, mockBHN, mockBuildersClient, "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			task := tasks["test@google.com"]
+			assert.Loosely(t, task, should.BeNil)
+		})
 	})
 }
