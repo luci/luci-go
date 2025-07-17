@@ -14,7 +14,7 @@
 
 import '@testing-library/jest-dom';
 
-import { screen, waitForElementToBeRemoved } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import fetchMock from 'fetch-mock-jest';
 
 import { ClusterContextProvider } from '@/clusters/components/cluster/cluster_context';
@@ -79,6 +79,11 @@ describe('Test OverviewTab component', () => {
     };
     mockQueryHistory(history);
 
+    const defaultMetrics = mockMetrics.filter((m) => m.isDefault);
+    const route = `/?selectedMetrics=${defaultMetrics
+      .map((m) => m.metricId)
+      .join(',')}&historyTimeRange=30d&annotated=false`;
+
     renderTabWithRouterAndClient(
       <ClusterContextProvider
         project={project}
@@ -87,12 +92,13 @@ describe('Test OverviewTab component', () => {
       >
         <OverviewTab value="test" />
       </ClusterContextProvider>,
+      'test',
+      route,
     );
 
-    // Wait for the progress bar to disappear.
-    await waitForElementToBeRemoved(() => screen.queryByRole('progressbar'));
+    // Wait for the cluster analysis overview tab to load.
+    await screen.findByTestId('history-charts-container');
 
-    await screen.findByTestId('policy-row-exonerations');
     expect(
       screen.getByText(
         'test variant(s) are being exonerated (ignored) in presubmit',
@@ -101,8 +107,6 @@ describe('Test OverviewTab component', () => {
     expect(
       screen.getByText('many CL(s) are being rejected'),
     ).toBeInTheDocument();
-
-    await screen.findByTestId('history-charts-container');
     // Expect charts only for the default metrics.
     mockMetrics
       .filter((metric) => metric.isDefault)
