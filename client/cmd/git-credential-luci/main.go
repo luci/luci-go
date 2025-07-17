@@ -123,7 +123,7 @@ func main() {
 			}
 			os.Exit(1)
 		}
-		if os.Getenv("LUCI_ENABLE_REAUTH") != "" {
+		if reAuthEnabled() {
 			logging.Debugf(ctx, "ReAuth is enabled")
 			attrs, err := creds.ReadAttrs(os.Stdin)
 			if err != nil {
@@ -187,7 +187,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "login failed: %v\n", err)
 			os.Exit(1)
 		}
-		if os.Getenv("LUCI_ENABLE_REAUTH") != "" {
+		if reAuthEnabled() {
 			ra := auth.NewReAuthenticator(a)
 			if err := ra.RenewRAPT(ctx); err != nil {
 				fmt.Fprintf(os.Stderr, "ReAuth failed: %v\n", err)
@@ -195,9 +195,10 @@ func main() {
 			}
 		}
 	case "reauth":
-		if os.Getenv("LUCI_ENABLE_REAUTH") == "" {
-			fmt.Fprintf(os.Stderr, "ReAuth is not enabled (set LUCI_ENABLE_REAUTH=1 to enable)\n")
-			os.Exit(1)
+		if !reAuthEnabled() {
+			fmt.Fprintf(os.Stderr, "Note: ReAuth is not enabled, so git-credential-luci won't use your ReAuth credentials\n")
+			fmt.Fprintf(os.Stderr, "even if you refresh them with this command.\n")
+			fmt.Fprintf(os.Stderr, "Set LUCI_ENABLE_REAUTH=1 to enable\n")
 		}
 		ra := auth.NewReAuthenticator(a)
 		if err := ra.RenewRAPT(ctx); err != nil {
@@ -229,4 +230,8 @@ func main() {
 		// receives any other operation, it should silently ignore the
 		// request."
 	}
+}
+
+func reAuthEnabled() bool {
+	return os.Getenv("LUCI_ENABLE_REAUTH") != ""
 }
