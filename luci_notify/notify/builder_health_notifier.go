@@ -181,8 +181,8 @@ func formatBuildersToHTML(builders []BuilderInfo) string {
 
 		if builder.Description != "" {
 			for _, description := range strings.Split(builder.Description, ";") {
-			htmlOutput += fmt.Sprintf(`<p style="margin-left:30px;">%s</p>`, description)
-		}
+				htmlOutput += fmt.Sprintf(`<p style="margin-left:30px;">%s</p>`, description)
+			}
 		}
 		htmlOutput += "</li>" // End list item
 	}
@@ -230,11 +230,11 @@ func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifi
 			}
 			// Check if metadata or health exists
 			// If not, add into unknown category
-			if (builderItem.Metadata == nil || builderItem.Metadata.Health == nil) {
+			if builderItem.Metadata == nil || builderItem.Metadata.Health == nil {
 				unknownHealthBuilders = append(unknownHealthBuilders,
 					BuilderInfo{
-						Name:        fmt.Sprintf("%s.%s:%s", project, builder.Bucket, builder.Name),
-						Link:        fmt.Sprintf("https://ci.chromium.org/ui/p/%s/builders/%s/%s", project, builder.Bucket, builder.Name),
+						Name: fmt.Sprintf("%s.%s:%s", project, builder.Bucket, builder.Name),
+						Link: fmt.Sprintf("https://ci.chromium.org/ui/p/%s/builders/%s/%s", project, builder.Bucket, builder.Name),
 					})
 				continue
 			}

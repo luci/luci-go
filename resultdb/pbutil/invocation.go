@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
+
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )

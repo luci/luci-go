@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/spanner"
+
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 )
 

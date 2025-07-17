@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/check"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/validate"
+
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 

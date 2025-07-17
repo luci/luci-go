@@ -24,8 +24,8 @@ import (
 	"github.com/golang/mock/gomock"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -132,7 +132,7 @@ func TestNotifyOwnersHelper(t *testing.T) {
 			task := tasks["test@google.com"]
 			assert.Loosely(t, task.Recipients, should.Match([]string{"test@google.com"}))
 			assert.Loosely(t, task.Subject, should.Equal("Builder Health For test@google.com - 2 of 4 Are in Bad Health"))
-			expectedBody :=`
+			expectedBody := `
 	<html>
 	<head>
 		<meta charset="utf-8">
@@ -230,8 +230,7 @@ func TestNotifyOwnersHelper(t *testing.T) {
 				GetBuilder(gomock.Any(), proto.MatcherEqual(expectedReq3)).
 				MaxTimes(1).
 				Return(&buildbucketpb.BuilderItem{
-					Metadata: &buildbucketpb.BuilderMetadata{
-					},
+					Metadata: &buildbucketpb.BuilderMetadata{},
 				}, nil)
 			expectedReq4 := &buildbucketpb.GetBuilderRequest{
 				Id: &buildbucketpb.BuilderID{
@@ -247,9 +246,7 @@ func TestNotifyOwnersHelper(t *testing.T) {
 				EXPECT().
 				GetBuilder(gomock.Any(), proto.MatcherEqual(expectedReq4)).
 				MaxTimes(1).
-				Return(&buildbucketpb.BuilderItem{
-
-				}, nil)
+				Return(&buildbucketpb.BuilderItem{}, nil)
 			tasks, err := getNotifyOwnersTasks(c, mockBHN, mockBuildersClient, "chromium")
 			assert.Loosely(t, err, should.BeNil)
 			task := tasks["test@google.com"]
