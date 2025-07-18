@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Typography } from '@mui/material';
+import { Chip, Typography } from '@mui/material';
+import { Box } from '@mui/system';
 import _ from 'lodash';
 
 import sadBass from '@/fleet/assets/pngs/sad_bass.png';
+import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { platformRenderString } from '../hooks/usePlatform';
@@ -25,6 +27,7 @@ export const PlatformNotAvailable = ({
 }: {
   availablePlatforms?: Platform[];
 }) => {
+  const platform = usePlatform();
   return (
     <div
       css={{
@@ -49,13 +52,27 @@ export const PlatformNotAvailable = ({
       </Typography>
 
       {availablePlatforms && availablePlatforms.length > 0 && (
-        <Typography variant="body1" sx={{ marginTop: '30px' }}>
-          try{' '}
-          {availablePlatforms
-            .map(platformRenderString)
-            .map(_.lowerCase)
-            .join(', ')}
-        </Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: '10px',
+            marginTop: '30px',
+            alignItems: 'center',
+          }}
+        >
+          <Typography variant="body1">Try</Typography>
+          {availablePlatforms.map((p) => (
+            <Chip
+              key={p}
+              label={_.lowerCase(platformRenderString(p))}
+              onClick={() => platform.setPlatform(p)}
+              variant="outlined"
+              sx={{
+                fontSize: '1rem',
+              }}
+            />
+          ))}
+        </Box>
       )}
     </div>
   );

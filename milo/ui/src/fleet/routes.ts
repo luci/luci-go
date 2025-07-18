@@ -15,6 +15,7 @@
 import type { RouteObject } from 'react-router';
 
 import { obtainAuthState } from '../common/api/auth_state';
+import { trackedRedirect } from '../generic_libs/tools/react_router_utils/route_utils';
 
 // IMPORTANT:
 // When adding new routes, ensure that the path param does not contain PII.
@@ -76,15 +77,34 @@ export const fleetRoutes: RouteObject[] = [
         lazy: () => import('@/fleet/layouts/fleet_labs_layout'),
         children: [
           {
-            path: 'devices',
+            path: 'p/:platform',
             children: [
               {
                 index: true,
-                lazy: () => import('@/fleet/pages/device_list_page'),
+                // If someone goes to /p/chromeos/, default to the device list.
+                loader: ({ params: { platform } }) =>
+                  trackedRedirect({
+                    contentGroup: 'fleet',
+                    from: `/ui/fleet/labs/p/${platform}`,
+                    to: `/ui/fleet/labs/p/${platform}/devices`,
+                  }),
               },
               {
-                path: ':id',
-                lazy: () => import('@/fleet/pages/device_details_page'),
+                path: 'devices',
+                children: [
+                  {
+                    index: true,
+                    lazy: () => import('@/fleet/pages/device_list_page'),
+                  },
+                  {
+                    path: ':id',
+                    lazy: () => import('@/fleet/pages/device_details_page'),
+                  },
+                ],
+              },
+              {
+                path: 'repairs',
+                lazy: () => import('@/fleet/pages/repairs'),
               },
             ],
           },
@@ -105,10 +125,29 @@ export const fleetRoutes: RouteObject[] = [
             ),
           },
           { path: 'sandbox', lazy: () => import('@/fleet/pages/sandbox_page') },
+
+          // Redirects we added for locations where pages used to live.
+          {
+            path: 'devices/:id?',
+            loader: ({ params }) =>
+              trackedRedirect({
+                contentGroup: 'fleet',
+                from: `/ui/fleet/labs/devices${params.id ? `/${params.id}` : ''}`,
+                to: `/ui/fleet/labs/p/chromeos/devices${
+                  params.id ? `/${params.id}` : ''
+                }`,
+              }),
+          },
           {
             path: 'repairs/:platform',
-            lazy: () => import('@/fleet/pages/repairs'),
+            loader: ({ params }) =>
+              trackedRedirect({
+                contentGroup: 'fleet',
+                from: `/ui/fleet/labs/repairs/${params.platform}`,
+                to: `/ui/fleet/labs/p/${params.platform}/repairs`,
+              }),
           },
+          // End redirects
         ],
       },
       {

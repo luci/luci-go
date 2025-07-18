@@ -33,10 +33,12 @@ import {
   stringifyFilters,
 } from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
 import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { useDevices } from '@/fleet/hooks/use_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { MainMetricsContainer } from '@/fleet/pages/device_list_page/main_metrics';
@@ -48,6 +50,7 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import {
   CountDevicesRequest,
   ListDevicesRequest,
+  Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { dimensionsToFilterOptions, filterOptionsPlaceholder } from './helpers';
@@ -253,6 +256,7 @@ export const DeviceListPage = () => {
 };
 
 export function Component() {
+  const { platform } = usePlatform();
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
       <FleetHelmet pageTitle="Device List" />
@@ -262,7 +266,11 @@ export function Component() {
         key="fleet-device-list-page"
       >
         <LoggedInBoundary>
-          <DeviceListPage />
+          {platform !== Platform.CHROMEOS ? (
+            <PlatformNotAvailable availablePlatforms={[Platform.CHROMEOS]} />
+          ) : (
+            <DeviceListPage />
+          )}
         </LoggedInBoundary>
       </RecoverableLoggerErrorBoundary>
     </TrackLeafRoutePageView>

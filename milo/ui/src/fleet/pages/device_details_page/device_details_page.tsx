@@ -28,6 +28,8 @@ import { SshTip } from '@/fleet/components/actions/ssh/ssh_tip';
 import { RecoverableLoggerErrorBoundary } from '@/fleet/components/error_handling';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
+import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import {
   extractDutState,
@@ -37,6 +39,7 @@ import {
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { BotData } from './bot_data';
 import { DeviceDimensions } from './device_dimensions';
@@ -285,6 +288,7 @@ export const DeviceDetailsPage = () => {
 
 export function Component() {
   const { id = '' } = useParams();
+  const { platform } = usePlatform();
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-details">
       <RecoverableLoggerErrorBoundary
@@ -294,7 +298,11 @@ export function Component() {
       >
         <FleetHelmet pageTitle={`${id ? `${id} | ` : ''}Device Details`} />
         <LoggedInBoundary>
-          <DeviceDetailsPage />
+          {platform !== Platform.CHROMEOS ? (
+            <PlatformNotAvailable availablePlatforms={[Platform.CHROMEOS]} />
+          ) : (
+            <DeviceDetailsPage />
+          )}
         </LoggedInBoundary>
       </RecoverableLoggerErrorBoundary>
     </TrackLeafRoutePageView>
