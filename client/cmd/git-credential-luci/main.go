@@ -110,6 +110,9 @@ func main() {
 	}
 
 	ctx := gologger.StdConfig.Use(context.Background())
+	if debugLogEnabled() {
+		ctx = logging.SetLevel(ctx, logging.Debug)
+	}
 	a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 
 	switch flag.Args()[0] {
@@ -229,6 +232,10 @@ func main() {
 		// receives any other operation, it should silently ignore the
 		// request."
 	}
+}
+
+func debugLogEnabled() bool {
+	return os.Getenv("LUCI_AUTH_DEBUG") != ""
 }
 
 func reAuthEnabled() bool {
