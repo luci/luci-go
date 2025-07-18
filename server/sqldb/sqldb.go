@@ -25,6 +25,9 @@ import (
 
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/secrets"
+
+	// Load the driver for the Go port of Sqlite.
+	_ "modernc.org/sqlite"
 )
 
 // ModuleName can be used to refer to this module when declaring dependencies.
@@ -50,6 +53,7 @@ type ModuleOptions struct {
 // which would be hard to use / a configuration "gotcha".
 var schemeMap = map[string]string{
 	"pgx": "postgres",
+	"sqlite": "sqlite",
 }
 
 // Register registers some flags.
@@ -62,8 +66,11 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 	)
 	f.Func(
 		"sqldb-connection-url",
-		`database connection string in format driver://user@hostname:port/databasename`,
+		`database connection string in format driver://user@hostname:port/databasename or the string "sqlite"`,
 		func(connectionString string) error {
+			if connectionString == "sqlite" {
+				connectionString = "sqlite://"
+			}
 			connectionURL, err := url.Parse(connectionString)
 			if err != nil {
 				return err
@@ -85,7 +92,7 @@ func makeDBURI(newScheme string, dbConnectionURL *url.URL, password string) (str
 	if newScheme == "" {
 		return "", errors.New(`newScheme (e.g. "postgres" <--- "pgx")  cannot be empty`)
 	}
-	if password == "" {
+	if password == "" && newScheme != "sqlite" {
 		return "", errors.New("password (retrieved from secret) cannot be empty")
 	}
 	if _, hasPassword := dbConnectionURL.User.Password(); hasPassword {
@@ -127,11 +134,23 @@ func (m *sqlDBModule) Initialize(ctx context.Context, _ module.Host, _ module.Ho
 	if m.opts.DBConnectionURL == nil {
 		return nil, errors.New(`must specify connection string via -sqldb-connection-url`)
 	}
-	if m.opts.DBPasswordSecret == "" {
-		return nil, errors.New("must specify password secret via -sqldb-password-secret")
-	}
 	if _, hasPassword := m.opts.DBConnectionURL.User.Password(); hasPassword {
 		return nil, errors.New("password must be specified as a secret, not in the URL")
+	}
+
+	driver := m.opts.DBConnectionURL.Scheme
+	newScheme, ok := schemeMap[driver]
+	if !ok {
+		return nil, fmt.Errorf("scheme %q not recognized", newScheme)
+	}
+
+	if driver == "sqlite" {
+		// Just hardcode memory for now, future versions can do something smarter like sqlite:///path/to/something.db
+		dbConn, err := sql.Open(driver, ":memory:")
+		if err != nil {
+			return nil, errors.Fmt("initializing sqldb module: connecting to database: %w", err)
+		}
+		return UseDB(ctx, dbConn), nil
 	}
 
 	secretStore := secrets.CurrentStore(ctx)
@@ -140,11 +159,6 @@ func (m *sqlDBModule) Initialize(ctx context.Context, _ module.Host, _ module.Ho
 		return nil, errors.Fmt("initializing sqldb module: getting secret: %w", err)
 	}
 
-	driver := m.opts.DBConnectionURL.Scheme
-	newScheme, ok := schemeMap[driver]
-	if !ok {
-		return nil, fmt.Errorf("scheme %q not recognized", newScheme)
-	}
 	dbURI, err := makeDBURI(newScheme, m.opts.DBConnectionURL, string(passwordSecret.Active))
 	if err != nil {
 		return nil, errors.Fmt("initializing sqldb module: constructing URI: %w", err)

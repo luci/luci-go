@@ -15,6 +15,8 @@
 package sqldb
 
 import (
+	"context"
+	"database/sql"
 	"net/url"
 	"testing"
 
@@ -54,4 +56,17 @@ func TestMakeDBURI(t *testing.T) {
 			assert.That(t, actualURL, should.Match(tt.outURL))
 		})
 	}
+}
+
+func TestWithMagicSqliteDriver(t *testing.T) {
+	t.Parallel()
+
+	db, err := sql.Open("sqlite", ":memory:")
+	assert.NoErr(t, err)
+
+	ctx := context.Background()
+	ctx = UseDB(ctx, db)
+
+	gotDB := MustGetDB(ctx)
+	assert.Loosely(t, gotDB, should.NotBeNil)
 }
