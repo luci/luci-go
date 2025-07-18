@@ -13,8 +13,14 @@
 // limitations under the License.
 
 import { List } from '@mui/material';
+import { useMemo } from 'react';
 
-import { ExpandableListItem } from './expandable_list_item.tsx';
+import {
+  TestVerdict_Status,
+  testVerdict_StatusToJSON,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb.js';
+
+import { ExpandableListItem } from './expandable_list_item';
 import { TestNavigationTreeNode } from './types';
 
 interface DrawerTreeItemProps {
@@ -48,26 +54,57 @@ export function DrawerTreeItem({
     }
   };
 
-  const getSecondaryText = () => {
-    if (node.failedTests === undefined || node.totalTests === undefined) {
-      return undefined;
-    }
+  const testStatusTotals = useMemo(() => {
+    return {
+      [TestVerdict_Status.FAILED]: node.failedTests,
+      [TestVerdict_Status.EXECUTION_ERRORED]: node.errorTests,
+      [TestVerdict_Status.PRECLUDED]: node.precludedTests,
+      [TestVerdict_Status.FLAKY]: node.flakyTests,
+      [TestVerdict_Status.SKIPPED]: node.skippedTests,
+      [TestVerdict_Status.PASSED]: node.passedTests,
+      [TestVerdict_Status.STATUS_UNSPECIFIED]: node.unknownTests,
+    };
+  }, [node]); // Dependency array: Recalculate only if 'node' changes
+  const countsArray: { type: TestVerdict_Status; value: number }[] = [];
+
+  for (const [key, count] of Object.entries(testStatusTotals)) {
+    const testVerdict: TestVerdict_Status | undefined = parseInt(key);
+    countsArray.push({ type: testVerdict, value: count });
+  }
+  countsArray.sort((a, b) => b.value - a.value);
+
+  const getMostCommonStatus = () => {
+    return countsArray[0].type;
+  };
+
+  const getStatus = () => {
     if (hasChildren) {
-      return `${node.failedTests || 0} failed (${node.totalTests || 0} total)`;
+      return getMostCommonStatus();
     } else {
-      if (node.failedTests === 0) {
-        return 'Passed';
-      } else {
-        return 'Failed';
-      }
+      return node.testVariant?.statusV2;
     }
   };
 
+  const getSecondaryText = () => {
+    if (hasChildren) {
+      const secondHighestCount =
+        countsArray[1].value === 0
+          ? ''
+          : `, ${countsArray[1].value} ${testVerdict_StatusToJSON(countsArray[1].type)}`;
+      return `${countsArray[0].value} ${testVerdict_StatusToJSON(countsArray[0].type)}${secondHighestCount}`;
+    } else {
+      return node.testVariant?.statusV2
+        ? testVerdict_StatusToJSON(node.testVariant?.statusV2)
+        : '';
+    }
+  };
   return (
     <ExpandableListItem
       isExpanded={isExpanded}
       label={node.label}
+      status={getStatus()}
       secondaryText={getSecondaryText()}
+      totalTests={node.totalTests}
       onClick={handleItemClick}
       isSelected={
         currentTestId === node.testVariant?.testId &&

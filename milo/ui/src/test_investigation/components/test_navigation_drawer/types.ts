@@ -19,6 +19,12 @@ export interface TestNavigationTreeGroup {
   label: string;
   totalTests: number;
   failedTests: number;
+  passedTests: number;
+  flakyTests: number;
+  skippedTests: number;
+  errorTests: number;
+  precludedTests: number;
+  unknownTests: number;
   nodes: TestNavigationTreeNode[];
 }
 
@@ -29,5 +35,11 @@ export interface TestNavigationTreeNode {
   children?: TestNavigationTreeNode[]; // undefined for leaf nodes.
   totalTests: number;
   failedTests: number;
+  passedTests: number;
+  flakyTests: number;
+  skippedTests: number;
+  errorTests: number;
+  precludedTests: number;
+  unknownTests: number;
   testVariant?: TestVariant; // present on leaf nodes only.
 }

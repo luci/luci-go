@@ -22,8 +22,13 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
+import {
+  TestVerdict_Status,
+  testVerdict_StatusToJSON,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
+
 import { DrawerTreeItem } from './drawer_tree_item';
-import { ExpandableListItem } from './expandable_list_item.tsx';
+import { ExpandableListItem } from './expandable_list_item';
 import { TestNavigationTreeGroup, TestNavigationTreeNode } from './types';
 
 interface DrawerContentProps {
@@ -66,6 +71,32 @@ export function DrawerContent({
 
   const toggleGroup = (groupId: string) => {
     setOpenGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
+  };
+
+  const getStatusTotalsForGroup = (group: TestNavigationTreeGroup) => {
+    const testStatusTotals = {
+      [TestVerdict_Status.FAILED]: group.failedTests,
+      [TestVerdict_Status.EXECUTION_ERRORED]: group.errorTests,
+      [TestVerdict_Status.PRECLUDED]: group.precludedTests,
+      [TestVerdict_Status.FLAKY]: group.flakyTests,
+      [TestVerdict_Status.SKIPPED]: group.skippedTests,
+      [TestVerdict_Status.PASSED]: group.passedTests,
+      [TestVerdict_Status.STATUS_UNSPECIFIED]: group.unknownTests,
+    };
+    const countsArray: { type: TestVerdict_Status; value: number }[] = [];
+
+    for (const [key, count] of Object.entries(testStatusTotals)) {
+      const testVerdict: TestVerdict_Status | undefined = parseInt(key);
+      countsArray.push({ type: testVerdict, value: count });
+    }
+    countsArray.sort((a, b) => b.value - a.value);
+    const secondHighestCount =
+      countsArray[1].value === 0
+        ? ''
+        : `, ${countsArray[1].value} ${testVerdict_StatusToJSON(countsArray[1].type)}`;
+    const secondaryText = `${countsArray[0].value} ${testVerdict_StatusToJSON(countsArray[0].type)}${secondHighestCount}`;
+
+    return { status: countsArray[0].type, secondaryText: secondaryText };
   };
 
   return (
@@ -160,8 +191,10 @@ export function DrawerContent({
                     key={group.id}
                     isExpanded={!!openGroups[group.id]}
                     label={group.label}
-                    secondaryText={`${group.failedTests} failed (${group.totalTests} total)`}
                     onClick={() => toggleGroup(group.id)}
+                    totalTests={group.totalTests}
+                    status={getStatusTotalsForGroup(group).status}
+                    secondaryText={getStatusTotalsForGroup(group).secondaryText}
                   >
                     <List dense component="div" disablePadding>
                       {group.nodes.map((node) => (

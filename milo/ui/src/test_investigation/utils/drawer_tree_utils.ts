@@ -196,6 +196,30 @@ export function buildStructuredTree(
               (sum, child) => sum + child.failedTests,
               0,
             ),
+            passedTests: children.reduce(
+              (sum, child) => sum + child.passedTests,
+              0,
+            ),
+            flakyTests: children.reduce(
+              (sum, child) => sum + child.flakyTests,
+              0,
+            ),
+            skippedTests: children.reduce(
+              (sum, child) => sum + child.skippedTests,
+              0,
+            ),
+            errorTests: children.reduce(
+              (sum, child) => sum + child.errorTests,
+              0,
+            ),
+            precludedTests: children.reduce(
+              (sum, child) => sum + child.precludedTests,
+              0,
+            ),
+            unknownTests: children.reduce(
+              (sum, child) => sum + child.unknownTests,
+              0,
+            ),
             totalTests: children.reduce(
               (sum, child) => sum + child.totalTests,
               0,
@@ -212,6 +236,15 @@ export function buildStructuredTree(
         level: level,
         totalTests: 1,
         failedTests: variants[0].statusV2 === TestVerdict_Status.FAILED ? 1 : 0,
+        passedTests: variants[0].statusV2 === TestVerdict_Status.PASSED ? 1 : 0,
+        flakyTests: variants[0].statusV2 === TestVerdict_Status.FLAKY ? 1 : 0,
+        skippedTests:
+          variants[0].statusV2 === TestVerdict_Status.SKIPPED ? 1 : 0,
+        errorTests:
+          variants[0].statusV2 === TestVerdict_Status.EXECUTION_ERRORED ? 1 : 0,
+        precludedTests:
+          variants[0].statusV2 === TestVerdict_Status.PRECLUDED ? 1 : 0,
+        unknownTests: variants[0].statusV2 === undefined ? 1 : 0,
         testVariant: variants[0],
       });
     });
@@ -254,6 +287,15 @@ export function buildFlatTreeFromEntries(
         level: level,
         totalTests: 1,
         failedTests: entry.value.statusV2 === TestVerdict_Status.FAILED ? 1 : 0,
+        passedTests: entry.value.statusV2 === TestVerdict_Status.PASSED ? 1 : 0,
+        flakyTests: entry.value.statusV2 === TestVerdict_Status.FLAKY ? 1 : 0,
+        skippedTests:
+          entry.value.statusV2 === TestVerdict_Status.SKIPPED ? 1 : 0,
+        errorTests:
+          entry.value.statusV2 === TestVerdict_Status.EXECUTION_ERRORED ? 1 : 0,
+        precludedTests:
+          entry.value.statusV2 === TestVerdict_Status.PRECLUDED ? 1 : 0,
+        unknownTests: entry.value.statusV2 === undefined ? 1 : 0,
         testVariant: entry.value,
       });
     } else {
@@ -277,6 +319,25 @@ export function buildFlatTreeFromEntries(
           (sum, child) => sum + child.failedTests,
           0,
         ),
+        passedTests: children.reduce(
+          (sum, child) => sum + child.passedTests,
+          0,
+        ),
+        flakyTests: children.reduce((sum, child) => sum + child.flakyTests, 0),
+        skippedTests: children.reduce(
+          (sum, child) => sum + child.skippedTests,
+          0,
+        ),
+        errorTests: children.reduce((sum, child) => sum + child.errorTests, 0),
+        precludedTests: children.reduce(
+          (sum, child) => sum + child.precludedTests,
+          0,
+        ),
+        unknownTests: children.reduce(
+          (sum, child) => sum + child.unknownTests,
+          0,
+        ),
+
         children: children,
       });
     }
@@ -372,6 +433,15 @@ export function buildFailureReasonTree(
         nodes,
         totalTests: nodes.reduce((sum, child) => sum + child.totalTests, 0),
         failedTests: nodes.reduce((sum, child) => sum + child.failedTests, 0),
+        passedTests: nodes.reduce((sum, child) => sum + child.passedTests, 0),
+        flakyTests: nodes.reduce((sum, child) => sum + child.flakyTests, 0),
+        skippedTests: nodes.reduce((sum, child) => sum + child.skippedTests, 0),
+        errorTests: nodes.reduce((sum, child) => sum + child.errorTests, 0),
+        precludedTests: nodes.reduce(
+          (sum, child) => sum + child.precludedTests,
+          0,
+        ),
+        unknownTests: nodes.reduce((sum, child) => sum + child.unknownTests, 0),
       };
     },
   );

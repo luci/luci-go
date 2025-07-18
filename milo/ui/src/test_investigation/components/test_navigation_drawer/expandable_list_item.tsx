@@ -26,11 +26,17 @@ import {
 } from '@mui/material';
 import React from 'react';
 
+import { getStatusStyle } from '@/common/styles/status_styles';
+import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
+import { getSemanticStatusFromVerdict } from '@/test_investigation/utils/drawer_tree_utils';
+
 interface ExpandableListItemProps {
   isExpanded: boolean;
   label: string;
-  secondaryText?: string;
+  status?: TestVerdict_Status; // Undefined for non-leaf nodes.
   children?: React.ReactNode;
+  secondaryText?: string;
+  totalTests: number;
   isSelected?: boolean;
   onClick?: () => void;
   level?: number;
@@ -39,17 +45,20 @@ interface ExpandableListItemProps {
 export const ExpandableListItem: React.FC<ExpandableListItemProps> = ({
   isExpanded,
   label,
-  secondaryText,
   children,
+  status,
+  secondaryText,
+  totalTests,
   isSelected,
   onClick,
   level = 0,
 }) => {
   const paddingLeft = level * 10 + 1;
 
-  if (secondaryText?.startsWith('0 failed')) {
-    secondaryText = secondaryText.replace('0 failed', 'Passed');
-  }
+  // For leaf nodes, just get the correct style for the test verdict status.
+  const style = status
+    ? getStatusStyle(getSemanticStatusFromVerdict(status))
+    : undefined;
 
   return (
     <Box sx={{ pt: 0 }}>
@@ -93,28 +102,39 @@ export const ExpandableListItem: React.FC<ExpandableListItemProps> = ({
             </Typography>
           }
           secondary={
+            status &&
             secondaryText && (
               <Chip
                 label={
-                  <>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 0,
+                      my: '4px',
+                    }}
+                  >
                     <Typography variant="caption">
-                      {secondaryText.split('(')[0]}
+                      {secondaryText.charAt(0).toUpperCase() +
+                        secondaryText.slice(1).toLowerCase()}
                     </Typography>
-                    {secondaryText.includes('(') && (
+                    {children && (
                       <Typography
                         variant="caption"
-                        sx={{ fontStyle: 'italic' }}
-                        color="grey"
+                        sx={{ fontStyle: 'italic', color: 'grey' }}
                       >
-                        {'(' + secondaryText.split('(')[1]}
+                        {totalTests} tests ran
                       </Typography>
                     )}
-                  </>
+                  </Box>
                 }
                 sx={{
                   ml: children ? '8px' : undefined,
+                  backgroundColor: style?.backgroundColor || 'warning',
+                  height: children ? '40px' : '24px',
+                  borderRadius: '4px',
+                  '& .MuiChip-label': { px: '8px' },
                 }}
-                color={secondaryText.startsWith('Passed') ? 'success' : 'error'}
               ></Chip>
             )
           }
