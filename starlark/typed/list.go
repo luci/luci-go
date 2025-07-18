@@ -121,7 +121,7 @@ func (l *List) Binary(op syntax.Token, y starlark.Value, side starlark.Side) (st
 		// Convert regular lists to typed lists first.
 		if yl, ok := y.(*starlark.List); ok {
 			vals := make([]starlark.Value, yl.Len())
-			for i := 0; i < yl.Len(); i++ {
+			for i := range yl.Len() {
 				vals[i] = yl.Index(i)
 			}
 			asTyped, err := NewList(l.itemT, vals)

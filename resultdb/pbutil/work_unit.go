@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/validate"
+
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 

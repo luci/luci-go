@@ -34,7 +34,7 @@ func newStarlarkList(l *Loader, fd protoreflect.FieldDescriptor) *typed.List {
 // Panics if type of 'list' (or some of its items) doesn't match 'fd'.
 func toStarlarkList(l *Loader, fd protoreflect.FieldDescriptor, list protoreflect.List) *typed.List {
 	vals := make([]starlark.Value, list.Len())
-	for i := 0; i < list.Len(); i++ {
+	for i := range list.Len() {
 		vals[i] = toStarlarkSingular(l, fd, list.Get(i))
 	}
 	tl, err := typed.NewList(converter(l, fd), vals)
@@ -53,7 +53,7 @@ func assignProtoList(m protoreflect.Message, fd protoreflect.FieldDescriptor, li
 	if protoList.Len() != 0 {
 		panic(fmt.Errorf("internal error: the proto list is not empty"))
 	}
-	for i := 0; i < list.Len(); i++ {
+	for i := range list.Len() {
 		protoList.Append(toProtoSingular(fd, list.Index(i)))
 	}
 }

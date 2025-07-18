@@ -111,14 +111,14 @@ func getConfigResponse(ctx context.Context, m AuthMethod) (*configResponse, erro
 	var err error
 
 	if m != nil {
-		out.AuthStateURL, err = m.StateEndpointURL(ctx)
+		out.AuthStateURL, err = auth.HasStateEndpoint(m).StateEndpointURL(ctx)
 		switch err {
 		case nil:
-			out.LoginURL, err = m.LoginURL(ctx, "/rpcexplorer/")
+			out.LoginURL, err = auth.UsersAPI(m).LoginURL(ctx, "/rpcexplorer/")
 			if err != nil {
 				return nil, err
 			}
-			out.LogoutURL, err = m.LogoutURL(ctx, "/rpcexplorer/")
+			out.LogoutURL, err = auth.UsersAPI(m).LogoutURL(ctx, "/rpcexplorer/")
 			if err != nil {
 				return nil, err
 			}

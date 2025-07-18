@@ -278,7 +278,7 @@ func (l *Loader) initMessageTypeLocked(desc protoreflect.MessageDescriptor) *Mes
 // injectMessageTypesLocked instantiates constructors for messages in 'msgs' and
 // adds them to the dict 'd'.
 func (l *Loader) injectMessageTypesLocked(d starlark.StringDict, msgs protoreflect.MessageDescriptors) {
-	for i := 0; i < msgs.Len(); i++ {
+	for i := range msgs.Len() {
 		desc := msgs.Get(i)
 		// map<...> fields are represented by magical map message types. We do not
 		// expose them on Starlark level and represent maps as dicts instead.
@@ -291,9 +291,9 @@ func (l *Loader) injectMessageTypesLocked(d starlark.StringDict, msgs protorefle
 // injectEnumValuesLocked takes enum constants defined in 'enums' and puts them
 // directly into the given dict as integers.
 func (l *Loader) injectEnumValuesLocked(d starlark.StringDict, enums protoreflect.EnumDescriptors) {
-	for i := 0; i < enums.Len(); i++ {
+	for i := range enums.Len() {
 		vals := enums.Get(i).Values()
-		for j := 0; j < vals.Len(); j++ {
+		for j := range vals.Len() {
 			val := vals.Get(j)
 			d[string(val.Name())] = starlark.MakeInt(int(val.Number()))
 		}

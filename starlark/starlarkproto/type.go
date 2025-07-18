@@ -54,7 +54,7 @@ func (t *MessageType) initLocked() {
 	fields := t.desc.Fields() // note: this already includes oneof alternatives
 	t.fields = make(map[string]protoreflect.FieldDescriptor, fields.Len())
 	t.keys = make([]string, fields.Len())
-	for i := 0; i < fields.Len(); i++ {
+	for i := range fields.Len() {
 		fd := fields.Get(i)
 		key := string(fd.Name())
 		t.fields[key] = fd

@@ -284,7 +284,7 @@ func (m *Message) SetField(name string, val starlark.Value) error {
 	// When assigning to a oneof alternative, clear its all other alternatives.
 	if oneof := fd.ContainingOneof(); oneof != nil {
 		alts := oneof.Fields()
-		for i := 0; i < alts.Len(); i++ {
+		for i := range alts.Len() {
 			if altfd := alts.Get(i); altfd != fd {
 				delete(m.fields, string(altfd.Name()))
 			}
