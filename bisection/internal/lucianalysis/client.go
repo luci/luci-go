@@ -81,7 +81,7 @@ WITH
       -- The passing tail is allowed to be slightly non-deterministic, with failure rate less than 0.5%.
       AND previous_failure_rate < 0.005
       AND segments[0].counts.unexpected_passed_results = 0
-      AND segments[0].start_hour >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
+      AND segments[1].end_hour >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
       -- We only consider test failures with non-skipped result in the last 24 hour.
       AND segments[0].end_hour >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 24 HOUR)
     GROUP BY ref_hash, builder, nominal_lower, nominal_upper
