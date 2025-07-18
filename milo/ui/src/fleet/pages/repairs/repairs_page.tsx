@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import DoneIcon from '@mui/icons-material/Done';
 import ErrorIcon from '@mui/icons-material/Error';
+import WarningIcon from '@mui/icons-material/Warning';
 import { Alert, Chip, Typography } from '@mui/material';
 import { GridColDef } from '@mui/x-data-grid';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
@@ -64,16 +66,34 @@ const COLUMNS: Record<string, GridColDef> = {
     renderCell: (x) => {
       const label = repairMetric_PriorityToJSON(x.value);
 
+      let Icon: React.ReactNode = null;
       switch (x.value as RepairMetric_Priority) {
         case RepairMetric_Priority.NICE:
+          Icon = <DoneIcon sx={{ color: colors.green[400] }} />;
+          break;
         case RepairMetric_Priority.MISSING_DATA:
         case RepairMetric_Priority.DEVICES_REMOVED:
-          return label;
         case RepairMetric_Priority.WATCH:
-          return 'WATCH ICON' + label;
+          Icon = <WarningIcon sx={{ color: colors.yellow[900] }} />;
+          break;
         case RepairMetric_Priority.BREACHED:
-          return 'ERROR ICON' + label;
+          Icon = <ErrorIcon sx={{ color: colors.red[500] }} />;
+          break;
       }
+
+      return (
+        <div
+          css={{
+            gap: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            height: '100%',
+          }}
+        >
+          {Icon}
+          <Typography>{label}</Typography>
+        </div>
+      );
     },
   },
   labName: {
