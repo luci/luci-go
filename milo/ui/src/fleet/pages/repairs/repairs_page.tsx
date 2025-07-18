@@ -103,7 +103,7 @@ const COLUMNS: Record<string, GridColDef> = {
   },
 };
 
-export const DeviceListPage = () => {
+export const RepairListPage = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [orderByParam, updateOrderByParam] = useOrderByParam();
   const pagerCtx = usePagerContext({
@@ -397,7 +397,7 @@ export function Component() {
         key="fleet-repairs"
       >
         <LoggedInBoundary>
-          <DeviceListPage />
+          <RepairListPage />
         </LoggedInBoundary>
       </RecoverableLoggerErrorBoundary>
     </TrackLeafRoutePageView>
