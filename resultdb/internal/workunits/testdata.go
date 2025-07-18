@@ -38,12 +38,17 @@ type Builder struct {
 // The builder is initialized with some default values.
 func NewBuilder(rootInvocationID rootinvocations.ID, workUnitID string) *Builder {
 	id := ID{RootInvocationID: rootInvocationID, WorkUnitID: workUnitID}
+	var parentID spanner.NullString
+	// Default to creating the work unit under the work unit "root".
+	if workUnitID != "root" {
+		parentID = spanner.NullString{Valid: true, StringVal: "root"}
+	}
 	return &Builder{
-		// Default to populating all fields (except parent work unit ID as it is not known),
-		// this helps maximise test coverage.
+		// Default to populating all fields. This helps maximise test coverage.
 		row: WorkUnitRow{
 			ID:                    id,
 			SecondaryIndexShardID: id.shardID(secondaryIndexShardCount),
+			ParentWorkUnitID:      parentID,
 			State:                 pb.WorkUnit_FINALIZED,
 			Realm:                 "testproject:testrealm",
 			CreateTime:            time.Date(2025, 4, 25, 1, 2, 3, 4000, time.UTC),
@@ -259,5 +264,18 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		"ExtendedProperties":                spanutil.Compressed(pbutil.MustMarshal(&invocationspb.ExtendedProperties{ExtendedProperties: w.ExtendedProperties})),
 	})
 
-	return []*spanner.Mutation{workUnitMutation, legacyInvMutation}
+	var parentInvocationID invocations.ID
+	if w.ParentWorkUnitID.Valid {
+		// The parent is another work unit.
+		parentInvocationID = ID{RootInvocationID: w.ID.RootInvocationID, WorkUnitID: w.ParentWorkUnitID.StringVal}.LegacyInvocationID()
+	} else {
+		// The parent is the root invocation.
+		parentInvocationID = w.ID.RootInvocationID.LegacyInvocationID()
+	}
+	includeMutation := spanutil.InsertMap("IncludedInvocations", map[string]any{
+		"InvocationId":         parentInvocationID,
+		"IncludedInvocationId": w.ID.LegacyInvocationID(),
+	})
+
+	return []*spanner.Mutation{workUnitMutation, legacyInvMutation, includeMutation}
 }

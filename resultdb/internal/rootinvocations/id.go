@@ -20,6 +20,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 )
@@ -77,6 +78,20 @@ func (id ID) Key(suffix ...any) spanner.Key {
 	ret[0] = id.RowID()
 	copy(ret[1:], suffix)
 	return ret
+}
+
+// AllShardIDs returns the set of all shard IDs for this root invocation.
+func (id ID) AllShardIDs() ShardIDSet {
+	result := make(ShardIDSet)
+	for i := 0; i < RootInvocationShardCount; i++ {
+		result.Add(ShardID{RootInvocationID: id, ShardIndex: i})
+	}
+	return result
+}
+
+// ID returns the legacy invocation ID corresponding to this root invocation.
+func (id ID) LegacyInvocationID() invocations.ID {
+	return invocations.ID(fmt.Sprintf("root:%s", string(id)))
 }
 
 // MustParseName parses a root invocation resource name.

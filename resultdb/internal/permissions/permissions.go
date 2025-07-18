@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/permissions/permissionstype"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/internal/workunits"
@@ -95,6 +94,17 @@ func VerifyRootInvocation(ctx context.Context, id rootinvocations.ID, permission
 	return nil
 }
 
+type AccessLevel int
+
+const (
+	// The user has no access to the resource.
+	NoAccess AccessLevel = iota
+	// The user has limited access to the resource (e.g. only masked access).
+	LimitedAccess
+	// The user has full access to the resource.
+	FullAccess
+)
+
 // QueryWorkUnitAccessOptions defines the permissions required to reach a certain access level
 // on the work unit.
 type QueryWorkUnitAccessOptions struct {
@@ -116,10 +126,10 @@ type QueryWorkUnitAccessOptions struct {
 // disclosing its existence, even to unauthenticated callers). A NotFound appstatus error
 // may also be returned if the work unit is not found, if it was necessary to check the
 // work unit realm.
-func QueryWorkUnitAccess(ctx context.Context, id workunits.ID, opts QueryWorkUnitAccessOptions) (accessLevel permissionstype.AccessLevel, err error) {
+func QueryWorkUnitAccess(ctx context.Context, id workunits.ID, opts QueryWorkUnitAccessOptions) (accessLevel AccessLevel, err error) {
 	result, err := QueryWorkUnitsAccess(ctx, []workunits.ID{id}, opts)
 	if err != nil {
-		return permissionstype.NoAccess, err
+		return NoAccess, err
 	}
 	return result[0], nil
 }
@@ -131,7 +141,7 @@ func QueryWorkUnitAccess(ctx context.Context, id workunits.ID, opts QueryWorkUni
 // disclosing its existence, even to unauthenticated callers). A NotFound appstatus error
 // may also be returned if any work unit is not found, if it was necessary to check the
 // work unit realm.
-func QueryWorkUnitsAccess(ctx context.Context, ids []workunits.ID, opts QueryWorkUnitAccessOptions) (accessLevels []permissionstype.AccessLevel, err error) {
+func QueryWorkUnitsAccess(ctx context.Context, ids []workunits.ID, opts QueryWorkUnitAccessOptions) (accessLevels []AccessLevel, err error) {
 	ctx, ts := tracing.Start(ctx, "resultdb.permissions.QueryWorkUnitsAccess")
 	defer func() { tracing.End(ts, err) }()
 
@@ -164,7 +174,7 @@ func QueryWorkUnitsAccess(ctx context.Context, ids []workunits.ID, opts QueryWor
 	}
 	if allowed {
 		// Break out early, we have full access to all work units.
-		return repeatAccessLevel(permissionstype.FullAccess, len(ids)), nil
+		return repeatAccessLevel(FullAccess, len(ids)), nil
 	}
 	allowed, err = auth.HasPermission(ctx, opts.Limited, rootInvRealm, nil)
 	if err != nil {
@@ -179,7 +189,7 @@ func QueryWorkUnitsAccess(ctx context.Context, ids []workunits.ID, opts QueryWor
 			return nil, err
 		}
 
-		accessLevels = make([]permissionstype.AccessLevel, len(ids))
+		accessLevels = make([]AccessLevel, len(ids))
 		for i := range ids {
 			allowed, err := auth.HasPermission(ctx, opts.UpgradeLimitedToFull, workUnitRealms[i], nil)
 			if err != nil {
@@ -187,18 +197,18 @@ func QueryWorkUnitsAccess(ctx context.Context, ids []workunits.ID, opts QueryWor
 				return nil, err
 			}
 			if allowed {
-				accessLevels[i] = permissionstype.FullAccess
+				accessLevels[i] = FullAccess
 			} else {
-				accessLevels[i] = permissionstype.LimitedAccess
+				accessLevels[i] = LimitedAccess
 			}
 		}
 		return accessLevels, nil
 	}
-	return repeatAccessLevel(permissionstype.NoAccess, len(ids)), nil
+	return repeatAccessLevel(NoAccess, len(ids)), nil
 }
 
-func repeatAccessLevel(accessLevel permissionstype.AccessLevel, n int) []permissionstype.AccessLevel {
-	ret := make([]permissionstype.AccessLevel, n)
+func repeatAccessLevel(accessLevel AccessLevel, n int) []AccessLevel {
+	ret := make([]AccessLevel, n)
 	for i := range ret {
 		ret[i] = accessLevel
 	}

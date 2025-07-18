@@ -23,8 +23,9 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
-	"go.chromium.org/luci/resultdb/internal/permissions/permissionstype"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -45,7 +46,7 @@ func (s *resultDBServer) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequ
 	if err != nil {
 		return nil, err
 	}
-	if accessLevel == permissionstype.NoAccess {
+	if accessLevel == permissions.NoAccess {
 		return nil, appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s (or %s) on root invocation %q`,
 			rdbperms.PermGetWorkUnit, rdbperms.PermListLimitedWorkUnits, id.RootInvocationID.Name())
 	}
@@ -55,7 +56,7 @@ func (s *resultDBServer) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequ
 	}
 
 	readMask := workunits.ExcludeExtendedProperties
-	if in.View == pb.WorkUnitView_WORK_UNIT_VIEW_FULL && accessLevel == permissionstype.FullAccess {
+	if in.View == pb.WorkUnitView_WORK_UNIT_VIEW_FULL && accessLevel == permissions.FullAccess {
 		readMask = workunits.AllFields
 	}
 
@@ -65,13 +66,28 @@ func (s *resultDBServer) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequ
 		return nil, err
 	}
 
-	return wu.ToProto(accessLevel, in.View), nil
+	childWUs, err := workunits.ReadChildren(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	childInvs, err := invocations.ReadIncluded(ctx, id.LegacyInvocationID())
+	if err != nil {
+		return nil, err
+	}
+
+	inputs := masking.WorkUnitFields{
+		Row:              wu,
+		ChildWorkUnits:   childWUs,
+		ChildInvocations: childInvs.SortByRowID(),
+	}
+	return masking.WorkUnit(inputs, accessLevel, in.View), nil
 }
 
-func queryWorkUnitAccess(ctx context.Context, in *pb.GetWorkUnitRequest) (id workunits.ID, accessLevel permissionstype.AccessLevel, err error) {
+func queryWorkUnitAccess(ctx context.Context, in *pb.GetWorkUnitRequest) (id workunits.ID, accessLevel permissions.AccessLevel, err error) {
 	rootInvocationID, workUnitID, err := pbutil.ParseWorkUnitName(in.Name)
 	if err != nil {
-		return workunits.ID{}, permissionstype.NoAccess, appstatus.BadRequest(errors.Fmt("name: %w", err))
+		return workunits.ID{}, permissions.NoAccess, appstatus.BadRequest(errors.Fmt("name: %w", err))
 	}
 	id = workunits.ID{
 		RootInvocationID: rootinvocations.ID(rootInvocationID),
@@ -85,7 +101,7 @@ func queryWorkUnitAccess(ctx context.Context, in *pb.GetWorkUnitRequest) (id wor
 	}
 	accessLevel, err = permissions.QueryWorkUnitAccess(ctx, id, opts)
 	if err != nil {
-		return workunits.ID{}, permissionstype.NoAccess, err
+		return workunits.ID{}, permissions.NoAccess, err
 	}
 	return id, accessLevel, nil
 }

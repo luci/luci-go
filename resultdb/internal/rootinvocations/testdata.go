@@ -20,6 +20,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -249,5 +250,32 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 			"IsSourcesFinal":        r.IsSourcesFinal,
 		}))
 	}
+
+	// Insert legacy invocation corresponding to root invocation.
+	ms = append(ms, spanutil.InsertMap("Invocations", map[string]interface{}{
+		"InvocationId":                      r.RootInvocationID.LegacyInvocationID(),
+		"Type":                              invocations.Root,
+		"ShardId":                           r.RootInvocationID.shardID(invocations.Shards),
+		"State":                             r.State,
+		"Realm":                             r.Realm,
+		"InvocationExpirationTime":          time.Unix(0, 0), // unused field, but spanner schema enforce it to be not null.
+		"ExpectedTestResultsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
+		"CreateTime":                        r.CreateTime,
+		"CreatedBy":                         r.CreatedBy,
+		"FinalizeStartTime":                 r.FinalizeStartTime,
+		"FinalizeTime":                      r.FinalizeTime,
+		"Deadline":                          r.Deadline,
+		"Tags":                              r.Tags,
+		"CreateRequestId":                   r.CreateRequestID,
+		"ProducerResource":                  r.ProducerResource,
+		"Properties":                        spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
+		"InheritSources":                    spanner.NullBool{Bool: false, Valid: true}, // A root invocation defines its own sources.
+		"Sources":                           spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
+		"IsSourceSpecFinal":                 r.IsSourcesFinal,
+		"IsExportRoot":                      spanner.NullBool{Bool: true, Valid: true}, // Root invocations are always export roots.
+		"BaselineId":                        r.BaselineID,
+		"Submitted":                         r.Submitted,
+	}))
+
 	return ms
 }

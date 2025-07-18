@@ -488,9 +488,38 @@ func Checkpoint(ctx context.Context, project, resourceID, processID, uniquifier 
 	return spanutil.InsertMap("Checkpoints", values)
 }
 
-// RootInvocation returns Spanner mtuations to create the given root invocation.
-func RootInvocation(row *rootinvocations.RootInvocationRow) []*spanner.Mutation {
+// RootInvocationOnly returns Spanner mutations to create the given root invocation only.
+func RootInvocationOnly(row *rootinvocations.RootInvocationRow) []*spanner.Mutation {
 	return rootinvocations.InsertForTesting(row)
+}
+
+// RootInvocationWithRootWorkUnit returns spanner mutations to create the given root invocation
+// with a default root work unit.
+func RootInvocationWithRootWorkUnit(row *rootinvocations.RootInvocationRow) []*spanner.Mutation {
+	var state pb.WorkUnit_State
+	switch row.State {
+	case pb.RootInvocation_ACTIVE:
+		state = pb.WorkUnit_ACTIVE
+	case pb.RootInvocation_FINALIZING:
+		state = pb.WorkUnit_FINALIZING
+	case pb.RootInvocation_FINALIZED:
+		state = pb.WorkUnit_FINALIZED
+	default:
+		panic(fmt.Sprintf("unrecognised work unit state: %v", row.State))
+	}
+
+	workUnit := workunits.NewBuilder(row.RootInvocationID, "root").
+		WithRealm(row.Realm).
+		WithCreateTime(row.CreateTime).
+		WithCreatedBy(row.CreatedBy).
+		WithDeadline(row.Deadline).
+		WithProducerResource(row.ProducerResource).
+		WithState(state).
+		Build()
+
+	ms := rootinvocations.InsertForTesting(row)
+	ms = append(ms, workunits.InsertForTesting(workUnit)...)
+	return ms
 }
 
 // WorkUnit returns Spanner mutations to create the given work unit.

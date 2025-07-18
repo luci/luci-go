@@ -16,7 +16,6 @@
 package workunits
 
 import (
-	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -26,7 +25,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
-	"go.chromium.org/luci/resultdb/internal/permissions/permissionstype"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -186,53 +184,4 @@ func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *span
 		row["FinalizeStartTime"] = spanner.CommitTimestamp
 	}
 	return spanutil.InsertMap("Invocations", row)
-}
-
-func (w *WorkUnitRow) ToCompleteProto() *pb.WorkUnit {
-	return w.ToProto(permissionstype.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL)
-}
-
-func (w *WorkUnitRow) ToProto(accessLevel permissionstype.AccessLevel, view pb.WorkUnitView) *pb.WorkUnit {
-	// TODO: child work units, child invocations.
-	result := &pb.WorkUnit{
-		// Include metadata-only fields by default.
-		Name:             w.ID.Name(),
-		WorkUnitId:       w.ID.WorkUnitID,
-		State:            w.State,
-		Realm:            w.Realm,
-		CreateTime:       pbutil.MustTimestampProto(w.CreateTime),
-		Creator:          w.CreatedBy,
-		Deadline:         pbutil.MustTimestampProto(w.Deadline),
-		ProducerResource: w.ProducerResource,
-		IsMasked:         true,
-	}
-	if accessLevel == permissionstype.FullAccess {
-		result.Tags = w.Tags
-		result.Properties = w.Properties
-		result.Instructions = w.Instructions
-		result.IsMasked = false
-
-		if view == pb.WorkUnitView_WORK_UNIT_VIEW_FULL {
-			result.ExtendedProperties = w.ExtendedProperties
-		}
-	}
-
-	if w.ID.WorkUnitID == "root" {
-		result.Parent = w.ID.RootInvocationID.Name()
-	} else {
-		if !w.ParentWorkUnitID.Valid {
-			panic(fmt.Sprintf("invariant violated: parent work unit ID not set on non-root work unit %q", w.ID.Name()))
-		}
-		result.Parent = ID{
-			RootInvocationID: w.ID.RootInvocationID,
-			WorkUnitID:       w.ParentWorkUnitID.StringVal,
-		}.Name()
-	}
-	if w.FinalizeStartTime.Valid {
-		result.FinalizeStartTime = pbutil.MustTimestampProto(w.FinalizeStartTime.Time)
-	}
-	if w.FinalizeTime.Valid {
-		result.FinalizeTime = pbutil.MustTimestampProto(w.FinalizeTime.Time)
-	}
-	return result
 }

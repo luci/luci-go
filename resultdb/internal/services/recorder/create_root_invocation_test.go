@@ -670,7 +670,7 @@ func TestCreateRootInvocation(t *testing.T) {
 		})
 		t.Run("already exists with different request id", func(t *ftt.Test) {
 			testData := rootinvocations.NewBuilder("u-already-exists").Build()
-			testutil.MustApply(ctx, t, insert.RootInvocation(testData)...)
+			testutil.MustApply(ctx, t, insert.RootInvocationOnly(testData)...)
 			req.RootInvocationId = "u-already-exists"
 
 			_, err := recorder.CreateRootInvocation(ctx, req)

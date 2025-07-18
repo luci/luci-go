@@ -20,6 +20,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"sort"
 
 	"cloud.google.com/go/spanner"
 
@@ -146,4 +147,31 @@ func shardIndexFromHashedPrefix(hashedPrefix string) int {
 		panic(fmt.Sprintf("logic error: obtained shard index %d from hash prefix %s", result, hashedPrefix))
 	}
 	return result
+}
+
+// Represents a set of Shard IDs.
+type ShardIDSet map[ShardID]struct{}
+
+// NewShardIDSet creates an ShardIDSet from members.
+func NewShardIDSet(ids ...ShardID) ShardIDSet {
+	ret := make(ShardIDSet, len(ids))
+	for _, id := range ids {
+		ret.Add(id)
+	}
+	return ret
+}
+
+// Add adds id to the set.
+func (s ShardIDSet) Add(id ShardID) {
+	s[id] = struct{}{}
+}
+
+// ToSpanner implements span.Value.
+func (s ShardIDSet) ToSpanner() any {
+	ret := make([]string, 0, len(s))
+	for id := range s {
+		ret = append(ret, id.RowID())
+	}
+	sort.Strings(ret)
+	return ret
 }

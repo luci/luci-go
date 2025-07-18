@@ -51,9 +51,9 @@ func TestGetWorkUnit(t *testing.T) {
 
 		// Insert a root invocation and a work unit.
 		rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm(rootRealm).Build()
-		wu := workunits.NewBuilder(rootInvID, rootWorkUnitID.WorkUnitID).WithRealm(wuRealm).Build()
-		testutil.MustApply(ctx, t, insert.RootInvocation(rootInv)...)
-		testutil.MustApply(ctx, t, insert.WorkUnit(wu)...)
+		rootWu := workunits.NewBuilder(rootInvID, "root").WithRealm(wuRealm).Build()
+		testutil.MustApply(ctx, t, insert.RootInvocationOnly(rootInv)...)
+		testutil.MustApply(ctx, t, insert.WorkUnit(rootWu)...)
 
 		// Insert a child work unit.
 		childWuID := workunits.ID{
@@ -86,18 +86,19 @@ func TestGetWorkUnit(t *testing.T) {
 			expectedRsp := &pb.WorkUnit{
 				Name:              rootWorkUnitID.Name(),
 				WorkUnitId:        rootWorkUnitID.WorkUnitID,
-				State:             wu.State,
-				Realm:             wu.Realm,
-				CreateTime:        pbutil.MustTimestampProto(wu.CreateTime),
-				Creator:           wu.CreatedBy,
-				FinalizeStartTime: pbutil.MustTimestampProto(wu.FinalizeStartTime.Time),
-				FinalizeTime:      pbutil.MustTimestampProto(wu.FinalizeTime.Time),
-				Deadline:          pbutil.MustTimestampProto(wu.Deadline),
+				State:             rootWu.State,
+				Realm:             rootWu.Realm,
+				CreateTime:        pbutil.MustTimestampProto(rootWu.CreateTime),
+				Creator:           rootWu.CreatedBy,
+				FinalizeStartTime: pbutil.MustTimestampProto(rootWu.FinalizeStartTime.Time),
+				FinalizeTime:      pbutil.MustTimestampProto(rootWu.FinalizeTime.Time),
+				Deadline:          pbutil.MustTimestampProto(rootWu.Deadline),
 				Parent:            rootInvID.Name(),
-				ProducerResource:  wu.ProducerResource,
-				Tags:              wu.Tags,
-				Properties:        wu.Properties,
-				Instructions:      wu.Instructions,
+				ChildWorkUnits:    []string{childWuID.Name()},
+				ProducerResource:  rootWu.ProducerResource,
+				Tags:              rootWu.Tags,
+				Properties:        rootWu.Properties,
+				Instructions:      rootWu.Instructions,
 				IsMasked:          false,
 			}
 
@@ -119,7 +120,7 @@ func TestGetWorkUnit(t *testing.T) {
 				})
 				t.Run("full view", func(t *ftt.Test) {
 					req.View = pb.WorkUnitView_WORK_UNIT_VIEW_FULL
-					expectedRsp.ExtendedProperties = wu.ExtendedProperties
+					expectedRsp.ExtendedProperties = rootWu.ExtendedProperties
 
 					rsp, err := srv.GetWorkUnit(ctx, req)
 					assert.Loosely(t, err, should.BeNil)

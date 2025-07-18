@@ -23,8 +23,8 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
-	"go.chromium.org/luci/resultdb/internal/permissions/permissionstype"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -46,11 +46,11 @@ func (s *resultDBServer) BatchGetWorkUnits(ctx context.Context, in *pb.BatchGetW
 
 	anyHasFullAccess := false
 	for i, level := range accessLevels {
-		if level == permissionstype.NoAccess {
+		if level == permissions.NoAccess {
 			return nil, appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s (or %s) on root invocation %q`,
 				rdbperms.PermGetWorkUnit, rdbperms.PermListLimitedWorkUnits, ids[i].RootInvocationID.Name())
 		}
-		if level == permissionstype.FullAccess {
+		if level == permissions.FullAccess {
 			anyHasFullAccess = true
 		}
 	}
@@ -70,9 +70,20 @@ func (s *resultDBServer) BatchGetWorkUnits(ctx context.Context, in *pb.BatchGetW
 		return nil, err
 	}
 
+	// Read the work unit children.
+	childWUs, err := workunits.ReadChildrenBatch(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+
 	protos := make([]*pb.WorkUnit, len(wus))
 	for i, wu := range wus {
-		protos[i] = wu.ToProto(accessLevels[i], in.View)
+		inputs := masking.WorkUnitFields{
+			Row:            wu,
+			ChildWorkUnits: childWUs[i],
+			// TODO: Included child invocations.
+		}
+		protos[i] = masking.WorkUnit(inputs, accessLevels[i], in.View)
 	}
 
 	return &pb.BatchGetWorkUnitsResponse{
@@ -80,7 +91,7 @@ func (s *resultDBServer) BatchGetWorkUnits(ctx context.Context, in *pb.BatchGetW
 	}, nil
 }
 
-func queryBatchGetWorkUnitAccess(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (ids []workunits.ID, accessLevels []permissionstype.AccessLevel, err error) {
+func queryBatchGetWorkUnitAccess(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (ids []workunits.ID, accessLevels []permissions.AccessLevel, err error) {
 	// While google.aip.dev/211 prescribes request validation should occur after
 	// authorisation, these initial validation checks are important to the integrity
 	// of authorisation.

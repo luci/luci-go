@@ -17,6 +17,7 @@ package invocations
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"cloud.google.com/go/spanner"
 
@@ -65,6 +66,24 @@ func IDFromRowID(rowID string) ID {
 // Name returns an invocation name.
 func (id ID) Name() string {
 	return pbutil.InvocationName(string(id))
+}
+
+// IsWorkUnit returns whether this invocation is the legacy invocation
+// corresponding to a work unit in the WorkUnits table.
+// If true, it means this invocation is not the source of truth and
+// is simply has a copy of (selected) work unit data to facilitate
+// compatibility with legacy query APIs.
+func (id ID) IsWorkUnit() bool {
+	return strings.HasPrefix(string(id), "workunit:")
+}
+
+// IsRootInvocation returns whether this invocation is the legacy invocation
+// corresponding to a root invocation in the RootInvocations table.
+// If true, it means this invocation is not the source of truth and
+// is simply has a copy of (selected) root invocation data to facilitate
+// compatibility with legacy query APIs.
+func (id ID) IsRootInvocation() bool {
+	return strings.HasPrefix(string(id), "root:")
 }
 
 // RowID returns an invocation ID used in spanner rows.

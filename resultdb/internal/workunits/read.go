@@ -16,6 +16,7 @@ package workunits
 
 import (
 	"context"
+	"sort"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -312,4 +313,88 @@ func ReadBatch(ctx context.Context, ids []ID, mask ReadMask) (ret []*WorkUnitRow
 		ret[i] = row.Clone()
 	}
 	return ret, err
+}
+
+// ReadChildren reads the child work unit IDs of a work unit.
+func ReadChildren(ctx context.Context, id ID) (ret []ID, err error) {
+	results, err := ReadChildrenBatch(ctx, []ID{id})
+	if err != nil {
+		return nil, err
+	}
+	return results[0], nil
+}
+
+// ReadChildrenBatch reads the child work units IDs of a batch of work units.
+// The work units must be in the same root invocation.
+// results[i] corresponds to ids[i]. Duplicate IDs are allowed.
+// This method does not check the existence of the work units for which children
+// are being read.
+func ReadChildrenBatch(ctx context.Context, ids []ID) (results [][]ID, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadChildrenBatch")
+	defer func() { tracing.End(ts, err) }()
+
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	rootInvocation := ids[0].RootInvocationID
+	var workUnitIDs []string
+	for _, id := range ids {
+		if id.RootInvocationID != rootInvocation {
+			return nil, errors.New("all work units must belong to the same root invocation")
+		}
+		workUnitIDs = append(workUnitIDs, id.WorkUnitID)
+	}
+
+	st := spanner.NewStatement(`
+		SELECT
+			RootInvocationShardId,
+			ParentWorkUnitId,
+			WorkUnitId
+		FROM WorkUnits
+		WHERE RootInvocationShardId IN UNNEST(@rootInvocationShardIds) AND ParentWorkUnitId IN UNNEST(@parentWorkUnitIds)`)
+
+	st.Params = map[string]any{
+		"rootInvocationShardIds": rootInvocation.AllShardIDs(),
+		"parentWorkUnitIds":      workUnitIDs,
+	}
+
+	resultsByParent := make(map[ID][]ID)
+	var b spanutil.Buffer
+	err = spanutil.Query(ctx, st, func(row *spanner.Row) error {
+		var rootInvocationShardID string
+		var parentWorkUnitID spanner.NullString
+		var workUnitID string
+		if err := b.FromSpanner(row, &rootInvocationShardID, &parentWorkUnitID, &workUnitID); err != nil {
+			return err
+		}
+		if !parentWorkUnitID.Valid {
+			return errors.New("logic error: this query design should never return the root (parentless) work unit")
+		}
+		parentID := IDFromRowID(rootInvocationShardID, parentWorkUnitID.StringVal)
+		resultsByParent[parentID] = append(resultsByParent[parentID], IDFromRowID(rootInvocationShardID, workUnitID))
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	results = make([][]ID, len(ids))
+	for i, id := range ids {
+		children := resultsByParent[id]
+		// Copy the results to avoid returning slices which are aliased
+		// (references to same object) in case the duplicate IDs are
+		// provided in the request. This might trip the caller up if they
+		// ever modify the slices.
+		copiedChildren := make([]ID, len(children))
+		copy(copiedChildren, children)
+
+		// Sort children by WorkUnitID for deterministic output.
+		// This is important for testing.
+		sort.Slice(copiedChildren, func(j, k int) bool {
+			return copiedChildren[j].WorkUnitID < copiedChildren[k].WorkUnitID
+		})
+		results[i] = copiedChildren
+	}
+	return results, err
 }

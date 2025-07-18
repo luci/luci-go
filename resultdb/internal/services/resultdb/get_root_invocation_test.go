@@ -43,7 +43,7 @@ func TestGetRootInvocation(t *testing.T) {
 		testData := rootinvocations.NewBuilder("root-inv-id").
 			WithState(pb.RootInvocation_FINALIZED).
 			WithRealm(realm).Build()
-		testutil.MustApply(ctx, t, insert.RootInvocation(testData)...)
+		testutil.MustApply(ctx, t, insert.RootInvocationOnly(testData)...)
 
 		// Setup authorisation.
 		authState := &authtest.FakeState{

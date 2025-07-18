@@ -32,15 +32,22 @@ func TestSpannerConversion(t *testing.T) {
 		var b spanutil.Buffer
 
 		t.Run(`ID`, func(t *ftt.Test) {
-			id := ID("a")
-			assert.Loosely(t, id.ToSpanner(), should.Equal("ca978112:a"))
+			t.Run(`To/FromSpanner`, func(t *ftt.Test) {
+				id := ID("a")
+				assert.Loosely(t, id.ToSpanner(), should.Equal("ca978112:a"))
 
-			row, err := spanner.NewRow([]string{"a"}, []any{id.ToSpanner()})
-			assert.Loosely(t, err, should.BeNil)
-			var actual ID
-			err = b.FromSpanner(row, &actual)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Equal(id))
+				row, err := spanner.NewRow([]string{"a"}, []any{id.ToSpanner()})
+				assert.Loosely(t, err, should.BeNil)
+				var actual ID
+				err = b.FromSpanner(row, &actual)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actual, should.Equal(id))
+			})
+			t.Run(`AllShardIDs`, func(t *ftt.Test) {
+				id := ID("a")
+				keys := id.AllShardIDs().ToSpanner().([]string)
+				assert.That(t, len(keys), should.Equal(RootInvocationShardCount))
+			})
 		})
 
 		t.Run(`IDSet`, func(t *ftt.Test) {
@@ -66,6 +73,11 @@ func TestSpannerConversion(t *testing.T) {
 			assert.Loosely(t, id.shardID(10), should.Equal(3))
 			id = ID("e")
 			assert.Loosely(t, id.shardID(10), should.Equal(9))
+		})
+
+		t.Run(`LegacyInvocationID`, func(t *ftt.Test) {
+			id := ID("a")
+			assert.Loosely(t, id.LegacyInvocationID(), should.Equal("root:a"))
 		})
 	})
 }

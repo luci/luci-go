@@ -16,7 +16,6 @@
 package rootinvocations
 
 import (
-	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -153,7 +152,7 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 
 func (r *RootInvocationRow) toLegacyInvocationMutation() *spanner.Mutation {
 	row := map[string]interface{}{
-		"InvocationId":                      invocations.ID(fmt.Sprintf("root:%s", r.RootInvocationID)),
+		"InvocationId":                      r.RootInvocationID.LegacyInvocationID(),
 		"Type":                              invocations.Root,
 		"ShardId":                           r.RootInvocationID.shardID(invocations.Shards),
 		"State":                             r.State,

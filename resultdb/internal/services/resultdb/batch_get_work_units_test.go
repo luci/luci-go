@@ -17,6 +17,7 @@ package resultdb
 import (
 	"testing"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -48,11 +49,16 @@ func TestBatchGetWorkUnits(t *testing.T) {
 
 		// Insert a root invocation and work units.
 		rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm(rootRealm).Build()
-		wu1 := workunits.NewBuilder(rootInvID, "wu1").WithRealm(wu1Realm).WithParentWorkUnitID("root").Build()
-		wu2 := workunits.NewBuilder(rootInvID, "wu2").WithRealm(wu2Realm).WithParentWorkUnitID("root").WithMinimalFields().Build()
-		testutil.MustApply(ctx, t, insert.RootInvocation(rootInv)...)
-		testutil.MustApply(ctx, t, insert.WorkUnit(wu1)...)
-		testutil.MustApply(ctx, t, insert.WorkUnit(wu2)...)
+		wu1 := workunits.NewBuilder(rootInvID, "wu1").WithRealm(wu1Realm).Build()
+		wu2 := workunits.NewBuilder(rootInvID, "wu2").WithRealm(wu2Realm).WithMinimalFields().Build()
+		wuChild1 := workunits.NewBuilder(rootInvID, "wu11").WithParentWorkUnitID("wu1").WithRealm(wu2Realm).Build()
+
+		var ms []*spanner.Mutation
+		ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootInv)...)
+		ms = append(ms, insert.WorkUnit(wu1)...)
+		ms = append(ms, insert.WorkUnit(wu2)...)
+		ms = append(ms, insert.WorkUnit(wuChild1)...)
+		testutil.MustApply(ctx, t, ms...)
 
 		// Setup authorisation.
 		authState := &authtest.FakeState{
@@ -85,11 +91,14 @@ func TestBatchGetWorkUnits(t *testing.T) {
 				FinalizeTime:      pbutil.MustTimestampProto(wu1.FinalizeTime.Time),
 				Deadline:          pbutil.MustTimestampProto(wu1.Deadline),
 				Parent:            workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "root"}.Name(),
-				ProducerResource:  wu1.ProducerResource,
-				Tags:              wu1.Tags,
-				Properties:        wu1.Properties,
-				Instructions:      wu1.Instructions,
-				IsMasked:          false,
+				ChildWorkUnits: []string{
+					workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu11"}.Name(),
+				},
+				ProducerResource: wu1.ProducerResource,
+				Tags:             wu1.Tags,
+				Properties:       wu1.Properties,
+				Instructions:     wu1.Instructions,
+				IsMasked:         false,
 			}
 			expectedWu2 := &pb.WorkUnit{
 				Name:             wu2.ID.Name(),

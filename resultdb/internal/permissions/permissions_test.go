@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/permissions/permissionstype"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -135,7 +134,7 @@ func TestQueryWorkUnitAccess(t *testing.T) {
 
 		// Insert root invocation for subsequent tests.
 		var ms []*spanner.Mutation
-		ms = append(ms, insert.RootInvocation(
+		ms = append(ms, insert.RootInvocationWithRootWorkUnit(
 			rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:root").Build(),
 		)...)
 		ms = append(ms, insert.WorkUnit(
@@ -168,7 +167,7 @@ func TestQueryWorkUnitAccess(t *testing.T) {
 		t.Run("no access on root invocation", func(t *ftt.Test) {
 			level, err := QueryWorkUnitAccess(ctx, workUnitID, opts)
 			assert.Loosely(t, err, should.BeNil)
-			assert.That(t, level, should.Equal(permissionstype.NoAccess))
+			assert.That(t, level, should.Equal(NoAccess))
 		})
 		t.Run("full access on root invocation", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{
@@ -176,7 +175,7 @@ func TestQueryWorkUnitAccess(t *testing.T) {
 			}
 			level, err := QueryWorkUnitAccess(ctx, workUnitID, opts)
 			assert.Loosely(t, err, should.BeNil)
-			assert.That(t, level, should.Equal(permissionstype.FullAccess))
+			assert.That(t, level, should.Equal(FullAccess))
 		})
 		t.Run("limited access on root invocation", func(t *ftt.Test) {
 			t.Run("baseline (no upgrade permission)", func(t *ftt.Test) {
@@ -185,7 +184,7 @@ func TestQueryWorkUnitAccess(t *testing.T) {
 				}
 				level, err := QueryWorkUnitAccess(ctx, workUnitID, opts)
 				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, level, should.Equal(permissionstype.LimitedAccess))
+				assert.That(t, level, should.Equal(LimitedAccess))
 			})
 			t.Run("upgrade to full access", func(t *ftt.Test) {
 				authState.IdentityPermissions = []authtest.RealmPermission{
@@ -194,7 +193,7 @@ func TestQueryWorkUnitAccess(t *testing.T) {
 				}
 				level, err := QueryWorkUnitAccess(ctx, workUnitID, opts)
 				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, level, should.Equal(permissionstype.FullAccess))
+				assert.That(t, level, should.Equal(FullAccess))
 			})
 			t.Run("work unit not found", func(t *ftt.Test) {
 				authState.IdentityPermissions = []authtest.RealmPermission{
@@ -223,7 +222,7 @@ func TestQueryWorkUnitsAccess(t *testing.T) {
 
 		// Insert root invocation and work units for subsequent tests.
 		var ms []*spanner.Mutation
-		ms = append(ms, insert.RootInvocation(
+		ms = append(ms, insert.RootInvocationWithRootWorkUnit(
 			rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:root").Build(),
 		)...)
 		ms = append(ms, insert.WorkUnit(
@@ -267,7 +266,7 @@ func TestQueryWorkUnitsAccess(t *testing.T) {
 			authState.IdentityPermissions = nil
 			levels, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
 			assert.Loosely(t, err, should.BeNil)
-			assert.That(t, levels, should.Match([]permissionstype.AccessLevel{permissionstype.NoAccess, permissionstype.NoAccess}))
+			assert.That(t, levels, should.Match([]AccessLevel{NoAccess, NoAccess}))
 		})
 		t.Run("full access on root invocation", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{
@@ -275,7 +274,7 @@ func TestQueryWorkUnitsAccess(t *testing.T) {
 			}
 			levels, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
 			assert.Loosely(t, err, should.BeNil)
-			assert.That(t, levels, should.Match([]permissionstype.AccessLevel{permissionstype.FullAccess, permissionstype.FullAccess}))
+			assert.That(t, levels, should.Match([]AccessLevel{FullAccess, FullAccess}))
 		})
 		t.Run("limited access on root invocation", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{
@@ -284,7 +283,7 @@ func TestQueryWorkUnitsAccess(t *testing.T) {
 			t.Run("baseline (no upgrade permission)", func(t *ftt.Test) {
 				levels, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
 				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, levels, should.Match([]permissionstype.AccessLevel{permissionstype.LimitedAccess, permissionstype.LimitedAccess}))
+				assert.That(t, levels, should.Match([]AccessLevel{LimitedAccess, LimitedAccess}))
 			})
 			t.Run("upgrade to full access for some", func(t *ftt.Test) {
 				authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
@@ -292,7 +291,7 @@ func TestQueryWorkUnitsAccess(t *testing.T) {
 				})
 				levels, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
 				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, levels, should.Match([]permissionstype.AccessLevel{permissionstype.FullAccess, permissionstype.LimitedAccess}))
+				assert.That(t, levels, should.Match([]AccessLevel{FullAccess, LimitedAccess}))
 			})
 			t.Run("work unit not found", func(t *ftt.Test) {
 				workUnitIDs[1] = workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "not-exists"}
