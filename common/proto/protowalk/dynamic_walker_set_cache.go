@@ -92,7 +92,7 @@ func (t tempCache) populate(msgD protoreflect.MessageDescriptor, processors []Fi
 func (t tempCache) generateCacheEntry(msg protoreflect.MessageDescriptor, processor FieldProcessor, visitedSubMsgs stringset.Set, tmp map[protoreflect.MessageDescriptor]*tempCacheEntryBuilder) *tempCacheEntryBuilder {
 	fields := msg.Fields()
 
-	for f := 0; f < fields.Len(); f++ {
+	for f := range fields.Len() {
 		finalRet := true
 		field := fields.Get(f)
 		value := tempCacheField{

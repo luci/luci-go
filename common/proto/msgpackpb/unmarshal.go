@@ -336,7 +336,7 @@ func (o *options) unmarshalMessage(dec *msgpack.Decoder, to protoreflect.Message
 				decodeIdx = func() (int, error) { return 0, nil }
 			}
 
-			for i := 0; i < mapLen; i++ {
+			for i := range mapLen {
 				idx, err := decodeIdx()
 				if err != nil {
 					return errors.Fmt("%s[%d]: expected int key: %w", name, i, err)

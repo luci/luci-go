@@ -49,7 +49,7 @@ func findBytewiseLCP(a, b string) string {
 		short = b
 	}
 
-	for i := 0; i < len(short); i++ {
+	for i := range len(short) {
 		if a[i] != b[i] {
 			return a[:i]
 		}

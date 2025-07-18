@@ -45,7 +45,7 @@ func (s Semaphore) Unlock() {
 // TakeAll blocks until it holds all available semaphore resources. When it
 // returns, the caller owns all of the resources in the semaphore.
 func (s Semaphore) TakeAll() {
-	for i := 0; i < cap(s); i++ {
+	for range cap(s) {
 		s.Lock()
 	}
 }

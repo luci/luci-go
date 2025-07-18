@@ -240,7 +240,7 @@ func (o *options) marshalMessage(enc *msgpack.Encoder, msg protoreflect.Message)
 			if err := enc.EncodeArrayLen(lst.Len()); err != nil {
 				return err
 			}
-			for i := 0; i < lst.Len(); i++ {
+			for i := range lst.Len() {
 				if err := o.marshalValue(enc, fd, lst.Get(i)); err != nil {
 					return errors.Fmt("%s[%d]: %w", name, i, err)
 				}

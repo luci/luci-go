@@ -480,7 +480,7 @@ func generate(outFile string, msgs []protoreflect.MessageDescriptor, enums []pro
 		if _, ok := allMsgMap[key]; !ok {
 			allMsgMap[key] = msg
 			fields := msg.Fields()
-			for i := 0; i < fields.Len(); i++ {
+			for i := range fields.Len() {
 				field := fields.Get(i)
 				if field.IsMap() {
 					field = field.MapValue()
@@ -543,7 +543,7 @@ func generate(outFile string, msgs []protoreflect.MessageDescriptor, enums []pro
 
 				curly(`[%q] =`, key)(func() {
 					vals := enum.Values()
-					for i := 0; i < vals.Len(); i++ {
+					for i := range vals.Len() {
 						val := vals.Get(i)
 						pl(`[%q] = %d,`, val.Name(), val.Number())
 						pl(`[%d] = %q,`, val.Number(), val.Name())
@@ -568,7 +568,7 @@ func generate(outFile string, msgs []protoreflect.MessageDescriptor, enums []pro
 						pl("local acc, val, T = {}, nil, nil, nil")
 
 						fields := desc.Fields()
-						for i := 0; i < fields.Len(); i++ {
+						for i := range fields.Len() {
 							field := fields.Get(i)
 							name := field.Name()
 							num := field.Number()
@@ -649,7 +649,7 @@ func generate(outFile string, msgs []protoreflect.MessageDescriptor, enums []pro
 							pl(`["$unknown"] = {},`)
 							pl(`["$type"] = %q,`, fullName)
 							fields := desc.Fields()
-							for i := 0; i < fields.Len(); i++ {
+							for i := range fields.Len() {
 								field := fields.Get(i)
 								var def string
 								if field.IsList() || field.IsMap() {
@@ -664,7 +664,7 @@ func generate(outFile string, msgs []protoreflect.MessageDescriptor, enums []pro
 						// generate the decoding table
 						curly("local dec =")(func() {
 							fields := desc.Fields()
-							for i := 0; i < fields.Len(); i++ {
+							for i := range fields.Len() {
 								field := fields.Get(i)
 								name := field.Name()
 								kind := field.Kind()
@@ -740,7 +740,7 @@ func generate(outFile string, msgs []protoreflect.MessageDescriptor, enums []pro
 					pl(`keys = {`)
 					suite(func() {
 						fields := desc.Fields()
-						for i := 0; i < fields.Len(); i++ {
+						for i := range fields.Len() {
 							pl(`[%q] = true,`, fields.Get(i).Name())
 						}
 					}, `},`)

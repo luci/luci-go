@@ -122,7 +122,7 @@ func hashList(h hash.Hash, lv protoreflect.List) error {
 	if err := hashNumber(h, uint64(lv.Len())); err != nil {
 		return err
 	}
-	for i := 0; i < lv.Len(); i++ {
+	for i := range lv.Len() {
 		if err := hashValue(h, lv.Get(i)); err != nil {
 			return err
 		}

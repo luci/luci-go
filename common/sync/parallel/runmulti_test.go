@@ -81,7 +81,7 @@ func TestRunMulti(t *testing.T) {
 		// Make sure all of the error values that we expect are present.
 		actual := make([]int, len(aggregateErr))
 		expected := make([]int, len(aggregateErr))
-		for i := 0; i < len(aggregateErr); i++ {
+		for i := range aggregateErr {
 			actual[i] = int(aggregateErr[i].(numberError))
 			expected[i] = i
 		}

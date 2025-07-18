@@ -97,7 +97,7 @@ func extractAllowUnexportedFromLocked(typ reflect.Type) []cmp.Option {
 		resembleOptionCache[typ] = nil
 
 		hasUnexported := false
-		for i := 0; i < typ.NumField(); i++ {
+		for i := range typ.NumField() {
 			field := typ.Field(i)
 			if !hasUnexported && !field.IsExported() {
 				// It looks like this struct, itself, has unexported fields, so we at

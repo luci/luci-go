@@ -57,7 +57,7 @@ func (l DynamicWalker) fieldsImpl(path reflectutil.Path, msg protoreflect.Messag
 			switch toRecurse {
 			case recurseRepeated:
 				lst := msg.Get(field).List()
-				for i := 0; i < lst.Len(); i++ {
+				for i := range lst.Len() {
 					mergeResults(l.fieldsImpl(append(recursePath, reflectutil.MustMakePathItem(i)), lst.Get(i).Message()))
 				}
 

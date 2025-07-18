@@ -76,7 +76,7 @@ func countMaxGoroutines(iters, reap int, enc func(func() error)) int {
 		}
 		iters -= r
 
-		for i := 0; i < r; i++ {
+		for range r {
 			enc(func() error {
 				cur := int(atomic.AddInt32(&numGoroutines, 1))
 				defer atomic.AddInt32(&numGoroutines, -1)
@@ -99,12 +99,12 @@ func countMaxGoroutines(iters, reap int, enc func(func() error)) int {
 		}
 
 		// Make sure all goroutines are running.
-		for i := 0; i < r; i++ {
+		for range r {
 			<-runningC
 		}
 
 		// Release goroutines.
-		for i := 0; i < r; i++ {
+		for range r {
 			blockC <- struct{}{}
 		}
 	}

@@ -137,7 +137,7 @@ func TestFields(t *testing.T) {
 func BenchmarkNewWalker(b *testing.B) {
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		runtime.KeepAlive(NewWalker[*Outer](CustomChecker{}))
 	}
 }
@@ -233,7 +233,7 @@ func BenchmarkWalkerExecute_Complex(b *testing.B) {
 	b.StopTimer()
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		b.StartTimer()
 		reports := cache.Execute(msg)
 		b.StopTimer()
@@ -303,7 +303,7 @@ func BenchmarkNoop(b *testing.B) {
 	cache := NewWalker[*Outer](NoopChecker{})
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		// this is fast enough that we can't start/stop the timer, as it dominates
 		// the runtime and makes the benchmark timeout after 10 minutes. Instead,
 		// just run a tight loop with KeepAlive to prevent the compiler from
@@ -348,7 +348,7 @@ func BenchmarkOne(b *testing.B) {
 	cache := NewWalker[*Outer](Custom2Checker{})
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		// this is fast enough that we can't start/stop the timer, as it dominates
 		// the runtime and makes the benchmark timeout after 10 minutes. Instead,
 		// just run a tight loop with KeepAlive to prevent the compiler from

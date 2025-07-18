@@ -78,7 +78,7 @@ func MarshalBody(v any) ([]byte, error) {
 
 	var buf bytes.Buffer
 
-	for i := 0; i < val.NumField(); i++ {
+	for i := range val.NumField() {
 		fieldVal := val.Field(i)
 		switch fieldVal.Kind() {
 		case reflect.String:
@@ -120,7 +120,7 @@ func UnmarshalBody(data []byte, v any) error {
 	r := bytes.NewReader(data)
 	t := val.Type()
 
-	for i := 0; i < val.NumField(); i++ {
+	for i := range val.NumField() {
 		fieldVal := val.Field(i)
 		fieldType := t.Field(i)
 

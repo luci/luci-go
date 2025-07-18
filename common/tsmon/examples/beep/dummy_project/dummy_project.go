@@ -110,7 +110,7 @@ func (t *DummyProject) PopulateProto(d *pb.MetricsCollection) {
 func (t *DummyProject) toMetricsProto(d *pb.MetricsCollection) {
 	st := t.Type().Type.Elem()
 	sv := reflect.Indirect(reflect.ValueOf(t))
-	for i := 0; i < st.NumField(); i++ {
+	for i := range st.NumField() {
 		props := new(proto.Properties)
 		tag, ok := st.Field(i).Tag.Lookup("protobuf")
 		if !ok {

@@ -78,7 +78,7 @@ func TestBuffer(t *testing.T) {
 				nextSendTimeOffset := b.opts.BatchAgeMax
 
 				t.Run(`batch cut by count`, func(t *ftt.Test) {
-					for i := 0; i < int(b.opts.BatchItemsMax); i++ {
+					for i := range b.opts.BatchItemsMax {
 						assert.Loosely(t, b.unleased.Len(), should.BeZero)
 						if i > 0 {
 							// The next send time should be when the current batch will be
@@ -461,7 +461,7 @@ func TestBuffer(t *testing.T) {
 					})
 					assert.Loosely(t, err, should.BeNil)
 
-					for i := 0; i < int(b.opts.BatchItemsMax)+1; i++ {
+					for i := range int(b.opts.BatchItemsMax) + 1 {
 						assert.Loosely(t, must(addNoBlockZero(b, clock.Now(ctx), i)), should.BeNil)
 					}
 
