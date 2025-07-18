@@ -291,7 +291,7 @@ export function ArtifactsSection() {
       ) : currentResult && containsArtifacts ? (
         <PanelGroup
           direction="horizontal"
-          style={{ height: '100%', minHeight: '380px' }}
+          style={{ height: '100%', minHeight: '600px' }}
         >
           <Panel defaultSize={30} minSize={20}>
             <Box

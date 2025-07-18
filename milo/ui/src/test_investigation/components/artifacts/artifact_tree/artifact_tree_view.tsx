@@ -349,7 +349,7 @@ export function ArtifactTreeView({
           flexGrow: 1,
           width: '100%',
           wordBreak: 'break-word',
-          overflow: 'hidden',
+          overflowY: 'auto',
         }}
       >
         <VirtualTree<ArtifactTreeNodeData>
