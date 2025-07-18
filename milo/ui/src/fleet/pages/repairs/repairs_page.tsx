@@ -123,7 +123,7 @@ const COLUMNS: Record<string, GridColDef> = {
   },
 };
 
-export const RepairListPage = () => {
+export const RepairListPage = ({ platform }: { platform: Platform }) => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [orderByParam, updateOrderByParam] = useOrderByParam();
   const pagerCtx = usePagerContext({
@@ -149,27 +149,25 @@ export const RepairListPage = () => {
     ? ''
     : stringifyFilters(selectedOptions.filters);
 
-  const platform = usePlatform();
-
   const client = useFleetConsoleClient();
 
   const repairMetricsList = useQuery({
     ...client.ListRepairMetrics.query({
-      platform: platform.platform!, // the query is only enabled if the platform is valid
+      platform: platform,
       filter: stringifiedSelectedOptions,
       pageSize: getPageSize(pagerCtx, searchParams),
       pageToken: getPageToken(pagerCtx, searchParams),
       orderBy: orderByParam,
     }),
     placeholderData: keepPreviousData,
-    enabled: platform.isValid,
+    enabled: platform !== undefined,
   });
 
   const repairMetricsFilterValues = useQuery({
     ...client.GetRepairMetricsDimensions.query({
-      platform: platform.platform!, // the query is only enabled if the platform is valid
+      platform: platform,
     }),
-    enabled: platform.isValid,
+    enabled: platform !== undefined,
   });
 
   const [warnings, addWarning] = useWarnings();
@@ -196,10 +194,6 @@ export const RepairListPage = () => {
     setSearchParams(filtersUpdater({}));
   }, [addWarning, selectedOptions.error, setSearchParams]);
 
-  if (!platform.isValid || platform.platform !== Platform.ANDROID) {
-    return <PlatformNotAvailable availablePlatforms={[Platform.ANDROID]} />;
-  }
-
   return (
     <div
       css={{
@@ -207,7 +201,7 @@ export const RepairListPage = () => {
       }}
     >
       <WarningNotifications warnings={warnings} />
-      <Metrics filters={stringifiedSelectedOptions} />
+      <Metrics filters={stringifiedSelectedOptions} platform={platform} />
       <div
         css={{
           marginTop: 24,
@@ -298,15 +292,20 @@ export const RepairListPage = () => {
   );
 };
 
-function Metrics({ filters }: { filters: string }) {
-  const platform = usePlatform();
+function Metrics({
+  filters,
+  platform,
+}: {
+  filters: string;
+  platform: Platform;
+}) {
   const client = useFleetConsoleClient();
   const countQuery = useQuery({
     ...client.CountRepairMetrics.query({
-      platform: platform.platform!, // the query is only enabled if the platform is valid
+      platform: platform,
       filter: filters,
     }),
-    enabled: platform.isValid,
+    enabled: platform !== undefined,
   });
 
   const getContent = () => {
@@ -408,6 +407,8 @@ function Metrics({ filters }: { filters: string }) {
 }
 
 export function Component() {
+  const { platform } = usePlatform();
+
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-repairs">
       <FleetHelmet pageTitle="Repairs" />
@@ -417,7 +418,11 @@ export function Component() {
         key="fleet-repairs"
       >
         <LoggedInBoundary>
-          <RepairListPage />
+          {platform !== Platform.ANDROID ? (
+            <PlatformNotAvailable availablePlatforms={[Platform.ANDROID]} />
+          ) : (
+            <RepairListPage platform={platform} />
+          )}
         </LoggedInBoundary>
       </RecoverableLoggerErrorBoundary>
     </TrackLeafRoutePageView>

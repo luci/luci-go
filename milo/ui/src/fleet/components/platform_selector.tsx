@@ -26,20 +26,11 @@ import {
 import _ from 'lodash';
 import { useState } from 'react';
 
-import { usePlatform } from '@/fleet/hooks/usePlatform';
+import { usePlatform, platformRenderString } from '@/fleet/hooks/usePlatform';
 import { colors } from '@/fleet/theme/colors';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 const PLATFORMS: Platform[] = [Platform.CHROMEOS, Platform.ANDROID];
-
-export const platformRenderString = (p: Platform) => {
-  switch (p) {
-    case Platform.ANDROID:
-      return 'Android';
-    case Platform.CHROMEOS:
-      return 'Chrome OS';
-  }
-};
 
 export function PlatformSelector() {
   const platform = usePlatform();
@@ -58,7 +49,7 @@ export function PlatformSelector() {
     handleClose();
   };
 
-  if (!platform.currentPageSupportsPlatforms) {
+  if (!platform.inPlatformScope) {
     return null;
   }
 
@@ -82,9 +73,7 @@ export function PlatformSelector() {
           }}
         >
           <Typography variant="body1">
-            {platform.isValid
-              ? platformRenderString(platform.platform)
-              : 'Invalid platform'}
+            {platformRenderString(platform.platform) || 'Invalid platform'}
           </Typography>
         </Button>
       </Tooltip>

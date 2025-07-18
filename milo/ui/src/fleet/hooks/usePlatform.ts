@@ -26,28 +26,33 @@ import {
   platformToJSON,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-type ValidPlatformReturn = {
+export type PlatformDetails = {
   setPlatform: (p: Platform) => void;
-  platform: Platform;
-  isValid: true;
-  currentPageSupportsPlatforms: true;
-};
-type InvalidPlatformReturn = Omit<
-  ValidPlatformReturn,
-  'platform' | 'isValid' | 'currentPageSupportsPlatforms'
-> & {
-  platform: undefined;
-  isValid: false;
-  currentPageSupportsPlatforms: boolean;
+  platform?: Platform;
+  inPlatformScope: boolean;
 };
 
-export function usePlatform(): ValidPlatformReturn | InvalidPlatformReturn {
+export const platformRenderString = (p?: Platform) => {
+  switch (p) {
+    case Platform.ANDROID:
+      return 'Android';
+    case Platform.CHROMEOS:
+      return 'Chrome OS';
+    case undefined:
+      return undefined;
+  }
+};
+
+export function usePlatform(): PlatformDetails {
   const { platform } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Assume any page which has a platform route param is in the platform scope.
+  const inPlatformScope = !!platform;
+
   const setPlatform = (newPlatform: Platform) => {
-    if (!platform) throw Error('Platform not available in this page');
+    if (!inPlatformScope) throw Error('Platform not available in this page');
 
     const newPath = generatePath(
       location.pathname.replace(platform, ':platform'), // replaces the first occurrence
@@ -56,28 +61,15 @@ export function usePlatform(): ValidPlatformReturn | InvalidPlatformReturn {
     navigate(newPath);
   };
 
-  const platformEnum = getPlatformEnum(platform);
-  if (platformEnum !== undefined) {
-    return {
-      platform: platformEnum,
-      setPlatform,
-      isValid: true,
-      currentPageSupportsPlatforms: true,
-    };
-  }
-
   return {
-    platform: undefined,
+    platform: getPlatformEnum(platform),
     setPlatform,
-    isValid: false,
-    currentPageSupportsPlatforms: platform !== undefined,
+    inPlatformScope,
   };
 }
 
 const getPlatformEnum = (platform: string | undefined) => {
-  if (!platform) {
-    return undefined;
-  }
+  if (!platform) return undefined;
   try {
     return platformFromJSON(platform.toUpperCase());
   } catch (e) {

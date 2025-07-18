@@ -15,10 +15,12 @@
 import { renderHook } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+
 import { usePlatform } from './usePlatform';
 
 describe('usePlatform', () => {
-  it('returns true when the platform is ANDROID', () => {
+  it('returns the correct platform when the platform is valid', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <MemoryRouter initialEntries={['/repairs/android']}>
         <Routes>
@@ -27,10 +29,11 @@ describe('usePlatform', () => {
       </MemoryRouter>
     );
     const { result } = renderHook(() => usePlatform(), { wrapper });
-    expect(result.current.isValid).toBe(true);
+    expect(result.current.platform).toBe(Platform.ANDROID);
+    expect(result.current.inPlatformScope).toBe(true);
   });
 
-  it('returns false when the platform is not in the URL', () => {
+  it('returns undefined when the platform is not in the URL', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <MemoryRouter initialEntries={['/repairs']}>
         <Routes>
@@ -39,10 +42,11 @@ describe('usePlatform', () => {
       </MemoryRouter>
     );
     const { result } = renderHook(() => usePlatform(), { wrapper });
-    expect(result.current.isValid).toBe(false);
+    expect(result.current.platform).toBe(undefined);
+    expect(result.current.inPlatformScope).toBe(false);
   });
 
-  it('returns false when the platform is invalid', () => {
+  it('returns undefined when the platform is invalid', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <MemoryRouter initialEntries={['/repairs/invalid']}>
         <Routes>
@@ -51,10 +55,11 @@ describe('usePlatform', () => {
       </MemoryRouter>
     );
     const { result } = renderHook(() => usePlatform(), { wrapper });
-    expect(result.current.isValid).toBe(false);
+    expect(result.current.platform).toBe(undefined);
+    expect(result.current.inPlatformScope).toBe(true);
   });
 
-  it('currentPageSupportsPlatforms is false when the platform is not in the URL', () => {
+  it('inPlatformScope is false when the platform is not in the URL', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <MemoryRouter initialEntries={['/repairs']}>
         <Routes>
@@ -63,6 +68,6 @@ describe('usePlatform', () => {
       </MemoryRouter>
     );
     const { result } = renderHook(() => usePlatform(), { wrapper });
-    expect(result.current.currentPageSupportsPlatforms).toBe(false);
+    expect(result.current.inPlatformScope).toBe(false);
   });
 });

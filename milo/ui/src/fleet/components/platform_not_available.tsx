@@ -18,7 +18,7 @@ import _ from 'lodash';
 import sadBass from '@/fleet/assets/pngs/sad_bass.png';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { platformRenderString } from './platform_selector';
+import { platformRenderString } from '../hooks/usePlatform';
 
 export const PlatformNotAvailable = ({
   availablePlatforms,
