@@ -20,14 +20,21 @@ import (
 	"strings"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tokens"
 
+	"go.chromium.org/luci/resultdb/internal/masking"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -41,10 +48,116 @@ func (s *recorderServer) CreateWorkUnit(ctx context.Context, in *pb.CreateWorkUn
 	if err := validateCreateWorkUnitRequest(in, true); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	// TODO: Validate we have the update-token for the parent work unit and that
-	// work unit is not FINALIZED.
 
-	return nil, appstatus.Error(codes.Unimplemented, "not yet implemented")
+	if err := createIdempotentWorkUnit(ctx, in, s.ExpectedResultsExpiration); err != nil {
+		return nil, err
+	}
+	wuID := workunits.ID{
+		RootInvocationID: workunits.MustParseName(in.Parent).RootInvocationID,
+		WorkUnitID:       in.WorkUnitId,
+	}
+	// TODO: The response is read in a separate transaction
+	// from the creation. This means a duplicate request may not receive an
+	// identical response if the invocation was updated in the meantime.
+	// While AIP-155 (https://google.aip.dev/155#stale-success-responses)
+	// permits returning the most current data, we could instead construct the
+	// response from the request data for better consistency.
+	workUnitRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
+	if err != nil {
+		return nil, err
+	}
+	token, err := generateWorkUnitToken(ctx, wuID)
+	if err != nil {
+		return nil, err
+	}
+	md := metadata.MD{}
+	md.Set(pb.UpdateTokenMetadataKey, token)
+	prpc.SetHeader(ctx, md)
+	inputs := masking.WorkUnitFields{
+		Row: workUnitRow,
+		// No child should be created at this point.
+	}
+	return masking.WorkUnit(inputs, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL), nil
+}
+
+func createIdempotentWorkUnit(
+	ctx context.Context,
+	in *pb.CreateWorkUnitRequest,
+	uninterestingTestVerdictsExpirationTime time.Duration,
+) error {
+	parentID := workunits.MustParseName(in.Parent)
+	now := clock.Now(ctx)
+	createdBy := string(auth.CurrentIdentity(ctx))
+	wuID := workunits.ID{
+		RootInvocationID: parentID.RootInvocationID,
+		WorkUnitID:       in.WorkUnitId,
+	}
+	_, err := mutateWorkUnit(ctx, parentID, func(ctx context.Context) error {
+		wu := in.WorkUnit
+		deduped, err := deduplicateCreateWorkUnit(ctx, wuID, in.RequestId, createdBy)
+		if err != nil {
+			return err
+		}
+		if deduped {
+			// This call should be deduplicated, do not write to database.
+			return nil
+		}
+
+		state := wu.State
+		if state == pb.WorkUnit_STATE_UNSPECIFIED {
+			state = pb.WorkUnit_ACTIVE
+		}
+		deadline := wu.Deadline.AsTime()
+		if wu.Deadline == nil {
+			deadline = now.Add(defaultDeadlineDuration)
+		}
+
+		wuRow := &workunits.WorkUnitRow{
+			ID:                 wuID,
+			ParentWorkUnitID:   spanner.NullString{Valid: true, StringVal: parentID.WorkUnitID},
+			State:              state,
+			Realm:              wu.Realm,
+			CreatedBy:          createdBy,
+			Deadline:           deadline,
+			CreateRequestID:    in.RequestId,
+			ProducerResource:   wu.ProducerResource,
+			Tags:               wu.Tags,
+			Properties:         wu.Properties,
+			Instructions:       wu.Instructions,
+			ExtendedProperties: wu.ExtendedProperties,
+		}
+		legacyCreateOpts := workunits.LegacyCreateOptions{
+			ExpectedTestResultsExpirationTime: now.Add(uninterestingTestVerdictsExpirationTime),
+		}
+		// TODO: add the child-parent relationship to IncludedInvocations table.
+		span.BufferWrite(ctx, workunits.Create(wuRow, legacyCreateOpts)...)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	// TODO: increment row count metrics on new record creation.
+	return nil
+}
+
+func deduplicateCreateWorkUnit(ctx context.Context, id workunits.ID, requestID, createdBy string) (bool, error) {
+	curRequestID, curCreatedBy, err := workunits.ReadRequestIDAndCreatedBy(ctx, id)
+	if err != nil {
+		st, ok := appstatus.Get(err)
+		if ok && st.Code() == codes.NotFound {
+			// Work unit doesn't exist yet, do not deduplicate this call.
+			return false, nil
+		}
+		return false, err
+	}
+	if requestID != curRequestID || curCreatedBy != createdBy {
+		// Work unit with the same id exist, and is not created with the same requestID and creator.
+		return false, appstatus.Errorf(codes.AlreadyExists, "%q already exists", id.Name())
+	}
+	// Work unit with the same id and requestID and creator exist.
+	// Could happen if someone sent two different calls with the same request ID, eg. retry.
+	// This call should be deduplicated.
+	return true, nil
 }
 
 // workUnitTokenKind generates and validates tokens issued to authorize
@@ -85,6 +198,49 @@ func workUnitTokenState(id workunits.ID) string {
 	} else {
 		return fmt.Sprintf("%q:%q", id.RootInvocationID, id.WorkUnitID)
 	}
+}
+
+// mutateWorkUnit provides a transactional wrapper for modifying a work unit.
+// It ensures that any modifications happen only if the work unit is ACTIVE and
+// the caller provides a valid update token.
+//
+// It executes the provided function `f` within a read-write transaction after
+// performing these checks. This function MUST be used for all work unit
+// mutations (e.g., adding test results, artifacts) to guarantee atomicity
+// and proper authorization.
+//
+// On success, it returns the Spanner commit timestamp.
+func mutateWorkUnit(ctx context.Context, id workunits.ID, f func(context.Context) error) (time.Time, error) {
+	// Per AIP-211, authorization should precede validation. We intentionally deviate
+	// from that pattern by performing update-token authorization inside `mutateWorkUnit`,
+	// after initial request validation. This make sure data modification is always
+	// performed with authorization check.
+	//
+	// Because the update-token is not yet validated, logic
+	// before the `mutateWorkUnit` call MUST NOT access or return any protected
+	// resource data. All preceding checks should operate only on the incoming
+	// request parameters.
+	token, err := extractUpdateToken(ctx)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if err := validateWorkUnitToken(ctx, token, id); err != nil {
+		return time.Time{}, appstatus.Errorf(codes.PermissionDenied, "invalid update token")
+	}
+	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		state, err := workunits.ReadState(ctx, id)
+		if err != nil {
+			return err
+		}
+		if state != pb.WorkUnit_ACTIVE {
+			return appstatus.Errorf(codes.FailedPrecondition, "work unit %q is not active", id.Name())
+		}
+		return f(ctx)
+	})
+	if err != nil {
+		return time.Time{}, err
+	}
+	return commitTimestamp, nil
 }
 
 func verifyCreateWorkUnitPermissions(ctx context.Context, req *pb.CreateWorkUnitRequest) error {

@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestReadFunctions(t *testing.T) {
@@ -43,7 +44,12 @@ func TestReadFunctions(t *testing.T) {
 		ms = append(ms, InsertForTesting(rootWU)...)
 
 		// Insert a work unit with all fields set.
-		testData := NewBuilder(rootInvID, "work-unit-id").WithRealm("testproject:wu1").Build()
+		testData := NewBuilder(rootInvID, "work-unit-id").
+			WithRealm("testproject:wu1").
+			WithCreatedBy("test-user").
+			WithCreateRequestID("test-request-id").
+			WithState(pb.WorkUnit_FINALIZED).
+			Build()
 		ms = append(ms, InsertForTesting(testData)...)
 		id := ID{
 			RootInvocationID: rootInvID,
@@ -213,6 +219,68 @@ func TestReadFunctions(t *testing.T) {
 				assert.That(t, err, should.ErrLike("workUnitID: unspecified"))
 			})
 		})
+
+		t.Run("ReadState", func(t *ftt.Test) {
+			t.Run("happy path", func(t *ftt.Test) {
+				state, err := ReadState(span.Single(ctx), id)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, state, should.Equal(testData.State))
+			})
+
+			t.Run("not found", func(t *ftt.Test) {
+				nonExistentID := ID{
+					RootInvocationID: rootInvID,
+					WorkUnitID:       "non-existent-id",
+				}
+				_, err := ReadState(span.Single(ctx), nonExistentID)
+				st, ok := appstatus.Get(err)
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, st.Code(), should.Equal(codes.NotFound))
+				assert.Loosely(t, st.Message(), should.ContainSubstring(`"rootInvocations/root-inv-id/workUnits/non-existent-id" not found`))
+			})
+
+			t.Run("empty root invocation ID", func(t *ftt.Test) {
+				_, err := ReadState(span.Single(ctx), ID{WorkUnitID: "work-unit-id"})
+				assert.That(t, err, should.ErrLike("rootInvocationID: unspecified"))
+			})
+
+			t.Run("empty work unit ID", func(t *ftt.Test) {
+				_, err := ReadState(span.Single(ctx), ID{RootInvocationID: rootInvID})
+				assert.That(t, err, should.ErrLike("workUnitID: unspecified"))
+			})
+		})
+
+		t.Run("ReadRequestIDAndCreatedBy", func(t *ftt.Test) {
+			t.Run("happy path", func(t *ftt.Test) {
+				requestID, createdBy, err := ReadRequestIDAndCreatedBy(span.Single(ctx), id)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, requestID, should.Equal(testData.CreateRequestID))
+				assert.That(t, createdBy, should.Equal(testData.CreatedBy))
+			})
+
+			t.Run("not found", func(t *ftt.Test) {
+				nonExistentID := ID{
+					RootInvocationID: rootInvID,
+					WorkUnitID:       "non-existent-id",
+				}
+				_, _, err := ReadRequestIDAndCreatedBy(span.Single(ctx), nonExistentID)
+				st, ok := appstatus.Get(err)
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, st.Code(), should.Equal(codes.NotFound))
+				assert.Loosely(t, st.Message(), should.ContainSubstring(`"rootInvocations/root-inv-id/workUnits/non-existent-id" not found`))
+			})
+
+			t.Run("empty root invocation ID", func(t *ftt.Test) {
+				_, _, err := ReadRequestIDAndCreatedBy(span.Single(ctx), ID{WorkUnitID: "work-unit-id"})
+				assert.That(t, err, should.ErrLike("rootInvocationID: unspecified"))
+			})
+
+			t.Run("empty work unit ID", func(t *ftt.Test) {
+				_, _, err := ReadRequestIDAndCreatedBy(span.Single(ctx), ID{RootInvocationID: rootInvID})
+				assert.That(t, err, should.ErrLike("workUnitID: unspecified"))
+			})
+		})
+
 		t.Run("ReadRealms", func(t *ftt.Test) {
 			// Insert an additional work unit in the existing root invocation.
 			wu2 := NewBuilder(rootInvID, "work-unit-id2").WithRealm("testproject:wu2").Build()

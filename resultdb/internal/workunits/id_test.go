@@ -34,21 +34,21 @@ func TestIDConversion(t *testing.T) {
 		}
 		t.Run(`Key`, func(t *ftt.Test) {
 			expectedKey := spanner.Key{"8d2c0941:root-inv-id", "work-unit-id"}
-			assert.That(t, id.key(), should.Match(expectedKey))
+			assert.That(t, id.Key(), should.Match(expectedKey))
 
 			id2 := ID{
 				RootInvocationID: "build123",
 				WorkUnitID:       "swarming213:1234567890",
 			}
 			expectedKey = spanner.Key{"05c33bcc:build123", "swarming213:1234567890"}
-			assert.That(t, id2.key(), should.Match(expectedKey))
+			assert.That(t, id2.Key(), should.Match(expectedKey))
 
 			id3 := ID{
 				RootInvocationID: "ants-123",
 				WorkUnitID:       "root",
 			}
 			expectedKey = spanner.Key{"43930c7a:ants-123", "root"}
-			assert.That(t, id3.key(), should.Match(expectedKey))
+			assert.That(t, id3.Key(), should.Match(expectedKey))
 		})
 
 		t.Run(`ShardID`, func(t *ftt.Test) {

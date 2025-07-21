@@ -34,8 +34,8 @@ type ID struct {
 	WorkUnitID       string
 }
 
-// Returns the spanner primary key of this work unit.
-func (id ID) key() spanner.Key {
+// Returns the spanner primary Key of this work unit.
+func (id ID) Key() spanner.Key {
 	return spanner.Key{id.RootInvocationShardID().RowID(), id.WorkUnitID}
 }
 

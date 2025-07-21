@@ -881,7 +881,7 @@ func TestCreateRootInvocation(t *testing.T) {
 				expectWURow.FinalizeStartTime = wuRow.FinalizeStartTime
 				assert.That(t, wuRow, should.Match(expectWURow))
 				// Check finalize start time is set.
-				assert.That(t, row.FinalizeStartTime.Valid, should.BeTrue)
+				assert.That(t, wuRow.FinalizeStartTime.Valid, should.BeTrue)
 			})
 		})
 	})

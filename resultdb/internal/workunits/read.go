@@ -43,7 +43,7 @@ func readColumns(ctx context.Context, id ID, ptrMap map[string]any) error {
 		return err
 	}
 
-	err := spanutil.ReadRow(ctx, "WorkUnits", id.key(), ptrMap)
+	err := spanutil.ReadRow(ctx, "WorkUnits", id.Key(), ptrMap)
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
 		return appstatus.Attachf(err, codes.NotFound, "%q not found", id.Name())
@@ -69,6 +69,39 @@ func ReadRealm(ctx context.Context, id ID) (realm string, err error) {
 		return "", err
 	}
 	return realm, nil
+}
+
+// ReadState reads the state of the given work unit.
+// If the work unit is not found, returns a NotFound appstatus error.
+// Otherwise returns the internal error.
+func ReadState(ctx context.Context, id ID) (state pb.WorkUnit_State, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadState")
+	defer func() { tracing.End(ts, err) }()
+
+	err = readColumns(ctx, id, map[string]any{
+		"State": &state,
+	})
+	if err != nil {
+		return 0, err
+	}
+	return state, nil
+}
+
+// ReadRequestIDAndCreatedBy reads the request id and createdBy of the given work unit.
+// If the work unit is not found, returns a NotFound appstatus error.
+// Otherwise returns the internal error.
+func ReadRequestIDAndCreatedBy(ctx context.Context, id ID) (requestID string, createdBy string, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadRequestIDAndCreatedBy")
+	defer func() { tracing.End(ts, err) }()
+
+	err = readColumns(ctx, id, map[string]any{
+		"CreateRequestId": &requestID,
+		"CreatedBy":       &createdBy,
+	})
+	if err != nil {
+		return "", "", err
+	}
+	return requestID, createdBy, nil
 }
 
 func validateID(id ID) error {
@@ -111,7 +144,7 @@ func ReadRealms(ctx context.Context, ids []ID) (realms []string, err error) {
 	// as if the key is only specified once.
 	var keys []spanner.Key
 	for _, id := range ids {
-		keys = append(keys, id.key())
+		keys = append(keys, id.Key())
 	}
 
 	resultMap := make(map[ID]string, len(ids))
@@ -186,7 +219,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 
 	keys := spanner.KeySets()
 	for _, id := range ids {
-		keys = spanner.KeySets(keys, id.key())
+		keys = spanner.KeySets(keys, id.Key())
 	}
 
 	var b spanutil.Buffer

@@ -20,18 +20,31 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
+	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -495,6 +508,296 @@ func TestWorkUnitToken(t *testing.T) {
 				}
 				assert.Loosely(t, workUnitTokenState(id), should.Equal(`"root-inv-id":"base"`))
 			})
+		})
+	})
+}
+
+func TestCreateWorkUnit(t *testing.T) {
+	ftt.Run(`TestCreateWorkUnit`, t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:testrealm", Permission: permCreateWorkUnit},
+				{Realm: "testproject:testrealm", Permission: permIncludeWorkUnit},
+				{Realm: "testproject:@root", Permission: permCreateWorkUnitWithReservedID},
+				{Realm: "testproject:@root", Permission: permSetWorkUnitProducerResource},
+			},
+		})
+
+		// Set test clock.
+		start := testclock.TestRecentTimeUTC
+		ctx, _ = testclock.UseTime(ctx, start)
+
+		// Setup a full HTTP server to retrieve response headers.
+		server := &prpctest.Server{}
+		pb.RegisterRecorderServer(server, newTestRecorderServer())
+		server.Start(ctx)
+		defer server.Close()
+		client, err := server.NewClient()
+		assert.Loosely(t, err, should.BeNil)
+		recorder := pb.NewRecorderPRPCClient(client)
+
+		rootInvID := rootinvocations.ID("root-inv-id")
+		parentWorkUnitID := workunits.ID{
+			RootInvocationID: rootInvID,
+			WorkUnitID:       "wu-parent",
+		}
+		workUnitID := workunits.ID{
+			RootInvocationID: rootInvID,
+			WorkUnitID:       "wu-new",
+		}
+
+		// Insert a root invocation and the parent work unit.
+		rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:testrealm").Build()
+		parentWu := workunits.NewBuilder(rootInvID, parentWorkUnitID.WorkUnitID).WithState(pb.WorkUnit_ACTIVE).Build()
+		testutil.MustApply(ctx, t, insert.RootInvocationWithRootWorkUnit(rootInv)...)
+		testutil.MustApply(ctx, t, insert.WorkUnit(parentWu)...)
+
+		// Generate an update token for the parent work unit.
+		parentUpdateToken, err := generateWorkUnitToken(ctx, parentWorkUnitID)
+		assert.Loosely(t, err, should.BeNil)
+		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, parentUpdateToken))
+
+		// A basic valid request.
+		req := &pb.CreateWorkUnitRequest{
+			Parent:     parentWorkUnitID.Name(),
+			WorkUnitId: workUnitID.WorkUnitID,
+			WorkUnit:   &pb.WorkUnit{Realm: "testproject:testrealm"},
+			RequestId:  "test-request-id",
+		}
+
+		t.Run("invalid request", func(t *ftt.Test) {
+			// Request validation exhaustively tested in test cases for validateCreateWorkUnitRequest.
+			// These tests only exist to ensure that method is called.
+			t.Run("missing work unit realm", func(t *ftt.Test) {
+				badReq := proto.Clone(req).(*pb.CreateWorkUnitRequest)
+				badReq.WorkUnit.Realm = ""
+
+				_, err := recorder.CreateWorkUnit(ctx, badReq)
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike("work_unit: realm: unspecified"))
+			})
+
+			t.Run("missing request id", func(t *ftt.Test) {
+				badReq := proto.Clone(req).(*pb.CreateWorkUnitRequest)
+				badReq.RequestId = ""
+
+				_, err := recorder.CreateWorkUnit(ctx, badReq)
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike("request_id: unspecified"))
+			})
+		})
+
+		t.Run("permission denied", func(t *ftt.Test) {
+			// Request authorisation exhaustively tested in test cases for verifyCreateWorkUnitPermissions.
+			// This test case only exists to verify that method is called.
+
+			t.Run("no create work unit create permission", func(t *ftt.Test) {
+				badReq := proto.Clone(req).(*pb.CreateWorkUnitRequest)
+				badReq.WorkUnit.Realm = "secretproject:testrealm"
+
+				_, err := recorder.CreateWorkUnit(ctx, badReq)
+				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.That(t, err, should.ErrLike(`caller does not have permission "resultdb.workUnits.create"`))
+			})
+
+			// Validate update token is not part of verifyCreateWorkUnitPermissions, should be validated separately here.
+			t.Run("invalid update token", func(t *ftt.Test) {
+				ctx := metadata.NewOutgoingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid-token"))
+				badReq := proto.Clone(req).(*pb.CreateWorkUnitRequest)
+
+				_, err := recorder.CreateWorkUnit(ctx, badReq)
+				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.That(t, err, should.ErrLike(`invalid update token`))
+			})
+			t.Run("missing update token", func(t *ftt.Test) {
+				ctx := metadata.NewOutgoingContext(ctx, metadata.MD{})
+				badReq := proto.Clone(req).(*pb.CreateWorkUnitRequest)
+
+				_, err := recorder.CreateWorkUnit(ctx, badReq)
+				assert.That(t, err, grpccode.ShouldBe(codes.Unauthenticated))
+				assert.That(t, err, should.ErrLike(`missing update-token metadata value in the request`))
+			})
+		})
+
+		t.Run("parent not active", func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, spanutil.UpdateMap("WorkUnits", map[string]any{
+				"RootInvocationShardId": parentWorkUnitID.RootInvocationShardID(),
+				"WorkUnitId":            parentWorkUnitID.WorkUnitID,
+				"State":                 pb.WorkUnit_FINALIZING,
+			}))
+
+			_, err = recorder.CreateWorkUnit(ctx, req)
+			assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+			assert.That(t, err, should.ErrLike("work unit \"rootInvocations/root-inv-id/workUnits/wu-parent\" is not active"))
+		})
+
+		t.Run("parent does not exist", func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, spanner.Delete("WorkUnits", parentWorkUnitID.Key()))
+
+			_, err = recorder.CreateWorkUnit(ctx, req)
+			assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.That(t, err, should.ErrLike("\"rootInvocations/root-inv-id/workUnits/wu-parent\" not found"))
+		})
+
+		t.Run("already exists with different request id", func(t *ftt.Test) {
+			wu := workunits.NewBuilder(rootInvID, workUnitID.WorkUnitID).WithCreateRequestID("different-request-id").Build()
+			testutil.MustApply(ctx, t, insert.WorkUnit(wu)...)
+
+			_, err := recorder.CreateWorkUnit(ctx, req)
+			assert.That(t, err, grpccode.ShouldBe(codes.AlreadyExists))
+			assert.That(t, err, should.ErrLike("\"rootInvocations/root-inv-id/workUnits/wu-new\" already exists"))
+		})
+
+		t.Run("create is idempotent", func(t *ftt.Test) {
+			res1, err := recorder.CreateWorkUnit(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+
+			// Send the exact same request again.
+			res2, err := recorder.CreateWorkUnit(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, res2, should.Match(res1))
+		})
+
+		t.Run("end to end success", func(t *ftt.Test) {
+			wuProperties := &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"@type": structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
+					"key":   structpb.NewStringValue("workunit"),
+				},
+			}
+			instructions := testutil.TestInstructions()
+			extendedProperties := map[string]*structpb.Struct{
+				"mykey": {
+					Fields: map[string]*structpb.Value{
+						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
+						"child_key_1": structpb.NewStringValue("child_value_1"),
+					},
+				},
+			}
+			req.WorkUnit = &pb.WorkUnit{
+				Realm:              "testproject:testrealm",
+				ProducerResource:   "//producer.example.com/builds/123",
+				Tags:               pbutil.StringPairs("e2e_key", "e2e_value"),
+				Properties:         wuProperties,
+				ExtendedProperties: extendedProperties,
+				Instructions:       instructions,
+			}
+
+			expectedWU := proto.Clone(req.WorkUnit).(*pb.WorkUnit)
+			proto.Merge(expectedWU, &pb.WorkUnit{
+				Name:       workUnitID.Name(),
+				Parent:     parentWorkUnitID.Name(),
+				WorkUnitId: workUnitID.WorkUnitID,
+				State:      pb.WorkUnit_ACTIVE, // Default state is ACTIVE.
+				Creator:    "user:someone@example.com",
+				Deadline:   timestamppb.New(start.Add(defaultDeadlineDuration)),
+			})
+			expectedWU.Instructions = instructionutil.InstructionsWithNames(instructions, workUnitID.Name())
+
+			expectWURow := &workunits.WorkUnitRow{
+				ID:                 workUnitID,
+				ParentWorkUnitID:   spanner.NullString{Valid: true, StringVal: parentWorkUnitID.WorkUnitID},
+				State:              pb.WorkUnit_ACTIVE,
+				Realm:              "testproject:testrealm",
+				CreatedBy:          "user:someone@example.com",
+				FinalizeStartTime:  spanner.NullTime{},
+				FinalizeTime:       spanner.NullTime{},
+				Deadline:           start.Add(defaultDeadlineDuration),
+				CreateRequestID:    "test-request-id",
+				ProducerResource:   "//producer.example.com/builds/123",
+				Tags:               pbutil.StringPairs("e2e_key", "e2e_value"),
+				Properties:         wuProperties,
+				Instructions:       instructionutil.InstructionsWithNames(instructions, workUnitID.Name()),
+				ExtendedProperties: extendedProperties,
+			}
+
+			expectedLegacyInv := &pb.Invocation{
+				Name:                   "invocations/workunit:root-inv-id:wu-new",
+				State:                  pb.Invocation_ACTIVE,
+				Realm:                  "testproject:testrealm",
+				CreatedBy:              "user:someone@example.com",
+				Deadline:               timestamppb.New(start.Add(defaultDeadlineDuration)),
+				ProducerResource:       "//producer.example.com/builds/123",
+				Tags:                   pbutil.StringPairs("e2e_key", "e2e_value"),
+				Properties:             wuProperties,
+				ExtendedProperties:     extendedProperties,
+				Instructions:           instructionutil.InstructionsWithNames(instructions, "invocations/workunit:root-inv-id:wu-new"),
+				TestResultVariantUnion: &pb.Variant{},
+			}
+
+			t.Run("active work unit", func(t *ftt.Test) {
+				var headers metadata.MD
+				res, err := recorder.CreateWorkUnit(ctx, req, grpc.Header(&headers))
+				assert.Loosely(t, err, should.BeNil)
+
+				// Merge server-populated fields for comparison.
+				proto.Merge(expectedWU, &pb.WorkUnit{CreateTime: res.CreateTime})
+				assert.That(t, res, should.Match(expectedWU))
+
+				// Check for the new update token in headers.
+				token := headers.Get(pb.UpdateTokenMetadataKey)
+				assert.Loosely(t, token, should.HaveLength(1))
+				assert.Loosely(t, token[0], should.NotBeEmpty)
+
+				// Check the database.
+				readCtx, cancel := span.ReadOnlyTransaction(ctx)
+				defer cancel()
+				row, err := workunits.Read(readCtx, workUnitID, workunits.AllFields)
+				assert.Loosely(t, err, should.BeNil)
+				expectWURow.SecondaryIndexShardID = row.SecondaryIndexShardID
+				expectWURow.CreateTime = row.CreateTime
+				assert.That(t, row, should.Match(expectWURow))
+
+				// Check the legacy invocation is inserted.
+				legacyInv, err := invocations.Read(readCtx, workUnitID.LegacyInvocationID(), invocations.AllFields)
+				expectedLegacyInv.CreateTime = legacyInv.CreateTime
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, legacyInv, should.Match(expectedLegacyInv))
+			})
+
+			t.Run("finalizing work unit", func(t *ftt.Test) {
+				req.WorkUnit.State = pb.WorkUnit_FINALIZING
+				var headers metadata.MD
+				res, err := recorder.CreateWorkUnit(ctx, req, grpc.Header(&headers))
+				assert.Loosely(t, err, should.BeNil)
+
+				// Merge server-populated fields for comparison.
+				proto.Merge(expectedWU, &pb.WorkUnit{
+					CreateTime:        res.CreateTime,
+					State:             pb.WorkUnit_FINALIZING,
+					FinalizeStartTime: res.FinalizeStartTime,
+				})
+				assert.That(t, res, should.Match(expectedWU))
+
+				// Check for the new update token in headers.
+				token := headers.Get(pb.UpdateTokenMetadataKey)
+				assert.Loosely(t, token, should.HaveLength(1))
+				assert.Loosely(t, token[0], should.NotBeEmpty)
+
+				// Check the database.
+				readCtx, cancel := span.ReadOnlyTransaction(ctx)
+				defer cancel()
+				row, err := workunits.Read(readCtx, workUnitID, workunits.AllFields)
+				assert.Loosely(t, err, should.BeNil)
+				expectWURow.SecondaryIndexShardID = row.SecondaryIndexShardID
+				expectWURow.CreateTime = row.CreateTime
+				expectWURow.State = pb.WorkUnit_FINALIZING
+				expectWURow.FinalizeStartTime = row.FinalizeStartTime
+				assert.That(t, row, should.Match(expectWURow))
+				// Check finalize start time is set.
+				assert.That(t, row.FinalizeStartTime.Valid, should.BeTrue)
+
+				// Check the legacy invocation is inserted.
+				legacyInv, err := invocations.Read(readCtx, workUnitID.LegacyInvocationID(), invocations.AllFields)
+				expectedLegacyInv.CreateTime = legacyInv.CreateTime
+				expectedLegacyInv.State = pb.Invocation_FINALIZING
+				expectedLegacyInv.FinalizeStartTime = legacyInv.FinalizeStartTime
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, legacyInv, should.Match(expectedLegacyInv))
+			})
+
 		})
 	})
 }

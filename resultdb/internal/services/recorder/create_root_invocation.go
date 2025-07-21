@@ -47,7 +47,7 @@ const (
 	// work unit can spend in the ACTIVE state before it should be finalized.
 	maxDeadlineDuration = 5 * 24 * time.Hour // 5 days
 
-	// By default, finalize the root invocation 2d after creation if it is still
+	// By default, finalize root invocation and work unit 2d after creation if it is still
 	// not finalized.
 	defaultDeadlineDuration = 2 * 24 * time.Hour // 2 days
 
@@ -118,7 +118,7 @@ func (s *recorderServer) CreateRootInvocation(ctx context.Context, in *pb.Create
 func createIdempotentRootInvocation(
 	ctx context.Context,
 	req *pb.CreateRootInvocationRequest,
-	UninterestingTestVerdictsExpirationTime time.Duration,
+	uninterestingTestVerdictsExpirationTime time.Duration,
 ) error {
 	now := clock.Now(ctx)
 	createdBy := string(auth.CurrentIdentity(ctx))
@@ -149,7 +149,7 @@ func createIdempotentRootInvocation(
 			Realm:                                   req.RootInvocation.Realm,
 			CreatedBy:                               createdBy,
 			Deadline:                                deadline,
-			UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: now.Add(UninterestingTestVerdictsExpirationTime)},
+			UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: now.Add(uninterestingTestVerdictsExpirationTime)},
 			CreateRequestID:                         req.RequestId,
 			ProducerResource:                        req.RootInvocation.ProducerResource,
 			Tags:                                    req.RootInvocation.Tags,
@@ -184,7 +184,7 @@ func createIdempotentRootInvocation(
 			ExtendedProperties: req.RootWorkUnit.ExtendedProperties,
 		}
 		legacyCreateOpts := workunits.LegacyCreateOptions{
-			ExpectedTestResultsExpirationTime: now.Add(UninterestingTestVerdictsExpirationTime),
+			ExpectedTestResultsExpirationTime: now.Add(uninterestingTestVerdictsExpirationTime),
 		}
 		span.BufferWrite(ctx, workunits.Create(wuRow, legacyCreateOpts)...)
 		return nil
