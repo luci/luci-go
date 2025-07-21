@@ -614,10 +614,10 @@ func (d *Dispatcher) TaskClassRef(id string) TaskClassRef {
 //
 // If the given context is transactional, inherits the transaction if allowed
 // according to the TaskClass's Kind. A transactional task will eventually be
-// submitted to Cloud Tasks if and only if the transaction successfully commits.
-// This requires a sweeper instance to be running somewhere, see ModuleOptions.
-// Note that a failure to submit the task to Cloud Tasks will not abort
-// the transaction.
+// submitted to Cloud Tasks/PubSub if and only if the transaction successfully
+// commits. This requires a sweeper instance to be running somewhere, see
+// ModuleOptions. Note that a failure to submit the task to Cloud Tasks/PubSub
+// will not abort the transaction.
 //
 // If the task has a DeduplicationKey and there already was a recent task with
 // the same TaskClass ID and DeduplicationKey, silently ignores the added task.

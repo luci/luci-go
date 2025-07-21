@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package tq provides a task queue implementation on top of Cloud Tasks.
+// Package tq provides a task queue implementation on top of Cloud Tasks and
+// Cloud PubSub.
 //
 // It exposes a high-level API that operates with proto messages and hides
 // gory details such as serialization, routing, authentication, etc.
@@ -26,11 +27,11 @@
 //
 // First, the sweeper must be running somewhere. The sweeper is responsible for
 // discovering tasks that were successfully committed into the database, but
-// were failed to be dispatched to Cloud Tasks (for example if the client that
-// was submitting the task crashed right after committing the transaction). The
-// sweeper can run either as a standalone service (the most convenient option
-// for Kubernetes deployments) or as a cron job (the most convenient option for
-// Appengine deployments).
+// were failed to be dispatched to Cloud Tasks or PubSub (for example if the
+// client that was submitting the task crashed right after committing the
+// transaction). The sweeper can run either as a standalone service (the most
+// convenient option for Kubernetes deployments) or as a cron job (the most
+// convenient option for Appengine deployments).
 //
 // Second, the core server/tq library needs to "know" how to talk to the
 // database that implements transactions. This is achieved by blank-importing
