@@ -27,7 +27,7 @@ export const SHOW_TEST_INVESTIGATION_PAGE_OPT_IN_BANNER_FLAG =
   createFeatureFlag({
     namespace: 'test-investigation-ui',
     name: 'show-opt-in-banner',
-    percentage: 50,
+    percentage: 100,
     description:
       'Shows an opt in banner to users to allow them to opt in to the new test investigation UI.',
     trackingBug: 'b:422604579',
