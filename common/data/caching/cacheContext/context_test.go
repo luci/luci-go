@@ -69,7 +69,7 @@ func runLookupBenchmark(b *testing.B, depth int, cache bool) {
 		c = Wrap(c)
 	}
 
-	for round := 0; round < b.N; round++ {
+	for range b.N {
 		// Lookup the value up a few times.
 		for range 5 {
 			v, ok := c.Value(0).(int)

@@ -81,7 +81,7 @@ func WriteBytes(buf io.ByteWriter, data []byte) (n int, err error) {
 func ReadBytes(buf io.ByteReader) (ret []byte, n int, err error) {
 	tmpBuf := bytes.Buffer{}
 	acc := byte(0)
-	for i := 0; i < ReadByteLimit; i++ {
+	for i := range ReadByteLimit {
 		o := byte(0)
 		if o, err = buf.ReadByte(); err != nil {
 			return

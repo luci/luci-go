@@ -97,7 +97,7 @@ func mapFromMessage(pm proto.Message, path []string) (map[string]bigquery.Value,
 	var row map[string]bigquery.Value // keep it nil unless there are values
 	path = append(path, "")
 
-	for i := 0; i < fields.Len(); i++ {
+	for i := range fields.Len() {
 		var bqValue any
 		var err error
 		field := fields.Get(i)
@@ -111,7 +111,7 @@ func mapFromMessage(pm proto.Message, path []string) (map[string]bigquery.Value,
 
 			elems := make([]any, 0, list.Len())
 			vPath := append(path, "")
-			for i := 0; i < list.Len(); i++ {
+			for i := range list.Len() {
 				vPath[len(vPath)-1] = strconv.Itoa(i)
 				elemValue, err := getValue(field, list.Get(i), vPath)
 				if err != nil {

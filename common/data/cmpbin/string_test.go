@@ -211,7 +211,7 @@ func (s StringSliceSlice) Less(i, j int) bool {
 	if len(b) < lim {
 		lim = len(b)
 	}
-	for k := 0; k < lim; k++ {
+	for k := range lim {
 		if a[k] > b[k] {
 			return false
 		} else if a[k] < b[k] {

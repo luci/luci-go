@@ -34,21 +34,21 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
-	"go.chromium.org/luci/luci_notify/internal"
 	"go.chromium.org/luci/luci_notify/common"
+	"go.chromium.org/luci/luci_notify/internal"
 )
 
 func mockUnhealthyResponse(mockBuildersClient *buildbucketpb.MockBuildersClient, builderName string) {
 	expectedReq1 := &buildbucketpb.GetBuilderRequest{
-				Id: &buildbucketpb.BuilderID{
-					Project: "chromium",
-					Bucket:  "ci",
-					Builder: builderName,
-				},
-				Mask: &buildbucketpb.BuilderMask{
-					Type: 2,
-				},
-			}
+		Id: &buildbucketpb.BuilderID{
+			Project: "chromium",
+			Bucket:  "ci",
+			Builder: builderName,
+		},
+		Mask: &buildbucketpb.BuilderMask{
+			Type: 2,
+		},
+	}
 	mockBuildersClient.
 		EXPECT().
 		GetBuilder(gomock.Any(), proto.MatcherEqual(expectedReq1)).
@@ -65,15 +65,15 @@ func mockUnhealthyResponse(mockBuildersClient *buildbucketpb.MockBuildersClient,
 
 func mockHealthyResponse(mockBuildersClient *buildbucketpb.MockBuildersClient, builderName string) {
 	expectedReq1 := &buildbucketpb.GetBuilderRequest{
-				Id: &buildbucketpb.BuilderID{
-					Project: "chromium",
-					Bucket:  "ci",
-					Builder: builderName,
-				},
-				Mask: &buildbucketpb.BuilderMask{
-					Type: 2,
-				},
-			}
+		Id: &buildbucketpb.BuilderID{
+			Project: "chromium",
+			Bucket:  "ci",
+			Builder: builderName,
+		},
+		Mask: &buildbucketpb.BuilderMask{
+			Type: 2,
+		},
+	}
 	mockBuildersClient.
 		EXPECT().
 		GetBuilder(gomock.Any(), proto.MatcherEqual(expectedReq1)).
@@ -99,28 +99,28 @@ func TestNotifyOwnersHelper(t *testing.T) {
 		c, sched := tq.TestingContext(c, nil)
 
 		mockBHN := []*notifypb.BuilderHealthNotifier{
-				&notifypb.BuilderHealthNotifier{
-					OwnerEmail: "test@google.com",
-					Builders: []*notifypb.Builder{
-						&notifypb.Builder{
-							Bucket: "ci",
-							Name:   "builder1",
-						},
-						&notifypb.Builder{
-							Bucket: "ci",
-							Name:   "builder2",
-						},
-						&notifypb.Builder{
-							Bucket: "ci",
-							Name:   "builder3",
-						},
-						&notifypb.Builder{
-							Bucket: "ci",
-							Name:   "builder4",
-						},
+			&notifypb.BuilderHealthNotifier{
+				OwnerEmail: "test@google.com",
+				Builders: []*notifypb.Builder{
+					&notifypb.Builder{
+						Bucket: "ci",
+						Name:   "builder1",
+					},
+					&notifypb.Builder{
+						Bucket: "ci",
+						Name:   "builder2",
+					},
+					&notifypb.Builder{
+						Bucket: "ci",
+						Name:   "builder3",
+					},
+					&notifypb.Builder{
+						Bucket: "ci",
+						Name:   "builder4",
 					},
 				},
-			}
+			},
+		}
 
 		t.Run("Success", func(t *ftt.Test) {
 			mockUnhealthyResponse(mockBuildersClient, "builder2")
@@ -301,7 +301,7 @@ func TestNotifyOwnersHelper(t *testing.T) {
 			task := tasks["test@google.com"]
 			assert.Loosely(t, task.Recipients, should.Match([]string{"test@google.com"}))
 			assert.Loosely(t, task.Subject, should.Equal("Builder Health For test@google.com - 0 of 1 Are in Bad Health"))
-			expectedBody :=`
+			expectedBody := `
 	<html>
 	<head>
 		<meta charset="utf-8">

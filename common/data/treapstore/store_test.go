@@ -264,7 +264,7 @@ func TestStoreParallel(t *testing.T) {
 					}
 
 					total := 0
-					for i := 0; i < 1+len(snaps); i++ {
+					for range 1 + len(snaps) {
 						total += <-doneC
 					}
 					readDoneC <- total

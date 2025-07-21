@@ -546,7 +546,7 @@ func isClusteringDifferent(a, b *bigquery.Clustering) bool {
 	if aLength != bLength {
 		return true
 	}
-	for i := 0; i < aLength; i++ {
+	for i := range aLength {
 		if !strings.EqualFold(a.Fields[i], b.Fields[i]) {
 			return true
 		}

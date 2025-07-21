@@ -296,7 +296,7 @@ func (d *Dispatcher) runBatchesPerQueue(ctx context.Context, tasks []*Task,
 	}
 
 	all := errors.NewLazyMultiError(ops)
-	for i := 0; i < ops; i++ {
+	for i := range ops {
 		err := <-errs
 		if err != nil {
 			all.Assign(i, err)

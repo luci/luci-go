@@ -72,7 +72,7 @@ func (m messageSliceFlag) String() string {
 		return ""
 	}
 	var sb strings.Builder
-	for i := 0; i < m.msgSliceVal.Len(); i++ {
+	for i := range m.msgSliceVal.Len() {
 		msg := m.msgSliceVal.Index(i).Interface().(proto.Message)
 
 		if buf, err := protojson.Marshal(msg); err != nil {

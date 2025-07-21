@@ -54,7 +54,7 @@ func schemaToMap(schema interface{}, mustInclude, useNull map[string]bool, useNu
 	s := reflect.ValueOf(schema)
 	st := s.Type()
 
-	for i := 0; i < s.NumField(); i++ {
+	for i := range s.NumField() {
 		jsonTag := st.Field(i).Tag.Get("json")
 		if jsonTag == "" {
 			continue

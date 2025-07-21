@@ -87,7 +87,7 @@ func TestBuffer(t *testing.T) {
 				})
 
 				t.Run(`Can consume byte-at-a-time.`, func(t *ftt.Test) {
-					for i := int64(0); i < size; i++ {
+					for i := range size {
 						assert.Loosely(t, b.Len(), should.Equal((size - i)))
 						assert.Loosely(t, b.Bytes(), should.Match(coalesced[i:]))
 						b.Consume(1)

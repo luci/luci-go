@@ -131,7 +131,7 @@ func (n *node) sortedKeys() []string {
 		sort.Strings(keys)
 	case kindList:
 		// Order keys as integer indexes.
-		for idx := 0; idx < len(n.children); idx++ {
+		for idx := range len(n.children) {
 			keys = append(keys, fmt.Sprintf("%d", idx))
 		}
 	}

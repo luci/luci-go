@@ -99,7 +99,7 @@ func (ib *invertibleBytesBuffer) Read(bs []byte) (int, error) {
 func (ib *invertibleBytesBuffer) WriteString(s string) (int, error) {
 	if ib.invert {
 		ib.Grow(len(s))
-		for i := 0; i < len(s); i++ {
+		for i := range len(s) {
 			if err := ib.WriteableBytesBuffer.WriteByte(s[i] ^ 0xFF); err != nil {
 				return i, err
 			}

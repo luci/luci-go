@@ -103,9 +103,7 @@ func formatWithFields(format string, fieldString string, args []any) string {
 	if padding < 1 {
 		padding = 1
 	}
-	for i := 0; i < padding; i++ {
-		buf.WriteString(" ")
-	}
+	buf.WriteString(strings.Repeat(" ", padding))
 	buf.WriteString(fieldString)
 	return buf.String()
 }

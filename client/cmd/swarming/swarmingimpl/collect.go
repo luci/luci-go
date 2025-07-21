@@ -577,7 +577,7 @@ func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Client, sink *
 	// Wait for all fetchTaskResults(...) calls to complete. Emit their output
 	// as soon as it is available.
 	emitter.start(&outputErrs)
-	for i := 0; i < len(cmd.taskIDs); i++ {
+	for range cmd.taskIDs {
 		res := <-resultsCh
 		res.logSummary(ctx) // might be context cancellation, log it
 		if cmd.taskOutput.includesConsole() {

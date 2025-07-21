@@ -442,7 +442,7 @@ func (m *Mask) mergeImpl(src, dest protoreflect.Message) {
 		case fieldDesc.IsList():
 			newField := dest.NewField(fieldDesc)
 			srcList, destList := srcVal.List(), newField.List()
-			for i := 0; i < srcList.Len(); i++ {
+			for i := range srcList.Len() {
 				destList.Append(cloneValue(srcList.Get(i), kind))
 			}
 			dest.Set(fieldDesc, newField)
