@@ -74,14 +74,19 @@ export const filterDescriptors = {
   resource_pm: 'multi-select',
   fulfillment_channel: 'multi-select',
   execution_status: 'multi-select',
+  resource_groups: 'array-field-multi-select',
   rr_bug_status: 'multi-select',
 } as const satisfies Partial<
-  Record<ResourceRequestColumnKey, 'multi-select' | 'date-range' | 'range'>
+  Record<
+    ResourceRequestColumnKey,
+    'array-field-multi-select' | 'multi-select' | 'date-range' | 'range'
+  >
 >;
 
 export type RriFilterKey = keyof typeof filterDescriptors;
 
 type MapDescriptorToType<T extends (typeof filterDescriptors)[RriFilterKey]> = {
+  'array-field-multi-select': string[];
   'multi-select': string[];
   'date-range': DateFilterData;
   range: RangeFilterData;
@@ -206,6 +211,7 @@ const getFiltersFromSearchParam = (
     resource_pm: parseMultiselectFilter(rec['resource_pm']),
     fulfillment_channel: parseMultiselectFilter(rec['fulfillment_channel']),
     execution_status: parseMultiselectFilter(rec['execution_status']),
+    resource_groups: parseMultiselectFilter(rec['resource_groups']),
     rr_bug_status: parseMultiselectFilter(rec['rr_bug_status']),
   } satisfies Record<RriFilterKey, unknown>;
 };
@@ -228,6 +234,12 @@ const filtersToUrlString = (filters: RriFilters): string => {
       }
     }
     if (type === 'multi-select') {
+      const values = filters[key] as string[] | undefined;
+      if (values) {
+        parts.push(`${key}=${multiselectFilterToUrlString(values)}`);
+      }
+    }
+    if (type === 'array-field-multi-select') {
       const values = filters[key] as string[] | undefined;
       if (values) {
         parts.push(`${key}=${multiselectFilterToUrlString(values)}`);
@@ -287,6 +299,17 @@ const filtersToAip = (filters: RriFilters): string => {
       if (values) {
         parts.push(
           '(' + values.map((v) => `${key} = "${v}"`).join(' OR ') + ')',
+        );
+      }
+    }
+    if (type === 'array-field-multi-select') {
+      const values = filters[key] as string[] | undefined;
+      if (!values || values.length === 0) {
+        continue;
+      }
+      if (values) {
+        parts.push(
+          '(' + values.map((v) => `${key} : "${v}"`).join(' OR ') + ')',
         );
       }
     }
@@ -353,7 +376,8 @@ const getElements = (
     fulfillment_channel: data.fulfillmentChannel,
     execution_status: data.executionStatus,
     rr_bug_status: data.resourceRequestBugStatus,
-  };
+    resource_groups: data.resourceGroups,
+  } as Record<RriFilterKey, string[]>;
 
   return map[option] ?? [];
 };
@@ -516,6 +540,18 @@ export const useRriFilters = () => {
           : 0,
       optionsComponent: MultiSelectFilter,
     },
+    {
+      value: 'resource_groups',
+      getChildrenSearchScore: (searchQuery: string) =>
+        query.data
+          ? getSortedMultiselectElements(
+              query.data,
+              'resource_groups',
+              searchQuery,
+            )[0]?.score
+          : 0,
+      optionsComponent: MultiSelectFilter,
+    },
   ] as RriFilterOption[];
 
   const filterData = useMemo(
@@ -570,6 +606,7 @@ export const useRriFilters = () => {
     resource_pm: (v) => (v as string[]).join(', '),
     fulfillment_channel: (v) => (v as string[]).join(', '),
     execution_status: (v) => (v as string[]).join(', '),
+    resource_groups: (v) => (v as string[]).join(', '),
     rr_bug_status: (v) => (v as string[]).join(', '),
   } as const satisfies Record<
     RriFilterKey,
