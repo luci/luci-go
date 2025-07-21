@@ -15,7 +15,7 @@
 import styled from '@emotion/styled';
 import { Alert, CircularProgress, MenuList } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown';
 import { OptionsMenu } from '@/fleet/components/filter_dropdown/options_menu';
@@ -42,6 +42,10 @@ export const MultiSelectFilter = ({
   searchQuery,
 }: OptionComponentProps<ResourceRequestInsightsOptionComponentProps>) => {
   useEffect(() => () => onClose(), [onClose]);
+
+  const [initialSelections, _] = useState(
+    (filters && (filters[option.value] as string[])) ?? [],
+  );
 
   const client = useFleetConsoleClient();
   const query = useQuery(
@@ -80,6 +84,7 @@ export const MultiSelectFilter = ({
     query.data,
     option.value,
     searchQuery,
+    initialSelections,
   );
 
   const optionValues = filters && (filters[option.value] as string[]);

@@ -354,10 +354,19 @@ export const getSortedMultiselectElements = (
   data: GetResourceRequestsMultiselectFilterValuesResponse,
   option: RriFilterKey,
   searchQuery: string,
+  initialSelections: string[] = [],
 ) => {
-  const els = getElements(data, option).map(
-    (el): OptionValue => ({ label: el, value: el }),
-  );
+  let elements = getElements(data, option) as string[];
+  elements = elements.sort((a, b) => {
+    if (initialSelections.includes(a) && !initialSelections.includes(b)) {
+      return -1;
+    }
+    if (!initialSelections.includes(a) && initialSelections.includes(b)) {
+      return 1;
+    }
+    return a > b ? 1 : -1;
+  });
+  const els = elements.map((el): OptionValue => ({ label: el, value: el }));
   return fuzzySort(searchQuery)(els, (x) => x.label);
 };
 
