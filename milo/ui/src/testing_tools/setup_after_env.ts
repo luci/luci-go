@@ -108,6 +108,8 @@ serverInjectedVars.SETTINGS = Object.freeze({
         assertNonNullable(process.env['VITE_FLEET_CONSOLE_HATS_PRODUCT_ID']),
       ),
     },
+    enableColumnFilter:
+      process.env['VITE_FLEET_CONSOLE_ENABLE_COLUMN_FILTER'] === 'true',
   },
   ufs: {
     host: assertNonNullable(process.env['VITE_UFS_HOST']),

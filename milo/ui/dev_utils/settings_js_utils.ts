@@ -99,6 +99,8 @@ export function getLocalDevSettingsJs(env: Record<string, string | undefined>) {
           assertNonNullable(env['VITE_FLEET_CONSOLE_HATS_PRODUCT_ID']),
         ),
       },
+      enableColumnFilter:
+        env['VITE_FLEET_CONSOLE_ENABLE_COLUMN_FILTER'] === 'true',
     },
     ufs: {
       host: assertNonNullable(env['VITE_UFS_HOST']),
