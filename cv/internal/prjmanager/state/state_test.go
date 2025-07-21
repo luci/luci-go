@@ -526,6 +526,27 @@ func TestUpdateConfig(t *testing.T) {
 				}))
 			})
 
+			t.Run("CL is no longer watched", func(t *ftt.Test) {
+				meta2 := updateConfigToNoFallabck(ctx, &ct)
+				s2, sideEffect, err := h.UpdateConfig(ctx, s1)
+				assert.NoErr(t, err)
+				assert.That(t, s1.PB, should.Match(pb1)) // s1 must not change.
+				assert.Loosely(t, sideEffect, should.HaveType[*UpdateIncompleteRunsConfig])
+				assert.That(t, sideEffect.(*UpdateIncompleteRunsConfig), should.Match(&UpdateIncompleteRunsConfig{
+					Hash:     meta2.Hash(),
+					RunIDs:   common.RunIDs{"test/1111-v1-beef"},
+					EVersion: meta2.EVersion,
+				}))
+				cl101.ApplicableConfig.Projects[0].ConfigGroupIds = []string{"sha:1231/R119"}
+				s2.cfgMatcher = cfgmatcher.LoadMatcherFromConfigGroups(ctx, nil /* configGroups */, &meta2)
+				assert.That(t, s2.makePCL(ctx, cl101), should.Match(&prjpb.PCL{
+					Clid:               int64(cl101.ID),
+					Eversion:           cl101.EVersion,
+					Status:             prjpb.PCL_UNWATCHED,
+					ConfigGroupIndexes: []int32{},
+				}))
+			})
+
 			t.Run("CL with Commit: false footer has an error", func(t *ftt.Test) {
 				cl101.Snapshot.Metadata = []*changelist.StringPair{{Key: "Commit", Value: "false"}}
 				assert.That(t, s1.makePCL(ctx, cl101).GetPurgeReasons(), should.Match([]*prjpb.PurgeReason{

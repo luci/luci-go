@@ -210,7 +210,6 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 		Eversion: int64(cl.EVersion),
 		Status:   prjpb.PCL_UNKNOWN,
 	}
-
 	var ap *changelist.ApplicableConfig_Project
 	switch kind, reason := cl.AccessKindWithReason(ctx, s.PB.GetLuciProject()); kind {
 	case changelist.AccessUnknown:
@@ -257,6 +256,19 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 	}
 
 	s.setApplicableConfigGroups(ap, cl.Snapshot, pcl)
+	if len(pcl.GetConfigGroupIndexes()) == 0 {
+		// This is the case where the CL snapshot in DS has a reference to
+		// ConfigGroup, but the project config no longer has the ConfigGroup.
+		// It happens when
+		// - The CL was watched by a ConfigGroup and fetched at least once
+		// - The project config was updated to remove the ConfigGroup.
+		// - The CL is no longer updated because the ConfigGroup has been
+		//   removed. Therefore, it still references the stale ConfigGroup hash.
+		logging.Warningf(ctx, "CL %d is no longer watched by this project", cl.ID)
+		pcl.Status = prjpb.PCL_UNWATCHED
+		return pcl
+	}
+
 	if errs := cl.Snapshot.GetErrors(); len(errs) > 0 {
 		for _, err := range errs {
 			pcl.PurgeReasons = append(pcl.PurgeReasons, &prjpb.PurgeReason{
