@@ -52,7 +52,7 @@ type ModuleOptions struct {
 // independently, but this would end up with two flags controlling the same thing,
 // which would be hard to use / a configuration "gotcha".
 var schemeMap = map[string]string{
-	"pgx": "postgres",
+	"pgx":    "postgres",
 	"sqlite": "sqlite",
 }
 
