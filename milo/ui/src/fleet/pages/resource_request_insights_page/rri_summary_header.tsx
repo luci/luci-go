@@ -24,11 +24,11 @@ import { RriFilterKey, RriFilters, useRriFilters } from './use_rri_filters';
 export function RriSummaryHeader() {
   const client = useFleetConsoleClient();
 
-  const { filterData, setFilters } = useRriFilters();
+  const { filterData, setFilters, aipString } = useRriFilters();
 
   const { data, isLoading, isError } = useQuery(
     client.CountResourceRequests.query({
-      filter: '', // TODO: b/396079336 add filtering
+      filter: aipString,
     }),
   );
 
