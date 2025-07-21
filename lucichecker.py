@@ -47,7 +47,10 @@ def golangci_lint_fix():
 
     # Run golangci-lint with --fix on the found directories
     for subdir in dirs_to_lint:
-        args = ["golangci-lint", "run", "--fix", f"--path-prefix=./{os.path.basename(subdir)}", "./..."]
+        executable = "golangci-lint"
+        if os.getenv("GOLANGCI_LINT_EXE"):
+            executable = os.getenv("GOLANGCI_LINT_EXE")
+        args = [executable, "run", "--fix", f"--path-prefix=./{os.path.basename(subdir)}", "./..."]
         print(f"Running {args} in {subdir}")
         try:
             subprocess.run(
