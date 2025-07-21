@@ -52,8 +52,11 @@ import (
 )
 
 const (
-	// AdminGroup defines a group whose members are allowed to create new groups.
+	// AdminGroup defines a group whose members are allowed to edit all groups.
 	AdminGroup = "administrators"
+
+	// GroupCreatorsGroup defines a group whose members are allowed to create new groups.
+	GroupCreatorsGroup = "auth-group-creators"
 
 	// TrustedServicesGroup defines a group whose members are allowed to
 	// subscribe to group change notifications and fetch all groups at
@@ -1128,8 +1131,8 @@ func validateAdminGroup(ctx context.Context, admin *AuthGroup) error {
 //	customerrors.ErrReferencedEntity if the group is referenced by another group.
 //	Annotated error for other errors.
 func DeleteAuthGroup(ctx context.Context, groupName string, etag string, historicalComment string) error {
-	// Disallow deletion of the admin group.
-	if groupName == AdminGroup {
+	// Disallow deletion of hardcoded groups.
+	if groupName == AdminGroup || groupName == GroupCreatorsGroup {
 		return customerrors.ErrPermissionDenied
 	}
 

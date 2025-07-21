@@ -35,8 +35,8 @@ var AuthorizeRPCAccess = rpcacl.Interceptor(rpcacl.Map{
 	// All methods to work with groups require authorization.
 	"/auth.service.Groups/*": authdb.AuthServiceAccessGroup,
 
-	// Only administrators can create groups.
-	"/auth.service.Groups/CreateGroup": model.AdminGroup,
+	// Only group creators can create groups.
+	"/auth.service.Groups/CreateGroup": model.GroupCreatorsGroup,
 
 	// All methods to work with allowlists require authorization.
 	"/auth.service.Allowlists/*": authdb.AuthServiceAccessGroup,

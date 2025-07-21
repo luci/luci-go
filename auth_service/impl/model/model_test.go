@@ -1079,6 +1079,11 @@ func TestDeleteAuthGroup(t *testing.T) {
 			assert.Loosely(t, err, should.Equal(customerrors.ErrPermissionDenied))
 		})
 
+		t.Run("can't delete the creator group", func(t *ftt.Test) {
+			err := DeleteAuthGroup(ctx, GroupCreatorsGroup, "", "Go pRPC API")
+			assert.Loosely(t, err, should.Equal(customerrors.ErrPermissionDenied))
+		})
+
 		t.Run("can't delete external group", func(t *ftt.Test) {
 			group.ID = "mdb/foo"
 			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)

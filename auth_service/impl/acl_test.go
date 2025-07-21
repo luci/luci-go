@@ -96,6 +96,20 @@ func TestAuthorizeRPCAccess(t *testing.T) {
 		assert.Loosely(t, check(ctx, "auth.service.Accounts", "GetSelf"), should.Equal(codes.OK))
 		assert.Loosely(t, check(ctx, "discovery.Discovery", "Something"), should.Equal(codes.OK))
 		assert.Loosely(t, check(ctx, "auth.service.Groups", "Something"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "auth.service.Groups", "CreateGroup"), should.Equal(codes.PermissionDenied))
+		assert.Loosely(t, check(ctx, "auth.service.AuthDB", "GetSnapshot"), should.Equal(codes.PermissionDenied))
+		assert.Loosely(t, check(ctx, "unknown.API", "Something"), should.Equal(codes.PermissionDenied))
+	})
+
+	ftt.Run("Authorized as group creator", t, func(t *ftt.Test) {
+		ctx := auth.WithState(context.Background(), &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{authdb.AuthServiceAccessGroup, model.GroupCreatorsGroup},
+		})
+
+		assert.Loosely(t, check(ctx, "auth.service.Accounts", "GetSelf"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "discovery.Discovery", "Something"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "auth.service.Groups", "Something"), should.Equal(codes.OK))
 		assert.Loosely(t, check(ctx, "auth.service.Groups", "CreateGroup"), should.Equal(codes.OK))
 		assert.Loosely(t, check(ctx, "auth.service.AuthDB", "GetSnapshot"), should.Equal(codes.PermissionDenied))
 		assert.Loosely(t, check(ctx, "unknown.API", "Something"), should.Equal(codes.PermissionDenied))
