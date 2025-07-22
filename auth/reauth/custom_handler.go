@@ -20,6 +20,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"os/exec"
@@ -180,48 +181,74 @@ func (h pluginHandler) sendRequest(ctx context.Context, req *webauthn.GetAsserti
 // pluginHeaderOrder is the byte order for signing plugin message headers.
 var pluginHeaderOrder = binary.LittleEndian
 
+// pluginReadFrame reads a framed message from `r` and returns the message body.
+func pluginReadFrame(r io.Reader) ([]byte, error) {
+	var bodyLen uint32
+
+	if err := binary.Read(r, pluginHeaderOrder, &bodyLen); err != nil {
+		return nil, errors.WrapIf(err, "pluginRead: failed to read plugin frame header")
+	}
+
+	// Check the message body can fit in a []byte. So we don't panic when
+	// we allocate the `body` []byte below.
+	//
+	// For example, on 32-bit systems, the max supported size MaxInt is smaller
+	// than what's permitted in the plugin protocol (MaxUint32).
+	if int64(bodyLen) > int64(math.MaxInt) {
+		return nil, errors.Fmt("pluginRead: plugin frame body size is too large for this platform, got: %v, max supported size: %v", bodyLen, math.MaxInt)
+	}
+
+	body := make([]byte, bodyLen)
+	if _, err := io.ReadFull(r, body); err != nil {
+		return nil, errors.WrapIf(err, "pluginRead: failed to read plugin frame body")
+	}
+
+	return body, nil
+}
+
+// pluginWriteFrame writes `body` to `w` as a framed plugin message for signing plugin.
+func pluginWriteFrame(w io.Writer, body []byte) (err error) {
+	bodyLen := len(body)
+
+	// Cast to int64 to avoid coercing RHS to int (which might be int32 on certain platforms).
+	if int64(bodyLen) > int64(math.MaxUint32) {
+		return errors.New("pluginWrite: body too big")
+	}
+
+	if err := binary.Write(w, pluginHeaderOrder, uint32(bodyLen)); err != nil {
+		return errors.WrapIf(err, "pluginWrite: failed to write plugin frame header")
+	}
+
+	if _, err := w.Write(body); err != nil {
+		return errors.WrapIf(err, "pluginWrite: failed to write plugin frame body")
+	}
+
+	return nil
+}
+
 // pluginEncode encodes framed JSON messages for signing plugins.
 func pluginEncode(v any) ([]byte, error) {
 	body, err := json.Marshal(v)
 	if err != nil {
 		return nil, errors.Fmt("pluginEncode: %w", err)
 	}
-	// Check body length fits within 32-bit limit of the encoding.
-	// Note we cast both LHS and RHS to an int64 to avoid coercing
-	// RHS to an int (which may be only 32 bits on some platforms).
-	if int64(len(body)) > int64(math.MaxUint32) {
-		return nil, errors.New("pluginEncode: body too big")
+
+	var buf bytes.Buffer
+	if err := pluginWriteFrame(&buf, body); err != nil {
+		return nil, errors.WrapIf(err, "pluginEncode: failed to encode into a buffer")
 	}
-	// If we are running on a platform where ints are 32 bits
-	// or less, check len(body)+4 will not overflow int.
-	if len(body) > math.MaxInt-4 {
-		return nil, errors.Fmt("pluginEncode: body exceeding %v unsupported on this platform", math.MaxInt-4)
-	}
-	msg := make([]byte, len(body)+4)
-	if _, err = binary.Encode(msg[:4], pluginHeaderOrder, uint32(len(body))); err != nil {
-		return nil, errors.Fmt("pluginEncode: %w", err)
-	}
-	copy(msg[4:], body)
-	return msg, nil
+
+	return buf.Bytes(), nil
 }
 
 // pluginDecode decodes framed JSON messages from signing plugins.
 func pluginDecode(d []byte, v any) error {
-	if len(d) < 4 {
-		return errors.New("pluginDecode: input too short")
-	}
-	var bodyLen uint32
-	n, err := binary.Decode(d[:4], pluginHeaderOrder, &bodyLen)
+	body, err := pluginReadFrame(bytes.NewReader(d))
 	if err != nil {
-		return errors.Fmt("pluginDecode: %w", err)
+		return err
 	}
-	if n != 4 {
-		panic(fmt.Sprintf("read unexpected number of header bytes %d", n))
-	}
-	if int64(bodyLen) != int64(len(d)-4) {
-		return errors.Fmt("pluginDecide: message declared %d length, but actual length is %d (with 4 bytes header)", bodyLen, len(d))
-	}
-	if err := json.Unmarshal(d[4:], v); err != nil {
+
+	if err := json.Unmarshal(body, v); err != nil {
 		return errors.Fmt("pluginDecode: %w", err)
 	}
 	return nil

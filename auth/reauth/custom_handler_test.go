@@ -15,13 +15,68 @@
 package reauth
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/webauthn"
 )
+
+func TestPluginReadFrame(t *testing.T) {
+	t.Parallel()
+
+	t.Run("correctly framed messages", func(t *testing.T) {
+		t.Parallel()
+
+		// 4 byte header + 1 byte data.
+		frame1 := []byte{0x01, 0x00, 0x00, 0x00, 0xff}
+
+		// 4 byte header + 2 byte data.
+		frame2 := []byte{0x02, 0x00, 0x00, 0x00, 0xff, 0xfe}
+
+		// Combine two frames into a single reader.
+		r := io.MultiReader(bytes.NewReader(frame1), bytes.NewReader(frame2))
+
+		got1, err := pluginReadFrame(r)
+		assert.NoErr(t, err)
+		assert.That(t, got1, should.Match([]byte{0xff}))
+
+		got2, err := pluginReadFrame(r)
+		assert.NoErr(t, err)
+		assert.That(t, got2, should.Match([]byte{0xff, 0xfe}))
+	})
+
+	t.Run("incomplete header", func(t *testing.T) {
+		t.Parallel()
+
+		frame := []byte{0xff}
+
+		_, err := pluginReadFrame(bytes.NewReader(frame))
+		assert.ErrIsLike(t, err, io.ErrUnexpectedEOF)
+	})
+
+	t.Run("incomplete body", func(t *testing.T) {
+		t.Parallel()
+
+		// 4 byte header (length 255), 1 byte body.
+		frame := []byte{0xff, 0x00, 0x00, 0x00, 0x01}
+
+		_, err := pluginReadFrame(bytes.NewReader(frame))
+		assert.ErrIsLike(t, err, io.ErrUnexpectedEOF)
+	})
+}
+
+func TestPluginWriteFrame(t *testing.T) {
+	t.Parallel()
+
+	var b bytes.Buffer
+	err := pluginWriteFrame(&b, []byte{0xca, 0xfe})
+	assert.NoErr(t, err)
+	assert.That(t, b.Bytes(), should.Match([]byte{0x02, 0x00, 0x00, 0x00, 0xca, 0xfe}))
+}
 
 func TestPluginEncode(t *testing.T) {
 	t.Parallel()
