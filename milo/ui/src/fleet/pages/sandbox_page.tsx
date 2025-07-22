@@ -39,10 +39,6 @@ export const SandboxPage = () => {
     refetchInterval: 60000,
   });
 
-  const throwError = () => {
-    throw new Error('This is a test error from SandboxPage');
-  };
-
   return (
     <>
       Welcome. This is a sandbox page with experiments and tools for developers
@@ -53,10 +49,6 @@ export const SandboxPage = () => {
         onClick={() => requestSurvey(SETTINGS.fleetConsole.hats, authState)}
       >
         Test Survey
-      </Button>
-      <h2>Test Error Logging</h2>
-      <Button color="error" variant="contained" onClick={throwError}>
-        Throw Test Error
       </Button>
       <h2>Sample: UFS ListMachinesRequest</h2>
       <pre style={{ maxHeight: '300px', maxWidth: '100%', overflow: 'scroll' }}>

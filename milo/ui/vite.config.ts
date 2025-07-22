@@ -76,9 +76,6 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: '/ui',
-    esbuild: {
-      keepNames: true,
-    },
     build: {
       // Vite doesn't like index.html to be placed anywhere other than at the
       // root level of the input/output directory.
@@ -97,14 +94,6 @@ export default defineConfig(({ mode }) => {
         output: {
           chunkFileNames: `immutable/[name]-${HASH_TAG}.js`,
           entryFileNames: `immutable/[name]-${HASH_TAG}.js`,
-          sourcemapPathTransform: (relativePath, _) => {
-            const normalized = relativePath.replace(/\\/g, '/');
-
-            // remove leading ../ in the path. In that case they will be considered
-            // relative to the root of the host which is ok.
-            return '/' + normalized.replace(/^(\.\.\/)+/, '');
-            // return normalized.replace(/^(\.\.\/)/, '');
-          },
         },
         // Silence source map generattion warning. This is a workaround for
         // https://github.com/vitejs/vite/issues/15012.
