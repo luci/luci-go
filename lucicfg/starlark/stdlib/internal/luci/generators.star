@@ -1483,14 +1483,14 @@ def gen_notify_cfg(ctx):
                     builders.append(
                         notify_pb.Builder(
                             bucket = bucket.name,
-                            name = builder.name
-                        )
+                            name = builder.name,
+                        ),
                     )
         if len(builders) == 0:
             print("no builders belonging to %s when trying to create builder health " +
-            "notifier", owner_email)
+                  "notifier", owner_email)
         builder_health_notifiers_pb.append(
-            _builder_health_notifier_pb(n, builders)
+            _builder_health_notifier_pb(n, builders),
         )
 
     # Emit a single notify_pb.Notifier per builder with all notifications for

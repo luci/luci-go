@@ -19,13 +19,12 @@ load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "bhn")
 
 def _builder_health_notifier(
-    ctx, # @unused
-    owner_email,
-    ignore_buckets = None,
-    disable = None,
-    additional_emails = None,
-    notify_all_healthy = None,
-):
+        ctx,  # @unused
+        owner_email,
+        ignore_buckets = None,
+        disable = None,
+        additional_emails = None,
+        notify_all_healthy = None):
     """ Defines a builder health notifier configuration.
 
     The configuration will be used to aggregate all builders
@@ -37,15 +36,13 @@ def _builder_health_notifier(
 
       owner_email: This is an identifier which is unique within a project.
         Required.
-
       ignore_buckets: Ignore_buckets is a list of bucket names that we will not send
        email summaries for. Default is None. Optional.
-      disabale: Disable is a bool allowing owners to toggle notification settings
-	   on or off. Default value is false. Optional.
+      disable: Disable is a bool allowing owners to toggle notification settings
       additional_emails: Additional_emails is a list of other emails that may want to receive
-	   the summary of builders' health. Optional.
-      notify_all_health: Notify_all_healthy is a bool which dictates whether to send an email
-	   summary stating that all builders are healthy. Default is false. Optional.
+       the summary of builders' health. Optional.
+      notify_all_healthy: Notify_all_healthy is a bool which dictates whether to send an email
+       summary stating that all builders are healthy. Default is false. Optional.
     """
     owner_email = validate.string("owner_email", owner_email, required = True)
     ignore_buckets = validate.list("ignore_buckets", ignore_buckets, required = False)
@@ -59,11 +56,11 @@ def _builder_health_notifier(
     return bhn.add(
         owner_email = owner_email,
         props = {
-            "owner_email" : owner_email,
-            "ignore_buckets" : ignore_buckets,
-            "disable" : disable,
-            "additional_emails" : additional_emails,
-            "notify_all_healthy" : notify_all_healthy,
+            "owner_email": owner_email,
+            "ignore_buckets": ignore_buckets,
+            "disable": disable,
+            "additional_emails": additional_emails,
+            "notify_all_healthy": notify_all_healthy,
         },
     )
 

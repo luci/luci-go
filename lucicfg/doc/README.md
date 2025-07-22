@@ -2271,7 +2271,16 @@ the same name.
 ### luci.builder_health_notifier {#luci.builder-health-notifier}
 
 ```python
-luci.builder_health_notifier(owner_email, disabale = None)
+luci.builder_health_notifier(
+    # Required arguments.
+    owner_email,
+
+    # Optional arguments.
+    ignore_buckets = None,
+    disable = None,
+    additional_emails = None,
+    notify_all_healthy = None,
+)
 ```
 
 
@@ -2281,16 +2290,14 @@ Defines a builder health notifier configuration.
 The configuration will be used to aggregate all builders
 belonging to an owner and send out health reports for the
 builders in an email.
-on or off. Default value is false. Optional.
-  additional_emails: Additional_emails is a list of other emails that may want to receive
-the summary of builders' health. Optional.
-  notify_all_health: Notify_all_healthy is a bool which dictates whether to send an email
-summary stating that all builders are healthy. Default is false. Optional.
 
 #### Arguments {#luci.builder-health-notifier-args}
 
 * **owner_email**: This is an identifier which is unique within a project. Required.
-* **disabale**: Disable is a bool allowing owners to toggle notification settings
+* **ignore_buckets**: Ignore_buckets is a list of bucket names that we will not send email summaries for. Default is None. Optional.
+* **disable**: Disable is a bool allowing owners to toggle notification settings
+* **additional_emails**: Additional_emails is a list of other emails that may want to receive the summary of builders' health. Optional.
+* **notify_all_healthy**: Notify_all_healthy is a bool which dictates whether to send an email summary stating that all builders are healthy. Default is false. Optional.
 
 
 

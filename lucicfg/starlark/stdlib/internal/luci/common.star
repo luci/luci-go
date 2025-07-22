@@ -586,7 +586,6 @@ notifiable = struct(
     add = _notifiable_add,
 )
 
-
 ################################################################################
 ## Helpers for defining luci.builder_health_notifier nodes.
 
