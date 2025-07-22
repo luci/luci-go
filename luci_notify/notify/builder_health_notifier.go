@@ -135,9 +135,12 @@ func generateEmail(
 	)
 	buf := &bytes.Buffer{}
 	gz := gzip.NewWriter(buf)
-	io.WriteString(gz, htmlBody)
+	_, err := io.WriteString(gz, htmlBody)
+	if err != nil {
+		logging.Debugf(c,"Failed to write string in generateEmail for %s, err is %s", htmlBody, err)
+	}
 	if err := gz.Close(); err != nil {
-		panic("failed to gzip HTML body in memory")
+		logging.Debugf(c, "Failed to close gzip.NewWriter in generateEmail for %s, err is %s", htmlBody, err)
 	}
 	logging.Debugf(c, "Completed generating email for %s", ownerEmail)
 
@@ -259,6 +262,7 @@ func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifi
 
 		// Check if we need to send an email if all builders are healthy.
 		if unhealthyBuilderCount == 0 && !builderHealthNotifier.NotifyAllHealthy {
+			logging.Debugf(c, "Got 0 unhealthy builders and notify_all_healthy is set to %s", builderHealthNotifier.NotifyAllHealthy)
 			continue
 		}
 
