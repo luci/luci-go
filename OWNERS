@@ -17,3 +17,5 @@ meiring@google.com
 mdraz@google.com
 nqmtuan@google.com
 zhihuixie@google.com
+
+per-file /SECURITY_OWNERS=file:/SECURITY_OWNERS
