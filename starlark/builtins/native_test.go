@@ -46,7 +46,8 @@ func TestToGoNative(t *testing.T) {
 	}
 
 	mustFail := func(code string, expectErr string) {
-		out, err := runScript(code) // nolint:ineffassign
+		out, err := runScript(code)
+		assert.Loosely(t, err, should.ErrLike(nil))
 		_, err = ToGoNative(out["val"])
 		assert.Loosely(t, err, should.ErrLike(expectErr))
 	}
