@@ -265,7 +265,7 @@ func TestUpstreamErrors(t *testing.T) {
 		assert.Loosely(t, me == nil, should.BeTrue)
 
 		var err error
-		err = me
+		err = me // nolint:ineffassign
 
 		// Unfortunately Go has many nil's :(
 		//   So(err == nil, ShouldBeTrue)

@@ -219,7 +219,7 @@ func TestReader(t *testing.T) {
 			// the frame size to be read without incident, but the frame data to still
 			// return an error.
 			tr.err = errors.New("test: test-induced error")
-			data, err := r.ReadFrameAll()
+			data, err := r.ReadFrameAll() // nolint:ineffassign
 			assert.Loosely(t, err, should.Equal(tr.err))
 		})
 	})

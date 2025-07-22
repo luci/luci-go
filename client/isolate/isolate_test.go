@@ -50,7 +50,7 @@ func TestReplaceVars(t *testing.T) {
 		assert.Loosely(t, r, should.Match("hello wonderful wonderful world"))
 
 		// Replacement of missing variable.
-		r, err = ReplaceVariables("hello <(MISSING) world", opts)
+		r, err = ReplaceVariables("hello <(MISSING) world", opts) // nolint:ineffassign
 		assert.Loosely(t, err.Error(), should.Match("no value for variable 'MISSING'"))
 	})
 }

@@ -45,7 +45,7 @@ func TestByteSliceReader(t *testing.T) {
 			assert.Loosely(t, b, should.Equal(0x65))
 			assert.Loosely(t, err, should.BeNil)
 
-			b, err = bsd.ReadByte()
+			b, err = bsd.ReadByte() // nolint:ineffassign
 			assert.Loosely(t, err, should.Equal(io.EOF))
 		})
 

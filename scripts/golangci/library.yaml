@@ -9,11 +9,11 @@ linters:
   enable:
     - copyloopvar
     - intrange
+    - ineffassign
   disable:
     - errcheck
     - errorlint
     - govet
-    - ineffassign
     - noctx
     - staticcheck
     - unused

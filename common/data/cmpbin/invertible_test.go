@@ -90,10 +90,10 @@ func TestInvertible(t *testing.T) {
 		})
 		t.Run("Toggleable", func(t *ftt.Test) {
 			inv.SetInvert(true)
-			n, err := inv.Write([]byte("hello"))
+			n, err := inv.Write([]byte("hello")) // nolint:ineffassign
 			assert.Loosely(t, err, should.BeNil)
 			inv.SetInvert(false)
-			n, err = inv.Write([]byte("hello"))
+			n, err = inv.Write([]byte("hello")) // nolint:ineffassign
 			assert.Loosely(t, n, should.Equal(5))
 			assert.Loosely(t, inv.String(), should.Equal("\x97\x9a\x93\x93\x90hello"))
 		})
