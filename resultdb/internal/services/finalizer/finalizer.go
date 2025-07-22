@@ -277,16 +277,18 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID, opts Options)
 					return errors.Fmt("failed to read finalized notification info: %w", err)
 				}
 
-				// Note that this submits the notification transactionally,
-				// i.e. conditionally on this transaction committing.
-				notification := &pb.InvocationFinalizedNotification{
-					Invocation:   invID.Name(),
-					Realm:        inv.Realm,
-					IsExportRoot: inv.IsExportRoot,
-					ResultdbHost: opts.ResultDBHostname,
-					CreateTime:   inv.CreateTime,
+				if !invID.IsRootInvocation() && !invID.IsWorkUnit() {
+					// Note that this submits the notification transactionally,
+					// i.e. conditionally on this transaction committing.
+					notification := &pb.InvocationFinalizedNotification{
+						Invocation:   invID.Name(),
+						Realm:        inv.Realm,
+						IsExportRoot: inv.IsExportRoot,
+						ResultdbHost: opts.ResultDBHostname,
+						CreateTime:   inv.CreateTime,
+					}
+					tasks.NotifyInvocationFinalized(ctx, notification)
 				}
-				tasks.NotifyInvocationFinalized(ctx, notification)
 
 				// Enqueue update test metadata task transactionally.
 				if err := testmetadataupdator.Schedule(ctx, invID); err != nil {

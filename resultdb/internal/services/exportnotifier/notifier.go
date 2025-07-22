@@ -27,6 +27,7 @@ package exportnotifier
 
 import (
 	"context"
+	"fmt"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -172,18 +173,34 @@ func propagate(ctx context.Context, task *taskspb.RunExportNotifications, opts O
 				sources = inv.Sources
 			}
 
-			// Create pub/sub message.
-			notification := &pb.InvocationReadyForExportNotification{
-				ResultdbHost:        opts.ResultDBHostname,
-				RootInvocation:      root.RootInvocation.Name(),
-				RootInvocationRealm: rootRealm,
-				RootCreateTime:      rootCreateTime,
-				Invocation:          root.Invocation.Name(),
-				InvocationRealm:     inv.Realm,
-				Sources:             sources,
+			// Publish a notification, unless the invocation is for a
+			// work unit or root invocation. A new pub-sub feed will be created
+			// that will handle these.
+			if !root.RootInvocation.IsRootInvocation() {
+				if root.RootInvocation.IsWorkUnit() {
+					// This should never happen.
+					panic(fmt.Sprintf("work unit invocation %q is an export root", root.RootInvocation.Name()))
+				}
+				if root.Invocation.IsWorkUnit() || root.Invocation.IsRootInvocation() {
+					// This should never happen.
+					panic(fmt.Sprintf("work unit or root invocation %q is included from invocation %q", root.Invocation.Name(), root.RootInvocation.Name()))
+				}
+
+				// Create pub/sub message.
+				notification := &pb.InvocationReadyForExportNotification{
+					ResultdbHost: opts.ResultDBHostname,
+					// N.B. this is old terminology, this refers to an "export root" invocation,
+					// not a root invocation.
+					RootInvocation:      root.RootInvocation.Name(),
+					RootInvocationRealm: rootRealm,
+					RootCreateTime:      rootCreateTime,
+					Invocation:          root.Invocation.Name(),
+					InvocationRealm:     inv.Realm,
+					Sources:             sources,
+				}
+				// Transactioncally dispatch it.
+				notifyInvocationReadyForExport(ctx, notification)
 			}
-			// Transactioncally dispatch it.
-			notifyInvocationReadyForExport(ctx, notification)
 
 			// Set notified.
 			root.IsNotified = true
