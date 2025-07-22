@@ -194,11 +194,11 @@ func readWhere(ctx context.Context, whereClause string, params map[string]any) (
 // IsNotified is set.
 func Create(root ExportRoot) *spanner.Mutation {
 	// Add an extra layer of protection against invalid data getting into the database.
-	if err := pbutil.ValidateInvocationID(string(root.Invocation)); err != nil {
-		panic(errors.Fmt("invalid invocation ID: %w", err))
+	if root.Invocation == "" {
+		panic(errors.New("empty invocation ID"))
 	}
-	if err := pbutil.ValidateInvocationID(string(root.RootInvocation)); err != nil {
-		panic(errors.Fmt("invalid root invocation ID: %w", err))
+	if root.RootInvocation == "" {
+		panic(errors.New("empty root invocation ID"))
 	}
 	if root.InheritedSources != nil && !root.IsInheritedSourcesSet {
 		// Note that the alternative combination InheritedSources == nil with
