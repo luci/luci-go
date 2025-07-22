@@ -29,6 +29,8 @@ import { colors } from '@/fleet/theme/colors';
 
 import { FEEDBACK_BUGANIZER_BUG_ID } from '../constants/feedback';
 
+import { SettingsMenu } from './settings_menu';
+
 export const Header = ({
   sidebarOpen,
   setSidebarOpen,
@@ -116,6 +118,7 @@ export const Header = ({
             <Feedback sx={{ color: colors.grey[700] }} />
           </Tooltip>
         </IconButton>
+        <SettingsMenu />
         {!authState.identity || authState.identity === ANONYMOUS_IDENTITY ? (
           <Button
             variant="text"

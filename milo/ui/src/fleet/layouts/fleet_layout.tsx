@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ThemeProvider, styled } from '@mui/material';
+import { Box, ThemeProvider, styled } from '@mui/material';
 import { NotificationsProvider } from '@toolpad/core/useNotifications';
 import { Settings } from 'luxon';
 import { Helmet } from 'react-helmet';
@@ -23,6 +23,7 @@ import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { SIDE_BAR_OPEN_CACHE_KEY } from '@/common/layouts/base_layout';
 import { CookieConsentBar } from '@/common/layouts/cookie_consent_bar';
 import { PrivacyFooter } from '@/common/layouts/privacy_footer';
+import { VersionBanner } from '@/common/layouts/version_banner';
 import {
   QueuedStickyScrollingBase,
   StickyOffset,
@@ -39,9 +40,10 @@ import { Sidebar } from './sidebar';
 const ScrollingBase = styled(QueuedStickyScrollingBase)`
   display: grid;
   min-height: 100vh;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto 1fr auto;
   grid-template-columns: auto minmax(0, 1fr);
   grid-template-areas:
+    'banner banner'
     'header header'
     'sidebar main'
     'sidebar footer';
@@ -66,6 +68,14 @@ export const FleetLayout = () => {
               >
                 <link rel="icon" href={bassFavicon} />
               </Helmet>
+              <Box
+                sx={{
+                  gridArea: 'banner',
+                  zIndex: (theme) => theme.zIndex.appBar,
+                }}
+              >
+                <VersionBanner />
+              </Box>
               <Sticky
                 top
                 sx={{
