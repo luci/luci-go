@@ -223,7 +223,9 @@ def _cq_tryjob_verifier(
       location_filters: a list of cq.location_filter(...).
       owner_whitelist: a list of groups with accounts of CL owners to enable
         this builder for. If set, only CLs owned by someone from any one of
-        these groups will be verified by this builder.
+        these groups will be verified by this builder. Any CL owner outside of
+        the groups that opts their CL into the builder via `CQ-Include-Trybots:`
+        will be met with an error from CV.
       equivalent_builder: an optional alternative builder for the CQ to choose
         instead. If provided, the CQ will choose only one of the equivalent
         builders as required based purely on the given CL and CL's owner and
