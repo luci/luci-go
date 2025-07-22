@@ -17,16 +17,11 @@ package tasks
 import (
 	"context"
 
-	"cloud.google.com/go/spanner"
-
-	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/services/exportnotifier"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	// Add support for Spanner transactions in TQ.
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
@@ -43,8 +38,7 @@ var FinalizationTasks = tq.RegisterTaskClass(tq.TaskClass{
 	RoutingPrefix: "/internal/tasks/finalizer", // for routing to "finalizer" service
 })
 
-// StartInvocationFinalization changes invocation state to FINALIZING
-// if updateInv is set, and enqueues a TryFinalizeInvocation task.
+// StartInvocationFinalization enqueues a TryFinalizeInvocation task.
 //
 // The caller is responsible for ensuring that the invocation was
 // previously active (except in case of new invocations being created
@@ -53,15 +47,7 @@ var FinalizationTasks = tq.RegisterTaskClass(tq.TaskClass{
 // TODO(nodir): this package is not a great place for this function, but there
 // is no better package at the moment. Keep it here for now, but consider a
 // new package as the code base grows.
-func StartInvocationFinalization(ctx context.Context, id invocations.ID, updateInv bool) {
-	if updateInv {
-		span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]any{
-			"InvocationId":      id,
-			"State":             pb.Invocation_FINALIZING,
-			"FinalizeStartTime": spanner.CommitTimestamp,
-		}))
-	}
-
+func StartInvocationFinalization(ctx context.Context, id invocations.ID) {
 	tq.MustAddTask(ctx, &tq.Task{
 		Payload: &taskspb.TryFinalizeInvocation{InvocationId: string(id)},
 		Title:   string(id),

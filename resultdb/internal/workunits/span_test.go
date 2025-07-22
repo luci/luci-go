@@ -115,5 +115,63 @@ func TestWriteWorkUnit(t *testing.T) {
 		assert.Loosely(t, expectedTestResultsExpirationTime.Time, should.Match(LegacyCreateOptions.ExpectedTestResultsExpirationTime))
 		assert.Loosely(t, submitted.Valid, should.BeFalse)
 	})
+}
 
+func TestFinalizationMethods(t *testing.T) {
+	ftt.Run("TestFinalizationMethods", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+
+		const rootInvocationID = "root-inv-id"
+
+		// Create a root invocation.
+		var ms []*spanner.Mutation
+		ms = append(ms, rootinvocations.InsertForTesting(rootinvocations.NewBuilder(rootInvocationID).Build())...)
+		ms = append(ms, InsertForTesting(NewBuilder(rootInvocationID, "root").Build())...)
+
+		// Create a work unit.
+		id := ID{
+			RootInvocationID: rootinvocations.ID(rootInvocationID),
+			WorkUnitID:       "work-unit-id",
+		}
+		workUnit := NewBuilder(rootInvocationID, "work-unit-id").WithState(pb.WorkUnit_ACTIVE).Build()
+		ms = append(ms, InsertForTesting(workUnit)...)
+
+		// Insert rows in the parent RootInvocationShards table.
+		testutil.MustApply(ctx, t, ms...)
+
+		t.Run(`MarkFinalizing`, func(t *ftt.Test) {
+			ct, err := span.Apply(ctx, MarkFinalizing(id))
+			assert.Loosely(t, err, should.BeNil)
+
+			expectedWU := workUnit.Clone()
+			expectedWU.State = pb.WorkUnit_FINALIZING
+			expectedWU.FinalizeStartTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
+
+			wu, err := Read(span.Single(ctx), id, AllFields)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, wu, should.Match(expectedWU))
+
+			// Check the legacy invocation state is also updated.
+			state, err := invocations.ReadState(span.Single(ctx), id.LegacyInvocationID())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, state, should.Equal(pb.Invocation_FINALIZING))
+		})
+		t.Run(`MarkFinalized`, func(t *ftt.Test) {
+			ct, err := span.Apply(ctx, MarkFinalized(id))
+			assert.Loosely(t, err, should.BeNil)
+
+			expectedWU := workUnit.Clone()
+			expectedWU.State = pb.WorkUnit_FINALIZED
+			expectedWU.FinalizeTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
+
+			wu, err := Read(span.Single(ctx), id, AllFields)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, wu, should.Match(expectedWU))
+
+			// Check the legacy invocation state is also updated.
+			state, err := invocations.ReadState(span.Single(ctx), id.LegacyInvocationID())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, state, should.Equal(pb.Invocation_FINALIZED))
+		})
+	})
 }

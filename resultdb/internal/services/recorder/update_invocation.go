@@ -431,7 +431,7 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 
 		span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", values))
 		if shouldFinalizeInvocation {
-			tasks.StartInvocationFinalization(ctx, invID, false)
+			tasks.StartInvocationFinalization(ctx, invID)
 		}
 
 		return nil

@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 )
 
@@ -78,6 +79,11 @@ func TestSpannerConversion(t *testing.T) {
 		t.Run(`LegacyInvocationID`, func(t *ftt.Test) {
 			id := ID("a")
 			assert.Loosely(t, id.LegacyInvocationID(), should.Equal("root:a"))
+		})
+
+		t.Run(`MustParseLegacyInvocationID`, func(t *ftt.Test) {
+			legacyID := invocations.ID("root:a")
+			assert.Loosely(t, MustParseLegacyInvocationID(legacyID), should.Equal(ID("a")))
 		})
 	})
 }

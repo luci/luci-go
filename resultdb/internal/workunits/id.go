@@ -19,6 +19,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
+	"strings"
 
 	"cloud.google.com/go/spanner"
 
@@ -80,6 +81,27 @@ func IDFromRowID(rootInvocationShardID string, workUnitID string) ID {
 	}
 }
 
+// MustParseLegacyInvocationID parses the ID of an invocation representing
+// the shadow record for a work unit into the ID of the work unit it is
+// shadowing.
+//
+// If the invocation ID does not correspond to a work unit, it panics.
+func MustParseLegacyInvocationID(id invocations.ID) ID {
+	// The work unit ID may have a colon embedded in it, we do not want to
+	// split this.
+	parts := strings.SplitN(string(id), ":", 3)
+	if len(parts) != 3 || parts[0] != "workunit" {
+		panic(fmt.Sprintf("not a legacy invocation for a work unit: %q", id))
+	}
+
+	return ID{
+		RootInvocationID: rootinvocations.ID(parts[1]),
+		WorkUnitID:       parts[2],
+	}
+}
+
+// MustParseName parses a work unit resource name into its ID.
+// If the resource name is not valid, it panics.
 func MustParseName(name string) ID {
 	rootInvocationID, workUnitID, err := pbutil.ParseWorkUnitName(name)
 	if err != nil {

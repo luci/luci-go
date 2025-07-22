@@ -17,6 +17,7 @@ package rootinvocations
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"cloud.google.com/go/spanner"
 
@@ -162,4 +163,19 @@ func (s *IDSet) FromSpanner(b *spanutil.Buffer) error {
 		s.Add(IDFromRowID(rowID))
 	}
 	return nil
+}
+
+// MustParseLegacyInvocationID parses the ID of an invocation representing
+// the shadow record for a root invocation into the ID of the root invocation
+// it is shadowing.
+//
+// If the invocation ID does not correspond to a root invocation, it panics.
+func MustParseLegacyInvocationID(id invocations.ID) ID {
+	// The work unit ID may have a colon embedded in it, we do not want to
+	// split this.
+	parts := strings.SplitN(string(id), ":", 2)
+	if len(parts) != 2 || parts[0] != "root" {
+		panic(fmt.Sprintf("not a legacy invocation for a root invocation: %q", id))
+	}
+	return ID(parts[1])
 }

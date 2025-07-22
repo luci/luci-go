@@ -214,7 +214,7 @@ func (s *recorderServer) createInvocationsInternal(ctx context.Context, now time
 
 		if req.Invocation.State == pb.Invocation_FINALIZING {
 			// Enqueue finalization task and run export notifications task.
-			tasks.StartInvocationFinalization(ctx, invocations.ID(req.InvocationId), false)
+			tasks.StartInvocationFinalization(ctx, invocations.ID(req.InvocationId))
 		}
 	}
 	span.BufferWrite(ctx, ms...)

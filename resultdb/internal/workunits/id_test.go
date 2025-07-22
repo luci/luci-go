@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 )
 
@@ -58,8 +59,40 @@ func TestIDConversion(t *testing.T) {
 			assert.Loosely(t, ID{RootInvocationID: "root-inv-id", WorkUnitID: "work-unit-id"}.shardID(150), should.Equal(58))
 		})
 
-		t.Run(`LegacyInvocationWorkUnitID`, func(t *ftt.Test) {
-			assert.Loosely(t, id.LegacyInvocationID(), should.Equal("workunit:root-inv-id:work-unit-id"))
+		t.Run(`LegacyInvocationID`, func(t *ftt.Test) {
+			t.Run(`prefixed`, func(t *ftt.Test) {
+				prefixedID := ID{
+					RootInvocationID: "root-inv-id",
+					WorkUnitID:       "some-prefix:work-unit-id",
+				}
+				assert.Loosely(t, prefixedID.LegacyInvocationID(), should.Equal("workunit:root-inv-id:some-prefix:work-unit-id"))
+			})
+			t.Run(`non-prefixed`, func(t *ftt.Test) {
+				id := ID{
+					RootInvocationID: "root-inv-id",
+					WorkUnitID:       "work-unit-id",
+				}
+				assert.Loosely(t, id.LegacyInvocationID(), should.Equal("workunit:root-inv-id:work-unit-id"))
+			})
+		})
+
+		t.Run(`MustParseLegacyInvocationID`, func(t *ftt.Test) {
+			t.Run(`prefixed`, func(t *ftt.Test) {
+				legacyID := invocations.ID("workunit:root-inv-id:some-prefix:work-unit-id")
+				expectedID := ID{
+					RootInvocationID: "root-inv-id",
+					WorkUnitID:       "some-prefix:work-unit-id",
+				}
+				assert.Loosely(t, MustParseLegacyInvocationID(legacyID), should.Equal(expectedID))
+			})
+			t.Run(`non-prefixed`, func(t *ftt.Test) {
+				legacyID := invocations.ID("workunit:root-inv-id:work-unit-id")
+				expectedID := ID{
+					RootInvocationID: "root-inv-id",
+					WorkUnitID:       "work-unit-id",
+				}
+				assert.Loosely(t, MustParseLegacyInvocationID(legacyID), should.Equal(expectedID))
+			})
 		})
 
 		t.Run(`RootInvocationShardID`, func(t *ftt.Test) {

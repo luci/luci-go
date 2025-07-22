@@ -223,3 +223,45 @@ func (r *RootInvocationRow) ToProto() *pb.RootInvocation {
 	}
 	return result
 }
+
+// MarkFinalizing creates mutations to mark the given root invocation as finalizing.
+// The caller MUST check the root invocation is currently in ACTIVE state, or this
+// may incorrectly overwrite the FinalizeStartTime.
+func MarkFinalizing(id ID) []*spanner.Mutation {
+	ms := make([]*spanner.Mutation, 0, 2+RootInvocationShardCount)
+	ms = append(ms, spanutil.UpdateMap("RootInvocations", map[string]any{
+		"RootInvocationId":  id,
+		"State":             pb.RootInvocation_FINALIZING,
+		"FinalizeStartTime": spanner.CommitTimestamp,
+	}))
+
+	for i := 0; i < RootInvocationShardCount; i++ {
+		ms = append(ms, spanutil.UpdateMap("RootInvocationShards", map[string]any{
+			"RootInvocationShardId": ShardID{RootInvocationID: id, ShardIndex: i},
+			"State":                 pb.RootInvocation_FINALIZING,
+		}))
+	}
+	ms = append(ms, invocations.MarkFinalizing(id.LegacyInvocationID()))
+	return ms
+}
+
+// MarkFinalized creates a mutation to mark the given root invocation as finalized.
+// The caller MUST check the root invocation is currently in FINALIZING state, or this
+// may incorrectly overwrite the FinalizeTime.
+func MarkFinalized(id ID) []*spanner.Mutation {
+	ms := make([]*spanner.Mutation, 0, 2+RootInvocationShardCount)
+	ms = append(ms, spanutil.UpdateMap("RootInvocations", map[string]any{
+		"RootInvocationId": id,
+		"State":            pb.RootInvocation_FINALIZED,
+		"FinalizeTime":     spanner.CommitTimestamp,
+	}))
+
+	for i := 0; i < RootInvocationShardCount; i++ {
+		ms = append(ms, spanutil.UpdateMap("RootInvocationShards", map[string]any{
+			"RootInvocationShardId": ShardID{RootInvocationID: id, ShardIndex: i},
+			"State":                 pb.RootInvocation_FINALIZED,
+		}))
+	}
+	ms = append(ms, invocations.MarkFinalized(id.LegacyInvocationID()))
+	return ms
+}

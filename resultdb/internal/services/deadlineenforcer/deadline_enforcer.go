@@ -146,7 +146,8 @@ func enforce(ctx context.Context, shard, limit int) (int, error) {
 				return nil
 			}
 
-			tasks.StartInvocationFinalization(ctx, id, true)
+			span.BufferWrite(ctx, invocations.MarkFinalizing(id))
+			tasks.StartInvocationFinalization(ctx, id)
 			return nil
 		})
 		if err == nil {
