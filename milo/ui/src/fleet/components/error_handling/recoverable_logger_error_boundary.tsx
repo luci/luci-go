@@ -28,9 +28,8 @@
 
 import { ErrorInfo, ReactNode } from 'react';
 
+import { errorHandler } from '@/common/api/stackdriver_errors';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { useLogger } from '@/fleet/hooks/logger';
-import { LogFrontendRequest_Severity } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 export interface RecoverableLoggerErrorBoundaryProps {
   readonly children: ReactNode;
@@ -42,19 +41,13 @@ export interface RecoverableLoggerErrorBoundaryProps {
 export function RecoverableLoggerErrorBoundary({
   children,
 }: RecoverableLoggerErrorBoundaryProps) {
-  const { logger } = useLogger();
+  // const { logger } = useLogger();
 
-  const handleError = (error: Error, info: ErrorInfo) => {
-    logger({
-      message: error.message,
-      source: '',
-      lineno: -1,
-      colno: -1,
-      stack: error.stack ?? '',
-      componentStack: info.componentStack ?? '',
-      url: window.location.href,
-      severity: LogFrontendRequest_Severity.ERROR,
-    });
+  const handleError = (error: Error, _: ErrorInfo) => {
+    // // eslint-disable-next-line no-console
+    // console.log('sending error to gcp:', error);
+
+    errorHandler.report(error);
   };
 
   return (

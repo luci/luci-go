@@ -43,6 +43,14 @@ const options = [
       // [1]: https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorker#browser_compatibility
       format: 'commonjs',
       sourcemap: true,
+      sourcemapPathTransform: (relativePath, _) => {
+        const normalized = relativePath.replace(/\\/g, '/');
+
+        // remove leading ../ in the path. In that case they will be considered
+        // relative to the root of the host which is ok
+        return '/' + normalized.replace(/^(\.\.\/)+/, '');
+        // return normalized.replace(/^(\.\.\/)/, '');
+      },
     },
     plugins: [typescript()],
   },
