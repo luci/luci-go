@@ -349,6 +349,167 @@ func TestReadFunctions(t *testing.T) {
 				assert.That(t, err, should.ErrLike("ids[1]: workUnitID: unspecified"))
 			})
 		})
+
+		t.Run("ReadStates", func(t *ftt.Test) {
+			// Insert an additional work unit in the existing root invocation.
+			wu2 := NewBuilder(rootInvID, "work-unit-id2").WithState(pb.WorkUnit_ACTIVE).Build()
+			ms := InsertForTesting(wu2)
+
+			// Create a further root invocation with a work unit.
+			rootInv2 := rootinvocations.NewBuilder("root-inv-id2").Build()
+			wuRoot := NewBuilder("root-inv-id2", "root").WithState(pb.WorkUnit_ACTIVE).Build()
+			wu21 := NewBuilder("root-inv-id2", "work-unit-id").WithState(pb.WorkUnit_FINALIZING).Build()
+			wu22 := NewBuilder("root-inv-id2", "work-unit-id2").WithState(pb.WorkUnit_FINALIZED).Build()
+			ms = append(ms, rootinvocations.InsertForTesting(rootInv2)...)
+			ms = append(ms, InsertForTesting(wuRoot)...)
+			ms = append(ms, InsertForTesting(wu21)...)
+			ms = append(ms, InsertForTesting(wu22)...)
+
+			testutil.MustApply(ctx, t, ms...)
+			t.Run("happy path", func(t *ftt.Test) {
+				ids := []ID{
+					{RootInvocationID: "root-inv-id2", WorkUnitID: "root"},
+					{RootInvocationID: rootInvID, WorkUnitID: "work-unit-id"},
+					{RootInvocationID: rootInvID, WorkUnitID: "work-unit-id2"},
+					{RootInvocationID: "root-inv-id2", WorkUnitID: "work-unit-id"},
+					{RootInvocationID: rootInvID, WorkUnitID: "work-unit-id"}, // Duplicates are allowed.
+					{RootInvocationID: "root-inv-id2", WorkUnitID: "work-unit-id2"},
+				}
+				states, err := ReadStates(span.Single(ctx), ids)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, states, should.Match([]pb.WorkUnit_State{
+					pb.WorkUnit_ACTIVE,
+					pb.WorkUnit_FINALIZED,
+					pb.WorkUnit_ACTIVE,
+					pb.WorkUnit_FINALIZING,
+					pb.WorkUnit_FINALIZED,
+					pb.WorkUnit_FINALIZED,
+				}))
+			})
+
+			t.Run("not found", func(t *ftt.Test) {
+				ids := []ID{
+					id,
+					{RootInvocationID: rootInvID, WorkUnitID: "non-existent-id"},
+				}
+				_, err := ReadStates(span.Single(ctx), ids)
+				st, ok := appstatus.Get(err)
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, st.Code(), should.Equal(codes.NotFound))
+				assert.Loosely(t, st.Message(), should.ContainSubstring(`"rootInvocations/root-inv-id/workUnits/non-existent-id" not found`))
+			})
+
+			t.Run("empty root invocation ID", func(t *ftt.Test) {
+				ids := []ID{
+					id,
+					{WorkUnitID: "work-unit-id2"},
+				}
+				_, err := ReadStates(span.Single(ctx), ids)
+				assert.That(t, err, should.ErrLike("ids[1]: rootInvocationID: unspecified"))
+			})
+
+			t.Run("empty work unit ID", func(t *ftt.Test) {
+				ids := []ID{
+					id,
+					{RootInvocationID: rootInvID},
+				}
+				_, err := ReadStates(span.Single(ctx), ids)
+				assert.That(t, err, should.ErrLike("ids[1]: workUnitID: unspecified"))
+			})
+		})
+
+		t.Run("ReadRequestIDsAndCreatedBys", func(t *ftt.Test) {
+			// Insert an additional work unit in the existing root invocation.
+			wu2 := NewBuilder(rootInvID, "work-unit-id2").
+				WithCreateRequestID("req-wu2").
+				WithCreatedBy("creator-wu2").
+				Build()
+			ms := InsertForTesting(wu2)
+
+			// Create a further root invocation with a work unit.
+			rootInv2 := rootinvocations.NewBuilder("root-inv-id2").Build()
+			wuRoot := NewBuilder("root-inv-id2", "root").
+				WithCreateRequestID("req-inv2-root").
+				WithCreatedBy("creator-inv2-root").
+				Build()
+			wu21 := NewBuilder("root-inv-id2", "work-unit-id").
+				WithCreateRequestID("req-inv2-wu").
+				WithCreatedBy("creator-inv2-wu").
+				Build()
+			wu22 := NewBuilder("root-inv-id2", "work-unit-id2").
+				WithCreateRequestID("req-inv2-wu2").
+				WithCreatedBy("creator-inv2-wu2").
+				Build()
+			ms = append(ms, rootinvocations.InsertForTesting(rootInv2)...)
+			ms = append(ms, InsertForTesting(wuRoot)...)
+			ms = append(ms, InsertForTesting(wu21)...)
+			ms = append(ms, InsertForTesting(wu22)...)
+
+			testutil.MustApply(ctx, t, ms...)
+
+			t.Run("happy path with non-existent", func(t *ftt.Test) {
+				ids := []ID{
+					id,
+					{RootInvocationID: "root-inv-id2", WorkUnitID: "work-unit-id"},
+					{RootInvocationID: "root-inv-id2", WorkUnitID: "work-unit-id2"},
+					{RootInvocationID: rootInvID, WorkUnitID: "non-existent-id"}, // Should not be found.
+					{RootInvocationID: "root-inv-id2", WorkUnitID: "root"},
+					{RootInvocationID: rootInvID, WorkUnitID: "work-unit-id2"},
+					id, // Duplicates are allowed.
+				}
+				results, err := ReadRequestIDsAndCreatedBys(span.Single(ctx), ids)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, results, should.Match([]*RequestIDAndCreatedBy{
+					{
+						RequestID: "test-request-id",
+						CreatedBy: "test-user",
+					},
+					{
+						RequestID: "req-inv2-wu",
+						CreatedBy: "creator-inv2-wu",
+					},
+					{
+						RequestID: "req-inv2-wu2",
+						CreatedBy: "creator-inv2-wu2",
+					},
+					nil, // for non-existent-id
+					{
+						RequestID: "req-inv2-root",
+						CreatedBy: "creator-inv2-root",
+					},
+					{
+						RequestID: "req-wu2",
+						CreatedBy: "creator-wu2",
+					},
+					{
+						RequestID: "test-request-id",
+						CreatedBy: "test-user",
+					},
+				}))
+
+				// Validate results of the same id doesn't alias each other.
+				results[0].CreatedBy = "mutated"
+				assert.That(t, results[6].CreatedBy, should.Equal("test-user"))
+			})
+			t.Run("empty root invocation ID", func(t *ftt.Test) {
+				ids := []ID{
+					id,
+					{WorkUnitID: "work-unit-id2"},
+				}
+				_, err := ReadRequestIDsAndCreatedBys(span.Single(ctx), ids)
+				assert.That(t, err, should.ErrLike("ids[1]: rootInvocationID: unspecified"))
+			})
+
+			t.Run("empty work unit ID", func(t *ftt.Test) {
+				ids := []ID{
+					id,
+					{RootInvocationID: rootInvID},
+				}
+				_, err := ReadRequestIDsAndCreatedBys(span.Single(ctx), ids)
+				assert.That(t, err, should.ErrLike("ids[1]: workUnitID: unspecified"))
+			})
+		})
+
 		t.Run("ReadChildren(Batch)", func(t *ftt.Test) {
 			// Setup data for ReadChildren and ReadChildrenBatch tests.
 			rootInvID := rootinvocations.ID("children-root")

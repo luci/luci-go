@@ -23,6 +23,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -73,6 +75,8 @@ func validateBatchCreateWorkUnitsRequest(req *pb.BatchCreateWorkUnitsRequest) er
 	if err := pbutil.ValidateBatchRequestCount(len(req.Requests)); err != nil {
 		return errors.Fmt("requests: %w", err)
 	}
+	seenIDs := workunits.NewIDSet()
+	var rootInvocationID rootinvocations.ID
 	for i, r := range req.Requests {
 		// Validate the sub-request.
 		// The request ID is not specified on the sub-request as it is already
@@ -83,6 +87,48 @@ func validateBatchCreateWorkUnitsRequest(req *pb.BatchCreateWorkUnitsRequest) er
 		if r.RequestId != "" && r.RequestId != req.RequestId {
 			return errors.Fmt("requests[%d]: request_id: inconsistent with top-level request_id", i)
 		}
+		// Validate no duplicated work unit.
+		newID := extractWorkUnitIDFromRequest(r)
+		if ok := seenIDs.Has(newID); ok {
+			return errors.Fmt("requests[%d]: work_unit_id: duplicated work unit id %q", i, r.WorkUnitId)
+		}
+		seenIDs.Add(newID)
+		// Validate all requests have the same root invocation ID.
+		if rootInvocationID != "" && rootInvocationID != newID.RootInvocationID {
+			return errors.Fmt("requests[%d]: parent: all requests must be for creations in the same root invocation", i)
+		}
+		if rootInvocationID == "" {
+			rootInvocationID = newID.RootInvocationID
+		}
+	}
+	if err := validateRequestOrdering(req); err != nil {
+		return err
 	}
 	return nil
+}
+
+// validate request entries only refer to work units created by earlier
+// request entries. This make sure no loop in the work unit structure.
+func validateRequestOrdering(req *pb.BatchCreateWorkUnitsRequest) error {
+	idToIndex := make(map[workunits.ID]int, len(req.Requests))
+	for i, r := range req.Requests {
+		newID := extractWorkUnitIDFromRequest(r)
+		idToIndex[newID] = i
+	}
+	for i, r := range req.Requests {
+		parentID := workunits.MustParseName(r.Parent)
+		idx, ok := idToIndex[parentID]
+		if ok && idx >= i {
+			return errors.Fmt("requests[%d]: parent: cannot refer to work unit created in the later request requests[%d], please order requests to match expected creation order.", i, idx)
+		}
+	}
+	return nil
+}
+
+func extractWorkUnitIDFromRequest(r *pb.CreateWorkUnitRequest) workunits.ID {
+	parentID := workunits.MustParseName(r.Parent)
+	return workunits.ID{
+		RootInvocationID: parentID.RootInvocationID,
+		WorkUnitID:       r.WorkUnitId,
+	}
 }

@@ -118,4 +118,40 @@ func TestIDConversion(t *testing.T) {
 			})
 		})
 	})
+
+	ftt.Run("IDSet", t, func(t *ftt.Test) {
+		id1 := ID{RootInvocationID: "a", WorkUnitID: "1"}
+		id2 := ID{RootInvocationID: "b", WorkUnitID: "2"}
+		id3 := ID{RootInvocationID: "c", WorkUnitID: "3"}
+		s := NewIDSet(id1, id2, id3)
+		t.Run("RemoveAll", func(t *ftt.Test) {
+			t.Run("Empty", func(t *ftt.Test) {
+				emptySet := NewIDSet()
+				emptySet.RemoveAll(s)
+				assert.Loosely(t, len(emptySet), should.Equal(0))
+			})
+			t.Run("Non-empty", func(t *ftt.Test) {
+				other := NewIDSet(id1, id3)
+				s.RemoveAll(other)
+				assert.Loosely(t, len(s), should.Equal(1))
+				assert.Loosely(t, s.Has(id2), should.BeTrue)
+				assert.Loosely(t, s.Has(id1), should.BeFalse)
+				assert.Loosely(t, s.Has(id3), should.BeFalse)
+			})
+		})
+		t.Run("ToSlice", func(t *ftt.Test) {
+			t.Run("Empty", func(t *ftt.Test) {
+				emptySet := NewIDSet()
+				emptySlice := emptySet.ToSlice()
+				assert.Loosely(t, len(emptySlice), should.Equal(0))
+			})
+			t.Run("Non-empty", func(t *ftt.Test) {
+				s := NewIDSet(id1, id2)
+				slice := s.ToSlice()
+				assert.Loosely(t, len(slice), should.Equal(2))
+				assert.Loosely(t, slice, should.Contain(id1))
+				assert.Loosely(t, slice, should.Contain(id2))
+			})
+		})
+	})
 }

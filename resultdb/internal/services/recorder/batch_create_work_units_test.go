@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -148,6 +149,12 @@ func TestValidateBatchCreateWorkUnitsRequest(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("requests: the number of requests in the batch (501) exceeds 500"))
 		})
 
+		t.Run("duplicated work unit id", func(t *ftt.Test) {
+			req.Requests[1].WorkUnitId = req.Requests[0].WorkUnitId
+
+			err := validateBatchCreateWorkUnitsRequest(req)
+			assert.Loosely(t, err, should.ErrLike("requests[1]: work_unit_id: duplicated work unit id"))
+		})
 		t.Run("sub-request", func(t *ftt.Test) {
 			t.Run("invalid", func(t *ftt.Test) {
 				req.Requests[1].WorkUnitId = "invalid id"
@@ -171,6 +178,54 @@ func TestValidateBatchCreateWorkUnitsRequest(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 				})
 			})
+		})
+		t.Run("ordering", func(t *ftt.Test) {
+			t.Run("early entry refer to later entry", func(t *ftt.Test) {
+				workUnitID3 := workunits.ID{
+					RootInvocationID: "u-my-root-id",
+					WorkUnitID:       "wu-new-3",
+				}
+				workUnitID4 := workunits.ID{
+					RootInvocationID: "u-my-root-id",
+					WorkUnitID:       "wu-new-4",
+				}
+				req.Requests = append(req.Requests,
+					&pb.CreateWorkUnitRequest{
+						Parent:     workUnitID4.Name(),
+						WorkUnitId: workUnitID3.WorkUnitID,
+						WorkUnit:   &pb.WorkUnit{Realm: "testproject:testrealm"},
+					})
+				req.Requests = append(req.Requests,
+					&pb.CreateWorkUnitRequest{
+						Parent:     "rootInvocations/u-my-root-id/workUnits/root",
+						WorkUnitId: workUnitID4.WorkUnitID,
+						WorkUnit:   &pb.WorkUnit{Realm: "testproject:testrealm"},
+					})
+
+				err := validateBatchCreateWorkUnitsRequest(req)
+				assert.That(t, err, should.ErrLike("parent: cannot refer to work unit created in the later request"))
+			})
+
+			t.Run("request contains self loop wu3 <-> wu3", func(t *ftt.Test) {
+				workUnitID3 := workunits.ID{
+					RootInvocationID: "u-my-root-id",
+					WorkUnitID:       "wu-parent:wu-new-3",
+				}
+				req.Requests = append(req.Requests,
+					&pb.CreateWorkUnitRequest{
+						Parent:     workUnitID3.Name(),
+						WorkUnitId: workUnitID3.WorkUnitID,
+						WorkUnit:   &pb.WorkUnit{Realm: "testproject:testrealm"},
+					})
+				err := validateBatchCreateWorkUnitsRequest(req)
+				assert.That(t, err, should.ErrLike("cannot refer to work unit created in the later request"))
+			})
+		})
+		t.Run("parent is a different root invocation id", func(t *ftt.Test) {
+			req.Requests[1].Parent = "rootInvocations/u-my-root-id-2/workUnits/root"
+
+			err := validateBatchCreateWorkUnitsRequest(req)
+			assert.That(t, err, should.ErrLike("all requests must be for creations in the same root invocation"))
 		})
 	})
 }

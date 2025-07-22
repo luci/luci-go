@@ -112,3 +112,50 @@ func MustParseName(name string) ID {
 		WorkUnitID:       workUnitID,
 	}
 }
+
+// IDSet is an unordered set of work unit ids.
+type IDSet map[ID]struct{}
+
+// NewIDSet creates an IDSet from members.
+func NewIDSet(ids ...ID) IDSet {
+	ret := make(IDSet, len(ids))
+	for _, id := range ids {
+		ret.Add(id)
+	}
+	return ret
+}
+
+// Add adds id to the set.
+func (s IDSet) Add(id ID) {
+	s[id] = struct{}{}
+}
+
+// Has returns true if id is in the set.
+func (s IDSet) Has(id ID) bool {
+	_, ok := s[id]
+	return ok
+}
+
+// RemoveAll removes any ids present in other.
+func (s IDSet) RemoveAll(other IDSet) {
+	if len(s) > 0 {
+		for id := range other {
+			s.Remove(id)
+		}
+	}
+}
+
+// Remove removes id from the set if it was present.
+func (s IDSet) Remove(id ID) {
+	delete(s, id)
+}
+
+// ToSlice returns the IDs in the set as a slice.
+// The order of IDs in the slice is not guaranteed.
+func (s IDSet) ToSlice() []ID {
+	slice := make([]ID, 0, len(s))
+	for id := range s {
+		slice = append(slice, id)
+	}
+	return slice
+}

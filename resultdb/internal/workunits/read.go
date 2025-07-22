@@ -177,6 +177,126 @@ func ReadRealms(ctx context.Context, ids []ID) (realms []string, err error) {
 	return realms, nil
 }
 
+// ReadStates reads the state of the given work units. If any of the work
+// units are not found, returns a NotFound appstatus error. Returned state
+// match 1:1 with the requested ids, i.e. result[i] corresponds to ids[i].
+// Duplicate IDs are allowed.
+func ReadStates(ctx context.Context, ids []ID) (states []pb.WorkUnit_State, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadStates")
+	defer func() { tracing.End(ts, err) }()
+
+	if err := validateIDs(ids); err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	states = make([]pb.WorkUnit_State, len(ids))
+
+	// No need to dedup keys going into Spanner, Cloud Spanner always behaves
+	// as if the key is only specified once.
+	var keys []spanner.Key
+	for _, id := range ids {
+		keys = append(keys, id.Key())
+	}
+
+	resultMap := make(map[ID]pb.WorkUnit_State, len(ids))
+
+	var b spanutil.Buffer
+	columns := []string{"RootInvocationShardId", "WorkUnitId", "State"}
+	err = span.Read(ctx, "WorkUnits", spanner.KeySetFromKeys(keys...), columns).Do(func(r *spanner.Row) error {
+		var rootInvocationShardID string
+		var workUnitID string
+		var state pb.WorkUnit_State
+		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &state)
+		if err != nil {
+			return errors.Fmt("read spanner row for work unit: %w", err)
+		}
+		id := IDFromRowID(rootInvocationShardID, workUnitID)
+		resultMap[id] = state
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for i, id := range ids {
+		state, ok := resultMap[id]
+		if !ok {
+			return nil, appstatus.Errorf(codes.NotFound, "%q not found", id.Name())
+		}
+		states[i] = state
+	}
+	return states, nil
+}
+
+type RequestIDAndCreatedBy struct {
+	RequestID string
+	CreatedBy string
+}
+
+// ReadRequestIDsAndCreatedBys reads the requestID and createBy of the given work units.
+// Returned results match 1:1 with the requested ids, i.e. results[i] corresponds to ids[i].
+// A nil in results[i] indicate that ids[i] not found in spanner.
+// Duplicate IDs are allowed.
+func ReadRequestIDsAndCreatedBys(ctx context.Context, ids []ID) (results []*RequestIDAndCreatedBy, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadRequestIDsAndCreatedBys")
+	defer func() { tracing.End(ts, err) }()
+
+	if err := validateIDs(ids); err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		return nil, err
+	}
+
+	// No need to dedup keys going into Spanner, Cloud Spanner always behaves
+	// as if the key is only specified once.
+	var keys []spanner.Key
+	for _, id := range ids {
+		keys = append(keys, id.Key())
+	}
+	resultMap := make(map[ID]RequestIDAndCreatedBy)
+
+	var b spanutil.Buffer
+	columns := []string{"RootInvocationShardId", "WorkUnitId", "CreateRequestId", "CreatedBy"}
+	err = span.Read(ctx, "WorkUnits", spanner.KeySetFromKeys(keys...), columns).Do(func(r *spanner.Row) error {
+		var rootInvocationShardID string
+		var workUnitID string
+		var requestID string
+		var createdBy string
+		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &requestID, &createdBy)
+		if err != nil {
+			return errors.Fmt("read spanner row for work unit: %w", err)
+		}
+		id := IDFromRowID(rootInvocationShardID, workUnitID)
+		resultMap[id] = RequestIDAndCreatedBy{
+			RequestID: requestID,
+			CreatedBy: createdBy,
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	results = make([]*RequestIDAndCreatedBy, len(ids))
+	for i, id := range ids {
+		r, ok := resultMap[id]
+		if !ok {
+			results[i] = nil
+		} else {
+			// Create a copy of r to avoid aliasing the same object in
+			// result twice (in case of the same ID being requested twice),
+			// as the caller might not expect aliasing.
+			copyR := r
+			results[i] = &copyR
+		}
+	}
+	return results, nil
+}
+
 // ReadMask controls what fields to read.
 type ReadMask int
 
