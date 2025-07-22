@@ -806,7 +806,7 @@ func TestBatchCreateBackendBuildTasks(t *testing.T) {
 			ctx := memory.Use(context.Background())
 			ctx, sch := tq.TestingContext(ctx, nil)
 			task := newTask(ctx, []int64{1, 2, 3})
-			assert.That(t, BatchCreateBackendBuildTasks(ctx, task), should.ErrLike(nil))
+			assert.NoErr(t, BatchCreateBackendBuildTasks(ctx, task))
 			assert.That(t, len(sch.Tasks()), should.Equal(3))
 		})
 	})

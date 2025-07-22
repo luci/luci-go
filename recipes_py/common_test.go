@@ -35,13 +35,13 @@ func TestRepoFromPath(t *testing.T) {
 		"recipes_path": "recipes"
 }`
 		cfgPath := filepath.Join(repoDir, filepath.Join(cfgPathSegments...))
-		assert.That(t, os.MkdirAll(filepath.Dir(cfgPath), 0755), should.ErrLike(nil))
-		assert.That(t, os.WriteFile(cfgPath, []byte(cfgContent), 0644), should.ErrLike(nil))
+		assert.NoErr(t, os.MkdirAll(filepath.Dir(cfgPath), 0755))
+		assert.NoErr(t, os.WriteFile(cfgPath, []byte(cfgContent), 0644))
 
 		repo, err := RepoFromPath(repoDir)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		absRepoDir, err := filepath.Abs(repoDir)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, repo.Path, should.Equal(absRepoDir))
 		assert.That(t, repo.Spec, should.Match(&recipepb.RepoSpec{
 			ApiVersion:  2,
@@ -61,7 +61,7 @@ func TestRepoFromPath(t *testing.T) {
 	t.Run("missing recipe repo", func(t *testing.T) {
 		t.Parallel()
 		repoDir := t.TempDir()
-		assert.That(t, os.Remove(repoDir), should.ErrLike(nil))
+		assert.NoErr(t, os.Remove(repoDir))
 		repo, err := RepoFromPath(repoDir)
 		assert.That(t, err, should.ErrLike("failed to read recipes.cfg"))
 		assert.Loosely(t, repo, should.BeNil)

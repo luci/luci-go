@@ -40,7 +40,7 @@ func TestProtoFromStruct(t *testing.T) {
 		}), target)
 
 		assert.That(t, badExtras, should.BeFalse)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, target, should.Match(&buildbucketpb.Build{
 			Id: 1234,
 		}))
@@ -50,7 +50,7 @@ func TestProtoFromStruct(t *testing.T) {
 			"id":     1234,
 		}), target)
 		assert.That(t, badExtras, should.BeTrue)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, ml.Messages(), should.Match([]memlogger.LogEntry{
 			{Level: logging.Error, Msg: `Unknown fields while parsing property namespace "": {"morple":100}`, CallDepth: 2},
 		}))
@@ -66,7 +66,7 @@ func TestProtoFromStruct(t *testing.T) {
 			"id":     1234,
 		}), target)
 		assert.That(t, badExtras, should.BeFalse)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, target, should.Match(&buildbucketpb.Build{
 			Id: 1234,
 		}))
@@ -89,7 +89,7 @@ func TestStructPBPassthrough(t *testing.T) {
 	})
 
 	state, err := r.Instantiate(context.Background(), rawStruct, nil)
-	assert.That(t, err, should.ErrLike(nil))
+	assert.NoErr(t, err)
 
 	// should.Equal makes sure that the original object was passed through.
 	assert.That(t, outer.GetInputFromState(state).Fields["random"].GetNumberValue(),
@@ -119,7 +119,7 @@ func TestStructPBPassthrough(t *testing.T) {
 	})
 
 	out, _, _, err := state.Serialize()
-	assert.That(t, err, should.ErrLike(nil))
+	assert.NoErr(t, err)
 	assert.That(t, out, should.Match(rawStruct))
 
 	// Serialize always returns a NEW Struct - ensure that these values do NOT

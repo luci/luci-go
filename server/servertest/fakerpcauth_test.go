@@ -57,10 +57,10 @@ func TestFakeRPCAuthTokens(t *testing.T) {
 
 	t.Run("GenerateOAuthToken", func(t *testing.T) {
 		tok, err := gen.GenerateOAuthToken(ctx, []string{"a", "b"}, 0)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		user, err := call("Bearer " + tok.AccessToken)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, user, should.Match(&auth.User{
 			Identity: "user:abc@example.com",
 			Email:    "abc@example.com",
@@ -76,10 +76,10 @@ func TestFakeRPCAuthTokens(t *testing.T) {
 
 	t.Run("GenerateIDToken", func(t *testing.T) {
 		tok, err := gen.GenerateIDToken(ctx, "good-aud", 0)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		user, err := call("Bearer " + tok.AccessToken)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, user, should.Match(&auth.User{
 			Identity: "user:abc@example.com",
 			Email:    "abc@example.com",
@@ -95,7 +95,7 @@ func TestFakeRPCAuthTokens(t *testing.T) {
 
 	t.Run("No header", func(t *testing.T) {
 		user, err := call("")
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.Loosely(t, user, should.BeNil)
 	})
 
@@ -120,7 +120,7 @@ func TestFakeRPCAuthTokens(t *testing.T) {
 		}
 
 		tok, err := gen.GenerateOAuthToken(ctx, []string{"a", "b"}, 0)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		_, err = call("Bearer " + tok.AccessToken)
 		assert.That(t, err, should.ErrLike("unexpected seed"))
@@ -128,7 +128,7 @@ func TestFakeRPCAuthTokens(t *testing.T) {
 
 	t.Run("Wrong audience", func(t *testing.T) {
 		tok, err := gen.GenerateIDToken(ctx, "bad-aud", 0)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		_, err = call("Bearer " + tok.AccessToken)
 		assert.That(t, err, should.ErrLike("unexpected ID token audience"))
@@ -137,7 +137,7 @@ func TestFakeRPCAuthTokens(t *testing.T) {
 	t.Run("Expiry", func(t *testing.T) {
 		ctx, _ := testclock.UseTime(context.Background(), now.Add(-20*time.Minute))
 		tok, err := gen.GenerateOAuthToken(ctx, []string{"a", "b"}, 0)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		_, err = call("Bearer " + tok.AccessToken)
 		assert.That(t, err, should.ErrLike("fake token expired 5m0s ago"))

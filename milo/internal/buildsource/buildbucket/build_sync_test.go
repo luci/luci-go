@@ -161,16 +161,16 @@ func TestPubSub(t *testing.T) {
 			t.Run("stores BuildSummary and BuilderSummary", func(t *ftt.Test) {
 				buildExp.Output.Properties = outProperties
 				pubsubMsg, err := makeBuildsV2PpubsubMsg(buildExp)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 
 				err = pubSubHandlerImpl(c, pubsub.Message{}, pubsubMsg)
-				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				verifyDatastore()
 			})
 
 			t.Run("need additional GetBuild call", func(t *ftt.Test) {
 				pubsubMsg, err := makeBuildsV2PpubsubMsg(buildExp)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 
 				pubsubMsg.BuildLargeFields = nil
 				pubsubMsg.BuildLargeFieldsDropped = true
@@ -184,7 +184,7 @@ func TestPubSub(t *testing.T) {
 				}, nil).AnyTimes()
 
 				err = pubSubHandlerImpl(c, pubsub.Message{}, pubsubMsg)
-				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				datastore.GetTestable(c).CatchupIndexes()
 				verifyDatastore()
 			})
@@ -205,10 +205,10 @@ func TestPubSub(t *testing.T) {
 				Project: "angle/angle",
 			}
 			pubsubMsg, err := makeBuildsV2PpubsubMsg(buildExp)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			err = pubSubHandlerImpl(c, pubsub.Message{}, pubsubMsg)
-			assert.Loosely(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			t.Run("stores BuildSummary and BuilderSummary", func(t *ftt.Test) {
 				buildAct := model.BuildSummary{BuildKey: bKey}
 				err = datastore.Get(c, &buildAct)
@@ -253,10 +253,10 @@ func TestPubSub(t *testing.T) {
 					Status:     buildbucketpb.Status_STARTED,
 				}
 				pubsubMsg, err := makeBuildsV2PpubsubMsg(eBuild)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 
 				err = pubSubHandlerImpl(c, pubsub.Message{}, pubsubMsg)
-				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 
 				buildAct := model.BuildSummary{BuildKey: bKey}
 				err = datastore.Get(c, &buildAct)
@@ -409,7 +409,7 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 				assert.Loosely(tc, <-eventC, should.Equal("return"))
 				tClock.Add(time.Duration(entityUpdateIntervalInS) * time.Second)
 			})
-			assert.Loosely(tc, err, should.BeNil)
+			assert.NoErr(tc, err)
 
 			// The first value should be true because there's no recent updates.
 			assert.Loosely(tc, shouldUpdates[0], should.BeTrue)
@@ -480,7 +480,7 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 				assert.Loosely(t, <-eventC, should.Equal("return"))
 				tClock.Add(time.Duration(entityUpdateIntervalInS) * time.Second)
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			// The first value should be true because there's no pending/recent updates.
 			assert.Loosely(t, shouldUpdates[0], should.BeTrue)
@@ -506,7 +506,7 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 			shouldUpdates := make([]bool, 4)
 
 			shouldUpdate, err := shouldUpdateBuilderSummary(c, createBuildSummary("test-builder-id-4", buildbucketpb.Status_SUCCESS, pivot))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			shouldUpdates[0] = shouldUpdate
 
 			// Ensures the following `shouldUpdateBuilderSummary` calls are in a
@@ -551,7 +551,7 @@ func TestShouldUpdateBuilderSummary(t *testing.T) {
 				assert.Loosely(t, <-eventC, should.Equal("timer"))
 				tClock.Add(time.Duration(entityUpdateIntervalInS) * time.Second)
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			// The first value should be true because there's no pending/recent updates.
 			assert.Loosely(t, shouldUpdates[0], should.BeTrue)

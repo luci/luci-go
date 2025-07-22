@@ -45,7 +45,7 @@ func checkRecorded(t testing.TB, actual *record, expected Origin, expectErr bool
 	if expectErr {
 		assert.Loosely(t, actual.e, should.NotBeNil, truth.LineContext())
 	} else {
-		assert.That(t, actual.e, should.ErrLike(nil), truth.LineContext())
+		assert.NoErr(t, actual.e, truth.LineContext())
 	}
 	for _, re := range expectRe {
 		assert.That(t, actual.d, should.MatchRegexp(re), truth.LineContext())

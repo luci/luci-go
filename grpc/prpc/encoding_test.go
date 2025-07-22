@@ -120,7 +120,7 @@ func TestEncoding(t *testing.T) {
 		}
 
 		wirePB, err := codecWireV2.Encode(nil, msg)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		test(codecWireV2, mtPRPCBinary, wirePB)
 		test(codecJSONV2, mtPRPCJSONPB, []byte(")]}'\n{\"message\":\"Hi\"}\n"))

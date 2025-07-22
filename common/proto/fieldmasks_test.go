@@ -121,7 +121,7 @@ func TestFixFieldMasks(t *testing.T) {
 			t.Run(c.name, func(t *ftt.Test) {
 				clone := proto.Clone(c.expected)
 				proto.Reset(clone)
-				assert.That(t, UnmarshalJSONWithNonStandardFieldMasks([]byte(c.body), clone), should.ErrLike(nil))
+				assert.NoErr(t, UnmarshalJSONWithNonStandardFieldMasks([]byte(c.body), clone))
 				assert.That(t, clone, should.Match(c.expected))
 			})
 		}

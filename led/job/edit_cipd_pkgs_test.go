@@ -33,7 +33,7 @@ func TestEditCIPDPkgs(t *testing.T) {
 					je.CIPDPkgs(nil)
 				})
 				pkgs, err := jd.Info().CIPDPkgs()
-				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.Loosely(t, pkgs, should.BeEmpty)
 			},
 		},
@@ -51,11 +51,11 @@ func TestEditCIPDPkgs(t *testing.T) {
 				})
 				if sw := jd.GetSwarming(); sw != nil && len(sw.GetTask().GetTaskSlices()) == 0 {
 					pkgs, err := jd.Info().CIPDPkgs()
-					assert.Loosely(t, err, should.ErrLike(nil))
+					assert.NoErr(t, err)
 					assert.Loosely(t, pkgs, should.BeEmpty)
 				} else {
 					pkgs, err := jd.Info().CIPDPkgs()
-					assert.Loosely(t, err, should.ErrLike(nil))
+					assert.NoErr(t, err)
 					assert.Loosely(t, pkgs, should.Match(CIPDPkgs{
 						"subdir:some/pkg":       "version",
 						"other_subdir:some/pkg": "different_version",
@@ -85,11 +85,11 @@ func TestEditCIPDPkgs(t *testing.T) {
 
 				if sw := jd.GetSwarming(); sw != nil && len(sw.GetTask().GetTaskSlices()) == 0 {
 					pkgs, err := jd.Info().CIPDPkgs()
-					assert.Loosely(t, err, should.ErrLike(nil))
+					assert.NoErr(t, err)
 					assert.Loosely(t, pkgs, should.BeEmpty)
 				} else {
 					pkgs, err := jd.Info().CIPDPkgs()
-					assert.Loosely(t, err, should.ErrLike(nil))
+					assert.NoErr(t, err)
 					assert.Loosely(t, pkgs, should.Match(CIPDPkgs{
 						"other_subdir:some/pkg": "different_version",
 					}))

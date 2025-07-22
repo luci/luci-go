@@ -37,14 +37,14 @@ func TestStateSerialize(t *testing.T) {
 		p := MustRegister[*struct{ ID int }](&r, "$sub")
 		state, err := r.Instantiate(context.Background(), nil, nil)
 
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		p.MutateOutputFromState(state, func(s *struct{ ID int }) (mutated bool) {
 			s.ID = 200
 			return true
 		})
 
 		out, _, _, err := state.Serialize()
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, out, should.Match(mustStruct(map[string]any{
 			"$sub": map[string]any{
 				"ID": 200,
@@ -61,14 +61,14 @@ func TestStateSerialize(t *testing.T) {
 		}](&r, "$sub")
 		state, err := r.Instantiate(context.Background(), nil, nil)
 
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		top.MutateOutputFromState(state, func(s *struct{ ID int }) (mutated bool) {
 			s.ID = 200
 			return true
 		})
 
 		out, _, _, err := state.Serialize()
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, out, should.Match(mustStruct(map[string]any{
 			"ID": 200,
 			// sub is omitted because it is empty
@@ -82,7 +82,7 @@ func TestStateSerialize(t *testing.T) {
 		})
 
 		out, _, _, err = state.Serialize()
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, out, should.Match(mustStruct(map[string]any{
 			"ID": 200,
 			"$sub": map[string]any{
@@ -112,7 +112,7 @@ func TestStateSerialize(t *testing.T) {
 			state, err := r.Instantiate(context.Background(), mustStruct(map[string]any{
 				"extra": 100,
 			}), nil)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, top.GetInputFromState(state), should.Match(mustStruct(map[string]any{
 				"extra": 100,
 			})))
@@ -126,7 +126,7 @@ func TestStateSerialize(t *testing.T) {
 			state, err := r.Instantiate(context.Background(), mustStruct(map[string]any{
 				"extra": 100,
 			}), nil)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, top.GetInputFromState(state), should.Match(map[string]any{
 				"extra": 100.0,
 			}))
@@ -142,7 +142,7 @@ func TestStateSerialize(t *testing.T) {
 		mid := MustRegister[map[string]any](&r, "$mid")
 
 		state, err := r.Instantiate(context.Background(), nil, nil)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		top.MutateOutputFromState(state, func(m map[string]any) (mutated bool) {
 			m["hello"] = "world"
@@ -155,7 +155,7 @@ func TestStateSerialize(t *testing.T) {
 
 		// so far, so good
 		out, _, _, err := state.Serialize()
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, out, should.Match(mustStruct(map[string]any{
 			"hello": "world",
 			"$mid": map[string]any{
@@ -177,17 +177,17 @@ func TestStateSerialize(t *testing.T) {
 		top := MustRegisterOut[map[string]string](&r, "")
 		sub := MustRegisterOut[map[string]string](&r, "$sub")
 		state, err := r.Instantiate(context.Background(), nil, nil)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		out, _, _, err := state.Serialize()
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, out, should.Match[*structpb.Struct](nil))
 
 		sub.SetOutputFromState(state, map[string]string{
 			"heylo": "world",
 		})
 		out, _, _, err = state.Serialize()
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, out, should.Match(mustStruct(map[string]any{
 			"$sub": map[string]any{"heylo": "world"},
 		})))
@@ -196,7 +196,7 @@ func TestStateSerialize(t *testing.T) {
 			"cool": "beans",
 		})
 		out, _, _, err = state.Serialize()
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, out, should.Match(mustStruct(map[string]any{
 			"cool": "beans",
 			"$sub": map[string]any{
@@ -220,7 +220,7 @@ func TestStateNotify(t *testing.T) {
 	r := Registry{}
 	top := MustRegister[map[string]any](&r, "")
 	state, err := r.Instantiate(context.Background(), nil, bumpVers)
-	assert.That(t, err, should.ErrLike(nil))
+	assert.NoErr(t, err)
 
 	top.MutateOutputFromState(state, func(m map[string]any) (mutated bool) {
 		m["hello"] = "world"
@@ -257,7 +257,7 @@ func TestConcurrentManipulation(t *testing.T) {
 	state, err := r.Instantiate(context.Background(), nil, func(version int64) {
 		ch <- version
 	})
-	assert.That(t, err, should.ErrLike(nil))
+	assert.NoErr(t, err)
 
 	// We use this pattern instead of assert.That to ensure that all the
 	// goroutines drain correctly.

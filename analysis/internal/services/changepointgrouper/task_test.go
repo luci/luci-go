@@ -68,7 +68,7 @@ func TestGroupChangepoints(t *testing.T) {
 			changepointClient.ReadChangepointsResult = []*changepoints.ChangepointDetailRow{cp1, cp2, cp3, cp4}
 
 			err := grouper.run(ctx, payload)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, exportClient.Insertions, should.Match([]*bqpb.GroupedChangepointRow{
 				makeGroupedChangepointRow(1, 2, 4, "chromeos", groupexporter.ChangepointKey(cp4)),
 				makeGroupedChangepointRow(2, 2, 3, "chromium", groupexporter.ChangepointKey(cp1)),

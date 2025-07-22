@@ -531,38 +531,38 @@ func (f *tempFileSystemImpl) join(path string) string {
 func (f *tempFileSystemImpl) write(rel string, data string) {
 	abs := f.join(rel)
 	err := os.MkdirAll(filepath.Dir(abs), 0777)
-	assert.That(f.c, err, should.ErrLike(nil))
+	assert.NoErr(f.c, err)
 	file, err := os.Create(abs)
-	assert.That(f.c, err, should.ErrLike(nil))
+	assert.NoErr(f.c, err)
 	file.WriteString(data)
-	assert.That(f.c, file.Close(), should.ErrLike(nil))
+	assert.NoErr(f.c, file.Close())
 }
 
 // mkdir creates an empty directory.
 func (f *tempFileSystemImpl) mkdir(rel string) {
-	assert.That(f.c, os.MkdirAll(f.join(rel), 0777), should.ErrLike(nil))
+	assert.NoErr(f.c, os.MkdirAll(f.join(rel), 0777))
 }
 
 // symlink creates a symlink.
 func (f *tempFileSystemImpl) symlink(oldname, newname string) {
-	assert.That(f.c, os.Symlink(f.join(oldname), f.join(newname)), should.ErrLike(nil))
+	assert.NoErr(f.c, os.Symlink(f.join(oldname), f.join(newname)))
 }
 
 // read reads an existing file at a given slash separated path relative to Root().
 func (f *tempFileSystemImpl) read(rel string) string {
 	fd, err := f.OpenFile(f.join(rel))
-	assert.That(f.c, err, should.ErrLike(nil))
+	assert.NoErr(f.c, err)
 	defer fd.Close()
 
 	data, err := io.ReadAll(fd)
-	assert.That(f.c, err, should.ErrLike(nil))
+	assert.NoErr(f.c, err)
 	return string(data)
 }
 
 // readLink reads a symlink at a given slash separated path relative to Root().
 func (f *tempFileSystemImpl) readLink(rel string) string {
 	val, err := os.Readlink(f.join(rel))
-	assert.That(f.c, err, should.ErrLike(nil))
+	assert.NoErr(f.c, err)
 	return val
 }
 

@@ -58,7 +58,7 @@ func TestHandleBuild(t *testing.T) {
 			pubSubMessage.Build.Status = buildbucketpb.Status_SUCCESS
 
 			err := BuildbucketPubSubHandler(ctx, pubsub.Message{}, pubSubMessage)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.Loosely(t, buildCounter.Get(ctx, "buildproject", "success"), should.Equal(1))
 
 			assert.Loosely(t, len(skdr.Tasks().Payloads()), should.Equal(1))

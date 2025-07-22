@@ -58,7 +58,7 @@ func TestInvocationReadyForExportHandler(t *testing.T) {
 			}
 			// Process invocation finalization.
 			err := h.Handle(ctx, pubsub.Message{}, notification)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.Loosely(t, invocationsReadyForExportCounter.Get(ctx, "testproject", "success"), should.Equal(1))
 			assert.That(t, taskScheduler.Tasks().Payloads(), should.Match([]proto.Message{
 				&taskspb.IngestTestResults{

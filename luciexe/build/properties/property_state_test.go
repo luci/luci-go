@@ -120,7 +120,7 @@ func TestRegisteredProto(t *testing.T) {
 		s, err := r.Instantiate(ctx, mustStruct(map[string]any{
 			"id": 12345,
 		}), nil)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, rp.GetInputFromState(s), should.Match(&buildbucketpb.Build{Id: 12345}))
 	})
 
@@ -130,10 +130,10 @@ func TestRegisteredProto(t *testing.T) {
 		s, err := r.Instantiate(ctx, mustStruct(map[string]any{
 			"id": 12345,
 		}), nil)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		ctx, err := s.SetInContext(context.Background())
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		assert.That(t, rp.GetInput(ctx), should.Match(&buildbucketpb.Build{Id: 12345}))
 	})
@@ -143,7 +143,7 @@ func TestRegisteredProto(t *testing.T) {
 
 		s, err := r.Instantiate(ctx, nil, nil)
 
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		rp.MutateOutputFromState(s, func(b *buildbucketpb.Build) (mutated bool) {
 			assert.That(t, b.Id, should.Equal[int64](0))
@@ -165,10 +165,10 @@ func TestRegisteredProto(t *testing.T) {
 		t.Parallel()
 
 		s, err := r.Instantiate(ctx, nil, nil)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		ctx, err := s.SetInContext(context.Background())
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		rp.MutateOutput(ctx, func(b *buildbucketpb.Build) (mutated bool) {
 			assert.That(t, b.Id, should.Equal[int64](0))
@@ -205,7 +205,7 @@ func TestRegisteredStruct(t *testing.T) {
 		s, err := r.Instantiate(ctx, mustStruct(map[string]any{
 			"Field": 12345,
 		}), nil)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, rp.GetInputFromState(s), should.Match(&myCustomStruct{Field: 12345}))
 	})
 
@@ -215,10 +215,10 @@ func TestRegisteredStruct(t *testing.T) {
 		s, err := r.Instantiate(ctx, mustStruct(map[string]any{
 			"Field": 12345,
 		}), nil)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		ctx, err := s.SetInContext(context.Background())
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		assert.That(t, rp.GetInput(ctx), should.Match(&myCustomStruct{Field: 12345}))
 	})
@@ -228,7 +228,7 @@ func TestRegisteredStruct(t *testing.T) {
 
 		s, err := r.Instantiate(ctx, nil, nil)
 
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		rp.MutateOutputFromState(s, func(b *myCustomStruct) (mutated bool) {
 			assert.That(t, b.Field, should.Equal(0))
@@ -250,7 +250,7 @@ func TestRegisteredStruct(t *testing.T) {
 		t.Parallel()
 
 		s, err := r.Instantiate(ctx, nil, nil)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		ctx, err := s.SetInContext(context.Background())
 		assert.That(t, err, should.ErrLike(nil))

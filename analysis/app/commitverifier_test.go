@@ -60,7 +60,7 @@ func TestCVRunHandler(t *testing.T) {
 				processed = true
 
 				err := h.Handle(ctx, pubsub.Message{}, message)
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.Loosely(t, cvRunCounter.Get(ctx, "cvproject", "success"), should.Equal(1))
 			})
 			t.Run(`Not processed`, func(t *ftt.Test) {

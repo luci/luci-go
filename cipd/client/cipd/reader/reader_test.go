@@ -73,6 +73,7 @@ func shouldBeSameJSONDict(expected string) comparison.Func[string] {
 	expectedNorm, err := normalizeJSON(expected)
 	if err != nil {
 		return func(_ string) *failure.Summary {
+			// TODO(gregorynisbet): Remove should.ErrLike here.
 			return should.ErrLike(nil)(err)
 		}
 	}
@@ -80,6 +81,7 @@ func shouldBeSameJSONDict(expected string) comparison.Func[string] {
 	return func(actual string) *failure.Summary {
 		actualNorm, err := normalizeJSON(actual)
 		if err != nil {
+			// TODO(gregorynisbet): Remove should.ErrLike here.
 			return should.ErrLike(nil)(err)
 		}
 

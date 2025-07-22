@@ -80,7 +80,7 @@ func TestEnv(t *testing.T) {
 					je.Env(nil)
 				})
 				env, err := jd.Info().Env()
-				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.Loosely(t, env, should.BeEmpty)
 			},
 		},
@@ -96,7 +96,7 @@ func TestEnv(t *testing.T) {
 					})
 				})
 				env, err := jd.Info().Env()
-				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.Loosely(t, env, should.Match(map[string]string{
 					"KEY": "VALUE",
 				}))
@@ -119,7 +119,7 @@ func TestEnv(t *testing.T) {
 					})
 				})
 				env, err := jd.Info().Env()
-				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.Loosely(t, env, should.Match(map[string]string{
 					"KEY":   "VALUE",
 					"OTHER": "NEW_VAL",
@@ -143,7 +143,7 @@ func TestEnv(t *testing.T) {
 					})
 				})
 				env, err := jd.Info().Env()
-				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.Loosely(t, env, should.Match(map[string]string{
 					"OTHER": "NEW_VAL",
 				}))
@@ -266,7 +266,7 @@ func TestPrefixPathEnv(t *testing.T) {
 					je.PrefixPathEnv(nil)
 				})
 				env, err := jd.Info().PrefixPathEnv()
-				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.Loosely(t, env, should.BeEmpty)
 			},
 		},
@@ -279,7 +279,7 @@ func TestPrefixPathEnv(t *testing.T) {
 					je.PrefixPathEnv([]string{"some/path", "other/path"})
 				})
 				env, err := jd.Info().PrefixPathEnv()
-				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.Loosely(t, env, should.Match([]string{
 					"some/path", "other/path",
 				}))
@@ -297,7 +297,7 @@ func TestPrefixPathEnv(t *testing.T) {
 					je.PrefixPathEnv([]string{"!other/path"})
 				})
 				env, err := jd.Info().PrefixPathEnv()
-				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.Loosely(t, env, should.Match([]string{
 					"some/path", "third",
 				}))
@@ -408,7 +408,7 @@ func TestProperties(t *testing.T) {
 					je.Properties(nil, false)
 				})
 				props, err := jd.HighLevelInfo().Properties()
-				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.Loosely(t, props, should.BeEmpty)
 			},
 		},
@@ -425,7 +425,7 @@ func TestProperties(t *testing.T) {
 					}, false)
 				})
 				props, err := jd.HighLevelInfo().Properties()
-				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.Loosely(t, props, should.Match(map[string]string{
 					"key":   `"value"`,
 					"other": `{"something":[1,2,"subvalue"]}`,
@@ -445,7 +445,7 @@ func TestProperties(t *testing.T) {
 					}, true)
 				})
 				props, err := jd.HighLevelInfo().Properties()
-				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.Loosely(t, props, should.Match(map[string]string{
 					"json":    `{"thingy":"kerplop"}`,
 					"literal": `"{I am a banana}"`, // string now
@@ -468,7 +468,7 @@ func TestProperties(t *testing.T) {
 					}, false)
 				})
 				props, err := jd.HighLevelInfo().Properties()
-				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.Loosely(t, props, should.BeEmpty)
 			},
 		},

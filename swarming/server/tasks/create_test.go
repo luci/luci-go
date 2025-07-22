@@ -209,7 +209,7 @@ func TestCreation(t *testing.T) {
 					Key:         model.SecretBytesKey(ctx, reqKey),
 					SecretBytes: []byte("secret"),
 				}
-				assert.That(t, datastore.Put(ctx, tr, trs, secrets), should.ErrLike(nil))
+				assert.NoErr(t, datastore.Put(ctx, tr, trs, secrets))
 
 				res, err := mgr.CreateTask(ctx, &CreationOp{
 					Request: &model.TaskRequest{
@@ -285,7 +285,7 @@ func TestCreation(t *testing.T) {
 					PropertiesHash: datastore.NewIndexedOptional(hash),
 					Created:        now.Add(-10 * time.Hour),
 				}
-				assert.That(t, datastore.Put(ctx, tr, trs), should.ErrLike(nil))
+				assert.NoErr(t, datastore.Put(ctx, tr, trs))
 				inv := &rdbpb.Invocation{
 					Name: "invocations/task-example.appspot.com-65aba3a3e6b99311",
 				}
@@ -330,7 +330,7 @@ func TestCreation(t *testing.T) {
 			tr1 := &model.TaskRequest{
 				Key: key,
 			}
-			assert.That(t, datastore.Put(ctx, tr1), should.ErrLike(nil))
+			assert.NoErr(t, datastore.Put(ctx, tr1))
 
 			_, err := mgr.CreateTask(ctx, &CreationOp{
 				Request: &model.TaskRequest{

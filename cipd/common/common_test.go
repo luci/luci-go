@@ -219,7 +219,7 @@ func TestValidateSubdir(t *testing.T) {
 		t.Run("accepts good subdirs", func(t *ftt.Test) {
 			for _, tc := range goodSubdirs {
 				t.Run(tc.name, func(t *ftt.Test) {
-					assert.Loosely(t, ValidateSubdir(tc.subdir), should.ErrLike(nil))
+					assert.NoErr(t, ValidateSubdir(tc.subdir))
 				})
 			}
 		})
@@ -367,7 +367,7 @@ func TestPinSliceAndMap(t *testing.T) {
 		}
 
 		t.Run("Can validate", func(t *ftt.Test) {
-			assert.Loosely(t, pmr.Validate(AnyHash), should.ErrLike(nil))
+			assert.NoErr(t, pmr.Validate(AnyHash))
 
 			t.Run("can see bad subdirs", func(t *ftt.Test) {
 				pmr["/"] = PinSlice{{"something", "version"}}

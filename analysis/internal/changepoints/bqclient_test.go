@@ -31,7 +31,7 @@ func TestParseReadChangepointGroupSummariesPageToken(t *testing.T) {
 			nextPageToken := pagination.Token("123", "testid", "variantHash", "refhash", "100")
 
 			afterStartHourUnix, afterTestID, afterVariantHash, afterRefHash, afterNominalStartPosition, err := parseReadChangepointGroupSummariesPageToken(nextPageToken)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, afterStartHourUnix, should.Equal(123))
 			assert.That(t, afterTestID, should.Equal("testid"))
 			assert.That(t, afterVariantHash, should.Equal("variantHash"))

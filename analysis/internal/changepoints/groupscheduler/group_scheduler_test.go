@@ -39,7 +39,7 @@ func TestScheduleGroupChangepoints(t *testing.T) {
 
 	ftt.Run("e2e", t, func(t *ftt.Test) {
 		err := scheduleGroupingTasks(ctx)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		tasks := taskScheduler.Tasks().Payloads()
 		assert.That(t, len(tasks), should.Equal(8))
 		assert.That(t, tasks[0].(*taskspb.GroupChangepoints), should.Match(

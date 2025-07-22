@@ -77,10 +77,10 @@ func loaderTest(t testing.TB, l Loader) {
 
 	tmpl, err := Get(ctx, "pages/page")
 	assert.Loosely(t, tmpl, should.NotBeNilInterface, truth.LineContext())
-	assert.That(t, err, should.ErrLike(nil), truth.LineContext())
+	assert.NoErr(t, err, truth.LineContext())
 
 	blob, err := Render(ctx, "pages/page", Args{"arg2": "val2"})
-	assert.That(t, err, should.ErrLike(nil), truth.LineContext())
+	assert.NoErr(t, err, truth.LineContext())
 	assert.That(t, string(blob), should.Equal("\nbase\n\ncontent val1 val2\n\n"), truth.LineContext())
 
 	buf := bytes.Buffer{}

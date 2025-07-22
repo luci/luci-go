@@ -69,7 +69,7 @@ func TestInvocationFinalizedHandler(t *testing.T) {
 				processed = true
 
 				err := h.Handle(ctx, message, notification)
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.Loosely(t, invocationsFinalizedCounter.Get(ctx, "invproject", "success"), should.Equal(1))
 				assert.Loosely(t, called, should.BeTrue)
 				// No task scheduled.
@@ -91,7 +91,7 @@ func TestInvocationFinalizedHandler(t *testing.T) {
 				notification.Realm = "android:test"
 
 				err := h.Handle(ctx, message, notification)
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.That(t, taskScheduler.Tasks().Payloads(), should.Match([]proto.Message{
 					&taskspb.IngestArtifacts{
 						Notification: notification,

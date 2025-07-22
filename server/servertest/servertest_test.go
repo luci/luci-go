@@ -64,7 +64,7 @@ func TestServerTestAndFakeAuthDb(t *testing.T) {
 		},
 	})
 
-	assert.That(t, err, should.ErrLike(nil))
+	assert.NoErr(t, err)
 	assert.Loosely(t, srv, should.NotBeNil)
 
 	srv.Shutdown()
@@ -108,9 +108,9 @@ func TestFakeRPCAuth(t *testing.T) {
 		cl, err := testClient(auth.Options{
 			Scopes: []string{"a", "b"},
 		})
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		_, err = cl.Unary(clientCtx, &testpb.Request{})
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, testPb.calls, should.Match([]fakeCall{
 			{
 				Caller: FakeClientIdentity,
@@ -126,9 +126,9 @@ func TestFakeRPCAuth(t *testing.T) {
 			UseIDTokens: true,
 			Audience:    "http://" + srv.HTTPAddr(),
 		})
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		_, err = cl.Unary(clientCtx, &testpb.Request{})
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, testPb.calls, should.Match([]fakeCall{
 			{
 				Caller: FakeClientIdentity,

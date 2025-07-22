@@ -42,7 +42,7 @@ func TestStructFromStruct(t *testing.T) {
 			"id": 1234,
 		}), target)
 		assert.That(t, badExtras, should.BeFalse)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, target, should.Match(&someStruct{
 			ID: 1234,
 		}))
@@ -52,7 +52,7 @@ func TestStructFromStruct(t *testing.T) {
 			"id":     1234,
 		}), target)
 		assert.That(t, badExtras, should.BeTrue)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, ml.Messages(), should.Match([]memlogger.LogEntry{
 			{Level: logging.Error, Msg: `Unknown fields while parsing property namespace "": {"morple":100}`, CallDepth: 2},
 		}))
@@ -70,7 +70,7 @@ func TestStructFromStruct(t *testing.T) {
 			"id":     1234,
 		}), target)
 		assert.That(t, badExtras, should.BeFalse)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, target, should.Match(&someStruct{
 			ID: 1234,
 		}))
@@ -88,7 +88,7 @@ func TestStructFromStruct(t *testing.T) {
 			"id":     "hi",
 		}), &target)
 		assert.That(t, badExtras, should.BeFalse)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, target, should.Match(map[string]any{
 			"morple": json.Number("100"),
 			"id":     "hi",

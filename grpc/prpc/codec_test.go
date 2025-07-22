@@ -159,7 +159,7 @@ func TestFieldMaskJSONDecoder(t *testing.T) {
 			if c.fields == nil {
 				assert.That(t, err != nil, should.BeTrue)
 			} else {
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 			}
 		})
 	}
@@ -181,7 +181,7 @@ func runCodecRoundTripTests(t *testing.T, msg *testpb.HelloRequest, cases []code
 					assert.That(t, err != nil, should.BeTrue)
 					return
 				}
-				assert.That(t, err, should.ErrLike(nil), truth.Explain("%s", string(blob)))
+				assert.NoErr(t, err, truth.Explain("%s", string(blob)))
 				assert.That(t, bytes.HasPrefix(blob, initBuf), should.BeTrue)
 
 				out := &testpb.HelloRequest{}
@@ -190,7 +190,7 @@ func runCodecRoundTripTests(t *testing.T, msg *testpb.HelloRequest, cases []code
 					assert.That(t, err != nil, should.BeTrue)
 					return
 				}
-				assert.That(t, err, should.ErrLike(nil), truth.Explain("%s", string(blob[len(initBuf):])))
+				assert.NoErr(t, err, truth.Explain("%s", string(blob[len(initBuf):])))
 				assert.That(t, out, should.Match(msg))
 			})
 		}

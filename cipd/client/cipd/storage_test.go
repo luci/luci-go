@@ -209,7 +209,7 @@ func (s *expectedHTTPCallHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 
 	// Read body and essential headers.
 	body, err := io.ReadAll(r.Body)
-	assert.That(s.t, err, should.ErrLike(nil))
+	assert.NoErr(s.t, err)
 	ignorelist := map[string]bool{
 		"Accept-Encoding": true,
 		"Content-Length":  true,

@@ -39,9 +39,9 @@ func TestToGoNative(t *testing.T) {
 		t.Helper()
 
 		out, err := runScript(code)
-		assert.That(t, err, should.ErrLike(nil), truth.LineContext())
+		assert.NoErr(t, err, truth.LineContext())
 		result, err := ToGoNative(out["val"])
-		assert.That(t, err, should.ErrLike(nil), truth.LineContext())
+		assert.NoErr(t, err, truth.LineContext())
 		assert.Loosely(t, result, should.Match(expected), truth.LineContext())
 	}
 
