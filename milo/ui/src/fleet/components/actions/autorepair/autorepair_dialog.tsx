@@ -54,7 +54,7 @@ function getDeviceDetailListItem(dutName: string) {
   return (
     <li key={dutName}>
       <a
-        href={`/ui/fleet/labs/devices/${dutName}`}
+        href={`/ui/fleet/labs/p/chromeos/devices/${dutName}`}
         target="_blank"
         rel="noreferrer"
       >
@@ -156,7 +156,7 @@ export default function AutorepairDialog({
             return (
               <li key={dutName}>
                 <a
-                  href={`/ui/fleet/labs/devices/${dutName}`}
+                  href={`/ui/fleet/labs/p/chromeos/devices/${dutName}`}
                   target="_blank"
                   rel="noreferrer"
                 >

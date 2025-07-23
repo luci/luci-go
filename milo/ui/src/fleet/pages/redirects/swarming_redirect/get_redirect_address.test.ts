@@ -17,7 +17,7 @@ import { BotsClientImpl } from '@/proto/go.chromium.org/luci/swarming/proto/api_
 
 import { getRedirectAddress } from './get_redirect_address';
 
-const prefix = '/ui/fleet/labs/';
+const prefix = '/ui/fleet/labs/p/chromeos/';
 
 describe('getRedirectAddress', () => {
   const swarmingClient = jest.mocked({

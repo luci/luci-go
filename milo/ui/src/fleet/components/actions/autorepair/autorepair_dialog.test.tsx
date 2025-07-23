@@ -60,7 +60,10 @@ describe('<AutorepairDialog />', () => {
 
     const dutLink = screen.getByRole('link', { name: 'test-dut' });
     expect(dutLink).toBeVisible();
-    expect(dutLink).toHaveAttribute('href', '/ui/fleet/labs/devices/test-dut');
+    expect(dutLink).toHaveAttribute(
+      'href',
+      '/ui/fleet/labs/p/chromeos/devices/test-dut',
+    );
   });
 
   it('renders shivas command', async () => {
@@ -116,7 +119,10 @@ describe('<AutorepairDialog />', () => {
     expect(text).toBeVisible();
 
     const dutLink = screen.getByRole('link', { name: 'test-dut' });
-    expect(dutLink).toHaveAttribute('href', '/ui/fleet/labs/devices/test-dut');
+    expect(dutLink).toHaveAttribute(
+      'href',
+      '/ui/fleet/labs/p/chromeos/devices/test-dut',
+    );
 
     const miloLink = screen.getByRole('link', { name: 'View in Milo' });
 

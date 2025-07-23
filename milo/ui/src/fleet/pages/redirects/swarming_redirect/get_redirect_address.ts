@@ -19,7 +19,7 @@ import { BASE_DIMENSIONS } from '@/fleet/components/device_table/dimensions';
 import { getDutName } from '@/fleet/utils/swarming';
 import { BotsClientImpl } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 
-const prefix = '/ui/fleet/labs/';
+const prefix = '/ui/fleet/labs/p/chromeos/';
 
 /* Maps swarming path to fleet console paths.
  * Supports:

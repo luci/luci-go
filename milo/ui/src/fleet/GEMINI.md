@@ -6,7 +6,7 @@ This document provides context for the LUCI Fleet Console UI subproject to AI co
 
 The `fleet` project is a Single Page Application (SPA) that provides a user interface for monitoring and managing the LUCI fleet of bots and drones. It is a subproject of the larger LUCI UI.
 
-- **Live URL:** [go/fleet-console-prod](https://ci.chromium.org/ui/fleet/labs/devices)
+- **Live URL:** [go/fleet-console-prod](https://ci.chromium.org/ui/fleet/labs/p/chromeos/devices)
 
 The primary users are:
 
@@ -101,7 +101,7 @@ The recommended local development environment uses Visual Studio Code (VSC) with
 - Initialize Infra Go environment: `eval ../../../../../env.py`.
 - Copy `.env.development` to `.env.development.local` and set `VITE_FLEET_CONSOLE_HOST="localhost:8800"`.
 - Run `npm ci` in the `ui` directory
-- Run the dev server: `npm run dev`. The UI is available at `http://localhost:8080/ui/fleet/labs/devices`.
+- Run the dev server: `npm run dev`. The UI is available at `http://localhost:8080/ui/fleet/labs/p/chromeos/devices`.
 - Run tests: `npm test -- ./src/fleet`.
 
 ## Sandbox page

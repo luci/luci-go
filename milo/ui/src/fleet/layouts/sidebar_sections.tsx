@@ -51,7 +51,7 @@ function generateFleetConsoleSection(): SidebarSection {
       },
       {
         label: 'Devices',
-        url: '/ui/fleet/labs/devices',
+        url: '/ui/fleet/labs/p/chromeos/devices',
         icon: <DevicesIcon />,
       },
     ],

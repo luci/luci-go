@@ -41,12 +41,12 @@ const FakePage = ({ path }: { path: string }) => (
       },
 
       {
-        path: '/ui/fleet/labs/devices/:id',
+        path: '/ui/fleet/labs/p/chromeos/devices/:id',
         element: <FakeDeviceDetails />,
       },
 
       {
-        path: '/ui/fleet/labs/devices',
+        path: '/ui/fleet/labs/p/chromeos/devices',
         element: <FakeDevices />,
       },
     ]}
