@@ -607,6 +607,21 @@ func TestSessionServer(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("no active RBE session"))
 		})
 
+		t.Run("UpdateBotSession BotId changed", func(t *ftt.Test) {
+			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
+				return nil, status.Errorf(codes.FailedPrecondition, `cannot change bot ID: expected "old_bot_id", got %q`, fakeBotID)
+			})
+
+			resp, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{
+				Status: "OK",
+			}, fakeRequest)
+
+			assert.NoErr(t, err)
+
+			msg := resp.(*UpdateBotSessionResponse)
+			assert.Loosely(t, msg.Status, should.Equal("UNHEALTHY"))
+			assert.Loosely(t, msg.Lease, should.BeNil)
+		})
 		t.Run("UpdateBotSession propagates RBE error", func(t *ftt.Test) {
 			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
 				return nil, status.Errorf(codes.FailedPrecondition, "boom")

@@ -252,6 +252,8 @@ type UpdateBotSessionResponse struct {
 	// Possible values:
 	//   * OK: if the session is healthy.
 	//   * BOT_TERMINATING: if the session has expired.
+	//   * UNHEALTHY: if the session is unhealthy, for example if the bot ID
+	//     changes.
 	Status string `json:"status"`
 
 	// The lease the bot should be working on or should cancel now, if any.
@@ -373,6 +375,23 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 				Status:  "OK",
 			}, nil
 		}
+
+		// If the bot ID changed, for example if the bot's effective bot ID changed,
+		// treat the session as unhealthy.
+		//
+		// The error message should be like "cannot change bot ID: expected <old_bot_id>, got <botSession.BotId>".
+		if status.Code(err) == codes.FailedPrecondition && strings.Contains(err.Error(), "cannot change bot ID") {
+			logging.Warningf(ctx, "bot ID changed: %s", err)
+			sessionTok, err := srv.updateSessionToken(ctx, r.Session, rbeSessionID)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "could not marshal session token: %s", err)
+			}
+			return &UpdateBotSessionResponse{
+				Session: sessionTok,
+				Status:  "UNHEALTHY",
+			}, nil
+		}
+
 		// Return the exact same gRPC error in a reply. This is fine, we trust the
 		// bot, it has already been authorized. It is useful for debugging to see
 		// the original RBE errors.
