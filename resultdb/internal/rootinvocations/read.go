@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -73,12 +74,30 @@ func readColumnsFromShard(ctx context.Context, id ShardID, ptrMap map[string]any
 	}
 }
 
+// ReadState reads the state of the given root invocation.
+// If the root invocation is not found, returns a NotFound appstatus error.
+// Otherwise returns the internal error.
+func ReadState(ctx context.Context, id ID) (state pb.RootInvocation_State, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.rootinvocations.ReadState")
+	defer func() { tracing.End(ts, err) }()
+
+	err = readColumns(ctx, id, map[string]any{
+		"State": &state,
+	})
+	if err != nil {
+		return 0, err
+	}
+	return state, nil
+}
+
 // ReadRealm reads the realm of the given root invocation. If the root invocation
 // is not found, returns a NotFound appstatus error. Otherwise returns the internal
 // error.
-func ReadRealm(ctx context.Context, id ID) (string, error) {
-	var realm string
-	err := readColumns(ctx, id, map[string]any{
+func ReadRealm(ctx context.Context, id ID) (realm string, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.rootinvocations.ReadRealm")
+	defer func() { tracing.End(ts, err) }()
+
+	err = readColumns(ctx, id, map[string]any{
 		"Realm": &realm,
 	})
 	if err != nil {
@@ -90,10 +109,11 @@ func ReadRealm(ctx context.Context, id ID) (string, error) {
 // ReadRequestIDAndCreatedBy reads the request id and createdBy of the given root invocation.
 // If the root invocation is not found, returns a NotFound appstatus error.
 // Otherwise returns the internal error.
-func ReadRequestIDAndCreatedBy(ctx context.Context, id ID) (string, string, error) {
-	var requestID string
-	var createdBy string
-	err := readColumns(ctx, id, map[string]any{
+func ReadRequestIDAndCreatedBy(ctx context.Context, id ID) (requestID string, createdBy string, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.rootinvocations.ReadRequestIDAndCreatedBy")
+	defer func() { tracing.End(ts, err) }()
+
+	err = readColumns(ctx, id, map[string]any{
 		"CreateRequestId": &requestID,
 		"CreatedBy":       &createdBy,
 	})
@@ -109,9 +129,11 @@ func ReadRequestIDAndCreatedBy(ctx context.Context, id ID) (string, string, erro
 //
 // This will return identical results to ReadRealm but can be used to avoid hotspotting
 // the root invocation record.
-func ReadRealmFromShard(ctx context.Context, id ShardID) (string, error) {
-	var realm string
-	err := readColumnsFromShard(ctx, id, map[string]any{
+func ReadRealmFromShard(ctx context.Context, id ShardID) (realm string, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.rootinvocations.ReadRealmFromShard")
+	defer func() { tracing.End(ts, err) }()
+
+	err = readColumnsFromShard(ctx, id, map[string]any{
 		"Realm": &realm,
 	})
 	if err != nil {
@@ -199,9 +221,12 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 // Read reads one root invocation from Spanner.
 // If the invocation does not exist, the returned error is annotated with
 // NotFound GRPC code.
-func Read(ctx context.Context, id ID) (*RootInvocationRow, error) {
+func Read(ctx context.Context, id ID) (row *RootInvocationRow, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.rootinvocations.Read")
+	defer func() { tracing.End(ts, err) }()
+
 	var ret *RootInvocationRow
-	err := readMulti(ctx, NewIDSet(id), func(inv *RootInvocationRow) error {
+	err = readMulti(ctx, NewIDSet(id), func(inv *RootInvocationRow) error {
 		ret = inv
 		return nil
 	})

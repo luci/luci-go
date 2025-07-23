@@ -32,8 +32,10 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/cron"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -146,7 +148,15 @@ func enforce(ctx context.Context, shard, limit int) (int, error) {
 				return nil
 			}
 
-			span.BufferWrite(ctx, invocations.MarkFinalizing(id))
+			if id.IsRootInvocation() {
+				// This also updates the legacy invocation.
+				span.BufferWrite(ctx, rootinvocations.MarkFinalizing(rootinvocations.MustParseLegacyInvocationID(id))...)
+			} else if id.IsWorkUnit() {
+				// This also updates the legacy invocation.
+				span.BufferWrite(ctx, workunits.MarkFinalizing(workunits.MustParseLegacyInvocationID(id))...)
+			} else {
+				span.BufferWrite(ctx, invocations.MarkFinalizing(id))
+			}
 			tasks.StartInvocationFinalization(ctx, id)
 			return nil
 		})

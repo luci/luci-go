@@ -76,6 +76,27 @@ func TestReadFunctions(t *testing.T) {
 			})
 		})
 
+		t.Run("ReadState", func(t *ftt.Test) {
+			t.Run("happy path", func(t *ftt.Test) {
+				state, err := ReadState(span.Single(ctx), id)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, state, should.Equal(testData.State))
+			})
+
+			t.Run("not found", func(t *ftt.Test) {
+				_, err := ReadState(span.Single(ctx), "non-existent-id")
+				st, ok := appstatus.Get(err)
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, st.Code(), should.Equal(codes.NotFound))
+				assert.Loosely(t, st.Message(), should.ContainSubstring(`"rootInvocations/non-existent-id" not found`))
+			})
+
+			t.Run("empty ID", func(t *ftt.Test) {
+				_, err := ReadState(span.Single(ctx), "")
+				assert.That(t, err, should.ErrLike("id is unspecified"))
+			})
+		})
+
 		t.Run("ReadRealm", func(t *ftt.Test) {
 			t.Run("happy path", func(t *ftt.Test) {
 				r, err := ReadRealm(span.Single(ctx), id)
