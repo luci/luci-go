@@ -97,7 +97,7 @@ func (h pluginHandler) Handle(ctx context.Context, c challenge) (*proposalReply,
 	}
 	allowed := make([]webauthn.PublicKeyCredentialDescriptor, len(dc))
 	for i := range dc {
-		id, err := pluginFromReAuth(dc[i].KeyHandle)
+		id, err := PluginFromReAuthBase64(dc[i].KeyHandle)
 		if err != nil {
 			return nil, errors.Fmt("pluginHandler: encode key handle: %s", err)
 		}
@@ -107,7 +107,7 @@ func (h pluginHandler) Handle(ctx context.Context, c challenge) (*proposalReply,
 		}
 	}
 
-	challenge, err := pluginFromReAuth(dc[0].Challenge)
+	challenge, err := PluginFromReAuthBase64(dc[0].Challenge)
 	if err != nil {
 		return nil, errors.Fmt("pluginHandler: encode challenge: %s", err)
 	}
@@ -265,24 +265,4 @@ func PluginDecodeStream(r io.Reader, v any) error {
 	return nil
 }
 
-// pluginFromReAuth converts a ReAuth base64 string to a plugin base64 string.
-func pluginFromReAuth(s string) (string, error) {
-	s2, err := transcodeBase64(webauthn.Base64Encoding, reauthEncoding, s)
-	if err != nil {
-		return "", errors.Fmt("pluginFromReAuth: %w", err)
-	}
-	return s2, nil
-}
 
-type base64Encoding interface {
-	DecodeString(string) ([]byte, error)
-	EncodeToString([]byte) string
-}
-
-func transcodeBase64(to, from base64Encoding, s string) (string, error) {
-	d, err := from.DecodeString(s)
-	if err != nil {
-		return "", err
-	}
-	return to.EncodeToString(d), nil
-}

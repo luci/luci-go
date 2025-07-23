@@ -17,7 +17,6 @@ package reauth
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -194,6 +193,3 @@ const (
 	skU2F      = "U2F"
 	skWebAuthn = 2
 )
-
-// base64 encoding used by ReAuth.
-var reauthEncoding = base64.StdEncoding
