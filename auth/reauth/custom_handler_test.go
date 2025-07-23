@@ -40,11 +40,11 @@ func TestPluginReadFrame(t *testing.T) {
 		// Combine two frames into a single reader.
 		r := io.MultiReader(bytes.NewReader(frame1), bytes.NewReader(frame2))
 
-		got1, err := pluginReadFrame(r)
+		got1, err := PluginReadFrame(r)
 		assert.NoErr(t, err)
 		assert.That(t, got1, should.Match([]byte{0xff}))
 
-		got2, err := pluginReadFrame(r)
+		got2, err := PluginReadFrame(r)
 		assert.NoErr(t, err)
 		assert.That(t, got2, should.Match([]byte{0xff, 0xfe}))
 	})
@@ -54,7 +54,7 @@ func TestPluginReadFrame(t *testing.T) {
 
 		frame := []byte{0xff}
 
-		_, err := pluginReadFrame(bytes.NewReader(frame))
+		_, err := PluginReadFrame(bytes.NewReader(frame))
 		assert.ErrIsLike(t, err, io.ErrUnexpectedEOF)
 	})
 
@@ -64,7 +64,7 @@ func TestPluginReadFrame(t *testing.T) {
 		// 4 byte header (length 255), 1 byte body.
 		frame := []byte{0xff, 0x00, 0x00, 0x00, 0x01}
 
-		_, err := pluginReadFrame(bytes.NewReader(frame))
+		_, err := PluginReadFrame(bytes.NewReader(frame))
 		assert.ErrIsLike(t, err, io.ErrUnexpectedEOF)
 	})
 }
@@ -73,7 +73,7 @@ func TestPluginWriteFrame(t *testing.T) {
 	t.Parallel()
 
 	var b bytes.Buffer
-	err := pluginWriteFrame(&b, []byte{0xca, 0xfe})
+	err := PluginWriteFrame(&b, []byte{0xca, 0xfe})
 	assert.NoErr(t, err)
 	assert.That(t, b.Bytes(), should.Match([]byte{0x02, 0x00, 0x00, 0x00, 0xca, 0xfe}))
 }

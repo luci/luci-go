@@ -181,8 +181,8 @@ func (h pluginHandler) sendRequest(ctx context.Context, req *webauthn.GetAsserti
 // pluginHeaderOrder is the byte order for signing plugin message headers.
 var pluginHeaderOrder = binary.LittleEndian
 
-// pluginReadFrame reads a framed message from `r` and returns the message body.
-func pluginReadFrame(r io.Reader) ([]byte, error) {
+// PluginReadFrame reads a framed message from `r` and returns the message body.
+func PluginReadFrame(r io.Reader) ([]byte, error) {
 	var bodyLen uint32
 
 	if err := binary.Read(r, pluginHeaderOrder, &bodyLen); err != nil {
@@ -206,8 +206,8 @@ func pluginReadFrame(r io.Reader) ([]byte, error) {
 	return body, nil
 }
 
-// pluginWriteFrame writes `body` to `w` as a framed plugin message for signing plugin.
-func pluginWriteFrame(w io.Writer, body []byte) (err error) {
+// PluginWriteFrame writes `body` to `w` as a framed plugin message for signing plugin.
+func PluginWriteFrame(w io.Writer, body []byte) (err error) {
 	bodyLen := len(body)
 
 	// Cast to int64 to avoid coercing RHS to int (which might be int32 on certain platforms).
@@ -234,7 +234,7 @@ func PluginEncode(v any) ([]byte, error) {
 	}
 
 	var buf bytes.Buffer
-	if err := pluginWriteFrame(&buf, body); err != nil {
+	if err := PluginWriteFrame(&buf, body); err != nil {
 		return nil, errors.WrapIf(err, "pluginEncode: failed to encode into a buffer")
 	}
 
@@ -243,7 +243,7 @@ func PluginEncode(v any) ([]byte, error) {
 
 // PluginDecode decodes framed JSON messages from signing plugins.
 func PluginDecode(d []byte, v any) error {
-	body, err := pluginReadFrame(bytes.NewReader(d))
+	body, err := PluginReadFrame(bytes.NewReader(d))
 	if err != nil {
 		return err
 	}
