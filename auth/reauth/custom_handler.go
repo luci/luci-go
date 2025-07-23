@@ -228,28 +228,39 @@ func PluginWriteFrame(w io.Writer, body []byte) (err error) {
 
 // PluginEncode encodes framed JSON messages for signing plugins.
 func PluginEncode(v any) ([]byte, error) {
+	var buf bytes.Buffer
+	if err := PluginEncodeStream(&buf, v); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// PluginEncodeStream encodes framed JSON messages for signing plugins into a stream.
+func PluginEncodeStream(w io.Writer, v any) error {
 	body, err := json.Marshal(v)
 	if err != nil {
-		return nil, errors.Fmt("pluginEncode: %w", err)
+		return errors.Fmt("pluginEncodeStream: %w", err)
 	}
-
-	var buf bytes.Buffer
-	if err := PluginWriteFrame(&buf, body); err != nil {
-		return nil, errors.WrapIf(err, "pluginEncode: failed to encode into a buffer")
+	if err := PluginWriteFrame(w, body); err != nil {
+		return errors.WrapIf(err, "pluginEncodeStream: failed to encode")
 	}
-
-	return buf.Bytes(), nil
+	return nil
 }
 
 // PluginDecode decodes framed JSON messages from signing plugins.
 func PluginDecode(d []byte, v any) error {
-	body, err := PluginReadFrame(bytes.NewReader(d))
+	return PluginDecodeStream(bytes.NewReader(d), v)
+}
+
+// PluginDecodeStream decodes a framed JSON message from a signing plugin stream.
+func PluginDecodeStream(r io.Reader, v any) error {
+	body, err := PluginReadFrame(r)
 	if err != nil {
 		return err
 	}
 
 	if err := json.Unmarshal(body, v); err != nil {
-		return errors.Fmt("pluginDecode: %w", err)
+		return errors.Fmt("pluginDecodeStream: %w", err)
 	}
 	return nil
 }
