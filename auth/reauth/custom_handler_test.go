@@ -85,7 +85,7 @@ func TestPluginEncode(t *testing.T) {
 	}{
 		You: "me",
 	}
-	got, err := pluginEncode(body)
+	got, err := PluginEncode(body)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func TestPluginDecode(t *testing.T) {
 	t.Parallel()
 	d := []byte("\x1e\x00\x00\x00" + `{"type":"get","origin":"seia"}`)
 	var got map[string]string
-	if err := pluginDecode(d, &got); err != nil {
+	if err := PluginDecode(d, &got); err != nil {
 		t.Fatal(err)
 	}
 	want := map[string]string{
@@ -109,7 +109,7 @@ func TestPluginDecode(t *testing.T) {
 
 func TestPluginHandler(t *testing.T) {
 	t.Parallel()
-	resp, err := pluginEncode(&webauthn.GetAssertionResponse{
+	resp, err := PluginEncode(&webauthn.GetAssertionResponse{
 		Type: "getResponse",
 		ResponseData: webauthn.GetAssertionResponseData{
 			Type: "public-key",
@@ -158,7 +158,7 @@ func TestPluginHandler(t *testing.T) {
 		},
 	}
 	assert.That(t, got, should.Match(want))
-	sendWant, err := pluginEncode(&webauthn.GetAssertionRequest{
+	sendWant, err := PluginEncode(&webauthn.GetAssertionRequest{
 		Type:   "get",
 		Origin: "sartre",
 		RequestData: webauthn.GetAssertionRequestData{

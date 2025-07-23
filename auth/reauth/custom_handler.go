@@ -164,14 +164,14 @@ func (h pluginHandler) authWithPlugin(ctx context.Context, req *webauthn.GetAsse
 // treated as an error.
 // The response may contain more details about the error from the plugin.
 func (h pluginHandler) sendRequest(ctx context.Context, req *webauthn.GetAssertionRequest) (*webauthn.GetAssertionResponse, error) {
-	ereq, err := pluginEncode(req)
+	ereq, err := PluginEncode(req)
 	if err != nil {
 		return nil, errors.Fmt("pluginHandler.sendRequest: %w", err)
 	}
 	logging.Debugf(ctx, "Sending signing plugin input: %q", ereq)
 	out, err := h.send(ctx, ereq) // nolint:ineffassign
 	var resp *webauthn.GetAssertionResponse
-	if err := pluginDecode(out, &resp); err != nil {
+	if err := PluginDecode(out, &resp); err != nil {
 		logging.Debugf(ctx, "Error unmarshalling plugin response: %q", out)
 		return nil, errors.Fmt("pluginHandler.sendRequest: %w", err)
 	}
@@ -226,8 +226,8 @@ func pluginWriteFrame(w io.Writer, body []byte) (err error) {
 	return nil
 }
 
-// pluginEncode encodes framed JSON messages for signing plugins.
-func pluginEncode(v any) ([]byte, error) {
+// PluginEncode encodes framed JSON messages for signing plugins.
+func PluginEncode(v any) ([]byte, error) {
 	body, err := json.Marshal(v)
 	if err != nil {
 		return nil, errors.Fmt("pluginEncode: %w", err)
@@ -241,8 +241,8 @@ func pluginEncode(v any) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// pluginDecode decodes framed JSON messages from signing plugins.
-func pluginDecode(d []byte, v any) error {
+// PluginDecode decodes framed JSON messages from signing plugins.
+func PluginDecode(d []byte, v any) error {
 	body, err := pluginReadFrame(bytes.NewReader(d))
 	if err != nil {
 		return err
