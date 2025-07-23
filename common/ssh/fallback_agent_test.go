@@ -25,7 +25,7 @@ import (
 func TestFallbackAgent(t *testing.T) {
 	t.Run("Read", func(t *testing.T) {
 		t.Parallel()
-		agent := newFallbackAgent()
+		agent := NewFallbackAgent()
 		msg, err := agent.Read()
 		assert.NoErr(t, err)
 		assert.That(t, msg.Code, should.Equal(AgentFailure))
@@ -34,14 +34,14 @@ func TestFallbackAgent(t *testing.T) {
 
 	t.Run("Write", func(t *testing.T) {
 		t.Parallel()
-		agent := newFallbackAgent()
+		agent := NewFallbackAgent()
 		err := agent.Write(AgentMessage{Code: AgentMessageCode(0)})
 		assert.NoErr(t, err)
 	})
 
 	t.Run("Close", func(t *testing.T) {
 		t.Parallel()
-		agent := newFallbackAgent()
+		agent := NewFallbackAgent()
 		agent.Close()
 
 		t.Run("Read", func(t *testing.T) {

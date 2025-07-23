@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ssh
+package ssh_test
 
 import (
 	"context"
@@ -21,52 +21,24 @@ import (
 
 	"golang.org/x/net/nettest"
 
+	"go.chromium.org/luci/common/ssh"
+	"go.chromium.org/luci/common/ssh/testutil"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
-
-type fallbackDialer struct{}
-
-func (_ fallbackDialer) Dial(ctx context.Context) AgentConn {
-	return newFallbackAgent()
-}
-
-type proxyDialer struct {
-	connections chan AgentConn
-}
-
-func (p proxyDialer) Dial(ctx context.Context) AgentConn {
-	s, c := net.Pipe()
-	p.connections <- NewAgentConn(s)
-	return NewAgentConn(c)
-}
-
-func (p proxyDialer) getConnection() AgentConn {
-	return <-p.connections
-}
-
-func newProxyDialer() proxyDialer {
-	return proxyDialer{
-		connections: make(chan AgentConn, 1),
-	}
-}
-
-type testUpstreamDialer interface {
-	Dial(context.Context) AgentConn
-}
 
 // Caller is responsible for calling Close() on the returned agent and client.
 func newTestExtensionAgentAndClient(
 	ctx context.Context,
 	t *testing.T,
-	dispatcher AgentExtensionDispatcher,
-	upstream testUpstreamDialer,
-) (*ExtensionAgent, AgentConn) {
+	dispatcher ssh.AgentExtensionDispatcher,
+	upstream ssh.AgentDialer,
+) (*ssh.ExtensionAgent, ssh.AgentConn) {
 	listener, err := nettest.NewLocalListener("tcp")
 	if err != nil {
 		t.Fatal(err)
 	}
-	agent := ExtensionAgent{
+	agent := ssh.ExtensionAgent{
 		Dispatcher:     dispatcher,
 		Listener:       listener,
 		UpstreamDialer: upstream,
@@ -77,7 +49,7 @@ func newTestExtensionAgentAndClient(
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &agent, NewAgentConn(clientConn)
+	return &agent, ssh.NewAgentConn(clientConn)
 }
 
 func TestHandleClient(t *testing.T) {
@@ -89,16 +61,16 @@ func TestHandleClient(t *testing.T) {
 		otherExtension   = "other@example.com"
 	)
 
-	dispatcher := AgentExtensionDispatcher{
-		succeedExtension: func(p []byte) AgentMessage {
-			return AgentMessage{
-				Code:    AgentSuccess,
+	dispatcher := ssh.AgentExtensionDispatcher{
+		succeedExtension: func(p []byte) ssh.AgentMessage {
+			return ssh.AgentMessage{
+				Code:    ssh.AgentSuccess,
 				Payload: []byte("echo"),
 			}
 		},
-		failExtension: func(p []byte) AgentMessage {
-			return AgentMessage{
-				Code:    AgentExtensionFailure,
+		failExtension: func(p []byte) ssh.AgentMessage {
+			return ssh.AgentMessage{
+				Code:    ssh.AgentExtensionFailure,
 				Payload: []byte(failExtension),
 			}
 		},
@@ -111,21 +83,21 @@ func TestHandleClient(t *testing.T) {
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 
-			agent, client := newTestExtensionAgentAndClient(ctx, t, dispatcher, fallbackDialer{})
+			agent, client := newTestExtensionAgentAndClient(ctx, t, dispatcher, testutil.FallbackDialer{})
 			defer agent.Close()
 			defer client.Close()
 
-			payload, err := MarshalBody(AgentExtensionRequest{
+			payload, err := ssh.MarshalBody(ssh.AgentExtensionRequest{
 				ExtensionType: succeedExtension,
 				ExtensionData: []byte("echo"),
 			})
 			assert.NoErr(t, err)
-			err = client.Write(AgentMessage{Code: AgentcExtension, Payload: payload})
+			err = client.Write(ssh.AgentMessage{Code: ssh.AgentcExtension, Payload: payload})
 			assert.NoErr(t, err)
 
 			resp, err := client.Read()
 			assert.NoErr(t, err)
-			assert.Loosely(t, resp.Code, should.Equal(AgentSuccess))
+			assert.Loosely(t, resp.Code, should.Equal(ssh.AgentSuccess))
 			assert.Loosely(t, resp.Payload, should.Match("echo"))
 		})
 
@@ -134,21 +106,21 @@ func TestHandleClient(t *testing.T) {
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 
-			agent, client := newTestExtensionAgentAndClient(ctx, t, dispatcher, fallbackDialer{})
+			agent, client := newTestExtensionAgentAndClient(ctx, t, dispatcher, testutil.FallbackDialer{})
 			defer agent.Close()
 			defer client.Close()
 
-			payload, err := MarshalBody(AgentExtensionRequest{
+			payload, err := ssh.MarshalBody(ssh.AgentExtensionRequest{
 				ExtensionType: failExtension,
 				ExtensionData: []byte("echo"),
 			})
 			assert.NoErr(t, err)
-			err = client.Write(AgentMessage{Code: AgentcExtension, Payload: payload})
+			err = client.Write(ssh.AgentMessage{Code: ssh.AgentcExtension, Payload: payload})
 			assert.NoErr(t, err)
 
 			resp, err := client.Read()
 			assert.NoErr(t, err)
-			assert.Loosely(t, resp.Code, should.Equal(AgentExtensionFailure))
+			assert.Loosely(t, resp.Code, should.Equal(ssh.AgentExtensionFailure))
 			assert.Loosely(t, resp.Payload, should.Match(failExtension))
 		})
 
@@ -157,21 +129,21 @@ func TestHandleClient(t *testing.T) {
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 
-			agent, client := newTestExtensionAgentAndClient(ctx, t, dispatcher, fallbackDialer{})
+			agent, client := newTestExtensionAgentAndClient(ctx, t, dispatcher, testutil.FallbackDialer{})
 			defer agent.Close()
 			defer client.Close()
 
-			payload, err := MarshalBody(AgentExtensionRequest{
+			payload, err := ssh.MarshalBody(ssh.AgentExtensionRequest{
 				ExtensionType: otherExtension,
 				ExtensionData: []byte("other extension's message"),
 			})
 			assert.NoErr(t, err)
-			err = client.Write(AgentMessage{Code: AgentcExtension, Payload: payload})
+			err = client.Write(ssh.AgentMessage{Code: ssh.AgentcExtension, Payload: payload})
 			assert.NoErr(t, err)
 
 			resp, err := client.Read()
 			assert.NoErr(t, err)
-			assert.Loosely(t, resp.Code, should.Equal(AgentFailure))
+			assert.Loosely(t, resp.Code, should.Equal(ssh.AgentFailure))
 			assert.Loosely(t, resp.Payload, should.Match([]byte{}))
 		})
 	})
@@ -186,23 +158,22 @@ func TestHandleClient(t *testing.T) {
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 
-			upstream := newProxyDialer()
-			agent, client := newTestExtensionAgentAndClient(ctx, t, dispatcher, upstream)
-			defer agent.Close()
-			defer client.Close()
-
-			go func() {
-				conn := upstream.getConnection()
-				msg, err := conn.Read()
+			upstream := testutil.NewTestAgentDialer(func(c ssh.AgentConn) {
+				msg, err := c.Read()
 				assert.NoErr(t, err)
 				assert.Loosely(t, msg.Code, should.Equal(testSSHAgentcRequest))
 				assert.Loosely(t, msg.Payload, should.Match("upstream"))
 
-				err = conn.Write(AgentMessage{Code: testSSHAgentResponse, Payload: []byte("resp")})
+				err = c.Write(ssh.AgentMessage{Code: testSSHAgentResponse, Payload: []byte("resp")})
 				assert.NoErr(t, err)
-			}()
+			})
+			defer upstream.Shutdown()
 
-			err := client.Write(AgentMessage{Code: testSSHAgentcRequest, Payload: []byte("upstream")})
+			agent, client := newTestExtensionAgentAndClient(ctx, t, dispatcher, upstream)
+			defer agent.Close()
+			defer client.Close()
+
+			err := client.Write(ssh.AgentMessage{Code: testSSHAgentcRequest, Payload: []byte("upstream")})
 			assert.NoErr(t, err)
 
 			// Read reply from upstream
@@ -216,40 +187,40 @@ func TestHandleClient(t *testing.T) {
 			t.Parallel()
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
-			upstream := newProxyDialer()
-			agent, client := newTestExtensionAgentAndClient(ctx, t, dispatcher, upstream)
-			defer agent.Close()
-			defer client.Close()
 
-			testReq := AgentExtensionRequest{
+			testReq := ssh.AgentExtensionRequest{
 				ExtensionType: "test@example.com",
 				ExtensionData: []byte("abcd"),
 			}
 
-			go func() {
-				conn := upstream.getConnection()
-				msg, err := conn.Read()
+			upstream := testutil.NewTestAgentDialer(func(c ssh.AgentConn) {
+				msg, err := c.Read()
 				assert.NoErr(t, err)
-				assert.Loosely(t, msg.Code, should.Equal(AgentcExtension))
+				assert.Loosely(t, msg.Code, should.Equal(ssh.AgentcExtension))
 
-				var gotReq AgentExtensionRequest
-				err = UnmarshalBody(msg.Payload, &gotReq)
+				var gotReq ssh.AgentExtensionRequest
+				err = ssh.UnmarshalBody(msg.Payload, &gotReq)
 				assert.NoErr(t, err)
 				assert.Loosely(t, gotReq, should.Match(testReq))
 
-				err = conn.Write(AgentMessage{Code: AgentSuccess, Payload: []byte("resp")})
+				err = c.Write(ssh.AgentMessage{Code: ssh.AgentSuccess, Payload: []byte("resp")})
 				assert.NoErr(t, err)
-			}()
+			})
+			defer upstream.Shutdown()
 
-			payload, err := MarshalBody(testReq)
+			agent, client := newTestExtensionAgentAndClient(ctx, t, dispatcher, upstream)
+			defer agent.Close()
+			defer client.Close()
+
+			payload, err := ssh.MarshalBody(testReq)
 			assert.NoErr(t, err)
-			err = client.Write(AgentMessage{Code: AgentcExtension, Payload: payload})
+			err = client.Write(ssh.AgentMessage{Code: ssh.AgentcExtension, Payload: payload})
 			assert.NoErr(t, err)
 
 			// Read reply from upstream
 			resp, err := client.Read()
 			assert.NoErr(t, err)
-			assert.Loosely(t, resp.Code, should.Equal(AgentSuccess))
+			assert.Loosely(t, resp.Code, should.Equal(ssh.AgentSuccess))
 			assert.Loosely(t, resp.Payload, should.Match("resp"))
 		})
 	})

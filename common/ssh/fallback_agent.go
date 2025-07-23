@@ -19,40 +19,40 @@ import (
 	"sync/atomic"
 )
 
-// fallbackAgent acts as an SSH agent that always fails the request with
+// FallbackAgent acts as an SSH agent that always fails the request with
 // AgentFailure.
 //
 // This implements AgentConn interface, and can be used when SSH_AUTH_SOCK
 // isn't set.
-type fallbackAgent struct {
+type FallbackAgent struct {
 	closed atomic.Bool
 }
 
-var _ AgentConn = (*fallbackAgent)(nil)
+var _ AgentConn = (*FallbackAgent)(nil)
 
-func (c *fallbackAgent) Read() (*AgentMessage, error) {
+func (c *FallbackAgent) Read() (*AgentMessage, error) {
 	if c.closed.Load() {
 		return nil, net.ErrClosed
 	}
 	return &AgentMessage{Code: AgentFailure}, nil
 }
 
-func (c *fallbackAgent) Write(msg AgentMessage) error {
+func (c *FallbackAgent) Write(msg AgentMessage) error {
 	if c.closed.Load() {
 		return net.ErrClosed
 	}
 	return nil
 }
 
-func (c *fallbackAgent) Close() error {
+func (c *FallbackAgent) Close() error {
 	c.closed.Store(true)
 	return nil
 }
 
-func (c *fallbackAgent) RemoteAddr() net.Addr {
+func (c *FallbackAgent) RemoteAddr() net.Addr {
 	return nil
 }
 
-func newFallbackAgent() *fallbackAgent {
-	return &fallbackAgent{}
+func NewFallbackAgent() *FallbackAgent {
+	return &FallbackAgent{}
 }

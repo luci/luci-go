@@ -40,20 +40,18 @@ type AgentConn interface {
 	RemoteAddr() net.Addr
 }
 
-// AgentClient sends requests to an Agent on a remote machine
-// via SSH Agent protocol.
 type AgentClient struct {
-	conn AgentConn
+	AgentConn
 }
 
-// NewAgentClient creates a new client of Agent from AgentConn `c`.
-func NewAgentClient(c AgentConn) *AgentClient {
-	return &AgentClient{c}
+// NewAgentClient creates a new AgentClient from an AgentConn.
+func NewAgentClient(c AgentConn) AgentClient {
+	return AgentClient{AgentConn: c}
 }
 
-// SendExtensionRequest sends `req` to the agent for processing, and returns
-// the response.
-func (c *AgentClient) SendExtensionRequest(req AgentExtensionRequest) ([]byte, error) {
+// SendExtensionRequest sends `req` over AgentConn `c` for processing, and
+// returns the response.
+func (c AgentClient) SendExtensionRequest(req AgentExtensionRequest) ([]byte, error) {
 	payload, err := MarshalBody(req)
 	if err != nil {
 		return nil, errors.WrapIf(err, "failed to marshal message payload")
@@ -63,11 +61,11 @@ func (c *AgentClient) SendExtensionRequest(req AgentExtensionRequest) ([]byte, e
 		Code:    AgentcExtension,
 		Payload: payload,
 	}
-	if err := c.conn.Write(msg); err != nil {
+	if err := c.Write(msg); err != nil {
 		return nil, errors.WrapIf(err, "failed to write request")
 	}
 
-	resp, err := c.conn.Read()
+	resp, err := c.Read()
 	if err != nil {
 		return nil, errors.WrapIf(err, "failed to read response")
 	}
@@ -85,9 +83,9 @@ func (c *AgentClient) SendExtensionRequest(req AgentExtensionRequest) ([]byte, e
 	}
 }
 
-type agentDialer interface {
+type AgentDialer interface {
 	// Dial returns a AgentConn to an SSH agent.
-	Dial(context.Context) AgentConn
+	Dial(context.Context) (AgentConn, error)
 }
 
 // AgentExtensionHandler defines the function signature of a SSH agent
@@ -106,10 +104,10 @@ type AgentExtensionDispatcher map[string]AgentExtensionHandler
 // registered in `dispatcher`, and sends all other messages to an upstream SSH
 // agent (dialed by `upstreamDialer`).
 type ExtensionAgent struct {
-	// UpstreamDialer specifies the `agentDialer` that ExtensionAgent proxies
+	// UpstreamDialer specifies the `AgentDialer` that ExtensionAgent proxies
 	// non-extension SSH Agent messages or extension messages that aren't
 	// registered in `Dispatcher`
-	UpstreamDialer agentDialer
+	UpstreamDialer AgentDialer
 
 	// The net.Listener that ExtensionAgent should accept connections from.
 	Listener net.Listener
@@ -142,7 +140,11 @@ func (a *ExtensionAgent) handleClient(ctx context.Context, conn net.Conn) {
 	client := NewAgentConn(conn)
 	defer client.Close()
 
-	upstream := a.UpstreamDialer.Dial(ctx)
+	upstream, err := a.UpstreamDialer.Dial(ctx)
+	if err != nil {
+		logging.Infof(ctx, "Failed to dial upstream agent: %v", err)
+		return
+	}
 	defer upstream.Close()
 
 	// This closes the client connection when the ListenLoop's context has been
@@ -243,25 +245,20 @@ type upstreamWithFallback struct {
 	upstream string
 }
 
-var _ agentDialer = (*upstreamWithFallback)(nil)
+var _ AgentDialer = (*upstreamWithFallback)(nil)
 
 // Dial connects to an upstream SSH_AUTH_SOCK. On failure, it returns a
-// fallback channel.
-func (u upstreamWithFallback) Dial(ctx context.Context) AgentConn {
+// fallback channel and an error explaining why it failed.
+func (u upstreamWithFallback) Dial(ctx context.Context) (AgentConn, error) {
 	if u.upstream == "" {
-		logging.Warningf(ctx, "No upstream SSH_AUTH_SOCK.")
-		logging.Warningf(ctx, "Will proceeed without an upstream, the first SSH authentication will likely fail.")
-		return newFallbackAgent()
+		return NewFallbackAgent(), errors.New("no upstream SSH_AUTH_SOCK")
 	}
 
 	var d net.Dialer
 	upConn, err := d.DialContext(ctx, "unix", u.upstream)
 	if err != nil {
-		logging.Warningf(ctx, "Failed to dial upstream SSH_AUTH_SOCK, %v", err)
-		logging.Warningf(ctx, "Will proceeed without an upstream, the first SSH authentication will likely fail.")
-		return newFallbackAgent()
+		return NewFallbackAgent(), errors.WrapIf(err, "failed to dial SSH_AUTH_SOCK")
 	}
 
-	logging.Infof(ctx, "Upstream socket dialed: %v", upConn.RemoteAddr())
-	return NewAgentConn(upConn)
+	return NewAgentConn(upConn), nil
 }
