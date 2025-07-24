@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//       http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,10 +20,12 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 option java_package = "com.google.luci.resultdb.v1";
 option java_multiple_files = true;
 
-// Information about why a test failed. This information may be displayed
-// to developers in result viewing UIs and will also be used to cluster
-// similar failures together.
-// For example, this will contain assertion failure messages and stack traces.
+// Provides structured information about why a test failed. This information is helpful
+// for developers debugging failures and is also used by systems like LUCI Analysis
+// to cluster similar failures together.
+// It typically contains one or more error messages and potentially stack traces.
+// Note: The total combined size of all errors within this message (as measured
+// by proto.Size()) must not exceed 16,384 bytes.
 message FailureReason {
   // Kind defines the general category of the failure.
   // Open to extension.
@@ -58,18 +60,28 @@ message FailureReason {
   // Error represents a problem that caused a test to fail, such as a crash
   // or expectation failure.
   message Error {
-    // The error message. This should only be the error message and
-    // should not include any stack traces. An example would be the
-    // message from an Exception in a Java test.
+    // The specific error message associated with this particular error instance
+    // (e.g., the text of a specific assertion failure). This should generally
+    // exclude stack traces, which belong in the `trace` field.
+    // This message is often used for clustering related failures.
     //
-    // This message may be used to cluster related failures together.
+    // Example message:
+    // camera_unittest.cc(123): Value of GetPrivacyIndicatorsView()->CameraIcon()->GetVisible() Actual: false Expected: true
     //
-    // The size of the message must be equal to or smaller than 1024 bytes in
-    // UTF-8.
+    // The size of this message must be equal to or smaller than 1024 bytes in UTF-8.
     string message = 1;
+
+    // The stack trace associated with this error, if one is available.
+    // For very long stack traces, it's recommended to store them as separate
+    // artifacts linked to the TestResult and include a truncated version inline
+    // here to avoid exceeding size limits.
+    // A size limit of 4096 bytes (UTF-8) applies to this field.
+    string trace = 2;
   }
 
-  // The error(s) that caused the test to fail.
+  // A list of all the errors that contributed to the test failure. There might
+  // be multiple errors if, for example, a test harness continues after non-fatal
+  // assertion failures.
   //
   // If there is more than one error (e.g. due to multiple expectation failures),
   // a stable sorting should be used. A recommended form of stable sorting is:
@@ -79,10 +91,11 @@ message FailureReason {
   //   (earliest error first).
   //
   // The total combined size of all errors (as measured by proto.Size()) must
-  // not exceed 3,172 bytes.
+  // not exceed 16,384 bytes.
   repeated Error errors = 2;
 
-  // The number of errors that are truncated from the errors list above due to
-  // the size limits.
+  // If the list of errors was too large to fit within the size limits for the
+  // FailureReason message, this count indicates how many errors were truncated
+  // from the end of the `errors` list.
   int32 truncated_errors_count = 3;
 }

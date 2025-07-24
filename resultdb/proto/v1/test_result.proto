@@ -28,12 +28,14 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 option java_package = "com.google.luci.resultdb.v1";
 option java_multiple_files = true;
 
-// A result of a functional test case.
-// Often a single test case is executed multiple times and has multiple results,
-// a single test suite has multiple test cases,
-// and the same test suite can be executed in different variants
-// (OS, GPU, compile flags, etc).
+// A result of a functional test case, representing a single execution attempt.
+// Often a single test case is executed multiple times (attempts or runs) and
+// has multiple results. Test results are associated with a RootInvocation and
+// a WorkUnit that represents the execution context (like a swarming task
+// or build step).
 //
+// This message includes details about the test identity, its execution status/result,
+// timing, and potentially failure details.
 // This message does not specify the test id.
 // It should be available in the message that embeds this message.
 //
@@ -41,14 +43,15 @@ option java_multiple_files = true;
 message TestResult {
   reserved 11;  // test_location
 
-  // Can be used to refer to this test result, e.g. in ResultDB.GetTestResult
-  // RPC.
-  // Format:
-  // "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}".
-  // where URL_ESCAPED_TEST_ID is test_id escaped with
-  // https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
+  // This is the resource name of the test result. You can use it to refer
+  // to this test result in RPCs like ResultDB.GetTestResult.
+  // The format is:
+  // "rootinvocations/{ROOT_INVOCATION_ID}/workunits/{WORK_UNIT_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}".
+  // Note that URL_ESCAPED_TEST_ID uses the flat test ID format.
   //
-  // Output only.
+  // This field is output only, meaning it's assigned by the server.
+  // Note: while ResultDB is being updated, a legacy name format that is different to the above may be returned.  This
+  // legacy format will also be accepted anywhere the updated format is accepted so they are functionally equivalent.
   string name = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE
@@ -77,8 +80,13 @@ message TestResult {
   // Output only. (Except for legacy uploaders.)
   string test_id = 2 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
 
-  // Identifies a test result in a given invocation and test id.
-  // Regex: ^[a-z0-9\-_.]{1,32}$
+  // This identifies the specific test result within a given invocation and test ID.
+  // It's needed because a single test might run multiple times (e.g., retries).
+  // This ID should be unique for a given test within the invocation.
+  // Test runners or result uploaders typically generate this ID.
+  // This forms part of the name (or primary key) of the test result:
+  // (root_invocation_id, test_id, result_id)
+  // The format follows the regex: ^[a-z0-9\-_.]{1,32}$
   string result_id = 3 [
     (google.api.field_behavior) = IMMUTABLE,
     (google.api.field_behavior) = REQUIRED
@@ -224,25 +232,37 @@ message TestResult {
   // A key can be repeated.
   repeated StringPair tags = 10 [(google.api.field_behavior) = IMMUTABLE];
 
-  // Hash of the variant.
-  // hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).
+  // This is a SHA256 hash of the `test_id_structured.module_variant` key-value pairs,
+  // encoded as hex.
   //
-  // Output only.
+  // It provides a consistent way to identify unique variants for grouping and
+  // analysis.
+  //
+  // hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items()))))
+  //
+  // For legacy test results which do not upload the test_id_structured field, the
+  // module_variant field is equivalent to the legacy `variant` field, and thus
+  // this field is effectively a hash of the `variant` field.
+  //
+  // This field is output only.
   string variant_hash = 12 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  // Information about the test at the time of its execution.
+  // This holds metadata about the test code itself, like its source code location,
+  // captured at the time the test was executed.
   TestMetadata test_metadata = 13;
 
-  // Information about the test failure.
-  //
+  // This provides structured information about why a test failed.
   // MUST be set (and only set) when status_v2 is FAILED.
   FailureReason failure_reason = 14;
 
   // Arbitrary JSON object that contains structured, domain-specific properties
   // of the test result.
+  //
+  // As well as allowing more structure than tags, it will be exported to BigQuery
+  // as a JSON field allowing faster querying than tags.
   //
   // The serialized size must be <= 8 KB.
   google.protobuf.Struct properties = 15;
@@ -250,17 +270,23 @@ message TestResult {
   // Whether the test result has been masked so that it includes only metadata.
   // The metadata fields for a TestResult are:
   // * name
+  // * test_id_structured
   // * test_id
+  // * variant
   // * result_id
-  // * expected
-  // * status
+  // * status_v2
   // * start_time
   // * duration
   // * variant_hash
+  // * failure_reason.kind
+  // * summary_html
   // * failure_reason.primary_error_message (truncated to 140 characters)
-  // * skip_reason
+  // * skipped_reason
+  // * skip_reason (deprecated)
+  // * expected (deprecated)
+  // * status (deprecated)
   //
-  // Output only.
+  // This field is output only.
   bool is_masked = 16 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // Deprecated: Replaced by skipped_reason message.
@@ -402,6 +428,8 @@ message WebTest {
 // DEPRECATED: Use TestResult.Status instead.
 // Machine-readable status of a test result.
 enum TestStatus {
+  option deprecated = true;
+
   // Status was not specified.
   // Not to be used in actual test results; serves as a default value for an
   // unset field.
@@ -439,6 +467,8 @@ enum TestStatus {
 // Only reasons actually used are listed here, if you need a new reason
 // please add it here and send a CL to the OWNERS.
 enum SkipReason {
+    option deprecated = true;
+
   // Skip reason was not specified.
   // This represents an unset field which should be used for non-skip test
   // result statuses.  It can also be used if none of the other statuses
@@ -451,18 +481,18 @@ enum SkipReason {
   AUTOMATICALLY_DISABLED_FOR_FLAKINESS = 1;
 }
 
-// Indicates the test subject (e.g. a CL) is absolved from blame
-// for an unexpected result of a test variant.
-// For example, the test variant fails both with and without CL, so it is not
-// CL's fault.
+
+// Indicates that the test subject (e.g., a ChangeList in Gerrit) should not
+// be considered "at fault" for an failed result of a particular test variant.
+// This is often used in presubmit checks (like CQ) to prevent blaming a CL
+// for pre-existing or unrelated issues.
 // Next ID: 10.
 message TestExoneration {
   // Can be used to refer to this test exoneration, e.g. in
   // ResultDB.GetTestExoneration RPC.
   // Format:
   // invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/exonerations/{EXONERATION_ID}.
-  // URL_ESCAPED_TEST_ID is test_variant.test_id escaped with
-  // https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
+  // URL_ESCAPED_TEST_ID uses the flat test ID format.
   //
   // Output only.
   string name = 1 [
@@ -470,32 +500,14 @@ message TestExoneration {
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  // The structured test identifier.
-  //
-  // Uniquely identifies the test that was run, including the specific way of running that
-  // test, e.g. build configuration, CPU architecture, OS.
-  //
-  // When uploading results, this should be specified in preference
-  // to test_id and variant. (Uploading test_id and variant is supported only for
-  // legacy uploaders).
+  // The structured identifier of the test that is being exonerated.
   TestIdentifier test_id_structured = 9 [(google.api.field_behavior) = IMMUTABLE];
 
-  // A unique identifier of the test in a LUCI project, excluding variant.
-  // Regex: ^[[::print::]]{1,512}$
-  //
-  // This is the flat-form encoding of the structured test variant ID above,
-  // excluding information about the specific way of running test (e.g. build configuration,
-  // CPU architecture). Such information is captured separately in the `variant` field below.
-  //
-  // See TestIdentifier for details how a structured test identifier is converted
-  // to flat test ID.
-  //
+  // The flat test id of the test that is being exonerated.
   // Output only. (Except for legacy uploaders.)
   string test_id = 2 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
 
-  // Description of one specific way of running the test,
-  // e.g. build configuration, CPU architecture, OS.
-  //
+  // The variant of the test that is being exonerated.
   // Output only. (Except for legacy uploaders.)
   Variant variant = 3 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
 
@@ -506,12 +518,13 @@ message TestExoneration {
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  // Reasoning behind the exoneration, in HTML.
+  // Humnan readable reasoning behind the exoneration, in HTML.
   // MUST be sanitized before rendering in the browser.
   string explanation_html = 5 [(google.api.field_behavior) = IMMUTABLE];
 
-  // Hash of the variant.
-  // hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).
+  // SHA256 hash of the module variant key-value pairs, hex-encoded.
+  // See variant_hash on TestResult for more details.
+  // Output only.
   string variant_hash = 6 [(google.api.field_behavior) = IMMUTABLE];
 
   // Reasoning behind the exoneration, in machine-readable form.
@@ -523,13 +536,15 @@ message TestExoneration {
   // Whether the test exoneration has been masked so that it includes only
   // metadata. The metadata fields for a TestExoneration are:
   // * name
-  // * test_id
+  // * test_id_structured
   // * exoneration_id
   // * variant_hash
   // * explanation_html
   // * reason
+  // * test_id (deprecated)
+  // * variant (deprecated)
   //
-  // Output only.
+  // This field is output only.
   bool is_masked = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 

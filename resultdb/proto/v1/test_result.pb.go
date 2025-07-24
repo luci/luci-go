@@ -41,6 +41,8 @@ const (
 
 // DEPRECATED: Use TestResult.Status instead.
 // Machine-readable status of a test result.
+//
+// Deprecated: Marked as deprecated in go.chromium.org/luci/resultdb/proto/v1/test_result.proto.
 type TestStatus int32
 
 const (
@@ -122,6 +124,8 @@ func (TestStatus) EnumDescriptor() ([]byte, []int) {
 // Machine-readable reason that a test execution was skipped.
 // Only reasons actually used are listed here, if you need a new reason
 // please add it here and send a CL to the OWNERS.
+//
+// Deprecated: Marked as deprecated in go.chromium.org/luci/resultdb/proto/v1/test_result.proto.
 type SkipReason int32
 
 const (
@@ -542,26 +546,29 @@ func (WebTest_Status) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_resultdb_proto_v1_test_result_proto_rawDescGZIP(), []int{3, 0}
 }
 
-// A result of a functional test case.
-// Often a single test case is executed multiple times and has multiple results,
-// a single test suite has multiple test cases,
-// and the same test suite can be executed in different variants
-// (OS, GPU, compile flags, etc).
+// A result of a functional test case, representing a single execution attempt.
+// Often a single test case is executed multiple times (attempts or runs) and
+// has multiple results. Test results are associated with a RootInvocation and
+// a WorkUnit that represents the execution context (like a swarming task
+// or build step).
 //
+// This message includes details about the test identity, its execution status/result,
+// timing, and potentially failure details.
 // This message does not specify the test id.
 // It should be available in the message that embeds this message.
 //
 // Next id: 23.
 type TestResult struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Can be used to refer to this test result, e.g. in ResultDB.GetTestResult
-	// RPC.
-	// Format:
-	// "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}".
-	// where URL_ESCAPED_TEST_ID is test_id escaped with
-	// https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
+	// This is the resource name of the test result. You can use it to refer
+	// to this test result in RPCs like ResultDB.GetTestResult.
+	// The format is:
+	// "rootinvocations/{ROOT_INVOCATION_ID}/workunits/{WORK_UNIT_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}".
+	// Note that URL_ESCAPED_TEST_ID uses the flat test ID format.
 	//
-	// Output only.
+	// This field is output only, meaning it's assigned by the server.
+	// Note: while ResultDB is being updated, a legacy name format that is different to the above may be returned.  This
+	// legacy format will also be accepted anywhere the updated format is accepted so they are functionally equivalent.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The structured test identifier.
 	//
@@ -584,8 +591,13 @@ type TestResult struct {
 	//
 	// Output only. (Except for legacy uploaders.)
 	TestId string `protobuf:"bytes,2,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
-	// Identifies a test result in a given invocation and test id.
-	// Regex: ^[a-z0-9\-_.]{1,32}$
+	// This identifies the specific test result within a given invocation and test ID.
+	// It's needed because a single test might run multiple times (e.g., retries).
+	// This ID should be unique for a given test within the invocation.
+	// Test runners or result uploaders typically generate this ID.
+	// This forms part of the name (or primary key) of the test result:
+	// (root_invocation_id, test_id, result_id)
+	// The format follows the regex: ^[a-z0-9\-_.]{1,32}$
 	ResultId string `protobuf:"bytes,3,opt,name=result_id,json=resultId,proto3" json:"result_id,omitempty"`
 	// Description of one specific way of running the test,
 	// e.g. build configuration, CPU architecture, OS.
@@ -637,36 +649,54 @@ type TestResult struct {
 	// It might describe this particular execution or the test case.
 	// A key can be repeated.
 	Tags []*StringPair `protobuf:"bytes,10,rep,name=tags,proto3" json:"tags,omitempty"`
-	// Hash of the variant.
-	// hex(sha256(sorted(”.join('%s:%s\n' for k, v in variant.items())))).
+	// This is a SHA256 hash of the `test_id_structured.module_variant` key-value pairs,
+	// encoded as hex.
 	//
-	// Output only.
+	// It provides a consistent way to identify unique variants for grouping and
+	// analysis.
+	//
+	// hex(sha256(sorted(”.join('%s:%s\n' for k, v in variant.items()))))
+	//
+	// For legacy test results which do not upload the test_id_structured field, the
+	// module_variant field is equivalent to the legacy `variant` field, and thus
+	// this field is effectively a hash of the `variant` field.
+	//
+	// This field is output only.
 	VariantHash string `protobuf:"bytes,12,opt,name=variant_hash,json=variantHash,proto3" json:"variant_hash,omitempty"`
-	// Information about the test at the time of its execution.
+	// This holds metadata about the test code itself, like its source code location,
+	// captured at the time the test was executed.
 	TestMetadata *TestMetadata `protobuf:"bytes,13,opt,name=test_metadata,json=testMetadata,proto3" json:"test_metadata,omitempty"`
-	// Information about the test failure.
-	//
+	// This provides structured information about why a test failed.
 	// MUST be set (and only set) when status_v2 is FAILED.
 	FailureReason *FailureReason `protobuf:"bytes,14,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`
 	// Arbitrary JSON object that contains structured, domain-specific properties
 	// of the test result.
+	//
+	// As well as allowing more structure than tags, it will be exported to BigQuery
+	// as a JSON field allowing faster querying than tags.
 	//
 	// The serialized size must be <= 8 KB.
 	Properties *structpb.Struct `protobuf:"bytes,15,opt,name=properties,proto3" json:"properties,omitempty"`
 	// Whether the test result has been masked so that it includes only metadata.
 	// The metadata fields for a TestResult are:
 	// * name
+	// * test_id_structured
 	// * test_id
+	// * variant
 	// * result_id
-	// * expected
-	// * status
+	// * status_v2
 	// * start_time
 	// * duration
 	// * variant_hash
+	// * failure_reason.kind
+	// * summary_html
 	// * failure_reason.primary_error_message (truncated to 140 characters)
-	// * skip_reason
+	// * skipped_reason
+	// * skip_reason (deprecated)
+	// * expected (deprecated)
+	// * status (deprecated)
 	//
-	// Output only.
+	// This field is output only.
 	IsMasked bool `protobuf:"varint,16,opt,name=is_masked,json=isMasked,proto3" json:"is_masked,omitempty"`
 	// Deprecated: Replaced by skipped_reason message.
 	// Reasoning behind a test skip, in machine-readable form.
@@ -1041,10 +1071,10 @@ func (x *WebTest) GetStatus() WebTest_Status {
 	return WebTest_STATUS_UNSPECIFIED
 }
 
-// Indicates the test subject (e.g. a CL) is absolved from blame
-// for an unexpected result of a test variant.
-// For example, the test variant fails both with and without CL, so it is not
-// CL's fault.
+// Indicates that the test subject (e.g., a ChangeList in Gerrit) should not
+// be considered "at fault" for an failed result of a particular test variant.
+// This is often used in presubmit checks (like CQ) to prevent blaming a CL
+// for pre-existing or unrelated issues.
 // Next ID: 10.
 type TestExoneration struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1052,45 +1082,27 @@ type TestExoneration struct {
 	// ResultDB.GetTestExoneration RPC.
 	// Format:
 	// invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/exonerations/{EXONERATION_ID}.
-	// URL_ESCAPED_TEST_ID is test_variant.test_id escaped with
-	// https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
+	// URL_ESCAPED_TEST_ID uses the flat test ID format.
 	//
 	// Output only.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// The structured test identifier.
-	//
-	// Uniquely identifies the test that was run, including the specific way of running that
-	// test, e.g. build configuration, CPU architecture, OS.
-	//
-	// When uploading results, this should be specified in preference
-	// to test_id and variant. (Uploading test_id and variant is supported only for
-	// legacy uploaders).
+	// The structured identifier of the test that is being exonerated.
 	TestIdStructured *TestIdentifier `protobuf:"bytes,9,opt,name=test_id_structured,json=testIdStructured,proto3" json:"test_id_structured,omitempty"`
-	// A unique identifier of the test in a LUCI project, excluding variant.
-	// Regex: ^[[::print::]]{1,512}$
-	//
-	// This is the flat-form encoding of the structured test variant ID above,
-	// excluding information about the specific way of running test (e.g. build configuration,
-	// CPU architecture). Such information is captured separately in the `variant` field below.
-	//
-	// See TestIdentifier for details how a structured test identifier is converted
-	// to flat test ID.
-	//
+	// The flat test id of the test that is being exonerated.
 	// Output only. (Except for legacy uploaders.)
 	TestId string `protobuf:"bytes,2,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
-	// Description of one specific way of running the test,
-	// e.g. build configuration, CPU architecture, OS.
-	//
+	// The variant of the test that is being exonerated.
 	// Output only. (Except for legacy uploaders.)
 	Variant *Variant `protobuf:"bytes,3,opt,name=variant,proto3" json:"variant,omitempty"`
 	// Identifies an exoneration in a given invocation and test id.
 	// It is server-generated.
 	ExonerationId string `protobuf:"bytes,4,opt,name=exoneration_id,json=exonerationId,proto3" json:"exoneration_id,omitempty"`
-	// Reasoning behind the exoneration, in HTML.
+	// Humnan readable reasoning behind the exoneration, in HTML.
 	// MUST be sanitized before rendering in the browser.
 	ExplanationHtml string `protobuf:"bytes,5,opt,name=explanation_html,json=explanationHtml,proto3" json:"explanation_html,omitempty"`
-	// Hash of the variant.
-	// hex(sha256(sorted(”.join('%s:%s\n' for k, v in variant.items())))).
+	// SHA256 hash of the module variant key-value pairs, hex-encoded.
+	// See variant_hash on TestResult for more details.
+	// Output only.
 	VariantHash string `protobuf:"bytes,6,opt,name=variant_hash,json=variantHash,proto3" json:"variant_hash,omitempty"`
 	// Reasoning behind the exoneration, in machine-readable form.
 	// Used to assist downstream analyses, such as automatic bug-filing.
@@ -1100,13 +1112,15 @@ type TestExoneration struct {
 	// Whether the test exoneration has been masked so that it includes only
 	// metadata. The metadata fields for a TestExoneration are:
 	// * name
-	// * test_id
+	// * test_id_structured
 	// * exoneration_id
 	// * variant_hash
 	// * explanation_html
 	// * reason
+	// * test_id (deprecated)
+	// * variant (deprecated)
 	//
-	// Output only.
+	// This field is output only.
 	IsMasked      bool `protobuf:"varint,8,opt,name=is_masked,json=isMasked,proto3" json:"is_masked,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1370,32 +1384,33 @@ var file_go_chromium_org_luci_resultdb_proto_v1_test_result_proto_rawDesc = stri
 	0x42, 0x03, 0xe0, 0x41, 0x05, 0x52, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x12, 0x20, 0x0a,
 	0x09, 0x69, 0x73, 0x5f, 0x6d, 0x61, 0x73, 0x6b, 0x65, 0x64, 0x18, 0x08, 0x20, 0x01, 0x28, 0x08,
 	0x42, 0x03, 0xe0, 0x41, 0x03, 0x52, 0x08, 0x69, 0x73, 0x4d, 0x61, 0x73, 0x6b, 0x65, 0x64, 0x2a,
-	0x58, 0x0a, 0x0a, 0x54, 0x65, 0x73, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x16, 0x0a,
+	0x5c, 0x0a, 0x0a, 0x54, 0x65, 0x73, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x16, 0x0a,
 	0x12, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46,
 	0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x08, 0x0a, 0x04, 0x50, 0x41, 0x53, 0x53, 0x10, 0x01, 0x12,
 	0x08, 0x0a, 0x04, 0x46, 0x41, 0x49, 0x4c, 0x10, 0x02, 0x12, 0x09, 0x0a, 0x05, 0x43, 0x52, 0x41,
 	0x53, 0x48, 0x10, 0x03, 0x12, 0x09, 0x0a, 0x05, 0x41, 0x42, 0x4f, 0x52, 0x54, 0x10, 0x04, 0x12,
-	0x08, 0x0a, 0x04, 0x53, 0x4b, 0x49, 0x50, 0x10, 0x05, 0x2a, 0x53, 0x0a, 0x0a, 0x53, 0x6b, 0x69,
-	0x70, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x12, 0x1b, 0x0a, 0x17, 0x53, 0x4b, 0x49, 0x50, 0x5f,
-	0x52, 0x45, 0x41, 0x53, 0x4f, 0x4e, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49,
-	0x45, 0x44, 0x10, 0x00, 0x12, 0x28, 0x0a, 0x24, 0x41, 0x55, 0x54, 0x4f, 0x4d, 0x41, 0x54, 0x49,
-	0x43, 0x41, 0x4c, 0x4c, 0x59, 0x5f, 0x44, 0x49, 0x53, 0x41, 0x42, 0x4c, 0x45, 0x44, 0x5f, 0x46,
-	0x4f, 0x52, 0x5f, 0x46, 0x4c, 0x41, 0x4b, 0x49, 0x4e, 0x45, 0x53, 0x53, 0x10, 0x01, 0x2a, 0x8f,
-	0x01, 0x0a, 0x11, 0x45, 0x78, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65,
-	0x61, 0x73, 0x6f, 0x6e, 0x12, 0x22, 0x0a, 0x1e, 0x45, 0x58, 0x4f, 0x4e, 0x45, 0x52, 0x41, 0x54,
-	0x49, 0x4f, 0x4e, 0x5f, 0x52, 0x45, 0x41, 0x53, 0x4f, 0x4e, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45,
-	0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x16, 0x0a, 0x12, 0x4f, 0x43, 0x43, 0x55,
-	0x52, 0x53, 0x5f, 0x4f, 0x4e, 0x5f, 0x4d, 0x41, 0x49, 0x4e, 0x4c, 0x49, 0x4e, 0x45, 0x10, 0x01,
-	0x12, 0x17, 0x0a, 0x13, 0x4f, 0x43, 0x43, 0x55, 0x52, 0x53, 0x5f, 0x4f, 0x4e, 0x5f, 0x4f, 0x54,
-	0x48, 0x45, 0x52, 0x5f, 0x43, 0x4c, 0x53, 0x10, 0x02, 0x12, 0x10, 0x0a, 0x0c, 0x4e, 0x4f, 0x54,
-	0x5f, 0x43, 0x52, 0x49, 0x54, 0x49, 0x43, 0x41, 0x4c, 0x10, 0x03, 0x12, 0x13, 0x0a, 0x0f, 0x55,
-	0x4e, 0x45, 0x58, 0x50, 0x45, 0x43, 0x54, 0x45, 0x44, 0x5f, 0x50, 0x41, 0x53, 0x53, 0x10, 0x04,
-	0x42, 0x50, 0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x6c,
-	0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x50,
-	0x01, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f,
-	0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62,
-	0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
-	0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x08, 0x0a, 0x04, 0x53, 0x4b, 0x49, 0x50, 0x10, 0x05, 0x1a, 0x02, 0x18, 0x01, 0x2a, 0x57, 0x0a,
+	0x0a, 0x53, 0x6b, 0x69, 0x70, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x12, 0x1b, 0x0a, 0x17, 0x53,
+	0x4b, 0x49, 0x50, 0x5f, 0x52, 0x45, 0x41, 0x53, 0x4f, 0x4e, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45,
+	0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x28, 0x0a, 0x24, 0x41, 0x55, 0x54, 0x4f,
+	0x4d, 0x41, 0x54, 0x49, 0x43, 0x41, 0x4c, 0x4c, 0x59, 0x5f, 0x44, 0x49, 0x53, 0x41, 0x42, 0x4c,
+	0x45, 0x44, 0x5f, 0x46, 0x4f, 0x52, 0x5f, 0x46, 0x4c, 0x41, 0x4b, 0x49, 0x4e, 0x45, 0x53, 0x53,
+	0x10, 0x01, 0x1a, 0x02, 0x18, 0x01, 0x2a, 0x8f, 0x01, 0x0a, 0x11, 0x45, 0x78, 0x6f, 0x6e, 0x65,
+	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x12, 0x22, 0x0a, 0x1e,
+	0x45, 0x58, 0x4f, 0x4e, 0x45, 0x52, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x52, 0x45, 0x41, 0x53,
+	0x4f, 0x4e, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00,
+	0x12, 0x16, 0x0a, 0x12, 0x4f, 0x43, 0x43, 0x55, 0x52, 0x53, 0x5f, 0x4f, 0x4e, 0x5f, 0x4d, 0x41,
+	0x49, 0x4e, 0x4c, 0x49, 0x4e, 0x45, 0x10, 0x01, 0x12, 0x17, 0x0a, 0x13, 0x4f, 0x43, 0x43, 0x55,
+	0x52, 0x53, 0x5f, 0x4f, 0x4e, 0x5f, 0x4f, 0x54, 0x48, 0x45, 0x52, 0x5f, 0x43, 0x4c, 0x53, 0x10,
+	0x02, 0x12, 0x10, 0x0a, 0x0c, 0x4e, 0x4f, 0x54, 0x5f, 0x43, 0x52, 0x49, 0x54, 0x49, 0x43, 0x41,
+	0x4c, 0x10, 0x03, 0x12, 0x13, 0x0a, 0x0f, 0x55, 0x4e, 0x45, 0x58, 0x50, 0x45, 0x43, 0x54, 0x45,
+	0x44, 0x5f, 0x50, 0x41, 0x53, 0x53, 0x10, 0x04, 0x42, 0x50, 0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e,
+	0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75,
+	0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x50, 0x01, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68,
+	0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f,
+	0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76,
+	0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 })
 
 var (
