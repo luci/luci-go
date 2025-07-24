@@ -21,7 +21,6 @@ import {
 import { OptionsDropdown } from '@/fleet/components/options_dropdown';
 import { OptionValue } from '@/fleet/types/option';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
-import { getVisibilityModel } from '@/fleet/utils/search_param';
 
 import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';
 import { OptionsMenu } from '../filter_dropdown/options_menu';
@@ -30,7 +29,7 @@ interface ColumnsButtonProps {
   isLoading?: boolean;
   anchorEl: HTMLElement | null;
   setAnchorEL: (newAnchorEl: HTMLElement | null) => void;
-  defaultColumns: string[];
+  onReset?: () => void;
 }
 
 /**
@@ -40,7 +39,7 @@ export function ColumnsManageDropDown({
   isLoading,
   anchorEl,
   setAnchorEL,
-  defaultColumns,
+  onReset,
 }: ColumnsButtonProps) {
   const apiRef = useGridApiContext();
   const columnVisibilityModel = gridColumnVisibilityModelSelector(apiRef);
@@ -81,14 +80,7 @@ export function ColumnsManageDropDown({
       }}
       enableSearchInput={true}
       maxHeight={500}
-      onResetClick={() =>
-        apiRef.current?.setColumnVisibilityModel(
-          getVisibilityModel(
-            columns.map((c) => c.value),
-            defaultColumns,
-          ),
-        )
-      }
+      onResetClick={onReset}
       footerButtons={['reset']}
       onApply={() => {}}
       renderChild={(searchQuery) => {

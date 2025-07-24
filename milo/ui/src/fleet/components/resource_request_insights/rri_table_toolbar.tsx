@@ -19,24 +19,20 @@ import {
 } from '@mui/x-data-grid';
 
 import { ColumnsButton } from '@/fleet/components/columns/columns_button';
-import {
-  RriColumnDescriptor,
-  RRI_COLUMNS,
-} from '@/fleet/pages/resource_request_insights_page/rri_columns';
 
 /**
  * Custom data table toolbar styled for Fleet's expected usage.
  */
-export function RriTableToolbar() {
+export function RriTableToolbar({
+  resetDefaultColumns,
+}: {
+  resetDefaultColumns?: () => void;
+}) {
   return (
     <GridToolbarContainer>
       <Box sx={{ flexGrow: 1 }} />
       <GridToolbarDensitySelector />
-      <ColumnsButton
-        defaultColumns={RRI_COLUMNS.filter(
-          (column: RriColumnDescriptor) => column.isDefault,
-        ).map((column: RriColumnDescriptor) => column.gridColDef.field)}
-      />
+      <ColumnsButton resetDefaultColumns={resetDefaultColumns} />
     </GridToolbarContainer>
   );
 }

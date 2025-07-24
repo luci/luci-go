@@ -29,6 +29,9 @@ function ColumnsItem(props: GridColumnMenuItemProps) {
  * Customized implementation of GridColumnMenu for fleet use cases.
  */
 export function ColumnMenu(props: GridColumnMenuProps) {
+  const { colDef } = props;
+  const hideable = colDef.hideable ?? true;
+
   return (
     <GridColumnMenu
       {...props}
@@ -40,7 +43,7 @@ export function ColumnMenu(props: GridColumnMenuProps) {
         // TODO: b/393602662 - Column menu items are disabled because they're
         // different from our custom column component. We can re-add this later
         // if we can make sure state is synced and the components are aligned.
-        columnMenuColumnsItem: ColumnsItem,
+        columnMenuColumnsItem: hideable ? ColumnsItem : null,
       }}
     />
   );

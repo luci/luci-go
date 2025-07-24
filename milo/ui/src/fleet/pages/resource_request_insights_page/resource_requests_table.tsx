@@ -1,11 +1,6 @@
 import { Alert, CircularProgress, Container } from '@mui/material';
-import {
-  GridColumnVisibilityModel,
-  GridSortItem,
-  GridSortModel,
-} from '@mui/x-data-grid';
+import { GridSortItem, GridSortModel } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
 
 import {
   emptyPageTokenUpdater,
@@ -16,14 +11,12 @@ import {
 } from '@/common/components/params_pager';
 import { ColumnMenu } from '@/fleet/components/device_table/column_menu';
 import { Pagination } from '@/fleet/components/device_table/pagination';
-import { useParamsAndLocalStorage } from '@/fleet/components/device_table/use_params_and_local_storage';
+import { useColumnManagement } from '@/fleet/components/device_table/use_column_management';
 import { RriTableToolbar } from '@/fleet/components/resource_request_insights/rri_table_toolbar';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
-import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { getVisibilityModel } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import {
@@ -106,27 +99,21 @@ export const ResourceRequestTable = () => {
     }),
   );
 
-  const [visibleColumns, setVisibleColumns] = useParamsAndLocalStorage(
-    COLUMNS_PARAM_KEY,
-    RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY,
-    RRI_COLUMNS.filter((column: RriColumnDescriptor) => column.isDefault).map(
+  const {
+    columns,
+    columnVisibilityModel,
+    onColumnVisibilityModelChange,
+    resetDefaultColumns,
+    temporaryColumnSx,
+  } = useColumnManagement({
+    allColumnIds: RRI_COLUMNS.map(
       (column: RriColumnDescriptor) => column.gridColDef.field,
     ),
-  );
-
-  const onColumnVisibilityModelChange = (
-    newColumnVisibilityModel: GridColumnVisibilityModel,
-  ) => {
-    setVisibleColumns(
-      Object.entries(newColumnVisibilityModel)
-        .filter(([_key, val]) => val)
-        .map(([key, _val]) => key),
-    );
-  };
-
-  const columns = useMemo(() => {
-    return RRI_COLUMNS.map((column) => column.gridColDef);
-  }, []);
+    defaultColumns: RRI_COLUMNS.filter(
+      (column: RriColumnDescriptor) => column.isDefault,
+    ).map((column: RriColumnDescriptor) => column.gridColDef.field),
+    localStorageKey: RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY,
+  });
 
   const handleSortModelChange = (newSortModel: GridSortModel) => {
     updateOrderByParam(getOrderByParamFromSortModel(newSortModel));
@@ -164,8 +151,8 @@ export const ResourceRequestTable = () => {
         marginTop: 24,
       }}
     >
-      {/* TODO: this piece of code is similar to data_table.tsx and could probably be separated to a shared component */}
       <StyledGrid
+        sx={temporaryColumnSx}
         columns={columns}
         rows={rows}
         slots={{
@@ -177,6 +164,9 @@ export const ResourceRequestTable = () => {
           pagination: {
             pagerCtx: pagerCtx,
             nextPageToken: query.data.nextPageToken,
+          },
+          toolbar: {
+            resetDefaultColumns: resetDefaultColumns,
           },
         }}
         paginationMode="server"
@@ -190,12 +180,7 @@ export const ResourceRequestTable = () => {
         sortModel={sortModel}
         sortingMode="server"
         onSortModelChange={handleSortModelChange}
-        columnVisibilityModel={getVisibilityModel(
-          RRI_COLUMNS.map(
-            (column: RriColumnDescriptor) => column.gridColDef.field,
-          ),
-          visibleColumns,
-        )}
+        columnVisibilityModel={columnVisibilityModel}
         onColumnVisibilityModelChange={onColumnVisibilityModelChange}
       />
     </div>

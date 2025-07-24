@@ -14,12 +14,10 @@
 
 import { Alert } from '@mui/material';
 import {
-  GridColumnVisibilityModel,
   GridRowModel,
   GridRowSelectionModel,
   GridSortModel,
 } from '@mui/x-data-grid';
-import _ from 'lodash';
 import { useState, useMemo } from 'react';
 
 import {
@@ -31,18 +29,15 @@ import {
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
 import { DEVICES_COLUMNS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
-import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { extractDutId } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
-import { getVisibilityModel } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { CopySnackbar } from '../actions/copy/copy_snackbar';
 
 import { ColumnMenu } from './column_menu';
-import { getColumns, orderColumns } from './columns';
 import {
   BASE_DIMENSIONS,
   COLUMN_OVERRIDES,
@@ -50,7 +45,7 @@ import {
 } from './dimensions';
 import { FleetToolbar, FleetToolbarProps } from './fleet_toolbar';
 import { Pagination } from './pagination';
-import { useParamsAndLocalStorage } from './use_params_and_local_storage';
+import { useColumnManagement } from './use_column_management';
 
 const UNKNOWN_ROW_COUNT = -1;
 
@@ -123,16 +118,21 @@ export function DeviceTable({
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
   const [, setOrderByParam] = useOrderByParam();
-
-  const [visibleColumns, setVisibleColumns] = useParamsAndLocalStorage(
-    COLUMNS_PARAM_KEY,
-    DEVICES_COLUMNS_LOCAL_STORAGE_KEY,
-    DEFAULT_DEVICE_COLUMNS,
-  );
-
-  // See: https://mui.com/x/react-data-grid/row-selection/#controlled-row-selection
   const [rowSelectionModel, setRowSelectionModel] =
     useState<GridRowSelectionModel>([]);
+  const [showCopySuccess, setShowCopySuccess] = useState(false);
+
+  const {
+    columns,
+    columnVisibilityModel,
+    onColumnVisibilityModelChange,
+    resetDefaultColumns,
+    temporaryColumnSx,
+  } = useColumnManagement({
+    allColumnIds: columnIds,
+    defaultColumns: DEFAULT_DEVICE_COLUMNS,
+    localStorageKey: DEVICES_COLUMNS_LOCAL_STORAGE_KEY,
+  });
 
   const rows = useMemo(
     () =>
@@ -150,32 +150,18 @@ export function DeviceTable({
     setSearchParams(emptyPageTokenUpdater(pagerCtx));
   };
 
-  const columns = useMemo(() => {
-    return orderColumns(getColumns(columnIds), visibleColumns);
-  }, [columnIds, visibleColumns]);
-
-  const onColumnVisibilityModelChange = (
-    newColumnVisibilityModel: GridColumnVisibilityModel,
-  ) => {
-    setVisibleColumns(
-      Object.entries(newColumnVisibilityModel)
-        .filter(([_key, val]) => val)
-        .map(([key, _val]) => key),
-    );
-  };
-
-  const [showCopySuccess, setShowCopySuccess] = useState(false);
-
-  if (isError)
+  if (isError) {
     return (
       <Alert severity="error">
         Something went wrong: {getErrorMessage(error, 'list devices')}
       </Alert>
     );
+  }
 
   return (
     <>
       <StyledGrid
+        sx={temporaryColumnSx}
         slots={{
           pagination: Pagination,
           columnMenu: ColumnMenu,
@@ -190,6 +176,7 @@ export function DeviceTable({
           toolbar: {
             selectedRows: computeSelectedRows(rowSelectionModel, rows),
             isLoadingColumns: isLoadingColumns,
+            resetDefaultColumns: resetDefaultColumns,
           },
         }}
         disableRowSelectionOnClick
@@ -208,7 +195,7 @@ export function DeviceTable({
           page: getCurrentPageIndex(pagerCtx),
           pageSize: getPageSize(pagerCtx, searchParams),
         }}
-        columnVisibilityModel={getVisibilityModel(columnIds, visibleColumns)}
+        columnVisibilityModel={columnVisibilityModel}
         onColumnVisibilityModelChange={onColumnVisibilityModelChange}
         rows={rows}
         columns={columns}

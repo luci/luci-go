@@ -20,7 +20,7 @@ import { ColumnsManageDropDown } from './column_manage_dropdown';
 
 interface ColumnsButtonProps {
   isLoading?: boolean;
-  defaultColumns: string[];
+  resetDefaultColumns?: () => void;
 }
 
 /**
@@ -28,7 +28,7 @@ interface ColumnsButtonProps {
  */
 export function ColumnsButton({
   isLoading,
-  defaultColumns,
+  resetDefaultColumns,
 }: ColumnsButtonProps) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
@@ -45,7 +45,7 @@ export function ColumnsButton({
         isLoading={isLoading}
         anchorEl={anchorEl}
         setAnchorEL={setAnchorEL}
-        defaultColumns={defaultColumns}
+        onReset={resetDefaultColumns}
       />
     </>
   );

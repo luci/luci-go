@@ -18,8 +18,6 @@ import {
   GridToolbarDensitySelector,
 } from '@mui/x-data-grid';
 
-import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
-
 import { RunAutorepair } from '../actions/autorepair/run_autorepair';
 import { CopyButton } from '../actions/copy/copy_button';
 import { RequestRepair } from '../actions/request_repair/request_repair';
@@ -30,6 +28,7 @@ import { ExportButton } from './export_button';
 export interface FleetToolbarProps {
   selectedRows: GridRowModel[];
   isLoadingColumns?: boolean;
+  resetDefaultColumns?: () => void;
 }
 
 /**
@@ -38,6 +37,7 @@ export interface FleetToolbarProps {
 export function FleetToolbar({
   selectedRows = [],
   isLoadingColumns,
+  resetDefaultColumns,
 }: FleetToolbarProps) {
   const selectedDuts = selectedRows.map((row) => ({
     name: `${row.dut_name}`,
@@ -64,7 +64,7 @@ export function FleetToolbar({
       <GridToolbarDensitySelector />
       <ColumnsButton
         isLoading={isLoadingColumns}
-        defaultColumns={DEFAULT_DEVICE_COLUMNS}
+        resetDefaultColumns={resetDefaultColumns}
       />
     </GridToolbarContainer>
   );
