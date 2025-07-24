@@ -257,6 +257,18 @@ func (s IDSet) SortByRowID() []ID {
 	return ret
 }
 
+// SortByRowID returns IDs in the set sorted by id.
+func (s IDSet) SortedByID() []ID {
+	ids := make([]ID, 0, len(s))
+	for id := range s {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(i, j int) bool {
+		return ids[i] < ids[j]
+	})
+	return ids
+}
+
 // Batch returns IDs in the set in batches of size batchSize.
 func (s IDSet) Batch(batchSize int) []IDSet {
 	if batchSize <= 0 {

@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -58,6 +59,7 @@ func TestBatchGetWorkUnits(t *testing.T) {
 		ms = append(ms, insert.WorkUnit(wu1)...)
 		ms = append(ms, insert.WorkUnit(wu2)...)
 		ms = append(ms, insert.WorkUnit(wuChild1)...)
+		ms = append(ms, insert.Inclusion(wu1.ID.LegacyInvocationID(), invocations.ID("included-legacy-invocation")))
 		testutil.MustApply(ctx, t, ms...)
 
 		// Setup authorisation.
@@ -93,6 +95,9 @@ func TestBatchGetWorkUnits(t *testing.T) {
 				Parent:            workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "root"}.Name(),
 				ChildWorkUnits: []string{
 					workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu11"}.Name(),
+				},
+				ChildInvocations: []string{
+					invocations.ID("included-legacy-invocation").Name(),
 				},
 				ProducerResource: wu1.ProducerResource,
 				Tags:             wu1.Tags,
@@ -191,6 +196,14 @@ func TestBatchGetWorkUnits(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 					assert.That(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWu1, expectedWu2}))
 				})
+			})
+			t.Run("duplicates", func(t *ftt.Test) {
+				// It is valid to request the same work unit more than once.
+				req.Names = []string{wu1.ID.Name(), wu2.ID.Name(), wu1.ID.Name()}
+
+				rsp, err := srv.BatchGetWorkUnits(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWu1, expectedWu2, expectedWu1}))
 			})
 		})
 

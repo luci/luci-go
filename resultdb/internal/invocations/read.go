@@ -476,3 +476,55 @@ func ReadFinalizedNotificationInfo(ctx context.Context, invID ID) (FinalizedNoti
 	info.IsExportRoot = isExportRoot.Valid && isExportRoot.Bool
 	return info, nil
 }
+
+// ReadIncludedBatch returns the set of invocations directly
+// included from each of the invocations in `ids`.
+//
+// The returned list corresponds 1:1 with the ids in the request,
+// i.e. results[i] corresponds to ids[i].
+//
+// Duplicates in `ids` are permitted.
+func ReadIncludedBatch(ctx context.Context, ids []ID) (results [][]ID, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.invocations.ReadIncludedBatch",
+		attribute.Int("cr.dev.count", len(ids)),
+	)
+	defer func() { tracing.End(ts, err) }()
+
+	var keyRanges []spanner.KeySet
+	for _, id := range ids {
+		keyRanges = append(keyRanges, id.Key().AsPrefix())
+	}
+
+	columns := []string{"InvocationID", "IncludedInvocationID"}
+
+	b := &spanutil.Buffer{}
+	resultMap := make(map[ID]IDSet)
+	err = span.Read(ctx, "IncludedInvocations", spanner.KeySets(keyRanges...), columns).Do(func(r *spanner.Row) error {
+		var invocationID ID
+		var includedInvocationID ID
+		if err := b.FromSpanner(r, &invocationID, &includedInvocationID); err != nil {
+			return errors.Fmt("read included invocation: %w", err)
+		}
+		inclusions, ok := resultMap[invocationID]
+		if !ok {
+			inclusions = make(IDSet)
+			resultMap[invocationID] = inclusions
+		}
+		inclusions.Add(includedInvocationID)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	results = make([][]ID, len(ids))
+	for i, id := range ids {
+		includedIDs, ok := resultMap[id]
+		if ok {
+			results[i] = includedIDs.SortedByID()
+		} else {
+			results[i] = make([]ID, 0)
+		}
+	}
+	return results, nil
+}
