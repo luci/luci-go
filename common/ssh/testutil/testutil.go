@@ -16,11 +16,19 @@ package testutil
 
 import (
 	"context"
+	"errors"
 	"net"
 	"sync"
 
 	"go.chromium.org/luci/common/ssh"
 )
+
+// FailureDialer always return an error when Dial() is called.
+type FailureDialer struct{}
+
+func (_ FailureDialer) Dial(ctx context.Context) (ssh.AgentConn, error) {
+	return nil, errors.New("failed to dial")
+}
 
 // FallbackDialer returns an ssh.AgentConn to an ssh.FallbackAgent.
 type FallbackDialer struct{}
