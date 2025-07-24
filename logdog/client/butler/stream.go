@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 
+	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/logdog/common/archive"
 	"go.chromium.org/luci/logdog/common/types"
@@ -38,6 +39,7 @@ type stream struct {
 	now func() time.Time
 
 	name          types.StreamName
+	streamType    logpb.StreamType
 	totalSize     int64
 	truncatedSize int64
 	// Set for testing, override the maxStreamBytes.
@@ -54,6 +56,13 @@ type stream struct {
 // Returns true if stream could return more data at a later time.
 func (s *stream) readChunk() bool {
 	d := s.bs.LeaseData()
+	defer func() {
+		// If we haven't consumed our data, release it.
+		if d != nil {
+			d.Release()
+			d = nil
+		}
+	}()
 
 	amount, err := s.r.Read(d.Bytes())
 
@@ -68,9 +77,8 @@ func (s *stream) readChunk() bool {
 			d = nil
 			if s.truncatedSize == 0 {
 				// Only log the message at the first truncated chunk.
-				truncationMsg := fmt.Sprintf("Stream size limit of %d bytes reached. Truncating.", streamBytesLimit)
-				s.log.Warningf(truncationMsg)
-				if appendErr := s.appendText("\n" + truncationMsg); appendErr != nil {
+				truncationMsg := fmt.Sprintf("\nStream size limit of %d bytes reached. Truncating.", streamBytesLimit)
+				if appendErr := s.appendText(truncationMsg); appendErr != nil {
 					s.log.Errorf("truncation start message: %s", appendErr)
 					return false
 				}
@@ -90,12 +98,6 @@ func (s *stream) readChunk() bool {
 			}
 		}
 		s.totalSize += int64(amount)
-	}
-
-	// If we haven't consumed our data, release it.
-	if d != nil {
-		d.Release()
-		d = nil
 	}
 
 	switch err {
@@ -123,13 +125,19 @@ func (s *stream) readChunk() bool {
 }
 
 func (s *stream) appendText(text string) error {
-	msgData := s.bs.LeaseData()
-	n := copy(msgData.Bytes(), text)
-	msgData.Bind(n, s.now())
-	err := s.bs.Append(msgData)
-	msgData = nil
-	if err != nil {
-		return fmt.Errorf("Failed to append text to the stream: %s", err)
+	switch s.streamType {
+	case logpb.StreamType_TEXT:
+		msgData := s.bs.LeaseData()
+		n := copy(msgData.Bytes(), text)
+		msgData.Bind(n, s.now())
+		err := s.bs.Append(msgData)
+		msgData = nil
+		if err != nil {
+			return err
+		}
+	default:
+		// We can't append text to non-text stream, so just log the message here.
+		s.log.Warningf("%s streamType: (%s).", text, s.streamType)
 	}
 	return nil
 }

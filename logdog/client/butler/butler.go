@@ -393,11 +393,12 @@ func (b *Butler) AddStream(rc io.ReadCloser, d *logpb.LogStreamDescriptor) error
 	streamCtx := log.SetField(b.ctx, "stream", d.Name)
 	logging.Infof(streamCtx, "adding stream")
 	s := stream{
-		log:  logging.Get(streamCtx),
-		now:  clock.Get(streamCtx).Now,
-		r:    rc,
-		c:    rc,
-		name: types.StreamName(d.Name),
+		log:        logging.Get(streamCtx),
+		now:        clock.Get(streamCtx).Now,
+		r:          rc,
+		c:          rc,
+		name:       types.StreamName(d.Name),
+		streamType: d.StreamType,
 	}
 
 	// Register this stream with our Bundler. It will take ownership of "d", so
