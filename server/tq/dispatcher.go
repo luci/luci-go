@@ -260,7 +260,7 @@ type TaskClass struct {
 	// constructed using dispatcher's CloudProject and CloudRegion if they are
 	// set.
 	//
-	// Can't be set together with QueuePicker or Topic.
+	// Can't be set together with QueuePicker, Topic, or TopicPicker.
 	Queue string
 
 	// QueuePicker is a callback that picks a queue for each individual task.
@@ -278,7 +278,7 @@ type TaskClass struct {
 	// queue name should be in the same format as Queue, i.e. either be a short
 	// queue name or a full queue name. See Queue for details.
 	//
-	// Can't be set together with Queue or Topic.
+	// Can't be set together with Queue, Topic, or TopicPicker.
 	QueuePicker func(context.Context, *Task) (string, error)
 
 	// Topic is a name of PubSub topic to use for the tasks.
@@ -288,8 +288,27 @@ type TaskClass struct {
 	// a full name like "projects/<project>/topics/<name>". If it is a full name,
 	// it must have the above format or RegisterTaskClass would panic.
 	//
-	// Can't be set together with Queue or QueuePicker.
+	// Can't be set together with Queue, QueuePicker, or TopicPicker.
 	Topic string
+
+	// TopicPicker is a callback that picks a topic for each individual task.
+	//
+	// It is an alternative to specifying a single topic via Topic. It can be used
+	// to distribute tasks across multiple topics, for example to separate on
+	// domain boundaries or to use different topics for tasks with different
+	// priorities.
+	//
+	// Receives Task with Payload proto.Message having the same underlying type as
+	// Prototype. It can be type cast to a concrete type and examined, if
+	// necessary.
+	//
+	// Must be lightweight, will be called from within AddTask implementation for
+	// each added task, receiving the context passed to AddTask. The returned
+	// topic name should be in the same format as Topic, i.e. either be a short
+	// topic name or a full topic name. See Topic for details.
+	//
+	// Can't be set together with Queue, QueuePicker, or Topic.
+	TopicPicker func(context.Context, *Task) (string, error)
 
 	// RoutingPrefix is a URL prefix for produced Cloud Tasks.
 	//
@@ -536,13 +555,17 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) TaskClassRef {
 	if cls.Queue != "" && cls.QueuePicker != nil {
 		panic("TaskClass must have either Queue or QueuePicker set, not both")
 	}
+	usesTopics := cls.Topic != "" || cls.TopicPicker != nil
+	if cls.Topic != "" && cls.TopicPicker != nil {
+		panic("TaskClass must have either Topic or TopicPicker set, not both")
+	}
 
 	var backend taskBackend
 	switch {
-	case !usesQueues && cls.Topic == "":
-		panic("TaskClass must have either Queue, QueuePicker or Topic set")
-	case usesQueues && cls.Topic != "":
-		panic("TaskClass must have either Queue/QueuePicker or Topic set, not both")
+	case !usesQueues && !usesTopics:
+		panic("TaskClass must have one of Queue, QueuePicker, Topic, or TopicPicker set")
+	case usesQueues && usesTopics:
+		panic("TaskClass must have either Queue/QueuePicker or Topic/TopicPicker set, not both")
 	case usesQueues:
 		backend = backendCloudTasks
 		if cls.Queue != "" {
@@ -550,16 +573,18 @@ func (d *Dispatcher) RegisterTaskClass(cls TaskClass) TaskClassRef {
 				panic(fmt.Sprintf("not a valid queue name %q", cls.Queue))
 			}
 		}
-	case cls.Topic != "":
+	case usesTopics:
 		backend = backendPubSub
-		if strings.ContainsRune(cls.Topic, '/') && !isValidTopic(cls.Topic) {
-			panic(fmt.Sprintf("not a valid full topic name %q", cls.Topic))
-		}
 		if cls.RoutingPrefix != "" {
 			panic("PubSub tasks do not support RoutingPrefix")
 		}
 		if cls.TargetHost != "" {
 			panic("PubSub tasks do not support TargetHost")
+		}
+		if cls.Topic != "" {
+			if strings.ContainsRune(cls.Topic, '/') && !isValidTopic(cls.Topic) {
+				panic(fmt.Sprintf("not a valid full topic name %q", cls.Topic))
+			}
 		}
 	}
 
@@ -1096,7 +1121,19 @@ func (d *Dispatcher) prepPubSubRequest(ctx context.Context, cls *taskClassImpl, 
 		return nil, errors.New("can't use Delay or ETA with PubSub tasks")
 	}
 
-	topicID, err := d.topicID(cls.Topic)
+	var topic string
+	switch {
+	case cls.Topic != "":
+		topic = cls.Topic
+	case cls.TopicPicker != nil:
+		var err error
+		if topic, err = cls.TopicPicker(ctx, t); err != nil {
+			return nil, err
+		}
+	default:
+		panic("impossible, backendPubSub tasks have either Topic or TopicPicker set")
+	}
+	topicID, err := d.topicID(topic)
 	if err != nil {
 		return nil, err
 	}
@@ -1134,14 +1171,17 @@ func (d *Dispatcher) prepPubSubRequest(ctx context.Context, cls *taskClassImpl, 
 
 // topicID expands `id` into a full topic name if necessary.
 func (d *Dispatcher) topicID(id string) (string, error) {
-	if strings.HasPrefix(id, "projects/") {
-		return id, nil // already full name
+	if id != "" && !strings.HasPrefix(id, "projects/") {
+		project := d.CloudProject
+		if project == "" {
+			project = "default"
+		}
+		return fmt.Sprintf("projects/%s/topics/%s", project, id), nil
 	}
-	project := d.CloudProject
-	if project == "" {
-		project = "default"
+	if !isValidTopic(id) {
+		return "", errors.Fmt("not a valid topic name: %q", id)
 	}
-	return fmt.Sprintf("projects/%s/topics/%s", project, id), nil
+	return id, nil
 }
 
 // attachToReminder makes a reminder and attaches the payload to it, thus

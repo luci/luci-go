@@ -283,6 +283,54 @@ func TestAddTask(t *testing.T) {
 			})
 		})
 
+		t.Run("TopicPicker", func(t *ftt.Test) {
+			var topicPickerCB func(pb *timestamppb.Timestamp) (string, error)
+
+			d.RegisterTaskClass(TaskClass{
+				ID:        "test-ts",
+				Prototype: &timestamppb.Timestamp{}, // just some proto type
+				Kind:      NonTransactional,
+				TopicPicker: func(ctx context.Context, task *Task) (string, error) {
+					return topicPickerCB(task.Payload.(*timestamppb.Timestamp))
+				},
+			})
+
+			t.Run("OK short", func(t *ftt.Test) {
+				topicPickerCB = func(pb *timestamppb.Timestamp) (string, error) {
+					assert.Loosely(t, pb.Seconds, should.Equal(1))
+					return "short", nil
+				}
+				assert.Loosely(t, d.AddTask(ctx, &Task{Payload: &timestamppb.Timestamp{Seconds: 1}}), should.BeNil)
+				assert.Loosely(t, submitter.reqs, should.HaveLength(1))
+				assert.That(t, submitter.reqs[0].PublishRequest.Topic, should.Equal("projects/proj/topics/short"))
+			})
+
+			t.Run("OK long", func(t *ftt.Test) {
+				topicPickerCB = func(*timestamppb.Timestamp) (string, error) {
+					return "projects/zzz/topics/long", nil
+				}
+				assert.Loosely(t, d.AddTask(ctx, &Task{Payload: &timestamppb.Timestamp{Seconds: 1}}), should.BeNil)
+				assert.Loosely(t, submitter.reqs, should.HaveLength(1))
+				assert.That(t, submitter.reqs[0].PublishRequest.Topic, should.Equal("projects/zzz/topics/long"))
+			})
+
+			t.Run("Bad topic name", func(t *ftt.Test) {
+				topicPickerCB = func(*timestamppb.Timestamp) (string, error) {
+					return "", nil
+				}
+				err := d.AddTask(ctx, &Task{Payload: &timestamppb.Timestamp{Seconds: 1}})
+				assert.That(t, err, should.ErrLike("not a valid topic name"))
+			})
+
+			t.Run("Err", func(t *ftt.Test) {
+				topicPickerCB = func(*timestamppb.Timestamp) (string, error) {
+					return "zzz", errors.New("boom")
+				}
+				err := d.AddTask(ctx, &Task{Payload: &timestamppb.Timestamp{Seconds: 1}})
+				assert.That(t, err, should.ErrLike("boom"))
+			})
+		})
+
 		t.Run("Custom task payload on GAE", func(t *ftt.Test) {
 			d.GAE = true
 			d.DefaultTargetHost = ""
