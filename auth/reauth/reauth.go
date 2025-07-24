@@ -96,7 +96,7 @@ func getRAPT(ctx context.Context, c *http.Client, h map[string]challengeHandler)
 			ChallengeID: ch.ChallengeID,
 			Response:    *pr,
 		}
-		logging.Debugf(ctx, "Sending ReAuth continue session request")
+		logging.Debugf(ctx, "Sending ReAuth continue session request %+v", req)
 		sr, err = continueSession(ctx, c, sr.SessionID, req)
 		if err != nil {
 			return nil, errors.Fmt("GetRAPT: %w", err)
