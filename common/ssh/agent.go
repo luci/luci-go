@@ -240,22 +240,22 @@ func (a *ExtensionAgent) ListenLoop(ctx context.Context) error {
 
 // upstreamWithFallback is an agentDialer that connects to the `upstream`
 // SSH_AUTH_SOCK if available. Otherwise it connects to a fallbackAgent.
-type upstreamWithFallback struct {
+type UpstreamWithFallback struct {
 	// Upstream SSH_AUTH_SOCK.
-	upstream string
+	Upstream string
 }
 
-var _ AgentDialer = (*upstreamWithFallback)(nil)
+var _ AgentDialer = (*UpstreamWithFallback)(nil)
 
 // Dial connects to an upstream SSH_AUTH_SOCK. On failure, it returns a
 // fallback channel and an error explaining why it failed.
-func (u upstreamWithFallback) Dial(ctx context.Context) (AgentConn, error) {
-	if u.upstream == "" {
+func (u UpstreamWithFallback) Dial(ctx context.Context) (AgentConn, error) {
+	if u.Upstream == "" {
 		return NewFallbackAgent(), errors.New("no upstream SSH_AUTH_SOCK")
 	}
 
 	var d net.Dialer
-	upConn, err := d.DialContext(ctx, "unix", u.upstream)
+	upConn, err := d.DialContext(ctx, "unix", u.Upstream)
 	if err != nil {
 		return NewFallbackAgent(), errors.WrapIf(err, "failed to dial SSH_AUTH_SOCK")
 	}
