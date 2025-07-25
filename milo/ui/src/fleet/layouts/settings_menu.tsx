@@ -20,6 +20,7 @@ import {
   Menu,
   MenuItem,
 } from '@mui/material';
+import { Divider } from '@mui/material';
 import { MouseEvent, useState } from 'react';
 
 import {
@@ -27,6 +28,7 @@ import {
   useSwitchVersion,
   ROLLBACK_DURATION_WEEK,
 } from '@/common/components/version_control';
+import { VersionInfo } from '@/common/components/version_info';
 
 const isNewUI = UI_VERSION_TYPE === 'new-ui';
 
@@ -76,6 +78,8 @@ export function SettingsMenu() {
           </ListItemIcon>
           <ListItemText>Switch to {isNewUI ? 'old' : 'new'} UI</ListItemText>
         </MenuItem>
+        <Divider />
+        <VersionInfo />
       </Menu>
     </>
   );

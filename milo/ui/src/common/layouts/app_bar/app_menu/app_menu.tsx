@@ -15,6 +15,7 @@
 import DescriptionIcon from '@mui/icons-material/Description';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SettingsIcon from '@mui/icons-material/Settings';
+import { Divider } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
@@ -29,6 +30,7 @@ import {
   useSwitchVersion,
   ROLLBACK_DURATION_WEEK,
 } from '@/common/components/version_control';
+import { VersionInfo } from '@/common/components/version_info';
 import { ReleaseNotesTooltip } from '@/core/components/release_notes';
 
 const isNewUI = UI_VERSION_TYPE === 'new-ui';
@@ -103,6 +105,8 @@ export function AppMenu() {
           </ListItemIcon>
           <ListItemText>Page Settings</ListItemText>
         </MenuItem>
+        <Divider />
+        <VersionInfo />
       </Menu>
     </>
   );
