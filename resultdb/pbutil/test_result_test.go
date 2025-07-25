@@ -669,13 +669,16 @@ func TestValidateTestResult(t *testing.T) {
 			msg.Expected = false
 
 			errorMessage1 := "error1"
+			errorTrace1 := "trace1"
 			errorMessage2 := "error2"
+			errorTrace2 := "trace2"
 			longErrorMessage := strings.Repeat("a very long error message", 100)
+			longErrorTrace := strings.Repeat("a very long error trace", 400)
 			msg.FailureReason = &pb.FailureReason{
 				Kind: pb.FailureReason_ORDINARY,
 				Errors: []*pb.FailureReason_Error{
-					{Message: errorMessage1},
-					{Message: errorMessage2},
+					{Message: errorMessage1, Trace: errorTrace1},
+					{Message: errorMessage2, Trace: errorTrace2},
 				},
 				TruncatedErrorsCount: 0,
 			}
@@ -774,16 +777,26 @@ func TestValidateTestResult(t *testing.T) {
 						"errors[1]: message: exceeds the maximum size of 1024 "+
 							"bytes"))
 				})
-				t.Run("the total size of the errors list exceeds the limit", func(t *ftt.Test) {
-					maxErrorMessage := strings.Repeat(".", 1024)
+				t.Run("one of the error traces exceeds the maximum limit", func(t *ftt.Test) {
 					msg.FailureReason.Errors = []*pb.FailureReason_Error{
-						{Message: maxErrorMessage},
-						{Message: maxErrorMessage},
-						{Message: maxErrorMessage},
-						{Message: maxErrorMessage},
+						{Message: errorMessage1, Trace: errorTrace1},
+						{Message: errorMessage2, Trace: longErrorTrace},
 					}
 					assert.Loosely(t, validateTR(msg), should.ErrLike(
-						"errors: exceeds the maximum total size of 3172 bytes"))
+						"errors[1]: trace: exceeds the maximum size of 4096 "+
+							"bytes"))
+				})
+				t.Run("the total size of the errors list exceeds the limit", func(t *ftt.Test) {
+					maxErrorMessage := strings.Repeat(".", 1024)
+					maxErrorTrace := strings.Repeat(".", 4096)
+					msg.FailureReason.Errors = []*pb.FailureReason_Error{
+						{Message: maxErrorMessage, Trace: maxErrorTrace},
+						{Message: maxErrorMessage, Trace: maxErrorTrace},
+						{Message: maxErrorMessage, Trace: maxErrorTrace},
+						{Message: maxErrorMessage, Trace: maxErrorTrace},
+					}
+					assert.Loosely(t, validateTR(msg), should.ErrLike(
+						"errors: exceeds the maximum total size of 16384 bytes"))
 				})
 				t.Run("invalid UTF-8 error message", func(t *ftt.Test) {
 					msg.FailureReason.Errors = []*pb.FailureReason_Error{
@@ -791,11 +804,24 @@ func TestValidateTestResult(t *testing.T) {
 					}
 					assert.Loosely(t, validateTR(msg), should.ErrLike("errors[0]: message: is not valid UTF-8"))
 				})
+				t.Run("invalid UTF-8 error trace", func(t *ftt.Test) {
+					msg.FailureReason.Errors = []*pb.FailureReason_Error{
+						{Message: errorMessage1, Trace: "some test.\xFF"},
+					}
+					assert.Loosely(t, validateTR(msg), should.ErrLike("errors[0]: trace: is not valid UTF-8"))
+				})
+
 				t.Run("empty error message", func(t *ftt.Test) {
 					msg.FailureReason.Errors = []*pb.FailureReason_Error{
 						{Message: ""},
 					}
 					assert.Loosely(t, validateTR(msg), should.ErrLike("errors[0]: message: unspecified"))
+				})
+				t.Run("empty error trace is valid", func(t *ftt.Test) {
+					msg.FailureReason.Errors = []*pb.FailureReason_Error{
+						{Message: errorMessage1, Trace: ""},
+					}
+					assert.Loosely(t, validateTR(msg), should.BeNil)
 				})
 			})
 

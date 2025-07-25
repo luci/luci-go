@@ -43,7 +43,8 @@ const (
 	// maxLenSummaryHTML is the maximum length of summary HTML.
 	maxLenSummaryHTML         = 4 * 1024
 	maxLenPrimaryErrorMessage = 1024
-	maxSizeErrors             = 3*1024 + 100
+	maxLenPrimaryErrorTrace   = 4096
+	maxSizeErrors             = 16 * 1024
 	maxLenPropertiesSchema    = 256
 	// maxClockSkew is the maximum amount of time that clocks could have been out of sync for.
 	maxClockSkew = 10 * time.Minute
@@ -473,9 +474,13 @@ func ValidateFailureReasonKind(k pb.FailureReason_Kind) error {
 
 // ValidateFailureReasonError returns a non-nil error if e is invalid.
 func ValidateFailureReasonError(e *pb.FailureReason_Error, useStrictValidation bool) error {
-	if len(e.GetMessage()) > maxLenPrimaryErrorMessage {
+	if len(e.Message) > maxLenPrimaryErrorMessage {
 		return errors.Fmt("message: exceeds the maximum size of %d bytes",
 			maxLenPrimaryErrorMessage)
+	}
+	if len(e.Trace) > maxLenPrimaryErrorTrace {
+		return errors.Fmt("trace: exceeds the maximum size of %d bytes",
+			maxLenPrimaryErrorTrace)
 	}
 	if useStrictValidation {
 		if e.Message == "" {
@@ -489,6 +494,9 @@ func ValidateFailureReasonError(e *pb.FailureReason_Error, useStrictValidation b
 		if !utf8.ValidString(e.Message) {
 			return errors.New("message: is not valid UTF-8")
 		}
+	}
+	if !utf8.ValidString(e.Trace) {
+		return errors.New("trace: is not valid UTF-8")
 	}
 	return nil
 }
