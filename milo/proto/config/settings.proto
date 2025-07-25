@@ -163,6 +163,11 @@ message Settings {
   }
   FleetConsole fleet_console = 16;
 
+  message TestInvestigate {
+    // HaTS configuration for recommendations section.
+    HaTSConfig hats_positive_recs = 1;
+    HaTSConfig hats_negative_recs = 2;
+  }
   message UFS {
     // host is the hostname of the UFS instance we're pointing to (eg. staging.ufs.api.cr.dev).
     string host = 1;

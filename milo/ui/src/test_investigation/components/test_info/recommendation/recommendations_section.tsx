@@ -14,15 +14,18 @@
 
 import ArrowOutwardIcon from '@mui/icons-material/ArrowOutward';
 import CallReceivedIcon from '@mui/icons-material/CallReceived';
-import { Box, Button, Card, Typography } from '@mui/material';
+import ThumbDownOutlinedIcon from '@mui/icons-material/ThumbDownOutlined';
+import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
+import { Box, Button, Card, IconButton, Typography } from '@mui/material';
 import { DateTime } from 'luxon';
 import { useMemo } from 'react';
 
+import { useAuthState } from '@/common/components/auth_state_provider';
+import { requestSurvey } from '@/fleet/utils/survey';
 import { useInvocation } from '@/test_investigation/context';
 
 import { AnalysisSubsection } from './analysis_subsection';
 import { NextStepsSubsection } from './next_steps_subsection';
-
 // Helper to convert ISO string to Luxon DateTime (can be shared or local)
 // Assuming proto timestamps are ISO strings here.
 function isoStringToLuxonDateTime(isoString?: string): DateTime | undefined {
@@ -41,7 +44,7 @@ export function RecommendationsSection({
   setExpanded,
 }: RecommendationsSectionProps) {
   const invocation = useInvocation();
-
+  const authState = useAuthState();
   const now = useMemo(() => DateTime.now(), []);
   const lastUpdateTime = useMemo(() => {
     if (!invocation?.finalizeTime) {
@@ -72,17 +75,53 @@ export function RecommendationsSection({
         <Box
           sx={{
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: 'row',
             justifyContent: 'space-between',
-            gap: 0.5,
           }}
         >
-          <Typography variant="h6" component="div" sx={{ lineHeight: '24px' }}>
-            Suggested next steps
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Last update: {lastUpdateTime}
-          </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: 0.5,
+            }}
+          >
+            <Typography
+              variant="h6"
+              component="div"
+              sx={{ lineHeight: '24px' }}
+            >
+              Suggested next steps
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Last update: {lastUpdateTime}
+            </Typography>
+          </Box>
+          {expanded && (
+            <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+              <IconButton
+                onClick={() =>
+                  requestSurvey(
+                    SETTINGS.testInvestigate.hatsPositiveRecs,
+                    authState,
+                  )
+                }
+              >
+                <ThumbUpOutlinedIcon />
+              </IconButton>
+              <IconButton
+                onClick={() =>
+                  requestSurvey(
+                    SETTINGS.testInvestigate.hatsNegativeRecs,
+                    authState,
+                  )
+                }
+              >
+                <ThumbDownOutlinedIcon />
+              </IconButton>
+            </Box>
+          )}
         </Box>
         <Box
           sx={{

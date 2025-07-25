@@ -96,6 +96,11 @@ declare const SETTINGS: {
   readonly ufs: {
     readonly host: string;
   };
+  readonly testInvestigate: {
+    // To store all trigger IDs for different HaTS surveys on the test investigate page.
+    readonly hatsPositiveRecs: HaTSConfig;
+    readonly hatsNegativeRecs: HaTSConfig;
+  };
 };
 
 /**

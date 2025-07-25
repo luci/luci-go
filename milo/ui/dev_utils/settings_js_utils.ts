@@ -105,6 +105,26 @@ export function getLocalDevSettingsJs(env: Record<string, string | undefined>) {
     ufs: {
       host: assertNonNullable(env['VITE_UFS_HOST']),
     },
+    testInvestigate: {
+      hatsPositiveRecs: {
+        apiKey: assertNonNullable(env['VITE_INVESTIGATE_HATS_API_KEY']),
+        triggerId: assertNonNullable(
+          env['VITE_INVESTIGATE_HATS_POSITIVE_RECS_TRIGGER_ID'],
+        ),
+        productId: Number(
+          assertNonNullable(env['VITE_INVESTIGATE_HATS_PRODUCT_ID']),
+        ),
+      },
+      hatsNegativeRecs: {
+        apiKey: assertNonNullable(env['VITE_INVESTIGATE_HATS_API_KEY']),
+        triggerId: assertNonNullable(
+          env['VITE_INVESTIGATE_HATS_NEGATIVE_RECS_TRIGGER_ID'],
+        ),
+        productId: Number(
+          assertNonNullable(env['VITE_INVESTIGATE_HATS_PRODUCT_ID']),
+        ),
+      },
+    },
   };
 
   const localDevSettingsJs = `self.SETTINGS = Object.freeze(${JSON.stringify(

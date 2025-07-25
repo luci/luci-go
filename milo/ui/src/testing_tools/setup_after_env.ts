@@ -114,6 +114,26 @@ serverInjectedVars.SETTINGS = Object.freeze({
   ufs: {
     host: assertNonNullable(process.env['VITE_UFS_HOST']),
   },
+  testInvestigate: {
+    hatsPositiveRecs: {
+      apiKey: assertNonNullable(process.env['VITE_INVESTIGATE_HATS_API_KEY']),
+      triggerId: assertNonNullable(
+        process.env['VITE_INVESTIGATE_HATS_POSITIVE_RECS_TRIGGER_ID'],
+      ),
+      productId: Number(
+        assertNonNullable(process.env['VITE_INVESTIGATE_HATS_PRODUCT_ID']),
+      ),
+    },
+    hatsNegativeRecs: {
+      apiKey: assertNonNullable(process.env['VITE_INVESTIGATE_HATS_API_KEY']),
+      triggerId: assertNonNullable(
+        process.env['VITE_INVESTIGATE_HATS_NEGATIVE_RECS_TRIGGER_ID'],
+      ),
+      productId: Number(
+        assertNonNullable(process.env['VITE_INVESTIGATE_HATS_PRODUCT_ID']),
+      ),
+    },
+  },
 });
 
 // `jest.mock` calls are automatically moved to the beginning of a test file by
