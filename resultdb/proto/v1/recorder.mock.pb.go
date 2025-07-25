@@ -275,6 +275,26 @@ func (mr *MockRecorderClientMockRecorder) CreateWorkUnit(ctx, in interface{}, op
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWorkUnit", reflect.TypeOf((*MockRecorderClient)(nil).CreateWorkUnit), varargs...)
 }
 
+// DelegateWorkUnitInclusion mocks base method.
+func (m *MockRecorderClient) DelegateWorkUnitInclusion(ctx context.Context, in *DelegateWorkUnitInclusionRequest, opts ...grpc.CallOption) (*DelegateWorkUnitInclusionResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DelegateWorkUnitInclusion", varargs...)
+	ret0, _ := ret[0].(*DelegateWorkUnitInclusionResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DelegateWorkUnitInclusion indicates an expected call of DelegateWorkUnitInclusion.
+func (mr *MockRecorderClientMockRecorder) DelegateWorkUnitInclusion(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelegateWorkUnitInclusion", reflect.TypeOf((*MockRecorderClient)(nil).DelegateWorkUnitInclusion), varargs...)
+}
+
 // FinalizeInvocation mocks base method.
 func (m *MockRecorderClient) FinalizeInvocation(ctx context.Context, in *FinalizeInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
 	m.ctrl.T.Helper()
@@ -636,6 +656,21 @@ func (m *MockRecorderServer) CreateWorkUnit(arg0 context.Context, arg1 *CreateWo
 func (mr *MockRecorderServerMockRecorder) CreateWorkUnit(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWorkUnit", reflect.TypeOf((*MockRecorderServer)(nil).CreateWorkUnit), arg0, arg1)
+}
+
+// DelegateWorkUnitInclusion mocks base method.
+func (m *MockRecorderServer) DelegateWorkUnitInclusion(arg0 context.Context, arg1 *DelegateWorkUnitInclusionRequest) (*DelegateWorkUnitInclusionResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DelegateWorkUnitInclusion", arg0, arg1)
+	ret0, _ := ret[0].(*DelegateWorkUnitInclusionResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DelegateWorkUnitInclusion indicates an expected call of DelegateWorkUnitInclusion.
+func (mr *MockRecorderServerMockRecorder) DelegateWorkUnitInclusion(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelegateWorkUnitInclusion", reflect.TypeOf((*MockRecorderServer)(nil).DelegateWorkUnitInclusion), arg0, arg1)
 }
 
 // FinalizeInvocation mocks base method.

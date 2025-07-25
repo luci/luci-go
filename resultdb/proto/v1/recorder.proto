@@ -85,6 +85,8 @@ service Recorder {
   //
   // If a work unit with the given ID already exists, returns ALREADY_EXISTS
   // error code.
+  //
+  // See CreateWorkUnitRequest for more details.
   rpc CreateWorkUnit(CreateWorkUnitRequest) returns (WorkUnit) {};
 
   // Batch creates new WorkUnits inside a root invocation.
@@ -112,6 +114,12 @@ service Recorder {
   // transitioning them to the state FINALIZED.
   rpc BatchFinalizeWorkUnits(BatchFinalizeWorkUnitsRequest)
       returns (BatchFinalizeWorkUnitsResponse) {};
+
+  // Mints a token that proves the current caller has permission to include
+  // work units from a given realm. The minted 'inclusion token' can be
+  // passed to another caller/system and used in CreateWorkUnit to include
+  // child work units into the parent work unit.
+  rpc DelegateWorkUnitInclusion(DelegateWorkUnitInclusionRequest) returns (DelegateWorkUnitInclusionResponse) {};
 
   // == Invocations (Legacy) ===================================================
 
@@ -254,16 +262,29 @@ message FinalizeRootInvocationRequest {
 
 // A request message for the CreateWorkUnit RPC.
 //
-// To use this RPC, the caller will need resultdb.workUnits.create
-// permission in the realm `work_unit.realm`. The update token of the parent
-// work unit must also be supplied in the "update-token" request header
-// metadata key.
+// To use this RPC, you must have:
+// 1. the update token from the parent work unit in the "update-token"
+//   request header, or alternatively, an inclusion token from
+//   DelegateWorkUnitInclusion in an "inclusion-token" request header.
+//   This authorises the modification of the parent work unit.
+// 2. the resultdb.workunits.create permission on the realm the work unit
+//   is being created in, to verify the caller is trusted to maintain
+//   integrity of data in the realm to which it is writing.
+// 3. resultdb.workunits.include permission for the realm the work unit is
+//   being created in. This ensures the caller is authorised to make the
+//   results of the child work unit visible within the parent work unit,
+//   and by extension the root invocation. This is because including the child
+//   work unit implicitly declassifies the results in the the realm of the
+//   root invocation. This is not necessary if an inclusion token was provided
+//   at point (1.) as this permission was checked when the token was minted.
+// 4. if an ID not starting with "u-" is specified,
+//   the resultdb.workUnits.createWithReservedID permission
+// 5. if the producer resource is set,
+//   the resultdb.workUnits.setProducerResource permission
 //
-// Depending on the request, the following permissions may also be required:
-// - if an ID not starting with "u-" is specified,
-//   resultdb.workUnits.createWithReservedID permission is required
-// - if the producer resource is set,
-//   resultdb.workUnits.setProducerResource permission is required
+// This RPC returns an update token in a response header named "update-token".
+// This token is required to make future updates. Treat this token as you might
+// an OAuth token, do not log it.
 message CreateWorkUnitRequest {
   // The parent work unit in which this work unit should be created.
   // Format: rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{PARENT_WORK_UNIT_ID}.
@@ -325,6 +346,8 @@ message CreateWorkUnitRequest {
 //
 // The request will be handled atomically (i.e. all work units are
 // created or none are).
+//
+// See CreateWorkUnitRequest for details about required permissions.
 message BatchCreateWorkUnitsRequest {
   // The work units to create.
   //
@@ -333,25 +356,23 @@ message BatchCreateWorkUnitsRequest {
   // request entries. For example, requests[1] may assume requests[0] has
   // already been created and refer to it as its parent.
   //
-  // Only one "update-token" request metadata key (needed to modify
-  // the parent work unit) may be provided per batch request. This means
-  // that all work units being created must descend from the same work unit
-  // parent OR descend from work units sharing the same update token
-  // (see CreateWorkUnitRequest.work_unit_id for details about prefixed
-  // work unit IDs that share an update token).
+  // There is one important caveat: only one "update-token" request metadata
+  // key (needed to modify the parent work unit) or "inclusion-token" metadata
+  // key may be provided per batch request. This means that all work units being
+  // created must be children of the same work unit parent OR children of work
+  // units sharing the same update token (see CreateWorkUnitRequest.work_unit_id
+  // for details about prefixed work unit IDs that share an update token).
   //
   // # Allowed usages
   //
-  // Create nested structure in one request, descending from pre-existing
-  // work unit "wu0":
+  // Create multiple children in one request, sharing the same work unit parent
+  // "wu0":
   //
   // Root invocation
   // ...
   //   wu0 <-- Pre-existing
   //     |- wu1
   //     |- wu2
-  //        |- wu21 <-- Can be created because wu2 is created in the same
-  //                    request, update token is passed internally.
   //
   // Create multiple nested structures, all descending from work units sharing
   // update token from "wu0":
@@ -369,6 +390,16 @@ message BatchCreateWorkUnitsRequest {
   //     |- wu0:shard2-attempt1
   //
   // # Disallowed usages
+  //
+  // Create a nested structure, descending from work units with
+  // different update tokens:
+  //
+  // Root invocation
+  // ...
+  //   wu0 <-- Pre-existing
+  //     |- wu1 <--- Requires update token for "wu0".
+  //     |- wu2
+  //        |- wu21  <--- Requires update token for "wu2".
   //
   // Create multiple nested structures, descending from work units with
   // different update tokens:
@@ -474,6 +505,68 @@ message BatchFinalizeWorkUnitsResponse {
   // To limit response size, the `extended_properties` field is elided
   // from work units.
   repeated WorkUnit work_units = 1;
+}
+
+// Mints an 'inclusion token' that proves the current caller has permission to
+// include work units from a given realm. The minted inclusion token can be
+// passed to another caller/system and used in CreateWorkUnit to include
+// child work units into the parent work unit.
+//
+// The token returned by this RPC is called an 'inclusion token' and is a
+// replacement to the update token that is otherwise required by CreateWorkUnit.
+//
+// Purpose:
+//
+// This RPC allows the permissions required by CreateWorkUnit to be
+// split over two callers/systems:
+//
+//  1. Caller #1, which owns the parent work unit and wishes to include
+//     a child work unit from a (possibly) different realm, but may not
+//     have one of the permissions required by CreateWorkUnit, e.g.:
+//     - permission to create work units in that realm
+//     (resultdb.workunits.create).
+//     - permission to create work units with reserved names
+//     (resultdb.workunits.createWithReservedID).
+//     - permission to set the producer resource field
+//     (resultdb.workunits.setProducerResource).
+//  2. Caller #2, which is happy to create work unit in a given realm
+//     and has permission to do so, but wants caller #1 to prove it has
+//     read (include) access to the created work unit before it includes
+//     the work unit in caller #1's work unit (which implicitly declassifies
+//     the results into that work unit, and by extension, the root invocation).
+//
+// Use of this RPC is usually not necessary and is designed for systems
+// where multiple systems need to cooperate to create work units in a
+// secure manner. If the first caller has all required permissions, it is
+// common to call CreateWorkUnit directly with the update token to create a new
+// work unit. The ID of the created work unit and its update token can then be
+// passed to a second system to populate.
+//
+// Security: Inclusion tokens should be treated with the same level of security
+// as update tokens, as they effectively grant permission to modify the parent work unit.
+// Treat them as secrets and do not log them.
+message DelegateWorkUnitInclusionRequest {
+  // The resource name of the parent work unit in which further work units
+  // shall be included (created).
+  //
+  // The update token of this work unit must be passed in the
+  // "update-token" request metadata key, or a PERMISSION_DENIED error will
+  // be returned.
+  //
+  // The minted inclusion token will be scoped to this work unit; the token
+  // will not allow inclusion into any other work unit.
+  string work_unit = 1;
+
+  // The realm of the prospective child work unit(s).
+  // The caller must have resultdb.workunits.include permission on this realm.
+  string realm = 2;
+}
+
+// A response message for DelegateWorkUnitInclusion RPC.
+message DelegateWorkUnitInclusionResponse {
+  // The inclusion token is included in a response header named "inclusion-token".
+  // It is not included in the response directly to minimise the risk of
+  // accidentally logging this secret data.
 }
 
 // == Invocations (Legacy) =====================================================

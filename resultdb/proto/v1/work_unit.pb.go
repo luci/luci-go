@@ -190,6 +190,8 @@ type WorkUnit struct {
 	// Typical examples:
 	// - Swarming task: "//chromium-swarm.appspot.com/tasks/deadbeef"
 	// - Buildbucket build: "//cr-buildbucket.appspot.com/builds/1234567890".
+	//
+	// Setting this field requires resultdb.workUnits.setProducerResource permission.
 	ProducerResource string `protobuf:"bytes,13,opt,name=producer_resource,json=producerResource,proto3" json:"producer_resource,omitempty"`
 	// Work unit-level string key-value pairs.
 	// A key can be repeated.

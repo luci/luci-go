@@ -178,6 +178,23 @@ func (s *DecoratedRecorder) BatchFinalizeWorkUnits(ctx context.Context, req *Bat
 	return
 }
 
+func (s *DecoratedRecorder) DelegateWorkUnitInclusion(ctx context.Context, req *DelegateWorkUnitInclusionRequest) (rsp *DelegateWorkUnitInclusionResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "DelegateWorkUnitInclusion", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.DelegateWorkUnitInclusion(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "DelegateWorkUnitInclusion", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedRecorder) CreateInvocation(ctx context.Context, req *CreateInvocationRequest) (rsp *Invocation, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
