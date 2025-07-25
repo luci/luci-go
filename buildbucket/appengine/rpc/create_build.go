@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildid"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
@@ -851,6 +852,14 @@ func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
 func (*Builds) CreateBuild(ctx context.Context, req *pb.CreateBuildRequest) (*pb.Build, error) {
 	if err := perm.HasInBucket(ctx, bbperms.BuildsCreate, req.Build.Builder.Project, req.Build.Builder.Bucket); err != nil {
 		return nil, err
+	}
+
+	// TODO: b/434087830: remove the warning below once the realms have been
+	// cleaned up.
+	realmName := realms.Join(req.Build.Builder.Project, req.Build.Builder.Bucket)
+	if realmName == "chromeos:release" || realmName == "chromeos:firmware" {
+		logging.Warningf(ctx, "permission %s used in realm %s by %q",
+			bbperms.BuildsCreate, realmName, auth.CurrentIdentity(ctx))
 	}
 
 	globalCfg, err := config.GetSettingsCfg(ctx)

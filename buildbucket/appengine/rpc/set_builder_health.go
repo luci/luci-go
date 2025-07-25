@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -172,6 +173,14 @@ func (*Builders) SetBuilderHealth(ctx context.Context, req *pb.SetBuilderHealthR
 			err := annotateErrorWithBuilder(err, msg.Id)
 			errs[i] = err
 			resp.Responses[i] = createErrorResponse(err, codes.PermissionDenied)
+		}
+
+		// TODO: b/434087830: remove the warning below once the realms have been
+		// cleaned up.
+		realmName := realms.Join(msg.Id.Project, msg.Id.Bucket)
+		if realmName == "chromeos:release" || realmName == "chromeos:firmware" {
+			logging.Warningf(ctx, "permission %s used in realm %s by %q",
+				bbperms.BuildersSetHealth, realmName, auth.CurrentIdentity(ctx))
 		}
 	}
 	// Returning early if there are no builders that the user is allowed to update.
