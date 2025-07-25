@@ -139,7 +139,6 @@ func createWorkUnitsIdempotent(
 			}
 			span.BufferWrite(ctx, workunits.Create(wuRow, legacyCreateOpts)...)
 		}
-		// TODO: add inclusions
 		return nil
 	})
 	if err != nil {

@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -834,6 +835,12 @@ func TestCreateRootInvocation(t *testing.T) {
 				expectWURow.SecondaryIndexShardID = wuRow.SecondaryIndexShardID
 				expectWURow.CreateTime = wuRow.CreateTime
 				assert.That(t, wuRow, should.Match(expectWURow))
+
+				// Check inclusion is added to IncludedInvocations.
+				includedIDs, err := invocations.ReadIncluded(ctx, rootInvocationID.LegacyInvocationID())
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, includedIDs, should.HaveLength(1))
+				assert.That(t, includedIDs.Has(wuID.LegacyInvocationID()), should.BeTrue)
 			})
 
 			t.Run("finalizing root invocation", func(t *ftt.Test) {
@@ -882,6 +889,12 @@ func TestCreateRootInvocation(t *testing.T) {
 				assert.That(t, wuRow, should.Match(expectWURow))
 				// Check finalize start time is set.
 				assert.That(t, wuRow.FinalizeStartTime.Valid, should.BeTrue)
+
+				// Check inclusion is added to IncludedInvocations.
+				includedIDs, err := invocations.ReadIncluded(ctx, rootInvocationID.LegacyInvocationID())
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, includedIDs, should.HaveLength(1))
+				assert.That(t, includedIDs.Has(wuID.LegacyInvocationID()), should.BeTrue)
 			})
 		})
 	})

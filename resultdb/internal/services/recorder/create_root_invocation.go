@@ -50,8 +50,6 @@ const (
 	// By default, finalize root invocation and work unit 2d after creation if it is still
 	// not finalized.
 	defaultDeadlineDuration = 2 * 24 * time.Hour // 2 days
-
-	rootWorkUnitID = "root"
 )
 
 // CreateRootInvocation implements pb.RecorderServer.
@@ -85,7 +83,7 @@ func (s *recorderServer) CreateRootInvocation(ctx context.Context, in *pb.Create
 
 	workUnitID := workunits.ID{
 		RootInvocationID: rootInvocationID,
-		WorkUnitID:       rootWorkUnitID,
+		WorkUnitID:       workunits.RootWorkUnitID,
 	}
 	workUnitRow, err := workunits.Read(span.Single(ctx), workUnitID, workunits.AllFields)
 	if err != nil {
@@ -166,7 +164,7 @@ func createIdempotentRootInvocation(
 		wuRow := &workunits.WorkUnitRow{
 			ID: workunits.ID{
 				RootInvocationID: rootInvocationID,
-				WorkUnitID:       rootWorkUnitID,
+				WorkUnitID:       workunits.RootWorkUnitID,
 			},
 			// Root work unit has parent work unit set to null.
 			ParentWorkUnitID: spanner.NullString{Valid: false},

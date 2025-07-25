@@ -755,6 +755,12 @@ func TestCreateWorkUnit(t *testing.T) {
 				expectedLegacyInv.CreateTime = legacyInv.CreateTime
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, legacyInv, should.Match(expectedLegacyInv))
+
+				// Check inclusion is added to IncludedInvocations.
+				includedIDs, err := invocations.ReadIncluded(readCtx, parentWorkUnitID.LegacyInvocationID())
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, includedIDs, should.HaveLength(1))
+				assert.That(t, includedIDs.Has(workUnitID.LegacyInvocationID()), should.BeTrue)
 			})
 
 			t.Run("finalizing work unit", func(t *ftt.Test) {
@@ -796,6 +802,12 @@ func TestCreateWorkUnit(t *testing.T) {
 				expectedLegacyInv.FinalizeStartTime = legacyInv.FinalizeStartTime
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, legacyInv, should.Match(expectedLegacyInv))
+
+				// Check inclusion is added to IncludedInvocations.
+				includedIDs, err := invocations.ReadIncluded(readCtx, parentWorkUnitID.LegacyInvocationID())
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, includedIDs, should.HaveLength(1))
+				assert.That(t, includedIDs.Has(workUnitID.LegacyInvocationID()), should.BeTrue)
 			})
 
 		})

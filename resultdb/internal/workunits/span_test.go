@@ -45,7 +45,15 @@ func TestWriteWorkUnit(t *testing.T) {
 			RootInvocationID: "root-inv-id",
 			WorkUnitID:       "work-unit-id",
 		}
-		row := NewBuilder("root-inv-id", "work-unit-id").WithState(pb.WorkUnit_ACTIVE).Build()
+		parentID := ID{
+			RootInvocationID: "root-inv-id",
+			WorkUnitID:       "root",
+		}
+		row := NewBuilder("root-inv-id", "work-unit-id").
+			WithState(pb.WorkUnit_ACTIVE).
+			WithParentWorkUnitID(parentID.WorkUnitID).
+			Build()
+		parentRow := NewBuilder("root-inv-id", "root").WithState(pb.WorkUnit_ACTIVE).Build()
 
 		LegacyCreateOptions := LegacyCreateOptions{
 			ExpectedTestResultsExpirationTime: now.Add(2 * 24 * time.Hour),
@@ -57,7 +65,8 @@ func TestWriteWorkUnit(t *testing.T) {
 			rootinvocations.InsertForTesting(rootinvocations.NewBuilder("root-inv-id").Build())...,
 		)
 		commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-			mutations := Create(row.Clone(), LegacyCreateOptions)
+			mutations := Create(parentRow.Clone(), LegacyCreateOptions)
+			mutations = append(mutations, Create(row.Clone(), LegacyCreateOptions)...)
 			span.BufferWrite(ctx, mutations...)
 			return nil
 		})
@@ -114,6 +123,17 @@ func TestWriteWorkUnit(t *testing.T) {
 		assert.Loosely(t, invocationType, should.Equal(invocations.WorkUnit))
 		assert.Loosely(t, expectedTestResultsExpirationTime.Time, should.Match(LegacyCreateOptions.ExpectedTestResultsExpirationTime))
 		assert.Loosely(t, submitted.Valid, should.BeFalse)
+
+		// Validate IncludedInvocations entry.
+		includedIDs, err := invocations.ReadIncluded(ctx, parentID.LegacyInvocationID())
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, includedIDs, should.HaveLength(1))
+		assert.That(t, includedIDs.Has(id.LegacyInvocationID()), should.BeTrue)
+
+		includedIDs, err = invocations.ReadIncluded(ctx, parentID.RootInvocationID.LegacyInvocationID())
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, includedIDs, should.HaveLength(1))
+		assert.That(t, includedIDs.Has(parentID.LegacyInvocationID()), should.BeTrue)
 	})
 }
 

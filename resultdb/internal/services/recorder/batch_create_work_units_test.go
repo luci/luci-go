@@ -594,6 +594,18 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			legacyInvs, err := invocations.ReadBatch(readCtx, invocations.NewIDSet(workUnitID1.LegacyInvocationID(), workUnitID11.LegacyInvocationID(), workUnitID2.LegacyInvocationID()), invocations.AllFields)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, legacyInvs, should.HaveLength(3))
+
+			// Check inclusion is added to IncludedInvocations.
+			includedIDs, err := invocations.ReadIncluded(readCtx, parentWorkUnitID.LegacyInvocationID())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, includedIDs, should.HaveLength(2))
+			assert.That(t, includedIDs.Has(workUnitID1.LegacyInvocationID()), should.BeTrue)
+			assert.That(t, includedIDs.Has(workUnitID2.LegacyInvocationID()), should.BeTrue)
+
+			includedIDs, err = invocations.ReadIncluded(readCtx, workUnitID1.LegacyInvocationID())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, includedIDs, should.HaveLength(1))
+			assert.That(t, includedIDs.Has(workUnitID11.LegacyInvocationID()), should.BeTrue)
 		})
 	})
 }

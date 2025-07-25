@@ -34,6 +34,9 @@ const (
 	// secondaryIndexShardCount is the number of values for the SecondaryIndexShardId column in the WorkUnits table
 	// used for preventing hotspots in global secondary indexes. The range of values is [0, secondaryIndexShardCount-1].
 	secondaryIndexShardCount = 100
+
+	// Work unit ID of the root work unit.
+	RootWorkUnitID = "root"
 )
 
 // Extra information to support writing to legacy invocation table.
@@ -67,7 +70,8 @@ func Create(workUnit *WorkUnitRow, opts LegacyCreateOptions) []*spanner.Mutation
 
 	workUnitMutation := workUnit.toMutation()
 	invMutation := workUnit.toLegacyInvocationMutation(opts)
-	return []*spanner.Mutation{workUnitMutation, invMutation}
+	includeMutation := workUnit.toLegacyInclusionMutation()
+	return []*spanner.Mutation{workUnitMutation, invMutation, includeMutation}
 }
 
 // Convert the work unit row to the canonical form.
@@ -184,6 +188,27 @@ func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *span
 		row["FinalizeStartTime"] = spanner.CommitTimestamp
 	}
 	return spanutil.InsertMap("Invocations", row)
+}
+
+func (w *WorkUnitRow) toLegacyInclusionMutation() *spanner.Mutation {
+	var parentLegacyInvocationID invocations.ID
+	if !w.ParentWorkUnitID.Valid {
+		if w.ID.WorkUnitID != RootWorkUnitID {
+			panic("only root work unit can have empty parent work unit ID")
+		}
+		// For root work unit, the parent should be the root invocation.
+		parentLegacyInvocationID = w.ID.RootInvocationID.LegacyInvocationID()
+	} else {
+		parentID := ID{
+			RootInvocationID: w.ID.RootInvocationID,
+			WorkUnitID:       w.ParentWorkUnitID.StringVal,
+		}
+		parentLegacyInvocationID = parentID.LegacyInvocationID()
+	}
+	return spanutil.InsertMap("IncludedInvocations", map[string]any{
+		"InvocationId":         parentLegacyInvocationID,
+		"IncludedInvocationId": w.ID.LegacyInvocationID(),
+	})
 }
 
 // MarkFinalizing creates mutations to mark the given work unit as finalizing.

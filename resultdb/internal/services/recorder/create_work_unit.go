@@ -129,7 +129,6 @@ func createIdempotentWorkUnit(
 		legacyCreateOpts := workunits.LegacyCreateOptions{
 			ExpectedTestResultsExpirationTime: now.Add(uninterestingTestVerdictsExpirationTime),
 		}
-		// TODO: add the child-parent relationship to IncludedInvocations table.
 		span.BufferWrite(ctx, workunits.Create(wuRow, legacyCreateOpts)...)
 		return nil
 	})
