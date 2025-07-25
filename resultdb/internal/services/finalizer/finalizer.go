@@ -27,12 +27,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/services/artifactexporter"
 	"go.chromium.org/luci/resultdb/internal/services/baselineupdater"
 	"go.chromium.org/luci/resultdb/internal/services/bqexporter"
@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/tracing"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -252,72 +253,82 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID, opts Options)
 			return err
 		}
 
-		err := parallel.FanOutIn(func(work chan<- func() error) {
-			work <- func() error {
-				parentInvs, err := parentsInFinalizingState(ctx, invID)
-				if err != nil {
-					return err
-				}
-
-				// Enqueue tasks to try to finalize invocations that include ours.
-				// Note that MustAddTask in a Spanner transaction is essentially
-				// a BufferWrite (no RPCs inside), it's fine to call it sequentially
-				// and panic on errors.
-				for _, id := range parentInvs {
-					tq.MustAddTask(ctx, &tq.Task{
-						Payload: &taskspb.TryFinalizeInvocation{InvocationId: string(id)},
-						Title:   string(id),
-					})
-				}
-
-				// Enqueue a notification to pub/sub listeners that the invocation
-				// has been finalized.
-				inv, err := invocations.ReadFinalizedNotificationInfo(ctx, invID)
-				if err != nil {
-					return errors.Fmt("failed to read finalized notification info: %w", err)
-				}
-
-				if !invID.IsRootInvocation() && !invID.IsWorkUnit() {
-					// Note that this submits the notification transactionally,
-					// i.e. conditionally on this transaction committing.
-					notification := &pb.InvocationFinalizedNotification{
-						Invocation:   invID.Name(),
-						Realm:        inv.Realm,
-						IsExportRoot: inv.IsExportRoot,
-						ResultdbHost: opts.ResultDBHostname,
-						CreateTime:   inv.CreateTime,
-					}
-					tasks.NotifyInvocationFinalized(ctx, notification)
-				}
-
-				// Enqueue update test metadata task transactionally.
-				if err := testmetadataupdator.Schedule(ctx, invID); err != nil {
-					return err
-				}
-
-				// Enqueue export artifact task transactionally.
-				if err := artifactexporter.Schedule(ctx, invID); err != nil {
-					return err
-				}
-
-				// Enqueue BigQuery exports transactionally.
-				return bqexporter.Schedule(ctx, invID)
-			}
-		})
+		parentInvs, err := parentsInFinalizingState(ctx, invID)
 		if err != nil {
 			return err
 		}
 
-		// Update the invocation.
-		span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]any{
-			"InvocationId": invID,
-			"State":        pb.Invocation_FINALIZED,
-			"FinalizeTime": spanner.CommitTimestamp,
-		}))
+		// Enqueue tasks to try to finalize invocations that include ours.
+		// Note that MustAddTask in a Spanner transaction is essentially
+		// a BufferWrite (no RPCs inside), it's fine to call it sequentially
+		// and panic on errors.
+		for _, id := range parentInvs {
+			tq.MustAddTask(ctx, &tq.Task{
+				Payload: &taskspb.TryFinalizeInvocation{InvocationId: string(id)},
+				Title:   string(id),
+			})
+		}
 
-		if err = scheduleBaselineTask(ctx, invID); err != nil {
+		if !invID.IsRootInvocation() && !invID.IsWorkUnit() {
+			// Enqueue a notification to pub/sub listeners that the invocation
+			// has been finalized.
+			inv, err := invocations.ReadFinalizedNotificationInfo(ctx, invID)
+			if err != nil {
+				return errors.Fmt("failed to read finalized notification info: %w", err)
+			}
+
+			// Note that this submits the notification transactionally,
+			// i.e. conditionally on this transaction committing.
+			notification := &pb.InvocationFinalizedNotification{
+				Invocation:   invID.Name(),
+				Realm:        inv.Realm,
+				IsExportRoot: inv.IsExportRoot,
+				ResultdbHost: opts.ResultDBHostname,
+				CreateTime:   inv.CreateTime,
+			}
+			tasks.NotifyInvocationFinalized(ctx, notification)
+		}
+
+		// Enqueue update test metadata task transactionally.
+		if err := testmetadataupdator.Schedule(ctx, invID); err != nil {
 			return err
 		}
+
+		// Enqueue export artifact task transactionally.
+		if err := artifactexporter.Schedule(ctx, invID); err != nil {
+			return err
+		}
+
+		// Enqueue BigQuery exports transactionally.
+		if err := bqexporter.Schedule(ctx, invID); err != nil {
+			return err
+		}
+
+		// Work units do not have a submitted state.
+		if !invID.IsWorkUnit() {
+			// Enqueue baseline update task transactionally.
+			submitted, err := invocations.ReadSubmitted(ctx, invID)
+			if err != nil {
+				return err
+			}
+			if submitted {
+				baselineupdater.Schedule(ctx, string(invID))
+			}
+		}
+
+		// Mark the invocation finalized.
+		// If the invocation is a shadow record for a root invocation
+		// or work unit, update via the source of truth.
+		if invID.IsRootInvocation() {
+			// Also updates the legacy invocation.
+			span.BufferWrite(ctx, rootinvocations.MarkFinalized(rootinvocations.MustParseLegacyInvocationID(invID))...)
+		} else if invID.IsWorkUnit() {
+			// Also updates the legacy invocation.
+			span.BufferWrite(ctx, workunits.MarkFinalized(workunits.MustParseLegacyInvocationID(invID))...)
+		} else {
+			span.BufferWrite(ctx, invocations.MarkFinalized(invID))
+		}
+
 		return nil
 	})
 	switch {
@@ -352,15 +363,4 @@ func parentsInFinalizingState(ctx context.Context, invID invocations.ID) (ids []
 		return nil
 	})
 	return ids, err
-}
-
-func scheduleBaselineTask(ctx context.Context, invID invocations.ID) error {
-	submitted, err := invocations.ReadSubmitted(ctx, invID)
-	if err != nil {
-		return err
-	}
-	if submitted {
-		baselineupdater.Schedule(ctx, string(invID))
-	}
-	return nil
 }

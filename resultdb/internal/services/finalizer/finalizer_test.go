@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
+
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -28,9 +30,11 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -250,6 +254,79 @@ func TestFinalizeInvocation(t *testing.T) {
 				&taskspb.MarkInvocationSubmitted{
 					InvocationId: "x",
 				}))
+		})
+
+		t.Run("For a root invocation", func(t *ftt.Test) {
+			rootInvID := rootinvocations.ID("root-inv")
+
+			// Create a root invocation and its legacy shadow.
+			// The root invocation needs to be in FINALIZING state.
+			// The root invocation root work unit will also be in FINALIZING state.
+			row := rootinvocations.NewBuilder(rootInvID).WithState(pb.RootInvocation_FINALIZING).Build()
+			testutil.MustApply(ctx, t, insert.RootInvocationWithRootWorkUnit(row)...)
+
+			err := finalizeInvocation(ctx, rootInvID.LegacyInvocationID(), opts)
+			assert.Loosely(t, err, should.BeNil)
+
+			// Check RootInvocations table.
+			var state pb.RootInvocation_State
+			var finalizeTime spanner.NullTime
+			testutil.MustReadRow(ctx, t, "RootInvocations", rootInvID.Key(), map[string]any{
+				"State":        &state,
+				"FinalizeTime": &finalizeTime,
+			})
+			assert.Loosely(t, state, should.Equal(pb.RootInvocation_FINALIZED))
+			assert.Loosely(t, finalizeTime.Valid, should.BeTrue)
+
+			// Check Invocations table.
+			var legacyState pb.Invocation_State
+			var legacyFinalizeTime spanner.NullTime
+			testutil.MustReadRow(ctx, t, "Invocations", rootInvID.LegacyInvocationID().Key(), map[string]any{
+				"State":        &legacyState,
+				"FinalizeTime": &legacyFinalizeTime,
+			})
+			assert.Loosely(t, legacyState, should.Equal(pb.Invocation_FINALIZED))
+			assert.Loosely(t, legacyFinalizeTime, should.Equal(finalizeTime))
+		})
+
+		t.Run("For a work unit", func(t *ftt.Test) {
+			var ms []*spanner.Mutation
+
+			// Create a root invocation for the work unit to be created in.
+			rootInvID := rootinvocations.ID("root-inv-for-wu")
+			rootRow := rootinvocations.NewBuilder(rootInvID).WithState(pb.RootInvocation_ACTIVE).Build()
+			ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootRow)...)
+
+			wuID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "my-work-unit"}
+
+			// Create a work unit and its legacy shadow.
+			// The work unit needs to be in FINALIZING state.
+			wuRow := workunits.NewBuilder(rootInvID, "my-work-unit").WithState(pb.WorkUnit_FINALIZING).Build()
+			ms = append(ms, insert.WorkUnit(wuRow)...)
+			testutil.MustApply(ctx, t, ms...)
+
+			err := finalizeInvocation(ctx, wuID.LegacyInvocationID(), opts)
+			assert.Loosely(t, err, should.BeNil)
+
+			// Check WorkUnits table.
+			var state pb.WorkUnit_State
+			var finalizeTime spanner.NullTime
+			testutil.MustReadRow(ctx, t, "WorkUnits", wuID.Key(), map[string]any{
+				"State":        &state,
+				"FinalizeTime": &finalizeTime,
+			})
+			assert.Loosely(t, state, should.Equal(pb.WorkUnit_FINALIZED))
+			assert.Loosely(t, finalizeTime.Valid, should.BeTrue)
+
+			// Check Invocations table.
+			var legacyState pb.Invocation_State
+			var legacyFinalizeTime spanner.NullTime
+			testutil.MustReadRow(ctx, t, "Invocations", wuID.LegacyInvocationID().Key(), map[string]any{
+				"State":        &legacyState,
+				"FinalizeTime": &legacyFinalizeTime,
+			})
+			assert.Loosely(t, legacyState, should.Equal(pb.Invocation_FINALIZED))
+			assert.Loosely(t, legacyFinalizeTime, should.Match(finalizeTime))
 		})
 	})
 }
