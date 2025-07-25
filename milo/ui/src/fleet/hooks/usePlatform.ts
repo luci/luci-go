@@ -38,6 +38,8 @@ export const platformRenderString = (p?: Platform) => {
       return 'Android';
     case Platform.CHROMEOS:
       return 'Chrome OS';
+    case Platform.CHROMIUM:
+      return 'Chromium';
     case undefined:
       return undefined;
   }

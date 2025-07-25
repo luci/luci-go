@@ -30,6 +30,10 @@ test:
 build:
 	NODE_OPTIONS=--max-old-space-size=4096 npm run build
 
+# Regenerate TypeScript protos on the frontend
+gen:
+	./scripts/gen_proto.sh
+
 # Used to run integration test in a builder (see https://chromium.googlesource.com/infra/infra/+/73ad16cffae6eb25bb30cba6da1a91dc777b2a43/recipes/recipes/luci_ui_promoter.py#85).
 e2e:
 	npm run e2e

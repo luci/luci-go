@@ -31,6 +31,8 @@ const MOCK_DATA: CountDevicesResponse = {
     needManualRepair: 40,
     needRepair: 40,
     repairFailed: 40,
+    needsDeploy: 0,
+    needsReplacement: 0,
   },
 };
 
