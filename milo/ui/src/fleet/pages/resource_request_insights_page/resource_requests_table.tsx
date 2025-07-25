@@ -106,13 +106,12 @@ export const ResourceRequestTable = () => {
     resetDefaultColumns,
     temporaryColumnSx,
   } = useColumnManagement({
-    allColumnIds: RRI_COLUMNS.map(
-      (column: RriColumnDescriptor) => column.gridColDef.field,
-    ),
+    allColumns: RRI_COLUMNS.map((c) => c.gridColDef),
     defaultColumns: RRI_COLUMNS.filter(
       (column: RriColumnDescriptor) => column.isDefault,
     ).map((column: RriColumnDescriptor) => column.gridColDef.field),
     localStorageKey: RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY,
+    preserveOrder: true,
   });
 
   const handleSortModelChange = (newSortModel: GridSortModel) => {

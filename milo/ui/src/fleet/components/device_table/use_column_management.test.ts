@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GridColDef } from '@mui/x-data-grid';
 import { act, renderHook } from '@testing-library/react';
 
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -23,8 +24,6 @@ import { useParamsAndLocalStorage } from './use_params_and_local_storage';
 jest.mock('@/generic_libs/hooks/synced_search_params');
 jest.mock('./use_params_and_local_storage');
 jest.mock('./columns', () => ({
-  getColumns: (ids: string[]) =>
-    ids.map((id) => ({ field: id, headerName: id.toUpperCase() })),
   orderColumns: (cols: { field: string }[], order: string[]) => {
     const colMap = new Map(cols.map((c) => [c.field, c]));
     return order.map((id) => colMap.get(id)).filter(Boolean);
@@ -34,7 +33,13 @@ jest.mock('./columns', () => ({
 const mockUseSyncedSearchParams = useSyncedSearchParams as jest.Mock;
 const mockUseParamsAndLocalStorage = useParamsAndLocalStorage as jest.Mock;
 
-const ALL_COLUMNS = ['name', 'os', 'pool', 'cpu', 'memory'];
+const ALL_COLUMNS: readonly GridColDef[] = [
+  { field: 'name', headerName: 'Name' },
+  { field: 'os', headerName: 'OS' },
+  { field: 'pool', headerName: 'Pool' },
+  { field: 'cpu', headerName: 'CPU' },
+  { field: 'memory', headerName: 'Memory' },
+];
 const DEFAULT_COLUMNS = ['name', 'os'];
 const LOCAL_STORAGE_KEY = 'test-columns-key';
 
@@ -42,7 +47,7 @@ describe('useColumnManagement', () => {
   let mockSetUserVisibleColumns: jest.Mock;
 
   const config = {
-    allColumnIds: ALL_COLUMNS,
+    allColumns: ALL_COLUMNS,
     defaultColumns: DEFAULT_COLUMNS,
     localStorageKey: LOCAL_STORAGE_KEY,
   };
@@ -59,7 +64,7 @@ describe('useColumnManagement', () => {
     ]);
   });
 
-  it('should initialize with default columns', () => {
+  it('should initialize with default columns and dynamic order', () => {
     const { result } = renderHook(() => useColumnManagement(config));
     expect(result.current.columnVisibilityModel).toEqual({
       name: true,
@@ -73,7 +78,7 @@ describe('useColumnManagement', () => {
 
   it('should use user-selected columns if they exist', () => {
     mockUseParamsAndLocalStorage.mockReturnValue([
-      ['name', 'cpu'],
+      ['cpu', 'name'],
       mockSetUserVisibleColumns,
     ]);
 
@@ -85,7 +90,8 @@ describe('useColumnManagement', () => {
       cpu: true,
       memory: false,
     });
-    expect(result.current.columns.map((c) => c.field)).toEqual(['name', 'cpu']);
+    // Order should match the user's preference.
+    expect(result.current.columns.map((c) => c.field)).toEqual(['cpu', 'name']);
   });
 
   it('should make a hidden column temporarily visible if it has an active filter', () => {
@@ -180,6 +186,28 @@ describe('useColumnManagement', () => {
     act(() => result.current.resetDefaultColumns());
     expect(mockSetUserVisibleColumns).toHaveBeenCalledWith([
       ...DEFAULT_COLUMNS,
+    ]);
+  });
+
+  it('should preserve original column order when preserveOrder is true', () => {
+    // User has selected columns in a different order than the original definition.
+    mockUseParamsAndLocalStorage.mockReturnValue([
+      ['cpu', 'name'],
+      mockSetUserVisibleColumns,
+    ]);
+
+    const { result } = renderHook(() =>
+      useColumnManagement({ ...config, preserveOrder: true }),
+    );
+
+    // The final order should match the order in ALL_COLUMNS, not the user's preference.
+    // 'name' comes before 'cpu' in ALL_COLUMNS.
+    expect(result.current.columns.map((c) => c.field)).toEqual([
+      'name',
+      'os',
+      'pool',
+      'cpu',
+      'memory',
     ]);
   });
 });

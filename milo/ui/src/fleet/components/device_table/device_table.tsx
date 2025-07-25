@@ -38,6 +38,7 @@ import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetcons
 import { CopySnackbar } from '../actions/copy/copy_snackbar';
 
 import { ColumnMenu } from './column_menu';
+import { getColumns } from './columns';
 import {
   BASE_DIMENSIONS,
   COLUMN_OVERRIDES,
@@ -129,7 +130,7 @@ export function DeviceTable({
     resetDefaultColumns,
     temporaryColumnSx,
   } = useColumnManagement({
-    allColumnIds: columnIds,
+    allColumns: getColumns(columnIds),
     defaultColumns: DEFAULT_DEVICE_COLUMNS,
     localStorageKey: DEVICES_COLUMNS_LOCAL_STORAGE_KEY,
   });

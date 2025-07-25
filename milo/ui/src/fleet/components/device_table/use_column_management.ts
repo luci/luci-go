@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridColumnVisibilityModel } from '@mui/x-data-grid';
+import { GridColDef, GridColumnVisibilityModel } from '@mui/x-data-grid';
 import { useMemo } from 'react';
 
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
@@ -21,7 +21,7 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 
 import { getFilters } from '../filter_dropdown/search_param_utils/search_param_utils';
 
-import { getColumns, orderColumns } from './columns';
+import { orderColumns } from './columns';
 import { useParamsAndLocalStorage } from './use_params_and_local_storage';
 
 /**
@@ -41,9 +41,10 @@ const temporaryColumnSx = {
 };
 
 interface ColumnManagementConfig {
-  readonly allColumnIds: readonly string[];
+  readonly allColumns: readonly GridColDef[];
   readonly defaultColumns: readonly string[];
   readonly localStorageKey: string;
+  readonly preserveOrder?: boolean;
 }
 
 /**
@@ -55,9 +56,10 @@ interface ColumnManagementConfig {
  * will make that column temporarily visible and apply a distinct style to it.
  */
 export function useColumnManagement({
-  allColumnIds,
+  allColumns,
   defaultColumns,
   localStorageKey,
+  preserveOrder = false,
 }: ColumnManagementConfig) {
   const [searchParams] = useSyncedSearchParams();
 
@@ -98,9 +100,11 @@ export function useColumnManagement({
   // The visibility model required by the MUI DataGrid.
   const columnVisibilityModel = useMemo(() => {
     const model: GridColumnVisibilityModel = {};
-    allColumnIds.forEach((col) => (model[col] = visibleColumns.includes(col)));
+    allColumns.forEach(
+      (col) => (model[col.field] = visibleColumns.includes(col.field)),
+    );
     return model;
-  }, [allColumnIds, visibleColumns]);
+  }, [allColumns, visibleColumns]);
 
   // Callback for when the user changes column visibility in the UI.
   // It ensures that temporary columns cannot be hidden by the user.
@@ -120,8 +124,7 @@ export function useColumnManagement({
   // Generates the final column definitions for the DataGrid.
   // It adds special properties (e.g., class names) to temporary columns.
   const columns = useMemo(() => {
-    const allGeneratedColumns = getColumns([...allColumnIds]);
-    const styledColumns = allGeneratedColumns.map((colDef) => {
+    const styledColumns = allColumns.map((colDef) => {
       if (temporaryColumnFields.has(colDef.field)) {
         return {
           ...colDef,
@@ -132,8 +135,10 @@ export function useColumnManagement({
       }
       return colDef;
     });
-    return orderColumns(styledColumns, visibleColumns);
-  }, [allColumnIds, visibleColumns, temporaryColumnFields]);
+    return preserveOrder
+      ? styledColumns
+      : orderColumns(styledColumns, visibleColumns);
+  }, [allColumns, visibleColumns, temporaryColumnFields, preserveOrder]);
 
   const resetDefaultColumns = () => setUserVisibleColumns([...defaultColumns]);
   return {
