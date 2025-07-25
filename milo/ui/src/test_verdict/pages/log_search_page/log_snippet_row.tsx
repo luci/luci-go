@@ -15,15 +15,16 @@
 import { Box, Link, styled } from '@mui/material';
 import { DateTime } from 'luxon';
 import { useMemo } from 'react';
-import { useParams } from 'react-router';
 
 import { Timestamp } from '@/common/components/timestamp';
 import { parseArtifactName } from '@/common/services/resultdb';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 import { OutputArtifactMatchingContent } from '@/common/types/verdict';
 import { ArtifactMatchingContent_Match } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { TestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { testStatusToJSON } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import {
+  TestStatus,
+  testStatusToJSON,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { ResultStatusIcon } from '@/test_verdict/components/result_status_icon';
 
 const Container = styled(Box)`
@@ -79,7 +80,6 @@ function splitSnippet(
 }
 
 function getLogViewerLink(
-  project: string,
   artifactName: string,
   match?: string,
   variantHash?: string | null,
@@ -95,7 +95,7 @@ function getLogViewerLink(
   search.set('logSearchQuery', match);
   search.set('selectedArtifact', artifactId);
   search.set('selectedArtifactSource', 'result');
-  return `/ui/labs/p/${project}/inv/${invocationId}/test/${encodeURIComponent(testId)}/variant/${variantHash}/?${search}`;
+  return `/ui/test-investigate/invocations/${invocationId}/tests/${encodeURIComponent(testId)}/variants/${variantHash}/?${search}`;
 }
 
 export interface LogSnippetRowProps {
@@ -104,10 +104,6 @@ export interface LogSnippetRowProps {
 }
 
 export function LogSnippetRow({ artifact, variantHash }: LogSnippetRowProps) {
-  const { project } = useParams();
-  if (!project) {
-    throw new Error('project must be set');
-  }
   const { name, partitionTime, testStatus, snippet, matches } = artifact;
   const tokens: Token[] = useMemo(
     () => splitSnippet(snippet, matches),
@@ -115,7 +111,6 @@ export function LogSnippetRow({ artifact, variantHash }: LogSnippetRowProps) {
   );
   const firstMatch = tokens.find((token) => token.type === 'matching');
   const logViewerLink = getLogViewerLink(
-    project,
     artifact.name,
     firstMatch?.content,
     variantHash,
