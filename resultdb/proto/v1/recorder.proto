@@ -338,7 +338,7 @@ message CreateWorkUnitRequest {
   // If the same request is replayed (see "Retry policy" at the top of this doc),
   // this request_id guarantees idempotence.
   //
-  // Required.
+  // Required (unless this request is nested in a BatchCreateWorkUnitsRequest).
   string request_id = 4;
 }
 
@@ -420,7 +420,8 @@ message BatchCreateWorkUnitsRequest {
   // requests[i].request_id MUST be either empty or equal to request_id in
   // this message.
   //
-  // A maximum of 500 work units can be created in one request.
+  // Up to 500 requests. Total size of all requests (as measured by proto.Size())
+  // MUST be <= 10 MiB.
   repeated CreateWorkUnitRequest requests = 1;
 
   // A unique identifier for this request. Restricted to 36 ASCII characters.
@@ -666,16 +667,24 @@ message UpdateIncludedInvocationsRequest {
 // - resultdb.invocations.setSubmitted in the realm the <project>:@project, where
 //   project is the project of the nominated invocation.
 message MarkInvocationSubmittedRequest {
+  // Name of the root invocation, e.g. "rootInvocations/{id}".
+  string root_invocation = 2 [ (google.api.field_behavior) = REQUIRED ];
+
+  // DEPRECATED: use `root_invocation` instead.
   // Name of the invocation, e.g. "invocations/{id}".
-  string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
+  string invocation = 1 [ deprecated = true ];
 }
 
 // == Test results =============================================================
 
 // A request message for CreateTestResult RPC.
 message CreateTestResultRequest {
+  // Name of the parent work unit. See WorkUnit.name.
+  string parent = 4 [ (google.api.field_behavior) = REQUIRED ];
+
+  // DEPRECATED: Use `parent` instead.
   // Name of the parent invocation, see Invocation.name.
-  string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
+  string invocation = 1 [ deprecated = true ];
 
   // The test result to create.
   // Test id and result id are used to dedupe requests, i.e.
@@ -686,37 +695,42 @@ message CreateTestResultRequest {
 
   // A unique identifier for this request. Restricted to 36 ASCII characters.
   // A random UUID is recommended.
-  // This request is only idempotent if a `request_id` is provided, so it is
-  // strongly recommended to populate this field.
   //
-  // Impl note: this field is used to compute the spanner-level result id, which
-  // will encode tuple (request_id, index_of_request)", where
-  // - request_id is a random GUID if not provided by the user
-  // - index_of_request is 0 in CreateTestResult RPC, or index of the request
-  //   in BatchCreateTestResultsRequest in the batch RPC.
-  // TODO(jchinlee): remove this impl note when it is converted into code.
+  // If the same request is replayed (see "Retry policy" at the top of this doc),
+  // this request_id guarantees idempotence.
+  //
+  // Required (unless this request is nested in a BatchCreateTestResultsRequest).
   string request_id = 3;
 }
 
 // A request message for BatchCreateTestResults RPC.
 message BatchCreateTestResultsRequest {
+  // Name of the parent work unit. See WorkUnit.name.
+  string parent = 4 [ (google.api.field_behavior) = REQUIRED ];
+
+  // DEPRECATED: Use `parent` instead.
   // Name of the parent invocation, see Invocation.name.
-  string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
+  string invocation = 1 [ deprecated = true ];
 
   // Requests to create test results.
+  // requests[i].parent MUST be either empty or equal to parent in this
+  // message.
   // requests[i].invocation MUST be either empty or equal to invocation in this
   // message.
   // requests[i].request_id MUST be either empty or equal to request_id in
   // this message.
   //
-  // Up to 500 requests.
+  // Up to 500 requests. Total size of all requests (as measured by proto.Size())
+  // MUST be <= 10 MiB.
   repeated CreateTestResultRequest requests = 2;
 
   // A unique identifier for this request. Restricted to 36 ASCII characters.
   // A random UUID is recommended.
-  // This request is only idempotent if a `request_id` is provided, so it is
-  // strongly recommended to populate this field.
   //
+  // If the same request is replayed (see "Retry policy" at the top of this doc),
+  // this request_id guarantees idempotence.
+  //
+  // Required.
   string request_id = 3;
 }
 
@@ -728,8 +742,12 @@ message BatchCreateTestResultsResponse {
 
 // A request message for CreateTestExoneration RPC.
 message CreateTestExonerationRequest {
+  // Name of the parent work unit. See WorkUnit.name.
+  string parent = 4 [ (google.api.field_behavior) = REQUIRED ];
+
+  // DEPRECATED: Use `parent` instead.
   // Name of the parent invocation, see Invocation.name.
-  string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
+  string invocation = 1 [ deprecated = true ];
 
   // The TestExoneration to create.
   TestExoneration test_exoneration = 2
@@ -737,14 +755,22 @@ message CreateTestExonerationRequest {
 
   // A unique identifier for this request. Restricted to 36 ASCII characters.
   // A random UUID is recommended.
-  // This request is only idempotent if a `request_id` is provided.
+  //
+  // If the same request is replayed (see "Retry policy" at the top of this doc),
+  // this request_id guarantees idempotence.
+  //
+  // Required (unless this request is nested in a BatchCreateTestExonerationsRequest).
   string request_id = 3;
 }
 
 // A request message for BatchCreateTestExonerations RPC.
 message BatchCreateTestExonerationsRequest {
+  // Name of the parent work unit. See WorkUnit.name.
+  string parent = 4 [ (google.api.field_behavior) = REQUIRED ];
+
+  // DEPRECATED: Use `parent` instead.
   // Name of the parent invocation, see Invocation.name.
-  string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
+  string invocation = 1 [ deprecated = true ];
 
   // Requests to create TestExonerations.
   // requests[i].invocation MUST be either empty or equal to invocation in this
@@ -752,13 +778,17 @@ message BatchCreateTestExonerationsRequest {
   // requests[i].request_id MUST be either empty or equal to request_id in
   // this message.
   //
-  // Up to 500 requests.
+  // Up to 500 requests. Total size of all requests (as measured by proto.Size())
+  // MUST be <= 10 MiB.
   repeated CreateTestExonerationRequest requests = 2;
 
   // A unique identifier for this request. Restricted to 36 ASCII characters.
   // A random UUID is recommended.
-  // This request is only idempotent if a `request_id` is provided, so it is
-  // strongly recommended to populate this field.
+  //
+  // If the same request is replayed (see "Retry policy" at the top of this doc),
+  // this request_id guarantees idempotence.
+  //
+  // Required.
   string request_id = 3;
 }
 
@@ -772,15 +802,15 @@ message BatchCreateTestExonerationsResponse {
 
 // A request message for CreateArtifactRequest.
 message CreateArtifactRequest {
-
-  // Name of the parent invocation, see Invocation.name.
+  // Name of the parent work unit. See WorkUnit.name.
   //
   // To create test result-level artifacts, set test_id_structured and result_id on
-  // the Artifact. Otherwise, to create invocation-level artifacts, leave
+  // the Artifact. Otherwise, to create work unit-level artifacts, leave
   // test_id_structured and result_id blank.
   //
-  // Legacy uploaders can also use the name format:
-  // invocations/{INVOCATION_ID}/tests/{URL_ENCODED_TEST_ID}/results/{RESULT_ID}
+  // Legacy uploaders can also use the name formats:
+  // - invocations/{INVOCATION_ID} for create artifacts in an invocation.
+  // - invocations/{INVOCATION_ID}/tests/{URL_ENCODED_TEST_ID}/results/{RESULT_ID}
   // to create test result-level artifacts (in this case, test_id_structured and
   // result_id MUST be left blank on the Artifact).
   string parent = 1 [ (google.api.field_behavior) = REQUIRED ];
@@ -790,22 +820,40 @@ message CreateArtifactRequest {
   // artifact.artifact_id MUST be set.
   // artifact.name will be ignored.
   Artifact artifact = 2 [ (google.api.field_behavior) = REQUIRED ];
+
+  // A unique identifier for this request. Restricted to 36 ASCII characters.
+  // A random UUID is recommended.
+  //
+  // If the same request is replayed (see "Retry policy" at the top of this doc),
+  // this request_id guarantees idempotence.
+  //
+  // Required (unless this request is nested in a BatchCreateArtifactsRequest).
+  string request_id = 3;
 }
 
 // A request message for BatchCreateArtifactsRequest.
 // Next ID: 4.
 message BatchCreateArtifactsRequest {
-  // Required. Name of the parent invocation, see Invocation.name.
-  // Can only be empty for legacy uploaders which specify requests[i].parent.
+  // Name of the parent work unit. See WorkUnit.name.
+  //
+  // Legacy clients may also use an invocation name, see Invocation.name.
   string parent = 3 [ (google.api.field_behavior) = REQUIRED ];
 
   // Requests to create Artifacts.
-  // The sum of the content lengths MUST be <= 10MiB.
   // requests[i].parent MUST be either empty or equal to parent in this
   // message.
-  // For legacy uploader requests[i].parent MUST be derived from the same invocation.
-  // Up to 500 requests.
+  // Up to 500 requests. Total size of all requests (as measured by proto.Size())
+  // MUST be <= 10 MiB.
   repeated CreateArtifactRequest requests = 2;
+
+  // A unique identifier for this request. Restricted to 36 ASCII characters.
+  // A random UUID is recommended.
+  //
+  // If the same request is replayed (see "Retry policy" at the top of this doc),
+  // this request_id guarantees idempotence.
+  //
+  // Required.
+  string request_id = 4;
 }
 
 message BatchCreateArtifactsResponse {
