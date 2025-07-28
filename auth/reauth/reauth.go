@@ -107,7 +107,7 @@ func getRAPT(ctx context.Context, c *http.Client, h map[string]challengeHandler)
 
 func nextReadyChallenge(ch []challenge) (challenge, bool) {
 	for _, ch := range ch {
-		if ch.Status != "READY" {
+		if ch.Status != "READY" && ch.Status != "RETRYABLE_ERROR" {
 			continue
 		}
 		return ch, true
