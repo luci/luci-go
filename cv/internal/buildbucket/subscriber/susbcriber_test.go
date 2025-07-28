@@ -23,6 +23,7 @@ import (
 
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
@@ -71,6 +72,17 @@ func TestProcessPubSubMessageUpdateTryjob(t *testing.T) {
 		Infra: &buildbucketpb.BuildInfra{
 			Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{
 				Hostname: bbHost,
+			},
+		},
+		Output: &buildbucketpb.Build_Output{
+			Properties: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"output": {
+						Kind: &structpb.Value_StringValue{
+							StringValue: "output value",
+						},
+					},
+				},
 			},
 		},
 	}
@@ -135,36 +147,36 @@ func TestProcessPubSubMessageIrrelevantBuild(t *testing.T) {
 func makeBuildPubsubMessagePayload(t testing.TB, build *buildbucketpb.Build, dropLargeFields bool) common.PubSubMessagePayload {
 	t.Helper()
 	msg := &buildbucketpb.BuildsV2PubSub{
-		Build:                   proto.Clone(build).(*buildbucketpb.Build),
+		Build:                   build,
 		BuildLargeFieldsDropped: dropLargeFields,
 	}
-	if !dropLargeFields {
-		large := &buildbucketpb.Build{
-			Input: &buildbucketpb.Build_Input{
-				Properties: build.GetInput().GetProperties(),
-			},
-			Output: &buildbucketpb.Build_Output{
-				Properties: build.GetOutput().GetProperties(),
-			},
-			Steps: build.GetSteps(),
-		}
-		if build.Input != nil {
-			build.Input.Properties = nil
-		}
-		if build.Output != nil {
-			build.Output.Properties = nil
-		}
-		build.Steps = nil
-		largeBytes, err := proto.Marshal(large)
-		assert.NoErr(t, err, truth.LineContext())
 
-		buf := &bytes.Buffer{}
-		zw := zlib.NewWriter(buf)
-		_, err = zw.Write(largeBytes)
-		assert.NoErr(t, err, truth.LineContext())
-		assert.NoErr(t, zw.Close(), truth.LineContext())
-		msg.BuildLargeFields = buf.Bytes()
+	clone := proto.Clone(build).(*buildbucketpb.Build)
+	large := &buildbucketpb.Build{
+		Input: &buildbucketpb.Build_Input{
+			Properties: clone.GetInput().GetProperties(),
+		},
+		Output: &buildbucketpb.Build_Output{
+			Properties: clone.GetOutput().GetProperties(),
+		},
+		Steps: clone.GetSteps(),
 	}
+	if build.Input != nil {
+		build.Input.Properties = nil
+	}
+	if build.Output != nil {
+		build.Output.Properties = nil
+	}
+	build.Steps = nil
+	largeBytes, err := proto.Marshal(large)
+	assert.NoErr(t, err, truth.LineContext())
+
+	buf := &bytes.Buffer{}
+	zw := zlib.NewWriter(buf)
+	_, err = zw.Write(largeBytes)
+	assert.NoErr(t, err, truth.LineContext())
+	assert.NoErr(t, zw.Close(), truth.LineContext())
+	msg.BuildLargeFields = buf.Bytes()
 	data, err := protojson.Marshal(msg)
 	assert.NoErr(t, err, truth.LineContext())
 	return common.PubSubMessagePayload{

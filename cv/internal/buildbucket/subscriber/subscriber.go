@@ -115,7 +115,7 @@ func recoverLargeFields(buildPubSub *buildbucketpb.BuildsV2PubSub) error {
 	if err != nil {
 		return errors.Fmt("decompress build_large_fields failed: %w", err)
 	}
-	if err := (proto.UnmarshalOptions{Merge: true, DiscardUnknown: true}).Unmarshal(largeFieldsData, buildPubSub); err != nil {
+	if err := (proto.UnmarshalOptions{Merge: true, DiscardUnknown: true}).Unmarshal(largeFieldsData, buildPubSub.GetBuild()); err != nil {
 		return errors.Fmt("unmarshal build_large_fields failed: %w", err)
 	}
 	return nil
