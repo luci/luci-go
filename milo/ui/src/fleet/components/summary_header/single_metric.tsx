@@ -58,7 +58,6 @@ export function SingleMetric({
   const content = (
     <div
       css={{
-        marginRight: 'auto',
         padding: 8,
         display: 'flex',
         flexDirection: 'column',
@@ -95,11 +94,7 @@ export function SingleMetric({
   const isClickable = handleClick || filterUrl;
 
   return (
-    <div
-      css={{
-        marginRight: 'auto',
-      }}
-    >
+    <div>
       {isClickable ? (
         <Button
           variant="text"

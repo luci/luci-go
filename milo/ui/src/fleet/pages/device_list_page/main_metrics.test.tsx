@@ -73,7 +73,6 @@ describe('<MainMetrics />', () => {
         <MainMetrics
           countQuery={mockQuery(MOCK_DATA)}
           labstationsQuery={mockQuery(MOCK_DATA)}
-          needsDeployLabstationsQuery={mockQuery(MOCK_DATA)}
         />
       </FakeContextProvider>,
     );

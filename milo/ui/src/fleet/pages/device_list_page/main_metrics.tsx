@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { type CSSObject } from '@emotion/react';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
 import { Alert, Typography } from '@mui/material';
@@ -32,10 +33,18 @@ import {
 } from '../../components/filter_dropdown/search_param_utils/search_param_utils';
 import { SingleMetric } from '../../components/summary_header/single_metric';
 
-const HAS_RIGHT_SIBLING_STYLES = {
+const HAS_RIGHT_SIBLING_STYLES: CSSObject = {
   borderRight: `1px solid ${colors.grey[300]}`,
-  marginRight: 15,
-  paddingRight: 10,
+  marginRight: 16,
+  paddingRight: 8,
+};
+
+const METRIC_CONTAINER_STYLES: CSSObject = {
+  display: 'flex',
+  justifyContent: 'flex-start',
+  marginTop: 4,
+  flexWrap: 'wrap',
+  gap: 8,
 };
 
 // Recommended filters for finding all CrOS labstations. See: b/398911822#comment4
@@ -50,7 +59,6 @@ const LABSTATION_FILTERS: SelectedOptions = {
 interface MainMetricsProps {
   countQuery: UseQueryResult<CountDevicesResponse, unknown>;
   labstationsQuery: UseQueryResult<CountDevicesResponse, unknown>;
-  needsDeployLabstationsQuery: UseQueryResult<CountDevicesResponse, unknown>;
 }
 
 /**
@@ -60,7 +68,6 @@ interface MainMetricsProps {
 export function MainMetrics({
   countQuery,
   labstationsQuery,
-  needsDeployLabstationsQuery,
 }: MainMetricsProps) {
   const [searchParams, _] = useSyncedSearchParams();
 
@@ -73,17 +80,11 @@ export function MainMetrics({
   };
 
   const getContent = () => {
-    if (
-      countQuery.isError ||
-      labstationsQuery.isError ||
-      needsDeployLabstationsQuery.isError
-    ) {
+    if (countQuery.isError || labstationsQuery.isError) {
       return (
         <Alert severity="error">
           {getErrorMessage(
-            countQuery.error ||
-              labstationsQuery.error ||
-              needsDeployLabstationsQuery.error,
+            countQuery.error || labstationsQuery.error,
             'get the main metrics',
           )}
         </Alert>
@@ -94,7 +95,7 @@ export function MainMetrics({
       <div
         css={{
           display: 'flex',
-          maxWidth: 1100,
+          maxWidth: 1400,
         }}
       >
         <div
@@ -104,13 +105,7 @@ export function MainMetrics({
           }}
         >
           <Typography variant="subhead1">Total</Typography>
-          <div
-            css={{
-              display: 'flex',
-              justifyContent: 'space-around',
-              marginTop: 5,
-            }}
-          >
+          <div css={METRIC_CONTAINER_STYLES}>
             <SingleMetric
               name="Devices"
               value={countQuery.data?.total}
@@ -128,14 +123,7 @@ export function MainMetrics({
             <Typography variant="subhead1">Lease state</Typography>
             <LeaseStateInfo />
           </div>
-          <div
-            css={{
-              display: 'flex',
-              justifyContent: 'space-around',
-              marginTop: 5,
-              flexWrap: 'wrap',
-            }}
-          >
+          <div css={METRIC_CONTAINER_STYLES}>
             <SingleMetric
               name="Leased"
               value={countQuery.data?.taskState?.busy}
@@ -156,16 +144,9 @@ export function MainMetrics({
             />
           </div>
         </div>
-        <div css={{ ...HAS_RIGHT_SIBLING_STYLES, flexGrow: 1 }}>
+        <div css={{ ...HAS_RIGHT_SIBLING_STYLES, flexGrow: 2 }}>
           <Typography variant="subhead1">Device state</Typography>
-          <div
-            css={{
-              display: 'flex',
-              marginTop: 5,
-              marginLeft: 8,
-              flexWrap: 'wrap',
-            }}
-          >
+          <div css={METRIC_CONTAINER_STYLES}>
             <SingleMetric
               name="Ready"
               value={countQuery.data?.deviceState?.ready}
@@ -179,11 +160,6 @@ export function MainMetrics({
               name="Need repair"
               value={countQuery.data?.deviceState?.needRepair}
               total={countQuery.data?.total}
-              Icon={
-                <WarningIcon
-                  sx={{ color: colors.yellow[900], marginTop: '-2px' }}
-                />
-              }
               loading={countQuery.isPending}
               filterUrl={getFilterQueryString({
                 'labels.dut_state': ['needs_repair'],
@@ -193,10 +169,37 @@ export function MainMetrics({
               name="Repair failed"
               value={countQuery.data?.deviceState?.repairFailed}
               total={countQuery.data?.total}
-              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isPending}
               filterUrl={getFilterQueryString({
                 'labels.dut_state': ['repair_failed'],
+              })}
+            />
+            <SingleMetric
+              name="Needs deploy"
+              value={countQuery.data?.deviceState?.needsDeploy}
+              total={countQuery.data?.total}
+              Icon={
+                <WarningIcon
+                  sx={{ color: colors.yellow[900], marginTop: '-2px' }}
+                />
+              }
+              loading={countQuery.isPending}
+              filterUrl={getFilterQueryString({
+                'labels.dut_state': ['needs_deploy'],
+              })}
+            />
+            <SingleMetric
+              name="Needs replacement"
+              value={countQuery.data?.deviceState?.needsReplacement}
+              total={countQuery.data?.total}
+              Icon={
+                <WarningIcon
+                  sx={{ color: colors.yellow[900], marginTop: '-2px' }}
+                />
+              }
+              loading={countQuery.isPending}
+              filterUrl={getFilterQueryString({
+                'labels.dut_state': ['needs_replacement'],
               })}
             />
             <SingleMetric
@@ -211,16 +214,9 @@ export function MainMetrics({
             />
           </div>
         </div>
-        <div css={{ flexGrow: 1 }}>
+        <div css={{ flexGrow: 1.5 }}>
           <Typography variant="subhead1">Labstation state</Typography>
-          <div
-            css={{
-              display: 'flex',
-              marginTop: 5,
-              marginLeft: 8,
-              flexWrap: 'wrap',
-            }}
-          >
+          <div css={METRIC_CONTAINER_STYLES}>
             <SingleMetric
               name="Ready"
               value={labstationsQuery.data?.deviceState?.ready}
@@ -235,7 +231,6 @@ export function MainMetrics({
               name="Repair failed"
               value={labstationsQuery.data?.deviceState?.repairFailed}
               total={labstationsQuery.data?.total}
-              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={labstationsQuery.isPending}
               filterUrl={getFilterQueryString({
                 'labels.dut_state': ['repair_failed'],
@@ -244,10 +239,14 @@ export function MainMetrics({
             />
             <SingleMetric
               name="Needs deploy"
-              value={needsDeployLabstationsQuery.data?.total}
+              value={labstationsQuery.data?.deviceState?.needsDeploy}
               total={labstationsQuery.data?.total}
-              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
-              loading={needsDeployLabstationsQuery.isPending}
+              Icon={
+                <WarningIcon
+                  sx={{ color: colors.yellow[900], marginTop: '-2px' }}
+                />
+              }
+              loading={labstationsQuery.isPending}
               filterUrl={getFilterQueryString({
                 'labels.dut_state': ['needs_deploy'],
                 ...LABSTATION_FILTERS,
@@ -291,27 +290,7 @@ export function MainMetricsContainer({
     }),
   );
 
-  // TODO(b/398857588): remove this once needs_deploy is added to the device
-  // state counts.
-  // NOTE: Because we are using filters for needs_deploy and filters do not
-  // have AND support, there is a known issue where needs_deploy shows an
-  // incorrect count in the case when selectedOptions includes a
-  // labels.dut_state selection other than needs_deploy.
-  const needsDeployLabstationsQuery = useQuery(
-    client.CountDevices.query({
-      filter: stringifyFilters({
-        ...selectedOptions,
-        ...LABSTATION_FILTERS,
-        'labels.dut_state': ['needs_deploy'],
-      }),
-    }),
-  );
-
   return (
-    <MainMetrics
-      countQuery={countQuery}
-      labstationsQuery={labstationsQuery}
-      needsDeployLabstationsQuery={needsDeployLabstationsQuery}
-    />
+    <MainMetrics countQuery={countQuery} labstationsQuery={labstationsQuery} />
   );
 }
