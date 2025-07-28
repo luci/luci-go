@@ -14,12 +14,65 @@
 
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { ListItemIcon, MenuItem, Typography } from '@mui/material';
-import Popover from '@mui/material/Popover';
-import { GridColumnMenuItemProps } from '@mui/x-data-grid';
-import { useState } from 'react';
+import { GridColumnMenuItemProps, useGridApiContext } from '@mui/x-data-grid';
+import { useEffect, useState } from 'react';
 
-export function FilterItem(_props: GridColumnMenuItemProps) {
+import { OptionsDropdown } from '@/fleet/components/options_dropdown';
+import { OptionValue } from '@/fleet/types/option';
+import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+
+import { useDeviceDimensions } from '../../pages/device_list_page/use_device_dimensions';
+import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';
+import { OptionsMenu } from '../filter_dropdown/options_menu';
+import {
+  filtersUpdater,
+  getFilters,
+} from '../filter_dropdown/search_param_utils/search_param_utils';
+
+const getDimensionInfo = (
+  dimensionsData: GetDeviceDimensionsResponse,
+  field: string,
+): { dimensionValues: readonly string[]; filterKey: string } | null => {
+  if (dimensionsData.baseDimensions[field]) {
+    return {
+      dimensionValues: dimensionsData.baseDimensions[field].values,
+      filterKey: field,
+    };
+  }
+  if (dimensionsData.labels[field]) {
+    return {
+      dimensionValues: dimensionsData.labels[field].values,
+      filterKey: `labels.${field}`,
+    };
+  }
+  return null;
+};
+
+export function FilterItem(props: GridColumnMenuItemProps) {
+  const apiRef = useGridApiContext();
+  const { colDef } = props;
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const { data: dimensionsData, isLoading } = useDeviceDimensions();
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+
+  const dimensionInfo = dimensionsData
+    ? getDimensionInfo(dimensionsData, colDef.field)
+    : null;
+  const isFilterable = !!dimensionInfo;
+  const filterKey = dimensionInfo?.filterKey;
+
+  const [selectedValues, setSelectedValues] = useState<Set<string>>(new Set());
+
+  const open = Boolean(anchorEl);
+
+  useEffect(() => {
+    if (open && filterKey) {
+      const existingFilters = getFilters(searchParams).filters || {};
+      setSelectedValues(new Set(existingFilters[filterKey] || []));
+    }
+  }, [open, filterKey, searchParams]);
 
   const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -27,18 +80,52 @@ export function FilterItem(_props: GridColumnMenuItemProps) {
 
   const handleClose = () => {
     setAnchorEl(null);
+    // Close the parent column menu.
+    apiRef.current.hideColumnMenu();
   };
 
-  const open = Boolean(anchorEl);
+  const handleApply = () => {
+    if (!filterKey) return;
+    const existingFilters = getFilters(searchParams).filters || {};
+    const newFilters = {
+      ...existingFilters,
+      [filterKey]: Array.from(selectedValues),
+    };
+
+    if (selectedValues.size === 0) {
+      delete newFilters[filterKey];
+    }
+
+    setSearchParams(filtersUpdater(newFilters));
+    handleClose();
+  };
+
+  const handleReset = () => {
+    setSelectedValues(new Set());
+  };
+
+  const flipOption = (value: string) => {
+    const newSelectedValues = new Set(selectedValues);
+    if (newSelectedValues.has(value)) {
+      newSelectedValues.delete(value);
+    } else {
+      newSelectedValues.add(value);
+    }
+    setSelectedValues(newSelectedValues);
+  };
+
+  const options: OptionValue[] =
+    dimensionInfo?.dimensionValues.map((v) => ({ value: v, label: v })) || [];
+
   return (
     <div>
-      <MenuItem onClick={handleOpen}>
+      <MenuItem onClick={handleOpen} disabled={!isFilterable}>
         <ListItemIcon>
           <FilterListIcon fontSize="small" />
         </ListItemIcon>
         <Typography variant="inherit">Filter</Typography>
       </MenuItem>
-      <Popover
+      <OptionsDropdown
         open={open}
         anchorEl={anchorEl}
         onClose={handleClose}
@@ -46,9 +133,28 @@ export function FilterItem(_props: GridColumnMenuItemProps) {
           vertical: 'bottom',
           horizontal: 'left',
         }}
-      >
-        <p>Filter options will be here.</p>
-      </Popover>
+        enableSearchInput={true}
+        maxHeight={500}
+        onResetClick={handleReset}
+        footerButtons={['reset', 'cancel', 'apply']}
+        onApply={handleApply}
+        renderChild={(searchQuery) => {
+          if (isLoading) {
+            return <MenuSkeleton itemCount={10} maxHeight={400} />;
+          }
+          if (!dimensionInfo) {
+            return null;
+          }
+          const sortedOptions = fuzzySort(searchQuery)(options, (x) => x.label);
+          return (
+            <OptionsMenu
+              elements={sortedOptions}
+              selectedElements={selectedValues}
+              flipOption={flipOption}
+            />
+          );
+        }}
+      />
     </div>
   );
 }
