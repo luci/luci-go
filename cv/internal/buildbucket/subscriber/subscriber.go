@@ -71,27 +71,31 @@ func (bs *BuildbucketSubscriber) ProcessPubSubMessage(ctx context.Context, paylo
 	case hostname == "":
 		return errors.Fmt("build %d has no hostname", buildID)
 	}
+	ctx = logging.SetFields(ctx, logging.Fields{"build": buildID})
 	logging.Infof(ctx, "Received Buildbucket event for build %d in host %s", buildID, hostname)
 	eid, err := tryjob.BuildbucketID(hostname, buildID)
 	if err != nil {
 		return err
 	}
-	switch id, err := eid.Resolve(ctx); {
+
+	id, err := eid.Resolve(ctx)
+	switch {
 	case err != nil:
 		return err
 	case id == 0:
 		logging.Infof(ctx, "Build is not tracked by LUCI CV")
 		return nil
-	case buildPubSub.GetBuildLargeFieldsDropped():
-		logging.Infof(ctx, "Build has large fields dropped, schedule a task to update tryjob %d", id)
-		return bs.TryjobNotifier.ScheduleUpdate(ctx, id, eid)
-	default:
-		logging.Infof(ctx, "Updating tryjob %d directly", id)
-		if err := recoverLargeFields(buildPubSub); err != nil {
-			return errors.Fmt("failed to recover large fields for build %d: %w", buildID, err)
-		}
-		return bs.TryjobUpdater.Update(ctx, eid, build)
 	}
+	ctx = logging.SetFields(ctx, logging.Fields{"tryjob": id})
+	if buildPubSub.GetBuildLargeFieldsDropped() {
+		logging.Infof(ctx, "Build has large fields dropped, schedule a task to update the tryjob")
+		return bs.TryjobNotifier.ScheduleUpdate(ctx, id, eid)
+	}
+	logging.Infof(ctx, "Updating the tryjob directly")
+	if err := recoverLargeFields(buildPubSub); err != nil {
+		return errors.Fmt("failed to recover large fields for build %d: %w", buildID, err)
+	}
+	return bs.TryjobUpdater.Update(ctx, eid, build)
 }
 
 // parseBuildPubSub parses Buildbucket pubsub message data.
