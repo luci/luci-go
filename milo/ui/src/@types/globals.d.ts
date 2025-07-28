@@ -100,6 +100,7 @@ declare const SETTINGS: {
     // To store all trigger IDs for different HaTS surveys on the test investigate page.
     readonly hatsPositiveRecs: HaTSConfig;
     readonly hatsNegativeRecs: HaTSConfig;
+    readonly hatsCUJ: HaTSConfig;
   };
 };
 

@@ -124,6 +124,15 @@ export function getLocalDevSettingsJs(env: Record<string, string | undefined>) {
           assertNonNullable(env['VITE_INVESTIGATE_HATS_PRODUCT_ID']),
         ),
       },
+      hatsCUJ: {
+        apiKey: assertNonNullable(env['VITE_INVESTIGATE_HATS_API_KEY']),
+        triggerId: assertNonNullable(
+          env['VITE_INVESTIGATE_HATS_CUJ_TRIGGER_ID'],
+        ),
+        productId: Number(
+          assertNonNullable(env['VITE_INVESTIGATE_HATS_PRODUCT_ID']),
+        ),
+      },
     },
   };
 

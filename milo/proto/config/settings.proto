@@ -173,6 +173,7 @@ message Settings {
     // HaTS configuration for recommendations section.
     HaTSConfig hats_positive_recs = 1;
     HaTSConfig hats_negative_recs = 2;
+    HaTSConfig hats_cuj = 3;
   }
   TestInvestigate test_investigate = 18;
 }

@@ -133,6 +133,15 @@ serverInjectedVars.SETTINGS = Object.freeze({
         assertNonNullable(process.env['VITE_INVESTIGATE_HATS_PRODUCT_ID']),
       ),
     },
+    hatsCUJ: {
+      apiKey: assertNonNullable(process.env['VITE_INVESTIGATE_HATS_API_KEY']),
+      triggerId: assertNonNullable(
+        process.env['VITE_INVESTIGATE_HATS_CUJ_TRIGGER_ID'],
+      ),
+      productId: Number(
+        assertNonNullable(process.env['VITE_INVESTIGATE_HATS_PRODUCT_ID']),
+      ),
+    },
   },
 });
 

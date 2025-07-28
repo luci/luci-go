@@ -25,6 +25,7 @@ import { useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
+import { useAuthState } from '@/common/components/auth_state_provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   useDeclarePageId,
@@ -38,6 +39,7 @@ import { UiPage } from '@/common/constants/view';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { gm3PageTheme } from '@/common/themes/gm3_theme';
 import { OutputTestVerdict } from '@/common/types/verdict';
+import { requestSurvey } from '@/fleet/utils/survey';
 import {
   TrackLeafRoutePageView,
   useGoogleAnalytics,
@@ -68,7 +70,7 @@ export function TestInvestigatePage() {
     testId: string;
     variantHash: string;
   }>();
-
+  const authState = useAuthState();
   const resultDbClient = useResultDbClient();
 
   if (!rawInvocationId || !rawTestId || !rawVariantHash) {
@@ -147,6 +149,11 @@ export function TestInvestigatePage() {
       });
     }
   }, [invocation, testVariant, project, trackEvent]);
+
+  useEffect(() => {
+    // Trigger HaTs survey on first page load.
+    requestSurvey(SETTINGS.testInvestigate.hatsCUJ, authState);
+  }, [authState]);
 
   if (isLoadingInvocation || isLoadingTestVariant) {
     return (
