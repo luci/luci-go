@@ -15,7 +15,14 @@
 package resultpb
 
 // UpdateTokenMetadataKey is the metadata.MD key for the secret update token
-// required to mutate an invocation.
-// It is returned by CreateInvocation RPC in response header metadata,
-// and is required by all RPCs mutating an invocation.
+// required to mutate a root invocation, work unit or invocation.
+// It is returned by CreateRootInvocation, CreateWorkUnit and CreateInvocation
+// RPCs in response header metadata, and is required by all RPCs mutating a
+// root invocation, work unit or invocation.
 const UpdateTokenMetadataKey = "update-token"
+
+// InclusionTokenMetadataKey is the metadata.MD key for the secret inclusion token
+// required to include a work unit into another work unit.
+// It is returned by DelegateWorkUnitInclusion RPC in response header metadata,
+// and is an alternative to providing an "update-token" to CreateWorkUnit RPC.
+const InclusionTokenMetadataKey = "inclusion-token"

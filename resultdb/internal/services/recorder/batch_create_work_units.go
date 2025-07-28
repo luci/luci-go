@@ -65,7 +65,7 @@ func (s *recorderServer) BatchCreateWorkUnits(ctx context.Context, in *pb.BatchC
 	workUnits := make([]*pb.WorkUnit, len(in.Requests))
 	updateTokens := make([]string, len(in.Requests))
 	for i, id := range ids {
-		token, err := generateWorkUnitToken(ctx, id)
+		token, err := generateWorkUnitUpdateToken(ctx, id)
 		if err != nil {
 			return nil, err
 		}
@@ -197,7 +197,7 @@ func mutateWorkUnitsForCreate(ctx context.Context, parentIDs []workunits.ID, new
 	}
 
 	// We have already check all parentIDs have the same update token, so we just need to check against one of them.
-	if err := validateWorkUnitToken(ctx, token, parentIDs[0]); err != nil {
+	if err := validateWorkUnitUpdateToken(ctx, token, parentIDs[0]); err != nil {
 		return time.Time{}, appstatus.Errorf(codes.PermissionDenied, "invalid update token")
 	}
 
@@ -333,9 +333,9 @@ func extractWorkUnitIDFromRequest(r *pb.CreateWorkUnitRequest) workunits.ID {
 
 // validate only a single update token is required.
 func validateSameUpdateTokenState(parents []workunits.ID) error {
-	s := workUnitTokenState(parents[0])
+	s := workUnitUpdateTokenState(parents[0])
 	for i, p := range parents {
-		if s != workUnitTokenState(p) {
+		if s != workUnitUpdateTokenState(p) {
 			return errors.Fmt("requests[%d]: parent %q requires a different update token to requests[0].parent %q, but this RPC only accepts one update token", i, p.Name(), parents[0].Name())
 		}
 	}

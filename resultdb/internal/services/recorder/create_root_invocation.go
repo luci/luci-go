@@ -94,7 +94,7 @@ func (s *recorderServer) CreateRootInvocation(ctx context.Context, in *pb.Create
 
 	// RootInvocation and root work unit share the same update token.
 	// Use the update token generated from root work unit id.
-	token, err := generateWorkUnitToken(ctx, workUnitID)
+	token, err := generateWorkUnitUpdateToken(ctx, workUnitID)
 	if err != nil {
 		return nil, err
 	}

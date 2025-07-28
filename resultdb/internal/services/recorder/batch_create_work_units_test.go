@@ -19,9 +19,9 @@ import (
 	"testing"
 
 	"cloud.google.com/go/spanner"
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -297,7 +297,7 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 		testutil.MustApply(ctx, t, insert.WorkUnit(parentWu)...)
 
 		// Generate an update token for the parent work unit.
-		parentUpdateToken, err := generateWorkUnitToken(ctx, parentWorkUnitID)
+		parentUpdateToken, err := generateWorkUnitUpdateToken(ctx, parentWorkUnitID)
 		assert.Loosely(t, err, should.BeNil)
 		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, parentUpdateToken))
 
@@ -543,9 +543,9 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			}
 
 			// Expected update token
-			workUnitID11ExpectedUpdateToken, err := generateWorkUnitToken(ctx, workUnitID11)
+			workUnitID11ExpectedUpdateToken, err := generateWorkUnitUpdateToken(ctx, workUnitID11)
 			assert.Loosely(t, err, should.BeNil)
-			workUnitID2ExpectedUpdateToken, err := generateWorkUnitToken(ctx, workUnitID2)
+			workUnitID2ExpectedUpdateToken, err := generateWorkUnitUpdateToken(ctx, workUnitID2)
 			assert.Loosely(t, err, should.BeNil)
 
 			res, err := recorder.BatchCreateWorkUnits(ctx, req)

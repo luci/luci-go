@@ -508,13 +508,14 @@ message BatchFinalizeWorkUnitsResponse {
   repeated WorkUnit work_units = 1;
 }
 
-// Mints an 'inclusion token' that proves the current caller has permission to
+// Mints an inclusion token that proves the current caller has permission to
 // include work units from a given realm. The minted inclusion token can be
 // passed to another caller/system and used in CreateWorkUnit to include
 // child work units into the parent work unit.
 //
-// The token returned by this RPC is called an 'inclusion token' and is a
-// replacement to the update token that is otherwise required by CreateWorkUnit.
+// The token returned by this RPC is in a response header metadata key
+// named "inclusion-token" and is a replacement to the update token that
+// is otherwise required by CreateWorkUnit.
 //
 // Purpose:
 //
@@ -565,8 +566,8 @@ message DelegateWorkUnitInclusionRequest {
 
 // A response message for DelegateWorkUnitInclusion RPC.
 message DelegateWorkUnitInclusionResponse {
-  // The inclusion token is included in a response header named "inclusion-token".
-  // It is not included in the response directly to minimise the risk of
+  // The response header contains a metadata key named "inclusion-token".
+  // The token is not included in the response body to minimise the risk of
   // accidentally logging this secret data.
 }
 

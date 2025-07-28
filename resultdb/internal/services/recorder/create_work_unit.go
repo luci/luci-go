@@ -66,7 +66,7 @@ func (s *recorderServer) CreateWorkUnit(ctx context.Context, in *pb.CreateWorkUn
 	if err != nil {
 		return nil, err
 	}
-	token, err := generateWorkUnitToken(ctx, wuID)
+	token, err := generateWorkUnitUpdateToken(ctx, wuID)
 	if err != nil {
 		return nil, err
 	}
@@ -159,43 +159,44 @@ func deduplicateCreateWorkUnit(ctx context.Context, id workunits.ID, requestID, 
 	return true, nil
 }
 
-// workUnitTokenKind generates and validates tokens issued to authorize
+// workUnitUpdateTokenKind generates and validates tokens issued to authorize
 // updating a given work unit or root invocation.
-var workUnitTokenKind = tokens.TokenKind{
-	Algo:      tokens.TokenAlgoHmacSHA256,
-	SecretKey: "work_unit_tokens_secret",
+var workUnitUpdateTokenKind = tokens.TokenKind{
+	Algo: tokens.TokenAlgoHmacSHA256,
+	// The actual secret is derived by mixing the root secret with this key.
+	SecretKey: "work_unit_update_token_secret",
 	Version:   1,
 }
 
-// generateWorkUnitToken generates an update token for a given work unit or root invocation.
-func generateWorkUnitToken(ctx context.Context, id workunits.ID) (string, error) {
-	// The token should last as long as a build is allowed to run.
-	// Buildbucket has a max of 2 days, so one week should be enough even
-	// for other use cases.
-	return workUnitTokenKind.Generate(ctx, []byte(workUnitTokenState(id)), nil, 7*day) // One week.
+// generateWorkUnitUpdateToken generates an update token for a given work unit or root invocation.
+func generateWorkUnitUpdateToken(ctx context.Context, id workunits.ID) (string, error) {
+	// The token should last at least as long as a work unit is allowed to remain active.
+	// Add one day to give some margin, so that "invocation is not active" errors
+	// will occur for a while before invalid token errors.
+	return workUnitUpdateTokenKind.Generate(ctx, []byte(workUnitUpdateTokenState(id)), nil, maxDeadlineDuration+day)
 }
 
-// validateWorkUnitToken validates an update token for a work unit or root invocation.
+// validateWorkUnitUpdateToken validates an update token for a work unit or root invocation.
 //
 // For a root invocation, use the ID of its corresponding root work unit
 // (WorkUnitID: "root"), as they share the same update token.
 // Returns an error if the token is invalid, nil otherwise.
-func validateWorkUnitToken(ctx context.Context, token string, id workunits.ID) error {
-	_, err := workUnitTokenKind.Validate(ctx, token, []byte(workUnitTokenState(id)))
+func validateWorkUnitUpdateToken(ctx context.Context, token string, id workunits.ID) error {
+	_, err := workUnitUpdateTokenKind.Validate(ctx, token, []byte(workUnitUpdateTokenState(id)))
 	return err
 }
 
-func workUnitTokenState(id workunits.ID) string {
+func workUnitUpdateTokenState(id workunits.ID) string {
 	// A work unit can share an update token with an ancestor by using a prefixed ID
 	// format: "ancestorID:suffix". For example, a work unit with ID "wu0:s1" is
 	// should have the same update token as the work unit "wu0".
 	prefix, ok := workUnitIDPrefix(id.WorkUnitID)
 	if ok {
 		// Use %q instead of %s which convert string to escaped Go string literal.
-		// If we ever let these invocation IDs use colons, this make sure the input is unique.
-		return fmt.Sprintf("%q:%q", id.RootInvocationID, prefix)
+		// If we ever let these IDs use semicolons, this makes sure the input is unique.
+		return fmt.Sprintf("%q;%q", id.RootInvocationID, prefix)
 	} else {
-		return fmt.Sprintf("%q:%q", id.RootInvocationID, id.WorkUnitID)
+		return fmt.Sprintf("%q;%q", id.RootInvocationID, id.WorkUnitID)
 	}
 }
 
@@ -223,7 +224,7 @@ func mutateWorkUnit(ctx context.Context, id workunits.ID, f func(context.Context
 	if err != nil {
 		return time.Time{}, err
 	}
-	if err := validateWorkUnitToken(ctx, token, id); err != nil {
+	if err := validateWorkUnitUpdateToken(ctx, token, id); err != nil {
 		return time.Time{}, appstatus.Errorf(codes.PermissionDenied, "invalid update token")
 	}
 	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {

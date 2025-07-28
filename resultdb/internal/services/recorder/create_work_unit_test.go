@@ -21,10 +21,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -472,11 +472,11 @@ func TestWorkUnitToken(t *testing.T) {
 					RootInvocationID: "root-inv-id",
 					WorkUnitID:       "work-unit-id",
 				}
-				token, err := generateWorkUnitToken(ctx, id)
+				token, err := generateWorkUnitUpdateToken(ctx, id)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, token, should.NotBeEmpty)
 
-				err = validateWorkUnitToken(ctx, token, id)
+				err = validateWorkUnitUpdateToken(ctx, token, id)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run("work unit ID prefixed", func(t *ftt.Test) {
@@ -484,12 +484,12 @@ func TestWorkUnitToken(t *testing.T) {
 					RootInvocationID: "root-inv-id",
 					WorkUnitID:       "base:a2",
 				}
-				token, err := generateWorkUnitToken(ctx, idWithPrefix)
+				token, err := generateWorkUnitUpdateToken(ctx, idWithPrefix)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, token, should.NotBeEmpty)
 
 				idWithPrefix.WorkUnitID = "base:a1"
-				err = validateWorkUnitToken(ctx, token, idWithPrefix)
+				err = validateWorkUnitUpdateToken(ctx, token, idWithPrefix)
 				assert.Loosely(t, err, should.BeNil)
 			})
 		})
@@ -499,14 +499,14 @@ func TestWorkUnitToken(t *testing.T) {
 					RootInvocationID: "root-inv-id",
 					WorkUnitID:       "work-unit-id",
 				}
-				assert.Loosely(t, workUnitTokenState(id), should.Equal(`"root-inv-id":"work-unit-id"`))
+				assert.Loosely(t, workUnitUpdateTokenState(id), should.Equal(`"root-inv-id";"work-unit-id"`))
 			})
 			t.Run("work unit ID prefixed", func(t *ftt.Test) {
 				id := workunits.ID{
 					RootInvocationID: "root-inv-id",
 					WorkUnitID:       "base:a2",
 				}
-				assert.Loosely(t, workUnitTokenState(id), should.Equal(`"root-inv-id":"base"`))
+				assert.Loosely(t, workUnitUpdateTokenState(id), should.Equal(`"root-inv-id";"base"`))
 			})
 		})
 	})
@@ -555,7 +555,7 @@ func TestCreateWorkUnit(t *testing.T) {
 		testutil.MustApply(ctx, t, insert.WorkUnit(parentWu)...)
 
 		// Generate an update token for the parent work unit.
-		parentUpdateToken, err := generateWorkUnitToken(ctx, parentWorkUnitID)
+		parentUpdateToken, err := generateWorkUnitUpdateToken(ctx, parentWorkUnitID)
 		assert.Loosely(t, err, should.BeNil)
 		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, parentUpdateToken))
 

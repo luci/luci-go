@@ -955,13 +955,14 @@ func (x *BatchFinalizeWorkUnitsResponse) GetWorkUnits() []*WorkUnit {
 	return nil
 }
 
-// Mints an 'inclusion token' that proves the current caller has permission to
+// Mints an inclusion token that proves the current caller has permission to
 // include work units from a given realm. The minted inclusion token can be
 // passed to another caller/system and used in CreateWorkUnit to include
 // child work units into the parent work unit.
 //
-// The token returned by this RPC is called an 'inclusion token' and is a
-// replacement to the update token that is otherwise required by CreateWorkUnit.
+// The token returned by this RPC is in a response header metadata key
+// named "inclusion-token" and is a replacement to the update token that
+// is otherwise required by CreateWorkUnit.
 //
 // Purpose:
 //
