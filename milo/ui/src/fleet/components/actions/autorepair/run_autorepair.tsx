@@ -43,15 +43,21 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
   const validDuts = selectedDuts.filter(
     (selectedDut) =>
       selectedDut.state &&
-      DutStatusesNotEligibleForAutorepair.includes(selectedDut.state) === false,
+      !DutStatusesNotEligibleForAutorepair.includes(
+        selectedDut.state.toLowerCase(),
+      ) &&
+      !selectedDut.name.includes('-clank'),
   );
 
   // User may select invalid DUTs for autorepair
   // and should be warned that autorepair won't be executed for them.
   const invalidDuts = selectedDuts.filter(
     (selectedDut) =>
-      selectedDut.state &&
-      DutStatusesNotEligibleForAutorepair.includes(selectedDut.state) === true,
+      !selectedDut.state ||
+      DutStatusesNotEligibleForAutorepair.includes(
+        selectedDut.state.toLowerCase(),
+      ) ||
+      selectedDut.name.includes('-clank'),
   );
 
   // First, give users a modal to confirm if they want autorepair or not.

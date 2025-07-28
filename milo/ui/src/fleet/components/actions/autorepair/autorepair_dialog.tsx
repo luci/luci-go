@@ -91,8 +91,8 @@ export default function AutorepairDialog({
           <>
             <Alert severity="error" sx={{ mt: 1 }}>
               For the following devices autorepair will not be executed, as they
-              are in a <code>ready</code> and/or <code>needs_repair</code>{' '}
-              state:
+              are in a <code>ready</code> and/or <code>needs_repair</code> state
+              or clank devices:
               <ul>
                 {invalidDutNames?.map((dutName) =>
                   getDeviceDetailListItem(dutName),
