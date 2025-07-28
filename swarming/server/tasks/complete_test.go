@@ -396,7 +396,6 @@ func TestCompleteOp(t *testing.T) {
 				trr := ents.trr
 				assert.NoErr(t, datastore.Get(ctx, trr))
 				assert.That(t, trr.Killing, should.BeFalse)
-
 			})
 
 			t.Run("killed", func(t *ftt.Test) {

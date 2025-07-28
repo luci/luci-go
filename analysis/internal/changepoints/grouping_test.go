@@ -60,7 +60,6 @@ func TestGroupChangepoints(t *testing.T) {
 
 func TestStartOfWeek(t *testing.T) {
 	ftt.Run("TestStartOfWeek", t, func(t *ftt.Test) {
-
 		week := StartOfWeek(time.Date(2024, 9, 14, 0, 0, 0, 0, time.UTC))
 		expected := time.Date(2024, 9, 8, 0, 0, 0, 0, time.UTC)
 		assert.That(t, week, should.Match(expected))
@@ -82,7 +81,6 @@ func TestStartOfWeek(t *testing.T) {
 
 		week = StartOfWeek(time.Date(2024, 9, 8, 0, 0, 0, 0, time.UTC))
 		assert.That(t, week, should.Match(expected))
-
 	})
 }
 

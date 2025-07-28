@@ -63,7 +63,6 @@ func TestChannelConstruction(t *testing.T) {
 		defer cancel()
 
 		t.Run(`construction`, func(t *ftt.Test) {
-
 			t.Run(`success`, func(t *ftt.Test) {
 				ch, err := NewChannel(ctx, &Options[string]{testingDbg: dbg}, dummySendFn)
 				assert.Loosely(t, err, should.BeNil)
@@ -93,11 +92,8 @@ func TestChannelConstruction(t *testing.T) {
 					assert.Loosely(t, err, should.ErrLike("allocating Buffer"))
 				})
 			})
-
 		})
-
 	})
-
 }
 
 func TestSerialSenderWithoutDrops(t *testing.T) {
@@ -165,7 +161,6 @@ func TestSerialSenderWithoutDrops(t *testing.T) {
 				"is", "a", "test.", "This",
 			}))
 		})
-
 	})
 }
 

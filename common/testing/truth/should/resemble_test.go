@@ -213,5 +213,4 @@ func TestResembleTypeWalking(t *testing.T) {
 			reflect.TypeFor[struct{ Struct *structpb.Struct }](): 0,
 		},
 	}))
-
 }

@@ -112,6 +112,5 @@ func TestMemory(t *testing.T) {
 			}))
 			assert.Loosely(t, outStream.StreamType(), should.Equal(logpb.StreamType_DATAGRAM))
 		})
-
 	})
 }

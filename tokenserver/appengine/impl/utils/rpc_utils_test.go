@@ -40,7 +40,6 @@ func TestRpcUtils(t *testing.T) {
 	ctx := gaetesting.TestingContext()
 
 	ftt.Run("validateRequest works", t, func(t *ftt.Test) {
-
 		t.Run("empty fields", func(t *ftt.Test) {
 			req := &minter.MintProjectTokenRequest{
 				LuciProject:         "",
@@ -95,7 +94,6 @@ func TestRpcUtils(t *testing.T) {
 		})
 
 		t.Run("empty scopes", func(t *ftt.Test) {
-
 			req := &minter.MintProjectTokenRequest{
 				LuciProject:         "foo-project",
 				OauthScope:          []string{},

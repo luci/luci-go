@@ -27,7 +27,6 @@ func TestLogStreamEncoding(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run(`Testing log stream key encode/decode`, t, func(t *ftt.Test) {
-
 		t.Run(`Will encode "quux" into "Key_cXV1eA~~".`, func(t *ftt.Test) {
 			// Note that we test a key whose length is not a multiple of 3 so that we
 			// can assert that the padding is correct, too.

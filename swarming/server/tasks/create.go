@@ -270,7 +270,6 @@ func (m *managerImpl) CreateTask(ctx context.Context, c *CreationOp) (*CreatedTa
 		if trs.State != apipb.TaskState_PENDING {
 			if err := notifications.SendOnTaskUpdate(ctx, m.disp, tr, trs); err != nil {
 				return errors.Fmt("failed to enqueue pubsub notification cloud tasks for creating task %s: %w", taskID, err)
-
 			}
 		}
 		return datastore.Put(ctx, toPut...)

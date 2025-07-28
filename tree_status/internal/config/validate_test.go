@@ -86,6 +86,5 @@ func TestValidateConfig(t *testing.T) {
 			err := validateCfg(cfg)
 			assert.Loosely(t, err, should.BeNil)
 		})
-
 	})
 }

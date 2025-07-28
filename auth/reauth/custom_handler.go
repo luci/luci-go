@@ -264,5 +264,3 @@ func PluginDecodeStream(r io.Reader, v any) error {
 	}
 	return nil
 }
-
-

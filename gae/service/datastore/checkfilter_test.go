@@ -142,7 +142,6 @@ func TestCheckFilter(t *testing.T) {
 			}, should.Panic)
 			assert.Loosely(t, hit, should.BeFalse)
 		})
-
 	})
 
 	ftt.Run("Test context done", t, func(t *ftt.Test) {

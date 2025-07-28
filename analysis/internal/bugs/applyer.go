@@ -288,7 +288,6 @@ func (p PolicyApplyer) PreparePriorityAndVerifiedChange(opts BugOptions, uiBaseU
 			return BugChange{}, errors.New("logic error: no priority/verified change being made in a section of code expecting one")
 		}
 	} else {
-
 		// Otherwise, the recent changes to active policies do not explain the change in priority / verification.
 		// We should justify the bug priority from first principles, based on the policies which are active now.
 
@@ -388,7 +387,6 @@ func sortPoliciesByDescendingPriority(policies []*configpb.BugManagementPolicy) 
 }
 
 func (p PolicyApplyer) problemsDescription(activatedPolicyIDs map[PolicyID]struct{}) string {
-
 	var policyHumanNames []string
 	for _, p := range p.policiesByDescendingPriority {
 		if _, isActive := activatedPolicyIDs[PolicyID(p.Id)]; isActive {

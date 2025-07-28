@@ -67,7 +67,6 @@ func (mv *mockValidator) Examine(ctx context.Context, cs config.Set, files []val
 		return nil, mv.examineErr
 	}
 	return mv.examineResult, nil
-
 }
 
 func (mv *mockValidator) Validate(ctx context.Context, cs config.Set, files []validation.File) (*cfgcommonpb.ValidationResult, error) {
@@ -76,7 +75,6 @@ func (mv *mockValidator) Validate(ctx context.Context, cs config.Set, files []va
 		return nil, mv.validateErr
 	}
 	return mv.validateResult, nil
-
 }
 
 func TestValidate(t *testing.T) {

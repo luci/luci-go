@@ -395,7 +395,6 @@ func updateAttempts(exec *tryjob.ExecutionState_Execution, tryjobsByIDs map[comm
 		}
 	}
 	return latestAttemptUpdated
-
 }
 
 // hasExecutionStateEnded returns whether the status of ExecutionState is final.

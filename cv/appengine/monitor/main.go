@@ -44,7 +44,6 @@ const (
 )
 
 func main() {
-
 	modules := []module.Module{
 		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),

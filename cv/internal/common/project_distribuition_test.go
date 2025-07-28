@@ -29,7 +29,6 @@ func TestProjectOffset(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("DistributeOffset forms uniformish distribution", t, func(t *ftt.Test) {
-
 		testIntervalOf100x := func(d time.Duration) {
 			t.Run((100 * d).String(), func(t *ftt.Test) {
 				offsets := make([]time.Duration, 101)

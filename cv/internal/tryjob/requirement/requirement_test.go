@@ -517,7 +517,6 @@ func TestCompute(t *testing.T) {
 					in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "luci.test-proj.test.bucket:builder2")
 					check(t)
 				})
-
 			})
 		})
 
@@ -597,7 +596,6 @@ func TestCompute(t *testing.T) {
 					}
 					check(t)
 				})
-
 			})
 		})
 
@@ -654,7 +652,6 @@ func TestCompute(t *testing.T) {
 					assert.That(t, res.OK(), should.BeTrue)
 					assert.Loosely(t, res.Requirement.GetDefinitions(), should.BeEmpty)
 				})
-
 			})
 		})
 		t.Run("optional", func(t *ftt.Test) {

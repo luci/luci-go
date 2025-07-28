@@ -121,7 +121,6 @@ func (c ClusterID) IsTestNameCluster() bool {
 // of the failure reason clustering algorithm.
 func (c ClusterID) IsFailureReasonCluster() bool {
 	return strings.HasPrefix(c.Algorithm, FailureReasonAlgorithmPrefix)
-
 }
 
 // SortClusters sorts the given clusters in ascending algorithm and then ID

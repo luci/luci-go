@@ -45,5 +45,4 @@ func TestCancelTasksParse(t *testing.T) {
 	ftt.Run(`Make sure that tag is specified when limit is greater than default limit.`, t, func(t *ftt.Test) {
 		expectErr([]string{"-limit", "500"}, "cannot be larger than")
 	})
-
 }

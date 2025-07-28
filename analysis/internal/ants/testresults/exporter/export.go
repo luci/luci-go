@@ -53,7 +53,6 @@ type ExportOptions struct {
 
 // Export exports the given test results to BigQuery.
 func (e *Exporter) Export(ctx context.Context, testVariants []*rdbpb.TestVariant, opts ExportOptions) error {
-
 	exportRow, err := prepareExportRow(testVariants, opts)
 	if err != nil {
 		return errors.Fmt("prepare row: %w", err)
@@ -67,7 +66,6 @@ func (e *Exporter) Export(ctx context.Context, testVariants []*rdbpb.TestVariant
 
 // prepareExportRow prepares a BigQuery export rows.
 func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqpb.AntsTestResultRow, error) {
-
 	invocationID, err := rdbpbutil.ParseInvocationName(opts.Invocation.Name)
 	if err != nil {
 		return nil, errors.Fmt("invalid invocation name %q: %w", invocationID, err)
@@ -77,7 +75,6 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqp
 	results := make([]*bqpb.AntsTestResultRow, 0, len(verdicts)*2)
 
 	for _, tv := range verdicts {
-
 		testIDStructured, err := bqutil.StructuredTestIdentifierRDB(tv.TestId, tv.Variant)
 		if err != nil {
 			return nil, errors.Fmt("test_id_structured: %w", err)

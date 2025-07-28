@@ -34,7 +34,6 @@ func TestRead(t *testing.T) {
 			_, err := Read(span.Single(ctx), "chromium", "try:linux-rel")
 			assert.Loosely(t, err, should.ErrLike(NotFound))
 		})
-
 	})
 
 	ftt.Run(`Valid`, t, func(t *ftt.Test) {

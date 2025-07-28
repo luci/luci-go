@@ -233,7 +233,6 @@ func TestQuery(t *testing.T) {
 				"invocations/inv1/artifacts/a",
 				"invocations/inv1/tests/t2/results/0/artifacts/a",
 			}))
-
 		})
 
 		t.Run(`Variant equals`, func(t *ftt.Test) {

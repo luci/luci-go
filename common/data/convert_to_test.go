@@ -189,7 +189,6 @@ func TestNilConversion(t *testing.T) {
 	if val, ok := LosslessConvertTo[func()](nil); !ok || val != nil {
 		t.Errorf("%[1]T(%[1]v) - ok=%[2]t, value=%[3]T(%[3]v) | expect=%[4]v", "hello", ok, any(val), []byte("hello"))
 	}
-
 }
 
 // TestInterfaceConversion tests converting a value to an interface that it satisfies.

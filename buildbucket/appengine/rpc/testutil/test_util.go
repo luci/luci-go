@@ -26,7 +26,6 @@ import (
 
 // PutBuilder saves a *model.Builder to datastore for test usage.
 func PutBuilder(ctx context.Context, project, bucket, builder string, backend string) {
-
 	bldr := &model.Builder{
 		Parent: model.BucketKey(ctx, project, bucket),
 		ID:     builder,

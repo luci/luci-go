@@ -182,7 +182,6 @@ func TestCheckToken(t *testing.T) {
 		})
 		assert.Loosely(t, err, should.Equal(ErrForbiddenDelegationToken))
 	})
-
 }
 
 // subtoken returns messages.Subtoken with some fields filled in.

@@ -138,7 +138,6 @@ func TestReset(t *testing.T) {
 
 		t.Run("Fails PreCondition if CL is AccessDenied from code review site", func(t *ftt.Test) {
 			check := func(t testing.TB) {
-
 				noAccessTime := ct.Clock.Now().UTC().Add(1 * time.Minute)
 				cl.Access = &changelist.Access{
 					ByProject: map[string]*changelist.Access_Project{

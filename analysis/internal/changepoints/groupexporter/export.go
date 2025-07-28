@@ -59,7 +59,6 @@ func (e *Exporter) Export(ctx context.Context, groups [][]*changepoints.Changepo
 func prepareExportRows(groups [][]*changepoints.ChangepointDetailRow, version time.Time) []*bqpb.GroupedChangepointRow {
 	rows := make([]*bqpb.GroupedChangepointRow, 0)
 	for _, g := range groups {
-
 		groupKey := changepointGroupID(g)
 		for _, r := range g {
 			row := &bqpb.GroupedChangepointRow{

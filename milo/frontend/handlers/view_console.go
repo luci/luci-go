@@ -153,7 +153,6 @@ func getConsoleGroups(def *projectconfigpb.Header, summaries map[projectconfig.C
 
 func consoleRowCommits(c context.Context, project string, def *projectconfigpb.Console, limit int) (
 	[]*buildsource.ConsoleRow, []ui.Commit, error) {
-
 	tGitiles := logTimer(c, "Rows: loading commit from gitiles")
 	repoHost, repoProject, err := gitiles.ParseRepoURL(def.RepoUrl)
 	if err != nil {

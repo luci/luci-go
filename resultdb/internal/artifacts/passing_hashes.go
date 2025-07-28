@@ -127,7 +127,6 @@ func ToFailureOnlyLineRanges(artifactID string, contentType string, content []by
 				for _, line := range linesContent[rangeStart:index] {
 					lines = append(lines, string(line))
 				}
-
 			}
 			ranges = append(ranges, &pb.QueryArtifactFailureOnlyLinesResponse_LineRange{
 				Start: int32(rangeStart),

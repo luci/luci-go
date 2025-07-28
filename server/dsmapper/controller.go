@@ -448,7 +448,6 @@ func (ctl *Controller) splitAndLaunchHandler(ctx context.Context, payload proto.
 		job.Updated = now
 		if err := datastore.Put(ctx, job, &shardsEnt); err != nil {
 			return transient.Tag.Apply(errors.Fmt("when storing Job %d and ShardList with %d shards: %w", job.ID, len(shards), err))
-
 		}
 
 		return ctl.tq().AddTask(ctx, &tq.Task{

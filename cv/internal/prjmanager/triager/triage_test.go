@@ -586,7 +586,6 @@ func TestTriage(t *testing.T) {
 					assert.ErrIsLike(t, err, itriager.ErrOutdatedPMState)
 					assert.ErrIsLike(t, err, "EVersion changed 1 => 2")
 				})
-
 			})
 			t.Run("Singular", func(t *ftt.Test) {
 				t.Run("OK", func(t *ftt.Test) {

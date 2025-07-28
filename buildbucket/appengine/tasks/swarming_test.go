@@ -444,7 +444,6 @@ func TestSyncBuild(t *testing.T) {
 		}
 		assert.Loosely(t, datastore.Put(ctx, b, inf, bs, bldr), should.BeNil)
 		t.Run("swarming-build-create", func(t *ftt.Test) {
-
 			t.Run("build not found", func(t *ftt.Test) {
 				err := SyncBuild(ctx, 789, 0)
 				assert.Loosely(t, err, should.ErrLike("build 789 or buildInfra not found"))
@@ -1001,7 +1000,6 @@ func TestSyncBuild(t *testing.T) {
 
 						v2fs := []any{pb.Status_name[int32(syncedBuild.Status)], "None"}
 						assert.Loosely(t, metricsStore.Get(ctx, metrics.V2.BuildCountCompleted, v2fs), should.Equal(1))
-
 					} else if syncedBuild.Status == pb.Status_STARTED {
 						// NotifyPubSubGoProxy and a continuation sync task.
 						assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
@@ -1014,7 +1012,6 @@ func TestSyncBuild(t *testing.T) {
 			}
 		})
 	})
-
 }
 
 func TestHandleCancelSwarmingTask(t *testing.T) {
@@ -1242,7 +1239,6 @@ func TestSubNotify(t *testing.T) {
 		})
 
 		t.Run("different swarming hostname", func(t *ftt.Test) {
-
 			body := makeSwarmingPubsubMsg(&userdata{
 				BuildID:          123,
 				CreatedTS:        1517260502000000,

@@ -229,7 +229,6 @@ func (t *taskContext) recluster(ctx context.Context) (done bool, err error) {
 		for i, entry := range entries {
 			// Capture value of loop variables.
 			c <- func() error {
-
 				// Read the test results from GCS.
 				chunk, err := t.worker.chunkStore.Get(ctx, t.task.Project, entry.ObjectID)
 				if err != nil {

@@ -116,7 +116,6 @@ func TestHTTP(t *testing.T) {
 			assert.Loosely(t, body, should.Equal(fmt.Sprintf(`<div class="error line">LOGDOG ERROR: %s</div>`, template.HTMLEscapeString(msg))))
 		})
 	})
-
 }
 
 func TestHelperFunctions(t *testing.T) {
@@ -184,7 +183,6 @@ func TestHelperFunctions(t *testing.T) {
 			assert.Loosely(t, w.String(), should.ContainSubstring(
 				`<span class="text">See <a href="https://crbug.com/1167332">https://crbug.com/1167332</a>.</span>`))
 		})
-
 	})
 
 	ftt.Run(`contentTypeHeader adjusts based on format and data content type`, t, func(t *ftt.Test) {

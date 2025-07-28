@@ -183,7 +183,6 @@ func TestUpdateOutput(t *testing.T) {
 				content := bytes.Repeat([]byte("a"), model.ChunkSize)
 				if i == stdoutChunks-1 {
 					content = content[:lastChunkLegth]
-
 				}
 				compressed, err := compress(content)
 				assert.NoErr(t, err)
@@ -244,7 +243,6 @@ func TestUpdateOutput(t *testing.T) {
 			assert.That(t, len(chunks), should.Equal(2))
 			compare(chunks[0], bytes.Repeat([]byte("a"), model.ChunkSize))
 			compare(chunks[1], bytes.Repeat([]byte("a"), 100))
-
 		})
 
 		t.Run("new_output_from_a_fresh_chunk_with_gap", func(t *ftt.Test) {

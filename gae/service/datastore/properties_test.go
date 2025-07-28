@@ -294,7 +294,6 @@ func TestDSPropertyMapImpl(t *testing.T) {
 				})
 
 				t.Run("errors", func(t *ftt.Test) {
-
 					t.Run("weird value", func(t *ftt.Test) {
 						pm := PropertyMap{}
 						assert.Loosely(t, pm.SetMeta("sup", complex(100, 20)), should.BeFalse)

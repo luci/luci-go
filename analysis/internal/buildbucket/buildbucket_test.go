@@ -32,7 +32,6 @@ func TestGetBuild(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Get build", t, func(t *ftt.Test) {
-
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mc := NewMockedClient(context.Background(), ctl)

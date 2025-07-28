@@ -284,7 +284,6 @@ func TestCreateArtifact(t *testing.T) {
 				assert.Loosely(t, w.requests, should.HaveLength(1))
 				assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, artMFVs), should.Equal(1))
 			})
-
 		})
 
 		t.Run(`Verify digest`, func(t *ftt.Test) {

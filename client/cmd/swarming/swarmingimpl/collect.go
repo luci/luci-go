@@ -313,7 +313,6 @@ func (cmd *collectImpl) ParseInputs(ctx context.Context, args []string, env subc
 				"either specify the directory as `-task-output-stdout dir:<path>` " +
 				"(if only console output is required) or pass `-output-dir` " +
 				"(if both text and isolated output are required)")
-
 		}
 	}
 

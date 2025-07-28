@@ -147,6 +147,5 @@ func TestAddLogLikelihood(t *testing.T) {
 			}
 			assert.Loosely(t, addLogLikelihoods(eles), should.AlmostEqual(math.Log(0.000001)))
 		})
-
 	})
 }

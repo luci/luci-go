@@ -180,7 +180,6 @@ func TestRerun(t *testing.T) {
 			}))
 		})
 	})
-
 }
 
 func TestCreateRerunBuildModel(t *testing.T) {

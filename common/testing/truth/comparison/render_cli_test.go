@@ -374,5 +374,4 @@ func TestRenderCLISummary(t *testing.T) {
 			`Because: reasons`,
 		},
 	}))
-
 }

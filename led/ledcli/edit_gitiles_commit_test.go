@@ -113,6 +113,5 @@ func TestParseGitilesURL(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }

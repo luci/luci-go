@@ -1280,7 +1280,6 @@ func TestUpdateAllAuthIPAllowlists(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, allowlists, should.Match(baseAllowlistSlice))
 			assert.Loosely(t, taskScheduler.Tasks(), should.BeEmpty)
-
 		})
 
 		t.Run("Create allowlist entity", func(t *ftt.Test) {
@@ -2121,7 +2120,6 @@ func TestStoreAuthDBSnapshot(t *testing.T) {
 
 func TestDryRun(t *testing.T) {
 	t.Parallel()
-
 }
 
 func TestProtoConversion(t *testing.T) {

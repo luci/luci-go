@@ -200,7 +200,6 @@ func TestFSImpl(t *testing.T) {
 					},
 				}))
 			})
-
 		})
 	})
 
@@ -296,8 +295,6 @@ func TestFSImpl(t *testing.T) {
 					assert.Loosely(t, cfg.Content, should.Equal("v2/projects/foobar/something/file.cfg"))
 				})
 			})
-
 		})
 	})
-
 }

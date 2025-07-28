@@ -313,7 +313,6 @@ func TestState(t *testing.T) {
 			st := testCase.state(startTime)
 
 			t.Run(fmt.Sprintf(`Correctly loads/generates for %q test case.`, testCase.name), func(t *ftt.Test) {
-
 				_, err := playAnnotationScript(t, testCase.name, st)
 				assert.Loosely(t, err, should.BeNil)
 

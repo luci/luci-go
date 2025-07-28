@@ -149,7 +149,6 @@ func TestArtifactChannel(t *testing.T) {
 			assert.Loosely(t, body, should.Resemble([]byte("content-foo-bar")))
 		})
 	})
-
 }
 
 func TestUploadTask(t *testing.T) {

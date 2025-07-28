@@ -132,6 +132,5 @@ func TestOAuthServing(t *testing.T) {
 			assert.Loosely(t, json.Unmarshal(actualBlob, actualJSON), should.BeNil)
 			assert.Loosely(t, actualJSON, should.Match(expectedJSON))
 		})
-
 	})
 }

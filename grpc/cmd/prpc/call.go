@@ -143,7 +143,6 @@ func call(ctx context.Context, client *prpc.Client, req *request, out io.Writer)
 	var inf, outf prpc.Format
 	var message []byte
 	switch req.format {
-
 	default:
 		var buf bytes.Buffer
 		if _, err := buf.ReadFrom(req.message); err != nil {

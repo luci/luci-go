@@ -45,7 +45,6 @@ func NewOpID(ctx context.Context) (int64, error) {
 	if err := datastore.AllocateIDs(ctx, keys); err != nil {
 		return 0,
 			transient.Tag.Apply(errors.Fmt("failed to generate upload operation ID: %w", err))
-
 	}
 	return keys[0].IntID(), nil
 }

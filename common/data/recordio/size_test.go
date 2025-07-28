@@ -29,7 +29,6 @@ func TestFrameHeaderSize(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run(`Testing FrameHeaderSize`, t, func(t *ftt.Test) {
-
 		t.Run(`Matches actual written frame size`, func(t *ftt.Test) {
 			prev := -1
 			for i := range 3 {

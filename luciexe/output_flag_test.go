@@ -64,7 +64,6 @@ func TestOutputFlag(t *testing.T) {
 				assert.Loosely(t, of.Path, should.BeEmpty)
 				assert.Loosely(t, of.Codec, should.Match(buildFileCodecNoop{}))
 			})
-
 		})
 
 		t.Run(`bad`, func(t *ftt.Test) {

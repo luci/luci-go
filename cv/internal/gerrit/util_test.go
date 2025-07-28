@@ -26,7 +26,6 @@ func TestTruncateMessage(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("TruncateMessage", t, func(t *ftt.Test) {
-
 		t.Run("Noop when message doesn't exceed max length", func(t *ftt.Test) {
 			const msg = "this is a message"
 			assert.Loosely(t, truncate(msg, len(msg)), should.Equal(msg))
@@ -52,7 +51,6 @@ func TestTag(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Tag", t, func(t *ftt.Test) {
-
 		t.Run("panic if name is not provided", func(t *ftt.Test) {
 			assert.Loosely(t, func() { Tag("", "") }, should.Panic)
 		})

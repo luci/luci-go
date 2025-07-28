@@ -191,7 +191,6 @@ func TestProjectConfig(t *testing.T) {
 					assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(projectA, newUpdateTime)))
 					assert.Loosely(t, projects.Project("b"), should.Match(withLastUpdated(newProjectB, updateTime)))
 					assert.Loosely(t, projects.Project("c"), should.Match(withLastUpdated(projectC, updateTime)))
-
 				})
 			})
 
@@ -251,7 +250,6 @@ func TestProjectConfig(t *testing.T) {
 				assert.Loosely(t, projects.Project("a"), should.Match(withLastUpdated(newProjectA, updateTime)))
 				assert.Loosely(t, projects.Project("b"), should.Match(withLastUpdated(projectB, creationTime)))
 			})
-
 		}
 	}
 

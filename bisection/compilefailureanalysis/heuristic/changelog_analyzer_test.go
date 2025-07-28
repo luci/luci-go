@@ -238,5 +238,4 @@ func TestChangeLogAnalyzer(t *testing.T) {
 			}))
 		})
 	})
-
 }

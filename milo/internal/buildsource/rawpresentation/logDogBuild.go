@@ -39,7 +39,6 @@ type URLBuilder interface {
 // miloBuildStep converts a logdog/annopb step to a BuildComponent struct.
 // buildCompletedTime must be zero if build did not complete yet.
 func miloBuildStep(c context.Context, ub URLBuilder, anno *annopb.Step, includeChildren bool) ui.BuildComponent {
-
 	comp := ui.BuildComponent{
 		Label: ui.NewLink(anno.Name, "", anno.Name),
 	}
@@ -197,7 +196,6 @@ func SubStepsToUI(c context.Context, ub URLBuilder, substeps []*annopb.Step_Subs
 // build.Summary.Finished must be set.
 func AddLogDogToBuild(
 	c context.Context, ub URLBuilder, mainAnno *annopb.Step, build *ui.MiloBuildLegacy) {
-
 	// Now fill in each of the step components.
 	// TODO(hinoka): This is totes cacheable.
 	build.Summary = miloBuildStep(c, ub, mainAnno, false)

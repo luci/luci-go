@@ -190,7 +190,6 @@ func TestRoundtrip(t *testing.T) {
 			})
 		}
 	})
-
 }
 
 func TestEncode(t *testing.T) {
@@ -362,9 +361,7 @@ func TestDecode(t *testing.T) {
 				} else {
 					assert.Loosely(t, err, should.ErrLike(tc.err))
 				}
-
 			})
 		}
 	})
-
 }

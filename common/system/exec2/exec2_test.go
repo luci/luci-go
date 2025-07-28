@@ -137,7 +137,6 @@ func TestExec(t *testing.T) {
 
 			assert.Loosely(t, cmd.ProcessState.ExitCode(), should.Equal(-1))
 		})
-
 	})
 }
 

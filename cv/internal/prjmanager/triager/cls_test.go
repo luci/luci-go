@@ -314,7 +314,6 @@ func TestCLsTriage(t *testing.T) {
 				cls := do(&prjpb.Component{Clids: []int64{1}})
 				assert.Loosely(t, cls, should.HaveLength(1))
 				assert.That(t, cls[1], should.Match(expected))
-
 			})
 		})
 		t.Run("Triage with ongoing New Pachset Run", func(t *ftt.Test) {

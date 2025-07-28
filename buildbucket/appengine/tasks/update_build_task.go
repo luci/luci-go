@@ -168,7 +168,6 @@ func backfillCanceledTask(ctx context.Context, build *model.Build, infra *model.
 		// We could bypass other intermidiate updates between the backend server
 		// schedules the task cancelation and the task actually being canceled.
 		return nil
-
 	}
 	logging.Infof(ctx, "Backfill build %d's backend task, setting it's state to %q", build.ID, task.Status)
 	proto.Merge(infra.Proto.Backend.Task, task)

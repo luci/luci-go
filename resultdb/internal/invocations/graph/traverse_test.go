@@ -34,7 +34,6 @@ import (
 )
 
 func TestFindInheritSourcesDescendants(t *testing.T) {
-
 	ftt.Run(`FindInheritSourcesDescendants`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		sources := spanutil.Compressed(pbutil.MustMarshal(&pb.Sources{
@@ -91,7 +90,6 @@ func TestFindInheritSourcesDescendants(t *testing.T) {
 }
 
 func TestFindRoot(t *testing.T) {
-
 	ftt.Run(`TestFindRoot`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, cancel := span.ReadOnlyTransaction(ctx)

@@ -107,7 +107,6 @@ func doExport(ctx context.Context, authDB *protocol.AuthDB,
 	if err != nil {
 		return errors.Fmt("failed to insert all groups for AuthDB rev %d at %s: %w",
 			authDBRev, ts.String(), err)
-
 	}
 
 	// Insert all realms.
@@ -117,7 +116,6 @@ func doExport(ctx context.Context, authDB *protocol.AuthDB,
 	if err != nil {
 		return errors.Fmt("failed to insert all realms for AuthDB rev %d at %s: %w",
 			authDBRev, ts.String(), err)
-
 	}
 
 	if err := exportSupplementalData(ctx, client, ts); err != nil {

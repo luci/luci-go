@@ -145,7 +145,6 @@ func TestStrings(t *testing.T) {
 			assert.Loosely(t, n, should.Equal(exn))
 			assert.Loosely(t, r, should.Equal(s))
 		})
-
 	})
 }
 

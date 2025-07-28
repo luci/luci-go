@@ -467,7 +467,6 @@ func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelated
 func (f *fetcher) matchCurrentAmongRelated(
 	ctx context.Context, related []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit,
 ) (*gerritpb.GetRelatedChangesResponse_ChangeAndCommit, *changelist.CLError) {
-
 	var this *gerritpb.GetRelatedChangesResponse_ChangeAndCommit
 	matched := 0
 	for _, r := range related {

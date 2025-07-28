@@ -320,7 +320,6 @@ type MakeUpdateResult struct {
 // bug with the given bug management state.
 // **Must** ONLY be called if NeedsPriorityOrVerifiedUpdate(...) returns true.
 func (rg *RequestGenerator) MakePriorityOrVerifiedUpdate(options MakeUpdateOptions) (MakeUpdateResult, error) {
-
 	opts := bugs.BugOptions{
 		State:              options.BugManagementState,
 		IsManagingPriority: options.IsManagingBugPriority && !options.HasManuallySetPriority,

@@ -112,7 +112,6 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 		})
 
 		t.Run("invalid request", func(t *ftt.Test) {
-
 			t.Run("googler", func(t *ftt.Test) {
 				req.StartTime = nil
 				res, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
@@ -417,7 +416,6 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 			assert.Loosely(t, matches, should.Match([]*pb.ArtifactMatchingContent_Match{{
 				StartIndex: 0, EndIndex: int32(len(snippet)),
 			}}))
-
 		})
 		t.Run("truncate before and after append ellipsis", func(t *ftt.Test) {
 			match := strings.Repeat("a", maxMatchWithContextLength-9)
@@ -493,6 +491,5 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 			}
 			assert.Loosely(t, matches, should.Match(expectedMatches))
 		})
-
 	})
 }

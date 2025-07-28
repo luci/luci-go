@@ -33,7 +33,6 @@ import (
 
 func TestQueryTestMetadata(t *testing.T) {
 	ftt.Run(`Query`, t, func(t *ftt.Test) {
-
 		ctx := testutil.SpannerTestContext(t)
 		q := &Query{
 			Project:   "testproject",
@@ -132,7 +131,6 @@ func TestQueryTestMetadata(t *testing.T) {
 					assert.That(t, as.Message(), should.ContainSubstring("invalid page_token"))
 				})
 			})
-
 		})
 	})
 }

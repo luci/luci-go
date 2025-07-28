@@ -459,7 +459,6 @@ func (s *State) finishWithStatusImpl(status *annopb.Status, fd *annopb.FailureDe
 				Type: annopb.FailureDetails_EXCEPTION,
 			}
 		}
-
 	}
 	s.rootStep.FailureDetails = fd
 	s.rootStep.closeWithStatus(buildEndTime, status)

@@ -103,7 +103,6 @@ func refetch(ctx context.Context, prev *AuthGroupsSnapshot) (*AuthGroupsSnapshot
 	latestState, err := model.GetReplicationState(ctx)
 	if err != nil {
 		return nil, errors.Fmt("failed to check the latest AuthDB revision: %w", err)
-
 	}
 
 	if prev.authDBRev >= latestState.AuthDBRev {

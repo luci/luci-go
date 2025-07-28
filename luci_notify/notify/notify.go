@@ -275,7 +275,6 @@ func ShouldNotify(ctx context.Context, n *notifypb.Notification, oldStatus build
 	newStatus := newBuild.Status
 
 	switch {
-
 	case newStatus == buildbucketpb.Status_STATUS_UNSPECIFIED:
 		panic("new status must always be valid")
 	case contains(newStatus, n.OnOccurrence):

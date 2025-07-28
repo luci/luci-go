@@ -350,7 +350,6 @@ func updateSuspectWithRerunData(c context.Context, rerun *model.SingleRerun) err
 		if err != nil {
 			return errors.Fmt("error creating task in task queue to revert culprit (analysis ID=%d, suspect ID=%d): %w",
 				analysisID, suspect.Id, err)
-
 		}
 	}
 	return nil

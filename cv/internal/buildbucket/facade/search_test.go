@@ -190,7 +190,6 @@ func TestSearch(t *testing.T) {
 					build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 					checkResult(t)
 				})
-
 			})
 
 			t.Run("No match", func(t *ftt.Test) {

@@ -185,7 +185,6 @@ func TestRenderer(t *testing.T) {
 			})
 
 			t.Run(`When deferring to a datagram writer`, func(t *ftt.Test) {
-
 				t.Run(`Uses the writer instead of a hex dump.`, func(t *ftt.Test) {
 					var bytes []byte
 					r.DatagramWriter = func(w io.Writer, dg []byte) bool {

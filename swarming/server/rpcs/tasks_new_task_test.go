@@ -344,7 +344,6 @@ func TestValidateNewTask(t *testing.T) {
 				err := validateNewTask(ctx, req, "pool")
 				assert.That(t, err, should.ErrLike("pubsub_auth_token requires pubsub_topic"))
 			})
-
 		})
 
 		t.Run("pubsub_userdata", func(t *ftt.Test) {
@@ -361,7 +360,6 @@ func TestValidateNewTask(t *testing.T) {
 				err := validateNewTask(ctx, req, "pool")
 				assert.That(t, err, should.ErrLike("too long"))
 			})
-
 		})
 
 		t.Run("bot_ping_tolerance", func(t *ftt.Test) {
@@ -1052,7 +1050,6 @@ func TestToTaskRequestEntities(t *testing.T) {
 				assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 				assert.That(t, err, should.ErrLike(`parent task "60b2ed0a43078111" has ended`))
 			})
-
 		})
 
 		t.Run("apply_default_values", func(t *ftt.Test) {

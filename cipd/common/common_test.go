@@ -409,7 +409,6 @@ func TestPinSliceAndMap(t *testing.T) {
 				}))
 			})
 		})
-
 	})
 }
 

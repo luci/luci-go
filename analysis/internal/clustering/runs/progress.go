@@ -73,7 +73,6 @@ func ReadReclusteringProgress(ctx context.Context, project string) (*Reclusterin
 // also why the passed timestamp is called 'upToAttemptTimestamp'
 // not an asAtTime.
 func ReadReclusteringProgressUpTo(ctx context.Context, project string, upToAttemptTimestamp time.Time) (*ReclusteringProgress, error) {
-
 	// Reading reclustering progress as at a time in the past can also
 	// be achieved with Spanner stale reads, but this does not have
 	// good testability. Implement reading past reclustering state

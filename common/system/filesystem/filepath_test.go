@@ -57,7 +57,6 @@ func TestSetReadOnly(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, f.Close(), should.BeNil)
 	})
-
 }
 
 func TestMakeTreeReadOnly(t *testing.T) {

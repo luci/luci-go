@@ -87,5 +87,4 @@ func TestLineContext(t *testing.T) {
 			t.Fatalf("unexpected line number: %s", diff)
 		}
 	})
-
 }

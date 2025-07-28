@@ -4870,7 +4870,6 @@ func TestScheduleBuild(t *testing.T) {
 			setExperiments(ctx, nil, bldrCfg, s, b)
 
 			t.Run("use builder Priority and ServiceAccount", func(t *ftt.Test) {
-
 				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)
 
 				expectedBackendConfig := &structpb.Struct{}
@@ -6820,7 +6819,6 @@ func TestScheduleBuild(t *testing.T) {
 						Input:      &pb.Build_Input{},
 					},
 				}))
-
 			})
 
 			t.Run("one of builds failed in `createBuilds` part", func(t *ftt.Test) {
@@ -7251,7 +7249,6 @@ func TestScheduleBuild(t *testing.T) {
 				assert.Loosely(t, blds[2], should.BeNil)
 			})
 		})
-
 	})
 
 	ftt.Run("structContains", t, func(t *ftt.Test) {

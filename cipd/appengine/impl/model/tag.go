@@ -313,7 +313,6 @@ func fetchTags(ctx context.Context, tagEnts []*Tag, expectedTag func(idx int) *a
 		default: // ent.Tag != kv
 			return nil, nil,
 				grpcutil.InternalTag.Apply(errors.Fmt("tag %q collides with tag %q, refusing to touch it", kv, ent.Tag))
-
 		}
 	}
 

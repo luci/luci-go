@@ -1541,5 +1541,4 @@ func TestMinHeap(t *testing.T) {
 		}
 		assert.Loosely(t, res, should.Match([]int64{1, 2, 3, 5}))
 	})
-
 }

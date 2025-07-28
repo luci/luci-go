@@ -276,7 +276,6 @@ func TestTriggerer(t *testing.T) {
 				statusWant = "CANCELED"
 				check(t)
 			})
-
 		})
 
 		t.Run("noop if already voted", func(t *ftt.Test) {

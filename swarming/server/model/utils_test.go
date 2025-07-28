@@ -215,7 +215,6 @@ func TestMapToStringListPair(t *testing.T) {
 	ftt.Run("nil", t, func(t *ftt.Test) {
 		assert.Loosely(t, MapToStringListPair(nil, false), should.BeNil)
 	})
-
 }
 
 func deflate(blob []byte) []byte {

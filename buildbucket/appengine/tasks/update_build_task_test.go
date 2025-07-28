@@ -241,7 +241,6 @@ func TestValidateBuildTask(t *testing.T) {
 			err := validateBuildTask(req, infra)
 			assert.Loosely(t, err, should.BeNil)
 		})
-
 	})
 }
 
@@ -360,7 +359,6 @@ func TestValidateTaskUpdate(t *testing.T) {
 			assert.Loosely(t, err.Error(), should.ContainSubstring("invalid status STATUS_UNSPECIFIED"))
 		})
 		t.Run("is invalid task detail", func(t *ftt.Test) {
-
 			details := make(map[string]*structpb.Value)
 			for i := range 10000 {
 				v, _ := structpb.NewValue("my really long detail, but it's not that long.")
@@ -752,7 +750,6 @@ func TestUpdateTaskEntity(t *testing.T) {
 				assert.Loosely(t, result.Proto.Backend.Task.Status, should.Equal(pb.Status_CANCELED))
 			})
 		})
-
 	})
 }
 

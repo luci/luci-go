@@ -257,7 +257,6 @@ func TestUpstreamErrors(t *testing.T) {
 			assert.Loosely(t, me, should.HaveLength(2))
 			assert.Loosely(t, error(me), should.NotBeNilInterface)
 		})
-
 	})
 
 	ftt.Run("AsError", t, func(t *ftt.Test) {

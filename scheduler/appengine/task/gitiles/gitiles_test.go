@@ -537,7 +537,6 @@ func TestPathFilterHelpers(t *testing.T) {
 				assert.Loosely(t, err, should.NotBeNil)
 				_, err = newPathFilter(&messages.GitilesTask{PathRegexps: []string{`a?`}, PathRegexpsExclude: []string{`\K`}})
 				assert.Loosely(t, err, should.NotBeNil)
-
 			})
 			t.Run("just negative ignored", func(t *ftt.Test) {
 				v, err := newPathFilter(&messages.GitilesTask{PathRegexpsExclude: []string{`.+\.cpp`}})

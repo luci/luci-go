@@ -255,7 +255,6 @@ func TestMetricsDefaultTargetType(t *testing.T) {
 		m := NewCumulativeDistribution("cumul_dist", "description", nil, distribution.FixedWidthBucketer(10, 20))
 		assert.Loosely(t, m.Info().TargetType, should.Match(tt))
 		assert.Loosely(t, func() { NewCumulativeDistributionWithOptions("cumul_dist", opt, "description", nil, m.Bucketer()) }, should.Panic)
-
 	})
 
 	ftt.Run("NonCumulativeDistribution", t, func(t *ftt.Test) {

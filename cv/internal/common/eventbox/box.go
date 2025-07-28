@@ -153,7 +153,6 @@ func processBatch(ctx context.Context, r Recipient, p Processor, maxEvents int) 
 			return err
 		case latestEV != expectedEV:
 			return common.DSContentionTag.Apply(transient.Tag.Apply(errors.Fmt("Datastore contention: EVersion read %d, but expected %d", latestEV, expectedEV)))
-
 		}
 
 		popOp, err := d.BeginPop(ctx, listing)

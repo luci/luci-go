@@ -821,7 +821,6 @@ func TestOnSubmissionCompleted(t *testing.T) {
 									},
 								})
 							})
-
 						})
 					})
 
@@ -1098,7 +1097,6 @@ func TestOnCLsSubmitted(t *testing.T) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{3})
 			assert.NoErr(t, err)
 			assert.That(t, res.State.Submission.SubmittedCls, should.Match([]int64{3}))
-
 		})
 		t.Run("Duplicate", func(t *ftt.Test) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{3, 3, 3, 3, 1, 1, 1})

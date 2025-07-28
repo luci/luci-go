@@ -59,5 +59,4 @@ func TestExtractorUtil(t *testing.T) {
 			assert.Loosely(t, StripExtensionAndCommonSuffixFromFileName(k), should.Equal(v))
 		}
 	})
-
 }

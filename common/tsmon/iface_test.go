@@ -164,6 +164,5 @@ func TestInitializeFromFlags(t *testing.T) {
 			assert.Loosely(t, target.Hostname, should.Equal("autogen:host-flag"))
 			assert.Loosely(t, target.Metro, should.Equal("region-config"))
 		})
-
 	})
 }

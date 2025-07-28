@@ -59,7 +59,6 @@ func TestTemplateNormalize(t *testing.T) {
 
 	ftt.Run("File_Template.Normalize", t, func(t *ftt.Test) {
 		t.Run("bad", func(t *ftt.Test) {
-
 			for _, tc := range badCases {
 				t.Run(tc.err, func(t *ftt.Test) {
 					template := parse(t, tc.data)

@@ -192,7 +192,6 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *api.BeginUploadRequest
 		if r.HashAlgo != 0 && r.HashAlgo != r.Object.HashAlgo {
 			return nil,
 				grpcutil.InvalidArgumentTag.Apply(errors.New("'hash_algo' and 'object.hash_algo' do not match"))
-
 		}
 		hashAlgo = r.Object.HashAlgo
 		hexDigest = r.Object.HexDigest
@@ -317,7 +316,6 @@ func (s *storageImpl) FinishUpload(ctx context.Context, r *api.FinishUploadReque
 	if err != nil {
 		return nil,
 			grpcutil.InternalTag.Apply(errors.Fmt("failed to start the verification task: %w", err))
-
 	}
 	return mutated.ToProto(r.UploadOperationId), nil
 }
@@ -358,7 +356,6 @@ func (s *storageImpl) CancelUpload(ctx context.Context, r *api.CancelUploadReque
 	if err != nil {
 		return nil,
 			grpcutil.InternalTag.Apply(errors.Fmt("failed to start the cleanup task: %w", err))
-
 	}
 	return handleOpStatus(mutated)
 }

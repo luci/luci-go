@@ -57,7 +57,6 @@ func Create(rootInvocation *RootInvocationRow) []*spanner.Mutation {
 	}
 	if !rootInvocation.UninterestingTestVerdictsExpirationTime.Valid {
 		panic("do not create root invocations with empty UninterestingTestVerdictsExpirationTime")
-
 	}
 	rootInvocation.Normalize()
 	// Create mutation for the RootInvocations table record.

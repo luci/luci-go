@@ -179,12 +179,10 @@ func (as *AnnotationStream) populateCache(c context.Context) error {
 		z, err := zlib.NewReader(bytes.NewBuffer(dg.Data))
 		if err != nil {
 			return errors.Fmt("Datagram is marked as compressed, but failed to open zlib stream: %w", err)
-
 		}
 
 		if data, err = io.ReadAll(z); err != nil {
 			return errors.Fmt("Datagram is marked as compressed, but failed to decompress: %w", err)
-
 		}
 	}
 

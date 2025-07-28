@@ -44,13 +44,11 @@ func TestReadyToFinalize(t *testing.T) {
 	ftt.Run("Ready to finalize: success", t, func(t *ftt.Test) {
 		isReady := readyToFinalize(ctx, finalBuild, nil, nil, outputFlag)
 		assert.Loosely(t, isReady, should.Equal(true))
-
 	})
 
 	ftt.Run("Not ready to finalize: fatal error not nil", t, func(t *ftt.Test) {
 		isReady := readyToFinalize(ctx, finalBuild, errors.New("Fatal Error Happened"), nil, outputFlag)
 		assert.Loosely(t, isReady, should.Equal(false))
-
 	})
 }
 
@@ -205,7 +203,6 @@ func TestDownloadInputs(t *testing.T) {
 			assert.Loosely(c, bbclient.requests[1].Build.Infra.Buildbucket.Agent.Output.Status, should.Equal(bbpb.Status_SUCCESS))
 		})
 	})
-
 }
 
 func TestStartBuild(t *testing.T) {
@@ -236,7 +233,6 @@ func TestChooseCacheDir(t *testing.T) {
 	ftt.Run("use input.CacheDir no backend", t, func(t *ftt.Test) {
 		cacheDir := chooseCacheDir(input, "")
 		assert.Loosely(t, cacheDir, should.Equal("inputCacheDir"))
-
 	})
 
 	ftt.Run("use input.CacheDir backend exists", t, func(t *ftt.Test) {
@@ -245,7 +241,6 @@ func TestChooseCacheDir(t *testing.T) {
 		}
 		cacheDir := chooseCacheDir(input, "")
 		assert.Loosely(t, cacheDir, should.Equal("inputCacheDir"))
-
 	})
 
 	ftt.Run("use cache-base flag backend exists", t, func(t *ftt.Test) {
@@ -254,6 +249,5 @@ func TestChooseCacheDir(t *testing.T) {
 		}
 		cacheDir := chooseCacheDir(input, "cache")
 		assert.Loosely(t, cacheDir, should.Equal("cache"))
-
 	})
 }

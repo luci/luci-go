@@ -152,7 +152,6 @@ func MergeRealms(
 		projRealms, err := authProjectRealms.RealmsToProto()
 		if err != nil {
 			return nil, errors.Fmt("error parsing Realms from AuthProjectRealms: %w", err)
-
 		}
 		projectIDs[i] = authProjectRealms.ID
 		realmsByProject[authProjectRealms.ID] = projRealms
@@ -168,7 +167,6 @@ func MergeRealms(
 		for _, cond := range realmsByProject[projectID].Conditions {
 			if err := condSet.add(cond); err != nil {
 				return nil, errors.Fmt("error merging conditions: %w", err)
-
 			}
 		}
 	}
@@ -211,7 +209,6 @@ func MergeRealms(
 					condIndices, err := condSet.relabel(projectRealms.Conditions, oldBinding.Conditions)
 					if err != nil {
 						return nil, errors.Fmt("error relabelling conditions: %w", err)
-
 					}
 					// Permissions and Conditions in a protocol.Binding must be
 					// in ascending order. See

@@ -85,7 +85,6 @@ func TestDeleteBot(t *testing.T) {
 		_ = datastore.Put(ctx, aliveBot)
 
 		call := func(botID string, abandonedTaskID string) (*apipb.DeleteResponse, error) {
-
 			var reqKey *datastore.Key
 			var err error
 			if abandonedTaskID != "" {
@@ -145,5 +144,4 @@ func TestDeleteBot(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLikeError(datastore.ErrNoSuchEntity))
 		})
 	})
-
 }

@@ -350,7 +350,6 @@ func TestQueryTestVariants(t *testing.T) {
 					verifyFields(tvs)
 					assert.Loosely(t, tvs[len(tvs)-1].TestId, should.Equal("Tz0"))
 				})
-
 			})
 
 			t.Run(`with full field mask`, func(t *ftt.Test) {

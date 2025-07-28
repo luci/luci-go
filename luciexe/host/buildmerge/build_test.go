@@ -345,7 +345,6 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 					},
 				}))
 			})
-
 		})
 
 		t.Run(`deep path`, func(t *ftt.Test) {

@@ -289,7 +289,6 @@ func addGerritHosts(ctx context.Context, prj *ProjectConfig, hosts stringset.Set
 		if err := datastore.Get(ctx, cgs); err != nil {
 			return transient.Tag.Apply(errors.Fmt("fetching ConfigGroups for %s: %w",
 				strings.Join(prj.ConfigGroupNames[offset:end], ","), err))
-
 		}
 
 		// parse and add all the hosts.
@@ -301,7 +300,6 @@ func addGerritHosts(ctx context.Context, prj *ProjectConfig, hosts stringset.Set
 					// must be a bug in the project config validator.
 					return errors.Fmt("%s: invalid GerritURL %q: %w",
 						cg.ID.Name(), rawURL, err)
-
 				}
 				if u.Host == "" {
 					// same; must be a bug.

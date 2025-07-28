@@ -375,7 +375,6 @@ func TestUpdaterBackendFetch(t *testing.T) {
 					assert.That(t, res.Snapshot.GetGerrit().GetInfo().GetStatus(), should.Match(s))
 					assert.Loosely(t, res.Snapshot.GetGerrit().GetFiles(), should.BeNil)
 					assert.Loosely(t, res.Snapshot.GetDeps(), should.BeNil)
-
 				})
 			}
 			t.Run("regression: NEW -> ABANDON -> NEW transitions don't lose file list", func(t *ftt.Test) {

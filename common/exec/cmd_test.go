@@ -201,7 +201,6 @@ func TestCmd(t *testing.T) {
 			assert.Loosely(t, panicStack, should.NotBeEmpty)
 		})
 	})
-
 }
 
 func TestMain(m *testing.M) {

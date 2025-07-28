@@ -97,7 +97,6 @@ func TestTaskBackendRunTask(t *testing.T) {
 		})
 
 		t.Run("past_start_deadline", func(t *ftt.Test) {
-
 			req := &bbpb.RunTaskRequest{
 				BuildId:       "12345678",
 				PubsubTopic:   "pubsub_topic",

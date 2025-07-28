@@ -80,7 +80,6 @@ func (s *stream) getCurFile() (*os.File, error) {
 	if err != nil {
 		return nil, errors.Fmt("could not open %d'th datagram of %s: %w",
 			s.datagramCount, filepath.Join(s.basePath, s.fname), err)
-
 	}
 	s.datagramCount++
 

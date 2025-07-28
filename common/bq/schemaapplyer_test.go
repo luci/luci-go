@@ -221,7 +221,6 @@ func TestBqTableCache(t *testing.T) {
 					expectedUpdate.SetLabel(MetadataVersionKey, "10")
 					assert.Loosely(t, mockTable.updateMD, should.Resemble(expectedUpdate))
 				})
-
 			})
 			t.Run(`With RefreshViewInterval option`, func(t *ftt.Test) {
 				spec.ViewQuery = "should be ignored as this option does not push spec.ViewQuery"

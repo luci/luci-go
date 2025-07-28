@@ -31,7 +31,6 @@ func TestPartitionConfig(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("partitionConfig works", t, func(t *ftt.Test) {
-
 		t.Run("groups by prefix if possible", func(t *ftt.Test) {
 			// makeCfgs merges several projects configs into one just to re-use
 			// singleRepoConfig.

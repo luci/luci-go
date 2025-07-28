@@ -93,10 +93,7 @@ func TestBatchHeap(t *testing.T) {
 					assert.Loosely(t, h.PopBatch(), should.Resemble(&Batch[any]{id: 20}))
 					assert.Loosely(t, h.data, should.BeEmpty)
 				})
-
 			})
-
 		})
 	})
-
 }

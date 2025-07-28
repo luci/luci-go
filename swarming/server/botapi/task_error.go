@@ -154,7 +154,6 @@ func (srv *BotAPIServer) TaskError(ctx context.Context, body *TaskErrorRequest, 
 				return nil, err
 			}
 			return &botinfo.PrepareOutcome{Proceed: true}, nil
-
 		},
 		CallInfo: botCallInfo(ctx, &botinfo.CallInfo{
 			SessionID: r.Session.SessionId,

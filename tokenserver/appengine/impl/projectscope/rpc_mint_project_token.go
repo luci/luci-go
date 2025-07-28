@@ -116,7 +116,6 @@ func (r *MintProjectTokenRPC) MintProjectToken(c context.Context, req *minter.Mi
 		case err != nil:
 			logging.WithError(err).Errorf(c, "error while looking for scoped identity of project %s", req.LuciProject)
 			return nil, status.Errorf(codes.Internal, "internal error")
-
 		}
 	}
 

@@ -364,7 +364,6 @@ func TestListAccountEmails(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("ListAccountEmails works", t, func(t *ftt.Test) {
-
 		ctx := context.Background()
 		f := Fake{}
 		f.AddLinkedAccountMapping([]*gerritpb.EmailInfo{

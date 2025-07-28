@@ -412,7 +412,6 @@ func TestNamedCachesAggregator(t *testing.T) {
 			})); diff != "" {
 				t.Errorf("unexpected diff (-want +got): %s", diff)
 			}
-
 		})
 	}
 }

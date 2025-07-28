@@ -59,7 +59,6 @@ func (s *MiloInternalService) QueryBuilderStats(ctx context.Context, req *milopb
 	stats := &milopb.BuilderStats{}
 
 	err = parallel.FanOutIn(func(fetch chan<- func() error) {
-
 		// Pending builds
 		fetch <- func() error {
 			q := datastore.NewQuery("BuildSummary").

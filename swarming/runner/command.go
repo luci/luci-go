@@ -34,7 +34,6 @@ const (
 // ReplaceCommandParameters replaces parameter tokens with appropriate values in a
 // string.
 func ReplaceCommandParameters(ctx context.Context, arg, outDir, botFile string) (string, error) {
-
 	if runtime.GOOS == "windows" {
 		arg = strings.Replace(arg, executableSuffixParameter, ".exe", -1)
 	} else {

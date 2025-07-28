@@ -42,7 +42,6 @@ type BigTableStorage struct {
 // GetSignedURLs implements coordinator.Storage.
 func (st *BigTableStorage) GetSignedURLs(context.Context, *coordinator.URLSigningRequest) (
 	*coordinator.URLSigningResponse, error) {
-
 	return nil, nil
 }
 
@@ -75,7 +74,6 @@ func (st *ArchivalStorage) Close() {
 // GetSignedURLs implements coordinator.SigningStorage.
 func (st *ArchivalStorage) GetSignedURLs(c context.Context, req *coordinator.URLSigningRequest) (
 	*coordinator.URLSigningResponse, error) {
-
 	if req.Lifetime < 0 {
 		return nil, errors.New("invalid lifetime")
 	}

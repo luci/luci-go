@@ -269,7 +269,6 @@ func TestRegister(t *testing.T) {
 		assert.That(t, output, should.Match(mustStruct(map[string]any{
 			"Out": 200.0,
 		})))
-
 	})
 }
 

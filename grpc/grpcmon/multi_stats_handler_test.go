@@ -127,6 +127,5 @@ func TestWithMultiStatsHandler(t *testing.T) {
 			}
 			assert.Loosely(t, values, should.Match([]int{2, 1, 2}))
 		})
-
 	})
 }

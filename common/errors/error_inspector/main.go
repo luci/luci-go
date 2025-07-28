@@ -450,7 +450,6 @@ func checkCondition(errorsPkgName string, condExpr ast.Expr, varName string, exp
 						checkCondition(errorsPkgName, expr.Y, varName, expectNotEqualsNil)
 				}
 			}
-
 		}
 	}
 	return false

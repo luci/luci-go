@@ -331,9 +331,7 @@ func TestFindFiles(t *testing.T) {
 				someOtherTmpDir := t.TempDir()
 				assertFiles(pkgDef, someOtherTmpDir)
 			})
-
 		})
-
 	})
 }
 

@@ -841,7 +841,6 @@ func TestOperationStats(t *testing.T) {
 				Duration: 1,
 			}))
 		})
-
 	})
 }
 

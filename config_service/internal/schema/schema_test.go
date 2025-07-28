@@ -56,6 +56,5 @@ func TestLookupSchemaURL(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, url, should.BeEmpty)
 		})
-
 	})
 }

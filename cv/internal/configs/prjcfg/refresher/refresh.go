@@ -38,7 +38,6 @@ func projectsWithConfig(ctx context.Context, configFileName string) ([]string, e
 		return nil,
 			transient.Tag.Apply(errors.Fmt("failed to get projects with %q from LUCI Config: %w",
 				configFileName, err))
-
 	}
 	return projects, nil
 }

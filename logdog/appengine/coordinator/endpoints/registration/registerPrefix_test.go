@@ -178,7 +178,6 @@ func TestRegisterPrefix(t *testing.T) {
 		})
 
 		t.Run(`Uses the correct prefix expiration`, func(t *ftt.Test) {
-
 			t.Run(`When service, project, and request have expiration, chooses smallest.`, func(t *ftt.Test) {
 				env.ModProjectConfig(c, project, func(pcfg *svcconfig.ProjectConfig) {
 					pcfg.PrefixExpiration = durationpb.New(time.Hour)

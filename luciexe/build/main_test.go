@@ -232,7 +232,6 @@ func TestMain(t *testing.T) {
 				assert.Loosely(t, final.Status, should.Equal(bbpb.Status_INFRA_FAILURE))
 				assert.Loosely(t, final.Output.Status, should.Equal(bbpb.Status_INFRA_FAILURE))
 			})
-
 		})
 	})
 }

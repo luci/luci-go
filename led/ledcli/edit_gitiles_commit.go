@@ -127,7 +127,6 @@ func parseGitilesURL(gitilesURL, refCmd string) (*bbpb.GitilesCommit, error) {
 		default:
 			c.Ref = refCmd
 		}
-
 	} else {
 		ref := strings.Join(commitToks, "/")
 		switch {

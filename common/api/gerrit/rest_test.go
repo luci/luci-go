@@ -2059,7 +2059,6 @@ func TestGetMetaDiff(t *testing.T) {
 			assert.Loosely(t, actualRequest.URL.Query()["meta"], should.Match([]string{"booboo"}))
 		})
 	})
-
 }
 
 func newMockPbClient(handler func(w http.ResponseWriter, r *http.Request)) (*httptest.Server, gerritpb.GerritClient) {

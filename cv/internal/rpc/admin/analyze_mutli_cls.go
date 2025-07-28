@@ -139,7 +139,6 @@ func makeCLGraph(cls []*run.RunCL) clGraph {
 					Kind: changelist.DepKind_HARD,
 				})
 			}
-
 		}
 
 		for _, softDep := range cl.Detail.GetGerrit().GetSoftDeps() {

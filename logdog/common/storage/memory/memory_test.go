@@ -193,7 +193,6 @@ func TestBigTable(t *testing.T) {
 					assert.Loosely(t, err, should.ErrLike("test error"))
 				})
 			})
-
 		})
 	})
 }

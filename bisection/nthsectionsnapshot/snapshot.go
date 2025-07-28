@@ -322,5 +322,4 @@ func (snapshot *Snapshot) FindNextSingleCommitToRun() (string, error) {
 		return "", errors.Fmt("expect only 1 commits to rerun. Got %d", len(commits))
 	}
 	return commits[0], nil
-
 }

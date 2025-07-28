@@ -127,7 +127,6 @@ func adjustQuery(fq *ds.FinalizedQuery) (*ds.FinalizedQuery, error) {
 // See also `dsTxnBuf.Run()`.
 func runMergedQueries(fq *ds.FinalizedQuery, sizes *sizeTracker,
 	memDS, parentDS ds.RawInterface, cb func(k *ds.Key, data ds.PropertyMap) error) error {
-
 	toRun, err := adjustQuery(fq)
 	if err != nil {
 		return err

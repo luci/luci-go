@@ -166,7 +166,6 @@ func (rx *ResumableUpload) transferChunk(ctx context.Context) (*http.Response, e
 // Upload does not parse the response into the error on a non 200 response;
 // it is the caller's responsibility to call resp.Body.Close.
 func (rx *ResumableUpload) Upload(ctx context.Context) (resp *http.Response, err error) {
-
 	// There are a couple of cases where it's possible for err and resp to both
 	// be non-nil. However, we expose a simpler contract to our callers: exactly
 	// one of resp and err will be non-nil. This means that any response body

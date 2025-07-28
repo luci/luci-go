@@ -90,7 +90,6 @@ func TestExportAntsTestResults(t *testing.T) {
 			verifyAnTSTestResultExport(t, antsTestResultsClient, false)
 			verifyCheckpoints(ctx, t, []checkpoints.Checkpoint{})
 		})
-
 	})
 }
 

@@ -130,7 +130,6 @@ func TestGetSheriffRotationsForBuild(t *testing.T) {
 		rotations := GetSheriffRotationsForBuild(build)
 		assert.Loosely(t, rotations, should.Match([]string{"chromium"}))
 	})
-
 }
 
 func TestGetTaskDimensions(t *testing.T) {
@@ -163,5 +162,4 @@ func TestGetTaskDimensions(t *testing.T) {
 		got := GetTaskDimensions(build)
 		assert.Loosely(t, got, should.Match(dims))
 	})
-
 }

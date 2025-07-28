@@ -36,7 +36,6 @@ func TestTestResultCount(t *testing.T) {
 
 		invID := invocations.ID("inv")
 		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-
 			if err := IncrementTestResultCount(ctx, invID, 10); err != nil {
 				return err
 			}

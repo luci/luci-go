@@ -118,7 +118,6 @@ func TestMapRangeSorted(t *testing.T) {
 				})
 				assert.Loosely(t, results, should.Resemble(expect))
 			})
-
 		})
 
 		t.Run(`uint`, func(t *ftt.Test) {

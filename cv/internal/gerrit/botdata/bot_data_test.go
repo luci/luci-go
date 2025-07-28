@@ -28,7 +28,6 @@ func TestParse(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Parse", t, func(t *ftt.Test) {
-
 		t.Run("Nil ChangeMessageInfo", func(t *ftt.Test) {
 			_, ok := Parse(nil)
 			assert.Loosely(t, ok, should.BeFalse)

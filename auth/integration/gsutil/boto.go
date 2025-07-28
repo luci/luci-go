@@ -227,7 +227,6 @@ func findUserBotoConfig(ctx context.Context) (string, error) {
 	}
 
 	return "", nil
-
 }
 
 // PrepareStateDir prepares a directory (based on b.StateDir) for gsutil to keep

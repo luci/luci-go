@@ -55,7 +55,6 @@ func TestRecurseAttr(t *testing.T) {
 			})
 		})
 	})
-
 }
 
 func TestProcessAttr(t *testing.T) {
@@ -85,5 +84,4 @@ func TestProcessAttr(t *testing.T) {
 			assert.Loosely(t, ProcessAttr(217).Valid(), should.BeFalse)
 		})
 	})
-
 }

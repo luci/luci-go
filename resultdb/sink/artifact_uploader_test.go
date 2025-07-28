@@ -111,7 +111,6 @@ func TestArtifactUploader(t *testing.T) {
 				},
 			}
 			for _, tc := range tests {
-
 				t.Run(fmt.Sprintf("With artifact content type: %s should upload with content type: %s", tc.contentType, tc.expectedContentType), func(t *ftt.Test) {
 					art := testArtifactWithContents([]byte(content))
 					art.ContentType = tc.contentType
@@ -173,7 +172,6 @@ func TestArtifactUploader(t *testing.T) {
 				}
 
 				assert.Loosely(t, uploader.BatchUpload(ctx, b), should.ErrLike("an artifact is greater than"))
-
 			})
 
 		t.Run("Batch Upload w/ mixed artifacts",

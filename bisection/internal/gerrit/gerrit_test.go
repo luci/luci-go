@@ -601,6 +601,5 @@ func TestCommitRevert(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, reviewResult, should.Match(expectedResult))
 		})
-
 	})
 }

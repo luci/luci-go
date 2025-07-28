@@ -202,7 +202,6 @@ func (p *listChangesPager) fetch(ctx context.Context) ([]*gerritpb.ChangeInfo, b
 			transient.Tag.Apply(errors.New("PagingListChanges can't keep up with the rate of updates to changes. " +
 				"Try increasing PagingListChangesOptions.PageSize or " +
 				"restricting PagingListChangesOptions.UpdatedBefore to past timestamp"))
-
 	}
 	changes = deduper.mergeSorted(newerChanges, changes)
 	if len(changes) > p.opts.Limit {

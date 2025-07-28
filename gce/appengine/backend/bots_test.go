@@ -780,7 +780,6 @@ func TestInspectSwarming(t *testing.T) {
 			// One DeleteStaleSwarmingBots tasks and one inspectSwarming task with cursor
 			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(2))
 		})
-
 	})
 }
 
@@ -927,7 +926,6 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
 			})
 		})
-
 	})
 }
 

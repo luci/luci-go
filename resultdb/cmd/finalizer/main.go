@@ -24,7 +24,6 @@ import (
 )
 
 func main() {
-
 	opts := finalizer.Options{}
 	flag.StringVar(
 		&opts.ResultDBHostname,

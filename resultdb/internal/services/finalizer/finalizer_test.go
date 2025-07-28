@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 

@@ -370,7 +370,6 @@ func TestEnsureDirectoryGone(t *testing.T) {
 		fs := tempFileSystem(t)
 		assert.Loosely(c, fs.EnsureDirectoryGone(ctx, fs.join("missing")), should.BeNil)
 	})
-
 }
 
 func TestReplace(t *testing.T) {

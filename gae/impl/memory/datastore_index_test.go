@@ -236,7 +236,6 @@ func TestIndexRowGen(t *testing.T) {
 				assert.Loosely(t, idxs[3].String(), should.Equal("B:knd/-nerd"))
 				assert.Loosely(t, idxs[4].String(), should.Equal("B:knd/-wat"))
 			})
-
 		})
 	})
 }

@@ -216,7 +216,6 @@ func TestListenerStreamServer(t *testing.T) {
 
 				assert.Loosely(t, <-s.discardC, should.NotBeNil)
 			})
-
 		})
 	})
 }

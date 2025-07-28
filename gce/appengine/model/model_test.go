@@ -629,7 +629,6 @@ func TestVM(t *testing.T) {
 				})
 			})
 		})
-
 	})
 
 	ftt.Run("getScheduling", t, func(t *ftt.Test) {

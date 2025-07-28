@@ -49,5 +49,4 @@ func TestGenerator(t *testing.T) {
 		cmd := testutils.Assert[*core.Action_Command](t, a.Spec)
 		assert.Loosely(t, cmd.Command.Env, should.Match([]string{"depsBuildHost={{.second}}", "second={{.second}}"}))
 	})
-
 }

@@ -59,7 +59,6 @@ func TestDatastoreQueries(t *testing.T) {
 					{Property: "wat"}, {Property: "__key__"}}))
 			})
 		})
-
 	})
 }
 
@@ -737,7 +736,6 @@ func TestQueryConcurrencySafety(t *testing.T) {
 		q := NewQuery("Foo")
 
 		err := parallel.FanOutIn(func(outerC chan<- func() error) {
-
 			for i := range rounds {
 				outerQ := q.Gt("Field", i)
 

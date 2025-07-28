@@ -55,13 +55,11 @@ func getOnCallEmails(ctx context.Context, rotationProxyName string) ([]string, e
 	data, err := client.sendRequest(ctx, rotationProxyName)
 	if err != nil {
 		return nil, errors.Fmt("error when querying for on-call rotation: %w", err)
-
 	}
 
 	res := &rotationResponse{}
 	if err = json.Unmarshal([]byte(data), res); err != nil {
 		return nil, errors.Fmt("failed to unmarshal rotation response (data = %s): %w", data, err)
-
 	}
 
 	return res.Emails, nil
@@ -87,7 +85,6 @@ func (client *RotationProxyClient) sendRequest(ctx context.Context, rotationProx
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", errors.Fmt("failed to construct request when getting on-call rotation with name '%s': %w", rotationProxyName, err)
-
 	}
 
 	// Get the on-call rotation (timeout of 30s)

@@ -33,7 +33,6 @@ import (
 
 func TestAnalyzer(t *testing.T) {
 	ftt.Run("Analyzer", t, func(t *ftt.Test) {
-
 		var a Analyzer
 
 		variant := &pb.Variant{
@@ -531,7 +530,6 @@ func BenchmarkAnalyzer(b *testing.B) {
 
 	var a Analyzer
 	for i := 0; i < b.N; i++ {
-
 		row := &testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_id_2",

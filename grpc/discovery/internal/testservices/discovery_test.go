@@ -40,7 +40,6 @@ var _ = CalcServer(nil)
 
 func TestDiscovery(t *testing.T) {
 	ftt.Run("Discovery", t, func(t *ftt.Test) {
-
 		server := discovery.New(
 			"discovery.Discovery",
 			"testservices.Greeter",

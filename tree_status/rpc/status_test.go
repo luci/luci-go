@@ -623,7 +623,6 @@ func TestStatus(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, time.Since(actual.CreateTime.AsTime()), should.BeLessThan(time.Minute))
 			})
-
 		})
 
 		t.Run("List", func(t *ftt.Test) {
@@ -803,7 +802,6 @@ func TestStatus(t *testing.T) {
 			})
 		})
 	})
-
 }
 
 type StatusBuilder struct {

@@ -283,7 +283,6 @@ func TestClient(t *testing.T) {
 				req := &testpb.HelloRequest{Name: strings.Repeat("A", 1024)}
 
 				client, server := setUp(func(w http.ResponseWriter, r *http.Request) {
-
 					// Parse request.
 					assert.Loosely(t, r.Header.Get("Accept-Encoding"), should.Equal("gzip"))
 					assert.Loosely(t, r.Header.Get("Content-Encoding"), should.Equal("gzip"))

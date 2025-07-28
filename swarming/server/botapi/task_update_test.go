@@ -345,11 +345,9 @@ func TestProcessTaskUpdate(t *testing.T) {
 						if res != nil {
 							assert.That(t, res.Proceed, should.BeTrue)
 							assert.That(t, res.EventType, should.Equal(outcome.BotEventType))
-
 						}
 						return err
 					}, nil)
-
 				}
 
 				srv.tasksManager = &tasks.MockedManager{
@@ -455,7 +453,6 @@ func TestProcessTaskUpdate(t *testing.T) {
 						assert.NoErr(t, datastore.Put(ctx, botInfo))
 						return nil
 					}, nil)
-
 				}
 
 				lastSeen := now.Add(-time.Minute)

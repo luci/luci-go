@@ -188,7 +188,6 @@ func RevokeStaleAuthorization(ctx context.Context, trustedGroup string) (retErr 
 		if err != nil {
 			return errors.Fmt("error checking %s membership for %s: %w",
 				trustedGroup, authIdentity, err)
-
 		}
 		if !trusted {
 			logging.Warningf(ctx, "revoking subscribing authorization for %s", iamIdentity)

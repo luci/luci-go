@@ -246,11 +246,9 @@ func TestTransactionBuffers(t *testing.T) {
 
 				fooShouldHaveValues(c, t, k.IntID(), nums, nil)
 			})
-
 		})
 
 		t.Run("Bad", func(t *ftt.Test) {
-
 			t.Run("too many roots", func(t *ftt.Test) {
 				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 					for i := 1; i < 26; i++ {
@@ -279,9 +277,7 @@ func TestTransactionBuffers(t *testing.T) {
 				assert.Loosely(t, under.PutMulti.Total(), should.BeZero)
 				assert.Loosely(t, over.PutMulti.Successes(), should.Equal(1))
 			})
-
 		})
-
 	})
 }
 
@@ -547,7 +543,6 @@ func TestQuerySupport(t *testing.T) {
 
 					return nil
 				}, nil), should.BeNil)
-
 			})
 
 			t.Run("project+distinct", func(t *ftt.Test) {
@@ -655,7 +650,6 @@ func TestQuerySupport(t *testing.T) {
 			}
 
 			t.Run("project+extra orders", func(t *ftt.Test) {
-
 				_, _, c := mkds(projectData)
 				ds.GetTestable(c).AddIndexes(&ds.IndexDefinition{
 					Kind:     "Foo",
@@ -818,7 +812,6 @@ func TestQuerySupport(t *testing.T) {
 				vals := []*Foo{}
 				assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
 				assert.Loosely(t, vals, should.Match([]*Foo{foo1, projectData[0], foo7}))
-
 			})
 
 			t.Run("start transaction from inside query", func(t *ftt.Test) {
@@ -838,11 +831,8 @@ func TestQuerySupport(t *testing.T) {
 					assert.Loosely(t, val[len(val)-1].Value(), should.Match("wat"))
 				}), should.BeNil)
 			})
-
 		})
-
 	})
-
 }
 
 func TestRegressions(t *testing.T) {

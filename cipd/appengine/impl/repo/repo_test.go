@@ -449,7 +449,6 @@ func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 			}
 		})
-
 	})
 }
 
@@ -737,7 +736,6 @@ func TestListPrefix(t *testing.T) {
 			assert.Loosely(t, resp.Packages, should.HaveLength(0))
 			assert.Loosely(t, resp.Prefixes, should.HaveLength(0))
 		})
-
 	})
 }
 

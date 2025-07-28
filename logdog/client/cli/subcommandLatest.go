@@ -123,7 +123,6 @@ func (cmd *latestCommandRun) Run(scApp subcommands.Application, args []string, _
 
 func (cmd *latestCommandRun) getTailEntry(c context.Context, s *coordinator.Stream) (
 	*logpb.LogEntry, *coordinator.LogStream, error) {
-
 	// Loop until we either hard fail or succeed.
 	var st coordinator.LogStream
 

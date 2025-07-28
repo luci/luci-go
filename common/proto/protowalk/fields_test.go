@@ -54,7 +54,6 @@ func TestFields(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run(`Fields`, t, func(t *ftt.Test) {
-
 		t.Run(`fails when constructed without NewWalker`, func(t *ftt.Test) {
 			var walker Walker[*Outer]
 			assert.Loosely(t, walker.Execute(&Outer{}).Empty(), should.BeTrue)
@@ -104,7 +103,6 @@ func TestFields(t *testing.T) {
 					".multi_inner[2].deprecated: deprecated",
 				}))
 			})
-
 		})
 
 		t.Run(`works with custom check`, func(t *ftt.Test) {
@@ -124,7 +122,6 @@ func TestFields(t *testing.T) {
 				// 2 is OK!
 				`.multi_inner[3].custom: "" doesn't equal "hello"`,
 			}))
-
 		})
 	})
 }

@@ -132,7 +132,6 @@ func TestRAPT(t *testing.T) {
 			Name:  "RAPT",
 			Value: "nahinahi",
 		}}))
-
 	})
 }
 

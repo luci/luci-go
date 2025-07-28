@@ -78,7 +78,6 @@ func TestSubgraphOperations(t *testing.T) {
 
 			assert.Loosely(t, subgraph.nodesToID, should.Match(expectedNodeMap))
 		})
-
 	})
 
 	ftt.Run("Testing addEdge", t, func(t *ftt.Test) {

@@ -1528,7 +1528,6 @@ func TestValidateProject(t *testing.T) {
 			assert.Loosely(t, allErrs, should.ContainSubstring(`key "is_experimental": reserved key`))
 		})
 	})
-
 }
 
 func TestUpdateProject(t *testing.T) {
@@ -1917,7 +1916,6 @@ func TestUpdateProject(t *testing.T) {
 				assert.Loosely(t, UpdateProjectCfg(ctx), should.BeNil)
 				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 			})
-
 		})
 
 		t.Run("test custom builder metrics", func(t *ftt.Test) {
@@ -2171,7 +2169,6 @@ func TestUpdateProject(t *testing.T) {
 					Revision: "deadbeef",
 				},
 			}))
-
 		})
 
 		t.Run("with broken configs", func(t *ftt.Test) {
@@ -2519,7 +2516,6 @@ func TestUpdateProject(t *testing.T) {
 						Compression: pb.Compression_ZLIB,
 					},
 				}))
-
 			})
 
 			t.Run("delete all topics", func(t *ftt.Test) {

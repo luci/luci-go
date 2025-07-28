@@ -283,7 +283,6 @@ func TestDeadline(t *testing.T) {
 					assert.Loosely(t, tc.Now(), should.HappenWithin(time.Millisecond, hardDeadline.Add(-10*time.Second)))
 				})
 			})
-
 		})
 	})
 }

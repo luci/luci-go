@@ -117,7 +117,6 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					assert.Loosely(t, ds.Delete(c, k), should.BeNil)
 					assert.Loosely(t, ds.Get(c, newFoo), should.Equal(ds.ErrNoSuchEntity))
 				})
-
 			})
 			t.Run("Can Get it back as a PropertyMap", func(t *ftt.Test) {
 				pmap := ds.PropertyMap{
@@ -214,7 +213,6 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 						}))
 					}
 				})
-
 			})
 
 			t.Run("allocating ids prevents their use", func(t *ftt.Test) {
@@ -957,7 +955,6 @@ func TestConcurrentTxn(t *testing.T) {
 					if err == nil {
 						atomic.AddInt64(&successes, 1)
 					}
-
 				}(round, track)
 			}
 

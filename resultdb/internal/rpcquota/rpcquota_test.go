@@ -108,5 +108,4 @@ func TestUpdateUserQuota(t *testing.T) {
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.ResourceExhausted))
 		})
 	})
-
 }

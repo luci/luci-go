@@ -140,6 +140,5 @@ func TestParseCLURL(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }

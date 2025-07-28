@@ -41,7 +41,6 @@ import (
 )
 
 func TestValidateNewTestVariantsRequest(t *testing.T) {
-
 	ftt.Run(`Validate Request`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
@@ -86,7 +85,6 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 			err := validateQueryNewTestVariantsRequest(ctx, req)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("invocation"))
-
 		})
 
 		t.Run(`Baseline Bad Format`, func(t *ftt.Test) {
@@ -166,7 +164,6 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 }
 
 func ValidateCheckBaselineStatus(t *testing.T) {
-
 	ftt.Run(`ValidateCheckBaselineStatus`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
@@ -263,7 +260,6 @@ func ValidateCheckBaselineStatus(t *testing.T) {
 }
 
 func TestFindNewTests(t *testing.T) {
-
 	ftt.Run(`FindNewTests`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
@@ -347,7 +343,6 @@ func TestFindNewTests(t *testing.T) {
 }
 
 func TestE2E(t *testing.T) {
-
 	ftt.Run(`E2E`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 

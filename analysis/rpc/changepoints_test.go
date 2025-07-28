@@ -358,7 +358,6 @@ func TestChangepointsServer(t *testing.T) {
 					NextPageToken: "next-page",
 				}))
 			})
-
 		})
 
 		t.Run("QueryChangepointsInGroup", func(t *ftt.Test) {
@@ -448,7 +447,6 @@ func TestChangepointsServer(t *testing.T) {
 							PreviousSegmentNominalEndPosition: 1,
 						}},
 					}))
-
 				})
 
 				t.Run("group not found", func(t *ftt.Test) {

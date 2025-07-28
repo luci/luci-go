@@ -652,7 +652,6 @@ func (c *commandRun) cmdRotationBegin(ctx context.Context) error {
 			return userError.Apply(errors.Fmt("Can't change the secret type from %q to %q. Types are incompatible. "+
 				"If you really need this change, pass -force flag. This is dangerous.",
 				existingType, c.secretGen.name))
-
 		}
 		logging.Warningf(ctx, "Overriding the secret type %q => %q.", existingType, c.secretGen.name)
 		labels := secret.Labels

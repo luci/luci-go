@@ -135,7 +135,6 @@ func TestEnsureBaselineExists(t *testing.T) {
 }
 
 func TestTryMarkInvocationSubmitted(t *testing.T) {
-
 	ftt.Run(`e2e`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 

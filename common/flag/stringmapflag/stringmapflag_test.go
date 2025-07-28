@@ -56,7 +56,6 @@ func TestValueFlag(t *testing.T) {
 				err := fs.Parse([]string{"-tag", "foo=FOO", "-tag", "foo=BAR"})
 				assert.Loosely(t, err, should.NotBeNil)
 			})
-
 		})
 	})
 }

@@ -137,7 +137,6 @@ func LosslessConvertToReflect(value any, to reflect.Value) (ok bool) {
 		// We rely on the default conversion rules for all other target types.
 		to.Set(from.Convert(toT))
 		return true
-
 	}
 
 	return false

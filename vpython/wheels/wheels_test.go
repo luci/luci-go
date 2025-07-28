@@ -38,7 +38,6 @@ func TestGeneratingEnsureFile(t *testing.T) {
 			{PackageTemplate: "pkg1", UnresolvedVersion: "version1"},
 			{PackageTemplate: "pkg2", UnresolvedVersion: "version2"},
 		}))
-
 	})
 	ftt.Run("Test duplicated wheels", t, func(t *ftt.Test) {
 		t.Run("Same version", func(t *ftt.Test) {

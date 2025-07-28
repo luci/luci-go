@@ -1312,7 +1312,6 @@ func TestClusters(t *testing.T) {
 					// Verify.
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, response, should.Match(expectedResponse))
-
 				})
 			})
 			t.Run("With an invalid request", func(t *ftt.Test) {

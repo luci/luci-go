@@ -26,7 +26,6 @@ import (
 
 func TestParseCL(t *testing.T) {
 	ftt.Run("ParseCL", t, func(t *ftt.Test) {
-
 		t.Run("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7", func(t *ftt.Test) {
 			actual, err := parseCL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1541677/7")
 			assert.Loosely(t, err, should.BeNil)

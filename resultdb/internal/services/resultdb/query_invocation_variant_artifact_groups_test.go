@@ -102,7 +102,6 @@ func TestQueryInvocationVariantArtifactGroups(t *testing.T) {
 		})
 
 		t.Run("invalid request", func(t *ftt.Test) {
-
 			t.Run("googler", func(t *ftt.Test) {
 				req.StartTime = nil
 				res, err := rdbSvr.QueryInvocationVariantArtifactGroups(ctx, req)

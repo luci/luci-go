@@ -112,13 +112,11 @@ func getSignedURL(ctx context.Context, gsPath, filename string, signer signerFac
 	if err != nil {
 		return "", 0,
 			grpcutil.InternalTag.Apply(errors.Fmt("failed to sign URL: %w", err))
-
 	}
 
 	if !info.Exists() {
 		return "", 0,
 			grpcutil.NotFoundTag.Apply(errors.Fmt("object %q doesn't exist", gsPath))
-
 	}
 
 	signedURL := info.URL

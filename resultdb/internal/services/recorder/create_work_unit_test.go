@@ -809,7 +809,6 @@ func TestCreateWorkUnit(t *testing.T) {
 				assert.Loosely(t, includedIDs, should.HaveLength(1))
 				assert.That(t, includedIDs.Has(workUnitID.LegacyInvocationID()), should.BeTrue)
 			})
-
 		})
 	})
 }

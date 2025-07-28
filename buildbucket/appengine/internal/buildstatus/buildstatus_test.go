@@ -50,7 +50,6 @@ func TestUpdate(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 
 		t.Run("fail", func(t *ftt.Test) {
-
 			t.Run("not in transaction", func(t *ftt.Test) {
 				u := &Updater{}
 				_, err := u.Do(ctx)
@@ -151,7 +150,6 @@ func TestUpdate(t *testing.T) {
 		})
 
 		t.Run("pass", func(t *ftt.Test) {
-
 			b := &model.Build{
 				ID: 87654321,
 				Proto: &pb.Build{

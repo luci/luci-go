@@ -111,7 +111,6 @@ func (cfg *Pool) rbeConfig(botID string) RBEConfig {
 			EffectiveBotIDDimension: cfg.RBEEffectiveBotIDDimension,
 		}
 	}
-
 }
 
 // newPoolsConfig converts pools.cfg proto to a queryable map.
@@ -607,7 +606,6 @@ func (g *inclusionGraph) includes(root string, visited stringset.Set) ([]string,
 			}
 			allIncs = append(allIncs, subInc)
 		}
-
 	}
 
 	g.flattened[root] = &templateResolvement{

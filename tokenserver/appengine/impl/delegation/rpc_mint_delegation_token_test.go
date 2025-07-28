@@ -366,6 +366,5 @@ func TestMintDelegationToken(t *testing.T) {
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike("forbidden - the requested validity duration (3601 sec) exceeds the maximum allowed one (3600 sec)"))
 		})
-
 	})
 }

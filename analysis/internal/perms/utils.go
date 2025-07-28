@@ -67,7 +67,6 @@ func SplitRealms(realms []string) (proj string, subRealms []string, err error) {
 			return "", nil, ErrMultipleProjects
 		}
 		subRealms = append(subRealms, subRealm)
-
 	}
 	return proj, subRealms, nil
 }

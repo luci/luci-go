@@ -165,7 +165,6 @@ func (c *Cancellator) fetchCandidates(ctx context.Context, clid common.CLID, pre
 		}
 	}
 	return ret, nil
-
 }
 
 func makeHasAllWatchingRunEndedFn(ctx context.Context, tryjobs []*tryjob.Tryjob) (func(*tryjob.Tryjob) (nonEnded common.RunIDs), error) {

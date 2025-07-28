@@ -177,5 +177,4 @@ func TestRefRecursiveRuntime(t *testing.T) {
 			assert.Loosely(t, func() { MustDecRefRecursiveRuntime(first) }, should.NotPanic)
 		})
 	})
-
 }

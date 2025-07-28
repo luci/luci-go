@@ -400,7 +400,6 @@ func (a *Archivist) loadSettings(ctx context.Context, project string) (*Settings
 
 func (a *Archivist) makeStagedArchival(ctx context.Context, project string, realm string,
 	st *Settings, ls *logdog.LoadStreamResponse) (*stagedArchival, error) {
-
 	gsClient, err := a.GSClientFactory(ctx, project)
 	if err != nil {
 		logging.Fields{
@@ -465,7 +464,6 @@ func (a *Archivist) makeStagedArchival(ctx context.Context, project string, real
 		if err = clc.Ping(ctx); err != nil {
 			return nil, errors.Fmt("failed to ping CloudProject %q for Cloud Logging export: %w",
 				st.CloudLoggingProjectID, err)
-
 		}
 		sa.clclient = clc
 	}

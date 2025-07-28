@@ -84,7 +84,6 @@ func (s *recorderServer) BatchCreateInvocations(ctx context.Context, in *pb.Batc
 		if err := verifyCreateInvocationPermissions(ctx, r); err != nil {
 			return nil, errors.Fmt("requests[%d]: %w", i, err)
 		}
-
 	}
 
 	idSet, includedInvs, err := validateBatchCreateInvocationsRequest(now, in.Requests, in.RequestId)

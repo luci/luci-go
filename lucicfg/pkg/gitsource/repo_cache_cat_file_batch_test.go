@@ -102,7 +102,6 @@ func TestCatFileBatchLazy(t *testing.T) {
 		_, _, err = repo.batchProc.catFile(
 			context.Background(), "6371")
 		assert.ErrIsLike(t, err, "ambiguous")
-
 	})
 
 	t.Run("missing", func(t *testing.T) {

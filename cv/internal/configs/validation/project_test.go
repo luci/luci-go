@@ -432,7 +432,6 @@ func TestValidateProjectDetailed(t *testing.T) {
 							w.Votes = append(w.Votes, w.Votes[0])
 							validateProjectConfig(vctx, &cfg)
 							assert.ErrIsLike(t, vctx.Finalize(), `"CQ-verified" already specified`)
-
 						})
 					})
 				})

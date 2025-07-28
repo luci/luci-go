@@ -76,7 +76,6 @@ func TestCanRetryAll(t *testing.T) {
 						},
 					},
 				}))
-
 			}
 
 			t.Run("Nil config", func(t *ftt.Test) {

@@ -77,7 +77,6 @@ func TestCLGraph(t *testing.T) {
 	})
 
 	t.Run("DotGraph", func(t *testing.T) {
-
 		t.Run("2->1->0", func(t *testing.T) {
 			cls := generateRunCL(3)
 			setHardDepOn(cls[2], cls[1])
@@ -115,9 +114,7 @@ func TestCLGraph(t *testing.T) {
 				t.Fatalf("expecting:\n%s\ngot:\n%s", expected, dotGraph)
 			}
 		})
-
 	})
-
 }
 
 // generate CL 0...n-1

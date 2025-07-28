@@ -105,7 +105,6 @@ func show(ctx context.Context, client *prpc.Client, name string) error {
 	}
 
 	switch obj := obj.(type) {
-
 	case *descriptorpb.ServiceDescriptorProto:
 		printer.Service(obj, -1)
 

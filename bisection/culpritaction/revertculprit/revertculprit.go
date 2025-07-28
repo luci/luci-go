@@ -503,7 +503,6 @@ func searchForCreatedRevert(ctx context.Context, gerritClient *gerrit.Client,
 	reverts, err := gerritClient.GetReverts(ctx, culprit)
 	if err != nil {
 		return nil, errors.Fmt("failed getting existing reverts when searching for created revert: %w", err)
-
 	}
 
 	var createdRevert *gerritpb.ChangeInfo = nil
@@ -547,7 +546,6 @@ func isRevertActive(ctx context.Context, gerritClient *gerrit.Client,
 	revert, err := gerritClient.RefetchChange(ctx, revert)
 	if err != nil {
 		return false, errors.Fmt("error refetching revert created by LUCI Bisection: %w", err)
-
 	}
 
 	if revert.Status == gerritpb.ChangeStatus_NEW {
@@ -605,7 +603,6 @@ func saveCreationDetails(ctx context.Context, gerritClient *gerrit.Client,
 	}, nil)
 	if err != nil {
 		return errors.Fmt("couldn't update suspect revert creation details: %w", err)
-
 	}
 	return nil
 }
@@ -631,7 +628,6 @@ func saveCommitDetails(ctx context.Context, culpritModel *model.Suspect) error {
 	}, nil)
 	if err != nil {
 		return errors.Fmt("couldn't update suspect revert commit details: %w", err)
-
 	}
 	return nil
 }

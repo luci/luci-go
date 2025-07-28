@@ -39,5 +39,4 @@ func TestVariantUtil(t *testing.T) {
 			assert.Loosely(t, variant, should.BeNil)
 		})
 	})
-
 }

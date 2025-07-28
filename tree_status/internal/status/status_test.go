@@ -80,7 +80,6 @@ func TestValidation(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("message: not a valid utf8 string"))
 			})
 			// TODO: unicode tests
-
 		})
 		t.Run("closing builder name", func(t *ftt.Test) {
 			t.Run("ignored if status is not closed", func(t *ftt.Test) {

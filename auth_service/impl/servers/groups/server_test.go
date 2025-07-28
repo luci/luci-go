@@ -401,7 +401,6 @@ func TestGroupsServer(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, actualGroupResponse, should.Match(expectedResponse))
 		})
-
 	})
 
 	ftt.Run("GetLegacyAuthGroup REST call", t, func(t *ftt.Test) {
@@ -862,7 +861,6 @@ func TestGroupsServer(t *testing.T) {
 		})
 
 		t.Run("Permissions", func(t *ftt.Test) {
-
 			t.Run("Anonymous is denied", func(t *ftt.Test) {
 				ctx := auth.WithState(ctx, &authtest.FakeState{})
 				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
@@ -1274,7 +1272,6 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			assert.Loosely(t, actualSubgraph, should.Match(expectedSubgraph))
-
 		})
 
 		t.Run("Glob principal", func(t *ftt.Test) {
@@ -1329,7 +1326,6 @@ func TestGroupsServer(t *testing.T) {
 
 			_, err := srv.GetSubgraph(ctx, &request)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("invalid principal kind"))
-
 		})
 
 		t.Run("Group principal not in groups graph", func(t *ftt.Test) {

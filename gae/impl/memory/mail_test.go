@@ -165,7 +165,6 @@ func TestMail(t *testing.T) {
 						},
 					}},
 				}))
-
 			})
 		})
 
@@ -239,10 +238,7 @@ func TestMail(t *testing.T) {
 					Body:    "I forgot",
 					Headers: net_mail.Header{"x-spam-cool": []string{"value"}},
 				}), should.ErrLike(`disallowed header: x-spam-cool`))
-
 			})
-
 		})
-
 	})
 }

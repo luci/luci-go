@@ -172,7 +172,6 @@ func NewBuildMask(legacyPrefix string, legacy *fieldmaskpb.FieldMask, bm *pb.Bui
 		return nil, errors.New("the extended field mask syntax is no longer supported, " +
 			"use the standard one: " +
 			"https://pkg.go.dev/google.golang.org/protobuf/types/known/fieldmaskpb#FieldMask")
-
 	}
 
 	return &BuildMask{

@@ -339,7 +339,6 @@ func TestDiscoversCLs(t *testing.T) {
 				assert.That(t, qs.GetLastIncrTime().AsTime(), should.Match(ct.Clock.Now().UTC()))
 				assert.That(t, qs.GetChanges(), should.Match([]int64{31, 32, 33, 34, 35, 36}))
 			})
-
 		})
 
 		t.Run("Skip incremental poll for project use pubsub listener type", func(t *ftt.Test) {

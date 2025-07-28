@@ -348,7 +348,6 @@ func TestMutatorBatch(t *testing.T) {
 				if gChange%3 == 0 {
 					cl.IncompleteRuns = append(cl.IncompleteRuns, run1)
 					expectedRun1 = append(expectedRun1, cl.ID)
-
 				}
 				if gChange%5 == 0 {
 					cl.IncompleteRuns = append(cl.IncompleteRuns, run2)

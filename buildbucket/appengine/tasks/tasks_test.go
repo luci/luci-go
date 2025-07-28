@@ -99,9 +99,7 @@ func TestTasks(t *testing.T) {
 
 		t.Run("ExportBigQuery", func(t *ftt.Test) {
 			t.Run("invalid", func(t *ftt.Test) {
-
 				t.Run("zero", func(t *ftt.Test) {
-
 					assert.Loosely(t, ExportBigQuery(ctx, 0), should.ErrLike("build_id is invalid"))
 					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})

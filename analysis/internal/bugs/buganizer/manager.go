@@ -109,7 +109,6 @@ type BugManager struct {
 func NewBugManager(client Client,
 	uiBaseURL, project, selfEmail string,
 	projectCfg *configpb.ProjectConfig) (*BugManager, error) {
-
 	generator, err := NewRequestGenerator(
 		client,
 		project,

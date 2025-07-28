@@ -251,7 +251,6 @@ func (srv *BotAPIServer) completeTask(ctx context.Context, body *TaskUpdateReque
 				return nil, err
 			}
 			return &botinfo.PrepareOutcome{Proceed: true, EventType: outcome.BotEventType}, nil
-
 		},
 		CallInfo: botCallInfo(ctx, &botinfo.CallInfo{
 			SessionID: r.Session.SessionId,

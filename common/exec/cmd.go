@@ -457,7 +457,6 @@ func commandImpl(ctx context.Context, name string, arg []string, mkFn func(ctx c
 	}
 	ret.Cmd.Args = append([]string{name}, arg...)
 	return ret
-
 }
 
 // CommandContext behaves like "os/exec".CommandContext, except that it can be

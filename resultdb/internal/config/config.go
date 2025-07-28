@@ -58,7 +58,6 @@ func UpdateConfig(ctx context.Context) error {
 		return errors.NewMultiError(errs...)
 	}
 	return nil
-
 }
 
 // UpdateServiceConfig fetches the latest service config and caches it in datastore.

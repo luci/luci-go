@@ -665,7 +665,6 @@ func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceC
 func (c *InstanceCache) syncState(ctx context.Context, state *messages.InstanceCache, now time.Time) error {
 	root, err := os.Open(c.FS.Root())
 	switch {
-
 	case os.IsNotExist(err):
 		state.Entries = nil
 

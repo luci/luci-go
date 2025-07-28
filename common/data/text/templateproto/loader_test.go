@@ -153,6 +153,5 @@ func TestLoadFromConfig(t *testing.T) {
 				assert.Loosely(t, ret, should.Equal(`{"woot": ["sauce"]}`))
 			})
 		})
-
 	})
 }

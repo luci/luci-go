@@ -204,5 +204,4 @@ ORDER BY regression_group.RegressionEndPosition DESC
 LIMIT 5000`))
 		})
 	})
-
 }

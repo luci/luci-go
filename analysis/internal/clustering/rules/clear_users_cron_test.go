@@ -28,7 +28,6 @@ import (
 
 func TestClearRuleUsers(t *testing.T) {
 	ftt.Run(`With Spanner Test Database`, t, func(t *ftt.Test) {
-
 		ctx := testutil.IntegrationTestContext(t)
 
 		t.Run(`Rules older than 30 days should have their CreationUser cleared`, func(t *ftt.Test) {

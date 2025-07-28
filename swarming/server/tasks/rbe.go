@@ -171,7 +171,6 @@ func dimsToBotIDAndConstraints(ctx context.Context, dims model.TaskDimensions, r
 	if effectiveBotIDFromBot != "" && effectiveBotID != "" && effectiveBotIDFromBot != effectiveBotID {
 		return "", nil, errors.Fmt("conflicting effective bot IDs: %q (according to bot %q) and %q (according to task): %w",
 			effectiveBotIDFromBot, botID, effectiveBotID, ErrBadReservation)
-
 	}
 	if effectiveBotIDFromBot != "" {
 		botID = effectiveBotIDFromBot

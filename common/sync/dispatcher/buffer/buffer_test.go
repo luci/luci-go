@@ -389,7 +389,6 @@ func TestBuffer(t *testing.T) {
 			})
 
 			t.Run(`full buffer behavior`, func(t *ftt.Test) {
-
 				t.Run(`DropOldestBatch`, func(t *ftt.Test) {
 					b, err := NewBuffer[any](&Options{
 						FullBehavior:  &DropOldestBatch{MaxLiveItems: 1},
@@ -512,11 +511,8 @@ func TestBuffer(t *testing.T) {
 							assert.Loosely(t, b.stats, should.Resemble(Stats{UnleasedItemCount: 21}))
 							assert.Loosely(t, b.CanAddItem(), should.BeFalse)
 						})
-
 					})
-
 				})
-
 			})
 		})
 	})

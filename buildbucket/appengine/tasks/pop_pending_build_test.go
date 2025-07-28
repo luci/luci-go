@@ -325,7 +325,5 @@ func TestPopPendingBuildTask(t *testing.T) {
 				}))
 			})
 		})
-
 	})
-
 }

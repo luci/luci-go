@@ -106,7 +106,6 @@ func GetConsoleRows(c context.Context, project string, console *projectconfigpb.
 // This expects all builders in all consoles coming from the same projectID.
 func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*projectconfig.Console, projectID string) (
 	map[projectconfig.ConsoleID]*ui.BuilderSummaryGroup, error) {
-
 	// Maps consoleID -> console config definition.
 	consoles := make(map[projectconfig.ConsoleID]*projectconfigpb.Console, len(consoleEnts))
 

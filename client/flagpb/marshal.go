@@ -32,7 +32,6 @@ func appendFlags(flags []string, path []string, v reflect.Value) ([]string, erro
 
 	var err error
 	switch v.Kind() {
-
 	case reflect.Map:
 		if kind := v.Type().Key().Kind(); kind != reflect.String {
 			return nil, fmt.Errorf("map key type must be string, got %s", kind)

@@ -497,7 +497,6 @@ func TestConvertRootStep(t *testing.T) {
 			expectedBuild.EndTime = &timestamppb.Timestamp{Seconds: 1600000000}
 			test()
 		})
-
 	})
 }
 

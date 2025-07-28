@@ -179,7 +179,5 @@ func TestServer(t *testing.T) {
 			assert.Loosely(t, capturedOutput, should.BeBlank)
 			assert.Loosely(t, capturedErr, should.ErrLike("boom"))
 		})
-
 	})
-
 }

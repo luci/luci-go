@@ -290,7 +290,6 @@ func TestSetDimensions(t *testing.T) {
 			},
 		},
 	})
-
 }
 
 func editDims(t testing.TB, jd *Definition, cmds ...string) {
@@ -433,7 +432,6 @@ func TestEditDimensions(t *testing.T) {
 						{Value: "everything", Expiration: swSlice3Exp},
 					},
 				}))
-
 			},
 		},
 	})

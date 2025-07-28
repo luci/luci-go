@@ -130,11 +130,9 @@ func AttachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetad
 		checkExisting := func(ent *InstanceMetadata, msg *api.InstanceMetadata) error {
 			if ent.Key != msg.Key {
 				return grpcutil.InternalTag.Apply(errors.Fmt("fingerprint %q matches two metadata keys %q and %q, aborting", ent.Fingerprint, ent.Key, msg.Key))
-
 			}
 			if !bytes.Equal(ent.Value, msg.Value) {
 				return grpcutil.InternalTag.Apply(errors.Fmt("fingerprint %q matches metadata key %q with two different values, aborting", ent.Fingerprint, ent.Key))
-
 			}
 			return nil
 		}

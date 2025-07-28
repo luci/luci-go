@@ -107,7 +107,6 @@ func (v VersionsFile) ResolveVersion(pkg, ver string) (common.Pin, error) {
 
 			// Equal returns true if version files have same entries.
 			New("not in the versions file"))
-
 }
 
 func (v VersionsFile) Equal(a VersionsFile) bool {

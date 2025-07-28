@@ -121,7 +121,6 @@ func (w *worker) findRetriableTryjobs(ctx context.Context, tryjobs []*tryjob.Try
 		case canRetryBackendError(result.Err):
 			toRetry = append(toRetry, tj)
 		}
-
 	}
 	if len(launchLogs) > 0 {
 		w.logEntries = append(w.logEntries, &tryjob.ExecutionLogEntry{

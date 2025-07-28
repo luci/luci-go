@@ -28,7 +28,6 @@ func TestExternalID(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("ExternalID works", t, func(t *ftt.Test) {
-
 		t.Run("BuildbucketID", func(t *ftt.Test) {
 			eid, err := BuildbucketID("cr-buildbucket.appspot.com", 12)
 			assert.NoErr(t, err)

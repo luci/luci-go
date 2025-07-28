@@ -271,7 +271,6 @@ func TestValidateTestResult(t *testing.T) {
 				msg.Tags = StringPairs("", "")
 				assert.Loosely(t, validateTR(msg), should.ErrLike(`"":"": key: unspecified`))
 			})
-
 		})
 
 		t.Run("with nil", func(t *ftt.Test) {
@@ -465,7 +464,6 @@ func TestValidateTestResult(t *testing.T) {
 				})
 			})
 			t.Run("Bug component", func(t *ftt.Test) {
-
 				t.Run("nil bug system in bug component", func(t *ftt.Test) {
 					msg.TestMetadata = &pb.TestMetadata{
 						Name: "name",

@@ -36,7 +36,6 @@ func init() {
 func TestReplaceVars(t *testing.T) {
 	t.Parallel()
 	ftt.Run(`Variables replacement should be supported in isolate files.`, t, func(t *ftt.Test) {
-
 		opts := &ArchiveOptions{PathVariables: map[string]string{"VAR": "wonderful"}}
 
 		// Single replacement.

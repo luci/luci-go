@@ -8,6 +8,7 @@ version: "2"
 linters:
   enable:
     - copyloopvar
+    - whitespace
   disable:
     - errcheck
     - errorlint

@@ -85,7 +85,6 @@ func TestState(t *testing.T) {
 			assert.Loosely(t, build.GetInfra().Buildbucket.ServiceConfigRevision, should.Match("I am a string"))
 			build.GetInfra().Buildbucket.ServiceConfigRevision = "narf"
 			assert.Loosely(t, origInfra.Buildbucket.ServiceConfigRevision, should.Match("I am a string"))
-
 		})
 	})
 
@@ -181,7 +180,6 @@ func TestStateLogging(t *testing.T) {
 
 			assert.Loosely(t, scFake.Data()["fakeNS/log/2"].GetDatagrams(), should.Contain("here's some stuff"))
 		})
-
 	})
 }
 
@@ -309,7 +307,6 @@ func TestStateSend(t *testing.T) {
 				},
 			}))
 		})
-
 	})
 }
 

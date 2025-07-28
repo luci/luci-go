@@ -37,7 +37,6 @@ const (
 )
 
 func TestLeasing(t *testing.T) {
-
 	ftt.Run("leasing works", t, func(t *ftt.Test) {
 		ctx := spantest.SpannerTestContext(t, cleanupDatabase)
 		now := clock.Now(ctx).UTC()

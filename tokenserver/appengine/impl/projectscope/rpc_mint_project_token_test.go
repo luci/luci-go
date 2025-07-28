@@ -59,7 +59,6 @@ func testingContext(caller identity.Identity) context.Context {
 		Identity:       caller,
 		IdentityGroups: authorizedGroups,
 	})
-
 }
 
 func newTestMintProjectTokenRPC() *MintProjectTokenRPC {
@@ -72,7 +71,6 @@ func newTestMintProjectTokenRPC() *MintProjectTokenRPC {
 }
 
 func TestMintProjectToken(t *testing.T) {
-
 	t.Parallel()
 	ctx := testingContext("service@example.com")
 	member, err := auth.IsMember(ctx, projectActorsGroup)
@@ -81,7 +79,6 @@ func TestMintProjectToken(t *testing.T) {
 		rpc := newTestMintProjectTokenRPC()
 
 		t.Run("validateRequest works", func(t *ftt.Test) {
-
 			t.Run("empty fields", func(t *ftt.Test) {
 				req := &minter.MintProjectTokenRequest{
 					LuciProject:         "",
@@ -93,7 +90,6 @@ func TestMintProjectToken(t *testing.T) {
 			})
 
 			t.Run("empty project", func(t *ftt.Test) {
-
 				req := &minter.MintProjectTokenRequest{
 					LuciProject:         "",
 					OauthScope:          []string{"https://www.googleapis.com/auth/cloud-platform"},
@@ -104,7 +100,6 @@ func TestMintProjectToken(t *testing.T) {
 			})
 
 			t.Run("empty scopes", func(t *ftt.Test) {
-
 				req := &minter.MintProjectTokenRequest{
 					LuciProject:         "foo-project",
 					OauthScope:          []string{},
@@ -143,9 +138,6 @@ func TestMintProjectToken(t *testing.T) {
 			resp, err := rpc.MintProjectToken(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.NotBeNil)
-
 		})
-
 	})
-
 }

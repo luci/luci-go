@@ -74,7 +74,6 @@ func TestConstructGerritCodeReviewURL(t *testing.T) {
 }
 
 func TestConstructBuganizerURLForTestAnalysis(t *testing.T) {
-
 	commitReviewURL := "https://chromium-test-review.googlesource.com/c/chromium/test/src/+/1234567"
 
 	ftt.Run("construct buganizer URL", t, func(t *ftt.Test) {

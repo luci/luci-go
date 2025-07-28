@@ -48,7 +48,6 @@ func TestFastSizerVarintLength(t *testing.T) {
 			0x100000000000000,
 			0x8000000000000000,
 		} {
-
 			for _, delta := range []int64{
 				-2,
 				-1,

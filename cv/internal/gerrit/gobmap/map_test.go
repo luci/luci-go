@@ -262,7 +262,6 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 		assert.NoErr(t, update("chromium"))
 
 		t.Run("main group matches two different hosts", func(t *ftt.Test) {
-
 			assert.Loosely(t,
 				lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
 				should.Match(

@@ -142,6 +142,5 @@ func TestFakeLogs(t *testing.T) {
 
 			assert.Loosely(t, data, should.Match([]byte("I am a bananathis is\ntwo lines")))
 		})
-
 	})
 }

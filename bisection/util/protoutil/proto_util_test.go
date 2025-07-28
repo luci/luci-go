@@ -551,7 +551,6 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 			}))
 		})
 	})
-
 }
 
 func TestRegressionRange(t *testing.T) {

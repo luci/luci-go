@@ -432,7 +432,6 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 			})
 
 			t.Run(`sub update mask`, func(t *ftt.Test) {
-
 				t.Run(`backticks`, func(t *ftt.Test) {
 					request.UpdateMask.Paths = []string{"extended_properties.`abc`"}
 					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
@@ -845,7 +844,6 @@ func TestUpdateInvocation(t *testing.T) {
 					&taskspb.RunExportNotifications{InvocationId: "inv"},
 					&taskspb.TryFinalizeInvocation{InvocationId: "inv"},
 				}))
-
 			})
 		})
 

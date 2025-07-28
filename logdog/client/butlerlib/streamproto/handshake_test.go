@@ -90,7 +90,6 @@ func TestHandshakeProtocol(t *testing.T) {
 						"foo": "bar",
 					},
 				}), truth.LineContext())
-
 			}
 
 			t.Run(`manually written handshake`, func(t *ftt.Test) {
@@ -153,6 +152,5 @@ func TestHandshakeProtocol(t *testing.T) {
 
 			assert.Loosely(t, f.FromHandshake(buf), should.ErrLike("invalid character 'i'"))
 		})
-
 	})
 }

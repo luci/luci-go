@@ -134,7 +134,6 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 						return nil
 					}
 				}
-
 			}
 		})
 		switch {

@@ -88,6 +88,5 @@ func TestOptions(t *testing.T) {
 				"key2": "value",
 			}))
 		})
-
 	})
 }

@@ -1060,7 +1060,6 @@ func expandPkgDir(ctx context.Context, c cipd.Client, packagePrefix string) ([]s
 			cipderr.RPC.WithDetails(cipderr.Details{
 				Package: packagePrefix,
 			}).Apply(errors.Fmt("no packages under %s", packagePrefix))
-
 	}
 	return out, nil
 }
@@ -1488,7 +1487,6 @@ func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, 
 				err = cipderr.IO.Apply(errors.Fmt("writing resolved ensure file: %w", err))
 			}
 		}
-
 	}
 
 	return resolved.PackagesBySubdir, actions, err
@@ -2146,7 +2144,6 @@ func visitPins(ctx context.Context, args *visitPinsArgs) ([]pinInfo, error) {
 				Version: args.version,
 			}).Apply(errors.
 				Fmt("can't find %q version in all packages, aborting", args.version))
-
 	}
 
 	// Prepare for the next batch call.

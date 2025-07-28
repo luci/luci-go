@@ -26,7 +26,6 @@ func TestExternalID(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("ExternalID works", t, func(t *ftt.Test) {
-
 		t.Run("GobID", func(t *ftt.Test) {
 			eid, err := GobID("x-review.example.com", 12)
 			assert.NoErr(t, err)
@@ -47,7 +46,6 @@ func TestExternalID(t *testing.T) {
 			_, _, err = ExternalID("gerrit/x/y").ParseGobID()
 			assert.ErrIsLike(t, err, "is not a valid GobID")
 		})
-
 	})
 }
 

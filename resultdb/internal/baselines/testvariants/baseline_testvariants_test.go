@@ -33,7 +33,6 @@ func TestRead(t *testing.T) {
 			_, err := Read(span.Single(ctx), "chromium", "try:linux-rel", "ninja://some/test:test_id", "12345")
 			assert.Loosely(t, err, should.ErrLike(NotFound))
 		})
-
 	})
 
 	ftt.Run(`Valid`, t, func(t *ftt.Test) {

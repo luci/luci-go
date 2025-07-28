@@ -1292,7 +1292,6 @@ func TestGetAll(t *testing.T) {
 					assert.Loosely(t, k.IntID(), should.Equal(i+1))
 				}
 			})
-
 		})
 	})
 }
@@ -1492,7 +1491,6 @@ func TestRun(t *testing.T) {
 					i++
 				}), should.BeNil)
 			})
-
 		})
 	})
 }
@@ -1873,7 +1871,6 @@ indexes:
 	})
 
 	ftt.Run("returns non-nil error for incorrectly formatted YAML", t, func(t *ftt.Test) {
-
 		t.Run("missing top level `indexes` key", func(t *ftt.Test) {
 			yaml := `
 - kind: Cat

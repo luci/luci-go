@@ -427,7 +427,6 @@ func TestUpdate(t *testing.T) {
 					assert.That(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobEnded, "test", "test_config_group", true, false, apiv0pb.Tryjob_Result_SUCCEEDED.String()), should.BeNil)
 				})
 			})
-
 		})
 
 		t.Run("fails to update a tryjob with an external ID that doesn't exist", func(t *ftt.Test) {

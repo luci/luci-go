@@ -40,7 +40,6 @@ import (
 )
 
 func TestNotifier(t *testing.T) {
-
 	ftt.Run(`MarkInvocationSubmitted`, t, func(t *ftt.Test) {
 		ct := cvtesting.Test{}
 		ctx := ct.SetUp(t)

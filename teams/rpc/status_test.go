@@ -124,7 +124,6 @@ func TestTeams(t *testing.T) {
 			})
 		})
 	})
-
 }
 
 type fakeAuthBuilder struct {

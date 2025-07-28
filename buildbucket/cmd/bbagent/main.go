@@ -301,7 +301,6 @@ func backFillTaskInfoNeeded(ci clientInput) bool {
 	_, ok := details["bot_dimensions"]
 	// Only need to back fill if bot dimensions have not been populated.
 	return !ok
-
 }
 
 func chooseCacheDir(input *bbpb.BBAgentArgs, cacheBaseFlag string) string {

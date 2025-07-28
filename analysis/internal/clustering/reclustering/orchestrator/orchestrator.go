@@ -241,7 +241,6 @@ func projectWorkerAllocations(ctx context.Context, projects []string, workers in
 	sequence := 1
 	result := make(map[string]workerAllocation)
 	for _, project := range projects {
-
 		projectChunks := chunksByProject[project]
 		// Equiv. to math.Round((projectChunks / totalChunks) * freeWorkers)
 		// without floating-point precision issues.

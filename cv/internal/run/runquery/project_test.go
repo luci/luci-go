@@ -144,7 +144,6 @@ func TestProjectQueryBuilder(t *testing.T) {
 				qb = ProjectQueryBuilder{Status: run.Status_SUCCEEDED}.After(bond2).Before(bond9)
 				assert.Loosely(t, getAll(t, qb), should.HaveLength(0))
 			})
-
 		})
 
 		t.Run("Invalid usage panics", func(t *ftt.Test) {

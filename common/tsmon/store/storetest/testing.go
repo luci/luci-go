@@ -73,7 +73,6 @@ type TestOptions struct {
 // implementations are expected to pass.  When you write a new Store
 // implementation you should ensure you run these tests against it.
 func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOptions) {
-
 	distOne := distribution.New(distribution.DefaultBucketer)
 	distOne.Add(4.2)
 
@@ -342,7 +341,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 						m = &fakeDistributionMetric{FakeMetric{
 							types.MetricInfo{"m", "", []field.Field{}, test.typ, target.NilType},
 							types.MetricMetadata{}}, test.bucketer}
-
 					} else {
 						m = &FakeMetric{
 							types.MetricInfo{"m", "", []field.Field{}, test.typ, target.NilType},
@@ -645,7 +643,6 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 						m = &fakeDistributionMetric{FakeMetric{
 							types.MetricInfo{"m", "", []field.Field{}, test.typ, target.NilType},
 							types.MetricMetadata{}}, test.bucketer}
-
 					} else {
 						m = &FakeMetric{
 							types.MetricInfo{"m", "", []field.Field{}, test.typ, target.NilType},

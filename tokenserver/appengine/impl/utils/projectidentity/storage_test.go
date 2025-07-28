@@ -24,7 +24,6 @@ import (
 )
 
 func TestScopedServiceAccountStorage(t *testing.T) {
-
 	ftt.Run("Test successful creation of several identities", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 		var err error
@@ -86,7 +85,6 @@ func TestScopedServiceAccountStorage(t *testing.T) {
 
 			_, err = storage.lookup(ctx, expected)
 			assert.Loosely(t, err, should.NotBeNil)
-
 		})
 
 		t.Run("Test update identity", func(t *ftt.Test) {
@@ -122,7 +120,6 @@ func TestScopedServiceAccountStorage(t *testing.T) {
 			actual, err = storage.Update(ctx, expected)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, actual, should.Resemble(expected))
-
 		})
 	})
 }

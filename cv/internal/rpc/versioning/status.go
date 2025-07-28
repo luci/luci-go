@@ -51,7 +51,6 @@ func TryjobStatusV0(tjs tryjob.Status, tjrs tryjob.Result_Status) apiv0pb.Tryjob
 	default:
 		panic(fmt.Sprintf("unknown tryjob status: %s", tjs))
 	}
-
 }
 
 // LegacyTryjobStatusV0 converts internal Tryjob status to an APIv0 equivalent.

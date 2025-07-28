@@ -103,7 +103,6 @@ func NewGlobalServices(ctx context.Context, bt *bigtable.Flags) (*GlobalServices
 // The caller must close the returned instance if successful.
 func (gsvc *GlobalServices) StorageForStream(ctx context.Context, lst *coordinator.LogStreamState, project string) (
 	coordinator.SigningStorage, error) {
-
 	if !lst.ArchivalState().Archived() {
 		logging.Debugf(ctx, "Log is not archived. Fetching from intermediate storage.")
 		return noSignedURLStorage{gsvc.btStorage}, nil
@@ -161,7 +160,6 @@ type noSignedURLStorage struct {
 
 func (noSignedURLStorage) GetSignedURLs(context.Context, *coordinator.URLSigningRequest) (
 	*coordinator.URLSigningResponse, error) {
-
 	return nil, nil
 }
 

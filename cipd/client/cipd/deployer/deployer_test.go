@@ -1942,7 +1942,6 @@ func TestUpgradeOldPkgDir(t *testing.T) {
 				".cipd/tmp!",
 			}))
 		})
-
 	})
 }
 
@@ -1973,7 +1972,6 @@ func TestNumSet(t *testing.T) {
 				ns.addNum(sn)
 			}
 		})
-
 	})
 }
 
@@ -2118,9 +2116,7 @@ func TestResolveValidPackageDirs(t *testing.T) {
 				".cipd/pkgs/oldskool/description.json",
 			}))
 		})
-
 	})
-
 }
 
 func TestPackagePathCollision(t *testing.T) {

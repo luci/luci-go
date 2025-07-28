@@ -137,7 +137,7 @@ func generateEmail(
 	gz := gzip.NewWriter(buf)
 	_, err := io.WriteString(gz, htmlBody)
 	if err != nil {
-		logging.Debugf(c,"Failed to write string in generateEmail for %s, err is %s", htmlBody, err)
+		logging.Debugf(c, "Failed to write string in generateEmail for %s, err is %s", htmlBody, err)
 	}
 	if err := gz.Close(); err != nil {
 		logging.Debugf(c, "Failed to close gzip.NewWriter in generateEmail for %s, err is %s", htmlBody, err)
@@ -158,15 +158,12 @@ func generateBuilderDescriptionHTML(unhealthyBuilders []BuilderInfo, healthyBuil
 	htmlOutput := ""
 	if len(unhealthyBuilders) != 0 {
 		htmlOutput += "<p><strong>Unhealthy Builders:</strong></p>" + formatBuildersToHTML(unhealthyBuilders)
-
 	}
 	if len(healthyBuilders) != 0 {
 		htmlOutput += "<p><strong>Healthy Builders:</strong></p>" + formatBuildersToHTML(healthyBuilders)
-
 	}
 	if len(unknownHealthBuilders) != 0 {
 		htmlOutput += "<p><strong>Unknown Health Builders:</strong></p>" + formatBuildersToHTML(unknownHealthBuilders)
-
 	}
 	return htmlOutput
 }

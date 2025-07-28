@@ -28,8 +28,8 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/logdog/api/logpb"
 
+	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 )
 
@@ -197,7 +197,6 @@ func TestStream(t *testing.T) {
 		})
 
 		t.Run(`Will truncate stream when it exceeds maxStreamBytes.`, func(t *ftt.Test) {
-
 			runStream := func() {
 				rc.data = []byte(strings.Repeat("a", 128))
 				assert.Loosely(t, s.readChunk(), should.BeTrue)

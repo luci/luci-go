@@ -85,7 +85,6 @@ func TestTerminateBot(t *testing.T) {
 				_, err := call(srv, state, "", "")
 				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 				assert.That(t, err, should.ErrLike("bot_id is required"))
-
 			})
 			t.Run("invalid_reason", func(t *ftt.Test) {
 				_, err := call(srv, state, botID, strings.Repeat("a", 1001))

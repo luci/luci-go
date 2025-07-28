@@ -156,7 +156,6 @@ func (c *prodClient) ensureTopic(ctx context.Context, name string) (*pubsub.Topi
 		if err != nil {
 			return nil, errors.Fmt("error creating topic %s in project %s: %w",
 				name, c.projectID, err)
-
 		}
 	}
 

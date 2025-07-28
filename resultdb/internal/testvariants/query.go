@@ -445,7 +445,6 @@ func (q *Query) toLimitedData(ctx context.Context, tv *pb.TestVariant,
 				rdbperms.PermGetTestResult, reachableInv.Realm, nil)
 			if err != nil {
 				return errors.Fmt("error checking permission for test result data restriction: %w", err)
-
 			}
 			// Record whether the caller has permission to get test results in the
 			// realm so the HasPermission result can be re-used.
@@ -492,7 +491,6 @@ func (q *Query) toLimitedData(ctx context.Context, tv *pb.TestVariant,
 				rdbperms.PermGetTestExoneration, reachableInv.Realm, nil)
 			if err != nil {
 				return errors.Fmt("error checking permission for test exoneration data restriction: %w", err)
-
 			}
 			// Record whether the caller has permission to get test exonerations in
 			// the realm so the HasPermission result can be re-used.
@@ -945,7 +943,6 @@ func (q *Query) fetchTestVariantsWithExpectedStatus(ctx context.Context) (Page, 
 	var lastProcessedVariantHash string
 
 	finished, err := q.queryTestVariants(ctx, func(tv *pb.TestVariant) error {
-
 		lastProcessedTestID = tv.TestId
 		lastProcessedVariantHash = tv.VariantHash
 

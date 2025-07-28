@@ -106,13 +106,11 @@ func NewClient(ctx context.Context) (*Client, error) {
 	bqClient, err := bq.NewClient(ctx, projectID)
 	if err != nil {
 		return nil, errors.Fmt("failed to create BQ client for project %q: %w", projectID, err)
-
 	}
 
 	mwClient, err := bq.NewWriterClient(ctx, projectID)
 	if err != nil {
 		return nil, errors.Fmt("failed to create BQ managed writer client: %w", err)
-
 	}
 
 	return &Client{
@@ -316,7 +314,6 @@ func (client *Client) ensureLatestView(ctx context.Context,
 	if err != nil {
 		return errors.Fmt("failed to ensure view %q for version %s: %w",
 			viewName, version, err)
-
 	}
 
 	return nil
@@ -333,7 +330,6 @@ func (client *Client) EnsureLatestViews(ctx context.Context) error {
 	groupsViewQuery, err := constructLatestSnapshotViewQuery(ctx, groupsTableName, realmsTableName)
 	if err != nil {
 		return errors.Fmt("failed to construct view query for %q: %w", latestGroupsViewName, err)
-
 	}
 	err = client.ensureLatestView(ctx, latestGroupsViewName, groupsViewQuery, groupsViewVersion)
 	if err != nil {
@@ -345,7 +341,6 @@ func (client *Client) EnsureLatestViews(ctx context.Context) error {
 	realmsViewQuery, err := constructLatestSnapshotViewQuery(ctx, realmsTableName, groupsTableName)
 	if err != nil {
 		return errors.Fmt("failed to construct view query for %q: %w", latestRealmsViewName, err)
-
 	}
 	err = client.ensureLatestView(ctx, latestRealmsViewName, realmsViewQuery, realmsViewVersion)
 	if err != nil {
@@ -357,7 +352,6 @@ func (client *Client) EnsureLatestViews(ctx context.Context) error {
 	rolesViewQuery, err := constructLatestRolesViewQuery(ctx)
 	if err != nil {
 		return errors.Fmt("failed to construct view query for %q: %w", latestRolesViewName, err)
-
 	}
 	err = client.ensureLatestView(ctx, latestRolesViewName, rolesViewQuery, rolesViewVersion)
 	if err != nil {

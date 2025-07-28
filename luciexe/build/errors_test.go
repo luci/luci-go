@@ -71,7 +71,6 @@ func TestErrors(t *testing.T) {
 					Timeout: &bbpb.StatusDetails_Timeout{},
 				}))
 			})
-
 		})
 
 		t.Run(`AttachStatus panics for bad status`, func(t *ftt.Test) {

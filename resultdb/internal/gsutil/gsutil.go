@@ -30,7 +30,6 @@ type Key string
 // GenerateSignedURL generates object signed URL.
 func GenerateSignedURL(ctx context.Context, gsClient *storage.Client, bucket, object string,
 	expiration time.Time, opts *storage.SignedURLOptions) (string, error) {
-
 	// For passing GoogleAcessId used in testing
 	if opts == nil {
 		// GoogleAccessID & privateKey don't need to be provided as they will be

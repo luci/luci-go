@@ -399,5 +399,4 @@ func TestHasAccess(t *testing.T) {
 			})
 		})
 	})
-
 }

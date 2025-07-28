@@ -31,7 +31,6 @@ func TestAbsolutize(t *testing.T) {
 			return absolutizeURLs(logURL, viewURL, "ns/", func(ns, streamName types.StreamName) (url string, viewUrl string) {
 				return fmt.Sprintf("url://%s%s", ns, streamName), fmt.Sprintf("viewURL://%s%s", ns, streamName)
 			})
-
 		}
 		t.Run(`no-op if both urls are absolute`, func(t *ftt.Test) {
 			absLogURL, absViewURL, err := absolutize("url://ns/log/foo", "viewURL://ns/log/foo")

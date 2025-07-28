@@ -28,7 +28,6 @@ func TestEquivalentPatchsetRange(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("EquivalentPatchsetRange", t, func(t *ftt.Test) {
-
 		t.Run("No revisions", func(t *ftt.Test) {
 			_, _, err := EquivalentPatchsetRange(makeCI())
 			assert.ErrIsLike(t, err, "must have all revisions populated")

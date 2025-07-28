@@ -136,7 +136,6 @@ func (a *application) getOutputFactory() (outputFactory, error) {
 // runWithButler is an execution harness that adds application-level management
 // to a Butler run.
 func (a *application) runWithButler(out output.Output, runFunc func(*butler.Butler) error) error {
-
 	// Start our Profiler.
 	a.prof.Logger = log.Get(a)
 	if err := a.prof.Start(); err != nil {

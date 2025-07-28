@@ -35,7 +35,6 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 	lbOwned, err := gerrit.IsOwnedByLUCIBisection(ctx, revert)
 	if err != nil {
 		return errors.Fmt("failed handling existing revert when finding owner: %w", err)
-
 	}
 
 	if lbOwned {
@@ -48,7 +47,6 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 	lbCommented, err := gerrit.HasLUCIBisectionComment(ctx, revert)
 	if err != nil {
 		return errors.Fmt("failed handling existing revert when checking for pre-existing comment: %w", err)
-
 	}
 
 	if lbCommented {
@@ -73,7 +71,6 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 	_, err = gerritClient.AddComment(ctx, revert, message)
 	if err != nil {
 		return errors.Fmt("error when adding supporting comment to existing revert: %w", err)
-
 	}
 
 	// Update tsmon metrics
@@ -98,7 +95,6 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 
 	if err != nil {
 		return errors.Fmt("couldn't update suspect details when commenting support for existing revert: %w", err)
-
 	}
 	return nil
 }
@@ -113,7 +109,6 @@ func commentReasonOnCulprit(ctx context.Context, gerritClient *gerrit.Client,
 	lbCommented, err := gerrit.HasLUCIBisectionComment(ctx, culprit)
 	if err != nil {
 		return errors.Fmt("failed handling failed revert creation when checking for pre-existing comment: %w", err)
-
 	}
 
 	if lbCommented {
@@ -164,7 +159,6 @@ func commentReasonOnCulprit(ctx context.Context, gerritClient *gerrit.Client,
 
 	if err != nil {
 		return errors.Fmt("couldn't update suspect details when commenting on the culprit: %w", err)
-
 	}
 	return nil
 }

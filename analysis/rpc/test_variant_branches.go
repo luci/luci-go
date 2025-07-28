@@ -558,7 +558,6 @@ func toTestVerdictsSpanner(tvs []lowlatency.SourceVerdictTestVerdict) []*pb.Quer
 			Status:        tv.Status,
 			Changelists:   toChangelistSpanner(tv.Changelists),
 		})
-
 	}
 	return result
 }
@@ -585,7 +584,6 @@ func toTestVerdictsBigQuery(tvs []testresults.SourceVerdictTestVerdict) []*pb.Qu
 			Status:        pb.QuerySourceVerdictsResponse_VerdictStatus(pb.QuerySourceVerdictsResponse_VerdictStatus_value[tv.Status]),
 			Changelists:   toChangelistBigQuery(tv.Changelists),
 		})
-
 	}
 	return result
 }

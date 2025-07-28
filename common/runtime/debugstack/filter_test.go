@@ -175,5 +175,4 @@ func TestFilter(t *testing.T) {
 		}})
 		check.That(t, trace, should.Match(trace.Filter(rules, true)))
 	})
-
 }

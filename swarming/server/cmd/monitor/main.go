@@ -99,7 +99,6 @@ func main() {
 		})
 
 		cron.RegisterHandler("report-tasks", func(ctx context.Context) error {
-
 			visitors := []scan.TaskVisitor{
 				&scan.ActiveJobsReporter{
 					ServiceName: srv.Options.TsMonServiceName,

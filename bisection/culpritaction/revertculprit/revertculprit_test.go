@@ -1846,6 +1846,5 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), should.Equal(1))
 			assert.Loosely(t, culpritActionCounter.Get(ctx, "chromium", "compile", "submit_revert"), should.Equal(1))
 		})
-
 	})
 }

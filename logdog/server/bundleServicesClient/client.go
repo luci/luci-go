@@ -68,7 +68,6 @@ type Client struct {
 // RegisterStream implements ServicesClient.
 func (c *Client) RegisterStream(ctx context.Context, in *s.RegisterStreamRequest, opts ...grpc.CallOption) (
 	*s.RegisterStreamResponse, error) {
-
 	resp, err := c.bundleRPC(ctx, opts, &s.BatchRequest_Entry{
 		Value: &s.BatchRequest_Entry_RegisterStream{RegisterStream: in},
 	})
@@ -82,7 +81,6 @@ func (c *Client) RegisterStream(ctx context.Context, in *s.RegisterStreamRequest
 // LoadStream implements ServicesClient.
 func (c *Client) LoadStream(ctx context.Context, in *s.LoadStreamRequest, opts ...grpc.CallOption) (
 	*s.LoadStreamResponse, error) {
-
 	resp, err := c.bundleRPC(ctx, opts, &s.BatchRequest_Entry{
 		Value: &s.BatchRequest_Entry_LoadStream{LoadStream: in},
 	})
@@ -96,7 +94,6 @@ func (c *Client) LoadStream(ctx context.Context, in *s.LoadStreamRequest, opts .
 // TerminateStream implements ServicesClient.
 func (c *Client) TerminateStream(ctx context.Context, in *s.TerminateStreamRequest, opts ...grpc.CallOption) (
 	*emptypb.Empty, error) {
-
 	_, err := c.bundleRPC(ctx, opts, &s.BatchRequest_Entry{
 		Value: &s.BatchRequest_Entry_TerminateStream{TerminateStream: in},
 	})
@@ -110,7 +107,6 @@ func (c *Client) TerminateStream(ctx context.Context, in *s.TerminateStreamReque
 // ArchiveStream implements ServicesClient.
 func (c *Client) ArchiveStream(ctx context.Context, in *s.ArchiveStreamRequest, opts ...grpc.CallOption) (
 	*emptypb.Empty, error) {
-
 	_, err := c.bundleRPC(ctx, opts, &s.BatchRequest_Entry{
 		Value: &s.BatchRequest_Entry_ArchiveStream{ArchiveStream: in},
 	})

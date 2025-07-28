@@ -113,6 +113,5 @@ func TestSpy(t *testing.T) {
 			}
 			assert.Loosely(c, sawBuild, should.BeTrue)
 		})
-
 	})
 }

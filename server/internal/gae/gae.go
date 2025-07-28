@@ -171,21 +171,18 @@ func Call(ctx context.Context, service, method string, in, out proto.Message) (e
 		return errors.Fmt("RPC error %s calling %s.%s: %s",
 			remotepb.RpcError_ErrorCode(res.RpcError.GetCode()),
 			service, method, res.RpcError.GetDetail())
-
 	}
 
 	if res.ApplicationError != nil {
 		return errors.Fmt("API error %d calling %s.%s: %s",
 			res.ApplicationError.GetCode(),
 			service, method, res.ApplicationError.GetDetail())
-
 	}
 
 	// This should not be happening.
 	if res.Exception != nil || res.JavaException != nil {
 		return errors.Fmt("service bridge returned unexpected exception from %s.%s",
 			service, method)
-
 	}
 
 	if err := proto.Unmarshal(res.Response, out); err != nil {

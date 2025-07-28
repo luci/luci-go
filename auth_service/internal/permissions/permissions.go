@@ -76,7 +76,6 @@ func NewPermissionsDB(permissionscfg *configspb.PermissionsConfig, meta *config.
 	}
 
 	for _, role := range permissionscfg.GetRole() {
-
 		permissionsDB.Roles[role.GetName()] = &Role{role.GetName(), stringset.Set{}}
 		for _, perm := range role.GetPermissions() {
 			permissionsDB.Permissions[perm.GetName()] = perm

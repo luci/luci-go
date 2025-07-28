@@ -80,9 +80,7 @@ func TestRules(t *testing.T) {
 				Email:   email,
 			}))
 		}
-
 	})
-
 }
 
 // prepareCfg injects config.Backend implementation with a bunch of

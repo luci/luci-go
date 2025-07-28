@@ -164,6 +164,5 @@ func TestListArtifacts(t *testing.T) {
 			assert.Loosely(t, actual, should.HaveLength(1))
 			assert.Loosely(t, actual[0].FetchUrl, should.HavePrefix("https://storage.googleapis.com/bucket1/file1.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential"))
 		})
-
 	})
 }

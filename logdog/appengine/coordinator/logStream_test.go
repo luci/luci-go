@@ -250,7 +250,6 @@ func TestLogStream(t *testing.T) {
 					assert.Loosely(t, getAll(q), shouldHaveLogPaths(
 						"testing/+/cat/bird/dog", "testing/+/cat/dog"))
 				})
-
 			})
 		})
 	})

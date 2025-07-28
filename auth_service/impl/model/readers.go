@@ -200,7 +200,6 @@ func RevokeStaleReaderAccess(ctx context.Context, trustedGroup string) error {
 		if err != nil {
 			return errors.Fmt("error checking %s membership for %s: %w",
 				trustedGroup, authIdentity, err)
-
 		}
 		if !trusted {
 			logging.Warningf(ctx, "stale AuthDB reader access for %s", email)

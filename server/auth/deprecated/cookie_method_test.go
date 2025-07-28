@@ -72,7 +72,6 @@ func TestFullFlow(t *testing.T) {
 		var ts *httptest.Server
 		ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.URL.Path {
-
 			case "/discovery":
 				w.Write([]byte(fmt.Sprintf(`{
 					"issuer": "https://issuer.example.com",

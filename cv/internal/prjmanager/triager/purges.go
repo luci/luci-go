@@ -96,7 +96,6 @@ func purgeETA(info *clInfo, now time.Time, pm pmState) time.Time {
 		if d == nil {
 			eta = earliest(eta, now)
 		} else {
-
 			t := info.lastCQVoteTriggered()
 			if t.IsZero() {
 				panic(fmt.Errorf("impossible: CQ label is triggered but triggering time is zero"))

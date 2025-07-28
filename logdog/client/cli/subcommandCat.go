@@ -238,7 +238,6 @@ func (cmd *catCommandRun) getTextPrefix(desc *logpb.LogStreamDescriptor, le *log
 // getDatagramWriter returns a datagram writer function that can be used as a
 // Renderer's DatagramWriter. The writer is bound to desc.
 func getDatagramWriter(c context.Context, desc *logpb.LogStreamDescriptor) renderer.DatagramWriter {
-
 	return func(w io.Writer, dg []byte) bool {
 		var pb proto.Message
 		switch desc.ContentType {

@@ -25,7 +25,6 @@ import (
 )
 
 func TestParseOrderBy(t *testing.T) {
-
 	ftt.Run("ParseOrderBy", t, func(t *ftt.Test) {
 		fieldPathAllowUnexported := cmp.AllowUnexported(FieldPath{})
 

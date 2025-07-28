@@ -179,12 +179,10 @@ func update(ctx context.Context, meta *prjcfg.Meta, cgs []*prjcfg.ConfigGroup) e
 	if err := datastore.Delete(ctx, toDelete); err != nil {
 		return transient.Tag.Apply(errors.Fmt("failed to delete %d MapPart entities when updating project %q: %w",
 			len(toDelete), meta.Project, err))
-
 	}
 	if err := datastore.Put(ctx, toPut); err != nil {
 		return transient.Tag.Apply(errors.Fmt("failed to put %d MapPart entities when updating project %q: %w",
 			len(toPut), meta.Project, err))
-
 	}
 	return nil
 }

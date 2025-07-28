@@ -39,7 +39,6 @@ import (
 func TestValidListArtifactLinesRequest(t *testing.T) {
 	t.Parallel()
 	ftt.Run(`TestValidateListArtifactsRequest`, t, func(t *ftt.Test) {
-
 		t.Run(`Valid, invocation level`, func(t *ftt.Test) {
 			err := validateListArtifactLinesRequest(&pb.ListArtifactLinesRequest{
 				Parent:   "invocations/x/artifacts/artifact-id",
@@ -74,7 +73,6 @@ func TestValidListArtifactLinesRequest(t *testing.T) {
 }
 
 func TestListArtifactLines(t *testing.T) {
-
 	verifyArtifactLine := func(line *pb.ArtifactLine, timestamp string, severity pb.ArtifactLine_Severity) {
 		if timestamp != "" {
 			ts, err := time.Parse(time.RFC3339Nano, timestamp)

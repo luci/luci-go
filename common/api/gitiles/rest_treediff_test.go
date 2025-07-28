@@ -183,6 +183,5 @@ func TestLogWithTreeDiff(t *testing.T) {
 			NewMode: 33188,
 			NewPath: "appengine/findit/model/flake/master_flake_analysis.py",
 		}))
-
 	})
 }

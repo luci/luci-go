@@ -76,7 +76,6 @@ func (k *KVS) GetMulti(ctx context.Context, keys []string, fn func(key string, v
 				return item.Value(func(val []byte) error {
 					return fn(key, val)
 				})
-
 			})
 		}
 

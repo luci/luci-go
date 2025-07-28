@@ -24,7 +24,6 @@ import (
 
 func TestMovingAverage(t *testing.T) {
 	ftt.Run(`movingAverage`, t, func(t *ftt.Test) {
-
 		t.Run(`construction`, func(t *ftt.Test) {
 			t.Run(`panics on bad window`, func(t *ftt.Test) {
 				assert.Loosely(t, func() {
@@ -52,6 +51,5 @@ func TestMovingAverage(t *testing.T) {
 				assert.Loosely(t, ma.get(), should.Equal(100.0))
 			})
 		})
-
 	})
 }

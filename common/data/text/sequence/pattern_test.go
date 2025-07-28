@@ -210,5 +210,4 @@ func TestPatternIn(t *testing.T) {
 			})
 		})
 	})
-
 }

@@ -35,7 +35,6 @@ import (
 func TestValidQueryArtifactFailureOnlyLinesRequest(t *testing.T) {
 	t.Parallel()
 	ftt.Run(`TestValidateQueryArtifactFailureOnlyLinesRequest`, t, func(t *ftt.Test) {
-
 		t.Run(`Valid, invocation level`, func(t *ftt.Test) {
 			err := validateListArtifactLinesRequest(&pb.ListArtifactLinesRequest{
 				Parent:   "invocations/x/artifacts/artifact-id",

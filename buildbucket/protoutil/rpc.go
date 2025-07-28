@@ -50,5 +50,4 @@ func ParseGetBuildRequest(s string) (*pb.GetBuildRequest, error) {
 	return nil, fmt.Errorf(
 		"build request string must be either an int64 build ID or " +
 			"a <project>/<bucket>/<builder>/<build_number>, e.g. chromium/ci/linux-rel/1")
-
 }

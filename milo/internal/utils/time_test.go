@@ -25,7 +25,6 @@ import (
 
 func TestFuncs(t *testing.T) {
 	ftt.Run("Time Tests", t, func(t *ftt.Test) {
-
 		t.Run("Interval", func(t *ftt.Test) {
 			from := time.Date(2019, time.February, 3, 4, 5, 0, 0, time.UTC)
 			to := time.Date(2019, time.February, 3, 4, 6, 0, 0, time.UTC)

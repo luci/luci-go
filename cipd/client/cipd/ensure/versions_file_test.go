@@ -88,7 +88,6 @@ func TestVersionsFile(t *testing.T) {
 	})
 
 	ftt.Run("Serialization and successful parsing", t, func(t *ftt.Test) {
-
 		testVersion := VersionsFile{
 			{"pkg1", "ver1"}:      iid1,
 			{"pkg1", "ver2"}:      iid1,

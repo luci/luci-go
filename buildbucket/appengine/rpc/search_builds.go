@@ -99,7 +99,6 @@ func validatePredicate(pr *pb.BuildPredicate) error {
 		enabled := plusMinus == '+'
 		if cur, has := expMap[expName]; has && cur != enabled {
 			return errors.Fmt("experiments %d: experiment %q has both inclusive and exclusive filter", i, expName)
-
 		}
 		expMap[expName] = enabled
 	}

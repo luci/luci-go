@@ -58,7 +58,6 @@ func TestValidateSynthesize(t *testing.T) {
 			assert.Loosely(t, validateSynthesize(req), should.ErrLike("builder:"))
 		})
 	})
-
 }
 
 func TestSynthesizeBuild(t *testing.T) {
@@ -617,7 +616,6 @@ func TestSynthesizeBuild(t *testing.T) {
 
 				assert.Loosely(t, b, should.Match(expected))
 			})
-
 		})
 	})
 }

@@ -255,7 +255,6 @@ func downloadCIPDPackages(ctx context.Context, workdir string, slicesByPath map[
 		return errors.Fmt("failed to install or update CIPD packages: %w", err)
 	}
 	return nil
-
 }
 
 func prepareDir(dir string) error {

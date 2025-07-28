@@ -26,7 +26,6 @@ import (
 
 func TestParseReadChangepointGroupSummariesPageToken(t *testing.T) {
 	ftt.Run(`Test parseReadChangepointGroupSummariesPageToken`, t, func(t *ftt.Test) {
-
 		t.Run(`valid token`, func(t *ftt.Test) {
 			nextPageToken := pagination.Token("123", "testid", "variantHash", "refhash", "100")
 

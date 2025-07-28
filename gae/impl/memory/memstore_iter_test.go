@@ -284,7 +284,5 @@ func TestMultiIteratorSimple(iter *testing.T) {
 			}), shouldBeSuccessful)
 			assert.Loosely(t, i, should.Equal(1))
 		})
-
 	})
-
 }

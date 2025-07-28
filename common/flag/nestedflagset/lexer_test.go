@@ -31,7 +31,6 @@ func TestLexer(t *testing.T) {
 		})
 
 		t.Run("The next token should be empty.", func(t *ftt.Test) {
-
 			assert.Loosely(t, l.nextToken(), should.Equal(token("")))
 		})
 

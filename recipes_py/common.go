@@ -104,7 +104,6 @@ func (r *Repo) ensureDeps(ctx context.Context) error {
 		return err
 	}
 	return nil
-
 }
 
 // RepoFromPath creates a recipe Repo instance from a local path.

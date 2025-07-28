@@ -86,7 +86,6 @@ func (s *State) planPartition(cat *categorizedCLs) disjointset.DisjointSet {
 //
 // Expects pclIndex to be same used by planPartition.
 func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []*prjpb.Component {
-
 	canReuse := func(c *prjpb.Component) (root int, can bool) {
 		// Old component can be re-used iff all of:
 		//  (1) it has exactly the same set in the new partition.

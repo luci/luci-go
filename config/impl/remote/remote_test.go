@@ -169,7 +169,6 @@ func TestRemoteCalls(t *testing.T) {
 		})
 
 		t.Run("GetProjectConfigs", func(t *ftt.Test) {
-
 			t.Run("ok - meta only", func(t *ftt.Test) {
 				mockClient.EXPECT().GetProjectConfigs(gomock.Any(), proto.MatcherEqual(&pb.GetProjectConfigsRequest{
 					Path: "config.cfg",
@@ -463,7 +462,6 @@ func TestRemoteCalls(t *testing.T) {
 							},
 						},
 					}, nil)
-
 				}
 				filter := func(path string) bool { return path != "ignored" }
 

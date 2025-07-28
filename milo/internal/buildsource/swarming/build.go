@@ -146,7 +146,6 @@ type swarmingFetchResult struct {
 // errNotMiloJob.
 func swarmingFetch(c context.Context, svc swarmingService, taskID string, req swarmingFetchParams) (
 	*swarmingFetchResult, error) {
-
 	// logErr is managed separately from other fetch errors, since in some
 	// situations it's acceptable to not have a log stream.
 	var logErr error

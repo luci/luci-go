@@ -354,7 +354,6 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 			// build 8 is unchanged, but we still update the builds update time
 			assert.Loosely(t, blds[3].Proto.UpdateTime.AsTime(), should.Match(now))
 			assert.Loosely(t, blds[3].NextBackendSyncTime, should.BeGreaterThan(nextSyncTimeBeforeSync))
-
 		})
 
 		t.Run("all fail", func(t *ftt.Test) {

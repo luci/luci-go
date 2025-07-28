@@ -184,7 +184,6 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 		})
 
 		e2eTest := func(req *pb.BatchCreateTestExonerationsRequest, expected []*pb.TestExoneration) {
-
 			// Insert the invocation.
 			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 

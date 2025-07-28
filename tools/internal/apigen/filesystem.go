@@ -111,7 +111,6 @@ func copyFile(src, dst string, relPath string, edit editFunc) error {
 		if err != nil {
 			return fmt.Errorf("edit error: %s", err)
 		}
-
 	}
 	if data == nil {
 		return nil

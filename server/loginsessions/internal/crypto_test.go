@@ -57,5 +57,4 @@ func TestState(t *testing.T) {
 
 		assert.Loosely(t, decrypted, should.Match(original))
 	})
-
 }

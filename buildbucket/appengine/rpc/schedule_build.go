@@ -724,7 +724,6 @@ func experimentsMatch(experimentSet stringset.Set, includeOnExperiment, omitOnEx
 		if !include {
 			return false
 		}
-
 	}
 
 	return true

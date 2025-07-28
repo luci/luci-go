@@ -115,7 +115,6 @@ func TestQueryTestMetadata(t *testing.T) {
 				expected := toTestMetadataDetails(append(expectedT1Rows, expectedT2Rows...))
 				sortMetadata(expected)
 				assert.Loosely(t, res.TestMetadata, should.Match(expected))
-
 			})
 
 			t.Run(`Filter test id`, func(t *ftt.Test) {
@@ -131,7 +130,6 @@ func TestQueryTestMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 				assert.Loosely(t, res.TestMetadata, should.Match(toTestMetadataDetails(expectedT1Rows[1:])))
-
 			})
 		})
 	})

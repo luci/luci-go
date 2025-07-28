@@ -340,7 +340,6 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike(`invocation: realm: bad global realm name`))
 		})
 	})
-
 }
 func TestValidateCreateInvocationRequest(t *testing.T) {
 	t.Parallel()
@@ -449,7 +448,6 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 		})
 
 		t.Run(`invalid extended properties`, func(t *ftt.Test) {
-
 			t.Run(`invalid key`, func(t *ftt.Test) {
 				request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
 					"mykey_": {

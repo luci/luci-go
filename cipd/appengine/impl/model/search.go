@@ -130,7 +130,6 @@ func queryByTag(ctx context.Context, pkg, tag string, cursor datastore.Cursor, p
 	out []*datastore.Key,
 	next datastore.Cursor,
 	err error) {
-
 	// TODO(vadimsh): 'registered_ts' here is when the tag was attached. The
 	// callers likely expect results ordered by instance registration time. This
 	// is not possible currently. We'll need to copy Instance.registered_ts into

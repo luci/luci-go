@@ -1263,7 +1263,6 @@ func (c *clientImpl) ensureClientVersionInfo(ctx context.Context, fs fs.FileSyst
 // MaybeUpdateClient function.
 func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 	targetVersion, clientExe string, digests *digests.ClientDigestsFile) (common.Pin, error) {
-
 	// currentHashMatches calculates the existing client binary hash and compares
 	// it to 'obj'.
 	currentHashMatches := func(obj *api.ObjectRef) (yep bool, err error) {

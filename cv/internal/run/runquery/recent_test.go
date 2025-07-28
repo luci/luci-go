@@ -140,7 +140,6 @@ func TestRecentQueryBuilder(t *testing.T) {
 							return false, nil
 						}
 						return true, nil
-
 					},
 				}.LoadRuns(ctx)
 				assert.NoErr(t, err)

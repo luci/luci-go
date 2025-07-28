@@ -286,7 +286,6 @@ func TestSecurityConfigValidation(t *testing.T) {
 			// Syntax is Perl, in Perl it is not allowed to stack repetition operators.
 			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("invalid nested repetition operator"))
 		})
-
 	})
 }
 
@@ -677,7 +676,6 @@ func TestPermissionsConfigValidation(t *testing.T) {
 		})
 
 		t.Run("valid configs", func(t *ftt.Test) {
-
 			t.Run("1 entry", func(t *ftt.Test) {
 				content := []byte(`
 					role {

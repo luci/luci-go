@@ -26,7 +26,6 @@ import (
 
 func TestParseCommit(t *testing.T) {
 	ftt.Run("ParseCommit", t, func(t *ftt.Test) {
-
 		t.Run("https://chromium.googlesource.com/infra/luci/luci-go/+/7a63166bfab5de38ddb2cb8e29aca756bdc2a28d", func(t *ftt.Test) {
 			actual, confirm, err := parseCommit("https://chromium.googlesource.com/infra/luci/luci-go/+/7a63166bfab5de38ddb2cb8e29aca756bdc2a28d")
 			assert.Loosely(t, err, should.BeNil)

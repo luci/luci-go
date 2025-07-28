@@ -164,7 +164,6 @@ func (s *Snapshot) ToAuthDB(ctx context.Context) (*authdb.SnapshotDB, error) {
 	authDBProto, err := s.ToAuthDBProto(ctx)
 	if err != nil {
 		return nil, errors.Fmt("failed converting AuthDB snapshot to proto: %w", err)
-
 	}
 	return authdb.NewSnapshotDB(authDBProto, "", s.ReplicationState.AuthDBRev, false)
 }

@@ -406,7 +406,6 @@ func TestQueryTestVariants(t *testing.T) {
 
 			assert.Loosely(t, page.Sources, should.HaveLength(1))
 			assert.Loosely(t, page.Sources[expectedSourceHash], should.Match(expectedSources))
-
 		})
 
 		t.Run(`Valid without included invocation`, func(t *ftt.Test) {

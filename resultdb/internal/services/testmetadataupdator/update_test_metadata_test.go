@@ -65,7 +65,6 @@ func TestFieldExistenceBitField(t *testing.T) {
 }
 
 func TestUpdateTestMetadata(t *testing.T) {
-
 	ftt.Run(`Error`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		testInvocationID := invocations.ID("inv1")

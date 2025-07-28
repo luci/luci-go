@@ -105,7 +105,6 @@ func testConcurrentAccess(t *ftt.Test, r *rand.Rand) {
 			<-doneC
 		}
 	})
-
 }
 
 // TestConcurrentGlobalAccess is intentionally NOT Parallel, since we want to

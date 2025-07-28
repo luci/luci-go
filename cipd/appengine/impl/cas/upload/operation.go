@@ -96,7 +96,6 @@ func (op *Operation) Advance(ctx context.Context, cb func(context.Context, *Oper
 	if err != nil {
 		return nil,
 			transient.Tag.Apply(errors.Fmt("failed to update the upload operation: %w", err))
-
 	}
 	return fresh, nil
 }

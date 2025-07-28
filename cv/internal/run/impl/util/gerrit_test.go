@@ -137,6 +137,5 @@ func TestIsActionTakenOnGerritCL(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, actionTime.IsZero(), should.BeTrue)
 		})
-
 	})
 }

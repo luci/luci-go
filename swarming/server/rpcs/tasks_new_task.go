@@ -1001,7 +1001,6 @@ func applyTemplateEnv(props *model.TaskProperties, template *configpb.TaskTempla
 			envPrefix = append(envPrefix, e.Prefix...)
 			props.EnvPrefixes[e.Var] = envPrefix
 		}
-
 	}
 	return nil
 }

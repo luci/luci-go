@@ -242,7 +242,6 @@ func TestNotification(t *testing.T) {
 		})
 
 		t.Run("To internal topic", func(t *ftt.Test) {
-
 			t.Run("success", func(t *ftt.Test) {
 				err := PublishBuildsV2Notification(ctx, 123, nil, false, maxLargeBytesSize)
 				assert.Loosely(t, err, should.BeNil)

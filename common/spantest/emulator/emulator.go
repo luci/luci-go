@@ -108,7 +108,6 @@ func Start(ctx context.Context) (emu *Emulator, err error) {
 					return nil, errors.Fmt(`neither "docker", nor "podman" are in PATH: `+
 						`a containerization engine is required to run the Cloud Spanner emulator on %s`,
 						runtime.GOOS)
-
 				}
 			}
 		}

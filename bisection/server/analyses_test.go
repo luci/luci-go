@@ -564,7 +564,6 @@ func TestQueryAnalysis(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(res.Analyses), should.Equal(1))
 	})
-
 }
 
 func TestListAnalyses(t *testing.T) {

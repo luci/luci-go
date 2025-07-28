@@ -61,7 +61,6 @@ func TestExtractTimestamp(t *testing.T) {
 
 	ftt.Run("extractTimestamp", t, func(t *ftt.Test) {
 		t.Run("given valid log lines with various timestamp formats", func(t *ftt.Test) {
-
 			testYear := 2024
 
 			// Test cases for various timestamp formats
@@ -215,7 +214,6 @@ func TestExtractSeverity(t *testing.T) {
 
 	ftt.Run(`extractSeverity`, t, func(t *ftt.Test) {
 		t.Run("Given various log lines with severity levels", func(t *ftt.Test) {
-
 			testCases := []struct {
 				description string
 				logLine     string

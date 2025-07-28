@@ -29,7 +29,6 @@ func TestExtract(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Extract works", t, func(t *ftt.Test) {
-
 		t.Run("Empty", func(t *ftt.Test) {
 			assert.That(t, Extract(`Title.`), should.Match([]*changelist.StringPair{}))
 		})

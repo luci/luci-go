@@ -79,7 +79,6 @@ func refetch(ctx context.Context, prev *PermissionsSnapshot) (*PermissionsSnapsh
 	latestState, err := model.GetAuthDBSnapshotLatest(ctx)
 	if err != nil {
 		return nil, errors.Fmt("failed to fetch the latest AuthDBSnapshot revision: %w", err)
-
 	}
 
 	if latestState.AuthDBRev <= prev.authDBRev {

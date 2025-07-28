@@ -187,7 +187,6 @@ func (s *Snapshot) OwnerIdentity() (identity.Identity, error) {
 		return "", errors.Fmt("CL %s/%d owner email of account %d is unknown",
 			g.GetHost(), g.GetInfo().GetNumber(),
 			owner.GetAccountId())
-
 	}
 	return identity.MakeIdentity("user:" + email)
 }

@@ -486,7 +486,6 @@ func TestAgent(t *testing.T) {
 						}
 						assert.Loosely(t, <-merger.MergedBuildC, should.Match(expect))
 					})
-
 				})
 			})
 		})
@@ -566,7 +565,6 @@ func TestAgent(t *testing.T) {
 				expect.Steps[0].SummaryMarkdown = ""
 				assert.Loosely(t, <-merger.MergedBuildC, should.Match(expect))
 			})
-
 		})
 	})
 }

@@ -107,7 +107,6 @@ func (c *Client) GetChange(ctx context.Context, project string, commitID string)
 	if err != nil {
 		return nil, errors.Fmt("error getting change from Gerrit host %s using query %s: %w",
 			c.host, query, err)
-
 	}
 
 	if len(changes) == 0 {
@@ -149,7 +148,6 @@ func (c *Client) GetReverts(ctx context.Context, change *gerritpb.ChangeInfo) ([
 	if err != nil {
 		return nil, errors.Fmt("error getting reverts of a change from Gerrit host %s using query %s: %w",
 			c.host, query, err)
-
 	}
 
 	return changes, nil
@@ -192,7 +190,6 @@ func (c *Client) CreateRevert(ctx context.Context, change *gerritpb.ChangeInfo, 
 	if err != nil {
 		return nil, errors.Fmt("error creating revert change on Gerrit host %s for change %s~%d: %w",
 			c.host, req.Project, req.Number, err)
-
 	}
 
 	return res, nil
@@ -305,7 +302,6 @@ func (c *Client) getRelatedChanges(ctx context.Context, change *gerritpb.ChangeI
 	if err != nil {
 		return nil, errors.Fmt("failed getting related changes from Gerrit host %s for change %s~%d: %w",
 			c.host, req.Project, req.Number, err)
-
 	}
 
 	// Changes are sorted by git commit order, newest to oldest.
@@ -328,7 +324,6 @@ func (c *Client) isPureRevert(ctx context.Context, change *gerritpb.ChangeInfo) 
 	if err != nil {
 		return false, errors.Fmt("error querying Gerrit host %s on whether the change %s~%d is a pure revert: %w",
 			c.host, req.Project, req.Number, err)
-
 	}
 
 	return res.IsPureRevert, nil
@@ -340,7 +335,6 @@ func (c *Client) setReview(ctx context.Context, req *gerritpb.SetReviewRequest) 
 	if err != nil {
 		return nil, errors.Fmt("failed to set review on Gerrit host %s for change %s~%d: %w",
 			c.host, req.Project, req.Number, err)
-
 	}
 
 	return res, nil

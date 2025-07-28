@@ -165,7 +165,6 @@ func TestChangeDetails(t *testing.T) {
 			assert.Loosely(t, cl.RevertOf, should.Equal(629277))
 			assert.Loosely(t, cl.CurrentRevision, should.Equal("1ee75012c0de"))
 		})
-
 	})
 
 	ftt.Run("Retry", t, func(t *ftt.Test) {
@@ -212,9 +211,7 @@ func TestListChangeComments(t *testing.T) {
 			assert.Loosely(t, comments["foo"][0].Range.StartLine, should.Equal(3))
 			assert.Loosely(t, comments["bar"][0].Line, should.Equal(21))
 		})
-
 	})
-
 }
 
 func TestListRobotComments(t *testing.T) {
@@ -293,7 +290,6 @@ func TestChangesSubmittedTogether(t *testing.T) {
 			assert.Loosely(t, cls.Changes[1].CurrentRevision, should.Equal("d6375c2ea5b0"))
 			assert.Loosely(t, cls.NonVisibleChanges, should.Equal(1))
 		})
-
 	})
 }
 
@@ -335,7 +331,6 @@ func TestMergeable(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, cls.Mergeable, should.Equal(false))
 		})
-
 	})
 }
 
@@ -363,9 +358,7 @@ func TestChangeLabels(t *testing.T) {
 			assert.Loosely(t, len(cl.Labels["Code-Review"].Values), should.Equal(5))
 			assert.Loosely(t, len(cl.Labels["Verified"].Values), should.Equal(3))
 		})
-
 	})
-
 }
 
 func TestCreateChange(t *testing.T) {
@@ -414,7 +407,6 @@ func TestCreateChange(t *testing.T) {
 			assert.Loosely(c, change.Topic, should.Match(ci.Topic))
 			assert.Loosely(c, change.Status, should.Match("NEW"))
 		})
-
 	})
 
 	ftt.Run("CreateChange but project non-existent", t, func(t *ftt.Test) {
@@ -435,7 +427,6 @@ func TestCreateChange(t *testing.T) {
 			_, err := c.CreateChange(ctx, &ci)
 			assert.Loosely(t, err, should.NotBeNil)
 		})
-
 	})
 }
 
@@ -485,7 +476,6 @@ func TestAbandonChange(t *testing.T) {
 			_, err := c.AbandonChange(ctx, "629279", nil)
 			assert.Loosely(t, err, should.NotBeNil)
 		})
-
 	})
 }
 
@@ -883,7 +873,6 @@ func TestDirectSetReview(t *testing.T) {
 			_, err := c.SetReview(ctx, "629279", "current", &ReviewInput{})
 			assert.Loosely(t, err, should.NotBeNil)
 		})
-
 	})
 }
 

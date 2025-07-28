@@ -152,7 +152,6 @@ func TestArtifactId(t *testing.T) {
 			err := ValidateArtifactID(".arc.log")
 			assert.Loosely(t, err, should.BeNil)
 		})
-
 	})
 }
 

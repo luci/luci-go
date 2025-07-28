@@ -228,5 +228,4 @@ func TestFlattenToSwarming(t *testing.T) {
 			assert.Loosely(t, sw.Task.Tags[len(sw.Task.Tags)-1], should.Equal("phony_tag:experiment"))
 		})
 	})
-
 }

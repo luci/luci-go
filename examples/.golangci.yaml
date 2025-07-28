@@ -10,6 +10,7 @@ linters:
     - copyloopvar
     - intrange
     - ineffassign
+    - whitespace
   disable:
     - errcheck
     - errorlint

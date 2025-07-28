@@ -37,7 +37,6 @@ func TestPublishAuthDBRevision(t *testing.T) {
 
 	testAppID := "chrome-infra-auth-test"
 	ftt.Run("PublishAuthDBRevision works", t, func(t *ftt.Test) {
-
 		t.Run("returns error for invalid revision", func(t *ftt.Test) {
 			ctx := context.Background()
 			assert.Loosely(t, PublishAuthDBRevision(ctx, nil), should.ErrLike("invalid AuthDBRevision"))

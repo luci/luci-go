@@ -282,7 +282,6 @@ func (p *parser) subMessages(root message, path []string) ([]subMsg, error) {
 // Types: https://developers.google.com/protocol-buffers/docs/proto?hl=en#scalar
 func (p *parser) parseFieldValue(s string, msgName string, field *descriptorpb.FieldDescriptorProto) (any, error) {
 	switch field.GetType() {
-
 	case descriptorpb.FieldDescriptorProto_TYPE_DOUBLE:
 		return strconv.ParseFloat(s, 64)
 

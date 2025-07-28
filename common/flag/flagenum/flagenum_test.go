@@ -95,7 +95,6 @@ func (tv testStruct) MarshalJSON() ([]byte, error) {
 
 func TestEnum(t *testing.T) {
 	ftt.Run(`A testing enumeration`, t, func(t *ftt.Test) {
-
 		t.Run(`String for "testFoo" is "foo".`, func(t *ftt.Test) {
 			assert.Loosely(t, testEnum.GetKey(testFoo), should.Equal("foo"))
 		})
@@ -179,7 +178,6 @@ func TestStringEnum(t *testing.T) {
 
 func TestStructEnum(t *testing.T) {
 	ftt.Run(`A testing enumeration for a struct type`, t, func(t *ftt.Test) {
-
 		t.Run(`Panics when attempting to set an unsettable value.`, func(t *ftt.Test) {
 			assert.Loosely(t, func() { testStructEnum.setValue(123, "foo") }, should.Panic)
 		})

@@ -103,7 +103,6 @@ func TestTaskError(t *testing.T) {
 			})
 			assert.NoErr(t, err)
 			assert.Loosely(t, resp, should.NotBeNil)
-
 		}
 
 		t.Run("with_client_error", func(t *ftt.Test) {

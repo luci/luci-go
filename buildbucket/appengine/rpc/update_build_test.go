@@ -329,7 +329,6 @@ func TestValidateUpdate(t *testing.T) {
 			}
 			assert.Loosely(t, validateUpdate(ctx, req, nil), should.BeNil)
 		})
-
 	})
 
 	ftt.Run("validate agent purpose", t, func(t *ftt.Test) {
@@ -427,7 +426,6 @@ func TestValidateStep(t *testing.T) {
 				step.Status = pb.Status_STARTED
 				assert.Loosely(t, validateStep(step, nil, bStatus), should.ErrLike(`status: cannot be "STARTED" because the build has a terminal status "SUCCESS"`))
 			})
-
 		})
 
 		t.Run("with terminal status", func(t *ftt.Test) {
@@ -619,7 +617,6 @@ func TestCheckBuildForUpdate(t *testing.T) {
 }
 
 func TestUpdateBuild(t *testing.T) {
-
 	updateContextForNewBuildToken := func(ctx context.Context, buildID int64) (string, context.Context) {
 		newToken, _ := buildtoken.GenerateToken(ctx, buildID, pb.TokenBody_BUILD)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, newToken))
@@ -818,7 +815,6 @@ func TestUpdateBuild(t *testing.T) {
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				assert.Loosely(t, b.Proto.Output.Properties, should.BeNil)
 			})
-
 		})
 
 		t.Run("build.output.properties large", func(t *ftt.Test) {
@@ -994,7 +990,6 @@ func TestUpdateBuild(t *testing.T) {
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				assert.Loosely(t, b.Proto.Infra.Buildbucket.Agent.Output, should.BeNil)
 			})
-
 		})
 
 		t.Run("build.infra.buildbucket.agent.purposes", func(t *ftt.Test) {
@@ -1579,7 +1574,6 @@ func TestUpdateBuild(t *testing.T) {
 					req.UpdateMask.Paths[0] = "build.status"
 					_, err := srv.UpdateBuild(ctx, req)
 					assert.Loosely(t, err, should.ErrLike("error fetching build entities with ID"))
-
 				})
 
 				t.Run("build is being canceled", func(t *ftt.Test) {

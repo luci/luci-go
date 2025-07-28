@@ -49,7 +49,6 @@ type ExportOptions struct {
 
 // Export inserts the provided artifacts into BigQuery.
 func (e *Exporter) Export(ctx context.Context, artifacts []*rdbpb.Artifact, opts ExportOptions) error {
-
 	exportRow, err := prepareExportRow(artifacts, opts)
 	if err != nil {
 		return errors.Fmt("prepare row: %w", err)
@@ -70,7 +69,6 @@ func prepareExportRow(artifacts []*rdbpb.Artifact, opts ExportOptions) ([]*bqpb.
 
 	results := make([]*bqpb.AntsArtifactRow, 0, len(artifacts))
 	for _, artifact := range artifacts {
-
 		artifactRow := &bqpb.AntsArtifactRow{
 			InvocationId:   invocationID,
 			WorkUnitId:     "",

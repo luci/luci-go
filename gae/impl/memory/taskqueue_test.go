@@ -196,7 +196,6 @@ func TestTaskQueue(t *testing.T) {
 							assert.Loosely(t, tq.Purge(c, "noexist").Error(), should.ContainSubstring("UNKNOWN_QUEUE"))
 						})
 					})
-
 				})
 			})
 
@@ -430,7 +429,6 @@ func TestTaskQueue(t *testing.T) {
 				assert.Loosely(t, tqt.GetTombstonedTasks()["default"][t2.Name], should.Match(t2))
 				assert.Loosely(t, tqt.GetTransactionTasks()["default"], should.BeNil)
 			})
-
 		})
 
 		t.Run("Pull queues", func(t *ftt.Test) {

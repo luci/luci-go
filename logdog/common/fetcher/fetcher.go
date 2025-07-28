@@ -260,7 +260,6 @@ func (f *Fetcher) fetch(c context.Context) {
 		// If we're not currently fetching logs, and we are below our thresholds,
 		// request a new batch of logs.
 		if logFetchC == nil && (tidx < 0 || nextFetchIndex <= tidx) {
-
 			// We always have a byte constraint. Are we below it?
 			fetchCount := f.applyConstraint(int64(f.o.BufferCount), int64(lb.size()))
 			fetchBytes := f.applyConstraint(f.o.BufferBytes, bytes)

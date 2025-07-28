@@ -298,7 +298,6 @@ func TestIngestTestVerdicts(t *testing.T) {
 				// Expect a continuation task to be created.
 				verifyContinuationTask(t, skdr, expectedContinuation)
 				verifyCheckpoints(ctx, t, expectedCheckpoints)
-
 			})
 			t.Run(`Last task`, func(t *ftt.Test) {
 				payload.TaskIndex = 10
@@ -329,7 +328,6 @@ func TestIngestTestVerdicts(t *testing.T) {
 				// task to be created.
 				verifyContinuationTask(t, skdr, nil)
 				verifyCheckpoints(ctx, t, expectedCheckpoints) // Expect no checkpoints to be created.
-
 			})
 
 			t.Run(`Retry task after continuation task already created`, func(t *ftt.Test) {
@@ -390,7 +388,6 @@ func TestIngestTestVerdicts(t *testing.T) {
 				err := o.run(ctx, payload)
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, testIngestor.called, should.BeFalse)
-
 			})
 			t.Run(`Project not allowed`, func(t *ftt.Test) {
 				cfg.Ingestion = &configpb.Ingestion{

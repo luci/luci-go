@@ -58,6 +58,5 @@ func TestValidateConsolePredicate(t *testing.T) {
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err, should.ErrLike("builder: project must match"))
 		})
-
 	})
 }

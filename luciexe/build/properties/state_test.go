@@ -203,7 +203,6 @@ func TestStateSerialize(t *testing.T) {
 				"heylo": "world",
 			},
 		})))
-
 	})
 }
 

@@ -268,7 +268,6 @@ func TestPostGerritMessage(t *testing.T) {
 				})
 				check(t)
 			})
-
 		})
 	})
 }

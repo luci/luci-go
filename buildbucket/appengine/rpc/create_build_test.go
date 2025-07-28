@@ -474,7 +474,6 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 			})
 
 			t.Run("Infra", func(t *ftt.Test) {
-
 				t.Run("buildbucket", func(t *ftt.Test) {
 					t.Run("host", func(t *ftt.Test) {
 						req.Build.Infra.Buildbucket.Hostname = "wrong.appspot.com"

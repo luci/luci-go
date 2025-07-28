@@ -369,7 +369,6 @@ func HardlinkRecursively(src, dst string) error {
 			if err := HardlinkRecursively(filepath.Join(src, name), filepath.Join(dst, name)); err != nil {
 				return errors.Fmt("failed to call HardlinkRecursively(%s, %s): %w", filepath.Join(src, name), filepath.Join(dst, name), err)
 			}
-
 		}
 	}
 

@@ -128,7 +128,6 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 
 func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog.GetResponse,
 	tail bool, ls *coordinator.LogStream, lst *coordinator.LogStreamState) error {
-
 	// Identify our URL signing parameters.
 	var signingRequest coordinator.URLSigningRequest
 	if sr := req.GetSignedUrls; sr != nil {
@@ -190,7 +189,6 @@ func (s *server) getLogs(c context.Context, req *logdog.GetRequest, resp *logdog
 
 func getHead(c context.Context, req *logdog.GetRequest, st coordinator.SigningStorage, project string,
 	path types.StreamPath, byteLimit int) ([]*logpb.LogEntry, error) {
-
 	log.Fields{
 		"project":       project,
 		"path":          path,
@@ -275,7 +273,6 @@ func getHead(c context.Context, req *logdog.GetRequest, st coordinator.SigningSt
 
 func getTail(c context.Context, st coordinator.SigningStorage, project string, path types.StreamPath) (
 	[]*logpb.LogEntry, error) {
-
 	log.Fields{
 		"project": project,
 		"path":    path,

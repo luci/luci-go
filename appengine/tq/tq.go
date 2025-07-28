@@ -250,7 +250,6 @@ func (d *Dispatcher) GetQueues() []string {
 // containing only the non-nil errors. This simplifies user expectations.
 func (d *Dispatcher) runBatchesPerQueue(ctx context.Context, tasks []*Task,
 	fn func(ctx context.Context, queue string, tasks []*taskqueue.Task) error) error {
-
 	if len(tasks) == 0 {
 		return nil
 	}

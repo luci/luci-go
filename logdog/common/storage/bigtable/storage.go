@@ -327,7 +327,6 @@ func (w *rowWriter) append(d []byte) (appended bool) {
 
 func (w *rowWriter) flush(c context.Context, iface btIface, index types.MessageIndex,
 	project string, path types.StreamPath) (int, error) {
-
 	flushCount := w.count
 	if flushCount == 0 {
 		return 0, nil

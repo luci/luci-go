@@ -122,6 +122,5 @@ func TestUser(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("OAuthConsumerKey is deprecated"))
 			assert.Loosely(t, key, should.BeEmpty)
 		})
-
 	})
 }

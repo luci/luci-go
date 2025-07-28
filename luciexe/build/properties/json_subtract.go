@@ -71,7 +71,6 @@ func subtractList(a, b *structpb.ListValue) (empty bool) {
 				leftover = append(leftover, null)
 			}
 		}
-
 	}
 
 	a.Values = leftover

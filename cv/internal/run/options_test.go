@@ -178,7 +178,6 @@ func TestExtractOptions(t *testing.T) {
 				SkipTryjobs: true,
 			}))
 		})
-
 	})
 }
 

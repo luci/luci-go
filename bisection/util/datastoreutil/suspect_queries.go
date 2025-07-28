@@ -124,7 +124,6 @@ func GetBuildIDForCompileSuspect(ctx context.Context, suspect *model.Suspect) (i
 			compileFailure.Id)
 	}
 	return compileFailure.Build.IntID(), nil
-
 }
 
 // FetchSuspectsForAnalysis returns all suspects (from heuristic and nthsection) for an analysis

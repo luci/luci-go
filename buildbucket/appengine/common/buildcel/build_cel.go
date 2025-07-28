@@ -186,7 +186,6 @@ func (bbc *Bool) generateExpression(predicates []string) (string, error) {
 	// Generate
 	expr := strings.Join(predicates, ") && (")
 	return "(" + expr + ")", nil
-
 }
 
 // NewBool generates a CEL program to evaluate a Build message against a

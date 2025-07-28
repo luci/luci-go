@@ -35,7 +35,6 @@ import (
 )
 
 func cmdArchive(authOpts auth.Options) *subcommands.Command {
-
 	return &subcommands.Command{
 		UsageLine: "archive <options> repository-url committish",
 		ShortDesc: "downloads an archive at the given repo committish",

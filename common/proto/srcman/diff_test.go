@@ -28,7 +28,6 @@ func TestDiff(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run(`test Diff`, t, func(t *ftt.Test) {
-
 		t.Run(`git checkouts`, func(t *ftt.Test) {
 			a := &Manifest{
 				Directories: map[string]*Manifest_Directory{
@@ -153,7 +152,6 @@ func TestDiff(t *testing.T) {
 					},
 				}))
 			})
-
 		})
 
 		t.Run(`cipd packages`, func(t *ftt.Test) {
@@ -229,7 +227,6 @@ func TestDiff(t *testing.T) {
 					},
 				}))
 			})
-
 		})
 	})
 }

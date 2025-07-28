@@ -53,7 +53,6 @@ func SendAuthDB(ctx context.Context, replicaURL, keyName, encodedSig string, aut
 		bytes.NewReader(authDBBlob))
 	if err != nil {
 		return nil, errors.Fmt("failed creating http.Request to %s: %w", replicaURL, err)
-
 	}
 
 	// Pass signature via the header.

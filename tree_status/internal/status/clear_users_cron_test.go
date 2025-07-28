@@ -28,7 +28,6 @@ import (
 
 func TestClearStatusUsers(t *testing.T) {
 	ftt.Run(`With Spanner Test Database`, t, func(t *ftt.Test) {
-
 		ctx := testutil.IntegrationTestContext(t)
 
 		t.Run(`Status older than 30 days should have their CreateUser cleared`, func(t *ftt.Test) {

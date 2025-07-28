@@ -65,6 +65,5 @@ func TestBigTable(t *testing.T) {
 				assert.Loosely(t, getReadItem(fakeRow, "log", "invalid"), should.BeNil)
 			})
 		})
-
 	})
 }

@@ -148,7 +148,6 @@ func parseCommit(s string) (commit *pb.GitilesCommit, mustConfirmRef bool, err e
 		// The user has specified something with prefix "refs/", but without
 		// prefix "refs/heads/". They must know what they is doing.
 		mustConfirmRef = true
-
 	}
 	return
 }

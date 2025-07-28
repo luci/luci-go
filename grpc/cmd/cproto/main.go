@@ -207,7 +207,6 @@ func run(ctx context.Context, inputDir string) error {
 		if goPackages.Len() != 1 {
 			return errors.Fmt("cannot generate pb.discovery.go: generated *.pb.go files are in multiple packages %v",
 				goPackages.ToSortedSlice())
-
 		}
 		goPkg := goPackages.ToSlice()[0]
 		out := filepath.Join(

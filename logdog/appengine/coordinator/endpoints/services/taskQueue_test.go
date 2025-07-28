@@ -131,6 +131,5 @@ func TestTaskQueue(t *testing.T) {
 
 			assert.Loosely(t, len(leasedTasks), should.Equal(3))
 		})
-
 	})
 }

@@ -298,7 +298,6 @@ func TestGetCulprit(t *testing.T) {
 		ok, _ := snapshot.GetCulprit()
 		assert.Loosely(t, ok, should.BeFalse)
 	})
-
 }
 
 func TestFindRegressionChunks(t *testing.T) {

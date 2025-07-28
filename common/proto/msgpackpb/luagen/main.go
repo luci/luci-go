@@ -629,7 +629,6 @@ func generate(outFile string, msgs []protoreflect.MessageDescriptor, enums []pro
 									pl("acc[%d] = val", num)
 								})
 							}
-
 						}
 
 						nl()

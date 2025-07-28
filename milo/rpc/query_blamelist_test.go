@@ -182,7 +182,6 @@ func TestPrepareQueryBlamelistRequest(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.ErrLike("gitiles_commit.host must be a subdomain of .googlesource.com"))
 		})
-
 	})
 }
 

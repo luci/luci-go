@@ -106,7 +106,6 @@ func TestInstrumentedFactory(t *testing.T) {
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, tsmonSentCounter(ctx, metrics.Internal.BuildbucketRPCCount, lProject, bbHost, "GetBuild", "NOT_FOUND"), should.Equal(1))
 			assert.Loosely(t, tsmonSentDistr(ctx, metrics.Internal.BuildbucketRPCDurations, lProject, bbHost, "GetBuild", "NOT_FOUND").Sum(), should.AlmostEqual(10.0))
-
 		})
 	})
 }
@@ -160,7 +159,6 @@ func (m *mockBBClient) CancelBuild(ctx context.Context, in *bbpb.CancelBuildRequ
 		return nil, status.Error(m.grpcCode, "something wrong")
 	}
 	return &bbpb.Build{}, nil
-
 }
 func (m *mockBBClient) Batch(ctx context.Context, in *bbpb.BatchRequest, opts ...grpc.CallOption) (*bbpb.BatchResponse, error) {
 	clock.Get(ctx).(testclock.TestClock).Add(m.latency)

@@ -50,7 +50,6 @@ func TestStreamAddr(t *testing.T) {
 	}
 
 	ftt.Run(`Testing StreamAddr`, t, func(t *ftt.Test) {
-
 		for _, tc := range successes {
 			t.Run(fmt.Sprintf(`Success: %q`, tc.s), func(t *ftt.Test) {
 				addr, err := ParseURL(tc.s)

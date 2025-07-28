@@ -82,7 +82,6 @@ func Resolve(s *pb.FileDescriptorSet, fullName string) (file *pb.FileDescriptorP
 	var parent any
 	file, parent, path = Resolve(s, pkg)
 	switch parent := parent.(type) {
-
 	case *pb.ServiceDescriptorProto:
 		if i := FindMethodForService(parent, name); i != -1 {
 			return file, parent.Method[i], append(path, ServiceDescriptorProtoMethodTag, i)
