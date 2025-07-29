@@ -55,11 +55,5 @@ func TestValidateBatchFinalizeWorkUnitsRequest(t *testing.T) {
 			err := validateBatchFinalizeWorkUnitsRequest(req)
 			assert.Loosely(t, err, should.ErrLike("requests: the number of requests in the batch (501) exceeds 500"))
 		})
-
-		t.Run("sub-request invalid", func(t *ftt.Test) {
-			req.Requests[1].Name = "invalid name"
-			err := validateBatchFinalizeWorkUnitsRequest(req)
-			assert.Loosely(t, err, should.ErrLike("requests[1]: name: does not match"))
-		})
 	})
 }

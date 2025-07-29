@@ -39,10 +39,5 @@ func validateBatchFinalizeWorkUnitsRequest(req *pb.BatchFinalizeWorkUnitsRequest
 	if err := pbutil.ValidateBatchRequestCount(len(req.Requests)); err != nil {
 		return errors.Fmt("requests: %w", err)
 	}
-	for i, r := range req.Requests {
-		if err := validateFinalizeWorkUnitRequest(r); err != nil {
-			return errors.Fmt("requests[%d]: %w", i, err)
-		}
-	}
 	return nil
 }

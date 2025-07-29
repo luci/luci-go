@@ -100,17 +100,27 @@ func MustParseLegacyInvocationID(id invocations.ID) ID {
 	}
 }
 
-// MustParseName parses a work unit resource name into its ID.
-// If the resource name is not valid, it panics.
-func MustParseName(name string) ID {
+// ParseName parses a work unit resource name into its ID.
+// An error is returned if parsing fails.
+func ParseName(name string) (ID, error) {
 	rootInvocationID, workUnitID, err := pbutil.ParseWorkUnitName(name)
 	if err != nil {
-		panic(err)
+		return ID{}, err
 	}
 	return ID{
 		RootInvocationID: rootinvocations.ID(rootInvocationID),
 		WorkUnitID:       workUnitID,
+	}, nil
+}
+
+// MustParseName parses a work unit resource name into its ID.
+// If the resource name is not valid, it panics.
+func MustParseName(name string) ID {
+	id, err := ParseName(name)
+	if err != nil {
+		panic(err)
 	}
+	return id
 }
 
 // IDSet is an unordered set of work unit ids.
