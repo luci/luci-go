@@ -13,7 +13,12 @@
 // limitations under the License.
 
 import FilterListIcon from '@mui/icons-material/FilterList';
-import { ListItemIcon, MenuItem, Typography } from '@mui/material';
+import {
+  ListItemIcon,
+  MenuItem,
+  PopoverOrigin,
+  Typography,
+} from '@mui/material';
 import { GridColumnMenuItemProps, useGridApiContext } from '@mui/x-data-grid';
 import { useEffect, useState } from 'react';
 
@@ -54,6 +59,14 @@ export function FilterItem(props: GridColumnMenuItemProps) {
   const apiRef = useGridApiContext();
   const { colDef } = props;
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [anchorOrigin, setAnchorOrigin] = useState<PopoverOrigin>({
+    vertical: 'top',
+    horizontal: 'right',
+  });
+  const [transformOrigin, setTransformOrigin] = useState<PopoverOrigin>({
+    vertical: 'top',
+    horizontal: 'left',
+  });
   const { data: dimensionsData, isLoading } = useDeviceDimensions();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
 
@@ -75,6 +88,21 @@ export function FilterItem(props: GridColumnMenuItemProps) {
   }, [open, filterKey, searchParams]);
 
   const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const screenWidth = window.innerWidth;
+    // A reasonable guess for the dropdown width.
+    const dropdownWidth = 300;
+
+    // Decide which way to open the dropdown based on available space.
+    if (rect.right + dropdownWidth > screenWidth && rect.left > dropdownWidth) {
+      // Not enough space on the right, so open to the left.
+      setAnchorOrigin({ vertical: 'top', horizontal: 'left' });
+      setTransformOrigin({ vertical: 'top', horizontal: 'right' });
+    } else {
+      // Default behavior: open to the right.
+      setAnchorOrigin({ vertical: 'top', horizontal: 'right' });
+      setTransformOrigin({ vertical: 'top', horizontal: 'left' });
+    }
     setAnchorEl(event.currentTarget);
   };
 
@@ -118,7 +146,7 @@ export function FilterItem(props: GridColumnMenuItemProps) {
     dimensionInfo?.dimensionValues.map((v) => ({ value: v, label: v })) || [];
 
   return (
-    <div>
+    <>
       <MenuItem onClick={handleOpen} disabled={!isFilterable}>
         <ListItemIcon>
           <FilterListIcon fontSize="small" />
@@ -129,10 +157,8 @@ export function FilterItem(props: GridColumnMenuItemProps) {
         open={open}
         anchorEl={anchorEl}
         onClose={handleClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
-        }}
+        anchorOrigin={anchorOrigin}
+        transformOrigin={transformOrigin}
         enableSearchInput={true}
         maxHeight={500}
         onResetClick={handleReset}
@@ -155,6 +181,6 @@ export function FilterItem(props: GridColumnMenuItemProps) {
           );
         }}
       />
-    </div>
+    </>
   );
 }
