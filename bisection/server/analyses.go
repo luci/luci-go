@@ -289,42 +289,63 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 		return nil, errors.Fmt("from field mask: %w", err)
 	}
 
-	// Query Changepoint analysis.
-	logging.Infof(ctx, "Start querying changepoint analysis")
-	client, err := analysis.NewTestVariantBranchesClient(ctx, server.LUCIAnalysisHost, req.Project)
-	if err != nil {
-		return nil, errors.Fmt("create LUCI Analysis client: %w", err)
-	}
-
-	tvbRequest := &analysispb.BatchGetTestVariantBranchRequest{}
+	// For test failures that have source position specified, we do not need to query LUCI Analysis.
+	// We only need to query LUCI Analysis for test failures that do not have source position specified.
+	luciAnalysisRequests := []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{}
 	for _, tf := range req.TestFailures {
-		tvbRequest.Names = append(tvbRequest.Names, fmt.Sprintf("projects/%s/tests/%s/variants/%s/refs/%s", req.Project, url.PathEscape(tf.TestId), tf.VariantHash, tf.RefHash))
-	}
-	changePointResults, err := client.BatchGet(ctx, tvbRequest)
-	if err != nil {
-		code := status.Code(err)
-		if code == codes.PermissionDenied {
-			logging.Fields{
-				"Project": req.Project,
-			}.Warningf(ctx, "User requested test analyses for project %q, but obtained permission denied from LUCI Analysis while trying to read test variant branches (project may not exist).", req.Project)
-
-			// Project does not exist (or this LUCI Bisection deployment
-			// does not have access). Return an empty set of results.
-			return &pb.BatchGetTestAnalysesResponse{
-				TestAnalyses: make([]*pb.TestAnalysis, len(req.TestFailures)),
-			}, nil
-		} else {
-			return nil, status.Errorf(codes.Internal, "read changepoint analysis: %s", err)
+		if tf.SourcePosition == 0 {
+			luciAnalysisRequests = append(luciAnalysisRequests, tf)
 		}
 	}
-	logging.Infof(ctx, "Changepoint analysis returns %d results", len(changePointResults.TestVariantBranches))
+
+	// Query Changepoint analysis.
+	changePointResults := map[string]*analysispb.TestVariantBranch{}
+	if len(luciAnalysisRequests) > 0 {
+		logging.Infof(ctx, "Start querying changepoint analysis for %d test failures", len(luciAnalysisRequests))
+		client, err := analysis.NewTestVariantBranchesClient(ctx, server.LUCIAnalysisHost, req.Project)
+		if err != nil {
+			return nil, errors.Fmt("create LUCI Analysis client: %w", err)
+		}
+
+		tvbRequest := &analysispb.BatchGetTestVariantBranchRequest{}
+		for _, tf := range luciAnalysisRequests {
+			tvbRequest.Names = append(tvbRequest.Names, fmt.Sprintf("projects/%s/tests/%s/variants/%s/refs/%s", req.Project, url.PathEscape(tf.TestId), tf.VariantHash, tf.RefHash))
+		}
+		cpr, err := client.BatchGet(ctx, tvbRequest)
+		if err != nil {
+			code := status.Code(err)
+			if code == codes.PermissionDenied {
+				logging.Fields{
+					"Project": req.Project,
+				}.Warningf(ctx, "User requested test analyses for project %q, but obtained permission denied from LUCI Analysis while trying to read test variant branches (project may not exist).", req.Project)
+
+				// Project does not exist (or this LUCI Bisection deployment
+				// does not have access). Return an empty set of results.
+				return &pb.BatchGetTestAnalysesResponse{
+					TestAnalyses: make([]*pb.TestAnalysis, len(req.TestFailures)),
+				}, nil
+			} else {
+				return nil, status.Errorf(codes.Internal, "read changepoint analysis: %s", err)
+			}
+		}
+		logging.Infof(ctx, "Changepoint analysis returns %d results", len(cpr.TestVariantBranches))
+		for i, tf := range luciAnalysisRequests {
+			key := fmt.Sprintf("%s-%s-%s", tf.TestId, tf.VariantHash, tf.RefHash)
+			changePointResults[key] = cpr.TestVariantBranches[i]
+		}
+	}
 
 	result := make([]*pb.TestAnalysis, len(req.TestFailures))
 	err = parallel.FanOutIn(func(workC chan<- func() error) {
 		for i, tf := range req.TestFailures {
-			// Assign to local variables.
-			cpr := changePointResults.TestVariantBranches[i]
+			i := i
+			tf := tf
 			workC <- func() error {
+				var cpr *analysispb.TestVariantBranch
+				if tf.SourcePosition == 0 {
+					key := fmt.Sprintf("%s-%s-%s", tf.TestId, tf.VariantHash, tf.RefHash)
+					cpr = changePointResults[key]
+				}
 				tfaProto, err := retrieveTestAnalysis(ctx, req.Project, tf, cpr, tfamask)
 				if err != nil {
 					return errors.Fmt("retrieve test analysis: %w", err)
@@ -355,23 +376,42 @@ func retrieveTestAnalysis(ctx context.Context, project string, tf *pb.BatchGetTe
 	if len(tfs) == 0 {
 		return nil, nil
 	}
-	sort.Slice(tfs, func(i, j int) bool {
-		return tfs[i].RegressionStartPosition > tfs[j].RegressionStartPosition
-	})
-	latestTestFailure := tfs[0]
-	if latestTestFailure.IsDiverged {
-		// Do not return test analysis if diverged.
-		// Because diverged test failure is considered excluded from the test analyses.
+
+	var testFailure *model.TestFailure
+	if tf.SourcePosition > 0 {
+		// If source position is specified, we find the test failure that has the source position
+		// within its regression range.
+		for _, t := range tfs {
+			if !t.IsDiverged && tf.SourcePosition >= t.RegressionStartPosition && tf.SourcePosition <= t.RegressionEndPosition {
+				testFailure = t
+				break
+			}
+		}
+	} else {
+		// If source position is not specified, we find the latest test failure.
+		sort.Slice(tfs, func(i, j int) bool {
+			return tfs[i].RegressionStartPosition > tfs[j].RegressionStartPosition
+		})
+		testFailure = tfs[0]
+		if testFailure.IsDiverged {
+			// Do not return test analysis if diverged.
+			// Because diverged test failure is considered excluded from the test analyses.
+			return nil, nil
+		}
+		ongoing, reason := isTestFailureDeterministicallyOngoing(testFailure, changepointResult)
+		// Do not return the test analysis if the failure is not ongoing.
+		if !ongoing {
+			logging.Infof(ctx, "no bisection returned for test %s %s %s because %s", tf.TestId, tf.VariantHash, tf.RefHash, reason)
+			return nil, nil
+		}
+	}
+
+	if testFailure == nil {
 		return nil, nil
 	}
-	ongoing, reason := isTestFailureDeterministicallyOngoing(latestTestFailure, changepointResult)
-	// Do not return the test analysis if the failure is not ongoing.
-	if !ongoing {
-		logging.Infof(ctx, "no bisection returned for test %s %s %s because %s", tf.TestId, tf.VariantHash, tf.RefHash, reason)
-		return nil, nil
-	}
+
 	// Return the test analysis that analyze this test failure.
-	tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, latestTestFailure.AnalysisKey.IntID())
+	tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, testFailure.AnalysisKey.IntID())
 	if err != nil {
 		return nil, errors.Fmt("get test failure analysis: %w", err)
 	}
@@ -387,6 +427,9 @@ func retrieveTestAnalysis(ctx context.Context, project string, tf *pb.BatchGetTe
 // a test failure is still deterministically failing.
 // It also returns a string to explain why it is not deterministically failing.
 func isTestFailureDeterministicallyOngoing(tf *model.TestFailure, changepointResult *analysispb.TestVariantBranch) (bool, string) {
+	if changepointResult == nil {
+		return false, "changepoint is not found"
+	}
 	segments := changepointResult.Segments
 	if len(segments) < 2 {
 		return false, "not deterministically failing"
@@ -831,6 +874,9 @@ func validateBatchGetTestAnalysesRequest(req *pb.BatchGetTestAnalysesRequest) er
 		}
 		if tf.RefHash == "" {
 			return errors.Fmt("test_variants[%v]: ref_hash: unspecified", i)
+		}
+		if tf.SourcePosition < 0 {
+			return errors.Fmt("test_variants[%v]: source_position: must not be negative", i)
 		}
 		if err := rdbpbutil.ValidateTestID(tf.TestId); err != nil {
 			return errors.Fmt("test_variants[%v].test_id: %w", i, err)

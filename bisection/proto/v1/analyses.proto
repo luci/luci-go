@@ -66,9 +66,6 @@ service Analyses {
   rpc GetTestAnalysis(GetTestAnalysisRequest) returns (TestAnalysis);
 
   // BatchGetTestAnalyses is an RPC to batch get test analyses for test failures.
-  // At this moment it only support getting the bisection for the ongoing test failure.
-  // TODO(@beining): This endpoint can be extended to support returning bisection for
-  // any test failure by specifying source position in the request.
   rpc BatchGetTestAnalyses(BatchGetTestAnalysesRequest) returns (BatchGetTestAnalysesResponse);
 
 }
@@ -393,9 +390,11 @@ message BatchGetTestAnalysesRequest {
    string test_id = 1;
    string variant_hash = 2;
    string ref_hash = 3;
-   // TODO: Add an optional source_position field in this proto.
-   // This is the source position where a failure occurs.
-   // See go/surface-bisection-and-changepoint-analysis-som.
+   // If there is source_position specified, the bisection corresponding to the
+   // source position will be returned (if the bisection exists).
+   // If no source position is specified, the bisection for the ongoing
+   // test failure will be returned (if the bisection exists).
+   int64 source_position = 4;
  }
  // The response will only contain analyses which analyze failures in this list.
  // It is an error to request for more than 100 test failures.

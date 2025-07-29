@@ -842,6 +842,22 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 				assert.Loosely(t, err.Error(), should.ContainSubstring("test_variants[0].variant_hash"))
 			})
+
+			t.Run("invalid source position", func(t *ftt.Test) {
+				req := &pb.BatchGetTestAnalysesRequest{
+					Project: "chromium",
+					TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{{
+						TestId:         "testid",
+						VariantHash:    "aaaaaaaaaaaaaaa",
+						RefHash:        "aaaaaaaaaaaaaaa",
+						SourcePosition: -1,
+					}},
+				}
+				_, err := server.BatchGetTestAnalyses(ctx, req)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err.Error(), should.ContainSubstring("test_variants[0]: source_position: must not be negative"))
+			})
 		})
 
 		fakeAnalysisClient := &analysis.FakeTestVariantBranchesClient{}
@@ -876,7 +892,6 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 					RefHash:       "bbbbbbbbbbbbbbb" + fmt.Sprint(i),
 					StartPosition: 90,
 					EndPosition:   99,
-					IsPrimary:     true,
 				})
 				testFailureInRequest = append(testFailureInRequest, &pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{
 					TestId:      "testid" + fmt.Sprint(i),
@@ -1000,6 +1015,66 @@ func TestBatchGetTestAnalyses(t *testing.T) {
 							},
 						},
 					}, nil},
+				}))
+			})
+
+			t.Run("request with source position", func(t *ftt.Test) {
+				req := &pb.BatchGetTestAnalysesRequest{
+					Project: "chromium",
+					TestFailures: []*pb.BatchGetTestAnalysesRequest_TestFailureIdentifier{
+						{
+							TestId:         "testid1",
+							VariantHash:    "aaaaaaaaaaaaaaa1",
+							RefHash:        "bbbbbbbbbbbbbbb1",
+							SourcePosition: 105,
+						},
+						{
+							TestId:         "testid2",
+							VariantHash:    "aaaaaaaaaaaaaaa2",
+							RefHash:        "bbbbbbbbbbbbbbb2",
+							SourcePosition: 112, // Not found
+						},
+						{
+							TestId:         "testid3",
+							VariantHash:    "aaaaaaaaaaaaaaa2", // Not found
+							RefHash:        "bbbbbbbbbbbbbbb2",
+							SourcePosition: 105,
+						},
+						{
+							TestId:         "testid5", // Diverge
+							VariantHash:    "aaaaaaaaaaaaaaa5",
+							RefHash:        "bbbbbbbbbbbbbbb5",
+							SourcePosition: 109,
+						},
+					},
+				}
+				resp, err := server.BatchGetTestAnalyses(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Match(&pb.BatchGetTestAnalysesResponse{
+					TestAnalyses: []*pb.TestAnalysis{
+						{
+							AnalysisId:  101,
+							Builder:     &buildbucketpb.BuilderID{Project: "chromium", Bucket: "bucket", Builder: "builder"},
+							CreatedTime: timestamppb.New(time.Unix(int64(100), 0).UTC()),
+							EndCommit:   &buildbucketpb.GitilesCommit{Position: 110},
+							SampleBbid:  8000,
+							StartCommit: &buildbucketpb.GitilesCommit{Position: 101},
+							TestFailures: []*pb.TestFailure{
+								{
+									TestId:      "testid1",
+									VariantHash: "aaaaaaaaaaaaaaa1",
+									RefHash:     "bbbbbbbbbbbbbbb1",
+									Variant:     &pb.Variant{},
+									IsDiverged:  false,
+									IsPrimary:   true,
+									StartHour:   timestamppb.New(time.Unix(int64(99), 0).UTC()),
+								},
+							},
+						},
+						{},
+						{},
+						{},
+					},
 				}))
 			})
 		})
