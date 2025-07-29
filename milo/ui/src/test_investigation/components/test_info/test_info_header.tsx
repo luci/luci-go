@@ -41,7 +41,10 @@ export function TestInfoHeader() {
   const project = useProject();
   const testVariantBranch = useTestVariantBranch();
 
-  const testDisplayName = testVariant.testMetadata?.name || testVariant.testId;
+  const testDisplayName =
+    testVariant?.testIdStructured?.caseName ||
+    testVariant.testMetadata?.name ||
+    testVariant.testId;
   const commitInfo = getCommitInfoFromInvocation(invocation);
   const originalCommitLink = getCommitGitilesUrlFromInvocation(invocation);
 
@@ -65,15 +68,17 @@ export function TestInfoHeader() {
             {value}
           </SummaryLineItem>
         ))}
-        <SummaryLineItem label="Commit">
-          <Link
-            href={blamelistCommitLink || originalCommitLink}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {commitInfo}
-          </Link>
-        </SummaryLineItem>
+        {commitInfo && (
+          <SummaryLineItem label="Commit">
+            <Link
+              href={blamelistCommitLink || originalCommitLink}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {commitInfo}
+            </Link>
+          </SummaryLineItem>
+        )}
       </PageSummaryLine>
     </Box>
   );
