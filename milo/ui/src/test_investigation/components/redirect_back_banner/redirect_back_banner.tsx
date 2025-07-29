@@ -20,9 +20,12 @@ import { Link as RouterLink } from 'react-router';
 
 import { useFeatureFlag } from '@/common/feature_flags';
 import { genFeedbackUrl } from '@/common/tools/utils';
+import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { useProject } from '@/test_investigation/context';
 import { NEW_TEST_INVESTIGATION_PAGE_FLAG } from '@/test_investigation/pages/features';
+import { isPresubmitRun } from '@/test_investigation/utils/test_info_utils';
 
 export interface RedirectBackBannerProps extends AlertProps {
   invocation: Invocation;
@@ -46,6 +49,9 @@ export function RedirectBackBanner({
 }: RedirectBackBannerProps) {
   // This is here purely for the side effect of enabling the opt out dialog on the page.
   useFeatureFlag(NEW_TEST_INVESTIGATION_PAGE_FLAG);
+
+  const { trackEvent } = useGoogleAnalytics();
+  const project = useProject();
 
   const buildId = invocation.name.startsWith('invocations/build-')
     ? invocation.name.substring('invocations/build-'.length)
@@ -117,6 +123,15 @@ From Link: ${self.location.href}`;
             to={legacyUrl}
             underline="always"
             sx={{ display: 'flex', alignItems: 'center' }}
+            onClick={() =>
+              trackEvent('user_action', {
+                componentName: 'back_to_old_view',
+                project,
+                invocationType: isPresubmitRun(invocation)
+                  ? 'presubmit'
+                  : 'postsubmit',
+              })
+            }
           >
             Go back to old view
           </Link>

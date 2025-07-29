@@ -18,11 +18,13 @@ import ThumbDownOutlinedIcon from '@mui/icons-material/ThumbDownOutlined';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import { Box, Button, Card, IconButton, Typography } from '@mui/material';
 import { DateTime } from 'luxon';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { requestSurvey } from '@/fleet/utils/survey';
-import { useInvocation } from '@/test_investigation/context';
+import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+import { useInvocation, useProject } from '@/test_investigation/context';
+import { isPresubmitRun } from '@/test_investigation/utils/test_info_utils';
 
 import { AnalysisSubsection } from './analysis_subsection';
 import { NextStepsSubsection } from './next_steps_subsection';
@@ -45,6 +47,20 @@ export function RecommendationsSection({
 }: RecommendationsSectionProps) {
   const invocation = useInvocation();
   const authState = useAuthState();
+  const { trackEvent } = useGoogleAnalytics();
+  const project = useProject();
+
+  const track = useCallback(
+    (componentName: string) => {
+      trackEvent('user_action', {
+        componentName,
+        project,
+        invocationType: isPresubmitRun(invocation) ? 'presubmit' : 'postsubmit',
+      });
+    },
+    [invocation, project, trackEvent],
+  );
+
   const now = useMemo(() => DateTime.now(), []);
   const lastUpdateTime = useMemo(() => {
     if (!invocation?.finalizeTime) {
@@ -143,6 +159,7 @@ export function RecommendationsSection({
               startIcon={<ArrowOutwardIcon />}
               onClick={() => {
                 setExpanded(false);
+                track('hide_recommendation_details');
               }}
             >
               Hide details
@@ -155,6 +172,7 @@ export function RecommendationsSection({
             startIcon={<CallReceivedIcon />}
             onClick={() => {
               setExpanded(true);
+              track('view_recommendation_details');
             }}
           >
             View details

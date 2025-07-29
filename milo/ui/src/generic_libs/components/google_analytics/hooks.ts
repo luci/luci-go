@@ -51,6 +51,11 @@ export interface EventPayload {
 
   /** The name of the feature flag being opted in or out. */
   featureFlag?: string;
+
+  /** The name of the component that was acted upon by the user.
+   * e.g. the name of the link that was clicked or the button that was pressed.
+   */
+  componentName?: string;
 }
 
 /**
