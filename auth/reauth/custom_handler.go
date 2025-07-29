@@ -68,11 +68,14 @@ func (h customSKHandler) IsAvailable() bool {
 func (h customSKHandler) send(ctx context.Context, d []byte) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, h.pluginCmd())
 	cmd.Stdin = bytes.NewReader(d)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	out, err := cmd.Output()
+	logging.Debugf(ctx, "signing plugin stderr: %q", cmd.Stderr)
 	if err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
-			logging.Debugf(ctx, "signing plugin stderr: %q", exitErr.Stderr)
+			logging.Debugf(ctx, "signing plugin exit code: %v", exitErr.ExitCode())
 		}
 	}
 	return out, err
