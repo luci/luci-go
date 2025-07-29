@@ -16,7 +16,6 @@ package workunits
 
 import (
 	"context"
-	"sort"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -28,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tracing"
@@ -315,35 +315,61 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 		return nil
 	}
 
-	cols := []string{
-		"RootInvocationShardId",
-		"WorkUnitId",
-		"ParentWorkUnitId",
-		"SecondaryIndexShardId",
-		"State",
-		"Realm",
-		"CreateTime",
-		"CreatedBy",
-		"FinalizeStartTime",
-		"FinalizeTime",
-		"Deadline",
-		"CreateRequestId",
-		"ProducerResource",
-		"Tags",
-		"Properties",
-		"Instructions",
-	}
+	extraCols := ""
 	if mask == AllFields {
-		cols = append(cols, "ExtendedProperties")
+		extraCols = "			ExtendedProperties,\n"
 	}
 
-	keys := spanner.KeySets()
+	stmt := spanner.NewStatement(`
+		SELECT
+			w.RootInvocationShardId,
+			w.WorkUnitId,
+			w.ParentWorkUnitId,
+			w.SecondaryIndexShardId,
+			w.State,
+			w.Realm,
+			w.CreateTime,
+			w.CreatedBy,
+			w.FinalizeStartTime,
+			w.FinalizeTime,
+			w.Deadline,
+			w.CreateRequestId,
+			w.ProducerResource,
+			w.Tags,
+			w.Properties,
+			w.Instructions,` + extraCols + `
+			ARRAY(
+				SELECT c.ChildWorkUnitId
+				FROM ChildWorkUnits c WHERE c.RootInvocationShardId = w.RootInvocationShardId AND c.WorkUnitId = w.WorkUnitId
+				ORDER BY c.ChildWorkUnitId
+			) as ChildWorkUnits,
+			ARRAY(
+				SELECT c.ChildInvocationId
+				FROM ChildInvocations c WHERE c.RootInvocationShardId = w.RootInvocationShardId AND c.WorkUnitId = w.WorkUnitId
+			) as ChildInvocations
+		FROM WorkUnits w
+		WHERE STRUCT(w.RootInvocationShardId, w.WorkUnitId) IN UNNEST(@ids)
+	`)
+
+	// Struct to use as Spanner Query Parameter.
+	type workUnitID struct {
+		RootInvocationShardId string
+		WorkUnitId            string
+	}
+
+	var workUnitIDs []workUnitID
 	for _, id := range ids {
-		keys = spanner.KeySets(keys, id.Key())
+		workUnitIDs = append(workUnitIDs, workUnitID{
+			RootInvocationShardId: id.RootInvocationShardID().RowID(),
+			WorkUnitId:            id.WorkUnitID,
+		})
+	}
+	stmt.Params = map[string]any{
+		"ids": workUnitIDs,
 	}
 
 	var b spanutil.Buffer
-	return span.Read(ctx, "WorkUnits", keys, cols).Do(func(row *spanner.Row) error {
+	return span.Query(ctx, stmt).Do(func(row *spanner.Row) error {
 		wu := &WorkUnitRow{}
 
 		var (
@@ -352,6 +378,8 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			properties            spanutil.Compressed
 			instructions          spanutil.Compressed
 			extendedProperties    spanutil.Compressed
+			childWorkUnitIDs      []string
+			childInvocations      invocations.IDSet
 		)
 
 		dest := []any{
@@ -375,6 +403,9 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 		if mask == AllFields {
 			dest = append(dest, &extendedProperties)
 		}
+		dest = append(dest,
+			&childWorkUnitIDs,
+			&childInvocations)
 
 		if err := b.FromSpanner(row, dest...); err != nil {
 			return errors.Fmt("read spanner row for work unit: %w", err)
@@ -403,6 +434,17 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 				return errors.Fmt("unmarshal extended properties for work unit %s: %w", wu.ID.Name(), err)
 			}
 			wu.ExtendedProperties = internalExtendedProperties.ExtendedProperties
+		}
+
+		if len(childWorkUnitIDs) > 0 {
+			wu.ChildWorkUnits = make([]ID, len(childWorkUnitIDs))
+			for i, childWorkUnitID := range childWorkUnitIDs {
+				wu.ChildWorkUnits[i] = ID{RootInvocationID: wu.ID.RootInvocationID, WorkUnitID: childWorkUnitID}
+			}
+		}
+
+		if len(childInvocations) > 0 {
+			wu.ChildInvocations = childInvocations.SortedByID()
 		}
 
 		return f(wu)
@@ -466,88 +508,4 @@ func ReadBatch(ctx context.Context, ids []ID, mask ReadMask) (ret []*WorkUnitRow
 		ret[i] = row.Clone()
 	}
 	return ret, err
-}
-
-// ReadChildren reads the child work unit IDs of a work unit.
-func ReadChildren(ctx context.Context, id ID) (ret []ID, err error) {
-	results, err := ReadChildrenBatch(ctx, []ID{id})
-	if err != nil {
-		return nil, err
-	}
-	return results[0], nil
-}
-
-// ReadChildrenBatch reads the child work units IDs of a batch of work units.
-// The work units must be in the same root invocation.
-// results[i] corresponds to ids[i]. Duplicate IDs are allowed.
-// This method does not check the existence of the work units for which children
-// are being read.
-func ReadChildrenBatch(ctx context.Context, ids []ID) (results [][]ID, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadChildrenBatch")
-	defer func() { tracing.End(ts, err) }()
-
-	if len(ids) == 0 {
-		return nil, nil
-	}
-
-	rootInvocation := ids[0].RootInvocationID
-	var workUnitIDs []string
-	for _, id := range ids {
-		if id.RootInvocationID != rootInvocation {
-			return nil, errors.New("all work units must belong to the same root invocation")
-		}
-		workUnitIDs = append(workUnitIDs, id.WorkUnitID)
-	}
-
-	st := spanner.NewStatement(`
-		SELECT
-			RootInvocationShardId,
-			ParentWorkUnitId,
-			WorkUnitId
-		FROM WorkUnits
-		WHERE RootInvocationShardId IN UNNEST(@rootInvocationShardIds) AND ParentWorkUnitId IN UNNEST(@parentWorkUnitIds)`)
-
-	st.Params = map[string]any{
-		"rootInvocationShardIds": rootInvocation.AllShardIDs(),
-		"parentWorkUnitIds":      workUnitIDs,
-	}
-
-	resultsByParent := make(map[ID][]ID)
-	var b spanutil.Buffer
-	err = spanutil.Query(ctx, st, func(row *spanner.Row) error {
-		var rootInvocationShardID string
-		var parentWorkUnitID spanner.NullString
-		var workUnitID string
-		if err := b.FromSpanner(row, &rootInvocationShardID, &parentWorkUnitID, &workUnitID); err != nil {
-			return err
-		}
-		if !parentWorkUnitID.Valid {
-			return errors.New("logic error: this query design should never return the root (parentless) work unit")
-		}
-		parentID := IDFromRowID(rootInvocationShardID, parentWorkUnitID.StringVal)
-		resultsByParent[parentID] = append(resultsByParent[parentID], IDFromRowID(rootInvocationShardID, workUnitID))
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	results = make([][]ID, len(ids))
-	for i, id := range ids {
-		children := resultsByParent[id]
-		// Copy the results to avoid returning slices which are aliased
-		// (references to same object) in case the duplicate IDs are
-		// provided in the request. This might trip the caller up if they
-		// ever modify the slices.
-		copiedChildren := make([]ID, len(children))
-		copy(copiedChildren, children)
-
-		// Sort children by WorkUnitID for deterministic output.
-		// This is important for testing.
-		sort.Slice(copiedChildren, func(j, k int) bool {
-			return copiedChildren[j].WorkUnitID < copiedChildren[k].WorkUnitID
-		})
-		results[i] = copiedChildren
-	}
-	return results, err
 }

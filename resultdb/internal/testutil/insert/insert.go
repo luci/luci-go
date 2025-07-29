@@ -92,6 +92,10 @@ func InvocationWithInclusions(id invocations.ID, state pb.Invocation_State, extr
 
 // Inclusion returns a spanner mutation that inserts an inclusion.
 func Inclusion(including, included invocations.ID) *spanner.Mutation {
+	if including.IsWorkUnit() {
+		// This method does not perform all required updates for this case.
+		panic("this method should not be used for work unit inclusions; use WorkUnitInclusion instead")
+	}
 	return spanutil.InsertMap("IncludedInvocations", map[string]any{
 		"InvocationId":         including,
 		"IncludedInvocationId": included,
@@ -525,4 +529,9 @@ func RootInvocationWithRootWorkUnit(row *rootinvocations.RootInvocationRow) []*s
 // WorkUnit returns Spanner mutations to create the given work unit.
 func WorkUnit(row *workunits.WorkUnitRow) []*spanner.Mutation {
 	return workunits.InsertForTesting(row)
+}
+
+// Inclusion returns a spanner mutation that includes an invocation from a work unit.
+func WorkUnitInclusion(workUnit workunits.ID, included invocations.ID) []*spanner.Mutation {
+	return workunits.InsertInvocationInclusionForTesting(workUnit, included)
 }

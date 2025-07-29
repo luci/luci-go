@@ -53,13 +53,16 @@ func TestBatchGetWorkUnits(t *testing.T) {
 		wu1 := workunits.NewBuilder(rootInvID, "wu1").WithRealm(wu1Realm).Build()
 		wu2 := workunits.NewBuilder(rootInvID, "wu2").WithRealm(wu2Realm).WithMinimalFields().Build()
 		wuChild1 := workunits.NewBuilder(rootInvID, "wu11").WithParentWorkUnitID("wu1").WithRealm(wu2Realm).Build()
+		wuChild2 := workunits.NewBuilder(rootInvID, "wu12").WithParentWorkUnitID("wu1").WithRealm(wu2Realm).Build()
 
 		var ms []*spanner.Mutation
 		ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootInv)...)
 		ms = append(ms, insert.WorkUnit(wu1)...)
 		ms = append(ms, insert.WorkUnit(wu2)...)
 		ms = append(ms, insert.WorkUnit(wuChild1)...)
-		ms = append(ms, insert.Inclusion(wu1.ID.LegacyInvocationID(), invocations.ID("included-legacy-invocation")))
+		ms = append(ms, insert.WorkUnit(wuChild2)...)
+		ms = append(ms, insert.WorkUnitInclusion(wu1.ID, invocations.ID("included-legacy-invocation"))...)
+		ms = append(ms, insert.WorkUnitInclusion(wu1.ID, invocations.ID("included-legacy-invocation-2"))...)
 		testutil.MustApply(ctx, t, ms...)
 
 		// Setup authorisation.
@@ -95,9 +98,11 @@ func TestBatchGetWorkUnits(t *testing.T) {
 				Parent:            workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "root"}.Name(),
 				ChildWorkUnits: []string{
 					workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu11"}.Name(),
+					workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu12"}.Name(),
 				},
 				ChildInvocations: []string{
 					invocations.ID("included-legacy-invocation").Name(),
+					invocations.ID("included-legacy-invocation-2").Name(),
 				},
 				ProducerResource: wu1.ProducerResource,
 				Tags:             wu1.Tags,

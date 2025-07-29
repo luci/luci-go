@@ -473,11 +473,12 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			// Expected work units in the response.
 			expectedWU1 := proto.Clone(req.Requests[0].WorkUnit).(*pb.WorkUnit)
 			proto.Merge(expectedWU1, &pb.WorkUnit{
-				Name:       workUnitID1.Name(),
-				Parent:     parentWorkUnitID.Name(),
-				WorkUnitId: workUnitID1.WorkUnitID,
-				Creator:    "user:someone@example.com",
-				Deadline:   timestamppb.New(start.Add(defaultDeadlineDuration)),
+				Name:           workUnitID1.Name(),
+				Parent:         parentWorkUnitID.Name(),
+				WorkUnitId:     workUnitID1.WorkUnitID,
+				Creator:        "user:someone@example.com",
+				Deadline:       timestamppb.New(start.Add(defaultDeadlineDuration)),
+				ChildWorkUnits: []string{workUnitID11.Name()},
 			})
 			expectedWU1.Instructions = instructionutil.InstructionsWithNames(instructions, workUnitID1.Name())
 
@@ -516,6 +517,7 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 				Properties:         wuProperties,
 				Instructions:       instructionutil.InstructionsWithNames(instructions, workUnitID1.Name()),
 				ExtendedProperties: extendedProperties,
+				ChildWorkUnits:     []workunits.ID{workUnitID11},
 			}
 
 			expectWURow11 := &workunits.WorkUnitRow{

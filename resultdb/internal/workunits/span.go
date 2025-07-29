@@ -68,10 +68,14 @@ func Create(workUnit *WorkUnitRow, opts LegacyCreateOptions) []*spanner.Mutation
 	}
 	workUnit.Normalize()
 
-	workUnitMutation := workUnit.toMutation()
-	invMutation := workUnit.toLegacyInvocationMutation(opts)
-	includeMutation := workUnit.toLegacyInclusionMutation()
-	return []*spanner.Mutation{workUnitMutation, invMutation, includeMutation}
+	var ms []*spanner.Mutation
+	ms = append(ms, workUnit.toMutation())
+	if workUnit.ParentWorkUnitID.Valid {
+		ms = append(ms, workUnit.toChildWorkUnitsMutation())
+	}
+	ms = append(ms, workUnit.toLegacyInvocationMutation(opts))
+	ms = append(ms, workUnit.toLegacyInclusionMutation())
+	return ms
 }
 
 // Convert the work unit row to the canonical form.
@@ -98,6 +102,8 @@ type WorkUnitRow struct {
 	Properties            *structpb.Struct
 	Instructions          *pb.Instructions
 	ExtendedProperties    map[string]*structpb.Struct
+	ChildWorkUnits        []ID             // Output only.
+	ChildInvocations      []invocations.ID // Output only.
 }
 
 // Clone makes a deep copy of the row.
@@ -152,6 +158,26 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 		row["FinalizeStartTime"] = spanner.CommitTimestamp
 	}
 	return spanutil.InsertMap("WorkUnits", row)
+}
+
+func (w *WorkUnitRow) toChildWorkUnitsMutation() *spanner.Mutation {
+	if !w.ParentWorkUnitID.Valid {
+		if w.ID.WorkUnitID != RootWorkUnitID {
+			panic("only root work unit can have empty parent work unit ID")
+		}
+		panic("cannot create ChildWorkUnits mutation; work unit does not have a parent")
+	}
+	// Include an entry in ChildWorkUnits for the parent work unit.
+	parentID := ID{
+		RootInvocationID: w.ID.RootInvocationID,
+		WorkUnitID:       w.ParentWorkUnitID.StringVal,
+	}
+	row := map[string]interface{}{
+		"RootInvocationShardId": parentID.RootInvocationShardID(),
+		"WorkUnitId":            parentID.WorkUnitID,
+		"ChildWorkUnitId":       w.ID.WorkUnitID,
+	}
+	return spanutil.InsertMap("ChildWorkUnits", row)
 }
 
 func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *spanner.Mutation {

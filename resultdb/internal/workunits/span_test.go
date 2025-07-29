@@ -83,6 +83,11 @@ func TestWriteWorkUnit(t *testing.T) {
 		row.SecondaryIndexShardID = id.shardID(secondaryIndexShardCount)
 		assert.Loosely(t, readWorkUnit, should.Match(row))
 
+		// Validate the parent work unit has a child work units entry.
+		rootWorkUnit, err := Read(ctx, parentID, AllFields)
+		assert.Loosely(t, err, should.BeNil)
+		assert.That(t, rootWorkUnit.ChildWorkUnits, should.Match([]ID{id}))
+
 		// Validate Legacy Invocations table entry.
 		legacyInvID := invocations.ID("workunit:root-inv-id:work-unit-id")
 		readLegacyInv, err := invocations.Read(ctx, legacyInvID, invocations.AllFields)

@@ -241,6 +241,16 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		"ExtendedProperties":    spanutil.Compressed(pbutil.MustMarshal(&invocationspb.ExtendedProperties{ExtendedProperties: w.ExtendedProperties})),
 	})
 
+	var childMutation *spanner.Mutation
+	if w.ParentWorkUnitID.Valid {
+		parentWorkUnitID := ID{RootInvocationID: w.ID.RootInvocationID, WorkUnitID: w.ParentWorkUnitID.StringVal}
+		childMutation = spanutil.InsertMap("ChildWorkUnits", map[string]any{
+			"RootInvocationShardId": parentWorkUnitID.RootInvocationShardID(),
+			"WorkUnitId":            parentWorkUnitID.WorkUnitID,
+			"ChildWorkUnitId":       w.ID.WorkUnitID,
+		})
+	}
+
 	legacyInvMutation := spanutil.InsertMap("Invocations", map[string]any{
 		"InvocationId":                      w.ID.LegacyInvocationID(),
 		"Type":                              invocations.WorkUnit,
@@ -277,5 +287,25 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		"IncludedInvocationId": w.ID.LegacyInvocationID(),
 	})
 
-	return []*spanner.Mutation{workUnitMutation, legacyInvMutation, includeMutation}
+	ms := []*spanner.Mutation{workUnitMutation, legacyInvMutation, includeMutation}
+	if childMutation != nil {
+		ms = append(ms, childMutation)
+	}
+	return ms
+}
+
+// InsertInvocationInclusionForTesting includes a child invocation into
+// a work unit for testing.
+func InsertInvocationInclusionForTesting(workUnit ID, included invocations.ID) []*spanner.Mutation {
+	var ms []*spanner.Mutation
+	ms = append(ms, spanutil.InsertMap("IncludedInvocations", map[string]any{
+		"InvocationId":         workUnit.LegacyInvocationID(),
+		"IncludedInvocationId": included,
+	}))
+	ms = append(ms, spanutil.InsertMap("ChildInvocations", map[string]any{
+		"RootInvocationShardId": workUnit.RootInvocationShardID(),
+		"WorkUnitId":            workUnit.WorkUnitID,
+		"ChildInvocationId":     included,
+	}))
+	return ms
 }

@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal"
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
@@ -102,14 +101,9 @@ func (s *recorderServer) CreateRootInvocation(ctx context.Context, in *pb.Create
 	md.Set(pb.UpdateTokenMetadataKey, token)
 	prpc.SetHeader(ctx, md)
 
-	workUnitFields := masking.WorkUnitFields{
-		Row:              workUnitRow,
-		ChildWorkUnits:   []workunits.ID{},   // At creation time, this is still empty.
-		ChildInvocations: []invocations.ID{}, // At creation time, this is still empty.
-	}
 	return &pb.CreateRootInvocationResponse{
 		RootInvocation: rootInvocation.ToProto(),
-		RootWorkUnit:   masking.WorkUnit(workUnitFields, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL),
+		RootWorkUnit:   masking.WorkUnit(workUnitRow, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL),
 	}, nil
 }
 

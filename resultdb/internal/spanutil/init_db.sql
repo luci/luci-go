@@ -317,6 +317,39 @@ CREATE TABLE WorkUnits (
 ) PRIMARY KEY (RootInvocationShardId, WorkUnitId),
   INTERLEAVE IN PARENT RootInvocationShards ON DELETE CASCADE;
 
+-- ChildWorkUnits stores which work units are children of a given parent work unit.
+-- This is an index maintained by the application layer that is updated atomically with
+-- changes to the WorkUnits table.
+--
+-- It avoids the need to query all work unit shards for a root invocation to identify
+-- children of a single work unit.
+CREATE TABLE ChildWorkUnits (
+  -- The root invocation-shard of the parent work unit.
+  RootInvocationShardId STRING(MAX) NOT NULL,
+  -- The ID of the parent work unit.
+  WorkUnitId STRING(MAX) NOT NULL,
+  -- The ID of the child work unit.
+  ChildWorkUnitId STRING(MAX) NOT NULL,
+) PRIMARY KEY (RootInvocationShardId, WorkUnitId, ChildWorkUnitId),
+  INTERLEAVE IN PARENT WorkUnits ON DELETE CASCADE;
+
+-- ChildInvocations stores which legacy invocations were explicitly included in
+-- the given parent work unit. It excludes shadow legacy invocations created for
+-- child work units. It also excludes indirectly included invocations.
+--
+-- This is an index that is maintained by the application layer and is updated
+-- automatically with changes to the IncludedInvocations table.
+CREATE TABLE ChildInvocations (
+  -- The root invocation-shard of the parent work unit.
+  RootInvocationShardId STRING(MAX) NOT NULL,
+  -- The ID of the parent work unit.
+  WorkUnitId STRING(MAX) NOT NULL,
+  -- The ID of the included invocation. This is stored hash-prefixed, see
+  -- Invocations table for details.
+  ChildInvocationId STRING(MAX) NOT NULL,
+) PRIMARY KEY (RootInvocationShardId, WorkUnitId, ChildInvocationId),
+  INTERLEAVE IN PARENT WorkUnits ON DELETE CASCADE;
+
 -- Stores the invocations.
 -- Invocations are a legacy concept, representing a container of test results.
 -- This is the root table for much of the other legacy data and tables, which define

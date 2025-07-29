@@ -73,11 +73,7 @@ func (s *recorderServer) CreateWorkUnit(ctx context.Context, in *pb.CreateWorkUn
 	md := metadata.MD{}
 	md.Set(pb.UpdateTokenMetadataKey, token)
 	prpc.SetHeader(ctx, md)
-	inputs := masking.WorkUnitFields{
-		Row: workUnitRow,
-		// No child should be created at this point.
-	}
-	return masking.WorkUnit(inputs, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL), nil
+	return masking.WorkUnit(workUnitRow, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL), nil
 }
 
 func createIdempotentWorkUnit(

@@ -20,82 +20,67 @@ package masking
 import (
 	"fmt"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// WorkUnitFields represents the inputs required to construct a pb.WorkUnit.
-type WorkUnitFields struct {
-	// The work unit row.
-	Row *workunits.WorkUnitRow
-	// The child work units.
-	ChildWorkUnits []workunits.ID
-	// The child invocations.
-	ChildInvocations []invocations.ID
-}
-
 // WorkUnit constructs a *pb.WorkUnit from the given fields, applying masking
 // appropriate to the access level and selected view.
-func WorkUnit(inputs WorkUnitFields, accessLevel permissions.AccessLevel, view pb.WorkUnitView) *pb.WorkUnit {
+func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, view pb.WorkUnitView) *pb.WorkUnit {
 	if accessLevel == permissions.NoAccess {
 		return nil
 	}
 
-	r := inputs.Row
 	result := &pb.WorkUnit{
 		// Include metadata-only fields by default.
-		Name:             r.ID.Name(),
-		WorkUnitId:       r.ID.WorkUnitID,
-		State:            r.State,
-		Realm:            r.Realm,
-		CreateTime:       pbutil.MustTimestampProto(r.CreateTime),
-		Creator:          r.CreatedBy,
-		Deadline:         pbutil.MustTimestampProto(r.Deadline),
-		ProducerResource: r.ProducerResource,
+		Name:             row.ID.Name(),
+		WorkUnitId:       row.ID.WorkUnitID,
+		State:            row.State,
+		Realm:            row.Realm,
+		CreateTime:       pbutil.MustTimestampProto(row.CreateTime),
+		Creator:          row.CreatedBy,
+		Deadline:         pbutil.MustTimestampProto(row.Deadline),
+		ProducerResource: row.ProducerResource,
 		IsMasked:         true,
 	}
-	result.ChildWorkUnits = make([]string, 0, len(inputs.ChildWorkUnits))
-	for _, child := range inputs.ChildWorkUnits {
+	result.ChildWorkUnits = make([]string, 0, len(row.ChildWorkUnits))
+	for _, child := range row.ChildWorkUnits {
 		result.ChildWorkUnits = append(result.ChildWorkUnits, child.Name())
 	}
-	result.ChildInvocations = make([]string, 0, len(inputs.ChildInvocations))
-	for _, child := range inputs.ChildInvocations {
-		// Hide legacy invocations that correspond to the work units above.
-		if !child.IsWorkUnit() {
-			result.ChildInvocations = append(result.ChildInvocations, child.Name())
-		}
+	result.ChildInvocations = make([]string, 0, len(row.ChildInvocations))
+	for _, child := range row.ChildInvocations {
+		result.ChildInvocations = append(result.ChildInvocations, child.Name())
 	}
 
 	if accessLevel == permissions.FullAccess {
-		result.Tags = r.Tags
-		result.Properties = r.Properties
-		result.Instructions = r.Instructions
+		result.Tags = row.Tags
+		result.Properties = row.Properties
+		result.Instructions = row.Instructions
 		result.IsMasked = false
 
 		if view == pb.WorkUnitView_WORK_UNIT_VIEW_FULL {
-			result.ExtendedProperties = r.ExtendedProperties
+			result.ExtendedProperties = row.ExtendedProperties
 		}
 	}
 
-	if r.ID.WorkUnitID == "root" {
-		result.Parent = r.ID.RootInvocationID.Name()
+	if row.ID.WorkUnitID == "root" {
+		result.Parent = row.ID.RootInvocationID.Name()
 	} else {
-		if !r.ParentWorkUnitID.Valid {
-			panic(fmt.Sprintf("invariant violated: parent work unit ID not set on non-root work unit %q", r.ID.Name()))
+		if !row.ParentWorkUnitID.Valid {
+			panic(fmt.Sprintf("invariant violated: parent work unit ID not set on non-root work unit %q", row.ID.Name()))
 		}
 		result.Parent = workunits.ID{
-			RootInvocationID: r.ID.RootInvocationID,
-			WorkUnitID:       r.ParentWorkUnitID.StringVal,
+			RootInvocationID: row.ID.RootInvocationID,
+			WorkUnitID:       row.ParentWorkUnitID.StringVal,
 		}.Name()
 	}
-	if r.FinalizeStartTime.Valid {
-		result.FinalizeStartTime = pbutil.MustTimestampProto(r.FinalizeStartTime.Time)
+	if row.FinalizeStartTime.Valid {
+		result.FinalizeStartTime = pbutil.MustTimestampProto(row.FinalizeStartTime.Time)
 	}
-	if r.FinalizeTime.Valid {
-		result.FinalizeTime = pbutil.MustTimestampProto(r.FinalizeTime.Time)
+	if row.FinalizeTime.Valid {
+		result.FinalizeTime = pbutil.MustTimestampProto(row.FinalizeTime.Time)
 	}
 	return result
 }

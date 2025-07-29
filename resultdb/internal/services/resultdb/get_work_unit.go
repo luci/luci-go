@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
@@ -66,22 +65,7 @@ func (s *resultDBServer) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequ
 		return nil, err
 	}
 
-	childWUs, err := workunits.ReadChildren(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	childInvs, err := invocations.ReadIncluded(ctx, id.LegacyInvocationID())
-	if err != nil {
-		return nil, err
-	}
-
-	inputs := masking.WorkUnitFields{
-		Row:              wu,
-		ChildWorkUnits:   childWUs,
-		ChildInvocations: childInvs.SortByRowID(),
-	}
-	return masking.WorkUnit(inputs, accessLevel, in.View), nil
+	return masking.WorkUnit(wu, accessLevel, in.View), nil
 }
 
 func queryWorkUnitAccess(ctx context.Context, in *pb.GetWorkUnitRequest) (id workunits.ID, accessLevel permissions.AccessLevel, err error) {

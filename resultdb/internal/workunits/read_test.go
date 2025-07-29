@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -43,6 +44,14 @@ func TestReadFunctions(t *testing.T) {
 		rootWU := NewBuilder(rootInvID, "root").WithRealm("testproject:root").Build()
 		ms = append(ms, InsertForTesting(rootWU)...)
 
+		// Insert a work unit with minimal fields set.
+		testDataMinimal := NewBuilder(rootInvID, "work-unit-id-minimal").WithRealm("testproject:wu1").WithMinimalFields().Build()
+		idMinimal := ID{
+			RootInvocationID: rootInvID,
+			WorkUnitID:       "work-unit-id-minimal",
+		}
+		ms = append(ms, InsertForTesting(testDataMinimal)...)
+
 		// Insert a work unit with all fields set.
 		testData := NewBuilder(rootInvID, "work-unit-id").
 			WithRealm("testproject:wu1").
@@ -51,18 +60,33 @@ func TestReadFunctions(t *testing.T) {
 			WithState(pb.WorkUnit_FINALIZED).
 			Build()
 		ms = append(ms, InsertForTesting(testData)...)
+
+		// Update expected root work unit children accordingly.
+		rootWU.ChildWorkUnits = []ID{
+			{RootInvocationID: rootInvID, WorkUnitID: "work-unit-id"},
+			{RootInvocationID: rootInvID, WorkUnitID: "work-unit-id-minimal"},
+		}
+
 		id := ID{
 			RootInvocationID: rootInvID,
 			WorkUnitID:       "work-unit-id",
 		}
 
-		// Insert a work unit with minimal fields set.
-		testDataMinimal := NewBuilder(rootInvID, "work-unit-id-minimal").WithRealm("testproject:wu1").WithMinimalFields().Build()
-		idMinimal := ID{
-			RootInvocationID: rootInvID,
-			WorkUnitID:       "work-unit-id-minimal",
+		// Create a few child work units and invocations in the work unit.
+		ms = append(ms, InsertForTesting(NewBuilder(rootInvID, "child1").WithParentWorkUnitID("work-unit-id").Build())...)
+		ms = append(ms, InsertForTesting(NewBuilder(rootInvID, "child2").WithParentWorkUnitID("work-unit-id").Build())...)
+		ms = append(ms, InsertInvocationInclusionForTesting(id, "child-inv1")...)
+		ms = append(ms, InsertInvocationInclusionForTesting(id, "child-inv2")...)
+
+		// Update expected children accordingly.
+		testData.ChildWorkUnits = []ID{
+			{RootInvocationID: rootInvID, WorkUnitID: "child1"},
+			{RootInvocationID: rootInvID, WorkUnitID: "child2"},
 		}
-		ms = append(ms, InsertForTesting(testDataMinimal)...)
+		testData.ChildInvocations = []invocations.ID{
+			"child-inv1",
+			"child-inv2",
+		}
 
 		testutil.MustApply(ctx, t, ms...)
 
@@ -113,11 +137,18 @@ func TestReadFunctions(t *testing.T) {
 			rootInv2 := rootinvocations.NewBuilder("root-inv-id2").WithRealm("testproject:root2").Build()
 			wu2Root := NewBuilder("root-inv-id2", "root").WithRealm("testproject:root2").Build()
 			wu21 := NewBuilder("root-inv-id2", "work-unit-id").WithRealm("testproject:wu21").Build()
+			wu21Child1 := NewBuilder("root-inv-id2", "work-unit-id-child1").WithParentWorkUnitID("work-unit-id").Build()
 			wu22 := NewBuilder("root-inv-id2", "work-unit-id2").WithRealm("testproject:wu22").Build()
+
 			ms := rootinvocations.InsertForTesting(rootInv2)
 			ms = append(ms, InsertForTesting(wu2Root)...)
 			ms = append(ms, InsertForTesting(wu21)...)
+			ms = append(ms, InsertForTesting(wu21Child1)...)
 			ms = append(ms, InsertForTesting(wu22)...)
+
+			// Update expected root work unit children accordingly.
+			wu21.ChildWorkUnits = []ID{{RootInvocationID: "root-inv-id2", WorkUnitID: "work-unit-id-child1"}}
+
 			testutil.MustApply(ctx, t, ms...)
 
 			t.Run("happy path", func(t *ftt.Test) {
@@ -507,92 +538,6 @@ func TestReadFunctions(t *testing.T) {
 				}
 				_, err := ReadRequestIDsAndCreatedBys(span.Single(ctx), ids)
 				assert.That(t, err, should.ErrLike("ids[1]: workUnitID: unspecified"))
-			})
-		})
-
-		t.Run("ReadChildren(Batch)", func(t *ftt.Test) {
-			// Setup data for ReadChildren and ReadChildrenBatch tests.
-			rootInvID := rootinvocations.ID("children-root")
-			rootInv := rootinvocations.NewBuilder(rootInvID).Build()
-			rootID := ID{RootInvocationID: rootInvID, WorkUnitID: "root"}
-			root := NewBuilder(rootInvID, "root").Build()
-
-			// parent1 has two children.
-			parent1ID := ID{RootInvocationID: rootInvID, WorkUnitID: "parent1"}
-			parent1 := NewBuilder(rootInvID, "parent1").Build()
-			child11ID := ID{RootInvocationID: rootInvID, WorkUnitID: "child11"}
-			child11 := NewBuilder(rootInvID, "child11").WithParentWorkUnitID("parent1").Build()
-			child12ID := ID{RootInvocationID: rootInvID, WorkUnitID: "child12"}
-			child12 := NewBuilder(rootInvID, "child12").WithParentWorkUnitID("parent1").Build()
-
-			// parent2 has one child.
-			parent2ID := ID{RootInvocationID: rootInvID, WorkUnitID: "parent2"}
-			parent2 := NewBuilder(rootInvID, "parent2").Build()
-			child21ID := ID{RootInvocationID: rootInvID, WorkUnitID: "child21"}
-			child21 := NewBuilder(rootInvID, "child21").WithParentWorkUnitID("parent2").Build()
-
-			// parent3 has no children.
-			parent3ID := ID{RootInvocationID: rootInvID, WorkUnitID: "parent3"}
-			parent3 := NewBuilder(rootInvID, "parent3").Build()
-
-			ms := rootinvocations.InsertForTesting(rootInv)
-			ms = append(ms, InsertForTesting(root)...)
-			ms = append(ms, InsertForTesting(parent1)...)
-			ms = append(ms, InsertForTesting(child11)...)
-			ms = append(ms, InsertForTesting(child12)...)
-			ms = append(ms, InsertForTesting(parent2)...)
-			ms = append(ms, InsertForTesting(child21)...)
-			ms = append(ms, InsertForTesting(parent3)...)
-			testutil.MustApply(ctx, t, ms...)
-
-			t.Run("ReadChildren", func(t *ftt.Test) {
-				children, err := ReadChildren(span.Single(ctx), parent1ID)
-				assert.Loosely(t, err, should.BeNil)
-
-				assert.That(t, children, should.Match([]ID{child11ID, child12ID}))
-			})
-
-			t.Run("ReadChildrenBatch", func(t *ftt.Test) {
-				t.Run("happy path", func(t *ftt.Test) {
-					ids := []ID{
-						rootID,
-						parent1ID,
-						parent2ID,
-						parent3ID,
-						{RootInvocationID: rootInvID, WorkUnitID: "non-existent-parent"},
-						parent1ID, // Duplicate
-					}
-
-					results, err := ReadChildrenBatch(span.Single(ctx), ids)
-					assert.Loosely(t, err, should.BeNil)
-
-					assert.Loosely(t, results, should.HaveLength(6))
-					assert.That(t, results[0], should.Match([]ID{parent1ID, parent2ID, parent3ID}))
-					assert.That(t, results[1], should.Match([]ID{child11ID, child12ID}))
-					assert.That(t, results[2], should.Match([]ID{child21ID}))
-					assert.That(t, results[3], should.Match([]ID{}))
-					assert.That(t, results[4], should.Match([]ID{}))
-					assert.That(t, results[5], should.Match([]ID{child11ID, child12ID}))
-
-					// Check that slices for duplicate requests are not aliased.
-					if len(results[4]) > 0 {
-						results[4][0].WorkUnitID = "mutated"
-						assert.That(t, results[0][0].WorkUnitID, should.Equal("child11"))
-					}
-				})
-
-				t.Run("empty request", func(t *ftt.Test) {
-					results, err := ReadChildrenBatch(span.Single(ctx), []ID{})
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, results, should.HaveLength(0))
-				})
-
-				t.Run("different root invocations", func(t *ftt.Test) {
-					otherParentID := ID{RootInvocationID: rootinvocations.ID("other-root"), WorkUnitID: "other-parent"}
-					ids := []ID{parent1ID, otherParentID}
-					_, err := ReadChildrenBatch(span.Single(ctx), ids)
-					assert.That(t, err, should.ErrLike("all work units must belong to the same root invocation"))
-				})
 			})
 		})
 	})

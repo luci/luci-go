@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
@@ -71,39 +70,14 @@ func (s *resultDBServer) BatchGetWorkUnits(ctx context.Context, in *pb.BatchGetW
 		return nil, err
 	}
 
-	// Read the work unit children.
-	childWUs, err := workunits.ReadChildrenBatch(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-
-	// Read the child invocations.
-	childInvs, err := invocations.ReadIncludedBatch(ctx, legacyIDsForWorkUnits(ids))
-	if err != nil {
-		return nil, err
-	}
-
 	protos := make([]*pb.WorkUnit, len(wus))
 	for i, wu := range wus {
-		inputs := masking.WorkUnitFields{
-			Row:              wu,
-			ChildWorkUnits:   childWUs[i],
-			ChildInvocations: childInvs[i],
-		}
-		protos[i] = masking.WorkUnit(inputs, accessLevels[i], in.View)
+		protos[i] = masking.WorkUnit(wu, accessLevels[i], in.View)
 	}
 
 	return &pb.BatchGetWorkUnitsResponse{
 		WorkUnits: protos,
 	}, nil
-}
-
-func legacyIDsForWorkUnits(ids []workunits.ID) []invocations.ID {
-	result := make([]invocations.ID, 0, len(ids))
-	for _, id := range ids {
-		result = append(result, id.LegacyInvocationID())
-	}
-	return result
 }
 
 func queryBatchGetWorkUnitAccess(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (ids []workunits.ID, accessLevels []permissions.AccessLevel, err error) {

@@ -70,12 +70,7 @@ func (s *recorderServer) BatchCreateWorkUnits(ctx context.Context, in *pb.BatchC
 			return nil, err
 		}
 		updateTokens[i] = token
-		inputs := masking.WorkUnitFields{
-			Row: wuRows[i],
-			// TODO:populate child work unit.
-			// There should be no child invocation at this point.
-		}
-		workUnits[i] = masking.WorkUnit(inputs, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL)
+		workUnits[i] = masking.WorkUnit(wuRows[i], permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL)
 	}
 	return &pb.BatchCreateWorkUnitsResponse{
 		WorkUnits:    workUnits,
