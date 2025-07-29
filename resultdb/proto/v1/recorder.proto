@@ -253,9 +253,32 @@ message UpdateRootInvocationRequest {
 }
 
 // A request message for the FinalizeRootInvocation RPC.
+//
+// This RPC is idempotent: attempting to finalize an already finalized
+// (or finalizing) root invocation will have no effect.
 message FinalizeRootInvocationRequest {
   // Name of the root invocation to finalize.
   string name = 1 [ (google.api.field_behavior) = REQUIRED ];
+
+  // Describes what to do with the root work unit when finalizing the root
+  // invocation.
+  enum FinalizationScope {
+    // The scope is not specified. Do not use.
+    FINALIZATION_SCOPE_UNSPECIFIED = 0;
+
+    // Do not finalize the root work unit.
+    // FinalizeWorkUnit must be called on on the root work unit separately.
+    EXCLUDE_ROOT_WORK_UNIT = 1;
+
+    // Finalize the root work unit in addition to the root invocation.
+    // If the root work unit is already finalized (or finalizing),
+    // no further action is taken on it.
+    INCLUDE_ROOT_WORK_UNIT = 2;
+  }
+
+  // Specifies whether to finalize the root work unit along with the root
+  // invocation. Required.
+  FinalizationScope finalization_scope = 2 [ (google.api.field_behavior) = REQUIRED ];
 }
 
 // == Work Units ===============================================================
@@ -481,14 +504,23 @@ message BatchUpdateWorkUnitsResponse {
 
 // A request message for FinalizeWorkUnit RPC.
 //
-// The request will be handled atomically (i.e. all work units are
-// finalized or none are).
+// This RPC is idempotent: attempting to finalize an already finalized
+// (or finalizing) work unit will have no effect.
+//
+// To limit response size, the `extended_properties` field is elided
+// from the work unit returned by the RPC.
 message FinalizeWorkUnitRequest {
   // Resource name of the work unit to finalize.
   string name = 1 [ (google.api.field_behavior) = REQUIRED ];
 }
 
 // A request message for BatchFinalizeWorkUnits RPC.
+//
+// The Batch will be handled atomically (i.e. all requests will
+// be processed or none will). In practice, the only case where
+// requests will not be processed is if a request is invalid or permission
+// is lacking; it is not an error if one of the work units is already
+// finalizing as the semantics of each request is defined idempotently.
 //
 // Note: As each request may only have one update token, batching is only
 // possible for work units sharing the same prefix (and thus update token).
