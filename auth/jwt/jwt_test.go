@@ -19,6 +19,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -108,7 +109,9 @@ func TestVerifyJWT(t *testing.T) {
 
 	ftt.Run("Bad signature", t, func(t *ftt.Test) {
 		jwt := prepareJWT("RS256", goodKeyID, fakeBody{"body"})
-		_, err := verifyJWT(jwt[:len(jwt)-2])
+		chunks := strings.Split(jwt, ".")
+		chunks[2] = base64.RawURLEncoding.EncodeToString([]byte("not-a-valid-signature"))
+		_, err := verifyJWT(strings.Join(chunks, "."))
 		assert.Loosely(t, err, should.ErrLike("signature check error"))
 		assert.Loosely(t, NotJWT.In(err), should.BeFalse)
 	})

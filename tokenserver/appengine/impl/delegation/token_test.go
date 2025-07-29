@@ -47,7 +47,7 @@ func TestSignToken(t *testing.T) {
 
 		tok, err := SignToken(ctx, signer, original)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tok, should.HaveLength(276))
+		assert.Loosely(t, tok, should.HaveLength(363))
 
 		envelope, back, err := deserializeForTest(ctx, tok, signer)
 		assert.Loosely(t, err, should.BeNil)

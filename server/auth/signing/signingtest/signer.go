@@ -43,7 +43,7 @@ var _ signing.Signer = (*Signer)(nil)
 //
 // Panics on errors.
 func NewSigner(serviceInfo *signing.ServiceInfo) *Signer {
-	priv, err := rsa.GenerateKey(rand.Reader, 512)
+	priv, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
 		panic(err)
 	}

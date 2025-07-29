@@ -48,7 +48,7 @@ func TestSignToken(t *testing.T) {
 	ftt.Run("Works", t, func(t *ftt.Test) {
 		tok, err := signerForTest(signer, "").SignToken(ctx, original)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tok, should.HaveLength(276))
+		assert.Loosely(t, tok, should.HaveLength(363))
 
 		envelope, back, err := deserializeForTest(ctx, tok, signer)
 		assert.Loosely(t, err, should.BeNil)
@@ -68,7 +68,7 @@ func TestSignToken(t *testing.T) {
 		signer := &capturingSigner{signer, nil}
 		tok, err := signerForTest(signer, contextString).SignToken(ctx, original)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tok, should.HaveLength(276))
+		assert.Loosely(t, tok, should.HaveLength(363))
 
 		ctxPart := signer.blobs[0][:len(contextString)+1]
 		assert.Loosely(t, string(ctxPart), should.Equal(contextString+"\x00"))
