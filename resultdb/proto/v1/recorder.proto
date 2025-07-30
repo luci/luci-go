@@ -737,21 +737,38 @@ message CreateTestResultRequest {
 }
 
 // A request message for BatchCreateTestResults RPC.
+//
+// The request will be handled atomically (i.e. all test results are
+// created or none are).
+//
+// Use of batching for test result uploads is strongly encouraged for
+// performance and efficiency reasons. Clients implementing buffering for the
+// purposes of batching will typically cut a batch once any of the following
+// criteria are met:
+// - 500 test results are in the batch,
+// - the size of the batch would exceed 10 MiB,
+// - a given dwell time has elapsed (e.g. 1 minute), or
+// - all test results have completed and the last batch needs to be flushed.
+//
+// Batched test results can cover more than one work unit, provided all
+// work units share the same update token (i.e. in case of Prefixed work units;
+// see CreateWorkUnitRequest.work_unit_id for details). In such situations,
+// the batching for test results may be integrated with the batching of work
+// units (e.g. creating test results in a batch will be preceded by batch-
+// creating any pending work units to avoid NotFound errors).
 message BatchCreateTestResultsRequest {
-  // Name of the parent work unit. See WorkUnit.name.
-  string parent = 4 [ (google.api.field_behavior) = REQUIRED ];
+  // Name of the parent work unit (if all test results to be created belong to the
+  // same work unit). See WorkUnit.name.
+  //
+  // If this set, then parent field in CreateTestResultRequest messages
+  // must either be empty or match this field.
+  string parent = 4;
 
   // DEPRECATED: Use `parent` instead.
   // Name of the parent invocation, see Invocation.name.
   string invocation = 1 [ deprecated = true ];
 
-  // Requests to create test results.
-  // requests[i].parent MUST be either empty or equal to parent in this
-  // message.
-  // requests[i].invocation MUST be either empty or equal to invocation in this
-  // message.
-  // requests[i].request_id MUST be either empty or equal to request_id in
-  // this message.
+  // Request messages specifying the test results to be created.
   //
   // Up to 500 requests. Total size of all requests (as measured by proto.Size())
   // MUST be <= 10 MiB.
@@ -762,6 +779,9 @@ message BatchCreateTestResultsRequest {
   //
   // If the same request is replayed (see "Retry policy" at the top of this doc),
   // this request_id guarantees idempotence.
+  //
+  // The request_id field in CreateTestResultRequest messages must either
+  // be empty or match this field.
   //
   // Required.
   string request_id = 3;
@@ -797,19 +817,33 @@ message CreateTestExonerationRequest {
 }
 
 // A request message for BatchCreateTestExonerations RPC.
+//
+// The request will be handled atomically (i.e. all test exonerations are
+// created or none are).
+//
+// Use of batching for exoneration uploads is strongly encouraged for
+// performance and efficiency reasons.
+//
+// Batched test exonerations can cover more than one work unit, provided all
+// work units share the same update token (i.e. in case of Prefixed work units;
+// see CreateWorkUnitRequest.work_unit_id for details). This is primarily
+// for consistency with the other Batch RPCs; in practice there is not
+// a lot of benefit to report exonerations through one work unit over another,
+// as they are a root invocation-level concept and are only reported through
+// work units for traceability reasons.
 message BatchCreateTestExonerationsRequest {
-  // Name of the parent work unit. See WorkUnit.name.
-  string parent = 4 [ (google.api.field_behavior) = REQUIRED ];
+  // Name of the parent work unit (if all test exonerations to be created belong to the
+  // same work unit). See WorkUnit.name.
+  //
+  // If this set, then parent field in CreateTestExonerationRequest messages
+  // must either be empty or match this field.
+  string parent = 4;
 
   // DEPRECATED: Use `parent` instead.
   // Name of the parent invocation, see Invocation.name.
   string invocation = 1 [ deprecated = true ];
 
   // Requests to create TestExonerations.
-  // requests[i].invocation MUST be either empty or equal to invocation in this
-  // message.
-  // requests[i].request_id MUST be either empty or equal to request_id in
-  // this message.
   //
   // Up to 500 requests. Total size of all requests (as measured by proto.Size())
   // MUST be <= 10 MiB.
@@ -820,6 +854,9 @@ message BatchCreateTestExonerationsRequest {
   //
   // If the same request is replayed (see "Retry policy" at the top of this doc),
   // this request_id guarantees idempotence.
+  //
+  // The request_id field in CreateTestResultRequest messages must either
+  // be empty or match this field.
   //
   // Required.
   string request_id = 3;
@@ -865,16 +902,46 @@ message CreateArtifactRequest {
 }
 
 // A request message for BatchCreateArtifactsRequest.
-// Next ID: 4.
+//
+// The request will be handled atomically (i.e. all artifacts are
+// created or none are).
+//
+// Use of batching for artifacts uploads is strongly encouraged for
+// performance and efficiency reasons. Batches would typically but cut for
+// one of the following reasons:
+// - 500 test artifacts are in the batch,
+// - the size of the batch would exceed 10 MiB (this refers to the size of
+//   the field `requests` not the artifact contents), or
+// - a given dwell time has elapsed (e.g. 1 minute)
+//
+// Batched artifacts can cover more than one work unit, provided all
+// work units share the same update token (i.e. in case of Prefixed work units;
+// see CreateWorkUnitRequest.work_unit_id for details). In such situations,
+// the batching for artifacts may be integrated with the batching of work
+// units (e.g. creating artifacts in a batch will be preceded by batch-
+// creating any pending work units to avoid NotFound errors).
+//
+// To simplify batching, there is no requirement to create test results before
+// the corresponding test result artifacts are uploaded; the only ordering
+// requirement is for the work unit to be created before any artifacts are
+// uploaded to it.
+//
+// While this means it is technically possible to create orphaned test result
+// artifacts (by uploading the artifacts and never uploading the corresponding
+// test results), clients should not rely on being able to read such orphaned
+// artifacts later.
 message BatchCreateArtifactsRequest {
-  // Name of the parent work unit. See WorkUnit.name.
+  // Name of the parent work unit (if all artifacts to be created belong to the
+  // same work unit). See WorkUnit.name.
+  //
+  // If this set, then parent field in CreateArtifactRequest messages
+  // must either be empty or match this field.
   //
   // Legacy clients may also use an invocation name, see Invocation.name.
   string parent = 3 [ (google.api.field_behavior) = REQUIRED ];
 
   // Requests to create Artifacts.
-  // requests[i].parent MUST be either empty or equal to parent in this
-  // message.
+  //
   // Up to 500 requests. Total size of all requests (as measured by proto.Size())
   // MUST be <= 10 MiB.
   repeated CreateArtifactRequest requests = 2;
@@ -884,6 +951,9 @@ message BatchCreateArtifactsRequest {
   //
   // If the same request is replayed (see "Retry policy" at the top of this doc),
   // this request_id guarantees idempotence.
+  //
+  // The request_id field in CreateArtifactRequest messages must either
+  // be empty or match this field.
   //
   // Required.
   string request_id = 4;
