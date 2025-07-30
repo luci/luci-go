@@ -39,7 +39,6 @@ import (
 )
 
 func TestDelegateWorkUnitInclusion(t *testing.T) {
-	t.Parallel()
 
 	ftt.Run("DelegateWorkUnitInclusion", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)

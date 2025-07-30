@@ -95,14 +95,24 @@ func (id ID) LegacyInvocationID() invocations.ID {
 	return invocations.ID(fmt.Sprintf("root:%s", string(id)))
 }
 
+// ParseName parses a root invocation resource name.
+// An error is returned if parsing fails.
+func ParseName(name string) (ID, error) {
+	id, err := pbutil.ParseRootInvocationName(name)
+	if err != nil {
+		return "", err
+	}
+	return ID(id), nil
+}
+
 // MustParseName parses a root invocation resource name.
 // If parsing fails, the method panics.
 func MustParseName(name string) ID {
-	id, err := pbutil.ParseRootInvocationName(name)
+	id, err := ParseName(name)
 	if err != nil {
 		panic(err)
 	}
-	return ID(id)
+	return id
 }
 
 // IDSet is an unordered set of root invocation ids.
