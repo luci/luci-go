@@ -66,6 +66,9 @@ const MaxDependencyStepTagValSize = 1024
 
 const MaxInstructionNameSize = 100
 
+// The maximum size the requests collection in a batch request, in bytes.
+const MaxBatchRequestSize = 10 * 1024 * 1024 // 10 MiB
+
 // maxResourceNameLength is the maximum length of a full resource name.
 // Selected as 2000 bytes here as some browsers and load balancers have
 // trouble for URLs above 2,083 characters.
@@ -130,6 +133,22 @@ func ValidateBatchRequestCount(count int) error {
 	}
 	if count > limit {
 		return errors.Fmt("the number of requests in the batch (%d) exceeds %d", count, limit)
+	}
+	return nil
+}
+
+// ValidateBatchRequestCountAndSize validates the request count and total size of a batch request.
+// Sizes are measured using proto.Size.
+func ValidateBatchRequestCountAndSize[T proto.Message](requests []T) error {
+	if err := ValidateBatchRequestCount(len(requests)); err != nil {
+		return err
+	}
+	totalSize := 0
+	for _, r := range requests {
+		totalSize += proto.Size(r)
+	}
+	if totalSize > MaxBatchRequestSize {
+		return errors.Fmt("the size of all requests is too large (got %d bytes; maximum is %d bytes)", totalSize, MaxBatchRequestSize)
 	}
 	return nil
 }

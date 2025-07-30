@@ -15,6 +15,7 @@
 package recorder
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -43,109 +44,78 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
 		assert.NoErr(t, err)
 
+		req := &pb.BatchCreateTestExonerationsRequest{
+			Invocation: "invocations/inv",
+			Requests: []*pb.CreateTestExonerationRequest{
+				{
+					TestExoneration: &pb.TestExoneration{
+						TestId:          "ninja://ab/cd.ef",
+						ExplanationHtml: "Test failed also when tried without patch.",
+						Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
+					},
+				},
+				{
+					TestExoneration: &pb.TestExoneration{
+						TestId:          "ninja://ab/cd.ef",
+						Variant:         pbutil.Variant("a/b", "1", "c", "2"),
+						ExplanationHtml: "Test is known to be failing on other CLs.",
+						Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+					},
+				},
+			},
+			RequestId: "a",
+		}
+
+		t.Run(`Valid`, func(t *ftt.Test) {
+			err := validateBatchCreateTestExonerationsRequest(req, cfg)
+			assert.Loosely(t, err, should.BeNil)
+		})
+
 		t.Run(`Empty`, func(t *ftt.Test) {
 			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{}, cfg)
 			assert.Loosely(t, err, should.ErrLike(`invocation: unspecified`))
 		})
 
 		t.Run(`Invalid invocation`, func(t *ftt.Test) {
-			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
-				Invocation: "x",
-			}, cfg)
+			req.Invocation = "x"
+			err := validateBatchCreateTestExonerationsRequest(req, cfg)
 			assert.Loosely(t, err, should.ErrLike(`invocation: does not match`))
 		})
 
 		t.Run(`Invalid request id`, func(t *ftt.Test) {
-			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
-				Invocation: "invocations/a",
-				RequestId:  "😃",
-			}, cfg)
+			req.RequestId = "😃"
+			err := validateBatchCreateTestExonerationsRequest(req, cfg)
 			assert.Loosely(t, err, should.ErrLike(`request_id: does not match`))
 		})
 
 		t.Run(`Too many requests`, func(t *ftt.Test) {
-			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
-				Invocation: "invocations/a",
-				Requests:   make([]*pb.CreateTestExonerationRequest, 1000),
-			}, cfg)
-			assert.Loosely(t, err, should.ErrLike(`the number of requests in the batch`))
-			assert.Loosely(t, err, should.ErrLike(`exceeds 500`))
+			req.Requests = make([]*pb.CreateTestExonerationRequest, 1000)
+			err := validateBatchCreateTestExonerationsRequest(req, cfg)
+			assert.Loosely(t, err, should.ErrLike(`requests: the number of requests in the batch (1000) exceeds 500`))
+		})
+
+		t.Run(`requests too large`, func(t *ftt.Test) {
+			req.Requests[0].Parent = strings.Repeat("a", pbutil.MaxBatchRequestSize)
+			err := validateBatchCreateTestExonerationsRequest(req, cfg)
+			assert.Loosely(t, err, should.ErrLike(`requests: the size of all requests is too large`))
 		})
 
 		t.Run(`Invalid sub-request`, func(t *ftt.Test) {
-			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
-				Invocation: "invocations/inv",
-				Requests: []*pb.CreateTestExonerationRequest{
-					{
-						TestExoneration: &pb.TestExoneration{
-							TestId:          "\x01",
-							ExplanationHtml: "Unexpected pass.",
-							Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
-						},
-					},
-				},
-			}, cfg)
+			req.Requests[0].TestExoneration.TestId = "\x01"
+			err := validateBatchCreateTestExonerationsRequest(req, cfg)
 			assert.Loosely(t, err, should.ErrLike(`requests[0]: test_exoneration: test_id: non-printable rune`))
 		})
 
 		t.Run(`Inconsistent invocation`, func(t *ftt.Test) {
-			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
-				Invocation: "invocations/inv",
-				Requests: []*pb.CreateTestExonerationRequest{
-					{
-						Invocation: "invocations/x",
-						TestExoneration: &pb.TestExoneration{
-							TestId:          "ninja://ab/cd.ef",
-							ExplanationHtml: "Unexpected pass.",
-							Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
-						},
-					},
-				},
-			}, cfg)
+			req.Requests[0].Invocation = "invocations/inconsistent"
+			err := validateBatchCreateTestExonerationsRequest(req, cfg)
 			assert.Loosely(t, err, should.ErrLike(`requests[0]: invocation: inconsistent with top-level invocation`))
 		})
 
 		t.Run(`Inconsistent request_id`, func(t *ftt.Test) {
-			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
-				Invocation: "invocations/inv",
-				RequestId:  "req1",
-				Requests: []*pb.CreateTestExonerationRequest{
-					{
-						RequestId: "req2",
-						TestExoneration: &pb.TestExoneration{
-							TestId:          "ninja://ab/cd.ef",
-							ExplanationHtml: "Unexpected pass.",
-							Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
-						},
-					},
-				},
-			}, cfg)
+			req.Requests[0].RequestId = "inconsistent"
+			err := validateBatchCreateTestExonerationsRequest(req, cfg)
 			assert.Loosely(t, err, should.ErrLike(`requests[0]: request_id: inconsistent with top-level request_id`))
-		})
-
-		t.Run(`Valid`, func(t *ftt.Test) {
-			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
-				Invocation: "invocations/inv",
-				Requests: []*pb.CreateTestExonerationRequest{
-					{
-						TestExoneration: &pb.TestExoneration{
-							TestId:          "ninja://ab/cd.ef",
-							ExplanationHtml: "Test failed also when tried without patch.",
-							Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
-						},
-					},
-					{
-						TestExoneration: &pb.TestExoneration{
-							TestId:          "ninja://ab/cd.ef",
-							Variant:         pbutil.Variant("a/b", "1", "c", "2"),
-							ExplanationHtml: "Test is known to be failing on other CLs.",
-							Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
-						},
-					},
-				},
-				RequestId: "a",
-			}, cfg)
-			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }

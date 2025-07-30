@@ -15,6 +15,7 @@
 package recorder
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -78,11 +79,15 @@ func TestValidateBatchCreateTestResultRequest(t *testing.T) {
 		})
 
 		t.Run("fails with", func(t *ftt.Test) {
-			t.Run(`Too many requests`, func(t *ftt.Test) {
+			t.Run(`too many requests`, func(t *ftt.Test) {
 				req.Requests = make([]*pb.CreateTestResultRequest, 1000)
 				err := validateBatchCreateTestResultsRequest(req, cfg, now)
-				assert.Loosely(t, err, should.ErrLike(`the number of requests in the batch`))
-				assert.Loosely(t, err, should.ErrLike(`exceeds 500`))
+				assert.Loosely(t, err, should.ErrLike(`requests: the number of requests in the batch (1000) exceeds 500`))
+			})
+			t.Run(`requests too large`, func(t *ftt.Test) {
+				req.Requests[0].Parent = strings.Repeat("a", pbutil.MaxBatchRequestSize)
+				err := validateBatchCreateTestResultsRequest(req, cfg, now)
+				assert.Loosely(t, err, should.ErrLike(`requests: the size of all requests is too large`))
 			})
 
 			t.Run("invocation", func(t *ftt.Test) {

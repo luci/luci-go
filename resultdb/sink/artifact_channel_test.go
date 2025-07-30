@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"google.golang.org/protobuf/proto"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
@@ -63,7 +64,7 @@ func TestArtifactChannel(t *testing.T) {
 			ac.closeAndDrain(ctx)
 
 			// The artifact should have been sent to the batch channel.
-			assert.Loosely(t, <-batchCh, should.Resemble(&pb.BatchCreateArtifactsRequest{
+			assert.Loosely(t, <-batchCh, should.Match(&pb.BatchCreateArtifactsRequest{
 				Requests: []*pb.CreateArtifactRequest{{
 					Parent: "invocations/inv",
 					Artifact: &pb.Artifact{
@@ -77,19 +78,42 @@ func TestArtifactChannel(t *testing.T) {
 		})
 
 		t.Run("with multiple, small artifacts", func(t *ftt.Test) {
-			cfg.MaxBatchableArtifactSize = 10
-			ac := newArtifactChannel(ctx, &cfg)
-
 			t1 := createTask("invocations/inv/artifacts/art1", "1234")
 			t2 := createTask("invocations/inv/artifacts/art2", "5678")
 			t3 := createTask("invocations/inv/artifacts/art3", "9012")
+
+			expectedRequests := []*pb.CreateArtifactRequest{
+				// art1
+				{
+					Parent: "invocations/inv",
+					Artifact: &pb.Artifact{
+						ArtifactId:  "art1",
+						ContentType: t1.art.ContentType,
+						SizeBytes:   int64(len("1234")),
+						Contents:    []byte("1234"),
+					},
+				},
+				// art2
+				{
+					Parent: "invocations/inv",
+					Artifact: &pb.Artifact{
+						ArtifactId:  "art2",
+						ContentType: t2.art.ContentType,
+						SizeBytes:   int64(len("5678")),
+						Contents:    []byte("5678"),
+					},
+				},
+			}
+
+			cfg.MaxBatchableArtifactSize = int64(proto.Size(expectedRequests[0]) + 4 + batchedArtifactOverheadBytes)
+			ac := newArtifactChannel(ctx, &cfg)
 			ac.schedule(t1)
 			ac.schedule(t2)
 			ac.schedule(t3)
 			ac.closeAndDrain(ctx)
 
 			// The 1st request should contain the first two artifacts.
-			assert.Loosely(t, <-batchCh, should.Resemble(&pb.BatchCreateArtifactsRequest{
+			assert.Loosely(t, <-batchCh, should.Match(&pb.BatchCreateArtifactsRequest{
 				Requests: []*pb.CreateArtifactRequest{
 					// art1
 					{
@@ -115,7 +139,7 @@ func TestArtifactChannel(t *testing.T) {
 			}))
 
 			// The 2nd request should only contain the last one.
-			assert.Loosely(t, <-batchCh, should.Resemble(&pb.BatchCreateArtifactsRequest{
+			assert.Loosely(t, <-batchCh, should.Match(&pb.BatchCreateArtifactsRequest{
 				Requests: []*pb.CreateArtifactRequest{
 					// art3
 					{
@@ -132,7 +156,7 @@ func TestArtifactChannel(t *testing.T) {
 		})
 
 		t.Run("with a large artifact", func(t *ftt.Test) {
-			cfg.MaxBatchableArtifactSize = 10
+			cfg.MaxBatchableArtifactSize = 10 + batchedArtifactOverheadBytes
 			ac := newArtifactChannel(ctx, &cfg)
 
 			t1 := createTask("invocations/inv/artifacts/art1", "content-foo-bar")
@@ -146,7 +170,7 @@ func TestArtifactChannel(t *testing.T) {
 				"https://"+cfg.ArtifactStreamHost+"/invocations/inv/artifacts/art1"))
 			body, err := io.ReadAll(req.Body)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, body, should.Resemble([]byte("content-foo-bar")))
+			assert.Loosely(t, body, should.Match([]byte("content-foo-bar")))
 		})
 	})
 }

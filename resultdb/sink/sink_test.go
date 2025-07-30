@@ -118,15 +118,15 @@ func TestNewServer(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, cfg.MaxBatchableArtifactSize, should.NotEqual(0))
 
-			cfg.MaxBatchableArtifactSize = 10 * 1024 * 1024
+			cfg.MaxBatchableArtifactSize = pbutil.MaxBatchRequestSize
 			_, err = NewServer(ctx, cfg)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, cfg.MaxBatchableArtifactSize, should.NotEqual(0))
 
 			// invalid - too big
-			cfg.MaxBatchableArtifactSize = 10*1024*1024 + 1
+			cfg.MaxBatchableArtifactSize = pbutil.MaxBatchRequestSize + 1
 			_, err = NewServer(ctx, cfg)
-			assert.Loosely(t, err, should.ErrLike("is greater than 10MiB"))
+			assert.Loosely(t, err, should.ErrLike("MaxBatchableArtifactSize: greater than maximum allowed value"))
 		})
 	})
 }

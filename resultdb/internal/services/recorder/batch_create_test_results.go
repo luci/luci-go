@@ -56,8 +56,8 @@ func validateBatchCreateTestResultsRequest(req *pb.BatchCreateTestResultsRequest
 
 	// TODO: Try to get rid of this case if we can and always expect in.Requests has at least one entry.
 	if len(req.Requests) > 0 {
-		if err := pbutil.ValidateBatchRequestCount(len(req.Requests)); err != nil {
-			return err
+		if err := pbutil.ValidateBatchRequestCountAndSize(req.Requests); err != nil {
+			return errors.Fmt("requests: %w", err)
 		}
 	}
 

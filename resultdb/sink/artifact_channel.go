@@ -39,6 +39,10 @@ type uploadTask struct {
 	size    int64 // content size
 }
 
+// batchedArtifactOverheadBytes is the maximum number of bytes of overhead that is
+// assumed to be incurred when uploading an artifact in a batch-upload request.
+const batchedArtifactOverheadBytes = 1_024
+
 // newUploadTask constructs an uploadTask for the artifact.
 //
 // If FilePath is set on the artifact, this calls os.Stat to obtain the file information,
@@ -244,7 +248,7 @@ func (c *artifactChannel) schedule(tasks ...*uploadTask) {
 	}
 
 	for _, task := range tasks {
-		if task.size > c.cfg.MaxBatchableArtifactSize {
+		if (task.size + batchedArtifactOverheadBytes) > c.cfg.MaxBatchableArtifactSize {
 			c.streamChannel.C <- task
 		} else {
 			c.batchChannel.C <- task

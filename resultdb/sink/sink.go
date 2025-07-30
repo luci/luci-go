@@ -203,8 +203,8 @@ func (c *ServerConfig) Validate() error {
 			return errors.Fmt("TestLocationBase: %w", err)
 		}
 	}
-	if c.MaxBatchableArtifactSize > 10*1024*1024 {
-		return errors.Fmt("MaxBatchableArtifactSize: %d is greater than 10MiB", c.MaxBatchableArtifactSize)
+	if c.MaxBatchableArtifactSize > pbutil.MaxBatchRequestSize {
+		return errors.Fmt("MaxBatchableArtifactSize: greater than maximum allowed value (got %d; maximum is %d)", c.MaxBatchableArtifactSize, pbutil.MaxBatchRequestSize)
 	}
 	if c.ModuleScheme == nil {
 		// Having the module name, scheme and variant locked-in upfront makes

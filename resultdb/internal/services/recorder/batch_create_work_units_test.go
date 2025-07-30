@@ -16,6 +16,7 @@ package recorder
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"cloud.google.com/go/spanner"
@@ -163,6 +164,11 @@ func TestValidateBatchCreateWorkUnitsRequest(t *testing.T) {
 			req.Requests = make([]*pb.CreateWorkUnitRequest, 501)
 			err := validateBatchCreateWorkUnitsRequest(req)
 			assert.Loosely(t, err, should.ErrLike("requests: the number of requests in the batch (501) exceeds 500"))
+		})
+		t.Run("total size of requests is too large", func(t *ftt.Test) {
+			req.Requests[0].Parent = strings.Repeat("a", pbutil.MaxBatchRequestSize)
+			err := validateBatchCreateWorkUnitsRequest(req)
+			assert.Loosely(t, err, should.ErrLike("requests: the size of all requests is too large"))
 		})
 
 		t.Run("duplicated work unit id", func(t *ftt.Test) {

@@ -50,7 +50,7 @@ func validateBatchCreateInvocationsRequest(
 		return nil, nil, errors.Fmt("request_id: %w", err)
 	}
 
-	if err := pbutil.ValidateBatchRequestCount(len(reqs)); err != nil {
+	if err := pbutil.ValidateBatchRequestCountAndSize(reqs); err != nil {
 		return nil, nil, err
 	}
 

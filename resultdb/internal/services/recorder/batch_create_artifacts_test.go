@@ -239,14 +239,14 @@ func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike(`only one of contents and gcs_uri can be given`))
 		})
 
-		t.Run("sum() of artifact.Contents is too big", func(t *ftt.Test) {
+		t.Run("sum() of requests is too big", func(t *ftt.Test) {
 			for i := range 11 {
 				req := newTestArtReq(fmt.Sprintf("art%d", i))
 				req.Artifact.Contents = make([]byte, 1024*1024)
 				bReq.Requests = append(bReq.Requests, req)
 			}
 			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike("the total size of artifact contents exceeded"))
+			assert.Loosely(t, err, should.ErrLike("requests: the size of all requests is too large"))
 		})
 
 		t.Run("if more than one invocations - legacy", func(t *ftt.Test) {

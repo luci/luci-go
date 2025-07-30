@@ -28,7 +28,9 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
+	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -164,7 +166,8 @@ func calculateHash(input io.Reader) (string, error) {
 }
 
 // newBatchCreateArtifactsRequest returns a BatchCreateArtifactsRequest with
-// at most 500 items with capping the sum of the artifact sizes by maxSum.
+// at most 500 items with capping the sum of the request sizes to no more than
+// maxSum.
 //
 // Panics if tasks an item with an artifact larger than maxSum.
 func newBatchCreateArtifactsRequest(maxSum int64, tasks []buffer.BatchItem[*uploadTask]) (*pb.BatchCreateArtifactsRequest, error) {
@@ -173,17 +176,24 @@ func newBatchCreateArtifactsRequest(maxSum int64, tasks []buffer.BatchItem[*uplo
 		l = 500
 	}
 
-	var sum int64
+	if maxSum > pbutil.MaxBatchRequestSize {
+		return nil, errors.Fmt("requested maxSum (%d bytes) exceeds maximum ResultDB batch size (%d bytes)", maxSum, pbutil.MaxBatchRequestSize)
+	}
+
+	var requestSize int64
 	reqs := make([]*pb.CreateArtifactRequest, 0, l)
 	for i := 0; i < l; i++ {
 		ut := tasks[i].Item
 
 		// artifactChannel.schedule() should have sent it to streamChannel.
-		if ut.size > maxSum {
+		if ut.size > (maxSum - batchedArtifactOverheadBytes) {
 			return nil, errors.Fmt("an artifact is greater than %d", maxSum)
 		}
-		// if the sum is going to be too big, stop the iteration.
-		if sum+ut.size > maxSum {
+
+		estimatedSize := ut.size + batchedArtifactOverheadBytes
+
+		// We have hit our soft request size limit, end the batch.
+		if requestSize+estimatedSize > maxSum {
 			break
 		}
 
@@ -191,8 +201,9 @@ func newBatchCreateArtifactsRequest(maxSum int64, tasks []buffer.BatchItem[*uplo
 		if err != nil {
 			return nil, errors.Fmt("CreateRequest: %w", err)
 		}
+
 		reqs = append(reqs, r)
-		sum += ut.size
+		requestSize += int64(proto.Size(r))
 	}
 	return &pb.BatchCreateArtifactsRequest{Requests: reqs}, nil
 }

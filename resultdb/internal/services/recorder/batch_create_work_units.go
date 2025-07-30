@@ -146,7 +146,7 @@ func validateBatchCreateWorkUnitsPermissions(ctx context.Context, req *pb.BatchC
 	// Only perform minimal validation necessary to verify permissions. Full validation
 	// will be performed in validateBatchCreateWorkUnitsRequest.
 
-	if err := pbutil.ValidateBatchRequestCount(len(req.Requests)); err != nil {
+	if err := pbutil.ValidateBatchRequestCountAndSize(req.Requests); err != nil {
 		return appstatus.BadRequest(errors.Fmt("requests: %w", err))
 	}
 	for i, r := range req.Requests {
@@ -265,9 +265,10 @@ func validateBatchCreateWorkUnitsRequest(req *pb.BatchCreateWorkUnitsRequest) er
 		return errors.Fmt("request_id: %w", err)
 	}
 
-	if err := pbutil.ValidateBatchRequestCount(len(req.Requests)); err != nil {
+	if err := pbutil.ValidateBatchRequestCountAndSize(req.Requests); err != nil {
 		return errors.Fmt("requests: %w", err)
 	}
+
 	seenIDs := workunits.NewIDSet()
 	var rootInvocationID rootinvocations.ID
 	for i, r := range req.Requests {
