@@ -63,7 +63,7 @@ func wrapTracingMemStore(store memStore) memStore {
 		}
 
 		lck := sync.Mutex{}
-		fname := fmt.Sprintf(filepath.Join(logMemCollectionFolderTmp, fmt.Sprintf("%d.trace", logNum)))
+		fname := fmt.Sprintf("%s", filepath.Join(logMemCollectionFolderTmp, fmt.Sprintf("%d.trace", logNum)))
 		fil, err := os.Create(fname)
 		if err != nil {
 			panic(err)

@@ -62,7 +62,7 @@ func VerifyInvocations(ctx context.Context, ids invocations.IDSet, permissions .
 		return err
 	}
 	if !verified {
-		return appstatus.Errorf(codes.PermissionDenied, desc)
+		return appstatus.Error(codes.PermissionDenied, desc)
 	}
 
 	return nil

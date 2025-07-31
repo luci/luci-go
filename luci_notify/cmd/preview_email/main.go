@@ -58,7 +58,7 @@ func main() {
 	flag.StringVar(&f.BuildbucketHostname, "buildbucket-hostname", chromeinfra.BuildbucketHost, "Buildbucket hostname")
 
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), text.Doc(`
+		fmt.Fprint(flag.CommandLine.Output(), text.Doc(`
 			Usage: preview_email TEMPLATE_FILE [BUILD]
 
 			BUILD is a path to a buildbucket.v2.Build JSON file

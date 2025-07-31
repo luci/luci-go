@@ -35,7 +35,7 @@ func Example() {
 	}
 
 	innerHandler(c, w)
-	fmt.Printf(string(w.Body.Bytes()))
+	fmt.Print(string(w.Body.Bytes()))
 	// Output: I wrote: dev~app::/CoolStruct,"struct-id"
 }
 

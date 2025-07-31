@@ -170,7 +170,7 @@ func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.List
 	case nil:
 		// Continue
 	default:
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Override the page size if necessary.
@@ -195,13 +195,13 @@ func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.List
 	})
 	if err != nil {
 		logging.Errorf(ctx, err.Error())
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Construct the next page token.
 	nextPageToken, err := listTestAnalysesPageTokenVault.PageToken(ctx, nextCursor)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Get the result for each test failure analysis.
@@ -223,7 +223,7 @@ func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.List
 	})
 	if err != nil {
 		logging.Errorf(ctx, err.Error())
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &pb.ListTestAnalysesResponse{
@@ -253,13 +253,13 @@ func (server *AnalysesServer) GetTestAnalysis(ctx context.Context, req *pb.GetTe
 		}
 		err = errors.Fmt("get test failure analysis: %w", err)
 		logging.Errorf(ctx, err.Error())
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	result, err := protoutil.TestFailureAnalysisToPb(ctx, tfa, mask)
 	if err != nil {
 		err = errors.Fmt("test failure analysis to pb: %w", err)
 		logging.Errorf(ctx, err.Error())
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return result, nil
 }
@@ -276,7 +276,7 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 
 	// Validate request.
 	if err := validateBatchGetTestAnalysesRequest(req); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// By default, returning all fields.
@@ -356,7 +356,7 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 	})
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &pb.BatchGetTestAnalysesResponse{
@@ -771,7 +771,7 @@ func (server *AnalysesServer) ListAnalyses(c context.Context, req *pb.ListAnalys
 	case nil:
 		// Continue
 	default:
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Override the page size if necessary
@@ -797,13 +797,13 @@ func (server *AnalysesServer) ListAnalyses(c context.Context, req *pb.ListAnalys
 		return nil
 	})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Construct the next page token
 	nextPageToken, err := listAnalysesPageTokenVault.PageToken(c, nextCursor)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Get the result for each compile failure analysis
@@ -823,7 +823,7 @@ func (server *AnalysesServer) ListAnalyses(c context.Context, req *pb.ListAnalys
 		}
 	})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &pb.ListAnalysesResponse{

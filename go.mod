@@ -12,7 +12,7 @@
 
 module go.chromium.org/luci
 
-go 1.23.0
+go 1.24.0
 
 // Don't add a `toolchain` directive here. We manage the version of our Go
 // toolchain with a different mechanism.

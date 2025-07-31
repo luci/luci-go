@@ -80,7 +80,7 @@ func determineListAccessLevel(ctx context.Context, ids invocations.IDSet) (a tes
 	}
 
 	// Caller does not have access
-	return testvariants.AccessLevelInvalid, appstatus.Errorf(codes.PermissionDenied, desc)
+	return testvariants.AccessLevelInvalid, appstatus.Error(codes.PermissionDenied, desc)
 }
 
 // QueryTestVariants implements pb.ResultDBServer.

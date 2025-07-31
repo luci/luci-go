@@ -55,7 +55,7 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 	}()
 	err := validateRequest(req)
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, errors.Fmt("validate request: %w", err).Error())
+		return status.Error(codes.InvalidArgument, errors.Fmt("validate request: %w", err).Error())
 	}
 	ctx = loggingutil.SetRerunBBID(ctx, req.Bbid)
 
@@ -64,9 +64,9 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 	if err != nil {
 		// We don't compare err == datastore.ErrNoSuchEntity because err may be annotated.
 		if errors.Is(err, datastore.ErrNoSuchEntity) {
-			return status.Errorf(codes.NotFound, errors.Fmt("get test single rerun: %w", err).Error())
+			return status.Error(codes.NotFound, errors.Fmt("get test single rerun: %w", err).Error())
 		} else {
-			return status.Errorf(codes.Internal, errors.Fmt("get test single rerun: %w", err).Error())
+			return status.Error(codes.Internal, errors.Fmt("get test single rerun: %w", err).Error())
 		}
 	}
 
@@ -85,7 +85,7 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 	if err != nil {
 		// Do not return a NOTFOUND here since the rerun was found.
 		// If the analysis is not found, there is likely something wrong.
-		return status.Errorf(codes.Internal, errors.Fmt("get test failure analysis: %w", err).Error())
+		return status.Error(codes.Internal, errors.Fmt("get test failure analysis: %w", err).Error())
 	}
 	ctx = loggingutil.SetAnalysisID(ctx, tfa.ID)
 
@@ -109,9 +109,9 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 			// If the primary failure is not found, we consider it as InvalidArgument
 			// instead of Internal, because there is nothing wrong with the service.
 			// Returning internal error here will cause the PRPC to retry.
-			return status.Errorf(codes.InvalidArgument, errors.Fmt("update rerun: %w", err).Error())
+			return status.Error(codes.InvalidArgument, errors.Fmt("update rerun: %w", err).Error())
 		}
-		return status.Errorf(codes.Internal, errors.Fmt("update rerun: %w", err).Error())
+		return status.Error(codes.Internal, errors.Fmt("update rerun: %w", err).Error())
 	}
 
 	if rerun.Type == model.RerunBuildType_CulpritVerification {
@@ -122,7 +122,7 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 				// Just log.
 				logging.Errorf(ctx, "Update analysis status %s", e.Error())
 			}
-			return status.Errorf(codes.Internal, errors.Fmt("process culprit verification update: %w", err).Error())
+			return status.Error(codes.Internal, errors.Fmt("process culprit verification update: %w", err).Error())
 		}
 	}
 	if rerun.Type == model.RerunBuildType_NthSection {
@@ -133,7 +133,7 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 				// Just log.
 				logging.Errorf(ctx, "UpdateAnalysisStatusWhenRerunError %s", e.Error())
 			}
-			return status.Errorf(codes.Internal, errors.Fmt("process nthsection update: %w", err).Error())
+			return status.Error(codes.Internal, errors.Fmt("process nthsection update: %w", err).Error())
 		}
 	}
 	return nil

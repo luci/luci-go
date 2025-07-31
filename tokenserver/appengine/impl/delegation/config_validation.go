@@ -56,7 +56,7 @@ func validateDelegationCfg(ctx *validation.Context, cfg *admin.DelegationPermiss
 //
 // See config.proto, DelegationRule for the description of allowed values.
 func validateRule(ctx *validation.Context, title string, r *admin.DelegationRule) {
-	ctx.Enter(title)
+	ctx.Enter("%s", title)
 	defer ctx.Exit()
 
 	if r.Name == "" {

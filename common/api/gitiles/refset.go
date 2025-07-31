@@ -210,7 +210,7 @@ func (w *refSetPrefix) addLiteralRef(literalRef string) {
 }
 
 func validateRegexpRef(c *validation.Context, ref string) {
-	c.Enter(ref)
+	c.Enter("%s", ref)
 	defer c.Exit()
 	reStr := strings.TrimPrefix(ref, "regexp:")
 	if strings.HasPrefix(reStr, "^") || strings.HasSuffix(reStr, "$") {

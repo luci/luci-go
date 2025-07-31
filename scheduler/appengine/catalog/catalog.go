@@ -351,7 +351,7 @@ func (cat *catalog) validateProjectConfig(ctx *validation.Context, configSet, pa
 		if job.Id != "" {
 			id = job.Id
 		}
-		ctx.Enter(id)
+		ctx.Enter("%s", id)
 		if job.Id != "" && !knownIDs.Add(job.Id) {
 			ctx.Errorf("duplicate id %q", job.Id)
 		}
@@ -369,7 +369,7 @@ func (cat *catalog) validateProjectConfig(ctx *validation.Context, configSet, pa
 		if trigger.Id != "" {
 			id = trigger.Id
 		}
-		ctx.Enter(id)
+		ctx.Enter("%s", id)
 		if trigger.Id != "" && !knownIDs.Add(trigger.Id) {
 			ctx.Errorf("duplicate id %q", trigger.Id)
 		}

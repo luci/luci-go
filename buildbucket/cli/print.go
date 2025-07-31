@@ -259,7 +259,7 @@ func (p *printer) commit(c *pb.GitilesCommit) {
 		"chromium.googlesource.com",
 		"gerrit.googlesource.com",
 		"webrtc.googlesource.com":
-		p.linkf("https://crrev.com/" + c.Id)
+		p.linkf("https://crrev.com/%s", c.Id)
 	default:
 		p.linkf("https://%s/%s/+/%s", c.Host, c.Project, c.Id)
 	}

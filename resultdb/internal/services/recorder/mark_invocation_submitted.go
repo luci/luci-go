@@ -47,7 +47,7 @@ func validateMarkInvocationSubmittedPermissions(ctx context.Context, inv invocat
 		// If the invocation does not exist, we mask the error with permission
 		// denied to avoid leaking resource existence.
 		if appstatus.Code(err) == codes.NotFound {
-			return appstatus.Errorf(codes.PermissionDenied, noPermissionsError(inv))
+			return appstatus.Error(codes.PermissionDenied, noPermissionsError(inv))
 		} else {
 			return err
 		}
@@ -64,7 +64,7 @@ func validateMarkInvocationSubmittedPermissions(ctx context.Context, inv invocat
 	case err != nil:
 		return err
 	case !allowed:
-		return appstatus.Errorf(codes.PermissionDenied, noPermissionsError(inv))
+		return appstatus.Error(codes.PermissionDenied, noPermissionsError(inv))
 	}
 
 	return nil

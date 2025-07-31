@@ -142,7 +142,7 @@ func (server *BotUpdatesServer) UpdateAnalysisProgress(c context.Context, req *p
 				e = errors.Fmt("UpdateAnalysisStatus. Analysis ID: %d: %w", req.AnalysisId, e)
 				logging.Errorf(c, e.Error())
 			}
-			return nil, status.Errorf(codes.Internal, err.Error())
+			return nil, status.Error(codes.Internal, err.Error())
 		}
 
 		// Update analysis status

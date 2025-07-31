@@ -38,7 +38,7 @@ func (c Configs) GetConfigSet(ctx context.Context, req *pb.GetConfigSetRequest) 
 	if req.GetConfigSet() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "config_set is not specified")
 	} else if err := config.Set(req.ConfigSet).Validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	m, err := toConfigSetMask(req.Fields)

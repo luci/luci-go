@@ -916,12 +916,12 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 					_, key, value := ParseDimension(dim)
 					if value == "" {
 						if nonEmpty.Has(key) {
-							ctx.Errorf(fmt.Sprintf("dimensions contain both empty and non-empty value for the same key - %q", key))
+							ctx.Errorf("dimensions contain both empty and non-empty value for the same key - %q", key)
 						}
 						empty.Add(key)
 					} else {
 						if empty.Has(key) {
-							ctx.Errorf(fmt.Sprintf("dimensions contain both empty and non-empty value for the same key - %q", key))
+							ctx.Errorf("dimensions contain both empty and non-empty value for the same key - %q", key)
 						}
 						nonEmpty.Add(key)
 					}
@@ -982,7 +982,7 @@ func validateCustomMetricDefinition(ctx *validation.Context, cm *pb.CustomMetric
 		}
 	}
 	if len(missedFs) > 0 {
-		ctx.Errorf(fmt.Sprintf("field(s) %q must be included", missedFs))
+		ctx.Errorf("field(s) %q must be included", missedFs)
 	}
 
 	if len(cm.GetExtraFields()) > 0 {

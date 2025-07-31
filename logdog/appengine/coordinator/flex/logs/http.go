@@ -564,7 +564,7 @@ func writeFooter(ctx *router.Context, start time.Time, err error, isHTML bool) {
 			fmt.Fprintf(ctx.Writer, "Failed to render page: %s", html.EscapeString(err.Error()))
 		}
 	} else {
-		fmt.Fprintf(ctx.Writer, message)
+		fmt.Fprint(ctx.Writer, message)
 	}
 	// TODO(hinoka): If there is an error, we can signal an error
 	// by acquiring the underlying TCP connection using ctx.Writer.(http.Hijacker),

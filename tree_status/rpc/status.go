@@ -67,7 +67,7 @@ func (*treeStatusServer) ListStatus(ctx context.Context, request *pb.ListStatusR
 		return nil, errors.Fmt("checking list status limited permission: %w", err)
 	}
 	if !hasLimitedAccess {
-		return nil, appstatus.Errorf(codes.PermissionDenied, msg)
+		return nil, appstatus.Error(codes.PermissionDenied, msg)
 	}
 	offset, err := listPaginator.Offset(request)
 	if err != nil {
@@ -137,7 +137,7 @@ func (*treeStatusServer) GetStatus(ctx context.Context, request *pb.GetStatusReq
 		return nil, errors.Fmt("checking get status limited permission: %w", err)
 	}
 	if !hasLimitedAccess {
-		return nil, appstatus.Errorf(codes.PermissionDenied, msg)
+		return nil, appstatus.Error(codes.PermissionDenied, msg)
 	}
 
 	includeUserInResponse, _, err := perms.HasGetStatusPermission(ctx, tree)
@@ -183,7 +183,7 @@ func (*treeStatusServer) CreateStatus(ctx context.Context, request *pb.CreateSta
 		return nil, errors.Fmt("checking create status permission: %w", err)
 	}
 	if !hasWriteAccess {
-		return nil, appstatus.Errorf(codes.PermissionDenied, msg)
+		return nil, appstatus.Error(codes.PermissionDenied, msg)
 	}
 
 	id, err := status.GenerateID()

@@ -43,7 +43,7 @@ var schemeIDRE = regexp.MustCompile(`^` + SchemeIDPattern + `$`)
 var humanReadableRE = regexp.MustCompile(`^[[:print:]]{1,100}$`)
 
 func validateStringConfig(ctx *validation.Context, name, cfg string, re *regexp.Regexp) {
-	ctx.Enter(name)
+	ctx.Enter("%s", name)
 	defer ctx.Exit()
 	if cfg == "" {
 		ctx.Errorf("empty %s is not allowed", name)
@@ -56,7 +56,7 @@ func validateStringConfig(ctx *validation.Context, name, cfg string, re *regexp.
 
 // Validates according to https://cloud.google.com/storage/docs/objects#naming
 func validateGCSBucketPrefix(ctx *validation.Context, name string, prefix string) {
-	ctx.Enter(name)
+	ctx.Enter("%s", name)
 	defer ctx.Exit()
 
 	prefixLen := len(prefix)
@@ -76,7 +76,7 @@ func validateGCSBucketPrefix(ctx *validation.Context, name string, prefix string
 }
 
 func validateGCSAllowlist(ctx *validation.Context, name string, allowList *configpb.GcsAllowList) {
-	ctx.Enter(name)
+	ctx.Enter("%s", name)
 	defer ctx.Exit()
 
 	if len(allowList.Users) == 0 {
@@ -85,11 +85,11 @@ func validateGCSAllowlist(ctx *validation.Context, name string, allowList *confi
 	for _, user := range allowList.Users {
 		identity, err := identity.MakeIdentity(user)
 		if err != nil {
-			ctx.Errorf(err.Error())
+			ctx.Errorf("%s", err.Error())
 		}
 		err = identity.Validate()
 		if err != nil {
-			ctx.Errorf(err.Error())
+			ctx.Errorf("%s", err.Error())
 		}
 	}
 
@@ -154,7 +154,7 @@ func validateSchemes(ctx *validation.Context, schemes []*configpb.Scheme) {
 }
 
 func validateScheme(ctx *validation.Context, name string, cfg *configpb.Scheme, seenIDs map[string]struct{}) {
-	ctx.Enter(name)
+	ctx.Enter("%s", name)
 	defer ctx.Exit()
 
 	validateSchemeID(ctx, cfg.Id, seenIDs)
@@ -198,7 +198,7 @@ func validateHumanReadableName(ctx *validation.Context, value string) {
 }
 
 func validateSchemeLevel(ctx *validation.Context, name string, level *configpb.Scheme_Level) {
-	ctx.Enter(name)
+	ctx.Enter("%s", name)
 	defer ctx.Exit()
 
 	if level == nil {

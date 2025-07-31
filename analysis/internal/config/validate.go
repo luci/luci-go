@@ -115,7 +115,7 @@ func validateConfig(ctx *validation.Context, cfg *configpb.Config) {
 }
 
 func validateStringConfig(ctx *validation.Context, name, cfg string, re *regexp.Regexp, maxLengthBytes int) {
-	ctx.Enter(name)
+	ctx.Enter("%s", name)
 	defer ctx.Exit()
 	if len(cfg) > maxLengthBytes {
 		ctx.Errorf("exceeds maximum allowed length of %v bytes", maxLengthBytes)
@@ -130,12 +130,12 @@ func validateStringConfig(ctx *validation.Context, name, cfg string, re *regexp.
 // validateIntegerConfig validates that an integer field is within the
 // range [minInclusive, maxInclusive].
 func validateIntegerConfig(ctx *validation.Context, name string, cfg, minInclusive, maxInclusive int64) {
-	ctx.Enter(name)
+	ctx.Enter("%s", name)
 	defer ctx.Exit()
 
 	if cfg < minInclusive || cfg > maxInclusive {
 		if cfg == 0 {
-			ctx.Errorf(unspecifiedMessage)
+			ctx.Errorf("%s", unspecifiedMessage)
 		} else {
 			ctx.Errorf("must be in the range [%v, %v]", minInclusive, maxInclusive)
 		}
@@ -145,7 +145,7 @@ func validateIntegerConfig(ctx *validation.Context, name string, cfg, minInclusi
 // validateFloat64Config validates that a float64 field is within the
 // range [minInclusive, maxInclusive].
 func validateFloat64Config(ctx *validation.Context, name string, cfg, minInclusive, maxInclusive float64) {
-	ctx.Enter(name)
+	ctx.Enter("%s", name)
 	defer ctx.Exit()
 
 	if math.IsInf(cfg, 0) || math.IsNaN(cfg) {
@@ -153,7 +153,7 @@ func validateFloat64Config(ctx *validation.Context, name string, cfg, minInclusi
 		return
 	}
 	if cfg == 0.0 && (cfg < minInclusive || cfg > maxInclusive) {
-		ctx.Errorf(unspecifiedMessage)
+		ctx.Errorf("%s", unspecifiedMessage)
 		return
 	}
 	if cfg < minInclusive || cfg > maxInclusive {
@@ -185,7 +185,7 @@ func validateBuganizerDefaultComponent(ctx *validation.Context, component *confi
 	defer ctx.Exit()
 
 	if component == nil {
-		ctx.Errorf(unspecifiedMessage)
+		ctx.Errorf("%s", unspecifiedMessage)
 		return
 	}
 
@@ -193,7 +193,7 @@ func validateBuganizerDefaultComponent(ctx *validation.Context, component *confi
 	defer ctx.Exit()
 
 	if component.Id == 0 {
-		ctx.Errorf(unspecifiedMessage)
+		ctx.Errorf("%s", unspecifiedMessage)
 	} else if component.Id < 0 {
 		ctx.Errorf("must be positive")
 	}
@@ -204,7 +204,7 @@ func validateBuganizerPriority(ctx *validation.Context, priority configpb.Bugani
 	defer ctx.Exit()
 
 	if priority == configpb.BuganizerPriority_BUGANIZER_PRIORITY_UNSPECIFIED {
-		ctx.Errorf(unspecifiedMessage)
+		ctx.Errorf("%s", unspecifiedMessage)
 		return
 	}
 }
@@ -223,11 +223,11 @@ func validateDefaultFieldValues(ctx *validation.Context, fvs []*configpb.Monorai
 }
 
 func validateFieldValue(ctx *validation.Context, name string, fv *configpb.MonorailFieldValue) {
-	ctx.Enter(name)
+	ctx.Enter("%s", name)
 	defer ctx.Exit()
 
 	if fv == nil {
-		ctx.Errorf(unspecifiedMessage)
+		ctx.Errorf("%s", unspecifiedMessage)
 		return
 	}
 
@@ -236,11 +236,11 @@ func validateFieldValue(ctx *validation.Context, name string, fv *configpb.Monor
 }
 
 func validateFieldID(ctx *validation.Context, fieldName string, fieldID int64) {
-	ctx.Enter(fieldName)
+	ctx.Enter("%s", fieldName)
 	defer ctx.Exit()
 
 	if fieldID == 0 {
-		ctx.Errorf(unspecifiedMessage)
+		ctx.Errorf("%s", unspecifiedMessage)
 	} else if fieldID < 0 {
 		ctx.Errorf("must be positive")
 	}
@@ -249,13 +249,13 @@ func validateFieldID(ctx *validation.Context, fieldName string, fieldID int64) {
 // validateMetricThreshold a metric threshold message. If mustBeSatisfiable is set,
 // the metric threshold must have at least one of one_day, three_day or seven_day set.
 func validateMetricThreshold(ctx *validation.Context, fieldName string, t *configpb.MetricThreshold, mustBeSatisfiable bool) {
-	ctx.Enter(fieldName)
+	ctx.Enter("%s", fieldName)
 	defer ctx.Exit()
 
 	if t == nil {
 		if mustBeSatisfiable {
 			// To be satisfiable, a threshold must be set.
-			ctx.Errorf(unspecifiedMessage)
+			ctx.Errorf("%s", unspecifiedMessage)
 		}
 		// Not specified.
 		return
@@ -272,7 +272,7 @@ func validateMetricThreshold(ctx *validation.Context, fieldName string, t *confi
 }
 
 func validateThresholdValue(ctx *validation.Context, value *int64, fieldName string) {
-	ctx.Enter(fieldName)
+	ctx.Enter("%s", fieldName)
 	defer ctx.Exit()
 
 	if value != nil && *value <= 0 {
@@ -297,7 +297,7 @@ type validateImplicationOptions struct {
 // the threshold `rhs` is satisfied, i.e. lhs => rhs.
 // fieldName is the name of the field that contains the `rhs` threshold.
 func validateMetricThresholdImpliedBy(ctx *validation.Context, rhsFieldName string, rhs *configpb.MetricThreshold, lhs *configpb.MetricThreshold, opts validateImplicationOptions) {
-	ctx.Enter(rhsFieldName)
+	ctx.Enter("%s", rhsFieldName)
 	defer ctx.Exit()
 
 	if rhs == nil {
@@ -402,7 +402,7 @@ func minOfThresholds(thresholds ...*int64) *int64 {
 }
 
 func validateBugFilingThresholdSatisfiesThresold(ctx *validation.Context, rhsThreshold *int64, lhsThres *int64, fieldName, lhsDescription, implicationDescription string) {
-	ctx.Enter(fieldName)
+	ctx.Enter("%s", fieldName)
 	defer ctx.Exit()
 
 	if lhsThres == nil {
@@ -549,7 +549,7 @@ func validateDefaultBugSystem(ctx *validation.Context, value configpb.BugSystem)
 	ctx.Enter("default_bug_system")
 	defer ctx.Exit()
 	if value == configpb.BugSystem_BUG_SYSTEM_UNSPECIFIED {
-		ctx.Errorf(unspecifiedMessage)
+		ctx.Errorf("%s", unspecifiedMessage)
 	}
 }
 
@@ -596,11 +596,11 @@ func validateBugManagementPolicies(ctx *validation.Context, policies []*configpb
 }
 
 func validateBugManagementPolicy(ctx *validation.Context, name string, p *configpb.BugManagementPolicy, seenIDs map[string]struct{}) {
-	ctx.Enter(name)
+	ctx.Enter("%s", name)
 	defer ctx.Exit()
 
 	if p == nil {
-		ctx.Errorf(unspecifiedMessage)
+		ctx.Errorf("%s", unspecifiedMessage)
 		return
 	}
 
@@ -667,7 +667,7 @@ func validateBugManagementPolicyID(ctx *validation.Context, id string, seenIDs m
 }
 
 func validateBugManagementPolicyMetric(ctx *validation.Context, name string, m *configpb.BugManagementPolicy_Metric, seenIDs map[string]struct{}) {
-	ctx.Enter(name)
+	ctx.Enter("%s", name)
 	defer ctx.Exit()
 
 	validateMetricID(ctx, m.MetricId, seenIDs)
@@ -696,7 +696,7 @@ func validateBugManagementPolicyExplanation(ctx *validation.Context, e *configpb
 	defer ctx.Exit()
 
 	if e == nil {
-		ctx.Errorf(unspecifiedMessage)
+		ctx.Errorf("%s", unspecifiedMessage)
 		return
 	}
 
@@ -717,7 +717,7 @@ func validateBugManagementPolicyBugTemplate(ctx *validation.Context, t *configpb
 	defer ctx.Exit()
 
 	if t == nil {
-		ctx.Errorf(unspecifiedMessage)
+		ctx.Errorf("%s", unspecifiedMessage)
 		return
 	}
 
@@ -856,7 +856,7 @@ func validateFailureRateCriteria(ctx *validation.Context, f *configpb.TestStabil
 	defer ctx.Exit()
 
 	if f == nil {
-		ctx.Errorf(unspecifiedMessage)
+		ctx.Errorf("%s", unspecifiedMessage)
 		return
 	}
 	validateIntegerConfig(ctx, "failure_threshold", int64(f.FailureThreshold), 1, 10)
@@ -868,7 +868,7 @@ func validateFlakeRateCriteria(ctx *validation.Context, f *configpb.TestStabilit
 	defer ctx.Exit()
 
 	if f == nil {
-		ctx.Errorf(unspecifiedMessage)
+		ctx.Errorf("%s", unspecifiedMessage)
 		return
 	}
 

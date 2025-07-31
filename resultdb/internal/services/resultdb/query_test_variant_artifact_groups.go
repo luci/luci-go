@@ -66,7 +66,7 @@ func (s *resultDBServer) QueryTestVariantArtifactGroups(ctx context.Context, req
 	}
 	if err := validateQueryTestVariantArtifactGroupsRequest(req, isGoogler); err != nil {
 		if errors.Contains(err, insufficientPermissionWithQueryFilter) {
-			return nil, appstatus.Errorf(codes.PermissionDenied, err.Error())
+			return nil, appstatus.Error(codes.PermissionDenied, err.Error())
 		}
 		return nil, appstatus.BadRequest(err)
 	}
