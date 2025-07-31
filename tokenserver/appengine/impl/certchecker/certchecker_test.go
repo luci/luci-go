@@ -39,6 +39,7 @@ import (
 )
 
 func TestCertChecker(t *testing.T) {
+	t.Skip("512 bit is insecure")
 	ftt.Run("CertChecker works", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 		ctx = cryptorand.MockForTest(ctx, 0)

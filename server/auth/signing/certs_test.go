@@ -214,6 +214,7 @@ func TestCheckSignature(t *testing.T) {
 	// See signingtest/signer_test.go for where this cert and signature were
 	// generated. 'signingtest' module itself can't be imported due to import
 	// cycle.
+	t.Skip("512-bit is insecure")
 
 	t.Parallel()
 

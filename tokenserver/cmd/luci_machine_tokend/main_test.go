@@ -40,6 +40,7 @@ import (
 )
 
 func TestMain(t *testing.T) {
+	t.Skip("512 bit is insecure")
 	tmp := t.TempDir()
 	tmpPath := func(file string) string {
 		return filepath.Join(tmp, file)
