@@ -616,7 +616,7 @@ func SubcommandTokenWithParams(params CommandParams) *subcommands.Command {
 					"The 'luci' format is {\"token\": \"...\", expiry: <unix_ts>}.\n"+
 					"The 'reclient' format is similar, but uses the textual Unix date format for the expiry.\n"+
 					"The 'bazel' format is defined in Bazel's credential helper design:\n"+
-					"https://github.com/bazelbuild/proposals/blob/main/designs/2022-06-07-bazel-credential-helpers.md")
+					"https://github.com/EngFlow/credential-helper-spec/blob/main/spec.md")
 			return c
 		},
 	}
@@ -691,7 +691,8 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 		case "bazel":
 			data = struct {
 				Headers map[string]string `json:"headers"`
-			}{map[string]string{"Authorization": "Bearer " + token.AccessToken}}
+				Expires string            `json:"expires"`
+			}{map[string]string{"Authorization": "Bearer " + token.AccessToken}, token.Expiry.UTC().Format(time.RFC3339)}
 		}
 		if err = json.NewEncoder(out).Encode(data); err != nil {
 			fmt.Fprintln(os.Stderr, err)
