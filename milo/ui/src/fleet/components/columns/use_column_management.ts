@@ -17,31 +17,32 @@ import { useMemo } from 'react';
 
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { colors } from '@/fleet/theme/colors';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
-import { getFilters } from '../filter_dropdown/search_param_utils/search_param_utils';
+import { orderColumns } from '../device_table/columns';
 
-import { orderColumns } from './columns';
 import { useParamsAndLocalStorage } from './use_params_and_local_storage';
 
+const highlightedColumnClassName = 'column-highlight';
+
 /**
- * Styling object for columns that are temporarily visible due to an active filter.
+ * Styling object for columns that are highlighted and temporarily visible due to an active filter.
  * This is applied to the DataGrid via the `sx` prop.
  */
-const temporaryColumnSx = {
-  '& .MuiDataGrid-columnHeader.temp-visible-column, & .MuiDataGrid-cell.temp-visible-column':
+const columnHighlightSx = {
+  [`& .MuiDataGrid-columnHeader.${highlightedColumnClassName}, & .MuiDataGrid-cell.${highlightedColumnClassName}`]:
     {
       color: colors.blue[600],
       backgroundColor: colors.blue[50],
     },
-  '& .MuiDataGrid-columnHeader.temp-visible-column:hover, & .MuiDataGrid-cell.temp-visible-column:hover':
+  [`& .MuiDataGrid-columnHeader.${highlightedColumnClassName}:hover, & .MuiDataGrid-cell.${highlightedColumnClassName}:hover`]:
     {
       backgroundColor: colors.blue[100],
     },
 };
 
-interface ColumnManagementConfig {
+export interface ColumnManagementConfig {
   readonly allColumns: readonly GridColDef[];
+  readonly highlightedColumnIds: readonly string[];
   readonly defaultColumns: readonly string[];
   readonly localStorageKey: string;
   readonly preserveOrder?: boolean;
@@ -57,12 +58,11 @@ interface ColumnManagementConfig {
  */
 export function useColumnManagement({
   allColumns,
+  highlightedColumnIds,
   defaultColumns,
   localStorageKey,
   preserveOrder = false,
 }: ColumnManagementConfig) {
-  const [searchParams] = useSyncedSearchParams();
-
   // Manages columns the user has explicitly chosen to see.
   // This state is persisted in local storage and the URL.
   const [userVisibleColumns, setUserVisibleColumns] = useParamsAndLocalStorage(
@@ -71,30 +71,16 @@ export function useColumnManagement({
     [...defaultColumns],
   );
 
-  // Determines which columns have active filters from the URL search parameters.
-  const activeFilterFields = useMemo(() => {
-    const filters = getFilters(searchParams).filters || {};
-    return new Set(
-      Object.keys(filters).map((key) => key.replace('labels.', '')),
-    );
-  }, [searchParams]);
-
-  // Identifies columns that should be temporarily visible because they have an
-  // active filter but are not in the user's set of visible columns.
-  const temporaryColumnFields = useMemo(
+  const temporaryColumnIds = useMemo(
     () =>
-      new Set(
-        [...activeFilterFields].filter(
-          (field) => !userVisibleColumns.includes(field),
-        ),
-      ),
-    [activeFilterFields, userVisibleColumns],
+      highlightedColumnIds.filter((col) => !userVisibleColumns.includes(col)),
+    [highlightedColumnIds, userVisibleColumns],
   );
 
   // The final set of columns to be displayed, combining user-selected and temporary columns.
   const visibleColumns = useMemo(
-    () => [...userVisibleColumns, ...temporaryColumnFields],
-    [userVisibleColumns, temporaryColumnFields],
+    () => [...userVisibleColumns, ...temporaryColumnIds],
+    [userVisibleColumns, temporaryColumnIds],
   );
 
   // The visibility model required by the MUI DataGrid.
@@ -113,7 +99,7 @@ export function useColumnManagement({
   ) => {
     const newVisible = Object.keys(newModel).filter((field) => {
       // Prevent temporary columns from being saved to the user's preferences.
-      if (newModel[field] && temporaryColumnFields.has(field)) {
+      if (temporaryColumnIds.includes(field)) {
         return false;
       }
       return newModel[field];
@@ -125,12 +111,12 @@ export function useColumnManagement({
   // It adds special properties (e.g., class names) to temporary columns.
   const columns = useMemo(() => {
     const styledColumns = allColumns.map((colDef) => {
-      if (temporaryColumnFields.has(colDef.field)) {
+      if (highlightedColumnIds.includes(colDef.field)) {
         return {
           ...colDef,
           hideable: false,
-          headerClassName: 'temp-visible-column',
-          cellClassName: 'temp-visible-column',
+          headerClassName: highlightedColumnClassName,
+          cellClassName: highlightedColumnClassName,
         };
       }
       return colDef;
@@ -138,7 +124,7 @@ export function useColumnManagement({
     return preserveOrder
       ? styledColumns
       : orderColumns(styledColumns, visibleColumns);
-  }, [allColumns, visibleColumns, temporaryColumnFields, preserveOrder]);
+  }, [allColumns, visibleColumns, highlightedColumnIds, preserveOrder]);
 
   const resetDefaultColumns = () => setUserVisibleColumns([...defaultColumns]);
   return {
@@ -146,6 +132,6 @@ export function useColumnManagement({
     columnVisibilityModel,
     onColumnVisibilityModelChange,
     resetDefaultColumns,
-    temporaryColumnSx,
+    temporaryColumnSx: columnHighlightSx,
   };
 }

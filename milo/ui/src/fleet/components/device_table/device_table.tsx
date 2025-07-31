@@ -18,13 +18,13 @@ import {
   GridRowSelectionModel,
   GridSortModel,
 } from '@mui/x-data-grid';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import {
-  getPageSize,
-  PagerContext,
   emptyPageTokenUpdater,
   getCurrentPageIndex,
+  getPageSize,
+  PagerContext,
 } from '@/common/components/params_pager';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
@@ -36,6 +36,8 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { CopySnackbar } from '../actions/copy/copy_snackbar';
+import { useColumnManagement } from '../columns/use_column_management';
+import { getFilters } from '../filter_dropdown/search_param_utils/search_param_utils';
 
 import { ColumnMenu } from './column_menu';
 import { getColumns } from './columns';
@@ -46,7 +48,6 @@ import {
 } from './dimensions';
 import { FleetToolbar, FleetToolbarProps } from './fleet_toolbar';
 import { Pagination } from './pagination';
-import { useColumnManagement } from './use_column_management';
 
 const UNKNOWN_ROW_COUNT = -1;
 
@@ -123,6 +124,12 @@ export function DeviceTable({
     useState<GridRowSelectionModel>([]);
   const [showCopySuccess, setShowCopySuccess] = useState(false);
 
+  const getFilteredColumnIds = () => {
+    const filters = getFilters(searchParams)?.filters;
+    if (!filters) return [];
+    return Object.keys(filters).map((key) => key.replace('labels.', ''));
+  };
+
   const {
     columns,
     columnVisibilityModel,
@@ -131,6 +138,7 @@ export function DeviceTable({
     temporaryColumnSx,
   } = useColumnManagement({
     allColumns: getColumns(columnIds),
+    highlightedColumnIds: getFilteredColumnIds(),
     defaultColumns: DEFAULT_DEVICE_COLUMNS,
     localStorageKey: DEVICES_COLUMNS_LOCAL_STORAGE_KEY,
   });

@@ -9,9 +9,9 @@ import {
   getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
+import { useColumnManagement } from '@/fleet/components/columns/use_column_management';
 import { ColumnMenu } from '@/fleet/components/device_table/column_menu';
 import { Pagination } from '@/fleet/components/device_table/pagination';
-import { useColumnManagement } from '@/fleet/components/device_table/use_column_management';
 import { RriTableToolbar } from '@/fleet/components/resource_request_insights/rri_table_toolbar';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
@@ -26,7 +26,7 @@ import {
   RriColumnDescriptor,
   RriGridRow,
 } from './rri_columns';
-import { useRriFilters } from './use_rri_filters';
+import { RriFilterKey, useRriFilters } from './use_rri_filters';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
@@ -84,7 +84,7 @@ export const ResourceRequestTable = () => {
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
 
-  const { aipString } = useRriFilters();
+  const { filterData, aipString } = useRriFilters();
 
   const sortModel = getSortModelFromOrderByParam(orderByParam);
 
@@ -107,6 +107,19 @@ export const ResourceRequestTable = () => {
     temporaryColumnSx,
   } = useColumnManagement({
     allColumns: RRI_COLUMNS.map((c) => c.gridColDef),
+    highlightedColumnIds: filterData
+      ? Object.keys(filterData)
+          .filter(
+            (filterKey) => filterData[filterKey as RriFilterKey] !== undefined,
+          )
+          .map((filterKey) => {
+            const column = RRI_COLUMNS.find((c) => c.id === filterKey);
+            if (!column) {
+              throw new Error(`Column with id ${filterKey} not found`);
+            }
+            return column.gridColDef.field;
+          })
+      : [],
     defaultColumns: RRI_COLUMNS.filter(
       (column: RriColumnDescriptor) => column.isDefault,
     ).map((column: RriColumnDescriptor) => column.gridColDef.field),
