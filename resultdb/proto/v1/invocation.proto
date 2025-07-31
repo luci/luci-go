@@ -32,7 +32,7 @@ option java_multiple_files = true;
 // buildbucket build, CQ attempt.
 // Composable: can include other invocations, see inclusion.proto.
 //
-// Next id: 25.
+// Next id: 26.
 message Invocation {
   reserved 3; // bool interrupted, crbug.com/1078696.
   reserved 17,18; // step and test instructions.
@@ -152,6 +152,15 @@ message Invocation {
   // N.B. Export roots do not affect legacy BigQuery exports configured by the
   // BigQueryExports field.
   bool is_export_root = 21 [ (google.api.field_behavior) = IMMUTABLE ];
+
+  // The module this invocation is reporting results for.
+  //
+  // If set, test results and artifacts uploaded to this invocation will need to
+  // match this module.
+  //
+  // Once this field is set to a non-empty value, it becomes invariant and may
+  // not be changed.
+  ModuleIdentifier module_id = 25;
 
   // bigquery_exports indicates what BigQuery table(s) that results in this
   // invocation should export to.

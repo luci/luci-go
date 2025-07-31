@@ -151,10 +151,10 @@ message TestIdentifier {
   // Hash of the module variant.
   // hex(sha256(sorted(''.join('%s:%s\n' for k, v in module_variant.items()))))[:8].
   //
-  // In result upload and download contexts, this field is OUTPUT_ONLY and will be
+  // In the context of the TestResult record, this field is OUTPUT_ONLY and will be
   // automatically computed from the provided module_variant (do not set it yourself).
-  // When specifying the tests to query in a ResultDB (not Recorder) RPC request, this field
-  // may be specified as an alternative to module_variant.
+  // In the context of ResultDB Query RPCs accepting this type as a request filter,
+  // this field may be specified as an alternative to module_variant.
   string module_variant_hash = 4;
 
   // Intermediate hierarchy - coarse name.
@@ -335,6 +335,40 @@ message TestIdentifierBase {
 
   // Equivalent of luci.resultdb.v1.TestIdentifier.case_name.
   string case_name = 7;
+}
+
+// ModuleIdentifier represents the identity of a module.
+message ModuleIdentifier {
+  // The name of the module being tested. A module is a set of tests which run
+  // with the same test harness, and typically corresponds with a unit of
+  // build, such as a bazel test target.
+  //
+  // See TestIdentifier.module_name for more details.
+  string module_name = 1;
+
+  // The scheme of the module, for example, "junit" or "gtest".
+  //
+  // Must match one of the schemes in the ResultDB service configuration (see
+  // go/resultdb-schemes). Additional values can be configured as needed.
+  //
+  // See TestIdentifier.module_scheme for more details.
+  string module_scheme = 2;
+
+  // Description of one specific way of running the tests in a module,
+  // e.g. specific ABI (x64/x86/...), build flags and/or operating system.
+  //
+  // See TestIdentifier.module_variant for more details.
+  Variant module_variant = 3;
+
+  // Hash of the module variant.
+  //
+  // In the context of the WorkUnit record, this field is always OUTPUT_ONLY and will be
+  // automatically computed from the provided module_variant (do not set it yourself).
+  // In the context of ResultDB Query RPCs accepting this type as a request filter,
+  // this field may be specified as an alternative to module_variant.
+  //
+  // See TestIdentifier.module_variant_hash for more details.
+  string module_variant_hash = 4;
 }
 
 // GitilesCommit specifies the position of the gitiles commit an invocation

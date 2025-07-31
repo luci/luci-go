@@ -275,6 +275,8 @@ CREATE TABLE WorkUnits (
   -- LUCI identity who created the work unit, typically "user:<email>".
   CreatedBy STRING(MAX) NOT NULL,
 
+  -- Finalization fields.
+
   -- When the work unit started finalizing (state was set to
   -- Finalizing).
   -- This means the work unit became immutable but directly or
@@ -289,6 +291,29 @@ CREATE TABLE WorkUnits (
 
   -- When to force work unit finalization.
   Deadline TIMESTAMP NOT NULL,
+
+  -- Details of the module associated with this work unit.
+
+  -- Module name.
+  --
+  -- Invariant: If any one of the Module* fields are set, they must all be set.
+  ModuleName STRING(MAX),
+
+  -- The module scheme.
+  -- Must match one of the schemes in the ResultDB service configuration (see
+  -- go/resultdb-schemes).
+  ModuleScheme STRING(MAX),
+
+  -- key:value pairs in the module variant.
+  -- See also ModuleIdentifier.module_variant in common.proto.
+  ModuleVariant ARRAY<STRING(MAX)>,
+
+  -- Module variant hash.
+  -- A hash of the key:variant pairs in the module variant.
+  -- Computed as hex(sha256(<concatenated_key_value_pairs>)[:8]),
+  -- where concatenated_key_value_pairs is the result of concatenating
+  -- variant pairs formatted as "<key>:<value>\n" in ascending key order.
+  ModuleVariantHash STRING(16),
 
   -- Value of CreateWorkUnitRequest.request_id.
   -- Used to dedup work unit creation requests.
@@ -411,6 +436,29 @@ CREATE TABLE Invocations (
 
   -- When to force invocation finalization.
   Deadline TIMESTAMP NOT NULL,
+
+  -- Details of the module associated with this invocation.
+
+  -- Module name.
+  --
+  -- Invariant: If any one of the Module* fields are set, they must all be set.
+  ModuleName STRING(MAX),
+
+  -- The module scheme.
+  -- Must match one of the schemes in the ResultDB service configuration (see
+  -- go/resultdb-schemes).
+  ModuleScheme STRING(MAX),
+
+  -- key:value pairs in the module variant.
+  -- See also ModuleIdentifier.module_variant in common.proto.
+  ModuleVariant ARRAY<STRING(MAX)>,
+
+  -- Module variant hash.
+  -- A hash of the key:variant pairs in the module variant.
+  -- Computed as hex(sha256(<concatenated_key_value_pairs>)[:8]),
+  -- where concatenated_key_value_pairs is the result of concatenating
+  -- variant pairs formatted as "<key>:<value>\n" in ascending key order.
+  ModuleVariantHash STRING(16),
 
   -- List of colon-separated key-value tags.
   -- Corresponds to Invocation.tags in invocation.proto.
