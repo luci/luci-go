@@ -39,7 +39,6 @@ import (
 )
 
 func TestCertChecker(t *testing.T) {
-	t.Skip("512 bit is insecure")
 	ftt.Run("CertChecker works", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 		ctx = cryptorand.MockForTest(ctx, 0)
@@ -137,7 +136,7 @@ func TestCertChecker(t *testing.T) {
 func generateCA(c context.Context, name string) (*rsa.PrivateKey, []byte, error) {
 	// See https://golang.org/src/crypto/tls/generate_cert.go.
 	rand := cryptorand.Get(c)
-	privKey, err := rsa.GenerateKey(rand, 512) // use short key in tests
+	privKey, err := rsa.GenerateKey(rand, 1024) // use short key in tests
 	if err != nil {
 		return nil, nil, err
 	}
@@ -164,7 +163,7 @@ func generateCert(c context.Context, sn int64, name string, caCert []byte, caKey
 		return nil, err
 	}
 	rand := cryptorand.Get(c)
-	privKey, err := rsa.GenerateKey(rand, 512) // use short key in tests
+	privKey, err := rsa.GenerateKey(rand, 1024) // use short key in tests
 	if err != nil {
 		return nil, err
 	}

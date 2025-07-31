@@ -40,7 +40,6 @@ import (
 )
 
 func TestMain(t *testing.T) {
-	t.Skip("512 bit is insecure")
 	tmp := t.TempDir()
 	tmpPath := func(file string) string {
 		return filepath.Join(tmp, file)
@@ -57,7 +56,7 @@ func TestMain(t *testing.T) {
 	// certificate is signed by some CA, but using a self-signed key is simpler
 	// in tests.
 	const machineCN = "test.example.com"
-	priv, err := rsa.GenerateKey(rand.Reader, 512)
+	priv, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
 		t.Fatal(err)
 	}
