@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
@@ -99,7 +100,11 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 	if err != nil {
 		return nil, err
 	}
-	if err := s.populateFetchURLs(ctx, []string{realm}, arts...); err != nil {
+	project, _ := realms.Split(realm)
+	invocationIDToProject := map[invocations.ID]string{
+		invID: project,
+	}
+	if err := s.populateFetchURLs(ctx, invocationIDToProject, arts...); err != nil {
 		return nil, err
 	}
 

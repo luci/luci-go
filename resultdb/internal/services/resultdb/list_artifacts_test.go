@@ -94,9 +94,8 @@ func TestListArtifacts(t *testing.T) {
 		srv := newTestResultDBService()
 
 		mustFetch := func(req *pb.ListArtifactsRequest) (arts []*pb.Artifact, token string) {
-			// Add SignedURL opts to ctx
-			opts := testutil.GetSignedURLOptions(ctx)
-			ctx := context.WithValue(ctx, gsutil.Key("signedURLOpts"), opts)
+			// Set up cloud storage test client.
+			ctx = context.WithValue(ctx, &gsutil.MockedGSClientKey, &gsutil.MockClient{})
 
 			res, err := srv.ListArtifacts(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
@@ -162,7 +161,7 @@ func TestListArtifacts(t *testing.T) {
 
 			actual, _ := mustFetch(req)
 			assert.Loosely(t, actual, should.HaveLength(1))
-			assert.Loosely(t, actual[0].FetchUrl, should.HavePrefix("https://storage.googleapis.com/bucket1/file1.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential"))
+			assert.Loosely(t, actual[0].FetchUrl, should.Equal("https://fake-signed-url/bucket1/file1.txt?x-project=testproject"))
 		})
 	})
 }

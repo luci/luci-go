@@ -123,15 +123,14 @@ func TestGetArtifact(t *testing.T) {
 			)
 			const name = "invocations/inv/artifacts/a"
 			req := &pb.GetArtifactRequest{Name: name}
-			opts := testutil.GetSignedURLOptions(ctx)
-			ctx := context.WithValue(ctx, gsutil.Key("signedURLOpts"), opts)
+			// Set up cloud storage test client.
+			ctx = context.WithValue(ctx, &gsutil.MockedGSClientKey, &gsutil.MockClient{})
 
 			art, err := srv.GetArtifact(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, art.Name, should.Equal(name))
 			assert.Loosely(t, art.ArtifactId, should.Equal("a"))
-			assert.Loosely(t, art.FetchUrl, should.HavePrefix(
-				fmt.Sprintf("https://storage.googleapis.com/%s/%s?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential", bucket, object)))
+			assert.Loosely(t, art.FetchUrl, should.Equal("https://fake-signed-url/bucket1/file1.txt?x-project=testproject"))
 		})
 
 		t.Run(`Does not exist`, func(t *ftt.Test) {

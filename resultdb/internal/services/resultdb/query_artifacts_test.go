@@ -101,9 +101,8 @@ func TestQueryArtifacts(t *testing.T) {
 
 		mustFetch := func(t testing.TB, req *pb.QueryArtifactsRequest) (arts []*pb.Artifact, token string) {
 			t.Helper()
-			// Add SignedURL opts to ctx
-			opts := testutil.GetSignedURLOptions(ctx)
-			ctx := context.WithValue(ctx, gsutil.Key("signedURLOpts"), opts)
+			// Set up cloud storage test client.
+			ctx = context.WithValue(ctx, &gsutil.MockedGSClientKey, &gsutil.MockClient{})
 
 			res, err := srv.QueryArtifacts(ctx, req)
 			assert.Loosely(t, err, should.BeNil, truth.LineContext())
@@ -205,7 +204,24 @@ func TestQueryArtifacts(t *testing.T) {
 
 			actual, _ := mustFetch(t, req)
 			assert.Loosely(t, actual, should.HaveLength(1))
-			assert.Loosely(t, actual[0].FetchUrl, should.HavePrefix("https://storage.googleapis.com/bucket1/file1.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential"))
+			assert.Loosely(t, actual[0].FetchUrl, should.Equal("https://fake-signed-url/bucket1/file1.txt?x-project=testproject"))
+		})
+
+		t.Run(`Fetch URL wtih GCSURI from multiple projects`, func(t *ftt.Test) {
+			// This test makes sure the correct project-scoped service account is used for generating signed URL.
+			testutil.MustApply(ctx, t,
+				// Include inv3 into inv1.
+				insert.Inclusion("inv1", "inv3"),
+				insert.Artifact("inv1", "", "a", map[string]any{"GcsURI": "gs://bucket1/file1.txt"}),
+				insert.Artifact("inv3", "", "a", map[string]any{"GcsURI": "gs://bucket2/file2.txt"}),
+				insert.Artifact("inv2", "tr/test/resultid", "a", map[string]any{"GcsURI": "gs://bucket1/testfile2.txt"}),
+			)
+
+			actual, _ := mustFetch(t, req)
+			assert.Loosely(t, actual, should.HaveLength(3))
+			assert.Loosely(t, actual[0].FetchUrl, should.Equal("https://fake-signed-url/bucket2/file2.txt?x-project=testproject2"))
+			assert.Loosely(t, actual[1].FetchUrl, should.Equal("https://fake-signed-url/bucket1/file1.txt?x-project=testproject"))
+			assert.Loosely(t, actual[2].FetchUrl, should.Equal("https://fake-signed-url/bucket1/testfile2.txt?x-project=testproject"))
 		})
 	})
 }

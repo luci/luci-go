@@ -18,12 +18,12 @@ import (
 	"context"
 	"time"
 
-	"cloud.google.com/go/storage"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
@@ -61,13 +61,16 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 
 	art := artData.Artifact
 
-	invIDStr, _, _, _, _ := pbutil.ParseArtifactName(in.Name)
+	invIDStr, _, _, _ := artifacts.MustParseName(in.Name)
 	realm, err := invocations.ReadRealm(ctx, invocations.ID(invIDStr))
 	if err != nil {
 		return nil, err
 	}
-
-	if err := s.populateFetchURLs(ctx, []string{realm}, art); err != nil {
+	project, _ := realms.Split(realm)
+	invocationIDToProject := map[invocations.ID]string{
+		invocations.ID(invIDStr): project,
+	}
+	if err := s.populateFetchURLs(ctx, invocationIDToProject, art); err != nil {
 		return nil, err
 	}
 
@@ -75,10 +78,11 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 }
 
 // populateFetchURLs populates FetchUrl and FetchUrlExpiration fields
-// of the artifacts. Uses queriedRealms for GCS Artifacts ACL checking.
+// of the artifacts.
+// invocationIDToProject contains a mapping between invocation id its LUCI project, it should contains all immediate parent invocation of artifacts.
 //
 // Must be called from within some gRPC request handler.
-func (s *resultDBServer) populateFetchURLs(ctx context.Context, queriedRealms []string, artifacts ...*pb.Artifact) error {
+func (s *resultDBServer) populateFetchURLs(ctx context.Context, invocationIDToProject map[invocations.ID]string, arts ...*pb.Artifact) error {
 	// Extract Host header (may be empty) from the request to use it as a basis
 	// for generating artifact URLs.
 	requestHost := ""
@@ -87,29 +91,35 @@ func (s *resultDBServer) populateFetchURLs(ctx context.Context, queriedRealms []
 		requestHost = val[0]
 	}
 
-	// Client to fetch from Google Storage
-	var gsClient *storage.Client
+	// Mapping of LUCI project to google storage Client.
+	// Each client will sent request authenticated using the corresponding project-scoped service account.
+	gsClients := map[string]gsutil.Client{}
 	now := clock.Now(ctx).UTC()
 
-	for _, a := range artifacts {
+	for _, a := range arts {
 		if a.GcsUri != "" {
-			if gsClient == nil {
-				client, err := storage.NewClient(ctx)
+			// ResultDB allows including invocation from a different LUCI project to a parent invocation.
+			// We should use the LUCI project of the immediate parent of the artifact to generate the signed URL.
+			invIDStr, _, _, _ := artifacts.MustParseName(a.Name)
+			project, ok := invocationIDToProject[invocations.ID(invIDStr)]
+			if !ok {
+				panic("invocation for artifact doesn't exist in the invocationIDToProject map")
+			}
+			if _, ok := gsClients[project]; !ok {
+				c, err := gsutil.NewStorageClient(ctx, project)
 				if err != nil {
-					return err
+					return errors.Fmt("new storage client for project %s: %w", project, err)
 				}
-				gsClient = client
+				defer c.Close()
+				gsClients[project] = c
 			}
 
 			exp := now.Add(7 * 24 * time.Hour)
-			var opts *storage.SignedURLOptions
-			ctxOpts := ctx.Value(gsutil.Key("signedURLOpts"))
-			if ctxOpts != nil {
-				opts = ctxOpts.(*storage.SignedURLOptions)
-			}
 			bucket, object := gsutil.Split(a.GcsUri)
-			url, err := gsutil.GenerateSignedURL(ctx, gsClient, bucket, object, exp, opts)
-
+			gsClient := gsClients[project]
+			// TODO: The QPS of GenerateSignedURL is likely bounded by the nested projects.serviceAccounts.signBlob call,
+			// which is 1000 request for second. We should mask this field, when the callers doesn't need the signed url.
+			url, err := gsClient.GenerateSignedURL(ctx, bucket, object, exp)
 			if err != nil {
 				return err
 			}

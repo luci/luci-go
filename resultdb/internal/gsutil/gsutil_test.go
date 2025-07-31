@@ -49,11 +49,15 @@ func TestGenerateSignedURL(t *testing.T) {
 			object := "object.txt"
 			expiration := clock.Now(ctx).UTC().Add(7 * 24 * time.Hour)
 			opts := testutil.GetSignedURLOptions(ctx)
-
+			ctx = context.WithValue(ctx, &SignURLOptsKey, opts)
 			gsClient, err := storage.NewClient(ctx)
 			assert.Loosely(t, err, should.BeNil)
+			c := StorageClient{
+				gsClient:    gsClient,
+				luciProject: "test-project",
+			}
 
-			url, err := GenerateSignedURL(ctx, gsClient, bucket, object, expiration, opts)
+			url, err := c.GenerateSignedURL(ctx, bucket, object, expiration)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, url, should.HavePrefix("https://storage.googleapis.com/testBucket/object.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential="))
 		})
