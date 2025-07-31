@@ -170,6 +170,22 @@ var (
 		CountSQL: `f.ingested_invocation_id`,
 	}.Build()
 
+	// The number of gardened builds that had failing test runs.
+	MonitoredBuildsWithTestRunFailures = metricBuilder{
+		ID:                "monitored-builds-with-test-run-failures",
+		HumanReadableName: "Monitored Builds with Test Run Failures",
+		Description:       "The number of gardened builds that had failing test runs.",
+		DefaultConfig: Configuration{
+			SortPriority:          600,
+			ShowInMetricsSelector: false,
+		},
+		// Criteria:
+		// - A test run fails in a gardened builder
+		FilterSQL: `f.is_test_run_blocked AND ARRAY_LENGTH(f.build_gardener_rotations) > 0`,
+		// Count distinct builds.
+		CountSQL: `f.ingested_invocation_id`,
+	}.Build()
+
 	// ComputedMetrics is the set of metrics computed for each cluster and
 	// stored on the cluster summaries table.
 	ComputedMetrics = []BaseDefinition{
@@ -180,6 +196,7 @@ var (
 		BuildsWithTestRunsFailedDueToFlakyTests,
 		FailuresWithAttributedFilteredTestRuns,
 		BuildsWithFlakesInPresubmit,
+		MonitoredBuildsWithTestRunFailures,
 	}
 )
 
