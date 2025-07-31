@@ -64,46 +64,36 @@ func TestVerifyFinalizeWorkUnitPermissions(t *testing.T) {
 		t.Run("empty name", func(t *ftt.Test) {
 			req.Name = ""
 			err := verifyFinalizeWorkUnitPermissions(ctx, req)
-			st, ok := appstatus.Get(err)
-			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, st.Code(), should.Equal(codes.InvalidArgument))
-			assert.Loosely(t, st.Err(), should.ErrLike("name: unspecified"))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("name: unspecified"))
 		})
 
 		t.Run("invalid name", func(t *ftt.Test) {
 			req.Name = "invalid name"
 			err := verifyFinalizeWorkUnitPermissions(ctx, req)
-			st, ok := appstatus.Get(err)
-			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, st.Code(), should.Equal(codes.InvalidArgument))
-			assert.Loosely(t, st.Err(), should.ErrLike("name: does not match"))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("name: does not match"))
 		})
 
 		t.Run("invalid token", func(t *ftt.Test) {
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid"))
 			err := verifyFinalizeWorkUnitPermissions(ctx, req)
-			st, ok := appstatus.Get(err)
-			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, st.Code(), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, st.Err(), should.ErrLike("invalid update token"))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("invalid update token"))
 		})
 
 		t.Run("missing token", func(t *ftt.Test) {
 			ctx = metadata.NewIncomingContext(ctx, metadata.MD{})
 			err := verifyFinalizeWorkUnitPermissions(ctx, req)
-			st, ok := appstatus.Get(err)
-			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, st.Code(), should.Equal(codes.Unauthenticated))
-			assert.Loosely(t, st.Err(), should.ErrLike("missing update-token metadata value"))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.Unauthenticated))
+			assert.Loosely(t, err, should.ErrLike("missing update-token metadata value"))
 		})
 
 		t.Run("too many tokens", func(t *ftt.Test) {
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token, pb.UpdateTokenMetadataKey, token))
 			err := verifyFinalizeWorkUnitPermissions(ctx, req)
-			st, ok := appstatus.Get(err)
-			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, st.Code(), should.Equal(codes.InvalidArgument))
-			assert.Loosely(t, st.Err(), should.ErrLike("expected exactly one update-token metadata value, got 2"))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("expected exactly one update-token metadata value, got 2"))
 		})
 	})
 }

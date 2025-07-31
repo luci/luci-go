@@ -182,6 +182,15 @@ func validateWorkUnitUpdateToken(ctx context.Context, token string, id workunits
 	return err
 }
 
+// validateWorkUnitUpdateTokenForState validates an update token for a work unit or set of work units.
+//
+// State is the the state returned by workUnitUpdateTokenState.
+// Returns an error if the token is invalid, nil otherwise.
+func validateWorkUnitUpdateTokenForState(ctx context.Context, token string, state string) error {
+	_, err := workUnitUpdateTokenKind.Validate(ctx, token, []byte(state))
+	return err
+}
+
 func workUnitUpdateTokenState(id workunits.ID) string {
 	// A work unit can share an update token with an ancestor by using a prefixed ID
 	// format: "ancestorID:suffix". For example, a work unit with ID "wu0:s1" is

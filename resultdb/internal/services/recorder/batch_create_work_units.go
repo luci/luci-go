@@ -187,12 +187,11 @@ func mutateWorkUnitsForCreate(ctx context.Context, parentIDs []workunits.ID, new
 		return time.Time{}, err
 	}
 
-	if err := validateSameUpdateTokenState(parentIDs); err != nil {
+	state, err := validateSameUpdateTokenState(parentIDs)
+	if err != nil {
 		return time.Time{}, appstatus.BadRequest(err)
 	}
-
-	// We have already check all parentIDs have the same update token, so we just need to check against one of them.
-	if err := validateWorkUnitUpdateToken(ctx, token, parentIDs[0]); err != nil {
+	if err := validateWorkUnitUpdateTokenForState(ctx, token, state); err != nil {
 		return time.Time{}, appstatus.Errorf(codes.PermissionDenied, "invalid update token")
 	}
 
@@ -327,13 +326,14 @@ func extractWorkUnitIDFromRequest(r *pb.CreateWorkUnitRequest) workunits.ID {
 	}
 }
 
-// validate only a single update token is required.
-func validateSameUpdateTokenState(parents []workunits.ID) error {
+// validateSameUpdateTokenState validates all work units share the same update token state.
+// If the method succeeds, the value of the shared state is returned.
+func validateSameUpdateTokenState(parents []workunits.ID) (state string, err error) {
 	s := workUnitUpdateTokenState(parents[0])
 	for i, p := range parents {
 		if s != workUnitUpdateTokenState(p) {
-			return errors.Fmt("requests[%d]: parent %q requires a different update token to requests[0].parent %q, but this RPC only accepts one update token", i, p.Name(), parents[0].Name())
+			return "", errors.Fmt("requests[%d]: parent %q requires a different update token to requests[0].parent %q, but this RPC only accepts one update token", i, p.Name(), parents[0].Name())
 		}
 	}
-	return nil
+	return s, nil
 }
