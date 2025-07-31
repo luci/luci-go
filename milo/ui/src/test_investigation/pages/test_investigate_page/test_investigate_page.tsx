@@ -152,8 +152,8 @@ export function TestInvestigatePage() {
 
   useEffect(() => {
     // Trigger HaTs survey on first page load.
-    if (SETTINGS.testInvestigate?.hatsCUJ) {
-      requestSurvey(SETTINGS.testInvestigate.hatsCUJ, authState);
+    if (SETTINGS.testInvestigate?.hatsCuj) {
+      requestSurvey(SETTINGS.testInvestigate.hatsCuj, authState);
     }
   }, [authState]);
 
