@@ -93,10 +93,12 @@ func notifyOwner(c context.Context, bhn []*notifypb.BuilderHealthNotifier, proje
 func addNotifyOwnerTasksToQueue(c context.Context, tasks map[string]*internal.EmailTask) error {
 	for emailKey, task := range tasks {
 		logging.Debugf(c, "Adding tq email task for %s", emailKey)
+		currentTime := time.Now()
+		year, month, day := currentTime.Date()
 		if err := tq.AddTask(c, &tq.Task{
 			Payload:          task,
-			Title:            emailKey,
-			DeduplicationKey: emailKey,
+			Title:            fmt.Sprintf("%s-%d-%d-%d", emailKey, year, month, day),
+			DeduplicationKey: fmt.Sprintf("%s-%d-%d-%d", emailKey, year, month, day),
 		}); err != nil {
 			return err
 		}
