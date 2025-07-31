@@ -106,6 +106,10 @@ export const fleetRoutes: RouteObject[] = [
                 path: 'repairs',
                 lazy: () => import('@/fleet/pages/repairs'),
               },
+              {
+                path: 'admin-tasks',
+                lazy: () => import('@/fleet/pages/admin_tasks_page'),
+              },
             ],
           },
           {
