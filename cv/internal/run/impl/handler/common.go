@@ -282,7 +282,7 @@ func checkRunCreate(ctx context.Context, gf gerrit.Factory, rs *state.RunState, 
 				fmt.Fprintf(&b, "\n  * %s", cl.ExternalID.MustURL())
 			}
 		}
-		rs.LogInfof(ctx, "Run failed", b.String())
+		rs.LogInfo(ctx, "Run failed", b.String())
 		metas := computeMetasForFailedACLCheck(ctx, rs, aclResult, cls, rootCL)
 		scheduleTriggersReset(ctx, rs, metas, run.Status_FAILED)
 		return false, nil
