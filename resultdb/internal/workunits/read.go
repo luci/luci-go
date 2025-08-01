@@ -132,50 +132,24 @@ func ReadRealms(ctx context.Context, ids []ID) (realms []string, err error) {
 	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadRealms")
 	defer func() { tracing.End(ts, err) }()
 
-	if err := validateIDs(ids); err != nil {
-		return nil, err
-	}
-	if len(ids) == 0 {
-		return nil, nil
-	}
-
-	realms = make([]string, len(ids))
-
-	// No need to dedup keys going into Spanner, Cloud Spanner always behaves
-	// as if the key is only specified once.
-	var keys []spanner.Key
-	for _, id := range ids {
-		keys = append(keys, id.Key())
-	}
-
-	resultMap := make(map[ID]string, len(ids))
-
 	var b spanutil.Buffer
-	columns := []string{"RootInvocationShardId", "WorkUnitId", "Realm"}
-	err = span.Read(ctx, "WorkUnits", spanner.KeySetFromKeys(keys...), columns).Do(func(r *spanner.Row) error {
+	parseRow := func(r *spanner.Row) (ID, string, error) {
 		var rootInvocationShardID string
 		var workUnitID string
 		var realm string
 		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &realm)
 		if err != nil {
-			return errors.Fmt("read spanner row for work unit: %w", err)
+			return ID{}, "", err
 		}
-		id := IDFromRowID(rootInvocationShardID, workUnitID)
-		resultMap[id] = realm
-		return nil
-	})
+		return IDFromRowID(rootInvocationShardID, workUnitID), realm, nil
+	}
+
+	resultMap, err := readRows(ctx, ids, []string{"Realm"}, parseRow)
 	if err != nil {
 		return nil, err
 	}
-
-	for i, id := range ids {
-		realm, ok := resultMap[id]
-		if !ok {
-			return nil, appstatus.Errorf(codes.NotFound, "%q not found", id.Name())
-		}
-		realms[i] = realm
-	}
-	return realms, nil
+	// Returns NotFound appstatus error if a row for an ID is missing.
+	return rowsForIDsMandatory(resultMap, ids)
 }
 
 // ReadStates reads the state of the given work units. If any of the work
@@ -186,50 +160,25 @@ func ReadStates(ctx context.Context, ids []ID) (states []pb.WorkUnit_State, err 
 	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadStates")
 	defer func() { tracing.End(ts, err) }()
 
-	if err := validateIDs(ids); err != nil {
-		return nil, err
-	}
-	if len(ids) == 0 {
-		return nil, nil
-	}
-
-	states = make([]pb.WorkUnit_State, len(ids))
-
-	// No need to dedup keys going into Spanner, Cloud Spanner always behaves
-	// as if the key is only specified once.
-	var keys []spanner.Key
-	for _, id := range ids {
-		keys = append(keys, id.Key())
-	}
-
-	resultMap := make(map[ID]pb.WorkUnit_State, len(ids))
-
 	var b spanutil.Buffer
-	columns := []string{"RootInvocationShardId", "WorkUnitId", "State"}
-	err = span.Read(ctx, "WorkUnits", spanner.KeySetFromKeys(keys...), columns).Do(func(r *spanner.Row) error {
+	columns := []string{"State"}
+	parseRow := func(r *spanner.Row) (ID, pb.WorkUnit_State, error) {
 		var rootInvocationShardID string
 		var workUnitID string
 		var state pb.WorkUnit_State
 		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &state)
 		if err != nil {
-			return errors.Fmt("read spanner row for work unit: %w", err)
+			return ID{}, pb.WorkUnit_STATE_UNSPECIFIED, err
 		}
-		id := IDFromRowID(rootInvocationShardID, workUnitID)
-		resultMap[id] = state
-		return nil
-	})
+		return IDFromRowID(rootInvocationShardID, workUnitID), state, nil
+	}
+
+	resultMap, err := readRows(ctx, ids, columns, parseRow)
 	if err != nil {
 		return nil, err
 	}
-
-	for i, id := range ids {
-		state, ok := resultMap[id]
-		if !ok {
-			return nil, appstatus.Errorf(codes.NotFound, "%q not found", id.Name())
-		}
-		states[i] = state
-	}
-	return states, nil
+	// Returns NotFound appstatus error if a row for an ID is missing.
+	return rowsForIDsMandatory(resultMap, ids)
 }
 
 type RequestIDAndCreatedBy struct {
@@ -245,11 +194,112 @@ func ReadRequestIDsAndCreatedBys(ctx context.Context, ids []ID) (results []*Requ
 	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadRequestIDsAndCreatedBys")
 	defer func() { tracing.End(ts, err) }()
 
+	var b spanutil.Buffer
+	columns := []string{"CreateRequestId", "CreatedBy"}
+	parseRow := func(r *spanner.Row) (ID, RequestIDAndCreatedBy, error) {
+		var rootInvocationShardID string
+		var workUnitID string
+		var requestID string
+		var createdBy string
+		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &requestID, &createdBy)
+		if err != nil {
+			return ID{}, RequestIDAndCreatedBy{}, err
+		}
+		result := RequestIDAndCreatedBy{
+			RequestID: requestID,
+			CreatedBy: createdBy,
+		}
+		return IDFromRowID(rootInvocationShardID, workUnitID), result, nil
+	}
+
+	resultMap, err := readRows(ctx, ids, columns, parseRow)
+	if err != nil {
+		return nil, err
+	}
+	return rowsForIDsOptional(resultMap, ids)
+}
+
+// TestResultInfo contains fields about the work unit that are useful to RPCs
+// populating test results into the work unit.
+type TestResultInfo struct {
+	State pb.WorkUnit_State
+	// The realm of the work unit.
+	Realm string
+	// The module associated with the work unit.
+	ModuleID *pb.ModuleIdentifier
+}
+
+// ReadTestResultInfos reads the content info of the given work units.
+// If any of the work units are not found, returns a NotFound appstatus error.
+// Duplicate IDs are allowed.
+func ReadTestResultInfos(ctx context.Context, ids []ID) (results map[ID]TestResultInfo, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadContentInfo")
+	defer func() { tracing.End(ts, err) }()
+
+	var b spanutil.Buffer
+	parseRow := func(r *spanner.Row) (ID, TestResultInfo, error) {
+		var rootInvocationShardID string
+		var workUnitID string
+		var state pb.WorkUnit_State
+		var realm string
+		var moduleName spanner.NullString
+		var moduleScheme spanner.NullString
+		var moduleVariant *pb.Variant
+
+		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &state, &realm, &moduleName, &moduleScheme, &moduleVariant)
+		if err != nil {
+			return ID{}, TestResultInfo{}, err
+		}
+
+		var moduleID *pb.ModuleIdentifier
+		if moduleName.Valid != moduleScheme.Valid {
+			panic("invariant violated: moduleName.Valid == moduleScheme.Valid, is there data corruption?")
+		}
+		if moduleName.Valid {
+			moduleID = &pb.ModuleIdentifier{
+				ModuleName:    moduleName.StringVal,
+				ModuleScheme:  moduleScheme.StringVal,
+				ModuleVariant: moduleVariant,
+			}
+			pbutil.PopulateModuleIdentifierHashes(moduleID)
+		}
+
+		result := TestResultInfo{
+			State:    state,
+			Realm:    realm,
+			ModuleID: moduleID,
+		}
+		return IDFromRowID(rootInvocationShardID, workUnitID), result, nil
+	}
+
+	resultMap, err := readRows(ctx, ids, []string{"State", "Realm", "ModuleName", "ModuleScheme", "ModuleVariant"}, parseRow)
+	if err != nil {
+		return nil, err
+	}
+	// Expect all requested IDs are in the map, or return a NotFound appstatus error.
+	if err := expectIDs(resultMap, ids); err != nil {
+		return nil, err
+	}
+	return resultMap, nil
+}
+
+// readRows reads selected columns for each of the given work units.
+// Duplicate IDs are allowed.
+//
+// If any of the referenced work units do not exist, this method returns a NotFound error.
+//
+// The given parseRow function is used to parse a Spanner row. It has the following
+// contract:
+//   - The provided Spanner row will have as columns 1 and 2 the RootInvocationShardID
+//     and workUnitID, followed by the user-specified columns in `columns`.
+//   - The function shall return this ID, alongside the user-specified row type and
+//     any error encountered.
+func readRows[T any](ctx context.Context, ids []ID, columns []string, parseRow func(row *spanner.Row) (ID, T, error)) (map[ID]T, error) {
 	if err := validateIDs(ids); err != nil {
 		return nil, err
 	}
 	if len(ids) == 0 {
-		return nil, err
+		return nil, nil
 	}
 
 	// No need to dedup keys going into Spanner, Cloud Spanner always behaves
@@ -258,44 +308,76 @@ func ReadRequestIDsAndCreatedBys(ctx context.Context, ids []ID) (results []*Requ
 	for _, id := range ids {
 		keys = append(keys, id.Key())
 	}
-	resultMap := make(map[ID]RequestIDAndCreatedBy)
 
-	var b spanutil.Buffer
-	columns := []string{"RootInvocationShardId", "WorkUnitId", "CreateRequestId", "CreatedBy"}
-	err = span.Read(ctx, "WorkUnits", spanner.KeySetFromKeys(keys...), columns).Do(func(r *spanner.Row) error {
-		var rootInvocationShardID string
-		var workUnitID string
-		var requestID string
-		var createdBy string
-		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &requestID, &createdBy)
+	resultMap := make(map[ID]T, len(ids))
+
+	columns = append([]string{"RootInvocationShardId", "WorkUnitId"}, columns...)
+	err := span.Read(ctx, "WorkUnits", spanner.KeySetFromKeys(keys...), columns).Do(func(r *spanner.Row) error {
+		id, row, err := parseRow(r)
 		if err != nil {
-			return errors.Fmt("read spanner row for work unit: %w", err)
+			return errors.Fmt("parse row: %w", err)
 		}
-		id := IDFromRowID(rootInvocationShardID, workUnitID)
-		resultMap[id] = RequestIDAndCreatedBy{
-			RequestID: requestID,
-			CreatedBy: createdBy,
-		}
+		resultMap[id] = row
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+	return resultMap, nil
+}
 
-	results = make([]*RequestIDAndCreatedBy, len(ids))
+// rowsForIDsMandatory converts the given result map to a slice.
+// The result slice corresponds 1:1 with the expectedIDs collection,
+// i.e. resultMap[i] matches results[i].
+//
+// In the case of duplicate IDs, the returned rows are shallow copies
+// (in case rows containing reference types, this means aliasing).
+//
+// If one of the IDs is not found in the resultMap, a NotFound appstatus error
+// is returned.
+func rowsForIDsMandatory[T any](resultMap map[ID]T, expectedIDs []ID) ([]T, error) {
+	results := make([]T, len(expectedIDs))
+	for i, id := range expectedIDs {
+		row, ok := resultMap[id]
+		if !ok {
+			return nil, appstatus.Errorf(codes.NotFound, "%q not found", id.Name())
+		}
+		results[i] = row
+	}
+	return results, nil
+}
+
+// rowsForIDsOptional converts the given result map to a slice.
+// The result slice corresponds 1:1 with the expectedIDs collection,
+// i.e. resultMap[i] matches results[i].
+//
+// In the case of duplicate IDs, the returned rows are shallow copies
+// (in case rows containing reference types, this means aliasing).
+//
+// If one of the IDs is not found in the resultMap, the entry on the
+// results slice is left as nil.
+func rowsForIDsOptional[T any](resultMap map[ID]T, ids []ID) ([]*T, error) {
+	results := make([]*T, len(ids))
 	for i, id := range ids {
-		r, ok := resultMap[id]
+		row, ok := resultMap[id]
 		if !ok {
 			results[i] = nil
 		} else {
-			// Create a copy of r to avoid aliasing the same object in
-			// result twice (in case of the same ID being requested twice),
-			// as the caller might not expect aliasing.
-			copyR := r
-			results[i] = &copyR
+			results[i] = &row
 		}
 	}
 	return results, nil
+}
+
+// expectIDs expects that each of the IDs in expectIDs is present in the
+// given resultMap. If not, it returns a NotFound appstatus error.
+func expectIDs[T any](resultMap map[ID]T, expectedIDs []ID) error {
+	for _, id := range expectedIDs {
+		if _, ok := resultMap[id]; !ok {
+			return appstatus.Errorf(codes.NotFound, "%q not found", id.Name())
+		}
+	}
+	return nil
 }
 
 // ReadMask controls what fields to read.

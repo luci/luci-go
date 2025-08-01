@@ -220,6 +220,11 @@ func (b *Builder) Build() *WorkUnitRow {
 	// Populate output-only fields on instructions.
 	r.Instructions = instructionutil.InstructionsWithNames(r.Instructions, r.ID.Name())
 
+	if r.ModuleID != nil {
+		// Populate output-only fields on the module identifier.
+		pbutil.PopulateModuleIdentifierHashes(r.ModuleID)
+	}
+
 	if r.State == pb.WorkUnit_ACTIVE {
 		r.FinalizeStartTime = spanner.NullTime{}
 		r.FinalizeTime = spanner.NullTime{}

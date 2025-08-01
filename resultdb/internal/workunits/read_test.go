@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -99,11 +100,12 @@ func TestReadFunctions(t *testing.T) {
 				})
 				t.Run("mask: exclude extended properties", func(t *ftt.Test) {
 					assert.Loosely(t, testData.ExtendedProperties, should.NotBeNil)
-					testData.ExtendedProperties = nil
+					expected := testData.Clone()
+					expected.ExtendedProperties = nil
 
 					row, err := Read(span.Single(ctx), id, ExcludeExtendedProperties)
 					assert.Loosely(t, err, should.BeNil)
-					assert.That(t, row, should.Match(testData))
+					assert.That(t, row, should.Match(expected))
 				})
 				t.Run("row: minimal fields", func(t *ftt.Test) {
 					row, err := Read(span.Single(ctx), idMinimal, AllFields)
@@ -538,6 +540,69 @@ func TestReadFunctions(t *testing.T) {
 				}
 				_, err := ReadRequestIDsAndCreatedBys(span.Single(ctx), ids)
 				assert.That(t, err, should.ErrLike("ids[1]: workUnitID: unspecified"))
+			})
+		})
+
+		t.Run("ReadTestResultInfos", func(t *ftt.Test) {
+			t.Run("happy path", func(t *ftt.Test) {
+				// Create some further work units for testing.
+				wu1 := NewBuilder(rootInvID, "content-1").
+					WithState(pb.WorkUnit_FINALIZED).
+					WithRealm("testproject:realm-a").
+					WithModuleID(&pb.ModuleIdentifier{
+						ModuleName:    "module_name",
+						ModuleScheme:  "module_scheme",
+						ModuleVariant: pbutil.Variant("k", "v"),
+					}).Build()
+				wu1ID := ID{RootInvocationID: rootInvID, WorkUnitID: "content-1"}
+
+				wu2 := NewBuilder(rootInvID, "content-2").
+					WithState(pb.WorkUnit_ACTIVE).
+					WithRealm("testproject:realm-b").
+					WithModuleID(nil).
+					Build()
+				wu2ID := ID{RootInvocationID: rootInvID, WorkUnitID: "content-2"}
+
+				ms = InsertForTesting(wu1)
+				ms = append(ms, InsertForTesting(wu2)...)
+				testutil.MustApply(ctx, t, ms...)
+
+				ids := []ID{wu1ID, wu2ID, wu1ID} // with duplicate
+				results, err := ReadTestResultInfos(span.Single(ctx), ids)
+				assert.Loosely(t, err, should.BeNil)
+
+				assert.That(t, results, should.Match(map[ID]TestResultInfo{
+					wu1ID: {
+						State: pb.WorkUnit_FINALIZED,
+						Realm: "testproject:realm-a",
+						ModuleID: &pb.ModuleIdentifier{
+							ModuleName:        "module_name",
+							ModuleScheme:      "module_scheme",
+							ModuleVariant:     pbutil.Variant("k", "v"),
+							ModuleVariantHash: "b1618cc2bf370a7c",
+						},
+					},
+					wu2ID: {
+						State: pb.WorkUnit_ACTIVE,
+						Realm: "testproject:realm-b",
+					},
+				}))
+			})
+
+			t.Run("not found", func(t *ftt.Test) {
+				ids := []ID{
+					id,
+					{RootInvocationID: rootInvID, WorkUnitID: "non-existent-id"},
+				}
+				_, err := ReadTestResultInfos(span.Single(ctx), ids)
+				assert.That(t, appstatus.Code(err), should.Equal(codes.NotFound))
+				assert.That(t, err, should.ErrLike(`"rootInvocations/root-inv-id/workUnits/non-existent-id" not found`))
+			})
+
+			t.Run("empty request", func(t *ftt.Test) {
+				results, err := ReadTestResultInfos(span.Single(ctx), []ID{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, results, should.HaveLength(0))
 			})
 		})
 	})
