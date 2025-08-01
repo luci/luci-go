@@ -15,7 +15,7 @@
 import styled from '@emotion/styled';
 import { useCallback, useEffect, useState } from 'react';
 
-import { RecoverableLoggerErrorBoundary } from '@/fleet/components/error_handling';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { FilterButton } from '@/fleet/components/filter_dropdown/filter_button';
 import { FilterCategoryData } from '@/fleet/components/filter_dropdown/filter_dropdown';
 import { SelectedChip } from '@/fleet/components/filter_dropdown/selected_chip';
@@ -168,7 +168,7 @@ export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-resource-request-list">
       <FleetHelmet pageTitle="Resource Requests" />
-      <RecoverableLoggerErrorBoundary
+      <RecoverableErrorBoundary
         // See the documentation for `<LoginPage />` for why we handle error
         // this way.
         key="fleet-resource-request-list-page"
@@ -176,7 +176,7 @@ export function Component() {
         <LoggedInBoundary>
           <ResourceRequestListPage />
         </LoggedInBoundary>
-      </RecoverableLoggerErrorBoundary>
+      </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>
   );
 }

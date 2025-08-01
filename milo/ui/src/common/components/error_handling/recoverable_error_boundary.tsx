@@ -16,11 +16,12 @@ import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
+import { errorReporter } from '@/common/api/error_reporting';
+
 import { RecoverableErrorFallback } from './recoverable_error_fallback';
 
 export interface RecoverableErrorBoundaryProps {
   readonly children: ReactNode;
-  readonly onError?: (error: Error, info: React.ErrorInfo) => void;
 }
 
 /**
@@ -29,7 +30,6 @@ export interface RecoverableErrorBoundaryProps {
 // See https://tanstack.com/query/latest/docs/react/reference/QueryErrorResetBoundary
 export function RecoverableErrorBoundary({
   children,
-  onError,
 }: RecoverableErrorBoundaryProps) {
   return (
     <QueryErrorResetBoundary>
@@ -37,7 +37,9 @@ export function RecoverableErrorBoundary({
         <ErrorBoundary
           onReset={() => reset()}
           FallbackComponent={RecoverableErrorFallback}
-          onError={onError}
+          onError={(err, _) => {
+            errorReporter.report(err);
+          }}
         >
           {children}
         </ErrorBoundary>

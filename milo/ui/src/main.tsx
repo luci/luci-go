@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import 'virtual:override-milo-host';
-import '@/common/api/stackdriver_errors';
+import '@/common/api/error_reporting/register_handlers';
 import '@/proto_utils/duration_patch';
 
 import { Settings } from 'luxon';

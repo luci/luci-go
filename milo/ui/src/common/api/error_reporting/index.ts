@@ -1,4 +1,4 @@
-// Copyright 2021 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import StackdriverErrorReporter from 'stackdriver-errors-js';
-
-const errorHandler = new StackdriverErrorReporter();
-if (
-  ['luci-milo.appspot.com', 'ci.chromium.org'].includes(
-    window.location.hostname,
-  )
-) {
-  errorHandler.start({
-    key: 'AIzaSyDxVV8kLK8CozsA1iKiPx6OjukSKQKmVbY',
-    projectId: 'luci-milo',
-  });
-} else {
-  errorHandler.start({
-    key: 'AIzaSyAyY1lwrHvFsIUrxyTuUDZZF1xTF6GbY08',
-    projectId: 'luci-milo-dev',
-  });
-}
+export { errorReporter } from './reporter';

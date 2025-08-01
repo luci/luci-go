@@ -16,10 +16,10 @@ import { Button } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { ListMachinesRequest } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.pb';
 
-import { RecoverableLoggerErrorBoundary } from '../components/error_handling';
 import { useUfsClient } from '../hooks/prpc_clients';
 import { FleetHelmet } from '../layouts/fleet_helmet';
 import { requestSurvey } from '../utils/survey';
@@ -62,13 +62,13 @@ export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-sandbox">
       <FleetHelmet pageTitle="Sandbox" />
-      <RecoverableLoggerErrorBoundary
+      <RecoverableErrorBoundary
         // See the documentation for `<LoginPage />` for why we handle error
         // this way.
         key="fleet-sandbox-page"
       >
         <SandboxPage />
-      </RecoverableLoggerErrorBoundary>
+      </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>
   );
 }

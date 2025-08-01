@@ -30,7 +30,6 @@ import {
   Sticky,
 } from '@/generic_libs/components/queued_sticky';
 
-import { UnhandledErrorLogger } from '../components/error_handling';
 import { LocalStoragePersistClientProvider } from '../context';
 import { theme } from '../theme/theme';
 
@@ -57,57 +56,55 @@ export const FleetLayout = () => {
   Settings.defaultLocale = 'en';
 
   return (
-    <UnhandledErrorLogger>
-      <LocalStoragePersistClientProvider>
-        <NotificationsProvider>
-          <ThemeProvider theme={theme}>
-            <ScrollingBase>
-              <Helmet
-                titleTemplate="%s | Fleet Console"
-                defaultTitle="Fleet Console"
-              >
-                <link rel="icon" href={bassFavicon} />
-              </Helmet>
-              <Box
-                sx={{
-                  gridArea: 'banner',
-                  zIndex: (theme) => theme.zIndex.appBar,
-                }}
-              >
-                <VersionBanner />
-              </Box>
-              <Sticky
-                top
-                sx={{
-                  gridArea: 'header',
-                  zIndex: (theme) => theme.zIndex.appBar,
-                }}
-              >
-                <Header
-                  sidebarOpen={sidebarOpen}
-                  setSidebarOpen={setSidebarOpen}
-                />
-              </Sticky>
-              <Sticky
-                left
-                sx={{
-                  gridArea: 'sidebar',
-                  zIndex: (theme) => theme.zIndex.drawer,
-                }}
-              >
-                <Sidebar open={sidebarOpen} />
-              </Sticky>
-              <Sticky top sx={{ gridArea: 'footer' }}>
-                <PrivacyFooter />
-              </Sticky>
-              <StickyOffset component="main" sx={{ gridArea: 'main' }}>
-                <Outlet />
-              </StickyOffset>
-              <CookieConsentBar />
-            </ScrollingBase>
-          </ThemeProvider>
-        </NotificationsProvider>
-      </LocalStoragePersistClientProvider>
-    </UnhandledErrorLogger>
+    <LocalStoragePersistClientProvider>
+      <NotificationsProvider>
+        <ThemeProvider theme={theme}>
+          <ScrollingBase>
+            <Helmet
+              titleTemplate="%s | Fleet Console"
+              defaultTitle="Fleet Console"
+            >
+              <link rel="icon" href={bassFavicon} />
+            </Helmet>
+            <Box
+              sx={{
+                gridArea: 'banner',
+                zIndex: (theme) => theme.zIndex.appBar,
+              }}
+            >
+              <VersionBanner />
+            </Box>
+            <Sticky
+              top
+              sx={{
+                gridArea: 'header',
+                zIndex: (theme) => theme.zIndex.appBar,
+              }}
+            >
+              <Header
+                sidebarOpen={sidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+              />
+            </Sticky>
+            <Sticky
+              left
+              sx={{
+                gridArea: 'sidebar',
+                zIndex: (theme) => theme.zIndex.drawer,
+              }}
+            >
+              <Sidebar open={sidebarOpen} />
+            </Sticky>
+            <Sticky top sx={{ gridArea: 'footer' }}>
+              <PrivacyFooter />
+            </Sticky>
+            <StickyOffset component="main" sx={{ gridArea: 'main' }}>
+              <Outlet />
+            </StickyOffset>
+            <CookieConsentBar />
+          </ScrollingBase>
+        </ThemeProvider>
+      </NotificationsProvider>
+    </LocalStoragePersistClientProvider>
   );
 };

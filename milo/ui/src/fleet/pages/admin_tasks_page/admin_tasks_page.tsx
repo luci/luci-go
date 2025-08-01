@@ -14,7 +14,7 @@
 
 import { Typography } from '@mui/material';
 
-import { RecoverableLoggerErrorBoundary } from '@/fleet/components/error_handling';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -50,12 +50,12 @@ export const AdminTasksPage = () => {
 export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-admin-tasks">
-      <RecoverableLoggerErrorBoundary key="fleet-admin-tasks-page">
+      <RecoverableErrorBoundary key="fleet-admin-tasks-page">
         <FleetHelmet pageTitle="Autorepair history" />
         <LoggedInBoundary>
           <AdminTasksPage />
         </LoggedInBoundary>
-      </RecoverableLoggerErrorBoundary>
+      </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>
   );
 }
