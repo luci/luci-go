@@ -1,4 +1,4 @@
-runtime: go123
+runtime: go124
 
 # This is needed to use GAE Mail API via `mailer` module.
 app_engine_apis: true

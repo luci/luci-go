@@ -15,7 +15,7 @@
 # Experimental setup for user-initialed-rollback. See b/381131084.
 
 service: ui-dispatcher
-runtime: go123
+runtime: go124
 
 instance_class: F4_1G
 

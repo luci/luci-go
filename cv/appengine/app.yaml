@@ -1,5 +1,5 @@
 service: default
-runtime: go123
+runtime: go124
 
 instance_class: F4
 

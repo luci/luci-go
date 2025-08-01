@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-runtime: go123
+runtime: go124
 instance_class: F4
 service: backend
 service_account: ${BACKEND_SERVICE_ACCOUNT}

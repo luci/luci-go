@@ -1,5 +1,5 @@
 service: monitor
-runtime: go123
+runtime: go124
 
 instance_class: B4_1G
 
