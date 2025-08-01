@@ -104,6 +104,12 @@ func TestBatchGetWorkUnits(t *testing.T) {
 					invocations.ID("included-legacy-invocation").Name(),
 					invocations.ID("included-legacy-invocation-2").Name(),
 				},
+				ModuleId: &pb.ModuleIdentifier{
+					ModuleName:        wu1.ModuleID.ModuleName,
+					ModuleScheme:      wu1.ModuleID.ModuleScheme,
+					ModuleVariant:     wu1.ModuleID.ModuleVariant,
+					ModuleVariantHash: wu1.ModuleID.ModuleVariantHash,
+				},
 				ProducerResource: wu1.ProducerResource,
 				Tags:             wu1.Tags,
 				Properties:       wu1.Properties,
@@ -150,6 +156,7 @@ func TestBatchGetWorkUnits(t *testing.T) {
 					{Realm: rootRealm, Permission: rdbperms.PermListLimitedWorkUnits},
 				}
 
+				expectedWu1.ModuleId.ModuleVariant = nil
 				expectedWu1.Tags = nil
 				expectedWu1.Properties = nil
 				expectedWu1.Instructions = nil

@@ -97,6 +97,7 @@ type WorkUnitRow struct {
 	FinalizeTime          spanner.NullTime // Output only.
 	Deadline              time.Time
 	CreateRequestID       string
+	ModuleID              *pb.ModuleIdentifier
 	ProducerResource      string
 	Tags                  []*pb.StringPair
 	Properties            *structpb.Struct
@@ -121,11 +122,22 @@ func (w *WorkUnitRow) Clone() *WorkUnitRow {
 	if w.Instructions != nil {
 		ret.Instructions = proto.Clone(w.Instructions).(*pb.Instructions)
 	}
+	if w.ModuleID != nil {
+		ret.ModuleID = proto.Clone(w.ModuleID).(*pb.ModuleIdentifier)
+	}
 	if w.ExtendedProperties != nil {
 		ret.ExtendedProperties = make(map[string]*structpb.Struct, len(w.ExtendedProperties))
 		for k, v := range w.ExtendedProperties {
 			ret.ExtendedProperties[k] = proto.Clone(v).(*structpb.Struct)
 		}
+	}
+	if w.ChildWorkUnits != nil {
+		ret.ChildWorkUnits = make([]ID, len(w.ChildWorkUnits))
+		copy(ret.ChildWorkUnits, w.ChildWorkUnits)
+	}
+	if w.ChildInvocations != nil {
+		ret.ChildInvocations = make([]invocations.ID, len(w.ChildInvocations))
+		copy(ret.ChildInvocations, w.ChildInvocations)
 	}
 	return &ret
 }
@@ -146,6 +158,12 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 		"Tags":                  w.Tags,
 		"Properties":            spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
 		"Instructions":          spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
+	}
+	if w.ModuleID != nil {
+		row["ModuleName"] = w.ModuleID.ModuleName
+		row["ModuleScheme"] = w.ModuleID.ModuleScheme
+		row["ModuleVariant"] = w.ModuleID.ModuleVariant
+		row["ModuleVariantHash"] = pbutil.VariantHash(w.ModuleID.ModuleVariant)
 	}
 	// Wrap into luci.resultdb.internal.invocations.ExtendedProperties so that
 	// it can be serialized as a single value to spanner.
@@ -201,6 +219,12 @@ func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *span
 		// Work units are not export roots.
 		"IsExportRoot": spanner.NullBool{Bool: false, Valid: true},
 		"Instructions": spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
+	}
+	if w.ModuleID != nil {
+		row["ModuleName"] = w.ModuleID.ModuleName
+		row["ModuleScheme"] = w.ModuleID.ModuleScheme
+		row["ModuleVariant"] = w.ModuleID.ModuleVariant
+		row["ModuleVariantHash"] = pbutil.VariantHash(w.ModuleID.ModuleVariant)
 	}
 
 	// Wrap into luci.resultdb.internal.invocations.ExtendedProperties so that

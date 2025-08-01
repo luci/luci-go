@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
@@ -57,8 +58,14 @@ func NewBuilder(rootInvocationID rootinvocations.ID, workUnitID string) *Builder
 			FinalizeTime:          spanner.NullTime{Valid: true, Time: time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)},
 			Deadline:              time.Date(2025, 4, 28, 1, 2, 3, 4000, time.UTC),
 			CreateRequestID:       "test-request-id",
-			ProducerResource:      "//builds.example.com/builds/123",
-			Tags:                  pbutil.StringPairs("k1", "v1"),
+			ModuleID: &pb.ModuleIdentifier{
+				ModuleName:        "modulename",
+				ModuleScheme:      "gtest",
+				ModuleVariant:     pbutil.Variant("v", "d"),
+				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("v", "d")),
+			},
+			ProducerResource: "//builds.example.com/builds/123",
+			Tags:             pbutil.StringPairs("k1", "v1"),
 			Properties: &structpb.Struct{
 				Fields: map[string]*structpb.Value{
 					"key": structpb.NewStringValue("value"),
@@ -163,6 +170,11 @@ func (b *Builder) WithDeadline(t time.Time) *Builder {
 	return b
 }
 
+func (b *Builder) WithModuleID(id *pb.ModuleIdentifier) *Builder {
+	b.row.ModuleID = proto.Clone(id).(*pb.ModuleIdentifier)
+	return b
+}
+
 // WithCreateRequestID sets the create request ID.
 func (b *Builder) WithCreateRequestID(id string) *Builder {
 	b.row.CreateRequestID = id
@@ -221,7 +233,7 @@ func (b *Builder) Build() *WorkUnitRow {
 // InsertForTesting inserts the work unit record and its corresponding
 // legacy invocation record for testing purposes.
 func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
-	workUnitMutation := spanutil.InsertMap("WorkUnits", map[string]any{
+	row := map[string]any{
 		"RootInvocationShardId": w.ID.RootInvocationShardID(),
 		"WorkUnitId":            w.ID.WorkUnitID,
 		"ParentWorkUnitId":      w.ParentWorkUnitID,
@@ -239,7 +251,14 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		"Properties":            spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
 		"Instructions":          spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
 		"ExtendedProperties":    spanutil.Compressed(pbutil.MustMarshal(&invocationspb.ExtendedProperties{ExtendedProperties: w.ExtendedProperties})),
-	})
+	}
+	if w.ModuleID != nil {
+		row["ModuleName"] = w.ModuleID.ModuleName
+		row["ModuleScheme"] = w.ModuleID.ModuleScheme
+		row["ModuleVariant"] = w.ModuleID.ModuleVariant
+		row["ModuleVariantHash"] = pbutil.VariantHash(w.ModuleID.ModuleVariant)
+	}
+	workUnitMutation := spanutil.InsertMap("WorkUnits", row)
 
 	var childMutation *spanner.Mutation
 	if w.ParentWorkUnitID.Valid {
@@ -251,7 +270,7 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		})
 	}
 
-	legacyInvMutation := spanutil.InsertMap("Invocations", map[string]any{
+	legacyRow := map[string]any{
 		"InvocationId":                      w.ID.LegacyInvocationID(),
 		"Type":                              invocations.WorkUnit,
 		"ShardId":                           w.ID.shardID(invocations.Shards),
@@ -272,7 +291,14 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		"IsExportRoot":                      spanner.NullBool{Bool: false, Valid: true},
 		"Instructions":                      spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
 		"ExtendedProperties":                spanutil.Compressed(pbutil.MustMarshal(&invocationspb.ExtendedProperties{ExtendedProperties: w.ExtendedProperties})),
-	})
+	}
+	if w.ModuleID != nil {
+		legacyRow["ModuleName"] = w.ModuleID.ModuleName
+		legacyRow["ModuleScheme"] = w.ModuleID.ModuleScheme
+		legacyRow["ModuleVariant"] = w.ModuleID.ModuleVariant
+		legacyRow["ModuleVariantHash"] = pbutil.VariantHash(w.ModuleID.ModuleVariant)
+	}
+	legacyInvMutation := spanutil.InsertMap("Invocations", legacyRow)
 
 	var parentInvocationID invocations.ID
 	if w.ParentWorkUnitID.Valid {

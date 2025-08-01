@@ -79,6 +79,7 @@ func TestGetInvocation(t *testing.T) {
 
 		t.Run(`Valid`, func(t *ftt.Test) {
 			// Insert some Invocations.
+			moduleVariant := pbutil.Variant("k1", "v1", "k2", "v2")
 			testutil.MustApply(ctx, t,
 				insert.Invocation("including", pb.Invocation_ACTIVE, map[string]any{
 					"CreateTime":         ct,
@@ -89,6 +90,10 @@ func TestGetInvocation(t *testing.T) {
 					"InheritSources":     spanner.NullBool{Valid: true, Bool: true},
 					"BaselineId":         "testrealm:testbuilder",
 					"ExtendedProperties": spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties)),
+					"ModuleName":         "modulename",
+					"ModuleScheme":       "gtest",
+					"ModuleVariant":      moduleVariant,
+					"ModuleVariantHash":  pbutil.VariantHash(moduleVariant),
 				}),
 				insert.Invocation("included0", pb.Invocation_FINALIZED, nil),
 				insert.Invocation("included1", pb.Invocation_FINALIZED, nil),
@@ -106,8 +111,14 @@ func TestGetInvocation(t *testing.T) {
 				CreateTime:          pbutil.MustTimestampProto(ct),
 				Deadline:            pbutil.MustTimestampProto(deadline),
 				IncludedInvocations: []string{"invocations/included0", "invocations/included1"},
-				Realm:               "testproject:testrealm",
-				Properties:          testutil.TestProperties(),
+				ModuleId: &pb.ModuleIdentifier{
+					ModuleName:        "modulename",
+					ModuleScheme:      "gtest",
+					ModuleVariant:     moduleVariant,
+					ModuleVariantHash: pbutil.VariantHash(moduleVariant),
+				},
+				Realm:      "testproject:testrealm",
+				Properties: testutil.TestProperties(),
 				SourceSpec: &pb.SourceSpec{
 					Sources: testutil.TestSources(),
 					Inherit: true,

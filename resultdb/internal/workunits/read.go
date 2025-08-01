@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tracing"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -333,6 +334,9 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			w.FinalizeStartTime,
 			w.FinalizeTime,
 			w.Deadline,
+			w.ModuleName,
+			w.ModuleScheme,
+			w.ModuleVariant,
 			w.CreateRequestId,
 			w.ProducerResource,
 			w.Tags,
@@ -380,6 +384,9 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			extendedProperties    spanutil.Compressed
 			childWorkUnitIDs      []string
 			childInvocations      invocations.IDSet
+			moduleName            spanner.NullString
+			moduleScheme          spanner.NullString
+			moduleVariant         *pb.Variant
 		)
 
 		dest := []any{
@@ -394,6 +401,9 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			&wu.FinalizeStartTime,
 			&wu.FinalizeTime,
 			&wu.Deadline,
+			&moduleName,
+			&moduleScheme,
+			&moduleVariant,
 			&wu.CreateRequestID,
 			&wu.ProducerResource,
 			&wu.Tags,
@@ -411,6 +421,18 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			return errors.Fmt("read spanner row for work unit: %w", err)
 		}
 		wu.ID = IDFromRowID(rootInvocationShardID, workUnitID)
+
+		if moduleName.Valid != moduleScheme.Valid {
+			panic("invariant violated: moduleName.Valid == moduleScheme.Valid, is there data corruption?")
+		}
+		if moduleName.Valid {
+			wu.ModuleID = &pb.ModuleIdentifier{
+				ModuleName:    moduleName.StringVal,
+				ModuleScheme:  moduleScheme.StringVal,
+				ModuleVariant: moduleVariant,
+			}
+			pbutil.PopulateModuleIdentifierHashes(wu.ModuleID)
+		}
 
 		if len(properties) > 0 {
 			wu.Properties = &structpb.Struct{}

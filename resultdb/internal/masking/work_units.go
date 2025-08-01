@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 // WorkUnit constructs a *pb.WorkUnit from the given fields, applying masking
@@ -58,10 +59,18 @@ func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, v
 		result.Tags = row.Tags
 		result.Properties = row.Properties
 		result.Instructions = row.Instructions
+		result.ModuleId = row.ModuleID
 		result.IsMasked = false
 
 		if view == pb.WorkUnitView_WORK_UNIT_VIEW_FULL {
 			result.ExtendedProperties = row.ExtendedProperties
+		}
+	} else {
+		// Include a masked version of the module identifier.
+		if row.ModuleID != nil {
+			moduleID := proto.Clone(row.ModuleID).(*pb.ModuleIdentifier)
+			moduleID.ModuleVariant = nil
+			result.ModuleId = moduleID
 		}
 	}
 

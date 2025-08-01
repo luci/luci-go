@@ -269,6 +269,7 @@ type WorkUnit struct {
 	// * finalize_start_time
 	// * finalize_time
 	// * deadline
+	// * module_id (all fields except `module_variant`)
 	// * parent
 	// * child_work_units
 	// * child_invocations

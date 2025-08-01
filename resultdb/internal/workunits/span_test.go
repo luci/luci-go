@@ -100,6 +100,7 @@ func TestWriteWorkUnit(t *testing.T) {
 			Deadline:               pbutil.MustTimestampProto(row.Deadline),
 			CreateTime:             timestamppb.New(commitTime),
 			CreatedBy:              row.CreatedBy,
+			ModuleId:               row.ModuleID,
 			Tags:                   row.Tags,
 			ProducerResource:       row.ProducerResource,
 			Properties:             row.Properties,

@@ -103,6 +103,9 @@ func readMulti(ctx context.Context, ids IDSet, mask ReadMask, f func(id ID, inv 
 		"i.BaselineId",
 		"i.Instructions",
 		"i.TestResultVariantUnion",
+		"i.ModuleName",
+		"i.ModuleScheme",
+		"i.ModuleVariant",
 	}
 
 	if includeExtendedProperties {
@@ -136,6 +139,9 @@ func readMulti(ctx context.Context, ids IDSet, mask ReadMask, f func(id ID, inv 
 			baselineID         spanner.NullString
 			instructions       spanutil.Compressed
 			extendedProperties spanutil.Compressed
+			moduleName         spanner.NullString
+			moduleScheme       spanner.NullString
+			moduleVariant      *pb.Variant
 		)
 
 		dest := []any{
@@ -159,6 +165,9 @@ func readMulti(ctx context.Context, ids IDSet, mask ReadMask, f func(id ID, inv 
 			&baselineID,
 			&instructions,
 			&inv.TestResultVariantUnion,
+			&moduleName,
+			&moduleScheme,
+			&moduleVariant,
 		}
 		if includeExtendedProperties {
 			dest = append(dest, &extendedProperties)
@@ -211,6 +220,18 @@ func readMulti(ctx context.Context, ids IDSet, mask ReadMask, f func(id ID, inv 
 				return err
 			}
 			inv.Instructions = instructionutil.InstructionsWithNames(inv.Instructions, id.Name())
+		}
+
+		if moduleName.Valid != moduleScheme.Valid {
+			panic("invariant violated: moduleName.Valid == moduleScheme.Valid, is there data corruption?")
+		}
+		if moduleName.Valid {
+			inv.ModuleId = &pb.ModuleIdentifier{
+				ModuleName:    moduleName.StringVal,
+				ModuleScheme:  moduleScheme.StringVal,
+				ModuleVariant: moduleVariant,
+			}
+			pbutil.PopulateModuleIdentifierHashes(inv.ModuleId)
 		}
 
 		// Conditionally process ExtendedProperties.

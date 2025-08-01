@@ -125,6 +125,18 @@ func TestRead(t *testing.T) {
 		ExtendedProperties: extendedProperties,
 	}
 
+	moduleID := &pb.ModuleIdentifier{
+		ModuleName:   "modulename",
+		ModuleScheme: "gtest",
+		ModuleVariant: &pb.Variant{
+			Def: map[string]string{
+				"k1": "v1",
+				"k2": "v2",
+			},
+		},
+	}
+	pbutil.PopulateModuleIdentifierHashes(moduleID)
+
 	// Insert some Invocations.
 	testutil.MustApply(ctx, t,
 		insertInvocation("including", map[string]any{
@@ -139,6 +151,10 @@ func TestRead(t *testing.T) {
 			"BaselineId":         "try:linux-rel",
 			"Instructions":       spanutil.Compressed(pbutil.MustMarshal(instructions)),
 			"ExtendedProperties": spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties)),
+			"ModuleName":         moduleID.ModuleName,
+			"ModuleScheme":       moduleID.ModuleScheme,
+			"ModuleVariant":      moduleID.ModuleVariant,
+			"ModuleVariantHash":  pbutil.VariantHash(moduleID.ModuleVariant),
 		}),
 		insertInvocation("included0", nil),
 		insertInvocation("included1", nil),
@@ -159,6 +175,7 @@ func TestRead(t *testing.T) {
 			CreateTime:          pbutil.MustTimestampProto(start),
 			Deadline:            pbutil.MustTimestampProto(start.Add(time.Hour)),
 			IsExportRoot:        true,
+			ModuleId:            moduleID,
 			IncludedInvocations: []string{"invocations/included0", "invocations/included1"},
 			Properties:          properties,
 			SourceSpec: &pb.SourceSpec{
@@ -186,6 +203,7 @@ func TestRead(t *testing.T) {
 			CreateTime:          pbutil.MustTimestampProto(start),
 			Deadline:            pbutil.MustTimestampProto(start.Add(time.Hour)),
 			IsExportRoot:        true,
+			ModuleId:            moduleID,
 			IncludedInvocations: []string{"invocations/included0", "invocations/included1"},
 			Properties:          properties,
 			SourceSpec: &pb.SourceSpec{

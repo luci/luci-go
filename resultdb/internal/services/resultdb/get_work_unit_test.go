@@ -95,11 +95,17 @@ func TestGetWorkUnit(t *testing.T) {
 				Deadline:          pbutil.MustTimestampProto(rootWu.Deadline),
 				Parent:            rootInvID.Name(),
 				ChildWorkUnits:    []string{childWuID.Name()},
-				ProducerResource:  rootWu.ProducerResource,
-				Tags:              rootWu.Tags,
-				Properties:        rootWu.Properties,
-				Instructions:      rootWu.Instructions,
-				IsMasked:          false,
+				ModuleId: &pb.ModuleIdentifier{
+					ModuleName:        rootWu.ModuleID.ModuleName,
+					ModuleScheme:      rootWu.ModuleID.ModuleScheme,
+					ModuleVariant:     rootWu.ModuleID.ModuleVariant,
+					ModuleVariantHash: rootWu.ModuleID.ModuleVariantHash,
+				},
+				ProducerResource: rootWu.ProducerResource,
+				Tags:             rootWu.Tags,
+				Properties:       rootWu.Properties,
+				Instructions:     rootWu.Instructions,
+				IsMasked:         false,
 			}
 
 			t.Run("full access", func(t *ftt.Test) {
@@ -141,6 +147,7 @@ func TestGetWorkUnit(t *testing.T) {
 					{Realm: rootRealm, Permission: rdbperms.PermListLimitedWorkUnits},
 				}
 
+				expectedRsp.ModuleId.ModuleVariant = nil
 				expectedRsp.Tags = nil
 				expectedRsp.Properties = nil
 				expectedRsp.Instructions = nil
