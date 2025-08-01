@@ -12,10 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { parse as babelParse } from '@babel/parser';
 import { NullableMappedPosition } from 'source-map';
 import StackFrame from 'stackframe';
 
-import { getSourceMapUrl, trimLeadingParents, formatFrame } from './utils';
+import {
+  getSourceMapUrl,
+  trimLeadingParents,
+  formatFrame,
+  findEnclosingFunctionName,
+} from './utils';
 
 describe('Error Reporting Utils', () => {
   describe('getSourceMapUrl', () => {
@@ -130,6 +136,160 @@ describe('Error Reporting Utils', () => {
       expect(formatFrame(minifiedFrameWithoutName, originalFrame)).toBe(
         `    at <anonymous> (src/bar.js:10:5)`,
       );
+    });
+  });
+
+  describe('findEnclosingFunctionName', () => {
+    const parse = (code: string) =>
+      babelParse(code, {
+        sourceType: 'module',
+        plugins: ['typescript', 'jsx'],
+      });
+
+    it('should find a named function declaration', () => {
+      const code = `
+        function myFunction() {
+          console.log('hello');
+        }
+      `;
+      const ast = parse(code);
+      expect(findEnclosingFunctionName(ast, 3, 10)).toBe('myFunction');
+    });
+
+    it('should find a named function expression', () => {
+      const code = `
+        const x = function myFunction() {
+          console.log('hello');
+        };
+      `;
+      const ast = parse(code);
+      expect(findEnclosingFunctionName(ast, 3, 10)).toBe('myFunction');
+    });
+
+    it('should find a class method', () => {
+      const code = `
+        class MyClass {
+          myMethod() {
+            console.log('hello');
+          }
+        }
+      `;
+      const ast = parse(code);
+      expect(findEnclosingFunctionName(ast, 4, 12)).toBe('myMethod');
+    });
+
+    it('should find an object method', () => {
+      const code = `
+        const myObj = {
+          myMethod() {
+            console.log('hello');
+          }
+        };
+      `;
+      const ast = parse(code);
+      expect(findEnclosingFunctionName(ast, 4, 12)).toBe('myMethod');
+    });
+
+    it('should find an arrow function assigned to a variable', () => {
+      const code = `
+        const myFunction = () => {
+          console.log('hello');
+        };
+      `;
+      const ast = parse(code);
+      expect(findEnclosingFunctionName(ast, 3, 10)).toBe('myFunction');
+    });
+
+    it('should find a function expression assigned to a variable', () => {
+      const code = `
+        const myFunction = function() {
+          console.log('hello');
+        };
+      `;
+      const ast = parse(code);
+      expect(findEnclosingFunctionName(ast, 3, 10)).toBe('myFunction');
+    });
+
+    it('should find an arrow function in an object property', () => {
+      const code = `
+        const myObj = {
+          myMethod: () => {
+            console.log('hello');
+          }
+        };
+      `;
+      const ast = parse(code);
+      expect(findEnclosingFunctionName(ast, 4, 12)).toBe('myMethod');
+    });
+
+    it('should find an arrow function in an object property with string literal key', () => {
+      const code = `
+        const myObj = {
+          "my-method": () => {
+            console.log('hello');
+          }
+        };
+      `;
+      const ast = parse(code);
+      expect(findEnclosingFunctionName(ast, 4, 12)).toBe('my-method');
+    });
+
+    it('should find an arrow function in a class property', () => {
+      const code = `
+        class MyClass {
+          myMethod = () => {
+            console.log('hello');
+          };
+        }
+      `;
+      const ast = parse(code);
+      expect(findEnclosingFunctionName(ast, 4, 12)).toBe('myMethod');
+    });
+
+    it('should find an arrow function in a class property with string literal key', () => {
+      const code = `
+        class MyClass {
+          "my-method" = () => {
+            console.log('hello');
+          };
+        }
+      `;
+      const ast = parse(code);
+      expect(findEnclosingFunctionName(ast, 4, 12)).toBe('my-method');
+    });
+
+    it('should find an inline arrow function in a JSX attribute', () => {
+      const code = `
+        const MyComponent = () => (
+          <div onClick={() => {
+            console.log('clicked');
+          }}>
+            Click me
+          </div>
+        );
+      `;
+      const ast = parse(code);
+      expect(findEnclosingFunctionName(ast, 4, 12)).toBe('onClick');
+    });
+
+    it('should return the inner-most function name', () => {
+      const code = `
+        function outer() {
+          function inner() {
+            console.log('hello');
+          }
+        }
+      `;
+      const ast = parse(code);
+      expect(findEnclosingFunctionName(ast, 4, 12)).toBe('inner');
+    });
+
+    it('should return null if no enclosing function is found', () => {
+      const code = `
+        console.log('hello');
+      `;
+      const ast = parse(code);
+      expect(findEnclosingFunctionName(ast, 2, 8)).toBe(null);
     });
   });
 });

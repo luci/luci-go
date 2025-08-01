@@ -76,6 +76,13 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: '/ui',
+    define: {
+      // Some Babel packages check process.env variables which don't exist
+      // in the browser, causing `ReferenceError: process is not defined`.
+      // Defining them here as 'false' ensures these checks work without errors.
+      'process.env.BABEL_8_BREAKING': 'false',
+      'process.env.BABEL_TYPES_8_BREAKING': 'false',
+    },
     build: {
       // Vite doesn't like index.html to be placed anywhere other than at the
       // root level of the input/output directory.

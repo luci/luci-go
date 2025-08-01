@@ -67,7 +67,7 @@ export function Component() {
     expect(unminified).toContain('Error: Test error');
     expect(unminified).toContain('[Host: localhost]');
     expect(unminified).toContain(
-      'at n (src/core/pages/not_found_page.tsx:3:6)',
+      'at NotFoundPage (src/core/pages/not_found_page.tsx:3:6)',
     );
   });
 });

@@ -14,7 +14,12 @@
 import ErrorStackParser, { StackFrame } from 'error-stack-parser';
 import { SourceMapConsumer } from 'source-map';
 
-import { getSourceMapUrl, formatFrame } from './utils';
+import {
+  formatFrame,
+  ASTCache,
+  findEnclosingFunctionName,
+  getSourceMapUrl,
+} from './utils';
 
 // Cache promises to prevent race conditions and re-fetching.
 const sourceMapConsumerCache = new Map<
@@ -71,6 +76,7 @@ async function getSourceMapConsumer(
 async function unminifyFrame(
   minifiedFrame: StackFrame,
   consumerPromise: Promise<SourceMapConsumer | null> | undefined,
+  astCache: ASTCache,
 ): Promise<string> {
   if (!minifiedFrame.lineNumber || !minifiedFrame.columnNumber) {
     return formatFrame(minifiedFrame);
@@ -90,6 +96,19 @@ async function unminifyFrame(
   if (originalFrame && originalFrame.column) {
     // Change it back to 1-based.
     originalFrame.column++;
+
+    // originalPositionFor parses the original position really good,
+    // but it struggles with the enclosing function names.
+    if (originalFrame.source && originalFrame.line) {
+      const ast = astCache.get(originalFrame.source, consumer);
+      if (ast) {
+        originalFrame.name = findEnclosingFunctionName(
+          ast,
+          originalFrame.line,
+          originalFrame.column,
+        );
+      }
+    }
   }
 
   return formatFrame(minifiedFrame, originalFrame);
@@ -118,9 +137,14 @@ export async function unminifyError(error: Error): Promise<string> {
     }
   }
 
+  const astCache = new ASTCache();
   const unminifiedLines = await Promise.all(
     stackFrames.map((frame) =>
-      unminifyFrame(frame, consumerPromises.get(frame.fileName || '')),
+      unminifyFrame(
+        frame,
+        consumerPromises.get(frame.fileName || ''),
+        astCache,
+      ),
     ),
   );
 
