@@ -144,6 +144,69 @@ func TestParseAndValidateTestID(t *testing.T) {
 	})
 }
 
+func TestValidateModuleName(t *testing.T) {
+	t.Parallel()
+	ftt.Run("ValidateModuleName", t, func(t *ftt.Test) {
+		moduleName := "module"
+		t.Run("Valid", func(t *ftt.Test) {
+			assert.Loosely(t, ValidateModuleName(moduleName), should.BeNil)
+		})
+		t.Run("Unicode is allowed", func(t *ftt.Test) {
+			moduleName = "µs-timing"
+			assert.Loosely(t, ValidateModuleName(moduleName), should.BeNil)
+		})
+		t.Run("Too Long", func(t *ftt.Test) {
+			moduleName = strings.Repeat("a", 301)
+			assert.Loosely(t, ValidateModuleName(moduleName), should.ErrLike("longer than 300 bytes"))
+		})
+		t.Run("Non-Printable", func(t *ftt.Test) {
+			moduleName = "abc\u0000def"
+			assert.Loosely(t, ValidateModuleName(moduleName), should.ErrLike("non-printable rune"))
+		})
+		t.Run("Not in Unicode Normal Form C", func(t *ftt.Test) {
+			moduleName = "e\u0301"
+			assert.Loosely(t, ValidateModuleName(moduleName), should.ErrLike("not in unicode normalized form C"))
+		})
+		t.Run("Not valid UTF-8", func(t *ftt.Test) {
+			moduleName = "\xbd"
+			assert.Loosely(t, ValidateModuleName(moduleName), should.ErrLike("not a valid utf8 string"))
+		})
+		t.Run("Error rune", func(t *ftt.Test) {
+			moduleName = "aa\ufffd"
+			assert.Loosely(t, ValidateModuleName(moduleName), should.ErrLike("unicode replacement character (U+FFFD) at byte index 2"))
+		})
+	})
+}
+func TestValidateModuleScheme(t *testing.T) {
+	t.Parallel()
+	ftt.Run("ValidateModuleScheme", t, func(t *ftt.Test) {
+		scheme := "scheme"
+		t.Run("Valid", func(t *ftt.Test) {
+			assert.Loosely(t, ValidateModuleScheme(scheme, false), should.BeNil)
+		})
+		t.Run("Too Long", func(t *ftt.Test) {
+			scheme = strings.Repeat("a", 21)
+			assert.Loosely(t, ValidateModuleScheme(scheme, false), should.ErrLike("longer than 20 bytes"))
+		})
+		t.Run("Invalid", func(t *ftt.Test) {
+			scheme = "A"
+			assert.Loosely(t, ValidateModuleScheme(scheme, false), should.ErrLike(`does not match "^[a-z][a-z0-9]*$"`))
+		})
+		t.Run("Legacy is reserved", func(t *ftt.Test) {
+			scheme = "legacy"
+			assert.Loosely(t, ValidateModuleScheme(scheme, false), should.ErrLike(`must not be set to "legacy" except in the "legacy" module`))
+		})
+		t.Run("Legacy is allowed for legacy module", func(t *ftt.Test) {
+			scheme = "legacy"
+			assert.Loosely(t, ValidateModuleScheme(scheme, true), should.BeNil)
+		})
+		t.Run("Non-legacy is not allowed for legacy module", func(t *ftt.Test) {
+			scheme = "scheme"
+			assert.Loosely(t, ValidateModuleScheme(scheme, true), should.ErrLike(`must be set to "legacy" in the "legacy" module`))
+		})
+	})
+}
+
 func TestValidateBaseTestIdentifier(t *testing.T) {
 	t.Parallel()
 	ftt.Run("validateBaseTestIdentifier", t, func(t *ftt.Test) {
@@ -162,25 +225,11 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 			assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
 		})
 		t.Run("Module Name", func(t *ftt.Test) {
+			// The implementation calls into ValidateModuleName. That already has its own tests, so
+			// just verify it is called.
 			t.Run("Unicode is allowed", func(t *ftt.Test) {
 				id.ModuleName = "µs-timing"
 				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.BeNil)
-			})
-			t.Run("Too Long", func(t *ftt.Test) {
-				id.ModuleName = strings.Repeat("a", 301)
-				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("module_name: longer than 300 bytes"))
-			})
-			t.Run("Non-Printable", func(t *ftt.Test) {
-				id.ModuleName = "abc\u0000def"
-				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("module_name: non-printable rune"))
-			})
-			t.Run("Not in Unicode Normal Form C", func(t *ftt.Test) {
-				id.ModuleName = "e\u0301"
-				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("module_name: not in unicode normalized form C"))
-			})
-			t.Run("Not valid UTF-8", func(t *ftt.Test) {
-				id.ModuleName = "\xbd"
-				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("module_name: not a valid utf8 string"))
 			})
 			t.Run("Error rune", func(t *ftt.Test) {
 				id.ModuleName = "aa\ufffd"
@@ -188,22 +237,12 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 			})
 		})
 		t.Run("Module Scheme", func(t *ftt.Test) {
-			t.Run("Empty", func(t *ftt.Test) {
-				id.ModuleScheme = ""
-				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("module_scheme: unspecified"))
-			})
-			t.Run("Too Long", func(t *ftt.Test) {
-				id.ModuleScheme = strings.Repeat("a", 21)
-				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike("module_scheme: longer than 20 bytes"))
-			})
-			t.Run("Invalid", func(t *ftt.Test) {
-				id.ModuleScheme = "A"
-				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`module_scheme: does not match "^[a-z][a-z0-9]*$"`))
-			})
+			// The implementation calls into ValidateModuleScheme. That already has its own tests, so
+			// just verify it is called.
 			t.Run("Legacy is reserved", func(t *ftt.Test) {
 				id.ModuleName = "module"
 				id.ModuleScheme = "legacy"
-				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`module_scheme: must not be set to "legacy" except for tests in the "legacy" module`))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`module_scheme: must not be set to "legacy" except in the "legacy" module`))
 			})
 		})
 		t.Run("Coarse Name", func(t *ftt.Test) {
@@ -408,7 +447,7 @@ func TestValidateBaseTestIdentifier(t *testing.T) {
 
 			t.Run("Invalid scheme", func(t *ftt.Test) {
 				id.ModuleScheme = "notlegacy"
-				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`module_scheme: must be set to "legacy" for tests in the "legacy" module`))
+				assert.Loosely(t, ValidateBaseTestIdentifier(id), should.ErrLike(`module_scheme: must be set to "legacy" in the "legacy" module`))
 			})
 			t.Run("Invalid coarse name", func(t *ftt.Test) {
 				id.CoarseName = "coarse"

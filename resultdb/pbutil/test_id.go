@@ -419,8 +419,7 @@ func PopulateStructuredTestIdentifierHashes(id *pb.TestIdentifier) {
 //
 // N.B. This does not validate the test ID against the configured schemes; this
 // should also be applied at upload time. (And must not be applied at other times
-// to ensure old tests uploaded under old schemes continue to be ingestable and
-// queryable.)
+// to ensure old tests uploaded under old schemes continue to be queryable.)
 func ValidateStructuredTestIdentifierForStorage(id *pb.TestIdentifier) error {
 	if id == nil {
 		return validate.Unspecified()
@@ -591,11 +590,11 @@ func ValidateModuleScheme(scheme string, isLegacyModule bool) error {
 	}
 	if isLegacyModule {
 		if scheme != LegacySchemeID {
-			return errors.Fmt("must be set to %q for tests in the %q module", LegacySchemeID, LegacyModuleName)
+			return errors.Fmt("must be set to %q in the %q module", LegacySchemeID, LegacyModuleName)
 		}
 	} else {
 		if scheme == LegacySchemeID {
-			return errors.Fmt("must not be set to %q except for tests in the %q module", LegacySchemeID, LegacyModuleName)
+			return errors.Fmt("must not be set to %q except in the %q module", LegacySchemeID, LegacyModuleName)
 		}
 	}
 	return nil
