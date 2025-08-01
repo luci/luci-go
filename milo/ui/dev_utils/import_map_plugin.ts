@@ -15,24 +15,17 @@
 import { createHash } from 'crypto';
 import * as path from 'path';
 
+import { OutputAsset, OutputChunk } from 'rollup';
 import { PluginOption } from 'vite';
-
-// While it's possible that the web may have newer/different standards for
-// sourcemap URLs. In the worst case, we will only break the source map not
-// the actual production code.
-const SOURCE_MAPPING_URL_RE = /^\/\/# sourceMappingURL=(.+)$/m;
 
 // Note that 7d608c4 is not the actual hash, it's just a randomly generated
 // string that reduces the chance of collision.
 export const HASH_TAG = '<luci-ui-contenthash-7d608c4>';
 
-/**
- * Given a URL `path` from a URL `base` path, returns the absolute URL path.
- */
-function absUrlPath(base: string, path: string) {
-  const PLACEHOLDER_DOMAIN = 'http://placeholder.domain/';
-  const url = new URL(path, PLACEHOLDER_DOMAIN + base);
-  return url.toString().slice(PLACEHOLDER_DOMAIN.length);
+function isOutputChunkWithHashTag(
+  chunk: OutputAsset | OutputChunk,
+): chunk is OutputChunk {
+  return chunk.type === 'chunk' && chunk.fileName.includes(HASH_TAG);
 }
 
 /**
@@ -60,65 +53,47 @@ export function importMapPlugin(): PluginOption {
       importMap = {};
     },
     generateBundle(_opts, bundle) {
-      // Map old sourcemap filenames (with content hash placeholder) to new
-      // sourcemap filenames (with the real content hash).
-      const smFilenameMap: { [key: string]: string } = {};
-
-      for (const chunk of Object.values(bundle)) {
-        if (chunk.type !== 'chunk') {
-          continue;
-        }
-
-        // Replace the HASH_TAG in the filename with actual content hash of the
-        // file so we can cache those files without running into version
-        // resolution issue.
+      // We only care about JS chunks that use our HASH_TAG placeholder
+      for (const chunk of Object.values(bundle).filter(
+        isOutputChunkWithHashTag,
+      )) {
+        // Calculate Hashes and New Filenames
         const contentHash = createHash('md5')
           .update(chunk.code)
           .digest('hex')
           .slice(0, 8);
-        const hashedFilename = chunk.fileName.replace(HASH_TAG, contentHash);
-        importMap[path.join(base, chunk.fileName)] = path.join(
-          base,
-          hashedFilename,
+
+        const originalJsName = chunk.fileName;
+        const newJsName = originalJsName.replace(HASH_TAG, contentHash);
+        const originalMapName = `${originalJsName}.map`;
+        const newMapName = `${newJsName}.map`;
+
+        chunk.fileName = newJsName;
+
+        delete bundle[originalJsName];
+        bundle[newJsName] = chunk;
+
+        // Manually update the sourceMappingURL comment in the JS code
+        chunk.code = chunk.code.replace(
+          `//# sourceMappingURL=${path.basename(originalMapName)}`,
+          `//# sourceMappingURL=${path.basename(newMapName)}`,
         );
 
-        // Record the sourcemap URL and fill the content hash placeholder. Store
-        // the mapping so it can be used to update sourcemap chunk filenames
-        // later.
-        const match = SOURCE_MAPPING_URL_RE.exec(chunk.code);
-        if (match) {
-          const resolvedSM = absUrlPath(chunk.fileName, match[1]);
-          smFilenameMap[resolvedSM] = absUrlPath(
-            chunk.fileName,
-            match[1].replace(HASH_TAG, contentHash),
-          );
-        }
-
-        // Populate the content hash placeholder in the filename and the
-        // sourcemap URL.
-        chunk.fileName = hashedFilename;
-        chunk.code = chunk.code.replace(SOURCE_MAPPING_URL_RE, (url) =>
-          url.replace(HASH_TAG, contentHash),
-        );
-      }
-
-      // Fill the content hash placeholder in all the sourcemap filenames.
-      for (const chunk of Object.values(bundle)) {
-        if (chunk.type !== 'asset' || !chunk.fileName.endsWith('.map')) {
+        // Find the Corresponding Sourcemap Asset and update
+        // correspondingly if exists
+        const sourcemapAsset = bundle[originalMapName];
+        if (!sourcemapAsset) {
+          // If no sourcemap, we can't proceed with this chunk
           continue;
         }
 
-        const newFilename = smFilenameMap[absUrlPath('', chunk.fileName)];
+        sourcemapAsset.fileName = newMapName;
 
-        // It's possible that another plugin can create a sourcemap for a file
-        // that's not process by the regular pipeline (e.g. virtual modules?).
-        // In that case we don't need to do anything for it if it's not using
-        // the HASH_TAG anyway.
-        if (!newFilename) {
-          continue;
-        }
+        delete bundle[originalMapName];
+        bundle[newMapName] = sourcemapAsset;
 
-        chunk.fileName = newFilename;
+        // Update the import map for index.html
+        importMap[path.join(base, originalJsName)] = path.join(base, newJsName);
       }
     },
     transformIndexHtml: (html) => {
