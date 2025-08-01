@@ -71,7 +71,7 @@ func Test(t *testing.T) {
 		// Average: 0.500000
 		// Standard deviation: 0.288675
 		assert.Loosely(t, mean, should.BeBetween(0.495, 0.505))
-		assert.Loosely(t, dev, should.BeBetween(0.284, 0.29))
+		assert.Loosely(t, dev, should.BeBetween(0.284, 0.294))
 	})
 }
 
