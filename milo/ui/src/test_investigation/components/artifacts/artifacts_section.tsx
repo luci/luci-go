@@ -350,6 +350,7 @@ export function ArtifactsSection() {
                   <ArtifactSummaryView
                     currentResult={currentResult}
                     textDiffArtifact={textDiffArtifact}
+                    selectedAttemptIndex={selectedAttemptIndex}
                   />
                 ) : selectedArtifactNode.artifact ? (
                   <ArtifactContentView
