@@ -52,7 +52,9 @@ func NewStorageClient(ctx context.Context, luciProject string) (Client, error) {
 		testClient.luciProject = luciProject
 		return testClient, nil
 	}
-	t, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(luciProject), auth.WithScopes(storage.ScopeReadOnly))
+	requiredScopes := []string{storage.ScopeReadOnly}
+	requiredScopes = append(requiredScopes, auth.CloudOAuthScopes...)
+	t, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(luciProject), auth.WithScopes(requiredScopes...))
 	if err != nil {
 		return nil, err
 	}
