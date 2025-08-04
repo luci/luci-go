@@ -33,14 +33,17 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
@@ -63,38 +66,41 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 			UpdateMask: &field_mask.FieldMask{Paths: []string{}},
 		}
 
+		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
+		assert.NoErr(t, err)
+
 		t.Run(`empty`, func(t *ftt.Test) {
-			err := validateUpdateInvocationRequest(&pb.UpdateInvocationRequest{}, now)
+			err := validateUpdateInvocationRequest(&pb.UpdateInvocationRequest{}, cfg, now)
 			assert.Loosely(t, err, should.ErrLike(`invocation: name: unspecified`))
 		})
 
 		t.Run(`invalid id`, func(t *ftt.Test) {
 			request.Invocation.Name = "1"
-			err := validateUpdateInvocationRequest(request, now)
+			err := validateUpdateInvocationRequest(request, cfg, now)
 			assert.Loosely(t, err, should.ErrLike(`invocation: name: does not match`))
 		})
 
 		t.Run(`empty update mask`, func(t *ftt.Test) {
-			err := validateUpdateInvocationRequest(request, now)
+			err := validateUpdateInvocationRequest(request, cfg, now)
 			assert.Loosely(t, err, should.ErrLike(`update_mask: paths is empty`))
 		})
 
 		t.Run(`unsupported update mask`, func(t *ftt.Test) {
 			request.UpdateMask.Paths = []string{"name"}
-			err := validateUpdateInvocationRequest(request, now)
+			err := validateUpdateInvocationRequest(request, cfg, now)
 			assert.Loosely(t, err, should.ErrLike(`update_mask: unsupported path "name"`))
 		})
 
 		t.Run(`submask in update mask`, func(t *ftt.Test) {
 			t.Run(`unsupported`, func(t *ftt.Test) {
 				request.UpdateMask.Paths = []string{"deadline.seconds"}
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.ErrLike(`update_mask: "deadline" should not have any submask`))
 			})
 
 			t.Run(`supported`, func(t *ftt.Test) {
 				request.UpdateMask.Paths = []string{"extended_properties.some_key"}
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.BeNil)
 			})
 		})
@@ -105,15 +111,51 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 			t.Run(`invalid`, func(t *ftt.Test) {
 				deadline := pbutil.MustTimestampProto(now.Add(-time.Hour))
 				request.Invocation.Deadline = deadline
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.ErrLike(`invocation: deadline: must be at least 10 seconds in the future`))
 			})
 
 			t.Run(`valid`, func(t *ftt.Test) {
 				deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 				request.Invocation.Deadline = deadline
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.BeNil)
+			})
+		})
+		t.Run(`module_id`, func(t *ftt.Test) {
+			request.UpdateMask = &field_mask.FieldMask{Paths: []string{"module_id"}}
+
+			t.Run(`nil`, func(t *ftt.Test) {
+				request.Invocation.ModuleId = nil
+				err := validateUpdateInvocationRequest(request, cfg, now)
+				assert.Loosely(t, err, should.BeNil)
+			})
+			t.Run(`valid`, func(t *ftt.Test) {
+				request.Invocation.ModuleId = &pb.ModuleIdentifier{
+					ModuleName:    "module",
+					ModuleScheme:  "gtest",
+					ModuleVariant: pbutil.Variant("k", "v"),
+				}
+				err := validateUpdateInvocationRequest(request, cfg, now)
+				assert.Loosely(t, err, should.BeNil)
+			})
+			t.Run(`structurally invalid`, func(t *ftt.Test) {
+				request.Invocation.ModuleId = &pb.ModuleIdentifier{
+					ModuleName:        "mymodule",
+					ModuleScheme:      "gtest",
+					ModuleVariantHash: "aaaaaaaaaaaaaaaa", // Variant hash only is not allowed for storage.
+				}
+				err := validateUpdateInvocationRequest(request, cfg, now)
+				assert.Loosely(t, err, should.ErrLike("invocation: module_id: module_variant: unspecified"))
+			})
+			t.Run("invalid with respect to service configuration", func(t *ftt.Test) {
+				request.Invocation.ModuleId = &pb.ModuleIdentifier{
+					ModuleName:    "mymodule",
+					ModuleScheme:  "cooltest", // This is not defined in the service config.
+					ModuleVariant: pbutil.Variant("k", "v"),
+				}
+				err := validateUpdateInvocationRequest(request, cfg, now)
+				assert.Loosely(t, err, should.ErrLike(`invocation: module_id: module_scheme: scheme "cooltest" is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme`))
 			})
 		})
 		t.Run(`bigquery exports`, func(t *ftt.Test) {
@@ -127,7 +169,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 					// No ResultType.
 				}}
 				request.UpdateMask.Paths = []string{"bigquery_exports"}
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.ErrLike(`invocation: bigquery_exports[0]: result_type: unspecified`))
 			})
 
@@ -140,13 +182,13 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 						TestResults: &pb.BigQueryExport_TestResults{},
 					},
 				}}
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
 			t.Run(`empty`, func(t *ftt.Test) {
 				request.Invocation.BigqueryExports = []*pb.BigQueryExport{}
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.BeNil)
 			})
 		})
@@ -159,7 +201,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 						"key1": structpb.NewStringValue(strings.Repeat("1", pbutil.MaxSizeInvocationProperties)),
 					},
 				}
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.ErrLike(`exceeds the maximum size of`))
 				assert.Loosely(t, err, should.ErrLike(`bytes`))
 			})
@@ -174,7 +216,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 						}),
 					},
 				}
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.BeNil)
 			})
 		})
@@ -185,14 +227,14 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 				request.Invocation.Tags = []*pb.StringPair{
 					{Key: "key1", Value: strings.Repeat("1", 300)},
 				}
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.ErrLike(`value: length must be less or equal to`))
 			})
 			t.Run(`valid`, func(t *ftt.Test) {
 				request.Invocation.Tags = []*pb.StringPair{
 					{Key: "key1", Value: "val1"},
 				}
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.BeNil)
 			})
 		})
@@ -220,7 +262,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 						IsDirty: true,
 					},
 				}
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
@@ -230,7 +272,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 						GitilesCommit: &pb.GitilesCommit{},
 					},
 				}
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.ErrLike(`invocation: source_spec: sources: gitiles_commit: host: unspecified`))
 			})
 		})
@@ -239,7 +281,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 
 			t.Run(`true`, func(t *ftt.Test) {
 				request.Invocation.IsSourceSpecFinal = true
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run(`false`, func(t *ftt.Test) {
@@ -250,7 +292,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 				// useful update to do, but it allowed to set a field to
 				// its current value.
 				request.Invocation.IsSourceSpecFinal = false
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.BeNil)
 			})
 		})
@@ -259,17 +301,17 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 
 			t.Run(`valid`, func(t *ftt.Test) {
 				request.Invocation.BaselineId = "try:linux-rel"
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run(`empty`, func(t *ftt.Test) {
 				request.Invocation.BaselineId = ""
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run(`invalid`, func(t *ftt.Test) {
 				request.Invocation.BaselineId = "try/linux-rel"
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.ErrLike(`invocation: baseline_id: does not match`))
 			})
 		})
@@ -279,17 +321,17 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 
 			t.Run(`empty`, func(t *ftt.Test) {
 				request.Invocation.Realm = ""
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.ErrLike(`invocation: realm: unspecified`))
 			})
 			t.Run(`valid`, func(t *ftt.Test) {
 				request.Invocation.Realm = "testproject:newrealm"
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run(`invalid`, func(t *ftt.Test) {
 				request.Invocation.Realm = "blah"
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.ErrLike(`invocation: realm: bad global realm name "blah"`))
 			})
 		})
@@ -299,17 +341,17 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 
 			t.Run(`valid finalizing`, func(t *ftt.Test) {
 				request.Invocation.State = pb.Invocation_FINALIZING
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run(`valid active`, func(t *ftt.Test) {
 				request.Invocation.State = pb.Invocation_ACTIVE
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run(`invalid`, func(t *ftt.Test) {
 				request.Invocation.State = pb.Invocation_FINALIZED
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.ErrLike(`invocation: state: must be FINALIZING or ACTIVE`))
 			})
 		})
@@ -319,7 +361,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 
 			t.Run(`empty`, func(t *ftt.Test) {
 				request.Invocation.Instructions = nil
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run(`valid`, func(t *ftt.Test) {
@@ -373,7 +415,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 							},
 						},
 					}}
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run(`invalid`, func(t *ftt.Test) {
@@ -398,7 +440,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 						},
 					},
 				}
-				err := validateUpdateInvocationRequest(request, now)
+				err := validateUpdateInvocationRequest(request, cfg, now)
 				assert.Loosely(t, err, should.ErrLike(`invocation: instructions: instructions[1]: id: "instruction1" is re-used at index 0`))
 			})
 		})
@@ -409,12 +451,12 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 
 				t.Run(`empty`, func(t *ftt.Test) {
 					request.Invocation.ExtendedProperties = nil
-					err := validateUpdateInvocationRequest(request, now)
+					err := validateUpdateInvocationRequest(request, cfg, now)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run(`valid`, func(t *ftt.Test) {
 					request.Invocation.ExtendedProperties = testutil.TestInvocationExtendedProperties()
-					err := validateUpdateInvocationRequest(request, now)
+					err := validateUpdateInvocationRequest(request, cfg, now)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run(`invalid`, func(t *ftt.Test) {
@@ -425,7 +467,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 							},
 						},
 					}
-					err := validateUpdateInvocationRequest(request, now)
+					err := validateUpdateInvocationRequest(request, cfg, now)
 					assert.Loosely(t, err, should.ErrLike(`exceeds the maximum size`))
 					assert.Loosely(t, err, should.ErrLike(`bytes`))
 				})
@@ -442,7 +484,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 							},
 						},
 					}
-					err := validateUpdateInvocationRequest(request, now)
+					err := validateUpdateInvocationRequest(request, cfg, now)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run(`valid`, func(t *ftt.Test) {
@@ -455,7 +497,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 							},
 						},
 					}
-					err := validateUpdateInvocationRequest(request, now)
+					err := validateUpdateInvocationRequest(request, cfg, now)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run(`invalid`, func(t *ftt.Test) {
@@ -468,7 +510,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 							},
 						},
 					}
-					err := validateUpdateInvocationRequest(request, now)
+					err := validateUpdateInvocationRequest(request, cfg, now)
 					assert.Loosely(t, err, should.ErrLike(`update_mask: extended_properties: key "abc_": does not match`))
 				})
 				t.Run(`too deep`, func(t *ftt.Test) {
@@ -480,7 +522,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 							},
 						},
 					}
-					err := validateUpdateInvocationRequest(request, now)
+					err := validateUpdateInvocationRequest(request, cfg, now)
 					assert.Loosely(t, err, should.ErrLike(`update_mask: extended_properties["abc"] should not have any submask`))
 				})
 			})
@@ -639,6 +681,11 @@ func createTestBigQueryExportConfig() *pb.BigQueryExport {
 func TestUpdateInvocation(t *testing.T) {
 	ftt.Run(`TestUpdateInvocation`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
+		assert.NoErr(t, err)
+
 		ctx, sched := tq.TestingContext(ctx, nil)
 		start := clock.Now(ctx).UTC()
 
@@ -736,6 +783,60 @@ func TestUpdateInvocation(t *testing.T) {
 				inv, err := recorder.UpdateInvocation(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, inv.BaselineId, should.Equal("try:linux-rel"))
+			})
+		})
+
+		t.Run("module_id", func(t *ftt.Test) {
+			doInsert()
+			req := &pb.UpdateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Name: "invocations/inv",
+					ModuleId: &pb.ModuleIdentifier{
+						ModuleName:    "module",
+						ModuleScheme:  "gtest",
+						ModuleVariant: pbutil.Variant("k", "v"),
+					},
+				},
+				UpdateMask: &field_mask.FieldMask{Paths: []string{"module_id"}},
+			}
+
+			t.Run("set for the first time", func(t *ftt.Test) {
+				inv, err := recorder.UpdateInvocation(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, inv.ModuleId.ModuleName, should.Equal("module"))
+				assert.Loosely(t, inv.ModuleId.ModuleScheme, should.Equal("gtest"))
+				assert.Loosely(t, inv.ModuleId.ModuleVariant, should.Match(pbutil.Variant("k", "v")))
+				assert.Loosely(t, inv.ModuleId.ModuleVariantHash, should.Equal(pbutil.VariantHash(pbutil.Variant("k", "v"))))
+			})
+			t.Run("updating an already set module", func(t *ftt.Test) {
+				// Set a module ID first.
+				inv, err := recorder.UpdateInvocation(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, inv.ModuleId.ModuleName, should.Equal("module"))
+
+				t.Run("to another value", func(t *ftt.Test) {
+					t.Run("to nil", func(t *ftt.Test) {
+						req.Invocation.ModuleId = nil
+						_, err = recorder.UpdateInvocation(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`invocation: module_id: cannot modify module_id once set`))
+					})
+					t.Run("to another non-nil value", func(t *ftt.Test) {
+						req.Invocation.ModuleId = &pb.ModuleIdentifier{
+							ModuleName:    "new_module",
+							ModuleScheme:  "gtest",
+							ModuleVariant: pbutil.Variant("k", "v"),
+						}
+						_, err = recorder.UpdateInvocation(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`invocation: module_id: cannot modify module_id once set`))
+					})
+				})
+				t.Run("to the same value", func(t *ftt.Test) {
+					// This is allowed, as it is a no-op.
+					_, err = recorder.UpdateInvocation(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+				})
 			})
 		})
 

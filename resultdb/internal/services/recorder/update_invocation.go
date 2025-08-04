@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
@@ -64,7 +65,7 @@ func validateUpdateInvocationRequestSubmask(path string, submask *mask.Mask) err
 }
 
 // validateUpdateInvocationRequest returns non-nil error if req is invalid.
-func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.Time) error {
+func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, cfg *config.CompiledServiceConfig, now time.Time) error {
 	if err := pbutil.ValidateInvocationName(req.Invocation.GetName()); err != nil {
 		return errors.Fmt("invocation: name: %w", err)
 	}
@@ -88,6 +89,16 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 		case "deadline":
 			if err := validateInvocationDeadline(req.Invocation.GetDeadline(), now); err != nil {
 				return errors.Fmt("invocation: deadline: %w", err)
+			}
+
+		case "module_id":
+			if req.Invocation.ModuleId != nil {
+				if err := pbutil.ValidateModuleIdentifierForStorage(req.Invocation.ModuleId); err != nil {
+					return errors.Fmt("invocation: module_id: %w", err)
+				}
+				if err := validateModuleIdentifierAgainstConfig(req.Invocation.ModuleId, cfg); err != nil {
+					return errors.Fmt("invocation: module_id: %w", err)
+				}
 			}
 
 		case "bigquery_exports":
@@ -267,7 +278,11 @@ func validateUpdateBaselinePermissions(ctx context.Context, realm string) error 
 
 // UpdateInvocation implements pb.RecorderServer.
 func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvocationRequest) (*pb.Invocation, error) {
-	if err := validateUpdateInvocationRequest(in, clock.Now(ctx).UTC()); err != nil {
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateUpdateInvocationRequest(in, cfg, clock.Now(ctx).UTC()); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
@@ -311,6 +326,23 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				deadline := in.Invocation.Deadline
 				values["Deadline"] = deadline
 				ret.Deadline = deadline
+
+			case "module_id":
+				if !isModuleIdentifierEqual(in.Invocation.ModuleId, ret.ModuleId) {
+					if ret.ModuleId != nil {
+						return appstatus.BadRequest(errors.New("invocation: module_id: cannot modify module_id once set (do you need to create a child invocation?)"))
+					}
+					// ret.ModuleId is nil. And the specified in.Invocation.ModuleId is not equal to it.
+					// Therefore, we must be setting the module to something substantive.
+					values["ModuleName"] = in.Invocation.ModuleId.ModuleName
+					values["ModuleScheme"] = in.Invocation.ModuleId.ModuleScheme
+					values["ModuleVariant"] = in.Invocation.ModuleId.ModuleVariant
+					values["ModuleVariantHash"] = pbutil.VariantHash(in.Invocation.ModuleId.ModuleVariant)
+					ret.ModuleId = in.Invocation.ModuleId
+
+					// Populate output-only fields in the response.
+					pbutil.PopulateModuleIdentifierHashes(ret.ModuleId)
+				}
 
 			case "bigquery_exports":
 				if !isBigQueryExportsEqual(in.Invocation.BigqueryExports, ret.BigqueryExports) {
@@ -443,6 +475,19 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 		ret.FinalizeStartTime = timestamppb.New(commitTimestamp)
 	}
 	return ret, nil
+}
+
+func isModuleIdentifierEqual(a, b *pb.ModuleIdentifier) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	// Remove the hash (output-only field) from both to make
+	// sure we compare only the meaningful fields.
+	aNormalized := proto.Clone(a).(*pb.ModuleIdentifier)
+	bNormalized := proto.Clone(b).(*pb.ModuleIdentifier)
+	aNormalized.ModuleVariantHash = ""
+	bNormalized.ModuleVariantHash = ""
+	return proto.Equal(a, b)
 }
 
 func isBigQueryExportsEqual(a, b []*pb.BigQueryExport) bool {
