@@ -86,6 +86,10 @@ export function getLocalDevSettingsJs(env: Record<string, string | undefined>) {
     },
     milo: {
       host: assertNonNullable(env['VITE_MILO_HOST']),
+      project: assertNonNullable(env['VITE_MILO_PROJECT']),
+      errorReportingApiKey: assertNonNullable(
+        env['VITE_MILO_ERROR_REPORTING_API_KEY'],
+      ),
     },
     luciSourceIndex: {
       host: assertNonNullable(env['VITE_LUCI_SOURCE_INDEX_HOST']),

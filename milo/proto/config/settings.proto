@@ -137,6 +137,10 @@ message Settings {
   message Milo {
     // host is the hostname of the MILO instance we're pointing to for RPCs (e.g. milo.api.luci.app).
     string host = 1;
+    // project is the name of the Google Cloud project where the milo is running.
+    string project = 2;
+    // api key configured in the Pantheon for error reporting
+    string error_reporting_api_key = 3;
   }
   // Value set in configuration ignored, actual value picked up from command line flags to server binary.
   Milo milo = 14;

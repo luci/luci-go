@@ -15,6 +15,7 @@
 package httpservice
 
 import (
+	"os"
 	"text/template"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -58,7 +59,9 @@ func (s *HTTPService) settingsJSHandler(c *router.Context) error {
 			// Fetched from command line arguments to the server binary instead of
 			// config. This facilitates testing locally developed UI with locally
 			// developed backend uploaded via gae.py.
-			Host: miloAPIHost,
+			Host:                 miloAPIHost,
+			Project:              os.Getenv("GOOGLE_CLOUD_PROJECT"),
+			ErrorReportingApiKey: settings.Milo.ErrorReportingApiKey,
 		},
 		LuciSourceIndex: settings.LuciSourceIndex,
 		FleetConsole:    settings.FleetConsole,

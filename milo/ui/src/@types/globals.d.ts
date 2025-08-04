@@ -84,6 +84,8 @@ declare const SETTINGS: {
   };
   readonly milo: {
     readonly host: string;
+    readonly project: string;
+    readonly errorReportingApiKey: string;
   };
   readonly luciSourceIndex: {
     readonly host: string;

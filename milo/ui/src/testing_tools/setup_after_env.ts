@@ -93,6 +93,10 @@ serverInjectedVars.SETTINGS = Object.freeze({
   },
   milo: {
     host: assertNonNullable(process.env['VITE_MILO_HOST']),
+    project: assertNonNullable(process.env['VITE_MILO_PROJECT']),
+    errorReportingApiKey: assertNonNullable(
+      process.env['VITE_MILO_ERROR_REPORTING_API_KEY'],
+    ),
   },
   luciSourceIndex: {
     host: assertNonNullable(process.env['VITE_LUCI_SOURCE_INDEX_HOST']),
