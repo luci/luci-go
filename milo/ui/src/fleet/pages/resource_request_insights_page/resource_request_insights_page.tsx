@@ -85,7 +85,10 @@ export const ResourceRequestListPage = () => {
       } satisfies FilterCategoryData<ResourceRequestInsightsOptionComponentProps>;
     });
 
-  const getSelectedChipDropdownContent = (filterKey: RriFilterKey) => {
+  const getSelectedChipDropdownContent = (
+    filterKey: RriFilterKey,
+    searchQuery: string,
+  ) => {
     const filterOption = filterComponents.find(
       (opt) => opt.value === filterKey,
     );
@@ -97,7 +100,7 @@ export const ResourceRequestListPage = () => {
 
     return (
       <OptionComponent
-        searchQuery={''}
+        searchQuery={searchQuery}
         optionComponentProps={{
           filters: currentFilters,
           onClose: clearSelections,
@@ -137,7 +140,9 @@ export const ResourceRequestListPage = () => {
             filterValue && (
               <SelectedChip
                 key={filterKey}
-                dropdownContent={getSelectedChipDropdownContent(filterKey)}
+                dropdownContent={(searchQuery) =>
+                  getSelectedChipDropdownContent(filterKey, searchQuery)
+                }
                 label={getSelectedFilterLabel(filterKey, filterValue)}
                 onApply={() => {
                   onApplyFilters();

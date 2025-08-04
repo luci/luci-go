@@ -17,12 +17,8 @@ import { useEffect, useState } from 'react';
 import { MenuSkeleton } from '@/fleet/components/filter_dropdown/menu_skeleton';
 import { OptionsMenu } from '@/fleet/components/filter_dropdown/options_menu';
 import { SelectedChip } from '@/fleet/components/filter_dropdown/selected_chip';
-import {
-  OptionCategory,
-  OptionValue,
-  SelectedOptions,
-} from '@/fleet/types/option';
-import { SortedElement } from '@/fleet/utils/fuzzy_sort';
+import { OptionCategory, SelectedOptions } from '@/fleet/types/option';
+import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 
 export const StringOnlySelectedChip = ({
   filterOptions,
@@ -61,49 +57,48 @@ export const StringOnlySelectedChip = ({
       .join(dimensionSeparator)}`;
   };
 
+  const renderMenu = (searchQuery: string) => {
+    if (isLoading) {
+      return (
+        <MenuSkeleton
+          itemCount={Math.min(filterOptions.length, 30)}
+          maxHeight={200}
+        />
+      );
+    }
+
+    const elements = filterOptions.find((opt) => opt.value === optionKey);
+
+    const elementsSorted = fuzzySort(searchQuery)(
+      elements?.options ?? [],
+      (o) => o.label,
+    );
+
+    return (
+      <OptionsMenu
+        elements={elementsSorted}
+        selectedElements={new Set(tempSelectedOptions[optionKey] ?? [])}
+        flipOption={(selectedValue: string) => {
+          const currentValues = tempSelectedOptions[optionKey] ?? [];
+          if (currentValues.includes(selectedValue)) {
+            setTempSelectedOptions((prev) => ({
+              ...prev,
+              [optionKey]: currentValues.filter((x) => x !== selectedValue),
+            }));
+          } else {
+            setTempSelectedOptions((prev) => ({
+              ...prev,
+              [optionKey]: [...currentValues, selectedValue],
+            }));
+          }
+        }}
+      />
+    );
+  };
+
   return (
     <SelectedChip
-      dropdownContent={
-        isLoading ? (
-          <MenuSkeleton
-            itemCount={Math.min(filterOptions.length, 30)}
-            maxHeight={200}
-          />
-        ) : (
-          <OptionsMenu
-            elements={
-              filterOptions
-                .find((opt) => opt.value === optionKey)
-                ?.options.map(
-                  (o) =>
-                    ({
-                      el: {
-                        label: o.label,
-                        value: o.value,
-                      },
-                      matches: [], // No search query here, so no matches to highlight
-                      score: 1, // Score is not used for sorting here, items are as-is
-                    }) as SortedElement<OptionValue>,
-                ) ?? []
-            }
-            selectedElements={new Set(tempSelectedOptions[optionKey] ?? [])}
-            flipOption={(selectedValue: string) => {
-              const currentValues = tempSelectedOptions[optionKey] ?? [];
-              if (currentValues.includes(selectedValue)) {
-                setTempSelectedOptions((prev) => ({
-                  ...prev,
-                  [optionKey]: currentValues.filter((x) => x !== selectedValue),
-                }));
-              } else {
-                setTempSelectedOptions((prev) => ({
-                  ...prev,
-                  [optionKey]: [...currentValues, selectedValue],
-                }));
-              }
-            }}
-          />
-        )
-      }
+      dropdownContent={renderMenu}
       label={getChipLabel()}
       onApply={() => {
         onSelectedOptionsChange(tempSelectedOptions);

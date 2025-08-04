@@ -19,7 +19,7 @@ import { ReactNode, useState } from 'react';
 import { OptionsDropdown } from '../options_dropdown/options_dropdown';
 
 interface SelectedChipProps {
-  dropdownContent: ReactNode;
+  dropdownContent: (searchQuery: string) => ReactNode;
   label: string;
   onApply: () => void;
   onDelete: () => void;
@@ -59,7 +59,8 @@ export function SelectedChip({
       <OptionsDropdown
         anchorEl={anchorEl}
         open={!!anchorEl}
-        renderChild={() => dropdownContent}
+        enableSearchInput
+        renderChild={dropdownContent}
         onApply={() => {
           setAnchorEL(null);
           onApply();
