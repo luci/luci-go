@@ -34,35 +34,54 @@ var settingsJsTemplateStr = `
 
 var settingsJsTemplate = template.Must(template.New("settings.js").Parse(settingsJsTemplateStr))
 
-// settingsJSHandler serves /settings.js used by the browser-side.
-func (s *HTTPService) settingsJSHandler(c *router.Context) error {
+func constructMiloConfigs(c *router.Context, settings *configpb.Settings) (*configpb.Settings_Milo, error) {
+	// Fetched from command line arguments to the server binary instead of
+	// config. This facilitates testing locally developed UI with locally
+	// developed backend uploaded via gae.py.
 	miloAPIHost, err := hosts.APIHost(c.Request.Context())
 	if err != nil {
 		logging.Errorf(c.Request.Context(), "Failed to load MILO Host: %s", err)
+		return nil, err
+	}
+
+	errorReportingApiKey := ""
+	// Previously, the Milo settings object was constructed dynamically and only
+	// contained the Host field, which was fetched from command-line arguments.
+	// Now that a new field is read from the config file (ErrorReportingApiKey),
+	// a nil pointer exception can occur if the config is missing or empty.
+	// This check prevents that.
+	if settings.Milo != nil {
+		errorReportingApiKey = settings.Milo.ErrorReportingApiKey
+	}
+
+	return &configpb.Settings_Milo{
+		Host:                 miloAPIHost,
+		Project:              os.Getenv("GOOGLE_CLOUD_PROJECT"),
+		ErrorReportingApiKey: errorReportingApiKey,
+	}, nil
+}
+
+// settingsJSHandler serves /settings.js used by the browser-side.
+func (s *HTTPService) settingsJSHandler(c *router.Context) error {
+	settings := config.GetSettings(c.Request.Context())
+	miloConfigs, err := constructMiloConfigs(c, settings)
+	if err != nil {
 		return err
 	}
 
-	settings := config.GetSettings(c.Request.Context())
 	// Reassign to make exposing props explicit.
 	settings = &configpb.Settings{
-		Swarming:       settings.Swarming,
-		Buildbucket:    settings.Buildbucket,
-		Resultdb:       settings.Resultdb,
-		LuciAnalysis:   settings.LuciAnalysis,
-		LuciBisection:  settings.LuciBisection,
-		SheriffOMatic:  settings.SheriffOMatic,
-		LuciTreeStatus: settings.LuciTreeStatus,
-		LuciNotify:     settings.LuciNotify,
-		AuthService:    settings.AuthService,
-		CrRev:          settings.CrRev,
-		Milo: &configpb.Settings_Milo{
-			// Fetched from command line arguments to the server binary instead of
-			// config. This facilitates testing locally developed UI with locally
-			// developed backend uploaded via gae.py.
-			Host:                 miloAPIHost,
-			Project:              os.Getenv("GOOGLE_CLOUD_PROJECT"),
-			ErrorReportingApiKey: settings.Milo.ErrorReportingApiKey,
-		},
+		Swarming:        settings.Swarming,
+		Buildbucket:     settings.Buildbucket,
+		Resultdb:        settings.Resultdb,
+		LuciAnalysis:    settings.LuciAnalysis,
+		LuciBisection:   settings.LuciBisection,
+		SheriffOMatic:   settings.SheriffOMatic,
+		LuciTreeStatus:  settings.LuciTreeStatus,
+		LuciNotify:      settings.LuciNotify,
+		AuthService:     settings.AuthService,
+		CrRev:           settings.CrRev,
+		Milo:            miloConfigs,
 		LuciSourceIndex: settings.LuciSourceIndex,
 		FleetConsole:    settings.FleetConsole,
 		Ufs:             settings.Ufs,
