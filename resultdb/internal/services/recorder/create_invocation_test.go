@@ -34,13 +34,16 @@ import (
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
@@ -358,66 +361,104 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			},
 		}
 
+		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
+		assert.NoErr(t, err)
+
 		t.Run(`valid`, func(t *ftt.Test) {
-			err := validateCreateInvocationRequest(request, now, addedInvs)
+			err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
 			assert.Loosely(t, err, should.BeNil)
 		})
 
 		t.Run(`empty`, func(t *ftt.Test) {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{}, now, addedInvs)
+			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{}, cfg, now, addedInvs)
 			assert.Loosely(t, err, should.ErrLike(`invocation_id: unspecified`))
 		})
 
 		t.Run(`invalid id`, func(t *ftt.Test) {
 			request.InvocationId = "1"
-			err := validateCreateInvocationRequest(request, now, addedInvs)
+			err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
 			assert.Loosely(t, err, should.ErrLike(`invocation_id: does not match`))
 		})
 
 		t.Run(`invalid request id`, func(t *ftt.Test) {
 			request.RequestId = "😃"
-			err := validateCreateInvocationRequest(request, now, addedInvs)
+			err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
 			assert.Loosely(t, err, should.ErrLike("request_id: does not match"))
 		})
 
 		t.Run(`invalid tags`, func(t *ftt.Test) {
 			request.Invocation.Tags = pbutil.StringPairs("1", "a")
-			err := validateCreateInvocationRequest(request, now, addedInvs)
+			err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
 			assert.Loosely(t, err, should.ErrLike(`invocation: tags: "1":"a": key: does not match`))
 		})
 
 		t.Run(`invalid deadline`, func(t *ftt.Test) {
 			request.Invocation.Deadline = pbutil.MustTimestampProto(now.Add(-time.Hour))
-			err := validateCreateInvocationRequest(request, now, addedInvs)
+			err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
 			assert.Loosely(t, err, should.ErrLike(`invocation: deadline: must be at least 10 seconds in the future`))
 		})
 
 		t.Run(`invalid realm`, func(t *ftt.Test) {
 			request.Invocation.Realm = "B@d/f::rm@t"
-			err := validateCreateInvocationRequest(request, now, addedInvs)
+			err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
 			assert.Loosely(t, err, should.ErrLike(`invocation: realm: bad global realm name`))
 		})
 
 		t.Run(`invalid state`, func(t *ftt.Test) {
 			request.Invocation.State = pb.Invocation_FINALIZED
-			err := validateCreateInvocationRequest(request, now, addedInvs)
+			err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
 			assert.Loosely(t, err, should.ErrLike(`invocation: state: cannot be created in the state FINALIZED`))
 		})
 
 		t.Run(`invalid included invocation`, func(t *ftt.Test) {
 			request.Invocation.IncludedInvocations = []string{"not an invocation name"}
-			err := validateCreateInvocationRequest(request, now, addedInvs)
-			assert.Loosely(t, err, should.ErrLike(`included_invocations[0]: invalid included invocation name`))
+			err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
+			assert.Loosely(t, err, should.ErrLike(`invocation: included_invocations[0]: invalid included invocation name`))
 		})
 
+		t.Run(`module_id`, func(t *ftt.Test) {
+			t.Run(`nil`, func(t *ftt.Test) {
+				// This is valid.
+				request.Invocation.ModuleId = nil
+				err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
+				assert.Loosely(t, err, should.BeNil)
+			})
+			t.Run(`valid`, func(t *ftt.Test) {
+				request.Invocation.ModuleId = &pb.ModuleIdentifier{
+					ModuleName:    "mymodule",
+					ModuleScheme:  "gtest", // This is in the service config we use for testing.
+					ModuleVariant: pbutil.Variant("k", "v"),
+				}
+				err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
+				assert.Loosely(t, err, should.BeNil)
+			})
+			t.Run("structurally invalid", func(t *ftt.Test) {
+				request.Invocation.ModuleId = &pb.ModuleIdentifier{
+					ModuleName:        "mymodule",
+					ModuleScheme:      "gtest",
+					ModuleVariantHash: "aaaaaaaaaaaaaaaa", // Variant hash only is not allowed for storage.
+				}
+				err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
+				assert.Loosely(t, err, should.ErrLike("invocation: module_id: module_variant: unspecified"))
+			})
+			t.Run("invalid with respect to service configuration", func(t *ftt.Test) {
+				request.Invocation.ModuleId = &pb.ModuleIdentifier{
+					ModuleName:    "mymodule",
+					ModuleScheme:  "cooltest", // This is not defined in the service config.
+					ModuleVariant: pbutil.Variant("k", "v"),
+				}
+				err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
+				assert.Loosely(t, err, should.ErrLike(`invocation: module_id: module_scheme: scheme "cooltest" is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme`))
+			})
+		})
 		t.Run(`invalid bigqueryExports`, func(t *ftt.Test) {
 			request.Invocation.BigqueryExports = []*pb.BigQueryExport{
 				{
 					Project: "project",
 				},
 			}
-			err := validateCreateInvocationRequest(request, now, addedInvs)
-			assert.Loosely(t, err, should.ErrLike(`bigquery_export[0]: dataset: unspecified`))
+			err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
+			assert.Loosely(t, err, should.ErrLike(`invocation: bigquery_export[0]: dataset: unspecified`))
 		})
 
 		t.Run(`invalid source spec`, func(t *ftt.Test) {
@@ -426,13 +467,13 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 					GitilesCommit: &pb.GitilesCommit{},
 				},
 			}
-			err := validateCreateInvocationRequest(request, now, addedInvs)
-			assert.Loosely(t, err, should.ErrLike(`source_spec: sources: gitiles_commit: host: unspecified`))
+			err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
+			assert.Loosely(t, err, should.ErrLike(`invocation: source_spec: sources: gitiles_commit: host: unspecified`))
 		})
 
 		t.Run(`invalid baseline`, func(t *ftt.Test) {
 			request.Invocation.BaselineId = "try/linux-rel"
-			err := validateCreateInvocationRequest(request, now, addedInvs)
+			err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
 			assert.Loosely(t, err, should.ErrLike(`invocation: baseline_id: does not match`))
 		})
 
@@ -442,7 +483,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 					"a": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationProperties)),
 				},
 			}
-			err := validateCreateInvocationRequest(request, now, addedInvs)
+			err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
 			assert.Loosely(t, err, should.ErrLike(`exceeds the maximum size of`))
 			assert.Loosely(t, err, should.ErrLike(`bytes`))
 		})
@@ -457,8 +498,8 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 						},
 					},
 				}
-				err := validateCreateInvocationRequest(request, now, addedInvs)
-				assert.Loosely(t, err, should.ErrLike(`extended_properties: key "mykey_"`))
+				err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
+				assert.Loosely(t, err, should.ErrLike(`invocation: extended_properties: key "mykey_"`))
 				assert.Loosely(t, err, should.ErrLike(`does not match`))
 			})
 			t.Run(`missing @type`, func(t *ftt.Test) {
@@ -469,8 +510,8 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 						},
 					},
 				}
-				err := validateCreateInvocationRequest(request, now, addedInvs)
-				assert.Loosely(t, err, should.ErrLike(`extended_properties: ["mykey"]: must have a field "@type"`))
+				err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
+				assert.Loosely(t, err, should.ErrLike(`invocation: extended_properties: ["mykey"]: must have a field "@type"`))
 			})
 
 			t.Run(`invalid @type`, func(t *ftt.Test) {
@@ -482,8 +523,8 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 						},
 					},
 				}
-				err := validateCreateInvocationRequest(request, now, addedInvs)
-				assert.Loosely(t, err, should.ErrLike(`extended_properties: ["mykey"]: "@type" type name "_some.package.MyMessage": does not match`))
+				err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
+				assert.Loosely(t, err, should.ErrLike(`invocation: extended_properties: ["mykey"]: "@type" type name "_some.package.MyMessage": does not match`))
 			})
 
 			t.Run(`max size of value`, func(t *ftt.Test) {
@@ -495,7 +536,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 						},
 					},
 				}
-				err := validateCreateInvocationRequest(request, now, addedInvs)
+				err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
 				assert.Loosely(t, err, should.ErrLike(`exceeds the maximum size of`))
 				assert.Loosely(t, err, should.ErrLike(`bytes`))
 			})
@@ -514,7 +555,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 					"mykey_4": tempValue,
 					"mykey_5": tempValue,
 				}
-				err := validateCreateInvocationRequest(request, now, addedInvs)
+				err := validateCreateInvocationRequest(request, cfg, now, addedInvs)
 				assert.Loosely(t, err, should.ErrLike(`exceeds the maximum size of`))
 				assert.Loosely(t, err, should.ErrLike(`bytes`))
 			})
@@ -525,6 +566,11 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 func TestCreateInvocation(t *testing.T) {
 	ftt.Run(`TestCreateInvocation`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
+		assert.NoErr(t, err)
+
 		ctx, sched := tq.TestingContext(ctx, nil)
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:someone@example.com",
@@ -728,7 +774,12 @@ func TestCreateInvocation(t *testing.T) {
 					Realm:               "testproject:testrealm",
 					IncludedInvocations: []string{"invocations/u-inv-child"},
 					State:               pb.Invocation_FINALIZING,
-					Properties:          testutil.TestProperties(),
+					ModuleId: &pb.ModuleIdentifier{
+						ModuleName:    "mymodule",
+						ModuleScheme:  "gtest",
+						ModuleVariant: pbutil.Variant("k", "v"),
+					},
+					Properties: testutil.TestProperties(),
 					SourceSpec: &pb.SourceSpec{
 						Sources: testutil.TestSources(),
 					},
@@ -802,6 +853,7 @@ func TestCreateInvocation(t *testing.T) {
 
 			expected := proto.Clone(req.Invocation).(*pb.Invocation)
 			expected.Instructions = instructionutil.InstructionsWithNames(expected.Instructions, "invocations/u-inv")
+			pbutil.PopulateModuleIdentifierHashes(expected.ModuleId)
 			proto.Merge(expected, &pb.Invocation{
 				Name:      "invocations/u-inv",
 				CreatedBy: "user:someone@example.com",

@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/exportroots"
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -45,7 +46,7 @@ import (
 // It also returns an IDSet containing the ids of all the invocations to be
 // included in the new invocations.
 func validateBatchCreateInvocationsRequest(
-	now time.Time, reqs []*pb.CreateInvocationRequest, requestID string) (newInvs, includedInvs invocations.IDSet, err error) {
+	now time.Time, reqs []*pb.CreateInvocationRequest, cfg *config.CompiledServiceConfig, requestID string) (newInvs, includedInvs invocations.IDSet, err error) {
 	if err := pbutil.ValidateRequestID(requestID); err != nil {
 		return nil, nil, errors.Fmt("request_id: %w", err)
 	}
@@ -57,7 +58,7 @@ func validateBatchCreateInvocationsRequest(
 	newInvs = make(invocations.IDSet, len(reqs))
 	allIncludedIDs := make(invocations.IDSet)
 	for i, req := range reqs {
-		if err := validateCreateInvocationRequest(req, now, allIncludedIDs); err != nil {
+		if err := validateCreateInvocationRequest(req, cfg, now, allIncludedIDs); err != nil {
 			return nil, nil, errors.Fmt("requests[%d]: %w", i, err)
 		}
 
@@ -85,8 +86,12 @@ func (s *recorderServer) BatchCreateInvocations(ctx context.Context, in *pb.Batc
 			return nil, errors.Fmt("requests[%d]: %w", i, err)
 		}
 	}
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	idSet, includedInvs, err := validateBatchCreateInvocationsRequest(now, in.Requests, in.RequestId)
+	idSet, includedInvs, err := validateBatchCreateInvocationsRequest(now, in.Requests, cfg, in.RequestId)
 	if err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
@@ -152,19 +157,20 @@ func (s *recorderServer) createInvocationsInternal(ctx context.Context, now time
 		inv := &pb.Invocation{
 			Name:               invocations.ID(req.InvocationId).Name(),
 			State:              newInvState,
-			Deadline:           req.Invocation.GetDeadline(),
-			Tags:               req.Invocation.GetTags(),
-			IsExportRoot:       req.Invocation.GetIsExportRoot(),
-			BigqueryExports:    req.Invocation.GetBigqueryExports(),
+			Deadline:           req.Invocation.Deadline,
+			Tags:               req.Invocation.Tags,
+			IsExportRoot:       req.Invocation.IsExportRoot,
+			ModuleId:           req.Invocation.ModuleId,
+			BigqueryExports:    req.Invocation.BigqueryExports,
 			CreatedBy:          createdBy,
-			ProducerResource:   req.Invocation.GetProducerResource(),
-			Realm:              req.Invocation.GetRealm(),
-			Properties:         req.Invocation.GetProperties(),
-			SourceSpec:         req.Invocation.GetSourceSpec(),
-			IsSourceSpecFinal:  req.Invocation.GetIsSourceSpecFinal(),
-			BaselineId:         req.Invocation.GetBaselineId(),
+			ProducerResource:   req.Invocation.ProducerResource,
+			Realm:              req.Invocation.Realm,
+			Properties:         req.Invocation.Properties,
+			SourceSpec:         req.Invocation.SourceSpec,
+			IsSourceSpecFinal:  req.Invocation.IsSourceSpecFinal,
+			BaselineId:         req.Invocation.BaselineId,
 			Instructions:       instructionutil.RemoveInstructionsName(req.Invocation.GetInstructions()),
-			ExtendedProperties: req.Invocation.GetExtendedProperties(),
+			ExtendedProperties: req.Invocation.ExtendedProperties,
 		}
 
 		// Ensure the invocation has a deadline.

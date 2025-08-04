@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tokens"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/workunits"
@@ -45,7 +46,11 @@ func (s *recorderServer) CreateWorkUnit(ctx context.Context, in *pb.CreateWorkUn
 	if err := verifyCreateWorkUnitPermissions(ctx, in); err != nil {
 		return nil, err
 	}
-	if err := validateCreateWorkUnitRequest(in, true); err != nil {
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateCreateWorkUnitRequest(in, cfg, true); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
@@ -116,6 +121,7 @@ func createIdempotentWorkUnit(
 			CreatedBy:          createdBy,
 			Deadline:           deadline,
 			CreateRequestID:    in.RequestId,
+			ModuleID:           wu.ModuleId,
 			ProducerResource:   wu.ProducerResource,
 			Tags:               wu.Tags,
 			Properties:         wu.Properties,
@@ -314,7 +320,7 @@ func verifyCreateWorkUnitPermissions(ctx context.Context, req *pb.CreateWorkUnit
 // requireRequestID should be set to true for all single work unit creation requests.
 // It should only be false for batch work unit creations where the request ID is set
 // on the parent.
-func validateCreateWorkUnitRequest(req *pb.CreateWorkUnitRequest, requireRequestID bool) error {
+func validateCreateWorkUnitRequest(req *pb.CreateWorkUnitRequest, cfg *config.CompiledServiceConfig, requireRequestID bool) error {
 	if err := pbutil.ValidateWorkUnitName(req.Parent); err != nil {
 		return errors.Fmt("parent: %w", err)
 	}
@@ -326,7 +332,7 @@ func validateCreateWorkUnitRequest(req *pb.CreateWorkUnitRequest, requireRequest
 	if err := validateWorkUnitIDPrefix(parentID.WorkUnitID, req.WorkUnitId); err != nil {
 		return errors.Fmt("work_unit_id: %w", err)
 	}
-	if err := validateWorkUnitForCreate(req.WorkUnit); err != nil {
+	if err := validateNonRootWorkUnitForCreate(req.WorkUnit, cfg); err != nil {
 		return errors.Fmt("work_unit: %w", err)
 	}
 	if requireRequestID && req.RequestId == "" {
@@ -340,9 +346,9 @@ func validateCreateWorkUnitRequest(req *pb.CreateWorkUnitRequest, requireRequest
 	return nil
 }
 
-// validateWorkUnitForCreate validates the fields of a pb.WorkUnit message
-// for a creation request within a root invocation.
-func validateWorkUnitForCreate(wu *pb.WorkUnit) error {
+// validateNonRootWorkUnitForCreate validates the fields of a pb.WorkUnit message
+// for creation (outside of a root work unit creation).
+func validateNonRootWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServiceConfig) error {
 	if wu == nil {
 		return errors.New("unspecified")
 	}
@@ -387,6 +393,20 @@ func validateWorkUnitForCreate(wu *pb.WorkUnit) error {
 			return errors.Fmt("producer_resource: %w", err)
 		}
 	}
+	return validateWorkUnitForCreate(wu, cfg)
+}
+
+// validateWorkUnitForCreate implements common work unit validation between
+// root and non-root work unit creations.
+func validateWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServiceConfig) error {
+	if wu.ModuleId != nil {
+		if err := pbutil.ValidateModuleIdentifierForStorage(wu.ModuleId); err != nil {
+			return errors.Fmt("module_id: %w", err)
+		}
+		if err := validateModuleIdentifierAgainstConfig(wu.ModuleId, cfg); err != nil {
+			return errors.Fmt("module_id: %w", err)
+		}
+	}
 	if err := pbutil.ValidateWorkUnitTags(wu.Tags); err != nil {
 		return errors.Fmt("tags: %w", err)
 	}
@@ -404,6 +424,16 @@ func validateWorkUnitForCreate(wu *pb.WorkUnit) error {
 		if err := pbutil.ValidateInstructions(wu.Instructions); err != nil {
 			return errors.Fmt("instructions: %w", err)
 		}
+	}
+	return nil
+}
+
+// validateModuleIdentifierAgainstConfig validates the module identifier
+// against the service configuration.
+func validateModuleIdentifierAgainstConfig(moduleID *pb.ModuleIdentifier, cfg *config.CompiledServiceConfig) error {
+	_, ok := cfg.Schemes[moduleID.ModuleScheme]
+	if !ok {
+		return errors.Fmt("module_scheme: scheme %q is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme", moduleID.ModuleScheme)
 	}
 	return nil
 }

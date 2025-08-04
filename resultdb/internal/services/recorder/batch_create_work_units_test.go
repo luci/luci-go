@@ -31,12 +31,15 @@ import (
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
@@ -116,6 +119,7 @@ func TestValidateBatchCreateWorkUnitsRequest(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run(`ValidateBatchCreateWorkUnitsRequest`, t, func(t *ftt.Test) {
+		// Construct a valid request.
 		req := &pb.BatchCreateWorkUnitsRequest{
 			Requests: []*pb.CreateWorkUnitRequest{
 				{
@@ -136,67 +140,72 @@ func TestValidateBatchCreateWorkUnitsRequest(t *testing.T) {
 			RequestId: "request-id",
 		}
 
+		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
+		assert.NoErr(t, err)
+
 		t.Run("valid", func(t *ftt.Test) {
-			err := validateBatchCreateWorkUnitsRequest(req)
+			err := validateBatchCreateWorkUnitsRequest(req, cfg)
 			assert.Loosely(t, err, should.BeNil)
 		})
 
 		t.Run("request_id", func(t *ftt.Test) {
 			t.Run("unspecified", func(t *ftt.Test) {
 				req.RequestId = ""
-				err := validateBatchCreateWorkUnitsRequest(req)
+				err := validateBatchCreateWorkUnitsRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("request_id: unspecified"))
 			})
 			t.Run("invalid", func(t *ftt.Test) {
 				req.RequestId = "😃"
-				err := validateBatchCreateWorkUnitsRequest(req)
+				err := validateBatchCreateWorkUnitsRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("request_id: does not match"))
 			})
 		})
 
 		t.Run("no requests", func(t *ftt.Test) {
 			req.Requests = nil
-			err := validateBatchCreateWorkUnitsRequest(req)
+			err := validateBatchCreateWorkUnitsRequest(req, cfg)
 			assert.Loosely(t, err, should.ErrLike("requests: must have at least one request"))
 		})
 
 		t.Run("too many requests", func(t *ftt.Test) {
 			req.Requests = make([]*pb.CreateWorkUnitRequest, 501)
-			err := validateBatchCreateWorkUnitsRequest(req)
+			err := validateBatchCreateWorkUnitsRequest(req, cfg)
 			assert.Loosely(t, err, should.ErrLike("requests: the number of requests in the batch (501) exceeds 500"))
 		})
 		t.Run("total size of requests is too large", func(t *ftt.Test) {
 			req.Requests[0].Parent = strings.Repeat("a", pbutil.MaxBatchRequestSize)
-			err := validateBatchCreateWorkUnitsRequest(req)
+			err := validateBatchCreateWorkUnitsRequest(req, cfg)
 			assert.Loosely(t, err, should.ErrLike("requests: the size of all requests is too large"))
 		})
 
 		t.Run("duplicated work unit id", func(t *ftt.Test) {
 			req.Requests[1].WorkUnitId = req.Requests[0].WorkUnitId
 
-			err := validateBatchCreateWorkUnitsRequest(req)
+			err := validateBatchCreateWorkUnitsRequest(req, cfg)
 			assert.Loosely(t, err, should.ErrLike("requests[1]: work_unit_id: duplicated work unit id"))
 		})
 		t.Run("sub-request", func(t *ftt.Test) {
 			t.Run("invalid", func(t *ftt.Test) {
+				// validateCreateWorkUnitRequest has its own exhaustive test cases,
+				// simply check that it is called.
 				req.Requests[1].WorkUnitId = "invalid id"
-				err := validateBatchCreateWorkUnitsRequest(req)
+				err := validateBatchCreateWorkUnitsRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("requests[1]: work_unit_id: does not match"))
 			})
 			t.Run("request_id", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.Requests[0].RequestId = ""
-					err := validateBatchCreateWorkUnitsRequest(req)
+					err := validateBatchCreateWorkUnitsRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("inconsistent", func(t *ftt.Test) {
 					req.Requests[0].RequestId = "another-id"
-					err := validateBatchCreateWorkUnitsRequest(req)
+					err := validateBatchCreateWorkUnitsRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("requests[0]: request_id: inconsistent with top-level request_id"))
 				})
 				t.Run("consistent", func(t *ftt.Test) {
 					req.Requests[0].RequestId = req.RequestId
-					err := validateBatchCreateWorkUnitsRequest(req)
+					err := validateBatchCreateWorkUnitsRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 			})
@@ -224,7 +233,7 @@ func TestValidateBatchCreateWorkUnitsRequest(t *testing.T) {
 						WorkUnit:   &pb.WorkUnit{Realm: "testproject:testrealm"},
 					})
 
-				err := validateBatchCreateWorkUnitsRequest(req)
+				err := validateBatchCreateWorkUnitsRequest(req, cfg)
 				assert.That(t, err, should.ErrLike("parent: cannot refer to work unit created in the later request"))
 			})
 
@@ -239,14 +248,14 @@ func TestValidateBatchCreateWorkUnitsRequest(t *testing.T) {
 						WorkUnitId: workUnitID3.WorkUnitID,
 						WorkUnit:   &pb.WorkUnit{Realm: "testproject:testrealm"},
 					})
-				err := validateBatchCreateWorkUnitsRequest(req)
+				err := validateBatchCreateWorkUnitsRequest(req, cfg)
 				assert.That(t, err, should.ErrLike("cannot refer to work unit created in the later request"))
 			})
 		})
 		t.Run("parent is a different root invocation id", func(t *ftt.Test) {
 			req.Requests[1].Parent = "rootInvocations/u-my-root-id-2/workUnits/root"
 
-			err := validateBatchCreateWorkUnitsRequest(req)
+			err := validateBatchCreateWorkUnitsRequest(req, cfg)
 			assert.That(t, err, should.ErrLike("all requests must be for creations in the same root invocation"))
 		})
 	})
@@ -255,6 +264,11 @@ func TestValidateBatchCreateWorkUnitsRequest(t *testing.T) {
 func TestBatchCreateWorkUnits(t *testing.T) {
 	ftt.Run(`TestBatchCreateWorkUnits`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
+		assert.NoErr(t, err)
+
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -465,10 +479,16 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 				},
 			}
 
-			// Fill all fields to enhance test coverage.
+			// Populare Requests[0] with all fields and Requests[1] and [2] with minimal fields
+			// to maximise test coverage.
 			req.Requests[0].WorkUnit = &pb.WorkUnit{
-				Realm:              "testproject:testrealm",
-				State:              pb.WorkUnit_FINALIZING,
+				Realm: "testproject:testrealm",
+				State: pb.WorkUnit_FINALIZING,
+				ModuleId: &pb.ModuleIdentifier{
+					ModuleName:    "mymodule",
+					ModuleScheme:  "gtest",
+					ModuleVariant: pbutil.Variant("k", "v"),
+				},
 				ProducerResource:   "//producer.example.com/builds/123",
 				Tags:               pbutil.StringPairs("e2e_key", "e2e_value"),
 				Properties:         wuProperties,
@@ -487,6 +507,7 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 				ChildWorkUnits: []string{workUnitID11.Name()},
 			})
 			expectedWU1.Instructions = instructionutil.InstructionsWithNames(instructions, workUnitID1.Name())
+			pbutil.PopulateModuleIdentifierHashes(expectedWU1.ModuleId)
 
 			expectedWU11 := proto.Clone(req.Requests[1].WorkUnit).(*pb.WorkUnit)
 			proto.Merge(expectedWU11, &pb.WorkUnit{
@@ -509,15 +530,21 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			})
 
 			expectWURow1 := &workunits.WorkUnitRow{
-				ID:                 workUnitID1,
-				ParentWorkUnitID:   spanner.NullString{Valid: true, StringVal: parentWorkUnitID.WorkUnitID},
-				State:              pb.WorkUnit_FINALIZING,
-				Realm:              "testproject:testrealm",
-				CreatedBy:          "user:someone@example.com",
-				FinalizeStartTime:  spanner.NullTime{},
-				FinalizeTime:       spanner.NullTime{},
-				Deadline:           start.Add(defaultDeadlineDuration),
-				CreateRequestID:    "test-request-id",
+				ID:                workUnitID1,
+				ParentWorkUnitID:  spanner.NullString{Valid: true, StringVal: parentWorkUnitID.WorkUnitID},
+				State:             pb.WorkUnit_FINALIZING,
+				Realm:             "testproject:testrealm",
+				CreatedBy:         "user:someone@example.com",
+				FinalizeStartTime: spanner.NullTime{},
+				FinalizeTime:      spanner.NullTime{},
+				Deadline:          start.Add(defaultDeadlineDuration),
+				CreateRequestID:   "test-request-id",
+				ModuleID: &pb.ModuleIdentifier{
+					ModuleName:        "mymodule",
+					ModuleScheme:      "gtest",
+					ModuleVariant:     pbutil.Variant("k", "v"),
+					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k", "v")),
+				},
 				ProducerResource:   "//producer.example.com/builds/123",
 				Tags:               pbutil.StringPairs("e2e_key", "e2e_value"),
 				Properties:         wuProperties,

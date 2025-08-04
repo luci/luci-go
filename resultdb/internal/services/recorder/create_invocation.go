@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -83,7 +84,7 @@ func validateInvocationDeadline(deadline *timestamppb.Timestamp, now time.Time) 
 // invalid.
 // It also adds the invocations to be included into the newly
 // created invocation to the given IDSet.
-func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time, includedIDs invocations.IDSet) error {
+func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, cfg *config.CompiledServiceConfig, now time.Time, includedIDs invocations.IDSet) error {
 	if err := pbutil.ValidateInvocationID(req.InvocationId); err != nil {
 		return errors.Fmt("invocation_id: %w", err)
 	}
@@ -114,50 +115,59 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 		}
 	}
 
-	if !isValidCreateState(inv.GetState()) {
+	if !isValidCreateState(inv.State) {
 		return errors.Fmt("invocation: state: cannot be created in the state %s", inv.GetState())
 	}
 
-	for i, bqExport := range inv.GetBigqueryExports() {
-		if err := pbutil.ValidateBigQueryExport(bqExport); err != nil {
-			return errors.Fmt("bigquery_export[%d]: %w", i, err)
+	if inv.ModuleId != nil {
+		if err := pbutil.ValidateModuleIdentifierForStorage(inv.ModuleId); err != nil {
+			return errors.Fmt("invocation: module_id: %w", err)
+		}
+		if err := validateModuleIdentifierAgainstConfig(inv.ModuleId, cfg); err != nil {
+			return errors.Fmt("invocation: module_id: %w", err)
 		}
 	}
 
-	for i, incInvName := range inv.GetIncludedInvocations() {
+	for i, bqExport := range inv.BigqueryExports {
+		if err := pbutil.ValidateBigQueryExport(bqExport); err != nil {
+			return errors.Fmt("invocation: bigquery_export[%d]: %w", i, err)
+		}
+	}
+
+	for i, incInvName := range inv.IncludedInvocations {
 		incInvID, err := pbutil.ParseInvocationName(incInvName)
 		if err != nil {
-			return errors.Fmt("included_invocations[%d]: invalid included invocation name %q: %w", i, incInvName, err)
+			return errors.Fmt("invocation: included_invocations[%d]: invalid included invocation name %q: %w", i, incInvName, err)
 		}
 		if incInvID == req.InvocationId {
-			return errors.Fmt("included_invocations[%d]: invocation cannot include itself", i)
+			return errors.Fmt("invocation: included_invocations[%d]: invocation cannot include itself", i)
 		}
 		includedIDs.Add(invocations.ID(incInvID))
 	}
 
-	if err := pbutil.ValidateSourceSpec(inv.GetSourceSpec()); err != nil {
-		return errors.Fmt("source_spec: %w", err)
+	if err := pbutil.ValidateSourceSpec(inv.SourceSpec); err != nil {
+		return errors.Fmt("invocation: source_spec: %w", err)
 	}
 
 	if inv.GetBaselineId() != "" {
-		if err := pbutil.ValidateBaselineID(inv.GetBaselineId()); err != nil {
+		if err := pbutil.ValidateBaselineID(inv.BaselineId); err != nil {
 			return errors.Fmt("invocation: baseline_id: %w", err)
 		}
 	}
 
-	if err := pbutil.ValidateInvocationProperties(req.Invocation.GetProperties()); err != nil {
-		return errors.Fmt("properties: %w", err)
+	if err := pbutil.ValidateInvocationProperties(inv.Properties); err != nil {
+		return errors.Fmt("invocation: properties: %w", err)
 	}
 
 	// In the current flow, step instructions are populated by UpdateInvocation,
 	// instead of CreateInvocation.
 	// However, we will also store step instructions if they are passed in during creation.
-	if err := pbutil.ValidateInstructions(req.Invocation.GetInstructions()); err != nil {
-		return errors.Fmt("instructions: %w", err)
+	if err := pbutil.ValidateInstructions(inv.Instructions); err != nil {
+		return errors.Fmt("invocation: instructions: %w", err)
 	}
 
-	if err := pbutil.ValidateInvocationExtendedProperties(req.Invocation.GetExtendedProperties()); err != nil {
-		return errors.Fmt("extended_properties: %w", err)
+	if err := pbutil.ValidateInvocationExtendedProperties(inv.ExtendedProperties); err != nil {
+		return errors.Fmt("invocation: extended_properties: %w", err)
 	}
 
 	return nil
@@ -305,9 +315,13 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 	if err := verifyCreateInvocationPermissions(ctx, in); err != nil {
 		return nil, err
 	}
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	includedInvs := make(invocations.IDSet)
-	if err := validateCreateInvocationRequest(in, now, includedInvs); err != nil {
+	if err := validateCreateInvocationRequest(in, cfg, now, includedInvs); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 

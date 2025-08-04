@@ -28,11 +28,14 @@ import (
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -45,6 +48,9 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 	now := testclock.TestRecentTimeUTC
 
 	ftt.Run(`TestValidateBatchCreateInvocationsRequest`, t, func(t *ftt.Test) {
+		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
+		assert.NoErr(t, err)
+
 		t.Run(`invalid request id - Batch`, func(t *ftt.Test) {
 			_, _, err := validateBatchCreateInvocationsRequest(
 				now,
@@ -54,6 +60,7 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 						Realm: "testproject:testrealm",
 					},
 				}},
+				cfg,
 				"😃",
 			)
 			assert.Loosely(t, err, should.ErrLike("request_id: does not match"))
@@ -67,6 +74,7 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 						Realm: "testproject:testrealm",
 					},
 					RequestId: "valid, but different"}},
+				cfg,
 				"valid",
 			)
 			assert.Loosely(t, err, should.ErrLike(`request_id: "valid" does not match`))
@@ -75,6 +83,7 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 			_, _, err := validateBatchCreateInvocationsRequest(
 				now,
 				make([]*pb.CreateInvocationRequest, 1000),
+				cfg,
 				"valid",
 			)
 			assert.Loosely(t, err, should.ErrLike(`the number of requests in the batch`))
@@ -90,6 +99,7 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 						Realm: "testproject:testrealm",
 					},
 				}},
+				cfg,
 				"valid",
 			)
 			assert.Loosely(t, err, should.BeNil)
@@ -102,6 +112,11 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 func TestBatchCreateInvocations(t *testing.T) {
 	ftt.Run(`TestBatchCreateInvocations`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
+		assert.NoErr(t, err)
+
 		ctx, _ = tq.TestingContext(ctx, nil)
 
 		// Configure mock authentication to allow creation of custom invocation ids.

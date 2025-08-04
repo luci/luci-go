@@ -107,7 +107,7 @@ func TestWriteWorkUnit(t *testing.T) {
 			Instructions:           row.Instructions,
 			ExtendedProperties:     row.ExtendedProperties,
 			IsExportRoot:           false,
-			TestResultVariantUnion: &pb.Variant{},
+			TestResultVariantUnion: row.ModuleID.ModuleVariant,
 		}
 		expectedLegacyInv.Instructions.Instructions[0].Name = "invocations/workunit:root-inv-id:work-unit-id/instructions/step"
 

@@ -33,12 +33,15 @@ import (
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
@@ -188,6 +191,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 	t.Parallel()
 	now := testclock.TestRecentTimeUTC
 	ftt.Run("ValidateCreateRootInvocationRequest", t, func(t *ftt.Test) {
+		// Construct a valid request.
 		req := &pb.CreateRootInvocationRequest{
 			RootInvocationId: "u-my-root-id",
 			RootInvocation: &pb.RootInvocation{
@@ -197,25 +201,28 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 			RequestId:    "request-id",
 		}
 
+		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
+		assert.NoErr(t, err)
+
 		t.Run("valid", func(t *ftt.Test) {
-			err := validateCreateRootInvocationRequest(req)
+			err := validateCreateRootInvocationRequest(req, cfg)
 			assert.Loosely(t, err, should.BeNil)
 		})
 
 		t.Run("root_invocation_id", func(t *ftt.Test) {
 			t.Run("empty", func(t *ftt.Test) {
 				req.RootInvocationId = ""
-				err := validateCreateRootInvocationRequest(req)
+				err := validateCreateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_invocation_id: unspecified"))
 			})
 			t.Run("reserved", func(t *ftt.Test) {
 				req.RootInvocationId = "build-1234567890"
-				err := validateCreateRootInvocationRequest(req)
+				err := validateCreateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run("invalid", func(t *ftt.Test) {
 				req.RootInvocationId = "INVALID"
-				err := validateCreateRootInvocationRequest(req)
+				err := validateCreateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_invocation_id: does not match"))
 			})
 		})
@@ -223,41 +230,41 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 		t.Run("root_invocation", func(t *ftt.Test) {
 			t.Run("unspecified", func(t *ftt.Test) {
 				req.RootInvocation = nil
-				err := validateCreateRootInvocationRequest(req)
+				err := validateCreateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_invocation: unspecified"))
 			})
 			t.Run("state", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					// If it is unset, we will populate a default value.
 					req.RootInvocation.State = pb.RootInvocation_STATE_UNSPECIFIED
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("active", func(t *ftt.Test) {
 					req.RootInvocation.State = pb.RootInvocation_ACTIVE
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("finalizing", func(t *ftt.Test) {
 					req.RootInvocation.State = pb.RootInvocation_FINALIZING
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.RootInvocation.State = pb.RootInvocation_FINALIZED
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: state: cannot be created in the state FINALIZED"))
 				})
 			})
 			t.Run("realm", func(t *ftt.Test) {
 				t.Run("unspecified", func(t *ftt.Test) {
 					req.RootInvocation.Realm = ""
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: realm: unspecified"))
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.RootInvocation.Realm = "invalid:"
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: realm: bad global realm name"))
 				})
 			})
@@ -265,29 +272,29 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 				t.Run("empty", func(t *ftt.Test) {
 					// Empty is valid, the deadline will be defaulted.
 					req.RootInvocation.Deadline = nil
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.RootInvocation.Deadline = pbutil.MustTimestampProto(now.Add(-time.Hour))
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: deadline: must be at least 10 seconds in the future"))
 				})
 			})
 			t.Run("tags", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.RootInvocation.Tags = nil
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("valid", func(t *ftt.Test) {
 					req.RootInvocation.Tags = pbutil.StringPairs("key", "value")
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.RootInvocation.Tags = pbutil.StringPairs("1", "a")
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike(`root_invocation: tags: "1":"a": key: does not match`))
 				})
 				t.Run("too large", func(t *ftt.Test) {
@@ -296,31 +303,31 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 						tags[i] = pbutil.StringPair(strings.Repeat("k", 64), strings.Repeat("v", 256))
 					}
 					req.RootInvocation.Tags = tags
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: tags: got 16575 bytes; exceeds the maximum size of 16384 bytes"))
 				})
 			})
 			t.Run("producer_resource", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.RootInvocation.ProducerResource = ""
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("valid", func(t *ftt.Test) {
 					req.RootInvocation.ProducerResource = "//cr-buildbucket.appspot.com/builds/1234567890"
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.RootInvocation.ProducerResource = "invalid"
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: producer_resource: resource name \"invalid\" does not start with '//'"))
 				})
 			})
 			t.Run("sources", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.RootInvocation.Sources = nil
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("valid", func(t *ftt.Test) {
@@ -333,21 +340,21 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 							Position:   5,
 						},
 					}
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.RootInvocation.Sources = &pb.Sources{
 						GitilesCommit: &pb.GitilesCommit{},
 					}
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: sources: gitiles_commit: host: unspecified"))
 				})
 			})
 			t.Run("properties", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.RootInvocation.Properties = nil
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("valid", func(t *ftt.Test) {
@@ -357,7 +364,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 							"key_1": structpb.NewStringValue("value_1"),
 						},
 					}
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
@@ -366,7 +373,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 							"key_1": structpb.NewStringValue("value_1"),
 						},
 					}
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike(`root_invocation: properties: must have a field "@type"`))
 				})
 				t.Run("too large", func(t *ftt.Test) {
@@ -376,19 +383,19 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 							"a":     structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationProperties)),
 						},
 					}
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: properties: the size of properties (16448) exceeds the maximum size of 16384 bytes"))
 				})
 			})
 			t.Run("baseline_id", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.RootInvocation.BaselineId = ""
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.RootInvocation.BaselineId = "try/linux-rel"
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: baseline_id: does not match"))
 				})
 			})
@@ -396,47 +403,84 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 		t.Run("root_work_unit", func(t *ftt.Test) {
 			t.Run("unspecified", func(t *ftt.Test) {
 				req.RootWorkUnit = nil
-				err := validateCreateRootInvocationRequest(req)
+				err := validateCreateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_work_unit: unspecified"))
 			})
 			t.Run("state", func(t *ftt.Test) {
 				// Must not be set.
 				req.RootWorkUnit.State = pb.WorkUnit_ACTIVE
-				err := validateCreateRootInvocationRequest(req)
+				err := validateCreateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_work_unit: state: must not be set; always inherited from root invocation"))
 			})
 			t.Run("realm", func(t *ftt.Test) {
 				// Must not be set.
 				req.RootWorkUnit.Realm = "project:realm"
-				err := validateCreateRootInvocationRequest(req)
+				err := validateCreateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_work_unit: realm: must not be set"))
 			})
 			t.Run("deadline", func(t *ftt.Test) {
 				// Must not be set.
 				req.RootWorkUnit.Deadline = pbutil.MustTimestampProto(now.Add(time.Hour))
-				err := validateCreateRootInvocationRequest(req)
+				err := validateCreateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_work_unit: deadline: must not be set; always inherited from root invocation"))
+			})
+			t.Run("module_id", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
+					// This is valid.
+					req.RootWorkUnit.ModuleId = nil
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("valid", func(t *ftt.Test) {
+					req.RootWorkUnit.ModuleId = &pb.ModuleIdentifier{
+						ModuleName:    "mymodule",
+						ModuleScheme:  "gtest", // This is in the service config we use for testing.
+						ModuleVariant: pbutil.Variant("k", "v"),
+					}
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("structurally invalid", func(t *ftt.Test) {
+					// pbutil.ValidateModuleIdentifierForStorage has its own
+					// exhaustive tests, verify it is being called.
+					req.RootWorkUnit.ModuleId = &pb.ModuleIdentifier{
+						ModuleName:        "mymodule",
+						ModuleScheme:      "gtest",
+						ModuleVariantHash: "aaaaaaaaaaaaaaaa", // Variant hash only is not allowed for storage.
+					}
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("root_work_unit: module_id: module_variant: unspecified"))
+				})
+				t.Run("invalid with respect to service configuration", func(t *ftt.Test) {
+					req.RootWorkUnit.ModuleId = &pb.ModuleIdentifier{
+						ModuleName:    "mymodule",
+						ModuleScheme:  "cooltest", // This is not defined in the service config.
+						ModuleVariant: pbutil.Variant("k", "v"),
+					}
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike(`root_work_unit: module_id: module_scheme: scheme "cooltest" is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme`))
+				})
 			})
 			t.Run("producer resource", func(t *ftt.Test) {
 				// Must not be set.
 				req.RootWorkUnit.ProducerResource = "//chromium-swarm.appspot.com/tasks/deadbeef"
-				err := validateCreateRootInvocationRequest(req)
+				err := validateCreateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_work_unit: producer_resource: must not be set; always inherited from root invocation"))
 			})
 			t.Run("tags", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.RootWorkUnit.Tags = nil
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("valid", func(t *ftt.Test) {
 					req.RootWorkUnit.Tags = pbutil.StringPairs("key", "value")
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.RootWorkUnit.Tags = pbutil.StringPairs("1", "a")
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike(`root_work_unit: tags: "1":"a": key: does not match`))
 				})
 				t.Run("too large", func(t *ftt.Test) {
@@ -445,14 +489,14 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 						tags[i] = pbutil.StringPair(strings.Repeat("k", 64), strings.Repeat("v", 256))
 					}
 					req.RootWorkUnit.Tags = tags
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_work_unit: tags: got 16575 bytes; exceeds the maximum size of 16384 bytes"))
 				})
 			})
 			t.Run("properties", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.RootWorkUnit.Properties = nil
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("valid", func(t *ftt.Test) {
@@ -462,7 +506,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 							"key_1": structpb.NewStringValue("value_1"),
 						},
 					}
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
@@ -471,7 +515,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 							"key_1": structpb.NewStringValue("value_1"),
 						},
 					}
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike(`root_work_unit: properties: must have a field "@type"`))
 				})
 				t.Run("too large", func(t *ftt.Test) {
@@ -481,27 +525,27 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 							"a":     structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationProperties)),
 						},
 					}
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_work_unit: properties: the size of properties (16448) exceeds the maximum size of 16384 bytes"))
 				})
 			})
 			t.Run("extended_properties", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.RootWorkUnit.ExtendedProperties = nil
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid key", func(t *ftt.Test) {
 					req.RootWorkUnit.ExtendedProperties = testutil.TestInvocationExtendedProperties()
 					req.RootWorkUnit.ExtendedProperties["invalid_key@"] = &structpb.Struct{}
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike(`root_work_unit: extended_properties: key "invalid_key@"`))
 				})
 			})
 			t.Run("instructions", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.RootWorkUnit.Instructions = nil
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("valid", func(t *ftt.Test) {
@@ -530,7 +574,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 							},
 						},
 					}
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
@@ -539,7 +583,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 							{},
 						},
 					}
-					err := validateCreateRootInvocationRequest(req)
+					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_work_unit: instructions: instructions[0]: id: unspecified"))
 				})
 			})
@@ -548,12 +592,12 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 		t.Run("request_id", func(t *ftt.Test) {
 			t.Run("empty", func(t *ftt.Test) {
 				req.RequestId = ""
-				err := validateCreateRootInvocationRequest(req)
+				err := validateCreateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("request_id: unspecified (please provide a per-request UUID to ensure idempotence)"))
 			})
 			t.Run("invalid", func(t *ftt.Test) {
 				req.RequestId = "😃"
-				err := validateCreateRootInvocationRequest(req)
+				err := validateCreateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("request_id: does not match"))
 			})
 		})
@@ -594,6 +638,11 @@ func TestValidateDeadline(t *testing.T) {
 func TestCreateRootInvocation(t *testing.T) {
 	ftt.Run(`TestCreateRootInvocation`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
+		assert.NoErr(t, err)
+
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -734,6 +783,11 @@ func TestCreateRootInvocation(t *testing.T) {
 					BaselineId:       "testrealm:test-builder",
 				},
 				RootWorkUnit: &pb.WorkUnit{
+					ModuleId: &pb.ModuleIdentifier{
+						ModuleName:    "mymodule",
+						ModuleScheme:  "gtest",
+						ModuleVariant: pbutil.Variant("k", "v"),
+					},
 					Tags:               workUnitTags,
 					Properties:         wuProperties,
 					ExtendedProperties: extendedProperties,
@@ -743,10 +797,10 @@ func TestCreateRootInvocation(t *testing.T) {
 
 			// Expected Response.
 			expectedInv := proto.Clone(req.RootInvocation).(*pb.RootInvocation)
-			proto.Merge(expectedInv, &pb.RootInvocation{
+			proto.Merge(expectedInv, &pb.RootInvocation{ // Merge defaulted and output-only fields.
 				Name:             "rootInvocations/u-e2e-success",
 				RootInvocationId: "u-e2e-success",
-				State:            pb.RootInvocation_ACTIVE, // State is overridden to ACTIVE.
+				State:            pb.RootInvocation_ACTIVE, // State is defaulted to ACTIVE.
 				Creator:          "user:someone@example.com",
 				Deadline:         timestamppb.New(start.Add(defaultDeadlineDuration)),
 			})
@@ -755,7 +809,7 @@ func TestCreateRootInvocation(t *testing.T) {
 				WorkUnitID:       "root",
 			}
 			expectedWU := proto.Clone(req.RootWorkUnit).(*pb.WorkUnit)
-			proto.Merge(expectedWU, &pb.WorkUnit{
+			proto.Merge(expectedWU, &pb.WorkUnit{ // Merge defaulted and output-only fields.
 				Name:             "rootInvocations/u-e2e-success/workUnits/root",
 				Parent:           "rootInvocations/u-e2e-success",
 				WorkUnitId:       "root",
@@ -766,6 +820,7 @@ func TestCreateRootInvocation(t *testing.T) {
 				ProducerResource: "//builds.example.com/builds/1",
 			})
 			expectedWU.Instructions = instructionutil.InstructionsWithNames(instructions, wuID.Name())
+			pbutil.PopulateModuleIdentifierHashes(expectedWU.ModuleId)
 
 			rootInvocationID := rootinvocations.ID("u-e2e-success")
 			expectInvRow := &rootinvocations.RootInvocationRow{
@@ -788,21 +843,28 @@ func TestCreateRootInvocation(t *testing.T) {
 			}
 
 			expectWURow := &workunits.WorkUnitRow{
-				ID:                 wuID,
-				ParentWorkUnitID:   spanner.NullString{Valid: false},
-				State:              pb.WorkUnit_ACTIVE,
-				Realm:              "testproject:testrealm",
-				CreatedBy:          "user:someone@example.com",
-				FinalizeStartTime:  spanner.NullTime{},
-				FinalizeTime:       spanner.NullTime{},
-				Deadline:           start.Add(defaultDeadlineDuration),
-				CreateRequestID:    "e2e-request",
+				ID:                wuID,
+				ParentWorkUnitID:  spanner.NullString{Valid: false},
+				State:             pb.WorkUnit_ACTIVE,
+				Realm:             "testproject:testrealm",
+				CreatedBy:         "user:someone@example.com",
+				FinalizeStartTime: spanner.NullTime{},
+				FinalizeTime:      spanner.NullTime{},
+				Deadline:          start.Add(defaultDeadlineDuration),
+				CreateRequestID:   "e2e-request",
+				ModuleID: &pb.ModuleIdentifier{
+					ModuleName:        "mymodule",
+					ModuleScheme:      "gtest",
+					ModuleVariant:     pbutil.Variant("k", "v"),
+					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k", "v")),
+				},
 				ProducerResource:   "//builds.example.com/builds/1",
 				Tags:               pbutil.StringPairs("wu_key", "wu_value"),
 				Properties:         wuProperties,
 				Instructions:       instructionutil.InstructionsWithNames(instructions, wuID.Name()),
 				ExtendedProperties: extendedProperties,
 			}
+
 			t.Run("active root invocation", func(t *ftt.Test) {
 				var headers metadata.MD
 				res, err := recorder.CreateRootInvocation(ctx, req, grpc.Header(&headers))

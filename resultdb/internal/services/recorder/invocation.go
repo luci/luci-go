@@ -152,6 +152,13 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		"Instructions":      spanutil.Compressed(pbutil.MustMarshal(inv.Instructions)),
 	}
 
+	if inv.ModuleId != nil {
+		row["ModuleName"] = inv.ModuleId.ModuleName
+		row["ModuleScheme"] = inv.ModuleId.ModuleScheme
+		row["ModuleVariant"] = inv.ModuleId.ModuleVariant
+		row["ModuleVariantHash"] = pbutil.VariantHash(inv.ModuleId.ModuleVariant)
+	}
+
 	// Wrap into luci.resultdb.internal.invocations.ExtendedProperties so that
 	// it can be serialized as a single value to spanner.
 	internalExtendedProperties := &invocationspb.ExtendedProperties{

@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
@@ -58,7 +59,11 @@ func (s *recorderServer) CreateRootInvocation(ctx context.Context, in *pb.Create
 	if err := verifyCreateRootInvocationPermissions(ctx, in); err != nil {
 		return nil, err
 	}
-	if err := validateCreateRootInvocationRequest(in); err != nil {
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateCreateRootInvocationRequest(in, cfg); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
@@ -168,6 +173,7 @@ func createIdempotentRootInvocation(
 			CreatedBy:        createdBy,
 			Deadline:         rootInvocationRow.Deadline,
 			CreateRequestID:  req.RequestId,
+			ModuleID:         req.RootWorkUnit.ModuleId,
 			ProducerResource: rootInvocationRow.ProducerResource,
 			// Fields should be set with value in request.RootWorkUnit.
 			Tags:               req.RootWorkUnit.Tags,
@@ -293,14 +299,14 @@ func verifyCreateRootInvocationPermissions(ctx context.Context, req *pb.CreateRo
 	return nil
 }
 
-func validateCreateRootInvocationRequest(req *pb.CreateRootInvocationRequest) error {
+func validateCreateRootInvocationRequest(req *pb.CreateRootInvocationRequest, cfg *config.CompiledServiceConfig) error {
 	if err := pbutil.ValidateRootInvocationID(req.RootInvocationId); err != nil {
 		return errors.Fmt("root_invocation_id: %w", err)
 	}
 	if err := validateRootInvocationForCreate(req.RootInvocation); err != nil {
 		return errors.Fmt("root_invocation: %w", err)
 	}
-	if err := validateRootWorkUnitForCreate(req.RootWorkUnit); err != nil {
+	if err := validateRootWorkUnitForCreate(req.RootWorkUnit, cfg); err != nil {
 		return errors.Fmt("root_work_unit: %w", err)
 	}
 	if req.RequestId == "" {
@@ -390,7 +396,7 @@ func validateRootInvocationForCreate(inv *pb.RootInvocation) error {
 
 // validateRootWorkUnitForCreate validates the fields of a pb.WorkUnit message
 // for a creation request within a root invocation.
-func validateRootWorkUnitForCreate(wu *pb.WorkUnit) error {
+func validateRootWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServiceConfig) error {
 	if wu == nil {
 		return errors.New("unspecified")
 	}
@@ -413,31 +419,14 @@ func validateRootWorkUnitForCreate(wu *pb.WorkUnit) error {
 		return errors.New("deadline: must not be set; always inherited from root invocation")
 	}
 
-	// Parent, ChildWorkUnits, ChildInvocations are output only and should be ignored
+	// Parent, ChildWorkUnits and ChildInvocations are output only fields and should be ignored
 	// as per https://google.aip.dev/203.
 
 	if wu.ProducerResource != "" {
 		return errors.New("producer_resource: must not be set; always inherited from root invocation")
 	}
-	if err := pbutil.ValidateWorkUnitTags(wu.Tags); err != nil {
-		return errors.Fmt("tags: %w", err)
-	}
-	if wu.Properties != nil {
-		if err := pbutil.ValidateWorkUnitProperties(wu.Properties); err != nil {
-			return errors.Fmt("properties: %w", err)
-		}
-	}
-	if wu.ExtendedProperties != nil {
-		if err := pbutil.ValidateInvocationExtendedProperties(wu.ExtendedProperties); err != nil {
-			return errors.Fmt("extended_properties: %w", err)
-		}
-	}
-	if wu.Instructions != nil {
-		if err := pbutil.ValidateInstructions(wu.Instructions); err != nil {
-			return errors.Fmt("instructions: %w", err)
-		}
-	}
-	return nil
+
+	return validateWorkUnitForCreate(wu, cfg)
 }
 
 // validateDeadline validates a deadline for a root invocation or work unit.

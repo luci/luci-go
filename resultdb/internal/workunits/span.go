@@ -225,6 +225,10 @@ func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *span
 		row["ModuleScheme"] = w.ModuleID.ModuleScheme
 		row["ModuleVariant"] = w.ModuleID.ModuleVariant
 		row["ModuleVariantHash"] = pbutil.VariantHash(w.ModuleID.ModuleVariant)
+
+		// Replicate the ModuleVariant to the TestResultVariantUnion, since this is no
+		// longer computed at test result upload time.
+		row["TestResultVariantUnion"] = w.ModuleID.ModuleVariant
 	}
 
 	// Wrap into luci.resultdb.internal.invocations.ExtendedProperties so that

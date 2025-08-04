@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
@@ -41,7 +42,11 @@ func (s *recorderServer) BatchCreateWorkUnits(ctx context.Context, in *pb.BatchC
 	if err := validateBatchCreateWorkUnitsPermissions(ctx, in); err != nil {
 		return nil, err
 	}
-	if err := validateBatchCreateWorkUnitsRequest(in); err != nil {
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateBatchCreateWorkUnitsRequest(in, cfg); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 	if err := createWorkUnitsIdempotent(ctx, in, s.ExpectedResultsExpiration); err != nil {
@@ -123,6 +128,7 @@ func createWorkUnitsIdempotent(
 				CreatedBy:          createdBy,
 				Deadline:           deadline,
 				CreateRequestID:    in.RequestId,
+				ModuleID:           wu.ModuleId,
 				ProducerResource:   wu.ProducerResource,
 				Tags:               wu.Tags,
 				Properties:         wu.Properties,
@@ -254,7 +260,7 @@ func deduplicateCreateWorkUnits(ctx context.Context, ids []workunits.ID, request
 	return true, nil
 }
 
-func validateBatchCreateWorkUnitsRequest(req *pb.BatchCreateWorkUnitsRequest) error {
+func validateBatchCreateWorkUnitsRequest(req *pb.BatchCreateWorkUnitsRequest, cfg *config.CompiledServiceConfig) error {
 	if req.RequestId == "" {
 		// Request ID is required to ensure requests are treated idempotently
 		// in case of inevitable retries.
@@ -274,7 +280,7 @@ func validateBatchCreateWorkUnitsRequest(req *pb.BatchCreateWorkUnitsRequest) er
 		// Validate the sub-request.
 		// The request ID is not specified on the sub-request as it is already
 		// specified on the parent.
-		if err := validateCreateWorkUnitRequest(r, false /*requireRequestID*/); err != nil {
+		if err := validateCreateWorkUnitRequest(r, cfg, false /*requireRequestID*/); err != nil {
 			return errors.Fmt("requests[%d]: %w", i, err)
 		}
 		if r.RequestId != "" && r.RequestId != req.RequestId {
