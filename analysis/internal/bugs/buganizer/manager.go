@@ -24,13 +24,14 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/protobuf/encoding/prototext"
 
+	"go.chromium.org/luci/analysis/internal/bugs"
+	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
+	configpb "go.chromium.org/luci/analysis/proto/config"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
-
-	"go.chromium.org/luci/analysis/internal/bugs"
-	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
 // The maximum number of issues you can get from Buganizer
@@ -172,9 +173,10 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 		return response
 	}
 
+	activePolicyIDs := activePolicyIDsFromPolicyState(createRequest.BugManagementState.PolicyState)
 	createIssueRequest, err := bm.requestGenerator.PrepareNew(
 		createRequest.Description,
-		createRequest.ActivePolicyIDs,
+		activePolicyIDs,
 		createRequest.RuleID,
 		component,
 	)
@@ -203,19 +205,29 @@ func (bm *BugManager) Create(ctx context.Context, createRequest bugs.BugCreateRe
 		}
 	}
 
-	response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, createRequest.RuleID, issueID, createRequest.ActivePolicyIDs)
+	response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, createRequest.RuleID, issueID, activePolicyIDs)
 	if err != nil {
 		response.Error = errors.Fmt("notify policy activations: %w", err)
 		return response
 	}
 
-	hotlistIDs := bm.requestGenerator.ExpectedHotlistIDs(createRequest.ActivePolicyIDs)
+	hotlistIDs := bm.requestGenerator.ExpectedHotlistIDs(activePolicyIDs)
 	if err := bm.insertIntoHotlists(ctx, hotlistIDs, issueID); err != nil {
 		response.Error = errors.Fmt("insert into hotlists: %w", err)
 		return response
 	}
 
 	return response
+}
+
+func activePolicyIDsFromPolicyState(policyStateMap map[string]*bugspb.BugManagementState_PolicyState) map[bugs.PolicyID]struct{} {
+	activePolicyIDs := map[bugs.PolicyID]struct{}{}
+	for policyID, policyState := range policyStateMap {
+		if policyState.IsActive {
+			activePolicyIDs[bugs.PolicyID(policyID)] = struct{}{}
+		}
+	}
+	return activePolicyIDs
 }
 
 // notifyPolicyActivation notifies that the given policies have activated.
@@ -354,78 +366,109 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 		response.IsDuplicateAndAssigned = issue.IssueState.Assignee != nil
 	}
 
-	if !response.IsDuplicate && !response.ShouldArchive {
-		if !request.BugManagementState.RuleAssociationNotified {
-			commentRequest, err := bm.requestGenerator.PrepareRuleAssociatedComment(request.RuleID, issue.IssueId)
-			if err != nil {
-				response.Error = errors.Fmt("prepare rule associated comment: %w", err)
-				return response
-			}
-			if err := bm.createIssueComment(ctx, commentRequest); err != nil {
-				response.Error = errors.Fmt("create rule associated comment: %w", err)
-				return response
-			}
-			response.RuleAssociationNotified = true
-		}
-
-		// Identify which policies have activated for the first time and notify them.
-		policyIDsToNotify := bugs.ActivePoliciesPendingNotification(request.BugManagementState)
-
-		var err error
-		response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, request.RuleID, issue.IssueId, policyIDsToNotify)
-		if err != nil {
-			response.Error = errors.Fmt("notify policy activations: %w", err)
-			return response
-		}
-
-		// Apply priority/verified updates.
-		if request.IsManagingBug && bm.requestGenerator.NeedsPriorityOrVerifiedUpdate(request.BugManagementState, issue, request.IsManagingBugPriority) {
-			// List issue updates.
-			listUpdatesRequest := &issuetracker.ListIssueUpdatesRequest{
-				IssueId: issue.IssueId,
-			}
-			it := bm.client.ListIssueUpdates(ctx, listUpdatesRequest)
-
-			// Determine if bug priority manually set. This involves listing issue comments.
-			hasManuallySetPriority, err := bm.hasManuallySetPriority(it, bm.selfEmail, request.IsManagingBugPriorityLastUpdated)
-			if err != nil {
-				response.Error = errors.Fmt("determine if priority manually set: %w", err)
-				return response
-			}
-			mur, err := bm.requestGenerator.MakePriorityOrVerifiedUpdate(MakeUpdateOptions{
-				RuleID:                 request.RuleID,
-				BugManagementState:     request.BugManagementState,
-				Issue:                  issue,
-				IsManagingBugPriority:  request.IsManagingBugPriority,
-				HasManuallySetPriority: hasManuallySetPriority,
-			})
-			if err != nil {
-				response.Error = errors.Fmt("create update request for issue: %w", err)
-				return response
-			}
-			if _, err := bm.client.ModifyIssue(ctx, mur.request); err != nil {
-				response.Error = errors.Fmt("update Buganizer issue: %w", err)
-				return response
-			}
-			bugs.BugsUpdatedCounter.Add(ctx, 1, bm.project, "buganizer")
-			response.DisableRulePriorityUpdates = mur.disablePriorityUpdates
-		}
-
-		// Hotlists
-		// Find all hotlists specified on active policies.
-		hotlistsIDsToAdd := bm.requestGenerator.ExpectedHotlistIDs(bugs.ActivePolicies(request.BugManagementState))
-
-		// Subtract the hotlists already on the bug.
-		for _, hotlistID := range issue.IssueState.HotlistIds {
-			delete(hotlistsIDsToAdd, hotlistID)
-		}
-
-		if err := bm.insertIntoHotlists(ctx, hotlistsIDsToAdd, issue.IssueId); err != nil {
-			response.Error = errors.Fmt("insert issue into hotlists: %w", err)
-			return response
-		}
+	if response.IsDuplicate || response.ShouldArchive {
+		// exit early
+		return response
 	}
 
+	// Add comment to bug notifying it of a new rule association.
+	if !request.BugManagementState.RuleAssociationNotified {
+		commentRequest, err := bm.requestGenerator.PrepareRuleAssociatedComment(request.RuleID, issue.IssueId)
+		if err != nil {
+			response.Error = errors.Annotate(err, "prepare rule associated comment").Err()
+			return response
+		}
+		if err := bm.createIssueComment(ctx, commentRequest); err != nil {
+			response.Error = errors.Annotate(err, "create rule associated comment").Err()
+			return response
+		}
+		response.RuleAssociationNotified = true
+	}
+
+	// Identify which policies have activated for the first time and notify them.
+	policyIDsToNotify := bugs.ActivePoliciesPendingNotification(request.BugManagementState)
+	var err error
+	response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, request.RuleID, issue.IssueId, policyIDsToNotify)
+	if err != nil {
+		response.Error = errors.Annotate(err, "notify policy activations").Err()
+		return response
+	}
+
+	if issue.GetIssueState().GetStatus() == issuetracker.Issue_FIXED {
+		// get largest time interval since bug closed
+		if resolvedTime := issue.GetResolvedTime(); resolvedTime != nil {
+			// Because the threshold is considered satisfied if any of the individual metric
+			// thresholds is met or exceeded, thresholds being met on shorter time intervals
+			// implies thresholds being met on longer time intervals for bug closure invalidation.
+			timeDiffInDays := time.Since(resolvedTime.AsTime()).Hours() / 24
+			if timeDiffInDays >= 1 && timeDiffInDays < 3 {
+				if request.InvalidationStatus.OneDay.IsInvalidated {
+					response.BugClosureValidationResult.IsInvalidated = true
+					response.BugClosureValidationResult.ActivePolicyIDs = request.InvalidationStatus.OneDay.ActivePolicyIDs
+				}
+			} else if timeDiffInDays >= 3 && timeDiffInDays < 7 {
+				if request.InvalidationStatus.ThreeDay.IsInvalidated {
+					response.BugClosureValidationResult.IsInvalidated = true
+					response.BugClosureValidationResult.ActivePolicyIDs = request.InvalidationStatus.ThreeDay.ActivePolicyIDs
+				}
+			} else if timeDiffInDays >= 7 {
+				if request.InvalidationStatus.SevenDay.IsInvalidated {
+					response.BugClosureValidationResult.IsInvalidated = true
+					response.BugClosureValidationResult.ActivePolicyIDs = request.InvalidationStatus.SevenDay.ActivePolicyIDs
+				}
+			}
+		}
+	} else if request.IsManagingBug && bm.requestGenerator.NeedsPriorityOrVerifiedUpdate(request.BugManagementState, issue, request.IsManagingBugPriority) {
+		// List issue updates.
+		listUpdatesRequest := &issuetracker.ListIssueUpdatesRequest{
+			IssueId: issue.IssueId,
+		}
+		it := bm.client.ListIssueUpdates(ctx, listUpdatesRequest)
+
+		// Determine if bug priority manually set. This involves listing issue comments.
+		hasManuallySetPriority, err := bm.hasManuallySetPriority(it, bm.selfEmail, request.IsManagingBugPriorityLastUpdated)
+		if err != nil {
+			response.Error = errors.Fmt("determine if priority manually set: %w", err)
+			return response
+		}
+		mur, err := bm.requestGenerator.MakePriorityOrVerifiedUpdate(MakeUpdateOptions{
+			RuleID:                 request.RuleID,
+			BugManagementState:     request.BugManagementState,
+			Issue:                  issue,
+			IsManagingBugPriority:  request.IsManagingBugPriority,
+			HasManuallySetPriority: hasManuallySetPriority,
+		})
+		if err != nil {
+			response.Error = errors.Fmt("create update request for issue: %w", err)
+			return response
+		}
+		if _, err := bm.client.ModifyIssue(ctx, mur.request); err != nil {
+			response.Error = errors.Fmt("update Buganizer issue: %w", err)
+			return response
+		}
+		bugs.BugsUpdatedCounter.Add(ctx, 1, bm.project, "buganizer")
+		response.DisableRulePriorityUpdates = mur.disablePriorityUpdates
+	}
+
+	// Hotlists
+	// Find all hotlists specified on active policies.
+	hotlistsIDsToAdd := bm.requestGenerator.ExpectedHotlistIDs(bugs.ActivePolicies(request.BugManagementState))
+
+	// Subtract the hotlists already on the bug.
+	for _, hotlistID := range issue.IssueState.HotlistIds {
+		delete(hotlistsIDsToAdd, hotlistID)
+	}
+
+	// Forward the bug title so that the test name or failure reason can be known.
+	// This is used when when filing a new bug due to a user bug closure being
+	// invalidated and the project configuration indicating new bugs will be filed
+	// as the bug closure invalidation action.
+	response.BugTitle = issue.IssueState.GetTitle()
+
+	if err := bm.insertIntoHotlists(ctx, hotlistsIDsToAdd, issue.IssueId); err != nil {
+		response.Error = errors.Fmt("insert issue into hotlists: %w", err)
+		return response
+	}
 	return response
 }
 

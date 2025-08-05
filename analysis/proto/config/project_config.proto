@@ -134,6 +134,20 @@ message BugManagement {
 
   // Monorail-specific bug filing configuration.
   MonorailProject monorail = 5;
+
+  // Configure what action should be taken after a bug closure initiated by the
+  // user is validated.
+  // When a bug closure is invalidated, the bug could be reopened, a new bug
+  // could be filed, or no action can be taken.
+  oneof bug_closure_invalidation_action {
+    NoInvalidationAction no_validation = 6;
+    ReopenBugsInvalidationAction reopen_bugs = 7;
+    FileNewBugsInvalidationAction file_new_bugs = 8;
+  }
+
+  message NoInvalidationAction {}
+  message ReopenBugsInvalidationAction {}
+  message FileNewBugsInvalidationAction {}
 }
 
 // A bug management policy in LUCI Analysis.

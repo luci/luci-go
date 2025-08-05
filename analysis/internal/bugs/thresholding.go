@@ -82,7 +82,8 @@ func inflateSingleThreshold(threshold *int64, inflationPercent int64) *int64 {
 // any of the specified thresholds.
 func (c *ClusterMetrics) MeetsAnyOfThresholds(ts []*configpb.ImpactMetricThreshold) bool {
 	for _, t := range ts {
-		if c.MeetsThreshold(metrics.ID(t.MetricId), t.Threshold) {
+		thresholdsMet := c.MeetsThreshold(metrics.ID(t.MetricId), t.Threshold)
+		if thresholdsMet.OneDay || thresholdsMet.ThreeDay || thresholdsMet.SevenDay {
 			return true
 		}
 	}
@@ -91,37 +92,42 @@ func (c *ClusterMetrics) MeetsAnyOfThresholds(ts []*configpb.ImpactMetricThresho
 
 // MeetsThreshold returns whether the cluster metrics meet or exceed
 // the specified threshold.
-func (c *ClusterMetrics) MeetsThreshold(metricID metrics.ID, t *configpb.MetricThreshold) bool {
+func (c *ClusterMetrics) MeetsThreshold(metricID metrics.ID, t *configpb.MetricThreshold) ThresholdsMetPerTimeInterval {
 	impact, ok := (*c)[metricID]
-	if ok && impact.meetsThreshold(t) {
-		return true
+	if ok {
+		return impact.meetsThreshold(t)
 	}
-	return false
+	return ThresholdsMetPerTimeInterval{OneDay: false, ThreeDay: false, SevenDay: false}
 }
 
-func (m MetricValues) meetsThreshold(t *configpb.MetricThreshold) bool {
-	if t == nil {
-		t = &configpb.MetricThreshold{}
-	}
-	if meetsThreshold(m.OneDay, t.OneDay) {
-		return true
-	}
-	if meetsThreshold(m.ThreeDay, t.ThreeDay) {
-		return true
-	}
-	if meetsThreshold(m.SevenDay, t.SevenDay) {
-		return true
-	}
-	return false
+func (m MetricValues) meetsThreshold(t *configpb.MetricThreshold) ThresholdsMetPerTimeInterval {
+	thresholdsMet := ThresholdsMetPerTimeInterval{}
+	thresholdsMet.OneDay = meetsThresholdOneDay(m.OneDay, t)
+	thresholdsMet.ThreeDay = meetsThresholdThreeDay(m.ThreeDay, t)
+	thresholdsMet.SevenDay = meetsThresholdSevenDay(m.SevenDay, t)
+	return thresholdsMet
 }
 
-// meetsThreshold tests whether value exceeds the given threshold.
-// If threshold is nil, the threshold is considered "not set"
-// and the method always returns false.
-func meetsThreshold(value int64, threshold *int64) bool {
-	if threshold == nil {
+func meetsThresholdOneDay(value int64, thresholds *configpb.MetricThreshold) bool {
+	if thresholds == nil {
 		return false
 	}
-	thresholdValue := *threshold
-	return value >= thresholdValue
+	return thresholds.OneDay != nil && value >= *thresholds.OneDay ||
+		thresholds.ThreeDay != nil && value >= *thresholds.ThreeDay ||
+		thresholds.SevenDay != nil && value >= *thresholds.SevenDay
+}
+
+func meetsThresholdThreeDay(value int64, thresholds *configpb.MetricThreshold) bool {
+	if thresholds == nil {
+		return false
+	}
+	return thresholds.ThreeDay != nil && value >= *thresholds.ThreeDay ||
+		thresholds.SevenDay != nil && value >= *thresholds.SevenDay
+}
+
+func meetsThresholdSevenDay(value int64, thresholds *configpb.MetricThreshold) bool {
+	if thresholds == nil {
+		return false
+	}
+	return thresholds.SevenDay != nil && value >= *thresholds.SevenDay
 }

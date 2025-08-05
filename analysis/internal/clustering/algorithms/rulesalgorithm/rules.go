@@ -39,6 +39,11 @@ const AlgorithmVersion = 3
 // of an algorithm has a different name.
 var AlgorithmName = fmt.Sprintf("%sv%v", clustering.RulesAlgorithmPrefix, AlgorithmVersion)
 
+// Name returns the identifier of the clustering algorithm.
+func (a *Algorithm) Name() string {
+	return AlgorithmName
+}
+
 // Cluster incrementally (re-)clusters the given test failure, updating the
 // matched cluster IDs. The passed existingRulesVersion and ruleIDs
 // should be the ruleset.RulesVersion and cluster IDs of the previous call

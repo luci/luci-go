@@ -73,6 +73,7 @@ func TestBugManager(t *testing.T) {
 					policyB,
 					policyC,
 				},
+				BugClosureInvalidationAction: &configpb.BugManagement_FileNewBugs{},
 			},
 		}
 
@@ -83,8 +84,12 @@ func TestBugManager(t *testing.T) {
 
 		t.Run("Create", func(t *ftt.Test) {
 			createRequest := newCreateRequest()
-			createRequest.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
-				"policy-a": {}, // P4
+			createRequest.BugManagementState = &bugspb.BugManagementState{
+				PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
+					"policy-a": {
+						IsActive: true,
+					}, // P4
+				},
 			}
 			expectedIssue := &issuetracker.Issue{
 				IssueId: 1,
@@ -193,10 +198,18 @@ func TestBugManager(t *testing.T) {
 					assert.Loosely(t, len(issueData.Comments), should.Equal(1))
 				})
 				t.Run("Multiple policies activated", func(t *ftt.Test) {
-					createRequest.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
-						"policy-a": {}, // P4
-						"policy-b": {}, // P0
-						"policy-c": {}, // P1
+					createRequest.BugManagementState = &bugspb.BugManagementState{
+						PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
+							"policy-a": {
+								IsActive: true,
+							}, // P4
+							"policy-b": {
+								IsActive: true,
+							}, // P0
+							"policy-c": {
+								IsActive: true,
+							}, // P1
+						},
 					}
 					expectedIssue.Description.Comment = strings.Replace(expectedIssue.Description.Comment, "- Problem A\n", "- Problem B\n- Problem C\n- Problem A\n", 1)
 					expectedIssue.IssueState.Priority = issuetracker.Issue_P0
@@ -371,9 +384,15 @@ func TestBugManager(t *testing.T) {
 		})
 		t.Run("Update", func(t *ftt.Test) {
 			c := newCreateRequest()
-			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{
-				"policy-a": {}, // P4
-				"policy-c": {}, // P1
+			c.BugManagementState = &bugspb.BugManagementState{
+				PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
+					"policy-a": {
+						IsActive: true,
+					}, // P4
+					"policy-c": {
+						IsActive: true,
+					}, // P1
+				},
 			}
 			response := bm.Create(ctx, c)
 			assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
@@ -424,9 +443,8 @@ func TestBugManager(t *testing.T) {
 			}
 			expectedResponse := []bugs.BugUpdateResponse{
 				{
-					IsDuplicate:               false,
-					ShouldArchive:             false,
 					PolicyActivationsNotified: map[bugs.PolicyID]struct{}{},
+					BugTitle:                  "Tests are failing: ClusterID",
 				},
 			}
 			verifyUpdateDoesNothing := func(t testing.TB) error {
@@ -867,10 +885,66 @@ func TestBugManager(t *testing.T) {
 				assert.Loosely(t, len(response), should.Equal(len(bugsToUpdate)))
 				assert.Loosely(t, fakeStore.Issues, should.BeNil)
 			})
+			t.Run("Falsify a bug closure after a user marks a bug as fixed", func(t *ftt.Test) {
+				assert.Loosely(t, len(fakeStore.Issues), should.Equal(1))
+				fakeStore.Issues[1].Issue.IssueState.Status = issuetracker.Issue_FIXED
+				now := time.Now()
+				twentyFiveHoursAgo := now.Add(-25 * time.Hour)
+				fakeStore.Issues[1].Issue.ResolvedTime = timestamppb.New(twentyFiveHoursAgo)
+				bugsToUpdate := []bugs.BugUpdateRequest{
+					{
+						Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: response.ID},
+						BugManagementState:               state,
+						IsManagingBug:                    true,
+						RuleID:                           "rule-id",
+						IsManagingBugPriority:            true,
+						IsManagingBugPriorityLastUpdated: clock.Now(ctx),
+						InvalidationStatus: bugs.BugClosureInvalidationStatus{
+							OneDay: bugs.BugClosureInvalidationResult{
+								IsInvalidated: true,
+								ActivePolicyIDs: map[bugs.PolicyID]struct{}{
+									bugs.PolicyID(policyA.Id): struct{}{},
+								},
+							},
+							ThreeDay: bugs.BugClosureInvalidationResult{
+								IsInvalidated: true,
+							},
+							SevenDay: bugs.BugClosureInvalidationResult{
+								IsInvalidated: true,
+							},
+						},
+					},
+				}
+				expectedResponse = []bugs.BugUpdateResponse{
+					{
+						PolicyActivationsNotified: make(map[bugs.PolicyID]struct{}),
+						BugClosureValidationResult: bugs.BugClosureInvalidationResult{
+							IsInvalidated: true,
+							ActivePolicyIDs: map[bugs.PolicyID]struct{}{
+								bugs.PolicyID(policyA.Id): struct{}{},
+							},
+						},
+						BugTitle: "Tests are failing: ClusterID",
+					},
+				}
+
+				t.Run("mark bug closure as invalid", func(t *ftt.Test) {
+					response, err := bm.Update(ctx, bugsToUpdate)
+
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, response, should.Match(expectedResponse))
+				})
+			})
 		})
 		t.Run("GetMergedInto", func(t *ftt.Test) {
 			c := newCreateRequest()
-			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{"policy-a": {}}
+			c.BugManagementState = &bugspb.BugManagementState{
+				PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
+					"policy-a": {
+						IsActive: true,
+					}, // P4
+				},
+			}
 			response := bm.Create(ctx, c)
 			assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
 				ID: "1",
@@ -905,7 +979,13 @@ func TestBugManager(t *testing.T) {
 		})
 		t.Run("UpdateDuplicateSource", func(t *ftt.Test) {
 			c := newCreateRequest()
-			c.ActivePolicyIDs = map[bugs.PolicyID]struct{}{"policy-a": {}}
+			c.BugManagementState = &bugspb.BugManagementState{
+				PolicyState: map[string]*bugspb.BugManagementState_PolicyState{
+					"policy-a": {
+						IsActive: true,
+					}, // P4
+				},
+			}
 			response := bm.Create(ctx, c)
 			assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{
 				ID: "1",

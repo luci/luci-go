@@ -17,6 +17,7 @@ package bugs
 import (
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -29,6 +30,92 @@ import (
 
 func TestThresholding(t *testing.T) {
 	t.Parallel()
+
+	ftt.Run("MeetsThreshold", t, func(t *ftt.Test) {
+		oneDayThreshold := new(int64)
+		*oneDayThreshold = 10
+		threeDayThreshold := new(int64)
+		*threeDayThreshold = 30
+		sevenDayThreshold := new(int64)
+		*sevenDayThreshold = 70
+		testCases := []struct {
+			name                  string
+			clusterMetrics        *ClusterMetrics
+			metricID              metrics.ID
+			metricThreshold       *configpb.MetricThreshold
+			expectedThresholdsMet ThresholdsMetPerTimeInterval
+		}{
+			{
+				name: "debugging test",
+				clusterMetrics: &ClusterMetrics{
+					metrics.CriticalFailuresExonerated.ID: MetricValues{
+						OneDay:   60,
+						ThreeDay: 180,
+						SevenDay: 420,
+					},
+				},
+				metricID: metrics.CriticalFailuresExonerated.ID,
+				metricThreshold: &configpb.MetricThreshold{
+					OneDay:   oneDayThreshold,
+					ThreeDay: threeDayThreshold,
+					SevenDay: sevenDayThreshold,
+				},
+				expectedThresholdsMet: ThresholdsMetPerTimeInterval{
+					OneDay:   true,
+					ThreeDay: true,
+					SevenDay: true,
+				},
+			},
+			{
+				// oneday and threeday metrics should be compared to the sevenday threshold
+				name: "metrics for shorter time intervals should be compared to thresholds for longer time intervals",
+				clusterMetrics: &ClusterMetrics{
+					metrics.CriticalFailuresExonerated.ID: MetricValues{
+						OneDay:   100,
+						ThreeDay: 180,
+						SevenDay: 420,
+					},
+				},
+				metricID: metrics.CriticalFailuresExonerated.ID,
+				metricThreshold: &configpb.MetricThreshold{
+					SevenDay: sevenDayThreshold,
+				},
+				expectedThresholdsMet: ThresholdsMetPerTimeInterval{
+					OneDay:   true,
+					ThreeDay: true,
+					SevenDay: true,
+				},
+			},
+			{
+				name: "metrics for longer time intervals should not be compared to thresholds for shorter time intervals",
+				clusterMetrics: &ClusterMetrics{
+					metrics.CriticalFailuresExonerated.ID: MetricValues{
+						OneDay:   100,
+						ThreeDay: 180,
+						SevenDay: 420,
+					},
+				},
+				metricID: metrics.CriticalFailuresExonerated.ID,
+				metricThreshold: &configpb.MetricThreshold{
+					OneDay: oneDayThreshold,
+				},
+				expectedThresholdsMet: ThresholdsMetPerTimeInterval{
+					OneDay:   true,
+					ThreeDay: false,
+					SevenDay: false,
+				},
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Parallel(tc.name, func(t *ftt.Test) {
+				thresholdsMet := tc.clusterMetrics.MeetsThreshold(tc.metricID, tc.metricThreshold)
+				if diff := cmp.Diff(tc.expectedThresholdsMet, thresholdsMet); diff != "" {
+					t.Errorf("Resolution diff (-want +got):\n%s", diff)
+				}
+			})
+		}
+	})
 
 	ftt.Run("With Cluster", t, func(t *ftt.Test) {
 		cl := &ClusterMetrics{

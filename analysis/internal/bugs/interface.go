@@ -42,6 +42,10 @@ type BugUpdateRequest struct {
 	// The bug management state of the rule. Only set if policy-based bug
 	// management should be used; see Metrics field otherwise.
 	BugManagementState *bugspb.BugManagementState
+	// Information on whether a bug closure should be invalidated based on if the
+	// metrics met the thresholds for the one day, three days, or seven days after
+	// the bug closure.
+	InvalidationStatus BugClosureInvalidationStatus
 }
 
 type BugUpdateResponse struct {
@@ -105,6 +109,11 @@ type BugUpdateResponse struct {
 	// BugManagementState.Policies[<policyID>].ActivationNotified will be
 	// set to true on the rule.
 	PolicyActivationsNotified map[PolicyID]struct{}
+	// The result of validating a bug closure. This is only applicable to closed
+	// bugs.
+	BugClosureValidationResult BugClosureInvalidationResult
+	// Title of the issue that was updated.
+	BugTitle string
 }
 
 // DuplicateBugDetails holds the data of a duplicate bug, this includes it's bug id,
@@ -141,6 +150,8 @@ type UpdateDuplicateSourceRequest struct {
 type BugCreateRequest struct {
 	// The ID of the rule that is in the process of being created.
 	RuleID string
+	// The rule predicate, defining which failures are being associated.
+	RuleDefinition string
 	// Description is the human-readable description of the cluster.
 	Description *clustering.ClusterDescription
 	// The monorail components (if any) to use.
@@ -149,9 +160,12 @@ type BugCreateRequest struct {
 	// The buganizer component id (if any) to use.
 	// This value is ignored for Monorail.
 	BuganizerComponent int64
-	// The bug management policies which activated for this
-	// cluster and are triggering the filing of this bug.
-	ActivePolicyIDs map[PolicyID]struct{}
+	// Automatic bug-management state for a single failure association rule.
+	BugManagementState *bugspb.BugManagementState
+	// Whether a new bug is being created for an existing rule
+	// (e.g. in response to invalidating the fix for an existing bug),
+	// rather than filing an entirely new rule.
+	ReuseRule bool
 }
 
 type BugCreateResponse struct {

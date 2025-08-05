@@ -25,6 +25,46 @@ import (
 	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
+// ThresholdsMetPerTimeInterval stores whether the activation threshold
+// was met for each interval of time that is queried: one day, three days,
+// and seven days.
+type ThresholdsMetPerTimeInterval struct {
+	// Whether the activation threshold for the 1 day time interval was met.
+	OneDay bool
+	// Whether the activation threshold for the 3 day time interval was met.
+	ThreeDay bool
+	// Whether the activation threshold for the 7 day time interval was met.
+	SevenDay bool
+}
+
+// ThresholdsMetForAnyTimeInterval returns whether any activation threshold for
+// any time interval was met.
+func (t ThresholdsMetPerTimeInterval) ThresholdMetForAnyTimeInterval() bool {
+	return t.OneDay || t.ThreeDay || t.SevenDay
+}
+
+// BugClosureInvalidationStatus stores whether we have data to invalidate a bug
+// closure that landed at least 1 day ago, 3 days ago, or 7 days ago
+// respectively. Invalidating a bug closure means we have evidence that shows the
+// bug was not actually fixed at the time a user closed the bug.
+type BugClosureInvalidationStatus struct {
+	// Whether we have data to invalidate a bug closure landed at least 1 day ago.
+	OneDay BugClosureInvalidationResult
+	// Whether we have data to invalidate a bug closure landed at least 3 days ago.
+	ThreeDay BugClosureInvalidationResult
+	// Whether we have data to invalidate a bug closure landed at least 7 days ago.
+	SevenDay BugClosureInvalidationResult
+}
+
+// BugClosureInvalidationResult stores whether a bug closure is invalid and
+// the policies that passed the activation thresholds after the bug was closed.
+type BugClosureInvalidationResult struct {
+	// Whether we are able to invalidate the bug closure.
+	IsInvalidated bool
+	// A list of policies that have passed the activation thresholds after the bug was closed.
+	ActivePolicyIDs map[PolicyID]struct{}
+}
+
 // ActivationThresholds returns the set of thresholds that result
 // in a policy activating. The returned thresholds should be treated as
 // an 'OR', i.e. any of the given metric thresholds can result in a policy
@@ -112,6 +152,49 @@ func UpdatePolicyActivations(state *bugspb.BugManagementState, policies []*confi
 	return state, false
 }
 
+// InvalidationStatus returns the BugClosureInvalidationStatus to determine
+// whether a bug closure on the bug associated with a failure association rule
+// should be invalidated given the rules's configured policies and
+// cluster metrics.
+func InvalidationStatus(policies []*configpb.BugManagementPolicy, clusterMetrics ClusterMetrics) BugClosureInvalidationStatus {
+	result := BugClosureInvalidationStatus{
+		OneDay: BugClosureInvalidationResult{
+			IsInvalidated:   false,
+			ActivePolicyIDs: map[PolicyID]struct{}{},
+		},
+		ThreeDay: BugClosureInvalidationResult{
+			IsInvalidated:   false,
+			ActivePolicyIDs: map[PolicyID]struct{}{},
+		},
+		SevenDay: BugClosureInvalidationResult{
+			IsInvalidated:   false,
+			ActivePolicyIDs: map[PolicyID]struct{}{},
+		},
+	}
+	if clusterMetrics != nil {
+		for _, policy := range policies {
+			for _, metric := range policy.Metrics {
+				activationThresholdsMet := clusterMetrics.MeetsThreshold(metrics.ID(metric.MetricId), metric.ActivationThreshold)
+				if activationThresholdsMet.ThresholdMetForAnyTimeInterval() {
+					if activationThresholdsMet.OneDay {
+						result.OneDay.IsInvalidated = true
+						result.OneDay.ActivePolicyIDs[PolicyID(policy.Id)] = struct{}{}
+					}
+					if activationThresholdsMet.ThreeDay || activationThresholdsMet.OneDay {
+						result.ThreeDay.IsInvalidated = true
+						result.ThreeDay.ActivePolicyIDs[PolicyID(policy.Id)] = struct{}{}
+					}
+					if activationThresholdsMet.SevenDay || activationThresholdsMet.ThreeDay || activationThresholdsMet.OneDay {
+						result.SevenDay.IsInvalidated = true
+						result.SevenDay.ActivePolicyIDs[PolicyID(policy.Id)] = struct{}{}
+					}
+				}
+			}
+		}
+	}
+	return result
+}
+
 // ActivePoliciesPendingNotification returns the set of policies which
 // are active but for which activation has not been notified to the bug.
 func ActivePoliciesPendingNotification(state *bugspb.BugManagementState) map[PolicyID]struct{} {
@@ -141,12 +224,14 @@ const (
 func evaluatePolicy(policy *configpb.BugManagementPolicy, clusterMetrics ClusterMetrics) policyEvaluation {
 	isDeactivationCriteriaMet := true
 	for _, metric := range policy.Metrics {
-		if clusterMetrics.MeetsThreshold(metrics.ID(metric.MetricId), metric.ActivationThreshold) {
+		activationThresholdsMet := clusterMetrics.MeetsThreshold(metrics.ID(metric.MetricId), metric.ActivationThreshold)
+		if activationThresholdsMet.ThresholdMetForAnyTimeInterval() {
 			// The activation criteria is met on one of the metrics.
 			// The policy should activate.
 			return policyEvaluationActivate
 		}
-		if clusterMetrics.MeetsThreshold(metrics.ID(metric.MetricId), metric.DeactivationThreshold) {
+		deactivationThresholdsMet := clusterMetrics.MeetsThreshold(metrics.ID(metric.MetricId), metric.DeactivationThreshold)
+		if deactivationThresholdsMet.ThresholdMetForAnyTimeInterval() {
 			// If the deactivation threshold is met on any metric,
 			// deactivation is inhibited. Deactivation only occurs
 			// once all thresholds are unmet.

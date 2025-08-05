@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -71,6 +72,10 @@ var mergeIntoPermissionErr = errors.New("permission error occured while merging 
 // ruleDefinitionTooLongErr is the error returned if merging two failure
 // association rules results in a rule that is too long.
 var ruleDefinitionTooLongErr = errors.New("the merged rule definition is too long")
+
+// bugFilingQuotaExhaustedErr is the error returned if creating a new bug is attempted after
+// the maximum bugs able to be created in this run have been created.
+var bugFilingQuotaExhaustedErr = errors.New("already created the maximum number of bugs able to be created this run")
 
 // mergeIntoCycleMessage is the message posted on bugs when LUCI Analysis
 // cannot deal with a bug marked as the duplicate of another because of
@@ -146,6 +151,8 @@ type BugUpdater struct {
 	// MaxBugsFiledPerRun is the maximum number of bugs to file each time
 	// BugUpdater runs. This throttles the rate of changes to the bug system.
 	MaxBugsFiledPerRun int
+	// the number of bugs filed in the current run.
+	NumberOfBugsFiled int
 	// UpdateRuleBatchSize is the maximum number of rules to update in one
 	// transaction, when updating rule bug management state.
 	UpdateRuleBatchSize int
@@ -162,6 +169,7 @@ func NewBugUpdater(project string, mgrs map[string]BugManager, ac AnalysisClient
 		analysisClient:      ac,
 		projectCfg:          projectCfg,
 		MaxBugsFiledPerRun:  1,    // Default value.
+		NumberOfBugsFiled:   0,    // Default value.
 		UpdateRuleBatchSize: 1000, // Default value.
 		RunTimestamp:        runTimestamp,
 	}
@@ -173,6 +181,8 @@ func NewBugUpdater(project string, mgrs map[string]BugManager, ac AnalysisClient
 // The passed progress should reflect the progress of re-clustering as captured
 // in the latest analysis.
 func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.ReclusteringProgress) error {
+	// Reset the number of bugs created per run as this is a new run.
+	b.NumberOfBugsFiled = 0
 	// Verify we are not currently reclustering to a new version of
 	// algorithms or project configuration. If we are, we should
 	// suspend bug creation, priority updates and auto-closure
@@ -185,6 +195,8 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 	}
 
 	metricsByRuleID := make(map[string]bugs.ClusterMetrics)
+	clusterByRuleID := make(map[string]*analysis.Cluster)
+	ruleDefinitionByRuleID := make(map[string]string)
 	if metricsValid {
 		var thresholds []*configpb.ImpactMetricThreshold
 		for _, p := range b.projectCfg.Config.BugManagement.GetPolicies() {
@@ -234,12 +246,14 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 				// Use only impact from latest algorithm version.
 				ruleID := cluster.ClusterID.ID
 				metricsByRuleID[ruleID] = ExtractResidualMetrics(cluster)
+				clusterByRuleID[ruleID] = cluster
 			}
 		}
 	}
 
-	var rms []ruleWithMetrics
+	var rms []ruleWithAnalysis
 	for _, rule := range activeRules {
+		ruleDefinitionByRuleID[rule.RuleID] = rule.RuleDefinition
 		var metrics bugs.ClusterMetrics
 
 		// Metrics are valid if re-clustering and analysis ran on the latest
@@ -261,9 +275,15 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 		// indication valid metrics are not available and will not attempt
 		// priority updates/auto-closure.
 
-		rms = append(rms, ruleWithMetrics{
-			RuleID:  rule.RuleID,
-			Metrics: metrics,
+		cluster, found := clusterByRuleID[rule.RuleID]
+		if !found {
+			cluster = nil
+		}
+		rms = append(rms, ruleWithAnalysis{
+			RuleID:         rule.RuleID,
+			Metrics:        metrics,
+			Cluster:        cluster,
+			RuleDefinition: rule.RuleDefinition,
 		})
 	}
 
@@ -286,7 +306,7 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 	// Perform bug updates.
 	var errs []error
 	for system, systemBugsToUpdate := range bugUpdatesBySystem {
-		err := b.updateBugsForSystem(ctx, system, systemBugsToUpdate)
+		err := b.updateBugsForSystem(ctx, updateBugsOpts{system: system, bugsToUpdate: systemBugsToUpdate, clusterByRuleID: clusterByRuleID, ruleDefinitionByRuleID: ruleDefinitionByRuleID})
 		if err != nil {
 			errs = append(errs, errors.Fmt("updating bugs in %s: %w", system, err))
 		}
@@ -295,12 +315,16 @@ func (b *BugUpdater) Run(ctx context.Context, reclusteringProgress *runs.Reclust
 	return errors.Append(errs...)
 }
 
-type ruleWithMetrics struct {
+type ruleWithAnalysis struct {
 	// Rule identifier.
 	RuleID string
+	// The rule definition: defines which failures are being associated.
+	RuleDefinition string
 	// The bug cluster metrics. May be nil if no reliable metrics
 	// are available because reclustering is in progress.
 	Metrics bugs.ClusterMetrics
+	// A statistical summary of a group of test failures.
+	Cluster *analysis.Cluster
 }
 
 // updateBugManagementState updates policy activations for the
@@ -309,7 +333,7 @@ type ruleWithMetrics struct {
 // BugUpdateRequests then are created based on the read rules
 // and updated bug management state. The returned BugUpdateRequests
 // will be in 1:1 correspondance to the specified rules.
-func (b *BugUpdater) updateBugManagementState(ctx context.Context, rs []ruleWithMetrics) ([]bugs.BugUpdateRequest, error) {
+func (b *BugUpdater) updateBugManagementState(ctx context.Context, rs []ruleWithAnalysis) ([]bugs.BugUpdateRequest, error) {
 	// Read and update bug management state in batches.
 	// Batching is required as Spanner limits the number of mutations
 	// per transaction to 40,000 (as at August 2023):
@@ -353,10 +377,12 @@ func batch[K any](items []K, batchSize int) [][]K {
 // BugUpdateRequests then are created based on the read rules
 // and updated bug management state. The returned BugUpdateRequests
 // will be in 1:1 correspondance to the specified rules.
-func (b *BugUpdater) updateBugManagementStateBatch(ctx context.Context, rulesAndMetrics []ruleWithMetrics) ([]bugs.BugUpdateRequest, error) {
+func (b *BugUpdater) updateBugManagementStateBatch(ctx context.Context, rulesAndMetrics []ruleWithAnalysis) ([]bugs.BugUpdateRequest, error) {
 	ruleIDs := make([]string, 0, len(rulesAndMetrics))
+	ruleMap := make(map[string]ruleWithAnalysis)
 	for _, rule := range rulesAndMetrics {
 		ruleIDs = append(ruleIDs, rule.RuleID)
+		ruleMap[rule.RuleID] = rule
 	}
 
 	var result []bugs.BugUpdateRequest
@@ -380,8 +406,11 @@ func (b *BugUpdater) updateBugManagementStateBatch(ctx context.Context, rulesAnd
 			// Fetches the corresponding metrics for a rule.
 			clusterMetrics := rulesAndMetrics[i].Metrics
 
+			invalidationStatus := bugs.BugClosureInvalidationStatus{}
 			// If metrics data is valid (e.g. no reclustering in progress).
 			if clusterMetrics != nil {
+				// Get data to validate user bug closures
+				invalidationStatus = bugs.InvalidationStatus(b.projectCfg.Config.BugManagement.GetPolicies(), clusterMetrics)
 				// Update which policies are active.
 				updatedBugManagementState, changed := bugs.UpdatePolicyActivations(r.BugManagementState, b.projectCfg.Config.BugManagement.GetPolicies(), clusterMetrics, b.RunTimestamp)
 				if changed {
@@ -398,15 +427,15 @@ func (b *BugUpdater) updateBugManagementStateBatch(ctx context.Context, rulesAnd
 					span.BufferWrite(ctx, ms)
 				}
 			}
-
 			updateRequest := bugs.BugUpdateRequest{
 				Bug:                              r.BugID,
 				IsManagingBug:                    r.IsManagingBug,
 				IsManagingBugPriority:            r.IsManagingBugPriority,
 				IsManagingBugPriorityLastUpdated: r.IsManagingBugPriorityLastUpdateTime,
 				RuleID:                           r.RuleID,
+				InvalidationStatus:               invalidationStatus,
+				BugManagementState:               r.BugManagementState,
 			}
-			updateRequest.BugManagementState = r.BugManagementState
 			result = append(result, updateRequest)
 		}
 		return nil
@@ -417,10 +446,17 @@ func (b *BugUpdater) updateBugManagementStateBatch(ctx context.Context, rulesAnd
 	return result, nil
 }
 
-func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bugsToUpdate []bugs.BugUpdateRequest) error {
-	manager, ok := b.managers[system]
+type updateBugsOpts struct {
+	system                 string
+	bugsToUpdate           []bugs.BugUpdateRequest
+	clusterByRuleID        map[string]*analysis.Cluster
+	ruleDefinitionByRuleID map[string]string
+}
+
+func (b *BugUpdater) updateBugsForSystem(ctx context.Context, opts updateBugsOpts) error {
+	manager, ok := b.managers[opts.system]
 	if !ok {
-		logging.Warningf(ctx, "Encountered bug(s) with an unrecognised manager: %q", system)
+		logging.Warningf(ctx, "Encountered bug(s) with an unrecognised manager: %q", opts.system)
 		return nil
 	}
 
@@ -432,9 +468,9 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 	mgrCtx, cancel := bugs.Shorten(ctx, time.Minute)
 	defer cancel()
 
-	logging.Debugf(ctx, "Considering update of %v %s bugs in project %s", len(bugsToUpdate), system, b.project)
+	logging.Debugf(ctx, "Considering update of %v %s bugs in project %s", len(opts.bugsToUpdate), opts.system, b.project)
 
-	responses, err := manager.Update(mgrCtx, bugsToUpdate)
+	responses, err := manager.Update(mgrCtx, opts.bugsToUpdate)
 	if err != nil {
 		// Catastrophic error, exit immediately.
 		return errors.Fmt("update bugs: %w", err)
@@ -452,33 +488,58 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 			// Capture the error, but continue processing this bug
 			// and other bugs, as partial success is possible
 			// and pending rule updates must be applied.
-			err := errors.Fmt("updating bug (%s): %w", bugsToUpdate[i].Bug.String(), rsp.Error)
+			err := errors.Fmt("updating bug (%s): %w", opts.bugsToUpdate[i].Bug.String(), rsp.Error)
 			errs = append(errs, err)
 			logging.Errorf(ctx, "%s", err)
 		}
 
 		if rsp.IsDuplicate {
 			duplicateBugs = append(duplicateBugs, bugs.DuplicateBugDetails{
-				RuleID:     bugsToUpdate[i].RuleID,
-				Bug:        bugsToUpdate[i].Bug,
+				RuleID:     opts.bugsToUpdate[i].RuleID,
+				Bug:        opts.bugsToUpdate[i].Bug,
 				IsAssigned: rsp.IsDuplicateAndAssigned,
 			})
 			// Inhibit archiving if rules are duplicates.
 			rsp.ShouldArchive = false
 		}
+
+		if rsp.BugClosureValidationResult.IsInvalidated && b.projectCfg.Config.BugManagement.GetFileNewBugs() != nil {
+			ruleID := opts.bugsToUpdate[i].RuleID
+			bugCreateRequest, err := b.createRequestForExistingBugClosureInvalidation(createRequestOpts{
+				cluster:        opts.clusterByRuleID[ruleID],
+				ruleID:         ruleID,
+				bugTitle:       rsp.BugTitle,
+				bugID:          opts.bugsToUpdate[i].Bug.ID,
+				ruleDefinition: opts.ruleDefinitionByRuleID[ruleID],
+			})
+			if err != nil {
+				err = errors.Fmt("failed to make a create bug request for %s rule and %s bug: %w", ruleID, opts.bugsToUpdate[i].Bug.String(), err)
+				errs = append(errs, err)
+				logging.Errorf(ctx, "%s", err)
+			} else {
+				// Use the mgrCtx to use the same time budget as bug updates to reserve time to commit all rule updates.
+				err := b.createBug(mgrCtx, opts.clusterByRuleID[ruleID], bugCreateRequest)
+				if err == bugFilingQuotaExhaustedErr {
+					logging.Warningf(ctx, "Bug filing quota for this run has been exhausted.")
+				} else if err != nil {
+					err = errors.Fmt("failed to create a new bug for %s rule and %s bug: %w", ruleID, opts.bugsToUpdate[i].Bug.String(), err)
+					errs = append(errs, err)
+					logging.Errorf(ctx, "%s", err)
+				}
+			}
+		}
 		if rsp.ShouldArchive || rsp.DisableRulePriorityUpdates || rsp.RuleAssociationNotified || len(rsp.PolicyActivationsNotified) > 0 {
 			logging.Fields{
-				"RuleID":                     bugsToUpdate[i].RuleID,
-				"BugID":                      bugsToUpdate[i].Bug.String(),
+				"RuleID":                     opts.bugsToUpdate[i].RuleID,
+				"BugID":                      opts.bugsToUpdate[i].Bug.String(),
 				"Archive":                    rsp.ShouldArchive,
 				"DisableRulePriorityUpdates": rsp.DisableRulePriorityUpdates,
 				"RuleAssociationNotified":    rsp.RuleAssociationNotified,
 				"PolicyActivationsNotified":  rsp.PolicyActivationsNotified,
-			}.Debugf(ctx, "Preparing rule update for bug %s", bugsToUpdate[i].Bug.String())
-
+			}.Debugf(ctx, "Preparing rule update for bug %s", opts.bugsToUpdate[i].Bug.String())
 			updateRuleRequests = append(updateRuleRequests, updateRuleRequest{
-				RuleID:                     bugsToUpdate[i].RuleID,
-				BugID:                      bugsToUpdate[i].Bug,
+				RuleID:                     opts.bugsToUpdate[i].RuleID,
+				BugID:                      opts.bugsToUpdate[i].Bug,
 				Archive:                    rsp.ShouldArchive,
 				DisableRulePriorityUpdates: rsp.DisableRulePriorityUpdates,
 				RuleAssociationNotified:    rsp.RuleAssociationNotified,
@@ -542,7 +603,6 @@ func (b *BugUpdater) fileNewBugs(ctx context.Context, clusters []*analysis.Clust
 
 		for _, cluster := range clusters {
 			if cluster.ClusterID.IsBugCluster() {
-				// Never file another bug for a bug cluster.
 				continue
 			}
 
@@ -598,17 +658,16 @@ func (b *BugUpdater) fileNewBugs(ctx context.Context, clusters []*analysis.Clust
 	}
 
 	// File new bugs.
-	bugsFiled := 0
 	for _, cluster := range clustersToCreateBugsFor {
-		if bugsFiled >= b.MaxBugsFiledPerRun {
-			break
-		}
-		created, err := b.createBug(ctx, cluster)
+		bugCreateRequest, err := b.createRequestForSuggestedCluster(cluster)
 		if err != nil {
 			return err
 		}
-		if created {
-			bugsFiled++
+		err = b.createBug(ctx, cluster, bugCreateRequest)
+		if err == bugFilingQuotaExhaustedErr {
+			break
+		} else if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -1026,19 +1085,16 @@ func rankByMetric(a, b *analysis.Cluster, metric metrics.ID) (equal bool, less b
 	return equal, less
 }
 
-// createBug files a new bug for the given suggested cluster,
-// and stores the association from bug to failures through a new
-// failure association rule.
-func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (created bool, err error) {
+func (b *BugUpdater) createRequestForSuggestedCluster(cs *analysis.Cluster) (bugs.BugCreateRequest, error) {
+	request := bugs.BugCreateRequest{}
 	alg, err := algorithms.SuggestingAlgorithm(cs.ClusterID.Algorithm)
 	if err == algorithms.ErrAlgorithmNotExist {
 		// The cluster is for an old algorithm that no longer exists, or
 		// for a new algorithm that is not known by us yet.
 		// Do not file a bug. This is not an error, it is expected during
 		// algorithm version changes.
-		return false, nil
+		return request, errors.Fmt("Algorithm does not exist or is a rule algorithm: %w", err)
 	}
-
 	summary := clusterSummaryFromAnalysis(cs)
 
 	// Double-check the failure matches the cluster. Generating a
@@ -1049,21 +1105,21 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 	// Mismatches should usually be transient as re-clustering will fix
 	// up any incorrect clustering.
 	if hex.EncodeToString(alg.Cluster(b.projectCfg, &summary.Example)) != cs.ClusterID.ID {
-		return false, errors.New("example failure did not match cluster ID")
+		return request, errors.New("example failure did not match cluster ID")
 	}
 	rule, err := b.generateFailureAssociationRule(alg, &summary.Example)
 	if err != nil {
-		return false, errors.Fmt("obtain failure association rule: %w", err)
+		return request, errors.Fmt("obtain failure association rule: %w", err)
 	}
 
 	ruleID, err := rules.GenerateID()
 	if err != nil {
-		return false, errors.Fmt("generating rule ID: %w", err)
+		return request, errors.Fmt("generating rule ID: %w", err)
 	}
 
 	description, err := alg.ClusterDescription(b.projectCfg, summary)
 	if err != nil {
-		return false, errors.Fmt("prepare bug description: %w", err)
+		return request, errors.Fmt("prepare bug description: %w", err)
 	}
 
 	// Set policy activations starting from a state where no policies
@@ -1071,34 +1127,66 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 	impact := ExtractResidualMetrics(cs)
 	bugManagementState, _ := bugs.UpdatePolicyActivations(&bugspb.BugManagementState{}, b.projectCfg.Config.BugManagement.GetPolicies(), impact, b.RunTimestamp)
 
+	request = bugs.BugCreateRequest{
+		RuleID:             ruleID,
+		Description:        description,
+		RuleDefinition:     rule,
+		BugManagementState: bugManagementState,
+	}
+	// addActivePolicyIDsToBugCreateRequest(bugManagementState, &request)
+	err = addComponentToBugCreateRequest(b, cs, &request)
+	if err != nil {
+		return request, errors.Fmt("error adding component to bug create request: %w", err)
+	}
+
+	return request, nil
+}
+
+type createRequestOpts struct {
+	cluster        *analysis.Cluster
+	ruleID         string
+	ruleDefinition string
+	bugID          string
+	bugTitle       string
+}
+
+func (b *BugUpdater) createRequestForExistingBugClosureInvalidation(opts createRequestOpts) (bugs.BugCreateRequest, error) {
+	// Set policy activations starting from a state where no policies
+	// are active.
+	impact := ExtractResidualMetrics(opts.cluster)
+	bugManagementState, _ := bugs.UpdatePolicyActivations(&bugspb.BugManagementState{}, b.projectCfg.Config.BugManagement.GetPolicies(), impact, b.RunTimestamp)
+
+	description := &clustering.ClusterDescription{
+		Title:       strings.TrimPrefix(opts.bugTitle, bugs.BugTitlePrefix),
+		Description: fmt.Sprintf("This bug re-raises b/%s for all test failures matching: %s", opts.bugID, opts.ruleDefinition),
+	}
+
 	request := bugs.BugCreateRequest{
-		RuleID:      ruleID,
-		Description: description,
+		RuleID:             opts.ruleID,
+		Description:        description,
+		RuleDefinition:     opts.ruleDefinition,
+		BugManagementState: bugManagementState,
+		ReuseRule:          true,
 	}
-
-	activePolicyIDs := make(map[bugs.PolicyID]struct{})
-	for policyID, state := range bugManagementState.PolicyState {
-		if state.IsActive {
-			activePolicyIDs[bugs.PolicyID(policyID)] = struct{}{}
-		}
+	// addActivePolicyIDsToBugCreateRequest(bugManagementState, &request)
+	err := addComponentToBugCreateRequest(b, opts.cluster, &request)
+	if err != nil {
+		return request, errors.Fmt("error adding component to bug create request: %w", err)
 	}
-	request.ActivePolicyIDs = activePolicyIDs
+	return request, err
+}
 
+func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster, request bugs.BugCreateRequest) error {
+	if err := ctx.Err(); err != nil {
+		return errors.Fmt("the deadline has been exceeded, thus there is no time to create more bugs %w", err)
+	}
+	if b.NumberOfBugsFiled >= b.MaxBugsFiledPerRun {
+		return bugFilingQuotaExhaustedErr
+	}
 	system, err := b.routeToBugSystem(cs)
 	if err != nil {
-		return false, errors.Fmt("extracting bug system: %w", err)
+		return errors.Fmt("extracting bug system: %w", err)
 	}
-
-	if system == bugs.BuganizerSystem {
-		var err error
-		request.BuganizerComponent, err = extractBuganizerComponent(cs)
-		if err != nil {
-			return false, errors.Fmt("extracting buganizer component: %w", err)
-		}
-	} else {
-		request.MonorailComponents = extractMonorailComponents(cs)
-	}
-
 	manager := b.managers[system]
 	response := manager.Create(ctx, request)
 
@@ -1107,47 +1195,88 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 		// Create a failure association rule associating the failures with a bug.
 
 		// In filing a bug, we notified the rule association.
-		bugManagementState.RuleAssociationNotified = true
+		request.BugManagementState.RuleAssociationNotified = true
 
 		// Record which policies we notified as activating.
 		for policyID := range response.PolicyActivationsNotified {
-			bugManagementState.PolicyState[string(policyID)].ActivationNotified = true
+			request.BugManagementState.PolicyState[string(policyID)].ActivationNotified = true
 		}
 
-		newRule := &rules.Entry{
-			Project:               b.project,
-			RuleID:                ruleID,
-			RuleDefinition:        rule,
-			BugID:                 bugs.BugID{System: system, ID: response.ID},
-			IsActive:              true,
-			IsManagingBug:         true,
-			IsManagingBugPriority: true,
-			SourceCluster:         cs.ClusterID,
-			BugManagementState:    bugManagementState,
-		}
-		create := func(ctx context.Context) error {
-			user := rules.LUCIAnalysisSystem
-			ms, err := rules.Create(newRule, user)
+		if request.ReuseRule {
+			ruleEntry, err := rules.Read(span.Single(ctx), b.project, request.RuleID)
 			if err != nil {
-				return err
+				return errors.Fmt("read active failure association rules: %w", err)
 			}
-			span.BufferWrite(ctx, ms)
-			return nil
-		}
-		if _, err := span.ReadWriteTransaction(ctx, create); err != nil {
-			return false, errors.Fmt("create rule: %w", err)
+			ruleEntry.BugID = bugs.BugID{System: system, ID: response.ID}
+			opts := rules.UpdateOptions{
+				IsAuditableUpdate: true,
+			}
+
+			update := func(ctx context.Context) error {
+				ms, err := rules.Update(ruleEntry, opts, rules.LUCIAnalysisSystem)
+				if err != nil {
+					return err
+				}
+				span.BufferWrite(ctx, ms)
+				return nil
+			}
+			if _, err := span.ReadWriteTransaction(ctx, update); err != nil {
+				return errors.Fmt("update rule: %w", err)
+			}
+
+		} else {
+			newRule := &rules.Entry{
+				Project:               b.project,
+				RuleID:                request.RuleID,
+				RuleDefinition:        request.RuleDefinition,
+				BugID:                 bugs.BugID{System: system, ID: response.ID},
+				IsActive:              true,
+				IsManagingBug:         true,
+				IsManagingBugPriority: true,
+				SourceCluster:         cs.ClusterID,
+				BugManagementState:    request.BugManagementState,
+			}
+			create := func(ctx context.Context) error {
+				user := rules.LUCIAnalysisSystem
+				ms, err := rules.Create(newRule, user)
+				if err != nil {
+					return err
+				}
+				span.BufferWrite(ctx, ms)
+				return nil
+			}
+			if _, err := span.ReadWriteTransaction(ctx, create); err != nil {
+				return errors.Fmt("create rule: %w", err)
+			}
 		}
 	}
-
 	if response.Error != nil {
 		// We encountered an error creating the bug. Note that this
 		// is not mutually exclusive with having filed a bug, as
 		// steps after creating the bug may have failed, and in
 		// this case a failure association rule should still be created.
-		return false, errors.Fmt("create issue in %v (created ID: %q): %w", system, response.ID, response.Error)
+		return errors.Fmt("create issue in %v (created ID: %q): %w", system, response.ID, response.Error)
+	}
+	b.NumberOfBugsFiled++
+	return nil
+}
+
+func addComponentToBugCreateRequest(b *BugUpdater, cs *analysis.Cluster, request *bugs.BugCreateRequest) error {
+	system, err := b.routeToBugSystem(cs)
+	if err != nil {
+		return errors.Fmt("extracting bug system %w", err)
 	}
 
-	return true, nil
+	if system == bugs.BuganizerSystem {
+		var err error
+		request.BuganizerComponent, err = extractBuganizerComponent(cs)
+		if err != nil {
+			return errors.Fmt("extracting buganizer component %w", err)
+		}
+	} else {
+		request.MonorailComponents = extractMonorailComponents(cs)
+	}
+	return nil
 }
 
 func (b *BugUpdater) routeToBugSystem(cs *analysis.Cluster) (string, error) {

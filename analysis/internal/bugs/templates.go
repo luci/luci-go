@@ -30,6 +30,8 @@ See failure impact and configure the failure association rule for the canoncial 
 	NoPermissionTemplate = `This bug was filed in the fallback component instead of in component %d because LUCI Analysis does not have permissions to that component.`
 
 	ComponentArchivedTemplate = `This bug was filed in the fallback component instead of in component %d because that component is archived.`
+
+	BugTitlePrefix = "Tests are failing: "
 )
 
 // whitespaceRE matches blocks of whitespace, including new lines tabs and
@@ -38,7 +40,7 @@ var whitespaceRE = regexp.MustCompile(`[ \t\n]+`)
 
 // GenerateBugSummary generates a unified form of bug summary with a sanitized title.
 func GenerateBugSummary(title string) string {
-	return fmt.Sprintf("Tests are failing: %v", sanitiseTitle(title, 150))
+	return fmt.Sprintf("%s%v", BugTitlePrefix, sanitiseTitle(title, 150))
 }
 
 // sanitiseTitle removes tabs and line breaks from input, replacing them with

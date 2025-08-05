@@ -938,6 +938,46 @@ func TestUpdate(t *testing.T) {
 						assert.Loosely(t, issue.Comments, should.HaveLength(originalCommentCount+1))
 					})
 				})
+				t.Run("invalidated user bug closures", func(t *ftt.Test) {
+					t.Run("buganizer", func(t *ftt.Test) {
+						t.Run("create new bug if bug closure is invalidated", func(t *ftt.Test) {
+							assert.Loosely(t, len(buganizerStore.Issues), should.Equal(4))
+							buganizerStore.Issues[1].Issue.IssueState.Status = issuetracker.Issue_FIXED
+							now := time.Now()
+							twentyFiveHoursAgo := now.Add(-25 * time.Hour)
+							buganizerStore.Issues[1].Issue.ResolvedTime = timestamppb.New(twentyFiveHoursAgo)
+							expectedRules[0].IsActive = true
+							expectedRules[0].BugID = bugs.BugID{System: bugs.BuganizerSystem, ID: "5"}
+							expectedBuganizerBug := buganizerBug{
+								ID:            5,
+								Component:     projectCfg.BugManagement.Buganizer.DefaultComponent.Id,
+								ExpectedTitle: buganizerStore.Issues[1].Issue.IssueState.Title,
+								ExpectedContent: []string{
+									"This bug re-raises b/1 for all test failures matching:",   // Old bug is mentioned.
+									"https://luci-analysis-test.appspot.com/p/chromeos/rules/", // Rule ID randomly generated.
+									"testname-0", // Test name is included in rule definition.
+								},
+								ExpectedPolicyIDsActivated: []string{
+									"exoneration-policy",
+								},
+							}
+
+							err = UpdateBugsForProject(ctx, opts)
+
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, len(buganizerStore.Issues), should.Equal(5))
+							assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+							assert.Loosely(t, expectBuganizerBug(buganizerStore, expectedBuganizerBug), should.BeNil)
+
+							// Further updates do nothing.
+							err = UpdateBugsForProject(ctx, opts)
+
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, verifyRulesResemble(ctx, t, expectedRules), should.BeNil)
+							assert.Loosely(t, len(buganizerStore.Issues), should.Equal(5))
+						})
+					})
+				})
 				t.Run("priority updates and auto-closure", func(t *ftt.Test) {
 					t.Run("buganizer", func(t *ftt.Test) {
 						// Select a Buganizer issue.
@@ -1427,6 +1467,7 @@ func createProjectConfig() *configpb.ProjectConfig {
 				createExonerationPolicy(),
 				createCLsRejectedPolicy(),
 			},
+			BugClosureInvalidationAction: &configpb.BugManagement_FileNewBugs{},
 		},
 		LastUpdated: timestamppb.New(time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC)),
 	}
@@ -1569,31 +1610,31 @@ type buganizerBug struct {
 func expectBuganizerBug(buganizerStore *buganizer.FakeIssueStore, bug buganizerBug) error {
 	issue := buganizerStore.Issues[bug.ID].Issue
 	if issue == nil {
-		return errors.Fmt("buganizer issue %v not found", bug.ID)
+		return errors.Reason("buganizer issue %v not found", bug.ID).Err()
 	}
 	if issue.IssueId != bug.ID {
-		return errors.Fmt("issue ID: got %v, want %v", issue.IssueId, bug.ID)
+		return errors.Reason("issue ID: got %v, want %v", issue.IssueId, bug.ID).Err()
 	}
 	if !strings.Contains(issue.IssueState.Title, bug.ExpectedTitle) {
-		return errors.Fmt("issue title: got %q, expected it to contain %q", issue.IssueState.Title, bug.ExpectedTitle)
+		return errors.Reason("issue title: got %q, expected it to contain %q", issue.IssueState.Title, bug.ExpectedTitle).Err()
 	}
 	if issue.IssueState.ComponentId != bug.Component {
-		return errors.Fmt("component: got %v; want %v", issue.IssueState.ComponentId, bug.Component)
+		return errors.Reason("component: got %v; want %v", issue.IssueState.ComponentId, bug.Component).Err()
 	}
 
 	for _, expectedContent := range bug.ExpectedContent {
 		if !strings.Contains(issue.Description.Comment, expectedContent) {
-			return errors.Fmt("issue description: got %q, expected it to contain %q", issue.Description.Comment, expectedContent)
+			return errors.Reason("issue description: got %q, expected it to contain %q", issue.Description.Comment, expectedContent).Err()
 		}
 	}
 	comments := buganizerStore.Issues[bug.ID].Comments
 	if len(comments) != 1+len(bug.ExpectedPolicyIDsActivated) {
-		return errors.Fmt("issue comments: got %v want %v", len(comments), 1+len(bug.ExpectedPolicyIDsActivated))
+		return errors.Reason("issue comments: got %v want %v", len(comments), 1+len(bug.ExpectedPolicyIDsActivated)).Err()
 	}
 	for i, activatedPolicyID := range bug.ExpectedPolicyIDsActivated {
 		expectedContent := fmt.Sprintf("(Policy ID: %s)", activatedPolicyID)
 		if !strings.Contains(comments[1+i].Comment, expectedContent) {
-			return errors.Fmt("issue comment %v: got %q, expected it to contain %q", i+1, comments[i+1].Comment, expectedContent)
+			return errors.Reason("issue comment %v: got %q, expected it to contain %q", i+1, comments[i+1].Comment, expectedContent).Err()
 		}
 	}
 	return nil
