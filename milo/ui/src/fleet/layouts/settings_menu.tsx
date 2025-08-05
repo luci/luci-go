@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { MoreVert } from '@mui/icons-material';
+import DescriptionIcon from '@mui/icons-material/Description';
 import {
   IconButton,
   ListItemIcon,
@@ -22,6 +23,7 @@ import {
 } from '@mui/material';
 import { Divider } from '@mui/material';
 import { MouseEvent, useState } from 'react';
+import { Link } from 'react-router';
 
 import {
   VersionControlIcon,
@@ -72,6 +74,18 @@ export function SettingsMenu() {
         open={Boolean(menuAnchorEl)}
         onClose={handleCloseMenu}
       >
+        <MenuItem
+          component={Link}
+          to="http://go/fleet-console-newsletter"
+          title="View Fleet Console newsletter"
+          onClick={handleCloseMenu}
+          target="_blank"
+        >
+          <ListItemIcon>
+            <DescriptionIcon />
+          </ListItemIcon>
+          <ListItemText>What{"'"}s new</ListItemText>
+        </MenuItem>
         <MenuItem title={switchVersionTitle} onClick={() => switchVersion()}>
           <ListItemIcon>
             <VersionControlIcon />
