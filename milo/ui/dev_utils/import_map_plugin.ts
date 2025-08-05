@@ -46,11 +46,15 @@ function isOutputChunkWithHashTag(
 export function importMapPlugin(): PluginOption {
   let base = '';
   let importMap: { [key: string]: string } = {};
+  // Used to change imports back to placeholders.
+  let reverseImportMap: { [key: string]: string } = {};
+
   return {
     name: 'luci-ui-import-map',
     configResolved(config) {
       base = config.base;
       importMap = {};
+      reverseImportMap = {};
     },
     generateBundle(_opts, bundle) {
       // We only care about JS chunks that use our HASH_TAG placeholder
@@ -70,41 +74,55 @@ export function importMapPlugin(): PluginOption {
 
         chunk.fileName = newJsName;
 
-        delete bundle[originalJsName];
-        bundle[newJsName] = chunk;
-
         // Manually update the sourceMappingURL comment in the JS code
         chunk.code = chunk.code.replace(
           `//# sourceMappingURL=${path.basename(originalMapName)}`,
           `//# sourceMappingURL=${path.basename(newMapName)}`,
         );
 
+        delete bundle[originalJsName];
+        bundle[newJsName] = chunk;
+
+        const placeholderPath = path.join(base, originalJsName);
+        const finalPath = path.join(base, newJsName);
+
+        importMap[placeholderPath] = finalPath;
+
+        // Do not replace the entry point
+        if (!chunk.isEntry) {
+          reverseImportMap[finalPath] = placeholderPath;
+        }
+
         // Find the Corresponding Sourcemap Asset and update
         // correspondingly if exists
         const sourcemapAsset = bundle[originalMapName];
-        if (!sourcemapAsset) {
-          // If no sourcemap, we can't proceed with this chunk
-          continue;
+        if (sourcemapAsset) {
+          sourcemapAsset.fileName = newMapName;
+          delete bundle[originalMapName];
+          bundle[sourcemapAsset.fileName] = sourcemapAsset;
         }
-
-        sourcemapAsset.fileName = newMapName;
-
-        delete bundle[originalMapName];
-        bundle[newMapName] = sourcemapAsset;
-
-        // Update the import map for index.html
-        importMap[path.join(base, originalJsName)] = path.join(base, newJsName);
       }
     },
     transformIndexHtml: (html) => {
+      let transformedHtml = html;
+
+      for (const [finalPath, placeholderPath] of Object.entries(
+        reverseImportMap,
+      )) {
+        // Find every instance of the final, hashed path and
+        // replace it with the placeholder path.
+        transformedHtml = transformedHtml.replaceAll(
+          finalPath,
+          placeholderPath,
+        );
+      }
+
       return {
-        html,
+        html: transformedHtml,
         tags: [
           {
             tag: 'script',
-            attrs: {
-              type: 'importmap',
-            },
+            attrs: { type: 'importmap' },
             children: `\n${JSON.stringify({ imports: importMap }, undefined, 2)}\n`,
             injectTo: 'head-prepend',
           },
