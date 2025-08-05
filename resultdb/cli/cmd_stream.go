@@ -459,6 +459,11 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	if err != nil {
 		return r.done(errors.Fmt("get source spec from arguments: %w", err))
 	}
+	moduleID := r.moduleIDFromArgs()
+
+	if err := r.updateInvocation(ctx, moduleID, invProperties, sourceSpec, r.baselineID); err != nil {
+		return r.done(err)
+	}
 
 	defer func() {
 		// Finalize the invocation if it was created by -new.
@@ -484,9 +489,10 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	if err != nil {
 		return r.done(errors.Fmt("get invocation extended_properties from arguments: %w", err))
 	}
-
-	if err := r.updateInvocation(ctx, invProperties, invExtendedProperties, sourceSpec, r.baselineID); err != nil {
-		return r.done(err)
+	if invExtendedProperties != nil {
+		if err := r.updateInvocationExtendedProperties(ctx, invExtendedProperties); err != nil {
+			return r.done(err)
+		}
 	}
 
 	logging.Infof(ctx, "rdb-stream: exiting with %d", ec)
@@ -739,6 +745,18 @@ func (r *streamRun) sourceSpecFromArgs(ctx context.Context) (*pb.SourceSpec, err
 	return &pb.SourceSpec{Sources: sources}, nil
 }
 
+func (r *streamRun) moduleIDFromArgs() *pb.ModuleIdentifier {
+	if r.moduleName != "" {
+		// We're using structured test IDs.
+		return &pb.ModuleIdentifier{
+			ModuleName:    r.moduleName,
+			ModuleScheme:  r.moduleScheme,
+			ModuleVariant: &pb.Variant{Def: r.vars},
+		}
+	}
+	return nil
+}
+
 func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret lucictx.ResultDBInvocation, err error) {
 	invID, err := GenInvID(ctx)
 	if err != nil {
@@ -775,11 +793,25 @@ func (r *streamRun) includeInvocation(ctx context.Context, parent, child *lucict
 	return err
 }
 
-// updateInvocation sets the properties and/or source spec on the invocation.
+// updateInvocation sets the extended properties on the invocation.
+func (r *streamRun) updateInvocationExtendedProperties(ctx context.Context, extendedProperties map[string]*structpb.Struct) error {
+	ctx = metadata.AppendToOutgoingContext(ctx, pb.UpdateTokenMetadataKey, r.invocation.UpdateToken)
+	request := &pb.UpdateInvocationRequest{
+		Invocation: &pb.Invocation{
+			Name:               r.invocation.Name,
+			ExtendedProperties: extendedProperties,
+		},
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"extended_properties"}},
+	}
+	_, err := r.recorder.UpdateInvocation(ctx, request)
+	return err
+}
+
+// updateInvocation sets the module ID, properties, baseline ID and/or source spec on the invocation.
 func (r *streamRun) updateInvocation(
 	ctx context.Context,
+	moduleID *pb.ModuleIdentifier,
 	properties *structpb.Struct,
-	extendedProperties map[string]*structpb.Struct,
 	sourceSpec *pb.SourceSpec,
 	baselineID string) error {
 	ctx = metadata.AppendToOutgoingContext(ctx, pb.UpdateTokenMetadataKey, r.invocation.UpdateToken)
@@ -789,13 +821,13 @@ func (r *streamRun) updateInvocation(
 		},
 		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{}},
 	}
+	if moduleID != nil {
+		request.Invocation.ModuleId = moduleID
+		request.UpdateMask.Paths = append(request.UpdateMask.Paths, "module_id")
+	}
 	if properties != nil {
 		request.Invocation.Properties = properties
 		request.UpdateMask.Paths = append(request.UpdateMask.Paths, "properties")
-	}
-	if extendedProperties != nil {
-		request.Invocation.ExtendedProperties = extendedProperties
-		request.UpdateMask.Paths = append(request.UpdateMask.Paths, "extended_properties")
 	}
 	if sourceSpec != nil {
 		request.Invocation.SourceSpec = sourceSpec
