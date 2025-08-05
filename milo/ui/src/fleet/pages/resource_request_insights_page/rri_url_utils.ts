@@ -49,7 +49,7 @@ export const parseMultiselectFilter = (str?: string): string[] | undefined => {
 
     const values = trimmed
       .slice(1, -1)
-      .split(/OR/)
+      .split(/or|\|/i)
       .map((s) => s.trim());
 
     if (values.some((v) => v === '')) {

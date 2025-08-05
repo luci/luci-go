@@ -12,19 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as React from 'react';
+
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 jest.mock('@/generic_libs/hooks/synced_search_params');
-let searchParams = new URLSearchParams();
-
 export const fakeUseSyncedSearchParams = () => {
-  searchParams = new URLSearchParams(); // clear searchParams
+  let searchParams = new URLSearchParams();
 
   const mockUseSyncedSearchParams = useSyncedSearchParams as jest.Mock;
-  mockUseSyncedSearchParams.mockReturnValue([
-    searchParams,
-    (newSearchParams: URLSearchParams) => {
-      searchParams = newSearchParams;
-    },
-  ]);
+  mockUseSyncedSearchParams.mockImplementation(() => {
+    const [sp, ssp] = React.useState(searchParams);
+    const set = (
+      updater: URLSearchParams | ((p: URLSearchParams) => URLSearchParams),
+    ) => {
+      const newSp = updater instanceof Function ? updater(sp) : updater;
+      ssp(newSp);
+      searchParams = newSp;
+    };
+    return [sp, set];
+  });
 };

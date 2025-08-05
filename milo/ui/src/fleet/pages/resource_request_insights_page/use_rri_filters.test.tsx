@@ -12,10 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, renderHook } from '@testing-library/react';
+import { ReactNode } from 'react';
+
+import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { fakeUseSyncedSearchParams } from '@/fleet/testing_tools/mocks/fake_search_params';
 // eslint-disable-next-line max-len
 import { GetResourceRequestsMultiselectFilterValuesResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { getSortedMultiselectElements } from './use_rri_filters';
+import { getSortedMultiselectElements, useRriFilters } from './use_rri_filters';
 
 const MOCK_FILTER_VALUES =
   GetResourceRequestsMultiselectFilterValuesResponse.fromPartial({
@@ -90,5 +96,80 @@ describe('getSortedMultiselectElements', () => {
       '',
     );
     expect(result).toEqual([]);
+  });
+});
+
+// TODO: b/435182355 - Look into patterns for improving network request mocking.
+jest.mock('@/fleet/hooks/prpc_clients', () => ({
+  useFleetConsoleClient: jest.fn(() => ({
+    GetResourceRequestsMultiselectFilterValues: {
+      query: jest.fn(),
+    },
+  })),
+}));
+
+describe('useRriFilters', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    fakeUseSyncedSearchParams();
+    (useFleetConsoleClient as jest.Mock).mockReturnValue({
+      GetResourceRequestsMultiselectFilterValues: {
+        query: () => ({
+          queryKey: ['test'],
+          queryFn: () => MOCK_FILTER_VALUES,
+        }),
+      },
+    });
+  });
+
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+
+  it('should set and parse filters from search params', () => {
+    const { result: result1 } = renderHook(() => useRriFilters(), {
+      wrapper,
+    });
+    act(() => {
+      result1.current.setFilters({
+        rr_id: ['rr-id-1', 'rr-id-2'],
+        fulfillment_status: ['IN_PROGRESS'],
+      });
+    });
+
+    const { result: result2 } = renderHook(() => useRriFilters(), {
+      wrapper,
+    });
+    expect(result2.current.filterData).toEqual({
+      rr_id: ['rr-id-1', 'rr-id-2'],
+      fulfillment_status: ['IN_PROGRESS'],
+    });
+  });
+
+  it('should generate an AIP string from filters', () => {
+    const { result } = renderHook(() => useRriFilters(), { wrapper });
+    act(() => {
+      result.current.setFilters({
+        rr_id: ['rr-id-1', 'rr-id-2'],
+        fulfillment_status: ['IN_PROGRESS'],
+      });
+    });
+    expect(result.current.aipString).toEqual(
+      '(rr_id = "rr-id-1" OR rr_id = "rr-id-2") AND (fulfillment_status = "IN_PROGRESS")',
+    );
+  });
+
+  it('should return the correct label for a filter', () => {
+    const { result } = renderHook(() => useRriFilters(), { wrapper });
+    expect(
+      result.current.getSelectedFilterLabel('rr_id', ['rr-id-1', 'rr-id-2']),
+    ).toEqual('RR ID: rr-id-1, rr-id-2');
   });
 });
