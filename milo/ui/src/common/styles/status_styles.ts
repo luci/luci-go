@@ -19,9 +19,9 @@ import ErrorIcon from '@mui/icons-material/Error';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import InfoIcon from '@mui/icons-material/Info';
+import NextPlanIcon from '@mui/icons-material/NextPlan';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import RepeatOnIcon from '@mui/icons-material/RepeatOn';
-import SkipNextIcon from '@mui/icons-material/SkipNext';
 import WarningIcon from '@mui/icons-material/Warning';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
@@ -167,7 +167,7 @@ export function getStatusStyle(
       };
     case 'skipped':
       return {
-        icon: SkipNextIcon,
+        icon: NextPlanIcon,
         textColor:
           'var(--gm3-color-on-surface-variant, var(--greyed-out-text-color))',
         backgroundColor:
