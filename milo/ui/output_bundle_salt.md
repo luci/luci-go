@@ -6,8 +6,9 @@ trigger a deployment without a code change to the UI.
 You can simply update the version number below to trigger a new build.
 
 ```text
-VERSION=12
+VERSION=13
 ```
 
 ## Why do we need this?
+
 The primary use case is documented [here](./docs/guides/run_updated_e2e_tests_in_luci_ui_promoter.md).
