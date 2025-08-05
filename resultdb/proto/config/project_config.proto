@@ -19,6 +19,7 @@ package luci.resultdb.config;
 option go_package = "go.chromium.org/luci/resultdb/proto/config;configpb";
 
 // ProjectConfig is the project-specific configuration data for Luci ResultDB.
+// Next tag: 3
 message ProjectConfig {
   // Per user allow list to control GCS buckets that can be referenced as
   // artifacts in ResultDB invocations.
@@ -27,6 +28,14 @@ message ProjectConfig {
   // artifacts in GCS buckets they don't have access to by feigning the
   // uploaded artifact GCS path.
   repeated GcsAllowList gcs_allow_list = 1;
+
+  // Per user allow list to control RBE instances that can be referenced as
+  // artifacts in ResultDB invocations.
+  // Since ResultDB returns RBE CAS artifacts through signed urls, the allow
+  // list is needed to prevent potential exploit where user could gain access to
+  // artifacts in RBE CAS they don't have access to by feigning the
+  // uploaded artifact RBE CAS path.
+  repeated RbeAllowList rbe_allow_list = 2;
 }
 
 // Capture the per user GCS bucket allow list.
@@ -38,4 +47,19 @@ message GcsAllowList {
 
   // GCS buckets the user is allowed to reference.
   repeated string buckets = 2;
+}
+
+// Capture the per user RBE instance allow list.
+message RbeAllowList {
+  // The users allowed to reference the specified RBE instances.
+  // Each user is a LUCI Auth identity string, e.g. user:username@email.com
+  // For all available identity kinds see luci/auth/identity/identity.go
+  repeated string users = 1;
+
+  // RBE instances that the users are authorized to upload artifacts to.
+  // A RBE instance must consist of the Google Cloud project id and instance id,
+  // and must end with "/".
+  // The format is: "projects/<project-id>/instances/<instance-id>/",
+  // e.g. "projects/luci-resultdb/instances/default_instance/".
+  repeated string instances = 2;
 }
