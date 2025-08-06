@@ -146,6 +146,7 @@ func main() {
 			if dir := opts.SecretsDir; dir != "" {
 				cache = gerrit.NewDiskResultCache(ctx, dir)
 			}
+			logging.Debugf(ctx, "Checking if ReAuth is needed")
 			checker := gerrit.NewReAuthChecker(c, cache)
 			res, err := checker.Check(ctx, attrs)
 			if err != nil {
