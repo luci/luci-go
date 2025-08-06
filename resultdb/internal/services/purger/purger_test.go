@@ -59,7 +59,7 @@ func makeTestResultsWithVariants(invID, testID string, nPassingVariants, nFailed
 			rIndex := v*len(statuses) + s
 			resultID := fmt.Sprintf("%d", rIndex)
 			trs[rIndex] = &pb.TestResult{
-				Name:     pbutil.TestResultName(invID, testID, resultID),
+				Name:     pbutil.LegacyTestResultName(invID, testID, resultID),
 				TestId:   testID,
 				ResultId: resultID,
 				Variant:  pbutil.Variant("k1", "v1", "k2", fmt.Sprintf("v%d", v)),

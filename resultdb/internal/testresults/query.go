@@ -258,7 +258,7 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 
 		// Generate test result name now in case tr.TestId and tr.ResultId become
 		// empty after q.Mask.Trim(tr).
-		trName := pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
+		trName := pbutil.LegacyTestResultName(string(invID), tr.TestId, tr.ResultId)
 		tvID, err := pbutil.ParseStructuredTestIdentifierForOutput(tr.TestId, tr.Variant)
 		if err != nil {
 			return nil, errors.Fmt("populate structured test identifier for %s: %w", trName, err)

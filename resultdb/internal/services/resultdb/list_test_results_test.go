@@ -126,7 +126,7 @@ func insertTestResults(ctx context.Context, t testing.TB, invID invocations.ID, 
 
 		v := pbutil.Variant("k1", "v1", "k2", "v2")
 		trs[i] = &pb.TestResult{
-			Name:     pbutil.TestResultName(string(invID), testID, resultID),
+			Name:     pbutil.LegacyTestResultName(string(invID), testID, resultID),
 			TestId:   testID,
 			ResultId: resultID,
 			TestIdStructured: &pb.TestIdentifier{

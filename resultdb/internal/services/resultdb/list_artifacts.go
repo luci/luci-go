@@ -40,7 +40,7 @@ func parseParent(parent string) (invocations.ID, string, error) {
 		// Fetch only invocation-level artifacts. They have empty ParentId.
 		return invocations.ID(invIDStr), "^$", nil
 	}
-	invIDStr, testID, resultID, err := pbutil.ParseTestResultName(parent)
+	invIDStr, testID, resultID, err := pbutil.ParseLegacyTestResultName(parent)
 	if err != nil {
 		return "", "", appstatus.BadRequest(errors.New("parent: neither valid invocation name nor valid test result name"))
 	}

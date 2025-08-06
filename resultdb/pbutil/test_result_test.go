@@ -46,12 +46,12 @@ func fieldDoesNotMatch(fieldName string, re *regexp.Regexp) string {
 	return fmt.Sprintf("%s: %s", fieldName, validate.DoesNotMatchReErr(re))
 }
 
-func TestTestResultName(t *testing.T) {
+func TestLegacyTestResultName(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("ParseTestResultName", t, func(t *ftt.Test) {
+	ftt.Run("ParseLegacyTestResultName", t, func(t *ftt.Test) {
 		t.Run("Parse", func(t *ftt.Test) {
-			invID, testID, resultID, err := ParseTestResultName(
+			invID, testID, resultID, err := ParseLegacyTestResultName(
 				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, invID, should.Equal("a"))
@@ -61,28 +61,77 @@ func TestTestResultName(t *testing.T) {
 
 		t.Run("Invalid", func(t *ftt.Test) {
 			t.Run(`has slashes`, func(t *ftt.Test) {
-				_, _, _, err := ParseTestResultName(
+				_, _, _, err := ParseLegacyTestResultName(
 					"invocations/inv/tests/ninja://test/results/result1")
 				assert.Loosely(t, err, should.ErrLike("does not match pattern"))
 			})
 
 			t.Run(`bad unescape`, func(t *ftt.Test) {
-				_, _, _, err := ParseTestResultName(
+				_, _, _, err := ParseLegacyTestResultName(
 					"invocations/a/tests/bad_hex_%gg/results/result1")
 				assert.Loosely(t, err, should.ErrLike("test id"))
 			})
 
 			t.Run(`unescaped unprintable`, func(t *ftt.Test) {
-				_, _, _, err := ParseTestResultName(
+				_, _, _, err := ParseLegacyTestResultName(
 					"invocations/a/tests/unprintable_%07/results/result1")
 				assert.Loosely(t, err, should.ErrLike("non-printable rune"))
 			})
 		})
 
 		t.Run("Format", func(t *ftt.Test) {
-			assert.Loosely(t, TestResultName("a", "ninja://chrome/test:foo_tests/BarTest.DoBaz", "result5"),
+			assert.Loosely(t, LegacyTestResultName("a", "ninja://chrome/test:foo_tests/BarTest.DoBaz", "result5"),
 				should.Equal(
 					"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5"))
+		})
+		t.Run("IsLegacy", func(t *ftt.Test) {
+			name := LegacyTestResultName("a", "ninja://chrome/test:foo_tests/BarTest.DoBaz", "result5")
+			assert.That(t, IsLegacyTestResultName(name), should.BeTrue)
+
+			name = TestResultName("a", "b", "ninja://chrome/test:foo_tests/BarTest.DoBaz", "result5")
+			assert.That(t, IsLegacyTestResultName(name), should.BeFalse)
+		})
+	})
+}
+
+func TestTestResultName(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("ParseTestResultName", t, func(t *ftt.Test) {
+		t.Run("Parse", func(t *ftt.Test) {
+			parts, err := ParseTestResultName(
+				"rootInvocations/a/workUnits/b/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, parts.RootInvocationID, should.Equal("a"))
+			assert.Loosely(t, parts.WorkUnitID, should.Equal("b"))
+			assert.Loosely(t, parts.TestID, should.Equal("ninja://chrome/test:foo_tests/BarTest.DoBaz"))
+			assert.Loosely(t, parts.ResultID, should.Equal("result5"))
+		})
+
+		t.Run("Invalid", func(t *ftt.Test) {
+			t.Run(`has slashes`, func(t *ftt.Test) {
+				_, err := ParseTestResultName(
+					"rootInvocations/inv/workUnits/wu/tests/ninja://test/results/result1")
+				assert.Loosely(t, err, should.ErrLike("does not match pattern"))
+			})
+
+			t.Run(`bad unescape`, func(t *ftt.Test) {
+				_, err := ParseTestResultName(
+					"rootInvocations/a/workUnits/b/tests/bad_hex_%gg/results/result1")
+				assert.Loosely(t, err, should.ErrLike("test id"))
+			})
+
+			t.Run(`unescaped unprintable`, func(t *ftt.Test) {
+				_, err := ParseTestResultName(
+					"rootInvocations/a/workUnits/b/tests/unprintable_%07/results/result1")
+				assert.Loosely(t, err, should.ErrLike("non-printable rune"))
+			})
+		})
+
+		t.Run("Format", func(t *ftt.Test) {
+			assert.Loosely(t, TestResultName("a", "b", "ninja://chrome/test:foo_tests/BarTest.DoBaz", "result5"),
+				should.Equal(
+					"rootInvocations/a/workUnits/b/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5"))
 		})
 	})
 }

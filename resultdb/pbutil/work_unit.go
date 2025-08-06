@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	workUnitIDPattern   = `[a-z][a-z0-9_\-.]*(:[a-z][a-z0-9_\-.]*)?`
+	workUnitIDPattern   = `[a-z][a-z0-9_\-.]*(?::[a-z][a-z0-9_\-.]*)?`
 	workUnitIDMaxLength = 100
 )
 

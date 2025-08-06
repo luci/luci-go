@@ -344,7 +344,7 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 		Status:   pb.TestStatus(r.Status),
 		StatusV2: pb.TestResult_Status(r.StatusV2),
 	}
-	tr.Name = pbutil.TestResultName(
+	tr.Name = pbutil.LegacyTestResultName(
 		string(invocations.IDFromRowID(r.InvocationID)), testID, r.ResultID)
 
 	if r.StartTime.Valid {
@@ -392,7 +392,7 @@ func (q *Query) populateSources(tv *pb.TestVariant, distinctSources map[string]*
 	}
 	// Find the invocation for one of the test results in the test variant.
 	tr := tv.Results[0].Result
-	invID, _, _, err := pbutil.ParseTestResultName(tr.Name)
+	invID, _, _, err := pbutil.ParseLegacyTestResultName(tr.Name)
 	if err != nil {
 		return err
 	}
@@ -425,7 +425,7 @@ func (q *Query) toLimitedData(ctx context.Context, tv *pb.TestVariant,
 	shouldMaskVariant := true
 	for _, resultBundle := range tv.Results {
 		tr := resultBundle.Result
-		invID, _, _, err := pbutil.ParseTestResultName(tr.Name)
+		invID, _, _, err := pbutil.ParseLegacyTestResultName(tr.Name)
 		if err != nil {
 			return err
 		}
@@ -1103,7 +1103,7 @@ func calculateStatusV2(trs []*pb.TestResultBundle) pb.TestVerdict_Status {
 // Returns instruction of the invocation of the first test result.
 func fetchVerdictInstruction(tv *pb.TestVariant, instructionMap map[invocations.ID]*pb.VerdictInstruction) (*pb.VerdictInstruction, error) {
 	resultName := tv.Results[0].Result.Name
-	invID, _, _, err := pbutil.ParseTestResultName(resultName)
+	invID, _, _, err := pbutil.ParseLegacyTestResultName(resultName)
 	if err != nil {
 		return nil, errors.Fmt("parse test result name: %w", err)
 	}

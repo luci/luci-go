@@ -168,11 +168,11 @@ func TestUpdateTestMetadata(t *testing.T) {
 			invID := "inv1"
 			insertInvocationWithTestResults(ctx, t, invID, invSources(2), []*pb.TestResult{
 				{
-					Name:         pbutil.TestResultName(invID, "testID", "1"),
+					Name:         pbutil.LegacyTestResultName(invID, "testID", "1"),
 					TestMetadata: &pb.TestMetadata{Name: "othertestname"},
 				},
 				{
-					Name:         pbutil.TestResultName(invID, "testID", "0"),
+					Name:         pbutil.LegacyTestResultName(invID, "testID", "0"),
 					TestMetadata: fakeFullTestMetadata("testname"),
 				}},
 			)
@@ -189,7 +189,7 @@ func TestUpdateTestMetadata(t *testing.T) {
 			invID := "inv1"
 			insertInvocationWithTestResults(ctx, t, invID, invSources(3), []*pb.TestResult{
 				{
-					Name:         pbutil.TestResultName(invID, "testID", "0"),
+					Name:         pbutil.LegacyTestResultName(invID, "testID", "0"),
 					TestMetadata: &pb.TestMetadata{Name: "updatedtestname"},
 				}},
 			)
@@ -211,7 +211,7 @@ func TestUpdateTestMetadata(t *testing.T) {
 			invID := "inv1"
 			insertInvocationWithTestResults(ctx, t, invID, invSources(3), []*pb.TestResult{
 				{
-					Name:         pbutil.TestResultName(invID, "testID", "0"),
+					Name:         pbutil.LegacyTestResultName(invID, "testID", "0"),
 					TestMetadata: fakeFullTestMetadata("updatedtestname"),
 				}},
 			)
@@ -233,7 +233,7 @@ func TestUpdateTestMetadata(t *testing.T) {
 			invID := "inv1"
 			insertInvocationWithTestResults(ctx, t, invID, invSources(2), []*pb.TestResult{
 				{
-					Name:         pbutil.TestResultName(invID, "testID", "0"),
+					Name:         pbutil.LegacyTestResultName(invID, "testID", "0"),
 					TestMetadata: fakeFullTestMetadata("updatedtestname"),
 				}},
 			)
@@ -255,7 +255,7 @@ func TestUpdateTestMetadata(t *testing.T) {
 			invID := "inv1"
 			insertInvocationWithTestResults(ctx, t, invID, invSources(2), []*pb.TestResult{
 				{
-					Name:         pbutil.TestResultName(invID, "testID", "0"),
+					Name:         pbutil.LegacyTestResultName(invID, "testID", "0"),
 					TestMetadata: fakeFullTestMetadata("updatedtestname"),
 				}},
 			)
@@ -274,7 +274,7 @@ func TestUpdateTestMetadata(t *testing.T) {
 			invID := "inv1"
 			insertInvocationWithTestResults(ctx, t, invID, invSources(2), []*pb.TestResult{
 				{
-					Name:         pbutil.TestResultName(invID, "testID", "0"),
+					Name:         pbutil.LegacyTestResultName(invID, "testID", "0"),
 					TestMetadata: &pb.TestMetadata{Name: "updatedTestname"},
 				}},
 			)
@@ -293,7 +293,7 @@ func TestUpdateTestMetadata(t *testing.T) {
 			invID := "inv1"
 			insertInvocationWithTestResults(ctx, t, invID, invSources(3), []*pb.TestResult{
 				{
-					Name:         pbutil.TestResultName(invID, "testID", "0"),
+					Name:         pbutil.LegacyTestResultName(invID, "testID", "0"),
 					TestMetadata: &pb.TestMetadata{Name: "updatedTestname"},
 				}},
 			)
@@ -322,11 +322,11 @@ func TestUpdateTestMetadata(t *testing.T) {
 				)...)
 			testutil.MustApply(ctx, t, insert.TestResultMessages(t, []*pb.TestResult{
 				{
-					Name:         pbutil.TestResultName(string(testInvocationID), "testID", "1"),
+					Name:         pbutil.LegacyTestResultName(string(testInvocationID), "testID", "1"),
 					TestMetadata: &pb.TestMetadata{Name: "testname"},
 				},
 				{
-					Name:         pbutil.TestResultName(string(includedInvocationID), "includedTestID", "1"),
+					Name:         pbutil.LegacyTestResultName(string(includedInvocationID), "includedTestID", "1"),
 					TestMetadata: &pb.TestMetadata{Name: "includedtestname"},
 				}})...)
 

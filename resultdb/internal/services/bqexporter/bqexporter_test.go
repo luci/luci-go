@@ -113,7 +113,7 @@ func TestExportToBigQuery(t *testing.T) {
 			insert.TestExonerations("b", "D", pbutil.Variant("k", "v"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 			insert.TestResultMessages(t, []*pb.TestResult{
 				{
-					Name:        pbutil.TestResultName("a", "E", "0"),
+					Name:        pbutil.LegacyTestResultName("a", "E", "0"),
 					TestId:      "E",
 					ResultId:    "0",
 					Variant:     pbutil.Variant("k2", "v2", "k3", "v3"),
@@ -181,7 +181,7 @@ func TestExportToBigQuery(t *testing.T) {
 				assert.Loosely(t, tr.Exported.Properties, should.BeNil)
 				assert.Loosely(t, tr.Exonerated, should.Equal(tr.TestId == "A" || tr.TestId == "D"))
 
-				assert.Loosely(t, tr.Name, should.Equal(pbutil.TestResultName(string(tr.Parent.Id), tr.TestId, tr.ResultId)))
+				assert.Loosely(t, tr.Name, should.Equal(pbutil.LegacyTestResultName(string(tr.Parent.Id), tr.TestId, tr.ResultId)))
 				assert.Loosely(t, tr.InsertTime, should.Match(timestamppb.New(testclock.TestTimeUTC)))
 
 				if tr.TestId == "E" {

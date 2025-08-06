@@ -191,7 +191,7 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 	}
 	ret.VariantHash = pbutil.VariantHash(ret.Variant)
 
-	ret.Name = pbutil.TestResultName(string(invID), ret.TestId, ret.ResultId)
+	ret.Name = pbutil.LegacyTestResultName(string(invID), ret.TestId, ret.ResultId)
 
 	// handle values for nullable columns
 	var runDuration spanner.NullInt64

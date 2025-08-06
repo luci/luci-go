@@ -30,7 +30,7 @@ import (
 )
 
 func verifyGetTestResultPermission(ctx context.Context, resultName string) error {
-	invID, _, _, err := pbutil.ParseTestResultName(resultName)
+	invID, _, _, err := pbutil.ParseLegacyTestResultName(resultName)
 	if err != nil {
 		return appstatus.BadRequest(errors.Fmt("name: %w", err))
 	}
@@ -39,7 +39,7 @@ func verifyGetTestResultPermission(ctx context.Context, resultName string) error
 }
 
 func validateGetTestResultRequest(req *pb.GetTestResultRequest) error {
-	if err := pbutil.ValidateTestResultName(req.Name); err != nil {
+	if err := pbutil.ValidateLegacyTestResultName(req.Name); err != nil {
 		return errors.Fmt("name: %w", err)
 	}
 

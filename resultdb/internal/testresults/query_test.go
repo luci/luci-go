@@ -667,7 +667,7 @@ func TestToLimitedData(t *testing.T) {
 		invID := "inv0"
 		testID := "FooBar"
 		resultID := "123"
-		name := pbutil.TestResultName(invID, testID, resultID)
+		name := pbutil.LegacyTestResultName(invID, testID, resultID)
 		variant := pbutil.Variant()
 		variantHash := pbutil.VariantHash(variant)
 

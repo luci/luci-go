@@ -118,7 +118,7 @@ func TestResultMessages(t testing.TB, trs []*pb.TestResult) []*spanner.Mutation 
 
 	ms := make([]*spanner.Mutation, len(trs))
 	for i, tr := range trs {
-		invID, testID, resultID, err := pbutil.ParseTestResultName(tr.Name)
+		invID, testID, resultID, err := pbutil.ParseLegacyTestResultName(tr.Name)
 		assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 		mutMap := map[string]any{
@@ -193,7 +193,7 @@ func TestResultMessagesLegacy(t testing.TB, trs []*pb.TestResult) []*spanner.Mut
 
 	ms := make([]*spanner.Mutation, len(trs))
 	for i, tr := range trs {
-		invID, testID, resultID, err := pbutil.ParseTestResultName(tr.Name)
+		invID, testID, resultID, err := pbutil.ParseLegacyTestResultName(tr.Name)
 		assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 		mutMap := map[string]any{
@@ -373,7 +373,7 @@ func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestRes
 		}
 
 		trs[i] = &pb.TestResult{
-			Name:             pbutil.TestResultName(invID, testID, resultID),
+			Name:             pbutil.LegacyTestResultName(invID, testID, resultID),
 			TestId:           testID,
 			ResultId:         resultID,
 			TestIdStructured: tvID,
@@ -459,7 +459,7 @@ func MakeTestResultsLegacy(invID, testID string, v *pb.Variant, statuses ...pb.T
 		}
 
 		trs[i] = &pb.TestResult{
-			Name:             pbutil.TestResultName(invID, testID, resultID),
+			Name:             pbutil.LegacyTestResultName(invID, testID, resultID),
 			TestId:           testID,
 			ResultId:         resultID,
 			TestIdStructured: tvID,

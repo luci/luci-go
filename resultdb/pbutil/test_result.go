@@ -51,12 +51,15 @@ const (
 )
 
 var (
-	projectRe        = regexpf("^%s$", projectPattern)
-	resultIDRe       = regexpf("^%s$", resultIDPattern)
-	variantHashRe    = regexp.MustCompile(`^` + variantHashRePattern + `$`)
-	testResultNameRe = regexpf(
+	projectRe              = regexpf("^%s$", projectPattern)
+	resultIDRe             = regexpf("^%s$", resultIDPattern)
+	variantHashRe          = regexp.MustCompile(`^` + variantHashRePattern + `$`)
+	legacyTestResultNameRe = regexpf(
 		"^invocations/(%s)/tests/([^/]+)/results/(%s)$", invocationIDPattern,
 		resultIDPattern,
+	)
+	testResultNameRe = regexpf(
+		"^rootInvocations/(%s)/workUnits/(%s)/tests/([^/]+)/results/(%s)$", rootInvocationIDPattern, workUnitIDPattern, resultIDPattern,
 	)
 )
 
@@ -235,9 +238,17 @@ func ValidateResultID(resultID string) error {
 	return validate.SpecifiedWithRe(resultIDRe, resultID)
 }
 
-// ValidateTestResultName returns a non-nil error if name is invalid.
+// ValidateLegacyTestResultName returns a non-nil error if name is an
+// invalid legacy test result name.
+func ValidateLegacyTestResultName(name string) error {
+	_, _, _, err := ParseLegacyTestResultName(name)
+	return err
+}
+
+// ValidateTestResultName returns a non-nil error if name is invalid
+// V2 test result name.
 func ValidateTestResultName(name string) error {
-	_, _, _, err := ParseTestResultName(name)
+	_, err := ParseTestResultName(name)
 	return err
 }
 
@@ -598,17 +609,17 @@ func ValidateTestResultSkipReason(status pb.TestStatus, reason pb.SkipReason) er
 	return nil
 }
 
-// ParseTestResultName extracts the invocation ID, unescaped test id, and
+// ParseLegacyTestResultName extracts the invocation ID, unescaped test id, and
 // result ID.
-func ParseTestResultName(name string) (invID, testID, resultID string, err error) {
+func ParseLegacyTestResultName(name string) (invID, testID, resultID string, err error) {
 	if name == "" {
 		err = validate.Unspecified()
 		return
 	}
 
-	m := testResultNameRe.FindStringSubmatch(name)
+	m := legacyTestResultNameRe.FindStringSubmatch(name)
 	if m == nil {
-		err = validate.DoesNotMatchReErr(testResultNameRe)
+		err = validate.DoesNotMatchReErr(legacyTestResultNameRe)
 		return
 	}
 	unescapedTestID, err := url.PathUnescape(m[2])
@@ -624,11 +635,57 @@ func ParseTestResultName(name string) (invID, testID, resultID string, err error
 	return m[1], unescapedTestID, m[3], nil
 }
 
-// TestResultName synthesizes a test result name from its parts.
+type TestResultNameParts struct {
+	RootInvocationID string
+	WorkUnitID       string
+	TestID           string
+	ResultID         string
+}
+
+// ParseTestResultName parses a V2 test result name into its components.
+func ParseTestResultName(name string) (TestResultNameParts, error) {
+	if name == "" {
+		return TestResultNameParts{}, validate.Unspecified()
+	}
+
+	m := testResultNameRe.FindStringSubmatch(name)
+	if m == nil {
+		return TestResultNameParts{}, validate.DoesNotMatchReErr(testResultNameRe)
+	}
+	unescapedTestID, err := url.PathUnescape(m[3])
+	if err != nil {
+		return TestResultNameParts{}, errors.Fmt("test id %q: %w", m[3], err)
+	}
+
+	if err := ValidateTestID(unescapedTestID); err != nil {
+		return TestResultNameParts{}, errors.Fmt("test id %q: %w", unescapedTestID, err)
+	}
+
+	return TestResultNameParts{
+		RootInvocationID: m[1],
+		WorkUnitID:       m[2],
+		TestID:           unescapedTestID,
+		ResultID:         m[4],
+	}, nil
+}
+
+// IsLegacyTestResultName returns whether the given test result name is likely
+// a legacy test result name, not a V2 test result name.
+// If the name is not valid, this method may return any value.
+func IsLegacyTestResultName(name string) bool {
+	return strings.HasPrefix(name, "invocations/")
+}
+
+// LegacyTestResultName synthesizes a legacy test result name from its parts.
 // Does not validate parts; use ValidateTestResultName.
-func TestResultName(invID, testID, resultID string) string {
+func LegacyTestResultName(invID, testID, resultID string) string {
 	return fmt.Sprintf(
 		"invocations/%s/tests/%s/results/%s", invID, url.PathEscape(testID), resultID)
+}
+
+// TestResultName synthesizes a test result name from its parts.
+func TestResultName(rootInvID, workUnitID, testID, resultID string) string {
+	return fmt.Sprintf("rootInvocations/%s/workUnits/%s/tests/%s/results/%s", rootInvID, workUnitID, url.PathEscape(testID), resultID)
 }
 
 // NormalizeTestResult converts inv to the canonical form.

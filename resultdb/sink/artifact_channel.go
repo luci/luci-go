@@ -102,7 +102,7 @@ func (t *uploadTask) CreateRequest() (*pb.CreateArtifactRequest, error) {
 		// Invocation-level artifact
 		req.Parent = pbutil.InvocationName(invID)
 	default:
-		req.Parent = pbutil.TestResultName(invID, tID, rID)
+		req.Parent = pbutil.LegacyTestResultName(invID, tID, rID)
 	}
 
 	// contents

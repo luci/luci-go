@@ -109,7 +109,7 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, requireParent boo
 		if invocationID, ok := pbutil.TryParseInvocationName(req.Parent); ok {
 			invID = invocationID
 		} else {
-			if invID, testID, resultID, err = pbutil.ParseTestResultName(req.Parent); err != nil {
+			if invID, testID, resultID, err = pbutil.ParseLegacyTestResultName(req.Parent); err != nil {
 				return "", nil, errors.New("parent: neither valid invocation name nor valid test result name")
 			}
 		}

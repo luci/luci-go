@@ -377,7 +377,7 @@ func unmarshalRows(invID invocations.ID, it *spanner.RowIterator, f func(tr *pb.
 			return errors.Fmt("unmarshal row: %w", err)
 		}
 
-		trName := pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
+		trName := pbutil.LegacyTestResultName(string(invID), tr.TestId, tr.ResultId)
 
 		tr.Name = trName
 		testresults.PopulateExpectedField(tr, isUnexpected)
