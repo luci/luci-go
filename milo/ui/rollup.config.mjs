@@ -38,10 +38,7 @@ const options = [
     input: 'src/sw/root_sw.ts',
     output: {
       file: 'dist/root_sw.js',
-      // In production, the service worker script cannot be an ES module due to
-      // limited browser support [1].
-      // [1]: https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorker#browser_compatibility
-      format: 'commonjs',
+      format: 'es',
       sourcemap: true,
     },
     plugins: [typescript()],
