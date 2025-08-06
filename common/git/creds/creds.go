@@ -44,6 +44,10 @@ func ReadAttrs(r io.Reader) (*Attrs, error) {
 	attrs := &Attrs{}
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
+		// Empty line signals end of attributes.
+		if scanner.Text() == "" {
+			return attrs, nil
+		}
 		k, v, ok := strings.Cut(scanner.Text(), "=")
 		if !ok {
 			return nil, errors.Fmt("read git credential attributes: invalid line %q", scanner.Text())
