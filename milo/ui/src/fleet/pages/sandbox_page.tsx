@@ -44,6 +44,9 @@ export const SandboxPage = () => {
       Welcome. This is a sandbox page with experiments and tools for developers
       of the Fleet Console to use for testing the functionality of the Fleet
       Console UI.
+      <p>
+        Logged in as: <b>{authState.identity}</b>
+      </p>
       <h2>Test Survey</h2>
       <Button
         onClick={() => requestSurvey(SETTINGS.fleetConsole.hats, authState)}
