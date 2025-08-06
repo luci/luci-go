@@ -16,7 +16,7 @@ import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 
 import { jwtDecode } from 'jwt-decode';
-import { PluginOption } from 'vite';
+import { PluginOption, PreviewServer, ViteDevServer } from 'vite';
 
 import { AuthState } from '../src/common/api/auth_state';
 
@@ -60,6 +60,58 @@ async function getAuthStateFromLUCIAuth(): Promise<AuthState> {
   };
 }
 
+const configureMiddlewares = (server: ViteDevServer | PreviewServer) => {
+  // Instructs developers to sign in with the luci-auth flow.
+  server.middlewares.use(async (req, res, next) => {
+    const url = new URL(req.url!, 'http://placeholder.com');
+    if (url.pathname !== '/auth/openid/login') {
+      return next();
+    }
+
+    const params = new URLSearchParams({
+      redirect: url.searchParams.get('r') || '/',
+      scopes: OAUTH_SCOPES,
+    });
+    res.statusCode = 302;
+    res.setHeader(
+      'Location',
+      `/ui/local-login-instruction?${params.toString()}`,
+    );
+    res.end();
+  });
+
+  // Return a auth state object if a valid luci-auth session exists.
+  server.middlewares.use(async (req, res, next) => {
+    if (req.url !== '/auth/openid/state') {
+      return next();
+    }
+
+    let authState: AuthState;
+    try {
+      authState = await getAuthStateFromLUCIAuth();
+    } catch (_e) {
+      return next();
+    }
+
+    res.setHeader('content-type', 'application/json');
+    res.end(JSON.stringify(authState));
+  });
+
+  // Logout the luci-auth session.
+  server.middlewares.use(async (req, res, next) => {
+    const url = new URL(req.url!, 'http://placeholder.com');
+    if (url.pathname !== '/auth/openid/logout') {
+      return next();
+    }
+
+    await execCLI(`luci-auth logout -scopes "${OAUTH_SCOPES}"`);
+
+    res.setHeader('Location', url.searchParams.get('r') || '/');
+    res.statusCode = 302;
+    res.end();
+  });
+};
+
 /**
  * A vite plugin that enables a `luci-auth` based login flow during local
  * development.
@@ -67,56 +119,7 @@ async function getAuthStateFromLUCIAuth(): Promise<AuthState> {
 export function localAuthPlugin(): PluginOption {
   return {
     name: 'luci-ui-local-auth',
-    configureServer: (server) => {
-      // Instructs developers to sign in with the luci-auth flow.
-      server.middlewares.use(async (req, res, next) => {
-        const url = new URL(req.url!, 'http://placeholder.com');
-        if (url.pathname !== '/auth/openid/login') {
-          return next();
-        }
-
-        const params = new URLSearchParams({
-          redirect: url.searchParams.get('r') || '/',
-          scopes: OAUTH_SCOPES,
-        });
-        res.statusCode = 302;
-        res.setHeader(
-          'Location',
-          `/ui/local-login-instruction?${params.toString()}`,
-        );
-        res.end();
-      });
-
-      // Return a auth state object if a valid luci-auth session exists.
-      server.middlewares.use(async (req, res, next) => {
-        if (req.url !== '/auth/openid/state') {
-          return next();
-        }
-
-        let authState: AuthState;
-        try {
-          authState = await getAuthStateFromLUCIAuth();
-        } catch (_e) {
-          return next();
-        }
-
-        res.setHeader('content-type', 'application/json');
-        res.end(JSON.stringify(authState));
-      });
-
-      // Logout the luci-auth session.
-      server.middlewares.use(async (req, res, next) => {
-        const url = new URL(req.url!, 'http://placeholder.com');
-        if (url.pathname !== '/auth/openid/logout') {
-          return next();
-        }
-
-        await execCLI(`luci-auth logout -scopes "${OAUTH_SCOPES}"`);
-
-        res.setHeader('Location', url.searchParams.get('r') || '/');
-        res.statusCode = 302;
-        res.end();
-      });
-    },
+    configureServer: configureMiddlewares,
+    configurePreviewServer: configureMiddlewares,
   };
 }
