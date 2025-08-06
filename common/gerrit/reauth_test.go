@@ -126,3 +126,19 @@ func TestDiskResultCache_expiry(t *testing.T) {
 	_, err = c.GetForProject(ctx, "host1", "project1")
 	assert.That(t, err, should.Equal(ErrResultMissing))
 }
+
+func TestNormalizeGerritHost(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		input    string
+		expected string
+	}{
+		{"chromium.googlesource.com", "chromium-review.googlesource.com"},
+		{"chromium-review.googlesource.com", "chromium-review.googlesource.com"},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.input, func(t *testing.T) {
+			assert.That(t, normalizeGerritHost(tc.input), should.Equal(tc.expected))
+		})
+	}
+}

@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -123,6 +124,9 @@ func (c *ReAuthChecker) Check(ctx context.Context, attrs *creds.Attrs) (*ReAuthC
 // supportedHosts contains Gerrit hosts that support ReAuth and the "Check Rapt" API.
 //
 // Used to short circuit checks.
+//
+// Note that the API can only be called using the `-review` hostname,
+// see [normalizeGerritHost].
 var supportedHosts = map[string]bool{
 	"chromium.googlesource.com":        true,
 	"chromium-review.googlesource.com": true,
@@ -143,7 +147,7 @@ func checkProjectReAuth(ctx context.Context, c *http.Client, host, project strin
 		Host:    host,
 		Project: project,
 	}
-	gc, err := gerrit.NewRESTClient(c, res.Host, true)
+	gc, err := gerrit.NewRESTClient(c, normalizeGerritHost(host), true)
 	if err != nil {
 		return nil, err
 	}
@@ -328,4 +332,14 @@ func reverse[V any](s []V) func(yield func(int, V) bool) {
 			}
 		}
 	}
+}
+
+// normalizeGerritHost ensures the Gerrit host is the -review kind.
+// This is needed to access the check RAPT API.
+func normalizeGerritHost(host string) string {
+	parts := strings.Split(host, ".")
+	if !strings.HasSuffix(parts[0], "-review") {
+		parts[0] = parts[0] + "-review"
+	}
+	return strings.Join(parts, ".")
 }
