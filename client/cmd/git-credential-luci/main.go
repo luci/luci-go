@@ -22,10 +22,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -128,11 +130,13 @@ func main() {
 		}
 		if reAuthEnabled() {
 			logging.Debugf(ctx, "ReAuth is enabled")
-			attrs, err := creds.ReadAttrs(os.Stdin)
+			var readInput bytes.Buffer
+			attrs, err := creds.ReadAttrs(io.TeeReader(os.Stdin, &readInput))
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%v\n", err)
 				os.Exit(1)
 			}
+			logging.Debugf(ctx, "Read input %q", readInput.Bytes())
 			logging.Debugf(ctx, "Got attributes %+v", attrs)
 			ra := auth.NewReAuthenticator(a)
 
