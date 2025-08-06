@@ -229,7 +229,7 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
                 label: _.startCase(key),
                 value: key,
                 options: val.values.map((v) => ({
-                  label: _.startCase(v),
+                  label: v,
                   value: v,
                 })),
               }),
