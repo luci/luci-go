@@ -122,7 +122,7 @@ func (h pluginHandler) Handle(ctx context.Context, c challenge) (*proposalReply,
 			Challenge:        challenge,
 			TimeoutMillis:    30_000,
 			AllowCredentials: allowed,
-			UserVerification: "required",
+			UserVerification: "preferred",
 			Extensions: map[string]any{
 				"appid": c.SecurityKey.AppID,
 			},

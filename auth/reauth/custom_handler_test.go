@@ -169,7 +169,7 @@ func TestPluginHandler(t *testing.T) {
 				Type: "public-key",
 				ID:   "dalian-__A",
 			}},
-			UserVerification: "required",
+			UserVerification: "preferred",
 			Extensions:       map[string]any{"appid": "google.com"},
 		},
 	})
