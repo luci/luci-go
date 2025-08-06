@@ -80,18 +80,15 @@ function addArtifactsToTree(
 function buildArtifactsTree(
   resultArtifacts: readonly Artifact[],
   invocationArtifacts: readonly Artifact[],
-  containsSummary: boolean,
 ): ArtifactTreeNodeData[] {
   const result: ArtifactTreeNodeData[] = [];
 
-  if (containsSummary) {
-    result.push({
-      id: 'summary_node',
-      name: 'Summary',
-      isSummary: true,
-      children: [],
-    });
-  }
+  result.push({
+    id: 'summary_node',
+    name: 'Summary',
+    isSummary: true,
+    children: [],
+  });
   let lastInsertedId = 0;
 
   if (resultArtifacts.length > 0) {
@@ -106,6 +103,7 @@ function buildArtifactsTree(
       ++lastInsertedId,
       'result',
     );
+
     result.push(resultArtifactsRoot);
   }
 
@@ -156,7 +154,6 @@ export function ArtifactTreeView({
   selectedAttemptIndex,
   onAttemptChange,
   currentCluster,
-  currentResult,
   hasRenderableResults,
 }: ArtifactTreeViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -197,16 +194,8 @@ export function ArtifactTreeView({
   }, [invArtifacts, debouncedSearchTerm]);
 
   const artifactsTree = useMemo(() => {
-    return buildArtifactsTree(
-      filteredResultArtifacts,
-      filteredInvArtifacts,
-      !!currentResult?.summaryHtml,
-    );
-  }, [
-    filteredResultArtifacts,
-    filteredInvArtifacts,
-    currentResult?.summaryHtml,
-  ]);
+    return buildArtifactsTree(filteredResultArtifacts, filteredInvArtifacts);
+  }, [filteredResultArtifacts, filteredInvArtifacts]);
 
   useEffect(() => {
     if (debouncedSearchTerm) return;
