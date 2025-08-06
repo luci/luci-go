@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +17,7 @@ import { EditorConfiguration, ModeSpec } from 'codemirror';
 import { useRef } from 'react';
 import { useLatest } from 'react-use';
 
+import CodeBlock from '@/clusters/components/codeblock/codeblock';
 import { PropertyViewerConfigInstance } from '@/common/store/user_config/build_config';
 import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
 
@@ -60,6 +62,10 @@ export function PropertyViewer({
       return;
     }
     configRef.current.setFolded(line, folded);
+  }
+  // TODO(mdraz): revert this once the codemirror issue is fixed b/436152777.
+  if (formattedValue) {
+    return <CodeBlock code={formattedValue} />;
   }
 
   return (
