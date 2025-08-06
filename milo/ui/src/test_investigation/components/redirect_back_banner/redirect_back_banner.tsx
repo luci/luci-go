@@ -133,7 +133,7 @@ From Link: ${self.location.href}`;
               })
             }
           >
-            Go back to old view
+            Go back to old UI
           </Link>
         </Box>
       }

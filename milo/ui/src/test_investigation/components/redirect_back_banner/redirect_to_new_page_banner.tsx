@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Button } from '@mui/material';
+import { Box, Button, Link } from '@mui/material';
 import Alert, { AlertProps } from '@mui/material/Alert';
 import { useCallback } from 'react';
+import { useNavigate } from 'react-router';
+import { useLocation } from 'react-router';
 
 import { useFeatureFlag, useSetFeatureFlag } from '@/common/feature_flags';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { NEW_TEST_INVESTIGATION_PAGE_FLAG } from '@/test_investigation/pages/features';
 
 export interface RedirectToNewPageBannerProps extends AlertProps {
@@ -31,6 +34,9 @@ export function RedirectToNewPageBanner({
   const featureFlag = useFeatureFlag(NEW_TEST_INVESTIGATION_PAGE_FLAG);
   const setFeatureFlag = useSetFeatureFlag(NEW_TEST_INVESTIGATION_PAGE_FLAG);
   const { trackEvent } = useGoogleAnalytics();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
 
   // TODO: Track all feature flag opt in/outs generically, rather than only from this call site.
   const trackOptChange = useCallback(
@@ -43,21 +49,43 @@ export function RedirectToNewPageBanner({
     [project, trackEvent],
   );
 
+  const navigateToNewUI = () => {
+    if (searchParams.get('view') === 'legacy') {
+      searchParams.delete('view');
+      setSearchParams(searchParams);
+    }
+    navigate(location.pathname, { replace: true });
+  };
+
   return (
     <Alert
       severity="info"
       action={
         featureFlag ? (
-          <Button
-            size="small"
-            variant="contained"
-            onClick={() => {
-              trackOptChange(false);
-              setFeatureFlag(false);
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
             }}
           >
-            Opt out of the new UI
-          </Button>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={() => {
+                trackOptChange(false);
+                setFeatureFlag(false);
+              }}
+            >
+              Opt out of the new UI
+            </Button>
+            <Link
+              onClick={() => navigateToNewUI()}
+              underline="always"
+              sx={{ ml: 1, cursor: 'pointer' }}
+            >
+              Go to new UI
+            </Link>
+          </Box>
         ) : (
           <Button
             size="small"
