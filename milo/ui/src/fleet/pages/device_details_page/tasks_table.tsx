@@ -13,38 +13,24 @@
 // limitations under the License.
 
 import { Alert, AlertTitle } from '@mui/material';
-import { GridColDef } from '@mui/x-data-grid';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import {
-  getCurrentPageIndex,
   getPageSize,
   getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
-import { getSwarmingTaskURL } from '@/common/tools/url_utils';
-import { Pagination } from '@/fleet/components/device_table/pagination';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
-import { StyledGrid } from '@/fleet/components/styled_data_grid';
-import { useBot, useTasks } from '@/fleet/hooks/swarming_hooks';
-import { colors } from '@/fleet/theme/colors';
+import { TasksGrid } from '@/fleet/components/tasks_grid/tasks_grid';
+import { useBot, useBotTasks } from '@/fleet/hooks/swarming_hooks';
 import {
   DEVICE_TASKS_MILO_HOST,
   DEVICE_TASKS_SWARMING_HOST,
-  extractBuildUrlFromTagData,
 } from '@/fleet/utils/builds';
-import { prettyDateTime } from '@/fleet/utils/dates';
 import { getErrorMessage } from '@/fleet/utils/errors';
-import {
-  getRowClassName,
-  getTaskDuration,
-  getTaskTagValue,
-  prettifySwarmingState,
-} from '@/fleet/utils/task_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { useBotsClient } from '@/swarming/hooks/prpc_clients';
 
-const UNKNOWN_ROW_COUNT = -1;
 const DEFAULT_PAGE_SIZE = 50;
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
@@ -63,7 +49,7 @@ export const Tasks = ({
 
   const client = useBotsClient(swarmingHost);
   const botData = useBot(client, dutId);
-  const tasksData = useTasks({
+  const tasksData = useBotTasks({
     client,
     botId: botData.info?.botId || '',
     limit: getPageSize(pagerCtx, searchParams),
@@ -138,113 +124,13 @@ export const Tasks = ({
       </Alert>
     );
   }
-
-  const taskMap = new Map(tasksData.tasks.map((t) => [t.taskId, t]));
-  const taskGridData = tasksData.tasks.map((t) => ({
-    id: t.taskId,
-    task: t.name,
-    started: prettyDateTime(t.startedTs),
-    duration: getTaskDuration(t),
-    result: prettifySwarmingState(t),
-    tags: t.tags,
-    buildVersion: getTaskTagValue(t, 'build'),
-  }));
-
-  // TODO: 371010330 - Prettify these columns.
-  const columns: GridColDef[] = [
-    {
-      field: 'task',
-      headerName: 'Task',
-      flex: 2,
-      renderCell: (params) => {
-        const buildUrl = extractBuildUrlFromTagData(
-          taskMap.get(params.id.toString())?.tags || [],
-          DEVICE_TASKS_MILO_HOST,
-        );
-
-        return (
-          <a
-            href={
-              buildUrl ??
-              getSwarmingTaskURL(
-                DEVICE_TASKS_SWARMING_HOST,
-                params.id.toString(),
-              )
-            }
-            target="_blank"
-            rel="noreferrer"
-          >
-            {params.value}
-          </a>
-        );
-      },
-    },
-    {
-      field: 'buildVersion',
-      headerName: 'Build version',
-      flex: 1,
-    },
-    // TODO: 371010330 - Make rows and add a failure icon somewhere (for a11y)
-    // if result is a failure.
-    {
-      field: 'result',
-      headerName: 'Result',
-      flex: 1,
-    },
-    {
-      field: 'started',
-      headerName: 'Started',
-      flex: 1,
-    },
-    {
-      field: 'duration',
-      headerName: 'Duration',
-      flex: 1,
-    },
-  ];
-
   return (
-    <StyledGrid
-      rows={taskGridData}
-      columns={columns}
-      slots={{ pagination: Pagination }}
-      slotProps={{
-        pagination: {
-          pagerCtx: pagerCtx,
-          nextPageToken: tasksData.nextPageToken,
-        },
-      }}
-      paginationMode="server"
-      pageSizeOptions={pagerCtx.options.pageSizeOptions}
-      paginationModel={{
-        page: getCurrentPageIndex(pagerCtx),
-        pageSize: getPageSize(pagerCtx, searchParams),
-      }}
-      rowCount={UNKNOWN_ROW_COUNT}
-      disableColumnMenu
-      disableColumnFilter
-      disableRowSelectionOnClick
-      getRowClassName={getRowClassName}
-      sx={{
-        '& .row--failure, .row--failure:hover': {
-          backgroundColor: colors.red[100],
-        },
-        '& .row--pending, .row--pending:hover': {
-          backgroundColor: colors.yellow[100],
-        },
-        '& .row--bot_died, .row--bot_died:hover': {
-          backgroundColor: colors.grey[100],
-        },
-        '& .row--client_error, .row--client_error:hover': {
-          backgroundColor: colors.orange[100],
-        },
-        '& .row--exception, .row--exception:hover': {
-          backgroundColor: colors.purple[100],
-        },
-        '& .MuiDataGrid-row:hover': {
-          filter: 'brightness(0.94)',
-        },
-      }}
+    <TasksGrid
+      tasks={tasksData.tasks}
+      pagerCtx={pagerCtx}
+      nextPageToken={tasksData.nextPageToken}
+      swarmingHost={swarmingHost}
+      miloHost={DEVICE_TASKS_MILO_HOST}
     />
   );
 };

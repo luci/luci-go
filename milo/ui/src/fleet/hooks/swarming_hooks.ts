@@ -23,6 +23,8 @@ import {
   SortQuery,
   StateQuery,
   TaskResultResponse,
+  TasksClientImpl,
+  TasksWithPerfRequest,
 } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 
 export const useBot = (
@@ -56,7 +58,7 @@ export const useBot = (
   return { info, botFound, error, isError, isLoading };
 };
 
-export const useTasks = ({
+export const useBotTasks = ({
   client,
   botId,
   limit,
@@ -87,6 +89,46 @@ export const useTasks = ({
     refetchInterval: 60000,
     // The query will not execute until `botId` is available.
     enabled: botId !== '',
+  });
+
+  return {
+    tasks: data?.items,
+    nextPageToken: data?.cursor || '',
+    error,
+    isError,
+    isLoading,
+  };
+};
+
+// TODO: b/436654106 look into cleaning up swarming hooks
+export const useTasks = ({
+  client,
+  tags,
+  limit,
+  pageToken,
+}: {
+  client: DecoratedClient<TasksClientImpl>;
+  tags: string[];
+  limit: number;
+  pageToken: string;
+}): {
+  tasks: readonly TaskResultResponse[] | undefined;
+  nextPageToken: string;
+  error: unknown;
+  isError: boolean;
+  isLoading: boolean;
+} => {
+  const { data, error, isError, isLoading } = useQuery({
+    ...client.ListTasks.query(
+      TasksWithPerfRequest.fromPartial({
+        tags: tags,
+        limit: limit,
+        cursor: pageToken,
+        state: StateQuery.QUERY_ALL,
+        sort: SortQuery.QUERY_CREATED_TS,
+      }),
+    ),
+    refetchInterval: 60000,
   });
 
   return {
