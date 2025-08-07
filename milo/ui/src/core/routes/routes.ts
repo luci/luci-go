@@ -53,6 +53,10 @@ export const routes: RouteObject[] = [
     lazy: () => import('@/core/pages/always_fail_page'),
   },
   {
+    path: 'internal/gallery',
+    lazy: () => import('@/core/pages/gallery_page'),
+  },
+  {
     path: 'doc/release-notes',
     lazy: () => import('@/core/pages/release_notes_page'),
   },
