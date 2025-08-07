@@ -16,9 +16,20 @@
 //
 // The protocol used for communication between Git and the credential helper
 // is documented in:
+//   - https://git-scm.com/docs/gitcredentials
+//   - https://git-scm.com/docs/git-credential
 //
-// https://git-scm.com/docs/gitcredentials
-// https://git-scm.com/docs/git-credential
+// If you need ReAuth to authenticate with Gerrit, enable ReAuth by
+// setting an environment variable:
+//
+//	LUCI_ENABLE_REAUTH=1
+//
+// git-credential-luci supports ancillary authentication via a plugin.
+// A plugin can be configured by setting an environment variable:
+//
+//	GOOGLE_AUTH_WEBAUTHN_PLUGIN=foo
+//
+// This will run the plugin binary `foo` as needed.
 package main
 
 import (

@@ -12,6 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Command luci-auth-ssh-plugin is an auth plugin for git-credential-luci.
+//
+// See git-credential-luci for info on how to use auth plugins.
+//
+// This plugin supports proxying the authentication over an SSH
+// connection via the SSH agent channel.  This plugin is run on the
+// remote host, and it forwards auth requests to a local helper that
+// piggybacks on the SSH agent.
 package main
 
 import (
