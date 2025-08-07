@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import {
-  Alert,
   Button,
   Checkbox,
   Dialog,
@@ -22,19 +21,15 @@ import {
   FormControlLabel,
 } from '@mui/material';
 
-import {
-  generateBuildUrl,
-  BuildIdentifier,
-  FLEET_BUILDS_SWARMING_HOST,
-} from '@/fleet/utils/builds';
+import { FLEET_BUILDS_SWARMING_HOST } from '@/fleet/utils/builds';
+import { ScheduleAutorepairResult } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import CodeSnippet from '../../code_snippet/code_snippet';
 
 export interface SessionInfo {
   sessionId?: string;
-  builds?: BuildIdentifier[];
+  results?: ScheduleAutorepairResult[];
   dutNames?: string[];
-  invalidDutNames?: string[];
 }
 
 export interface AutorepairDialogProps {
@@ -66,7 +61,7 @@ function getDeviceDetailListItem(dutName: string) {
 
 export default function AutorepairDialog({
   open,
-  sessionInfo: { dutNames = [], builds, sessionId, invalidDutNames = [] },
+  sessionInfo: { dutNames = [], results, sessionId },
   handleClose,
   handleOk,
   deepRepair,
@@ -77,31 +72,6 @@ export default function AutorepairDialog({
     <>
       <DialogTitle>Running autorepair</DialogTitle>
       <DialogContent>
-        {/* TODO: b/394429368 - remove this alert. */}
-        <Alert severity="info">
-          At this time, devices in the <code>ready</code> and{' '}
-          <code>needs_repair</code> states cannot have autorepair run on them
-          from the UI. For more info, see:{' '}
-          <a href="http://b/394429368" target="_blank" rel="noreferrer">
-            b/394429368
-          </a>
-        </Alert>
-
-        {invalidDutNames.length > 0 && (
-          <>
-            <Alert severity="error" sx={{ mt: 1 }}>
-              For the following devices autorepair will not be executed, as they
-              are in a <code>ready</code> and/or <code>needs_repair</code> state
-              or clank devices:
-              <ul>
-                {invalidDutNames?.map((dutName) =>
-                  getDeviceDetailListItem(dutName),
-                )}
-              </ul>
-            </Alert>
-          </>
-        )}
-
         {dutNames.length > 0 && (
           <>
             <p>
@@ -148,24 +118,29 @@ export default function AutorepairDialog({
       <DialogContent>
         <p>
           Autorepair has been triggered on the following{' '}
-          {plurifyDevices(dutNames.length)}:
+          {plurifyDevices(results?.length || 0)}:
         </p>
         <ul>
-          {builds?.map((b, i) => {
-            const dutName = dutNames[i];
+          {results?.map((result) => {
             return (
-              <li key={dutName}>
+              <li key={result.unitName}>
                 <a
-                  href={`/ui/fleet/labs/p/chromeos/devices/${dutName}`}
+                  href={`/ui/fleet/labs/p/chromeos/devices/${result.unitName}`}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  {dutName}
+                  {result.unitName}
                 </a>
-                :{' '}
-                <a href={generateBuildUrl(b)} target="_blank" rel="noreferrer">
-                  View in Milo
-                </a>
+                {': '}
+                {result.taskUrl ? (
+                  <a href={result.taskUrl} target="_blank" rel="noreferrer">
+                    View in Milo
+                  </a>
+                ) : (
+                  <span style={{ color: 'red' }}>
+                    Failed to schedule autorepair: {result.errorMessage}
+                  </span>
+                )}
               </li>
             );
           })}
@@ -191,7 +166,7 @@ export default function AutorepairDialog({
   );
   return (
     <Dialog onClose={handleClose} open={open}>
-      {builds ? finalScreen : confirmationScreen}
+      {results ? finalScreen : confirmationScreen}
     </Dialog>
   );
 }

@@ -15,59 +15,31 @@
 import BuildIcon from '@mui/icons-material/Build';
 import { Button } from '@mui/material';
 import { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 
-import { useBuildsClient } from '@/build/hooks/prpc_clients';
-import { DutStatusesNotEligibleForAutorepair } from '@/fleet/constants/dut';
-import { BatchRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import {
+  ScheduleAutorepairRequest_AutorepairFlag,
+  ScheduleAutorepairRequest,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { DutToRepair } from '../../actions/shared/types';
 
 import AutorepairDialog, { SessionInfo } from './autorepair_dialog';
-import { autorepairRequestsFromDuts, extractBuildIdentifiers } from './shared';
 
 interface RunAutorepairProps {
   selectedDuts: DutToRepair[];
 }
 
 export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
-  const bbClient = useBuildsClient();
+  const fleetConsoleClient = useFleetConsoleClient();
   const [open, setOpen] = useState<boolean>(false);
   const [sessionInfo, setSessionInfo] = useState<SessionInfo>({});
   const [deepRepair, setDeepRepair] = useState<boolean>(false);
-
-  // TODO: b/394429368 - Stop filtering out ready devices once we have moved
-  // admin tasks off of Buildbucket.
-  // NeedsRepair DUTS are filtered to prevent users from accidentally
-  // scheduling too many autorepair jobs in a short-time.
-  const validDuts = selectedDuts.filter(
-    (selectedDut) =>
-      selectedDut.state &&
-      !DutStatusesNotEligibleForAutorepair.includes(
-        selectedDut.state.toLowerCase(),
-      ) &&
-      !selectedDut.name.includes('-clank'),
-  );
-
-  // User may select invalid DUTs for autorepair
-  // and should be warned that autorepair won't be executed for them.
-  const invalidDuts = selectedDuts.filter(
-    (selectedDut) =>
-      !selectedDut.state ||
-      DutStatusesNotEligibleForAutorepair.includes(
-        selectedDut.state.toLowerCase(),
-      ) ||
-      selectedDut.name.includes('-clank'),
-  );
-
+  const dutNames = selectedDuts.map((d) => d.name);
   // First, give users a modal to confirm if they want autorepair or not.
   const initializeAutorepair = () => {
-    const sessionId = uuidv4();
-
     setSessionInfo({
-      sessionId,
-      dutNames: validDuts.map((d) => d.name),
-      invalidDutNames: invalidDuts.map((d) => d.name),
+      dutNames: dutNames,
     });
     setOpen(true);
 
@@ -75,19 +47,22 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
   };
 
   const runAutorepair = async () => {
-    const resp = await bbClient.Batch(
-      BatchRequest.fromPartial({
-        requests: autorepairRequestsFromDuts(
-          validDuts || [],
-          sessionInfo.sessionId || '',
-          deepRepair,
-        ),
+    const flags = [];
+    if (deepRepair) {
+      flags.push(ScheduleAutorepairRequest_AutorepairFlag.DEEP_REPAIR);
+    }
+
+    const resp = await fleetConsoleClient.ScheduleAutorepair(
+      ScheduleAutorepairRequest.fromPartial({
+        unitNames: dutNames,
+        flags: flags,
       }),
     );
 
     setSessionInfo({
       ...sessionInfo,
-      builds: extractBuildIdentifiers(resp),
+      sessionId: resp.sessionId,
+      results: [...resp.results],
     });
 
     return;
@@ -100,6 +75,7 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
         size="small"
         startIcon={<BuildIcon />}
         onClick={initializeAutorepair}
+        disabled={dutNames.length === 0}
       >
         Run autorepair
       </Button>
