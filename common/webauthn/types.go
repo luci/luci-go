@@ -22,7 +22,7 @@ import (
 
 // A GetAssertionRequest represents a WebAuthn authenticatorGetAssertion request.
 //
-// https://www.w3.org/TR/webauthn-3/#sctn-appid-extension
+// https://www.w3.org/TR/webauthn-3/#sctn-op-get-assertion
 type GetAssertionRequest struct {
 	// Type (should always be "get")
 	Type        string                  `json:"type"`
