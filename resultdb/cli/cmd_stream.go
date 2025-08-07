@@ -753,8 +753,17 @@ func (r *streamRun) moduleIDFromArgs() *pb.ModuleIdentifier {
 			ModuleScheme:  r.moduleScheme,
 			ModuleVariant: &pb.Variant{Def: r.vars},
 		}
+	} else {
+		return &pb.ModuleIdentifier{
+			ModuleName:   "legacy",
+			ModuleScheme: "legacy",
+			// Do not pass through vars, it is possible legacy clients are calling `rdb stream`
+			// multiple times within one invocation and trying to set it to different values
+			// at different times will cause UpdateInvocation to return an error as module_id
+			// may not be modified once set.
+			ModuleVariant: &pb.Variant{},
+		}
 	}
-	return nil
 }
 
 func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret lucictx.ResultDBInvocation, err error) {
