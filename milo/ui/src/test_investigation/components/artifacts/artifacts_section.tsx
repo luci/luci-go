@@ -373,12 +373,20 @@ export function ArtifactsSection() {
           </Panel>
         </PanelGroup>
       ) : (
-        <Typography sx={{ p: 2 }} color="text.disabled">
-          {isOverallArtifactListsLoading
-            ? 'Loading...'
-            : !currentResult
-              ? 'No test results to display.'
-              : 'No summary or artifacts available.'}
+        <Typography color="text.disabled">
+          {isOverallArtifactListsLoading ? (
+            'Loading...'
+          ) : !currentResult ? (
+            'No test results to display.'
+          ) : (
+            <Box sx={{ pl: 1 }}>
+              <ArtifactSummaryView
+                currentResult={currentResult}
+                textDiffArtifact={textDiffArtifact}
+                selectedAttemptIndex={selectedAttemptIndex}
+              />
+            </Box>
+          )}
         </Typography>
       )}
     </Box>
