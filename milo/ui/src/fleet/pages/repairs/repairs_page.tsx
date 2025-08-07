@@ -14,12 +14,14 @@
 
 import DoneIcon from '@mui/icons-material/Done';
 import ErrorIcon from '@mui/icons-material/Error';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import WarningIcon from '@mui/icons-material/Warning';
 import { Alert, Chip, Typography } from '@mui/material';
 import { GridColDef } from '@mui/x-data-grid';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
 import { useEffect, useMemo } from 'react';
+import { Link } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -120,6 +122,30 @@ const COLUMNS: Record<string, GridColDef> = {
     field: 'devices_offline_ratio',
     headerName: 'Devices Offline / Total Devices',
     flex: 2,
+  },
+  omnilab_link: {
+    field: 'omnilab_link',
+    headerName: 'Explore in arsenal',
+    flex: 1,
+    renderCell: (x) => {
+      // Double encodeURIComponent because omnilab is weird i guess
+      const to = `https://omnilab.corp.google.com/recovery?host=host_group:include:${encodeURIComponent(encodeURIComponent(x.row.host_group))}&device=Hardware:include:${encodeURIComponent(encodeURIComponent(x.row.run_target))}`;
+
+      return (
+        <Link
+          css={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100%',
+          }}
+          to={to}
+          target="_blank"
+        >
+          <OpenInNewIcon />
+        </Link>
+      );
+    },
   },
 };
 
