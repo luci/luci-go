@@ -13,9 +13,11 @@
 // limitations under the License.
 
 import { Box, Button } from '@mui/material';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { HtmlTooltip } from '@/common/components/html_tooltip';
+import { InstructionDialog } from '@/common/components/instruction_hint/instruction_dialog';
+import { pairsToPlaceholderDict } from '@/common/tools/instruction/instruction_utils';
 import { useInvocation, useTestVariant } from '@/test_investigation/context';
 
 import {
@@ -30,6 +32,7 @@ export function OverviewActionsSection() {
   const testVariant = useTestVariant();
   const invocation = useInvocation();
   const builder = getVariantValue(testVariant.variant, 'builder');
+  const [open, setOpen] = useState(false);
 
   const fileBugUrl = useMemo(
     () =>
@@ -50,6 +53,19 @@ export function OverviewActionsSection() {
 
   const sourceRef = invocation.sourceSpec?.sources?.gitilesCommit?.ref;
 
+  const instructionPlaceHolderData = () => {
+    const resultBundle = testVariant.results || [];
+    const tagDict = pairsToPlaceholderDict(resultBundle[0].result.tags);
+    return {
+      test: {
+        id: testVariant.testId,
+        metadata: testVariant.testMetadata || {},
+        variant: testVariant.variant?.def || {},
+        tags: tagDict,
+      },
+    };
+  };
+
   return (
     <Box
       sx={{
@@ -62,10 +78,24 @@ export function OverviewActionsSection() {
       <Button
         variant="outlined"
         size="small"
-        onClick={() => alert('Rerun functionality to be implemented')}
+        onClick={() => {
+          setOpen(true);
+        }}
       >
         Rerun
       </Button>
+      {testVariant.instruction?.instruction && (
+        <InstructionDialog
+          open={open}
+          onClose={(e) => {
+            setOpen(false);
+            e.stopPropagation();
+          }}
+          title={'rerun instructions'}
+          instructionName={testVariant.instruction?.instruction}
+          placeholderData={instructionPlaceHolderData()}
+        />
+      )}
       <Button
         variant="outlined"
         size="small"
