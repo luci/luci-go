@@ -58,7 +58,9 @@ export function importMapPlugin(): PluginOption {
       // Map old sourcemap filenames (with content hash placeholder) to new
       // sourcemap filenames (with the real content hash).
       const smFilenameMap: { [key: string]: string } = {};
-      for (const chunk of Object.values(bundle)) {
+      const chunkNames = Object.keys(bundle).sort();
+      for (const chunkName of chunkNames) {
+        const chunk = bundle[chunkName];
         if (chunk.type !== 'chunk') {
           continue;
         }
