@@ -819,7 +819,7 @@ func TestUpdateInvocation(t *testing.T) {
 						req.Invocation.ModuleId = nil
 						_, err = recorder.UpdateInvocation(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike(`invocation: module_id: cannot modify module_id once set`))
+						assert.Loosely(t, err, should.ErrLike(`invocation: module_id: cannot modify module_id once set (do you need to create a child invocation?); got nil, was non-nil`))
 					})
 					t.Run("to another non-nil value", func(t *ftt.Test) {
 						req.Invocation.ModuleId = &pb.ModuleIdentifier{
@@ -829,7 +829,7 @@ func TestUpdateInvocation(t *testing.T) {
 						}
 						_, err = recorder.UpdateInvocation(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike(`invocation: module_id: cannot modify module_id once set`))
+						assert.Loosely(t, err, should.ErrLike(`invocation: module_id: cannot modify module_id once set (do you need to create a child invocation?); got module name "new_module", was "module"`))
 					})
 				})
 				t.Run("to the same value", func(t *ftt.Test) {

@@ -16,6 +16,7 @@ package recorder
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"time"
 
@@ -277,7 +278,13 @@ func validateUpdateBaselinePermissions(ctx context.Context, realm string) error 
 }
 
 // UpdateInvocation implements pb.RecorderServer.
-func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvocationRequest) (*pb.Invocation, error) {
+func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvocationRequest) (inv *pb.Invocation, err error) {
+	defer func() {
+		if err != nil {
+			logging.Warningf(ctx, "UpdateInvocation call for %q responding with error: %s", in.Invocation.GetName(), err.Error())
+		}
+	}()
+
 	cfg, err := config.Service(ctx)
 	if err != nil {
 		return nil, err
@@ -328,9 +335,9 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				ret.Deadline = deadline
 
 			case "module_id":
-				if !isModuleIdentifierEqual(in.Invocation.ModuleId, ret.ModuleId) {
+				if diff := diffModuleIdentifier(in.Invocation.ModuleId, ret.ModuleId); diff != "" {
 					if ret.ModuleId != nil {
-						return appstatus.BadRequest(errors.New("invocation: module_id: cannot modify module_id once set (do you need to create a child invocation?)"))
+						return appstatus.BadRequest(errors.Fmt("invocation: module_id: cannot modify module_id once set (do you need to create a child invocation?); %s", diff))
 					}
 					// ret.ModuleId is nil. And the specified in.Invocation.ModuleId is not equal to it.
 					// Therefore, we must be setting the module to something substantive.
@@ -477,17 +484,34 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 	return ret, nil
 }
 
-func isModuleIdentifierEqual(a, b *pb.ModuleIdentifier) bool {
-	if a == nil || b == nil {
-		return a == nil && b == nil
+func diffModuleIdentifier(got, was *pb.ModuleIdentifier) string {
+	if got == nil || was == nil {
+		if got == nil && was == nil {
+			return ""
+		} else if got == nil {
+			return "got nil, was non-nil"
+		} else {
+			return "got non-nil, was nil"
+		}
 	}
-	// Remove the hash (output-only field) from both to make
-	// sure we compare only the meaningful fields.
-	aNormalized := proto.Clone(a).(*pb.ModuleIdentifier)
-	bNormalized := proto.Clone(b).(*pb.ModuleIdentifier)
-	aNormalized.ModuleVariantHash = ""
-	bNormalized.ModuleVariantHash = ""
-	return proto.Equal(a, b)
+	if got.ModuleName != was.ModuleName {
+		return fmt.Sprintf("got module name %q, was %q", got.ModuleName, was.ModuleName)
+	}
+	if got.ModuleScheme != was.ModuleScheme {
+		return fmt.Sprintf("got module scheme %q, was %q", got.ModuleScheme, was.ModuleScheme)
+	}
+	if !pbutil.VariantsEqual(got.ModuleVariant, was.ModuleVariant) {
+		gotKeys, err := pbutil.VariantToJSON(got.ModuleVariant)
+		if err != nil {
+			gotKeys = "{<invalid>}"
+		}
+		wantKeys, err := pbutil.VariantToJSON(was.ModuleVariant)
+		if err != nil {
+			wantKeys = "{<invalid>}"
+		}
+		return fmt.Sprintf("got module variant %q, was %q", gotKeys, wantKeys)
+	}
+	return ""
 }
 
 func isBigQueryExportsEqual(a, b []*pb.BigQueryExport) bool {
