@@ -869,12 +869,15 @@ func TestCreateRootInvocation(t *testing.T) {
 				var headers metadata.MD
 				res, err := recorder.CreateRootInvocation(ctx, req, grpc.Header(&headers))
 				assert.Loosely(t, err, should.BeNil)
+				commitTime := res.RootInvocation.CreateTime.AsTime()
 				proto.Merge(expectedInv, &pb.RootInvocation{
-					CreateTime: res.RootInvocation.CreateTime,
+					CreateTime:  timestamppb.New(commitTime),
+					LastUpdated: timestamppb.New(commitTime),
 				})
 				assert.That(t, res.RootInvocation, should.Match(expectedInv))
 				proto.Merge(expectedWU, &pb.WorkUnit{
-					CreateTime: res.RootWorkUnit.CreateTime,
+					CreateTime:  timestamppb.New(commitTime),
+					LastUpdated: timestamppb.New(commitTime),
 				})
 				assert.That(t, res.RootWorkUnit, should.Match(expectedWU))
 
@@ -889,13 +892,15 @@ func TestCreateRootInvocation(t *testing.T) {
 				row, err := rootinvocations.Read(ctx, rootInvocationID)
 				assert.Loosely(t, err, should.BeNil)
 				expectInvRow.SecondaryIndexShardID = row.SecondaryIndexShardID
-				expectInvRow.CreateTime = row.CreateTime
+				expectInvRow.CreateTime = commitTime
+				expectInvRow.LastUpdated = commitTime
 				assert.That(t, row, should.Match(expectInvRow))
 
 				wuRow, err := workunits.Read(ctx, wuID, workunits.AllFields)
 				assert.Loosely(t, err, should.BeNil)
 				expectWURow.SecondaryIndexShardID = wuRow.SecondaryIndexShardID
-				expectWURow.CreateTime = wuRow.CreateTime
+				expectWURow.CreateTime = commitTime
+				expectWURow.LastUpdated = commitTime
 				assert.That(t, wuRow, should.Match(expectWURow))
 
 				// Check inclusion is added to IncludedInvocations.
@@ -911,16 +916,19 @@ func TestCreateRootInvocation(t *testing.T) {
 				var headers metadata.MD
 				res, err := recorder.CreateRootInvocation(ctx, req, grpc.Header(&headers))
 				assert.Loosely(t, err, should.BeNil)
+				commitTime := res.RootInvocation.CreateTime.AsTime()
 				proto.Merge(expectedInv, &pb.RootInvocation{
 					State:             pb.RootInvocation_FINALIZING,
-					CreateTime:        res.RootInvocation.CreateTime,
-					FinalizeStartTime: res.RootInvocation.FinalizeStartTime,
+					CreateTime:        timestamppb.New(commitTime),
+					LastUpdated:       timestamppb.New(commitTime),
+					FinalizeStartTime: timestamppb.New(commitTime),
 				})
 				assert.That(t, res.RootInvocation, should.Match(expectedInv))
 				proto.Merge(expectedWU, &pb.WorkUnit{
 					State:             pb.WorkUnit_FINALIZING,
-					CreateTime:        res.RootWorkUnit.CreateTime,
-					FinalizeStartTime: res.RootWorkUnit.FinalizeStartTime,
+					CreateTime:        timestamppb.New(commitTime),
+					LastUpdated:       timestamppb.New(commitTime),
+					FinalizeStartTime: timestamppb.New(commitTime),
 				})
 				assert.That(t, res.RootWorkUnit, should.Match(expectedWU))
 
@@ -935,9 +943,10 @@ func TestCreateRootInvocation(t *testing.T) {
 				row, err := rootinvocations.Read(ctx, rootInvocationID)
 				assert.Loosely(t, err, should.BeNil)
 				expectInvRow.SecondaryIndexShardID = row.SecondaryIndexShardID
-				expectInvRow.CreateTime = row.CreateTime
 				expectInvRow.State = pb.RootInvocation_FINALIZING
-				expectInvRow.FinalizeStartTime = row.FinalizeStartTime
+				expectInvRow.CreateTime = commitTime
+				expectInvRow.LastUpdated = commitTime
+				expectInvRow.FinalizeStartTime = spanner.NullTime{Time: commitTime, Valid: true}
 				assert.That(t, row, should.Match(expectInvRow))
 				// Check finalize start time is set.
 				assert.That(t, row.FinalizeStartTime.Valid, should.BeTrue)
@@ -945,9 +954,10 @@ func TestCreateRootInvocation(t *testing.T) {
 				wuRow, err := workunits.Read(ctx, wuID, workunits.AllFields)
 				assert.Loosely(t, err, should.BeNil)
 				expectWURow.SecondaryIndexShardID = wuRow.SecondaryIndexShardID
-				expectWURow.CreateTime = wuRow.CreateTime
 				expectWURow.State = pb.WorkUnit_FINALIZING
-				expectWURow.FinalizeStartTime = wuRow.FinalizeStartTime
+				expectWURow.CreateTime = commitTime
+				expectWURow.LastUpdated = commitTime
+				expectWURow.FinalizeStartTime = spanner.NullTime{Time: commitTime, Valid: true}
 				assert.That(t, wuRow, should.Match(expectWURow))
 				// Check finalize start time is set.
 				assert.That(t, wuRow.FinalizeStartTime.Valid, should.BeTrue)

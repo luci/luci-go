@@ -155,12 +155,14 @@ func TestFinalizeWorkUnit(t *testing.T) {
 			assert.Loosely(t, wuProto.State, should.Equal(pb.WorkUnit_FINALIZING))
 			assert.Loosely(t, wuProto.FinalizeStartTime, should.NotBeNil)
 			finalizeTime := wuProto.FinalizeStartTime.AsTime()
+			assert.Loosely(t, wuProto.LastUpdated.AsTime(), should.Match(finalizeTime))
 
 			// Read the work unit from Spanner to confirm it's really FINALIZING.
 			wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, wuRow.State, should.Equal(pb.WorkUnit_FINALIZING))
 			assert.Loosely(t, wuRow.FinalizeStartTime, should.Match(spanner.NullTime{Valid: true, Time: finalizeTime}))
+			assert.Loosely(t, wuRow.LastUpdated, should.Match(finalizeTime))
 
 			// Enqueued the finalization task for the legacy invocation.
 			expectedTasks := []protoreflect.ProtoMessage{

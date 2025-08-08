@@ -43,6 +43,7 @@ func NewBuilder(id ID) *Builder {
 			Realm:                                   "testproject:testrealm",
 			CreateTime:                              time.Date(2025, 4, 25, 1, 2, 3, 4000, time.UTC),
 			CreatedBy:                               "user:test@example.com",
+			LastUpdated:                             time.Date(2025, 4, 26, 1, 2, 3, 4000, time.UTC),
 			FinalizeStartTime:                       spanner.NullTime{Valid: true, Time: time.Date(2025, 4, 26, 1, 2, 3, 4000, time.UTC)},
 			FinalizeTime:                            spanner.NullTime{Valid: true, Time: time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)},
 			Deadline:                                time.Date(2025, 4, 28, 1, 2, 3, 4000, time.UTC),
@@ -83,6 +84,7 @@ func (b *Builder) WithMinimalFields() *Builder {
 		Realm:             b.row.Realm,
 		CreateTime:        b.row.CreateTime,
 		CreatedBy:         b.row.CreatedBy,
+		LastUpdated:       b.row.LastUpdated,
 		FinalizeStartTime: b.row.FinalizeStartTime,
 		FinalizeTime:      b.row.FinalizeTime,
 		Deadline:          b.row.Deadline,
@@ -122,6 +124,12 @@ func (b *Builder) WithCreateTime(t time.Time) *Builder {
 // WithCreatedBy sets the creator of the root invocation.
 func (b *Builder) WithCreatedBy(creator string) *Builder {
 	b.row.CreatedBy = creator
+	return b
+}
+
+// WithLastUpdatedTime sets the last update time of the root invocation.
+func (b *Builder) WithLastUpdatedTime(t time.Time) *Builder {
+	b.row.LastUpdated = t
 	return b
 }
 
@@ -224,6 +232,7 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 		"Realm":                 r.Realm,
 		"CreateTime":            r.CreateTime,
 		"CreatedBy":             r.CreatedBy,
+		"LastUpdated":           r.LastUpdated,
 		"FinalizeStartTime":     r.FinalizeStartTime,
 		"FinalizeTime":          r.FinalizeTime,
 		"Deadline":              r.Deadline,

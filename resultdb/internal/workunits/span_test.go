@@ -80,6 +80,7 @@ func TestWriteWorkUnit(t *testing.T) {
 		readWorkUnit, err := Read(ctx, id, AllFields)
 		assert.Loosely(t, err, should.BeNil)
 		row.CreateTime = commitTime.In(time.UTC)
+		row.LastUpdated = commitTime.In(time.UTC)
 		row.SecondaryIndexShardID = id.shardID(secondaryIndexShardCount)
 		assert.Loosely(t, readWorkUnit, should.Match(row))
 
@@ -171,6 +172,7 @@ func TestFinalizationMethods(t *testing.T) {
 
 			expectedWU := workUnit.Clone()
 			expectedWU.State = pb.WorkUnit_FINALIZING
+			expectedWU.LastUpdated = ct.In(time.UTC)
 			expectedWU.FinalizeStartTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
 
 			wu, err := Read(span.Single(ctx), id, AllFields)
@@ -188,6 +190,7 @@ func TestFinalizationMethods(t *testing.T) {
 
 			expectedWU := workUnit.Clone()
 			expectedWU.State = pb.WorkUnit_FINALIZED
+			expectedWU.LastUpdated = ct.In(time.UTC)
 			expectedWU.FinalizeTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
 
 			wu, err := Read(span.Single(ctx), id, AllFields)

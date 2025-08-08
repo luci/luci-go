@@ -49,6 +49,9 @@ CREATE TABLE RootInvocations (
   -- LUCI identity who created the root invocation, typically "user:<email>".
   CreatedBy STRING(MAX) NOT NULL,
 
+  -- When the root invocation was last updated.
+  LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+
   -- When the root invocation started finalizing (state was set to
   -- Finalizing).
   -- This means the root invocation became immutable but directly or
@@ -274,6 +277,11 @@ CREATE TABLE WorkUnits (
 
   -- LUCI identity who created the work unit, typically "user:<email>".
   CreatedBy STRING(MAX) NOT NULL,
+
+  -- When the work unit row was last updated.
+  -- This includes a change to one of the nested ChildWorkUnits or ChildInvocations
+  -- tables but not any new test results, artifacts or exonerations.
+  LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 
   -- Finalization fields.
 

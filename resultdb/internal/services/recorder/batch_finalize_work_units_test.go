@@ -227,22 +227,24 @@ func TestBatchFinalizeWorkUnits(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp.WorkUnits[0].State, should.Equal(pb.WorkUnit_FINALIZING))
 			assert.Loosely(t, resp.WorkUnits[0].FinalizeStartTime, should.NotBeNil)
+			finalizeTime := resp.WorkUnits[0].FinalizeStartTime.AsTime()
+			assert.Loosely(t, resp.WorkUnits[0].LastUpdated.AsTime(), should.Match(finalizeTime))
 			assert.Loosely(t, resp.WorkUnits[1].State, should.Equal(pb.WorkUnit_FINALIZING))
-			assert.Loosely(t, resp.WorkUnits[1].FinalizeStartTime, should.NotBeNil)
-
-			finalizeTime1 := resp.WorkUnits[0].FinalizeStartTime.AsTime()
-			finalizeTime2 := resp.WorkUnits[1].FinalizeStartTime.AsTime()
+			assert.Loosely(t, resp.WorkUnits[1].FinalizeStartTime.AsTime(), should.Match(finalizeTime))
+			assert.Loosely(t, resp.WorkUnits[1].LastUpdated.AsTime(), should.Match(finalizeTime))
 
 			// Read the work unit from Spanner to confirm it's really FINALIZING.
 			wuRow1, err := workunits.Read(span.Single(ctx), wuID1, workunits.AllFields)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, wuRow1.State, should.Equal(pb.WorkUnit_FINALIZING))
-			assert.Loosely(t, wuRow1.FinalizeStartTime, should.Match(spanner.NullTime{Valid: true, Time: finalizeTime1}))
+			assert.Loosely(t, wuRow1.LastUpdated, should.Match(finalizeTime))
+			assert.Loosely(t, wuRow1.FinalizeStartTime, should.Match(spanner.NullTime{Valid: true, Time: finalizeTime}))
 
 			wuRow2, err := workunits.Read(span.Single(ctx), wuID2, workunits.AllFields)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, wuRow2.State, should.Equal(pb.WorkUnit_FINALIZING))
-			assert.Loosely(t, wuRow2.FinalizeStartTime, should.Match(spanner.NullTime{Valid: true, Time: finalizeTime2}))
+			assert.Loosely(t, wuRow1.LastUpdated, should.Match(finalizeTime))
+			assert.Loosely(t, wuRow2.FinalizeStartTime, should.Match(spanner.NullTime{Valid: true, Time: finalizeTime}))
 
 			// Enqueued the finalization task for the legacy invocation.
 			expectedTasks := []protoreflect.ProtoMessage{

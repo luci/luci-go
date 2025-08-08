@@ -76,6 +76,7 @@ func (s *recorderServer) BatchFinalizeWorkUnits(ctx context.Context, in *pb.Batc
 	for _, wuRow := range wuRows {
 		if !wuRow.FinalizeStartTime.Valid {
 			// We set the work unit to finalizing.
+			wuRow.LastUpdated = commitTimestamp
 			wuRow.FinalizeStartTime = spanner.NullTime{Valid: true, Time: commitTimestamp}
 		}
 	}

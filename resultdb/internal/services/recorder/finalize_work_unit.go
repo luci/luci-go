@@ -69,6 +69,7 @@ func (s *recorderServer) FinalizeWorkUnit(ctx context.Context, in *pb.FinalizeWo
 	}
 	if !wuRow.FinalizeStartTime.Valid {
 		// We set the work unit to finalizing.
+		wuRow.LastUpdated = commitTimestamp
 		wuRow.FinalizeStartTime = spanner.NullTime{Valid: true, Time: commitTimestamp}
 	}
 

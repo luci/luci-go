@@ -42,6 +42,7 @@ func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, v
 		Realm:            row.Realm,
 		CreateTime:       pbutil.MustTimestampProto(row.CreateTime),
 		Creator:          row.CreatedBy,
+		LastUpdated:      pbutil.MustTimestampProto(row.LastUpdated),
 		Deadline:         pbutil.MustTimestampProto(row.Deadline),
 		ProducerResource: row.ProducerResource,
 		IsMasked:         true,

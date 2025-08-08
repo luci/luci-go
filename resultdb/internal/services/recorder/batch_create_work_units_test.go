@@ -585,10 +585,14 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 
 			res, err := recorder.BatchCreateWorkUnits(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			expectedWU1.CreateTime = res.WorkUnits[0].CreateTime
-			expectedWU1.FinalizeStartTime = res.WorkUnits[0].FinalizeStartTime
-			expectedWU11.CreateTime = res.WorkUnits[1].CreateTime
-			expectedWU2.CreateTime = res.WorkUnits[2].CreateTime
+			createTime := res.WorkUnits[0].CreateTime.AsTime()
+			expectedWU1.CreateTime = timestamppb.New(createTime)
+			expectedWU1.LastUpdated = timestamppb.New(createTime)
+			expectedWU1.FinalizeStartTime = timestamppb.New(createTime)
+			expectedWU11.CreateTime = timestamppb.New(createTime)
+			expectedWU11.LastUpdated = timestamppb.New(createTime)
+			expectedWU2.CreateTime = timestamppb.New(createTime)
+			expectedWU2.LastUpdated = timestamppb.New(createTime)
 			assert.That(t, res, should.Match(
 				&pb.BatchCreateWorkUnitsResponse{
 					WorkUnits: []*pb.WorkUnit{expectedWU1, expectedWU11, expectedWU2},
@@ -607,21 +611,24 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			row, err := workunits.Read(readCtx, workUnitID1, workunits.AllFields)
 			assert.Loosely(t, err, should.BeNil)
 			expectWURow1.SecondaryIndexShardID = row.SecondaryIndexShardID
-			expectWURow1.CreateTime = row.CreateTime
-			expectWURow1.FinalizeStartTime = row.FinalizeStartTime
+			expectWURow1.CreateTime = createTime
+			expectWURow1.LastUpdated = createTime
+			expectWURow1.FinalizeStartTime = spanner.NullTime{Time: createTime, Valid: true}
 			assert.That(t, row, should.Match(expectWURow1))
 
 			row, err = workunits.Read(readCtx, workUnitID2, workunits.AllFields)
 			assert.Loosely(t, err, should.BeNil)
 			expectWURow2.SecondaryIndexShardID = row.SecondaryIndexShardID
-			expectWURow2.CreateTime = row.CreateTime
+			expectWURow2.CreateTime = createTime
+			expectWURow2.LastUpdated = createTime
 			expectWURow2.Tags = []*pb.StringPair{}
 			assert.That(t, row, should.Match(expectWURow2))
 
 			row, err = workunits.Read(readCtx, workUnitID11, workunits.AllFields)
 			assert.Loosely(t, err, should.BeNil)
 			expectWURow11.SecondaryIndexShardID = row.SecondaryIndexShardID
-			expectWURow11.CreateTime = row.CreateTime
+			expectWURow11.CreateTime = createTime
+			expectWURow11.LastUpdated = createTime
 			expectWURow11.Tags = []*pb.StringPair{}
 			assert.That(t, row, should.Match(expectWURow11))
 

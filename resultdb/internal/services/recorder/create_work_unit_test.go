@@ -800,7 +800,11 @@ func TestCreateWorkUnit(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 
 				// Merge server-populated fields for comparison.
-				proto.Merge(expectedWU, &pb.WorkUnit{CreateTime: res.CreateTime})
+				commitTime := res.CreateTime.AsTime()
+				proto.Merge(expectedWU, &pb.WorkUnit{
+					CreateTime:  timestamppb.New(commitTime),
+					LastUpdated: timestamppb.New(commitTime),
+				})
 				assert.That(t, res, should.Match(expectedWU))
 
 				// Check for the new update token in headers.
@@ -814,12 +818,13 @@ func TestCreateWorkUnit(t *testing.T) {
 				row, err := workunits.Read(readCtx, workUnitID, workunits.AllFields)
 				assert.Loosely(t, err, should.BeNil)
 				expectWURow.SecondaryIndexShardID = row.SecondaryIndexShardID
-				expectWURow.CreateTime = row.CreateTime
+				expectWURow.CreateTime = commitTime
+				expectWURow.LastUpdated = commitTime
 				assert.That(t, row, should.Match(expectWURow))
 
 				// Check the legacy invocation is inserted.
 				legacyInv, err := invocations.Read(readCtx, workUnitID.LegacyInvocationID(), invocations.AllFields)
-				expectedLegacyInv.CreateTime = legacyInv.CreateTime
+				expectedLegacyInv.CreateTime = timestamppb.New(commitTime)
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, legacyInv, should.Match(expectedLegacyInv))
 
@@ -837,10 +842,12 @@ func TestCreateWorkUnit(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 
 				// Merge server-populated fields for comparison.
+				commitTime := res.CreateTime.AsTime()
 				proto.Merge(expectedWU, &pb.WorkUnit{
-					CreateTime:        res.CreateTime,
 					State:             pb.WorkUnit_FINALIZING,
-					FinalizeStartTime: res.FinalizeStartTime,
+					CreateTime:        timestamppb.New(commitTime),
+					LastUpdated:       timestamppb.New(commitTime),
+					FinalizeStartTime: timestamppb.New(commitTime),
 				})
 				assert.That(t, res, should.Match(expectedWU))
 
@@ -855,16 +862,17 @@ func TestCreateWorkUnit(t *testing.T) {
 				row, err := workunits.Read(readCtx, workUnitID, workunits.AllFields)
 				assert.Loosely(t, err, should.BeNil)
 				expectWURow.SecondaryIndexShardID = row.SecondaryIndexShardID
-				expectWURow.CreateTime = row.CreateTime
 				expectWURow.State = pb.WorkUnit_FINALIZING
-				expectWURow.FinalizeStartTime = row.FinalizeStartTime
+				expectWURow.CreateTime = commitTime
+				expectWURow.FinalizeStartTime = spanner.NullTime{Time: commitTime, Valid: true}
+				expectWURow.LastUpdated = commitTime
 				assert.That(t, row, should.Match(expectWURow))
 				// Check finalize start time is set.
 				assert.That(t, row.FinalizeStartTime.Valid, should.BeTrue)
 
 				// Check the legacy invocation is inserted.
 				legacyInv, err := invocations.Read(readCtx, workUnitID.LegacyInvocationID(), invocations.AllFields)
-				expectedLegacyInv.CreateTime = legacyInv.CreateTime
+				expectedLegacyInv.CreateTime = timestamppb.New(commitTime)
 				expectedLegacyInv.State = pb.Invocation_FINALIZING
 				expectedLegacyInv.FinalizeStartTime = legacyInv.FinalizeStartTime
 				assert.Loosely(t, err, should.BeNil)

@@ -69,6 +69,7 @@ func TestGetRootInvocation(t *testing.T) {
 			assert.That(t, rsp.Realm, should.Equal(realm))
 			assert.That(t, rsp.CreateTime.AsTime(), should.Match(testData.CreateTime))
 			assert.That(t, rsp.Creator, should.Equal(testData.CreatedBy))
+			assert.That(t, rsp.LastUpdated.AsTime(), should.Match(testData.LastUpdated))
 			assert.That(t, rsp.FinalizeStartTime.AsTime(), should.Match(testData.FinalizeStartTime.Time))
 			assert.That(t, rsp.FinalizeTime.AsTime(), should.Match(testData.FinalizeTime.Time))
 			assert.That(t, rsp.Deadline.AsTime(), should.Match(testData.Deadline))

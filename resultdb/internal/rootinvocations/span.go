@@ -34,7 +34,7 @@ const (
 	secondaryIndexShardCount = 100
 )
 
-// Create creates mutations of the following records.
+// Create returns mutations to create the following records.
 //   - a new root invocation record,
 //   - the corresponding legacy invocation record
 //   - sharding records in RootInvocationShards
@@ -81,7 +81,8 @@ type RootInvocationRow struct {
 	State                                   pb.RootInvocation_State
 	Realm                                   string
 	CreateTime                              time.Time // Output only.
-	CreatedBy                               string
+	CreatedBy                               string    // Output only.
+	LastUpdated                             time.Time
 	FinalizeStartTime                       spanner.NullTime // Output only.
 	FinalizeTime                            spanner.NullTime // Output only.
 	Deadline                                time.Time
@@ -130,6 +131,7 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 		"Realm":                 r.Realm,
 		"CreateTime":            spanner.CommitTimestamp,
 		"CreatedBy":             r.CreatedBy,
+		"LastUpdated":           spanner.CommitTimestamp,
 		"Deadline":              r.Deadline,
 		"UninterestingTestVerdictsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
 		"CreateRequestId":                         r.CreateRequestID,
@@ -206,6 +208,7 @@ func (r *RootInvocationRow) ToProto() *pb.RootInvocation {
 		Realm:            r.Realm,
 		CreateTime:       pbutil.MustTimestampProto(r.CreateTime),
 		Creator:          r.CreatedBy,
+		LastUpdated:      pbutil.MustTimestampProto(r.LastUpdated),
 		Deadline:         pbutil.MustTimestampProto(r.Deadline),
 		ProducerResource: r.ProducerResource,
 		Sources:          r.Sources,
@@ -231,6 +234,7 @@ func MarkFinalizing(id ID) []*spanner.Mutation {
 	ms = append(ms, spanutil.UpdateMap("RootInvocations", map[string]any{
 		"RootInvocationId":  id,
 		"State":             pb.RootInvocation_FINALIZING,
+		"LastUpdated":       spanner.CommitTimestamp,
 		"FinalizeStartTime": spanner.CommitTimestamp,
 	}))
 
@@ -252,6 +256,7 @@ func MarkFinalized(id ID) []*spanner.Mutation {
 	ms = append(ms, spanutil.UpdateMap("RootInvocations", map[string]any{
 		"RootInvocationId": id,
 		"State":            pb.RootInvocation_FINALIZED,
+		"LastUpdated":      spanner.CommitTimestamp,
 		"FinalizeTime":     spanner.CommitTimestamp,
 	}))
 

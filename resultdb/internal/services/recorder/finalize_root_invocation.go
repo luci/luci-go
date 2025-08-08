@@ -86,6 +86,7 @@ func (s *recorderServer) FinalizeRootInvocation(ctx context.Context, in *pb.Fina
 	}
 	if !invRow.FinalizeStartTime.Valid {
 		// We set the root invocation to finalizing.
+		invRow.LastUpdated = commitTimestamp
 		invRow.FinalizeStartTime = spanner.NullTime{Valid: true, Time: commitTimestamp}
 	}
 

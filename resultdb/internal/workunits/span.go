@@ -71,7 +71,7 @@ func Create(workUnit *WorkUnitRow, opts LegacyCreateOptions) []*spanner.Mutation
 	var ms []*spanner.Mutation
 	ms = append(ms, workUnit.toMutation())
 	if workUnit.ParentWorkUnitID.Valid {
-		ms = append(ms, workUnit.toChildWorkUnitsMutation())
+		ms = append(ms, workUnit.toChildWorkUnitsMutations()...)
 	}
 	ms = append(ms, workUnit.toLegacyInvocationMutation(opts))
 	ms = append(ms, workUnit.toLegacyInclusionMutation())
@@ -93,6 +93,7 @@ type WorkUnitRow struct {
 	Realm                 string
 	CreateTime            time.Time // Output only.
 	CreatedBy             string
+	LastUpdated           time.Time        // Output only
 	FinalizeStartTime     spanner.NullTime // Output only.
 	FinalizeTime          spanner.NullTime // Output only.
 	Deadline              time.Time
@@ -152,6 +153,7 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 		"Realm":                 w.Realm,
 		"CreateTime":            spanner.CommitTimestamp,
 		"CreatedBy":             w.CreatedBy,
+		"LastUpdated":           spanner.CommitTimestamp,
 		"Deadline":              w.Deadline,
 		"CreateRequestId":       w.CreateRequestID,
 		"ProducerResource":      w.ProducerResource,
@@ -178,7 +180,7 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 	return spanutil.InsertMap("WorkUnits", row)
 }
 
-func (w *WorkUnitRow) toChildWorkUnitsMutation() *spanner.Mutation {
+func (w *WorkUnitRow) toChildWorkUnitsMutations() []*spanner.Mutation {
 	if !w.ParentWorkUnitID.Valid {
 		if w.ID.WorkUnitID != RootWorkUnitID {
 			panic("only root work unit can have empty parent work unit ID")
@@ -190,12 +192,21 @@ func (w *WorkUnitRow) toChildWorkUnitsMutation() *spanner.Mutation {
 		RootInvocationID: w.ID.RootInvocationID,
 		WorkUnitID:       w.ParentWorkUnitID.StringVal,
 	}
-	row := map[string]interface{}{
+	// Mark the parent work unit updated, per semantics of LastUpdated.
+	parentRow := map[string]interface{}{
+		"RootInvocationShardId": parentID.RootInvocationShardID(),
+		"WorkUnitId":            parentID.WorkUnitID,
+		"LastUpdated":           spanner.CommitTimestamp,
+	}
+	inclusionRow := map[string]interface{}{
 		"RootInvocationShardId": parentID.RootInvocationShardID(),
 		"WorkUnitId":            parentID.WorkUnitID,
 		"ChildWorkUnitId":       w.ID.WorkUnitID,
 	}
-	return spanutil.InsertMap("ChildWorkUnits", row)
+	var ms []*spanner.Mutation
+	ms = append(ms, spanutil.UpdateMap("WorkUnits", parentRow))
+	ms = append(ms, spanutil.InsertMap("ChildWorkUnits", inclusionRow))
+	return ms
 }
 
 func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *spanner.Mutation {
@@ -274,6 +285,7 @@ func MarkFinalizing(id ID) []*spanner.Mutation {
 		"RootInvocationShardId": id.RootInvocationShardID(),
 		"WorkUnitId":            id.WorkUnitID,
 		"State":                 pb.WorkUnit_FINALIZING,
+		"LastUpdated":           spanner.CommitTimestamp,
 		"FinalizeStartTime":     spanner.CommitTimestamp,
 	}))
 	ms = append(ms, invocations.MarkFinalizing(id.LegacyInvocationID()))
@@ -289,6 +301,7 @@ func MarkFinalized(id ID) []*spanner.Mutation {
 		"RootInvocationShardId": id.RootInvocationShardID(),
 		"WorkUnitId":            id.WorkUnitID,
 		"State":                 pb.WorkUnit_FINALIZED,
+		"LastUpdated":           spanner.CommitTimestamp,
 		"FinalizeTime":          spanner.CommitTimestamp,
 	}))
 	ms = append(ms, invocations.MarkFinalized(id.LegacyInvocationID()))

@@ -90,6 +90,7 @@ func TestGetWorkUnit(t *testing.T) {
 				Realm:             rootWu.Realm,
 				CreateTime:        pbutil.MustTimestampProto(rootWu.CreateTime),
 				Creator:           rootWu.CreatedBy,
+				LastUpdated:       pbutil.MustTimestampProto(rootWu.LastUpdated),
 				FinalizeStartTime: pbutil.MustTimestampProto(rootWu.FinalizeStartTime.Time),
 				FinalizeTime:      pbutil.MustTimestampProto(rootWu.FinalizeTime.Time),
 				Deadline:          pbutil.MustTimestampProto(rootWu.Deadline),

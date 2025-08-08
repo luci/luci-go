@@ -107,6 +107,12 @@ message RootInvocation {
     (google.api.field_behavior) = IMMUTABLE
   ];
 
+  // When the work unit was last updated.
+  // Output only.
+  google.protobuf.Timestamp last_updated = 20 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
   // == Finalization ===========================================================
 
   // When the invocation started to finalize, i.e. transitioned to FINALIZING

@@ -60,6 +60,7 @@ func TestWriteRootInvocation(t *testing.T) {
 		readRootInv, err := Read(ctx, ID(id))
 		assert.Loosely(t, err, should.BeNil)
 		row.CreateTime = commitTime
+		row.LastUpdated = commitTime
 		row.SecondaryIndexShardID = row.RootInvocationID.shardID(secondaryIndexShardCount)
 		assert.That(t, readRootInv, should.Match(row))
 
@@ -160,6 +161,7 @@ func TestFinalizationMethods(t *testing.T) {
 
 			expected := rootInvocation.Clone()
 			expected.State = pb.RootInvocation_FINALIZING
+			expected.LastUpdated = ct.In(time.UTC)
 			expected.FinalizeStartTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
 
 			ri, err := Read(span.Single(ctx), rootInvocationID)
@@ -188,6 +190,7 @@ func TestFinalizationMethods(t *testing.T) {
 
 			expected := rootInvocation.Clone()
 			expected.State = pb.RootInvocation_FINALIZED
+			expected.LastUpdated = ct.In(time.UTC)
 			expected.FinalizeTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
 
 			ri, err := Read(span.Single(ctx), rootInvocationID)
