@@ -24,7 +24,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server"
@@ -200,7 +199,6 @@ func markInvocationSubmitted(ctx context.Context, inv *pb.Invocation) error {
 		if tr.Status == pb.TestStatus_SKIP {
 			// We'll ignore SKIPPED from being BaselineTestVariants. This allows
 			// it to be verified for flakiness when it no longer becomes skipped.
-			logging.Debugf(ctx, "Skipped adding %s for baselineID %s", tr.TestId, baselineID)
 			return nil
 		}
 		ms = append(ms, btv.InsertOrUpdate(project, baselineID, tr.TestId, tr.VariantHash))

@@ -734,10 +734,12 @@ func validateTestResultAgainstWorkUnitModule(got *pb.ModuleIdentifier, expectedM
 		if strictValidation {
 			return errors.Fmt("test_result: to upload test results, you must set the module_id on the parent work unit first")
 		} else {
-			// No expected module set on the legacy invocation yet. Only allow legacy test results to upload.
-			if got.ModuleName != "legacy" || got.ModuleScheme != "legacy" {
-				return errors.Fmt("test_result: test_id_structured: to upload results with structured test IDs, you must set the module_id on the parent legacy invocation first")
-			}
+			// For compatibility reasons we will let legacy and structured test IDs upload to invocations
+			// with module_id unset for a time.
+			// TODO(meiring): Uncomment the following check once Android has migrated to work units.
+			// if got.ModuleName != "legacy" || got.ModuleScheme != "legacy" {
+			// 	return errors.Fmt("test_result: test_id_structured: to upload results with structured test IDs, you must set the module_id on the parent legacy invocation first")
+			// }
 		}
 	}
 	return nil

@@ -475,8 +475,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 				}))
 				t.Run("uploading structured test IDs", func(t *ftt.Test) {
 					_, err := recorder.BatchCreateTestResults(ctx, req)
-					assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
-					assert.Loosely(t, err, should.ErrLike("requests[0]: test_result: test_id_structured: to upload results with structured test IDs, you must set the module_id on the parent legacy invocation first"))
+					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("uploading legacy IDs", func(t *ftt.Test) {
 					req.Requests[0].TestResult.TestIdStructured = nil
