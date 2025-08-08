@@ -15,7 +15,6 @@
 package recorder
 
 import (
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -34,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -53,116 +51,6 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-func TestVerifyCreateWorkUnitPermissions(t *testing.T) {
-	t.Parallel()
-
-	ftt.Run(`VerifyCreateWorkUnitPermissions`, t, func(t *ftt.Test) {
-		basePerms := []authtest.RealmPermission{
-			{Realm: "project:realm", Permission: permCreateWorkUnit},
-			{Realm: "project:realm", Permission: permIncludeWorkUnit},
-		}
-
-		authState := &authtest.FakeState{
-			Identity:            "user:someone@example.com",
-			IdentityPermissions: basePerms,
-		}
-		ctx := auth.WithState(context.Background(), authState)
-
-		request := &pb.CreateWorkUnitRequest{
-			WorkUnitId: "u-wu",
-			WorkUnit: &pb.WorkUnit{
-				Realm: "project:realm",
-			},
-		}
-
-		t.Run("unspecified work unit", func(t *ftt.Test) {
-			request.WorkUnit = nil
-			err := verifyCreateWorkUnitPermissions(ctx, request)
-			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
-			assert.Loosely(t, err, should.ErrLike("work_unit: unspecified"))
-		})
-		t.Run("unspecified realm", func(t *ftt.Test) {
-			request.WorkUnit.Realm = ""
-			err := verifyCreateWorkUnitPermissions(ctx, request)
-			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
-			assert.Loosely(t, err, should.ErrLike("work_unit: realm: unspecified"))
-		})
-
-		t.Run("invalid realm", func(t *ftt.Test) {
-			request.WorkUnit.Realm = "invalid:"
-			err := verifyCreateWorkUnitPermissions(ctx, request)
-			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
-			assert.Loosely(t, err, should.ErrLike(`work_unit: realm: bad global realm name`))
-		})
-
-		t.Run("basic creation", func(t *ftt.Test) {
-			t.Run("allowed", func(t *ftt.Test) {
-				err := verifyCreateWorkUnitPermissions(ctx, request)
-				assert.Loosely(t, err, should.BeNil)
-			})
-			t.Run("create work unit disallowed", func(t *ftt.Test) {
-				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateWorkUnit)
-				err := verifyCreateWorkUnitPermissions(ctx, request)
-				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike(`caller does not have permission "resultdb.workUnits.create"`))
-			})
-			t.Run("include work unit disallowed", func(t *ftt.Test) {
-				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permIncludeWorkUnit)
-				err := verifyCreateWorkUnitPermissions(ctx, request)
-				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike(`caller does not have permission "resultdb.workUnits.include"`))
-			})
-		})
-
-		t.Run("reserved id", func(t *ftt.Test) {
-			request.WorkUnitId = "build-8765432100"
-
-			t.Run("disallowed", func(t *ftt.Test) {
-				err := verifyCreateWorkUnitPermissions(ctx, request)
-				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike(`work_unit_id: only work units created by trusted systems may have id not starting with "u-"`))
-			})
-
-			t.Run("allowed with realm permission", func(t *ftt.Test) {
-				authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
-					Realm: "project:@root", Permission: permCreateWorkUnitWithReservedID,
-				})
-				err := verifyCreateWorkUnitPermissions(ctx, request)
-				assert.Loosely(t, err, should.BeNil)
-			})
-
-			t.Run("allowed with trusted group", func(t *ftt.Test) {
-				authState.IdentityGroups = []string{trustedCreatorGroup}
-				err := verifyCreateWorkUnitPermissions(ctx, request)
-				assert.Loosely(t, err, should.BeNil)
-			})
-		})
-
-		t.Run("producer resource", func(t *ftt.Test) {
-			request.WorkUnit.ProducerResource = "//builds.example.com/builds/1"
-			t.Run("disallowed", func(t *ftt.Test) {
-				err := verifyCreateWorkUnitPermissions(ctx, request)
-				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike(`work_unit: producer_resource: only work units created by trusted system may have a populated producer_resource field`))
-			})
-
-			t.Run("allowed with realm permission", func(t *ftt.Test) {
-				authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
-					Realm: "project:@root", Permission: permSetWorkUnitProducerResource,
-				})
-				err := verifyCreateWorkUnitPermissions(ctx, request)
-				assert.Loosely(t, err, should.BeNil)
-			})
-
-			t.Run("allowed with trusted group", func(t *ftt.Test) {
-				authState.IdentityGroups = []string{trustedCreatorGroup}
-				err := verifyCreateWorkUnitPermissions(ctx, request)
-				assert.Loosely(t, err, should.BeNil)
-			})
-		})
-	})
-}
-
 func TestValidateCreateWorkUnitRequest(t *testing.T) {
 	t.Parallel()
 	now := testclock.TestRecentTimeUTC
@@ -180,133 +68,50 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
 		assert.NoErr(t, err)
 
-		// This is always true for single create work unit requests,
-		// for batch requests it may be false as the request_id can be
-		// set on the parent request object.
-		requireRequestID := true
-
 		t.Run("valid", func(t *ftt.Test) {
-			err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+			err := validateCreateWorkUnitRequest(req, cfg)
 			assert.Loosely(t, err, should.BeNil)
-		})
-
-		t.Run("parent", func(t *ftt.Test) {
-			t.Run("unspecified", func(t *ftt.Test) {
-				req.Parent = ""
-				err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
-				assert.Loosely(t, err, should.ErrLike("parent: unspecified"))
-			})
-			t.Run("invalid", func(t *ftt.Test) {
-				req.Parent = "invalid"
-				err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
-				assert.Loosely(t, err, should.ErrLike("parent: does not match"))
-			})
-		})
-		t.Run("work_unit_id", func(t *ftt.Test) {
-			t.Run("empty", func(t *ftt.Test) {
-				req.WorkUnitId = ""
-				err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
-				assert.Loosely(t, err, should.ErrLike("work_unit_id: unspecified"))
-			})
-			t.Run("reserved", func(t *ftt.Test) {
-				req.WorkUnitId = "build-1234567890"
-				err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
-				assert.Loosely(t, err, should.BeNil)
-			})
-			t.Run("invalid", func(t *ftt.Test) {
-				req.WorkUnitId = "INVALID"
-				err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
-				assert.Loosely(t, err, should.ErrLike("work_unit_id: does not match"))
-			})
-
-			t.Run("prefix", func(t *ftt.Test) {
-				t.Run("not prefixed", func(t *ftt.Test) {
-					req.WorkUnitId = "u-my-work-unit-id"
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
-					assert.Loosely(t, err, should.BeNil)
-				})
-				t.Run("parent is prefixed", func(t *ftt.Test) {
-					t.Run("valid", func(t *ftt.Test) {
-						req.WorkUnitId = "swarming123:a2"
-						req.Parent = "rootInvocations/u-my-root-id/workUnits/swarming123:a"
-						err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
-						assert.Loosely(t, err, should.BeNil)
-					})
-					t.Run("invalid", func(t *ftt.Test) {
-						req.WorkUnitId = "swarming2:a2"
-						req.Parent = "rootInvocations/u-my-root-id/workUnits/swarming1:a"
-						err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
-						assert.Loosely(t, err, should.ErrLike("must match parent work unit ID prefix"))
-					})
-				})
-				t.Run("parent is not prefix", func(t *ftt.Test) {
-					t.Run("valid", func(t *ftt.Test) {
-						req.WorkUnitId = "root:a"
-						req.Parent = "rootInvocations/u-my-root-id/workUnits/root"
-						err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
-						assert.Loosely(t, err, should.BeNil)
-					})
-					t.Run("invalid", func(t *ftt.Test) {
-						req.WorkUnitId = "swarming2:a"
-						req.Parent = "rootInvocations/u-my-root-id/workUnits/swarming1"
-						err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
-						assert.Loosely(t, err, should.ErrLike("must match parent work unit ID"))
-					})
-				})
-			})
 		})
 
 		t.Run("work_unit", func(t *ftt.Test) {
 			t.Run("unspecified", func(t *ftt.Test) {
 				req.WorkUnit = nil
-				err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+				err := validateCreateWorkUnitRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("work_unit: unspecified"))
 			})
 			t.Run("state", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					// If it is unset, we will populate a default value.
 					req.WorkUnit.State = pb.WorkUnit_STATE_UNSPECIFIED
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("active", func(t *ftt.Test) {
 					req.WorkUnit.State = pb.WorkUnit_ACTIVE
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("finalizing", func(t *ftt.Test) {
 					req.WorkUnit.State = pb.WorkUnit_FINALIZING
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.WorkUnit.State = pb.WorkUnit_FINALIZED
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("work_unit: state: cannot be created in the state FINALIZED"))
-				})
-			})
-			t.Run("realm", func(t *ftt.Test) {
-				t.Run("unspecified", func(t *ftt.Test) {
-					req.WorkUnit.Realm = ""
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
-					assert.Loosely(t, err, should.ErrLike("work_unit: realm: unspecified"))
-				})
-				t.Run("invalid", func(t *ftt.Test) {
-					req.WorkUnit.Realm = "invalid:"
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
-					assert.Loosely(t, err, should.ErrLike("work_unit: realm: bad global realm name"))
 				})
 			})
 			t.Run("deadline", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					// Empty is valid, the deadline will be defaulted.
 					req.WorkUnit.Deadline = nil
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.WorkUnit.Deadline = pbutil.MustTimestampProto(now.Add(-time.Hour))
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("work_unit: deadline: must be at least 10 seconds in the future"))
 				})
 			})
@@ -314,7 +119,7 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 				t.Run("nil", func(t *ftt.Test) {
 					// This is valid.
 					req.WorkUnit.ModuleId = nil
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("valid", func(t *ftt.Test) {
@@ -323,7 +128,7 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 						ModuleScheme:  "gtest", // This is in the service config we use for testing.
 						ModuleVariant: pbutil.Variant("k", "v"),
 					}
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("structurally invalid", func(t *ftt.Test) {
@@ -334,7 +139,7 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 						ModuleScheme:      "gtest",
 						ModuleVariantHash: "aaaaaaaaaaaaaaaa", // Variant hash only is not allowed for storage.
 					}
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("work_unit: module_id: module_variant: unspecified"))
 				})
 				t.Run("invalid with respect to service configuration", func(t *ftt.Test) {
@@ -343,41 +148,41 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 						ModuleScheme:  "cooltest", // This is not defined in the service config.
 						ModuleVariant: pbutil.Variant("k", "v"),
 					}
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike(`work_unit: module_id: module_scheme: scheme "cooltest" is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme`))
 				})
 			})
 			t.Run("producer_resource", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.WorkUnit.ProducerResource = ""
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("valid", func(t *ftt.Test) {
 					req.WorkUnit.ProducerResource = "//cr-buildbucket.appspot.com/builds/1234567890"
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.WorkUnit.ProducerResource = "invalid"
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("work_unit: producer_resource: resource name \"invalid\" does not start with '//'"))
 				})
 			})
 			t.Run("tags", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.WorkUnit.Tags = nil
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("valid", func(t *ftt.Test) {
 					req.WorkUnit.Tags = pbutil.StringPairs("key", "value")
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.WorkUnit.Tags = pbutil.StringPairs("1", "a")
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike(`work_unit: tags: "1":"a": key: does not match`))
 				})
 				t.Run("too large", func(t *ftt.Test) {
@@ -386,14 +191,14 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 						tags[i] = pbutil.StringPair(strings.Repeat("k", 64), strings.Repeat("v", 256))
 					}
 					req.WorkUnit.Tags = tags
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("work_unit: tags: got 16575 bytes; exceeds the maximum size of 16384 bytes"))
 				})
 			})
 			t.Run("properties", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.WorkUnit.Properties = nil
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("valid", func(t *ftt.Test) {
@@ -403,7 +208,7 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 							"key_1": structpb.NewStringValue("value_1"),
 						},
 					}
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
@@ -412,7 +217,7 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 							"key_1": structpb.NewStringValue("value_1"),
 						},
 					}
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike(`work_unit: properties: must have a field "@type"`))
 				})
 				t.Run("too large", func(t *ftt.Test) {
@@ -422,27 +227,27 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 							"a":     structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationProperties)),
 						},
 					}
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("work_unit: properties: the size of properties (16448) exceeds the maximum size of 16384 bytes"))
 				})
 			})
 			t.Run("extended_properties", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.WorkUnit.ExtendedProperties = nil
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid key", func(t *ftt.Test) {
 					req.WorkUnit.ExtendedProperties = testutil.TestInvocationExtendedProperties()
 					req.WorkUnit.ExtendedProperties["invalid_key@"] = &structpb.Struct{}
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike(`work_unit: extended_properties: key "invalid_key@"`))
 				})
 			})
 			t.Run("instructions", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.WorkUnit.Instructions = nil
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("valid", func(t *ftt.Test) {
@@ -471,7 +276,7 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 							},
 						},
 					}
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
@@ -480,27 +285,23 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 							{},
 						},
 					}
-					err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
+					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("work_unit: instructions: instructions[0]: id: unspecified"))
 				})
 			})
-		})
-		t.Run("request_id", func(t *ftt.Test) {
-			t.Run("empty", func(t *ftt.Test) {
-				req.RequestId = ""
-				err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
-				assert.Loosely(t, err, should.ErrLike("request_id: unspecified (please provide a per-request UUID to ensure idempotence)"))
-			})
-			t.Run("empty but not required", func(t *ftt.Test) {
-				requireRequestID = false
-				req.RequestId = ""
-				err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
-				assert.Loosely(t, err, should.BeNil)
-			})
-			t.Run("invalid", func(t *ftt.Test) {
-				req.RequestId = "😃"
-				err := validateCreateWorkUnitRequest(req, cfg, requireRequestID)
-				assert.Loosely(t, err, should.ErrLike("request_id: does not match"))
+			t.Run("request_id", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
+					// Not required (in the individual requests of a batch request).
+					req.RequestId = ""
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+
+				t.Run("invalid", func(t *ftt.Test) {
+					req.RequestId = "😃"
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("request_id: does not match"))
+				})
 			})
 		})
 	})
@@ -565,15 +366,14 @@ func TestCreateWorkUnit(t *testing.T) {
 		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
 		assert.NoErr(t, err)
 
-		ctx = auth.WithState(ctx, &authtest.FakeState{
+		authState := &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
-				{Realm: "testproject:testrealm", Permission: permCreateWorkUnit},
-				{Realm: "testproject:testrealm", Permission: permIncludeWorkUnit},
 				{Realm: "testproject:@root", Permission: permCreateWorkUnitWithReservedID},
 				{Realm: "testproject:@root", Permission: permSetWorkUnitProducerResource},
 			},
-		})
+		}
+		ctx = auth.WithState(ctx, authState)
 
 		// Set test clock.
 		start := testclock.TestRecentTimeUTC
@@ -594,14 +394,20 @@ func TestCreateWorkUnit(t *testing.T) {
 			RootInvocationID: rootInvID,
 			WorkUnitID:       "wu-parent",
 		}
+		prefixedParentWorkUnitID := workunits.ID{
+			RootInvocationID: rootInvID,
+			WorkUnitID:       "wu-parent:parent",
+		}
 		workUnitID := workunits.ID{
 			RootInvocationID: rootInvID,
 			WorkUnitID:       "wu-new",
 		}
 		rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:testrealm").Build()
 		parentWu := workunits.NewBuilder(rootInvID, parentWorkUnitID.WorkUnitID).WithState(pb.WorkUnit_ACTIVE).Build()
+		parentPrefixedWu := workunits.NewBuilder(rootInvID, prefixedParentWorkUnitID.WorkUnitID).WithState(pb.WorkUnit_ACTIVE).Build()
 		testutil.MustApply(ctx, t, insert.RootInvocationWithRootWorkUnit(rootInv)...)
 		testutil.MustApply(ctx, t, insert.WorkUnit(parentWu)...)
+		testutil.MustApply(ctx, t, insert.WorkUnit(parentPrefixedWu)...)
 
 		// Generate an update token for the parent work unit.
 		parentUpdateToken, err := generateWorkUnitUpdateToken(ctx, parentWorkUnitID)
@@ -616,57 +422,273 @@ func TestCreateWorkUnit(t *testing.T) {
 			RequestId:  "test-request-id",
 		}
 
-		t.Run("invalid request", func(t *ftt.Test) {
-			// Request validation exhaustively tested in test cases for validateCreateWorkUnitRequest.
-			// These tests only exist to ensure that method is called.
-			t.Run("missing work unit realm", func(t *ftt.Test) {
-				badReq := proto.Clone(req).(*pb.CreateWorkUnitRequest)
-				badReq.WorkUnit.Realm = ""
-
-				_, err := recorder.CreateWorkUnit(ctx, badReq)
-				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-				assert.That(t, err, should.ErrLike("work_unit: realm: unspecified"))
+		t.Run("request validation", func(t *ftt.Test) {
+			t.Run("parent", func(t *ftt.Test) {
+				t.Run("unspecified", func(t *ftt.Test) {
+					req.Parent = ""
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("bad request: parent: unspecified"))
+				})
+				t.Run("invalid", func(t *ftt.Test) {
+					req.Parent = "invalid"
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("bad request: parent: does not match"))
+				})
 			})
-
-			t.Run("missing request id", func(t *ftt.Test) {
-				badReq := proto.Clone(req).(*pb.CreateWorkUnitRequest)
-				badReq.RequestId = ""
-
-				_, err := recorder.CreateWorkUnit(ctx, badReq)
-				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-				assert.That(t, err, should.ErrLike("request_id: unspecified"))
+			t.Run("work_unit", func(t *ftt.Test) {
+				t.Run("unspecified", func(t *ftt.Test) {
+					req.WorkUnit = nil
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("bad request: work_unit: unspecified"))
+				})
+				t.Run("realm", func(t *ftt.Test) {
+					t.Run("unspecified", func(t *ftt.Test) {
+						req.WorkUnit.Realm = ""
+						_, err := recorder.CreateWorkUnit(ctx, req)
+						assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("bad request: work_unit: realm: unspecified"))
+					})
+					t.Run("invalid", func(t *ftt.Test) {
+						req.WorkUnit.Realm = "invalid:"
+						_, err := recorder.CreateWorkUnit(ctx, req)
+						assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("bad request: work_unit: realm: bad global realm name"))
+					})
+				})
+				t.Run("other invalid", func(t *ftt.Test) {
+					// validateCreateWorkUnitRequest has its own exhaustive test cases,
+					// simply check that it is called.
+					req.WorkUnit.State = pb.WorkUnit_FINALIZED
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("bad request: work_unit: state: cannot be created in the state FINALIZED"))
+				})
+			})
+			t.Run("work_unit_id", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
+					req.WorkUnitId = ""
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("bad request: work_unit_id: unspecified"))
+				})
+				t.Run("reserved", func(t *ftt.Test) {
+					req.WorkUnitId = "build-1234567890"
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("invalid", func(t *ftt.Test) {
+					req.WorkUnitId = "INVALID"
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("bad request: work_unit_id: does not match pattern"))
+				})
+				t.Run("not prefixed", func(t *ftt.Test) {
+					req.WorkUnitId = "u-my-work-unit-id"
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("prefixed, in parent is not prefixed", func(t *ftt.Test) {
+					t.Run("valid", func(t *ftt.Test) {
+						req.WorkUnitId = "wu-parent:child"
+						req.Parent = parentWorkUnitID.Name()
+						_, err := recorder.CreateWorkUnit(ctx, req)
+						assert.Loosely(t, err, should.BeNil)
+					})
+					t.Run("invalid", func(t *ftt.Test) {
+						req.WorkUnitId = "otherworkunit:child"
+						req.Parent = parentWorkUnitID.Name()
+						_, err := recorder.CreateWorkUnit(ctx, req)
+						assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`bad request: work_unit_id: work unit ID prefix "otherworkunit" must match parent work unit ID "wu-parent"`))
+					})
+				})
+				t.Run("prefixed, in parent that is prefixed", func(t *ftt.Test) {
+					t.Run("valid", func(t *ftt.Test) {
+						req.WorkUnitId = "wu-parent:child"
+						req.Parent = prefixedParentWorkUnitID.Name()
+						_, err := recorder.CreateWorkUnit(ctx, req)
+						assert.Loosely(t, err, should.BeNil)
+					})
+					t.Run("invalid", func(t *ftt.Test) {
+						req.WorkUnitId = "otherworkunit:child"
+						req.Parent = prefixedParentWorkUnitID.Name()
+						_, err := recorder.CreateWorkUnit(ctx, req)
+						assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`bad request: work_unit_id: work unit ID prefix "otherworkunit" must match parent work unit ID prefix "wu-parent"`))
+					})
+				})
+			})
+			t.Run("request_id", func(t *ftt.Test) {
+				t.Run("unspecified", func(t *ftt.Test) {
+					req.RequestId = ""
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.That(t, err, should.ErrLike("bad request: request_id: unspecified (please provide a per-request UUID to ensure idempotence)"))
+				})
+				t.Run("invalid", func(t *ftt.Test) {
+					req.RequestId = "😃"
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("bad request: request_id: does not match"))
+				})
 			})
 		})
 
-		t.Run("permission denied", func(t *ftt.Test) {
-			// Request authorisation exhaustively tested in test cases for verifyCreateWorkUnitPermissions.
-			// This test case only exists to verify that method is called.
+		t.Run("request authorization", func(t *ftt.Test) {
+			t.Run("basic (same-realm) creation", func(t *ftt.Test) {
+				t.Run("with update token", func(t *ftt.Test) {
+					t.Run("allowed", func(t *ftt.Test) {
+						ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, parentUpdateToken))
+						_, err := recorder.CreateWorkUnit(ctx, req)
+						assert.Loosely(t, err, should.BeNil)
+					})
+				})
+				t.Run("with inclusion token", func(t *ftt.Test) {
+					inclusionToken, err := generateWorkUnitInclusionToken(ctx, parentWorkUnitID, "testproject:testrealm")
+					assert.Loosely(t, err, should.BeNil)
+					ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(pb.InclusionTokenMetadataKey, inclusionToken))
 
-			t.Run("no create work unit create permission", func(t *ftt.Test) {
-				badReq := proto.Clone(req).(*pb.CreateWorkUnitRequest)
-				badReq.WorkUnit.Realm = "secretproject:testrealm"
+					t.Run("allowed", func(t *ftt.Test) {
+						_, err := recorder.CreateWorkUnit(ctx, req)
+						assert.Loosely(t, err, should.BeNil)
+					})
+					t.Run("disallowed with inclusion token for wrong realm", func(t *ftt.Test) {
+						inclusionToken, err := generateWorkUnitInclusionToken(ctx, parentWorkUnitID, "testproject:otherrealm")
+						assert.Loosely(t, err, should.BeNil)
+						ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(pb.InclusionTokenMetadataKey, inclusionToken))
 
-				_, err := recorder.CreateWorkUnit(ctx, badReq)
-				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-				assert.That(t, err, should.ErrLike(`caller does not have permission "resultdb.workUnits.create"`))
+						_, err = recorder.CreateWorkUnit(ctx, req)
+						assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+						assert.Loosely(t, err, should.ErrLike(`desc = work_unit: realm: got realm "testproject:testrealm" but inclusion token only authorizes the source to include realm "testproject:otherrealm"`))
+					})
+				})
 			})
+			t.Run("cross-realm creation", func(t *ftt.Test) {
+				req.WorkUnit.Realm = "testproject:otherrealm"
 
-			// Validate update token is not part of verifyCreateWorkUnitPermissions, should be validated separately here.
-			t.Run("invalid update token", func(t *ftt.Test) {
-				ctx := metadata.NewOutgoingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid-token"))
-				badReq := proto.Clone(req).(*pb.CreateWorkUnitRequest)
+				t.Run("with update token", func(t *ftt.Test) {
+					// Provide the permission required.
+					authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+						Realm:      "testproject:otherrealm",
+						Permission: permCreateWorkUnit,
+					})
+					authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+						Realm:      "testproject:otherrealm",
+						Permission: permIncludeWorkUnit,
+					})
+					t.Run("allowed with required permissions", func(t *ftt.Test) {
+						_, err := recorder.CreateWorkUnit(ctx, req)
+						assert.Loosely(t, err, should.BeNil)
+					})
+					t.Run("disallowed without create work unit permission", func(t *ftt.Test) {
+						authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateWorkUnit)
+						_, err := recorder.CreateWorkUnit(ctx, req)
+						assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+						assert.Loosely(t, err, should.ErrLike(`desc = caller does not have permission "resultdb.workUnits.create" in realm "testproject:otherrealm"`))
+					})
+					t.Run("disallowed without include work unit permission", func(t *ftt.Test) {
+						authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permIncludeWorkUnit)
+						_, err := recorder.CreateWorkUnit(ctx, req)
+						assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+						assert.Loosely(t, err, should.ErrLike(`desc = caller does not have permission "resultdb.workUnits.include" in realm "testproject:otherrealm"`))
+					})
+				})
+				t.Run("with inclusion token", func(t *ftt.Test) {
+					// Provide the permission required.
+					authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+						Realm:      "testproject:otherrealm",
+						Permission: permCreateWorkUnit,
+					})
 
-				_, err := recorder.CreateWorkUnit(ctx, badReq)
-				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-				assert.That(t, err, should.ErrLike(`invalid update token`))
+					inclusionToken, err := generateWorkUnitInclusionToken(ctx, parentWorkUnitID, "testproject:otherrealm")
+					assert.Loosely(t, err, should.BeNil)
+					ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(pb.InclusionTokenMetadataKey, inclusionToken))
+
+					t.Run("allowed with required permissions", func(t *ftt.Test) {
+						_, err := recorder.CreateWorkUnit(ctx, req)
+						assert.Loosely(t, err, should.BeNil)
+					})
+					t.Run("disallowed without create work unit permission", func(t *ftt.Test) {
+						authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateWorkUnit)
+						_, err := recorder.CreateWorkUnit(ctx, req)
+						assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+						assert.Loosely(t, err, should.ErrLike(`desc = caller does not have permission "resultdb.workUnits.create" in realm "testproject:otherrealm"`))
+					})
+					t.Run("disallowed with inclusion token for wrong realm", func(t *ftt.Test) {
+						req.WorkUnit.Realm = "testproject:thirdrealm"
+
+						_, err = recorder.CreateWorkUnit(ctx, req)
+						assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+						assert.Loosely(t, err, should.ErrLike(`desc = work_unit: realm: got realm "testproject:thirdrealm" but inclusion token only authorizes the source to include realm "testproject:otherrealm"`))
+					})
+				})
 			})
-			t.Run("missing update token", func(t *ftt.Test) {
-				ctx := metadata.NewOutgoingContext(ctx, metadata.MD{})
-				badReq := proto.Clone(req).(*pb.CreateWorkUnitRequest)
+			t.Run("reserved id", func(t *ftt.Test) {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateWorkUnitWithReservedID)
+				req.WorkUnitId = "build-8765432100"
 
-				_, err := recorder.CreateWorkUnit(ctx, badReq)
-				assert.That(t, err, grpccode.ShouldBe(codes.Unauthenticated))
-				assert.That(t, err, should.ErrLike(`missing update-token metadata value in the request`))
+				t.Run("disallowed without realm permission", func(t *ftt.Test) {
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.Loosely(t, err, should.ErrLike(`desc = work_unit_id: only work units created by trusted systems may have id not starting with "u-"`))
+				})
+				t.Run("allowed with realm permission", func(t *ftt.Test) {
+					authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+						Realm: "testproject:@root", Permission: permCreateWorkUnitWithReservedID,
+					})
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("allowed with trusted group", func(t *ftt.Test) {
+					authState.IdentityGroups = []string{trustedCreatorGroup}
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+				})
+			})
+			t.Run("producer resource", func(t *ftt.Test) {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permSetWorkUnitProducerResource)
+				req.WorkUnit.ProducerResource = "//builds.example.com/builds/1"
+				t.Run("disallowed without permission", func(t *ftt.Test) {
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.Loosely(t, err, should.ErrLike(`desc = work_unit: producer_resource: only work units created by trusted system may have a populated producer_resource field`))
+				})
+				t.Run("allowed with realm permission", func(t *ftt.Test) {
+					authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+						Realm: "testproject:@root", Permission: permSetWorkUnitProducerResource,
+					})
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("allowed with trusted group", func(t *ftt.Test) {
+					authState.IdentityGroups = []string{trustedCreatorGroup}
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+				})
+			})
+			t.Run("inclusion or update token is validated", func(t *ftt.Test) {
+				t.Run("invalid update token", func(t *ftt.Test) {
+					ctx := metadata.NewOutgoingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid-token"))
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.That(t, err, should.ErrLike(`desc = invalid update token`))
+				})
+				t.Run("invalid inclusion token", func(t *ftt.Test) {
+					ctx := metadata.NewOutgoingContext(ctx, metadata.Pairs(pb.InclusionTokenMetadataKey, "invalid-token"))
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.That(t, err, should.ErrLike(`desc = invalid inclusion token`))
+				})
+				t.Run("missing update and inclusion token", func(t *ftt.Test) {
+					// Other test cases are covered by extractInclusionOrUpdateToken.
+					ctx := metadata.NewOutgoingContext(ctx, metadata.MD{})
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.Unauthenticated))
+					assert.That(t, err, should.ErrLike(`desc = expected either update-token or inclusion-token metadata value in the request`))
+				})
 			})
 		})
 
@@ -679,7 +701,7 @@ func TestCreateWorkUnit(t *testing.T) {
 
 			_, err = recorder.CreateWorkUnit(ctx, req)
 			assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
-			assert.That(t, err, should.ErrLike("work unit \"rootInvocations/root-inv-id/workUnits/wu-parent\" is not active"))
+			assert.That(t, err, should.ErrLike("desc = parent \"rootInvocations/root-inv-id/workUnits/wu-parent\" is not active"))
 		})
 
 		t.Run("parent does not exist", func(t *ftt.Test) {
@@ -687,7 +709,7 @@ func TestCreateWorkUnit(t *testing.T) {
 
 			_, err = recorder.CreateWorkUnit(ctx, req)
 			assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
-			assert.That(t, err, should.ErrLike("\"rootInvocations/root-inv-id/workUnits/wu-parent\" not found"))
+			assert.That(t, err, should.ErrLike("desc = \"rootInvocations/root-inv-id/workUnits/wu-parent\" not found"))
 		})
 
 		t.Run("already exists with different request id", func(t *ftt.Test) {
@@ -696,7 +718,7 @@ func TestCreateWorkUnit(t *testing.T) {
 
 			_, err := recorder.CreateWorkUnit(ctx, req)
 			assert.That(t, err, grpccode.ShouldBe(codes.AlreadyExists))
-			assert.That(t, err, should.ErrLike("\"rootInvocations/root-inv-id/workUnits/wu-new\" already exists"))
+			assert.That(t, err, should.ErrLike("desc = \"rootInvocations/root-inv-id/workUnits/wu-new\" already exists"))
 		})
 
 		t.Run("create is idempotent", func(t *ftt.Test) {

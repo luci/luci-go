@@ -125,10 +125,9 @@ func validateIDs(ids []ID) error {
 }
 
 // ReadRealms reads the realm of the given work units. If any of the work
-// units are not found, returns a NotFound appstatus error. Returned realms
-// match 1:1 with the requested ids, i.e. result[i] corresponds to ids[i].
+// units are not found, returns a NotFound appstatus error.
 // Duplicate IDs are allowed.
-func ReadRealms(ctx context.Context, ids []ID) (realms []string, err error) {
+func ReadRealms(ctx context.Context, ids []ID) (realms map[ID]string, err error) {
 	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadRealms")
 	defer func() { tracing.End(ts, err) }()
 
@@ -148,8 +147,12 @@ func ReadRealms(ctx context.Context, ids []ID) (realms []string, err error) {
 	if err != nil {
 		return nil, err
 	}
+
 	// Returns NotFound appstatus error if a row for an ID is missing.
-	return rowsForIDsMandatory(resultMap, ids)
+	if err := expectIDs(resultMap, ids); err != nil {
+		return nil, err
+	}
+	return resultMap, nil
 }
 
 // ReadStates reads the state of the given work units. If any of the work

@@ -384,19 +384,21 @@ func (x *FinalizeRootInvocationRequest) GetFinalizationScope() FinalizeRootInvoc
 //     request header, or alternatively, an inclusion token from
 //     DelegateWorkUnitInclusion in an "inclusion-token" request header.
 //     This authorises the modification of the parent work unit.
-//  2. the resultdb.workunits.create permission on the realm the work unit
+//  2. If the realm of the work unit to be created differs from the parent
+//     work unit:
+//     - the resultdb.workunits.create permission on the realm the work unit
 //     is being created in, to verify the caller is trusted to maintain
 //     integrity of data in the realm to which it is writing.
-//  3. resultdb.workunits.include permission for the realm the work unit is
+//     - resultdb.workunits.include permission for the realm the work unit is
 //     being created in. This ensures the caller is authorised to make the
 //     results of the child work unit visible within the parent work unit,
 //     and by extension the root invocation. This is because including the child
 //     work unit implicitly declassifies the results in the the realm of the
 //     root invocation. This is not necessary if an inclusion token was provided
 //     at point (1.) as this permission was checked when the token was minted.
-//  4. if an ID not starting with "u-" is specified,
+//  3. if an ID not starting with "u-" is specified,
 //     the resultdb.workUnits.createWithReservedID permission
-//  5. if the producer resource is set,
+//  4. if the producer resource is set,
 //     the resultdb.workUnits.setProducerResource permission
 //
 // This RPC returns an update token in a response header named "update-token".
@@ -3008,10 +3010,14 @@ type RecorderClient interface {
 	// Batch marks a set of WorkUnits as final and begins the process offer
 	// transitioning them to the state FINALIZED.
 	BatchFinalizeWorkUnits(ctx context.Context, in *BatchFinalizeWorkUnitsRequest, opts ...grpc.CallOption) (*BatchFinalizeWorkUnitsResponse, error)
-	// Mints a token that proves the current caller has permission to include
-	// work units from a given realm. The minted 'inclusion token' can be
-	// passed to another caller/system and used in CreateWorkUnit to include
-	// child work units into the parent work unit.
+	// Mints an 'inclusion token' that proves the current caller has permission
+	// to include work units from a given realm. The minted inclusion token
+	// can be passed to another caller/system and used in CreateWorkUnit to
+	// create child work units into the parent work unit.
+	//
+	// Systems which produce test results should require such a token (instead
+	// of an update token) if they are distrustful of their callers and believe
+	// they may not be authorised to see results from a given realm.
 	DelegateWorkUnitInclusion(ctx context.Context, in *DelegateWorkUnitInclusionRequest, opts ...grpc.CallOption) (*DelegateWorkUnitInclusionResponse, error)
 	// Creates a new invocation.
 	// The request specifies the invocation id and its contents.
@@ -3492,10 +3498,14 @@ type RecorderServer interface {
 	// Batch marks a set of WorkUnits as final and begins the process offer
 	// transitioning them to the state FINALIZED.
 	BatchFinalizeWorkUnits(context.Context, *BatchFinalizeWorkUnitsRequest) (*BatchFinalizeWorkUnitsResponse, error)
-	// Mints a token that proves the current caller has permission to include
-	// work units from a given realm. The minted 'inclusion token' can be
-	// passed to another caller/system and used in CreateWorkUnit to include
-	// child work units into the parent work unit.
+	// Mints an 'inclusion token' that proves the current caller has permission
+	// to include work units from a given realm. The minted inclusion token
+	// can be passed to another caller/system and used in CreateWorkUnit to
+	// create child work units into the parent work unit.
+	//
+	// Systems which produce test results should require such a token (instead
+	// of an update token) if they are distrustful of their callers and believe
+	// they may not be authorised to see results from a given realm.
 	DelegateWorkUnitInclusion(context.Context, *DelegateWorkUnitInclusionRequest) (*DelegateWorkUnitInclusionResponse, error)
 	// Creates a new invocation.
 	// The request specifies the invocation id and its contents.

@@ -145,8 +145,9 @@ func TestDelegateWorkUnitInclusion(t *testing.T) {
 			assert.Loosely(t, token[0], should.NotBeEmpty)
 
 			// Verify the token is valid.
-			err = validateWorkUnitInclusionToken(ctx, token[0], workUnitID, "testproject:testrealm")
+			gotRealm, err := validateWorkUnitInclusionTokenForState(ctx, token[0], workUnitInclusionTokenState(workUnitID))
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, gotRealm, should.Equal("testproject:testrealm"))
 		})
 	})
 }
@@ -249,8 +250,9 @@ func TestWorkUnitInclusionToken(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, token, should.NotBeEmpty)
 
-			err = validateWorkUnitInclusionToken(ctx, token, id, realm)
+			gotRealm, err := validateWorkUnitInclusionTokenForState(ctx, token, workUnitInclusionTokenState(id))
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, gotRealm, should.Equal(realm))
 		})
 
 		t.Run("invalid token", func(t *ftt.Test) {
@@ -262,7 +264,7 @@ func TestWorkUnitInclusionToken(t *testing.T) {
 					RootInvocationID: "wrong-root-inv-id",
 					WorkUnitID:       "work-unit-id",
 				}
-				err = validateWorkUnitInclusionToken(ctx, token, wrongID, realm)
+				_, err := validateWorkUnitInclusionTokenForState(ctx, token, workUnitInclusionTokenState(wrongID))
 				assert.Loosely(t, err, should.NotBeNil)
 			})
 
@@ -271,18 +273,64 @@ func TestWorkUnitInclusionToken(t *testing.T) {
 					RootInvocationID: "root-inv-id",
 					WorkUnitID:       "wrong-work-unit-id",
 				}
-				err = validateWorkUnitInclusionToken(ctx, token, wrongID, realm)
-				assert.Loosely(t, err, should.NotBeNil)
-			})
-
-			t.Run("wrong realm", func(t *ftt.Test) {
-				err = validateWorkUnitInclusionToken(ctx, token, id, "project:wrongrealm")
+				_, err := validateWorkUnitInclusionTokenForState(ctx, token, workUnitInclusionTokenState(wrongID))
 				assert.Loosely(t, err, should.NotBeNil)
 			})
 		})
 
 		t.Run("workUnitInclusionTokenState", func(t *ftt.Test) {
-			assert.Loosely(t, workUnitInclusionTokenState(id, realm), should.Equal(`"root-inv-id";"work-unit-id";"project:realm"`))
+			assert.Loosely(t, workUnitInclusionTokenState(id), should.Equal(`"root-inv-id";"work-unit-id";inclusion-only`))
+		})
+
+		t.Run("extractInclusionOrUpdateToken", func(t *ftt.Test) {
+			inclusionToken, err := generateWorkUnitInclusionToken(ctx, id, realm)
+			assert.Loosely(t, err, should.BeNil)
+
+			updateToken, err := generateWorkUnitUpdateToken(ctx, id)
+			assert.Loosely(t, err, should.BeNil)
+
+			t.Run("only inclusion token", func(t *ftt.Test) {
+				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.InclusionTokenMetadataKey, inclusionToken))
+				inc, upd, err := extractInclusionOrUpdateToken(ctx)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, inc, should.Equal(inclusionToken))
+				assert.Loosely(t, upd, should.BeEmpty)
+			})
+			t.Run("only update token", func(t *ftt.Test) {
+				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, updateToken))
+				inc, upd, err := extractInclusionOrUpdateToken(ctx)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, inc, should.BeEmpty)
+				assert.Loosely(t, upd, should.Equal(updateToken))
+			})
+			t.Run("both tokens", func(t *ftt.Test) {
+				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.InclusionTokenMetadataKey, inclusionToken, pb.UpdateTokenMetadataKey, updateToken))
+				_, _, err := extractInclusionOrUpdateToken(ctx)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("cannot specify both update-token and inclusion-token metadata values in the request"))
+			})
+			t.Run("no tokens", func(t *ftt.Test) {
+				ctx := metadata.NewIncomingContext(ctx, metadata.MD{})
+				_, _, err := extractInclusionOrUpdateToken(ctx)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.Unauthenticated))
+				assert.Loosely(t, err, should.ErrLike("expected either update-token or inclusion-token metadata value in the request"))
+			})
+			t.Run("multiple inclusion tokens", func(t *ftt.Test) {
+				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.InclusionTokenMetadataKey, inclusionToken, pb.InclusionTokenMetadataKey, inclusionToken))
+				_, _, err := extractInclusionOrUpdateToken(ctx)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("expected exactly one inclusion-token metadata value, got 2"))
+			})
+			t.Run("multiple update tokens", func(t *ftt.Test) {
+				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, updateToken, pb.UpdateTokenMetadataKey, updateToken))
+				_, _, err := extractInclusionOrUpdateToken(ctx)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("expected exactly one update-token metadata value, got 2"))
+			})
 		})
 	})
 }

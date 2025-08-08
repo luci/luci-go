@@ -80,7 +80,7 @@ func verifyDelegateWorkUnitInclusionPermissions(ctx context.Context, req *pb.Del
 		RootInvocationID: rootinvocations.ID(rootInvocationID),
 		WorkUnitID:       workUnitID,
 	}); err != nil {
-		return appstatus.Errorf(codes.PermissionDenied, "invalid update token")
+		return err // PermissionDenied appstatus error.
 	}
 
 	// Check we have permission to include work units of a given realm into a root invocation (of possibly different
@@ -116,20 +116,58 @@ func generateWorkUnitInclusionToken(ctx context.Context, id workunits.ID, realm 
 	// The token should last at least as long as a work unit is allowed to remain active.
 	// Add one day to give some margin, so that "invocation is not active" errors
 	// will occur for a while before invalid token errors.
-	return workUnitInclusionTokenKind.Generate(ctx, []byte(workUnitInclusionTokenState(id, realm)), nil, maxDeadlineDuration+day)
+	embedded := map[string]string{
+		"realm": realm,
+	}
+	return workUnitInclusionTokenKind.Generate(ctx, []byte(workUnitInclusionTokenState(id)), embedded, maxDeadlineDuration+day)
 }
 
-func workUnitInclusionTokenState(id workunits.ID, realm string) string {
-	// Quote to ensure state unambiguously represents the three source fields,
+func workUnitInclusionTokenState(id workunits.ID) string {
+	// Quote to ensure state unambiguously represents the source fields,
 	// even in the case any of the fields contain a ';'.
-	return fmt.Sprintf("%q;%q;%q", id.RootInvocationID, id.WorkUnitID, realm)
+	//
+	// The text ";inclusion-only" is not necessary for functionality but
+	// is for debugging purposes to ensure inclusion token state
+	// can never be confused with update token state.
+	return fmt.Sprintf("%q;%q;inclusion-only", id.RootInvocationID, id.WorkUnitID)
 }
 
-// validateWorkUnitInclusionToken validates an inclusion token for a given work unit and realm.
-// If the token is valid, including invocations from the given realm into the work unit is authorised.
+// validateWorkUnitInclusionTokenForState validates an inclusion token matches the given state.
+// If the token is valid, the realm for which inclusions are authorised is returned.
 //
 // Returns an error if the token is invalid, nil otherwise.
-func validateWorkUnitInclusionToken(ctx context.Context, token string, id workunits.ID, realm string) error {
-	_, err := workUnitInclusionTokenKind.Validate(ctx, token, []byte(workUnitInclusionTokenState(id, realm)))
-	return err
+func validateWorkUnitInclusionTokenForState(ctx context.Context, token string, state string) (realm string, err error) {
+	embedded, err := workUnitInclusionTokenKind.Validate(ctx, token, []byte(state))
+	if err != nil {
+		return "", appstatus.Errorf(codes.PermissionDenied, "invalid inclusion token")
+	}
+	return embedded["realm"], nil
+}
+
+// extractInclusionOrUpdateToken extract the inclusion token or update token from the request.
+//
+// Exactly one of the two tokens must be specified, or an appstatus error will be returned.
+func extractInclusionOrUpdateToken(ctx context.Context) (includeToken string, updateToken string, err error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	includeTokens := md.Get(pb.InclusionTokenMetadataKey)
+	updateTokens := md.Get(pb.UpdateTokenMetadataKey)
+
+	if len(includeTokens) > 1 {
+		return "", "", appstatus.Errorf(codes.InvalidArgument, "expected exactly one %s metadata value, got %d", pb.InclusionTokenMetadataKey, len(includeTokens))
+	}
+	if len(updateTokens) > 1 {
+		return "", "", appstatus.Errorf(codes.InvalidArgument, "expected exactly one %s metadata value, got %d", pb.UpdateTokenMetadataKey, len(updateTokens))
+	}
+	if len(includeTokens) > 0 && len(updateTokens) > 0 {
+		return "", "", appstatus.Errorf(codes.InvalidArgument, "cannot specify both %s and %s metadata values in the request", pb.UpdateTokenMetadataKey, pb.InclusionTokenMetadataKey)
+	}
+	if len(includeTokens) == 0 && len(updateTokens) == 0 {
+		return "", "", appstatus.Errorf(codes.Unauthenticated, "expected either %s or %s metadata value in the request", pb.UpdateTokenMetadataKey, pb.InclusionTokenMetadataKey)
+	}
+
+	if len(includeTokens) > 0 {
+		return includeTokens[0], "", nil
+	} else {
+		return "", updateTokens[0], nil
+	}
 }

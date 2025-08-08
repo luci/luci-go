@@ -190,8 +190,8 @@ func QueryWorkUnitsAccess(ctx context.Context, ids []workunits.ID, opts QueryWor
 		}
 
 		accessLevels = make([]AccessLevel, len(ids))
-		for i := range ids {
-			allowed, err := auth.HasPermission(ctx, opts.UpgradeLimitedToFull, workUnitRealms[i], nil)
+		for i, id := range ids {
+			allowed, err := auth.HasPermission(ctx, opts.UpgradeLimitedToFull, workUnitRealms[id], nil)
 			if err != nil {
 				// Some sort of internal error doing the permission check.
 				return nil, err

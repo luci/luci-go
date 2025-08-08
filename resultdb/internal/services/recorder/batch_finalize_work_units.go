@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -136,7 +135,7 @@ func verifyBatchFinalizeWorkUnitsPermissions(ctx context.Context, req *pb.BatchF
 		return err
 	}
 	if err := validateWorkUnitUpdateTokenForState(ctx, token, state); err != nil {
-		return appstatus.Errorf(codes.PermissionDenied, "invalid update token")
+		return err // PermissionDenied appstatus error.
 	}
 	return nil
 }

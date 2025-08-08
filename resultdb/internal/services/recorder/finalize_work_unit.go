@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -89,7 +88,7 @@ func verifyFinalizeWorkUnitPermissions(ctx context.Context, req *pb.FinalizeWork
 	}
 	wuID := workunits.ID{RootInvocationID: rootinvocations.ID(rootInvocationID), WorkUnitID: workUnitID}
 	if err := validateWorkUnitUpdateToken(ctx, token, wuID); err != nil {
-		return appstatus.Errorf(codes.PermissionDenied, "invalid update token")
+		return err // PermissionDenied appstatus error.
 	}
 	return nil
 }

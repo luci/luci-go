@@ -342,13 +342,12 @@ func TestReadFunctions(t *testing.T) {
 				}
 				realms, err := ReadRealms(span.Single(ctx), ids)
 				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, realms, should.Match([]string{
-					"testproject:root2",
-					"testproject:wu1",
-					"testproject:wu2",
-					"testproject:wu22",
-					"testproject:wu21",
-					"testproject:wu2",
+				assert.That(t, realms, should.Match(map[ID]string{
+					wuRoot.ID:   "testproject:root2",
+					wu21.ID:     "testproject:wu21",
+					wu22.ID:     "testproject:wu22",
+					wu2.ID:      "testproject:wu2",
+					testData.ID: "testproject:wu1",
 				}))
 			})
 
