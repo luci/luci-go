@@ -39,7 +39,7 @@ func TestMustParseName(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("MustParseName", t, func(t *ftt.Test) {
-		t.Run("Parse", func(t *ftt.Test) {
+		t.Run("Parse Legacy Name", func(t *ftt.Test) {
 			invID, testID, resultID := MustParseName(
 				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
 			assert.Loosely(t, invID, should.Equal(invocations.ID("a")))
@@ -47,9 +47,19 @@ func TestMustParseName(t *testing.T) {
 			assert.Loosely(t, resultID, should.Equal("result5"))
 		})
 
+		t.Run("Parse", func(t *ftt.Test) {
+			invID, testID, resultID := MustParseName(
+				"rootInvocations/a/workUnits/b:c/tests/d/results/e")
+			assert.Loosely(t, invID, should.Equal(invocations.ID("workunit:a:b:c")))
+			assert.Loosely(t, testID, should.Equal("d"))
+			assert.Loosely(t, resultID, should.Equal("e"))
+		})
+
 		t.Run("Invalid", func(t *ftt.Test) {
 			invalidNames := []string{
 				"invocations/a/tests/b",
+				"rootInvocations/a/tests/b/results/c",
+				"workUnits/a/tests/b/results/c",
 				"invocations/a/tests/b/exonerations/c",
 			}
 			for _, name := range invalidNames {

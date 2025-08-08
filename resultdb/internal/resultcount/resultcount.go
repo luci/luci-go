@@ -21,10 +21,12 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 )
 
 // Total number of shards for each invocation in TestResultCount table.
@@ -50,6 +52,61 @@ func IncrementTestResultCount(ctx context.Context, id invocations.ID, delta int6
 		"ShardId":         shardId,
 		"TestResultCount": count.Int64 + delta,
 	}))
+	return nil
+}
+
+// BatchIncrementTestResultCount increases the counts of test results in a random shard
+// of the given invocations.
+func BatchIncrementTestResultCount(ctx context.Context, deltas map[invocations.ID]int64) (err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.resultcount.BatchIncrementTestResultCount")
+	defer func() { tracing.End(ts, err) }()
+
+	idsToUpdate := invocations.NewIDSet()
+	for id, delta := range deltas {
+		if delta != 0 {
+			idsToUpdate.Add(id)
+		}
+	}
+	if len(idsToUpdate) == 0 {
+		return nil
+	}
+
+	// Pick one shard and write to it for all invocations. This reduces the
+	// collision risk compared to picking different shards for each invocation,
+	// especially if there are other tasks also updating batches of invocations.
+	shardId := mathrand.Int63n(ctx, nShards)
+	var ms []*spanner.Mutation
+
+	// Try to read existing state of count rows and update them if they exist.
+	var b spanutil.Buffer
+	err = span.Read(ctx, "TestResultCounts", idsToUpdate.Keys(shardId), []string{"InvocationId", "TestResultCount"}).Do(func(r *spanner.Row) error {
+		var id invocations.ID
+		var count int64
+		if err := b.FromSpanner(r, &id, &count); err != nil {
+			return errors.Fmt("parse row: %w", err)
+		}
+		ms = append(ms, spanutil.UpdateMap("TestResultCounts", map[string]any{
+			"InvocationId":    id,
+			"ShardId":         shardId,
+			"TestResultCount": count + deltas[id],
+		}))
+		idsToUpdate.Remove(id)
+		return nil
+	})
+	if err != nil {
+		return errors.Fmt("read existing counts: %w", err)
+	}
+
+	// For any invocations not found in the initial read, insert them.
+	for id := range idsToUpdate {
+		delta := deltas[id]
+		ms = append(ms, spanutil.InsertMap("TestResultCounts", map[string]any{
+			"InvocationId":    id,
+			"ShardId":         shardId,
+			"TestResultCount": delta,
+		}))
+	}
+	span.BufferWrite(ctx, ms...)
 	return nil
 }
 

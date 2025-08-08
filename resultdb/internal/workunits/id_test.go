@@ -15,6 +15,7 @@
 package workunits
 
 import (
+	"fmt"
 	"testing"
 
 	"cloud.google.com/go/spanner"
@@ -123,7 +124,9 @@ func TestIDConversion(t *testing.T) {
 		id1 := ID{RootInvocationID: "a", WorkUnitID: "1"}
 		id2 := ID{RootInvocationID: "b", WorkUnitID: "2"}
 		id3 := ID{RootInvocationID: "c", WorkUnitID: "3"}
-		s := NewIDSet(id1, id2, id3)
+		id4 := ID{RootInvocationID: "c", WorkUnitID: "4"}
+		id5 := ID{RootInvocationID: "d", WorkUnitID: "2"}
+		s := NewIDSet(id1, id2, id3, id4, id5)
 		t.Run("RemoveAll", func(t *ftt.Test) {
 			t.Run("Empty", func(t *ftt.Test) {
 				emptySet := NewIDSet()
@@ -133,24 +136,53 @@ func TestIDConversion(t *testing.T) {
 			t.Run("Non-empty", func(t *ftt.Test) {
 				other := NewIDSet(id1, id3)
 				s.RemoveAll(other)
-				assert.Loosely(t, len(s), should.Equal(1))
-				assert.Loosely(t, s.Has(id2), should.BeTrue)
+				assert.Loosely(t, len(s), should.Equal(3))
 				assert.Loosely(t, s.Has(id1), should.BeFalse)
+				assert.Loosely(t, s.Has(id2), should.BeTrue)
 				assert.Loosely(t, s.Has(id3), should.BeFalse)
+				assert.Loosely(t, s.Has(id4), should.BeTrue)
+				assert.Loosely(t, s.Has(id5), should.BeTrue)
 			})
 		})
-		t.Run("ToSlice", func(t *ftt.Test) {
+		t.Run("SortedByID", func(t *ftt.Test) {
 			t.Run("Empty", func(t *ftt.Test) {
 				emptySet := NewIDSet()
-				emptySlice := emptySet.ToSlice()
+				emptySlice := emptySet.SortedByID()
 				assert.Loosely(t, len(emptySlice), should.Equal(0))
 			})
 			t.Run("Non-empty", func(t *ftt.Test) {
-				s := NewIDSet(id1, id2)
-				slice := s.ToSlice()
-				assert.Loosely(t, len(slice), should.Equal(2))
-				assert.Loosely(t, slice, should.Contain(id1))
-				assert.Loosely(t, slice, should.Contain(id2))
+				s := NewIDSet(id1, id2, id3, id4, id5)
+				slice := s.SortedByID()
+				assert.Loosely(t, len(slice), should.Equal(5))
+				assert.Loosely(t, slice[0], should.Equal(id1))
+				assert.Loosely(t, slice[1], should.Equal(id2))
+				assert.Loosely(t, slice[2], should.Equal(id3))
+				assert.Loosely(t, slice[3], should.Equal(id4))
+				assert.Loosely(t, slice[4], should.Equal(id5))
+			})
+		})
+		t.Run("SortedByRowID", func(t *ftt.Test) {
+			t.Run("Empty", func(t *ftt.Test) {
+				emptySet := NewIDSet()
+				emptySlice := emptySet.SortedByRowID()
+				assert.Loosely(t, len(emptySlice), should.Equal(0))
+			})
+			t.Run("Non-empty", func(t *ftt.Test) {
+				s := NewIDSet(id1, id2, id3, id4, id5)
+				slice := s.SortedByRowID()
+
+				// Check the Row IDs are in order.
+				rowIDs := make([]string, len(slice))
+				for i, id := range slice {
+					rowIDs[i] = fmt.Sprintf("%s,%s", id.RootInvocationShardID().RowID(), id.WorkUnitID)
+				}
+				assert.Loosely(t, rowIDs, should.Match([]string{
+					"58ac3e73:d,2",
+					"6a978112:a,1",
+					"7e23e816:b,2",
+					"7e7d2c03:c,4",
+					"be7d2c03:c,3",
+				}))
 			})
 		})
 	})

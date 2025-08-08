@@ -205,7 +205,7 @@ func mutateWorkUnitsForCreate(ctx context.Context, parentIDs []workunits.ID, new
 	parentsToCheckSet := workunits.NewIDSet(parentIDs...)
 	// Only check parents that are not being created in this batch.
 	parentsToCheckSet.RemoveAll(newIDSet)
-	parentsToCheck := parentsToCheckSet.ToSlice()
+	parentsToCheck := parentsToCheckSet.SortedByRowID()
 
 	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		states, err := workunits.ReadStates(ctx, parentsToCheck)

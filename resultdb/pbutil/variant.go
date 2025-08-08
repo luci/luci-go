@@ -200,3 +200,25 @@ func VariantFromJSON(variant string) (*pb.Variant, error) {
 	}
 	return &pb.Variant{Def: v}, nil
 }
+
+// VariantsEqual tests if two variants are equal.
+func VariantsEqual(want, got *pb.Variant) bool {
+	// Normalize representation.
+	if want == nil {
+		want = &pb.Variant{Def: map[string]string{}}
+	}
+	if got == nil {
+		got = &pb.Variant{Def: map[string]string{}}
+	}
+
+	if len(want.Def) != len(got.Def) {
+		return false
+	}
+	for k, v := range want.Def {
+		gotVal, ok := got.Def[k]
+		if !ok || (gotVal != v) {
+			return false
+		}
+	}
+	return true
+}

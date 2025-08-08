@@ -16,48 +16,33 @@ package recorder
 
 import (
 	"context"
-	"time"
+	"strings"
 
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
-	"go.chromium.org/luci/resultdb/internal/config"
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-func validateCreateTestResultRequest(msg *pb.CreateTestResultRequest, cfg *config.CompiledServiceConfig, now time.Time) error {
-	if err := pbutil.ValidateInvocationName(msg.Invocation); err != nil {
-		return errors.Fmt("invocation: %w", err)
-	}
-	if err := validateTestResult(now, cfg, msg.TestResult); err != nil {
-		return errors.Fmt("test_result: %w", err)
-	}
-	if err := pbutil.ValidateRequestID(msg.RequestId); err != nil {
-		return errors.Fmt("request_id: %w", err)
-	}
-	return nil
-}
-
 // CreateTestResult implements pb.RecorderServer.
 func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTestResultRequest) (*pb.TestResult, error) {
-	now := clock.Now(ctx).UTC()
-	cfg, err := config.Service(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err := validateCreateTestResultRequest(in, cfg, now); err != nil {
-		return nil, appstatus.BadRequest(err)
-	}
-
 	// Piggy back on BatchCreateTestResults.
 	res, err := s.BatchCreateTestResults(ctx, &pb.BatchCreateTestResultsRequest{
+		Parent:     in.Parent,
 		Invocation: in.Invocation,
 		Requests:   []*pb.CreateTestResultRequest{in},
 		RequestId:  in.RequestId,
 	})
 	if err != nil {
+		st, ok := appstatus.Get(err)
+
+		// Attempt to fix up any references to requests[0]: in the batch response.
+		if ok {
+			msg := st.Message()
+			if strings.HasPrefix(msg, "requests[0]: ") || strings.HasPrefix(msg, "bad request: requests[0]: ") {
+				msg = strings.Replace(msg, "requests[0]: ", "", 1)
+			}
+			return nil, appstatus.Error(st.Code(), msg)
+		}
 		return nil, err
 	}
 	return res.TestResults[0], nil

@@ -19,6 +19,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
+	"sort"
 	"strings"
 
 	"cloud.google.com/go/spanner"
@@ -160,12 +161,37 @@ func (s IDSet) Remove(id ID) {
 	delete(s, id)
 }
 
-// ToSlice returns the IDs in the set as a slice.
-// The order of IDs in the slice is not guaranteed.
-func (s IDSet) ToSlice() []ID {
-	slice := make([]ID, 0, len(s))
+// SortedByRowID returns IDs in the set sorted by row id.
+func (s IDSet) SortedByRowID() []ID {
+	shardIDs := make(map[ID]string)
 	for id := range s {
-		slice = append(slice, id)
+		shardIDs[id] = id.RootInvocationShardID().RowID()
 	}
-	return slice
+
+	ids := make([]ID, 0, len(s))
+	for id := range s {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(i, j int) bool {
+		if shardIDs[ids[i]] != shardIDs[ids[j]] {
+			return shardIDs[ids[i]] < shardIDs[ids[j]]
+		}
+		return ids[i].WorkUnitID < ids[j].WorkUnitID
+	})
+	return ids
+}
+
+// SortedByID returns IDs in the set sorted by logical id.
+func (s IDSet) SortedByID() []ID {
+	ids := make([]ID, 0, len(s))
+	for id := range s {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(i, j int) bool {
+		if ids[i].RootInvocationID != ids[j].RootInvocationID {
+			return ids[i].RootInvocationID < ids[j].RootInvocationID
+		}
+		return ids[i].WorkUnitID < ids[j].WorkUnitID
+	})
+	return ids
 }

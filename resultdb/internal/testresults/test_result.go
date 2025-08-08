@@ -30,7 +30,9 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -42,22 +44,43 @@ import (
 //
 // MustParseName is faster than pbutil.ParseTestResultName.
 func MustParseName(name string) (invID invocations.ID, testID, resultID string) {
-	parts := strings.Split(name, "/")
-	if len(parts) != 6 || parts[0] != "invocations" || parts[2] != "tests" || parts[4] != "results" {
-		panic(errors.Fmt("malformed test result name: %q", name))
+	if pbutil.IsLegacyTestResultName(name) {
+		parts := strings.Split(name, "/")
+		if len(parts) != 6 || parts[0] != "invocations" || parts[2] != "tests" || parts[4] != "results" {
+			panic(errors.Fmt("malformed test result name: %q", name))
+		}
+		invID = invocations.ID(parts[1])
+		escapedTestID := parts[3]
+		resultID = parts[5]
+
+		var err error
+		testID, err = url.PathUnescape(escapedTestID)
+		if err != nil {
+			panic(errors.Fmt("malformed test id %q: %w", escapedTestID, err))
+		}
+		return invID, testID, resultID
+	} else {
+		parts := strings.Split(name, "/")
+		if len(parts) != 8 || parts[0] != "rootInvocations" || parts[2] != "workUnits" || parts[4] != "tests" || parts[6] != "results" {
+			panic(errors.Fmt("malformed test result name: %q", name))
+		}
+
+		wuID := workunits.ID{
+			RootInvocationID: rootinvocations.ID(parts[1]),
+			WorkUnitID:       parts[3],
+		}
+		escapedTestID := parts[5]
+		resultID = parts[7]
+
+		invID = wuID.LegacyInvocationID()
+
+		var err error
+		testID, err = url.PathUnescape(escapedTestID)
+		if err != nil {
+			panic(errors.Fmt("malformed test id %q: %w", escapedTestID, err))
+		}
+		return invID, testID, resultID
 	}
-
-	invID = invocations.ID(parts[1])
-	testID = parts[3]
-	resultID = parts[5]
-
-	unescaped, err := url.PathUnescape(testID)
-	if err != nil {
-		panic(errors.Fmt("malformed test id %q: %w", testID, err))
-	}
-	testID = unescaped
-
-	return
 }
 
 // Read reads specified TestResult within the transaction.
