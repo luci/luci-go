@@ -762,6 +762,11 @@ CREATE TABLE Artifacts (
   -- A string of format "gs://{bucket}/{path}"
   -- if this artifact is stored in Google Cloud Storage (GCS).
   GcsURI STRING(MAX),
+
+  -- key:value pairs in the module variant. This is populated for structured
+  -- test results, but may not be populated for results in module "legacy".
+  -- See also TestIdentifier.module_variant in common.proto.
+  ModuleVariant ARRAY<STRING(MAX)>,
 ) PRIMARY KEY (InvocationId, ParentId, ArtifactId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 

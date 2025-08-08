@@ -171,6 +171,8 @@ func (ac *artifactCreator) handle(c *router.Context) error {
 			"ContentType":  ac.contentType,
 			"Size":         ac.size,
 			"RBECASHash":   ac.hash,
+			// TODO(meiring): populate variant from work unit/invocation module_id.
+			"ModuleVariant": &pb.Variant{},
 		}))
 		return nil
 	})

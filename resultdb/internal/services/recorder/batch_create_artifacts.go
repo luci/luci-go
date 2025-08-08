@@ -26,6 +26,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
@@ -71,6 +72,8 @@ type artifactCreationRequest struct {
 	data []byte
 	// gcsURI is the location of the artifact content if it is stored in GCS.  If this is provided, data must be empty.
 	gcsURI string
+	// variant is the test variant, if known.
+	variant *pb.Variant
 }
 
 type invocationInfo struct {
@@ -115,15 +118,28 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, requireParent boo
 		}
 	}
 
-	if req.Artifact.TestIdStructured != nil {
-		testIDBase := pbutil.BaseTestIdentifier{
-			ModuleName:   req.Artifact.TestIdStructured.ModuleName,
-			ModuleScheme: req.Artifact.TestIdStructured.ModuleScheme,
-			CoarseName:   req.Artifact.TestIdStructured.CoarseName,
-			FineName:     req.Artifact.TestIdStructured.FineName,
-			CaseName:     req.Artifact.TestIdStructured.CaseName,
+	var variant *pb.Variant
+	if testID != "" {
+		testIDBase, err := pbutil.ParseAndValidateTestID(testID)
+		if err != nil {
+			return "", nil, errors.Fmt("parent: encoded test id: %w", err)
 		}
-		if err := pbutil.ValidateBaseTestIdentifier(testIDBase); err != nil {
+		// Validate the test identifier meets the requirements of the scheme.
+		// This is enforced only at upload time.
+		if err := validateTestIDToScheme(cfg, testIDBase); err != nil {
+			return "", nil, errors.Fmt("parent: encoded test id: %w", err)
+		}
+	}
+	if req.Artifact.TestIdStructured != nil {
+		testIDToValidate := proto.Clone(req.Artifact.TestIdStructured).(*pb.TestIdentifier)
+		if testIDToValidate.ModuleVariant == nil && testIDToValidate.ModuleVariantHash == "" {
+			// Historically, this RPC accepted a structured test ID without module variant.
+			// For compatibility reasons, we still want such variant-less to pass validation.
+			testIDToValidate.ModuleVariant = &pb.Variant{}
+		}
+
+		testIDBase := pbutil.ExtractBaseTestIdentifier(testIDToValidate)
+		if err := pbutil.ValidateStructuredTestIdentifierForStorage(testIDToValidate); err != nil {
 			return "", nil, errors.Fmt("test_id_structured: %w", err)
 		}
 		// Validate the test identifier meets the requirements of the scheme.
@@ -142,6 +158,7 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, requireParent boo
 		}
 		testID = pbutil.EncodeTestID(testIDBase)
 		resultID = req.Artifact.ResultId
+		variant = req.Artifact.TestIdStructured.ModuleVariant
 	}
 
 	if req.Artifact.ResultId != "" && req.Artifact.TestIdStructured == nil {
@@ -183,6 +200,7 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, requireParent boo
 		testID:      testID,
 		resultID:    resultID,
 		gcsURI:      req.Artifact.GcsUri,
+		variant:     variant,
 	}, nil
 }
 
@@ -370,13 +388,14 @@ func createArtifactStates(ctx context.Context, realm string, invID invocations.I
 		}
 		for _, a := range noStateArts {
 			span.BufferWrite(ctx, spanutil.InsertMap("Artifacts", map[string]any{
-				"InvocationId": invID,
-				"ParentId":     a.parentID(),
-				"ArtifactId":   a.artifactID,
-				"ContentType":  a.contentType,
-				"Size":         a.size,
-				"RBECASHash":   a.hash,
-				"GcsURI":       a.gcsURI,
+				"InvocationId":  invID,
+				"ParentId":      a.parentID(),
+				"ArtifactId":    a.artifactID,
+				"ContentType":   a.contentType,
+				"Size":          a.size,
+				"RBECASHash":    a.hash,
+				"GcsURI":        a.gcsURI,
+				"ModuleVariant": a.variant,
 			}))
 		}
 		return nil
@@ -522,19 +541,20 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 	// Return all the artifacts to indicate that they were created.
 	ret := &pb.BatchCreateArtifactsResponse{Artifacts: make([]*pb.Artifact, len(arts))}
 	for i, a := range arts {
-		var structuredTestIDProto *pb.TestIdentifierBase
+		var structuredTestIDProto *pb.TestIdentifier
 		if a.testID != "" {
-			structuredTestID, err := pbutil.ParseAndValidateTestID(a.testID)
+			baseTestID, err := pbutil.ParseAndValidateTestID(a.testID)
 			if err != nil {
 				// Should never happen.
 				return nil, errors.Fmt("parse test id: %w", err)
 			}
-			structuredTestIDProto = &pb.TestIdentifierBase{
-				ModuleName:   structuredTestID.ModuleName,
-				ModuleScheme: structuredTestID.ModuleScheme,
-				CoarseName:   structuredTestID.CoarseName,
-				FineName:     structuredTestID.FineName,
-				CaseName:     structuredTestID.CaseName,
+			structuredTestIDProto = &pb.TestIdentifier{
+				ModuleName:    baseTestID.ModuleName,
+				ModuleScheme:  baseTestID.ModuleScheme,
+				ModuleVariant: a.variant, // This may be null, if the variant is not known.
+				CoarseName:    baseTestID.CoarseName,
+				FineName:      baseTestID.FineName,
+				CaseName:      baseTestID.CaseName,
 			}
 		}
 		ret.Artifacts[i] = &pb.Artifact{

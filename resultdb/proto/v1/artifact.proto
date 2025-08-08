@@ -48,12 +48,12 @@ message Artifact {
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  // The structured test identifier. Uniquely identifies the test that was run, excluding variant.
+  // The structured test identifier. Uniquely identifies the test that was run.
   //
   // This field is only populated for test-result-level artifacts.
   // MUST set if result_id is set.
   // MUST NOT set for legacy uploader where test id should be specified in the parent.
-  TestIdentifierBase test_id_structured = 12 [(google.api.field_behavior) = IMMUTABLE];
+  TestIdentifier test_id_structured = 12 [(google.api.field_behavior) = IMMUTABLE];
 
   // A unique identifier of the test in a LUCI project, excluding variant.
   // Regex: ^[[::print::]]{1,512}$
@@ -65,7 +65,6 @@ message Artifact {
   //
   // Output only.
   string test_id = 13 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
-
 
   // This field is only populated for test-result-level artifacts.
   // MUST set if test_id_structured is set.

@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	"go.chromium.org/luci/resultdb/pbutil"
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -81,12 +82,13 @@ func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
 	newTestArtReq := func(artifactID string) *pb.CreateArtifactRequest {
 		return &pb.CreateArtifactRequest{
 			Artifact: &pb.Artifact{
-				TestIdStructured: &pb.TestIdentifierBase{
-					ModuleName:   "module",
-					ModuleScheme: "junit",
-					CoarseName:   "coarse",
-					FineName:     "fine",
-					CaseName:     "case",
+				TestIdStructured: &pb.TestIdentifier{
+					ModuleName:    "module",
+					ModuleScheme:  "junit",
+					ModuleVariant: pbutil.Variant("k1", "v1", "k2", "v2"),
+					CoarseName:    "coarse",
+					FineName:      "fine",
+					CaseName:      "case",
 				},
 				ResultId:    "resultid",
 				ArtifactId:  artifactID,
@@ -130,6 +132,7 @@ func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
 				assert.Loosely(t, arts[1].artifactID, should.Equal("art2"))
 				assert.Loosely(t, arts[1].parentID(), should.Equal(artifacts.ParentID("t1", "r1")))
 				assert.Loosely(t, arts[1].contentType, should.Equal("image/png"))
+				assert.Loosely(t, arts[1].variant, should.BeNil)
 			})
 
 			t.Run("use the top-level parent field", func(t *ftt.Test) {
@@ -145,11 +148,26 @@ func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
 				assert.Loosely(t, arts[0].artifactID, should.Equal("art1"))
 				assert.Loosely(t, arts[0].parentID(), should.Equal(artifacts.ParentID("", "")))
 				assert.Loosely(t, arts[0].contentType, should.Equal("text/plain"))
+				assert.Loosely(t, arts[0].variant, should.BeNil)
 
 				// test-result-level artifact
 				assert.Loosely(t, arts[1].artifactID, should.Equal("art2"))
 				assert.Loosely(t, arts[1].parentID(), should.Equal(artifacts.ParentID(":module!junit:coarse:fine#case", "resultid")))
 				assert.Loosely(t, arts[1].contentType, should.Equal("image/png"))
+				assert.Loosely(t, arts[1].variant, should.Match(pbutil.Variant("k1", "v1", "k2", "v2")))
+			})
+			t.Run("module variant not specified when test_id_structured is specified", func(t *ftt.Test) {
+				// We need this case to support legacy clients.
+				// TODO(meiring): Delete when Tradefed uploader migrated.
+				r := newTestArtReq("art1")
+				r.Artifact.TestIdStructured.ModuleVariant = nil
+				bReq.Requests = append(bReq.Requests, r)
+
+				invID, arts, err := parseBatchCreateArtifactsRequest(bReq, cfg)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, invID, should.Equal(invocations.ID("abc")))
+				assert.Loosely(t, len(arts), should.Equal(1))
+				assert.Loosely(t, arts[0].variant, should.BeNil)
 			})
 		})
 
@@ -208,6 +226,25 @@ func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
 
 			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
 			assert.Loosely(t, err, should.ErrLike("result_id is required if test_id_structured is specified"))
+		})
+
+		t.Run("uploaded test_id_structured references unknown module scheme", func(t *ftt.Test) {
+			r := newTestArtReq("art1")
+			r.Artifact.TestIdStructured.ModuleScheme = "unknown"
+			bReq.Requests = append(bReq.Requests, r)
+
+			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
+			assert.Loosely(t, err, should.ErrLike(`requests[0]: test_id_structured: module_scheme: scheme "unknown" is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme`))
+		})
+
+		t.Run("flat-form test_id references unknown module scheme", func(t *ftt.Test) {
+			r := newTestArtReq("art1")
+			r.Parent = "invocations/abc/tests/:module%21unknown::%23case/results/123"
+			r.Artifact.TestIdStructured = nil
+			bReq.Requests = append(bReq.Requests, r)
+
+			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
+			assert.Loosely(t, err, should.ErrLike(`requests[0]: parent: encoded test id: module_scheme: scheme "unknown" is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme`))
 		})
 
 		t.Run("mismatched size_bytes", func(t *ftt.Test) {
@@ -291,14 +328,15 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		}
 
 		appendArtReq := func(aID, content, cType, caseName, resultID string) {
-			var testID *pb.TestIdentifierBase
+			var testID *pb.TestIdentifier
 			if caseName != "" {
-				testID = &pb.TestIdentifierBase{
-					ModuleName:   "module",
-					ModuleScheme: "junit",
-					CoarseName:   "coarse",
-					FineName:     "fine",
-					CaseName:     caseName,
+				testID = &pb.TestIdentifier{
+					ModuleName:    "module",
+					ModuleScheme:  "junit",
+					ModuleVariant: pbutil.Variant("k1", "v1", "k2", "v2"),
+					CoarseName:    "coarse",
+					FineName:      "fine",
+					CaseName:      caseName,
 				}
 			}
 			bReq.Requests = append(bReq.Requests, &pb.CreateArtifactRequest{
@@ -319,14 +357,15 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			})
 		}
 
-		fetchState := func(parentID, aID string) (size int64, hash string, contentType string, gcsURI string) {
+		fetchState := func(parentID, aID string) (size int64, hash string, contentType string, gcsURI string, variant *pb.Variant) {
 			testutil.MustReadRow(
 				ctx, t, "Artifacts", invocations.ID("inv").Key(parentID, aID),
 				map[string]any{
-					"Size":        &size,
-					"RBECASHash":  &hash,
-					"ContentType": &contentType,
-					"GcsURI":      &gcsURI,
+					"Size":          &size,
+					"RBECASHash":    &hash,
+					"ContentType":   &contentType,
+					"GcsURI":        &gcsURI,
+					"ModuleVariant": &variant,
 				},
 			)
 			return
@@ -404,8 +443,13 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					},
 					{
 						Name: "invocations/inv/tests/:module%21junit:coarse:fine%23test_id/results/0/artifacts/art2",
-						TestIdStructured: &pb.TestIdentifierBase{
-							ModuleName: "module", ModuleScheme: "junit", CoarseName: "coarse", FineName: "fine", CaseName: "test_id",
+						TestIdStructured: &pb.TestIdentifier{
+							ModuleName:    "module",
+							ModuleScheme:  "junit",
+							ModuleVariant: pbutil.Variant("k1", "v1", "k2", "v2"),
+							CoarseName:    "coarse",
+							FineName:      "fine",
+							CaseName:      "test_id",
 						},
 						TestId:      ":module!junit:coarse:fine#test_id",
 						ResultId:    "0",
@@ -427,8 +471,13 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					},
 					{
 						Name: "invocations/inv/tests/:module%21junit:coarse:fine%23test_id_1/results/0/artifacts/art5",
-						TestIdStructured: &pb.TestIdentifierBase{
-							ModuleName: "module", ModuleScheme: "junit", CoarseName: "coarse", FineName: "fine", CaseName: "test_id_1",
+						TestIdStructured: &pb.TestIdentifier{
+							ModuleName:    "module",
+							ModuleScheme:  "junit",
+							ModuleVariant: pbutil.Variant("k1", "v1", "k2", "v2"),
+							CoarseName:    "coarse",
+							FineName:      "fine",
+							CaseName:      "test_id_1",
 						},
 						TestId:      ":module!junit:coarse:fine#test_id_1",
 						ResultId:    "0",
@@ -466,35 +515,40 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				},
 			}))
 			// verify the Spanner states
-			size, hash, cType, gcsURI := fetchState("", "art1")
+			size, hash, cType, gcsURI, variant := fetchState("", "art1")
 			assert.Loosely(t, size, should.Equal(int64(len("c0ntent"))))
 			assert.Loosely(t, hash, should.Equal(artifacts.AddHashPrefix(compHash("c0ntent"))))
 			assert.Loosely(t, cType, should.Equal("text/plain"))
 			assert.Loosely(t, gcsURI, should.BeEmpty)
+			assert.Loosely(t, variant, should.Match(&pb.Variant{}))
 
-			size, hash, cType, gcsURI = fetchState("tr/:module!junit:coarse:fine#test_id/0", "art2")
+			size, hash, cType, gcsURI, variant = fetchState("tr/:module!junit:coarse:fine#test_id/0", "art2")
 			assert.Loosely(t, size, should.Equal(int64(len("c1ntent"))))
 			assert.Loosely(t, hash, should.Equal(artifacts.AddHashPrefix(compHash("c1ntent"))))
 			assert.Loosely(t, cType, should.Equal("text/richtext"))
 			assert.Loosely(t, gcsURI, should.BeEmpty)
+			assert.Loosely(t, variant, should.Match(pbutil.Variant("k1", "v1", "k2", "v2")))
 
-			size, hash, cType, gcsURI = fetchState("tr/:module!junit:coarse:fine#test_id_1/0", "art5")
+			size, hash, cType, gcsURI, variant = fetchState("tr/:module!junit:coarse:fine#test_id_1/0", "art5")
 			assert.Loosely(t, size, should.Equal(int64(len("c5ntent"))))
 			assert.Loosely(t, hash, should.Equal(artifacts.AddHashPrefix(compHash("c5ntent"))))
 			assert.Loosely(t, cType, should.Equal("text/richtext"))
 			assert.Loosely(t, gcsURI, should.BeEmpty)
+			assert.Loosely(t, variant, should.Match(pbutil.Variant("k1", "v1", "k2", "v2")))
 
-			size, hash, cType, gcsURI = fetchState("", "art3")
+			size, hash, cType, gcsURI, variant = fetchState("", "art3")
 			assert.Loosely(t, size, should.BeZero)
 			assert.Loosely(t, hash, should.BeEmpty)
 			assert.Loosely(t, cType, should.Equal("text/plain"))
 			assert.Loosely(t, gcsURI, should.Equal("gs://testbucket/art3"))
+			assert.Loosely(t, variant, should.Match(&pb.Variant{}))
 
-			size, hash, cType, gcsURI = fetchState("", "art4")
+			size, hash, cType, gcsURI, variant = fetchState("", "art4")
 			assert.Loosely(t, size, should.Equal(500))
 			assert.Loosely(t, hash, should.BeEmpty)
 			assert.Loosely(t, cType, should.Equal("text/richtext"))
 			assert.Loosely(t, gcsURI, should.Equal("gs://testbucket/art4"))
+			assert.Loosely(t, variant, should.Match(&pb.Variant{}))
 
 			// RowCount metric should be increased by 5.
 			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, artMFVs), should.Equal(5))

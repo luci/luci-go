@@ -317,26 +317,6 @@ message TestIdentifierPrefix {
   TestIdentifier id = 2;
 }
 
-// TestIdentifierBase represent a structured test id message without variant information.
-// See luci.resultdb.v1.TestIdentifier for the full message structured test id message.
-message TestIdentifierBase {
-
-  // Equivalent of luci.resultdb.v1.TestIdentifier.module_name.
-  string module_name = 1;
-
-  // Equivalent of luci.resultdb.v1.TestIdentifier.module_scheme.
-  string module_scheme = 2;
-
-  // Equivalent of luci.resultdb.v1.TestIdentifier.coarse_name.
-  string coarse_name = 5;
-
-  // Equivalent of luci.resultdb.v1.TestIdentifier.fine_name.
-  string fine_name = 6;
-
-  // Equivalent of luci.resultdb.v1.TestIdentifier.case_name.
-  string case_name = 7;
-}
-
 // ModuleIdentifier represents the identity of a module.
 message ModuleIdentifier {
   // The name of the module being tested. A module is a set of tests which run
