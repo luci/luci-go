@@ -944,7 +944,7 @@ message BatchCreateArtifactsRequest {
   // must either be empty or match this field.
   //
   // Legacy clients may also use an invocation name, see Invocation.name.
-  string parent = 3 [ (google.api.field_behavior) = REQUIRED ];
+  string parent = 3;
 
   // Requests to create Artifacts.
   //
