@@ -115,8 +115,9 @@ From Link: ${self.location.href}`;
             size="small"
             variant="contained"
             startIcon={<FeedbackIcon />}
+            sx={{ textTransform: 'none' }}
           >
-            File a bug
+            File UI bug
           </Button>
           <Link
             component={RouterLink}
