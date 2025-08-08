@@ -151,7 +151,7 @@ export function ArtifactContentView({
               sx={{
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-all',
-                maxHeight: '400px',
+                maxHeight: '55vh',
                 overflowY: 'auto',
                 bgcolor: 'grey.100',
                 p: 1,
