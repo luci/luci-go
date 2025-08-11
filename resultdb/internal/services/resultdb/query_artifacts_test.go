@@ -19,6 +19,7 @@ import (
 	"strings"
 	"testing"
 
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -124,6 +125,80 @@ func TestQueryArtifacts(t *testing.T) {
 			_, err := srv.QueryArtifacts(ctx, req)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.artifacts.list in realm of invocation invx"))
+		})
+
+		t.Run(`Read mask`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
+				insert.Artifact("inv1", "tr/t t/r", "aa", map[string]any{"ContentType": "text/plain", "Size": 100}),
+			)
+			t.Run(`Invalid mask`, func(t *ftt.Test) {
+				_, err := srv.QueryArtifacts(ctx, &pb.QueryArtifactsRequest{
+					Invocations: []string{"invocations/inv1"},
+					ReadMask:    &field_mask.FieldMask{Paths: []string{"artifact_id", "bad_path"}},
+				})
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`field "bad_path" does not exist in message Artifact`))
+			})
+
+			t.Run(`Exclude fetch url`, func(t *ftt.Test) {
+				actual, _ := mustFetch(t, &pb.QueryArtifactsRequest{
+					Invocations: []string{"invocations/inv1"},
+					ReadMask:    &field_mask.FieldMask{Paths: []string{"name", "content_type"}},
+				})
+				assert.Loosely(t, actual, should.HaveLength(1))
+				assert.Loosely(t, actual[0], should.Match(&pb.Artifact{
+					Name:        "invocations/inv1/tests/t%20t/results/r/artifacts/aa",
+					ContentType: "text/plain",
+				}))
+			})
+
+			t.Run(`Can pagination with read mask`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
+					insert.Artifact("inv1", "tr/t t/r", "aa1", map[string]any{"ContentType": "text/plain", "Size": 100}),
+				)
+				actual, token := mustFetch(t, &pb.QueryArtifactsRequest{
+					Invocations: []string{"invocations/inv1"},
+					ReadMask:    &field_mask.FieldMask{Paths: []string{"artifact_id"}},
+					PageSize:    1,
+				})
+				assert.Loosely(t, actual, should.HaveLength(1))
+				assert.Loosely(t, actual[0], should.Match(&pb.Artifact{
+					Name:       "invocations/inv1/tests/t%20t/results/r/artifacts/aa",
+					ArtifactId: "aa",
+				}))
+				assert.Loosely(t, token, should.NotBeEmpty)
+
+				actual, _ = mustFetch(t, &pb.QueryArtifactsRequest{
+					Invocations: []string{"invocations/inv1"},
+					ReadMask:    &field_mask.FieldMask{Paths: []string{"artifact_id"}},
+					PageSize:    1,
+					PageToken:   token,
+				})
+				assert.Loosely(t, actual, should.HaveLength(1))
+				assert.Loosely(t, actual[0], should.Match(&pb.Artifact{
+					Name:       "invocations/inv1/tests/t%20t/results/r/artifacts/aa1",
+					ArtifactId: "aa1",
+				}))
+			})
+
+			t.Run(`Empty mask`, func(t *ftt.Test) {
+				actual, _ := mustFetch(t, &pb.QueryArtifactsRequest{
+					Invocations: []string{"invocations/inv1"},
+				})
+
+				assert.Loosely(t, actual, should.HaveLength(1))
+				expected := &pb.Artifact{
+					Name:        "invocations/inv1/tests/t%20t/results/r/artifacts/aa",
+					ArtifactId:  "aa",
+					ContentType: "text/plain",
+					HasLines:    true,
+					SizeBytes:   100,
+				}
+				expected.FetchUrl = actual[0].FetchUrl
+				expected.FetchUrlExpiration = actual[0].FetchUrlExpiration
+				assert.Loosely(t, actual[0], should.Match(expected))
+				assert.Loosely(t, strings.HasPrefix(actual[0].FetchUrl, "https://signed-url.example.com/invocations/inv1/tests/t%20t/results/r/artifacts/aa"), should.BeTrue)
+			})
 		})
 
 		t.Run(`ArtifactId filter works`, func(t *ftt.Test) {

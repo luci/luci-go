@@ -79,6 +79,10 @@ message Artifact {
 
   // A signed short-lived URL to fetch the contents of the artifact.
   // See also fetch_url_expiration.
+  //
+  // While the fetch_url will be returned by default, in some cases it may introduce significantly
+  // higher latency and potentially trigger errors if quota limits are exceeded.
+  // Thus please mask fetch_url unless you are actually going to use it.
   string fetch_url = 3;
 
   // When fetch_url expires. If expired, re-request this Artifact.

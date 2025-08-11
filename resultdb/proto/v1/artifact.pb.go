@@ -155,6 +155,10 @@ type Artifact struct {
 	ArtifactId string `protobuf:"bytes,2,opt,name=artifact_id,json=artifactId,proto3" json:"artifact_id,omitempty"`
 	// A signed short-lived URL to fetch the contents of the artifact.
 	// See also fetch_url_expiration.
+	//
+	// While the fetch_url will be returned by default, in some cases it may introduce significantly
+	// higher latency and potentially trigger errors if quota limits are exceeded.
+	// Thus please mask fetch_url unless you are actually going to use it.
 	FetchUrl string `protobuf:"bytes,3,opt,name=fetch_url,json=fetchUrl,proto3" json:"fetch_url,omitempty"`
 	// When fetch_url expires. If expired, re-request this Artifact.
 	FetchUrlExpiration *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=fetch_url_expiration,json=fetchUrlExpiration,proto3" json:"fetch_url_expiration,omitempty"`

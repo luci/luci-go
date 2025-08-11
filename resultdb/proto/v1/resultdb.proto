@@ -561,6 +561,13 @@ message QueryArtifactsRequest {
   // When paginating, all other parameters provided to `QueryArtifacts` MUST
   // match the call that provided the page token.
   string page_token = 5;
+
+  // Fields to include in the response.
+  // If not set, the default mask is used where all fields are included.
+  //
+  // In particular, the fetch_url field can slow down the request or in some cases introduce
+  // quota errors, so it is encouraged to not read the fetch_url field unless necessary.
+  google.protobuf.FieldMask read_mask = 6;
 }
 
 // A response message for QueryArtifacts RPC.

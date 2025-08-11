@@ -117,8 +117,9 @@ func (s *resultDBServer) populateFetchURLs(ctx context.Context, invocationIDToPr
 			exp := now.Add(7 * 24 * time.Hour)
 			bucket, object := gsutil.Split(a.GcsUri)
 			gsClient := gsClients[project]
-			// TODO: The QPS of GenerateSignedURL is likely bounded by the nested projects.serviceAccounts.signBlob call,
-			// which is 1000 request for second. We should mask this field, when the callers doesn't need the signed url.
+			// The QPS of GenerateSignedURL is limited by the underlying
+			// projects.serviceAccounts.signBlob call, which has a quota of 60,000
+			// requests per minute. Exceeding this limit will result in a quota error.
 			url, err := gsClient.GenerateSignedURL(ctx, bucket, object, exp)
 			if err != nil {
 				return err

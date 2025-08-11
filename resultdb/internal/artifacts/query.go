@@ -22,6 +22,8 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -47,6 +49,7 @@ type Query struct {
 	PageToken           string
 	WithRBECASHash      bool
 	WithGcsURI          bool
+	Mask                *mask.Mask
 }
 
 // Artifact contains pb.Artifact and its RBECAS hash.
@@ -249,6 +252,12 @@ func (q *Query) FetchProtos(ctx context.Context) (arts []*pb.Artifact, nextPageT
 	}
 
 	err = q.run(ctx, func(a *Artifact) error {
+		// Always keep the name field because it is used to generate the pagination token.
+		name := a.Name
+		if err := q.Mask.Trim(a.Artifact); err != nil {
+			return errors.Fmt("trimming fields for artifact: %s: %w", name, err)
+		}
+		a.Name = name
 		arts = append(arts, a.Artifact)
 		return nil
 	})

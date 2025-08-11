@@ -18,9 +18,11 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
+	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -57,6 +59,11 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		return nil, appstatus.BadRequest(err)
 	}
 
+	readMask, err := QueryMask(in.ReadMask)
+	if err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+
 	// Query is valid - increment the queryInvocationsCount metric
 	queryInvocationsCount.Add(ctx, 1, "QueryArtifacts", len(in.Invocations))
 
@@ -81,6 +88,7 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		ContentTypeRegexp:   in.GetPredicate().GetContentTypeRegexp(),
 		ArtifactIDRegexp:    in.GetPredicate().GetArtifactIdRegexp(),
 		WithGcsURI:          true,
+		Mask:                readMask,
 	}
 	arts, token, err := q.FetchProtos(ctx)
 	if err != nil {
@@ -92,12 +100,27 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		p, _ := realms.Split(ri.Realm)
 		invocationIDToProject[invID] = p
 	}
-	if err := s.populateFetchURLs(ctx, invocationIDToProject, arts...); err != nil {
+
+	includeFetchURL, err := readMask.Includes("fetch_url")
+	if err != nil {
 		return nil, err
 	}
-
+	if includeFetchURL == mask.IncludeEntirely {
+		if err := s.populateFetchURLs(ctx, invocationIDToProject, arts...); err != nil {
+			return nil, err
+		}
+	}
 	return &pb.QueryArtifactsResponse{
 		Artifacts:     arts,
 		NextPageToken: token,
 	}, nil
+}
+
+// QueryMask returns mask.Mask converted from field_mask.FieldMask.
+// It returns a default mask with all fields if readMask is empty.
+func QueryMask(readMask *field_mask.FieldMask) (*mask.Mask, error) {
+	if len(readMask.GetPaths()) == 0 {
+		return mask.All(&pb.Artifact{}), nil
+	}
+	return mask.FromFieldMask(readMask, &pb.Artifact{}, mask.AdvancedSemantics())
 }
