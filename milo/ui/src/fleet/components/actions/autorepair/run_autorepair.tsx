@@ -18,8 +18,10 @@ import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 import { useBuildsClient } from '@/build/hooks/prpc_clients';
+import { useAuthState } from '@/common/components/auth_state_provider';
 import { DutStatusesNotEligibleForAutorepair } from '@/fleet/constants/dut';
 import { BatchRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { StringPair } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { DutToRepair } from '../../actions/shared/types';
 
@@ -32,9 +34,11 @@ interface RunAutorepairProps {
 
 export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
   const bbClient = useBuildsClient();
+  const authState = useAuthState();
   const [open, setOpen] = useState<boolean>(false);
   const [sessionInfo, setSessionInfo] = useState<SessionInfo>({});
   const [deepRepair, setDeepRepair] = useState<boolean>(false);
+  const USER_TAG = 'client_user';
 
   // TODO: b/394429368 - Stop filtering out ready devices once we have moved
   // admin tasks off of Buildbucket.
@@ -75,12 +79,16 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
   };
 
   const runAutorepair = async () => {
+    const tags: StringPair[] = authState.email
+      ? [{ key: USER_TAG, value: authState.email }]
+      : [];
     const resp = await bbClient.Batch(
       BatchRequest.fromPartial({
         requests: autorepairRequestsFromDuts(
           validDuts || [],
           sessionInfo.sessionId || '',
           deepRepair,
+          tags || [],
         ),
       }),
     );

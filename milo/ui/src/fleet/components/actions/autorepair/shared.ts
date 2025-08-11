@@ -17,6 +17,7 @@ import {
   BatchRequest_Request,
   BatchResponse,
 } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { StringPair } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { DutToRepair } from '../../actions/shared/types';
 
@@ -54,11 +55,11 @@ export function autorepairRequestsFromDuts(
   duts: DutToRepair[],
   sessionId: string,
   deep: boolean = false,
+  tags: readonly StringPair[] = [],
 ): BatchRequest_Request[] {
   // Combine all build requests into one Swarming view using a session ID.
 
   const builder = USING_BUILD_BUCKET_DEV ? DEV_BUILDER : PROD_BUILDER;
-
   return duts.map((dut) => {
     // Avoid matching dut_name on Buildbucket dev because duts do not exist
     // on dev.
@@ -117,6 +118,7 @@ export function autorepairRequestsFromDuts(
             key: 'qs_account',
             value: 'unmanaged_p0',
           },
+          ...tags,
         ],
         // Required for autorepair to run successfully. See: b/401004801
         properties: {
