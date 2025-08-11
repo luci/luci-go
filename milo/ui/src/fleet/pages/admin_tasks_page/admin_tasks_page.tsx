@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Typography } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { IconButton, Typography } from '@mui/material';
+import { useNavigate } from 'react-router';
 
+import { useAuthState } from '@/common/components/auth_state_provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
@@ -22,6 +25,8 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { TasksTable } from './tasks_table';
 
 export const AdminTasksPage = () => {
+  const navigate = useNavigate();
+  const authState = useAuthState();
   return (
     <div
       css={{
@@ -38,11 +43,16 @@ export const AdminTasksPage = () => {
           gap: 8,
         }}
       >
+        <IconButton onClick={() => navigate(-1)}>
+          <ArrowBackIcon />
+        </IconButton>
         <Typography variant="h4" sx={{ whiteSpace: 'nowrap' }}>
-          Autorepair history:
+          Tasks history: {authState.email}
         </Typography>
       </div>
-      <TasksTable />
+      <div css={{ padding: '0 24px' }}>
+        <TasksTable />
+      </div>
     </div>
   );
 };
