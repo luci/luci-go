@@ -106,11 +106,13 @@ export const useTasks = ({
   tags,
   limit,
   pageToken,
+  startTime,
 }: {
   client: DecoratedClient<TasksClientImpl>;
   tags: string[];
   limit: number;
-  pageToken: string;
+  pageToken?: string;
+  startTime?: string;
 }): {
   tasks: readonly TaskResultResponse[] | undefined;
   nextPageToken: string;
@@ -126,6 +128,7 @@ export const useTasks = ({
         cursor: pageToken,
         state: StateQuery.QUERY_ALL,
         sort: SortQuery.QUERY_CREATED_TS,
+        start: startTime,
       }),
     ),
     refetchInterval: 60000,

@@ -53,6 +53,7 @@ import {
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+import { AutorepairJobsAlert } from './autorepair_jobs_alert';
 import { dimensionsToFilterOptions, filterOptionsPlaceholder } from './helpers';
 import { useDeviceDimensions } from './use_device_dimensions';
 
@@ -195,6 +196,7 @@ export const DeviceListPage = () => {
     >
       <WarningNotifications warnings={warnings} />
       <MainMetricsContainer selectedOptions={selectedOptions.filters || {}} />
+      <AutorepairJobsAlert />
       <div
         css={{
           marginTop: 24,
