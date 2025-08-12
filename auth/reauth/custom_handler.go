@@ -71,11 +71,12 @@ func (h customSKHandler) send(ctx context.Context, d []byte) ([]byte, error) {
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
-	logging.Debugf(ctx, "signing plugin stderr: %q", cmd.Stderr)
+	logging.Debugf(ctx, "signing plugin stderr: %q", stderr.Bytes())
 	if err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
 			logging.Debugf(ctx, "signing plugin exit code: %v", exitErr.ExitCode())
+			logging.Errorf(ctx, "signing plugin stderr: %q", stderr.Bytes())
 		}
 	}
 	return out, err
