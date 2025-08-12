@@ -43,7 +43,11 @@ func main() {
 
 	ctx := context.Background()
 	ctx = gologger.StdConfig.Use(ctx)
-	ctx = logging.SetLevel(ctx, logging.Info)
+	if f.Verbose {
+		ctx = logging.SetLevel(ctx, logging.Debug)
+	} else {
+		ctx = logging.SetLevel(ctx, logging.Warning)
+	}
 
 	if err := sshHelperMain(ctx, f); err != nil {
 		// Propagate exit code if available.
@@ -93,11 +97,6 @@ func sshHelperMain(ctx context.Context, r runArgs) error {
 	}
 
 	listenerCtx := ctx
-	if !r.Verbose {
-		// Only log warning and errors to avoid mixing informational logs with
-		// SSH command's stdout and stderr.
-		listenerCtx = logging.SetLevel(ctx, logging.Warning)
-	}
 
 	go agent.ListenLoop(listenerCtx)
 	defer agent.Close()
