@@ -159,8 +159,9 @@ func TestQueryTextArtifacts(t *testing.T) {
 				insert.Artifact("inv1", "", "a0", map[string]any{"ContentType": "text/plain; encoding=utf-8", "Size": "100", "RBECASHash": "deadbeef"}),
 				insert.Artifact("inv1", "tr/testid/0", "a1", map[string]any{"ContentType": "text/html", "Size": "100", "RBECASHash": "deadbeef"}),
 				insert.Artifact("inv1", "tr/testid/0", "a2", map[string]any{"ContentType": "image/png", "Size": "100", "RBECASHash": "deadbeef"}),
-				insert.Artifact("inv1", "", "a3", map[string]any{"Size": "100"}),
+				insert.Artifact("inv1", "", "a3", map[string]any{"Size": "100", "RBECASHash": "deadbeef"}),
 				insert.Artifact("inv1", "tr/testid/0", "a4", map[string]any{"ContentType": "text/html", "Size": "200000000", "RBECASHash": "deadbeef"}),
+				insert.Artifact("inv1", "", "a5", map[string]any{"Size": "100"}), // No RBECASHash should be excluded by the query.
 			)
 
 			testutil.MustApply(ctx, t, testutil.CombineMutations(

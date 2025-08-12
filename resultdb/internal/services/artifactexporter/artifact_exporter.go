@@ -514,7 +514,7 @@ func (ae *artifactExporter) queryTextArtifacts(ctx context.Context, invID invoca
 		LEFT JOIN TestResults tr
 		ON a.InvocationId = tr.InvocationId
 		AND a.ParentId = CONCAT("tr/", tr.TestId , "/" , tr.ResultId)
-		WHERE a.InvocationId=@invID
+		WHERE a.InvocationId=@invID AND a.RBECASHash != ""
 		ORDER BY tr.TestId, tr.ResultId, a.ArtifactId
 	`
 	st := spanner.NewStatement(statementStr)
