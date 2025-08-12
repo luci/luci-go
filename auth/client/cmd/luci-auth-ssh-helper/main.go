@@ -88,11 +88,16 @@ func sshHelperMain(ctx context.Context, r runArgs) error {
 	sshAuthSock := getSSHAuthSock(listener)
 	logging.Infof(ctx, "LUCI SSH Agent listening on: %v", sshAuthSock)
 
+	handler := forwardingHandler{}
+	if !handler.available() {
+		logging.Errorf(ctx, "No challenge handler available")
+		return err
+	}
 	agent := ssh.ExtensionAgent{
 		UpstreamDialer: upstreamDialer,
 		Listener:       listener,
 		Dispatcher: map[string]ssh.AgentExtensionHandler{
-			reauth.SSHExtensionForwardedChallenge: forwardedChallengeHandler,
+			reauth.SSHExtensionForwardedChallenge: handler.handle,
 		},
 	}
 

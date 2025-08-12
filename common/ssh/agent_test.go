@@ -62,13 +62,13 @@ func TestHandleClient(t *testing.T) {
 	)
 
 	dispatcher := ssh.AgentExtensionDispatcher{
-		succeedExtension: func(p []byte) ssh.AgentMessage {
+		succeedExtension: func(ctx context.Context, p []byte) ssh.AgentMessage {
 			return ssh.AgentMessage{
 				Code:    ssh.AgentSuccess,
 				Payload: []byte("echo"),
 			}
 		},
-		failExtension: func(p []byte) ssh.AgentMessage {
+		failExtension: func(ctx context.Context, p []byte) ssh.AgentMessage {
 			return ssh.AgentMessage{
 				Code:    ssh.AgentExtensionFailure,
 				Payload: []byte(failExtension),

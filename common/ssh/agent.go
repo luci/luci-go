@@ -94,7 +94,7 @@ type AgentDialer interface {
 // The handler receives a []byte, representing the request payload.
 //
 // The handler should return a response `AgentMessage`.
-type AgentExtensionHandler func([]byte) AgentMessage
+type AgentExtensionHandler func(context.Context, []byte) AgentMessage
 
 // AgentExtensionDispatcher defines a mapping of SSH agent extension
 // names to their handler functions.
@@ -178,7 +178,7 @@ func (a *ExtensionAgent) handleClient(ctx context.Context, conn net.Conn) {
 			logging.Infof(ctx, "Received SSH Agent extension: %v, payload len: %v", req.ExtensionType, len(req.ExtensionData))
 			if handler, ok := a.Dispatcher[req.ExtensionType]; ok {
 				logging.Infof(ctx, "Dispatching LUCI SSH extension: %s", req.ExtensionType)
-				if err := client.Write(handler(req.ExtensionData)); err != nil {
+				if err := client.Write(handler(ctx, req.ExtensionData)); err != nil {
 					if !errors.Is(err, net.ErrClosed) {
 						logging.Warningf(ctx, "Failed to write message to client: %v", err)
 					}
