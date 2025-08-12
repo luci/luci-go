@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -94,6 +95,8 @@ func Schedule(ctx context.Context, task *taskspb.IngestArtifacts) {
 	})
 }
 
+var artifactFields = []string{"name", "result_id", "artifact_id", "content_type", "size_bytes"}
+
 type artifactIngester struct {
 	antsExporter *antsexporter.Exporter
 }
@@ -143,6 +146,9 @@ func (a *artifactIngester) run(ctx context.Context, payload *taskspb.IngestArtif
 		Invocations: []string{n.Invocation},
 		PageSize:    1000,
 		PageToken:   payload.PageToken,
+		ReadMask: &fieldmaskpb.FieldMask{
+			Paths: artifactFields,
+		},
 	}
 	rsp, err := invClient.QueryArtifacts(ctx, req)
 	code = status.Code(err)

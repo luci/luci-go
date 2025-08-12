@@ -22,6 +22,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -173,6 +174,9 @@ func TestArtifactIngesterRun(t *testing.T) {
 					Invocations: []string{testInvocation},
 					PageSize:    1000,
 					PageToken:   "initial-page-token",
+					ReadMask: &fieldmaskpb.FieldMask{
+						Paths: artifactFields,
+					},
 				}
 				arRes := &resultpb.QueryArtifactsResponse{
 					Artifacts:     mockArtifacts,
