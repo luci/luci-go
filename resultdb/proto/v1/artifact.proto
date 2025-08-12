@@ -31,7 +31,7 @@ option java_multiple_files = true;
 // An invocation-level artifact might be related to tests, or it might not, for
 // example it may be used to store build step logs when streaming support is
 // added.
-// Next id: 15.
+// Next id: 16.
 message Artifact {
   // Can be used to refer to this artifact.
   // Format:
@@ -106,7 +106,8 @@ message Artifact {
   // If specified, `gcs_uri` must be empty.
   bytes contents = 7 [ (google.api.field_behavior) = INPUT_ONLY ];
 
-  // The GCS URI of the artifact if it's stored in GCS.  If specified, `contents` must be empty.
+  // The GCS URI of the artifact if it's stored in GCS. If specified, `contents`
+  // and `rbe_uri` must be empty.
   string gcs_uri = 8;
 
   // Status of the test result that the artifact belongs to.
@@ -116,6 +117,10 @@ message Artifact {
 
   // Indicates whether ListArtifactLines RPC can be used with this artifact.
   bool has_lines = 11;
+
+  // The RBE URI of the artifact if it's stored in RBE. If specified, `contents`
+  // and `gcs_uri` must be empty.
+  string rbe_uri = 15;
 }
 
 message ArtifactLine {
