@@ -118,6 +118,11 @@ const COLUMNS: Record<string, GridColDef> = {
     headerName: 'Minimum Repairs',
     flex: 1,
   },
+  devicesOfflinePercentage: {
+    field: 'devices_offline_percentage',
+    headerName: 'Devices Offline %',
+    flex: 1,
+  },
   devicesOfflineRatio: {
     field: 'devices_offline_ratio',
     headerName: 'Devices Offline / Total Devices',
@@ -283,6 +288,12 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
             run_target: rm.runTarget,
             minimum_repairs: rm.minimumRepairs,
             devices_offline_ratio: `${rm.devicesOffline} / ${rm.totalDevices}`,
+            devices_offline_percentage: (
+              rm.devicesOffline / rm.totalDevices
+            ).toLocaleString('en-GB', {
+              style: 'percent',
+              minimumFractionDigits: 1,
+            }),
           }))}
           slots={{
             pagination: Pagination,
@@ -302,11 +313,7 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
               return;
             }
 
-            const by =
-              newModel[0].field === 'devices_offline_ratio'
-                ? 'devices_offline'
-                : newModel[0].field;
-
+            const by = newModel[0].field;
             const order = newModel[0].sort === 'asc' ? '' : 'desc';
             updateOrderByParam(`${by} ${order}`);
             setSearchParams(emptyPageTokenUpdater(pagerCtx));
