@@ -426,7 +426,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			appendArtReq("art1", "c0ntent", "text/plain", "", "")
 			appendArtReq("art2", "c1ntent", "text/richtext", "test_id", "0")
 			appendGcsArtReq("art3", 0, "text/plain", "gs://testbucket/art3")
-			appendGcsArtReq("art4", 500, "text/richtext", "gs://testbucket/art4")
+			appendGcsArtReq("art4", 50_000_000, "text/richtext", "gs://testbucket/art4")
 			appendArtReq("art5", "c5ntent", "text/richtext", "test_id_1", "0")
 
 			casClient.mockResp(nil, codes.OK, codes.OK)
@@ -467,7 +467,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 						Name:        "invocations/inv/artifacts/art4",
 						ArtifactId:  "art4",
 						ContentType: "text/richtext",
-						SizeBytes:   500,
+						SizeBytes:   50_000_000,
 					},
 					{
 						Name: "invocations/inv/tests/:module%21junit:coarse:fine%23test_id_1/results/0/artifacts/art5",
@@ -544,7 +544,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			assert.Loosely(t, variant, should.Match(&pb.Variant{}))
 
 			size, hash, cType, gcsURI, variant = fetchState("", "art4")
-			assert.Loosely(t, size, should.Equal(500))
+			assert.Loosely(t, size, should.Equal(50_000_000))
 			assert.Loosely(t, hash, should.BeEmpty)
 			assert.Loosely(t, cType, should.Equal("text/richtext"))
 			assert.Loosely(t, gcsURI, should.Equal("gs://testbucket/art4"))

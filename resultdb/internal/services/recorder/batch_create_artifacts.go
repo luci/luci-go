@@ -254,8 +254,10 @@ func parseBatchCreateArtifactsRequest(in *pb.BatchCreateArtifactsRequest, cfg *c
 			return "", nil, errors.Fmt("requests[%d]: only one parent is allowed: %q, %q", i, in.Parent, req.Parent)
 		}
 
-		// TODO(ddoman): limit the max request body size in prpc level.
-		tSize += art.size
+		// We do not count GCS artifacts when validating the size.
+		if art.gcsURI == "" {
+			tSize += art.size
+		}
 		if tSize > MaxBatchCreateArtifactSize {
 			return "", nil, errors.Fmt("the total size of artifact contents exceeded %d", MaxBatchCreateArtifactSize)
 		}
