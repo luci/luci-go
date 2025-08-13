@@ -21,7 +21,10 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
-import { TasksGrid } from '@/fleet/components/tasks_grid/tasks_grid';
+import {
+  TasksGrid,
+  TaskGridColumnKey,
+} from '@/fleet/components/tasks_grid/tasks_grid';
 import { useBot, useBotTasks } from '@/fleet/hooks/swarming_hooks';
 import {
   DEVICE_TASKS_MILO_HOST,
@@ -33,6 +36,14 @@ import { useBotsClient } from '@/swarming/hooks/prpc_clients';
 
 const DEFAULT_PAGE_SIZE = 50;
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+
+const COLUMNS: readonly TaskGridColumnKey[] = [
+  'task',
+  'buildVersion',
+  'result',
+  'started',
+  'duration',
+];
 
 export const Tasks = ({
   dutId,
@@ -128,6 +139,7 @@ export const Tasks = ({
     <TasksGrid
       tasks={tasksData.tasks}
       pagerCtx={pagerCtx}
+      columnKeys={COLUMNS}
       nextPageToken={tasksData.nextPageToken}
       swarmingHost={swarmingHost}
       miloHost={DEVICE_TASKS_MILO_HOST}

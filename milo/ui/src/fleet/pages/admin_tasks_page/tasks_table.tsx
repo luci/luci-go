@@ -21,7 +21,10 @@ import {
   getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
-import { TasksGrid } from '@/fleet/components/tasks_grid/tasks_grid';
+import {
+  TasksGrid,
+  TaskGridColumnKey,
+} from '@/fleet/components/tasks_grid/tasks_grid';
 import { useTasks } from '@/fleet/hooks/swarming_hooks';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { getErrorMessage } from '@/fleet/utils/errors';
@@ -31,6 +34,14 @@ import { useTasksClient } from '@/swarming/hooks/prpc_clients';
 const DEFAULT_PAGE_SIZE = 50;
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const USER_TAG = 'client_user';
+
+const COLUMNS: readonly TaskGridColumnKey[] = [
+  'task',
+  'dut_name',
+  'result',
+  'started',
+  'duration',
+];
 
 export const TasksTable = ({
   swarmingHost = DEVICE_TASKS_SWARMING_HOST,
@@ -97,6 +108,7 @@ export const TasksTable = ({
     <TasksGrid
       tasks={taskData.tasks}
       pagerCtx={pagerCtx}
+      columnKeys={COLUMNS}
       nextPageToken={taskData.nextPageToken}
       swarmingHost={swarmingHost}
     />

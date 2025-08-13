@@ -36,9 +36,74 @@ import { TaskResultResponse } from '@/proto/go.chromium.org/luci/swarming/proto/
 
 const UNKNOWN_ROW_COUNT = -1;
 
+export type TaskGridColumnKey =
+  | 'task'
+  | 'buildVersion'
+  | 'result'
+  | 'started'
+  | 'duration'
+  | 'dut_name';
+
+interface ColumnConfig {
+  colDef: GridColDef;
+  valueGetter: (task: TaskResultResponse) => unknown;
+}
+
+const COLUMN_DEFINITIONS: Record<TaskGridColumnKey, ColumnConfig> = {
+  task: {
+    colDef: {
+      field: 'task',
+      headerName: 'Task',
+      flex: 2,
+    },
+    valueGetter: (task) => task.name,
+  },
+  buildVersion: {
+    colDef: {
+      field: 'buildVersion',
+      headerName: 'Build version',
+      flex: 1,
+    },
+    valueGetter: (task) => getTaskTagValue(task, 'build'),
+  },
+  result: {
+    colDef: {
+      field: 'result',
+      headerName: 'Result',
+      flex: 1,
+    },
+    valueGetter: (task) => prettifySwarmingState(task),
+  },
+  started: {
+    colDef: {
+      field: 'started',
+      headerName: 'Started',
+      flex: 1,
+    },
+    valueGetter: (task) => prettyDateTime(task.startedTs),
+  },
+  duration: {
+    colDef: {
+      field: 'duration',
+      headerName: 'Duration',
+      flex: 1,
+    },
+    valueGetter: (task) => getTaskDuration(task),
+  },
+  dut_name: {
+    colDef: {
+      field: 'dut_name',
+      headerName: 'DUT Name',
+      width: 200,
+    },
+    valueGetter: (task) => getTaskTagValue(task, 'dut-name'),
+  },
+};
+
 export interface TasksGridProps {
   tasks: readonly TaskResultResponse[];
   pagerCtx: PagerContext;
+  columnKeys: readonly TaskGridColumnKey[];
   nextPageToken?: string;
   swarmingHost: string;
   miloHost?: string;
@@ -47,6 +112,7 @@ export interface TasksGridProps {
 export const TasksGrid = ({
   tasks,
   pagerCtx,
+  columnKeys,
   nextPageToken,
   swarmingHost,
   miloHost,
@@ -54,62 +120,46 @@ export const TasksGrid = ({
   const [searchParams] = useSyncedSearchParams();
 
   const taskMap = new Map(tasks.map((t) => [t.taskId, t]));
-  const taskGridData = tasks.map((t) => ({
-    id: t.taskId,
-    task: t.name,
-    started: prettyDateTime(t.startedTs),
-    duration: getTaskDuration(t),
-    result: prettifySwarmingState(t),
-    buildVersion: getTaskTagValue(t, 'build'),
-  }));
-
+  const taskGridData = tasks.map((t) => {
+    const row: { [key: string]: unknown } = {
+      id: t.taskId,
+      // This is needed for getRowClassName to work correctly.
+      result: prettifySwarmingState(t),
+    };
+    for (const key of columnKeys) {
+      row[key] = COLUMN_DEFINITIONS[key].valueGetter(t);
+    }
+    return row;
+  });
   // TODO: 371010330 - Prettify these columns.
-  const columns: GridColDef[] = [
-    {
-      field: 'task',
-      headerName: 'Task',
-      flex: 2,
-      renderCell: (params) => {
-        const task = taskMap.get(params.id.toString());
-        let url: string | undefined;
-        if (miloHost && task?.tags) {
-          url = extractBuildUrlFromTagData(task.tags, miloHost);
-        }
+  const columns: GridColDef[] = columnKeys.map((key) => {
+    const config = COLUMN_DEFINITIONS[key];
+    if (key === 'task') {
+      return {
+        ...config.colDef,
+        renderCell: (params) => {
+          const task = taskMap.get(params.id.toString());
+          let url: string | undefined;
+          if (miloHost && task?.tags) {
+            url = extractBuildUrlFromTagData(task.tags, miloHost);
+          }
 
-        return (
-          <a
-            href={url ?? getSwarmingTaskURL(swarmingHost, params.id.toString())}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {params.value}
-          </a>
-        );
-      },
-    },
-    {
-      field: 'buildVersion',
-      headerName: 'Build version',
-      flex: 1,
-    },
-    // TODO: 371010330 - Make rows and add a failure icon somewhere (for a11y)
-    // if result is a failure.
-    {
-      field: 'result',
-      headerName: 'Result',
-      flex: 1,
-    },
-    {
-      field: 'started',
-      headerName: 'Started',
-      flex: 1,
-    },
-    {
-      field: 'duration',
-      headerName: 'Duration',
-      flex: 1,
-    },
-  ];
+          return (
+            <a
+              href={
+                url ?? getSwarmingTaskURL(swarmingHost, params.id.toString())
+              }
+              target="_blank"
+              rel="noreferrer"
+            >
+              {params.value}
+            </a>
+          );
+        },
+      };
+    }
+    return config.colDef;
+  });
 
   return (
     <StyledGrid
