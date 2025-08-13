@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getByRole, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
 import AutorepairDialog, { AutorepairDialogProps } from './autorepair_dialog';
 
@@ -27,6 +27,7 @@ describe('<AutorepairDialog />', () => {
     deepRepair: false,
     handleDeepRepairChange: () => undefined,
     sessionInfo: {},
+    loading: false,
   };
 
   beforeEach(() => {
@@ -41,6 +42,7 @@ describe('<AutorepairDialog />', () => {
       deepRepair: false,
       handleDeepRepairChange: handleDeepRepairChangeMock,
       sessionInfo: {},
+      loading: false,
     };
   });
 
@@ -79,6 +81,17 @@ describe('<AutorepairDialog />', () => {
     expect(shivas).toBeVisible();
   });
 
+  it('renders loading spinner', async () => {
+    render(
+      <AutorepairDialog
+        {...sharedTestProps}
+        loading={true}
+        sessionInfo={{ dutNames: ['test-dut'] }}
+      />,
+    );
+    expect(screen.getByRole('progressbar')).toBeVisible();
+  });
+
   it('confirms on click', async () => {
     render(
       <AutorepairDialog
@@ -99,16 +112,13 @@ describe('<AutorepairDialog />', () => {
       <AutorepairDialog
         {...sharedTestProps}
         sessionInfo={{
-          dutNames: ['test-dut'],
-          sessionId: 'fake-session-info',
-          builds: [
+          results: [
             {
-              project: 'proj',
-              bucket: 'buck',
-              builder: 'builder',
-              buildId: 'b1337',
+              unitName: 'test-dut',
+              taskUrl: '/p/proj/builders/buck/builder/b1337',
             },
           ],
+          sessionId: 'fake-session-info',
         }}
       />,
     );
@@ -128,49 +138,32 @@ describe('<AutorepairDialog />', () => {
 
     expect(miloLink).toHaveAttribute(
       'href',
-      expect.stringContaining('/p/proj/builders/buck/builder/b1337'),
+      '/p/proj/builders/buck/builder/b1337',
     );
   });
 
-  it('confirm button not visible if only invalid DUTs selected', async () => {
+  it('displays error for failed autorepair', async () => {
     render(
       <AutorepairDialog
         {...sharedTestProps}
         sessionInfo={{
-          invalidDutNames: ['invalid-test-dut1', 'invalid-test-dut2'],
+          results: [
+            {
+              unitName: 'test-dut-1',
+              taskUrl: '/p/proj/builders/buck/builder/b1337',
+            },
+            {
+              unitName: 'test-dut-2',
+              errorMessage: 'it broke',
+            },
+          ],
         }}
       />,
     );
 
+    expect(screen.getByRole('link', { name: 'View in Milo' })).toBeVisible();
     expect(
-      screen.queryByRole('button', { name: 'Confirm' }),
-    ).not.toBeInTheDocument();
-  });
-
-  it('warning displayed when mix of valid and invalid DUTs selected', async () => {
-    const invalidDuts = ['invalid-test-dut1', 'invalid-test-dut2'];
-    render(
-      <AutorepairDialog
-        {...sharedTestProps}
-        sessionInfo={{
-          dutNames: ['test-dut1', 'test-dut2'],
-          invalidDutNames: invalidDuts,
-        }}
-      />,
-    );
-
-    expect(
-      screen.queryByRole('button', { name: 'Confirm' }),
-    ).toBeInTheDocument();
-
-    const warning = screen.getByText(
-      /For the following devices autorepair will not be executed/,
-    );
-
-    expect(warning).toBeVisible();
-
-    invalidDuts.forEach((dutName) =>
-      expect(getByRole(warning, 'link', { name: dutName })).toBeVisible(),
-    );
+      screen.getByText('Failed to schedule autorepair: it broke'),
+    ).toBeVisible();
   });
 });

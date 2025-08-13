@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import {
-  Alert,
+  Box,
   Button,
   Checkbox,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -22,19 +23,15 @@ import {
   FormControlLabel,
 } from '@mui/material';
 
-import {
-  generateBuildUrl,
-  BuildIdentifier,
-  FLEET_BUILDS_SWARMING_HOST,
-} from '@/fleet/utils/builds';
+import { FLEET_BUILDS_SWARMING_HOST } from '@/fleet/utils/builds';
+import { ScheduleAutorepairResult } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import CodeSnippet from '../../code_snippet/code_snippet';
 
 export interface SessionInfo {
   sessionId?: string;
-  builds?: BuildIdentifier[];
+  results?: ScheduleAutorepairResult[];
   dutNames?: string[];
-  invalidDutNames?: string[];
 }
 
 export interface AutorepairDialogProps {
@@ -44,6 +41,7 @@ export interface AutorepairDialogProps {
   handleOk: () => void;
   deepRepair: boolean;
   handleDeepRepairChange: (checked: boolean) => void;
+  loading: boolean;
 }
 
 const plurifyDevices = (count: number) => {
@@ -66,42 +64,37 @@ function getDeviceDetailListItem(dutName: string) {
 
 export default function AutorepairDialog({
   open,
-  sessionInfo: { dutNames = [], builds, sessionId, invalidDutNames = [] },
+  sessionInfo: { dutNames = [], results, sessionId },
   handleClose,
   handleOk,
   deepRepair,
   handleDeepRepairChange,
+  loading,
 }: AutorepairDialogProps) {
   const shivasCommand = `shivas repair${deepRepair ? ' -deep' : ''} ${dutNames.join(' ')}`;
+
+  const loadingScreen = (
+    <>
+      <DialogTitle>Running autorepair</DialogTitle>
+      <DialogContent>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '100px',
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      </DialogContent>
+    </>
+  );
+
   const confirmationScreen = (
     <>
       <DialogTitle>Running autorepair</DialogTitle>
       <DialogContent>
-        {/* TODO: b/394429368 - remove this alert. */}
-        <Alert severity="info">
-          At this time, devices in the <code>ready</code> and{' '}
-          <code>needs_repair</code> states cannot have autorepair run on them
-          from the UI. For more info, see:{' '}
-          <a href="http://b/394429368" target="_blank" rel="noreferrer">
-            b/394429368
-          </a>
-        </Alert>
-
-        {invalidDutNames.length > 0 && (
-          <>
-            <Alert severity="error" sx={{ mt: 1 }}>
-              For the following devices autorepair will not be executed, as they
-              are in a <code>ready</code> and/or <code>needs_repair</code> state
-              or clank devices:
-              <ul>
-                {invalidDutNames?.map((dutName) =>
-                  getDeviceDetailListItem(dutName),
-                )}
-              </ul>
-            </Alert>
-          </>
-        )}
-
         {dutNames.length > 0 && (
           <>
             <p>
@@ -148,24 +141,29 @@ export default function AutorepairDialog({
       <DialogContent>
         <p>
           Autorepair has been triggered on the following{' '}
-          {plurifyDevices(dutNames.length)}:
+          {plurifyDevices(results?.length || 0)}:
         </p>
         <ul>
-          {builds?.map((b, i) => {
-            const dutName = dutNames[i];
+          {results?.map((result) => {
             return (
-              <li key={dutName}>
+              <li key={result.unitName}>
                 <a
-                  href={`/ui/fleet/labs/p/chromeos/devices/${dutName}`}
+                  href={`/ui/fleet/labs/p/chromeos/devices/${result.unitName}`}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  {dutName}
+                  {result.unitName}
                 </a>
-                :{' '}
-                <a href={generateBuildUrl(b)} target="_blank" rel="noreferrer">
-                  View in Milo
-                </a>
+                {': '}
+                {result.taskUrl ? (
+                  <a href={result.taskUrl} target="_blank" rel="noreferrer">
+                    View in Milo
+                  </a>
+                ) : (
+                  <span style={{ color: 'red' }}>
+                    Failed to schedule autorepair: {result.errorMessage}
+                  </span>
+                )}
               </li>
             );
           })}
@@ -181,6 +179,12 @@ export default function AutorepairDialog({
           </a>
           )
         </p>
+        <p>
+          <i>
+            It may take a few minutes for Swarming to update the task to show up
+            on Milo.
+          </i>
+        </p>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} variant="contained">
@@ -189,9 +193,18 @@ export default function AutorepairDialog({
       </DialogActions>
     </>
   );
+  const getDialogContent = () => {
+    if (loading) {
+      return loadingScreen;
+    }
+    if (results) {
+      return finalScreen;
+    }
+    return confirmationScreen;
+  };
   return (
     <Dialog onClose={handleClose} open={open}>
-      {builds ? finalScreen : confirmationScreen}
+      {getDialogContent()}
     </Dialog>
   );
 }
