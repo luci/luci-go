@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/common/webauthn"
 )
 
-// A customSKHandler supports U2F challenge via an external tool.
+// A customSKHandler supports WebAuthn challenge via an external tool.
 //
 // The signing plugin should implement the following interface:
 //
@@ -82,7 +82,7 @@ func (h customSKHandler) send(ctx context.Context, d []byte) ([]byte, error) {
 	return out, err
 }
 
-// A pluginHandler implements U2F challenges via a plugin.
+// A pluginHandler implements WebAuthn challenges via a plugin.
 //
 // The core logic is implemented, with the low level plugin
 // interaction abstracted to enable testing.
@@ -157,7 +157,8 @@ func (h pluginHandler) authWithPlugin(ctx context.Context, req *webauthn.GetAsse
 	ctx, cancel := context.WithTimeout(ctx, 25*time.Second)
 	defer cancel()
 	logging.Debugf(ctx, "Attempting signing plugin auth with request: %+v", req)
-	fmt.Print("\nYou may need to touch the flashing security key device to proceed.\n\n")
+	h.printForUser("\nStarting plugin (this may take a while the first time)...\n")
+	h.printForUser("When your security key starts flashing, touch it to proceed.\n\n")
 	return h.sendRequest(ctx, req)
 }
 
@@ -180,6 +181,11 @@ func (h pluginHandler) sendRequest(ctx context.Context, req *webauthn.GetAsserti
 		return nil, errors.Fmt("pluginHandler.sendRequest: %w", err)
 	}
 	return resp, nil
+}
+
+// printForUser prints some notice for the user.
+func (pluginHandler) printForUser(format string, args ...any) {
+	fmt.Printf(format, args...)
 }
 
 // pluginHeaderOrder is the byte order for signing plugin message headers.
