@@ -174,7 +174,10 @@ func (h pluginHandler) sendRequest(ctx context.Context, req *webauthn.GetAsserti
 		return nil, errors.Fmt("pluginHandler.sendRequest: %w", err)
 	}
 	logging.Debugf(ctx, "Sending signing plugin input: %q", ereq)
-	out, err := h.send(ctx, ereq) // nolint:ineffassign
+	out, err := h.send(ctx, ereq)
+	if err != nil {
+		return nil, errors.Fmt("pluginHandler.sendRequest: %w", err)
+	}
 	var resp *webauthn.GetAssertionResponse
 	if err := PluginDecode(out, &resp); err != nil {
 		logging.Debugf(ctx, "Error unmarshalling plugin response: %q", out)
