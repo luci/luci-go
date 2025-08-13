@@ -763,6 +763,11 @@ CREATE TABLE Artifacts (
   -- if this artifact is stored in Google Cloud Storage (GCS).
   GcsURI STRING(MAX),
 
+  -- A full RBE URI string of format
+  -- "projects/{project}/instances/{instance}/{resource_type}/{resource_identifier}"
+  -- if this artifact is stored in RBE.
+  RbeURI STRING(MAX),
+
   -- key:value pairs in the module variant. This is populated for structured
   -- test results, but may not be populated for results in module "legacy".
   -- See also TestIdentifier.module_variant in common.proto.
