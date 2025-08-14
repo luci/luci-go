@@ -27,9 +27,10 @@
 // git-credential-luci supports ancillary authentication via a plugin.
 // A plugin can be configured by setting an environment variable:
 //
-//	GOOGLE_AUTH_WEBAUTHN_PLUGIN=foo
+//	GOOGLE_AUTH_WEBAUTHN_PLUGIN=luci-auth-fido2-plugin
 //
-// This will run the plugin binary `foo` as needed.
+// This will run the plugin binary `luci-auth-fido2-plugin` when
+// needed.
 package main
 
 import (
