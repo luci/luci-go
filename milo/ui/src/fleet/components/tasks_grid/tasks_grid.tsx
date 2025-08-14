@@ -158,6 +158,22 @@ export const TasksGrid = ({
         },
       };
     }
+    if (key === 'dut_name') {
+      return {
+        ...config.colDef,
+        renderCell: (params) => {
+          const dutName = params.value as string;
+          if (!dutName) {
+            return '';
+          }
+          return (
+            <a href={`/ui/fleet/labs/p/chromeos/devices/${dutName}`}>
+              {params.value}
+            </a>
+          );
+        },
+      };
+    }
     return config.colDef;
   });
 
