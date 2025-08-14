@@ -17,6 +17,7 @@ package scan
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -76,7 +77,7 @@ func (r *BotsMetricsReporter) Prepare(ctx context.Context, shards int, lastRun t
 // Part of BotVisitor interface.
 func (r *BotsMetricsReporter) Visit(ctx context.Context, shard int, bot *model.BotInfo) {
 	r.shards[shard].collect(bot)
-	setExecutorMetrics(tsmon.WithState(ctx, r.state), bot, r.ServiceName)
+	r.shards[shard].setExecutorMetrics(tsmon.WithState(ctx, r.state), bot, r.ServiceName)
 }
 
 // Finalize is called once the scan is done.
@@ -102,30 +103,45 @@ func (r *BotsMetricsReporter) Finalize(ctx context.Context, scanErr error) error
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// ignoredDimensions is dimensions to exclude from the BotsDimensionsPool metric
-// value.
+// ignoredDimensionRegexes are dimensions to exclude from the BotsDimensionsPool
+// metric value.
 //
-// Ignoring these values significantly reduces total cordiality of the set of
+// Ignoring these values significantly reduces total cardinality of the set of
 // metric values (speeding up precalculations based on it) or discards
 // information not actually relevant for monitoring.
-//
-// Keep in sync with luci/appengine/swarming/ts_mon_metrics.py.
-var ignoredDimensions = stringset.NewFromSlice(
+var ignoredDimensionRegexes = []*regexp.Regexp{
 	// Side effect of the health of each Android devices connected to the bot.
-	"android_devices",
+	regexp.MustCompile("^android_devices$"),
 	// Unbounded set of values.
-	"caches",
+	regexp.MustCompile("^caches$"),
 	// Unique for each bot, already part of the metric target.
-	"id",
+	regexp.MustCompile("^id$"),
 	// Server-assigned, not relevant to the bot at all.
-	"server_version",
+	regexp.MustCompile("^server_version$"),
 	// Android specific.
-	"temp_band",
+	regexp.MustCompile("^temp_band$"),
+
+	// The following are CrOS-specific dimensions with high cardinality.
+	regexp.MustCompile("^drone.*$"),
+	regexp.MustCompile("^dut_id$"),
+	regexp.MustCompile("^dut_name$"),
+	regexp.MustCompile("^hwid$"),
+	regexp.MustCompile(`^label-.*$`),
+	regexp.MustCompile("^serial_number$"),
+	regexp.MustCompile("^version_info_os$"),
+}
+
+// Exceptions to the regexes above.
+var ignoredDimensionAllowlist = stringset.NewFromSlice(
+	// We want to block all "label-*" except for "label-pool", which is
+	// mostly a sub-pool dimension.
+	"label-pool",
 )
 
 type metricsReporterShardState struct {
-	counts map[counterKey]int64
-	total  int64
+	counts                 map[counterKey]int64
+	total                  int64
+	ignoredDimensionsCache map[string]bool
 }
 
 type counterKey struct {
@@ -135,7 +151,8 @@ type counterKey struct {
 
 func newMetricsReporterShardState() *metricsReporterShardState {
 	return &metricsReporterShardState{
-		counts: map[counterKey]int64{},
+		counts:                 map[counterKey]int64{},
+		ignoredDimensionsCache: make(map[string]bool),
 	}
 }
 
@@ -185,7 +202,7 @@ func (s *metricsReporterShardState) mergeFrom(another *metricsReporterShardState
 }
 
 // setExecutorMetrics sets metrics reported to the per-bot target.
-func setExecutorMetrics(ctx context.Context, bot *model.BotInfo, serviceName string) {
+func (s *metricsReporterShardState) setExecutorMetrics(ctx context.Context, bot *model.BotInfo, serviceName string) {
 	rbeState := "none"
 	if rbeInstance := bot.State.MustReadString("rbe_instance"); rbeInstance != "" {
 		rbeState = rbeInstance
@@ -198,7 +215,7 @@ func setExecutorMetrics(ctx context.Context, bot *model.BotInfo, serviceName str
 		HostName:    fmt.Sprintf("autogen:%s", bot.BotID()),
 	})
 	metrics.BotsStatus.Set(ctx, bot.GetStatus())
-	metrics.BotsDimensionsPool.Set(ctx, poolFromDimensions(bot.Dimensions))
+	metrics.BotsDimensionsPool.Set(ctx, s.poolFromDimensions(bot.Dimensions))
 	metrics.BotsRBEInstance.Set(ctx, rbeState)
 	metrics.BotsVersion.Set(ctx, bot.Version)
 }
@@ -206,15 +223,28 @@ func setExecutorMetrics(ctx context.Context, bot *model.BotInfo, serviceName str
 // poolFromDimensions serializes the bot's dimensions and trims out redundant
 // prefixes, i.e. ["cpu:x86-64", "cpu:x86-64-Broadwell_GCE"] returns
 // "cpu:x86-64-Broadwell_GCE".
-func poolFromDimensions(dims []string) string {
+func (s *metricsReporterShardState) poolFromDimensions(dims []string) string {
 	// Assuming dimensions are sorted.
 	var pairs []string
 
 	for current := 0; current < len(dims); current++ {
 		key := strings.SplitN(dims[current], ":", 2)[0]
-		if ignoredDimensions.Has(key) {
+
+		ignoreDimension, ok := s.ignoredDimensionsCache[key]
+		if !ok {
+			ignoreDimension = false
+			for _, re := range ignoredDimensionRegexes {
+				if re.MatchString(key) && !ignoredDimensionAllowlist.Has(key) {
+					ignoreDimension = true
+					break
+				}
+			}
+			s.ignoredDimensionsCache[key] = ignoreDimension
+		}
+		if ignoreDimension {
 			continue
 		}
+
 		next := current + 1
 		// Set `current` to the longest (and last) prefix of the chain.
 		// i.e. if chain is ["os:Ubuntu", "os:Ubuntu-22", "os:Ubuntu-22.04"]
