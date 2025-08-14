@@ -15,7 +15,7 @@ import { DatePicker } from '@mui/x-date-pickers';
 import { DateTime } from 'luxon';
 import { useEffect } from 'react';
 
-import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown';
+import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown_old';
 import { fromLuxonDateTime, toLuxonDateTime } from '@/fleet/utils/dates';
 
 import {

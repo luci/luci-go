@@ -30,7 +30,7 @@ import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleet
 
 import { useDeviceDimensions } from '../../pages/device_list_page/use_device_dimensions';
 import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';
-import { OptionsMenu } from '../filter_dropdown/options_menu';
+import { OptionsMenuOld } from '../filter_dropdown/options_menu_old';
 import {
   filtersUpdater,
   getFilters,
@@ -173,7 +173,7 @@ export function FilterItem(props: GridColumnMenuItemProps) {
           }
           const sortedOptions = fuzzySort(searchQuery)(options, (x) => x.label);
           return (
-            <OptionsMenu
+            <OptionsMenuOld
               elements={sortedOptions}
               selectedElements={selectedValues}
               flipOption={flipOption}

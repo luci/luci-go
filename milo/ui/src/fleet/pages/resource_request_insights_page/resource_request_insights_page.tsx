@@ -17,7 +17,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { FilterButton } from '@/fleet/components/filter_dropdown/filter_button';
-import { FilterCategoryData } from '@/fleet/components/filter_dropdown/filter_dropdown';
+import { FilterCategoryDataOld } from '@/fleet/components/filter_dropdown/filter_dropdown_old';
 import { SelectedChip } from '@/fleet/components/filter_dropdown/selected_chip';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
@@ -57,7 +57,7 @@ export const ResourceRequestListPage = () => {
     setFilters(currentFilters);
   };
 
-  const filterCategoryDatas: FilterCategoryData<ResourceRequestInsightsOptionComponentProps>[] =
+  const filterCategoryDatas: FilterCategoryDataOld<ResourceRequestInsightsOptionComponentProps>[] =
     filterComponents.map((option) => {
       const label: string =
         RRI_COLUMNS.find((c) => c.id === option.value)?.gridColDef.headerName ??
@@ -82,7 +82,7 @@ export const ResourceRequestListPage = () => {
           onFiltersChange: setCurrentFilters,
           onClose: clearSelections,
         },
-      } satisfies FilterCategoryData<ResourceRequestInsightsOptionComponentProps>;
+      } satisfies FilterCategoryDataOld<ResourceRequestInsightsOptionComponentProps>;
     });
 
   const getSelectedChipDropdownContent = (

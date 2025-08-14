@@ -16,7 +16,7 @@ import { Alert, CircularProgress, Slider, TextField } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
-import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown';
+import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown_old';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 
 import {

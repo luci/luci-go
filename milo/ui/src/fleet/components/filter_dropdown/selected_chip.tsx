@@ -13,16 +13,15 @@
 // limitations under the License.
 
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { Chip } from '@mui/material';
+import { Chip, ChipProps } from '@mui/material';
 import { ReactNode, useState } from 'react';
 
 import { OptionsDropdown } from '../options_dropdown/options_dropdown';
 
-interface SelectedChipProps {
+export interface SelectedChipProps {
   dropdownContent: (searchQuery: string) => ReactNode;
   label: string;
   onApply: () => void;
-  onDelete: () => void;
 }
 
 export function SelectedChip({
@@ -30,13 +29,23 @@ export function SelectedChip({
   label,
   onApply,
   onDelete,
-}: SelectedChipProps) {
+  ...chipProps
+}: ChipProps & SelectedChipProps) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
   return (
     <>
       <Chip
+        {...chipProps}
         onClick={(event) => setAnchorEL(event.currentTarget)}
+        onMouseDown={(e) => {
+          if (e.button === 1) {
+            if (onDelete) {
+              onDelete(e);
+              e.stopPropagation();
+            }
+          }
+        }}
         label={
           <p style={{ display: 'flex', alignItems: 'center' }}>
             <span
@@ -52,6 +61,10 @@ export function SelectedChip({
         }
         sx={{
           maxWidth: 300,
+          margin: '2px',
+          ':hover': {
+            cursor: 'pointer', // without it probably the textfield overrides the cursor
+          },
         }}
         variant="filter"
         onDelete={onDelete}

@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 import { Checkbox, MenuItem } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useRef } from 'react';
@@ -21,24 +20,21 @@ import { keyboardUpDownHandler } from '@/fleet/utils';
 import { SortedElement } from '@/fleet/utils/fuzzy_sort';
 
 import { HighlightCharacter } from '../highlight_character';
-
 interface OptionsMenuProps {
   elements: SortedElement<OptionValue>[];
   selectedElements: Set<string>;
   flipOption: (value: string) => void;
-  onNavigateUp?: () => void;
-  onNavigateDown?: () => void;
 }
 
-export const OptionsMenu = ({
+/**
+ * @deprecated This component will be removed when all pages are migrated to go/fleet-console-unified-filter-bar
+ */
+export const OptionsMenuOld = ({
   elements,
   selectedElements,
   flipOption,
-  onNavigateUp,
-  onNavigateDown,
 }: OptionsMenuProps) => {
   const parentRef = useRef(null);
-
   const virtualizer = useVirtualizer({
     count: elements.length,
     getScrollElement: () => parentRef.current,
@@ -104,15 +100,9 @@ export const OptionsMenu = ({
                   }
                   flipOption(elements[virtualRow.index].el.value);
                 }}
-                onKeyDown={(e) =>
-                  keyboardUpDownHandler(
-                    e,
-                    virtualRow.index === virtualRows.length - 1
-                      ? onNavigateDown
-                      : undefined,
-                    virtualRow.index === 0 ? onNavigateUp : undefined,
-                  )
-                }
+                // eslint-disable-next-line jsx-a11y/no-autofocus
+                autoFocus={virtualRow.index === 0}
+                onKeyDown={keyboardUpDownHandler}
                 css={{
                   display: 'flex',
                   alignItems: 'center',

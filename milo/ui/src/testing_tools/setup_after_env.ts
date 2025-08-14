@@ -114,6 +114,8 @@ serverInjectedVars.SETTINGS = Object.freeze({
     },
     enableColumnFilter:
       process.env['VITE_FLEET_CONSOLE_ENABLE_COLUMN_FILTER'] === 'true',
+    enableUnifiedFilterBar:
+      process.env['VITE_FLEET_CONSOLE_ENABLE_UNIFIED_FILTER_BAR'] === 'true',
   },
   ufs: {
     host: assertNonNullable(process.env['VITE_UFS_HOST']),

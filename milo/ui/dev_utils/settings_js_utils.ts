@@ -105,6 +105,8 @@ export function getLocalDevSettingsJs(env: Record<string, string | undefined>) {
       },
       enableColumnFilter:
         env['VITE_FLEET_CONSOLE_ENABLE_COLUMN_FILTER'] === 'true',
+      enableUnifiedFilterBar:
+        env['VITE_FLEET_CONSOLE_ENABLE_UNIFIED_FILTER_BAR'] === 'true',
     },
     ufs: {
       host: assertNonNullable(env['VITE_UFS_HOST']),

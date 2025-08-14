@@ -15,11 +15,15 @@
 import { useEffect, useState } from 'react';
 
 import { MenuSkeleton } from '@/fleet/components/filter_dropdown/menu_skeleton';
-import { OptionsMenu } from '@/fleet/components/filter_dropdown/options_menu';
 import { SelectedChip } from '@/fleet/components/filter_dropdown/selected_chip';
 import { OptionCategory, SelectedOptions } from '@/fleet/types/option';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 
+import { OptionsMenuOld } from '../options_menu_old';
+
+/**
+ * @deprecated This component will be removed when all pages are migrated to go/fleet-console-unified-filter-bar
+ */
 export const StringOnlySelectedChip = ({
   filterOptions,
   selectedOptions,
@@ -75,7 +79,7 @@ export const StringOnlySelectedChip = ({
     );
 
     return (
-      <OptionsMenu
+      <OptionsMenuOld
         elements={elementsSorted}
         selectedElements={new Set(tempSelectedOptions[optionKey] ?? [])}
         flipOption={(selectedValue: string) => {

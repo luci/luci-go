@@ -17,8 +17,8 @@ import { Alert, CircularProgress, MenuList } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
-import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown';
-import { OptionsMenu } from '@/fleet/components/filter_dropdown/options_menu';
+import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown_old';
+import { OptionsMenuOld } from '@/fleet/components/filter_dropdown/options_menu_old';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 
 import {
@@ -118,7 +118,7 @@ export const MultiSelectFilter = ({
         width: 300,
       }}
     >
-      <OptionsMenu
+      <OptionsMenuOld
         elements={elements}
         selectedElements={new Set(optionValues ?? [])}
         flipOption={(value: string) => {

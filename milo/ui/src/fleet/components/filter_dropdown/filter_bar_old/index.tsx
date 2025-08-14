@@ -21,9 +21,9 @@ import { StringOnlyFilterButton } from './string_only_filter_button';
 import { StringOnlySelectedChip } from './string_only_selected_chip';
 
 /**
- * Provides a simplified wrapper around `FilterButton` and `SelectedOptions` that only supports string filters
+ * @deprecated This component will be removed when all pages are migrated to go/fleet-console-unified-filter-bar
  */
-export const FilterBar = ({
+export const FilterBarOld = ({
   filterOptions,
   selectedOptions,
   onSelectedOptionsChange,

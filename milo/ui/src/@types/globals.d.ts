@@ -94,6 +94,7 @@ declare const SETTINGS: {
     readonly host: string;
     readonly hats: HaTSConfig;
     readonly enableColumnFilter: boolean;
+    readonly enableUnifiedFilterBar: boolean;
   };
   readonly ufs: {
     readonly host: string;

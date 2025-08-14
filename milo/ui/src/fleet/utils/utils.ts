@@ -41,7 +41,11 @@ export function hasAnyModifier(e: React.KeyboardEvent<HTMLElement>) {
  *   for a mix of list items, search bars, and buttons to be included in the
 - *   navigation flow.
  */
-export function keyboardUpDownHandler(e: React.KeyboardEvent) {
+export function keyboardUpDownHandler(
+  e: React.KeyboardEvent,
+  goToNext?: () => void,
+  goToPrevious?: () => void,
+) {
   const target = e.target as HTMLElement;
 
   // If the user is typing a space in an input, do not prevent it.
@@ -49,44 +53,28 @@ export function keyboardUpDownHandler(e: React.KeyboardEvent) {
     return;
   }
 
-  const listContainer = target.closest('ul');
-  if (!listContainer) {
-    return;
-  }
-
-  const navigableItems = Array.from(
-    listContainer.querySelectorAll<HTMLElement>(
-      '#search, [role="menuitem"], button',
-    ),
-  );
-  if (navigableItems.length === 0) {
-    return;
-  }
-
-  const currentIndex = navigableItems.findIndex((item) =>
-    item.contains(target),
-  );
-  if (currentIndex === -1) {
-    return;
-  }
-
-  let nextIndex: number;
-
   switch (e.key) {
     case e.ctrlKey && 'j':
     case 'ArrowDown':
-      nextIndex = (currentIndex + 1) % navigableItems.length;
-      navigableItems[nextIndex]?.focus();
-      e.preventDefault();
-      e.stopPropagation();
+      if (goToNext) {
+        goToNext();
+      } else {
+        const neighbors = findNeighborsInList(e.target as HTMLElement);
+        neighbors?.next.focus();
+        e.preventDefault();
+        e.stopPropagation();
+      }
       break;
     case e.ctrlKey && 'k':
     case 'ArrowUp':
-      nextIndex =
-        (currentIndex - 1 + navigableItems.length) % navigableItems.length;
-      navigableItems[nextIndex]?.focus();
-      e.preventDefault();
-      e.stopPropagation();
+      if (goToPrevious) {
+        goToPrevious();
+      } else {
+        const neighbors = findNeighborsInList(e.target as HTMLElement);
+        neighbors?.previous.focus();
+        e.preventDefault();
+        e.stopPropagation();
+      }
       break;
     case ' ':
       target.click();
@@ -95,3 +83,34 @@ export function keyboardUpDownHandler(e: React.KeyboardEvent) {
       break;
   }
 }
+
+const findNeighborsInList = (target: HTMLElement) => {
+  const listContainer = target.closest('ul');
+  if (!listContainer) {
+    return undefined;
+  }
+
+  const navigableItems = Array.from(
+    listContainer.querySelectorAll<HTMLElement>(
+      '#search, [role="menuitem"], button',
+    ),
+  );
+  if (navigableItems.length === 0) {
+    return undefined;
+  }
+
+  const currentIndex = navigableItems.findIndex((item) =>
+    item.contains(target),
+  );
+  if (currentIndex === -1) {
+    return undefined;
+  }
+
+  return {
+    previous:
+      navigableItems[
+        (currentIndex - 1 + navigableItems.length) % navigableItems.length
+      ],
+    next: navigableItems[(currentIndex + 1) % navigableItems.length],
+  };
+};

@@ -15,7 +15,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
-import { OptionComponent } from '@/fleet/components/filter_dropdown/filter_dropdown';
+import { OptionComponent } from '@/fleet/components/filter_dropdown/filter_dropdown_old';
 import { FILTERS_PARAM_KEY } from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import {
@@ -356,18 +356,28 @@ export const getSortedMultiselectElements = (
   searchQuery: string,
   initialSelections: string[] = [],
 ) => {
-  let elements = getElements(data, option) as string[];
-  elements = elements.sort((a, b) => {
-    if (initialSelections.includes(a) && !initialSelections.includes(b)) {
+  const elements = getElements(data, option) as string[];
+  const els = elements.map((el): OptionValue => ({ label: el, value: el }));
+  const fuzzySorted = fuzzySort(searchQuery)(els, (x) => x.label);
+  return fuzzySorted.sort((a, b) => {
+    if (
+      initialSelections.includes(a.el.value) &&
+      !initialSelections.includes(b.el.value)
+    ) {
       return -1;
     }
-    if (!initialSelections.includes(a) && initialSelections.includes(b)) {
+    if (
+      !initialSelections.includes(a.el.value) &&
+      initialSelections.includes(b.el.value)
+    ) {
       return 1;
     }
-    return a > b ? 1 : -1;
+    const scoreDiff = b.score - a.score;
+    if (scoreDiff !== 0) {
+      return scoreDiff;
+    }
+    return a.el.label > b.el.label ? 1 : -1;
   });
-  const els = elements.map((el): OptionValue => ({ label: el, value: el }));
-  return fuzzySort(searchQuery)(els, (x) => x.label);
 };
 
 const getElements = (

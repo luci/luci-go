@@ -32,7 +32,7 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { Pagination } from '@/fleet/components/device_table/pagination';
-import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
+import { FilterBarOld } from '@/fleet/components/filter_dropdown/filter_bar_old';
 import {
   filtersUpdater,
   getFilters,
@@ -270,7 +270,7 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
             color="error"
           />
         ) : (
-          <FilterBar
+          <FilterBarOld
             filterOptions={Object.entries(
               repairMetricsFilterValues.data?.dimensions ?? {},
             ).map(

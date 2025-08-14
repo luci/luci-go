@@ -14,7 +14,7 @@
 
 import { useEffect } from 'react';
 
-import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown';
+import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown_old';
 import { OptionsMenu } from '@/fleet/components/filter_dropdown/options_menu';
 
 import { getFulfillmentStatusScoredOptions } from './fulfillment_status';

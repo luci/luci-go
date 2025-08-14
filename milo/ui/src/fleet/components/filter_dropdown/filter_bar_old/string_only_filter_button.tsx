@@ -19,9 +19,15 @@ import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { fuzzySort, fuzzySubstring } from '@/fleet/utils/fuzzy_sort';
 
 import { FilterButton } from '../filter_button';
-import { FilterCategoryData, OptionComponentProps } from '../filter_dropdown';
-import { OptionsMenu } from '../options_menu';
+import {
+  FilterCategoryDataOld,
+  OptionComponentProps,
+} from '../filter_dropdown_old';
+import { OptionsMenuOld } from '../options_menu_old';
 
+/**
+ * @deprecated This component will be removed when all pages are migrated to go/fleet-console-unified-filter-bar
+ */
 export function StringOnlyFilterButton({
   filterOptions,
   selectedOptions,
@@ -46,7 +52,7 @@ export function StringOnlyFilterButton({
     setTempSelectedOptions(selectedOptions);
   }, [setTempSelectedOptions, selectedOptions]);
 
-  const filterCategoryDatas: FilterCategoryData<StringOnlyFilterOptionComponentProps>[] =
+  const filterCategoryDatas: FilterCategoryDataOld<StringOnlyFilterOptionComponentProps>[] =
     filterOptions.map((option) => {
       return {
         label: option.label,
@@ -76,7 +82,7 @@ export function StringOnlyFilterButton({
             }),
           onClose: clearSelections,
         },
-      } as FilterCategoryData<StringOnlyFilterOptionComponentProps>;
+      } as FilterCategoryDataOld<StringOnlyFilterOptionComponentProps>;
     });
 
   return (
@@ -127,7 +133,7 @@ const OptionComponent = ({
         width: 300,
       }}
     >
-      <OptionsMenu
+      <OptionsMenuOld
         elements={fuzzySorted}
         selectedElements={new Set(selectedOptions)}
         flipOption={(value) => flipOption(value)}

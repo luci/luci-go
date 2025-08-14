@@ -68,9 +68,9 @@ describe('getSortedMultiselectElements', () => {
     );
     expect(result.map((r) => r.el.value)).toEqual([
       'xyz-123',
-      'abc-123',
-      'rr-id-1',
       'rr-id-2',
+      'rr-id-1',
+      'abc-123',
     ]);
   });
 

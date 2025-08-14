@@ -17,17 +17,20 @@ import { Chip, colors } from '@mui/material';
 import { useState } from 'react';
 
 import {
-  FilterDropdown,
-  FilterCategoryData as FilterCategoryData,
-} from './filter_dropdown';
+  FilterDropdownOld,
+  FilterCategoryDataOld as FilterCategoryDataOld,
+} from './filter_dropdown_old';
 
+/**
+ * @deprecated This component will be removed when all pages are migrated to go/fleet-console-unified-filter-bar
+ */
 export function FilterButton<T>({
   filterOptions,
   isLoading,
   onApply,
   commonOptions,
 }: {
-  filterOptions: FilterCategoryData<T>[];
+  filterOptions: FilterCategoryDataOld<T>[];
   isLoading?: boolean;
   onApply: () => void;
   commonOptions?: string[];
@@ -42,7 +45,7 @@ export function FilterButton<T>({
         variant="outlined"
         icon={<AddIcon sx={{ color: colors.blue[600], width: 18 }} />}
       ></Chip>
-      <FilterDropdown
+      <FilterDropdownOld
         filterOptions={filterOptions}
         anchorEl={anchorEl}
         setAnchorEL={setAnchorEL}

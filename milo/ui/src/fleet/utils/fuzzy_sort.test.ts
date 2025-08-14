@@ -62,6 +62,14 @@ describe('fuzzy_sort', () => {
       expect(result.map((r) => r.el)).toEqual(['aaa', 'azzza', 'bb']);
     });
 
+    it('priorities exact matches and matches with higher edge proximity', () => {
+      const options = ['bidding', 'dut id', 'id'];
+      const query = 'id';
+
+      const result = fuzzySort(query)(options);
+      expect(result.map((r) => r.el)).toEqual(['id', 'dut id', 'bidding']);
+    });
+
     it('works with a getter function', () => {
       const options = [-2, 3, 0, 1, 2];
       const query = 'a';

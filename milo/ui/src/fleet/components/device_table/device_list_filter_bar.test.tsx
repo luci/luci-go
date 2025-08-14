@@ -25,7 +25,7 @@ import { useEffect, useState } from 'react';
 import { mockVirtualizedListDomProperties } from '@/fleet/testing_tools/dom_mocks';
 import { SelectedOptions } from '@/fleet/types';
 
-import { DeviceListFilterBar } from './device_list_filter_bar';
+import { DeviceListFilterBarOld } from './device_list_filter_bar_old';
 import { TEST_FILTER_OPTIONS } from './mock_data';
 
 const mockSelectedOptions = jest.fn();
@@ -37,7 +37,7 @@ const TestComponent = () => {
   }, [selectedOptions]);
 
   return (
-    <DeviceListFilterBar
+    <DeviceListFilterBarOld
       filterOptions={TEST_FILTER_OPTIONS}
       selectedOptions={selectedOptions}
       onSelectedOptionsChange={setSelectedOptions}
@@ -92,7 +92,7 @@ const CTRL_K_KEY = {
   ctrlKey: true,
 };
 
-describe('<DeviceListFilterBar />', () => {
+describe('<DeviceListFilterBarOld />', () => {
   let cleanupDomMocks: () => void;
 
   beforeEach(() => {

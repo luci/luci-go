@@ -45,6 +45,27 @@ export type SortedElement<ElementType> = {
   matches: number[];
 };
 
+/** The number of characters from the start of the string to apply a bonus for. */
+const START_OF_STRING_BONUS_CHAR_LIMIT = 5;
+/** The number of characters from the end of the string to apply a bonus for. */
+const END_OF_STRING_BONUS_CHAR_LIMIT = 5;
+
+/**
+ * Calculates a bonus score for a character match based on its proximity to the
+ * start or end of a string. The bonus is on a quadratic scale, from 1 (at the
+ * edge) to 0 (at or beyond the character limit).
+ */
+const calculateEdgeProximityBonus = (
+  distanceFromEdge: number,
+  bonusCharLimit: number,
+) => {
+  return (
+    ((bonusCharLimit - Math.min(distanceFromEdge, bonusCharLimit)) /
+      bonusCharLimit) **
+    2
+  );
+};
+
 /**
  * Inspired by vscode fuzzy finding it requires that all the
  * characters in the query are present in the target in the same
@@ -60,7 +81,7 @@ export const fuzzySubstring: ScoringFunction = (
 
   let targetIndex = 0;
   let queryIndex = 0;
-  let score = 0;
+  let score = 0.0;
   let seqMatchCount = 0;
 
   const matchesIdx = [];
@@ -72,7 +93,19 @@ export const fuzzySubstring: ScoringFunction = (
 
     if (targetChar === queryChar) {
       // Characters match, increase score and sequential match count
-      score += 1 + seqMatchCount * 5; // Sequential match bonus
+      score += 1.0 + seqMatchCount * 5.0; // Sequential match bonus
+
+      const startCharactersBonus = calculateEdgeProximityBonus(
+        targetIndex,
+        START_OF_STRING_BONUS_CHAR_LIMIT,
+      );
+      const endCharactersBonus = calculateEdgeProximityBonus(
+        target.length - 1 - targetIndex,
+        END_OF_STRING_BONUS_CHAR_LIMIT,
+      );
+
+      score += startCharactersBonus + endCharactersBonus * 0.9;
+
       seqMatchCount++;
       queryIndex++;
 
@@ -87,8 +120,11 @@ export const fuzzySubstring: ScoringFunction = (
 
   // If we didn't reach the end of the query, it's not a match
   if (queryIndex < query.length) {
-    return [-1, []];
+    return [-1.0, []];
   }
+
+  const exactMatchBonus = matchesIdx.length === target.length ? 10.0 : 0.0;
+  score += exactMatchBonus;
 
   return [score, matchesIdx];
 };

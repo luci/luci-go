@@ -11,17 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 import SearchIcon from '@mui/icons-material/Search';
 import { TextField, TextFieldProps } from '@mui/material';
 import _ from 'lodash';
-
 export type SearchInputProps = TextFieldProps & {
   searchInput: React.RefObject<HTMLInputElement | null>;
   searchQuery: string;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
+/**
+ * @deprecated This will be removed after all pages are migrated to go/fleet-console-unified-filter-bar
+ */
 export function SearchInput({
   searchInput,
   searchQuery,

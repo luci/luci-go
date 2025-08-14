@@ -25,8 +25,8 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { DeviceTable } from '@/fleet/components/device_table';
+import { DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_ft_selector';
 import { useCurrentTasks } from '@/fleet/components/device_table/use_current_tasks';
-import { DeviceListFilterBar } from '@/fleet/components/filter_dropdown';
 import {
   filtersUpdater,
   getFilters,
