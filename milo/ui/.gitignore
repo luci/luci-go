@@ -7,3 +7,6 @@
 coverage
 .idea
 .cache
+
+# Ignore compiled Go binaries.
+scripts/check-tests

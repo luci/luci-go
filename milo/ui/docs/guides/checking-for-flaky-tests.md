@@ -1,17 +1,23 @@
 # Checking for Flaky or Slow Tests
 
-This guide explains how to use the `check_tests.sh` script to identify flaky and slow tests in the UI codebase.
+This guide explains how to use the `check-tests` program to identify flaky and slow tests in the UI codebase.
 
 ## Overview
 
-The `check_tests.sh` script is a utility that runs a specified test suite multiple times and reports on any failures and/or performance. This is useful for detecting tests that pass and fail intermittently (flaky tests), and for identifying tests that are taking a long time to run.
+The `check-tests` program is a utility that runs a specified test suite multiple times and reports on any failures and/or performance. This is useful for detecting tests that pass and fail intermittently (flaky tests), and for identifying tests that are taking a long time to run.
 
 ## Usage
 
-The script is located in the `milo/ui/scripts` directory. You can run it from the root of the `luci-go` repository like this:
+The program can be run using the `check-tests` command in the `milo/ui` directory:
 
 ```bash
-./milo/ui/scripts/check_tests.sh [options] <test_matcher>
+make check-tests <test_matcher> [options]
+```
+
+Alternatively, you can run the script directly from the root of the `luci-go` repository:
+
+```bash
+go run milo/ui/scripts/check_tests.go <test_matcher> [options]
 ```
 
 ### Arguments
@@ -30,13 +36,13 @@ The script is located in the `milo/ui/scripts` directory. You can run it from th
 To run the `overview_tab.test.tsx` test suite 50 times, you would use the following command:
 
 ```bash
-./milo/ui/scripts/check_tests.sh -n 50 milo/ui/src/clusters/components/cluster/cluster_analysis_section/overview_tab/overview_tab.test.tsx
+make check-tests milo/ui/src/clusters/components/cluster/cluster_analysis_section/overview_tab/overview_tab.test.tsx -- -n 50
 ```
 
 To check the performance of the same test suite, you would add the `-p` flag:
 
 ```bash
-./milo/ui/scripts/check_tests.sh -n 50 -p milo/ui/src/clusters/components/cluster/cluster_analysis_section/overview_tab/overview_tab.test.tsx
+make check-tests milo/ui/src/clusters/components/cluster/cluster_analysis_section/overview_tab/overview_tab.test.tsx -- -n 50 -p
 ```
 
 ## Output

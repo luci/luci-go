@@ -22,10 +22,17 @@ format:
 test:
 	npm run test
 
+check-tests:
+	@echo "Usage: make check-tests <test_matcher> [options]"
+	@echo "Example: make check-tests milo/ui/src/clusters/components/cluster/cluster_analysis_section/overview_tab/overview_tab.test.tsx -- -n 10"
+	go run ./scripts/check_tests.go $(filter-out $@,$(MAKECMDGOALS))
+
+.PHONY: check-tests
+
 # Used to build
 # * release tarballs (see https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/build/gae/luci-milo-ui.yaml).
 # * preview server assets when running integration tests.
-# * release tarballs when running presubmit checks to ensure the CL doesn't
+# * release tarballs when runening presubmit checks to ensure the CL doesn't
 #   break the builds (see https://chromium.googlesource.com/infra/infra/+/73ad16cffae6eb25bb30cba6da1a91dc777b2a43/recipes/recipes/infra_frontend_tester.py#128).
 build:
 	NODE_OPTIONS=--max-old-space-size=4096 npm run build
