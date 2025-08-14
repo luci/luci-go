@@ -135,7 +135,24 @@ const COLUMNS: Record<string, GridColDef> = {
     flex: 1,
     renderCell: (x) => {
       // Double encodeURIComponent because omnilab is weird i guess
-      const to = `https://omnilab.corp.google.com/recovery?host=host_group:include:${encodeURIComponent(encodeURIComponent(x.row.host_group))}&device=Hardware:include:${encodeURIComponent(encodeURIComponent(x.row.run_target))}`;
+      const params = new URLSearchParams();
+      if (x.row.lab_name)
+        params.append(
+          'host',
+          'lab_location:include:' + encodeURIComponent(x.row.lab_name),
+        );
+      if (x.row.host_group)
+        params.append(
+          'host',
+          'host_group:include:' + encodeURIComponent(x.row.host_group),
+        );
+      if (x.row.run_target)
+        params.append(
+          'device',
+          'Hardware:include:' + encodeURIComponent(x.row.run_target),
+        );
+
+      const to = `https://omnilab.corp.google.com/recovery?${params.toString()}`;
 
       return (
         <Link
