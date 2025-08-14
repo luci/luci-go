@@ -189,9 +189,11 @@ func main() {
 		}
 		fmt.Printf("username=git-luci\n")
 		fmt.Printf("password=%s\n", t.AccessToken)
-	case "erase", "logout":
+	case "logout":
 		// logout is not part of the Git credential helper
 		// specification, but it is provided for convenience.
+		fallthrough
+	case "erase":
 		if err := a.PurgeCredentialsCache(); err != nil {
 			fmt.Fprintf(os.Stderr, "cannot erase cache: %v\n", err)
 			os.Exit(1)
