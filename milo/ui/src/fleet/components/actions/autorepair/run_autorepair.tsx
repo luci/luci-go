@@ -14,6 +14,7 @@
 
 import BuildIcon from '@mui/icons-material/Build';
 import { Button } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
@@ -32,6 +33,7 @@ interface RunAutorepairProps {
 
 export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
   const fleetConsoleClient = useFleetConsoleClient();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState<boolean>(false);
   const [sessionInfo, setSessionInfo] = useState<SessionInfo>({});
   const [loading, setLoading] = useState<boolean>(false);
@@ -72,6 +74,15 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
     return;
   };
 
+  const handleClose = () => {
+    setOpen(false);
+    if (sessionInfo.results) {
+      void queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    }
+    setSessionInfo({});
+    setDeepRepair(false);
+  };
+
   return (
     <>
       <Button
@@ -86,7 +97,7 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
       <AutorepairDialog
         sessionInfo={sessionInfo}
         open={open}
-        handleClose={() => setOpen(false)}
+        handleClose={handleClose}
         handleOk={runAutorepair}
         deepRepair={deepRepair}
         handleDeepRepairChange={(checked) => setDeepRepair(checked)}
