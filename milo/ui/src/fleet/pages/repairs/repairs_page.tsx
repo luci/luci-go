@@ -26,6 +26,7 @@ import { Link } from 'react-router';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   emptyPageTokenUpdater,
+  getCurrentPageIndex,
   getPageSize,
   getPageToken,
   usePagerContext,
@@ -302,10 +303,17 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
             pagination: {
               pagerCtx: pagerCtx,
               nextPageToken: repairMetricsList.data?.nextPageToken,
+              totalRowCount: repairMetricsList.data?.totalSize,
             },
           }}
           rowSelection={false}
           sortingMode="server"
+          rowCount={repairMetricsList.data?.totalSize}
+          paginationMode="server"
+          paginationModel={{
+            page: getCurrentPageIndex(pagerCtx),
+            pageSize: getPageSize(pagerCtx, searchParams),
+          }}
           onSortModelChange={(newModel) => {
             if (newModel.length !== 1) {
               updateOrderByParam('');
@@ -319,6 +327,9 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
             setSearchParams(emptyPageTokenUpdater(pagerCtx));
           }}
           loading={repairMetricsList.isPending}
+          disableColumnFilter={true}
+          disableColumnSelector
+          disableColumnMenu
         />
       </div>
     </div>
