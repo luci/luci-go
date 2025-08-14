@@ -14,7 +14,7 @@
 
 import { Box, Chip, Link, CircularProgress } from '@mui/material';
 import { useMemo, useCallback, useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams } from 'react-router';
 
 import {
   getStatusStyle,
@@ -75,7 +75,6 @@ export function TestVariantsTable({
   setSelectedStatuses,
 }: TestVariantsTableProps) {
   const { invocationId } = useParams<{ invocationId: string }>();
-  const navigate = useNavigate();
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [_, setSearchParams] = useSyncedSearchParams();
   const filteredHierarchyTreeData = treeData;
@@ -115,17 +114,16 @@ export function TestVariantsTable({
     [setSearchParams, parsedVariantDef],
   );
 
-  const handleSelectTestVariant = useCallback(
+  const getTestVariantURL = useCallback(
     (testId: string, variantHash: string) => {
       if (invocationId && testId && variantHash) {
-        navigate(
-          `/ui/test-investigate/invocations/${invocationId}/tests/${encodeURIComponent(
-            testId,
-          )}/variants/${variantHash}`,
-        );
+        return `/ui/test-investigate/invocations/${invocationId}/tests/${encodeURIComponent(
+          testId,
+        )}/variants/${variantHash}`;
       }
+      return '#';
     },
-    [invocationId, navigate],
+    [invocationId],
   );
 
   const columns: ColumnDefinition[] = useMemo(() => {
@@ -155,14 +153,11 @@ export function TestVariantsTable({
                   />
                 )}
                 <Link
-                  component="button"
+                  href={getTestVariantURL(
+                    testVariant.testId,
+                    testVariant.variantHash,
+                  )}
                   variant="body2"
-                  onClick={() =>
-                    handleSelectTestVariant(
-                      testVariant.testId,
-                      testVariant.variantHash,
-                    )
-                  }
                   sx={{
                     textAlign: 'left',
                     textTransform: 'none',
@@ -185,7 +180,7 @@ export function TestVariantsTable({
         },
       },
     ];
-  }, [handleSelectTestVariant]);
+  }, [getTestVariantURL]);
 
   useEffect(() => {
     const idsToExpand = getIdsOfAllNodes(filteredHierarchyTreeData);
