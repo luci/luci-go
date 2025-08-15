@@ -227,9 +227,8 @@ func handleGet(ctx context.Context, opts auth.Options) {
 		}
 		logging.Debugf(ctx, "Read input %q", readInput.Bytes())
 		logging.Debugf(ctx, "Got attributes %+v", attrs)
-		ra := auth.NewReAuthenticator(a)
 
-		res, err := checkReAuth(ctx, ra, opts, attrs)
+		res, err := checkReAuth(ctx, a, opts, attrs)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
@@ -239,6 +238,7 @@ func handleGet(ctx context.Context, opts auth.Options) {
 				fmt.Fprintf(os.Stderr, "Git client does not support authtype capability, so cannot continue with ReAuth\n")
 				os.Exit(1)
 			}
+			ra := auth.NewReAuthenticator(a)
 			rapt, err := ra.GetRAPT(ctx)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%v\n", err)
@@ -255,8 +255,8 @@ func handleGet(ctx context.Context, opts auth.Options) {
 	fmt.Printf("password=%s\n", t.AccessToken)
 }
 
-func checkReAuth(ctx context.Context, ra *auth.ReAuthenticator, opts auth.Options, attrs *creds.Attrs) (*gerrit.ReAuthCheckResult, error) {
-	c, err := ra.Client(ctx)
+func checkReAuth(ctx context.Context, a *auth.Authenticator, opts auth.Options, attrs *creds.Attrs) (*gerrit.ReAuthCheckResult, error) {
+	c, err := a.Client()
 	if err != nil {
 		return nil, errors.Fmt("checkReAuthNeeded: %s", err)
 	}
