@@ -653,13 +653,16 @@ func SelectBestMethod(ctx context.Context, opts Options) Method {
 type Authenticator struct {
 	// Immutable members.
 	loginMode LoginMode
-	opts      *Options
 	transport http.RoundTripper
 	ctx       context.Context
 
 	// Mutable members.
 	lock sync.RWMutex
 	err  error
+
+	// opts is mutated to resolve [AutoSelectMethod] in
+	// [Authenticator.ensureInitialized].
+	opts *Options
 
 	// baseToken is a token (and its provider and cache) whose possession is
 	// sufficient to get the final access token used for authentication of user
