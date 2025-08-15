@@ -21,6 +21,7 @@ import {
   semanticStatusForTestVariant,
   SemanticStatusType,
 } from '@/common/styles/status_styles';
+import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
 import {
   CategoryOption,
   AppliedFilterChip,
@@ -35,7 +36,6 @@ import {
 } from '@/generic_libs/components/table';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { TestNavigationTreeNode } from '@/test_investigation/components/test_navigation_drawer/types';
-
 /**
  * Recursively traverses the node tree to find the IDs of all nodes.
  * @param nodes The nodes to search through.
@@ -135,12 +135,17 @@ export function TestVariantsTable({
         renderCell: (data: RowData) => {
           const rowData = data as TestNavigationTreeNode;
           const isLeafWithVariant = rowData.testVariant;
+          const isTestIdStructured = rowData.isStructured;
 
           if (isLeafWithVariant) {
             const testVariant = rowData.testVariant!;
             const semanticStatus = semanticStatusForTestVariant(testVariant);
             const styles = getStatusStyle(semanticStatus);
             const IconComponent = styles.icon;
+
+            const testTextToCopy = isTestIdStructured
+              ? rowData.label
+              : testVariant.testId;
 
             return (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -167,14 +172,26 @@ export function TestVariantsTable({
                 >
                   {rowData.label}
                 </Link>
+                <CopyToClipboard
+                  textToCopy={testTextToCopy}
+                  aria-label="Copy text."
+                  sx={{ ml: 0.5 }}
+                />
               </Box>
             );
           } else {
             return (
-              <>
+              <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                 {rowData.label}{' '}
                 <Chip color="error" label={`${rowData.failedTests} failed`} />
-              </>
+                {isTestIdStructured && (
+                  <CopyToClipboard
+                    textToCopy={rowData.label}
+                    aria-label="Copy text."
+                    sx={{ ml: 0.5 }}
+                  />
+                )}
+              </Box>
             );
           }
         },

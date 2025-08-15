@@ -42,4 +42,5 @@ export interface TestNavigationTreeNode {
   precludedTests: number;
   unknownTests: number;
   testVariant?: TestVariant; // present on leaf nodes only.
+  isStructured: boolean;
 }

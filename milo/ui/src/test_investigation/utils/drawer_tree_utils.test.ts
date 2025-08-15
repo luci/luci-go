@@ -278,6 +278,7 @@ describe('DrawerTreeUtils', () => {
           errorTests: 0,
           precludedTests: 0,
           unknownTests: 0,
+          isStructured: true,
           children: [
             {
               id: 'b',
@@ -291,6 +292,7 @@ describe('DrawerTreeUtils', () => {
               errorTests: 0,
               precludedTests: 0,
               unknownTests: 0,
+              isStructured: true,
               children: [
                 {
                   id: 'c',
@@ -305,6 +307,7 @@ describe('DrawerTreeUtils', () => {
                   precludedTests: 0,
                   unknownTests: 0,
                   testVariant: {} as TestVariant,
+                  isStructured: true,
                 },
               ],
             },
@@ -332,6 +335,8 @@ describe('DrawerTreeUtils', () => {
           errorTests: 0,
           precludedTests: 0,
           unknownTests: 0,
+          isStructured: true,
+
           children: [
             {
               id: 'b',
@@ -346,6 +351,7 @@ describe('DrawerTreeUtils', () => {
               precludedTests: 0,
               unknownTests: 0,
               testVariant: {} as TestVariant,
+              isStructured: true,
             },
             {
               id: 'c',
@@ -360,6 +366,7 @@ describe('DrawerTreeUtils', () => {
               precludedTests: 0,
               unknownTests: 0,
               testVariant: {} as TestVariant,
+              isStructured: true,
             },
           ],
         },
@@ -382,6 +389,7 @@ describe('DrawerTreeUtils', () => {
           errorTests: 0,
           precludedTests: 3,
           unknownTests: 0,
+          isStructured: true,
           children: [
             {
               id: 'b',
@@ -396,6 +404,7 @@ describe('DrawerTreeUtils', () => {
               precludedTests: 1,
               unknownTests: 0,
               testVariant: {} as TestVariant,
+              isStructured: true,
             },
             {
               id: 'c',
@@ -410,6 +419,7 @@ describe('DrawerTreeUtils', () => {
               precludedTests: 2,
               unknownTests: 0,
               testVariant: {} as TestVariant,
+              isStructured: true,
             },
           ],
         },

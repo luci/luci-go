@@ -224,6 +224,7 @@ export function buildStructuredTree(
               (sum, child) => sum + child.totalTests,
               0,
             ),
+            isStructured: true,
           });
         }
       }
@@ -246,6 +247,7 @@ export function buildStructuredTree(
           variants[0].statusV2 === TestVerdict_Status.PRECLUDED ? 1 : 0,
         unknownTests: variants[0].statusV2 === undefined ? 1 : 0,
         testVariant: variants[0],
+        isStructured: true,
       });
     });
   }
@@ -297,6 +299,7 @@ export function buildFlatTreeFromEntries(
           entry.value.statusV2 === TestVerdict_Status.PRECLUDED ? 1 : 0,
         unknownTests: entry.value.statusV2 === undefined ? 1 : 0,
         testVariant: entry.value,
+        isStructured: false,
       });
     } else {
       if (!groups.has(component)) {
@@ -337,7 +340,7 @@ export function buildFlatTreeFromEntries(
           (sum, child) => sum + child.unknownTests,
           0,
         ),
-
+        isStructured: false,
         children: children,
       });
     }
