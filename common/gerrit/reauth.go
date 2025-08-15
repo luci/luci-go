@@ -99,6 +99,7 @@ func (c *ReAuthChecker) Check(ctx context.Context, attrs *creds.Attrs) (*ReAuthC
 	project := attrs.Path
 	if !supportedHosts[host] {
 		// Unsupported hosts never need ReAuth.
+		logging.Debugf(ctx, "Skipping ReAuth check for unsupported host %q", host)
 		return &ReAuthCheckResult{
 			Host:    host,
 			Project: project,
@@ -147,6 +148,7 @@ func checkProjectReAuth(ctx context.Context, c *http.Client, host, project strin
 		Host:    host,
 		Project: project,
 	}
+	logging.Debugf(ctx, "Calling ReAuth check RPC on Gerrit host %q for %q", normalizeGerritHost(host), project)
 	gc, err := gerrit.NewRESTClient(c, normalizeGerritHost(host), true)
 	if err != nil {
 		return nil, err
