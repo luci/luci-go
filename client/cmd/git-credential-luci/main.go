@@ -198,7 +198,18 @@ func main() {
 		rapt, err := ra.GetRAPT(ctx)
 		hasRAPT := err == nil && rapt != ""
 		fmt.Printf("has_rapt=%v\n", hasRAPT)
-
+	case "clear-reauth-check-cache":
+		// This is not part of the Git credential helper
+		// specification.
+		cache := getReAuthResultCache(ctx, opts)
+		switch cache := cache.(type) {
+		case *gerrit.DiskResultCache:
+			if err := cache.Clear(); err != nil {
+				logging.Warningf(ctx, "Error clearing cache: %s", err)
+			}
+		default:
+			logging.Debugf(ctx, "Cannot purge cache of type %T", cache)
+		}
 	default:
 		// The specification for Git credential helper says: "If a helper
 		// receives any other operation, it should silently ignore the

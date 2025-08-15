@@ -35,7 +35,7 @@ func TestReverse(t *testing.T) {
 	assert.That(t, got, should.Match([]int{5, 4, 3, 2, 1}))
 }
 
-func testCacheImpls(t *testing.T, testfunc func(*testing.T, ReAuthResultCache)) {
+func testAllCacheImpls(t *testing.T, testfunc func(*testing.T, ReAuthResultCache)) {
 	t.Run("MemResultCache", func(t *testing.T) {
 		t.Parallel()
 		c := &MemResultCache{}
@@ -51,7 +51,7 @@ func testCacheImpls(t *testing.T, testfunc func(*testing.T, ReAuthResultCache)) 
 func TestReAuthResultCache(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	testCacheImpls(t, func(t *testing.T, c ReAuthResultCache) {
+	testAllCacheImpls(t, func(t *testing.T, c ReAuthResultCache) {
 		r1 := &ReAuthCheckResult{Host: "host1", Project: "project1", NeedsRAPT: true}
 		r2 := &ReAuthCheckResult{Host: "host1", Project: "project2", NeedsRAPT: false}
 		r3 := &ReAuthCheckResult{Host: "host2", Project: "project1", NeedsRAPT: true}
@@ -91,16 +91,17 @@ func TestReAuthResultCache(t *testing.T) {
 	})
 }
 
-func TestDiskResultCache_clears(t *testing.T) {
+func TestDiskResultCache_Clear(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	c := NewDiskResultCache(ctx, t.TempDir())
 	r1 := &ReAuthCheckResult{Host: "host1", Project: "project1", NeedsRAPT: true}
 	err := c.Put(ctx, r1)
 	assert.NoErr(t, err)
-	got, err := c.GetForProject(ctx, "host1", "project1")
+	err = c.Clear()
 	assert.NoErr(t, err)
-	assert.That(t, got.HasValidRAPT, should.BeFalse)
+	_, err = c.GetForProject(ctx, "host1", "project1")
+	assert.ErrIsLike(t, err, ErrResultMissing)
 }
 
 func TestDiskResultCache_expiry(t *testing.T) {

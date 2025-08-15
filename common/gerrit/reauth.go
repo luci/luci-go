@@ -325,6 +325,16 @@ func (c *DiskResultCache) Put(ctx context.Context, r *ReAuthCheckResult) error {
 	return nil
 }
 
+// Clear clears all entries in the cache.
+func (c *DiskResultCache) Clear() error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	if err := os.Remove(c.cacheFile()); err != nil {
+		return errors.Fmt("DiskResultCache.Clear: %w", err)
+	}
+	return nil
+}
+
 func reverse[V any](s []V) func(yield func(int, V) bool) {
 	return func(yield func(int, V) bool) {
 		for i := range s {
