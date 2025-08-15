@@ -130,65 +130,7 @@ func main() {
 
 	switch flag.Args()[0] {
 	case "get":
-		a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
-		t, err := a.GetAccessToken(lifetime)
-		if err != nil {
-			if errors.Is(err, auth.ErrLoginRequired) {
-				fmt.Fprint(os.Stderr, loginRequiredMsg)
-			} else {
-				fmt.Fprintf(os.Stderr, "cannot get access token: %v\n", err)
-			}
-			os.Exit(1)
-		}
-		if reAuthEnabled() {
-			logging.Debugf(ctx, "ReAuth is enabled")
-			var readInput bytes.Buffer
-			attrs, err := creds.ReadAttrs(io.TeeReader(os.Stdin, &readInput))
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%v\n", err)
-				os.Exit(1)
-			}
-			logging.Debugf(ctx, "Read input %q", readInput.Bytes())
-			logging.Debugf(ctx, "Got attributes %+v", attrs)
-			ra := auth.NewReAuthenticator(a)
-
-			c, err := ra.Client(ctx)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%v\n", err)
-				os.Exit(1)
-			}
-			var cache gerrit.ReAuthResultCache
-			cache = &gerrit.MemResultCache{}
-			if dir := opts.SecretsDir; dir != "" {
-				cache = gerrit.NewDiskResultCache(ctx, dir)
-			}
-			logging.Debugf(ctx, "Checking if ReAuth is needed")
-			checker := gerrit.NewReAuthChecker(c, cache)
-			res, err := checker.Check(ctx, attrs)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%v\n", err)
-				os.Exit(1)
-			}
-			logging.Debugf(ctx, "Got ReAuth check result %+v", res)
-			if res.NeedsRAPT || forceReAuth() {
-				if !attrs.HasAuthtypeCapability() {
-					fmt.Fprintf(os.Stderr, "Git client does not support authtype capability, so cannot continue with ReAuth\n")
-					os.Exit(1)
-				}
-				rapt, err := ra.GetRAPT(ctx)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "%v\n", err)
-					fmt.Fprint(os.Stderr, reAuthRequiredMsg)
-					os.Exit(1)
-				}
-				fmt.Printf("authtype=BearerReAuth\n")
-				fmt.Printf("credential=%s:%s\n", t.AccessToken, rapt)
-				os.Exit(0)
-			}
-			// Fall through if ReAuth is not needed
-		}
-		fmt.Printf("username=git-luci\n")
-		fmt.Printf("password=%s\n", t.AccessToken)
+		handleGet(ctx, opts)
 	case "logout":
 		// logout is not part of the Git credential helper
 		// specification, but it is provided for convenience.
@@ -254,6 +196,68 @@ func main() {
 		// receives any other operation, it should silently ignore the
 		// request."
 	}
+}
+
+func handleGet(ctx context.Context, opts auth.Options) {
+	a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
+	t, err := a.GetAccessToken(lifetime)
+	if err != nil {
+		if errors.Is(err, auth.ErrLoginRequired) {
+			fmt.Fprint(os.Stderr, loginRequiredMsg)
+		} else {
+			fmt.Fprintf(os.Stderr, "cannot get access token: %v\n", err)
+		}
+		os.Exit(1)
+	}
+	if reAuthEnabled() {
+		logging.Debugf(ctx, "ReAuth is enabled")
+		var readInput bytes.Buffer
+		attrs, err := creds.ReadAttrs(io.TeeReader(os.Stdin, &readInput))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			os.Exit(1)
+		}
+		logging.Debugf(ctx, "Read input %q", readInput.Bytes())
+		logging.Debugf(ctx, "Got attributes %+v", attrs)
+		ra := auth.NewReAuthenticator(a)
+
+		c, err := ra.Client(ctx)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			os.Exit(1)
+		}
+		var cache gerrit.ReAuthResultCache
+		cache = &gerrit.MemResultCache{}
+		if dir := opts.SecretsDir; dir != "" {
+			cache = gerrit.NewDiskResultCache(ctx, dir)
+		}
+		logging.Debugf(ctx, "Checking if ReAuth is needed")
+		checker := gerrit.NewReAuthChecker(c, cache)
+		res, err := checker.Check(ctx, attrs)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			os.Exit(1)
+		}
+		logging.Debugf(ctx, "Got ReAuth check result %+v", res)
+		if res.NeedsRAPT || forceReAuth() {
+			if !attrs.HasAuthtypeCapability() {
+				fmt.Fprintf(os.Stderr, "Git client does not support authtype capability, so cannot continue with ReAuth\n")
+				os.Exit(1)
+			}
+			rapt, err := ra.GetRAPT(ctx)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%v\n", err)
+				fmt.Fprint(os.Stderr, reAuthRequiredMsg)
+				os.Exit(1)
+			}
+			fmt.Printf("authtype=BearerReAuth\n")
+			fmt.Printf("credential=%s:%s\n", t.AccessToken, rapt)
+			os.Exit(0)
+		}
+		// Fall through if ReAuth is not needed
+	}
+	fmt.Printf("username=git-luci\n")
+	fmt.Printf("password=%s\n", t.AccessToken)
 }
 
 func debugLogEnabled() bool {
