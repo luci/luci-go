@@ -186,6 +186,7 @@ func main() {
 		// Output keys:
 		//
 		//  - email
+		//  - has_rapt
 		a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 		email, err := a.GetEmail()
 		if err != nil {
@@ -193,6 +194,11 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Printf("email=%s\n", email)
+		ra := auth.NewReAuthenticator(a)
+		rapt, err := ra.GetRAPT(ctx)
+		hasRAPT := err == nil && rapt != ""
+		fmt.Printf("has_rapt=%v\n", hasRAPT)
+
 	default:
 		// The specification for Git credential helper says: "If a helper
 		// receives any other operation, it should silently ignore the
