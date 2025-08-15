@@ -18,7 +18,7 @@ import { useMemo } from 'react';
 
 import { Timestamp } from '@/common/components/timestamp';
 import { parseArtifactName } from '@/common/services/resultdb';
-import { getRawArtifactURLPath } from '@/common/tools/url_utils';
+import { getRawArtifactURLPath, getInvURLPath } from '@/common/tools/url_utils';
 import { OutputArtifactMatchingContent } from '@/common/types/verdict';
 import { ArtifactMatchingContent_Match } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import {
@@ -115,6 +115,7 @@ export function LogSnippetRow({ artifact, variantHash }: LogSnippetRowProps) {
     firstMatch?.content,
     variantHash,
   );
+  const invocationID = getInvocationID(name);
   return (
     <Container>
       <Box sx={{ flex: 'none', width: '100px' }}>
@@ -131,6 +132,23 @@ export function LogSnippetRow({ artifact, variantHash }: LogSnippetRowProps) {
           >
             <ResultStatusIcon status={testStatus} sx={{ fontSize: '22px' }} />
             {testStatusToJSON(testStatus)}
+          </Box>
+        )}
+        {logViewerLink === null && invocationID !== null && (
+          // Link to the invocation page when the log view link is not available.
+          <Box
+            sx={{
+              alignItems: 'center',
+              display: 'flex',
+            }}
+          >
+            <Link
+              href={getInvURLPath(invocationID)}
+              target="_blank"
+              rel="noopenner"
+            >
+              invocation
+            </Link>
           </Box>
         )}
       </Box>
@@ -165,4 +183,9 @@ export function LogSnippetRow({ artifact, variantHash }: LogSnippetRowProps) {
       </Link>
     </Container>
   );
+}
+
+function getInvocationID(artifactName: string) {
+  const match = artifactName.match(/invocations\/([^/]+)/);
+  return match && match.length > 0 ? match[1] : null;
 }
