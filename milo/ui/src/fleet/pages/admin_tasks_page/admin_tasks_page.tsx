@@ -43,7 +43,9 @@ export const AdminTasksPage = () => {
           gap: 8,
         }}
       >
-        <IconButton onClick={() => navigate('/fleet/labs/p/chromeos/devices')}>
+        <IconButton
+          onClick={() => navigate('/ui/fleet/labs/p/chromeos/devices')}
+        >
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" sx={{ whiteSpace: 'nowrap' }}>
