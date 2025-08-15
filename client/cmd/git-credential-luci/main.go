@@ -36,7 +36,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -46,6 +45,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gerrit"
 	"go.chromium.org/luci/common/git/creds"
 	"go.chromium.org/luci/common/logging"
@@ -229,24 +229,11 @@ func handleGet(ctx context.Context, opts auth.Options) {
 		logging.Debugf(ctx, "Got attributes %+v", attrs)
 		ra := auth.NewReAuthenticator(a)
 
-		c, err := ra.Client(ctx)
+		res, err := checkReAuth(ctx, ra, opts, attrs)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
 		}
-		var cache gerrit.ReAuthResultCache
-		cache = &gerrit.MemResultCache{}
-		if dir := opts.SecretsDir; dir != "" {
-			cache = gerrit.NewDiskResultCache(ctx, dir)
-		}
-		logging.Debugf(ctx, "Checking if ReAuth is needed")
-		checker := gerrit.NewReAuthChecker(c, cache)
-		res, err := checker.Check(ctx, attrs)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
-		}
-		logging.Debugf(ctx, "Got ReAuth check result %+v", res)
 		if res.NeedsRAPT || forceReAuth() {
 			if !attrs.HasAuthtypeCapability() {
 				fmt.Fprintf(os.Stderr, "Git client does not support authtype capability, so cannot continue with ReAuth\n")
@@ -266,6 +253,26 @@ func handleGet(ctx context.Context, opts auth.Options) {
 	}
 	fmt.Printf("username=git-luci\n")
 	fmt.Printf("password=%s\n", t.AccessToken)
+}
+
+func checkReAuth(ctx context.Context, ra *auth.ReAuthenticator, opts auth.Options, attrs *creds.Attrs) (*gerrit.ReAuthCheckResult, error) {
+	c, err := ra.Client(ctx)
+	if err != nil {
+		return nil, errors.Fmt("checkReAuthNeeded: %s", err)
+	}
+	var cache gerrit.ReAuthResultCache
+	cache = &gerrit.MemResultCache{}
+	if dir := opts.SecretsDir; dir != "" {
+		cache = gerrit.NewDiskResultCache(ctx, dir)
+	}
+	logging.Debugf(ctx, "Checking if ReAuth is needed")
+	checker := gerrit.NewReAuthChecker(c, cache)
+	res, err := checker.Check(ctx, attrs)
+	if err != nil {
+		return nil, errors.Fmt("checkReAuthNeeded: %s", err)
+	}
+	logging.Debugf(ctx, "Got ReAuth check result %+v", res)
+	return res, nil
 }
 
 func debugLogEnabled() bool {
