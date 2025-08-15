@@ -127,10 +127,10 @@ func main() {
 	if debugLogEnabled() {
 		ctx = logging.SetLevel(ctx, logging.Debug)
 	}
-	a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 
 	switch flag.Args()[0] {
 	case "get":
+		a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 		t, err := a.GetAccessToken(lifetime)
 		if err != nil {
 			if errors.Is(err, auth.ErrLoginRequired) {
@@ -194,6 +194,7 @@ func main() {
 		// specification, but it is provided for convenience.
 		fallthrough
 	case "erase":
+		a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 		if err := a.PurgeCredentialsCache(); err != nil {
 			fmt.Fprintf(os.Stderr, "cannot erase cache: %v\n", err)
 			os.Exit(1)
@@ -203,7 +204,7 @@ func main() {
 		// specification, but it is provided for convenience.
 
 		// Create a new authenticator with interactive login.
-		a = auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts)
+		a := auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts)
 		if err := a.Login(); err != nil {
 			fmt.Fprintf(os.Stderr, "login failed: %v\n", err)
 			os.Exit(1)
@@ -216,6 +217,7 @@ func main() {
 			}
 		}
 	case "reauth":
+		a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 		if !reAuthEnabled() {
 			fmt.Fprintf(os.Stderr, "Note: ReAuth is not enabled, so git-credential-luci won't use your ReAuth credentials\n")
 			fmt.Fprintf(os.Stderr, "even if you refresh them with this command.\n")
@@ -240,6 +242,7 @@ func main() {
 		// Output keys:
 		//
 		//  - email
+		a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 		email, err := a.GetEmail()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "cannot get email: %v\n", err)
