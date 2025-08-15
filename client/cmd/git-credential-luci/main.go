@@ -260,11 +260,7 @@ func checkReAuth(ctx context.Context, ra *auth.ReAuthenticator, opts auth.Option
 	if err != nil {
 		return nil, errors.Fmt("checkReAuthNeeded: %s", err)
 	}
-	var cache gerrit.ReAuthResultCache
-	cache = &gerrit.MemResultCache{}
-	if dir := opts.SecretsDir; dir != "" {
-		cache = gerrit.NewDiskResultCache(ctx, dir)
-	}
+	cache := getReAuthResultCache(ctx, opts)
 	logging.Debugf(ctx, "Checking if ReAuth is needed")
 	checker := gerrit.NewReAuthChecker(c, cache)
 	res, err := checker.Check(ctx, attrs)
@@ -273,6 +269,14 @@ func checkReAuth(ctx context.Context, ra *auth.ReAuthenticator, opts auth.Option
 	}
 	logging.Debugf(ctx, "Got ReAuth check result %+v", res)
 	return res, nil
+}
+
+func getReAuthResultCache(ctx context.Context, opts auth.Options) gerrit.ReAuthResultCache {
+	if dir := opts.SecretsDir; dir != "" {
+		return gerrit.NewDiskResultCache(ctx, dir)
+	} else {
+		return &gerrit.MemResultCache{}
+	}
 }
 
 func debugLogEnabled() bool {
