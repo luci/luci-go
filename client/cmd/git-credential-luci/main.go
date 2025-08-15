@@ -159,6 +159,8 @@ func main() {
 			}
 		}
 	case "reauth":
+		// This is not part of the Git credential helper
+		// specification, but is needed for ReAuth.
 		a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 		if !reAuthEnabled() {
 			fmt.Fprintf(os.Stderr, "Note: ReAuth is not enabled, so git-credential-luci won't use your ReAuth credentials\n")
