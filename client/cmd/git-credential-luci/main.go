@@ -31,6 +31,20 @@
 //
 // This will run the plugin binary `luci-auth-fido2-plugin` when
 // needed.
+//
+// To enable debug logging:
+//
+//	LUCI_AUTH_DEBUG=1
+//
+// If you encounter issues with ReAuth, you may bypass the client side
+// check with:
+//
+//	LUCI_BYPASS_REAUTH=1
+//
+// This will not bypass server side enforcement when it gets enabled,
+// so please file a ticket so your issue can get resolved:
+//
+// https://issues.chromium.org/issues/new?component=1456702&template=2176581
 package main
 
 import (
@@ -251,14 +265,19 @@ func handleGet(ctx context.Context, opts auth.Options) {
 			}
 			ra := auth.NewReAuthenticator(a)
 			rapt, err := ra.GetRAPT(ctx)
-			if err != nil {
+			if err == nil {
+				fmt.Printf("authtype=BearerReAuth\n")
+				fmt.Printf("credential=%s:%s\n", t.AccessToken, rapt)
+				os.Exit(0)
+			}
+			if bypassReAuth() {
+				printBypassWarning()
+				// Fall through to non-ReAuth case
+			} else {
 				fmt.Fprintf(os.Stderr, "%v\n", err)
 				fmt.Fprint(os.Stderr, reAuthRequiredMsg)
 				os.Exit(1)
 			}
-			fmt.Printf("authtype=BearerReAuth\n")
-			fmt.Printf("credential=%s:%s\n", t.AccessToken, rapt)
-			os.Exit(0)
 		}
 		// Fall through if ReAuth is not needed
 	}
@@ -290,6 +309,22 @@ func getReAuthResultCache(ctx context.Context, opts auth.Options) gerrit.ReAuthR
 	}
 }
 
+func printBypassWarning() {
+	fmt.Fprintf(os.Stderr, `
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+You are bypassing ReAuth for a Gerrit repo that will enforce ReAuth
+soon.
+
+You can stop bypassing by removing the LUCI_BYPASS_REAUTH environment
+variable.
+
+If you are bypassing ReAuth due to an issue and have not already filed
+a bug, please do so at:
+https://issues.chromium.org/issues/new?component=1456702&template=2176581
+------------------------------------------------------------------------
+`)
+}
+
 func debugLogEnabled() bool {
 	return os.Getenv("LUCI_AUTH_DEBUG") != ""
 }
@@ -303,4 +338,21 @@ func reAuthEnabled() bool {
 // around bugs.
 func forceReAuth() bool {
 	return os.Getenv("LUCI_FORCE_REAUTH") != ""
+}
+
+// bypassReAuth bypasses the client side ReAuth enforcement.
+//
+// Specifically, if the Gerrit host reports a ReAuth requirement, we
+// will normally fail if we do not have a valid RAPT.
+//
+// This bypass will make us fall back to providing credentials without
+// a RAPT instead of failing.
+//
+// Naturally, this will only work if the ReAuth isn't enforced server
+// side.
+//
+// (The server reporting a requirement does not necessarily mean the
+// server enforces it, e.g., during rollout.)
+func bypassReAuth() bool {
+	return os.Getenv("LUCI_BYPASS_REAUTH") != ""
 }
