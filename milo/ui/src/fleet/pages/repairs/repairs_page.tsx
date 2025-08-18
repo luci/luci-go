@@ -149,7 +149,7 @@ const COLUMNS: Record<string, GridColDef> = {
       if (x.row.run_target)
         params.append(
           'device',
-          'Hardware:include:' + encodeURIComponent(x.row.run_target),
+          'hardware:include:' + encodeURIComponent(x.row.run_target),
         );
 
       const to = `https://omnilab.corp.google.com/recovery?${params.toString()}`;
