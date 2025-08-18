@@ -17,6 +17,8 @@ import type { RouteObject } from 'react-router';
 import { obtainAuthState } from '../common/api/auth_state';
 import { trackedRedirect } from '../generic_libs/tools/react_router_utils/route_utils';
 
+import { initiateSurvey } from './utils/survey';
+
 // IMPORTANT:
 // When adding new routes, ensure that the path param does not contain PII.
 // If you need PII in the path param, document it and scrub the URL param from
@@ -91,6 +93,11 @@ export const fleetRoutes: RouteObject[] = [
               },
               {
                 path: 'devices',
+                loader: async () => {
+                  // Fire-and-forget. Don't block the page load.
+                  initiateSurvey(SETTINGS.fleetConsole.hats);
+                  return null;
+                },
                 children: [
                   {
                     index: true,

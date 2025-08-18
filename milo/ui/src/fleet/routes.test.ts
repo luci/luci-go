@@ -13,11 +13,15 @@
 // limitations under the License.
 
 import { obtainAuthState } from '@/common/api/auth_state';
+import * as surveyUtils from '@/fleet/utils/survey';
 
-import { loadRouteForGooglersOnly } from './routes';
+import { fleetRoutes, loadRouteForGooglersOnly } from './routes';
 
 jest.mock('@/common/api/auth_state');
 const mockedObtainAuthState = jest.mocked(obtainAuthState);
+
+jest.mock('@/fleet/utils/survey');
+const mockedInitiateSurvey = jest.mocked(surveyUtils.initiateSurvey);
 
 describe('loadRouteForGooglersOnly', () => {
   let onSuccess: jest.Mock;
@@ -66,5 +70,35 @@ describe('loadRouteForGooglersOnly', () => {
     expect(onFail).toHaveBeenCalledTimes(1);
     expect(onSuccess).not.toHaveBeenCalled();
     expect(mockedObtainAuthState).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('devices loader', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it('should initiate a survey when the route loads', async () => {
+    // Find the parent route object for '/devices'.
+    const devicesRoute = fleetRoutes[0].children
+      ?.find((r) => r.path === 'labs')
+      ?.children?.find((r) => r.path === 'p/:platform')
+      ?.children?.find((r) => r.path === 'devices');
+
+    expect(devicesRoute).toBeDefined();
+    expect(devicesRoute?.loader).toBeInstanceOf(Function);
+
+    // Execute the loader.
+    if (typeof devicesRoute?.loader === 'function') {
+      await devicesRoute.loader({} as never, {} as never);
+    } else {
+      throw new Error('devicesRoute.loader is not a function');
+    }
+
+    // Ensure the survey helper was called.
+    expect(mockedInitiateSurvey).toHaveBeenCalledTimes(1);
+    expect(mockedInitiateSurvey).toHaveBeenCalledWith(
+      SETTINGS.fleetConsole.hats,
+    );
   });
 });

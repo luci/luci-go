@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AuthState } from '@/common/api/auth_state';
+import { AuthState, obtainAuthState } from '../../common/api/auth_state';
 
 declare global {
   interface Window {
@@ -66,4 +66,10 @@ export const requestSurvey = (cfg: HaTSConfig, auth: AuthState) => {
     callback: callback,
     authuser: Number(auth.identity),
   });
+};
+
+export const initiateSurvey = (config: HaTSConfig): Promise<void> => {
+  return obtainAuthState().then((authState) =>
+    requestSurvey(config, authState),
+  );
 };
