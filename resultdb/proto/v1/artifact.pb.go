@@ -190,6 +190,8 @@ type Artifact struct {
 	HasLines bool `protobuf:"varint,11,opt,name=has_lines,json=hasLines,proto3" json:"has_lines,omitempty"`
 	// The RBE URI of the artifact if it's stored in RBE. If specified, `contents`
 	// and `gcs_uri` must be empty.
+	// Format: "bytestream://<HOSTNAME>/projects/<PROJECT_ID>/instances/<INSTANCE_ID>/blobs/<HASH>/<SIZE_BYTES>"
+	// Example: "bytestream://remotebuildexecution.googleapis.com/projects/luci-resultdb-dev/instances/artifacts/blobs/abcd1234/509"
 	RbeUri        string `protobuf:"bytes,15,opt,name=rbe_uri,json=rbeUri,proto3" json:"rbe_uri,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

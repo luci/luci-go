@@ -763,9 +763,9 @@ CREATE TABLE Artifacts (
   -- if this artifact is stored in Google Cloud Storage (GCS).
   GcsURI STRING(MAX),
 
-  -- A full RBE URI string of format
-  -- "projects/{project}/instances/{instance}/{resource_type}/{resource_identifier}"
-  -- if this artifact is stored in RBE.
+  -- A full RBE URI string if this artifact is stored in RBE:
+  -- Format: "bytestream://<HOSTNAME>/projects/<PROJECT_ID>/instances/<INSTANCE_ID>/blobs/<HASH>/<SIZE_BYTES>"
+  -- Example: "bytestream://remotebuildexecution.googleapis.com/projects/luci-resultdb-dev/instances/artifacts/blobs/abcd1234/509"
   RbeURI STRING(MAX),
 
   -- key:value pairs in the module variant. This is populated for structured
