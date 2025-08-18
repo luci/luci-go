@@ -19,11 +19,6 @@
 //   - https://git-scm.com/docs/gitcredentials
 //   - https://git-scm.com/docs/git-credential
 //
-// If you need ReAuth to authenticate with Gerrit, enable ReAuth by
-// setting an environment variable:
-//
-//	LUCI_ENABLE_REAUTH=1
-//
 // git-credential-luci supports ancillary authentication via a plugin.
 // A plugin can be configured by setting an environment variable:
 //
@@ -330,7 +325,17 @@ func debugLogEnabled() bool {
 }
 
 func reAuthEnabled() bool {
-	return os.Getenv("LUCI_ENABLE_REAUTH") != ""
+	// Always disable ReAuth for Swarming tasks
+	if os.Getenv("SWARMING_HEADLESS") != "" {
+		return false
+	}
+	// Explicitly disabled via envvar
+	if os.Getenv("LUCI_ENABLE_REAUTH") == "0" {
+		return false
+	}
+	// Otherwise default to enabled (we will check whether the
+	// Gerrit host+repo has ReAuth enforcement enabled first)
+	return true
 }
 
 // forceReAuth will force providing a RAPT even if Gerrit reports that
