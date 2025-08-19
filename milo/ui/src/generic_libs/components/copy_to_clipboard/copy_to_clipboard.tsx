@@ -68,9 +68,20 @@ export function CopyToClipboard({
   return (
     <Container title={title} sx={sx} className={className}>
       {justCopied ? (
-        <Done fontSize="inherit" />
+        <Done
+          fontSize="inherit"
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        />
       ) : (
-        <ContentCopy fontSize="inherit" onClick={handleCopy} />
+        <ContentCopy
+          fontSize="inherit"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCopy();
+          }}
+        />
       )}
     </Container>
   );

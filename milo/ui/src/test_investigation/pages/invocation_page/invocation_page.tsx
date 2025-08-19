@@ -156,6 +156,10 @@ export function InvocationPage() {
         'variant_hash',
         'variant.def',
         'status_v2',
+        'results.*.result.failure_reason',
+        'results.*.result.skipped_reason',
+        'results.*.result.summary_html',
+        'results.*.result.status_v2',
       ],
       filter,
     });
