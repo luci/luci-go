@@ -23,6 +23,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"sync"
+	"sort"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
@@ -204,6 +206,14 @@ func shouldIgnoreRecipient(c context.Context, email string) bool {
 	return true
 }
 
+func sortBuildersByName(builders [][]BuilderInfo) {
+	for _, builder := range builders {
+		sort.Slice(builder, func(i, j int) bool {
+			return builder[i].Name < builder[j].Name
+		})
+	}
+}
+
 func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifier, bbclient buildbucketpb.BuildersClient, project string) (map[string]*internal.EmailTask, error) {
 	tasks := make(map[string]*internal.EmailTask)
 	for _, builderHealthNotifier := range bhn {
@@ -211,55 +221,83 @@ func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifi
 		if shouldIgnoreRecipient(c, email) {
 			continue
 		}
-		healthyBuilders := []BuilderInfo{}
-		unhealthyBuilders := []BuilderInfo{}
-		unknownHealthBuilders := []BuilderInfo{}
+
+		// Use channels to collect results from goroutines
+		unhealthyBuildersChan := make(chan BuilderInfo, len(builderHealthNotifier.Builders))
+		healthyBuildersChan := make(chan BuilderInfo, len(builderHealthNotifier.Builders))
+		unknownHealthBuildersChan := make(chan BuilderInfo, len(builderHealthNotifier.Builders))
+
+		// Run getBuilder calls async and wait for all requests to finish
+		// before generating the email.
+		var wg sync.WaitGroup
 		builderCount := len(builderHealthNotifier.Builders)
 		for _, builder := range builderHealthNotifier.Builders {
-			req := &buildbucketpb.GetBuilderRequest{
-				Id: &buildbucketpb.BuilderID{
-					Project: project,
-					Bucket:  builder.Bucket,
-					Builder: builder.Name,
-				},
-				Mask: &buildbucketpb.BuilderMask{
-					Type: 2,
-				},
-			}
-			builderItem, err := bbclient.GetBuilder(c, req)
-			if err != nil {
-				return nil, err
-			}
-			// Check if metadata or health exists
-			// If not, add into unknown category
-			if builderItem.Metadata == nil || builderItem.Metadata.Health == nil {
-				unknownHealthBuilders = append(unknownHealthBuilders,
-					BuilderInfo{
-						Name: fmt.Sprintf("%s.%s:%s", project, builder.Bucket, builder.Name),
-						Link: fmt.Sprintf("https://ci.chromium.org/ui/p/%s/builders/%s/%s", project, builder.Bucket, builder.Name),
-					})
-				continue
-			}
-			healthStatus := builderItem.Metadata.Health
-			if healthStatus.HealthScore == 10 {
-				healthyBuilders = append(healthyBuilders,
-					BuilderInfo{
-						Name:        fmt.Sprintf("%s.%s:%s", project, builder.Bucket, builder.Name),
-						Link:        fmt.Sprintf("https://ci.chromium.org/ui/p/%s/builders/%s/%s", project, builder.Bucket, builder.Name),
-						Description: healthStatus.Description,
-					})
-			} else {
-				unhealthyBuilders = append(unhealthyBuilders,
-					BuilderInfo{
-						Name:        fmt.Sprintf("%s.%s:%s", project, builder.Bucket, builder.Name),
-						Link:        fmt.Sprintf("https://ci.chromium.org/ui/p/%s/builders/%s/%s", project, builder.Bucket, builder.Name),
-						Description: healthStatus.Description,
-					})
-			}
+			wg.Add(1)
+			go func(b *notifypb.Builder) {
+				defer wg.Done()
+				req := &buildbucketpb.GetBuilderRequest{
+					Id: &buildbucketpb.BuilderID{
+						Project: project,
+						Bucket: b.Bucket,
+						Builder: b.Name,
+					},
+					Mask: &buildbucketpb.BuilderMask{
+						Type: 2,
+					},
+				}
+				builderItem, err := bbclient.GetBuilder(c, req)
+				if err != nil {
+					// We can't return an error from a goroutine, so log it.
+					logging.Errorf(c, "Failed to get builder %s: %v", b.Name, err)
+					return
+				}
+
+				builderInfo := BuilderInfo{
+					Name: fmt.Sprintf("%s.%s:%s", project, b.Bucket, b.Name),
+					Link: fmt.Sprintf("https://ci.chromium.org/ui/p/%s/builders/%s/%s", project, b.Bucket, b.Name),
+				}
+
+				if builderItem.Metadata == nil || builderItem.Metadata.Health == nil {
+					unknownHealthBuildersChan <- builderInfo
+				} else {
+					healthStatus := builderItem.Metadata.Health
+					builderInfo.Description = healthStatus.Description
+					if healthStatus.HealthScore == 10 {
+						healthyBuildersChan <- builderInfo
+					} else {
+						unhealthyBuildersChan <- builderInfo
+					}
+				}
+			}(builder)
 		}
+
+		// Wait for all goroutines to finish
+		wg.Wait()
+		close(unhealthyBuildersChan)
+		close(healthyBuildersChan)
+		close(unknownHealthBuildersChan)
+
+		// Collect results from channels into slices
+		healthyBuilders := []BuilderInfo{}
+		for b := range healthyBuildersChan {
+			healthyBuilders = append(healthyBuilders, b)
+		}
+
+		unhealthyBuilders := []BuilderInfo{}
+		for b := range unhealthyBuildersChan {
+			unhealthyBuilders = append(unhealthyBuilders, b)
+		}
+
+		unknownHealthBuilders := []BuilderInfo{}
+		for b := range unknownHealthBuildersChan {
+			unknownHealthBuilders = append(unknownHealthBuilders, b)
+		}
+
+		// Sort the slices alphabetically by builder name
+		sortBuildersByName([][]BuilderInfo{healthyBuilders, unhealthyBuilders, unknownHealthBuilders})
+
 		unhealthyBuilderCount := len(unhealthyBuilders)
 
-		// Check if we need to send an email if all builders are healthy.
 		if unhealthyBuilderCount == 0 && !builderHealthNotifier.NotifyAllHealthy {
 			logging.Debugf(c, "Got 0 unhealthy builders and notify_all_healthy is set to %s", builderHealthNotifier.NotifyAllHealthy)
 			continue
@@ -267,10 +305,11 @@ func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifi
 
 		task := &internal.EmailTask{
 			Recipients: []string{email},
-			Subject:    fmt.Sprintf("Builder Health For %s - %d of %d Are in Bad Health", email, unhealthyBuilderCount, builderCount),
-			BodyGzip:   generateEmail(c, email, unhealthyBuilderCount, builderCount, generateBuilderDescriptionHTML(unhealthyBuilders, healthyBuilders, unknownHealthBuilders), "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/infra/builder_health_indicators.md"),
+			Subject: fmt.Sprintf("Builder Health For %s - %d of %d Are in Bad Health", email, unhealthyBuilderCount, builderCount),
+			BodyGzip: generateEmail(c, email, unhealthyBuilderCount, builderCount, generateBuilderDescriptionHTML(unhealthyBuilders, healthyBuilders, unknownHealthBuilders), "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/infra/builder_health_indicators.md"),
 		}
 		tasks[email] = task
 	}
+
 	return tasks, nil
 }
