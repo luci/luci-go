@@ -94,7 +94,7 @@ const COLUMNS: Record<string, GridColDef> = {
           }}
         >
           {Icon}
-          <Typography>{label}</Typography>
+          <Typography noWrap={true}>{label}</Typography>
         </div>
       );
     },
