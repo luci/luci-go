@@ -58,6 +58,7 @@ type SuspectType string
 
 const (
 	SuspectType_Heuristic  SuspectType = "Heuristic"
+	SuspectType_GenAI      SuspectType = "GenAI"
 	SuspectType_NthSection SuspectType = "NthSection"
 )
 
@@ -326,6 +327,21 @@ type Suspect struct {
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
+// CompileGenAIAnalysis is GenAI analysis for compile failures.
+type CompileGenAIAnalysis struct {
+	Id int64 `gae:"$id"`
+	// Key to the parent CompileFailureAnalysis
+	ParentAnalysis *datastore.Key `gae:"$parent"`
+	// Time when the analysis starts to run.
+	StartTime time.Time `gae:"start_time"`
+	// Time when the analysis ends, or canceled
+	EndTime time.Time `gae:"end_time"`
+	// Status of the analysis
+	Status pb.AnalysisStatus `gae:"status"`
+	// Run status of the analysis
+	RunStatus pb.AnalysisRunStatus `gae:"run_status"`
+}
+
 // CompileHeuristicAnalysis is heuristic analysis for compile failures.
 type CompileHeuristicAnalysis struct {
 	Id int64 `gae:"$id"`
@@ -557,6 +573,10 @@ func (tfa *TestFailureAnalysis) HasStarted() bool {
 
 func (ha *CompileHeuristicAnalysis) HasEnded() bool {
 	return ha.RunStatus == pb.AnalysisRunStatus_ENDED || ha.RunStatus == pb.AnalysisRunStatus_CANCELED
+}
+
+func (ga *CompileGenAIAnalysis) HasEnded() bool {
+	return ga.RunStatus == pb.AnalysisRunStatus_ENDED
 }
 
 func (nsa *CompileNthSectionAnalysis) HasEnded() bool {
