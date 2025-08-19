@@ -2,7 +2,7 @@ runtime: go124
 service: default
 app_engine_apis: true
 
-instance_class: F4_1G
+instance_class: F4
 automatic_scaling:
   min_idle_instances: 2
 
