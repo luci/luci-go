@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Link, Typography } from '@mui/material';
+import { Box, Chip, Link, Typography } from '@mui/material';
 import { useMemo } from 'react';
 
 import { TestResultSummary } from '@/common/components/test_result_summary';
@@ -22,6 +22,10 @@ import {
 } from '@/common/styles/status_styles';
 import { parseInvId } from '@/common/tools/invocation_utils';
 import { parseTestResultName } from '@/common/tools/test_result_utils';
+import {
+  displayCompactDuration,
+  parseProtoDuration,
+} from '@/common/tools/time_utils';
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import {
@@ -93,6 +97,11 @@ export function ArtifactSummaryView({
     () => getFailureReasonKindDisplayText(currentResult.failureReason?.kind),
     [currentResult.failureReason?.kind],
   );
+
+  const [compactDuration] =
+    (currentResult.duration &&
+      displayCompactDuration(parseProtoDuration(currentResult.duration))) ||
+    [];
 
   const renderStatus = () => {
     const requiresLeadingWas =
@@ -192,7 +201,19 @@ export function ArtifactSummaryView({
               No primary error message uploaded.
             </Typography>
           )}
-          <Box sx={{ pl: 1, pr: 1, pb: 1 }}>
+          <Box
+            sx={{
+              pl: 1,
+              pr: 1,
+              pb: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            {compactDuration && (
+              <Chip label={compactDuration} color="primary"></Chip>
+            )}
             {parsedInvId.type === 'swarming-task' && (
               <Typography variant="body2">
                 Result #{selectedAttemptIndex + 1}{' '}
