@@ -33,20 +33,31 @@ import (
 // variable.
 type defaultAgentDialer struct{}
 
-func (_ defaultAgentDialer) Dial(ctx context.Context) (ssh.AgentConn, error) {
+func (d defaultAgentDialer) Dial(ctx context.Context) (ssh.AgentConn, error) {
 	sshAuthSock, _ := os.LookupEnv(reauth.EnvSSHAuthSock)
 	if sshAuthSock == "" {
 		return nil, fmt.Errorf("no available SSH Agent socket, %s isn't set", reauth.EnvSSHAuthSock)
 	}
 
-	// TODO(b/415121564): Add support for dialing TCP sockets.
-
-	c, err := net.Dial("unix", sshAuthSock)
+	c, err := d.dialAddr(sshAuthSock)
 	if err != nil {
 		return nil, err
 	}
 
 	return ssh.NewAgentConn(c), nil
+}
+
+// Try to dial `addr` by trying supported protocols (i.e. TCP or Unix) in order.
+func (d defaultAgentDialer) dialAddr(addr string) (net.Conn, error) {
+	if a, err := net.ResolveTCPAddr("tcp", addr); err != nil {
+		return net.DialTCP("tcp", nil, a)
+	}
+
+	if a, err := net.ResolveUnixAddr("unix", addr); err != nil {
+		return net.DialUnix("unix", nil, a)
+	}
+
+	return nil, errors.Fmt("No matching protocol for address: %v", addr)
 }
 
 func newDefaultAgentDialer() defaultAgentDialer {
