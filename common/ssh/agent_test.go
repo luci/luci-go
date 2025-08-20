@@ -225,3 +225,16 @@ func TestHandleClient(t *testing.T) {
 		})
 	})
 }
+
+func TestUpstreamWithFallbackDialer(t *testing.T) {
+	ctx := context.Background()
+	t.Parallel()
+
+	t.Run("Fallback without failing", func(t *testing.T) {
+		dialer := ssh.UpstreamWithFallback{}
+		c, err := dialer.Dial(ctx)
+		assert.NoErr(t, err)
+		assert.Loosely(t, c, should.NotBeNil)
+		assert.Loosely(t, c, should.HaveType[*ssh.FallbackAgent])
+	})
+}
