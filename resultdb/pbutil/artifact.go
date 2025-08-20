@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strconv"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
@@ -29,6 +30,9 @@ const (
 	// Also accept '.' as the first character to enable upload of files starting with .
 	artifactIDPattern       = `(?:[[:word:]]|\.)([\p{L}\p{M}\p{N}\p{P}\p{S}\p{Zs}]{0,508}[[:word:]])?`
 	artifactIDPrefixPattern = `(?:[[:word:]]|\.)([\p{L}\p{M}\p{N}\p{P}\p{S}\p{Zs}]{0,509})?`
+	// The RBE URI format: "bytestream://<HOSTNAME>/projects/<PROJECT_ID>/instances/<INSTANCE_ID>/blobs/<HASH>/<SIZE_BYTES>".
+	// Captures: 1=PROJECT_ID, 2=INSTANCE_ID, 3=HASH, 4=SIZE_BYTES
+	rbeURIPatten = `bytestream://[^/]+/projects/([^/]+)/instances/([^/]+)/blobs/([^/]+)/(\d+)`
 )
 
 var (
@@ -40,6 +44,7 @@ var (
 	testResultArtifactNameRe      = regexpf("^%s$", testResultArtifactNamePattern)
 	artifactNameRe                = regexpf("^%s|%s$", testResultArtifactNamePattern, invocationArtifactNamePattern)
 	textArtifactContentTypeRe     = regexpf("^text/*")
+	rbeURIRe                      = regexpf("^%s$", rbeURIPatten)
 )
 
 // ValidateArtifactID returns a non-nil error if id is invalid.
@@ -113,6 +118,34 @@ func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID 
 
 	err = validate.DoesNotMatchReErr(artifactNameRe)
 	return
+}
+
+// ParseRbeURI parses the RBE URI in the format of
+// "bytestream://<HOSTNAME>/projects/<PROJECT_ID>/instances/<INSTANCE_ID>/blobs/<HASH>/<SIZE_BYTES>"
+// and then returns the project id, instance id, artifact hash and artifact
+// size.
+func ParseRbeURI(rbeURI string) (project, instance, hash string, size int64, err error) {
+	matches := rbeURIRe.FindStringSubmatch(rbeURI)
+
+	// A successful match will return a slice of 5 strings:
+	// matches[0]: The full matched string
+	// matches[1]: The Project ID
+	// matches[2]: The Instance ID
+	// matches[3]: The Hash
+	// matches[4]: The Size Bytes (as string)
+	if len(matches) != 5 {
+		return "", "", "", 0, fmt.Errorf("invalid RBE URI format: does not match 'bytestream://<HOSTNAME>/projects/<PROJECT_ID>/instances/<INSTANCE_ID>/blobs/<HASH>/<SIZE_BYTES>' for URI %q", rbeURI)
+	}
+
+	project = matches[1]
+	instance = matches[2]
+	hash = matches[3]
+	size, err = strconv.ParseInt(matches[4], 10, 64)
+	if err != nil {
+		return "", "", "", 0, fmt.Errorf("invalid size component in RBE URI %q: %w", rbeURI, err)
+	}
+
+	return project, instance, hash, size, nil
 }
 
 // InvocationArtifactName synthesizes a name of an invocation-level artifact.

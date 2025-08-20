@@ -32,11 +32,26 @@ func createPlaceholderGcsAllowlist() []*configpb.GcsAllowList {
 	}
 }
 
+// Creates a placeholder `RbeAllowlist` config with default values.
+func createPlaceholderRbeAllowlist() []*configpb.RbeAllowList {
+	return []*configpb.RbeAllowList{
+		{
+			Users: []string{
+				"user:test@test.com",
+			},
+			Instances: []string{
+				"projects/testproject/instances/default_instance",
+			},
+		},
+	}
+}
+
 // CreatePlaceholderProjectConfig creates a placeholder project config with
 // default values.
 func CreatePlaceholderProjectConfig() *configpb.ProjectConfig {
 	return &configpb.ProjectConfig{
 		GcsAllowList: createPlaceholderGcsAllowlist(),
+		RbeAllowList: createPlaceholderRbeAllowlist(),
 	}
 }
 

@@ -169,3 +169,143 @@ func TestIsTextArtifact(t *testing.T) {
 		})
 	})
 }
+
+func TestParseRbeURI(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name         string
+		uri          string
+		wantProject  string
+		wantInstance string
+		wantHash     string
+		wantSize     int64
+	}{
+		{
+			name:         "Valid URI",
+			uri:          "bytestream://remotebuildexecution.googleapis.com/projects/my-proj/instances/default/blobs/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855/12345",
+			wantProject:  "my-proj",
+			wantInstance: "default",
+			wantHash:     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			wantSize:     12345,
+		},
+		{
+			name:         "Valid URI with zero size",
+			uri:          "bytestream://us-central1-remotebuildexecution.googleapis.com/projects/another-proj/instances/test-inst/blobs/deadbeef/0",
+			wantProject:  "another-proj",
+			wantInstance: "test-inst",
+			wantHash:     "deadbeef",
+			wantSize:     0,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			project, instance, hash, size, err := ParseRbeURI(tc.uri)
+
+			if err != nil {
+				t.Fatalf("ParseRbeURI(%q) failed unexpectedly: %v", tc.uri, err)
+			}
+
+			if project != tc.wantProject {
+				t.Errorf("ParseRbeURI(%q) project = %q, want %q", tc.uri, project, tc.wantProject)
+			}
+			if instance != tc.wantInstance {
+				t.Errorf("ParseRbeURI(%q) instance = %q, want %q", tc.uri, instance, tc.wantInstance)
+			}
+			if hash != tc.wantHash {
+				t.Errorf("ParseRbeURI(%q) hash = %q, want %q", tc.uri, hash, tc.wantHash)
+			}
+			if size != tc.wantSize {
+				t.Errorf("ParseRbeURI(%q) size = %d, want %d", tc.uri, size, tc.wantSize)
+			}
+		})
+	}
+}
+
+func TestParseRbeURI_Failure(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		uri        string
+		wantErrMsg string
+	}{
+		{
+			name:       "Empty URI",
+			uri:        "",
+			wantErrMsg: "invalid RBE URI format",
+		},
+		{
+			name:       "Not bytestream",
+			uri:        "https://remotebuildexecution.googleapis.com/projects/my-proj/instances/default/blobs/abc/123",
+			wantErrMsg: "invalid RBE URI format",
+		},
+		{
+			name:       "Missing projects prefix",
+			uri:        "bytestream://remotebuildexecution.googleapis.com/my-proj/instances/default/blobs/abc/123",
+			wantErrMsg: "invalid RBE URI format",
+		},
+		{
+			name:       "Missing instances prefix",
+			uri:        "bytestream://remotebuildexecution.googleapis.com/projects/my-proj/default/blobs/abc/123",
+			wantErrMsg: "invalid RBE URI format",
+		},
+		{
+			name:       "Missing blobs prefix",
+			uri:        "bytestream://remotebuildexecution.googleapis.com/projects/my-proj/instances/default/abc/123",
+			wantErrMsg: "invalid RBE URI format",
+		},
+		{
+			name:       "Unsupported resource type",
+			uri:        "bytestream://remotebuildexecution.googleapis.com/projects/my-proj/instances/default/actions/abc",
+			wantErrMsg: "invalid RBE URI format",
+		},
+		{
+			name:       "Missing hash",
+			uri:        "bytestream://remotebuildexecution.googleapis.com/projects/my-proj/instances/default/blobs//123",
+			wantErrMsg: "invalid RBE URI format",
+		},
+		{
+			name:       "Missing size",
+			uri:        "bytestream://remotebuildexecution.googleapis.com/projects/my-proj/instances/default/blobs/abc/",
+			wantErrMsg: "invalid RBE URI format",
+		},
+		{
+			name:       "Non-numeric size",
+			uri:        "bytestream://remotebuildexecution.googleapis.com/projects/my-proj/instances/default/blobs/abc/def",
+			wantErrMsg: "invalid RBE URI format",
+		},
+		{
+			name:       "Size not integer",
+			uri:        "bytestream://remotebuildexecution.googleapis.com/projects/my-proj/instances/default/blobs/abc/123.45",
+			wantErrMsg: "invalid RBE URI format",
+		},
+		{
+			name:       "Empty project",
+			uri:        "bytestream://remotebuildexecution.googleapis.com/projects//instances/default/blobs/abc/123",
+			wantErrMsg: "invalid RBE URI format",
+		},
+		{
+			name:       "Empty instance",
+			uri:        "bytestream://remotebuildexecution.googleapis.com/projects/my-proj/instances//blobs/abc/123",
+			wantErrMsg: "invalid RBE URI format",
+		},
+		{
+			name:       "Size overflow",
+			uri:        "bytestream://remotebuildexecution.googleapis.com/projects/my-proj/instances/default/blobs/abc/9223372036854775808", // MaxInt64 + 1
+			wantErrMsg: "invalid size component in RBE URI",                                                                                 // Fails regex
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, _, _, _, err := ParseRbeURI(tc.uri)
+
+			if err == nil {
+				t.Fatalf("ParseRbeURI(%q) succeeded unexpectedly, want error", tc.uri)
+			}
+			if !strings.Contains(err.Error(), tc.wantErrMsg) {
+				t.Errorf("ParseRbeURI(%q) returned error %v, want error containing %q", tc.uri, err, tc.wantErrMsg)
+			}
+		})
+	}
+}

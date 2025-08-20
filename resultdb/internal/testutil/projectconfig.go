@@ -33,43 +33,139 @@ import (
 	"go.chromium.org/luci/server/caching"
 
 	rdbcfg "go.chromium.org/luci/resultdb/internal/config"
+	configpb "go.chromium.org/luci/resultdb/proto/config"
 )
 
 var textPBMultiline = prototext.MarshalOptions{
 	Multiline: true,
 }
 
-// TestProjectConfigContext returns a context to be used in project config related tests.
-func TestProjectConfigContext(ctx context.Context, t testing.TB, project, user, bucket string) context.Context {
-	t.Helper()
-	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
-	ctx = memory.Use(ctx)
-	ctx = caching.WithEmptyProcessCache(ctx)
-	ctx = SetGCSAllowedBuckets(ctx, t, project, user, bucket)
-	return ctx
+type projectConfigsKeyType struct{}
+
+var projectConfigsKey = projectConfigsKeyType{}
+
+func getConfigs(ctx context.Context) map[config.Set]cfgmem.Files {
+	if cfgs, ok := ctx.Value(projectConfigsKey).(map[config.Set]cfgmem.Files); ok {
+		return cfgs
+	}
+	return make(map[config.Set]cfgmem.Files)
 }
 
-// SetGCSAllowedBuckets overrides the only existing project-config
-// GcsAllowlist entry to match the rule defined by project, realm, bucket
-// and prefix.
-func SetGCSAllowedBuckets(ctx context.Context, t testing.TB, project, user, bucket string) context.Context {
+func setConfigs(ctx context.Context, cfgs map[config.Set]cfgmem.Files) context.Context {
+	return context.WithValue(ctx, projectConfigsKey, cfgs)
+}
+
+func getProjectConfig(ctx context.Context, t testing.TB, project string) *configpb.ProjectConfig {
 	t.Helper()
 
-	testProject := rdbcfg.CreatePlaceholderProjectConfig()
-	assert.Loosely(t, len(testProject.GcsAllowList), should.Equal(1), truth.LineContext())
-	testProject.GcsAllowList[0].Users = []string{user}
-	assert.Loosely(t, len(testProject.GcsAllowList[0].Buckets), should.Equal(1), truth.LineContext())
-	testProject.GcsAllowList[0].Buckets[0] = bucket
-
+	configs := getConfigs(ctx)
 	cfgSet := config.Set(fmt.Sprintf("projects/%s", project))
-	configs := map[config.Set]cfgmem.Files{
-		cfgSet: {"${appid}.cfg": textPBMultiline.Format(testProject)},
+	files, _ := configs[cfgSet]
+	if files == nil {
+		files = make(cfgmem.Files)
+		configs[cfgSet] = files
 	}
 
+	var pcfg configpb.ProjectConfig
+	if content, ok := files["${appid}.cfg"]; ok {
+		if err := prototext.Unmarshal([]byte(content), &pcfg); err != nil {
+			t.Fatalf("failed to unmarshal project config: %s", err)
+		}
+	} else {
+		pcfg = *rdbcfg.CreatePlaceholderProjectConfig()
+	}
+	return &pcfg
+}
+
+func setProjectConfig(ctx context.Context, t testing.TB, project string, pcfg *configpb.ProjectConfig) context.Context {
+	t.Helper()
+
+	configs := getConfigs(ctx)
+	cfgSet := config.Set(fmt.Sprintf("projects/%s", project))
+	files, _ := configs[cfgSet]
+	if files == nil {
+		files = make(cfgmem.Files)
+		configs[cfgSet] = files
+	}
+
+	files["${appid}.cfg"] = textPBMultiline.Format(pcfg)
+
+	ctx = setConfigs(ctx, configs)
 	ctx = cfgclient.Use(ctx, cfgmem.New(configs))
 	err := rdbcfg.UpdateProjects(ctx)
 	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	datastore.GetTestable(ctx).CatchupIndexes()
 
 	return ctx
+}
+
+// ClearProjectConfig removes the configuration for a project.
+func ClearProjectConfig(ctx context.Context, t testing.TB, project string) context.Context {
+	t.Helper()
+
+	configs := getConfigs(ctx)
+	cfgSet := config.Set(fmt.Sprintf("projects/%s", project))
+	delete(configs, cfgSet)
+
+	ctx = setConfigs(ctx, configs)
+	ctx = cfgclient.Use(ctx, cfgmem.New(configs))
+	err := rdbcfg.UpdateProjects(ctx)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
+	datastore.GetTestable(ctx).CatchupIndexes()
+
+	return ctx
+}
+
+// TestProjectConfigContext returns a context to be used in project config
+// related tests.
+func TestProjectConfigContext(ctx context.Context, t testing.TB, project, user, bucket, instance string) context.Context {
+	t.Helper()
+	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+	ctx = memory.Use(ctx)
+	ctx = caching.WithEmptyProcessCache(ctx)
+	ctx = SetGCSAllowedBuckets(ctx, t, project, user, bucket)
+	ctx = SetRBEAllowedInstances(ctx, t, project, user, instance)
+	return ctx
+}
+
+// SetGCSAllowedBuckets sets the GCS allow list for a user in a project.
+func SetGCSAllowedBuckets(ctx context.Context, t testing.TB, project, user string, buckets ...string) context.Context {
+	pcfg := getProjectConfig(ctx, t, project)
+	var rule *configpb.GcsAllowList
+	for _, r := range pcfg.GcsAllowList {
+		// Match only by user, this is sufficient for our tests.
+		if len(r.Users) == 1 && r.Users[0] == user {
+			rule = r
+			break
+		}
+	}
+
+	// If no rule for the user, create one.
+	if rule == nil {
+		rule = &configpb.GcsAllowList{Users: []string{user}}
+		pcfg.GcsAllowList = append(pcfg.GcsAllowList, rule)
+	}
+	rule.Buckets = buckets
+	return setProjectConfig(ctx, t, project, pcfg)
+}
+
+// SetRBEAllowedInstances sets the RBE allow list for a user in a project.
+func SetRBEAllowedInstances(ctx context.Context, t testing.TB, project, user string, instances ...string) context.Context {
+	pcfg := getProjectConfig(ctx, t, project)
+	var rule *configpb.RbeAllowList
+	for _, r := range pcfg.RbeAllowList {
+		// Match only by user, this is sufficient for our tests.
+		if len(r.Users) == 1 && r.Users[0] == user {
+			rule = r
+			break
+		}
+	}
+
+	// If no rule for the user, create one.
+	if rule == nil {
+		rule = &configpb.RbeAllowList{Users: []string{user}}
+		pcfg.RbeAllowList = append(pcfg.RbeAllowList, rule)
+	}
+	rule.Instances = instances
+	return setProjectConfig(ctx, t, project, pcfg)
 }

@@ -70,8 +70,13 @@ type artifactCreationRequest struct {
 	size int64
 	// data is the artifact contents data that will be stored in RBE-CAS.  If gcsURI is provided, this must be empty.
 	data []byte
-	// gcsURI is the location of the artifact content if it is stored in GCS.  If this is provided, data must be empty.
+	// gcsURI is the location of the artifact content if it is stored in GCS.
+	// If this is provided, data must be empty.
 	gcsURI string
+	// rbeURI is the location of the artifact content if it is stored in RBE.
+	// If this is provided, data must be empty.
+	rbeURI string
+
 	// variant is the test variant, if known.
 	variant *pb.Variant
 }
@@ -175,8 +180,16 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, requireParent boo
 		}
 	}
 
-	if len(req.Artifact.Contents) != 0 && req.Artifact.GcsUri != "" {
-		return "", nil, errors.New("only one of contents and gcs_uri can be given")
+	if (req.Artifact.GcsUri != "" && len(req.Artifact.Contents) > 0) ||
+		(req.Artifact.GcsUri != "" && req.Artifact.RbeUri != "") ||
+		(len(req.Artifact.Contents) > 0 && req.Artifact.RbeUri != "") {
+		return "", nil, errors.New("only one of contents, gcs_uri and rbe_cas_uri can be given")
+	}
+
+	if req.Artifact.RbeUri != "" {
+		if _, _, _, _, err := pbutil.ParseRbeURI(req.Artifact.RbeUri); err != nil {
+			return "", nil, errors.Fmt("invalid RBE URI format: %w", err)
+		}
 	}
 
 	sizeBytes := int64(len(req.Artifact.Contents))
@@ -200,6 +213,7 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, requireParent boo
 		testID:      testID,
 		resultID:    resultID,
 		gcsURI:      req.Artifact.GcsUri,
+		rbeURI:      req.Artifact.RbeUri,
 		variant:     variant,
 	}, nil
 }
@@ -254,8 +268,8 @@ func parseBatchCreateArtifactsRequest(in *pb.BatchCreateArtifactsRequest, cfg *c
 			return "", nil, errors.Fmt("requests[%d]: only one parent is allowed: %q, %q", i, in.Parent, req.Parent)
 		}
 
-		// We do not count GCS artifacts when validating the size.
-		if art.gcsURI == "" {
+		// We do not count GCS or RBE artifacts when validating the size.
+		if art.gcsURI == "" && art.rbeURI == "" {
 			tSize += art.size
 		}
 		if tSize > MaxBatchCreateArtifactSize {
@@ -275,6 +289,7 @@ func findNewArtifacts(ctx context.Context, invID invocations.ID, arts []*artifac
 		hash   string
 		size   int64
 		gcsURI string
+		rbeURI string
 	}
 	var states map[string]state
 	ks := spanner.KeySets()
@@ -282,13 +297,14 @@ func findNewArtifacts(ctx context.Context, invID invocations.ID, arts []*artifac
 		ks = spanner.KeySets(invID.Key(a.parentID(), a.artifactID), ks)
 	}
 	var b spanutil.Buffer
-	err := span.Read(ctx, "Artifacts", ks, []string{"ParentId", "ArtifactId", "RBECASHash", "Size", "GcsURI"}).Do(
+	err := span.Read(ctx, "Artifacts", ks, []string{"ParentId", "ArtifactId", "RBECASHash", "Size", "GcsURI", "RbeURI"}).Do(
 		func(row *spanner.Row) (err error) {
 			var pid, aid string
 			var hash string
 			var size = new(int64)
 			var gcsURI string
-			if err = b.FromSpanner(row, &pid, &aid, &hash, &size, &gcsURI); err != nil {
+			var rbeURI string
+			if err = b.FromSpanner(row, &pid, &aid, &hash, &size, &gcsURI, &rbeURI); err != nil {
 				return
 			}
 			if states == nil {
@@ -299,7 +315,7 @@ func findNewArtifacts(ctx context.Context, invID invocations.ID, arts []*artifac
 				size = new(int64)
 			}
 			// The artifact exists.
-			states[invID.Key(pid, aid).String()] = state{hash, *size, gcsURI}
+			states[invID.Key(pid, aid).String()] = state{hash, *size, gcsURI, rbeURI}
 			return
 		},
 	)
@@ -311,7 +327,7 @@ func findNewArtifacts(ctx context.Context, invID invocations.ID, arts []*artifac
 	for _, a := range arts {
 		// Save the hash, so that it can be reused in the post-verification
 		// after rbecase.UpdateBlob().
-		if a.gcsURI == "" && a.hash == "" {
+		if a.gcsURI == "" && a.rbeURI == "" && a.hash == "" {
 			h := sha256.Sum256(a.data)
 			a.hash = artifacts.AddHashPrefix(hex.EncodeToString(h[:]))
 		}
@@ -322,7 +338,11 @@ func findNewArtifacts(ctx context.Context, invID invocations.ID, arts []*artifac
 		}
 		if (a.gcsURI == "") != (st.gcsURI == "") {
 			// Can't change from GCS to non-GCS and vice-versa
-			return nil, appstatus.Errorf(codes.AlreadyExists, `%q: exists w/ different storage scheme`, a.name(invID))
+			return nil, appstatus.Errorf(codes.AlreadyExists, `%q: exists w/ different GCS storage scheme`, a.name(invID))
+		}
+		if (a.rbeURI == "") != (st.rbeURI == "") {
+			// Can't change from RBE to non-RBE and vice-versa
+			return nil, appstatus.Errorf(codes.AlreadyExists, `%q: exists w/ different RBE storage scheme`, a.name(invID))
 		}
 		if a.size != st.size {
 			return nil, appstatus.Errorf(codes.AlreadyExists, `%q: exists w/ different size: %d != %d`, a.name(invID), a.size, st.size)
@@ -330,6 +350,10 @@ func findNewArtifacts(ctx context.Context, invID invocations.ID, arts []*artifac
 		if a.gcsURI != "" {
 			if a.gcsURI != st.gcsURI {
 				return nil, appstatus.Errorf(codes.AlreadyExists, `%q: exists w/ different GCS URI: %s != %s`, a.name(invID), a.gcsURI, st.gcsURI)
+			}
+		} else if a.rbeURI != "" {
+			if a.rbeURI != st.rbeURI {
+				return nil, appstatus.Errorf(codes.AlreadyExists, `%q: exists w/ different RBE URI: %s != %s`, a.name(invID), a.rbeURI, st.rbeURI)
 			}
 		} else {
 			if a.hash != st.hash {
@@ -394,6 +418,7 @@ func createArtifactStates(ctx context.Context, realm string, invID invocations.I
 				"Size":          a.size,
 				"RBECASHash":    a.hash,
 				"GcsURI":        a.gcsURI,
+				"RbeURI":        a.rbeURI,
 				"ModuleVariant": a.variant,
 			}))
 		}
@@ -435,10 +460,10 @@ func uploadArtifactBlobs(ctx context.Context, rbeIns string, casClient repb.Cont
 	return nil
 }
 
-// allowedBucketsForUser returns the GCS buckets a user is allowed to reference by reading
-// the project config.
-// If no config exists for the user, an empty map will be returned, rather than an error.
-func allowedBucketsForUser(ctx context.Context, project, user string) (allowedBuckets map[string]bool, err error) {
+// allowedGCSBucketsForUser returns the GCS buckets a user is allowed to reference
+// by reading the project config. If no config exists for the user, an empty map
+// will be returned, rather than an error.
+func allowedGCSBucketsForUser(ctx context.Context, project, user string) (allowedBuckets map[string]bool, err error) {
 	allowedBuckets = map[string]bool{}
 	// This is cached for 1 minute, so no need to re-optimize here.
 	cfg, err := config.Project(ctx, project)
@@ -460,6 +485,33 @@ func allowedBucketsForUser(ctx context.Context, project, user string) (allowedBu
 		}
 	}
 	return allowedBuckets, nil
+}
+
+// allowedRbeInstancesForUser returns the RBE instances a user is allowed to
+// reference by reading the project config. If no config exists for the user, an
+// empty map will be returned, rather than an error.
+func allowedRbeInstancesForUser(ctx context.Context, project, user string) (allowedInstances map[string]bool, err error) {
+	allowedInstances = map[string]bool{}
+	// This is cached for 1 minute, so no need to re-optimize here.
+	cfg, err := config.Project(ctx, project)
+	if err != nil {
+		if errors.Is(err, config.ErrNotFoundProjectConfig) {
+			return allowedInstances, nil
+		}
+		return nil, err
+	}
+
+	for _, list := range cfg.RbeAllowList {
+		for _, listUser := range list.Users {
+			if listUser == user {
+				for _, instance := range list.Instances {
+					allowedInstances[instance] = true
+				}
+				return allowedInstances, nil
+			}
+		}
+	}
+	return allowedInstances, nil
 }
 
 // BatchCreateArtifacts implements pb.RecorderServer.
@@ -508,24 +560,40 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 	user := auth.CurrentUser(ctx).Identity
 
 	var allowedBuckets map[string]bool = nil
+	var allowedRbeInstances map[string]bool = nil
 	artsToUpload := make([]*artifactCreationRequest, 0, len(artsToCreate))
 	for _, a := range artsToCreate {
-		// Only upload to RBE CAS the ones that are not in GCS
-		if a.gcsURI == "" {
+		// Only upload to RBE CAS the ones that are not in GCS or RBE
+		if a.gcsURI == "" && a.rbeURI == "" {
 			artsToUpload = append(artsToUpload, a)
-		} else {
+		} else if a.gcsURI != "" {
 			// Check this GCS reference is allowed by the project config.
 			// Delay construction of the checker (which may occasionally involve an RPC) until we know we
 			// actually need it.
 			if allowedBuckets == nil {
-				allowedBuckets, err = allowedBucketsForUser(ctx, project, string(user))
+				allowedBuckets, err = allowedGCSBucketsForUser(ctx, project, string(user))
 				if err != nil {
-					return nil, errors.Fmt("fetch allowed buckets for user %s: %w", string(user), err)
+					return nil, errors.Fmt("fetch allowed buckets: %w", err)
 				}
 			}
 			bucket, _ := gsutil.Split(a.gcsURI)
 			if _, ok := allowedBuckets[bucket]; !ok {
-				return nil, appstatus.Errorf(codes.PermissionDenied, "the user %s does not have permission to reference GCS objects in bucket %s in project %s", string(user), bucket, project)
+				return nil, appstatus.Errorf(codes.PermissionDenied, "does not have permission to reference GCS objects in bucket %s in project %s", bucket, project)
+			}
+		} else if a.rbeURI != "" {
+			// Check this RBE reference is allowed by the project config.
+			if allowedRbeInstances == nil {
+				allowedRbeInstances, err = allowedRbeInstancesForUser(ctx, project, string(user))
+				if err != nil {
+					return nil, errors.Fmt("fetch allowed RBE instances: %w", err)
+				}
+			}
+			rbeProject, rbeInstance, _, _, err := pbutil.ParseRbeURI(a.rbeURI)
+			if err != nil {
+				return nil, appstatus.Errorf(codes.InvalidArgument, "invalid RBE URI: %q", a.rbeURI)
+			}
+			if _, ok := allowedRbeInstances[rbeInstance]; !ok {
+				return nil, appstatus.Errorf(codes.PermissionDenied, "does not have permission to reference RBE objects in instance %q in project %q", rbeInstance, rbeProject)
 			}
 		}
 	}
