@@ -48,9 +48,7 @@ describe('RepairListPage', () => {
 
   it('renders the component and calls the mock', () => {
     expect(screen.getByText('Repair metrics')).toBeInTheDocument();
-    expect(
-      screen.getByText('Devices Offline / Total Devices'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Offline / Total Devices')).toBeInTheDocument();
     expect(mockUseFleetConsoleClient).toHaveBeenCalled();
   });
 });

@@ -107,7 +107,7 @@ const COLUMNS: Record<string, GridColDef> = {
   hostGroup: {
     field: 'host_group',
     headerName: 'Host Group',
-    flex: 1,
+    flex: 2,
   },
   runTarget: {
     field: 'run_target',
@@ -126,12 +126,12 @@ const COLUMNS: Record<string, GridColDef> = {
   },
   devicesOfflineRatio: {
     field: 'devices_offline_ratio',
-    headerName: 'Devices Offline / Total Devices',
-    flex: 2,
+    headerName: 'Offline / Total Devices',
+    flex: 1,
   },
   omnilab_link: {
     field: 'omnilab_link',
-    headerName: 'Explore in arsenal',
+    headerName: 'Explore in Arsenal',
     flex: 1,
     renderCell: (x) => {
       // Double encodeURIComponent because omnilab is weird i guess
