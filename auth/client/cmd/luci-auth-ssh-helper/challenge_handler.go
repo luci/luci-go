@@ -32,8 +32,11 @@ import (
 type forwardingHandler struct {
 }
 
+// Environment variable name of the challenge plugin.
+const pluginEnvVar = "GOOGLE_AUTH_WEBAUTHN_PLUGIN"
+
 func (forwardingHandler) pluginCmd() string {
-	return os.Getenv("GOOGLE_AUTH_WEBAUTHN_PLUGIN")
+	return os.Getenv(pluginEnvVar)
 }
 
 func (h forwardingHandler) available() bool {

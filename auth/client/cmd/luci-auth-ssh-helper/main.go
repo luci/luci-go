@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/ssh"
+	"go.chromium.org/luci/common/system/signals"
 )
 
 func main() {
@@ -43,34 +44,85 @@ func main() {
 
 	ctx := context.Background()
 	ctx = gologger.StdConfig.Use(ctx)
-	if f.Verbose {
-		ctx = logging.SetLevel(ctx, logging.Debug)
-	} else {
-		ctx = logging.SetLevel(ctx, logging.Warning)
-	}
 
-	if err := sshHelperMain(ctx, f); err != nil {
-		// Propagate exit code if available.
-		if err, ok := err.(*exec.ExitError); ok {
-			os.Exit(err.ExitCode())
+	switch f.Mode {
+	case modeConnect:
+		if f.Verbose {
+			ctx = logging.SetLevel(ctx, logging.Debug)
+		} else {
+			ctx = logging.SetLevel(ctx, logging.Warning)
 		}
 
-		// Other errors.
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		if err := sshHelperMain(ctx, f); err != nil {
+			// Propagate exit code if available.
+			if err, ok := err.(*exec.ExitError); ok {
+				os.Exit(err.ExitCode())
+			}
+
+			// Other errors.
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+
+	case modeDaemon:
+		if err := standaloneMain(ctx, f); err != nil {
+			logging.Errorf(ctx, "Daemon mode failed with: %v", err)
+			os.Exit(2)
+		}
 	}
 }
 
-func sshHelperMain(ctx context.Context, r runArgs) error {
-	upstreamAddr, _ := os.LookupEnv(reauth.EnvSSHAuthSock)
+func createAgent(upstreamDialer ssh.AgentDialer, listener net.Listener) (*ssh.ExtensionAgent, error) {
+	h := forwardingHandler{}
+	if !h.available() {
+		return nil, fmt.Errorf("No challenge handler available. Please set %v.", pluginEnvVar)
+	}
+
+	agent := ssh.ExtensionAgent{
+		UpstreamDialer: upstreamDialer,
+		Listener:       listener,
+		Dispatcher: map[string]ssh.AgentExtensionHandler{
+			reauth.SSHExtensionForwardedChallenge: h.handle,
+		},
+	}
+
+	return &agent, nil
+}
+
+// Create an appropriate AgentDialer based on environment vars.
+func createUpstreamDialer(ctx context.Context) ssh.AgentDialer {
+	upstreamAddr := os.Getenv(reauth.EnvSSHAuthSock)
 	if upstreamAddr == "" {
 		logging.Warningf(ctx, "SSH_AUTH_SOCK isn't set.")
 	} else {
-		logging.Infof(ctx, "Local SSH_AUTH_SOCK is %v", upstreamAddr)
+		logging.Infof(ctx, "Proxies SSH agent commands to %v.", upstreamAddr)
 	}
 
-	upstreamDialer := ssh.UpstreamWithFallback{Upstream: upstreamAddr}
+	return ssh.UpstreamWithFallback{Upstream: upstreamAddr}
+}
 
+func standaloneMain(ctx context.Context, r runArgs) error {
+	listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", r.Port))
+	if err != nil {
+		return err
+	}
+	defer listener.Close()
+
+	upstreamDialer := createUpstreamDialer(ctx)
+	agent, err := createAgent(upstreamDialer, listener)
+	if err != nil {
+		return err
+	}
+
+	logging.Infof(ctx, "ReAuth handler listening on: %v", listener.Addr().String())
+
+	signals.HandleInterrupt(func() { agent.Close() })
+
+	// Blocks forever until agent.Close() is called.
+	return agent.ListenLoop(ctx)
+}
+
+func sshHelperMain(ctx context.Context, r runArgs) error {
 	listenerDir, err := os.MkdirTemp("", "luci_ssh_agent.")
 	if err != nil {
 		logging.Errorf(ctx, "Failed to create temporary directory: %v", err)
@@ -85,25 +137,17 @@ func sshHelperMain(ctx context.Context, r runArgs) error {
 	}
 	defer listener.Close()
 
+	upstreamDialer := createUpstreamDialer(ctx)
+	agent, err := createAgent(upstreamDialer, listener)
+	if err != nil {
+		logging.Errorf(ctx, "Failed to create SSH agent: %v", err)
+		return err
+	}
+
 	sshAuthSock := getSSHAuthSock(listener)
 	logging.Infof(ctx, "LUCI SSH Agent listening on: %v", sshAuthSock)
 
-	handler := forwardingHandler{}
-	if !handler.available() {
-		logging.Errorf(ctx, "No challenge handler available")
-		return err
-	}
-	agent := ssh.ExtensionAgent{
-		UpstreamDialer: upstreamDialer,
-		Listener:       listener,
-		Dispatcher: map[string]ssh.AgentExtensionHandler{
-			reauth.SSHExtensionForwardedChallenge: handler.handle,
-		},
-	}
-
-	listenerCtx := ctx
-
-	go agent.ListenLoop(listenerCtx)
+	go agent.ListenLoop(ctx)
 	defer agent.Close()
 
 	// Start the real SSH command.

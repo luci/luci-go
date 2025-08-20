@@ -27,9 +27,19 @@ import (
 type helperMode string
 
 const (
-	modePassthrough helperMode = "passthrough"
+	// Acts as an SSH binary wrapper.
+	//
+	// Starts an SSH agent that listens for ReAuth challenges, then starts an
+	// `ssh` session using this SSH agent.
+	//
+	// Other SSH agent commands are proxied to SSH_AUTH_SOCK, if it's set.
+	modeConnect helperMode = "connect"
 
-	// TODO(b/415121564): standalone (agent daemon) mode
+	// Runs as a daemon (i.e. doesn't start an SSH session) and starts an SSH
+	// agent that listens for ReAuth challenges.
+	//
+	// Other SSH agent commands are proxied to SSH_AUTH_SOCK, if it's set.
+	modeDaemon helperMode = "daemon"
 )
 
 type runArgs struct {
@@ -40,6 +50,11 @@ type runArgs struct {
 	// SSH tty.
 	Verbose bool
 
+	// For `modeStandalone`, the TCP port to listen on.
+	//
+	// For security reason, the TCP listener always binds to `localhost`.
+	Port int
+
 	// Args to be passed to the `ssh`` binary.
 	SSHArgs []string
 }
@@ -48,10 +63,18 @@ func (f *runArgs) registerFlags(fs *flag.FlagSet) {
 	fs.Var(
 		luciflag.NewChoice(
 			(*string)(&f.Mode),
-			string(modePassthrough),
+			string(modeConnect),
+			string(modeDaemon),
 		),
 		"mode",
-		fmt.Sprintf("Operation mode, choose from: %v, default: %v", modePassthrough, modePassthrough),
+		fmt.Sprintf("Operation mode, choose from: %v (default), %v", modeConnect, modeDaemon),
+	)
+
+	fs.IntVar(
+		&f.Port,
+		"port",
+		0,
+		fmt.Sprintf("When running with -mode=%v, the TCP port to listen on for incoming connections. The port always binds to `localhost`.", modeDaemon),
 	)
 
 	fs.BoolVar(&f.Verbose, "verbose", false, "Enables verbose logging. This might mess up the SSH terminal output")
@@ -77,6 +100,12 @@ func parseArgs(osArgs []string) (runArgs, error) {
 		fmt.Fprintf(os.Stderr, "  * To replace `ssh` command: `%v -- [ssh_opts] [user@]host`\n", arg0)
 		fmt.Fprintf(os.Stderr, "    You must use \"--\" to mark the beginning of ssh arguments.\n")
 		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, "  * To use this tool on its own: %v -mode=daemon -port=<PORT>\n", arg0)
+		fmt.Fprintf(os.Stderr, "    This opens a TCP listener on localhost:<PORT> to handle ReAuth challenge.\n")
+		fmt.Fprintf(os.Stderr, "    You need to setup port forwarding and send ReAuth challenges to the above port.\n")
+		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, "If SSH_AUTH_SOCK is set, this program proxies SSH agent commands it receives to SSH_AUTH_SOCK.\n")
+		fmt.Fprintf(os.Stderr, "\n")
 		fmt.Fprintf(os.Stderr, "Flags:\n")
 		fs.PrintDefaults()
 	}
@@ -87,7 +116,12 @@ func parseArgs(osArgs []string) (runArgs, error) {
 
 	// Defaults to passthrough mode.
 	if r.Mode == "" {
-		r.Mode = modePassthrough
+		r.Mode = modeConnect
+	}
+
+	// Check port range.
+	if r.Port < 0 || r.Port > 65535 {
+		return r, fmt.Errorf("Invalid port: %v, port must be within range [0, 65535].", r.Port)
 	}
 
 	r.SSHArgs = fs.Args()

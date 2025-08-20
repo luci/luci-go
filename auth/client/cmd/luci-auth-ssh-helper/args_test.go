@@ -28,7 +28,7 @@ func TestSSHPluginMain(t *testing.T) {
 		got, err := parseArgs([]string{"helper"})
 		assert.NoErr(t, err)
 		assert.That(t, got, should.Match(runArgs{
-			Mode:    modePassthrough,
+			Mode:    modeConnect,
 			Verbose: false,
 			SSHArgs: []string{},
 		}))
@@ -63,5 +63,13 @@ func TestSSHPluginMain(t *testing.T) {
 		_, err := parseArgs([]string{
 			"helper", "--verbose", "-p2222", "who@host"})
 		assert.ErrIsLike(t, err, "flag provided but not defined")
+	})
+
+	t.Run("daemon mode", func(t *testing.T) {
+		got, err := parseArgs([]string{
+			"helper", "--mode=daemon", "--port", "10899"})
+		assert.NoErr(t, err)
+		assert.That(t, got.Mode, should.Equal(modeDaemon))
+		assert.That(t, got.Port, should.Equal(10899))
 	})
 }
