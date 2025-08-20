@@ -16,12 +16,15 @@ package recorder
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -31,10 +34,20 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/config"
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
+	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
+	"go.chromium.org/luci/resultdb/internal/masking"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -148,7 +161,7 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 		t.Run("module_id", func(t *ftt.Test) {
 			req.UpdateMask.Paths = []string{"module_id"}
 
-			t.Run("nil", func(t *ftt.Test) {
+			t.Run("set for the first time", func(t *ftt.Test) {
 				req.WorkUnit.ModuleId = nil
 				err := validateUpdateWorkUnitRequest(ctx, req, cfg)
 				assert.Loosely(t, err, should.BeNil)
@@ -283,15 +296,22 @@ func TestUpdateWorkUnit(t *testing.T) {
 		ctx = memory.Use(ctx)                    // For config datastore cache.
 		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
 		assert.NoErr(t, err)
+		ctx, sched := tq.TestingContext(ctx, nil)
+		now := testclock.TestRecentTimeUTC
+		ctx, _ = testclock.UseTime(ctx, now)
 
 		recorder := newTestRecorderServer()
 		// A basic valid request.
+		rootInvID := rootinvocations.ID("rootid")
 		wuID := workunits.ID{
-			RootInvocationID: rootinvocations.ID("rootid"),
+			RootInvocationID: rootInvID,
 			WorkUnitID:       "wu",
 		}
 		req := &pb.UpdateWorkUnitRequest{
-			WorkUnit:   &pb.WorkUnit{Name: wuID.Name()},
+			WorkUnit: &pb.WorkUnit{
+				Name:  wuID.Name(),
+				State: pb.WorkUnit_ACTIVE,
+			},
 			UpdateMask: &field_mask.FieldMask{Paths: []string{"state"}},
 		}
 
@@ -299,6 +319,21 @@ func TestUpdateWorkUnit(t *testing.T) {
 		token, err := generateWorkUnitUpdateToken(ctx, wuID)
 		assert.Loosely(t, err, should.BeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
+
+		// Insert root invocation and work unit into spanner.
+		expectedWURow := workunits.
+			NewBuilder(wuID.RootInvocationID, wuID.WorkUnitID).
+			WithModuleID(nil).
+			WithState(pb.WorkUnit_ACTIVE).
+			Build()
+
+		var ms []*spanner.Mutation
+		ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootinvocations.NewBuilder(rootInvID).Build())...)
+		ms = append(ms, insert.WorkUnit(expectedWURow)...)
+		testutil.MustApply(ctx, t, ms...)
+
+		expectedWU := masking.WorkUnit(expectedWURow, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL)
+
 		t.Run("request validate", func(t *ftt.Test) {
 			t.Run("unspecified work unit", func(t *ftt.Test) {
 				req.WorkUnit = nil
@@ -339,8 +374,339 @@ func TestUpdateWorkUnit(t *testing.T) {
 				assert.That(t, err, should.ErrLike(`invalid update token`))
 			})
 		})
-		t.Run("happy path", func(t *ftt.Test) {
-			// TODO
+
+		t.Run("no work unit", func(t *ftt.Test) {
+			nonexistWuID := workunits.ID{
+				RootInvocationID: wuID.RootInvocationID,
+				WorkUnitID:       "nonexist",
+			}
+			req.WorkUnit.Name = nonexistWuID.Name()
+			token, err := generateWorkUnitUpdateToken(ctx, nonexistWuID)
+			assert.Loosely(t, err, should.BeNil)
+			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
+
+			_, err = recorder.UpdateWorkUnit(ctx, req)
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike(`"rootInvocations/rootid/workUnits/nonexist" not found`))
+		})
+
+		t.Run("work unit not active", func(t *ftt.Test) {
+			// Finalize work unit first.
+			req.UpdateMask.Paths = []string{"state"}
+			req.WorkUnit.State = pb.WorkUnit_FINALIZING
+
+			_, err := recorder.UpdateWorkUnit(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+
+			_, err = recorder.UpdateWorkUnit(ctx, req)
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike(`"rootInvocations/rootid/workUnits/wu" is not active`))
+		})
+
+		t.Run("e2e", func(t *ftt.Test) {
+			t.Run("base case - no update", func(t *ftt.Test) {
+				wu, err := recorder.UpdateWorkUnit(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, wu, should.Match(expectedWU))
+			})
+
+			t.Run("state", func(t *ftt.Test) {
+				req.UpdateMask.Paths = []string{"state"}
+				req.WorkUnit.State = pb.WorkUnit_FINALIZING
+
+				wu, err := recorder.UpdateWorkUnit(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, wu.FinalizeStartTime, should.NotBeNil)
+				expectedWU.State = pb.WorkUnit_FINALIZING
+				expectedWU.FinalizeStartTime = wu.FinalizeStartTime
+				expectedWU.LastUpdated = wu.LastUpdated
+				assert.That(t, wu, should.Match(expectedWU))
+
+				// Validate work unit table.
+				wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
+				assert.Loosely(t, err, should.BeNil)
+				expectedWURow.State = pb.WorkUnit_FINALIZING
+				expectedWURow.FinalizeStartTime = wuRow.FinalizeStartTime
+				expectedWURow.LastUpdated = wuRow.LastUpdated
+				assert.Loosely(t, wuRow, should.Match(expectedWURow))
+				assert.Loosely(t, wuRow.FinalizeStartTime.Valid, should.BeTrue)
+
+				// Validate legacy invocation table.
+				inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.ExcludeExtendedProperties)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, inv.State, should.Equal(pb.Invocation_FINALIZING))
+				assert.Loosely(t, inv.FinalizeStartTime.CheckValid(), should.BeNil)
+
+				// Enqueued the finalization task.
+				assert.Loosely(t, sched.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
+					&taskspb.RunExportNotifications{InvocationId: string(wuID.LegacyInvocationID())},
+					&taskspb.TryFinalizeInvocation{InvocationId: string(wuID.LegacyInvocationID())},
+				}))
+			})
+
+			t.Run("module_id", func(t *ftt.Test) {
+				req.UpdateMask.Paths = []string{"module_id"}
+				newModuleID := &pb.ModuleIdentifier{
+					ModuleName:    "module",
+					ModuleScheme:  "gtest",
+					ModuleVariant: pbutil.Variant("k", "v"),
+				}
+				req.WorkUnit.ModuleId = newModuleID
+
+				t.Run("set for the first time", func(t *ftt.Test) {
+					wu, err := recorder.UpdateWorkUnit(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					expectedWU.ModuleId = newModuleID
+					expectedWU.LastUpdated = wu.LastUpdated
+					pbutil.PopulateModuleIdentifierHashes(expectedWU.ModuleId)
+					assert.That(t, wu, should.Match(expectedWU))
+
+					// Validate work unit table.
+					wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
+					assert.Loosely(t, err, should.BeNil)
+					expectedWURow.ModuleID = newModuleID
+					expectedWURow.LastUpdated = wuRow.LastUpdated
+					assert.Loosely(t, wuRow, should.Match(expectedWURow))
+
+					// Validate legacy invocation table.
+					inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.ExcludeExtendedProperties)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, inv.ModuleId, should.Match(newModuleID))
+				})
+				t.Run("updating an already set module", func(t *ftt.Test) {
+					// Set a module ID first.
+					wu, err := recorder.UpdateWorkUnit(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, wu.ModuleId.ModuleName, should.Equal("module"))
+
+					t.Run("to nil", func(t *ftt.Test) {
+						req.WorkUnit.ModuleId = nil
+						_, err = recorder.UpdateWorkUnit(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`work_unit: module_id: cannot modify module_id once set (do you need to create a child work unit?); got nil, was non-nil`))
+					})
+					t.Run("to another value", func(t *ftt.Test) {
+						req.WorkUnit.ModuleId = &pb.ModuleIdentifier{
+							ModuleName:    "new_module",
+							ModuleScheme:  "gtest",
+							ModuleVariant: pbutil.Variant("k", "v"),
+						}
+						_, err = recorder.UpdateWorkUnit(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`work_unit: module_id: cannot modify module_id once set`))
+					})
+					t.Run("to the same value", func(t *ftt.Test) {
+						// This is allowed, as it is a no-op.
+						_, err = recorder.UpdateWorkUnit(ctx, req)
+						assert.Loosely(t, err, should.BeNil)
+					})
+				})
+			})
+
+			t.Run("extended_properties", func(t *ftt.Test) {
+				structValueOrg := &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
+						"child_key_1": structpb.NewStringValue("child_value_1"),
+					},
+				}
+				structValueNew := &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
+						"child_key_2": structpb.NewStringValue("child_value_2"),
+					},
+				}
+
+				updateExtendedProperties := func(extendedPropertiesOrg map[string]*structpb.Struct) {
+					internalExtendedProperties := &invocationspb.ExtendedProperties{
+						ExtendedProperties: extendedPropertiesOrg,
+					}
+					testutil.MustApply(ctx, t, spanutil.UpdateMap("WorkUnits", map[string]any{
+						"RootInvocationShardId": wuID.RootInvocationShardID(),
+						"WorkUnitId":            wuID.WorkUnitID,
+						"ExtendedProperties":    spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties)),
+					}))
+				}
+
+				t.Run("replace entire field", func(t *ftt.Test) {
+					extendedPropertiesOrg := map[string]*structpb.Struct{
+						"old_key": structValueOrg,
+					}
+					extendedPropertiesNew := map[string]*structpb.Struct{
+						"new_key": structValueOrg,
+					}
+					updateMask := &field_mask.FieldMask{Paths: []string{"extended_properties"}}
+					updateExtendedProperties(extendedPropertiesOrg)
+					req.WorkUnit.ExtendedProperties = extendedPropertiesNew
+					req.UpdateMask = updateMask
+
+					wu, err := recorder.UpdateWorkUnit(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					expectedWU.LastUpdated = wu.LastUpdated
+					assert.Loosely(t, wu.ExtendedProperties, should.Match(extendedPropertiesNew))
+
+					// Validate work unit table.
+					wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
+					assert.Loosely(t, err, should.BeNil)
+					expectedWURow.LastUpdated = wuRow.LastUpdated
+					expectedWURow.ExtendedProperties = extendedPropertiesNew
+					assert.Loosely(t, wuRow, should.Match(expectedWURow))
+
+					// Validate legacy invocation table.
+					inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.AllFields)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, inv.ExtendedProperties, should.Match(extendedPropertiesNew))
+				})
+				t.Run("add, replace, and delete keys to existing field", func(t *ftt.Test) {
+					extendedPropertiesOrg := map[string]*structpb.Struct{
+						"to_be_kept":     structValueOrg,
+						"to_be_replaced": structValueOrg,
+						"to_be_deleted":  structValueOrg,
+					}
+					extendedPropertiesNew := map[string]*structpb.Struct{
+						"to_be_added":    structValueNew,
+						"to_be_replaced": structValueNew,
+					}
+					updateMask := &field_mask.FieldMask{Paths: []string{
+						"extended_properties.to_be_added",
+						"extended_properties.to_be_replaced",
+						"extended_properties.to_be_deleted",
+					}}
+					expectedExtendedProperties := map[string]*structpb.Struct{
+						"to_be_kept":     structValueOrg,
+						"to_be_added":    structValueNew,
+						"to_be_replaced": structValueNew,
+					}
+					updateExtendedProperties(extendedPropertiesOrg)
+					req.WorkUnit.ExtendedProperties = extendedPropertiesNew
+					req.UpdateMask = updateMask
+
+					wu, err := recorder.UpdateWorkUnit(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					expectedWU.LastUpdated = wu.LastUpdated
+					assert.Loosely(t, wu.ExtendedProperties, should.Match(expectedExtendedProperties))
+
+					// Validate work unit table.
+					wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
+					assert.Loosely(t, err, should.BeNil)
+					expectedWURow.LastUpdated = wuRow.LastUpdated
+					expectedWURow.ExtendedProperties = expectedExtendedProperties
+					assert.Loosely(t, wuRow, should.Match(expectedWURow))
+
+					// Validate legacy invocation table.
+					inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.AllFields)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, inv.ExtendedProperties, should.Match(expectedExtendedProperties))
+				})
+				t.Run("valid request but overall size exceed limit", func(t *ftt.Test) {
+					structValueLong := &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
+							"child_key_1": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationExtendedPropertyValue-80)),
+						},
+					}
+					extendedPropertiesOrg := map[string]*structpb.Struct{
+						"mykey_1": structValueLong,
+						"mykey_2": structValueLong,
+						"mykey_3": structValueLong,
+						"mykey_4": structValueLong,
+						"mykey_5": structValueOrg,
+					}
+					extendedPropertiesNew := map[string]*structpb.Struct{
+						"mykey_5": structValueLong,
+					}
+					updateMask := &field_mask.FieldMask{Paths: []string{
+						"extended_properties.mykey_5",
+					}}
+					updateExtendedProperties(extendedPropertiesOrg)
+					req.WorkUnit.ExtendedProperties = extendedPropertiesNew
+					req.UpdateMask = updateMask
+
+					wu, err := recorder.UpdateWorkUnit(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`work_unit: extended_properties: exceeds the maximum size of`))
+					assert.Loosely(t, wu, should.BeNil)
+				})
+			})
+
+			t.Run("updated time", func(t *ftt.Test) {
+				t.Run("update when there is a update", func(t *ftt.Test) {
+					req.UpdateMask.Paths = []string{"deadline"}
+					req.WorkUnit.Deadline = pbutil.MustTimestampProto(now.Add(time.Hour))
+					oldUpdateTime := expectedWURow.LastUpdated
+
+					wu, err := recorder.UpdateWorkUnit(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, wu.LastUpdated.AsTime(), should.HappenAfter(oldUpdateTime))
+
+					// Check the work unit table.
+					wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, wuRow.LastUpdated, should.HappenAfter(oldUpdateTime))
+				})
+
+				t.Run("not updated when there is a no-op", func(t *ftt.Test) {
+					req.UpdateMask.Paths = []string{"state"}
+					req.WorkUnit.State = pb.WorkUnit_ACTIVE
+					oldUpdateTime := expectedWURow.LastUpdated
+
+					wu, err := recorder.UpdateWorkUnit(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, wu.LastUpdated.AsTime(), should.Match(oldUpdateTime))
+
+					// Check the work unit table.
+					wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, wuRow.LastUpdated, should.Match(oldUpdateTime))
+				})
+			})
+
+			t.Run("deadline, properties, instructions, tags", func(t *ftt.Test) {
+				newDeadline := pbutil.MustTimestampProto(now.Add(3 * time.Hour))
+				instruction := testutil.TestInstructions()
+				updateMask := &field_mask.FieldMask{
+					Paths: []string{"deadline", "properties", "instructions", "tags"},
+				}
+				newProperties := testutil.TestStrictProperties()
+				req := &pb.UpdateWorkUnitRequest{
+					WorkUnit: &pb.WorkUnit{
+						Name:         wuID.Name(),
+						Deadline:     newDeadline,
+						Properties:   newProperties,
+						Instructions: instruction,
+						Tags:         []*pb.StringPair{{Key: "newkey", Value: "newvalue"}},
+						State:        pb.WorkUnit_FINALIZING,
+					},
+					UpdateMask: updateMask,
+				}
+				wu, err := recorder.UpdateWorkUnit(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				expectedWU.Deadline = newDeadline
+				expectedWU.Properties = newProperties
+				expectedWU.Instructions = instructionutil.InstructionsWithNames(instruction, wuID.Name())
+				expectedWU.Tags = []*pb.StringPair{{Key: "newkey", Value: "newvalue"}}
+				expectedWU.LastUpdated = wu.LastUpdated
+				assert.That(t, wu, should.Match(expectedWU))
+
+				// Validate work unit table.
+				wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
+				assert.Loosely(t, err, should.BeNil)
+				expectedWURow.Deadline = newDeadline.AsTime()
+				expectedWURow.Properties = newProperties
+				expectedWURow.Instructions = instructionutil.InstructionsWithNames(instruction, wuID.Name())
+				expectedWURow.Tags = []*pb.StringPair{{Key: "newkey", Value: "newvalue"}}
+				expectedWURow.LastUpdated = wuRow.LastUpdated
+				assert.Loosely(t, wuRow, should.Match(expectedWURow))
+
+				// Validate legacy invocation table.
+				inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.AllFields)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, inv.Deadline, should.Match(newDeadline))
+				assert.Loosely(t, inv.Properties, should.Match(newProperties))
+				assert.Loosely(t, inv.Instructions, should.Match(instructionutil.InstructionsWithNames(instruction, wuID.LegacyInvocationID().Name())))
+				assert.Loosely(t, inv.Tags, should.Match([]*pb.StringPair{{Key: "newkey", Value: "newvalue"}}))
+			})
 		})
 	})
 }

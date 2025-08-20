@@ -17,6 +17,7 @@ package pbutil
 import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
+
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 

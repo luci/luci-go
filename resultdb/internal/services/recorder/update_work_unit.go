@@ -17,15 +17,25 @@ package recorder
 import (
 	"context"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/config"
+	"go.chromium.org/luci/resultdb/internal/instructionutil"
+	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
+	"go.chromium.org/luci/resultdb/internal/masking"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -43,7 +53,141 @@ func (s *recorderServer) UpdateWorkUnit(ctx context.Context, in *pb.UpdateWorkUn
 	if err := validateUpdateWorkUnitRequest(ctx, in, cfg); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	return nil, appstatus.Error(codes.Unimplemented, "not yet implemented")
+
+	var ret *pb.WorkUnit
+	shouldFinalizeWorkUnit := false
+	updated := false
+	wuID := workunits.MustParseName(in.WorkUnit.Name)
+	ct, err := mutateWorkUnit(ctx, wuID, func(ctx context.Context) error {
+		curWu, err := workunits.Read(ctx, wuID, workunits.AllFields)
+		if err != nil {
+			return err
+		}
+		ret = masking.WorkUnit(curWu, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL)
+
+		updateMask, err := mask.FromFieldMask(in.UpdateMask, in.WorkUnit, mask.ForUpdate())
+		if err != nil {
+			return errors.Fmt("update_mask: %w", err)
+		}
+
+		values := map[string]any{
+			"RootInvocationShardId": wuID.RootInvocationShardID(),
+			"WorkUnitId":            wuID.WorkUnitID,
+		}
+
+		legacyInvocationValues := map[string]any{
+			"InvocationId": wuID.LegacyInvocationID(),
+		}
+		for path, submask := range updateMask.Children() {
+			switch path {
+			// The cases in this switch statement must be synchronized with a
+			// similar switch statement in validateUpdateWorkUnitRequest.
+
+			case "state":
+				// In the case of ACTIVE, it should be a No-op.
+				if in.WorkUnit.State == pb.WorkUnit_FINALIZING {
+					shouldFinalizeWorkUnit = true
+					values["State"] = pb.WorkUnit_FINALIZING
+					values["FinalizeStartTime"] = spanner.CommitTimestamp
+					legacyInvocationValues["State"] = pb.Invocation_FINALIZING
+					legacyInvocationValues["FinalizeStartTime"] = spanner.CommitTimestamp
+					ret.State = pb.WorkUnit_FINALIZING
+				}
+			case "deadline":
+				if !proto.Equal(ret.Deadline, in.WorkUnit.Deadline) {
+					deadline := in.WorkUnit.Deadline
+					values["Deadline"] = deadline
+					legacyInvocationValues["Deadline"] = deadline
+					ret.Deadline = deadline
+				}
+			case "module_id":
+				curModuleID := ret.ModuleId
+				if diff := diffModuleIdentifier(in.WorkUnit.ModuleId, curModuleID); diff != "" {
+					if ret.ModuleId != nil {
+						return appstatus.BadRequest(errors.Fmt("work_unit: module_id: cannot modify module_id once set (do you need to create a child work unit?); %s", diff))
+					}
+					// curModuleID is nil. And the specified in.WorkUnit.ModuleId is not equal to it.
+					// Therefore, we must be setting the module to something substantive.
+					values["ModuleName"] = in.WorkUnit.ModuleId.ModuleName
+					values["ModuleScheme"] = in.WorkUnit.ModuleId.ModuleScheme
+					values["ModuleVariant"] = in.WorkUnit.ModuleId.ModuleVariant
+					values["ModuleVariantHash"] = pbutil.VariantHash(in.WorkUnit.ModuleId.ModuleVariant)
+
+					legacyInvocationValues["ModuleName"] = in.WorkUnit.ModuleId.ModuleName
+					legacyInvocationValues["ModuleScheme"] = in.WorkUnit.ModuleId.ModuleScheme
+					legacyInvocationValues["ModuleVariant"] = in.WorkUnit.ModuleId.ModuleVariant
+					legacyInvocationValues["ModuleVariantHash"] = pbutil.VariantHash(in.WorkUnit.ModuleId.ModuleVariant)
+
+					// Populate output-only fields in the response.
+					ret.ModuleId = in.WorkUnit.ModuleId
+					pbutil.PopulateModuleIdentifierHashes(ret.ModuleId)
+				}
+
+			case "properties":
+				if !proto.Equal(ret.Properties, in.WorkUnit.Properties) {
+					values["Properties"] = spanutil.Compressed(pbutil.MustMarshal(in.WorkUnit.Properties))
+					legacyInvocationValues["Properties"] = spanutil.Compressed(pbutil.MustMarshal(in.WorkUnit.Properties))
+					ret.Properties = in.WorkUnit.Properties
+				}
+
+			case "tags":
+				if !pbutil.StringPairsEqual(ret.Tags, in.WorkUnit.Tags) {
+					values["Tags"] = in.WorkUnit.Tags
+					legacyInvocationValues["Tags"] = in.WorkUnit.Tags
+					ret.Tags = in.WorkUnit.Tags
+				}
+
+			case "extended_properties":
+				extendedProperties := in.WorkUnit.ExtendedProperties
+				updatedExtendedProperties := updateExtendedProperties(ret.ExtendedProperties, extendedProperties, submask)
+				if !pbutil.ExtendedPropertiesEqual(updatedExtendedProperties, ret.ExtendedProperties) {
+					ret.ExtendedProperties = updatedExtendedProperties
+					if err := pbutil.ValidateInvocationExtendedProperties(ret.ExtendedProperties); err != nil {
+						// One more validation to ensure the size is within the limit.
+						return appstatus.BadRequest(errors.Fmt("work_unit: extended_properties: %w", err))
+					}
+					internalExtendedProperties := &invocationspb.ExtendedProperties{
+						ExtendedProperties: ret.ExtendedProperties,
+					}
+					values["ExtendedProperties"] = spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties))
+					legacyInvocationValues["ExtendedProperties"] = spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties))
+				}
+			case "instructions":
+				ins := instructionutil.RemoveInstructionsName(in.WorkUnit.Instructions)
+				curIns := instructionutil.RemoveInstructionsName(ret.Instructions)
+				if !proto.Equal(curIns, ins) {
+					values["Instructions"] = spanutil.Compressed(pbutil.MustMarshal(ins))
+					legacyInvocationValues["Instructions"] = spanutil.Compressed(pbutil.MustMarshal(ins))
+					ret.Instructions = instructionutil.InstructionsWithNames(in.WorkUnit.Instructions, wuID.Name())
+				}
+			default:
+				panic("impossible")
+			}
+		}
+		// The `values` map is initialized with the 2 primary key columns of a WorkUnit.
+		// There is no update if no other columns are added.
+		updated = len(values) > 2
+		if updated {
+			values["LastUpdated"] = spanner.CommitTimestamp
+			span.BufferWrite(ctx, spanutil.UpdateMap("WorkUnits", values))
+			span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", legacyInvocationValues))
+			if shouldFinalizeWorkUnit {
+				tasks.StartInvocationFinalization(ctx, wuID.LegacyInvocationID())
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if updated {
+		ret.LastUpdated = timestamppb.New(ct)
+	}
+	if shouldFinalizeWorkUnit {
+		ret.FinalizeStartTime = timestamppb.New(ct)
+	}
+	return ret, nil
 }
 
 func validateUpdateWorkUnitRequest(ctx context.Context, req *pb.UpdateWorkUnitRequest, cfg *config.CompiledServiceConfig) error {
@@ -51,7 +195,7 @@ func validateUpdateWorkUnitRequest(ctx context.Context, req *pb.UpdateWorkUnitRe
 	if len(req.UpdateMask.GetPaths()) == 0 {
 		return errors.New("update_mask: paths is empty")
 	}
-	updateMask, err := mask.FromFieldMask(req.UpdateMask, req.WorkUnit, mask.AdvancedSemantics(), mask.ForUpdate())
+	updateMask, err := mask.FromFieldMask(req.UpdateMask, req.WorkUnit, mask.ForUpdate())
 	if err != nil {
 		return errors.Fmt("update_mask: %w", err)
 	}

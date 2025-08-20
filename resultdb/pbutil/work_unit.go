@@ -17,6 +17,9 @@ package pbutil
 import (
 	"fmt"
 
+	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/validate"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -105,4 +108,22 @@ func ValidateWorkUnitView(view pb.WorkUnitView) error {
 	default:
 		return fmt.Errorf("unrecognized view %q", view)
 	}
+}
+
+// ExtendedPropertiesEqual compares two map[string]*structpb.Struct for equality.
+func ExtendedPropertiesEqual(a, b map[string]*structpb.Struct) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for k, vA := range a {
+		vB, ok := b[k]
+		if !ok {
+			return false
+		}
+		if !proto.Equal(vA, vB) {
+			return false
+		}
+	}
+	return true
 }

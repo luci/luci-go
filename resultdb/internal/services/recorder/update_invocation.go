@@ -429,24 +429,7 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 
 			case "extended_properties":
 				extendedProperties := in.Invocation.GetExtendedProperties()
-				if len(submask.Children()) > 0 {
-					// Init if nil map
-					if ret.ExtendedProperties == nil {
-						ret.ExtendedProperties = make(map[string]*structpb.Struct)
-					}
-					// If the update_mask has masks like "extended_properties.some_key".
-					for extPropKey := range submask.Children() {
-						if _, exist := extendedProperties[extPropKey]; exist {
-							// Add or update if extPropKey exists in extendedProperties
-							ret.ExtendedProperties[extPropKey] = extendedProperties[extPropKey]
-						} else {
-							// Delete if does not exist
-							delete(ret.ExtendedProperties, extPropKey)
-						}
-					}
-				} else {
-					ret.ExtendedProperties = extendedProperties
-				}
+				ret.ExtendedProperties = updateExtendedProperties(ret.ExtendedProperties, extendedProperties, submask)
 				// One more validation to ensure the size is within the limit.
 				if err := pbutil.ValidateInvocationExtendedProperties(ret.ExtendedProperties); err != nil {
 					return appstatus.BadRequest(errors.Fmt("invocation: extended_properties: %w", err))
@@ -520,4 +503,26 @@ func isBigQueryExportsEqual(a, b []*pb.BigQueryExport) bool {
 	aInv := &pb.Invocation{BigqueryExports: a}
 	bInv := &pb.Invocation{BigqueryExports: b}
 	return proto.Equal(aInv, bInv)
+}
+
+func updateExtendedProperties(old map[string]*structpb.Struct, new map[string]*structpb.Struct, submask *mask.Mask) (updated map[string]*structpb.Struct) {
+	if len(submask.Children()) == 0 {
+		// Replace the whole field to new.
+		return new
+	}
+	updated = make(map[string]*structpb.Struct, len(old))
+	for key, value := range old {
+		updated[key] = proto.Clone(value).(*structpb.Struct)
+	}
+	// If the update_mask has masks like "extended_properties.some_key".
+	for extPropKey := range submask.Children() {
+		if _, exist := new[extPropKey]; exist {
+			// Add or update if extPropKey exists in extendedProperties
+			updated[extPropKey] = new[extPropKey]
+		} else {
+			// Delete if does not exist
+			delete(updated, extPropKey)
+		}
+	}
+	return updated
 }

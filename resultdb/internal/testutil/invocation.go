@@ -33,6 +33,20 @@ func TestProperties() *structpb.Struct {
 	}
 }
 
+func TestStrictProperties() *structpb.Struct {
+	return &structpb.Struct{
+		Fields: map[string]*structpb.Value{
+			"@type": structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
+			"key_1": structpb.NewStringValue("value_1"),
+			"key_2": structpb.NewStructValue(&structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"child_key": structpb.NewNumberValue(1),
+				},
+			}),
+		},
+	}
+}
+
 func TestSources() *pb.Sources {
 	return TestSourcesWithChangelistNumbers(567)
 }

@@ -18,6 +18,8 @@ import (
 	"strings"
 	"testing"
 
+	structpb "github.com/golang/protobuf/ptypes/struct"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -121,6 +123,41 @@ func TestWorkUnitName(t *testing.T) {
 		})
 		t.Run("Invalid", func(t *ftt.Test) {
 			assert.Loosely(t, ValidateWorkUnitName("invocations/a/workUnits/b"), should.ErrLike("does not match"))
+		})
+	})
+}
+
+func TestExtendedPropertiesEqual(t *testing.T) {
+	t.Parallel()
+	ftt.Run("ExtendedPropertiesEqual", t, func(t *ftt.Test) {
+		struct1 := &structpb.Struct{Fields: map[string]*structpb.Value{"key": {Kind: &structpb.Value_StringValue{StringValue: "val1"}}}}
+		struct2 := &structpb.Struct{Fields: map[string]*structpb.Value{"key": {Kind: &structpb.Value_StringValue{StringValue: "val2"}}}}
+		struct1Clone := &structpb.Struct{Fields: map[string]*structpb.Value{"key": {Kind: &structpb.Value_StringValue{StringValue: "val1"}}}}
+
+		mapA := map[string]*structpb.Struct{"a": struct1}
+		mapAClone := map[string]*structpb.Struct{"a": struct1Clone}
+		mapB := map[string]*structpb.Struct{"b": struct1}
+		mapC := map[string]*structpb.Struct{"a": struct2}
+		mapD := map[string]*structpb.Struct{"a": struct1, "b": struct2}
+
+		t.Run("equal", func(t *ftt.Test) {
+			assert.Loosely(t, ExtendedPropertiesEqual(mapA, mapAClone), should.BeTrue)
+		})
+		t.Run("both nil", func(t *ftt.Test) {
+			assert.Loosely(t, ExtendedPropertiesEqual(nil, nil), should.BeTrue)
+		})
+		t.Run("one nil", func(t *ftt.Test) {
+			assert.Loosely(t, ExtendedPropertiesEqual(mapA, nil), should.BeFalse)
+			assert.Loosely(t, ExtendedPropertiesEqual(nil, mapA), should.BeFalse)
+		})
+		t.Run("different length", func(t *ftt.Test) {
+			assert.Loosely(t, ExtendedPropertiesEqual(mapA, mapD), should.BeFalse)
+		})
+		t.Run("different keys", func(t *ftt.Test) {
+			assert.Loosely(t, ExtendedPropertiesEqual(mapA, mapB), should.BeFalse)
+		})
+		t.Run("different values", func(t *ftt.Test) {
+			assert.Loosely(t, ExtendedPropertiesEqual(mapA, mapC), should.BeFalse)
 		})
 	})
 }

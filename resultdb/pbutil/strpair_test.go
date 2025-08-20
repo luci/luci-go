@@ -167,3 +167,34 @@ func TestFromStrpairMap(t *testing.T) {
 		)))
 	})
 }
+
+func TestStringPairsEqual(t *testing.T) {
+	t.Parallel()
+	ftt.Run("StringPairsEqual", t, func(t *ftt.Test) {
+		p1 := StringPairs("k1", "v1", "k2", "v2")
+		p2 := StringPairs("k1", "v1", "k2", "v2")
+		p3 := StringPairs("k2", "v2", "k1", "v1") // different order
+		p4 := StringPairs("k1", "v1")             // different length
+		p5 := StringPairs("k1", "v1", "k2", "v3") // different value
+
+		t.Run("equal", func(t *ftt.Test) {
+			assert.Loosely(t, StringPairsEqual(p1, p2), should.BeTrue)
+		})
+		t.Run("different order", func(t *ftt.Test) {
+			assert.Loosely(t, StringPairsEqual(p1, p3), should.BeFalse)
+		})
+		t.Run("different length", func(t *ftt.Test) {
+			assert.Loosely(t, StringPairsEqual(p1, p4), should.BeFalse)
+		})
+		t.Run("different value", func(t *ftt.Test) {
+			assert.Loosely(t, StringPairsEqual(p1, p5), should.BeFalse)
+		})
+		t.Run("one nil", func(t *ftt.Test) {
+			assert.Loosely(t, StringPairsEqual(p1, nil), should.BeFalse)
+			assert.Loosely(t, StringPairsEqual(nil, p1), should.BeFalse)
+		})
+		t.Run("both nil", func(t *ftt.Test) {
+			assert.Loosely(t, StringPairsEqual(nil, nil), should.BeTrue)
+		})
+	})
+}

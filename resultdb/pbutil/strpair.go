@@ -174,3 +174,16 @@ func FromStrpairMap(m strpair.Map) []*pb.StringPair {
 	SortStringPairs(ret)
 	return ret
 }
+
+// StringPairsEqual compare two slice of StringPairs for equality (including ordering).
+func StringPairsEqual(a, b []*pb.StringPair) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i].Key != b[i].Key || a[i].Value != b[i].Value {
+			return false
+		}
+	}
+	return true
+}
