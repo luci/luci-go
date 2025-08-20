@@ -399,7 +399,7 @@ function Metrics({
           <div
             css={{
               display: 'flex',
-              justifyContent: 'space-around',
+              justifyContent: 'space-between',
               marginTop: 5,
               flexWrap: 'wrap',
             }}
@@ -416,6 +416,8 @@ function Metrics({
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isPending}
             />
+            {/* needed to left align content while keeping the correct right spacing*/}
+            <div />
           </div>
         </div>
         <div
@@ -432,6 +434,7 @@ function Metrics({
               marginTop: 5,
               marginLeft: 8,
               flexWrap: 'wrap',
+              justifyContent: 'space-between',
             }}
           >
             <SingleMetric
