@@ -19,6 +19,10 @@ import { useNavigate } from 'react-router';
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import {
+  generateDeviceListURL,
+  CHROMEOS_PLATFORM,
+} from '@/fleet/constants/paths';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -44,7 +48,7 @@ export const AdminTasksPage = () => {
         }}
       >
         <IconButton
-          onClick={() => navigate('/ui/fleet/labs/p/chromeos/devices')}
+          onClick={() => navigate(generateDeviceListURL(CHROMEOS_PLATFORM))}
         >
           <ArrowBackIcon />
         </IconButton>

@@ -17,6 +17,16 @@ import type { RouteObject } from 'react-router';
 import { obtainAuthState } from '../common/api/auth_state';
 import { trackedRedirect } from '../generic_libs/tools/react_router_utils/route_utils';
 
+import {
+  DEVICES_SUBROUTE,
+  FLEET_CONSOLE_BASE_URL,
+  PLATFORM_SUBROUTE,
+  REPAIRS_SUBROUTE,
+  REQUESTS_SUBROUTE,
+  generateDeviceDetailsURL,
+  generateDeviceListURL,
+  generateRepairsURL,
+} from './constants/paths';
 import { initiateSurvey } from './utils/survey';
 
 // IMPORTANT:
@@ -79,7 +89,7 @@ export const fleetRoutes: RouteObject[] = [
         lazy: () => import('@/fleet/layouts/fleet_labs_layout'),
         children: [
           {
-            path: 'p/:platform',
+            path: PLATFORM_SUBROUTE,
             children: [
               {
                 index: true,
@@ -87,12 +97,12 @@ export const fleetRoutes: RouteObject[] = [
                 loader: ({ params: { platform } }) =>
                   trackedRedirect({
                     contentGroup: 'fleet',
-                    from: `/ui/fleet/labs/p/${platform}`,
-                    to: `/ui/fleet/labs/p/${platform}/devices`,
+                    from: `${FLEET_CONSOLE_BASE_URL}/p/${platform}`,
+                    to: generateDeviceListURL(platform || 'chromeos'),
                   }),
               },
               {
-                path: 'devices',
+                path: DEVICES_SUBROUTE,
                 loader: async () => {
                   // Fire-and-forget. Don't block the page load.
                   initiateSurvey(SETTINGS.fleetConsole.hats);
@@ -110,7 +120,7 @@ export const fleetRoutes: RouteObject[] = [
                 ],
               },
               {
-                path: 'repairs',
+                path: REPAIRS_SUBROUTE,
                 lazy: () => import('@/fleet/pages/repairs'),
               },
               {
@@ -120,7 +130,7 @@ export const fleetRoutes: RouteObject[] = [
             ],
           },
           {
-            path: 'requests',
+            path: REQUESTS_SUBROUTE,
             children: [
               {
                 index: true,
@@ -143,10 +153,12 @@ export const fleetRoutes: RouteObject[] = [
             loader: ({ params }) =>
               trackedRedirect({
                 contentGroup: 'fleet',
-                from: `/ui/fleet/labs/devices${params.id ? `/${params.id}` : ''}`,
-                to: `/ui/fleet/labs/p/chromeos/devices${
+                from: `${FLEET_CONSOLE_BASE_URL}/devices${
                   params.id ? `/${params.id}` : ''
                 }`,
+                to: params.id
+                  ? generateDeviceDetailsURL('chromeos', params.id)
+                  : generateDeviceListURL('chromeos'),
               }),
           },
           {
@@ -154,8 +166,8 @@ export const fleetRoutes: RouteObject[] = [
             loader: ({ params }) =>
               trackedRedirect({
                 contentGroup: 'fleet',
-                from: `/ui/fleet/labs/repairs/${params.platform}`,
-                to: `/ui/fleet/labs/p/${params.platform}/repairs`,
+                from: `${FLEET_CONSOLE_BASE_URL}/repairs/${params.platform}`,
+                to: generateRepairsURL(params.platform || 'android'),
               }),
           },
           // End redirects

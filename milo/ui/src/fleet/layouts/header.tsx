@@ -28,6 +28,7 @@ import { PlatformSelector } from '@/fleet/components/platform_selector';
 import { colors } from '@/fleet/theme/colors';
 
 import { FEEDBACK_BUGANIZER_BUG_ID } from '../constants/feedback';
+import { generateDeviceListURL, CHROMEOS_PLATFORM } from '../constants/paths';
 
 import { SettingsMenu } from './settings_menu';
 
@@ -76,7 +77,7 @@ export const Header = ({
           <MenuIcon />
         </IconButton>
         <Link
-          to="/ui/fleet/labs/devices"
+          to={generateDeviceListURL(CHROMEOS_PLATFORM)}
           css={{ display: 'flex', alignItems: 'center' }}
         >
           <img

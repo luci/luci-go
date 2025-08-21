@@ -22,6 +22,7 @@ import {
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
 import { Pagination } from '@/fleet/components/device_table/pagination';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
+import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { colors } from '@/fleet/theme/colors';
 import { extractBuildUrlFromTagData } from '@/fleet/utils/builds';
 import { prettyDateTime } from '@/fleet/utils/dates';
@@ -167,7 +168,7 @@ export const TasksGrid = ({
             return '';
           }
           return (
-            <a href={`/ui/fleet/labs/p/chromeos/devices/${dutName}`}>
+            <a href={generateChromeOsDeviceDetailsURL(dutName)}>
               {params.value}
             </a>
           );

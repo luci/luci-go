@@ -16,6 +16,7 @@ import { Navigate } from 'react-router';
 
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { getFilterValue } from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
+import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useDevices } from '@/fleet/hooks/use_devices';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -71,7 +72,9 @@ export function SingleDeviceRedirect() {
 
   return (
     <Navigate
-      to={`/ui/fleet/labs/devices/${devicesQuery.data?.devices[0].id}`}
+      to={generateChromeOsDeviceDetailsURL(
+        devicesQuery.data?.devices[0].id || '',
+      )}
     />
   );
 }

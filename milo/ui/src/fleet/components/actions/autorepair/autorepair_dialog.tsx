@@ -23,6 +23,7 @@ import {
   FormControlLabel,
 } from '@mui/material';
 
+import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { FLEET_BUILDS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { ScheduleAutorepairResult } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
@@ -52,7 +53,7 @@ function getDeviceDetailListItem(dutName: string) {
   return (
     <li key={dutName}>
       <a
-        href={`/ui/fleet/labs/p/chromeos/devices/${dutName}`}
+        href={generateChromeOsDeviceDetailsURL(dutName)}
         target="_blank"
         rel="noreferrer"
       >
@@ -148,7 +149,7 @@ export default function AutorepairDialog({
             return (
               <li key={result.unitName}>
                 <a
-                  href={`/ui/fleet/labs/p/chromeos/devices/${result.unitName}`}
+                  href={generateChromeOsDeviceDetailsURL(result.unitName)}
                   target="_blank"
                   rel="noreferrer"
                 >

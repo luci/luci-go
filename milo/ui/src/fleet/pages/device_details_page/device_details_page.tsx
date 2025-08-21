@@ -29,6 +29,11 @@ import { SshTip } from '@/fleet/components/actions/ssh/ssh_tip';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
+import {
+  generateChromeOsDeviceDetailsURL,
+  generateDeviceListURL,
+  CHROMEOS_PLATFORM,
+} from '@/fleet/constants/paths';
 import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import {
@@ -127,8 +132,9 @@ export const DeviceDetailsPage = () => {
     const parts = location.pathname.toString().split('/');
     const urlId = parts[parts.length - 1];
     if (urlId !== deviceId) {
-      // TODO: b/402770033 - fix URL generation
-      navigate(`/ui/fleet/labs/devices/${deviceId}?tab=${selectedTab}`);
+      navigate(
+        `${generateChromeOsDeviceDetailsURL(deviceId)}?tab=${selectedTab}`,
+      );
     }
   };
 
@@ -190,7 +196,7 @@ export const DeviceDetailsPage = () => {
             if (navigatedFromLink) {
               navigate(navigatedFromLink);
             } else {
-              navigate('/ui/fleet/labs/devices');
+              navigate(generateDeviceListURL(CHROMEOS_PLATFORM));
             }
           }}
         >

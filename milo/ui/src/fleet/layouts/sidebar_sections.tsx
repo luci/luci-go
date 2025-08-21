@@ -19,6 +19,8 @@ import LanIcon from '@mui/icons-material/Lan';
 import TopicIcon from '@mui/icons-material/Topic';
 import React from 'react';
 
+import { generateDeviceListURL, CHROMEOS_PLATFORM } from '../constants/paths';
+
 export interface SidebarPage {
   readonly label: string;
   readonly url: string;
@@ -51,7 +53,7 @@ function generateFleetConsoleSection(): SidebarSection {
       },
       {
         label: 'Devices',
-        url: '/ui/fleet/labs/p/chromeos/devices',
+        url: generateDeviceListURL(CHROMEOS_PLATFORM),
         icon: <DevicesIcon />,
       },
     ],

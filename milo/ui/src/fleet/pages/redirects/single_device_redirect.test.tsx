@@ -16,6 +16,7 @@ import { render, screen } from '@testing-library/react';
 import fetchMock from 'fetch-mock-jest';
 import { useParams } from 'react-router';
 
+import { DEVICE_DETAILS_PATH } from '@/fleet/constants/paths';
 import {
   MOCK_DEVICE_1,
   MOCK_DEVICE_2,
@@ -54,7 +55,7 @@ describe('<SingleDeviceRedirect />', () => {
         }}
         siblingRoutes={[
           {
-            path: '/ui/fleet/labs/devices/:id',
+            path: DEVICE_DETAILS_PATH,
             element: <FakeDeviceDetails />,
           },
         ]}

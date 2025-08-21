@@ -18,6 +18,7 @@ import React from 'react';
 import { generateDutNameRedirectURL } from '@/fleet/config/device_config';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
 import { DIMENSION_SEPARATOR } from '@/fleet/constants/dimension_separator';
+import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { getDeviceStateString } from '@/fleet/utils/devices';
 import { getTaskURL } from '@/fleet/utils/swarming';
 import {
@@ -57,7 +58,7 @@ export const BASE_DIMENSIONS: Dimension = {
     displayName: 'ID',
     getValue: (device: Device) => device.id,
     renderCell: renderCellWithLink(
-      (value) => `/ui/fleet/labs/devices/${value}`,
+      (value) => generateChromeOsDeviceDetailsURL(value),
       false,
     ),
   },
