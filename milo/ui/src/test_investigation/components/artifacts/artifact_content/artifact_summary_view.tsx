@@ -97,6 +97,10 @@ export function ArtifactSummaryView({
     () => getFailureReasonKindDisplayText(currentResult.failureReason?.kind),
     [currentResult.failureReason?.kind],
   );
+  const hasStackTraces = useMemo(
+    () => currentResult.failureReason?.errors?.some((e) => e.trace) ?? false,
+    [currentResult.failureReason?.errors],
+  );
 
   const [compactDuration] =
     (currentResult.duration &&
@@ -252,6 +256,42 @@ export function ArtifactSummaryView({
                 </Link>
               </Typography>
             )}
+          </Box>
+        </CollapsibleArtifactSummarySection>
+      )}
+      {hasStackTraces && (
+        <CollapsibleArtifactSummarySection
+          title="Stack trace(s)"
+          helpText="Stack traces associated with the test failure."
+        >
+          <Box sx={{ pl: 1, pr: 1, pb: 1 }}>
+            {currentResult
+              .failureReason!.errors.filter((e) => e.trace)
+              .map((error, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    p: 1,
+                    border: `1px solid ${neutralStatusStyle.borderColor}`,
+                    borderRadius: '4px',
+                    backgroundColor: neutralStatusStyle.backgroundColor,
+                    '&:not(:last-child)': {
+                      mb: 1,
+                    },
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: 'monospace',
+                      color: neutralStatusStyle.textColor,
+                    }}
+                  >
+                    {error.trace}
+                  </Typography>
+                </Box>
+              ))}
           </Box>
         </CollapsibleArtifactSummarySection>
       )}
