@@ -16,8 +16,8 @@ import DoneIcon from '@mui/icons-material/Done';
 import ErrorIcon from '@mui/icons-material/Error';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import WarningIcon from '@mui/icons-material/Warning';
-import { Alert, Chip, Typography } from '@mui/material';
-import { GridColDef } from '@mui/x-data-grid';
+import { Alert, Chip, Divider, Typography } from '@mui/material';
+import { GridColDef, GridColumnHeaderTitle } from '@mui/x-data-grid';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
 import { useEffect, useMemo } from 'react';
@@ -38,6 +38,7 @@ import {
   getFilters,
   stringifyFilters,
 } from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
+import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
@@ -61,43 +62,107 @@ import {
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
 
+const getPriorityIcon = (priority: RepairMetric_Priority) => {
+  switch (priority) {
+    case RepairMetric_Priority.NICE:
+      return <DoneIcon sx={{ color: colors.green[400] }} />;
+    case RepairMetric_Priority.MISSING_DATA:
+    case RepairMetric_Priority.DEVICES_REMOVED:
+    case RepairMetric_Priority.WATCH:
+      return <WarningIcon sx={{ color: colors.yellow[900] }} />;
+    case RepairMetric_Priority.BREACHED:
+      return <ErrorIcon sx={{ color: colors.red[500] }} />;
+  }
+};
+
 const COLUMNS: Record<string, GridColDef> = {
   priority: {
     field: 'priority',
-    headerName: 'Priority',
     flex: 1,
-    renderCell: (x) => {
-      const label = repairMetric_PriorityToJSON(x.value);
-
-      let Icon: React.ReactNode = null;
-      switch (x.value as RepairMetric_Priority) {
-        case RepairMetric_Priority.NICE:
-          Icon = <DoneIcon sx={{ color: colors.green[400] }} />;
-          break;
-        case RepairMetric_Priority.MISSING_DATA:
-        case RepairMetric_Priority.DEVICES_REMOVED:
-        case RepairMetric_Priority.WATCH:
-          Icon = <WarningIcon sx={{ color: colors.yellow[900] }} />;
-          break;
-        case RepairMetric_Priority.BREACHED:
-          Icon = <ErrorIcon sx={{ color: colors.red[500] }} />;
-          break;
-      }
-
+    renderHeader: () => {
       return (
-        <div
-          css={{
-            gap: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            height: '100%',
-          }}
-        >
-          {Icon}
-          <Typography noWrap={true}>{label}</Typography>
-        </div>
+        <>
+          <GridColumnHeaderTitle label="Priority" columnWidth={Infinity} />
+          <InfoTooltip infoCss={{ marginLeft: '10px' }}>
+            <div
+              css={{
+                display: 'grid',
+                gridTemplateColumns: 'auto auto',
+                rowGap: '4px',
+              }}
+            >
+              <div
+                css={{
+                  gap: '4px',
+                  display: 'flex',
+                  paddingRight: 8, // columnGap doesn't work because of the line divider
+                }}
+              >
+                {getPriorityIcon(RepairMetric_Priority.BREACHED)}
+                <Typography variant="body1">BREACHED</Typography>
+              </div>
+              <Typography variant="body2">
+                The minimum number of repairs needed to meet SLOs SLO-2 is
+                considered breached when the Offline Ratio is above 10% and
+                allocated Ratio is above 80%
+              </Typography>
+              <Divider
+                css={{
+                  backgroundColor: 'transparent',
+                  gridColumn: '1 / span 99',
+                }}
+              />
+              <div
+                css={{
+                  gap: '4px',
+                  display: 'flex',
+                }}
+              >
+                {getPriorityIcon(RepairMetric_Priority.WATCH)}
+                <Typography variant="body1">WATCH</Typography>
+              </div>
+              <Typography variant="body2">
+                SLO-2 is considered at risk when the Offline Ratio is above 8%
+                and this time we check for Peak Utilization to be above 80%
+              </Typography>
+              <Divider
+                css={{
+                  backgroundColor: 'transparent',
+                  gridColumn: '1 / span 99',
+                }}
+              />
+              <div
+                css={{
+                  gap: '4px',
+                  display: 'flex',
+                }}
+              >
+                {getPriorityIcon(RepairMetric_Priority.NICE)}
+                <Typography variant="body1">NICE</Typography>
+              </div>
+              <Typography variant="body2" css={{ paddingTop: 4 }}>
+                Everything else is considered nice
+              </Typography>
+            </div>
+          </InfoTooltip>
+        </>
       );
     },
+    renderCell: (x) => (
+      <div
+        css={{
+          gap: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          height: '100%',
+        }}
+      >
+        {getPriorityIcon(x.value as RepairMetric_Priority)}
+        <Typography noWrap={true}>
+          {repairMetric_PriorityToJSON(x.value)}
+        </Typography>
+      </div>
+    ),
   },
   labName: {
     field: 'lab_name',
@@ -118,6 +183,19 @@ const COLUMNS: Record<string, GridColDef> = {
     field: 'minimum_repairs',
     headerName: 'Minimum Repairs',
     flex: 1,
+    renderHeader: () => {
+      return (
+        <>
+          <GridColumnHeaderTitle
+            label="Minimum Repairs"
+            columnWidth={Infinity}
+          />
+          <InfoTooltip infoCss={{ marginLeft: '10px' }}>
+            The minimum number of repairs needed to meet SLOs
+          </InfoTooltip>
+        </>
+      );
+    },
   },
   devicesOfflinePercentage: {
     field: 'devices_offline_percentage',
