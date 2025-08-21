@@ -17,6 +17,11 @@ package main
 import (
 	"bytes"
 	"context"
+	"io"
+	"net"
+	"os"
+	"path/filepath"
+	"sync"
 	"testing"
 
 	"go.chromium.org/luci/auth/reauth"
@@ -180,5 +185,82 @@ func TestSSHPluginMain(t *testing.T) {
 		gotResponse, err := reauth.PluginReadFrame(&pluginStdout)
 		assert.NoErr(t, err)
 		assert.That(t, gotResponse, should.Match(pluginResponse))
+	})
+}
+
+func TestDefaultDialerSupportedProtocols(t *testing.T) {
+	t.Parallel()
+	d := defaultAgentDialer{}
+
+	t.Run("tcp", func(t *testing.T) {
+		t.Parallel()
+		loAddrs, err := net.LookupIP("localhost")
+		assert.NoErr(t, err)
+		assert.Loosely(t, loAddrs, should.NotBeEmpty)
+
+		l, err := net.ListenTCP("tcp", &net.TCPAddr{
+			IP:   loAddrs[0],
+			Port: 0,
+		})
+		assert.NoErr(t, err)
+		t.Cleanup(func() { l.Close() })
+
+		var wg sync.WaitGroup
+		t.Cleanup(wg.Wait)
+		go func() {
+			defer wg.Done()
+			cli, err := l.Accept()
+			assert.NoErr(t, err)
+			defer cli.Close()
+
+			_, err = cli.Write([]byte("tcp"))
+			assert.NoErr(t, err)
+		}()
+		wg.Add(1)
+
+		s := l.Addr().String()
+		c, err := d.dialAddr(s)
+		assert.NoErr(t, err)
+		t.Cleanup(func() { c.Close() })
+
+		// Check socket reads correctly.
+		got, err := io.ReadAll(c)
+		assert.NoErr(t, err)
+		assert.Loosely(t, got, should.Match([]byte("tcp")))
+	})
+
+	t.Run("unix", func(t *testing.T) {
+		t.Parallel()
+		ldir, err := os.MkdirTemp("", "luci_ssh_plugin_test.")
+		assert.NoErr(t, err)
+		t.Cleanup(func() { os.RemoveAll(ldir) })
+
+		lpath := filepath.Join(ldir, "unix_sock")
+		l, err := net.ListenUnix("unix", &net.UnixAddr{Name: lpath, Net: "unix"})
+		assert.NoErr(t, err)
+		t.Cleanup(func() { l.Close() })
+
+		var wg sync.WaitGroup
+		t.Cleanup(wg.Wait)
+		go func() {
+			defer wg.Done()
+			cli, err := l.Accept()
+			assert.NoErr(t, err)
+			defer cli.Close()
+
+			_, err = cli.Write([]byte("unix"))
+			assert.NoErr(t, err)
+		}()
+		wg.Add(1)
+
+		s := l.Addr().String()
+		c, err := d.dialAddr(s)
+		assert.NoErr(t, err)
+		t.Cleanup(func() { c.Close() })
+
+		// Check socket reads correctly.
+		got, err := io.ReadAll(c)
+		assert.NoErr(t, err)
+		assert.Loosely(t, got, should.Match([]byte("unix")))
 	})
 }

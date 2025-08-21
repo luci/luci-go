@@ -49,11 +49,11 @@ func (d defaultAgentDialer) Dial(ctx context.Context) (ssh.AgentConn, error) {
 
 // Try to dial `addr` by trying supported protocols (i.e. TCP or Unix) in order.
 func (d defaultAgentDialer) dialAddr(addr string) (net.Conn, error) {
-	if a, err := net.ResolveTCPAddr("tcp", addr); err != nil {
+	if a, err := net.ResolveTCPAddr("tcp", addr); err == nil {
 		return net.DialTCP("tcp", nil, a)
 	}
 
-	if a, err := net.ResolveUnixAddr("unix", addr); err != nil {
+	if a, err := net.ResolveUnixAddr("unix", addr); err == nil {
 		return net.DialUnix("unix", nil, a)
 	}
 
