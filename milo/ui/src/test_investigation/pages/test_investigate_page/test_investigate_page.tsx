@@ -252,6 +252,7 @@ export function TestInvestigatePage() {
                 gap: 3,
                 maxWidth: `calc(100vw - 16px)`,
                 boxSizing: 'border-box',
+                height: '100%',
               }}
             >
               <TestInfo />
