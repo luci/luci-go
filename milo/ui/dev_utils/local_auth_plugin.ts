@@ -27,6 +27,7 @@ const OAUTH_SCOPES = [
   'https://www.googleapis.com/auth/userinfo.email',
   'https://www.googleapis.com/auth/gerritcodereview',
   'https://www.googleapis.com/auth/buganizer',
+  'https://www.googleapis.com/auth/androidbuild.internal',
 ].join(' ');
 
 const execCLI = promisify(exec);
