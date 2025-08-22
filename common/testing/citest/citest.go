@@ -73,23 +73,3 @@ func IntegrationTest(t testing.TB, envvar string) {
 	}
 	t.Skipf("skipping test because neither %q or %q were set", envvar, "INTEGRATION_TESTS")
 }
-
-// LocalOnlyBecause skips a test in CI and writes a reference to the bug in the logs.
-//
-// This function is a kinder alternative to t.Skip(...) for tests that work okay locally
-// but are breaking for various reasons in CI.
-//
-// Please do not use this function as an excuse to write bad tests.
-//
-// In a perfect world, this function would never be used.
-func LocalOnlyBecause(t testing.TB, bug string) {
-	t.Helper()
-	if !bugPattern.MatchString(bug) {
-		t.Fatal(`Local only tests are technical debt. You must include a valid bug number.`)
-	}
-	if isRunningInCI() {
-		t.Skipf("skipping test in CI due to %s", bug)
-	} else {
-		t.Logf("test is marked local-only due to %s", bug)
-	}
-}

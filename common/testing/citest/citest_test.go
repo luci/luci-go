@@ -14,62 +14,7 @@
 
 package citest
 
-import (
-	"log"
-	"testing"
-)
-
-func TestSkipCI(t *testing.T) {
-	// t.Parallel -- can't be parallel, environment variable manipulation
-	checkRan := false
-	defer func() {
-		if !checkRan {
-			log.Fatal("TestDontSkipCI was ineffective")
-		}
-	}()
-	didSkip := true
-
-	t.Setenv("CI", "1")
-
-	t.Setenv("CHROME_HEADLESS", "")
-	t.Setenv("SWARMING_HEADLESS", "")
-
-	t.Run("try to skip this test", func(t *testing.T) {
-		LocalOnlyBecause(t, "b/1")
-		didSkip = false
-	})
-
-	if !didSkip {
-		t.Error("failed to skip :(")
-	}
-	checkRan = true
-}
-
-func TestDontSkipCI(t *testing.T) {
-	// t.Parallel -- can't be parallel, environment variable manipulation
-	checkRan := false
-	defer func() {
-		if !checkRan {
-			log.Fatal("TestDontSkipCI was ineffective")
-		}
-	}()
-	didSkip := true
-
-	t.Setenv("CI", "")
-
-	t.Setenv("CHROME_HEADLESS", "")
-	t.Setenv("SWARMING_HEADLESS", "")
-
-	t.Run("try to skip this test", func(t *testing.T) {
-		LocalOnlyBecause(t, "b/1")
-		didSkip = false
-	})
-
-	if didSkip {
-		t.Error("should not have been skipped")
-	}
-	checkRan = true
-}
+import "testing"
 
 func TestWantIntegrationTests(t *testing.T) {
 	// Check that this doesn't panic.
