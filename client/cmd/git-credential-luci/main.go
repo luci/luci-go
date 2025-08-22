@@ -254,6 +254,9 @@ func handleGet(ctx context.Context, opts auth.Options) {
 			os.Exit(1)
 		}
 		if res.NeedsRAPT || forceReAuth() {
+			logging.Debugf(
+				ctx, "Proceeding with ReAuth (check=%v, force=%v)",
+				res.NeedsRAPT, forceReAuth())
 			if !attrs.HasAuthtypeCapability() {
 				fmt.Fprintf(os.Stderr, "Git client does not support authtype capability, so cannot continue with ReAuth\n")
 				os.Exit(1)
