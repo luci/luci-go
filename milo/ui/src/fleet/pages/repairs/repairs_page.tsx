@@ -65,13 +65,13 @@ const DEFAULT_PAGE_SIZE = 100;
 const getPriorityIcon = (priority: RepairMetric_Priority) => {
   switch (priority) {
     case RepairMetric_Priority.NICE:
-      return <DoneIcon sx={{ color: colors.green[400] }} />;
+      return <DoneIcon sx={{ color: colors.green[400], width: '20px' }} />;
     case RepairMetric_Priority.MISSING_DATA:
     case RepairMetric_Priority.DEVICES_REMOVED:
     case RepairMetric_Priority.WATCH:
-      return <WarningIcon sx={{ color: colors.yellow[900] }} />;
+      return <WarningIcon sx={{ color: colors.yellow[900], width: '20px' }} />;
     case RepairMetric_Priority.BREACHED:
-      return <ErrorIcon sx={{ color: colors.red[500] }} />;
+      return <ErrorIcon sx={{ color: colors.red[500], width: '20px' }} />;
   }
 };
 
@@ -91,15 +91,18 @@ const COLUMNS: Record<string, GridColDef> = {
                 rowGap: '4px',
               }}
             >
-              <div
-                css={{
-                  gap: '4px',
-                  display: 'flex',
-                  paddingRight: 8, // columnGap doesn't work because of the line divider
-                }}
-              >
-                {getPriorityIcon(RepairMetric_Priority.BREACHED)}
-                <Typography variant="body1">BREACHED</Typography>
+              <div>
+                <div
+                  css={{
+                    gap: '4px',
+                    paddingRight: 8, // columnGap doesn't work because of the line divider
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  {getPriorityIcon(RepairMetric_Priority.BREACHED)}
+                  <Typography variant="body2">BREACHED</Typography>
+                </div>
               </div>
               <Typography variant="body2">
                 The minimum number of repairs needed to meet SLOs SLO-2 is
@@ -112,14 +115,17 @@ const COLUMNS: Record<string, GridColDef> = {
                   gridColumn: '1 / span 99',
                 }}
               />
-              <div
-                css={{
-                  gap: '4px',
-                  display: 'flex',
-                }}
-              >
-                {getPriorityIcon(RepairMetric_Priority.WATCH)}
-                <Typography variant="body1">WATCH</Typography>
+              <div>
+                <div
+                  css={{
+                    gap: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  {getPriorityIcon(RepairMetric_Priority.WATCH)}
+                  <Typography variant="body2">WATCH</Typography>
+                </div>
               </div>
               <Typography variant="body2">
                 SLO-2 is considered at risk when the Offline Ratio is above 8%
@@ -131,14 +137,23 @@ const COLUMNS: Record<string, GridColDef> = {
                   gridColumn: '1 / span 99',
                 }}
               />
-              <div
-                css={{
-                  gap: '4px',
-                  display: 'flex',
-                }}
-              >
-                {getPriorityIcon(RepairMetric_Priority.NICE)}
-                <Typography variant="body1">NICE</Typography>
+              <div>
+                <div
+                  css={{
+                    gap: '4px',
+                    display: 'flex',
+                    alignContent: 'center',
+                  }}
+                >
+                  {getPriorityIcon(RepairMetric_Priority.NICE)}
+                  {/*
+                    the `tick` icon is very visually bottom heavy so to look aligned
+                    we need to move the text a bit further down
+                  */}
+                  <Typography variant="body2" css={{ paddingTop: 3 }}>
+                    NICE
+                  </Typography>
+                </div>
               </div>
               <Typography variant="body2" css={{ paddingTop: 4 }}>
                 Everything else is considered nice
@@ -158,7 +173,7 @@ const COLUMNS: Record<string, GridColDef> = {
         }}
       >
         {getPriorityIcon(x.value as RepairMetric_Priority)}
-        <Typography noWrap={true}>
+        <Typography variant="body2" noWrap={true}>
           {repairMetric_PriorityToJSON(x.value)}
         </Typography>
       </div>
