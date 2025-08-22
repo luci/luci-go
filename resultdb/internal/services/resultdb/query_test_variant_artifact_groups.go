@@ -258,7 +258,7 @@ func toTestArtifactMatchingContents(bqArtifacts []*artifacts.MatchingArtifact, t
 			testStatusV2 = pb.TestResult_Status(pb.TestResult_Status_value[a.TestStatusV2.StringVal])
 		}
 		res = append(res, &pb.ArtifactMatchingContent{
-			Name:          pbutil.TestResultArtifactName(a.InvocationID, testID, a.ResultID, artifactID),
+			Name:          pbutil.LegacyTestResultArtifactName(a.InvocationID, testID, a.ResultID, artifactID),
 			PartitionTime: timestamppb.New(a.PartitionTime),
 			TestStatus:    testStatus,
 			TestStatusV2:  testStatusV2,

@@ -90,9 +90,9 @@ type invocationInfo struct {
 // name returns the artifact name.
 func (a *artifactCreationRequest) name(invID invocations.ID) string {
 	if a.testID == "" {
-		return pbutil.InvocationArtifactName(string(invID), a.artifactID)
+		return pbutil.LegacyInvocationArtifactName(string(invID), a.artifactID)
 	}
-	return pbutil.TestResultArtifactName(string(invID), a.testID, a.resultID, a.artifactID)
+	return pbutil.LegacyTestResultArtifactName(string(invID), a.testID, a.resultID, a.artifactID)
 }
 
 // parentID returns the local parent ID of the artifact.

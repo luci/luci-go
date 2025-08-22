@@ -82,7 +82,7 @@ func newUploadTask(name string, art *sinkpb.Artifact) (*uploadTask, error) {
 // Artifact_FilePath. Save the returned request to avoid unnecessary I/Os,
 // if necessary.
 func (t *uploadTask) CreateRequest() (*pb.CreateArtifactRequest, error) {
-	invID, tID, rID, aID, err := pbutil.ParseArtifactName(t.artName)
+	invID, tID, rID, aID, err := pbutil.ParseLegacyArtifactName(t.artName)
 	if err != nil {
 		return nil, err
 	}

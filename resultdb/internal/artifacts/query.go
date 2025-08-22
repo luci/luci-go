@@ -216,9 +216,9 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 		case err != nil:
 			return err
 		case testID == "":
-			a.Name = pbutil.InvocationArtifactName(string(invID), a.ArtifactId)
+			a.Name = pbutil.LegacyInvocationArtifactName(string(invID), a.ArtifactId)
 		default:
-			a.Name = pbutil.TestResultArtifactName(string(invID), testID, resultID, a.ArtifactId)
+			a.Name = pbutil.LegacyTestResultArtifactName(string(invID), testID, resultID, a.ArtifactId)
 		}
 
 		a.ContentType = contentType.StringVal
@@ -270,7 +270,7 @@ func (q *Query) FetchProtos(ctx context.Context) (arts []*pb.Artifact, nextPageT
 	// need to return the next page token.
 	if len(arts) == q.PageSize {
 		last := arts[q.PageSize-1]
-		invID, testID, resultID, artifactID := MustParseName(last.Name)
+		invID, testID, resultID, artifactID := MustParseLegacyName(last.Name)
 		parentID := ParentID(testID, resultID)
 		nextPageToken = pagination.Token(string(invID), parentID, artifactID)
 	}

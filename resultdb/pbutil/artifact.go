@@ -17,8 +17,8 @@ package pbutil
 import (
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
+	"strings"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
@@ -33,18 +33,26 @@ const (
 	// The RBE URI format: "bytestream://<HOSTNAME>/projects/<PROJECT_ID>/instances/<INSTANCE_ID>/blobs/<HASH>/<SIZE_BYTES>".
 	// Captures: 1=PROJECT_ID, 2=INSTANCE_ID, 3=HASH, 4=SIZE_BYTES
 	rbeURIPatten = `bytestream://[^/]+/projects/([^/]+)/instances/([^/]+)/blobs/([^/]+)/(\d+)`
+	// This should be more than enough.
+	rbeURIMaxLength = 1024
 )
 
 var (
-	artifactIDRe                  = regexpf("^%s$", artifactIDPattern)
-	artifactIDPrefixRe            = regexpf("^%s$", artifactIDPrefixPattern)
-	invocationArtifactNamePattern = fmt.Sprintf("invocations/(%s)/artifacts/(.+)", invocationIDPattern)
-	testResultArtifactNamePattern = fmt.Sprintf("invocations/(%s)/tests/([^/]+)/results/(%s)/artifacts/(.+)", invocationIDPattern, resultIDPattern)
-	invocationArtifactNameRe      = regexpf("^%s$", invocationArtifactNamePattern)
-	testResultArtifactNameRe      = regexpf("^%s$", testResultArtifactNamePattern)
-	artifactNameRe                = regexpf("^%s|%s$", testResultArtifactNamePattern, invocationArtifactNamePattern)
-	textArtifactContentTypeRe     = regexpf("^text/*")
-	rbeURIRe                      = regexpf("^%s$", rbeURIPatten)
+	artifactIDRe                    = regexpf("^%s$", artifactIDPattern)
+	artifactIDPrefixRe              = regexpf("^%s$", artifactIDPrefixPattern)
+	workUnitArtifactNamePattern     = fmt.Sprintf("rootInvocations/(%s)/workUnits/(%s)/artifacts/(.+)", rootInvocationIDPattern, workUnitIDPattern)
+	testResultArtifactNamePattern   = fmt.Sprintf("rootInvocations/(%s)/workUnits/(%s)/tests/([^/]+)/results/(%s)/artifacts/(.+)", rootInvocationIDPattern, workUnitIDPattern, resultIDPattern)
+	workUnitArtifactNamePatternRe   = regexpf("^%s$", workUnitArtifactNamePattern)
+	testResultArtifactNamePatternRe = regexpf("^%s$", testResultArtifactNamePattern)
+	artifactNameRe                  = regexpf("^%s|%s$", testResultArtifactNamePattern, workUnitArtifactNamePattern)
+
+	legacyInvocationArtifactNamePattern = fmt.Sprintf("invocations/(%s)/artifacts/(.+)", invocationIDPattern)
+	legacyTestResultArtifactNamePattern = fmt.Sprintf("invocations/(%s)/tests/([^/]+)/results/(%s)/artifacts/(.+)", invocationIDPattern, resultIDPattern)
+	legacyInvocationArtifactNameRe      = regexpf("^%s$", legacyInvocationArtifactNamePattern)
+	legacyTestResultArtifactNameRe      = regexpf("^%s$", legacyTestResultArtifactNamePattern)
+	legacyArtifactNameRe                = regexpf("^%s|%s$", legacyTestResultArtifactNamePattern, legacyInvocationArtifactNamePattern)
+	textArtifactContentTypeRe           = regexpf("^text/*")
+	rbeURIRe                            = regexpf("^%s$", rbeURIPatten)
 )
 
 // ValidateArtifactID returns a non-nil error if id is invalid.
@@ -57,62 +65,43 @@ func ValidateArtifactIDPrefix(idPrefix string) error {
 	return validate.SpecifiedWithRe(artifactIDPrefixRe, idPrefix)
 }
 
-// ValidateArtifactName returns a non-nil error if name is invalid.
-func ValidateArtifactName(name string) error {
-	return validate.SpecifiedWithRe(artifactNameRe, name)
+// ValidateLegacyArtifactName returns a non-nil error if name is invalid.
+func ValidateLegacyArtifactName(name string) error {
+	return validate.SpecifiedWithRe(legacyArtifactNameRe, name)
 }
 
-// ParseArtifactName extracts the invocation ID, unescaped test id, result ID
-// and artifact ID.
-// The testID and resultID are empty if this is an invocation-level artifact.
-func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID string, err error) {
+// ParseArtifactName extracts the root invocation ID, work unit ID, unescaped test id, result ID
+// and artifact ID from an artifact name.
+// The testID and resultID are empty if this is a work unit-level artifact.
+func ParseArtifactName(name string) (rootInvocationID, workUnitID, testID, resultID, artifactID string, err error) {
 	if name == "" {
 		err = validate.Unspecified()
 		return
 	}
 
-	unescape := func(escaped string, re *regexp.Regexp) (string, error) {
-		unescaped, err := url.PathUnescape(escaped)
+	if m := workUnitArtifactNamePatternRe.FindStringSubmatch(name); m != nil {
+		rootInvocationID = m[1]
+		workUnitID = m[2]
+		artifactID, err = unescapeAndValidateArtifactID(m[3])
 		if err != nil {
-			return "", errors.Fmt("%q: %w", escaped, err)
+			err = errors.Fmt("artifact ID: %w", err)
 		}
-
-		if err := validate.SpecifiedWithRe(re, unescaped); err != nil {
-			return "", errors.Fmt("%q: %w", unescaped, err)
-		}
-
-		return unescaped, nil
-	}
-
-	unescapeTestID := func(escaped string) (string, error) {
-		unescaped, err := url.PathUnescape(escaped)
-		if err != nil {
-			return "", errors.Fmt("%q: %w", escaped, err)
-		}
-
-		if err := ValidateTestID(unescaped); err != nil {
-			return "", errors.Fmt("%q: %w", unescaped, err)
-		}
-
-		return unescaped, nil
-	}
-
-	if m := invocationArtifactNameRe.FindStringSubmatch(name); m != nil {
-		invocationID = m[1]
-		artifactID, err = unescape(m[2], artifactIDRe)
-		err = errors.WrapIf(err, "artifact ID")
 		return
 	}
 
-	if m := testResultArtifactNameRe.FindStringSubmatch(name); m != nil {
-		invocationID = m[1]
-		if testID, err = unescapeTestID(m[2]); err != nil {
+	if m := testResultArtifactNamePatternRe.FindStringSubmatch(name); m != nil {
+		rootInvocationID = m[1]
+		workUnitID = m[2]
+		testID, err = unescapeAndValidateTestID(m[3])
+		if err != nil {
 			err = errors.Fmt("test ID: %w", err)
 			return
 		}
-		resultID = m[3]
-		artifactID, err = unescape(m[4], artifactIDRe)
-		err = errors.WrapIf(err, "artifact ID")
+		resultID = m[4]
+		artifactID, err = unescapeAndValidateArtifactID(m[5])
+		if err != nil {
+			err = errors.Fmt("artifact ID: %w", err)
+		}
 		return
 	}
 
@@ -120,11 +109,64 @@ func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID 
 	return
 }
 
+// ParseLegacyArtifactName extracts the invocation ID, unescaped test id, result ID
+// and artifact ID from a legacy artifact name.
+// The testID and resultID are empty if this is an invocation-level artifact.
+func ParseLegacyArtifactName(name string) (invocationID, testID, resultID, artifactID string, err error) {
+	if name == "" {
+		err = validate.Unspecified()
+		return
+	}
+
+	if m := legacyInvocationArtifactNameRe.FindStringSubmatch(name); m != nil {
+		invocationID = m[1]
+		artifactID, err = unescapeAndValidateArtifactID(m[2])
+		if err != nil {
+			err = errors.Fmt("artifact ID: %w", err)
+		}
+		return
+	}
+
+	if m := legacyTestResultArtifactNameRe.FindStringSubmatch(name); m != nil {
+		invocationID = m[1]
+		testID, err = unescapeAndValidateTestID(m[2])
+		if err != nil {
+			err = errors.Fmt("test ID: %w", err)
+			return
+		}
+		resultID = m[3]
+		artifactID, err = unescapeAndValidateArtifactID(m[4])
+		if err != nil {
+			err = errors.Fmt("artifact ID: %w", err)
+		}
+		return
+	}
+
+	err = validate.DoesNotMatchReErr(legacyArtifactNameRe)
+	return
+}
+
+func unescapeAndValidateArtifactID(escaped string) (string, error) {
+	unescaped, err := url.PathUnescape(escaped)
+	if err != nil {
+		return "", errors.Fmt("%q: %w", escaped, err)
+	}
+
+	if err := ValidateArtifactID(unescaped); err != nil {
+		return "", errors.Fmt("%q: %w", unescaped, err)
+	}
+
+	return unescaped, nil
+}
+
 // ParseRbeURI parses the RBE URI in the format of
 // "bytestream://<HOSTNAME>/projects/<PROJECT_ID>/instances/<INSTANCE_ID>/blobs/<HASH>/<SIZE_BYTES>"
 // and then returns the project id, instance id, artifact hash and artifact
 // size.
 func ParseRbeURI(rbeURI string) (project, instance, hash string, size int64, err error) {
+	if len(rbeURI) > rbeURIMaxLength {
+		return "", "", "", 0, errors.Fmt("too long; got %d bytes, want max %d", len(rbeURI), rbeURIMaxLength)
+	}
 	matches := rbeURIRe.FindStringSubmatch(rbeURI)
 
 	// A successful match will return a slice of 5 strings:
@@ -148,17 +190,37 @@ func ParseRbeURI(rbeURI string) (project, instance, hash string, size int64, err
 	return project, instance, hash, size, nil
 }
 
-// InvocationArtifactName synthesizes a name of an invocation-level artifact.
+// IsLegacyArtifactName returns whether the given artifact name is likely
+// a legacy artifact name, not a V2 artifact name.
+// If the name is not valid, this method may return any value.
+func IsLegacyArtifactName(name string) bool {
+	return strings.HasPrefix(name, "invocations/")
+}
+
+// WorkUnitArtifactName synthesizes a name of a work unit-level artifact.
+// Does not validate IDs, use ValidateRootInvocationID, ValidateWorkUnitID and ValidateArtifactID.
+func WorkUnitArtifactName(rootInvID, workUnitID, artifactID string) string {
+	return fmt.Sprintf("rootInvocations/%s/workUnits/%s/artifacts/%s", rootInvID, workUnitID, url.PathEscape(artifactID))
+}
+
+// TestResultArtifactName synthesizes a name of a test-result-level artifact.
+// Does not validate IDs, use ValidateRootInvocationID, ValidateWorkUnitID, ValidateTestID,
+// ValidateResultID and ValidateArtifactID.
+func TestResultArtifactName(rootInvID, workUnitID, testID, resultID, artifactID string) string {
+	return fmt.Sprintf("rootInvocations/%s/workUnits/%s/tests/%s/results/%s/artifacts/%s", rootInvID, workUnitID, url.PathEscape(testID), resultID, url.PathEscape(artifactID))
+}
+
+// LegacyInvocationArtifactName synthesizes a name of an invocation-level artifact.
 // Does not validate IDs, use ValidateInvocationID and ValidateArtifactID.
-func InvocationArtifactName(invocationID, artifactID string) string {
+func LegacyInvocationArtifactName(invocationID, artifactID string) string {
 	return fmt.Sprintf("invocations/%s/artifacts/%s", invocationID, url.PathEscape(artifactID))
 }
 
-// TestResultArtifactName synthesizes a name of an test-result-level artifact.
+// LegacyTestResultArtifactName synthesizes a name of an test-result-level artifact.
 // Does not validate IDs, use ValidateInvocationID, ValidateTestID,
 // ValidateResultID and ValidateArtifactID.
-func TestResultArtifactName(invocationID, testID, resulID, artifactID string) string {
-	return fmt.Sprintf("invocations/%s/tests/%s/results/%s/artifacts/%s", invocationID, url.PathEscape(testID), resulID, url.PathEscape(artifactID))
+func LegacyTestResultArtifactName(invocationID, testID, resultID, artifactID string) string {
+	return fmt.Sprintf("invocations/%s/tests/%s/results/%s/artifacts/%s", invocationID, url.PathEscape(testID), resultID, url.PathEscape(artifactID))
 }
 
 // IsTextArtifact returns true if the content type represents a text-based artifact.

@@ -49,7 +49,7 @@ func (s *resultDBServer) QueryArtifactFailureOnlyLines(ctx context.Context, requ
 		return nil, appstatus.BadRequest(err)
 	}
 
-	invID, testID, _, artifactID, err := pbutil.ParseArtifactName(request.Parent)
+	invID, testID, _, artifactID, err := pbutil.ParseLegacyArtifactName(request.Parent)
 	if err != nil {
 		return nil, errors.Fmt("parse artifact name: %w", err)
 	}
@@ -150,7 +150,7 @@ func (s *resultDBServer) QueryArtifactFailureOnlyLines(ctx context.Context, requ
 }
 
 func validateQueryArtifactFailureOnlyLinesRequest(req *pb.QueryArtifactFailureOnlyLinesRequest) error {
-	if err := pbutil.ValidateArtifactName(req.Parent); err != nil {
+	if err := pbutil.ValidateLegacyArtifactName(req.Parent); err != nil {
 		return appstatus.BadRequest(errors.New("parent: invalid artifact name"))
 	}
 

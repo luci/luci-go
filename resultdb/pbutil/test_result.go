@@ -30,7 +30,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
-
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -652,13 +651,9 @@ func ParseTestResultName(name string) (TestResultNameParts, error) {
 	if m == nil {
 		return TestResultNameParts{}, validate.DoesNotMatchReErr(testResultNameRe)
 	}
-	unescapedTestID, err := url.PathUnescape(m[3])
+	unescapedTestID, err := unescapeAndValidateTestID(m[3])
 	if err != nil {
-		return TestResultNameParts{}, errors.Fmt("test id %q: %w", m[3], err)
-	}
-
-	if err := ValidateTestID(unescapedTestID); err != nil {
-		return TestResultNameParts{}, errors.Fmt("test id %q: %w", unescapedTestID, err)
+		return TestResultNameParts{}, errors.Fmt("test id: %w", err)
 	}
 
 	return TestResultNameParts{
@@ -667,6 +662,19 @@ func ParseTestResultName(name string) (TestResultNameParts, error) {
 		TestID:           unescapedTestID,
 		ResultID:         m[4],
 	}, nil
+}
+
+func unescapeAndValidateTestID(escaped string) (string, error) {
+	unescaped, err := url.PathUnescape(escaped)
+	if err != nil {
+		return "", errors.Fmt("%q: %w", escaped, err)
+	}
+
+	if err := ValidateTestID(unescaped); err != nil {
+		return "", errors.Fmt("%q: %w", unescaped, err)
+	}
+
+	return unescaped, nil
 }
 
 // IsLegacyTestResultName returns whether the given test result name is likely

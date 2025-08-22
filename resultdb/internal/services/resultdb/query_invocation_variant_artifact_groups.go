@@ -130,7 +130,7 @@ func toInvocationArtifactMatchingContents(bqArtifacts []*artifacts.MatchingArtif
 	for _, a := range bqArtifacts {
 		snippet, matches := constructSnippetAndMatches(a, searchString)
 		res = append(res, &pb.ArtifactMatchingContent{
-			Name:          pbutil.InvocationArtifactName(a.InvocationID, artifactID),
+			Name:          pbutil.LegacyInvocationArtifactName(a.InvocationID, artifactID),
 			PartitionTime: timestamppb.New(a.PartitionTime),
 			Snippet:       snippet,
 			Matches:       matches,

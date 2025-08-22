@@ -35,14 +35,21 @@ option java_multiple_files = true;
 message Artifact {
   // Can be used to refer to this artifact.
   // Format:
-  // - For invocation-level artifacts:
-  //   "invocations/{INVOCATION_ID}/artifacts/{ARTIFACT_ID}".
-  // - For test-result-level artifacts:
-  //   "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
+  // - For work unit-level artifacts:
+  //   "rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}/artifacts/{ARTIFACT_ID}".
+  // - For test result-level artifacts:
+  //   "rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
+  //
   // where URL_ESCAPED_TEST_ID is the test_id escaped with
   // https://golang.org/pkg/net/url/#PathEscape (see also https://aip.dev/122),
   // and ARTIFACT_ID is documented below.
   // Examples: "screenshot.png", "traces/a.txt".
+  //
+  // For artifacts in legacy invocations, the following formats are also used:
+  // - For invocation-level artifacts:
+  //   "invocations/{INVOCATION_ID}/artifacts/{ARTIFACT_ID}".
+  // - For test-result-level artifacts:
+  //   "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
   string name = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE
@@ -51,7 +58,7 @@ message Artifact {
   // The structured test identifier. Uniquely identifies the test that was run.
   //
   // This field is only populated for test-result-level artifacts.
-  // MUST set if result_id is set.
+  //
   // MUST NOT set for legacy uploader where test id should be specified in the parent.
   TestIdentifier test_id_structured = 12 [(google.api.field_behavior) = IMMUTABLE];
 
@@ -68,7 +75,7 @@ message Artifact {
 
   // This field is only populated for test-result-level artifacts.
   // MUST set if test_id_structured is set.
-  // MUST NOT set for legacy uploader where result id should be specified in the parent.
+  // MUST NOT set if test_id_structured is unset.
   string result_id = 14 [(google.api.field_behavior) = IMMUTABLE];
 
   // A local identifier of the artifact, unique within the parent resource.
@@ -83,10 +90,10 @@ message Artifact {
   // While the fetch_url will be returned by default, in some cases it may introduce significantly
   // higher latency and potentially trigger errors if quota limits are exceeded.
   // Thus please mask fetch_url unless you are actually going to use it.
-  string fetch_url = 3;
+  string fetch_url = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // When fetch_url expires. If expired, re-request this Artifact.
-  google.protobuf.Timestamp fetch_url_expiration = 4;
+  google.protobuf.Timestamp fetch_url_expiration = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // Media type of the artifact.
   // Logs are typically "text/plain" and screenshots are typically "image/png".
@@ -96,7 +103,11 @@ message Artifact {
   // Size of the file.
   // Can be used in UI to decide between displaying the artifact inline or only
   // showing a link if it is too large.
-  // If you are using the gcs_uri, this field is not verified, but only treated as a hint.
+  //
+  // If you are using the gcs_uri, the uploaded value is not verified, only
+  // treated as a hint.
+  //
+  // Optional.
   int64 size_bytes = 6;
 
   // Contents of the artifact.
@@ -116,7 +127,9 @@ message Artifact {
   TestStatus test_status = 9 [ deprecated = true ];
 
   // Indicates whether ListArtifactLines RPC can be used with this artifact.
-  bool has_lines = 11;
+  //
+  // Output only.
+  bool has_lines = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // The RBE URI of the artifact if it's stored in RBE. If specified, `contents`
   // and `gcs_uri` must be empty.

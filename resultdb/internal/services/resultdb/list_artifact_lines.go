@@ -49,7 +49,7 @@ func (s *resultDBServer) ListArtifactLines(ctx context.Context, in *pb.ListArtif
 		return nil, appstatus.BadRequest(err)
 	}
 
-	invID, _, _, artifactID, err := pbutil.ParseArtifactName(in.Parent)
+	invID, _, _, artifactID, err := pbutil.ParseLegacyArtifactName(in.Parent)
 
 	if err != nil {
 		return nil, errors.Fmt("parse artifact name: %w", err)
@@ -87,7 +87,7 @@ func (s *resultDBServer) ListArtifactLines(ctx context.Context, in *pb.ListArtif
 }
 
 func validateListArtifactLinesRequest(req *pb.ListArtifactLinesRequest) error {
-	if err := pbutil.ValidateArtifactName(req.Parent); err != nil {
+	if err := pbutil.ValidateLegacyArtifactName(req.Parent); err != nil {
 		return appstatus.BadRequest(errors.New("parent: invalid artifact name"))
 	}
 

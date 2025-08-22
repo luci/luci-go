@@ -34,7 +34,7 @@ import (
 )
 
 func validateGetArtifactRequest(req *pb.GetArtifactRequest) error {
-	if err := pbutil.ValidateArtifactName(req.Name); err != nil {
+	if err := pbutil.ValidateLegacyArtifactName(req.Name); err != nil {
 		return errors.Fmt("name: %w", err)
 	}
 
@@ -61,7 +61,7 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 
 	art := artData.Artifact
 
-	invIDStr, _, _, _ := artifacts.MustParseName(in.Name)
+	invIDStr, _, _, _ := artifacts.MustParseLegacyName(in.Name)
 	realm, err := invocations.ReadRealm(ctx, invocations.ID(invIDStr))
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (s *resultDBServer) populateFetchURLs(ctx context.Context, invocationIDToPr
 		if a.GcsUri != "" {
 			// ResultDB allows including invocation from a different LUCI project to a parent invocation.
 			// We should use the LUCI project of the immediate parent of the artifact to generate the signed URL.
-			invIDStr, _, _, _ := artifacts.MustParseName(a.Name)
+			invIDStr, _, _, _ := artifacts.MustParseLegacyName(a.Name)
 			project, ok := invocationIDToProject[invocations.ID(invIDStr)]
 			if !ok {
 				panic("invocation for artifact doesn't exist in the invocationIDToProject map")

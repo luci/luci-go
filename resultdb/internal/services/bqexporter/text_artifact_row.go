@@ -81,7 +81,7 @@ type textArtifactRowInput struct {
 }
 
 func (i *textArtifactRowInput) row() proto.Message {
-	_, testID, resultID, artifactID := artifacts.MustParseName(i.a.Name)
+	_, testID, resultID, artifactID := artifacts.MustParseLegacyName(i.a.Name)
 	expRec := invocationProtoToRecord(i.exported)
 	parRec := invocationProtoToRecord(i.parent)
 
@@ -209,7 +209,7 @@ func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocati
 		}
 
 		err = q.Run(ctx, func(a *artifacts.Artifact) error {
-			invID, _, _, _ := artifacts.MustParseName(a.Name)
+			invID, _, _, _ := artifacts.MustParseLegacyName(a.Name)
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
@@ -271,9 +271,9 @@ func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, ins inse
 				a := rows[err[i].RowIndex].Message.(*bqpb.TextArtifactRowLegacy)
 				var artifactName string
 				if a.TestId != "" {
-					artifactName = pbutil.TestResultArtifactName(a.Parent.Id, a.TestId, a.ResultId, a.ArtifactId)
+					artifactName = pbutil.LegacyTestResultArtifactName(a.Parent.Id, a.TestId, a.ResultId, a.ArtifactId)
 				} else {
-					artifactName = pbutil.InvocationArtifactName(a.Parent.Id, a.ArtifactId)
+					artifactName = pbutil.LegacyInvocationArtifactName(a.Parent.Id, a.ArtifactId)
 				}
 				logging.Errorf(ctx, "failed to insert row for %s: %s", artifactName, err[i].Error())
 			}

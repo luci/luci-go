@@ -26,7 +26,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -35,11 +34,11 @@ import (
 	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
-// MustParseName extracts invocation, test, result and artifactIDs.
+// MustParseLegacyName extracts invocation, test, result and artifactIDs.
 // Test and result IDs are "" if this is a invocation-level artifact.
 // Panics on failure.
-func MustParseName(name string) (invID invocations.ID, testID, resultID, artifactID string) {
-	invIDStr, testID, resultID, artifactID, err := pbutil.ParseArtifactName(name)
+func MustParseLegacyName(name string) (invID invocations.ID, testID, resultID, artifactID string) {
+	invIDStr, testID, resultID, artifactID, err := pbutil.ParseLegacyArtifactName(name)
 	if err != nil {
 		panic(err)
 	}
@@ -82,7 +81,7 @@ func ParseParentID(parentID string) (testID, resultID string, err error) {
 // * GcsURI
 // * RBECASHash
 func Read(ctx context.Context, name string) (*Artifact, error) {
-	invIDStr, testID, resultID, artifactID, err := pbutil.ParseArtifactName(name)
+	invIDStr, testID, resultID, artifactID, err := pbutil.ParseLegacyArtifactName(name)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +143,7 @@ func TrimHashPrefix(hash string) string {
 
 // VerifyReadArtifactPermission verifies if the caller has enough permissions to read the artifact.
 func VerifyReadArtifactPermission(ctx context.Context, name string) error {
-	invIDStr, _, _, _, inputErr := pbutil.ParseArtifactName(name)
+	invIDStr, _, _, _, inputErr := pbutil.ParseLegacyArtifactName(name)
 	if inputErr != nil {
 		return appstatus.BadRequest(inputErr)
 	}

@@ -294,7 +294,7 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 	// Parse and validate the artifact name.
 	var invIDString string
 	var err error
-	invIDString, ac.testID, ac.resultID, ac.artifactID, err = pbutil.ParseArtifactName(ac.artifactName)
+	invIDString, ac.testID, ac.resultID, ac.artifactID, err = pbutil.ParseLegacyArtifactName(ac.artifactName)
 	if err != nil {
 		return appstatus.Errorf(codes.InvalidArgument, "bad artifact name: %s", err)
 	}

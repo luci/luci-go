@@ -239,7 +239,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 				testID = rdbtr.TestId
 			}
 
-			n := pbutil.TestResultArtifactName(s.cfg.invocationID, testID, rdbtr.ResultId, id)
+			n := pbutil.LegacyTestResultArtifactName(s.cfg.invocationID, testID, rdbtr.ResultId, id)
 			t, err := newUploadTask(n, a)
 
 			// newUploadTask can return an error if os.Stat() fails.
@@ -299,7 +299,7 @@ func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sin
 		if err := validateArtifact(a); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request for artifact %q: %s", id, err)
 		}
-		t, err := newUploadTask(pbutil.InvocationArtifactName(s.cfg.invocationID, id), a)
+		t, err := newUploadTask(pbutil.LegacyInvocationArtifactName(s.cfg.invocationID, id), a)
 		// newUploadTask can return an error if os.Stat() fails.
 		if err != nil {
 			// TODO(crbug.com/1124868) - once all test harnesses are fixed, return 4xx on

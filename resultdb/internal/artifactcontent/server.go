@@ -170,7 +170,7 @@ func (r *contentRequest) parseRequest(ctx context.Context, req *http.Request) er
 	// of test IDs.
 	r.artifactName = strings.Trim(req.URL.EscapedPath(), "/")
 
-	invID, testID, resultID, artifactID, err := pbutil.ParseArtifactName(r.artifactName)
+	invID, testID, resultID, artifactID, err := pbutil.ParseLegacyArtifactName(r.artifactName)
 	if err != nil {
 		return errors.Fmt("invalid artifact name %q: %w", r.artifactName, err)
 	}
