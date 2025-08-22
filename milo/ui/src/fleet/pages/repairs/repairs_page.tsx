@@ -216,6 +216,21 @@ const COLUMNS: Record<string, GridColDef> = {
     field: 'devices_offline_percentage',
     headerName: 'Devices Offline %',
     flex: 1,
+    renderHeader: () => {
+      return (
+        <Typography
+          variant="subhead2"
+          css={{
+            fontWeight: 500,
+            textWrap: 'wrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          Devices Offline&nbsp;%
+        </Typography>
+      );
+    },
   },
   devicesOfflineRatio: {
     field: 'devices_offline_ratio',
