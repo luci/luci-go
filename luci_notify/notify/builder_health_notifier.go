@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
-	"time"
-	"sync"
 	"sort"
+	"strings"
+	"sync"
+	"time"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
@@ -238,7 +238,7 @@ func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifi
 				req := &buildbucketpb.GetBuilderRequest{
 					Id: &buildbucketpb.BuilderID{
 						Project: project,
-						Bucket: b.Bucket,
+						Bucket:  b.Bucket,
 						Builder: b.Name,
 					},
 					Mask: &buildbucketpb.BuilderMask{
@@ -305,8 +305,8 @@ func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifi
 
 		task := &internal.EmailTask{
 			Recipients: []string{email},
-			Subject: fmt.Sprintf("Builder Health For %s - %d of %d Are in Bad Health", email, unhealthyBuilderCount, builderCount),
-			BodyGzip: generateEmail(c, email, unhealthyBuilderCount, builderCount, generateBuilderDescriptionHTML(unhealthyBuilders, healthyBuilders, unknownHealthBuilders), "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/infra/builder_health_indicators.md"),
+			Subject:    fmt.Sprintf("Builder Health For %s - %d of %d Are in Bad Health", email, unhealthyBuilderCount, builderCount),
+			BodyGzip:   generateEmail(c, email, unhealthyBuilderCount, builderCount, generateBuilderDescriptionHTML(unhealthyBuilders, healthyBuilders, unknownHealthBuilders), "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/infra/builder_health_indicators.md"),
 		}
 		tasks[email] = task
 	}

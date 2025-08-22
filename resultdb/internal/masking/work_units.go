@@ -20,11 +20,12 @@ package masking
 import (
 	"fmt"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"google.golang.org/protobuf/proto"
 )
 
 // WorkUnit constructs a *pb.WorkUnit from the given fields, applying masking

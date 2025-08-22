@@ -8,10 +8,10 @@ version: "2"
 linters:
   enable:
     - copyloopvar
-    - intrange
     - ineffassign
     - whitespace
   disable:
+    - intrange
     - errcheck
     - errorlint
     - govet

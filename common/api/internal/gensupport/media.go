@@ -259,7 +259,6 @@ func (mi *MediaInfo) UploadRequest(reqHeaders http.Header, body io.Reader) (newB
 		for _, closer := range toCleanup {
 			_ = closer.Close()
 		}
-
 	}
 	return body, getBody, cleanup
 }

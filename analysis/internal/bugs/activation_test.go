@@ -19,11 +19,12 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	configpb "go.chromium.org/luci/analysis/proto/config"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestUpdatePolicyActivations(t *testing.T) {

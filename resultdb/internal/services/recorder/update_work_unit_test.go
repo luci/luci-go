@@ -57,7 +57,6 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("TestValidateUpdateWorkUnitRequest", t, func(t *ftt.Test) {
-
 		ctx := context.Background()
 		now := testclock.TestRecentTimeUTC
 		ctx, _ = testclock.UseTime(ctx, now)
@@ -290,7 +289,6 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 
 func TestUpdateWorkUnit(t *testing.T) {
 	ftt.Run("TestUpdateWorkUnit", t, func(t *ftt.Test) {
-
 		ctx := testutil.SpannerTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
 		ctx = memory.Use(ctx)                    // For config datastore cache.

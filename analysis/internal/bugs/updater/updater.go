@@ -1223,7 +1223,6 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster, reques
 			if _, err := span.ReadWriteTransaction(ctx, update); err != nil {
 				return errors.Fmt("update rule: %w", err)
 			}
-
 		} else {
 			newRule := &rules.Entry{
 				Project:               b.project,

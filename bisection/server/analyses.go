@@ -338,7 +338,6 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 	result := make([]*pb.TestAnalysis, len(req.TestFailures))
 	err = parallel.FanOutIn(func(workC chan<- func() error) {
 		for i, tf := range req.TestFailures {
-
 			workC <- func() error {
 				var cpr *analysispb.TestVariantBranch
 				if tf.SourcePosition == 0 {
