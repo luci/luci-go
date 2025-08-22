@@ -25,32 +25,24 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/server/span"
-
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 )
 
 func TestMustParseName(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("MustParseName", t, func(t *ftt.Test) {
-		t.Run("Parse Legacy Name", func(t *ftt.Test) {
-			invID, testID, resultID := MustParseName(
-				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
-			assert.Loosely(t, invID, should.Equal(invocations.ID("a")))
-			assert.Loosely(t, testID, should.Equal("ninja://chrome/test:foo_tests/BarTest.DoBaz"))
-			assert.Loosely(t, resultID, should.Equal("result5"))
-		})
-
-		t.Run("Parse", func(t *ftt.Test) {
-			invID, testID, resultID := MustParseName(
+		t.Run("Valid", func(t *ftt.Test) {
+			wuID, testID, resultID := MustParseName(
 				"rootInvocations/a/workUnits/b:c/tests/d/results/e")
-			assert.Loosely(t, invID, should.Equal(invocations.ID("workunit:a:b:c")))
+			assert.Loosely(t, wuID, should.Equal(workunits.ID{RootInvocationID: "a", WorkUnitID: "b:c"}))
 			assert.Loosely(t, testID, should.Equal("d"))
 			assert.Loosely(t, resultID, should.Equal("e"))
 		})
@@ -64,6 +56,31 @@ func TestMustParseName(t *testing.T) {
 			}
 			for _, name := range invalidNames {
 				assert.Loosely(t, func() { MustParseName(name) }, should.Panic)
+			}
+		})
+	})
+}
+
+func TestMustLegacyParseName(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("MustParseName", t, func(t *ftt.Test) {
+		t.Run("Valid", func(t *ftt.Test) {
+			invID, testID, resultID := MustParseLegacyName(
+				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
+			assert.Loosely(t, invID, should.Equal(invocations.ID("a")))
+			assert.Loosely(t, testID, should.Equal("ninja://chrome/test:foo_tests/BarTest.DoBaz"))
+			assert.Loosely(t, resultID, should.Equal("result5"))
+		})
+
+		t.Run("Invalid", func(t *ftt.Test) {
+			invalidNames := []string{
+				"invocations/a/tests/b",
+				"invocations/a/tests/b/exonerations/c",
+				"rootInvocations/a/tests/b/results/c",
+			}
+			for _, name := range invalidNames {
+				assert.Loosely(t, func() { MustParseLegacyName(name) }, should.Panic)
 			}
 		})
 	})

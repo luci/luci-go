@@ -188,7 +188,7 @@ func (b *bqExporter) queryTestResults(
 	now := clock.Now(ctx).UTC()
 	err = q.Run(ctx, func(tr *pb.TestResult) error {
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: tr.VariantHash}]
-		parentID, _, _ := testresults.MustParseName(tr.Name)
+		parentID, _, _ := testresults.MustParseLegacyName(tr.Name)
 		sourceHash := reachableInvs.Invocations[parentID].SourceHash
 		var sources *pb.Sources
 		if sourceHash != graph.EmptySourceHash {
