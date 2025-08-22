@@ -95,7 +95,7 @@ require (
 	golang.org/x/term v0.31.0
 	golang.org/x/text v0.24.0
 	golang.org/x/time v0.9.0
-	golang.org/x/tools v0.29.0
+	golang.org/x/tools v0.30.0
 	gonum.org/v1/gonum v0.12.0
 	google.golang.org/api v0.218.0
 	google.golang.org/appengine v1.6.8
@@ -106,7 +106,7 @@ require (
 	google.golang.org/grpc v1.70.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.5.1
 	google.golang.org/protobuf v1.36.5
-	honnef.co/go/tools v0.1.3
+	honnef.co/go/tools v0.6.1
 	modernc.org/sqlite v1.21.2
 )
 
@@ -120,7 +120,7 @@ require (
 	cloud.google.com/go/monitoring v1.23.0 // indirect
 	cloud.google.com/go/trace v1.11.3 // indirect
 	dario.cat/mergo v1.0.0 // indirect
-	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c // indirect
 	github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.25.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.48.1 // indirect
@@ -177,7 +177,8 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.34.0 // indirect
-	golang.org/x/mod v0.22.0 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20231108232855-2478ac86f678 // indirect
+	golang.org/x/mod v0.23.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	lukechampine.com/uint128 v1.3.0 // indirect
