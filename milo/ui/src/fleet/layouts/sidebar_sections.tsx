@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import ConstructionIcon from '@mui/icons-material/Construction';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import DevicesIcon from '@mui/icons-material/Devices';
 import EmojiNatureIcon from '@mui/icons-material/EmojiNature';
@@ -19,7 +20,12 @@ import LanIcon from '@mui/icons-material/Lan';
 import TopicIcon from '@mui/icons-material/Topic';
 import React from 'react';
 
-import { generateDeviceListURL, CHROMEOS_PLATFORM } from '../constants/paths';
+import {
+  generateDeviceListURL,
+  CHROMEOS_PLATFORM,
+  generateRepairsURL,
+  ANDROID_PLATFORM,
+} from '../constants/paths';
 
 export interface SidebarPage {
   readonly label: string;
@@ -55,6 +61,11 @@ function generateFleetConsoleSection(): SidebarSection {
         label: 'Devices',
         url: generateDeviceListURL(CHROMEOS_PLATFORM),
         icon: <DevicesIcon />,
+      },
+      {
+        label: 'Repairs',
+        url: generateRepairsURL(ANDROID_PLATFORM),
+        icon: <ConstructionIcon />,
       },
     ],
   };
