@@ -16,8 +16,12 @@ package recorder
 
 import (
 	"context"
+	"maps"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -26,6 +30,8 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -41,7 +47,151 @@ func (s *recorderServer) UpdateRootInvocation(ctx context.Context, in *pb.Update
 		return nil, appstatus.BadRequest(err)
 	}
 
-	return nil, appstatus.Error(codes.Unimplemented, "not yet implemented")
+	var ret *pb.RootInvocation
+	shouldFinalizeRootInvocation := false
+	updated := false
+	rootInvID := rootinvocations.MustParseName(in.RootInvocation.Name)
+
+	ct, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		// Read the current root invocation.
+		curRootInvocation, err := rootinvocations.Read(ctx, rootInvID)
+		if err != nil {
+			return err
+		}
+		if curRootInvocation.State != pb.RootInvocation_ACTIVE {
+			return appstatus.Errorf(codes.FailedPrecondition, "root invocation %q is not active", rootInvID.Name())
+		}
+		ret = curRootInvocation.ToProto()
+
+		updateMask, err := mask.FromFieldMask(in.UpdateMask, in.RootInvocation, mask.AdvancedSemantics(), mask.ForUpdate())
+		if err != nil {
+			// Should not happen, as it's validated in the initial request validation.
+			return errors.Fmt("update_mask: %w", err)
+		}
+
+		// Update map for the RootInvocations table.
+		rootInvocationValues := map[string]any{
+			"RootInvocationId": rootInvID,
+		}
+		// Update map for the legacy Invocations table.
+		legacyInvocationValues := map[string]any{
+			"InvocationId": rootInvID.LegacyInvocationID(),
+		}
+		// Update map for RootInvocationShards table.
+		shardRootInvocationValues := map[string]any{}
+
+		for path := range updateMask.Children() {
+			switch path {
+			// The cases in this switch statement must be synchronized with a
+			// similar switch statement in validateUpdateRootInvocationRequest.
+			case "state":
+				// In the case of ACTIVE it should be a No-op.
+				if in.RootInvocation.State == pb.RootInvocation_FINALIZING {
+					shouldFinalizeRootInvocation = true
+					rootInvocationValues["State"] = pb.RootInvocation_FINALIZING
+					rootInvocationValues["FinalizeStartTime"] = spanner.CommitTimestamp
+					legacyInvocationValues["State"] = pb.Invocation_FINALIZING
+					legacyInvocationValues["FinalizeStartTime"] = spanner.CommitTimestamp
+					shardRootInvocationValues["State"] = pb.RootInvocation_FINALIZING
+					ret.State = pb.RootInvocation_FINALIZING
+				}
+
+			case "deadline":
+				if !proto.Equal(ret.Deadline, in.RootInvocation.Deadline) {
+					deadline := in.RootInvocation.Deadline
+					rootInvocationValues["Deadline"] = deadline
+					legacyInvocationValues["Deadline"] = deadline
+					ret.Deadline = deadline
+				}
+			case "sources":
+				// Are we setting the field to a value other than its current value?
+				if !proto.Equal(curRootInvocation.Sources, in.RootInvocation.Sources) {
+					// We can't set the field to a value other than its current value, if IsSourcesFinal already set to true.
+					if curRootInvocation.IsSourcesFinal {
+						return appstatus.BadRequest(errors.New("root_invocation: sources: cannot modify already finalized sources"))
+					}
+					compressedSources := spanutil.Compressed(pbutil.MustMarshal(in.RootInvocation.Sources))
+					rootInvocationValues["Sources"] = compressedSources
+					legacyInvocationValues["Sources"] = compressedSources
+					shardRootInvocationValues["Sources"] = compressedSources
+					ret.Sources = in.RootInvocation.Sources
+				}
+
+			case "sources_final":
+				if curRootInvocation.IsSourcesFinal != in.RootInvocation.SourcesFinal {
+					if !in.RootInvocation.SourcesFinal {
+						return appstatus.BadRequest(errors.New("root_invocation: sources_final: cannot un-finalize already finalized sources"))
+					}
+					rootInvocationValues["IsSourcesFinal"] = true
+					legacyInvocationValues["IsSourceSpecFinal"] = spanner.NullBool{Valid: true, Bool: true}
+					shardRootInvocationValues["IsSourcesFinal"] = true
+					ret.SourcesFinal = true
+				}
+
+			case "tags":
+				if !pbutil.StringPairsEqual(ret.Tags, in.RootInvocation.Tags) {
+					tags := in.RootInvocation.Tags
+					rootInvocationValues["Tags"] = tags
+					legacyInvocationValues["Tags"] = tags
+					ret.Tags = tags
+				}
+			case "properties":
+				if !proto.Equal(ret.Properties, in.RootInvocation.Properties) {
+					compressedProps := spanutil.Compressed(pbutil.MustMarshal(in.RootInvocation.Properties))
+					rootInvocationValues["Properties"] = compressedProps
+					legacyInvocationValues["Properties"] = compressedProps
+					ret.Properties = in.RootInvocation.Properties
+				}
+			case "baseline_id":
+				if ret.BaselineId != in.RootInvocation.BaselineId {
+					baselineID := in.RootInvocation.BaselineId
+					rootInvocationValues["BaselineId"] = baselineID
+					legacyInvocationValues["BaselineId"] = baselineID
+					ret.BaselineId = baselineID
+				}
+			default:
+				// This should not be reached due to the validation step.
+				panic("impossible")
+			}
+		}
+
+		// The `rootInvocationValues` map is initialized with the primary key.
+		// There is no update if no other columns are added.
+		updated = len(rootInvocationValues) > 1
+		if updated {
+			rootInvocationValues["LastUpdated"] = spanner.CommitTimestamp
+			span.BufferWrite(ctx, spanutil.UpdateMap("RootInvocations", rootInvocationValues))
+			span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", legacyInvocationValues))
+
+			// Check if any update is needed to the RootInvocationShards table.
+			if len(shardRootInvocationValues) > 0 {
+				// Update all records for this root invocation in RootInvocationShards table.
+				for shardID := range rootInvID.AllShardIDs() {
+					shardUpdate := make(map[string]any, len(shardRootInvocationValues)+1)
+					maps.Copy(shardUpdate, shardRootInvocationValues)
+					shardUpdate["RootInvocationShardId"] = shardID
+					span.BufferWrite(ctx, spanutil.UpdateMap("RootInvocationShards", shardUpdate))
+				}
+			}
+			if shouldFinalizeRootInvocation {
+				tasks.StartInvocationFinalization(ctx, rootInvID.LegacyInvocationID())
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Populate output-only fields that are based on the commit timestamp.
+	if updated {
+		ret.LastUpdated = timestamppb.New(ct)
+	}
+	if shouldFinalizeRootInvocation {
+		ret.FinalizeStartTime = timestamppb.New(ct)
+	}
+
+	return ret, nil
 }
 
 // validateUpdateRootInvocationRequest validates an UpdateRootInvocationRequest.
@@ -131,6 +281,8 @@ func verifyUpdateRootInvocationPermissions(ctx context.Context, req *pb.UpdateRo
 		return err // Appstatus error.
 	}
 
+	// RootInvocation and root work unit share the same update token.
+	// Use the update token generated from root work unit id.
 	rootWorkUnitID := workunits.ID{
 		RootInvocationID: rootInvocationID,
 		WorkUnitID:       workunits.RootWorkUnitID,
@@ -144,7 +296,7 @@ func verifyUpdateRootInvocationPermissions(ctx context.Context, req *pb.UpdateRo
 	// the realm is immutable.
 	realm, err := rootinvocations.ReadRealm(span.Single(ctx), rootInvocationID)
 
-	updateMask, err := mask.FromFieldMask(req.UpdateMask, req.RootInvocation, mask.AdvancedSemantics(), mask.ForUpdate())
+	updateMask, err := mask.FromFieldMask(req.UpdateMask, req.RootInvocation, mask.ForUpdate())
 	if err != nil {
 		return appstatus.BadRequest(errors.Fmt("update_mask: %w", err))
 	}
