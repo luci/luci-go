@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import { logging } from '@/common/tools/logging';
+
 import { unminifyError } from './unminify_stackframe';
 
 const baseAPIUrl =
@@ -18,20 +20,18 @@ const baseAPIUrl =
 
 const noop = () => {};
 
-type ErrorReporterOptions = {
-  apiKey: string;
-  projectId: string;
-};
-
 class ErrorReporter {
-  /** The API key for the Google Cloud project. */
-  private readonly apiKey: string;
-  /** The ID of the Google Cloud project. */
-  private readonly projectId: string;
-
-  constructor({ apiKey, projectId }: ErrorReporterOptions) {
-    this.apiKey = apiKey;
-    this.projectId = projectId;
+  constructor(
+    /** The API key for the Google Cloud project. */
+    private readonly apiKey: string,
+    /** The ID of the Google Cloud project. */
+    private readonly projectId: string,
+  ) {
+    if (!apiKey || !projectId) {
+      logging.warn(
+        'Error reporting is disabled due to missing apiKey or projectId.',
+      );
+    }
   }
 
   /**
@@ -72,6 +72,9 @@ class ErrorReporter {
    * @param {unknown} err - The error to be reported. Can be any type.
    */
   report = (err: Error) => {
+    if (!this.apiKey || !this.projectId) {
+      return;
+    }
     unminifyError(err)
       .then((unminifiedError) => {
         this.send(unminifiedError).catch(noop);
@@ -82,15 +85,7 @@ class ErrorReporter {
   };
 }
 
-export const errorReporter = [
-  'luci-milo.appspot.com',
-  'ci.chromium.org',
-].includes(window.location.hostname)
-  ? new ErrorReporter({
-      apiKey: 'AIzaSyDxVV8kLK8CozsA1iKiPx6OjukSKQKmVbY',
-      projectId: 'luci-milo',
-    })
-  : new ErrorReporter({
-      apiKey: 'AIzaSyAyY1lwrHvFsIUrxyTuUDZZF1xTF6GbY08',
-      projectId: 'luci-milo-dev',
-    });
+export const errorReporter = new ErrorReporter(
+  SETTINGS.milo.errorReportingApiKey,
+  SETTINGS.milo.project,
+);
