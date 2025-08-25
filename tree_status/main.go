@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/cron"
+	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/gerritauth"
 	"go.chromium.org/luci/server/module"
@@ -30,7 +31,7 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
-
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 	"go.chromium.org/luci/tree_status/internal/bqexporter"
 	"go.chromium.org/luci/tree_status/internal/config"
 	"go.chromium.org/luci/tree_status/internal/span"
@@ -38,9 +39,6 @@ import (
 	"go.chromium.org/luci/tree_status/internal/views"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
 	"go.chromium.org/luci/tree_status/rpc"
-
-	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
-	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 func main() {
@@ -72,9 +70,6 @@ func main() {
 					AllowHeaders:             []string{gerritauth.Method.Header},
 				}
 			}
-			// TODO(crbug/1082369): Remove this workaround once non-standard field
-			// masks are no longer used in the API.
-			s.EnableNonStandardFieldMasks = true
 		})
 		srv.RegisterUnaryServerInterceptors(span.SpannerDefaultsInterceptor())
 		pb.RegisterTreeStatusServer(srv, rpc.NewTreeStatusServer())

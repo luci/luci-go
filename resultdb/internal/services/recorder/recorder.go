@@ -24,13 +24,11 @@ import (
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server"
-
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server"
 )
 
 // recorderServer implements pb.RecorderServer.
@@ -68,12 +66,6 @@ func InitServer(srv *server.Server, opt Options) error {
 	}
 
 	pb.RegisterRecorderServer(srv, NewRecorderServer(opt, repb.NewContentAddressableStorageClient(conn)))
-
-	// TODO(crbug/1082369): Remove this workaround once non-standard field masks
-	// are no longer used in the API.
-	srv.ConfigurePRPC(func(p *prpc.Server) {
-		p.EnableNonStandardFieldMasks = true
-	})
 
 	srv.RegisterUnaryServerInterceptors(spanutil.SpannerDefaultsInterceptor(sppb.RequestOptions_PRIORITY_HIGH))
 	return installArtifactCreationHandler(srv, &opt, conn)

@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/server/redisconn"
 	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
-
 	"go.chromium.org/luci/source_index/internal/commitingester"
 	"go.chromium.org/luci/source_index/internal/config"
 	sourceindexpb "go.chromium.org/luci/source_index/proto/v1"
@@ -58,9 +57,6 @@ func Main(init func(srv *luciserver.Server) error) {
 func RegisterPRPCHandlers(srv *luciserver.Server) error {
 	srv.ConfigurePRPC(func(s *prpc.Server) {
 		s.AccessControl = prpc.AllowOriginAll
-		// TODO(crbug/1082369): Remove this workaround once non-standard field masks
-		// are no longer used in the API.
-		s.EnableNonStandardFieldMasks = true
 	})
 
 	sourceindexpb.RegisterSourceIndexServer(srv, rpc.NewSourceIndexServer())
