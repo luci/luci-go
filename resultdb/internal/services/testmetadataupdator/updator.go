@@ -237,6 +237,7 @@ func (u *testMetadataUpdator) testMetadataMutation(project, testID, subRealm str
 // TestMetadata.location.file_name
 // TestMetadata.location.line
 // TestMetadata.bug_component
+// TestMetadata.previous_test_id
 // TestMetadata.properties
 func fieldExistenceBitField(metadata *pb.TestMetadata) uint8 {
 	bitField := uint8(0)
@@ -246,6 +247,7 @@ func fieldExistenceBitField(metadata *pb.TestMetadata) uint8 {
 		"location.file_name",
 		"location.line",
 		"bug_component",
+		"previous_test_id",
 		"properties",
 	}
 	for i, k := range bitFieldOrder {

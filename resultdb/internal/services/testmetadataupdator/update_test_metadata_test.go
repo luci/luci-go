@@ -22,6 +22,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -42,7 +43,7 @@ func TestFieldExistenceBitField(t *testing.T) {
 			md := fakeFullTestMetadata("testname")
 
 			res := fieldExistenceBitField(md)
-			assert.Loosely(t, res, should.Equal(0b11111))
+			assert.Loosely(t, res, should.Equal(0b1111111))
 		})
 
 		t.Run("partial test metadata", func(t *ftt.Test) {
@@ -360,6 +361,11 @@ func insertTestMetadata(ctx context.Context, t testing.TB, tm *testmetadata.Test
 }
 
 func fakeFullTestMetadata(testname string) *pb.TestMetadata {
+	props, err := structpb.NewStruct(map[string]any{"key": "value"})
+	if err != nil {
+		panic(err)
+	}
+
 	return &pb.TestMetadata{
 		Name: testname,
 		Location: &pb.TestLocation{
@@ -374,5 +380,7 @@ func fakeFullTestMetadata(testname string) *pb.TestMetadata {
 				},
 			},
 		},
+		PreviousTestId: "previous-test-id",
+		Properties:     props,
 	}
 }
