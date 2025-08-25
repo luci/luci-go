@@ -23,12 +23,14 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/span"
-
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	"go.chromium.org/luci/resultdb/internal/workunits"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 )
 
 func TestMustParseName(t *testing.T) {
@@ -76,9 +78,22 @@ func TestRead(t *testing.T) {
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
 		defer cancel()
 
-		testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
+		wuID := workunits.ID{RootInvocationID: "root-inv-id", WorkUnitID: "work-unit-id"}
+		wu := workunits.NewBuilder("root-inv-id", "work-unit-id").Build()
+		ms := insert.RootInvocationWithRootWorkUnit(rootinvocations.NewBuilder("root-inv-id").Build())
+		ms = append(ms, insert.WorkUnit(wu)...)
+		ms = append(ms, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
+		testutil.MustApply(ctx, t, ms...)
 
 		t.Run(`Does not exist`, func(t *ftt.Test) {
+			_, err := Read(ctx, "rootInvocations/i/workUnits/wu1/artifacts/a")
+			as, ok := appstatus.Get(err)
+			assert.That(t, ok, should.BeTrue)
+			assert.That(t, as.Code(), should.Equal(codes.NotFound))
+			assert.That(t, as.Message(), should.ContainSubstring("rootInvocations/i/workUnits/wu1/artifacts/a not found"))
+		})
+
+		t.Run(`Does not exist (legecy name)`, func(t *ftt.Test) {
 			_, err := Read(ctx, "invocations/i/artifacts/a")
 			as, ok := appstatus.Get(err)
 			assert.That(t, ok, should.BeTrue)
@@ -87,28 +102,38 @@ func TestRead(t *testing.T) {
 		})
 
 		t.Run(`Exists`, func(t *ftt.Test) {
-			testutil.MustApply(ctx, t, insert.Artifact("inv", "tr/t/r", "a", map[string]any{
+			testutil.MustApply(ctx, t, insert.Artifact(wuID.LegacyInvocationID(), "tr/t/r", "a", map[string]any{
 				"ContentType": "text/plain",
 				"Size":        "54",
 			}))
-			const name = "invocations/inv/tests/t/results/r/artifacts/a"
+			const name = "rootInvocations/root-inv-id/workUnits/work-unit-id/tests/t/results/r/artifacts/a"
 			a, err := Read(ctx, name)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, a.Artifact, should.Match(&pb.Artifact{
-				Name:        name,
+				Name: name,
+				TestIdStructured: &pb.TestIdentifier{
+					ModuleName:        "legacy",
+					ModuleScheme:      "legacy",
+					ModuleVariant:     &pb.Variant{},
+					ModuleVariantHash: pbutil.VariantHash(&pb.Variant{}),
+					CaseName:          "t",
+				},
+				TestId:      "t",
+				ResultId:    "r",
 				ArtifactId:  "a",
 				ContentType: "text/plain",
 				SizeBytes:   54,
+				HasLines:    true,
 			}))
 		})
 
 		t.Run(`Exists with GcsURI`, func(t *ftt.Test) {
-			testutil.MustApply(ctx, t, insert.Artifact("inv", "tr/t/r", "b", map[string]any{
+			testutil.MustApply(ctx, t, insert.Artifact(wuID.LegacyInvocationID(), "", "b", map[string]any{
 				"ContentType": "text/plain",
 				"Size":        "54",
 				"GcsURI":      "gs://test",
 			}))
-			const name = "invocations/inv/tests/t/results/r/artifacts/b"
+			const name = "rootInvocations/root-inv-id/workUnits/work-unit-id/artifacts/b"
 			a, err := Read(ctx, name)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, a.Artifact, should.Match(&pb.Artifact{
@@ -117,6 +142,24 @@ func TestRead(t *testing.T) {
 				ContentType: "text/plain",
 				SizeBytes:   54,
 				GcsUri:      "gs://test",
+				HasLines:    true,
+			}))
+		})
+
+		t.Run(`Exists (legacy invocation)`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Artifact("inv", "", "a", map[string]any{
+				"ContentType": "text/plain",
+				"Size":        "54",
+			}))
+			const name = "invocations/inv/artifacts/a"
+			a, err := Read(ctx, name)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, a.Artifact, should.Match(&pb.Artifact{
+				Name:        name,
+				ArtifactId:  "a",
+				ContentType: "text/plain",
+				SizeBytes:   54,
+				HasLines:    true,
 			}))
 		})
 	})

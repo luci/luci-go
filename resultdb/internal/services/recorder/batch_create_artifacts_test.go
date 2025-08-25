@@ -18,34 +18,38 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
+	"strings"
 	"testing"
-	"time"
 
+	"cloud.google.com/go/spanner"
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
-	configpb "go.chromium.org/luci/resultdb/proto/config"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -72,857 +76,987 @@ func (c *fakeRBEClient) mockResp(err error, cds ...codes.Code) {
 	}
 }
 
-func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
-	newLegacyArtReq := func(parent, artID, contentType string) *pb.CreateArtifactRequest {
-		return &pb.CreateArtifactRequest{
-			Parent:   parent,
-			Artifact: &pb.Artifact{ArtifactId: artID, ContentType: contentType},
-		}
-	}
-
-	newTestArtReq := func(artifactID string) *pb.CreateArtifactRequest {
-		return &pb.CreateArtifactRequest{
-			Artifact: &pb.Artifact{
-				TestIdStructured: &pb.TestIdentifier{
-					ModuleName:    "module",
-					ModuleScheme:  "junit",
-					ModuleVariant: pbutil.Variant("k1", "v1", "k2", "v2"),
-					CoarseName:    "coarse",
-					FineName:      "fine",
-					CaseName:      "case",
-				},
-				ResultId:    "resultid",
-				ArtifactId:  artifactID,
-				ContentType: "image/png",
-			},
-		}
-	}
-
-	newInvArtReq := func(artifactID string) *pb.CreateArtifactRequest {
-		return &pb.CreateArtifactRequest{
-			Parent: "invocations/abc",
-			Artifact: &pb.Artifact{
-				ArtifactId:  artifactID,
-				ContentType: "text/plain",
-			},
-		}
-	}
-
-	ftt.Run("newArtifactCreationRequestsFromProto", t, func(t *ftt.Test) {
-		bReq := &pb.BatchCreateArtifactsRequest{Parent: "invocations/abc"}
-		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
-		assert.NoErr(t, err)
-		t.Run("successes", func(t *ftt.Test) {
-			t.Run("use the legacy parent format", func(t *ftt.Test) {
-				invArt := newLegacyArtReq("invocations/inv1", "art1", "text/html")
-				trArt := newLegacyArtReq("invocations/inv1/tests/t1/results/r1", "art2", "image/png")
-				bReq.Requests = append(bReq.Requests, invArt)
-				bReq.Requests = append(bReq.Requests, trArt)
-				bReq.Parent = ""
-				invID, arts, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, invID, should.Equal(invocations.ID("inv1")))
-				assert.Loosely(t, len(arts), should.Equal(len(bReq.Requests)))
-
-				// invocation-level artifact
-				assert.Loosely(t, arts[0].artifactID, should.Equal("art1"))
-				assert.Loosely(t, arts[0].parentID(), should.Equal(artifacts.ParentID("", "")))
-				assert.Loosely(t, arts[0].contentType, should.Equal("text/html"))
-
-				// test-result-level artifact
-				assert.Loosely(t, arts[1].artifactID, should.Equal("art2"))
-				assert.Loosely(t, arts[1].parentID(), should.Equal(artifacts.ParentID("t1", "r1")))
-				assert.Loosely(t, arts[1].contentType, should.Equal("image/png"))
-				assert.Loosely(t, arts[1].variant, should.BeNil)
-			})
-
-			t.Run("use the top-level parent field", func(t *ftt.Test) {
-				bReq.Requests = append(bReq.Requests, newInvArtReq("art1"))
-				bReq.Requests = append(bReq.Requests, newTestArtReq("art2"))
-
-				invID, arts, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, invID, should.Equal(invocations.ID("abc")))
-				assert.Loosely(t, len(arts), should.Equal(2))
-
-				// invocation-level artifact
-				assert.Loosely(t, arts[0].artifactID, should.Equal("art1"))
-				assert.Loosely(t, arts[0].parentID(), should.Equal(artifacts.ParentID("", "")))
-				assert.Loosely(t, arts[0].contentType, should.Equal("text/plain"))
-				assert.Loosely(t, arts[0].variant, should.BeNil)
-
-				// test-result-level artifact
-				assert.Loosely(t, arts[1].artifactID, should.Equal("art2"))
-				assert.Loosely(t, arts[1].parentID(), should.Equal(artifacts.ParentID(":module!junit:coarse:fine#case", "resultid")))
-				assert.Loosely(t, arts[1].contentType, should.Equal("image/png"))
-				assert.Loosely(t, arts[1].variant, should.Match(pbutil.Variant("k1", "v1", "k2", "v2")))
-			})
-			t.Run("module variant not specified when test_id_structured is specified", func(t *ftt.Test) {
-				// We need this case to support legacy clients.
-				// TODO(meiring): Delete when Tradefed uploader migrated.
-				r := newTestArtReq("art1")
-				r.Artifact.TestIdStructured.ModuleVariant = nil
-				bReq.Requests = append(bReq.Requests, r)
-
-				invID, arts, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, invID, should.Equal(invocations.ID("abc")))
-				assert.Loosely(t, len(arts), should.Equal(1))
-				assert.Loosely(t, arts[0].variant, should.BeNil)
-			})
-		})
-
-		t.Run("neither of nested parent nor top level parent is specified", func(t *ftt.Test) {
-			r := newTestArtReq("art1")
-			bReq.Requests = append(bReq.Requests, r)
-			bReq.Parent = ""
-			r.Parent = ""
-
-			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike("requests[0]: parent: unspecified"))
-		})
-
-		t.Run("Different nested parent and top level parent", func(t *ftt.Test) {
-			r := newTestArtReq("art1")
-			r.Parent = "invocations/inv"
-			bReq.Requests = append(bReq.Requests, r)
-
-			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike("only one parent is allowed: \"invocations/abc\", \"invocations/inv\""))
-		})
-
-		t.Run("Use legacy parent format and test_id_structured are specified", func(t *ftt.Test) {
-			r := newTestArtReq("art1")
-			r.Parent = "invocations/abc/tests/testid/results/123"
-			bReq.Requests = append(bReq.Requests, r)
-			bReq.Parent = ""
-
-			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike("test_id_structured must not be specified if parent is a test result name (legacy format)"))
-		})
-
-		t.Run("No top level parent and test_id_structured is specified", func(t *ftt.Test) {
-			r := newTestArtReq("art1")
-			r.Parent = "invocations/abc"
-			bReq.Requests = append(bReq.Requests, r)
-			bReq.Parent = ""
-
-			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike("test_id_structured or result_id must not be specified if top-level invocation is not set (legacy uploader)"))
-		})
-
-		t.Run("test_id_structured not specified with result_id specified", func(t *ftt.Test) {
-			r := newTestArtReq("art1")
-			r.Artifact.TestIdStructured = nil
-			bReq.Requests = append(bReq.Requests, r)
-
-			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike("test_id_structured is required if result_id is specified"))
-		})
-
-		t.Run("result_id not specified with test_id_structured specified", func(t *ftt.Test) {
-			r := newTestArtReq("art1")
-			r.Artifact.ResultId = ""
-			bReq.Requests = append(bReq.Requests, r)
-
-			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike("result_id is required if test_id_structured is specified"))
-		})
-
-		t.Run("uploaded test_id_structured references unknown module scheme", func(t *ftt.Test) {
-			r := newTestArtReq("art1")
-			r.Artifact.TestIdStructured.ModuleScheme = "unknown"
-			bReq.Requests = append(bReq.Requests, r)
-
-			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike(`requests[0]: test_id_structured: module_scheme: scheme "unknown" is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme`))
-		})
-
-		t.Run("flat-form test_id references unknown module scheme", func(t *ftt.Test) {
-			r := newTestArtReq("art1")
-			r.Parent = "invocations/abc/tests/:module%21unknown::%23case/results/123"
-			r.Artifact.TestIdStructured = nil
-			bReq.Requests = append(bReq.Requests, r)
-
-			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike(`requests[0]: parent: encoded test id: module_scheme: scheme "unknown" is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme`))
-		})
-
-		t.Run("mismatched size_bytes", func(t *ftt.Test) {
-			trArt := newTestArtReq("art1")
-			bReq.Requests = append(bReq.Requests, trArt)
-			trArt.Artifact.SizeBytes = 123
-			trArt.Artifact.Contents = make([]byte, 10249)
-			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike(`sizeBytes and contents are specified but don't match`))
-		})
-
-		t.Run("ignored size_bytes", func(t *ftt.Test) {
-			trArt := newTestArtReq("art1")
-			bReq.Requests = append(bReq.Requests, trArt)
-			trArt.Artifact.SizeBytes = 0
-			trArt.Artifact.Contents = make([]byte, 10249)
-			_, arts, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, arts[0].size, should.Equal(10249))
-		})
-
-		t.Run("contents and gcs_uri both specified", func(t *ftt.Test) {
-			trArt := newTestArtReq("art1")
-			bReq.Requests = append(bReq.Requests, trArt)
-			trArt.Artifact.Contents = make([]byte, 1)
-			trArt.Artifact.GcsUri = "gs://testbucket/testfile"
-			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike(`only one of contents, gcs_uri and rbe_cas_uri can be given`))
-		})
-
-		t.Run("contents and rbe_cas_uri both specified", func(t *ftt.Test) {
-			trArt := newTestArtReq("art1")
-			bReq.Requests = append(bReq.Requests, trArt)
-			trArt.Artifact.Contents = make([]byte, 1)
-			trArt.Artifact.RbeUri = "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default/blobs/abc/1"
-			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike(`only one of contents, gcs_uri and rbe_cas_uri can be given`))
-		})
-
-		t.Run("gcs_uri and rbe_cas_uri both specified", func(t *ftt.Test) {
-			trArt := newTestArtReq("art1")
-			bReq.Requests = append(bReq.Requests, trArt)
-			trArt.Artifact.GcsUri = "gs://testbucket/testfile"
-			trArt.Artifact.RbeUri = "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default/blobs/abc/1"
-			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike(`only one of contents, gcs_uri and rbe_cas_uri can be given`))
-		})
-
-		t.Run("contents, gcs_uri and rbe_cas_uri all specified", func(t *ftt.Test) {
-			trArt := newTestArtReq("art1")
-			bReq.Requests = append(bReq.Requests, trArt)
-			trArt.Artifact.Contents = make([]byte, 1)
-			trArt.Artifact.GcsUri = "gs://testbucket/testfile"
-			trArt.Artifact.RbeUri = "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default/blobs/abc/1"
-			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike(`only one of contents, gcs_uri and rbe_cas_uri can be given`))
-		})
-
-		t.Run("rbe_uri success", func(t *ftt.Test) {
-			trArt := newTestArtReq("art1")
-			bReq.Requests = append(bReq.Requests, trArt)
-			trArt.Artifact.RbeUri = "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default/blobs/abc/1"
-			trArt.Artifact.Contents = nil
-			_, arts, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, arts[0].rbeURI, should.Equal("bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default/blobs/abc/1"))
-		})
-
-		t.Run("rbe_uri invalid", func(t *ftt.Test) {
-			trArt := newTestArtReq("art1")
-			bReq.Requests = append(bReq.Requests, trArt)
-			trArt.Artifact.RbeUri = "invalid_rbe_uri"
-			trArt.Artifact.Contents = nil
-			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike(`invalid RBE URI format`))
-		})
-
-		t.Run("sum() of requests is too big", func(t *ftt.Test) {
-			for i := range 11 {
-				req := newTestArtReq(fmt.Sprintf("art%d", i))
-				req.Artifact.Contents = make([]byte, 1024*1024)
-				bReq.Requests = append(bReq.Requests, req)
-			}
-			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike("requests: the size of all requests is too large"))
-		})
-
-		t.Run("if more than one invocations - legacy", func(t *ftt.Test) {
-			bReq.Requests = append(bReq.Requests, newLegacyArtReq("invocations/inv1", "art1", "text/html"))
-			bReq.Requests = append(bReq.Requests, newLegacyArtReq("invocations/inv2", "art1", "text/html"))
-			bReq.Parent = ""
-
-			_, _, err := parseBatchCreateArtifactsRequest(bReq, cfg)
-			assert.Loosely(t, err, should.ErrLike(`only one invocation is allowed: "inv1", "inv2"`))
-		})
-	})
-}
-
-func appendRbeArtReq(bReq *pb.BatchCreateArtifactsRequest, aID string, cSize int64, cType string, rbeURI string) {
-	bReq.Requests = append(bReq.Requests, &pb.CreateArtifactRequest{
-		Artifact: &pb.Artifact{
-			ArtifactId: aID, SizeBytes: cSize, ContentType: cType, RbeUri: rbeURI,
-		},
-	})
-}
-
 func TestBatchCreateArtifacts(t *testing.T) {
-	// metric field values for Artifact table
-	artMFVs := []any{string(spanutil.Artifacts), string(spanutil.Inserted), insert.TestRealm}
-
 	ftt.Run("TestBatchCreateArtifacts", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
-		ctx = testutil.TestProjectConfigContext(ctx, t, "testproject", "user:test@test.com", "testbucket", "default_instance")
-		token, err := generateInvocationToken(ctx, "inv")
-		assert.Loosely(t, err, should.BeNil)
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
-		store := tsmon.Store(ctx)
+		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
+		assert.NoErr(t, err)
+
+		// Mock the CAS client.
+		casClient := &fakeRBEClient{}
+		recorder := newTestRecorderServerWithClients(casClient)
+
+		rootInvID := rootinvocations.ID("root-inv-id")
+		wuID1 := workunits.ID{
+			RootInvocationID: "root-inv-id",
+			WorkUnitID:       "work-unit:child-1",
+		}
+		wuID2 := workunits.ID{
+			RootInvocationID: "root-inv-id",
+			WorkUnitID:       "work-unit:child-2",
+		}
+		junitModuleID := &pb.ModuleIdentifier{
+			ModuleName:   "//infra/junit_tests",
+			ModuleScheme: "junit",
+			ModuleVariant: pbutil.Variant(
+				"a/b", "1",
+				"c", "2",
+			),
+			ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("a/b", "1", "c", "2")),
+		}
+		legacyModuleID := &pb.ModuleIdentifier{
+			ModuleName:    "legacy",
+			ModuleScheme:  "legacy",
+			ModuleVariant: &pb.Variant{},
+		}
+
+		// Create some sample work units and a sample root invocation.
+		var ms []*spanner.Mutation
+		ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootinvocations.NewBuilder(rootInvID).Build())...)
+		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-1").WithState(pb.WorkUnit_ACTIVE).WithModuleID(junitModuleID).Build())...)
+		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-2").WithState(pb.WorkUnit_ACTIVE).WithModuleID(legacyModuleID).Build())...)
+		testutil.MustApply(ctx, t, ms...)
+
+		tvID := &pb.TestIdentifier{
+			ModuleName:    junitModuleID.ModuleName,
+			ModuleScheme:  junitModuleID.ModuleScheme,
+			ModuleVariant: junitModuleID.ModuleVariant,
+			CoarseName:    "org.chromium.go.luci",
+			FineName:      "ValidationTests",
+			CaseName:      "FooBar",
+		}
+		tvIDWithOutputOnlyFields := proto.Clone(tvID).(*pb.TestIdentifier)
+		pbutil.PopulateStructuredTestIdentifierHashes(tvIDWithOutputOnlyFields)
+
+		// Artifact for a new test result.
+		reqItem1TestResult := &pb.CreateArtifactRequest{
+			Parent: wuID1.Name(),
+			Artifact: &pb.Artifact{
+				TestIdStructured: proto.Clone(tvID).(*pb.TestIdentifier),
+				ResultId:         "result-id-0",
+				ArtifactId:       "artifact-id-0",
+				ContentType:      "text/plain",
+				Contents:         []byte("artifact content 0"),
+			},
+		}
+		// GCS Artifact.
+		reqItem2GCS := &pb.CreateArtifactRequest{
+			Parent: wuID1.Name(),
+			Artifact: &pb.Artifact{
+				TestIdStructured: proto.Clone(tvID).(*pb.TestIdentifier),
+				ResultId:         "result-id-2",
+				ArtifactId:       "artifact-id-2",
+				ContentType:      "image/png",
+				SizeBytes:        50_000_000, // It's good practice to provide a size hint for GCS artifacts.
+				GcsUri:           "gs://testbucket/art3",
+			},
+		}
+		// External RBE Artifact.
+		reqItem3RBE := &pb.CreateArtifactRequest{
+			Parent: wuID1.Name(),
+			Artifact: &pb.Artifact{
+				TestIdStructured: proto.Clone(tvID).(*pb.TestIdentifier),
+				ResultId:         "result-id-3",
+				ArtifactId:       "artifact-id-3",
+				ContentType:      "image/png",
+				RbeUri:           "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default_instance/blobs/deadbeef/10",
+			},
+		}
+		// Work unit-level artifact.
+		reqItem4ContainerLevel := &pb.CreateArtifactRequest{
+			Parent: wuID1.Name(),
+			Artifact: &pb.Artifact{
+				ArtifactId:  "artifact-4",
+				ContentType: "text/richtext",
+				Contents:    []byte("artifact content 4"),
+			},
+		}
+		// Artifact for a legacy test result.
+		reqItem5LegacyTestResult := &pb.CreateArtifactRequest{
+			Parent: wuID2.Name(),
+			Artifact: &pb.Artifact{
+				TestIdStructured: &pb.TestIdentifier{
+					ModuleName:   "legacy",
+					ModuleScheme: "legacy",
+					CaseName:     "some-legacy-test-id",
+				},
+				ResultId:    "result-id-1",
+				ArtifactId:  "artifact-id-1",
+				ContentType: "text/richtext",
+				Contents:    []byte("artifact content 5"),
+			},
+		}
+
+		req := &pb.BatchCreateArtifactsRequest{
+			Requests:  []*pb.CreateArtifactRequest{reqItem1TestResult, reqItem2GCS, reqItem3RBE, reqItem4ContainerLevel, reqItem5LegacyTestResult},
+			RequestId: "request-id",
+		}
+
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:test@test.com",
 		})
+		ctx = testutil.SetGCSAllowedBuckets(ctx, t, "testproject", "user:test@test.com", "testbucket")
+		ctx = testutil.SetRBEAllowedInstances(ctx, t, "testproject", "user:test@test.com", "default_instance")
 
-		serviceCfg := config.CreatePlaceHolderServiceConfig()
-		serviceCfg.BqArtifactExportConfig = &configpb.BqArtifactExportConfig{
-			Enabled:       true,
-			ExportPercent: 100,
-		}
-		err = config.SetServiceConfigForTesting(ctx, serviceCfg)
-		assert.NoErr(t, err)
+		token, err := generateWorkUnitUpdateToken(ctx, wuID1)
+		assert.Loosely(t, err, should.BeNil)
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 
-		casClient := &fakeRBEClient{}
-		recorder := newTestRecorderServerWithClients(casClient)
-		bReq := &pb.BatchCreateArtifactsRequest{
-			Parent: "invocations/inv",
-		}
-
-		appendArtReq := func(aID, content, cType, caseName, resultID string) {
-			var testID *pb.TestIdentifier
-			if caseName != "" {
-				testID = &pb.TestIdentifier{
-					ModuleName:    "module",
-					ModuleScheme:  "junit",
-					ModuleVariant: pbutil.Variant("k1", "v1", "k2", "v2"),
-					CoarseName:    "coarse",
-					FineName:      "fine",
-					CaseName:      caseName,
-				}
-			}
-			bReq.Requests = append(bReq.Requests, &pb.CreateArtifactRequest{
-				Artifact: &pb.Artifact{
-					TestIdStructured: testID,
-					ResultId:         resultID,
-					ArtifactId:       aID,
-					Contents:         []byte(content),
-					ContentType:      cType,
-				},
-			})
-		}
-		appendGcsArtReq := func(aID string, cSize int64, cType string, gcsURI string) {
-			bReq.Requests = append(bReq.Requests, &pb.CreateArtifactRequest{
-				Artifact: &pb.Artifact{
-					ArtifactId: aID, SizeBytes: cSize, ContentType: cType, GcsUri: gcsURI,
-				},
-			})
-		}
-
-		fetchState := func(parentID, aID string) (size int64, hash string, contentType string, gcsURI string, rbeURI string, variant *pb.Variant) {
-			testutil.MustReadRow(
-				ctx, t, "Artifacts", invocations.ID("inv").Key(parentID, aID),
-				map[string]any{
-					"Size":          &size,
-					"RBECASHash":    &hash,
-					"ContentType":   &contentType,
-					"GcsURI":        &gcsURI,
-					"RbeURI":        &rbeURI,
-					"ModuleVariant": &variant,
-				},
-			)
-			return
-		}
-		compHash := func(content string) string {
-			h := sha256.Sum256([]byte(content))
-			return hex.EncodeToString(h[:])
-		}
-
-		t.Run("RBE reference isAllowed", func(t *ftt.Test) {
-			testCases := []struct {
-				name               string
-				project            string
-				user               string
-				allowedInstances   []string
-				rbeURI             string
-				expectedErrCode    codes.Code
-				expectedErrMessage string
-			}{
-				{
-					name:             "reference is allowed",
-					project:          "testproject",
-					user:             "user:test@test.com",
-					allowedInstances: []string{"default_instance"},
-					rbeURI:           "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default_instance/blobs/deadbeef/10",
-				},
-				{
-					name:               "project not configured",
-					project:            "otherproject",
-					user:               "user:test@test.com",
-					allowedInstances:   []string{"default_instance"},
-					rbeURI:             "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default_instance/blobs/deadbeef/10",
-					expectedErrCode:    codes.PermissionDenied,
-					expectedErrMessage: `does not have permission to reference RBE objects in instance "default_instance" in project "testproject"`,
-				},
-				{
-					name:               "user not configured",
-					project:            "testproject",
-					user:               "user:other@test.com",
-					allowedInstances:   []string{"default_instance"},
-					rbeURI:             "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default_instance/blobs/deadbeef/10",
-					expectedErrCode:    codes.PermissionDenied,
-					expectedErrMessage: "permission",
-				},
-				{
-					name:               "instance not listed",
-					project:            "testproject",
-					user:               "user:test@test.com",
-					allowedInstances:   []string{"otherinstance"},
-					rbeURI:             "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default_instance/blobs/deadbeef/10",
-					expectedErrCode:    codes.PermissionDenied,
-					expectedErrMessage: "default_instance",
-				},
-			}
-
-			for _, tc := range testCases {
-				t.Run(tc.name, func(t *ftt.Test) {
-					ctx := testutil.ClearProjectConfig(ctx, t, "testproject")
-					testutil.SetRBEAllowedInstances(ctx, t, tc.project, "user:test@test.com", tc.allowedInstances...)
-					t.Cleanup(func() {
-						ctx = testutil.ClearProjectConfig(ctx, t, tc.project)
-					})
-
-					if tc.user != "user:test@test.com" {
-						ctx = auth.WithState(ctx, &authtest.FakeState{
-							Identity:       identity.Identity(tc.user),
-							IdentityGroups: []string{"luci-resultdb-access"},
-						})
-					}
-
-					testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-					req := &pb.BatchCreateArtifactsRequest{Parent: "invocations/inv"}
-					appendRbeArtReq(req, "art1", 0, "text/plain", tc.rbeURI)
-
+		t.Run(`request validation`, func(t *ftt.Test) {
+			t.Run(`parent`, func(t *ftt.Test) {
+				t.Run(`invalid`, func(t *ftt.Test) {
+					req.Parent = `invalid`
 					_, err := recorder.BatchCreateArtifacts(ctx, req)
-
-					if tc.expectedErrCode == codes.OK {
-						assert.Loosely(t, err, should.BeNil)
-					} else {
-						assert.Loosely(t, err, grpccode.ShouldBe(tc.expectedErrCode))
-						assert.Loosely(t, err, should.ErrLike(tc.expectedErrMessage))
-					}
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`parent: does not match pattern`))
 				})
-			}
-		})
-
-		t.Run("GCS reference isAllowed", func(t *ftt.Test) {
-			testCases := []struct {
-				name               string
-				project            string
-				user               string
-				allowedBuckets     []string
-				gcsURI             string
-				expectedErrCode    codes.Code
-				expectedErrMessage string
-			}{
-				{
-					name:           "reference is allowed",
-					project:        "testproject",
-					user:           "user:test@test.com",
-					allowedBuckets: []string{"testbucket"},
-					gcsURI:         "gs://testbucket/art1",
-				},
-				{
-					name:               "project not configured",
-					project:            "otherproject",
-					user:               "user:test@test.com",
-					allowedBuckets:     []string{"testbucket"},
-					gcsURI:             "gs://testbucket/art1",
-					expectedErrCode:    codes.PermissionDenied,
-					expectedErrMessage: "does not have permission to reference GCS objects in bucket testbucket in project testproject",
-				},
-				{
-					name:               "user not configured",
-					project:            "testproject",
-					user:               "user:other@test.com",
-					allowedBuckets:     []string{"testbucket"},
-					gcsURI:             "gs://testbucket/art1",
-					expectedErrCode:    codes.PermissionDenied,
-					expectedErrMessage: "permission",
-				},
-				{
-					name:               "bucket not listed",
-					project:            "testproject",
-					user:               "user:test@test.com",
-					allowedBuckets:     []string{"otherbucket"},
-					gcsURI:             "gs://testbucket/art1",
-					expectedErrCode:    codes.PermissionDenied,
-					expectedErrMessage: "testbucket",
-				},
-			}
-
-			for _, tc := range testCases {
-				t.Run(tc.name, func(t *ftt.Test) {
-					ctx := testutil.ClearProjectConfig(ctx, t, "testproject")
-					testutil.SetGCSAllowedBuckets(ctx, t, tc.project, "user:test@test.com", tc.allowedBuckets...)
-					t.Cleanup(func() {
-						ctx = testutil.ClearProjectConfig(ctx, t, tc.project)
+				t.Run(`valid`, func(t *ftt.Test) {
+					req.Parent = wuID1.Name()
+					// Truncate the requests to only include those for wuID1, otherwise we
+					// will get an error about the parent at the child request level
+					// not matching the batch parent.
+					req.Requests = req.Requests[:3]
+					// Parent may be set or elided at the individual request level
+					// if set at the parent level. Let's try a mix of both.
+					req.Requests[0].Parent = ""
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+				})
+			})
+			t.Run(`too many requests`, func(t *ftt.Test) {
+				req.Requests = make([]*pb.CreateArtifactRequest, 1000)
+				_, err := recorder.BatchCreateArtifacts(ctx, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`requests: the number of requests in the batch (1000) exceeds 500`))
+			})
+			t.Run(`requests too large`, func(t *ftt.Test) {
+				req.Requests[0].Parent = strings.Repeat("a", pbutil.MaxBatchRequestSize)
+				_, err := recorder.BatchCreateArtifacts(ctx, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`requests: the size of all requests is too large`))
+			})
+			t.Run(`sub-requests`, func(t *ftt.Test) {
+				t.Run(`parent`, func(t *ftt.Test) {
+					t.Run(`unspecified`, func(t *ftt.Test) {
+						req.Requests[1].Parent = ""
+						_, err := recorder.BatchCreateArtifacts(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`requests[1]: parent: unspecified`))
 					})
-
-					if tc.user != "user:test@test.com" {
-						ctx = auth.WithState(ctx, &authtest.FakeState{
-							Identity:       identity.Identity(tc.user),
-							IdentityGroups: []string{"luci-resultdb-access"},
+					t.Run(`invalid`, func(t *ftt.Test) {
+						req.Requests[1].Parent = "invalid"
+						_, err := recorder.BatchCreateArtifacts(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`requests[1]: parent: does not match pattern`))
+					})
+					t.Run(`mismatches batch request parent`, func(t *ftt.Test) {
+						req.Parent = wuID1.Name()
+						_, err := recorder.BatchCreateArtifacts(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`requests[4]: parent: must be empty or equal to the batch-level parent; got "rootInvocations/root-inv-id/workUnits/work-unit:child-2", want "rootInvocations/root-inv-id/workUnits/work-unit:child-1"`))
+					})
+					t.Run(`mix of work units and invocations - first request is work unit`, func(t *ftt.Test) {
+						req.Requests[1].Parent = "invocations/test-inv"
+						_, err := recorder.BatchCreateArtifacts(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`requests[1]: parent: cannot create artifacts in mix of invocations and work units in the same request, expected another work unit`))
+					})
+					t.Run(`mix of work units and invocations - first request is invocation`, func(t *ftt.Test) {
+						req.Requests[0].Parent = "invocations/test-inv"
+						_, err := recorder.BatchCreateArtifacts(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`requests[1]: parent: cannot create artifacts in mix of invocations and work units in the same request, expected "invocations/test-inv"`))
+					})
+					t.Run(`legacy behaviour: test ID and result ID encoded in parent`, func(t *ftt.Test) {
+						// Limit to one request so we don't have mixed invocations/work units in the same request.
+						req.Requests = req.Requests[:1]
+						req.Requests[0].Parent = pbutil.LegacyTestResultName(string("test-inv"), pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier(tvID)), "result-id-0")
+						req.Requests[0].Artifact.TestIdStructured = nil
+						req.Requests[0].Artifact.ResultId = ""
+						t.Run(`test ID references invalid scheme`, func(t *ftt.Test) {
+							req.Requests[0].Parent = "invocations/abc/tests/:module%21unknown::%23case/results/123"
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[0]: parent: encoded test id: module_scheme: scheme "unknown" is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme`))
 						})
-					}
-
-					testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-					bReq.Requests = nil
-					appendGcsArtReq("art1", 0, "text/plain", tc.gcsURI)
-
-					_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-
-					if tc.expectedErrCode == codes.OK {
-						assert.Loosely(t, err, should.BeNil)
-					} else {
-						assert.Loosely(t, err, grpccode.ShouldBe(tc.expectedErrCode))
-						assert.Loosely(t, err, should.ErrLike(tc.expectedErrMessage))
-					}
+						t.Run(`test ID encoded in parent with test ID structured also specified`, func(t *ftt.Test) {
+							req.Requests[0].Artifact.TestIdStructured = tvID
+							req.Requests[0].Artifact.ResultId = "result-id"
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[0]: artifact: test_id_structured must not be specified if parent is a test result name (legacy format`))
+						})
+					})
 				})
-			}
+				t.Run(`artifact`, func(t *ftt.Test) {
+					t.Run(`unspecified`, func(t *ftt.Test) {
+						req.Requests[1].Artifact = nil
+						_, err := recorder.BatchCreateArtifacts(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: unspecified`))
+					})
+					t.Run(`test_id_structured`, func(t *ftt.Test) {
+						t.Run(`unspecified`, func(t *ftt.Test) {
+							// May not be left unspecified if result_id is specified.
+							req.Requests[1].Artifact.TestIdStructured = nil
+							req.Requests[1].Artifact.ResultId = "result_id"
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: test_id_structured is required if result_id is specified`))
+						})
+						t.Run(`invalid`, func(t *ftt.Test) {
+							// ValidateStructuredTestIdentifierForStorage has various test cases already, just check it is called.
+							req.Requests[1].Artifact.TestIdStructured.ModuleScheme = ""
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: test_id_structured: module_scheme: unspecified`))
+						})
+						t.Run(`unrecognised scheme`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.TestIdStructured.ModuleScheme = "unknown"
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: test_id_structured: module_scheme: scheme "unknown" is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme`))
+						})
+						t.Run(`does not meet scheme requirements`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.TestIdStructured.CoarseName = ""
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: test_id_structured: coarse_name: required, please set a Package (scheme "junit")`))
+						})
+						t.Run("does not match work unit module", func(t *ftt.Test) {
+							req.Requests[1].Artifact.TestIdStructured.ModuleName = "other"
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: test_id_structured: module_name: does not match parent work unit module_id.module_name; got "other", want "//infra/junit_tests"`))
+						})
+					})
+					t.Run(`result_id`, func(t *ftt.Test) {
+						t.Run(`unspecified`, func(t *ftt.Test) {
+							// May not be left unspecified if test_id_structured is specified.
+							req.Requests[1].Artifact.TestIdStructured = tvID
+							req.Requests[1].Artifact.ResultId = ""
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: result_id is required if test_id_structured is specified`))
+						})
+						t.Run(`invalid`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.ResultId = "\x00"
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: result_id: does not match pattern`))
+						})
+						t.Run(`too long`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.ResultId = strings.Repeat("a", 100)
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: result_id: does not match pattern`))
+						})
+					})
+					t.Run(`artifact_id`, func(t *ftt.Test) {
+						t.Run(`unspecified`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.ArtifactId = ""
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: artifact_id: unspecified`))
+						})
+						t.Run(`invalid`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.ArtifactId = "\x00"
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: artifact_id: does not match pattern`))
+						})
+						t.Run(`too long`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.ArtifactId = strings.Repeat("a", 513)
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: artifact_id: does not match pattern`))
+						})
+					})
+					t.Run(`content_type`, func(t *ftt.Test) {
+						t.Run(`empty`, func(t *ftt.Test) {
+							// Empty content type is valid as it is an optional field.
+							req.Requests[1].Artifact.ContentType = ""
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, should.BeNil)
+						})
+						t.Run(`invalid`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.ContentType = "\x00"
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: content_type: mime: no media type`))
+						})
+					})
+					t.Run(`size_bytes`, func(t *ftt.Test) {
+						t.Run(`invalid`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.SizeBytes = -1
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: size_bytes: must be non-negative`))
+						})
+						t.Run(`set and mismatches with request content`, func(t *ftt.Test) {
+							req.Requests[0].Artifact.SizeBytes = 1
+							req.Requests[0].Artifact.Contents = make([]byte, 0)
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[0]: artifact: size_bytes: does not match the size of contents (and the artifact is not a GCS or RBE reference)`))
+						})
+						t.Run(`set and mismatches with RBE content`, func(t *ftt.Test) {
+							// 10 bytes
+							req.Requests[2].Artifact.RbeUri = `bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default_instance/blobs/deadbeef/10`
+							req.Requests[2].Artifact.SizeBytes = 12
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[2]: artifact: size_bytes: does not match the size of external RBE artifact; got 12, want 10`))
+						})
+					})
+					t.Run(`gcs_uri`, func(t *ftt.Test) {
+						t.Run(`bucket name too long`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.GcsUri = "gs://" + strings.Repeat("a", 223) + "/object"
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: gcs_uri: bucket name component exceeds 222 bytes`))
+						})
+						t.Run(`object name too long`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.GcsUri = "gs://bucket/" + strings.Repeat("a", 1025)
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: gcs_uri: object name component exceeds 1024 bytes`))
+						})
+						t.Run(`bucket name empty`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.GcsUri = "object name"
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: gcs_uri: missing bucket name; got "object name"`))
+						})
+						t.Run(`object name empty`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.GcsUri = "gs://bucket/"
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: gcs_uri: missing object name; got "gs://bucket/"`))
+						})
+					})
+					t.Run(`rbe_uri`, func(t *ftt.Test) {
+						t.Run(`invalid`, func(t *ftt.Test) {
+							req.Requests[2].Artifact.RbeUri = "bytestream://"
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[2]: artifact: rbe_uri: invalid RBE URI format: does not match 'bytestream://<HOSTNAME>/projects/<PROJECT_ID>/instances/<INSTANCE_ID>/blobs/<HASH>/<SIZE_BYTES>'`))
+						})
+					})
+					t.Run(`mixed artifact types are rejected`, func(t *ftt.Test) {
+						t.Run(`mixed RBE/contents`, func(t *ftt.Test) {
+							req.Requests[2].Artifact.RbeUri = "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default_instance/blobs/deadbeef/10"
+							req.Requests[2].Artifact.Contents = []byte("some content")
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[2]: artifact: only one of contents, gcs_uri and rbe_uri can be given`))
+						})
+						t.Run(`mixed GCS/contents`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.GcsUri = "gs://testbucket/art3"
+							req.Requests[1].Artifact.Contents = []byte("some content")
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: only one of contents, gcs_uri and rbe_uri can be given`))
+						})
+						t.Run(`mixed RBE/GCS`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.GcsUri = "gs://testbucket/art3"
+							req.Requests[1].Artifact.RbeUri = "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default_instance/blobs/deadbeef/10"
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: only one of contents, gcs_uri and rbe_uri can be given`))
+						})
+					})
+				})
+				// Duplicate artifact creation requests should be detected and rejected.
+				t.Run(`duplicate request - test result artifact`, func(t *ftt.Test) {
+					req.Requests = append(req.Requests, reqItem1TestResult)
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`requests[5]: same parent, test_id_structured, result_id and artifact_id as requests[0]`))
+				})
+				t.Run(`duplicate request - invocation-level artifact`, func(t *ftt.Test) {
+					req.Requests = append(req.Requests, reqItem4ContainerLevel)
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`requests[5]: same parent, test_id_structured, result_id and artifact_id as requests[3]`))
+				})
+			})
+			t.Run(`request_id`, func(t *ftt.Test) {
+				t.Run(`empty`, func(t *ftt.Test) {
+					req.RequestId = ""
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`request_id: unspecified`))
+				})
+				t.Run(`invalid`, func(t *ftt.Test) {
+					// non-ascii character
+					req.RequestId = string(rune(244))
+					_, err = recorder.BatchCreateArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`request_id: does not match pattern`))
+				})
+				t.Run(`unmatched request_id in requests`, func(t *ftt.Test) {
+					req.RequestId = "foo"
+					req.Requests[0].RequestId = "bar"
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("requests[0]: request_id: must be either empty or equal"))
+				})
+			})
 		})
-		t.Run("works", func(t *ftt.Test) {
-			testutil.SetRBEAllowedInstances(ctx, t, "testproject", "user:test@test.com", "default_instance")
-			testutil.SetGCSAllowedBuckets(ctx, t, "testproject", "user:test@test.com", "testbucket")
-			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{
-				"CreateTime": time.Unix(10000, 0),
-			}))
+		t.Run(`request authorization`, func(t *ftt.Test) {
+			t.Run(`request cannot be authorised with single update token`, func(t *ftt.Test) {
+				req.Requests[0].Parent = "rootInvocations/root-inv/workUnits/work-unit-1"
+				req.Requests[1].Parent = "rootInvocations/root-inv/workUnits/work-unit-2"
 
-			appendArtReq("art1", "c0ntent", "text/plain", "", "")
-			appendArtReq("art2", "c1ntent", "text/richtext", "test_id", "0")
-			appendGcsArtReq("art3", 0, "text/plain", "gs://testbucket/art3")
-			appendGcsArtReq("art4", 50_000_000, "text/richtext", "gs://testbucket/art4")
-			appendRbeArtReq(bReq, "art5", 100, "text/plain", "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default_instance/blobs/deadbeef/100")
-			appendArtReq("art6", "c6ntent", "text/richtext", "test_id_1", "0")
+				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid-token"))
+				_, err := recorder.BatchCreateArtifacts(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike(`requests[1]: parent: work unit "rootInvocations/root-inv/workUnits/work-unit-2" requires a different update token to request[0]'s "rootInvocations/root-inv/workUnits/work-unit-1", but this RPC only accepts one update token`))
+			})
+			t.Run(`invalid update token`, func(t *ftt.Test) {
+				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid-token"))
+				_, err := recorder.BatchCreateArtifacts(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.That(t, err, should.ErrLike(`invalid update token`))
+			})
+			t.Run(`missing update token`, func(t *ftt.Test) {
+				ctx := metadata.NewIncomingContext(ctx, metadata.MD{})
+				_, err := recorder.BatchCreateArtifacts(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.Unauthenticated))
+				assert.That(t, err, should.ErrLike(`missing update-token metadata value in the request`))
+			})
+			t.Run(`with invocations`, func(t *ftt.Test) {
+				req.Parent = "invocations/inv-1"
+				for _, r := range req.Requests {
+					r.Parent = ""
+				}
+				t.Run(`request cannot be authorized with a single update token`, func(t *ftt.Test) {
+					req.Parent = ""
+					req.Requests[0].Parent = "invocations/inv-1"
+					for _, r := range req.Requests[1:] {
+						r.Parent = "invocations/inv-2"
+					}
 
-			casClient.mockResp(nil, codes.OK, codes.OK, codes.OK)
-
-			resp, err := recorder.BatchCreateArtifacts(ctx, bReq)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Match(&pb.BatchCreateArtifactsResponse{
+					ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid-token"))
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.That(t, err, should.ErrLike(`requests[1]: parent: only one invocation is allowed: got "invocations/inv-2", want "invocations/inv-1"`))
+				})
+				t.Run(`invalid update token`, func(t *ftt.Test) {
+					ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid-token"))
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.That(t, err, should.ErrLike(`invalid update token`))
+				})
+				t.Run(`missing update token`, func(t *ftt.Test) {
+					ctx := metadata.NewIncomingContext(ctx, metadata.MD{})
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.Unauthenticated))
+					assert.That(t, err, should.ErrLike(`missing update-token metadata value in the request`))
+				})
+			})
+			t.Run(`GCS artifact references`, func(t *ftt.Test) {
+				t.Run(`missing GCS bucket ACL`, func(t *ftt.Test) {
+					ctx := testutil.SetGCSAllowedBuckets(ctx, t, "testproject", "user:test@test.com", "otherbucket")
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.That(t, err, should.ErrLike(`requests[1]: the user user:test@test.com does not have permission to reference GCS objects in bucket "testbucket" in project "testproject"`))
+				})
+				t.Run(`missing GCS project ACL`, func(t *ftt.Test) {
+					ctx = testutil.ClearProjectConfig(ctx, t, "testproject")
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.That(t, err, should.ErrLike(`requests[1]: the user user:test@test.com does not have permission to reference GCS objects in bucket "testbucket" in project "testproject"`))
+				})
+			})
+			t.Run(`RBE artifact references`, func(t *ftt.Test) {
+				t.Run(`missing RBE instance ACL`, func(t *ftt.Test) {
+					ctx = testutil.SetRBEAllowedInstances(ctx, t, "testproject", "user:test@test.com", "otherbucket")
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.That(t, err, should.ErrLike(`requests[2]: the user user:test@test.com does not have permission to reference RBE objects in instance "default_instance" in project "testproject"`))
+				})
+				t.Run(`missing RBE project ACL`, func(t *ftt.Test) {
+					// Put the RBE artifact first so that it attracts any errors in preference to the GCS artifact.
+					req.Requests[2], req.Requests[0] = req.Requests[0], req.Requests[2]
+					ctx = testutil.ClearProjectConfig(ctx, t, "testproject")
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.That(t, err, should.ErrLike(`requests[0]: the user user:test@test.com does not have permission to reference RBE objects in instance "default_instance" in project "testproject"`))
+				})
+			})
+		})
+		t.Run(`with work units`, func(t *ftt.Test) {
+			expectedResponse := &pb.BatchCreateArtifactsResponse{
 				Artifacts: []*pb.Artifact{
 					{
-						Name:        "invocations/inv/artifacts/art1",
-						ArtifactId:  "art1",
-						ContentType: "text/plain",
-						SizeBytes:   7,
+						Name:             "rootInvocations/root-inv-id/workUnits/work-unit:child-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-0/artifacts/artifact-id-0",
+						ArtifactId:       "artifact-id-0",
+						ContentType:      "text/plain",
+						SizeBytes:        18,
+						TestId:           "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
+						TestIdStructured: tvIDWithOutputOnlyFields,
+						ResultId:         "result-id-0",
+						HasLines:         true,
 					},
 					{
-						Name: "invocations/inv/tests/:module%21junit:coarse:fine%23test_id/results/0/artifacts/art2",
+						Name:             "rootInvocations/root-inv-id/workUnits/work-unit:child-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-2/artifacts/artifact-id-2",
+						ArtifactId:       "artifact-id-2",
+						ContentType:      "image/png",
+						SizeBytes:        50_000_000,
+						GcsUri:           "gs://testbucket/art3",
+						TestId:           "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
+						TestIdStructured: tvIDWithOutputOnlyFields,
+						ResultId:         "result-id-2",
+					},
+					{
+						Name:             "rootInvocations/root-inv-id/workUnits/work-unit:child-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-3/artifacts/artifact-id-3",
+						ArtifactId:       "artifact-id-3",
+						ContentType:      "image/png",
+						SizeBytes:        10,
+						RbeUri:           "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default_instance/blobs/deadbeef/10",
+						TestId:           "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
+						TestIdStructured: tvIDWithOutputOnlyFields,
+						ResultId:         "result-id-3",
+					},
+					{
+						Name:        "rootInvocations/root-inv-id/workUnits/work-unit:child-1/artifacts/artifact-4",
+						ArtifactId:  "artifact-4",
+						ContentType: "text/richtext",
+						SizeBytes:   18,
+						HasLines:    true,
+					},
+					{
+						Name:        "rootInvocations/root-inv-id/workUnits/work-unit:child-2/tests/some-legacy-test-id/results/result-id-1/artifacts/artifact-id-1",
+						ArtifactId:  "artifact-id-1",
+						ContentType: "text/richtext",
+						SizeBytes:   18,
+						TestId:      "some-legacy-test-id",
 						TestIdStructured: &pb.TestIdentifier{
-							ModuleName:    "module",
-							ModuleScheme:  "junit",
-							ModuleVariant: pbutil.Variant("k1", "v1", "k2", "v2"),
-							CoarseName:    "coarse",
-							FineName:      "fine",
-							CaseName:      "test_id",
+							ModuleName:        "legacy",
+							ModuleScheme:      "legacy",
+							ModuleVariant:     &pb.Variant{},
+							ModuleVariantHash: pbutil.VariantHash(&pb.Variant{}),
+							CaseName:          "some-legacy-test-id",
 						},
-						TestId:      ":module!junit:coarse:fine#test_id",
-						ResultId:    "0",
-						ArtifactId:  "art2",
-						ContentType: "text/richtext",
-						SizeBytes:   7,
-					},
-					{
-						Name:        "invocations/inv/artifacts/art3",
-						ArtifactId:  "art3",
-						ContentType: "text/plain",
-						SizeBytes:   0,
-					},
-					{
-						Name:        "invocations/inv/artifacts/art4",
-						ArtifactId:  "art4",
-						ContentType: "text/richtext",
-						SizeBytes:   50_000_000,
-					},
-					{
-						Name:        "invocations/inv/artifacts/art5",
-						ArtifactId:  "art5",
-						ContentType: "text/plain",
-						SizeBytes:   100,
-					},
-					{
-						Name: "invocations/inv/tests/:module%21junit:coarse:fine%23test_id_1/results/0/artifacts/art6",
-						TestIdStructured: &pb.TestIdentifier{
-							ModuleName:    "module",
-							ModuleScheme:  "junit",
-							ModuleVariant: pbutil.Variant("k1", "v1", "k2", "v2"),
-							CoarseName:    "coarse",
-							FineName:      "fine",
-							CaseName:      "test_id_1",
-						},
-						TestId:      ":module!junit:coarse:fine#test_id_1",
-						ResultId:    "0",
-						ArtifactId:  "art6",
-						ContentType: "text/richtext",
-						SizeBytes:   7,
+						ResultId: "result-id-1",
+						HasLines: true,
 					},
 				},
-			}))
-			// verify the RBECAS reqs
-			assert.Loosely(t, casClient.req, should.Match(&repb.BatchUpdateBlobsRequest{
-				InstanceName: "",
-				Requests: []*repb.BatchUpdateBlobsRequest_Request{
-					{
-						Digest: &repb.Digest{
-							Hash:      compHash("c0ntent"),
-							SizeBytes: int64(len("c0ntent")),
-						},
-						Data: []byte("c0ntent"),
-					},
-					{
-						Digest: &repb.Digest{
-							Hash:      compHash("c1ntent"),
-							SizeBytes: int64(len("c1ntent")),
-						},
-						Data: []byte("c1ntent"),
-					},
-					{
-						Digest: &repb.Digest{
-							Hash:      compHash("c6ntent"),
-							SizeBytes: int64(len("c6ntent")),
-						},
-						Data: []byte("c6ntent"),
-					},
-				},
-			}))
-			// verify the Spanner states
-			size, hash, cType, gcsURI, rbeURI, variant := fetchState("", "art1")
-			assert.Loosely(t, size, should.Equal(int64(len("c0ntent"))))
-			assert.Loosely(t, hash, should.Equal(artifacts.AddHashPrefix(compHash("c0ntent"))))
-			assert.Loosely(t, cType, should.Equal("text/plain"))
-			assert.Loosely(t, gcsURI, should.BeEmpty)
-			assert.Loosely(t, rbeURI, should.BeEmpty)
-			assert.Loosely(t, variant, should.Match(&pb.Variant{}))
-
-			size, hash, cType, gcsURI, rbeURI, variant = fetchState("tr/:module!junit:coarse:fine#test_id/0", "art2")
-			assert.Loosely(t, size, should.Equal(int64(len("c1ntent"))))
-			assert.Loosely(t, hash, should.Equal(artifacts.AddHashPrefix(compHash("c1ntent"))))
-			assert.Loosely(t, cType, should.Equal("text/richtext"))
-			assert.Loosely(t, gcsURI, should.BeEmpty)
-			assert.Loosely(t, rbeURI, should.BeEmpty)
-			assert.Loosely(t, variant, should.Match(pbutil.Variant("k1", "v1", "k2", "v2")))
-
-			size, hash, cType, gcsURI, rbeURI, variant = fetchState("", "art3")
-			assert.Loosely(t, size, should.BeZero)
-			assert.Loosely(t, hash, should.BeEmpty)
-			assert.Loosely(t, cType, should.Equal("text/plain"))
-			assert.Loosely(t, gcsURI, should.Equal("gs://testbucket/art3"))
-			assert.Loosely(t, rbeURI, should.BeEmpty)
-			assert.Loosely(t, variant, should.Match(&pb.Variant{}))
-
-			size, hash, cType, gcsURI, rbeURI, variant = fetchState("", "art4")
-			assert.Loosely(t, size, should.Equal(50_000_000))
-			assert.Loosely(t, hash, should.BeEmpty)
-			assert.Loosely(t, cType, should.Equal("text/richtext"))
-			assert.Loosely(t, gcsURI, should.Equal("gs://testbucket/art4"))
-			assert.Loosely(t, rbeURI, should.BeEmpty)
-			assert.Loosely(t, variant, should.Match(&pb.Variant{}))
-
-			size, hash, cType, gcsURI, rbeURI, variant = fetchState("", "art5")
-			assert.Loosely(t, size, should.Equal(100))
-			assert.Loosely(t, hash, should.BeEmpty)
-			assert.Loosely(t, cType, should.Equal("text/plain"))
-			assert.Loosely(t, gcsURI, should.BeEmpty)
-			assert.Loosely(t, rbeURI, should.Equal("bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default_instance/blobs/deadbeef/100"))
-			assert.Loosely(t, variant, should.Match(&pb.Variant{}))
-
-			size, hash, cType, gcsURI, rbeURI, variant = fetchState("tr/:module!junit:coarse:fine#test_id_1/0", "art6")
-			assert.Loosely(t, size, should.Equal(int64(len("c6ntent"))))
-			assert.Loosely(t, hash, should.Equal(artifacts.AddHashPrefix(compHash("c6ntent"))))
-			assert.Loosely(t, cType, should.Equal("text/richtext"))
-			assert.Loosely(t, gcsURI, should.BeEmpty)
-			assert.Loosely(t, rbeURI, should.BeEmpty)
-			assert.Loosely(t, variant, should.Match(pbutil.Variant("k1", "v1", "k2", "v2")))
-
-			// RowCount metric should be increased by 6.
-			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, artMFVs), should.Equal(6))
-		})
-
-		t.Run("BatchUpdateBlobs fails", func(t *ftt.Test) {
-			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-			appendArtReq("art1", "c0ntent", "text/plain", "", "")
-			appendArtReq("art2", "c1ntent", "text/richtext", "", "")
-
-			t.Run("Partly", func(t *ftt.Test) {
-				casClient.mockResp(nil, codes.OK, codes.InvalidArgument)
-				// Call the implementation without postlude so that we can see the
-				// internal error, and don't just get "Internal server error" back.
-				_, err := recorder.Service.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, should.ErrLike(`artifact "invocations/inv/artifacts/art2": cas.BatchUpdateBlobs failed`))
-			})
-
-			t.Run("Entirely", func(t *ftt.Test) {
-				// exceeded the maximum size limit is the only possible error that
-				// can cause the entire request failed.
-				casClient.mockResp(errors.New("err"), codes.OK, codes.OK)
-				// Call the implementation without postlude so that we can see the
-				// internal error, and don't just get "Internal server error" back.
-				_, err := recorder.Service.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, should.ErrLike("cas.BatchUpdateBlobs failed"))
-			})
-
-			// RowCount metric should have no changes from any of the above Convey()s.
-			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, artMFVs), should.BeNil)
-		})
-
-		t.Run("Token", func(t *ftt.Test) {
-			appendArtReq("art1", "", "text/plain", "", "")
-			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-
-			t.Run("Missing", func(t *ftt.Test) {
-				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs())
-				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.Unauthenticated))
-				assert.Loosely(t, err, should.ErrLike(`missing update-token`))
-			})
-			t.Run("Wrong", func(t *ftt.Test) {
-				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "rong"))
-				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike(`invalid update token`))
-			})
-		})
-
-		t.Run("Verify state", func(t *ftt.Test) {
-			casClient.mockResp(nil, codes.OK, codes.OK)
-
-			t.Run("Finalized invocation", func(t *ftt.Test) {
-				testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
-				appendArtReq("art1", "c0ntent", "text/plain", "", "")
-				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
-				assert.Loosely(t, err, should.ErrLike(`invocations/inv is not active`))
-			})
-
-			art := map[string]any{
-				"InvocationId": invocations.ID("inv"),
-				"ParentId":     "",
-				"ArtifactId":   "art1",
-				"RBECASHash":   artifacts.AddHashPrefix(compHash("c0ntent")),
-				"Size":         len("c0ntent"),
-				"ContentType":  "text/plain",
 			}
 
-			gcsArt := map[string]any{
-				"InvocationId": invocations.ID("inv"),
-				"ParentId":     "",
-				"ArtifactId":   "art1",
-				"ContentType":  "text/plain",
-				"GcsURI":       "gs://testbucket/art1",
-			}
-
-			t.Run("Same artifact exists", func(t *ftt.Test) {
-				testutil.MustApply(ctx, t,
-					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
-					spanutil.InsertMap("Artifacts", art),
-				)
-				appendArtReq("art1", "c0ntent", "text/plain", "", "")
-				resp, err := recorder.BatchCreateArtifacts(ctx, bReq)
+			t.Run(`base case (success)`, func(t *ftt.Test) {
+				resp, err := recorder.BatchCreateArtifacts(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp, should.Match(&pb.BatchCreateArtifactsResponse{}))
+				assert.Loosely(t, resp, should.Match(expectedResponse))
+
+				// Verify with the database.
+				var rbeCASHashes []string
+				for _, a := range expectedResponse.Artifacts {
+					got, err := artifacts.Read(span.Single(ctx), a.Name)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, got.Artifact, should.Match(a))
+					rbeCASHashes = append(rbeCASHashes, got.RBECASHash)
+				}
+				assert.Loosely(t, rbeCASHashes, should.Match([]string{
+					artifacts.AddHashPrefix(sha256Hash("artifact content 0")),
+					"", // GCS artifact
+					"", // RBE artifact
+					artifacts.AddHashPrefix(sha256Hash("artifact content 4")),
+					artifacts.AddHashPrefix(sha256Hash("artifact content 5")),
+				}))
+
+				// Verify the RBECAS request
+				assert.Loosely(t, casClient.req, should.Match(&repb.BatchUpdateBlobsRequest{
+					InstanceName: "",
+					Requests: []*repb.BatchUpdateBlobsRequest_Request{
+						{
+							Digest: &repb.Digest{
+								Hash:      sha256Hash("artifact content 0"),
+								SizeBytes: int64(len("artifact content 0")),
+							},
+							Data: []byte("artifact content 0"),
+						},
+						{
+							Digest: &repb.Digest{
+								Hash:      sha256Hash("artifact content 4"),
+								SizeBytes: int64(len("artifact content 4")),
+							},
+							Data: []byte("artifact content 4"),
+						},
+						{
+							Digest: &repb.Digest{
+								Hash:      sha256Hash("artifact content 5"),
+								SizeBytes: int64(len("artifact content 5")),
+							},
+							Data: []byte("artifact content 5"),
+						},
+					},
+				}))
+
+				t.Run(`idempotent`, func(t *ftt.Test) {
+					// Verify retrying the same request produces the same result.
+					casClient.req = nil
+
+					resp, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, resp, should.Match(expectedResponse))
+
+					// Verify with the database.
+					for _, a := range expectedResponse.Artifacts {
+						got, err := artifacts.Read(span.Single(ctx), a.Name)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, got.Artifact, should.Match(a))
+					}
+
+					// No further request made to RBE-CAS as the artifacts
+					// already exist.
+					assert.Loosely(t, casClient.req, should.BeNil)
+				})
 			})
+			t.Run(`parent`, func(t *ftt.Test) {
+				t.Run(`finalized`, func(t *ftt.Test) {
+					testutil.MustApply(ctx, t, spanutil.UpdateMap("WorkUnits", map[string]any{
+						"RootInvocationShardId": wuID1.RootInvocationShardID(),
+						"WorkUnitId":            wuID1.WorkUnitID,
+						"State":                 pb.WorkUnit_FINALIZED,
+					}))
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+					assert.Loosely(t, err, should.ErrLike(`"rootInvocations/root-inv-id/workUnits/work-unit:child-1" is not active`))
+				})
+				t.Run(`does not exist`, func(t *ftt.Test) {
+					testutil.MustApply(ctx, t, spanner.Delete("WorkUnits", wuID1.Key()))
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+					assert.Loosely(t, err, should.ErrLike(`"rootInvocations/root-inv-id/workUnits/work-unit:child-1" not found`))
+				})
+				t.Run(`no module ID set`, func(t *ftt.Test) {
+					testutil.MustApply(ctx, t, spanutil.UpdateMap("WorkUnits", map[string]any{
+						"RootInvocationShardId": wuID1.RootInvocationShardID(),
+						"WorkUnitId":            wuID1.WorkUnitID,
+						"ModuleName":            spanner.NullString{},
+						"ModuleScheme":          spanner.NullString{},
+						"ModuleVariant":         []string{},
+						"ModuleVariantHash":     spanner.NullString{},
+					}))
 
-			t.Run("Different artifact exists", func(t *ftt.Test) {
-				testutil.SetGCSAllowedBuckets(ctx, t, "testproject", "user:test@test.com", "testbucket")
-				testutil.MustApply(ctx, t,
-					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
-					spanutil.InsertMap("Artifacts", art),
-				)
-
-				appendArtReq("art1", "c0ntent", "text/plain", "", "")
-				bReq.Requests[0].Artifact.Contents = []byte("loooong content")
-				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
-				assert.Loosely(t, err, should.ErrLike("exists w/ different size"))
-
-				bReq.Requests[0].Artifact.Contents = []byte("c1ntent")
-				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
-				assert.Loosely(t, err, should.ErrLike(`"invocations/inv/artifacts/art1": exists w/ different hash`))
-
-				bReq.Requests[0].Artifact.Contents = []byte("")
-				bReq.Requests[0].Artifact.GcsUri = "gs://testbucket/art1"
-				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
-				assert.Loosely(t, err, should.ErrLike(`"invocations/inv/artifacts/art1": exists w/ different GCS storage scheme`))
-
-				bReq.Requests[0].Artifact.GcsUri = ""
-				bReq.Requests[0].Artifact.RbeUri = "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default/blobs/deadbeef/10"
-				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
-				assert.Loosely(t, err, should.ErrLike(`"invocations/inv/artifacts/art1": exists w/ different RBE storage scheme`))
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+					assert.Loosely(t, err, should.ErrLike(`requests[0]: artifact: to upload test results or test result artifacts, you must set the module_id on the parent work unit first`))
+				})
 			})
+			t.Run(`artifact already exists`, func(t *ftt.Test) {
+				// Create the artifacts.
+				resp, err := recorder.BatchCreateArtifacts(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Match(expectedResponse))
 
-			t.Run("Different artifact exists RBE", func(t *ftt.Test) {
-				testutil.SetRBEAllowedInstances(ctx, t, "testproject", "user:test@test.com", "default_instance")
-				testutil.MustApply(ctx, t,
-					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
-					spanutil.InsertMap("Artifacts", map[string]any{
-						"InvocationId": invocations.ID("inv"),
-						"ParentId":     "",
-						"ArtifactId":   "art1",
-						"ContentType":  "text/plain",
-						"RbeURI":       "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default/blobs/deadbeef/10",
-					}),
-				)
+				// Now create another request for the same artifacts but with
+				// slightly different properties so it is not handled as an
+				// idempotent request.
+				t.Run(`RBE-CAS`, func(t *ftt.Test) {
+					updatedRequestItem := proto.Clone(reqItem1TestResult).(*pb.CreateArtifactRequest)
+					req := &pb.BatchCreateArtifactsRequest{
+						Requests:  []*pb.CreateArtifactRequest{updatedRequestItem},
+						RequestId: req.RequestId,
+					}
 
-				appendArtReq("art1", "c0ntent", "text/plain", "", "")
-				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
-				assert.Loosely(t, err, should.ErrLike(`"invocations/inv/artifacts/art1": exists w/ different RBE storage scheme`))
+					t.Run(`with different storage scheme`, func(t *ftt.Test) {
+						updatedRequestItem.Artifact.RbeUri = "bytestream://remotebuildexution.googleapis.com/projects/testproject/instances/default_instance/blobs/deadbeef/10"
+						updatedRequestItem.Artifact.Contents = nil
+						_, err := recorder.BatchCreateArtifacts(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
+						assert.Loosely(t, err, should.ErrLike(`requests[0]: artifact "rootInvocations/root-inv-id/workUnits/work-unit:child-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-0/artifacts/artifact-id-0" already exists with a different storage scheme (RBE vs non-RBE)`))
+					})
+					t.Run(`with different content`, func(t *ftt.Test) {
+						updatedRequestItem.Artifact.Contents = []byte("different content")
+						_, err := recorder.BatchCreateArtifacts(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
+						assert.Loosely(t, err, should.ErrLike(`requests[0]: artifact "rootInvocations/root-inv-id/workUnits/work-unit:child-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-0/artifacts/artifact-id-0" already exists with a different hash`))
+					})
+				})
+				t.Run(`GCS`, func(t *ftt.Test) {
+					updatedRequestItem := proto.Clone(reqItem2GCS).(*pb.CreateArtifactRequest)
+					req := &pb.BatchCreateArtifactsRequest{
+						Requests:  []*pb.CreateArtifactRequest{updatedRequestItem},
+						RequestId: req.RequestId,
+					}
 
-				bReq.Requests[0].Artifact.Contents = []byte("")
-				bReq.Requests[0].Artifact.RbeUri = "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/other/blobs/deadbeef/10"
-				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
-				assert.Loosely(t, err, should.ErrLike(`"invocations/inv/artifacts/art1": exists w/ different RBE URI`))
+					t.Run(`with different content URL`, func(t *ftt.Test) {
+						updatedRequestItem.Artifact.GcsUri = "gs://testbucket/other-path/file.txt"
+						_, err := recorder.BatchCreateArtifacts(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
+						assert.Loosely(t, err, should.ErrLike(`requests[0]: artifact "rootInvocations/root-inv-id/workUnits/work-unit:child-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-2/artifacts/artifact-id-2" already exists with a different GCS URI: "gs://testbucket/other-path/file.txt" != "gs://testbucket/art3"`))
+					})
+					t.Run(`with different storage scheme`, func(t *ftt.Test) {
+						updatedRequestItem.Artifact.GcsUri = ""
+						updatedRequestItem.Artifact.Contents = []byte("different content")
+						updatedRequestItem.Artifact.SizeBytes = 0
+						_, err := recorder.BatchCreateArtifacts(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
+						assert.Loosely(t, err, should.ErrLike(`requests[0]: artifact "rootInvocations/root-inv-id/workUnits/work-unit:child-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-2/artifacts/artifact-id-2" already exists with a different storage scheme (GCS vs non-GCS)`))
+					})
+					t.Run(`with different size`, func(t *ftt.Test) {
+						updatedRequestItem.Artifact.SizeBytes = 100
+						_, err := recorder.BatchCreateArtifacts(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
+						assert.Loosely(t, err, should.ErrLike(`requests[0]: artifact "rootInvocations/root-inv-id/workUnits/work-unit:child-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-2/artifacts/artifact-id-2" already exists with a different size: 100 != 50000000`))
+					})
+				})
+				t.Run(`RBE External`, func(t *ftt.Test) {
+					updatedRequestItem := proto.Clone(reqItem3RBE).(*pb.CreateArtifactRequest)
+					req := &pb.BatchCreateArtifactsRequest{
+						Requests:  []*pb.CreateArtifactRequest{updatedRequestItem},
+						RequestId: req.RequestId,
+					}
 
-				appendArtReq("art1", "c0ntent", "text/plain", "", "")
-				bReq.Requests[0].Artifact.SizeBytes = 42
-				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
-				assert.Loosely(t, err, should.ErrLike(`"invocations/inv/artifacts/art1": exists w/ different size`))
+					t.Run(`with different content URL`, func(t *ftt.Test) {
+						updatedRequestItem.Artifact.RbeUri = `bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default_instance/blobs/otherfile/10`
+						_, err := recorder.BatchCreateArtifacts(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
+						assert.Loosely(t, err, should.ErrLike(`requests[0]: artifact "rootInvocations/root-inv-id/workUnits/work-unit:child-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-3/artifacts/artifact-id-3" already exists with a different RBE URI: "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default_instance/blobs/otherfile/10" != "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default_instance/blobs/deadbeef/10"`))
+					})
+					t.Run(`with different storage scheme`, func(t *ftt.Test) {
+						updatedRequestItem.Artifact.RbeUri = ""
+						updatedRequestItem.Artifact.Contents = []byte("different content")
+						_, err := recorder.BatchCreateArtifacts(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
+						assert.Loosely(t, err, should.ErrLike(`requests[0]: artifact "rootInvocations/root-inv-id/workUnits/work-unit:child-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-3/artifacts/artifact-id-3" already exists with a different storage scheme (RBE vs non-RBE)`))
+					})
+				})
 			})
+			t.Run(`RBE-CAS write fails`, func(t *ftt.Test) {
+				t.Run(`partly`, func(t *ftt.Test) {
+					casClient.mockResp(nil, codes.OK, codes.InvalidArgument, codes.OK)
 
-			t.Run("Different artifact exists GCS", func(t *ftt.Test) {
-				testutil.SetGCSAllowedBuckets(ctx, t, "testproject", "user:test@test.com", "testbucket")
-				testutil.MustApply(ctx, t,
-					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
-					spanutil.InsertMap("Artifacts", gcsArt),
-				)
+					// Call the implementation without postlude so that we can see the
+					// internal error, and don't just get "Internal server error" back.
+					_, err := recorder.Service.BatchCreateArtifacts(ctx, req)
+					assert.Loosely(t, err, should.ErrLike(`artifact "rootInvocations/root-inv-id/workUnits/work-unit:child-1/artifacts/artifact-4": cas.BatchUpdateBlobs failed`))
+				})
+				t.Run(`entirely`, func(t *ftt.Test) {
+					casClient.mockResp(errors.New("RBE-CAS write error"))
 
-				appendArtReq("art1", "c0ntent", "text/plain", "", "")
-				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
-				assert.Loosely(t, err, should.ErrLike(`"invocations/inv/artifacts/art1": exists w/ different GCS storage scheme`))
-
-				bReq.Requests[0].Artifact.Contents = []byte("")
-				bReq.Requests[0].Artifact.GcsUri = "gs://testbucket/art2"
-				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
-				assert.Loosely(t, err, should.ErrLike(`"invocations/inv/artifacts/art1": exists w/ different GCS URI`))
-
-				appendArtReq("art1", "c0ntent", "text/plain", "", "")
-				bReq.Requests[0].Artifact.SizeBytes = 42
-				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
-				assert.Loosely(t, err, should.ErrLike(`"invocations/inv/artifacts/art1": exists w/ different size`))
+					// Call the implementation without postlude so that we can see the
+					// internal error, and don't just get "Internal server error" back.
+					_, err := recorder.Service.BatchCreateArtifacts(ctx, req)
+					assert.Loosely(t, err, should.ErrLike(`cas.BatchUpdateBlobs failed`))
+				})
 			})
-
-			// RowCount metric should have no changes from any of the above Convey()s.
-			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, artMFVs), should.BeNil)
 		})
+		t.Run(`with invocations`, func(t *ftt.Test) {
+			invID := invocations.ID("inv-id")
+			// Create a sample invocation.
+			testutil.MustApply(ctx, t, insert.Invocation(invID, pb.Invocation_ACTIVE, map[string]any{
+				"ModuleName":        "//infra/junit_tests",
+				"ModuleScheme":      "junit",
+				"ModuleVariant":     pbutil.Variant("a/b", "1", "c", "2"),
+				"ModuleVariantHash": pbutil.VariantHash(pbutil.Variant("a/b", "1", "c", "2")),
+			}))
 
-		t.Run("Too many requests", func(t *ftt.Test) {
-			bReq.Requests = make([]*pb.CreateArtifactRequest, 1000)
-			_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-			assert.Loosely(t, err, should.ErrLike("the number of requests in the batch"))
-			assert.Loosely(t, err, should.ErrLike("exceeds 500"))
+			// Artifact for a new test result.
+			reqItem1TestResult := &pb.CreateArtifactRequest{
+				Parent: pbutil.LegacyTestResultName(string(invID), pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier(tvID)), "result-id-0"),
+				Artifact: &pb.Artifact{
+					ArtifactId:  "artifact-id-0",
+					ContentType: "text/plain",
+					Contents:    []byte("artifact content 0"),
+				},
+			}
+			// GCS Artifact.
+			reqItem2GCS := &pb.CreateArtifactRequest{
+				Parent: invID.Name(),
+				Artifact: &pb.Artifact{
+					TestIdStructured: tvID,
+					ResultId:         "result-id-2",
+					ArtifactId:       "artifact-id-2",
+					ContentType:      "image/png",
+					SizeBytes:        50_000_000,
+					GcsUri:           "gs://testbucket/art3",
+				},
+			}
+			// Invocation-level artifact.
+			reqItem3ContainerLevel := &pb.CreateArtifactRequest{
+				Parent: invID.Name(),
+				Artifact: &pb.Artifact{
+					ArtifactId:  "artifact-4",
+					ContentType: "text/richtext",
+					Contents:    []byte("artifact content 4"),
+				},
+			}
+
+			req := &pb.BatchCreateArtifactsRequest{
+				Requests: []*pb.CreateArtifactRequest{reqItem1TestResult, reqItem2GCS, reqItem3ContainerLevel},
+			}
+
+			token, err := generateInvocationToken(ctx, invID)
+			assert.Loosely(t, err, should.BeNil)
+			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
+
+			expectedResponse := &pb.BatchCreateArtifactsResponse{
+				Artifacts: []*pb.Artifact{
+					{
+						Name:             "invocations/inv-id/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-0/artifacts/artifact-id-0",
+						ArtifactId:       "artifact-id-0",
+						ContentType:      "text/plain",
+						SizeBytes:        18,
+						TestId:           "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
+						TestIdStructured: tvIDWithOutputOnlyFields,
+						ResultId:         "result-id-0",
+						HasLines:         true,
+					},
+					{
+						Name:             "invocations/inv-id/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-2/artifacts/artifact-id-2",
+						ArtifactId:       "artifact-id-2",
+						ContentType:      "image/png",
+						SizeBytes:        50_000_000,
+						GcsUri:           "gs://testbucket/art3",
+						TestId:           "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
+						TestIdStructured: tvIDWithOutputOnlyFields,
+						ResultId:         "result-id-2",
+					},
+					{
+						Name:        "invocations/inv-id/artifacts/artifact-4",
+						ArtifactId:  "artifact-4",
+						ContentType: "text/richtext",
+						SizeBytes:   18,
+						HasLines:    true,
+					},
+				},
+			}
+
+			t.Run(`base case (success)`, func(t *ftt.Test) {
+				resp, err := recorder.BatchCreateArtifacts(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Match(expectedResponse))
+
+				// Verify with the database.
+				var rbeCASHashes []string
+				for _, a := range expectedResponse.Artifacts {
+					got, err := artifacts.Read(span.Single(ctx), a.Name)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, got.Artifact, should.Match(a))
+					rbeCASHashes = append(rbeCASHashes, got.RBECASHash)
+				}
+				assert.Loosely(t, rbeCASHashes, should.Match([]string{
+					artifacts.AddHashPrefix(sha256Hash("artifact content 0")),
+					"", // GCS artifact
+					artifacts.AddHashPrefix(sha256Hash("artifact content 4")),
+				}))
+
+				t.Run(`idempotent`, func(t *ftt.Test) {
+					resp, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, resp, should.Match(expectedResponse))
+
+					// Verify with the database.
+					for _, a := range expectedResponse.Artifacts {
+						got, err := artifacts.Read(span.Single(ctx), a.Name)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, got.Artifact, should.Match(a))
+					}
+				})
+			})
+			t.Run(`parent`, func(t *ftt.Test) {
+				t.Run(`finalized`, func(t *ftt.Test) {
+					testutil.MustApply(ctx, t, spanutil.UpdateMap("Invocations", map[string]any{
+						"InvocationId": invID,
+						"State":        pb.Invocation_FINALIZED,
+					}))
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+					assert.Loosely(t, err, should.ErrLike(`"invocations/inv-id" is not active`))
+				})
+				t.Run(`not found`, func(t *ftt.Test) {
+					testutil.MustApply(ctx, t, spanner.Delete("Invocations", invID.Key()))
+					_, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+					assert.Loosely(t, err, should.ErrLike(`invocations/inv-id not found`))
+				})
+			})
+			t.Run(`legacy use case: without module ID`, func(t *ftt.Test) {
+				// Update expected module ID.
+				testutil.MustApply(ctx, t, spanutil.UpdateMap("Invocations", map[string]any{
+					"InvocationId":      invID,
+					"ModuleName":        spanner.NullString{},
+					"ModuleScheme":      spanner.NullString{},
+					"ModuleVariant":     []string{},
+					"ModuleVariantHash": spanner.NullString{},
+				}))
+
+				for _, e := range expectedResponse.Artifacts {
+					if e.TestIdStructured != nil {
+						e.TestIdStructured.ModuleVariant = nil
+						e.TestIdStructured.ModuleVariantHash = ""
+					}
+				}
+
+				resp, err := recorder.BatchCreateArtifacts(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Match(expectedResponse))
+			})
+			t.Run(`legacy use case: without module variant`, func(t *ftt.Test) {
+				reqItem2GCS.Artifact.TestIdStructured.ModuleVariant = nil
+
+				// Does not affect response as the variant is taken from the invocation module_id.
+				resp, err := recorder.BatchCreateArtifacts(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Match(expectedResponse))
+			})
+			t.Run(`legacy use case: with legacy test ID`, func(t *ftt.Test) {
+				// Update expected module ID.
+				testutil.MustApply(ctx, t, spanutil.UpdateMap("Invocations", map[string]any{
+					"InvocationId":      invID,
+					"ModuleName":        "legacy",
+					"ModuleScheme":      "legacy",
+					"ModuleVariant":     pbutil.Variant("k", "v"),
+					"ModuleVariantHash": pbutil.VariantHash(pbutil.Variant("k", "v")),
+				}))
+
+				// Artifact for a legacy test result.
+				req.Requests = []*pb.CreateArtifactRequest{
+					{
+						Parent: pbutil.LegacyTestResultName(string(invID), "some-legacy-test-id", "result-id-1"),
+						Artifact: &pb.Artifact{
+							ArtifactId:  "artifact-id-1",
+							ContentType: "text/richtext",
+							Contents:    []byte("artifact content 1"),
+						},
+					},
+				}
+				expectedResponse.Artifacts = []*pb.Artifact{
+					{
+						Name:        "invocations/inv-id/tests/some-legacy-test-id/results/result-id-1/artifacts/artifact-id-1",
+						ArtifactId:  "artifact-id-1",
+						ContentType: "text/richtext",
+						SizeBytes:   18,
+						TestId:      "some-legacy-test-id",
+						TestIdStructured: &pb.TestIdentifier{
+							ModuleName:        "legacy",
+							ModuleScheme:      "legacy",
+							ModuleVariant:     pbutil.Variant("k", "v"),
+							ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k", "v")),
+							CaseName:          "some-legacy-test-id",
+						},
+						ResultId: "result-id-1",
+						HasLines: true,
+					},
+				}
+
+				resp, err := recorder.BatchCreateArtifacts(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Match(expectedResponse))
+			})
 		})
 	})
+}
+
+func sha256Hash(content string) string {
+	h := sha256.Sum256([]byte(content))
+	return hex.EncodeToString(h[:])
 }

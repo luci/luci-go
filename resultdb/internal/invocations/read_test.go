@@ -27,14 +27,13 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/span"
-
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 )
 
 func TestRead(t *testing.T) {
@@ -141,6 +140,7 @@ func TestRead(t *testing.T) {
 	testutil.MustApply(ctx, t,
 		insertInvocation("including", map[string]any{
 			"State":              pb.Invocation_ACTIVE,
+			"Realm":              "testproject:testrealm",
 			"CreateTime":         start,
 			"Deadline":           start.Add(time.Hour),
 			"IsExportRoot":       spanner.NullBool{Bool: true, Valid: true},
@@ -171,6 +171,7 @@ func TestRead(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, inv, should.Match(&pb.Invocation{
 			Name:                "invocations/including",
+			Realm:               "testproject:testrealm",
 			State:               pb.Invocation_ACTIVE,
 			CreateTime:          pbutil.MustTimestampProto(start),
 			Deadline:            pbutil.MustTimestampProto(start.Add(time.Hour)),
@@ -199,6 +200,7 @@ func TestRead(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, inv, should.Match(&pb.Invocation{
 			Name:                "invocations/including",
+			Realm:               "testproject:testrealm",
 			State:               pb.Invocation_ACTIVE,
 			CreateTime:          pbutil.MustTimestampProto(start),
 			Deadline:            pbutil.MustTimestampProto(start.Add(time.Hour)),
@@ -217,6 +219,20 @@ func TestRead(t *testing.T) {
 		}))
 		// Double check the ExtendedProperties is nil
 		assert.Loosely(t, inv.ExtendedProperties, should.BeNil)
+	})
+
+	ftt.Run(`TestReadTestResultsInfo`, t, func(t *ftt.Test) {
+		ctx, cancel := span.ReadOnlyTransaction(ctx)
+		defer cancel()
+
+		// Fetch back the top-level Invocation.
+		info, err := ReadTestResultInfo(ctx, "including")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, info, should.Match(TestResultInfo{
+			State:    pb.Invocation_ACTIVE,
+			Realm:    "testproject:testrealm",
+			ModuleID: moduleID,
+		}))
 	})
 }
 

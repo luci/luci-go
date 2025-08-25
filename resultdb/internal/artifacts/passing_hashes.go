@@ -106,7 +106,7 @@ func HashLine(line string) int64 {
 //
 // This function will optionally include the content of the failure only lines in the ranges.
 func ToFailureOnlyLineRanges(artifactID string, contentType string, content []byte, passingHashes map[int64]struct{}, includeContent bool) ([]*pb.QueryArtifactFailureOnlyLinesResponse_LineRange, error) {
-	isSupported := isLogSupportedArtifact(artifactID, contentType)
+	isSupported := IsLogSupportedArtifact(artifactID, contentType)
 
 	if !isSupported {
 		return nil, errors.New("unsupported file type")

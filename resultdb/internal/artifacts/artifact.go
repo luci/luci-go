@@ -29,7 +29,9 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/permissions"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
@@ -80,13 +82,28 @@ func ParseParentID(parentID string) (testID, resultID string, err error) {
 // * ContentType
 // * Size
 // * GcsURI
+// * RbeUri
 // * RBECASHash
 func Read(ctx context.Context, name string) (*Artifact, error) {
-	invIDStr, testID, resultID, artifactID, err := pbutil.ParseLegacyArtifactName(name)
-	if err != nil {
-		return nil, err
+	var invID invocations.ID
+	var testID, resultID, artifactID string
+	var err error
+	if pbutil.IsLegacyArtifactName(name) {
+		var invIDStr string
+		invIDStr, testID, resultID, artifactID, err = pbutil.ParseLegacyArtifactName(name)
+		if err != nil {
+			return nil, err
+		}
+		invID = invocations.ID(invIDStr)
+	} else {
+		var rootInvID, wuID string
+		rootInvID, wuID, testID, resultID, artifactID, err = pbutil.ParseArtifactName(name)
+		if err != nil {
+			return nil, err
+		}
+		invID = workunits.ID{RootInvocationID: rootinvocations.ID(rootInvID), WorkUnitID: wuID}.LegacyInvocationID()
 	}
-	invID := invocations.ID(invIDStr)
+
 	parentID := ParentID(testID, resultID)
 
 	ret := &Artifact{
@@ -99,13 +116,17 @@ func Read(ctx context.Context, name string) (*Artifact, error) {
 	var contentType spanner.NullString
 	var size spanner.NullInt64
 	var gcsURI spanner.NullString
+	var rbeURI spanner.NullString
 	var rbeCASHash spanner.NullString
+	var moduleVariant *pb.Variant
 	// Populate fields from Artifacts table.
 	err = spanutil.ReadRow(ctx, "Artifacts", invID.Key(parentID, artifactID), map[string]any{
-		"ContentType": &contentType,
-		"Size":        &size,
-		"GcsURI":      &gcsURI,
-		"RBECASHash":  &rbeCASHash,
+		"ContentType":   &contentType,
+		"Size":          &size,
+		"GcsURI":        &gcsURI,
+		"RbeURI":        &rbeURI,
+		"RBECASHash":    &rbeCASHash,
+		"ModuleVariant": &moduleVariant,
 	})
 
 	switch {
@@ -115,12 +136,25 @@ func Read(ctx context.Context, name string) (*Artifact, error) {
 	case err != nil:
 		return nil, errors.Fmt("failed to fetch %q: %w", name, err)
 	default:
-		ret.ContentType = contentType.StringVal
-		ret.SizeBytes = size.Int64
-		ret.GcsUri = gcsURI.StringVal
-		ret.RBECASHash = rbeCASHash.StringVal
-		return ret, nil
 	}
+
+	ret.ContentType = contentType.StringVal
+	ret.SizeBytes = size.Int64
+	ret.GcsUri = gcsURI.StringVal
+	ret.RbeUri = rbeURI.StringVal
+	ret.RBECASHash = rbeCASHash.StringVal
+	ret.HasLines = IsLogSupportedArtifact(ret.ArtifactId, ret.ContentType)
+
+	if testID != "" {
+		testIDStructured, err := pbutil.ParseStructuredTestIdentifierForOutput(testID, moduleVariant)
+		if err != nil {
+			panic(fmt.Errorf("data corruption: stored test ID and variant is invalid, artifact name = %q", name))
+		}
+		ret.ResultId = resultID
+		ret.TestId = testID
+		ret.TestIdStructured = testIDStructured
+	}
+	return ret, nil
 }
 
 const (

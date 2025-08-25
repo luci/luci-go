@@ -28,14 +28,13 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/span"
-
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 )
 
 // ReadColumns reads the specified columns from an invocation Spanner row.
@@ -470,6 +469,52 @@ func ReadExportInfo(ctx context.Context, invID ID) (ExportInfo, error) {
 	}
 
 	return result, nil
+}
+
+// TestResultInfo contains fields about the invocation that are useful to RPCs
+// populating test results and artifacts.
+type TestResultInfo struct {
+	State pb.Invocation_State
+	// The realm of the invocation.
+	Realm string
+	// The module associated with the invocation.
+	ModuleID *pb.ModuleIdentifier
+}
+
+// ReadTestResultInfo reads information about the invocation that are useful to
+// RPCs populating test results and artifacts.
+// Returns a NotFound appstatus error if the invocation was not found.
+func ReadTestResultInfo(ctx context.Context, id ID) (TestResultInfo, error) {
+	var state pb.Invocation_State
+	var realm string
+	var moduleName spanner.NullString
+	var moduleScheme spanner.NullString
+	var moduleVariant *pb.Variant
+
+	err := ReadColumns(ctx, id, map[string]any{
+		"State":         &state,
+		"Realm":         &realm,
+		"ModuleName":    &moduleName,
+		"ModuleScheme":  &moduleScheme,
+		"ModuleVariant": &moduleVariant,
+	})
+	if err != nil {
+		return TestResultInfo{}, err
+	}
+
+	info := TestResultInfo{
+		State: state,
+		Realm: realm,
+	}
+	if moduleName.Valid {
+		info.ModuleID = &pb.ModuleIdentifier{
+			ModuleName:    moduleName.StringVal,
+			ModuleScheme:  moduleScheme.StringVal,
+			ModuleVariant: moduleVariant,
+		}
+		pbutil.PopulateModuleIdentifierHashes(info.ModuleID)
+	}
+	return info, nil
 }
 
 // FinalizedNotificationInfo captures information for sending an invocation finalized notification.

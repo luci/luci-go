@@ -19,17 +19,17 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"mime"
-	"time"
+	"strings"
 
 	"cloud.google.com/go/spanner"
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
@@ -41,6 +41,8 @@ import (
 	"go.chromium.org/luci/resultdb/internal/gsutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/tracing"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -57,42 +59,54 @@ const MaxShardContentSize = bq.RowMaxBytes - 10*1024
 // look back to find new line/white space characters to split the chunks.
 const LookbackWindow = 1024
 
+// Represents an artifact creation request.
 type artifactCreationRequest struct {
+	// the work unit ID in which to create the artifact, if any.
+	// Either this or invocationID will be set to a non-emtpy value, but not both.
+	workUnitID workunits.ID
+	// the invocation ID in which to create the artifact, if any.
+	invocationID invocations.ID
+
 	// the flat test id.
 	testID      string
 	resultID    string
 	artifactID  string
 	contentType string
 
-	// hash is a hash of the artifact data.  It is not supplied or calculated for GCS artifacts.
-	hash string
-	// size is the size of the artifact data in bytes.  In the case of a GCS artifact it is user-specified, optional and not verified.
+	// rbeCASHash is a hash of the artifact data that will be stored in RBE-CAS.
+	// It is not supplied or calculated for client-stored GCS or RBE artifacts (where gcsURI or rbeURI supplied).
+	rbeCASHash string
+	// size is the size of the artifact data in bytes. In the case of a GCS artifact it is user-specified, optional and not verified.
 	size int64
 	// data is the artifact contents data that will be stored in RBE-CAS.  If gcsURI is provided, this must be empty.
 	data []byte
 	// gcsURI is the location of the artifact content if it is stored in GCS.
 	// If this is provided, data must be empty.
 	gcsURI string
-	// rbeURI is the location of the artifact content if it is stored in RBE.
+	// rbeURI is the location of the artifact content if it is stored in external RBE.
 	// If this is provided, data must be empty.
 	rbeURI string
 
-	// variant is the test variant, if known.
-	variant *pb.Variant
-}
-
-type invocationInfo struct {
-	id         string
-	realm      string
-	createTime time.Time
+	// The structured test ID corresponding to `testID` and `moduleVariant`.
+	// This may be missing the ModuleVariant (legacy clients may not be setting this).
+	testIDStructured *pb.TestIdentifier
 }
 
 // name returns the artifact name.
-func (a *artifactCreationRequest) name(invID invocations.ID) string {
-	if a.testID == "" {
-		return pbutil.LegacyInvocationArtifactName(string(invID), a.artifactID)
+func (a *artifactCreationRequest) name() string {
+	if a.invocationID != "" {
+		if a.testID == "" {
+			return pbutil.LegacyInvocationArtifactName(string(a.invocationID), a.artifactID)
+		}
+		return pbutil.LegacyTestResultArtifactName(string(a.invocationID), a.testID, a.resultID, a.artifactID)
 	}
-	return pbutil.LegacyTestResultArtifactName(string(invID), a.testID, a.resultID, a.artifactID)
+	if a.workUnitID != (workunits.ID{}) {
+		if a.testID == "" {
+			return pbutil.WorkUnitArtifactName(string(a.workUnitID.RootInvocationID), string(a.workUnitID.WorkUnitID), a.artifactID)
+		}
+		return pbutil.TestResultArtifactName(string(a.workUnitID.RootInvocationID), string(a.workUnitID.WorkUnitID), a.testID, a.resultID, a.artifactID)
+	}
+	panic("logic error: artifact should have either invocationID or workUnitID")
 }
 
 // parentID returns the local parent ID of the artifact.
@@ -100,39 +114,75 @@ func (a *artifactCreationRequest) parentID() string {
 	return artifacts.ParentID(a.testID, a.resultID)
 }
 
-func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, requireParent bool, cfg *config.CompiledServiceConfig) (invocations.ID, *artifactCreationRequest, error) {
+func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, batchLevelParent string, cfg *config.CompiledServiceConfig) (*artifactCreationRequest, error) {
 	if req.GetArtifact() == nil {
-		return "", nil, errors.New("artifact: unspecified")
+		return nil, errors.New("artifact: unspecified")
 	}
-	var invID, testID, resultID string
-	var err error
+	var wuID workunits.ID
+	var invID invocations.ID
+	var testID, resultID string
 
-	if requireParent && req.Parent == "" {
-		return "", nil, errors.New("parent: unspecified")
-	}
+	if req.Parent == "" {
+		// Parent field is required if there is no batch-level parent, but
+		// no value was specified.
+		if batchLevelParent == "" {
+			return nil, errors.New("parent: unspecified")
+		}
 
-	if req.Parent != "" {
-		// Parsing the parent string as an invocation name first. If this fails, attempt to parse it as a test result name.
-		// This order ensures that `testID` and `resultID` are only assigned if a valid test result parent is identified,
-		if invocationID, ok := pbutil.TryParseInvocationName(req.Parent); ok {
-			invID = invocationID
+		// Inherit invocation/work unit from batch-level.
+		isLegacyName := strings.HasPrefix(batchLevelParent, "invocations/")
+		if !isLegacyName {
+			wuID = workunits.MustParseName(batchLevelParent)
 		} else {
-			if invID, testID, resultID, err = pbutil.ParseLegacyTestResultName(req.Parent); err != nil {
-				return "", nil, errors.New("parent: neither valid invocation name nor valid test result name")
+			invID = invocations.MustParseName(batchLevelParent)
+		}
+	} else { // req.Parent != ""
+		if batchLevelParent != "" && req.Parent != batchLevelParent {
+			return nil, errors.Fmt("parent: must be empty or equal to the batch-level parent; got %q, want %q", req.Parent, batchLevelParent)
+		}
+		// Use a heuristic to determine how we should parse the parent name.
+		isLegacyName := strings.HasPrefix(req.Parent, "invocations/")
+		if !isLegacyName {
+			var err error
+			wuID, err = workunits.ParseName(req.Parent)
+			if err != nil {
+				return nil, errors.Fmt("parent: %w", err)
+			}
+		} else {
+			// Parsing the parent string as an invocation name first. If this fails, attempt to parse it as a test result name.
+			// This order ensures that `testID` and `resultID` are only assigned if a valid test result parent is identified,
+			if invocationID, ok := pbutil.TryParseInvocationName(req.Parent); ok {
+				invID = invocations.ID(invocationID)
+			} else {
+				var invIDStr string
+				var err error
+				invIDStr, testID, resultID, err = pbutil.ParseLegacyTestResultName(req.Parent)
+				if err != nil {
+					return nil, errors.Fmt("parent: not a valid work unit name, invocation name or test result name; got %q", req.Parent)
+				}
+				invID = invocations.ID(invIDStr)
 			}
 		}
 	}
 
-	var variant *pb.Variant
+	var testIDStructured *pb.TestIdentifier
 	if testID != "" {
 		testIDBase, err := pbutil.ParseAndValidateTestID(testID)
 		if err != nil {
-			return "", nil, errors.Fmt("parent: encoded test id: %w", err)
+			return nil, errors.Fmt("parent: encoded test id: %w", err)
 		}
 		// Validate the test identifier meets the requirements of the scheme.
 		// This is enforced only at upload time.
 		if err := validateTestIDToScheme(cfg, testIDBase); err != nil {
-			return "", nil, errors.Fmt("parent: encoded test id: %w", err)
+			return nil, errors.Fmt("parent: encoded test id: %w", err)
+		}
+		testIDStructured = &pb.TestIdentifier{
+			ModuleName:    testIDBase.ModuleName,
+			ModuleScheme:  testIDBase.ModuleScheme,
+			ModuleVariant: nil,
+			CoarseName:    testIDBase.CoarseName,
+			FineName:      testIDBase.FineName,
+			CaseName:      testIDBase.CaseName,
 		}
 	}
 	if req.Artifact.TestIdStructured != nil {
@@ -145,76 +195,107 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, requireParent boo
 
 		testIDBase := pbutil.ExtractBaseTestIdentifier(testIDToValidate)
 		if err := pbutil.ValidateStructuredTestIdentifierForStorage(testIDToValidate); err != nil {
-			return "", nil, errors.Fmt("test_id_structured: %w", err)
+			return nil, errors.Fmt("artifact: test_id_structured: %w", err)
 		}
 		// Validate the test identifier meets the requirements of the scheme.
 		// This is enforced only at upload time.
 		if err := validateTestIDToScheme(cfg, testIDBase); err != nil {
-			return "", nil, errors.Fmt("test_id_structured: %w", err)
+			return nil, errors.Fmt("artifact: test_id_structured: %w", err)
 		}
 		if req.Artifact.ResultId == "" {
-			return "", nil, errors.New("result_id is required if test_id_structured is specified")
+			return nil, errors.New("artifact: result_id is required if test_id_structured is specified")
 		}
 		if err := pbutil.ValidateResultID(req.Artifact.ResultId); err != nil {
-			return "", nil, errors.Fmt("result_id: %w", err)
+			return nil, errors.Fmt("artifact: result_id: %w", err)
 		}
 		if testID != "" || resultID != "" {
-			return "", nil, errors.New("test_id_structured must not be specified if parent is a test result name (legacy format)")
+			return nil, errors.New("artifact: test_id_structured must not be specified if parent is a test result name (legacy format)")
 		}
 		testID = pbutil.EncodeTestID(testIDBase)
 		resultID = req.Artifact.ResultId
-		variant = req.Artifact.TestIdStructured.ModuleVariant
+		testIDStructured = req.Artifact.TestIdStructured
 	}
 
 	if req.Artifact.ResultId != "" && req.Artifact.TestIdStructured == nil {
-		return "", nil, errors.New("test_id_structured is required if result_id is specified")
+		return nil, errors.New("artifact: test_id_structured is required if result_id is specified")
 	}
 
 	if err := pbutil.ValidateArtifactID(req.Artifact.ArtifactId); err != nil {
-		return "", nil, errors.Fmt("artifact_id: %w", err)
+		return nil, errors.Fmt("artifact: artifact_id: %w", err)
 	}
 
 	if req.Artifact.ContentType != "" {
 		if _, _, err := mime.ParseMediaType(req.Artifact.ContentType); err != nil {
-			return "", nil, errors.Fmt("content_type: %w", err)
+			return nil, errors.Fmt("artifact: content_type: %w", err)
 		}
 	}
 
+	if req.Artifact.SizeBytes < 0 {
+		return nil, errors.New("artifact: size_bytes: must be non-negative")
+	}
+
+	var sizeBytes int64
+	var rbeCASHash string
 	if (req.Artifact.GcsUri != "" && len(req.Artifact.Contents) > 0) ||
 		(req.Artifact.GcsUri != "" && req.Artifact.RbeUri != "") ||
 		(len(req.Artifact.Contents) > 0 && req.Artifact.RbeUri != "") {
-		return "", nil, errors.New("only one of contents, gcs_uri and rbe_cas_uri can be given")
+		return nil, errors.New("artifact: only one of contents, gcs_uri and rbe_uri can be given")
 	}
-
-	if req.Artifact.RbeUri != "" {
-		if _, _, _, _, err := pbutil.ParseRbeURI(req.Artifact.RbeUri); err != nil {
-			return "", nil, errors.Fmt("invalid RBE URI format: %w", err)
+	if req.Artifact.GcsUri != "" {
+		bucket, objectName := gs.Path(req.Artifact.GcsUri).Split()
+		// From https://cloud.google.com/storage/quotas.
+		const gcsBucketMaxLength = 222    // bytes (owing to only ASCII characters being allowed in names)
+		const gcsFileNameMaxLength = 1024 // bytes
+		if bucket == "" {
+			return nil, errors.Fmt("artifact: gcs_uri: missing bucket name; got %q", req.Artifact.GcsUri)
 		}
-	}
-
-	sizeBytes := int64(len(req.Artifact.Contents))
-
-	if sizeBytes != 0 && req.Artifact.SizeBytes != 0 && sizeBytes != req.Artifact.SizeBytes {
-		return "", nil, errors.New("sizeBytes and contents are specified but don't match")
-	}
-
-	// If contents field is empty, try to set size from the request instead.
-	if sizeBytes == 0 {
-		if req.Artifact.SizeBytes != 0 {
-			sizeBytes = req.Artifact.SizeBytes
+		if objectName == "" {
+			return nil, errors.Fmt("artifact: gcs_uri: missing object name; got %q", req.Artifact.GcsUri)
 		}
+		if len(bucket) > gcsBucketMaxLength {
+			return nil, errors.Fmt("artifact: gcs_uri: bucket name component exceeds %d bytes", gcsBucketMaxLength)
+		}
+		if len(objectName) > gcsFileNameMaxLength {
+			return nil, errors.Fmt("artifact: gcs_uri: object name component exceeds %d bytes", gcsFileNameMaxLength)
+		}
+		// Try to set size from the request.
+		sizeBytes = req.Artifact.SizeBytes
+	} else if req.Artifact.RbeUri != "" {
+		_, _, _, size, err := pbutil.ParseRbeURI(req.Artifact.RbeUri)
+		if err != nil {
+			return nil, errors.Fmt("artifact: rbe_uri: %w", err)
+		}
+		if req.Artifact.SizeBytes != 0 && size != req.Artifact.SizeBytes {
+			return nil, errors.Fmt("artifact: size_bytes: does not match the size of external RBE artifact; got %v, want %v", req.Artifact.SizeBytes, size)
+		}
+		sizeBytes = size
+	} else {
+		// Internal RBE-CAS.
+		data := req.Artifact.Contents
+
+		// Take size from the contents uploaded.
+		sizeBytes = int64(len(data))
+		if req.Artifact.SizeBytes != 0 && sizeBytes != req.Artifact.SizeBytes {
+			return nil, errors.New("artifact: size_bytes: does not match the size of contents (and the artifact is not a GCS or RBE reference)")
+		}
+
+		h := sha256.Sum256(data)
+		rbeCASHash = artifacts.AddHashPrefix(hex.EncodeToString(h[:]))
 	}
 
-	return invocations.ID(invID), &artifactCreationRequest{
-		artifactID:  req.Artifact.ArtifactId,
-		contentType: req.Artifact.ContentType,
-		data:        req.Artifact.Contents,
-		size:        sizeBytes,
-		testID:      testID,
-		resultID:    resultID,
-		gcsURI:      req.Artifact.GcsUri,
-		rbeURI:      req.Artifact.RbeUri,
-		variant:     variant,
+	return &artifactCreationRequest{
+		workUnitID:       wuID,
+		invocationID:     invID,
+		testID:           testID,
+		resultID:         resultID,
+		artifactID:       req.Artifact.ArtifactId,
+		contentType:      req.Artifact.ContentType,
+		rbeCASHash:       rbeCASHash,
+		data:             req.Artifact.Contents,
+		size:             sizeBytes,
+		gcsURI:           req.Artifact.GcsUri,
+		rbeURI:           req.Artifact.RbeUri,
+		testIDStructured: testIDStructured,
 	}, nil
 }
 
@@ -228,61 +309,105 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, requireParent boo
 // - mix use of the legacy format of requests[i].parent field and the new schema, including
 //   - different top-level parent and requests[i].parent.
 //   - use of test result name as requests[i].parent with test_id_structured, result_id specified.
-func parseBatchCreateArtifactsRequest(in *pb.BatchCreateArtifactsRequest, cfg *config.CompiledServiceConfig) (invocations.ID, []*artifactCreationRequest, error) {
+func parseBatchCreateArtifactsRequest(in *pb.BatchCreateArtifactsRequest, cfg *config.CompiledServiceConfig) ([]*artifactCreationRequest, error) {
 	var tSize int64
-	var invID invocations.ID
 
 	if err := pbutil.ValidateBatchRequestCountAndSize(in.Requests); err != nil {
-		return "", nil, errors.Fmt("requests: %w", err)
+		return nil, errors.Fmt("requests: %w", err)
 	}
+
+	// The invocation ID common to all requests, if this request is indeed using invocation IDs.
+	// This is used to validate a request using invocation IDs, only uses one invocation ID.
+	var commonInvID invocations.ID
+	// If this request is using work units. If it is, it cannot use invocation IDs.
+	// It may reference multiple work units in the same batch.
+	var usingWorkUnits bool
 
 	if in.Parent != "" {
-		if err := pbutil.ValidateInvocationName(in.Parent); err != nil {
-			return "", nil, errors.Fmt("invocation: %w", err)
+		isLegacyParent := strings.HasPrefix(in.Parent, "invocations/")
+		if !isLegacyParent {
+			if err := pbutil.ValidateWorkUnitName(in.Parent); err != nil {
+				return nil, errors.Fmt("parent: %w", err)
+			}
+		} else {
+			// For legacy compatibility: also accept invocation IDs.
+			if err := pbutil.ValidateInvocationName(in.Parent); err != nil {
+				return nil, errors.Fmt("parent: %w", err)
+			}
+			commonInvID = invocations.MustParseName(in.Parent)
 		}
-		invID = invocations.MustParseName(in.Parent)
 	}
 
-	requireParent := in.Parent == ""
+	nameToRequestIndex := make(map[string]int)
+
 	arts := make([]*artifactCreationRequest, len(in.Requests))
 	for i, req := range in.Requests {
-		inv, art, err := parseCreateArtifactRequest(req, requireParent, cfg)
+		art, err := parseCreateArtifactRequest(req, in.Parent, cfg)
 		if err != nil {
-			return "", nil, errors.Fmt("requests[%d]: %w", i, err)
+			return nil, errors.Fmt("requests[%d]: %w", i, err)
 		}
 
-		if in.Parent == "" {
-			// Legacy uploader check:
-			//    * testIDStructured and resultID are not set.
-			//    * all parents belong to the same invocation.
-			if req.Artifact.TestIdStructured != nil || req.Artifact.ResultId != "" {
-				return "", nil, errors.Fmt("requests[%d]: test_id_structured or result_id must not be specified if top-level invocation is not set (legacy uploader)", i)
+		if (art.workUnitID != workunits.ID{}) {
+			if commonInvID != "" {
+				// Work unit ID specified on artifact, but invocation ID has been used previously.
+				return nil, errors.Fmt("requests[%d]: parent: cannot create artifacts in mix of invocations and work units in the same request, expected %q", i, commonInvID.Name())
 			}
-			if invID == "" {
-				invID = inv
-			} else if inv != invID {
-				return "", nil, errors.Fmt("requests[%d]: only one invocation is allowed: %q, %q", i, invID, inv)
+			usingWorkUnits = true
+		} else {
+			if art.invocationID == "" {
+				panic("logic error: parseCreateArtifactRequest should have validated either a workUnitID or invocationID is set")
 			}
-		}
-		if in.Parent != "" && req.Parent != "" && in.Parent != req.Parent {
-			return "", nil, errors.Fmt("requests[%d]: only one parent is allowed: %q, %q", i, in.Parent, req.Parent)
+
+			if usingWorkUnits {
+				// An invocation ID specified on the artifact, but work unit ID used previously.
+				return nil, errors.Fmt("requests[%d]: parent: cannot create artifacts in mix of invocations and work units in the same request, expected another work unit", i)
+			}
+			if commonInvID == "" {
+				commonInvID = art.invocationID
+			} else if commonInvID != art.invocationID {
+				return nil, errors.Fmt("requests[%d]: parent: only one invocation is allowed: got %q, want %q", i, art.invocationID.Name(), commonInvID.Name())
+			}
 		}
 
-		// We do not count GCS or RBE artifacts when validating the size.
+		// Count the size of artifacts going to RBE-CAS as it has limits on the size of its Batch upload.
+		// N.B. As at writing, this limit is impossible to exceed because the total request size limit is the
+		// same as the content limit imposed here, but if limits change this could be enforced again.
 		if art.gcsURI == "" && art.rbeURI == "" {
 			tSize += art.size
 		}
 		if tSize > MaxBatchCreateArtifactSize {
-			return "", nil, errors.Fmt("the total size of artifact contents exceeded %d", MaxBatchCreateArtifactSize)
+			return nil, errors.Fmt("the total size of artifact contents to be stored exceeded %d", MaxBatchCreateArtifactSize)
 		}
+
+		name := art.name()
+		if previousIndex, ok := nameToRequestIndex[name]; ok {
+			return nil, errors.Fmt("requests[%d]: same parent, test_id_structured, result_id and artifact_id as requests[%d]", i, previousIndex)
+		}
+		nameToRequestIndex[name] = i
+
 		arts[i] = art
 	}
-	return invID, arts, nil
+
+	// Validate request IDs.
+	if usingWorkUnits && in.RequestId == "" {
+		// Request ID is required to ensure requests are treated idempotently
+		// in case of inevitable retries.
+		return nil, errors.Fmt("request_id: unspecified (please provide a per-request UUID to ensure idempotence)")
+	}
+	if err := pbutil.ValidateRequestID(in.RequestId); err != nil {
+		return nil, errors.Fmt("request_id: %w", err)
+	}
+	for i, r := range in.Requests {
+		if err := emptyOrEqual("request_id", r.RequestId, in.RequestId); err != nil {
+			return nil, errors.Fmt("requests[%d]: %w", i, err)
+		}
+	}
+	return arts, nil
 }
 
 // findNewArtifacts returns a list of the artifacts that don't have states yet.
 // If one exists w/ different hash/size, this returns an error.
-func findNewArtifacts(ctx context.Context, invID invocations.ID, arts []*artifactCreationRequest) ([]*artifactCreationRequest, error) {
+func findNewArtifacts(ctx context.Context, arts []*artifactCreationRequest) ([]*artifactCreationRequest, error) {
 	// artifacts are not expected to exist in most cases, and this map would likely
 	// be empty.
 	type state struct {
@@ -294,17 +419,22 @@ func findNewArtifacts(ctx context.Context, invID invocations.ID, arts []*artifac
 	var states map[string]state
 	ks := spanner.KeySets()
 	for _, a := range arts {
+		invID := a.invocationID
+		if invID == "" {
+			invID = a.workUnitID.LegacyInvocationID()
+		}
 		ks = spanner.KeySets(invID.Key(a.parentID(), a.artifactID), ks)
 	}
 	var b spanutil.Buffer
-	err := span.Read(ctx, "Artifacts", ks, []string{"ParentId", "ArtifactId", "RBECASHash", "Size", "GcsURI", "RbeURI"}).Do(
+	err := span.Read(ctx, "Artifacts", ks, []string{"InvocationId", "ParentId", "ArtifactId", "RBECASHash", "Size", "GcsURI", "RbeURI"}).Do(
 		func(row *spanner.Row) (err error) {
+			var invID invocations.ID
 			var pid, aid string
 			var hash string
 			var size = new(int64)
 			var gcsURI string
 			var rbeURI string
-			if err = b.FromSpanner(row, &pid, &aid, &hash, &size, &gcsURI, &rbeURI); err != nil {
+			if err = b.FromSpanner(row, &invID, &pid, &aid, &hash, &size, &gcsURI, &rbeURI); err != nil {
 				return
 			}
 			if states == nil {
@@ -324,12 +454,12 @@ func findNewArtifacts(ctx context.Context, invID invocations.ID, arts []*artifac
 	}
 
 	newArts := make([]*artifactCreationRequest, 0, len(arts)-len(states))
-	for _, a := range arts {
-		// Save the hash, so that it can be reused in the post-verification
-		// after rbecase.UpdateBlob().
-		if a.gcsURI == "" && a.rbeURI == "" && a.hash == "" {
-			h := sha256.Sum256(a.data)
-			a.hash = artifacts.AddHashPrefix(hex.EncodeToString(h[:]))
+	for i, a := range arts {
+		aCopy := *a
+		a = &aCopy
+		invID := a.invocationID
+		if invID == "" {
+			invID = a.workUnitID.LegacyInvocationID()
 		}
 		st, ok := states[invID.Key(a.parentID(), a.artifactID).String()]
 		if !ok {
@@ -338,104 +468,279 @@ func findNewArtifacts(ctx context.Context, invID invocations.ID, arts []*artifac
 		}
 		if (a.gcsURI == "") != (st.gcsURI == "") {
 			// Can't change from GCS to non-GCS and vice-versa
-			return nil, appstatus.Errorf(codes.AlreadyExists, `%q: exists w/ different GCS storage scheme`, a.name(invID))
+			return nil, appstatus.Errorf(codes.AlreadyExists, `requests[%d]: artifact %q already exists with a different storage scheme (GCS vs non-GCS)`, i, a.name())
 		}
 		if (a.rbeURI == "") != (st.rbeURI == "") {
 			// Can't change from RBE to non-RBE and vice-versa
-			return nil, appstatus.Errorf(codes.AlreadyExists, `%q: exists w/ different RBE storage scheme`, a.name(invID))
-		}
-		if a.size != st.size {
-			return nil, appstatus.Errorf(codes.AlreadyExists, `%q: exists w/ different size: %d != %d`, a.name(invID), a.size, st.size)
+			return nil, appstatus.Errorf(codes.AlreadyExists, `requests[%d]: artifact %q already exists with a different storage scheme (RBE vs non-RBE)`, i, a.name())
 		}
 		if a.gcsURI != "" {
 			if a.gcsURI != st.gcsURI {
-				return nil, appstatus.Errorf(codes.AlreadyExists, `%q: exists w/ different GCS URI: %s != %s`, a.name(invID), a.gcsURI, st.gcsURI)
+				return nil, appstatus.Errorf(codes.AlreadyExists, `requests[%d]: artifact %q already exists with a different GCS URI: %q != %q`, i, a.name(), a.gcsURI, st.gcsURI)
 			}
 		} else if a.rbeURI != "" {
 			if a.rbeURI != st.rbeURI {
-				return nil, appstatus.Errorf(codes.AlreadyExists, `%q: exists w/ different RBE URI: %s != %s`, a.name(invID), a.rbeURI, st.rbeURI)
+				return nil, appstatus.Errorf(codes.AlreadyExists, `requests[%d]: artifact %q already exists with a different RBE URI: %q != %q`, i, a.name(), a.rbeURI, st.rbeURI)
 			}
 		} else {
-			if a.hash != st.hash {
-				return nil, appstatus.Errorf(codes.AlreadyExists, `%q: exists w/ different hash`, a.name(invID))
+			if a.rbeCASHash != st.hash {
+				return nil, appstatus.Errorf(codes.AlreadyExists, `requests[%d]: artifact %q already exists with a different hash`, i, a.name())
 			}
+		}
+		if a.size != st.size {
+			return nil, appstatus.Errorf(codes.AlreadyExists, `requests[%d]: artifact %q already exists with a different size: %d != %d`, i, a.name(), a.size, st.size)
 		}
 	}
 	return newArts, nil
 }
 
-// checkArtStates checks if the states of the associated invocation and artifacts are
-// compatible with creation of the artifacts. On success, it returns a list of
-// the artifactCreationRequests of which artifact don't have states in Spanner yet.
-func checkArtStates(ctx context.Context, invID invocations.ID, arts []*artifactCreationRequest) (reqs []*artifactCreationRequest, invInfo *invocationInfo, err error) {
-	var invState pb.Invocation_State
-	var createTime time.Time
-	var realm string
-
-	eg, ctx := errgroup.WithContext(ctx)
-	eg.Go(func() error {
-		return invocations.ReadColumns(ctx, invID, map[string]any{
-			"State": &invState, "Realm": &realm, "CreateTime": &createTime,
-		})
-	})
-
-	eg.Go(func() (err error) {
-		reqs, err = findNewArtifacts(ctx, invID, arts)
-		return
-	})
-
-	switch err := eg.Wait(); {
-	case err != nil:
-		return nil, nil, err
-	case invState != pb.Invocation_ACTIVE:
-		return nil, nil, appstatus.Errorf(codes.FailedPrecondition, "%s is not active", invID.Name())
+func checkInvocationOrWorkUnitState(ctx context.Context, arts []*artifactCreationRequest) (workUnitsInfo map[workunits.ID]workunits.TestResultInfo, invInfo *invocations.TestResultInfo, err error) {
+	workUnitIDs := workunits.NewIDSet()
+	for _, a := range arts {
+		if a.workUnitID != (workunits.ID{}) {
+			workUnitIDs.Add(a.workUnitID)
+		}
 	}
-	return reqs, &invocationInfo{
-		id:         string(invID),
-		realm:      realm,
-		createTime: createTime,
-	}, nil
+	if len(workUnitIDs) > 0 {
+		parentInfos, err := workunits.ReadTestResultInfos(ctx, workUnitIDs.SortedByRowID())
+		if err != nil {
+			return nil, nil, err // NotFound or internal error.
+		}
+		for _, wuID := range workUnitIDs.SortedByID() {
+			if parentInfos[wuID].State != pb.WorkUnit_ACTIVE {
+				return nil, nil, appstatus.Errorf(codes.FailedPrecondition, "%q is not active", wuID.Name())
+			}
+		}
+		workUnitsInfo = parentInfos
+	} else {
+		// We are using invocation IDs. The invocation ID on all requests should be the same.
+		invID := arts[0].invocationID
+		parentInfo, err := invocations.ReadTestResultInfo(ctx, arts[0].invocationID)
+		if err != nil {
+			return nil, nil, err // NotFound or internal error.
+		}
+		if parentInfo.State != pb.Invocation_ACTIVE {
+			return nil, nil, appstatus.Errorf(codes.FailedPrecondition, "%q is not active", invID.Name())
+		}
+		invInfo = &parentInfo
+	}
+
+	return workUnitsInfo, invInfo, nil
+}
+
+func validateBatchCreateArtifactsRequestForSystemState(ctx context.Context, workUnitsInfo map[workunits.ID]workunits.TestResultInfo, invInfo *invocations.TestResultInfo, arts []*artifactCreationRequest) error {
+	allowedBucketsByProject := make(map[string]map[string]bool)
+	allowedRBEInstancesByProject := make(map[string]map[string]bool)
+	user := auth.CurrentUser(ctx).Identity
+
+	for i, a := range arts {
+		// Test result-artifact. Validate the module matches the work unit.
+		if a.testIDStructured != nil {
+			var expectedModule *pb.ModuleIdentifier
+			strictValidation := true
+			if a.workUnitID != (workunits.ID{}) {
+				// Using work units.
+				expectedModule = workUnitsInfo[a.workUnitID].ModuleID
+			} else {
+				// Using invocations.
+				expectedModule = invInfo.ModuleID
+				strictValidation = false
+			}
+
+			testIDToValidate := a.testIDStructured
+			if testIDToValidate.ModuleVariant == nil && expectedModule != nil {
+				// Legacy callers may not specify the ModuleVariant. If it is not
+				// specified (indicated by nil as opposed to &pb.Variant{} with no defs),
+				// let it pass validation. We will backfill the ModuleVariant from the
+				// parent work unit or invocation later.
+				//
+				// Clone to avoid having changes to the test ID made here (to let it pass
+				// validation) propagate backwards to the caller.
+				testIDToValidate = proto.Clone(testIDToValidate).(*pb.TestIdentifier)
+				testIDToValidate.ModuleVariant = expectedModule.ModuleVariant
+			}
+			if err := validateUploadAgainstWorkUnitModule(testIDToValidate, expectedModule, strictValidation); err != nil {
+				return appstatus.Errorf(codes.FailedPrecondition, "requests[%d]: artifact: %s", i, err)
+			}
+		}
+
+		var realm string
+		if a.workUnitID != (workunits.ID{}) {
+			realm = workUnitsInfo[a.workUnitID].Realm
+		} else {
+			realm = invInfo.Realm
+		}
+		project, _ := realms.Split(realm)
+		if a.gcsURI != "" {
+			// Check this GCS reference is allowed by the project config.
+			// Delay construction of the checker (which may occasionally involve an RPC) until we know we
+			// actually need it.
+			if allowedBucketsByProject[project] == nil {
+				allowedBuckets, err := allowedGCSBucketsForUser(ctx, project, string(user))
+				if err != nil {
+					// Internal error.
+					return errors.Fmt("fetch allowed GCS buckets for project %s and user %s: %w", project, string(user), err)
+				}
+				allowedBucketsByProject[project] = allowedBuckets
+			}
+			bucket, _ := gsutil.Split(a.gcsURI)
+			if _, ok := allowedBucketsByProject[project][bucket]; !ok {
+				return appstatus.Errorf(codes.PermissionDenied, "requests[%d]: the user %s does not have permission to reference GCS objects in bucket %q in project %q", i, string(user), bucket, project)
+			}
+		}
+		if a.rbeURI != "" {
+			// Check this RBE reference is allowed by the project config.
+			if allowedRBEInstancesByProject[project] == nil {
+				allowedRbeInstances, err := allowedRbeInstancesForUser(ctx, project, string(user))
+				if err != nil {
+					return errors.Fmt("fetch allowed RBE instances for project %s and user %s: %w", project, string(user), err)
+				}
+				allowedBucketsByProject[project] = allowedRbeInstances
+			}
+			rbeProject, rbeInstance, _, _, err := pbutil.ParseRbeURI(a.rbeURI)
+			if err != nil {
+				return appstatus.Errorf(codes.InvalidArgument, "requests[%d]: artifact: rbe_uri: invalid RBE URI: %q", i, a.rbeURI)
+			}
+			if _, ok := allowedBucketsByProject[project][rbeInstance]; !ok {
+				return appstatus.Errorf(codes.PermissionDenied, "requests[%d]: the user %s does not have permission to reference RBE objects in instance %q in project %q", i, string(user), rbeInstance, rbeProject)
+			}
+		}
+	}
+	return nil
 }
 
 // createArtifactStates creates the states of given artifacts in Spanner.
-func createArtifactStates(ctx context.Context, realm string, invID invocations.ID, arts []*artifactCreationRequest) error {
-	var noStateArts []*artifactCreationRequest
-	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) (err error) {
-		// Verify all the states again.
-		noStateArts, _, err = checkArtStates(ctx, invID, arts)
+func createArtifactStates(ctx context.Context, arts []*artifactCreationRequest) (results []*pb.Artifact, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.recorder.createArtifactStates")
+	defer func() { tracing.End(ts, err) }()
+
+	var insertsByRealm map[string]int
+	var wuInfos map[workunits.ID]workunits.TestResultInfo
+	var invInfo *invocations.TestResultInfo
+
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		// New transaction attempt, reset the read values to avoid cross-contamination
+		// by previous attempts.
+		insertsByRealm = make(map[string]int)
+		wuInfos = nil
+		invInfo = nil
+
+		// Verify work unit/invocation state.
+		var err error
+		wuInfos, invInfo, err = checkInvocationOrWorkUnitState(ctx, arts)
+		if err != nil {
+			return err // NotFound, FailedPrecondition or internal error.
+		}
+
+		// Verify the request is valid for the current system state.
+		err = validateBatchCreateArtifactsRequestForSystemState(ctx, wuInfos, invInfo, arts)
+		if err != nil {
+			return err // FailedPrecondition or PermissionDenied error.
+		}
+
+		// Find the new artifacts.
+		noStateArts, err := findNewArtifacts(ctx, arts)
 		if err != nil {
 			return err
 		}
 		if len(noStateArts) == 0 {
 			logging.Warningf(ctx, "The states of all the artifacts already exist.")
 		}
+		if len(noStateArts) != 0 && len(noStateArts) != len(arts) {
+			logging.Warningf(ctx, "Some of the artifacts already exist, but not all.")
+		}
+
+		// Prepare the mutations.
 		for _, a := range noStateArts {
+			var invID invocations.ID
+			if a.invocationID != "" {
+				invID = a.invocationID
+			} else {
+				invID = a.workUnitID.LegacyInvocationID()
+			}
+			var moduleVariant *pb.Variant
+			if a.testID != "" {
+				// Pull the module variant from the invocation/work unit.
+				// This is needed as for legacy compatibility reasons the variant
+				// may not always be set in the request.
+				// Moreover, if the variant is set on the request, it is validated
+				// to be consistent with the values on the work unit/invocation.
+				if a.invocationID != "" {
+					moduleVariant = invInfo.ModuleID.GetModuleVariant()
+				} else {
+					moduleVariant = wuInfos[a.workUnitID].ModuleID.GetModuleVariant()
+				}
+			}
+
 			span.BufferWrite(ctx, spanutil.InsertMap("Artifacts", map[string]any{
 				"InvocationId":  invID,
 				"ParentId":      a.parentID(),
 				"ArtifactId":    a.artifactID,
 				"ContentType":   a.contentType,
 				"Size":          a.size,
-				"RBECASHash":    a.hash,
+				"RBECASHash":    a.rbeCASHash,
 				"GcsURI":        a.gcsURI,
 				"RbeURI":        a.rbeURI,
-				"ModuleVariant": a.variant,
+				"ModuleVariant": moduleVariant,
 			}))
+
+			if a.invocationID != "" {
+				insertsByRealm[invInfo.Realm]++
+			} else {
+				insertsByRealm[wuInfos[a.workUnitID].Realm]++
+			}
 		}
+
 		return nil
 	})
 	if err != nil {
-		return errors.Fmt("failed to write artifact to Spanner: %w", err)
+		return nil, errors.Fmt("write artifacts to Spanner: %w", err)
 	}
-	spanutil.IncRowCount(ctx, len(noStateArts), spanutil.Artifacts, spanutil.Inserted, realm)
-	return nil
+	for realm, count := range insertsByRealm {
+		spanutil.IncRowCount(ctx, count, spanutil.Artifacts, spanutil.Inserted, realm)
+	}
+
+	// Construct the results.
+	results = make([]*pb.Artifact, 0, len(arts))
+	for _, a := range arts {
+		var testIDStructured *pb.TestIdentifier
+		if a.testID != "" {
+			// Pull the module variant from the invocation/work unit.
+			// This is needed as for legacy compatibility reasons the variant
+			// may not always be set in the request.
+			testIDStructured = proto.Clone(a.testIDStructured).(*pb.TestIdentifier)
+			if a.invocationID != "" {
+				testIDStructured.ModuleVariant = invInfo.ModuleID.GetModuleVariant()
+				testIDStructured.ModuleVariantHash = invInfo.ModuleID.GetModuleVariantHash()
+			} else {
+				// The ModuleID should always be set as it is enforced by validation.
+				testIDStructured.ModuleVariant = wuInfos[a.workUnitID].ModuleID.ModuleVariant
+				testIDStructured.ModuleVariantHash = wuInfos[a.workUnitID].ModuleID.ModuleVariantHash
+			}
+		}
+
+		results = append(results, &pb.Artifact{
+			Name:             a.name(),
+			TestIdStructured: testIDStructured,
+			TestId:           a.testID,
+			ResultId:         a.resultID,
+			ArtifactId:       a.artifactID,
+			ContentType:      a.contentType,
+			SizeBytes:        a.size,
+			GcsUri:           a.gcsURI,
+			RbeUri:           a.rbeURI,
+			HasLines:         artifacts.IsLogSupportedArtifact(a.artifactID, a.contentType),
+		})
+	}
+
+	return results, nil
 }
 
-func uploadArtifactBlobs(ctx context.Context, rbeIns string, casClient repb.ContentAddressableStorageClient, invID invocations.ID, arts []*artifactCreationRequest) error {
+func uploadArtifactBlobs(ctx context.Context, rbeIns string, casClient repb.ContentAddressableStorageClient, arts []*artifactCreationRequest) error {
 	casReq := &repb.BatchUpdateBlobsRequest{InstanceName: rbeIns}
 	for _, a := range arts {
 		casReq.Requests = append(casReq.Requests, &repb.BatchUpdateBlobsRequest_Request{
-			Digest: &repb.Digest{Hash: artifacts.TrimHashPrefix(a.hash), SizeBytes: a.size},
+			Digest: &repb.Digest{Hash: artifacts.TrimHashPrefix(a.rbeCASHash), SizeBytes: a.size},
 			Data:   a.data,
 		})
 	}
@@ -454,7 +759,7 @@ func uploadArtifactBlobs(ctx context.Context, rbeIns string, casClient repb.Cont
 			// If resource exhausted, the RBE server quota needs to be adjusted.
 			//
 			// Either case, it's a server-error, and an internal error will be returned.
-			return errors.Fmt("artifact %q: cas.BatchUpdateBlobs failed", arts[i].name(invID))
+			return errors.Fmt("artifact %q: cas.BatchUpdateBlobs failed", arts[i].name())
 		}
 	}
 	return nil
@@ -514,125 +819,124 @@ func allowedRbeInstancesForUser(ctx context.Context, project, user string) (allo
 	return allowedInstances, nil
 }
 
+func verifyBatchCreateArtifactsPermissions(ctx context.Context, arts []*artifactCreationRequest) error {
+	// Validate the update token.
+	token, err := extractUpdateToken(ctx)
+	if err != nil {
+		return err
+	}
+	var commonInvID invocations.ID
+	var commonWorkUnitState string
+	for i, a := range arts {
+		if a.invocationID != "" {
+			if commonInvID == "" {
+				commonInvID = a.invocationID
+			}
+			if commonInvID != "" && commonInvID != a.invocationID {
+				panic("logic error: request with multiple different invocations, this should have been caught in parseBatchCreateArtifactsRequest")
+			}
+		} else {
+			tokenState := workUnitUpdateTokenState(a.workUnitID)
+			if commonWorkUnitState == "" {
+				commonWorkUnitState = tokenState
+			} else if commonWorkUnitState != tokenState {
+				return appstatus.BadRequest(errors.Fmt("requests[%d]: parent: work unit %q requires a different update token to request[0]'s %q, but this RPC only accepts one update token", i, a.workUnitID.Name(), arts[0].workUnitID.Name()))
+			}
+		}
+	}
+
+	if commonInvID == "" && commonWorkUnitState == "" {
+		panic("logic error: neither work unit and invocation IDs specified, this should have been caught in parseBatchCreateArtifactsRequest")
+	}
+	if commonInvID != "" {
+		if err := validateInvocationToken(ctx, token, commonInvID); err != nil {
+			return appstatus.Errorf(codes.PermissionDenied, "invalid update token")
+		}
+	}
+	if commonWorkUnitState != "" {
+		if err := validateWorkUnitUpdateTokenForState(ctx, token, commonWorkUnitState); err != nil {
+			return appstatus.Errorf(codes.PermissionDenied, "invalid update token")
+		}
+	}
+
+	return nil
+}
+
 // BatchCreateArtifacts implements pb.RecorderServer.
 // This functions uploads the artifacts to RBE-CAS.
 // If the artifact is a text-based artifact, it will also get uploaded to BigQuery.
 // We have a percentage control to determine how many percent of artifacts got
 // uploaded to BigQuery.
 func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchCreateArtifactsRequest) (*pb.BatchCreateArtifactsResponse, error) {
-	token, err := extractUpdateToken(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if len(in.Requests) == 0 {
-		logging.Debugf(ctx, "Received a BatchCreateArtifactsRequest with 0 requests; returning")
-		return &pb.BatchCreateArtifactsResponse{}, nil
-	}
 	cfg, err := config.Service(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	invID, arts, err := parseBatchCreateArtifactsRequest(in, cfg)
+	arts, err := parseBatchCreateArtifactsRequest(in, cfg)
 	if err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	if err := validateInvocationToken(ctx, token, invID); err != nil {
-		return nil, appstatus.Errorf(codes.PermissionDenied, "invalid update token")
-	}
-
-	var artsToCreate []*artifactCreationRequest
-	var invInfo *invocationInfo
-	func() {
-		ctx, cancel := span.ReadOnlyTransaction(ctx)
-		defer cancel()
-		artsToCreate, invInfo, err = checkArtStates(ctx, invID, arts)
-	}()
-	if err != nil {
+	if err := verifyBatchCreateArtifactsPermissions(ctx, arts); err != nil {
 		return nil, err
 	}
-	if len(artsToCreate) == 0 {
-		logging.Debugf(ctx, "Found no artifacts to create")
-		return &pb.BatchCreateArtifactsResponse{}, nil
-	}
-	realm := invInfo.realm
-	project, _ := realms.Split(realm)
-	user := auth.CurrentUser(ctx).Identity
 
-	var allowedBuckets map[string]bool = nil
-	var allowedRbeInstances map[string]bool = nil
-	artsToUpload := make([]*artifactCreationRequest, 0, len(artsToCreate))
-	for _, a := range artsToCreate {
-		// Only upload to RBE CAS the ones that are not in GCS or RBE
+	requiresRBECASUpload := false
+	for _, a := range arts {
 		if a.gcsURI == "" && a.rbeURI == "" {
-			artsToUpload = append(artsToUpload, a)
-		} else if a.gcsURI != "" {
-			// Check this GCS reference is allowed by the project config.
-			// Delay construction of the checker (which may occasionally involve an RPC) until we know we
-			// actually need it.
-			if allowedBuckets == nil {
-				allowedBuckets, err = allowedGCSBucketsForUser(ctx, project, string(user))
-				if err != nil {
-					return nil, errors.Fmt("fetch allowed buckets: %w", err)
-				}
-			}
-			bucket, _ := gsutil.Split(a.gcsURI)
-			if _, ok := allowedBuckets[bucket]; !ok {
-				return nil, appstatus.Errorf(codes.PermissionDenied, "does not have permission to reference GCS objects in bucket %s in project %s", bucket, project)
-			}
-		} else if a.rbeURI != "" {
-			// Check this RBE reference is allowed by the project config.
-			if allowedRbeInstances == nil {
-				allowedRbeInstances, err = allowedRbeInstancesForUser(ctx, project, string(user))
-				if err != nil {
-					return nil, errors.Fmt("fetch allowed RBE instances: %w", err)
-				}
-			}
-			rbeProject, rbeInstance, _, _, err := pbutil.ParseRbeURI(a.rbeURI)
+			requiresRBECASUpload = true
+			break
+		}
+	}
+
+	if requiresRBECASUpload {
+		// We cannot upload to RBE-CAS atomically with writing to Spanner.
+		// So we will validate the request early w.r.t. current state of invocations
+		// work units in Spanner, and if this succeeds, speculatively upload
+		// the artifacts to RBE-CAS. We will then apply all validation again when
+		// we commit the artifacts to Spanner.
+		// Worst case, if this fails, we have a few orphaned artifacts in RBE-CAS.
+
+		var artsToCreate []*artifactCreationRequest
+		var wuInfos map[workunits.ID]workunits.TestResultInfo
+		var invInfo *invocations.TestResultInfo
+		func() {
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			wuInfos, invInfo, err = checkInvocationOrWorkUnitState(ctx, arts)
 			if err != nil {
-				return nil, appstatus.Errorf(codes.InvalidArgument, "invalid RBE URI: %q", a.rbeURI)
+				return // NotFound, FailedPrecondition or internal error.
 			}
-			if _, ok := allowedRbeInstances[rbeInstance]; !ok {
-				return nil, appstatus.Errorf(codes.PermissionDenied, "does not have permission to reference RBE objects in instance %q in project %q", rbeInstance, rbeProject)
+			artsToCreate, err = findNewArtifacts(ctx, arts)
+		}()
+		if err != nil {
+			return nil, err
+		}
+
+		if err := validateBatchCreateArtifactsRequestForSystemState(ctx, wuInfos, invInfo, arts); err != nil {
+			return nil, err
+		}
+
+		artsToUpload := make([]*artifactCreationRequest, 0, len(artsToCreate))
+		for _, a := range artsToCreate {
+			// Only upload to RBE CAS the ones that are not in GCS or external RBE.
+			if a.gcsURI == "" && a.rbeURI == "" {
+				artsToUpload = append(artsToUpload, a)
+			}
+		}
+
+		if len(artsToUpload) > 0 {
+			if err := uploadArtifactBlobs(ctx, s.ArtifactRBEInstance, s.casClient, artsToUpload); err != nil {
+				return nil, err
 			}
 		}
 	}
 
-	if err := uploadArtifactBlobs(ctx, s.ArtifactRBEInstance, s.casClient, invID, artsToUpload); err != nil {
-		return nil, err
-	}
-	if err := createArtifactStates(ctx, realm, invID, artsToCreate); err != nil {
+	results, err := createArtifactStates(ctx, arts)
+	if err != nil {
 		return nil, err
 	}
 
 	// Return all the artifacts to indicate that they were created.
-	ret := &pb.BatchCreateArtifactsResponse{Artifacts: make([]*pb.Artifact, len(arts))}
-	for i, a := range arts {
-		var structuredTestIDProto *pb.TestIdentifier
-		if a.testID != "" {
-			baseTestID, err := pbutil.ParseAndValidateTestID(a.testID)
-			if err != nil {
-				// Should never happen.
-				return nil, errors.Fmt("parse test id: %w", err)
-			}
-			structuredTestIDProto = &pb.TestIdentifier{
-				ModuleName:    baseTestID.ModuleName,
-				ModuleScheme:  baseTestID.ModuleScheme,
-				ModuleVariant: a.variant, // This may be null, if the variant is not known.
-				CoarseName:    baseTestID.CoarseName,
-				FineName:      baseTestID.FineName,
-				CaseName:      baseTestID.CaseName,
-			}
-		}
-		ret.Artifacts[i] = &pb.Artifact{
-			Name:             a.name(invID),
-			TestIdStructured: structuredTestIDProto,
-			TestId:           a.testID,
-			ResultId:         a.resultID,
-			ArtifactId:       a.artifactID,
-			ContentType:      a.contentType,
-			SizeBytes:        a.size,
-		}
-	}
+	ret := &pb.BatchCreateArtifactsResponse{Artifacts: results}
 	return ret, nil
 }

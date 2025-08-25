@@ -26,31 +26,30 @@ import (
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestSupportedArtifacts(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run(`isLogSupportedArtifact`, t, func(t *ftt.Test) {
+	ftt.Run(`IsLogSupportedArtifact`, t, func(t *ftt.Test) {
 		t.Run(`given a supported extension, then should return true`, func(t *ftt.Test) {
-			isSupported := isLogSupportedArtifact("log.txt", "")
+			isSupported := IsLogSupportedArtifact("log.txt", "")
 			assert.Loosely(t, isSupported, should.BeTrue)
 		})
 
 		t.Run(`given a supported content type, then should return true`, func(t *ftt.Test) {
-			isSupported := isLogSupportedArtifact("log", "text/content")
+			isSupported := IsLogSupportedArtifact("log", "text/content")
 			assert.Loosely(t, isSupported, should.BeTrue)
 		})
 
 		t.Run(`given a unsupported content type, then should return false`, func(t *ftt.Test) {
-			isSupported := isLogSupportedArtifact("log", "image/png")
+			isSupported := IsLogSupportedArtifact("log", "image/png")
 			assert.Loosely(t, isSupported, should.BeFalse)
 		})
 
 		t.Run(`given a unsupported extension and no content-type, then should return false`, func(t *ftt.Test) {
-			isSupported := isLogSupportedArtifact("log.jpg", "")
+			isSupported := IsLogSupportedArtifact("log.jpg", "")
 			assert.Loosely(t, isSupported, should.BeFalse)
 		})
 	})

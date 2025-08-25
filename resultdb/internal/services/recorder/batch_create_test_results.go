@@ -260,8 +260,8 @@ func batchCreateResultsInWorkUnits(ctx context.Context, in *pb.BatchCreateTestRe
 	// The number of test results inserted per invocation.
 	testResultsPerInvocation := make(map[invocations.ID]int64)
 
-	// The module of each test result.
-	testResultModules := make([]*pb.ModuleIdentifier, len(in.Requests))
+	// The test identifier of each test result.
+	testResultTestIdentifiers := make([]*pb.TestIdentifier, len(in.Requests))
 
 	// Prepare the test results we want to write outside the read-update
 	// transaction to minimise the transaction duration.
@@ -283,7 +283,7 @@ func batchCreateResultsInWorkUnits(ctx context.Context, in *pb.BatchCreateTestRe
 		parents.Add(parentID)
 
 		testResultsPerInvocation[legacyInvID]++
-		testResultModules[i] = extractTestResultModule(tr)
+		testResultTestIdentifiers[i] = extractTestResultTestIdentifier(tr)
 	}
 
 	var insertsByRealm map[string]int
@@ -312,8 +312,8 @@ func batchCreateResultsInWorkUnits(ctx context.Context, in *pb.BatchCreateTestRe
 				return appstatus.Errorf(codes.FailedPrecondition, "requests[%d]: parent %q is not active", i, parentID.Name())
 			}
 			const strictValidation = true
-			if err := validateTestResultAgainstWorkUnitModule(testResultModules[i], parentInfo.ModuleID, strictValidation); err != nil {
-				return appstatus.Errorf(codes.FailedPrecondition, "requests[%d]: %s", i, err)
+			if err := validateUploadAgainstWorkUnitModule(testResultTestIdentifiers[i], parentInfo.ModuleID, strictValidation); err != nil {
+				return appstatus.Errorf(codes.FailedPrecondition, "requests[%d]: test_result: %s", i, err)
 			}
 			// Count inserts by realm
 			insertsByRealm[parentInfo.Realm]++
@@ -357,8 +357,8 @@ func batchCreateResultsInInvocation(ctx context.Context, in *pb.BatchCreateTestR
 	testResultInserts := make([]*spanner.Mutation, len(in.Requests))
 	var commonPrefix string
 	varUnion := stringset.New(0)
-	// The module of each test result.
-	testResultModules := make([]*pb.ModuleIdentifier, len(in.Requests))
+	// The test identifier of each test result.
+	testResultTestIdentifiers := make([]*pb.TestIdentifier, len(in.Requests))
 	for i, r := range in.Requests {
 		tr, mutation, err := insertTestResult(ctx, invID, in.RequestId, r.TestResult)
 		if err != nil {
@@ -372,7 +372,7 @@ func batchCreateResultsInInvocation(ctx context.Context, in *pb.BatchCreateTestR
 			commonPrefix = longestCommonPrefix(commonPrefix, ret.TestResults[i].TestId)
 		}
 		varUnion.AddAll(pbutil.VariantToStrings(ret.TestResults[i].GetVariant()))
-		testResultModules[i] = extractTestResultModule(tr)
+		testResultTestIdentifiers[i] = extractTestResultTestIdentifier(tr)
 	}
 
 	var realm string
@@ -406,10 +406,10 @@ func batchCreateResultsInInvocation(ctx context.Context, in *pb.BatchCreateTestR
 			}
 
 			// Ensure the module of each result matches the expected value.
-			for i, trModule := range testResultModules {
+			for i, testIdentifier := range testResultTestIdentifiers {
 				const strictValidation = false
-				if err := validateTestResultAgainstWorkUnitModule(trModule, expectedModule, strictValidation); err != nil {
-					return appstatus.Errorf(codes.FailedPrecondition, "requests[%d]: %s", i, err)
+				if err := validateUploadAgainstWorkUnitModule(testIdentifier, expectedModule, strictValidation); err != nil {
+					return appstatus.Errorf(codes.FailedPrecondition, "requests[%d]: test_result: %s", i, err)
 				}
 				if expectedModule == nil {
 					testResultsUploadedWithoutModuleIDValidationCounter.Add(ctx, 1, realm)
@@ -697,24 +697,22 @@ func statusV2FromV1(oldStatus pb.TestStatus, expected bool) (status pb.TestResul
 	return pb.TestResult_FAILED, kind, webTest
 }
 
-func extractTestResultModule(tr *pb.TestResult) *pb.ModuleIdentifier {
+func extractTestResultTestIdentifier(tr *pb.TestResult) *pb.TestIdentifier {
 	if tr.TestIdStructured == nil {
 		panic("expected test_id_structured to be set")
 	}
-	return &pb.ModuleIdentifier{
-		ModuleName:    tr.TestIdStructured.ModuleName,
-		ModuleScheme:  tr.TestIdStructured.ModuleScheme,
-		ModuleVariant: tr.TestIdStructured.ModuleVariant,
-	}
+	return tr.TestIdStructured
 }
 
-func validateTestResultAgainstWorkUnitModule(got *pb.ModuleIdentifier, expectedModuleID *pb.ModuleIdentifier, strictValidation bool) error {
+// Validates the module of the uploaded test result or test result artifact against the module
+// expected by the work unit or invocation.
+func validateUploadAgainstWorkUnitModule(got *pb.TestIdentifier, expectedModuleID *pb.ModuleIdentifier, strictValidation bool) error {
 	if expectedModuleID != nil {
 		if got.ModuleName != expectedModuleID.ModuleName {
-			return errors.Fmt("test_result: test_id_structured: module_name: does not match parent work unit module_id.module_name; got %q, want %q", got.ModuleName, expectedModuleID.ModuleName)
+			return errors.Fmt("test_id_structured: module_name: does not match parent work unit module_id.module_name; got %q, want %q", got.ModuleName, expectedModuleID.ModuleName)
 		}
 		if got.ModuleScheme != expectedModuleID.ModuleScheme {
-			return errors.Fmt("test_result: test_id_structured: module_scheme: does not match parent work unit module_id.module_scheme; got %q, want %q", got.ModuleScheme, expectedModuleID.ModuleScheme)
+			return errors.Fmt("test_id_structured: module_scheme: does not match parent work unit module_id.module_scheme; got %q, want %q", got.ModuleScheme, expectedModuleID.ModuleScheme)
 		}
 		isLegacyID := expectedModuleID.ModuleName == "legacy"
 		// For legacy test IDs, do not validate the variant as they can be overridden at the test result level.
@@ -728,17 +726,17 @@ func validateTestResultAgainstWorkUnitModule(got *pb.ModuleIdentifier, expectedM
 			if err != nil {
 				wantKeys = "{<invalid>}"
 			}
-			return errors.Fmt("test_result: test_id_structured: module_variant: does not match parent work unit module_id.module_variant; got %s, want %s", gotKeys, wantKeys)
+			return errors.Fmt("test_id_structured: module_variant: does not match parent work unit module_id.module_variant; got %s, want %s", gotKeys, wantKeys)
 		}
 	} else {
 		if strictValidation {
-			return errors.Fmt("test_result: to upload test results, you must set the module_id on the parent work unit first")
+			return errors.Fmt("to upload test results or test result artifacts, you must set the module_id on the parent work unit first")
 		} else {
 			// For compatibility reasons we will let legacy and structured test IDs upload to invocations
 			// with module_id unset for a time.
 			// TODO(meiring): Uncomment the following check once Android has migrated to work units.
 			// if got.ModuleName != "legacy" || got.ModuleScheme != "legacy" {
-			// 	return errors.Fmt("test_result: test_id_structured: to upload results with structured test IDs, you must set the module_id on the parent legacy invocation first")
+			// 	return errors.Fmt("test_id_structured: to upload results with structured test IDs, you must set the module_id on the parent legacy invocation first")
 			// }
 		}
 	}

@@ -214,6 +214,12 @@ func TestBatchCreateTestResults(t *testing.T) {
 				})
 				t.Run("test result", func(t *ftt.Test) {
 					// validateTestResult has its own tests, so only test a few cases to make sure it is correctly integrated.
+					t.Run(`unspecified`, func(t *ftt.Test) {
+						req.Requests[0].TestResult = nil
+						_, err := recorder.BatchCreateTestResults(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`requests[0]: test_result: unspecified`))
+					})
 					t.Run("test ID using invalid scheme", func(t *ftt.Test) {
 						req.Requests[0].TestResult.TestIdStructured.ModuleScheme = "undefined"
 						_, err := recorder.BatchCreateTestResults(ctx, req)
@@ -285,7 +291,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 						req.Requests[0].Parent = wuIDNoModule.Name()
 						_, err := recorder.BatchCreateTestResults(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
-						assert.Loosely(t, err, should.ErrLike("equests[0]: test_result: to upload test results, you must set the module_id on the parent work unit first"))
+						assert.Loosely(t, err, should.ErrLike("equests[0]: test_result: to upload test results or test result artifacts, you must set the module_id on the parent work unit first"))
 					})
 					t.Run("legacy test ID set and work unit does not have module ID", func(t *ftt.Test) {
 						wuIDNoModule := workunits.ID{
@@ -296,7 +302,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 						req.Requests[1].Parent = wuIDNoModule.Name()
 						_, err := recorder.BatchCreateTestResults(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
-						assert.Loosely(t, err, should.ErrLike("requests[1]: test_result: to upload test results, you must set the module_id on the parent work unit first"))
+						assert.Loosely(t, err, should.ErrLike("requests[1]: test_result: to upload test results or test result artifacts, you must set the module_id on the parent work unit first"))
 					})
 				})
 			})
@@ -331,7 +337,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid-token"))
 				_, err := recorder.BatchCreateTestResults(ctx, req)
 				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-				assert.That(t, err, should.ErrLike(`equests[1]: parent: work unit "rootInvocations/root-inv/workUnits/work-unit-2" requires a different update token to request[0]'s "rootInvocations/root-inv/workUnits/work-unit-1", but this RPC only accepts one update token`))
+				assert.That(t, err, should.ErrLike(`requests[1]: parent: work unit "rootInvocations/root-inv/workUnits/work-unit-2" requires a different update token to request[0]'s "rootInvocations/root-inv/workUnits/work-unit-1", but this RPC only accepts one update token`))
 			})
 			t.Run("invalid update token", func(t *ftt.Test) {
 				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid-token"))
@@ -351,13 +357,13 @@ func TestBatchCreateTestResults(t *testing.T) {
 				for _, r := range req.Requests {
 					r.Parent = ""
 				}
-				t.Run("invalid update token, request uses invocations", func(t *ftt.Test) {
+				t.Run("invalid update token", func(t *ftt.Test) {
 					ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid-token"))
 					_, err := recorder.BatchCreateTestResults(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 					assert.That(t, err, should.ErrLike(`invalid update token`))
 				})
-				t.Run("missing update token, request uses invocations", func(t *ftt.Test) {
+				t.Run("missing update token", func(t *ftt.Test) {
 					ctx := metadata.NewIncomingContext(ctx, metadata.MD{})
 					_, err := recorder.BatchCreateTestResults(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.Unauthenticated))

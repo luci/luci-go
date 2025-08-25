@@ -29,7 +29,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
-
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -42,7 +41,7 @@ import (
 // The max specified the maximum number of results to return,
 // if the max <= 0 it will return all lines.
 func ToLogLines(artifactID string, contentType string, content []byte, year, maxLines, maxBytes int) ([]*pb.ArtifactLine, error) {
-	isSupported := isLogSupportedArtifact(artifactID, contentType)
+	isSupported := IsLogSupportedArtifact(artifactID, contentType)
 
 	if !isSupported {
 		return nil, errors.Fmt("unsupported file type with artifact id: %s and content type: %s", artifactID, contentType)
@@ -90,7 +89,7 @@ var SupportedContentTypes = map[string]bool{
 	"application/x-gzip":       true,
 }
 
-func isLogSupportedArtifact(artifactID string, contentType string) bool {
+func IsLogSupportedArtifact(artifactID string, contentType string) bool {
 	return isSupportedContentType(contentType) && !isNonTextFile(artifactID)
 }
 
