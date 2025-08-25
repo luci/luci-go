@@ -21,6 +21,8 @@ import { ColumnsManageDropDown } from './column_manage_dropdown';
 interface ColumnsButtonProps {
   isLoading?: boolean;
   resetDefaultColumns?: () => void;
+  temporaryColumns?: string[];
+  addUserVisibleColumn?: (column: string) => void;
 }
 
 /**
@@ -29,6 +31,8 @@ interface ColumnsButtonProps {
 export function ColumnsButton({
   isLoading,
   resetDefaultColumns,
+  temporaryColumns,
+  addUserVisibleColumn,
 }: ColumnsButtonProps) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
@@ -46,6 +50,8 @@ export function ColumnsButton({
         anchorEl={anchorEl}
         setAnchorEL={setAnchorEL}
         onReset={resetDefaultColumns}
+        temporaryColumns={temporaryColumns}
+        addUserVisibleColumn={addUserVisibleColumn}
       />
     </>
   );

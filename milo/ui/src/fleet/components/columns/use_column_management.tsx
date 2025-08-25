@@ -23,6 +23,7 @@ import { orderColumns } from '../device_table/columns';
 import { useParamsAndLocalStorage } from './use_params_and_local_storage';
 
 const highlightedColumnClassName = 'column-highlight';
+const temporaryColumnClassName = `${highlightedColumnClassName} temporary-column-highlight`;
 
 /**
  * Styling object for columns that are highlighted and temporarily visible due to an active filter.
@@ -38,6 +39,13 @@ const columnHighlightSx = {
     {
       backgroundColor: colors.blue[100],
     },
+  [`& .MuiDataGrid-columnHeader.temporary-column-highlight`]: {
+    '& .MuiDataGrid-columnHeaderTitle::after': {
+      // Add an asterisk to temporary columns.
+      content: '"*"',
+      marginLeft: '6px',
+    },
+  },
 };
 
 export interface ColumnManagementConfig {
@@ -71,39 +79,33 @@ export function useColumnManagement({
     [...defaultColumns],
   );
 
+  // Columns not visible initially but filtered on.
   const temporaryColumnIds = useMemo(
     () =>
       highlightedColumnIds.filter((col) => !userVisibleColumns.includes(col)),
     [highlightedColumnIds, userVisibleColumns],
   );
 
-  // The final set of columns to be displayed, combining user-selected and temporary columns.
-  const visibleColumns = useMemo(
-    () => [...userVisibleColumns, ...temporaryColumnIds],
-    [userVisibleColumns, temporaryColumnIds],
-  );
-
   // The visibility model required by the MUI DataGrid.
   const columnVisibilityModel = useMemo(() => {
     const model: GridColumnVisibilityModel = {};
     allColumns.forEach(
-      (col) => (model[col.field] = visibleColumns.includes(col.field)),
+      (col) =>
+        (model[col.field] =
+          temporaryColumnIds.includes(col.field) ||
+          userVisibleColumns.includes(col.field)),
     );
     return model;
-  }, [allColumns, visibleColumns]);
+  }, [allColumns, userVisibleColumns, temporaryColumnIds]);
 
   // Callback for when the user changes column visibility in the UI.
-  // It ensures that temporary columns cannot be hidden by the user.
   const onColumnVisibilityModelChange = (
     newModel: GridColumnVisibilityModel,
   ) => {
-    const newVisible = Object.keys(newModel).filter((field) => {
+    const newVisible = Object.keys(newModel).filter((field) =>
       // Prevent temporary columns from being saved to the user's preferences.
-      if (temporaryColumnIds.includes(field)) {
-        return false;
-      }
-      return newModel[field];
-    });
+      temporaryColumnIds.includes(field) ? false : newModel[field],
+    );
     setUserVisibleColumns(newVisible);
   };
 
@@ -111,10 +113,17 @@ export function useColumnManagement({
   // It adds special properties (e.g., class names) to temporary columns.
   const columns = useMemo(() => {
     const styledColumns = allColumns.map((colDef) => {
-      if (highlightedColumnIds.includes(colDef.field)) {
+      if (temporaryColumnIds.includes(colDef.field)) {
         return {
           ...colDef,
           hideable: false,
+          headerClassName: temporaryColumnClassName,
+          cellClassName: temporaryColumnClassName,
+        };
+      }
+      if (highlightedColumnIds.includes(colDef.field)) {
+        return {
+          ...colDef,
           headerClassName: highlightedColumnClassName,
           cellClassName: highlightedColumnClassName,
         };
@@ -123,15 +132,28 @@ export function useColumnManagement({
     });
     return preserveOrder
       ? styledColumns
-      : orderColumns(styledColumns, visibleColumns);
-  }, [allColumns, visibleColumns, highlightedColumnIds, preserveOrder]);
+      : orderColumns(styledColumns, userVisibleColumns, temporaryColumnIds);
+  }, [
+    allColumns,
+    highlightedColumnIds,
+    userVisibleColumns,
+    temporaryColumnIds,
+    preserveOrder,
+  ]);
 
-  const resetDefaultColumns = () => setUserVisibleColumns([...defaultColumns]);
+  // Callback to explicitly add a temporary column to user defaults.
+  const addUserVisibleColumn = (column: string) => {
+    if (!userVisibleColumns.includes(column)) {
+      setUserVisibleColumns([...userVisibleColumns, column]);
+    }
+  };
   return {
     columns,
     columnVisibilityModel,
     onColumnVisibilityModelChange,
-    resetDefaultColumns,
+    addUserVisibleColumn,
+    resetDefaultColumns: () => setUserVisibleColumns([...defaultColumns]),
+    temporaryColumns: temporaryColumnIds,
     temporaryColumnSx: columnHighlightSx,
   };
 }

@@ -29,6 +29,8 @@ export interface FleetToolbarProps {
   selectedRows: GridRowModel[];
   isLoadingColumns?: boolean;
   resetDefaultColumns?: () => void;
+  temporaryColumns?: string[];
+  addUserVisibleColumn?: (column: string) => void;
 }
 
 /**
@@ -38,6 +40,8 @@ export function FleetToolbar({
   selectedRows = [],
   isLoadingColumns,
   resetDefaultColumns,
+  temporaryColumns,
+  addUserVisibleColumn,
 }: FleetToolbarProps) {
   const selectedDuts = selectedRows.map((row) => ({
     name: `${row.dut_name}`,
@@ -65,6 +69,8 @@ export function FleetToolbar({
       <ColumnsButton
         isLoading={isLoadingColumns}
         resetDefaultColumns={resetDefaultColumns}
+        temporaryColumns={temporaryColumns}
+        addUserVisibleColumn={addUserVisibleColumn}
       />
     </GridToolbarContainer>
   );

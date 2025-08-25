@@ -136,8 +136,12 @@ describe('useColumnManagement', () => {
     const tempColumn = result.current.columns.find((c) => c.field === 'pool');
     expect(tempColumn).toBeDefined();
     expect(tempColumn?.hideable).toBe(false);
-    expect(tempColumn?.headerClassName).toBe('column-highlight');
-    expect(tempColumn?.cellClassName).toBe('column-highlight');
+    expect(tempColumn?.headerClassName).toBe(
+      'column-highlight temporary-column-highlight',
+    );
+    expect(tempColumn?.cellClassName).toBe(
+      'column-highlight temporary-column-highlight',
+    );
     expect(result.current.columns.map((c) => c.field)).toEqual([
       'name',
       'os',
@@ -163,7 +167,7 @@ describe('useColumnManagement', () => {
       (c) => c.field === 'os',
     );
     expect(highlightedColumn).toBeDefined();
-    expect(highlightedColumn?.hideable).toBe(false);
+    expect(highlightedColumn?.hideable).toBe(undefined);
     expect(highlightedColumn?.headerClassName).toBe('column-highlight');
     expect(highlightedColumn?.cellClassName).toBe('column-highlight');
     expect(result.current.columns.map((c) => c.field)).toEqual([

@@ -32,21 +32,25 @@ const sortingComparator = (
   a: string,
   b: string,
   visibleColumnIds: string[],
+  temporaryColumnIds: string[],
 ) => {
-  const aIsVisible = visibleColumnIds.includes(a);
-  const bIsVisible = visibleColumnIds.includes(b);
+  const aIsVisible = visibleColumnIds.includes(a) ? 1 : 0;
+  const bIsVisible = visibleColumnIds.includes(b) ? 1 : 0;
+  if (aIsVisible !== bIsVisible) {
+    return bIsVisible - aIsVisible;
+  }
+
+  // Both visible or neither visible, check temporary status
+  const aIsTemporary = temporaryColumnIds.includes(a) ? 1 : 0;
+  const bIsTemporary = temporaryColumnIds.includes(b) ? 1 : 0;
+  if (aIsTemporary !== bIsTemporary) {
+    return bIsTemporary - aIsTemporary;
+  }
 
   const aCommonIndex = COMMON_COLUMNS.findIndex((c) => c === a);
   const bCommonIndex = COMMON_COLUMNS.findIndex((c) => c === b);
 
-  if (aIsVisible && !bIsVisible) {
-    return -1; // a comes before b (a is visible)
-  }
-  if (!aIsVisible && bIsVisible) {
-    return 1; // b comes before a (b is visible)
-  }
-
-  // Both visible or neither visible, then check common columns
+  // Fall back to common columns
   if (aCommonIndex !== -1 && bCommonIndex !== -1) {
     return aCommonIndex < bCommonIndex ? -1 : 1; // Sort as in COMMON_COLUMNS
   }
@@ -79,15 +83,16 @@ export const getColumns = (columnIds: string[]): GridColDef[] => {
 export const orderColumns = (
   columnDefs: GridColDef[],
   visibleColumnIds: string[],
+  temporaryColumnIds: string[] = [],
 ): GridColDef[] => {
   if (columnDefs.length === 0) {
     // If the columns are still not loaded show the visible ones.
     return getColumns(visibleColumnIds).sort((a, b) =>
-      sortingComparator(a.field, b.field, []),
+      sortingComparator(a.field, b.field, [], temporaryColumnIds),
     );
   }
 
   return columnDefs.sort((a, b) =>
-    sortingComparator(a.field, b.field, visibleColumnIds),
+    sortingComparator(a.field, b.field, visibleColumnIds, temporaryColumnIds),
   );
 };

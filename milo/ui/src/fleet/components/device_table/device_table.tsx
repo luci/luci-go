@@ -132,10 +132,12 @@ export function DeviceTable({
 
   const {
     columns,
+    temporaryColumns,
     columnVisibilityModel,
     onColumnVisibilityModelChange,
     resetDefaultColumns,
     temporaryColumnSx,
+    addUserVisibleColumn,
   } = useColumnManagement({
     allColumns: getColumns(columnIds),
     highlightedColumnIds: getFilteredColumnIds(),
@@ -186,6 +188,8 @@ export function DeviceTable({
             selectedRows: computeSelectedRows(rowSelectionModel, rows),
             isLoadingColumns: isLoadingColumns,
             resetDefaultColumns: resetDefaultColumns,
+            temporaryColumns: temporaryColumns,
+            addUserVisibleColumn: addUserVisibleColumn,
           },
         }}
         disableRowSelectionOnClick

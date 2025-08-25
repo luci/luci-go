@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  GridColDef,
   gridColumnDefinitionsSelector,
   gridColumnVisibilityModelSelector,
   useGridApiContext,
@@ -30,6 +31,8 @@ interface ColumnsButtonProps {
   anchorEl: HTMLElement | null;
   setAnchorEL: (newAnchorEl: HTMLElement | null) => void;
   onReset?: () => void;
+  temporaryColumns?: string[];
+  addUserVisibleColumn?: (column: string) => void;
 }
 
 /**
@@ -40,6 +43,8 @@ export function ColumnsManageDropDown({
   anchorEl,
   setAnchorEL,
   onReset,
+  temporaryColumns,
+  addUserVisibleColumn,
 }: ColumnsButtonProps) {
   const apiRef = useGridApiContext();
   const columnVisibilityModel = gridColumnVisibilityModelSelector(apiRef);
@@ -49,8 +54,18 @@ export function ColumnsManageDropDown({
     if (!columnVisibilityModel) {
       return;
     }
+    if (temporaryColumns?.includes(field)) {
+      // Toggling a temporary column makes it permanent.
+      addUserVisibleColumn?.(field);
+      return;
+    }
 
     apiRef.current.setColumnVisibility(field, !columnVisibilityModel[field]);
+  };
+
+  const renderLabel = (col: GridColDef) => {
+    const label = col.headerName || col.field;
+    return temporaryColumns?.includes(col.field) ? `${label} *` : label;
   };
 
   const columns = columnDefinitions
@@ -58,14 +73,14 @@ export function ColumnsManageDropDown({
     .map(
       (d) =>
         ({
-          label: d.headerName ?? d.field,
+          label: renderLabel(d),
           value: d.field,
         }) as OptionValue,
     );
 
   const selectedColumns = columnVisibilityModel
     ? Object.keys(columnVisibilityModel).filter(
-        (key) => columnVisibilityModel[key],
+        (key) => columnVisibilityModel[key] && !temporaryColumns?.includes(key),
       )
     : [];
 
