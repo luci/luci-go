@@ -16,6 +16,7 @@ package recorder
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -878,6 +879,7 @@ func TestCreateRootInvocation(t *testing.T) {
 				proto.Merge(expectedWU, &pb.WorkUnit{
 					CreateTime:  timestamppb.New(commitTime),
 					LastUpdated: timestamppb.New(commitTime),
+					Etag:        fmt.Sprintf(`W/"+f/%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
 				})
 				assert.That(t, res.RootWorkUnit, should.Match(expectedWU))
 
@@ -929,6 +931,7 @@ func TestCreateRootInvocation(t *testing.T) {
 					CreateTime:        timestamppb.New(commitTime),
 					LastUpdated:       timestamppb.New(commitTime),
 					FinalizeStartTime: timestamppb.New(commitTime),
+					Etag:              fmt.Sprintf(`W/"+f/%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
 				})
 				assert.That(t, res.RootWorkUnit, should.Match(expectedWU))
 

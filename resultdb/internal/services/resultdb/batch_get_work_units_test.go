@@ -116,6 +116,7 @@ func TestBatchGetWorkUnits(t *testing.T) {
 				Properties:       wu1.Properties,
 				Instructions:     wu1.Instructions,
 				IsMasked:         false,
+				Etag:             `W/"/2025-04-26T01:02:03.000004Z"`,
 			}
 			expectedWu2 := &pb.WorkUnit{
 				Name:             wu2.ID.Name(),
@@ -132,6 +133,7 @@ func TestBatchGetWorkUnits(t *testing.T) {
 				Properties:       wu2.Properties,
 				Instructions:     wu2.Instructions,
 				IsMasked:         false,
+				Etag:             `W/"/2025-04-26T01:02:03.000004Z"`,
 			}
 
 			t.Run("full access", func(t *ftt.Test) {
@@ -147,6 +149,8 @@ func TestBatchGetWorkUnits(t *testing.T) {
 					req.View = pb.WorkUnitView_WORK_UNIT_VIEW_FULL
 					expectedWu1.ExtendedProperties = wu1.ExtendedProperties
 					expectedWu2.ExtendedProperties = wu2.ExtendedProperties
+					expectedWu1.Etag = `W/"+f/2025-04-26T01:02:03.000004Z"`
+					expectedWu2.Etag = `W/"+f/2025-04-26T01:02:03.000004Z"`
 
 					rsp, err := srv.BatchGetWorkUnits(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
@@ -157,6 +161,8 @@ func TestBatchGetWorkUnits(t *testing.T) {
 				authState.IdentityPermissions = []authtest.RealmPermission{
 					{Realm: rootRealm, Permission: rdbperms.PermListLimitedWorkUnits},
 				}
+				expectedWu1.Etag = `W/"+l/2025-04-26T01:02:03.000004Z"`
+				expectedWu2.Etag = `W/"+l/2025-04-26T01:02:03.000004Z"`
 
 				expectedWu1.ModuleId.ModuleVariant = nil
 				expectedWu1.Tags = nil
@@ -178,6 +184,8 @@ func TestBatchGetWorkUnits(t *testing.T) {
 				})
 				t.Run("full view", func(t *ftt.Test) {
 					req.View = pb.WorkUnitView_WORK_UNIT_VIEW_FULL
+					expectedWu1.Etag = `W/"+l+f/2025-04-26T01:02:03.000004Z"`
+					expectedWu2.Etag = `W/"+l+f/2025-04-26T01:02:03.000004Z"`
 
 					// No additional fields should be exposed because we have limited access.
 					rsp, err := srv.BatchGetWorkUnits(ctx, req)
@@ -198,6 +206,9 @@ func TestBatchGetWorkUnits(t *testing.T) {
 				expectedWu2.IsMasked = true
 
 				t.Run("default view", func(t *ftt.Test) {
+					expectedWu1.Etag = `W/"/2025-04-26T01:02:03.000004Z"`
+					expectedWu2.Etag = `W/"+l/2025-04-26T01:02:03.000004Z"`
+
 					rsp, err := srv.BatchGetWorkUnits(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
 					assert.That(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWu1, expectedWu2}))
@@ -205,6 +216,8 @@ func TestBatchGetWorkUnits(t *testing.T) {
 				t.Run("full view", func(t *ftt.Test) {
 					req.View = pb.WorkUnitView_WORK_UNIT_VIEW_FULL
 					expectedWu1.ExtendedProperties = wu1.ExtendedProperties
+					expectedWu1.Etag = `W/"+f/2025-04-26T01:02:03.000004Z"`
+					expectedWu2.Etag = `W/"+l+f/2025-04-26T01:02:03.000004Z"`
 
 					rsp, err := srv.BatchGetWorkUnits(ctx, req)
 					assert.Loosely(t, err, should.BeNil)

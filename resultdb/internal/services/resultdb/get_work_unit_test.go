@@ -107,6 +107,7 @@ func TestGetWorkUnit(t *testing.T) {
 				Properties:       rootWu.Properties,
 				Instructions:     rootWu.Instructions,
 				IsMasked:         false,
+				Etag:             `W/"/2025-04-26T01:02:03.000004Z"`,
 			}
 
 			t.Run("full access", func(t *ftt.Test) {
@@ -128,6 +129,7 @@ func TestGetWorkUnit(t *testing.T) {
 				t.Run("full view", func(t *ftt.Test) {
 					req.View = pb.WorkUnitView_WORK_UNIT_VIEW_FULL
 					expectedRsp.ExtendedProperties = rootWu.ExtendedProperties
+					expectedRsp.Etag = `W/"+f/2025-04-26T01:02:03.000004Z"`
 
 					rsp, err := srv.GetWorkUnit(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
@@ -138,6 +140,7 @@ func TestGetWorkUnit(t *testing.T) {
 						{Realm: rootRealm, Permission: rdbperms.PermListLimitedWorkUnits},
 						{Realm: wuRealm, Permission: rdbperms.PermGetWorkUnit},
 					}
+
 					rsp, err := srv.GetWorkUnit(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
 					assert.That(t, rsp, should.Match(expectedRsp))
@@ -147,6 +150,7 @@ func TestGetWorkUnit(t *testing.T) {
 				authState.IdentityPermissions = []authtest.RealmPermission{
 					{Realm: rootRealm, Permission: rdbperms.PermListLimitedWorkUnits},
 				}
+				expectedRsp.Etag = `W/"+l/2025-04-26T01:02:03.000004Z"`
 
 				expectedRsp.ModuleId.ModuleVariant = nil
 				expectedRsp.Tags = nil
@@ -169,6 +173,7 @@ func TestGetWorkUnit(t *testing.T) {
 				})
 				t.Run("full view", func(t *ftt.Test) {
 					req.View = pb.WorkUnitView_WORK_UNIT_VIEW_FULL
+					expectedRsp.Etag = `W/"+l+f/2025-04-26T01:02:03.000004Z"`
 
 					rsp, err := srv.GetWorkUnit(ctx, req)
 					assert.Loosely(t, err, should.BeNil)

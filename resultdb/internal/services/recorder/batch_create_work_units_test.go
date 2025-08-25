@@ -15,8 +15,10 @@
 package recorder
 
 import (
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -695,10 +697,13 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			expectedWU1.CreateTime = timestamppb.New(createTime)
 			expectedWU1.LastUpdated = timestamppb.New(createTime)
 			expectedWU1.FinalizeStartTime = timestamppb.New(createTime)
+			expectedWU1.Etag = fmt.Sprintf(`W/"+f/%s"`, createTime.UTC().Format(time.RFC3339Nano))
 			expectedWU11.CreateTime = timestamppb.New(createTime)
 			expectedWU11.LastUpdated = timestamppb.New(createTime)
+			expectedWU11.Etag = fmt.Sprintf(`W/"+f/%s"`, createTime.UTC().Format(time.RFC3339Nano))
 			expectedWU2.CreateTime = timestamppb.New(createTime)
 			expectedWU2.LastUpdated = timestamppb.New(createTime)
+			expectedWU2.Etag = fmt.Sprintf(`W/"+f/%s"`, createTime.UTC().Format(time.RFC3339Nano))
 			assert.That(t, res, should.Match(
 				&pb.BatchCreateWorkUnitsResponse{
 					WorkUnits: []*pb.WorkUnit{expectedWU1, expectedWU11, expectedWU2},

@@ -19,9 +19,12 @@ package masking
 
 import (
 	"fmt"
+	"regexp"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -47,6 +50,7 @@ func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, v
 		Deadline:         pbutil.MustTimestampProto(row.Deadline),
 		ProducerResource: row.ProducerResource,
 		IsMasked:         true,
+		Etag:             WorkUnitETag(row, accessLevel, view),
 	}
 	result.ChildWorkUnits = make([]string, 0, len(row.ChildWorkUnits))
 	for _, child := range row.ChildWorkUnits {
@@ -94,4 +98,45 @@ func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, v
 		result.FinalizeTime = pbutil.MustTimestampProto(row.FinalizeTime.Time)
 	}
 	return result
+}
+
+// WorkUnitETag returns the HTTP ETag for the given work unit.
+func WorkUnitETag(wu *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, view pb.WorkUnitView) string {
+	accessLevelFilter := ""
+	switch accessLevel {
+	case permissions.LimitedAccess:
+		accessLevelFilter = "+l"
+	case permissions.FullAccess:
+		// Default case, keep accessLevelFilter empty.
+	default:
+		panic("invariant violated: invalid access level for etag generation")
+	}
+
+	viewFilter := ""
+	switch view {
+	case pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, pb.WorkUnitView_WORK_UNIT_VIEW_UNSPECIFIED:
+		// Default case, keep viewFilter empty.
+	case pb.WorkUnitView_WORK_UNIT_VIEW_FULL:
+		viewFilter = "+f"
+	default:
+		panic("invariant violated: invalid view for etag generation")
+	}
+
+	// The ETag must be a function of the resource representation according to (AIP-154).
+	// The representation of a work unit depends on the access level and view,
+	// so we include them in the ETag.
+	return fmt.Sprintf(`W/"%s%s/%s"`, accessLevelFilter, viewFilter, wu.LastUpdated.UTC().Format(time.RFC3339Nano))
+}
+
+// etagRegexp extracts the work unit's last updated timestamp from a work unit ETag.
+var etagRegexp = regexp.MustCompile(`^W/"(?:\+[lf])*/(.*)"$`)
+
+// IsWorkUnitETagMatch determines if the Etag is consistent with the specified
+// work unit version.
+func IsWorkUnitETagMatch(wu *workunits.WorkUnitRow, etag string) (bool, error) {
+	m := etagRegexp.FindStringSubmatch(etag)
+	if len(m) < 2 {
+		return false, errors.Fmt("malformated etag")
+	}
+	return m[1] == wu.LastUpdated.UTC().Format(time.RFC3339Nano), nil
 }

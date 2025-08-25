@@ -29,6 +29,7 @@ option java_multiple_files = true;
 // A process step that contributes results to a root invocation.
 // Work units contain test results, artifacts and exonerations. Work units may
 // also contain other work units and (legacy) invocations.
+// Next ID: 22.
 message WorkUnit {
   // The resource name of this work unit.
   // Format: `rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}`
@@ -274,4 +275,10 @@ message WorkUnit {
   //
   // Output only.
   bool is_masked = 18 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // This checksum is computed by the server based on the value of other
+  // fields, and may be sent on update requests to ensure the client
+  // has an up-to-date value before proceeding.
+  // See also https://google.aip.dev/154.
+  string etag = 21;
 }

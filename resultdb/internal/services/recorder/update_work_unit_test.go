@@ -373,6 +373,37 @@ func TestUpdateWorkUnit(t *testing.T) {
 			})
 		})
 
+		t.Run("etag", func(t *ftt.Test) {
+			t.Run("bad etag", func(t *ftt.Test) {
+				req.WorkUnit.Etag = "invalid"
+
+				_, err := recorder.UpdateWorkUnit(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike(`work_unit: etag: malformated etag`))
+			})
+
+			t.Run("unmatch etag", func(t *ftt.Test) {
+				// Work unit updated.
+				req.UpdateMask.Paths = []string{"tags"}
+				req.WorkUnit.Tags = []*pb.StringPair{{Key: "nk", Value: "nv"}}
+				_, err := recorder.UpdateWorkUnit(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+
+				// Request sent with the old etag.
+				req.WorkUnit.Etag = expectedWU.Etag
+				_, err = recorder.UpdateWorkUnit(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.Aborted))
+				assert.That(t, err, should.ErrLike(`the work unit was modified since it was last read; the update was not applied`))
+			})
+
+			t.Run("match etag", func(t *ftt.Test) {
+				req.WorkUnit.Etag = masking.WorkUnitETag(expectedWURow, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC)
+
+				_, err = recorder.UpdateWorkUnit(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+			})
+		})
+
 		t.Run("no work unit", func(t *ftt.Test) {
 			nonexistWuID := workunits.ID{
 				RootInvocationID: wuID.RootInvocationID,

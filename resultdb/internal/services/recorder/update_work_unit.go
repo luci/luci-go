@@ -19,6 +19,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -63,6 +64,21 @@ func (s *recorderServer) UpdateWorkUnit(ctx context.Context, in *pb.UpdateWorkUn
 		if err != nil {
 			return err
 		}
+
+		if in.WorkUnit.Etag != "" {
+			match, err := masking.IsWorkUnitETagMatch(curWu, in.WorkUnit.Etag)
+			if err != nil {
+				return appstatus.BadRequest(errors.Fmt("work_unit: etag: %w", err))
+			}
+			if !match {
+				// Attach a codes.Aborted appstatus to a vanilla error to avoid
+				// ReadWriteTransaction interpreting this case for a scenario
+				// in which it should retry the transaction.
+				err := errors.New("etag mismatch")
+				return appstatus.Attach(err, status.New(codes.Aborted, "the work unit was modified since it was last read; the update was not applied"))
+			}
+		}
+
 		ret = masking.WorkUnit(curWu, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL)
 
 		updateMask, err := mask.FromFieldMask(in.UpdateMask, in.WorkUnit, mask.ForUpdate())
