@@ -675,6 +675,10 @@ export interface CountRepairMetricsResponse {
   readonly offlineHosts: number;
   readonly totalDevices: number;
   readonly offlineDevices: number;
+  readonly totalRepairGroup: number;
+  readonly breachedRepairGroup: number;
+  readonly watchRepairGroup: number;
+  readonly niceRepairGroup: number;
 }
 
 export interface GetRepairMetricsDimensionsRequest {
@@ -5584,7 +5588,16 @@ export const CountRepairMetricsRequest: MessageFns<CountRepairMetricsRequest> = 
 };
 
 function createBaseCountRepairMetricsResponse(): CountRepairMetricsResponse {
-  return { totalHosts: 0, offlineHosts: 0, totalDevices: 0, offlineDevices: 0 };
+  return {
+    totalHosts: 0,
+    offlineHosts: 0,
+    totalDevices: 0,
+    offlineDevices: 0,
+    totalRepairGroup: 0,
+    breachedRepairGroup: 0,
+    watchRepairGroup: 0,
+    niceRepairGroup: 0,
+  };
 }
 
 export const CountRepairMetricsResponse: MessageFns<CountRepairMetricsResponse> = {
@@ -5600,6 +5613,18 @@ export const CountRepairMetricsResponse: MessageFns<CountRepairMetricsResponse> 
     }
     if (message.offlineDevices !== 0) {
       writer.uint32(32).int32(message.offlineDevices);
+    }
+    if (message.totalRepairGroup !== 0) {
+      writer.uint32(40).int32(message.totalRepairGroup);
+    }
+    if (message.breachedRepairGroup !== 0) {
+      writer.uint32(48).int32(message.breachedRepairGroup);
+    }
+    if (message.watchRepairGroup !== 0) {
+      writer.uint32(56).int32(message.watchRepairGroup);
+    }
+    if (message.niceRepairGroup !== 0) {
+      writer.uint32(64).int32(message.niceRepairGroup);
     }
     return writer;
   },
@@ -5643,6 +5668,38 @@ export const CountRepairMetricsResponse: MessageFns<CountRepairMetricsResponse> 
           message.offlineDevices = reader.int32();
           continue;
         }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.totalRepairGroup = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.breachedRepairGroup = reader.int32();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.watchRepairGroup = reader.int32();
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.niceRepairGroup = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5658,6 +5715,10 @@ export const CountRepairMetricsResponse: MessageFns<CountRepairMetricsResponse> 
       offlineHosts: isSet(object.offlineHosts) ? globalThis.Number(object.offlineHosts) : 0,
       totalDevices: isSet(object.totalDevices) ? globalThis.Number(object.totalDevices) : 0,
       offlineDevices: isSet(object.offlineDevices) ? globalThis.Number(object.offlineDevices) : 0,
+      totalRepairGroup: isSet(object.totalRepairGroup) ? globalThis.Number(object.totalRepairGroup) : 0,
+      breachedRepairGroup: isSet(object.breachedRepairGroup) ? globalThis.Number(object.breachedRepairGroup) : 0,
+      watchRepairGroup: isSet(object.watchRepairGroup) ? globalThis.Number(object.watchRepairGroup) : 0,
+      niceRepairGroup: isSet(object.niceRepairGroup) ? globalThis.Number(object.niceRepairGroup) : 0,
     };
   },
 
@@ -5675,6 +5736,18 @@ export const CountRepairMetricsResponse: MessageFns<CountRepairMetricsResponse> 
     if (message.offlineDevices !== 0) {
       obj.offlineDevices = Math.round(message.offlineDevices);
     }
+    if (message.totalRepairGroup !== 0) {
+      obj.totalRepairGroup = Math.round(message.totalRepairGroup);
+    }
+    if (message.breachedRepairGroup !== 0) {
+      obj.breachedRepairGroup = Math.round(message.breachedRepairGroup);
+    }
+    if (message.watchRepairGroup !== 0) {
+      obj.watchRepairGroup = Math.round(message.watchRepairGroup);
+    }
+    if (message.niceRepairGroup !== 0) {
+      obj.niceRepairGroup = Math.round(message.niceRepairGroup);
+    }
     return obj;
   },
 
@@ -5687,6 +5760,10 @@ export const CountRepairMetricsResponse: MessageFns<CountRepairMetricsResponse> 
     message.offlineHosts = object.offlineHosts ?? 0;
     message.totalDevices = object.totalDevices ?? 0;
     message.offlineDevices = object.offlineDevices ?? 0;
+    message.totalRepairGroup = object.totalRepairGroup ?? 0;
+    message.breachedRepairGroup = object.breachedRepairGroup ?? 0;
+    message.watchRepairGroup = object.watchRepairGroup ?? 0;
+    message.niceRepairGroup = object.niceRepairGroup ?? 0;
     return message;
   },
 };

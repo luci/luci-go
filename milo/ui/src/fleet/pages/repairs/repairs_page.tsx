@@ -490,7 +490,6 @@ function Metrics({
       <div
         css={{
           display: 'flex',
-          maxWidth: 800,
         }}
       >
         <div
@@ -533,6 +532,9 @@ function Metrics({
             display: 'flex',
             flexDirection: 'column',
             flexGrow: 1,
+            borderRight: `1px solid ${colors.grey[300]}`,
+            marginRight: 15,
+            paddingRight: 15,
           }}
         >
           <Typography variant="subhead1">Devices</Typography>
@@ -555,6 +557,59 @@ function Metrics({
               value={countQuery.data?.offlineDevices}
               total={countQuery.data?.totalDevices}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
+              loading={countQuery.isPending}
+            />
+            {/* needed to left align content while keeping the correct right spacing*/}
+            <div />
+          </div>
+        </div>
+        <div
+          css={{
+            display: 'flex',
+            flexDirection: 'column',
+            flexGrow: 2,
+          }}
+        >
+          <div css={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Typography variant="subhead1">Repair groups</Typography>
+            <InfoTooltip>
+              A repair group is defined by aggregating lab name + host group +
+              run target and corresponds to one of the rows of the table below
+            </InfoTooltip>
+          </div>
+          <div
+            css={{
+              display: 'flex',
+              marginTop: 5,
+              marginLeft: 8,
+              flexWrap: 'wrap',
+              justifyContent: 'space-between',
+            }}
+          >
+            <SingleMetric
+              name="Total"
+              value={countQuery.data?.totalRepairGroup}
+              loading={countQuery.isPending}
+            />
+            <SingleMetric
+              name="Breached"
+              value={countQuery.data?.breachedRepairGroup}
+              total={countQuery.data?.totalRepairGroup}
+              Icon={getPriorityIcon(RepairMetric_Priority.BREACHED)}
+              loading={countQuery.isPending}
+            />
+            <SingleMetric
+              name="Watch"
+              value={countQuery.data?.watchRepairGroup}
+              total={countQuery.data?.totalRepairGroup}
+              Icon={getPriorityIcon(RepairMetric_Priority.WATCH)}
+              loading={countQuery.isPending}
+            />
+            <SingleMetric
+              name="Nice"
+              value={countQuery.data?.niceRepairGroup}
+              total={countQuery.data?.totalRepairGroup}
+              Icon={getPriorityIcon(RepairMetric_Priority.NICE)}
               loading={countQuery.isPending}
             />
           </div>
