@@ -60,6 +60,7 @@ const MaxShardContentSize = bq.RowMaxBytes - 10*1024
 const LookbackWindow = 1024
 
 // Represents an artifact creation request.
+// This is used both by BatchCreateArtifacts and the (single) streaming artifact upload.
 type artifactCreationRequest struct {
 	// the work unit ID in which to create the artifact, if any.
 	// Either this or invocationID will be set to a non-emtpy value, but not both.
@@ -78,7 +79,9 @@ type artifactCreationRequest struct {
 	rbeCASHash string
 	// size is the size of the artifact data in bytes. In the case of a GCS artifact it is user-specified, optional and not verified.
 	size int64
-	// data is the artifact contents data that will be stored in RBE-CAS.  If gcsURI is provided, this must be empty.
+	// data is the artifact contents data that will be stored in RBE-CAS. If gcsURI or rbeURI is provided, this must be empty.
+	// This field is only set when used from BatchCreateArtifacts; in the single artifact creation endpoint the
+	// artifact contents is streamed.
 	data []byte
 	// gcsURI is the location of the artifact content if it is stored in GCS.
 	// If this is provided, data must be empty.

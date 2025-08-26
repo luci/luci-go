@@ -16,9 +16,6 @@ package recorder
 
 import (
 	"context"
-	"strings"
-
-	"go.chromium.org/luci/grpc/appstatus"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -33,17 +30,8 @@ func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTest
 		RequestId:  in.RequestId,
 	})
 	if err != nil {
-		st, ok := appstatus.Get(err)
-
-		// Attempt to fix up any references to requests[0]: in the batch response.
-		if ok {
-			msg := st.Message()
-			if strings.HasPrefix(msg, "requests[0]: ") || strings.HasPrefix(msg, "bad request: requests[0]: ") {
-				msg = strings.Replace(msg, "requests[0]: ", "", 1)
-			}
-			return nil, appstatus.Error(st.Code(), msg)
-		}
-		return nil, err
+		// Remove any references to "requests[0]: ", this is a single create RPC not a batch RPC.
+		return nil, removeRequestNumberFromAppStatusError(err)
 	}
 	return res.TestResults[0], nil
 }

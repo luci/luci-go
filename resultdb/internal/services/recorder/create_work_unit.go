@@ -45,17 +45,8 @@ func (s *recorderServer) CreateWorkUnit(ctx context.Context, in *pb.CreateWorkUn
 	}
 	rsp, err := s.BatchCreateWorkUnits(ctx, req)
 	if err != nil {
-		st, ok := appstatus.Get(err)
-
-		// Attempt to fix up any references to requests[0]: in the batch response.
-		if ok {
-			msg := st.Message()
-			if strings.HasPrefix(msg, "requests[0]: ") || strings.HasPrefix(msg, "bad request: requests[0]: ") {
-				msg = strings.Replace(msg, "requests[0]: ", "", 1)
-			}
-			return nil, appstatus.Error(st.Code(), msg)
-		}
-		return nil, err
+		// Remove any references to "requests[0]: ", this is a single create RPC not a batch RPC.
+		return nil, removeRequestNumberFromAppStatusError(err)
 	}
 
 	md := metadata.MD{}

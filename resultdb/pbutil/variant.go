@@ -26,7 +26,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
-
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -93,7 +92,7 @@ func VariantToStrings(vr *pb.Variant) []string {
 
 // VariantFromStrings returns a Variant proto given the key:val string slice of its contents.
 //
-// If a key appears multiple times, the last pair wins.
+// If a key appears multiple times, an error is returned.
 func VariantFromStrings(pairs []string) (*pb.Variant, error) {
 	if len(pairs) == 0 {
 		return &pb.Variant{}, nil
@@ -104,6 +103,9 @@ func VariantFromStrings(pairs []string) (*pb.Variant, error) {
 		pair, err := StringPairFromString(p)
 		if err != nil {
 			return nil, errors.Fmt("pair %q: %w", p, err)
+		}
+		if _, ok := def[pair.Key]; ok {
+			return nil, errors.Fmt("duplicate key %q", pair.Key)
 		}
 		def[pair.Key] = pair.Value
 	}
