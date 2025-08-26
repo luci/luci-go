@@ -1489,6 +1489,7 @@ def gen_notify_cfg(ctx):
         if len(builders) == 0:
             print("no builders belonging to %s when trying to create builder health " +
                   "notifier", owner_email)
+            continue
         builder_health_notifiers_pb.append(
             _builder_health_notifier_pb(n, builders),
         )
