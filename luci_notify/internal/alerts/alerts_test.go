@@ -69,7 +69,7 @@ func TestValidation(t *testing.T) {
 	})
 }
 
-func TestStatusTable(t *testing.T) {
+func TestAlerts(t *testing.T) {
 	ftt.Run("Put", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		alert := NewAlertBuilder().WithBug(10).WithGerritCL(15).Build()

@@ -18,7 +18,6 @@ package rpc
 import (
 	"context"
 	"fmt"
-	"regexp"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -63,7 +62,7 @@ func toAlertProto(value *alerts.Alert) *pb.Alert {
 func (*alertsServer) BatchGetAlerts(ctx context.Context, request *pb.BatchGetAlertsRequest) (*pb.BatchGetAlertsResponse, error) {
 	keys := []string{}
 	for i, name := range request.Names {
-		key, err := parseAlertName(name)
+		key, err := alerts.ParseAlertName(name)
 		if err != nil {
 			return nil, invalidArgumentError(errors.Fmt("name[%v]: %w", i, err))
 		}
@@ -101,7 +100,7 @@ func (*alertsServer) BatchUpdateAlerts(ctx context.Context, request *pb.BatchUpd
 	keys := []string{}
 	mutations := []*spanner.Mutation{}
 	for i, r := range request.Requests {
-		key, err := parseAlertName(r.Alert.Name)
+		key, err := alerts.ParseAlertName(r.Alert.Name)
 		if err != nil {
 			return nil, invalidArgumentError(errors.Fmt("alerts[%v]: name: %w", i, err))
 		}
@@ -150,21 +149,6 @@ func (*alertsServer) BatchUpdateAlerts(ctx context.Context, request *pb.BatchUpd
 		a.ModifyTime = timestamppb.New(ts)
 	}
 	return response, nil
-}
-
-var alertNameRE = regexp.MustCompile(`^alerts/(` + alerts.AlertKeyExpression + `)$`)
-
-// parseAlertName parses an alert resource name into its constituent ID
-// parts.
-func parseAlertName(name string) (key string, err error) {
-	if name == "" {
-		return "", errors.New("must be specified")
-	}
-	match := alertNameRE.FindStringSubmatch(name)
-	if match == nil {
-		return "", errors.Fmt("expected format: %s", alertNameRE)
-	}
-	return match[1], nil
 }
 
 // invalidArgumentError annotates err as having an invalid argument.

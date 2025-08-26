@@ -20,6 +20,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"hash/fnv"
+	"regexp"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -29,7 +30,7 @@ import (
 )
 
 const (
-	// StatusIDExpression is a partial regular expression that validates status identifiers.
+	// AlertKeyExpression is a partial regular expression that validates alert keys.
 	// For now this is quite loose to handle Sheriff-o-matic keys which contain builder name
 	// strings, so could be any characters at all.
 	// Example SOM key: chromium$!chrome$!ci$!linux-chromeos-chrome$!browser_tests on Ubuntu-22.04$!8754809345790718177
@@ -201,4 +202,19 @@ func (a *Alert) Etag() string {
 	_ = binary.Write(h, binary.LittleEndian, a.GerritCL)
 	_ = binary.Write(h, binary.LittleEndian, a.SilenceUntil)
 	return fmt.Sprintf("W/\"%x\"", h.Sum32())
+}
+
+var alertNameRE = regexp.MustCompile(`^alerts/(` + AlertKeyExpression + `)$`)
+
+// ParseAlertName parses an alert resource name into its constituent ID
+// parts.
+func ParseAlertName(name string) (key string, err error) {
+	if name == "" {
+		return "", errors.New("must be specified")
+	}
+	match := alertNameRE.FindStringSubmatch(name)
+	if match == nil {
+		return "", errors.Fmt("expected format: %s", alertNameRE)
+	}
+	return match[1], nil
 }

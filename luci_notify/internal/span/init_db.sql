@@ -38,3 +38,27 @@ CREATE TABLE Alerts (
   ModifyTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 ) PRIMARY KEY (AlertKey),
 ROW DELETION POLICY (OLDER_THAN(ModifyTime, INTERVAL 30 DAY));
+
+-- AlertGroups are collections of alerts that are managed together.
+CREATE TABLE AlertGroups (
+  -- The rotation the alert group belongs to.
+  Rotation STRING(256) NOT NULL,
+  -- The ID of the alert group.
+  AlertGroupId STRING(256) NOT NULL,
+  -- The human-readable name of the alert group.
+  DisplayName STRING(1024),
+  -- A message describing the status of the alert group.
+  StatusMessage STRING(MAX),
+  -- The keys of the alerts in this group.
+  AlertKeys ARRAY<STRING(256)> NOT NULL,
+  -- The bugs associated with this alert group.
+  Bugs ARRAY<INT64> NOT NULL,
+  -- The time the alert group was last updated.
+  UpdateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+  -- The identity of the user who last updated the alert group.
+  -- If the TTL of this table is extended past 30 days, this column must be overwritten
+  -- to 'user' 30 days after CreationTime.
+  -- This column should never be exported to BigQuery.
+  UpdatedBy STRING(256),
+) PRIMARY KEY (Rotation, AlertGroupId),
+ROW DELETION POLICY (OLDER_THAN(UpdateTime, INTERVAL 30 DAY));

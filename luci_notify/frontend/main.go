@@ -94,6 +94,7 @@ func main() {
 			Prelude: checkAPIAccess,
 		})
 		pb.RegisterAlertsServer(srv, rpc.NewAlertsServer())
+		pb.RegisterAlertGroupsServer(srv, rpc.NewAlertGroupsServer())
 
 		// Redirect the frontend to rpcexplorer.
 		srv.Routes.GET("/", nil, func(ctx *router.Context) {

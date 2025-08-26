@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/secrets"
@@ -348,37 +347,6 @@ func TestAlerts(t *testing.T) {
 	})
 }
 
-type fakeAuthBuilder struct {
-	state *authtest.FakeState
-}
-
-func fakeAuth() *fakeAuthBuilder {
-	return &fakeAuthBuilder{
-		state: &authtest.FakeState{
-			Identity:       "user:someone@example.com",
-			IdentityGroups: []string{},
-		},
-	}
-}
-func (a *fakeAuthBuilder) anonymous() *fakeAuthBuilder {
-	a.state.Identity = "anonymous:anonymous"
-	return a
-}
-func (a *fakeAuthBuilder) withReadAccess() *fakeAuthBuilder {
-	a.state.IdentityGroups = append(a.state.IdentityGroups, luciNotifyAccessGroup)
-	return a
-}
-func (a *fakeAuthBuilder) withWriteAccess() *fakeAuthBuilder {
-	a.state.IdentityGroups = append(a.state.IdentityGroups, luciNotifyWriteAccessGroup)
-	return a
-}
-func (a *fakeAuthBuilder) setInContext(ctx context.Context) context.Context {
-	if a.state.Identity == "anonymous:anonymous" && len(a.state.IdentityGroups) > 0 {
-		panic("You cannot call any of the with methods on fakeAuthBuilder if you call the anonymous method")
-	}
-	return auth.WithState(ctx, a.state)
-}
-
 type AlertBuilder struct {
 	alert alerts.Alert
 }
@@ -423,7 +391,7 @@ func (b *AlertBuilder) CreateInDB(ctx context.Context, t testing.TB) *alerts.Ale
 	m := spanner.InsertOrUpdateMap("Alerts", row)
 	ts, err := span.Apply(ctx, []*spanner.Mutation{m})
 	assert.Loosely(t, err, should.BeNil, truth.LineContext())
-	if s.ModifyTime == spanner.CommitTimestamp {
+	if s.ModifyTime.Equal(spanner.CommitTimestamp) {
 		s.ModifyTime = ts.UTC()
 	}
 	return s

@@ -1,4 +1,4 @@
-// Copyright 2021 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package lucinotifypb
+package alertgroups
 
-//go:generate cproto
-//go:generate mockgen -source rpc.pb.go -destination rpc.mock.pb.go -package lucinotifypb -write_package_comment=false
-//go:generate goimports -w rpc.mock.pb.go
-//go:generate svcdec -type TreeCloserServer
-//go:generate svcdec -type AlertsServer
-//go:generate svcdec -type AlertGroupsServer
+import (
+	"testing"
+
+	"go.chromium.org/luci/luci_notify/internal/testutil"
+)
+
+func TestMain(m *testing.M) {
+	testutil.SpannerTestMain(m)
+}

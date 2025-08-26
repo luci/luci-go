@@ -16,7 +16,6 @@ package rpc
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
@@ -40,9 +39,6 @@ func checkAllowedPrelude(ctx context.Context, methodName string, req proto.Messa
 
 // Logs and converts the errors to GRPC type errors.
 func gRPCifyAndLogPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
-	if err != nil {
-		fmt.Printf("error being GRPCified: %s", err)
-	}
 	return appstatus.GRPCifyAndLog(ctx, err)
 }
 
