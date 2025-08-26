@@ -50,7 +50,7 @@ export function TimelineTab() {
   }
 
   if (!build.startTime) {
-    return <span>Build were not started.</span>;
+    return <span>Build has not started.</span>;
   }
 
   if (!build.steps.length) {
