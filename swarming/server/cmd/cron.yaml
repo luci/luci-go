@@ -3,65 +3,11 @@ cron:
 
 ### Tasks
 
-- description: >-
-    Catch TaskRunResult's where the bot died and failed sending updates.
-  url: /internal/cron/important/scheduler/abort_bot_missing
-  schedule: every 1 minutes
-  target: backend
-
-- description: Catch TaskToRunShards that are expired.
-  url: /internal/cron/important/scheduler/abort_expired
-  schedule: every 1 minutes
-  target: backend
-
-- description: Removes expired task dimension sets from the datastore.
-  url: /internal/cron/cleanup/task_dimension_sets
-  schedule: every 1 minutes
-  target: backend
-
-- description: Removes stale BotDimensionsMatches from the datastore.
-  url: /internal/cron/cleanup/bot_dimensions_matches
-  schedule: every 1 minutes
-  target: backend
 
 - description: Triggers TQ tasks to delete old TaskRequest entity groups
   url: /internal/cron/cleanup-old-tasks
   schedule: every 10 minutes
   target: default-go
-
-
-### Named caches
-
-- description: >-
-    Update named caches cache sizes; this is important to ensure the bots have
-    enough free disk space for cold named cache.
-  url: /internal/cron/important/named_caches/update
-  schedule: every 10 minutes synchronized
-  target: backend
-
-### External schedulers
-
-- description: Cancel tasks at the behest of external scheduler.
-  url: /internal/cron/important/external_scheduler/cancellations
-  schedule: every 1 minutes
-  target: backend
-
-- description: Notify external scheduler based on its desired callbacks.
-  url: /internal/cron/important/external_scheduler/get_callbacks
-  schedule: every 1 minutes
-  target: backend
-
-### ereporter2
-
-- description: ereporter2 cleanup
-  url: /internal/cron/ereporter2/cleanup
-  schedule: every 1 hours
-  target: backend
-
-- description: ereporter2 mail exception report
-  url: /internal/cron/ereporter2/mail
-  schedule: every 1 hours synchronized
-  target: backend
 
 
 ### Monitoring
