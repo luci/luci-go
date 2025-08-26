@@ -60,10 +60,10 @@ describe('TestIdLabel', () => {
   const renderTestIdLabel = () => {
     render(
       <FakeContextProvider>
-        <TestIdLabel projectOrRealm="testrealm" testId="testid" />
+        <TestIdLabel project="testproject" testId="testid" />
       </FakeContextProvider>,
     );
-    expect(screen.queryByText('testrealm')).not.toBeNull();
+    expect(screen.queryByText('testproject')).not.toBeNull();
     expect(screen.queryByText('testid')).not.toBeNull();
   };
 

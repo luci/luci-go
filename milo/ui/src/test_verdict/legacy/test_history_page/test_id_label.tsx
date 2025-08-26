@@ -19,7 +19,6 @@ import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
 import { StringPair } from '@/common/services/common';
 import { TestMetadata } from '@/common/services/resultdb';
 import { getCodeSourceUrl } from '@/common/tools/url_utils';
-import { extractProject } from '@/common/tools/utils';
 import { Project } from '@/proto/go.chromium.org/luci/milo/proto/projectconfig/project.pb';
 import { QueryTestMetadataRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
@@ -27,7 +26,7 @@ import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/tes
 import { useTestMetadata } from './utils';
 
 export interface TestIdLabelProps {
-  readonly projectOrRealm: string; // A project name or a realm name.
+  readonly project: string;
   readonly testId: string;
 }
 
@@ -75,8 +74,7 @@ function extractProperty(
   return current.toString();
 }
 
-export function TestIdLabel({ projectOrRealm, testId }: TestIdLabelProps) {
-  const project = extractProject(projectOrRealm);
+export function TestIdLabel({ project, testId }: TestIdLabelProps) {
   const {
     data: testMetadataDetail,
     isSuccess: tmIsSuccess,

@@ -96,8 +96,8 @@ export function getTextDiffArtifactURLPath(artifactName: string) {
   return `/ui/artifact/text-diff/${artifactName}`;
 }
 
-export function getTestHistoryURLPath(realm: string, testId: string) {
-  return `/ui/test/${realm}/${encodeURIComponent(testId)}`;
+export function getTestHistoryURLPath(project: string, testId: string) {
+  return `/ui/test/${project}/${encodeURIComponent(testId)}`;
 }
 
 export function generateTestHistoryURLSearchParams(variant: Variant) {

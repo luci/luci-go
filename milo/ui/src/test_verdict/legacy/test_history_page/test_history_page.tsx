@@ -38,6 +38,7 @@ import { DurationGraph } from './duration_graph';
 import { DurationLegend } from './duration_legend';
 import { FilterBox } from './filter_box';
 import { GraphConfig } from './graph_config';
+import { PreviousTestIdBanner } from './previous_test_id_banner';
 import { StatusGraph } from './status_graph';
 import { TestIdLabel } from './test_id_label';
 import { TestPropertiesEntry } from './test_properties_entry';
@@ -151,10 +152,11 @@ export const TestHistoryPage = observer(() => {
           padding: '6px 16px',
         }}
       >
-        <TestIdLabel projectOrRealm={projectOrRealm} testId={testId} />
+        <TestIdLabel project={project} testId={testId} />
         <TestPropertiesEntry projectOrRealm={projectOrRealm} testId={testId} />
       </div>
       <LinearProgress value={100} variant="determinate" />
+      <PreviousTestIdBanner project={project} testId={testId} />
       <FilterBox
         css={{ width: 'calc(100% - 10px)', margin: '5px' }}
         initialFilterText={initialFilterText}
