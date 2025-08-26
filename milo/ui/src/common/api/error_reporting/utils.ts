@@ -182,3 +182,21 @@ export class ASTCache {
     }
   }
 }
+
+export function getFleetConsoleProject() {
+  let fleetConsoleProjectApiKey = '';
+  let fleetConsoleProjectId = '';
+
+  if (
+    ['luci-milo.appspot.com', 'ci.chromium.org'].includes(
+      window.location.hostname,
+    )
+  ) {
+    fleetConsoleProjectApiKey = 'AIzaSyD8sLpokusZlnCyEDZ_b3dZmcSueo5g_-M';
+    fleetConsoleProjectId = 'fleet-console-prod';
+  } else if (window.location.hostname.endsWith('luci-milo-dev.appspot.com')) {
+    fleetConsoleProjectApiKey = 'AIzaSyDxnTm4WP4mpJ5t1_S-q68vbGc8YEDPVrA';
+    fleetConsoleProjectId = 'fleet-console-dev';
+  }
+  return { fleetConsoleProjectApiKey, fleetConsoleProjectId };
+}
