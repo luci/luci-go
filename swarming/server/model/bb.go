@@ -89,7 +89,10 @@ func (bt *BuildTask) ToProto(result *TaskResultSummary, target string) *bbpb.Tas
 			Target: target,
 		},
 		UpdateId: bt.UpdateID,
-		Details: &structpb.Struct{
+	}
+
+	if len(botDims) > 0 {
+		bbTask.Details = &structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"bot_dimensions": {
 					Kind: &structpb.Value_StructValue{
@@ -97,7 +100,7 @@ func (bt *BuildTask) ToProto(result *TaskResultSummary, target string) *bbpb.Tas
 					},
 				},
 			},
-		},
+		}
 	}
 
 	SetBBTaskStatus(result.State, result.Failure, bbTask)

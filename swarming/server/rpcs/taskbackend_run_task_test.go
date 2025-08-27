@@ -201,17 +201,6 @@ func TestTaskBackendRunTask(t *testing.T) {
 					Link:     "http://fake.example.com/2cbe1fa55012fa10",
 					Status:   bbpb.Status_SCHEDULED,
 					UpdateId: now.UnixNano(),
-					Details: &structpb.Struct{
-						Fields: map[string]*structpb.Value{
-							"bot_dimensions": {
-								Kind: &structpb.Value_StructValue{
-									StructValue: &structpb.Struct{
-										Fields: map[string]*structpb.Value{},
-									},
-								},
-							},
-						},
-					},
 				},
 			}
 			assert.That(t, res, should.Match(expected))
