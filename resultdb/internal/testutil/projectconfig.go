@@ -30,10 +30,10 @@ import (
 	cfgmem "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/caching"
-
 	rdbcfg "go.chromium.org/luci/resultdb/internal/config"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	configpb "go.chromium.org/luci/resultdb/proto/config"
+	"go.chromium.org/luci/server/caching"
 )
 
 var textPBMultiline = prototext.MarshalOptions{
@@ -166,6 +166,11 @@ func SetRBEAllowedInstances(ctx context.Context, t testing.TB, project, user str
 		rule = &configpb.RbeAllowList{Users: []string{user}}
 		pcfg.RbeAllowList = append(pcfg.RbeAllowList, rule)
 	}
-	rule.Instances = instances
+
+	fullRbeInstances := []string{}
+	for _, instance := range instances {
+		fullRbeInstances = append(fullRbeInstances, rdbpbutil.RbeInstancePath(project, instance))
+	}
+	rule.Instances = fullRbeInstances
 	return setProjectConfig(ctx, t, project, pcfg)
 }

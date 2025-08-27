@@ -564,13 +564,13 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					ctx := testutil.SetGCSAllowedBuckets(ctx, t, "testproject", "user:test@test.com", "otherbucket")
 					_, err := recorder.BatchCreateArtifacts(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-					assert.That(t, err, should.ErrLike(`requests[1]: the user user:test@test.com does not have permission to reference GCS objects in bucket "testbucket" in project "testproject"`))
+					assert.That(t, err, should.ErrLike(`requests[1]: the user does not have permission to reference GCS objects in bucket "testbucket" in project "testproject"`))
 				})
 				t.Run(`missing GCS project ACL`, func(t *ftt.Test) {
 					ctx = testutil.ClearProjectConfig(ctx, t, "testproject")
 					_, err := recorder.BatchCreateArtifacts(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-					assert.That(t, err, should.ErrLike(`requests[1]: the user user:test@test.com does not have permission to reference GCS objects in bucket "testbucket" in project "testproject"`))
+					assert.That(t, err, should.ErrLike(`requests[1]: the user does not have permission to reference GCS objects in bucket "testbucket" in project "testproject"`))
 				})
 			})
 			t.Run(`RBE artifact references`, func(t *ftt.Test) {
@@ -578,7 +578,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					ctx = testutil.SetRBEAllowedInstances(ctx, t, "testproject", "user:test@test.com", "otherbucket")
 					_, err := recorder.BatchCreateArtifacts(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-					assert.That(t, err, should.ErrLike(`requests[2]: the user user:test@test.com does not have permission to reference RBE objects in instance "default_instance" in project "testproject"`))
+					assert.That(t, err, should.ErrLike(`requests[2]: the user does not have permission to reference RBE objects in RBE instance "projects/testproject/instances/default_instance"`))
 				})
 				t.Run(`missing RBE project ACL`, func(t *ftt.Test) {
 					// Put the RBE artifact first so that it attracts any errors in preference to the GCS artifact.
@@ -586,7 +586,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					ctx = testutil.ClearProjectConfig(ctx, t, "testproject")
 					_, err := recorder.BatchCreateArtifacts(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-					assert.That(t, err, should.ErrLike(`requests[0]: the user user:test@test.com does not have permission to reference RBE objects in instance "default_instance" in project "testproject"`))
+					assert.That(t, err, should.ErrLike(`requests[0]: the user does not have permission to reference RBE objects in RBE instance "projects/testproject/instances/default_instance"`))
 				})
 			})
 		})

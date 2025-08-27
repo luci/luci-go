@@ -190,6 +190,12 @@ func ParseRbeURI(rbeURI string) (project, instance, hash string, size int64, err
 	return project, instance, hash, size, nil
 }
 
+// RbeInstancePath generates the full RBE instance path in the format of
+// "projects/<project_name>/instances/<instance_name>".
+func RbeInstancePath(project, instance string) string {
+	return fmt.Sprintf("projects/%s/instances/%s", project, instance)
+}
+
 // IsLegacyArtifactName returns whether the given artifact name is likely
 // a legacy artifact name, not a V2 artifact name.
 // If the name is not valid, this method may return any value.

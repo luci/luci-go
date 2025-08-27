@@ -582,13 +582,13 @@ func validateBatchCreateArtifactsRequestForSystemState(ctx context.Context, work
 				allowedBuckets, err := allowedGCSBucketsForUser(ctx, project, string(user))
 				if err != nil {
 					// Internal error.
-					return errors.Fmt("fetch allowed GCS buckets for project %s and user %s: %w", project, string(user), err)
+					return errors.Fmt("fetch allowed GCS buckets for project %s: %w", project, err)
 				}
 				allowedBucketsByProject[project] = allowedBuckets
 			}
 			bucket, _ := gsutil.Split(a.gcsURI)
 			if _, ok := allowedBucketsByProject[project][bucket]; !ok {
-				return appstatus.Errorf(codes.PermissionDenied, "requests[%d]: the user %s does not have permission to reference GCS objects in bucket %q in project %q", i, string(user), bucket, project)
+				return appstatus.Errorf(codes.PermissionDenied, "requests[%d]: the user does not have permission to reference GCS objects in bucket %q in project %q", i, bucket, project)
 			}
 		}
 		if a.rbeURI != "" {
@@ -596,16 +596,17 @@ func validateBatchCreateArtifactsRequestForSystemState(ctx context.Context, work
 			if allowedRBEInstancesByProject[project] == nil {
 				allowedRbeInstances, err := allowedRbeInstancesForUser(ctx, project, string(user))
 				if err != nil {
-					return errors.Fmt("fetch allowed RBE instances for project %s and user %s: %w", project, string(user), err)
+					return errors.Fmt("fetch allowed RBE instances for project %s: %w", project, err)
 				}
-				allowedBucketsByProject[project] = allowedRbeInstances
+				allowedRBEInstancesByProject[project] = allowedRbeInstances
 			}
 			rbeProject, rbeInstance, _, _, err := pbutil.ParseRbeURI(a.rbeURI)
 			if err != nil {
 				return appstatus.Errorf(codes.InvalidArgument, "requests[%d]: artifact: rbe_uri: invalid RBE URI: %q", i, a.rbeURI)
 			}
-			if _, ok := allowedBucketsByProject[project][rbeInstance]; !ok {
-				return appstatus.Errorf(codes.PermissionDenied, "requests[%d]: the user %s does not have permission to reference RBE objects in instance %q in project %q", i, string(user), rbeInstance, rbeProject)
+			rbeInstancePath := pbutil.RbeInstancePath(rbeProject, rbeInstance)
+			if _, ok := allowedRBEInstancesByProject[project][rbeInstancePath]; !ok {
+				return appstatus.Errorf(codes.PermissionDenied, "requests[%d]: the user does not have permission to reference RBE objects in RBE instance %q", i, rbeInstancePath)
 			}
 		}
 	}

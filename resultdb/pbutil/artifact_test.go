@@ -374,3 +374,25 @@ func TestParseRbeURI_Failure(t *testing.T) {
 		})
 	}
 }
+
+func TestRbeInstancePath(t *testing.T) {
+	t.Parallel()
+	ftt.Run("RbeInstancePath", t, func(t *ftt.Test) {
+		t.Run("Valid", func(t *ftt.Test) {
+			path := RbeInstancePath("my-project", "my-instance")
+			assert.Loosely(t, path, should.Equal("projects/my-project/instances/my-instance"))
+		})
+		t.Run("Empty project", func(t *ftt.Test) {
+			path := RbeInstancePath("", "my-instance")
+			assert.Loosely(t, path, should.Equal("projects//instances/my-instance"))
+		})
+		t.Run("Empty instance", func(t *ftt.Test) {
+			path := RbeInstancePath("my-project", "")
+			assert.Loosely(t, path, should.Equal("projects/my-project/instances/"))
+		})
+		t.Run("Empty both", func(t *ftt.Test) {
+			path := RbeInstancePath("", "")
+			assert.Loosely(t, path, should.Equal("projects//instances/"))
+		})
+	})
+}
