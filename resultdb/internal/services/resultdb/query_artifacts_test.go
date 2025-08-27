@@ -16,6 +16,7 @@ package resultdb
 
 import (
 	"context"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/gsutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -297,6 +299,56 @@ func TestQueryArtifacts(t *testing.T) {
 			assert.Loosely(t, actual[0].FetchUrl, should.Equal("https://fake-signed-url/bucket2/file2.txt?x-project=testproject2"))
 			assert.Loosely(t, actual[1].FetchUrl, should.Equal("https://fake-signed-url/bucket1/file1.txt?x-project=testproject"))
 			assert.Loosely(t, actual[2].FetchUrl, should.Equal("https://fake-signed-url/bucket1/testfile2.txt?x-project=testproject"))
+		})
+
+		t.Run(`Fetch URL with RbeURI`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
+				insert.Artifact("inv1", "", "a", map[string]any{"RbeURI": "bytestream://remotebuildexecution.googleapis.com/projects/testproject/instances/default_instance/blobs/test_artifact/10"}),
+			)
+
+			actual, _ := mustFetch(t, req)
+			assert.Loosely(t, actual, should.HaveLength(1))
+			assert.Loosely(t, strings.HasPrefix(actual[0].FetchUrl, "https://signed-url.example.com/invocations/inv1/artifacts/a?token="), should.BeTrue)
+		})
+
+		t.Run(`Fetch URL wtih RbeURI from multiple projects`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
+				// Include inv3 into inv1.
+				insert.Inclusion("inv1", "inv3"),
+				insert.Artifact("inv1", "", "a", map[string]any{"RbeURI": "bytestream://remotebuildexecution.googleapis.com/projects/rbe-project-a/instances/default_instance1/blobs/test_artifact1/10"}),
+				insert.Artifact("inv3", "", "a", map[string]any{"RbeURI": "bytestream://remotebuildexecution.googleapis.com/projects/rbe-project-b/instances/default_instance/blobs/test_artifact3/10"}),
+				insert.Artifact("inv2", "tr/t t/r", "a", map[string]any{"RbeURI": "bytestream://remotebuildexecution.googleapis.com/projects/rbe-project-a/instances/default_instance/blobs/test_artifact2/10"}),
+			)
+
+			actual, _ := mustFetch(t, req)
+			assert.Loosely(t, actual, should.HaveLength(3))
+
+			// Check the artifact from inv1.
+			u, err := url.Parse(actual[0].FetchUrl)
+			assert.Loosely(t, err, should.BeNil)
+			token := u.Query().Get("token")
+			assert.Loosely(t, token, should.NotBeEmpty)
+			embedded, err := artifactcontent.ValidateTokenForTesting(ctx, token, actual[0].Name)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, embedded["project"], should.Equal("testproject2"))
+
+			// Check the artifact from inv2.
+			u, err = url.Parse(actual[1].FetchUrl)
+			assert.Loosely(t, err, should.BeNil)
+			token = u.Query().Get("token")
+			assert.Loosely(t, token, should.NotBeEmpty)
+			embedded, err = artifactcontent.ValidateTokenForTesting(ctx, token, actual[1].Name)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, embedded["project"], should.Equal("testproject"))
+
+			// Check the artifact from inv3.
+			u, err = url.Parse(actual[2].FetchUrl)
+			assert.Loosely(t, err, should.BeNil)
+			token = u.Query().Get("token")
+			assert.Loosely(t, token, should.NotBeEmpty)
+			embedded, err = artifactcontent.ValidateTokenForTesting(ctx, token, actual[2].Name)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, embedded["project"], should.Equal("testproject"))
 		})
 	})
 }

@@ -82,7 +82,7 @@ func ParseParentID(parentID string) (testID, resultID string, err error) {
 // * ContentType
 // * Size
 // * GcsURI
-// * RbeUri
+// * RbeURI
 // * RBECASHash
 func Read(ctx context.Context, name string) (*Artifact, error) {
 	var invID invocations.ID

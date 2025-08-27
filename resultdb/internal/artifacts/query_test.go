@@ -467,6 +467,75 @@ func TestQuery(t *testing.T) {
 			assert.Loosely(t, actual[0].GcsUri, should.Equal("gs://bucket/beyondbeef"))
 		})
 
+		t.Run(`Without WithGcsURI`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
+				insert.Artifact("inv1", "tr/t/r", "a", map[string]any{
+					"ContentType": "text/plain",
+					"Size":        64,
+					"GcsURI":      "gs://bucket/beyondbeef",
+				}),
+			)
+
+			q.WithGcsURI = false
+			q.PageSize = 0
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			var actual []*Artifact
+			err := q.Run(ctx, func(a *Artifact) error {
+				actual = append(actual, a)
+				return nil
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.HaveLength(1))
+			assert.Loosely(t, actual[0].GcsUri, should.BeEmpty)
+		})
+
+		t.Run(`WithRbeURI`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
+				insert.Artifact("inv1", "tr/t/r", "a", map[string]any{
+					"ContentType": "text/plain",
+					"Size":        64,
+					"RBEURI":      "rbe://cas/default/blobs/deadbeef/128",
+				}),
+			)
+
+			q.WithRbeURI = true
+			q.PageSize = 0
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			var actual []*Artifact
+			err := q.Run(ctx, func(a *Artifact) error {
+				actual = append(actual, a)
+				return nil
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.HaveLength(1))
+			assert.Loosely(t, actual[0].RbeUri, should.Equal("rbe://cas/default/blobs/deadbeef/128"))
+		})
+
+		t.Run(`Without WithRbeURI`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
+				insert.Artifact("inv1", "tr/t/r", "a", map[string]any{
+					"ContentType": "text/plain",
+					"Size":        64,
+					"RBEURI":      "rbe://cas/default/blobs/deadbeef/128",
+				}),
+			)
+
+			q.WithRbeURI = false
+			q.PageSize = 0
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			var actual []*Artifact
+			err := q.Run(ctx, func(a *Artifact) error {
+				actual = append(actual, a)
+				return nil
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.HaveLength(1))
+			assert.Loosely(t, actual[0].RbeUri, should.BeEmpty)
+		})
+
 		t.Run(`Populates HasLines field correctly`, func(t *ftt.Test) {
 			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "", "a", map[string]any{

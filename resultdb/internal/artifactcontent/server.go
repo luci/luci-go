@@ -67,6 +67,9 @@ type Server struct {
 	// Reads a blob from RBE-CAS.
 	ReadCASBlob func(ctx context.Context, req *bytestream.ReadRequest) (bytestream.ByteStream_ReadClient, error)
 
+	// Reads a blob from RBE-CAS by a project-scoped account.
+	ReadCASBlobByProject func(ctx context.Context, req *bytestream.ReadRequest, project string) (bytestream.ByteStream_ReadClient, error)
+
 	// Full name of the RBE-CAS instance used to store artifacts,
 	// e.g. "projects/luci-resultdb/instances/artifacts".
 	RBECASInstanceName string
@@ -131,37 +134,51 @@ func (r *contentRequest) handle(c *router.Context) {
 		return
 	}
 
-	if err := r.checkAccess(c.Request.Context(), c.Request); err != nil {
+	embedded, err := r.checkAccess(c.Request.Context(), c.Request)
+	if err != nil {
 		r.sendError(c.Request.Context(), err)
 		return
 	}
 
 	// Read the state from database.
-	var rbeCASHash spanner.NullString
+	var rbeCASHash, rbeURI spanner.NullString
 	key := r.invID.Key(r.parentID, r.artifactID)
-	err := spanutil.ReadRow(span.Single(c.Request.Context()), "Artifacts", key, map[string]any{
+	err = spanutil.ReadRow(span.Single(c.Request.Context()), "Artifacts", key, map[string]any{
 		"ContentType": &r.contentType,
 		"Size":        &r.size,
 		"RBECASHash":  &rbeCASHash,
+		"RbeURI":      &rbeURI,
 	})
 
 	// Check the error and write content to the response body.
+	ctx := c.Request.Context()
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
 		err = appstatus.Attachf(err, codes.NotFound, "%s not found", r.artifactName)
-		r.sendError(c.Request.Context(), err)
+		r.sendError(ctx, err)
 
 	case err != nil:
-		r.sendError(c.Request.Context(), err)
+		r.sendError(ctx, err)
 
-	case rbeCASHash.Valid:
+	case rbeCASHash.Valid && rbeCASHash.StringVal != "":
 		mw := NewMetricsWriter(c)
-		defer mw.Download(c.Request.Context(), r.size.Int64)
+		defer mw.Download(ctx, r.size.Int64)
 		r.handleRBECASContent(c, rbeCASHash.StringVal)
+
+	case rbeURI.Valid && rbeURI.StringVal != "":
+		project := embedded["project"]
+		if project == "" {
+			r.sendError(ctx, appstatus.Errorf(codes.PermissionDenied, "project is not specified in the token"))
+			return
+		}
+
+		mw := NewMetricsWriter(c)
+		defer mw.Download(ctx, r.size.Int64)
+		r.handleRBECASContentWithURI(c, rbeURI.StringVal, project)
 
 	default:
 		err = appstatus.Attachf(err, codes.NotFound, "%s not found", r.artifactName)
-		r.sendError(c.Request.Context(), err)
+		r.sendError(ctx, err)
 	}
 }
 
@@ -193,20 +210,25 @@ func (r *contentRequest) parseRequest(ctx context.Context, req *http.Request) er
 	return nil
 }
 
-// checkAccess ensures that the requester has access to the artifact content.
+// checkAccess ensures that the requester has access to the artifact content and
+// then returns a map of embedded data from the token, such as the "project",
+// and an error.
 //
 // Checks access using signed token query string param.
-func (r *contentRequest) checkAccess(ctx context.Context, req *http.Request) error {
+func (r *contentRequest) checkAccess(ctx context.Context, req *http.Request) (map[string]string, error) {
 	token := req.URL.Query().Get("token")
 	if token == "" {
-		return appstatus.Errorf(codes.Unauthenticated, "no token")
+		return nil, appstatus.Errorf(codes.Unauthenticated, "no token")
 	}
 
-	_, err := artifactNameTokenKind.Validate(ctx, token, []byte(r.artifactName))
-	if !transient.Tag.In(err) {
-		return appstatus.Attachf(err, codes.PermissionDenied, "invalid token")
+	embedded, err := artifactNameTokenKind.Validate(ctx, token, []byte(r.artifactName))
+	if err != nil {
+		if !transient.Tag.In(err) {
+			return nil, appstatus.Attachf(err, codes.PermissionDenied, "invalid token")
+		}
+		return nil, err
 	}
-	return err
+	return embedded, nil
 }
 
 func (r *contentRequest) sendError(ctx context.Context, err error) {
@@ -237,12 +259,15 @@ func (r *contentRequest) writeContentHeaders() {
 	}
 }
 
-// GenerateSignedURL generates a signed HTTPS URL back to this server.
+// GenerateSignedURL generates a signed HTTPS URL back to this server. If a
+// project is specified, the project name will be embedded in the token, and
+// the corresponding project scoped account will be used to access the RBE
+// Artifact.
 // The returned token works only with the same artifact name.
-func (s *Server) GenerateSignedURL(ctx context.Context, requestHost, artifactName string) (url string, expiration time.Time, err error) {
+func (s *Server) GenerateSignedURL(ctx context.Context, requestHost, artifactName string, embedded map[string]string) (url string, expiration time.Time, err error) {
 	now := clock.Now(ctx).UTC()
 
-	tok, err := artifactNameTokenKind.Generate(ctx, []byte(artifactName), nil, artifactNameTokenKind.Expiration)
+	tok, err := artifactNameTokenKind.Generate(ctx, []byte(artifactName), embedded, artifactNameTokenKind.Expiration)
 	if err != nil {
 		return "", time.Time{}, err
 	}
@@ -264,4 +289,10 @@ func (s *Server) GenerateSignedURL(ctx context.Context, requestHost, artifactNam
 	url = fmt.Sprintf("%s://%s/%s?token=%s", scheme, hostname, artifactName, tok)
 	expiration = now.Add(artifactNameTokenKind.Expiration)
 	return
+}
+
+// ValidateTokenForTesting validates a token for the given artifact name.
+// NOTE: this function is for testing ONLY.
+func ValidateTokenForTesting(ctx context.Context, token, artifactName string) (map[string]string, error) {
+	return artifactNameTokenKind.Validate(ctx, token, []byte(artifactName))
 }

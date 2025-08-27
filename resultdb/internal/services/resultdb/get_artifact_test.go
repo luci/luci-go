@@ -133,6 +133,26 @@ func TestGetArtifact(t *testing.T) {
 			assert.Loosely(t, art.FetchUrl, should.Equal("https://fake-signed-url/bucket1/file1.txt?x-project=testproject"))
 		})
 
+		t.Run(`Exists with rbeURI`, func(t *ftt.Test) {
+			const realm = "testrealm"
+			const project = "testproject"
+			var globalRealm = fmt.Sprintf("%s:%s", project, realm)
+
+			// Insert an Artifact.
+			testutil.MustApply(ctx, t,
+				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": globalRealm}),
+				insert.Artifact("inv", "", "a", map[string]any{"RbeURI": "bytestream://host/instance/blobs/hash/10"}),
+			)
+			const name = "invocations/inv/artifacts/a"
+			req := &pb.GetArtifactRequest{Name: name}
+
+			art, err := srv.GetArtifact(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, art.Name, should.Equal(name))
+			assert.Loosely(t, art.ArtifactId, should.Equal("a"))
+			assert.Loosely(t, strings.HasPrefix(art.FetchUrl, "https://signed-url.example.com/invocations/inv/artifacts/a?token="), should.BeTrue)
+		})
+
 		t.Run(`Does not exist`, func(t *ftt.Test) {
 			testutil.MustApply(ctx, t,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}))

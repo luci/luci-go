@@ -97,14 +97,15 @@ func (s *resultDBServer) populateFetchURLs(ctx context.Context, invocationIDToPr
 	now := clock.Now(ctx).UTC()
 
 	for _, a := range arts {
+		invIDStr, _, _, _ := artifacts.MustParseLegacyName(a.Name)
+		project, ok := invocationIDToProject[invocations.ID(invIDStr)]
+		if !ok {
+			panic("invocation for artifact doesn't exist in the invocationIDToProject map")
+		}
+
 		if a.GcsUri != "" {
 			// ResultDB allows including invocation from a different LUCI project to a parent invocation.
 			// We should use the LUCI project of the immediate parent of the artifact to generate the signed URL.
-			invIDStr, _, _, _ := artifacts.MustParseLegacyName(a.Name)
-			project, ok := invocationIDToProject[invocations.ID(invIDStr)]
-			if !ok {
-				panic("invocation for artifact doesn't exist in the invocationIDToProject map")
-			}
 			if _, ok := gsClients[project]; !ok {
 				c, err := gsutil.NewStorageClient(ctx, project)
 				if err != nil {
@@ -127,8 +128,24 @@ func (s *resultDBServer) populateFetchURLs(ctx context.Context, invocationIDToPr
 
 			a.FetchUrl = url
 			a.FetchUrlExpiration = pbutil.MustTimestampProto(exp)
+		} else if a.GetRbeUri() != "" {
+			// Specify the project name to the token to ensure that the correct
+			// project-scoped service account is used to access the RBE
+			// artifact.
+			embedded := map[string]string{
+				"project": project,
+			}
+			url, exp, err := s.contentServer.GenerateSignedURL(ctx, requestHost, a.Name, embedded)
+			if err != nil {
+				return err
+			}
+
+			a.FetchUrl = url
+			a.FetchUrlExpiration = pbutil.MustTimestampProto(exp)
 		} else {
-			url, exp, err := s.contentServer.GenerateSignedURL(ctx, requestHost, a.Name)
+			// Skip the project name so that the ResultDB service account is
+			// used to access the artifact.
+			url, exp, err := s.contentServer.GenerateSignedURL(ctx, requestHost, a.Name, nil)
 			if err != nil {
 				return err
 			}

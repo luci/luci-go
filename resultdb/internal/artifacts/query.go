@@ -50,6 +50,7 @@ type Query struct {
 	PageToken           string
 	WithRBECASHash      bool
 	WithGcsURI          bool
+	WithRbeURI          bool
 	Mask                *mask.Mask
 }
 
@@ -104,7 +105,10 @@ SELECT InvocationId, ParentId, ArtifactId, ContentType, Size,
 	RBECASHash,
 {{ end }}
 {{ if .Q.WithGcsURI }}
-	GcsURI
+	GcsURI,
+{{ end }}
+{{ if .Q.WithRbeURI }}
+	RBEURI
 {{ end }}
 FROM Artifacts art
 {{ if .JoinWithTestResults }}
@@ -198,6 +202,7 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 		var size spanner.NullInt64
 		var rbecasHash spanner.NullString
 		var gcsURI spanner.NullString
+		var rbeURI spanner.NullString
 
 		ptrs := []any{
 			&invID, &parentID, &a.ArtifactId, &contentType, &size,
@@ -207,6 +212,9 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 		}
 		if q.WithGcsURI {
 			ptrs = append(ptrs, &gcsURI)
+		}
+		if q.WithRbeURI {
+			ptrs = append(ptrs, &rbeURI)
 		}
 		if err := b.FromSpanner(row, ptrs...); err != nil {
 			return err
@@ -226,6 +234,7 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 		a.SizeBytes = size.Int64
 		a.RBECASHash = rbecasHash.StringVal
 		a.GcsUri = gcsURI.StringVal
+		a.RbeUri = rbeURI.StringVal
 		a.HasLines = IsLogSupportedArtifact(a.ArtifactId, a.ContentType)
 
 		return f(a)

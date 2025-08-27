@@ -19,6 +19,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	neturl "net/url"
 	"testing"
 	"time"
 
@@ -62,17 +63,32 @@ func TestGenerateSignedURL(t *testing.T) {
 		})
 
 		t.Run(`Basic case`, func(t *ftt.Test) {
-			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/a")
+			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/a", nil)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, url, should.HavePrefix("https://results.usercontent.example.com/invocations/inv/artifacts/a?token="))
 			assert.Loosely(t, exp, should.Match(clock.Now(ctx).UTC().Add(time.Hour)))
 		})
 
 		t.Run(`Escaped test id`, func(t *ftt.Test) {
-			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t%2Ft/results/r/artifacts/a")
+			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t%2Ft/results/r/artifacts/a", nil)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, url, should.HavePrefix("https://results.usercontent.example.com/invocations/inv/tests/t%2Ft/results/r/artifacts/a?token="))
 			assert.Loosely(t, exp, should.Match(clock.Now(ctx).UTC().Add(time.Hour)))
+		})
+
+		t.Run(`With project`, func(t *ftt.Test) {
+			url, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/a", map[string]string{"project": "test-project"})
+			assert.Loosely(t, err, should.BeNil)
+
+			// Validate the token.
+			parsedURL, err := neturl.Parse(url)
+			assert.Loosely(t, err, should.BeNil)
+			token := parsedURL.Query().Get("token")
+			assert.Loosely(t, token, should.NotBeEmpty)
+
+			embedded, err := artifactNameTokenKind.Validate(ctx, token, []byte("invocations/inv/artifacts/a"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, embedded, should.Resemble(map[string]string{"project": "test-project"}))
 		})
 	})
 }
@@ -100,6 +116,14 @@ func TestServeContent(t *testing.T) {
 				casReader.ReadLimit = int(req.ReadLimit)
 				return casReader, casReadErr
 			},
+		}
+
+		var casReadByProjectErr error
+		var projectFromReader string
+		s.ReadCASBlobByProject = func(ctx context.Context, req *bytestream.ReadRequest, project string) (bytestream.ByteStream_ReadClient, error) {
+			casReader.ReadLimit = int(req.ReadLimit)
+			projectFromReader = project
+			return casReader, casReadByProjectErr
 		}
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -137,6 +161,22 @@ func TestServeContent(t *testing.T) {
 			)
 		}
 
+		newArtWithURI := func(parentID, artID, uri string, datas ...[]byte) {
+			casReader.Res = nil
+			sum := 0
+			for _, d := range datas {
+				casReader.Res = append(casReader.Res, &bytestream.ReadResponse{Data: d})
+				sum += len(d)
+			}
+			testutil.MustApply(ctx, t,
+				insert.Artifact("inv", parentID, artID, map[string]any{
+					"ContentType": "text/plain",
+					"Size":        sum,
+					"RbeURI":      uri,
+				}),
+			)
+		}
+
 		testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
 
 		t.Run(`Invalid resource name`, func(t *ftt.Test) {
@@ -156,7 +196,7 @@ func TestServeContent(t *testing.T) {
 
 		t.Run(`Escaped test id`, func(t *ftt.Test) {
 			newArt("tr/t/r", "a", "sha256:deadbeef", []byte("contents"))
-			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t/results/r/artifacts/a")
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t/results/r/artifacts/a", nil)
 			assert.Loosely(t, err, should.BeNil)
 			res, actualContents := fetch(t, u)
 			assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
@@ -165,7 +205,7 @@ func TestServeContent(t *testing.T) {
 
 		t.Run(`limit`, func(t *ftt.Test) {
 			newArt("tr/t/r", "a", "sha256:deadbeef", []byte("contents"))
-			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t/results/r/artifacts/a")
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t/results/r/artifacts/a", nil)
 			assert.Loosely(t, err, should.BeNil)
 
 			t.Run(`empty`, func(t *ftt.Test) {
@@ -211,7 +251,7 @@ func TestServeContent(t *testing.T) {
 
 		t.Run(`E2E with RBE-CAS`, func(t *ftt.Test) {
 			newArt("", "rbe", "sha256:deadbeef", []byte("first "), []byte("second"))
-			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/rbe")
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/rbe", nil)
 			assert.Loosely(t, err, should.BeNil)
 
 			t.Run(`Not found`, func(t *ftt.Test) {
@@ -239,6 +279,28 @@ func TestServeContent(t *testing.T) {
 				assert.Loosely(t, body, should.Equal("first second"))
 				assert.Loosely(t, res.Header.Get("Content-Type"), should.Equal("text/plain"))
 				assert.Loosely(t, res.ContentLength, should.Equal(len("first second")))
+			})
+		})
+
+		t.Run(`E2E with RBE-CAS URI`, func(t *ftt.Test) {
+			newArtWithURI("", "rbe-uri", "bytestream://remotebuildexecution.googleapis.com/projects/example/instances/artifacts/blobs/deadbeef/123", []byte("first "), []byte("second"))
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/rbe-uri", map[string]string{"project": "test-project"})
+			assert.Loosely(t, err, should.BeNil)
+
+			t.Run("Succeeds", func(t *ftt.Test) {
+				res, body := fetch(t, u)
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal("first second"))
+				assert.Loosely(t, res.Header.Get("Content-Type"), should.Equal("text/plain"))
+				assert.Loosely(t, res.ContentLength, should.Equal(len("first second")))
+				assert.Loosely(t, projectFromReader, should.Equal("test-project"))
+			})
+
+			t.Run(`No project in token`, func(t *ftt.Test) {
+				u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/rbe-uri", nil)
+				assert.Loosely(t, err, should.BeNil)
+				res, _ := fetch(t, u)
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusForbidden))
 			})
 		})
 	})

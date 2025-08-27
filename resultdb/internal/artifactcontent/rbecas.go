@@ -47,6 +47,21 @@ func RBEConn(ctx context.Context) (*grpc.ClientConn, error) {
 		return nil, err
 	}
 
+	return rbeConn(ctx, creds)
+}
+
+// RBEConnWithProject creates a gRPC connection to RBE authenticated by a
+// project scoped account.
+func RBEConnWithProject(ctx context.Context, project string) (*grpc.ClientConn, error) {
+	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsProject, auth.WithProject(project))
+	if err != nil {
+		return nil, err
+	}
+
+	return rbeConn(ctx, creds)
+}
+
+func rbeConn(ctx context.Context, creds credentials.PerRPCCredentials) (*grpc.ClientConn, error) {
 	return grpc.NewClient(
 		"remotebuildexecution.googleapis.com:443",
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
@@ -66,17 +81,15 @@ func RegisterRBEInstanceFlag(fs *flag.FlagSet, target *string) {
 	)
 }
 
-// handleRBECASContent serves artifact content stored in RBE-CAS.
+// handleRBECASContent serves artifact content stored in RBE-CAS via blob hash.
 func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
-	// Protocol:
-	// https://github.com/bazelbuild/remote-apis/blob/7802003e00901b4e740fe0ebec1243c221e02ae2/build/bazel/remote/execution/v2/remote_execution.proto#L229-L233
-	// https://github.com/googleapis/googleapis/blob/c8e291e6a4d60771219205b653715d5aeec3e96b/google/bytestream/bytestream.proto#L50-L53
-
-	// Start a reading stream.
-	stream, err := r.ReadCASBlob(c.Request.Context(), &bytestream.ReadRequest{
-		ResourceName: ResourceName(r.RBECASInstanceName, hash, r.size.Int64),
-		ReadLimit:    r.limit,
-	})
+	resourceName := ResourceName(r.RBECASInstanceName, hash, r.size.Int64)
+	stream, err := r.ReadCASBlob(
+		c.Request.Context(),
+		&bytestream.ReadRequest{
+			ResourceName: resourceName,
+			ReadLimit:    r.limit,
+		})
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
 			// Do not lose the original error message.
@@ -86,6 +99,42 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 		r.sendError(c.Request.Context(), err)
 		return
 	}
+	r.handleContent(c, resourceName, stream)
+}
+
+// handleRBECASContentWithURI serves artifact content stored in RBE-CAS via RBE
+// URI. The artifact content will be accessed by a project-scoped account.
+func (r *contentRequest) handleRBECASContentWithURI(c *router.Context, rbeURI, project string) {
+	resourceName, err := resourceNameFromURI(rbeURI)
+	if err != nil {
+		r.sendError(c.Request.Context(), appstatus.BadRequest(err))
+		return
+	}
+	stream, err := r.ReadCASBlobByProject(
+		c.Request.Context(),
+		&bytestream.ReadRequest{
+			ResourceName: resourceName,
+			ReadLimit:    r.limit,
+		},
+		project)
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			// Do not lose the original error message.
+			logging.Warningf(c.Request.Context(), "RBE-CAS responded via RBE URI %q: %s", rbeURI, err)
+			err = appstatus.Errorf(codes.NotFound, "artifact content does not exist")
+		}
+		r.sendError(c.Request.Context(), err)
+		return
+	}
+	r.handleContent(c, resourceName, stream)
+}
+
+// handleContent serves artifact content stored in RBE-CAS via the full RBE
+// resource name.
+func (r *contentRequest) handleContent(c *router.Context, resourceName string, stream bytestream.ByteStream_ReadClient) {
+	// Protocol:
+	// https://github.com/bazelbuild/remote-apis/blob/7802003e00901b4e740fe0ebec1243c221e02ae2/build/bazel/remote/execution/v2/remote_execution.proto#L229-L233
+	// https://github.com/googleapis/googleapis/blob/c8e291e6a4d60771219205b653715d5aeec3e96b/google/bytestream/bytestream.proto#L50-L53
 
 	// Forward the blob to the client.
 	wroteHeader := false
@@ -140,6 +189,20 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 			}
 		}
 	}
+}
+
+// resourceNameFromURI parses the RBE URI and returns the resource name.
+// The URI is expected to be in the format bytestream://<host>/<resource_name>.
+func resourceNameFromURI(uri string) (string, error) {
+	if !strings.HasPrefix(uri, "bytestream://") {
+		return "", errors.Fmt("invalid rbe uri scheme: %q", uri)
+	}
+	path := strings.TrimPrefix(uri, "bytestream://")
+	parts := strings.SplitN(path, "/", 2)
+	if len(parts) < 2 {
+		return "", errors.Fmt("invalid rbe uri format: %q", uri)
+	}
+	return parts[1], nil
 }
 
 func ResourceName(instance, hash string, size int64) string {

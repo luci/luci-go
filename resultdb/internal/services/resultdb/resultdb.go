@@ -154,6 +154,10 @@ func newArtifactContentServer(ctx context.Context, opts Options) (*artifactconte
 	}
 	bs := bytestream.NewByteStreamClient(conn)
 
+	// Mapping of LUCI project to bytestream clients.
+	// Each client will sent request authenticated using the corresponding
+	// project-scoped service account.
+	bsClients := map[string]bytestream.ByteStreamClient{}
 	return &artifactcontent.Server{
 		InsecureURLs: opts.InsecureSelfURLs,
 		HostnameProvider: func(requestHost string) string {
@@ -162,9 +166,26 @@ func newArtifactContentServer(ctx context.Context, opts Options) (*artifactconte
 			}
 			return opts.ContentHostnameMap["*"]
 		},
-
 		ReadCASBlob: func(ctx context.Context, req *bytestream.ReadRequest) (bytestream.ByteStream_ReadClient, error) {
 			return bs.Read(ctx, req)
+		},
+		ReadCASBlobByProject: func(ctx context.Context, req *bytestream.ReadRequest, project string) (bytestream.ByteStream_ReadClient, error) {
+			if project == "" {
+				return nil, errors.New("project must be specified")
+			}
+
+			_, ok := bsClients[project]
+			if !ok {
+				// Create a new bytestream client for the project-scoped
+				// account. This client will be reused for subsequent requests
+				// for the same project.
+				conn, err := artifactcontent.RBEConnWithProject(ctx, project)
+				if err != nil {
+					return nil, err
+				}
+				bsClients[project] = bytestream.NewByteStreamClient(conn)
+			}
+			return bsClients[project].Read(ctx, req)
 		},
 		RBECASInstanceName: opts.ArtifactRBEInstance,
 	}, nil

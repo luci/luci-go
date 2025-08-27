@@ -163,5 +163,15 @@ func TestListArtifacts(t *testing.T) {
 			assert.Loosely(t, actual, should.HaveLength(1))
 			assert.Loosely(t, actual[0].FetchUrl, should.Equal("https://fake-signed-url/bucket1/file1.txt?x-project=testproject"))
 		})
+
+		t.Run(`Fetch URL with Rbe URI`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
+				insert.Artifact("inv1", "", "a", map[string]any{"RbeURI": "projects/testproject/instances/default_instance/blobs/test_artifact/10"}),
+			)
+
+			actual, _ := mustFetch(req)
+			assert.Loosely(t, actual, should.HaveLength(1))
+			assert.Loosely(t, strings.HasPrefix(actual[0].FetchUrl, "https://signed-url.example.com/invocations/inv1/artifacts/a"), should.BeTrue)
+		})
 	})
 }

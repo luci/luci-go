@@ -23,6 +23,8 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -30,7 +32,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/span"
 )
 
 func TestMustParseName(t *testing.T) {
@@ -142,6 +143,25 @@ func TestRead(t *testing.T) {
 				ContentType: "text/plain",
 				SizeBytes:   54,
 				GcsUri:      "gs://test",
+				HasLines:    true,
+			}))
+		})
+
+		t.Run(`Exists with RbeURI`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Artifact(wuID.LegacyInvocationID(), "", "c", map[string]any{
+				"ContentType": "text/plain",
+				"Size":        "54",
+				"RBEURI":      "rbe://cas/default/blobs/deadbeef/54",
+			}))
+			const name = "rootInvocations/root-inv-id/workUnits/work-unit-id/artifacts/c"
+			a, err := Read(ctx, name)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, a.Artifact, should.Match(&pb.Artifact{
+				Name:        name,
+				ArtifactId:  "c",
+				ContentType: "text/plain",
+				SizeBytes:   54,
+				RbeUri:      "rbe://cas/default/blobs/deadbeef/54",
 				HasLines:    true,
 			}))
 		})
