@@ -28,8 +28,7 @@ import {
 
 import { TreeJson } from '@/monitoring/util/server_json';
 import { StructuredAlert } from '@/monitoringv2/util/alerts';
-
-import { AlertGroup } from './alerts';
+import { AlertGroup } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alert_groups.pb';
 
 interface AlertsSideNavProps {
   tree: TreeJson;
@@ -37,7 +36,7 @@ interface AlertsSideNavProps {
   setSelectedTab: (tab: string) => void;
   topLevelAlerts: StructuredAlert[];
   ungroupedTopLevelAlerts: StructuredAlert[];
-  alertGroups: AlertGroup[];
+  alertGroups: readonly AlertGroup[];
 }
 
 export const AlertsSideNav = ({
@@ -110,15 +109,15 @@ export const AlertsSideNav = ({
         Groups
       </ListSubheader>
       {alertGroups.map((group) => (
-        <ListItem disablePadding key={group.id}>
+        <ListItem disablePadding key={group.name}>
           <ListItemButton
-            selected={selectedTab === 'group:' + group.id}
-            onClick={() => setSelectedTab('group:' + group.id)}
+            selected={selectedTab === 'group:' + group.name}
+            onClick={() => setSelectedTab('group:' + group.name)}
           >
             <ListItemIcon>
               <FolderIcon />
             </ListItemIcon>
-            <ListItemText primary={group.name} />
+            <ListItemText primary={group.displayName} />
             <Chip label={group.alertKeys.length} variant="outlined" />
           </ListItemButton>
         </ListItem>

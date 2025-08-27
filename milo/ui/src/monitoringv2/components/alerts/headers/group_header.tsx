@@ -24,43 +24,37 @@ import { BugCard } from '@/common/components/bug_card';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
 import { displayApproxDuration } from '@/common/tools/time_utils';
-
-import { AlertGroup } from '../alerts';
+import { useAlertGroups } from '@/monitoringv2/hooks/alert_groups';
+import { AlertGroup } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alert_groups.pb';
 
 import { AddBugDialog } from './add_bug_dialog';
-import { ArchiveGroupDialog } from './archive_group_dialog';
+import { DeleteGroupDialog } from './delete_group_dialog';
 import { EditGroupNameDialog } from './edit_group_name_dialog';
 import { EditGroupStatusMessageDialog } from './edit_group_status_message_dialog';
 
 interface GroupHeaderProps {
   group: AlertGroup;
-  setGroup: (group: AlertGroup) => void;
-  archiveGroup: (group: AlertGroup) => void;
 }
 
-export const GroupHeader = ({
-  group,
-  setGroup,
-  archiveGroup,
-}: GroupHeaderProps) => {
+export const GroupHeader = ({ group }: GroupHeaderProps) => {
   const [showEditNameDialog, setShowEditNameDialog] = useState(false);
   const [showEditStatusMessageDialog, setShowEditStatusMessageDialog] =
     useState(false);
-  const [showArchiveGroupDialog, setShowArchiveDialog] = useState(false);
+  const [showDeleteGroupDialog, setShowDeleteDialog] = useState(false);
 
   const [showAddBugDialog, setShowAddBugDialog] = useState(false);
-  const [bugs, setBugs] = useState<string[]>(group.bugs || []);
+  const { update: updateGroup } = useAlertGroups();
+
   return (
     <Box sx={{ padding: '16px' }}>
       <Typography variant="h5">
-        {group.name}
+        {group.displayName}
         <IconButton onClick={() => setShowEditNameDialog(true)}>
           <EditIcon />
         </IconButton>
         {showEditNameDialog ? (
           <EditGroupNameDialog
             group={group}
-            setGroup={setGroup}
             onClose={() => setShowEditNameDialog(false)}
           />
         ) : null}
@@ -68,16 +62,15 @@ export const GroupHeader = ({
           variant="outlined"
           color="inherit"
           startIcon={<DeleteIcon />}
-          onClick={() => setShowArchiveDialog(true)}
+          onClick={() => setShowDeleteDialog(true)}
           sx={{ opacity: '70%' }}
         >
-          Archive
+          Delete
         </Button>
-        {showArchiveGroupDialog ? (
-          <ArchiveGroupDialog
+        {showDeleteGroupDialog ? (
+          <DeleteGroupDialog
             group={group}
-            archiveGroup={archiveGroup}
-            onClose={() => setShowArchiveDialog(false)}
+            onClose={() => setShowDeleteDialog(false)}
           />
         ) : null}
         <span style={{ fontSize: '14px', opacity: '70%', paddingLeft: '12px' }}>
@@ -89,9 +82,9 @@ export const GroupHeader = ({
           >
             {group.updatedBy}
           </a>{' '}
-          {group.updated ? (
+          {group.updateTime ? (
             <RelativeTimestamp
-              timestamp={DateTime.fromISO(group.updated)}
+              timestamp={DateTime.fromISO(group.updateTime)}
               formatFn={displayApproxDuration}
             ></RelativeTimestamp>
           ) : null}
@@ -100,13 +93,19 @@ export const GroupHeader = ({
       </Typography>
 
       <Box>
-        {bugs.map((bug) => (
+        {group.bugs.map((bug) => (
           <HtmlTooltip key={bug} title={<BugCard bugId={bug} />}>
             <Chip
-              onDelete={(e) => {
-                setBugs(bugs.filter((b) => b !== bug));
+              onDelete={async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                updateGroup.mutate({
+                  alertGroup: {
+                    ...group,
+                    bugs: group.bugs.filter((b) => b !== bug),
+                  },
+                  updateMask: ['bugs'],
+                });
               }}
               label={`b/${bug}`}
               sx={{
@@ -132,10 +131,8 @@ export const GroupHeader = ({
         </Button>
         {showAddBugDialog ? (
           <AddBugDialog
+            group={group}
             open={true}
-            onSubmit={(bugId) =>
-              setBugs([...bugs.filter((b) => b !== bugId), bugId])
-            }
             onClose={() => setShowAddBugDialog(false)}
           />
         ) : null}
@@ -152,7 +149,6 @@ export const GroupHeader = ({
         {showEditStatusMessageDialog ? (
           <EditGroupStatusMessageDialog
             group={group}
-            setGroup={setGroup}
             onClose={() => setShowEditStatusMessageDialog(false)}
           />
         ) : null}

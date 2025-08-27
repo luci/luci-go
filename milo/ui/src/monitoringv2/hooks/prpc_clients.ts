@@ -14,6 +14,7 @@
 
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { AlertsClientImpl as SoMAlertsClientImpl } from '@/proto/go.chromium.org/infra/appengine/sheriff-o-matic/proto/v1/alerts.pb';
+import { AlertGroupsClientImpl } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alert_groups.pb';
 import { AlertsClientImpl as NotifyAlertsClientImpl } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
 
 export function useSoMAlertsClient() {
@@ -27,5 +28,12 @@ export function useNotifyAlertsClient() {
   return usePrpcServiceClient({
     host: SETTINGS.luciNotify.host,
     ClientImpl: NotifyAlertsClientImpl,
+  });
+}
+
+export function useAlertGroupsClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.luciNotify.host,
+    ClientImpl: AlertGroupsClientImpl,
   });
 }

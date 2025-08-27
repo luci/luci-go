@@ -32,8 +32,7 @@ import {
   SortDirection,
   StructuredAlert,
 } from '@/monitoringv2/util/alerts';
-
-import { AlertGroup } from '../alerts';
+import { AlertGroup } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alert_groups.pb';
 
 import { ActionBar } from './action_bar';
 import { BuildAlertRow } from './build_alert_row';
@@ -43,8 +42,7 @@ import { TestAlertRow } from './test_alert_row';
 interface AlertTableProps {
   alerts: StructuredAlert[];
   group?: AlertGroup;
-  groups: AlertGroup[];
-  setGroups: (group: AlertGroup[]) => void;
+  groups: readonly AlertGroup[];
   selectedTab: string;
 }
 
@@ -55,7 +53,6 @@ export const AlertTable = ({
   alerts,
   group,
   groups,
-  setGroups,
   selectedTab,
 }: AlertTableProps) => {
   const [expanded, setExpanded] = useState({} as { [alert: string]: boolean });
@@ -155,7 +152,6 @@ export const AlertTable = ({
             <ActionBar
               group={group}
               groups={groups}
-              setGroups={setGroups}
               alerts={alerts}
               selectedAlertKeys={selectedAlertKeys}
               unselectAll={() => setSelectedAlertKeys({})}

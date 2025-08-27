@@ -14,7 +14,7 @@
 
 import { Menu, MenuItem } from '@mui/material';
 
-import { AlertGroup } from '../alerts';
+import { AlertGroup } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alert_groups.pb';
 
 interface SelectGroupMenuProps {
   anchorEl: HTMLElement | null;
@@ -24,7 +24,7 @@ interface SelectGroupMenuProps {
    */
   onSelect: (group: AlertGroup) => void;
   onClose: () => void;
-  groups: AlertGroup[];
+  groups: readonly AlertGroup[];
 }
 export const SelectGroupMenu = ({
   anchorEl,
@@ -44,14 +44,14 @@ export const SelectGroupMenu = ({
       >
         {groups.map((group) => (
           <MenuItem
-            key={group.id}
+            key={group.name}
             onClick={(e) => {
               e.stopPropagation();
               onSelect(group);
               onClose();
             }}
           >
-            {group.name}
+            {group.displayName}
           </MenuItem>
         ))}
       </Menu>

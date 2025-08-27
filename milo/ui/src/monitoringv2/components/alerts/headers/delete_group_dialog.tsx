@@ -21,45 +21,39 @@ import {
   Typography,
 } from '@mui/material';
 
-import { AlertGroup } from '../alerts';
+import { useAlertGroups } from '@/monitoringv2/hooks/alert_groups';
+import { AlertGroup } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alert_groups.pb';
 
-interface ArchiveGroupDialogProps {
+interface DeleteGroupDialogProps {
   group: AlertGroup;
-  archiveGroup: (group: AlertGroup) => void;
   onClose: () => void;
 }
-export const ArchiveGroupDialog = ({
+export const DeleteGroupDialog = ({
   group,
-  archiveGroup,
   onClose,
-}: ArchiveGroupDialogProps) => {
+}: DeleteGroupDialogProps) => {
+  const { delete: deleteGroup } = useAlertGroups();
   return (
     <Dialog open onClose={onClose}>
-      <DialogTitle>Archive Group</DialogTitle>
+      <DialogTitle>Delete Group</DialogTitle>
       <DialogContent>
         <Typography>
-          Are you sure you want to archive the group{' '}
+          Are you sure you want to delete the group{' '}
           <strong>{group.name}</strong>?
-        </Typography>
-        <Typography
-          variant="body2"
-          style={{ opacity: '80%', marginTop: '16px' }}
-        >
-          Archiving a group removes the group from the list of active groups on
-          the sidebar. As alerts are no longer associated with an active group,
-          they will be shown in the untriaged views. Groups will remain
-          accessible by direct link for up to 14 days.
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose} disabled={deleteGroup.isPending}>
+          Cancel
+        </Button>
         <Button
-          onClick={() => {
-            archiveGroup({ ...group, alertKeys: [] });
+          onClick={async () => {
+            await deleteGroup.mutateAsync({ ...group });
             onClose();
           }}
+          loading={deleteGroup.isPending}
         >
-          Archive Group
+          Delete
         </Button>
       </DialogActions>
     </Dialog>

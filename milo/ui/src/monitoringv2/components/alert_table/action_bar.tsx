@@ -16,26 +16,18 @@ import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
 import FolderDeleteIcon from '@mui/icons-material/FolderDelete';
 import NotificationsPausedIcon from '@mui/icons-material/NotificationsPaused';
-import {
-  Box,
-  IconButton,
-  Link,
-  TableCell,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Box, IconButton, TableCell, Tooltip } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { useAuthState } from '@/common/components/auth_state_provider';
 import { useNotifyAlertsClient } from '@/monitoring/hooks/prpc_clients';
+import { useAlertGroups } from '@/monitoringv2/hooks/alert_groups';
 import { StructuredAlert } from '@/monitoringv2/util/alerts';
+import { AlertGroup } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alert_groups.pb';
 import {
   BatchUpdateAlertsRequest,
   UpdateAlertRequest,
 } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
-
-import { AlertGroup } from '../alerts';
 
 import { SelectGroupMenu } from './bug_menu';
 import { CreateGroupDialog } from './create_group_dialog';
@@ -43,8 +35,7 @@ import { RemoveFromGroupDialog } from './remove_from_group_dialog';
 
 interface ActionBarProps {
   group: AlertGroup | undefined;
-  groups: AlertGroup[];
-  setGroups: (groups: AlertGroup[]) => void;
+  groups: readonly AlertGroup[];
   alerts: StructuredAlert[];
   selectedAlertKeys: { [key: string]: boolean };
   unselectAll: () => void;
@@ -53,7 +44,6 @@ interface ActionBarProps {
 export const ActionBar = ({
   group,
   groups,
-  setGroups,
   alerts,
   selectedAlertKeys,
   unselectAll,
@@ -62,7 +52,6 @@ export const ActionBar = ({
   const [showRemoveFromGroupDialog, setShowRemoveFromGroupDialog] =
     useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const authState = useAuthState();
 
   const queryClient = useQueryClient();
   const client = useNotifyAlertsClient();
@@ -88,45 +77,39 @@ export const ActionBar = ({
     onSuccess: () => queryClient.invalidateQueries(),
   });
 
-  const createGroupAndUnselect = (group: AlertGroup) => {
-    group.id = new Date().toISOString();
-    group.updated = group.id;
-    group.updatedBy = authState.email?.split('@')[0];
+  const { update: updateGroup } = useAlertGroups();
 
-    setGroups([...groups, group]);
+  const onCreate = () => {
     unselectAll();
   };
 
-  const removeFromGroupAndUnselect = (
+  const removeFromGroupAndUnselect = async (
     group: AlertGroup,
     alertKeys: string[],
   ) => {
-    setGroups(
-      groups.map((g) => {
-        if (g.id === group.id) {
-          return {
-            ...g,
-            alertKeys: g.alertKeys.filter((k) => !alertKeys.includes(k)),
-          };
-        } else {
-          return g;
-        }
-      }),
-    );
+    const alertNames = alertKeys.map((k) => `alerts/${encodeURIComponent(k)}`);
+    await updateGroup.mutateAsync({
+      alertGroup: {
+        ...group,
+        alertKeys: group.alertKeys.filter((k) => !alertNames.includes(k)),
+      },
+      updateMask: ['alert_keys'],
+    });
     unselectAll();
   };
-  const moveToGroupAndUnselect = (group: AlertGroup) => {
-    const groupsCopy = groups.map((g) => {
-      const groupCopy = {
-        ...g,
-        alertKeys: g.alertKeys.filter((k) => !selectedAlertKeys[k]),
-      };
-      if (g.id === group.id) {
-        groupCopy.alertKeys.push(...Object.keys(selectedAlertKeys));
-      }
-      return groupCopy;
+  const moveToGroupAndUnselect = async (group: AlertGroup) => {
+    await updateGroup.mutateAsync({
+      alertGroup: {
+        ...group,
+        alertKeys: [
+          ...group.alertKeys,
+          ...Object.keys(selectedAlertKeys).map(
+            (k) => `alerts/${encodeURIComponent(k)}`,
+          ),
+        ],
+      },
+      updateMask: ['alert_keys'],
     });
-    setGroups(groupsCopy);
     unselectAll();
   };
 
@@ -141,9 +124,9 @@ export const ActionBar = ({
           </Tooltip>
           {showCreateGroupDialog ? (
             <CreateGroupDialog
+              onCreate={onCreate}
               onClose={() => setShowCreateGroupDialog(false)}
               alertKeys={Object.keys(selectedAlertKeys)}
-              createGroup={createGroupAndUnselect}
             />
           ) : null}
 
@@ -154,7 +137,7 @@ export const ActionBar = ({
           </Tooltip>
           <SelectGroupMenu
             anchorEl={menuAnchorEl}
-            onSelect={(group) => moveToGroupAndUnselect(group)}
+            onSelect={moveToGroupAndUnselect}
             onClose={() => setMenuAnchorEl(null)}
             groups={groups}
           />
@@ -173,7 +156,9 @@ export const ActionBar = ({
                   onConfirm={() =>
                     removeFromGroupAndUnselect(
                       group,
-                      alerts.map((a) => a.alert.key),
+                      alerts
+                        .filter((a) => selectedAlertKeys[a.alert.key])
+                        .map((a) => a.alert.key),
                     )
                   }
                 />
@@ -185,17 +170,6 @@ export const ActionBar = ({
               <NotificationsPausedIcon />
             </IconButton>
           </Tooltip>
-          <div style={{ flexGrow: 1 }}></div>
-          <Typography style={{ paddingRight: '24px', fontWeight: 'bold' }}>
-            <Link
-              href={`/b/FIXME/blamelist`}
-              target="_blank"
-              rel="noreferrer"
-              onClick={(e) => e.stopPropagation()}
-            >
-              Combined blamelist: XX CLs
-            </Link>
-          </Typography>
         </Box>
       </TableCell>
     </>

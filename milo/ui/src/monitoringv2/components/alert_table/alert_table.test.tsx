@@ -32,12 +32,7 @@ describe('<AlertTable />', () => {
 
     render(
       <FakeContextProvider>
-        <AlertTable
-          alerts={alerts}
-          groups={[]}
-          setGroups={() => {}}
-          selectedTab=""
-        />
+        <AlertTable alerts={alerts} groups={[]} selectedTab="" />
       </FakeContextProvider>,
     );
 
@@ -52,12 +47,7 @@ describe('<AlertTable />', () => {
 
     render(
       <FakeContextProvider>
-        <AlertTable
-          alerts={builderAlerts}
-          groups={[]}
-          setGroups={() => {}}
-          selectedTab=""
-        />
+        <AlertTable alerts={builderAlerts} groups={[]} selectedTab="" />
       </FakeContextProvider>,
     );
     expect(screen.getByText('linux-rel')).toBeInTheDocument();
@@ -74,12 +64,7 @@ describe('<AlertTable />', () => {
 
     render(
       <FakeContextProvider>
-        <AlertTable
-          alerts={alerts}
-          groups={[]}
-          setGroups={() => {}}
-          selectedTab=""
-        />
+        <AlertTable alerts={alerts} groups={[]} selectedTab="" />
       </FakeContextProvider>,
     );
     expect(screen.getByText('linux-rel')).toBeInTheDocument();

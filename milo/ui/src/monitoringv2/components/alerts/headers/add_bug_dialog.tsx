@@ -23,27 +23,30 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 
+import { useAlertGroups } from '@/monitoringv2/hooks/alert_groups';
+import { AlertGroup } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alert_groups.pb';
+
 interface AddBugDialogProps {
+  group: AlertGroup;
   open: boolean;
   onClose: () => void;
-  onSubmit: (bugId: string) => void;
 }
 
 export const AddBugDialog: React.FC<AddBugDialogProps> = ({
   open,
   onClose,
-  onSubmit,
+  group,
 }) => {
   const [bugId, setBugId] = useState('');
   const [error, setError] = useState('');
-
+  const { update: updateGroup } = useAlertGroups();
   const handleClose = () => {
     setBugId('');
     setError('');
     onClose();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!bugId) {
       setError('Please enter a bug ID.');
       return;
@@ -54,7 +57,13 @@ export const AddBugDialog: React.FC<AddBugDialogProps> = ({
       return;
     }
 
-    onSubmit(bugId);
+    await updateGroup.mutateAsync({
+      alertGroup: {
+        ...group,
+        bugs: [...group.bugs.filter((b) => b !== bugId), bugId],
+      },
+      updateMask: ['bugs'],
+    });
     handleClose();
   };
 
@@ -75,11 +84,18 @@ export const AddBugDialog: React.FC<AddBugDialogProps> = ({
           onChange={(e) => setBugId(e.target.value)}
           error={!!error}
           helperText={error}
+          disabled={updateGroup.isPending}
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained">
+        <Button onClick={handleClose} disabled={updateGroup.isPending}>
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          loading={updateGroup.isPending}
+        >
           Add Bug
         </Button>
       </DialogActions>

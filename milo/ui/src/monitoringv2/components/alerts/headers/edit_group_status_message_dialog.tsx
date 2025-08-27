@@ -22,11 +22,11 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
-import { AlertGroup } from '../alerts';
+import { useAlertGroups } from '@/monitoringv2/hooks/alert_groups';
+import { AlertGroup } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alert_groups.pb';
 
 interface EditGroupStatusMessageDialogProps {
   group: AlertGroup;
-  setGroup: (group: AlertGroup) => void;
   onClose: () => void;
 }
 
@@ -35,15 +35,16 @@ interface EditGroupStatusMessageDialogProps {
  */
 export const EditGroupStatusMessageDialog = ({
   group,
-  setGroup,
   onClose,
 }: EditGroupStatusMessageDialogProps) => {
   const [groupStatusMessage, setGroupStatusMessage] = useState(
     group.statusMessage,
   );
 
+  const { update: updateGroup } = useAlertGroups();
+
   return (
-    <Dialog open onClose={onClose}>
+    <Dialog open onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>Edit Status Message</DialogTitle>
       <DialogContent>
         <TextField
@@ -57,15 +58,22 @@ export const EditGroupStatusMessageDialog = ({
           variant="outlined"
           value={groupStatusMessage}
           onChange={(e) => setGroupStatusMessage(e.target.value)}
+          disabled={updateGroup.isPending}
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose} disabled={updateGroup.isPending}>
+          Cancel
+        </Button>
         <Button
-          onClick={() => {
-            setGroup({ ...group, statusMessage: groupStatusMessage });
+          onClick={async () => {
+            await updateGroup.mutateAsync({
+              alertGroup: { ...group, statusMessage: groupStatusMessage },
+              updateMask: ['status_message'],
+            });
             onClose();
           }}
+          loading={updateGroup.isPending}
         >
           Save
         </Button>

@@ -21,8 +21,7 @@ import {
 } from '@mui/material';
 
 import { StructuredAlert } from '@/monitoringv2/util/alerts';
-
-import { AlertGroup } from '../alerts';
+import { AlertGroup } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alert_groups.pb';
 
 interface RemoveFromGroupDialogProps {
   onClose: () => void;
@@ -44,7 +43,7 @@ export const RemoveFromGroupDialog = ({
         Are you sure you want to remove{' '}
         {alerts.length > 1 ? `these ${alerts.length}` : 'this'} alert
         {alerts.length > 1 ? 's' : ''} from the group{' '}
-        <strong>{group.name}</strong>?
+        <strong>{group.displayName}</strong>?
       </DialogContent>
       <DialogActions>
         <Button onClick={() => onClose()}>Cancel</Button>

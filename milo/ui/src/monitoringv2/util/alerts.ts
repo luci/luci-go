@@ -78,7 +78,7 @@ export interface AlertOrganzerOptions {
   showChildrenHidden: boolean;
 }
 
-export type GroupedAlertKeys = { [groupId: string]: string[] };
+export type GroupedAlertKeys = { [groupId: string]: readonly string[] };
 
 export class AlertOrganizer {
   private options: AlertOrganzerOptions;

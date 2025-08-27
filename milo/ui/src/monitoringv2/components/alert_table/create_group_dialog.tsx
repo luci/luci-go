@@ -24,19 +24,18 @@ import {
 import { useState } from 'react';
 
 import { getLongestCommonSubstring } from '@/generic_libs/tools/string_utils';
-
-import { AlertGroup } from '../alerts';
+import { useAlertGroups } from '@/monitoringv2/hooks/alert_groups';
 
 interface CreateGroupDialogProps {
+  onCreate: () => void;
   onClose: () => void;
   alertKeys: string[];
-  createGroup: (group: AlertGroup) => void;
 }
 
 export const CreateGroupDialog = ({
+  onCreate,
   onClose,
   alertKeys: alertKeys,
-  createGroup,
 }: CreateGroupDialogProps) => {
   const defaultTitleParts = getLongestCommonSubstring(alertKeys)
     .split('/')
@@ -46,47 +45,58 @@ export const CreateGroupDialog = ({
     .replace(/[/.\s]+$/, '');
   const [name, setName] = useState(defaultTitle.length > 3 ? defaultTitle : '');
   const [statusMessage, setStatusMessage] = useState('Not yet investigated.');
+  const { create: createGroup } = useAlertGroups();
 
-  const group: AlertGroup = {
-    id: new Date().toISOString(), // TODO(mwarton): replace with server generated id.
-    name,
-    statusMessage,
-    bugs: [],
-    alertKeys: alertKeys,
-  };
   return (
-    <Dialog open onClose={onClose}>
+    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>
         Create group from {alertKeys.length} alert
         {alertKeys.length > 1 ? 's' : ''}
       </DialogTitle>
       <DialogContent>
-        <Box>
+        <Box
+          sx={{
+            mt: '8px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+          }}
+        >
           <TextField
             label="Group name"
-            sx={{ margin: '8px', width: '400px' }}
+            fullWidth
             value={name}
             onChange={(e) => setName(e.target.value)}
+            disabled={createGroup.isPending}
           />
-        </Box>
-        <Box>
           <TextField
             multiline
             rows={4}
             label="Status message"
-            sx={{ margin: '8px', width: '400px' }}
+            fullWidth
             value={statusMessage}
             onChange={(e) => setStatusMessage(e.target.value)}
+            disabled={createGroup.isPending}
           />
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()} disabled={createGroup.isPending}>
+          Cancel
+        </Button>
         <Button
-          onClick={() => {
-            createGroup(group);
-            onClose();
+          onClick={async () => {
+            await createGroup.mutateAsync({
+              displayName: name,
+              statusMessage,
+              alertKeys: alertKeys.map(
+                (k) => `alerts/${encodeURIComponent(k)}`,
+              ),
+              bugs: [],
+            });
+            onCreate();
           }}
+          loading={createGroup.isPending}
         >
           Create
         </Button>

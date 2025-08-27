@@ -31,6 +31,7 @@ import { useState } from 'react';
 import { useUpdateEffect } from 'react-use';
 
 import { SearchInput } from '@/common/components/search_input';
+import { useAlertGroups } from '@/monitoringv2/hooks/alert_groups';
 import {
   useAlerts,
   useTree,
@@ -50,16 +51,6 @@ import { GroupHeader } from './headers/group_header';
 import { UngroupedHeader } from './headers/ungrouped_header';
 import { DEFAULT_ALERT_TAB, useFilterQuery, useSelectedTab } from './hooks';
 
-export interface AlertGroup {
-  id: string;
-  updated?: string;
-  updatedBy?: string | undefined;
-  name: string;
-  statusMessage: string;
-  alertKeys: string[];
-  bugs: string[];
-}
-
 export const Alerts = () => {
   const tree = useTree();
   const [filter, setFilter] = useFilterQuery('');
@@ -73,7 +64,6 @@ export const Alerts = () => {
   const [organizeBy, setOrganizeBy] = useState<AlertKind>('builder');
   const [showOptions, setShowOptions] = useState<string[]>([]);
   const [selectedTab, setSelectedTab] = useSelectedTab(DEFAULT_ALERT_TAB);
-  const [alertGroups, setAlertGroups] = useState<AlertGroup[]>([]);
 
   useUpdateEffect(() => {
     setFilter('');
@@ -82,12 +72,18 @@ export const Alerts = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTab]);
 
+  const alertGroupsData = useAlertGroups();
+
   if (!tree) {
     return <></>;
   }
 
+  const alertGroups = alertGroupsData?.alertGroups || [];
   const groupedAlertKeys = Object.fromEntries(
-    alertGroups.map((g) => [g.id, g.alertKeys]),
+    alertGroups.map((g) => [
+      g.name,
+      g.alertKeys.map((k) => decodeURIComponent(k.slice('alerts/'.length))),
+    ]),
   );
   const organizer = new AlertOrganizer(
     [...builderAlerts, ...stepAlerts, ...testAlerts],
@@ -102,7 +98,7 @@ export const Alerts = () => {
   const allAlerts = organizer.allAlerts(organizeBy);
   const ungroupedAlerts = organizer.ungroupedAlerts(organizeBy);
   const groupedAlerts = Object.fromEntries(
-    alertGroups.map((g) => [g.id, organizer.groupAlerts(g.id)]),
+    alertGroups.map((g) => [g.name, organizer.groupAlerts(g.name)]),
   );
 
   let selectedGroup = undefined;
@@ -115,32 +111,13 @@ export const Alerts = () => {
     selectedAlerts = allAlerts;
     header = <AllHeader />;
   } else if (selectedTab.startsWith('group:')) {
-    const groupId = selectedTab.slice(6);
-    const groupIndex = alertGroups.findIndex((g) => g.id === groupId);
+    const groupName = selectedTab.slice(6);
+    const groupIndex = alertGroups.findIndex((g) => g.name === groupName);
     const group = alertGroups[groupIndex];
-    const setGroup = (group: AlertGroup) => {
-      setAlertGroups([
-        ...alertGroups.slice(0, groupIndex),
-        group,
-        ...alertGroups.slice(groupIndex + 1),
-      ]);
-    };
-    const archiveGroup = () => {
-      setAlertGroups([
-        ...alertGroups.slice(0, groupIndex),
-        ...alertGroups.slice(groupIndex + 1),
-      ]);
-    };
     if (group) {
       selectedGroup = group;
-      selectedAlerts = groupedAlerts[groupId];
-      header = (
-        <GroupHeader
-          group={group}
-          setGroup={setGroup}
-          archiveGroup={archiveGroup}
-        />
-      );
+      selectedAlerts = groupedAlerts[groupName];
+      header = <GroupHeader group={group} />;
     }
   }
 
@@ -209,7 +186,6 @@ export const Alerts = () => {
           alerts={filteredAlerts}
           group={selectedGroup}
           groups={alertGroups}
-          setGroups={setAlertGroups}
           selectedTab={selectedTab}
         />
       </Box>
