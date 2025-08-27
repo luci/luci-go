@@ -63,6 +63,7 @@ paths =
     mmutex
     provenance
     recipes_py
+    resultai
     resultdb
     scheduler
     server
