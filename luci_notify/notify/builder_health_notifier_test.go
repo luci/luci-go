@@ -131,7 +131,7 @@ func TestNotifyOwnersHelper(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			task := tasks["test@google.com"]
 			assert.Loosely(t, task.Recipients, should.Match([]string{"test@google.com"}))
-			assert.Loosely(t, task.Subject, should.Equal("Builder Health For test@google.com - 2 of 4 Are in Bad Health"))
+			assert.Loosely(t, task.Subject, should.Equal("Builder Health For test@google.com - Project chromium - 2 of 4 Are in Bad Health"))
 			expectedBody := `
 	<html>
 	<head>
@@ -152,7 +152,7 @@ func TestNotifyOwnersHelper(t *testing.T) {
 			finalBody := string(decompressedBytes)
 			assert.Loosely(t, finalBody, should.Equal(expectedBody))
 
-			err = addNotifyOwnerTasksToQueue(c, tasks)
+			err = addNotifyOwnerTasksToQueue(c, tasks, "chromium")
 			assert.Loosely(t, err, should.BeNil)
 
 			// Verify tasks were scheduled.
@@ -251,7 +251,7 @@ func TestNotifyOwnersHelper(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			task := tasks["test@google.com"]
 			assert.Loosely(t, task.Recipients, should.Match([]string{"test@google.com"}))
-			assert.Loosely(t, task.Subject, should.Equal("Builder Health For test@google.com - 1 of 4 Are in Bad Health"))
+			assert.Loosely(t, task.Subject, should.Equal("Builder Health For test@google.com - Project chromium - 1 of 4 Are in Bad Health"))
 			expectedBody := `
 	<html>
 	<head>
@@ -272,7 +272,7 @@ func TestNotifyOwnersHelper(t *testing.T) {
 			finalBody := string(decompressedBytes)
 			assert.Loosely(t, finalBody, should.Equal(expectedBody))
 
-			err = addNotifyOwnerTasksToQueue(c, tasks)
+			err = addNotifyOwnerTasksToQueue(c, tasks, "chromium")
 			assert.Loosely(t, err, should.BeNil)
 
 			// Verify tasks were scheduled.
@@ -300,7 +300,7 @@ func TestNotifyOwnersHelper(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			task := tasks["test@google.com"]
 			assert.Loosely(t, task.Recipients, should.Match([]string{"test@google.com"}))
-			assert.Loosely(t, task.Subject, should.Equal("Builder Health For test@google.com - 0 of 1 Are in Bad Health"))
+			assert.Loosely(t, task.Subject, should.Equal("Builder Health For test@google.com - Project chromium - 0 of 1 Are in Bad Health"))
 			expectedBody := `
 	<html>
 	<head>

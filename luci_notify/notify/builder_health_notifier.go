@@ -85,22 +85,22 @@ func notifyOwner(c context.Context, bhn []*notifypb.BuilderHealthNotifier, proje
 	if err != nil {
 		return err
 	}
-	err = addNotifyOwnerTasksToQueue(c, tasks)
+	err = addNotifyOwnerTasksToQueue(c, tasks, projectID)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func addNotifyOwnerTasksToQueue(c context.Context, tasks map[string]*internal.EmailTask) error {
+func addNotifyOwnerTasksToQueue(c context.Context, tasks map[string]*internal.EmailTask, project string) error {
 	for emailKey, task := range tasks {
-		logging.Debugf(c, "Adding tq email task for %s", emailKey)
+		logging.Debugf(c, "Adding tq email task for %s - Project %s", emailKey, project)
 		currentTime := time.Now()
 		year, month, day := currentTime.Date()
 		if err := tq.AddTask(c, &tq.Task{
 			Payload:          task,
-			Title:            fmt.Sprintf("%s-%d-%d-%d", emailKey, year, month, day),
-			DeduplicationKey: fmt.Sprintf("%s-%d-%d-%d", emailKey, year, month, day),
+			Title:            fmt.Sprintf("%s-%s-%d-%d-%d", emailKey, project, year, month, day),
+			DeduplicationKey: fmt.Sprintf("%s-%s-%d-%d-%d", emailKey, project, year, month, day),
 		}); err != nil {
 			return err
 		}
@@ -305,7 +305,7 @@ func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifi
 
 		task := &internal.EmailTask{
 			Recipients: []string{email},
-			Subject:    fmt.Sprintf("Builder Health For %s - %d of %d Are in Bad Health", email, unhealthyBuilderCount, builderCount),
+			Subject:    fmt.Sprintf("Builder Health For %s - Project %s - %d of %d Are in Bad Health", email, project, unhealthyBuilderCount, builderCount),
 			BodyGzip:   generateEmail(c, email, unhealthyBuilderCount, builderCount, generateBuilderDescriptionHTML(unhealthyBuilders, healthyBuilders, unknownHealthBuilders), "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/infra/builder_health_indicators.md"),
 		}
 		tasks[email] = task
