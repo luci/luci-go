@@ -22,6 +22,7 @@ import { GenericAlert, StructuredAlert } from '@/monitoringv2/util/alerts';
 import { TestHistorySparkline } from '../test_history_sparkline';
 
 import { PrefillFilterIcon } from './prefill_filter_icon';
+import { TruncatedHistoryExplanation } from './truncated_history_explanation';
 
 interface AlertTestRowProps {
   parentAlert?: GenericAlert;
@@ -44,8 +45,6 @@ export const TestAlertRow = ({
   toggleSelected,
 }: AlertTestRowProps) => {
   const testAlert = alert.alert;
-  // FIXME!
-  const silenced = false;
   const consecutiveFailures = testAlert.consecutiveFailures;
   const firstFailureId = testAlert.history[consecutiveFailures - 1]?.buildId;
 
@@ -61,7 +60,6 @@ export const TestAlertRow = ({
       sx={{
         cursor: 'pointer',
         opacity:
-          silenced ||
           consecutiveFailures === 0 ||
           (parentAlert &&
             testAlert.consecutiveFailures > parentAlert.consecutiveFailures)
@@ -70,13 +68,11 @@ export const TestAlertRow = ({
       }}
     >
       <TableCell width="32px" padding="none">
-        {/* {parentAlert === undefined ? ( */}
         <Checkbox
           sx={{ marginLeft: `${indent * 20}px` }}
           checked={selected}
           onChange={toggleSelected}
         />
-        {/* ) : null} */}
       </TableCell>
       <TableCell
         width="32px"
@@ -114,38 +110,48 @@ export const TestAlertRow = ({
         />
       </TableCell>
       <TableCell width="120px">
-        {consecutiveFailures > 0 && (
+        {consecutiveFailures > 0 &&
+          consecutiveFailures < testAlert.history.length && (
+            <Link
+              href={`/b/${firstFailureId}`}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {consecutiveFailures} build
+              {consecutiveFailures > 1 && 's'} ago
+            </Link>
+          )}
+        {consecutiveFailures === testAlert.history.length && (
           <Link
-            href={`/b/${firstFailureId}`}
+            href={`/ui/p/${testAlert.builderID.project}/builders/${testAlert.builderID.bucket}/${testAlert.builderID.builder}`}
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
           >
-            {consecutiveFailures} build
-            {consecutiveFailures > 1 && 's'} ago
+            See history <TruncatedHistoryExplanation />
           </Link>
         )}
       </TableCell>
-      <TableCell width="80px">
-        {firstFailureId && (
+      <TableCell width="100px">
+        {firstFailureId && consecutiveFailures < testAlert.history.length && (
           <Link
             href={`/b/${firstFailureId}/blamelist`}
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* FIXME! {builder.first_failing_rev?.commit_position &&
-          builder.last_passing_rev?.commit_position ? (
-            <>
-            {builder.first_failing_rev?.commit_position -
-            builder.last_passing_rev?.commit_position}{' '}
-            CL
-            {builder.first_failing_rev?.commit_position -
-            builder.last_passing_rev?.commit_position >
-            1 && 's'}
-            </>
-            ) : ( */}
             Blamelist
+          </Link>
+        )}
+        {consecutiveFailures === testAlert.history.length && (
+          <Link
+            href={`/ui/p/${testAlert.builderID.project}/builders/${testAlert.builderID.bucket}/${testAlert.builderID.builder}`}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            See history <TruncatedHistoryExplanation />
           </Link>
         )}
       </TableCell>

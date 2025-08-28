@@ -15,19 +15,12 @@
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
 import FolderDeleteIcon from '@mui/icons-material/FolderDelete';
-import NotificationsPausedIcon from '@mui/icons-material/NotificationsPaused';
 import { Box, IconButton, TableCell, Tooltip } from '@mui/material';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { useNotifyAlertsClient } from '@/monitoring/hooks/prpc_clients';
 import { useAlertGroups } from '@/monitoringv2/hooks/alert_groups';
 import { StructuredAlert } from '@/monitoringv2/util/alerts';
 import { AlertGroup } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alert_groups.pb';
-import {
-  BatchUpdateAlertsRequest,
-  UpdateAlertRequest,
-} from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
 
 import { SelectGroupMenu } from './bug_menu';
 import { CreateGroupDialog } from './create_group_dialog';
@@ -52,30 +45,6 @@ export const ActionBar = ({
   const [showRemoveFromGroupDialog, setShowRemoveFromGroupDialog] =
     useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-
-  const queryClient = useQueryClient();
-  const client = useNotifyAlertsClient();
-  const silenceAllMutation = useMutation({
-    mutationFn: (alerts: StructuredAlert[]) => {
-      /* FIXME! do step and test alerts too. */
-      // eslint-disable-next-line new-cap
-      return client.BatchUpdateAlerts(
-        BatchUpdateAlertsRequest.fromPartial({
-          requests: alerts.map((a) =>
-            UpdateAlertRequest.fromPartial({
-              alert: {
-                name: `alerts/${encodeURIComponent(a.alert.key)}`,
-                // FIXME!
-                bug: '0', // a.bug || '0',
-                silenceUntil: `${a.alert.history[0].buildId || 0}`,
-              },
-            }),
-          ),
-        }),
-      );
-    },
-    onSuccess: () => queryClient.invalidateQueries(),
-  });
 
   const { update: updateGroup } = useAlertGroups();
 
@@ -165,11 +134,6 @@ export const ActionBar = ({
               ) : null}
             </>
           ) : null}
-          <Tooltip title="Snooze until next build">
-            <IconButton onClick={() => silenceAllMutation.mutate(alerts)}>
-              <NotificationsPausedIcon />
-            </IconButton>
-          </Tooltip>
         </Box>
       </TableCell>
     </>

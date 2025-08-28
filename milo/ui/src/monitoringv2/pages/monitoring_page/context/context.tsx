@@ -56,7 +56,9 @@ const FIELD_MASK = Object.freeze([
   'builds.*.status',
   'builds.*.startTime',
   'builds.*.summaryMarkdown',
-  'builds.*.steps',
+  'builds.*.steps.*.name',
+  'builds.*.steps.*.status',
+  'builds.*.steps.*.summaryMarkdown',
 ]);
 
 export interface ExtendedAlert {
