@@ -99,6 +99,7 @@ require (
 	gonum.org/v1/gonum v0.16.0
 	google.golang.org/api v0.248.0
 	google.golang.org/appengine v1.6.8
+	google.golang.org/genai v1.18.0
 	google.golang.org/genproto v0.0.0-20250818200422-3122310a409c
 	google.golang.org/genproto/googleapis/api v0.0.0-20250818200422-3122310a409c
 	google.golang.org/genproto/googleapis/bytestream v0.0.0-20250818200422-3122310a409c
@@ -151,6 +152,7 @@ require (
 	github.com/google/flatbuffers v23.5.26+incompatible // indirect
 	github.com/google/pprof v0.0.0-20250602020802-c6617b811d0e // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect

@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
+	"go.chromium.org/luci/bisection/compilefailureanalysis/llm"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
 	"go.chromium.org/luci/bisection/culpritverification"
@@ -99,6 +100,19 @@ func AnalyzeFailure(
 		// Non-critical, just continue
 		err := errors.Fmt("failed to check tree closer: %w", err)
 		logging.Errorf(c, err.Error())
+	}
+
+	// LLM analysis
+	// TODO: b/440598819 Use LUCI ResultAI server instead of fixed GCP project
+	cloudProject := "luci-bisection-dev"
+	client, err := llm.NewClient(c, cloudProject)
+	if err != nil {
+		logging.Errorf(c, "Failed to create GenAI client: %v", err)
+	} else {
+		_, err = llm.Analyze(c, client, analysis, regressionRange, compileLogs)
+		if err != nil {
+			logging.Errorf(c, "LLM analysis failed: %v", err)
+		}
 	}
 
 	// Heuristic analysis
