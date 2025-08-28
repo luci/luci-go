@@ -84,8 +84,8 @@ func getRAPT(ctx context.Context, c *http.Client, h map[string]challengeHandler)
 		if !ok {
 			return nil, errors.Fmt("GetRAPT: unsupported challenge type %q", ch.ChallengeType)
 		}
-		if !h.IsAvailable() {
-			return nil, errors.Fmt("GetRAPT: handler %T reports itself not available", h)
+		if err := h.CheckAvailable(ctx); err != nil {
+			return nil, errors.Fmt("GetRAPT: handler %T reports itself not available: %v", h, err)
 		}
 		pr, err := h.Handle(ctx, ch)
 		if err != nil {

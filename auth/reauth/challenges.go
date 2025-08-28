@@ -16,6 +16,7 @@ package reauth
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -32,7 +33,15 @@ func challengeHandlers(facetID string) map[string]challengeHandler {
 
 // A challengeHandler handles a Reauth challenge.
 type challengeHandler interface {
-	IsAvailable() bool
+	// Checks if the handler is availablein the current execution environment
+	// (e.g. are the necessary environment variables set).
+	//
+	// Returns `nil` if the handler is available.
+	//
+	// Otherwise, return an error explaining why the handler isn't available
+	// (to help troubleshooting).
+	CheckAvailable(context.Context) error
+
 	Handle(context.Context, challenge) (*proposalReply, error)
 }
 
@@ -40,18 +49,21 @@ type chainHandler struct {
 	handlers []challengeHandler
 }
 
-func (h chainHandler) IsAvailable() bool {
+func (h chainHandler) CheckAvailable(ctx context.Context) error {
+	var handlerErrs []error
 	for _, h := range h.handlers {
-		if h.IsAvailable() {
-			return true
+		if err := h.CheckAvailable(ctx); err != nil {
+			handlerErrs = append(handlerErrs, fmt.Errorf("%T: %v", h, err))
+			continue
 		}
+		return nil
 	}
-	return false
+	return errors.Fmt("no available handler: %v", errors.Join(handlerErrs...))
 }
 
 func (h chainHandler) Handle(ctx context.Context, c challenge) (*proposalReply, error) {
 	for _, h := range h.handlers {
-		if !h.IsAvailable() {
+		if err := h.CheckAvailable(ctx); err != nil {
 			continue
 		}
 		return h.Handle(ctx, c)

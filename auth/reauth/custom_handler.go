@@ -24,6 +24,8 @@ import (
 	"math"
 	"os"
 	"os/exec"
+	"path"
+	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
@@ -32,7 +34,8 @@ import (
 )
 
 const (
-	envPluginCmd = "GOOGLE_AUTH_WEBAUTHN_PLUGIN"
+	envPluginCmd   = "GOOGLE_AUTH_WEBAUTHN_PLUGIN"
+	envSSHAuthSock = "SSH_AUTH_SOCK"
 
 	// Executable names of the plugins we ship to users.
 	sshPluginExecutable   = "luci-auth-ssh-plugin"
@@ -86,8 +89,28 @@ func (customSKHandler) pluginCmd() string {
 	return fido2PluginExecutable
 }
 
-func (h customSKHandler) IsAvailable() bool {
-	return h.pluginCmd() != ""
+// Returns an error if continuing ReAuth will fail (i.e. there's an obvious
+// misconfiguration).
+func (h customSKHandler) CheckAvailable(ctx context.Context) error {
+	cmd := h.pluginCmd()
+	if cmd == "" {
+		return errors.New("security key plugin isn't set")
+	}
+
+	logging.Debugf(ctx, "customSKHandler pluginCmd: %v", cmd)
+	cmdName := strings.TrimSuffix(path.Base(cmd), path.Ext(cmd))
+
+	// Using SSH plugin.
+	if strings.EqualFold(cmdName, sshPluginExecutable) {
+		// Error if SSH_AUTH_SOCK isn't set.
+		if sshAuthSock := os.Getenv(envSSHAuthSock); sshAuthSock == "" {
+			return errors.Fmt("SSH plugin requested, but %s isn't set", envSSHAuthSock)
+		}
+
+		// TODO(b/440418327): Dial SSH_AUTH_SOCK and probe the agent is running.
+	}
+
+	return nil
 }
 
 // send sends bytes to the plugin command and returns the output.
