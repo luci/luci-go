@@ -25,34 +25,17 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// validateCreateTestExonerationRequest returns a non-nil error if req is invalid.
-func validateCreateTestExonerationRequest(req *pb.CreateTestExonerationRequest, cfg *config.CompiledServiceConfig, requireInvocation bool) error {
-	if requireInvocation || req.Invocation != "" {
-		if err := pbutil.ValidateInvocationName(req.Invocation); err != nil {
-			return errors.Fmt("invocation: %w", err)
-		}
-	}
-	if err := validateTestExoneration(req.TestExoneration, cfg); err != nil {
-		return errors.Fmt("test_exoneration: %w", err)
-	}
-	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
-		return errors.Fmt("request_id: %w", err)
-	}
-	return nil
-}
-
-func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledServiceConfig) error {
+func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledServiceConfig, strictValidation bool) error {
 	if ex == nil {
 		return errors.New("unspecified")
 	}
@@ -68,7 +51,9 @@ func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledService
 		// the empty variant. As this is ambiguous, we rely on the absence
 		// of VariantHash being set to determine if Variant was deliberately
 		// set to nil or if the Variant is simply not set.
-		if ex.Variant != nil {
+		//
+		// In strict validation: the variant is always required.
+		if ex.Variant != nil || strictValidation {
 			if err := pbutil.ValidateVariant(ex.GetVariant()); err != nil {
 				return errors.Fmt("variant: %w", err)
 			}
@@ -76,7 +61,7 @@ func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledService
 
 		// Some legacy clients do not set variant and only set variant_hash.
 		// Some set both. If both are set, check they are consistent.
-		hasVariant := len(ex.Variant.GetDef()) != 0
+		hasVariant := len(ex.Variant.GetDef()) != 0 || strictValidation
 		hasVariantHash := ex.VariantHash != ""
 		if hasVariant && hasVariantHash {
 			computedHash := pbutil.VariantHash(ex.GetVariant())
@@ -123,27 +108,27 @@ func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledService
 
 // CreateTestExoneration implements pb.RecorderServer.
 func (s *recorderServer) CreateTestExoneration(ctx context.Context, in *pb.CreateTestExonerationRequest) (*pb.TestExoneration, error) {
-	cfg, err := config.Service(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err := validateCreateTestExonerationRequest(in, cfg, true); err != nil {
-		return nil, appstatus.BadRequest(err)
-	}
-	invID := invocations.MustParseName(in.Invocation)
-
-	ret, mutation := insertTestExoneration(ctx, invID, in.RequestId, 0, in.TestExoneration)
-	_, err = mutateInvocation(ctx, invID, func(ctx context.Context) error {
-		span.BufferWrite(ctx, mutation)
-		return nil
+	// Piggy back on BatchCreateTestExonerations.
+	res, err := s.BatchCreateTestExonerations(ctx, &pb.BatchCreateTestExonerationsRequest{
+		Parent:     in.Parent,
+		Invocation: in.Invocation,
+		Requests:   []*pb.CreateTestExonerationRequest{in},
+		RequestId:  in.RequestId,
 	})
 	if err != nil {
-		return nil, err
+		// Remove any references to "requests[0]: ", this is a single create RPC not a batch RPC.
+		return nil, removeRequestNumberFromAppStatusError(err)
 	}
-	return ret, nil
+	return res.TestExonerations[0], nil
 }
 
-func insertTestExoneration(ctx context.Context, invID invocations.ID, requestID string, ordinal int, body *pb.TestExoneration) (*pb.TestExoneration, *spanner.Mutation) {
+// insertTestExoneration creates a test exoneration insertion mutation with the given properties.
+// Either workUnitID or invID should be specified - not both.
+func insertTestExoneration(ctx context.Context, workUnitID workunits.ID, invID invocations.ID, requestID string, ordinal int, body *pb.TestExoneration) (*pb.TestExoneration, *spanner.Mutation) {
+	if workUnitID == (workunits.ID{}) && invID == "" {
+		panic("either work unit ID or invocation ID must be set")
+	}
+
 	// Compute exoneration ID and choose Insert vs InsertOrUpdate.
 	var exonerationIDSuffix string
 	mutFn := spanner.InsertMap
@@ -175,6 +160,9 @@ func insertTestExoneration(ctx context.Context, invID invocations.ID, requestID 
 		// Legacy uploader.
 		testID = body.TestId
 
+		// Unfortunately some legacy clients can provide the VariantHash, but not the Variant
+		// and this is accepted as valid input for legacy reasons.
+
 		// Note this is not always available. This is a data integrity problem where
 		// Hash(Variant) != VariantHash and we have missing data in the database, but not
 		// much we can do about it until we fix clients away from the hash-only requests.
@@ -193,8 +181,17 @@ func insertTestExoneration(ctx context.Context, invID invocations.ID, requestID 
 			variantHash = pbutil.VariantHash(body.Variant)
 		}
 
-		// Do not set StructuredTestIdentifier in the response to legacy requests
-		// to minimise changes for these clients.
+		// Legacy test uploader. Populate TestIdStructured from TestId and Variant
+		// so that this RPC returns the same response as GetTestExoneration.
+		var err error
+		structuredTestIdentifier, err = pbutil.ParseStructuredTestIdentifierForOutput(testID, variant)
+		if err != nil {
+			// This should not happen, the test identifier should already have been validated.
+			panic(fmt.Errorf("parse test identifier: %w", err))
+		}
+		// Override the computed variant hash with the user-supplied variant hash,
+		// see point about being able to set VariantHash without setting the variant.
+		structuredTestIdentifier.ModuleVariantHash = variantHash
 	}
 
 	exonerationID := fmt.Sprintf("%s:%s", variantHash, exonerationIDSuffix)
@@ -202,8 +199,15 @@ func insertTestExoneration(ctx context.Context, invID invocations.ID, requestID 
 		panic(fmt.Sprintf("server-generated exoneration ID is not valid: %q: %s", exonerationID, err))
 	}
 
+	var name string
+	if invID != "" {
+		name = pbutil.LegacyTestExonerationName(string(invID), testID, exonerationID)
+	} else {
+		name = pbutil.TestExonerationName(string(workUnitID.RootInvocationID), workUnitID.WorkUnitID, testID, exonerationID)
+	}
+
 	ret := &pb.TestExoneration{
-		Name:             pbutil.LegacyTestExonerationName(string(invID), testID, exonerationID),
+		Name:             name,
 		TestIdStructured: structuredTestIdentifier,
 		TestId:           testID,
 		Variant:          variant,
@@ -213,8 +217,12 @@ func insertTestExoneration(ctx context.Context, invID invocations.ID, requestID 
 		Reason:           body.Reason,
 	}
 
+	destinationInvID := invID
+	if workUnitID != (workunits.ID{}) {
+		destinationInvID = workUnitID.LegacyInvocationID()
+	}
 	mutation := mutFn("TestExonerations", spanutil.ToSpannerMap(map[string]any{
-		"InvocationId":    invID,
+		"InvocationId":    destinationInvID,
 		"TestId":          ret.TestId,
 		"ExonerationId":   exonerationID,
 		"Variant":         ret.Variant,

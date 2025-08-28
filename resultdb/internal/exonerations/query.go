@@ -121,7 +121,7 @@ func (q *Query) Fetch(ctx context.Context) (tes []*pb.TestExoneration, nextPageT
 	// need to return the next page token.
 	if len(tes) == q.PageSize {
 		last := tes[q.PageSize-1]
-		invID, testID, exID := MustParseName(last.Name)
+		invID, testID, exID := MustLegacyParseName(last.Name)
 		nextPageToken = pagination.Token(string(invID), testID, exID)
 	}
 	return

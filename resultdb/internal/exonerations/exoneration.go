@@ -24,15 +24,17 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// MustParseName extracts invocation, test id and exoneration
+// MustLegacyParseName extracts invocation, test id and exoneration
 // IDs from the name.
 // Panics on failure.
-func MustParseName(name string) (invID invocations.ID, testID, exonerationID string) {
+func MustLegacyParseName(name string) (invID invocations.ID, testID, exonerationID string) {
 	invIDStr, testID, exonerationID, err := pbutil.ParseLegacyTestExonerationName(name)
 	if err != nil {
 		panic(err)
@@ -45,11 +47,25 @@ func MustParseName(name string) (invID invocations.ID, testID, exonerationID str
 // If it does not exist, the returned error is annotated with NotFound GRPC
 // code.
 func Read(ctx context.Context, name string) (*pb.TestExoneration, error) {
-	invIDStr, testID, exonerationID, err := pbutil.ParseLegacyTestExonerationName(name)
-	if err != nil {
-		return nil, err
+	var invID invocations.ID
+	var testID, exonerationID string
+	if pbutil.IsLegacyTestExonerationName(name) {
+		var invIDStr string
+		var err error
+		invIDStr, testID, exonerationID, err = pbutil.ParseLegacyTestExonerationName(name)
+		if err != nil {
+			return nil, err
+		}
+		invID = invocations.ID(invIDStr)
+	} else {
+		parts, err := pbutil.ParseTestExonerationName(name)
+		if err != nil {
+			return nil, err
+		}
+		invID = workunits.ID{RootInvocationID: rootinvocations.ID(parts.RootInvocationID), WorkUnitID: parts.WorkUnitID}.LegacyInvocationID()
+		testID = parts.TestID
+		exonerationID = parts.ExonerationID
 	}
-	invID := invocations.ID(invIDStr)
 
 	ret := &pb.TestExoneration{
 		Name:          name,
@@ -59,7 +75,7 @@ func Read(ctx context.Context, name string) (*pb.TestExoneration, error) {
 
 	// Populate fields from TestExonerations table.
 	var explanationHTML spanutil.Compressed
-	err = spanutil.ReadRow(ctx, "TestExonerations", invID.Key(testID, exonerationID), map[string]any{
+	err := spanutil.ReadRow(ctx, "TestExonerations", invID.Key(testID, exonerationID), map[string]any{
 		"Variant":         &ret.Variant,
 		"VariantHash":     &ret.VariantHash,
 		"ExplanationHTML": &explanationHTML,
