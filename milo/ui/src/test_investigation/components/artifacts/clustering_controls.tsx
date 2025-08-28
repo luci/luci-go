@@ -17,24 +17,13 @@ import {
   FormControl,
   MenuItem,
   Select,
-  Typography,
   SelectChangeEvent,
+  Typography,
 } from '@mui/material';
 
-import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-
+import { useArtifactsContext } from './context';
 import { StatusKindChip } from './status_kind_chip';
 import { ClusteredResult } from './types';
-
-interface ClusteringControlsProps {
-  clusteredFailures: readonly ClusteredResult[];
-  selectedClusterIndex: number;
-  onClusterChange: (event: SelectChangeEvent<number>) => void;
-  currentAttempts: readonly TestResultBundle[];
-  selectedAttemptIndex: number;
-  onAttemptChange: (event: SelectChangeEvent<number>) => void;
-  currentCluster?: ClusteredResult;
-}
 
 interface ClusterMenuItemContentProps {
   cluster: ClusteredResult;
@@ -83,17 +72,26 @@ function ClusterMenuItemContent({
   );
 }
 
-export function ClusteringControls({
-  clusteredFailures,
-  selectedClusterIndex,
-  onClusterChange,
-  currentAttempts,
-  selectedAttemptIndex,
-  onAttemptChange,
-  currentCluster,
-}: ClusteringControlsProps) {
+export function ClusteringControls() {
+  const {
+    clusteredFailures,
+    selectedClusterIndex,
+    setSelectedClusterIndex,
+    currentAttempts,
+    selectedAttemptIndex,
+    setSelectedAttemptIndex,
+    currentCluster,
+  } = useArtifactsContext();
+
+  const handleClusterChange = (event: SelectChangeEvent<number>) => {
+    setSelectedClusterIndex(Number(event.target.value));
+  };
+
+  const handleAttemptChange = (event: SelectChangeEvent<number>) => {
+    setSelectedAttemptIndex(Number(event.target.value));
+  };
+
   if (!currentCluster) {
-    // No cluster means no controls to show
     return null;
   }
 
@@ -109,7 +107,7 @@ export function ClusteringControls({
       <FormControl variant="standard" size="small" sx={{ minWidth: 180 }}>
         <Select
           value={selectedClusterIndex}
-          onChange={onClusterChange}
+          onChange={handleClusterChange}
           aria-label="Select Failure Cluster"
           variant="outlined"
           renderValue={(value) => (
@@ -140,7 +138,7 @@ export function ClusteringControls({
       <FormControl variant="standard" size="small" sx={{ minWidth: 180 }}>
         <Select
           value={selectedAttemptIndex}
-          onChange={onAttemptChange}
+          onChange={handleAttemptChange}
           aria-label="Select Attempt"
           variant="outlined"
           renderValue={(value) =>

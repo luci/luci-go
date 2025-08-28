@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { SelectChangeEvent } from '@mui/material';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { VirtuosoMockContext } from 'react-virtuoso';
 
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
+import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
+import { ArtifactsProvider } from '../context';
 
 import { ArtifactTreeView } from './artifact_tree_view';
 
@@ -45,33 +47,22 @@ describe('<ArtifactTreeView />', () => {
     }),
   ];
 
+  const MOCK_RESULTS: readonly TestResultBundle[] = [];
+
   it('given an list of artifacts, should create a tree out of their names', async () => {
     render(
       <VirtuosoMockContext.Provider
         value={{ viewportHeight: 300, itemHeight: 30 }}
       >
         <FakeContextProvider>
-          <ArtifactTreeView
-            resultArtifacts={resultArtifacts}
-            invArtifacts={invArtifacts}
-            artifactsLoading={false}
-            updateSelectedArtifact={() => {}}
-            clusteredFailures={[]}
-            selectedClusterIndex={0}
-            onClusterChange={function (
-              _event: SelectChangeEvent<number>,
-            ): void {
-              throw new Error('Function not implemented.');
-            }}
-            currentAttempts={[]}
-            selectedAttemptIndex={0}
-            onAttemptChange={function (
-              _event: SelectChangeEvent<number>,
-            ): void {
-              throw new Error('Function not implemented.');
-            }}
-            hasRenderableResults={false}
-          />
+          <ArtifactsProvider results={MOCK_RESULTS}>
+            <ArtifactTreeView
+              resultArtifacts={resultArtifacts}
+              invArtifacts={invArtifacts}
+              artifactsLoading={false}
+              updateSelectedArtifact={() => {}}
+            />
+          </ArtifactsProvider>
         </FakeContextProvider>
       </VirtuosoMockContext.Provider>,
     );
@@ -94,27 +85,14 @@ describe('<ArtifactTreeView />', () => {
         value={{ viewportHeight: 300, itemHeight: 30 }}
       >
         <FakeContextProvider>
-          <ArtifactTreeView
-            resultArtifacts={resultArtifacts}
-            invArtifacts={invArtifacts}
-            artifactsLoading={false}
-            updateSelectedArtifact={() => {}}
-            clusteredFailures={[]}
-            selectedClusterIndex={0}
-            onClusterChange={function (
-              _event: SelectChangeEvent<number>,
-            ): void {
-              throw new Error('Function not implemented.');
-            }}
-            currentAttempts={[]}
-            selectedAttemptIndex={0}
-            onAttemptChange={function (
-              _event: SelectChangeEvent<number>,
-            ): void {
-              throw new Error('Function not implemented.');
-            }}
-            hasRenderableResults={false}
-          />
+          <ArtifactsProvider results={MOCK_RESULTS}>
+            <ArtifactTreeView
+              resultArtifacts={resultArtifacts}
+              invArtifacts={invArtifacts}
+              artifactsLoading={false}
+              updateSelectedArtifact={() => {}}
+            />
+          </ArtifactsProvider>
         </FakeContextProvider>
       </VirtuosoMockContext.Provider>,
     );
