@@ -133,9 +133,13 @@ var ignoredDimensionRegexes = []*regexp.Regexp{
 
 // Exceptions to the regexes above.
 var ignoredDimensionAllowlist = stringset.NewFromSlice(
-	// We want to block all "label-*" except for "label-pool", which is
-	// mostly a sub-pool dimension.
+	// We want to block all "label-*" except for the following:
+	// "label-pool" is a sub-pool dimension.
 	"label-pool",
+	// "label-board" and "label-model" are used by Fleet Infra Software
+	// for fleet monitoring
+	"label-board",
+	"label-model",
 )
 
 type metricsReporterShardState struct {

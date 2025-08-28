@@ -346,7 +346,7 @@ func TestPoolFromDimensions(t *testing.T) {
 				"version_info_os_type:ANDROID",
 				"zone:cloud",
 			},
-			want: "bot_config:browser_dut.py|cipd_platform:linux-amd64|device_abi:x86_64|device_gms_core_version:25.22.34|device_max_uid:<=18000|device_os:13658449|device_os:Baklava|device_os:MAIN|device_os_flavor:google|device_os_type:userdebug|device_os_version:16|device_playstore_version:46.8.29-31|device_type:brya|display_attached:0|dut_state:ready|gce:0|image:chrome-jammy-23081300-d896075b897|inside_docker:0|kernel:5.13.0-44-generic|label-pool:chrome.tests|locale:en_US.UTF-8|os:Android|pool:chrome|python:3.8.0|ufs_zone:ZONE_SFO36_OS|version_info_os_type:ANDROID|zone:cloud",
+			want: "bot_config:browser_dut.py|cipd_platform:linux-amd64|device_abi:x86_64|device_gms_core_version:25.22.34|device_max_uid:<=18000|device_os:13658449|device_os:Baklava|device_os:MAIN|device_os_flavor:google|device_os_type:userdebug|device_os_version:16|device_playstore_version:46.8.29-31|device_type:brya|display_attached:0|dut_state:ready|gce:0|image:chrome-jammy-23081300-d896075b897|inside_docker:0|kernel:5.13.0-44-generic|label-model:kano|label-pool:chrome.tests|locale:en_US.UTF-8|os:Android|pool:chrome|python:3.8.0|ufs_zone:ZONE_SFO36_OS|version_info_os_type:ANDROID|zone:cloud",
 		},
 	}
 	for i, c := range cases {
