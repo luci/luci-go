@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/rpcacl"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
@@ -47,6 +48,7 @@ import (
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/cipd"
 	"go.chromium.org/luci/swarming/server/hmactoken"
+	"go.chromium.org/luci/swarming/server/legacyapi"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/notifications"
 	"go.chromium.org/luci/swarming/server/pyproxy"
@@ -269,10 +271,11 @@ func main() {
 		}))
 
 		// Register gRPC server implementations.
-		apipb.RegisterBotsServer(srv, &rpcs.BotsServer{
+		botsServer := &rpcs.BotsServer{
 			BotQuerySplitMode: model.SplitOptimally,
 			TasksManager:      tasksManager,
-		})
+		}
+		apipb.RegisterBotsServer(srv, botsServer)
 
 		tasksServer := &rpcs.TasksServer{
 			TaskQuerySplitMode: model.SplitOptimally,
@@ -300,6 +303,30 @@ func main() {
 				rpcs.ConfigureMigration(prpcSrv, proxy)
 			}
 		})
+
+		// Some legacy API endpoints that are still in use as of Aug 2025.
+		legacyApiMW := router.MiddlewareChain{
+			auth.Authenticate(&auth.GoogleOAuth2Method{
+				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+			}),
+			rpcs.LegacyMiddleware(cfg),
+		}
+		srv.Routes.GET("/_ah/api/swarming/v1/bots/count",
+			legacyApiMW,
+			legacyapi.Adapt(
+				rpcs.LegacyCountBotsRequest,
+				rpcs.LegacyCountBotsResponse,
+				botsServer.CountBots,
+			),
+		)
+		srv.Routes.GET("/_ah/api/swarming/v1/bots/list",
+			legacyApiMW,
+			legacyapi.Adapt(
+				rpcs.LegacyListBotsRequest,
+				rpcs.LegacyListBotsResponse,
+				botsServer.ListBots,
+			),
+		)
 
 		return nil
 	})

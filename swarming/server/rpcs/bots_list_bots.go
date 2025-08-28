@@ -16,6 +16,7 @@ package rpcs
 
 import (
 	"context"
+	"net/http"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/cursor"
 	"go.chromium.org/luci/swarming/server/cursor/cursorpb"
+	"go.chromium.org/luci/swarming/server/legacyapi"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
@@ -97,4 +99,109 @@ func (srv *BotsServer) ListBots(ctx context.Context, req *apipb.BotsRequest) (*a
 
 	out.Now = timestamppb.New(clock.Now(ctx))
 	return out, nil
+}
+
+// LegacyListBotsRequest converts a legacy request to a gRPC request.
+func LegacyListBotsRequest(req *http.Request) (*apipb.BotsRequest, error) {
+	limit, err := legacyapi.Int(req, "limit")
+	if err != nil {
+		return nil, err
+	}
+	cursor, err := legacyapi.String(req, "cursor")
+	if err != nil {
+		return nil, err
+	}
+	dims, err := legacyapi.Dimensions(req, "dimensions")
+	if err != nil {
+		return nil, err
+	}
+	quarantined, err := legacyapi.NullableBool(req, "quarantined")
+	if err != nil {
+		return nil, err
+	}
+	maintenance, err := legacyapi.NullableBool(req, "in_maintenance")
+	if err != nil {
+		return nil, err
+	}
+	dead, err := legacyapi.NullableBool(req, "is_dead")
+	if err != nil {
+		return nil, err
+	}
+	busy, err := legacyapi.NullableBool(req, "is_busy")
+	if err != nil {
+		return nil, err
+	}
+	return &apipb.BotsRequest{
+		Limit:         int32(limit),
+		Cursor:        cursor,
+		Dimensions:    dims,
+		Quarantined:   quarantined,
+		InMaintenance: maintenance,
+		IsDead:        dead,
+		IsBusy:        busy,
+	}, nil
+}
+
+// LegacyListBotsResponse converts a gRPC response to a legacy response.
+func LegacyListBotsResponse(res *apipb.BotInfoListResponse) (any, error) {
+	type KV struct {
+		Key   string   `json:"key"`
+		Value []string `json:"value"`
+	}
+
+	type BotInfo struct {
+		AuthenticatedAs string `json:"authenticated_as"`
+		BotId           string `json:"bot_id"`
+		Deleted         bool   `json:"deleted"`
+		Dimensions      []KV   `json:"dimensions"`
+		ExternalIp      string `json:"external_ip"`
+		FirstSeenTs     string `json:"first_seen_ts"`
+		IsDead          bool   `json:"is_dead"`
+		LastSeenTs      string `json:"last_seen_ts"`
+		MaintenanceMsg  string `json:"maintenance_msg"`
+		Quarantined     bool   `json:"quarantined"`
+		State           string `json:"state"`
+		TaskId          string `json:"task_id"`
+		TaskName        string `json:"task_name"`
+		Version         string `json:"version"`
+	}
+
+	bots := make([]BotInfo, 0, len(res.Items))
+	for _, bot := range res.Items {
+		dims := make([]KV, 0, len(bot.Dimensions))
+		for _, kv := range bot.Dimensions {
+			dims = append(dims, KV{
+				Key:   kv.Key,
+				Value: kv.Value,
+			})
+		}
+		bots = append(bots, BotInfo{
+			AuthenticatedAs: bot.AuthenticatedAs,
+			BotId:           bot.BotId,
+			Deleted:         bot.Deleted,
+			Dimensions:      dims,
+			ExternalIp:      bot.ExternalIp,
+			FirstSeenTs:     legacyapi.ToTime(bot.FirstSeenTs),
+			IsDead:          bot.IsDead,
+			LastSeenTs:      legacyapi.ToTime(bot.LastSeenTs),
+			MaintenanceMsg:  bot.MaintenanceMsg,
+			Quarantined:     bot.Quarantined,
+			State:           bot.State,
+			TaskId:          bot.TaskId,
+			TaskName:        bot.TaskName,
+			Version:         bot.Version,
+		})
+	}
+
+	return struct {
+		Cursor       string    `json:"cursor,omitempty"`
+		DeathTimeout int32     `json:"death_timeout,string"`
+		Items        []BotInfo `json:"items,omitempty"`
+		Now          string    `json:"now"`
+	}{
+		res.Cursor,
+		res.DeathTimeout,
+		bots,
+		legacyapi.ToTime(res.Now),
+	}, nil
 }

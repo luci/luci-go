@@ -16,6 +16,7 @@ package rpcs
 
 import (
 	"context"
+	"net/http"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
@@ -29,6 +30,7 @@ import (
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
+	"go.chromium.org/luci/swarming/server/legacyapi"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
@@ -132,4 +134,34 @@ func maybeTxn(ctx context.Context, txn bool, cb func(ctx context.Context) error)
 		return datastore.RunInTransaction(ctx, cb, &datastore.TransactionOptions{ReadOnly: true})
 	}
 	return cb(ctx)
+}
+
+// LegacyCountBotsRequest converts a legacy request to a gRPC request.
+func LegacyCountBotsRequest(req *http.Request) (*apipb.BotsCountRequest, error) {
+	dims, err := legacyapi.Dimensions(req, "dimensions")
+	if err != nil {
+		return nil, err
+	}
+	return &apipb.BotsCountRequest{
+		Dimensions: dims,
+	}, nil
+}
+
+// LegacyCountBotsResponse converts a gRPC response to a legacy response.
+func LegacyCountBotsResponse(res *apipb.BotsCount) (any, error) {
+	return struct {
+		Count       int32  `json:"count,string"`
+		Busy        int32  `json:"busy,string"`
+		Dead        int32  `json:"dead,string"`
+		Quarantined int32  `json:"quarantined,string"`
+		Maintenance int32  `json:"maintenance,string"`
+		Now         string `json:"now"`
+	}{
+		res.Count,
+		res.Busy,
+		res.Dead,
+		res.Quarantined,
+		res.Maintenance,
+		legacyapi.ToTime(res.Now),
+	}, nil
 }

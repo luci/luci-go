@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/router"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
@@ -172,6 +173,21 @@ func ServerInterceptor(cfg *cfg.Provider, services []string) grpcutil.UnifiedSer
 			Config: cfg,
 			ACL:    acls.NewChecker(ctx, cfg),
 		}))
+	}
+}
+
+// LegacyMiddleware initializes per-RPC context for legacy endpoints.
+//
+// Does the same thing as ServerInterceptor, but for legacy endpoints.
+func LegacyMiddleware(cfg *cfg.Provider) router.Middleware {
+	return func(c *router.Context, next router.Handler) {
+		ctx := c.Request.Context()
+		cfg := cfg.Cached(ctx)
+		c.Request = c.Request.WithContext(context.WithValue(ctx, &requestStateCtxKey, &RequestState{
+			Config: cfg,
+			ACL:    acls.NewChecker(ctx, cfg),
+		}))
+		next(c)
 	}
 }
 

@@ -14,6 +14,5 @@ cd server/cmd/default
 go run main.go \
   -cloud-project chromium-swarm-dev \
   -shared-hmac-secret devsecret://aaaa \
-  -primary-tink-aead-key devsecret-gen://tink/aead \
-  -expose-integration-mocks
+  -primary-tink-aead-key devsecret-gen://tink/aead
 ```

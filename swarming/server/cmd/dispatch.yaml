@@ -27,6 +27,10 @@ dispatch:
   - url: "*/prpc/*"
     service: default-go
 
+  # Serve some legacy API endpoints using Go.
+  - url: "*/_ah/api/swarming/*"
+    service: default-go
+
   # Bot APIs served via Go (perhaps proxying to Python).
   - url: "*/bot_code*"
     service: default-go
