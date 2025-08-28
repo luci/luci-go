@@ -24,32 +24,41 @@ import { ArtifactsProvider } from '../context';
 
 import { ArtifactTreeView } from './artifact_tree_view';
 
+// Mock window.open for the JSDOM environment
+window.open = jest.fn();
+
 describe('<ArtifactTreeView />', () => {
   const resultArtifacts: readonly Artifact[] = [
     Artifact.fromPartial({
       artifactId: 'artifact1.log',
-      name: 'artifacts/artifact1.log',
+      name: 'invocations/inv/artifacts/artifact1.log',
+      hasLines: true, // This artifact is viewable in the app
     }),
     Artifact.fromPartial({
       artifactId: 'artifact2.png',
-      name: 'artifacts/artifact2.png',
+      name: 'invocations/inv/artifacts/artifact2.png',
+      // This artifact is not viewable, clicking it will call window.open
     }),
   ];
 
   const invArtifacts: readonly Artifact[] = [
     Artifact.fromPartial({
       artifactId: 'invArtifact1.log',
-      name: 'invArtifacts/invArtifact1.log',
+      name: 'invocations/inv/artifacts/invArtifact1.log',
+      hasLines: true, // This artifact is viewable in the app
     }),
     Artifact.fromPartial({
       artifactId: 'invArtifact2.jpg',
-      name: 'invArtifacts/invArtifact2.jpg',
+      name: 'invocations/inv/artifacts/invArtifact2.jpg',
     }),
   ];
 
   const MOCK_RESULTS: readonly TestResultBundle[] = [];
 
-  it('given an list of artifacts, should create a tree out of their names', async () => {
+  it('should create a tree and call updateSelectedArtifact when a node is clicked', async () => {
+    const user = userEvent.setup();
+    const updateSelectedArtifact = jest.fn();
+
     render(
       <VirtuosoMockContext.Provider
         value={{ viewportHeight: 300, itemHeight: 30 }}
@@ -60,25 +69,35 @@ describe('<ArtifactTreeView />', () => {
               resultArtifacts={resultArtifacts}
               invArtifacts={invArtifacts}
               artifactsLoading={false}
-              updateSelectedArtifact={() => {}}
+              updateSelectedArtifact={updateSelectedArtifact}
             />
           </ArtifactsProvider>
         </FakeContextProvider>
       </VirtuosoMockContext.Provider>,
     );
 
+    // Wait for the tree to render.
     await screen.findByText('Result artifacts');
+    const artifactNode = screen.getByText('artifact1.log');
+    expect(artifactNode).toBeInTheDocument();
 
-    expect(screen.getByText('Invocation artifacts')).toBeInTheDocument();
-    expect(screen.getByText('artifact1.log')).toBeInTheDocument();
-    expect(screen.getByText('artifact2.png')).toBeInTheDocument();
-    expect(screen.getByText('invArtifact1.log')).toBeInTheDocument();
-    expect(screen.getByText('invArtifact2.jpg')).toBeInTheDocument();
+    // The component should select the summary or first leaf node automatically on render.
+    expect(updateSelectedArtifact).toHaveBeenCalled();
+
+    // Click another artifact and confirm the callback is fired with the correct data.
+    await user.click(artifactNode);
+    expect(updateSelectedArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'artifact1.log',
+        source: 'result',
+      }),
+    );
   });
 
   it('should filter the artifact tree when a user types in the search box', async () => {
     jest.useFakeTimers();
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    const updateSelectedArtifact = jest.fn();
 
     render(
       <VirtuosoMockContext.Provider
@@ -90,39 +109,26 @@ describe('<ArtifactTreeView />', () => {
               resultArtifacts={resultArtifacts}
               invArtifacts={invArtifacts}
               artifactsLoading={false}
-              updateSelectedArtifact={() => {}}
+              updateSelectedArtifact={updateSelectedArtifact}
             />
           </ArtifactsProvider>
         </FakeContextProvider>
       </VirtuosoMockContext.Provider>,
     );
 
-    const searchBox = screen.getByPlaceholderText('Search artifacts');
+    const searchBox = screen.getByPlaceholderText('Search for artifact');
     await user.type(searchBox, 'log');
 
     await act(async () => {
       jest.runAllTimers();
     });
 
-    // Assert that non-matching artifacts are hidden.
+    // We expect 5 items: Summary + "Result artifacts" + "Invocation artifacts" + the two log files.
+    const treeItems = screen.getAllByRole('treeitem');
+    expect(treeItems).toHaveLength(5);
+
     expect(screen.queryByText('artifact2.png')).not.toBeInTheDocument();
     expect(screen.queryByText('invArtifact2.jpg')).not.toBeInTheDocument();
-
-    // Find all rendered tree items.
-    const treeItems = screen.getAllByRole('treeitem');
-
-    // Filter to get only the items for our log files. This is more specific
-    // than a broad search for the text 'log'.
-    const logFileItems = treeItems.filter((item) =>
-      item.textContent?.endsWith('.log'),
-    );
-
-    // We should have exactly two log files remaining.
-    expect(logFileItems).toHaveLength(2);
-
-    expect(logFileItems[0]).toHaveTextContent('artifact1.log');
-
-    expect(logFileItems[1]).toHaveTextContent('invArtifact1.log');
 
     jest.useRealTimers();
   });

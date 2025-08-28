@@ -21,12 +21,13 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import { Box, Typography, IconButton, Chip, Theme } from '@mui/material';
 import { deepOrange, yellow, blue } from '@mui/material/colors';
 import { useTheme } from '@mui/material/styles';
-import React, { ReactNode } from 'react';
+import { ReactNode } from 'react';
 
 import { TreeData } from '@/common/components/log_viewer/virtual_tree/types';
 import { VirtualTreeNodeActions } from '@/common/components/log_viewer/virtual_tree/virtual_tree';
 
 import { ArtifactTreeNodeData } from '../../types';
+import { getArtifactType } from '../artifact_utils';
 
 import { FolderIcon } from './folder_icon';
 
@@ -36,11 +37,6 @@ const CONTENT_INTERNAL_OFFSET_LEFT = 8;
 const DIRECT_ACTIVE_NODE_SELECTION_BACKGROUND_COLOR = deepOrange[300];
 const DIRECT_SEARCH_MATCHED_BACKGROUND_COLOR = yellow[400];
 
-/**
- * A helper function to render text with highlighted matches.
- * It splits the text by the highlight term (case-insensitively) and wraps
- * the matches in a bold span.
- */
 function renderHighlightedText(
   text: string,
   highlight: string,
@@ -48,7 +44,6 @@ function renderHighlightedText(
   if (!highlight.trim()) {
     return text;
   }
-  // Use a regex to split the text by the highlight term, keeping the delimiter
   const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
   return (
     <span>
@@ -88,35 +83,12 @@ const getNodeBackground = (
   return theme.palette.background.paper;
 };
 
-function getFileTypeFromName(fileName: string): string | null {
-  // Handle specific image file names.
-  if (
-    fileName === 'image_diff' ||
-    fileName === 'expected_image' ||
-    fileName === 'actual_image'
-  ) {
-    return 'image';
-  }
-  const lastDot = fileName.lastIndexOf('.');
-  if (lastDot === -1 || lastDot === 0 || lastDot === fileName.length - 1) {
-    return 'text';
-  }
-  const extension = fileName.substring(lastDot + 1).toLowerCase();
-
-  if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'heic'].includes(extension)) {
-    return extension;
-  }
-  if (extension.length > 0 && extension.length <= 4) {
-    return extension;
-  }
-  return 'text';
-}
-
 const LeafFileIcon = ({ fileType }: { fileType: string | null }) => {
   const theme = useTheme();
   let IconComponent = InsertDriveFileOutlinedIcon;
   if (fileType) {
     switch (fileType) {
+      case 'image':
       case 'png':
       case 'jpg':
       case 'jpeg':
@@ -130,6 +102,7 @@ const LeafFileIcon = ({ fileType }: { fileType: string | null }) => {
       case 'json':
       case 'yaml':
       case 'md':
+      case 'log':
         IconComponent = ArticleIcon;
         break;
     }
@@ -164,7 +137,8 @@ export function ArtifactTreeNode({
   const theme = useTheme();
   const isFolder = !row.isLeafNode;
   const backgroundColor = getNodeBackground(context, theme);
-  const fileType = isFolder ? null : getFileTypeFromName(row.name);
+  const artifactType = isFolder ? null : getArtifactType(row.name);
+
   const totalPaddingLeft =
     row.level * LEVEL_INDENTATION_SIZE + CONTENT_INTERNAL_OFFSET_LEFT;
 
@@ -267,13 +241,13 @@ export function ArtifactTreeNode({
           {isFolder ? (
             <FolderIcon sx={{ fontSize: '24px' }} />
           ) : (
-            <LeafFileIcon fileType={fileType} />
+            <LeafFileIcon fileType={artifactType} />
           )}
         </Box>
 
-        {!isFolder && fileType && (
+        {!isFolder && artifactType && artifactType !== 'file' && (
           <Chip
-            label={fileType}
+            label={artifactType}
             size="small"
             sx={{
               height: '18px',

@@ -49,7 +49,7 @@ function ArtifactsSectionContent() {
     ),
     enabled: !!currentResult?.name,
     staleTime: Infinity,
-    refetchInterval: 10 * 60 * 1000, // Refetch every 10 minutes to refresh the signed links.
+    refetchInterval: 10 * 60 * 1000,
     select: (res) => res.pages.flatMap((page) => page.artifacts) || [],
   });
 
@@ -80,7 +80,7 @@ function ArtifactsSectionContent() {
     ),
     enabled: !!currentResult?.name,
     staleTime: Infinity,
-    refetchInterval: 10 * 60 * 1000, // Refetch every 10 minutes to refresh the signed links.
+    refetchInterval: 10 * 60 * 1000,
     select: (res) => res.pages.flatMap((page) => page.artifacts) || [],
   });
 

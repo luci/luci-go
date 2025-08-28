@@ -13,15 +13,18 @@
 // limitations under the License.
 
 import SearchIcon from '@mui/icons-material/Search';
+import TuneIcon from '@mui/icons-material/Tune';
 import {
   Box,
   Chip,
+  ClickAwayListener,
+  IconButton,
   InputAdornment,
   LinearProgress,
   TextField,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   TreeData,
@@ -35,7 +38,9 @@ import { ClusteringControls } from '../clustering_controls';
 import { useArtifactsContext } from '../context';
 import { ArtifactTreeNodeData, SelectedArtifactSource } from '../types';
 
+import { ArtifactFiltersDropdown } from './artifact_filters_dropdown';
 import { ArtifactTreeNode } from './artifact_tree_node';
+import { getArtifactType } from './artifact_utils';
 
 function addArtifactsToTree(
   artifacts: readonly Artifact[],
@@ -134,8 +139,28 @@ export function ArtifactTreeView({
   updateSelectedArtifact,
 }: ArtifactTreeViewProps) {
   const { clusteredFailures, hasRenderableResults } = useArtifactsContext();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const filterContainerRef = useRef<HTMLDivElement>(null);
+
+  const [artifactTypes, setArtifactTypes] = useState<string[]>([]);
+  const [crashTypes, setCrashTypes] = useState<string[]>([]);
+  const [showCriticalCrashes, setShowCriticalCrashes] = useState(false);
+  const [hideAutomationFiles, setHideAutomationFiles] = useState(false);
+  const [hideEmptyFolders, setHideEmptyFolders] = useState(false);
+  const [showOnlyFoldersWithError, setShowOnlyFoldersWithError] =
+    useState(false);
+
+  const handleClearFilters = () => {
+    setArtifactTypes([]);
+    setCrashTypes([]);
+    setShowCriticalCrashes(false);
+    setHideAutomationFiles(false);
+    setHideEmptyFolders(false);
+    setShowOnlyFoldersWithError(false);
+  };
 
   const noFailuresToClusterMessage = 'No failures to cluster.';
 
@@ -149,37 +174,88 @@ export function ArtifactTreeView({
     };
   }, [searchTerm]);
 
-  const filteredResultArtifacts = useMemo(() => {
-    if (!debouncedSearchTerm) {
-      return resultArtifacts;
+  const availableArtifactTypes = useMemo(() => {
+    const allArtifacts = [...resultArtifacts, ...invArtifacts];
+    const types = new Set<string>();
+    for (const artifact of allArtifacts) {
+      const type = getArtifactType(artifact.artifactId);
+      if (type !== 'file') {
+        types.add(type);
+      }
     }
-    return resultArtifacts.filter((artifact) =>
-      artifact.artifactId
-        .toLowerCase()
-        .includes(debouncedSearchTerm.toLocaleLowerCase()),
-    );
-  }, [resultArtifacts, debouncedSearchTerm]);
+    return Array.from(types).sort();
+  }, [resultArtifacts, invArtifacts]);
 
-  const filteredInvArtifacts = useMemo(() => {
-    if (!debouncedSearchTerm) {
-      return invArtifacts;
-    }
-    return invArtifacts.filter((artifact) =>
-      artifact.artifactId
-        .toLowerCase()
-        .includes(debouncedSearchTerm.toLocaleLowerCase()),
-    );
-  }, [invArtifacts, debouncedSearchTerm]);
+  const filterArtifactList = useCallback(
+    (artifacts: readonly Artifact[]) => {
+      let filtered = artifacts;
 
-  const artifactsTree = useMemo(() => {
+      if (debouncedSearchTerm) {
+        filtered = filtered.filter((artifact) =>
+          artifact.artifactId
+            .toLowerCase()
+            .includes(debouncedSearchTerm.toLocaleLowerCase()),
+        );
+      }
+
+      if (artifactTypes.length > 0) {
+        const selectedTypes = new Set(artifactTypes);
+        filtered = filtered.filter((artifact) =>
+          selectedTypes.has(getArtifactType(artifact.artifactId)),
+        );
+      }
+
+      return filtered;
+    },
+    [debouncedSearchTerm, artifactTypes],
+  );
+
+  const filteredResultArtifacts = useMemo(
+    () => filterArtifactList(resultArtifacts),
+    [resultArtifacts, filterArtifactList],
+  );
+  const filteredInvArtifacts = useMemo(
+    () => filterArtifactList(invArtifacts),
+    [invArtifacts, filterArtifactList],
+  );
+
+  const initialArtifactsTree = useMemo(() => {
     return buildArtifactsTree(filteredResultArtifacts, filteredInvArtifacts);
   }, [filteredResultArtifacts, filteredInvArtifacts]);
+
+  const finalArtifactsTree = useMemo(() => {
+    if (!hideEmptyFolders) {
+      return initialArtifactsTree;
+    }
+
+    function pruneEmptyFolders(
+      nodes: ArtifactTreeNodeData[],
+    ): ArtifactTreeNodeData[] {
+      const prunedNodes: ArtifactTreeNodeData[] = [];
+      for (const node of nodes) {
+        const isLeaf = !!node.artifact || node.isSummary;
+        if (isLeaf) {
+          prunedNodes.push(node);
+          continue;
+        }
+
+        const prunedChildren = pruneEmptyFolders(node.children);
+
+        if (prunedChildren.length > 0) {
+          prunedNodes.push({ ...node, children: prunedChildren });
+        }
+      }
+      return prunedNodes;
+    }
+
+    return pruneEmptyFolders(initialArtifactsTree);
+  }, [initialArtifactsTree, hideEmptyFolders]);
 
   useEffect(() => {
     if (debouncedSearchTerm) return;
     if (selectedArtifactNode) return;
 
-    const summaryNode = artifactsTree.find((node) => node.isSummary);
+    const summaryNode = finalArtifactsTree.find((node) => node.isSummary);
     if (summaryNode) {
       updateSelectedArtifact(summaryNode);
       return;
@@ -200,10 +276,10 @@ export function ArtifactTreeView({
       return null;
     };
 
-    const firstLeaf = findFirstLeafRecursive(artifactsTree);
+    const firstLeaf = findFirstLeafRecursive(finalArtifactsTree);
     updateSelectedArtifact(firstLeaf);
   }, [
-    artifactsTree,
+    finalArtifactsTree,
     updateSelectedArtifact,
     selectedArtifactNode,
     debouncedSearchTerm,
@@ -270,32 +346,76 @@ export function ArtifactTreeView({
             </Typography>
           )
         )}
-        <TextField
-          placeholder="Search artifacts"
-          variant="outlined"
-          size="small"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          fullWidth
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            },
-          }}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              borderRadius: '50px',
-              backgroundColor: '#f5f5f5',
-              '& fieldset': {
-                border: 'none',
-              },
-            },
-          }}
-        />
+        <ClickAwayListener onClickAway={() => setIsFilterPanelOpen(false)}>
+          <Box ref={filterContainerRef} sx={{ position: 'relative' }}>
+            <TextField
+              placeholder="Search for artifact"
+              variant="outlined"
+              size="small"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              fullWidth
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setIsFilterPanelOpen((prev) => !prev)}
+                        sx={{
+                          color: isFilterPanelOpen ? 'primary.main' : 'inherit',
+                        }}
+                      >
+                        <TuneIcon />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '50px',
+                  backgroundColor: 'action.hover',
+                  '& fieldset': {
+                    border: 'none',
+                  },
+                },
+              }}
+            />
+            {isFilterPanelOpen && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 'calc(100% + 4px)',
+                  left: 0,
+                  width: '100%',
+                  zIndex: (theme) => theme.zIndex.tooltip,
+                }}
+              >
+                <ArtifactFiltersDropdown
+                  availableArtifactTypes={availableArtifactTypes}
+                  artifactTypes={artifactTypes}
+                  setArtifactTypes={setArtifactTypes}
+                  crashTypes={crashTypes}
+                  setCrashTypes={setCrashTypes}
+                  showCriticalCrashes={showCriticalCrashes}
+                  setShowCriticalCrashes={setShowCriticalCrashes}
+                  hideAutomationFiles={hideAutomationFiles}
+                  setHideAutomationFiles={setHideAutomationFiles}
+                  hideEmptyFolders={hideEmptyFolders}
+                  setHideEmptyFolders={setHideEmptyFolders}
+                  showOnlyFoldersWithError={showOnlyFoldersWithError}
+                  setShowOnlyFoldersWithError={setShowOnlyFoldersWithError}
+                  onClearFilters={handleClearFilters}
+                />
+              </Box>
+            )}
+          </Box>
+        </ClickAwayListener>
         {selectedArtifactNode && (
           <Box>
             Selected artifact:{' '}
@@ -312,7 +432,7 @@ export function ArtifactTreeView({
         }}
       >
         <VirtualTree<ArtifactTreeNodeData>
-          root={artifactsTree}
+          root={finalArtifactsTree}
           isTreeCollapsed={false}
           scrollToggle
           itemContent={(
