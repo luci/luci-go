@@ -29,6 +29,8 @@ var (
 	PermGetWorkUnit        = realms.RegisterPermission("resultdb.workUnits.get")
 
 	PermListArtifacts               = realms.RegisterPermission("resultdb.artifacts.list")
+	PermListLimitedArtifacts        = realms.RegisterPermission("resultdb.artifacts.listLimited")
+	PermListRootInvocations         = realms.RegisterPermission("resultdb.rootInvocations.list")
 	PermListTestExonerations        = realms.RegisterPermission("resultdb.testExonerations.list")
 	PermListLimitedTestExonerations = realms.RegisterPermission("resultdb.testExonerations.listLimited")
 	PermListTestResults             = realms.RegisterPermission("resultdb.testResults.list")

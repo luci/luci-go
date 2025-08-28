@@ -19,7 +19,8 @@ import (
 )
 
 var (
-	permCreateRootInvocation = realms.RegisterPermission("resultdb.rootInvocations.create")
+	permCreateRootInvocation       = realms.RegisterPermission("resultdb.rootInvocations.create")
+	permSetSubmittedRootInvocation = realms.RegisterPermission("resultdb.rootInvocations.setSubmitted")
 
 	permCreateWorkUnit  = realms.RegisterPermission("resultdb.workUnits.create")
 	permIncludeWorkUnit = realms.RegisterPermission("resultdb.workUnits.include")
