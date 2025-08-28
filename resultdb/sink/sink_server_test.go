@@ -689,7 +689,7 @@ func TestReportTestResults(t *testing.T) {
 			checkResults()
 		})
 
-		t.Run("ReportTestResults", func(t *ftt.Test) {
+		t.Run("reports artifacts", func(t *ftt.Test) {
 			sink, err := newSinkServer(ctx, cfg)
 			assert.Loosely(t, err, should.BeNil)
 			defer closeSinkServer(ctx, sink)
@@ -699,7 +699,18 @@ func TestReportTestResults(t *testing.T) {
 				return err
 			}
 
-			t.Run("returns an error if the artifact req is invalid", func(t *ftt.Test) {
+			t.Run("artifacts ID is invalid", func(t *ftt.Test) {
+				tr.Artifacts[strings.Repeat("a", 600)] = &sinkpb.Artifact{
+					Body: &sinkpb.Artifact_Contents{
+						Contents: []byte("a sample artifact"),
+					},
+				}
+				err := report(tr)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike("test_results[0]: artifacts: aaaaaaaaaaaaa"))
+				assert.That(t, err, should.ErrLike("aaaaaaaaaaaaa: does not match pattern"))
+			})
+			t.Run("artifact req is invalid", func(t *ftt.Test) {
 				tr.Artifacts["art2"] = &sinkpb.Artifact{}
 				err := report(tr)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
@@ -722,12 +733,13 @@ func TestReportTestResults(t *testing.T) {
 
 					assert.Loosely(t, sentArtReq, should.NotBeNil)
 					assert.Loosely(t, sentArtReq.Requests, should.HaveLength(1))
-					assert.Loosely(t, sentArtReq.Requests[0].Parent, should.HaveSuffix("/tests/:module_name%21scheme:coarse_name:fine_name%23component1:component2/results/result_id1"))
 					assert.Loosely(t, sentArtReq.Requests[0].Artifact, should.Match(&pb.Artifact{
-						ArtifactId:  "art1",
-						ContentType: "text/plain",
-						Contents:    []byte("a sample artifact"),
-						SizeBytes:   int64(len("a sample artifact")),
+						TestIdStructured: expectedTR.TestIdStructured,
+						ResultId:         "result_id1",
+						ArtifactId:       "art1",
+						ContentType:      "text/plain",
+						Contents:         []byte("a sample artifact"),
+						SizeBytes:        int64(len("a sample artifact")),
 					}))
 				})
 			})

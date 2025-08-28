@@ -19,7 +19,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
 	"testing"
 
 	"google.golang.org/protobuf/proto"
@@ -28,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
@@ -51,15 +51,15 @@ func TestArtifactChannel(t *testing.T) {
 			batchCh <- in
 			return nil, nil
 		}
-		createTask := func(name, content string) *uploadTask {
+		createTask := func(artifactID, content string) *uploadTask {
 			art := testArtifactWithContents([]byte(content))
-			task, err := newUploadTask(name, art)
+			task, err := newUploadTask("inv", nil, "", artifactID, art)
 			assert.Loosely(t, err, should.BeNil)
 			return task
 		}
 
 		t.Run("with a small artifact", func(t *ftt.Test) {
-			task := createTask("invocations/inv/artifacts/art1", "content")
+			task := createTask("art1", "content")
 			ac := newArtifactChannel(ctx, &cfg)
 			ac.schedule(task)
 			ac.closeAndDrain(ctx)
@@ -79,9 +79,9 @@ func TestArtifactChannel(t *testing.T) {
 		})
 
 		t.Run("with multiple, small artifacts", func(t *ftt.Test) {
-			t1 := createTask("invocations/inv/artifacts/art1", "1234")
-			t2 := createTask("invocations/inv/artifacts/art2", "5678")
-			t3 := createTask("invocations/inv/artifacts/art3", "9012")
+			t1 := createTask("art1", "1234")
+			t2 := createTask("art2", "5678")
+			t3 := createTask("art3", "9012")
 
 			expectedRequests := []*pb.CreateArtifactRequest{
 				// art1
@@ -160,7 +160,7 @@ func TestArtifactChannel(t *testing.T) {
 			cfg.MaxBatchableArtifactSize = 10 + batchedArtifactOverheadBytes
 			ac := newArtifactChannel(ctx, &cfg)
 
-			t1 := createTask("invocations/inv/artifacts/art1", "content-foo-bar")
+			t1 := createTask("art1", "content-foo-bar")
 			ac.schedule(t1)
 			ac.closeAndDrain(ctx)
 
@@ -168,7 +168,7 @@ func TestArtifactChannel(t *testing.T) {
 			req := <-streamCh
 			assert.Loosely(t, req, should.NotBeNil)
 			assert.Loosely(t, req.URL.String(), should.Equal(
-				"https://"+cfg.ArtifactStreamHost+"/invocations/inv/artifacts/art1"))
+				"https://"+cfg.ArtifactStreamHost+"/invocations/inv/artifacts"))
 			body, err := io.ReadAll(req.Body)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, body, should.Match([]byte("content-foo-bar")))
@@ -180,7 +180,9 @@ func TestUploadTask(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("newUploadTask", t, func(t *ftt.Test) {
-		name := "invocations/inv/artifacts/art1"
+		invID := "inv"
+		artifactID := "art1"
+
 		fArt := testArtifactWithFile(t, func(f *os.File) {
 			_, err := f.Write([]byte("content"))
 			assert.Loosely(t, err, should.BeNil)
@@ -189,15 +191,15 @@ func TestUploadTask(t *testing.T) {
 		defer os.Remove(fArt.GetFilePath())
 
 		t.Run("works", func(t *ftt.Test) {
-			tsk, err := newUploadTask(name, fArt)
+			tsk, err := newUploadTask(invID, nil, "", artifactID, fArt)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tsk, should.Resemble(&uploadTask{art: fArt, artName: name, size: int64(len("content"))}))
+			assert.Loosely(t, tsk, should.Resemble(&uploadTask{art: fArt, invocationID: invID, artifactID: artifactID, size: int64(len("content"))}))
 		})
 
 		t.Run("fails", func(t *ftt.Test) {
 			// stat error
 			assert.Loosely(t, os.Remove(fArt.GetFilePath()), should.BeNil)
-			_, err := newUploadTask(name, fArt)
+			_, err := newUploadTask(invID, nil, "", artifactID, fArt)
 			assert.Loosely(t, err, should.ErrLike("querying file info"))
 
 			// is a directory
@@ -205,20 +207,33 @@ func TestUploadTask(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			defer os.RemoveAll(path)
 			fArt.Body.(*sinkpb.Artifact_FilePath).FilePath = path
-			_, err = newUploadTask(name, fArt)
+			_, err = newUploadTask(invID, nil, "", artifactID, fArt)
 			assert.Loosely(t, err, should.ErrLike("is a directory"))
 		})
 	})
 
 	ftt.Run("CreateRequest", t, func(t *ftt.Test) {
-		name := "invocations/inv/tests/t1/results/r1/artifacts/a1"
+		invID := "inv"
+		testID := &pb.TestIdentifier{
+			ModuleName:   "//infra/junit_tests",
+			ModuleScheme: "junit",
+			ModuleVariant: pbutil.Variant(
+				"key", "value",
+			),
+			CoarseName: "org.chromium.go.luci",
+			FineName:   "ValidationTests",
+			CaseName:   "FooBar",
+		}
+		resultID := "r1"
+		artifactID := "a1"
+
 		fArt := testArtifactWithFile(t, func(f *os.File) {
 			_, err := f.Write([]byte("content"))
 			assert.Loosely(t, err, should.BeNil)
 		})
 		fArt.ContentType = "plain/text"
 		defer os.Remove(fArt.GetFilePath())
-		ut, err := newUploadTask(name, fArt)
+		ut, err := newUploadTask(invID, testID, resultID, artifactID, fArt)
 		assert.Loosely(t, err, should.BeNil)
 
 		t.Run("Updates the content type when it is missing", func(t *ftt.Test) {
@@ -228,21 +243,30 @@ func TestUploadTask(t *testing.T) {
 			assert.Loosely(t, req.Artifact.ContentType, should.Equal("text/plain"))
 		})
 
-		t.Run("Fails when the artifact name is too long", func(t *ftt.Test) {
-			artifactID := strings.Repeat("a", 600)
-			name := "invocations/inv/tests/t1/results/r1/artifacts/" + artifactID
-			ut, err := newUploadTask(name, fArt)
-			assert.Loosely(t, err, should.BeNil)
-
-			_, err = ut.CreateRequest()
-			assert.Loosely(t, err, should.NotBeNil)
-		})
-
 		t.Run("works", func(t *ftt.Test) {
 			req, err := ut.CreateRequest()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, req, should.Match(&pb.CreateArtifactRequest{
-				Parent: "invocations/inv/tests/t1/results/r1",
+				Parent: "invocations/inv",
+				Artifact: &pb.Artifact{
+					ArtifactId:       "a1",
+					TestIdStructured: testID,
+					ResultId:         "r1",
+					ContentType:      "plain/text",
+					SizeBytes:        int64(len("content")),
+					Contents:         []byte("content"),
+				},
+			}))
+		})
+
+		t.Run("work for invocation-level artifact", func(t *ftt.Test) {
+			ut, err := newUploadTask(invID, nil, "", artifactID, fArt)
+			assert.Loosely(t, err, should.BeNil)
+
+			req, err := ut.CreateRequest()
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, req, should.Match(&pb.CreateArtifactRequest{
+				Parent: "invocations/inv",
 				Artifact: &pb.Artifact{
 					ArtifactId:  "a1",
 					ContentType: "plain/text",

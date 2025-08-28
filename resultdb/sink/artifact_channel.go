@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -34,9 +35,12 @@ import (
 )
 
 type uploadTask struct {
-	art     *sinkpb.Artifact
-	artName string
-	size    int64 // content size
+	art          *sinkpb.Artifact
+	invocationID string
+	testID       *pb.TestIdentifier
+	resultID     string
+	artifactID   string
+	size         int64 // content size
 }
 
 // batchedArtifactOverheadBytes is the maximum number of bytes of overhead that is
@@ -45,14 +49,19 @@ const batchedArtifactOverheadBytes = 1_024
 
 // newUploadTask constructs an uploadTask for the artifact.
 //
+// testID and resultID are optional.
+//
 // If FilePath is set on the artifact, this calls os.Stat to obtain the file information,
 // and may return an error if the Stat call fails. e.g., permission denied, not found.
 // It also returns an error if the artifact file path is a directory.
-func newUploadTask(name string, art *sinkpb.Artifact) (*uploadTask, error) {
+func newUploadTask(invocationID string, testID *pb.TestIdentifier, resultID, artifactID string, art *sinkpb.Artifact) (*uploadTask, error) {
 	ret := &uploadTask{
-		art:     art,
-		artName: name,
-		size:    int64(len(art.GetContents())),
+		art:          art,
+		invocationID: invocationID,
+		testID:       testID,
+		resultID:     resultID,
+		artifactID:   artifactID,
+		size:         int64(len(art.GetContents())),
 	}
 
 	// Find and save the content size on uploadTask creation, so that the task scheduling
@@ -82,31 +91,24 @@ func newUploadTask(name string, art *sinkpb.Artifact) (*uploadTask, error) {
 // Artifact_FilePath. Save the returned request to avoid unnecessary I/Os,
 // if necessary.
 func (t *uploadTask) CreateRequest() (*pb.CreateArtifactRequest, error) {
-	invID, tID, rID, aID, err := pbutil.ParseLegacyArtifactName(t.artName)
-	if err != nil {
-		return nil, err
-	}
 	req := &pb.CreateArtifactRequest{
+		Parent: pbutil.InvocationName(t.invocationID),
 		Artifact: &pb.Artifact{
-			ArtifactId:  aID,
+			ArtifactId:  t.artifactID,
 			ContentType: t.art.GetContentType(),
 			SizeBytes:   t.size,
 			Contents:    t.art.GetContents(),
 			GcsUri:      t.art.GetGcsUri(),
 		},
 	}
-
-	// parent
-	switch {
-	case tID == "":
-		// Invocation-level artifact
-		req.Parent = pbutil.InvocationName(invID)
-	default:
-		req.Parent = pbutil.LegacyTestResultName(invID, tID, rID)
+	if t.testID != nil {
+		req.Artifact.TestIdStructured = proto.Clone(t.testID).(*pb.TestIdentifier)
+		req.Artifact.ResultId = t.resultID
 	}
 
 	// contents
 	if fp := t.art.GetFilePath(); fp != "" {
+		var err error
 		if req.Artifact.Contents, err = os.ReadFile(fp); err != nil {
 			return nil, err
 		}

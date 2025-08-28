@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -38,7 +39,19 @@ func (c mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 func TestArtifactUploader(t *testing.T) {
 	t.Parallel()
 
-	name := "invocations/inv1/tests/t1/results/r1/artifacts/stderr"
+	invID := "inv1"
+	testID := &pb.TestIdentifier{
+		ModuleName:   "//infra/junit_tests",
+		ModuleScheme: "junit",
+		ModuleVariant: pbutil.Variant(
+			"key", "value",
+		),
+		CoarseName: "org.chromium.go.luci",
+		FineName:   "ValidationTests",
+		CaseName:   "FooBar",
+	}
+	resultID := "r1"
+	artifactID := "stderr"
 	token := "this is an update token"
 	content := "the test passed"
 	contentType := "test/output"
@@ -51,7 +64,7 @@ func TestArtifactUploader(t *testing.T) {
 		reqCh := make(chan *http.Request, 1)
 		keepReq := func(req *http.Request) (*http.Response, error) {
 			reqCh <- req
-			return &http.Response{StatusCode: http.StatusNoContent}, nil
+			return &http.Response{StatusCode: http.StatusCreated}, nil
 		}
 		batchReqCh := make(chan *pb.BatchCreateArtifactsRequest, 1)
 		keepBatchReq := func(ctx context.Context, in *pb.BatchCreateArtifactsRequest) (*pb.BatchCreateArtifactsResponse, error) {
@@ -74,13 +87,13 @@ func TestArtifactUploader(t *testing.T) {
 			defer os.Remove(art.GetFilePath())
 
 			t.Run("works", func(t *ftt.Test) {
-				ut, err := newUploadTask(name, art)
+				ut, err := newUploadTask(invID, testID, resultID, artifactID, art)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, uploader.StreamUpload(ctx, ut, token), should.BeNil)
 
 				// validate the request
 				sent := <-reqCh
-				assert.Loosely(t, sent.URL.String(), should.Equal(fmt.Sprintf("https://example.org/%s", name)))
+				assert.Loosely(t, sent.URL.String(), should.Equal("https://example.org/invocations/inv1/artifacts"))
 				assert.Loosely(t, sent.ContentLength, should.Equal(len(content)))
 				assert.Loosely(t, sent.Header.Get("Content-Hash"), should.Equal(hash))
 				assert.Loosely(t, sent.Header.Get("Content-Type"), should.Equal(contentType))
@@ -88,7 +101,7 @@ func TestArtifactUploader(t *testing.T) {
 			})
 
 			t.Run("fails if file doesn't exist", func(t *ftt.Test) {
-				ut, err := newUploadTask(name, art)
+				ut, err := newUploadTask(invID, testID, resultID, artifactID, art)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, os.Remove(art.GetFilePath()), should.BeNil)
 
@@ -114,13 +127,13 @@ func TestArtifactUploader(t *testing.T) {
 				t.Run(fmt.Sprintf("With artifact content type: %s should upload with content type: %s", tc.contentType, tc.expectedContentType), func(t *ftt.Test) {
 					art := testArtifactWithContents([]byte(content))
 					art.ContentType = tc.contentType
-					ut, err := newUploadTask(name, art)
+					ut, err := newUploadTask(invID, testID, resultID, artifactID, art)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, uploader.StreamUpload(ctx, ut, token), should.BeNil)
 
 					// validate the request
 					sent := <-reqCh
-					assert.Loosely(t, sent.URL.String(), should.Equal(fmt.Sprintf("https://example.org/%s", name)))
+					assert.Loosely(t, sent.URL.String(), should.Equal("https://example.org/invocations/inv1/artifacts"))
 					assert.Loosely(t, sent.ContentLength, should.Equal(len(content)))
 					assert.Loosely(t, sent.Header.Get("Content-Hash"), should.Equal(hash))
 					assert.Loosely(t, sent.Header.Get("Content-Type"), should.Equal(tc.expectedContentType))
@@ -132,7 +145,7 @@ func TestArtifactUploader(t *testing.T) {
 		t.Run("Upload w/ gcs not supported by stream upload", func(t *ftt.Test) {
 			art := testArtifactWithGcs(gcsURI)
 			art.ContentType = contentType
-			ut, err := newUploadTask(name, art)
+			ut, err := newUploadTask(invID, testID, resultID, artifactID, art)
 			assert.Loosely(t, err, should.BeNil)
 
 			// StreamUpload does not support gcsUri upload
@@ -142,7 +155,7 @@ func TestArtifactUploader(t *testing.T) {
 		t.Run("Batch Upload w/ gcs", func(t *ftt.Test) {
 			art := testArtifactWithGcs(gcsURI)
 			art.ContentType = contentType
-			ut, err := newUploadTask(name, art)
+			ut, err := newUploadTask(invID, testID, resultID, artifactID, art)
 			ut.size = 5 * 1024 * 1024
 			assert.Loosely(t, err, should.BeNil)
 
@@ -163,7 +176,7 @@ func TestArtifactUploader(t *testing.T) {
 			func(t *ftt.Test) {
 				art := testArtifactWithGcs(gcsURI)
 				art.ContentType = contentType
-				ut, err := newUploadTask(name, art)
+				ut, err := newUploadTask(invID, testID, resultID, artifactID, art)
 				ut.size = 15 * 1024 * 1024
 				assert.Loosely(t, err, should.BeNil)
 
@@ -182,17 +195,17 @@ func TestArtifactUploader(t *testing.T) {
 				})
 				art1.ContentType = contentType
 				defer os.Remove(art1.GetFilePath())
-				ut1, err := newUploadTask(name, art1)
+				ut1, err := newUploadTask(invID, testID, resultID, "art-1", art1)
 				assert.Loosely(t, err, should.BeNil)
 
 				art2 := testArtifactWithContents([]byte(content))
 				art2.ContentType = contentType
-				ut2, err := newUploadTask(name, art2)
+				ut2, err := newUploadTask(invID, testID, resultID, "art-2", art2)
 				assert.Loosely(t, err, should.BeNil)
 
 				art3 := testArtifactWithGcs(gcsURI)
 				art3.ContentType = contentType
-				ut3, err := newUploadTask(name, art3)
+				ut3, err := newUploadTask(invID, testID, resultID, "art-3", art3)
 				ut3.size = 5 * 1024 * 1024
 				assert.Loosely(t, err, should.BeNil)
 

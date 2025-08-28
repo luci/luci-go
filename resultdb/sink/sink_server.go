@@ -232,15 +232,29 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		}
 
 		for id, a := range tr.GetArtifacts() {
-			var testID string
-			if rdbtr.TestIdStructured != nil {
-				testID = pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier(rdbtr.TestIdStructured))
-			} else {
-				testID = rdbtr.TestId
+			if err := pbutil.ValidateArtifactID(id); err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: artifacts: invalid artifact ID %q: %s", i, id, err)
 			}
 
-			n := pbutil.LegacyTestResultArtifactName(s.cfg.invocationID, testID, rdbtr.ResultId, id)
-			t, err := newUploadTask(n, a)
+			var testID *pb.TestIdentifier
+			if rdbtr.TestIdStructured != nil {
+				testID = rdbtr.TestIdStructured
+			} else {
+				testIDBase, err := pbutil.ParseAndValidateTestID(rdbtr.TestId)
+				if err != nil {
+					return nil, errors.Fmt("parent: encoded test id: %w", err)
+				}
+				testID = &pb.TestIdentifier{
+					ModuleScheme:  testIDBase.ModuleScheme,
+					ModuleName:    testIDBase.ModuleName,
+					ModuleVariant: rdbtr.Variant,
+					CaseName:      testIDBase.CaseName,
+					CoarseName:    testIDBase.CoarseName,
+					FineName:      testIDBase.FineName,
+				}
+			}
+
+			t, err := newUploadTask(s.cfg.invocationID, testID, rdbtr.ResultId, id, a)
 
 			// newUploadTask can return an error if os.Stat() fails.
 			if err != nil {
@@ -299,7 +313,7 @@ func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sin
 		if err := validateArtifact(a); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad request for artifact %q: %s", id, err)
 		}
-		t, err := newUploadTask(pbutil.LegacyInvocationArtifactName(s.cfg.invocationID, id), a)
+		t, err := newUploadTask(s.cfg.invocationID, nil, "", id, a)
 		// newUploadTask can return an error if os.Stat() fails.
 		if err != nil {
 			// TODO(crbug.com/1124868) - once all test harnesses are fixed, return 4xx on

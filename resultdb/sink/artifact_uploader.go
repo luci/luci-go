@@ -22,7 +22,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 
 	"google.golang.org/protobuf/proto"
 
@@ -71,7 +73,7 @@ func (u *artifactUploader) StreamUpload(ctx context.Context, t *uploadTask, upda
 	}
 
 	req, err := http.NewRequestWithContext(
-		ctx, "PUT", fmt.Sprintf("https://%s/%s", u.StreamHost, t.artName), body)
+		ctx, "POST", fmt.Sprintf("https://%s/%s/artifacts", u.StreamHost, pbutil.InvocationName(t.invocationID)), body)
 	if err != nil {
 		return errors.Fmt("newHTTPRequest: %w", err)
 	}
@@ -105,6 +107,29 @@ func (u *artifactUploader) StreamUpload(ctx context.Context, t *uploadTask, upda
 		}
 		req.ContentLength = st.Size()
 	}
+
+	if t.testID != nil {
+		req.Header.Add("Test-Module-Name", url.PathEscape(t.testID.ModuleName))
+		req.Header.Add("Test-Module-Scheme", url.PathEscape(t.testID.ModuleScheme))
+
+		// Variant is transferred as a comma-separated list of URL-encoded string pairs.
+		if len(t.testID.ModuleVariant.Def) > 0 {
+			var variantHeaderValue strings.Builder
+			for k, v := range t.testID.ModuleVariant.Def {
+				stringPair := url.PathEscape(fmt.Sprintf("%s:%s", k, v))
+				if variantHeaderValue.Len() > 0 {
+					variantHeaderValue.WriteString(",")
+				}
+				variantHeaderValue.WriteString(stringPair)
+			}
+			req.Header.Add("Test-Module-Variant", variantHeaderValue.String())
+		}
+		req.Header.Add("Test-Coarse-Name", url.PathEscape(t.testID.CoarseName))
+		req.Header.Add("Test-Fine-Name", url.PathEscape(t.testID.FineName))
+		req.Header.Add("Test-Case-Name", url.PathEscape(t.testID.CaseName))
+		req.Header.Add("Result-ID", t.resultID)
+	}
+	req.Header.Add("Artifact-ID", t.artifactID)
 
 	// calculates the hash and rewind the position back to the beginning so that
 	// the request body can be re-read by HTTPClient.Do.
@@ -144,13 +169,20 @@ func (u *artifactUploader) sendHTTP(req *http.Request) error {
 		}
 
 		code := resp.StatusCode
-		// ResultDB returns StatusNoContent on success.
-		if code == http.StatusNoContent {
+		// ResultDB returns StatusCreated on success.
+		if code == http.StatusCreated {
 			return nil
 		}
 
+		// Try to read the detailed error message.
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			// Ignore error, we already have another error.
+		}
+		detailedError := strings.TrimSpace(string(body))
+
 		// Tag the error as an transient error, if retriable.
-		err = errors.Fmt("http request failed(%d): %s", resp.StatusCode, resp.Status)
+		err = errors.Fmt("http request failed(%d): %s", resp.StatusCode, detailedError)
 		if code == http.StatusRequestTimeout || code == http.StatusTooManyRequests || code >= 500 {
 			err = transient.Tag.Apply(err)
 		}
