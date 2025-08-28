@@ -98,7 +98,7 @@ func TestListTestExonerations(t *testing.T) {
 
 		all := []*pb.TestExoneration{
 			{
-				Name:   pbutil.TestExonerationName("inv", testID, "0"),
+				Name:   pbutil.LegacyTestExonerationName("inv", testID, "0"),
 				TestId: testID,
 				TestIdStructured: &pb.TestIdentifier{
 					ModuleName:        "//chrome/test:foo_tests",
@@ -115,7 +115,7 @@ func TestListTestExonerations(t *testing.T) {
 				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 			},
 			{
-				Name:   pbutil.TestExonerationName("inv", testID, "1"),
+				Name:   pbutil.LegacyTestExonerationName("inv", testID, "1"),
 				TestId: testID,
 				TestIdStructured: &pb.TestIdentifier{
 					ModuleName:        "//chrome/test:foo_tests",
@@ -131,7 +131,7 @@ func TestListTestExonerations(t *testing.T) {
 				Reason:        pb.ExonerationReason_UNEXPECTED_PASS,
 			},
 			{
-				Name:   pbutil.TestExonerationName("inv", testID, "2"),
+				Name:   pbutil.LegacyTestExonerationName("inv", testID, "2"),
 				TestId: testID,
 				TestIdStructured: &pb.TestIdentifier{
 					ModuleName:        "//chrome/test:foo_tests",

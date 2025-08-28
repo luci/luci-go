@@ -117,7 +117,7 @@ func TestToLimitedData(t *testing.T) {
 		invocationID := "inv0"
 		testID := "://chrome/test:foo_tests!junit:org.chromium.foo:BarTest#Foo"
 		exonerationID := "123"
-		name := pbutil.TestExonerationName(invocationID, testID, exonerationID)
+		name := pbutil.LegacyTestExonerationName(invocationID, testID, exonerationID)
 		variant := pbutil.Variant("v", "a")
 		variantHash := pbutil.VariantHash(variant)
 

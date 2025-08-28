@@ -30,7 +30,7 @@ import (
 )
 
 func verifyGetTestExonerationPermission(ctx context.Context, exonerationName string) error {
-	invID, _, _, err := pbutil.ParseTestExonerationName(exonerationName)
+	invID, _, _, err := pbutil.ParseLegacyTestExonerationName(exonerationName)
 	if err != nil {
 		return appstatus.BadRequest(errors.Fmt("name: %w", err))
 	}
@@ -39,7 +39,7 @@ func verifyGetTestExonerationPermission(ctx context.Context, exonerationName str
 }
 
 func validateGetTestExonerationRequest(req *pb.GetTestExonerationRequest) error {
-	if err := pbutil.ValidateTestExonerationName(req.Name); err != nil {
+	if err := pbutil.ValidateLegacyTestExonerationName(req.Name); err != nil {
 		return errors.Fmt("name: %w", err)
 	}
 

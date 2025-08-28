@@ -96,12 +96,14 @@ func Read(ctx context.Context, name string) (*Artifact, error) {
 		}
 		invID = invocations.ID(invIDStr)
 	} else {
-		var rootInvID, wuID string
-		rootInvID, wuID, testID, resultID, artifactID, err = pbutil.ParseArtifactName(name)
+		parts, err := pbutil.ParseArtifactName(name)
 		if err != nil {
 			return nil, err
 		}
-		invID = workunits.ID{RootInvocationID: rootinvocations.ID(rootInvID), WorkUnitID: wuID}.LegacyInvocationID()
+		invID = workunits.ID{RootInvocationID: rootinvocations.ID(parts.RootInvocationID), WorkUnitID: parts.WorkUnitID}.LegacyInvocationID()
+		testID = parts.TestID
+		resultID = parts.ResultID
+		artifactID = parts.ArtifactID
 	}
 
 	parentID := ParentID(testID, resultID)

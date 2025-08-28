@@ -46,8 +46,8 @@ var (
 	testResultArtifactNamePatternRe = regexpf("^%s$", testResultArtifactNamePattern)
 	artifactNameRe                  = regexpf("^%s|%s$", testResultArtifactNamePattern, workUnitArtifactNamePattern)
 
-	legacyInvocationArtifactNamePattern = fmt.Sprintf("invocations/(%s)/artifacts/(.+)", invocationIDPattern)
-	legacyTestResultArtifactNamePattern = fmt.Sprintf("invocations/(%s)/tests/([^/]+)/results/(%s)/artifacts/(.+)", invocationIDPattern, resultIDPattern)
+	legacyInvocationArtifactNamePattern = fmt.Sprintf("^invocations/(%s)/artifacts/(.+)$", invocationIDPattern)
+	legacyTestResultArtifactNamePattern = fmt.Sprintf("^invocations/(%s)/tests/([^/]+)/results/(%s)/artifacts/(.+)$", invocationIDPattern, resultIDPattern)
 	legacyInvocationArtifactNameRe      = regexpf("^%s$", legacyInvocationArtifactNamePattern)
 	legacyTestResultArtifactNameRe      = regexpf("^%s$", legacyTestResultArtifactNamePattern)
 	legacyArtifactNameRe                = regexpf("^%s|%s$", legacyTestResultArtifactNamePattern, legacyInvocationArtifactNamePattern)
@@ -70,43 +70,73 @@ func ValidateLegacyArtifactName(name string) error {
 	return validate.SpecifiedWithRe(legacyArtifactNameRe, name)
 }
 
+// ArtifactNameParts captures the parsed parts of an artifact resource name.
+type ArtifactNameParts struct {
+	RootInvocationID string
+	WorkUnitID       string
+	TestID           string // Optional
+	ResultID         string // Optional
+	ArtifactID       string
+}
+
 // ParseArtifactName extracts the root invocation ID, work unit ID, unescaped test id, result ID
 // and artifact ID from an artifact name.
 // The testID and resultID are empty if this is a work unit-level artifact.
-func ParseArtifactName(name string) (rootInvocationID, workUnitID, testID, resultID, artifactID string, err error) {
+func ParseArtifactName(name string) (ArtifactNameParts, error) {
 	if name == "" {
-		err = validate.Unspecified()
-		return
+		return ArtifactNameParts{}, validate.Unspecified()
 	}
 
 	if m := workUnitArtifactNamePatternRe.FindStringSubmatch(name); m != nil {
-		rootInvocationID = m[1]
-		workUnitID = m[2]
-		artifactID, err = unescapeAndValidateArtifactID(m[3])
-		if err != nil {
-			err = errors.Fmt("artifact ID: %w", err)
+		rootInvocationID := m[1]
+		if err := ValidateRootInvocationID(rootInvocationID); err != nil {
+			return ArtifactNameParts{}, errors.Fmt("root invocation ID: %w", err)
 		}
-		return
+		workUnitID := m[2]
+		if err := ValidateWorkUnitID(workUnitID); err != nil {
+			return ArtifactNameParts{}, errors.Fmt("work unit ID: %w", err)
+		}
+		artifactID, err := unescapeAndValidateArtifactID(m[3])
+		if err != nil {
+			return ArtifactNameParts{}, errors.Fmt("artifact ID: %w", err)
+		}
+		return ArtifactNameParts{
+			RootInvocationID: rootInvocationID,
+			WorkUnitID:       workUnitID,
+			TestID:           "",
+			ResultID:         "",
+			ArtifactID:       artifactID,
+		}, nil
 	}
 
 	if m := testResultArtifactNamePatternRe.FindStringSubmatch(name); m != nil {
-		rootInvocationID = m[1]
-		workUnitID = m[2]
-		testID, err = unescapeAndValidateTestID(m[3])
-		if err != nil {
-			err = errors.Fmt("test ID: %w", err)
-			return
+		rootInvocationID := m[1]
+		if err := ValidateRootInvocationID(rootInvocationID); err != nil {
+			return ArtifactNameParts{}, errors.Fmt("root invocation ID: %w", err)
 		}
-		resultID = m[4]
-		artifactID, err = unescapeAndValidateArtifactID(m[5])
-		if err != nil {
-			err = errors.Fmt("artifact ID: %w", err)
+		workUnitID := m[2]
+		if err := ValidateWorkUnitID(workUnitID); err != nil {
+			return ArtifactNameParts{}, errors.Fmt("work unit ID: %w", err)
 		}
-		return
+		testID, err := unescapeAndValidateTestID(m[3])
+		if err != nil {
+			return ArtifactNameParts{}, errors.Fmt("test ID: %w", err)
+		}
+		resultID := m[4]
+		artifactID, err := unescapeAndValidateArtifactID(m[5])
+		if err != nil {
+			return ArtifactNameParts{}, errors.Fmt("artifact ID: %w", err)
+		}
+		return ArtifactNameParts{
+			RootInvocationID: rootInvocationID,
+			WorkUnitID:       workUnitID,
+			TestID:           testID,
+			ResultID:         resultID,
+			ArtifactID:       artifactID,
+		}, nil
 	}
 
-	err = validate.DoesNotMatchReErr(artifactNameRe)
-	return
+	return ArtifactNameParts{}, validate.DoesNotMatchReErr(artifactNameRe)
 }
 
 // ParseLegacyArtifactName extracts the invocation ID, unescaped test id, result ID

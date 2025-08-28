@@ -470,7 +470,7 @@ func (q *Query) toLimitedData(ctx context.Context, tv *pb.TestVariant,
 	}
 
 	for _, exoneration := range tv.Exonerations {
-		invID, _, _, err := pbutil.ParseTestExonerationName(exoneration.Name)
+		invID, _, _, err := pbutil.ParseLegacyTestExonerationName(exoneration.Name)
 		if err != nil {
 			return err
 		}
@@ -617,7 +617,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 			// the same length.
 
 			e := &pb.TestExoneration{}
-			e.Name = pbutil.TestExonerationName(
+			e.Name = pbutil.LegacyTestExonerationName(
 				string(invocations.IDFromRowID(exonerationInvocationIDs[i])),
 				tv.TestId, exonerationID)
 

@@ -652,9 +652,19 @@ func ParseTestResultName(name string) (TestResultNameParts, error) {
 	if m == nil {
 		return TestResultNameParts{}, validate.DoesNotMatchReErr(testResultNameRe)
 	}
+
+	if err := ValidateRootInvocationID(m[1]); err != nil {
+		return TestResultNameParts{}, errors.Fmt("root invocation ID: %w", err)
+	}
+	if err := ValidateWorkUnitID(m[2]); err != nil {
+		return TestResultNameParts{}, errors.Fmt("work unit ID: %w", err)
+	}
 	unescapedTestID, err := unescapeAndValidateTestID(m[3])
 	if err != nil {
-		return TestResultNameParts{}, errors.Fmt("test id: %w", err)
+		return TestResultNameParts{}, errors.Fmt("test ID: %w", err)
+	}
+	if err := ValidateResultID(m[4]); err != nil {
+		return TestResultNameParts{}, errors.Fmt("result ID: %w", err)
 	}
 
 	return TestResultNameParts{

@@ -33,7 +33,7 @@ import (
 // IDs from the name.
 // Panics on failure.
 func MustParseName(name string) (invID invocations.ID, testID, exonerationID string) {
-	invIDStr, testID, exonerationID, err := pbutil.ParseTestExonerationName(name)
+	invIDStr, testID, exonerationID, err := pbutil.ParseLegacyTestExonerationName(name)
 	if err != nil {
 		panic(err)
 	}
@@ -45,7 +45,7 @@ func MustParseName(name string) (invID invocations.ID, testID, exonerationID str
 // If it does not exist, the returned error is annotated with NotFound GRPC
 // code.
 func Read(ctx context.Context, name string) (*pb.TestExoneration, error) {
-	invIDStr, testID, exonerationID, err := pbutil.ParseTestExonerationName(name)
+	invIDStr, testID, exonerationID, err := pbutil.ParseLegacyTestExonerationName(name)
 	if err != nil {
 		return nil, err
 	}

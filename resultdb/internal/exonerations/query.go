@@ -95,7 +95,7 @@ func (q *Query) Fetch(ctx context.Context) (tes []*pb.TestExoneration, nextPageT
 		if err != nil {
 			return err
 		}
-		ex.Name = pbutil.TestExonerationName(string(invID), ex.TestId, ex.ExonerationId)
+		ex.Name = pbutil.LegacyTestExonerationName(string(invID), ex.TestId, ex.ExonerationId)
 		ex.ExplanationHtml = string(explanationHTML)
 
 		ex.TestIdStructured, err = pbutil.ParseStructuredTestIdentifierForOutput(ex.TestId, ex.Variant)

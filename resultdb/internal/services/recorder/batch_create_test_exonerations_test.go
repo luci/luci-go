@@ -166,7 +166,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 
 				expectedDB := proto.Clone(expected[i]).(*pb.TestExoneration)
 				proto.Merge(expectedDB, &pb.TestExoneration{
-					Name:          pbutil.TestExonerationName("inv", expectedDB.TestId, actual.ExonerationId),
+					Name:          pbutil.LegacyTestExonerationName("inv", expectedDB.TestId, actual.ExonerationId),
 					ExonerationId: actual.ExonerationId, // Accept the server-assigned ID.
 				})
 

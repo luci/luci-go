@@ -109,22 +109,39 @@ func TestTestResultName(t *testing.T) {
 		})
 
 		t.Run("Invalid", func(t *ftt.Test) {
-			t.Run(`has slashes`, func(t *ftt.Test) {
+			t.Run(`unspecified`, func(t *ftt.Test) {
+				_, err := ParseTestResultName("")
+				assert.Loosely(t, err, should.ErrLike("unspecified"))
+			})
+			t.Run(`invalid root invocation name`, func(t *ftt.Test) {
+				_, err := ParseTestResultName(
+					"rootInvocations/" + strings.Repeat("a", rootInvocationMaxLength+1) + "/workUnits/b/tests/test-id/results/result1")
+				assert.Loosely(t, err, should.ErrLike("root invocation ID"))
+			})
+			t.Run(`invalid work unit name`, func(t *ftt.Test) {
+				_, err := ParseTestResultName(
+					"rootInvocations/a/workUnits/" + strings.Repeat("b", workUnitIDMaxLength+1) + "/tests/test-id/results/result1")
+				assert.Loosely(t, err, should.ErrLike("work unit ID"))
+			})
+			t.Run(`unencoded test ID`, func(t *ftt.Test) {
 				_, err := ParseTestResultName(
 					"rootInvocations/inv/workUnits/wu/tests/ninja://test/results/result1")
 				assert.Loosely(t, err, should.ErrLike("does not match pattern"))
 			})
-
-			t.Run(`bad unescape`, func(t *ftt.Test) {
+			t.Run(`bad URL escape sequence in test ID`, func(t *ftt.Test) {
 				_, err := ParseTestResultName(
 					"rootInvocations/a/workUnits/b/tests/bad_hex_%gg/results/result1")
-				assert.Loosely(t, err, should.ErrLike("test id"))
+				assert.Loosely(t, err, should.ErrLike("test ID"))
 			})
-
-			t.Run(`unescaped unprintable`, func(t *ftt.Test) {
+			t.Run(`unescaped unprintable in test ID`, func(t *ftt.Test) {
 				_, err := ParseTestResultName(
 					"rootInvocations/a/workUnits/b/tests/unprintable_%07/results/result1")
 				assert.Loosely(t, err, should.ErrLike("non-printable rune"))
+			})
+			t.Run(`invalid result ID`, func(t *ftt.Test) {
+				_, err := ParseTestResultName(
+					"rootInvocations/a/workUnits/b/tests/test-id/results/result\x00")
+				assert.Loosely(t, err, should.ErrLike("does not match pattern"))
 			})
 		})
 

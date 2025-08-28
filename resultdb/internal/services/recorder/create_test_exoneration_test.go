@@ -276,7 +276,7 @@ func TestCreateTestExoneration(t *testing.T) {
 
 			expectedWireProto := proto.Clone(expected).(*pb.TestExoneration)
 			expectedWireProto.ExonerationId = res.ExonerationId
-			expectedWireProto.Name = pbutil.TestExonerationName("inv", expected.TestId, res.ExonerationId)
+			expectedWireProto.Name = pbutil.LegacyTestExonerationName("inv", expected.TestId, res.ExonerationId)
 			if req.TestExoneration.TestIdStructured == nil {
 				// If the request is a legacy request, do not expect the structured test identifier
 				// to be set on the response. This is to minimise changes to existing clients.
@@ -287,7 +287,7 @@ func TestCreateTestExoneration(t *testing.T) {
 			// Now check the database.
 			expectedDBProto := proto.Clone(expected).(*pb.TestExoneration)
 			expectedDBProto.ExonerationId = res.ExonerationId
-			expectedDBProto.Name = pbutil.TestExonerationName("inv", expected.TestId, res.ExonerationId)
+			expectedDBProto.Name = pbutil.LegacyTestExonerationName("inv", expected.TestId, res.ExonerationId)
 
 			row, err := exonerations.Read(span.Single(ctx), res.Name)
 			assert.Loosely(t, err, should.BeNil)

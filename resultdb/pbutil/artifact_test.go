@@ -28,56 +28,97 @@ func TestParseArtifactName(t *testing.T) {
 	ftt.Run(`ParseArtifactName`, t, func(t *ftt.Test) {
 		t.Run(`Work unit level`, func(t *ftt.Test) {
 			t.Run(`Success`, func(t *ftt.Test) {
-				rootInvocationID, workUnitID, testID, resultID, artifactID, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/artifacts/a")
+				parts, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/artifacts/a")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rootInvocationID, should.Equal("inv"))
-				assert.Loosely(t, workUnitID, should.Equal("wu"))
-				assert.Loosely(t, testID, should.BeEmpty)
-				assert.Loosely(t, resultID, should.BeEmpty)
-				assert.Loosely(t, artifactID, should.Equal("a"))
+				assert.Loosely(t, parts.RootInvocationID, should.Equal("inv"))
+				assert.Loosely(t, parts.WorkUnitID, should.Equal("wu"))
+				assert.Loosely(t, parts.TestID, should.BeEmpty)
+				assert.Loosely(t, parts.ResultID, should.BeEmpty)
+				assert.Loosely(t, parts.ArtifactID, should.Equal("a"))
 			})
 			t.Run(`With a slash`, func(t *ftt.Test) {
-				_, _, _, _, artifactID, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/artifacts/a%2Fb")
+				parts, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/artifacts/a%2Fb")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, artifactID, should.Equal("a/b"))
+				assert.Loosely(t, parts.ArtifactID, should.Equal("a/b"))
 			})
 			t.Run(`With a percent sign`, func(t *ftt.Test) {
-				_, _, _, _, artifactID, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/artifacts/a%25b")
+				parts, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/artifacts/a%25b")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, artifactID, should.Equal("a%b"))
+				assert.Loosely(t, parts.ArtifactID, should.Equal("a%b"))
 			})
 			t.Run(`Success with a long artifact name`, func(t *ftt.Test) {
 				artName := strings.Repeat("a%2Fb", 100) // 500 characters
 				wantArtID := strings.Repeat("a/b", 100)
-				_, _, _, _, gotArtID, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/artifacts/" + artName)
+				parts, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/artifacts/" + artName)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, gotArtID, should.Equal(wantArtID))
+				assert.Loosely(t, parts.ArtifactID, should.Equal(wantArtID))
 			})
-			t.Run(`Failure with a long artifact name over the character limit`, func(t *ftt.Test) {
-				artName := strings.Repeat("a", 600)
-				_, _, _, _, _, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/artifacts/" + artName)
-				assert.Loosely(t, err, should.NotBeNil)
+			t.Run(`Invalid names`, func(t *ftt.Test) {
+				t.Run(`Unspecified`, func(t *ftt.Test) {
+					_, err := ParseArtifactName("")
+					assert.Loosely(t, err, should.ErrLike(`unspecified`))
+				})
+				t.Run(`Invalid root invocation name`, func(t *ftt.Test) {
+					_, err := ParseArtifactName("rootInvocations/" + strings.Repeat("a", rootInvocationMaxLength+1) + "/workUnits/wu/artifacts/a")
+					assert.Loosely(t, err, should.ErrLike(`root invocation ID`))
+				})
+				t.Run(`Invalid work unit name`, func(t *ftt.Test) {
+					_, err := ParseArtifactName("rootInvocations/inv/workUnits/" + strings.Repeat("w", workUnitIDMaxLength+1) + "/artifacts/a")
+					assert.Loosely(t, err, should.ErrLike(`work unit ID`))
+				})
+				t.Run(`Invalid artifact ID`, func(t *ftt.Test) {
+					_, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/artifacts/a\x00")
+					assert.Loosely(t, err, should.ErrLike(`artifact ID`))
+				})
+				t.Run(`Too long artifact ID`, func(t *ftt.Test) {
+					artName := strings.Repeat("a", 600)
+					_, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/artifacts/" + artName)
+					assert.Loosely(t, err, should.ErrLike(`artifact ID`))
+				})
 			})
 		})
 		t.Run(`Test result level`, func(t *ftt.Test) {
 			t.Run(`Success`, func(t *ftt.Test) {
-				rootInvocationID, workUnitID, testID, resultID, artifactID, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/tests/t/results/r/artifacts/a")
+				parts, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/tests/t/results/r/artifacts/a")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rootInvocationID, should.Equal("inv"))
-				assert.Loosely(t, workUnitID, should.Equal("wu"))
-				assert.Loosely(t, testID, should.Equal("t"))
-				assert.Loosely(t, resultID, should.Equal("r"))
-				assert.Loosely(t, artifactID, should.Equal("a"))
+				assert.Loosely(t, parts.RootInvocationID, should.Equal("inv"))
+				assert.Loosely(t, parts.WorkUnitID, should.Equal("wu"))
+				assert.Loosely(t, parts.TestID, should.Equal("t"))
+				assert.Loosely(t, parts.ResultID, should.Equal("r"))
+				assert.Loosely(t, parts.ArtifactID, should.Equal("a"))
 			})
 			t.Run(`With a slash in test ID`, func(t *ftt.Test) {
-				_, _, testID, _, _, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/tests/t%2F/results/r/artifacts/a/b")
+				parts, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/tests/t%2F/results/r/artifacts/a/b")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, testID, should.Equal("t/"))
+				assert.Loosely(t, parts.TestID, should.Equal("t/"))
 			})
 			t.Run(`With a slash`, func(t *ftt.Test) {
-				_, _, _, _, artifactID, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/tests/t/results/r/artifacts/a%2Fb")
+				parts, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/tests/t/results/r/artifacts/a%2Fb")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, artifactID, should.Equal("a/b"))
+				assert.Loosely(t, parts.ArtifactID, should.Equal("a/b"))
+			})
+			t.Run(`Invalid names`, func(t *ftt.Test) {
+				t.Run(`Invalid root invocation name`, func(t *ftt.Test) {
+					_, err := ParseArtifactName("rootInvocations/" + strings.Repeat("a", rootInvocationMaxLength+1) + "/workUnits/wu/tests/t/results/r/artifacts/a")
+					assert.Loosely(t, err, should.ErrLike(`root invocation ID`))
+				})
+				t.Run(`Invalid work unit name`, func(t *ftt.Test) {
+					_, err := ParseArtifactName("rootInvocations/inv/workUnits/" + strings.Repeat("w", workUnitIDMaxLength+1) + "/tests/t/results/r/artifacts/a")
+					assert.Loosely(t, err, should.ErrLike(`work unit ID`))
+				})
+				t.Run(`Invalid test ID`, func(t *ftt.Test) {
+					_, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/tests/t\x00/results/r/artifacts/a")
+					assert.Loosely(t, err, should.ErrLike(`test ID`))
+				})
+				t.Run(`Invalid artifact ID`, func(t *ftt.Test) {
+					_, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/tests/t/results/r/artifacts/a\x00")
+					assert.Loosely(t, err, should.ErrLike(`artifact ID`))
+				})
+				t.Run(`Too long artifact ID`, func(t *ftt.Test) {
+					artName := strings.Repeat("a", 600)
+					_, err := ParseArtifactName("rootInvocations/inv/workUnits/wu/tests/t/results/r/artifacts/" + artName)
+					assert.Loosely(t, err, should.ErrLike(`artifact ID`))
+				})
 			})
 		})
 	})

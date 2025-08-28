@@ -198,8 +198,12 @@ func insertTestExoneration(ctx context.Context, invID invocations.ID, requestID 
 	}
 
 	exonerationID := fmt.Sprintf("%s:%s", variantHash, exonerationIDSuffix)
+	if err := pbutil.ValidateExonerationID(exonerationID); err != nil {
+		panic(fmt.Sprintf("server-generated exoneration ID is not valid: %q: %s", exonerationID, err))
+	}
+
 	ret := &pb.TestExoneration{
-		Name:             pbutil.TestExonerationName(string(invID), testID, exonerationID),
+		Name:             pbutil.LegacyTestExonerationName(string(invID), testID, exonerationID),
 		TestIdStructured: structuredTestIdentifier,
 		TestId:           testID,
 		Variant:          variant,

@@ -63,12 +63,12 @@ func ParseWorkUnitName(name string) (rootInvocationID string, workUnitID string,
 		return "", "", validate.DoesNotMatchReErr(workUnitNameRe)
 	}
 	rootInvocationID = m[1]
-	workUnitID = m[2]
-	if len(rootInvocationID) > rootInvocationMaxLength {
-		return "", "", fmt.Errorf("root invocation ID must be at most %v bytes long", rootInvocationMaxLength)
+	if err := ValidateRootInvocationID(rootInvocationID); err != nil {
+		return "", "", fmt.Errorf("root invocation ID: %w", err)
 	}
-	if len(workUnitID) > workUnitIDMaxLength {
-		return "", "", fmt.Errorf("work unit ID must be at most %v bytes long", workUnitIDMaxLength)
+	workUnitID = m[2]
+	if err := ValidateWorkUnitID(workUnitID); err != nil {
+		return "", "", fmt.Errorf("work unit ID: %w", err)
 	}
 	return rootInvocationID, workUnitID, nil
 }
