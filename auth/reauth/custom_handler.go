@@ -31,6 +31,20 @@ import (
 	"go.chromium.org/luci/common/webauthn"
 )
 
+const (
+	envPluginCmd = "GOOGLE_AUTH_WEBAUTHN_PLUGIN"
+
+	// Executable names of the plugins we ship to users.
+	sshPluginExecutable   = "luci-auth-ssh-plugin"
+	fido2PluginExecutable = "luci-auth-fido2-plugin"
+)
+
+// Returns whether the current running environment is an SSH session by probing
+// for SSH session environment variables.
+func isInSSHSession() bool {
+	return os.Getenv("SSH_CONNECTION") != ""
+}
+
 // A customSKHandler supports WebAuthn challenge via an external tool.
 //
 // The signing plugin should implement the following interface:
@@ -57,7 +71,19 @@ func newCustomSKHandler(facetID string) customSKHandler {
 }
 
 func (customSKHandler) pluginCmd() string {
-	return os.Getenv("GOOGLE_AUTH_WEBAUTHN_PLUGIN")
+	// Use plugin environment variable if it's set explicitly.
+	if pluginCmd, ok := os.LookupEnv(envPluginCmd); ok {
+		return pluginCmd
+	}
+
+	// If we're running from a SSH session, use the SSH plugin.
+	if isInSSHSession() {
+		return sshPluginExecutable
+	}
+
+	// Otherwise, default to FIDO2 plugin (which works locally or inside remote
+	// desktop sessions).
+	return fido2PluginExecutable
 }
 
 func (h customSKHandler) IsAvailable() bool {
