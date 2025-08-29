@@ -18,12 +18,11 @@ import (
 	"context"
 	"hash"
 	"io"
-	"net/http"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/srvhttp"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
@@ -180,13 +179,9 @@ func (ex *Extractor) Run(ctx context.Context, path string) (*ExtractionResult, e
 
 func gsUploader(ctx context.Context, size int64, uploadURL string) io.Writer {
 	// Authentication is handled through the tokens in the upload session URL.
-	tr, err := auth.GetRPCTransport(ctx, auth.NoAuth)
-	if err != nil {
-		panic(errors.Fmt("failed to get the RPC transport: %w", err))
-	}
 	return &gs.Uploader{
 		Context:   ctx,
-		Client:    &http.Client{Transport: tr},
+		Client:    srvhttp.DefaultClient(ctx),
 		UploadURL: uploadURL,
 		FileSize:  size,
 	}

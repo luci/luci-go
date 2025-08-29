@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/srvhttp"
 )
 
 // prodFactory knows how to construct Gerrit clients and hop over Gerrit
@@ -42,12 +43,8 @@ type prodFactory struct {
 var errEmptyProjectToken = errors.New("crbug/824492: Project token is empty")
 
 func newProd(ctx context.Context, mirrorHostPrefixes ...string) (*prodFactory, error) {
-	t, err := auth.GetRPCTransport(ctx, auth.NoAuth)
-	if err != nil {
-		return nil, err
-	}
 	return &prodFactory{
-		baseTransport:      t,
+		baseTransport:      srvhttp.DefaultTransport(ctx),
 		mirrorHostPrefixes: mirrorHostPrefixes,
 	}, nil
 }

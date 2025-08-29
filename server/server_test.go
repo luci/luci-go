@@ -66,6 +66,7 @@ import (
 	"go.chromium.org/luci/server/internal/testpb"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/srvhttp"
 )
 
 var fakeUser = &auth.User{
@@ -382,11 +383,7 @@ func TestServer(t *testing.T) {
 				req, _ := http.NewRequest("GET", ts.URL, nil)
 				req.Header.Add("User-Agent", "zzz")
 
-				transp, err := auth.GetRPCTransport(rc.Request.Context(), auth.NoAuth)
-				assert.Loosely(t, err, should.BeNil)
-				client := http.Client{Transport: transp}
-
-				resp, err := client.Do(req)
+				resp, err := srvhttp.DefaultClient(rc.Request.Context()).Do(req)
 				assert.Loosely(t, err, should.BeNil)
 				io.ReadAll(resp.Body)
 				resp.Body.Close()

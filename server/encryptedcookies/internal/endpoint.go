@@ -28,9 +28,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/encryptedcookies/session/sessionpb"
+	"go.chromium.org/luci/server/srvhttp"
 )
 
 // EndpointError is returned on recognized error responses.
@@ -97,12 +97,6 @@ func HitRevocationEndpoint(ctx context.Context, doc *openid.DiscoveryDoc, params
 //	(nil, non-transient error) on unrecognized fatal errors.
 //	(nil, transient error) on transient errors.
 func hitEndpoint(ctx context.Context, endpoint string, params map[string]string) ([]byte, error) {
-	tr, err := auth.GetRPCTransport(ctx, auth.NoAuth)
-	if err != nil {
-		return nil, errors.Fmt("failed to get the transport: %w", err)
-	}
-	client := &http.Client{Transport: tr}
-
 	form := make(url.Values, len(params))
 	for k, v := range params {
 		form.Set(k, v)
@@ -115,7 +109,7 @@ func hitEndpoint(ctx context.Context, endpoint string, params map[string]string)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := client.Do(req.WithContext(ctx))
+	resp, err := srvhttp.DefaultClient(ctx).Do(req.WithContext(ctx))
 	if resp != nil {
 		defer func() {
 			io.Copy(io.Discard, resp.Body)

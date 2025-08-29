@@ -36,7 +36,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/srvhttp"
 
 	"go.chromium.org/luci/config"
 	pb "go.chromium.org/luci/config_service/proto"
@@ -127,18 +127,10 @@ func New(ctx context.Context, opts Options) (config.Interface, error) {
 		return nil, errors.Fmt("cannot dial to %s: %w", opts.Host, err)
 	}
 
-	t := http.DefaultTransport
-	if s := auth.GetState(ctx); s != nil {
-		t, err = auth.GetRPCTransport(ctx, auth.NoAuth)
-		if err != nil {
-			return nil, errors.Fmt("failed to create a transport: %w", err)
-		}
-	}
-
 	return &remoteImpl{
 		conn:       conn,
 		grpcClient: pb.NewConfigsClient(conn),
-		httpClient: &http.Client{Transport: t},
+		httpClient: srvhttp.DefaultClient(ctx),
 	}, nil
 }
 

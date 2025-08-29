@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/srvhttp"
 )
 
 var tracer = otel.Tracer("go.chromium.org/luci/example")
@@ -149,11 +150,7 @@ func main() {
 		})
 
 		// Shared http.Client with monitoring instrumentation.
-		tr, err := auth.GetRPCTransport(srv.Context, auth.NoAuth)
-		if err != nil {
-			return err
-		}
-		client := &http.Client{Transport: tr}
+		client := srvhttp.DefaultClient(srv.Context)
 
 		srv.Routes.GET("/example.com", nil, func(c *router.Context) {
 			var blob []byte

@@ -31,15 +31,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/srvhttp"
 )
 
 // GetSelfSignedJWTTransport returns a transport that add self signed jwt token
 // as authorization header.
 func GetSelfSignedJWTTransport(ctx context.Context, aud string) (http.RoundTripper, error) {
-	tr, err := auth.GetRPCTransport(ctx, auth.NoAuth)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create RPC transport: %w", err)
-	}
 	signer := auth.GetSigner(ctx)
 	info, err := signer.ServiceInfo(ctx)
 	switch {
@@ -49,7 +46,7 @@ func GetSelfSignedJWTTransport(ctx context.Context, aud string) (http.RoundTripp
 		return nil, errors.New("the current service account is empty")
 	}
 	serviceAccount := info.ServiceAccountName
-	return luciauth.NewModifyingTransport(tr, func(req *http.Request) error {
+	return luciauth.NewModifyingTransport(srvhttp.DefaultTransport(ctx), func(req *http.Request) error {
 		ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 		if err != nil {
 			return fmt.Errorf("failed to get OAuth2 token source: %w", err)

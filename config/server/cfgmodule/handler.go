@@ -17,7 +17,6 @@ package cfgmodule
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
@@ -29,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	cfgpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/srvhttp"
 
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
@@ -89,11 +89,8 @@ func (srv *ConsumerServer) ValidateConfigs(ctx context.Context, req *cfgpb.Valid
 			case *cfgpb.ValidateConfigsRequest_File_RawContent:
 				content = file.GetRawContent()
 			case *cfgpb.ValidateConfigsRequest_File_SignedUrl:
-				tr, err := auth.GetRPCTransport(ctx, auth.NoAuth)
-				if err != nil {
-					return fmt.Errorf("failed to get the RPC transport: %w", err)
-				}
-				if content, err = config.DownloadConfigFromSignedURL(ectx, &http.Client{Transport: tr}, file.GetSignedUrl()); err != nil {
+				var err error
+				if content, err = config.DownloadConfigFromSignedURL(ectx, srvhttp.DefaultClient(ctx), file.GetSignedUrl()); err != nil {
 					return fmt.Errorf("failed to download file %s from the signed url: %w", file.Path, err)
 				}
 			default:
