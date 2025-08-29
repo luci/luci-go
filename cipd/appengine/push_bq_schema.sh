@@ -1,4 +1,17 @@
 #!/bin/bash
+# Copyright 2018 The LUCI Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 THIS_DIR=$(dirname "$0")
 
@@ -25,6 +38,14 @@ bqschemaupdater \
   -message-dir "$THIS_DIR/../api/cipd/v1" \
   -message "cipd.VerificationLogEntry" \
   -partitioning-field "submitted" \
+  -partitioning-expiration "8760h"  # 1y
+
+bqschemaupdater \
+  -table "$PROJECT_ID.cipd.vsa_log" \
+  -friendly-name "CIPD VerifySoftwareArtifact log." \
+  -message-dir "$THIS_DIR/impl/vsa/api" \
+  -message "cipd.impl.vsa.VerifySoftwareArtifactLogEntry" \
+  -partitioning-field "timestamp" \
   -partitioning-expiration "8760h"  # 1y
 
 # Note: this table is used as a template table to create 'exported_tags_<jobid>'

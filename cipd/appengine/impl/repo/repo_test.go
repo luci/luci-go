@@ -16,6 +16,7 @@ package repo
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -3694,5 +3695,116 @@ func TestParseDownloadPath(t *testing.T) {
 
 		_, _, err = parseDownloadPath("a/+/!!!!")
 		assert.Loosely(t, err, should.ErrLike(`bad version`))
+	})
+}
+
+type MockVSA struct {
+	VSA func() string
+}
+
+func (m *MockVSA) Register(f *flag.FlagSet)       {}
+func (m *MockVSA) Init(ctx context.Context) error { return nil }
+func (m *MockVSA) VerifySoftwareArtifact(ctx context.Context, inst *model.Instance, bundle string) (vsa string) {
+	return m.VSA()
+}
+
+func TestVSA(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
+		ctx, _, as := testutil.TestingContext()
+		ctx = as("owner@example.com")
+
+		meta := testutil.MetadataStore{}
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"user:owner@example.com"},
+				},
+			},
+		})
+
+		cas := testutil.MockCAS{}
+		vsa := &MockVSA{VSA: func() string { return "vsa content" }}
+		impl := repoImpl{meta: &meta, cas: &cas, vsa: vsa}
+
+		inst := &model.Instance{
+			InstanceID:   strings.Repeat("1", 40),
+			Package:      model.PackageKey(ctx, "a/pkg"),
+			RegisteredBy: "user:1@example.com",
+		}
+
+		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), should.BeNil)
+
+		cas.GetObjectURLImpl = func(_ context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
+			assert.Loosely(t, r.Object.HashAlgo, should.Equal(api.HashAlgo_SHA1))
+			assert.Loosely(t, r.Object.HexDigest, should.Equal(inst.InstanceID))
+			return &api.ObjectURL{
+				SignedUrl: fmt.Sprintf("http://example.com/%s?d=%s", r.Object.HexDigest, r.DownloadFilename),
+			}, nil
+		}
+
+		t.Run("AttachMetadata", func(t *ftt.Test) {
+			t.Run("Not Ready", func(t *ftt.Test) {
+				vsa.VSA = func() string { t.Fail(); return "" }
+
+				_, err := impl.AttachMetadata(ctx, &api.AttachMetadataRequest{
+					Package:  "a/pkg/somethingelse",
+					Instance: inst.Proto().Instance,
+					Metadata: []*api.InstanceMetadata{
+						{Key: "attestations", Value: []uint8("attestation bundle"), ContentType: "application/vnd.in-toto.bundle"},
+					},
+				})
+				assert.ErrIsLike(t, err, "no such package")
+			})
+
+			t.Run("OK", func(t *ftt.Test) {
+				_, err := impl.AttachMetadata(ctx, &api.AttachMetadataRequest{
+					Package:  inst.Package.StringID(),
+					Instance: inst.Proto().Instance,
+					Metadata: []*api.InstanceMetadata{
+						{Key: "attestations", Value: []uint8("attestation bundle"), ContentType: "application/vnd.in-toto.bundle"},
+					},
+				})
+				assert.Loosely(t, err, should.BeNil)
+
+				m, err := model.ListMetadata(ctx, inst)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, m, should.HaveLength(2))
+				assert.Loosely(t, m[0].Key, should.Equal("attestations"))
+				assert.Loosely(t, m[0].Value, should.Match([]uint8("attestation bundle")))
+				assert.Loosely(t, m[0].ContentType, should.Equal("application/vnd.in-toto.bundle"))
+				assert.Loosely(t, m[1].Key, should.Equal("luci.slsa.VSA"))
+				assert.Loosely(t, m[1].Value, should.Match([]uint8("vsa content")))
+
+				// Should not be called agail when package is requested.
+				vsa.VSA = func() string { panic("impossible") }
+				_, err = impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+					Package:  inst.Package.StringID(),
+					Instance: inst.Proto().Instance,
+				})
+				assert.Loosely(t, err, should.BeNil)
+			})
+		})
+		t.Run("Failed", func(t *ftt.Test) {
+			vsa.VSA = func() string { return "" }
+
+			_, err := impl.AttachMetadata(ctx, &api.AttachMetadataRequest{
+				Package:  inst.Package.StringID(),
+				Instance: inst.Proto().Instance,
+				Metadata: []*api.InstanceMetadata{
+					{Key: "attestations", Value: []uint8("attestation bundle"), ContentType: "application/vnd.in-toto.bundle"},
+				},
+			})
+			assert.Loosely(t, err, should.BeNil)
+
+			m, err := model.ListMetadata(ctx, inst)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, m, should.HaveLength(1))
+			assert.Loosely(t, m[0].Key, should.Equal("attestations"))
+			assert.Loosely(t, m[0].Value, should.Match([]uint8("attestation bundle")))
+			assert.Loosely(t, m[0].ContentType, should.Equal("application/vnd.in-toto.bundle"))
+		})
 	})
 }

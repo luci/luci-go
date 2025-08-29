@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/repo"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
+	"go.chromium.org/luci/cipd/appengine/impl/vsa"
 )
 
 // Services is a collection of initialized CIPD backend service subsystems.
@@ -80,8 +81,14 @@ func Main(extra []module.Module, cb func(srv *server.Server, svc *Services) erro
 	s := &settings.Settings{}
 	s.Register(flag.CommandLine)
 
+	b := vsa.NewClient()
+	b.Register(flag.CommandLine)
+
 	server.Main(nil, modules, func(srv *server.Server) error {
 		if err := s.Validate(); err != nil {
+			return err
+		}
+		if err := b.Init(srv.Context); err != nil {
 			return err
 		}
 
@@ -95,7 +102,7 @@ func Main(extra []module.Module, cb func(srv *server.Server, svc *Services) erro
 		return cb(srv, &Services{
 			InternalCAS: internalCAS,
 			PublicCAS:   cas.Public(internalCAS),
-			PublicRepo:  repo.Public(internalCAS, &tq.Default),
+			PublicRepo:  repo.Public(internalCAS, &tq.Default, b),
 			AdminAPI:    admin.AdminAPI(&dsmapper.Default),
 			EventLogger: ev,
 		})

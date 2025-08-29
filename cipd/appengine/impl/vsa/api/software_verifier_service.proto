@@ -1,0 +1,140 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// This file is mostly a duplication of the softwareverifier interface from
+// internal bcid/softwareverifier/v1/software_verifier_service.proto.
+// If/when this original proto/API becomes public, remove this copy.
+syntax = "proto3";
+
+package cipd.impl.vsa;
+
+option go_package = "go.chromium.org/luci/cipd/appengine/impl/vsa/api";
+
+// Performs verification of various software artifacts.
+// Checks include (but may not be limited to):
+// * Was the artifact produced by a trusted build process?
+// * Was the artifact built from the expected build rule?
+// * Is the source code used to build the artifact trustworthy?
+//
+// Caller-supplied context information about the Verify*Request.
+message VerificationContext {
+  // Caller supplied identification of their intent for the verification.
+  // NOTE: The values are what the callers "promise" to handle verification
+  // response. They do NOT change response, i.e. non-compliant artifacts will
+  // always get "disallowed" decision.
+  enum VerificationPurpose {
+    reserved 1, 2, 4;
+
+    // The default value.
+    // An alias of `VERIFY_FOR_ENFORCEMENT`, for backward compatibility of
+    // client who does not set the field.
+    DEFAULT = 0;
+
+    // The verification is requested by an unenforced client.
+    // * This is production traffic, and may be used for future policy testing
+    // and automation;
+    // * all verification (allowed or rejected) will be reported to SCILo.
+    VERIFY_FOR_LOGGING = 3;
+  }
+
+  // Caller provided verification purpose.
+  VerificationPurpose verification_purpose = 1;
+
+  // Caller provided enforcement point identifier.
+  // This value is reported to SCILo, and can be used for querying.
+  string enforcement_point_name = 2;
+
+  // The stage type of an artifact occurrence on the software supply chain.
+  enum OccurrenceStageType {
+    reserved 1, 2, 3;
+
+    // Legacy client will leave this field unspecified.
+    OCCURRENCE_STAGE_TYPE_UNSPECIFIED = 0;
+
+    // Represents the artifact(s) is observed, but verifier has no info
+    // about the stage of it.
+    OBSERVED = 4;
+  }
+
+  // Caller provided software supply chain stage classificiation.
+  OccurrenceStageType occurrence_stage = 3;
+}
+
+// Information about the artifacts to be verified.
+// Includes hashes of the artifacts that were computed by the caller and
+// attestations for verifying them.
+message ArtifactInfo {
+  // A list of attestations about the artifact(s).
+  //
+  // Attestations are DSSE formatted JSON lines.
+  //
+  // Each attestation must occupy exactly one text line, with multiple
+  // attestations delimited by newlines.
+  //
+  // Each entry of this field may contain one or multiple attestations.
+  repeated string attestations = 3;
+
+  reserved 1, 2, 4;
+
+  // One or more artifacts to verify with the provided attestations.
+  //
+  // If more than one artifact is specified, verifier will only use
+  // attestations that list *all* artifacts as their subjects.
+  //
+  // Mutually exclusive with the `digests` and `content_hash` fields.
+  repeated ArtifactDescriptor artifacts = 5;
+
+  // Information about an artifact to be verified.
+  message ArtifactDescriptor {
+    // An optional display text for an artifact.
+    // Only used for diagnostic purposes, e.g. show which artifact is missing
+    // from an attestation.
+    string name = 1;
+
+    // The digests of the artifact.
+    // For a list of supported digest types, see:
+    // https://github.com/in-toto/attestation/blob/main/spec/v1/digest_set.md
+    map<string, string> digests = 2;
+  }
+}
+
+// Answers the question "Is the artifact with the `content_hash` and these
+// `attestations` allowed to be used with `resource`.
+message VerifySoftwareArtifactRequest {
+  // The resource this verification request is asking about.
+  // e.g. "chrome_app://chrome/desktop-5c0tCh".
+  // Used to lookup the policy to apply to the artifact.
+  string resource_to_verify = 1;
+
+  // Information about the artifact being verified.
+  ArtifactInfo artifact_info = 2;
+
+  // Additional context information.
+  VerificationContext context = 3;
+}
+
+// The response to VerifySoftwareArtifactRequest.
+message VerifySoftwareArtifactResponse {
+  // If true, this request should be allowed because it passed the rules.
+  bool allowed = 1;
+
+  // If not 'allowed', the text that should be logged and/or shown to the end
+  // user.
+  string rejection_message = 2;
+
+  // Contains DSSE wrapped JSONL line of Verification Summary Attestations
+  // (VSA).For more details about the JSONL attestation bundle format, see:
+  // https://github.com/in-toto/attestation/blob/main/spec/v1/bundle.md.
+  string verification_summary = 3;
+}

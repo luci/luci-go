@@ -49,6 +49,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
+	"go.chromium.org/luci/cipd/appengine/impl/vsa"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -59,11 +60,12 @@ const PrefixesViewers = "cipd-prefixes-viewers"
 // Public returns publicly exposed implementation of cipd.Repository service.
 //
 // It checks ACLs.
-func Public(internalCAS cas.StorageServer, d *tq.Dispatcher) Server {
+func Public(internalCAS cas.StorageServer, d *tq.Dispatcher, c vsa.Client) Server {
 	impl := &repoImpl{
 		tq:   d,
 		meta: metadata.GetStorage(),
 		cas:  internalCAS,
+		vsa:  c,
 	}
 	impl.registerTasks()
 	impl.registerProcessor(&processing.ClientExtractor{CAS: internalCAS})
@@ -89,6 +91,7 @@ type repoImpl struct {
 
 	meta metadata.Storage  // storage for package prefix metadata
 	cas  cas.StorageServer // non-ACLed storage for instance package files
+	vsa  vsa.Client
 
 	procs    []processing.Processor          // in order of registerProcessor calls
 	procsMap map[string]processing.Processor // ID => processing.Processor
@@ -1162,6 +1165,9 @@ func (impl *repoImpl) AttachMetadata(ctx context.Context, r *api.AttachMetadataR
 		if err := common.ValidateInstanceMetadataKey(m.Key); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad 'metadata' key: %s", err)
 		}
+		if strings.HasPrefix(m.Key, "luci.") {
+			return nil, status.Errorf(codes.InvalidArgument, "bad 'metadata' key %q: `luci.` prefix is reserved for internal use", m.Key)
+		}
 		if err := common.ValidateInstanceMetadataLen(len(m.Value)); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "metadata with key %q: %s", m.Key, err)
 		}
@@ -1175,12 +1181,35 @@ func (impl *repoImpl) AttachMetadata(ctx context.Context, r *api.AttachMetadataR
 		return nil, err
 	}
 
-	// Actually attach the metadata. This will also transactionally check the
-	// instance exists and it has passed the processing successfully.
 	inst := &model.Instance{
 		InstanceID: common.ObjectRefToInstanceID(r.Instance),
 		Package:    model.PackageKey(ctx, r.Package),
 	}
+
+	// Early check the instance ready to prevent retrying on
+	// VerifySoftwareArtifact. When metadata is actually attached this will be
+	// checked again in transaction to guarantee the instance's readiness.
+	if err := model.CheckInstanceReady(ctx, inst); err != nil {
+		return nil, err
+	}
+
+	// Call VerifySoftwareArtifact if an attestation bundle is attached to the package.
+	var extraMetadata []*api.InstanceMetadata
+	for _, m := range r.Metadata {
+		if m.ContentType == "application/vnd.in-toto.bundle" {
+			if vsa := impl.vsa.VerifySoftwareArtifact(ctx, inst, string(m.Value)); vsa != "" {
+				extraMetadata = append(extraMetadata, &api.InstanceMetadata{
+					Key:         "luci.slsa.VSA",
+					Value:       []byte(vsa),
+					ContentType: "application/vnd.in-toto.bundle",
+				})
+			}
+		}
+	}
+	r.Metadata = append(r.Metadata, extraMetadata...)
+
+	// Actually attach the metadata. This will also transactionally check the
+	// instance exists and it has passed the processing successfully.
 	if err := model.AttachMetadata(ctx, inst, r.Metadata); err != nil {
 		return nil, err
 	}
