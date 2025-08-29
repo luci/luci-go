@@ -256,15 +256,11 @@ func handleGet(ctx context.Context, opts auth.Options) {
 		logging.Debugf(ctx, "Read input %q", readInput.Bytes())
 		logging.Debugf(ctx, "Got attributes %+v", attrs)
 
-		res, err := checkReAuth(ctx, a, opts, attrs)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
-		}
-		if res.NeedsRAPT || forceReAuth() {
+		needReAuth := checkReAuthNeeded(ctx, a, opts, attrs)
+		if needReAuth || forceReAuth() {
 			logging.Debugf(
 				ctx, "Proceeding with ReAuth (check=%v, force=%v)",
-				res.NeedsRAPT, forceReAuth())
+				needReAuth, forceReAuth())
 			if !attrs.HasAuthtypeCapability() {
 				fmt.Fprintf(os.Stderr, "Git client does not support authtype capability, so cannot continue with ReAuth\n")
 				os.Exit(1)
@@ -291,20 +287,24 @@ func handleGet(ctx context.Context, opts auth.Options) {
 	fmt.Printf("password=%s\n", t.AccessToken)
 }
 
-func checkReAuth(ctx context.Context, a *auth.Authenticator, opts auth.Options, attrs *creds.Attrs) (*gerrit.ReAuthCheckResult, error) {
+// Returns whether ReAuth needed by the Gerrit server.
+// On server-side failure (e.g. server-side ReAuth not enabled), returns false.
+func checkReAuthNeeded(ctx context.Context, a *auth.Authenticator, opts auth.Options, attrs *creds.Attrs) bool {
 	c, err := a.Client()
 	if err != nil {
-		return nil, errors.Fmt("checkReAuthNeeded: %s", err)
+		logging.Warningf(ctx, "Failed to checkReAuth: %v", err)
+		return false
 	}
 	cache := getReAuthResultCache(ctx, opts)
 	logging.Debugf(ctx, "Checking if ReAuth is needed")
 	checker := gerrit.NewReAuthChecker(c, cache)
 	res, err := checker.Check(ctx, attrs)
 	if err != nil {
-		return nil, errors.Fmt("checkReAuthNeeded: %s", err)
+		logging.Warningf(ctx, "Failed to checkReAuth: %v", err)
+		return false
 	}
 	logging.Debugf(ctx, "Got ReAuth check result %+v", res)
-	return res, nil
+	return res.NeedsRAPT
 }
 
 func getReAuthResultCache(ctx context.Context, opts auth.Options) gerrit.ReAuthResultCache {
