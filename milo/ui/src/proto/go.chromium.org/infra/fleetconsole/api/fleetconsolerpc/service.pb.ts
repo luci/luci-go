@@ -216,7 +216,10 @@ export interface Device {
   readonly address: DeviceAddress | undefined;
   readonly type: DeviceType;
   readonly state: DeviceState;
-  /** // This proto contains per-DUT hardware relevant information including labels. */
+  /**
+   * // This proto contains per-DUT hardware relevant information including
+   * labels.
+   */
   readonly deviceSpec: DeviceSpec | undefined;
 }
 
@@ -410,7 +413,8 @@ export interface ScheduleAutorepairResponse {
   readonly sessionId: string;
   /**
    * The results for each device in the request
-   * The order of the results is the same as the order of the unit_names in the request.
+   * The order of the results is the same as the order of the unit_names in the
+   * request.
    */
   readonly results: readonly ScheduleAutorepairResult[];
 }
@@ -423,16 +427,17 @@ export interface UpdateAndroidMetricsResponse {
 
 export interface ListResourceRequestsRequest {
   /**
-   * The maximum number of Resource Requests to return. The service may return fewer than
-   * this value. If unspecified, at most 50 Resource Requests will be returned.
+   * The maximum number of Resource Requests to return. The service may return
+   * fewer than this value. If unspecified, at most 50 Resource Requests will be
+   * returned.
    */
   readonly pageSize: number;
   /**
-   * A page token, received from a previous `ListResourceRequests` call. Provide this to
-   * retrieve the subsequent page. Returns first page if omitted.
+   * A page token, received from a previous `ListResourceRequests` call. Provide
+   * this to retrieve the subsequent page. Returns first page if omitted.
    *
-   * When paginating, all other parameters provided to `ListResourceRequests` must match
-   * the call that provided the page token.
+   * When paginating, all other parameters provided to `ListResourceRequests`
+   * must match the call that provided the page token.
    */
   readonly pageToken: string;
   readonly orderBy: string;
@@ -577,8 +582,8 @@ export interface GetResourceRequestsMultiselectFilterValuesResponse {
   readonly fulfillmentChannel: readonly string[];
   readonly executionStatus: readonly string[];
   /**
-   * Contains all unique string values from the 'resource_groups' (repeated) field
-   * across all resource requests.
+   * Contains all unique string values from the 'resource_groups' (repeated)
+   * field across all resource requests.
    */
   readonly resourceGroups: readonly string[];
   readonly resourceRequestBugStatus: readonly string[];
@@ -609,6 +614,7 @@ export interface RepairMetric {
   readonly minimumRepairs: number;
   readonly devicesOffline: number;
   readonly totalDevices: number;
+  readonly peakUsage: number;
 }
 
 export enum RepairMetric_Priority {
@@ -5262,6 +5268,7 @@ function createBaseRepairMetric(): RepairMetric {
     minimumRepairs: 0,
     devicesOffline: 0,
     totalDevices: 0,
+    peakUsage: 0,
   };
 }
 
@@ -5287,6 +5294,9 @@ export const RepairMetric: MessageFns<RepairMetric> = {
     }
     if (message.totalDevices !== 0) {
       writer.uint32(56).int32(message.totalDevices);
+    }
+    if (message.peakUsage !== 0) {
+      writer.uint32(64).int32(message.peakUsage);
     }
     return writer;
   },
@@ -5354,6 +5364,14 @@ export const RepairMetric: MessageFns<RepairMetric> = {
           message.totalDevices = reader.int32();
           continue;
         }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.peakUsage = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5372,6 +5390,7 @@ export const RepairMetric: MessageFns<RepairMetric> = {
       minimumRepairs: isSet(object.minimumRepairs) ? globalThis.Number(object.minimumRepairs) : 0,
       devicesOffline: isSet(object.devicesOffline) ? globalThis.Number(object.devicesOffline) : 0,
       totalDevices: isSet(object.totalDevices) ? globalThis.Number(object.totalDevices) : 0,
+      peakUsage: isSet(object.peakUsage) ? globalThis.Number(object.peakUsage) : 0,
     };
   },
 
@@ -5398,6 +5417,9 @@ export const RepairMetric: MessageFns<RepairMetric> = {
     if (message.totalDevices !== 0) {
       obj.totalDevices = Math.round(message.totalDevices);
     }
+    if (message.peakUsage !== 0) {
+      obj.peakUsage = Math.round(message.peakUsage);
+    }
     return obj;
   },
 
@@ -5413,6 +5435,7 @@ export const RepairMetric: MessageFns<RepairMetric> = {
     message.minimumRepairs = object.minimumRepairs ?? 0;
     message.devicesOffline = object.devicesOffline ?? 0;
     message.totalDevices = object.totalDevices ?? 0;
+    message.peakUsage = object.peakUsage ?? 0;
     return message;
   },
 };
@@ -6245,25 +6268,43 @@ export const ScheduleBuildResponse: MessageFns<ScheduleBuildResponse> = {
 };
 
 export interface FleetConsole {
-  /** Ping does not send or receive any information. It just checks that the service is there. */
+  /**
+   * Ping does not send or receive any information. It just checks that the
+   * service is there.
+   */
   Ping(request: PingRequest): Promise<PingResponse>;
-  /** PingBigQuery attempts to contact BigQuery service through Fleet Console. Useful for debugging. */
+  /**
+   * PingBigQuery attempts to contact BigQuery service through Fleet Console.
+   * Useful for debugging.
+   */
   PingBigQuery(request: PingBigQueryRequest): Promise<PingBigQueryResponse>;
-  /** PingDeviceManager attempts to contact DeviceManager through Fleet Console. Useful for debugging. */
+  /**
+   * PingDeviceManager attempts to contact DeviceManager through Fleet Console.
+   * Useful for debugging.
+   */
   PingDeviceManager(request: PingDeviceManagerRequest): Promise<PingDeviceManagerResponse>;
-  /** PingUfs attempts to contact UFS through Fleet Console. Useful for debugging. */
+  /**
+   * PingUfs attempts to contact UFS through Fleet Console. Useful for
+   * debugging.
+   */
   PingUfs(request: PingUfsRequest): Promise<PingUfsResponse>;
   /** LogFrontend used to collect logs from the frontend */
   LogFrontend(request: LogFrontendRequest): Promise<LogFrontendResponse>;
   /** ListDevices managed by Device Manager. */
   ListDevices(request: ListDevicesRequest): Promise<ListDevicesResponse>;
-  /** GetDeviceDimensions provides overview of devices dimensions and their values */
+  /**
+   * GetDeviceDimensions provides overview of devices dimensions and their
+   * values
+   */
   GetDeviceDimensions(request: Empty): Promise<GetDeviceDimensionsResponse>;
   /** CountDevices provides a count of the devices */
   CountDevices(request: CountDevicesRequest): Promise<CountDevicesResponse>;
   /** RepopulateCache repopulates the cache, meant to be triggered by cron. */
   RepopulateCache(request: RepopulateCacheRequest): Promise<RepopulateCacheResponse>;
-  /** PingDB attempts to establish contact with the database and does nothing else. */
+  /**
+   * PingDB attempts to establish contact with the database and does nothing
+   * else.
+   */
   PingDB(request: PingDBRequest): Promise<PingDBResponse>;
   /** CleanExit just exits the current process. */
   CleanExit(request: CleanExitRequest): Promise<CleanExitResponse>;

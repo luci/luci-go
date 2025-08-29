@@ -237,6 +237,11 @@ const COLUMNS: Record<string, GridColDef> = {
     headerName: 'Offline / Total Devices',
     flex: 1,
   },
+  peakUsage: {
+    field: 'peakUsage',
+    headerName: 'Peak usage',
+    flex: 1,
+  },
   omnilab_link: {
     field: 'omnilab_link',
     headerName: 'Explore in Arsenal',
@@ -420,6 +425,7 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
               style: 'percent',
               minimumFractionDigits: 1,
             }),
+            peakUsage: rm.peakUsage,
           }))}
           slots={{
             pagination: Pagination,

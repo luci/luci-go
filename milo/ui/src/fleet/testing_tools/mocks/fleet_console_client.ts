@@ -31,6 +31,7 @@ const MOCK_REPAIR_METRICS: readonly RepairMetric[] = [
     minimumRepairs: 1,
     devicesOffline: 1,
     totalDevices: 2,
+    peakUsage: 1,
   },
   {
     priority: RepairMetric_Priority.WATCH,
@@ -40,6 +41,7 @@ const MOCK_REPAIR_METRICS: readonly RepairMetric[] = [
     minimumRepairs: 2,
     devicesOffline: 3,
     totalDevices: 4,
+    peakUsage: 1,
   },
 ];
 
