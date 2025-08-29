@@ -114,6 +114,25 @@ git credential-luci reauth
 
 ` + "\u200b\n"
 
+// reAuthTroubleshootMsg is the message to print when ReAuth failed. This
+// message will change as we roll out ReAuth enforcement.
+const reAuthTroubleshootMsg = `
+To bypass ReAuth for now, set LUCI_BYPASS_REAUTH environment variable in your
+terminal:
+
+    On Linux / Mac: export LUCI_BYPASS_REAUTH=1
+    On Windows (CMD): set LUCI_BYPASS_REAUTH=1
+
+Then re-run the failed command.
+
+We *STRONGLY ENCOURAGE* you to set up and get familiar with ReAuth.
+
+We will soon enforce ReAuth requirements, please do so at your first
+convenience to avoid disruptions.
+
+See https://chromium.googlesource.com/chromium/src.git/+/HEAD/docs/gerrit_reauth.md
+`
+
 func main() {
 	flag.Parse()
 
@@ -165,7 +184,7 @@ func main() {
 			if err := ra.RenewRAPT(ctx); err != nil {
 				fmt.Fprintf(os.Stderr, "\nWarning: Login successful, but ReAuth failed: %v\n", err)
 				fmt.Fprintf(os.Stderr, "If you're asked for ReAuth later, run `git credential-luci reauth` to retry.\n")
-				fmt.Fprintf(os.Stderr, "For context, see: TODO(b/440418327): link to doc\n")
+				fmt.Fprintf(os.Stderr, "For context, see: https://chromium.googlesource.com/chromium/src.git/+/HEAD/docs/gerrit_reauth.md \n")
 				os.Exit(0)
 			}
 		}
@@ -186,6 +205,7 @@ func main() {
 		ra := auth.NewReAuthenticator(a)
 		if err := ra.RenewRAPT(ctx); err != nil {
 			fmt.Fprintf(os.Stderr, "ReAuth failed: %v\n", err)
+			fmt.Fprintf(os.Stderr, reAuthTroubleshootMsg)
 			os.Exit(1)
 		}
 		fmt.Fprintf(os.Stderr, "ReAuth successful!\n")
@@ -323,6 +343,9 @@ soon.
 
 You can stop bypassing by removing the LUCI_BYPASS_REAUTH environment
 variable.
+
+If you haven't setup ReAuth, see the following link for instructions:
+https://chromium.googlesource.com/chromium/src.git/+/HEAD/docs/gerrit_reauth.md
 
 If you are bypassing ReAuth due to an issue and have not already filed
 a bug, please do so at:
