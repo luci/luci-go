@@ -238,7 +238,7 @@ const COLUMNS: Record<string, GridColDef> = {
     flex: 1,
   },
   peakUsage: {
-    field: 'peakUsage',
+    field: 'peak_usage',
     headerName: 'Peak Usage',
     flex: 1,
     renderHeader: () => {
@@ -246,7 +246,18 @@ const COLUMNS: Record<string, GridColDef> = {
         <>
           <GridColumnHeaderTitle label="Peak Usage" columnWidth={Infinity} />
           <InfoTooltip infoCss={{ marginLeft: '10px' }}>
-            The maxiumum number of busy devices in the past 14 days
+            <Typography variant="body2">
+              The maxiumum number of busy devices in the past 14 days
+            </Typography>
+
+            <Typography
+              variant="caption"
+              css={{ marginTop: 10, display: 'block' }}
+            >
+              If some devices has been deleted in the past 14 days it&apos;s
+              possible for this figure to be higher than the total number of
+              devices.
+            </Typography>
           </InfoTooltip>
         </>
       );
@@ -435,7 +446,7 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
               style: 'percent',
               minimumFractionDigits: 1,
             }),
-            peakUsage: rm.peakUsage,
+            peak_usage: rm.peakUsage,
           }))}
           slots={{
             pagination: Pagination,
