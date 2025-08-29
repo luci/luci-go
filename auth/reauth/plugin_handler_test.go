@@ -18,12 +18,36 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"os"
 	"testing"
 
+	"go.chromium.org/luci/common/exec/execmock"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/webauthn"
 )
+
+type pluginMockConfig struct {
+	// What the plugin mock writes to stdout.
+	Output []byte
+}
+type pluginMockResult struct {
+	// What the plugin mock received from stdin.
+	Got []byte
+}
+
+var pluginExecMock = execmock.Register(func(c pluginMockConfig) (*pluginMockResult, int, error) {
+	data, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return nil, 1, err
+	}
+
+	if _, err := os.Stdout.Write(c.Output); err != nil {
+		return nil, 1, err
+	}
+
+	return &pluginMockResult{Got: data}, 0, nil
+})
 
 func TestPluginReadFrame(t *testing.T) {
 	t.Parallel()
@@ -109,7 +133,7 @@ func TestPluginDecode(t *testing.T) {
 
 func TestPluginHandler(t *testing.T) {
 	t.Parallel()
-	resp, err := PluginEncode(&webauthn.GetAssertionResponse{
+	pluginOutput, err := PluginEncode(&webauthn.GetAssertionResponse{
 		Type: "getResponse",
 		ResponseData: webauthn.GetAssertionResponseData{
 			Type: "public-key",
@@ -124,15 +148,11 @@ func TestPluginHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p := dummyPlugin{
-		resp: resp,
-	}
 
-	h := pluginHandler{
-		facetID: "sartre",
-		send:    p.send,
-	}
-	ctx := context.Background()
+	ctx := execmock.Init(context.Background())
+	pluginUses := pluginExecMock.Mock(ctx, pluginMockConfig{Output: pluginOutput})
+
+	h := pluginHandler{facetID: "sartre"}
 	c := challenge{
 		SecurityKey: skProposal{
 			AppID:          "google.com",
@@ -176,18 +196,18 @@ func TestPluginHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("send received request: %q", p.got)
-	assert.That(t, p.got, should.Match(sendWant))
+
+	pluginInvocations := pluginUses.Snapshot()
+	assert.Loosely(t, pluginInvocations, should.HaveLength(1))
+	pluginResult, _, err := pluginInvocations[0].GetOutput(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("send received request: %q", pluginResult.Got)
+	assert.Loosely(t, pluginResult.Got, should.Match(sendWant))
 }
 
-type dummyPlugin struct {
-	got  []byte
-	resp []byte
-	err  error
-}
-
-func (p *dummyPlugin) send(ctx context.Context, d []byte) ([]byte, error) {
-	p.got = make([]byte, len(d))
-	copy(p.got, d)
-	return p.resp, p.err
+func TestMain(m *testing.M) {
+	execmock.Intercept(true)
+	os.Exit(m.Run())
 }

@@ -23,12 +23,12 @@ import (
 	"io"
 	"math"
 	"os"
-	"os/exec"
 	"path"
 	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/exec"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/webauthn"
 )
@@ -48,7 +48,7 @@ func isInSSHSession() bool {
 	return os.Getenv("SSH_CONNECTION") != ""
 }
 
-// A customSKHandler supports WebAuthn challenge via an external tool.
+// A pluginHandler implements WebAuthn challenges via an external plugin.
 //
 // The signing plugin should implement the following interface:
 //
@@ -58,22 +58,11 @@ func isInSSHSession() bool {
 //	[4 bytes - payload size (little-endian)][variable bytes - json payload]
 //
 // The JSON payloads are defined in [webauthn].
-type customSKHandler struct {
-	pluginHandler
+type pluginHandler struct {
 	facetID string
 }
 
-func newCustomSKHandler(facetID string) customSKHandler {
-	h := customSKHandler{
-		pluginHandler: pluginHandler{
-			facetID: facetID,
-		},
-	}
-	h.pluginHandler.send = h.send
-	return h
-}
-
-func (customSKHandler) pluginCmd() string {
+func (pluginHandler) pluginCmd() string {
 	// Use plugin environment variable if it's set explicitly.
 	if pluginCmd, ok := os.LookupEnv(envPluginCmd); ok {
 		return pluginCmd
@@ -91,7 +80,7 @@ func (customSKHandler) pluginCmd() string {
 
 // Returns an error if continuing ReAuth will fail (i.e. there's an obvious
 // misconfiguration).
-func (h customSKHandler) CheckAvailable(ctx context.Context) error {
+func (h pluginHandler) CheckAvailable(ctx context.Context) error {
 	cmd := h.pluginCmd()
 	if cmd == "" {
 		return errors.New("security key plugin isn't set")
@@ -114,7 +103,7 @@ func (h customSKHandler) CheckAvailable(ctx context.Context) error {
 }
 
 // send sends bytes to the plugin command and returns the output.
-func (h customSKHandler) send(ctx context.Context, d []byte) ([]byte, error) {
+func (h pluginHandler) send(ctx context.Context, d []byte) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, h.pluginCmd())
 	cmd.Stdin = bytes.NewReader(d)
 	var stderr bytes.Buffer
@@ -129,15 +118,6 @@ func (h customSKHandler) send(ctx context.Context, d []byte) ([]byte, error) {
 		}
 	}
 	return out, err
-}
-
-// A pluginHandler implements WebAuthn challenges via a plugin.
-//
-// The core logic is implemented, with the low level plugin
-// interaction abstracted to enable testing.
-type pluginHandler struct {
-	facetID string
-	send    func(context.Context, []byte) ([]byte, error)
 }
 
 func (h pluginHandler) Handle(ctx context.Context, c challenge) (*proposalReply, error) {
