@@ -139,22 +139,23 @@ func TestRead(t *testing.T) {
 	// Insert some Invocations.
 	testutil.MustApply(ctx, t,
 		insertInvocation("including", map[string]any{
-			"State":              pb.Invocation_ACTIVE,
-			"Realm":              "testproject:testrealm",
-			"CreateTime":         start,
-			"Deadline":           start.Add(time.Hour),
-			"IsExportRoot":       spanner.NullBool{Bool: true, Valid: true},
-			"Properties":         spanutil.Compressed(pbutil.MustMarshal(properties)),
-			"Sources":            spanutil.Compressed(pbutil.MustMarshal(sources)),
-			"InheritSources":     spanner.NullBool{Bool: true, Valid: true},
-			"IsSourceSpecFinal":  spanner.NullBool{Bool: true, Valid: true},
-			"BaselineId":         "try:linux-rel",
-			"Instructions":       spanutil.Compressed(pbutil.MustMarshal(instructions)),
-			"ExtendedProperties": spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties)),
-			"ModuleName":         moduleID.ModuleName,
-			"ModuleScheme":       moduleID.ModuleScheme,
-			"ModuleVariant":      moduleID.ModuleVariant,
-			"ModuleVariantHash":  pbutil.VariantHash(moduleID.ModuleVariant),
+			"State":                  pb.Invocation_ACTIVE,
+			"Realm":                  "testproject:testrealm",
+			"CreateTime":             start,
+			"Deadline":               start.Add(time.Hour),
+			"IsExportRoot":           spanner.NullBool{Bool: true, Valid: true},
+			"Properties":             spanutil.Compressed(pbutil.MustMarshal(properties)),
+			"Sources":                spanutil.Compressed(pbutil.MustMarshal(sources)),
+			"InheritSources":         spanner.NullBool{Bool: true, Valid: true},
+			"IsSourceSpecFinal":      spanner.NullBool{Bool: true, Valid: true},
+			"BaselineId":             "try:linux-rel",
+			"Instructions":           spanutil.Compressed(pbutil.MustMarshal(instructions)),
+			"ExtendedProperties":     spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties)),
+			"ModuleName":             moduleID.ModuleName,
+			"ModuleScheme":           moduleID.ModuleScheme,
+			"ModuleVariant":          moduleID.ModuleVariant,
+			"ModuleVariantHash":      pbutil.VariantHash(moduleID.ModuleVariant),
+			"TestResultVariantUnion": []string{"k1:v1", "k1:v2", "k2:v2"},
 		}),
 		insertInvocation("included0", nil),
 		insertInvocation("included1", nil),
@@ -187,7 +188,7 @@ func TestRead(t *testing.T) {
 			BaselineId:             "try:linux-rel",
 			Instructions:           instructionutil.InstructionsWithNames(instructions, "invocations/including"),
 			ExtendedProperties:     extendedProperties,
-			TestResultVariantUnion: &pb.Variant{},
+			TestResultVariantUnion: pbutil.Variant("k1", "v2", "k2", "v2"),
 		}))
 	})
 
@@ -215,7 +216,7 @@ func TestRead(t *testing.T) {
 			IsSourceSpecFinal:      true,
 			BaselineId:             "try:linux-rel",
 			Instructions:           instructionutil.InstructionsWithNames(instructions, "invocations/including"),
-			TestResultVariantUnion: &pb.Variant{},
+			TestResultVariantUnion: pbutil.Variant("k1", "v2", "k2", "v2"),
 		}))
 		// Double check the ExtendedProperties is nil
 		assert.Loosely(t, inv.ExtendedProperties, should.BeNil)

@@ -490,6 +490,8 @@ CREATE TABLE Invocations (
   CommonTestIDPrefix STRING(MAX),
 
   -- Union of all variants of test results directly included by the invocation.
+  -- Note this is not a Variant itself as it may contain duplicate keys (with
+  -- different values).
   TestResultVariantUnion ARRAY<STRING(MAX)>,
 
   -- DEPRECATED - DO NOT USE: Union of all variants of test results

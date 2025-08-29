@@ -127,20 +127,21 @@ func readMulti(ctx context.Context, ids IDSet, mask ReadMask, f func(id ID, inv 
 		inv := &pb.Invocation{}
 
 		var (
-			createdBy          spanner.NullString
-			isExportRoot       spanner.NullBool
-			producerResource   spanner.NullString
-			realm              spanner.NullString
-			properties         spanutil.Compressed
-			sources            spanutil.Compressed
-			inheritSources     spanner.NullBool
-			isSourceSpecFinal  spanner.NullBool
-			baselineID         spanner.NullString
-			instructions       spanutil.Compressed
-			extendedProperties spanutil.Compressed
-			moduleName         spanner.NullString
-			moduleScheme       spanner.NullString
-			moduleVariant      *pb.Variant
+			createdBy              spanner.NullString
+			isExportRoot           spanner.NullBool
+			producerResource       spanner.NullString
+			realm                  spanner.NullString
+			properties             spanutil.Compressed
+			sources                spanutil.Compressed
+			inheritSources         spanner.NullBool
+			isSourceSpecFinal      spanner.NullBool
+			baselineID             spanner.NullString
+			instructions           spanutil.Compressed
+			extendedProperties     spanutil.Compressed
+			testResultVariantUnion []string
+			moduleName             spanner.NullString
+			moduleScheme           spanner.NullString
+			moduleVariant          *pb.Variant
 		)
 
 		dest := []any{
@@ -163,7 +164,7 @@ func readMulti(ctx context.Context, ids IDSet, mask ReadMask, f func(id ID, inv 
 			&isSourceSpecFinal,
 			&baselineID,
 			&instructions,
-			&inv.TestResultVariantUnion,
+			&testResultVariantUnion,
 			&moduleName,
 			&moduleScheme,
 			&moduleVariant,
@@ -182,6 +183,21 @@ func readMulti(ctx context.Context, ids IDSet, mask ReadMask, f func(id ID, inv 
 		inv.CreatedBy = createdBy.StringVal
 		inv.ProducerResource = producerResource.StringVal
 		inv.Realm = realm.StringVal
+
+		inv.TestResultVariantUnion = &pb.Variant{}
+		if len(testResultVariantUnion) > 0 {
+			// Flatten a set of string pairs to a variant.
+			// If the key appears more than once, the last occurrence wins.
+			def := make(map[string]string, len(testResultVariantUnion))
+			for _, p := range testResultVariantUnion {
+				pair, err := pbutil.StringPairFromString(p)
+				if err != nil {
+					return errors.Fmt("test variant union: pair %q: %w", p, err)
+				}
+				def[pair.Key] = pair.Value
+			}
+			inv.TestResultVariantUnion.Def = def
+		}
 
 		if len(properties) != 0 {
 			inv.Properties = &structpb.Struct{}
