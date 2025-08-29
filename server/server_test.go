@@ -38,6 +38,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	clientauth "go.chromium.org/luci/auth"
@@ -707,6 +708,38 @@ func TestRPCServers(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestDefaultPRPCClient(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	srv, err := newTestServer(ctx, nil)
+	assert.Loosely(t, err, should.BeNil)
+	defer srv.cleanup()
+
+	rpcSvc := &testRPCServer{}
+	testpb.RegisterTestServer(srv, rpcSvc)
+
+	// The default HTTP client populates User-Agent header.
+	rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
+		md, _ := metadata.FromIncomingContext(ctx)
+		ua := md.Get("user-agent")
+		assert.Loosely(t, ua, should.HaveLength(1))
+		assert.That(t, ua[0], should.HavePrefix("LUCI-Server "))
+		return &testpb.Response{}, nil
+	}
+
+	srv.ServeInBackground()
+	defer srv.StopBackgroundServing()
+
+	rpcClient := testpb.NewTestClient(&prpc.Client{
+		Host:    srv.mainAddr,
+		Options: &prpc.Options{Insecure: true},
+	})
+	_, err = rpcClient.Unary(srv.Context, &testpb.Request{})
+	assert.Loosely(t, err, should.BeNil)
 }
 
 // testContextFeatures check that the context has all subsystems enabled.

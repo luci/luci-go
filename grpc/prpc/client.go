@@ -93,13 +93,30 @@ var (
 	ErrNoStreamingSupport = status.Error(codes.Unimplemented, "prpc: no streaming support")
 )
 
+// clientFactoryCtxKey is used for the context.Context key.
+var clientFactoryCtxKey = "prpc client factory"
+
 // Client can make pRPC calls.
 //
 // Changing fields after the first Call(...) is undefined behavior.
 type Client struct {
-	C       *http.Client // if nil, uses http.DefaultClient
-	Host    string       // host and optionally a port number of the target server
-	Options *Options     // if nil, DefaultOptions() are used
+	// Host is a hostname (i.e. without "http://" or "https://") and optionally
+	// a port number of the target server.
+	//
+	// Required.
+	Host string
+
+	// C is an http.Client to use for making HTTP requests.
+	//
+	// If nil, some default client will be used (usually http.DefaultClient, but
+	// it can be changed by installing a custom client provider into the per-RPC
+	// context via SetDefaultHTTPClient).
+	C *http.Client
+
+	// Options allow to fine-tune behavior of the client.
+	//
+	// if nil, DefaultOptions() are used.
+	Options *Options
 
 	// ErrBodySize is the number of bytes to truncate error messages from HTTP
 	// responses to.
@@ -494,14 +511,9 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 		req.Header.Del(HeaderTimeout)
 	}
 
-	client := c.C
-	if client == nil {
-		client = http.DefaultClient
-	}
-
 	// Send the request.
 	req.Body, _ = req.GetBody()
-	res, err := client.Do(req.WithContext(ctx))
+	res, err := c.httpClient(ctx).Do(req.WithContext(ctx))
 	if err == nil {
 		defer func() {
 			// Drain the body before closing it to enable HTTP connection reuse. This
@@ -543,6 +555,17 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 	err = c.readStatus(res, buf, options.respCodec)
 
 	return res.Header.Get("Content-Type"), err
+}
+
+// httpClient returns an http.Client to use for a single RPC call attempt.
+func (c *Client) httpClient(ctx context.Context) *http.Client {
+	if c.C != nil {
+		return c.C
+	}
+	if f := ctx.Value(&clientFactoryCtxKey); f != nil {
+		return f.(func(context.Context) *http.Client)(ctx)
+	}
+	return http.DefaultClient
 }
 
 // maxResponseSize is a maximum length of the uncompressed response to read.
@@ -831,4 +854,15 @@ func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage
 			return io.NopCloser(bytes.NewReader(body)), nil
 		},
 	}, nil
+}
+
+// SetDefaultHTTPClient allows to modify what http.Client is used by pRPC
+// clients by default (i.e. when they have nil as Client.C).
+//
+// This kicks in only if the returned context (or its derivative) is used as
+// an RPC context. This is primarily used in a server environment where the
+// server installs a default HTTP client that has monitoring and tracing
+// instrumentation.
+func SetDefaultHTTPClient(ctx context.Context, factory func(context.Context) *http.Client) context.Context {
+	return context.WithValue(ctx, &clientFactoryCtxKey, factory)
 }

@@ -254,6 +254,7 @@ import (
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/srvhttp"
 	"go.chromium.org/luci/server/tsmon"
 	"go.chromium.org/luci/server/warmup"
 )
@@ -2462,6 +2463,9 @@ func (s *Server) initAuthStart() error {
 		IsDevMode:           !s.Options.Prod,
 	})
 
+	// Make pRPC clients use the instrumented HTTP client by default.
+	s.Context = prpc.SetDefaultHTTPClient(s.Context, srvhttp.DefaultClient)
+
 	// Note: we initialize a token source for the default set of scopes here. In
 	// many practical cases this is sufficient to verify that credentials are
 	// valid. For example, when we use service account JSON key, if we can
@@ -2469,7 +2473,7 @@ func (s *Server) initAuthStart() error {
 	// we can generate tokens with *any* scope, since there's no restrictions on
 	// what scopes are accessible to a service account, as long as the private key
 	// is valid (which we just verified by generating some token).
-	_, err := tokens.GenerateOAuthToken(ctx, opts.Scopes, 0)
+	_, err := tokens.GenerateOAuthToken(s.Context, opts.Scopes, 0)
 	if err != nil {
 		// ErrLoginRequired may happen only when running the server locally using
 		// developer's credentials. Let them know how the problem can be fixed.
