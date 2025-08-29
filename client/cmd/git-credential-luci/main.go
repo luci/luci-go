@@ -163,16 +163,16 @@ func main() {
 		if reAuthEnabled() {
 			ra := auth.NewReAuthenticator(a)
 			if err := ra.RenewRAPT(ctx); err != nil {
-				fmt.Fprintf(os.Stderr, "\nWarning: Login succeed, but ReAuth failed: %v\n", err)
+				fmt.Fprintf(os.Stderr, "\nWarning: Login successful, but ReAuth failed: %v\n", err)
 				fmt.Fprintf(os.Stderr, "If you're asked for ReAuth later, run `git credential-luci reauth` to retry.\n")
 				fmt.Fprintf(os.Stderr, "For context, see: TODO(b/440418327): link to doc\n")
 				os.Exit(0)
 			}
 		}
-		if email, err := a.GetEmail(); err != nil {
-			logging.Warningf(ctx, "Login succeed, but failed to obtain user email address: %v", err)
-		} else {
-			fmt.Fprintf(os.Stderr, "Login succeed, logged in as: %v\n", email)
+
+		fmt.Fprintf(os.Stderr, "Login successful!\n")
+		if email, err := a.GetEmail(); err == nil {
+			fmt.Fprintf(os.Stderr, "Logged in as: %v\n", email)
 		}
 	case "reauth":
 		// This is not part of the Git credential helper
@@ -188,6 +188,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "ReAuth failed: %v\n", err)
 			os.Exit(1)
 		}
+		fmt.Fprintf(os.Stderr, "ReAuth successful!\n")
 	case "info":
 		// This is not part of the Git credential helper
 		// specification, but it is provided for convenience.
