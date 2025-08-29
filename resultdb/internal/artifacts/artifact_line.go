@@ -106,7 +106,6 @@ func isSupportedContentType(contentType string) bool {
 func isNonTextFile(filePath string) bool {
 	ext := filepath.Ext(filePath)
 	mimeType := mime.TypeByExtension(ext)
-	fmt.Println(filePath)
 	if ext != "" {
 		return mimeType != "" && !strings.HasPrefix(mimeType, "text/")
 	} else {
