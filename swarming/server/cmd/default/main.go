@@ -20,9 +20,13 @@ import (
 	"fmt"
 	"maps"
 	"net/http"
+	"net/url"
 	"path"
 	"slices"
 	"strings"
+	"time"
+
+	"google.golang.org/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
@@ -31,7 +35,9 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/rpcacl"
+	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -328,6 +334,29 @@ func main() {
 			),
 		)
 
+		// Ignore explicit AuthDB pushes. This endpoint was used by Python code.
+		// Go code pulls AuthDB instead and doesn't need this. This can be removed
+		// once Swarming is unregistered from chrome-infra-auth.
+		srv.Routes.POST("/auth/api/v1/internal/replication", nil, func(c *router.Context) {
+			db, _ := auth.GetDB(c.Request.Context())
+			rev := authdb.Revision(db)
+			if rev == 0 {
+				http.Error(c.Writer, "no valid Auth DB in the context", http.StatusInternalServerError)
+				return
+			}
+			blob, _ := proto.Marshal(&protocol.ReplicationPushResponse{
+				Status: protocol.ReplicationPushResponse_SKIPPED,
+				CurrentRevision: &protocol.AuthDBRevision{
+					AuthDbRev:  rev,
+					ModifiedTs: time.Now().UnixMicro(),
+				},
+				AuthCodeVersion: "stub",
+			})
+			c.Writer.Header().Add("Content-Type", "application/octet-stream")
+			c.Writer.WriteHeader(http.StatusOK)
+			_, _ = c.Writer.Write(blob)
+		})
+
 		return nil
 	})
 }
@@ -361,6 +390,13 @@ func installUIHandlers(srv *server.Server, cfg *cfg.Provider) {
 	srv.Routes.GET("/botlist", nil, render(srv.Context, "botlist", cfg))
 	srv.Routes.GET("/task", nil, render(srv.Context, "task", cfg))
 	srv.Routes.GET("/tasklist", nil, render(srv.Context, "tasklist", cfg))
+
+	// Redirects for ancient (pre 2016) URLs that are still occasionally used.
+	srv.Routes.GET("/restricted/bot/:ID", nil, simpleRedirect("/bot"))
+	srv.Routes.GET("/restricted/bots", nil, listingRedirect("/botlist", "dimensions"))
+	srv.Routes.GET("/tasks/:ID", nil, simpleRedirect("/task"))
+	srv.Routes.GET("/user/task/:ID", nil, simpleRedirect("/task"))
+	srv.Routes.GET("/user/tasks", nil, listingRedirect("/tasklist", "task_tag"))
 }
 
 // All CSP directives except "frame-src", which is constructed dynamically
@@ -443,5 +479,31 @@ func render(ctx context.Context, page string, cfg *cfg.Provider) router.Handler 
 		)
 		pagePath := path.Join("ui2", "dist", fmt.Sprintf("public_%s_index.html", page))
 		http.ServeFile(rctx.Writer, rctx.Request, pagePath)
+	}
+}
+
+func simpleRedirect(dest string) router.Handler {
+	return func(c *router.Context) {
+		vals := url.Values{"id": {c.Params.ByName("ID")}}
+		http.Redirect(c.Writer, c.Request, dest+"?"+vals.Encode(), http.StatusFound)
+	}
+}
+
+func listingRedirect(dest, queryParam string) router.Handler {
+	return func(c *router.Context) {
+		c.Request.ParseForm()
+		limit := c.Request.Form.Get("limit")
+		if limit == "" {
+			limit = "100"
+		}
+		var filters []string
+		for _, val := range c.Request.Form[queryParam] {
+			val = strings.TrimSpace(val)
+			if val != "" {
+				filters = append(filters, val)
+			}
+		}
+		vals := url.Values{"l": {limit}, "f": filters}
+		http.Redirect(c.Writer, c.Request, dest+"?"+vals.Encode(), http.StatusFound)
 	}
 }
