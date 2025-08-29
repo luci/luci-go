@@ -20,6 +20,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/retry"
@@ -43,6 +44,15 @@ type Options struct {
 	//
 	// Useful for local tests.
 	Insecure bool
+
+	// PerRPCCredentials is used to get per-RPC authentication tokens.
+	//
+	// Can be overridden per-RPC by using grpc.PerRPCCredentials(...) call option.
+	// If PerRPCCredentials is nil and grpc.PerRPCCredentials(...) isn't used,
+	// the call will be made without any extra credentials attached (but note
+	// that the *http.Client may still be attaching credentials of its own,
+	// depending on how it was obtained).
+	PerRPCCredentials credentials.PerRPCCredentials
 
 	// PerRPCTimeout, if > 0, is a timeout that is applied to each call attempt.
 	//
@@ -108,6 +118,8 @@ func (o *Options) apply(callOptions []grpc.CallOption) {
 			o.resHeaderMetadata = val.HeaderAddr
 		case grpc.TrailerCallOption:
 			o.resTrailerMetadata = val.TrailerAddr
+		case grpc.PerRPCCredsCallOption:
+			o.PerRPCCredentials = val.Creds
 		case grpc.StaticMethodCallOption:
 			// Noop.
 		case *CallOption:

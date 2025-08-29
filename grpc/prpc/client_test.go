@@ -16,6 +16,7 @@ package prpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -30,6 +31,7 @@ import (
 	"github.com/klauspost/compress/gzip"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -153,6 +155,29 @@ func shouldHaveMessagesLike(t testing.TB, log *memlogger.MemLogger, expected ...
 		assert.Loosely(t, actual.Level, should.Equal(expected[i].Level), truth.LineContext())
 		assert.Loosely(t, actual.Msg, should.ContainSubstring(expected[i].Msg), truth.LineContext())
 	}
+}
+
+type testPerRPCCreds struct {
+	md    map[string]string
+	err   error
+	uri   []string
+	calls int
+}
+
+// GetRequestMetadata implements credentials.PerRPCCredentials.
+func (t *testPerRPCCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+	t.calls++
+	ri, _ := credentials.RequestInfoFromContext(ctx)
+	if err := credentials.CheckSecurityLevel(ri.AuthInfo, credentials.PrivacyAndIntegrity); err != nil {
+		return nil, fmt.Errorf("CheckSecurityLevel: %w", err)
+	}
+	t.uri = uri
+	return t.md, t.err
+}
+
+// RequireTransportSecurity implements credentials.PerRPCCredentials.
+func (t *testPerRPCCreds) RequireTransportSecurity() bool {
+	return true // ignored
 }
 
 func TestClient(t *testing.T) {
@@ -541,6 +566,39 @@ func TestClient(t *testing.T) {
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
 				assert.Loosely(t, status.Code(err), should.Equal(codes.Canceled))
+			})
+
+			t.Run("PerRPCCredentials", func(t *ftt.Test) {
+				var receivedHeader http.Header
+				greeter := sayHello(t)
+				client, server := setUp(func(w http.ResponseWriter, r *http.Request) {
+					receivedHeader = r.Header
+					greeter(w, r)
+				})
+				defer server.Close()
+
+				t.Run("OK", func(t *ftt.Test) {
+					creds := &testPerRPCCreds{
+						md: map[string]string{"authorization": "boo"},
+					}
+					err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, grpc.PerRPCCredentials(creds))
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, receivedHeader["Authorization"], should.Match([]string{"boo"}))
+					assert.That(t, creds.calls, should.Equal(1))
+					assert.That(t, creds.uri, should.Match([]string{
+						fmt.Sprintf("%s/prpc/prpc.Greeter/SayHello", server.URL),
+					}))
+				})
+
+				t.Run("Fail", func(t *ftt.Test) {
+					creds := &testPerRPCCreds{
+						err: errors.New("boo"),
+					}
+					err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, grpc.PerRPCCredentials(creds))
+					assert.That(t, status.Code(err), should.Equal(codes.Internal))
+					assert.That(t, err, should.ErrLike("getting per-RPC credentials: boo"))
+					assert.That(t, creds.calls, should.Equal(4)) // retried a bunch of times
+				})
 			})
 
 			t.Run("Concurrency limit", func(t *ftt.Test) {

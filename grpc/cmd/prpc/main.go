@@ -84,18 +84,16 @@ func (r *cmdRun) authenticatedClient(ctx context.Context, host string) (*prpc.Cl
 	if authOpts.UseIDTokens && authOpts.Audience == "" {
 		authOpts.Audience = "https://" + host
 	}
-	a := auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts)
-	httpClient, err := a.Client()
+	creds, err := auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).PerRPCCredentials()
 	if err != nil {
 		return nil, err
 	}
-
 	client := prpc.Client{
-		C:       httpClient,
 		Host:    host,
 		Options: prpc.DefaultOptions(),
 	}
 	client.Options.Insecure = r.forceInsecure || lhttp.IsLocalHost(host)
+	client.Options.PerRPCCredentials = creds
 	return &client, nil
 }
 

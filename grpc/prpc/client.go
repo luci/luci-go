@@ -34,6 +34,7 @@ import (
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -178,6 +179,16 @@ type Client struct {
 
 var _ grpc.ClientConnInterface = (*Client)(nil)
 
+// prpcAuthInfo implements credentials.AuthInfo.
+type prpcAuthInfo struct {
+	credentials.CommonAuthInfo
+}
+
+// AuthType implements credentials.AuthInfo.
+func (prpcAuthInfo) AuthType() string {
+	return "prpc"
+}
+
 // Invoke performs a unary RPC and returns after the response is received
 // into reply.
 //
@@ -269,6 +280,7 @@ func (c *Client) responseCodec(f Format) (protoCodec, error) {
 // Following gRPC options are supported:
 //   - grpc.Header
 //   - grpc.Trailer
+//   - grpc.PerRPCCredentials
 //   - grpc.StaticMethod
 //
 // Propagates outgoing gRPC metadata provided via metadata.NewOutgoingContext.
@@ -509,6 +521,34 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 	} else {
 		logging.Debugf(ctx, "RPC %s/%s.%s", options.host, options.serviceName, options.methodName)
 		req.Header.Del(HeaderTimeout)
+	}
+
+	// Grab fresh per-RPC credentials. Make sure not to override req.Header, since
+	// original headers may be needed if the call is retried.
+	if options.PerRPCCredentials != nil {
+		mdctx := credentials.NewContextWithRequestInfo(ctx, credentials.RequestInfo{
+			Method: fmt.Sprintf("/%s/%s", options.serviceName, options.methodName),
+			AuthInfo: prpcAuthInfo{
+				CommonAuthInfo: credentials.CommonAuthInfo{
+					// Note: this is not true when using "insecure: true" pRPC mode, but
+					// fixing this will break random local tests. "insecure: true" is used
+					// only locally in tests, this should be fine.
+					SecurityLevel: credentials.PrivacyAndIntegrity,
+				},
+			},
+		})
+		md, err := options.PerRPCCredentials.GetRequestMetadata(mdctx, req.URL.String())
+		if err != nil {
+			return "", status.Errorf(codeForErr(err), "prpc: getting per-RPC credentials: %s", err)
+		}
+		if len(md) != 0 {
+			orig := req.Header
+			req.Header = req.Header.Clone()
+			defer func() { req.Header = orig }()
+			for k, v := range md {
+				req.Header.Set(k, v)
+			}
+		}
 	}
 
 	// Send the request.
