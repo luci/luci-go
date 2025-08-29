@@ -14,6 +14,8 @@
 
 import { GridColumnVisibilityModel } from '@mui/x-data-grid';
 
+import { OrderBy, OrderByDirection } from '../hooks/order_by';
+
 /**
  * Takes an existing set of URLSearchParams and updates that object with a
  * new set of values.
@@ -44,4 +46,20 @@ export function getVisibilityModel(
     }),
     {},
   );
+}
+
+export function parseOrderByParam(orderByParam: string): OrderBy | null {
+  const [field, direction] = orderByParam.split(' ');
+
+  if (!field) {
+    return null;
+  }
+
+  return {
+    field: field,
+    direction:
+      direction === OrderByDirection.DESC
+        ? OrderByDirection.DESC
+        : OrderByDirection.ASC,
+  };
 }

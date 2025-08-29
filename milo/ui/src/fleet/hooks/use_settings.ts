@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { GridDensity } from '@mui/x-data-grid';
+import { MRT_DensityState } from 'material-react-table';
 import { useLocalStorage } from 'react-use';
 
 import { SETTINGS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
@@ -21,10 +22,16 @@ export interface Settings {
   table: {
     density: GridDensity;
   };
+  tableMRT: {
+    density: MRT_DensityState;
+  };
 }
 
 export const defaultSettings: Settings = {
   table: {
+    density: 'compact',
+  },
+  tableMRT: {
     density: 'compact',
   },
 };

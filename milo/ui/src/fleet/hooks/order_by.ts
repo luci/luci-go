@@ -16,7 +16,17 @@ import { useCallback, useMemo } from 'react';
 
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
-const ORDER_BY_PARAM_KEY = 'order_by';
+export const ORDER_BY_PARAM_KEY = 'order_by';
+
+export enum OrderByDirection {
+  ASC = 'asc',
+  DESC = 'desc',
+}
+
+export interface OrderBy {
+  field: string;
+  direction: OrderByDirection;
+}
 
 /**
  * Generic hook for handling an order_by URL parameter based on AIP-132.
