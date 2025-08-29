@@ -239,8 +239,18 @@ const COLUMNS: Record<string, GridColDef> = {
   },
   peakUsage: {
     field: 'peakUsage',
-    headerName: 'Peak usage',
+    headerName: 'Peak Usage',
     flex: 1,
+    renderHeader: () => {
+      return (
+        <>
+          <GridColumnHeaderTitle label="Peak Usage" columnWidth={Infinity} />
+          <InfoTooltip infoCss={{ marginLeft: '10px' }}>
+            The maxiumum number of busy devices in the past 14 days
+          </InfoTooltip>
+        </>
+      );
+    },
   },
   omnilab_link: {
     field: 'omnilab_link',
