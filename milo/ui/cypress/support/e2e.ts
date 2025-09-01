@@ -14,12 +14,29 @@
 
 /// <reference types="cypress" />
 
+// Tell TypeScript that the global Window object may have a 'gapi' property.
+// Tell TypeScript that the global Window object may have a 'gapi' property.
+declare global {
+  interface Window {
+    gapi: unknown;
+  }
+}
+
 beforeEach(() => {
+  // Intercept the Google API script and return an empty response
+  // to prevent it from loading and executing in tests.
+  cy.intercept('https://apis.google.com/js/api.js', { body: '' });
+
+  // Create a mock gapi object on the window before each test.
   cy.on('window:before:load', (win) => {
-    // Workbox service worker can cause cypress `.visit` to timeout
-    // occasionally even though the page itself loads just fine. The exact
-    // reason is unknown. See b/399191804 for various attempts to fix this.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (win as any).DISABLE_UI_SW_FOR_CYPRESS = true;
+    win.gapi = {
+      load: () => {},
+      client: {
+        init: () => {},
+      },
+    };
   });
 });
+
+// Add this empty export to treat this file as a module.
+export {};
