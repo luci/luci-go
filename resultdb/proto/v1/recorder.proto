@@ -72,6 +72,14 @@ service Recorder {
   // Updates an existing non-final RootInvocation.
   rpc UpdateRootInvocation(UpdateRootInvocationRequest) returns (RootInvocation) {};
 
+  // Retrieves a root invocation.
+  //
+  // Unlike the GetRootInvocation RPC on the ResultDB service, this RPC
+  // uses update tokens to authorise reads and is designed for use with
+  // UpdateRootInvocation to make atomic updates (using aip.dev/154 etags for
+  // optimistic locking). It should be used (and only used by) recorders.
+  rpc GetRootInvocation(GetRootInvocationRequest) returns (RootInvocation) {};
+
   // Marks the given RootInvocation as final and begins the process of
   // transitioning it to the state FINALIZED.
   rpc FinalizeRootInvocation(FinalizeRootInvocationRequest) returns (RootInvocation) {};
@@ -105,6 +113,22 @@ service Recorder {
   // Batch updates existing non-final WorkUnits.
   rpc BatchUpdateWorkUnits(BatchUpdateWorkUnitsRequest)
       returns (BatchUpdateWorkUnitsResponse) {};
+
+  // Retrieves a work unit.
+  //
+  // Unlike the GetWorkUnit RPC on the ResultDB service, this RPC
+  // uses update tokens to authorise reads and is designed for use with
+  // UpdateWorkUnit to make atomic updates (using aip.dev/154 etags for
+  // optimistic locking). It should be used (and only used by) recorders.
+  rpc GetWorkUnit(GetWorkUnitRequest) returns (WorkUnit) {};
+
+  // Retrieves a list of work units.
+  //
+  // Unlike the BatchGetWorkUnits RPC on the ResultDB service, this RPC
+  // uses update tokens to authorise reads and is designed for use with
+  // BatchUpdateWorkUnits to make atomic updates (using aip.dev/154 etags for
+  // optimistic locking). It should be used (and only used by) recorders.
+  rpc BatchGetWorkUnits(BatchGetWorkUnitsRequest) returns (BatchGetWorkUnitsResponse) {};
 
   // Marks the given work unit as final and begins the process of
   // transitioning it to the state FINALIZED.

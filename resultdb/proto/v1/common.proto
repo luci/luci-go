@@ -482,3 +482,17 @@ enum AggregationLevel {
   // This means all test results sharing the same test identifier.
   CASE = 5;
 }
+
+// WorkUnitView represents the set of work unit fields to be retrieved.
+// See https://google.aip.dev/157.
+enum WorkUnitView {
+  // The default / unset value. The API will default to the basic view.
+  WORK_UNIT_VIEW_UNSPECIFIED = 0;
+
+  // Include basic information about the work unit. Excludes
+  // extended_properties.
+  WORK_UNIT_VIEW_BASIC = 1;
+
+  // Include all fields, including extended_properties.
+  WORK_UNIT_VIEW_FULL = 2;
+}

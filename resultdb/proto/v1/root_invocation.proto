@@ -204,3 +204,17 @@ message RootInvocation {
   // presubmit checks, such as to validate they are not flaky.
   string baseline_id = 15;
 }
+
+// The following request message appears below as GetRootInvocation is
+// implemented by both the ResultDB and Recorder service. They are
+// implemented by both services for client ergonomics and to seperate
+// the recorder and reader-side failure domains. In the recorder service,
+// the Get methods facilitate atomic updates using etags for opportunistic
+// concurrency control.
+// In the ResultDB service, they support reading the uploaded work units.
+
+// A request message for the GetRootInvocation RPC.
+message GetRootInvocationRequest {
+  // The name of the root invocation to read, see RootInvocation.name.
+  string name = 1 [ (google.api.field_behavior) = REQUIRED ];
+}

@@ -59,6 +59,23 @@ func (s *DecoratedRecorder) UpdateRootInvocation(ctx context.Context, req *Updat
 	return
 }
 
+func (s *DecoratedRecorder) GetRootInvocation(ctx context.Context, req *GetRootInvocationRequest) (rsp *RootInvocation, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "GetRootInvocation", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.GetRootInvocation(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "GetRootInvocation", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedRecorder) FinalizeRootInvocation(ctx context.Context, req *FinalizeRootInvocationRequest) (rsp *RootInvocation, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
@@ -140,6 +157,40 @@ func (s *DecoratedRecorder) BatchUpdateWorkUnits(ctx context.Context, req *Batch
 	}
 	if s.Postlude != nil {
 		err = s.Postlude(ctx, "BatchUpdateWorkUnits", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedRecorder) GetWorkUnit(ctx context.Context, req *GetWorkUnitRequest) (rsp *WorkUnit, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "GetWorkUnit", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.GetWorkUnit(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "GetWorkUnit", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedRecorder) BatchGetWorkUnits(ctx context.Context, req *BatchGetWorkUnitsRequest) (rsp *BatchGetWorkUnitsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "BatchGetWorkUnits", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.BatchGetWorkUnits(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "BatchGetWorkUnits", rsp, err)
 	}
 	return
 }
