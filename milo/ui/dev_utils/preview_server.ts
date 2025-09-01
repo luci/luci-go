@@ -12,27 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-
 import { PluginOption } from 'vite';
 
 import { getLocalUiVersionJs } from './ui_version_js_utils';
 
-function getContentType(filename: string) {
-  if (filename.endsWith('.js.map')) {
-    return 'application/json';
-  }
-  if (filename.endsWith('.js')) {
-    return 'text/javascript';
-  }
-  throw new Error(
-    `file ${JSON.stringify(filename)} does not have a known MIME type`,
-  );
-}
-
 export function previewServer(
-  assetDir: string,
+  _assetDir: string,
   env: Record<string, string | undefined>,
 ): PluginOption {
   return {
@@ -54,25 +39,6 @@ export function previewServer(
               : 'new-ui',
           ),
         );
-      });
-
-      // Serve files in `./dist/` but not in `./dist/ui/` (e.g. `root_sw.js`).
-      server.middlewares.use((req, res, next) => {
-        if (!req.url || req.url.match(/^\/(ui(\/.*)?)?$/)) {
-          return next();
-        }
-        const stat = fs.statSync(path.join(assetDir, req.url), {
-          throwIfNoEntry: false,
-        });
-        if (!stat) {
-          return next();
-        }
-
-        res.writeHead(200, {
-          'content-type': getContentType(req.url),
-        });
-        const readStream = fs.createReadStream(path.join(assetDir, req.url));
-        readStream.pipe(res);
       });
     },
   };

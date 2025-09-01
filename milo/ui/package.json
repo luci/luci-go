@@ -10,7 +10,7 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf ./dist && rollup -c && vite build && cp output_bundle_salt.md ./dist/",
+    "build": "rm -rf ./dist && vite build && cp output_bundle_salt.md ./dist/",
     "dev": "vite",
     "preview": "vite preview",
     "gen-utils": "rollup -c rollup.utils.config.mjs",

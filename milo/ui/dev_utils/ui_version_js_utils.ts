@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as path from 'node:path';
-
 import { Plugin } from 'vite';
 
 /**
@@ -55,49 +53,4 @@ export function getLocalUiVersionJs(
     self.UI_VERSION_TYPE = '${versionType}';
   `;
   return localUiVersionJs;
-}
-
-/**
- * Get a virtual-ui-version-js plugin so we can import ui_version.js in the
- * service workers with the correct syntax required by different environments.
- */
-export function getVirtualUiVersionJsPlugin(mode: string): Plugin {
-  return {
-    name: 'luci-ui-virtual-ui-version-js',
-    resolveId: (id, importer) => {
-      if (id !== 'virtual:ui_version.js') {
-        return null;
-      }
-
-      // `importScripts` is only available in workers.
-      // Ensure this module is only used by service workers.
-      if (
-        !['src/sw/root_sw.ts', 'src/sw/ui_sw.ts']
-          .map((p) => path.join(__dirname, '../', p))
-          .includes(importer || '')
-      ) {
-        throw new Error(
-          'virtual:ui_version.js should only be imported by a service worker script.',
-        );
-      }
-      return '\0virtual:ui_version.js';
-    },
-    load: (id) => {
-      if (id !== '\0virtual:ui_version.js') {
-        return null;
-      }
-
-      // In production, the service worker script cannot be a JS module due to
-      // limited browser support. So we need to use `importScripts` instead of
-      // `import` to load `/ui_version.js`.
-      if (mode !== 'development') {
-        return "importScripts('/ui_version.js');";
-      }
-
-      // During development, the service worker script can only be a JS module,
-      // because it runs through the same pipeline as the rest of the scripts.
-      // It cannot use the `importScripts`.  So we need to use the `import`.
-      return "import '/ui_version.js';";
-    },
-  };
 }

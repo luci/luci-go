@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as path from 'node:path';
-
 import { Plugin } from 'vite';
 
 import { assertNonNullable } from '../src/generic_libs/tools/utils';
@@ -149,51 +147,6 @@ export function getLocalDevSettingsJs(env: Record<string, string | undefined>) {
   )});\n`;
 
   return localDevSettingsJs;
-}
-
-/**
- * Get a virtual-settings-js plugin so we can import settings.js in the service
- * workers with the correct syntax required by different environments.
- */
-export function getVirtualSettingsJsPlugin(mode: string): Plugin {
-  return {
-    name: 'luci-ui-virtual-settings-js',
-    resolveId: (id, importer) => {
-      if (id !== 'virtual:settings.js') {
-        return null;
-      }
-
-      // `importScripts` is only available in workers.
-      // Ensure this module is only used by service workers.
-      if (
-        !['src/sw/root_sw.ts', 'src/sw/ui_sw.ts']
-          .map((p) => path.join(__dirname, '../', p))
-          .includes(importer || '')
-      ) {
-        throw new Error(
-          'virtual:settings.js should only be imported by a service worker script.',
-        );
-      }
-      return '\0virtual:settings.js';
-    },
-    load: (id) => {
-      if (id !== '\0virtual:settings.js') {
-        return null;
-      }
-
-      // In production, the service worker script cannot be a JS module due to
-      // limited browser support. So we need to use `importScripts` instead of
-      // `import` to load `/settings.js`.
-      if (mode !== 'development') {
-        return "importScripts('/settings.js');";
-      }
-
-      // During development, the service worker script can only be a JS module,
-      // because it runs through the same pipeline as the rest of the scripts.
-      // It cannot use the `importScripts`. So we need to use the `import`.
-      return "import '/settings.js';";
-    },
-  };
 }
 
 /**

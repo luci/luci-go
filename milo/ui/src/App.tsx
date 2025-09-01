@@ -53,7 +53,6 @@ import { ReactLitBridge } from '@/generic_libs/components/react_lit_element';
 import { useIsDevBuild } from '@/generic_libs/hooks/is_dev_build';
 import { SingletonStoreProvider } from '@/generic_libs/hooks/singleton';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
-import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
 
 const isNonTransientError = (error: unknown) =>
   error instanceof GrpcError && NON_TRANSIENT_ERROR_CODES.includes(error.code);
@@ -106,32 +105,8 @@ export function App() {
       // less likely to be misused.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).__STORE = store;
-      if (
-        navigator.serviceWorker &&
-        !document.cookie.includes('showNewBuildPage=false')
-      ) {
-        navigator.serviceWorker
-          .register(
-            // cast to string because TypeScript doesn't allow us to use
-            // TrustedScriptURL here
-            createStaticTrustedURL(
-              'root-sw-js-static',
-              '/root_sw.js',
-            ) as string,
-            // During local development, the service worker script can only be
-            // an ES module, because it runs through the same pipeline as the
-            // rest of the scripts.
-            // In a production/deployed build, the service worker script cannot
-            // be an ES module due to limited browser support [1].
-            // [1]: https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorker#browser_compatibility
-            { type: isDevBuild ? 'module' : 'classic' },
-          )
-          .then((registration) => {
-            store.setRedirectSw(registration);
-          });
-      } else {
-        store.setRedirectSw(null);
-      }
+
+      // The service worker registration logic has been removed.
 
       return () => destroy(store);
     },

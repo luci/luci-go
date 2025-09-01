@@ -24,21 +24,26 @@ import { App } from '@/App';
 import { initDefaultTrustedTypesPolicy } from '@/common/tools/sanitize_html';
 import { IsDevBuildProvider } from '@/generic_libs/hooks/is_dev_build';
 import { assertNonNullable } from '@/generic_libs/tools/utils';
-import { initUiSW } from '@/sw/init_sw';
 
-/**
- * Whether the UI service worker should be enabled.
- */
-declare const ENABLE_UI_SW: boolean;
+import { logging } from './common/tools/logging';
 
-if (
-  navigator.serviceWorker &&
-  ENABLE_UI_SW &&
-  // Allow cypress to disable service worker via a global variable.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  !(window as any).DISABLE_UI_SW_FOR_CYPRESS
-) {
-  initUiSW({ isDevEnv: import.meta.env.DEV });
+// Unregister any existing service workers to complete the removal.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker
+    .getRegistrations()
+    .then((registrations) => {
+      if (registrations.length) {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+        // Reload the page once to ensure the client is no longer
+        // controlled by the old service worker.
+        window.location.reload();
+      }
+    })
+    .catch((error) => {
+      logging.error('Error during service worker unregistration:', error);
+    });
 }
 
 initDefaultTrustedTypesPolicy();

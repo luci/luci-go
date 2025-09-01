@@ -23,18 +23,7 @@ export function devServer(
   return {
     name: 'luci-ui-dev-server',
     configureServer: (server) => {
-      // Serve `/root_sw.js` in local development environment.
-      server.middlewares.use((req, _res, next) => {
-        if (req.url === '/root_sw.js') {
-          req.url = '/ui/src/sw/root_sw.ts';
-        }
-        return next();
-      });
-
-      // Serve `/ui_version.js` in local development environment.
-      // We don't want to define `UI_VERSION` directly because that would
-      // prevent us from testing the service worker's `GET '/ui_version.js'`
-      // handler.
+      // Serve `/ui_version.js` in local development environment to mimic production.
       server.middlewares.use((req, res, next) => {
         if (req.url !== '/ui_version.js') {
           return next();
@@ -50,10 +39,7 @@ export function devServer(
         );
       });
 
-      // Serve `/settings.js` in local development environment.
-      // We don't want to define `SETTINGS` directly because that would
-      // prevent us from testing the service worker's `GET '/settings.js'`
-      // handler.
+      // Serve `/settings.js` in local development environment to mimic production.
       server.middlewares.use((req, res, next) => {
         if (req.url !== '/settings.js') {
           return next();
