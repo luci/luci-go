@@ -25,7 +25,7 @@ func challengeHandlers(facetID string) map[string]challengeHandler {
 	return map[string]challengeHandler{
 		"SECURITY_KEY": chainHandler{
 			handlers: []challengeHandler{
-				pluginHandler{facetID},
+				newPluginHandler(facetID),
 			},
 		},
 	}

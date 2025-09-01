@@ -72,11 +72,13 @@ func main() {
 	}
 }
 
-func createAgent(upstreamDialer ssh.AgentDialer, listener net.Listener) (*ssh.ExtensionAgent, error) {
+func createAgent(ctx context.Context, upstreamDialer ssh.AgentDialer, listener net.Listener) (*ssh.ExtensionAgent, error) {
 	h := forwardingHandler{}
-	if !h.available() {
-		return nil, fmt.Errorf("No challenge handler available. Please set %v.", pluginEnvVar)
+	if err := h.CheckAvailable(ctx); err != nil {
+		return nil, fmt.Errorf("challenge handler isn't available: %v", err)
 	}
+
+	logging.Infof(ctx, "Using PluginCmd: %v", h.PluginCmd())
 
 	agent := ssh.ExtensionAgent{
 		UpstreamDialer: upstreamDialer,
@@ -109,7 +111,7 @@ func standaloneMain(ctx context.Context, r runArgs) error {
 	defer listener.Close()
 
 	upstreamDialer := createUpstreamDialer(ctx)
-	agent, err := createAgent(upstreamDialer, listener)
+	agent, err := createAgent(ctx, upstreamDialer, listener)
 	if err != nil {
 		return err
 	}
@@ -138,7 +140,7 @@ func sshHelperMain(ctx context.Context, r runArgs) error {
 	defer listener.Close()
 
 	upstreamDialer := createUpstreamDialer(ctx)
-	agent, err := createAgent(upstreamDialer, listener)
+	agent, err := createAgent(ctx, upstreamDialer, listener)
 	if err != nil {
 		logging.Errorf(ctx, "Failed to create SSH agent: %v", err)
 		return err

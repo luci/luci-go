@@ -34,8 +34,7 @@ import (
 )
 
 const (
-	envPluginCmd   = "GOOGLE_AUTH_WEBAUTHN_PLUGIN"
-	envSSHAuthSock = "SSH_AUTH_SOCK"
+	envPluginCmd = "GOOGLE_AUTH_WEBAUTHN_PLUGIN"
 
 	// Executable names of the plugins we ship to users.
 	sshPluginExecutable   = "luci-auth-ssh-plugin"
@@ -48,21 +47,11 @@ func isInSSHSession() bool {
 	return os.Getenv("SSH_CONNECTION") != ""
 }
 
-// A pluginHandler implements WebAuthn challenges via an external plugin.
-//
-// The signing plugin should implement the following interface:
-//
-// Communication occurs over stdin/stdout, and messages are both sent and
-// received in the form:
-//
-//	[4 bytes - payload size (little-endian)][variable bytes - json payload]
-//
-// The JSON payloads are defined in [webauthn].
-type pluginHandler struct {
-	facetID string
-}
+// Abstraction for selecting and talking with a plugin.
+type PluginIO struct{}
 
-func (pluginHandler) pluginCmd() string {
+// Returns the plugin executable to use.
+func (_ PluginIO) PluginCmd() string {
 	// Use plugin environment variable if it's set explicitly.
 	if pluginCmd, ok := os.LookupEnv(envPluginCmd); ok {
 		return pluginCmd
@@ -78,22 +67,22 @@ func (pluginHandler) pluginCmd() string {
 	return fido2PluginExecutable
 }
 
-// Returns an error if continuing ReAuth will fail (i.e. there's an obvious
-// misconfiguration).
-func (h pluginHandler) CheckAvailable(ctx context.Context) error {
-	cmd := h.pluginCmd()
+// Returns an error if ReAuth with the plugin will fail (i.e. there's an
+// obvious misconfiguration).
+func (p PluginIO) CheckAvailable(ctx context.Context) error {
+	cmd := p.PluginCmd()
 	if cmd == "" {
 		return errors.New("security key plugin isn't set")
 	}
 
-	logging.Debugf(ctx, "customSKHandler pluginCmd: %v", cmd)
+	logging.Debugf(ctx, "PluginIO.PluginCmd(): %v", cmd)
 	cmdName := strings.TrimSuffix(path.Base(cmd), path.Ext(cmd))
 
 	// Using SSH plugin.
 	if strings.EqualFold(cmdName, sshPluginExecutable) {
 		// Error if SSH_AUTH_SOCK isn't set.
-		if sshAuthSock := os.Getenv(envSSHAuthSock); sshAuthSock == "" {
-			return errors.Fmt("SSH plugin requested, but %s isn't set", envSSHAuthSock)
+		if sshAuthSock := os.Getenv(EnvSSHAuthSock); sshAuthSock == "" {
+			return errors.Fmt("SSH plugin requested, but %s isn't set", EnvSSHAuthSock)
 		}
 
 		// TODO(b/440418327): Dial SSH_AUTH_SOCK and probe the agent is running.
@@ -102,10 +91,10 @@ func (h pluginHandler) CheckAvailable(ctx context.Context) error {
 	return nil
 }
 
-// send sends bytes to the plugin command and returns the output.
-func (h pluginHandler) send(ctx context.Context, d []byte) ([]byte, error) {
-	cmd := exec.CommandContext(ctx, h.pluginCmd())
-	cmd.Stdin = bytes.NewReader(d)
+// Send executes PluginCmd() and sends `r` to the child process's stdin, then returns the output.
+func (p PluginIO) Send(ctx context.Context, r io.Reader) ([]byte, error) {
+	cmd := exec.CommandContext(ctx, p.PluginCmd())
+	cmd.Stdin = r
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
@@ -118,6 +107,28 @@ func (h pluginHandler) send(ctx context.Context, d []byte) ([]byte, error) {
 		}
 	}
 	return out, err
+}
+
+// A pluginHandler implements WebAuthn challenges via an external plugin.
+//
+// The signing plugin should implement the following interface:
+//
+// Communication occurs over stdin/stdout, and messages are both sent and
+// received in the form:
+//
+//	[4 bytes - payload size (little-endian)][variable bytes - json payload]
+//
+// The JSON payloads are defined in [webauthn].
+type pluginHandler struct {
+	PluginIO
+	facetID string
+}
+
+func newPluginHandler(facetID string) pluginHandler {
+	return pluginHandler{
+		PluginIO: PluginIO{},
+		facetID:  facetID,
+	}
 }
 
 func (h pluginHandler) Handle(ctx context.Context, c challenge) (*proposalReply, error) {
@@ -203,7 +214,7 @@ func (h pluginHandler) sendRequest(ctx context.Context, req *webauthn.GetAsserti
 		return nil, errors.Fmt("pluginHandler.sendRequest: %w", err)
 	}
 	logging.Debugf(ctx, "Sending signing plugin input: %q", ereq)
-	out, err := h.send(ctx, ereq)
+	out, err := h.Send(ctx, bytes.NewReader(ereq))
 	if err != nil {
 		return nil, errors.Fmt("pluginHandler.sendRequest: %w", err)
 	}

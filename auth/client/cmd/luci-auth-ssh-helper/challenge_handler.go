@@ -18,29 +18,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"os"
-	"os/exec"
 
 	"go.chromium.org/luci/auth/reauth"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/ssh"
 )
 
-// A forwardingHandler forwards challenges to a subprocess handler.
+// A forwardingHandler forwards challenges to subprocess plugin for signing.
 type forwardingHandler struct {
-}
-
-// Environment variable name of the challenge plugin.
-const pluginEnvVar = "GOOGLE_AUTH_WEBAUTHN_PLUGIN"
-
-func (forwardingHandler) pluginCmd() string {
-	return os.Getenv(pluginEnvVar)
-}
-
-func (h forwardingHandler) available() bool {
-	return h.pluginCmd() != ""
+	reauth.PluginIO
 }
 
 func (h forwardingHandler) handle(ctx context.Context, payload []byte) ssh.AgentMessage {
@@ -51,7 +36,7 @@ func (h forwardingHandler) handle(ctx context.Context, payload []byte) ssh.Agent
 		// insanely huge payload)
 		panic(err)
 	}
-	output, err := h.send(ctx, &input)
+	output, err := h.Send(ctx, &input)
 	if err != nil {
 		return ssh.AgentMessage{
 			Code:    ssh.AgentExtensionFailure,
@@ -69,22 +54,4 @@ func (h forwardingHandler) handle(ctx context.Context, payload []byte) ssh.Agent
 		Code:    ssh.AgentSuccess,
 		Payload: outPayload,
 	}
-}
-
-// send sends bytes to the plugin command and returns the output.
-func (h forwardingHandler) send(ctx context.Context, r io.Reader) ([]byte, error) {
-	cmd := exec.CommandContext(ctx, h.pluginCmd())
-	cmd.Stdin = r
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-	out, err := cmd.Output()
-	logging.Debugf(ctx, "forwarded challenge handler stderr: %q", stderr.Bytes())
-	if err != nil {
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
-			logging.Errorf(ctx, "forwarded challenge handler exit code: %v", exitErr.ExitCode())
-			logging.Errorf(ctx, "forwarded challenge handler stderr: %q", stderr.Bytes())
-		}
-	}
-	return out, err
 }
