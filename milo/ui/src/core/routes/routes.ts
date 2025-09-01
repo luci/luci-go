@@ -228,6 +228,14 @@ export const routes: RouteObject[] = [
       },
     ],
   },
+  {
+    path: 'monitoring',
+    lazy: () => import('@/monitoringv2/pages/monitoring_page'),
+  },
+  {
+    path: 'monitoring/:tree',
+    lazy: () => import('@/monitoringv2/pages/monitoring_page'),
+  },
   // When promoting lab pages out of labs, move them to their respective feature
   // area. See go/luci-ui-path-segregation for details.
   // New lab pages should be mounted to `/ui/<feature>/labs/my-new-lab-page`
@@ -247,11 +255,11 @@ export const routes: RouteObject[] = [
       },
       {
         path: 'monitoringv2',
-        lazy: () => import('@/monitoringv2/pages/monitoring_page'),
+        lazy: () => import('@/monitoringv2/pages/redirection_loader'),
       },
       {
         path: 'monitoringv2/:tree',
-        lazy: () => import('@/monitoringv2/pages/monitoring_page'),
+        lazy: () => import('@/monitoringv2/pages/redirection_loader'),
       },
       {
         // TODO: Remove this endpoint after we remove all client.
