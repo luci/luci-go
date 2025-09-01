@@ -82,6 +82,8 @@ const (
 	ChangeProjectRealmsChanged     ChangeType = 10100
 	ChangeProjectRealmsReevaluated ChangeType = 10200
 	ChangeProjectRealmsRemoved     ChangeType = 10300
+
+	authGroupChangePrefix = "AuthGroup$"
 )
 
 var (
@@ -337,8 +339,8 @@ func (ct ChangeType) ToString() string {
 	return val
 }
 
-func (change *AuthDBChange) ToProto() *rpcpb.AuthDBChange {
-	return &rpcpb.AuthDBChange{
+func (change *AuthDBChange) ToProto(ctx context.Context) (*rpcpb.AuthDBChange, error) {
+	out := &rpcpb.AuthDBChange{
 		ChangeType:               change.ChangeType.ToString(),
 		Target:                   change.Target,
 		AuthDbRev:                change.AuthDBRev,
@@ -350,7 +352,6 @@ func (change *AuthDBChange) ToProto() *rpcpb.AuthDBChange {
 		OldDescription:           change.OldDescription,
 		Owners:                   change.Owners,
 		OldOwners:                change.OldOwners,
-		Members:                  change.Members,
 		Globs:                    change.Globs,
 		Nested:                   change.Nested,
 		Subnets:                  change.Subnets,
@@ -371,6 +372,24 @@ func (change *AuthDBChange) ToProto() *rpcpb.AuthDBChange {
 		PermsRevOld:              change.PermsRevOld,
 		PermsRevNew:              change.PermsRevNew,
 	}
+
+	// The privacy filter is only relevant for group membership changes.
+	if (change.ChangeType != ChangeGroupMembersAdded) && (change.ChangeType != ChangeGroupMembersRemoved) {
+		return out, nil
+	}
+
+	// Check whether the privacy filter should be applied for this caller.
+	name := strings.TrimPrefix(change.Target, authGroupChangePrefix)
+	ok, err := CanCallerViewMembers(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		out.Members = change.Members
+	} else {
+		out.NumRedacted = int32(len(change.Members))
+	}
+	return out, nil
 }
 
 // EnqueueProcessChangeTask adds a ProcessChangeTask task to the cloud task

@@ -23,6 +23,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -39,6 +40,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
+	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/testsupport"
 )
@@ -73,6 +75,7 @@ func testAuthDBIPAllowlistChange(ctx context.Context, t testing.TB, authDBRev in
 		Description:    "description",
 		OldDescription: "",
 		Target:         "AuthIPWhitelist$a",
+		AuthDBRev:      authDBRev,
 		When:           time.Date(2021, time.December, 12, 1, 0, 0, 0, time.UTC),
 		Who:            "user:test@example.com",
 		AppVersion:     "123-45abc",
@@ -1102,6 +1105,99 @@ func TestGenerateChanges(t *testing.T) {
 			// Changelog for rev 1 has already been generated, so a task
 			// should not have been added.
 			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(7))
+		})
+	})
+}
+
+func TestAuthDBChangeProtoConversion(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("AuthDBChange ToProto works for non-membership changes", t, func(t *ftt.Test) {
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{"testers"},
+		})
+
+		testChange := testAuthDBIPAllowlistChange(ctx, t, 1001)
+		actual, err := testChange.ToProto(ctx)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Match(&rpcpb.AuthDBChange{
+			ChangeType:  "IPWL_CREATED",
+			Comment:     "comment",
+			Description: "description",
+			Target:      "AuthIPWhitelist$a",
+			AuthDbRev:   1001,
+			Who:         "user:test@example.com",
+			When:        timestamppb.New(time.Date(2021, time.December, 12, 1, 0, 0, 0, time.UTC)),
+			AppVersion:  "123-45abc",
+		}))
+	})
+
+	ftt.Run("AuthDBChange ToProto applies privacy filter", t, func(t *ftt.Test) {
+		t.Run("filters Google groups", func(t *ftt.Test) {
+			ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+				Identity:       "user:someone@example.com",
+				IdentityGroups: []string{"testers"},
+			})
+
+			testChange := testAuthDBGroupChange(ctx, t, "AuthGroup$google/test@group.com", 1200, 1001)
+			testChange.Members = []string{"joe.bloggs@group.com"}
+			actual, err := testChange.ToProto(ctx)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Match(&rpcpb.AuthDBChange{
+				ChangeType:  "GROUP_MEMBERS_ADDED",
+				Comment:     "comment",
+				Target:      "AuthGroup$google/test@group.com",
+				AuthDbRev:   1001,
+				NumRedacted: 1,
+				Who:         "user:test@example.com",
+				When:        timestamppb.New(time.Date(2020, time.August, 16, 15, 20, 0, 0, time.UTC)),
+				AppVersion:  "123-45abc",
+			}))
+		})
+
+		t.Run("Google groups can be sen by admin", func(t *ftt.Test) {
+			ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+				Identity:       "user:admin@example.com",
+				IdentityGroups: []string{AdminGroup},
+			})
+
+			testChange := testAuthDBGroupChange(ctx, t, "AuthGroup$google/test@group.com", 1200, 1001)
+			testChange.Members = []string{"joe.bloggs@group.com"}
+			actual, err := testChange.ToProto(ctx)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Match(&rpcpb.AuthDBChange{
+				ChangeType: "GROUP_MEMBERS_ADDED",
+				Comment:    "comment",
+				Target:     "AuthGroup$google/test@group.com",
+				AuthDbRev:  1001,
+				Members:    []string{"joe.bloggs@group.com"},
+				Who:        "user:test@example.com",
+				When:       timestamppb.New(time.Date(2020, time.August, 16, 15, 20, 0, 0, time.UTC)),
+				AppVersion: "123-45abc",
+			}))
+		})
+
+		t.Run("shows TwoSync groups", func(t *ftt.Test) {
+			ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+				Identity:       "user:someone@example.com",
+				IdentityGroups: []string{"testers"},
+			})
+
+			testChange := testAuthDBGroupChange(ctx, t, "AuthGroup$google/team@twosync.google.com", 1300, 1002)
+			testChange.Members = []string{"user@google.com"}
+			actual, err := testChange.ToProto(ctx)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Match(&rpcpb.AuthDBChange{
+				ChangeType: "GROUP_MEMBERS_REMOVED",
+				Comment:    "comment",
+				Target:     "AuthGroup$google/team@twosync.google.com",
+				AuthDbRev:  1002,
+				Members:    []string{"user@google.com"},
+				Who:        "user:test@example.com",
+				When:       timestamppb.New(time.Date(2020, time.August, 16, 15, 20, 0, 0, time.UTC)),
+				AppVersion: "123-45abc",
+			}))
 		})
 	})
 }

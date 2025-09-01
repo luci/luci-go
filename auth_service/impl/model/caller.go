@@ -33,8 +33,7 @@ func CanCallerModify(ctx context.Context, group GraphableGroup) (bool, error) {
 
 // CanCallerViewMembers returns whether the current identity can view the
 // members of the given group.
-func CanCallerViewMembers(ctx context.Context, group GraphableGroup) (bool, error) {
-	name := group.GetName()
+func CanCallerViewMembers(ctx context.Context, name string) (bool, error) {
 	// Don't filter if the group is internal.
 	if !IsExternalAuthGroupName(name) {
 		return true, nil

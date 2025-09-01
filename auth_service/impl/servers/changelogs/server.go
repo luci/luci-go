@@ -41,7 +41,7 @@ func (*Server) ListChangeLogs(ctx context.Context, req *rpcpb.ListChangeLogsRequ
 		case errors.Is(err, model.ErrInvalidTarget):
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		case errors.Is(err, pagination.ErrInvalidPageToken):
-			return nil, status.Errorf(codes.InvalidArgument, "Invalid page token")
+			return nil, status.Error(codes.InvalidArgument, "Invalid page token")
 		default:
 			return nil, status.Errorf(codes.Internal, "Failed to fetch change logs: %s", err)
 		}
@@ -49,7 +49,11 @@ func (*Server) ListChangeLogs(ctx context.Context, req *rpcpb.ListChangeLogsRequ
 
 	changeList := make([]*rpcpb.AuthDBChange, len(changes))
 	for idx, entity := range changes {
-		changeList[idx] = entity.ToProto()
+		c, err := entity.ToProto(ctx)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		changeList[idx] = c
 	}
 
 	return &rpcpb.ListChangeLogsResponse{

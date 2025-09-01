@@ -1903,7 +1903,7 @@ func (group *AuthGroup) ToProto(ctx context.Context, includeMemberships bool) (*
 		return nil, err
 	}
 
-	membersVisible, err := CanCallerViewMembers(ctx, group)
+	membersVisible, err := CanCallerViewMembers(ctx, group.GetName())
 	if err != nil {
 		return nil, err
 	}

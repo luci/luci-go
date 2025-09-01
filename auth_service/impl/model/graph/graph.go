@@ -223,7 +223,7 @@ func (g *Graph) doExpansion(
 		result.Members.AddAll(members)
 	} else {
 		// Check whether the caller can view members.
-		ok, err := model.CanCallerViewMembers(ctx, node.group)
+		ok, err := model.CanCallerViewMembers(ctx, node.group.GetName())
 		if err != nil {
 			return nil, err
 		}

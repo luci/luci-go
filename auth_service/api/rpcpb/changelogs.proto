@@ -99,4 +99,7 @@ message AuthDBChange {
   string config_rev_new = 29;
   string perms_rev_old = 30;
   string perms_rev_new = 31;
+
+  // Number of member emails redacted, if any.
+  int32 num_redacted = 32;
 }
