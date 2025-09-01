@@ -18,7 +18,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -60,7 +59,7 @@ func main() {
 			}
 
 			// Other errors.
-			fmt.Fprintln(os.Stderr, err)
+			logging.Errorf(ctx, "%v", err)
 			os.Exit(1)
 		}
 
@@ -127,8 +126,7 @@ func standaloneMain(ctx context.Context, r runArgs) error {
 func sshHelperMain(ctx context.Context, r runArgs) error {
 	listenerDir, err := os.MkdirTemp("", "luci_ssh_agent.")
 	if err != nil {
-		logging.Errorf(ctx, "Failed to create temporary directory: %v", err)
-		return err
+		return errors.WrapIf(err, "failed to create temporary directory for agent socket")
 	}
 	defer os.RemoveAll(listenerDir)
 
@@ -142,8 +140,7 @@ func sshHelperMain(ctx context.Context, r runArgs) error {
 	upstreamDialer := createUpstreamDialer(ctx)
 	agent, err := createAgent(ctx, upstreamDialer, listener)
 	if err != nil {
-		logging.Errorf(ctx, "Failed to create SSH agent: %v", err)
-		return err
+		return errors.WrapIf(err, "failed to create SSH agent")
 	}
 
 	sshAuthSock := getSSHAuthSock(listener)
@@ -155,8 +152,9 @@ func sshHelperMain(ctx context.Context, r runArgs) error {
 	// Start the real SSH command.
 	sshPath, err := exec.LookPath("ssh")
 	if err != nil {
-		log.Printf("SSH binary not found: %v", err)
+		return errors.WrapIf(err, "SSH binary not found")
 	}
+
 	sshArgs := []string{
 		// Inject agent forwarding flag.
 		"-o", "ForwardAgent=yes",
