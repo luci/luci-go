@@ -187,13 +187,15 @@ func (*testHistoryServer) QueryVariants(ctx context.Context, req *pb.QueryVarian
 
 	pageSize := int(pageSizeLimiter.Adjust(req.PageSize))
 	opts := testresults.ReadVariantsOptions{
+		Project:          req.GetProject(),
+		TestID:           req.GetTestId(),
 		SubRealms:        subRealms,
 		VariantPredicate: req.VariantPredicate,
 		PageSize:         pageSize,
 		PageToken:        req.PageToken,
 	}
 
-	variants, nextPageToken, err := testresults.ReadVariants(span.Single(ctx), req.GetProject(), req.GetTestId(), opts)
+	variants, nextPageToken, err := testresults.ReadVariants(span.Single(ctx), opts)
 	if err != nil {
 		return nil, err
 	}

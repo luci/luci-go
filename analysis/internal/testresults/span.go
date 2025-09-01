@@ -290,6 +290,7 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 type ReadTestHistoryOptions struct {
 	Project                 string
 	TestID                  string
+	PreviousTestID          string // The ID this test previously used, if any.
 	SubRealms               []string
 	VariantPredicate        *pb.VariantPredicate
 	SubmittedFilter         pb.SubmittedFilter
@@ -300,12 +301,13 @@ type ReadTestHistoryOptions struct {
 }
 
 // statement generates a spanner statement for the specified query template.
-func (opts ReadTestHistoryOptions) statement(ctx context.Context, tmpl string, paginationParams []string) (spanner.Statement, error) {
+func (opts ReadTestHistoryOptions) statement(tmpl string, paginationParams []string) (spanner.Statement, error) {
 	params := map[string]any{
-		"project":   opts.Project,
-		"testId":    opts.TestID,
-		"subRealms": opts.SubRealms,
-		"limit":     opts.PageSize,
+		"project":        opts.Project,
+		"testId":         opts.TestID,
+		"previousTestId": opts.PreviousTestID,
+		"subRealms":      opts.SubRealms,
+		"limit":          opts.PageSize,
 
 		// If the filter is unspecified, this param will be ignored during the
 		// statement generation step.
@@ -338,6 +340,7 @@ func (opts ReadTestHistoryOptions) statement(ctx context.Context, tmpl string, p
 	}
 	input := map[string]any{
 		"hasLimit":                opts.PageSize > 0,
+		"hasPreviousTestId":       opts.PreviousTestID != "",
 		"hasSubmittedFilter":      opts.SubmittedFilter != pb.SubmittedFilter_SUBMITTED_FILTER_UNSPECIFIED,
 		"excludeBisectionResults": opts.ExcludeBisectionResults,
 		"pagination":              opts.PageToken != "",
@@ -403,7 +406,7 @@ func (opts ReadTestHistoryOptions) statement(ctx context.Context, tmpl string, p
 // ReadTestHistory reads verdicts from the spanner database.
 // Must be called in a spanner transactional context.
 func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts []*pb.TestVerdict, nextPageToken string, err error) {
-	stmt, err := opts.statement(ctx, "testHistoryQuery", []string{"paginationTime", "paginationVariantHash", "paginationInvId"})
+	stmt, err := opts.statement("testHistoryQuery", []string{"paginationTime", "paginationVariantHash", "paginationInvId"})
 	if err != nil {
 		return nil, "", err
 	}
@@ -411,9 +414,8 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts
 	var b spanutil.Buffer
 	verdicts = make([]*pb.TestVerdict, 0, opts.PageSize)
 	err = span.Query(ctx, stmt).Do(func(row *spanner.Row) error {
-		tv := &pb.TestVerdict{
-			TestId: opts.TestID,
-		}
+		tv := &pb.TestVerdict{}
+		var isPreviousTestID bool
 		var status int64
 		var statusV2 int64
 		var passedAvgDurationUsec spanner.NullInt64
@@ -424,6 +426,7 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts
 		var changelistOwnerKinds []string
 		err := b.FromSpanner(
 			row,
+			&isPreviousTestID,
 			&tv.PartitionTime,
 			&tv.VariantHash,
 			&tv.InvocationId,
@@ -438,6 +441,11 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts
 		)
 		if err != nil {
 			return err
+		}
+		if isPreviousTestID {
+			tv.TestId = opts.PreviousTestID
+		} else {
+			tv.TestId = opts.TestID
 		}
 		tv.Status = pb.TestVerdictStatus(status)
 		tv.StatusV2 = pb.TestVerdict_Status(statusV2)
@@ -521,7 +529,7 @@ type verdictCountsV1 struct {
 // spanner database.
 // Must be called in a spanner transactional context.
 func ReadTestHistoryStats(ctx context.Context, opts ReadTestHistoryOptions) (groups []*pb.QueryTestHistoryStatsResponse_Group, nextPageToken string, err error) {
-	stmt, err := opts.statement(ctx, "testHistoryStatsQuery", []string{"paginationDate", "paginationVariantHash"})
+	stmt, err := opts.statement("testHistoryStatsQuery", []string{"paginationDate", "paginationVariantHash"})
 	if err != nil {
 		return nil, "", err
 	}
@@ -647,6 +655,9 @@ func (tvr *TestVariantRealm) SaveUnverified() *spanner.Mutation {
 
 // ReadVariantsOptions specifies options for ReadVariants().
 type ReadVariantsOptions struct {
+	Project          string
+	TestID           string
+	PreviousTestID   string // The ID this test previously used, if any.
 	SubRealms        []string
 	VariantPredicate *pb.VariantPredicate
 	PageSize         int
@@ -670,7 +681,7 @@ func parseQueryVariantsPageToken(pageToken string) (afterHash string, err error)
 // ReadVariants reads all the variants of the specified test from the
 // spanner database.
 // Must be called in a spanner transactional context.
-func ReadVariants(ctx context.Context, project, testID string, opts ReadVariantsOptions) (variants []*pb.QueryVariantsResponse_VariantInfo, nextPageToken string, err error) {
+func ReadVariants(ctx context.Context, opts ReadVariantsOptions) (variants []*pb.QueryVariantsResponse_VariantInfo, nextPageToken string, err error) {
 	paginationVariantHash := ""
 	if opts.PageToken != "" {
 		paginationVariantHash, err = parseQueryVariantsPageToken(opts.PageToken)
@@ -680,17 +691,19 @@ func ReadVariants(ctx context.Context, project, testID string, opts ReadVariants
 	}
 
 	params := map[string]any{
-		"project":   project,
-		"testId":    testID,
-		"subRealms": opts.SubRealms,
+		"project":        opts.Project,
+		"testId":         opts.TestID,
+		"previousTestId": opts.PreviousTestID,
+		"subRealms":      opts.SubRealms,
 
 		// Control pagination.
 		"limit":                 opts.PageSize,
 		"paginationVariantHash": paginationVariantHash,
 	}
 	input := map[string]any{
-		"hasLimit": opts.PageSize > 0,
-		"params":   params,
+		"hasLimit":          opts.PageSize > 0,
+		"hasPreviousTestId": opts.PreviousTestID != "",
+		"params":            params,
 	}
 
 	switch p := opts.VariantPredicate.GetPredicate().(type) {
@@ -769,7 +782,12 @@ var testHistoryQueryTmpl = template.Must(template.New("").Parse(`
 
 	{{define "testResultFilter"}}
 		Project = @project
-			AND TestId = @testId
+			AND (
+				TestId = @testId
+				{{if .hasPreviousTestId}}
+					OR TestId = @previousTestId
+				{{end}}
+			)
 			AND PartitionTime >= @afterTime
 			AND PartitionTime < @beforeTime
 			AND SubRealm IN UNNEST(@subRealms)
@@ -782,7 +800,12 @@ var testHistoryQueryTmpl = template.Must(template.New("").Parse(`
 					FROM TestVariantRealms
 					WHERE
 						Project = @project
-						AND TestId = @testId
+						AND (
+							TestId = @testId
+							{{if .hasPreviousTestId}}
+								OR TestId = @previousTestId
+							{{end}}
+						)
 						AND SubRealm IN UNNEST(@subRealms)
 						AND (SELECT LOGICAL_AND(kv IN UNNEST(Variant)) FROM UNNEST(@variantKVs) kv)
 				)
@@ -798,6 +821,7 @@ var testHistoryQueryTmpl = template.Must(template.New("").Parse(`
 
 	{{define "testHistoryQuery"}}
 		SELECT
+			TestId = @previousTestId AS IsPreviousTestId,
 			PartitionTime,
 			VariantHash,
 			IngestedInvocationId,
@@ -819,9 +843,10 @@ var testHistoryQueryTmpl = template.Must(template.New("").Parse(`
 						OR (PartitionTime = TIMESTAMP(@paginationTime) AND VariantHash = @paginationVariantHash AND IngestedInvocationId > @paginationInvId)
 				)
 			{{end}}
-		GROUP BY PartitionTime, VariantHash, IngestedInvocationId
+		GROUP BY PartitionTime, TestId, VariantHash, IngestedInvocationId
 		ORDER BY
 			PartitionTime DESC,
+			TestId ASC,
 			VariantHash ASC,
 			IngestedInvocationId ASC
 		{{if .hasLimit}}
@@ -890,7 +915,12 @@ var variantsQueryTmpl = template.Must(template.New("variantsQuery").Parse(`
 	FROM TestVariantRealms
 	WHERE
 		Project = @project
-			AND TestId = @testId
+			AND (
+				TestId = @testId
+				{{if .hasPreviousTestId}}
+					OR TestId = @previousTestId
+				{{end}}
+			)
 			AND SubRealm IN UNNEST(@subRealms)
 			{{if .hasVariantHash}}
 				AND VariantHash = @variantHash

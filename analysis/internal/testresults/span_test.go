@@ -16,6 +16,7 @@ package testresults
 
 import (
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -306,6 +307,66 @@ func TestReadTestHistory(t *testing.T) {
 				expectedTestVerdicts[7],
 			}))
 		})
+		t.Run("with previous_test_id", func(t *ftt.Test) {
+			opts.PreviousTestID = "previous_test_id"
+			verdicts, nextPageToken, err := ReadTestHistory(span.Single(ctx), opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+
+			additionalExpectedTestVerdicts := []*pb.TestVerdict{
+				{
+					TestId:            "previous_test_id",
+					VariantHash:       pbutil.VariantHash(testVariant5),
+					InvocationId:      "inv-prev1",
+					Status:            pb.TestVerdictStatus_UNEXPECTED,
+					StatusV2:          pb.TestVerdict_FAILED,
+					StatusOverride:    pb.TestVerdict_NOT_OVERRIDDEN,
+					PartitionTime:     timestamppb.New(referenceTime.Add(-2 * time.Hour)),
+					PassedAvgDuration: nil,
+					Changelists:       expectedChangelists,
+				},
+				{
+					TestId:            "previous_test_id",
+					VariantHash:       pbutil.VariantHash(testVariant2),
+					InvocationId:      "inv-prev1",
+					Status:            pb.TestVerdictStatus_EXPECTED,
+					StatusV2:          pb.TestVerdict_PASSED,
+					StatusOverride:    pb.TestVerdict_NOT_OVERRIDDEN,
+					PartitionTime:     timestamppb.New(referenceTime.Add(-day - 18*time.Hour)),
+					PassedAvgDuration: nil,
+					Changelists:       expectedChangelists,
+				},
+				{
+					TestId:            "previous_test_id",
+					VariantHash:       pbutil.VariantHash(testVariant3),
+					InvocationId:      "ind-prev1",
+					Status:            pb.TestVerdictStatus_EXONERATED,
+					StatusV2:          pb.TestVerdict_PRECLUDED,
+					StatusOverride:    pb.TestVerdict_EXONERATED,
+					PartitionTime:     timestamppb.New(referenceTime.Add(-2*day - 6*time.Hour)),
+					PassedAvgDuration: nil,
+					Changelists:       expectedChangelists,
+				},
+			}
+			expectedTestVerdicts = append(expectedTestVerdicts, additionalExpectedTestVerdicts...)
+			// Sort test verdicts.
+			sort.Slice(expectedTestVerdicts, func(i, j int) bool {
+				a, b := expectedTestVerdicts[i], expectedTestVerdicts[j]
+				if a.PartitionTime.AsTime() != (b.PartitionTime.AsTime()) {
+					// Sort in desending time order.
+					return a.PartitionTime.AsTime().After(b.PartitionTime.AsTime())
+				}
+				if a.TestId != b.TestId {
+					return a.TestId < b.TestId
+				}
+				if a.VariantHash != b.VariantHash {
+					return a.VariantHash < b.VariantHash
+				}
+				return a.InvocationId < b.InvocationId
+			})
+
+			assert.Loosely(t, verdicts, should.Match(expectedTestVerdicts))
+		})
 	})
 }
 
@@ -427,7 +488,46 @@ func TestReadTestHistoryStats(t *testing.T) {
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match(expectedGroups))
 		})
+		t.Run("with previous_test_id", func(t *ftt.Test) {
+			newExpectedGroups := []*pb.QueryTestHistoryStatsResponse_Group{
+				{
+					PartitionTime:   timestamppb.New(referenceTime.Add(-1 * day)),
+					VariantHash:     pbutil.VariantHash(testVariant5),
+					UnexpectedCount: 1,
+					VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+						Failed: 1,
+					},
+				},
+				expectedGroups[0],
+				expectedGroups[1],
+				expectedGroups[2],
+				expectedGroups[3],
+				{
+					PartitionTime:     timestamppb.New(referenceTime.Add(-2 * day)),
+					VariantHash:       pbutil.VariantHash(testVariant2),
+					ExpectedCount:     2,
+					PassedAvgDuration: nil,
+					VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+						Passed: 2,
+					},
+				},
+				{
+					PartitionTime:   timestamppb.New(referenceTime.Add(-3 * day)),
+					VariantHash:     pbutil.VariantHash(testVariant3),
+					ExoneratedCount: 2,
+					VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+						Precluded:           2,
+						PrecludedExonerated: 2,
+					},
+				},
+			}
 
+			opts.PreviousTestID = "previous_test_id"
+			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Match(newExpectedGroups))
+		})
 		t.Run("with partition_time_range", func(t *ftt.Test) {
 			t.Run("day boundaries", func(t *ftt.Test) {
 				opts.TimeRange = &pb.TimeRange{
@@ -788,33 +888,39 @@ func TestReadVariants(t *testing.T) {
 		var2 := pbutil.Variant("key1", "val2", "key2", "val1")
 		var3 := pbutil.Variant("key1", "val2", "key2", "val2")
 		var4 := pbutil.Variant("key1", "val1", "key2", "val2")
+		var5 := pbutil.Variant("keyold", "valOld")
 
 		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-			insertTVR := func(subRealm string, variant *pb.Variant) {
+			insertTVR := func(subRealm string, testID string, variant *pb.Variant) {
 				span.BufferWrite(ctx, (&TestVariantRealm{
 					Project:     "project",
-					TestID:      "test_id",
+					TestID:      testID,
 					SubRealm:    subRealm,
 					Variant:     variant,
 					VariantHash: pbutil.VariantHash(variant),
 				}).SaveUnverified())
 			}
 
-			insertTVR("realm1", var1)
-			insertTVR("realm1", var2)
+			insertTVR("realm1", "test_id", var1)
+			insertTVR("realm1", "test_id", var2)
+			insertTVR("realm1", "previous_test_id", var2)
 
-			insertTVR("realm2", var2)
-			insertTVR("realm2", var3)
+			insertTVR("realm2", "test_id", var2)
+			insertTVR("realm2", "previous_test_id", var2)
+			insertTVR("realm2", "test_id", var3)
+			insertTVR("realm2", "previous_test_id", var5)
 
-			insertTVR("realm3", var4)
+			insertTVR("realm3", "test_id", var4)
 
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
 
+		opts := ReadVariantsOptions{Project: "project", TestID: "test_id", SubRealms: []string{"realm1", "realm2"}}
 		t.Run("pagination works", func(t *ftt.Test) {
-			opts := ReadVariantsOptions{PageSize: 3, SubRealms: []string{"realm1", "realm2", "realm3"}}
-			variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
+			opts.SubRealms = []string{"realm1", "realm2", "realm3"}
+			opts.PageSize = 3
+			variants, nextPageToken, err := ReadVariants(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.NotBeEmpty)
 			assert.Loosely(t, variants, should.Match([]*pb.QueryVariantsResponse_VariantInfo{
@@ -833,7 +939,7 @@ func TestReadVariants(t *testing.T) {
 			}))
 
 			opts.PageToken = nextPageToken
-			variants, nextPageToken, err = ReadVariants(span.Single(ctx), "project", "test_id", opts)
+			variants, nextPageToken, err = ReadVariants(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, variants, should.Match([]*pb.QueryVariantsResponse_VariantInfo{
@@ -845,8 +951,8 @@ func TestReadVariants(t *testing.T) {
 		})
 
 		t.Run("multi-realm works", func(t *ftt.Test) {
-			opts := ReadVariantsOptions{SubRealms: []string{"realm1", "realm2"}}
-			variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
+			opts.SubRealms = []string{"realm1", "realm2"}
+			variants, nextPageToken, err := ReadVariants(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, variants, should.Match([]*pb.QueryVariantsResponse_VariantInfo{
@@ -866,8 +972,8 @@ func TestReadVariants(t *testing.T) {
 		})
 
 		t.Run("single-realm works", func(t *ftt.Test) {
-			opts := ReadVariantsOptions{SubRealms: []string{"realm2"}}
-			variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
+			opts.SubRealms = []string{"realm2"}
+			variants, nextPageToken, err := ReadVariants(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, variants, should.Match([]*pb.QueryVariantsResponse_VariantInfo{
@@ -884,15 +990,12 @@ func TestReadVariants(t *testing.T) {
 
 		t.Run("with contains variant predicate", func(t *ftt.Test) {
 			t.Run("with single key-value pair", func(t *ftt.Test) {
-				opts := ReadVariantsOptions{
-					SubRealms: []string{"realm1", "realm2"},
-					VariantPredicate: &pb.VariantPredicate{
-						Predicate: &pb.VariantPredicate_Contains{
-							Contains: pbutil.Variant("key1", "val2"),
-						},
+				opts.VariantPredicate = &pb.VariantPredicate{
+					Predicate: &pb.VariantPredicate_Contains{
+						Contains: pbutil.Variant("key1", "val2"),
 					},
 				}
-				variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
+				variants, nextPageToken, err := ReadVariants(span.Single(ctx), opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
 				assert.Loosely(t, variants, should.Match([]*pb.QueryVariantsResponse_VariantInfo{
@@ -908,15 +1011,12 @@ func TestReadVariants(t *testing.T) {
 			})
 
 			t.Run("with multiple key-value pairs", func(t *ftt.Test) {
-				opts := ReadVariantsOptions{
-					SubRealms: []string{"realm1", "realm2"},
-					VariantPredicate: &pb.VariantPredicate{
-						Predicate: &pb.VariantPredicate_Contains{
-							Contains: pbutil.Variant("key1", "val2", "key2", "val2"),
-						},
+				opts.VariantPredicate = &pb.VariantPredicate{
+					Predicate: &pb.VariantPredicate_Contains{
+						Contains: pbutil.Variant("key1", "val2", "key2", "val2"),
 					},
 				}
-				variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
+				variants, nextPageToken, err := ReadVariants(span.Single(ctx), opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
 				assert.Loosely(t, variants, should.Match([]*pb.QueryVariantsResponse_VariantInfo{
@@ -929,15 +1029,12 @@ func TestReadVariants(t *testing.T) {
 		})
 
 		t.Run("with equals variant predicate", func(t *ftt.Test) {
-			opts := ReadVariantsOptions{
-				SubRealms: []string{"realm1", "realm2"},
-				VariantPredicate: &pb.VariantPredicate{
-					Predicate: &pb.VariantPredicate_Equals{
-						Equals: var2,
-					},
+			opts.VariantPredicate = &pb.VariantPredicate{
+				Predicate: &pb.VariantPredicate_Equals{
+					Equals: var2,
 				},
 			}
-			variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
+			variants, nextPageToken, err := ReadVariants(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, variants, should.Match([]*pb.QueryVariantsResponse_VariantInfo{
@@ -949,15 +1046,12 @@ func TestReadVariants(t *testing.T) {
 		})
 
 		t.Run("with hash_equals variant predicate", func(t *ftt.Test) {
-			opts := ReadVariantsOptions{
-				SubRealms: []string{"realm2"},
-				VariantPredicate: &pb.VariantPredicate{
-					Predicate: &pb.VariantPredicate_HashEquals{
-						HashEquals: pbutil.VariantHash(var2),
-					},
+			opts.VariantPredicate = &pb.VariantPredicate{
+				Predicate: &pb.VariantPredicate_HashEquals{
+					HashEquals: pbutil.VariantHash(var2),
 				},
 			}
-			variants, nextPageToken, err := ReadVariants(span.Single(ctx), "project", "test_id", opts)
+			variants, nextPageToken, err := ReadVariants(span.Single(ctx), opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, variants, should.Match([]*pb.QueryVariantsResponse_VariantInfo{
@@ -966,6 +1060,21 @@ func TestReadVariants(t *testing.T) {
 					Variant:     var2,
 				},
 			}))
+		})
+		t.Run("with previous_test_id", func(t *ftt.Test) {
+			opts.PreviousTestID = "previous_test_id"
+			variants, nextPageToken, err := ReadVariants(span.Single(ctx), opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+
+			expectedVariants := []*pb.QueryVariantsResponse_VariantInfo{
+				// Sorted by variant hash.
+				{VariantHash: pbutil.VariantHash(var1), Variant: var1},
+				{VariantHash: pbutil.VariantHash(var3), Variant: var3},
+				{VariantHash: pbutil.VariantHash(var5), Variant: var5},
+				{VariantHash: pbutil.VariantHash(var2), Variant: var2},
+			}
+			assert.Loosely(t, variants, should.Match(expectedVariants))
 		})
 	})
 }
