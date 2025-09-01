@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/resultcount"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -348,6 +349,15 @@ func TestCreateTestResults(t *testing.T) {
 				_, err := recorder.CreateTestResult(ctx, req)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 				assert.Loosely(t, err, should.ErrLike("invocations/inv not found"))
+			})
+			t.Run("with an inactive invocation", func(t *ftt.Test) {
+				testutil.MustApply(ctx, t, spanutil.UpdateMap("Invocations", map[string]any{
+					"InvocationId": invID,
+					"State":        pb.Invocation_FINALIZED,
+				}))
+				_, err := recorder.CreateTestResult(ctx, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+				assert.Loosely(t, err, should.ErrLike(`invocations/u-build-1 is not active`))
 			})
 			t.Run("with no request ID", func(t *ftt.Test) {
 				// This is a legacy behaviour and is valid for test result uploads to invocations only.

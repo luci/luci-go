@@ -438,7 +438,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 			expected[1].Status = pb.TestStatus_PASS
 			expected[1].Expected = true
 
-			t.Run("with an non-existing invocation", func(t *ftt.Test) {
+			t.Run("with a non-existing invocation", func(t *ftt.Test) {
 				tok, err = generateInvocationToken(ctx, "inv")
 				assert.Loosely(t, err, should.BeNil)
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, tok))
@@ -450,6 +450,15 @@ func TestBatchCreateTestResults(t *testing.T) {
 				_, err := recorder.BatchCreateTestResults(ctx, req)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 				assert.Loosely(t, err, should.ErrLike("invocations/inv not found"))
+			})
+			t.Run("with an inactive invocation", func(t *ftt.Test) {
+				testutil.MustApply(ctx, t, spanutil.UpdateMap("Invocations", map[string]any{
+					"InvocationId": invID,
+					"State":        pb.Invocation_FINALIZED,
+				}))
+				_, err := recorder.BatchCreateTestResults(ctx, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+				assert.Loosely(t, err, should.ErrLike(`invocations/u-build-1 is not active`))
 			})
 			t.Run("with no request ID", func(t *ftt.Test) {
 				// This is a legacy behaviour and is valid for test result uploads to invocations only.
