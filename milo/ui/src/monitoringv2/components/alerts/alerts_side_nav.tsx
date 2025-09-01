@@ -14,7 +14,6 @@
 
 import FolderIcon from '@mui/icons-material/Folder';
 import InboxIcon from '@mui/icons-material/Inbox';
-import ParkIcon from '@mui/icons-material/Park';
 import {
   Chip,
   Divider,
@@ -30,6 +29,8 @@ import { TreeJson } from '@/monitoring/util/server_json';
 import { StructuredAlert } from '@/monitoringv2/util/alerts';
 import { AlertGroup } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alert_groups.pb';
 
+import { TreeStatusSideNav } from './tree_status_side_nav';
+
 interface AlertsSideNavProps {
   tree: TreeJson;
   selectedTab: string | null;
@@ -40,6 +41,7 @@ interface AlertsSideNavProps {
 }
 
 export const AlertsSideNav = ({
+  tree,
   selectedTab,
   setSelectedTab,
   topLevelAlerts,
@@ -49,25 +51,7 @@ export const AlertsSideNav = ({
   return (
     <>
       <List>
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon>
-              <ParkIcon sx={{ color: 'var(--success-color)' }} />
-            </ListItemIcon>
-            <ListItemText
-              primary="Tree Status"
-              sx={{ color: 'var(--success-color)' }}
-            />
-            <Chip
-              label="Open"
-              variant="outlined"
-              sx={{
-                color: 'var(--success-color)',
-                borderColor: 'var(--success-color)',
-              }}
-            />
-          </ListItemButton>
-        </ListItem>
+        <TreeStatusSideNav tree={tree} />
         <Divider />
         <ListSubheader component="div" id="nested-list-subheader">
           Alerts

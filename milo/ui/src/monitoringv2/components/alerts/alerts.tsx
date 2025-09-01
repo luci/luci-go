@@ -124,7 +124,14 @@ export const Alerts = () => {
   const filteredAlerts = filterAlerts(selectedAlerts, filter);
   return (
     <Box sx={{ display: 'flex' }}>
-      <Box sx={{ minWidth: '256px', flexGrow: 1, flexShrink: 0 }}>
+      <Box
+        sx={{
+          minWidth: '256px',
+          maxWidth: '25%',
+          flexGrow: 1,
+          flexShrink: 0,
+        }}
+      >
         <AlertsSideNav
           tree={tree}
           selectedTab={selectedTab}
