@@ -21,8 +21,11 @@ import (
 	"unicode/utf8"
 
 	"golang.org/x/text/unicode/norm"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -247,6 +250,10 @@ func queryPreviousTestIDFromResultDB(ctx context.Context, project, testID string
 	}
 	rsp, err := cl.QueryTestMetadata(ctx, req)
 	if err != nil {
+		code := status.Code(err)
+		if code == codes.PermissionDenied {
+			return "", appstatus.Errorf(codes.PermissionDenied, "caller does not have permission to query for previous test ID: %s", err)
+		}
 		return "", fmt.Errorf("query previous test ID from ResultDB: %w", err)
 	}
 

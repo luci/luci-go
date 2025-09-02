@@ -273,6 +273,13 @@ func TestTestHistoryServer(t *testing.T) {
 				assert.Loosely(t, res, should.BeNil)
 			})
 
+			t.Run("test metadata permission denied errors are forwarded to client", func(t *ftt.Test) {
+				fakeRDBClient.IsAccessDenied = true
+				_, err := server.Query(ctx, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission to query for previous test ID"))
+			})
+
 			t.Run("multi-realms", func(t *ftt.Test) {
 				req.Predicate.SubRealm = ""
 				req.Predicate.VariantPredicate = &pb.VariantPredicate{
@@ -554,6 +561,13 @@ func TestTestHistoryServer(t *testing.T) {
 				assert.Loosely(t, res, should.BeNil)
 			})
 
+			t.Run("test metadata permission denied errors are forwarded to client", func(t *ftt.Test) {
+				fakeRDBClient.IsAccessDenied = true
+				_, err := server.QueryStats(ctx, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission to query for previous test ID"))
+			})
+
 			t.Run("multi-realms", func(t *ftt.Test) {
 				req.Predicate.SubRealm = ""
 				req.Predicate.VariantPredicate = &pb.VariantPredicate{
@@ -730,6 +744,13 @@ func TestTestHistoryServer(t *testing.T) {
 				assert.Loosely(t, err, should.NotBeNil)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 				assert.Loosely(t, res, should.BeNil)
+			})
+
+			t.Run("test metadata permission denied errors are forwarded to client", func(t *ftt.Test) {
+				fakeRDBClient.IsAccessDenied = true
+				_, err := server.QueryVariants(ctx, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission to query for previous test ID"))
 			})
 
 			t.Run("multi-realms", func(t *ftt.Test) {

@@ -20,9 +20,12 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/proto"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 type FakeClient struct {
@@ -32,12 +35,20 @@ type FakeClient struct {
 
 	// The TestMetadata accessible via the client.
 	TestMetadata []*rdbpb.TestMetadataDetail
+
+	// Whether to simulate the caller has no access and the service should return a PermissionDenied error.
+	IsAccessDenied bool
 }
 
 func (f *FakeClient) QueryTestMetadata(ctx context.Context, in *rdbpb.QueryTestMetadataRequest, opts ...grpc.CallOption) (*rdbpb.QueryTestMetadataResponse, error) {
 	if in.PageToken != "" || in.PageSize != 0 {
 		panic("pagination not implemented in fake")
 	}
+
+	if f.IsAccessDenied {
+		return nil, status.Errorf(codes.PermissionDenied, `caller does not have permission %v in any realm in project %q`, rdbperms.PermListTestMetadata, in.Project)
+	}
+
 	var results []*rdbpb.TestMetadataDetail
 	for _, item := range f.TestMetadata {
 		if item.Project == in.Project && slices.Contains(in.Predicate.TestIds, item.TestId) {
