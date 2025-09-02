@@ -30,7 +30,7 @@ import (
 var mockResultDBClientKey = "used in tests only for setting the mock resultdb client"
 
 func newResultDBClient(ctx context.Context, host string, createTransport func() (http.RoundTripper, error)) (rdbpb.ResultDBClient, error) {
-	if mockClient, ok := ctx.Value(&mockResultDBClientKey).(*rdbpb.MockResultDBClient); ok {
+	if mockClient, ok := ctx.Value(&mockResultDBClientKey).(rdbpb.ResultDBClient); ok {
 		return mockClient, nil
 	}
 
@@ -59,6 +59,24 @@ type Client struct {
 func NewClient(ctx context.Context, host, project string) (*Client, error) {
 	createTransport := func() (http.RoundTripper, error) {
 		return scopedauth.GetRPCTransport(ctx, project)
+	}
+
+	client, err := newResultDBClient(ctx, host, createTransport)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Client{
+		client: client,
+	}, nil
+}
+
+// NewCredentialForwardingClient creates a client to communicate with ResultDB,
+// forwarding the credentials of the caller who made the current
+// request.
+func NewCredentialForwardingClient(ctx context.Context, host string) (*Client, error) {
+	createTransport := func() (http.RoundTripper, error) {
+		return auth.GetRPCTransport(ctx, auth.AsCredentialsForwarder)
 	}
 
 	client, err := newResultDBClient(ctx, host, createTransport)
@@ -117,4 +135,9 @@ func (c *Client) GetInvocation(ctx context.Context, invName string) (*rdbpb.Invo
 		return nil, err
 	}
 	return inv, nil
+}
+
+// QueryTestMetadata queries a single page of test metadata.
+func (c *Client) QueryTestMetadata(ctx context.Context, req *rdbpb.QueryTestMetadataRequest) (*rdbpb.QueryTestMetadataResponse, error) {
+	return c.client.QueryTestMetadata(ctx, req)
 }

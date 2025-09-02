@@ -16,12 +16,44 @@ package resultdb
 
 import (
 	"context"
+	"slices"
 
 	"github.com/golang/mock/gomock"
+	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/proto"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+type FakeClient struct {
+	// Embed the interface so we do not need to re-implement every method. This will be set to
+	// nil so any unimplemented methods will lead to a nil reference panic.
+	rdbpb.ResultDBClient
+
+	// The TestMetadata accessible via the client.
+	TestMetadata []*rdbpb.TestMetadataDetail
+}
+
+func (f *FakeClient) QueryTestMetadata(ctx context.Context, in *rdbpb.QueryTestMetadataRequest, opts ...grpc.CallOption) (*rdbpb.QueryTestMetadataResponse, error) {
+	if in.PageToken != "" || in.PageSize != 0 {
+		panic("pagination not implemented in fake")
+	}
+	var results []*rdbpb.TestMetadataDetail
+	for _, item := range f.TestMetadata {
+		if item.Project == in.Project && slices.Contains(in.Predicate.TestIds, item.TestId) {
+			results = append(results, item)
+		}
+	}
+	return &rdbpb.QueryTestMetadataResponse{
+		TestMetadata: results,
+	}, nil
+}
+
+// UseClientForTesting replaces the ResultDB client used by NewClient calls
+// with the given client. Use for testing only.
+func UseClientForTesting(ctx context.Context, client rdbpb.ResultDBClient) context.Context {
+	return context.WithValue(ctx, &mockResultDBClientKey, client)
+}
 
 // MockedClient is a mocked ResultDB client for testing.
 // It wraps a rdbpb.MockResultDBClient and a context with the mocked client.
@@ -35,7 +67,7 @@ func NewMockedClient(ctx context.Context, ctl *gomock.Controller) *MockedClient 
 	mockClient := rdbpb.NewMockResultDBClient(ctl)
 	return &MockedClient{
 		Client: mockClient,
-		Ctx:    context.WithValue(ctx, &mockResultDBClientKey, mockClient),
+		Ctx:    UseClientForTesting(ctx, mockClient),
 	}
 }
 

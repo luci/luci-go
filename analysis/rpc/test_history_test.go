@@ -26,11 +26,13 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/testrealms"
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testutil"
@@ -74,26 +76,27 @@ func TestTestHistoryServer(t *testing.T) {
 		var5 := pbutil.Variant("key1", "val3", "key2", "val2")
 
 		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-			insertTVR := func(subRealm string, variant *pb.Variant) {
+			insertTVR := func(testID, subRealm string, variant *pb.Variant) {
 				span.BufferWrite(ctx, (&testresults.TestVariantRealm{
 					Project:     "project",
-					TestID:      "test_id",
+					TestID:      testID,
 					SubRealm:    subRealm,
 					Variant:     variant,
 					VariantHash: pbutil.VariantHash(variant),
 				}).SaveUnverified())
 			}
 
-			insertTVR("realm", var1)
-			insertTVR("realm", var2)
-			insertTVR("realm", var3)
-			insertTVR("other-realm", var4)
-			insertTVR("forbidden-realm", var5)
+			insertTVR("test_id", "realm", var1)
+			insertTVR("previous_test_id", "realm", var1)
+			insertTVR("test_id", "realm", var2)
+			insertTVR("previous_test_id", "realm", var3)
+			insertTVR("test_id", "other-realm", var4)
+			insertTVR("test_id", "forbidden-realm", var5)
 
-			insertTV := func(partitionTime time.Time, variant *pb.Variant, invId string, hasUnsubmittedChanges bool, isFromBisection bool, subRealm string) {
+			insertTV := func(partitionTime time.Time, testID string, variant *pb.Variant, invId string, hasUnsubmittedChanges bool, isFromBisection bool, subRealm string) {
 				baseTestResult := testresults.NewTestResult().
 					WithProject("project").
-					WithTestID("test_id").
+					WithTestID(testID).
 					WithVariantHash(pbutil.VariantHash(variant)).
 					WithPartitionTime(partitionTime).
 					WithIngestedInvocationID(invId).
@@ -133,19 +136,19 @@ func TestTestHistoryServer(t *testing.T) {
 				}
 			}
 
-			insertTV(referenceTime.Add(-1*day), var1, "inv1", false, false, "realm")
-			insertTV(referenceTime.Add(-1*day), var1, "inv2", false, false, "realm")
-			insertTV(referenceTime.Add(-1*day), var2, "inv1", false, false, "realm")
-			insertTV(referenceTime.Add(-1*day), var2, "inv2", false, true, "realm")
+			insertTV(referenceTime.Add(-1*day), "test_id", var1, "inv1", false, false, "realm")
+			insertTV(referenceTime.Add(-1*day), "test_id", var1, "inv2", false, false, "realm")
+			insertTV(referenceTime.Add(-1*day), "test_id", var2, "inv1", false, false, "realm")
+			insertTV(referenceTime.Add(-1*day), "test_id", var2, "inv2", false, true, "realm")
 
-			insertTV(referenceTime.Add(-2*day), var1, "inv1", false, false, "realm")
-			insertTV(referenceTime.Add(-2*day), var1, "inv2", true, false, "realm")
-			insertTV(referenceTime.Add(-2*day), var2, "inv1", true, false, "realm")
+			insertTV(referenceTime.Add(-2*day), "previous_test_id", var1, "inv1", false, false, "realm")
+			insertTV(referenceTime.Add(-2*day), "test_id", var1, "inv2", true, false, "realm")
+			insertTV(referenceTime.Add(-2*day), "test_id", var2, "inv1", true, false, "realm")
 
-			insertTV(referenceTime.Add(-3*day), var3, "inv1", true, false, "realm")
+			insertTV(referenceTime.Add(-3*day), "previous_test_id", var3, "inv1", true, false, "realm")
 
-			insertTV(referenceTime.Add(-4*day), var4, "inv2", false, false, "other-realm")
-			insertTV(referenceTime.Add(-5*day), var5, "inv3", false, false, "forbidden-realm")
+			insertTV(referenceTime.Add(-4*day), "test_id", var4, "inv2", false, false, "other-realm")
+			insertTV(referenceTime.Add(-5*day), "test_id", var5, "inv3", false, false, "forbidden-realm")
 
 			return nil
 		})
@@ -154,6 +157,40 @@ func TestTestHistoryServer(t *testing.T) {
 		searchClient := &testrealms.FakeClient{}
 		server := NewTestHistoryServer(searchClient)
 
+		// Install a fake ResultDB test metadata client in the context.
+		fakeRDBClient := &resultdb.FakeClient{
+			TestMetadata: []*resultpb.TestMetadataDetail{
+				{
+					Project: "project",
+					TestId:  "test_id",
+					SourceRef: &resultpb.SourceRef{
+						System: &resultpb.SourceRef_Gitiles{
+							Gitiles: &resultpb.GitilesRef{
+								Host: "chromium.googlesource.com",
+								Ref:  "refs/heads/other",
+							},
+						},
+					},
+				},
+				{
+					Project: "project",
+					TestId:  "test_id",
+					SourceRef: &resultpb.SourceRef{
+						System: &resultpb.SourceRef_Gitiles{
+							Gitiles: &resultpb.GitilesRef{
+								Host: "chromium.googlesource.com",
+								Ref:  "refs/heads/main",
+							},
+						},
+					},
+					TestMetadata: &resultpb.TestMetadata{
+						PreviousTestId: "previous_test_id",
+					},
+				},
+			},
+		}
+		ctx = resultdb.UseClientForTesting(ctx, fakeRDBClient)
+
 		t.Run("Query", func(t *ftt.Test) {
 			req := &pb.QueryTestHistoryRequest{
 				Project: "project",
@@ -161,7 +198,8 @@ func TestTestHistoryServer(t *testing.T) {
 				Predicate: &pb.TestVerdictPredicate{
 					SubRealm: "realm",
 				},
-				PageSize: 5,
+				FollowTestIdRenaming: true,
+				PageSize:             5,
 			}
 
 			expectedChangelists := []*pb.Changelist{
@@ -247,7 +285,7 @@ func TestTestHistoryServer(t *testing.T) {
 				assert.Loosely(t, res, should.Match(&pb.QueryTestHistoryResponse{
 					Verdicts: []*pb.TestVerdict{
 						{
-							TestId:         "test_id",
+							TestId:         "previous_test_id",
 							VariantHash:    pbutil.VariantHash(var3),
 							InvocationId:   "inv1",
 							Status:         pb.TestVerdictStatus_EXPECTED,
@@ -302,7 +340,7 @@ func TestTestHistoryServer(t *testing.T) {
 							PartitionTime:  timestamppb.New(referenceTime.Add(-1 * day)),
 						},
 						{
-							TestId:         "test_id",
+							TestId:         "previous_test_id",
 							VariantHash:    pbutil.VariantHash(var1),
 							InvocationId:   "inv1",
 							Status:         pb.TestVerdictStatus_EXPECTED,
@@ -341,7 +379,7 @@ func TestTestHistoryServer(t *testing.T) {
 							Changelists:    expectedChangelists,
 						},
 						{
-							TestId:         "test_id",
+							TestId:         "previous_test_id",
 							VariantHash:    pbutil.VariantHash(var3),
 							InvocationId:   "inv1",
 							Status:         pb.TestVerdictStatus_EXPECTED,
@@ -352,6 +390,14 @@ func TestTestHistoryServer(t *testing.T) {
 						},
 					},
 				}))
+			})
+			t.Run("without follow renames", func(t *ftt.Test) {
+				req.FollowTestIdRenaming = false
+				req.PageSize = 10
+				res, err := server.Query(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				// Two less than the baseline test.
+				assert.Loosely(t, len(res.Verdicts), should.Equal(5))
 			})
 
 			t.Run("include bisection", func(t *ftt.Test) {
@@ -398,7 +444,7 @@ func TestTestHistoryServer(t *testing.T) {
 							PartitionTime:  timestamppb.New(referenceTime.Add(-1 * day)),
 						},
 						{
-							TestId:         "test_id",
+							TestId:         "previous_test_id",
 							VariantHash:    pbutil.VariantHash(var1),
 							InvocationId:   "inv1",
 							Status:         pb.TestVerdictStatus_EXPECTED,
@@ -427,7 +473,7 @@ func TestTestHistoryServer(t *testing.T) {
 							Changelists:    expectedChangelists,
 						},
 						{
-							TestId:         "test_id",
+							TestId:         "previous_test_id",
 							VariantHash:    pbutil.VariantHash(var3),
 							InvocationId:   "inv1",
 							Status:         pb.TestVerdictStatus_EXPECTED,
@@ -448,7 +494,8 @@ func TestTestHistoryServer(t *testing.T) {
 				Predicate: &pb.TestVerdictPredicate{
 					SubRealm: "realm",
 				},
-				PageSize: 3,
+				FollowTestIdRenaming: true,
+				PageSize:             3,
 			}
 
 			t.Run("unauthorised requests are rejected", func(t *ftt.Test) {
@@ -596,6 +643,14 @@ func TestTestHistoryServer(t *testing.T) {
 					},
 				}))
 			})
+			t.Run("without follow renames", func(t *ftt.Test) {
+				req.FollowTestIdRenaming = false
+				req.PageSize = 10
+				res, err := server.QueryStats(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				// One less than the baseline test.
+				assert.Loosely(t, len(res.Groups), should.Equal(4))
+			})
 
 			t.Run("include bisection", func(t *ftt.Test) {
 				req.Predicate.IncludeBisectionResults = true
@@ -651,10 +706,11 @@ func TestTestHistoryServer(t *testing.T) {
 
 		t.Run("QueryVariants", func(t *ftt.Test) {
 			req := &pb.QueryVariantsRequest{
-				Project:  "project",
-				TestId:   "test_id",
-				SubRealm: "realm",
-				PageSize: 2,
+				Project:              "project",
+				TestId:               "test_id",
+				SubRealm:             "realm",
+				FollowTestIdRenaming: true,
+				PageSize:             2,
 			}
 
 			t.Run("unauthorised requests are rejected", func(t *ftt.Test) {
@@ -729,6 +785,14 @@ func TestTestHistoryServer(t *testing.T) {
 						},
 					},
 				}))
+			})
+			t.Run("without follow renames", func(t *ftt.Test) {
+				req.FollowTestIdRenaming = false
+				req.PageSize = 10
+				res, err := server.QueryVariants(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				// One less than the baseline test (var3).
+				assert.Loosely(t, len(res.Variants), should.Equal(2))
 			})
 		})
 
