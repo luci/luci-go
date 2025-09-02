@@ -12,26 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resultdb
+package recorder
 
 import (
 	"testing"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 func TestGetRootInvocation(t *testing.T) {
@@ -40,28 +39,30 @@ func TestGetRootInvocation(t *testing.T) {
 
 		ctx := testutil.SpannerTestContext(t)
 
-		// Insert a root invocation.
-		testData := rootinvocations.NewBuilder("root-inv-id").
-			WithState(pb.RootInvocation_FINALIZED).
-			WithRealm(realm).Build()
-		testutil.MustApply(ctx, t, insert.RootInvocationOnly(testData)...)
+		rootInvID := rootinvocations.ID("root-inv-id")
+		rootWorkUnitID := workunits.ID{
+			RootInvocationID: rootInvID,
+			WorkUnitID:       workunits.RootWorkUnitID,
+		}
 
 		// Setup authorisation.
-		authState := &authtest.FakeState{
-			Identity: "user:someone@example.com",
-			IdentityPermissions: []authtest.RealmPermission{
-				{Realm: realm, Permission: rdbperms.PermGetRootInvocation},
-			},
-		}
-		ctx = auth.WithState(ctx, authState)
+		token, err := generateWorkUnitUpdateToken(ctx, rootWorkUnitID)
+		assert.Loosely(t, err, should.BeNil)
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 
 		req := &pb.GetRootInvocationRequest{
 			Name: "rootInvocations/root-inv-id",
 		}
 
-		srv := newTestResultDBService()
+		recorder := newTestRecorderServer()
 
 		t.Run("happy path", func(t *ftt.Test) {
+			// Insert a root invocation.
+			testData := rootinvocations.NewBuilder(rootInvID).
+				WithState(pb.RootInvocation_FINALIZED).
+				WithRealm(realm).Build()
+			testutil.MustApply(ctx, t, insert.RootInvocationOnly(testData)...)
+
 			expectedRootInvocation := &pb.RootInvocation{
 				Name:              "rootInvocations/root-inv-id",
 				RootInvocationId:  "root-inv-id",
@@ -81,37 +82,43 @@ func TestGetRootInvocation(t *testing.T) {
 				BaselineId:        testData.BaselineID,
 			}
 
-			rsp, err := srv.GetRootInvocation(ctx, req)
+			rsp, err := recorder.GetRootInvocation(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, rsp, should.Match(expectedRootInvocation))
 		})
 
 		t.Run("does not exist", func(t *ftt.Test) {
-			req.Name = "rootInvocations/non-existent"
-			_, err := srv.GetRootInvocation(ctx, req)
+			_, err := recorder.GetRootInvocation(ctx, req)
 			assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
-			assert.That(t, err, should.ErrLike(`"rootInvocations/non-existent" not found`))
+			assert.That(t, err, should.ErrLike(`"rootInvocations/root-inv-id" not found`))
 		})
 
-		t.Run("permission denied", func(t *ftt.Test) {
-			authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermGetRootInvocation)
-
-			_, err := srv.GetRootInvocation(ctx, req)
-			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.That(t, err, should.ErrLike("caller does not have permission resultdb.rootInvocations.get"))
+		t.Run("request authorization", func(t *ftt.Test) {
+			t.Run("invalid update token", func(t *ftt.Test) {
+				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid-token"))
+				_, err := recorder.GetRootInvocation(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.That(t, err, should.ErrLike(`desc = invalid update token`))
+			})
+			t.Run("missing update token", func(t *ftt.Test) {
+				ctx := metadata.NewIncomingContext(ctx, metadata.MD{})
+				_, err := recorder.GetRootInvocation(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.Unauthenticated))
+				assert.That(t, err, should.ErrLike(`desc = missing update-token metadata value in the request`))
+			})
 		})
 
-		t.Run("invalid request", func(t *ftt.Test) {
+		t.Run("request validation", func(t *ftt.Test) {
 			t.Run("name", func(t *ftt.Test) {
 				t.Run("invalid", func(t *ftt.Test) {
 					req.Name = "invalid-name"
-					_, err := srv.GetRootInvocation(ctx, req)
+					_, err := recorder.GetRootInvocation(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 					assert.That(t, err, should.ErrLike("name: does not match"))
 				})
 				t.Run("empty", func(t *ftt.Test) {
 					req.Name = ""
-					_, err := srv.GetRootInvocation(ctx, req)
+					_, err := recorder.GetRootInvocation(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 					assert.That(t, err, should.ErrLike("name: unspecified"))
 				})

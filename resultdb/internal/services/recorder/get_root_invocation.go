@@ -17,12 +17,29 @@ package recorder
 import (
 	"context"
 
-	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"google.golang.org/grpc/codes"
+	"go.chromium.org/luci/server/span"
 )
 
 // GetRootInvocation implements pb.RecorderServer.
 func (s *recorderServer) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
-	return nil, appstatus.Errorf(codes.Unimplemented, "not implemented")
+	if err := verifyRootInvocationPermissions(ctx, in); err != nil {
+		return nil, err
+	}
+
+	// Use one transaction for the entire RPC so that we work with a
+	// consistent snapshot of the system state. This is important to
+	// prevent subtle bugs and TOC-TOU vulnerabilities.
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
+	row, err := rootinvocations.Read(ctx, rootinvocations.MustParseName(in.Name))
+	if err != nil {
+		// Error is already annotated with NotFound appstatus if record is not found.
+		// Otherwise it is an internal error.
+		return nil, err
+	}
+
+	return row.ToProto(), nil
 }

@@ -31,7 +31,7 @@ import (
 
 // FinalizeRootInvocation implements pb.RecorderServer.
 func (s *recorderServer) FinalizeRootInvocation(ctx context.Context, in *pb.FinalizeRootInvocationRequest) (*pb.RootInvocation, error) {
-	if err := verifyFinalizeRootInvocationPermissions(ctx, in); err != nil {
+	if err := verifyRootInvocationPermissions(ctx, in); err != nil {
 		return nil, err
 	}
 	if err := validateFinalizeRootInvocationRequest(in); err != nil {
@@ -92,8 +92,13 @@ func (s *recorderServer) FinalizeRootInvocation(ctx context.Context, in *pb.Fina
 	return invRow.ToProto(), nil
 }
 
-func verifyFinalizeRootInvocationPermissions(ctx context.Context, req *pb.FinalizeRootInvocationRequest) error {
-	rootInvocationID, err := rootinvocations.ParseName(req.Name)
+type RootInvocationRequest interface {
+	GetName() string
+}
+
+func verifyRootInvocationPermissions(ctx context.Context, req RootInvocationRequest) error {
+	name := req.GetName()
+	rootInvocationID, err := rootinvocations.ParseName(name)
 	if err != nil {
 		return appstatus.BadRequest(errors.Fmt("name: %w", err))
 	}

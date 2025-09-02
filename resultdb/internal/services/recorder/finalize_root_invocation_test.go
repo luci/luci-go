@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
@@ -37,77 +36,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
-
-func TestVerifyFinalizeRootInvocationPermissions(t *testing.T) {
-	t.Parallel()
-
-	ftt.Run("VerifyFinalizeRootInvocationPermissions", t, func(t *ftt.Test) {
-		ctx := testutil.TestingContext()
-		rootInvID := rootinvocations.ID("finalize-inv-id")
-		rootWorkUnitID := workunits.ID{
-			RootInvocationID: rootInvID,
-			WorkUnitID:       workunits.RootWorkUnitID,
-		}
-
-		req := &pb.FinalizeRootInvocationRequest{
-			Name: rootInvID.Name(),
-		}
-
-		token, err := generateWorkUnitUpdateToken(ctx, rootWorkUnitID)
-		assert.Loosely(t, err, should.BeNil)
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
-
-		t.Run("valid", func(t *ftt.Test) {
-			err := verifyFinalizeRootInvocationPermissions(ctx, req)
-			assert.Loosely(t, err, should.BeNil)
-		})
-
-		t.Run("empty name", func(t *ftt.Test) {
-			req.Name = ""
-			err := verifyFinalizeRootInvocationPermissions(ctx, req)
-			st, ok := appstatus.Get(err)
-			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, st.Code(), should.Equal(codes.InvalidArgument))
-			assert.Loosely(t, st.Err(), should.ErrLike("name: unspecified"))
-		})
-
-		t.Run("invalid name", func(t *ftt.Test) {
-			req.Name = "invalid name"
-			err := verifyFinalizeRootInvocationPermissions(ctx, req)
-			st, ok := appstatus.Get(err)
-			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, st.Code(), should.Equal(codes.InvalidArgument))
-			assert.Loosely(t, st.Err(), should.ErrLike("name: does not match"))
-		})
-
-		t.Run("invalid token", func(t *ftt.Test) {
-			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid"))
-			err := verifyFinalizeRootInvocationPermissions(ctx, req)
-			st, ok := appstatus.Get(err)
-			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, st.Code(), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, st.Err(), should.ErrLike("invalid update token"))
-		})
-
-		t.Run("missing token", func(t *ftt.Test) {
-			ctx = metadata.NewIncomingContext(ctx, metadata.MD{})
-			err := verifyFinalizeRootInvocationPermissions(ctx, req)
-			st, ok := appstatus.Get(err)
-			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, st.Code(), should.Equal(codes.Unauthenticated))
-			assert.Loosely(t, st.Err(), should.ErrLike("missing update-token metadata value"))
-		})
-
-		t.Run("too many tokens", func(t *ftt.Test) {
-			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token, pb.UpdateTokenMetadataKey, token))
-			err := verifyFinalizeRootInvocationPermissions(ctx, req)
-			st, ok := appstatus.Get(err)
-			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, st.Code(), should.Equal(codes.InvalidArgument))
-			assert.Loosely(t, st.Err(), should.ErrLike("expected exactly one update-token metadata value, got 2"))
-		})
-	})
-}
 
 func TestFinalizeRootInvocation(t *testing.T) {
 	ftt.Run("FinalizeRootInvocation", t, func(t *ftt.Test) {
@@ -130,14 +58,20 @@ func TestFinalizeRootInvocation(t *testing.T) {
 			FinalizationScope: pb.FinalizeRootInvocationRequest_INCLUDE_ROOT_WORK_UNIT,
 		}
 
-		t.Run("invalid request", func(t *ftt.Test) {
-			// Do not need to test all cases, the tests for VerifyFinalizeWorkUnitPermissions
-			// verifies that. We simply want to check that method is called.
+		t.Run("request validation", func(t *ftt.Test) {
 			t.Run("name", func(t *ftt.Test) {
-				req.Name = "invalid name"
-				_, err := recorder.FinalizeRootInvocation(ctx, req)
-				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-				assert.That(t, err, should.ErrLike("name: does not match"))
+				t.Run("empty", func(t *ftt.Test) {
+					req.Name = ""
+					_, err := recorder.FinalizeRootInvocation(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.That(t, err, should.ErrLike("name: unspecified"))
+				})
+				t.Run("invalid", func(t *ftt.Test) {
+					req.Name = "invalid name"
+					_, err := recorder.FinalizeRootInvocation(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.That(t, err, should.ErrLike("name: does not match"))
+				})
 			})
 			t.Run("finalization scope", func(t *ftt.Test) {
 				req.FinalizationScope = pb.FinalizeRootInvocationRequest_FinalizationScope(100)
@@ -147,13 +81,19 @@ func TestFinalizeRootInvocation(t *testing.T) {
 			})
 		})
 
-		t.Run("permission denied", func(t *ftt.Test) {
-			// Do not need to test all cases, the tests for VerifyFinalizeWorkUnitPermissions
-			// verifies that. We simply want to check that method is called.
-			badCtx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid"))
-			_, err := recorder.FinalizeRootInvocation(badCtx, req)
-			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.That(t, err, should.ErrLike("invalid update token"))
+		t.Run("request authorization", func(t *ftt.Test) {
+			t.Run("invalid update token", func(t *ftt.Test) {
+				badCtx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid"))
+				_, err := recorder.FinalizeRootInvocation(badCtx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.That(t, err, should.ErrLike("invalid update token"))
+			})
+			t.Run("missing update token", func(t *ftt.Test) {
+				badCtx := metadata.NewIncomingContext(ctx, metadata.MD{})
+				_, err := recorder.FinalizeRootInvocation(badCtx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.Unauthenticated))
+				assert.That(t, err, should.ErrLike(`missing update-token metadata value in the request`))
+			})
 		})
 
 		t.Run("not found", func(t *ftt.Test) {
