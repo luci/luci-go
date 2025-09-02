@@ -26,6 +26,7 @@ import (
 	"context"
 	"os"
 
+	"go.chromium.org/luci/auth/reauth"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 )
@@ -35,7 +36,7 @@ func main() {
 	ctx = logging.SetLevel(ctx, logging.Info)
 	sshPluginMain(
 		ctx,
-		newDefaultAgentDialer(),
+		reauth.DefaultAgentDialer{},
 		os.Stdin,
 		os.Stdout,
 	)

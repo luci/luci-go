@@ -190,7 +190,7 @@ func TestSSHPluginMain(t *testing.T) {
 
 func TestDefaultDialerSupportedProtocols(t *testing.T) {
 	t.Parallel()
-	d := defaultAgentDialer{}
+	d := reauth.DefaultAgentDialer{}
 
 	t.Run("tcp", func(t *testing.T) {
 		t.Parallel()
@@ -219,7 +219,7 @@ func TestDefaultDialerSupportedProtocols(t *testing.T) {
 		wg.Add(1)
 
 		s := l.Addr().String()
-		c, err := d.dialAddr(s)
+		c, err := d.DialAddr(s)
 		assert.NoErr(t, err)
 		t.Cleanup(func() { c.Close() })
 
@@ -254,7 +254,7 @@ func TestDefaultDialerSupportedProtocols(t *testing.T) {
 		wg.Add(1)
 
 		s := l.Addr().String()
-		c, err := d.dialAddr(s)
+		c, err := d.DialAddr(s)
 		assert.NoErr(t, err)
 		t.Cleanup(func() { c.Close() })
 

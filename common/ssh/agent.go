@@ -49,6 +49,8 @@ func NewAgentClient(c AgentConn) AgentClient {
 	return AgentClient{AgentConn: c}
 }
 
+type AgentFailureError struct{ error }
+
 // SendExtensionRequest sends `req` over AgentConn `c` for processing, and
 // returns the response.
 func (c AgentClient) SendExtensionRequest(req AgentExtensionRequest) ([]byte, error) {
@@ -74,7 +76,7 @@ func (c AgentClient) SendExtensionRequest(req AgentExtensionRequest) ([]byte, er
 	case AgentSuccess:
 		return resp.Payload, nil
 	case AgentFailure:
-		return nil, fmt.Errorf("extension request failed (SSH_AGENT_FAILURE), response: %v", resp.Payload)
+		return nil, AgentFailureError{errors.Fmt("extension request failed (SSH_AGENT_FAILURE), response: %v", resp.Payload)}
 	case AgentExtensionFailure:
 		// Agent understood the extension, but failed to handle it.
 		return nil, fmt.Errorf("extension request failed (SSH_AGENT_EXTENSION_FAILURE): %s", string(resp.Payload))

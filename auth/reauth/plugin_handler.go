@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/exec"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/ssh"
 	"go.chromium.org/luci/common/webauthn"
 )
 
@@ -67,6 +68,38 @@ func (_ PluginIO) PluginCmd() string {
 	return fido2PluginExecutable
 }
 
+// Dial and ping SSH Agent to check if it understoods ReAuth LUCI extension.
+// Returns an error if anything failed.
+func pingSSHAgent(ctx context.Context) error {
+	d := DefaultAgentDialer{}
+	conn, err := d.Dial(ctx)
+	if err != nil {
+		return errors.WrapIf(err, "failed to dial SSH agent")
+	}
+
+	cli := ssh.NewAgentClient(conn)
+	_, err = cli.SendExtensionRequest(ssh.AgentExtensionRequest{
+		ExtensionType: SSHExtensionPing,
+	})
+
+	if err != nil {
+		if _, ok := err.(ssh.AgentFailureError); ok {
+			// Remote agent doesn't understand the LUCI extension.
+			//
+			// Per SSH Agent spec, an agent SHOULD return AgentFailure when it
+			// doesn't understand the ExtensionType above.
+			//
+			// See: https://datatracker.ietf.org/doc/draft-ietf-sshm-ssh-agent/)
+			return errors.Fmt("the remote agent (%v) doesn't appear to be a LUCI SSH agent", cli.RemoteAddr().String())
+		} else {
+			// Other errors.
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Returns an error if ReAuth with the plugin will fail (i.e. there's an
 // obvious misconfiguration).
 func (p PluginIO) CheckAvailable(ctx context.Context) error {
@@ -80,12 +113,9 @@ func (p PluginIO) CheckAvailable(ctx context.Context) error {
 
 	// Using SSH plugin.
 	if strings.EqualFold(cmdName, sshPluginExecutable) {
-		// Error if SSH_AUTH_SOCK isn't set.
-		if sshAuthSock := os.Getenv(EnvSSHAuthSock); sshAuthSock == "" {
-			return errors.Fmt("SSH plugin requested, but %s isn't set", EnvSSHAuthSock)
+		if err := pingSSHAgent(ctx); err != nil {
+			return errors.WrapIf(err, "LUCI SSH agent isn't usable")
 		}
-
-		// TODO(b/440418327): Dial SSH_AUTH_SOCK and probe the agent is running.
 	}
 
 	return nil

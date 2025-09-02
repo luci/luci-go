@@ -17,10 +17,7 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
-	"net"
-	"os"
 
 	"go.chromium.org/luci/auth/reauth"
 	"go.chromium.org/luci/common/errors"
@@ -28,41 +25,6 @@ import (
 	"go.chromium.org/luci/common/ssh"
 	"go.chromium.org/luci/common/webauthn"
 )
-
-// defaultAgentDialer dials the agent based on SSH_AUTH_SOCK environment
-// variable.
-type defaultAgentDialer struct{}
-
-func (d defaultAgentDialer) Dial(ctx context.Context) (ssh.AgentConn, error) {
-	sshAuthSock, _ := os.LookupEnv(reauth.EnvSSHAuthSock)
-	if sshAuthSock == "" {
-		return nil, fmt.Errorf("no available SSH Agent socket, %s isn't set", reauth.EnvSSHAuthSock)
-	}
-
-	c, err := d.dialAddr(sshAuthSock)
-	if err != nil {
-		return nil, err
-	}
-
-	return ssh.NewAgentConn(c), nil
-}
-
-// Try to dial `addr` by trying supported protocols (i.e. TCP or Unix) in order.
-func (d defaultAgentDialer) dialAddr(addr string) (net.Conn, error) {
-	if a, err := net.ResolveTCPAddr("tcp", addr); err == nil {
-		return net.DialTCP("tcp", nil, a)
-	}
-
-	if a, err := net.ResolveUnixAddr("unix", addr); err == nil {
-		return net.DialUnix("unix", nil, a)
-	}
-
-	return nil, errors.Fmt("No matching protocol for address: %v", addr)
-}
-
-func newDefaultAgentDialer() defaultAgentDialer {
-	return defaultAgentDialer{}
-}
 
 // sshPluginMain reads a plugin request from `r`, sends the request
 // over an SSH agent dialed by `dialer`, obtains and writes a plugin
