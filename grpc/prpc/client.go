@@ -891,6 +891,9 @@ func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage
 		Header:        headers,
 		ContentLength: int64(len(body)),
 		GetBody: func() (io.ReadCloser, error) {
+			if len(body) == 0 {
+				return nil, nil
+			}
 			return io.NopCloser(bytes.NewReader(body)), nil
 		},
 	}, nil

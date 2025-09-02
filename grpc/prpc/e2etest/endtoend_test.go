@@ -182,6 +182,14 @@ func endToEndTest(t *testing.T, responseFormat prpc.Format) {
 			assert.Loosely(t, resp, should.Match(svc.R))
 		})
 
+		t.Run(`Can round-trip an empty message`, func(t *ftt.Test) {
+			svc.R = &testpb.HelloReply{}
+
+			resp, err := client.SayHello(ctx, &testpb.HelloRequest{})
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
+			assert.Loosely(t, resp, should.Match(svc.R))
+		})
+
 		t.Run(`Respects response size limits`, func(t *ftt.Test) {
 			var retried atomic.Bool
 
