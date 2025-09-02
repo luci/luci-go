@@ -55,6 +55,17 @@ describe('generateSidebarSections', () => {
           },
         ],
       },
+      {
+        title: 'Monitoring',
+        pages: [
+          {
+            page: UiPage.Monitoring,
+            url: '/ui/monitoring',
+            icon: <EngineeringIcon />,
+            external: false,
+          },
+        ],
+      },
     ]);
   });
 
@@ -72,6 +83,17 @@ describe('generateSidebarSections', () => {
             page: UiPage.BuilderSearch,
             url: '/ui/builder-search',
             icon: <SearchIcon />,
+          },
+        ],
+      },
+      {
+        title: 'Monitoring',
+        pages: [
+          {
+            page: UiPage.Monitoring,
+            url: '/ui/monitoring',
+            icon: <EngineeringIcon />,
+            external: false,
           },
         ],
       },
@@ -161,6 +183,17 @@ describe('generateSidebarSections', () => {
           },
         ],
       },
+      {
+        title: 'Monitoring',
+        pages: [
+          {
+            page: UiPage.Monitoring,
+            url: '/ui/monitoring',
+            icon: <EngineeringIcon />,
+            external: false,
+          },
+        ],
+      },
     ]);
   });
 
@@ -240,6 +273,12 @@ describe('generateSidebarSections', () => {
       {
         title: 'Monitoring',
         pages: [
+          {
+            page: UiPage.Monitoring,
+            url: '/ui/monitoring',
+            icon: <EngineeringIcon />,
+            external: false,
+          },
           {
             page: UiPage.SoM,
             url: 'https://sheriff-o-matic.appspot.com/chromium',
@@ -345,6 +384,12 @@ describe('generateSidebarSections', () => {
       {
         title: 'Monitoring',
         pages: [
+          {
+            page: UiPage.Monitoring,
+            url: '/ui/monitoring',
+            icon: <EngineeringIcon />,
+            external: false,
+          },
           {
             page: UiPage.SoM,
             url: 'https://sheriff-o-matic.appspot.com/chromeos',

@@ -100,6 +100,7 @@ export const Alerts = () => {
   const groupedAlerts = Object.fromEntries(
     alertGroups.map((g) => [g.name, organizer.groupAlerts(g.name)]),
   );
+  const numHiddenAlerts = organizer.numHiddenAlerts(organizeBy);
 
   let selectedGroup = undefined;
   let header = null;
@@ -195,6 +196,19 @@ export const Alerts = () => {
           groups={alertGroups}
           selectedTab={selectedTab}
         />
+        {numHiddenAlerts > 0 && (
+          <Box sx={{ mt: '16px', textAlign: 'center' }}>
+            {numHiddenAlerts} alert{numHiddenAlerts > 1 ? 's' : ''} hidden for
+            suspected flakiness.{' '}
+            <Button
+              onClick={() =>
+                setShowOptions([...showOptions, 'children_hidden'])
+              }
+            >
+              Show all
+            </Button>
+          </Box>
+        )}
       </Box>
     </Box>
   );

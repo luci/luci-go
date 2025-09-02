@@ -117,6 +117,18 @@ export class AlertOrganizer {
     );
     return cloneShownAlerts(topLevel, {}, this.options);
   }
+
+  /** The number of consistent alerts hidden due to having flaky children */
+  numHiddenAlerts(kind: AlertKind): number {
+    const all = this.structuredAlerts.filter((a) => a.alert.kind === kind);
+    const visible = cloneShownAlerts(all, {}, this.options);
+    const withChildrenHidden = cloneShownAlerts(
+      all,
+      {},
+      { ...this.options, showChildrenHidden: true },
+    );
+    return withChildrenHidden.length - visible.length;
+  }
 }
 
 const cloneShownAlerts = (

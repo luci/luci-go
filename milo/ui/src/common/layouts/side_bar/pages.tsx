@@ -166,6 +166,13 @@ function generateMonitoringSection(
 ): SidebarSection {
   const pages: SidebarPage[] = [];
 
+  pages.push({
+    page: UiPage.Monitoring,
+    url: `/ui/monitoring`,
+    icon: <EngineeringIcon />,
+    external: false,
+  });
+
   const somProject = getSomProject(project);
   if (somProject) {
     pages.push({

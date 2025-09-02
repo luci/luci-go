@@ -66,7 +66,7 @@ export const MonitoringPage = () => {
               <ListItemButton
                 key={t.display_name}
                 component={Link}
-                to={`/ui/labs/monitoring/${t.name}`}
+                to={`/ui/monitoring/${t.name}`}
               >
                 <ListItemAvatar>
                   <Avatar>

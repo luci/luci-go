@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import BugReportIcon from '@mui/icons-material/BugReport';
+import FlakyIcon from '@mui/icons-material/Flaky';
 import FolderIcon from '@mui/icons-material/Folder';
 import InboxIcon from '@mui/icons-material/Inbox';
 import {
+  Box,
   Chip,
   Divider,
+  Link,
   List,
   ListItem,
   ListItemButton,
@@ -106,6 +110,46 @@ export const AlertsSideNav = ({
           </ListItemButton>
         </ListItem>
       ))}
+      {alertGroups.length === 0 && (
+        <ListItem>
+          <Box sx={{ opacity: '50%' }}>No current alert groups</Box>
+        </ListItem>
+      )}
+      <Divider />
+      <ListSubheader component="div" id="nested-list-subheader">
+        Next Steps
+      </ListSubheader>
+      {tree.hotlistId && (
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
+            href={`https://b.corp.google.com/issues?q=hotlistid:${tree.hotlistId}%20status:open`}
+            target="_blank"
+          >
+            <ListItemIcon>
+              <BugReportIcon />
+            </ListItemIcon>
+            <ListItemText primary="Review Monitoring Bugs" />
+          </ListItemButton>
+        </ListItem>
+      )}
+      {tree.project && (
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
+            href={
+              `/ui/tests/p/${tree.project}/clusters` +
+              '?interval=7d&selectedMetrics=test-runs-failed%2Cbuilds-failed-due-to-flaky-tests&orderBy=builds-failed-due-to-flaky-tests'
+            }
+            target="_blank"
+          >
+            <ListItemIcon>
+              <FlakyIcon />
+            </ListItemIcon>
+            <ListItemText primary="Investigate Top Flaky Tests" />
+          </ListItemButton>
+        </ListItem>
+      )}
     </>
   );
 };
