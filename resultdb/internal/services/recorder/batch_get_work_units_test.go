@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resultdb
+package recorder
 
 import (
 	"testing"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
@@ -34,7 +33,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 func TestBatchGetWorkUnits(t *testing.T) {
@@ -50,10 +48,11 @@ func TestBatchGetWorkUnits(t *testing.T) {
 
 		// Insert a root invocation and work units.
 		rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm(rootRealm).Build()
-		wu1 := workunits.NewBuilder(rootInvID, "wu1").WithRealm(wu1Realm).Build()
-		wu2 := workunits.NewBuilder(rootInvID, "wu2").WithRealm(wu2Realm).WithMinimalFields().Build()
-		wuChild1 := workunits.NewBuilder(rootInvID, "wu11").WithParentWorkUnitID("wu1").WithRealm(wu2Realm).Build()
-		wuChild2 := workunits.NewBuilder(rootInvID, "wu12").WithParentWorkUnitID("wu1").WithRealm(wu2Realm).Build()
+		baseWUID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "basewu"}
+		wu1 := workunits.NewBuilder(rootInvID, "basewu:wu1").WithRealm(wu1Realm).Build()
+		wu2 := workunits.NewBuilder(rootInvID, "basewu:wu2").WithRealm(wu2Realm).WithMinimalFields().Build()
+		wuChild1 := workunits.NewBuilder(rootInvID, "basewu:wu11").WithParentWorkUnitID("basewu:wu1").WithRealm(wu2Realm).Build()
+		wuChild2 := workunits.NewBuilder(rootInvID, "basewu:wu12").WithParentWorkUnitID("basewu:wu1").WithRealm(wu2Realm).Build()
 
 		var ms []*spanner.Mutation
 		ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootInv)...)
@@ -65,24 +64,20 @@ func TestBatchGetWorkUnits(t *testing.T) {
 		ms = append(ms, insert.WorkUnitInclusion(wu1.ID, invocations.ID("included-legacy-invocation-2"))...)
 		testutil.MustApply(ctx, t, ms...)
 
-		// Setup authorisation.
-		authState := &authtest.FakeState{
-			Identity: "user:someone@example.com",
-			IdentityPermissions: []authtest.RealmPermission{
-				{Realm: rootRealm, Permission: rdbperms.PermGetWorkUnit},
-			},
-		}
-		ctx = auth.WithState(ctx, authState)
+		// Create update token.
+		token, err := generateWorkUnitUpdateToken(ctx, baseWUID)
+		assert.Loosely(t, err, should.BeNil)
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 
 		req := &pb.BatchGetWorkUnitsRequest{
 			Parent: "rootInvocations/root-inv-id",
 			Names: []string{
-				"rootInvocations/root-inv-id/workUnits/wu1",
-				"rootInvocations/root-inv-id/workUnits/wu2",
+				"rootInvocations/root-inv-id/workUnits/basewu:wu1",
+				"rootInvocations/root-inv-id/workUnits/basewu:wu2",
 			},
 		}
 
-		srv := newTestResultDBService()
+		recorder := newTestRecorderServer()
 
 		t.Run("happy path", func(t *ftt.Test) {
 			expectedWu1 := &pb.WorkUnit{
@@ -98,8 +93,8 @@ func TestBatchGetWorkUnits(t *testing.T) {
 				Deadline:          pbutil.MustTimestampProto(wu1.Deadline),
 				Parent:            workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "root"}.Name(),
 				ChildWorkUnits: []string{
-					workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu11"}.Name(),
-					workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu12"}.Name(),
+					workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "basewu:wu11"}.Name(),
+					workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "basewu:wu12"}.Name(),
 				},
 				ChildInvocations: []string{
 					invocations.ID("included-legacy-invocation").Name(),
@@ -136,129 +131,75 @@ func TestBatchGetWorkUnits(t *testing.T) {
 				Etag:             `W/"/2025-04-26T01:02:03.000004Z"`,
 			}
 
-			t.Run("full access", func(t *ftt.Test) {
-				authState.IdentityPermissions = []authtest.RealmPermission{
-					{Realm: rootRealm, Permission: rdbperms.PermGetWorkUnit},
-				}
-				t.Run("default view", func(t *ftt.Test) {
-					rsp, err := srv.BatchGetWorkUnits(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					assert.That(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWu1, expectedWu2}))
-				})
-				t.Run("full view", func(t *ftt.Test) {
-					req.View = pb.WorkUnitView_WORK_UNIT_VIEW_FULL
-					expectedWu1.ExtendedProperties = wu1.ExtendedProperties
-					expectedWu2.ExtendedProperties = wu2.ExtendedProperties
-					expectedWu1.Etag = `W/"+f/2025-04-26T01:02:03.000004Z"`
-					expectedWu2.Etag = `W/"+f/2025-04-26T01:02:03.000004Z"`
-
-					rsp, err := srv.BatchGetWorkUnits(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					assert.That(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWu1, expectedWu2}))
-				})
+			t.Run("default view", func(t *ftt.Test) {
+				rsp, err := recorder.BatchGetWorkUnits(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWu1, expectedWu2}))
 			})
-			t.Run("limited access", func(t *ftt.Test) {
-				authState.IdentityPermissions = []authtest.RealmPermission{
-					{Realm: rootRealm, Permission: rdbperms.PermListLimitedWorkUnits},
-				}
-				expectedWu1.Etag = `W/"+l/2025-04-26T01:02:03.000004Z"`
-				expectedWu2.Etag = `W/"+l/2025-04-26T01:02:03.000004Z"`
+			t.Run("full view", func(t *ftt.Test) {
+				req.View = pb.WorkUnitView_WORK_UNIT_VIEW_FULL
+				expectedWu1.ExtendedProperties = wu1.ExtendedProperties
+				expectedWu2.ExtendedProperties = wu2.ExtendedProperties
+				expectedWu1.Etag = `W/"+f/2025-04-26T01:02:03.000004Z"`
+				expectedWu2.Etag = `W/"+f/2025-04-26T01:02:03.000004Z"`
 
-				expectedWu1.ModuleId.ModuleVariant = nil
-				expectedWu1.Tags = nil
-				expectedWu1.Properties = nil
-				expectedWu1.Instructions = nil
-				expectedWu1.ExtendedProperties = nil
-				expectedWu1.IsMasked = true
-
-				expectedWu2.Tags = nil
-				expectedWu2.Properties = nil
-				expectedWu2.Instructions = nil
-				expectedWu2.ExtendedProperties = nil
-				expectedWu2.IsMasked = true
-
-				t.Run("default view", func(t *ftt.Test) {
-					rsp, err := srv.BatchGetWorkUnits(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					assert.That(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWu1, expectedWu2}))
-				})
-				t.Run("full view", func(t *ftt.Test) {
-					req.View = pb.WorkUnitView_WORK_UNIT_VIEW_FULL
-					expectedWu1.Etag = `W/"+l+f/2025-04-26T01:02:03.000004Z"`
-					expectedWu2.Etag = `W/"+l+f/2025-04-26T01:02:03.000004Z"`
-
-					// No additional fields should be exposed because we have limited access.
-					rsp, err := srv.BatchGetWorkUnits(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					assert.That(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWu1, expectedWu2}))
-				})
-			})
-			t.Run("mixed access", func(t *ftt.Test) {
-				authState.IdentityPermissions = []authtest.RealmPermission{
-					{Realm: rootRealm, Permission: rdbperms.PermListLimitedWorkUnits},
-					{Realm: wu1Realm, Permission: rdbperms.PermGetWorkUnit},
-				}
-
-				expectedWu2.Tags = nil
-				expectedWu2.Properties = nil
-				expectedWu2.Instructions = nil
-				expectedWu2.ExtendedProperties = nil
-				expectedWu2.IsMasked = true
-
-				t.Run("default view", func(t *ftt.Test) {
-					expectedWu1.Etag = `W/"/2025-04-26T01:02:03.000004Z"`
-					expectedWu2.Etag = `W/"+l/2025-04-26T01:02:03.000004Z"`
-
-					rsp, err := srv.BatchGetWorkUnits(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					assert.That(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWu1, expectedWu2}))
-				})
-				t.Run("full view", func(t *ftt.Test) {
-					req.View = pb.WorkUnitView_WORK_UNIT_VIEW_FULL
-					expectedWu1.ExtendedProperties = wu1.ExtendedProperties
-					expectedWu1.Etag = `W/"+f/2025-04-26T01:02:03.000004Z"`
-					expectedWu2.Etag = `W/"+l+f/2025-04-26T01:02:03.000004Z"`
-
-					rsp, err := srv.BatchGetWorkUnits(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					assert.That(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWu1, expectedWu2}))
-				})
+				rsp, err := recorder.BatchGetWorkUnits(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWu1, expectedWu2}))
 			})
 			t.Run("duplicates", func(t *ftt.Test) {
 				// It is valid to request the same work unit more than once.
 				req.Names = []string{wu1.ID.Name(), wu2.ID.Name(), wu1.ID.Name()}
 
-				rsp, err := srv.BatchGetWorkUnits(ctx, req)
+				rsp, err := recorder.BatchGetWorkUnits(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWu1, expectedWu2, expectedWu1}))
 			})
 		})
 
 		t.Run("does not exist", func(t *ftt.Test) {
-			req.Names = []string{wu1.ID.Name(), "rootInvocations/root-inv-id/workUnits/non-existent"}
-			_, err := srv.BatchGetWorkUnits(ctx, req)
+			testutil.MustApply(ctx, t, spanner.Delete("WorkUnits", wu2.ID.Key()))
+
+			_, err := recorder.BatchGetWorkUnits(ctx, req)
 			assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
-			assert.That(t, err, should.ErrLike(`"rootInvocations/root-inv-id/workUnits/non-existent" not found`))
+			assert.That(t, err, should.ErrLike(`"rootInvocations/root-inv-id/workUnits/basewu:wu2" not found`))
 		})
 
 		t.Run("request authorization", func(t *ftt.Test) {
-			authState.IdentityPermissions = nil
-			_, err := srv.BatchGetWorkUnits(ctx, req)
-			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.That(t, err, should.ErrLike(`caller does not have permission resultdb.workUnits.get (or resultdb.workUnits.listLimited) on root invocation "rootInvocations/root-inv-id"`))
+			t.Run("request cannot be authorised with single update token", func(t *ftt.Test) {
+				req.Names[0] = "rootInvocations/root-inv-id/workUnits/work-unit-1"
+				req.Names[1] = "rootInvocations/root-inv-id/workUnits/work-unit-2"
+
+				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid-token"))
+				_, err := recorder.BatchGetWorkUnits(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike(`names[1]: work unit "rootInvocations/root-inv-id/workUnits/work-unit-2" requires a different update token to names[0]'s "rootInvocations/root-inv-id/workUnits/work-unit-1", but this RPC only accepts one update token`))
+			})
+			t.Run("invalid update token", func(t *ftt.Test) {
+				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid-token"))
+				_, err := recorder.BatchGetWorkUnits(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.That(t, err, should.ErrLike(`invalid update token`))
+			})
+			t.Run("missing update token", func(t *ftt.Test) {
+				ctx := metadata.NewIncomingContext(ctx, metadata.MD{})
+				_, err := recorder.BatchGetWorkUnits(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.Unauthenticated))
+				assert.That(t, err, should.ErrLike(`missing update-token metadata value in the request`))
+			})
 		})
 
 		t.Run("request validation", func(t *ftt.Test) {
 			t.Run("parent", func(t *ftt.Test) {
 				t.Run("invalid", func(t *ftt.Test) {
 					req.Parent = "invalid-name"
-					_, err := srv.BatchGetWorkUnits(ctx, req)
+					_, err := recorder.BatchGetWorkUnits(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 					assert.That(t, err, should.ErrLike("parent: does not match"))
 				})
 				t.Run("empty", func(t *ftt.Test) {
 					req.Parent = ""
-					_, err := srv.BatchGetWorkUnits(ctx, req)
+					_, err := recorder.BatchGetWorkUnits(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 					assert.That(t, err, should.ErrLike("parent: unspecified"))
 				})
@@ -266,25 +207,25 @@ func TestBatchGetWorkUnits(t *testing.T) {
 			t.Run("names", func(t *ftt.Test) {
 				t.Run("invalid", func(t *ftt.Test) {
 					req.Names = []string{"invalid-name"}
-					_, err := srv.BatchGetWorkUnits(ctx, req)
+					_, err := recorder.BatchGetWorkUnits(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 					assert.That(t, err, should.ErrLike("names[0]: does not match"))
 				})
 				t.Run("empty item", func(t *ftt.Test) {
 					req.Names = []string{""}
-					_, err := srv.BatchGetWorkUnits(ctx, req)
+					_, err := recorder.BatchGetWorkUnits(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 					assert.That(t, err, should.ErrLike("names[0]: unspecified"))
 				})
 				t.Run("empty list", func(t *ftt.Test) {
 					req.Names = []string{}
-					_, err := srv.BatchGetWorkUnits(ctx, req)
+					_, err := recorder.BatchGetWorkUnits(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 					assert.That(t, err, should.ErrLike("names: must have at least one request"))
 				})
 				t.Run("different root invocations", func(t *ftt.Test) {
 					req.Names = []string{wu1.ID.Name(), "rootInvocations/other-root/workUnits/wu"}
-					_, err := srv.BatchGetWorkUnits(ctx, req)
+					_, err := recorder.BatchGetWorkUnits(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 					assert.That(t, err, should.ErrLike(`names[1]: does not match parent root invocation "rootInvocations/root-inv-id"`))
 				})
@@ -293,14 +234,14 @@ func TestBatchGetWorkUnits(t *testing.T) {
 					for i := 0; i < 501; i++ {
 						req.Names[i] = wu1.ID.Name()
 					}
-					_, err := srv.BatchGetWorkUnits(ctx, req)
+					_, err := recorder.BatchGetWorkUnits(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 					assert.That(t, err, should.ErrLike("names: the number of requests in the batch (501) exceeds 500"))
 				})
 			})
 			t.Run("view", func(t *ftt.Test) {
 				req.View = pb.WorkUnitView(999)
-				_, err := srv.BatchGetWorkUnits(ctx, req)
+				_, err := recorder.BatchGetWorkUnits(ctx, req)
 				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 				assert.That(t, err, should.ErrLike("view: unrecognized view"))
 			})

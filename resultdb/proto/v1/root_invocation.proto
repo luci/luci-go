@@ -209,7 +209,7 @@ message RootInvocation {
 // implemented by both the ResultDB and Recorder service. They are
 // implemented by both services for client ergonomics and to seperate
 // the recorder and reader-side failure domains. In the recorder service,
-// the Get methods facilitate atomic updates using etags for opportunistic
+// the Get methods facilitate atomic updates using etags for optimistic
 // concurrency control.
 // In the ResultDB service, they support reading the uploaded work units.
 

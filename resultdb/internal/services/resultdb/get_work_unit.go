@@ -16,84 +16,28 @@ package resultdb
 
 import (
 	"context"
+	"fmt"
 
-	"google.golang.org/grpc/codes"
-
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/resultdb/internal/masking"
-	"go.chromium.org/luci/resultdb/internal/permissions"
-	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/workunits"
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 func (s *resultDBServer) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
-	// Use one transaction for the entire RPC so that we work with a
-	// consistent snapshot of the system state. This is important to
-	// prevent subtle bugs and TOC-TOU vulnerabilities.
-	ctx, cancel := span.ReadOnlyTransaction(ctx)
-	defer cancel()
+	wuID, err := workunits.ParseName(in.Name)
+	if err != nil {
+		return nil, appstatus.BadRequest(fmt.Errorf("name: %w", err))
+	}
 
-	// Check permissions. As per google.aip.dev/211
-	// this should happen before any other request validation.
-	id, accessLevel, err := queryWorkUnitAccess(ctx, in)
+	// Piggy back on BatchGetWorkUnits.
+	res, err := s.BatchGetWorkUnits(ctx, &pb.BatchGetWorkUnitsRequest{
+		Parent: wuID.RootInvocationID.Name(),
+		Names:  []string{in.Name},
+		View:   in.View,
+	})
 	if err != nil {
 		return nil, err
 	}
-	if accessLevel == permissions.NoAccess {
-		return nil, appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s (or %s) on root invocation %q`,
-			rdbperms.PermGetWorkUnit, rdbperms.PermListLimitedWorkUnits, id.RootInvocationID.Name())
-	}
-
-	if err := validateGetWorkUnitRequest(in); err != nil {
-		return nil, appstatus.BadRequest(err)
-	}
-
-	readMask := workunits.ExcludeExtendedProperties
-	if in.View == pb.WorkUnitView_WORK_UNIT_VIEW_FULL && accessLevel == permissions.FullAccess {
-		readMask = workunits.AllFields
-	}
-
-	// Read the work unit.
-	wu, err := workunits.Read(ctx, id, readMask)
-	if err != nil {
-		return nil, err
-	}
-
-	return masking.WorkUnit(wu, accessLevel, in.View), nil
-}
-
-func queryWorkUnitAccess(ctx context.Context, in *pb.GetWorkUnitRequest) (id workunits.ID, accessLevel permissions.AccessLevel, err error) {
-	rootInvocationID, workUnitID, err := pbutil.ParseWorkUnitName(in.Name)
-	if err != nil {
-		return workunits.ID{}, permissions.NoAccess, appstatus.BadRequest(errors.Fmt("name: %w", err))
-	}
-	id = workunits.ID{
-		RootInvocationID: rootinvocations.ID(rootInvocationID),
-		WorkUnitID:       workUnitID,
-	}
-
-	opts := permissions.QueryWorkUnitAccessOptions{
-		Full:                 rdbperms.PermGetWorkUnit,
-		Limited:              rdbperms.PermListLimitedWorkUnits,
-		UpgradeLimitedToFull: rdbperms.PermGetWorkUnit,
-	}
-	accessLevel, err = permissions.QueryWorkUnitAccess(ctx, id, opts)
-	if err != nil {
-		return workunits.ID{}, permissions.NoAccess, err
-	}
-	return id, accessLevel, nil
-}
-
-func validateGetWorkUnitRequest(in *pb.GetWorkUnitRequest) error {
-	// Name is already validated in GetWorkUnit.
-	if err := pbutil.ValidateWorkUnitView(in.View); err != nil {
-		return errors.Fmt("view: %w", err)
-	}
-	return nil
+	return res.WorkUnits[0], nil
 }

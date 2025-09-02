@@ -17,12 +17,33 @@ package recorder
 import (
 	"context"
 
+	"fmt"
+
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"google.golang.org/grpc/codes"
 )
 
 // GetWorkUnit implements pb.RecorderServer.
+//
+// N.B. Unlike the API with the same name in ResultDB service, this API
+// uses update tokens to authorise reads. It is intended for use by
+// recorders only, specifically facilitating work unit updates using
+// optimistic locking (using aip.dev/154 etags).
 func (s *recorderServer) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
-	return nil, appstatus.Errorf(codes.Unimplemented, "not implemented")
+	wuID, err := workunits.ParseName(in.Name)
+	if err != nil {
+		return nil, appstatus.BadRequest(fmt.Errorf("name: %w", err))
+	}
+
+	// Piggy back on BatchGetWorkUnits.
+	res, err := s.BatchGetWorkUnits(ctx, &pb.BatchGetWorkUnitsRequest{
+		Parent: wuID.RootInvocationID.Name(),
+		Names:  []string{in.Name},
+		View:   in.View,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return res.WorkUnits[0], nil
 }

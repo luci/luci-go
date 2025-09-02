@@ -84,7 +84,7 @@ func queryBatchGetWorkUnitAccess(ctx context.Context, in *pb.BatchGetWorkUnitsRe
 	// While google.aip.dev/211 prescribes request validation should occur after
 	// authorisation, these initial validation checks are important to the integrity
 	// of authorisation.
-	rootInvID, err := pbutil.ParseRootInvocationName(in.Parent)
+	rootInvID, err := rootinvocations.ParseName(in.Parent)
 	if err != nil {
 		return nil, nil, appstatus.BadRequest(errors.Fmt("parent: %w", err))
 	}
@@ -95,17 +95,15 @@ func queryBatchGetWorkUnitAccess(ctx context.Context, in *pb.BatchGetWorkUnitsRe
 
 	ids = make([]workunits.ID, 0, len(in.Names))
 	for i, name := range in.Names {
-		wuRootInvID, wuID, err := pbutil.ParseWorkUnitName(name)
+		wuID, err := workunits.ParseName(name)
 		if err != nil {
 			return nil, nil, appstatus.BadRequest(errors.Fmt("names[%d]: %w", i, err))
 		}
-		if wuRootInvID != rootInvID {
+
+		if wuID.RootInvocationID != rootInvID {
 			return nil, nil, appstatus.BadRequest(errors.Fmt("names[%d]: does not match parent root invocation %q", i, rootinvocations.ID(rootInvID).Name()))
 		}
-		ids = append(ids, workunits.ID{
-			RootInvocationID: rootinvocations.ID(rootInvID),
-			WorkUnitID:       wuID,
-		})
+		ids = append(ids, wuID)
 	}
 
 	// Check permissions.
