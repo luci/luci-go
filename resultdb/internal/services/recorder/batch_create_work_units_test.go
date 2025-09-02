@@ -184,7 +184,7 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 						req.Requests[1].Parent = "rootInvocations/another-root/workUnits/root"
 						_, err := recorder.BatchCreateWorkUnits(ctx, req)
 						assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike("requests[1]: parent: all requests must be for creations in the same root invocation"))
+						assert.Loosely(t, err, should.ErrLike("requests[1]: parent: all requests must be for the same root invocation"))
 					})
 					t.Run("parent cycle", func(t *ftt.Test) {
 						t.Run("cycle of length 1", func(t *ftt.Test) {
@@ -336,7 +336,7 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 						req.Requests[1].Parent = "rootInvocations/root-inv-id/workUnits/other-work-unit"
 						_, err := recorder.BatchCreateWorkUnits(ctx, req)
 						assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike(`requests[1]: parent "rootInvocations/root-inv-id/workUnits/other-work-unit" requires a different update token to requests[0].parent "rootInvocations/root-inv-id/workUnits/wu-parent", but this RPC only accepts one update token`))
+						assert.Loosely(t, err, should.ErrLike(`requests[1]: parent "rootInvocations/root-inv-id/workUnits/other-work-unit" requires a different update token to requests[0]'s "parent" "rootInvocations/root-inv-id/workUnits/wu-parent", but this RPC only accepts one update token`))
 					})
 				})
 				t.Run("with inclusion token", func(t *ftt.Test) {

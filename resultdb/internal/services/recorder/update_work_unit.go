@@ -19,15 +19,12 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
@@ -36,7 +33,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
-	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -54,160 +50,136 @@ func (s *recorderServer) UpdateWorkUnit(ctx context.Context, in *pb.UpdateWorkUn
 	if err := validateUpdateWorkUnitRequest(ctx, in, cfg); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-
-	var ret *pb.WorkUnit
-	shouldFinalizeWorkUnit := false
-	updated := false
-	wuID := workunits.MustParseName(in.WorkUnit.Name)
-	ct, err := mutateWorkUnit(ctx, wuID, func(ctx context.Context) error {
-		curWu, err := workunits.Read(ctx, wuID, workunits.AllFields)
-		if err != nil {
-			return err
-		}
-
-		if in.WorkUnit.Etag != "" {
-			match, err := masking.IsWorkUnitETagMatch(curWu, in.WorkUnit.Etag)
-			if err != nil {
-				return appstatus.BadRequest(errors.Fmt("work_unit: etag: %w", err))
-			}
-			if !match {
-				// Attach a codes.Aborted appstatus to a vanilla error to avoid
-				// ReadWriteTransaction interpreting this case for a scenario
-				// in which it should retry the transaction.
-				err := errors.New("etag mismatch")
-				return appstatus.Attach(err, status.New(codes.Aborted, "the work unit was modified since it was last read; the update was not applied"))
-			}
-		}
-
-		ret = masking.WorkUnit(curWu, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL)
-
-		updateMask, err := mask.FromFieldMask(in.UpdateMask, in.WorkUnit, mask.ForUpdate())
-		if err != nil {
-			return errors.Fmt("update_mask: %w", err)
-		}
-
-		values := map[string]any{
-			"RootInvocationShardId": wuID.RootInvocationShardID(),
-			"WorkUnitId":            wuID.WorkUnitID,
-		}
-
-		legacyInvocationValues := map[string]any{
-			"InvocationId": wuID.LegacyInvocationID(),
-		}
-		for path, submask := range updateMask.Children() {
-			switch path {
-			// The cases in this switch statement must be synchronized with a
-			// similar switch statement in validateUpdateWorkUnitRequest.
-
-			case "state":
-				// In the case of ACTIVE, it should be a No-op.
-				if in.WorkUnit.State == pb.WorkUnit_FINALIZING {
-					shouldFinalizeWorkUnit = true
-					values["State"] = pb.WorkUnit_FINALIZING
-					values["FinalizeStartTime"] = spanner.CommitTimestamp
-					legacyInvocationValues["State"] = pb.Invocation_FINALIZING
-					legacyInvocationValues["FinalizeStartTime"] = spanner.CommitTimestamp
-					ret.State = pb.WorkUnit_FINALIZING
-				}
-			case "deadline":
-				if !proto.Equal(ret.Deadline, in.WorkUnit.Deadline) {
-					deadline := in.WorkUnit.Deadline
-					values["Deadline"] = deadline
-					legacyInvocationValues["Deadline"] = deadline
-					ret.Deadline = deadline
-				}
-			case "module_id":
-				curModuleID := ret.ModuleId
-				if diff := diffModuleIdentifier(in.WorkUnit.ModuleId, curModuleID); diff != "" {
-					if ret.ModuleId != nil {
-						return appstatus.BadRequest(errors.Fmt("work_unit: module_id: cannot modify module_id once set (do you need to create a child work unit?); %s", diff))
-					}
-					// curModuleID is nil. And the specified in.WorkUnit.ModuleId is not equal to it.
-					// Therefore, we must be setting the module to something substantive.
-					values["ModuleName"] = in.WorkUnit.ModuleId.ModuleName
-					values["ModuleScheme"] = in.WorkUnit.ModuleId.ModuleScheme
-					values["ModuleVariant"] = in.WorkUnit.ModuleId.ModuleVariant
-					values["ModuleVariantHash"] = pbutil.VariantHash(in.WorkUnit.ModuleId.ModuleVariant)
-
-					legacyInvocationValues["ModuleName"] = in.WorkUnit.ModuleId.ModuleName
-					legacyInvocationValues["ModuleScheme"] = in.WorkUnit.ModuleId.ModuleScheme
-					legacyInvocationValues["ModuleVariant"] = in.WorkUnit.ModuleId.ModuleVariant
-					legacyInvocationValues["ModuleVariantHash"] = pbutil.VariantHash(in.WorkUnit.ModuleId.ModuleVariant)
-
-					// Populate output-only fields in the response.
-					ret.ModuleId = in.WorkUnit.ModuleId
-					pbutil.PopulateModuleIdentifierHashes(ret.ModuleId)
-				}
-
-			case "properties":
-				if !proto.Equal(ret.Properties, in.WorkUnit.Properties) {
-					values["Properties"] = spanutil.Compressed(pbutil.MustMarshal(in.WorkUnit.Properties))
-					legacyInvocationValues["Properties"] = spanutil.Compressed(pbutil.MustMarshal(in.WorkUnit.Properties))
-					ret.Properties = in.WorkUnit.Properties
-				}
-
-			case "tags":
-				if !pbutil.StringPairsEqual(ret.Tags, in.WorkUnit.Tags) {
-					values["Tags"] = in.WorkUnit.Tags
-					legacyInvocationValues["Tags"] = in.WorkUnit.Tags
-					ret.Tags = in.WorkUnit.Tags
-				}
-
-			case "extended_properties":
-				extendedProperties := in.WorkUnit.ExtendedProperties
-				updatedExtendedProperties := updateExtendedProperties(ret.ExtendedProperties, extendedProperties, submask)
-				if !pbutil.ExtendedPropertiesEqual(updatedExtendedProperties, ret.ExtendedProperties) {
-					ret.ExtendedProperties = updatedExtendedProperties
-					if err := pbutil.ValidateInvocationExtendedProperties(ret.ExtendedProperties); err != nil {
-						// One more validation to ensure the size is within the limit.
-						return appstatus.BadRequest(errors.Fmt("work_unit: extended_properties: %w", err))
-					}
-					internalExtendedProperties := &invocationspb.ExtendedProperties{
-						ExtendedProperties: ret.ExtendedProperties,
-					}
-					values["ExtendedProperties"] = spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties))
-					legacyInvocationValues["ExtendedProperties"] = spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties))
-				}
-			case "instructions":
-				ins := instructionutil.RemoveInstructionsName(in.WorkUnit.Instructions)
-				curIns := instructionutil.RemoveInstructionsName(ret.Instructions)
-				if !proto.Equal(curIns, ins) {
-					values["Instructions"] = spanutil.Compressed(pbutil.MustMarshal(ins))
-					legacyInvocationValues["Instructions"] = spanutil.Compressed(pbutil.MustMarshal(ins))
-					ret.Instructions = instructionutil.InstructionsWithNames(in.WorkUnit.Instructions, wuID.Name())
-				}
-			default:
-				panic("impossible")
-			}
-		}
-		// The `values` map is initialized with the 2 primary key columns of a WorkUnit.
-		// There is no update if no other columns are added.
-		updated = len(values) > 2
-		if updated {
-			values["LastUpdated"] = spanner.CommitTimestamp
-			span.BufferWrite(ctx, spanutil.UpdateMap("WorkUnits", values))
-			span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", legacyInvocationValues))
-			if shouldFinalizeWorkUnit {
-				tasks.StartInvocationFinalization(ctx, wuID.LegacyInvocationID())
-			}
-		}
-		return nil
-	})
+	// Piggy back on updateWorkUnits.
+	updatedRows, err := updateWorkUnits(ctx, []*pb.UpdateWorkUnitRequest{in})
 	if err != nil {
-		return nil, err
+		// Remove any references to "requests[0]: ", this is a single create RPC not a batch RPC.
+		return nil, removeRequestNumberFromAppStatusError(err)
+	}
+	res := masking.WorkUnit(updatedRows[0], permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL)
+	return res, nil
+}
+
+// updateWorkUnitInternal returns the mutations to update a work unit, the updated work unit row.
+func updateWorkUnitInternal(in *pb.UpdateWorkUnitRequest, curWorkUnitRow *workunits.WorkUnitRow, ordinal int) (updateMutations []*spanner.Mutation, updatedRow *workunits.WorkUnitRow, err error) {
+	updatedRow = curWorkUnitRow.Clone()
+	updateMask, err := mask.FromFieldMask(in.UpdateMask, in.WorkUnit, mask.ForUpdate())
+	if err != nil {
+		// Should not happen, the update mask has already been validated.
+		return nil, nil, errors.Fmt("requests[%d]: update_mask: %w", ordinal, err)
+	}
+	wuID := workunits.MustParseName(in.WorkUnit.Name)
+	values := map[string]any{
+		"RootInvocationShardId": wuID.RootInvocationShardID(),
+		"WorkUnitId":            wuID.WorkUnitID,
 	}
 
+	legacyInvocationValues := map[string]any{
+		"InvocationId": wuID.LegacyInvocationID(),
+	}
+	for path, submask := range updateMask.Children() {
+		switch path {
+		// The cases in this switch statement must be synchronized with a
+		// similar switch statement in validateUpdateWorkUnitRequest.
+
+		case "state":
+			if in.WorkUnit.State == pb.WorkUnit_FINALIZING {
+				values["State"] = pb.WorkUnit_FINALIZING
+				values["FinalizeStartTime"] = spanner.CommitTimestamp
+				legacyInvocationValues["State"] = pb.Invocation_FINALIZING
+				legacyInvocationValues["FinalizeStartTime"] = spanner.CommitTimestamp
+				updatedRow.State = pb.WorkUnit_FINALIZING
+			}
+		case "deadline":
+			if !curWorkUnitRow.Deadline.Equal(in.WorkUnit.Deadline.AsTime()) {
+				deadline := in.WorkUnit.Deadline
+				values["Deadline"] = deadline
+				legacyInvocationValues["Deadline"] = deadline
+				updatedRow.Deadline = deadline.AsTime()
+			}
+		case "module_id":
+			curModuleID := curWorkUnitRow.ModuleID
+			if diff := diffModuleIdentifier(in.WorkUnit.ModuleId, curModuleID); diff != "" {
+				if curModuleID != nil {
+					return nil, nil, appstatus.BadRequest(errors.Fmt("requests[%d]: work_unit: module_id: cannot modify module_id once set (do you need to create a child work unit?); %s", ordinal, diff))
+				}
+				// curModuleID is nil. And the specified in.WorkUnit.ModuleId is not equal to it.
+				// Therefore, we must be setting the module to something substantive.
+				values["ModuleName"] = in.WorkUnit.ModuleId.ModuleName
+				values["ModuleScheme"] = in.WorkUnit.ModuleId.ModuleScheme
+				values["ModuleVariant"] = in.WorkUnit.ModuleId.ModuleVariant
+				values["ModuleVariantHash"] = pbutil.VariantHash(in.WorkUnit.ModuleId.ModuleVariant)
+
+				legacyInvocationValues["ModuleName"] = in.WorkUnit.ModuleId.ModuleName
+				legacyInvocationValues["ModuleScheme"] = in.WorkUnit.ModuleId.ModuleScheme
+				legacyInvocationValues["ModuleVariant"] = in.WorkUnit.ModuleId.ModuleVariant
+				legacyInvocationValues["ModuleVariantHash"] = pbutil.VariantHash(in.WorkUnit.ModuleId.ModuleVariant)
+
+				// Populate output-only fields in the response.
+				updatedRow.ModuleID = in.WorkUnit.ModuleId
+				pbutil.PopulateModuleIdentifierHashes(updatedRow.ModuleID)
+			}
+
+		case "properties":
+			if !proto.Equal(curWorkUnitRow.Properties, in.WorkUnit.Properties) {
+				values["Properties"] = spanutil.Compressed(pbutil.MustMarshal(in.WorkUnit.Properties))
+				legacyInvocationValues["Properties"] = spanutil.Compressed(pbutil.MustMarshal(in.WorkUnit.Properties))
+				updatedRow.Properties = in.WorkUnit.Properties
+			}
+
+		case "tags":
+			if !pbutil.StringPairsEqual(curWorkUnitRow.Tags, in.WorkUnit.Tags) {
+				values["Tags"] = in.WorkUnit.Tags
+				legacyInvocationValues["Tags"] = in.WorkUnit.Tags
+				updatedRow.Tags = in.WorkUnit.Tags
+			}
+
+		case "extended_properties":
+			extendedProperties := in.WorkUnit.ExtendedProperties
+			curExtendedProperties := curWorkUnitRow.ExtendedProperties
+			updatedExtendedProperties := updateExtendedProperties(curExtendedProperties, extendedProperties, submask)
+			if !pbutil.ExtendedPropertiesEqual(updatedExtendedProperties, curExtendedProperties) {
+				if err := pbutil.ValidateInvocationExtendedProperties(updatedExtendedProperties); err != nil {
+					// One more validation to ensure the size is within the limit.
+					return nil, nil, appstatus.BadRequest(errors.Fmt("requests[%d]: work_unit: extended_properties: %w", ordinal, err))
+				}
+				internalExtendedProperties := &invocationspb.ExtendedProperties{
+					ExtendedProperties: updatedExtendedProperties,
+				}
+				values["ExtendedProperties"] = spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties))
+				legacyInvocationValues["ExtendedProperties"] = spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties))
+				updatedRow.ExtendedProperties = updatedExtendedProperties
+			}
+		case "instructions":
+			ins := instructionutil.RemoveInstructionsName(in.WorkUnit.Instructions)
+			curIns := instructionutil.RemoveInstructionsName(curWorkUnitRow.Instructions)
+			if !proto.Equal(curIns, ins) {
+				values["Instructions"] = spanutil.Compressed(pbutil.MustMarshal(ins))
+				legacyInvocationValues["Instructions"] = spanutil.Compressed(pbutil.MustMarshal(ins))
+				updatedRow.Instructions = instructionutil.InstructionsWithNames(in.WorkUnit.Instructions, wuID.Name())
+			}
+		default:
+			panic("impossible")
+		}
+	}
+	// The `values` map is initialized with the 2 primary key columns of a WorkUnit.
+	// There is no update if no other columns are added.
+	updated := len(values) > 2
 	if updated {
-		ret.LastUpdated = timestamppb.New(ct)
+		values["LastUpdated"] = spanner.CommitTimestamp
+		updateMutations = append(updateMutations, spanutil.UpdateMap("WorkUnits", values))
+		updateMutations = append(updateMutations, spanutil.UpdateMap("Invocations", legacyInvocationValues))
 	}
-	if shouldFinalizeWorkUnit {
-		ret.FinalizeStartTime = timestamppb.New(ct)
-	}
-	return ret, nil
+	return updateMutations, updatedRow, nil
 }
 
 func validateUpdateWorkUnitRequest(ctx context.Context, req *pb.UpdateWorkUnitRequest, cfg *config.CompiledServiceConfig) error {
-	// Work unit name already been validated in verifyUpdateWorkUnitPermissions.
+	if req.WorkUnit == nil {
+		return errors.Fmt("work_unit: unspecified")
+	}
+	if err := pbutil.ValidateWorkUnitName(req.WorkUnit.Name); err != nil {
+		return errors.Fmt("work_unit: name: %w", err)
+	}
 	if len(req.UpdateMask.GetPaths()) == 0 {
 		return errors.New("update_mask: paths is empty")
 	}

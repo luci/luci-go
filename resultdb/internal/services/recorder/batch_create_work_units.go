@@ -181,7 +181,7 @@ func validateBatchCreateWorkUnitsPermissions(ctx context.Context, req *pb.BatchC
 	if updateToken != "" {
 		// Ensure the requests are ones we could authorise with a single update
 		// token.
-		state, err := validateSameUpdateTokenState(requestOrdering.parentIDs)
+		state, err := validateSameUpdateTokenState(requestOrdering.parentIDs, "parent")
 		if err != nil {
 			return appstatus.BadRequest(err)
 		}
@@ -516,17 +516,17 @@ func deduplicateCreateWorkUnits(ctx context.Context, ids []workunits.ID, request
 
 // validateSameUpdateTokenState validates all work units share the same update token state.
 // If the method succeeds, the value of the shared state is returned.
-func validateSameUpdateTokenState(parents []workunits.ID) (state string, err error) {
+func validateSameUpdateTokenState(parents []workunits.ID, fieldName string) (state string, err error) {
 	s := workUnitUpdateTokenState(parents[0])
 	for i, p := range parents {
 		// Validate all requests have the same root invocation ID. This will catch
 		// a subset of the cases and is more understandable than the update token error below.
 		if p.RootInvocationID != parents[0].RootInvocationID {
-			return "", errors.Fmt("requests[%d]: parent: all requests must be for creations in the same root invocation", i)
+			return "", errors.Fmt("requests[%d]: %s: all requests must be for the same root invocation", i, fieldName)
 		}
 
 		if s != workUnitUpdateTokenState(p) {
-			return "", errors.Fmt("requests[%d]: parent %q requires a different update token to requests[0].parent %q, but this RPC only accepts one update token", i, p.Name(), parents[0].Name())
+			return "", errors.Fmt("requests[%d]: %s %q requires a different update token to requests[0]'s %q %q, but this RPC only accepts one update token", i, fieldName, p.Name(), fieldName, parents[0].Name())
 		}
 	}
 	return s, nil

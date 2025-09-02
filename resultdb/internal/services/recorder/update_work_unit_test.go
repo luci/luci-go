@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -66,7 +67,7 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 
 		req := &pb.UpdateWorkUnitRequest{
 			WorkUnit: &pb.WorkUnit{
-				Name: "invocations/inv/workUnits/wu",
+				Name: "rootInvocations/inv/workUnits/wu",
 			},
 			UpdateMask: &field_mask.FieldMask{Paths: []string{}},
 		}
@@ -379,7 +380,7 @@ func TestUpdateWorkUnit(t *testing.T) {
 
 				_, err := recorder.UpdateWorkUnit(ctx, req)
 				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-				assert.That(t, err, should.ErrLike(`work_unit: etag: malformated etag`))
+				assert.That(t, err, should.ErrLike(`bad request: work_unit: etag: malformated etag`))
 			})
 
 			t.Run("unmatch etag", func(t *ftt.Test) {
@@ -393,7 +394,7 @@ func TestUpdateWorkUnit(t *testing.T) {
 				req.WorkUnit.Etag = expectedWU.Etag
 				_, err = recorder.UpdateWorkUnit(ctx, req)
 				assert.That(t, err, grpccode.ShouldBe(codes.Aborted))
-				assert.That(t, err, should.ErrLike(`the work unit was modified since it was last read; the update was not applied`))
+				assert.That(t, err, should.ErrLike(`desc = the work unit was modified since it was last read; the update was not applied`))
 			})
 
 			t.Run("match etag", func(t *ftt.Test) {
@@ -416,7 +417,7 @@ func TestUpdateWorkUnit(t *testing.T) {
 
 			_, err = recorder.UpdateWorkUnit(ctx, req)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
-			assert.Loosely(t, err, should.ErrLike(`"rootInvocations/rootid/workUnits/nonexist" not found`))
+			assert.Loosely(t, err, should.ErrLike(`desc = "rootInvocations/rootid/workUnits/nonexist" not found`))
 		})
 
 		t.Run("work unit not active", func(t *ftt.Test) {
@@ -429,14 +430,56 @@ func TestUpdateWorkUnit(t *testing.T) {
 
 			_, err = recorder.UpdateWorkUnit(ctx, req)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
-			assert.Loosely(t, err, should.ErrLike(`"rootInvocations/rootid/workUnits/wu" is not active`))
+			assert.Loosely(t, err, should.ErrLike(`desc = work unit "rootInvocations/rootid/workUnits/wu" is not active`))
 		})
 
 		t.Run("e2e", func(t *ftt.Test) {
+			assertWUProtoUpdated := func(wu *pb.WorkUnit) {
+				// Etag is must be different if updated.
+				assert.That(t, wu.Etag, should.NotEqual(expectedWU.Etag), truth.LineContext())
+				assert.Loosely(t, wu.Etag, should.NotBeEmpty, truth.LineContext())
+				// LastUpdated time must move forward.
+				assert.That(t, wu.LastUpdated.AsTime(), should.HappenAfter(expectedWU.LastUpdated.AsTime()), truth.LineContext())
+				// FinalizeStartTime must be set if state is updated.
+				if expectedWU.State != pb.WorkUnit_ACTIVE {
+					assert.Loosely(t, wu.FinalizeStartTime, should.Match(wu.LastUpdated), truth.LineContext())
+				} else {
+					assert.Loosely(t, wu.FinalizeStartTime, should.BeNil, truth.LineContext())
+				}
+				// Match lastUpdated, etag, finalizeStartTime before comparing the full proto.
+				expectedWU.LastUpdated = wu.LastUpdated
+				expectedWU.Etag = wu.Etag
+				expectedWU.FinalizeStartTime = wu.FinalizeStartTime
+				assert.That(t, wu, should.Match(expectedWU), truth.LineContext())
+			}
+
+			assertWUSpannerUpdated := func() {
+				wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
+				assert.Loosely(t, err, should.BeNil, truth.LineContext())
+				// LastUpdated time must move forward.
+				assert.That(t, wuRow.LastUpdated, should.HappenAfter(expectedWURow.LastUpdated), truth.LineContext())
+				// FinalizeStartTime must be set if state is updated.
+				shouldSetfinalizeStartTime := expectedWURow.State != pb.WorkUnit_ACTIVE
+				assert.Loosely(t, wuRow.FinalizeStartTime.Valid, should.Equal(shouldSetfinalizeStartTime), truth.LineContext())
+				if shouldSetfinalizeStartTime {
+					assert.Loosely(t, wuRow.FinalizeStartTime.Time, should.Match(wuRow.LastUpdated), truth.LineContext())
+				}
+
+				// Match lastUpdated, etag, finalizeStartTime before comparing the full proto.
+				expectedWURow.LastUpdated = wuRow.LastUpdated
+				expectedWURow.FinalizeStartTime = wuRow.FinalizeStartTime
+				assert.That(t, wuRow, should.Match(expectedWURow), truth.LineContext())
+			}
+
 			t.Run("base case - no update", func(t *ftt.Test) {
 				wu, err := recorder.UpdateWorkUnit(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, wu, should.Match(expectedWU))
+
+				// Check the work unit table.
+				wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, wuRow, should.Match(expectedWURow))
 			})
 
 			t.Run("state", func(t *ftt.Test) {
@@ -445,20 +488,12 @@ func TestUpdateWorkUnit(t *testing.T) {
 
 				wu, err := recorder.UpdateWorkUnit(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, wu.FinalizeStartTime, should.NotBeNil)
 				expectedWU.State = pb.WorkUnit_FINALIZING
-				expectedWU.FinalizeStartTime = wu.FinalizeStartTime
-				expectedWU.LastUpdated = wu.LastUpdated
-				assert.That(t, wu, should.Match(expectedWU))
+				assertWUProtoUpdated(wu)
 
 				// Validate work unit table.
-				wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
-				assert.Loosely(t, err, should.BeNil)
 				expectedWURow.State = pb.WorkUnit_FINALIZING
-				expectedWURow.FinalizeStartTime = wuRow.FinalizeStartTime
-				expectedWURow.LastUpdated = wuRow.LastUpdated
-				assert.Loosely(t, wuRow, should.Match(expectedWURow))
-				assert.Loosely(t, wuRow.FinalizeStartTime.Valid, should.BeTrue)
+				assertWUSpannerUpdated()
 
 				// Validate legacy invocation table.
 				inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.ExcludeExtendedProperties)
@@ -486,16 +521,12 @@ func TestUpdateWorkUnit(t *testing.T) {
 					wu, err := recorder.UpdateWorkUnit(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
 					expectedWU.ModuleId = newModuleID
-					expectedWU.LastUpdated = wu.LastUpdated
 					pbutil.PopulateModuleIdentifierHashes(expectedWU.ModuleId)
-					assert.That(t, wu, should.Match(expectedWU))
+					assertWUProtoUpdated(wu)
 
 					// Validate work unit table.
-					wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
-					assert.Loosely(t, err, should.BeNil)
 					expectedWURow.ModuleID = newModuleID
-					expectedWURow.LastUpdated = wuRow.LastUpdated
-					assert.Loosely(t, wuRow, should.Match(expectedWURow))
+					assertWUSpannerUpdated()
 
 					// Validate legacy invocation table.
 					inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.ExcludeExtendedProperties)
@@ -510,9 +541,10 @@ func TestUpdateWorkUnit(t *testing.T) {
 
 					t.Run("to nil", func(t *ftt.Test) {
 						req.WorkUnit.ModuleId = nil
+
 						_, err = recorder.UpdateWorkUnit(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike(`work_unit: module_id: cannot modify module_id once set (do you need to create a child work unit?); got nil, was non-nil`))
+						assert.Loosely(t, err, should.ErrLike(`bad request: work_unit: module_id: cannot modify module_id once set (do you need to create a child work unit?); got nil, was non-nil`))
 					})
 					t.Run("to another value", func(t *ftt.Test) {
 						req.WorkUnit.ModuleId = &pb.ModuleIdentifier{
@@ -520,9 +552,10 @@ func TestUpdateWorkUnit(t *testing.T) {
 							ModuleScheme:  "gtest",
 							ModuleVariant: pbutil.Variant("k", "v"),
 						}
+
 						_, err = recorder.UpdateWorkUnit(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike(`work_unit: module_id: cannot modify module_id once set`))
+						assert.Loosely(t, err, should.ErrLike(`bad request: work_unit: module_id: cannot modify module_id once set`))
 					})
 					t.Run("to the same value", func(t *ftt.Test) {
 						// This is allowed, as it is a no-op.
@@ -571,15 +604,12 @@ func TestUpdateWorkUnit(t *testing.T) {
 
 					wu, err := recorder.UpdateWorkUnit(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
-					expectedWU.LastUpdated = wu.LastUpdated
-					assert.Loosely(t, wu.ExtendedProperties, should.Match(extendedPropertiesNew))
+					expectedWU.ExtendedProperties = extendedPropertiesNew
+					assertWUProtoUpdated(wu)
 
 					// Validate work unit table.
-					wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
-					assert.Loosely(t, err, should.BeNil)
-					expectedWURow.LastUpdated = wuRow.LastUpdated
 					expectedWURow.ExtendedProperties = extendedPropertiesNew
-					assert.Loosely(t, wuRow, should.Match(expectedWURow))
+					assertWUSpannerUpdated()
 
 					// Validate legacy invocation table.
 					inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.AllFields)
@@ -612,15 +642,12 @@ func TestUpdateWorkUnit(t *testing.T) {
 
 					wu, err := recorder.UpdateWorkUnit(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
-					expectedWU.LastUpdated = wu.LastUpdated
-					assert.Loosely(t, wu.ExtendedProperties, should.Match(expectedExtendedProperties))
+					expectedWU.ExtendedProperties = expectedExtendedProperties
+					assertWUProtoUpdated(wu)
 
 					// Validate work unit table.
-					wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
-					assert.Loosely(t, err, should.BeNil)
-					expectedWURow.LastUpdated = wuRow.LastUpdated
 					expectedWURow.ExtendedProperties = expectedExtendedProperties
-					assert.Loosely(t, wuRow, should.Match(expectedWURow))
+					assertWUSpannerUpdated()
 
 					// Validate legacy invocation table.
 					inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.AllFields)
@@ -653,40 +680,8 @@ func TestUpdateWorkUnit(t *testing.T) {
 
 					wu, err := recorder.UpdateWorkUnit(ctx, req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike(`work_unit: extended_properties: exceeds the maximum size of`))
+					assert.Loosely(t, err, should.ErrLike(`bad request: work_unit: extended_properties: exceeds the maximum size of`))
 					assert.Loosely(t, wu, should.BeNil)
-				})
-			})
-
-			t.Run("updated time", func(t *ftt.Test) {
-				t.Run("update when there is a update", func(t *ftt.Test) {
-					req.UpdateMask.Paths = []string{"deadline"}
-					req.WorkUnit.Deadline = pbutil.MustTimestampProto(now.Add(time.Hour))
-					oldUpdateTime := expectedWURow.LastUpdated
-
-					wu, err := recorder.UpdateWorkUnit(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					assert.That(t, wu.LastUpdated.AsTime(), should.HappenAfter(oldUpdateTime))
-
-					// Check the work unit table.
-					wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
-					assert.Loosely(t, err, should.BeNil)
-					assert.That(t, wuRow.LastUpdated, should.HappenAfter(oldUpdateTime))
-				})
-
-				t.Run("not updated when there is a no-op", func(t *ftt.Test) {
-					req.UpdateMask.Paths = []string{"state"}
-					req.WorkUnit.State = pb.WorkUnit_ACTIVE
-					oldUpdateTime := expectedWURow.LastUpdated
-
-					wu, err := recorder.UpdateWorkUnit(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					assert.That(t, wu.LastUpdated.AsTime(), should.Match(oldUpdateTime))
-
-					// Check the work unit table.
-					wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
-					assert.Loosely(t, err, should.BeNil)
-					assert.That(t, wuRow.LastUpdated, should.Match(oldUpdateTime))
 				})
 			})
 
@@ -714,18 +709,14 @@ func TestUpdateWorkUnit(t *testing.T) {
 				expectedWU.Properties = newProperties
 				expectedWU.Instructions = instructionutil.InstructionsWithNames(instruction, wuID.Name())
 				expectedWU.Tags = []*pb.StringPair{{Key: "newkey", Value: "newvalue"}}
-				expectedWU.LastUpdated = wu.LastUpdated
-				assert.That(t, wu, should.Match(expectedWU))
+				assertWUProtoUpdated(wu)
 
 				// Validate work unit table.
-				wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
-				assert.Loosely(t, err, should.BeNil)
 				expectedWURow.Deadline = newDeadline.AsTime()
 				expectedWURow.Properties = newProperties
 				expectedWURow.Instructions = instructionutil.InstructionsWithNames(instruction, wuID.Name())
 				expectedWURow.Tags = []*pb.StringPair{{Key: "newkey", Value: "newvalue"}}
-				expectedWURow.LastUpdated = wuRow.LastUpdated
-				assert.Loosely(t, wuRow, should.Match(expectedWURow))
+				assertWUSpannerUpdated()
 
 				// Validate legacy invocation table.
 				inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.AllFields)
