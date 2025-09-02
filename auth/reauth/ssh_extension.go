@@ -17,5 +17,11 @@ package reauth
 // Name of SSH_AUTH_SOCK environment variable.
 const EnvSSHAuthSock = "SSH_AUTH_SOCK"
 
-// SSH extension name.
-const SSHExtensionForwardedChallenge = "forwarded-challenge@reauth.luci.go.chromium.org"
+// SSH extension names.
+const (
+	// Message is for checking if the receiving agent is a LUCI agent.
+	SSHExtensionPing = "ping@reauth.luci.go.chromium.org"
+
+	// Message is a forwarded WebAuthn challenge.
+	SSHExtensionForwardedChallenge = "forwarded-challenge@reauth.luci.go.chromium.org"
+)

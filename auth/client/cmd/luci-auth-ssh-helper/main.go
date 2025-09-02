@@ -71,6 +71,10 @@ func main() {
 	}
 }
 
+func handlePing(ctx context.Context, _ []byte) ssh.AgentMessage {
+	return ssh.AgentMessage{Code: ssh.AgentSuccess}
+}
+
 func createAgent(ctx context.Context, upstreamDialer ssh.AgentDialer, listener net.Listener) (*ssh.ExtensionAgent, error) {
 	h := forwardingHandler{}
 	if err := h.CheckAvailable(ctx); err != nil {
@@ -83,6 +87,7 @@ func createAgent(ctx context.Context, upstreamDialer ssh.AgentDialer, listener n
 		UpstreamDialer: upstreamDialer,
 		Listener:       listener,
 		Dispatcher: map[string]ssh.AgentExtensionHandler{
+			reauth.SSHExtensionPing:               handlePing,
 			reauth.SSHExtensionForwardedChallenge: h.handle,
 		},
 	}
