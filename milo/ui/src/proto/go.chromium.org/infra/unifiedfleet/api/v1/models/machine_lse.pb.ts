@@ -53,6 +53,54 @@ export function logicalZoneToJSON(object: LogicalZone): string {
   }
 }
 
+/** MachineLSEType denotes lse type. */
+export enum MachineLSEType {
+  MACHINE_LSE_TYPE_UNSPECIFIED = 0,
+  MACHINE_LSE_TYPE_CHROME_BROWSER = 1,
+  MACHINE_LSE_TYPE_CHROME_OS = 2,
+  MACHINE_LSE_TYPE_ATTACHED_DEVICE = 3,
+  MACHINE_LSE_TYPE_ANDROID_HOST = 4,
+}
+
+export function machineLSETypeFromJSON(object: any): MachineLSEType {
+  switch (object) {
+    case 0:
+    case "MACHINE_LSE_TYPE_UNSPECIFIED":
+      return MachineLSEType.MACHINE_LSE_TYPE_UNSPECIFIED;
+    case 1:
+    case "MACHINE_LSE_TYPE_CHROME_BROWSER":
+      return MachineLSEType.MACHINE_LSE_TYPE_CHROME_BROWSER;
+    case 2:
+    case "MACHINE_LSE_TYPE_CHROME_OS":
+      return MachineLSEType.MACHINE_LSE_TYPE_CHROME_OS;
+    case 3:
+    case "MACHINE_LSE_TYPE_ATTACHED_DEVICE":
+      return MachineLSEType.MACHINE_LSE_TYPE_ATTACHED_DEVICE;
+    case 4:
+    case "MACHINE_LSE_TYPE_ANDROID_HOST":
+      return MachineLSEType.MACHINE_LSE_TYPE_ANDROID_HOST;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum MachineLSEType");
+  }
+}
+
+export function machineLSETypeToJSON(object: MachineLSEType): string {
+  switch (object) {
+    case MachineLSEType.MACHINE_LSE_TYPE_UNSPECIFIED:
+      return "MACHINE_LSE_TYPE_UNSPECIFIED";
+    case MachineLSEType.MACHINE_LSE_TYPE_CHROME_BROWSER:
+      return "MACHINE_LSE_TYPE_CHROME_BROWSER";
+    case MachineLSEType.MACHINE_LSE_TYPE_CHROME_OS:
+      return "MACHINE_LSE_TYPE_CHROME_OS";
+    case MachineLSEType.MACHINE_LSE_TYPE_ATTACHED_DEVICE:
+      return "MACHINE_LSE_TYPE_ATTACHED_DEVICE";
+    case MachineLSEType.MACHINE_LSE_TYPE_ANDROID_HOST:
+      return "MACHINE_LSE_TYPE_ANDROID_HOST";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum MachineLSEType");
+  }
+}
+
 /**
  * MachineLSE is the Machine Lab Setup Environment.
  * It refers to the entity in the lab which has Machine(s) associated

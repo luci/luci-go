@@ -2445,6 +2445,12 @@ export enum Peripherals_WifiRouterFeature {
   WIFI_ROUTER_FEATURE_GCMP = 11,
   /** WIFI_ROUTER_FEATURE_SAE_EXT_KEY - SAE-EXT-KEY support for AKM-24/25. */
   WIFI_ROUTER_FEATURE_SAE_EXT_KEY = 12,
+  /**
+   * WIFI_ROUTER_FEATURE_NOT_U6PLUS_ROUTER - temp feature for ignoring the U6+ router in tests
+   * TODO(astrouski): Remove this feature once the U6+ router is fixed.
+   * (b/389945993)
+   */
+  WIFI_ROUTER_FEATURE_NOT_U6PLUS_ROUTER = 13,
 }
 
 export function peripherals_WifiRouterFeatureFromJSON(object: any): Peripherals_WifiRouterFeature {
@@ -2488,6 +2494,9 @@ export function peripherals_WifiRouterFeatureFromJSON(object: any): Peripherals_
     case 12:
     case "WIFI_ROUTER_FEATURE_SAE_EXT_KEY":
       return Peripherals_WifiRouterFeature.WIFI_ROUTER_FEATURE_SAE_EXT_KEY;
+    case 13:
+    case "WIFI_ROUTER_FEATURE_NOT_U6PLUS_ROUTER":
+      return Peripherals_WifiRouterFeature.WIFI_ROUTER_FEATURE_NOT_U6PLUS_ROUTER;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Peripherals_WifiRouterFeature");
   }
@@ -2521,6 +2530,8 @@ export function peripherals_WifiRouterFeatureToJSON(object: Peripherals_WifiRout
       return "WIFI_ROUTER_FEATURE_GCMP";
     case Peripherals_WifiRouterFeature.WIFI_ROUTER_FEATURE_SAE_EXT_KEY:
       return "WIFI_ROUTER_FEATURE_SAE_EXT_KEY";
+    case Peripherals_WifiRouterFeature.WIFI_ROUTER_FEATURE_NOT_U6PLUS_ROUTER:
+      return "WIFI_ROUTER_FEATURE_NOT_U6PLUS_ROUTER";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Peripherals_WifiRouterFeature");
   }

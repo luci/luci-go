@@ -25,21 +25,28 @@ export interface Artifact {
   /**
    * Can be used to refer to this artifact.
    * Format:
-   * - For invocation-level artifacts:
-   *   "invocations/{INVOCATION_ID}/artifacts/{ARTIFACT_ID}".
-   * - For test-result-level artifacts:
-   *   "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
+   * - For work unit-level artifacts:
+   *   "rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}/artifacts/{ARTIFACT_ID}".
+   * - For test result-level artifacts:
+   *   "rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
+   *
    * where URL_ESCAPED_TEST_ID is the test_id escaped with
    * https://golang.org/pkg/net/url/#PathEscape (see also https://aip.dev/122),
    * and ARTIFACT_ID is documented below.
    * Examples: "screenshot.png", "traces/a.txt".
+   *
+   * For artifacts in legacy invocations, the following formats are also used:
+   * - For invocation-level artifacts:
+   *   "invocations/{INVOCATION_ID}/artifacts/{ARTIFACT_ID}".
+   * - For test-result-level artifacts:
+   *   "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
    */
   readonly name: string;
   /**
    * The structured test identifier. Uniquely identifies the test that was run.
    *
    * This field is only populated for test-result-level artifacts.
-   * MUST set if result_id is set.
+   *
    * MUST NOT set for legacy uploader where test id should be specified in the parent.
    */
   readonly testIdStructured:
@@ -60,7 +67,7 @@ export interface Artifact {
   /**
    * This field is only populated for test-result-level artifacts.
    * MUST set if test_id_structured is set.
-   * MUST NOT set for legacy uploader where result id should be specified in the parent.
+   * MUST NOT set if test_id_structured is unset.
    */
   readonly resultId: string;
   /**
@@ -93,7 +100,11 @@ export interface Artifact {
    * Size of the file.
    * Can be used in UI to decide between displaying the artifact inline or only
    * showing a link if it is too large.
-   * If you are using the gcs_uri, this field is not verified, but only treated as a hint.
+   *
+   * If you are using the gcs_uri, the uploaded value is not verified, only
+   * treated as a hint.
+   *
+   * Optional.
    */
   readonly sizeBytes: string;
   /**
@@ -117,7 +128,11 @@ export interface Artifact {
    * @deprecated
    */
   readonly testStatus: TestStatus;
-  /** Indicates whether ListArtifactLines RPC can be used with this artifact. */
+  /**
+   * Indicates whether ListArtifactLines RPC can be used with this artifact.
+   *
+   * Output only.
+   */
   readonly hasLines: boolean;
   /**
    * The RBE URI of the artifact if it's stored in RBE. If specified, `contents`

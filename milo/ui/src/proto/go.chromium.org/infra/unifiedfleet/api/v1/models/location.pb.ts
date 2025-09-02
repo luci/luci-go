@@ -105,7 +105,7 @@ export function labToJSON(object: Lab): string {
 
 /**
  * Zone refers to the different network zones under chrome org
- * Next tag: 110
+ * Next tag: 111
  */
 export enum Zone {
   ZONE_UNSPECIFIED = 0,
@@ -343,6 +343,8 @@ export enum Zone {
   ZONE_SFP_91 = 108,
   /** ZONE_SFP_93 - ZONE_SFP_92 - intentionally skipped */
   ZONE_SFP_93 = 109,
+  /** ZONE_ATL97_BROWSER - "atl97" //  US-ATL-MET1 // Room ? */
+  ZONE_ATL97_BROWSER = 110,
 }
 
 export function zoneFromJSON(object: any): Zone {
@@ -674,6 +676,9 @@ export function zoneFromJSON(object: any): Zone {
     case 109:
     case "ZONE_SFP_93":
       return Zone.ZONE_SFP_93;
+    case 110:
+    case "ZONE_ATL97_BROWSER":
+      return Zone.ZONE_ATL97_BROWSER;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Zone");
   }
@@ -899,6 +904,8 @@ export function zoneToJSON(object: Zone): string {
       return "ZONE_SFP_91";
     case Zone.ZONE_SFP_93:
       return "ZONE_SFP_93";
+    case Zone.ZONE_ATL97_BROWSER:
+      return "ZONE_ATL97_BROWSER";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Zone");
   }

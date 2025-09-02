@@ -63,16 +63,8 @@ const theme = createTheme({
 });
 
 const CHANGE_FORMATTERS = new Map([
-  [
-    'GROUP_MEMBERS_ADDED',
-    (change: AuthDBChange) =>
-      formatPrincipals(change.members as string[], change.changeType),
-  ],
-  [
-    'GROUP_MEMBERS_REMOVED',
-    (change: AuthDBChange) =>
-      formatPrincipals(change.members as string[], change.changeType),
-  ],
+  ['GROUP_MEMBERS_ADDED', formatMembers],
+  ['GROUP_MEMBERS_REMOVED', formatMembers],
   [
     'GROUP_GLOBS_ADDED',
     (change: AuthDBChange) =>
@@ -126,6 +118,18 @@ function formatList(items: string[], changeType: string) {
       ))}
     </>
   );
+}
+
+function formatMembers(change: AuthDBChange) {
+  if (change.numRedacted > 0) {
+    const plural = change.numRedacted > 1 ? 's' : '';
+    return formatList(
+      [`${change.numRedacted} member${plural}`],
+      change.changeType,
+    );
+  }
+
+  return formatPrincipals(change.members as string[], change.changeType);
 }
 
 function formatPrincipals(principals: string[], changeType: string) {

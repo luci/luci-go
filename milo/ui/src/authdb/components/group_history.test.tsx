@@ -20,6 +20,7 @@ import { stripPrefix } from '@/authdb/common/helpers';
 import { GroupHistory } from '@/authdb/components/group_history';
 import {
   createMockGroupHistory,
+  createMockFilteredGroupHistory,
   mockFetchGetHistory,
 } from '@/authdb/testing_tools/mocks/group_history_mock';
 import { LONG_TIME_FORMAT } from '@/common/tools/time_utils';
@@ -69,6 +70,34 @@ describe('<GroupHistory />', () => {
       const memberString = '+ ' + stripPrefix('user', member);
       expect(screen.getByText(memberString)).toBeInTheDocument();
     }
+    // Shows group glob removed changes.
+    change = mockHistory.changes[1];
+    for (const glob of change.globs) {
+      const globString = '- ' + glob;
+      expect(screen.getByText(globString)).toBeInTheDocument();
+    }
+    // Shows group description changes.
+    change = mockHistory.changes[2];
+    expect(screen.getByText(change.description)).toBeInTheDocument();
+  });
+  test('handles displaying filtered details', async () => {
+    const mockHistory = createMockFilteredGroupHistory('google/456');
+    mockFetchGetHistory(mockHistory);
+
+    render(
+      <FakeContextProvider>
+        <List>
+          <GroupHistory name="google/456" />
+        </List>
+      </FakeContextProvider>,
+    );
+
+    await screen.findByTestId('history-table');
+    // Shows redacted count.
+    let change = mockHistory.changes[0];
+    expect(
+      screen.getByText(`+ ${change.numRedacted}`, { exact: false }),
+    ).toBeInTheDocument();
     // Shows group glob removed changes.
     change = mockHistory.changes[1];
     for (const glob of change.globs) {

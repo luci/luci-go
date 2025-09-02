@@ -149,27 +149,27 @@ export const AlertGroup: MessageFns<AlertGroup> = {
       writer.uint32(10).string(message.name);
     }
     if (message.displayName !== "") {
-      writer.uint32(26).string(message.displayName);
+      writer.uint32(18).string(message.displayName);
     }
     if (message.statusMessage !== "") {
-      writer.uint32(34).string(message.statusMessage);
+      writer.uint32(26).string(message.statusMessage);
     }
     for (const v of message.alertKeys) {
-      writer.uint32(42).string(v!);
+      writer.uint32(34).string(v!);
     }
-    writer.uint32(50).fork();
+    writer.uint32(42).fork();
     for (const v of message.bugs) {
       writer.int64(v);
     }
     writer.join();
     if (message.updateTime !== undefined) {
-      Timestamp.encode(toTimestamp(message.updateTime), writer.uint32(58).fork()).join();
+      Timestamp.encode(toTimestamp(message.updateTime), writer.uint32(50).fork()).join();
     }
     if (message.updatedBy !== "") {
-      writer.uint32(66).string(message.updatedBy);
+      writer.uint32(58).string(message.updatedBy);
     }
     if (message.etag !== "") {
-      writer.uint32(74).string(message.etag);
+      writer.uint32(66).string(message.etag);
     }
     return writer;
   },
@@ -189,12 +189,20 @@ export const AlertGroup: MessageFns<AlertGroup> = {
           message.name = reader.string();
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.displayName = reader.string();
+          continue;
+        }
         case 3: {
           if (tag !== 26) {
             break;
           }
 
-          message.displayName = reader.string();
+          message.statusMessage = reader.string();
           continue;
         }
         case 4: {
@@ -202,25 +210,17 @@ export const AlertGroup: MessageFns<AlertGroup> = {
             break;
           }
 
-          message.statusMessage = reader.string();
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
           message.alertKeys.push(reader.string());
           continue;
         }
-        case 6: {
-          if (tag === 48) {
+        case 5: {
+          if (tag === 40) {
             message.bugs.push(reader.int64().toString());
 
             continue;
           }
 
-          if (tag === 50) {
+          if (tag === 42) {
             const end2 = reader.uint32() + reader.pos;
             while (reader.pos < end2) {
               message.bugs.push(reader.int64().toString());
@@ -231,24 +231,24 @@ export const AlertGroup: MessageFns<AlertGroup> = {
 
           break;
         }
-        case 7: {
-          if (tag !== 58) {
+        case 6: {
+          if (tag !== 50) {
             break;
           }
 
           message.updateTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
           continue;
         }
-        case 8: {
-          if (tag !== 66) {
+        case 7: {
+          if (tag !== 58) {
             break;
           }
 
           message.updatedBy = reader.string();
           continue;
         }
-        case 9: {
-          if (tag !== 74) {
+        case 8: {
+          if (tag !== 66) {
             break;
           }
 
@@ -563,10 +563,10 @@ export const CreateAlertGroupRequest: MessageFns<CreateAlertGroupRequest> = {
       writer.uint32(10).string(message.parent);
     }
     if (message.alertGroupId !== "") {
-      writer.uint32(26).string(message.alertGroupId);
+      writer.uint32(18).string(message.alertGroupId);
     }
     if (message.alertGroup !== undefined) {
-      AlertGroup.encode(message.alertGroup, writer.uint32(18).fork()).join();
+      AlertGroup.encode(message.alertGroup, writer.uint32(26).fork()).join();
     }
     return writer;
   },
@@ -586,16 +586,16 @@ export const CreateAlertGroupRequest: MessageFns<CreateAlertGroupRequest> = {
           message.parent = reader.string();
           continue;
         }
-        case 3: {
-          if (tag !== 26) {
+        case 2: {
+          if (tag !== 18) {
             break;
           }
 
           message.alertGroupId = reader.string();
           continue;
         }
-        case 2: {
-          if (tag !== 18) {
+        case 3: {
+          if (tag !== 26) {
             break;
           }
 

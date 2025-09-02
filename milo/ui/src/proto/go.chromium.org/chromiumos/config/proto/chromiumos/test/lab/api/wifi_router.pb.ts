@@ -17,6 +17,9 @@ export const protobufPackage = "chromiumos.test.lab.api";
  * This is not an exhaustive list of features supported by these test WiFi
  * routers. The intent is to only track features that may differ between the
  * different types of WiFi router devices in our labs.
+ * After making changes to this enum, you must also update the device.proto
+ * file infra/go/src/infra/libs/skylab/inventory/device.proto WiFiRouterFeature
+ * enum to make swarming correctly parse json data with the new enum values.
  */
 export enum WifiRouterFeature {
   /** WIFI_ROUTER_FEATURE_UNKNOWN - Features are not known. */

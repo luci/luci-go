@@ -79,6 +79,8 @@ export interface AuthDBChange {
   readonly configRevNew: string;
   readonly permsRevOld: string;
   readonly permsRevNew: string;
+  /** Number of member emails redacted, if any. */
+  readonly numRedacted: number;
 }
 
 function createBaseListChangeLogsRequest(): ListChangeLogsRequest {
@@ -300,6 +302,7 @@ function createBaseAuthDBChange(): AuthDBChange {
     configRevNew: "",
     permsRevOld: "",
     permsRevNew: "",
+    numRedacted: 0,
   };
 }
 
@@ -397,6 +400,9 @@ export const AuthDBChange: MessageFns<AuthDBChange> = {
     }
     if (message.permsRevNew !== "") {
       writer.uint32(250).string(message.permsRevNew);
+    }
+    if (message.numRedacted !== 0) {
+      writer.uint32(256).int32(message.numRedacted);
     }
     return writer;
   },
@@ -656,6 +662,14 @@ export const AuthDBChange: MessageFns<AuthDBChange> = {
           message.permsRevNew = reader.string();
           continue;
         }
+        case 32: {
+          if (tag !== 256) {
+            break;
+          }
+
+          message.numRedacted = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -706,6 +720,7 @@ export const AuthDBChange: MessageFns<AuthDBChange> = {
       configRevNew: isSet(object.configRevNew) ? globalThis.String(object.configRevNew) : "",
       permsRevOld: isSet(object.permsRevOld) ? globalThis.String(object.permsRevOld) : "",
       permsRevNew: isSet(object.permsRevNew) ? globalThis.String(object.permsRevNew) : "",
+      numRedacted: isSet(object.numRedacted) ? globalThis.Number(object.numRedacted) : 0,
     };
   },
 
@@ -804,6 +819,9 @@ export const AuthDBChange: MessageFns<AuthDBChange> = {
     if (message.permsRevNew !== "") {
       obj.permsRevNew = message.permsRevNew;
     }
+    if (message.numRedacted !== 0) {
+      obj.numRedacted = Math.round(message.numRedacted);
+    }
     return obj;
   },
 
@@ -843,6 +861,7 @@ export const AuthDBChange: MessageFns<AuthDBChange> = {
     message.configRevNew = object.configRevNew ?? "";
     message.permsRevOld = object.permsRevOld ?? "";
     message.permsRevNew = object.permsRevNew ?? "";
+    message.numRedacted = object.numRedacted ?? 0;
     return message;
   },
 };

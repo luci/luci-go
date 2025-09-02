@@ -1343,6 +1343,23 @@ export interface ImportOSVlansRequest {
   readonly configSource?: ConfigSource | undefined;
 }
 
+export interface FixVlanRequest {
+  /** The names of the vlans to fix. */
+  readonly names: readonly string[];
+}
+
+export interface FixVlanResponse {
+  /** The results of the fix operation for each vlan. */
+  readonly results: readonly VlanFixResult[];
+}
+
+export interface VlanFixResult {
+  /** The name of the vlan. */
+  readonly name: string;
+  /** The status of the fix operation. */
+  readonly status: Status | undefined;
+}
+
 export interface GetStateRequest {
   /** The name of the resource to retrieve the state. */
   readonly resourceName: string;
@@ -11258,6 +11275,204 @@ export const ImportOSVlansRequest: MessageFns<ImportOSVlansRequest> = {
   },
 };
 
+function createBaseFixVlanRequest(): FixVlanRequest {
+  return { names: [] };
+}
+
+export const FixVlanRequest: MessageFns<FixVlanRequest> = {
+  encode(message: FixVlanRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.names) {
+      writer.uint32(10).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FixVlanRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFixVlanRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.names.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FixVlanRequest {
+    return { names: globalThis.Array.isArray(object?.names) ? object.names.map((e: any) => globalThis.String(e)) : [] };
+  },
+
+  toJSON(message: FixVlanRequest): unknown {
+    const obj: any = {};
+    if (message.names?.length) {
+      obj.names = message.names;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<FixVlanRequest>): FixVlanRequest {
+    return FixVlanRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<FixVlanRequest>): FixVlanRequest {
+    const message = createBaseFixVlanRequest() as any;
+    message.names = object.names?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseFixVlanResponse(): FixVlanResponse {
+  return { results: [] };
+}
+
+export const FixVlanResponse: MessageFns<FixVlanResponse> = {
+  encode(message: FixVlanResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.results) {
+      VlanFixResult.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FixVlanResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFixVlanResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.results.push(VlanFixResult.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FixVlanResponse {
+    return {
+      results: globalThis.Array.isArray(object?.results)
+        ? object.results.map((e: any) => VlanFixResult.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: FixVlanResponse): unknown {
+    const obj: any = {};
+    if (message.results?.length) {
+      obj.results = message.results.map((e) => VlanFixResult.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<FixVlanResponse>): FixVlanResponse {
+    return FixVlanResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<FixVlanResponse>): FixVlanResponse {
+    const message = createBaseFixVlanResponse() as any;
+    message.results = object.results?.map((e) => VlanFixResult.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseVlanFixResult(): VlanFixResult {
+  return { name: "", status: undefined };
+}
+
+export const VlanFixResult: MessageFns<VlanFixResult> = {
+  encode(message: VlanFixResult, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.status !== undefined) {
+      Status.encode(message.status, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): VlanFixResult {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseVlanFixResult() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.status = Status.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): VlanFixResult {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      status: isSet(object.status) ? Status.fromJSON(object.status) : undefined,
+    };
+  },
+
+  toJSON(message: VlanFixResult): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.status !== undefined) {
+      obj.status = Status.toJSON(message.status);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<VlanFixResult>): VlanFixResult {
+    return VlanFixResult.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<VlanFixResult>): VlanFixResult {
+    const message = createBaseVlanFixResult() as any;
+    message.name = object.name ?? "";
+    message.status = (object.status !== undefined && object.status !== null)
+      ? Status.fromPartial(object.status)
+      : undefined;
+    return message;
+  },
+};
+
 function createBaseGetStateRequest(): GetStateRequest {
   return { resourceName: "" };
 }
@@ -19184,6 +19399,13 @@ export interface Fleet {
   /** ImportOSVlans imports the ChromeOS vlans, ips, and dhcp configs. */
   ImportOSVlans(request: ImportOSVlansRequest): Promise<Status>;
   /**
+   * TEMPORARY: FixVlan fixes a vlan with incorrect IP address allocations.
+   * This RPC is meant to be used only members of the Fleet SW team to help
+   * with fixing b/437885587.
+   * TODO: b/437885587 - Remove this RPC once b/437885587 is fully resolved.
+   */
+  FixVlan(request: FixVlanRequest): Promise<FixVlanResponse>;
+  /**
    * UpdateState updates the state for a resource.
    * If the state doesn't exist before, it will create the state record for the resource.
    */
@@ -19414,6 +19636,7 @@ export class FleetClientImpl implements Fleet {
     this.ListVlans = this.ListVlans.bind(this);
     this.DeleteVlan = this.DeleteVlan.bind(this);
     this.ImportOSVlans = this.ImportOSVlans.bind(this);
+    this.FixVlan = this.FixVlan.bind(this);
     this.UpdateState = this.UpdateState.bind(this);
     this.GetState = this.GetState.bind(this);
     this.GetDutState = this.GetDutState.bind(this);
@@ -19926,6 +20149,12 @@ export class FleetClientImpl implements Fleet {
     const data = ImportOSVlansRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ImportOSVlans", data);
     return promise.then((data) => Status.fromJSON(data));
+  }
+
+  FixVlan(request: FixVlanRequest): Promise<FixVlanResponse> {
+    const data = FixVlanRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "FixVlan", data);
+    return promise.then((data) => FixVlanResponse.fromJSON(data));
   }
 
   UpdateState(request: UpdateStateRequest): Promise<StateRecord> {

@@ -17,6 +17,7 @@ export const protobufPackage = "luci.resultdb.v1";
  * A process step that contributes results to a root invocation.
  * Work units contain test results, artifacts and exonerations. Work units may
  * also contain other work units and (legacy) invocations.
+ * Next ID: 22.
  */
 export interface WorkUnit {
   /**
@@ -247,6 +248,13 @@ export interface WorkUnit {
    * Output only.
    */
   readonly isMasked: boolean;
+  /**
+   * This checksum is computed by the server based on the value of other
+   * fields, and may be sent on update requests to ensure the client
+   * has an up-to-date value before proceeding.
+   * See also https://google.aip.dev/154.
+   */
+  readonly etag: string;
 }
 
 export enum WorkUnit_State {
@@ -334,6 +342,7 @@ function createBaseWorkUnit(): WorkUnit {
     extendedProperties: {},
     instructions: undefined,
     isMasked: false,
+    etag: "",
   };
 }
 
@@ -400,6 +409,9 @@ export const WorkUnit: MessageFns<WorkUnit> = {
     }
     if (message.isMasked !== false) {
       writer.uint32(144).bool(message.isMasked);
+    }
+    if (message.etag !== "") {
+      writer.uint32(170).string(message.etag);
     }
     return writer;
   },
@@ -574,6 +586,14 @@ export const WorkUnit: MessageFns<WorkUnit> = {
           message.isMasked = reader.bool();
           continue;
         }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.etag = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -616,6 +636,7 @@ export const WorkUnit: MessageFns<WorkUnit> = {
         : {},
       instructions: isSet(object.instructions) ? Instructions.fromJSON(object.instructions) : undefined,
       isMasked: isSet(object.isMasked) ? globalThis.Boolean(object.isMasked) : false,
+      etag: isSet(object.etag) ? globalThis.String(object.etag) : "",
     };
   },
 
@@ -687,6 +708,9 @@ export const WorkUnit: MessageFns<WorkUnit> = {
     if (message.isMasked !== false) {
       obj.isMasked = message.isMasked;
     }
+    if (message.etag !== "") {
+      obj.etag = message.etag;
+    }
     return obj;
   },
 
@@ -726,6 +750,7 @@ export const WorkUnit: MessageFns<WorkUnit> = {
       ? Instructions.fromPartial(object.instructions)
       : undefined;
     message.isMasked = object.isMasked ?? false;
+    message.etag = object.etag ?? "";
     return message;
   },
 };

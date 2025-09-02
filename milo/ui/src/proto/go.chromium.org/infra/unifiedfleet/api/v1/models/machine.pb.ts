@@ -131,6 +131,60 @@ export function attachedDeviceTypeToJSON(object: AttachedDeviceType): string {
   }
 }
 
+/** MachineType denotes the device type. */
+export enum MachineType {
+  MACHINE_TYPE_UNSPECIFIED = 0,
+  MACHINE_TYPE_CHROME_BROWSER = 1,
+  MACHINE_TYPE_CHROME_OS = 2,
+  MACHINE_TYPE_ATTACHED_DEVICE = 3,
+  MACHINE_TYPE_DEVBOARD = 4,
+  MACHINE_TYPE_SERVER_MACHINE = 5,
+}
+
+export function machineTypeFromJSON(object: any): MachineType {
+  switch (object) {
+    case 0:
+    case "MACHINE_TYPE_UNSPECIFIED":
+      return MachineType.MACHINE_TYPE_UNSPECIFIED;
+    case 1:
+    case "MACHINE_TYPE_CHROME_BROWSER":
+      return MachineType.MACHINE_TYPE_CHROME_BROWSER;
+    case 2:
+    case "MACHINE_TYPE_CHROME_OS":
+      return MachineType.MACHINE_TYPE_CHROME_OS;
+    case 3:
+    case "MACHINE_TYPE_ATTACHED_DEVICE":
+      return MachineType.MACHINE_TYPE_ATTACHED_DEVICE;
+    case 4:
+    case "MACHINE_TYPE_DEVBOARD":
+      return MachineType.MACHINE_TYPE_DEVBOARD;
+    case 5:
+    case "MACHINE_TYPE_SERVER_MACHINE":
+      return MachineType.MACHINE_TYPE_SERVER_MACHINE;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum MachineType");
+  }
+}
+
+export function machineTypeToJSON(object: MachineType): string {
+  switch (object) {
+    case MachineType.MACHINE_TYPE_UNSPECIFIED:
+      return "MACHINE_TYPE_UNSPECIFIED";
+    case MachineType.MACHINE_TYPE_CHROME_BROWSER:
+      return "MACHINE_TYPE_CHROME_BROWSER";
+    case MachineType.MACHINE_TYPE_CHROME_OS:
+      return "MACHINE_TYPE_CHROME_OS";
+    case MachineType.MACHINE_TYPE_ATTACHED_DEVICE:
+      return "MACHINE_TYPE_ATTACHED_DEVICE";
+    case MachineType.MACHINE_TYPE_DEVBOARD:
+      return "MACHINE_TYPE_DEVBOARD";
+    case MachineType.MACHINE_TYPE_SERVER_MACHINE:
+      return "MACHINE_TYPE_SERVER_MACHINE";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum MachineType");
+  }
+}
+
 /**
  * Machine refers to the devices or bare metal servers
  * which serves the tests directly.
