@@ -293,10 +293,11 @@ func handleGet(ctx context.Context, opts auth.Options) {
 				os.Exit(0)
 			}
 			if bypassReAuth() {
+				logging.Debugf(ctx, "Error getting RAPT: %s", err)
 				printBypassWarning()
 				// Fall through to non-ReAuth case
 			} else {
-				fmt.Fprintf(os.Stderr, "%v\n", err)
+				fmt.Fprintf(os.Stderr, "Error: %v\n\n", err)
 				fmt.Fprint(os.Stderr, reAuthRequiredMsg)
 				os.Exit(1)
 			}
