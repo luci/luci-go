@@ -34,7 +34,7 @@ option java_multiple_files = true;
 // RPCs that mutate an root invocation, work unit or invocation return
 // FAILED_PRECONDITION error code if the resource is finalized (or finalizing).
 //
-// # Authorisation
+// # Authorization
 //
 // The responses to CreateRootInvocation, CreateWorkUnit and CreateInvocation
 // include a metadata key "update-token".
@@ -97,7 +97,7 @@ service Recorder {
   // See CreateWorkUnitRequest for more details.
   rpc CreateWorkUnit(CreateWorkUnitRequest) returns (WorkUnit) {};
 
-  // Batch creates new WorkUnits inside a root invocation.
+  // Creates multiple new work units inside a root invocation.
   //
   // Unlike CreateWorkUnit, update tokens are included directly in the response
   // message to avoid limits on HTTP response headers. Do not log these values.
@@ -107,17 +107,17 @@ service Recorder {
   rpc BatchCreateWorkUnits(BatchCreateWorkUnitsRequest)
       returns (BatchCreateWorkUnitsResponse) {};
 
-  // Updates an existing non-final WorkUnit.
+  // Updates an existing non-final work unit.
   rpc UpdateWorkUnit(UpdateWorkUnitRequest) returns (WorkUnit) {};
 
-  // Batch updates existing non-final WorkUnits.
+  // Updates multiple existing non-final work units.
   rpc BatchUpdateWorkUnits(BatchUpdateWorkUnitsRequest)
       returns (BatchUpdateWorkUnitsResponse) {};
 
   // Retrieves a work unit.
   //
   // Unlike the GetWorkUnit RPC on the ResultDB service, this RPC
-  // uses update tokens to authorise reads and is designed for use with
+  // uses update tokens to authorise reads. It is designed for use with
   // UpdateWorkUnit to make atomic updates (using aip.dev/154 etags for
   // optimistic locking). It should be used (and only used by) recorders.
   rpc GetWorkUnit(GetWorkUnitRequest) returns (WorkUnit) {};
@@ -125,7 +125,7 @@ service Recorder {
   // Retrieves a list of work units.
   //
   // Unlike the BatchGetWorkUnits RPC on the ResultDB service, this RPC
-  // uses update tokens to authorise reads and is designed for use with
+  // uses update tokens to authorise reads. It is designed for use with
   // BatchUpdateWorkUnits to make atomic updates (using aip.dev/154 etags for
   // optimistic locking). It should be used (and only used by) recorders.
   rpc BatchGetWorkUnits(BatchGetWorkUnitsRequest) returns (BatchGetWorkUnitsResponse) {};
@@ -134,49 +134,18 @@ service Recorder {
   // transitioning it to the state FINALIZED.
   rpc FinalizeWorkUnit(FinalizeWorkUnitRequest) returns (WorkUnit) {};
 
-  // Batch marks a set of WorkUnits as final and begins the process offer
+  // Marks a set of work units as final and begins the process offer
   // transitioning them to the state FINALIZED.
   rpc BatchFinalizeWorkUnits(BatchFinalizeWorkUnitsRequest)
       returns (BatchFinalizeWorkUnitsResponse) {};
 
-  // Mints an 'inclusion token' that proves the current caller has permission
-  // to include work units from a given realm. The minted inclusion token
-  // can be passed to another caller/system and used in CreateWorkUnit to
-  // create child work units into the parent work unit.
+  // Mints an 'inclusion token' which can be used by another system to
+  // include new child invocations (of a nominated realm) in a work unit.
+  // The caller of this RPC authorises the declassification of test results
+  // from the nominated realm to the realm of the root invocation.
   //
-  // Systems which produce test results should require such a token (instead
-  // of an update token) if they are distrustful of their callers and believe
-  // they may not be authorised to see results from a given realm.
+  // See DelegateWorkUnitInclusionRequest for details.
   rpc DelegateWorkUnitInclusion(DelegateWorkUnitInclusionRequest) returns (DelegateWorkUnitInclusionResponse) {};
-
-  // == Invocations (Legacy) ===================================================
-
-  // Creates a new invocation.
-  // The request specifies the invocation id and its contents.
-  //
-  // The response header metadata contains "update-token" required for future
-  // updates, including finalization.
-  //
-  // If invocation with the given ID already exists, returns ALREADY_EXISTS
-  // error code.
-  rpc CreateInvocation(CreateInvocationRequest) returns (Invocation) {};
-
-  // Creates multiple invocations in a single rpc.
-  //
-  // Unlike CreateInvocation, update tokens are included in the response message
-  // to avoid limits on HTTP response headers. Do not log these values.
-  rpc BatchCreateInvocations(BatchCreateInvocationsRequest)
-      returns (BatchCreateInvocationsResponse) {};
-
-  // Updates an existing non-finalized invocation.
-  rpc UpdateInvocation(UpdateInvocationRequest) returns (Invocation) {};
-
-  // Transitions the given invocation to the state FINALIZED.
-  rpc FinalizeInvocation(FinalizeInvocationRequest) returns (Invocation) {};
-
-  // Updates inclusions for a non-finalized invocation.
-  rpc UpdateIncludedInvocations(UpdateIncludedInvocationsRequest)
-      returns (google.protobuf.Empty) {};
 
   // == Baselines ==============================================================
 
@@ -187,28 +156,61 @@ service Recorder {
 
   // == Test results ===========================================================
 
-  // Appends a test result to a non-finalized invocation.
+  // Appends a test result to a non-finalized work unit.
   rpc CreateTestResult(CreateTestResultRequest) returns (TestResult) {};
-  // Atomically appends a batch of test results to a non-finalized invocation.
+
+  // Atomically appends multiple test results to one or more
+  // non-finalized work units.
   rpc BatchCreateTestResults(BatchCreateTestResultsRequest)
       returns (BatchCreateTestResultsResponse) {};
 
-  // Appends a test exoneration to a non-finalized invocation.
+  // Appends a test exoneration to a non-finalized work unit.
   rpc CreateTestExoneration(CreateTestExonerationRequest)
       returns (TestExoneration) {};
-  // Atomically appends a batch of test exonerations to a non-finalized
-  // invocation.
+
+  // Atomically appends multiple test exonerations to one or more
+  // non-finalized work units.
   rpc BatchCreateTestExonerations(BatchCreateTestExonerationsRequest)
       returns (BatchCreateTestExonerationsResponse) {};
 
   // == Artifacts ==============================================================
 
-  // Create multiple artifacts.
+  // Atomically creates multiple artifacts in one or more non-finalized
+  // work units.
   //
-  // An artifact can be either invocation-level or test-result-level.
+  // An artifact can be either work unit-level or test-result-level.
   // See Artifact.name for more info.
   rpc BatchCreateArtifacts(BatchCreateArtifactsRequest)
       returns (BatchCreateArtifactsResponse) {};
+
+  // == Invocations (Deprecated) ===================================================
+
+  // Deprecated. Creates a new invocation.
+  // The request specifies the invocation id and its contents.
+  //
+  // The response header metadata contains "update-token" required for future
+  // updates, including finalization.
+  //
+  // If invocation with the given ID already exists, returns ALREADY_EXISTS
+  // error code.
+  rpc CreateInvocation(CreateInvocationRequest) returns (Invocation) {};
+
+  // Deprecated. Creates multiple invocations in a single rpc.
+  //
+  // Unlike CreateInvocation, update tokens are included in the response message
+  // to avoid limits on HTTP response headers. Do not log these values.
+  rpc BatchCreateInvocations(BatchCreateInvocationsRequest)
+      returns (BatchCreateInvocationsResponse) {};
+
+  // Deprecated. Updates an existing non-finalized invocation.
+  rpc UpdateInvocation(UpdateInvocationRequest) returns (Invocation) {};
+
+  // Deprecated. Transitions the given invocation to the state FINALIZED.
+  rpc FinalizeInvocation(FinalizeInvocationRequest) returns (Invocation) {};
+
+  // Deprecated. Updates inclusions for a non-finalized invocation.
+  rpc UpdateIncludedInvocations(UpdateIncludedInvocationsRequest)
+      returns (google.protobuf.Empty) {};
 }
 
 // == Root Invocations =========================================================
@@ -479,9 +481,6 @@ message BatchCreateWorkUnitsRequest {
   // "wu0" and "wu20" to succeed, and only one update token can be supplied
   // per request.
   //
-  // requests[i].request_id MUST be either empty or equal to request_id in
-  // this message.
-  //
   // Up to 500 requests. Total size of all requests (as measured by proto.Size())
   // MUST be <= 10 MiB.
   repeated CreateWorkUnitRequest requests = 1;
@@ -491,6 +490,9 @@ message BatchCreateWorkUnitsRequest {
   //
   // If the same request is replayed (see "Retry policy" at the top of this doc),
   // this request_id guarantees idempotence.
+  //
+  // The request_id field in CreateWorkUnitRequest messages must either
+  // be empty or match this field.
   //
   // Required.
   string request_id = 2;
@@ -604,21 +606,39 @@ message BatchFinalizeWorkUnitsResponse {
   repeated WorkUnit work_units = 1;
 }
 
-// Mints an inclusion token that proves the current caller has permission to
-// include work units from a given realm. The minted inclusion token can be
-// passed to another caller/system and used in CreateWorkUnit to include
-// child work units into the parent work unit.
+// Request message to mint a work unit 'inclusion token' that grants the bearer:
+// 1. authority to include child work units in the nominated work unit;
+// 2. authority to declassify test results/artifacts from the nominated realm into
+//    the realm of the root invocation.
+//
+// This method is designed for situations where uploads are delegated between systems.
+// We will use the terms "delegator system" and "delagatee system".
+//
+// Compared to passing the update token of the current work unit to the delagatee
+// system, passing an inclusion token:
+// - prevents the delagatee from modifying the original work unit (beyond
+//   including new child work units)
+// - places responsibility on the delegator to authorize the declassification of results
+//   from the planned child work unit realm to the realm of the root invocation,
+//   rather than the delagatee. For the delagatee, this means their infrastructure
+//   is less likely to be accidentally abused (e.g. to upload results from
+//   restricted boards into public builders). This is predicated on public builders
+//   not having resultdb.workunits.include access to the restricted realms.
 //
 // The token returned by this RPC is in a response header metadata key
 // named "inclusion-token" and is a replacement to the update token that
 // is otherwise required by CreateWorkUnit.
 //
-// Purpose:
+// Security: Inclusion tokens should be treated with the same level of security
+// as update tokens, as they effectively grant permission to modify the parent work unit.
+// Treat them as secrets and do not log them.
+//
+// Extended explanation:
 //
 // This RPC allows the permissions required by CreateWorkUnit to be
 // split over two callers/systems:
 //
-//  1. Caller #1, which owns the parent work unit and wishes to include
+//  1. The delegator, which owns the parent work unit and wishes to include
 //     a child work unit from a (possibly) different realm, but may not
 //     have one of the permissions required by CreateWorkUnit, e.g.:
 //     - permission to create work units in that realm
@@ -627,22 +647,18 @@ message BatchFinalizeWorkUnitsResponse {
 //     (resultdb.workunits.createWithReservedID).
 //     - permission to set the producer resource field
 //     (resultdb.workunits.setProducerResource).
-//  2. Caller #2, which is happy to create work unit in a given realm
-//     and has permission to do so, but wants caller #1 to prove it has
-//     read (include) access to the created work unit before it includes
-//     the work unit in caller #1's work unit (which implicitly declassifies
-//     the results into that work unit, and by extension, the root invocation).
+//  2. The delegatee, which is happy to create work unit in a given realm
+//     and has permission to do so, but wants the delegator to prove it has
+//     resultdb.workunits.include access to the created work unit before it includes
+//     a work unit in the delegators's work unit (which implicitly declassifies
+//     the results into the root invocation).
 //
 // Use of this RPC is usually not necessary and is designed for systems
 // where multiple systems need to cooperate to create work units in a
-// secure manner. If the first caller has all required permissions, it is
+// secure manner. If the delegator has all required permissions, it is
 // common to call CreateWorkUnit directly with the update token to create a new
 // work unit. The ID of the created work unit and its update token can then be
-// passed to a second system to populate.
-//
-// Security: Inclusion tokens should be treated with the same level of security
-// as update tokens, as they effectively grant permission to modify the parent work unit.
-// Treat them as secrets and do not log them.
+// passed to the delegatee to populate.
 message DelegateWorkUnitInclusionRequest {
   // The resource name of the parent work unit in which further work units
   // shall be included (created).

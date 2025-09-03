@@ -246,91 +246,6 @@ func (s *DecoratedRecorder) DelegateWorkUnitInclusion(ctx context.Context, req *
 	return
 }
 
-func (s *DecoratedRecorder) CreateInvocation(ctx context.Context, req *CreateInvocationRequest) (rsp *Invocation, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "CreateInvocation", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.CreateInvocation(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "CreateInvocation", rsp, err)
-	}
-	return
-}
-
-func (s *DecoratedRecorder) BatchCreateInvocations(ctx context.Context, req *BatchCreateInvocationsRequest) (rsp *BatchCreateInvocationsResponse, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "BatchCreateInvocations", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.BatchCreateInvocations(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "BatchCreateInvocations", rsp, err)
-	}
-	return
-}
-
-func (s *DecoratedRecorder) UpdateInvocation(ctx context.Context, req *UpdateInvocationRequest) (rsp *Invocation, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "UpdateInvocation", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.UpdateInvocation(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "UpdateInvocation", rsp, err)
-	}
-	return
-}
-
-func (s *DecoratedRecorder) FinalizeInvocation(ctx context.Context, req *FinalizeInvocationRequest) (rsp *Invocation, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "FinalizeInvocation", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.FinalizeInvocation(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "FinalizeInvocation", rsp, err)
-	}
-	return
-}
-
-func (s *DecoratedRecorder) UpdateIncludedInvocations(ctx context.Context, req *UpdateIncludedInvocationsRequest) (rsp *emptypb.Empty, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "UpdateIncludedInvocations", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.UpdateIncludedInvocations(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "UpdateIncludedInvocations", rsp, err)
-	}
-	return
-}
-
 func (s *DecoratedRecorder) MarkInvocationSubmitted(ctx context.Context, req *MarkInvocationSubmittedRequest) (rsp *emptypb.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
@@ -429,6 +344,91 @@ func (s *DecoratedRecorder) BatchCreateArtifacts(ctx context.Context, req *Batch
 	}
 	if s.Postlude != nil {
 		err = s.Postlude(ctx, "BatchCreateArtifacts", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedRecorder) CreateInvocation(ctx context.Context, req *CreateInvocationRequest) (rsp *Invocation, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "CreateInvocation", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.CreateInvocation(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "CreateInvocation", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedRecorder) BatchCreateInvocations(ctx context.Context, req *BatchCreateInvocationsRequest) (rsp *BatchCreateInvocationsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "BatchCreateInvocations", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.BatchCreateInvocations(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "BatchCreateInvocations", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedRecorder) UpdateInvocation(ctx context.Context, req *UpdateInvocationRequest) (rsp *Invocation, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "UpdateInvocation", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.UpdateInvocation(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "UpdateInvocation", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedRecorder) FinalizeInvocation(ctx context.Context, req *FinalizeInvocationRequest) (rsp *Invocation, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "FinalizeInvocation", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.FinalizeInvocation(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "FinalizeInvocation", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedRecorder) UpdateIncludedInvocations(ctx context.Context, req *UpdateIncludedInvocationsRequest) (rsp *emptypb.Empty, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "UpdateIncludedInvocations", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.UpdateIncludedInvocations(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "UpdateIncludedInvocations", rsp, err)
 	}
 	return
 }

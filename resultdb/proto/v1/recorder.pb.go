@@ -614,9 +614,6 @@ type BatchCreateWorkUnitsRequest struct {
 	// "wu0" and "wu20" to succeed, and only one update token can be supplied
 	// per request.
 	//
-	// requests[i].request_id MUST be either empty or equal to request_id in
-	// this message.
-	//
 	// Up to 500 requests. Total size of all requests (as measured by proto.Size())
 	// MUST be <= 10 MiB.
 	Requests []*CreateWorkUnitRequest `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
@@ -625,6 +622,9 @@ type BatchCreateWorkUnitsRequest struct {
 	//
 	// If the same request is replayed (see "Retry policy" at the top of this doc),
 	// this request_id guarantees idempotence.
+	//
+	// The request_id field in CreateWorkUnitRequest messages must either
+	// be empty or match this field.
 	//
 	// Required.
 	RequestId     string `protobuf:"bytes,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
@@ -1088,21 +1088,39 @@ func (x *BatchFinalizeWorkUnitsResponse) GetWorkUnits() []*WorkUnit {
 	return nil
 }
 
-// Mints an inclusion token that proves the current caller has permission to
-// include work units from a given realm. The minted inclusion token can be
-// passed to another caller/system and used in CreateWorkUnit to include
-// child work units into the parent work unit.
+// Request message to mint a work unit 'inclusion token' that grants the bearer:
+//  1. authority to include child work units in the nominated work unit;
+//  2. authority to declassify test results/artifacts from the nominated realm into
+//     the realm of the root invocation.
+//
+// This method is designed for situations where uploads are delegated between systems.
+// We will use the terms "delegator system" and "delagatee system".
+//
+// Compared to passing the update token of the current work unit to the delagatee
+// system, passing an inclusion token:
+//   - prevents the delagatee from modifying the original work unit (beyond
+//     including new child work units)
+//   - places responsibility on the delegator to authorize the declassification of results
+//     from the planned child work unit realm to the realm of the root invocation,
+//     rather than the delagatee. For the delagatee, this means their infrastructure
+//     is less likely to be accidentally abused (e.g. to upload results from
+//     restricted boards into public builders). This is predicated on public builders
+//     not having resultdb.workunits.include access to the restricted realms.
 //
 // The token returned by this RPC is in a response header metadata key
 // named "inclusion-token" and is a replacement to the update token that
 // is otherwise required by CreateWorkUnit.
 //
-// Purpose:
+// Security: Inclusion tokens should be treated with the same level of security
+// as update tokens, as they effectively grant permission to modify the parent work unit.
+// Treat them as secrets and do not log them.
+//
+// Extended explanation:
 //
 // This RPC allows the permissions required by CreateWorkUnit to be
 // split over two callers/systems:
 //
-//  1. Caller #1, which owns the parent work unit and wishes to include
+//  1. The delegator, which owns the parent work unit and wishes to include
 //     a child work unit from a (possibly) different realm, but may not
 //     have one of the permissions required by CreateWorkUnit, e.g.:
 //     - permission to create work units in that realm
@@ -1111,22 +1129,18 @@ func (x *BatchFinalizeWorkUnitsResponse) GetWorkUnits() []*WorkUnit {
 //     (resultdb.workunits.createWithReservedID).
 //     - permission to set the producer resource field
 //     (resultdb.workunits.setProducerResource).
-//  2. Caller #2, which is happy to create work unit in a given realm
-//     and has permission to do so, but wants caller #1 to prove it has
-//     read (include) access to the created work unit before it includes
-//     the work unit in caller #1's work unit (which implicitly declassifies
-//     the results into that work unit, and by extension, the root invocation).
+//  2. The delegatee, which is happy to create work unit in a given realm
+//     and has permission to do so, but wants the delegator to prove it has
+//     resultdb.workunits.include access to the created work unit before it includes
+//     a work unit in the delegators's work unit (which implicitly declassifies
+//     the results into the root invocation).
 //
 // Use of this RPC is usually not necessary and is designed for systems
 // where multiple systems need to cooperate to create work units in a
-// secure manner. If the first caller has all required permissions, it is
+// secure manner. If the delegator has all required permissions, it is
 // common to call CreateWorkUnit directly with the update token to create a new
 // work unit. The ID of the created work unit and its update token can then be
-// passed to a second system to populate.
-//
-// Security: Inclusion tokens should be treated with the same level of security
-// as update tokens, as they effectively grant permission to modify the parent work unit.
-// Treat them as secrets and do not log them.
+// passed to the delegatee to populate.
 type DelegateWorkUnitInclusionRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The resource name of the parent work unit in which further work units
@@ -2536,18 +2550,18 @@ const file_go_chromium_org_luci_resultdb_proto_v1_recorder_proto_rawDesc = "" +
 	"\x11BatchGetWorkUnits\x12*.luci.resultdb.v1.BatchGetWorkUnitsRequest\x1a+.luci.resultdb.v1.BatchGetWorkUnitsResponse\"\x00\x12[\n" +
 	"\x10FinalizeWorkUnit\x12).luci.resultdb.v1.FinalizeWorkUnitRequest\x1a\x1a.luci.resultdb.v1.WorkUnit\"\x00\x12}\n" +
 	"\x16BatchFinalizeWorkUnits\x12/.luci.resultdb.v1.BatchFinalizeWorkUnitsRequest\x1a0.luci.resultdb.v1.BatchFinalizeWorkUnitsResponse\"\x00\x12\x86\x01\n" +
-	"\x19DelegateWorkUnitInclusion\x122.luci.resultdb.v1.DelegateWorkUnitInclusionRequest\x1a3.luci.resultdb.v1.DelegateWorkUnitInclusionResponse\"\x00\x12]\n" +
-	"\x10CreateInvocation\x12).luci.resultdb.v1.CreateInvocationRequest\x1a\x1c.luci.resultdb.v1.Invocation\"\x00\x12}\n" +
-	"\x16BatchCreateInvocations\x12/.luci.resultdb.v1.BatchCreateInvocationsRequest\x1a0.luci.resultdb.v1.BatchCreateInvocationsResponse\"\x00\x12]\n" +
-	"\x10UpdateInvocation\x12).luci.resultdb.v1.UpdateInvocationRequest\x1a\x1c.luci.resultdb.v1.Invocation\"\x00\x12a\n" +
-	"\x12FinalizeInvocation\x12+.luci.resultdb.v1.FinalizeInvocationRequest\x1a\x1c.luci.resultdb.v1.Invocation\"\x00\x12i\n" +
-	"\x19UpdateIncludedInvocations\x122.luci.resultdb.v1.UpdateIncludedInvocationsRequest\x1a\x16.google.protobuf.Empty\"\x00\x12e\n" +
+	"\x19DelegateWorkUnitInclusion\x122.luci.resultdb.v1.DelegateWorkUnitInclusionRequest\x1a3.luci.resultdb.v1.DelegateWorkUnitInclusionResponse\"\x00\x12e\n" +
 	"\x17MarkInvocationSubmitted\x120.luci.resultdb.v1.MarkInvocationSubmittedRequest\x1a\x16.google.protobuf.Empty\"\x00\x12]\n" +
 	"\x10CreateTestResult\x12).luci.resultdb.v1.CreateTestResultRequest\x1a\x1c.luci.resultdb.v1.TestResult\"\x00\x12}\n" +
 	"\x16BatchCreateTestResults\x12/.luci.resultdb.v1.BatchCreateTestResultsRequest\x1a0.luci.resultdb.v1.BatchCreateTestResultsResponse\"\x00\x12l\n" +
 	"\x15CreateTestExoneration\x12..luci.resultdb.v1.CreateTestExonerationRequest\x1a!.luci.resultdb.v1.TestExoneration\"\x00\x12\x8c\x01\n" +
 	"\x1bBatchCreateTestExonerations\x124.luci.resultdb.v1.BatchCreateTestExonerationsRequest\x1a5.luci.resultdb.v1.BatchCreateTestExonerationsResponse\"\x00\x12w\n" +
-	"\x14BatchCreateArtifacts\x12-.luci.resultdb.v1.BatchCreateArtifactsRequest\x1a..luci.resultdb.v1.BatchCreateArtifactsResponse\"\x00BP\n" +
+	"\x14BatchCreateArtifacts\x12-.luci.resultdb.v1.BatchCreateArtifactsRequest\x1a..luci.resultdb.v1.BatchCreateArtifactsResponse\"\x00\x12]\n" +
+	"\x10CreateInvocation\x12).luci.resultdb.v1.CreateInvocationRequest\x1a\x1c.luci.resultdb.v1.Invocation\"\x00\x12}\n" +
+	"\x16BatchCreateInvocations\x12/.luci.resultdb.v1.BatchCreateInvocationsRequest\x1a0.luci.resultdb.v1.BatchCreateInvocationsResponse\"\x00\x12]\n" +
+	"\x10UpdateInvocation\x12).luci.resultdb.v1.UpdateInvocationRequest\x1a\x1c.luci.resultdb.v1.Invocation\"\x00\x12a\n" +
+	"\x12FinalizeInvocation\x12+.luci.resultdb.v1.FinalizeInvocationRequest\x1a\x1c.luci.resultdb.v1.Invocation\"\x00\x12i\n" +
+	"\x19UpdateIncludedInvocations\x122.luci.resultdb.v1.UpdateIncludedInvocationsRequest\x1a\x16.google.protobuf.Empty\"\x00BP\n" +
 	"\x1bcom.google.luci.resultdb.v1P\x01Z/go.chromium.org/luci/resultdb/proto/v1;resultpbb\x06proto3"
 
 var (
@@ -2654,17 +2668,17 @@ var file_go_chromium_org_luci_resultdb_proto_v1_recorder_proto_depIdxs = []int32
 	11, // 40: luci.resultdb.v1.Recorder.FinalizeWorkUnit:input_type -> luci.resultdb.v1.FinalizeWorkUnitRequest
 	12, // 41: luci.resultdb.v1.Recorder.BatchFinalizeWorkUnits:input_type -> luci.resultdb.v1.BatchFinalizeWorkUnitsRequest
 	14, // 42: luci.resultdb.v1.Recorder.DelegateWorkUnitInclusion:input_type -> luci.resultdb.v1.DelegateWorkUnitInclusionRequest
-	16, // 43: luci.resultdb.v1.Recorder.CreateInvocation:input_type -> luci.resultdb.v1.CreateInvocationRequest
-	17, // 44: luci.resultdb.v1.Recorder.BatchCreateInvocations:input_type -> luci.resultdb.v1.BatchCreateInvocationsRequest
-	19, // 45: luci.resultdb.v1.Recorder.UpdateInvocation:input_type -> luci.resultdb.v1.UpdateInvocationRequest
-	20, // 46: luci.resultdb.v1.Recorder.FinalizeInvocation:input_type -> luci.resultdb.v1.FinalizeInvocationRequest
-	21, // 47: luci.resultdb.v1.Recorder.UpdateIncludedInvocations:input_type -> luci.resultdb.v1.UpdateIncludedInvocationsRequest
-	22, // 48: luci.resultdb.v1.Recorder.MarkInvocationSubmitted:input_type -> luci.resultdb.v1.MarkInvocationSubmittedRequest
-	23, // 49: luci.resultdb.v1.Recorder.CreateTestResult:input_type -> luci.resultdb.v1.CreateTestResultRequest
-	24, // 50: luci.resultdb.v1.Recorder.BatchCreateTestResults:input_type -> luci.resultdb.v1.BatchCreateTestResultsRequest
-	26, // 51: luci.resultdb.v1.Recorder.CreateTestExoneration:input_type -> luci.resultdb.v1.CreateTestExonerationRequest
-	27, // 52: luci.resultdb.v1.Recorder.BatchCreateTestExonerations:input_type -> luci.resultdb.v1.BatchCreateTestExonerationsRequest
-	30, // 53: luci.resultdb.v1.Recorder.BatchCreateArtifacts:input_type -> luci.resultdb.v1.BatchCreateArtifactsRequest
+	22, // 43: luci.resultdb.v1.Recorder.MarkInvocationSubmitted:input_type -> luci.resultdb.v1.MarkInvocationSubmittedRequest
+	23, // 44: luci.resultdb.v1.Recorder.CreateTestResult:input_type -> luci.resultdb.v1.CreateTestResultRequest
+	24, // 45: luci.resultdb.v1.Recorder.BatchCreateTestResults:input_type -> luci.resultdb.v1.BatchCreateTestResultsRequest
+	26, // 46: luci.resultdb.v1.Recorder.CreateTestExoneration:input_type -> luci.resultdb.v1.CreateTestExonerationRequest
+	27, // 47: luci.resultdb.v1.Recorder.BatchCreateTestExonerations:input_type -> luci.resultdb.v1.BatchCreateTestExonerationsRequest
+	30, // 48: luci.resultdb.v1.Recorder.BatchCreateArtifacts:input_type -> luci.resultdb.v1.BatchCreateArtifactsRequest
+	16, // 49: luci.resultdb.v1.Recorder.CreateInvocation:input_type -> luci.resultdb.v1.CreateInvocationRequest
+	17, // 50: luci.resultdb.v1.Recorder.BatchCreateInvocations:input_type -> luci.resultdb.v1.BatchCreateInvocationsRequest
+	19, // 51: luci.resultdb.v1.Recorder.UpdateInvocation:input_type -> luci.resultdb.v1.UpdateInvocationRequest
+	20, // 52: luci.resultdb.v1.Recorder.FinalizeInvocation:input_type -> luci.resultdb.v1.FinalizeInvocationRequest
+	21, // 53: luci.resultdb.v1.Recorder.UpdateIncludedInvocations:input_type -> luci.resultdb.v1.UpdateIncludedInvocationsRequest
 	2,  // 54: luci.resultdb.v1.Recorder.CreateRootInvocation:output_type -> luci.resultdb.v1.CreateRootInvocationResponse
 	32, // 55: luci.resultdb.v1.Recorder.UpdateRootInvocation:output_type -> luci.resultdb.v1.RootInvocation
 	32, // 56: luci.resultdb.v1.Recorder.GetRootInvocation:output_type -> luci.resultdb.v1.RootInvocation
@@ -2678,17 +2692,17 @@ var file_go_chromium_org_luci_resultdb_proto_v1_recorder_proto_depIdxs = []int32
 	33, // 64: luci.resultdb.v1.Recorder.FinalizeWorkUnit:output_type -> luci.resultdb.v1.WorkUnit
 	13, // 65: luci.resultdb.v1.Recorder.BatchFinalizeWorkUnits:output_type -> luci.resultdb.v1.BatchFinalizeWorkUnitsResponse
 	15, // 66: luci.resultdb.v1.Recorder.DelegateWorkUnitInclusion:output_type -> luci.resultdb.v1.DelegateWorkUnitInclusionResponse
-	35, // 67: luci.resultdb.v1.Recorder.CreateInvocation:output_type -> luci.resultdb.v1.Invocation
-	18, // 68: luci.resultdb.v1.Recorder.BatchCreateInvocations:output_type -> luci.resultdb.v1.BatchCreateInvocationsResponse
-	35, // 69: luci.resultdb.v1.Recorder.UpdateInvocation:output_type -> luci.resultdb.v1.Invocation
-	35, // 70: luci.resultdb.v1.Recorder.FinalizeInvocation:output_type -> luci.resultdb.v1.Invocation
-	43, // 71: luci.resultdb.v1.Recorder.UpdateIncludedInvocations:output_type -> google.protobuf.Empty
-	43, // 72: luci.resultdb.v1.Recorder.MarkInvocationSubmitted:output_type -> google.protobuf.Empty
-	36, // 73: luci.resultdb.v1.Recorder.CreateTestResult:output_type -> luci.resultdb.v1.TestResult
-	25, // 74: luci.resultdb.v1.Recorder.BatchCreateTestResults:output_type -> luci.resultdb.v1.BatchCreateTestResultsResponse
-	37, // 75: luci.resultdb.v1.Recorder.CreateTestExoneration:output_type -> luci.resultdb.v1.TestExoneration
-	28, // 76: luci.resultdb.v1.Recorder.BatchCreateTestExonerations:output_type -> luci.resultdb.v1.BatchCreateTestExonerationsResponse
-	31, // 77: luci.resultdb.v1.Recorder.BatchCreateArtifacts:output_type -> luci.resultdb.v1.BatchCreateArtifactsResponse
+	43, // 67: luci.resultdb.v1.Recorder.MarkInvocationSubmitted:output_type -> google.protobuf.Empty
+	36, // 68: luci.resultdb.v1.Recorder.CreateTestResult:output_type -> luci.resultdb.v1.TestResult
+	25, // 69: luci.resultdb.v1.Recorder.BatchCreateTestResults:output_type -> luci.resultdb.v1.BatchCreateTestResultsResponse
+	37, // 70: luci.resultdb.v1.Recorder.CreateTestExoneration:output_type -> luci.resultdb.v1.TestExoneration
+	28, // 71: luci.resultdb.v1.Recorder.BatchCreateTestExonerations:output_type -> luci.resultdb.v1.BatchCreateTestExonerationsResponse
+	31, // 72: luci.resultdb.v1.Recorder.BatchCreateArtifacts:output_type -> luci.resultdb.v1.BatchCreateArtifactsResponse
+	35, // 73: luci.resultdb.v1.Recorder.CreateInvocation:output_type -> luci.resultdb.v1.Invocation
+	18, // 74: luci.resultdb.v1.Recorder.BatchCreateInvocations:output_type -> luci.resultdb.v1.BatchCreateInvocationsResponse
+	35, // 75: luci.resultdb.v1.Recorder.UpdateInvocation:output_type -> luci.resultdb.v1.Invocation
+	35, // 76: luci.resultdb.v1.Recorder.FinalizeInvocation:output_type -> luci.resultdb.v1.Invocation
+	43, // 77: luci.resultdb.v1.Recorder.UpdateIncludedInvocations:output_type -> google.protobuf.Empty
 	54, // [54:78] is the sub-list for method output_type
 	30, // [30:54] is the sub-list for method input_type
 	30, // [30:30] is the sub-list for extension type_name
@@ -2772,7 +2786,7 @@ type RecorderClient interface {
 	//
 	// See CreateWorkUnitRequest for more details.
 	CreateWorkUnit(ctx context.Context, in *CreateWorkUnitRequest, opts ...grpc.CallOption) (*WorkUnit, error)
-	// Batch creates new WorkUnits inside a root invocation.
+	// Creates multiple new work units inside a root invocation.
 	//
 	// Unlike CreateWorkUnit, update tokens are included directly in the response
 	// message to avoid limits on HTTP response headers. Do not log these values.
@@ -2780,40 +2794,57 @@ type RecorderClient interface {
 	// If a work unit with the given ID already exists, returns ALREADY_EXISTS
 	// error code.
 	BatchCreateWorkUnits(ctx context.Context, in *BatchCreateWorkUnitsRequest, opts ...grpc.CallOption) (*BatchCreateWorkUnitsResponse, error)
-	// Updates an existing non-final WorkUnit.
+	// Updates an existing non-final work unit.
 	UpdateWorkUnit(ctx context.Context, in *UpdateWorkUnitRequest, opts ...grpc.CallOption) (*WorkUnit, error)
-	// Batch updates existing non-final WorkUnits.
+	// Updates multiple existing non-final work units.
 	BatchUpdateWorkUnits(ctx context.Context, in *BatchUpdateWorkUnitsRequest, opts ...grpc.CallOption) (*BatchUpdateWorkUnitsResponse, error)
 	// Retrieves a work unit.
 	//
 	// Unlike the GetWorkUnit RPC on the ResultDB service, this RPC
-	// uses update tokens to authorise reads and is designed for use with
+	// uses update tokens to authorise reads. It is designed for use with
 	// UpdateWorkUnit to make atomic updates (using aip.dev/154 etags for
 	// optimistic locking). It should be used (and only used by) recorders.
 	GetWorkUnit(ctx context.Context, in *GetWorkUnitRequest, opts ...grpc.CallOption) (*WorkUnit, error)
 	// Retrieves a list of work units.
 	//
 	// Unlike the BatchGetWorkUnits RPC on the ResultDB service, this RPC
-	// uses update tokens to authorise reads and is designed for use with
+	// uses update tokens to authorise reads. It is designed for use with
 	// BatchUpdateWorkUnits to make atomic updates (using aip.dev/154 etags for
 	// optimistic locking). It should be used (and only used by) recorders.
 	BatchGetWorkUnits(ctx context.Context, in *BatchGetWorkUnitsRequest, opts ...grpc.CallOption) (*BatchGetWorkUnitsResponse, error)
 	// Marks the given work unit as final and begins the process of
 	// transitioning it to the state FINALIZED.
 	FinalizeWorkUnit(ctx context.Context, in *FinalizeWorkUnitRequest, opts ...grpc.CallOption) (*WorkUnit, error)
-	// Batch marks a set of WorkUnits as final and begins the process offer
+	// Marks a set of work units as final and begins the process offer
 	// transitioning them to the state FINALIZED.
 	BatchFinalizeWorkUnits(ctx context.Context, in *BatchFinalizeWorkUnitsRequest, opts ...grpc.CallOption) (*BatchFinalizeWorkUnitsResponse, error)
-	// Mints an 'inclusion token' that proves the current caller has permission
-	// to include work units from a given realm. The minted inclusion token
-	// can be passed to another caller/system and used in CreateWorkUnit to
-	// create child work units into the parent work unit.
+	// Mints an 'inclusion token' which can be used by another system to
+	// include new child invocations (of a nominated realm) in a work unit.
+	// The caller of this RPC authorises the declassification of test results
+	// from the nominated realm to the realm of the root invocation.
 	//
-	// Systems which produce test results should require such a token (instead
-	// of an update token) if they are distrustful of their callers and believe
-	// they may not be authorised to see results from a given realm.
+	// See DelegateWorkUnitInclusionRequest for details.
 	DelegateWorkUnitInclusion(ctx context.Context, in *DelegateWorkUnitInclusionRequest, opts ...grpc.CallOption) (*DelegateWorkUnitInclusionResponse, error)
-	// Creates a new invocation.
+	// Recursively marks all test variants associated with the invocation as
+	// submitted, merging them into the invocation's associated baseline.
+	MarkInvocationSubmitted(ctx context.Context, in *MarkInvocationSubmittedRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Appends a test result to a non-finalized work unit.
+	CreateTestResult(ctx context.Context, in *CreateTestResultRequest, opts ...grpc.CallOption) (*TestResult, error)
+	// Atomically appends multiple test results to one or more
+	// non-finalized work units.
+	BatchCreateTestResults(ctx context.Context, in *BatchCreateTestResultsRequest, opts ...grpc.CallOption) (*BatchCreateTestResultsResponse, error)
+	// Appends a test exoneration to a non-finalized work unit.
+	CreateTestExoneration(ctx context.Context, in *CreateTestExonerationRequest, opts ...grpc.CallOption) (*TestExoneration, error)
+	// Atomically appends multiple test exonerations to one or more
+	// non-finalized work units.
+	BatchCreateTestExonerations(ctx context.Context, in *BatchCreateTestExonerationsRequest, opts ...grpc.CallOption) (*BatchCreateTestExonerationsResponse, error)
+	// Atomically creates multiple artifacts in one or more non-finalized
+	// work units.
+	//
+	// An artifact can be either work unit-level or test-result-level.
+	// See Artifact.name for more info.
+	BatchCreateArtifacts(ctx context.Context, in *BatchCreateArtifactsRequest, opts ...grpc.CallOption) (*BatchCreateArtifactsResponse, error)
+	// Deprecated. Creates a new invocation.
 	// The request specifies the invocation id and its contents.
 	//
 	// The response header metadata contains "update-token" required for future
@@ -2822,34 +2853,17 @@ type RecorderClient interface {
 	// If invocation with the given ID already exists, returns ALREADY_EXISTS
 	// error code.
 	CreateInvocation(ctx context.Context, in *CreateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error)
-	// Creates multiple invocations in a single rpc.
+	// Deprecated. Creates multiple invocations in a single rpc.
 	//
 	// Unlike CreateInvocation, update tokens are included in the response message
 	// to avoid limits on HTTP response headers. Do not log these values.
 	BatchCreateInvocations(ctx context.Context, in *BatchCreateInvocationsRequest, opts ...grpc.CallOption) (*BatchCreateInvocationsResponse, error)
-	// Updates an existing non-finalized invocation.
+	// Deprecated. Updates an existing non-finalized invocation.
 	UpdateInvocation(ctx context.Context, in *UpdateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error)
-	// Transitions the given invocation to the state FINALIZED.
+	// Deprecated. Transitions the given invocation to the state FINALIZED.
 	FinalizeInvocation(ctx context.Context, in *FinalizeInvocationRequest, opts ...grpc.CallOption) (*Invocation, error)
-	// Updates inclusions for a non-finalized invocation.
+	// Deprecated. Updates inclusions for a non-finalized invocation.
 	UpdateIncludedInvocations(ctx context.Context, in *UpdateIncludedInvocationsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Recursively marks all test variants associated with the invocation as
-	// submitted, merging them into the invocation's associated baseline.
-	MarkInvocationSubmitted(ctx context.Context, in *MarkInvocationSubmittedRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Appends a test result to a non-finalized invocation.
-	CreateTestResult(ctx context.Context, in *CreateTestResultRequest, opts ...grpc.CallOption) (*TestResult, error)
-	// Atomically appends a batch of test results to a non-finalized invocation.
-	BatchCreateTestResults(ctx context.Context, in *BatchCreateTestResultsRequest, opts ...grpc.CallOption) (*BatchCreateTestResultsResponse, error)
-	// Appends a test exoneration to a non-finalized invocation.
-	CreateTestExoneration(ctx context.Context, in *CreateTestExonerationRequest, opts ...grpc.CallOption) (*TestExoneration, error)
-	// Atomically appends a batch of test exonerations to a non-finalized
-	// invocation.
-	BatchCreateTestExonerations(ctx context.Context, in *BatchCreateTestExonerationsRequest, opts ...grpc.CallOption) (*BatchCreateTestExonerationsResponse, error)
-	// Create multiple artifacts.
-	//
-	// An artifact can be either invocation-level or test-result-level.
-	// See Artifact.name for more info.
-	BatchCreateArtifacts(ctx context.Context, in *BatchCreateArtifactsRequest, opts ...grpc.CallOption) (*BatchCreateArtifactsResponse, error)
 }
 type recorderPRPCClient struct {
 	client *prpc.Client
@@ -2976,51 +2990,6 @@ func (c *recorderPRPCClient) DelegateWorkUnitInclusion(ctx context.Context, in *
 	return out, nil
 }
 
-func (c *recorderPRPCClient) CreateInvocation(ctx context.Context, in *CreateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
-	out := new(Invocation)
-	err := c.client.Call(ctx, "luci.resultdb.v1.Recorder", "CreateInvocation", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *recorderPRPCClient) BatchCreateInvocations(ctx context.Context, in *BatchCreateInvocationsRequest, opts ...grpc.CallOption) (*BatchCreateInvocationsResponse, error) {
-	out := new(BatchCreateInvocationsResponse)
-	err := c.client.Call(ctx, "luci.resultdb.v1.Recorder", "BatchCreateInvocations", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *recorderPRPCClient) UpdateInvocation(ctx context.Context, in *UpdateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
-	out := new(Invocation)
-	err := c.client.Call(ctx, "luci.resultdb.v1.Recorder", "UpdateInvocation", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *recorderPRPCClient) FinalizeInvocation(ctx context.Context, in *FinalizeInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
-	out := new(Invocation)
-	err := c.client.Call(ctx, "luci.resultdb.v1.Recorder", "FinalizeInvocation", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *recorderPRPCClient) UpdateIncludedInvocations(ctx context.Context, in *UpdateIncludedInvocationsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.client.Call(ctx, "luci.resultdb.v1.Recorder", "UpdateIncludedInvocations", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *recorderPRPCClient) MarkInvocationSubmitted(ctx context.Context, in *MarkInvocationSubmittedRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.client.Call(ctx, "luci.resultdb.v1.Recorder", "MarkInvocationSubmitted", in, out, opts...)
@@ -3069,6 +3038,51 @@ func (c *recorderPRPCClient) BatchCreateTestExonerations(ctx context.Context, in
 func (c *recorderPRPCClient) BatchCreateArtifacts(ctx context.Context, in *BatchCreateArtifactsRequest, opts ...grpc.CallOption) (*BatchCreateArtifactsResponse, error) {
 	out := new(BatchCreateArtifactsResponse)
 	err := c.client.Call(ctx, "luci.resultdb.v1.Recorder", "BatchCreateArtifacts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderPRPCClient) CreateInvocation(ctx context.Context, in *CreateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
+	out := new(Invocation)
+	err := c.client.Call(ctx, "luci.resultdb.v1.Recorder", "CreateInvocation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderPRPCClient) BatchCreateInvocations(ctx context.Context, in *BatchCreateInvocationsRequest, opts ...grpc.CallOption) (*BatchCreateInvocationsResponse, error) {
+	out := new(BatchCreateInvocationsResponse)
+	err := c.client.Call(ctx, "luci.resultdb.v1.Recorder", "BatchCreateInvocations", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderPRPCClient) UpdateInvocation(ctx context.Context, in *UpdateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
+	out := new(Invocation)
+	err := c.client.Call(ctx, "luci.resultdb.v1.Recorder", "UpdateInvocation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderPRPCClient) FinalizeInvocation(ctx context.Context, in *FinalizeInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
+	out := new(Invocation)
+	err := c.client.Call(ctx, "luci.resultdb.v1.Recorder", "FinalizeInvocation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderPRPCClient) UpdateIncludedInvocations(ctx context.Context, in *UpdateIncludedInvocationsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.client.Call(ctx, "luci.resultdb.v1.Recorder", "UpdateIncludedInvocations", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -3200,51 +3214,6 @@ func (c *recorderClient) DelegateWorkUnitInclusion(ctx context.Context, in *Dele
 	return out, nil
 }
 
-func (c *recorderClient) CreateInvocation(ctx context.Context, in *CreateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
-	out := new(Invocation)
-	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.Recorder/CreateInvocation", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *recorderClient) BatchCreateInvocations(ctx context.Context, in *BatchCreateInvocationsRequest, opts ...grpc.CallOption) (*BatchCreateInvocationsResponse, error) {
-	out := new(BatchCreateInvocationsResponse)
-	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.Recorder/BatchCreateInvocations", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *recorderClient) UpdateInvocation(ctx context.Context, in *UpdateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
-	out := new(Invocation)
-	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.Recorder/UpdateInvocation", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *recorderClient) FinalizeInvocation(ctx context.Context, in *FinalizeInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
-	out := new(Invocation)
-	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.Recorder/FinalizeInvocation", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *recorderClient) UpdateIncludedInvocations(ctx context.Context, in *UpdateIncludedInvocationsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.Recorder/UpdateIncludedInvocations", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *recorderClient) MarkInvocationSubmitted(ctx context.Context, in *MarkInvocationSubmittedRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.Recorder/MarkInvocationSubmitted", in, out, opts...)
@@ -3299,6 +3268,51 @@ func (c *recorderClient) BatchCreateArtifacts(ctx context.Context, in *BatchCrea
 	return out, nil
 }
 
+func (c *recorderClient) CreateInvocation(ctx context.Context, in *CreateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
+	out := new(Invocation)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.Recorder/CreateInvocation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderClient) BatchCreateInvocations(ctx context.Context, in *BatchCreateInvocationsRequest, opts ...grpc.CallOption) (*BatchCreateInvocationsResponse, error) {
+	out := new(BatchCreateInvocationsResponse)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.Recorder/BatchCreateInvocations", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderClient) UpdateInvocation(ctx context.Context, in *UpdateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
+	out := new(Invocation)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.Recorder/UpdateInvocation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderClient) FinalizeInvocation(ctx context.Context, in *FinalizeInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
+	out := new(Invocation)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.Recorder/FinalizeInvocation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderClient) UpdateIncludedInvocations(ctx context.Context, in *UpdateIncludedInvocationsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.Recorder/UpdateIncludedInvocations", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RecorderServer is the server API for Recorder service.
 type RecorderServer interface {
 	// Creates a new root invocation and its root work unit.
@@ -3335,7 +3349,7 @@ type RecorderServer interface {
 	//
 	// See CreateWorkUnitRequest for more details.
 	CreateWorkUnit(context.Context, *CreateWorkUnitRequest) (*WorkUnit, error)
-	// Batch creates new WorkUnits inside a root invocation.
+	// Creates multiple new work units inside a root invocation.
 	//
 	// Unlike CreateWorkUnit, update tokens are included directly in the response
 	// message to avoid limits on HTTP response headers. Do not log these values.
@@ -3343,40 +3357,57 @@ type RecorderServer interface {
 	// If a work unit with the given ID already exists, returns ALREADY_EXISTS
 	// error code.
 	BatchCreateWorkUnits(context.Context, *BatchCreateWorkUnitsRequest) (*BatchCreateWorkUnitsResponse, error)
-	// Updates an existing non-final WorkUnit.
+	// Updates an existing non-final work unit.
 	UpdateWorkUnit(context.Context, *UpdateWorkUnitRequest) (*WorkUnit, error)
-	// Batch updates existing non-final WorkUnits.
+	// Updates multiple existing non-final work units.
 	BatchUpdateWorkUnits(context.Context, *BatchUpdateWorkUnitsRequest) (*BatchUpdateWorkUnitsResponse, error)
 	// Retrieves a work unit.
 	//
 	// Unlike the GetWorkUnit RPC on the ResultDB service, this RPC
-	// uses update tokens to authorise reads and is designed for use with
+	// uses update tokens to authorise reads. It is designed for use with
 	// UpdateWorkUnit to make atomic updates (using aip.dev/154 etags for
 	// optimistic locking). It should be used (and only used by) recorders.
 	GetWorkUnit(context.Context, *GetWorkUnitRequest) (*WorkUnit, error)
 	// Retrieves a list of work units.
 	//
 	// Unlike the BatchGetWorkUnits RPC on the ResultDB service, this RPC
-	// uses update tokens to authorise reads and is designed for use with
+	// uses update tokens to authorise reads. It is designed for use with
 	// BatchUpdateWorkUnits to make atomic updates (using aip.dev/154 etags for
 	// optimistic locking). It should be used (and only used by) recorders.
 	BatchGetWorkUnits(context.Context, *BatchGetWorkUnitsRequest) (*BatchGetWorkUnitsResponse, error)
 	// Marks the given work unit as final and begins the process of
 	// transitioning it to the state FINALIZED.
 	FinalizeWorkUnit(context.Context, *FinalizeWorkUnitRequest) (*WorkUnit, error)
-	// Batch marks a set of WorkUnits as final and begins the process offer
+	// Marks a set of work units as final and begins the process offer
 	// transitioning them to the state FINALIZED.
 	BatchFinalizeWorkUnits(context.Context, *BatchFinalizeWorkUnitsRequest) (*BatchFinalizeWorkUnitsResponse, error)
-	// Mints an 'inclusion token' that proves the current caller has permission
-	// to include work units from a given realm. The minted inclusion token
-	// can be passed to another caller/system and used in CreateWorkUnit to
-	// create child work units into the parent work unit.
+	// Mints an 'inclusion token' which can be used by another system to
+	// include new child invocations (of a nominated realm) in a work unit.
+	// The caller of this RPC authorises the declassification of test results
+	// from the nominated realm to the realm of the root invocation.
 	//
-	// Systems which produce test results should require such a token (instead
-	// of an update token) if they are distrustful of their callers and believe
-	// they may not be authorised to see results from a given realm.
+	// See DelegateWorkUnitInclusionRequest for details.
 	DelegateWorkUnitInclusion(context.Context, *DelegateWorkUnitInclusionRequest) (*DelegateWorkUnitInclusionResponse, error)
-	// Creates a new invocation.
+	// Recursively marks all test variants associated with the invocation as
+	// submitted, merging them into the invocation's associated baseline.
+	MarkInvocationSubmitted(context.Context, *MarkInvocationSubmittedRequest) (*emptypb.Empty, error)
+	// Appends a test result to a non-finalized work unit.
+	CreateTestResult(context.Context, *CreateTestResultRequest) (*TestResult, error)
+	// Atomically appends multiple test results to one or more
+	// non-finalized work units.
+	BatchCreateTestResults(context.Context, *BatchCreateTestResultsRequest) (*BatchCreateTestResultsResponse, error)
+	// Appends a test exoneration to a non-finalized work unit.
+	CreateTestExoneration(context.Context, *CreateTestExonerationRequest) (*TestExoneration, error)
+	// Atomically appends multiple test exonerations to one or more
+	// non-finalized work units.
+	BatchCreateTestExonerations(context.Context, *BatchCreateTestExonerationsRequest) (*BatchCreateTestExonerationsResponse, error)
+	// Atomically creates multiple artifacts in one or more non-finalized
+	// work units.
+	//
+	// An artifact can be either work unit-level or test-result-level.
+	// See Artifact.name for more info.
+	BatchCreateArtifacts(context.Context, *BatchCreateArtifactsRequest) (*BatchCreateArtifactsResponse, error)
+	// Deprecated. Creates a new invocation.
 	// The request specifies the invocation id and its contents.
 	//
 	// The response header metadata contains "update-token" required for future
@@ -3385,34 +3416,17 @@ type RecorderServer interface {
 	// If invocation with the given ID already exists, returns ALREADY_EXISTS
 	// error code.
 	CreateInvocation(context.Context, *CreateInvocationRequest) (*Invocation, error)
-	// Creates multiple invocations in a single rpc.
+	// Deprecated. Creates multiple invocations in a single rpc.
 	//
 	// Unlike CreateInvocation, update tokens are included in the response message
 	// to avoid limits on HTTP response headers. Do not log these values.
 	BatchCreateInvocations(context.Context, *BatchCreateInvocationsRequest) (*BatchCreateInvocationsResponse, error)
-	// Updates an existing non-finalized invocation.
+	// Deprecated. Updates an existing non-finalized invocation.
 	UpdateInvocation(context.Context, *UpdateInvocationRequest) (*Invocation, error)
-	// Transitions the given invocation to the state FINALIZED.
+	// Deprecated. Transitions the given invocation to the state FINALIZED.
 	FinalizeInvocation(context.Context, *FinalizeInvocationRequest) (*Invocation, error)
-	// Updates inclusions for a non-finalized invocation.
+	// Deprecated. Updates inclusions for a non-finalized invocation.
 	UpdateIncludedInvocations(context.Context, *UpdateIncludedInvocationsRequest) (*emptypb.Empty, error)
-	// Recursively marks all test variants associated with the invocation as
-	// submitted, merging them into the invocation's associated baseline.
-	MarkInvocationSubmitted(context.Context, *MarkInvocationSubmittedRequest) (*emptypb.Empty, error)
-	// Appends a test result to a non-finalized invocation.
-	CreateTestResult(context.Context, *CreateTestResultRequest) (*TestResult, error)
-	// Atomically appends a batch of test results to a non-finalized invocation.
-	BatchCreateTestResults(context.Context, *BatchCreateTestResultsRequest) (*BatchCreateTestResultsResponse, error)
-	// Appends a test exoneration to a non-finalized invocation.
-	CreateTestExoneration(context.Context, *CreateTestExonerationRequest) (*TestExoneration, error)
-	// Atomically appends a batch of test exonerations to a non-finalized
-	// invocation.
-	BatchCreateTestExonerations(context.Context, *BatchCreateTestExonerationsRequest) (*BatchCreateTestExonerationsResponse, error)
-	// Create multiple artifacts.
-	//
-	// An artifact can be either invocation-level or test-result-level.
-	// See Artifact.name for more info.
-	BatchCreateArtifacts(context.Context, *BatchCreateArtifactsRequest) (*BatchCreateArtifactsResponse, error)
 }
 
 // UnimplementedRecorderServer can be embedded to have forward compatible implementations.
@@ -3458,21 +3472,6 @@ func (*UnimplementedRecorderServer) BatchFinalizeWorkUnits(context.Context, *Bat
 func (*UnimplementedRecorderServer) DelegateWorkUnitInclusion(context.Context, *DelegateWorkUnitInclusionRequest) (*DelegateWorkUnitInclusionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DelegateWorkUnitInclusion not implemented")
 }
-func (*UnimplementedRecorderServer) CreateInvocation(context.Context, *CreateInvocationRequest) (*Invocation, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateInvocation not implemented")
-}
-func (*UnimplementedRecorderServer) BatchCreateInvocations(context.Context, *BatchCreateInvocationsRequest) (*BatchCreateInvocationsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BatchCreateInvocations not implemented")
-}
-func (*UnimplementedRecorderServer) UpdateInvocation(context.Context, *UpdateInvocationRequest) (*Invocation, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateInvocation not implemented")
-}
-func (*UnimplementedRecorderServer) FinalizeInvocation(context.Context, *FinalizeInvocationRequest) (*Invocation, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FinalizeInvocation not implemented")
-}
-func (*UnimplementedRecorderServer) UpdateIncludedInvocations(context.Context, *UpdateIncludedInvocationsRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateIncludedInvocations not implemented")
-}
 func (*UnimplementedRecorderServer) MarkInvocationSubmitted(context.Context, *MarkInvocationSubmittedRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MarkInvocationSubmitted not implemented")
 }
@@ -3490,6 +3489,21 @@ func (*UnimplementedRecorderServer) BatchCreateTestExonerations(context.Context,
 }
 func (*UnimplementedRecorderServer) BatchCreateArtifacts(context.Context, *BatchCreateArtifactsRequest) (*BatchCreateArtifactsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BatchCreateArtifacts not implemented")
+}
+func (*UnimplementedRecorderServer) CreateInvocation(context.Context, *CreateInvocationRequest) (*Invocation, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateInvocation not implemented")
+}
+func (*UnimplementedRecorderServer) BatchCreateInvocations(context.Context, *BatchCreateInvocationsRequest) (*BatchCreateInvocationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchCreateInvocations not implemented")
+}
+func (*UnimplementedRecorderServer) UpdateInvocation(context.Context, *UpdateInvocationRequest) (*Invocation, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateInvocation not implemented")
+}
+func (*UnimplementedRecorderServer) FinalizeInvocation(context.Context, *FinalizeInvocationRequest) (*Invocation, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FinalizeInvocation not implemented")
+}
+func (*UnimplementedRecorderServer) UpdateIncludedInvocations(context.Context, *UpdateIncludedInvocationsRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateIncludedInvocations not implemented")
 }
 
 func RegisterRecorderServer(s prpc.Registrar, srv RecorderServer) {
@@ -3730,96 +3744,6 @@ func _Recorder_DelegateWorkUnitInclusion_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Recorder_CreateInvocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateInvocationRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RecorderServer).CreateInvocation(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/luci.resultdb.v1.Recorder/CreateInvocation",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecorderServer).CreateInvocation(ctx, req.(*CreateInvocationRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Recorder_BatchCreateInvocations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BatchCreateInvocationsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RecorderServer).BatchCreateInvocations(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/luci.resultdb.v1.Recorder/BatchCreateInvocations",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecorderServer).BatchCreateInvocations(ctx, req.(*BatchCreateInvocationsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Recorder_UpdateInvocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateInvocationRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RecorderServer).UpdateInvocation(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/luci.resultdb.v1.Recorder/UpdateInvocation",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecorderServer).UpdateInvocation(ctx, req.(*UpdateInvocationRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Recorder_FinalizeInvocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FinalizeInvocationRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RecorderServer).FinalizeInvocation(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/luci.resultdb.v1.Recorder/FinalizeInvocation",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecorderServer).FinalizeInvocation(ctx, req.(*FinalizeInvocationRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Recorder_UpdateIncludedInvocations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateIncludedInvocationsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RecorderServer).UpdateIncludedInvocations(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/luci.resultdb.v1.Recorder/UpdateIncludedInvocations",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecorderServer).UpdateIncludedInvocations(ctx, req.(*UpdateIncludedInvocationsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Recorder_MarkInvocationSubmitted_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MarkInvocationSubmittedRequest)
 	if err := dec(in); err != nil {
@@ -3928,6 +3852,96 @@ func _Recorder_BatchCreateArtifacts_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Recorder_CreateInvocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateInvocationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecorderServer).CreateInvocation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.v1.Recorder/CreateInvocation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecorderServer).CreateInvocation(ctx, req.(*CreateInvocationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Recorder_BatchCreateInvocations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchCreateInvocationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecorderServer).BatchCreateInvocations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.v1.Recorder/BatchCreateInvocations",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecorderServer).BatchCreateInvocations(ctx, req.(*BatchCreateInvocationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Recorder_UpdateInvocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateInvocationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecorderServer).UpdateInvocation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.v1.Recorder/UpdateInvocation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecorderServer).UpdateInvocation(ctx, req.(*UpdateInvocationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Recorder_FinalizeInvocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FinalizeInvocationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecorderServer).FinalizeInvocation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.v1.Recorder/FinalizeInvocation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecorderServer).FinalizeInvocation(ctx, req.(*FinalizeInvocationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Recorder_UpdateIncludedInvocations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateIncludedInvocationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecorderServer).UpdateIncludedInvocations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.v1.Recorder/UpdateIncludedInvocations",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecorderServer).UpdateIncludedInvocations(ctx, req.(*UpdateIncludedInvocationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Recorder_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "luci.resultdb.v1.Recorder",
 	HandlerType: (*RecorderServer)(nil),
@@ -3985,26 +3999,6 @@ var _Recorder_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Recorder_DelegateWorkUnitInclusion_Handler,
 		},
 		{
-			MethodName: "CreateInvocation",
-			Handler:    _Recorder_CreateInvocation_Handler,
-		},
-		{
-			MethodName: "BatchCreateInvocations",
-			Handler:    _Recorder_BatchCreateInvocations_Handler,
-		},
-		{
-			MethodName: "UpdateInvocation",
-			Handler:    _Recorder_UpdateInvocation_Handler,
-		},
-		{
-			MethodName: "FinalizeInvocation",
-			Handler:    _Recorder_FinalizeInvocation_Handler,
-		},
-		{
-			MethodName: "UpdateIncludedInvocations",
-			Handler:    _Recorder_UpdateIncludedInvocations_Handler,
-		},
-		{
 			MethodName: "MarkInvocationSubmitted",
 			Handler:    _Recorder_MarkInvocationSubmitted_Handler,
 		},
@@ -4027,6 +4021,26 @@ var _Recorder_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BatchCreateArtifacts",
 			Handler:    _Recorder_BatchCreateArtifacts_Handler,
+		},
+		{
+			MethodName: "CreateInvocation",
+			Handler:    _Recorder_CreateInvocation_Handler,
+		},
+		{
+			MethodName: "BatchCreateInvocations",
+			Handler:    _Recorder_BatchCreateInvocations_Handler,
+		},
+		{
+			MethodName: "UpdateInvocation",
+			Handler:    _Recorder_UpdateInvocation_Handler,
+		},
+		{
+			MethodName: "FinalizeInvocation",
+			Handler:    _Recorder_FinalizeInvocation_Handler,
+		},
+		{
+			MethodName: "UpdateIncludedInvocations",
+			Handler:    _Recorder_UpdateIncludedInvocations_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
