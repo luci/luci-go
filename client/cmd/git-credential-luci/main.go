@@ -317,6 +317,10 @@ func handleGet(ctx context.Context, opts auth.Options) {
 // Returns whether ReAuth needed by the Gerrit server.
 // On server-side failure (e.g. server-side ReAuth not enabled), returns false.
 func checkReAuthNeeded(ctx context.Context, a *auth.Authenticator, opts auth.Options, attrs *creds.Attrs) bool {
+	if attrs.Path == "" {
+		logging.Warningf(ctx, "No path provided so cannot check if ReAuth is needed.  Run `git config --global credential.useHttpPath yes` to fix.")
+		return false
+	}
 	c, err := a.Client()
 	if err != nil {
 		logging.Warningf(ctx, "Failed to checkReAuth: %v", err)
