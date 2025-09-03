@@ -144,7 +144,7 @@ message RootInvocation {
   //
   // Total length limited to 2000 bytes. Resource names must be in Unicode
   // normalization form C.
-  string producer_resource = 10;
+  string producer_resource = 10 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // The code sources which were tested by this root invocation.
   // This is used to index test results for test history, and for
@@ -203,6 +203,12 @@ message RootInvocation {
   // tests run in the invocation. Those tests can then be e.g. subject to additional
   // presubmit checks, such as to validate they are not flaky.
   string baseline_id = 15;
+
+  // This checksum is computed by the server based on the value of other
+  // fields, and may be sent on update requests to ensure the client
+  // has an up-to-date value before proceeding.
+  // See also https://google.aip.dev/154.
+  string etag = 16;
 }
 
 // The following request message appears below as GetRootInvocation is

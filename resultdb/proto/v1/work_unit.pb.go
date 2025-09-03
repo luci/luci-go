@@ -649,7 +649,7 @@ var File_go_chromium_org_luci_resultdb_proto_v1_work_unit_proto protoreflect.Fil
 
 const file_go_chromium_org_luci_resultdb_proto_v1_work_unit_proto_rawDesc = "" +
 	"\n" +
-	"6go.chromium.org/luci/resultdb/proto/v1/work_unit.proto\x12\x10luci.resultdb.v1\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a3go.chromium.org/luci/resultdb/proto/v1/common.proto\x1a8go.chromium.org/luci/resultdb/proto/v1/instruction.proto\"\x84\n" +
+	"6go.chromium.org/luci/resultdb/proto/v1/work_unit.proto\x12\x10luci.resultdb.v1\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a3go.chromium.org/luci/resultdb/proto/v1/common.proto\x1a8go.chromium.org/luci/resultdb/proto/v1/instruction.proto\"\x89\n" +
 	"\n" +
 	"\bWorkUnit\x12\x1a\n" +
 	"\x04name\x18\x01 \x01(\tB\x06\xe0A\x03\xe0A\x05R\x04name\x12(\n" +
@@ -668,8 +668,8 @@ const file_go_chromium_org_luci_resultdb_proto_v1_work_unit_proto_rawDesc = "" +
 	" \x01(\tB\x06\xe0A\x03\xe0A\x05R\x06parent\x12-\n" +
 	"\x10child_work_units\x18\v \x03(\tB\x03\xe0A\x03R\x0echildWorkUnits\x120\n" +
 	"\x11child_invocations\x18\f \x03(\tB\x03\xe0A\x03R\x10childInvocations\x12?\n" +
-	"\tmodule_id\x18\x13 \x01(\v2\".luci.resultdb.v1.ModuleIdentifierR\bmoduleId\x12+\n" +
-	"\x11producer_resource\x18\r \x01(\tR\x10producerResource\x120\n" +
+	"\tmodule_id\x18\x13 \x01(\v2\".luci.resultdb.v1.ModuleIdentifierR\bmoduleId\x120\n" +
+	"\x11producer_resource\x18\r \x01(\tB\x03\xe0A\x05R\x10producerResource\x120\n" +
 	"\x04tags\x18\x0e \x03(\v2\x1c.luci.resultdb.v1.StringPairR\x04tags\x127\n" +
 	"\n" +
 	"properties\x18\x0f \x01(\v2\x17.google.protobuf.StructR\n" +

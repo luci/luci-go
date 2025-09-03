@@ -222,7 +222,12 @@ type RootInvocation struct {
 	// root invocation the set of test variants in the baseline yields the new
 	// tests run in the invocation. Those tests can then be e.g. subject to additional
 	// presubmit checks, such as to validate they are not flaky.
-	BaselineId    string `protobuf:"bytes,15,opt,name=baseline_id,json=baselineId,proto3" json:"baseline_id,omitempty"`
+	BaselineId string `protobuf:"bytes,15,opt,name=baseline_id,json=baselineId,proto3" json:"baseline_id,omitempty"`
+	// This checksum is computed by the server based on the value of other
+	// fields, and may be sent on update requests to ensure the client
+	// has an up-to-date value before proceeding.
+	// See also https://google.aip.dev/154.
+	Etag          string `protobuf:"bytes,16,opt,name=etag,proto3" json:"etag,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -369,6 +374,13 @@ func (x *RootInvocation) GetBaselineId() string {
 	return ""
 }
 
+func (x *RootInvocation) GetEtag() string {
+	if x != nil {
+		return x.Etag
+	}
+	return ""
+}
+
 // A request message for the GetRootInvocation RPC.
 type GetRootInvocationRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -419,7 +431,7 @@ var File_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto protorefle
 
 const file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_rawDesc = "" +
 	"\n" +
-	"<go.chromium.org/luci/resultdb/proto/v1/root_invocation.proto\x12\x10luci.resultdb.v1\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a3go.chromium.org/luci/resultdb/proto/v1/common.proto\"\x96\a\n" +
+	"<go.chromium.org/luci/resultdb/proto/v1/root_invocation.proto\x12\x10luci.resultdb.v1\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a3go.chromium.org/luci/resultdb/proto/v1/common.proto\"\xaf\a\n" +
 	"\x0eRootInvocation\x12\x1a\n" +
 	"\x04name\x18\x01 \x01(\tB\x06\xe0A\x03\xe0A\x05R\x04name\x124\n" +
 	"\x12root_invocation_id\x18\x02 \x01(\tB\x06\xe0A\x03\xe0A\x05R\x10rootInvocationId\x12<\n" +
@@ -431,9 +443,9 @@ const file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_rawDesc 
 	"\flast_updated\x18\x14 \x01(\v2\x1a.google.protobuf.TimestampB\x03\xe0A\x03R\vlastUpdated\x12O\n" +
 	"\x13finalize_start_time\x18\a \x01(\v2\x1a.google.protobuf.TimestampB\x03\xe0A\x03R\x11finalizeStartTime\x12D\n" +
 	"\rfinalize_time\x18\b \x01(\v2\x1a.google.protobuf.TimestampB\x03\xe0A\x03R\ffinalizeTime\x126\n" +
-	"\bdeadline\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\bdeadline\x12+\n" +
+	"\bdeadline\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\bdeadline\x120\n" +
 	"\x11producer_resource\x18\n" +
-	" \x01(\tR\x10producerResource\x123\n" +
+	" \x01(\tB\x03\xe0A\x05R\x10producerResource\x123\n" +
 	"\asources\x18\v \x01(\v2\x19.luci.resultdb.v1.SourcesR\asources\x12#\n" +
 	"\rsources_final\x18\f \x01(\bR\fsourcesFinal\x120\n" +
 	"\x04tags\x18\r \x03(\v2\x1c.luci.resultdb.v1.StringPairR\x04tags\x127\n" +
@@ -441,7 +453,8 @@ const file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_rawDesc 
 	"properties\x18\x0e \x01(\v2\x17.google.protobuf.StructR\n" +
 	"properties\x12\x1f\n" +
 	"\vbaseline_id\x18\x0f \x01(\tR\n" +
-	"baselineId\"I\n" +
+	"baselineId\x12\x12\n" +
+	"\x04etag\x18\x10 \x01(\tR\x04etag\"I\n" +
 	"\x05State\x12\x15\n" +
 	"\x11STATE_UNSPECIFIED\x10\x00\x12\n" +
 	"\n" +

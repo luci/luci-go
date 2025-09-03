@@ -200,7 +200,7 @@ message WorkUnit {
   // - Buildbucket build: "//cr-buildbucket.appspot.com/builds/1234567890".
   //
   // Setting this field requires resultdb.workUnits.setProducerResource permission.
-  string producer_resource = 13;
+  string producer_resource = 13 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Work unit-level string key-value pairs.
   // A key can be repeated.

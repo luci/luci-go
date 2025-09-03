@@ -278,6 +278,15 @@ message UpdateRootInvocationRequest {
 
   // The list of fields to be updated.
   google.protobuf.FieldMask update_mask = 2;
+
+  // A unique identifier for this request. Restricted to 36 ASCII characters.
+  // A random UUID is recommended.
+  //
+  // If the same request is replayed (see "Retry policy" at the top of this doc),
+  // this request_id guarantees idempotence.
+  //
+  // Required.
+  string request_id = 3;
 }
 
 // A request message for the FinalizeRootInvocation RPC.
@@ -479,7 +488,10 @@ message BatchCreateWorkUnitsRequest {
 
   // A unique identifier for this request. Restricted to 36 ASCII characters.
   // A random UUID is recommended.
-  // If the same request is replayed, the request_id guarantees idempotence.
+  //
+  // If the same request is replayed (see "Retry policy" at the top of this doc),
+  // this request_id guarantees idempotence.
+  //
   // Required.
   string request_id = 2;
 }
@@ -510,6 +522,15 @@ message UpdateWorkUnitRequest {
 
   // The list of fields to be updated.
   google.protobuf.FieldMask update_mask = 2;
+
+  // A unique identifier for this request. Restricted to 36 ASCII characters.
+  // A random UUID is recommended.
+  //
+  // If the same request is replayed (see "Retry policy" at the top of this doc),
+  // this request_id guarantees idempotence.
+  //
+  // Required (unless this request is nested in a BatchUpdateWorkUnitsRequest).
+  string request_id = 3;
 }
 
 // A request message for BatchUpdateWorkUnits RPC.
@@ -520,8 +541,21 @@ message UpdateWorkUnitRequest {
 message BatchUpdateWorkUnitsRequest {
   // The request messages specifying the work unit updates.
   //
-  // A maximum of 500 work units can be modified in one request.
+  // Up to 500 requests. Total size of all requests (as measured by proto.Size())
+  // MUST be <= 10 MiB.
   repeated UpdateWorkUnitRequest requests = 1;
+
+  // A unique identifier for this request. Restricted to 36 ASCII characters.
+  // A random UUID is recommended.
+  //
+  // If the same request is replayed (see "Retry policy" at the top of this doc),
+  // this request_id guarantees idempotence.
+  //
+  // The request_id field in UpdateWorkUnitRequest messages must either
+  // be empty or match this field.
+  //
+  // Required.
+  string request_id = 2;
 }
 
 // A response message for BatchUpdateWorkUnits RPC.

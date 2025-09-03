@@ -269,7 +269,15 @@ type UpdateRootInvocationRequest struct {
 	// If updating tags, the existing tags will be replaced with the new ones.
 	RootInvocation *RootInvocation `protobuf:"bytes,1,opt,name=root_invocation,json=rootInvocation,proto3" json:"root_invocation,omitempty"`
 	// The list of fields to be updated.
-	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
+	UpdateMask *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
+	// A unique identifier for this request. Restricted to 36 ASCII characters.
+	// A random UUID is recommended.
+	//
+	// If the same request is replayed (see "Retry policy" at the top of this doc),
+	// this request_id guarantees idempotence.
+	//
+	// Required.
+	RequestId     string `protobuf:"bytes,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -316,6 +324,13 @@ func (x *UpdateRootInvocationRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
 		return x.UpdateMask
 	}
 	return nil
+}
+
+func (x *UpdateRootInvocationRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
 }
 
 // A request message for the FinalizeRootInvocation RPC.
@@ -607,7 +622,10 @@ type BatchCreateWorkUnitsRequest struct {
 	Requests []*CreateWorkUnitRequest `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
 	// A unique identifier for this request. Restricted to 36 ASCII characters.
 	// A random UUID is recommended.
-	// If the same request is replayed, the request_id guarantees idempotence.
+	//
+	// If the same request is replayed (see "Retry policy" at the top of this doc),
+	// this request_id guarantees idempotence.
+	//
 	// Required.
 	RequestId     string `protobuf:"bytes,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -729,7 +747,15 @@ type UpdateWorkUnitRequest struct {
 	// If updating tags, the existing tags will be replaced with the new ones.
 	WorkUnit *WorkUnit `protobuf:"bytes,1,opt,name=work_unit,json=workUnit,proto3" json:"work_unit,omitempty"`
 	// The list of fields to be updated.
-	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
+	UpdateMask *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
+	// A unique identifier for this request. Restricted to 36 ASCII characters.
+	// A random UUID is recommended.
+	//
+	// If the same request is replayed (see "Retry policy" at the top of this doc),
+	// this request_id guarantees idempotence.
+	//
+	// Required (unless this request is nested in a BatchUpdateWorkUnitsRequest).
+	RequestId     string `protobuf:"bytes,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -778,6 +804,13 @@ func (x *UpdateWorkUnitRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
 	return nil
 }
 
+func (x *UpdateWorkUnitRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
 // A request message for BatchUpdateWorkUnits RPC.
 //
 // Note: As each request may only have one update token, batching is only
@@ -787,8 +820,20 @@ type BatchUpdateWorkUnitsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The request messages specifying the work unit updates.
 	//
-	// A maximum of 500 work units can be modified in one request.
-	Requests      []*UpdateWorkUnitRequest `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
+	// Up to 500 requests. Total size of all requests (as measured by proto.Size())
+	// MUST be <= 10 MiB.
+	Requests []*UpdateWorkUnitRequest `protobuf:"bytes,1,rep,name=requests,proto3" json:"requests,omitempty"`
+	// A unique identifier for this request. Restricted to 36 ASCII characters.
+	// A random UUID is recommended.
+	//
+	// If the same request is replayed (see "Retry policy" at the top of this doc),
+	// this request_id guarantees idempotence.
+	//
+	// The request_id field in UpdateWorkUnitRequest messages must either
+	// be empty or match this field.
+	//
+	// Required.
+	RequestId     string `protobuf:"bytes,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -828,6 +873,13 @@ func (x *BatchUpdateWorkUnitsRequest) GetRequests() []*UpdateWorkUnitRequest {
 		return x.Requests
 	}
 	return nil
+}
+
+func (x *BatchUpdateWorkUnitsRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
 }
 
 // A response message for BatchUpdateWorkUnits RPC.
@@ -2338,11 +2390,13 @@ const file_go_chromium_org_luci_resultdb_proto_v1_recorder_proto_rawDesc = "" +
 	"request_id\x18\x04 \x01(\tR\trequestId\"\xab\x01\n" +
 	"\x1cCreateRootInvocationResponse\x12I\n" +
 	"\x0froot_invocation\x18\x01 \x01(\v2 .luci.resultdb.v1.RootInvocationR\x0erootInvocation\x12@\n" +
-	"\x0eroot_work_unit\x18\x02 \x01(\v2\x1a.luci.resultdb.v1.WorkUnitR\frootWorkUnit\"\xaa\x01\n" +
+	"\x0eroot_work_unit\x18\x02 \x01(\v2\x1a.luci.resultdb.v1.WorkUnitR\frootWorkUnit\"\xc9\x01\n" +
 	"\x1bUpdateRootInvocationRequest\x12N\n" +
 	"\x0froot_invocation\x18\x01 \x01(\v2 .luci.resultdb.v1.RootInvocationB\x03\xe0A\x02R\x0erootInvocation\x12;\n" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
-	"updateMask\"\xa0\x02\n" +
+	"updateMask\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x03 \x01(\tR\trequestId\"\xa0\x02\n" +
 	"\x1dFinalizeRootInvocationRequest\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\x02R\x04name\x12u\n" +
 	"\x12finalization_scope\x18\x02 \x01(\x0e2A.luci.resultdb.v1.FinalizeRootInvocationRequest.FinalizationScopeB\x03\xe0A\x02R\x11finalizationScope\"o\n" +
@@ -2364,13 +2418,17 @@ const file_go_chromium_org_luci_resultdb_proto_v1_recorder_proto_rawDesc = "" +
 	"\x1cBatchCreateWorkUnitsResponse\x129\n" +
 	"\n" +
 	"work_units\x18\x01 \x03(\v2\x1a.luci.resultdb.v1.WorkUnitR\tworkUnits\x12#\n" +
-	"\rupdate_tokens\x18\x02 \x03(\tR\fupdateTokens\"\x92\x01\n" +
+	"\rupdate_tokens\x18\x02 \x03(\tR\fupdateTokens\"\xb1\x01\n" +
 	"\x15UpdateWorkUnitRequest\x12<\n" +
 	"\twork_unit\x18\x01 \x01(\v2\x1a.luci.resultdb.v1.WorkUnitB\x03\xe0A\x02R\bworkUnit\x12;\n" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
-	"updateMask\"b\n" +
+	"updateMask\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x03 \x01(\tR\trequestId\"\x81\x01\n" +
 	"\x1bBatchUpdateWorkUnitsRequest\x12C\n" +
-	"\brequests\x18\x01 \x03(\v2'.luci.resultdb.v1.UpdateWorkUnitRequestR\brequests\"Y\n" +
+	"\brequests\x18\x01 \x03(\v2'.luci.resultdb.v1.UpdateWorkUnitRequestR\brequests\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x02 \x01(\tR\trequestId\"Y\n" +
 	"\x1cBatchUpdateWorkUnitsResponse\x129\n" +
 	"\n" +
 	"work_units\x18\x01 \x03(\v2\x1a.luci.resultdb.v1.WorkUnitR\tworkUnits\"2\n" +
