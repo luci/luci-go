@@ -97,6 +97,12 @@ func NewReAuthChecker(client *http.Client, cache ReAuthResultCache) *ReAuthCheck
 func (c *ReAuthChecker) Check(ctx context.Context, attrs *creds.Attrs) (*ReAuthCheckResult, error) {
 	host := attrs.Host
 	project := attrs.Path
+	if host == "" {
+		return nil, errors.Fmt("check Gerrit ReAuth: empty host not allowed")
+	}
+	if project == "" {
+		return nil, errors.Fmt("check Gerrit ReAuth: empty project not allowed")
+	}
 	if !supportedHosts[host] {
 		// Unsupported hosts never need ReAuth.
 		logging.Debugf(ctx, "Skipping ReAuth check for unsupported host %q", host)
