@@ -14,10 +14,14 @@
 
 // Command git-credential-luci is a Git credential helper.
 //
+// # Protocol
+//
 // The protocol used for communication between Git and the credential helper
 // is documented in:
 //   - https://git-scm.com/docs/gitcredentials
 //   - https://git-scm.com/docs/git-credential
+//
+// # Plugin
 //
 // git-credential-luci supports ancillary authentication via a plugin.
 // A plugin can be configured by setting an environment variable:
@@ -26,6 +30,8 @@
 //
 // This will run the plugin binary `luci-auth-fido2-plugin` when
 // needed.
+//
+// # Debugging, etc.
 //
 // To enable debug logging:
 //
