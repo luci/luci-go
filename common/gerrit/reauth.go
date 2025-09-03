@@ -157,7 +157,7 @@ func checkProjectReAuth(ctx context.Context, c *http.Client, host, project strin
 	}
 	resp, err := gc.CheckRapt(ctx, &gerritpb.CheckRaptRequest{Project: res.Project})
 	if err != nil {
-		return nil, err
+		return nil, errors.Fmt("checkProjectReAuth on host %q project %q: %w", host, project, err)
 	}
 	res.NeedsRAPT = resp.GetRaptRequired()
 	res.HasValidRAPT = resp.GetHasValidRapt()
