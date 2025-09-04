@@ -227,7 +227,7 @@ func (h pluginHandler) authWithPlugin(ctx context.Context, req *webauthn.GetAsse
 	ctx, cancel := context.WithTimeout(ctx, 25*time.Second)
 	defer cancel()
 	logging.Debugf(ctx, "Attempting signing plugin auth with request: %+v", req)
-	h.printForUser("\nStarting plugin (this may take a while the first time)...\n")
+	h.printForUser("\nStarting ReAuth plugin (this may take a while the first time)...\n")
 	h.printForUser("When your security key starts flashing, touch it to proceed.\n\n")
 	return h.sendRequest(ctx, req)
 }
