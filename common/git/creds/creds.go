@@ -35,7 +35,7 @@ type Attrs struct {
 	Capabilities []string
 }
 
-func (a Attrs) HasAuthtypeCapability() bool {
+func (a Attrs) SupportsAuthtype() bool {
 	return slices.Contains(a.Capabilities, "authtype")
 }
 

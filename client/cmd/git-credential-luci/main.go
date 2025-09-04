@@ -308,7 +308,7 @@ func handleGet(ctx context.Context, opts auth.Options) {
 			logging.Debugf(
 				ctx, "Proceeding with ReAuth (check=%v, force=%v)",
 				needReAuth, forceReAuth())
-			if !attrs.HasAuthtypeCapability() {
+			if !attrs.SupportsAuthtype() {
 				fmt.Fprintf(os.Stderr, "Git client does not support authtype capability, so cannot continue with ReAuth\n")
 				os.Exit(EXIT_ERROR)
 			}
@@ -317,6 +317,7 @@ func handleGet(ctx context.Context, opts auth.Options) {
 			if err == nil {
 				fmt.Printf("authtype=BearerReAuth\n")
 				fmt.Printf("credential=%s:%s\n", t.AccessToken, rapt)
+				fmt.Printf("ephemeral=true\n")
 				os.Exit(EXIT_OK)
 			}
 			if bypassReAuth() {
