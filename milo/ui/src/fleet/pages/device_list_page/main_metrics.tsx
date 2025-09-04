@@ -111,7 +111,7 @@ export function ChromeOSMainMetrics({
           <div css={METRIC_CONTAINER_STYLES}>
             <SingleMetric
               name="Devices"
-              total={countQuery.data?.total}
+              value={countQuery.data?.total}
               loading={countQuery.isPending}
             />
           </div>
