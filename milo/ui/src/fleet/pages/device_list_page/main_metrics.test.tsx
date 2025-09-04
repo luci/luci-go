@@ -18,7 +18,7 @@ import { render, screen } from '@testing-library/react';
 import { CountDevicesResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { MainMetrics, MainMetricsContainer } from './main_metrics';
+import { ChromeOSMainMetrics, MainMetricsContainer } from './main_metrics';
 
 const MOCK_DATA: CountDevicesResponse = {
   total: 440,
@@ -70,7 +70,7 @@ describe('<MainMetrics />', () => {
 
     render(
       <FakeContextProvider>
-        <MainMetrics
+        <ChromeOSMainMetrics
           countQuery={mockQuery(MOCK_DATA)}
           labstationsQuery={mockQuery(MOCK_DATA)}
         />

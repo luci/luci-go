@@ -25,7 +25,10 @@ import { colors } from '@/fleet/theme/colors';
 import { SelectedOptions } from '@/fleet/types';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { CountDevicesResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import {
+  CountDevicesResponse,
+  Platform,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import {
   addNewFilterToParams,
@@ -65,7 +68,7 @@ interface MainMetricsProps {
  * MainMetrics is the presentational component for the main metrics section.
  * It is responsible for displaying the metrics, but not for fetching the data.
  */
-export function MainMetrics({
+export function ChromeOSMainMetrics({
   countQuery,
   labstationsQuery,
 }: MainMetricsProps) {
@@ -108,7 +111,7 @@ export function MainMetrics({
           <div css={METRIC_CONTAINER_STYLES}>
             <SingleMetric
               name="Devices"
-              value={countQuery.data?.total}
+              total={countQuery.data?.total}
               loading={countQuery.isPending}
             />
           </div>
@@ -220,7 +223,7 @@ export function MainMetrics({
             <SingleMetric
               name="Ready"
               value={labstationsQuery.data?.deviceState?.ready}
-              total={labstationsQuery.data?.total}
+              total={countQuery.data?.total}
               loading={labstationsQuery.isPending}
               filterUrl={getFilterQueryString({
                 'labels.dut_state': ['ready'],
@@ -230,7 +233,7 @@ export function MainMetrics({
             <SingleMetric
               name="Repair failed"
               value={labstationsQuery.data?.deviceState?.repairFailed}
-              total={labstationsQuery.data?.total}
+              total={countQuery.data?.total}
               loading={labstationsQuery.isPending}
               filterUrl={getFilterQueryString({
                 'labels.dut_state': ['repair_failed'],
@@ -240,7 +243,7 @@ export function MainMetrics({
             <SingleMetric
               name="Needs deploy"
               value={labstationsQuery.data?.deviceState?.needsDeploy}
-              total={labstationsQuery.data?.total}
+              total={countQuery.data?.total}
               Icon={
                 <WarningIcon
                   sx={{ color: colors.yellow[900], marginTop: '-2px' }}
@@ -266,6 +269,110 @@ export function MainMetrics({
   );
 }
 
+export function AndroidMainMetrics({
+  countQuery,
+}: {
+  countQuery: UseQueryResult<CountDevicesResponse, unknown>;
+}) {
+  const [searchParams, _] = useSyncedSearchParams();
+
+  const getFilterQueryString = (filters: Record<string, string[]>): string => {
+    let newSearchParams = new URLSearchParams(searchParams);
+    for (const [name, values] of Object.entries(filters)) {
+      newSearchParams = addNewFilterToParams(newSearchParams, name, values);
+    }
+    return '?' + newSearchParams.toString();
+  };
+
+  const getContent = () => {
+    if (countQuery.isError) {
+      return (
+        <Alert severity="error">
+          {getErrorMessage(countQuery.error, 'get the main metrics')}
+        </Alert>
+      );
+    }
+
+    return (
+      <div
+        css={{
+          display: 'flex',
+          maxWidth: 1400,
+        }}
+      >
+        <div css={{ flexGrow: 2 }}>
+          <Typography variant="subhead1">Device state</Typography>
+          <div css={METRIC_CONTAINER_STYLES}>
+            <SingleMetric
+              name="Total"
+              value={countQuery.data?.androidCount?.totalDevices}
+              loading={countQuery.isPending}
+            />
+            <SingleMetric
+              name="Ready"
+              value={countQuery.data?.androidCount?.idleDevices}
+              total={countQuery.data?.androidCount?.totalDevices}
+              loading={countQuery.isPending}
+              filterUrl={getFilterQueryString({
+                state: ['idle'],
+              })}
+            />
+            <SingleMetric
+              name="Busy"
+              value={countQuery.data?.androidCount?.busyDevices}
+              total={countQuery.data?.androidCount?.totalDevices}
+              loading={countQuery.isPending}
+              filterUrl={getFilterQueryString({
+                state: ['busy'],
+              })}
+            />
+            <SingleMetric
+              name="Prepping"
+              value={countQuery.data?.androidCount?.preppingDevices}
+              total={countQuery.data?.androidCount?.totalDevices}
+              loading={countQuery.isPending}
+              filterUrl={getFilterQueryString({
+                state: ['prepping'],
+              })}
+            />
+            <SingleMetric
+              name="Missing"
+              value={countQuery.data?.androidCount?.missingDevices}
+              total={countQuery.data?.androidCount?.totalDevices}
+              loading={countQuery.isPending}
+              filterUrl={getFilterQueryString({
+                state: ['missing'],
+              })}
+              Icon={
+                <WarningIcon
+                  sx={{ color: colors.yellow[900], marginTop: '-2px' }}
+                />
+              }
+            />
+            <SingleMetric
+              name="Dying"
+              value={countQuery.data?.androidCount?.dyingDevices}
+              total={countQuery.data?.androidCount?.totalDevices}
+              loading={countQuery.isPending}
+              filterUrl={getFilterQueryString({
+                state: ['dying'],
+              })}
+              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <MetricsContainer>
+      <Typography variant="h4">Main metrics</Typography>
+      <div css={{ marginTop: 24 }}>{getContent()}</div>
+    </MetricsContainer>
+  );
+}
+
 /**
  * MainMetricsContainer is the container component for the main metrics section.
  * It is responsible for fetching the data and passing it to the presentational
@@ -273,24 +380,44 @@ export function MainMetrics({
  */
 export function MainMetricsContainer({
   selectedOptions,
+  platform,
 }: {
   selectedOptions: SelectedOptions;
+  platform: Platform;
 }) {
   const client = useFleetConsoleClient();
 
   const countQuery = useQuery(
     client.CountDevices.query({
       filter: stringifyFilters(selectedOptions),
+      platform: platform,
     }),
   );
 
-  const labstationsQuery = useQuery(
-    client.CountDevices.query({
+  const labstationsQuery = useQuery({
+    ...client.CountDevices.query({
       filter: stringifyFilters({ ...selectedOptions, ...LABSTATION_FILTERS }),
+      platform: platform,
     }),
-  );
+    enabled: platform === Platform.CHROMEOS,
+  });
+
+  switch (platform) {
+    case Platform.ANDROID:
+      return <AndroidMainMetrics countQuery={countQuery} />;
+    case Platform.CHROMEOS:
+      return (
+        <ChromeOSMainMetrics
+          countQuery={countQuery}
+          labstationsQuery={labstationsQuery}
+        />
+      );
+  }
 
   return (
-    <MainMetrics countQuery={countQuery} labstationsQuery={labstationsQuery} />
+    <ChromeOSMainMetrics
+      countQuery={countQuery}
+      labstationsQuery={labstationsQuery}
+    />
   );
 }

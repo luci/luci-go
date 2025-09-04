@@ -77,10 +77,9 @@ export function SingleMetric({
           <>
             <Typography variant="h3">{value || 0}</Typography>
             {total ? (
-              <Typography
-                variant="caption"
-                sx={{ textWrap: 'nowrap' }}
-              >{` / ${total}`}</Typography>
+              <Typography variant="caption" sx={{ textWrap: 'nowrap' }}>
+                {` / ${total}`}
+              </Typography>
             ) : (
               <></>
             )}

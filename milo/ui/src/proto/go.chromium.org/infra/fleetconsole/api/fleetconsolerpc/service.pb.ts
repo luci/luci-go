@@ -88,20 +88,24 @@ export function deviceStateToJSON(object: DeviceState): string {
 }
 
 export enum Platform {
-  ANDROID = 0,
-  CHROMEOS = 1,
-  CHROMIUM = 2,
+  UNSPECIFIED = 0,
+  ANDROID = 1,
+  CHROMEOS = 2,
+  CHROMIUM = 3,
 }
 
 export function platformFromJSON(object: any): Platform {
   switch (object) {
     case 0:
+    case "UNSPECIFIED":
+      return Platform.UNSPECIFIED;
+    case 1:
     case "ANDROID":
       return Platform.ANDROID;
-    case 1:
+    case 2:
     case "CHROMEOS":
       return Platform.CHROMEOS;
-    case 2:
+    case 3:
     case "CHROMIUM":
       return Platform.CHROMIUM;
     default:
@@ -111,6 +115,8 @@ export function platformFromJSON(object: any): Platform {
 
 export function platformToJSON(object: Platform): string {
   switch (object) {
+    case Platform.UNSPECIFIED:
+      return "UNSPECIFIED";
     case Platform.ANDROID:
       return "ANDROID";
     case Platform.CHROMEOS:
@@ -296,12 +302,34 @@ export interface CountDevicesRequest {
    * Same filter format as ListDevicesRequest
    */
   readonly filter: string;
+  readonly platform: Platform;
 }
 
 export interface CountDevicesResponse {
   readonly total: number;
+  /** DEPRECATED */
+  readonly taskState:
+    | TaskStateCounts
+    | undefined;
+  /** DEPRECATED */
+  readonly deviceState: DeviceStateCounts | undefined;
+  readonly chromeosCount?: ChromeOSCount | undefined;
+  readonly androidCount?: AndroidCount | undefined;
+}
+
+export interface ChromeOSCount {
   readonly taskState: TaskStateCounts | undefined;
   readonly deviceState: DeviceStateCounts | undefined;
+  readonly total: number;
+}
+
+export interface AndroidCount {
+  readonly totalDevices: number;
+  readonly idleDevices: number;
+  readonly busyDevices: number;
+  readonly dyingDevices: number;
+  readonly preppingDevices: number;
+  readonly missingDevices: number;
 }
 
 export interface TaskStateCounts {
@@ -2180,13 +2208,16 @@ export const LabelValues: MessageFns<LabelValues> = {
 };
 
 function createBaseCountDevicesRequest(): CountDevicesRequest {
-  return { filter: "" };
+  return { filter: "", platform: 0 };
 }
 
 export const CountDevicesRequest: MessageFns<CountDevicesRequest> = {
   encode(message: CountDevicesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.filter !== "") {
       writer.uint32(10).string(message.filter);
+    }
+    if (message.platform !== 0) {
+      writer.uint32(16).int32(message.platform);
     }
     return writer;
   },
@@ -2206,6 +2237,14 @@ export const CountDevicesRequest: MessageFns<CountDevicesRequest> = {
           message.filter = reader.string();
           continue;
         }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.platform = reader.int32() as any;
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2216,13 +2255,19 @@ export const CountDevicesRequest: MessageFns<CountDevicesRequest> = {
   },
 
   fromJSON(object: any): CountDevicesRequest {
-    return { filter: isSet(object.filter) ? globalThis.String(object.filter) : "" };
+    return {
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+      platform: isSet(object.platform) ? platformFromJSON(object.platform) : 0,
+    };
   },
 
   toJSON(message: CountDevicesRequest): unknown {
     const obj: any = {};
     if (message.filter !== "") {
       obj.filter = message.filter;
+    }
+    if (message.platform !== 0) {
+      obj.platform = platformToJSON(message.platform);
     }
     return obj;
   },
@@ -2233,12 +2278,13 @@ export const CountDevicesRequest: MessageFns<CountDevicesRequest> = {
   fromPartial(object: DeepPartial<CountDevicesRequest>): CountDevicesRequest {
     const message = createBaseCountDevicesRequest() as any;
     message.filter = object.filter ?? "";
+    message.platform = object.platform ?? 0;
     return message;
   },
 };
 
 function createBaseCountDevicesResponse(): CountDevicesResponse {
-  return { total: 0, taskState: undefined, deviceState: undefined };
+  return { total: 0, taskState: undefined, deviceState: undefined, chromeosCount: undefined, androidCount: undefined };
 }
 
 export const CountDevicesResponse: MessageFns<CountDevicesResponse> = {
@@ -2251,6 +2297,12 @@ export const CountDevicesResponse: MessageFns<CountDevicesResponse> = {
     }
     if (message.deviceState !== undefined) {
       DeviceStateCounts.encode(message.deviceState, writer.uint32(26).fork()).join();
+    }
+    if (message.chromeosCount !== undefined) {
+      ChromeOSCount.encode(message.chromeosCount, writer.uint32(34).fork()).join();
+    }
+    if (message.androidCount !== undefined) {
+      AndroidCount.encode(message.androidCount, writer.uint32(42).fork()).join();
     }
     return writer;
   },
@@ -2286,6 +2338,22 @@ export const CountDevicesResponse: MessageFns<CountDevicesResponse> = {
           message.deviceState = DeviceStateCounts.decode(reader, reader.uint32());
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.chromeosCount = ChromeOSCount.decode(reader, reader.uint32());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.androidCount = AndroidCount.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2300,6 +2368,8 @@ export const CountDevicesResponse: MessageFns<CountDevicesResponse> = {
       total: isSet(object.total) ? globalThis.Number(object.total) : 0,
       taskState: isSet(object.taskState) ? TaskStateCounts.fromJSON(object.taskState) : undefined,
       deviceState: isSet(object.deviceState) ? DeviceStateCounts.fromJSON(object.deviceState) : undefined,
+      chromeosCount: isSet(object.chromeosCount) ? ChromeOSCount.fromJSON(object.chromeosCount) : undefined,
+      androidCount: isSet(object.androidCount) ? AndroidCount.fromJSON(object.androidCount) : undefined,
     };
   },
 
@@ -2313,6 +2383,12 @@ export const CountDevicesResponse: MessageFns<CountDevicesResponse> = {
     }
     if (message.deviceState !== undefined) {
       obj.deviceState = DeviceStateCounts.toJSON(message.deviceState);
+    }
+    if (message.chromeosCount !== undefined) {
+      obj.chromeosCount = ChromeOSCount.toJSON(message.chromeosCount);
+    }
+    if (message.androidCount !== undefined) {
+      obj.androidCount = AndroidCount.toJSON(message.androidCount);
     }
     return obj;
   },
@@ -2329,6 +2405,248 @@ export const CountDevicesResponse: MessageFns<CountDevicesResponse> = {
     message.deviceState = (object.deviceState !== undefined && object.deviceState !== null)
       ? DeviceStateCounts.fromPartial(object.deviceState)
       : undefined;
+    message.chromeosCount = (object.chromeosCount !== undefined && object.chromeosCount !== null)
+      ? ChromeOSCount.fromPartial(object.chromeosCount)
+      : undefined;
+    message.androidCount = (object.androidCount !== undefined && object.androidCount !== null)
+      ? AndroidCount.fromPartial(object.androidCount)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseChromeOSCount(): ChromeOSCount {
+  return { taskState: undefined, deviceState: undefined, total: 0 };
+}
+
+export const ChromeOSCount: MessageFns<ChromeOSCount> = {
+  encode(message: ChromeOSCount, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.taskState !== undefined) {
+      TaskStateCounts.encode(message.taskState, writer.uint32(10).fork()).join();
+    }
+    if (message.deviceState !== undefined) {
+      DeviceStateCounts.encode(message.deviceState, writer.uint32(18).fork()).join();
+    }
+    if (message.total !== 0) {
+      writer.uint32(24).int32(message.total);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ChromeOSCount {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseChromeOSCount() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.taskState = TaskStateCounts.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.deviceState = DeviceStateCounts.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.total = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ChromeOSCount {
+    return {
+      taskState: isSet(object.taskState) ? TaskStateCounts.fromJSON(object.taskState) : undefined,
+      deviceState: isSet(object.deviceState) ? DeviceStateCounts.fromJSON(object.deviceState) : undefined,
+      total: isSet(object.total) ? globalThis.Number(object.total) : 0,
+    };
+  },
+
+  toJSON(message: ChromeOSCount): unknown {
+    const obj: any = {};
+    if (message.taskState !== undefined) {
+      obj.taskState = TaskStateCounts.toJSON(message.taskState);
+    }
+    if (message.deviceState !== undefined) {
+      obj.deviceState = DeviceStateCounts.toJSON(message.deviceState);
+    }
+    if (message.total !== 0) {
+      obj.total = Math.round(message.total);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ChromeOSCount>): ChromeOSCount {
+    return ChromeOSCount.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ChromeOSCount>): ChromeOSCount {
+    const message = createBaseChromeOSCount() as any;
+    message.taskState = (object.taskState !== undefined && object.taskState !== null)
+      ? TaskStateCounts.fromPartial(object.taskState)
+      : undefined;
+    message.deviceState = (object.deviceState !== undefined && object.deviceState !== null)
+      ? DeviceStateCounts.fromPartial(object.deviceState)
+      : undefined;
+    message.total = object.total ?? 0;
+    return message;
+  },
+};
+
+function createBaseAndroidCount(): AndroidCount {
+  return { totalDevices: 0, idleDevices: 0, busyDevices: 0, dyingDevices: 0, preppingDevices: 0, missingDevices: 0 };
+}
+
+export const AndroidCount: MessageFns<AndroidCount> = {
+  encode(message: AndroidCount, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.totalDevices !== 0) {
+      writer.uint32(8).int32(message.totalDevices);
+    }
+    if (message.idleDevices !== 0) {
+      writer.uint32(16).int32(message.idleDevices);
+    }
+    if (message.busyDevices !== 0) {
+      writer.uint32(24).int32(message.busyDevices);
+    }
+    if (message.dyingDevices !== 0) {
+      writer.uint32(32).int32(message.dyingDevices);
+    }
+    if (message.preppingDevices !== 0) {
+      writer.uint32(40).int32(message.preppingDevices);
+    }
+    if (message.missingDevices !== 0) {
+      writer.uint32(48).int32(message.missingDevices);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AndroidCount {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAndroidCount() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.totalDevices = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.idleDevices = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.busyDevices = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.dyingDevices = reader.int32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.preppingDevices = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.missingDevices = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AndroidCount {
+    return {
+      totalDevices: isSet(object.totalDevices) ? globalThis.Number(object.totalDevices) : 0,
+      idleDevices: isSet(object.idleDevices) ? globalThis.Number(object.idleDevices) : 0,
+      busyDevices: isSet(object.busyDevices) ? globalThis.Number(object.busyDevices) : 0,
+      dyingDevices: isSet(object.dyingDevices) ? globalThis.Number(object.dyingDevices) : 0,
+      preppingDevices: isSet(object.preppingDevices) ? globalThis.Number(object.preppingDevices) : 0,
+      missingDevices: isSet(object.missingDevices) ? globalThis.Number(object.missingDevices) : 0,
+    };
+  },
+
+  toJSON(message: AndroidCount): unknown {
+    const obj: any = {};
+    if (message.totalDevices !== 0) {
+      obj.totalDevices = Math.round(message.totalDevices);
+    }
+    if (message.idleDevices !== 0) {
+      obj.idleDevices = Math.round(message.idleDevices);
+    }
+    if (message.busyDevices !== 0) {
+      obj.busyDevices = Math.round(message.busyDevices);
+    }
+    if (message.dyingDevices !== 0) {
+      obj.dyingDevices = Math.round(message.dyingDevices);
+    }
+    if (message.preppingDevices !== 0) {
+      obj.preppingDevices = Math.round(message.preppingDevices);
+    }
+    if (message.missingDevices !== 0) {
+      obj.missingDevices = Math.round(message.missingDevices);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<AndroidCount>): AndroidCount {
+    return AndroidCount.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<AndroidCount>): AndroidCount {
+    const message = createBaseAndroidCount() as any;
+    message.totalDevices = object.totalDevices ?? 0;
+    message.idleDevices = object.idleDevices ?? 0;
+    message.busyDevices = object.busyDevices ?? 0;
+    message.dyingDevices = object.dyingDevices ?? 0;
+    message.preppingDevices = object.preppingDevices ?? 0;
+    message.missingDevices = object.missingDevices ?? 0;
     return message;
   },
 };

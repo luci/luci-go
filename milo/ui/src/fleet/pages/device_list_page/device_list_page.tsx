@@ -16,6 +16,7 @@ import { Chip } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
 import { useEffect, useMemo } from 'react';
+import { useLocalStorage } from 'react-use';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -60,7 +61,7 @@ import { useDeviceDimensions } from './use_device_dimensions';
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
 
-export const DeviceListPage = () => {
+export const DeviceListPage = ({ platform }: { platform: Platform }) => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [orderByParam] = useOrderByParam();
   const pagerCtx = usePagerContext({
@@ -99,6 +100,7 @@ export const DeviceListPage = () => {
     ...client.CountDevices.query(
       CountDevicesRequest.fromPartial({
         filter: stringifiedSelectedOptions,
+        platform: platform,
       }),
     ),
   });
@@ -195,7 +197,10 @@ export const DeviceListPage = () => {
       }}
     >
       <WarningNotifications warnings={warnings} />
-      <MainMetricsContainer selectedOptions={selectedOptions.filters || {}} />
+      <MainMetricsContainer
+        selectedOptions={selectedOptions.filters || {}}
+        platform={platform}
+      />
       <AutorepairJobsAlert />
       <div
         css={{
@@ -259,6 +264,14 @@ export const DeviceListPage = () => {
 
 export function Component() {
   const { platform } = usePlatform();
+  const [localStorageEnable] = useLocalStorage<boolean>(
+    'super-secret-fleet-android-device-list',
+  );
+
+  const supportedPlatforms = localStorageEnable
+    ? [Platform.CHROMEOS, Platform.ANDROID]
+    : [Platform.CHROMEOS];
+
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
       <FleetHelmet pageTitle="Device List" />
@@ -268,10 +281,10 @@ export function Component() {
         key="fleet-device-list-page"
       >
         <LoggedInBoundary>
-          {platform !== Platform.CHROMEOS ? (
-            <PlatformNotAvailable availablePlatforms={[Platform.CHROMEOS]} />
+          {platform !== undefined && supportedPlatforms.includes(platform) ? (
+            <DeviceListPage platform={platform} />
           ) : (
-            <DeviceListPage />
+            <PlatformNotAvailable availablePlatforms={supportedPlatforms} />
           )}
         </LoggedInBoundary>
       </RecoverableErrorBoundary>
