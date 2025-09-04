@@ -180,14 +180,23 @@ func main() {
 		ctx = logging.SetLevel(ctx, logging.Debug)
 	}
 
+	logging.Debugf(ctx, "Got command %q", flag.Args()[0])
 	switch flag.Args()[0] {
 	case "get":
 		handleGet(ctx, opts)
+	case "erase":
+		// This should erase credentials, but git calls this whenever authentication fails, e.g.:
+		//
+		// User is logged in but without reauth -> auth fails -> git calls erase
+		//
+		// which is bad.
+		//
+		// For now, ignore these calls (which is allowed by
+		// the spec), but log it in debug.
+		_ = readAttrsOrDie(ctx)
 	case "logout":
 		// logout is not part of the Git credential helper
 		// specification, but it is provided for convenience.
-		fallthrough
-	case "erase":
 		a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 		if err := a.PurgeCredentialsCache(); err != nil {
 			fmt.Fprintf(os.Stderr, "cannot erase cache: %v\n", err)
@@ -292,14 +301,7 @@ func handleGet(ctx context.Context, opts auth.Options) {
 	}
 	if reAuthEnabled() {
 		logging.Debugf(ctx, "ReAuth is enabled")
-		var readInput bytes.Buffer
-		attrs, err := creds.ReadAttrs(io.TeeReader(os.Stdin, &readInput))
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(EXIT_ERROR)
-		}
-		logging.Debugf(ctx, "Read input %q", readInput.Bytes())
-		logging.Debugf(ctx, "Got attributes %+v", attrs)
+		attrs := readAttrsOrDie(ctx)
 
 		needReAuth := checkReAuthNeeded(ctx, a, opts, attrs)
 		if needReAuth || forceReAuth() {
@@ -331,6 +333,18 @@ func handleGet(ctx context.Context, opts auth.Options) {
 	}
 	fmt.Printf("username=git-luci\n")
 	fmt.Printf("password=%s\n", t.AccessToken)
+}
+
+func readAttrsOrDie(ctx context.Context) *creds.Attrs {
+	var readInput bytes.Buffer
+	attrs, err := creds.ReadAttrs(io.TeeReader(os.Stdin, &readInput))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(EXIT_ERROR)
+	}
+	logging.Debugf(ctx, "Read input for attributes: %q", readInput.Bytes())
+	logging.Debugf(ctx, "Got attributes %+v", attrs)
+	return attrs
 }
 
 // Returns whether ReAuth needed by the Gerrit server.
