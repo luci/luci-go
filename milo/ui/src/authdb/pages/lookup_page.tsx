@@ -38,6 +38,9 @@ import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
+const PRINCIPAL_PARAM_KEY = 'p';
+const TAB_PARAM_KEY = 'tab';
+
 const theme = createTheme({
   typography: {
     h6: {
@@ -66,12 +69,18 @@ const theme = createTheme({
 });
 
 export function LookupPage() {
-  const [query, setQuery] = useState<string>('');
-  const [principal, setPrincipal] = useState<string>('');
   const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const principal = searchParams.get(PRINCIPAL_PARAM_KEY);
+  const [barInput, setBarInput] = useState(principal || '');
 
   const searchQuery = () => {
-    setPrincipal(query);
+    setSearchParams(
+      (params) => {
+        params.set(PRINCIPAL_PARAM_KEY, barInput);
+        return params;
+      },
+      { replace: true },
+    );
   };
 
   const checkFieldSubmit = (keyPressed: string) => {
@@ -84,7 +93,7 @@ export function LookupPage() {
   const handleTabChange = (newValue: string) => {
     setSearchParams(
       (params) => {
-        params.set('tab', newValue);
+        params.set(TAB_PARAM_KEY, newValue);
         return params;
       },
       { replace: true },
@@ -92,10 +101,10 @@ export function LookupPage() {
   };
 
   const validValues = ['ancestors', 'permissions'];
-
-  let value = searchParams.get('tab');
-  if (!value || validValues.indexOf(value) === -1) {
-    value = 'ancestors';
+  let tabValue = searchParams.get(TAB_PARAM_KEY);
+  if (!tabValue || validValues.indexOf(tabValue) === -1) {
+    // Default to the ancestors tab.
+    tabValue = 'ancestors';
   }
 
   function a11yProps(value: string) {
@@ -122,7 +131,7 @@ export function LookupPage() {
           </a>{' '}
           and use the{' '}
           <a
-            href={`https://${SETTINGS.authService.host}/auth/groups`}
+            href={`https://${SETTINGS.authService.host}/auth/lookup`}
             target="_blank"
             rel="noreferrer"
           >
@@ -134,8 +143,8 @@ export function LookupPage() {
           <FormControl fullWidth>
             <TextField
               data-testid="lookup-textfield"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              value={barInput}
+              onChange={(e) => setBarInput(e.target.value)}
               onKeyDown={(e) => checkFieldSubmit(e.key)}
               label="Look up an email, glob, or group name. e.g. person@example.com, *@google.com, administrators."
               slotProps={{
@@ -154,8 +163,8 @@ export function LookupPage() {
               }}
             ></TextField>
           </FormControl>
-          {principal !== '' && (
-            <TabContext value={value}>
+          {principal && (
+            <TabContext value={tabValue}>
               <Box sx={{ borderBottom: 1, borderColor: 'divider', pt: 1.5 }}>
                 <TabList onChange={(_, newValue) => handleTabChange(newValue)}>
                   <Tab label="Ancestors" {...a11yProps('ancestors')} />

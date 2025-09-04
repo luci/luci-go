@@ -107,4 +107,32 @@ describe('<LookupPage />', () => {
       }
     }
   });
+  test('Uses URL search params', async () => {
+    const mockPermissions = createMockPrincipalPermissions(
+      'user:user@example.com',
+    );
+    mockFetchGetPrincipalPermissions(mockPermissions);
+
+    render(
+      <FakeContextProvider
+        routerOptions={{
+          initialEntries: ['/?p=user@example.com&tab=permissions'],
+        }}
+      >
+        <LookupPage />
+      </FakeContextProvider>,
+    );
+
+    expect(
+      screen.getByTestId('lookup-textfield').querySelector('input'),
+    ).toHaveValue('user@example.com');
+
+    await screen.findByTestId('permissions-tab');
+    await screen.findByTestId('permissions-table');
+    for (const realmPermission of mockPermissions.realmPermissions) {
+      for (const permission of realmPermission.permissions) {
+        expect(screen.getByText(permission)).toBeInTheDocument();
+      }
+    }
+  });
 });
