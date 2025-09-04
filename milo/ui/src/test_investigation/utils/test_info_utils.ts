@@ -154,7 +154,7 @@ export function constructTestHistoryUrl(
     const variantQueryParts: string[] = [];
     for (const [key, value] of Object.entries(variantDef)) {
       if (value !== undefined && value !== null) {
-        variantQueryParts.push(`V:${key}=${String(value)}`);
+        variantQueryParts.push(`V:${key}=${encodeURIComponent(value)}`);
       }
     }
 
