@@ -12,4 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './table_tree';
+export * from './tree_table';
+export * from './virtual_tree_table';

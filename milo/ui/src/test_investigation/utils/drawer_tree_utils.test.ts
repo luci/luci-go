@@ -239,8 +239,8 @@ describe('DrawerTreeUtils', () => {
       expect(pathSplit('a/b/c')).toEqual(['a/', 'b/', 'c']);
     });
 
-    it('should handle different separators', () => {
-      expect(pathSplit('a.b::c>d')).toEqual(['a.', 'b:', ':', 'c>', 'd']);
+    it('should ignore different separators', () => {
+      expect(pathSplit('a.b::c>d')).toEqual(['a.b::c>d']);
     });
 
     it('should handle leading and trailing separators', () => {
@@ -316,9 +316,10 @@ describe('DrawerTreeUtils', () => {
       ];
       const compressed = compressSingleChildNodes(tree);
       expect(compressed).toHaveLength(1);
-      expect(compressed[0].label).toBe('abc');
-      expect(compressed[0].children).toBeUndefined();
-      expect(compressed[0].testVariant).toBeDefined();
+      expect(compressed[0].label).toBe('ab');
+      expect(compressed[0].children).toHaveLength(1);
+      expect(compressed[0].children?.[0].label).toBe('c');
+      expect(compressed[0].children?.[0].testVariant).toBeDefined();
     });
 
     it('should not compress nodes with multiple children', () => {

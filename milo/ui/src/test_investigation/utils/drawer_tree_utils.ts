@@ -357,7 +357,7 @@ export function pathSplit(id: string): string[] {
   let currentPart = '';
   for (let i = 0; i < id.length; i++) {
     const char = id[i];
-    if (/[a-zA-Z0-9_-]/.test(char)) {
+    if (char !== '/') {
       currentPart += char;
     } else {
       if (currentPart) {
@@ -385,7 +385,7 @@ export function compressSingleChildNodes(
   const compressed = nodes.map((parent) => {
     if (parent.children) {
       parent.children = compressSingleChildNodes(parent.children);
-      if (parent.children.length === 1) {
+      if (parent.children.length === 1 && !parent.children[0].testVariant) {
         const child = parent.children[0];
         return {
           ...parent,

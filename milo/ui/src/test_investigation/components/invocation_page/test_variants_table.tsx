@@ -42,7 +42,7 @@ import { FilterBarContainer } from '@/generic_libs/components/filter/filter_bar_
 import {
   ColumnDefinition,
   RowData,
-  TreeTable,
+  VirtualTreeTable,
 } from '@/generic_libs/components/table';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
@@ -317,7 +317,22 @@ export function TestVariantsTable({
                     </AccordionDetails>
                   </Accordion>
                 ) : (
-                  <>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      p: 0,
+                    }}
+                  >
+                    {IconComponent && (
+                      <IconComponent
+                        sx={{
+                          fontSize: '18px',
+                          color: styles.iconColor,
+                        }}
+                      />
+                    )}
                     <Link
                       href={getTestVariantURL(
                         testVariant.testId,
@@ -343,13 +358,13 @@ export function TestVariantsTable({
                       aria-label="Copy text."
                       sx={{ ml: 0.5 }}
                     />
-                  </>
+                  </Box>
                 )}
               </>
             );
           } else {
             return (
-              <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 {rowData.label}{' '}
                 <Chip color="error" label={`${rowData.failedTests} failed`} />
                 {isTestIdStructured && (
@@ -410,7 +425,7 @@ export function TestVariantsTable({
           <CircularProgress />
         </Box>
       )}
-      <TreeTable
+      <VirtualTreeTable
         data={rows}
         columns={columns}
         expandedRowIds={expandedNodes}

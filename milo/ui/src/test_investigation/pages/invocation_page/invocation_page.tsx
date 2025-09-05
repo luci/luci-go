@@ -14,11 +14,12 @@
 
 import {
   Box,
+  Button,
   CircularProgress,
   ThemeProvider,
   Typography,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
@@ -36,7 +37,6 @@ import { Invocation_State } from '@/proto/go.chromium.org/luci/resultdb/proto/v1
 import {
   GetInvocationRequest,
   QueryTestVariantsRequest,
-  QueryTestVariantsResponse,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import {
   InvocationCounts,
@@ -171,27 +171,39 @@ export function InvocationPage() {
     isSuccess,
     error,
     isError,
-  } = useQuery<QueryTestVariantsResponse | null>({
-    ...resultDbClient.QueryTestVariants.query(queryRequest),
+    isPending,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    ...resultDbClient.QueryTestVariants.queryPaged(queryRequest),
     staleTime:
       invocation?.state === Invocation_State.FINALIZED
         ? Infinity
         : 5 * 60 * 1000,
   });
 
+  const isLoadingTestVariantsPage = isPending || isFetchingNextPage;
+  const testVariants = useMemo(() => {
+    return (
+      testVariantsResponse?.pages.flatMap((page) => page.testVariants || []) ||
+      []
+    );
+  }, [testVariantsResponse]);
+
   const { finalFilteredVariants, finalFilteredTree } = useMemo(() => {
-    if (!testVariantsResponse?.testVariants) {
+    if (!testVariants) {
       return { finalFilteredVariants: [], finalFilteredTree: [] };
     }
 
-    const linkFilteredVariants = testVariantsResponse.testVariants;
+    const linkFilteredVariants = testVariants;
     const { tree } = buildHierarchyTree(linkFilteredVariants);
     const statusFilteredTree = filterTreeByStatus(tree, selectedStatuses);
     return {
       finalFilteredVariants: linkFilteredVariants,
       finalFilteredTree: statusFilteredTree,
     };
-  }, [testVariantsResponse, selectedStatuses]);
+  }, [testVariants, selectedStatuses]);
 
   // If there is a unique match (excluding status filtering) navigate directly to
   // it, skipping the invocation page.
@@ -295,7 +307,23 @@ export function InvocationPage() {
             testVariants={finalFilteredVariants}
             isLoadingTestVariants={isFetchingTestVariants}
           />
-          <Box sx={{ mt: '24px' }}>
+          <Box>
+            Loaded {testVariants.length} tests.{' '}
+            <Button
+              disabled={isLoadingTestVariantsPage || !hasNextPage}
+              onClick={() => fetchNextPage()}
+              endIcon={
+                isLoadingTestVariantsPage ? (
+                  <CircularProgress size={15} />
+                ) : (
+                  <></>
+                )
+              }
+            >
+              {isLoadingTestVariantsPage ? 'Loading' : 'Load more'}
+            </Button>
+          </Box>
+          <Box>
             <TestVariantsTable
               treeData={finalFilteredTree}
               isLoading={isFetchingTestVariants}

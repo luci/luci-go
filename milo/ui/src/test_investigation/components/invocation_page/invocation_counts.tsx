@@ -13,21 +13,15 @@
 // limitations under the License.
 
 import { Box, CircularProgress, Paper, Typography } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
-import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import {
   getStatusStyle,
   semanticStatusForTestVariant,
   SemanticStatusType,
   StatusStyle,
 } from '@/common/styles/status_styles';
-import {
-  Invocation,
-  Invocation_State,
-} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
-import { QueryTestResultStatisticsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
 interface InvocationSummaryProps {
@@ -41,24 +35,9 @@ interface InvocationSummaryProps {
  * It fetches test variant counts and displays them in themed boxes.
  */
 export function InvocationCounts({
-  invocation,
   testVariants,
   isLoadingTestVariants,
 }: InvocationSummaryProps) {
-  const resultDbClient = useResultDbClient();
-
-  const { data: stats, isPending: isPendingStats } = useQuery({
-    ...resultDbClient.QueryTestResultStatistics.query(
-      QueryTestResultStatisticsRequest.fromPartial({
-        invocations: invocation ? [invocation.name] : [],
-      }),
-    ),
-    staleTime:
-      invocation.state === Invocation_State.FINALIZED
-        ? Infinity
-        : 5 * 60 * 1000,
-  });
-
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     if (!testVariants) {
@@ -71,7 +50,7 @@ export function InvocationCounts({
     return counts;
   }, [testVariants]);
 
-  if (isLoadingTestVariants || isPendingStats) {
+  if (isLoadingTestVariants) {
     return (
       <CircularProgress size={24} sx={{ display: 'block', margin: 'auto' }} />
     );
@@ -111,11 +90,6 @@ export function InvocationCounts({
           />
         );
       })}
-      <ResultCountBox
-        style={getStatusStyle('info')}
-        label="Total Results"
-        count={stats?.totalTestResults || 'Loading...'}
-      />
     </Box>
   );
 }
