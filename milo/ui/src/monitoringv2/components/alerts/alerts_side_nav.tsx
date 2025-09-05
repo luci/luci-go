@@ -18,6 +18,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import InboxIcon from '@mui/icons-material/Inbox';
 import {
   Box,
+  Button,
   Chip,
   Divider,
   Link,
@@ -28,9 +29,10 @@ import {
   ListItemText,
   ListSubheader,
 } from '@mui/material';
+import { useEffect, useState } from 'react';
 
 import { TreeJson } from '@/monitoring/util/server_json';
-import { StructuredAlert } from '@/monitoringv2/util/alerts';
+import { AlertOrganizer, StructuredAlert } from '@/monitoringv2/util/alerts';
 import { AlertGroup } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alert_groups.pb';
 
 import { TreeStatusSideNav } from './tree_status_side_nav';
@@ -42,6 +44,7 @@ interface AlertsSideNavProps {
   topLevelAlerts: StructuredAlert[];
   ungroupedTopLevelAlerts: StructuredAlert[];
   alertGroups: readonly AlertGroup[];
+  organizer: AlertOrganizer;
 }
 
 export const AlertsSideNav = ({
@@ -51,7 +54,28 @@ export const AlertsSideNav = ({
   topLevelAlerts,
   ungroupedTopLevelAlerts,
   alertGroups,
+  organizer,
 }: AlertsSideNavProps) => {
+  const [defaultShowResolved, setDefaultShowResolved] = useState(false);
+  const [userShowResolved, setUserShowResolved] = useState<boolean | undefined>(
+    undefined,
+  );
+  const activeGroupKeys = organizer.activeAlertKeys();
+  const numResolvedGroups = alertGroups.filter(
+    (group) => activeGroupKeys[group.name].length === 0,
+  ).length;
+
+  // We want to show the resolved groups on the side if the current group is resolved
+  // else we want to hide them for reduced clutter.
+  // We also allow the user to override this (with userShowResolved).
+  useEffect(() => {
+    if (selectedTab?.startsWith('group:')) {
+      setDefaultShowResolved(
+        activeGroupKeys[selectedTab.slice(6)]?.length === 0,
+      );
+    }
+  }, [selectedTab, activeGroupKeys]);
+  const showResolved = userShowResolved ?? defaultShowResolved;
   return (
     <>
       <List>
@@ -96,25 +120,83 @@ export const AlertsSideNav = ({
       <ListSubheader component="div" id="nested-list-subheader">
         Groups
       </ListSubheader>
-      {alertGroups.map((group) => (
-        <ListItem disablePadding key={group.name}>
-          <ListItemButton
-            selected={selectedTab === 'group:' + group.name}
-            onClick={() => setSelectedTab('group:' + group.name)}
-          >
-            <ListItemIcon>
-              <FolderIcon />
-            </ListItemIcon>
-            <ListItemText primary={group.displayName} />
-            <Chip label={group.alertKeys.length} variant="outlined" />
-          </ListItemButton>
-        </ListItem>
-      ))}
-      {alertGroups.length === 0 && (
+      {alertGroups
+        .filter((group) => activeGroupKeys[group.name].length > 0)
+        .map((group) => (
+          <ListItem disablePadding key={group.name}>
+            <ListItemButton
+              selected={selectedTab === 'group:' + group.name}
+              onClick={() => setSelectedTab('group:' + group.name)}
+            >
+              <ListItemIcon>
+                <FolderIcon />
+              </ListItemIcon>
+              <ListItemText primary={group.displayName} />
+              <Chip
+                label={activeGroupKeys[group.name].length}
+                variant="outlined"
+              />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      {alertGroups.length - numResolvedGroups === 0 && (
         <ListItem>
-          <Box sx={{ opacity: '50%' }}>No current alert groups</Box>
+          <Box sx={{ opacity: '50%' }}>No active alert groups</Box>
         </ListItem>
       )}
+      {showResolved && numResolvedGroups > 0 && (
+        <>
+          <Divider />
+          <ListSubheader component="div" id="nested-list-subheader">
+            Resolved Groups
+          </ListSubheader>
+          {alertGroups
+            .filter((group) => activeGroupKeys[group.name].length === 0)
+            .map((group) => (
+              <ListItem disablePadding key={group.name}>
+                <ListItemButton
+                  selected={selectedTab === 'group:' + group.name}
+                  onClick={() => setSelectedTab('group:' + group.name)}
+                >
+                  <ListItemIcon>
+                    <FolderIcon />
+                  </ListItemIcon>
+                  <ListItemText primary={group.displayName} />
+                  <Chip
+                    label={activeGroupKeys[group.name].length}
+                    variant="outlined"
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+        </>
+      )}
+      {numResolvedGroups > 0 && (
+        <ListItem>
+          <Button
+            onClick={() => setUserShowResolved(!showResolved)}
+            variant="outlined"
+            color="inherit"
+            sx={{ opacity: '50%' }}
+            size="small"
+          >
+            {!showResolved ? (
+              <>
+                Show{' '}
+                {
+                  alertGroups.filter(
+                    (group) => activeGroupKeys[group.name].length === 0,
+                  ).length
+                }{' '}
+                resolved groups
+              </>
+            ) : (
+              'Hide resolved groups'
+            )}
+          </Button>
+        </ListItem>
+      )}
+
       <Divider />
       <ListSubheader component="div" id="nested-list-subheader">
         Next Steps

@@ -140,6 +140,7 @@ export const Alerts = () => {
           topLevelAlerts={allAlerts}
           ungroupedTopLevelAlerts={ungroupedAlerts}
           alertGroups={alertGroups}
+          organizer={organizer}
         />
       </Box>
       <Box sx={{ flexGrow: 3 }}>
@@ -204,6 +205,10 @@ export const Alerts = () => {
               onClick={() =>
                 setShowOptions([...showOptions, 'children_hidden'])
               }
+              size="small"
+              variant="outlined"
+              color="inherit"
+              sx={{ opacity: '50%' }}
             >
               Show all
             </Button>

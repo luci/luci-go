@@ -91,6 +91,12 @@ export class AlertOrganizer {
     options: AlertOrganzerOptions,
   ) {
     this.options = options;
+    this.groups = {};
+    for (const group in groups) {
+      if (Object.prototype.hasOwnProperty.call(groups, group)) {
+        this.groups[group] = groups[group].map((ak) => decodeURIComponent(ak));
+      }
+    }
     this.groups = groups;
     this.structuredAlerts = buildStructuredAlerts(alerts);
   }
@@ -108,6 +114,19 @@ export class AlertOrganizer {
         .map((k) => [k, true]),
     );
     return cloneShownAlerts(all, alertKeys, this.options);
+  }
+
+  activeAlertKeys(): GroupedAlertKeys {
+    const active: GroupedAlertKeys = {};
+    for (const group in this.groups) {
+      if (Object.prototype.hasOwnProperty.call(this.groups, group)) {
+        const groupAlertKeys = this.groups[group] || [];
+        active[group] = this.structuredAlerts
+          .filter((a) => groupAlertKeys.includes(a.alert.key))
+          .map((a) => a.alert.key);
+      }
+    }
+    return active;
   }
 
   groupAlerts(groupId: string): StructuredAlert[] {

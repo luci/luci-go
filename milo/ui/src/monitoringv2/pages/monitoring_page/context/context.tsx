@@ -291,6 +291,12 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
         ? `Loading failing tests (${failingTestsQueries.filter((q) => q.isLoading).length}/${failingTestsQueries.length})...`
         : undefined;
 
+  const bugsError =
+    bugsQueryError !== null
+      ? bugsQueryError.result?.error === undefined
+        ? 'Please login to buganizer'
+        : new Error(bugsQueryError.result.error.message)
+      : null;
   return (
     <MonitoringCtx.Provider
       value={{
@@ -302,10 +308,7 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
           historiesQueries.some((q) => q.isLoading),
         alertsLoadingStatus,
         bugs,
-        bugsError:
-          bugsQueryError !== null
-            ? new Error(bugsQueryError.result.error.message)
-            : null,
+        bugsError,
         isBugsError: isBugQueryError || bugIsRefetchError,
         bugsLoading: bugIsLoading,
         builderAlerts: builderAlerts,
