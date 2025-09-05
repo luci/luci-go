@@ -42,11 +42,15 @@ func GetCompileLogs(c context.Context, bbid int64) (*model.CompileLogs, error) {
 	if err != nil {
 		return nil, err
 	}
+	failureSummaryUrl := ""
 	ninjaUrl := ""
 	stdoutUrl := ""
 	for _, step := range build.Steps {
 		if util.IsCompileStep(step) {
 			for _, log := range step.Logs {
+				if log.Name == "json.output[failure_summary]" || log.Name == "raw_io.output_text[failure_summary]" {
+					failureSummaryUrl = log.ViewUrl
+				}
 				if log.Name == "json.output[ninja_info]" {
 					ninjaUrl = log.ViewUrl
 				}
@@ -58,10 +62,18 @@ func GetCompileLogs(c context.Context, bbid int64) (*model.CompileLogs, error) {
 		}
 	}
 
+	failureSummaryLog := ""
 	ninjaLog := &model.NinjaLog{}
 	stdoutLog := ""
 
 	// TODO(crbug.com/1295566): Parallelize downloading ninja & stdout logs
+	if failureSummaryUrl != "" {
+		failureSummaryLog, err = logdog.GetLogFromViewUrl(c, failureSummaryUrl)
+		if err != nil {
+			logging.Errorf(c, "Failed to get failure summary log: %v", err)
+		}
+	}
+
 	if ninjaUrl != "" {
 		log, err := logdog.GetLogFromViewUrl(c, ninjaUrl)
 		if err != nil {
@@ -79,10 +91,11 @@ func GetCompileLogs(c context.Context, bbid int64) (*model.CompileLogs, error) {
 		}
 	}
 
-	if len(ninjaLog.Failures) > 0 || stdoutLog != "" {
+	if len(ninjaLog.Failures) > 0 || stdoutLog != "" || failureSummaryLog != "" {
 		return &model.CompileLogs{
-			NinjaLog:  ninjaLog,
-			StdOutLog: stdoutLog,
+			FailureSummaryLog: failureSummaryLog,
+			NinjaLog:          ninjaLog,
+			StdOutLog:         stdoutLog,
 		}, nil
 	}
 

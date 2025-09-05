@@ -132,7 +132,8 @@ func TestGenAiAnalysis(t *testing.T) {
 
 	// Create fake compile logs
 	compileLogs := &model.CompileLogs{
-		StdOutLog: "error: 'undefined_function' was not declared in this scope\nsrc/test.cc:42:5: error: expected ';' before 'return'",
+		FailureSummaryLog: "error: 'undefined_function' was not declared in this scope\nsrc/test.cc:42:5: error: expected ';' before 'return'",
+		StdOutLog:         "error: 'undefined_function' was not declared in this scope\nsrc/test.cc:42:5: error: expected ';' before 'return'",
 		NinjaLog: &model.NinjaLog{
 			Failures: []*model.NinjaLogFailure{
 				{
@@ -187,26 +188,13 @@ func TestPrepareStackTrace(t *testing.T) {
 
 	t.Run("valid_compile_logs", func(t *testing.T) {
 		compileLogs := &model.CompileLogs{
-			StdOutLog: "error: 'undefined_function' was not declared in this scope\nsrc/test.cc:42:5: error: expected ';' before 'return'",
-			NinjaLog: &model.NinjaLog{
-				Failures: []*model.NinjaLogFailure{
-					{
-						Rule:         "cxx",
-						Output:       "compilation failed",
-						OutputNodes:  []string{"obj/test.o"},
-						Dependencies: []string{"src/test.cc", "src/header.h"},
-					},
-				},
-			},
+			FailureSummaryLog: "error: 'undefined_function' was not declared in this scope\nsrc/test.cc:42:5: error: expected ';' before 'return'",
 		}
 
 		result, err := prepareStackTrace(compileLogs)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, result, should.ContainSubstring("Stdout Log:"))
+		assert.Loosely(t, result, should.ContainSubstring("Failure Summary Log:"))
 		assert.Loosely(t, result, should.ContainSubstring("undefined_function"))
-		assert.Loosely(t, result, should.ContainSubstring("Ninja Log Failures:"))
-		assert.Loosely(t, result, should.ContainSubstring("Rule: cxx"))
-		assert.Loosely(t, result, should.ContainSubstring("Output: compilation failed"))
 	})
 
 	t.Run("nil_compile_logs", func(t *testing.T) {
@@ -219,23 +207,23 @@ func TestPrepareStackTrace(t *testing.T) {
 		compileLogs := &model.CompileLogs{}
 		_, err := prepareStackTrace(compileLogs)
 		assert.Loosely(t, err, should.NotBeNil)
-		assert.Loosely(t, err.Error(), should.ContainSubstring("no compile failure information available"))
+		assert.Loosely(t, err.Error(), should.ContainSubstring("no compile failure summary available"))
 	})
 
-	t.Run("only_stdout", func(t *testing.T) {
+	t.Run("only_failure_summary", func(t *testing.T) {
 		compileLogs := &model.CompileLogs{
-			StdOutLog: "error: missing semicolon",
+			FailureSummaryLog: "error: missing semicolon",
 		}
 
 		result, err := prepareStackTrace(compileLogs)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, result, should.ContainSubstring("Stdout Log:"))
+		assert.Loosely(t, result, should.ContainSubstring("Failure Summary Log:"))
 		assert.Loosely(t, result, should.ContainSubstring("missing semicolon"))
-		assert.Loosely(t, result, should.NotContainSubstring("Ninja Log Failures:"))
 	})
 
-	t.Run("only_ninja_logs", func(t *testing.T) {
+	t.Run("without_failure_summary", func(t *testing.T) {
 		compileLogs := &model.CompileLogs{
+			StdOutLog: "error: linker error",
 			NinjaLog: &model.NinjaLog{
 				Failures: []*model.NinjaLogFailure{
 					{
@@ -246,11 +234,9 @@ func TestPrepareStackTrace(t *testing.T) {
 			},
 		}
 
-		result, err := prepareStackTrace(compileLogs)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, result, should.ContainSubstring("Ninja Log Failures:"))
-		assert.Loosely(t, result, should.ContainSubstring("Rule: link"))
-		assert.Loosely(t, result, should.NotContainSubstring("Stdout Log:"))
+		_, err := prepareStackTrace(compileLogs)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, err.Error(), should.ContainSubstring("no compile failure summary available"))
 	})
 }
 

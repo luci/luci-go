@@ -154,29 +154,16 @@ func prepareStackTrace(compileLogs *model.CompileLogs) (string, error) {
 
 	var stackTraceBuilder strings.Builder
 
-	// Add stdout log if available
-	if compileLogs.StdOutLog != "" {
-		stackTraceBuilder.WriteString("Stdout Log:\n")
-		stackTraceBuilder.WriteString(compileLogs.StdOutLog)
+	// Add failure summary log failures if available
+	if compileLogs.FailureSummaryLog != "" {
+		stackTraceBuilder.WriteString("Failure Summary Log:\n")
+		stackTraceBuilder.WriteString(compileLogs.FailureSummaryLog)
 		stackTraceBuilder.WriteString("\n\n")
-	}
-
-	// Add ninja log failures if available
-	if compileLogs.NinjaLog != nil && len(compileLogs.NinjaLog.Failures) > 0 {
-		stackTraceBuilder.WriteString("Ninja Log Failures:\n")
-		for i, failure := range compileLogs.NinjaLog.Failures {
-			stackTraceBuilder.WriteString(fmt.Sprintf("Failure %d:\n", i+1))
-			stackTraceBuilder.WriteString(fmt.Sprintf("  Rule: %s\n", failure.Rule))
-			stackTraceBuilder.WriteString(fmt.Sprintf("  Output: %s\n", failure.Output))
-			stackTraceBuilder.WriteString(fmt.Sprintf("  Output Nodes: %v\n", failure.OutputNodes))
-			stackTraceBuilder.WriteString(fmt.Sprintf("  Dependencies: %v\n", failure.Dependencies))
-			stackTraceBuilder.WriteString("\n")
-		}
 	}
 
 	result := stackTraceBuilder.String()
 	if result == "" {
-		return "", errors.New("no compile failure information available")
+		return "", errors.New("no compile failure summary available")
 	}
 
 	return result, nil

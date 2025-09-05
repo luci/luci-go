@@ -42,14 +42,19 @@ func TestGetCompileLogs(t *testing.T) {
 	mc := buildbucket.NewMockedClient(c, ctl)
 	c = mc.Ctx
 	c = logdog.MockClientContext(c, map[string]string{
-		"https://logs.chromium.org/logs/ninja_log":  "ninja_log",
-		"https://logs.chromium.org/logs/stdout_log": "stdout_log",
+		"https://logs.chromium.org/logs/ninja_log":       "ninja_log",
+		"https://logs.chromium.org/logs/stdout_log":      "stdout_log",
+		"https://logs.chromium.org/logs/failure_summary": "failure_summary_log",
 	})
 	res := &bbpb.Build{
 		Steps: []*bbpb.Step{
 			{
 				Name: "compile",
 				Logs: []*bbpb.Log{
+					{
+						Name:    "json.output[failure_summary]",
+						ViewUrl: "https://logs.chromium.org/logs/failure_summary",
+					},
 					{
 						Name:    "json.output[ninja_info]",
 						ViewUrl: "https://logs.chromium.org/logs/ninja_log",
@@ -79,12 +84,14 @@ func TestGetCompileLogs(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		c = logdog.MockClientContext(c, map[string]string{
-			"https://logs.chromium.org/logs/ninja_log":  string(ninjaLogStr),
-			"https://logs.chromium.org/logs/stdout_log": "stdout_log",
+			"https://logs.chromium.org/logs/failure_summary": "failure_summary_log",
+			"https://logs.chromium.org/logs/ninja_log":       string(ninjaLogStr),
+			"https://logs.chromium.org/logs/stdout_log":      "stdout_log",
 		})
 		logs, err := GetCompileLogs(c, 12345)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, *logs, should.Match(model.CompileLogs{
+			FailureSummaryLog: "failure_summary_log",
 			NinjaLog: &model.NinjaLog{
 				Failures: []*model.NinjaLogFailure{
 					{

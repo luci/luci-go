@@ -15,8 +15,9 @@
 package model
 
 type CompileLogs struct {
-	NinjaLog  *NinjaLog
-	StdOutLog string
+	FailureSummaryLog string
+	NinjaLog          *NinjaLog
+	StdOutLog         string
 }
 
 type NinjaLog struct {
