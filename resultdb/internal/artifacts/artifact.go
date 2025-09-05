@@ -49,6 +49,22 @@ func MustParseLegacyName(name string) (invID invocations.ID, testID, resultID, a
 	return
 }
 
+// MustParseName extracts the work unit, test result and artifact IDs
+// from the given artifact name.
+// Test and result IDs are "" if this is a work unit-level artifact.
+// Panics on failure.
+func MustParseName(name string) (wuID workunits.ID, testID, resultID, artifactID string) {
+	parts, err := pbutil.ParseArtifactName(name)
+	if err != nil {
+		panic(err)
+	}
+	wuID = workunits.ID{RootInvocationID: rootinvocations.ID(parts.RootInvocationID), WorkUnitID: parts.WorkUnitID}
+	testID = parts.TestID
+	resultID = parts.ResultID
+	artifactID = parts.ArtifactID
+	return
+}
+
 // ParentID returns a value for Artifacts.ParentId Spanner column.
 func ParentID(testID, resultID string) string {
 	if testID != "" {

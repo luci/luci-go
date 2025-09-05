@@ -16,7 +16,11 @@ package resultdb
 
 import (
 	"context"
+	"fmt"
 	"regexp"
+	"strings"
+
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -27,30 +31,49 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/permissions"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
-// parseParent parses the parent argument as either an invocation name or a
-// test result name and returns the corresponding invocation id, a parent id
-// regex suitable for artifacts.Query and an error if the arg is not a valid.
-func parseParent(parent string) (invocations.ID, string, error) {
-	if invIDStr, err := pbutil.ParseInvocationName(parent); err == nil {
-		// Fetch only invocation-level artifacts. They have empty ParentId.
-		return invocations.ID(invIDStr), "^$", nil
+// parseArtifactParent parses the parent argument as either as a work unit name,
+// test result name or an invocation name. It returns the corresponding work unit or
+// invocation id, a parent id regex suitable for artifacts.Query and an error if
+// the arg is not a valid.
+func parseArtifactParent(parent string) (invocations.ID, workunits.ID, string, error) {
+	if parent == "" {
+		return "", workunits.ID{}, "", errors.New("unspecified")
 	}
-	invIDStr, testID, resultID, err := pbutil.ParseLegacyTestResultName(parent)
-	if err != nil {
-		return "", "", appstatus.BadRequest(errors.New("parent: neither valid invocation name nor valid test result name"))
+	if strings.HasPrefix(parent, "invocations/") {
+		if invIDStr, ok := pbutil.TryParseInvocationName(parent); ok {
+			// Fetch only invocation-level artifacts. They have empty ParentId.
+			return invocations.ID(invIDStr), workunits.ID{}, "^$", nil
+		}
+		invIDStr, testID, resultID, err := pbutil.ParseLegacyTestResultName(parent)
+		if err == nil {
+			return invocations.ID(invIDStr), workunits.ID{}, regexp.QuoteMeta(artifacts.ParentID(testID, resultID)), nil
+		}
+		// Fall through to error path.
+	} else {
+		if wuID, ok := workunits.TryParseName(parent); ok {
+			return "", wuID, "^$", nil
+		}
+		parts, err := pbutil.ParseTestResultName(parent)
+		if err == nil {
+			wuID := workunits.ID{RootInvocationID: rootinvocations.ID(parts.RootInvocationID), WorkUnitID: parts.WorkUnitID}
+			return "", wuID, regexp.QuoteMeta(artifacts.ParentID(parts.TestID, parts.ResultID)), nil
+		}
+		// Fall through to error path.
 	}
-	return invocations.ID(invIDStr), regexp.QuoteMeta(artifacts.ParentID(testID, resultID)), nil
+	return "", workunits.ID{}, "", errors.New("neither a valid work unit name, test result name or legacy invocation name")
 }
 
 func validateListArtifactsRequest(req *pb.ListArtifactsRequest) error {
 	// Do not assume that parent is already validated for permissions checking.
-	if _, _, err := parseParent(req.Parent); err != nil {
-		return err
+	if _, _, _, err := parseArtifactParent(req.Parent); err != nil {
+		return appstatus.BadRequest(fmt.Errorf("parent: %w", err))
 	}
 
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
@@ -68,13 +91,29 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
-	invID, parentIDRegexp, err := parseParent(in.Parent)
+	invID, wuID, parentIDRegexp, err := parseArtifactParent(in.Parent)
 	if err != nil {
-		return nil, err
+		return nil, appstatus.BadRequest(fmt.Errorf("parent: %w", err))
 	}
 
-	if err := permissions.VerifyInvocation(ctx, invID, rdbperms.PermListArtifacts); err != nil {
-		return nil, err
+	var queryInvocationID invocations.ID
+	if invID != "" {
+		if err := permissions.VerifyInvocation(ctx, invID, rdbperms.PermListArtifacts); err != nil {
+			return nil, err
+		}
+		queryInvocationID = invID
+	} else {
+		accessLevel, err := permissions.QueryWorkUnitAccess(ctx, wuID, permissions.ListArtifactsAccessModel)
+		if err != nil {
+			return nil, err
+		}
+		if accessLevel == permissions.NoAccess {
+			return nil, appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %s or %s in realm of %q", rdbperms.PermListArtifacts, rdbperms.PermListLimitedArtifacts, wuID.RootInvocationID.Name())
+		}
+		if accessLevel != permissions.FullAccess {
+			return nil, appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %s in the realm of %q (trying to upgrade limited artifact access to full access)", rdbperms.PermGetArtifact, wuID.Name())
+		}
+		queryInvocationID = wuID.LegacyInvocationID()
 	}
 
 	if err := validateListArtifactsRequest(in); err != nil {
@@ -85,7 +124,7 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 	q := artifacts.Query{
 		PageSize:       pagination.AdjustPageSize(in.PageSize),
 		PageToken:      in.PageToken,
-		InvocationIDs:  invocations.NewIDSet(invID),
+		InvocationIDs:  invocations.NewIDSet(queryInvocationID),
 		ParentIDRegexp: parentIDRegexp,
 		WithGcsURI:     true,
 		WithRbeURI:     true,
@@ -97,15 +136,25 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 		return nil, err
 	}
 
-	realm, err := invocations.ReadRealm(ctx, invID)
-	if err != nil {
-		return nil, err
+	workUnitIDToProject := map[workunits.ID]string{}
+	invocationIDToProject := map[invocations.ID]string{}
+	if invID != "" {
+		realm, err := invocations.ReadRealm(ctx, invID)
+		if err != nil {
+			return nil, err
+		}
+		project, _ := realms.Split(realm)
+		invocationIDToProject[invID] = project
+	} else {
+		realm, err := workunits.ReadRealm(ctx, wuID)
+		if err != nil {
+			return nil, err
+		}
+		project, _ := realms.Split(realm)
+		workUnitIDToProject[wuID] = project
 	}
-	project, _ := realms.Split(realm)
-	invocationIDToProject := map[invocations.ID]string{
-		invID: project,
-	}
-	if err := s.populateFetchURLs(ctx, invocationIDToProject, arts...); err != nil {
+
+	if err := s.populateFetchURLs(ctx, workUnitIDToProject, invocationIDToProject, arts...); err != nil {
 		return nil, err
 	}
 

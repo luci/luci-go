@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -225,9 +226,19 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 		case err != nil:
 			return err
 		case testID == "":
-			a.Name = pbutil.LegacyInvocationArtifactName(string(invID), a.ArtifactId)
+			if invID.IsWorkUnit() {
+				wuID := workunits.MustParseLegacyInvocationID(invID)
+				a.Name = pbutil.WorkUnitArtifactName(string(wuID.RootInvocationID), wuID.WorkUnitID, a.ArtifactId)
+			} else {
+				a.Name = pbutil.LegacyInvocationArtifactName(string(invID), a.ArtifactId)
+			}
 		default:
-			a.Name = pbutil.LegacyTestResultArtifactName(string(invID), testID, resultID, a.ArtifactId)
+			if invID.IsWorkUnit() {
+				wuID := workunits.MustParseLegacyInvocationID(invID)
+				a.Name = pbutil.TestResultArtifactName(string(wuID.RootInvocationID), wuID.WorkUnitID, testID, resultID, a.ArtifactId)
+			} else {
+				a.Name = pbutil.LegacyTestResultArtifactName(string(invID), testID, resultID, a.ArtifactId)
+			}
 		}
 
 		a.ContentType = contentType.StringVal

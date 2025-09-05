@@ -19,6 +19,7 @@ import (
 	"strings"
 	"testing"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -29,67 +30,34 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/gsutil"
-	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
-func TestValidateListArtifactsRequest(t *testing.T) {
-	t.Parallel()
-	ftt.Run(`TestValidateListArtifactsRequest`, t, func(t *ftt.Test) {
-		t.Run(`Valid, invocation level`, func(t *ftt.Test) {
-			err := validateListArtifactsRequest(&pb.ListArtifactsRequest{
-				Parent:   "invocations/x",
-				PageSize: 50,
-			})
-			assert.Loosely(t, err, should.BeNil)
-		})
-
-		t.Run(`Valid, test result level`, func(t *ftt.Test) {
-			err := validateListArtifactsRequest(&pb.ListArtifactsRequest{
-				Parent:   "invocations/x/tests/t%20t/results/r",
-				PageSize: 50,
-			})
-			assert.Loosely(t, err, should.BeNil)
-		})
-
-		t.Run(`Invalid parent`, func(t *ftt.Test) {
-			err := validateListArtifactsRequest(&pb.ListArtifactsRequest{
-				Parent: "x",
-			})
-			assert.Loosely(t, err, should.ErrLike(`parent: neither valid invocation name nor valid test result name`))
-		})
-
-		t.Run(`Invalid page size`, func(t *ftt.Test) {
-			err := validateListArtifactsRequest(&pb.ListArtifactsRequest{
-				Parent:   "invocations/x",
-				PageSize: -1,
-			})
-			assert.Loosely(t, err, should.ErrLike(`page_size: negative`))
-		})
-	})
-}
-
 func TestListArtifacts(t *testing.T) {
 	ftt.Run(`ListArtifacts`, t, func(t *ftt.Test) {
-		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
+		authState := &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
-				{Realm: "testproject:testrealm", Permission: rdbperms.PermListArtifacts},
+				{Realm: "testproject:invrealm", Permission: rdbperms.PermListArtifacts},
+				{Realm: "testproject:rootrealm", Permission: rdbperms.PermListArtifacts},
 			},
-		})
-
-		testutil.MustApply(ctx, t,
-			insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
-			insert.Invocation("invx", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:testrealm"}),
-		)
-		req := &pb.ListArtifactsRequest{
-			Parent:   "invocations/inv1",
-			PageSize: 100,
 		}
+		ctx := auth.WithState(testutil.SpannerTestContext(t), authState)
+
+		rootInv := rootinvocations.NewBuilder("root-inv1").WithState(pb.RootInvocation_ACTIVE).WithRealm("testproject:rootrealm").Build()
+		wu := workunits.NewBuilder(rootInv.RootInvocationID, "wu1").WithState(pb.WorkUnit_ACTIVE).WithRealm("testproject:wurealm").Build()
+
+		var ms []*spanner.Mutation
+		ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootInv)...)
+		ms = append(ms, insert.WorkUnit(wu)...)
+		ms = append(ms, insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:invrealm"}))
+		ms = append(ms, insert.Invocation("invx", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:invrealm"}))
+		testutil.MustApply(ctx, t, ms...)
 
 		srv := newTestResultDBService()
 
@@ -102,8 +70,7 @@ func TestListArtifacts(t *testing.T) {
 			return res.Artifacts, res.NextPageToken
 		}
 
-		mustFetchNames := func(req *pb.ListArtifactsRequest) []string {
-			arts, _ := mustFetch(req)
+		artifactsNames := func(arts []*pb.Artifact) []string {
 			names := make([]string, len(arts))
 			for i, a := range arts {
 				names[i] = a.Name
@@ -111,67 +78,179 @@ func TestListArtifacts(t *testing.T) {
 			return names
 		}
 
-		t.Run(`Permission denied`, func(t *ftt.Test) {
-			req.Parent = "invocations/invx/tests/t%20t/results/r"
-			_, err := srv.ListArtifacts(ctx, req)
-			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.artifacts.list in realm of invocation invx"))
+		// Define a valid request.
+		req := &pb.ListArtifactsRequest{
+			Parent:   "rootInvocations/root-inv1/workUnits/wu1",
+			PageSize: 100,
+		}
+
+		t.Run(`request validation`, func(t *ftt.Test) {
+			t.Run(`parent`, func(t *ftt.Test) {
+				t.Run(`empty`, func(t *ftt.Test) {
+					req.Parent = ""
+					_, err := srv.ListArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`parent: unspecified`))
+				})
+				t.Run(`invalid`, func(t *ftt.Test) {
+					req.Parent = "x"
+					_, err := srv.ListArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`parent: neither a valid work unit name, test result name or legacy invocation name`))
+				})
+				t.Run(`invalid (legacy invocation-like)`, func(t *ftt.Test) {
+					req.Parent = "invocations/ x"
+					_, err := srv.ListArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`parent: neither a valid work unit name, test result name or legacy invocation name`))
+				})
+			})
+			t.Run(`page size`, func(t *ftt.Test) {
+				t.Run(`invalid`, func(t *ftt.Test) {
+					req.PageSize = -1
+					_, err := srv.ListArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`page_size: negative`))
+				})
+			})
 		})
 
-		t.Run(`With both invocation and test result artifacts`, func(t *ftt.Test) {
-			testutil.MustApply(ctx, t,
-				insert.Artifact("inv1", "", "a", nil),
-				spanutil.InsertMap("Artifacts", map[string]any{
-					"InvocationId": invocations.ID("inv1"),
-					"ParentID":     "tr/t t/r",
-					"ArtifactId":   "a",
-				}),
-			)
+		t.Run(`request authorization`, func(t *ftt.Test) {
+			t.Run(`work units`, func(t *ftt.Test) {
+				req.Parent = "rootInvocations/root-inv1/workUnits/wu1"
 
-			t.Run(`Reads only invocation artifacts`, func(t *ftt.Test) {
-				req.Parent = "invocations/inv1"
-				actual := mustFetchNames(req)
-				assert.Loosely(t, actual, should.Match([]string{
-					"invocations/inv1/artifacts/a",
-				}))
+				t.Run(`no root-level list access`, func(t *ftt.Test) {
+					authState.IdentityPermissions = []authtest.RealmPermission{}
+
+					_, err := srv.ListArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.artifacts.list or resultdb.artifacts.listLimited in realm of "rootInvocations/root-inv1"`))
+				})
+				t.Run(`with limited list access only`, func(t *ftt.Test) {
+					authState.IdentityPermissions = []authtest.RealmPermission{
+						{Realm: "testproject:rootrealm", Permission: rdbperms.PermListLimitedArtifacts},
+					}
+
+					_, err := srv.ListArtifacts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.artifacts.get in the realm of "rootInvocations/root-inv1/workUnits/wu1" (trying to upgrade limited artifact access to full access)`))
+				})
+				t.Run(`with limited list access upgraded to full access`, func(t *ftt.Test) {
+					authState.IdentityPermissions = []authtest.RealmPermission{
+						{Realm: "testproject:rootrealm", Permission: rdbperms.PermListLimitedArtifacts},
+						{Realm: "testproject:wurealm", Permission: rdbperms.PermGetArtifact},
+					}
+
+					// Authorized.
+					_, err := srv.ListArtifacts(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+				})
+			})
+			t.Run(`legacy invocation`, func(t *ftt.Test) {
+				req.Parent = "invocations/invx/tests/t%20t/results/r"
+				_, err := srv.ListArtifacts(ctx, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.artifacts.list in realm of invocation invx"))
+			})
+		})
+		t.Run(`work units`, func(t *ftt.Test) {
+			t.Run(`with both work unit and test result artifacts`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
+					insert.Artifact(wu.ID.LegacyInvocationID(), "", "a", nil),
+					insert.Artifact(wu.ID.LegacyInvocationID(), "", "b", map[string]any{"GcsURI": "gs://bucket1/file1.txt"}),
+					insert.Artifact(wu.ID.LegacyInvocationID(), "", "c", map[string]any{"RbeURI": "projects/testproject/instances/default_instance/blobs/work_unit_artifact/20"}),
+					insert.Artifact(wu.ID.LegacyInvocationID(), "tr/t t/r", "a", nil),
+					insert.Artifact(wu.ID.LegacyInvocationID(), "tr/t t/r", "e", map[string]any{"GcsURI": "gs://bucket1/file2.txt"}),
+					insert.Artifact(wu.ID.LegacyInvocationID(), "tr/t t/r", "f", map[string]any{"RbeURI": "projects/testproject/instances/default_instance/blobs/test_artifact/10"}),
+				)
+
+				t.Run(`Reads only invocation artifacts`, func(t *ftt.Test) {
+					req.Parent = "rootInvocations/root-inv1/workUnits/wu1"
+					arts, nextPageToken := mustFetch(req)
+					assert.Loosely(t, artifactsNames(arts), should.Match([]string{
+						"rootInvocations/root-inv1/workUnits/wu1/artifacts/a",
+						"rootInvocations/root-inv1/workUnits/wu1/artifacts/b",
+						"rootInvocations/root-inv1/workUnits/wu1/artifacts/c",
+					}))
+					assert.Loosely(t, nextPageToken, should.BeEmpty)
+
+					// Verify fetch URLs were generated for each type of artifact.
+					assert.Loosely(t, arts[0].FetchUrl, should.HavePrefix("https://signed-url.example.com/rootInvocations/root-inv1/workUnits/wu1/artifacts/a"))
+					assert.Loosely(t, arts[1].FetchUrl, should.HavePrefix("https://fake-signed-url/bucket1/file1.txt?x-project=testproject"))
+					assert.Loosely(t, arts[2].FetchUrl, should.HavePrefix("https://signed-url.example.com/rootInvocations/root-inv1/workUnits/wu1/artifacts/c"))
+				})
+
+				t.Run(`Reads only test result artifacts`, func(t *ftt.Test) {
+					req.Parent = "rootInvocations/root-inv1/workUnits/wu1/tests/t%20t/results/r"
+					arts, nextPageToken := mustFetch(req)
+					assert.Loosely(t, artifactsNames(arts), should.Match([]string{
+						"rootInvocations/root-inv1/workUnits/wu1/tests/t%20t/results/r/artifacts/a",
+						"rootInvocations/root-inv1/workUnits/wu1/tests/t%20t/results/r/artifacts/e",
+						"rootInvocations/root-inv1/workUnits/wu1/tests/t%20t/results/r/artifacts/f",
+					}))
+					assert.Loosely(t, nextPageToken, should.BeEmpty)
+
+					// Verify fetch URLs were generated for each type of artifact.
+					assert.Loosely(t, arts[0].FetchUrl, should.HavePrefix("https://signed-url.example.com/rootInvocations/root-inv1/workUnits/wu1/tests/t%20t/results/r/artifacts/a"))
+					assert.Loosely(t, arts[1].FetchUrl, should.HavePrefix("https://fake-signed-url/bucket1/file2.txt?x-project=testproject"))
+					assert.Loosely(t, arts[2].FetchUrl, should.HavePrefix("https://signed-url.example.com/rootInvocations/root-inv1/workUnits/wu1/tests/t%20t/results/r/artifacts/f"))
+				})
+			})
+		})
+		t.Run(`legacy invocations`, func(t *ftt.Test) {
+			req.Parent = "invocations/inv1"
+
+			t.Run(`With both invocation and test result artifacts`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
+					insert.Artifact("inv1", "", "a", nil),
+					insert.Artifact("inv1", "tr/t t/r", "a", nil),
+				)
+
+				t.Run(`Reads only invocation artifacts`, func(t *ftt.Test) {
+					req.Parent = "invocations/inv1"
+					arts, _ := mustFetch(req)
+					assert.Loosely(t, artifactsNames(arts), should.Match([]string{
+						"invocations/inv1/artifacts/a",
+					}))
+				})
+
+				t.Run(`Reads only test result artifacts`, func(t *ftt.Test) {
+					req.Parent = "invocations/inv1/tests/t%20t/results/r"
+					arts, _ := mustFetch(req)
+					assert.Loosely(t, artifactsNames(arts), should.Match([]string{
+						"invocations/inv1/tests/t%20t/results/r/artifacts/a",
+					}))
+				})
 			})
 
-			t.Run(`Reads only test result artifacts`, func(t *ftt.Test) {
-				req.Parent = "invocations/inv1/tests/t%20t/results/r"
-				actual := mustFetchNames(req)
-				assert.Loosely(t, actual, should.Match([]string{
-					"invocations/inv1/tests/t%20t/results/r/artifacts/a",
-				}))
+			t.Run(`Fetch URL`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
+					insert.Artifact("inv1", "", "a", nil),
+				)
+				actual, _ := mustFetch(req)
+				assert.Loosely(t, actual, should.HaveLength(1))
+				assert.Loosely(t, strings.HasPrefix(actual[0].FetchUrl, "https://signed-url.example.com/invocations/inv1/artifacts/a"), should.BeTrue)
 			})
-		})
 
-		t.Run(`Fetch URL`, func(t *ftt.Test) {
-			testutil.MustApply(ctx, t,
-				insert.Artifact("inv1", "", "a", nil),
-			)
-			actual, _ := mustFetch(req)
-			assert.Loosely(t, actual, should.HaveLength(1))
-			assert.Loosely(t, strings.HasPrefix(actual[0].FetchUrl, "https://signed-url.example.com/invocations/inv1/artifacts/a"), should.BeTrue)
-		})
+			t.Run(`Fetch URL with Gcs URI`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
+					insert.Artifact("inv1", "", "a", map[string]any{"GcsURI": "gs://bucket1/file1.txt"}),
+				)
 
-		t.Run(`Fetch URL with Gcs URI`, func(t *ftt.Test) {
-			testutil.MustApply(ctx, t,
-				insert.Artifact("inv1", "", "a", map[string]any{"GcsURI": "gs://bucket1/file1.txt"}),
-			)
+				actual, _ := mustFetch(req)
+				assert.Loosely(t, actual, should.HaveLength(1))
+				assert.Loosely(t, actual[0].FetchUrl, should.Equal("https://fake-signed-url/bucket1/file1.txt?x-project=testproject"))
+			})
 
-			actual, _ := mustFetch(req)
-			assert.Loosely(t, actual, should.HaveLength(1))
-			assert.Loosely(t, actual[0].FetchUrl, should.Equal("https://fake-signed-url/bucket1/file1.txt?x-project=testproject"))
-		})
+			t.Run(`Fetch URL with Rbe URI`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
+					insert.Artifact("inv1", "", "a", map[string]any{"RbeURI": "projects/testproject/instances/default_instance/blobs/test_artifact/10"}),
+				)
 
-		t.Run(`Fetch URL with Rbe URI`, func(t *ftt.Test) {
-			testutil.MustApply(ctx, t,
-				insert.Artifact("inv1", "", "a", map[string]any{"RbeURI": "projects/testproject/instances/default_instance/blobs/test_artifact/10"}),
-			)
-
-			actual, _ := mustFetch(req)
-			assert.Loosely(t, actual, should.HaveLength(1))
-			assert.Loosely(t, strings.HasPrefix(actual[0].FetchUrl, "https://signed-url.example.com/invocations/inv1/artifacts/a"), should.BeTrue)
+				actual, _ := mustFetch(req)
+				assert.Loosely(t, actual, should.HaveLength(1))
+				assert.Loosely(t, strings.HasPrefix(actual[0].FetchUrl, "https://signed-url.example.com/invocations/inv1/artifacts/a"), should.BeTrue)
+			})
 		})
 	})
 }

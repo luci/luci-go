@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/permissions"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
@@ -97,6 +98,7 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		return nil, err
 	}
 
+	workUnitIDToProject := map[workunits.ID]string{}
 	invocationIDToProject := make(map[invocations.ID]string, len(reachableInvs.Invocations))
 	for invID, ri := range reachableInvs.Invocations {
 		p, _ := realms.Split(ri.Realm)
@@ -108,7 +110,7 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		return nil, err
 	}
 	if includeFetchURL == mask.IncludeEntirely {
-		if err := s.populateFetchURLs(ctx, invocationIDToProject, arts...); err != nil {
+		if err := s.populateFetchURLs(ctx, workUnitIDToProject, invocationIDToProject, arts...); err != nil {
 			return nil, err
 		}
 	}

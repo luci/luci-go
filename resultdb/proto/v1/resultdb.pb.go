@@ -999,8 +999,9 @@ func (x *GetArtifactRequest) GetName() string {
 // A request message for ListArtifacts RPC.
 type ListArtifactsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Name of the parent, e.g. an invocation (see Invocation.name) or
-	// a test result (see TestResult.name).
+	// Name of the parent, e.g. a work unit (see WorkUnit.name),
+	// a test result (see TestResult.name), or a legacy invocation name
+	// (see Invocation.name).
 	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
 	// The maximum number of artifacts to return.
 	//
@@ -1077,7 +1078,7 @@ type ListArtifactsResponse struct {
 	// A token, which can be sent as `page_token` to retrieve the next page.
 	// If this field is omitted, there were no subsequent pages at the time of
 	// request.
-	// If the invocation is not finalized, more results may appear later.
+	// If the work unit is not finalized, more results may appear later.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

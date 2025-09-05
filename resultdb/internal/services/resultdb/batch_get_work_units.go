@@ -107,12 +107,7 @@ func queryBatchGetWorkUnitAccess(ctx context.Context, in *pb.BatchGetWorkUnitsRe
 	}
 
 	// Check permissions.
-	opts := permissions.QueryWorkUnitAccessOptions{
-		Full:                 rdbperms.PermGetWorkUnit,
-		Limited:              rdbperms.PermListLimitedWorkUnits,
-		UpgradeLimitedToFull: rdbperms.PermGetWorkUnit,
-	}
-	accessLevels, err = permissions.QueryWorkUnitsAccess(ctx, ids, opts)
+	accessLevels, err = permissions.QueryWorkUnitsAccess(ctx, ids, permissions.GetWorkUnitsAccessModel)
 	if err != nil {
 		// Returns NotFound appstatus error if one of the work units was not found,
 		// or an internal error.

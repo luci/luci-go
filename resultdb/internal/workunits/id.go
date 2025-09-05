@@ -107,6 +107,10 @@ func MustParseLegacyInvocationID(id invocations.ID) ID {
 
 // ParseName parses a work unit resource name into its ID.
 // An error is returned if parsing fails.
+//
+// Note: Error construction has an non-negligible CPU cost due to stack walk.
+// Use this when detailed error information is needed. If this is not needed,
+// use TryParseName.
 func ParseName(name string) (ID, error) {
 	rootInvocationID, workUnitID, err := pbutil.ParseWorkUnitName(name)
 	if err != nil {
@@ -116,6 +120,19 @@ func ParseName(name string) (ID, error) {
 		RootInvocationID: rootinvocations.ID(rootInvocationID),
 		WorkUnitID:       workUnitID,
 	}, nil
+}
+
+// TryParseName attempts to parse a work unit resource name into its ID.
+// If it succeeds, `ok` is set.
+func TryParseName(name string) (id ID, ok bool) {
+	rootInvocationID, workUnitID, ok := pbutil.TryParseWorkUnitName(name)
+	if !ok {
+		return ID{}, false
+	}
+	return ID{
+		RootInvocationID: rootinvocations.ID(rootInvocationID),
+		WorkUnitID:       workUnitID,
+	}, true
 }
 
 // MustParseName parses a work unit resource name into its ID.

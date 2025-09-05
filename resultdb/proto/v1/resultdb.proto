@@ -445,8 +445,9 @@ message GetArtifactRequest {
 
 // A request message for ListArtifacts RPC.
 message ListArtifactsRequest {
-  // Name of the parent, e.g. an invocation (see Invocation.name) or
-  // a test result (see TestResult.name).
+  // Name of the parent, e.g. a work unit (see WorkUnit.name),
+  // a test result (see TestResult.name), or a legacy invocation name
+  // (see Invocation.name).
   string parent = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // The maximum number of artifacts to return.
@@ -472,7 +473,7 @@ message ListArtifactsResponse {
   // A token, which can be sent as `page_token` to retrieve the next page.
   // If this field is omitted, there were no subsequent pages at the time of
   // request.
-  // If the invocation is not finalized, more results may appear later.
+  // If the work unit is not finalized, more results may appear later.
   string next_page_token = 2;
 }
 

@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/internal/workunits"
+	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 // VerifyInvocation checks if the caller has the specified permissions on the
@@ -108,16 +109,29 @@ const (
 // QueryWorkUnitAccessOptions defines the permissions required to reach a certain access level
 // on the work unit.
 type QueryWorkUnitAccessOptions struct {
-	// The permission required to reach FullAccess access level.
-	// To obtain FullAccess, this permission must be granted on the realm of the
-	// root invocation.
+	// The permission required on the *root invocation*'s realm to reach
+	// FullAccess access level.
 	Full realms.Permission
-	// The permission required to reach LimitedAccess access level.
-	// This permission must be granted on the realm of the root invocation.
+	// The permission required on the *root invocation*'s realm to reach
+	// LimitedAccess access level.
 	Limited realms.Permission
-	// The permission required to upgrade limited access to full access. This
-	// permission must be granted on the realm of the work unit.
+	// The permission required on the *work unit*'s realm to upgrade limited
+	// access to full access.
 	UpgradeLimitedToFull realms.Permission
+}
+
+// GetWorkUnitsAccessModel defines the permissions used to authorize access
+// when getting work units (e.g. Get or BatchGetWorkUnits).
+var GetWorkUnitsAccessModel = QueryWorkUnitAccessOptions{
+	Full:                 rdbperms.PermGetWorkUnit,          // At root invocation level
+	Limited:              rdbperms.PermListLimitedWorkUnits, // At root invocation level
+	UpgradeLimitedToFull: rdbperms.PermGetWorkUnit,          // At work unit level
+}
+
+var ListArtifactsAccessModel = QueryWorkUnitAccessOptions{
+	Full:                 rdbperms.PermListArtifacts,        // At root invocation level
+	Limited:              rdbperms.PermListLimitedArtifacts, // At root invocation level
+	UpgradeLimitedToFull: rdbperms.PermGetArtifact,          // At work unit level
 }
 
 // QueryWorkUnitAccess determines the access the user has to the given work unit.

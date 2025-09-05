@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/gsutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -67,10 +68,11 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 		return nil, err
 	}
 	project, _ := realms.Split(realm)
+	workUnitIDToProject := map[workunits.ID]string{}
 	invocationIDToProject := map[invocations.ID]string{
 		invocations.ID(invIDStr): project,
 	}
-	if err := s.populateFetchURLs(ctx, invocationIDToProject, art); err != nil {
+	if err := s.populateFetchURLs(ctx, workUnitIDToProject, invocationIDToProject, art); err != nil {
 		return nil, err
 	}
 
@@ -79,10 +81,11 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 
 // populateFetchURLs populates FetchUrl and FetchUrlExpiration fields
 // of the artifacts.
-// invocationIDToProject contains a mapping between invocation id its LUCI project, it should contains all immediate parent invocation of artifacts.
+// invocationIDToProject contains a mapping between invocation ids and their LUCI project, it should contain all immediate parent invocations of legacy artifacts.
+// workUnitIDToProject contains a mapping between work unit ids and their LUCI project, it should contain all immediate parent work units of artifacts.
 //
 // Must be called from within some gRPC request handler.
-func (s *resultDBServer) populateFetchURLs(ctx context.Context, invocationIDToProject map[invocations.ID]string, arts ...*pb.Artifact) error {
+func (s *resultDBServer) populateFetchURLs(ctx context.Context, workUnitIDToProject map[workunits.ID]string, invocationIDToProject map[invocations.ID]string, arts ...*pb.Artifact) error {
 	// Extract Host header (may be empty) from the request to use it as a basis
 	// for generating artifact URLs.
 	requestHost := ""
@@ -97,10 +100,21 @@ func (s *resultDBServer) populateFetchURLs(ctx context.Context, invocationIDToPr
 	now := clock.Now(ctx).UTC()
 
 	for _, a := range arts {
-		invIDStr, _, _, _ := artifacts.MustParseLegacyName(a.Name)
-		project, ok := invocationIDToProject[invocations.ID(invIDStr)]
-		if !ok {
-			panic("invocation for artifact doesn't exist in the invocationIDToProject map")
+		var project string
+		if pbutil.IsLegacyArtifactName(a.Name) {
+			invIDStr, _, _, _ := artifacts.MustParseLegacyName(a.Name)
+			var ok bool
+			project, ok = invocationIDToProject[invocations.ID(invIDStr)]
+			if !ok {
+				panic("invocation for artifact doesn't exist in the invocationIDToProject map")
+			}
+		} else {
+			wuID, _, _, _ := artifacts.MustParseName(a.Name)
+			var ok bool
+			project, ok = workUnitIDToProject[wuID]
+			if !ok {
+				panic("work unit for artifact doesn't exist in the workUnitIDToProject map")
+			}
 		}
 
 		if a.GcsUri != "" {
