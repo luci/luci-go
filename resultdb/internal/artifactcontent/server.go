@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 )
 
@@ -86,7 +87,9 @@ func (s *Server) InstallHandlers(r *router.Router) {
 	// https://github.com/julienschmidt/httprouter/issues/208
 	// This is triggered by URL-escaped test IDs.
 	r.GET("/invocations/*rest", nil, s.handleGET)
+	r.GET("/rootInvocations/*rest", nil, s.handleGET)
 	r.OPTIONS("/invocations/*rest", nil, s.handleOPTIONS)
+	r.OPTIONS("/rootInvocations/*rest", nil, s.handleOPTIONS)
 }
 
 func (s *Server) handleGET(c *router.Context) {
@@ -117,7 +120,10 @@ type contentRequest struct {
 
 	artifactName string
 
+	// Either work unit ID or invocation ID will be set, not both.
+	workUnitID workunits.ID
 	invID      invocations.ID
+
 	parentID   string
 	artifactID string
 	limit      int64 // Maximum size of the artifact, in bytes.
@@ -129,7 +135,7 @@ type contentRequest struct {
 func (r *contentRequest) handle(c *router.Context) {
 	r.setAccessControlHeaders(c, false)
 
-	if err := r.parseRequest(c.Request.Context(), c.Request); err != nil {
+	if err := r.parseRequest(c.Request); err != nil {
 		r.sendError(c.Request.Context(), appstatus.BadRequest(err))
 		return
 	}
@@ -142,7 +148,12 @@ func (r *contentRequest) handle(c *router.Context) {
 
 	// Read the state from database.
 	var rbeCASHash, rbeURI spanner.NullString
-	key := r.invID.Key(r.parentID, r.artifactID)
+	var key spanner.Key
+	if r.invID != "" {
+		key = r.invID.Key(r.parentID, r.artifactID)
+	} else {
+		key = r.workUnitID.LegacyInvocationID().Key(r.parentID, r.artifactID)
+	}
 	err = spanutil.ReadRow(span.Single(c.Request.Context()), "Artifacts", key, map[string]any{
 		"ContentType": &r.contentType,
 		"Size":        &r.size,
@@ -182,24 +193,35 @@ func (r *contentRequest) handle(c *router.Context) {
 	}
 }
 
-func (r *contentRequest) parseRequest(ctx context.Context, req *http.Request) error {
+func (r *contentRequest) parseRequest(req *http.Request) error {
 	// We should not use URL.Path because it is important to preserve escaping
 	// of test IDs.
 	r.artifactName = strings.Trim(req.URL.EscapedPath(), "/")
 
-	invID, testID, resultID, artifactID, err := pbutil.ParseLegacyArtifactName(r.artifactName)
-	if err != nil {
-		return errors.Fmt("invalid artifact name %q: %w", r.artifactName, err)
+	if pbutil.IsLegacyArtifactName(r.artifactName) {
+		invID, testID, resultID, artifactID, err := pbutil.ParseLegacyArtifactName(r.artifactName)
+		if err != nil {
+			return errors.Fmt("invalid artifact name %q: %w", r.artifactName, err)
+		}
+		r.invID = invocations.ID(invID)
+		r.parentID = artifacts.ParentID(testID, resultID)
+		r.artifactID = artifactID
+	} else {
+		wuID, testID, resultID, artifactID, err := artifacts.ParseName(r.artifactName)
+		if err != nil {
+			return errors.Fmt("invalid artifact name %q: %w", r.artifactName, err)
+		}
+		r.workUnitID = wuID
+		r.parentID = artifacts.ParentID(testID, resultID)
+		r.artifactID = artifactID
 	}
-	r.invID = invocations.ID(invID)
-	r.parentID = artifacts.ParentID(testID, resultID)
-	r.artifactID = artifactID
 
 	limitStr := req.URL.Query().Get("n")
 	if limitStr == "" {
 		return nil
 	}
 
+	var err error
 	r.limit, err = strconv.ParseInt(limitStr, 10, 64)
 	if err != nil {
 		return errors.Fmt("query parmeter n must be an integer, but got %q: %w", limitStr, err)

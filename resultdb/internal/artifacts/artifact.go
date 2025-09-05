@@ -49,20 +49,31 @@ func MustParseLegacyName(name string) (invID invocations.ID, testID, resultID, a
 	return
 }
 
-// MustParseName extracts the work unit, test result and artifact IDs
-// from the given artifact name.
-// Test and result IDs are "" if this is a work unit-level artifact.
-// Panics on failure.
-func MustParseName(name string) (wuID workunits.ID, testID, resultID, artifactID string) {
+// ParseName extracts work unit, test, result and artifact IDs from an artifact name.
+// testID and resultID are "" if this is a work unit-level artifact.
+func ParseName(name string) (wuID workunits.ID, testID, resultID, artifactID string, err error) {
 	parts, err := pbutil.ParseArtifactName(name)
 	if err != nil {
-		panic(err)
+		return workunits.ID{}, "", "", "", err
 	}
 	wuID = workunits.ID{RootInvocationID: rootinvocations.ID(parts.RootInvocationID), WorkUnitID: parts.WorkUnitID}
 	testID = parts.TestID
 	resultID = parts.ResultID
 	artifactID = parts.ArtifactID
-	return
+	return wuID, testID, resultID, artifactID, nil
+}
+
+// MustParseName extracts the work unit, test result and artifact IDs
+// from the given artifact name.
+// Test and result IDs are "" if this is a work unit-level artifact.
+// Panics on failure.
+func MustParseName(name string) (wuID workunits.ID, testID, resultID, artifactID string) {
+	var err error
+	wuID, testID, resultID, artifactID, err = ParseName(name)
+	if err != nil {
+		panic(err)
+	}
+	return wuID, testID, resultID, artifactID
 }
 
 // ParentID returns a value for Artifacts.ParentId Spanner column.
@@ -112,14 +123,12 @@ func Read(ctx context.Context, name string) (*Artifact, error) {
 		}
 		invID = invocations.ID(invIDStr)
 	} else {
-		parts, err := pbutil.ParseArtifactName(name)
+		var wuID workunits.ID
+		wuID, testID, resultID, artifactID, err = ParseName(name)
 		if err != nil {
 			return nil, err
 		}
-		invID = workunits.ID{RootInvocationID: rootinvocations.ID(parts.RootInvocationID), WorkUnitID: parts.WorkUnitID}.LegacyInvocationID()
-		testID = parts.TestID
-		resultID = parts.ResultID
-		artifactID = parts.ArtifactID
+		invID = wuID.LegacyInvocationID()
 	}
 
 	parentID := ParentID(testID, resultID)

@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -40,8 +41,11 @@ import (
 	"go.chromium.org/luci/server/secrets/testsecrets"
 
 	artifactcontenttest "go.chromium.org/luci/resultdb/internal/artifactcontent/testutil"
+	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -63,21 +67,21 @@ func TestGenerateSignedURL(t *testing.T) {
 		})
 
 		t.Run(`Basic case`, func(t *ftt.Test) {
-			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/a", nil)
+			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "rootInvocations/inv/workUnits/wu/artifacts/a", nil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, url, should.HavePrefix("https://results.usercontent.example.com/invocations/inv/artifacts/a?token="))
+			assert.Loosely(t, url, should.HavePrefix("https://results.usercontent.example.com/rootInvocations/inv/workUnits/wu/artifacts/a?token="))
 			assert.Loosely(t, exp, should.Match(clock.Now(ctx).UTC().Add(time.Hour)))
 		})
 
 		t.Run(`Escaped test id`, func(t *ftt.Test) {
-			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t%2Ft/results/r/artifacts/a", nil)
+			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "rootInvocations/inv/workUnits/wu/tests/t%2Ft/results/r/artifacts/a", nil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, url, should.HavePrefix("https://results.usercontent.example.com/invocations/inv/tests/t%2Ft/results/r/artifacts/a?token="))
+			assert.Loosely(t, url, should.HavePrefix("https://results.usercontent.example.com/rootInvocations/inv/workUnits/wu/tests/t%2Ft/results/r/artifacts/a?token="))
 			assert.Loosely(t, exp, should.Match(clock.Now(ctx).UTC().Add(time.Hour)))
 		})
 
 		t.Run(`With project`, func(t *ftt.Test) {
-			url, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/a", map[string]string{"project": "test-project"})
+			url, _, err := s.GenerateSignedURL(ctx, "request.example.com", "rootInvocations/inv/workUnits/wu/artifacts/a", map[string]string{"project": "test-project"})
 			assert.Loosely(t, err, should.BeNil)
 
 			// Validate the token.
@@ -86,9 +90,16 @@ func TestGenerateSignedURL(t *testing.T) {
 			token := parsedURL.Query().Get("token")
 			assert.Loosely(t, token, should.NotBeEmpty)
 
-			embedded, err := artifactNameTokenKind.Validate(ctx, token, []byte("invocations/inv/artifacts/a"))
+			embedded, err := artifactNameTokenKind.Validate(ctx, token, []byte("rootInvocations/inv/workUnits/wu/artifacts/a"))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, embedded, should.Resemble(map[string]string{"project": "test-project"}))
+		})
+
+		t.Run(`With legacy invocation`, func(t *ftt.Test) {
+			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t%2Ft/results/r/artifacts/a", nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, url, should.HavePrefix("https://results.usercontent.example.com/invocations/inv/tests/t%2Ft/results/r/artifacts/a?token="))
+			assert.Loosely(t, exp, should.Match(clock.Now(ctx).UTC().Add(time.Hour)))
 		})
 	})
 }
@@ -152,8 +163,25 @@ func TestServeContent(t *testing.T) {
 				casReader.Res = append(casReader.Res, &bytestream.ReadResponse{Data: d})
 				sum += len(d)
 			}
+			wuID := workunits.ID{RootInvocationID: "inv", WorkUnitID: "wu"}
 			testutil.MustApply(ctx, t,
-				insert.Artifact("inv", parentID, artID, map[string]any{
+				insert.Artifact(wuID.LegacyInvocationID(), parentID, artID, map[string]any{
+					"ContentType": "text/plain",
+					"Size":        sum,
+					"RBECASHash":  hash,
+				}),
+			)
+		}
+
+		newLegacyArt := func(inv invocations.ID, parentID, artID, hash string, datas ...[]byte) {
+			casReader.Res = nil
+			sum := 0
+			for _, d := range datas {
+				casReader.Res = append(casReader.Res, &bytestream.ReadResponse{Data: d})
+				sum += len(d)
+			}
+			testutil.MustApply(ctx, t,
+				insert.Artifact(inv, parentID, artID, map[string]any{
 					"ContentType": "text/plain",
 					"Size":        sum,
 					"RBECASHash":  hash,
@@ -168,8 +196,9 @@ func TestServeContent(t *testing.T) {
 				casReader.Res = append(casReader.Res, &bytestream.ReadResponse{Data: d})
 				sum += len(d)
 			}
+			wuID := workunits.ID{RootInvocationID: "inv", WorkUnitID: "wu"}
 			testutil.MustApply(ctx, t,
-				insert.Artifact("inv", parentID, artID, map[string]any{
+				insert.Artifact(wuID.LegacyInvocationID(), parentID, artID, map[string]any{
 					"ContentType": "text/plain",
 					"Size":        sum,
 					"RbeURI":      uri,
@@ -177,26 +206,37 @@ func TestServeContent(t *testing.T) {
 			)
 		}
 
-		testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
+		// Create some work units and invocations to create artifacts in.
+		ms := []*spanner.Mutation{}
+		ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootinvocations.NewBuilder("inv").Build())...)
+		ms = append(ms, insert.WorkUnit(workunits.NewBuilder("inv", "wu").Build())...)
+		ms = append(ms, insert.Invocation("legacyinv", pb.Invocation_FINALIZED, nil))
+		testutil.MustApply(ctx, t, ms...)
 
 		t.Run(`Invalid resource name`, func(t *ftt.Test) {
-			res, _ := fetch(t, "https://results.usercontent.example.com/invocations/inv")
-			assert.Loosely(t, res.StatusCode, should.Equal(http.StatusBadRequest))
+			t.Run(`Root invocation-like`, func(t *ftt.Test) {
+				res, _ := fetch(t, "https://results.usercontent.example.com/rootInvocations/inv")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusBadRequest))
+			})
+			t.Run(`Legacy-style`, func(t *ftt.Test) {
+				res, _ := fetch(t, "https://results.usercontent.example.com/invocations/inv")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusBadRequest))
+			})
 		})
 
 		t.Run(`Invalid token`, func(t *ftt.Test) {
-			res, _ := fetch(t, "https://results.usercontent.example.com/invocations/inv/artifacts/a?token=bad")
+			res, _ := fetch(t, "https://results.usercontent.example.com/rootInvocations/inv/workUnits/wu/artifacts/a?token=bad")
 			assert.Loosely(t, res.StatusCode, should.Equal(http.StatusForbidden))
 		})
 
 		t.Run(`No token`, func(t *ftt.Test) {
-			res, _ := fetch(t, "https://results.usercontent.example.com/invocations/inv/artifacts/a")
+			res, _ := fetch(t, "https://results.usercontent.example.com/rootInvocations/inv/workUnits/wu/artifacts/a")
 			assert.Loosely(t, res.StatusCode, should.Equal(http.StatusUnauthorized))
 		})
 
 		t.Run(`Escaped test id`, func(t *ftt.Test) {
 			newArt("tr/t/r", "a", "sha256:deadbeef", []byte("contents"))
-			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t/results/r/artifacts/a", nil)
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "rootInvocations/inv/workUnits/wu/tests/t/results/r/artifacts/a", nil)
 			assert.Loosely(t, err, should.BeNil)
 			res, actualContents := fetch(t, u)
 			assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
@@ -205,7 +245,7 @@ func TestServeContent(t *testing.T) {
 
 		t.Run(`limit`, func(t *ftt.Test) {
 			newArt("tr/t/r", "a", "sha256:deadbeef", []byte("contents"))
-			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t/results/r/artifacts/a", nil)
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "rootInvocations/inv/workUnits/wu/tests/t/results/r/artifacts/a", nil)
 			assert.Loosely(t, err, should.BeNil)
 
 			t.Run(`empty`, func(t *ftt.Test) {
@@ -251,7 +291,7 @@ func TestServeContent(t *testing.T) {
 
 		t.Run(`E2E with RBE-CAS`, func(t *ftt.Test) {
 			newArt("", "rbe", "sha256:deadbeef", []byte("first "), []byte("second"))
-			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/rbe", nil)
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "rootInvocations/inv/workUnits/wu/artifacts/rbe", nil)
 			assert.Loosely(t, err, should.BeNil)
 
 			t.Run(`Not found`, func(t *ftt.Test) {
@@ -284,7 +324,7 @@ func TestServeContent(t *testing.T) {
 
 		t.Run(`E2E with RBE-CAS URI`, func(t *ftt.Test) {
 			newArtWithURI("", "rbe-uri", "bytestream://remotebuildexecution.googleapis.com/projects/example/instances/artifacts/blobs/deadbeef/123", []byte("first "), []byte("second"))
-			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/rbe-uri", map[string]string{"project": "test-project"})
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "rootInvocations/inv/workUnits/wu/artifacts/rbe-uri", map[string]string{"project": "test-project"})
 			assert.Loosely(t, err, should.BeNil)
 
 			t.Run("Succeeds", func(t *ftt.Test) {
@@ -297,11 +337,20 @@ func TestServeContent(t *testing.T) {
 			})
 
 			t.Run(`No project in token`, func(t *ftt.Test) {
-				u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/rbe-uri", nil)
+				u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "rootInvocations/inv/workUnits/wu/artifacts/rbe-uri", nil)
 				assert.Loosely(t, err, should.BeNil)
 				res, _ := fetch(t, u)
 				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusForbidden))
 			})
+		})
+
+		t.Run(`with legacy invocation ID`, func(t *ftt.Test) {
+			newLegacyArt("legacyinv", "tr/t/r", "a", "sha256:deadbeef", []byte("contents"))
+			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/legacyinv/tests/t/results/r/artifacts/a", nil)
+			assert.Loosely(t, err, should.BeNil)
+			res, actualContents := fetch(t, u)
+			assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
+			assert.Loosely(t, actualContents, should.Equal("contents"))
 		})
 	})
 }
