@@ -15,6 +15,8 @@
 package internal
 
 import (
+	"go.chromium.org/luci/common/logging"
+	grpcLogging "go.chromium.org/luci/grpc/logging"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -53,6 +55,12 @@ func MainWithModules(modules []module.Module, init func(srv *server.Server) erro
 			// For authenticating calls from Gerrit plugins.
 			&gerritauth.Method,
 		})
+
+		// Route gRPC logs to LUCI logs. Only keep warnings and above in severity to
+		// avoid log spam.
+		logger := logging.Get(srv.Context)
+		grpcLogging.Install(logger, logging.Debug)
+
 		return init(srv)
 	})
 }
