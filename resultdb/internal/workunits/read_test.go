@@ -17,6 +17,7 @@ package workunits
 import (
 	"testing"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -603,6 +604,86 @@ func TestReadFunctions(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, results, should.HaveLength(0))
 			})
+		})
+	})
+}
+
+func TestWorkUnitUpdateRequests(t *testing.T) {
+	ftt.Run("CheckWorkUnitUpdateRequestsExist", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+
+		rootInvID := rootinvocations.ID("root-inv-id")
+		id := ID{RootInvocationID: rootInvID, WorkUnitID: "work-unit-id"}
+		id2 := ID{RootInvocationID: rootInvID, WorkUnitID: "work-unit-id2"}
+		id3 := ID{RootInvocationID: rootInvID, WorkUnitID: "work-unit-id3"}
+		rootInvID2 := rootinvocations.ID("root-inv-id2")
+		id20 := ID{RootInvocationID: rootInvID2, WorkUnitID: "work-unit-id20"}
+
+		// Create a root invocation and work units.
+		var ms []*spanner.Mutation
+		ms = append(ms, rootinvocations.InsertForTesting(rootinvocations.NewBuilder(rootInvID).Build())...)
+		ms = append(ms, rootinvocations.InsertForTesting(rootinvocations.NewBuilder(rootInvID2).Build())...)
+
+		ms = append(ms, InsertForTesting(NewBuilder(rootInvID, "root").Build())...)
+		ms = append(ms, InsertForTesting(NewBuilder(rootInvID2, "root").Build())...)
+
+		ms = append(ms, InsertForTesting(NewBuilder(rootInvID, id.WorkUnitID).WithState(pb.WorkUnit_ACTIVE).Build())...)
+		ms = append(ms, InsertForTesting(NewBuilder(rootInvID, id2.WorkUnitID).WithState(pb.WorkUnit_ACTIVE).Build())...)
+		ms = append(ms, InsertForTesting(NewBuilder(rootInvID, id3.WorkUnitID).WithState(pb.WorkUnit_ACTIVE).Build())...)
+		ms = append(ms, InsertForTesting(NewBuilder(rootInvID2, id20.WorkUnitID).WithState(pb.WorkUnit_ACTIVE).Build())...)
+
+		updatedBy := "user:test@example.com"
+		requestID := "request-123"
+
+		// Insert requests.
+		ms = append(ms, []*spanner.Mutation{
+			InsertWorkUnitUpdateRequestForTesting(id, updatedBy, requestID),
+			InsertWorkUnitUpdateRequestForTesting(id2, updatedBy, requestID),
+			InsertWorkUnitUpdateRequestForTesting(id3, "user:another@example.com", requestID),
+			InsertWorkUnitUpdateRequestForTesting(id3, updatedBy, "another-request-id"),
+			InsertWorkUnitUpdateRequestForTesting(id20, updatedBy, requestID),
+		}...)
+		testutil.MustApply(ctx, t, ms...)
+
+		t.Run("happy path", func(t *ftt.Test) {
+			idsToQuery := []ID{
+				id,
+				id2,
+				id3, // This one does not exist.
+				id,  // Duplicates are allowed and should be handled.
+				id20,
+			}
+			exists, err := CheckWorkUnitUpdateRequestsExist(span.Single(ctx), idsToQuery, updatedBy, requestID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, exists, should.Match(map[ID]bool{
+				id:   true,
+				id2:  true,
+				id20: true,
+			}))
+		})
+
+		t.Run("empty ids slice", func(t *ftt.Test) {
+			exists, err := CheckWorkUnitUpdateRequestsExist(span.Single(ctx), []ID{}, updatedBy, requestID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, exists, should.BeNil)
+		})
+
+		t.Run("empty root invocation ID", func(t *ftt.Test) {
+			ids := []ID{
+				id,
+				{WorkUnitID: "work-unit-id2"},
+			}
+			_, err := CheckWorkUnitUpdateRequestsExist(span.Single(ctx), ids, updatedBy, requestID)
+			assert.That(t, err, should.ErrLike("ids[1]: rootInvocationID: unspecified"))
+		})
+
+		t.Run("empty work unit ID", func(t *ftt.Test) {
+			ids := []ID{
+				id,
+				{RootInvocationID: rootInvID},
+			}
+			_, err := CheckWorkUnitUpdateRequestsExist(span.Single(ctx), ids, updatedBy, requestID)
+			assert.That(t, err, should.ErrLike("ids[1]: workUnitID: unspecified"))
 		})
 	})
 }

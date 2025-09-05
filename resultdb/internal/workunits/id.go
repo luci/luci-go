@@ -37,8 +37,12 @@ type ID struct {
 }
 
 // Returns the spanner primary Key of this work unit.
-func (id ID) Key() spanner.Key {
-	return spanner.Key{id.RootInvocationShardID().RowID(), id.WorkUnitID}
+func (id ID) Key(suffix ...any) spanner.Key {
+	ret := make(spanner.Key, 2+len(suffix))
+	ret[0] = id.RootInvocationShardID().RowID()
+	ret[1] = id.WorkUnitID
+	copy(ret[2:], suffix)
+	return ret
 }
 
 // shardID returns a value in [0,shardCount) deterministically based on the ID value.

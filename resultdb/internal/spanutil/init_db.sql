@@ -383,6 +383,48 @@ CREATE TABLE ChildInvocations (
 ) PRIMARY KEY (RootInvocationShardId, WorkUnitId, ChildInvocationId),
   INTERLEAVE IN PARENT WorkUnits ON DELETE CASCADE;
 
+-- Stores records of work unit update requests to support idempotency.
+-- When a work unit is updated, a record is inserted into this table. If a
+-- subsequent request with the same request ID for the same work unit by the
+-- same user is received, the request is deduplicated.
+CREATE TABLE WorkUnitUpdateRequests(
+  -- The root invocation-shard of the work unit being updated.
+  RootInvocationShardId STRING(MAX) NOT NULL,
+  -- The ID of the work unit being updated.
+  WorkUnitId STRING(MAX) NOT NULL,
+  -- The identity of the user who made the update request.
+  UpdatedBy STRING(MAX) NOT NULL,
+  -- The request ID from the update request.
+  UpdateRequestId STRING(MAX) NOT NULL,
+  -- The time the update request was made.
+  CreateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+) PRIMARY KEY (RootInvocationShardId, WorkUnitId, UpdatedBy, UpdateRequestId),
+  INTERLEAVE IN PARENT WorkUnits ON DELETE CASCADE,
+  -- Records are retained for 6 days. This duration is aligned with the
+  -- lifetime of update tokens. Beyond this, any idempotent RPC retry
+  -- will fail as it will not be authorizable.
+  ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 6 DAY));
+
+-- Stores records of root invocation update requests to support idempotency.
+-- When a root invocation is updated, a record is inserted into this table. If a
+-- subsequent request with the same request ID for the same root invocation by the
+-- same user is received, the request is deduplicated.
+CREATE TABLE RootInvocationUpdateRequests(
+  -- The ID of the root invocation being updated.
+  RootInvocationId STRING(MAX) NOT NULL,
+  -- The identity of the user who made the update request.
+  UpdatedBy STRING(MAX) NOT NULL,
+  -- The request ID from the update request.
+  UpdateRequestId STRING(MAX) NOT NULL,
+  -- The time the update request was made.
+  CreateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+) PRIMARY KEY (RootInvocationId, UpdatedBy, UpdateRequestId),
+  INTERLEAVE IN PARENT RootInvocations ON DELETE CASCADE,
+  -- Records are retained for 6 days. This duration is aligned with the
+  -- lifetime of update tokens. Beyond this, any idempotent RPC retry
+  -- will fail as it will not be authorizable.
+  ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 6 DAY));
+
 -- Stores the invocations.
 -- Invocations are a legacy concept, representing a container of test results.
 -- This is the root table for much of the other legacy data and tables, which define

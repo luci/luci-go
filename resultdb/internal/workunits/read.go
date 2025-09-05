@@ -618,3 +618,41 @@ func ReadBatch(ctx context.Context, ids []ID, mask ReadMask) (ret []*WorkUnitRow
 	}
 	return ret, err
 }
+
+// CheckWorkUnitUpdateRequestsExist checks if the given work units have already been updated by the given user with the given request ID.
+// Returns a map of work unit IDs to a boolean indicating whether the update request exists.
+func CheckWorkUnitUpdateRequestsExist(ctx context.Context, ids []ID, updatedBy string, requestID string) (exists map[ID]bool, err error) {
+	ctx, ts := tracing.Start(ctx, "resultdb.workunits.CheckWorkUnitUpdateRequestsExist")
+	defer func() { tracing.End(ts, err) }()
+
+	if err := validateIDs(ids); err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	// No need to dedup keys going into Spanner, Cloud Spanner always behaves
+	// as if the key is only specified once.
+	var keys []spanner.Key
+	for _, id := range ids {
+		keys = append(keys, id.Key(updatedBy, requestID))
+	}
+	var b spanutil.Buffer
+	columns := []string{"RootInvocationShardId", "WorkUnitId"}
+	exists = make(map[ID]bool)
+	err = span.Read(ctx, "WorkUnitUpdateRequests", spanner.KeySetFromKeys(keys...), columns).Do(func(r *spanner.Row) error {
+		var rootInvocationShardID string
+		var workUnitID string
+		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID)
+		if err != nil {
+			return err
+		}
+		readID := IDFromRowID(rootInvocationShardID, workUnitID)
+		exists[readID] = true
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return exists, nil
+}

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -27,6 +28,7 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
@@ -34,6 +36,8 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
@@ -57,6 +61,10 @@ import (
 func TestBatchUpdateWorkUnits(t *testing.T) {
 	ftt.Run("TestBatchUpdateWorkUnits", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		user := "user:someone@example.com"
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: identity.Identity(user),
+		})
 		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
 		ctx = memory.Use(ctx)                    // For config datastore cache.
 		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
@@ -117,6 +125,7 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 					UpdateMask: &field_mask.FieldMask{Paths: []string{"state"}},
 				},
 			},
+			RequestId: "test-request-id",
 		}
 
 		t.Run("request validation", func(t *ftt.Test) {
@@ -157,6 +166,35 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 						assert.Loosely(t, err, should.ErrLike("bad request: requests[1]: work_unit: state: must be FINALIZING or ACTIVE"))
 					})
 
+					t.Run("request_id", func(t *ftt.Test) {
+						t.Run("empty", func(t *ftt.Test) {
+							req.RequestId = ""
+							_, err := recorder.BatchUpdateWorkUnits(ctx, req)
+							assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike("request_id: unspecified"))
+						})
+
+						t.Run("invalid", func(t *ftt.Test) {
+							req.RequestId = "😃"
+							_, err := recorder.BatchUpdateWorkUnits(ctx, req)
+							assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike("request_id: does not match"))
+						})
+
+						t.Run("mismatched child request id", func(t *ftt.Test) {
+							req.Requests[1].RequestId = "another-request-id"
+							_, err := recorder.BatchUpdateWorkUnits(ctx, req)
+							assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.That(t, err, should.ErrLike("requests[1]: request_id: inconsistent with top-level request_id"))
+						})
+						t.Run("matched child request id", func(t *ftt.Test) {
+							req.RequestId = "test-request-id"
+							req.Requests[1].RequestId = "test-request-id"
+
+							_, err := recorder.BatchUpdateWorkUnits(ctx, req)
+							assert.Loosely(t, err, should.BeNil)
+						})
+					})
 					t.Run("contain duplicated work unit", func(t *ftt.Test) {
 						req.Requests[1].WorkUnit.Name = req.Requests[0].WorkUnit.Name
 
@@ -203,6 +241,30 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 			})
 		})
 
+		t.Run("update is idempotent", func(t *ftt.Test) {
+			t.Run("partial exist with the same request_id", func(t *ftt.Test) {
+				testutil.MustApply(ctx, t, workunits.InsertWorkUnitUpdateRequestForTesting(wuID1, user, req.RequestId))
+
+				_, err := recorder.BatchUpdateWorkUnits(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+				assert.That(t, err, should.ErrLike(`request_id "test-request-id" was used for some work units in the request (eg. "rootInvocations/rootid/workUnits/root:wu1")`))
+			})
+
+			t.Run("deduplicated with request_id", func(t *ftt.Test) {
+				req.Requests[1].WorkUnit.Tags = []*pb.StringPair{{Key: "updatedkey", Value: "updatedval"}}
+				req.Requests[1].UpdateMask.Paths = []string{"tags"}
+				req.Requests[1].WorkUnit.Etag = wu1Expected.Etag
+				res, err := recorder.BatchUpdateWorkUnits(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+
+				// Send the exact same request again, the etag is not updated so update
+				// should fail by etag mismatch if it is not deduplicated.
+				res2, err := recorder.BatchUpdateWorkUnits(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, res2, should.Match(res))
+			})
+		})
+
 		t.Run("etag", func(t *ftt.Test) {
 			t.Run("bad etag", func(t *ftt.Test) {
 				req.Requests[1].WorkUnit.Etag = "invalid"
@@ -216,11 +278,12 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 				// Work unit updated to change its etag.
 				req.Requests[1].WorkUnit.Tags = []*pb.StringPair{{Key: "updatedkey", Value: "updatedval"}}
 				req.Requests[1].UpdateMask.Paths = []string{"tags"}
+				req.Requests[1].WorkUnit.Etag = wu1Expected.Etag
 				_, err := recorder.BatchUpdateWorkUnits(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 
 				// Re-sent with the old etag.
-				req.Requests[1].WorkUnit.Etag = wu1Expected.Etag
+				req.RequestId = "new-request-id"
 				_, err = recorder.BatchUpdateWorkUnits(ctx, req)
 				assert.That(t, err, grpccode.ShouldBe(codes.Aborted))
 				assert.That(t, err, should.ErrLike(`requests[1]: the work unit was modified since it was last read; the update was not applied`))
@@ -245,16 +308,16 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 			_, err = recorder.BatchUpdateWorkUnits(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 
-			// Now try to update both. The transaction should fail.
-			req.Requests[0].UpdateMask.Paths = []string{"tags"}
+			// Now try to update. The transaction should fail.
 			req.Requests[1].UpdateMask.Paths = []string{"tags"}
+			req.RequestId = "new-request-id"
 			_, err = recorder.BatchUpdateWorkUnits(ctx, req)
 			assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 			assert.That(t, err, should.ErrLike(`requests[1]: work unit "rootInvocations/rootid/workUnits/root:wu2" is not active`))
 		})
 
 		t.Run("e2e", func(t *ftt.Test) {
-			assertWUProtoUpdated := func(wu *pb.WorkUnit, expected *pb.WorkUnit) {
+			assertResponse := func(wu *pb.WorkUnit, expected *pb.WorkUnit) {
 				// Etag is must be different if updated.
 				assert.That(t, wu.Etag, should.NotEqual(expected.Etag), truth.LineContext())
 				assert.Loosely(t, wu.Etag, should.NotBeEmpty, truth.LineContext())
@@ -267,10 +330,11 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 					assert.Loosely(t, wu.FinalizeStartTime, should.BeNil, truth.LineContext())
 				}
 				// Match lastUpdated, etag, finalizeStartTime before comparing the full proto.
-				expected.LastUpdated = wu.LastUpdated
-				expected.Etag = wu.Etag
-				expected.FinalizeStartTime = wu.FinalizeStartTime
-				assert.That(t, wu, should.Match(expected), truth.LineContext())
+				expectedCopy := proto.Clone(expected).(*pb.WorkUnit)
+				expectedCopy.LastUpdated = wu.LastUpdated
+				expectedCopy.Etag = wu.Etag
+				expectedCopy.FinalizeStartTime = wu.FinalizeStartTime
+				assert.That(t, wu, should.Match(expectedCopy), truth.LineContext())
 			}
 
 			assertWUSpannerUpdated := func(wuID workunits.ID, expectedRow *workunits.WorkUnitRow) {
@@ -286,9 +350,10 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 				}
 
 				// Match lastUpdated, etag, finalizeStartTime before comparing the full proto.
-				expectedRow.LastUpdated = wuRow.LastUpdated
-				expectedRow.FinalizeStartTime = wuRow.FinalizeStartTime
-				assert.That(t, wuRow, should.Match(expectedRow), truth.LineContext())
+				expectedRowCopy := expectedRow.Clone()
+				expectedRowCopy.LastUpdated = wuRow.LastUpdated
+				expectedRowCopy.FinalizeStartTime = wuRow.FinalizeStartTime
+				assert.That(t, wuRow, should.Match(expectedRowCopy), truth.LineContext())
 			}
 
 			t.Run("base case - no update", func(t *ftt.Test) {
@@ -317,7 +382,7 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 					assert.Loosely(t, res.WorkUnits, should.HaveLength(2))
 
 					wu2Expected.State = pb.WorkUnit_FINALIZING
-					assertWUProtoUpdated(res.WorkUnits[1], wu2Expected)
+					assertResponse(res.WorkUnits[1], wu2Expected)
 
 					// Validate work unit table.
 					wuRow2Expected.State = pb.WorkUnit_FINALIZING
@@ -356,7 +421,7 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 						assert.Loosely(t, err, should.BeNil)
 						wu2Expected.ModuleId = newModuleID
 						pbutil.PopulateModuleIdentifierHashes(wu2Expected.ModuleId)
-						assertWUProtoUpdated(res.WorkUnits[1], wu2Expected)
+						assertResponse(res.WorkUnits[1], wu2Expected)
 
 						// Validate work unit table.
 						wuRow2Expected.ModuleID = newModuleID
@@ -378,6 +443,8 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 						_, err := recorder.BatchUpdateWorkUnits(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
 
+						// Reset the request id to another value, so that the second call is not deduplicated.
+						req.RequestId = "new-request-id"
 						t.Run("to nil", func(t *ftt.Test) {
 							req.Requests[1].WorkUnit.ModuleId = nil
 							_, err = recorder.BatchUpdateWorkUnits(ctx, req)
@@ -437,7 +504,7 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 						res, err := recorder.BatchUpdateWorkUnits(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
 						// Extended properties field is elided from the response.
-						assertWUProtoUpdated(res.WorkUnits[0], wu1Expected)
+						assertResponse(res.WorkUnits[0], wu1Expected)
 
 						// Validate work unit table.
 						wuRow1Expected.ExtendedProperties = extendedPropertiesNew
@@ -480,7 +547,7 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 						res, err := recorder.BatchUpdateWorkUnits(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
 						// Extended properties field is elided from the response.
-						assertWUProtoUpdated(res.WorkUnits[0], wu1Expected)
+						assertResponse(res.WorkUnits[0], wu1Expected)
 
 						// Validate work unit table.
 						wuRow1Expected.ExtendedProperties = expectedExtendedProperties
@@ -555,7 +622,7 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 					wu2Expected.Properties = newProperties
 					wu2Expected.Instructions = instructionutil.InstructionsWithNames(instruction, wuID2.Name())
 					wu2Expected.Tags = []*pb.StringPair{{Key: "newkey", Value: "newvalue"}}
-					assertWUProtoUpdated(res.WorkUnits[1], wu2Expected)
+					assertResponse(res.WorkUnits[1], wu2Expected)
 
 					// Validate spanner.
 					wuRow2Expected.Deadline = newDeadline.AsTime()
@@ -594,11 +661,11 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 
 				// Verify wu1 response
 				wu1Expected.Tags = req.Requests[0].WorkUnit.Tags
-				assertWUProtoUpdated(res.WorkUnits[0], wu1Expected)
+				assertResponse(res.WorkUnits[0], wu1Expected)
 
 				// Verify wu2 response
 				wu2Expected.Deadline = newWu2Deadline
-				assertWUProtoUpdated(res.WorkUnits[1], wu2Expected)
+				assertResponse(res.WorkUnits[1], wu2Expected)
 
 				// Verify Spanner state for wu1
 				wuRow1Expected.Tags = newWu1Tags

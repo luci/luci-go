@@ -349,3 +349,15 @@ func InsertInvocationInclusionForTesting(workUnit ID, included invocations.ID) [
 	}))
 	return ms
 }
+
+// InsertWorkUnitUpdateRequestForTesting creates a spanner mutation to insert a
+// row into the WorkUnitUpdateRequests table for testing purposes.
+func InsertWorkUnitUpdateRequestForTesting(id ID, updatedBy, requestID string) *spanner.Mutation {
+	return spanutil.InsertMap("WorkUnitUpdateRequests", map[string]interface{}{
+		"RootInvocationShardId": id.RootInvocationShardID(),
+		"WorkUnitId":            id.WorkUnitID,
+		"UpdatedBy":             updatedBy,
+		"UpdateRequestId":       requestID,
+		"CreateTime":            time.Date(2025, 9, 3, 1, 2, 3, 4000, time.UTC),
+	})
+}

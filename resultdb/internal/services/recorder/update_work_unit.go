@@ -47,11 +47,11 @@ func (s *recorderServer) UpdateWorkUnit(ctx context.Context, in *pb.UpdateWorkUn
 	if err != nil {
 		return nil, err
 	}
-	if err := validateUpdateWorkUnitRequest(ctx, in, cfg); err != nil {
+	if err := validateUpdateWorkUnitRequest(ctx, in, cfg, true); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 	// Piggy back on updateWorkUnits.
-	updatedRows, err := updateWorkUnits(ctx, []*pb.UpdateWorkUnitRequest{in})
+	updatedRows, err := updateWorkUnits(ctx, []*pb.UpdateWorkUnitRequest{in}, in.RequestId)
 	if err != nil {
 		// Remove any references to "requests[0]: ", this is a single create RPC not a batch RPC.
 		return nil, removeRequestNumberFromAppStatusError(err)
@@ -173,7 +173,7 @@ func updateWorkUnitInternal(in *pb.UpdateWorkUnitRequest, curWorkUnitRow *workun
 	return updateMutations, updatedRow, nil
 }
 
-func validateUpdateWorkUnitRequest(ctx context.Context, req *pb.UpdateWorkUnitRequest, cfg *config.CompiledServiceConfig) error {
+func validateUpdateWorkUnitRequest(ctx context.Context, req *pb.UpdateWorkUnitRequest, cfg *config.CompiledServiceConfig, requireRequestID bool) error {
 	if req.WorkUnit == nil {
 		return errors.Fmt("work_unit: unspecified")
 	}
@@ -182,6 +182,12 @@ func validateUpdateWorkUnitRequest(ctx context.Context, req *pb.UpdateWorkUnitRe
 	}
 	if len(req.UpdateMask.GetPaths()) == 0 {
 		return errors.New("update_mask: paths is empty")
+	}
+	if requireRequestID && req.RequestId == "" {
+		return errors.Fmt("request_id: unspecified (please provide a per-request UUID to ensure idempotence)")
+	}
+	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
+		return errors.Fmt("request_id: %w", err)
 	}
 	updateMask, err := mask.FromFieldMask(req.UpdateMask, req.WorkUnit, mask.ForUpdate())
 	if err != nil {
@@ -222,8 +228,6 @@ func validateUpdateWorkUnitRequest(ctx context.Context, req *pb.UpdateWorkUnitRe
 					return errors.Fmt("work_unit: module_id: %w", err)
 				}
 			}
-
-		// TODO: support update producer_resource.
 
 		case "tags":
 			if err := pbutil.ValidateWorkUnitTags(req.WorkUnit.Tags); err != nil {

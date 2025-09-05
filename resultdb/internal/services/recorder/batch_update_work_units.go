@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/config"
@@ -46,7 +47,7 @@ func (s *recorderServer) BatchUpdateWorkUnits(ctx context.Context, in *pb.BatchU
 	if err := validateBatchUpdateWorkUnitsRequest(ctx, in, cfg); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	updatedRows, err := updateWorkUnits(ctx, in.Requests)
+	updatedRows, err := updateWorkUnits(ctx, in.Requests, in.RequestId)
 	if err != nil {
 		return nil, err
 	}
@@ -58,11 +59,13 @@ func (s *recorderServer) BatchUpdateWorkUnits(ctx context.Context, in *pb.BatchU
 	return &pb.BatchUpdateWorkUnitsResponse{WorkUnits: respWUs}, nil
 }
 
-func updateWorkUnits(ctx context.Context, requests []*pb.UpdateWorkUnitRequest) (updatedRows []*workunits.WorkUnitRow, err error) {
+func updateWorkUnits(ctx context.Context, requests []*pb.UpdateWorkUnitRequest, requestID string) (updatedRows []*workunits.WorkUnitRow, err error) {
 	wuIDs := make([]workunits.ID, len(requests))
 	for i, r := range requests {
 		wuIDs[i] = workunits.MustParseName(r.WorkUnit.Name)
 	}
+	updatedBy := string(auth.CurrentIdentity(ctx))
+
 	updatedRows = make([]*workunits.WorkUnitRow, len(requests))
 	updatedWUs := make([]bool, len(requests))
 	shouldFinalizeWUs := make([]bool, len(requests))
@@ -77,6 +80,22 @@ func updateWorkUnits(ctx context.Context, requests []*pb.UpdateWorkUnitRequest) 
 		if err != nil {
 			return err
 		}
+
+		dedup, err := deduplicateUpdateWorkUnits(ctx, wuIDs, updatedBy, requestID)
+		if err != nil {
+			return err
+		}
+		if dedup {
+			// This call should be deduplicated, so do not write to the database.
+			// Return the work units as they were read at the start of this transaction.
+			// This is a best-effort attempt to return the same response as the original
+			// request. Note that if the work units were modified between the original
+			// request and this one, this RPC will return the current state of the
+			// work units, which will be different from the original response.
+			copy(updatedRows, originalWUs)
+			return nil
+		}
+
 		// Validate assumptions.
 		// - All work units are active.
 		// - Etag match.
@@ -100,8 +119,9 @@ func updateWorkUnits(ctx context.Context, requests []*pb.UpdateWorkUnitRequest) 
 			}
 		}
 
-		// At most 2 mutation - one for updating work unit, one for updating legacy invocation.
-		ms := make([]*spanner.Mutation, 0, len(originalWUs)*2)
+		// At most 3 mutations for each work unit - one for work unit row, one for legacy invocation row,
+		// one for WorkUnitUpdateRequests row.
+		ms := make([]*spanner.Mutation, 0, len(originalWUs)*3)
 		for i, originalWU := range originalWUs {
 			updateMutations, updatedWURow, err := updateWorkUnitInternal(requests[i], originalWU, i)
 			if err != nil {
@@ -118,6 +138,9 @@ func updateWorkUnits(ctx context.Context, requests []*pb.UpdateWorkUnitRequest) 
 			}
 			updatedRows[i] = updatedWURow
 			updatedWUs[i] = updated
+
+			// Insert into WorkUnitUpdateRequests table.
+			ms = append(ms, workunits.CreateWorkUnitUpdateRequest(wuIDs[i], updatedBy, requestID))
 		}
 		span.BufferWrite(ctx, ms...)
 		return nil
@@ -136,11 +159,52 @@ func updateWorkUnits(ctx context.Context, requests []*pb.UpdateWorkUnitRequest) 
 	return updatedRows, nil
 }
 
+func deduplicateUpdateWorkUnits(ctx context.Context, ids []workunits.ID, updatedBy, requestID string) (shouldDedup bool, err error) {
+	exists, err := workunits.CheckWorkUnitUpdateRequestsExist(ctx, ids, updatedBy, requestID)
+	if err != nil {
+		return false, err
+	}
+	var exampleExistWorkUnit workunits.ID
+	existCount := 0
+	for i, id := range ids {
+		if exists[id] {
+			if exampleExistWorkUnit == (workunits.ID{}) {
+				exampleExistWorkUnit = ids[i]
+			}
+			existCount++
+		}
+	}
+	if existCount == 0 {
+		// Do not deduplicate, none of the id exists.
+		return false, nil
+	}
+	if existCount != len(ids) {
+		// some ids already exist, but some doesn't exist.
+		// Could happen if someone sent two different but overlapping batch update
+		// requests, but reused the request_id.
+		return false, appstatus.Errorf(codes.FailedPrecondition, "request_id %q was used for some work units in the request (eg. %q), but not others", requestID, exampleExistWorkUnit.Name())
+	}
+	// All id exist, deduplicate this call.
+	return true, nil
+}
+
 func validateBatchUpdateWorkUnitsRequest(ctx context.Context, in *pb.BatchUpdateWorkUnitsRequest, cfg *config.CompiledServiceConfig) error {
+	if in.RequestId == "" {
+		// Request ID is required to ensure requests are treated idempotently
+		// in case of inevitable retries.
+		return errors.Fmt("request_id: unspecified (please provide a per-request UUID to ensure idempotence)")
+	}
+	if err := pbutil.ValidateRequestID(in.RequestId); err != nil {
+		return errors.Fmt("request_id: %w", err)
+	}
 	wuIdx := make(map[workunits.ID]int, len(in.Requests))
 	for i, r := range in.Requests {
-		if err := validateUpdateWorkUnitRequest(ctx, r, cfg); err != nil {
+		requireRequestID := false
+		if err := validateUpdateWorkUnitRequest(ctx, r, cfg, requireRequestID); err != nil {
 			return errors.Fmt("requests[%d]: %w", i, err)
+		}
+		if r.RequestId != "" && r.RequestId != in.RequestId {
+			return errors.Fmt("requests[%d]: request_id: inconsistent with top-level request_id", i)
 		}
 		wuID := workunits.MustParseName(r.WorkUnit.Name)
 		if dupIdx, ok := wuIdx[wuID]; ok {

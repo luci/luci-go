@@ -204,3 +204,38 @@ func TestFinalizationMethods(t *testing.T) {
 		})
 	})
 }
+
+func TestWorkUnitUpdateRequestsMethods(t *testing.T) {
+	ftt.Run("TestWorkUnitUpdateRequestsMethods", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+		rootInvID := rootinvocations.ID("root-inv-id")
+		// Create a root invocation and root work unit.
+		var ms []*spanner.Mutation
+		ms = append(ms, rootinvocations.InsertForTesting(rootinvocations.NewBuilder(rootInvID).Build())...)
+		ms = append(ms, InsertForTesting(NewBuilder(rootInvID, "root").Build())...)
+
+		// Create a work unit.
+		id := ID{
+			RootInvocationID: rootinvocations.ID(rootInvID),
+			WorkUnitID:       "work-unit-id",
+		}
+		workUnit := NewBuilder(rootInvID, "work-unit-id").WithState(pb.WorkUnit_ACTIVE).Build()
+		ms = append(ms, InsertForTesting(workUnit)...)
+		testutil.MustApply(ctx, t, ms...)
+		t.Run("CreateWorkUnitUpdateRequest", func(t *ftt.Test) {
+			updatedBy := "user:creator@example.com"
+			requestID := "req-id-456"
+
+			m := CreateWorkUnitUpdateRequest(id, updatedBy, requestID)
+			ct, err := span.Apply(ctx, []*spanner.Mutation{m})
+			assert.Loosely(t, err, should.BeNil)
+			// Read back the row to confirm it was inserted correctly.
+			row, err := span.ReadRow(span.Single(ctx), "WorkUnitUpdateRequests", id.Key(updatedBy, requestID), []string{"CreateTime"})
+			assert.Loosely(t, err, should.BeNil)
+			var createTime time.Time
+			err = row.Column(0, &createTime)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, createTime, should.Match(ct))
+		})
+	})
+}

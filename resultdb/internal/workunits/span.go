@@ -307,3 +307,13 @@ func MarkFinalized(id ID) []*spanner.Mutation {
 	ms = append(ms, invocations.MarkFinalized(id.LegacyInvocationID()))
 	return ms
 }
+
+func CreateWorkUnitUpdateRequest(id ID, updatedBy, requestID string) *spanner.Mutation {
+	return spanutil.InsertMap("WorkUnitUpdateRequests", map[string]interface{}{
+		"RootInvocationShardId": id.RootInvocationShardID(),
+		"WorkUnitId":            id.WorkUnitID,
+		"UpdatedBy":             updatedBy,
+		"UpdateRequestId":       requestID,
+		"CreateTime":            spanner.CommitTimestamp,
+	})
+}
