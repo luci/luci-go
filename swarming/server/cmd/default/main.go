@@ -209,12 +209,8 @@ func main() {
 		botsrv.JSON(botSrv, "/swarming/api/v1/bot/rbe/session/create", rbeSessions.CreateBotSession)
 		botsrv.JSON(botSrv, "/swarming/api/v1/bot/rbe/session/update", rbeSessions.UpdateBotSession)
 
-		// Handlers for TQ tasks submitted by Python Swarming.
-		internals, err := rbe.NewInternalsClient(srv.Context, srv.Options.CloudProject)
-		if err != nil {
-			return err
-		}
-		rbeReservations := rbe.NewReservationServer(srv.Context, reservationsConn, internals, srv.Options.CloudProject, srv.Options.ImageVersion(), cfg, tasksManager)
+		// Handlers for TQ tasks and PubSub message that manage RBE reservations.
+		rbeReservations := rbe.NewReservationServer(srv.Context, reservationsConn, srv.Options.CloudProject, srv.Options.ImageVersion(), cfg, tasksManager)
 		rbeReservations.RegisterTQTasks(tqt)
 		rbeReservations.RegisterPSHandlers(&pubsub.Default)
 

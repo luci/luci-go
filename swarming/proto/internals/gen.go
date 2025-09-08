@@ -15,4 +15,4 @@
 // Package internalspb contains protobuf messages used internally by Swarming.
 package internalspb
 
-//go:generate cproto -use-grpc-plugin -discovery=false
+//go:generate cproto

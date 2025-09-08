@@ -26,7 +26,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -41,7 +40,6 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/swarming/internal/remoteworkers"
-	configpb "go.chromium.org/luci/swarming/proto/config"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
@@ -55,6 +53,7 @@ func TestReservationServer(t *testing.T) {
 	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		const rbeInstance = "projects/x/instances/y"
 		const rbeReservation = "reservation-id"
+		const taskID = "60b2ed0a43023110"
 
 		ctx := memory.Use(context.Background())
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
@@ -65,10 +64,8 @@ func TestReservationServer(t *testing.T) {
 		rbe := mockedReservationClient{
 			newState: remoteworkers.ReservationState_RESERVATION_PENDING,
 		}
-		internals := mockedInternalsClient{}
 		srv := ReservationServer{
 			rbe:           &rbe,
-			internals:     &internals,
 			serverProject: "cloud-proj",
 			serverVersion: "go-version",
 			cfg:           p,
@@ -81,7 +78,7 @@ func TestReservationServer(t *testing.T) {
 		enqueueTask := &internalspb.EnqueueRBETask{
 			Payload: &internalspb.TaskPayload{
 				ReservationId:  rbeReservation,
-				TaskId:         "60b2ed0a43023110",
+				TaskId:         taskID,
 				TaskToRunShard: 14,
 				TaskToRunId:    1,
 				DebugInfo: &internalspb.TaskPayload_DebugInfo{
@@ -100,8 +97,15 @@ func TestReservationServer(t *testing.T) {
 			WaitForCapacity: true,
 		}
 
-		taskReqKey, err := model.TaskIDToRequestKey(ctx, enqueueTask.Payload.TaskId)
+		taskReqKey, err := model.TaskIDToRequestKey(ctx, taskID)
 		assert.NoErr(t, err)
+
+		taskReq := &model.TaskRequest{
+			Key:        taskReqKey,
+			TaskSlices: make([]model.TaskSlice, 2), // empty, its fine for this test
+		}
+		assert.NoErr(t, datastore.Put(ctx, taskReq))
+
 		taskToRun := &model.TaskToRun{
 			Key: model.TaskToRunKey(ctx, taskReqKey,
 				enqueueTask.Payload.TaskToRunShard,
@@ -180,40 +184,34 @@ func TestReservationServer(t *testing.T) {
 		t.Run("handleEnqueueRBETask fatal error", func(t *ftt.Test) {
 			t.Run("expected error, report ok", func(t *ftt.Test) {
 				rbe.errCreate = status.Errorf(codes.FailedPrecondition, "boom")
-				internals.expireSlice = func(req *internalspb.ExpireSliceRequest) error {
-					assert.Loosely(t, req, should.Match(&internalspb.ExpireSliceRequest{
-						TaskId:         enqueueTask.Payload.TaskId,
-						TaskToRunShard: enqueueTask.Payload.TaskToRunShard,
-						TaskToRunId:    enqueueTask.Payload.TaskToRunId,
-						Reason:         internalspb.ExpireSliceRequest_NO_RESOURCE,
-						Details:        "rpc error: code = FailedPrecondition desc = boom",
-					}))
-					return nil
+				srv.tasksManager = &tasks.MockedManager{
+					ExpireSliceTxnMock: func(ctx context.Context, op *tasks.ExpireSliceOp) (*tasks.ExpireSliceTxnOutcome, error) {
+						assert.That(t, op.Reason, should.Equal(tasks.NoResource))
+						return &tasks.ExpireSliceTxnOutcome{Expired: true}, nil
+					},
 				}
 				err := srv.handleEnqueueRBETask(ctx, enqueueTask)
-				assert.Loosely(t, tq.Ignore.In(err), should.BeTrue)
+				assert.That(t, tq.Ignore.In(err), should.BeTrue)
 			})
 
 			t.Run("unexpected error, report ok", func(t *ftt.Test) {
 				rbe.errCreate = status.Errorf(codes.PermissionDenied, "boom")
-				internals.expireSlice = func(req *internalspb.ExpireSliceRequest) error {
-					assert.Loosely(t, req, should.Match(&internalspb.ExpireSliceRequest{
-						TaskId:         enqueueTask.Payload.TaskId,
-						TaskToRunShard: enqueueTask.Payload.TaskToRunShard,
-						TaskToRunId:    enqueueTask.Payload.TaskToRunId,
-						Reason:         internalspb.ExpireSliceRequest_PERMISSION_DENIED,
-						Details:        "rpc error: code = PermissionDenied desc = boom",
-					}))
-					return nil
+				srv.tasksManager = &tasks.MockedManager{
+					ExpireSliceTxnMock: func(ctx context.Context, op *tasks.ExpireSliceOp) (*tasks.ExpireSliceTxnOutcome, error) {
+						assert.That(t, op.Reason, should.Equal(tasks.PermissionDenied))
+						return &tasks.ExpireSliceTxnOutcome{Expired: true}, nil
+					},
 				}
 				err := srv.handleEnqueueRBETask(ctx, enqueueTask)
-				assert.Loosely(t, tq.Fatal.In(err), should.BeTrue)
+				assert.That(t, tq.Fatal.In(err), should.BeTrue)
 			})
 
 			t.Run("expected, report failed", func(t *ftt.Test) {
 				rbe.errCreate = status.Errorf(codes.FailedPrecondition, "boom")
-				internals.expireSlice = func(_ *internalspb.ExpireSliceRequest) error {
-					return status.Errorf(codes.InvalidArgument, "boom")
+				srv.tasksManager = &tasks.MockedManager{
+					ExpireSliceTxnMock: func(ctx context.Context, op *tasks.ExpireSliceOp) (*tasks.ExpireSliceTxnOutcome, error) {
+						return nil, fmt.Errorf("datastore error")
+					},
 				}
 				err := srv.handleEnqueueRBETask(ctx, enqueueTask)
 				assert.Loosely(t, err, should.NotBeNil)
@@ -256,31 +254,11 @@ func TestReservationServer(t *testing.T) {
 			const (
 				reservationName = "projects/.../instances/.../reservations/..."
 				taskSliceIndex  = 1
-				taskID          = "637f8e221100aa10"
 			)
-
-			config.Settings.TrafficMigration = &configpb.TrafficMigration{
-				Routes: []*configpb.TrafficMigration_Route{
-					{
-						Name:             "/prpc/swarming.internals.rbe.Internals/ExpireSlice",
-						RouteToGoPercent: int32(100),
-					},
-				},
-			}
-			p := cfgtest.MockConfigs(ctx, config)
-			srv.cfg = p
-
-			// This is checked when retrying the submission.
-			reqKey, _ := model.TaskIDToRequestKey(ctx, taskID)
-			req := &model.TaskRequest{
-				Key:        reqKey,
-				TaskSlices: make([]model.TaskSlice, taskSliceIndex+1), // empty, its fine for this test
-			}
-			assert.NoErr(t, datastore.Put(ctx, req))
 
 			// Get the matching parameters of TaskToRun, they are derived from task ID
 			// and the slice index.
-			ttrKey, _ := model.TaskRequestToToRunKey(ctx, req, taskSliceIndex)
+			ttrKey, _ := model.TaskRequestToToRunKey(ctx, taskReq, taskSliceIndex)
 			taskToRunID := ttrKey.IntID()
 			taskToRunShard := (&model.TaskToRun{Key: ttrKey}).MustShardIndex()
 
@@ -630,18 +608,4 @@ func (m *mockedReservationClient) CancelReservation(ctx context.Context, in *rem
 		return nil, m.errCancel
 	}
 	return &remoteworkers.CancelReservationResponse{}, nil
-}
-
-type mockedInternalsClient struct {
-	expireSlice func(*internalspb.ExpireSliceRequest) error
-}
-
-func (m *mockedInternalsClient) ExpireSlice(ctx context.Context, in *internalspb.ExpireSliceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	if m.expireSlice == nil {
-		panic("must not be called")
-	}
-	if err := m.expireSlice(in); err != nil {
-		return nil, err
-	}
-	return &emptypb.Empty{}, nil
 }

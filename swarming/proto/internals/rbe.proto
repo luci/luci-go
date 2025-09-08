@@ -9,16 +9,12 @@ package swarming.internals.rbe;
 option go_package = "go.chromium.org/luci/swarming/proto/internals;internalspb";
 
 import "google/protobuf/duration.proto";
-import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/swarming/proto/config/pools.proto";
 
 
 // EnqueueRBETask describes payload of `rbe-enqueue` TQ tasks.
-//
-// It is submitted into `rbe-enqueue` Cloud Tasks queue by the Python side and
-// processed by the Go side (resulting in a new RBE reservation on success).
 message EnqueueRBETask {
   // Payload of the new RBE reservation. It will eventually be routed to a bot.
   TaskPayload payload = 1;
@@ -53,9 +49,6 @@ message EnqueueRBETask {
 
 
 // CancelRBETask describes payload of `rbe-cancel` TQ tasks.
-//
-// It is submitted into `rbe-cancel` Cloud Tasks queue and
-// processed by the Go side (resulting in cancellation of an RBE reservation).
 message CancelRBETask {
   // Full RBE instance ID with the reservation, extracted from TaskRequest.
   string rbe_instance = 1;
@@ -63,6 +56,8 @@ message CancelRBETask {
   string reservation_id = 2;
 
   // Optional information used for debugging and tracing purposes.
+  //
+  // TODO: replace py_swarming_version with swarming_version.
   message DebugInfo {
     google.protobuf.Timestamp created = 1;  // when this message was created
     string py_swarming_version = 2;         // version of the Python Swarming
@@ -96,6 +91,8 @@ message TaskPayload {
   int64 task_to_run_id = 5;
 
   // Optional information used for debugging and tracing purposes.
+  //
+  // TODO: replace py|go_swarming_version with swarming_version.
   message DebugInfo {
     google.protobuf.Timestamp created = 1;  // when this message was created
     string py_swarming_version = 2;         // version of the Python Swarming
@@ -104,8 +101,8 @@ message TaskPayload {
   }
   DebugInfo debug_info = 6;
 
-  // If true, the bot should not contact Python Swarming, don't execute
-  // anything, just immediately move the reservation into COMPLETED state.
+  // If true, the bot should not contact Swarming, don't execute anything, just
+  // immediately move the reservation into COMPLETED state.
   //
   // This is useful during initial development to test RBE task distribution
   // mechanism in isolation from other Swarming guts.
@@ -137,45 +134,4 @@ message TaskResult {
   // many attempts. This is an internal Swarming error and it results in the
   // task failing with BOT_DIED error.
   string bot_internal_error = 2;
-}
-
-
-// This service is exposed by the Python Swarming, called by the Go Swarming.
-//
-// All RPCs are internal to the Swarming backend.
-service Internals {
-  // Marks the slice as expired or failed, switches the task to the next slice.
-  //
-  // Does nothing (and succeeds) if the slice is no longer pending or doesn't
-  // exist.
-  rpc ExpireSlice(ExpireSliceRequest) returns (google.protobuf.Empty);
-}
-
-
-// Body of ExpireSlice internal RPC call.
-//
-// It identifies a concrete TaskToRunShardXXX entity and the reason it has
-// expired.
-message ExpireSliceRequest {
-  // Swarming task ID (aka TaskResultSummary packed id), identifies TaskRequest.
-  string task_id = 1;
-  // Shard index of TaskToRunShardXXX entity class.
-  int32 task_to_run_shard = 2;
-  // Datastore ID of TaskToRunShardXXX entity (a child of the TaskRequest).
-  int64 task_to_run_id = 3;
-
-  // The reason the slice is marked as expired.
-  enum Reason {
-    REASON_UNSPECIFIED = 0;
-    NO_RESOURCE = 1;        // no bots alive that match the requested dimensions
-    PERMISSION_DENIED = 2;  // no access to the RBE instance
-    INVALID_ARGUMENT = 3;   // RBE didn't like something about the reservation
-    BOT_INTERNAL_ERROR = 4; // the bot picked up the reservation and then died
-    EXPIRED = 5;            // the scheduling deadline exceeded
-  }
-  Reason reason = 4;
-  string details = 5;
-
-  // Set if we know a bot that is likely responsible for BOT_INTERNAL_ERROR.
-  string culprit_bot_id = 6;
 }
