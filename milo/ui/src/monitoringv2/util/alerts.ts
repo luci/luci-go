@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GenAiSuspect } from '@/proto/go.chromium.org/luci/bisection/proto/v1/genai.pb';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
@@ -26,6 +27,7 @@ export interface BuilderAlert {
   history: OneBuildHistory[];
   consecutiveFailures: number;
   consecutivePasses: number;
+  suspectedCulprit: GenAiSuspect | undefined;
 }
 
 export interface StepAlert {

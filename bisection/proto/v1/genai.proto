@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package luci.bisection.v1;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/bisection/proto/v1/common.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
+option go_package = "go.chromium.org/luci/bisection/proto/v1;bisectionpb";
+
+message GenAiAnalysisResult{
+  // The status of the gen AI analysis.
+  luci.bisection.v1.AnalysisStatus status = 1;
+  // Suspects found by the gen AI analysis.
+  GenAiSuspect suspect = 2;
+  // Start time of gen AI analysis.
+  google.protobuf.Timestamp start_time = 3;
+  // End time of gen AI analysis.
+  google.protobuf.Timestamp end_time = 4;
+}
+
+message GenAiSuspect {
+  // A suspect revision of gen AI analysis.
+  buildbucket.v2.GitilesCommit commit = 1;
+  // Review URL for the suspect commit.
+  string reviewUrl = 2;
+  // Title of the review for the suspect commit.
+  string reviewTitle = 3;
+  // True if the suspect is confirmed as the culprit by bisection.
+  bool verified = 4;
+  // The details of suspect verification for the suspect.
+  luci.bisection.v1.SuspectVerificationDetails verification_details = 5;
+}

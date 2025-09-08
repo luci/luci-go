@@ -24,6 +24,7 @@ import {
   Variant,
 } from "./common.pb";
 import { Culprit, CulpritAction } from "./culprits.pb";
+import { GenAiAnalysisResult } from "./genai.pb";
 import { HeuristicAnalysisResult } from "./heuristic.pb";
 import { BlameList, NthSectionAnalysisResult, RegressionRange } from "./nthsection.pb";
 
@@ -262,6 +263,8 @@ export interface Analysis {
    * range. So we set it as repeated field.
    */
   readonly culprits: readonly Culprit[];
+  /** Result of the GenAI culprit finder analysis. */
+  readonly genAiResult: GenAiAnalysisResult | undefined;
 }
 
 export interface BuildFailure {
@@ -1137,6 +1140,7 @@ function createBaseAnalysis(): Analysis {
     builder: undefined,
     buildFailureType: 0,
     culprits: [],
+    genAiResult: undefined,
   };
 }
 
@@ -1183,6 +1187,9 @@ export const Analysis: MessageFns<Analysis> = {
     }
     for (const v of message.culprits) {
       Culprit.encode(v!, writer.uint32(114).fork()).join();
+    }
+    if (message.genAiResult !== undefined) {
+      GenAiAnalysisResult.encode(message.genAiResult, writer.uint32(122).fork()).join();
     }
     return writer;
   },
@@ -1306,6 +1313,14 @@ export const Analysis: MessageFns<Analysis> = {
           message.culprits.push(Culprit.decode(reader, reader.uint32()));
           continue;
         }
+        case 15: {
+          if (tag !== 122) {
+            break;
+          }
+
+          message.genAiResult = GenAiAnalysisResult.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1335,6 +1350,7 @@ export const Analysis: MessageFns<Analysis> = {
       builder: isSet(object.builder) ? BuilderID.fromJSON(object.builder) : undefined,
       buildFailureType: isSet(object.buildFailureType) ? buildFailureTypeFromJSON(object.buildFailureType) : 0,
       culprits: globalThis.Array.isArray(object?.culprits) ? object.culprits.map((e: any) => Culprit.fromJSON(e)) : [],
+      genAiResult: isSet(object.genAiResult) ? GenAiAnalysisResult.fromJSON(object.genAiResult) : undefined,
     };
   },
 
@@ -1382,6 +1398,9 @@ export const Analysis: MessageFns<Analysis> = {
     if (message.culprits?.length) {
       obj.culprits = message.culprits.map((e) => Culprit.toJSON(e));
     }
+    if (message.genAiResult !== undefined) {
+      obj.genAiResult = GenAiAnalysisResult.toJSON(message.genAiResult);
+    }
     return obj;
   },
 
@@ -1412,6 +1431,9 @@ export const Analysis: MessageFns<Analysis> = {
       : undefined;
     message.buildFailureType = object.buildFailureType ?? 0;
     message.culprits = object.culprits?.map((e) => Culprit.fromPartial(e)) || [];
+    message.genAiResult = (object.genAiResult !== undefined && object.genAiResult !== null)
+      ? GenAiAnalysisResult.fromPartial(object.genAiResult)
+      : undefined;
     return message;
   },
 };

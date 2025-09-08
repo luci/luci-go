@@ -22,6 +22,7 @@ import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/bisection/proto/v1/bugs.proto";
 import "go.chromium.org/luci/bisection/proto/v1/common.proto";
 import "go.chromium.org/luci/bisection/proto/v1/culprits.proto";
+import "go.chromium.org/luci/bisection/proto/v1/genai.proto";
 import "go.chromium.org/luci/bisection/proto/v1/heuristic.proto";
 import "go.chromium.org/luci/bisection/proto/v1/nthsection.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
@@ -182,6 +183,8 @@ message Analysis {
   // For some rare cases, we may get more than one culprit for a regression
   // range. So we set it as repeated field.
   repeated luci.bisection.v1.Culprit culprits = 14;
+  // Result of the GenAI culprit finder analysis.
+  luci.bisection.v1.GenAiAnalysisResult gen_ai_result = 15;
 }
 
 enum BuildFailureType {

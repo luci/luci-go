@@ -17,7 +17,10 @@ import { chunk, uniq, uniqBy, uniqWith } from 'lodash-es';
 import { createContext, ReactNode } from 'react';
 
 import { useBuildsClient } from '@/build/hooks/prpc_clients';
-import { useResultDbClient } from '@/common/hooks/prpc_clients';
+import {
+  useResultDbClient,
+  useAnalysesClient,
+} from '@/common/hooks/prpc_clients';
 import {
   useNotifyAlertsClient,
   useSoMAlertsClient,
@@ -36,6 +39,10 @@ import {
   TreeJson,
 } from '@/monitoringv2/util/server_json';
 import { ListAlertsRequest } from '@/proto/go.chromium.org/infra/appengine/sheriff-o-matic/proto/v1/alerts.pb';
+import {
+  Analysis,
+  QueryAnalysisRequest,
+} from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { SearchBuildsRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
@@ -86,6 +93,7 @@ interface MonitoringContext {
 interface BuildAndTestVariants {
   build: Build;
   testVariants: TestVariant[];
+  analysis: Analysis | undefined;
 }
 
 export const MonitoringCtx = createContext<MonitoringContext | null>(null);
@@ -171,7 +179,11 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
     .map(
       (q) =>
         q.data?.builds?.map((build) => {
-          const btv: BuildAndTestVariants = { build, testVariants: [] };
+          const btv: BuildAndTestVariants = {
+            build: build,
+            testVariants: [],
+            analysis: undefined,
+          };
           return btv;
         }) || [],
     )
@@ -200,6 +212,28 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
       (btv.testVariants =
         failingTestsQueries[i].data?.testVariants?.slice() || []),
   );
+
+  const bisectionClient = useAnalysesClient();
+  const analysesQueries = useQueries({
+    queries: buildHistories.map((btv) => {
+      const req = QueryAnalysisRequest.fromPartial({
+        buildFailure: {
+          bbid: btv.build.id,
+          failedStepName: 'compile',
+        },
+      });
+      return {
+        ...bisectionClient.QueryAnalysis.query(req),
+      };
+    }),
+  });
+
+  buildHistories.forEach((btv, i) => {
+    if (analysesQueries[i].data) {
+      btv.analysis = analysesQueries[i].data?.analyses?.[0];
+    }
+  });
+
   if (alertsQuery.isError) {
     throw alertsQuery.error;
   }
@@ -274,6 +308,7 @@ const createBuilderAlerts = (histories: BuildAndTestVariants[][]) => {
       })),
       consecutiveFailures: firstPassIndex === -1 ? 10 : firstPassIndex,
       consecutivePasses: firstFailIndex === -1 ? 10 : firstFailIndex,
+      suspectedCulprit: history[0].analysis?.genAiResult?.suspect,
     };
     return alert;
   });
