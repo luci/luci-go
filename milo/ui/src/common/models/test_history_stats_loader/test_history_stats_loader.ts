@@ -66,6 +66,7 @@ export class TestHistoryStatsLoader {
     readonly project: string,
     readonly subRealm: string,
     readonly testId: string,
+    readonly followTestIdRenaming: boolean,
     latestDate: DateTime,
     readonly variantPredicate: VariantPredicate,
     readonly testHistoryService: TestHistoryService,
@@ -90,6 +91,7 @@ export class TestHistoryStatsLoader {
       },
       pageSize: 1000,
       testId: this.testId,
+      followTestIdRenaming: this.followTestIdRenaming,
     };
     let pageToken = '';
 

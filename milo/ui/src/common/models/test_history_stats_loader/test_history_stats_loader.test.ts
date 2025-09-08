@@ -67,6 +67,7 @@ describe('TestHistoryStatsLoader', () => {
       'project',
       'realm',
       'test-id',
+      true,
       DateTime.fromISO('2021-11-05T11:00:00Z'),
       { contains: { def: {} } },
       {
@@ -93,6 +94,7 @@ describe('TestHistoryStatsLoader', () => {
       predicate: {
         subRealm: 'realm',
       },
+      followTestIdRenaming: true,
     });
     expect(stub.mock.calls[1][0]).toMatchObject({
       project: 'project',
@@ -101,6 +103,7 @@ describe('TestHistoryStatsLoader', () => {
         subRealm: 'realm',
       },
       pageToken: 'page2',
+      followTestIdRenaming: true,
     });
 
     // After loading.
@@ -127,6 +130,7 @@ describe('TestHistoryStatsLoader', () => {
         subRealm: 'realm',
       },
       pageToken: 'page3',
+      followTestIdRenaming: true,
     });
 
     expect(statsLoader.getStats('key1:val1', 0, true)).toEqual(group1);

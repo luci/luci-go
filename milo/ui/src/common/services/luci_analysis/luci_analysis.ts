@@ -99,6 +99,7 @@ export interface QueryTestHistoryRequest {
   readonly predicate: TestVerdictPredicate;
   readonly pageSize?: number;
   readonly pageToken?: string;
+  readonly followTestIdRenaming?: boolean;
 }
 
 export interface TestVerdict {
@@ -124,6 +125,7 @@ export interface QueryTestHistoryStatsRequest {
   readonly predicate: TestVerdictPredicate;
   readonly pageSize?: number;
   readonly pageToken?: string;
+  readonly followTestIdRenaming?: boolean;
 }
 
 export interface QueryTestHistoryStatsResponseGroupVerdictCounts {
@@ -162,6 +164,7 @@ export interface QueryVariantsRequest {
   readonly variantPredicate?: VariantPredicate;
   readonly pageSize?: number;
   readonly pageToken?: string;
+  readonly followTestIdRenaming?: boolean;
 }
 
 export interface QueryVariantsResponseVariantInfo {

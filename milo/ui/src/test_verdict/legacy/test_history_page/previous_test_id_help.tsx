@@ -14,19 +14,32 @@
 
 import { HelpOutline } from '@mui/icons-material';
 import { IconButton, Popover, Typography } from '@mui/material';
+import Link from '@mui/material/Link';
 import { useState } from 'react';
+import { Link as RouterLink } from 'react-router';
+
+import { getTestHistoryURLWithSearchParam } from '@/common/tools/url_utils';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 export interface PreviousTestIdBannerProps {
+  readonly project: string;
   readonly previousTestId: string;
 }
 
 export function PreviousTestIDHelp({
+  project,
   previousTestId,
 }: PreviousTestIdBannerProps) {
   const [helpAnchorEl, setHelpAnchorEl] = useState<HTMLButtonElement | null>(
     null,
   );
 
+  const [searchParams, _] = useSyncedSearchParams();
+  const previousTestIdHistoryURL = getTestHistoryURLWithSearchParam(
+    project,
+    previousTestId,
+    searchParams.get('q') || '',
+  );
   return (
     <>
       <IconButton
@@ -54,9 +67,16 @@ export function PreviousTestIDHelp({
       >
         <Typography sx={{ p: 2, maxWidth: '800px' }}>
           This test is migrating to a new structured test identifier to help us
-          organise tests better. It may have additional history under its old
-          ID:{' '}
+          organise tests better. It may have some history under its old ID:{' '}
           <code style={{ overflowWrap: 'break-word' }}>{previousTestId}</code>
+          <Link
+            component={RouterLink}
+            to={previousTestIdHistoryURL}
+            underline="always"
+            sx={{ display: 'flex', alignItems: 'center' }}
+          >
+            View history for previous ID only
+          </Link>
         </Typography>
       </Popover>
     </>

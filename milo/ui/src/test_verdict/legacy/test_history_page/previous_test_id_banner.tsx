@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { FormControlLabel, FormGroup, Switch } from '@mui/material';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Link from '@mui/material/Link';
-import { Link as RouterLink } from 'react-router';
 
-import { getTestHistoryURLPath } from '@/common/tools/url_utils';
 import { QueryTestMetadataRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 
+import { useFollowRenames } from './hooks';
 import { PreviousTestIDHelp } from './previous_test_id_help';
 import { useTestMetadata } from './utils';
 
@@ -42,34 +41,38 @@ export function PreviousTestIdBanner({
       predicate: { testIds: [testId] },
     }),
   );
+
   const metadata = testMetadataDetail?.testMetadata;
   const previousTestId = metadata?.previousTestId;
-  const previousTestIdHistoryURL = previousTestId
-    ? getTestHistoryURLPath(project, previousTestId)
-    : null;
+  const [followRenames, setFollowRenames] = useFollowRenames();
 
   return (
     <>
-      {!tmIsLoading &&
-        tmIsSuccess &&
-        metadata &&
-        previousTestId &&
-        previousTestIdHistoryURL && (
-          <Alert severity="info">
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              This test has additional history available under a previous ID.
-              <PreviousTestIDHelp previousTestId={previousTestId} />
-              <Link
-                component={RouterLink}
-                to={previousTestIdHistoryURL}
-                underline="always"
-                sx={{ display: 'flex', alignItems: 'center' }}
-              >
-                View history for previous ID
-              </Link>
-            </Box>
-          </Alert>
-        )}
+      {!tmIsLoading && tmIsSuccess && metadata && previousTestId && (
+        <Alert severity="info">
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            This test has additional history under a previous ID.
+            <PreviousTestIDHelp
+              project={project}
+              previousTestId={previousTestId}
+            />
+            <FormGroup sx={{ marginLeft: 2 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    size="small"
+                    checked={followRenames}
+                    onClick={() => setFollowRenames(!followRenames)}
+                  />
+                }
+                label="Include history from previous test ID"
+                disableTypography={true}
+                sx={{ marginTop: '-2px', marginBottom: '-2px' }}
+              />
+            </FormGroup>
+          </Box>
+        </Alert>
+      )}
     </>
   );
 }

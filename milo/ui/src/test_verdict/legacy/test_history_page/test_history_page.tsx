@@ -38,6 +38,7 @@ import { DurationGraph } from './duration_graph';
 import { DurationLegend } from './duration_legend';
 import { FilterBox } from './filter_box';
 import { GraphConfig } from './graph_config';
+import { useFollowRenames } from './hooks';
 import { PreviousTestIdBanner } from './previous_test_id_banner';
 import { StatusGraph } from './status_graph';
 import { TestIdLabel } from './test_id_label';
@@ -74,6 +75,7 @@ const GraphContainer = styled.div({
 export const TestHistoryPage = observer(() => {
   const { projectOrRealm, testId } = useParams();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const [followRenames] = useFollowRenames();
 
   // Use useState to ensure initialFilterText won't change after search params
   // are updated.
@@ -87,8 +89,8 @@ export const TestHistoryPage = observer(() => {
   }
 
   useEffect(() => {
-    pageState.setParams(projectOrRealm, testId);
-  }, [pageState, projectOrRealm, testId]);
+    pageState.setParams(projectOrRealm, testId, followRenames);
+  }, [pageState, projectOrRealm, testId, followRenames]);
 
   useEffect(() => {
     if (!initialFilterText) {

@@ -61,6 +61,7 @@ export const TestHistoryPage = types
     project: types.maybe(types.string),
     subRealm: types.maybe(types.string),
     testId: types.maybe(types.string),
+    followTestIdRenaming: types.maybe(types.boolean),
 
     days: 14,
     filterText: '',
@@ -116,6 +117,7 @@ export const TestHistoryPage = types
       const project = self.project;
       const subRealm = self.subRealm;
       const testId = self.testId;
+      const followTestIdRenaming = self.followTestIdRenaming;
       const variantPredicate = self.variantPredicate;
       const testHistoryService = self.services.testHistory;
 
@@ -126,6 +128,7 @@ export const TestHistoryPage = types
           testId,
           variantPredicate,
           pageToken,
+          followTestIdRenaming,
         });
         return [
           res.variants?.map(
@@ -145,6 +148,7 @@ export const TestHistoryPage = types
         self.project,
         self.subRealm || '',
         self.testId,
+        self.followTestIdRenaming || false,
         self.latestDate,
         self.variantPredicate,
         self.services.testHistory,
@@ -170,6 +174,7 @@ export const TestHistoryPage = types
       const project = self.project;
       const subRealm = self.subRealm;
       const testId = self.testId;
+      const followTestIdRenaming = self.followTestIdRenaming;
       const variantHash = self.selectedGroup?.variantHash;
       const earliest = self.selectedGroup?.partitionTime;
       const testHistoryService = self.services.testHistory;
@@ -194,6 +199,7 @@ export const TestHistoryPage = types
           },
           pageSize: 100,
           pageToken,
+          followTestIdRenaming,
         });
         return [
           res.verdicts?.map((verdict) => ({ verdict, variant: variant })) || [],
@@ -271,9 +277,10 @@ export const TestHistoryPage = types
     setDependencies(deps: Pick<typeof self, 'refreshTime' | 'services'>) {
       Object.assign(self, deps);
     },
-    setParams(projectOrRealm: string, testId: string) {
+    setParams(projectOrRealm: string, testId: string, followRenames: boolean) {
       [self.project, self.subRealm] = projectOrRealm.split(':', 2);
       self.testId = testId;
+      self.followTestIdRenaming = followRenames;
     },
     setFilterText(filterText: string) {
       self.filterText = filterText;
