@@ -93,8 +93,6 @@ declare const SETTINGS: {
   readonly fleetConsole: {
     readonly host: string;
     readonly hats: HaTSConfig;
-    readonly enableColumnFilter: boolean;
-    readonly enableUnifiedFilterBar: boolean;
   };
   readonly ufs: {
     readonly host: string;

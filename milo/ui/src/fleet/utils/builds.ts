@@ -18,7 +18,7 @@
 export const USING_BUILD_BUCKET_DEV =
   SETTINGS.buildbucket.host.includes('cr-buildbucket-dev');
 
-const MILO_PROD = 'ci.chromium.org';
+export const MILO_PROD = 'ci.chromium.org';
 const SWARMING_CHROMEOS_PROD = 'chromeos-swarming.appspot.com';
 
 // TODO: b/394901923 - Because there is no ChromeOS Swarming dev, right now,

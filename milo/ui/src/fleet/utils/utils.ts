@@ -14,6 +14,8 @@
 
 import React from 'react';
 
+import { MILO_PROD } from './builds';
+
 export function hasAnyModifier(e: React.KeyboardEvent<HTMLElement>) {
   return e.ctrlKey || e.altKey || e.metaKey || e.shiftKey;
 }
@@ -113,4 +115,8 @@ const findNeighborsInList = (target: HTMLElement) => {
       ],
     next: navigableItems[(currentIndex + 1) % navigableItems.length],
   };
+};
+
+export const isProdEnvironment = () => {
+  return window.location.hostname === MILO_PROD;
 };

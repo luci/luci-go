@@ -19,6 +19,8 @@ import {
   GridColumnMenuProps,
 } from '@mui/x-data-grid';
 
+import { getFeatureFlag } from '@/fleet/config/features';
+
 import { FilterItem } from './filter_item';
 
 function ColumnsItem(props: GridColumnMenuItemProps) {
@@ -37,7 +39,7 @@ export function ColumnMenu(props: GridColumnMenuProps) {
       {...props}
       slots={{
         // Use custom filtering widget.
-        columnMenuFilterItem: SETTINGS.fleetConsole.enableColumnFilter
+        columnMenuFilterItem: getFeatureFlag('ColumnFilter')
           ? FilterItem
           : null,
         // TODO: b/393602662 - Column menu items are disabled because they're

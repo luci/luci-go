@@ -12,16 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useMemo } from 'react';
-import { useLocalStorage } from 'react-use';
-
+import { getFeatureFlag } from '@/fleet/config/features';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 
 import { DeviceListFilterBar as DeviceListFilterBarNew } from './device_list_filter_bar';
 import { DeviceListFilterBarOld } from './device_list_filter_bar_old';
-
-const ENABLE_UNIFIED_FILTER_BAR_SETTING =
-  SETTINGS.fleetConsole.enableUnifiedFilterBar;
 
 export const DeviceListFilterBar = (props: {
   filterOptions: OptionCategory[];
@@ -29,16 +24,7 @@ export const DeviceListFilterBar = (props: {
   onSelectedOptionsChange: (newSelectedOptions: SelectedOptions) => void;
   isLoading?: boolean;
 }) => {
-  const [localStorageEnable] = useLocalStorage<boolean>(
-    'super-secret-fleet-searchbar',
-  );
-  const ENABLE_UNIFIED_FILTER_BAR = useMemo(() => {
-    if (localStorageEnable === undefined)
-      return ENABLE_UNIFIED_FILTER_BAR_SETTING;
-    else return localStorageEnable;
-  }, [localStorageEnable]);
-
-  if (ENABLE_UNIFIED_FILTER_BAR) {
+  if (getFeatureFlag('UnifiedFilterBar')) {
     return <DeviceListFilterBarNew {...props} />;
   } else {
     return <DeviceListFilterBarOld {...props} />;
