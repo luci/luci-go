@@ -339,15 +339,7 @@ func TestBuildQueriableConfig(t *testing.T) {
 			},
 		}
 		cfg, err := build(&internalcfgpb.ConfigBundle{
-			Settings: withDefaultSettings(&configpb.SettingsCfg{
-				TrafficMigration: &configpb.TrafficMigration{
-					Routes: []*configpb.TrafficMigration_Route{
-						{Name: "/prpc/service/method1", RouteToGoPercent: 0},
-						{Name: "/prpc/service/method2", RouteToGoPercent: 50},
-						{Name: "/prpc/service/method3", RouteToGoPercent: 100},
-					},
-				},
-			}),
+			Settings: withDefaultSettings(&configpb.SettingsCfg{}),
 			Pools: &configpb.PoolsCfg{
 				Pool: []*configpb.Pool{
 					{
@@ -618,12 +610,6 @@ func TestBuildQueriableConfig(t *testing.T) {
 
 		// Owners propagated.
 		assert.That(t, gr.Owners, should.Match([]string{"owner-1@example.com", "owner-2@example.com"}))
-
-		// Traffic routing rules are processed.
-		assert.That(t, cfg.RouteToGoPercent("/prpc/unknown"), should.Equal(0))
-		assert.That(t, cfg.RouteToGoPercent("/prpc/service/method1"), should.Equal(0))
-		assert.That(t, cfg.RouteToGoPercent("/prpc/service/method2"), should.Equal(50))
-		assert.That(t, cfg.RouteToGoPercent("/prpc/service/method3"), should.Equal(100))
 	})
 }
 

@@ -82,8 +82,8 @@ message SettingsCfg {
   // Configuration for RBE-CAS integration.
   CASSettings cas = 20;
 
-  // Configuration for Python => Go RPC servers migration.
-  TrafficMigration traffic_migration = 21;
+  // Configuration for Python => Go RPC servers migration. Unused.
+  TrafficMigration traffic_migration = 21 [ deprecated = true ];
 
   // Configuration of the bot deployment process.
   BotDeployment bot_deployment = 22;

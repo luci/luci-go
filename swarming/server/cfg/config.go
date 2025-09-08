@@ -218,7 +218,6 @@ type Config struct {
 	DefaultCIPD *configpb.ExternalServices_CIPD
 
 	settings  *configpb.SettingsCfg
-	traffic   map[string]*configpb.TrafficMigration_Route
 	poolMap   map[string]*Pool // pool name => config
 	poolNames []string         // sorted list of pool names
 	botGroups *botGroups       // can map bot ID to a bot group config
@@ -371,18 +370,6 @@ func (cfg *Config) RBEConfig(botID string) (RBEConfig, error) {
 		Instance:                instance,
 		EffectiveBotIDDimension: effectiveBotIDDimension,
 	}, nil
-}
-
-// RouteToGoPercent returns how much traffic to this route should be handled by
-// the Go server (vs Python server).
-//
-// Returns a number in range [0; 100].
-func (cfg *Config) RouteToGoPercent(route string) int {
-	if r, ok := cfg.traffic[route]; ok {
-		return int(r.RouteToGoPercent)
-	}
-	// Route to Python by default.
-	return 0
 }
 
 // UpdateConfigs fetches the most recent server configs and bot code and stores
@@ -774,20 +761,11 @@ func buildQueriableConfig(ctx context.Context, ent *configBundle) (*Config, erro
 		return nil, errors.Fmt("bad bots.cfg: %w", err)
 	}
 
-	settings := withDefaultSettings(ent.Bundle.Settings)
-	traffic := make(map[string]*configpb.TrafficMigration_Route)
-	if settings.TrafficMigration != nil {
-		for _, r := range settings.TrafficMigration.Routes {
-			traffic[r.Name] = r
-		}
-	}
-
 	return &Config{
 		VersionInfo: ent.VersionInfo,
 		Refreshed:   clock.Now(ctx),
 		DefaultCIPD: ent.Bundle.Pools.GetDefaultExternalServices().GetCipd(),
-		settings:    settings,
-		traffic:     traffic,
+		settings:    withDefaultSettings(ent.Bundle.Settings),
 		poolMap:     pools,
 		poolNames:   poolNames,
 		botGroups:   botGroups,

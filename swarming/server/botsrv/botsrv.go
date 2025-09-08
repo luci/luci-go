@@ -41,7 +41,6 @@ import (
 	"go.chromium.org/luci/swarming/server/botsession"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/hmactoken"
-	"go.chromium.org/luci/swarming/server/pyproxy"
 )
 
 // RequestBody should be implemented by a JSON-serializable struct representing
@@ -129,19 +128,11 @@ type Server struct {
 }
 
 // New constructs new Server.
-func New(ctx context.Context, cfg *cfg.Provider, r *router.Router, prx *pyproxy.Proxy, bots KnownBotProvider, projectID string, hmacSecret *hmactoken.Secret) *Server {
+func New(ctx context.Context, cfg *cfg.Provider, r *router.Router, bots KnownBotProvider, projectID string, hmacSecret *hmactoken.Secret) *Server {
 	gaeAppDomain := fmt.Sprintf("%s.appspot.com", projectID)
-
-	// Redirect to Python for eligible requests before hitting any other
-	// middlewares.
-	var middlewares router.MiddlewareChain
-	if prx != nil {
-		middlewares = append(middlewares, pythonProxyMiddleware(prx))
-	}
-
 	return &Server{
 		router: r,
-		middlewares: append(middlewares,
+		middlewares: router.MiddlewareChain{
 			// All supported bot authentication schemes. The first matching one wins.
 			auth.Authenticate(
 				// This checks "X-Luci-Gce-Vm-Token" header if present. The token
@@ -160,31 +151,10 @@ func New(ctx context.Context, cfg *cfg.Provider, r *router.Router, prx *pyproxy.
 					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
 				},
 			),
-		),
+		},
 		hmacSecret: hmacSecret,
 		cfg:        cfg,
 		knownBots:  bots,
-	}
-}
-
-// pythonProxyMiddleware is a middleware that routes a portion of requests to
-// the python server.
-func pythonProxyMiddleware(prx *pyproxy.Proxy) router.Middleware {
-	return func(c *router.Context, next router.Handler) {
-		// Bot API routes "/something/:Parameter" and "/something" are the same.
-		// Strip "/:Parameter" part when looking up the routing percent.
-		routeName := c.HandlerPath
-		chunks := strings.Split(c.HandlerPath, "/")
-		if strings.HasPrefix(chunks[len(chunks)-1], ":") {
-			routeName = strings.Join(chunks[:len(chunks)-1], "/")
-		}
-		if strings.HasPrefix(routeName, "/swarming/api/v1/bot/rbe/") {
-			// Never proxy to Python requests that are implemented only in Go.
-			next(c)
-		} else if !prx.DefaultOverride(routeName, c.Writer, c.Request) {
-			// DefaultOverride returned false => need to handle the request in Go.
-			next(c)
-		}
 	}
 }
 

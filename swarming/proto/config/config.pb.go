@@ -71,7 +71,9 @@ type SettingsCfg struct {
 	Resultdb *ResultDBSettings `protobuf:"bytes,19,opt,name=resultdb,proto3" json:"resultdb,omitempty"`
 	// Configuration for RBE-CAS integration.
 	Cas *CASSettings `protobuf:"bytes,20,opt,name=cas,proto3" json:"cas,omitempty"`
-	// Configuration for Python => Go RPC servers migration.
+	// Configuration for Python => Go RPC servers migration. Unused.
+	//
+	// Deprecated: Marked as deprecated in go.chromium.org/luci/swarming/proto/config/config.proto.
 	TrafficMigration *TrafficMigration `protobuf:"bytes,21,opt,name=traffic_migration,json=trafficMigration,proto3" json:"traffic_migration,omitempty"`
 	// Configuration of the bot deployment process.
 	BotDeployment *BotDeployment `protobuf:"bytes,22,opt,name=bot_deployment,json=botDeployment,proto3" json:"bot_deployment,omitempty"`
@@ -221,6 +223,7 @@ func (x *SettingsCfg) GetCas() *CASSettings {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in go.chromium.org/luci/swarming/proto/config/config.proto.
 func (x *SettingsCfg) GetTrafficMigration() *TrafficMigration {
 	if x != nil {
 		return x.TrafficMigration
@@ -803,7 +806,7 @@ var File_go_chromium_org_luci_swarming_proto_config_config_proto protoreflect.Fi
 
 const file_go_chromium_org_luci_swarming_proto_config_config_proto_rawDesc = "" +
 	"\n" +
-	"7go.chromium.org/luci/swarming/proto/config/config.proto\x12\x0fswarming.config\x1a7go.chromium.org/luci/swarming/proto/config/realms.proto\x1a/go.chromium.org/luci/common/proto/options.proto\"\x98\b\n" +
+	"7go.chromium.org/luci/swarming/proto/config/config.proto\x12\x0fswarming.config\x1a7go.chromium.org/luci/swarming/proto/config/realms.proto\x1a/go.chromium.org/luci/common/proto/options.proto\"\x9c\b\n" +
 	"\vSettingsCfg\x12)\n" +
 	"\x10google_analytics\x18\x01 \x01(\tR\x0fgoogleAnalytics\x123\n" +
 	"\x16reusable_task_age_secs\x18\x02 \x01(\x05R\x13reusableTaskAgeSecs\x123\n" +
@@ -821,8 +824,8 @@ const file_go_chromium_org_luci_swarming_proto_config_config_proto_rawDesc = "" 
 	"\x17extra_child_src_csp_url\x18\x10 \x03(\tR\x13extraChildSrcCspUrl\x12A\n" +
 	"\x1denable_batch_es_notifications\x18\x12 \x01(\bR\x1aenableBatchEsNotifications\x12=\n" +
 	"\bresultdb\x18\x13 \x01(\v2!.swarming.config.ResultDBSettingsR\bresultdb\x12.\n" +
-	"\x03cas\x18\x14 \x01(\v2\x1c.swarming.config.CASSettingsR\x03cas\x12N\n" +
-	"\x11traffic_migration\x18\x15 \x01(\v2!.swarming.config.TrafficMigrationR\x10trafficMigration\x12E\n" +
+	"\x03cas\x18\x14 \x01(\v2\x1c.swarming.config.CASSettingsR\x03cas\x12R\n" +
+	"\x11traffic_migration\x18\x15 \x01(\v2!.swarming.config.TrafficMigrationB\x02\x18\x01R\x10trafficMigration\x12E\n" +
 	"\x0ebot_deployment\x18\x16 \x01(\v2\x1e.swarming.config.BotDeploymentR\rbotDeploymentJ\x04\b\x05\x10\x06J\x04\b\a\x10\bJ\x04\b\n" +
 	"\x10\vJ\x04\b\x11\x10\x12\"J\n" +
 	"\vCipdPackage\x12!\n" +

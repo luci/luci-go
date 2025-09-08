@@ -61,15 +61,6 @@ func TestSettingsValidation(t *testing.T) {
 					Version:     "some:version",
 				},
 			},
-			TrafficMigration: &configpb.TrafficMigration{
-				Routes: []*configpb.TrafficMigration_Route{
-					{Name: "/prpc/service/method1", RouteToGoPercent: 0},
-					{Name: "/prpc/service/method2", RouteToGoPercent: 50},
-					{Name: "/prpc/service/method3", RouteToGoPercent: 100},
-					{Name: "/bot_code", RouteToGoPercent: 100},
-					{Name: "/swarming/api/v1/bot/something", RouteToGoPercent: 100},
-				},
-			},
 			BotDeployment: &configpb.BotDeployment{
 				Stable: &configpb.BotDeployment_BotPackage{
 					Server:  "https://example.com",
@@ -181,48 +172,6 @@ func TestSettingsValidation(t *testing.T) {
 					},
 				},
 				err: "(cas / viewer_server): must be an https:// URL",
-			},
-			{
-				cfg: &configpb.SettingsCfg{
-					TrafficMigration: &configpb.TrafficMigration{
-						Routes: []*configpb.TrafficMigration_Route{
-							{Name: "/prpc/service/method1", RouteToGoPercent: 0},
-							{Name: "/prpc/service/method2", RouteToGoPercent: 50},
-							{Name: "/prpc/service/method1", RouteToGoPercent: 100},
-						},
-					},
-				},
-				err: `(traffic_migration / "/prpc/service/method1"): duplicate route`,
-			},
-			{
-				cfg: &configpb.SettingsCfg{
-					TrafficMigration: &configpb.TrafficMigration{
-						Routes: []*configpb.TrafficMigration_Route{
-							{Name: "zzz/service/method1", RouteToGoPercent: 0},
-						},
-					},
-				},
-				err: `(traffic_migration / "zzz/service/method1"): route name should start with /`,
-			},
-			{
-				cfg: &configpb.SettingsCfg{
-					TrafficMigration: &configpb.TrafficMigration{
-						Routes: []*configpb.TrafficMigration_Route{
-							{Name: "/prpc/service/method1", RouteToGoPercent: -1},
-						},
-					},
-				},
-				err: `(traffic_migration / "/prpc/service/method1"): route_to_go_percent should be in range [0, 100]`,
-			},
-			{
-				cfg: &configpb.SettingsCfg{
-					TrafficMigration: &configpb.TrafficMigration{
-						Routes: []*configpb.TrafficMigration_Route{
-							{Name: "/prpc/service/method1", RouteToGoPercent: 101},
-						},
-					},
-				},
-				err: `(traffic_migration / "/prpc/service/method1"): route_to_go_percent should be in range [0, 100]`,
 			},
 			{
 				cfg: &configpb.SettingsCfg{
