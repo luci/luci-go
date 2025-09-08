@@ -1,21 +1,9 @@
 cron:
 
-
-### Tasks
-
-
 - description: Triggers TQ tasks to delete old TaskRequest entity groups
   url: /internal/cron/cleanup-old-tasks
   schedule: every 10 minutes
-  target: default-go
-
-
-### Monitoring
-
-- description: Send ts_mon metrics
-  url: /internal/cron/ts_mon/send
-  schedule: every 1 minutes
-  target: backend
+  target: default
 
 - description: >-
     Efficiently visit all the bots. Any operation requiring some type of
@@ -29,36 +17,17 @@ cron:
   schedule: every 1 minutes
   target: monitor
 
-
-### Configs
-
-- description: read luci-config configs
-  # Handled by inclusion of components/config in app.yaml.
-  url: /internal/cron/config/update
-  schedule: every 1 minutes
-  target: backend
-
-- description: assemble bot groups configs
-  url: /internal/cron/important/bot_groups_config
-  schedule: every 1 minutes
-  target: backend
-
-
-### Crons handled by the Go portion.
-
 - description: read server configs in Go
   url: /internal/cron/update-config
   schedule: every 1 minutes
-  target: default-go
+  target: default
 
 - description: Trigger task queues to send rows to to BigQuery
   url: /internal/cron/bq-export
   schedule: every 1 minutes
   target: exporter
 
-### TQ sweep
-
 - description: TQ sweeper
   url: /internal/tasks/c/sweep
   schedule: every 1 minutes
-  target: default-go
+  target: default
