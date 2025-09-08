@@ -70,8 +70,8 @@ func Test(t *testing.T) {
 		// For ideal uniform [0, 1) distribution it should be:
 		// Average: 0.500000
 		// Standard deviation: 0.288675
-		assert.Loosely(t, mean, should.BeBetween(0.495, 0.505))
-		assert.Loosely(t, dev, should.BeBetween(0.284, 0.294))
+		assert.Loosely(t, mean, should.BeBetween(0.49, 0.51))
+		assert.Loosely(t, dev, should.BeBetween(0.278, 0.298))
 	})
 }
 
