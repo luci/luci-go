@@ -65,6 +65,21 @@ func TestWorkUnitETag(t *testing.T) {
 		})
 	})
 
+	ftt.Run("TestParseWorkUnitETag", t, func(t *ftt.Test) {
+		t.Run("valid etag", func(t *ftt.Test) {
+			etag := `W/"+l/2025-04-26T01:02:03.000004Z"`
+			lastUpdated, err := ParseWorkUnitETag(etag)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, lastUpdated, should.Equal("2025-04-26T01:02:03.000004Z"))
+		})
+
+		t.Run("malformed etag", func(t *ftt.Test) {
+			etag := `W/"2025-04-26T01:02:03.000004Z"` // Missing access/view filter
+			_, err := ParseWorkUnitETag(etag)
+			assert.Loosely(t, err, should.ErrLike("malformated etag"))
+		})
+	})
+
 	ftt.Run("TestIsWorkUnitETagMatch", t, func(t *ftt.Test) {
 		lastUpdatedTime := time.Date(2025, 4, 26, 1, 2, 3, 4000, time.UTC)
 		wu := &workunits.WorkUnitRow{LastUpdated: lastUpdatedTime}
@@ -77,7 +92,7 @@ func TestWorkUnitETag(t *testing.T) {
 			assert.That(t, match, should.BeTrue)
 		})
 
-		t.Run("no match", func(t *ftt.Test) {
+		t.Run("not match", func(t *ftt.Test) {
 			etag := WorkUnitETag(wu, permissions.FullAccess, resultpb.WorkUnitView_WORK_UNIT_VIEW_BASIC)
 
 			wu.LastUpdated = wu.LastUpdated.Add(time.Second)

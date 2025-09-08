@@ -107,7 +107,8 @@ func updateWorkUnits(ctx context.Context, requests []*pb.UpdateWorkUnitRequest, 
 			if reqWU.Etag != "" {
 				match, err := masking.IsWorkUnitETagMatch(originalWU, reqWU.Etag)
 				if err != nil {
-					return appstatus.BadRequest(errors.Fmt("requests[%d]: work_unit: etag: %w", i, err))
+					// Impossible, etag has already been validated.
+					return err
 				}
 				if !match {
 					// Attach a codes.Aborted appstatus to a vanilla error to avoid

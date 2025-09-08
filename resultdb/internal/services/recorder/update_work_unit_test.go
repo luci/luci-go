@@ -75,6 +75,22 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 			RequestId:  "test-request-id",
 		}
 		requireRequestID := true
+		t.Run("etag", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
+				// Empty is valid.
+				req.WorkUnit.Etag = ""
+
+				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				assert.Loosely(t, err, should.BeNil)
+			})
+
+			t.Run("invalid", func(t *ftt.Test) {
+				req.WorkUnit.Etag = "invalid"
+
+				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				assert.That(t, err, should.ErrLike(`work_unit: etag: malformated etag`))
+			})
+		})
 		t.Run("empty update mask", func(t *ftt.Test) {
 			req.UpdateMask.Paths = []string{}
 			err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
@@ -417,14 +433,6 @@ func TestUpdateWorkUnit(t *testing.T) {
 			})
 		})
 		t.Run("etag", func(t *ftt.Test) {
-			t.Run("bad etag", func(t *ftt.Test) {
-				req.WorkUnit.Etag = "invalid"
-
-				_, err := recorder.UpdateWorkUnit(ctx, req)
-				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-				assert.That(t, err, should.ErrLike(`bad request: work_unit: etag: malformated etag`))
-			})
-
 			t.Run("unmatch etag", func(t *ftt.Test) {
 				// Work unit updated.
 				req.UpdateMask.Paths = []string{"tags"}

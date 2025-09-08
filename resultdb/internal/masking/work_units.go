@@ -131,12 +131,21 @@ func WorkUnitETag(wu *workunits.WorkUnitRow, accessLevel permissions.AccessLevel
 // etagRegexp extracts the work unit's last updated timestamp from a work unit ETag.
 var etagRegexp = regexp.MustCompile(`^W/"(?:\+[lf])*/(.*)"$`)
 
+// ParseWorkUnitETag validate the etag and returns the embedded lastUpdated time.
+func ParseWorkUnitETag(etag string) (lastUpdated string, err error) {
+	m := etagRegexp.FindStringSubmatch(etag)
+	if len(m) < 2 {
+		return "", errors.Fmt("malformated etag")
+	}
+	return m[1], nil
+}
+
 // IsWorkUnitETagMatch determines if the Etag is consistent with the specified
 // work unit version.
 func IsWorkUnitETagMatch(wu *workunits.WorkUnitRow, etag string) (bool, error) {
-	m := etagRegexp.FindStringSubmatch(etag)
-	if len(m) < 2 {
-		return false, errors.Fmt("malformated etag")
+	lastUpdated, err := ParseWorkUnitETag(etag)
+	if err != nil {
+		return false, err
 	}
-	return m[1] == wu.LastUpdated.UTC().Format(time.RFC3339Nano), nil
+	return lastUpdated == wu.LastUpdated.UTC().Format(time.RFC3339Nano), nil
 }

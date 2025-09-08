@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
@@ -59,10 +60,29 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 			RootInvocation: &pb.RootInvocation{
 				Name: "rootInvocations/inv",
 			},
-			UpdateMask: &field_mask.FieldMask{Paths: []string{}},
+			UpdateMask: &field_mask.FieldMask{Paths: []string{"tags"}},
 		}
 
+		t.Run("etag", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
+				// Empty is valid.
+				req.RootInvocation.Etag = ""
+
+				err := validateUpdateRootInvocationRequest(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+			})
+
+			t.Run("invalid", func(t *ftt.Test) {
+				req.RootInvocation.Etag = "invalid"
+
+				err := validateUpdateRootInvocationRequest(ctx, req)
+				assert.That(t, err, should.ErrLike(`root_invocation: etag: malformated etag`))
+			})
+		})
+
 		t.Run("empty update mask", func(t *ftt.Test) {
+			req.UpdateMask.Paths = []string{}
+
 			err := validateUpdateRootInvocationRequest(ctx, req)
 			assert.Loosely(t, err, should.ErrLike("update_mask: paths is empty"))
 		})
@@ -329,206 +349,229 @@ func TestUpdateRootInvocation(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike(`root invocation "rootInvocations/rootid" is not active`))
 		})
 
-		t.Run("state", func(t *ftt.Test) {
-			req.UpdateMask.Paths = []string{"state"}
-			req.RootInvocation.State = pb.RootInvocation_FINALIZING
-
-			ri, err := recorder.UpdateRootInvocation(ctx, req)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ri.FinalizeStartTime, should.NotBeNil)
-			expectedRootInv.State = pb.RootInvocation_FINALIZING
-			expectedRootInv.FinalizeStartTime = ri.FinalizeStartTime
-			expectedRootInv.LastUpdated = ri.LastUpdated
-			assert.That(t, ri, should.Match(expectedRootInv))
-
-			// Validate RootInvocations table.
-			riRow, err := rootinvocations.Read(span.Single(ctx), rootInvID)
-			assert.Loosely(t, err, should.BeNil)
-			expectedRootInvRow.State = pb.RootInvocation_FINALIZING
-			expectedRootInvRow.FinalizeStartTime = riRow.FinalizeStartTime
-			expectedRootInvRow.LastUpdated = riRow.LastUpdated
-			assert.Loosely(t, riRow, should.Match(expectedRootInvRow))
-			assert.Loosely(t, riRow.FinalizeStartTime.Valid, should.BeTrue)
-
-			// Validate legacy Invocations table.
-			inv, err := invocations.Read(span.Single(ctx), rootInvID.LegacyInvocationID(), invocations.AllFields)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inv.State, should.Equal(pb.Invocation_FINALIZING))
-
-			// Validate RootInvocationShards table.
-			for shardID := range rootInvID.AllShardIDs() {
-				var shardState pb.RootInvocation_State
-				err := spanutil.ReadRow(span.Single(ctx), "RootInvocationShards", shardID.Key(), map[string]any{
-					"State": &shardState,
-				})
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, shardState, should.Equal(pb.RootInvocation_FINALIZING))
-			}
-
-			// Enqueued the finalization task.
-			assert.Loosely(t, sched.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
-				&taskspb.RunExportNotifications{InvocationId: string(rootInvID.LegacyInvocationID())},
-				&taskspb.TryFinalizeInvocation{InvocationId: string(rootInvID.LegacyInvocationID())},
-			}))
-		})
-
-		t.Run("sources and sources_final", func(t *ftt.Test) {
-			newSources := testutil.TestSourcesWithChangelistNumbers(123456)
-
-			t.Run("source not finalized", func(t *ftt.Test) {
-				t.Run("update sources", func(t *ftt.Test) {
-					req.UpdateMask.Paths = []string{"sources"}
-					req.RootInvocation.Sources = newSources
-
-					ri, err := recorder.UpdateRootInvocation(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					expectedRootInv.Sources = newSources
-					expectedRootInv.LastUpdated = ri.LastUpdated
-					assert.Loosely(t, ri, should.Match(expectedRootInv))
-
-					// Validate RootInvocations table.
-					riRow, err := rootinvocations.Read(span.Single(ctx), rootInvID)
-					assert.Loosely(t, err, should.BeNil)
-					expectedRootInvRow.Sources = newSources
-					expectedRootInvRow.LastUpdated = riRow.LastUpdated
-					assert.Loosely(t, riRow, should.Match(expectedRootInvRow))
-
-					// Validate legacy Invocations table.
-					inv, err := invocations.Read(span.Single(ctx), rootInvID.LegacyInvocationID(), invocations.AllFields)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, inv.SourceSpec.Sources, should.Match(newSources))
-
-					// Validate RootInvocationShards table.
-					for shardID := range rootInvID.AllShardIDs() {
-						var compressedSources spanutil.Compressed
-						err := spanutil.ReadRow(span.Single(ctx), "RootInvocationShards", shardID.Key(), map[string]any{"Sources": &compressedSources})
-						assert.Loosely(t, err, should.BeNil)
-						shardSources := &pb.Sources{}
-						assert.Loosely(t, proto.Unmarshal(compressedSources, shardSources), should.BeNil)
-						assert.Loosely(t, shardSources, should.Match(newSources))
-					}
-				})
-
-				t.Run("to non-finalized sources", func(t *ftt.Test) {
-					req.UpdateMask.Paths = []string{"sources_final"}
-					req.RootInvocation.SourcesFinal = false
-
-					ri, err := recorder.UpdateRootInvocation(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, ri.SourcesFinal, should.BeFalse)
-				})
-
-				t.Run("to finalized sources", func(t *ftt.Test) {
-					req.UpdateMask.Paths = []string{"sources_final"}
-					req.RootInvocation.SourcesFinal = true
-
-					ri, err := recorder.UpdateRootInvocation(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					expectedRootInv.SourcesFinal = true
-					expectedRootInv.LastUpdated = ri.LastUpdated
-					assert.Loosely(t, ri, should.Match(expectedRootInv))
-
-					// Validate RootInvocations table.
-					riRow, err := rootinvocations.Read(span.Single(ctx), rootInvID)
-					assert.Loosely(t, err, should.BeNil)
-					expectedRootInvRow.IsSourcesFinal = true
-					expectedRootInvRow.LastUpdated = riRow.LastUpdated
-					assert.Loosely(t, riRow, should.Match(expectedRootInvRow))
-
-					// Validate legacy Invocations table.
-					inv, err := invocations.Read(span.Single(ctx), rootInvID.LegacyInvocationID(), invocations.AllFields)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, inv.IsSourceSpecFinal, should.BeTrue)
-
-					// Validate RootInvocationShards table.
-					for shardID := range rootInvID.AllShardIDs() {
-						var isFinal bool
-						err := spanutil.ReadRow(span.Single(ctx), "RootInvocationShards", shardID.Key(), map[string]any{"IsSourcesFinal": &isFinal})
-						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, isFinal, should.BeTrue)
-					}
-				})
-			})
-
-			t.Run("source finalized", func(t *ftt.Test) {
-				// Update sources_final to true.
-				req.UpdateMask.Paths = []string{"sources_final"}
-				req.RootInvocation.SourcesFinal = true
+		t.Run("etag", func(t *ftt.Test) {
+			t.Run("unmatch etag", func(t *ftt.Test) {
+				// Root invocation updated.
+				req.UpdateMask.Paths = []string{"tags"}
+				req.RootInvocation.Tags = []*pb.StringPair{{Key: "nk", Value: "nv"}}
 				_, err := recorder.UpdateRootInvocation(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 
-				t.Run("fail to update sources", func(t *ftt.Test) {
-					req.UpdateMask.Paths = []string{"sources"}
-					req.RootInvocation.Sources = newSources
+				// Request sent with the old etag.
+				req.RootInvocation.Etag = expectedRootInv.Etag
+				_, err = recorder.UpdateRootInvocation(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.Aborted))
+				assert.That(t, err, should.ErrLike(`the root invocation was modified since it was last read; the update was not applied`))
+			})
 
-					_, err := recorder.UpdateRootInvocation(ctx, req)
-					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("root_invocation: sources: cannot modify already finalized sources"))
-				})
+			t.Run("match etag", func(t *ftt.Test) {
+				req.RootInvocation.Etag = rootinvocations.Etag(expectedRootInvRow)
 
-				t.Run("to finalized sources", func(t *ftt.Test) {
-					req.UpdateMask.Paths = []string{"sources_final"}
-					req.RootInvocation.SourcesFinal = true
-
-					ri, err := recorder.UpdateRootInvocation(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, ri.SourcesFinal, should.BeTrue)
-				})
-
-				t.Run("to non-finalized sources", func(t *ftt.Test) {
-					req.UpdateMask.Paths = []string{"sources_final"}
-					req.RootInvocation.SourcesFinal = false
-
-					_, err := recorder.UpdateRootInvocation(ctx, req)
-					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("root_invocation: sources_final: cannot un-finalize already finalized sources"))
-				})
+				_, err := recorder.UpdateRootInvocation(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
-
 		t.Run("e2e", func(t *ftt.Test) {
-			newDeadline := pbutil.MustTimestampProto(now.Add(3 * time.Hour))
-			newProperties := testutil.TestStrictProperties()
-			newTags := []*pb.StringPair{{Key: "newkey", Value: "newvalue"}}
-			newBaselineID := "try:new-baseline"
-
-			req.UpdateMask.Paths = []string{"deadline", "properties", "tags", "baseline_id"}
-			req.RootInvocation = &pb.RootInvocation{
-				Name:       rootInvID.Name(),
-				Deadline:   newDeadline,
-				Properties: newProperties,
-				Tags:       newTags,
-				BaselineId: newBaselineID,
+			assertResponse := func(rootInv *pb.RootInvocation) {
+				// Etag is must be different if updated.
+				assert.That(t, rootInv.Etag, should.NotEqual(expectedRootInv.Etag), truth.LineContext())
+				assert.Loosely(t, rootInv.Etag, should.NotBeEmpty, truth.LineContext())
+				// LastUpdated time must move forward.
+				assert.That(t, rootInv.LastUpdated.AsTime(), should.HappenAfter(expectedRootInv.LastUpdated.AsTime()), truth.LineContext())
+				// FinalizeStartTime must be set if state is updated.
+				if expectedRootInv.State != pb.RootInvocation_ACTIVE {
+					assert.Loosely(t, rootInv.FinalizeStartTime, should.Match(rootInv.LastUpdated), truth.LineContext())
+				} else {
+					assert.Loosely(t, rootInv.FinalizeStartTime, should.BeNil, truth.LineContext())
+				}
+				// Match lastUpdated, etag, finalizeStartTime before comparing the full proto.
+				expectedCopy := proto.Clone(expectedRootInv).(*pb.RootInvocation)
+				expectedCopy.LastUpdated = rootInv.LastUpdated
+				expectedCopy.Etag = rootInv.Etag
+				expectedCopy.FinalizeStartTime = rootInv.FinalizeStartTime
+				assert.That(t, rootInv, should.Match(expectedCopy), truth.LineContext())
 			}
 
-			ri, err := recorder.UpdateRootInvocation(ctx, req)
-			assert.Loosely(t, err, should.BeNil)
-			expectedRootInv.BaselineId = newBaselineID
-			expectedRootInv.Properties = newProperties
-			expectedRootInv.Tags = newTags
-			expectedRootInv.Deadline = newDeadline
-			expectedRootInv.LastUpdated = ri.LastUpdated
-			assert.That(t, ri, should.Match(expectedRootInv))
+			assertSpannerRows := func(epxectedRow *rootinvocations.RootInvocationRow) {
+				rootInvRow, err := rootinvocations.Read(span.Single(ctx), rootInvID)
+				assert.Loosely(t, err, should.BeNil, truth.LineContext())
+				// LastUpdated time must move forward.
+				assert.That(t, rootInvRow.LastUpdated, should.HappenAfter(epxectedRow.LastUpdated), truth.LineContext())
+				// FinalizeStartTime must be set if state is updated.
+				shouldSetfinalizeStartTime := epxectedRow.State != pb.RootInvocation_ACTIVE
+				assert.Loosely(t, rootInvRow.FinalizeStartTime.Valid, should.Equal(shouldSetfinalizeStartTime), truth.LineContext())
+				if shouldSetfinalizeStartTime {
+					assert.Loosely(t, rootInvRow.FinalizeStartTime.Time, should.Match(rootInvRow.LastUpdated), truth.LineContext())
+				}
 
-			// Validate RootInvocations table.
-			riRow, err := rootinvocations.Read(span.Single(ctx), rootInvID)
-			assert.Loosely(t, err, should.BeNil)
-			expectedRootInvRow.BaselineID = newBaselineID
-			expectedRootInvRow.Properties = newProperties
-			expectedRootInvRow.Tags = newTags
-			expectedRootInvRow.Deadline = newDeadline.AsTime()
-			expectedRootInvRow.LastUpdated = riRow.LastUpdated
-			assert.That(t, riRow, should.Match(expectedRootInvRow))
+				// Match lastUpdated, etag, finalizeStartTime before comparing the full proto.
+				expectedRowCopy := epxectedRow.Clone()
+				expectedRowCopy.LastUpdated = rootInvRow.LastUpdated
+				expectedRowCopy.FinalizeStartTime = rootInvRow.FinalizeStartTime
+				// Validate RootInvocations table.
+				assert.That(t, rootInvRow, should.Match(expectedRowCopy), truth.LineContext())
 
-			// Validate legacy Invocations table.
-			inv, err := invocations.Read(span.Single(ctx), rootInvID.LegacyInvocationID(), invocations.AllFields)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inv.Deadline, should.Match(newDeadline))
-			assert.Loosely(t, inv.Properties, should.Match(newProperties))
-			assert.Loosely(t, inv.Tags, should.Match(newTags))
-			assert.Loosely(t, inv.BaselineId, should.Equal(newBaselineID))
+				// Validate RootInvocationShards table.
+				for shardID := range rootInvID.AllShardIDs() {
+					var compressedSources spanutil.Compressed
+					var shardState pb.RootInvocation_State
+					var shardRealm string
+					var shardIsSourcesFinal bool
+					err := spanutil.ReadRow(span.Single(ctx), "RootInvocationShards", shardID.Key(), map[string]any{
+						"State":          &shardState,
+						"Realm":          &shardRealm,
+						"Sources":        &compressedSources,
+						"IsSourcesFinal": &shardIsSourcesFinal,
+					})
+					assert.Loosely(t, err, should.BeNil)
+					shardSources := &pb.Sources{}
+					assert.Loosely(t, proto.Unmarshal(compressedSources, shardSources), should.BeNil)
+					assert.Loosely(t, shardState, should.Equal(expectedRowCopy.State), truth.LineContext())
+					assert.Loosely(t, shardRealm, should.Equal(expectedRowCopy.Realm), truth.LineContext())
+					assert.Loosely(t, shardSources, should.Match(expectedRowCopy.Sources), truth.LineContext())
+					assert.Loosely(t, shardIsSourcesFinal, should.Equal(expectedRowCopy.IsSourcesFinal), truth.LineContext())
+				}
 
-			// No fields updated in shards, so nothing to check.
+				// Validate legacy Invocations table.
+				inv, err := invocations.Read(span.Single(ctx), rootInvID.LegacyInvocationID(), invocations.AllFields)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, inv, should.Match(expectedRowCopy.ToLegacyInvocationProto()))
+			}
+
+			t.Run("state", func(t *ftt.Test) {
+				req.UpdateMask.Paths = []string{"state"}
+				req.RootInvocation.State = pb.RootInvocation_FINALIZING
+
+				ri, err := recorder.UpdateRootInvocation(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				expectedRootInv.State = pb.RootInvocation_FINALIZING
+				assertResponse(ri)
+
+				// Validate spanner records are updated.
+				expectedRootInvRow.State = pb.RootInvocation_FINALIZING
+				assertSpannerRows(expectedRootInvRow)
+
+				// Enqueued the finalization task.
+				assert.Loosely(t, sched.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
+					&taskspb.RunExportNotifications{InvocationId: string(rootInvID.LegacyInvocationID())},
+					&taskspb.TryFinalizeInvocation{InvocationId: string(rootInvID.LegacyInvocationID())},
+				}))
+			})
+
+			t.Run("sources and sources_final", func(t *ftt.Test) {
+				newSources := testutil.TestSourcesWithChangelistNumbers(123456)
+
+				t.Run("source not finalized", func(t *ftt.Test) {
+					t.Run("update sources", func(t *ftt.Test) {
+						req.UpdateMask.Paths = []string{"sources"}
+						req.RootInvocation.Sources = newSources
+
+						ri, err := recorder.UpdateRootInvocation(ctx, req)
+						assert.Loosely(t, err, should.BeNil)
+						expectedRootInv.Sources = newSources
+						assertResponse(ri)
+
+						// Validate spanner records are updated.
+						expectedRootInvRow.Sources = newSources
+						assertSpannerRows(expectedRootInvRow)
+					})
+
+					t.Run("to non-finalized sources", func(t *ftt.Test) {
+						// Should be no-op.
+						req.UpdateMask.Paths = []string{"sources_final"}
+						req.RootInvocation.SourcesFinal = false
+
+						ri, err := recorder.UpdateRootInvocation(ctx, req)
+						assert.Loosely(t, err, should.BeNil)
+						assert.That(t, ri, should.Match(expectedRootInv))
+					})
+
+					t.Run("to finalized sources", func(t *ftt.Test) {
+						req.UpdateMask.Paths = []string{"sources_final"}
+						req.RootInvocation.SourcesFinal = true
+
+						ri, err := recorder.UpdateRootInvocation(ctx, req)
+						assert.Loosely(t, err, should.BeNil)
+						expectedRootInv.SourcesFinal = true
+						assertResponse(ri)
+
+						// Validate spanner records are updated.
+						expectedRootInvRow.IsSourcesFinal = true
+						assertSpannerRows(expectedRootInvRow)
+					})
+				})
+
+				t.Run("source finalized", func(t *ftt.Test) {
+					// Update sources_final to true.
+					req.UpdateMask.Paths = []string{"sources_final"}
+					req.RootInvocation.SourcesFinal = true
+					ri, err := recorder.UpdateRootInvocation(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+
+					expectedRootInv.Etag = ri.Etag
+					expectedRootInv.LastUpdated = ri.LastUpdated
+					expectedRootInv.SourcesFinal = true
+
+					t.Run("fail to update sources", func(t *ftt.Test) {
+						req.UpdateMask.Paths = []string{"sources"}
+						req.RootInvocation.Sources = newSources
+
+						_, err := recorder.UpdateRootInvocation(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("root_invocation: sources: cannot modify already finalized sources"))
+					})
+
+					t.Run("to finalized sources", func(t *ftt.Test) {
+						// Should be no-op.
+						req.UpdateMask.Paths = []string{"sources_final"}
+						req.RootInvocation.SourcesFinal = true
+
+						ri, err := recorder.UpdateRootInvocation(ctx, req)
+						assert.Loosely(t, err, should.BeNil)
+						assert.That(t, ri, should.Match(expectedRootInv))
+					})
+
+					t.Run("to non-finalized sources", func(t *ftt.Test) {
+						req.UpdateMask.Paths = []string{"sources_final"}
+						req.RootInvocation.SourcesFinal = false
+
+						_, err := recorder.UpdateRootInvocation(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("root_invocation: sources_final: cannot un-finalize already finalized sources"))
+					})
+				})
+			})
+
+			t.Run("deadline, properties, tags, baseline_id", func(t *ftt.Test) {
+				newDeadline := pbutil.MustTimestampProto(now.Add(3 * time.Hour))
+				newProperties := testutil.TestStrictProperties()
+				newTags := []*pb.StringPair{{Key: "newkey", Value: "newvalue"}}
+				newBaselineID := "try:new-baseline"
+
+				req.UpdateMask.Paths = []string{"deadline", "properties", "tags", "baseline_id"}
+				req.RootInvocation = &pb.RootInvocation{
+					Name:       rootInvID.Name(),
+					Deadline:   newDeadline,
+					Properties: newProperties,
+					Tags:       newTags,
+					BaselineId: newBaselineID,
+				}
+
+				ri, err := recorder.UpdateRootInvocation(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				expectedRootInv.BaselineId = newBaselineID
+				expectedRootInv.Properties = newProperties
+				expectedRootInv.Tags = newTags
+				expectedRootInv.Deadline = newDeadline
+				assertResponse(ri)
+
+				// Validate spanner records are updated.
+				expectedRootInvRow.BaselineID = newBaselineID
+				expectedRootInvRow.Properties = newProperties
+				expectedRootInvRow.Tags = newTags
+				expectedRootInvRow.Deadline = newDeadline.AsTime()
+				assertSpannerRows(expectedRootInvRow)
+			})
 		})
 	})
 }

@@ -80,6 +80,7 @@ func TestGetRootInvocation(t *testing.T) {
 				Tags:              testData.Tags,
 				Properties:        testData.Properties,
 				BaselineId:        testData.BaselineID,
+				Etag:              `W/"2025-04-26T01:02:03.000004Z"`,
 			}
 
 			rsp, err := recorder.GetRootInvocation(ctx, req)

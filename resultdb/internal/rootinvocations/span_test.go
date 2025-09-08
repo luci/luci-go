@@ -145,6 +145,50 @@ func TestWriteRootInvocation(t *testing.T) {
 	})
 }
 
+func TestEtag(t *testing.T) {
+	t.Parallel()
+	ftt.Run("TestEtag", t, func(t *ftt.Test) {
+		lastUpdatedTime := time.Date(2025, 4, 26, 1, 2, 3, 4000, time.UTC)
+		ri := &RootInvocationRow{LastUpdated: lastUpdatedTime}
+
+		t.Run("Etag", func(t *ftt.Test) {
+			etag := Etag(ri)
+			assert.That(t, etag, should.Equal(`W/"2025-04-26T01:02:03.000004Z"`))
+		})
+
+		t.Run("ParseEtag", func(t *ftt.Test) {
+			t.Run("valid", func(t *ftt.Test) {
+				etag := `W/"2025-04-26T01:02:03.000004Z"`
+				lastUpdated, err := ParseEtag(etag)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, lastUpdated, should.Equal("2025-04-26T01:02:03.000004Z"))
+			})
+			t.Run("malformed", func(t *ftt.Test) {
+				etag := `W/+l/"malformed"`
+				_, err := ParseEtag(etag)
+				assert.Loosely(t, err, should.ErrLike("malformated etag"))
+			})
+		})
+
+		t.Run("IsEtagMatch", func(t *ftt.Test) {
+			t.Run("round-trip", func(t *ftt.Test) {
+				etag := Etag(ri)
+				match, err := IsEtagMatch(ri, etag)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, match, should.BeTrue)
+			})
+			t.Run("not match", func(t *ftt.Test) {
+				etag := Etag(ri)
+				ri.LastUpdated = ri.LastUpdated.Add(time.Second)
+
+				match, err := IsEtagMatch(ri, etag)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, match, should.BeFalse)
+			})
+		})
+	})
+}
+
 func TestFinalizationMethods(t *testing.T) {
 	ftt.Run("TestFinalizationMethods", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)

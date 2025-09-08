@@ -266,23 +266,15 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 		})
 
 		t.Run("etag", func(t *ftt.Test) {
-			t.Run("bad etag", func(t *ftt.Test) {
-				req.Requests[1].WorkUnit.Etag = "invalid"
-
-				_, err := recorder.BatchUpdateWorkUnits(ctx, req)
-				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-				assert.That(t, err, should.ErrLike(`requests[1]: work_unit: etag: malformated etag`))
-			})
-
 			t.Run("etag does not match", func(t *ftt.Test) {
-				// Work unit updated to change its etag.
+				// First BatchUpdateWorkUnits call with the current etag succeed.
 				req.Requests[1].WorkUnit.Tags = []*pb.StringPair{{Key: "updatedkey", Value: "updatedval"}}
 				req.Requests[1].UpdateMask.Paths = []string{"tags"}
 				req.Requests[1].WorkUnit.Etag = wu1Expected.Etag
 				_, err := recorder.BatchUpdateWorkUnits(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 
-				// Re-sent with the old etag.
+				// Re-sent with the old etag after update should fail.
 				req.RequestId = "new-request-id"
 				_, err = recorder.BatchUpdateWorkUnits(ctx, req)
 				assert.That(t, err, grpccode.ShouldBe(codes.Aborted))

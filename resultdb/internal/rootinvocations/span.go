@@ -16,11 +16,15 @@
 package rootinvocations
 
 import (
+	"fmt"
+	"regexp"
 	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
+
+	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -216,6 +220,7 @@ func (r *RootInvocationRow) ToProto() *pb.RootInvocation {
 		Tags:             r.Tags,
 		Properties:       r.Properties,
 		BaselineId:       r.BaselineID,
+		Etag:             Etag(r),
 	}
 	if r.FinalizeStartTime.Valid {
 		result.FinalizeStartTime = pbutil.MustTimestampProto(r.FinalizeStartTime.Time)
@@ -224,6 +229,76 @@ func (r *RootInvocationRow) ToProto() *pb.RootInvocation {
 		result.FinalizeTime = pbutil.MustTimestampProto(r.FinalizeTime.Time)
 	}
 	return result
+}
+
+func (r *RootInvocationRow) ToLegacyInvocationProto() *pb.Invocation {
+	var state pb.Invocation_State
+	switch r.State {
+	case pb.RootInvocation_ACTIVE:
+		state = pb.Invocation_ACTIVE
+	case pb.RootInvocation_FINALIZING:
+		state = pb.Invocation_FINALIZING
+	case pb.RootInvocation_FINALIZED:
+		state = pb.Invocation_FINALIZED
+	default:
+		panic(fmt.Sprintf("unknown root invocation state %s", r.State))
+	}
+
+	var sourceSpec *pb.SourceSpec
+	if r.Sources != nil {
+		sourceSpec = &pb.SourceSpec{Sources: r.Sources}
+	}
+	result := &pb.Invocation{
+		Name:                   r.RootInvocationID.LegacyInvocationID().Name(),
+		State:                  state,
+		Realm:                  r.Realm,
+		CreateTime:             pbutil.MustTimestampProto(r.CreateTime),
+		CreatedBy:              r.CreatedBy,
+		Deadline:               pbutil.MustTimestampProto(r.Deadline),
+		ProducerResource:       r.ProducerResource,
+		SourceSpec:             sourceSpec,
+		IsSourceSpecFinal:      r.IsSourcesFinal,
+		Tags:                   r.Tags,
+		IsExportRoot:           true,
+		Properties:             r.Properties,
+		BaselineId:             r.BaselineID,
+		TestResultVariantUnion: &pb.Variant{},
+	}
+	if r.FinalizeStartTime.Valid {
+		result.FinalizeStartTime = pbutil.MustTimestampProto(r.FinalizeStartTime.Time)
+	}
+	if r.FinalizeTime.Valid {
+		result.FinalizeTime = pbutil.MustTimestampProto(r.FinalizeTime.Time)
+	}
+	return result
+}
+
+// Etag returns the HTTP ETag for the given root invocation.
+func Etag(r *RootInvocationRow) string {
+	// The ETag must be a function of the resource representation according to (AIP-154).
+	return fmt.Sprintf(`W/"%s"`, r.LastUpdated.UTC().Format(time.RFC3339Nano))
+}
+
+// etagRegexp extracts the root invocation's last updated timestamp from a root invocation ETag.
+var etagRegexp = regexp.MustCompile(`^W/"(.*)"$`)
+
+// ParseEtag validate the etag and returns the embedded lastUpdated time.
+func ParseEtag(etag string) (lastUpdated string, err error) {
+	m := etagRegexp.FindStringSubmatch(etag)
+	if len(m) < 2 {
+		return "", errors.Fmt("malformated etag")
+	}
+	return m[1], nil
+}
+
+// IsEtagMatch determines if the Etag is consistent with the specified
+// root invocation version.
+func IsEtagMatch(r *RootInvocationRow, etag string) (bool, error) {
+	lastUpdated, err := ParseEtag(etag)
+	if err != nil {
+		return false, err
+	}
+	return lastUpdated == r.LastUpdated.UTC().Format(time.RFC3339Nano), nil
 }
 
 // MarkFinalizing creates mutations to mark the given root invocation as finalizing.

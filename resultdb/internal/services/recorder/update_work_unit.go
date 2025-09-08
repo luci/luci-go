@@ -180,6 +180,11 @@ func validateUpdateWorkUnitRequest(ctx context.Context, req *pb.UpdateWorkUnitRe
 	if err := pbutil.ValidateWorkUnitName(req.WorkUnit.Name); err != nil {
 		return errors.Fmt("work_unit: name: %w", err)
 	}
+	if req.WorkUnit.Etag != "" {
+		if _, err := masking.ParseWorkUnitETag(req.WorkUnit.Etag); err != nil {
+			return errors.Fmt("work_unit: etag: %w", err)
+		}
+	}
 	if len(req.UpdateMask.GetPaths()) == 0 {
 		return errors.New("update_mask: paths is empty")
 	}
