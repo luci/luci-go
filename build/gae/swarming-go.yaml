@@ -20,9 +20,6 @@ build:
   - go_gae_bundle: ${inputsdir}/cmd/default/app.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/cmd/default
-  - go_gae_bundle: ${inputsdir}/cmd/default/service-default-go.yaml
-    go_gae_bundle_as_module: True
-    dest: ${contextdir}/cmd/default
   - go_gae_bundle: ${inputsdir}/cmd/exporter/service-exporter.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/cmd/exporter
