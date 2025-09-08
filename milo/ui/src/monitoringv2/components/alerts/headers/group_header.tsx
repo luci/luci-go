@@ -13,19 +13,17 @@
 // limitations under the License.
 
 import AddIcon from '@mui/icons-material/Add';
-import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import { Box, Button, Chip, IconButton, Typography } from '@mui/material';
+import { Box, Button, IconButton, Typography } from '@mui/material';
 import { DateTime } from 'luxon';
 import { useState } from 'react';
 
-import { BugCard } from '@/common/components/bug_card';
-import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
 import { displayApproxDuration } from '@/common/tools/time_utils';
-import { useAlertGroups } from '@/monitoringv2/hooks/alert_groups';
 import { AlertGroup } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alert_groups.pb';
+
+import { GroupBugTable } from '../../bug_table';
 
 import { AddBugDialog } from './add_bug_dialog';
 import { DeleteGroupDialog } from './delete_group_dialog';
@@ -43,7 +41,6 @@ export const GroupHeader = ({ group }: GroupHeaderProps) => {
   const [showDeleteGroupDialog, setShowDeleteDialog] = useState(false);
 
   const [showAddBugDialog, setShowAddBugDialog] = useState(false);
-  const { update: updateGroup } = useAlertGroups();
 
   return (
     <Box sx={{ padding: '16px' }}>
@@ -92,51 +89,6 @@ export const GroupHeader = ({ group }: GroupHeaderProps) => {
         </span>
       </Typography>
 
-      <Box>
-        {group.bugs.map((bug) => (
-          <HtmlTooltip key={bug} title={<BugCard bugId={bug} />}>
-            <Chip
-              onDelete={async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                updateGroup.mutate({
-                  alertGroup: {
-                    ...group,
-                    bugs: group.bugs.filter((b) => b !== bug),
-                  },
-                  updateMask: ['bugs'],
-                });
-              }}
-              label={`b/${bug}`}
-              sx={{
-                marginRight: '8px',
-                marginBottom: '8px',
-                cursor: 'pointer',
-              }}
-              component="a"
-              href={`https://issues.chromium.org/issues/${bug}`}
-              target="_blank"
-              rel="noreferrer"
-              deleteIcon={<CloseIcon />}
-            />
-          </HtmlTooltip>
-        ))}
-        <Button
-          onClick={() => setShowAddBugDialog(true)}
-          startIcon={<AddIcon />}
-          color="inherit"
-          sx={{ marginRight: '8px', marginBottom: '8px' }}
-        >
-          Add Bug
-        </Button>
-        {showAddBugDialog ? (
-          <AddBugDialog
-            group={group}
-            open={true}
-            onClose={() => setShowAddBugDialog(false)}
-          />
-        ) : null}
-      </Box>
       <Typography variant="body1">
         {group.statusMessage || (
           <em style={{ opacity: '50%' }}>
@@ -153,6 +105,27 @@ export const GroupHeader = ({ group }: GroupHeaderProps) => {
           />
         ) : null}
       </Typography>
+
+      <Box>
+        {group.bugs.length > 0 && <GroupBugTable group={group} />}
+        <Button
+          onClick={() => setShowAddBugDialog(true)}
+          startIcon={<AddIcon />}
+          color="inherit"
+          variant="outlined"
+          size="small"
+          sx={{ margin: '12px 0' }}
+        >
+          Add Bug
+        </Button>
+        {showAddBugDialog ? (
+          <AddBugDialog
+            group={group}
+            open={true}
+            onClose={() => setShowAddBugDialog(false)}
+          />
+        ) : null}
+      </Box>
     </Box>
   );
 };

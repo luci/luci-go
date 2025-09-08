@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { DateTime } from 'luxon';
+
 import { IssueJson } from '@/common/hooks/gapi_query/corp_issuetracker';
 import { TestCulprit } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
@@ -214,7 +216,8 @@ export interface Bug {
   summary: string | undefined;
   priority: number | undefined;
   status: string | undefined;
-  labels: string[];
+  lastModifier: string;
+  modifiedTime: DateTime;
 }
 
 export const bugFromJson = (issue: IssueJson): Bug => {
@@ -227,18 +230,8 @@ export const bugFromJson = (issue: IssueJson): Bug => {
     status:
       issue.issueState.status[0] +
       issue.issueState.status.substring(1).toLowerCase(),
-    labels: [], // FIXME: what is the equivalent of labels for the UI?
-  };
-};
-
-export const bugFromId = (bug: string): Bug => {
-  return {
-    number: bug,
-    labels: [],
-    link: `https://issuetracker.google.com/issues/${bug}`,
-    priority: undefined,
-    status: undefined,
-    summary: undefined,
+    lastModifier: issue.lastModifier?.emailAddress,
+    modifiedTime: DateTime.fromISO(issue.modifiedTime),
   };
 };
 

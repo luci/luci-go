@@ -204,9 +204,8 @@ export const AlertsSideNav = ({
       {tree.hotlistId && (
         <ListItem disablePadding>
           <ListItemButton
-            component={Link}
-            href={`https://b.corp.google.com/issues?q=hotlistid:${tree.hotlistId}%20status:open`}
-            target="_blank"
+            selected={selectedTab === 'bugs'}
+            onClick={() => setSelectedTab('bugs')}
           >
             <ListItemIcon>
               <BugReportIcon />

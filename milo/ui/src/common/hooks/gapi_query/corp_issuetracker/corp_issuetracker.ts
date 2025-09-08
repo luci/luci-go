@@ -207,6 +207,17 @@ export interface IssueJson {
    * The current state of the issue.  Will always be present.
    */
   issueState: IssueStateJson;
+
+  /**
+   * The last user to modify the issue.
+   */
+  lastModifier: IssueUserJson;
+
+  /**
+   * The time the issue was last modified is ISO format.
+   * e.g: '2025-09-04T15:46:09.563Z'
+   */
+  modifiedTime: string;
 }
 
 export interface IssueStateJson {

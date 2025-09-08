@@ -44,9 +44,11 @@ import {
 } from '@/monitoringv2/util/alerts';
 
 import { AlertTable } from '../alert_table';
+import { ReviewBugsTable } from '../bug_table';
 
 import { AlertsSideNav } from './alerts_side_nav';
 import { AllHeader } from './headers/all_header';
+import { BugsHeader } from './headers/bugs_header';
 import { GroupHeader } from './headers/group_header';
 import { UngroupedHeader } from './headers/ungrouped_header';
 import { DEFAULT_ALERT_TAB, useFilterQuery, useSelectedTab } from './hooks';
@@ -111,6 +113,9 @@ export const Alerts = () => {
   } else if (selectedTab === 'all') {
     selectedAlerts = allAlerts;
     header = <AllHeader />;
+  } else if (selectedTab === 'bugs') {
+    selectedAlerts = allAlerts;
+    header = <BugsHeader />;
   } else if (selectedTab.startsWith('group:')) {
     const groupName = selectedTab.slice(6);
     const groupIndex = alertGroups.findIndex((g) => g.name === groupName);
@@ -175,44 +180,54 @@ export const Alerts = () => {
           </Box>
         </Box>
         {header ? header : null}
-        <Box
-          sx={{
-            height: '20px',
-            padding: '0 10px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-          }}
-        >
-          {alertsLoading ? (
-            <>
-              <CircularProgress size={20} />
-              <Typography variant="body2">{alertsLoadingStatus}</Typography>
-            </>
-          ) : null}
-        </Box>
-        <AlertTable
-          alerts={filteredAlerts}
-          group={selectedGroup}
-          groups={alertGroups}
-          selectedTab={selectedTab}
-        />
-        {numHiddenAlerts > 0 && (
-          <Box sx={{ mt: '16px', textAlign: 'center' }}>
-            {numHiddenAlerts} alert{numHiddenAlerts > 1 ? 's' : ''} hidden for
-            suspected flakiness.{' '}
-            <Button
-              onClick={() =>
-                setShowOptions([...showOptions, 'children_hidden'])
-              }
-              size="small"
-              variant="outlined"
-              color="inherit"
-              sx={{ opacity: '50%' }}
+        {selectedTab === 'bugs' ? (
+          <ReviewBugsTable
+            groups={alertGroups}
+            organizer={organizer}
+            setSelectedTab={setSelectedTab}
+          />
+        ) : (
+          <>
+            <Box
+              sx={{
+                height: '20px',
+                padding: '0 10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
             >
-              Show all
-            </Button>
-          </Box>
+              {alertsLoading ? (
+                <>
+                  <CircularProgress size={20} />
+                  <Typography variant="body2">{alertsLoadingStatus}</Typography>
+                </>
+              ) : null}
+            </Box>
+            <AlertTable
+              alerts={filteredAlerts}
+              group={selectedGroup}
+              groups={alertGroups}
+              selectedTab={selectedTab}
+            />
+            {numHiddenAlerts > 0 && (
+              <Box sx={{ mt: '16px', textAlign: 'center' }}>
+                {numHiddenAlerts} alert{numHiddenAlerts > 1 ? 's' : ''} hidden
+                for suspected flakiness.{' '}
+                <Button
+                  onClick={() =>
+                    setShowOptions([...showOptions, 'children_hidden'])
+                  }
+                  size="small"
+                  variant="outlined"
+                  color="inherit"
+                  sx={{ opacity: '50%' }}
+                >
+                  Show all
+                </Button>
+              </Box>
+            )}
+          </>
         )}
       </Box>
     </Box>

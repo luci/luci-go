@@ -34,27 +34,11 @@ export function useAlerts() {
   }
 
   return {
-    // FIXME: remove alerts.
     alerts: context.alerts,
     builderAlerts: context.builderAlerts,
     stepAlerts: context.stepAlerts,
     testAlerts: context.testAlerts,
     alertsLoading: context.alertsLoading,
     alertsLoadingStatus: context.alertsLoadingStatus,
-  };
-}
-
-export function useBugs() {
-  const context = useContext(MonitoringCtx);
-
-  if (!context) {
-    throw new Error('useBugs can only be used in a MonitoringProvider');
-  }
-
-  return {
-    bugs: context.bugs,
-    bugsError: context.bugsError,
-    bugsLoading: context.bugsLoading,
-    isBugsError: context.isBugsError,
   };
 }

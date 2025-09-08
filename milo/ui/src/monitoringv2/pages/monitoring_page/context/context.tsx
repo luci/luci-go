@@ -13,12 +13,10 @@
 // limitations under the License.
 
 import { useQuery, useQueries } from '@tanstack/react-query';
-import _, { uniqBy } from 'lodash';
-import { uniq, chunk, uniqWith } from 'lodash-es';
-import { createContext, ReactNode, useEffect, useMemo } from 'react';
+import { chunk, uniq, uniqBy, uniqWith } from 'lodash-es';
+import { createContext, ReactNode } from 'react';
 
 import { useBuildsClient } from '@/build/hooks/prpc_clients';
-import { useInfiniteIssueListQuery } from '@/common/hooks/gapi_query/corp_issuetracker';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import {
   useNotifyAlertsClient,
@@ -34,8 +32,6 @@ import {
 import {
   AlertExtensionJson,
   AlertJson,
-  Bug,
-  bugFromJson,
   builderPath,
   TreeJson,
 } from '@/monitoringv2/util/server_json';
@@ -82,21 +78,9 @@ interface MonitoringContext {
   readonly alerts?: ExtendedAlert[];
   readonly alertsLoading?: boolean;
   readonly alertsLoadingStatus?: string;
-  readonly bugs?: Bug[];
-  readonly bugsError?: Error | unknown;
-  readonly isBugsError?: boolean;
-  readonly bugsLoading?: boolean;
   readonly builderAlerts: BuilderAlert[];
   readonly stepAlerts: StepAlert[];
   readonly testAlerts: TestAlert[];
-}
-
-interface BugsQueryError extends Error {
-  readonly result: {
-    error: {
-      message: string;
-    };
-  };
 }
 
 interface BuildAndTestVariants {
@@ -148,41 +132,6 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
       .flatMap((result) => result?.data?.alerts || [])
       .map((a) => [a.name, a]),
   );
-
-  const linkedBugs = uniq(
-    Object.values(extendedAlertsData)
-      .map((a) => a?.bug)
-      .filter((b) => b && b !== '0'),
-  );
-
-  const {
-    hasNextPage: bugHasNextPage,
-    fetchNextPage: bugFetchNextPage,
-    data: bugData,
-    error: bugQueryError,
-    isError: isBugQueryError,
-    isRefetchError: bugIsRefetchError,
-    isLoading: bugIsLoading,
-  } = useInfiniteIssueListQuery(
-    {
-      query: `(status:open AND hotlistid:${tree?.hotlistId})${
-        linkedBugs.length > 0 ? ' OR ' : ''
-      }${linkedBugs.map((b) => 'id:' + b).join(' OR ')}`,
-      orderBy: 'priority',
-      pageSize: 50,
-    },
-    {
-      refetchInterval: 60000,
-      enabled:
-        !!tree?.hotlistId && !extendedAlertsQuery.some((q) => q.isLoading),
-    },
-  );
-
-  useEffect(() => {
-    if (bugHasNextPage) {
-      bugFetchNextPage();
-    }
-  }, [bugFetchNextPage, bugHasNextPage]);
 
   const alertJsons = (alertsQuery.data?.alerts || []).map(
     (a) => JSON.parse(a.alertJson) as AlertJson,
@@ -257,11 +206,6 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
   if (extendedAlertsQuery.some((q) => q.isError)) {
     throw extendedAlertsQuery.find((q) => q.isError && q.error);
   }
-  const bugs = useMemo(
-    () =>
-      bugData?.pages.flatMap((p) => p.issues || []).map((i) => bugFromJson(i)),
-    [bugData],
-  );
   if (historiesQueries.some((q) => q.isError)) {
     throw historiesQueries.find((q) => q.isError && q.error);
   }
@@ -282,7 +226,6 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
       silenceUntil: extended?.silenceUntil,
     };
   });
-  const bugsQueryError = bugQueryError as BugsQueryError;
   const alertsLoadingStatus = alertsQuery.isLoading
     ? 'Loading failing builders...'
     : extendedAlertsQuery.find((q) => q.isLoading)
@@ -291,12 +234,6 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
         ? `Loading failing tests (${failingTestsQueries.filter((q) => q.isLoading).length}/${failingTestsQueries.length})...`
         : undefined;
 
-  const bugsError =
-    bugsQueryError !== null
-      ? bugsQueryError.result?.error === undefined
-        ? 'Please login to buganizer'
-        : new Error(bugsQueryError.result.error.message)
-      : null;
   return (
     <MonitoringCtx.Provider
       value={{
@@ -307,10 +244,6 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
           extendedAlertsQuery.some((q) => q.isLoading) ||
           historiesQueries.some((q) => q.isLoading),
         alertsLoadingStatus,
-        bugs,
-        bugsError,
-        isBugsError: isBugQueryError || bugIsRefetchError,
-        bugsLoading: bugIsLoading,
         builderAlerts: builderAlerts,
         stepAlerts: stepAlerts,
         testAlerts: testAlerts,
