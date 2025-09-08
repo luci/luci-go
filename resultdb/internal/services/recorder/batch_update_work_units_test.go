@@ -329,7 +329,8 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 				assert.That(t, wu, should.Match(expectedCopy), truth.LineContext())
 			}
 
-			assertWUSpannerUpdated := func(wuID workunits.ID, expectedRow *workunits.WorkUnitRow) {
+			assertSpannerRows := func(expectedRow *workunits.WorkUnitRow) {
+				wuID := expectedRow.ID
 				wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
 				assert.Loosely(t, err, should.BeNil, truth.LineContext())
 				// LastUpdated time must move forward.
@@ -345,23 +346,40 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 				expectedRowCopy := expectedRow.Clone()
 				expectedRowCopy.LastUpdated = wuRow.LastUpdated
 				expectedRowCopy.FinalizeStartTime = wuRow.FinalizeStartTime
+				// Validate WorkUnits table.
 				assert.That(t, wuRow, should.Match(expectedRowCopy), truth.LineContext())
+
+				// Validate legacy invocation table.
+				inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.AllFields)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, inv, should.Match(expectedRowCopy.ToLegacyInvocationProto()))
+
+				// The work unit update request should be recorded.
+				exist, err := workunits.CheckWorkUnitUpdateRequestsExist(span.Single(ctx), []workunits.ID{wuID}, user, req.RequestId)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, exist[wuID], should.BeTrue)
 			}
 
+			assertNoOp := func(respWU *pb.WorkUnit, expectedRow *workunits.WorkUnitRow, expected *pb.WorkUnit) {
+				wuID := expectedRow.ID
+				// Assert response.
+				assert.That(t, respWU, should.Match(expected), truth.LineContext())
+				// Assert spanner.
+				wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
+				assert.Loosely(t, err, should.BeNil, truth.LineContext())
+				assert.That(t, wuRow, should.Match(expectedRow), truth.LineContext())
+
+				// The work unit update request should be recorded even for no-op.
+				exist, err := workunits.CheckWorkUnitUpdateRequestsExist(span.Single(ctx), []workunits.ID{wuID}, user, "test-request-id")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, exist[wuID], should.BeTrue)
+			}
 			t.Run("base case - no update", func(t *ftt.Test) {
 				res, err := recorder.BatchUpdateWorkUnits(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.WorkUnits, should.HaveLength(2))
-				assert.That(t, res.WorkUnits[0], should.Match(wu1Expected))
-				assert.That(t, res.WorkUnits[1], should.Match(wu2Expected))
-
-				// Check the work unit table.
-				wuRow, err := workunits.Read(span.Single(ctx), wuID1, workunits.AllFields)
-				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, wuRow, should.Match(wuRow1Expected))
-				wuRow, err = workunits.Read(span.Single(ctx), wuID2, workunits.AllFields)
-				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, wuRow, should.Match(wuRow2Expected))
+				assertNoOp(res.WorkUnits[0], wuRow1Expected, wu1Expected)
+				assertNoOp(res.WorkUnits[1], wuRow2Expected, wu2Expected)
 			})
 
 			t.Run("update one, no-op for another", func(t *ftt.Test) {
@@ -378,13 +396,7 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 
 					// Validate work unit table.
 					wuRow2Expected.State = pb.WorkUnit_FINALIZING
-					assertWUSpannerUpdated(wuID2, wuRow2Expected)
-
-					// Validate legacy invocation table.
-					inv, err := invocations.Read(span.Single(ctx), wuID2.LegacyInvocationID(), invocations.ExcludeExtendedProperties)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, inv.State, should.Equal(pb.Invocation_FINALIZING))
-					assert.Loosely(t, inv.FinalizeStartTime.CheckValid(), should.BeNil)
+					assertSpannerRows(wuRow2Expected)
 
 					// Enqueued the finalization task.
 					assert.Loosely(t, sched.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
@@ -393,10 +405,7 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 					}))
 
 					// Work unit 1 is no-op.
-					assert.That(t, res.WorkUnits[0], should.Match(wu1Expected))
-					wuRow, err := workunits.Read(span.Single(ctx), wuID1, workunits.AllFields)
-					assert.Loosely(t, err, should.BeNil)
-					assert.That(t, wuRow, should.Match(wuRow1Expected))
+					assertNoOp(res.WorkUnits[0], wuRow1Expected, wu1Expected)
 				})
 
 				t.Run("module_id", func(t *ftt.Test) {
@@ -417,24 +426,20 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 
 						// Validate work unit table.
 						wuRow2Expected.ModuleID = newModuleID
-						assertWUSpannerUpdated(wuID2, wuRow2Expected)
-
-						// Validate legacy invocation table.
-						inv, err := invocations.Read(span.Single(ctx), wuID2.LegacyInvocationID(), invocations.ExcludeExtendedProperties)
-						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, inv.ModuleId, should.Match(newModuleID))
+						assertSpannerRows(wuRow2Expected)
 
 						// Work unit 1 is no-op.
-						assert.That(t, res.WorkUnits[0], should.Match(wu1Expected))
-						wuRow, err := workunits.Read(span.Single(ctx), wuID1, workunits.AllFields)
-						assert.Loosely(t, err, should.BeNil)
-						assert.That(t, wuRow, should.Match(wuRow1Expected))
+						assertNoOp(res.WorkUnits[0], wuRow1Expected, wu1Expected)
 					})
 					t.Run("updating an already set module", func(t *ftt.Test) {
 						// Set a module ID first.
-						_, err := recorder.BatchUpdateWorkUnits(ctx, req)
+						resp, err := recorder.BatchUpdateWorkUnits(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
-
+						wu2Expected.ModuleId = newModuleID
+						wu2Expected.LastUpdated = resp.WorkUnits[1].LastUpdated
+						wu2Expected.Etag = resp.WorkUnits[1].Etag
+						wuRow2Expected.ModuleID = newModuleID
+						wuRow2Expected.LastUpdated = resp.WorkUnits[1].LastUpdated.AsTime()
 						// Reset the request id to another value, so that the second call is not deduplicated.
 						req.RequestId = "new-request-id"
 						t.Run("to nil", func(t *ftt.Test) {
@@ -455,8 +460,10 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 						})
 						t.Run("to the same value", func(t *ftt.Test) {
 							// This is allowed, as it is a no-op.
-							_, err = recorder.BatchUpdateWorkUnits(ctx, req)
+							res, err := recorder.BatchUpdateWorkUnits(ctx, req)
 							assert.Loosely(t, err, should.BeNil)
+							assertNoOp(res.WorkUnits[0], wuRow1Expected, wu1Expected)
+							assertNoOp(res.WorkUnits[1], wuRow2Expected, wu2Expected)
 						})
 					})
 				})
@@ -500,18 +507,10 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 
 						// Validate work unit table.
 						wuRow1Expected.ExtendedProperties = extendedPropertiesNew
-						assertWUSpannerUpdated(wuID1, wuRow1Expected)
-
-						// Validate legacy invocation table.
-						inv, err := invocations.Read(span.Single(ctx), wuID1.LegacyInvocationID(), invocations.AllFields)
-						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, inv.ExtendedProperties, should.Match(extendedPropertiesNew))
+						assertSpannerRows(wuRow1Expected)
 
 						// Work unit 2 is no-op.
-						assert.That(t, res.WorkUnits[1], should.Match(wu2Expected))
-						wuRow, err := workunits.Read(span.Single(ctx), wuID2, workunits.AllFields)
-						assert.Loosely(t, err, should.BeNil)
-						assert.That(t, wuRow, should.Match(wuRow2Expected))
+						assertNoOp(res.WorkUnits[1], wuRow2Expected, wu2Expected)
 					})
 					t.Run("add, replace, and delete keys to existing field", func(t *ftt.Test) {
 						extendedPropertiesOrg := map[string]*structpb.Struct{
@@ -543,18 +542,10 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 
 						// Validate work unit table.
 						wuRow1Expected.ExtendedProperties = expectedExtendedProperties
-						assertWUSpannerUpdated(wuID1, wuRow1Expected)
-
-						// Validate legacy invocation table.
-						inv, err := invocations.Read(span.Single(ctx), wuID1.LegacyInvocationID(), invocations.AllFields)
-						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, inv.ExtendedProperties, should.Match(expectedExtendedProperties))
+						assertSpannerRows(wuRow1Expected)
 
 						// Work unit 2 is no-op.
-						assert.That(t, res.WorkUnits[1], should.Match(wu2Expected))
-						wuRow, err := workunits.Read(span.Single(ctx), wuID2, workunits.AllFields)
-						assert.Loosely(t, err, should.BeNil)
-						assert.That(t, wuRow, should.Match(wuRow2Expected))
+						assertNoOp(res.WorkUnits[1], wuRow2Expected, wu2Expected)
 					})
 
 					t.Run("valid request but overall size exceed limit", func(t *ftt.Test) {
@@ -621,21 +612,10 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 					wuRow2Expected.Properties = newProperties
 					wuRow2Expected.Instructions = instructionutil.InstructionsWithNames(instruction, wuID2.Name())
 					wuRow2Expected.Tags = []*pb.StringPair{{Key: "newkey", Value: "newvalue"}}
-					assertWUSpannerUpdated(wuID2, wuRow2Expected)
-
-					// Validate legacy invocation table.
-					inv, err := invocations.Read(span.Single(ctx), wuID2.LegacyInvocationID(), invocations.AllFields)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, inv.Deadline, should.Match(newDeadline))
-					assert.Loosely(t, inv.Properties, should.Match(newProperties))
-					assert.Loosely(t, inv.Instructions, should.Match(instructionutil.InstructionsWithNames(instruction, wuID2.LegacyInvocationID().Name())))
-					assert.Loosely(t, inv.Tags, should.Match([]*pb.StringPair{{Key: "newkey", Value: "newvalue"}}))
+					assertSpannerRows(wuRow2Expected)
 
 					// Work unit 1 is no-op.
-					assert.That(t, res.WorkUnits[0], should.Match(wu1Expected))
-					wuRow, err := workunits.Read(span.Single(ctx), wuID1, workunits.AllFields)
-					assert.Loosely(t, err, should.BeNil)
-					assert.That(t, wuRow, should.Match(wuRow1Expected))
+					assertNoOp(res.WorkUnits[0], wuRow1Expected, wu1Expected)
 				})
 			})
 			t.Run("update both", func(t *ftt.Test) {
@@ -661,24 +641,11 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 
 				// Verify Spanner state for wu1
 				wuRow1Expected.Tags = newWu1Tags
-				assertWUSpannerUpdated(wuID1, wuRow1Expected)
+				assertSpannerRows(wuRow1Expected)
 
 				// Verify Spanner state for wu2
 				wuRow2Expected.Deadline = newWu2Deadline.AsTime()
-				assertWUSpannerUpdated(wuID2, wuRow2Expected)
-
-				// Verify legacy invocation for wu1 was also updated
-				inv, err := invocations.Read(span.Single(ctx), wuID1.LegacyInvocationID(), invocations.ExcludeExtendedProperties)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, inv.Tags, should.Match(newWu1Tags))
-
-				// Verify legacy invocation for wu2 was also updated
-				inv, err = invocations.Read(span.Single(ctx), wuID2.LegacyInvocationID(), invocations.ExcludeExtendedProperties)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, inv.Deadline, should.Match(newWu2Deadline))
-
-				// Verify finalization task was enqueued for wu2
-				assert.Loosely(t, sched.Tasks().Payloads(), should.HaveLength(0))
+				assertSpannerRows(wuRow2Expected)
 			})
 		})
 	})

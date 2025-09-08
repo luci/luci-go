@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
@@ -48,6 +49,7 @@ func (s *recorderServer) UpdateRootInvocation(ctx context.Context, in *pb.Update
 	}
 	rootInvID := rootinvocations.MustParseName(in.RootInvocation.Name)
 
+	updatedBy := string(auth.CurrentIdentity(ctx))
 	var updatedRootInvRow *rootinvocations.RootInvocationRow
 	shouldFinalizeRootInvocation := false
 	updated := false
@@ -61,6 +63,21 @@ func (s *recorderServer) UpdateRootInvocation(ctx context.Context, in *pb.Update
 		originalRootInvRow, err := rootinvocations.Read(ctx, rootInvID)
 		if err != nil {
 			return err
+		}
+		exist, err := rootinvocations.CheckRootInvocationUpdateRequestExist(ctx, rootInvID, updatedBy, in.RequestId)
+		if err != nil {
+			return err
+		}
+		if exist {
+			// Request has already been processed before. This call should be deduplicated,
+			// so do not write to the database.
+			// Return the root invocation as they were read at the start of this transaction.
+			// This is a best-effort attempt to return the same response as the original
+			// request. Note that if the root invocation were modified between the original
+			// request and this one, this RPC will return the current state of the
+			// work units, which will be different from the original response.
+			updatedRootInvRow = originalRootInvRow
+			return nil
 		}
 
 		// Validate assumptions.
@@ -96,6 +113,8 @@ func (s *recorderServer) UpdateRootInvocation(ctx context.Context, in *pb.Update
 				shouldFinalizeRootInvocation = true
 			}
 		}
+		// Insert into RootInvocationUpdateRequests table.
+		updateMutations = append(updateMutations, rootinvocations.CreateRootInvocationUpdateRequest(rootInvID, updatedBy, in.RequestId))
 		span.BufferWrite(ctx, updateMutations...)
 		return nil
 	})
@@ -236,6 +255,13 @@ func validateUpdateRootInvocationRequest(ctx context.Context, req *pb.UpdateRoot
 			return errors.Fmt("root_invocation: etag: %w", err)
 		}
 	}
+	if req.RequestId == "" {
+		return errors.Fmt("request_id: unspecified (please provide a per-request UUID to ensure idempotence)")
+	}
+	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
+		return errors.Fmt("request_id: %w", err)
+	}
+
 	if len(req.UpdateMask.GetPaths()) == 0 {
 		return errors.New("update_mask: paths is empty")
 	}

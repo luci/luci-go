@@ -16,6 +16,7 @@
 package workunits
 
 import (
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -241,7 +242,6 @@ func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *span
 		// longer computed at test result upload time.
 		row["TestResultVariantUnion"] = w.ModuleID.ModuleVariant
 	}
-
 	// Wrap into luci.resultdb.internal.invocations.ExtendedProperties so that
 	// it can be serialized as a single value to spanner.
 	internalExtendedProperties := &invocationspb.ExtendedProperties{
@@ -253,6 +253,42 @@ func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *span
 		row["FinalizeStartTime"] = spanner.CommitTimestamp
 	}
 	return spanutil.InsertMap("Invocations", row)
+}
+
+func (w *WorkUnitRow) ToLegacyInvocationProto() *pb.Invocation {
+	var state pb.Invocation_State
+	switch w.State {
+	case pb.WorkUnit_ACTIVE:
+		state = pb.Invocation_ACTIVE
+	case pb.WorkUnit_FINALIZING:
+		state = pb.Invocation_FINALIZING
+	case pb.WorkUnit_FINALIZED:
+		state = pb.Invocation_FINALIZED
+	default:
+		panic(fmt.Sprintf("unknown work unit state %s", w.State))
+	}
+	ret := &pb.Invocation{
+		Name:                   w.ID.LegacyInvocationID().Name(),
+		State:                  state,
+		Realm:                  w.Realm,
+		ModuleId:               w.ModuleID,
+		CreateTime:             pbutil.MustTimestampProto(w.CreateTime),
+		CreatedBy:              w.CreatedBy,
+		Deadline:               pbutil.MustTimestampProto(w.Deadline),
+		Tags:                   w.Tags,
+		Properties:             w.Properties,
+		ProducerResource:       w.ProducerResource,
+		Instructions:           instructionutil.InstructionsWithNames(w.Instructions, w.ID.LegacyInvocationID().Name()),
+		ExtendedProperties:     w.ExtendedProperties,
+		TestResultVariantUnion: &pb.Variant{},
+	}
+	if w.FinalizeStartTime.Valid {
+		ret.FinalizeStartTime = pbutil.MustTimestampProto(w.FinalizeStartTime.Time)
+	}
+	if w.FinalizeTime.Valid {
+		ret.FinalizeTime = pbutil.MustTimestampProto(w.FinalizeTime.Time)
+	}
+	return ret
 }
 
 func (w *WorkUnitRow) toLegacyInclusionMutation() *spanner.Mutation {

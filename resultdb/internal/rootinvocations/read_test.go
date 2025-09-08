@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestReadFunctions(t *testing.T) {
@@ -160,6 +161,53 @@ func TestReadFunctions(t *testing.T) {
 
 			t.Run("empty ID", func(t *ftt.Test) {
 				_, _, err := ReadRequestIDAndCreatedBy(span.Single(ctx), "")
+				assert.That(t, err, should.ErrLike("id is unspecified"))
+			})
+		})
+	})
+}
+
+func TestRootInvocationRequests(t *testing.T) {
+	ftt.Run("TestRootInvocationRequests", t, func(t *ftt.Test) {
+		t.Run("CheckRootInvocationUpdateRequestExist", func(t *ftt.Test) {
+			ctx := testutil.SpannerTestContext(t)
+			rootInvID := ID("root-inv-id")
+			updatedBy := "user:someone@example.com"
+			requestID := "test-request-id"
+			// Create a root invocation.
+			rootInvocation := NewBuilder(rootInvID).WithState(pb.RootInvocation_ACTIVE).Build()
+			testutil.MustApply(ctx, t, InsertForTesting(rootInvocation)...)
+
+			// Insert a request.
+			testutil.MustApply(ctx, t, InsertRootInvocationUpdateRequestForTesting(rootInvID, updatedBy, requestID))
+
+			t.Run("exist", func(t *ftt.Test) {
+				exist, err := CheckRootInvocationUpdateRequestExist(span.Single(ctx), rootInvID, updatedBy, requestID)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, exist, should.BeTrue)
+			})
+
+			t.Run("not exist", func(t *ftt.Test) {
+				t.Run("different id", func(t *ftt.Test) {
+					rootInvID2 := ID("root-inv-id2")
+					exist, err := CheckRootInvocationUpdateRequestExist(span.Single(ctx), rootInvID2, updatedBy, "non-exist-request-id")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, exist, should.BeFalse)
+				})
+				t.Run("different updatedBy", func(t *ftt.Test) {
+					exist, err := CheckRootInvocationUpdateRequestExist(span.Single(ctx), rootInvID, updatedBy, "non-exist-request-id")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, exist, should.BeFalse)
+				})
+				t.Run("different requestID", func(t *ftt.Test) {
+					exist, err := CheckRootInvocationUpdateRequestExist(span.Single(ctx), rootInvID, "non-exist-updatedBy", requestID)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, exist, should.BeFalse)
+				})
+			})
+
+			t.Run("empty ID", func(t *ftt.Test) {
+				_, err := CheckRootInvocationUpdateRequestExist(span.Single(ctx), "", updatedBy, requestID)
 				assert.That(t, err, should.ErrLike("id is unspecified"))
 			})
 		})

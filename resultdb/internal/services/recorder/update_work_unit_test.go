@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
@@ -35,6 +36,8 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
@@ -332,6 +335,10 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 func TestUpdateWorkUnit(t *testing.T) {
 	ftt.Run("TestUpdateWorkUnit", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		user := "user:someone@example.com"
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: identity.Identity(user),
+		})
 		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
 		ctx = memory.Use(ctx)                    // For config datastore cache.
 		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
@@ -487,54 +494,76 @@ func TestUpdateWorkUnit(t *testing.T) {
 		})
 
 		t.Run("e2e", func(t *ftt.Test) {
-			assertResponse := func(wu *pb.WorkUnit) {
+			assertResponse := func(wu *pb.WorkUnit, expected *pb.WorkUnit) {
 				// Etag is must be different if updated.
-				assert.That(t, wu.Etag, should.NotEqual(expectedWU.Etag), truth.LineContext())
+				assert.That(t, wu.Etag, should.NotEqual(expected.Etag), truth.LineContext())
 				assert.Loosely(t, wu.Etag, should.NotBeEmpty, truth.LineContext())
 				// LastUpdated time must move forward.
-				assert.That(t, wu.LastUpdated.AsTime(), should.HappenAfter(expectedWU.LastUpdated.AsTime()), truth.LineContext())
+				assert.That(t, wu.LastUpdated.AsTime(), should.HappenAfter(expected.LastUpdated.AsTime()), truth.LineContext())
 				// FinalizeStartTime must be set if state is updated.
-				if expectedWU.State != pb.WorkUnit_ACTIVE {
+				if expected.State != pb.WorkUnit_ACTIVE {
 					assert.Loosely(t, wu.FinalizeStartTime, should.Match(wu.LastUpdated), truth.LineContext())
 				} else {
 					assert.Loosely(t, wu.FinalizeStartTime, should.BeNil, truth.LineContext())
 				}
 				// Match lastUpdated, etag, finalizeStartTime before comparing the full proto.
-				expectedCopy := proto.Clone(expectedWU).(*pb.WorkUnit)
+				expectedCopy := proto.Clone(expected).(*pb.WorkUnit)
 				expectedCopy.LastUpdated = wu.LastUpdated
 				expectedCopy.Etag = wu.Etag
 				expectedCopy.FinalizeStartTime = wu.FinalizeStartTime
 				assert.That(t, wu, should.Match(expectedCopy), truth.LineContext())
 			}
 
-			assertWUSpannerUpdated := func() {
+			assertSpannerRows := func(expectedRow *workunits.WorkUnitRow) {
+				wuID := expectedRow.ID
 				wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
 				assert.Loosely(t, err, should.BeNil, truth.LineContext())
 				// LastUpdated time must move forward.
-				assert.That(t, wuRow.LastUpdated, should.HappenAfter(expectedWURow.LastUpdated), truth.LineContext())
+				assert.That(t, wuRow.LastUpdated, should.HappenAfter(expectedRow.LastUpdated), truth.LineContext())
 				// FinalizeStartTime must be set if state is updated.
-				shouldSetfinalizeStartTime := expectedWURow.State != pb.WorkUnit_ACTIVE
+				shouldSetfinalizeStartTime := expectedRow.State != pb.WorkUnit_ACTIVE
 				assert.Loosely(t, wuRow.FinalizeStartTime.Valid, should.Equal(shouldSetfinalizeStartTime), truth.LineContext())
 				if shouldSetfinalizeStartTime {
 					assert.Loosely(t, wuRow.FinalizeStartTime.Time, should.Match(wuRow.LastUpdated), truth.LineContext())
 				}
 
 				// Match lastUpdated, etag, finalizeStartTime before comparing the full proto.
-				expectedRowCopy := wuRow.Clone()
+				expectedRowCopy := expectedRow.Clone()
 				expectedRowCopy.LastUpdated = wuRow.LastUpdated
 				expectedRowCopy.FinalizeStartTime = wuRow.FinalizeStartTime
+				// Validate WorkUnits table.
 				assert.That(t, wuRow, should.Match(expectedRowCopy), truth.LineContext())
+
+				// Validate legacy invocation table.
+				inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.AllFields)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, inv, should.Match(expectedRowCopy.ToLegacyInvocationProto()))
+
+				// The work unit update request should be recorded.
+				exist, err := workunits.CheckWorkUnitUpdateRequestsExist(span.Single(ctx), []workunits.ID{wuID}, user, req.RequestId)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, exist[wuID], should.BeTrue)
+			}
+
+			assertNoOp := func(respWU *pb.WorkUnit, expectedRow *workunits.WorkUnitRow, expected *pb.WorkUnit) {
+				wuID := expectedRow.ID
+				// Assert response.
+				assert.That(t, respWU, should.Match(expected), truth.LineContext())
+				// Assert spanner.
+				wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
+				assert.Loosely(t, err, should.BeNil, truth.LineContext())
+				assert.That(t, wuRow, should.Match(expectedRow), truth.LineContext())
+
+				// The work unit update request should be recorded even for no-op.
+				exist, err := workunits.CheckWorkUnitUpdateRequestsExist(span.Single(ctx), []workunits.ID{wuID}, user, "test-request-id")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, exist[wuID], should.BeTrue)
 			}
 
 			t.Run("base case - no update", func(t *ftt.Test) {
 				wu, err := recorder.UpdateWorkUnit(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, wu, should.Match(expectedWU))
-
-				// Check the work unit table.
-				wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
-				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, wuRow, should.Match(expectedWURow))
+				assertNoOp(wu, expectedWURow, expectedWU)
 			})
 
 			t.Run("state", func(t *ftt.Test) {
@@ -544,17 +573,11 @@ func TestUpdateWorkUnit(t *testing.T) {
 				wu, err := recorder.UpdateWorkUnit(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				expectedWU.State = pb.WorkUnit_FINALIZING
-				assertResponse(wu)
+				assertResponse(wu, expectedWU)
 
 				// Validate work unit table.
 				expectedWURow.State = pb.WorkUnit_FINALIZING
-				assertWUSpannerUpdated()
-
-				// Validate legacy invocation table.
-				inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.ExcludeExtendedProperties)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, inv.State, should.Equal(pb.Invocation_FINALIZING))
-				assert.Loosely(t, inv.FinalizeStartTime.CheckValid(), should.BeNil)
+				assertSpannerRows(expectedWURow)
 
 				// Enqueued the finalization task.
 				assert.Loosely(t, sched.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
@@ -577,22 +600,23 @@ func TestUpdateWorkUnit(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 					expectedWU.ModuleId = newModuleID
 					pbutil.PopulateModuleIdentifierHashes(expectedWU.ModuleId)
-					assertResponse(wu)
+					assertResponse(wu, expectedWU)
 
 					// Validate work unit table.
 					expectedWURow.ModuleID = newModuleID
-					assertWUSpannerUpdated()
-
-					// Validate legacy invocation table.
-					inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.ExcludeExtendedProperties)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, inv.ModuleId, should.Match(newModuleID))
+					assertSpannerRows(expectedWURow)
 				})
 				t.Run("updating an already set module", func(t *ftt.Test) {
 					// Set a module ID first.
 					wu, err := recorder.UpdateWorkUnit(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, wu.ModuleId.ModuleName, should.Equal("module"))
+
+					expectedWU.ModuleId = newModuleID
+					expectedWU.LastUpdated = wu.LastUpdated
+					expectedWU.Etag = wu.Etag
+					expectedWURow.ModuleID = newModuleID
+					expectedWURow.LastUpdated = wu.LastUpdated.AsTime()
 
 					// Use a new request id to avoid request been deduplicated.
 					req.RequestId = "new-request-id"
@@ -616,8 +640,9 @@ func TestUpdateWorkUnit(t *testing.T) {
 					})
 					t.Run("to the same value", func(t *ftt.Test) {
 						// This is allowed, as it is a no-op.
-						_, err = recorder.UpdateWorkUnit(ctx, req)
+						respWU, err := recorder.UpdateWorkUnit(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
+						assertNoOp(respWU, expectedWURow, expectedWU)
 					})
 				})
 			})
@@ -662,16 +687,11 @@ func TestUpdateWorkUnit(t *testing.T) {
 					wu, err := recorder.UpdateWorkUnit(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
 					expectedWU.ExtendedProperties = extendedPropertiesNew
-					assertResponse(wu)
+					assertResponse(wu, expectedWU)
 
 					// Validate work unit table.
 					expectedWURow.ExtendedProperties = extendedPropertiesNew
-					assertWUSpannerUpdated()
-
-					// Validate legacy invocation table.
-					inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.AllFields)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, inv.ExtendedProperties, should.Match(extendedPropertiesNew))
+					assertSpannerRows(expectedWURow)
 				})
 				t.Run("add, replace, and delete keys to existing field", func(t *ftt.Test) {
 					extendedPropertiesOrg := map[string]*structpb.Struct{
@@ -700,16 +720,11 @@ func TestUpdateWorkUnit(t *testing.T) {
 					wu, err := recorder.UpdateWorkUnit(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
 					expectedWU.ExtendedProperties = expectedExtendedProperties
-					assertResponse(wu)
+					assertResponse(wu, expectedWU)
 
 					// Validate work unit table.
 					expectedWURow.ExtendedProperties = expectedExtendedProperties
-					assertWUSpannerUpdated()
-
-					// Validate legacy invocation table.
-					inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.AllFields)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, inv.ExtendedProperties, should.Match(expectedExtendedProperties))
+					assertSpannerRows(expectedWURow)
 				})
 				t.Run("valid request but overall size exceed limit", func(t *ftt.Test) {
 					structValueLong := &structpb.Struct{
@@ -767,23 +782,14 @@ func TestUpdateWorkUnit(t *testing.T) {
 				expectedWU.Properties = newProperties
 				expectedWU.Instructions = instructionutil.InstructionsWithNames(instruction, wuID.Name())
 				expectedWU.Tags = []*pb.StringPair{{Key: "newkey", Value: "newvalue"}}
-				assertResponse(wu)
+				assertResponse(wu, expectedWU)
 
 				// Validate work unit table.
 				expectedWURow.Deadline = newDeadline.AsTime()
 				expectedWURow.Properties = newProperties
 				expectedWURow.Instructions = instructionutil.InstructionsWithNames(instruction, wuID.Name())
 				expectedWURow.Tags = []*pb.StringPair{{Key: "newkey", Value: "newvalue"}}
-				assertWUSpannerUpdated()
-
-				// Validate legacy invocation table.
-				inv, err := invocations.Read(span.Single(ctx), wuID.LegacyInvocationID(), invocations.AllFields)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, inv.Deadline, should.Match(newDeadline))
-				assert.Loosely(t, inv.Properties, should.Match(newProperties))
-				assert.Loosely(t, inv.Instructions, should.Match(instructionutil.InstructionsWithNames(instruction, wuID.LegacyInvocationID().Name())))
-				assert.Loosely(t, inv.Tags, should.Match([]*pb.StringPair{{Key: "newkey", Value: "newvalue"}}))
+				assertSpannerRows(expectedWURow)
 			})
 		})
 	})

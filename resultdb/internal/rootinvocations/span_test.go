@@ -259,3 +259,29 @@ func TestFinalizationMethods(t *testing.T) {
 		})
 	})
 }
+
+func TestCreateRootInvocationUpdateRequest(t *testing.T) {
+	ftt.Run("TestCreateRootInvocationUpdateRequest", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+		rootInvID := ID("root-inv-id")
+		updatedBy := "user:someone@example.com"
+		requestID := "test-request-id"
+
+		// Create a root invocation.
+		rootInvocation := NewBuilder(rootInvID).WithState(pb.RootInvocation_ACTIVE).Build()
+		testutil.MustApply(ctx, t, InsertForTesting(rootInvocation)...)
+
+		t.Run(`ReadRootInvocationUpdateRequest`, func(t *ftt.Test) {
+			m := CreateRootInvocationUpdateRequest(rootInvID, updatedBy, requestID)
+			ct, err := span.Apply(ctx, []*spanner.Mutation{m})
+			assert.Loosely(t, err, should.BeNil)
+			// Read back the row to confirm it was inserted correctly.
+			var readCreateTime time.Time
+			err = spanutil.ReadRow(span.Single(ctx), "RootInvocationUpdateRequests", rootInvID.Key(updatedBy, requestID), map[string]any{
+				"CreateTime": &readCreateTime,
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, readCreateTime, should.Match(ct))
+		})
+	})
+}

@@ -288,3 +288,12 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 
 	return ms
 }
+
+func InsertRootInvocationUpdateRequestForTesting(rootInvocationID ID, updatedBy, requestID string) *spanner.Mutation {
+	return spanutil.InsertMap("RootInvocationUpdateRequests", map[string]any{
+		"RootInvocationId": rootInvocationID,
+		"UpdatedBy":        updatedBy,
+		"UpdateRequestId":  requestID,
+		"CreateTime":       time.Date(2025, 9, 3, 1, 2, 3, 4000, time.UTC),
+	})
+}

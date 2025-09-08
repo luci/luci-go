@@ -26,6 +26,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
@@ -61,6 +62,7 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 				Name: "rootInvocations/inv",
 			},
 			UpdateMask: &field_mask.FieldMask{Paths: []string{"tags"}},
+			RequestId:  "test-request-id",
 		}
 
 		t.Run("etag", func(t *ftt.Test) {
@@ -77,6 +79,19 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 
 				err := validateUpdateRootInvocationRequest(ctx, req)
 				assert.That(t, err, should.ErrLike(`root_invocation: etag: malformated etag`))
+			})
+		})
+
+		t.Run("request_id", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
+				req.RequestId = ""
+				err := validateUpdateRootInvocationRequest(ctx, req)
+				assert.Loosely(t, err, should.ErrLike("request_id: unspecified"))
+			})
+			t.Run("invalid", func(t *ftt.Test) {
+				req.RequestId = "😃"
+				err := validateUpdateRootInvocationRequest(ctx, req)
+				assert.Loosely(t, err, should.ErrLike("request_id: does not match"))
 			})
 		})
 
@@ -229,8 +244,9 @@ func TestUpdateRootInvocation(t *testing.T) {
 		ctx, sched := tq.TestingContext(ctx, nil)
 		now := testclock.TestRecentTimeUTC
 		ctx, _ = testclock.UseTime(ctx, now)
+		user := "user:someone@example.com"
 		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:baseliner@example.com",
+			Identity: identity.Identity(user),
 			IdentityPermissions: []authtest.RealmPermission{
 				{Realm: "testproject:@project", Permission: permPutBaseline},
 			},
@@ -240,6 +256,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 		req := &pb.UpdateRootInvocationRequest{
 			RootInvocation: &pb.RootInvocation{Name: rootInvID.Name(), State: pb.RootInvocation_FINALIZING},
 			UpdateMask:     &field_mask.FieldMask{Paths: []string{"state"}},
+			RequestId:      "test-request-id",
 		}
 
 		// Insert root invocation.
@@ -297,18 +314,12 @@ func TestUpdateRootInvocation(t *testing.T) {
 			})
 
 			t.Run("baseline_id permission", func(t *ftt.Test) {
-				reqWithBaseline := &pb.UpdateRootInvocationRequest{
-					RootInvocation: &pb.RootInvocation{
-						Name: rootInvID.Name(),
-					},
-					UpdateMask: &field_mask.FieldMask{Paths: []string{"baseline_id"}},
-				}
-
+				req.UpdateMask.Paths = []string{"baseline_id"}
 				t.Run("denied", func(t *ftt.Test) {
 					ctx := auth.WithState(ctx, &authtest.FakeState{
 						Identity: "user:user@example.com",
 					})
-					_, err := recorder.UpdateRootInvocation(ctx, reqWithBaseline)
+					_, err := recorder.UpdateRootInvocation(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 					assert.Loosely(t, err, should.ErrLike(`caller does not have permission to write to test baseline in realm testproject:@project`))
 				})
@@ -320,7 +331,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 							{Realm: "testproject:@project", Permission: permPutBaseline},
 						},
 					})
-					_, err := recorder.UpdateRootInvocation(ctx, reqWithBaseline)
+					_, err := recorder.UpdateRootInvocation(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
 				})
 			})
@@ -338,26 +349,46 @@ func TestUpdateRootInvocation(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike(`"rootInvocations/nonexist" not found`))
 		})
 
+		t.Run("update is idempotent", func(t *ftt.Test) {
+			t.Run("deduplicated with request_id", func(t *ftt.Test) {
+				req.RootInvocation.Tags = []*pb.StringPair{{Key: "updatedkey", Value: "updatedval"}}
+				req.UpdateMask.Paths = []string{"tags"}
+				req.RootInvocation.Etag = expectedRootInv.Etag
+				res, err := recorder.UpdateRootInvocation(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+
+				// Send the exact same request again, the etag is not updated so update
+				// should fail by etag mismatch if it is not deduplicated.
+				res2, err := recorder.UpdateRootInvocation(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res2, should.Match(res))
+			})
+		})
+
 		t.Run("root invocation not active", func(t *ftt.Test) {
 			req.UpdateMask.Paths = []string{"state"}
 			req.RootInvocation.State = pb.RootInvocation_FINALIZING
 			_, err := recorder.UpdateRootInvocation(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 
+			// Use a new request id to avoid the repeated request being deduplicated.
+			req.RequestId = "new-request-id"
 			_, err = recorder.UpdateRootInvocation(ctx, req)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 			assert.Loosely(t, err, should.ErrLike(`root invocation "rootInvocations/rootid" is not active`))
 		})
 
 		t.Run("etag", func(t *ftt.Test) {
-			t.Run("unmatch etag", func(t *ftt.Test) {
+			t.Run("unmatched etag", func(t *ftt.Test) {
 				// Root invocation updated.
 				req.UpdateMask.Paths = []string{"tags"}
 				req.RootInvocation.Tags = []*pb.StringPair{{Key: "nk", Value: "nv"}}
 				_, err := recorder.UpdateRootInvocation(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 
-				// Request sent with the old etag.
+				// Use a new request id to avoid the repeated request being deduplicated.
+				// Sent a request with the old etag.
+				req.RequestId = "new-request-id"
 				req.RootInvocation.Etag = expectedRootInv.Etag
 				_, err = recorder.UpdateRootInvocation(ctx, req)
 				assert.That(t, err, grpccode.ShouldBe(codes.Aborted))
@@ -372,40 +403,40 @@ func TestUpdateRootInvocation(t *testing.T) {
 			})
 		})
 		t.Run("e2e", func(t *ftt.Test) {
-			assertResponse := func(rootInv *pb.RootInvocation) {
+			assertResponse := func(rootInv *pb.RootInvocation, expected *pb.RootInvocation) {
 				// Etag is must be different if updated.
-				assert.That(t, rootInv.Etag, should.NotEqual(expectedRootInv.Etag), truth.LineContext())
+				assert.That(t, rootInv.Etag, should.NotEqual(expected.Etag), truth.LineContext())
 				assert.Loosely(t, rootInv.Etag, should.NotBeEmpty, truth.LineContext())
 				// LastUpdated time must move forward.
-				assert.That(t, rootInv.LastUpdated.AsTime(), should.HappenAfter(expectedRootInv.LastUpdated.AsTime()), truth.LineContext())
+				assert.That(t, rootInv.LastUpdated.AsTime(), should.HappenAfter(expected.LastUpdated.AsTime()), truth.LineContext())
 				// FinalizeStartTime must be set if state is updated.
-				if expectedRootInv.State != pb.RootInvocation_ACTIVE {
+				if expected.State != pb.RootInvocation_ACTIVE {
 					assert.Loosely(t, rootInv.FinalizeStartTime, should.Match(rootInv.LastUpdated), truth.LineContext())
 				} else {
 					assert.Loosely(t, rootInv.FinalizeStartTime, should.BeNil, truth.LineContext())
 				}
 				// Match lastUpdated, etag, finalizeStartTime before comparing the full proto.
-				expectedCopy := proto.Clone(expectedRootInv).(*pb.RootInvocation)
+				expectedCopy := proto.Clone(expected).(*pb.RootInvocation)
 				expectedCopy.LastUpdated = rootInv.LastUpdated
 				expectedCopy.Etag = rootInv.Etag
 				expectedCopy.FinalizeStartTime = rootInv.FinalizeStartTime
 				assert.That(t, rootInv, should.Match(expectedCopy), truth.LineContext())
 			}
 
-			assertSpannerRows := func(epxectedRow *rootinvocations.RootInvocationRow) {
+			assertSpannerRows := func(expectedRow *rootinvocations.RootInvocationRow) {
 				rootInvRow, err := rootinvocations.Read(span.Single(ctx), rootInvID)
 				assert.Loosely(t, err, should.BeNil, truth.LineContext())
 				// LastUpdated time must move forward.
-				assert.That(t, rootInvRow.LastUpdated, should.HappenAfter(epxectedRow.LastUpdated), truth.LineContext())
+				assert.That(t, rootInvRow.LastUpdated, should.HappenAfter(expectedRow.LastUpdated), truth.LineContext())
 				// FinalizeStartTime must be set if state is updated.
-				shouldSetfinalizeStartTime := epxectedRow.State != pb.RootInvocation_ACTIVE
+				shouldSetfinalizeStartTime := expectedRow.State != pb.RootInvocation_ACTIVE
 				assert.Loosely(t, rootInvRow.FinalizeStartTime.Valid, should.Equal(shouldSetfinalizeStartTime), truth.LineContext())
 				if shouldSetfinalizeStartTime {
 					assert.Loosely(t, rootInvRow.FinalizeStartTime.Time, should.Match(rootInvRow.LastUpdated), truth.LineContext())
 				}
 
 				// Match lastUpdated, etag, finalizeStartTime before comparing the full proto.
-				expectedRowCopy := epxectedRow.Clone()
+				expectedRowCopy := expectedRow.Clone()
 				expectedRowCopy.LastUpdated = rootInvRow.LastUpdated
 				expectedRowCopy.FinalizeStartTime = rootInvRow.FinalizeStartTime
 				// Validate RootInvocations table.
@@ -436,6 +467,24 @@ func TestUpdateRootInvocation(t *testing.T) {
 				inv, err := invocations.Read(span.Single(ctx), rootInvID.LegacyInvocationID(), invocations.AllFields)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, inv, should.Match(expectedRowCopy.ToLegacyInvocationProto()))
+				// The root invocation update request should be recorded.
+				exist, err := rootinvocations.CheckRootInvocationUpdateRequestExist(span.Single(ctx), rootInvID, user, "test-request-id")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, exist, should.BeTrue)
+			}
+
+			assertNoOp := func(respRootInv *pb.RootInvocation, expectedRow *rootinvocations.RootInvocationRow, expected *pb.RootInvocation) {
+				// Assert response.
+				assert.That(t, respRootInv, should.Match(expected), truth.LineContext())
+				// Assert spanner.
+				rootInvRow, err := rootinvocations.Read(span.Single(ctx), rootInvID)
+				assert.Loosely(t, err, should.BeNil, truth.LineContext())
+				assert.That(t, rootInvRow, should.Match(expectedRow), truth.LineContext())
+
+				// The root invocation update request should be recorded even for no-pp.
+				exist, err := rootinvocations.CheckRootInvocationUpdateRequestExist(span.Single(ctx), rootInvID, user, "test-request-id")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, exist, should.BeTrue)
 			}
 
 			t.Run("state", func(t *ftt.Test) {
@@ -445,7 +494,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 				ri, err := recorder.UpdateRootInvocation(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				expectedRootInv.State = pb.RootInvocation_FINALIZING
-				assertResponse(ri)
+				assertResponse(ri, expectedRootInv)
 
 				// Validate spanner records are updated.
 				expectedRootInvRow.State = pb.RootInvocation_FINALIZING
@@ -469,7 +518,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 						ri, err := recorder.UpdateRootInvocation(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
 						expectedRootInv.Sources = newSources
-						assertResponse(ri)
+						assertResponse(ri, expectedRootInv)
 
 						// Validate spanner records are updated.
 						expectedRootInvRow.Sources = newSources
@@ -483,7 +532,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 
 						ri, err := recorder.UpdateRootInvocation(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
-						assert.That(t, ri, should.Match(expectedRootInv))
+						assertNoOp(ri, expectedRootInvRow, expectedRootInv)
 					})
 
 					t.Run("to finalized sources", func(t *ftt.Test) {
@@ -493,7 +542,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 						ri, err := recorder.UpdateRootInvocation(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
 						expectedRootInv.SourcesFinal = true
-						assertResponse(ri)
+						assertResponse(ri, expectedRootInv)
 
 						// Validate spanner records are updated.
 						expectedRootInvRow.IsSourcesFinal = true
@@ -511,6 +560,10 @@ func TestUpdateRootInvocation(t *testing.T) {
 					expectedRootInv.Etag = ri.Etag
 					expectedRootInv.LastUpdated = ri.LastUpdated
 					expectedRootInv.SourcesFinal = true
+					expectedRootInvRow.LastUpdated = ri.LastUpdated.AsTime()
+					expectedRootInvRow.IsSourcesFinal = true
+					// Use a new request id to avoid the repeated request being deduplicated.
+					req.RequestId = "new-request-id"
 
 					t.Run("fail to update sources", func(t *ftt.Test) {
 						req.UpdateMask.Paths = []string{"sources"}
@@ -528,7 +581,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 
 						ri, err := recorder.UpdateRootInvocation(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
-						assert.That(t, ri, should.Match(expectedRootInv))
+						assertNoOp(ri, expectedRootInvRow, expectedRootInv)
 					})
 
 					t.Run("to non-finalized sources", func(t *ftt.Test) {
@@ -563,7 +616,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 				expectedRootInv.Properties = newProperties
 				expectedRootInv.Tags = newTags
 				expectedRootInv.Deadline = newDeadline
-				assertResponse(ri)
+				assertResponse(ri, expectedRootInv)
 
 				// Validate spanner records are updated.
 				expectedRootInvRow.BaselineID = newBaselineID

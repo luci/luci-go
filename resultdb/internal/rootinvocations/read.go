@@ -242,3 +242,24 @@ func Read(ctx context.Context, id ID) (row *RootInvocationRow, err error) {
 		return ret, nil
 	}
 }
+
+// CheckRootInvocationUpdateRequestExist checks if the given root invocation has already been updated by the given
+// user with the given request ID.
+func CheckRootInvocationUpdateRequestExist(ctx context.Context, id ID, updatedBy, requestID string) (exist bool, err error) {
+	if id == "" {
+		return false, errors.New("id is unspecified")
+	}
+	// ReadRow needs to read something for it to succeed, but we just want to check for the existence of the row
+	// The value read is not used.
+	var readID ID
+	ptrMap := map[string]any{"RootInvocationId": &readID}
+	err = spanutil.ReadRow(ctx, "RootInvocationUpdateRequests", id.Key(updatedBy, requestID), ptrMap)
+	switch {
+	case spanner.ErrCode(err) == codes.NotFound:
+		return false, nil
+	case err != nil:
+		return false, errors.Fmt("fetch RootInvocationUpdateRequests: %w", err)
+	default:
+		return true, nil
+	}
+}
