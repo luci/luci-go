@@ -286,6 +286,8 @@ func TestFinalizeInvocation(t *testing.T) {
 			})
 			assert.Loosely(t, legacyState, should.Equal(pb.Invocation_FINALIZED))
 			assert.Loosely(t, legacyFinalizeTime, should.Equal(finalizeTime))
+
+			assert.Loosely(t, sched.Tasks().Payloads(), should.HaveLength(0))
 		})
 
 		t.Run("For a work unit", func(t *ftt.Test) {
@@ -293,12 +295,12 @@ func TestFinalizeInvocation(t *testing.T) {
 
 			// Create a root invocation for the work unit to be created in.
 			rootInvID := rootinvocations.ID("root-inv-for-wu")
-			rootRow := rootinvocations.NewBuilder(rootInvID).WithState(pb.RootInvocation_ACTIVE).Build()
+			rootRow := rootinvocations.NewBuilder(rootInvID).WithState(pb.RootInvocation_FINALIZING).Build()
 			ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootRow)...)
 
 			wuID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "my-work-unit"}
 
-			// Create a work unit and its legacy shadow.
+			// Create a work unit.
 			// The work unit needs to be in FINALIZING state.
 			wuRow := workunits.NewBuilder(rootInvID, "my-work-unit").WithState(pb.WorkUnit_FINALIZING).Build()
 			ms = append(ms, insert.WorkUnit(wuRow)...)
@@ -326,6 +328,13 @@ func TestFinalizeInvocation(t *testing.T) {
 			})
 			assert.Loosely(t, legacyState, should.Equal(pb.Invocation_FINALIZED))
 			assert.Loosely(t, legacyFinalizeTime, should.Match(finalizeTime))
+
+			assert.Loosely(t, sched.Tasks().Payloads(), should.HaveLength(1))
+			assert.Loosely(t, sched.Tasks().Payloads()[0], should.Match(
+				&taskspb.TryFinalizeInvocation{
+					InvocationId: string(workunits.ID{"root-inv-for-wu", "root"}.LegacyInvocationID()),
+				},
+			))
 		})
 	})
 }

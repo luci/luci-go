@@ -269,6 +269,8 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID, opts Options)
 			})
 		}
 
+		// None of this work yet for work units and root invocations.
+		// We can enable it piecemeal once implemented.
 		if !invID.IsRootInvocation() && !invID.IsWorkUnit() {
 			// Enqueue a notification to pub/sub listeners that the invocation
 			// has been finalized.
@@ -287,32 +289,32 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID, opts Options)
 				CreateTime:   inv.CreateTime,
 			}
 			tasks.NotifyInvocationFinalized(ctx, notification)
-		}
 
-		// Enqueue update test metadata task transactionally.
-		if err := testmetadataupdator.Schedule(ctx, invID); err != nil {
-			return err
-		}
-
-		// Enqueue export artifact task transactionally.
-		if err := artifactexporter.Schedule(ctx, invID); err != nil {
-			return err
-		}
-
-		// Enqueue BigQuery exports transactionally.
-		if err := bqexporter.Schedule(ctx, invID); err != nil {
-			return err
-		}
-
-		// Work units do not have a submitted state.
-		if !invID.IsWorkUnit() {
-			// Enqueue baseline update task transactionally.
-			submitted, err := invocations.ReadSubmitted(ctx, invID)
-			if err != nil {
+			// Enqueue update test metadata task transactionally.
+			if err := testmetadataupdator.Schedule(ctx, invID); err != nil {
 				return err
 			}
-			if submitted {
-				baselineupdater.Schedule(ctx, string(invID))
+
+			// Enqueue export artifact task transactionally.
+			if err := artifactexporter.Schedule(ctx, invID); err != nil {
+				return err
+			}
+
+			// Enqueue BigQuery exports transactionally.
+			if err := bqexporter.Schedule(ctx, invID); err != nil {
+				return err
+			}
+
+			// Work units do not have a submitted state.
+			if !invID.IsWorkUnit() {
+				// Enqueue baseline update task transactionally.
+				submitted, err := invocations.ReadSubmitted(ctx, invID)
+				if err != nil {
+					return err
+				}
+				if submitted {
+					baselineupdater.Schedule(ctx, string(invID))
+				}
 			}
 		}
 
