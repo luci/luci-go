@@ -785,6 +785,9 @@ CREATE TABLE Artifacts (
   -- Media type of the artifact content.
   ContentType STRING(MAX),
 
+  -- Client designated type of the artifact.
+  ArtifactType STRING(150),
+
   -- Content size in bytes.
   -- In the case of a GCS artifact, this field is user supplied, optional and not verified.
   Size INT64,

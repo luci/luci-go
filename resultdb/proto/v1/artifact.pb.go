@@ -113,7 +113,7 @@ func (ArtifactLine_Severity) EnumDescriptor() ([]byte, []int) {
 // An invocation-level artifact might be related to tests, or it might not, for
 // example it may be used to store build step logs when streaming support is
 // added.
-// Next id: 16.
+// Next id: 17.
 type Artifact struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Can be used to refer to this artifact.
@@ -138,15 +138,16 @@ type Artifact struct {
 	//
 	// This field is only populated for test-result-level artifacts.
 	//
-	// MUST NOT set for legacy uploader where test id should be specified in the parent.
+	// MUST NOT set for legacy uploader where test id should be specified in the
+	// parent.
 	TestIdStructured *TestIdentifier `protobuf:"bytes,12,opt,name=test_id_structured,json=testIdStructured,proto3" json:"test_id_structured,omitempty"`
 	// A unique identifier of the test in a LUCI project, excluding variant.
 	// Regex: ^[[::print::]]{1,512}$
 	//
 	// This is the flat-form encoding of the test_id_structured above,
 	// only populated for test-result-level artifacts.
-	// See TestIdentifier for details how a structured test identifier is converted
-	// to flat test ID.
+	// See TestIdentifier for details how a structured test identifier is
+	// converted to flat test ID.
 	//
 	// Output only.
 	TestId string `protobuf:"bytes,13,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
@@ -157,14 +158,16 @@ type Artifact struct {
 	// A local identifier of the artifact, unique within the parent resource.
 	// MAY have slashes, but MUST NOT start with a slash.
 	// SHOULD not use backslashes.
-	// Regex: ^(?:[[:word:]]|\.)([\p{L}\p{M}\p{N}\p{P}\p{S}\p{Zs}]{0,254}[[:word:]])?$
+	// Regex:
+	// ^(?:[[:word:]]|\.)([\p{L}\p{M}\p{N}\p{P}\p{S}\p{Zs}]{0,254}[[:word:]])?$
 	ArtifactId string `protobuf:"bytes,2,opt,name=artifact_id,json=artifactId,proto3" json:"artifact_id,omitempty"`
 	// A signed short-lived URL to fetch the contents of the artifact.
 	// See also fetch_url_expiration.
 	//
-	// While the fetch_url will be returned by default, in some cases it may introduce significantly
-	// higher latency and potentially trigger errors if quota limits are exceeded.
-	// Thus please mask fetch_url unless you are actually going to use it.
+	// While the fetch_url will be returned by default, in some cases it may
+	// introduce significantly higher latency and potentially trigger errors if
+	// quota limits are exceeded. Thus please mask fetch_url unless you are
+	// actually going to use it.
 	FetchUrl string `protobuf:"bytes,3,opt,name=fetch_url,json=fetchUrl,proto3" json:"fetch_url,omitempty"`
 	// When fetch_url expires. If expired, re-request this Artifact.
 	FetchUrlExpiration *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=fetch_url_expiration,json=fetchUrlExpiration,proto3" json:"fetch_url_expiration,omitempty"`
@@ -191,8 +194,8 @@ type Artifact struct {
 	// and `rbe_uri` must be empty.
 	GcsUri string `protobuf:"bytes,8,opt,name=gcs_uri,json=gcsUri,proto3" json:"gcs_uri,omitempty"`
 	// Status of the test result that the artifact belongs to.
-	// This is only applicable for test-level artifacts, not invocation-level artifacts.
-	// Deprecated: This field is ignored by ResultDB and not set.
+	// This is only applicable for test-level artifacts, not invocation-level
+	// artifacts. Deprecated: This field is ignored by ResultDB and not set.
 	//
 	// Deprecated: Marked as deprecated in go.chromium.org/luci/resultdb/proto/v1/artifact.proto.
 	TestStatus TestStatus `protobuf:"varint,9,opt,name=test_status,json=testStatus,proto3,enum=luci.resultdb.v1.TestStatus" json:"test_status,omitempty"`
@@ -202,9 +205,24 @@ type Artifact struct {
 	HasLines bool `protobuf:"varint,11,opt,name=has_lines,json=hasLines,proto3" json:"has_lines,omitempty"`
 	// The RBE URI of the artifact if it's stored in RBE. If specified, `contents`
 	// and `gcs_uri` must be empty.
-	// Format: "bytestream://<HOSTNAME>/projects/<PROJECT_ID>/instances/<INSTANCE_ID>/blobs/<HASH>/<SIZE_BYTES>"
-	// Example: "bytestream://remotebuildexecution.googleapis.com/projects/luci-resultdb-dev/instances/artifacts/blobs/abcd1234/509"
-	RbeUri        string `protobuf:"bytes,15,opt,name=rbe_uri,json=rbeUri,proto3" json:"rbe_uri,omitempty"`
+	// Format:
+	// "bytestream://<HOSTNAME>/projects/<PROJECT_ID>/instances/<INSTANCE_ID>/blobs/<HASH>/<SIZE_BYTES>"
+	// Example:
+	// "bytestream://remotebuildexecution.googleapis.com/projects/luci-resultdb-dev/instances/artifacts/blobs/abcd1234/509"
+	RbeUri string `protobuf:"bytes,15,opt,name=rbe_uri,json=rbeUri,proto3" json:"rbe_uri,omitempty"`
+	// An artifact type as designated by the client.
+	// This field should not be used for the MIME content type (e.g. text/plain),
+	// for that please the content_type field.
+	//
+	// This field should not be a blank string, it is an optional field and should
+	// be left unset if not needed.
+	//
+	// It represents a type of artifact that a client designates
+	// to the artifacts which can then be used in further analysis or UI
+	// functions. For example, a client can use this field to designate that an
+	// artifact was generated by a certain tool or library and it can then use
+	// this type to query for all the artifacts generated by that tool.
+	ArtifactType  string `protobuf:"bytes,16,opt,name=artifact_type,json=artifactType,proto3" json:"artifact_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -338,6 +356,13 @@ func (x *Artifact) GetRbeUri() string {
 	return ""
 }
 
+func (x *Artifact) GetArtifactType() string {
+	if x != nil {
+		return x.ArtifactType
+	}
+	return ""
+}
+
 type ArtifactLine struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The position of this line in the artifact.
@@ -348,8 +373,9 @@ type ArtifactLine struct {
 	// The extracted severity of the line. Extraction is best effort only.
 	Severity ArtifactLine_Severity `protobuf:"varint,3,opt,name=severity,proto3,enum=luci.resultdb.v1.ArtifactLine_Severity" json:"severity,omitempty"`
 	// The content of the line as it is found in the log file.
-	// Lines are split on the \n character and the character is included in the line content that immediately precedes it.
-	// Empty lines will be included in the response.
+	// Lines are split on the \n character and the character is included in the
+	// line content that immediately precedes it. Empty lines will be included in
+	// the response.
 	Content       []byte `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -417,7 +443,7 @@ var File_go_chromium_org_luci_resultdb_proto_v1_artifact_proto protoreflect.File
 
 const file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_rawDesc = "" +
 	"\n" +
-	"5go.chromium.org/luci/resultdb/proto/v1/artifact.proto\x12\x10luci.resultdb.v1\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a8go.chromium.org/luci/resultdb/proto/v1/test_result.proto\x1a3go.chromium.org/luci/resultdb/proto/v1/common.proto\"\xce\x04\n" +
+	"5go.chromium.org/luci/resultdb/proto/v1/artifact.proto\x12\x10luci.resultdb.v1\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a8go.chromium.org/luci/resultdb/proto/v1/test_result.proto\x1a3go.chromium.org/luci/resultdb/proto/v1/common.proto\"\xf3\x04\n" +
 	"\bArtifact\x12\x1a\n" +
 	"\x04name\x18\x01 \x01(\tB\x06\xe0A\x03\xe0A\x05R\x04name\x12S\n" +
 	"\x12test_id_structured\x18\f \x01(\v2 .luci.resultdb.v1.TestIdentifierB\x03\xe0A\x05R\x10testIdStructured\x12\x1f\n" +
@@ -435,7 +461,8 @@ const file_go_chromium_org_luci_resultdb_proto_v1_artifact_proto_rawDesc = "" +
 	"\vtest_status\x18\t \x01(\x0e2\x1c.luci.resultdb.v1.TestStatusB\x02\x18\x01R\n" +
 	"testStatus\x12 \n" +
 	"\thas_lines\x18\v \x01(\bB\x03\xe0A\x03R\bhasLines\x12\x17\n" +
-	"\arbe_uri\x18\x0f \x01(\tR\x06rbeUri\"\xd0\x02\n" +
+	"\arbe_uri\x18\x0f \x01(\tR\x06rbeUri\x12#\n" +
+	"\rartifact_type\x18\x10 \x01(\tR\fartifactType\"\xd0\x02\n" +
 	"\fArtifactLine\x12\x16\n" +
 	"\x06number\x18\x01 \x01(\x03R\x06number\x128\n" +
 	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12C\n" +

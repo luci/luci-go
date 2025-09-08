@@ -31,7 +31,7 @@ option java_multiple_files = true;
 // An invocation-level artifact might be related to tests, or it might not, for
 // example it may be used to store build step logs when streaming support is
 // added.
-// Next id: 16.
+// Next id: 17.
 message Artifact {
   // Can be used to refer to this artifact.
   // Format:
@@ -59,19 +59,24 @@ message Artifact {
   //
   // This field is only populated for test-result-level artifacts.
   //
-  // MUST NOT set for legacy uploader where test id should be specified in the parent.
-  TestIdentifier test_id_structured = 12 [(google.api.field_behavior) = IMMUTABLE];
+  // MUST NOT set for legacy uploader where test id should be specified in the
+  // parent.
+  TestIdentifier test_id_structured = 12
+      [(google.api.field_behavior) = IMMUTABLE];
 
   // A unique identifier of the test in a LUCI project, excluding variant.
   // Regex: ^[[::print::]]{1,512}$
   //
   // This is the flat-form encoding of the test_id_structured above,
   // only populated for test-result-level artifacts.
-  // See TestIdentifier for details how a structured test identifier is converted
-  // to flat test ID.
+  // See TestIdentifier for details how a structured test identifier is
+  // converted to flat test ID.
   //
   // Output only.
-  string test_id = 13 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
+  string test_id = 13 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
 
   // This field is only populated for test-result-level artifacts.
   // MUST set if test_id_structured is set.
@@ -81,19 +86,22 @@ message Artifact {
   // A local identifier of the artifact, unique within the parent resource.
   // MAY have slashes, but MUST NOT start with a slash.
   // SHOULD not use backslashes.
-  // Regex: ^(?:[[:word:]]|\.)([\p{L}\p{M}\p{N}\p{P}\p{S}\p{Zs}]{0,254}[[:word:]])?$
+  // Regex:
+  // ^(?:[[:word:]]|\.)([\p{L}\p{M}\p{N}\p{P}\p{S}\p{Zs}]{0,254}[[:word:]])?$
   string artifact_id = 2;
 
   // A signed short-lived URL to fetch the contents of the artifact.
   // See also fetch_url_expiration.
   //
-  // While the fetch_url will be returned by default, in some cases it may introduce significantly
-  // higher latency and potentially trigger errors if quota limits are exceeded.
-  // Thus please mask fetch_url unless you are actually going to use it.
+  // While the fetch_url will be returned by default, in some cases it may
+  // introduce significantly higher latency and potentially trigger errors if
+  // quota limits are exceeded. Thus please mask fetch_url unless you are
+  // actually going to use it.
   string fetch_url = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // When fetch_url expires. If expired, re-request this Artifact.
-  google.protobuf.Timestamp fetch_url_expiration = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp fetch_url_expiration = 4
+      [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // Media type of the artifact.
   // Logs are typically "text/plain" and screenshots are typically "image/png".
@@ -115,16 +123,16 @@ message Artifact {
   // All getter RPCs, such as ListArtifacts(), do not populate values into
   // the field in the response.
   // If specified, `gcs_uri` must be empty.
-  bytes contents = 7 [ (google.api.field_behavior) = INPUT_ONLY ];
+  bytes contents = 7 [(google.api.field_behavior) = INPUT_ONLY];
 
   // The GCS URI of the artifact if it's stored in GCS. If specified, `contents`
   // and `rbe_uri` must be empty.
   string gcs_uri = 8;
 
   // Status of the test result that the artifact belongs to.
-  // This is only applicable for test-level artifacts, not invocation-level artifacts.
-  // Deprecated: This field is ignored by ResultDB and not set.
-  TestStatus test_status = 9 [ deprecated = true ];
+  // This is only applicable for test-level artifacts, not invocation-level
+  // artifacts. Deprecated: This field is ignored by ResultDB and not set.
+  TestStatus test_status = 9 [deprecated = true];
 
   // Indicates whether ListArtifactLines RPC can be used with this artifact.
   //
@@ -133,9 +141,27 @@ message Artifact {
 
   // The RBE URI of the artifact if it's stored in RBE. If specified, `contents`
   // and `gcs_uri` must be empty.
-  // Format: "bytestream://<HOSTNAME>/projects/<PROJECT_ID>/instances/<INSTANCE_ID>/blobs/<HASH>/<SIZE_BYTES>"
-  // Example: "bytestream://remotebuildexecution.googleapis.com/projects/luci-resultdb-dev/instances/artifacts/blobs/abcd1234/509"
+  // Format:
+  // "bytestream://<HOSTNAME>/projects/<PROJECT_ID>/instances/<INSTANCE_ID>/blobs/<HASH>/<SIZE_BYTES>"
+  // Example:
+  // "bytestream://remotebuildexecution.googleapis.com/projects/luci-resultdb-dev/instances/artifacts/blobs/abcd1234/509"
   string rbe_uri = 15;
+
+  // An artifact type as designated by the client.
+  // This field should not be used for the MIME content type (e.g. text/plain),
+  // for that please the content_type field. It should only be used to
+  // compliment the content type if the content type is not sufficient (e.g.
+  // text/plain or text/json).
+  //
+  // This field should not be a blank string, it is an optional field and should
+  // be left unset if not needed.
+  //
+  // It represents a type of artifact that a client designates
+  // to the artifacts which can then be used in further analysis or UI
+  // functions. For example, a client can use this field to designate that an
+  // artifact was generated by a certain tool or library and it can then use
+  // this type to query for all the artifacts generated by that tool.
+  string artifact_type = 16;
 }
 
 message ArtifactLine {
@@ -163,7 +189,8 @@ message ArtifactLine {
   Severity severity = 3;
 
   // The content of the line as it is found in the log file.
-  // Lines are split on the \n character and the character is included in the line content that immediately precedes it.
-  // Empty lines will be included in the response.
+  // Lines are split on the \n character and the character is included in the
+  // line content that immediately precedes it. Empty lines will be included in
+  // the response.
   bytes content = 4;
 }
