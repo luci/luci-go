@@ -75,11 +75,14 @@ export function SingleMetric({
           <Skeleton variant="text" width={34} height={36} />
         ) : (
           <>
-            <Typography variant="h3">{value || 0}</Typography>
+            <Typography variant="h3">
+              {(value || 0).toLocaleString('en-US')}
+            </Typography>
             {total ? (
-              <Typography variant="caption" sx={{ textWrap: 'nowrap' }}>
-                {` / ${total}`}
-              </Typography>
+              <Typography
+                variant="caption"
+                sx={{ textWrap: 'nowrap' }}
+              >{` / ${total.toLocaleString('en-US')}`}</Typography>
             ) : (
               <></>
             )}
