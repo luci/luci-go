@@ -131,6 +131,11 @@ message ArtifactPredicate {
 // Represents a function TestMetadata -> bool.
 // Empty message matches all test metadata.
 message TestMetadataPredicate {
-  // A test metadata must have the test id in this list.
+  // Filters to tests with a test_id in this list.
   repeated string test_ids = 1;
+
+  // Filters to tests which have a test_metadata.previous_test_id in this list.
+  // Use to find newer tests corresponding to a given old test ID.
+  // May not be used in conjunction with test_ids.
+  repeated string previous_test_ids = 2;
 }

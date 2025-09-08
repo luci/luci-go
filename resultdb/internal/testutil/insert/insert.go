@@ -284,14 +284,15 @@ func TestMetadataRows(rows []*testmetadata.TestMetadataRow) []*spanner.Mutation 
 	ms := make([]*spanner.Mutation, len(rows))
 	for i, row := range rows {
 		mutMap := map[string]any{
-			"Project":      row.Project,
-			"TestId":       row.TestID,
-			"SubRealm":     row.SubRealm,
-			"RefHash":      row.RefHash,
-			"LastUpdated":  row.LastUpdated,
-			"TestMetadata": spanutil.Compressed(pbutil.MustMarshal(row.TestMetadata)),
-			"SourceRef":    spanutil.Compressed(pbutil.MustMarshal(row.SourceRef)),
-			"Position":     int64(row.Position),
+			"Project":        row.Project,
+			"TestId":         row.TestID,
+			"SubRealm":       row.SubRealm,
+			"RefHash":        row.RefHash,
+			"LastUpdated":    row.LastUpdated,
+			"TestMetadata":   spanutil.Compressed(pbutil.MustMarshal(row.TestMetadata)),
+			"SourceRef":      spanutil.Compressed(pbutil.MustMarshal(row.SourceRef)),
+			"Position":       int64(row.Position),
+			"PreviousTestId": spanner.NullString{Valid: row.TestMetadata.GetPreviousTestId() != "", StringVal: row.TestMetadata.GetPreviousTestId()},
 		}
 		ms[i] = spanutil.InsertMap("TestMetadata", mutMap)
 	}
@@ -312,7 +313,8 @@ func MakeTestMetadataRow(project, testID, subRealm string, refHash []byte) *test
 				FileName: "testFile",
 				Line:     0,
 			},
-			BugComponent: &pb.BugComponent{},
+			BugComponent:   &pb.BugComponent{},
+			PreviousTestId: "previous_id_for_" + testID,
 		},
 		SourceRef: &pb.SourceRef{
 			System: &pb.SourceRef_Gitiles{

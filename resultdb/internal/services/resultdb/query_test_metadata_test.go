@@ -17,6 +17,7 @@ package resultdb
 import (
 	"encoding/hex"
 	"sort"
+	"strings"
 	"testing"
 
 	"google.golang.org/grpc/codes"
@@ -47,10 +48,7 @@ func TestQueryTestMetadata(t *testing.T) {
 			},
 		})
 		req := &pb.QueryTestMetadataRequest{
-			Project: "testproject",
-			Predicate: &pb.TestMetadataPredicate{
-				TestIds: []string{"test1"},
-			},
+			Project:   "testproject",
 			PageSize:  0, // Use default max page size.
 			PageToken: "",
 		}
@@ -79,36 +77,54 @@ func TestQueryTestMetadata(t *testing.T) {
 		})
 
 		t.Run(`Invalid request`, func(t *ftt.Test) {
+			request := &pb.QueryTestMetadataRequest{
+				Project: "testproject",
+				Predicate: &pb.TestMetadataPredicate{
+					TestIds: []string{"test"},
+				},
+			}
 			t.Run("Invalid project name", func(t *ftt.Test) {
-				res, err := srv.QueryTestMetadata(ctx, &pb.QueryTestMetadataRequest{
-					Project: "testproject:testrealm1",
-					Predicate: &pb.TestMetadataPredicate{
-						TestIds: []string{"test"},
-					},
-				})
+				request.Project = "testproject:testrealm1"
+				res, err := srv.QueryTestMetadata(ctx, request)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 				assert.Loosely(t, err, should.ErrLike(`project: does not match pattern "^[a-z0-9\\-]{1,40}$"`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
 			t.Run("Invalid page size", func(t *ftt.Test) {
-				res, err := srv.QueryTestMetadata(ctx, &pb.QueryTestMetadataRequest{
-					Project: "testproject",
-					Predicate: &pb.TestMetadataPredicate{
-						TestIds: []string{"test"},
-					},
-					PageSize: -1,
-				})
+				request.PageSize = -1
+				res, err := srv.QueryTestMetadata(ctx, request)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 				assert.Loosely(t, err, should.ErrLike(`page_size`))
 				assert.Loosely(t, res, should.BeNil)
+			})
+
+			t.Run("Predicate", func(t *ftt.Test) {
+				t.Run("Invalid test ID", func(t *ftt.Test) {
+					request.Predicate.TestIds = []string{strings.Repeat("a", 600)}
+					_, err := srv.QueryTestMetadata(ctx, request)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`predicate: test_ids[0]: longer than 512 bytes`))
+				})
+				t.Run("Invalid previous test ID", func(t *ftt.Test) {
+					request.Predicate.PreviousTestIds = []string{strings.Repeat("a", 600)}
+					_, err := srv.QueryTestMetadata(ctx, request)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`predicate: previous_test_ids[0]: longer than 512 bytes`))
+				})
+				t.Run("Both test ID and previous test ID", func(t *ftt.Test) {
+					request.Predicate.TestIds = []string{"test"}
+					request.Predicate.PreviousTestIds = []string{"previous_test"}
+					_, err := srv.QueryTestMetadata(ctx, request)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`predicate: either test_ids or previous_test_ids may be specified; not both`))
+				})
 			})
 		})
 
 		t.Run(`Valid request`, func(t *ftt.Test) {
 			t.Run(`No predicate`, func(t *ftt.Test) {
 				req.Predicate = nil
-
 				res, err := srv.QueryTestMetadata(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
@@ -117,19 +133,41 @@ func TestQueryTestMetadata(t *testing.T) {
 				assert.Loosely(t, res.TestMetadata, should.Match(expected))
 			})
 
-			t.Run(`Filter test id`, func(t *ftt.Test) {
-				res, err := srv.QueryTestMetadata(ctx, req)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
-				assert.Loosely(t, res.TestMetadata, should.Match(toTestMetadataDetails(expectedT1Rows)))
+			t.Run(`Filter on test ID`, func(t *ftt.Test) {
+				req.Predicate = &pb.TestMetadataPredicate{
+					TestIds: []string{"test1"},
+				}
+				t.Run(`Baseline`, func(t *ftt.Test) {
+					res, err := srv.QueryTestMetadata(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.NextPageToken, should.BeEmpty)
+					assert.Loosely(t, res.TestMetadata, should.Match(toTestMetadataDetails(expectedT1Rows)))
+				})
+				t.Run(`Try next page`, func(t *ftt.Test) {
+					req.PageToken = pagination.Token("test1", hex.EncodeToString([]byte("hash1")))
+					res, err := srv.QueryTestMetadata(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.NextPageToken, should.BeEmpty)
+					assert.Loosely(t, res.TestMetadata, should.Match(toTestMetadataDetails(expectedT1Rows[1:])))
+				})
 			})
-
-			t.Run(`Try next page`, func(t *ftt.Test) {
-				req.PageToken = pagination.Token("test1", hex.EncodeToString([]byte("hash1")))
-				res, err := srv.QueryTestMetadata(ctx, req)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
-				assert.Loosely(t, res.TestMetadata, should.Match(toTestMetadataDetails(expectedT1Rows[1:])))
+			t.Run(`Filter previous test ID`, func(t *ftt.Test) {
+				req.Predicate = &pb.TestMetadataPredicate{
+					PreviousTestIds: []string{"previous_id_for_test1"},
+				}
+				t.Run(`Baseline`, func(t *ftt.Test) {
+					res, err := srv.QueryTestMetadata(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.NextPageToken, should.BeEmpty)
+					assert.Loosely(t, res.TestMetadata, should.Match(toTestMetadataDetails(expectedT1Rows)))
+				})
+				t.Run(`Try next page`, func(t *ftt.Test) {
+					req.PageToken = pagination.Token("test1", hex.EncodeToString([]byte("hash1")))
+					res, err := srv.QueryTestMetadata(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.NextPageToken, should.BeEmpty)
+					assert.Loosely(t, res.TestMetadata, should.Match(toTestMetadataDetails(expectedT1Rows[1:])))
+				})
 			})
 		})
 	})

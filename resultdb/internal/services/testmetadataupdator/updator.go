@@ -178,7 +178,7 @@ func (u *testMetadataUpdator) updateOrCreateRows(ctx context.Context, realm stri
 			if (u.sources.GitilesCommit.Position == tmd.Position && newBitField > existingBitField) ||
 				(u.sources.GitilesCommit.Position > tmd.Position &&
 					(tmd.LastUpdated.Add(metadataExpiry).Before(u.start) || newBitField >= existingBitField)) {
-				mutation := u.testMetadataMutation(project, tmd.TestID, subRealm, testMetadata[testID(tmd.TestID)])
+				mutation := u.testMetadataMutation(project, tmd.TestID, subRealm, newMetadata)
 				ms = append(ms, mutation)
 			}
 			return nil
@@ -212,6 +212,7 @@ var saveCols = []string{
 	"TestMetadata",
 	"SourceRef",
 	"Position",
+	"PreviousTestId",
 }
 
 func (u *testMetadataUpdator) testMetadataMutation(project, testID, subRealm string, tm *pb.TestMetadata) *spanner.Mutation {
@@ -225,6 +226,7 @@ func (u *testMetadataUpdator) testMetadataMutation(project, testID, subRealm str
 		spanutil.Compressed(pbutil.MustMarshal(tm)).ToSpanner(),
 		spanutil.Compressed(pbutil.MustMarshal(ref)).ToSpanner(),
 		u.sources.GitilesCommit.Position,
+		spanner.NullString{Valid: tm.GetPreviousTestId() != "", StringVal: tm.GetPreviousTestId()},
 	}
 	return spanner.InsertOrUpdate("TestMetadata", saveCols, vals)
 }

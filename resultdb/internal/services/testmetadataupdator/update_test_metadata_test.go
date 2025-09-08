@@ -137,15 +137,17 @@ func TestUpdateTestMetadata(t *testing.T) {
 			row := &testmetadata.TestMetadataRow{}
 			var compressedTestMetadata spanutil.Compressed
 			var compressedSourceRef spanutil.Compressed
+			var previousTestID spanner.NullString
 			key := spanner.Key{expected.Project, expected.TestID, expected.RefHash, expected.SubRealm}
 			testutil.MustReadRow(ctx, t, "TestMetadata", key, map[string]any{
-				"Project":      &row.Project,
-				"TestId":       &row.TestID,
-				"RefHash":      &row.RefHash,
-				"SubRealm":     &row.SubRealm,
-				"TestMetadata": &compressedTestMetadata,
-				"SourceRef":    &compressedSourceRef,
-				"Position":     &row.Position,
+				"Project":        &row.Project,
+				"TestId":         &row.TestID,
+				"RefHash":        &row.RefHash,
+				"SubRealm":       &row.SubRealm,
+				"TestMetadata":   &compressedTestMetadata,
+				"SourceRef":      &compressedSourceRef,
+				"Position":       &row.Position,
+				"PreviousTestId": &previousTestID,
 			})
 			row.TestMetadata = &pb.TestMetadata{}
 			err := proto.Unmarshal(compressedTestMetadata, row.TestMetadata)
@@ -158,6 +160,8 @@ func TestUpdateTestMetadata(t *testing.T) {
 			// So we compare each proto field separately.
 			assert.Loosely(t, row.TestMetadata, should.Match(expected.TestMetadata))
 			assert.Loosely(t, row.SourceRef, should.Match(expected.SourceRef))
+			assert.Loosely(t, previousTestID.Valid, should.Match(expected.TestMetadata.PreviousTestId != ""))
+			assert.Loosely(t, previousTestID.StringVal, should.Match(expected.TestMetadata.PreviousTestId))
 			row.TestMetadata = nil
 			row.SourceRef = nil
 			expected.TestMetadata = nil

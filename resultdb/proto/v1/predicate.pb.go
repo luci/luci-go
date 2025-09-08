@@ -413,10 +413,14 @@ func (x *ArtifactPredicate) GetArtifactIdRegexp() string {
 // Empty message matches all test metadata.
 type TestMetadataPredicate struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// A test metadata must have the test id in this list.
-	TestIds       []string `protobuf:"bytes,1,rep,name=test_ids,json=testIds,proto3" json:"test_ids,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// Filters to tests with a test_id in this list.
+	TestIds []string `protobuf:"bytes,1,rep,name=test_ids,json=testIds,proto3" json:"test_ids,omitempty"`
+	// Filters to tests which have a test_metadata.previous_test_id in this list.
+	// Use to find newer tests corresponding to a given old test ID.
+	// May not be used in conjunction with test_ids.
+	PreviousTestIds []string `protobuf:"bytes,2,rep,name=previous_test_ids,json=previousTestIds,proto3" json:"previous_test_ids,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *TestMetadataPredicate) Reset() {
@@ -452,6 +456,13 @@ func (*TestMetadataPredicate) Descriptor() ([]byte, []int) {
 func (x *TestMetadataPredicate) GetTestIds() []string {
 	if x != nil {
 		return x.TestIds
+	}
+	return nil
+}
+
+func (x *TestMetadataPredicate) GetPreviousTestIds() []string {
+	if x != nil {
+		return x.PreviousTestIds
 	}
 	return nil
 }
@@ -542,9 +553,10 @@ const file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_rawDesc = "" +
 	"\x12artifact_id_regexp\x18\x04 \x01(\tR\x10artifactIdRegexp\x1ac\n" +
 	"\vEdgeTypeSet\x121\n" +
 	"\x14included_invocations\x18\x01 \x01(\bR\x13includedInvocations\x12!\n" +
-	"\ftest_results\x18\x02 \x01(\bR\vtestResults\"2\n" +
+	"\ftest_results\x18\x02 \x01(\bR\vtestResults\"^\n" +
 	"\x15TestMetadataPredicate\x12\x19\n" +
-	"\btest_ids\x18\x01 \x03(\tR\atestIdsBP\n" +
+	"\btest_ids\x18\x01 \x03(\tR\atestIds\x12*\n" +
+	"\x11previous_test_ids\x18\x02 \x03(\tR\x0fpreviousTestIdsBP\n" +
 	"\x1bcom.google.luci.resultdb.v1P\x01Z/go.chromium.org/luci/resultdb/proto/v1;resultpbb\x06proto3"
 
 var (

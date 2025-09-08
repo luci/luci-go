@@ -78,18 +78,20 @@ func parseQueryPageToken(pageToken string) (afterTestID, afterRefHash string, er
 // Run the query and call f for each test metadata detail returned from the query.
 func (q *Query) run(ctx context.Context, f func(tmd *pb.TestMetadataDetail) error) error {
 	st, err := spanutil.GenerateStatement(queryTmpl, map[string]any{
-		"pagination":   len(q.PageToken) > 0,
-		"hasLimit":     q.PageSize > 0,
-		"filterTestID": len(q.Predicate.GetTestIds()) != 0,
+		"pagination":           len(q.PageToken) > 0,
+		"hasLimit":             q.PageSize > 0,
+		"filterTestID":         len(q.Predicate.GetTestIds()) != 0,
+		"filterPreviousTestID": len(q.Predicate.GetPreviousTestIds()) != 0,
 	})
 	if err != nil {
 		return err
 	}
 	params := map[string]any{
-		"project":   q.Project,
-		"testIDs":   q.Predicate.GetTestIds(),
-		"subRealms": q.SubRealms,
-		"limit":     q.PageSize,
+		"project":         q.Project,
+		"testIDs":         q.Predicate.GetTestIds(),
+		"previousTestIDs": q.Predicate.GetPreviousTestIds(),
+		"subRealms":       q.SubRealms,
+		"limit":           q.PageSize,
 	}
 
 	if q.PageToken != "" {
@@ -144,6 +146,9 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		WHERE tm.Project = @project
 			{{if .filterTestID}}
 				AND tm.TestId IN UNNEST(@testIDs)
+			{{end}}
+			{{if .filterPreviousTestID}}
+				AND tm.PreviousTestId IN UNNEST(@previousTestIDs)
 			{{end}}
 			AND tm.SubRealm IN UNNEST(@subRealms)
 			{{if .pagination}}

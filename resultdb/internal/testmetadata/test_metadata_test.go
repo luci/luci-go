@@ -112,14 +112,15 @@ func insertTestMetadataRows(rows []*TestMetadataRow) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, len(rows))
 	for i, row := range rows {
 		mutMap := map[string]any{
-			"Project":      row.Project,
-			"TestId":       row.TestID,
-			"SubRealm":     row.SubRealm,
-			"RefHash":      row.RefHash,
-			"LastUpdated":  row.LastUpdated,
-			"TestMetadata": spanutil.Compressed(pbutil.MustMarshal(row.TestMetadata)),
-			"SourceRef":    spanutil.Compressed(pbutil.MustMarshal(row.SourceRef)),
-			"Position":     int64(row.Position),
+			"Project":        row.Project,
+			"TestId":         row.TestID,
+			"SubRealm":       row.SubRealm,
+			"RefHash":        row.RefHash,
+			"LastUpdated":    row.LastUpdated,
+			"TestMetadata":   spanutil.Compressed(pbutil.MustMarshal(row.TestMetadata)),
+			"SourceRef":      spanutil.Compressed(pbutil.MustMarshal(row.SourceRef)),
+			"Position":       int64(row.Position),
+			"PreviousTestId": spanner.NullString{Valid: row.TestMetadata.GetPreviousTestId() != "", StringVal: row.TestMetadata.GetPreviousTestId()},
 		}
 		ms[i] = spanutil.InsertMap("TestMetadata", mutMap)
 	}

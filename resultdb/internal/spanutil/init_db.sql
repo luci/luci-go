@@ -924,11 +924,19 @@ CREATE TABLE TestMetadata (
   -- See resultdb.v1.SourceRef for details.
   SourceRef BYTES(MAX),
 
-   -- Commit position of the test result which updated the test metadata last time.
-   -- Position is always positive.
-   Position INT64 NOT NULL,
+  -- Commit position of the test result which updated the test metadata last time.
+  -- Position is always positive.
+  Position INT64 NOT NULL,
+
+  -- The value of TestMetadata.previous_test_id, represented as a first-class
+  -- Spanner field. Permits finding tests based on their previous test ID.
+  -- NULL if the corresponding `previous_test_id` proto field is unset.
+   PreviousTestId STRING(MAX),
 ) PRIMARY KEY (Project, TestId, RefHash, SubRealm),
   ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 90 DAY));
+
+CREATE NULL_FILTERED INDEX TestMetadataByPreviousTestId
+  ON TestMetadata (Project, PreviousTestId, RefHash, SubRealm);
 
 -- Stores test baselines. A baseline is a named set of test variants which is
 -- believed to be part of the submitted code for a project. New tests are detected
