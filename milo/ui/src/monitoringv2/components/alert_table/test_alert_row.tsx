@@ -17,6 +17,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Checkbox, IconButton, TableCell, TableRow } from '@mui/material';
 import { Link } from '@mui/material';
 
+import { useFeatureFlag } from '@/common/feature_flags';
+import { SHOW_GEN_AI_SUSPECTS } from '@/monitoringv2/pages/monitoring_page/features';
 import { GenericAlert, StructuredAlert } from '@/monitoringv2/util/alerts';
 
 import { TestHistorySparkline } from '../test_history_sparkline';
@@ -47,7 +49,7 @@ export const TestAlertRow = ({
   const testAlert = alert.alert;
   const consecutiveFailures = testAlert.consecutiveFailures;
   const firstFailureId = testAlert.history[consecutiveFailures - 1]?.buildId;
-
+  const showGenAiSuspects: boolean = useFeatureFlag(SHOW_GEN_AI_SUSPECTS);
   if (testAlert.kind !== 'test') {
     throw new Error(
       `TestAlertRow can only be used with test alerts, not ${testAlert.kind}`,
@@ -109,30 +111,34 @@ export const TestAlertRow = ({
           numHighlighted={consecutiveFailures}
         />
       </TableCell>
-      <TableCell width="120px">
-        {consecutiveFailures > 0 &&
-          consecutiveFailures < testAlert.history.length && (
+      {showGenAiSuspects ? (
+        <TableCell width="200px"></TableCell>
+      ) : (
+        <TableCell width="120px">
+          {consecutiveFailures > 0 &&
+            consecutiveFailures < testAlert.history.length && (
+              <Link
+                href={`/b/${firstFailureId}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {consecutiveFailures} build
+                {consecutiveFailures > 1 && 's'} ago
+              </Link>
+            )}
+          {consecutiveFailures === testAlert.history.length && (
             <Link
-              href={`/b/${firstFailureId}`}
+              href={`/ui/p/${testAlert.builderID.project}/builders/${testAlert.builderID.bucket}/${testAlert.builderID.builder}`}
               target="_blank"
               rel="noreferrer"
               onClick={(e) => e.stopPropagation()}
             >
-              {consecutiveFailures} build
-              {consecutiveFailures > 1 && 's'} ago
+              See history <TruncatedHistoryExplanation />
             </Link>
           )}
-        {consecutiveFailures === testAlert.history.length && (
-          <Link
-            href={`/ui/p/${testAlert.builderID.project}/builders/${testAlert.builderID.bucket}/${testAlert.builderID.builder}`}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(e) => e.stopPropagation()}
-          >
-            See history <TruncatedHistoryExplanation />
-          </Link>
-        )}
-      </TableCell>
+        </TableCell>
+      )}
       <TableCell width="100px">
         {firstFailureId && consecutiveFailures < testAlert.history.length && (
           <Link

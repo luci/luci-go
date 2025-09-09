@@ -14,6 +14,8 @@
 
 import { TableCell, TableSortLabel } from '@mui/material';
 
+import { useFeatureFlag } from '@/common/feature_flags';
+import { SHOW_GEN_AI_SUSPECTS } from '@/monitoringv2/pages/monitoring_page/features';
 import { SortColumn } from '@/monitoringv2/util/alerts';
 
 interface ColumnHeadersProps {
@@ -27,6 +29,7 @@ export const ColumnHeaders = ({
   sortDirection,
   clickSortColumn,
 }: ColumnHeadersProps) => {
+  const showGenAiSuspects: boolean = useFeatureFlag(SHOW_GEN_AI_SUSPECTS);
   return (
     <>
       <TableCell>
@@ -47,7 +50,11 @@ export const ColumnHeaders = ({
           History
         </TableSortLabel>
       </TableCell>
-      <TableCell width="120px">First Failure</TableCell>
+      {showGenAiSuspects ? (
+        <TableCell width="200px">Culprit</TableCell>
+      ) : (
+        <TableCell width="120px">First Failure</TableCell>
+      )}
       <TableCell width="80px">Blamelist</TableCell>
     </>
   );

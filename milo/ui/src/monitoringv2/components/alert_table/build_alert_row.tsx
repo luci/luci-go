@@ -16,6 +16,8 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Link, Checkbox, IconButton, TableCell, TableRow } from '@mui/material';
 
+import { useFeatureFlag } from '@/common/feature_flags';
+import { SHOW_GEN_AI_SUSPECTS } from '@/monitoringv2/pages/monitoring_page/features';
 import { GenericAlert, StructuredAlert } from '@/monitoringv2/util/alerts';
 
 import { BuilderHistorySparkline } from '../builder_history_sparkline';
@@ -47,6 +49,7 @@ export const BuildAlertRow = ({
   const id = buildAlert.builderID;
   const consecutiveFailures = buildAlert.consecutiveFailures;
   const firstFailureId = buildAlert.history[consecutiveFailures - 1]?.buildId;
+  const showGenAiSuspects: boolean = useFeatureFlag(SHOW_GEN_AI_SUSPECTS);
 
   if (buildAlert.kind !== 'builder' && buildAlert.kind !== 'step') {
     throw new Error(
@@ -127,30 +130,45 @@ export const BuildAlertRow = ({
           numHighlighted={consecutiveFailures}
         />
       </TableCell>
-      <TableCell width="120px">
-        {consecutiveFailures > 0 &&
-          consecutiveFailures < buildAlert.history.length && (
+      {showGenAiSuspects ? (
+        <TableCell width="200px">
+          {buildAlert.kind === 'builder' && buildAlert.suspectedCulprit && (
             <Link
-              href={`/b/${firstFailureId}`}
+              href={buildAlert.suspectedCulprit.reviewUrl}
               target="_blank"
               rel="noreferrer"
               onClick={(e) => e.stopPropagation()}
             >
-              {consecutiveFailures} build
-              {consecutiveFailures > 1 && 's'} ago
+              {buildAlert.suspectedCulprit.reviewTitle}
             </Link>
           )}
-        {consecutiveFailures === buildAlert.history.length && (
-          <Link
-            href={`/ui/p/${buildAlert.builderID.project}/builders/${buildAlert.builderID.bucket}/${buildAlert.builderID.builder}`}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(e) => e.stopPropagation()}
-          >
-            See history <TruncatedHistoryExplanation />
-          </Link>
-        )}
-      </TableCell>
+        </TableCell>
+      ) : (
+        <TableCell width="120px">
+          {consecutiveFailures > 0 &&
+            consecutiveFailures < buildAlert.history.length && (
+              <Link
+                href={`/b/${firstFailureId}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {consecutiveFailures} build
+                {consecutiveFailures > 1 && 's'} ago
+              </Link>
+            )}
+          {consecutiveFailures === buildAlert.history.length && (
+            <Link
+              href={`/ui/p/${buildAlert.builderID.project}/builders/${buildAlert.builderID.bucket}/${buildAlert.builderID.builder}`}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+            >
+              See history <TruncatedHistoryExplanation />
+            </Link>
+          )}
+        </TableCell>
+      )}
       <TableCell width="100px">
         {firstFailureId && consecutiveFailures < buildAlert.history.length && (
           <Link
