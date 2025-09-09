@@ -26,9 +26,8 @@ option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
 // This means any structpb occurrences are replaced by string.
 message TestMetadata {
   // The original test name.
-  // Deprecated: This was an attempt to solve the problem of test IDs that were
-  // too long to show on the UI. Structured test IDs are now the recommended
-  // solution instead.
+  // This is useful for users who are familiar with the underlying test harness
+  // and want to re-run the test outside of the CI system.
   string name = 1;
 
   // Where the test is defined, e.g. the file name.

@@ -141,9 +141,8 @@ func (x *TestMetadataDetail) GetTestMetadata() *TestMetadata {
 type TestMetadata struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The original test name.
-	// Deprecated: This was an attempt to solve the problem of test IDs that were
-	// too long to show on the UI. Structured test IDs are now the recommended
-	// solution instead.
+	// This is useful for users who are familiar with the underlying test harness
+	// and want to re-run the test outside of the CI system.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Where the test is defined, e.g. the file name.
 	// location.repo MUST be specified.
