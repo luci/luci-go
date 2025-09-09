@@ -302,14 +302,14 @@ func handleGet(ctx context.Context, opts auth.Options) {
 	if reAuthEnabled() {
 		logging.Debugf(ctx, "ReAuth is enabled")
 		attrs := readAttrsOrDie(ctx)
-
 		needReAuth := checkReAuthNeeded(ctx, a, opts, attrs)
 		if needReAuth || forceReAuth() {
 			logging.Debugf(
 				ctx, "Proceeding with ReAuth (check=%v, force=%v)",
 				needReAuth, forceReAuth())
 			if !attrs.SupportsAuthtype() {
-				fmt.Fprintf(os.Stderr, "Git client does not support authtype capability, so cannot continue with ReAuth\n")
+				fmt.Fprintf(os.Stderr, "Git client does not support authtype capability, so cannot continue with ReAuth.\n")
+				fmt.Fprintf(os.Stderr, "ReAuth requires git version >=2.46.0.\n")
 				os.Exit(EXIT_ERROR)
 			}
 			ra := auth.NewReAuthenticator(a)
