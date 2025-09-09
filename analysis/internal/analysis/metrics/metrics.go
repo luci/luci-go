@@ -165,7 +165,11 @@ var (
 		},
 		// Criteria:
 		// - A test fails and then passes upon retry in the same invocation
-		FilterSQL: `not f.is_ingested_invocation_blocked AND f.presubmit_run_id.id is not null`,
+		// - It is also necessary to ignore test failures from tasks where more than 6 tests failed,
+		//   because they likely all have the same underlying cause and should not be considered
+		//   separate flakes. This can be done by checking for the flake_analysis_ignore tag.
+		// - Bugs should also only be filed for top level tests: check for the is_top_level_test tag.
+		FilterSQL: `NOT f.is_ingested_invocation_blocked AND f.presubmit_run_id.id IS NOT NULL AND NOT EXISTS(SELECT key, value FROM UNNEST(f.tags) WHERE key = 'flake_analysis_ignore') AND EXISTS(SELECT key, value FROM UNNEST(f.tags) WHERE key = 'is_top_level_test')`,
 		// Count distinct builds.
 		CountSQL: `f.ingested_invocation_id`,
 	}.Build()
@@ -181,7 +185,11 @@ var (
 		},
 		// Criteria:
 		// - A test run fails in a gardened builder
-		FilterSQL: `f.is_test_run_blocked AND ARRAY_LENGTH(f.build_gardener_rotations) > 0`,
+		// - It is also necessary to ignore test failures from tasks where more than 6 tests failed,
+		//   because they likely all have the same underlying cause and should not be considered
+		//   separate flakes. This can be done by checking for the flake_analysis_ignore tag.
+		// - Bugs should also only be filed for top level tests: check for the is_top_level_test tag.
+		FilterSQL: `f.is_test_run_blocked AND ARRAY_LENGTH(f.build_gardener_rotations) > 0 AND NOT EXISTS(SELECT key, value FROM UNNEST(f.tags) WHERE key = 'flake_analysis_ignore') AND EXISTS(SELECT key, value FROM UNNEST(f.tags) WHERE key = 'is_top_level_test')`,
 		// Count distinct builds.
 		CountSQL: `f.ingested_invocation_id`,
 	}.Build()
