@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/tq"
 
@@ -45,7 +46,15 @@ import (
 
 func TestBuildBucketPubsub(t *testing.T) {
 	t.Parallel()
-	compilefailuredetection.RegisterTaskClass()
+
+	// Create a mock server for RegisterTaskClass
+	mockSrv := &server.Server{
+		Context: context.Background(),
+		Options: server.Options{
+			CloudProject: "test-project",
+		},
+	}
+	compilefailuredetection.RegisterTaskClass(mockSrv)
 
 	ftt.Run("Buildbucket Pubsub Handler", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())

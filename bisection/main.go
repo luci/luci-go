@@ -159,7 +159,7 @@ func main() {
 		cron.RegisterHandler("ensure-views", bqexporter.EnsureViews)
 
 		// Task queues
-		compilefailuredetection.RegisterTaskClass()
+		compilefailuredetection.RegisterTaskClass(srv)
 		if err := revertculprit.RegisterTaskClass(srv, pg.Project); err != nil {
 			return errors.Fmt("register revert culprit: %w", err)
 		}

@@ -30,9 +30,11 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis"
+	"go.chromium.org/luci/bisection/compilefailureanalysis/llm"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -58,7 +60,13 @@ var (
 )
 
 // RegisterTaskClass registers the task class for tq dispatcher.
-func RegisterTaskClass() {
+func RegisterTaskClass(srv *server.Server) {
+	c := srv.Context
+	genaiClient, err := llm.NewClient(c, srv.Options.CloudProject)
+	if err != nil {
+		logging.Errorf(c, "Failed to create GenAI client: %v", err)
+	}
+
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        taskClass,
 		Prototype: (*tpb.FailedBuildIngestionTask)(nil),
@@ -67,7 +75,7 @@ func RegisterTaskClass() {
 		Handler: func(c context.Context, payload proto.Message) error {
 			task := payload.(*tpb.FailedBuildIngestionTask)
 			logging.Infof(c, "Processing failed build task with id = %d", task.GetBbid())
-			_, err := AnalyzeBuild(c, task.GetBbid())
+			_, err := AnalyzeBuild(c, genaiClient, task.GetBbid())
 			if err != nil {
 				logging.Errorf(c, "Error processing failed build task with id = %d: %s", task.GetBbid(), err)
 				// If the error is transient, return err to retry
@@ -83,7 +91,7 @@ func RegisterTaskClass() {
 
 // AnalyzeBuild analyzes a build and trigger an analysis if necessary.
 // Returns true if a new analysis is triggered, returns false otherwise.
-func AnalyzeBuild(c context.Context, bbid int64) (bool, error) {
+func AnalyzeBuild(c context.Context, genaiClient llm.Client, bbid int64) (bool, error) {
 	c = loggingutil.SetAnalyzedBBID(c, bbid)
 	logging.Infof(c, "AnalyzeBuild %d", bbid)
 	build, err := buildbucket.GetBuild(c, bbid, &buildbucketpb.BuildMask{
@@ -119,7 +127,7 @@ func AnalyzeBuild(c context.Context, bbid int64) (bool, error) {
 	}
 
 	// No analysis for the regression range. Trigger one.
-	_, err = compilefailureanalysis.AnalyzeFailure(c, cf, firstFailedBuild.Id, lastPassedBuild.Id)
+	_, err = compilefailureanalysis.AnalyzeFailure(c, cf, firstFailedBuild.Id, lastPassedBuild.Id, genaiClient)
 	if err != nil {
 		return false, err
 	}

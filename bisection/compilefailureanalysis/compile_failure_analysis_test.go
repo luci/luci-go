@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	lnpb "go.chromium.org/luci/luci_notify/api/service/v1"
 
+	"go.chromium.org/luci/bisection/compilefailureanalysis/llm"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gitiles"
@@ -106,6 +107,9 @@ func TestAnalyzeFailure(t *testing.T) {
 	}
 	lnmock.Client.EXPECT().CheckTreeCloser(gomock.Any(), gomock.Any(), gomock.Any()).Return(resp, nil).Times(1)
 
+	// Mock LLM client
+	mockLLMClient := llm.NewMockClient(ctl)
+
 	// Set up the config
 	projectCfg := config.CreatePlaceholderProjectConfig()
 	projectCfg.CompileAnalysisConfig.CulpritVerificationEnabled = false
@@ -130,7 +134,7 @@ func TestAnalyzeFailure(t *testing.T) {
 
 	cf := testutil.CreateCompileFailure(c, t, fb)
 
-	cfa, err := AnalyzeFailure(c, cf, 123, 456)
+	cfa, err := AnalyzeFailure(c, cf, 123, 456, mockLLMClient)
 	assert.Loosely(t, err, should.BeNil)
 	datastore.GetTestable(c).CatchupIndexes()
 	assert.Loosely(t, cfa.IsTreeCloser, should.BeTrue)

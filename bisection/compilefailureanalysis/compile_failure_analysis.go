@@ -48,6 +48,7 @@ func AnalyzeFailure(
 	cf *model.CompileFailure,
 	firstFailedBuildID int64,
 	lastPassedBuildID int64,
+	genaiClient llm.Client,
 ) (*model.CompileFailureAnalysis, error) {
 	logging.Infof(c, "AnalyzeFailure firstFailed = %d", firstFailedBuildID)
 	regressionRange, e := findRegressionRange(c, firstFailedBuildID, lastPassedBuildID)
@@ -103,25 +104,19 @@ func AnalyzeFailure(
 	}
 
 	// LLM analysis
-	// TODO: b/440598819 Use LUCI ResultAI server instead of fixed GCP project
-	cloudProject := "luci-bisection-dev"
-	client, err := llm.NewClient(c, cloudProject)
+	// TODO: b/440598819 calling LUCI ResultAI server prod/dev endpoints
+	genaiAnalysisResult, err := llm.Analyze(c, genaiClient, analysis, regressionRange, compileLogs)
 	if err != nil {
-		logging.Errorf(c, "Failed to create GenAI client: %v", err)
+		logging.Errorf(c, "LLM analysis failed: %v", err)
 	} else {
-		genaiAnalysisResult, err := llm.Analyze(c, client, analysis, regressionRange, compileLogs)
+		shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c, analysis)
 		if err != nil {
-			logging.Errorf(c, "LLM analysis failed: %v", err)
-		} else {
-			shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c, analysis)
-			if err != nil {
-				return nil, errors.Fmt("couldn't fetch config for culprit verification. Build %d: %w", firstFailedBuildID, err)
-			}
-			if shouldRunCulpritVerification {
-				if !analysis.ShouldCancel {
-					if err := verifyGenAIResult(c, genaiAnalysisResult, firstFailedBuildID, analysis.Id); err != nil {
-						logging.Errorf(c, "Error verifying genai result for build %d: %s", firstFailedBuildID, err)
-					}
+			return nil, errors.Fmt("couldn't fetch config for culprit verification. Build %d: %w", firstFailedBuildID, err)
+		}
+		if shouldRunCulpritVerification {
+			if !analysis.ShouldCancel {
+				if err := verifyGenAIResult(c, genaiAnalysisResult, firstFailedBuildID, analysis.Id); err != nil {
+					logging.Errorf(c, "Error verifying genai result for build %d: %s", firstFailedBuildID, err)
 				}
 			}
 		}
