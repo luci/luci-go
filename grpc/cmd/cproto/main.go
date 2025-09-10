@@ -67,7 +67,11 @@ var (
 	)
 	useModernProtocGenGo = flag.Bool(
 		"use-modern-protoc-gen-go", false,
-		"use google.golang.org/protobuf/cmd/protoc-gen-go for generation, implies -use-grpc-plugin",
+		"use pinned google.golang.org/protobuf/cmd/protoc-gen-go for generation, implies -use-grpc-plugin",
+	)
+	useAncientProtocGenGo = flag.Bool(
+		"use-ancient-protoc-gen-go", false,
+		"use pinned github.com/golang/protobuf/protoc-gen-go for generation",
 	)
 )
 
@@ -111,8 +115,17 @@ func run(ctx context.Context, inputDir string) error {
 
 	// Prepare a path with a modern version of protoc-gen-go.
 	var prependBinPath []string
-	if *useModernProtocGenGo {
-		path, err := protocgengo.Bootstrap()
+	if *useModernProtocGenGo || *useAncientProtocGenGo {
+		var ver protocgengo.Version
+		switch {
+		case *useModernProtocGenGo && *useAncientProtocGenGo:
+			return errors.Fmt("cannot -use-modern-protoc-gen-go and -use-ancient-protoc-gen-go at the same time")
+		case *useModernProtocGenGo:
+			ver = protocgengo.ModernVersion
+		case *useAncientProtocGenGo:
+			ver = protocgengo.AncientVersion
+		}
+		path, err := protocgengo.Bootstrap(ver)
 		if err != nil {
 			return errors.Fmt("could not setup protoc-gen-go: %w", err)
 		}

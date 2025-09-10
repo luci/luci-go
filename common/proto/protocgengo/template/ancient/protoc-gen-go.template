@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+go tool -modfile="$SCRIPT_DIR/go.mod" github.com/golang/protobuf/protoc-gen-go
