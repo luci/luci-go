@@ -88,12 +88,12 @@ const TestOptionComponent = forwardRef<
 const TEST_FILTER_OPTIONS = [
   {
     label: 'Option 1',
-    value: 'val-1',
+    value: 'option-1',
     options: ['Value 1'],
   },
   {
     label: 'Option 2',
-    value: 'val-2',
+    value: 'option-2',
     options: ['Value 1'],
   },
 ];
@@ -134,7 +134,7 @@ const TestComponent = ({
       optionsComponent:
         TestOptionComponent as OptionComponent<TestOptionComponentProps>,
       optionsComponentProps: {
-        value: o.value,
+        value: o.options[0],
         onAddFilter: () => {
           setTempSelectedOption((prev) => ({
             ...prev,
@@ -480,6 +480,41 @@ describe('FilterBar', () => {
     await user.keyboard('{Backspace}');
 
     expect(chip).not.toBeInTheDocument();
+  });
+
+  // b/444239211
+  it('reopening a closed dropdown should open it without secondary menu', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent options={TEST_FILTER_OPTIONS} />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBar();
+    await user.click(searchInput);
+
+    // Add a filter to get a chip.
+    await user.keyboard('{ArrowDown}');
+    await user.keyboard('{ArrowRight}');
+
+    // arrow up is dependant on the OptionComponent passed, so we have to manually click on the search input
+    await user.click(searchInput);
+
+    expect(await screen.queryByText('Value 1')).toBeInTheDocument();
+    expect(searchInput).toHaveFocus();
+
+    // close dropdown
+    await user.keyboard('{Escape}');
+
+    expect(await screen.queryByText('Option 1')).not.toBeInTheDocument();
+    expect(await screen.queryByText('Value 1')).not.toBeInTheDocument();
+
+    await user.keyboard('v');
+
+    // after dropdown was closed when we reopen it secondary menu should be closed
+    expect(await screen.queryByText('Option 1')).toBeInTheDocument();
+    expect(await screen.queryByText('Value 1')).not.toBeInTheDocument();
   });
 
   // b/443967368 - backspace could be handled in 2 different ways, make sure they are handled properly

@@ -126,6 +126,12 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
     }
   }, [openCategory]);
 
+  useEffect(() => {
+    if (!anchorEl) {
+      setOpenCategory(undefined);
+    }
+  }, [anchorEl]);
+
   const closeInnerMenu = () => {
     setOpenCategory(undefined);
   };
