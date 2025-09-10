@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto
+//go:generate cproto -use-ancient-protoc-gen-go
 
 // Package pb contains helper protobuf messages used to define BQ schemas.
 package pb

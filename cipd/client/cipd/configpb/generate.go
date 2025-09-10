@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto
+//go:generate cproto -use-ancient-protoc-gen-go
 
 // Package configpb contains definition of CIPD client config schema.
 package configpb

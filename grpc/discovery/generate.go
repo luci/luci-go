@@ -14,4 +14,4 @@
 
 package discovery
 
-//go:generate cproto
+//go:generate cproto -use-ancient-protoc-gen-go

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto -use-grpc-plugin
+//go:generate cproto -use-grpc-plugin -use-ancient-protoc-gen-go
 //go:generate mockgen -source repo_grpc.pb.go -destination repo_grpc.mock.pb.go -package api
 
 // Package api contains CIPD backend API definitions.

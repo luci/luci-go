@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto
+//go:generate cproto -use-ancient-protoc-gen-go
 
 // Package git contains Git-related protobuf definitions.
 package git

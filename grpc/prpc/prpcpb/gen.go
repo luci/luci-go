@@ -15,4 +15,4 @@
 // Package prpcpb contains protobuf message used by the pRPC protocol.
 package prpcpb
 
-//go:generate cproto
+//go:generate cproto -use-ancient-protoc-gen-go

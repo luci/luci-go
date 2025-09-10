@@ -14,7 +14,7 @@
 
 package buildbucketpb
 
-//go:generate cproto
+//go:generate cproto -use-ancient-protoc-gen-go
 //go:generate mockgen -source builds_service.pb.go -destination builds_service.mock.pb.go -package buildbucketpb -write_package_comment=false
 //go:generate mockgen -source builder_service.pb.go -destination builder_service.mock.pb.go -package buildbucketpb -write_package_comment=false
 //go:generate goimports -w builds_service.mock.pb.go

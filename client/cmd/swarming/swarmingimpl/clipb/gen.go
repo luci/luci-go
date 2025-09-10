@@ -15,4 +15,4 @@
 // Package clipb contains protobuf messages used by Swarming CLI.
 package clipb
 
-//go:generate cproto
+//go:generate cproto -use-ancient-protoc-gen-go

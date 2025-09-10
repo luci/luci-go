@@ -14,7 +14,7 @@
 
 package resultpb
 
-//go:generate cproto
+//go:generate cproto -use-ancient-protoc-gen-go
 //go:generate svcdec -type ExperimentsServer
 //go:generate svcdec -type RecorderServer
 //go:generate svcdec -type ResultDBServer

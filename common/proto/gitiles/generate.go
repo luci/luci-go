@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto
+//go:generate cproto -use-ancient-protoc-gen-go
 //go:generate mockgen -source gitiles.pb.go -destination mock_gitiles/gitiles.mock.pb.go -package mock_gitiles
 
 // Package gitiles contains Gitiles service definition.

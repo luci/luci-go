@@ -23,4 +23,4 @@
 // Modification: added luci.* options.
 package config
 
-//go:generate cproto -use-grpc-plugin
+//go:generate cproto -use-grpc-plugin -use-ancient-protoc-gen-go
