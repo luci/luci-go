@@ -122,6 +122,7 @@ func Analyze(c context.Context, client Client, cfa *model.CompileFailureAnalysis
 		ParentAnalysis: datastore.KeyForObj(c, genaiAnalysis),
 		ReviewUrl:      reviewUrl,
 		ReviewTitle:    reviewTitle,
+		Score:          30, // Default HighConfidence for PriorityCulpritVerification
 		GitilesCommit: buildbucketpb.GitilesCommit{
 			Host:    regressionRange.LastPassed.Host,
 			Project: regressionRange.LastPassed.Project,

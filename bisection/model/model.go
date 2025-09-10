@@ -295,7 +295,7 @@ type Suspect struct {
 	// is indeed the culprit.
 	// A higher score means a stronger signal that the suspect is responsible for
 	// a failure.
-	// Only applies to Heuristic suspect
+	// Only applies to Heuristic suspect and GenAI suspect
 	Score int `gae:"score"`
 
 	// A short, human-readable string that concisely describes a fact about the

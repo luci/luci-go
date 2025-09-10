@@ -109,9 +109,21 @@ func AnalyzeFailure(
 	if err != nil {
 		logging.Errorf(c, "Failed to create GenAI client: %v", err)
 	} else {
-		_, err = llm.Analyze(c, client, analysis, regressionRange, compileLogs)
+		genaiAnalysisResult, err := llm.Analyze(c, client, analysis, regressionRange, compileLogs)
 		if err != nil {
 			logging.Errorf(c, "LLM analysis failed: %v", err)
+		} else {
+			shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c, analysis)
+			if err != nil {
+				return nil, errors.Fmt("couldn't fetch config for culprit verification. Build %d: %w", firstFailedBuildID, err)
+			}
+			if shouldRunCulpritVerification {
+				if !analysis.ShouldCancel {
+					if err := verifyGenAIResult(c, genaiAnalysisResult, firstFailedBuildID, analysis.Id); err != nil {
+						logging.Errorf(c, "Error verifying genai result for build %d: %s", firstFailedBuildID, err)
+					}
+				}
+			}
 		}
 	}
 
@@ -158,6 +170,21 @@ func AnalyzeFailure(
 	}
 
 	return analysis, nil
+}
+
+// verifyGenAIResult verifies if the suspect from GenAI analysis is the real culprit.
+func verifyGenAIResult(c context.Context, genaiAnalysis *model.CompileGenAIAnalysis, failedBuildID int64, analysisID int64) error {
+	suspect := &model.Suspect{}
+	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, genaiAnalysis))
+	err := datastore.Get(c, q, &suspect)
+	if err != nil {
+		return err
+	}
+	err = culpritverification.VerifySuspect(c, suspect, failedBuildID, analysisID)
+	if err != nil {
+		logging.Errorf(c, "Error in verifying GenAI suspect %d for analysis %d", suspect.Id, analysisID)
+	}
+	return nil
 }
 
 // verifyHeuristicResults verifies if the suspects of heuristic analysis are the real culprit.
