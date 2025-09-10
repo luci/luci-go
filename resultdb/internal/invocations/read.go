@@ -266,28 +266,33 @@ func readMulti(ctx context.Context, ids IDSet, mask ReadMask, f func(id ID, inv 
 // Read reads one invocation from Spanner.
 // If the invocation does not exist, the returned error is annotated with
 // NotFound GRPC code.
-func Read(ctx context.Context, id ID, mask ReadMask) (*pb.Invocation, error) {
-	var ret *pb.Invocation
-	err := readMulti(ctx, NewIDSet(id), mask, func(id ID, inv *pb.Invocation) error {
-		ret = inv
+func Read(ctx context.Context, id ID, mask ReadMask) (inv *pb.Invocation, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/invocations.Read")
+	defer func() { tracing.End(ts, err) }()
+
+	err = readMulti(ctx, NewIDSet(id), mask, func(id ID, readInv *pb.Invocation) error {
+		inv = readInv
 		return nil
 	})
 
 	switch {
 	case err != nil:
 		return nil, err
-	case ret == nil:
+	case inv == nil:
 		return nil, appstatus.Errorf(codes.NotFound, "%s not found", id.Name())
 	default:
-		return ret, nil
+		return inv, nil
 	}
 }
 
 // ReadBatch reads multiple invocations from Spanner.
 // If any of them are not found, returns an error.
-func ReadBatch(ctx context.Context, ids IDSet, mask ReadMask) (map[ID]*pb.Invocation, error) {
-	ret := make(map[ID]*pb.Invocation, len(ids))
-	err := readMulti(ctx, ids, mask, func(id ID, inv *pb.Invocation) error {
+func ReadBatch(ctx context.Context, ids IDSet, mask ReadMask) (ret map[ID]*pb.Invocation, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/invocations.ReadBatch")
+	defer func() { tracing.End(ts, err) }()
+
+	ret = make(map[ID]*pb.Invocation, len(ids))
+	err = readMulti(ctx, ids, mask, func(id ID, inv *pb.Invocation) error {
 		if _, ok := ret[id]; ok {
 			panic("query is incorrect; it returned duplicated invocation IDs")
 		}
@@ -306,16 +311,21 @@ func ReadBatch(ctx context.Context, ids IDSet, mask ReadMask) (map[ID]*pb.Invoca
 }
 
 // ReadState returns the invocation's state.
-func ReadState(ctx context.Context, id ID) (pb.Invocation_State, error) {
-	var state pb.Invocation_State
-	err := ReadColumns(ctx, id, map[string]any{"State": &state})
+func ReadState(ctx context.Context, id ID) (state pb.Invocation_State, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/invocations.ReadState")
+	defer func() { tracing.End(ts, err) }()
+
+	err = ReadColumns(ctx, id, map[string]any{"State": &state})
 	return state, err
 }
 
 // ReadStateBatch reads the states of multiple invocations.
-func ReadStateBatch(ctx context.Context, ids IDSet) (map[ID]pb.Invocation_State, error) {
+func ReadStateBatch(ctx context.Context, ids IDSet) (result map[ID]pb.Invocation_State, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/invocations.ReadStateBatch")
+	defer func() { tracing.End(ts, err) }()
+
 	ret := make(map[ID]pb.Invocation_State)
-	err := span.Read(ctx, "Invocations", ids.Keys(), []string{"InvocationID", "State"}).Do(func(r *spanner.Row) error {
+	err = span.Read(ctx, "Invocations", ids.Keys(), []string{"InvocationID", "State"}).Do(func(r *spanner.Row) error {
 		var id ID
 		var s pb.Invocation_State
 		if err := spanutil.FromSpanner(r, &id, &s); err != nil {
@@ -331,9 +341,11 @@ func ReadStateBatch(ctx context.Context, ids IDSet) (map[ID]pb.Invocation_State,
 }
 
 // ReadRealm returns the invocation's realm.
-func ReadRealm(ctx context.Context, id ID) (string, error) {
-	var realm string
-	err := ReadColumns(ctx, id, map[string]any{"Realm": &realm})
+func ReadRealm(ctx context.Context, id ID) (realm string, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/invocations.ReadRealm")
+	defer func() { tracing.End(ts, err) }()
+
+	err = ReadColumns(ctx, id, map[string]any{"Realm": &realm})
 	return realm, err
 }
 
@@ -341,7 +353,7 @@ func ReadRealm(ctx context.Context, id ID) (string, error) {
 // Invocations table.
 // Makes a single RPC.
 func QueryRealms(ctx context.Context, ids IDSet) (realms map[ID]string, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.invocations.QueryRealms",
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/invocations.QueryRealms",
 		attribute.Int("cr.dev.count", len(ids)),
 	)
 	defer func() { tracing.End(ts, err) }()
@@ -375,7 +387,7 @@ func QueryRealms(ctx context.Context, ids IDSet) (realms map[ID]string, err erro
 // invocations.
 // Makes a single RPC.
 func ReadRealms(ctx context.Context, ids IDSet) (realms map[ID]string, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.invocations.ReadRealms",
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/invocations.ReadRealms",
 		attribute.Int("cr.dev.count", len(ids)),
 	)
 	defer func() { tracing.End(ts, err) }()
@@ -400,10 +412,12 @@ func InclusionKey(including, included ID) spanner.Key {
 }
 
 // ReadIncluded reads ids of (directly) included invocations.
-func ReadIncluded(ctx context.Context, id ID) (IDSet, error) {
-	var ret IDSet
+func ReadIncluded(ctx context.Context, id ID) (ret IDSet, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/invocations.ReadIncluded")
+	defer func() { tracing.End(ts, err) }()
+
 	var b spanutil.Buffer
-	err := span.Read(ctx, "IncludedInvocations", id.Key().AsPrefix(), []string{"IncludedInvocationId"}).Do(func(row *spanner.Row) error {
+	err = span.Read(ctx, "IncludedInvocations", id.Key().AsPrefix(), []string{"IncludedInvocationId"}).Do(func(row *spanner.Row) error {
 		var included ID
 		if err := b.FromSpanner(row, &included); err != nil {
 			return err
@@ -421,9 +435,12 @@ func ReadIncluded(ctx context.Context, id ID) (IDSet, error) {
 }
 
 // ReadSubmitted returns the invocation's submitted status.
-func ReadSubmitted(ctx context.Context, id ID) (bool, error) {
+func ReadSubmitted(ctx context.Context, id ID) (submittedValue bool, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/invocations.ReadSubmitted")
+	defer func() { tracing.End(ts, err) }()
+
 	var submitted spanner.NullBool
-	if err := ReadColumns(ctx, id, map[string]any{"Submitted": &submitted}); err != nil {
+	if err = ReadColumns(ctx, id, map[string]any{"Submitted": &submitted}); err != nil {
 		return false, err
 	}
 	// submitted is not a required field and so may be nil, in which we default to false.
@@ -449,7 +466,10 @@ type ExportInfo struct {
 }
 
 // ReadExportInfo reads information pertinent to exporting an invocation.
-func ReadExportInfo(ctx context.Context, invID ID) (ExportInfo, error) {
+func ReadExportInfo(ctx context.Context, invID ID) (info ExportInfo, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/invocations.ReadExportInfo")
+	defer func() { tracing.End(ts, err) }()
+
 	var state pb.Invocation_State
 	var realm string
 	var inheritingSources spanner.NullBool
@@ -457,7 +477,7 @@ func ReadExportInfo(ctx context.Context, invID ID) (ExportInfo, error) {
 	var sourceCmp spanutil.Compressed
 
 	// Read invocation source spec, invocation finalization and source finalization.
-	err := ReadColumns(ctx, invID, map[string]any{
+	err = ReadColumns(ctx, invID, map[string]any{
 		"State":             &state,
 		"Realm":             &realm,
 		"InheritSources":    &inheritingSources,
@@ -500,14 +520,17 @@ type TestResultInfo struct {
 // ReadTestResultInfo reads information about the invocation that are useful to
 // RPCs populating test results and artifacts.
 // Returns a NotFound appstatus error if the invocation was not found.
-func ReadTestResultInfo(ctx context.Context, id ID) (TestResultInfo, error) {
+func ReadTestResultInfo(ctx context.Context, id ID) (info TestResultInfo, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/invocations.ReadTestResultInfo")
+	defer func() { tracing.End(ts, err) }()
+
 	var state pb.Invocation_State
 	var realm string
 	var moduleName spanner.NullString
 	var moduleScheme spanner.NullString
 	var moduleVariant *pb.Variant
 
-	err := ReadColumns(ctx, id, map[string]any{
+	err = ReadColumns(ctx, id, map[string]any{
 		"State":         &state,
 		"Realm":         &realm,
 		"ModuleName":    &moduleName,
@@ -518,7 +541,7 @@ func ReadTestResultInfo(ctx context.Context, id ID) (TestResultInfo, error) {
 		return TestResultInfo{}, err
 	}
 
-	info := TestResultInfo{
+	info = TestResultInfo{
 		State: state,
 		Realm: realm,
 	}
@@ -544,7 +567,10 @@ type FinalizedNotificationInfo struct {
 }
 
 // ReadFinalizedNotificationInfo reads information for sending an invocation finalized notification.
-func ReadFinalizedNotificationInfo(ctx context.Context, invID ID) (FinalizedNotificationInfo, error) {
+func ReadFinalizedNotificationInfo(ctx context.Context, invID ID) (result FinalizedNotificationInfo, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/invocations.ReadFinalizedNotificationInfo")
+	defer func() { tracing.End(ts, err) }()
+
 	var isExportRoot spanner.NullBool
 	var info FinalizedNotificationInfo
 

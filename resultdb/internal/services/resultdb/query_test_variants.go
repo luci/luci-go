@@ -51,7 +51,7 @@ func determineListAccessLevel(ctx context.Context, ids invocations.IDSet) (a tes
 		return testvariants.AccessLevelInvalid, nil
 	}
 
-	ctx, ts := tracing.Start(ctx, "resultdb.query_test_variants.determineListAccessLevel")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/resultdb.determineListAccessLevel")
 	defer func() { tracing.End(ts, err) }()
 
 	realms, err := invocations.ReadRealms(span.Single(ctx), ids)

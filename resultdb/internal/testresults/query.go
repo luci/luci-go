@@ -110,7 +110,7 @@ type Query struct {
 }
 
 func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err error) {
-	ctx, ts := tracing.Start(ctx, "testresults.Query.run",
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/testresults.Query.run",
 		attribute.Int("cr.dev.invocations", len(q.InvocationIDs)),
 	)
 	defer func() { tracing.End(ts, err) }()

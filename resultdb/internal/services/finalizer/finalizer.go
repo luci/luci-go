@@ -134,7 +134,7 @@ var notReadyToFinalize = errtag.Make("not ready to get finalized", true)
 // An invocation is ready to be finalized if no ACTIVE invocation is reachable
 // from it.
 func readyToFinalize(ctx context.Context, invID invocations.ID) (ready bool, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.readyToFinalize")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/finalizer.readyToFinalize")
 	defer func() { tracing.End(ts, err) }()
 
 	ctx, cancel := span.ReadOnlyTransaction(ctx)

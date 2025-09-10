@@ -133,7 +133,7 @@ func reachable(ctx context.Context, roots invocations.IDSet, useRootCache bool) 
 
 // reachableUncached queries the Spanner database for the reachability graph if the data is not in the reach cache.
 func reachableUncached(ctx context.Context, roots invocations.IDSet) (ri ReachableInvocations, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.graph.reachable")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/invocations/graph.reachableUncached")
 	defer func() { tracing.End(ts, err) }()
 
 	reachableInvocations := invocations.NewIDSet()
@@ -435,7 +435,7 @@ func (c reachCache) key() string {
 // Write writes the new value.
 // The value does not have to include c, this is implied.
 func (c reachCache) Write(ctx context.Context, value ReachableInvocations) (err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.reachCache.write",
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/invocations/graph.reachCache.Write",
 		attribute.String("id", string(c)),
 	)
 	defer func() { tracing.End(ts, err) }()
@@ -488,7 +488,7 @@ var ErrUnknownReach = fmt.Errorf("the reachable set is unknown")
 //
 // If err is nil, ids includes c, even if it was not passed in Write().
 func (c reachCache) Read(ctx context.Context) (invs ReachableInvocations, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.reachCache.read",
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/invocations/graph.reachCache.Read",
 		attribute.String("id", string(c)),
 	)
 	defer func() { tracing.End(ts, err) }()

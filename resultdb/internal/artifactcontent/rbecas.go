@@ -243,7 +243,7 @@ func (r *Reader) DownloadRBECASContent(ctx context.Context, bs bytestream.ByteSt
 	eg.Go(func() error {
 		defer pw.Close()
 		for {
-			_, readSpan := tracing.Start(ctx, "resultdb.readChunk")
+			_, readSpan := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/artifactcontent.DownloadRBECASContent.readChunk")
 			chunk, err := stream.Recv()
 			if err == nil {
 				readSpan.SetAttributes(attribute.Int("size", len(chunk.Data)))

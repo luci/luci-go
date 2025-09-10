@@ -250,7 +250,7 @@ func (ac *artifactCreator) handle(c *router.Context, isLegacyEndpoint bool) erro
 // writeToCAS writes contents in r to RBE-CAS.
 // ac.hash and ac.size must match the contents.
 func (ac *artifactCreator) writeToCAS(ctx context.Context, a *artifactCreationRequest, r io.Reader) (err error) {
-	ctx, overallSpan := tracing.Start(ctx, "resultdb.writeToCAS")
+	ctx, overallSpan := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/recorder.artifactCreator.writeToCAS")
 	defer func() { tracing.End(overallSpan, err) }()
 
 	// Protocol:
@@ -277,7 +277,7 @@ func (ac *artifactCreator) writeToCAS(ctx context.Context, a *artifactCreationRe
 	first := true
 	bytesSent := 0
 	for {
-		_, readSpan := tracing.Start(ctx, "resultdb.readChunk")
+		_, readSpan := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/recorder.artifactCreator.writeToCAS.readChunk")
 		n, err := r.Read(buf)
 		if err != nil && err != io.EOF {
 			tracing.End(readSpan, err)
@@ -304,7 +304,7 @@ func (ac *artifactCreator) writeToCAS(ctx context.Context, a *artifactCreationRe
 		}
 
 		// Send the request.
-		_, writeSpan := tracing.Start(ctx, "resultdb.writeChunk",
+		_, writeSpan := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/recorder.artifactCreator.writeToCAS.writeChunk",
 			attribute.Int("size", n),
 		)
 		// Do not shadow err! It is checked below again.
@@ -697,7 +697,7 @@ func (v *digestVerifier) Read(p []byte) (n int, err error) {
 // and returns a non-nil error if the content have unexpected hash or size.
 // The error may be annotated with appstatus.
 func (v *digestVerifier) ReadVerify(ctx context.Context) (err error) {
-	_, ts := tracing.Start(ctx, "resultdb.digestVerifier.ReadVerify")
+	_, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/recorder.digestVerifier.ReadVerify")
 	defer func() { tracing.End(ts, err) }()
 
 	// Read until the end.

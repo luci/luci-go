@@ -60,7 +60,7 @@ func readColumns(ctx context.Context, id ID, ptrMap map[string]any) error {
 // ReadRealm reads the realm of the given work unit. If the work unit
 // is not found, returns a NotFound appstatus error.
 func ReadRealm(ctx context.Context, id ID) (realm string, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadRealm")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadRealm")
 	defer func() { tracing.End(ts, err) }()
 
 	err = readColumns(ctx, id, map[string]any{
@@ -76,7 +76,7 @@ func ReadRealm(ctx context.Context, id ID) (realm string, err error) {
 // If the work unit is not found, returns a NotFound appstatus error.
 // Otherwise returns the internal error.
 func ReadState(ctx context.Context, id ID) (state pb.WorkUnit_State, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadState")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadState")
 	defer func() { tracing.End(ts, err) }()
 
 	err = readColumns(ctx, id, map[string]any{
@@ -92,7 +92,7 @@ func ReadState(ctx context.Context, id ID) (state pb.WorkUnit_State, err error) 
 // If the work unit is not found, returns a NotFound appstatus error.
 // Otherwise returns the internal error.
 func ReadRequestIDAndCreatedBy(ctx context.Context, id ID) (requestID string, createdBy string, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadRequestIDAndCreatedBy")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadRequestIDAndCreatedBy")
 	defer func() { tracing.End(ts, err) }()
 
 	err = readColumns(ctx, id, map[string]any{
@@ -128,7 +128,7 @@ func validateIDs(ids []ID) error {
 // units are not found, returns a NotFound appstatus error.
 // Duplicate IDs are allowed.
 func ReadRealms(ctx context.Context, ids []ID) (realms map[ID]string, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadRealms")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadRealms")
 	defer func() { tracing.End(ts, err) }()
 
 	var b spanutil.Buffer
@@ -160,7 +160,7 @@ func ReadRealms(ctx context.Context, ids []ID) (realms map[ID]string, err error)
 // match 1:1 with the requested ids, i.e. result[i] corresponds to ids[i].
 // Duplicate IDs are allowed.
 func ReadStates(ctx context.Context, ids []ID) (states []pb.WorkUnit_State, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadStates")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadStates")
 	defer func() { tracing.End(ts, err) }()
 
 	var b spanutil.Buffer
@@ -194,7 +194,7 @@ type RequestIDAndCreatedBy struct {
 // A nil in results[i] indicate that ids[i] not found in spanner.
 // Duplicate IDs are allowed.
 func ReadRequestIDsAndCreatedBys(ctx context.Context, ids []ID) (results []*RequestIDAndCreatedBy, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadRequestIDsAndCreatedBys")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadRequestIDsAndCreatedBys")
 	defer func() { tracing.End(ts, err) }()
 
 	var b spanutil.Buffer
@@ -236,7 +236,7 @@ type TestResultInfo struct {
 // If any of the work units are not found, returns a NotFound appstatus error.
 // Duplicate IDs are allowed.
 func ReadTestResultInfos(ctx context.Context, ids []ID) (results map[ID]TestResultInfo, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadContentInfo")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadTestResultInfos")
 	defer func() { tracing.End(ts, err) }()
 
 	var b spanutil.Buffer
@@ -564,7 +564,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 // If the work unit does not exist, the returned error is annotated with
 // NotFound GRPC code.
 func Read(ctx context.Context, id ID, mask ReadMask) (ret *WorkUnitRow, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.workunits.Read")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.Read")
 	defer func() { tracing.End(ts, err) }()
 	if err := validateID(id); err != nil {
 		return nil, err
@@ -590,7 +590,7 @@ func Read(ctx context.Context, id ID, mask ReadMask) (ret *WorkUnitRow, err erro
 // ids, i.e. result[i] corresponds to ids[i].
 // Duplicate IDs are allowed.
 func ReadBatch(ctx context.Context, ids []ID, mask ReadMask) (ret []*WorkUnitRow, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.workunits.ReadBatch")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadBatch")
 	defer func() { tracing.End(ts, err) }()
 	if err := validateIDs(ids); err != nil {
 		return nil, err
@@ -622,7 +622,7 @@ func ReadBatch(ctx context.Context, ids []ID, mask ReadMask) (ret []*WorkUnitRow
 // CheckWorkUnitUpdateRequestsExist checks if the given work units have already been updated by the given user with the given request ID.
 // Returns a map of work unit IDs to a boolean indicating whether the update request exists.
 func CheckWorkUnitUpdateRequestsExist(ctx context.Context, ids []ID, updatedBy string, requestID string) (exists map[ID]bool, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.workunits.CheckWorkUnitUpdateRequestsExist")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.CheckWorkUnitUpdateRequestsExist")
 	defer func() { tracing.End(ts, err) }()
 
 	if err := validateIDs(ids); err != nil {

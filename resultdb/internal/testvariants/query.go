@@ -519,7 +519,7 @@ func (q *Query) toLimitedData(ctx context.Context, tv *pb.TestVariant,
 }
 
 func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f func(*pb.TestVariant) error) (err error) {
-	ctx, ts := tracing.Start(ctx, "testvariants.Query.run",
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/testvariants.Query.queryTestVariantsWithUnexpectedResults",
 		attribute.Int("cr.dev.invocations", len(q.ReachableInvocations.Invocations)),
 	)
 	defer func() { tracing.End(ts, err) }()
@@ -745,7 +745,7 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (Pag
 // test result read. Test results are returned in test variant order.
 // Within each test variant, unexpected results are returned first.
 func (q *Query) queryTestResults(ctx context.Context, limit int, f func(testId, variantHash string, variant *pb.Variant, tmd spanutil.Compressed, tvr *tvResult) error) (err error) {
-	ctx, ts := tracing.Start(ctx, "testvariants.Query.queryTestResults",
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/testvariants.Query.queryTestResults",
 		attribute.Int("cr.dev.invocations", len(q.ReachableInvocations.Invocations)),
 	)
 	defer func() { tracing.End(ts, err) }()

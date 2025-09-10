@@ -23,6 +23,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
@@ -312,7 +313,12 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, batchLevelParent 
 // - mix use of the legacy format of requests[i].parent field and the new schema, including
 //   - different top-level parent and requests[i].parent.
 //   - use of test result name as requests[i].parent with test_id_structured, result_id specified.
-func parseBatchCreateArtifactsRequest(in *pb.BatchCreateArtifactsRequest, cfg *config.CompiledServiceConfig) ([]*artifactCreationRequest, error) {
+func parseBatchCreateArtifactsRequest(ctx context.Context, in *pb.BatchCreateArtifactsRequest, cfg *config.CompiledServiceConfig) (arts []*artifactCreationRequest, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/recorder.parseBatchCreateArtifactsRequest",
+		attribute.Int("cr.dev.count", len(in.Requests)),
+	)
+	defer func() { tracing.End(ts, err) }()
+
 	var tSize int64
 
 	if err := pbutil.ValidateBatchRequestCountAndSize(in.Requests); err != nil {
@@ -343,7 +349,7 @@ func parseBatchCreateArtifactsRequest(in *pb.BatchCreateArtifactsRequest, cfg *c
 
 	nameToRequestIndex := make(map[string]int)
 
-	arts := make([]*artifactCreationRequest, len(in.Requests))
+	arts = make([]*artifactCreationRequest, len(in.Requests))
 	for i, req := range in.Requests {
 		art, err := parseCreateArtifactRequest(req, in.Parent, cfg)
 		if err != nil {
@@ -615,7 +621,7 @@ func validateBatchCreateArtifactsRequestForSystemState(ctx context.Context, work
 
 // createArtifactStates creates the states of given artifacts in Spanner.
 func createArtifactStates(ctx context.Context, arts []*artifactCreationRequest) (results []*pb.Artifact, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.recorder.createArtifactStates")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/recorder.createArtifactStates")
 	defer func() { tracing.End(ts, err) }()
 
 	var insertsByRealm map[string]int
@@ -740,7 +746,10 @@ func createArtifactStates(ctx context.Context, arts []*artifactCreationRequest) 
 	return results, nil
 }
 
-func uploadArtifactBlobs(ctx context.Context, rbeIns string, casClient repb.ContentAddressableStorageClient, arts []*artifactCreationRequest) error {
+func uploadArtifactBlobs(ctx context.Context, rbeIns string, casClient repb.ContentAddressableStorageClient, arts []*artifactCreationRequest) (err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/recorder.uploadArtifactBlobs")
+	defer func() { tracing.End(ts, err) }()
+
 	casReq := &repb.BatchUpdateBlobsRequest{InstanceName: rbeIns}
 	for _, a := range arts {
 		casReq.Requests = append(casReq.Requests, &repb.BatchUpdateBlobsRequest_Request{
@@ -823,7 +832,10 @@ func allowedRbeInstancesForUser(ctx context.Context, project, user string) (allo
 	return allowedInstances, nil
 }
 
-func verifyBatchCreateArtifactsPermissions(ctx context.Context, arts []*artifactCreationRequest) error {
+func verifyBatchCreateArtifactsPermissions(ctx context.Context, arts []*artifactCreationRequest) (err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/recorder.verifyBatchCreateArtifactsPermissions")
+	defer func() { tracing.End(ts, err) }()
+
 	// Validate the update token.
 	token, err := extractUpdateToken(ctx)
 	if err != nil {
@@ -876,7 +888,7 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 	if err != nil {
 		return nil, err
 	}
-	arts, err := parseBatchCreateArtifactsRequest(in, cfg)
+	arts, err := parseBatchCreateArtifactsRequest(ctx, in, cfg)
 	if err != nil {
 		return nil, appstatus.BadRequest(err)
 	}

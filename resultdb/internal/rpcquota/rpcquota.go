@@ -118,7 +118,7 @@ func mangleUser(user string) string {
 //
 // - TODO: automatic opts.RequestID..?
 func UpdateUserQuota(ctx context.Context, resourcePrefix string, cost int64, service string, method string) (err error) {
-	ctx, ts := tracing.Start(ctx, "rpcquota.UpdateUserQuota")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/rpcquota.UpdateUserQuota")
 	defer func() { tracing.End(ts, err) }()
 	who := mangleUser(string(auth.CurrentIdentity(ctx))) // TODO: should this be PeerIdentity?
 	wildcard := false

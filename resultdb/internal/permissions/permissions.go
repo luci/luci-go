@@ -49,7 +49,7 @@ func VerifyInvocations(ctx context.Context, ids invocations.IDSet, permissions .
 	if len(ids) == 0 {
 		return nil
 	}
-	ctx, ts := tracing.Start(ctx, "resultdb.permissions.VerifyInvocations")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/permissions.VerifyInvocations")
 	defer func() { tracing.End(ts, err) }()
 
 	realms, err := invocations.ReadRealms(ctx, ids)
@@ -74,7 +74,7 @@ func VerifyInvocations(ctx context.Context, ids invocations.IDSet, permissions .
 // found, a NotFound appstatus error is returned (thus disclosing the
 // non-existence of the root invocation to all callers).
 func VerifyRootInvocation(ctx context.Context, id rootinvocations.ID, permissions ...realms.Permission) (err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.permissions.VerifyRootInvocation")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/permissions.VerifyRootInvocation")
 	defer func() { tracing.End(ts, err) }()
 
 	realm, err := rootinvocations.ReadRealm(ctx, id)
@@ -156,7 +156,7 @@ func QueryWorkUnitAccess(ctx context.Context, id workunits.ID, opts QueryWorkUni
 // may also be returned if any work unit is not found, if it was necessary to check the
 // work unit realm.
 func QueryWorkUnitsAccess(ctx context.Context, ids []workunits.ID, opts QueryWorkUnitAccessOptions) (accessLevels []AccessLevel, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.permissions.QueryWorkUnitsAccess")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/permissions.QueryWorkUnitsAccess")
 	defer func() { tracing.End(ts, err) }()
 
 	if len(ids) == 0 {

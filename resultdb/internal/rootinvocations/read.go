@@ -78,7 +78,7 @@ func readColumnsFromShard(ctx context.Context, id ShardID, ptrMap map[string]any
 // If the root invocation is not found, returns a NotFound appstatus error.
 // Otherwise returns the internal error.
 func ReadState(ctx context.Context, id ID) (state pb.RootInvocation_State, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.rootinvocations.ReadState")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/rootinvocations.ReadState")
 	defer func() { tracing.End(ts, err) }()
 
 	err = readColumns(ctx, id, map[string]any{
@@ -94,7 +94,7 @@ func ReadState(ctx context.Context, id ID) (state pb.RootInvocation_State, err e
 // is not found, returns a NotFound appstatus error. Otherwise returns the internal
 // error.
 func ReadRealm(ctx context.Context, id ID) (realm string, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.rootinvocations.ReadRealm")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/rootinvocations.ReadRealm")
 	defer func() { tracing.End(ts, err) }()
 
 	err = readColumns(ctx, id, map[string]any{
@@ -110,7 +110,7 @@ func ReadRealm(ctx context.Context, id ID) (realm string, err error) {
 // If the root invocation is not found, returns a NotFound appstatus error.
 // Otherwise returns the internal error.
 func ReadRequestIDAndCreatedBy(ctx context.Context, id ID) (requestID string, createdBy string, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.rootinvocations.ReadRequestIDAndCreatedBy")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/rootinvocations.ReadRequestIDAndCreatedBy")
 	defer func() { tracing.End(ts, err) }()
 
 	err = readColumns(ctx, id, map[string]any{
@@ -130,7 +130,7 @@ func ReadRequestIDAndCreatedBy(ctx context.Context, id ID) (requestID string, cr
 // This will return identical results to ReadRealm but can be used to avoid hotspotting
 // the root invocation record.
 func ReadRealmFromShard(ctx context.Context, id ShardID) (realm string, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.rootinvocations.ReadRealmFromShard")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/rootinvocations.ReadRealmFromShard")
 	defer func() { tracing.End(ts, err) }()
 
 	err = readColumnsFromShard(ctx, id, map[string]any{
@@ -224,7 +224,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 // If the invocation does not exist, the returned error is annotated with
 // NotFound GRPC code.
 func Read(ctx context.Context, id ID) (row *RootInvocationRow, err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.rootinvocations.Read")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/rootinvocations.Read")
 	defer func() { tracing.End(ts, err) }()
 
 	var ret *RootInvocationRow
@@ -246,6 +246,9 @@ func Read(ctx context.Context, id ID) (row *RootInvocationRow, err error) {
 // CheckRootInvocationUpdateRequestExist checks if the given root invocation has already been updated by the given
 // user with the given request ID.
 func CheckRootInvocationUpdateRequestExist(ctx context.Context, id ID, updatedBy, requestID string) (exist bool, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/rootinvocations.CheckRootInvocationUpdateRequestExist")
+	defer func() { tracing.End(ts, err) }()
+
 	if id == "" {
 		return false, errors.New("id is unspecified")
 	}

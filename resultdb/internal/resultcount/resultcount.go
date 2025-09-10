@@ -58,7 +58,7 @@ func IncrementTestResultCount(ctx context.Context, id invocations.ID, delta int6
 // BatchIncrementTestResultCount increases the counts of test results in a random shard
 // of the given invocations.
 func BatchIncrementTestResultCount(ctx context.Context, deltas map[invocations.ID]int64) (err error) {
-	ctx, ts := tracing.Start(ctx, "resultdb.resultcount.BatchIncrementTestResultCount")
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/resultcount.BatchIncrementTestResultCount")
 	defer func() { tracing.End(ts, err) }()
 
 	idsToUpdate := invocations.NewIDSet()

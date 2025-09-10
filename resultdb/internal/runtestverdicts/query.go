@@ -66,7 +66,7 @@ type QueryResult struct {
 //
 // Must be run in a transactional spanner context supporting multiple reads.
 func (q *Query) Run(ctx context.Context) (result QueryResult, err error) {
-	ctx, ts := tracing.Start(ctx, "runtestverdicts.Query.Run",
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/runtestverdicts.Query.Run",
 		attribute.String("cr.dev.invocation", string(q.InvocationID)),
 	)
 	defer func() { tracing.End(ts, err) }()

@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
@@ -37,6 +38,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -63,7 +65,7 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	if err != nil {
 		return nil, err
 	}
-	if err := validateBatchCreateTestResultsRequest(in, cfg, now); err != nil {
+	if err := validateBatchCreateTestResultsRequest(ctx, in, cfg, now); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
@@ -77,7 +79,12 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 
 // verifyBatchCreateTestResultsPermissions verifies the caller has provided
 // the update-token(s) sufficient to create the given test results.
-func verifyBatchCreateTestResultsPermissions(ctx context.Context, req *pb.BatchCreateTestResultsRequest) error {
+func verifyBatchCreateTestResultsPermissions(ctx context.Context, req *pb.BatchCreateTestResultsRequest) (err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/recorder.verifyBatchCreateTestResultsPermissions",
+		attribute.Int("cr.dev.count", len(req.Requests)),
+	)
+	defer func() { tracing.End(ts, err) }()
+
 	// Three cases are allowed:
 	// 1. Parent is specified on the batch request. The child request, if it sets Parent, must set the same value.
 	//    Invocation is not specified everywhere.
@@ -184,7 +191,10 @@ func verifyBatchCreateTestResultsPermissionLegacy(ctx context.Context, req *pb.B
 	return nil
 }
 
-func validateBatchCreateTestResultsRequest(req *pb.BatchCreateTestResultsRequest, cfg *config.CompiledServiceConfig, now time.Time) error {
+func validateBatchCreateTestResultsRequest(ctx context.Context, req *pb.BatchCreateTestResultsRequest, cfg *config.CompiledServiceConfig, now time.Time) (err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/recorder.validateBatchCreateTestResultsRequest")
+	defer func() { tracing.End(ts, err) }()
+
 	// Parent, Invocation and Request length is already validated by
 	// verifyBatchCreateTestResultsPermissions.
 
@@ -241,7 +251,10 @@ func emptyOrEqual(name, actual, expected string) error {
 	return errors.Fmt("%s: must be either empty or equal to %q, but got %q", name, expected, actual)
 }
 
-func batchCreateResultsInWorkUnits(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
+func batchCreateResultsInWorkUnits(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (rsp *pb.BatchCreateTestResultsResponse, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/recorder.batchCreateResultsInWorkUnits")
+	defer func() { tracing.End(ts, err) }()
+
 	// The common work unit set at the batch-request level (if any).
 	var commonParentID workunits.ID
 	if in.Parent != "" {
@@ -273,7 +286,7 @@ func batchCreateResultsInWorkUnits(ctx context.Context, in *pb.BatchCreateTestRe
 		}
 
 		legacyInvID := parentID.LegacyInvocationID()
-		tr, mutation, err := insertTestResult(ctx, legacyInvID, in.RequestId, r.TestResult)
+		tr, mutation, err := insertTestResult(legacyInvID, in.RequestId, r.TestResult)
 		if err != nil {
 			return nil, err
 		}
@@ -287,7 +300,7 @@ func batchCreateResultsInWorkUnits(ctx context.Context, in *pb.BatchCreateTestRe
 	}
 
 	var insertsByRealm map[string]int
-	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		// Reset at the start of each transaction as this context may be retried.
 		insertsByRealm = make(map[string]int)
 
@@ -345,7 +358,10 @@ func batchCreateResultsInWorkUnits(ctx context.Context, in *pb.BatchCreateTestRe
 	return ret, nil
 }
 
-func batchCreateResultsInInvocation(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
+func batchCreateResultsInInvocation(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (rsp *pb.BatchCreateTestResultsResponse, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/recorder.batchCreateResultsInInvocation")
+	defer func() { tracing.End(ts, err) }()
+
 	invID := invocations.MustParseName(in.Invocation)
 
 	ret := &pb.BatchCreateTestResultsResponse{
@@ -360,7 +376,7 @@ func batchCreateResultsInInvocation(ctx context.Context, in *pb.BatchCreateTestR
 	// The test identifier of each test result.
 	testResultTestIdentifiers := make([]*pb.TestIdentifier, len(in.Requests))
 	for i, r := range in.Requests {
-		tr, mutation, err := insertTestResult(ctx, invID, in.RequestId, r.TestResult)
+		tr, mutation, err := insertTestResult(invID, in.RequestId, r.TestResult)
 		if err != nil {
 			return nil, err
 		}
@@ -376,7 +392,7 @@ func batchCreateResultsInInvocation(ctx context.Context, in *pb.BatchCreateTestR
 	}
 
 	var realm string
-	_, err := mutateInvocation(ctx, invID, func(ctx context.Context) error {
+	_, err = mutateInvocation(ctx, invID, func(ctx context.Context) error {
 		span.BufferWrite(ctx, testResultInserts...)
 		eg, ctx := errgroup.WithContext(ctx)
 		eg.Go(func() (err error) {
@@ -445,7 +461,7 @@ func batchCreateResultsInInvocation(ctx context.Context, in *pb.BatchCreateTestR
 	return ret, nil
 }
 
-func insertTestResult(ctx context.Context, invID invocations.ID, requestID string, body *pb.TestResult) (*pb.TestResult, *spanner.Mutation, error) {
+func insertTestResult(invID invocations.ID, requestID string, body *pb.TestResult) (*pb.TestResult, *spanner.Mutation, error) {
 	// create a copy of the input message with the OUTPUT_ONLY field(s) to be used in
 	// the response
 	ret := proto.Clone(body).(*pb.TestResult)
