@@ -16,6 +16,7 @@ import { TextField } from '@mui/material';
 import { forwardRef, useRef } from 'react';
 
 import { colors } from '@/fleet/theme/colors';
+import { keyboardUpDownHandler } from '@/fleet/utils';
 
 import { FilterCategoryData } from './filter_dropdown';
 import { SelectedChip } from './selected_chip';
@@ -84,6 +85,10 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
                 chipListRef.current[currentIndex + 1]?.focus();
               }
               e.preventDefault();
+              e.stopPropagation();
+            }
+            if (e.key === 'Backspace') {
+              // stops search bar from taking over, but allows the chip itself to handle the event
               e.stopPropagation();
             }
           }}
@@ -156,10 +161,10 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
               e.preventDefault();
             }
           }
-          if (e.key === 'ArrowDown') {
+          keyboardUpDownHandler(e, () => {
             onDropdownFocus();
             e.preventDefault();
-          }
+          });
         }}
         placeholder='Add a filter (e.g. "dut1" or "state:ready")'
         autoComplete="off"

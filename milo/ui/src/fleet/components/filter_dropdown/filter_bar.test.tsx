@@ -482,6 +482,57 @@ describe('FilterBar', () => {
     expect(chip).not.toBeInTheDocument();
   });
 
+  // b/443967368 - backspace could be handled in 2 different ways, make sure they are handled properly
+  it('should delete a focused chip with backspace', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent options={TEST_FILTER_OPTIONS} />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBar();
+    await user.click(searchInput);
+
+    // Add a filter to get a chip.
+    await act(async () => {
+      fireEvent.click(await screen.findByText('Option 1'));
+    });
+    await act(async () => {
+      fireEvent.click(await screen.getByTestId('test-option-component-button'));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByText('Apply'));
+    });
+
+    const chip1 = await screen.findByText('Option 1: Value 1');
+    expect(chip1).toBeInTheDocument();
+
+    // Add a filter to get a chip.
+    await act(async () => {
+      fireEvent.click(await screen.findByText('Option 2'));
+    });
+    await act(async () => {
+      fireEvent.click(await screen.getByTestId('test-option-component-button'));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByText('Apply'));
+    });
+
+    const chip2 = await screen.findByText('Option 2: Value 1');
+    expect(chip2).toBeInTheDocument();
+
+    // Focus input and press backspace when cursor is at the beginning.
+    searchInput.focus();
+
+    await user.keyboard('{ArrowLeft}');
+    await user.keyboard('{ArrowLeft}');
+    await user.keyboard('{Backspace}');
+
+    expect(chip1).not.toBeInTheDocument();
+    expect(chip2).toBeInTheDocument();
+  });
+
   it('should allow editing the chips value with a mouse', async () => {
     render(
       <FakeContextProvider>
@@ -527,7 +578,7 @@ describe('FilterBar', () => {
     expect(await screen.findByText('Option 1: Value 1')).toBeInTheDocument();
   });
 
-  it('should allow focusing on search bar with arrows from dropdown', async () => {
+  it('should allow focusing on search bar with keyboard from dropdown', async () => {
     render(
       <FakeContextProvider>
         <TestComponent options={TEST_FILTER_OPTIONS} />
@@ -544,6 +595,14 @@ describe('FilterBar', () => {
     expect(document.activeElement).toContainElement(option1);
 
     await user.keyboard('{ArrowUp}');
+
+    expect(searchInput).toHaveFocus();
+
+    await user.keyboard('{Control>}j{/Control}');
+
+    expect(document.activeElement).toContainElement(option1);
+
+    await user.keyboard('{Control>}k{/Control}');
 
     expect(searchInput).toHaveFocus();
   });
