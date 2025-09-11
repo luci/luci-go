@@ -315,7 +315,11 @@ func batchCreateResultsInWorkUnits(ctx context.Context, in *pb.BatchCreateTestRe
 		// - the parent work unit is active.
 		// - the test results are in the correct module for each work unit.
 		for i, r := range in.Requests {
-			parentID := workunits.MustParseName(r.Parent)
+			parentID := commonParentID
+			if parentID == (workunits.ID{}) {
+				// If the work unit is not set on the batch request, it must be set at the child request level.
+				parentID = workunits.MustParseName(r.Parent)
+			}
 			parentInfo, ok := parentInfos[parentID]
 			if !ok {
 				// If the parent was not read, we should have errored out already above.

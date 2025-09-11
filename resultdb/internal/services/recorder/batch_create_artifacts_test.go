@@ -717,6 +717,20 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					// already exist.
 					assert.Loosely(t, casClient.req, should.BeNil)
 				})
+				t.Run(`with common parent`, func(t *ftt.Test) {
+					req.Parent = wuID1.Name()
+					for _, req := range req.Requests {
+						req.Parent = ""
+					}
+
+					// Drop the request for work unit 2, it won't be valid with the new parent.
+					req.Requests = req.Requests[:4]
+					expectedResponse.Artifacts = expectedResponse.Artifacts[:4]
+
+					resp, err := recorder.BatchCreateArtifacts(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, resp, should.Match(expectedResponse))
+				})
 			})
 			t.Run(`parent`, func(t *ftt.Test) {
 				t.Run(`finalized`, func(t *ftt.Test) {

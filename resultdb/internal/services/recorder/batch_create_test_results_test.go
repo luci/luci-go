@@ -603,7 +603,16 @@ func TestBatchCreateTestResults(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, trNum, should.Equal(1))
 			})
+			t.Run("with common parent", func(t *ftt.Test) {
+				req.Parent = wuID1.Name()
+				req.Requests[0].Parent = ""
 
+				// Drop the second request as it will be invalid for work unit 1.
+				req.Requests = req.Requests[:1]
+				expected = expected[:1]
+
+				createTestResults(req, expected)
+			})
 			t.Run("with failure reason", func(t *ftt.Test) {
 				req.Requests[0].TestResult.StatusV2 = pb.TestResult_FAILED
 				req.Requests[0].TestResult.FailureReason = &pb.FailureReason{

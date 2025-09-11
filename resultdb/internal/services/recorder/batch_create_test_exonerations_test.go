@@ -379,6 +379,16 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 					createExonerations(req, expected)
 				})
 			})
+			t.Run("with common parent", func(t *ftt.Test) {
+				req.Parent = wuID1.Name()
+				req.Requests[0].Parent = ""
+				req.Requests[1].Parent = ""
+
+				// Update the expectations for the second request as it will be created in a different work unit.
+				expected[1].Name = pbutil.TestExonerationName(string(wuID1.RootInvocationID), wuID1.WorkUnitID, "://infra/special_junit_tests!junit:org.chromium.go.luci:BTests#B", expectedExonerationID2)
+
+				createExonerations(req, expected)
+			})
 		})
 		t.Run("with legacy invocation", func(t *ftt.Test) {
 			invID := invocations.ID("u-build-1")
