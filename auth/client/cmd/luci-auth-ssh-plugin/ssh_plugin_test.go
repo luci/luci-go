@@ -21,6 +21,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"testing"
 
@@ -230,6 +231,14 @@ func TestDefaultDialerSupportedProtocols(t *testing.T) {
 	})
 
 	t.Run("unix", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			// Windows SSH client doesn't support Unix socket SSH_AUTH_SOCK.
+			//
+			// We don't expect users to connect to Unix socket based agents, so
+			// it's fine to skip this part.
+			t.Skip("Skip on Windows, no unix sockets")
+		}
+
 		t.Parallel()
 		ldir, err := os.MkdirTemp("", "luci_ssh_plugin_test.")
 		assert.NoErr(t, err)
