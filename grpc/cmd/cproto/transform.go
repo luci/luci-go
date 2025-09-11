@@ -249,3 +249,19 @@ func firstLower(s string) string {
 	_, w := utf8.DecodeRuneInString(s)
 	return strings.ToLower(s[:w]) + s[w:]
 }
+
+func transformGoFile(name string, input []byte, filter func(*ast.File) error) ([]byte, error) {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, name, input, parser.ParseComments|parser.SkipObjectResolution)
+	if err != nil {
+		return nil, err
+	}
+	if err := filter(file); err != nil {
+		return nil, err
+	}
+	var buf bytes.Buffer
+	if err := printer.Fprint(&buf, fset, file); err != nil {
+		return nil, err
+	}
+	return gofmt(buf.Bytes())
+}

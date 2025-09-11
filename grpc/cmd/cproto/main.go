@@ -18,6 +18,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"go/ast"
+	"go/token"
 	"os"
 	"path"
 	"path/filepath"
@@ -73,6 +75,10 @@ var (
 		"use-ancient-protoc-gen-go", false,
 		"use pinned github.com/golang/protobuf/protoc-gen-go for generation",
 	)
+	moveGrpcIntoSubpackage = flag.Bool(
+		"move-grpc-into-subpackage", false,
+		"move generated _grpc.pb.go into a .../grpcpb subpackage",
+	)
 )
 
 func run(ctx context.Context, inputDir string) error {
@@ -93,6 +99,15 @@ func run(ctx context.Context, inputDir string) error {
 	if *useModernProtocGenGo && !*useGRPCPlugin {
 		logging.Infof(ctx, "implicitly enabling -use-grpc-plugin since it is required when using modern protoc-gen-go")
 		*useGRPCPlugin = true
+	}
+
+	if *moveGrpcIntoSubpackage {
+		if *disableGRPC {
+			return errors.Fmt("-move-grpc-into-subpackage requires grpc generation enabled")
+		}
+		if !*useGRPCPlugin {
+			return errors.Fmt("-move-grpc-into-subpackage requires -use-grpc-plugin")
+		}
 	}
 
 	// Stage all requested Go modules under a single root.
@@ -211,6 +226,18 @@ func run(ctx context.Context, inputDir string) error {
 				return err
 			}
 		}
+
+		// Move _grpc.pb.go into a subdirectory if asked to.
+		if *moveGrpcIntoSubpackage && len(fileDesc.Service) != 0 {
+			grpcFile := strings.TrimSuffix(goFile, ".pb.go") + "_grpc.pb.go"
+			if _, err := os.Stat(grpcFile); err != nil {
+				return errors.Fmt("could not find *_grpc.pb.go file generated from %q", protoFile)
+			}
+			logging.Debugf(ctx, "Moving %q into a subpackage", grpcFile)
+			if err := relocateGrpcPbGo(grpcFile, goPackage); err != nil {
+				return errors.Fmt("failed to move %q into a subpackage: %w", grpcFile, err)
+			}
+		}
 	}
 
 	if !*disableGRPC && *withDiscovery {
@@ -253,6 +280,47 @@ func loadDescriptorSet(path string) (map[string]*descriptorpb.FileDescriptorProt
 		mapping[f.GetName()] = f
 	}
 	return mapping, blob, nil
+}
+
+func relocateGrpcPbGo(grpcFile, goPackage string) error {
+	orig, err := os.ReadFile(grpcFile)
+	if err != nil {
+		return err
+	}
+
+	transformed, err := transformGoFile(grpcFile, orig, func(f *ast.File) error {
+		// Rename the package, e.g. "stuffpb" => "stuffgrpcpb".
+		f.Name.Name = strings.TrimSuffix(f.Name.Name, "pb") + "grpcpb"
+		// Add a dot import to allow proto messages (for requests and responses)
+		// to be referenced unqualified. Otherwise we'd need to find and replace all
+		// their occurrences, which can be non-trivial.
+		spec := &ast.ImportSpec{
+			Name: ast.NewIdent("."),
+			Path: &ast.BasicLit{
+				Kind:  token.STRING,
+				Value: `"` + goPackage + `"`,
+			},
+		}
+		f.Decls = append([]ast.Decl{&ast.GenDecl{
+			Tok:   token.IMPORT,
+			Specs: []ast.Spec{spec},
+		}}, f.Decls...)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	destDir := filepath.Join(filepath.Dir(grpcFile), "grpcpb")
+	if err := os.MkdirAll(destDir, 0777); err != nil {
+		return err
+	}
+	destPath := filepath.Join(destDir, filepath.Base(grpcFile))
+	if err := os.WriteFile(destPath, transformed, 0666); err != nil {
+		return err
+	}
+
+	return os.Remove(grpcFile)
 }
 
 func setupLogging(ctx context.Context) context.Context {
