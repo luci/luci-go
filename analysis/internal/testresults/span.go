@@ -17,6 +17,7 @@ package testresults
 
 import (
 	"context"
+	"math"
 	"sort"
 	"text/template"
 	"time"
@@ -25,6 +26,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/pagination"
@@ -301,7 +303,8 @@ type ReadTestHistoryOptions struct {
 }
 
 // statement generates a spanner statement for the specified query template.
-func (opts ReadTestHistoryOptions) statement(tmpl string, paginationParams []string) (spanner.Statement, error) {
+// timeRange specifies the range of partition times queried.
+func (opts ReadTestHistoryOptions) statement(tmpl string, paginationParams []string, timeRange TimeRange) (spanner.Statement, error) {
 	params := map[string]any{
 		"project":        opts.Project,
 		"testId":         opts.TestID,
@@ -347,16 +350,8 @@ func (opts ReadTestHistoryOptions) statement(tmpl string, paginationParams []str
 		"params":                  params,
 	}
 
-	if opts.TimeRange.GetEarliest() != nil {
-		params["afterTime"] = opts.TimeRange.GetEarliest().AsTime()
-	} else {
-		params["afterTime"] = MinSpannerTimestamp
-	}
-	if opts.TimeRange.GetLatest() != nil {
-		params["beforeTime"] = opts.TimeRange.GetLatest().AsTime()
-	} else {
-		params["beforeTime"] = MaxSpannerTimestamp
-	}
+	params["onOrAfterTime"] = timeRange.Earliest
+	params["beforeTime"] = timeRange.Latest
 
 	switch p := opts.VariantPredicate.GetPredicate().(type) {
 	case *pb.VariantPredicate_Equals:
@@ -406,7 +401,7 @@ func (opts ReadTestHistoryOptions) statement(tmpl string, paginationParams []str
 // ReadTestHistory reads verdicts from the spanner database.
 // Must be called in a spanner transactional context.
 func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts []*pb.TestVerdict, nextPageToken string, err error) {
-	stmt, err := opts.statement("testHistoryQuery", []string{"paginationTime", "paginationVariantHash", "paginationInvId"})
+	stmt, err := opts.statement("testHistoryQuery", []string{"paginationTime", "paginationVariantHash", "paginationInvId"}, TimeRangeFromProto(opts.TimeRange))
 	if err != nil {
 		return nil, "", err
 	}
@@ -525,72 +520,181 @@ type verdictCountsV1 struct {
 	Expected            int64
 }
 
+// findQueryInterval returns the partition time range to query for this query.
+// This considers:
+// - The data retention period of the table
+// - The pagination position
+// - The query options
+func findQueryInterval(opts ReadTestHistoryOptions, now time.Time) (TimeRange, error) {
+	// Start with all times.
+	result := TimeRange{
+		Latest:   MaxSpannerTimestamp,
+		Earliest: MinSpannerTimestamp,
+	}
+	if opts.PageToken != "" {
+		// If we have paginated, start reading from the pagination point.
+		// The pagination token contains the (PartitionTime, VariantHash) of the
+		// last group returned.
+		tokens, err := pagination.ParseToken(opts.PageToken)
+		if err != nil {
+			return TimeRange{}, err
+		}
+		lastGroupTime, err := time.Parse(pageTokenTimeFormat, tokens[0])
+		if err != nil {
+			return TimeRange{}, err
+		}
+		// Latest is an exclusive time, but we want to treat lastGroupTime as an inclusive date,
+		// so add 24 hours.
+		result.Latest = lastGroupTime.UTC().Add(24 * time.Hour)
+	}
+	// Intersect with the retention period of the table.
+	result = result.Intersect(TimeRange{
+		Latest:   now.UTC(),
+		Earliest: now.UTC().Add(-90 * 24 * time.Hour), // table has 90 days data retention.
+	})
+	// Intersect with the requested time range.
+	result = result.Intersect(TimeRangeFromProto(opts.TimeRange))
+	return result, nil
+}
+
+// complete is an error used to indicate a callback does not need any more rows.
+var complete = errors.New("callback does not want any more test verdicts")
+
 // ReadTestHistoryStats reads stats of verdicts grouped by UTC dates from the
 // spanner database.
 // Must be called in a spanner transactional context.
-func ReadTestHistoryStats(ctx context.Context, opts ReadTestHistoryOptions) (groups []*pb.QueryTestHistoryStatsResponse_Group, nextPageToken string, err error) {
-	stmt, err := opts.statement("testHistoryStatsQuery", []string{"paginationDate", "paginationVariantHash"})
+func ReadTestHistoryStats(ctx context.Context, opts ReadTestHistoryOptions, now time.Time) (groups []*pb.QueryTestHistoryStatsResponse_Group, nextPageToken string, err error) {
+	// Find the partition time range to query.
+	totalQueryInterval, err := findQueryInterval(opts, now)
 	if err != nil {
 		return nil, "", err
 	}
 
-	var b spanutil.Buffer
+	// For efficiency, do not query the all results for a test at once as the
+	// query design is hard for Spanner to do a LIMIT-clause push down on.
+	// (It will tend to read all rows for the test each time). Instead,
+	// read a chunk of results, and only continue if we do not have enough
+	// for a page.
+	partitioner := totalQueryInterval.Partition()
+
+	// Start querying at most 2 UTC days (typically today's fractional data plus yesterday).
+	// After the first run, we will update our estimate of days to query.
+	partitionDays := 2
+
 	groups = make([]*pb.QueryTestHistoryStatsResponse_Group, 0, opts.PageSize)
-	err = span.Query(ctx, stmt).Do(func(row *spanner.Row) error {
-		group := &pb.QueryTestHistoryStatsResponse_Group{}
-		var (
-			verdictCountsV2       verdictCountsV2
-			verdictCountsV1       verdictCountsV1
-			passedAvgDurationUsec spanner.NullInt64
-		)
-		err := b.FromSpanner(
-			row,
-			&group.PartitionTime,
-			&group.VariantHash,
-			&verdictCountsV2.Failed,
-			&verdictCountsV2.Flaky,
-			&verdictCountsV2.Passed,
-			&verdictCountsV2.Skipped,
-			&verdictCountsV2.ExecutionErrored,
-			&verdictCountsV2.Precluded,
-			&verdictCountsV2.FailedExonerated,
-			&verdictCountsV2.ExecutionErroredExonerated,
-			&verdictCountsV2.PrecludedExonerated,
-			&verdictCountsV1.Unexpected,
-			&verdictCountsV1.UnexpectedlySkipped,
-			&verdictCountsV1.Flaky,
-			&verdictCountsV1.Exonerated,
-			&verdictCountsV1.Expected,
-			&passedAvgDurationUsec,
-		)
+
+	// Keep reading until one of two conditions:
+	// - We have finished reading all date partitions for this test.
+	// - We have filled up a page of results.
+	for {
+		queryRange, ok := partitioner.Next(partitionDays)
+		if !ok {
+			// We have finished querying all partitions.
+			break
+		}
+		logging.Debugf(ctx, "Stats: querying interval from %v to %v (%v days).", queryRange.Earliest, queryRange.Latest, queryRange.Days())
+
+		stmt, err := opts.statement("testHistoryStatsQuery", []string{"paginationDate", "paginationVariantHash"}, queryRange)
 		if err != nil {
-			return err
+			return nil, "", err
 		}
 
-		group.VerdictCounts = &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
-			Failed:                     int32(verdictCountsV2.Failed),
-			Flaky:                      int32(verdictCountsV2.Flaky),
-			Passed:                     int32(verdictCountsV2.Passed),
-			Skipped:                    int32(verdictCountsV2.Skipped),
-			ExecutionErrored:           int32(verdictCountsV2.ExecutionErrored),
-			Precluded:                  int32(verdictCountsV2.Precluded),
-			FailedExonerated:           int32(verdictCountsV2.FailedExonerated),
-			ExecutionErroredExonerated: int32(verdictCountsV2.ExecutionErroredExonerated),
-			PrecludedExonerated:        int32(verdictCountsV2.PrecludedExonerated),
+		var b spanutil.Buffer
+		var itemsInThisLastQuery int
+		err = span.Query(ctx, stmt).Do(func(row *spanner.Row) error {
+			group := &pb.QueryTestHistoryStatsResponse_Group{}
+			var (
+				verdictCountsV2       verdictCountsV2
+				verdictCountsV1       verdictCountsV1
+				passedAvgDurationUsec spanner.NullInt64
+			)
+			err := b.FromSpanner(
+				row,
+				&group.PartitionTime,
+				&group.VariantHash,
+				&verdictCountsV2.Failed,
+				&verdictCountsV2.Flaky,
+				&verdictCountsV2.Passed,
+				&verdictCountsV2.Skipped,
+				&verdictCountsV2.ExecutionErrored,
+				&verdictCountsV2.Precluded,
+				&verdictCountsV2.FailedExonerated,
+				&verdictCountsV2.ExecutionErroredExonerated,
+				&verdictCountsV2.PrecludedExonerated,
+				&verdictCountsV1.Unexpected,
+				&verdictCountsV1.UnexpectedlySkipped,
+				&verdictCountsV1.Flaky,
+				&verdictCountsV1.Exonerated,
+				&verdictCountsV1.Expected,
+				&passedAvgDurationUsec,
+			)
+			if err != nil {
+				return err
+			}
+
+			group.VerdictCounts = &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+				Failed:                     int32(verdictCountsV2.Failed),
+				Flaky:                      int32(verdictCountsV2.Flaky),
+				Passed:                     int32(verdictCountsV2.Passed),
+				Skipped:                    int32(verdictCountsV2.Skipped),
+				ExecutionErrored:           int32(verdictCountsV2.ExecutionErrored),
+				Precluded:                  int32(verdictCountsV2.Precluded),
+				FailedExonerated:           int32(verdictCountsV2.FailedExonerated),
+				ExecutionErroredExonerated: int32(verdictCountsV2.ExecutionErroredExonerated),
+				PrecludedExonerated:        int32(verdictCountsV2.PrecludedExonerated),
+			}
+			group.UnexpectedCount = int32(verdictCountsV1.Unexpected)
+			group.UnexpectedlySkippedCount = int32(verdictCountsV1.UnexpectedlySkipped)
+			group.FlakyCount = int32(verdictCountsV1.Flaky)
+			group.ExoneratedCount = int32(verdictCountsV1.Exonerated)
+			group.ExpectedCount = int32(verdictCountsV1.Expected)
+			if passedAvgDurationUsec.Valid {
+				group.PassedAvgDuration = durationpb.New(time.Microsecond * time.Duration(passedAvgDurationUsec.Int64))
+			}
+
+			// Do not read more than the requested page size.
+			if opts.PageSize != 0 && len(groups) >= opts.PageSize {
+				// Signal we want to stop reading early.
+				return complete
+			}
+			groups = append(groups, group)
+			itemsInThisLastQuery++
+			return nil
+		})
+		if err != nil && err != complete {
+			return nil, "", errors.Fmt("query test history stats: %w", err)
 		}
-		group.UnexpectedCount = int32(verdictCountsV1.Unexpected)
-		group.UnexpectedlySkippedCount = int32(verdictCountsV1.UnexpectedlySkipped)
-		group.FlakyCount = int32(verdictCountsV1.Flaky)
-		group.ExoneratedCount = int32(verdictCountsV1.Exonerated)
-		group.ExpectedCount = int32(verdictCountsV1.Expected)
-		if passedAvgDurationUsec.Valid {
-			group.PassedAvgDuration = durationpb.New(time.Microsecond * time.Duration(passedAvgDurationUsec.Int64))
+
+		var remainingItems int
+		if opts.PageSize != 0 {
+			remainingItems = opts.PageSize - len(groups)
+		} else {
+			// When page size = 0, we should retrieve all items. Assume there are
+			// a lot of items in the table.
+			remainingItems = 1_000_000
 		}
-		groups = append(groups, group)
-		return nil
-	})
-	if err != nil {
-		return nil, "", errors.Fmt("query test history stats: %w", err)
+		if remainingItems <= 0 {
+			// We have a full page. No need to read further.
+			break
+		}
+
+		// Estimate the average number of items we have read per day.
+		// Even if we read nothing, estimate there were ~0.5 items in the query interval
+		// to avoid divide by zero errors later.
+		itemsPerDay := (math.Max(float64(itemsInThisLastQuery), 0.5)) / queryRange.Days()
+
+		// Read about 10% more than we think we need, and at least one day.
+		// The 10% is to reduce the likelihood of missing with the next query.
+		// The 1 day floor (via math.Ceil) is to make sure we make progress.
+		daysRequired := math.Ceil((float64(remainingItems) / itemsPerDay) * 1.1)
+		if daysRequired > 31 {
+			// Cap the number of days read at a time to 31 to avoid
+			// overly expensive queries (e.g. due to early understimates of
+			// the number of results per day).
+			daysRequired = 31
+		}
+
+		partitionDays = int(daysRequired)
 	}
 
 	if opts.PageSize != 0 && len(groups) == opts.PageSize {
@@ -788,7 +892,7 @@ var testHistoryQueryTmpl = template.Must(template.New("").Parse(`
 					OR TestId = @previousTestId
 				{{end}}
 			)
-			AND PartitionTime >= @afterTime
+			AND PartitionTime >= @onOrAfterTime
 			AND PartitionTime < @beforeTime
 			AND SubRealm IN UNNEST(@subRealms)
 			{{if .hasVariantHash}}
@@ -871,7 +975,7 @@ var testHistoryQueryTmpl = template.Must(template.New("").Parse(`
 				{{if .pagination}}
 					AND	PartitionTime < TIMESTAMP_ADD(TIMESTAMP(@paginationDate), INTERVAL 1 DAY)
 				{{end}}
-			GROUP BY PartitionTime, VariantHash, IngestedInvocationId
+			GROUP BY Project, TestId, PartitionTime, VariantHash, IngestedInvocationId
 		)
 
 		SELECT

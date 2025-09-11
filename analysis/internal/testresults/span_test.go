@@ -446,22 +446,29 @@ func TestReadTestHistoryStats(t *testing.T) {
 				},
 			},
 		}
+		now := referenceTime.Add(20 * time.Minute)
+
+		readStats := func(ctx context.Context, opts ReadTestHistoryOptions) ([]*pb.QueryTestHistoryStatsResponse_Group, string, error) {
+			readTxn, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			return ReadTestHistoryStats(readTxn, opts, now)
+		}
 
 		t.Run("baseline", func(t *ftt.Test) {
-			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readStats(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match(expectedGroups))
 		})
 		t.Run("pagination works", func(t *ftt.Test) {
 			opts.PageSize = 4
-			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readStats(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.NotBeEmpty)
 			assert.Loosely(t, verdicts, should.Match(expectedGroups[:4]))
 
 			opts.PageToken = nextPageToken
-			verdicts, nextPageToken, err = ReadTestHistoryStats(span.Single(ctx), opts)
+			verdicts, nextPageToken, err = readStats(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match(expectedGroups[4:]))
@@ -483,7 +490,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 				ExecutionErroredExonerated: 1,
 			}
 
-			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readStats(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match(expectedGroups))
@@ -523,7 +530,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 			}
 
 			opts.PreviousTestID = "previous_test_id"
-			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readStats(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match(newExpectedGroups))
@@ -536,7 +543,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 					// Exclusive.
 					Latest: timestamppb.New(referenceTime.Add(-1 * day)),
 				}
-				verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
+				verdicts, nextPageToken, err := readStats(ctx, opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
 				assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
@@ -569,7 +576,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 					// Exclusive.
 					Latest: timestamppb.New(referenceTime.Add(-1*day - 1*time.Hour)),
 				}
-				verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
+				verdicts, nextPageToken, err := readStats(ctx, opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
 				assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
@@ -611,7 +618,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 						Contains: pbutil.Variant("key1", "val2"),
 					},
 				}
-				verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
+				verdicts, nextPageToken, err := readStats(ctx, opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
 				assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
@@ -652,7 +659,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 						Contains: pbutil.Variant("key1", "val2", "key2", "val2"),
 					},
 				}
-				verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
+				verdicts, nextPageToken, err := readStats(ctx, opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextPageToken, should.BeEmpty)
 				assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
@@ -676,7 +683,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 					Equals: testVariant2,
 				},
 			}
-			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readStats(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
@@ -707,7 +714,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 					HashEquals: pbutil.VariantHash(testVariant2),
 				},
 			}
-			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readStats(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
@@ -738,7 +745,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 					HashEquals: "",
 				},
 			}
-			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readStats(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.BeEmpty)
@@ -746,7 +753,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 
 		t.Run("with submitted_filter", func(t *ftt.Test) {
 			opts.SubmittedFilter = pb.SubmittedFilter_ONLY_UNSUBMITTED
-			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readStats(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
@@ -781,7 +788,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 			}))
 
 			opts.SubmittedFilter = pb.SubmittedFilter_ONLY_SUBMITTED
-			verdicts, nextPageToken, err = ReadTestHistoryStats(span.Single(ctx), opts)
+			verdicts, nextPageToken, err = readStats(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{
@@ -820,7 +827,7 @@ func TestReadTestHistoryStats(t *testing.T) {
 
 		t.Run("with bisection filter", func(t *ftt.Test) {
 			opts.ExcludeBisectionResults = true
-			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
+			verdicts, nextPageToken, err := readStats(ctx, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match([]*pb.QueryTestHistoryStatsResponse_Group{

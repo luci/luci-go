@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -68,6 +69,9 @@ func TestTestHistoryServer(t *testing.T) {
 
 		referenceTime := time.Date(2025, time.February, 12, 0, 0, 0, 0, time.UTC)
 		day := 24 * time.Hour
+
+		now := referenceTime.Add(time.Minute * 20)
+		ctx, _ = testclock.UseTime(ctx, now)
 
 		var1 := pbutil.Variant("key1", "val1", "key2", "val1")
 		var2 := pbutil.Variant("key1", "val2", "key2", "val1")

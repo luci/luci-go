@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -165,7 +166,11 @@ func (s *testHistoryServer) QueryStats(ctx context.Context, req *pb.QueryTestHis
 		PageToken:               req.PageToken,
 	}
 
-	groups, nextPageToken, err := testresults.ReadTestHistoryStats(span.Single(ctx), opts)
+	now := clock.Now(ctx)
+	readTxn, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
+	groups, nextPageToken, err := testresults.ReadTestHistoryStats(readTxn, opts, now)
 	if err != nil {
 		return nil, err
 	}
