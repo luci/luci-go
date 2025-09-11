@@ -690,9 +690,9 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 			}{token.AccessToken, token.Expiry.UTC().Format(time.UnixDate)}
 		case "bazel":
 			data = struct {
-				Headers map[string]string `json:"headers"`
-				Expires string            `json:"expires"`
-			}{map[string]string{"Authorization": "Bearer " + token.AccessToken}, token.Expiry.UTC().Format(time.RFC3339)}
+				Headers map[string][]string `json:"headers"`
+				Expires string              `json:"expires"`
+			}{map[string][]string{"Authorization": []string{"Bearer " + token.AccessToken}}, token.Expiry.UTC().Format(time.RFC3339)}
 		}
 		if err = json.NewEncoder(out).Encode(data); err != nil {
 			fmt.Fprintln(os.Stderr, err)
