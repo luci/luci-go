@@ -130,13 +130,6 @@ func replicate(ctx context.Context, authDBRev int64) error {
 		return err
 	}
 
-	// Directly push the latest AuthDB to replicas.
-	if err := updateReplicas(ctx, revisionInfo.AuthDbRev, authDBBlob, sig, keyName); err != nil {
-		logging.Errorf(ctx, "error updating replicas for revision %d: %s",
-			revisionInfo.AuthDbRev, err)
-		return err
-	}
-
 	return nil
 }
 
