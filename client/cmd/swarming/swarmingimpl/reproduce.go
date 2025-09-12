@@ -45,7 +45,7 @@ import (
 	rdbcli "go.chromium.org/luci/resultdb/cli"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/swarming/client/swarming"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/runner"
 )
 
@@ -122,7 +122,7 @@ func (cmd *reproduceImpl) Execute(ctx context.Context, svc swarming.Client, sink
 	return cmd.executeTaskRequestCommand(ctx, tr, execCmd, extra.AuthFlags)
 }
 
-func (cmd *reproduceImpl) executeTaskRequestCommand(ctx context.Context, tr *swarmingv2.TaskRequestResponse, execCmd *exec.Cmd, auth base.AuthFlags) error {
+func (cmd *reproduceImpl) executeTaskRequestCommand(ctx context.Context, tr *swarmingpb.TaskRequestResponse, execCmd *exec.Cmd, auth base.AuthFlags) error {
 	// Enable ResultDB if necessary.
 	if tr.Resultdb != nil && tr.Resultdb.Enable {
 		if cmd.realm == "" {
@@ -150,7 +150,7 @@ func (cmd *reproduceImpl) executeTaskRequestCommand(ctx context.Context, tr *swa
 	return nil
 }
 
-func (cmd *reproduceImpl) prepareTaskRequestEnvironment(ctx context.Context, properties *swarmingv2.TaskProperties, svc swarming.Client, auth base.AuthFlags) (*exec.Cmd, error) {
+func (cmd *reproduceImpl) prepareTaskRequestEnvironment(ctx context.Context, properties *swarmingpb.TaskProperties, svc swarming.Client, auth base.AuthFlags) (*exec.Cmd, error) {
 	execDir := cmd.work
 	if properties.RelativeCwd != "" {
 		// TODO(vadimsh): Forbid "..".

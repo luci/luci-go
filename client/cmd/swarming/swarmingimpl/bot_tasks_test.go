@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestBotTasksParse(t *testing.T) {
@@ -57,13 +57,13 @@ func TestListBotTasksOutput(t *testing.T) {
 
 	botID := "bot1"
 
-	expectedTasks := []*swarmingv2.TaskResultResponse{
+	expectedTasks := []*swarmingpb.TaskResultResponse{
 		{TaskId: "task1"},
 		{TaskId: "task2"},
 	}
 
 	service := &swarmingtest.Client{
-		ListBotTasksMock: func(ctx context.Context, s string, i int32, f float64, sq swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error) {
+		ListBotTasksMock: func(ctx context.Context, s string, i int32, f float64, sq swarmingpb.StateQuery) ([]*swarmingpb.TaskResultResponse, error) {
 			assert.Loosely(t, s, should.Equal(botID))
 			return expectedTasks, nil
 		},

@@ -39,7 +39,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestCollectParse(t *testing.T) {
@@ -89,7 +89,7 @@ func TestCollect(t *testing.T) {
 			onSleep()
 		})
 
-		mockedState := map[string]swarmingv2.TaskState{}
+		mockedState := map[string]swarmingpb.TaskState{}
 		mockedHasCAS := map[string]bool{}
 		mockedErr := map[string]codes.Code{}
 		mockedStdoutErr := error(nil)
@@ -103,15 +103,15 @@ func TestCollect(t *testing.T) {
 						out[i] = swarming.ResultOrErr{Err: status.Errorf(code, "some error")}
 					} else if state, ok := mockedState[taskID]; ok {
 						out[i] = swarming.ResultOrErr{
-							Result: &swarmingv2.TaskResultResponse{
+							Result: &swarmingpb.TaskResultResponse{
 								TaskId: taskID,
 								State:  state,
 							},
 						}
 						if mockedHasCAS[taskID] {
-							out[i].Result.CasOutputRoot = &swarmingv2.CASReference{
+							out[i].Result.CasOutputRoot = &swarmingpb.CASReference{
 								CasInstance: "cas-instance",
-								Digest: &swarmingv2.Digest{
+								Digest: &swarmingpb.Digest{
 									Hash: "cas-" + taskID,
 								},
 							}
@@ -123,15 +123,15 @@ func TestCollect(t *testing.T) {
 				return out, nil
 			},
 
-			TaskOutputMock: func(ctx context.Context, taskID string, out io.Writer) (swarmingv2.TaskState, error) {
+			TaskOutputMock: func(ctx context.Context, taskID string, out io.Writer) (swarmingpb.TaskState, error) {
 				if mockedStdoutErr != nil {
 					return 0, mockedStdoutErr
 				}
 				_, err := fmt.Fprintf(out, "Output of %s", taskID)
-				return swarmingv2.TaskState_COMPLETED, err
+				return swarmingpb.TaskState_COMPLETED, err
 			},
 
-			FilesFromCASMock: func(ctx context.Context, outdir string, casRef *swarmingv2.CASReference) ([]string, error) {
+			FilesFromCASMock: func(ctx context.Context, outdir string, casRef *swarmingpb.CASReference) ([]string, error) {
 				if casRef.CasInstance != "cas-instance" {
 					panic("unexpected CAS instance")
 				}
@@ -147,17 +147,17 @@ func TestCollect(t *testing.T) {
 		}
 
 		t.Run(`Happy path`, func(t *ftt.Test) {
-			mockedState["a0"] = swarmingv2.TaskState_PENDING
+			mockedState["a0"] = swarmingpb.TaskState_PENDING
 			mockedHasCAS["a0"] = true
 
-			mockedState["a1"] = swarmingv2.TaskState_COMPLETED
+			mockedState["a1"] = swarmingpb.TaskState_COMPLETED
 			mockedHasCAS["a1"] = true
 
-			mockedState["a2"] = swarmingv2.TaskState_COMPLETED
+			mockedState["a2"] = swarmingpb.TaskState_COMPLETED
 			mockedHasCAS["a2"] = false
 
 			onSleep = func() {
-				mockedState["a0"] = swarmingv2.TaskState_COMPLETED
+				mockedState["a0"] = swarmingpb.TaskState_COMPLETED
 			}
 
 			_, code, stdout, _ := SubcommandTest(
@@ -226,7 +226,7 @@ func TestCollect(t *testing.T) {
 		})
 
 		t.Run(`Collect error`, func(t *ftt.Test) {
-			mockedState["a0"] = swarmingv2.TaskState_COMPLETED
+			mockedState["a0"] = swarmingpb.TaskState_COMPLETED
 			mockedErr["a1"] = codes.PermissionDenied
 
 			_, code, stdout, _ := SubcommandTest(
@@ -258,7 +258,7 @@ func TestCollect(t *testing.T) {
 		})
 
 		t.Run(`Stdout fetch error`, func(t *ftt.Test) {
-			mockedState["a0"] = swarmingv2.TaskState_COMPLETED
+			mockedState["a0"] = swarmingpb.TaskState_COMPLETED
 			mockedStdoutErr = errors.New("boom")
 
 			_, code, stdout, _ := SubcommandTest(
@@ -287,7 +287,7 @@ func TestCollect(t *testing.T) {
 		})
 
 		t.Run(`CAS fetch error`, func(t *ftt.Test) {
-			mockedState["a0"] = swarmingv2.TaskState_COMPLETED
+			mockedState["a0"] = swarmingpb.TaskState_COMPLETED
 			mockedHasCAS["a0"] = true
 			mockedCASErr = errors.New("boom")
 
@@ -324,7 +324,7 @@ func TestCollect(t *testing.T) {
 		})
 
 		t.Run(`Timeout waiting`, func(t *ftt.Test) {
-			mockedState["a0"] = swarmingv2.TaskState_PENDING
+			mockedState["a0"] = swarmingpb.TaskState_PENDING
 
 			_, code, stdout, _ := SubcommandTest(
 				ctx,
@@ -353,8 +353,8 @@ func TestCollect(t *testing.T) {
 		})
 
 		t.Run(`No waiting`, func(t *ftt.Test) {
-			mockedState["a0"] = swarmingv2.TaskState_PENDING
-			mockedState["a1"] = swarmingv2.TaskState_PENDING
+			mockedState["a0"] = swarmingpb.TaskState_PENDING
+			mockedState["a1"] = swarmingpb.TaskState_PENDING
 
 			onSleep = func() {
 				panic("must not sleep")
@@ -392,13 +392,13 @@ func TestCollect(t *testing.T) {
 		})
 
 		t.Run(`Waiting any`, func(t *ftt.Test) {
-			mockedState["a0"] = swarmingv2.TaskState_PENDING
-			mockedState["a1"] = swarmingv2.TaskState_PENDING
-			mockedState["a2"] = swarmingv2.TaskState_PENDING
+			mockedState["a0"] = swarmingpb.TaskState_PENDING
+			mockedState["a1"] = swarmingpb.TaskState_PENDING
+			mockedState["a2"] = swarmingpb.TaskState_PENDING
 
 			onSleep = func() {
-				mockedState["a1"] = swarmingv2.TaskState_COMPLETED
-				mockedState["a2"] = swarmingv2.TaskState_COMPLETED
+				mockedState["a1"] = swarmingpb.TaskState_COMPLETED
+				mockedState["a2"] = swarmingpb.TaskState_COMPLETED
 			}
 
 			_, code, stdout, _ := SubcommandTest(
@@ -446,17 +446,17 @@ func TestCollectSummarizeResults(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run(`Generates json.`, t, func(t *ftt.Test) {
-		result1 := &swarmingv2.TaskResultResponse{
+		result1 := &swarmingpb.TaskResultResponse{
 			CurrentTaskSlice: 0,
 			Duration:         1,
 			ExitCode:         0,
-			State:            swarmingv2.TaskState_COMPLETED,
-			PerformanceStats: &swarmingv2.PerformanceStats{
+			State:            swarmingpb.TaskState_COMPLETED,
+			PerformanceStats: &swarmingpb.PerformanceStats{
 				BotOverhead: 0.1,
-				CacheTrim:   &swarmingv2.OperationStats{Duration: 0.1},
-				Cleanup:     &swarmingv2.OperationStats{Duration: 0.1},
+				CacheTrim:   &swarmingpb.OperationStats{Duration: 0.1},
+				Cleanup:     &swarmingpb.OperationStats{Duration: 0.1},
 				// Stats with 0 value also should be kept.
-				IsolatedDownload: &swarmingv2.CASOperationStats{
+				IsolatedDownload: &swarmingpb.CASOperationStats{
 					Duration:            0.1,
 					InitialNumberItems:  0,
 					InitialSize:         0,
@@ -467,7 +467,7 @@ func TestCollectSummarizeResults(t *testing.T) {
 					TotalBytesItemsCold: 0,
 					TotalBytesItemsHot:  1,
 				},
-				IsolatedUpload: &swarmingv2.CASOperationStats{
+				IsolatedUpload: &swarmingpb.CASOperationStats{
 					Duration:            0.1,
 					InitialNumberItems:  0,
 					InitialSize:         0,
@@ -478,37 +478,37 @@ func TestCollectSummarizeResults(t *testing.T) {
 					TotalBytesItemsCold: 0,
 					TotalBytesItemsHot:  1,
 				},
-				NamedCachesInstall:   &swarmingv2.OperationStats{Duration: 0.1},
-				NamedCachesUninstall: &swarmingv2.OperationStats{Duration: 0.1},
-				PackageInstallation:  &swarmingv2.OperationStats{Duration: 0.1},
+				NamedCachesInstall:   &swarmingpb.OperationStats{Duration: 0.1},
+				NamedCachesUninstall: &swarmingpb.OperationStats{Duration: 0.1},
+				PackageInstallation:  &swarmingpb.OperationStats{Duration: 0.1},
 			},
 		}
-		result2 := &swarmingv2.TaskResultResponse{
+		result2 := &swarmingpb.TaskResultResponse{
 			CurrentTaskSlice: 1,
 			Duration:         1,
 			ExitCode:         -1,
-			State:            swarmingv2.TaskState_COMPLETED,
-			PerformanceStats: &swarmingv2.PerformanceStats{
+			State:            swarmingpb.TaskState_COMPLETED,
+			PerformanceStats: &swarmingpb.PerformanceStats{
 				BotOverhead:          0.1,
-				CacheTrim:            &swarmingv2.OperationStats{},
-				Cleanup:              &swarmingv2.OperationStats{},
-				IsolatedDownload:     &swarmingv2.CASOperationStats{},
-				IsolatedUpload:       &swarmingv2.CASOperationStats{},
-				NamedCachesInstall:   &swarmingv2.OperationStats{},
-				NamedCachesUninstall: &swarmingv2.OperationStats{},
-				PackageInstallation:  &swarmingv2.OperationStats{},
+				CacheTrim:            &swarmingpb.OperationStats{},
+				Cleanup:              &swarmingpb.OperationStats{},
+				IsolatedDownload:     &swarmingpb.CASOperationStats{},
+				IsolatedUpload:       &swarmingpb.CASOperationStats{},
+				NamedCachesInstall:   &swarmingpb.OperationStats{},
+				NamedCachesUninstall: &swarmingpb.OperationStats{},
+				PackageInstallation:  &swarmingpb.OperationStats{},
 			},
 		}
-		result3 := &swarmingv2.TaskResultResponse{
+		result3 := &swarmingpb.TaskResultResponse{
 			CurrentTaskSlice: 0,
 			Duration:         1,
 			ExitCode:         -1,
-			State:            swarmingv2.TaskState_KILLED,
-			PerformanceStats: &swarmingv2.PerformanceStats{
+			State:            swarmingpb.TaskState_KILLED,
+			PerformanceStats: &swarmingpb.PerformanceStats{
 				BotOverhead: 0.1,
-				CacheTrim:   &swarmingv2.OperationStats{Duration: 0.1},
-				Cleanup:     &swarmingv2.OperationStats{Duration: 0.1},
-				IsolatedDownload: &swarmingv2.CASOperationStats{
+				CacheTrim:   &swarmingpb.OperationStats{Duration: 0.1},
+				Cleanup:     &swarmingpb.OperationStats{Duration: 0.1},
+				IsolatedDownload: &swarmingpb.CASOperationStats{
 					Duration:            0.1,
 					InitialNumberItems:  0,
 					InitialSize:         0,
@@ -519,16 +519,16 @@ func TestCollectSummarizeResults(t *testing.T) {
 					TotalBytesItemsCold: 0,
 					TotalBytesItemsHot:  1,
 				},
-				IsolatedUpload:       &swarmingv2.CASOperationStats{},
-				NamedCachesInstall:   &swarmingv2.OperationStats{Duration: 0.1},
-				NamedCachesUninstall: &swarmingv2.OperationStats{},
-				PackageInstallation:  &swarmingv2.OperationStats{Duration: 0.1},
+				IsolatedUpload:       &swarmingpb.CASOperationStats{},
+				NamedCachesInstall:   &swarmingpb.OperationStats{Duration: 0.1},
+				NamedCachesUninstall: &swarmingpb.OperationStats{},
+				PackageInstallation:  &swarmingpb.OperationStats{Duration: 0.1},
 			},
 		}
-		result4 := &swarmingv2.TaskResultResponse{
+		result4 := &swarmingpb.TaskResultResponse{
 			CurrentTaskSlice: 0,
 			Duration:         1,
-			State:            swarmingv2.TaskState_RUNNING,
+			State:            swarmingpb.TaskState_RUNNING,
 		}
 
 		tmpDir := t.TempDir()
@@ -677,8 +677,8 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 		}, []*taskResult{
 			{
 				taskID: "finished",
-				result: &swarmingv2.TaskResultResponse{
-					State:    swarmingv2.TaskState_COMPLETED,
+				result: &swarmingpb.TaskResultResponse{
+					State:    swarmingpb.TaskState_COMPLETED,
 					Duration: 1,
 					ExitCode: 0,
 				},

@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	api "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 type testCase struct {
@@ -83,12 +83,12 @@ func testSWJob(sliceExps ...time.Duration) *Definition {
 	}}
 	if len(sliceExps) > 0 {
 		sw := ret.GetSwarming()
-		sw.Task = &api.NewTaskRequest{
+		sw.Task = &swarmingpb.NewTaskRequest{
 			Name: "default-task-name",
 		}
 
 		for _, exp := range sliceExps {
-			sw.Task.TaskSlices = append(sw.Task.TaskSlices, &api.TaskSlice{
+			sw.Task.TaskSlices = append(sw.Task.TaskSlices, &swarmingpb.TaskSlice{
 				ExpirationSecs: int32(exp.Seconds()),
 			})
 		}

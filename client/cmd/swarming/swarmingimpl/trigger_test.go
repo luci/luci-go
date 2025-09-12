@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // TODO(vadimsh): Add a test for actually triggering stuff (calling NewTask).
@@ -37,19 +37,19 @@ func TestMapToArray(t *testing.T) {
 	ftt.Run(`Make sure that stringmapflag.Value are returned as sorted arrays.`, t, func(t *ftt.Test) {
 		type item struct {
 			m stringmapflag.Value
-			a []*swarmingv2.StringPair
+			a []*swarmingpb.StringPair
 		}
 
 		data := []item{
 			{
 				m: stringmapflag.Value{},
-				a: []*swarmingv2.StringPair{},
+				a: []*swarmingpb.StringPair{},
 			},
 			{
 				m: stringmapflag.Value{
 					"foo": "bar",
 				},
-				a: []*swarmingv2.StringPair{
+				a: []*swarmingpb.StringPair{
 					{Key: "foo", Value: "bar"},
 				},
 			},
@@ -58,7 +58,7 @@ func TestMapToArray(t *testing.T) {
 					"foo":  "bar",
 					"toto": "fifi",
 				},
-				a: []*swarmingv2.StringPair{
+				a: []*swarmingpb.StringPair{
 					{Key: "foo", Value: "bar"},
 					{Key: "toto", Value: "fifi"},
 				},
@@ -68,7 +68,7 @@ func TestMapToArray(t *testing.T) {
 					"toto": "fifi",
 					"foo":  "bar",
 				},
-				a: []*swarmingv2.StringPair{
+				a: []*swarmingpb.StringPair{
 					{Key: "foo", Value: "bar"},
 					{Key: "toto", Value: "fifi"},
 				},
@@ -108,7 +108,7 @@ func TestOptionalDimension(t *testing.T) {
 			{
 				s: "foo=123:321",
 				d: &optionalDimension{
-					kv: &swarmingv2.StringPair{
+					kv: &swarmingpb.StringPair{
 						Key:   "foo",
 						Value: "123",
 					},
@@ -118,7 +118,7 @@ func TestOptionalDimension(t *testing.T) {
 			{
 				s: "foo=123:abc:321",
 				d: &optionalDimension{
-					kv: &swarmingv2.StringPair{
+					kv: &swarmingpb.StringPair{
 						Key:   "foo",
 						Value: "123:abc",
 					},
@@ -149,7 +149,7 @@ func TestListToStringListPairArray(t *testing.T) {
 			"y=c",
 			"x=b",
 		}
-		expected := []*swarmingv2.StringListPair{
+		expected := []*swarmingpb.StringListPair{
 			{Key: "x", Value: []string{"a", "b"}},
 			{Key: "y", Value: []string{"c"}},
 		}
@@ -257,8 +257,8 @@ func TestProcessTriggerOptions_CipdPackages(t *testing.T) {
 		assert.Loosely(t, result.Properties, should.BeNil)
 		assert.Loosely(t, result.TaskSlices, should.HaveLength(1))
 		properties := result.TaskSlices[0].Properties
-		assert.Loosely(t, properties.CipdInput, should.Resemble(&swarmingv2.CipdInput{
-			Packages: []*swarmingv2.CipdPackage{{
+		assert.Loosely(t, properties.CipdInput, should.Resemble(&swarmingpb.CipdInput{
+			Packages: []*swarmingpb.CipdPackage{{
 				PackageName: "name",
 				Path:        "path",
 				Version:     "version",
@@ -283,9 +283,9 @@ func TestProcessTriggerOptions_CAS(t *testing.T) {
 		assert.Loosely(t, result.TaskSlices, should.HaveLength(1))
 		properties := result.TaskSlices[0].Properties
 		assert.Loosely(t, properties.CasInputRoot, should.Resemble(
-			&swarmingv2.CASReference{
+			&swarmingpb.CASReference{
 				CasInstance: "projects/cas/instances/default_instance",
-				Digest: &swarmingv2.Digest{
+				Digest: &swarmingpb.Digest{
 					Hash:      "1d1e14a2d0da6348f3f37312ef524a2cea1db4ead9ebc6c335f9948ad634cbfd",
 					SizeBytes: 10430,
 				},
@@ -311,7 +311,7 @@ func TestProcessTriggerOptions_OptionalDimension(t *testing.T) {
 		assert.Loosely(t, result.TaskSlices, should.HaveLength(2))
 
 		slice1 := result.TaskSlices[0]
-		expectedDims := []*swarmingv2.StringPair{
+		expectedDims := []*swarmingpb.StringPair{
 			{
 				Key:   "foo",
 				Value: "abc",

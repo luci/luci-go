@@ -41,6 +41,7 @@ import (
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 	"go.chromium.org/luci/server/auth"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	swarminggrpcpb "go.chromium.org/luci/swarming/proto/api_v2/grpcpb"
 
 	"go.chromium.org/luci/milo/frontend/handlers/ui"
 	"go.chromium.org/luci/milo/internal/buildsource/rawpresentation"
@@ -64,12 +65,12 @@ type swarmingService interface {
 // identify as a Milo job.
 var ErrNotMiloJob = grpcutil.PermissionDeniedTag.Apply(errors.New("Not a Milo Job or access denied"))
 
-func getSwarmingClient(c context.Context, host string) (swarmingpb.TasksClient, error) {
+func getSwarmingClient(c context.Context, host string) (swarminggrpcpb.TasksClient, error) {
 	t, err := auth.GetRPCTransport(c, auth.AsSelf)
 	if err != nil {
 		return nil, err
 	}
-	return swarmingpb.NewTasksClient(&prpc.Client{
+	return swarminggrpcpb.NewTasksClient(&prpc.Client{
 		C:    &http.Client{Transport: t},
 		Host: host,
 	}), nil
@@ -77,7 +78,7 @@ func getSwarmingClient(c context.Context, host string) (swarmingpb.TasksClient, 
 
 type prodSwarmingService struct {
 	host   string
-	client swarmingpb.TasksClient
+	client swarminggrpcpb.TasksClient
 }
 
 func newProdService(c context.Context, host string) (*prodSwarmingService, error) {

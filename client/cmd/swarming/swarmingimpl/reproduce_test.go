@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestReproduceParse(t *testing.T) {
@@ -95,10 +95,10 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 
 		var fetchedCASFiles bool
 
-		properties := &swarmingv2.TaskProperties{
+		properties := &swarmingpb.TaskProperties{
 			Command:     []string{"rbd", "stream", "-test-id-prefix", "--isolated-output=${ISOLATED_OUTDIR}/chicken-output.json"},
 			RelativeCwd: relativeCwd,
-			Env: []*swarmingv2.StringPair{
+			Env: []*swarmingpb.StringPair{
 				{
 					Key:   "key",
 					Value: "value1",
@@ -112,7 +112,7 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 					Value: "",
 				},
 			},
-			EnvPrefixes: []*swarmingv2.StringListPair{
+			EnvPrefixes: []*swarmingpb.StringListPair{
 				{
 					Key:   "PATH",
 					Value: []string{".task_template_packages", ".task_template_packages/zoo"},
@@ -122,11 +122,11 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 					Value: []string{"egg", "rooster"},
 				},
 			},
-			CasInputRoot: &swarmingv2.CASReference{
+			CasInputRoot: &swarmingpb.CASReference{
 				CasInstance: "CAS-instance",
 			},
-			CipdInput: &swarmingv2.CipdInput{
-				Packages: []*swarmingv2.CipdPackage{
+			CipdInput: &swarmingpb.CipdInput{
+				Packages: []*swarmingpb.CipdPackage{
 					{
 						PackageName: "infra/tools/luci-auth/${platform}",
 						Path:        ".task_template_packages",
@@ -147,7 +147,7 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		}
 
 		service := &swarmingtest.Client{
-			FilesFromCASMock: func(_ context.Context, _ string, _ *swarmingv2.CASReference) ([]string, error) {
+			FilesFromCASMock: func(_ context.Context, _ string, _ *swarmingpb.CASReference) ([]string, error) {
 				fetchedCASFiles = true
 				return []string{}, nil
 			},
@@ -219,7 +219,7 @@ func TestReproduceTaskRequestCommand(t *testing.T) {
 
 		var stdout bytes.Buffer
 		cmd.Stdout = &stdout
-		err := c.executeTaskRequestCommand(ctx, &swarmingv2.TaskRequestResponse{}, cmd, &testAuthFlags{})
+		err := c.executeTaskRequestCommand(ctx, &swarmingpb.TaskRequestResponse{}, cmd, &testAuthFlags{})
 		assert.Loosely(t, err, should.BeNil)
 		if runtime.GOOS == "windows" {
 			assert.Loosely(t, stdout.String(), should.Equal("chicken\r\n"))

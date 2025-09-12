@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // WaitMode is passed to Get* functions and indicates how they should block.
@@ -64,13 +64,13 @@ const (
 // Retries on transient errors until the context expires.
 //
 // Panics if `taskID` is an empty string.
-func GetOne(ctx context.Context, client Client, taskID string, fields *TaskResultFields, mode WaitMode) (*swarmingv2.TaskResultResponse, error) {
+func GetOne(ctx context.Context, client Client, taskID string, fields *TaskResultFields, mode WaitMode) (*swarmingpb.TaskResultResponse, error) {
 	if taskID == "" {
 		panic("taskID should not be empty")
 	}
 
 	startTime := clock.Now(ctx)
-	var lastKnown *swarmingv2.TaskResultResponse
+	var lastKnown *swarmingpb.TaskResultResponse
 
 	for {
 		switch res, err := client.TaskResult(ctx, taskID, fields); {
@@ -113,7 +113,7 @@ func GetOne(ctx context.Context, client Client, taskID string, fields *TaskResul
 // Retries on transient errors until the context expires.
 //
 // Panics if `taskIDs` is empty or any of given task IDs is an empty string.
-func GetMany(ctx context.Context, client Client, taskIDs []string, fields *TaskResultFields, mode WaitMode, sink func(taskID string, res *swarmingv2.TaskResultResponse, err error)) {
+func GetMany(ctx context.Context, client Client, taskIDs []string, fields *TaskResultFields, mode WaitMode, sink func(taskID string, res *swarmingpb.TaskResultResponse, err error)) {
 	if len(taskIDs) == 0 {
 		panic("need at least one task to wait for")
 	}
@@ -230,8 +230,8 @@ func isFatalError(err error) bool {
 }
 
 // final is true if the task is in some final state.
-func final(state swarmingv2.TaskState) bool {
-	return state != swarmingv2.TaskState_PENDING && state != swarmingv2.TaskState_RUNNING
+func final(state swarmingpb.TaskState) bool {
+	return state != swarmingpb.TaskState_PENDING && state != swarmingpb.TaskState_RUNNING
 }
 
 // sleep sleeps a bit between retry loop iterations.

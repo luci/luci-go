@@ -40,7 +40,8 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	swarminggrpcpb "go.chromium.org/luci/swarming/proto/api_v2/grpcpb"
 )
 
 const (
@@ -81,24 +82,24 @@ func init() {
 type Client interface {
 	Close(ctx context.Context)
 
-	NewTask(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error)
-	CountTasks(ctx context.Context, start float64, state swarmingv2.StateQuery, tags []string) (*swarmingv2.TasksCount, error)
-	ListTasks(ctx context.Context, limit int32, start float64, state swarmingv2.StateQuery, tags []string) ([]*swarmingv2.TaskResultResponse, error)
-	CancelTask(ctx context.Context, taskID string, killRunning bool) (*swarmingv2.CancelResponse, error)
-	CancelTasks(ctx context.Context, limit int32, tags []string, killRunning bool, start, end time.Time) (*swarmingv2.TasksCancelResponse, error)
+	NewTask(ctx context.Context, req *swarmingpb.NewTaskRequest) (*swarmingpb.TaskRequestMetadataResponse, error)
+	CountTasks(ctx context.Context, start float64, state swarmingpb.StateQuery, tags []string) (*swarmingpb.TasksCount, error)
+	ListTasks(ctx context.Context, limit int32, start float64, state swarmingpb.StateQuery, tags []string) ([]*swarmingpb.TaskResultResponse, error)
+	CancelTask(ctx context.Context, taskID string, killRunning bool) (*swarmingpb.CancelResponse, error)
+	CancelTasks(ctx context.Context, limit int32, tags []string, killRunning bool, start, end time.Time) (*swarmingpb.TasksCancelResponse, error)
 
-	TaskRequest(ctx context.Context, taskID string) (*swarmingv2.TaskRequestResponse, error)
-	TaskOutput(ctx context.Context, taskID string, out io.Writer) (swarmingv2.TaskState, error)
-	TaskResult(ctx context.Context, taskID string, fields *TaskResultFields) (*swarmingv2.TaskResultResponse, error)
+	TaskRequest(ctx context.Context, taskID string) (*swarmingpb.TaskRequestResponse, error)
+	TaskOutput(ctx context.Context, taskID string, out io.Writer) (swarmingpb.TaskState, error)
+	TaskResult(ctx context.Context, taskID string, fields *TaskResultFields) (*swarmingpb.TaskResultResponse, error)
 	TaskResults(ctx context.Context, taskIDs []string, fields *TaskResultFields) ([]ResultOrErr, error)
 
-	CountBots(ctx context.Context, dimensions []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error)
-	ListBots(ctx context.Context, dimensions []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error)
-	DeleteBot(ctx context.Context, botID string) (*swarmingv2.DeleteResponse, error)
-	TerminateBot(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error)
-	ListBotTasks(ctx context.Context, botID string, limit int32, start float64, state swarmingv2.StateQuery) ([]*swarmingv2.TaskResultResponse, error)
+	CountBots(ctx context.Context, dimensions []*swarmingpb.StringPair) (*swarmingpb.BotsCount, error)
+	ListBots(ctx context.Context, dimensions []*swarmingpb.StringPair) ([]*swarmingpb.BotInfo, error)
+	DeleteBot(ctx context.Context, botID string) (*swarmingpb.DeleteResponse, error)
+	TerminateBot(ctx context.Context, botID string, reason string) (*swarmingpb.TerminateResponse, error)
+	ListBotTasks(ctx context.Context, botID string, limit int32, start float64, state swarmingpb.StateQuery) ([]*swarmingpb.TaskResultResponse, error)
 
-	FilesFromCAS(ctx context.Context, outdir string, casRef *swarmingv2.CASReference) ([]string, error)
+	FilesFromCAS(ctx context.Context, outdir string, casRef *swarmingpb.CASReference) ([]string, error)
 }
 
 // TaskResultFields defines what optional parts of TaskResultResponse to get.
@@ -114,7 +115,7 @@ type TaskResultFields struct {
 // ResultOrErr is returned by TaskResults. It either carries a task result or
 // an error if it could not be obtained.
 type ResultOrErr struct {
-	Result *swarmingv2.TaskResultResponse
+	Result *swarmingpb.TaskResultResponse
 	Err    error
 }
 
@@ -215,8 +216,8 @@ func NewClient(ctx context.Context, opts ClientOptions) (Client, error) {
 	return &swarmingServiceImpl{
 		ctx:         ctx,
 		opts:        opts,
-		botsClient:  swarmingv2.NewBotsClient(&prpcClient),
-		tasksClient: swarmingv2.NewTasksClient(&prpcClient),
+		botsClient:  swarminggrpcpb.NewBotsClient(&prpcClient),
+		tasksClient: swarminggrpcpb.NewTasksClient(&prpcClient),
 		rbe:         map[string]*rbeclient.Client{},
 	}, nil
 }
@@ -226,8 +227,8 @@ func NewClient(ctx context.Context, opts ClientOptions) (Client, error) {
 type swarmingServiceImpl struct {
 	ctx         context.Context
 	opts        ClientOptions
-	botsClient  swarmingv2.BotsClient
-	tasksClient swarmingv2.TasksClient
+	botsClient  swarminggrpcpb.BotsClient
+	tasksClient swarminggrpcpb.TasksClient
 
 	m   sync.Mutex
 	rbe map[string]*rbeclient.Client // instance name => RBE client
@@ -265,12 +266,12 @@ func (s *swarmingServiceImpl) Close(ctx context.Context) {
 	}
 }
 
-func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarmingv2.NewTaskRequest) (res *swarmingv2.TaskRequestMetadataResponse, err error) {
+func (s *swarmingServiceImpl) NewTask(ctx context.Context, req *swarmingpb.NewTaskRequest) (res *swarmingpb.TaskRequestMetadataResponse, err error) {
 	return s.tasksClient.NewTask(ctx, req)
 }
 
-func (s *swarmingServiceImpl) CountTasks(ctx context.Context, start float64, state swarmingv2.StateQuery, tags []string) (res *swarmingv2.TasksCount, err error) {
-	return s.tasksClient.CountTasks(ctx, &swarmingv2.TasksCountRequest{
+func (s *swarmingServiceImpl) CountTasks(ctx context.Context, start float64, state swarmingpb.StateQuery, tags []string) (res *swarmingpb.TasksCount, err error) {
+	return s.tasksClient.CountTasks(ctx, &swarmingpb.TasksCountRequest{
 		Start: &timestamppb.Timestamp{
 			Seconds: int64(start),
 		},
@@ -279,12 +280,12 @@ func (s *swarmingServiceImpl) CountTasks(ctx context.Context, start float64, sta
 	})
 }
 
-func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int32, start float64, state swarmingv2.StateQuery, tags []string) ([]*swarmingv2.TaskResultResponse, error) {
+func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int32, start float64, state swarmingpb.StateQuery, tags []string) ([]*swarmingpb.TaskResultResponse, error) {
 	const defaultPageSize = 1000
 
 	// Create an empty array so that if serialized to JSON it's an empty list,
 	// not null.
-	tasks := make([]*swarmingv2.TaskResultResponse, 0, limit)
+	tasks := make([]*swarmingpb.TaskResultResponse, 0, limit)
 	cursor := ""
 	// Keep calling as long as there's a cursor indicating more tasks to list.
 	for {
@@ -294,7 +295,7 @@ func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int32, start 
 		} else {
 			pageSize = defaultPageSize
 		}
-		req := &swarmingv2.TasksWithPerfRequest{
+		req := &swarmingpb.TasksWithPerfRequest{
 			Cursor:                  cursor,
 			Limit:                   pageSize,
 			State:                   state,
@@ -321,14 +322,14 @@ func (s *swarmingServiceImpl) ListTasks(ctx context.Context, limit int32, start 
 	return tasks, nil
 }
 
-func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, killRunning bool) (res *swarmingv2.CancelResponse, err error) {
-	return s.tasksClient.CancelTask(ctx, &swarmingv2.TaskCancelRequest{
+func (s *swarmingServiceImpl) CancelTask(ctx context.Context, taskID string, killRunning bool) (res *swarmingpb.CancelResponse, err error) {
+	return s.tasksClient.CancelTask(ctx, &swarmingpb.TaskCancelRequest{
 		KillRunning: killRunning,
 		TaskId:      taskID,
 	})
 }
 
-func (s *swarmingServiceImpl) CancelTasks(ctx context.Context, limit int32, tags []string, killRunning bool, start, end time.Time) (*swarmingv2.TasksCancelResponse, error) {
+func (s *swarmingServiceImpl) CancelTasks(ctx context.Context, limit int32, tags []string, killRunning bool, start, end time.Time) (*swarmingpb.TasksCancelResponse, error) {
 	requestLimit := int32(1000)
 	cursor := ""
 	// Keep calling as long as there's a cursor indicating more tasks to cancel.
@@ -336,7 +337,7 @@ func (s *swarmingServiceImpl) CancelTasks(ctx context.Context, limit int32, tags
 		if limit < requestLimit {
 			requestLimit = limit
 		}
-		cancelRequest := &swarmingv2.TasksCancelRequest{
+		cancelRequest := &swarmingpb.TasksCancelRequest{
 			Limit:       requestLimit,
 			Cursor:      cursor,
 			Tags:        tags,
@@ -361,16 +362,16 @@ func (s *swarmingServiceImpl) CancelTasks(ctx context.Context, limit int32, tags
 	}
 }
 
-func (s *swarmingServiceImpl) TaskRequest(ctx context.Context, taskID string) (res *swarmingv2.TaskRequestResponse, err error) {
-	return s.tasksClient.GetRequest(ctx, &swarmingv2.TaskIdRequest{TaskId: taskID})
+func (s *swarmingServiceImpl) TaskRequest(ctx context.Context, taskID string) (res *swarmingpb.TaskRequestResponse, err error) {
+	return s.tasksClient.GetRequest(ctx, &swarmingpb.TaskIdRequest{TaskId: taskID})
 }
 
-func (s *swarmingServiceImpl) TaskResult(ctx context.Context, taskID string, fields *TaskResultFields) (res *swarmingv2.TaskResultResponse, err error) {
+func (s *swarmingServiceImpl) TaskResult(ctx context.Context, taskID string, fields *TaskResultFields) (res *swarmingpb.TaskResultResponse, err error) {
 	perf := false
 	if fields != nil {
 		perf = fields.WithPerf
 	}
-	return s.tasksClient.GetResult(ctx, &swarmingv2.TaskIdWithPerfRequest{
+	return s.tasksClient.GetResult(ctx, &swarmingpb.TaskIdWithPerfRequest{
 		IncludePerformanceStats: perf,
 		TaskId:                  taskID,
 	})
@@ -422,7 +423,7 @@ func (s *swarmingServiceImpl) oneTaskResultsRPC(ctx context.Context, taskIDs []s
 	if fields != nil {
 		perf = fields.WithPerf
 	}
-	res, err := s.tasksClient.BatchGetResult(ctx, &swarmingv2.BatchGetResultRequest{
+	res, err := s.tasksClient.BatchGetResult(ctx, &swarmingpb.BatchGetResultRequest{
 		TaskIds:                 taskIDs,
 		IncludePerformanceStats: perf,
 	})
@@ -438,9 +439,9 @@ func (s *swarmingServiceImpl) oneTaskResultsRPC(ctx context.Context, taskIDs []s
 			return nil, status.Errorf(codes.FailedPrecondition, "unexpected response format: expecting outcome of task %q, but got %q", taskID, res.Results[i].TaskId)
 		}
 		switch x := res.Results[i].Outcome.(type) {
-		case *swarmingv2.BatchGetResultResponse_ResultOrError_Result:
+		case *swarmingpb.BatchGetResultResponse_ResultOrError_Result:
 			out[i].Result = x.Result
-		case *swarmingv2.BatchGetResultResponse_ResultOrError_Error:
+		case *swarmingpb.BatchGetResultResponse_ResultOrError_Error:
 			out[i].Err = status.FromProto(x.Error).Err()
 		default:
 			return nil, status.Errorf(codes.FailedPrecondition, "unexpected response format: unexpected outcome of task %q", taskID)
@@ -449,7 +450,7 @@ func (s *swarmingServiceImpl) oneTaskResultsRPC(ctx context.Context, taskIDs []s
 	return out, nil
 }
 
-func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string, out io.Writer) (state swarmingv2.TaskState, err error) {
+func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string, out io.Writer) (state swarmingpb.TaskState, err error) {
 	// We fetch 160 chunks every time which amounts to a max of 16mb each time.
 	// Each chunk is 100kbs.
 	// See https://chromium.googlesource.com/infra/luci/luci-py/+/b517353c0df0b52b4bdda4231ff37e749dc627af/appengine/swarming/api_common.py#343
@@ -457,7 +458,7 @@ func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string, out
 
 	var offset int64
 	for {
-		resp, err := s.tasksClient.GetStdout(ctx, &swarmingv2.TaskIdWithOffsetRequest{
+		resp, err := s.tasksClient.GetStdout(ctx, &swarmingpb.TaskIdWithOffsetRequest{
 			Offset: offset,
 			Length: perRequestLength,
 			TaskId: taskID,
@@ -481,7 +482,7 @@ func (s *swarmingServiceImpl) TaskOutput(ctx context.Context, taskID string, out
 }
 
 // FilesFromCAS downloads outputs from CAS.
-func (s *swarmingServiceImpl) FilesFromCAS(ctx context.Context, outdir string, casRef *swarmingv2.CASReference) ([]string, error) {
+func (s *swarmingServiceImpl) FilesFromCAS(ctx context.Context, outdir string, casRef *swarmingpb.CASReference) ([]string, error) {
 	cascli, err := s.rbeClient(casRef.CasInstance)
 	if err != nil {
 		return nil, err
@@ -502,13 +503,13 @@ func (s *swarmingServiceImpl) FilesFromCAS(ctx context.Context, outdir string, c
 	return files, nil
 }
 
-func (s *swarmingServiceImpl) CountBots(ctx context.Context, dimensions []*swarmingv2.StringPair) (res *swarmingv2.BotsCount, err error) {
-	return s.botsClient.CountBots(ctx, &swarmingv2.BotsCountRequest{
+func (s *swarmingServiceImpl) CountBots(ctx context.Context, dimensions []*swarmingpb.StringPair) (res *swarmingpb.BotsCount, err error) {
+	return s.botsClient.CountBots(ctx, &swarmingpb.BotsCountRequest{
 		Dimensions: dimensions,
 	})
 }
 
-func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error) {
+func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []*swarmingpb.StringPair) ([]*swarmingpb.BotInfo, error) {
 	// TODO: Allow increasing the Limit past 1000. Ideally the server should treat
 	// a missing Limit as "as much as will fit within the RPC response" (e.g.
 	// 32MB). At the time of adding this Limit(1000) parameter, the server has
@@ -517,9 +518,9 @@ func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []*swarmi
 
 	cursor := ""
 	// Keep calling as long as there's a cursor indicating more bots to list.
-	bots := make([]*swarmingv2.BotInfo, 0, defaultPageSize)
+	bots := make([]*swarmingpb.BotInfo, 0, defaultPageSize)
 	for {
-		resp, err := s.botsClient.ListBots(ctx, &swarmingv2.BotsRequest{
+		resp, err := s.botsClient.ListBots(ctx, &swarmingpb.BotsRequest{
 			Limit:      defaultPageSize,
 			Cursor:     cursor,
 			Dimensions: dimensions,
@@ -537,25 +538,25 @@ func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []*swarmi
 	return bots, nil
 }
 
-func (s *swarmingServiceImpl) DeleteBot(ctx context.Context, botID string) (res *swarmingv2.DeleteResponse, err error) {
-	return s.botsClient.DeleteBot(ctx, &swarmingv2.BotRequest{
+func (s *swarmingServiceImpl) DeleteBot(ctx context.Context, botID string) (res *swarmingpb.DeleteResponse, err error) {
+	return s.botsClient.DeleteBot(ctx, &swarmingpb.BotRequest{
 		BotId: botID,
 	})
 }
 
-func (s *swarmingServiceImpl) TerminateBot(ctx context.Context, botID string, reason string) (res *swarmingv2.TerminateResponse, err error) {
-	return s.botsClient.TerminateBot(ctx, &swarmingv2.TerminateRequest{
+func (s *swarmingServiceImpl) TerminateBot(ctx context.Context, botID string, reason string) (res *swarmingpb.TerminateResponse, err error) {
+	return s.botsClient.TerminateBot(ctx, &swarmingpb.TerminateRequest{
 		BotId:  botID,
 		Reason: reason,
 	})
 }
 
-func (s *swarmingServiceImpl) ListBotTasks(ctx context.Context, botID string, limit int32, start float64, state swarmingv2.StateQuery) (res []*swarmingv2.TaskResultResponse, err error) {
+func (s *swarmingServiceImpl) ListBotTasks(ctx context.Context, botID string, limit int32, start float64, state swarmingpb.StateQuery) (res []*swarmingpb.TaskResultResponse, err error) {
 	const defaultPageSize = 1000
 
 	// Create an empty array so that if serialized to JSON it's an empty list,
 	// not null.
-	tasks := make([]*swarmingv2.TaskResultResponse, 0, limit)
+	tasks := make([]*swarmingpb.TaskResultResponse, 0, limit)
 	cursor := ""
 
 	// Keep calling as long as there's a cursor indicating more tasks to list.
@@ -566,7 +567,7 @@ func (s *swarmingServiceImpl) ListBotTasks(ctx context.Context, botID string, li
 		} else {
 			pageSize = defaultPageSize
 		}
-		req := &swarmingv2.BotTasksRequest{
+		req := &swarmingpb.BotTasksRequest{
 			BotId:                   botID,
 			Cursor:                  cursor,
 			Limit:                   pageSize,

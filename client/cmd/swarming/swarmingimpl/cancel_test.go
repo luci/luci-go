@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
-	swarming "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestCancelTaskParse(t *testing.T) {
@@ -57,10 +57,10 @@ func TestCancelTask(t *testing.T) {
 		failTaskID := "failtask"
 
 		service := &swarmingtest.Client{
-			CancelTaskMock: func(ctx context.Context, taskID string, killRunning bool) (*swarming.CancelResponse, error) {
+			CancelTaskMock: func(ctx context.Context, taskID string, killRunning bool) (*swarmingpb.CancelResponse, error) {
 				givenTaskID = taskID
 				givenKillRunning = killRunning
-				res := &swarming.CancelResponse{
+				res := &swarmingpb.CancelResponse{
 					Canceled:   true,
 					WasRunning: givenKillRunning,
 				}

@@ -38,7 +38,7 @@ import (
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/swarming/client/swarming"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // CmdTrigger returns an object for the `trigger` subcommand.
@@ -66,10 +66,10 @@ func CmdTrigger(authFlags base.AuthFlags) *subcommands.Command {
 // swarmingv2.StringPair, sorted by key and then value.
 //
 // TODO(vadimsh): Move to utils.
-func mapToArray(m stringmapflag.Value) []*swarmingv2.StringPair {
-	a := make([]*swarmingv2.StringPair, 0, len(m))
+func mapToArray(m stringmapflag.Value) []*swarmingpb.StringPair {
+	a := make([]*swarmingpb.StringPair, 0, len(m))
 	for k, v := range m {
-		a = append(a, &swarmingv2.StringPair{Key: k, Value: v})
+		a = append(a, &swarmingpb.StringPair{Key: k, Value: v})
 	}
 
 	sort.Slice(a, func(i, j int) bool {
@@ -83,17 +83,17 @@ func mapToArray(m stringmapflag.Value) []*swarmingv2.StringPair {
 // swarmingv2.StringListPair, sorted by key.
 //
 // TODO(vadimsh): Move to utils.
-func listToStringListPairArray(m stringlistflag.Flag) []*swarmingv2.StringListPair {
+func listToStringListPairArray(m stringlistflag.Flag) []*swarmingpb.StringListPair {
 	prefixes := make(map[string][]string)
 	for _, f := range m {
 		kv := strings.SplitN(f, "=", 2)
 		prefixes[kv[0]] = append(prefixes[kv[0]], kv[1])
 	}
 
-	a := make([]*swarmingv2.StringListPair, 0, len(prefixes))
+	a := make([]*swarmingpb.StringListPair, 0, len(prefixes))
 
 	for key, value := range prefixes {
-		a = append(a, &swarmingv2.StringListPair{
+		a = append(a, &swarmingpb.StringListPair{
 			Key:   key,
 			Value: value,
 		})
@@ -137,7 +137,7 @@ var containmentChoices = flagenum.Enum{
 }
 
 type optionalDimension struct {
-	kv         *swarmingv2.StringPair
+	kv         *swarmingpb.StringPair
 	expiration int64
 }
 
@@ -171,7 +171,7 @@ func (f *optionalDimension) Set(s string) error {
 	if err != nil {
 		return errors.Fmt("cannot parse the expiration in the optional dimension: %q", valExp)
 	}
-	f.kv = &swarmingv2.StringPair{Key: k, Value: valExp[:colon]}
+	f.kv = &swarmingpb.StringPair{Key: k, Value: valExp[:colon]}
 	f.expiration = exp
 	return nil
 }
@@ -307,27 +307,27 @@ func (cmd *triggerImpl) Execute(ctx context.Context, svc swarming.Client, sink *
 	}
 
 	return output.Proto(sink, &clipb.SpawnTasksOutput{
-		Tasks: []*swarmingv2.TaskRequestMetadataResponse{result},
+		Tasks: []*swarmingpb.TaskRequestMetadataResponse{result},
 	})
 }
 
-func (cmd *triggerImpl) createTaskSliceForOptionalDimension(properties *swarmingv2.TaskProperties) (*swarmingv2.TaskSlice, error) {
+func (cmd *triggerImpl) createTaskSliceForOptionalDimension(properties *swarmingpb.TaskProperties) (*swarmingpb.TaskSlice, error) {
 	if cmd.optionalDimension.isEmpty() {
 		return nil, nil
 	}
 	optDim := cmd.optionalDimension.kv
 	exp := cmd.optionalDimension.expiration
 
-	propsCpy := proto.Clone(properties).(*swarmingv2.TaskProperties)
+	propsCpy := proto.Clone(properties).(*swarmingpb.TaskProperties)
 	propsCpy.Dimensions = append(propsCpy.Dimensions, optDim)
 
-	return &swarmingv2.TaskSlice{
+	return &swarmingpb.TaskSlice{
 		ExpirationSecs: int32(exp),
 		Properties:     propsCpy,
 	}, nil
 }
 
-func (cmd *triggerImpl) processTriggerOptions(commands []string, serverURL *url.URL) (*swarmingv2.NewTaskRequest, error) {
+func (cmd *triggerImpl) processTriggerOptions(commands []string, serverURL *url.URL) (*swarmingpb.NewTaskRequest, error) {
 	if cmd.taskName == "" {
 		cmd.taskName = fmt.Sprintf("%s/%s", cmd.user, namePartFromDimensions(cmd.dimensions))
 	}
@@ -341,7 +341,7 @@ func (cmd *triggerImpl) processTriggerOptions(commands []string, serverURL *url.
 		}
 	}
 
-	var CASRef *swarmingv2.CASReference
+	var CASRef *swarmingpb.CASReference
 	if cmd.digest != "" {
 		d, err := digest.NewFromString(cmd.digest)
 		if err != nil {
@@ -358,16 +358,16 @@ func (cmd *triggerImpl) processTriggerOptions(commands []string, serverURL *url.
 			casInstance = "projects/" + strings.TrimSuffix(serverURL.Host, appspot) + "/instances/default_instance"
 		}
 
-		CASRef = &swarmingv2.CASReference{
+		CASRef = &swarmingpb.CASReference{
 			CasInstance: casInstance,
-			Digest: &swarmingv2.Digest{
+			Digest: &swarmingpb.Digest{
 				Hash:      d.Hash,
 				SizeBytes: d.Size,
 			},
 		}
 	}
 
-	properties := swarmingv2.TaskProperties{
+	properties := swarmingpb.TaskProperties{
 		Command:              commands,
 		RelativeCwd:          cmd.relativeCwd,
 		Dimensions:           mapToArray(cmd.dimensions),
@@ -379,17 +379,17 @@ func (cmd *triggerImpl) processTriggerOptions(commands []string, serverURL *url.
 		CasInputRoot:         CASRef,
 		Outputs:              cmd.outputs,
 		IoTimeoutSecs:        int32(cmd.ioTimeout),
-		Containment: &swarmingv2.Containment{
-			ContainmentType: swarmingv2.Containment_ContainmentType(swarmingv2.Containment_ContainmentType_value[cmd.containmentType.String()]),
+		Containment: &swarmingpb.Containment{
+			ContainmentType: swarmingpb.Containment_ContainmentType(swarmingpb.Containment_ContainmentType_value[cmd.containmentType.String()]),
 		},
 		SecretBytes: secretBytes,
 	}
 
 	if len(cmd.cipdPackage) > 0 {
-		var pkgs []*swarmingv2.CipdPackage
+		var pkgs []*swarmingpb.CipdPackage
 		for k, v := range cmd.cipdPackage {
 			s := strings.SplitN(k, ":", 2)
-			pkg := swarmingv2.CipdPackage{
+			pkg := swarmingpb.CipdPackage{
 				PackageName: s[len(s)-1],
 				Version:     v,
 			}
@@ -410,12 +410,12 @@ func (cmd *triggerImpl) processTriggerOptions(commands []string, serverURL *url.
 			return pi.Path < pj.Path
 		})
 
-		properties.CipdInput = &swarmingv2.CipdInput{Packages: pkgs}
+		properties.CipdInput = &swarmingpb.CipdInput{Packages: pkgs}
 	}
 
 	for name, path := range cmd.namedCache {
 		properties.Caches = append(properties.Caches,
-			&swarmingv2.CacheEntry{
+			&swarmingpb.CacheEntry{
 				Name: name,
 				Path: path,
 			},
@@ -435,7 +435,7 @@ func (cmd *triggerImpl) processTriggerOptions(commands []string, serverURL *url.
 		return nil, errors.Fmt("failed to get random UUID: %w", err)
 	}
 
-	var taskSlices []*swarmingv2.TaskSlice
+	var taskSlices []*swarmingpb.TaskSlice
 	taskSlice, err := cmd.createTaskSliceForOptionalDimension(&properties)
 	if err != nil {
 		return nil, errors.Fmt("failed to createTaskSliceForOptionalDimension: %w", err)
@@ -449,12 +449,12 @@ func (cmd *triggerImpl) processTriggerOptions(commands []string, serverURL *url.
 			baseExpiration = 60
 		}
 	}
-	taskSlices = append(taskSlices, &swarmingv2.TaskSlice{
+	taskSlices = append(taskSlices, &swarmingpb.TaskSlice{
 		ExpirationSecs: int32(baseExpiration),
 		Properties:     &properties,
 	})
 
-	return &swarmingv2.NewTaskRequest{
+	return &swarmingpb.NewTaskRequest{
 		Name:           cmd.taskName,
 		ParentTaskId:   cmd.parentTaskID,
 		Priority:       int32(cmd.priority),
@@ -463,7 +463,7 @@ func (cmd *triggerImpl) processTriggerOptions(commands []string, serverURL *url.
 		TaskSlices:     taskSlices,
 		User:           cmd.user,
 		RequestUuid:    randomUUID.String(),
-		Resultdb: &swarmingv2.ResultDBCfg{
+		Resultdb: &swarmingpb.ResultDBCfg{
 			Enable: cmd.enableResultDB,
 		},
 		Realm: cmd.realm,

@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	swarminggrpcpb "go.chromium.org/luci/swarming/proto/api_v2/grpcpb"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
@@ -52,7 +53,7 @@ func TestDeleteBot(t *testing.T) {
 		swr := &mockSwarmingBotsClient{}
 
 		c := withDispatcher(memory.Use(context.Background()), dsp)
-		c = withSwarming(c, func(context.Context, string) swarmingpb.BotsClient { return swr })
+		c = withSwarming(c, func(context.Context, string) swarminggrpcpb.BotsClient { return swr })
 
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
@@ -198,7 +199,7 @@ func TestManageBot(t *testing.T) {
 		swr := &mockSwarmingBotsClient{}
 
 		c := withDispatcher(memory.Use(context.Background()), dsp)
-		c = withSwarming(c, func(context.Context, string) swarmingpb.BotsClient { return swr })
+		c = withSwarming(c, func(context.Context, string) swarminggrpcpb.BotsClient { return swr })
 
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
@@ -435,7 +436,7 @@ func TestTerminateBot(t *testing.T) {
 		swr := &mockSwarmingBotsClient{}
 
 		c := withDispatcher(memory.Use(context.Background()), dsp)
-		c = withSwarming(c, func(context.Context, string) swarmingpb.BotsClient { return swr })
+		c = withSwarming(c, func(context.Context, string) swarminggrpcpb.BotsClient { return swr })
 
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
@@ -586,7 +587,7 @@ func TestInspectSwarming(t *testing.T) {
 		swr := &mockSwarmingBotsClient{}
 
 		c := withDispatcher(memory.Use(context.Background()), dsp)
-		c = withSwarming(c, func(context.Context, string) swarmingpb.BotsClient { return swr })
+		c = withSwarming(c, func(context.Context, string) swarminggrpcpb.BotsClient { return swr })
 
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
@@ -793,7 +794,7 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 		swr := &mockSwarmingBotsClient{}
 
 		c := withDispatcher(memory.Use(context.Background()), dsp)
-		c = withSwarming(c, func(context.Context, string) swarmingpb.BotsClient { return swr })
+		c = withSwarming(c, func(context.Context, string) swarminggrpcpb.BotsClient { return swr })
 
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
@@ -939,7 +940,7 @@ type mockSwarmingBotsClient struct {
 	terminateBotResponse  *swarmingpb.TerminateResponse
 	listBotsResponse      *swarmingpb.BotInfoListResponse
 
-	swarmingpb.BotsClient // "implements" remaining RPCs by nil panicking
+	swarminggrpcpb.BotsClient // "implements" remaining RPCs by nil panicking
 }
 
 func handleCall[R any](mc *mockSwarmingBotsClient, method string, resp *R) (*R, error) {

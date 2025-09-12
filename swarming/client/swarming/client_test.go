@@ -30,7 +30,8 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	swarminggrpcpb "go.chromium.org/luci/swarming/proto/api_v2/grpcpb"
 )
 
 func TestTaskResults(t *testing.T) {
@@ -89,14 +90,14 @@ func TestTaskResults(t *testing.T) {
 }
 
 type mockedTasksClient struct {
-	swarmingv2.TasksClient
+	swarminggrpcpb.TasksClient
 
 	m     sync.Mutex
 	calls [][]string
 	errs  []error
 }
 
-func (c *mockedTasksClient) BatchGetResult(ctx context.Context, in *swarmingv2.BatchGetResultRequest, opts ...grpc.CallOption) (*swarmingv2.BatchGetResultResponse, error) {
+func (c *mockedTasksClient) BatchGetResult(ctx context.Context, in *swarmingpb.BatchGetResultRequest, opts ...grpc.CallOption) (*swarmingpb.BatchGetResultResponse, error) {
 	c.m.Lock()
 	c.calls = append(c.calls, in.TaskIds)
 	var err error
@@ -109,18 +110,18 @@ func (c *mockedTasksClient) BatchGetResult(ctx context.Context, in *swarmingv2.B
 		return nil, err
 	}
 
-	out := make([]*swarmingv2.BatchGetResultResponse_ResultOrError, len(in.TaskIds))
+	out := make([]*swarmingpb.BatchGetResultResponse_ResultOrError, len(in.TaskIds))
 	for i, taskID := range in.TaskIds {
-		out[i] = &swarmingv2.BatchGetResultResponse_ResultOrError{
+		out[i] = &swarmingpb.BatchGetResultResponse_ResultOrError{
 			TaskId: taskID,
-			Outcome: &swarmingv2.BatchGetResultResponse_ResultOrError_Result{
-				Result: &swarmingv2.TaskResultResponse{
+			Outcome: &swarmingpb.BatchGetResultResponse_ResultOrError_Result{
+				Result: &swarmingpb.TaskResultResponse{
 					TaskId: taskID,
-					State:  swarmingv2.TaskState_COMPLETED,
+					State:  swarmingpb.TaskState_COMPLETED,
 				},
 			},
 		}
 	}
 
-	return &swarmingv2.BatchGetResultResponse{Results: out}, nil
+	return &swarmingpb.BatchGetResultResponse{Results: out}, nil
 }

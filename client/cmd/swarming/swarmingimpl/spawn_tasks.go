@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/swarming/client/swarming"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // CmdSpawnTasks returns an object for the `spawn-tasks` subcommand.
@@ -60,7 +60,7 @@ type spawnTasksImpl struct {
 	jsonInput        string
 	cancelExtraTasks bool
 
-	requests []*swarmingv2.NewTaskRequest
+	requests []*swarmingpb.NewTaskRequest
 }
 
 func (cmd *spawnTasksImpl) RegisterFlags(fs *flag.FlagSet) {
@@ -108,7 +108,7 @@ func usingDefaultServer(env subcommands.Env, serverURL *url.URL) (bool, error) {
 	return envServerURL.String() == serverURL.String(), nil
 }
 
-func processTasksStream(ctx context.Context, tasks io.Reader, env subcommands.Env, serverURL *url.URL) ([]*swarmingv2.NewTaskRequest, error) {
+func processTasksStream(ctx context.Context, tasks io.Reader, env subcommands.Env, serverURL *url.URL) ([]*swarmingpb.NewTaskRequest, error) {
 	blob, err := io.ReadAll(tasks)
 	if err != nil {
 		return nil, errors.Fmt("reading tasks file: %w", err)
@@ -149,9 +149,9 @@ func processTasksStream(ctx context.Context, tasks io.Reader, env subcommands.En
 	return requests.Requests, nil
 }
 
-func createNewTasks(ctx context.Context, service swarming.Client, requests []*swarmingv2.NewTaskRequest) ([]*swarmingv2.TaskRequestMetadataResponse, error) {
+func createNewTasks(ctx context.Context, service swarming.Client, requests []*swarmingpb.NewTaskRequest) ([]*swarmingpb.TaskRequestMetadataResponse, error) {
 	var mu sync.Mutex
-	results := make([]*swarmingv2.TaskRequestMetadataResponse, 0, len(requests))
+	results := make([]*swarmingpb.TaskRequestMetadataResponse, 0, len(requests))
 	err := parallel.WorkPool(8, func(gen chan<- func() error) {
 		for _, request := range requests {
 			gen <- func() error {

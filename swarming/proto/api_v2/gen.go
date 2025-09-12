@@ -15,4 +15,4 @@
 // Package apipb contains swarming.v2 protos
 package apipb
 
-//go:generate cproto -use-grpc-plugin -use-ancient-protoc-gen-go
+//go:generate cproto -use-grpc-plugin -use-modern-protoc-gen-go -move-grpc-into-subpackage

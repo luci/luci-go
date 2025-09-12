@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	apigrpcpb "go.chromium.org/luci/swarming/proto/api_v2/grpcpb"
 )
 
 // SwarmingClient is a Swarming API wrapper for buildbucket-specific usage.
@@ -36,7 +37,7 @@ type SwarmingClient interface {
 
 // swarmingServiceImpl for use in real production envs.
 type swarmingServiceImpl struct {
-	TasksClient apipb.TasksClient
+	TasksClient apigrpcpb.TasksClient
 }
 
 // Ensure swarmingClientImpl implements SwarmingClient.
@@ -60,18 +61,18 @@ func NewSwarmingClient(ctx context.Context, host string, project string) (Swarmi
 		Host: host,
 	}
 	return &swarmingServiceImpl{
-		TasksClient: apipb.NewTasksClient(&prpcClient),
+		TasksClient: apigrpcpb.NewTasksClient(&prpcClient),
 	}, nil
 }
 
-// CreateTask calls `apipb.TasksClient.NewTask` to create a task.
+// CreateTask calls `apigrpcpb.TasksClient.NewTask` to create a task.
 func (s *swarmingServiceImpl) CreateTask(ctx context.Context, createTaskReq *apipb.NewTaskRequest) (*apipb.TaskRequestMetadataResponse, error) {
 	subCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 	return s.TasksClient.NewTask(subCtx, createTaskReq)
 }
 
-// GetTaskResult calls `apipb.TasksClient.GetResult` to get the result of a task via a task id.
+// GetTaskResult calls `apigrpcpb.TasksClient.GetResult` to get the result of a task via a task id.
 func (s *swarmingServiceImpl) GetTaskResult(ctx context.Context, taskID string) (*apipb.TaskResultResponse, error) {
 	subCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()

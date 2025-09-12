@@ -40,7 +40,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/swarming/client/swarming"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 type taskOutputOption []string
@@ -107,7 +107,7 @@ type taskResult struct {
 
 	// result is the raw result structure returned by a swarming RPC call.
 	// result may be nil if err is non-nil.
-	result *swarmingv2.TaskResultResponse
+	result *swarmingpb.TaskResultResponse
 
 	// output is the console output produced by the swarming task.
 	// output will only be populated if requested (nil otherwise).
@@ -130,7 +130,7 @@ func (t *taskResult) SummaryLine() string {
 	if t.err != nil {
 		return fmt.Sprintf("%s: %s", t.taskID, t.err)
 	}
-	if t.result.State == swarmingv2.TaskState_COMPLETED {
+	if t.result.State == swarmingpb.TaskState_COMPLETED {
 		return fmt.Sprintf("%s: COMPLETED, exit code %d", t.taskID, t.result.ExitCode)
 	}
 	return fmt.Sprintf("%s: %s", t.taskID, t.result.State)
@@ -386,7 +386,7 @@ func (cmd *collectImpl) fetchTaskResults(ctx context.Context, svc swarming.Clien
 		return
 	}
 
-	if res.result.State == swarmingv2.TaskState_PENDING || res.result.State == swarmingv2.TaskState_RUNNING {
+	if res.result.State == swarmingpb.TaskState_PENDING || res.result.State == swarmingpb.TaskState_RUNNING {
 		res.logSummary(ctx)
 		return
 	}
@@ -409,9 +409,9 @@ func (cmd *collectImpl) fetchTaskResults(ctx context.Context, svc swarming.Clien
 	if wantIsolatedOut {
 		eg.Go(func() error {
 			logging.Debugf(ectx, "%s: fetching isolated output", res.taskID)
-			output, err := svc.FilesFromCAS(ectx, outputDir, &swarmingv2.CASReference{
+			output, err := svc.FilesFromCAS(ectx, outputDir, &swarmingpb.CASReference{
 				CasInstance: res.result.CasOutputRoot.CasInstance,
-				Digest: &swarmingv2.Digest{
+				Digest: &swarmingpb.Digest{
 					Hash:      res.result.CasOutputRoot.Digest.Hash,
 					SizeBytes: res.result.CasOutputRoot.Digest.SizeBytes,
 				},
@@ -537,7 +537,7 @@ func (cmd *collectImpl) Execute(ctx context.Context, svc swarming.Client, sink *
 	// available).
 	resultsCh := make(chan taskResult)
 	go func() {
-		swarming.GetMany(wctx, svc, cmd.taskIDs, &fields, mode, func(taskID string, res *swarmingv2.TaskResultResponse, err error) {
+		swarming.GetMany(wctx, svc, cmd.taskIDs, &fields, mode, func(taskID string, res *swarmingpb.TaskResultResponse, err error) {
 			go func() {
 				taskRes := taskResult{taskID: taskID, result: res, err: err}
 				if acqErr := acquireSlot(); acqErr != nil {

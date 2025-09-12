@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
-	swarming "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestDeleteBotsParse(t *testing.T) {
@@ -55,17 +55,17 @@ func TestDeleteBots(t *testing.T) {
 		givenbotID := []string{}
 
 		service := &swarmingtest.Client{
-			DeleteBotMock: func(ctx context.Context, botID string) (*swarming.DeleteResponse, error) {
+			DeleteBotMock: func(ctx context.Context, botID string) (*swarmingpb.DeleteResponse, error) {
 				givenbotID = append(givenbotID, botID)
 				if botID == failbotID {
 					return nil, status.Errorf(codes.NotFound, "no such bot")
 				}
 				if botID == "cannotdeletebotID" {
-					return &swarming.DeleteResponse{
+					return &swarmingpb.DeleteResponse{
 						Deleted: false,
 					}, nil
 				}
-				return &swarming.DeleteResponse{
+				return &swarmingpb.DeleteResponse{
 					Deleted: true,
 				}, nil
 			},

@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 var testSpawnEnv = subcommands.Env{
@@ -95,11 +95,11 @@ func TestProcessTasksStream(t *testing.T) {
 		result, err := processTasksStream(ctx, r, testSpawnEnv, serverURL)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, result, should.HaveLength(1))
-		assert.Loosely(t, result[0], should.Match(&swarmingv2.NewTaskRequest{
+		assert.Loosely(t, result[0], should.Match(&swarmingpb.NewTaskRequest{
 			Name:         "foo",
 			User:         "test",
 			ParentTaskId: "293109284abc",
-			Properties: &swarmingv2.TaskProperties{
+			Properties: &swarmingpb.TaskProperties{
 				Command: []string{"/bin/ls"},
 				Outputs: []string{"my_output.bin"},
 			},
@@ -153,24 +153,24 @@ func TestProcessTasksStream(t *testing.T) {
 func TestCreateNewTasks(t *testing.T) {
 	t.Parallel()
 
-	req := &swarmingv2.NewTaskRequest{Name: "hello!"}
-	expectReq := &swarmingv2.TaskRequestResponse{Name: "hello!"}
+	req := &swarmingpb.NewTaskRequest{Name: "hello!"}
+	expectReq := &swarmingpb.TaskRequestResponse{Name: "hello!"}
 	ctx := context.Background()
 
 	ftt.Run(`Test fatal response`, t, func(t *ftt.Test) {
 		service := &swarmingtest.Client{
-			NewTaskMock: func(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error) {
+			NewTaskMock: func(ctx context.Context, req *swarmingpb.NewTaskRequest) (*swarmingpb.TaskRequestMetadataResponse, error) {
 				return nil, status.Errorf(codes.NotFound, "not found")
 			},
 		}
-		_, err := createNewTasks(ctx, service, []*swarmingv2.NewTaskRequest{req})
+		_, err := createNewTasks(ctx, service, []*swarmingpb.NewTaskRequest{req})
 		assert.Loosely(t, err, should.ErrLike("not found"))
 	})
 
 	goodService := &swarmingtest.Client{
-		NewTaskMock: func(ctx context.Context, req *swarmingv2.NewTaskRequest) (*swarmingv2.TaskRequestMetadataResponse, error) {
-			return &swarmingv2.TaskRequestMetadataResponse{
-				Request: &swarmingv2.TaskRequestResponse{
+		NewTaskMock: func(ctx context.Context, req *swarmingpb.NewTaskRequest) (*swarmingpb.TaskRequestMetadataResponse, error) {
+			return &swarmingpb.TaskRequestMetadataResponse{
+				Request: &swarmingpb.TaskRequestResponse{
 					Name: req.Name,
 				},
 			}, nil
@@ -178,14 +178,14 @@ func TestCreateNewTasks(t *testing.T) {
 	}
 
 	ftt.Run(`Test single success`, t, func(t *ftt.Test) {
-		results, err := createNewTasks(ctx, goodService, []*swarmingv2.NewTaskRequest{req})
+		results, err := createNewTasks(ctx, goodService, []*swarmingpb.NewTaskRequest{req})
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, results, should.HaveLength(1))
 		assert.Loosely(t, results[0].Request, should.Match(expectReq))
 	})
 
 	ftt.Run(`Test many success`, t, func(t *ftt.Test) {
-		reqs := make([]*swarmingv2.NewTaskRequest, 0, 12)
+		reqs := make([]*swarmingpb.NewTaskRequest, 0, 12)
 		for range 12 {
 			reqs = append(reqs, req)
 		}

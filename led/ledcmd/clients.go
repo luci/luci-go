@@ -19,11 +19,11 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/grpc/prpc"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	swarminggrpcpb "go.chromium.org/luci/swarming/proto/api_v2/grpcpb"
 )
 
-func newSwarmTasksClient(authClient *http.Client, host string) swarmingpb.TasksClient {
-	return swarmingpb.NewTasksClient(&prpc.Client{
+func newSwarmTasksClient(authClient *http.Client, host string) swarminggrpcpb.TasksClient {
+	return swarminggrpcpb.NewTasksClient(&prpc.Client{
 		C:    authClient,
 		Host: host,
 	})

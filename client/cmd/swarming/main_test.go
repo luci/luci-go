@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // IntegrationTestEnvVar is the name of the environment variable which controls
@@ -84,7 +84,7 @@ func TestTasksCommand(t *testing.T) {
 }
 
 // triggerTask triggers a task and returns the triggered TaskRequest.
-func triggerTask(t testing.TB, args []string) *swarmingv2.TaskRequestMetadataResponse {
+func triggerTask(t testing.TB, args []string) *swarmingpb.TaskRequestMetadataResponse {
 	t.Helper()
 
 	dir := t.TempDir()

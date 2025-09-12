@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	apigrpcpb "go.chromium.org/luci/swarming/proto/api_v2/grpcpb"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/cursor"
@@ -59,7 +60,7 @@ const (
 // It is a collection of various RPCs that didn't fit other services. Individual
 // RPCs are implemented in swarming_*.go files.
 type SwarmingServer struct {
-	apipb.UnimplementedSwarmingServer
+	apigrpcpb.UnimplementedSwarmingServer
 
 	// ServerVersion is the version of the executing binary.
 	ServerVersion string
@@ -70,7 +71,7 @@ type SwarmingServer struct {
 // It exposes methods to view and manipulate state of Swarming bots. Individual
 // RPCs are implemented in bots_*.go files.
 type BotsServer struct {
-	apipb.UnimplementedBotsServer
+	apigrpcpb.UnimplementedBotsServer
 
 	// BotQuerySplitMode controls how "finely" to split BotInfo queries.
 	BotQuerySplitMode model.SplitMode
@@ -85,7 +86,7 @@ type BotsServer struct {
 // It exposes methods to view and manipulate state of Swarming tasks. Individual
 // RPCs are implemented in tasks_*.go files.
 type TasksServer struct {
-	apipb.UnimplementedTasksServer
+	apigrpcpb.UnimplementedTasksServer
 
 	// TaskQuerySplitMode controls how "finely" to split TaskResultSummary queries.
 	TaskQuerySplitMode model.SplitMode

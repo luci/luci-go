@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestTerminateBotsParse(t *testing.T) {
@@ -77,51 +77,51 @@ func TestTerminateBots(t *testing.T) {
 		})
 
 		service := &swarmingtest.Client{
-			TerminateBotMock: func(ctx context.Context, botID string, reason string) (*swarmingv2.TerminateResponse, error) {
+			TerminateBotMock: func(ctx context.Context, botID string, reason string) (*swarmingpb.TerminateResponse, error) {
 				givenBotID = botID
 				if botID == failBotID {
 					return nil, status.Errorf(codes.NotFound, "no such bot")
 				}
 				if botID == taskStillRunningBotID {
-					return &swarmingv2.TerminateResponse{
+					return &swarmingpb.TerminateResponse{
 						TaskId: stillRunningTaskID,
 					}, nil
 				}
 				if botID == errorAtTaskBotID {
-					return &swarmingv2.TerminateResponse{
+					return &swarmingpb.TerminateResponse{
 						TaskId: failTaskID,
 					}, nil
 				}
 				if botID == statusNotCompletedBotID {
-					return &swarmingv2.TerminateResponse{
+					return &swarmingpb.TerminateResponse{
 						TaskId: statusNotCompletedTaskID,
 					}, nil
 				}
-				return &swarmingv2.TerminateResponse{
+				return &swarmingpb.TerminateResponse{
 					TaskId: terminateTaskID,
 				}, nil
 			},
-			TaskResultMock: func(ctx context.Context, taskID string, _ *swarming.TaskResultFields) (*swarmingv2.TaskResultResponse, error) {
+			TaskResultMock: func(ctx context.Context, taskID string, _ *swarming.TaskResultFields) (*swarmingpb.TaskResultResponse, error) {
 				givenTaskID = taskID
 				if taskID == stillRunningTaskID && countLoop < 2 {
 					countLoop += 1
-					return &swarmingv2.TaskResultResponse{
+					return &swarmingpb.TaskResultResponse{
 						TaskId: taskID,
-						State:  swarmingv2.TaskState_RUNNING,
+						State:  swarmingpb.TaskState_RUNNING,
 					}, nil
 				}
 				if taskID == failTaskID {
 					return nil, status.Errorf(codes.PermissionDenied, "failed to call GetTaskResult")
 				}
 				if taskID == statusNotCompletedTaskID {
-					return &swarmingv2.TaskResultResponse{
+					return &swarmingpb.TaskResultResponse{
 						TaskId: taskID,
-						State:  swarmingv2.TaskState_BOT_DIED,
+						State:  swarmingpb.TaskState_BOT_DIED,
 					}, nil
 				}
-				return &swarmingv2.TaskResultResponse{
+				return &swarmingpb.TaskResultResponse{
 					TaskId: taskID,
-					State:  swarmingv2.TaskState_COMPLETED,
+					State:  swarmingpb.TaskState_COMPLETED,
 				}, nil
 			},
 		}

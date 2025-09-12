@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestTasksParse(t *testing.T) {
@@ -60,16 +60,16 @@ func TestTasksOutput(t *testing.T) {
 	t.Parallel()
 
 	service := &swarmingtest.Client{
-		ListTasksMock: func(ctx context.Context, i int32, f float64, sq swarmingv2.StateQuery, s []string) ([]*swarmingv2.TaskResultResponse, error) {
+		ListTasksMock: func(ctx context.Context, i int32, f float64, sq swarmingpb.StateQuery, s []string) ([]*swarmingpb.TaskResultResponse, error) {
 			assert.Loosely(t, s, should.Match([]string{"t:1", "t:2"}))
-			assert.Loosely(t, swarmingv2.StateQuery_QUERY_PENDING, should.Equal(sq))
-			return []*swarmingv2.TaskResultResponse{
+			assert.Loosely(t, swarmingpb.StateQuery_QUERY_PENDING, should.Equal(sq))
+			return []*swarmingpb.TaskResultResponse{
 				{TaskId: "task1"},
 				{TaskId: "task2"},
 			}, nil
 		},
-		CountTasksMock: func(ctx context.Context, f float64, sq swarmingv2.StateQuery, s []string) (*swarmingv2.TasksCount, error) {
-			return &swarmingv2.TasksCount{
+		CountTasksMock: func(ctx context.Context, f float64, sq swarmingpb.StateQuery, s []string) (*swarmingpb.TasksCount, error) {
+			return &swarmingpb.TasksCount{
 				Count: 123,
 			}, nil
 		},

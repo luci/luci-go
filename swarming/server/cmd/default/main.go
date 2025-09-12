@@ -48,7 +48,7 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 
-	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	swarminggrpcpb "go.chromium.org/luci/swarming/proto/api_v2/grpcpb"
 	"go.chromium.org/luci/swarming/server/botapi"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/cfg"
@@ -264,14 +264,14 @@ func main() {
 			BotQuerySplitMode: model.SplitOptimally,
 			TasksManager:      tasksManager,
 		}
-		apipb.RegisterBotsServer(srv, botsServer)
+		swarminggrpcpb.RegisterBotsServer(srv, botsServer)
 
 		tasksServer := &rpcs.TasksServer{
 			TaskQuerySplitMode: model.SplitOptimally,
 			TasksManager:       tasksManager,
 		}
-		apipb.RegisterTasksServer(srv, tasksServer)
-		apipb.RegisterSwarmingServer(srv, &rpcs.SwarmingServer{
+		swarminggrpcpb.RegisterTasksServer(srv, tasksServer)
+		swarminggrpcpb.RegisterSwarmingServer(srv, &rpcs.SwarmingServer{
 			ServerVersion: srv.Options.ImageVersion(),
 		})
 		bbpb.RegisterTaskBackendServer(srv, &rpcs.TaskBackend{

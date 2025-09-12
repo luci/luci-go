@@ -8,7 +8,9 @@
 // - protoc             v6.32.0
 // source: go.chromium.org/luci/swarming/proto/api_v2/swarming.proto
 
-package apipb
+package apigrpcpb
+
+import . "go.chromium.org/luci/swarming/proto/api_v2"
 
 import (
 	context "context"

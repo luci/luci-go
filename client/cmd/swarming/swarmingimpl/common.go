@@ -18,44 +18,44 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // TODO(vadimsh): Convert into flag.Value.
-func stateMap(value string) (state swarmingv2.StateQuery, err error) {
+func stateMap(value string) (state swarmingpb.StateQuery, err error) {
 	value = strings.ToLower(value)
 	switch value {
 	case "pending":
-		state = swarmingv2.StateQuery_QUERY_PENDING
+		state = swarmingpb.StateQuery_QUERY_PENDING
 	case "running":
-		state = swarmingv2.StateQuery_QUERY_RUNNING
+		state = swarmingpb.StateQuery_QUERY_RUNNING
 	case "pending_running":
-		state = swarmingv2.StateQuery_QUERY_PENDING_RUNNING
+		state = swarmingpb.StateQuery_QUERY_PENDING_RUNNING
 	case "completed":
-		state = swarmingv2.StateQuery_QUERY_COMPLETED
+		state = swarmingpb.StateQuery_QUERY_COMPLETED
 	case "completed_success":
-		state = swarmingv2.StateQuery_QUERY_COMPLETED_SUCCESS
+		state = swarmingpb.StateQuery_QUERY_COMPLETED_SUCCESS
 	case "completed_failure":
-		state = swarmingv2.StateQuery_QUERY_COMPLETED_FAILURE
+		state = swarmingpb.StateQuery_QUERY_COMPLETED_FAILURE
 	case "expired":
-		state = swarmingv2.StateQuery_QUERY_EXPIRED
+		state = swarmingpb.StateQuery_QUERY_EXPIRED
 	case "timed_out":
-		state = swarmingv2.StateQuery_QUERY_TIMED_OUT
+		state = swarmingpb.StateQuery_QUERY_TIMED_OUT
 	case "bot_died":
-		state = swarmingv2.StateQuery_QUERY_BOT_DIED
+		state = swarmingpb.StateQuery_QUERY_BOT_DIED
 	case "canceled":
-		state = swarmingv2.StateQuery_QUERY_CANCELED
+		state = swarmingpb.StateQuery_QUERY_CANCELED
 	case "":
 	case "all":
-		state = swarmingv2.StateQuery_QUERY_ALL
+		state = swarmingpb.StateQuery_QUERY_ALL
 	case "deduped":
-		state = swarmingv2.StateQuery_QUERY_DEDUPED
+		state = swarmingpb.StateQuery_QUERY_DEDUPED
 	case "killed":
-		state = swarmingv2.StateQuery_QUERY_KILLED
+		state = swarmingpb.StateQuery_QUERY_KILLED
 	case "no_resource":
-		state = swarmingv2.StateQuery_QUERY_NO_RESOURCE
+		state = swarmingpb.StateQuery_QUERY_NO_RESOURCE
 	case "client_error":
-		state = swarmingv2.StateQuery_QUERY_CLIENT_ERROR
+		state = swarmingpb.StateQuery_QUERY_CLIENT_ERROR
 	default:
 		err = errors.Fmt("Invalid state %s", value)
 	}
@@ -63,11 +63,11 @@ func stateMap(value string) (state swarmingv2.StateQuery, err error) {
 }
 
 // TaskIsAlive is true if the task is pending or running.
-func TaskIsAlive(t swarmingv2.TaskState) bool {
-	return t == swarmingv2.TaskState_PENDING || t == swarmingv2.TaskState_RUNNING
+func TaskIsAlive(t swarmingpb.TaskState) bool {
+	return t == swarmingpb.TaskState_PENDING || t == swarmingpb.TaskState_RUNNING
 }
 
 // TaskIsCompleted is true if the task has completed (successfully or not).
-func TaskIsCompleted(t swarmingv2.TaskState) bool {
-	return t == swarmingv2.TaskState_COMPLETED
+func TaskIsCompleted(t swarmingpb.TaskState) bool {
+	return t == swarmingpb.TaskState_COMPLETED
 }

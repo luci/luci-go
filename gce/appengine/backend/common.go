@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
-	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	swarminggrpcpb "go.chromium.org/luci/swarming/proto/api_v2/grpcpb"
 
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
@@ -175,7 +175,7 @@ func newCompute(c context.Context) ComputeService {
 var swrKey = "swr"
 
 // swarmingFactroy produces Swarming client connected to the given server.
-type swarmingFactory func(c context.Context, server string) swarmingpb.BotsClient
+type swarmingFactory func(c context.Context, server string) swarminggrpcpb.BotsClient
 
 // withSwarming returns a new context with the given swarming client factory.
 func withSwarming(c context.Context, factory swarmingFactory) context.Context {
@@ -185,19 +185,19 @@ func withSwarming(c context.Context, factory swarmingFactory) context.Context {
 // getSwarming returns the swarming client connected to the given server.
 //
 // Uses the factory in the context to construct it.
-func getSwarming(c context.Context, url string) swarmingpb.BotsClient {
+func getSwarming(c context.Context, url string) swarminggrpcpb.BotsClient {
 	return c.Value(&swrKey).(swarmingFactory)(c, url)
 }
 
 // newSwarming produces a Swarming client connected to the given server.
 //
 // Panics on errors.
-func newSwarming(c context.Context, url string) swarmingpb.BotsClient {
+func newSwarming(c context.Context, url string) swarminggrpcpb.BotsClient {
 	t, err := auth.GetRPCTransport(c, auth.AsSelf)
 	if err != nil {
 		panic(err)
 	}
-	return swarmingpb.NewBotsClient(
+	return swarminggrpcpb.NewBotsClient(
 		&prpc.Client{
 			C:       &http.Client{Transport: t},
 			Host:    strings.TrimPrefix(url, "https://"),

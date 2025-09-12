@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestRequestShowParse(t *testing.T) {
@@ -52,9 +52,9 @@ func TestRequestShow(t *testing.T) {
 	t.Parallel()
 
 	service := &swarmingtest.Client{
-		TaskRequestMock: func(ctx context.Context, s string) (*swarmingv2.TaskRequestResponse, error) {
+		TaskRequestMock: func(ctx context.Context, s string) (*swarmingpb.TaskRequestResponse, error) {
 			assert.Loosely(t, s, should.Equal("aaaa"))
-			return &swarmingv2.TaskRequestResponse{
+			return &swarmingpb.TaskRequestResponse{
 				TaskId:       "aaaa",
 				ParentTaskId: "bbbb",
 			}, nil

@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/swarming/client/swarming"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 // CmdTerminateBot returns an object for the `terminate` subcommand.
@@ -74,7 +74,7 @@ func (cmd *terminateImpl) Execute(ctx context.Context, svc swarming.Client, sink
 		if err != nil {
 			return errors.Fmt("failed when polling task %s: %w", res.TaskId, err)
 		}
-		if taskres.State != swarmingv2.TaskState_COMPLETED {
+		if taskres.State != swarmingpb.TaskState_COMPLETED {
 			return errors.Fmt("failed to terminate bot ID %s with task state %s", cmd.botID, taskres.State)
 		}
 	}

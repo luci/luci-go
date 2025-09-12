@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/swarming/client/swarming/swarmingtest"
-	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestBotsParse(t *testing.T) {
@@ -47,7 +47,7 @@ func TestBotsParse(t *testing.T) {
 func TestFileOutput(t *testing.T) {
 	t.Parallel()
 
-	expectedDims := []*swarmingv2.StringPair{
+	expectedDims := []*swarmingpb.StringPair{
 		{
 			Key:   "a",
 			Value: "b",
@@ -57,12 +57,12 @@ func TestFileOutput(t *testing.T) {
 			Value: "d",
 		},
 	}
-	expectedCount := &swarmingv2.BotsCount{
+	expectedCount := &swarmingpb.BotsCount{
 		Count: 10,
 		Busy:  6,
 		Dead:  4,
 	}
-	expectedBots := []*swarmingv2.BotInfo{
+	expectedBots := []*swarmingpb.BotInfo{
 		{
 			BotId: "bot1",
 		},
@@ -72,14 +72,14 @@ func TestFileOutput(t *testing.T) {
 	}
 
 	service := &swarmingtest.Client{
-		CountBotsMock: func(ctx context.Context, dims []*swarmingv2.StringPair) (*swarmingv2.BotsCount, error) {
+		CountBotsMock: func(ctx context.Context, dims []*swarmingpb.StringPair) (*swarmingpb.BotsCount, error) {
 			for _, dim := range dims {
 				assert.Loosely(t, expectedDims, should.ContainMatch(dim))
 			}
 			assert.Loosely(t, dims, should.HaveLength(len(expectedDims)))
 			return expectedCount, nil
 		},
-		ListBotsMock: func(ctx context.Context, dims []*swarmingv2.StringPair) ([]*swarmingv2.BotInfo, error) {
+		ListBotsMock: func(ctx context.Context, dims []*swarmingpb.StringPair) ([]*swarmingpb.BotInfo, error) {
 			// Sometimes the argument parser ends up creating these arguments in
 			// different order. These two checks ensure that dims is equal to expected dims.
 			for _, dim := range dims {
