@@ -150,16 +150,20 @@ func TestAnalyzeFailure(t *testing.T) {
 	assert.Loosely(t, len(analyses), should.Equal(1))
 
 	// Make sure the heuristic analysis and nthsection analysis are run
+	q = datastore.NewQuery("CompileGenAIAnalysis").Ancestor(datastore.KeyForObj(c, cfa))
+	genai_analyses := []*model.CompileGenAIAnalysis{}
+	datastore.GetAll(c, q, &genai_analyses)
+	assert.Loosely(t, len(genai_analyses), should.Equal(1))
+
 	q = datastore.NewQuery("CompileHeuristicAnalysis").Ancestor(datastore.KeyForObj(c, cfa))
 	heuristic_analyses := []*model.CompileHeuristicAnalysis{}
 	datastore.GetAll(c, q, &heuristic_analyses)
 	assert.Loosely(t, len(heuristic_analyses), should.Equal(1))
 
-	// TODO (nqmtuan): Enable n-th section analysis when it is ready
-	// q = datastore.NewQuery("CompileNthSectionAnalysis").Ancestor(datastore.KeyForObj(c, compile_failure_analysis))
-	// nthsection_analyses := []*model.CompileNthSectionAnalysis{}
-	// datastore.GetAll(c, q, &nthsection_analyses)
-	// So(len(nthsection_analyses), ShouldEqual, 1)
+	q = datastore.NewQuery("CompileNthSectionAnalysis").Ancestor(datastore.KeyForObj(c, cfa))
+	nthsection_analyses := []*model.CompileNthSectionAnalysis{}
+	datastore.GetAll(c, q, &nthsection_analyses)
+	assert.Loosely(t, len(nthsection_analyses), should.Equal(1))
 }
 
 func TestFindRegressionRange(t *testing.T) {
