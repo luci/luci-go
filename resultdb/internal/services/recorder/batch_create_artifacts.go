@@ -70,10 +70,11 @@ type artifactCreationRequest struct {
 	invocationID invocations.ID
 
 	// the flat test id.
-	testID      string
-	resultID    string
-	artifactID  string
-	contentType string
+	testID       string
+	resultID     string
+	artifactID   string
+	contentType  string
+	artifactType string
 
 	// rbeCASHash is a hash of the artifact data that will be stored in RBE-CAS.
 	// It is not supplied or calculated for client-stored GCS or RBE artifacts (where gcsURI or rbeURI supplied).
@@ -228,6 +229,12 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, batchLevelParent 
 		return nil, errors.Fmt("artifact: artifact_id: %w", err)
 	}
 
+	if req.Artifact.ArtifactType != "" {
+		if err := pbutil.ValidateArtifactType(req.Artifact.ArtifactType); err != nil {
+			return nil, errors.Fmt("artifact: artifact_type: %w", err)
+		}
+	}
+
 	if req.Artifact.ContentType != "" {
 		if _, _, err := mime.ParseMediaType(req.Artifact.ContentType); err != nil {
 			return nil, errors.Fmt("artifact: content_type: %w", err)
@@ -294,6 +301,7 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, batchLevelParent 
 		resultID:         resultID,
 		artifactID:       req.Artifact.ArtifactId,
 		contentType:      req.Artifact.ContentType,
+		artifactType:     req.Artifact.ArtifactType,
 		rbeCASHash:       rbeCASHash,
 		data:             req.Artifact.Contents,
 		size:             sizeBytes,
@@ -687,6 +695,7 @@ func createArtifactStates(ctx context.Context, arts []*artifactCreationRequest) 
 				"ParentId":      a.parentID(),
 				"ArtifactId":    a.artifactID,
 				"ContentType":   a.contentType,
+				"ArtifactType":  a.artifactType,
 				"Size":          a.size,
 				"RBECASHash":    a.rbeCASHash,
 				"GcsURI":        a.gcsURI,
@@ -736,6 +745,7 @@ func createArtifactStates(ctx context.Context, arts []*artifactCreationRequest) 
 			ResultId:         a.resultID,
 			ArtifactId:       a.artifactID,
 			ContentType:      a.contentType,
+			ArtifactType:     a.artifactType,
 			SizeBytes:        a.size,
 			GcsUri:           a.gcsURI,
 			RbeUri:           a.rbeURI,

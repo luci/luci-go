@@ -94,7 +94,7 @@ func TestRead(t *testing.T) {
 			assert.That(t, as.Message(), should.ContainSubstring("rootInvocations/i/workUnits/wu1/artifacts/a not found"))
 		})
 
-		t.Run(`Does not exist (legecy name)`, func(t *ftt.Test) {
+		t.Run(`Does not exist (legacy name)`, func(t *ftt.Test) {
 			_, err := Read(ctx, "invocations/i/artifacts/a")
 			as, ok := appstatus.Get(err)
 			assert.That(t, ok, should.BeTrue)
@@ -104,8 +104,9 @@ func TestRead(t *testing.T) {
 
 		t.Run(`Exists`, func(t *ftt.Test) {
 			testutil.MustApply(ctx, t, insert.Artifact(wuID.LegacyInvocationID(), "tr/t/r", "a", map[string]any{
-				"ContentType": "text/plain",
-				"Size":        "54",
+				"ContentType":  "text/plain",
+				"Size":         "54",
+				"ArtifactType": "COVERAGE_REPORT",
 			}))
 			const name = "rootInvocations/root-inv-id/workUnits/work-unit-id/tests/t/results/r/artifacts/a"
 			a, err := Read(ctx, name)
@@ -119,12 +120,13 @@ func TestRead(t *testing.T) {
 					ModuleVariantHash: pbutil.VariantHash(&pb.Variant{}),
 					CaseName:          "t",
 				},
-				TestId:      "t",
-				ResultId:    "r",
-				ArtifactId:  "a",
-				ContentType: "text/plain",
-				SizeBytes:   54,
-				HasLines:    true,
+				TestId:       "t",
+				ResultId:     "r",
+				ArtifactId:   "a",
+				ContentType:  "text/plain",
+				SizeBytes:    54,
+				ArtifactType: "COVERAGE_REPORT",
+				HasLines:     true,
 			}))
 		})
 

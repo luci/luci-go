@@ -105,6 +105,8 @@ type createArtifactRequest struct {
 	ResultID string
 	// The artifact ID header value.
 	ArtifactID string
+	// The artifact type header value.
+	ArtifactType string
 	// Whether PUT should be used instead of POST.
 	UsePUT bool
 }
@@ -163,6 +165,9 @@ func prepareCreateArtifactRequest(req createArtifactRequest) *http.Request {
 	}
 	if req.ArtifactID != "" {
 		result.Header.Set(artifactIDHeaderKey, url.PathEscape(req.ArtifactID))
+	}
+	if req.ArtifactType != "" {
+		result.Header.Set(artifactTypeHeaderKey, req.ArtifactType)
 	}
 	return result
 }
@@ -249,16 +254,17 @@ func TestCreateArtifact(t *testing.T) {
 		assert.NoErr(t, err)
 
 		req := createArtifactRequest{
-			URLPath:     pbutil.WorkUnitName(string(wuIDJUnit.RootInvocationID), wuIDJUnit.WorkUnitID) + "/artifacts",
-			Content:     "hello",
-			ContentHash: "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", // sha256 hash of "hello".
-			ContentSize: 5,
-			UpdateToken: updateToken,
-			ContentType: "text/plain",
-			TestID:      tvID,
-			ResultID:    "result-id",
-			ArtifactID:  "artifact-id",
-			UsePUT:      false,
+			URLPath:      pbutil.WorkUnitName(string(wuIDJUnit.RootInvocationID), wuIDJUnit.WorkUnitID) + "/artifacts",
+			Content:      "hello",
+			ContentHash:  "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", // sha256 hash of "hello".
+			ContentSize:  5,
+			UpdateToken:  updateToken,
+			ContentType:  "text/plain",
+			TestID:       tvID,
+			ResultID:     "result-id",
+			ArtifactID:   "artifact-id",
+			ArtifactType: "COVERAGE_REPORT",
+			UsePUT:       false,
 		}
 
 		// Each t.Run(...) runs isolated from the other cases, so there is no need to reset state
@@ -390,6 +396,20 @@ func TestCreateArtifact(t *testing.T) {
 					assert.Loosely(t, rsp.Body.String(), should.HavePrefix(`artifact: artifact_id: does not match pattern`))
 				})
 			})
+			t.Run(`artifact type`, func(t *ftt.Test) {
+				t.Run(`invalid`, func(t *ftt.Test) {
+					req.ArtifactType = "invalid-type"
+					rsp := send(ctx, req)
+					assert.Loosely(t, rsp.Code, should.Equal(http.StatusBadRequest))
+					assert.Loosely(t, rsp.Body.String(), should.HavePrefix(`artifact: artifact_type: does not match pattern`))
+				})
+				t.Run(`too long`, func(t *ftt.Test) {
+					req.ArtifactType = strings.Repeat("a", 151)
+					rsp := send(ctx, req)
+					assert.Loosely(t, rsp.Code, should.Equal(http.StatusBadRequest))
+					assert.Loosely(t, rsp.Body.String(), should.HavePrefix(`artifact: artifact_type: exceeds 150 bytes`))
+				})
+			})
 			t.Run(`content type`, func(t *ftt.Test) {
 				t.Run(`invalid`, func(t *ftt.Test) {
 					req.ContentType = "\x00"
@@ -496,6 +516,7 @@ func TestCreateArtifact(t *testing.T) {
 				ResultId:         "result-id",
 				ArtifactId:       "artifact-id",
 				ContentType:      "text/plain",
+				ArtifactType:     "COVERAGE_REPORT",
 				SizeBytes:        5,
 				HasLines:         true,
 			}
@@ -676,6 +697,7 @@ func TestCreateArtifact(t *testing.T) {
 				ResultId:         "result-id",
 				ArtifactId:       "artifact-id",
 				ContentType:      "text/plain",
+				ArtifactType:     "COVERAGE_REPORT",
 				SizeBytes:        5,
 				HasLines:         true,
 			}

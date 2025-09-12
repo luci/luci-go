@@ -17,6 +17,7 @@ package pbutil
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -35,6 +36,8 @@ const (
 	rbeURIPatten = `bytestream://[^/]+/projects/([^/]+)/instances/([^/]+)/blobs/([^/]+)/(\d+)`
 	// This should be more than enough.
 	rbeURIMaxLength = 1024
+	// The maximum length of an artifact type.
+	artifactTypeMaxLength = 150
 )
 
 var (
@@ -53,6 +56,7 @@ var (
 	legacyArtifactNameRe                = regexpf("^%s|%s$", legacyTestResultArtifactNamePattern, legacyInvocationArtifactNamePattern)
 	textArtifactContentTypeRe           = regexpf("^text/*")
 	rbeURIRe                            = regexpf("^%s$", rbeURIPatten)
+	artifactTypeRe                      = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
 )
 
 // ValidateArtifactID returns a non-nil error if id is invalid.
@@ -268,4 +272,17 @@ func LegacyTestResultArtifactName(invocationID, testID, resultID, artifactID str
 // text artifact.
 func IsTextArtifact(contentType string) bool {
 	return textArtifactContentTypeRe.MatchString(contentType)
+}
+
+// ValidateArtifactType validates that the artifact type is within the max length
+// and that it matches the allowed pattern format.
+// See also Artifact in artifact.proto.
+func ValidateArtifactType(artifactType string) error {
+	if len(artifactType) > artifactTypeMaxLength {
+		return errors.Fmt("exceeds %d bytes (got %d bytes)", artifactTypeMaxLength, len(artifactType))
+	}
+	if !artifactTypeRe.MatchString(artifactType) {
+		return errors.Fmt("does not match pattern (got %q; want %q)", artifactType, artifactTypeRe.String())
+	}
+	return nil
 }

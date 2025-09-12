@@ -111,6 +111,7 @@ func ParseParentID(parentID string) (testID, resultID string, err error) {
 // * GcsURI
 // * RbeURI
 // * RBECASHash
+// * ArtifactType
 func Read(ctx context.Context, name string) (*Artifact, error) {
 	var invID invocations.ID
 	var testID, resultID, artifactID string
@@ -145,6 +146,7 @@ func Read(ctx context.Context, name string) (*Artifact, error) {
 	var gcsURI spanner.NullString
 	var rbeURI spanner.NullString
 	var rbeCASHash spanner.NullString
+	var artifactType spanner.NullString
 	var moduleVariant *pb.Variant
 	// Populate fields from Artifacts table.
 	err = spanutil.ReadRow(ctx, "Artifacts", invID.Key(parentID, artifactID), map[string]any{
@@ -153,6 +155,7 @@ func Read(ctx context.Context, name string) (*Artifact, error) {
 		"GcsURI":        &gcsURI,
 		"RbeURI":        &rbeURI,
 		"RBECASHash":    &rbeCASHash,
+		"ArtifactType":  &artifactType,
 		"ModuleVariant": &moduleVariant,
 	})
 
@@ -165,21 +168,22 @@ func Read(ctx context.Context, name string) (*Artifact, error) {
 	default:
 	}
 
-	ret.ContentType = contentType.StringVal
-	ret.SizeBytes = size.Int64
-	ret.GcsUri = gcsURI.StringVal
-	ret.RbeUri = rbeURI.StringVal
+	ret.Artifact.ContentType = contentType.StringVal
+	ret.Artifact.SizeBytes = size.Int64
+	ret.Artifact.GcsUri = gcsURI.StringVal
+	ret.Artifact.RbeUri = rbeURI.StringVal
+	ret.Artifact.ArtifactType = artifactType.StringVal
 	ret.RBECASHash = rbeCASHash.StringVal
-	ret.HasLines = IsLogSupportedArtifact(ret.ArtifactId, ret.ContentType)
+	ret.Artifact.HasLines = IsLogSupportedArtifact(ret.Artifact.ArtifactId, ret.Artifact.ContentType)
 
 	if testID != "" {
 		testIDStructured, err := pbutil.ParseStructuredTestIdentifierForOutput(testID, moduleVariant)
 		if err != nil {
 			panic(fmt.Errorf("data corruption: stored test ID and variant is invalid, artifact name = %q", name))
 		}
-		ret.ResultId = resultID
-		ret.TestId = testID
-		ret.TestIdStructured = testIDStructured
+		ret.Artifact.ResultId = resultID
+		ret.Artifact.TestId = testID
+		ret.Artifact.TestIdStructured = testIDStructured
 	}
 	return ret, nil
 }

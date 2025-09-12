@@ -138,6 +138,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				TestIdStructured: proto.Clone(tvID).(*pb.TestIdentifier),
 				ResultId:         "result-id-0",
 				ArtifactId:       "artifact-id-0",
+				ArtifactType:     "CONVERGE",
 				ContentType:      "text/plain",
 				Contents:         []byte("artifact content 0"),
 			},
@@ -389,6 +390,20 @@ func TestBatchCreateArtifacts(t *testing.T) {
 							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: content_type: mime: no media type`))
 						})
 					})
+					t.Run(`artifact_type`, func(t *ftt.Test) {
+						t.Run(`invalid`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.ArtifactType = "invalid type"
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: artifact_type: does not match pattern`))
+						})
+						t.Run(`too long`, func(t *ftt.Test) {
+							req.Requests[1].Artifact.ArtifactType = strings.Repeat("a", 151)
+							_, err := recorder.BatchCreateArtifacts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`requests[1]: artifact: artifact_type: exceeds 150 bytes`))
+						})
+					})
 					t.Run(`size_bytes`, func(t *ftt.Test) {
 						t.Run(`invalid`, func(t *ftt.Test) {
 							req.Requests[1].Artifact.SizeBytes = -1
@@ -597,6 +612,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 						Name:             "rootInvocations/root-inv-id/workUnits/work-unit:child-1/tests/:%2F%2Finfra%2Fjunit_tests%21junit:org.chromium.go.luci:ValidationTests%23FooBar/results/result-id-0/artifacts/artifact-id-0",
 						ArtifactId:       "artifact-id-0",
 						ContentType:      "text/plain",
+						ArtifactType:     "CONVERGE",
 						SizeBytes:        18,
 						TestId:           "://infra/junit_tests!junit:org.chromium.go.luci:ValidationTests#FooBar",
 						TestIdStructured: tvIDWithOutputOnlyFields,

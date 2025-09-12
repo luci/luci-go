@@ -63,6 +63,8 @@ const (
 	artifactContentTypeHeaderKey = "Content-Type"
 	// The work unit or invocation update token. Required.
 	updateTokenHeaderKey = "Update-Token"
+	// The artifact type of the uploaded artifact. Optional.
+	artifactTypeHeaderKey = "Artifact-Type"
 
 	// The following header values are URL encoded, even if for some it is not
 	// strictly necessary, to allow expanding the accepted character
@@ -111,7 +113,6 @@ const (
 
 	// The artifact ID, see also artifact_id in `CreateArtifactRequest`.
 	artifactIDHeaderKey = "Artifact-ID" // URL encoded value
-
 )
 
 // artifactCreationHandler can handle artifact creation requests.
@@ -522,6 +523,14 @@ func parseStreamingArtifactUploadRequest(c *router.Context, isLegacyEndpoint boo
 		}
 	}
 
+	artifactType := c.Request.Header.Get(artifactTypeHeaderKey)
+
+	if artifactType != "" {
+		if err := pbutil.ValidateArtifactType(artifactType); err != nil {
+			return nil, appstatus.Errorf(codes.InvalidArgument, "artifact: artifact_type: %s", err)
+		}
+	}
+
 	return &artifactCreationRequest{
 		workUnitID:       workUnitID,
 		invocationID:     invocationID,
@@ -529,6 +538,7 @@ func parseStreamingArtifactUploadRequest(c *router.Context, isLegacyEndpoint boo
 		resultID:         resultID,
 		artifactID:       artifactID,
 		contentType:      contentType,
+		artifactType:     artifactType,
 		rbeCASHash:       rbeCASHash,
 		size:             size,
 		testIDStructured: testIDStructured,
