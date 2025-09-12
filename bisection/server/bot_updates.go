@@ -20,6 +20,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -40,12 +41,19 @@ import (
 )
 
 // BotUpdatesServer implements the LUCI Bisection proto service for BotUpdates.
-type BotUpdatesServer struct{}
+type BotUpdatesServer struct {
+	pb.UnimplementedBotUpdatesServer
+	ACL func(context.Context, string, proto.Message) (context.Context, error)
+}
 
 // UpdateAnalysisProgress is an RPC endpoints used by the recipes to update
 // analysis progress.
 func (server *BotUpdatesServer) UpdateAnalysisProgress(c context.Context, req *pb.UpdateAnalysisProgressRequest) (*pb.UpdateAnalysisProgressResponse, error) {
-	err := verifyUpdateAnalysisProgressRequest(c, req)
+	c, err := server.ACL(c, "UpdateAnalysisProgress", req)
+	if err != nil {
+		return nil, err
+	}
+	err = verifyUpdateAnalysisProgressRequest(c, req)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request: %s", err)
 	}
@@ -159,8 +167,12 @@ func (server *BotUpdatesServer) UpdateAnalysisProgress(c context.Context, req *p
 	return nil, status.Errorf(codes.Internal, "unknown error")
 }
 
-func (server *BotUpdatesServer) UpdateTestAnalysisProgress(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (*pb.UpdateTestAnalysisProgressResponse, error) {
-	err := updatetestrerun.Update(ctx, req)
+func (server *BotUpdatesServer) UpdateTestAnalysisProgress(c context.Context, req *pb.UpdateTestAnalysisProgressRequest) (*pb.UpdateTestAnalysisProgressResponse, error) {
+	c, err := server.ACL(c, "UpdateTestAnalysisProgress", req)
+	if err != nil {
+		return nil, err
+	}
+	err = updatetestrerun.Update(c, req)
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +367,7 @@ func updateSuspectWithRerunData(c context.Context, rerun *model.SingleRerun) err
 	return nil
 }
 
-func verifyUpdateAnalysisProgressRequest(c context.Context, req *pb.UpdateAnalysisProgressRequest) error {
+func verifyUpdateAnalysisProgressRequest(_ context.Context, req *pb.UpdateAnalysisProgressRequest) error {
 	if req.AnalysisId == 0 {
 		return fmt.Errorf("analysis_id is required")
 	}

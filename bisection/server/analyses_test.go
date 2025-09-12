@@ -41,9 +41,14 @@ import (
 	"go.chromium.org/luci/bisection/util/testutil"
 )
 
+// mockCheckAccessAnalyses is a test ACL function that allows all requests
+func mockCheckAccessAnalyses(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
+	return ctx, nil // Allow all requests in tests
+}
+
 func TestQueryAnalysis(t *testing.T) {
 	t.Parallel()
-	server := &AnalysesServer{}
+	server := &AnalysesServer{ACL: mockCheckAccessAnalyses}
 	c := memory.Use(context.Background())
 	testutil.UpdateIndices(c)
 	datastore.GetTestable(c).AutoIndex(true)
@@ -568,7 +573,7 @@ func TestQueryAnalysis(t *testing.T) {
 
 func TestListAnalyses(t *testing.T) {
 	t.Parallel()
-	server := &AnalysesServer{}
+	server := &AnalysesServer{ACL: mockCheckAccessAnalyses}
 
 	ftt.Run("List existing analyses", t, func(t *ftt.Test) {
 		// Set up context and AEAD so that page tokens can be generated
@@ -649,7 +654,7 @@ func TestListAnalyses(t *testing.T) {
 
 func TestListTestAnalyses(t *testing.T) {
 	t.Parallel()
-	server := &AnalysesServer{}
+	server := &AnalysesServer{ACL: mockCheckAccessAnalyses}
 
 	ftt.Run("List existing analyses", t, func(t *ftt.Test) {
 		// Set up context and AEAD so that page tokens can be generated
@@ -729,7 +734,7 @@ func TestListTestAnalyses(t *testing.T) {
 
 func TestGetTestAnalyses(t *testing.T) {
 	t.Parallel()
-	server := &AnalysesServer{}
+	server := &AnalysesServer{ACL: mockCheckAccessAnalyses}
 
 	ftt.Run("List existing analyses", t, func(t *ftt.Test) {
 		// Set up context and AEAD so that page tokens can be generated
@@ -791,7 +796,7 @@ func TestGetTestAnalyses(t *testing.T) {
 
 func TestBatchGetTestAnalyses(t *testing.T) {
 	t.Parallel()
-	server := &AnalysesServer{LUCIAnalysisHost: "fake-host"}
+	server := &AnalysesServer{ACL: mockCheckAccessAnalyses, LUCIAnalysisHost: "fake-host"}
 	ftt.Run("With server", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		testutil.UpdateIndices(ctx)

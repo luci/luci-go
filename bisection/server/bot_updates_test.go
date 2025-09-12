@@ -47,6 +47,11 @@ import (
 	_ "go.chromium.org/luci/bisection/culpritaction/revertculprit"
 )
 
+// mockCheckAccess is a test ACL function that allows all requests
+func mockCheckAccess(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
+	return ctx, nil // Allow all requests in tests
+}
+
 func TestUpdateAnalysisProgress(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
@@ -160,7 +165,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			BotId: "abc",
 		}
 
-		server := &BotUpdatesServer{}
+		server := &BotUpdatesServer{ACL: mockCheckAccess}
 		_, err := server.UpdateAnalysisProgress(c, req1)
 		assert.Loosely(t, err, should.BeNil)
 		datastore.Get(c, singleRerun1)
@@ -296,7 +301,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				BotId: "abc",
 			}
 
-			server := &BotUpdatesServer{}
+			server := &BotUpdatesServer{ACL: mockCheckAccess}
 			res, err := server.UpdateAnalysisProgress(c, req)
 			datastore.GetTestable(c).CatchupIndexes()
 			assert.Loosely(t, err, should.BeNil)
@@ -407,7 +412,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 
 			// We do not expect any calls to ScheduleBuild
 			mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).Times(0)
-			server := &BotUpdatesServer{}
+			server := &BotUpdatesServer{ACL: mockCheckAccess}
 			res, err := server.UpdateAnalysisProgress(c, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, datastore.Get(c, singleRerun1), should.BeNil)
@@ -550,7 +555,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 
 			// We do not expect any calls to ScheduleBuild
 			mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).Times(0)
-			server := &BotUpdatesServer{}
+			server := &BotUpdatesServer{ACL: mockCheckAccess}
 			res, err := server.UpdateAnalysisProgress(c, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, datastore.Get(c, singleRerun3), should.BeNil)
@@ -650,7 +655,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 
 			// We do not expect any calls to ScheduleBuild
 			mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).Times(0)
-			server := &BotUpdatesServer{}
+			server := &BotUpdatesServer{ACL: mockCheckAccess}
 			_, err := server.UpdateAnalysisProgress(c, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, datastore.Get(c, singleRerun2), should.BeNil)

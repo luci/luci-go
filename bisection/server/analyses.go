@@ -26,6 +26,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -71,12 +72,18 @@ var listTestAnalysesPageSizeLimiter = PageSizeLimiter{
 
 // AnalysesServer implements the LUCI Bisection proto service for Analyses.
 type AnalysesServer struct {
+	pb.UnimplementedAnalysesServer
+	ACL func(context.Context, string, proto.Message) (context.Context, error)
 	// Hostname of the LUCI Analysis pRPC service, e.g. analysis.api.luci.app
 	LUCIAnalysisHost string
 }
 
 // GetAnalysis returns the analysis given the analysis id
 func (server *AnalysesServer) GetAnalysis(c context.Context, req *pb.GetAnalysisRequest) (*pb.Analysis, error) {
+	c, err := server.ACL(c, "GetAnalysis", req)
+	if err != nil {
+		return nil, err
+	}
 	c = loggingutil.SetAnalysisID(c, req.AnalysisId)
 	analysis := &model.CompileFailureAnalysis{
 		Id: req.AnalysisId,
@@ -98,6 +105,10 @@ func (server *AnalysesServer) GetAnalysis(c context.Context, req *pb.GetAnalysis
 
 // QueryAnalysis returns the analysis given a query
 func (server *AnalysesServer) QueryAnalysis(c context.Context, req *pb.QueryAnalysisRequest) (*pb.QueryAnalysisResponse, error) {
+	c, err := server.ACL(c, "QueryAnalysis", req)
+	if err != nil {
+		return nil, err
+	}
 	if err := validateQueryAnalysisRequest(req); err != nil {
 		return nil, err
 	}
@@ -132,6 +143,10 @@ func (server *AnalysesServer) QueryAnalysis(c context.Context, req *pb.QueryAnal
 
 // TriggerAnalysis triggers an analysis for a failure
 func (server *AnalysesServer) TriggerAnalysis(c context.Context, req *pb.TriggerAnalysisRequest) (*pb.TriggerAnalysisResponse, error) {
+	c, err := server.ACL(c, "TriggerAnalysis", req)
+	if err != nil {
+		return nil, err
+	}
 	// TODO(nqmtuan): Implement this
 	return nil, nil
 }
@@ -140,12 +155,20 @@ func (server *AnalysesServer) TriggerAnalysis(c context.Context, req *pb.Trigger
 // At the mean time, it is only used for update the bugs associated with an
 // analysis.
 func (server *AnalysesServer) UpdateAnalysis(c context.Context, req *pb.UpdateAnalysisRequest) (*pb.Analysis, error) {
+	c, err := server.ACL(c, "UpdateAnalysis", req)
+	if err != nil {
+		return nil, err
+	}
 	// TODO(nqmtuan): Implement this
 	return nil, nil
 }
 
-func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.ListTestAnalysesRequest) (*pb.ListTestAnalysesResponse, error) {
-	logging.Infof(ctx, "ListTestAnalyses for project %s", req.Project)
+func (server *AnalysesServer) ListTestAnalyses(c context.Context, req *pb.ListTestAnalysesRequest) (*pb.ListTestAnalysesResponse, error) {
+	c, err := server.ACL(c, "ListTestAnalyses", req)
+	if err != nil {
+		return nil, err
+	}
+	logging.Infof(c, "ListTestAnalyses for project %s", req.Project)
 
 	// Validate the request.
 	if err := validateListTestAnalysesRequest(req); err != nil {
@@ -163,7 +186,7 @@ func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.List
 	}
 
 	// Decode cursor from page token.
-	cursor, err := listTestAnalysesPageTokenVault.Cursor(ctx, req.PageToken)
+	cursor, err := listTestAnalysesPageTokenVault.Cursor(c, req.PageToken)
 	switch err {
 	case pagination.ErrInvalidPageToken:
 		return nil, status.Errorf(codes.InvalidArgument, "invalid page token")
@@ -180,7 +203,7 @@ func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.List
 	q := datastore.NewQuery("TestFailureAnalysis").Eq("project", req.Project).Order("-create_time").Start(cursor)
 	tfas := make([]*model.TestFailureAnalysis, 0, pageSize)
 	var nextCursor datastore.Cursor
-	err = datastore.Run(ctx, q, func(tfa *model.TestFailureAnalysis, getCursor datastore.CursorCB) error {
+	err = datastore.Run(c, q, func(tfa *model.TestFailureAnalysis, getCursor datastore.CursorCB) error {
 		tfas = append(tfas, tfa)
 
 		// Check whether the page size limit has been reached
@@ -194,12 +217,12 @@ func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.List
 		return nil
 	})
 	if err != nil {
-		logging.Errorf(ctx, err.Error())
+		logging.Errorf(c, err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Construct the next page token.
-	nextPageToken, err := listTestAnalysesPageTokenVault.PageToken(ctx, nextCursor)
+	nextPageToken, err := listTestAnalysesPageTokenVault.PageToken(c, nextCursor)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -210,10 +233,10 @@ func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.List
 		for i, tfa := range tfas {
 			// Assign to local variables.
 			workC <- func() error {
-				analysis, err := protoutil.TestFailureAnalysisToPb(ctx, tfa, mask)
+				analysis, err := protoutil.TestFailureAnalysisToPb(c, tfa, mask)
 				if err != nil {
 					err = errors.Fmt("test failure analysis to pb: %w", err)
-					logging.Errorf(ctx, "Could not get analysis data for analysis %d: %s", tfa.ID, err)
+					logging.Errorf(c, "Could not get analysis data for analysis %d: %s", tfa.ID, err)
 					return err
 				}
 				analyses[i] = analysis
@@ -222,7 +245,7 @@ func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.List
 		}
 	})
 	if err != nil {
-		logging.Errorf(ctx, err.Error())
+		logging.Errorf(c, err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -232,8 +255,12 @@ func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.List
 	}, nil
 }
 
-func (server *AnalysesServer) GetTestAnalysis(ctx context.Context, req *pb.GetTestAnalysisRequest) (*pb.TestAnalysis, error) {
-	ctx = loggingutil.SetAnalysisID(ctx, req.AnalysisId)
+func (server *AnalysesServer) GetTestAnalysis(c context.Context, req *pb.GetTestAnalysisRequest) (*pb.TestAnalysis, error) {
+	c, err := server.ACL(c, "GetTestAnalysis", req)
+	if err != nil {
+		return nil, err
+	}
+	c = loggingutil.SetAnalysisID(c, req.AnalysisId)
 
 	// By default, returning all fields.
 	fieldMask := req.Fields
@@ -245,34 +272,38 @@ func (server *AnalysesServer) GetTestAnalysis(ctx context.Context, req *pb.GetTe
 		return nil, errors.Fmt("from field mask: %w", err)
 	}
 
-	tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, req.AnalysisId)
+	tfa, err := datastoreutil.GetTestFailureAnalysis(c, req.AnalysisId)
 	if err != nil {
 		if errors.Is(err, datastore.ErrNoSuchEntity) {
-			logging.Errorf(ctx, err.Error())
+			logging.Errorf(c, err.Error())
 			return nil, status.Errorf(codes.NotFound, "analysis not found: %v", err)
 		}
 		err = errors.Fmt("get test failure analysis: %w", err)
-		logging.Errorf(ctx, err.Error())
+		logging.Errorf(c, err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	result, err := protoutil.TestFailureAnalysisToPb(ctx, tfa, mask)
+	result, err := protoutil.TestFailureAnalysisToPb(c, tfa, mask)
 	if err != nil {
 		err = errors.Fmt("test failure analysis to pb: %w", err)
-		logging.Errorf(ctx, err.Error())
+		logging.Errorf(c, err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return result, nil
 }
 
-func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.BatchGetTestAnalysesRequest) (res *pb.BatchGetTestAnalysesResponse, err error) {
-	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/bisection/server/analyses.BatchGetTestAnalyses")
+func (server *AnalysesServer) BatchGetTestAnalyses(c context.Context, req *pb.BatchGetTestAnalysesRequest) (res *pb.BatchGetTestAnalysesResponse, err error) {
+	c, aclErr := server.ACL(c, "BatchGetTestAnalyses", req)
+	if aclErr != nil {
+		return nil, aclErr
+	}
+	c, ts := tracing.Start(c, "go.chromium.org/luci/bisection/server/analyses.BatchGetTestAnalyses")
 	defer func() { tracing.End(ts, err) }()
 
 	// Adding a time value to the context when we are logging, so we know
 	// what request we are logging, because we may process many requests at the same time.
 	// We can also add hash of the request, or other information about the requests,
 	// but it is not neccessary for now.
-	ctx = logging.SetField(ctx, "request_time_unix_millis", time.Now().UnixMilli())
+	c = logging.SetField(c, "request_time_unix_millis", time.Now().UnixMilli())
 
 	// Validate request.
 	if err := validateBatchGetTestAnalysesRequest(req); err != nil {
@@ -301,8 +332,8 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 	// Query Changepoint analysis.
 	changePointResults := map[string]*analysispb.TestVariantBranch{}
 	if len(luciAnalysisRequests) > 0 {
-		logging.Infof(ctx, "Start querying changepoint analysis for %d test failures", len(luciAnalysisRequests))
-		client, err := analysis.NewTestVariantBranchesClient(ctx, server.LUCIAnalysisHost, req.Project)
+		logging.Infof(c, "Start querying changepoint analysis for %d test failures", len(luciAnalysisRequests))
+		client, err := analysis.NewTestVariantBranchesClient(c, server.LUCIAnalysisHost, req.Project)
 		if err != nil {
 			return nil, errors.Fmt("create LUCI Analysis client: %w", err)
 		}
@@ -311,13 +342,13 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 		for _, tf := range luciAnalysisRequests {
 			tvbRequest.Names = append(tvbRequest.Names, fmt.Sprintf("projects/%s/tests/%s/variants/%s/refs/%s", req.Project, url.PathEscape(tf.TestId), tf.VariantHash, tf.RefHash))
 		}
-		cpr, err := client.BatchGet(ctx, tvbRequest)
+		cpr, err := client.BatchGet(c, tvbRequest)
 		if err != nil {
 			code := status.Code(err)
 			if code == codes.PermissionDenied {
 				logging.Fields{
 					"Project": req.Project,
-				}.Warningf(ctx, "User requested test analyses for project %q, but obtained permission denied from LUCI Analysis while trying to read test variant branches (project may not exist).", req.Project)
+				}.Warningf(c, "User requested test analyses for project %q, but obtained permission denied from LUCI Analysis while trying to read test variant branches (project may not exist).", req.Project)
 
 				// Project does not exist (or this LUCI Bisection deployment
 				// does not have access). Return an empty set of results.
@@ -328,7 +359,7 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 				return nil, status.Errorf(codes.Internal, "read changepoint analysis: %s", err)
 			}
 		}
-		logging.Infof(ctx, "Changepoint analysis returns %d results", len(cpr.TestVariantBranches))
+		logging.Infof(c, "Changepoint analysis returns %d results", len(cpr.TestVariantBranches))
 		for i, tf := range luciAnalysisRequests {
 			key := fmt.Sprintf("%s-%s-%s", tf.TestId, tf.VariantHash, tf.RefHash)
 			changePointResults[key] = cpr.TestVariantBranches[i]
@@ -344,7 +375,7 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 					key := fmt.Sprintf("%s-%s-%s", tf.TestId, tf.VariantHash, tf.RefHash)
 					cpr = changePointResults[key]
 				}
-				tfaProto, err := retrieveTestAnalysis(ctx, req.Project, tf, cpr, tfamask)
+				tfaProto, err := retrieveTestAnalysis(c, req.Project, tf, cpr, tfamask)
 				if err != nil {
 					return errors.Fmt("retrieve test analysis: %w", err)
 				}
@@ -757,6 +788,10 @@ func validateQueryAnalysisRequest(req *pb.QueryAnalysisRequest) error {
 
 // ListAnalyses returns existing analyses
 func (server *AnalysesServer) ListAnalyses(c context.Context, req *pb.ListAnalysesRequest) (*pb.ListAnalysesResponse, error) {
+	c, err := server.ACL(c, "ListAnalyses", req)
+	if err != nil {
+		return nil, err
+	}
 	// Validate the request
 	if err := validateListAnalysesRequest(req); err != nil {
 		return nil, err

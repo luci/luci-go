@@ -15,6 +15,4 @@
 // Package bisectionpb contains the proto definitions for LUCI Bisection.
 package bisectionpb
 
-//go:generate cproto
-//go:generate svcdec -type AnalysesServer
-//go:generate svcdec -type BotUpdatesServer
+//go:generate cproto -use-grpc-plugin

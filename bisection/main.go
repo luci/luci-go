@@ -23,10 +23,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	// Store auth sessions in the datastore.
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/server/cfgmodule"
@@ -129,17 +129,14 @@ func main() {
 		}
 
 		// Installs gRPC service.
-		pb.RegisterAnalysesServer(srv, &pb.DecoratedAnalyses{
-			Service: &server.AnalysesServer{
-				LUCIAnalysisHost: luciAnalysisHost,
-			},
-			Prelude: checkAPIAccess,
+		pb.RegisterAnalysesServer(srv, &server.AnalysesServer{
+			LUCIAnalysisHost: luciAnalysisHost,
+			ACL:              checkAPIAccess,
 		})
 
 		// Installs gRPC service to communicate with recipes
-		pb.RegisterBotUpdatesServer(srv, &pb.DecoratedBotUpdates{
-			Service: &server.BotUpdatesServer{},
-			Prelude: checkBotAPIAccess,
+		pb.RegisterBotUpdatesServer(srv, &server.BotUpdatesServer{
+			ACL: checkBotAPIAccess,
 		})
 
 		// Register pPRC servers.
