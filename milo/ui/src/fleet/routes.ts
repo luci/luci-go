@@ -149,6 +149,12 @@ export const fleetRoutes: RouteObject[] = [
               () => import('@/fleet/pages/metrics_page'),
             ),
           },
+          {
+            path: 'planners',
+            lazy: loadRouteForGooglersOnly(
+              () => import('@/fleet/pages/resource_planner_insights_page'),
+            ),
+          },
           { path: 'sandbox', lazy: () => import('@/fleet/pages/sandbox_page') },
 
           // Redirects we added for locations where pages used to live.
