@@ -3775,7 +3775,7 @@ func TestVSA(t *testing.T) {
 				assert.Loosely(t, m[0].Key, should.Equal("attestations"))
 				assert.Loosely(t, m[0].Value, should.Match([]uint8("attestation bundle")))
 				assert.Loosely(t, m[0].ContentType, should.Equal("application/vnd.in-toto.bundle"))
-				assert.Loosely(t, m[1].Key, should.Equal("luci.slsa.VSA"))
+				assert.Loosely(t, m[1].Key, should.Equal("luci-slsa-VSA"))
 				assert.Loosely(t, m[1].Value, should.Match([]uint8("vsa content")))
 
 				// Should not be called agail when package is requested.

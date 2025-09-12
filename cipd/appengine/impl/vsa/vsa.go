@@ -30,6 +30,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/bqlog"
 
@@ -96,6 +97,7 @@ func (c *client) Register(f *flag.FlagSet) {
 // Init prepares the vsa client based on the parsed configs. It should only be
 // called exactly once.
 func (c *client) Init(ctx context.Context) error {
+	logging.Debugf(ctx, "Initializing vsa client: %v", c)
 	if c.softwareVerifierHost == "" {
 		if c.resourcePrefix != "" {
 			return fmt.Errorf("-slsa-resource-prefix must be set with -software-verifier-host")
@@ -132,6 +134,7 @@ func (c *client) Init(ctx context.Context) error {
 	if c.bqlog == nil {
 		c.bqlog = bqlog.Log
 	}
+	logging.Debugf(ctx, "Initialized vsa client: %v", c)
 	return nil
 }
 
@@ -177,6 +180,7 @@ func (c *client) VerifySoftwareArtifact(ctx context.Context, inst *model.Instanc
 			OccurrenceStage:      api.VerificationContext_OBSERVED,
 		},
 	}
+	logging.Debugf(ctx, "vsa request: %v", req)
 
 	resp, err := c.callVerifySoftwareArtifact(ctx, req)
 	if err != nil {
@@ -213,6 +217,7 @@ func (c *client) callVerifySoftwareArtifact(ctx context.Context, r *api.VerifySo
 		return nil, fmt.Errorf("VerifySoftwareArtifact: bad response status: api returns error: %s: %s", resp.Status, string(b))
 	}
 
+	logging.Debugf(ctx, "vsa resp: %v", resp)
 	var ret api.VerifySoftwareArtifactResponse
 	if err := protojson.Unmarshal(b, &ret); err != nil {
 		return nil, fmt.Errorf("VerifySoftwareArtifact: unmarshalling: failed to unmarshal response: %w: %s", err, string(b))
