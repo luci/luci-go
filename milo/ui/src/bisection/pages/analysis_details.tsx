@@ -28,18 +28,22 @@ import { useParams } from 'react-router';
 import { AnalysisOverview } from '@/bisection/components/analysis_overview';
 import { CulpritVerificationTable } from '@/bisection/components/culprit_verification_table';
 import { CulpritsTable } from '@/bisection/components/culprits_table/culprits_table';
+import { GenAiAnalysisTable } from '@/bisection/components/gen_ai_analysis_table';
 import { HeuristicAnalysisTable } from '@/bisection/components/heuristic_analysis_table';
 import { NthSectionAnalysisTable } from '@/bisection/components/nthsection_analysis_table';
+import { SHOW_GEN_AI_COMPILE_ANALYSIS_BISECTION } from '@/bisection/pages/features';
 import {
   GenericCulpritWithDetails,
   GenericNthSectionAnalysisResult,
   GenericSuspect,
 } from '@/bisection/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { useFeatureFlag } from '@/common/feature_flags';
 import { useAnalysesClient } from '@/common/hooks/prpc_clients';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import {
   Analysis,
+  BuildFailureType,
   QueryAnalysisRequest,
 } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
@@ -56,13 +60,18 @@ export function TabPanel({ value, name, children }: TabPanelProps) {
     </div>
   );
 }
-
-function getSuspects(analysis: Analysis): readonly GenericSuspect[] {
+function getSuspects(
+  analysis: Analysis,
+  includeAiSuspect: boolean,
+): readonly GenericSuspect[] {
   const heuristicSuspects = analysis.heuristicResult?.suspects || [];
   const suspects = heuristicSuspects.map(GenericSuspect.fromHeuristic);
   const nthSectionSuspect = analysis.nthSectionResult?.suspect;
   if (nthSectionSuspect) {
     suspects.push(GenericSuspect.fromNthSection(nthSectionSuspect));
+  }
+  if (includeAiSuspect && analysis.genAiResult?.suspect !== undefined) {
+    suspects.push(GenericSuspect.fromGenAi(analysis.genAiResult.suspect));
   }
   return suspects;
 }
@@ -71,9 +80,13 @@ enum AnalysisComponentTabs {
   HEURISTIC = 'Heuristic analysis',
   NTH_SECTION = 'Nth section analysis',
   CULPRIT_VERIFICATION = 'Culprit verification',
+  GEN_AI_CULPRIT = 'AI culprit detection',
 }
 
 export function AnalysisDetailsPage() {
+  const showGenAiAnalysis = useFeatureFlag(
+    SHOW_GEN_AI_COMPILE_ANALYSIS_BISECTION,
+  );
   const { bbid } = useParams();
   if (!bbid) {
     // The page should always be mounted to a path where bbid is set.
@@ -104,7 +117,6 @@ export function AnalysisDetailsPage() {
 
   // TODO: display alert if the build ID queried is not the first failed build
   //       linked to the failure analysis
-
   if (isError) {
     return (
       <div className="section">
@@ -171,6 +183,14 @@ export function AnalysisDetailsPage() {
             value={AnalysisComponentTabs.HEURISTIC}
             label={AnalysisComponentTabs.HEURISTIC}
           />
+          {showGenAiAnalysis &&
+            analysis.buildFailureType === BuildFailureType.COMPILE && (
+              <Tab
+                className="rounded-tab"
+                value={AnalysisComponentTabs.GEN_AI_CULPRIT}
+                label={AnalysisComponentTabs.GEN_AI_CULPRIT}
+              />
+            )}
           <Tab
             className="rounded-tab"
             value={AnalysisComponentTabs.NTH_SECTION}
@@ -182,6 +202,14 @@ export function AnalysisDetailsPage() {
             label={AnalysisComponentTabs.CULPRIT_VERIFICATION}
           />
         </Tabs>
+        <TabPanel
+          value={currentTab}
+          name={AnalysisComponentTabs.GEN_AI_CULPRIT}
+        >
+          <GenAiAnalysisTable
+            result={analysis.genAiResult}
+          ></GenAiAnalysisTable>
+        </TabPanel>
         <TabPanel value={currentTab} name={AnalysisComponentTabs.HEURISTIC}>
           <HeuristicAnalysisTable result={analysis.heuristicResult} />
         </TabPanel>
@@ -197,7 +225,9 @@ export function AnalysisDetailsPage() {
           value={currentTab}
           name={AnalysisComponentTabs.CULPRIT_VERIFICATION}
         >
-          <CulpritVerificationTable suspects={getSuspects(analysis)} />
+          <CulpritVerificationTable
+            suspects={getSuspects(analysis, showGenAiAnalysis)}
+          />
         </TabPanel>
       </div>
     </>

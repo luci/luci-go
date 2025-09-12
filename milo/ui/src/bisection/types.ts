@@ -30,6 +30,7 @@ import {
   Culprit,
   CulpritAction,
 } from '@/proto/go.chromium.org/luci/bisection/proto/v1/culprits.pb';
+import { GenAiSuspect } from '@/proto/go.chromium.org/luci/bisection/proto/v1/genai.pb';
 import { HeuristicSuspect } from '@/proto/go.chromium.org/luci/bisection/proto/v1/heuristic.pb';
 import {
   NthSectionAnalysisResult,
@@ -165,6 +166,17 @@ export interface GenericSuspect {
 }
 
 export const GenericSuspect = {
+  fromGenAi(suspect: GenAiSuspect): GenericSuspect {
+    return {
+      type: 'AI Analysis',
+      reviewUrl: suspect.reviewUrl,
+      reviewTitle: suspect.reviewTitle,
+      verificationDetails: GenericSuspectVerificationDetails.from(
+        assertNonNullable(suspect.verificationDetails),
+      ),
+      commit: assertNonNullable(suspect.commit),
+    };
+  },
   fromNthSection(suspect: NthSectionSuspect): GenericSuspect {
     return {
       type: 'NthSection',
