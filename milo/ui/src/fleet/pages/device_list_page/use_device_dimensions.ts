@@ -16,8 +16,12 @@ import { QueryKey, useQuery } from '@tanstack/react-query';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import {
+  GetDeviceDimensionsRequest,
+  Platform,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-export const useDeviceDimensions = () => {
+export const useDeviceDimensions = ({ platform }: { platform: Platform }) => {
   const { identity } = useAuthState();
   const client = useFleetConsoleClient();
 
@@ -25,12 +29,17 @@ export const useDeviceDimensions = () => {
     'fleet-console',
     identity,
     'deviceDimensions',
+    Platform[platform],
     'persist-local-storage',
   ];
 
   const devicesQuery = useQuery({
     queryKey: queryKey,
-    queryFn: client.GetDeviceDimensions.query({}).queryFn,
+    queryFn: client.GetDeviceDimensions.query(
+      GetDeviceDimensionsRequest.fromPartial({
+        platform,
+      }),
+    ).queryFn,
     // By default staleTime is zero,
     // so it updates the cache data every time.
     gcTime: Infinity,

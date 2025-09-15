@@ -88,7 +88,7 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
     : stringifyFilters(selectedOptions.filters);
 
   const client = useFleetConsoleClient();
-  const dimensionsQuery = useDeviceDimensions();
+  const dimensionsQuery = useDeviceDimensions({ platform });
 
   // TODO: b/419764393, b/420287987 - In local storage REACT_QUERY_OFFLINE_CACHE can contain empty data object which causes app to crash.
   const isDimensionsQueryProperlyLoaded =
@@ -135,7 +135,7 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
     const missingParamsColoumns = getWrongColumnsFromParams(
       searchParams,
       columns,
-      DEFAULT_DEVICE_COLUMNS,
+      DEFAULT_DEVICE_COLUMNS[platform],
     );
     if (missingParamsColoumns.length === 0) return;
     addWarning(
@@ -155,6 +155,7 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
     dimensionsQuery.isPending,
     searchParams,
     setSearchParams,
+    platform,
   ]);
 
   useEffect(() => {
@@ -256,6 +257,7 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
           isLoadingColumns={dimensionsQuery.isPending}
           totalRowCount={countQuery?.data?.total}
           currentTaskMap={currentTasks.map}
+          platform={platform}
         />
       </div>
     </div>

@@ -6,7 +6,6 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { Empty } from "../../../../../google/protobuf/empty.pb";
 import { MonitoredRecord } from "../../omnilab/omnilab-pubsub.pb";
 import { DateOnly } from "./common_types.pb";
 
@@ -275,6 +274,10 @@ export interface DeviceSpec {
 export interface DeviceSpec_LabelsEntry {
   readonly key: string;
   readonly value: LabelValues | undefined;
+}
+
+export interface GetDeviceDimensionsRequest {
+  readonly platform: Platform;
 }
 
 export interface GetDeviceDimensionsResponse {
@@ -1860,6 +1863,64 @@ export const DeviceSpec_LabelsEntry: MessageFns<DeviceSpec_LabelsEntry> = {
     message.value = (object.value !== undefined && object.value !== null)
       ? LabelValues.fromPartial(object.value)
       : undefined;
+    return message;
+  },
+};
+
+function createBaseGetDeviceDimensionsRequest(): GetDeviceDimensionsRequest {
+  return { platform: 0 };
+}
+
+export const GetDeviceDimensionsRequest: MessageFns<GetDeviceDimensionsRequest> = {
+  encode(message: GetDeviceDimensionsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.platform !== 0) {
+      writer.uint32(8).int32(message.platform);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetDeviceDimensionsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetDeviceDimensionsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.platform = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetDeviceDimensionsRequest {
+    return { platform: isSet(object.platform) ? platformFromJSON(object.platform) : 0 };
+  },
+
+  toJSON(message: GetDeviceDimensionsRequest): unknown {
+    const obj: any = {};
+    if (message.platform !== 0) {
+      obj.platform = platformToJSON(message.platform);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetDeviceDimensionsRequest>): GetDeviceDimensionsRequest {
+    return GetDeviceDimensionsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetDeviceDimensionsRequest>): GetDeviceDimensionsRequest {
+    const message = createBaseGetDeviceDimensionsRequest() as any;
+    message.platform = object.platform ?? 0;
     return message;
   },
 };
@@ -6614,7 +6675,7 @@ export interface FleetConsole {
    * GetDeviceDimensions provides overview of devices dimensions and their
    * values
    */
-  GetDeviceDimensions(request: Empty): Promise<GetDeviceDimensionsResponse>;
+  GetDeviceDimensions(request: GetDeviceDimensionsRequest): Promise<GetDeviceDimensionsResponse>;
   /** CountDevices provides a count of the devices */
   CountDevices(request: CountDevicesRequest): Promise<CountDevicesResponse>;
   /** RepopulateCache repopulates the cache, meant to be triggered by cron. */
@@ -6719,8 +6780,8 @@ export class FleetConsoleClientImpl implements FleetConsole {
     return promise.then((data) => ListDevicesResponse.fromJSON(data));
   }
 
-  GetDeviceDimensions(request: Empty): Promise<GetDeviceDimensionsResponse> {
-    const data = Empty.toJSON(request);
+  GetDeviceDimensions(request: GetDeviceDimensionsRequest): Promise<GetDeviceDimensionsResponse> {
+    const data = GetDeviceDimensionsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetDeviceDimensions", data);
     return promise.then((data) => GetDeviceDimensionsResponse.fromJSON(data));
   }

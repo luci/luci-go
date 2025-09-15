@@ -34,6 +34,7 @@ import {
   DeviceState,
   DeviceType,
   ExportDevicesToCSVRequest,
+  Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -187,6 +188,7 @@ function TestComponent({
       isLoadingColumns={false}
       totalRowCount={withKnownTotalRowCount ? totalRowCount : undefined}
       currentTaskMap={new Map<string, string>()}
+      platform={Platform.CHROMEOS}
     />
   );
 }

@@ -26,7 +26,10 @@ import { OptionsDropdown } from '@/fleet/components/options_dropdown';
 import { OptionValue } from '@/fleet/types/option';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import {
+  GetDeviceDimensionsResponse,
+  Platform,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { useDeviceDimensions } from '../../pages/device_list_page/use_device_dimensions';
 import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';
@@ -35,6 +38,10 @@ import {
   filtersUpdater,
   getFilters,
 } from '../filter_dropdown/search_param_utils/search_param_utils';
+
+export type FilterItemProps = GridColumnMenuItemProps & {
+  platform: Platform;
+};
 
 const getDimensionInfo = (
   dimensionsData: GetDeviceDimensionsResponse,
@@ -55,7 +62,7 @@ const getDimensionInfo = (
   return null;
 };
 
-export function FilterItem(props: GridColumnMenuItemProps) {
+export function FilterItem({ platform, ...props }: FilterItemProps) {
   const apiRef = useGridApiContext();
   const { colDef } = props;
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -67,7 +74,9 @@ export function FilterItem(props: GridColumnMenuItemProps) {
     vertical: 'top',
     horizontal: 'left',
   });
-  const { data: dimensionsData, isLoading } = useDeviceDimensions();
+  const { data: dimensionsData, isLoading } = useDeviceDimensions({
+    platform,
+  });
   const [searchParams, setSearchParams] = useSyncedSearchParams();
 
   const dimensionInfo = dimensionsData

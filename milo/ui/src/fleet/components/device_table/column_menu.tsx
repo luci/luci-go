@@ -20,8 +20,13 @@ import {
 } from '@mui/x-data-grid';
 
 import { getFeatureFlag } from '@/fleet/config/features';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { FilterItem } from './filter_item';
+
+export type ColumnMenuProps = GridColumnMenuProps & {
+  platform: Platform;
+};
 
 function ColumnsItem(props: GridColumnMenuItemProps) {
   return <GridColumnMenuHideItem {...props} />;
@@ -30,7 +35,7 @@ function ColumnsItem(props: GridColumnMenuItemProps) {
 /**
  * Customized implementation of GridColumnMenu for fleet use cases.
  */
-export function ColumnMenu(props: GridColumnMenuProps) {
+export function ColumnMenu({ platform, ...props }: ColumnMenuProps) {
   const { colDef } = props;
   const hideable = colDef.hideable ?? true;
 
@@ -47,6 +52,7 @@ export function ColumnMenu(props: GridColumnMenuProps) {
         // if we can make sure state is synced and the components are aligned.
         columnMenuColumnsItem: hideable ? ColumnsItem : null,
       }}
+      slotProps={{ columnMenuFilterItem: { platform: platform } }}
     />
   );
 }

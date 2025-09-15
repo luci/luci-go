@@ -14,6 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { DeviceListPage } from './device_list_page';
@@ -22,7 +23,7 @@ describe('<DeviceListPage />', () => {
   it('should render', async () => {
     render(
       <FakeContextProvider>
-        <DeviceListPage />
+        <DeviceListPage platform={Platform.CHROMEOS} />
       </FakeContextProvider>,
     );
 

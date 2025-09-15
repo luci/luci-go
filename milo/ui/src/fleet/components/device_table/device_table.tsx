@@ -33,13 +33,16 @@ import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { extractDutId } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import {
+  Device,
+  Platform,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { CopySnackbar } from '../actions/copy/copy_snackbar';
 import { useColumnManagement } from '../columns/use_column_management';
 import { getFilters } from '../filter_dropdown/search_param_utils/search_param_utils';
 
-import { ColumnMenu } from './column_menu';
+import { ColumnMenu, ColumnMenuProps } from './column_menu';
 import { getColumns } from './columns';
 import {
   BASE_DIMENSIONS,
@@ -55,6 +58,7 @@ const UNKNOWN_ROW_COUNT = -1;
 // See: https://mui.com/x/react-data-grid/components/?srsltid=AfmBOoqlDTexbfxLLrstTWIEaJ97nrqXGVqhaMHF3Q2yIujjoMRTtTvF#custom-slot-props-with-typescript
 declare module '@mui/x-data-grid' {
   interface ToolbarPropsOverrides extends FleetToolbarProps {}
+  interface ColumnMenuPropsOverrides extends ColumnMenuProps {}
 }
 
 const computeSelectedRows = (
@@ -103,6 +107,7 @@ interface DeviceTableProps {
   isLoadingColumns: boolean;
   totalRowCount?: number;
   currentTaskMap: Map<string, string>;
+  platform: Platform;
 }
 
 export function DeviceTable({
@@ -116,6 +121,7 @@ export function DeviceTable({
   isLoadingColumns,
   totalRowCount,
   currentTaskMap,
+  platform,
 }: DeviceTableProps) {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
@@ -141,8 +147,8 @@ export function DeviceTable({
   } = useColumnManagement({
     allColumns: getColumns(columnIds),
     highlightedColumnIds: getFilteredColumnIds(),
-    defaultColumns: DEFAULT_DEVICE_COLUMNS,
-    localStorageKey: DEVICES_COLUMNS_LOCAL_STORAGE_KEY,
+    defaultColumns: DEFAULT_DEVICE_COLUMNS[platform],
+    localStorageKey: DEVICES_COLUMNS_LOCAL_STORAGE_KEY[platform],
   });
 
   const rows = useMemo(
@@ -174,11 +180,12 @@ export function DeviceTable({
       <StyledGrid
         sx={temporaryColumnSx}
         slots={{
-          pagination: Pagination,
           columnMenu: ColumnMenu,
+          pagination: Pagination,
           toolbar: FleetToolbar,
         }}
         slotProps={{
+          columnMenu: { platform: platform },
           pagination: {
             pagerCtx: pagerCtx,
             nextPageToken: nextPageToken,
