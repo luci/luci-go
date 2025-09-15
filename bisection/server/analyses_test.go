@@ -161,6 +161,13 @@ func TestQueryAnalysis(t *testing.T) {
 		assert.Loosely(t, datastore.Put(c, heuristicAnalysis), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
+		// Create genai analysis
+		genaiAnalysis := &model.CompileGenAIAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, compileFailureAnalysis),
+		}
+		assert.Loosely(t, datastore.Put(c, genaiAnalysis), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
 		// Create nth section analysis
 		nsa := &model.CompileNthSectionAnalysis{
 			ParentAnalysis: datastore.KeyForObj(c, compileFailureAnalysis),
@@ -186,6 +193,21 @@ func TestQueryAnalysis(t *testing.T) {
 			ParentAnalysis:     datastore.KeyForObj(c, nsa),
 		}
 		assert.Loosely(t, datastore.Put(c, nthSectionSuspect), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		// Create suspect for genai
+		genaiSuspect := &model.Suspect{
+			GitilesCommit: buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Id:      "commit7",
+			},
+			ReviewUrl:          "http://this/is/review/url2",
+			ReviewTitle:        "This is review title2",
+			VerificationStatus: model.SuspectVerificationStatus_Unverified,
+			ParentAnalysis:     datastore.KeyForObj(c, genaiAnalysis),
+		}
+		assert.Loosely(t, datastore.Put(c, genaiSuspect), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Add culprit verification rerun build for suspect

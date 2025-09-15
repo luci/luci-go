@@ -126,9 +126,21 @@ func GetBuildIDForCompileSuspect(ctx context.Context, suspect *model.Suspect) (i
 	return compileFailure.Build.IntID(), nil
 }
 
-// FetchSuspectsForAnalysis returns all suspects (from heuristic and nthsection) for an analysis
+// FetchSuspectsForAnalysis returns all suspects (from genai, heuristic and nthsection) for an analysis
 func FetchSuspectsForAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) ([]*model.Suspect, error) {
 	suspects := []*model.Suspect{}
+	ga, err := GetGenAIAnalysis(c, cfa)
+	if err != nil {
+		return nil, errors.Fmt("getGenAIAnalysis: %w", err)
+	}
+	if ga != nil {
+		gaSuspect, err := fetchSuspectsForParentKey(c, datastore.KeyForObj(c, ga))
+		if err != nil {
+			return nil, errors.Fmt("fetchSuspects genai analysis: %w", err)
+		}
+		suspects = append(suspects, gaSuspect...)
+	}
+
 	ha, err := GetHeuristicAnalysis(c, cfa)
 	if err != nil {
 		return nil, errors.Fmt("getHeuristicAnalysis: %w", err)

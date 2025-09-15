@@ -186,6 +186,41 @@ func TestGetHeuristicAnalysis(t *testing.T) {
 	})
 }
 
+func TestGetGenAIAnalysis(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+
+	ftt.Run("No genai analysis found", t, func(t *ftt.Test) {
+		compileFailureAnalysis := &model.CompileFailureAnalysis{
+			Id: 1230004,
+		}
+		genaiAnalysis, err := GetGenAIAnalysis(c, compileFailureAnalysis)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, genaiAnalysis, should.BeNil)
+	})
+
+	ftt.Run("GenAI analysis found", t, func(t *ftt.Test) {
+		// Prepare datastore
+		compileFailureAnalysis := &model.CompileFailureAnalysis{
+			Id: 1230004,
+		}
+		assert.Loosely(t, datastore.Put(c, compileFailureAnalysis), should.BeNil)
+
+		compileGenAIAnalysis := &model.CompileGenAIAnalysis{
+			Id:             4560002,
+			ParentAnalysis: datastore.KeyForObj(c, compileFailureAnalysis),
+		}
+		assert.Loosely(t, datastore.Put(c, compileGenAIAnalysis), should.BeNil)
+
+		datastore.GetTestable(c).CatchupIndexes()
+
+		genaiAnalysis, err := GetGenAIAnalysis(c, compileFailureAnalysis)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, genaiAnalysis, should.NotBeNil)
+		assert.Loosely(t, genaiAnalysis.Id, should.Equal(4560002))
+	})
+}
+
 func TestGetSuspectsForHeuristicAnalysis(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
@@ -252,6 +287,40 @@ func TestGetSuspectsForHeuristicAnalysis(t *testing.T) {
 		assert.Loosely(t, suspects[1].Score, should.Equal(3))
 		assert.Loosely(t, suspects[2].Score, should.Equal(2))
 		assert.Loosely(t, suspects[3].Score, should.Equal(1))
+	})
+}
+
+func TestGetSuspectsForGenAIAnalysis(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+	testutil.UpdateIndices(c)
+
+	ftt.Run("No suspects found", t, func(t *ftt.Test) {
+		genaiAnalysis := &model.CompileGenAIAnalysis{}
+		assert.Loosely(t, datastore.Put(c, genaiAnalysis), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		suspect, err := GetSuspectsForGenAIAnalysis(c, genaiAnalysis)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, suspect, should.BeNil)
+	})
+
+	ftt.Run("Suspect found", t, func(t *ftt.Test) {
+		genaiAnalysis := &model.CompileGenAIAnalysis{}
+		assert.Loosely(t, datastore.Put(c, genaiAnalysis), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		suspect := &model.Suspect{
+			ParentAnalysis: datastore.KeyForObj(c, genaiAnalysis),
+			Id:             789,
+		}
+		assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		suspect, err := GetSuspectsForGenAIAnalysis(c, genaiAnalysis)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, suspect, should.NotBeNil)
+		assert.Loosely(t, suspect.Id, should.Equal(789))
 	})
 }
 

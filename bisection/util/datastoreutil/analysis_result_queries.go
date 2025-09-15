@@ -110,6 +110,47 @@ func GetHeuristicAnalysis(c context.Context, analysis *model.CompileFailureAnaly
 	return heuristicAnalysis, nil
 }
 
+func GetGenAIAnalysis(c context.Context, analysis *model.CompileFailureAnalysis) (*model.CompileGenAIAnalysis, error) {
+	// Gets genai analysis results.
+	q := datastore.NewQuery("CompileGenAIAnalysis").Ancestor(datastore.KeyForObj(c, analysis))
+	genaiAnalyses := []*model.CompileGenAIAnalysis{}
+	err := datastore.GetAll(c, q, &genaiAnalyses)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(genaiAnalyses) == 0 {
+		// No genai analysis
+		return nil, nil
+	}
+
+	if len(genaiAnalyses) > 1 {
+		logging.Warningf(c, "Found multiple genai analysis for analysis %d", analysis.Id)
+	}
+
+	genaiAnalysis := genaiAnalyses[0]
+	return genaiAnalysis, nil
+}
+
+// GetSuspectsForGenAIAnalysis returns the genai suspect identified by the given genai analysis
+func GetSuspectsForGenAIAnalysis(c context.Context, genaiAnalysis *model.CompileGenAIAnalysis) (*model.Suspect, error) {
+	// Getting the suspects for genai analysis
+	suspects := []*model.Suspect{}
+	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, genaiAnalysis))
+	err := datastore.GetAll(c, q, &suspects)
+	if err != nil {
+		return nil, err
+	}
+	if len(suspects) == 0 {
+		return nil, nil
+	}
+	if len(suspects) > 1 {
+		logging.Warningf(c, "genaiAnalysis has more than 1 suspect %d", len(suspects))
+	}
+	return suspects[0], nil
+}
+
 // GetSuspectsForHeuristicAnalysis returns the heuristic suspects identified by the given heuristic analysis
 func GetSuspectsForHeuristicAnalysis(c context.Context, heuristicAnalysis *model.CompileHeuristicAnalysis) ([]*model.Suspect, error) {
 	// Getting the suspects for heuristic analysis

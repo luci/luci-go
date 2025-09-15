@@ -156,8 +156,8 @@ func processRevertCulpritTask(ctx context.Context, payload proto.Message) error 
 }
 
 func isSuspectGerritActionReady(ctx context.Context, culpritModel *model.Suspect, gerritConfig *configpb.GerritConfig) (bool, error) {
-	// We only proceed with heuristic culprit if it is a confirmed culprit
-	if culpritModel.Type == model.SuspectType_Heuristic {
+	// We only proceed with genai or heuristic culprit if it is a confirmed culprit
+	if culpritModel.Type == model.SuspectType_Heuristic || culpritModel.Type == model.SuspectType_GenAI {
 		if culpritModel.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit {
 			return true, nil
 		}
