@@ -231,11 +231,15 @@ func (c *ServerConfig) Validate() error {
 		}
 	}
 	if c.PreviousTestIDPrefix != nil {
-		if pbutil.IsStructuredTestID(*c.PreviousTestIDPrefix) {
-			return errors.New("PreviousTestIDPrefix: must not start with prefix of structured test IDs")
-		}
-		if err := pbutil.ValidateTestID(*c.PreviousTestIDPrefix); err != nil {
-			return errors.Fmt("PreviousTestIDPrefix: %w", err)
+		// Empty previous test ID prefix is allowed and indicates the previous test ID
+		// had no prefix applied to it.
+		if *c.PreviousTestIDPrefix != "" {
+			if pbutil.IsStructuredTestID(*c.PreviousTestIDPrefix) {
+				return errors.New("PreviousTestIDPrefix: must not start with prefix of structured test IDs")
+			}
+			if err := pbutil.ValidateTestID(*c.PreviousTestIDPrefix); err != nil {
+				return errors.Fmt("PreviousTestIDPrefix: %w", err)
+			}
 		}
 	}
 	// For clients still using legacy test IDs, deprecated.

@@ -525,12 +525,14 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string, scheme *schem
 		// Prevent accessing cmd.Process while it's being started.
 		cmdProcMu.Lock()
 		defer cmdProcMu.Unlock()
-		if err := terminate(ctx, cmd.Process); err != nil {
-			logging.Warningf(ctx, "Could not terminate subprocess (%s), cancelling its context", err)
-			cancelCmd()
-			return
+		if cmd.Process != nil {
+			if err := terminate(ctx, cmd.Process); err != nil {
+				logging.Warningf(ctx, "Could not terminate subprocess (%s), cancelling its context", err)
+				cancelCmd()
+				return
+			}
+			logging.Infof(ctx, "Sent termination signal to subprocess, it has ~%s to terminate", lucictx.GetDeadline(cmdCtx).GracePeriodDuration())
 		}
-		logging.Infof(ctx, "Sent termination signal to subprocess, it has ~%s to terminate", lucictx.GetDeadline(cmdCtx).GracePeriodDuration())
 	}()
 
 	locationTags, err := r.locationTagsFromArg(ctx)
