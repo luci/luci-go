@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -119,10 +120,11 @@ func createIdempotentRootInvocation(
 ) error {
 	now := clock.Now(ctx)
 	createdBy := string(auth.CurrentIdentity(ctx))
-
+	deduped := false
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		rootInvocationID := rootinvocations.ID(req.RootInvocationId)
-		deduped, err := deduplicateCreateRootInvocations(ctx, rootInvocationID, req.RequestId, createdBy)
+		var err error
+		deduped, err = deduplicateCreateRootInvocations(ctx, rootInvocationID, req.RequestId, createdBy)
 		if err != nil {
 			return err
 		}
@@ -190,7 +192,12 @@ func createIdempotentRootInvocation(
 	if err != nil {
 		return err
 	}
-	// TODO: increment row count metrics on new record creation.
+	if !deduped {
+		spanutil.IncRowCount(ctx, 1, spanutil.RootInvocations, spanutil.Inserted, req.RootInvocation.Realm)
+		spanutil.IncRowCount(ctx, 1, spanutil.WorkUnits, spanutil.Inserted, req.RootInvocation.Realm)
+		// Two shadow legacy invocation for root invocation and root work unit.
+		spanutil.IncRowCount(ctx, 2, spanutil.Invocations, spanutil.Inserted, req.RootInvocation.Realm)
+	}
 	return nil
 }
 

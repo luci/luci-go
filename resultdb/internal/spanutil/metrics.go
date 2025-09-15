@@ -47,9 +47,11 @@ type Table string
 
 // Values of Table type.
 const (
-	TestResults Table = "TestResults"
-	Invocations Table = "Invocations"
-	Artifacts   Table = "Artifacts"
+	TestResults     Table = "TestResults"
+	Invocations     Table = "Invocations"
+	Artifacts       Table = "Artifacts"
+	RootInvocations Table = "RootInvocations"
+	WorkUnits       Table = "WorkUnits"
 )
 
 // IncRowCount increments the row counter.

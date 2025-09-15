@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -103,8 +104,10 @@ func createWorkUnitsIdempotent(
 		parentIDs = append(parentIDs, parentID)
 		ids = append(ids, createdID)
 	}
+	dedup := false
 	_, err = mutateWorkUnitsForCreate(ctx, parentIDs, ids, func(ctx context.Context) error {
-		dedup, err := deduplicateCreateWorkUnits(ctx, ids, in.RequestId, createdBy)
+		var err error
+		dedup, err = deduplicateCreateWorkUnits(ctx, ids, in.RequestId, createdBy)
 		if err != nil {
 			return err
 		}
@@ -147,6 +150,13 @@ func createWorkUnitsIdempotent(
 	})
 	if err != nil {
 		return nil, err
+	}
+	if !dedup {
+		for _, r := range in.Requests {
+			spanutil.IncRowCount(ctx, 1, spanutil.WorkUnits, spanutil.Inserted, r.WorkUnit.Realm)
+			// One shadow legacy invocation for the work unit.
+			spanutil.IncRowCount(ctx, 1, spanutil.Invocations, spanutil.Inserted, r.WorkUnit.Realm)
+		}
 	}
 	return ids, nil
 }
