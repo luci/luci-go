@@ -128,7 +128,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
 
   useEffect(() => {
     if (!anchorEl) {
-      setOpenCategory(undefined);
+      closeInnerMenu();
     }
   }, [anchorEl]);
 
@@ -330,7 +330,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
               anchor: event.currentTarget,
             });
           } else {
-            setOpenCategory(undefined);
+            closeInnerMenu();
           }
         }}
         onKeyDown={(e) => {
@@ -345,7 +345,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
             }
           }
           if (e.key === 'ArrowLeft') {
-            setOpenCategory(undefined);
+            closeInnerMenu();
           }
         }}
         key={`item-${parent.el.value}`}

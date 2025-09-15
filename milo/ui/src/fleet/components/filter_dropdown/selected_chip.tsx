@@ -13,8 +13,10 @@
 // limitations under the License.
 
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { Chip, ChipProps } from '@mui/material';
+import { Chip, ChipProps, ClickAwayListener } from '@mui/material';
 import { ReactNode, useState } from 'react';
+
+import { keyboardUpDownHandler } from '@/fleet/utils';
 
 import { OptionsDropdown } from '../options_dropdown/options_dropdown';
 
@@ -37,7 +39,14 @@ export function SelectedChip({
     <>
       <Chip
         {...chipProps}
-        onClick={(event) => setAnchorEL(event.currentTarget)}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (anchorEl) {
+            setAnchorEL(null);
+            return;
+          }
+          setAnchorEL(event.currentTarget);
+        }}
         onMouseDown={(e) => {
           if (e.button === 1) {
             if (onDelete) {
@@ -68,18 +77,55 @@ export function SelectedChip({
         }}
         variant="filter"
         onDelete={onDelete}
-      />
-      <OptionsDropdown
-        anchorEl={anchorEl}
-        open={!!anchorEl}
-        enableSearchInput
-        renderChild={dropdownContent}
-        onApply={() => {
-          setAnchorEL(null);
-          onApply();
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          keyboardUpDownHandler(e, () => {
+            setAnchorEL(e.currentTarget);
+            e.preventDefault();
+            e.stopPropagation();
+          });
+          chipProps.onKeyDown?.(e);
         }}
-        onClose={() => setAnchorEL(null)}
       />
+      <ClickAwayListener
+        onClickAway={() => {
+          setAnchorEL(null);
+        }}
+      >
+        <OptionsDropdown
+          anchorEl={anchorEl}
+          open={!!anchorEl}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left',
+          }}
+          hideBackdrop
+          disableEnforceFocus
+          disableRestoreFocus
+          sx={{
+            marginTop: '7px', // aligns similarly to the main filter bar dropdown. Would be nice to make it more robust in the future
+            pointerEvents: 'none', // prevents the portal from capturing clicks and allows to click on the search bar
+          }}
+          slotProps={{
+            list: {
+              sx: {
+                pointerEvents: 'auto', // restores the click
+              },
+            },
+          }}
+          enableSearchInput
+          renderChild={dropdownContent}
+          onApply={() => {
+            anchorEl?.focus();
+            setAnchorEL(null);
+            onApply();
+          }}
+          onClose={() => {
+            anchorEl?.focus();
+            setAnchorEL(null);
+          }}
+        />
+      </ClickAwayListener>
     </>
   );
 }

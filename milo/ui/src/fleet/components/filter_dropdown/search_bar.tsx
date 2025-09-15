@@ -66,7 +66,21 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
             chipListRef.current[i] = el;
             chipListRef.current = chipListRef.current.filter((x) => x !== null);
           }}
+          onFocus={() => {
+            // close the dropdown on text field blur
+            // onBlur is not optimal, as it triggers when dropdown is clicked, so we change it manually here
+            onChangeDropdownOpen(false);
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+          onBlur={(e) => {
+            e.stopPropagation();
+          }}
           onKeyDown={(e) => {
+            // stops search bar from taking over
+            e.stopPropagation();
+
             const currentIndex = chipListRef.current.findIndex(
               (x) => x === e.target,
             );
@@ -76,7 +90,6 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
                 chipListRef.current[currentIndex - 1]?.focus();
               }
               e.preventDefault();
-              e.stopPropagation();
             }
             if (e.key === 'ArrowRight') {
               if (currentIndex === chipListRef.current.length - 1) {
@@ -85,11 +98,6 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
                 chipListRef.current[currentIndex + 1]?.focus();
               }
               e.preventDefault();
-              e.stopPropagation();
-            }
-            if (e.key === 'Backspace') {
-              // stops search bar from taking over, but allows the chip itself to handle the event
-              e.stopPropagation();
             }
           }}
           onDelete={(e) => {

@@ -914,4 +914,156 @@ describe('FilterBar', () => {
       queryByBrokenUpText('aaiaaadaaa'),
     );
   });
+
+  it('should allow navigation to and from selected chip dropdown', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent options={TEST_FILTER_OPTIONS} />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBar();
+    await user.click(searchInput);
+
+    // Add a filter to get a chip.
+    await user.keyboard('{ArrowDown}');
+    await user.keyboard('{ArrowRight}');
+
+    await user.click(await screen.getByTestId('test-option-component-button'));
+
+    await user.click(await screen.getByText('Apply'));
+
+    const chip = await screen.findByText('Option 1: Value 1');
+
+    expect(chip).toBeInTheDocument();
+
+    expect(searchInput).toHaveFocus();
+    expect(
+      await screen.queryByTestId('test-option-component-button'),
+    ).not.toBeInTheDocument();
+
+    await user.click(chip);
+
+    expect(document.activeElement).not.toContainElement(searchInput);
+
+    // type in chip's search input
+    await user.keyboard('test_search');
+
+    expect(
+      await screen.queryByTestId('test-option-component-search-query'),
+    ).toHaveTextContent('test_search');
+
+    // close dropdown and focus on chip
+    await user.click(searchInput);
+
+    expect(searchInput).toHaveFocus();
+    expect(
+      await screen.queryByTestId('test-option-component-button'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('should allow keyboard navigation to and from selected chip dropdown', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent options={TEST_FILTER_OPTIONS} />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBar();
+    await user.click(searchInput);
+
+    // Add a filter to get a chip.
+    await user.keyboard('{ArrowDown}');
+    await user.keyboard('{ArrowRight}');
+
+    await user.click(await screen.getByTestId('test-option-component-button'));
+
+    await user.click(await screen.getByText('Apply'));
+
+    const chip = await screen.findByText('Option 1: Value 1');
+
+    expect(chip).toBeInTheDocument();
+
+    expect(searchInput).toHaveFocus();
+    expect(
+      await screen.queryByTestId('test-option-component-button'),
+    ).not.toBeInTheDocument();
+
+    await user.keyboard('{ArrowLeft}');
+
+    expect(document.activeElement).not.toContainElement(searchInput);
+    expect(document.activeElement).toContainElement(chip);
+
+    // open chip's dropdown
+    await user.keyboard('{ArrowDown}');
+
+    // type in chip's search input
+    await user.keyboard('test_search');
+    expect(
+      await screen.queryByTestId('test-option-component-search-query'),
+    ).toHaveTextContent('test_search');
+
+    // close dropdown and focus on chip
+    await user.keyboard('{ArrowUp}');
+
+    expect(
+      await screen.queryByTestId('test-option-component-button'),
+    ).not.toBeInTheDocument();
+
+    await user.keyboard('{ArrowRight}');
+
+    expect(searchInput).toHaveFocus();
+  });
+
+  it('should focus on chip after closing selected chip dropdown with escape', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent options={TEST_FILTER_OPTIONS} />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBar();
+    await user.click(searchInput);
+
+    // Add a filter to get a chip.
+    await user.keyboard('{ArrowDown}');
+    await user.keyboard('{ArrowRight}');
+
+    await user.click(await screen.getByTestId('test-option-component-button'));
+
+    await user.click(await screen.getByText('Apply'));
+
+    const chip = await screen.findByText('Option 1: Value 1');
+
+    expect(chip).toBeInTheDocument();
+
+    expect(searchInput).toHaveFocus();
+    expect(
+      await screen.queryByTestId('test-option-component-button'),
+    ).not.toBeInTheDocument();
+
+    await user.keyboard('{ArrowLeft}');
+
+    expect(document.activeElement).not.toContainElement(searchInput);
+    expect(document.activeElement).toContainElement(chip);
+
+    // open chip's dropdown
+    await user.keyboard('{ArrowDown}');
+    await user.keyboard('{ArrowDown}');
+
+    expect(
+      await screen.queryByTestId('test-option-component-button'),
+    ).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+
+    expect(
+      await screen.queryByTestId('test-option-component-button'),
+    ).not.toBeInTheDocument();
+    expect(document.activeElement).toContainElement(chip);
+    expect(document.activeElement).not.toContainElement(searchInput);
+  });
 });

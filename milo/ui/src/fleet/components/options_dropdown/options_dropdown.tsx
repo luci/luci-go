@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Menu, MenuProps, PopoverOrigin } from '@mui/material';
+import { Menu, MenuOwnerState, MenuProps, PopoverOrigin } from '@mui/material';
 import React, { ReactNode, useRef, useState } from 'react';
 
 import { hasAnyModifier, keyboardUpDownHandler } from '../../utils';
@@ -21,7 +21,7 @@ import { SearchInput } from '../search_input';
 import { Footer } from './footer';
 
 type OptionsDropdownProps = MenuProps & {
-  onClose?: (event: object, reason: 'backdropClick' | 'escapeKeyDown') => void;
+  onClose: () => void;
   onApply: () => void;
   renderChild: (searchQuery: string) => ReactNode;
   anchorEl: HTMLElement | null;
@@ -53,6 +53,27 @@ export function OptionsDropdown({
   const searchInput = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const slotProps = { ...(menuProps.slotProps ?? {}) };
+  const listProps = (ownerState: MenuOwnerState) => {
+    const incomingProps =
+      typeof slotProps.list === 'function'
+        ? slotProps.list(ownerState)
+        : slotProps.list;
+
+    return {
+      ...incomingProps,
+
+      sx: [
+        {
+          paddingTop: '8px',
+          paddingBottom: 0,
+        },
+        incomingProps?.sx,
+      ],
+    };
+  };
+  const slotPropsMerged = { ...slotProps, ...{ list: listProps } };
+
   return (
     <Menu
       variant="selectedMenu"
@@ -66,52 +87,63 @@ export function OptionsDropdown({
       anchorEl={anchorEl}
       anchorOrigin={anchorOrigin}
       elevation={2}
-      onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
-        if (e.key === 'Enter' && e.ctrlKey) {
-          onApply();
-        }
-
-        if (enableSearchInput) {
-          keyboardUpDownHandler(e);
-          switch (e.key) {
-            case 'Delete':
-            case 'Cancel':
-            case 'Backspace':
-              setSearchQuery('');
-              searchInput?.current?.focus();
-          }
-          // if the key is a single alphanumeric character without modifier
-          if (/^[a-zA-Z0-9]\b/.test(e.key) && !hasAnyModifier(e)) {
-            searchInput?.current?.focus();
-            setSearchQuery((old) => old + e.key);
-            e.preventDefault(); // Avoid race condition to type twice in the input
-          }
-        }
-
-        if (onKeyDown) onKeyDown(e);
-      }}
       sx={{
         zIndex: 1401, // luci's cookie_consent_bar is 1400
       }}
-      MenuListProps={{
-        sx: {
-          paddingTop: '8px',
-          paddingBottom: 0,
-        },
-      }}
       {...menuProps}
+      slotProps={slotPropsMerged}
     >
-      <div>
+      {/* Stop propagation to prevent the caller from handling the event inside the dropdown */}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions*/}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+
+          if (e.key === 'Escape') {
+            onClose();
+          }
+
+          if (e.key === 'Enter' && e.ctrlKey) {
+            onApply();
+          }
+
+          if (enableSearchInput) {
+            keyboardUpDownHandler(e);
+            switch (e.key) {
+              case 'Delete':
+              case 'Cancel':
+              case 'Backspace':
+                setSearchQuery('');
+                searchInput?.current?.focus();
+            }
+            // if the key is a single alphanumeric character without modifier
+            if (/^[a-zA-Z0-9]\b/.test(e.key) && !hasAnyModifier(e)) {
+              searchInput?.current?.focus();
+              setSearchQuery((old) => old + e.key);
+              e.preventDefault(); // Avoid race condition to type twice in the input
+            }
+          }
+
+          if (onKeyDown) onKeyDown(e);
+        }}
+      >
         {enableSearchInput && (
-          <div css={{ flexGrow: 1 }}>
-            <SearchInput
-              searchInput={searchInput}
-              searchQuery={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.currentTarget.value);
-              }}
-            />
-          </div>
+          <SearchInput
+            searchInput={searchInput}
+            searchQuery={searchQuery}
+            fullWidth
+            onChange={(e) => {
+              setSearchQuery(e.currentTarget.value);
+            }}
+            onKeyDown={(e) => {
+              keyboardUpDownHandler(e, undefined, () => {
+                onClose();
+                e.preventDefault();
+                e.stopPropagation();
+              });
+            }}
+          />
         )}
         <div
           css={{
