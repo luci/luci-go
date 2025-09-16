@@ -253,7 +253,7 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
           error={
             devicesQuery.error || dimensionsQuery.error || currentTasks.error
           }
-          isLoading={devicesQuery.isPending}
+          isLoading={devicesQuery.isPending || devicesQuery.isPlaceholderData}
           isLoadingColumns={dimensionsQuery.isPending}
           totalRowCount={countQuery?.data?.total}
           currentTaskMap={currentTasks.map}
