@@ -28,6 +28,7 @@ func TestTokenKinds(t *testing.T) {
 		{input: "AND b", kind: kindAnd, value: "AND"},
 		{input: "OR a", kind: kindOr, value: "OR"},
 		{input: ".field", kind: kindDot, value: "."},
+		{input: ".\"field\"", kind: kindDot, value: "."},
 		{input: "(arg)", kind: kindLParen, value: "("},
 		{input: ")", kind: kindRParen, value: ")"},
 		{input: ", arg2)", kind: kindComma, value: ","},
@@ -153,6 +154,7 @@ func TestFullParse(t *testing.T) {
 		// Note: although this parses correctly as a "global" restriction, the implementation doesn't handle this type of restriction, so an error will be returned higher in the stack.
 		{input: "member.field", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{\"member\", {\"field\"}}}}}}}}}}"},
 		{input: " member.field > 4 ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{\"member\", {\"field\"}}},\">\",arg{comparable{member{\"4\"}}}}}}}}}}}"},
+		{input: " member.\"field\" > 4 ", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{\"member\", {\"field\"}}},\">\",arg{comparable{member{\"4\"}}}}}}}}}}}"},
 		{input: "composite (expression)", ast: "filter{expression{sequence{factor{term{simple{restriction{comparable{member{\"composite\"}}}}}}},factor{term{simple{expression{sequence{factor{term{simple{restriction{comparable{member{\"expression\"}}}}}}}}}}}}}}}"},
 		// This should parse as a function, but function parsing is not implemented.
 		// {input: "function(expression)", ast: ""},

@@ -27,7 +27,7 @@ package aip160
 // simple: restriction | composite;
 // restriction: comparable [COMPARATOR arg];
 // comparable: member;
-// member: (TEXT | STRING) {DOT TEXT};
+// member: (TEXT | STRING) {DOT (TEXT | STRING)};
 // composite: LPAREN expression RPAREN;
 // arg: comparable | composite;
 //
@@ -651,7 +651,18 @@ func (p *parser) member() (*Member, error) {
 			return nil, err
 		}
 		if f == nil {
-			return nil, fmt.Errorf("expected field name after '.'")
+			f, err = p.accept(kindString)
+			if err != nil {
+				return nil, err
+			}
+			if f == nil {
+				return nil, fmt.Errorf("expected field name after '.'")
+			}
+
+			f.value, err = strconv.Unquote(f.value)
+			if err != nil {
+				return nil, err
+			}
 		}
 		m.Fields = append(m.Fields, f.value)
 	}
