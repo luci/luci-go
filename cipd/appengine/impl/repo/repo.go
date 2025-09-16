@@ -1197,11 +1197,9 @@ func (impl *repoImpl) AttachMetadata(ctx context.Context, r *api.AttachMetadataR
 	var extraMetadata []*api.InstanceMetadata
 	for _, m := range r.Metadata {
 		if m.ContentType == "application/vnd.in-toto.bundle" {
-			logging.Debugf(ctx, "Found vsa metadata: %v", m)
 			if vsa := impl.vsa.VerifySoftwareArtifact(ctx, inst, string(m.Value)); vsa != "" {
-				logging.Debugf(ctx, "Get vsa from verifier: %s", vsa)
 				extraMetadata = append(extraMetadata, &api.InstanceMetadata{
-					Key:         "luci-slsa-VSA",
+					Key:         "luci.slsa.VSA",
 					Value:       []byte(vsa),
 					ContentType: "application/vnd.in-toto.bundle",
 				})
