@@ -220,7 +220,7 @@ func (c *client) NewVerifySoftwareArtifactTask(ctx context.Context, inst *model.
 		Context: &api.VerificationContext{
 			EnforcementPointName: "cipd",
 			VerificationPurpose:  api.VerificationContext_VERIFY_FOR_LOGGING,
-			OccurrenceStage:      api.VerificationContext_OBSERVED,
+			OccurrenceStage:      api.VerificationContext_OCCURRENCE_STAGE_AS_VERIFIED,
 		},
 	}
 

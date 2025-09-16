@@ -57,14 +57,14 @@ message VerificationContext {
 
   // The stage type of an artifact occurrence on the software supply chain.
   enum OccurrenceStageType {
-    reserved 1, 2, 3;
+    reserved 1, 2, 4;
 
     // Legacy client will leave this field unspecified.
     OCCURRENCE_STAGE_TYPE_UNSPECIFIED = 0;
 
-    // Represents the artifact(s) is observed, but verifier has no info
-    // about the stage of it.
-    OBSERVED = 4;
+    // Represents the artifact(s) in this occurrence occurs after a BCID
+    // verification without any modification.
+    OCCURRENCE_STAGE_AS_VERIFIED = 3;
   }
 
   // Caller provided software supply chain stage classificiation.
