@@ -139,6 +139,8 @@ var supportedHosts = map[string]bool{
 	"chromium-review.googlesource.com": true,
 	"dawn.googlesource.com":            true,
 	"dawn-review.googlesource.com":     true,
+	"webrtc.googlesource.com":          true,
+	"webrtc-review.googlesource.com":   true,
 }
 
 // checkProjectReAuth checks whether the user needs ReAuth for a
