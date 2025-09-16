@@ -109,6 +109,16 @@ func (impl *repoImpl) registerTasks() {
 			return impl.runProcessorsTask(ctx, m.(*tasks.RunProcessors))
 		},
 	})
+	// See queue.yaml for "vsa-requests" task queue definition.
+	impl.tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "vsa-requests",
+		Prototype: &tasks.CallVerifySoftwareArtifact{},
+		Kind:      tq.NonTransactional,
+		Queue:     "vsa-requests",
+		Handler: func(ctx context.Context, m proto.Message) error {
+			return impl.callVerifySoftwareArtifact(ctx, m.(*tasks.CallVerifySoftwareArtifact))
+		},
+	})
 }
 
 // registerProcessor adds a new processor.
@@ -1147,6 +1157,17 @@ func (impl *repoImpl) DetachTags(ctx context.Context, r *api.DetachTagsRequest) 
 ////////////////////////////////////////////////////////////////////////////////
 // Instance metadata support.
 
+const (
+	// vsaAttestationsKey is the key for metadata entries that contains
+	// attestations.
+	vsaAttestationsKey = "policy-attestations"
+	// vsaAttestationsContentType is the content type for attestation bundle.
+	vsaAttestationsContentType = "application/vnd.in-toto.bundle"
+	// slsaVSAKey is the key for metadata entries that contains SLSA Verification
+	// Summary Attestation.
+	slsaVSAKey = "luci-slsa-VSA"
+)
+
 // AttachMetadata implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) AttachMetadata(ctx context.Context, r *api.AttachMetadataRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
@@ -1165,8 +1186,8 @@ func (impl *repoImpl) AttachMetadata(ctx context.Context, r *api.AttachMetadataR
 		if err := common.ValidateInstanceMetadataKey(m.Key); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "bad 'metadata' key: %s", err)
 		}
-		if strings.HasPrefix(m.Key, "luci.") {
-			return nil, status.Errorf(codes.InvalidArgument, "bad 'metadata' key %q: `luci.` prefix is reserved for internal use", m.Key)
+		if strings.HasPrefix(m.Key, "luci-") {
+			return nil, status.Errorf(codes.InvalidArgument, "bad 'metadata' key %q: `luci-` prefix is reserved for internal use", m.Key)
 		}
 		if err := common.ValidateInstanceMetadataLen(len(m.Value)); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "metadata with key %q: %s", m.Key, err)
@@ -1196,12 +1217,12 @@ func (impl *repoImpl) AttachMetadata(ctx context.Context, r *api.AttachMetadataR
 	// Call VerifySoftwareArtifact if an attestation bundle is attached to the package.
 	var extraMetadata []*api.InstanceMetadata
 	for _, m := range r.Metadata {
-		if m.ContentType == "application/vnd.in-toto.bundle" {
+		if m.Key == vsaAttestationsKey {
 			if vsa := impl.vsa.VerifySoftwareArtifact(ctx, inst, string(m.Value)); vsa != "" {
 				extraMetadata = append(extraMetadata, &api.InstanceMetadata{
-					Key:         "luci.slsa.VSA",
+					Key:         slsaVSAKey,
 					Value:       []byte(vsa),
-					ContentType: "application/vnd.in-toto.bundle",
+					ContentType: vsaAttestationsContentType,
 				})
 			}
 		}
@@ -1325,6 +1346,69 @@ func (impl *repoImpl) ListMetadata(ctx context.Context, r *api.ListMetadataReque
 	return resp, nil
 }
 
+// ensureVSA check whether the instance has a vsa. If not, it will create a
+// asynchronously task using VerifySoftwareArtifact to attach the vsa.
+func (impl *repoImpl) ensureVSA(ctx context.Context, inst *model.Instance) error {
+	switch s, err := impl.vsa.GetStatus(ctx, inst); {
+	case err != nil:
+		return err
+	case s != vsa.CacheStatusUnknown:
+		// We already have a vsa or we have a pending vsa request.
+		return nil
+	}
+	if err := impl.vsa.SetStatus(ctx, inst, vsa.CacheStatusPending); err != nil {
+		return err
+	}
+
+	vsas, err := model.ListMetadataWithKeys(ctx, inst, []string{slsaVSAKey})
+	if err != nil {
+		return err
+	}
+
+	if len(vsas) != 0 {
+		return impl.vsa.SetStatus(ctx, inst, vsa.CacheStatusCompleted)
+	}
+
+	ms, err := model.ListMetadataWithKeys(ctx, inst, []string{vsaAttestationsKey})
+	if err != nil {
+		return err
+	}
+
+	var bundle string
+	if len(ms) > 0 {
+		bundle = string(ms[0].Value)
+	}
+
+	t := impl.vsa.NewVerifySoftwareArtifactTask(ctx, inst, bundle)
+	return impl.tq.AddTask(ctx, &tq.Task{
+		Title:            inst.InstanceID,
+		Payload:          t,
+		DeduplicationKey: inst.InstanceID,
+	})
+}
+
+func (impl *repoImpl) callVerifySoftwareArtifact(ctx context.Context, t *tasks.CallVerifySoftwareArtifact) error {
+	vsaStr := impl.vsa.CallVerifySoftwareArtifact(ctx, t)
+	if vsaStr == "" {
+		return nil
+	}
+
+	inst := (&model.Instance{}).FromProto(ctx, t.Instance)
+	if err := model.AttachMetadata(ctx, inst, []*api.InstanceMetadata{{
+		Key:         slsaVSAKey,
+		Value:       []byte(vsaStr),
+		ContentType: vsaAttestationsContentType,
+	}}); err != nil {
+		logging.WithError(err).Errorf(ctx, "Failed to attach VSA metadata to %s", inst.InstanceID)
+		return nil // log and ignore
+	}
+
+	if err := impl.vsa.SetStatus(ctx, inst, vsa.CacheStatusCompleted); err != nil {
+		logging.WithError(err).Warningf(ctx, "Cache VSA Status: %s", inst.Package)
+	}
+	return nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Version resolution and instance info fetching.
 
@@ -1379,6 +1463,10 @@ func (impl *repoImpl) GetInstanceURL(ctx context.Context, r *api.GetInstanceURLR
 	})
 	if err := model.CheckInstanceExists(ctx, inst); err != nil {
 		return nil, err
+	}
+
+	if err := impl.ensureVSA(ctx, inst); err != nil {
+		logging.WithError(err).Warningf(ctx, "ensuring VSA: %s", inst.Package)
 	}
 
 	// Ask CAS generate an URL for us. Note that CAS does caching internally.

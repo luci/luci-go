@@ -19,12 +19,14 @@ package vsa
 import (
 	"bytes"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -32,9 +34,11 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/bqlog"
+	"go.chromium.org/luci/server/caching"
 
 	cipdapi "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
+	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/vsa/api"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -45,6 +49,14 @@ func init() {
 		Table:     "vsa_log",
 	})
 }
+
+type CacheStatus string
+
+const (
+	CacheStatusUnknown   CacheStatus = "Unknown"
+	CacheStatusPending   CacheStatus = "Pending"
+	CacheStatusCompleted CacheStatus = "Completed"
+)
 
 type Client interface {
 	// Register registers vsa client configs as CLI flags.
@@ -57,7 +69,25 @@ type Client interface {
 	// VerifySoftwareArtifact calls vsa VerifySoftwareArtifact API with the bundle
 	// provided. It returns the Verification Summary Attestation (VSA) if succeeded.
 	// Errors and detailed logs will be recorded in BigQuery Table.
-	VerifySoftwareArtifact(ctx context.Context, inst *model.Instance, bundle string) (vsa string)
+	// This is equivalent to use NewVerifySoftwareArtifactTask create a task then
+	// invoke CallVerifySoftwareArtifact immediately.
+	VerifySoftwareArtifact(ctx context.Context, inst *model.Instance, bundle string) string
+
+	// NewVerifySoftwareArtifactTask creates a task for VerifySoftwareArtifact
+	// which could be processed by CallVerifySoftwareArtifact.
+	NewVerifySoftwareArtifactTask(ctx context.Context, inst *model.Instance, bundle string) *tasks.CallVerifySoftwareArtifact
+
+	// CallVerifySoftwareArtifact calls vsa VerifySoftwareArtifact API with the
+	// task created by NewVerifySoftwareArtifactTask. Errors and detailed logs
+	// will be recorded in BigQuery Table.
+	CallVerifySoftwareArtifact(ctx context.Context, t *tasks.CallVerifySoftwareArtifact) string
+
+	// Get the vsa status (Unknown, Pending, Completed) for the instance.
+	GetStatus(ctx context.Context, inst *model.Instance) (CacheStatus, error)
+
+	// Set the vsa status (Unknown, Pending, Completed) for the instance.
+	// Depending on the status they will be cached for a period of time.
+	SetStatus(ctx context.Context, inst *model.Instance, status CacheStatus) error
 }
 
 // NewClient creates a vsa.Client for invoking verifier API. It needs to
@@ -74,6 +104,7 @@ type client struct {
 	softwareVerifierUrl *url.URL
 
 	client *http.Client
+	cache  caching.BlobCache
 	bqlog  func(ctx context.Context, m proto.Message)
 }
 
@@ -129,6 +160,11 @@ func (c *client) Init(ctx context.Context) error {
 		}
 		c.client = &http.Client{Transport: tr}
 	}
+
+	if c.cache == nil {
+		c.cache = caching.GlobalCache(ctx, "vsa")
+	}
+
 	if c.bqlog == nil {
 		c.bqlog = bqlog.Log
 	}
@@ -143,8 +179,19 @@ func (c *client) Init(ctx context.Context) error {
 //
 // Errors and detailed logs will be recorded in BigQuery Table.
 func (c *client) VerifySoftwareArtifact(ctx context.Context, inst *model.Instance, bundle string) string {
-	if c.softwareVerifierHost == "" {
+	t := c.NewVerifySoftwareArtifactTask(ctx, inst, bundle)
+	if t == nil {
 		return ""
+	}
+	return c.CallVerifySoftwareArtifact(ctx, t)
+}
+
+// NewVerifySoftwareArtifactTask creates a task for VerifySoftwareArtifact
+// with the bundle provided, see:
+// https://github.com/in-toto/attestation/blob/main/spec/v1/bundle.md
+func (c *client) NewVerifySoftwareArtifactTask(ctx context.Context, inst *model.Instance, bundle string) *tasks.CallVerifySoftwareArtifact {
+	if c.softwareVerifierHost == "" {
+		return nil
 	}
 
 	uri := c.resourcePrefix + inst.Package.StringID()
@@ -154,7 +201,6 @@ func (c *client) VerifySoftwareArtifact(ctx context.Context, inst *model.Instanc
 		ResourceUri: uri,
 		Timestamp:   clock.Now(ctx).UnixMicro(),
 	}
-	defer c.bqlog(ctx, logEntry)
 
 	digests := make(map[string]string)
 	switch obj := common.InstanceIDToObjectRef(inst.InstanceID); obj.HashAlgo {
@@ -178,13 +224,28 @@ func (c *client) VerifySoftwareArtifact(ctx context.Context, inst *model.Instanc
 		},
 	}
 
-	resp, err := c.callVerifySoftwareArtifact(ctx, req)
+	return &tasks.CallVerifySoftwareArtifact{
+		Instance: inst.Proto(),
+		Request:  req,
+		Log:      logEntry,
+	}
+}
+
+// CallVerifySoftwareArtifact calls vsa VerifySoftwareArtifact API with the
+// task created by NewVerifySoftwareArtifactTask.
+// It returns the Verification Summary Attestation (VSA) if succeeded, see:
+// https://slsa.dev/spec/v0.1/verification_summary
+//
+// Errors and detailed logs will be recorded in BigQuery Table.
+func (c *client) CallVerifySoftwareArtifact(ctx context.Context, t *tasks.CallVerifySoftwareArtifact) string {
+	defer c.bqlog(ctx, t.Log)
+	resp, err := c.callVerifySoftwareArtifact(ctx, t.Request)
 	if err != nil {
-		logEntry.ErrorMessage = err.Error()
+		t.Log.ErrorMessage = err.Error()
 		return ""
 	}
-	logEntry.Allowed = resp.Allowed
-	logEntry.RejectionMessage = resp.RejectionMessage
+	t.Log.Allowed = resp.Allowed
+	t.Log.RejectionMessage = resp.RejectionMessage
 
 	return resp.VerificationSummary
 }
@@ -218,4 +279,52 @@ func (c *client) callVerifySoftwareArtifact(ctx context.Context, r *api.VerifySo
 		return nil, fmt.Errorf("VerifySoftwareArtifact: unmarshalling: failed to unmarshal response: %w: %s", err, string(b))
 	}
 	return &ret, nil
+}
+
+func cacheKey(inst *model.Instance) string { return inst.InstanceID + ":vsa_status" }
+
+func (c *client) GetStatus(ctx context.Context, inst *model.Instance) (CacheStatus, error) {
+	if c.cache == nil {
+		return CacheStatusUnknown, nil
+	}
+
+	b, err := c.cache.Get(ctx, cacheKey(inst))
+	if err != nil {
+		if errors.Is(err, caching.ErrCacheMiss) {
+			return CacheStatusUnknown, nil
+		}
+		return CacheStatusUnknown, err
+	}
+
+	status := CacheStatus(b)
+	switch status {
+	case CacheStatusUnknown:
+	case CacheStatusPending:
+	case CacheStatusCompleted:
+	default:
+		return CacheStatusUnknown, fmt.Errorf("VerifySoftwareArtifact: get cache: unknown cache status: %s", status)
+	}
+	return status, nil
+}
+
+func (c *client) SetStatus(ctx context.Context, inst *model.Instance, status CacheStatus) error {
+	if c.cache == nil {
+		return nil
+	}
+
+	var ttl time.Duration
+	switch status {
+	case CacheStatusUnknown:
+		ttl = time.Second // Clear existing status
+	case CacheStatusPending:
+		ttl = time.Second * 30
+	case CacheStatusCompleted:
+		ttl = time.Minute * 5
+	default:
+		return fmt.Errorf("VerifySoftwareArtifact: set cache: unknown cache status: %s", status)
+	}
+	if err := c.cache.Set(ctx, cacheKey(inst), []byte(status), ttl); err != nil {
+		return fmt.Errorf("VerifySoftwareArtifact: set cache: failed to set: %w", err)
+	}
+	return nil
 }

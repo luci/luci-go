@@ -14,6 +14,11 @@ queue:
   retry_parameters:
     task_age_limit: 24h
 
+# Used for VerifySoftwareArtifact tasks, see impl/vsa/vsa.go.
+- name: vsa-requests
+  bucket_size: 500
+  rate: 100/s
+
 # Used to run mapping tasks, see impl/admin/admin.go.
 - name: mappers
   bucket_size: 500

@@ -51,6 +51,8 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
+	"go.chromium.org/luci/cipd/appengine/impl/vsa"
+	vsaapi "go.chromium.org/luci/cipd/appengine/impl/vsa/api"
 	"go.chromium.org/luci/cipd/common"
 
 	// Using transactional datastore TQ tasks.
@@ -2567,7 +2569,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 		})
 
 		cas := testutil.MockCAS{}
-		impl := repoImpl{meta: &meta, cas: &cas}
+		impl := repoImpl{meta: &meta, cas: &cas, vsa: vsa.NewClient()}
 
 		inst := &model.Instance{
 			InstanceID:   strings.Repeat("1", 40),
@@ -3699,13 +3701,37 @@ func TestParseDownloadPath(t *testing.T) {
 }
 
 type MockVSA struct {
-	VSA func() string
+	VSA    func() string
+	status vsa.CacheStatus
 }
 
 func (m *MockVSA) Register(f *flag.FlagSet)       {}
 func (m *MockVSA) Init(ctx context.Context) error { return nil }
 func (m *MockVSA) VerifySoftwareArtifact(ctx context.Context, inst *model.Instance, bundle string) (vsa string) {
 	return m.VSA()
+}
+func (m *MockVSA) NewVerifySoftwareArtifactTask(ctx context.Context, inst *model.Instance, bundle string) *tasks.CallVerifySoftwareArtifact {
+	return &tasks.CallVerifySoftwareArtifact{
+		Instance: inst.Proto(),
+		Request: &vsaapi.VerifySoftwareArtifactRequest{
+			ArtifactInfo: &vsaapi.ArtifactInfo{
+				Attestations: []string{bundle},
+			},
+		},
+	}
+}
+func (m *MockVSA) CallVerifySoftwareArtifact(ctx context.Context, t *tasks.CallVerifySoftwareArtifact) string {
+	return m.VSA()
+}
+func (m *MockVSA) GetStatus(ctx context.Context, inst *model.Instance) (vsa.CacheStatus, error) {
+	if m.status == "" {
+		return vsa.CacheStatusUnknown, nil
+	}
+	return m.status, nil
+}
+func (m *MockVSA) SetStatus(ctx context.Context, inst *model.Instance, status vsa.CacheStatus) error {
+	m.status = status
+	return nil
 }
 
 func TestVSA(t *testing.T) {
@@ -3725,9 +3751,19 @@ func TestVSA(t *testing.T) {
 			},
 		})
 
+		dispatcher := &tq.Dispatcher{}
+		ctx, sched := tq.TestingContext(ctx, dispatcher)
+		runTasks := func() {
+			for _, t := range sched.Tasks() {
+				sched.Executor.Execute(ctx, t, func(retry bool) {})
+			}
+		}
+
 		cas := testutil.MockCAS{}
-		vsa := &MockVSA{VSA: func() string { return "vsa content" }}
-		impl := repoImpl{meta: &meta, cas: &cas, vsa: vsa}
+		mvsa := &MockVSA{VSA: func() string { return "vsa content" }, status: vsa.CacheStatusUnknown}
+
+		impl := repoImpl{tq: dispatcher, meta: &meta, cas: &cas, vsa: mvsa}
+		impl.registerTasks()
 
 		inst := &model.Instance{
 			InstanceID:   strings.Repeat("1", 40),
@@ -3747,13 +3783,13 @@ func TestVSA(t *testing.T) {
 
 		t.Run("AttachMetadata", func(t *ftt.Test) {
 			t.Run("Not Ready", func(t *ftt.Test) {
-				vsa.VSA = func() string { t.Fail(); return "" }
+				mvsa.VSA = func() string { t.Fail(); return "" }
 
 				_, err := impl.AttachMetadata(ctx, &api.AttachMetadataRequest{
 					Package:  "a/pkg/somethingelse",
 					Instance: inst.Proto().Instance,
 					Metadata: []*api.InstanceMetadata{
-						{Key: "attestations", Value: []uint8("attestation bundle"), ContentType: "application/vnd.in-toto.bundle"},
+						{Key: "policy-attestations", Value: []uint8("attestation bundle"), ContentType: "application/vnd.in-toto.bundle"},
 					},
 				})
 				assert.ErrIsLike(t, err, "no such package")
@@ -3764,47 +3800,166 @@ func TestVSA(t *testing.T) {
 					Package:  inst.Package.StringID(),
 					Instance: inst.Proto().Instance,
 					Metadata: []*api.InstanceMetadata{
-						{Key: "attestations", Value: []uint8("attestation bundle"), ContentType: "application/vnd.in-toto.bundle"},
+						{Key: "policy-attestations", Value: []uint8("attestation bundle"), ContentType: "application/vnd.in-toto.bundle"},
 					},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 
 				m, err := model.ListMetadata(ctx, inst)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, m, should.HaveLength(2))
-				assert.Loosely(t, m[0].Key, should.Equal("attestations"))
-				assert.Loosely(t, m[0].Value, should.Match([]uint8("attestation bundle")))
-				assert.Loosely(t, m[0].ContentType, should.Equal("application/vnd.in-toto.bundle"))
-				assert.Loosely(t, m[1].Key, should.Equal("luci.slsa.VSA"))
-				assert.Loosely(t, m[1].Value, should.Match([]uint8("vsa content")))
+				assert.Loosely(t, m[0].Key, should.Equal(slsaVSAKey))
+				assert.Loosely(t, m[0].Value, should.Match([]uint8("vsa content")))
+				assert.Loosely(t, m[1].Key, should.Equal("policy-attestations"))
+				assert.Loosely(t, m[1].Value, should.Match([]uint8("attestation bundle")))
+				assert.Loosely(t, m[1].ContentType, should.Equal("application/vnd.in-toto.bundle"))
 
-				// Should not be called agail when package is requested.
-				vsa.VSA = func() string { panic("impossible") }
+				// Should not be called again when package is requested.
+				mvsa.VSA = func() string { t.Fail(); return "" }
 				_, err = impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 					Package:  inst.Package.StringID(),
 					Instance: inst.Proto().Instance,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				runTasks()
+				assert.NoErr(t, err)
+			})
+
+			t.Run("Failed", func(t *ftt.Test) {
+				mvsa.VSA = func() string { return "" }
+
+				_, err := impl.AttachMetadata(ctx, &api.AttachMetadataRequest{
+					Package:  inst.Package.StringID(),
+					Instance: inst.Proto().Instance,
+					Metadata: []*api.InstanceMetadata{
+						{Key: "policy-attestations", Value: []uint8("attestation bundle"), ContentType: "application/vnd.in-toto.bundle"},
+					},
+				})
+				assert.NoErr(t, err)
+
+				m, err := model.ListMetadata(ctx, inst)
+				assert.NoErr(t, err)
+				assert.Loosely(t, m, should.HaveLength(1))
+				assert.Loosely(t, m[0].Key, should.Equal("policy-attestations"))
+				assert.Loosely(t, m[0].Value, should.Match([]uint8("attestation bundle")))
+				assert.Loosely(t, m[0].ContentType, should.Equal("application/vnd.in-toto.bundle"))
 			})
 		})
-		t.Run("Failed", func(t *ftt.Test) {
-			vsa.VSA = func() string { return "" }
 
-			_, err := impl.AttachMetadata(ctx, &api.AttachMetadataRequest{
-				Package:  inst.Package.StringID(),
-				Instance: inst.Proto().Instance,
-				Metadata: []*api.InstanceMetadata{
-					{Key: "attestations", Value: []uint8("attestation bundle"), ContentType: "application/vnd.in-toto.bundle"},
-				},
+		t.Run("GetInstanceURL", func(t *ftt.Test) {
+			t.Run("Without VSA", func(t *ftt.Test) {
+				t.Run("With Attestation", func(t *ftt.Test) {
+					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusUnknown))
+					model.AttachMetadata(ctx, inst, []*api.InstanceMetadata{{
+						Key:         "policy-attestations",
+						Value:       []uint8("attestation bundle"),
+						ContentType: "application/vnd.in-toto.bundle"},
+					})
+
+					_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+						Package:  inst.Package.StringID(),
+						Instance: inst.Proto().Instance,
+					})
+					assert.NoErr(t, err)
+					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusPending))
+					assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
+					assert.Loosely(t, sched.Tasks()[0].Payload, should.Match(&tasks.CallVerifySoftwareArtifact{
+						Instance: inst.Proto(),
+						Request: &vsaapi.VerifySoftwareArtifactRequest{
+							ArtifactInfo: &vsaapi.ArtifactInfo{
+								Attestations: []string{"attestation bundle"},
+							},
+						},
+					}))
+					runTasks()
+
+					m, err := model.ListMetadata(ctx, inst)
+					assert.NoErr(t, err)
+					assert.Loosely(t, m, should.HaveLength(2))
+					assert.Loosely(t, m[0].Key, should.Equal(slsaVSAKey))
+					assert.Loosely(t, m[0].Value, should.Match([]uint8("vsa content")))
+					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusCompleted))
+				})
+
+				t.Run("Without Attestation", func(t *ftt.Test) {
+					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusUnknown))
+					_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+						Package:  inst.Package.StringID(),
+						Instance: inst.Proto().Instance,
+					})
+					assert.NoErr(t, err)
+					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusPending))
+
+					assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
+					assert.Loosely(t, sched.Tasks()[0].Payload, should.Match(&tasks.CallVerifySoftwareArtifact{
+						Instance: inst.Proto(),
+						Request: &vsaapi.VerifySoftwareArtifactRequest{
+							ArtifactInfo: &vsaapi.ArtifactInfo{
+								Attestations: []string{""},
+							},
+						},
+					}))
+					runTasks()
+
+					m, err := model.ListMetadata(ctx, inst)
+					assert.NoErr(t, err)
+					assert.Loosely(t, m, should.HaveLength(1))
+					assert.Loosely(t, m[0].Key, should.Equal(slsaVSAKey))
+					assert.Loosely(t, m[0].Value, should.Match([]uint8("vsa content")))
+					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusCompleted))
+				})
 			})
-			assert.Loosely(t, err, should.BeNil)
 
-			m, err := model.ListMetadata(ctx, inst)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, m, should.HaveLength(1))
-			assert.Loosely(t, m[0].Key, should.Equal("attestations"))
-			assert.Loosely(t, m[0].Value, should.Match([]uint8("attestation bundle")))
-			assert.Loosely(t, m[0].ContentType, should.Equal("application/vnd.in-toto.bundle"))
+			t.Run("With VSA", func(t *ftt.Test) {
+				mvsa.VSA = func() string { t.Fail(); return "" }
+				err := model.AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+					{Key: slsaVSAKey, Value: []uint8("something")},
+				})
+				assert.NoErr(t, err)
+
+				resp, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+					Package:  inst.Package.StringID(),
+					Instance: inst.Proto().Instance,
+				})
+				assert.NoErr(t, err)
+				assert.Loosely(t, resp, should.Match(&api.ObjectURL{
+					SignedUrl: "http://example.com/1111111111111111111111111111111111111111?d=",
+				}))
+
+				m, err := model.ListMetadata(ctx, inst)
+				assert.NoErr(t, err)
+				assert.Loosely(t, m, should.HaveLength(1))
+				assert.Loosely(t, m[0].Key, should.Equal(slsaVSAKey))
+				assert.Loosely(t, m[0].Value, should.Match([]uint8("something")))
+				assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusCompleted))
+			})
+
+			t.Run("With Cached Status", func(t *ftt.Test) {
+				mvsa.VSA = func() string { t.Fail(); return "" }
+				mvsa.status = vsa.CacheStatusPending
+
+				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+					Package:  inst.Package.StringID(),
+					Instance: inst.Proto().Instance,
+				})
+				assert.NoErr(t, err)
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
+
+				mvsa.status = vsa.CacheStatusCompleted
+				_, err = impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+					Package:  inst.Package.StringID(),
+					Instance: inst.Proto().Instance,
+				})
+				assert.NoErr(t, err)
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
+
+				mvsa.status = vsa.CacheStatusUnknown
+				_, err = impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+					Package:  inst.Package.StringID(),
+					Instance: inst.Proto().Instance,
+				})
+				assert.NoErr(t, err)
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
+			})
 		})
 	})
 }

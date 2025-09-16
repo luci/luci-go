@@ -43,8 +43,8 @@ bqschemaupdater \
 bqschemaupdater \
   -table "$PROJECT_ID.cipd.vsa_log" \
   -friendly-name "CIPD VerifySoftwareArtifact log." \
-  -message-dir "$THIS_DIR/impl/vsa/api" \
-  -message "cipd.impl.vsa.VerifySoftwareArtifactLogEntry" \
+  -message-dir "$THIS_DIR/impl/slsa/api" \
+  -message "cipd.impl.slsa.VerifySoftwareArtifactLogEntry" \
   -partitioning-field "timestamp" \
   -partitioning-expiration "8760h"  # 1y
 

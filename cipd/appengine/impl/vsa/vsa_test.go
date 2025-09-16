@@ -20,6 +20,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/check"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
@@ -132,4 +134,68 @@ func TestVSAClient(t *testing.T) {
 			}))
 		})
 	})
+
+	t.Run("Status Cache", func(t *testing.T) {
+		ctx, clk, _ := testutil.TestingContext()
+		clt := &client{cache: make(mockCache)}
+
+		inst := &model.Instance{
+			InstanceID: strings.Repeat("a", 40),
+			Package:    model.PackageKey(ctx, "a/b"),
+		}
+
+		s, err := clt.GetStatus(ctx, inst)
+		check.That(t, s, should.Equal(CacheStatusUnknown))
+		check.NoErr(t, err)
+
+		err = clt.SetStatus(ctx, inst, CacheStatusPending)
+		check.NoErr(t, err)
+
+		s, err = clt.GetStatus(ctx, inst)
+		check.That(t, s, should.Equal(CacheStatusPending))
+		check.NoErr(t, err)
+
+		clk.Add(time.Minute)
+		s, err = clt.GetStatus(ctx, inst)
+		check.That(t, s, should.Equal(CacheStatusUnknown))
+		check.NoErr(t, err)
+
+		err = clt.SetStatus(ctx, inst, CacheStatusCompleted)
+		check.NoErr(t, err)
+
+		s, err = clt.GetStatus(ctx, inst)
+		check.That(t, s, should.Equal(CacheStatusCompleted))
+		check.NoErr(t, err)
+
+		clk.Add(time.Minute)
+		s, err = clt.GetStatus(ctx, inst)
+		check.That(t, s, should.Equal(CacheStatusCompleted))
+		check.NoErr(t, err)
+
+		clk.Add(time.Minute * 10)
+		s, err = clt.GetStatus(ctx, inst)
+		check.That(t, s, should.Equal(CacheStatusUnknown))
+		check.NoErr(t, err)
+	})
+}
+
+type mockCache map[string]cacheValue
+type cacheValue struct {
+	value    []byte
+	deadline time.Time
+}
+
+func (c mockCache) Get(ctx context.Context, key string) ([]byte, error) {
+	if clock.Now(ctx).After(c[key].deadline) {
+		return nil, caching.ErrCacheMiss
+	}
+	return c[key].value, nil
+}
+
+func (c mockCache) Set(ctx context.Context, key string, value []byte, exp time.Duration) error {
+	c[key] = cacheValue{
+		value:    value,
+		deadline: clock.Now(ctx).Add(exp),
+	}
+	return nil
 }
