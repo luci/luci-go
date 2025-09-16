@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
 	"go.chromium.org/luci/bisection/model"
@@ -105,6 +106,7 @@ func Analyze(c context.Context, client Client, cfa *model.CompileFailureAnalysis
 
 	// Find the changelog for the suspect commit to extract review info
 	var reviewUrl, reviewTitle string
+	var suspectCommitTime *timestamppb.Timestamp
 	for _, cl := range changelogs {
 		if cl.Commit == suspectCommitID {
 			if url, err := cl.GetReviewUrl(); err == nil {
@@ -112,6 +114,9 @@ func Analyze(c context.Context, client Client, cfa *model.CompileFailureAnalysis
 			}
 			if title, err := cl.GetReviewTitle(); err == nil {
 				reviewTitle = title
+			}
+			if commitTime, err := cl.GetCommitTime(); err == nil {
+				suspectCommitTime = commitTime
 			}
 			break
 		}
@@ -132,6 +137,7 @@ func Analyze(c context.Context, client Client, cfa *model.CompileFailureAnalysis
 		VerificationStatus: model.SuspectVerificationStatus_Unverified,
 		Type:               model.SuspectType_GenAI,
 		AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
+		CommitTime:         suspectCommitTime.AsTime(),
 	}
 	datastore.Put(c, suspect)
 

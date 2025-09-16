@@ -179,6 +179,9 @@ func TestGenAiAnalysis(t *testing.T) {
 			suspect := suspects[0]
 			assert.Loosely(t, suspect.Type, should.Equal(model.SuspectType_GenAI))
 			assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_Unverified))
+			// Verify commit time is set (should match the time from mock Gitiles data)
+			assert.Loosely(t, suspect.CommitTime.IsZero(), should.BeFalse)
+			t.Logf("Suspect commit time: %v", suspect.CommitTime)
 		}
 	})
 }
