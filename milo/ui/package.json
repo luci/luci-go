@@ -78,10 +78,7 @@
     "source-map": "^0.7.6",
     "trusted-types": "^2.0.0",
     "uuid": "^11.0.5",
-    "validator": "^13.12.0",
-    "workbox-precaching": "^7.3.0",
-    "workbox-routing": "^7.3.0",
-    "workbox-window": "^7.3.0"
+    "validator": "^13.12.0"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
@@ -154,7 +151,6 @@
     "ts-proto": "^2.2.5",
     "typescript": "^5.6.3",
     "vite": "^5.4.10",
-    "vite-plugin-pwa": "^0.20.5",
     "vite-tsconfig-paths": "^5.0.1"
   },
   "engines": {

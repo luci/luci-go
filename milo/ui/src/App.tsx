@@ -106,8 +106,6 @@ export function App() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).__STORE = store;
 
-      // The service worker registration logic has been removed.
-
       return () => destroy(store);
     },
     // None of them will ever change. But list them as dependencies to make

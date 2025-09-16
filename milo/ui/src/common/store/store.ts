@@ -38,19 +38,7 @@ export const Store = types
     testHistoryPage: types.optional(TestHistoryPage, {}),
     invocationPage: types.optional(InvocationPage, {}),
   })
-  .volatile(() => ({
-    /**
-     * The service worker that performs redirection.
-     *
-     * undefined means it's not initialized yet.
-     * null means there's no such service worker.
-     */
-    redirectSw: undefined as ServiceWorkerRegistration | null | undefined,
-  }))
   .actions((self) => ({
-    setRedirectSw(redirectSw: ServiceWorkerRegistration | null) {
-      self.redirectSw = redirectSw;
-    },
     afterCreate() {
       self.services.setDependencies({ authState: self.authState });
       self.userConfig.enableCaching();

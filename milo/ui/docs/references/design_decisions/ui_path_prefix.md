@@ -22,16 +22,7 @@ This separation matters in a few places:
       * always hit the server when there's an unmatched route, which is slow and
         causes the user to leave the SPA therefore losing in-memory state/cache.
       * or, the SPA needs to be aware of which routes are handled by the server.
-3. Service worker:  
-   A service worker's scope is defined by the path prefix they registered at.
-   * With the `/ui/` prefix, we could register the main service worker at `/ui/`
-     and always serve the user with the cache `index.html` when the user hit
-     that route.
-   * Without the `/ui/` prefix, we the service worker needs to be aware of which
-     routes are handled by the SPA and serve `index.html` accordingly.
-       * That said, the server worker is already aware of which routes are
-         handled by the SPA. This is required to support cache busting when a
-         user visits a newly added page.
+
 
 It's possible to remove the `/ui/` prefix. But to do so without introducing too
 much complexity to our routing definitions, we should reduce the number of

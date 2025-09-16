@@ -23,8 +23,7 @@ export const IsDevBuildProvider = IsDevBuildCtx.Provider;
  * for:
  * 1. adding extra logs/assertions in during local development, and/or
  * 2. handling module/file resolving difference between a local development
- *    build and a production build (e.g. service worker scripts being served at
- *    different location).
+ *    build and a production build.
  *
  * Note that staging environments, which is often named `${project}-dev`,
  * usually use production builds not local development builds. This hook is not

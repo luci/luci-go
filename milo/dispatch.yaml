@@ -34,11 +34,6 @@ dispatch:
 # not handled by the UI services themselves.
 - url: "*/ui/*"
   service: ui-dispatcher
-# Additionally, the UI service serves the root service worker script.
-- url: "*/root_sw.js"
-  service: ui-dispatcher
-- url: "*/root_sw.js.map"
-  service: ui-dispatcher
 # The UI service also serve its own version.
 - url: "*/ui_version.js"
   service: ui-dispatcher
