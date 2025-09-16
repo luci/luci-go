@@ -15,13 +15,13 @@
 import { render, fireEvent } from '@testing-library/react';
 import React from 'react';
 
-import { keyboardUpDownHandler } from './utils';
+import { keyboardListNavigationHandler } from './utils';
 
 const TestMenu = ({ deepNestLi = false }: { deepNestLi?: boolean }) => (
   <ul
     role="menu"
     onKeyDown={(e) =>
-      keyboardUpDownHandler(e as React.KeyboardEvent<HTMLUListElement>)
+      keyboardListNavigationHandler(e as React.KeyboardEvent<HTMLUListElement>)
     }
   >
     <div id="search" data-testid="search-container" tabIndex={-1}>
@@ -51,7 +51,7 @@ const TestMenu = ({ deepNestLi = false }: { deepNestLi?: boolean }) => (
   </ul>
 );
 
-describe('keyboardUpDownHandler with React Testing Library', () => {
+describe('keyboardListNavigationHandler with React Testing Library', () => {
   it('should move focus from search to the first item on ArrowDown', () => {
     const { getByTestId } = render(<TestMenu />);
     const searchInput = getByTestId('search-input');

@@ -33,7 +33,7 @@ import {
 } from 'react';
 
 import { colors } from '@/fleet/theme/colors';
-import { hasAnyModifier, keyboardUpDownHandler } from '@/fleet/utils';
+import { hasAnyModifier, keyboardListNavigationHandler } from '@/fleet/utils';
 import { fuzzySubstring, SortedElement } from '@/fleet/utils/fuzzy_sort';
 
 import { HighlightCharacter } from '../highlight_character';
@@ -266,7 +266,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
             if (e.key === 'Tab') {
               closeMenu();
             }
-            if (e.key === 'Escape' || e.key === 'ArrowLeft') {
+            if (e.key === 'Escape') {
               openCategory.anchor.focus();
               closeInnerMenu();
             }
@@ -284,6 +284,16 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
               onSearchQueryChangeInternal('');
               onSearchBarFocus();
             }
+
+            keyboardListNavigationHandler(
+              e,
+              undefined,
+              () => {
+                openCategory.anchor.focus();
+                closeInnerMenu();
+              },
+              'horizontal',
+            );
 
             handleRandomTextInput(e);
           }}
@@ -334,19 +344,23 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
           }
         }}
         onKeyDown={(e) => {
-          if (e.key === 'ArrowRight') {
-            if (openCategory?.value === parent.el.value) {
-              openCategoryRef.current?.focus();
-            } else {
-              setOpenCategory({
-                value: parent.el.value,
-                anchor: e.currentTarget,
-              });
-            }
-          }
-          if (e.key === 'ArrowLeft') {
-            closeInnerMenu();
-          }
+          keyboardListNavigationHandler(
+            e,
+            () => {
+              if (openCategory?.value === parent.el.value) {
+                openCategoryRef.current?.focus();
+              } else {
+                setOpenCategory({
+                  value: parent.el.value,
+                  anchor: e.currentTarget,
+                });
+              }
+            },
+            () => {
+              closeInnerMenu();
+            },
+            'horizontal',
+          );
         }}
         key={`item-${parent.el.value}`}
         disableRipple
@@ -403,7 +417,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
               onKeyDown={(e) => {
                 const isFirstElement = e.target === firstElementRef.current;
 
-                keyboardUpDownHandler(
+                keyboardListNavigationHandler(
                   e,
                   undefined,
                   isFirstElement

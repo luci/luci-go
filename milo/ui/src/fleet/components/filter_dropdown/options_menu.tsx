@@ -17,7 +17,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import React, { useRef } from 'react';
 
 import { OptionValue } from '@/fleet/types/option';
-import { keyboardUpDownHandler } from '@/fleet/utils';
+import { keyboardListNavigationHandler } from '@/fleet/utils';
 import { SortedElement } from '@/fleet/utils/fuzzy_sort';
 
 import { HighlightCharacter } from '../highlight_character';
@@ -105,7 +105,7 @@ export const OptionsMenu = ({
                   flipOption(elements[virtualRow.index].el.value);
                 }}
                 onKeyDown={(e) =>
-                  keyboardUpDownHandler(
+                  keyboardListNavigationHandler(
                     e,
                     virtualRow.index === virtualRows.length - 1 &&
                       onNavigateDown

@@ -28,7 +28,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { colors } from '@/fleet/theme/colors';
 import { SortedElement } from '@/fleet/utils/fuzzy_sort';
 
-import { hasAnyModifier, keyboardUpDownHandler } from '../../utils';
+import { hasAnyModifier, keyboardListNavigationHandler } from '../../utils';
 import { HighlightCharacter } from '../highlight_character';
 import { Footer } from '../options_dropdown/footer';
 import { SearchInput } from '../search_input';
@@ -254,7 +254,7 @@ export function FilterDropdownOld<T>({
               paddingTop: 0,
             }}
             onKeyDown={(e) => {
-              keyboardUpDownHandler(e);
+              keyboardListNavigationHandler(e);
               switch (e.key) {
                 case 'Delete':
                 case 'Cancel':

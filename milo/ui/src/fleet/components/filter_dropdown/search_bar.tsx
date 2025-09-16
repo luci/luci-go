@@ -16,7 +16,7 @@ import { TextField } from '@mui/material';
 import { forwardRef, useRef } from 'react';
 
 import { colors } from '@/fleet/theme/colors';
-import { keyboardUpDownHandler } from '@/fleet/utils';
+import { keyboardListNavigationHandler } from '@/fleet/utils';
 
 import { FilterCategoryData } from './filter_dropdown';
 import { SelectedChip } from './selected_chip';
@@ -86,20 +86,25 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
               (x) => x === e.target,
             );
             if (currentIndex < 0) return; // not found
-            if (e.key === 'ArrowLeft') {
-              if (currentIndex > 0) {
-                chipListRef.current[currentIndex - 1]?.focus();
-              }
-              e.preventDefault();
-            }
-            if (e.key === 'ArrowRight') {
-              if (currentIndex === chipListRef.current.length - 1) {
-                internalRef.current?.focus();
-              } else {
-                chipListRef.current[currentIndex + 1]?.focus();
-              }
-              e.preventDefault();
-            }
+
+            keyboardListNavigationHandler(
+              e,
+              () => {
+                if (currentIndex === chipListRef.current.length - 1) {
+                  internalRef.current?.focus();
+                } else {
+                  chipListRef.current[currentIndex + 1]?.focus();
+                }
+                e.preventDefault();
+              },
+              () => {
+                if (currentIndex > 0) {
+                  chipListRef.current[currentIndex - 1]?.focus();
+                }
+                e.preventDefault();
+              },
+              'horizontal',
+            );
           }}
           onDelete={(e) => {
             onChipDeleted(option as FilterCategoryData<T>);
@@ -158,22 +163,31 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
               e.preventDefault();
             }
           }
-          if (
-            e.key === 'ArrowLeft' &&
-            internalRef.current?.selectionStart === 0
-          ) {
-            // get last chip
-            const lastChip =
-              chipListRef.current[chipListRef.current.length - 1];
-            if (lastChip) {
-              lastChip?.focus();
+          keyboardListNavigationHandler(
+            e,
+            () => {
+              onDropdownFocus();
               e.preventDefault();
-            }
-          }
-          keyboardUpDownHandler(e, () => {
-            onDropdownFocus();
-            e.preventDefault();
-          });
+            },
+            undefined,
+            'vertical',
+          );
+          keyboardListNavigationHandler(
+            e,
+            undefined,
+            internalRef.current?.selectionStart === 0
+              ? () => {
+                  // get last chip
+                  const lastChip =
+                    chipListRef.current[chipListRef.current.length - 1];
+                  if (lastChip) {
+                    lastChip?.focus();
+                    e.preventDefault();
+                  }
+                }
+              : undefined,
+            'horizontal',
+          );
         }}
         placeholder='Add a filter (e.g. "dut1" or "state:ready")'
         autoComplete="off"

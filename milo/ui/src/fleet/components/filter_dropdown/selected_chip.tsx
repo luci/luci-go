@@ -16,7 +16,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Chip, ChipProps, ClickAwayListener } from '@mui/material';
 import { ReactNode, useState } from 'react';
 
-import { keyboardUpDownHandler } from '@/fleet/utils';
+import { keyboardListNavigationHandler } from '@/fleet/utils';
 
 import { OptionsDropdown } from '../options_dropdown/options_dropdown';
 
@@ -82,7 +82,7 @@ export function SelectedChip({
         onDelete={onDelete}
         onKeyDown={(e) => {
           e.stopPropagation();
-          keyboardUpDownHandler(e, () => {
+          keyboardListNavigationHandler(e, () => {
             setAnchorEL(e.currentTarget);
             e.preventDefault();
             e.stopPropagation();

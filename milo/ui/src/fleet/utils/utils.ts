@@ -43,10 +43,11 @@ export function hasAnyModifier(e: React.KeyboardEvent<HTMLElement>) {
  *   for a mix of list items, search bars, and buttons to be included in the
 - *   navigation flow.
  */
-export function keyboardUpDownHandler(
+export function keyboardListNavigationHandler(
   e: React.KeyboardEvent,
   goToNext?: () => void,
   goToPrevious?: () => void,
+  direction: 'vertical' | 'horizontal' = 'vertical',
 ) {
   const target = e.target as HTMLElement;
 
@@ -55,27 +56,51 @@ export function keyboardUpDownHandler(
     return;
   }
 
+  const handleGoToNext = () => {
+    if (goToNext) {
+      goToNext();
+    } else {
+      const neighbors = findNeighborsInList(e.target as HTMLElement);
+      neighbors?.next.focus();
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+
+  const handleGoToPrevious = () => {
+    if (goToPrevious) {
+      goToPrevious();
+    } else {
+      const neighbors = findNeighborsInList(e.target as HTMLElement);
+      neighbors?.previous.focus();
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+
   switch (e.key) {
-    case e.ctrlKey && 'j':
-    case 'ArrowDown':
-      if (goToNext) {
-        goToNext();
-      } else {
-        const neighbors = findNeighborsInList(e.target as HTMLElement);
-        neighbors?.next.focus();
-        e.preventDefault();
-        e.stopPropagation();
+    case e.ctrlKey && 'h':
+    case 'ArrowLeft':
+      if (direction === 'horizontal') {
+        handleGoToPrevious();
+      }
+      break;
+    case e.ctrlKey && 'l':
+    case 'ArrowRight':
+      if (direction === 'horizontal') {
+        handleGoToNext();
       }
       break;
     case e.ctrlKey && 'k':
     case 'ArrowUp':
-      if (goToPrevious) {
-        goToPrevious();
-      } else {
-        const neighbors = findNeighborsInList(e.target as HTMLElement);
-        neighbors?.previous.focus();
-        e.preventDefault();
-        e.stopPropagation();
+      if (direction === 'vertical') {
+        handleGoToPrevious();
+      }
+      break;
+    case e.ctrlKey && 'j':
+    case 'ArrowDown':
+      if (direction === 'vertical') {
+        handleGoToNext();
       }
       break;
     case ' ':

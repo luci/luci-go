@@ -687,16 +687,28 @@ describe('FilterBar', () => {
     expect(document.activeElement).toContainElement(option1);
 
     await user.keyboard('{ArrowRight}');
-    const secondaryMenuButton = await screen.findByTestId(
+    let secondaryMenuButton = await screen.findByTestId(
       'test-option-component-button',
     );
     expect(secondaryMenuButton).toBeInTheDocument();
     expect(secondaryMenuButton).toHaveFocus();
 
     await user.keyboard('{ArrowLeft}');
-    expect(
-      screen.queryByTestId('test-option-component-button'),
-    ).not.toBeInTheDocument();
+    expect(secondaryMenuButton).not.toBeInTheDocument();
+    expect(document.activeElement).toContainElement(option1);
+
+    // test going back and forth with vim navigation
+    await user.keyboard('{Control>}l{/Control}');
+
+    secondaryMenuButton = await screen.findByTestId(
+      'test-option-component-button',
+    ); // the component was remounted so we need to find it again
+
+    expect(secondaryMenuButton).toBeInTheDocument();
+    expect(secondaryMenuButton).toHaveFocus();
+
+    await user.keyboard('{Control>}h{/Control}');
+    expect(secondaryMenuButton).not.toBeInTheDocument();
     expect(document.activeElement).toContainElement(option1);
   });
 
@@ -993,6 +1005,17 @@ describe('FilterBar', () => {
     ).not.toBeInTheDocument();
 
     await user.keyboard('{ArrowLeft}');
+
+    expect(document.activeElement).not.toContainElement(searchInput);
+    expect(document.activeElement).toContainElement(chip);
+
+    // test going back and forth with vim navigation
+    await user.keyboard('{Control>}l{/Control}');
+
+    expect(document.activeElement).toContainElement(searchInput);
+    expect(document.activeElement).not.toContainElement(chip);
+
+    await user.keyboard('{Control>}h{/Control}');
 
     expect(document.activeElement).not.toContainElement(searchInput);
     expect(document.activeElement).toContainElement(chip);

@@ -16,7 +16,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { useRef } from 'react';
 
 import { OptionValue } from '@/fleet/types/option';
-import { keyboardUpDownHandler } from '@/fleet/utils';
+import { keyboardListNavigationHandler } from '@/fleet/utils';
 import { SortedElement } from '@/fleet/utils/fuzzy_sort';
 
 import { HighlightCharacter } from '../highlight_character';
@@ -102,7 +102,7 @@ export const OptionsMenuOld = ({
                 }}
                 // eslint-disable-next-line jsx-a11y/no-autofocus
                 autoFocus={virtualRow.index === 0}
-                onKeyDown={keyboardUpDownHandler}
+                onKeyDown={keyboardListNavigationHandler}
                 css={{
                   display: 'flex',
                   alignItems: 'center',

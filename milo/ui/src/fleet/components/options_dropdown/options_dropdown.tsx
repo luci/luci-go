@@ -15,7 +15,7 @@
 import { Menu, MenuOwnerState, MenuProps, PopoverOrigin } from '@mui/material';
 import React, { ReactNode, useRef, useState } from 'react';
 
-import { hasAnyModifier, keyboardUpDownHandler } from '../../utils';
+import { hasAnyModifier, keyboardListNavigationHandler } from '../../utils';
 import { SearchInput } from '../search_input';
 
 import { Footer } from './footer';
@@ -112,7 +112,7 @@ export function OptionsDropdown({
           }
 
           if (enableSearchInput) {
-            keyboardUpDownHandler(e);
+            keyboardListNavigationHandler(e);
             switch (e.key) {
               case 'Delete':
               case 'Cancel':
@@ -140,7 +140,7 @@ export function OptionsDropdown({
               setSearchQuery(e.currentTarget.value);
             }}
             onKeyDown={(e) => {
-              keyboardUpDownHandler(e, undefined, () => {
+              keyboardListNavigationHandler(e, undefined, () => {
                 onClose();
                 e.preventDefault();
                 e.stopPropagation();
