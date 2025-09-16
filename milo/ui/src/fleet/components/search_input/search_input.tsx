@@ -49,6 +49,7 @@ export function SearchInput({
       id="search"
     >
       <TextField
+        data-testid="search-input"
         inputRef={searchInput}
         placeholder="search"
         variant="standard"

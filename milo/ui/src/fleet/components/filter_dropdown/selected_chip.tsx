@@ -21,7 +21,10 @@ import { keyboardUpDownHandler } from '@/fleet/utils';
 import { OptionsDropdown } from '../options_dropdown/options_dropdown';
 
 export interface SelectedChipProps {
-  dropdownContent: (searchQuery: string) => ReactNode;
+  dropdownContent: (
+    searchQuery: string,
+    onNavigateUp: (e: React.KeyboardEvent) => void,
+  ) => ReactNode;
   label: string;
   onApply: () => void;
 }

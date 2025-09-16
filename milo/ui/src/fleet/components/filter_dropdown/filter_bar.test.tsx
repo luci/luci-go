@@ -51,7 +51,7 @@ const TestOptionComponent = forwardRef<
 >(function TestOptionComponent(
   {
     childrenSearchQuery: searchQuery,
-    onSearchBarFocus,
+    onNavigateUp,
     optionComponentProps: { value, onAddFilter },
   },
   _ref,
@@ -72,12 +72,13 @@ const TestOptionComponent = forwardRef<
       <button
         data-testid="test-option-component-button"
         ref={buttonRef}
-        onClick={() => {
-          onAddFilter();
-          if (onSearchBarFocus) onSearchBarFocus();
+        onClick={() => onAddFilter()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            onAddFilter();
+          }
+          if (e.key === 'ArrowUp' && onNavigateUp) onNavigateUp(e);
         }}
-        // eslint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus
       >
         {value}
       </button>
@@ -999,13 +1000,29 @@ describe('FilterBar', () => {
     // open chip's dropdown
     await user.keyboard('{ArrowDown}');
 
+    const dropdownSearchInput = within(
+      screen.getByTestId('search-input'),
+    ).getByRole('textbox');
+
+    expect(dropdownSearchInput).toHaveFocus();
+
     // type in chip's search input
     await user.keyboard('test_search');
     expect(
-      await screen.queryByTestId('test-option-component-search-query'),
+      screen.queryByTestId('test-option-component-search-query'),
     ).toHaveTextContent('test_search');
 
-    // close dropdown and focus on chip
+    // go inside the option component
+    await user.keyboard('{ArrowDown}');
+
+    expect(dropdownSearchInput).not.toHaveFocus();
+
+    // go out of the option component and focus on the search input
+    await user.keyboard('{ArrowUp}');
+
+    expect(dropdownSearchInput).toHaveFocus();
+
+    // close the dropdown and focus on chip
     await user.keyboard('{ArrowUp}');
 
     expect(

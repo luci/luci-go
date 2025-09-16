@@ -45,7 +45,7 @@ export interface OptionComponentHandle {
 
 export type OptionComponentProps<T> = {
   childrenSearchQuery: string;
-  onSearchBarFocus?: () => void;
+  onNavigateUp?: (e: React.KeyboardEvent) => void;
   optionComponentProps: T;
 };
 
@@ -295,7 +295,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
               splitSearchQuery(searchQuery).childrenSearchQuery
             }
             optionComponentProps={openCategoryData.optionsComponentProps}
-            onSearchBarFocus={() => {
+            onNavigateUp={() => {
               onSearchBarFocus();
             }}
           />

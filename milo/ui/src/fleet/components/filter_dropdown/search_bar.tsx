@@ -56,10 +56,11 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
 
       return (
         <SelectedChip
-          dropdownContent={(searchQuery) => (
+          dropdownContent={(searchQuery, onNavigateUp) => (
             <OptionComponent
               childrenSearchQuery={searchQuery}
               optionComponentProps={option.optionsComponentProps}
+              onNavigateUp={onNavigateUp}
             />
           )}
           ref={(el) => {

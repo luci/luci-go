@@ -14,7 +14,7 @@
 
 import { Checkbox, MenuItem } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useRef } from 'react';
+import React, { useRef } from 'react';
 
 import { OptionValue } from '@/fleet/types/option';
 import { keyboardUpDownHandler } from '@/fleet/utils';
@@ -26,8 +26,8 @@ interface OptionsMenuProps {
   elements: SortedElement<OptionValue>[];
   selectedElements: Set<string>;
   flipOption: (value: string) => void;
-  onNavigateUp?: () => void;
-  onNavigateDown?: () => void;
+  onNavigateUp?: (e: React.KeyboardEvent) => void;
+  onNavigateDown?: (e: React.KeyboardEvent) => void;
 }
 
 export const OptionsMenu = ({
@@ -107,10 +107,13 @@ export const OptionsMenu = ({
                 onKeyDown={(e) =>
                   keyboardUpDownHandler(
                     e,
-                    virtualRow.index === virtualRows.length - 1
-                      ? onNavigateDown
+                    virtualRow.index === virtualRows.length - 1 &&
+                      onNavigateDown
+                      ? () => onNavigateDown(e)
                       : undefined,
-                    virtualRow.index === 0 ? onNavigateUp : undefined,
+                    virtualRow.index === 0 && onNavigateUp
+                      ? () => onNavigateUp(e)
+                      : undefined,
                   )
                 }
                 css={{

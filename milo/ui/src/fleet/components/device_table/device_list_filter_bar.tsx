@@ -159,7 +159,7 @@ const OptionComponent = forwardRef<
 >(function OptionComponent(
   {
     childrenSearchQuery,
-    onSearchBarFocus,
+    onNavigateUp,
     optionComponentProps: {
       option,
       selectedOptions,
@@ -205,7 +205,7 @@ const OptionComponent = forwardRef<
         elements={fuzzySorted}
         selectedElements={new Set(selectedOptions)}
         flipOption={(value) => flipOption(value)}
-        onNavigateUp={onSearchBarFocus}
+        onNavigateUp={onNavigateUp}
         onNavigateDown={() => {}} // currently just blocking navigating down from the last element
       />
     </MenuList>

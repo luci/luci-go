@@ -23,7 +23,10 @@ import { Footer } from './footer';
 type OptionsDropdownProps = MenuProps & {
   onClose: () => void;
   onApply: () => void;
-  renderChild: (searchQuery: string) => ReactNode;
+  renderChild: (
+    searchQuery: string,
+    onNavigateUp: (e: React.KeyboardEvent) => void,
+  ) => ReactNode;
   anchorEl: HTMLElement | null;
   open: boolean;
   anchorOrigin?: PopoverOrigin | undefined;
@@ -153,7 +156,11 @@ export function OptionsDropdown({
           tabIndex={-1}
           key="options-menu-container"
         >
-          {renderChild(searchQuery)}
+          {renderChild(searchQuery, (e) => {
+            searchInput.current?.focus();
+            e.stopPropagation();
+            e.preventDefault();
+          })}
         </div>
         {footerButtons && footerButtons.length > 0 && (
           <Footer
