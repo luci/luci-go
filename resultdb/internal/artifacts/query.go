@@ -47,6 +47,7 @@ type Query struct {
 	TestResultPredicate *pb.TestResultPredicate
 	ContentTypeRegexp   string
 	ArtifactIDRegexp    string
+	ArtifactTypeRegexp  string
 	PageSize            int // must be positive
 	PageToken           string
 	WithRBECASHash      bool
@@ -101,7 +102,7 @@ FilteredTestResults AS (
 		AND (SELECT LOGICAL_AND(kv IN UNNEST(Variant)) FROM UNNEST(@variantContains) kv)
 {{ end }}
 )
-SELECT InvocationId, ParentId, ArtifactId, ContentType, Size,
+SELECT InvocationId, ParentId, ArtifactId, ContentType, ArtifactType, Size,
 {{ if .Q.WithRBECASHash }}
 	RBECASHash,
 {{ end }}
@@ -131,6 +132,9 @@ WHERE art.InvocationId IN UNNEST(@invIDs)
 {{ if .Params.contentTypeRegexp }}
 		AND REGEXP_CONTAINS(IFNULL(art.ContentType, ""), @contentTypeRegexp)
 {{ end }}
+{{ if .Params.artifactTypeRegexp }}
+		AND REGEXP_CONTAINS(IFNULL(art.ArtifactType, ""), @artifactTypeRegexp)
+{{ end }}
 {{ if .Params.artifactIdRegexp }}
 		AND REGEXP_CONTAINS(IFNULL(art.ArtifactID, ""), @artifactIdRegexp)
 {{ end }}
@@ -149,6 +153,7 @@ func (q *Query) genStmt(ctx context.Context) (spanner.Statement, error) {
 	params["invIDs"] = q.InvocationIDs
 	params["limit"] = q.PageSize
 	addREParamMaybe(params, "contentTypeRegexp", q.ContentTypeRegexp)
+	addREParamMaybe(params, "artifactTypeRegexp", q.ArtifactTypeRegexp)
 	addREParamMaybe(params, "artifactIdRegexp", q.ArtifactIDRegexp)
 	addREParamMaybe(params, "ParentIdRegexp", q.parentIDRegexp())
 
@@ -200,13 +205,14 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 		var invID invocations.ID
 		var parentID string
 		var contentType spanner.NullString
+		var artifactType spanner.NullString
 		var size spanner.NullInt64
 		var rbecasHash spanner.NullString
 		var gcsURI spanner.NullString
 		var rbeURI spanner.NullString
 
 		ptrs := []any{
-			&invID, &parentID, &a.ArtifactId, &contentType, &size,
+			&invID, &parentID, &a.ArtifactId, &contentType, &artifactType, &size,
 		}
 		if q.WithRBECASHash {
 			ptrs = append(ptrs, &rbecasHash)
@@ -242,6 +248,7 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 		}
 
 		a.ContentType = contentType.StringVal
+		a.ArtifactType = artifactType.StringVal
 		a.SizeBytes = size.Int64
 		a.RBECASHash = rbecasHash.StringVal
 		a.GcsUri = gcsURI.StringVal

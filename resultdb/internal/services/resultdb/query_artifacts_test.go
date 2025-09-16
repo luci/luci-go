@@ -221,6 +221,24 @@ func TestQueryArtifacts(t *testing.T) {
 			}))
 		})
 
+		t.Run(`ArtifactType filter works`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
+				insert.Artifact("inv1", "", "a", map[string]any{"ArtifactType": "COVERAGE_REPORT"}),
+				insert.Artifact("inv1", "tr/t t/r", "aa", map[string]any{"ArtifactType": "COVERAGE_REPORT"}),
+				insert.Artifact("inv2", "", "baa", map[string]any{"ArtifactType": "SCREENSHOT"}),
+				insert.Artifact("inv2", "tr/t t/r", "aaa", map[string]any{"ArtifactType": "COVERAGE_REPORT"}),
+			)
+
+			req.Predicate.ArtifactTypeRegexp = "COVERAGE.+"
+
+			actual := mustFetchNames(t, req)
+			assert.Loosely(t, actual, should.Match([]string{
+				"invocations/inv1/artifacts/a",
+				"invocations/inv1/tests/t%20t/results/r/artifacts/aa",
+				"invocations/inv2/tests/t%20t/results/r/artifacts/aaa",
+			}))
+		})
+
 		t.Run(`Reads test result artifacts by invocation with included invocation`, func(t *ftt.Test) {
 			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "", "a", nil),

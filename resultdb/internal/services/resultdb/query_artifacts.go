@@ -89,6 +89,7 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		FollowEdges:         in.GetPredicate().GetFollowEdges(),
 		ContentTypeRegexp:   in.GetPredicate().GetContentTypeRegexp(),
 		ArtifactIDRegexp:    in.GetPredicate().GetArtifactIdRegexp(),
+		ArtifactTypeRegexp:  in.GetPredicate().GetArtifactTypeRegexp(),
 		WithGcsURI:          true,
 		WithRbeURI:          true,
 		Mask:                readMask,

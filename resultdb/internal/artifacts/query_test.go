@@ -64,13 +64,15 @@ func TestQuery(t *testing.T) {
 		t.Run(`Populates fields correctly`, func(t *ftt.Test) {
 			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "", "a", map[string]any{
-					"ContentType": "text/plain",
-					"Size":        64,
+					"ContentType":  "text/plain",
+					"Size":         64,
+					"ArtifactType": "CONVERGE",
 				}),
 			)
 			actual, _ := mustFetch(q)
 			assert.Loosely(t, actual, should.HaveLength(1))
 			assert.Loosely(t, actual[0].ContentType, should.Equal("text/plain"))
+			assert.Loosely(t, actual[0].ArtifactType, should.Equal("CONVERGE"))
 			assert.Loosely(t, actual[0].SizeBytes, should.Equal(64))
 			assert.Loosely(t, actual[0].HasLines, should.BeTrue)
 		})
@@ -393,6 +395,31 @@ func TestQuery(t *testing.T) {
 				st, err := q.genStmt(ctx)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, st.SQL, should.NotContainSubstring("@contentTypeRegexp"))
+			})
+		})
+
+		t.Run(`ArtifactTypes`, func(t *ftt.Test) {
+			t.Run(`Works`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
+					insert.Artifact("inv1", "", "a0", map[string]any{"ArtifactType": "COVERAGE_REPORT"}),
+					insert.Artifact("inv1", "tr/t/r", "a0", map[string]any{"ArtifactType": "COVERAGE_REPORT"}),
+					insert.Artifact("inv1", "tr/t/r", "a1", nil),
+					insert.Artifact("inv1", "tr/t/r", "a3", map[string]any{"ArtifactType": "SCREENSHOT"}),
+				)
+				q.ArtifactTypeRegexp = "COVERAGE.+"
+
+				actual := mustFetchNames(q)
+				assert.Loosely(t, actual, should.Match([]string{
+					"invocations/inv1/artifacts/a0",
+					"invocations/inv1/tests/t/results/r/artifacts/a0",
+				}))
+			})
+
+			t.Run(`Filter generated conditionally`, func(t *ftt.Test) {
+				q.ArtifactTypeRegexp = ""
+				st, err := q.genStmt(ctx)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, st.SQL, should.NotContainSubstring("@artifactTypeRegexp"))
 			})
 		})
 

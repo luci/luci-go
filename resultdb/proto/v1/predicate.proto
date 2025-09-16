@@ -92,6 +92,7 @@ message VariantPredicate {
 }
 
 // Represents a function Artifact -> bool.
+// Next id: 6;
 message ArtifactPredicate {
   // A set of Invocation's outgoing edge types.
   message EdgeTypeSet {
@@ -109,7 +110,7 @@ message ArtifactPredicate {
   // - to retrieve only test-result-level artifacts, use {test_results: true}.
   //
   // By default, follows all edges.
-  EdgeTypeSet follow_edges = 1; // defaults to All.
+  EdgeTypeSet follow_edges = 1;  // defaults to All.
 
   // If an Artifact belongs to a TestResult, then the test result must satisfy
   // this predicate.
@@ -125,8 +126,12 @@ message ArtifactPredicate {
   // An artifact must have an ID matching this regular expression entirely, i.e.
   // the expression is implicitly wrapped with ^ and $.  Defaults to ".*".
   string artifact_id_regexp = 4;
-}
 
+  // An artifact must have an artifact type matching this regular expression
+  // entirely, i.e. the expression is implicitly wrapped with ^ and $.
+  // Defaults to ".*".
+  string artifact_type_regexp = 5;
+}
 
 // Represents a function TestMetadata -> bool.
 // Empty message matches all test metadata.
