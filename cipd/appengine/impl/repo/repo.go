@@ -116,6 +116,7 @@ func (impl *repoImpl) registerTasks() {
 		Kind:      tq.NonTransactional,
 		Queue:     "vsa-requests",
 		Handler: func(ctx context.Context, m proto.Message) error {
+			logging.Debugf(ctx, "vsa-requests task: %+v", m)
 			return impl.callVerifySoftwareArtifact(ctx, m.(*tasks.CallVerifySoftwareArtifact))
 		},
 	})
@@ -1351,19 +1352,24 @@ func (impl *repoImpl) ListMetadata(ctx context.Context, r *api.ListMetadataReque
 func (impl *repoImpl) ensureVSA(ctx context.Context, inst *model.Instance) error {
 	switch s, err := impl.vsa.GetStatus(ctx, inst); {
 	case err != nil:
+		logging.Debugf(ctx, "ensure vsa: get status err %s", err)
 		return err
 	case s != vsa.CacheStatusUnknown:
+		logging.Debugf(ctx, "ensure vsa: get status skip %s", s)
 		// We already have a vsa or we have a pending vsa request.
 		return nil
 	}
 	if err := impl.vsa.SetStatus(ctx, inst, vsa.CacheStatusPending); err != nil {
+		logging.Debugf(ctx, "ensure vsa: set status err %s", err)
 		return err
 	}
+	logging.Debugf(ctx, "ensure vsa: not cached")
 
 	vsas, err := model.ListMetadataWithKeys(ctx, inst, []string{slsaVSAKey})
 	if err != nil {
 		return err
 	}
+	logging.Debugf(ctx, "ensure vsa: vsas %+v", vsas)
 
 	if len(vsas) != 0 {
 		return impl.vsa.SetStatus(ctx, inst, vsa.CacheStatusCompleted)
@@ -1378,8 +1384,10 @@ func (impl *repoImpl) ensureVSA(ctx context.Context, inst *model.Instance) error
 	if len(ms) > 0 {
 		bundle = string(ms[0].Value)
 	}
+	logging.Debugf(ctx, "ensure vsa: bundle %s", bundle)
 
 	t := impl.vsa.NewVerifySoftwareArtifactTask(ctx, inst, bundle)
+	logging.Debugf(ctx, "ensure vsa: task %+v", t)
 	return impl.tq.AddTask(ctx, &tq.Task{
 		Title:            inst.InstanceID,
 		Payload:          t,
@@ -1465,6 +1473,7 @@ func (impl *repoImpl) GetInstanceURL(ctx context.Context, r *api.GetInstanceURLR
 		return nil, err
 	}
 
+	logging.Debugf(ctx, "ensure vsa: %+v", inst)
 	if err := impl.ensureVSA(ctx, inst); err != nil {
 		logging.WithError(err).Warningf(ctx, "ensuring VSA: %s", inst.Package)
 	}
