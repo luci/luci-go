@@ -410,7 +410,7 @@ type Task struct {
 	// DeduplicationKey is optional unique key used to derive name of the task.
 	//
 	// If a task of a given class with a given key has already been enqueued
-	// recently (within ~1h), this task will be silently ignored.
+	// recently (within ~24h as of 2025 Q3), this task will be silently ignored.
 	//
 	// Because there is an extra lookup cost to identify duplicate task names,
 	// enqueues of named tasks have significantly increased latency.
