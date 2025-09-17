@@ -183,6 +183,7 @@ func storeNthSectionResultToDatastore(c context.Context, cfa *model.CompileFailu
 		ReviewUrl:          blCommit.ReviewUrl,
 		ReviewTitle:        blCommit.ReviewTitle,
 		AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
+		CommitTime:         blCommit.CommitTime.AsTime(),
 	}
 	err := datastore.Put(c, suspect)
 	if err != nil {

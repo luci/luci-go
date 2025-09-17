@@ -283,17 +283,20 @@ func TestAnalyze(t *testing.T) {
 						Commit:      "3426",
 						ReviewTitle: "Use TestActivationManager for all page activations",
 						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472131",
+						CommitTime:  nsa.BlameList.Commits[0].CommitTime,
 					},
 					{
 						Commit:      "3425",
 						ReviewTitle: "Second Commit",
 						ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472130",
+						CommitTime:  nsa.BlameList.Commits[1].CommitTime,
 					},
 				},
 				LastPassCommit: &pb.BlameListSingleCommit{
 					Commit:      "3424",
 					ReviewTitle: "Third Commit",
 					ReviewUrl:   "https://chromium-review.googlesource.com/c/chromium/src/+/3472129",
+					CommitTime:  nsa.BlameList.LastPassCommit.CommitTime,
 				},
 			}))
 		})
@@ -375,6 +378,7 @@ func TestAnalyze(t *testing.T) {
 				},
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 				VerificationStatus: model.SuspectVerificationStatus_VerificationScheduled,
+				CommitTime:         suspect.CommitTime,
 			}))
 
 			// Check that a task was created.
