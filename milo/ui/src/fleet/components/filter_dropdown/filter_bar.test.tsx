@@ -12,14 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   forwardRef,
@@ -181,16 +174,16 @@ describe('FilterBar', () => {
       </FakeContextProvider>,
     );
 
+    const user = userEvent.setup();
+
     expect(screen.queryByText('Option 1')).not.toBeInTheDocument();
 
     const searchInput = getSearchBar();
 
-    fireEvent.focus(searchInput);
+    await user.click(searchInput);
 
-    await waitFor(() => {
-      expect(screen.getByText('Option 1')).toBeInTheDocument();
-      expect(screen.getByText('Option 2')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Option 1')).toBeInTheDocument();
+    expect(screen.getByText('Option 2')).toBeInTheDocument();
   });
 
   it('should allow selecting and applying a filter', async () => {
@@ -200,22 +193,16 @@ describe('FilterBar', () => {
       </FakeContextProvider>,
     );
 
+    const user = userEvent.setup();
+
     const searchInput = getSearchBar();
-    fireEvent.focus(searchInput);
+    await user.click(searchInput);
 
-    await act(async () => {
-      fireEvent.click(await screen.findByText('Option 1'));
-    });
+    await user.click(screen.getByText('Option 1'));
+    await user.click(screen.getByTestId('test-option-component-button'));
+    await user.click(screen.getByText('Apply'));
 
-    await act(async () => {
-      fireEvent.click(await screen.getByTestId('test-option-component-button'));
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByText('Apply'));
-    });
-
-    expect(await screen.findByText('Option 1: Value 1')).toBeInTheDocument();
+    expect(screen.getByText('Option 1: Value 1')).toBeInTheDocument();
   });
 
   it('should allow moving between chips with arrows', async () => {
@@ -228,36 +215,19 @@ describe('FilterBar', () => {
     const user = userEvent.setup();
 
     const searchInput = getSearchBar();
-    fireEvent.focus(searchInput);
+    await user.click(searchInput);
 
-    await act(async () => {
-      fireEvent.click(await screen.findByText('Option 1'));
-    });
+    await user.click(screen.getByText('Option 1'));
 
-    await act(async () => {
-      fireEvent.click(await screen.getByTestId('test-option-component-button'));
-    });
+    await user.click(screen.getByTestId('test-option-component-button'));
+    await user.click(screen.getByText('Apply'));
+    await user.click(searchInput);
 
-    await act(async () => {
-      fireEvent.click(screen.getByText('Apply'));
-    });
-
-    fireEvent.focus(searchInput);
-
-    await act(async () => {
-      fireEvent.click(await screen.findByText('Option 2'));
-    });
-
-    await act(async () => {
-      fireEvent.click(await screen.getByTestId('test-option-component-button'));
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByText('Apply'));
-    });
-
-    const chip1 = await screen.findByText('Option 1: Value 1');
-    const chip2 = await screen.findByText('Option 2: Value 1');
+    await user.click(screen.getByText('Option 2'));
+    await user.click(screen.getByTestId('test-option-component-button'));
+    await user.click(screen.getByText('Apply'));
+    const chip1 = screen.getByText('Option 1: Value 1');
+    const chip2 = screen.getByText('Option 2: Value 1');
 
     expect(chip1).toBeInTheDocument();
     expect(chip2).toBeInTheDocument();
@@ -288,7 +258,7 @@ describe('FilterBar', () => {
     const searchInput = getSearchBar();
     await user.click(searchInput);
 
-    const option1 = await screen.findByText('Option 1');
+    const option1 = screen.getByText('Option 1');
     expect(option1).toBeInTheDocument();
 
     await user.keyboard('{Escape}');
@@ -354,9 +324,7 @@ describe('FilterBar', () => {
 
     // The default TestComponent's getSearchScore returns 0, which causes
     // items to be filtered out when a search query is present.
-    await waitFor(() => {
-      expect(screen.getByText('No results')).toBeInTheDocument();
-    });
+    expect(screen.getByText('No results')).toBeInTheDocument();
   });
 
   it('should display filtered results', async () => {
@@ -371,10 +339,8 @@ describe('FilterBar', () => {
     await user.click(searchInput);
     await user.type(searchInput, 'Option 1');
 
-    await waitFor(() => {
-      expect(queryByBrokenUpText('Option 1')).toBeInTheDocument();
-      expect(queryByBrokenUpText('Option 2')).toBeUndefined();
-    });
+    expect(queryByBrokenUpText('Option 1')).toBeInTheDocument();
+    expect(queryByBrokenUpText('Option 2')).toBeUndefined();
   });
 
   it('should append to the search input when typing within the dropdown', async () => {
@@ -408,7 +374,7 @@ describe('FilterBar', () => {
     const searchInput = getSearchBar();
     await user.click(searchInput);
 
-    const option1 = await screen.findByText('Option 1');
+    const option1 = screen.getByText('Option 1');
     await user.click(option1);
 
     // Secondary menu is open. Now type.
@@ -463,17 +429,11 @@ describe('FilterBar', () => {
     await user.click(searchInput);
 
     // Add a filter to get a chip.
-    await act(async () => {
-      fireEvent.click(await screen.findByText('Option 1'));
-    });
-    await act(async () => {
-      fireEvent.click(await screen.getByTestId('test-option-component-button'));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByText('Apply'));
-    });
+    await user.click(screen.getByText('Option 1'));
+    await user.click(screen.getByTestId('test-option-component-button'));
+    await user.click(screen.getByText('Apply'));
 
-    const chip = await screen.findByText('Option 1: Value 1');
+    const chip = screen.getByText('Option 1: Value 1');
     expect(chip).toBeInTheDocument();
 
     // Focus input and press backspace when cursor is at the beginning.
@@ -502,20 +462,20 @@ describe('FilterBar', () => {
     // arrow up is dependant on the OptionComponent passed, so we have to manually click on the search input
     await user.click(searchInput);
 
-    expect(await screen.queryByText('Value 1')).toBeInTheDocument();
+    expect(screen.queryByText('Value 1')).toBeInTheDocument();
     expect(searchInput).toHaveFocus();
 
     // close dropdown
     await user.keyboard('{Escape}');
 
-    expect(await screen.queryByText('Option 1')).not.toBeInTheDocument();
-    expect(await screen.queryByText('Value 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Option 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Value 1')).not.toBeInTheDocument();
 
     await user.keyboard('v');
 
     // after dropdown was closed when we reopen it secondary menu should be closed
-    expect(await screen.queryByText('Option 1')).toBeInTheDocument();
-    expect(await screen.queryByText('Value 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Option 1')).toBeInTheDocument();
+    expect(screen.queryByText('Value 1')).not.toBeInTheDocument();
   });
 
   // b/443967368 - backspace could be handled in 2 different ways, make sure they are handled properly
@@ -531,31 +491,19 @@ describe('FilterBar', () => {
     await user.click(searchInput);
 
     // Add a filter to get a chip.
-    await act(async () => {
-      fireEvent.click(await screen.findByText('Option 1'));
-    });
-    await act(async () => {
-      fireEvent.click(await screen.getByTestId('test-option-component-button'));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByText('Apply'));
-    });
+    await user.click(screen.getByText('Option 1'));
+    await user.click(screen.getByTestId('test-option-component-button'));
+    await user.click(screen.getByText('Apply'));
 
-    const chip1 = await screen.findByText('Option 1: Value 1');
+    const chip1 = screen.getByText('Option 1: Value 1');
     expect(chip1).toBeInTheDocument();
 
     // Add a filter to get a chip.
-    await act(async () => {
-      fireEvent.click(await screen.findByText('Option 2'));
-    });
-    await act(async () => {
-      fireEvent.click(await screen.getByTestId('test-option-component-button'));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByText('Apply'));
-    });
+    await user.click(screen.getByText('Option 2'));
+    await user.click(screen.getByTestId('test-option-component-button'));
+    await user.click(screen.getByText('Apply'));
 
-    const chip2 = await screen.findByText('Option 2: Value 1');
+    const chip2 = screen.getByText('Option 2: Value 1');
     expect(chip2).toBeInTheDocument();
 
     // Focus input and press backspace when cursor is at the beginning.
@@ -578,30 +526,20 @@ describe('FilterBar', () => {
     const user = userEvent.setup();
 
     // Add a filter.
-
     const searchInput = getSearchBar();
-    act(() => {
-      fireEvent.focus(searchInput);
-    });
-    await act(async () => {
-      fireEvent.click(await screen.findByText('Option 1'));
-    });
-    await act(async () => {
-      fireEvent.click(await screen.getByTestId('test-option-component-button'));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByText('Apply'));
-    });
 
-    const chip = await screen.findByText('Option 1: Value 1');
+    await user.click(searchInput);
+    await user.click(screen.getByText('Option 1'));
+    await user.click(screen.getByTestId('test-option-component-button'));
+    await user.click(screen.getByText('Apply'));
+
+    const chip = screen.getByText('Option 1: Value 1');
 
     // Click the chip to open its dropdown.
     await user.click(chip);
 
     // The dropdown for the chip contains the TestOptionComponent.
-    const optionButton = await screen.findByTestId(
-      'test-option-component-button',
-    );
+    const optionButton = screen.getByTestId('test-option-component-button');
     expect(optionButton).toBeInTheDocument();
     await user.click(optionButton);
 
@@ -611,7 +549,7 @@ describe('FilterBar', () => {
 
     // The chip is still there. The test component doesn't support
     // changing the value, but we've tested the UI flow.
-    expect(await screen.findByText('Option 1: Value 1')).toBeInTheDocument();
+    expect(screen.getByText('Option 1: Value 1')).toBeInTheDocument();
   });
 
   it('should allow focusing on search bar with keyboard from dropdown', async () => {
@@ -625,7 +563,7 @@ describe('FilterBar', () => {
     const searchInput = getSearchBar();
     await user.click(searchInput);
 
-    const option1 = await screen.findByText('Option 1');
+    const option1 = screen.getByText('Option 1');
     await user.keyboard('{ArrowDown}');
 
     expect(document.activeElement).toContainElement(option1);
@@ -655,10 +593,10 @@ describe('FilterBar', () => {
     await user.click(searchInput);
 
     // Open a category to have a secondary menu.
-    const option1 = await screen.findByText('Option 1');
+    const option1 = screen.getByText('Option 1');
     await user.click(option1);
 
-    const secondaryMenuButton = await screen.findByTestId(
+    const secondaryMenuButton = screen.getByTestId(
       'test-option-component-button',
     );
 
@@ -682,12 +620,12 @@ describe('FilterBar', () => {
     const searchInput = getSearchBar();
     await user.click(searchInput);
 
-    const option1 = await screen.findByText('Option 1');
+    const option1 = screen.getByText('Option 1');
     await user.keyboard('{ArrowDown}');
     expect(document.activeElement).toContainElement(option1);
 
     await user.keyboard('{ArrowRight}');
-    let secondaryMenuButton = await screen.findByTestId(
+    let secondaryMenuButton = screen.getByTestId(
       'test-option-component-button',
     );
     expect(secondaryMenuButton).toBeInTheDocument();
@@ -700,9 +638,7 @@ describe('FilterBar', () => {
     // test going back and forth with vim navigation
     await user.keyboard('{Control>}l{/Control}');
 
-    secondaryMenuButton = await screen.findByTestId(
-      'test-option-component-button',
-    ); // the component was remounted so we need to find it again
+    secondaryMenuButton = screen.getByTestId('test-option-component-button'); // the component was remounted so we need to find it again
 
     expect(secondaryMenuButton).toBeInTheDocument();
     expect(secondaryMenuButton).toHaveFocus();
@@ -719,31 +655,24 @@ describe('FilterBar', () => {
       </FakeContextProvider>,
     );
 
+    const user = userEvent.setup();
+
     const searchInput = getSearchBar();
-    act(() => {
-      fireEvent.focus(searchInput);
-    });
+
+    await user.click(searchInput);
 
     // Add a filter to get a chip.
-    await act(async () => {
-      fireEvent.click(await screen.findByText('Option 1'));
-    });
-    await act(async () => {
-      fireEvent.click(await screen.getByTestId('test-option-component-button'));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByText('Apply'));
-    });
+    await user.click(screen.getByText('Option 1'));
+    await user.click(screen.getByTestId('test-option-component-button'));
+    await user.click(screen.getByText('Apply'));
 
-    const chip = await screen.findByText('Option 1: Value 1');
+    const chip = screen.getByText('Option 1: Value 1');
     expect(chip).toBeInTheDocument();
 
     // Middle click on the chip.
-    await act(async () => {
-      fireEvent.mouseDown(chip, { button: 1 });
-    });
+    await fireEvent.mouseDown(chip, { button: 1 });
 
-    await waitFor(() => expect(chip).not.toBeInTheDocument());
+    expect(chip).not.toBeInTheDocument();
   });
 
   it('should close dropdown on clicking outside', async () => {
@@ -757,15 +686,13 @@ describe('FilterBar', () => {
     const searchInput = getSearchBar();
     await user.click(searchInput);
 
-    expect(await screen.findByText('Option 1')).toBeInTheDocument();
+    expect(screen.getByText('Option 1')).toBeInTheDocument();
 
     const backdrop = screen.getByTestId('filter-dropdown-backdrop');
 
     await user.click(backdrop);
 
-    await waitFor(() => {
-      expect(screen.queryByText('Option 1')).not.toBeInTheDocument();
-    });
+    expect(screen.queryByText('Option 1')).not.toBeInTheDocument();
   });
 
   it('should clear search query after applying a filter', async () => {
@@ -780,18 +707,12 @@ describe('FilterBar', () => {
     await user.type(searchInput, 'Option');
     expect(searchInput).toHaveValue('Option');
 
-    await act(async () => {
-      fireEvent.click(queryByBrokenUpText('Option 1'));
-    });
-    await act(async () => {
-      fireEvent.click(await screen.getByTestId('test-option-component-button'));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByText('Apply'));
-    });
+    await user.click(queryByBrokenUpText('Option 1'));
+    await user.click(screen.getByTestId('test-option-component-button'));
+    await user.click(screen.getByText('Apply'));
 
     // Wait for chip to appear to ensure apply is done.
-    await screen.findByText('Option 1: Value 1');
+    screen.getByText('Option 1: Value 1');
 
     expect(searchInput).toHaveValue('');
     expect(searchInput).toHaveFocus();
@@ -811,9 +732,7 @@ describe('FilterBar', () => {
     expect(queryByBrokenUpText('Option 1')).toBeInTheDocument();
     expect(queryByBrokenUpText('Option 2')).toBeUndefined();
 
-    await act(async () => {
-      fireEvent.click(queryByBrokenUpText('Option 1'));
-    });
+    await user.click(queryByBrokenUpText('Option 1'));
 
     expect(
       screen.getByTestId('test-option-component-search-query'),
@@ -834,9 +753,7 @@ describe('FilterBar', () => {
     expect(queryByBrokenUpText('Option 1')).toBeInTheDocument();
     expect(queryByBrokenUpText('Option 2')).toBeInTheDocument();
 
-    await act(async () => {
-      fireEvent.click(queryByBrokenUpText('Option 1'));
-    });
+    await user.click(queryByBrokenUpText('Option 1'));
 
     expect(
       screen.getByTestId('test-option-component-search-query'),
@@ -943,17 +860,17 @@ describe('FilterBar', () => {
     await user.keyboard('{ArrowDown}');
     await user.keyboard('{ArrowRight}');
 
-    await user.click(await screen.getByTestId('test-option-component-button'));
+    await user.click(screen.getByTestId('test-option-component-button'));
 
-    await user.click(await screen.getByText('Apply'));
+    await user.click(screen.getByText('Apply'));
 
-    const chip = await screen.findByText('Option 1: Value 1');
+    const chip = screen.getByText('Option 1: Value 1');
 
     expect(chip).toBeInTheDocument();
 
     expect(searchInput).toHaveFocus();
     expect(
-      await screen.queryByTestId('test-option-component-button'),
+      screen.queryByTestId('test-option-component-button'),
     ).not.toBeInTheDocument();
 
     await user.click(chip);
@@ -964,7 +881,7 @@ describe('FilterBar', () => {
     await user.keyboard('test_search');
 
     expect(
-      await screen.queryByTestId('test-option-component-search-query'),
+      screen.queryByTestId('test-option-component-search-query'),
     ).toHaveTextContent('test_search');
 
     // close dropdown and focus on chip
@@ -972,7 +889,7 @@ describe('FilterBar', () => {
 
     expect(searchInput).toHaveFocus();
     expect(
-      await screen.queryByTestId('test-option-component-button'),
+      screen.queryByTestId('test-option-component-button'),
     ).not.toBeInTheDocument();
   });
 
@@ -991,17 +908,17 @@ describe('FilterBar', () => {
     await user.keyboard('{ArrowDown}');
     await user.keyboard('{ArrowRight}');
 
-    await user.click(await screen.getByTestId('test-option-component-button'));
+    await user.click(screen.getByTestId('test-option-component-button'));
 
-    await user.click(await screen.getByText('Apply'));
+    await user.click(screen.getByText('Apply'));
 
-    const chip = await screen.findByText('Option 1: Value 1');
+    const chip = screen.getByText('Option 1: Value 1');
 
     expect(chip).toBeInTheDocument();
 
     expect(searchInput).toHaveFocus();
     expect(
-      await screen.queryByTestId('test-option-component-button'),
+      screen.queryByTestId('test-option-component-button'),
     ).not.toBeInTheDocument();
 
     await user.keyboard('{ArrowLeft}');
@@ -1049,7 +966,7 @@ describe('FilterBar', () => {
     await user.keyboard('{ArrowUp}');
 
     expect(
-      await screen.queryByTestId('test-option-component-button'),
+      screen.queryByTestId('test-option-component-button'),
     ).not.toBeInTheDocument();
 
     await user.keyboard('{ArrowRight}');
@@ -1072,17 +989,17 @@ describe('FilterBar', () => {
     await user.keyboard('{ArrowDown}');
     await user.keyboard('{ArrowRight}');
 
-    await user.click(await screen.getByTestId('test-option-component-button'));
+    await user.click(screen.getByTestId('test-option-component-button'));
 
-    await user.click(await screen.getByText('Apply'));
+    await user.click(screen.getByText('Apply'));
 
-    const chip = await screen.findByText('Option 1: Value 1');
+    const chip = screen.getByText('Option 1: Value 1');
 
     expect(chip).toBeInTheDocument();
 
     expect(searchInput).toHaveFocus();
     expect(
-      await screen.queryByTestId('test-option-component-button'),
+      screen.queryByTestId('test-option-component-button'),
     ).not.toBeInTheDocument();
 
     await user.keyboard('{ArrowLeft}');
@@ -1095,13 +1012,13 @@ describe('FilterBar', () => {
     await user.keyboard('{ArrowDown}');
 
     expect(
-      await screen.queryByTestId('test-option-component-button'),
+      screen.queryByTestId('test-option-component-button'),
     ).toBeInTheDocument();
 
     await user.keyboard('{Escape}');
 
     expect(
-      await screen.queryByTestId('test-option-component-button'),
+      screen.queryByTestId('test-option-component-button'),
     ).not.toBeInTheDocument();
     expect(document.activeElement).toContainElement(chip);
     expect(document.activeElement).not.toContainElement(searchInput);
