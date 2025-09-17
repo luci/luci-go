@@ -17,6 +17,7 @@ message HelloRequest {
 
 message HelloReply {
   string message = 1;
+  string method_name = 2;
 }
 
 service Greeter {

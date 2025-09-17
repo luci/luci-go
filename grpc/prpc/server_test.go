@@ -26,6 +26,7 @@ import (
 	"testing"
 
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -60,12 +61,15 @@ func (s *greeterService) SayHello(ctx context.Context, req *testpb.HelloRequest)
 		return nil, err
 	}
 
+	method, _ := grpc.Method(ctx)
+
 	if s.headerMD != nil {
 		SetHeader(ctx, s.headerMD)
 	}
 
 	return &testpb.HelloReply{
-		Message: "Hello " + req.Name,
+		Message:    "Hello " + req.Name,
+		MethodName: method,
 	}, nil
 }
 
@@ -141,7 +145,10 @@ func TestServer(t *testing.T) {
 					"X-Content-Type-Options": {"nosniff"},
 					"X-Prpc-Grpc-Code":       {strCode(codes.OK)},
 				}))
-				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Match(&testpb.HelloReply{Message: "Hello Lucy"}))
+				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Match(&testpb.HelloReply{
+					Message:    "Hello Lucy",
+					MethodName: "/prpc.Greeter/SayHello",
+				}))
 			})
 
 			t.Run("Header Metadata", func(t *ftt.Test) {
@@ -388,7 +395,10 @@ func TestServer(t *testing.T) {
 					"X-Content-Type-Options": {"nosniff"},
 					"X-Prpc-Grpc-Code":       {strCode(codes.OK)},
 				}))
-				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Match(&testpb.HelloReply{Message: "Hello Lucy"}))
+				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Match(&testpb.HelloReply{
+					Message:    "Hello Lucy",
+					MethodName: "/prpc.Greeter/SayHello",
+				}))
 				assert.Loosely(t, called, should.BeTrue)
 			})
 
@@ -459,7 +469,10 @@ func TestServer(t *testing.T) {
 					"X-Content-Type-Options": {"nosniff"},
 					"X-Prpc-Grpc-Code":       {strCode(codes.OK)},
 				}))
-				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Match(&testpb.HelloReply{Message: "Hello Lucy"}))
+				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Match(&testpb.HelloReply{
+					Message:    "Hello Lucy",
+					MethodName: "/prpc.Greeter/SayHello",
+				}))
 				assert.Loosely(t, rpcReq, should.Match(&testpb.HelloRequest{Name: "Lucy"}))
 			})
 

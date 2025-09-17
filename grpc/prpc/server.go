@@ -291,6 +291,7 @@ type Server struct {
 }
 
 type service struct {
+	name    string
 	methods map[string]grpc.MethodDesc
 	impl    any
 }
@@ -304,6 +305,7 @@ type service struct {
 // Panics if a service of the same name is already registered.
 func (s *Server) RegisterService(desc *grpc.ServiceDesc, impl any) {
 	serv := &service{
+		name:    desc.ServiceName,
 		impl:    impl,
 		methods: make(map[string]grpc.MethodDesc, len(desc.Methods)),
 	}
@@ -541,11 +543,29 @@ func (r *reproducingReader) Close() error {
 	return nil
 }
 
-var requestContextKey = "context key with *requestContext"
-
 type requestContext struct {
+	method string
+
 	// Additional headers that will be sent in the response.
 	header http.Header
+}
+
+var _ grpc.ServerTransportStream = (*requestContext)(nil)
+
+func (rc *requestContext) Method() string {
+	return rc.method
+}
+
+func (rc *requestContext) SetHeader(md metadata.MD) error {
+	return metaIntoHeaders(md, rc.header)
+}
+
+func (rc *requestContext) SetTrailer(md metadata.MD) error {
+	return status.Error(codes.Internal, "prpc.requestContext.SetTrailer: not implemented")
+}
+
+func (rc *requestContext) SendHeader(md metadata.MD) error {
+	return status.Error(codes.Internal, "prpc.requestContext.SendHeader: not implemented")
 }
 
 // SetHeader sets the header metadata.
@@ -559,15 +579,8 @@ type requestContext struct {
 // headers (like "content-type") and all "access-control-*" headers (if you want
 // to configure CORS policies, use [Server.AccessControl] field instead).
 //
-// If ctx is not a pRPC server context, then SetHeader calls grpc.SetHeader
-// such that calling prpc.SetHeader works for both pRPC and gRPC.
+// Deprecated: Use `grpc.SetHeader(ctx, md)` instead.
 func SetHeader(ctx context.Context, md metadata.MD) error {
-	if rctx, ok := ctx.Value(&requestContextKey).(*requestContext); ok {
-		if err := metaIntoHeaders(md, rctx.header); err != nil {
-			return err
-		}
-		return nil
-	}
 	return grpc.SetHeader(ctx, md)
 }
 
@@ -631,7 +644,10 @@ func (s *Server) parseAndCall(req *http.Request, rw http.ResponseWriter, service
 	}
 	defer cancelFunc()
 
-	methodCtx = context.WithValue(methodCtx, &requestContextKey, &requestContext{header: rw.Header()})
+	methodCtx = grpc.NewContextWithServerTransportStream(methodCtx, &requestContext{
+		method: fmt.Sprintf("/%s/%s", service.name, method.MethodName),
+		header: rw.Header(),
+	})
 
 	// Populate peer.Peer if we can manage to parse the address. This may fail
 	// if the server is exposed via a Unix socket, for example.
