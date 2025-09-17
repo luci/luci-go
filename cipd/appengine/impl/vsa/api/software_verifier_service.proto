@@ -64,7 +64,7 @@ message VerificationContext {
 
     // Represents the artifact(s) in this occurrence occurs after a BCID
     // verification without any modification.
-    OCCURRENCE_STAGE_AS_VERIFIED = 3;
+    AS_VERIFIED = 3;
   }
 
   // Caller provided software supply chain stage classificiation.
