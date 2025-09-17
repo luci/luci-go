@@ -23,6 +23,7 @@ import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/failure_reason.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/skipped_reason.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 option java_package = "com.google.luci.resultdb.v1";
@@ -306,78 +307,6 @@ message TestResult {
   FrameworkExtensions framework_extensions = 22;
 }
 
-// SkippedReason helps a developer answer the questions:
-// - Why was this test skipped?
-// - How do I stop it being skipped?
-message SkippedReason {
-  // Provides structured explanation for why a test was skipped.
-  // It must be populated when the status is SKIP.
-  // Open to extension.
-  enum Kind {
-    // Skipped reason was not specified. Do not use this value.
-    KIND_UNSPECIFIED = 0;
-
-    // Skipped by an annotation at the test declaration site.
-    //
-    // This includes:
-    // - JUnit4 @Ignore,
-    // - JUnit5 @Disabled, @DisabledIf/For/On... @EnabledIf/For/On...
-    //   annotations.
-    // - GoogleTest DISABLED_ text prefix.
-    // - Tast test skips from the declared software or hardware
-    //   dependencies being unsatisfied at runtime.
-    // and similar statically defined annotations at the test
-    // declaration site.
-    DISABLED_AT_DECLARATION = 1;
-
-    // Test body began to run but determined the test should
-    // not finish. For example, the test did not detect a valid
-    // environment meeting the test assumptions.
-    //
-    // This covers:
-    // - a JUnit4 or JUnit5 assumption failure in the body of a test,
-    //   from Assume.assumeThat(...) and similar methods.
-    // - Use of the GTEST_SKIP() macro within the body of a test.
-    // - Golang's t.Skip(...) in the body of a test.
-    SKIPPED_BY_TEST_BODY = 2;
-
-    // Used to indicate the test was skipped due to presubmit demotion
-    // (e.g. because the test was too flaky).
-    //
-    // You must specify a human-readable detail message if you use this status.
-    // Please explain the criteria that was met and how the user should get the
-    // test undemoted or reference a link that explains more.
-    DEMOTED = 3;
-
-    // The test was skipped by some other reason.
-    //
-    // This includes:
-    // - Blink web tests disabled in an expectation file.
-    //
-    // You must specify a human-readable detail message if you use this status.
-    OTHER = 4;
-  }
-  Kind kind = 1;
-
-  // A human-readable message providing more context or details about why the
-  // test was skipped. Limited to 1024 bytes of printable UTF-8.
-  //
-  // Required for skip kinds DEMOTED and OTHER, optional otherwise.
-  //
-  // For DISABLED_AT_DECLARATION, useful information would be:
-  // - For Tast, the Tast-provided skip reason (detailing the declared
-  //   hardware/software dependencies that were unmet).
-  //
-  // For SKIPPED_BY_TEST_BODY, useful information would be:
-  // - For JUnit, the JUnit assumption failure that led to the skip.
-  // - For GoogleTest, the file and line where the GTEST_SKIP() macro was
-  //   invoked and the message passed to it.
-  //
-  // For DEMOTED and OTHER, the criteria that led to the skip
-  // and how the user might get the test running again.
-  string reason_message = 2;
-}
-
 // Additional information about the test result in source test
 // framework-specific format. Data fields may be added here
 // before there is sufficient examples to create a standardised
@@ -467,7 +396,7 @@ enum TestStatus {
 // Only reasons actually used are listed here, if you need a new reason
 // please add it here and send a CL to the OWNERS.
 enum SkipReason {
-    option deprecated = true;
+  option deprecated = true;
 
   // Skip reason was not specified.
   // This represents an unset field which should be used for non-skip test
@@ -479,108 +408,4 @@ enum SkipReason {
   // flaky tests.
   // Used for ChromeOS CQ test filtering.
   AUTOMATICALLY_DISABLED_FOR_FLAKINESS = 1;
-}
-
-
-// Indicates that the test subject (e.g., a ChangeList in Gerrit) should not
-// be considered "at fault" for an failed result of a particular test variant.
-// This is often used in presubmit checks (like CQ) to prevent blaming a CL
-// for pre-existing or unrelated issues.
-// Next ID: 10.
-message TestExoneration {
-  // Can be used to refer to this test exoneration, e.g. in
-  // ResultDB.GetTestExoneration RPC.
-  // Format:
-  // invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/exonerations/{EXONERATION_ID}.
-  // URL_ESCAPED_TEST_ID uses the flat test ID format.
-  //
-  // Output only.
-  string name = 1 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (google.api.field_behavior) = IMMUTABLE
-  ];
-
-  // The structured identifier of the test that is being exonerated.
-  TestIdentifier test_id_structured = 9 [(google.api.field_behavior) = IMMUTABLE];
-
-  // The flat test id of the test that is being exonerated.
-  // Output only. (Except for legacy uploaders.)
-  string test_id = 2 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
-
-  // The variant of the test that is being exonerated.
-  // Output only. (Except for legacy uploaders.)
-  Variant variant = 3 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
-
-  // Identifies an exoneration in a given invocation and test id.
-  // It is server-generated.
-  string exoneration_id = 4 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (google.api.field_behavior) = IMMUTABLE
-  ];
-
-  // Humnan readable reasoning behind the exoneration, in HTML.
-  // MUST be sanitized before rendering in the browser.
-  string explanation_html = 5 [(google.api.field_behavior) = IMMUTABLE];
-
-  // SHA256 hash of the module variant key-value pairs, hex-encoded.
-  // See variant_hash on TestResult for more details.
-  // Output only.
-  string variant_hash = 6 [(google.api.field_behavior) = IMMUTABLE];
-
-  // Reasoning behind the exoneration, in machine-readable form.
-  // Used to assist downstream analyses, such as automatic bug-filing.
-  // This allow detection of e.g. critical tests failing in presubmit,
-  // even if they are being exonerated because they fail on other CLs.
-  ExonerationReason reason = 7 [(google.api.field_behavior) = IMMUTABLE];
-
-  // Whether the test exoneration has been masked so that it includes only
-  // metadata. The metadata fields for a TestExoneration are:
-  // * name
-  // * test_id_structured
-  // * exoneration_id
-  // * variant_hash
-  // * explanation_html
-  // * reason
-  // * test_id (deprecated)
-  // * variant (deprecated)
-  //
-  // This field is output only.
-  bool is_masked = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
-}
-
-// Reason why a test variant was exonerated.
-enum ExonerationReason {
-  // Reason was not specified.
-  // Not to be used in actual test exonerations; serves as a default value for
-  // an unset field.
-  EXONERATION_REASON_UNSPECIFIED = 0;
-
-  // Similar unexpected results were observed on a mainline branch
-  // (i.e. against a build without unsubmitted changes applied).
-  // (For avoidance of doubt, this includes both flakily and
-  // deterministically occurring unexpected results.)
-  // Applies to unexpected results in presubmit/CQ runs only.
-  OCCURS_ON_MAINLINE = 1;
-
-  // Similar unexpected results were observed in presubmit run(s) for other,
-  // unrelated CL(s). (This is suggestive of the issue being present
-  // on mainline but is not confirmed as there are possible confounding
-  // factors, like how tests are run on CLs vs how tests are run on
-  // mainline branches.)
-  // Applies to unexpected results in presubmit/CQ runs only.
-  OCCURS_ON_OTHER_CLS = 2;
-
-  // The tests are not critical to the test subject (e.g. CL) passing.
-  // This could be because more data is being collected to determine if
-  // the tests are stable enough to be made critical (as is often the
-  // case for experimental test suites).
-  // If information exists indicating the tests are producing unexpected
-  // results, and the tests are not critical for that reason,
-  // prefer more specific reasons OCCURS_ON_MAINLINE or OCCURS_ON_OTHER_CLS.
-  NOT_CRITICAL = 3;
-
-  // The test result was an unexpected pass. (Note that such an exoneration is
-  // not automatically created for unexpected passes, unless the option is
-  // specified to ResultSink or the project manually creates one).
-  UNEXPECTED_PASS = 4;
 }

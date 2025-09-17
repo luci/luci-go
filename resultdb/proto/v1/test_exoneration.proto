@@ -1,0 +1,127 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.v1;
+
+import "google/api/field_behavior.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
+option java_package = "com.google.luci.resultdb.v1";
+option java_multiple_files = true;
+
+// Indicates that the test subject (e.g., a ChangeList in Gerrit) should not
+// be considered "at fault" for an failed result of a particular test variant.
+// This is often used in presubmit checks (like CQ) to prevent blaming a CL
+// for pre-existing or unrelated issues.
+// Next ID: 10.
+message TestExoneration {
+  // Can be used to refer to this test exoneration, e.g. in
+  // ResultDB.GetTestExoneration RPC.
+  // Format:
+  // invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/exonerations/{EXONERATION_ID}.
+  // URL_ESCAPED_TEST_ID uses the flat test ID format.
+  //
+  // Output only.
+  string name = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
+  // The structured identifier of the test that is being exonerated.
+  TestIdentifier test_id_structured = 9 [(google.api.field_behavior) = IMMUTABLE];
+
+  // The flat test id of the test that is being exonerated.
+  // Output only. (Except for legacy uploaders.)
+  string test_id = 2 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
+
+  // The variant of the test that is being exonerated.
+  // Output only. (Except for legacy uploaders.)
+  Variant variant = 3 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
+
+  // Identifies an exoneration in a given invocation and test id.
+  // It is server-generated.
+  string exoneration_id = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
+  // Humnan readable reasoning behind the exoneration, in HTML.
+  // MUST be sanitized before rendering in the browser.
+  string explanation_html = 5 [(google.api.field_behavior) = IMMUTABLE];
+
+  // SHA256 hash of the module variant key-value pairs, hex-encoded.
+  // See variant_hash on TestResult for more details.
+  // Output only.
+  string variant_hash = 6 [(google.api.field_behavior) = IMMUTABLE];
+
+  // Reasoning behind the exoneration, in machine-readable form.
+  // Used to assist downstream analyses, such as automatic bug-filing.
+  // This allow detection of e.g. critical tests failing in presubmit,
+  // even if they are being exonerated because they fail on other CLs.
+  ExonerationReason reason = 7 [(google.api.field_behavior) = IMMUTABLE];
+
+  // Whether the test exoneration has been masked so that it includes only
+  // metadata. The metadata fields for a TestExoneration are:
+  // * name
+  // * test_id_structured
+  // * exoneration_id
+  // * variant_hash
+  // * explanation_html
+  // * reason
+  // * test_id (deprecated)
+  // * variant (deprecated)
+  //
+  // This field is output only.
+  bool is_masked = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Reason why a test variant was exonerated.
+enum ExonerationReason {
+  // Reason was not specified.
+  // Not to be used in actual test exonerations; serves as a default value for
+  // an unset field.
+  EXONERATION_REASON_UNSPECIFIED = 0;
+
+  // Similar unexpected results were observed on a mainline branch
+  // (i.e. against a build without unsubmitted changes applied).
+  // (For avoidance of doubt, this includes both flakily and
+  // deterministically occurring unexpected results.)
+  // Applies to unexpected results in presubmit/CQ runs only.
+  OCCURS_ON_MAINLINE = 1;
+
+  // Similar unexpected results were observed in presubmit run(s) for other,
+  // unrelated CL(s). (This is suggestive of the issue being present
+  // on mainline but is not confirmed as there are possible confounding
+  // factors, like how tests are run on CLs vs how tests are run on
+  // mainline branches.)
+  // Applies to unexpected results in presubmit/CQ runs only.
+  OCCURS_ON_OTHER_CLS = 2;
+
+  // The tests are not critical to the test subject (e.g. CL) passing.
+  // This could be because more data is being collected to determine if
+  // the tests are stable enough to be made critical (as is often the
+  // case for experimental test suites).
+  // If information exists indicating the tests are producing unexpected
+  // results, and the tests are not critical for that reason,
+  // prefer more specific reasons OCCURS_ON_MAINLINE or OCCURS_ON_OTHER_CLS.
+  NOT_CRITICAL = 3;
+
+  // The test result was an unexpected pass. (Note that such an exoneration is
+  // not automatically created for unexpected passes, unless the option is
+  // specified to ResultSink or the project manually creates one).
+  UNEXPECTED_PASS = 4;
+}

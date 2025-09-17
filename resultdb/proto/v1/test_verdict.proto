@@ -17,6 +17,7 @@ syntax = "proto3";
 package luci.resultdb.v1;
 
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_exoneration.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 

@@ -26,6 +26,7 @@ import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/predicate.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/root_invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_aggregation.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_exoneration.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_variant.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_verdict.proto";

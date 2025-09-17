@@ -1,0 +1,93 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.v1;
+
+option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
+option java_package = "com.google.luci.resultdb.v1";
+option java_multiple_files = true;
+
+// SkippedReason helps a developer answer the questions:
+// - Why was this test skipped?
+// - How do I stop it being skipped?
+message SkippedReason {
+  // Provides structured explanation for why a test was skipped.
+  // It must be populated when the status is SKIP.
+  // Open to extension.
+  enum Kind {
+    // Skipped reason was not specified. Do not use this value.
+    KIND_UNSPECIFIED = 0;
+
+    // Skipped by an annotation at the test declaration site.
+    //
+    // This includes:
+    // - JUnit4 @Ignore,
+    // - JUnit5 @Disabled, @DisabledIf/For/On... @EnabledIf/For/On...
+    //   annotations.
+    // - GoogleTest DISABLED_ text prefix.
+    // - Tast test skips from the declared software or hardware
+    //   dependencies being unsatisfied at runtime.
+    // and similar statically defined annotations at the test
+    // declaration site.
+    DISABLED_AT_DECLARATION = 1;
+
+    // Test body began to run but determined the test should
+    // not finish. For example, the test did not detect a valid
+    // environment meeting the test assumptions.
+    //
+    // This covers:
+    // - a JUnit4 or JUnit5 assumption failure in the body of a test,
+    //   from Assume.assumeThat(...) and similar methods.
+    // - Use of the GTEST_SKIP() macro within the body of a test.
+    // - Golang's t.Skip(...) in the body of a test.
+    SKIPPED_BY_TEST_BODY = 2;
+
+    // Used to indicate the test was skipped due to presubmit demotion
+    // (e.g. because the test was too flaky).
+    //
+    // You must specify a human-readable detail message if you use this status.
+    // Please explain the criteria that was met and how the user should get the
+    // test undemoted or reference a link that explains more.
+    DEMOTED = 3;
+
+    // The test was skipped by some other reason.
+    //
+    // This includes:
+    // - Blink web tests disabled in an expectation file.
+    //
+    // You must specify a human-readable detail message if you use this status.
+    OTHER = 4;
+  }
+  Kind kind = 1;
+
+  // A human-readable message providing more context or details about why the
+  // test was skipped. Limited to 1024 bytes of printable UTF-8.
+  //
+  // Required for skip kinds DEMOTED and OTHER, optional otherwise.
+  //
+  // For DISABLED_AT_DECLARATION, useful information would be:
+  // - For Tast, the Tast-provided skip reason (detailing the declared
+  //   hardware/software dependencies that were unmet).
+  //
+  // For SKIPPED_BY_TEST_BODY, useful information would be:
+  // - For JUnit, the JUnit assumption failure that led to the skip.
+  // - For GoogleTest, the file and line where the GTEST_SKIP() macro was
+  //   invoked and the message passed to it.
+  //
+  // For DEMOTED and OTHER, the criteria that led to the skip
+  // and how the user might get the test running again.
+  string reason_message = 2;
+}
