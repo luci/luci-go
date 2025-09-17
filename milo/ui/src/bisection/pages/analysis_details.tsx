@@ -31,14 +31,12 @@ import { CulpritsTable } from '@/bisection/components/culprits_table/culprits_ta
 import { GenAiAnalysisTable } from '@/bisection/components/gen_ai_analysis_table';
 import { HeuristicAnalysisTable } from '@/bisection/components/heuristic_analysis_table';
 import { NthSectionAnalysisTable } from '@/bisection/components/nthsection_analysis_table';
-import { SHOW_GEN_AI_COMPILE_ANALYSIS_BISECTION } from '@/bisection/pages/features';
 import {
   GenericCulpritWithDetails,
   GenericNthSectionAnalysisResult,
   GenericSuspect,
 } from '@/bisection/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { useFeatureFlag } from '@/common/feature_flags';
 import { useAnalysesClient } from '@/common/hooks/prpc_clients';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import {
@@ -60,17 +58,14 @@ export function TabPanel({ value, name, children }: TabPanelProps) {
     </div>
   );
 }
-function getSuspects(
-  analysis: Analysis,
-  includeAiSuspect: boolean,
-): readonly GenericSuspect[] {
+function getSuspects(analysis: Analysis): readonly GenericSuspect[] {
   const heuristicSuspects = analysis.heuristicResult?.suspects || [];
   const suspects = heuristicSuspects.map(GenericSuspect.fromHeuristic);
   const nthSectionSuspect = analysis.nthSectionResult?.suspect;
   if (nthSectionSuspect) {
     suspects.push(GenericSuspect.fromNthSection(nthSectionSuspect));
   }
-  if (includeAiSuspect && analysis.genAiResult?.suspect !== undefined) {
+  if (analysis.genAiResult?.suspect !== undefined) {
     suspects.push(GenericSuspect.fromGenAi(analysis.genAiResult.suspect));
   }
   return suspects;
@@ -80,13 +75,10 @@ enum AnalysisComponentTabs {
   HEURISTIC = 'Heuristic analysis',
   NTH_SECTION = 'Nth section analysis',
   CULPRIT_VERIFICATION = 'Culprit verification',
-  GEN_AI_CULPRIT = 'AI culprit detection',
+  GEN_AI_CULPRIT = 'GenAI analysis',
 }
 
 export function AnalysisDetailsPage() {
-  const showGenAiAnalysis = useFeatureFlag(
-    SHOW_GEN_AI_COMPILE_ANALYSIS_BISECTION,
-  );
   const { bbid } = useParams();
   if (!bbid) {
     // The page should always be mounted to a path where bbid is set.
@@ -183,14 +175,13 @@ export function AnalysisDetailsPage() {
             value={AnalysisComponentTabs.HEURISTIC}
             label={AnalysisComponentTabs.HEURISTIC}
           />
-          {showGenAiAnalysis &&
-            analysis.buildFailureType === BuildFailureType.COMPILE && (
-              <Tab
-                className="rounded-tab"
-                value={AnalysisComponentTabs.GEN_AI_CULPRIT}
-                label={AnalysisComponentTabs.GEN_AI_CULPRIT}
-              />
-            )}
+          {analysis.buildFailureType === BuildFailureType.COMPILE && (
+            <Tab
+              className="rounded-tab"
+              value={AnalysisComponentTabs.GEN_AI_CULPRIT}
+              label={AnalysisComponentTabs.GEN_AI_CULPRIT}
+            />
+          )}
           <Tab
             className="rounded-tab"
             value={AnalysisComponentTabs.NTH_SECTION}
@@ -225,9 +216,7 @@ export function AnalysisDetailsPage() {
           value={currentTab}
           name={AnalysisComponentTabs.CULPRIT_VERIFICATION}
         >
-          <CulpritVerificationTable
-            suspects={getSuspects(analysis, showGenAiAnalysis)}
-          />
+          <CulpritVerificationTable suspects={getSuspects(analysis)} />
         </TabPanel>
       </div>
     </>

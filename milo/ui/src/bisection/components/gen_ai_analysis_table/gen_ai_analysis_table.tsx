@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
-import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
@@ -23,6 +21,8 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
+import { AnalysisStatusInfo } from '@/bisection/components/status_info';
+import { getFormattedTimestamp } from '@/bisection/tools/timestamp_formatters';
 import { AnalysisStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
 import { GenAiAnalysisResult } from '@/proto/go.chromium.org/luci/bisection/proto/v1/genai.pb';
 export interface GenAiAnalysisTableProps {
@@ -42,10 +42,8 @@ export function GenAiAnalysisTable({ result }: GenAiAnalysisTableProps) {
       </span>
     );
   }
-
-  if (
-    [AnalysisStatus.CREATED, AnalysisStatus.RUNNING].includes(result.status)
-  ) {
+  const { status, suspect, startTime, endTime } = result;
+  if ([AnalysisStatus.CREATED, AnalysisStatus.RUNNING].includes(status)) {
     return (
       <span className="data-placeholder" data-testid="genai-analysis-table">
         AI analysis is in progress.
@@ -54,8 +52,8 @@ export function GenAiAnalysisTable({ result }: GenAiAnalysisTableProps) {
   }
 
   if (
-    !result.suspect ||
-    [AnalysisStatus.NOTFOUND, AnalysisStatus.ERROR].includes(result.status)
+    !suspect ||
+    [AnalysisStatus.NOTFOUND, AnalysisStatus.ERROR].includes(status)
   ) {
     return (
       <span className="data-placeholder" data-testid="genai-analysis-table">
@@ -63,7 +61,6 @@ export function GenAiAnalysisTable({ result }: GenAiAnalysisTableProps) {
       </span>
     );
   }
-
   return (
     <TableContainer
       component={Paper}
@@ -74,28 +71,28 @@ export function GenAiAnalysisTable({ result }: GenAiAnalysisTableProps) {
         <TableHead>
           <TableRow>
             <TableCell>Suspect CL</TableCell>
-            <TableCell>Verified</TableCell>
+            <TableCell>Status</TableCell>
+            <TableCell>Start Time</TableCell>
+            <TableCell>End Time</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           <TableRow>
             <TableCell>
               <Link
-                href={result.suspect.reviewUrl}
+                href={suspect.reviewUrl}
                 target="_blank"
                 rel="noreferrer"
                 underline="always"
               >
-                {result.suspect.reviewTitle}
+                {suspect.reviewTitle}
               </Link>
             </TableCell>
             <TableCell>
-              {result.suspect.verified && (
-                <IconButton style={{ color: 'var(--success-color)' }}>
-                  <CheckCircleOutline />
-                </IconButton>
-              )}
+              <AnalysisStatusInfo status={result.status}></AnalysisStatusInfo>
             </TableCell>
+            <TableCell>{getFormattedTimestamp(startTime)}</TableCell>
+            <TableCell>{getFormattedTimestamp(endTime)}</TableCell>
           </TableRow>
         </TableBody>
       </Table>
