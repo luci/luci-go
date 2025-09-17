@@ -22,6 +22,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
@@ -111,13 +112,6 @@ func logToBQ(ctx context.Context, id, parent, methodName string) {
 	})
 }
 
-// commonPostlude converts an appstatus error to a gRPC error and logs it.
-// Requires a *bqlog.Bundler in the context (see commonPrelude).
-func commonPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
-	logToBQ(ctx, trace.SpanContextFromContext(ctx).TraceID().String(), "", methodName)
-	return appstatus.GRPCifyAndLog(ctx, err)
-}
-
 // teeErr saves `err` in `keep` and then returns `err`
 func teeErr(err error, keep *error) error {
 	*keep = err
@@ -140,11 +134,24 @@ func getStartTime(ctx context.Context) time.Time {
 	return time.Time{}
 }
 
-// commonPrelude logs debug information about the request and installs a
-// start time and *bqlog.Bundler in the current context.
-func commonPrelude(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
-	logging.Debugf(ctx, "%q called %q with request %s", auth.CurrentIdentity(ctx), methodName, proto.MarshalTextString(req))
-	return withBundler(withStartTime(ctx, clock.Now(ctx)), &bqlog.Default), nil
+// UnaryInterceptor is used for all Buildbucket unary RPCs.
+//
+// Buildbucket RPC service implementations won't work without this interceptor
+// installed.
+//
+// It logs debug information about the request and response and converts
+// an appstatus error to a gRPC error.
+func UnaryInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	methodName := info.FullMethod[strings.LastIndexByte(info.FullMethod, '/')+1:]
+
+	logging.Debugf(ctx, "%q called %q with request %s", auth.CurrentIdentity(ctx), methodName, proto.MarshalTextString(req.(proto.Message)))
+	ctx = withBundler(withStartTime(ctx, clock.Now(ctx)), &bqlog.Default)
+
+	resp, err := handler(ctx, req)
+	err = appstatus.GRPCifyAndLog(ctx, err)
+
+	logToBQ(ctx, trace.SpanContextFromContext(ctx).TraceID().String(), "", methodName)
+	return resp, err
 }
 
 func validatePageSize(pageSize int32) error {

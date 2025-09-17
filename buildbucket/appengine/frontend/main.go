@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/gae/filter/dscache"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
@@ -205,8 +206,20 @@ func main() {
 			p.EnableNonStandardFieldMasks = true
 		})
 
-		pb.RegisterBuildsServer(srv, rpc.NewBuilds())
-		pb.RegisterBuildersServer(srv, rpc.NewBuilders())
+		srv.RegisterUnaryServerInterceptors(
+			grpcutil.UnaryBranchingInterceptor([]grpcutil.UnaryBranch{
+				{
+					Match: grpcutil.MatchServices(
+						"buildbucket.v2.Builds",
+						"buildbucket.v2.Builders",
+					),
+					Interceptor: rpc.UnaryInterceptor,
+				},
+			}),
+		)
+
+		pb.RegisterBuildsServer(srv, &rpc.Builds{})
+		pb.RegisterBuildersServer(srv, &rpc.Builders{})
 
 		cron.RegisterHandler("delete_builds", buildcron.DeleteOldBuilds)
 		cron.RegisterHandler("expire_builds", buildcron.TimeoutExpiredBuilds)

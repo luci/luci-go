@@ -23,12 +23,3 @@ type Builders struct{}
 
 // Ensure Builders implements projects.BuildersServer.
 var _ pb.BuildersServer = &Builders{}
-
-// NewBuilders returns a new pb.BuildersServer.
-func NewBuilders() pb.BuildersServer {
-	return &pb.DecoratedBuilders{
-		Prelude:  commonPrelude,
-		Service:  &Builders{},
-		Postlude: commonPostlude,
-	}
-}

@@ -19,17 +19,7 @@ import (
 )
 
 // Builds implements pb.BuildsServer.
-type Builds struct {
-}
+type Builds struct{}
 
-// Ensure Builds implements projects.ProjectsServer.
+// Ensure Builds implements pb.BuildsServer.
 var _ pb.BuildsServer = &Builds{}
-
-// NewBuilds returns a new pb.BuildsServer.
-func NewBuilds() pb.BuildsServer {
-	return &pb.DecoratedBuilds{
-		Prelude:  commonPrelude,
-		Service:  &Builds{},
-		Postlude: commonPostlude,
-	}
-}
