@@ -16,7 +16,6 @@ import { Chip } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
 import { useEffect, useMemo } from 'react';
-import { useLocalStorage } from 'react-use';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -36,6 +35,7 @@ import {
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
 import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
+import { getFeatureFlag } from '@/fleet/config/features';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
@@ -266,11 +266,8 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
 
 export function Component() {
   const { platform } = usePlatform();
-  const [localStorageEnable] = useLocalStorage<boolean>(
-    'super-secret-fleet-android-device-list',
-  );
 
-  const supportedPlatforms = localStorageEnable
+  const supportedPlatforms = getFeatureFlag('AndroidListDevices')
     ? [Platform.CHROMEOS, Platform.ANDROID]
     : [Platform.CHROMEOS];
 

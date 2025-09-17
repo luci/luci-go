@@ -17,4 +17,5 @@ import { FeaturesSchema } from './features_dev';
 export const features = {
   UnifiedFilterBar: true,
   ColumnFilter: false,
+  AndroidListDevices: false,
 } satisfies FeaturesSchema;
