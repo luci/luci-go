@@ -29,13 +29,15 @@ import (
 
 // ImportProjectIdentityConfigsRPC implements Admin.ImportProjectIdentityConfigs method.
 type ImportProjectIdentityConfigsRPC struct {
+	// UseStagingEmail means to use "staging_service_account_email" config field.
+	UseStagingEmail bool
 }
 
 // ImportProjectIdentityConfigs fetches configs from from luci-config right now.
-func (r *ImportProjectIdentityConfigsRPC) ImportProjectIdentityConfigs(c context.Context, _ *emptypb.Empty) (*admin.ImportedConfigs, error) {
-	rev, err := ImportConfigs(c)
+func (r *ImportProjectIdentityConfigsRPC) ImportProjectIdentityConfigs(ctx context.Context, _ *emptypb.Empty) (*admin.ImportedConfigs, error) {
+	rev, err := ImportConfigs(ctx, r.UseStagingEmail)
 	if err != nil {
-		logging.WithError(err).Errorf(c, "Failed to fetch projects configs")
+		logging.WithError(err).Errorf(ctx, "Failed to fetch projects configs")
 		return nil, status.Errorf(codes.Internal, "%s", err)
 	}
 	return &admin.ImportedConfigs{Revision: rev}, nil
@@ -43,5 +45,5 @@ func (r *ImportProjectIdentityConfigsRPC) ImportProjectIdentityConfigs(c context
 
 // SetupConfigValidation registers the config validation rules.
 func (r *ImportProjectIdentityConfigsRPC) SetupConfigValidation(rules *validation.RuleSet) {
-	SetupConfigValidation(&validation.Rules)
+	SetupConfigValidation(&validation.Rules, r.UseStagingEmail)
 }

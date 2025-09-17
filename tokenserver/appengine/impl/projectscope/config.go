@@ -29,53 +29,65 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
 )
 
+const projectsCfg = "projects.cfg"
+
 // SetupConfigValidation registers the tokenserver custom projects.cfg validator.
-func SetupConfigValidation(rules *validation.RuleSet) {
+func SetupConfigValidation(rules *validation.RuleSet, useStagingEmail bool) {
 	rules.Add("services/${config_service_appid}", projectsCfg, func(ctx *validation.Context, configSet, path string, content []byte) error {
 		ctx.SetFile(projectsCfg)
 		cfg := &config.ProjectsCfg{}
 		if err := prototext.Unmarshal(content, cfg); err != nil {
 			ctx.Errorf("not a valid ProjectsCfg proto message - %s", err)
 		} else {
-			validateProjectsCfg(ctx, cfg)
+			validateProjectsCfg(ctx, cfg, useStagingEmail)
 		}
 		return nil
 	})
 }
 
 // importIdentities analyzes projects.cfg to import or update project scoped service accounts.
-func importIdentities(c context.Context, cfg *config.ProjectsCfg) error {
-	storage := projectidentity.ProjectIdentities(c)
+func importIdentities(ctx context.Context, cfg *config.ProjectsCfg, useStagingEmail bool) error {
+	storage := projectidentity.ProjectIdentities(ctx)
 
-	// TODO (fmatenaar): Make this transactional and provide some guarantees around cleanup
-	// but do this after we have a stronger story for warning about config changes which are
-	// about to remove an identity config from a project since this can cause an outage.
+	// TODO: Remove entries for projects no longer listed in cfg.Projects.
+	var merr errors.MultiError
 	for _, project := range cfg.Projects {
-		identity := &projectidentity.ProjectIdentity{
-			Project: project.Id,
-		}
-		if project.IdentityConfig != nil && project.IdentityConfig.ServiceAccountEmail != "" {
-			identity.Email = project.IdentityConfig.ServiceAccountEmail
-			logging.Infof(c, "updating project scoped account: %v", identity)
-			if _, err := storage.Update(c, identity); err != nil {
-				logging.Errorf(c, "failed to update project scoped account: %v", identity)
-				return err
-			}
+		var err error
+		if email := projectIdentityEmail(project.IdentityConfig, useStagingEmail); email != "" {
+			err = storage.Update(ctx, &projectidentity.ProjectIdentity{
+				Project: project.Id,
+				Email:   email,
+			})
 		} else {
-			logging.Warningf(c, "removing project scoped account: %v", identity)
-			if err := storage.Delete(c, identity); err != nil {
-				logging.Errorf(c, "failed to remove project scoped account: %v", identity)
-			}
+			err = storage.Delete(ctx, project.Id)
+		}
+		if err != nil {
+			logging.Errorf(ctx, "Updating project scoped identity for %q: %v", project.Id, err)
+			merr = append(merr, err)
 		}
 	}
-	return nil
+	return merr.AsError()
+}
+
+// projectIdentityEmail returns an email representing a project or "" if
+// unconfigured.
+func projectIdentityEmail(cfg *config.IdentityConfig, useStagingEmail bool) string {
+	prod := cfg.GetServiceAccountEmail()
+	staging := cfg.GetStagingServiceAccountEmail()
+	if staging == "" {
+		staging = prod
+	}
+	if useStagingEmail {
+		return staging
+	}
+	return prod
 }
 
 // fetchConfigs loads proto messages with rules from the config.
-func fetchConfigs(c context.Context) (*config.ProjectsCfg, string, error) {
+func fetchConfigs(ctx context.Context) (*config.ProjectsCfg, string, error) {
 	cfg := &config.ProjectsCfg{}
 	var meta configset.Meta
-	if err := cfgclient.Get(c, "services/${config_service_appid}", projectsCfg, cfgclient.ProtoText(cfg), &meta); err != nil {
+	if err := cfgclient.Get(ctx, "services/${config_service_appid}", projectsCfg, cfgclient.ProtoText(cfg), &meta); err != nil {
 		return nil, "", err
 	}
 	return cfg, meta.Revision, nil
@@ -84,12 +96,12 @@ func fetchConfigs(c context.Context) (*config.ProjectsCfg, string, error) {
 // ImportConfigs fetches projects.cfg and updates datastore copy of it.
 //
 // Called from cron.
-func ImportConfigs(c context.Context) (string, error) {
-	cfg, rev, err := fetchConfigs(c)
+func ImportConfigs(ctx context.Context, useStagingEmail bool) (string, error) {
+	cfg, rev, err := fetchConfigs(ctx)
 	if err != nil {
 		return "", errors.Fmt("failed to fetch project configs: %w", err)
 	}
-	if err := importIdentities(c, cfg); err != nil {
+	if err := importIdentities(ctx, cfg, useStagingEmail); err != nil {
 		return "", errors.Fmt("failed to import project configs: %w", err)
 	}
 	return rev, nil

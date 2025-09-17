@@ -73,7 +73,6 @@ func newTestMintProjectTokenRPC() *MintProjectTokenRPC {
 func TestMintProjectToken(t *testing.T) {
 	t.Parallel()
 	ctx := testingContext("service@example.com")
-	member, err := auth.IsMember(ctx, projectActorsGroup)
 
 	ftt.Run("initialize rpc handler", t, func(t *ftt.Test) {
 		rpc := newTestMintProjectTokenRPC()
@@ -122,14 +121,8 @@ func TestMintProjectToken(t *testing.T) {
 		})
 
 		t.Run("MintProjectToken does not return errors with valid input", func(t *ftt.Test) {
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, member, should.BeTrue)
-
-			identity, err := rpc.ProjectIdentities(ctx).Create(
-				ctx,
-				&projectidentity.ProjectIdentity{Project: "service-project", Email: "foo@bar.com"})
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, identity, should.NotBeNil)
+			identity := &projectidentity.ProjectIdentity{Project: "service-project", Email: "foo@bar.com"}
+			assert.NoErr(t, rpc.ProjectIdentities(ctx).Update(ctx, identity))
 
 			req := &minter.MintProjectTokenRequest{
 				LuciProject: "service-project",

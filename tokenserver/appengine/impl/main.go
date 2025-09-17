@@ -53,7 +53,7 @@ func Main(init func(srv *server.Server, services *Services) error) {
 	server.Main(nil, modules, func(srv *server.Server) error {
 		signer := auth.GetSigner(srv.Context)
 
-		adminSrv := adminsrv.NewServer(signer)
+		adminSrv := adminsrv.NewServer(signer, srv.Options.CloudProject)
 		adminSrv.ImportCAConfigsRPC.SetupConfigValidation(&validation.Rules)
 		adminSrv.ImportDelegationConfigsRPC.SetupConfigValidation(&validation.Rules)
 		adminSrv.ImportProjectIdentityConfigsRPC.SetupConfigValidation(&validation.Rules)

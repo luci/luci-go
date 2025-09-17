@@ -119,7 +119,7 @@ func TestValidation(t *testing.T) {
 
 				ctx := &validation.Context{Context: context.Background()}
 				ctx.SetFile(projectsCfg)
-				validateSingleIdentityProjectAssignment(ctx, cfg)
+				validateProjectsCfg(ctx, cfg, false)
 				verr := ctx.Finalize()
 
 				if len(cs.Errors) == 0 {

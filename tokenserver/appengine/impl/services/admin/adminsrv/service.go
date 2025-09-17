@@ -19,6 +19,8 @@
 package adminsrv
 
 import (
+	"strings"
+
 	"go.chromium.org/luci/server/auth/signing"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
@@ -44,7 +46,7 @@ type AdminServer struct {
 // NewServer returns prod AdminServer implementation.
 //
 // It assumes authorization has happened already.
-func NewServer(signer signing.Signer) *AdminServer {
+func NewServer(signer signing.Signer, cloudProject string) *AdminServer {
 	return &AdminServer{
 		ImportDelegationConfigsRPC: delegation.ImportDelegationConfigsRPC{
 			RulesCache: delegation.GlobalRulesCache,
@@ -55,7 +57,9 @@ func NewServer(signer signing.Signer) *AdminServer {
 		InspectMachineTokenRPC: machinetoken.InspectMachineTokenRPC{
 			Signer: signer,
 		},
-		ImportProjectIdentityConfigsRPC: projectscope.ImportProjectIdentityConfigsRPC{},
+		ImportProjectIdentityConfigsRPC: projectscope.ImportProjectIdentityConfigsRPC{
+			UseStagingEmail: strings.HasSuffix(cloudProject, "-dev"),
+		},
 		ImportProjectOwnedAccountsConfigsRPC: serviceaccounts.ImportProjectOwnedAccountsConfigsRPC{
 			MappingCache: serviceaccounts.GlobalMappingCache,
 		},

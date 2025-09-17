@@ -19,14 +19,11 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/appengine/gaetesting"
-	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	configset "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
 )
@@ -50,6 +47,7 @@ const fakeConfig = `
 		}
 		identity_config {
 			service_account_email: "bar@bar.com"
+			staging_service_account_email: "staging-bar@bar.com"
 		}
 	}
 `
@@ -57,29 +55,35 @@ const fakeConfig = `
 func TestRules(t *testing.T) {
 	t.Parallel()
 
-	ctx := auth.WithState(gaetesting.TestingContext(), &authtest.FakeState{
-		Identity: "user:unused@example.com",
-	})
-	storage := projectidentity.ProjectIdentities(ctx)
+	assertExpected := func(ctx context.Context, t *testing.T, expected map[string]string) {
+		storage := projectidentity.ProjectIdentities(ctx)
+		got := make(map[string]string, len(expected))
+		for project := range expected {
+			identity, err := storage.LookupByProject(ctx, project)
+			assert.NoErr(t, err)
+			got[project] = identity.Email
+		}
+		assert.That(t, got, should.Match(expected))
+	}
 
-	ftt.Run("Loads", t, func(t *ftt.Test) {
-		ctx = prepareCfg(ctx, fakeConfig)
-		_, err := ImportConfigs(ctx)
-		assert.Loosely(t, err, should.BeNil)
-
-		expected := map[string]string{
+	t.Run("ImportConfig prod", func(t *testing.T) {
+		ctx := prepareCfg(gaetesting.TestingContext(), fakeConfig)
+		_, err := ImportConfigs(ctx, false)
+		assert.NoErr(t, err)
+		assertExpected(ctx, t, map[string]string{
 			"id1": "foo@bar.com",
 			"id2": "bar@bar.com",
-		}
+		})
+	})
 
-		for project, email := range expected {
-			identity, err := storage.LookupByProject(ctx, project)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, identity, should.Resemble(&projectidentity.ProjectIdentity{
-				Project: project,
-				Email:   email,
-			}))
-		}
+	t.Run("ImportConfig staging", func(t *testing.T) {
+		ctx := prepareCfg(gaetesting.TestingContext(), fakeConfig)
+		_, err := ImportConfigs(ctx, true)
+		assert.NoErr(t, err)
+		assertExpected(ctx, t, map[string]string{
+			"id1": "foo@bar.com",
+			"id2": "staging-bar@bar.com",
+		})
 	})
 }
 

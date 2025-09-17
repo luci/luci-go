@@ -93,7 +93,7 @@ func TestMintServiceAccountToken(t *testing.T) {
 		use_project_scoped_account: "%s"
 	`, testProject, testAccount.Email(), testProjectScoped, realms.InternalProject))
 
-	_, err := projectidentity.ProjectIdentities(ctx).Create(ctx, &projectidentity.ProjectIdentity{
+	err := projectidentity.ProjectIdentities(ctx).Update(ctx, &projectidentity.ProjectIdentity{
 		Project: testProjectScoped,
 		Email:   "scoped@example.com",
 	})
@@ -356,9 +356,7 @@ func TestMintServiceAccountToken(t *testing.T) {
 		})
 
 		t.Run("Missing project-scoped identity", func(t *ftt.Test) {
-			assert.Loosely(t, projectidentity.ProjectIdentities(ctx).Delete(ctx, &projectidentity.ProjectIdentity{
-				Project: testProjectScoped,
-			}), should.BeNil)
+			assert.Loosely(t, projectidentity.ProjectIdentities(ctx).Delete(ctx, testProjectScoped), should.BeNil)
 			assert.Loosely(t, call(&minter.MintServiceAccountTokenRequest{
 				TokenKind:      minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
 				ServiceAccount: testAccount.Email(),

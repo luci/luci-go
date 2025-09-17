@@ -80,6 +80,11 @@ message IdentityConfig {
   // to become effective. Keep this in mind when migrating projects to a
   // new identity.
   string service_account_email = 1;
+
+  // Same as above, but used from the staging instance of LUCI Token Server.
+  //
+  // If unset, the staging instance will use `service_account_email`.
+  string staging_service_account_email = 2;
 }
 
 // Location is the source repo location where the configuration stores.

@@ -16,17 +16,16 @@ package projectidentity
 
 import (
 	"context"
-	"errors"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
-var (
-	// ErrNotFound indicates that the entity which was queried does not exist in the storage.
-	ErrNotFound = errors.New("not found")
-)
+// ErrNotFound indicates that the entity which was queried does not exist in
+// the storage.
+var ErrNotFound = errors.New("not found")
 
 // projectIdentities is the default storage for all scoped identities.
 var projectIdentities = &persistentStorage{}
@@ -38,76 +37,68 @@ func ProjectIdentities(_ context.Context) Storage {
 
 // Storage interface declares methods for the scoped identity storage.
 type Storage interface {
-
-	// Create an identity or update if it already exists.
-	Create(c context.Context, identity *ProjectIdentity) (*ProjectIdentity, error)
-
-	// Update an identity in the storage.
-	Update(c context.Context, identity *ProjectIdentity) (*ProjectIdentity, error)
-
-	// Delete an identity from the storage.
-	Delete(c context.Context, identity *ProjectIdentity) error
-
-	// LookupByProject performs a lookup by project name.
-	LookupByProject(c context.Context, project string) (*ProjectIdentity, error)
+	// Update updates an identity in the storage, creating it if necessary.
+	Update(ctx context.Context, ident *ProjectIdentity) error
+	// Delete removes an identity from the storage if it is there.
+	Delete(ctx context.Context, project string) error
+	// LookupByProject performs an identity lookup by project name.
+	LookupByProject(ctx context.Context, project string) (*ProjectIdentity, error)
 }
 
 // ProjectIdentity defines a scoped identity in the storage.
 type ProjectIdentity struct {
 	_kind   string `gae:"$kind,ScopedIdentity"`
 	Project string `gae:"$id"`
-	Email   string
+	Email   string `gae:",noindex"`
 }
 
-// persistentStorage implements ScopedIdentityManager.
-type persistentStorage struct {
-}
+// persistentStorage implements Storage.
+type persistentStorage struct{}
 
-// lookup reads an identity from the storage based on what fields are set in the identity struct.
-func (s *persistentStorage) lookup(c context.Context, identity *ProjectIdentity) (*ProjectIdentity, error) {
-	logging.Debugf(c, "lookup project scoped identity %v", identity)
-	tmp := *identity
-	if err := ds.Get(c, &tmp); err != nil {
-		switch {
-		case err == ds.ErrNoSuchEntity:
-			return nil, ErrNotFound
-		case err != nil:
-			return nil, transient.Tag.Apply(err)
-		}
+func lookup(ctx context.Context, project string) (*ProjectIdentity, error) {
+	ident := &ProjectIdentity{Project: project}
+	switch err := datastore.Get(ctx, ident); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, ErrNotFound
+	case err != nil:
+		return nil, transient.Tag.Apply(err)
+	default:
+		return ident, nil
 	}
-	return &tmp, nil
 }
 
 // LookupByProject returns the project identity stored for a given project.
-func (s *persistentStorage) LookupByProject(c context.Context, project string) (*ProjectIdentity, error) {
-	return s.lookup(c, &ProjectIdentity{Project: project})
+func (s *persistentStorage) LookupByProject(ctx context.Context, project string) (*ProjectIdentity, error) {
+	// Note: here and elsewhere we make sure to avoid accidentally reusing
+	// callers datastore transaction, since our usage of the datastore in the
+	// Storage interface implementation is an internal detail. There's no promise
+	// of supporting datastore transactions in the Storage interface contract.
+	return lookup(datastore.WithoutTransaction(ctx), project)
 }
 
 // Delete removes an identity from the storage.
-func (s *persistentStorage) Delete(c context.Context, identity *ProjectIdentity) error {
-	logging.Debugf(c, "delete project scoped identity %v", identity)
-	return ds.Delete(c, identity)
+func (s *persistentStorage) Delete(ctx context.Context, project string) error {
+	logging.Debugf(ctx, "Deleting project scoped identity for %q", project)
+	return transient.Tag.Apply(datastore.Delete(datastore.WithoutTransaction(ctx), &ProjectIdentity{
+		Project: project,
+	}))
 }
 
-// Create stores a new entry for a project identity.
-func (s *persistentStorage) Create(c context.Context, identity *ProjectIdentity) (*ProjectIdentity, error) {
-	logging.Debugf(c, "create project scoped identity %v", identity)
-	return s.Update(c, identity)
-}
-
-// Update allows an identity to be updated, e.g. when the service account email changes.
-func (s *persistentStorage) Update(c context.Context, identity *ProjectIdentity) (*ProjectIdentity, error) {
-	logging.Debugf(c, "update project scoped identity %v", identity)
-	tmp, err := s.lookup(c, identity)
-	switch {
-	case err == nil && *tmp == *identity: // Doesn't need update
-		return identity, nil
-	case err != nil && err != ErrNotFound: // Lookup error to propagate
-		return nil, err
-	}
-
-	if err := ds.Put(c, identity); err != nil {
-		return nil, err
-	}
-	return identity, nil
+// Update updates an identity in the storage, creating it if necessary.
+func (s *persistentStorage) Update(ctx context.Context, identity *ProjectIdentity) error {
+	return transient.Tag.Apply(datastore.RunInTransaction(datastore.WithoutTransaction(ctx), func(ctx context.Context) error {
+		switch cur, err := lookup(ctx, identity.Project); {
+		case err != nil && err != ErrNotFound:
+			return err
+		case err == nil && cur.Email == identity.Email:
+			return nil // already up to date
+		default:
+			if cur == nil {
+				logging.Infof(ctx, "Creating project scoped identity for %q (email = %q)", identity.Project, identity.Email)
+			} else {
+				logging.Infof(ctx, "Project scoped identity of %q has changed: %q => %q", identity.Project, cur.Email, identity.Email)
+			}
+			return datastore.Put(ctx, identity)
+		}
+	}, nil))
 }
