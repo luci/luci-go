@@ -110,12 +110,12 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
     pageToken: getPageToken(pagerCtx, searchParams),
     orderBy: orderByParam,
     filter: stringifiedSelectedOptions,
+    platform: platform,
   });
 
   const devicesQuery = useDevices(request);
 
   const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
-  const currentTasks = useCurrentTasks(devices);
   const columns = useMemo(
     () =>
       isDimensionsQueryProperlyLoaded
@@ -190,6 +190,11 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
     addWarning('Invalid filters');
     setSearchParams(filtersUpdater({}));
   }, [addWarning, selectedOptions.error, setSearchParams]);
+
+  const currentTasks = useCurrentTasks(devices, {
+    enabled:
+      platform === Platform.CHROMEOS || platform === Platform.UNSPECIFIED,
+  });
 
   return (
     <div

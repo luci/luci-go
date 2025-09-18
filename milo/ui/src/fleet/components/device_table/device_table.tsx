@@ -69,20 +69,49 @@ const computeSelectedRows = (
   return rows.filter((r) => selectedSet.has(r.id));
 };
 
-const getRow = (device: Device) =>
-  Object.fromEntries<string>([
-    ...Object.entries(BASE_DIMENSIONS).map<[string, string]>(([id, dim]) => [
-      id,
-      dim.getValue?.(device) ?? labelValuesToString([id]),
-    ]),
-    ...Object.entries(device.deviceSpec?.labels ?? {}).map<[string, string]>(
-      ([label, { values }]) => [
-        label,
-        COLUMN_OVERRIDES[label]?.getValue?.(device) ??
-          labelValuesToString(values),
-      ],
-    ),
-  ]);
+const getRow = (
+  platform: Platform,
+  currentTaskMap?: Map<string, string>,
+): ((device: Device) => GridRowModel) => {
+  switch (platform) {
+    case Platform.CHROMEOS:
+    case Platform.UNSPECIFIED:
+      return (device) =>
+        Object.fromEntries<string>([
+          ...Object.entries(BASE_DIMENSIONS).map(
+            ([id, dim]) =>
+              [
+                id,
+                dim.getValue?.(device) ?? labelValuesToString([id]),
+              ] as const,
+          ),
+          ...Object.entries(device.deviceSpec?.labels ?? {}).map(
+            ([label, { values }]) =>
+              [
+                label,
+                COLUMN_OVERRIDES[label]?.getValue?.(device) ??
+                  labelValuesToString(values),
+              ] as const,
+          ),
+          ['current_task', currentTaskMap?.get(extractDutId(device)) || ''],
+        ]);
+    case Platform.ANDROID:
+      return (device) =>
+        Object.fromEntries([
+          ['id', device.id],
+          ...Object.entries(device.deviceSpec?.labels ?? {}).map(
+            ([label, { values }]) =>
+              [
+                label,
+                COLUMN_OVERRIDES[label]?.getValue?.(device) ??
+                  labelValuesToString(values),
+              ] as const,
+          ),
+        ]);
+    case Platform.CHROMIUM:
+      return (_device) => ({}); // TODO;
+  }
+};
 
 const getOrderByFromSortModel = (sortModel: GridSortModel): string => {
   if (sortModel.length !== 1) {
@@ -152,12 +181,8 @@ export function DeviceTable({
   });
 
   const rows = useMemo(
-    () =>
-      devices.map((d) => ({
-        ...getRow(d),
-        current_task: currentTaskMap.get(extractDutId(d)) || '',
-      })),
-    [devices, currentTaskMap],
+    () => devices.map(getRow(platform, currentTaskMap)),
+    [currentTaskMap, devices, platform],
   );
 
   const onSortModelChange = (newSortModel: GridSortModel) => {

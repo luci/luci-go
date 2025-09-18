@@ -56,6 +56,7 @@ function mockSwarmingListBotsError(errorMessage: string) {
 
 describe('useCurrentTasks', () => {
   beforeEach(() => {
+    fetchMock.mockClear();
     mockFetchAuthState();
   });
 
@@ -121,7 +122,7 @@ describe('useCurrentTasks', () => {
     });
 
     // Use a function matcher to inspect the request body for the first chunk.
-    fetchMock.postOnce(
+    fetchMock.post(
       (url, opts) =>
         url === LIST_BOTS_ENDPOINT &&
         (opts.body as string).includes('"value":"dut-1|dut-2"'),
@@ -144,7 +145,7 @@ describe('useCurrentTasks', () => {
     });
 
     // Use a function matcher for the second chunk.
-    fetchMock.postOnce(
+    fetchMock.post(
       (url, opts) =>
         url === LIST_BOTS_ENDPOINT &&
         (opts.body as string).includes('"value":"dut-3"'),
@@ -156,18 +157,23 @@ describe('useCurrentTasks', () => {
       },
     );
 
-    const { result } = renderHook(() => useCurrentTasks(devices, chunkSize), {
-      wrapper: FakeContextProvider,
-    });
+    const { result } = renderHook(
+      () => useCurrentTasks(devices, { chunkSize }),
+      {
+        wrapper: FakeContextProvider,
+      },
+    );
 
     await waitFor(() => expect(result.current.isPending).toBe(false));
 
+    // Ensure two separate calls were made, since the hook can run multiple times we just check that it runs twice on each re-render
+    expect(fetchMock.calls().length % 2).toBe(0);
+    expect(result.current.error).toBeNull();
+    expect(result.current.isError).toBe(false);
     expect(result.current.map.size).toBe(3);
     expect(result.current.map.get('dut-1')).toBe('task-1');
     expect(result.current.map.get('dut-2')).toBe('task-2');
     expect(result.current.map.get('dut-3')).toBe('task-3');
-    expect(result.current.isError).toBe(false);
-    expect(fetchMock.calls().length).toBe(2); // Ensure two separate calls were made
   });
 
   it('should handle API errors gracefully', async () => {

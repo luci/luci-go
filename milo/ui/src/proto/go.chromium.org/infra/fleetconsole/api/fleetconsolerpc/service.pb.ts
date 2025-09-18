@@ -254,6 +254,7 @@ export interface ListDevicesRequest {
   readonly orderBy: string;
   /** See: AIP-160 (https://google.aip.dev/160) for the syntax */
   readonly filter: string;
+  readonly platform: Platform;
 }
 
 export interface ListDevicesResponse {
@@ -264,6 +265,7 @@ export interface ListDevicesResponse {
    * this field is omitted, there are no subsequent pages.
    */
   readonly nextPageToken: string;
+  readonly totalSize: number;
 }
 
 export interface DeviceSpec {
@@ -1527,7 +1529,7 @@ export const DeviceAddress: MessageFns<DeviceAddress> = {
 };
 
 function createBaseListDevicesRequest(): ListDevicesRequest {
-  return { pageSize: 0, pageToken: "", orderBy: "", filter: "" };
+  return { pageSize: 0, pageToken: "", orderBy: "", filter: "", platform: 0 };
 }
 
 export const ListDevicesRequest: MessageFns<ListDevicesRequest> = {
@@ -1543,6 +1545,9 @@ export const ListDevicesRequest: MessageFns<ListDevicesRequest> = {
     }
     if (message.filter !== "") {
       writer.uint32(34).string(message.filter);
+    }
+    if (message.platform !== 0) {
+      writer.uint32(40).int32(message.platform);
     }
     return writer;
   },
@@ -1586,6 +1591,14 @@ export const ListDevicesRequest: MessageFns<ListDevicesRequest> = {
           message.filter = reader.string();
           continue;
         }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.platform = reader.int32() as any;
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1601,6 +1614,7 @@ export const ListDevicesRequest: MessageFns<ListDevicesRequest> = {
       pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
       orderBy: isSet(object.orderBy) ? globalThis.String(object.orderBy) : "",
       filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+      platform: isSet(object.platform) ? platformFromJSON(object.platform) : 0,
     };
   },
 
@@ -1618,6 +1632,9 @@ export const ListDevicesRequest: MessageFns<ListDevicesRequest> = {
     if (message.filter !== "") {
       obj.filter = message.filter;
     }
+    if (message.platform !== 0) {
+      obj.platform = platformToJSON(message.platform);
+    }
     return obj;
   },
 
@@ -1630,12 +1647,13 @@ export const ListDevicesRequest: MessageFns<ListDevicesRequest> = {
     message.pageToken = object.pageToken ?? "";
     message.orderBy = object.orderBy ?? "";
     message.filter = object.filter ?? "";
+    message.platform = object.platform ?? 0;
     return message;
   },
 };
 
 function createBaseListDevicesResponse(): ListDevicesResponse {
-  return { devices: [], nextPageToken: "" };
+  return { devices: [], nextPageToken: "", totalSize: 0 };
 }
 
 export const ListDevicesResponse: MessageFns<ListDevicesResponse> = {
@@ -1645,6 +1663,9 @@ export const ListDevicesResponse: MessageFns<ListDevicesResponse> = {
     }
     if (message.nextPageToken !== "") {
       writer.uint32(18).string(message.nextPageToken);
+    }
+    if (message.totalSize !== 0) {
+      writer.uint32(24).int32(message.totalSize);
     }
     return writer;
   },
@@ -1672,6 +1693,14 @@ export const ListDevicesResponse: MessageFns<ListDevicesResponse> = {
           message.nextPageToken = reader.string();
           continue;
         }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.totalSize = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1685,6 +1714,7 @@ export const ListDevicesResponse: MessageFns<ListDevicesResponse> = {
     return {
       devices: globalThis.Array.isArray(object?.devices) ? object.devices.map((e: any) => Device.fromJSON(e)) : [],
       nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+      totalSize: isSet(object.totalSize) ? globalThis.Number(object.totalSize) : 0,
     };
   },
 
@@ -1696,6 +1726,9 @@ export const ListDevicesResponse: MessageFns<ListDevicesResponse> = {
     if (message.nextPageToken !== "") {
       obj.nextPageToken = message.nextPageToken;
     }
+    if (message.totalSize !== 0) {
+      obj.totalSize = Math.round(message.totalSize);
+    }
     return obj;
   },
 
@@ -1706,6 +1739,7 @@ export const ListDevicesResponse: MessageFns<ListDevicesResponse> = {
     const message = createBaseListDevicesResponse() as any;
     message.devices = object.devices?.map((e) => Device.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
+    message.totalSize = object.totalSize ?? 0;
     return message;
   },
 };

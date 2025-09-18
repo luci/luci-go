@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useQueries } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useQueries, useQueryClient } from '@tanstack/react-query';
+import _ from 'lodash';
+import { useEffect, useMemo } from 'react';
 
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { extractDutId } from '@/fleet/utils/devices';
@@ -43,24 +44,30 @@ export interface CurrentTasksResult {
  */
 export const useCurrentTasks = (
   devices: readonly Device[],
-  chunkSize: number = 25,
-  swarmingHost: string = DEVICE_TASKS_SWARMING_HOST,
+  options?: {
+    enabled?: boolean;
+    chunkSize?: number;
+    swarmingHost?: string;
+  },
 ): CurrentTasksResult => {
+  const {
+    chunkSize = 25,
+    swarmingHost = DEVICE_TASKS_SWARMING_HOST,
+    enabled = true,
+  } = options ?? {};
+
   const swarmingClient = useBotsClient(swarmingHost);
   const dutIds = useMemo(() => devices.map(extractDutId), [devices]);
 
   // 1. Chunk the input dutIds into smaller arrays.
-  const dutIdChunks = useMemo(() => {
-    const chunks: string[][] = [];
+  const dutIdChunks = useMemo(
     // Sort the IDs first to ensure chunks are stable for the same set of IDs.
-    const sortedDutIds = [...dutIds].sort();
-    for (let i = 0; i < sortedDutIds.length; i += chunkSize) {
-      chunks.push(sortedDutIds.slice(i, i + chunkSize));
-    }
-    return chunks;
-  }, [dutIds, chunkSize]);
+    () => _.chunk(_.sortBy(dutIds), chunkSize),
+    [dutIds, chunkSize],
+  );
 
   // 2. Use `useQueries` to create a separate query for each chunk.
+  const queryClient = useQueryClient();
   const queries = useQueries({
     queries: dutIdChunks.map((chunk) => {
       const dutIdsString = chunk.join('|');
@@ -76,9 +83,16 @@ export const useCurrentTasks = (
         },
         staleTime: 30000,
         refetchInterval: 60000,
+        enabled,
+        Client: queryClient,
       };
     }),
   });
+
+  useEffect(() => {
+    // if the query gets disable we should reset the state
+    queryClient.resetQueries();
+  }, [queryClient, enabled]);
 
   // 3. Aggregate the results from all queries into a single map and state.
   const map = new Map<string, string>();
