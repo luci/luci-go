@@ -142,7 +142,7 @@ func Analyze(c context.Context, client Client, cfa *model.CompileFailureAnalysis
 	datastore.Put(c, suspect)
 
 	// Update analysis record with completion status
-	genaiAnalysis.Status = pb.AnalysisStatus_FOUND
+	genaiAnalysis.Status = pb.AnalysisStatus_SUSPECTFOUND
 	genaiAnalysis.RunStatus = pb.AnalysisRunStatus_ENDED
 	genaiAnalysis.EndTime = clock.Now(c)
 
