@@ -37,6 +37,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 )
 
 func cmdBatch(p Params) *subcommands.Command {
@@ -115,7 +116,7 @@ func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands
 }
 
 // sendBatchReq sends the Batch request to Buildbucket and handles retries.
-func sendBatchReq(ctx context.Context, req *pb.BatchRequest, buildsClient pb.BuildsClient) (*pb.BatchResponse, error) {
+func sendBatchReq(ctx context.Context, req *pb.BatchRequest, buildsClient grpcpb.BuildsClient) (*pb.BatchResponse, error) {
 	res := &pb.BatchResponse{
 		Responses: make([]*pb.BatchResponse_Response, len(req.Requests)),
 	}

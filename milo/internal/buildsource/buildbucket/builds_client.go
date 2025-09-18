@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net/http"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 )
@@ -28,16 +28,16 @@ var buildsClientContextKey = "context key for builds client"
 
 // buildsClientFactory is a function that returns a buildbucket rpc builds
 // client.
-type buildsClientFactory func(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error)
+type buildsClientFactory func(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (bbgrpcpb.BuildsClient, error)
 
-func ProdBuildsClientFactory(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error) {
+func ProdBuildsClientFactory(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (bbgrpcpb.BuildsClient, error) {
 	t, err := auth.GetRPCTransport(c, as, opts...)
 	if err != nil {
 		return nil, err
 	}
 	rpcOpts := prpc.DefaultOptions()
 	rpcOpts.PerRPCTimeout = bbRPCTimeout
-	return buildbucketpb.NewBuildsPRPCClient(&prpc.Client{
+	return bbgrpcpb.NewBuildsClient(&prpc.Client{
 		C:       &http.Client{Transport: t},
 		Host:    host,
 		Options: rpcOpts,
@@ -50,7 +50,7 @@ func WithBuildsClientFactory(c context.Context, factory buildsClientFactory) con
 	return context.WithValue(c, &buildsClientContextKey, factory)
 }
 
-func BuildsClient(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error) {
+func BuildsClient(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (bbgrpcpb.BuildsClient, error) {
 	factory, ok := c.Value(&buildsClientContextKey).(buildsClientFactory)
 	if !ok {
 		return nil, fmt.Errorf("no buildbucket builds client factory found in context")

@@ -21,7 +21,7 @@ import (
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
 
-	pb "go.chromium.org/luci/buildbucket/proto"
+	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
 		redisconn.NewModuleFromFlags(),
 	}
 	server.Main(nil, mods, func(srv *server.Server) error {
-		pb.RegisterTaskBackendLiteServer(srv, NewTaskBackendLite())
+		grpcpb.RegisterTaskBackendLiteServer(srv, &TaskBackendLite{})
 		return nil
 	})
 }

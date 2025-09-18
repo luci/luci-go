@@ -15,11 +15,10 @@
 package rpc
 
 import (
-	pb "go.chromium.org/luci/buildbucket/proto"
+	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 )
 
-// Builds implements pb.BuildsServer.
-type Builds struct{}
-
-// Ensure Builds implements pb.BuildsServer.
-var _ pb.BuildsServer = &Builds{}
+// Builds implements BuildsServer.
+type Builds struct {
+	grpcpb.UnimplementedBuildsServer
+}

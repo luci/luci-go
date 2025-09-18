@@ -29,10 +29,12 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 )
 
 type searchStub struct {
-	pb.BuildsClient
+	grpcpb.BuildsClient
+
 	reqs         []*pb.SearchBuildsRequest
 	mu           sync.Mutex
 	searchBuilds func(context.Context, *pb.SearchBuildsRequest) (*pb.SearchBuildsResponse, error)

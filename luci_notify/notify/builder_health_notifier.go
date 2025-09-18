@@ -27,6 +27,7 @@ import (
 	"time"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	buildbucketgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -76,7 +77,7 @@ func notifyOwner(c context.Context, bhn []*notifypb.BuilderHealthNotifier, proje
 	if err != nil {
 		return err
 	}
-	bbclient := buildbucketpb.NewBuildersClient(&prpc.Client{
+	bbclient := buildbucketgrpcpb.NewBuildersClient(&prpc.Client{
 		C:       &http.Client{Transport: t},
 		Host:    BuildBucketHost,
 		Options: prpc.DefaultOptions(),
@@ -214,7 +215,7 @@ func sortBuildersByName(builders [][]BuilderInfo) {
 	}
 }
 
-func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifier, bbclient buildbucketpb.BuildersClient, project string) (map[string]*internal.EmailTask, error) {
+func getNotifyOwnersTasks(c context.Context, bhn []*notifypb.BuilderHealthNotifier, bbclient buildbucketgrpcpb.BuildersClient, project string) (map[string]*internal.EmailTask, error) {
 	tasks := make(map[string]*internal.EmailTask)
 	for _, builderHealthNotifier := range bhn {
 		email := builderHealthNotifier.OwnerEmail

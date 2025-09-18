@@ -33,6 +33,7 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	buildbucketgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -398,15 +399,15 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 	return transient.Tag.Apply(errors.WrapIf(err, "failed to save builder"))
 }
 
-func newBuildsClient(c context.Context, host, project string) (buildbucketpb.BuildsClient, error) {
-	if mockClient, ok := c.Value(&mockedBBClientKey).(*buildbucketpb.MockBuildsClient); ok {
+func newBuildsClient(c context.Context, host, project string) (buildbucketgrpcpb.BuildsClient, error) {
+	if mockClient, ok := c.Value(&mockedBBClientKey).(*buildbucketgrpcpb.MockBuildsClient); ok {
 		return mockClient, nil
 	}
 	t, err := auth.GetRPCTransport(c, auth.AsProject, auth.WithProject(project))
 	if err != nil {
 		return nil, err
 	}
-	return buildbucketpb.NewBuildsPRPCClient(&prpc.Client{
+	return buildbucketgrpcpb.NewBuildsClient(&prpc.Client{
 		C:    &http.Client{Transport: t},
 		Host: host,
 	}), nil

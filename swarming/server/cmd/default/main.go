@@ -28,7 +28,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	bbpb "go.chromium.org/luci/buildbucket/proto"
+	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -274,7 +274,7 @@ func main() {
 		swarminggrpcpb.RegisterSwarmingServer(srv, &rpcs.SwarmingServer{
 			ServerVersion: srv.Options.ImageVersion(),
 		})
-		bbpb.RegisterTaskBackendServer(srv, &rpcs.TaskBackend{
+		bbgrpcpb.RegisterTaskBackendServer(srv, &rpcs.TaskBackend{
 			BuildbucketTarget:       fmt.Sprintf("swarming://%s", srv.Options.CloudProject),
 			BuildbucketAccount:      *buildbucketServiceAccount,
 			DisableBuildbucketCheck: !srv.Options.Prod,

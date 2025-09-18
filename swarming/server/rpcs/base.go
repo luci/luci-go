@@ -26,7 +26,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
-	bbpb "go.chromium.org/luci/buildbucket/proto"
+	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -96,7 +96,7 @@ type TasksServer struct {
 
 // TaskBackend implements bbpb.TaskBackendServer.
 type TaskBackend struct {
-	bbpb.UnimplementedTaskBackendServer
+	bbgrpcpb.UnimplementedTaskBackendServer
 
 	// BuildbucketTarget is "swarming://<swarming-cloud-project>".
 	BuildbucketTarget string

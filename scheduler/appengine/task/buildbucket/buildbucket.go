@@ -34,6 +34,7 @@ import (
 
 	"go.chromium.org/luci/appengine/tq"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -292,7 +293,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 
 	// Send the request.
 	var build *bbpb.Build
-	err = m.withBuildbucket(c, ctl, func(ctx context.Context, bb bbpb.BuildsClient) (err error) {
+	err = m.withBuildbucket(c, ctl, func(ctx context.Context, bb bbgrpcpb.BuildsClient) (err error) {
 		build, err = bb.ScheduleBuild(ctx, request)
 		return
 	})
@@ -353,7 +354,7 @@ func (m TaskManager) AbortTask(c context.Context, ctl task.Controller) error {
 	}
 
 	// Ask Buildbucket to cancel this build.
-	err = m.withBuildbucket(c, ctl, func(ctx context.Context, bb bbpb.BuildsClient) error {
+	err = m.withBuildbucket(c, ctl, func(ctx context.Context, bb bbgrpcpb.BuildsClient) error {
 		_, err := bb.CancelBuild(ctx, &bbpb.CancelBuildRequest{
 			Id:              taskData.BuildID,
 			SummaryMarkdown: "Canceled via LUCI Scheduler",
@@ -429,7 +430,7 @@ func makeServerURL(s string) string {
 // withBuildbucket makes a Buildbucket Builds API client and calls the callback.
 //
 // The callback runs under a new context with 1 min deadline.
-func (m TaskManager) withBuildbucket(c context.Context, ctl task.Controller, cb func(context.Context, bbpb.BuildsClient) error) error {
+func (m TaskManager) withBuildbucket(c context.Context, ctl task.Controller, cb func(context.Context, bbgrpcpb.BuildsClient) error) error {
 	c, cancel := clock.WithTimeout(c, time.Minute)
 	defer cancel()
 
@@ -450,7 +451,7 @@ func (m TaskManager) withBuildbucket(c context.Context, ctl task.Controller, cb 
 		prpcClient.Host = cfg.Server
 	}
 
-	return cb(c, bbpb.NewBuildsClient(prpcClient))
+	return cb(c, bbgrpcpb.NewBuildsClient(prpcClient))
 }
 
 // checkBuildStatusLater schedules a delayed call to checkBuildStatus if the
@@ -494,7 +495,7 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 
 	// Fetch the build from Buildbucket.
 	var build *bbpb.Build
-	err = m.withBuildbucket(c, ctl, func(ctx context.Context, bb bbpb.BuildsClient) (err error) {
+	err = m.withBuildbucket(c, ctl, func(ctx context.Context, bb bbgrpcpb.BuildsClient) (err error) {
 		build, err = bb.GetBuild(ctx, &bbpb.GetBuildRequest{Id: taskData.BuildID})
 		return
 	})

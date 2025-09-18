@@ -35,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
@@ -43,17 +44,9 @@ const (
 	TopicIDFormat              = "taskbackendlite-%s"
 )
 
-// TaskBackendLite implements pb.TaskBackendLiteServer.
+// TaskBackendLite implements TaskBackendLiteServer.
 type TaskBackendLite struct {
-	pb.UnimplementedTaskBackendLiteServer
-}
-
-// Ensure TaskBackendLite implements pb.TaskBackendLiteServer.
-var _ pb.TaskBackendLiteServer = &TaskBackendLite{}
-
-// NewTaskBackendLite returns a new pb.BuildsServer.
-func NewTaskBackendLite() pb.TaskBackendLiteServer {
-	return &TaskBackendLite{}
+	grpcpb.UnimplementedTaskBackendLiteServer
 }
 
 // TaskNotification is to notify users about a task creation event.

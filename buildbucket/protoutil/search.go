@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 )
 
 // Search searches for builds continuously, sending findings to `buildC`
@@ -34,7 +35,7 @@ import (
 //
 // Search does not return a next page token because ctx can be canceled in the
 // middle of a page and because Search supports multiple requests.
-func Search(ctx context.Context, buildC chan<- *pb.Build, client pb.BuildsClient, requests ...*pb.SearchBuildsRequest) error {
+func Search(ctx context.Context, buildC chan<- *pb.Build, client grpcpb.BuildsClient, requests ...*pb.SearchBuildsRequest) error {
 	// Do not leave sub-goroutunes running.
 	var wg sync.WaitGroup
 	defer wg.Wait()
@@ -108,7 +109,7 @@ func Search(ctx context.Context, buildC chan<- *pb.Build, client pb.BuildsClient
 
 // searchBuilds is like Search, but does not implement union of search results.
 // Sent builds have ids.
-func searchBuilds(ctx context.Context, buildC chan<- *pb.Build, client pb.BuildsClient, req *pb.SearchBuildsRequest) error {
+func searchBuilds(ctx context.Context, buildC chan<- *pb.Build, client grpcpb.BuildsClient, req *pb.SearchBuildsRequest) error {
 	// Prepare a channel of responses, s.t. we make an RPC as soon as we started
 	// consuming the response, as opposed to after the response is completely
 	// consumed.
@@ -139,7 +140,7 @@ func searchBuilds(ctx context.Context, buildC chan<- *pb.Build, client pb.Builds
 // searchResponses pages through search results and sends search responses to
 // resC.
 // Builds in resC have ids.
-func searchResponses(ctx context.Context, resC chan<- *pb.SearchBuildsResponse, client pb.BuildsClient, req *pb.SearchBuildsRequest) error {
+func searchResponses(ctx context.Context, resC chan<- *pb.SearchBuildsResponse, client grpcpb.BuildsClient, req *pb.SearchBuildsRequest) error {
 	req = proto.Clone(req).(*pb.SearchBuildsRequest)
 
 	// Ensure next_page_token and build ID are requested.

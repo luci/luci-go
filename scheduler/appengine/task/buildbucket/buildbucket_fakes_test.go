@@ -19,6 +19,7 @@ import (
 	"net/http/httptest"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/router"
 )
@@ -32,7 +33,7 @@ type BuildbucketFake struct {
 }
 
 type fakeBuildsServer struct {
-	bbpb.UnimplementedBuildsServer
+	bbgrpcpb.UnimplementedBuildsServer
 
 	fake *BuildbucketFake
 }
@@ -54,7 +55,7 @@ func (bb *BuildbucketFake) Start() {
 
 	rpcs := &prpc.Server{}
 	rpcs.InstallHandlers(r, nil)
-	bbpb.RegisterBuildsServer(rpcs, &fakeBuildsServer{fake: bb})
+	bbgrpcpb.RegisterBuildsServer(rpcs, &fakeBuildsServer{fake: bb})
 
 	bb.srv = httptest.NewServer(r)
 }

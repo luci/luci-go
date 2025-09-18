@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	buildbucketgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -116,7 +117,7 @@ var summaryBuildsMask = &field_mask.FieldMask{
 }
 
 // getRelatedBuilds fetches build summaries of builds with the same buildset as b.
-func getRelatedBuilds(c context.Context, now *timestamppb.Timestamp, client buildbucketpb.BuildsClient, b *buildbucketpb.Build) ([]*ui.Build, error) {
+func getRelatedBuilds(c context.Context, now *timestamppb.Timestamp, client buildbucketgrpcpb.BuildsClient, b *buildbucketpb.Build) ([]*ui.Build, error) {
 	var bs []string
 	for _, buildset := range protoutil.BuildSets(b) {
 		// HACK(hinoka): Remove the commit/git/ buildsets because we know they're redundant
@@ -296,7 +297,7 @@ func RetryBuild(c context.Context, buildbucketID int64, requestID string) (*buil
 	})
 }
 
-func getBuildbucketBuildsClient(c context.Context) (buildbucketpb.BuildsClient, error) {
+func getBuildbucketBuildsClient(c context.Context) (buildbucketgrpcpb.BuildsClient, error) {
 	host, err := GetHost(c)
 	if err != nil {
 		return nil, err

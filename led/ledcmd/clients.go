@@ -17,7 +17,7 @@ package ledcmd
 import (
 	"net/http"
 
-	bbpb "go.chromium.org/luci/buildbucket/proto"
+	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/grpc/prpc"
 	swarminggrpcpb "go.chromium.org/luci/swarming/proto/api_v2/grpcpb"
 )
@@ -29,8 +29,8 @@ func newSwarmTasksClient(authClient *http.Client, host string) swarminggrpcpb.Ta
 	})
 }
 
-func newBuildbucketClient(authClient *http.Client, host string) bbpb.BuildsClient {
-	return bbpb.NewBuildsPRPCClient(&prpc.Client{
+func newBuildbucketClient(authClient *http.Client, host string) bbgrpcpb.BuildsClient {
+	return bbgrpcpb.NewBuildsClient(&prpc.Client{
 		C:    authClient,
 		Host: host,
 	})

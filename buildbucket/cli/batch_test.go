@@ -29,13 +29,14 @@ import (
 
 	"go.chromium.org/luci/buildbucket"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 )
 
 func TestSendBatchReq(t *testing.T) {
 	ftt.Run("SendBatchReq", t, func(t *ftt.Test) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
-		mockBBClient := pb.NewMockBuildsClient(ctl)
+		mockBBClient := grpcpb.NewMockBuildsClient(ctl)
 		ctx := context.Background()
 
 		build := &pb.Build{

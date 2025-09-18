@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/grpc/prpc"
 
 	"go.chromium.org/luci/analysis/internal/scopedauth"
@@ -49,7 +50,7 @@ func newBuildsClient(ctx context.Context, host, project string) (GetBuildsClient
 	if err != nil {
 		return nil, err
 	}
-	return bbpb.NewBuildsPRPCClient(
+	return bbgrpcpb.NewBuildsClient(
 		&prpc.Client{
 			C:       &http.Client{Transport: t},
 			Host:    host,

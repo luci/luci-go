@@ -34,7 +34,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
 
-	pb "go.chromium.org/luci/buildbucket/proto"
+	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
@@ -58,8 +58,8 @@ type baseCommandRun struct {
 	scheduleBuildToken string
 
 	httpClient     *http.Client
-	buildsClient   pb.BuildsClient
-	buildersClient pb.BuildersClient
+	buildsClient   grpcpb.BuildsClient
+	buildersClient grpcpb.BuildersClient
 }
 
 func (r *baseCommandRun) RegisterDefaultFlags(p Params) {
@@ -129,12 +129,12 @@ func (r *baseCommandRun) initClients(ctx context.Context, rFn retry.Factory) err
 		return err
 	}
 	rpcOpts.UserAgent = fmt.Sprintf("buildbucket CLI, instanceID=%q", info.InstanceID)
-	r.buildsClient = pb.NewBuildsPRPCClient(&prpc.Client{
+	r.buildsClient = grpcpb.NewBuildsClient(&prpc.Client{
 		C:       r.httpClient,
 		Host:    r.host,
 		Options: rpcOpts,
 	})
-	r.buildersClient = pb.NewBuildersPRPCClient(&prpc.Client{
+	r.buildersClient = grpcpb.NewBuildersClient(&prpc.Client{
 		C:       r.httpClient,
 		Host:    r.host,
 		Options: rpcOpts,

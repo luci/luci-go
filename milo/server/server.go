@@ -22,7 +22,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	bbgrpcbb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/api/gitiles"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/config/server/cfgmodule"
@@ -93,7 +93,7 @@ func CreateInternalService() *rpc.MiloInternalService {
 
 			return client, nil
 		},
-		GetBuildersClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (buildbucketpb.BuildersClient, error) {
+		GetBuildersClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (bbgrpcbb.BuildersClient, error) {
 			t, err := auth.GetRPCTransport(c, as)
 			if err != nil {
 				return nil, err
@@ -101,7 +101,7 @@ func CreateInternalService() *rpc.MiloInternalService {
 
 			rpcOpts := prpc.DefaultOptions()
 			rpcOpts.PerRPCTimeout = time.Minute - time.Second
-			return buildbucketpb.NewBuildersClient(&prpc.Client{
+			return bbgrpcbb.NewBuildersClient(&prpc.Client{
 				C:       &http.Client{Transport: t},
 				Host:    host,
 				Options: rpcOpts,

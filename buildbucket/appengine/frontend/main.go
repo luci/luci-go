@@ -57,7 +57,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/redirect"
 	"go.chromium.org/luci/buildbucket/appengine/rpc"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
-	pb "go.chromium.org/luci/buildbucket/proto"
+	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 
 	// Store auth sessions in the datastore.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
@@ -218,8 +218,8 @@ func main() {
 			}),
 		)
 
-		pb.RegisterBuildsServer(srv, &rpc.Builds{})
-		pb.RegisterBuildersServer(srv, &rpc.Builders{})
+		grpcpb.RegisterBuildsServer(srv, &rpc.Builds{})
+		grpcpb.RegisterBuildersServer(srv, &rpc.Builders{})
 
 		cron.RegisterHandler("delete_builds", buildcron.DeleteOldBuilds)
 		cron.RegisterHandler("expire_builds", buildcron.TimeoutExpiredBuilds)

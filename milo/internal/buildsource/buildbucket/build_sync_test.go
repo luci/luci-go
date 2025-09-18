@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	buildbucketgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
@@ -52,10 +53,10 @@ import (
 	"go.chromium.org/luci/milo/internal/projectconfig"
 )
 
-func newMockClient(c context.Context, t *testing.T) (context.Context, *gomock.Controller, *buildbucketpb.MockBuildsClient) {
+func newMockClient(c context.Context, t *testing.T) (context.Context, *gomock.Controller, *buildbucketgrpcpb.MockBuildsClient) {
 	ctrl := gomock.NewController(t)
-	client := buildbucketpb.NewMockBuildsClient(ctrl)
-	factory := func(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketpb.BuildsClient, error) {
+	client := buildbucketgrpcpb.NewMockBuildsClient(ctrl)
+	factory := func(c context.Context, host string, as auth.RPCAuthorityKind, opts ...auth.RPCOption) (buildbucketgrpcpb.BuildsClient, error) {
 		return client, nil
 	}
 	return WithBuildsClientFactory(c, factory), ctrl, client

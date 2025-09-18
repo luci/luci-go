@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	buildbucketgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -72,7 +73,7 @@ func TestListBuilders(t *testing.T) {
 			},
 		})
 		datastore.GetTestable(ctx).Consistent(true)
-		mockBuildersClient := buildbucketpb.NewMockBuildersClient(gomock.NewController(t))
+		mockBuildersClient := buildbucketgrpcpb.NewMockBuildersClient(gomock.NewController(t))
 		srv := &MiloInternalService{
 			GetSettings: func(c context.Context) (*configpb.Settings, error) {
 				return &configpb.Settings{
@@ -81,7 +82,7 @@ func TestListBuilders(t *testing.T) {
 					},
 				}, nil
 			},
-			GetBuildersClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (buildbucketpb.BuildersClient, error) {
+			GetBuildersClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (buildbucketgrpcpb.BuildersClient, error) {
 				return mockBuildersClient, nil
 			},
 		}

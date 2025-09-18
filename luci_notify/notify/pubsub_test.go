@@ -32,6 +32,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	buildbucketgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
@@ -857,7 +858,7 @@ func TestExtractBuild(t *testing.T) {
 
 			ctl := gomock.NewController(t)
 			defer ctl.Finish()
-			mc := buildbucketpb.NewMockBuildsClient(ctl)
+			mc := buildbucketgrpcpb.NewMockBuildsClient(ctl)
 			ctx = context.WithValue(ctx, &mockedBBClientKey, mc)
 			largeFields := &buildbucketpb.Build{
 				Input: &buildbucketpb.Build_Input{},

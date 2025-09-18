@@ -17,7 +17,7 @@ package rpc
 import (
 	"context"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/server/auth"
 
@@ -34,5 +34,5 @@ type MiloInternalService struct {
 
 	// GetBuildersClient returns a buildbucket builders service for the given
 	// context.
-	GetBuildersClient func(c context.Context, host string, as auth.RPCAuthorityKind) (buildbucketpb.BuildersClient, error)
+	GetBuildersClient func(c context.Context, host string, as auth.RPCAuthorityKind) (bbgrpcpb.BuildersClient, error)
 }

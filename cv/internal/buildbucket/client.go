@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 )
@@ -57,7 +58,7 @@ func (prpcClientFactory) MakeClient(ctx context.Context, host, luciProject strin
 	if err != nil {
 		return nil, err
 	}
-	return bbpb.NewBuildsPRPCClient(&prpc.Client{
+	return bbgrpcpb.NewBuildsClient(&prpc.Client{
 		C:    &http.Client{Transport: rt},
 		Host: host,
 	}), nil

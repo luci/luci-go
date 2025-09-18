@@ -24,6 +24,7 @@ import (
 	"github.com/golang/mock/gomock"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	buildbucketgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -38,7 +39,7 @@ import (
 	"go.chromium.org/luci/luci_notify/internal"
 )
 
-func mockUnhealthyResponse(mockBuildersClient *buildbucketpb.MockBuildersClient, builderName string) {
+func mockUnhealthyResponse(mockBuildersClient *buildbucketgrpcpb.MockBuildersClient, builderName string) {
 	expectedReq1 := &buildbucketpb.GetBuilderRequest{
 		Id: &buildbucketpb.BuilderID{
 			Project: "chromium",
@@ -63,7 +64,7 @@ func mockUnhealthyResponse(mockBuildersClient *buildbucketpb.MockBuildersClient,
 		}, nil)
 }
 
-func mockHealthyResponse(mockBuildersClient *buildbucketpb.MockBuildersClient, builderName string) {
+func mockHealthyResponse(mockBuildersClient *buildbucketgrpcpb.MockBuildersClient, builderName string) {
 	expectedReq1 := &buildbucketpb.GetBuilderRequest{
 		Id: &buildbucketpb.BuilderID{
 			Project: "chromium",
@@ -95,7 +96,7 @@ func TestNotifyOwnersHelper(t *testing.T) {
 
 		datastore.GetTestable(c).Consistent(true)
 		c = memlogger.Use(c)
-		mockBuildersClient := buildbucketpb.NewMockBuildersClient(gomock.NewController(t))
+		mockBuildersClient := buildbucketgrpcpb.NewMockBuildersClient(gomock.NewController(t))
 		c, sched := tq.TestingContext(c, nil)
 
 		mockBHN := []*notifypb.BuilderHealthNotifier{

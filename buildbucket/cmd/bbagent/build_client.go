@@ -40,6 +40,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 )
 
 // BuildsClient is a trimmed version of `bbpb.BuildsClient` which only
@@ -84,7 +85,7 @@ type liveBBClient struct {
 	buildToken string
 	// A START_BUILD token for agent to call StartBuild.
 	startBuildToken string
-	c               bbpb.BuildsClient
+	c               bbgrpcpb.BuildsClient
 	retryF          retry.Factory
 }
 
@@ -182,7 +183,7 @@ func newBuildsClientWithSecrets(ctx context.Context, hostname string, retryF ret
 	return &liveBBClient{
 		buildToken:      secrets.BuildToken,
 		startBuildToken: startBuildToken,
-		c:               bbpb.NewBuildsPRPCClient(prpcClient),
+		c:               bbgrpcpb.NewBuildsClient(prpcClient),
 		retryF:          retryF,
 	}, nil
 }

@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
@@ -37,8 +38,8 @@ const (
 // mockedBBClientKey is the context key indicates using mocked buildbucket client in tests.
 var mockedBBClientKey = "used in tests only for setting the mock buildbucket client"
 
-func newBuildsClient(ctx context.Context, host string) (bbpb.BuildsClient, error) {
-	if mockClient, ok := ctx.Value(&mockedBBClientKey).(*bbpb.MockBuildsClient); ok {
+func newBuildsClient(ctx context.Context, host string) (bbgrpcpb.BuildsClient, error) {
+	if mockClient, ok := ctx.Value(&mockedBBClientKey).(*bbgrpcpb.MockBuildsClient); ok {
 		return mockClient, nil
 	}
 
@@ -46,7 +47,7 @@ func newBuildsClient(ctx context.Context, host string) (bbpb.BuildsClient, error
 	if err != nil {
 		return nil, err
 	}
-	return bbpb.NewBuildsPRPCClient(
+	return bbgrpcpb.NewBuildsClient(
 		&prpc.Client{
 			C:       &http.Client{Transport: t},
 			Host:    host,
@@ -55,9 +56,9 @@ func newBuildsClient(ctx context.Context, host string) (bbpb.BuildsClient, error
 }
 
 // Client is the client to communicate with Buildbucket.
-// It wraps a bbpb.BuildsClient.
+// It wraps a bbgrpcpb.BuildsClient.
 type Client struct {
-	Client bbpb.BuildsClient
+	Client bbgrpcpb.BuildsClient
 }
 
 // NewClient creates a client to communicate with Buildbucket.

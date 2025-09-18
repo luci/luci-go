@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 )
 
 type contextKey string
@@ -51,7 +52,7 @@ func newRawTaskBackendClient(ctx context.Context, host string, project string) (
 	if err != nil {
 		return nil, err
 	}
-	return pb.NewTaskBackendPRPCClient(prpcClient), nil
+	return grpcpb.NewTaskBackendClient(prpcClient), nil
 }
 
 // GetBackendHost returns the backend's hostname from service config.
@@ -159,10 +160,10 @@ func NewTaskCreator(ctx context.Context, project, target string, globalCfg *pb.S
 	}
 	if isLite {
 		return &TaskCreatorClient{
-			client: pb.NewTaskBackendLitePRPCClient(prpcClient),
+			client: grpcpb.NewTaskBackendLiteClient(prpcClient),
 		}, nil
 	}
 	return &TaskCreatorClient{
-		client: pb.NewTaskBackendPRPCClient(prpcClient),
+		client: grpcpb.NewTaskBackendClient(prpcClient),
 	}, nil
 }
