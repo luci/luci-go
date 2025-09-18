@@ -155,6 +155,7 @@ func TestUpdateAnalysisStatus(t *testing.T) {
 
 		t.Run("Nthsection not found, heuristic not found", func(t *ftt.Test) {
 			cfa := createCompileFailureAnalysisModel(c, t, 1016)
+			createGenAIAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
 			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
 			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
 			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
@@ -162,6 +163,7 @@ func TestUpdateAnalysisStatus(t *testing.T) {
 
 		t.Run("Heuristic not found, nth section running", func(t *ftt.Test) {
 			cfa := createCompileFailureAnalysisModel(c, t, 1017)
+			createGenAIAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
 			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
 			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
@@ -169,6 +171,7 @@ func TestUpdateAnalysisStatus(t *testing.T) {
 
 		t.Run("Heuristic running, nth section not found", func(t *ftt.Test) {
 			cfa := createCompileFailureAnalysisModel(c, t, 1019)
+			createGenAIAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
 			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
 			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
@@ -176,6 +179,7 @@ func TestUpdateAnalysisStatus(t *testing.T) {
 
 		t.Run("No heuristic, nthsection suspect found, run finished, verification schedule", func(t *ftt.Test) {
 			cfa := createCompileFailureAnalysisModel(c, t, 1020)
+			createGenAIAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
 			nsa := createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
 			suspect := &model.Suspect{
 				ParentAnalysis:     datastore.KeyForObj(c, nsa),
@@ -184,6 +188,20 @@ func TestUpdateAnalysisStatus(t *testing.T) {
 			assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
+		})
+
+		t.Run("Heuristic, GenAI, nthsection all run, GenAI find the suspect first", func(t *ftt.Test) {
+			cfa := createCompileFailureAnalysisModel(c, t, 1021)
+			createHeuristicAnalysis(c, t, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
+			ga := createGenAIAnalysis(c, t, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+			createNthSectionAnalysis(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			suspect := &model.Suspect{
+				ParentAnalysis:     datastore.KeyForObj(c, ga),
+				VerificationStatus: model.SuspectVerificationStatus_UnderVerification,
+			}
+			assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+			checkUpdateAnalysisStatus(c, t, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 		})
 	})
 }
@@ -302,6 +320,18 @@ func createNthSectionAnalysis(c context.Context, t testing.TB, cfa *model.Compil
 	assert.Loosely(t, datastore.Put(c, nsa), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 	return nsa
+}
+
+func createGenAIAnalysis(c context.Context, t testing.TB, cfa *model.CompileFailureAnalysis, status pb.AnalysisStatus, runStatus pb.AnalysisRunStatus) *model.CompileGenAIAnalysis {
+	t.Helper()
+	ga := &model.CompileGenAIAnalysis{
+		ParentAnalysis: datastore.KeyForObj(c, cfa),
+		Status:         status,
+		RunStatus:      runStatus,
+	}
+	assert.Loosely(t, datastore.Put(c, ga), should.BeNil, truth.LineContext())
+	datastore.GetTestable(c).CatchupIndexes()
+	return ga
 }
 
 func createUnfinishedRerun(c context.Context, t testing.TB, cfa *model.CompileFailureAnalysis) {

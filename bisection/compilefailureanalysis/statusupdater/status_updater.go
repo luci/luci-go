@@ -33,7 +33,11 @@ func UpdateAnalysisStatus(c context.Context, cfa *model.CompileFailureAnalysis) 
 		return UpdateStatus(c, cfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
 	}
 
-	// Fetch heuristic and nthsection analysis
+	// Fetch genai, heuristic and nthsection analysis
+	ga, err := datastoreutil.GetGenAIAnalysis(c, cfa)
+	if err != nil {
+		return errors.Fmt("couldn't fetch genai analysis of analysis %d: %w", cfa.Id, err)
+	}
 	ha, err := datastoreutil.GetHeuristicAnalysis(c, cfa)
 	if err != nil {
 		return errors.Fmt("couldn't fetch heuristic analysis of analysis %d: %w", cfa.Id, err)
@@ -100,7 +104,7 @@ func UpdateAnalysisStatus(c context.Context, cfa *model.CompileFailureAnalysis) 
 	}
 
 	// No suspect -> either in progress or notfound
-	if ha.Status == pb.AnalysisStatus_NOTFOUND && nsa.Status == pb.AnalysisStatus_NOTFOUND {
+	if ha.Status == pb.AnalysisStatus_NOTFOUND && ga.Status == pb.AnalysisStatus_NOTFOUND && nsa.Status == pb.AnalysisStatus_NOTFOUND {
 		return UpdateStatus(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
 	}
 	return UpdateStatus(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
