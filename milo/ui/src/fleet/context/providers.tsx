@@ -38,7 +38,10 @@ export function LocalStoragePersistClientProvider({
         persister: localStoragePersister,
         dehydrateOptions: {
           shouldDehydrateQuery: (query) => {
-            return query.queryKey.includes('persist-local-storage');
+            return (
+              query.queryKey.includes('persist-local-storage') &&
+              query.state.status === 'success'
+            );
           },
         },
       }}
