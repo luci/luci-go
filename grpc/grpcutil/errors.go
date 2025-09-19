@@ -188,6 +188,30 @@ func IsTransientCode(code codes.Code) bool {
 //	  defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 //	  ...
 //	}
+//
+// Unfortunately, the way that we typically use errors (i.e. by tagging them
+// with a code somewhere deep in the stack, adding context as we go back up the
+// stack, then returning them from the handler) is in opposition to the way that
+// the grpc status library works - specifically status.X will not wrap the
+// provided error, it will just render it to a string and return a new
+// status.Error object which doesn't implement errors.Unwrap. This means that
+// stack tagging, transient tagging, etc. are all lost at the point where the
+// error is 'cooked' into a gRPC error.
+//
+// NOTE: It might be tempting to do GRPCifyAndLogErr as a gRPC interceptor,
+// however, doing so would make your handlers [out of spec] with regard to the
+// way that gRPC error handling. Specifically, gRPC error handlers are meant to
+// return `status` based errors (the kind that GRPCifyAndLogErr returns). By
+// putting GRPCifyAndLogErr in an interceptor, it would mean that your handlers
+// return non-compliant errors which are then fixed somewhere in the interceptor
+// stack.
+//
+// This problem is compounded if your interceptors rely on this property of the
+// error - if someone accidentally adds an interceptor after the one calling
+// GRPCifyAndLogErr, it will see non-compliant errors, and possibly make the
+// wrong decision based on their code.
+//
+// [out of spec]: https://grpc.io/docs/guides/error/
 func GRPCifyAndLogErr(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
