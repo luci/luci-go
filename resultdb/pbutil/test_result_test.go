@@ -938,12 +938,12 @@ func TestValidateTestResult(t *testing.T) {
 					msg.SkippedReason.ReasonMessage = ""
 				})
 				t.Run("invalid UTF-8", func(t *ftt.Test) {
-					msg.SkippedReason.ReasonMessage = "some test.\x00"
-					assert.Loosely(t, validateTR(msg), should.ErrLike("skipped_reason: reason_message: non-printable rune '\\x00' at byte index 10"))
+					msg.SkippedReason.ReasonMessage = "some test.\xFF"
+					assert.Loosely(t, validateTR(msg), should.ErrLike("skipped_reason: reason_message: is not valid UTF-8"))
 				})
 				t.Run("too long", func(t *ftt.Test) {
 					msg.SkippedReason.ReasonMessage = strings.Repeat("a", 1025)
-					assert.Loosely(t, validateTR(msg), should.ErrLike("skipped_reason: reason_message: longer than 1024 bytes"))
+					assert.Loosely(t, validateTR(msg), should.ErrLike("skipped_reason: reason_message: exceeds the maximum size of 1024 bytes"))
 				})
 				t.Run("required for OTHER", func(t *ftt.Test) {
 					msg.SkippedReason.Kind = pb.SkippedReason_OTHER
@@ -954,6 +954,26 @@ func TestValidateTestResult(t *testing.T) {
 					msg.SkippedReason.Kind = pb.SkippedReason_DEMOTED
 					msg.SkippedReason.ReasonMessage = ""
 					assert.Loosely(t, validateTR(msg), should.ErrLike("skipped_reason: reason_message: must be set when skipped reason kind is DEMOTED"))
+				})
+			})
+			t.Run("trace", func(t *ftt.Test) {
+				t.Run("valid", func(t *ftt.Test) {
+					msg.SkippedReason.Trace = `org.junit.AssumptionViolatedException: some message
+							at org.junit.Assume.assumeTrue(Assume.java:68)
+							at com.example.MyTest.myTest(MyTest.java:456)`
+					assert.Loosely(t, validateTR(msg), should.BeNil)
+				})
+				t.Run("may be empty", func(t *ftt.Test) {
+					msg.SkippedReason.Trace = ``
+					assert.Loosely(t, validateTR(msg), should.BeNil)
+				})
+				t.Run("invalid UTF-8", func(t *ftt.Test) {
+					msg.SkippedReason.Trace = "some test.\xFF"
+					assert.Loosely(t, validateTR(msg), should.ErrLike("skipped_reason: trace: is not valid UTF-8"))
+				})
+				t.Run("too long", func(t *ftt.Test) {
+					msg.SkippedReason.Trace = strings.Repeat("a", 4097)
+					assert.Loosely(t, validateTR(msg), should.ErrLike("skipped_reason: trace: exceeds the maximum size of 4096 bytes"))
 				})
 			})
 		})

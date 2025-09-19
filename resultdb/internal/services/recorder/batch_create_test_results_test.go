@@ -643,6 +643,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 				req.Requests[0].TestResult.SkippedReason = &pb.SkippedReason{
 					Kind:          pb.SkippedReason_DISABLED_AT_DECLARATION,
 					ReasonMessage: "An explanatory message.",
+					Trace:         "Some stack trace\nMore stack trace",
 				}
 
 				expected[0].StatusV2 = pb.TestResult_SKIPPED
@@ -651,6 +652,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 				expected[0].SkippedReason = &pb.SkippedReason{
 					Kind:          pb.SkippedReason_DISABLED_AT_DECLARATION,
 					ReasonMessage: "An explanatory message.",
+					Trace:         "Some stack trace\nMore stack trace",
 				}
 				createTestResults(req, expected)
 			})

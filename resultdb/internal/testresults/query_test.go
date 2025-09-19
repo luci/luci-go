@@ -713,8 +713,14 @@ func TestToLimitedData(t *testing.T) {
 				Kind:                pb.FailureReason_CRASH,
 				PrimaryErrorMessage: "an error message",
 				Errors: []*pb.FailureReason_Error{
-					{Message: "an error message"},
-					{Message: "an error message2"},
+					{
+						Message: "an error message",
+						Trace:   "Some stack trace\nMore stack trace",
+					},
+					{
+						Message: "an error message2",
+						Trace:   "Some stack trace\nMore stack trace",
+					},
 				},
 				TruncatedErrorsCount: 0,
 			},
@@ -727,6 +733,7 @@ func TestToLimitedData(t *testing.T) {
 			SkippedReason: &pb.SkippedReason{
 				Kind:          pb.SkippedReason_DISABLED_AT_DECLARATION,
 				ReasonMessage: "skip reason",
+				Trace:         "Some stack trace\nMore stack trace",
 			},
 			FrameworkExtensions: &pb.FrameworkExtensions{
 				WebTest: &pb.WebTest{
@@ -781,8 +788,7 @@ func TestToLimitedData(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, testResult, should.Match(expected))
 		})
-
-		t.Run(`truncates primary error message`, func(t *ftt.Test) {
+		t.Run(`truncates error message`, func(t *ftt.Test) {
 			testResult.FailureReason = &pb.FailureReason{
 				PrimaryErrorMessage: strings.Repeat("a very long error message", 10),
 				Errors: []*pb.FailureReason_Error{
@@ -809,6 +815,22 @@ func TestToLimitedData(t *testing.T) {
 					{Message: limitedLongErrMsg2},
 				},
 				TruncatedErrorsCount: 0,
+			}
+
+			err := ToLimitedData(ctx, testResult)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, testResult, should.Match(expected))
+		})
+		t.Run(`truncates skip reason`, func(t *ftt.Test) {
+			testResult.SkippedReason = &pb.SkippedReason{
+				ReasonMessage: strings.Repeat("a very long skip reason", 10),
+				Trace:         "Some stack trace\nMore stack trace",
+			}
+
+			limitedLongSkipReason := strings.Repeat("a very long skip reason",
+				10)[:limitedReasonLength] + "..."
+			expected.SkippedReason = &pb.SkippedReason{
+				ReasonMessage: limitedLongSkipReason,
 			}
 
 			err := ToLimitedData(ctx, testResult)

@@ -41,11 +41,13 @@ const (
 	// validly formed Variant Hash.
 	variantHashRePattern = `[0-9a-f]{16}`
 	// maxLenSummaryHTML is the maximum length of summary HTML.
-	maxLenSummaryHTML         = 4 * 1024
-	maxLenPrimaryErrorMessage = 1024
-	maxLenPrimaryErrorTrace   = 4096
-	maxSizeErrors             = 16 * 1024
-	maxLenPropertiesSchema    = 256
+	maxLenSummaryHTML      = 4 * 1024
+	maxLenErrorMessage     = 1024
+	maxLenErrorTrace       = 4096
+	maxLenSkipReason       = 1024
+	maxLenSkipTrace        = 4096
+	maxSizeErrors          = 16 * 1024
+	maxLenPropertiesSchema = 256
 	// maxClockSkew is the maximum amount of time that clocks could have been out of sync for.
 	maxClockSkew = 10 * time.Minute
 )
@@ -439,9 +441,9 @@ func ValidateFailureReason(fr *pb.FailureReason, useStrictValidation bool) error
 			return errors.New("primary_error_message: must not be set when status_v2 is set; set errors instead")
 		}
 	} else {
-		if len(fr.PrimaryErrorMessage) > maxLenPrimaryErrorMessage {
+		if len(fr.PrimaryErrorMessage) > maxLenErrorMessage {
 			return errors.Fmt("primary_error_message: exceeds the maximum "+
-				"size of %d bytes", maxLenPrimaryErrorMessage)
+				"size of %d bytes", maxLenErrorMessage)
 		}
 	}
 
@@ -485,13 +487,13 @@ func ValidateFailureReasonKind(k pb.FailureReason_Kind) error {
 
 // ValidateFailureReasonError returns a non-nil error if e is invalid.
 func ValidateFailureReasonError(e *pb.FailureReason_Error, useStrictValidation bool) error {
-	if len(e.Message) > maxLenPrimaryErrorMessage {
+	if len(e.Message) > maxLenErrorMessage {
 		return errors.Fmt("message: exceeds the maximum size of %d bytes",
-			maxLenPrimaryErrorMessage)
+			maxLenErrorMessage)
 	}
-	if len(e.Trace) > maxLenPrimaryErrorTrace {
+	if len(e.Trace) > maxLenErrorTrace {
 		return errors.Fmt("trace: exceeds the maximum size of %d bytes",
-			maxLenPrimaryErrorTrace)
+			maxLenErrorTrace)
 	}
 	if useStrictValidation {
 		if e.Message == "" {
@@ -520,8 +522,25 @@ func ValidateSkippedReason(sr *pb.SkippedReason) error {
 	if err := ValidateSkippedReasonKind(sr.Kind); err != nil {
 		return errors.Fmt("kind: %w", err)
 	}
-	if err := ValidateUTF8Printable(sr.ReasonMessage, 1024, ValidationModeLoose); err != nil {
-		return errors.Fmt("reason_message: %w", err)
+	if len(sr.ReasonMessage) > maxLenSkipReason {
+		return errors.Fmt("reason_message: exceeds the maximum size of %d bytes",
+			maxLenSkipReason)
+	}
+	if len(sr.Trace) > maxLenSkipTrace {
+		return errors.Fmt("trace: exceeds the maximum size of %d bytes",
+			maxLenSkipTrace)
+	}
+
+	// We try not to be too pedantic about skipped reasons as they can
+	// come from raw logs where programs dump random bytes. So we do not enforce
+	// 100% printability or Normalisation Form C.
+	// However, we do require it to be valid UTF-8 as this is a requirement
+	// of all strings passed by proto.
+	if !utf8.ValidString(sr.ReasonMessage) {
+		return errors.New("reason_message: is not valid UTF-8")
+	}
+	if !utf8.ValidString(sr.Trace) {
+		return errors.New("trace: is not valid UTF-8")
 	}
 	if (sr.Kind == pb.SkippedReason_OTHER || sr.Kind == pb.SkippedReason_DEMOTED) && sr.ReasonMessage == "" {
 		return errors.Fmt("reason_message: must be set when skipped reason kind is %s", sr.Kind)

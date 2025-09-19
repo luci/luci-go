@@ -210,7 +210,9 @@ func TestQueryTestVariants(t *testing.T) {
 								FailureReason: &pb.FailureReason{
 									Kind:                pb.FailureReason_ORDINARY,
 									PrimaryErrorMessage: "failure reason",
-									Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
+									Errors: []*pb.FailureReason_Error{{
+										Message: "failure reason",
+									}},
 								},
 								FrameworkExtensions: fx,
 								IsMasked:            true,
@@ -247,7 +249,10 @@ func TestQueryTestVariants(t *testing.T) {
 								FailureReason: &pb.FailureReason{
 									Kind:                pb.FailureReason_ORDINARY,
 									PrimaryErrorMessage: "failure reason",
-									Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
+									Errors: []*pb.FailureReason_Error{{
+										Message: "failure reason",
+										Trace:   "trace",
+									}},
 								},
 								Tags: tags,
 								Properties: &structpb.Struct{Fields: map[string]*structpb.Value{

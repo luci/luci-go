@@ -91,7 +91,10 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 							FailureReason: &pb.FailureReason{
 								Kind:                pb.FailureReason_ORDINARY,
 								PrimaryErrorMessage: "failure reason",
-								Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
+								Errors: []*pb.FailureReason_Error{{
+									Message: "failure reason",
+									Trace:   "trace",
+								}},
 							},
 							Properties:          properties,
 							FrameworkExtensions: fx,

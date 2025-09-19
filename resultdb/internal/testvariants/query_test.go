@@ -785,7 +785,10 @@ func TestQueryTestVariants(t *testing.T) {
 								Kind:                pb.FailureReason_ORDINARY,
 								PrimaryErrorMessage: "failure reason",
 								Errors: []*pb.FailureReason_Error{
-									{Message: "failure reason"},
+									{
+										Message: "failure reason",
+										Trace:   "trace",
+									},
 								},
 								TruncatedErrorsCount: 0,
 							},
@@ -836,7 +839,10 @@ func TestQueryTestVariants(t *testing.T) {
 							FailureReason: &pb.FailureReason{
 								Kind: pb.FailureReason_ORDINARY,
 								Errors: []*pb.FailureReason_Error{
-									{Message: "failure reason"},
+									{
+										Message: "failure reason",
+										Trace:   "trace",
+									},
 								},
 								PrimaryErrorMessage: "failure reason",
 							},

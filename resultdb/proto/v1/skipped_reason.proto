@@ -84,10 +84,26 @@ message SkippedReason {
   //
   // For SKIPPED_BY_TEST_BODY, useful information would be:
   // - For JUnit, the JUnit assumption failure that led to the skip.
+  //   (Include the message and the file name/line number
+  //   that had the assert here, but leave the full stack trace
+  //   for the field `trace`).
+  //   E.g. `MyTest.java(456): some message`
   // - For GoogleTest, the file and line where the GTEST_SKIP() macro was
   //   invoked and the message passed to it.
   //
   // For DEMOTED and OTHER, the criteria that led to the skip
   // and how the user might get the test running again.
   string reason_message = 2;
+
+  // A stack trace associated with the decision to skip, if applicable.
+  // This is primarily intended for use with SKIPPED_BY_TEST_BODY,
+  // where the test framework is capable of providing a stack trace.
+  //
+  // A size limit of 4096 bytes (UTF-8) applies to this field. If no
+  // stack trace is available, leave blank.
+  //
+  // E.g. `org.junit.AssumptionViolatedException: some message
+  //      at org.junit.Assume.assumeTrue(Assume.java:68)
+  //      at com.example.MyTest.myTest(MyTest.java:456)`
+  string trace = 3;
 }

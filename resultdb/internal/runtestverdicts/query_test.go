@@ -96,7 +96,10 @@ func TestQuery(t *testing.T) {
 							FailureReason: &pb.FailureReason{
 								Kind:                pb.FailureReason_ORDINARY,
 								PrimaryErrorMessage: "failure reason",
-								Errors:              []*pb.FailureReason_Error{{Message: "failure reason"}},
+								Errors: []*pb.FailureReason_Error{{
+									Message: "failure reason",
+									Trace:   "trace",
+								}},
 							},
 							Tags:                tags,
 							Properties:          properties,
@@ -140,6 +143,7 @@ func TestQuery(t *testing.T) {
 							SkippedReason: &pb.SkippedReason{
 								Kind:          pb.SkippedReason_DEMOTED,
 								ReasonMessage: "skip reason",
+								Trace:         "trace",
 							},
 							FrameworkExtensions: fx,
 						},

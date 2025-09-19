@@ -340,7 +340,10 @@ func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestRes
 				Kind:                pb.FailureReason_ORDINARY,
 				PrimaryErrorMessage: "failure reason",
 				Errors: []*pb.FailureReason_Error{
-					{Message: "failure reason"},
+					{
+						Message: "failure reason",
+						Trace:   "trace",
+					},
 				},
 			}
 		}
@@ -349,6 +352,7 @@ func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestRes
 			skippedReason = &pb.SkippedReason{
 				Kind:          pb.SkippedReason_DEMOTED,
 				ReasonMessage: "skip reason",
+				Trace:         "trace",
 			}
 		}
 

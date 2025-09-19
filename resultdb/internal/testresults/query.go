@@ -541,22 +541,26 @@ func ToLimitedData(ctx context.Context, tr *pb.TestResult) error {
 	}
 
 	if tr.FailureReason != nil {
-		tr.FailureReason.PrimaryErrorMessage = truncateErrorMessage(
+		tr.FailureReason.PrimaryErrorMessage = truncateMessage(
 			tr.FailureReason.PrimaryErrorMessage, limitedReasonLength)
 
 		for i := range tr.FailureReason.Errors {
-			tr.FailureReason.Errors[i].Message = truncateErrorMessage(
+			tr.FailureReason.Errors[i].Message = truncateMessage(
 				tr.FailureReason.Errors[i].Message, limitedReasonLength)
+			tr.FailureReason.Errors[i].Trace = ""
 		}
+	}
+	if tr.SkippedReason != nil {
+		tr.SkippedReason.ReasonMessage = truncateMessage(tr.SkippedReason.ReasonMessage, limitedReasonLength)
+		tr.SkippedReason.Trace = ""
 	}
 
 	tr.IsMasked = true
 	return nil
 }
 
-// truncateErrorMessage truncates the error message if its length exceeds the
-// limit.
-func truncateErrorMessage(errorMessage string, maxLength int) string {
+// truncateMessage truncates the message if its length exceeds the limit.
+func truncateMessage(errorMessage string, maxLength int) string {
 	if len(errorMessage) <= maxLength {
 		return errorMessage
 	}
