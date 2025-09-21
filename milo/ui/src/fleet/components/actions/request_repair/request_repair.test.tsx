@@ -33,7 +33,7 @@ describe('<RequestRepair />', () => {
     const selectedDuts: DutToRepair[] = [
       {
         name: 'dut1',
-        dutId: '123',
+        dutId: 'dut1',
         state: 'needs_manual_repair',
         board: 'board1',
         model: 'model1',
@@ -41,11 +41,27 @@ describe('<RequestRepair />', () => {
       },
       {
         name: 'dut2',
-        dutId: '456',
+        dutId: 'dut2',
         state: 'needs_manual_repair',
         board: 'board2',
         model: 'model2',
         pool: 'pool2',
+      },
+      {
+        name: 'dut3',
+        dutId: 'dut3',
+        state: 'ready',
+        board: 'board3',
+        model: 'model3',
+        pool: 'pool3',
+      },
+      {
+        name: 'dut4',
+        dutId: 'dut4',
+        state: 'repair_failed',
+        board: 'board4',
+        model: 'model4',
+        pool: 'pool4',
       },
     ];
 
@@ -59,10 +75,12 @@ describe('<RequestRepair />', () => {
     const dutInfo = [
       ' * http://go/fcdut/dut1 (Location: <Please add if known>, Board: board1, Model: model1, Pool: pool1)',
       ' * http://go/fcdut/dut2 (Location: <Please add if known>, Board: board2, Model: model2, Pool: pool2)',
+      ' * http://go/fcdut/dut3 (Location: <Please add if known>, Board: board3, Model: model3, Pool: pool3)',
+      ' * http://go/fcdut/dut4 (Location: <Please add if known>, Board: board4, Model: model4, Pool: pool4)',
     ];
     const expectedDescription = generateIssueDescription(dutInfo.join('\n'));
     const title = encodeURIComponent(
-      `[Location Unknown][Repair][board1.model1] Pool: [pool1] [dut1] and 1 more`,
+      `[Location Unknown][Repair][board1.model1] Pool: [pool1] [dut1] and 3 more`,
     );
 
     const finalUrl = `http://b/issues/new?markdown=true&component=575445&template=1509031&title=${title}&description=${expectedDescription}`;
@@ -73,48 +91,6 @@ describe('<RequestRepair />', () => {
     {
       case: 'no DUTs are selected',
       duts: [] as DutToRepair[],
-    },
-    {
-      case: 'not all DUTs need manual repair',
-      duts: [
-        {
-          name: 'dut1',
-          dutId: '123',
-          state: 'needs_manual_repair',
-          board: 'board1',
-          model: 'model1',
-          pool: 'pool1',
-        },
-        {
-          name: 'dut2',
-          dutId: '456',
-          state: 'ready',
-          board: 'board2',
-          model: 'model2',
-          pool: 'pool2',
-        },
-      ] as DutToRepair[],
-    },
-    {
-      case: 'all DUTs are in a different state',
-      duts: [
-        {
-          name: 'dut1',
-          dutId: '123',
-          state: 'ready',
-          board: 'board1',
-          model: 'model1',
-          pool: 'pool1',
-        },
-        {
-          name: 'dut2',
-          dutId: '456',
-          state: 'repair_failed',
-          board: 'board2',
-          model: 'model2',
-          pool: 'pool2',
-        },
-      ] as DutToRepair[],
     },
   ])('should not render the button if $case', ({ duts }) => {
     render(<RequestRepair selectedDuts={duts} />);

@@ -21,7 +21,6 @@ interface RequestRepairProps {
   selectedDuts: DutToRepair[];
 }
 
-const ALLOWED_STATES = ['needs_manual_repair'];
 const TITLE_LOCATION_PLACEHOLDER = 'Location Unknown';
 const DESCRIPTION_LOCATION_PLACEHOLDER = '<Please add if known>';
 const REPAIR_COMPONENT_ID = '575445';
@@ -57,8 +56,10 @@ export const generateIssueDescription = (dutInfo: string) => {
   const description = [
     'Fleet Operations will repair DUTS that are in "needs_manual_repair" status. ' +
       'repair_failed & needs_repair are being recovered by auto repair tasks. ' +
+      'You can submit a bug for DUTs in a different state if you suspect that the state is incorrect, ' +
+      'or something is wrong with devices peripherals' +
       'Please do not explicitly assign bugs to individuals without prior ' +
-      'discussion with said individuals',
+      'discussion with said individuals.',
     '------------------------------------------------------------------------------------',
     '',
     '**DUT Link(s) / Locations:**:',
@@ -92,11 +93,7 @@ const generateDutInfo = (selectedDuts: DutToRepair[]): string =>
 export const RequestRepair: React.FC<RequestRepairProps> = ({
   selectedDuts,
 }) => {
-  const showButton =
-    selectedDuts?.length > 0 &&
-    selectedDuts.every((dut) =>
-      ALLOWED_STATES.includes(dut?.state?.toLowerCase() || ''),
-    );
+  const showButton = selectedDuts?.length > 0;
 
   if (!showButton) {
     return <></>;
