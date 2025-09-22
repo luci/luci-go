@@ -57,7 +57,7 @@ export const generateIssueDescription = (dutInfo: string) => {
     'Fleet Operations will repair DUTS that are in "needs_manual_repair" status. ' +
       'repair_failed & needs_repair are being recovered by auto repair tasks. ' +
       'You can submit a bug for DUTs in a different state if you suspect that the state is incorrect, ' +
-      'or something is wrong with devices peripherals' +
+      'or something is wrong with devices peripherals. ' +
       'Please do not explicitly assign bugs to individuals without prior ' +
       'discussion with said individuals.',
     '------------------------------------------------------------------------------------',
