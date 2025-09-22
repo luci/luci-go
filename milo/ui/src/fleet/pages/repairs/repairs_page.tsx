@@ -241,6 +241,29 @@ const COLUMNS: Record<string, GridColDef> = {
     field: 'peak_usage',
     headerName: 'Peak Usage',
     flex: 1,
+    renderCell: (x) => (
+      <div
+        css={{
+          gap: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          height: '100%',
+        }}
+      >
+        <Typography variant="body2" noWrap={true}>
+          {x.value}
+        </Typography>
+        <Typography variant="caption" sx={{ color: colors.grey[500] }}>
+          /{' '}
+          {x.row.peak_usage && x.row.total_devices
+            ? (x.row.peak_usage / x.row.total_devices).toLocaleString('en-US', {
+                style: 'percent',
+              })
+            : ''}
+        </Typography>
+      </div>
+    ),
+
     renderHeader: () => {
       return (
         <>
@@ -267,6 +290,7 @@ const COLUMNS: Record<string, GridColDef> = {
     field: 'omnilab_link',
     headerName: 'Explore in Arsenal',
     flex: 1,
+    sortable: false,
     renderCell: (x) => {
       // Double encodeURIComponent because omnilab is weird i guess
       const params = new URLSearchParams();
@@ -454,6 +478,7 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
               minimumFractionDigits: 1,
             }),
             peak_usage: rm.peakUsage,
+            total_devices: rm.totalDevices,
           }))}
           slots={{
             pagination: Pagination,
