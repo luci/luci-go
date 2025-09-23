@@ -37,8 +37,10 @@ func TestFindInheritSourcesDescendants(t *testing.T) {
 	ftt.Run(`FindInheritSourcesDescendants`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		sources := spanutil.Compressed(pbutil.MustMarshal(&pb.Sources{
-			GitilesCommit: &pb.GitilesCommit{Host: "testHost"},
-			IsDirty:       false,
+			BaseSources: &pb.Sources_GitilesCommit{
+				GitilesCommit: &pb.GitilesCommit{Host: "testHost"},
+			},
+			IsDirty: false,
 		}))
 		t.Run(`Includes inherited and non-inherted: a->b, a->c`, func(t *ftt.Test) {
 			testutil.MustApply(ctx, t, testutil.CombineMutations(

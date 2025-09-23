@@ -1014,7 +1014,7 @@ func (x *QueryTestVariantStabilityRequest_TestVariantPosition) GetSources() *Sou
 // a set of (up to) 20 test runs centered on the queried commit
 // position (10 prior and 10 after) and applies criteria
 // to this in various ways.
-// The 20 test runs are sorted by commit position and then time.
+// The 20 test runs are sorted by source position and then time.
 //
 // See go/luci-exoneration-v2 for more detail.
 type TestStabilityCriteria_FailureRateCriteria struct {
@@ -1064,7 +1064,7 @@ type TestStabilityCriteria_FailureRateCriteria struct {
 	//
 	// (N.B. Direction of history is irrelevant as criteria is
 	// applied symmetrically. Either the left or right could
-	// represent 'later' by commit position.)
+	// represent 'later' by source position.)
 	ConsecutiveFailureThreshold int32 `protobuf:"varint,2,opt,name=consecutive_failure_threshold,json=consecutiveFailureThreshold,proto3" json:"consecutive_failure_threshold,omitempty"`
 	unknownFields               protoimpl.UnknownFields
 	sizeCache                   protoimpl.SizeCache
@@ -1133,7 +1133,7 @@ type TestStabilityCriteria_FlakeRateCriteria struct {
 	//
 	// As standard, all source verdicts for sources
 	// +/- 7 days from the queried position are used.
-	// The conversion between time and commit position is discussed
+	// The conversion between time and source position is discussed
 	// in go/luci-exoneration-v2.
 	//
 	// However, if the number of verdicts is not equal
@@ -1170,7 +1170,7 @@ type TestStabilityCriteria_FlakeRateCriteria struct {
 	// occur on sources within one weekday either side of the
 	// queried source position.
 	//
-	// The conversion between time and commit position is discussed
+	// The conversion between time and source position is discussed
 	// in go/luci-exoneration-v2.
 	//
 	// One weekday means 24 hours on a weekday as observed in
@@ -1469,7 +1469,7 @@ func (x *TestVariantStabilityAnalysis_FlakeRate) GetRunFlakyVerdicts_12H() int32
 
 type TestVariantStabilityAnalysis_FailureRate_RecentVerdict struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The commit position of the source verdict on the queried branch.
+	// The source position of the source verdict on the queried branch.
 	Position int64 `protobuf:"varint,1,opt,name=position,proto3" json:"position,omitempty"`
 	// The changelist(s) tested, if any.
 	Changelists []*Changelist `protobuf:"bytes,2,rep,name=changelists,proto3" json:"changelists,omitempty"`
@@ -1559,7 +1559,7 @@ func (x *TestVariantStabilityAnalysis_FailureRate_RecentVerdict) GetTotalRuns() 
 // such as in the case of retried presubmit runs on the same patchset.
 type TestVariantStabilityAnalysis_FlakeRate_VerdictExample struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The commit position of the verdict on the queried branch.
+	// The source position of the verdict on the queried branch.
 	Position int64 `protobuf:"varint,1,opt,name=position,proto3" json:"position,omitempty"`
 	// The changelist(s) tested, if any.
 	Changelists []*Changelist `protobuf:"bytes,2,rep,name=changelists,proto3" json:"changelists,omitempty"`

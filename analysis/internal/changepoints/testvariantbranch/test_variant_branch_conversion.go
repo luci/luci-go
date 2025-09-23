@@ -21,8 +21,8 @@ import (
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
-	"go.chromium.org/luci/analysis/internal/changepoints/sources"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
+	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
@@ -32,7 +32,7 @@ import (
 // - UnexpectedCount, descendingly, then
 // - ExpectedCount, descendingly.
 func ToRuns(tv *rdbpb.TestVariant, partitionTime time.Time, claimedInvs map[string]bool, src *pb.Sources) ([]inputbuffer.Run, error) {
-	commitPosition := sources.CommitPosition(src)
+	commitPosition := pbutil.SourcePosition(src)
 	hour := partitionTime.Truncate(time.Hour)
 
 	var result []inputbuffer.Run
@@ -101,7 +101,7 @@ func ToRuns(tv *rdbpb.TestVariant, partitionTime time.Time, claimedInvs map[stri
 }
 
 func ToRun(v *rdbpb.RunTestVerdict, partitionTime time.Time, src *pb.Sources) inputbuffer.Run {
-	commitPosition := sources.CommitPosition(src)
+	commitPosition := pbutil.SourcePosition(src)
 	hour := partitionTime.Truncate(time.Hour)
 
 	result := inputbuffer.Run{

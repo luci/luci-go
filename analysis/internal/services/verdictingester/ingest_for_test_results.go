@@ -114,12 +114,9 @@ func toTestResultSources(sourcesByID map[string]*pb.Sources) (map[string]testres
 	for id, srcs := range sourcesByID {
 		var sources testresults.Sources
 
-		// We only know how to extract source position for gitiles-based
-		// sources for now.
-		if srcs.GitilesCommit != nil {
-			sources.RefHash = pbutil.SourceRefHash(pbutil.SourceRefFromSources(srcs))
-			sources.Position = srcs.GitilesCommit.Position
-		}
+		sources.RefHash = pbutil.SourceRefHash(pbutil.SourceRefFromSources(srcs))
+		sources.Position = pbutil.SourcePosition(srcs)
+
 		for _, cl := range srcs.Changelists {
 			err := testresults.ValidateGerritHostname(cl.Host)
 			if err != nil {

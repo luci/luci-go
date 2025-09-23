@@ -50,12 +50,14 @@ func TestPopulateOwnerKinds(t *testing.T) {
 
 		sources := make(map[string]*rdbpb.Sources)
 		sources["sources-1"] = &rdbpb.Sources{
-			GitilesCommit: &rdbpb.GitilesCommit{
-				Host:       "chromium.googlesource.com",
-				Project:    "chromium/src",
-				Ref:        "refs/heads/main",
-				CommitHash: "aa11bb22cc33dd44ee55aa11bb22cc33dd44ee55",
-				Position:   123,
+			BaseSources: &rdbpb.Sources_GitilesCommit{
+				GitilesCommit: &rdbpb.GitilesCommit{
+					Host:       "chromium.googlesource.com",
+					Project:    "chromium/src",
+					Ref:        "refs/heads/main",
+					CommitHash: "aa11bb22cc33dd44ee55aa11bb22cc33dd44ee55",
+					Position:   123,
+				},
 			},
 			Changelists: []*rdbpb.GerritChange{
 				{
@@ -149,12 +151,14 @@ func TestPopulateOwnerKinds(t *testing.T) {
 		t.Run("With multiple changelists", func(t *ftt.Test) {
 			sources := make(map[string]*rdbpb.Sources)
 			sources["sources-1"] = &rdbpb.Sources{
-				GitilesCommit: &rdbpb.GitilesCommit{
-					Host:       "chromium.googlesource.com",
-					Project:    "chromium/src",
-					Ref:        "refs/heads/main",
-					CommitHash: "aa11bb22cc33dd44ee55aa11bb22cc33dd44ee55",
-					Position:   123,
+				BaseSources: &rdbpb.Sources_GitilesCommit{
+					GitilesCommit: &rdbpb.GitilesCommit{
+						Host:       "chromium.googlesource.com",
+						Project:    "chromium/src",
+						Ref:        "refs/heads/main",
+						CommitHash: "aa11bb22cc33dd44ee55aa11bb22cc33dd44ee55",
+						Position:   123,
+					},
 				},
 				Changelists: []*rdbpb.GerritChange{
 					{
@@ -172,12 +176,14 @@ func TestPopulateOwnerKinds(t *testing.T) {
 				},
 			}
 			sources["sources-2"] = &rdbpb.Sources{
-				GitilesCommit: &rdbpb.GitilesCommit{
-					Host:       "chromium.googlesource.com",
-					Project:    "chromium/src",
-					Ref:        "refs/heads/main",
-					CommitHash: "bb22cc33dd44dd44ee55aa11bb22cc33dd44ee55",
-					Position:   456,
+				BaseSources: &rdbpb.Sources_GitilesCommit{
+					GitilesCommit: &rdbpb.GitilesCommit{
+						Host:       "chromium.googlesource.com",
+						Project:    "chromium/src",
+						Ref:        "refs/heads/main",
+						CommitHash: "bb22cc33dd44dd44ee55aa11bb22cc33dd44ee55",
+						Position:   456,
+					},
 				},
 				Changelists: []*rdbpb.GerritChange{
 					{

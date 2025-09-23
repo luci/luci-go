@@ -15,6 +15,7 @@
 package pbutil
 
 import (
+	"encoding/hex"
 	"strings"
 	"testing"
 
@@ -168,7 +169,65 @@ func TestValidate(t *testing.T) {
 			})
 		})
 	})
-
+	ftt.Run("ValidateSubmittedAndroidBuild", t, func(t *ftt.Test) {
+		buildID := &pb.SubmittedAndroidBuild{
+			DataRealm: "prod",
+			Branch:    "git_main",
+			BuildId:   1234567890,
+		}
+		t.Run("Valid", func(t *ftt.Test) {
+			assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.BeNil)
+		})
+		t.Run("Nil", func(t *ftt.Test) {
+			assert.Loosely(t, ValidateSubmittedAndroidBuild(nil), should.ErrLike("unspecified"))
+		})
+		t.Run("Data Realm", func(t *ftt.Test) {
+			t.Run("Missing", func(t *ftt.Test) {
+				buildID.DataRealm = ""
+				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike("data_realm: unspecified"))
+			})
+			t.Run("Invalid", func(t *ftt.Test) {
+				buildID.DataRealm = "invalid"
+				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike(`data_realm: unknown data realm "invalid"`))
+			})
+		})
+		t.Run("Branch", func(t *ftt.Test) {
+			t.Run("Missing", func(t *ftt.Test) {
+				buildID.Branch = ""
+				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike("branch: unspecified"))
+			})
+			t.Run("Too long", func(t *ftt.Test) {
+				buildID.Branch = strings.Repeat("a", MaxAndroidBranchLength+1)
+				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike("branch: longer than 255 bytes"))
+			})
+			t.Run("Non-Printable", func(t *ftt.Test) {
+				buildID.Branch = "abc\u0000def"
+				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike("branch: non-printable rune"))
+			})
+			t.Run("Not in Unicode Normal Form C", func(t *ftt.Test) {
+				buildID.Branch = "e\u0301" // Normal Form C would be \u00e9 (é).
+				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike("branch: not in unicode normalized form C"))
+			})
+			t.Run("Not valid UTF-8", func(t *ftt.Test) {
+				buildID.Branch = "\xbd"
+				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike("branch: not a valid utf8 string"))
+			})
+			t.Run("Error rune", func(t *ftt.Test) {
+				buildID.Branch = "aa\ufffd"
+				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike("branch: unicode replacement character (U+FFFD) at byte index 2"))
+			})
+		})
+		t.Run("Build ID", func(t *ftt.Test) {
+			t.Run("Missing", func(t *ftt.Test) {
+				buildID.BuildId = 0
+				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike("build_id: unspecified"))
+			})
+			t.Run("Negative", func(t *ftt.Test) {
+				buildID.BuildId = -1
+				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike("build_id: cannot be negative"))
+			})
+		})
+	})
 	ftt.Run("ValidateInstruction", t, func(t *ftt.Test) {
 		instructions := &pb.Instructions{
 			Instructions: []*pb.Instruction{
@@ -311,12 +370,14 @@ func TestValidate(t *testing.T) {
 	})
 	ftt.Run(`ValidateSources`, t, func(t *ftt.Test) {
 		sources := &pb.Sources{
-			GitilesCommit: &pb.GitilesCommit{
-				Host:       "chromium.googlesource.com",
-				Project:    "chromium/src",
-				Ref:        "refs/heads/branch",
-				CommitHash: "123456789012345678901234567890abcdefabcd",
-				Position:   1,
+			BaseSources: &pb.Sources_GitilesCommit{
+				GitilesCommit: &pb.GitilesCommit{
+					Host:       "chromium.googlesource.com",
+					Project:    "chromium/src",
+					Ref:        "refs/heads/branch",
+					CommitHash: "123456789012345678901234567890abcdefabcd",
+					Position:   1,
+				},
 			},
 			Changelists: []*pb.GerritChange{
 				{
@@ -334,15 +395,47 @@ func TestValidate(t *testing.T) {
 		t.Run(`Nil`, func(t *ftt.Test) {
 			assert.Loosely(t, ValidateSources(nil), should.ErrLike(`unspecified`))
 		})
-		t.Run(`Gitiles commit`, func(t *ftt.Test) {
+		t.Run(`Base sources`, func(t *ftt.Test) {
 			t.Run(`Missing`, func(t *ftt.Test) {
-				sources.GitilesCommit = nil
-				assert.Loosely(t, ValidateSources(sources), should.ErrLike(`gitiles_commit: unspecified`))
+				sources.BaseSources = nil
+				assert.Loosely(t, ValidateSources(sources), should.ErrLike(`base_sources: unspecified`))
 			})
-			t.Run(`Invalid`, func(t *ftt.Test) {
-				// protocol prefix should not be included.
-				sources.GitilesCommit.Host = "https://service"
-				assert.Loosely(t, ValidateSources(sources), should.ErrLike(`gitiles_commit: host: does not match`))
+			t.Run(`Gitiles commit`, func(t *ftt.Test) {
+				gc := &pb.GitilesCommit{
+					Host:       "chromium.googlesource.com",
+					Project:    "chromium/src",
+					Ref:        "refs/heads/branch",
+					CommitHash: "123456789012345678901234567890abcdefabcd",
+					Position:   1,
+				}
+				sources.BaseSources = &pb.Sources_GitilesCommit{
+					GitilesCommit: gc,
+				}
+				t.Run(`Valid`, func(t *ftt.Test) {
+					assert.Loosely(t, ValidateSources(sources), should.BeNil)
+				})
+				t.Run(`Invalid`, func(t *ftt.Test) {
+					// protocol prefix should not be included.
+					gc.Host = "https://service"
+					assert.Loosely(t, ValidateSources(sources), should.ErrLike(`gitiles_commit: host: does not match`))
+				})
+			})
+			t.Run(`Submitted Android build`, func(t *ftt.Test) {
+				ab := &pb.SubmittedAndroidBuild{
+					DataRealm: "prod",
+					Branch:    "git_main",
+					BuildId:   1234567890,
+				}
+				sources.BaseSources = &pb.Sources_SubmittedAndroidBuild{
+					SubmittedAndroidBuild: ab,
+				}
+				t.Run(`Valid`, func(t *ftt.Test) {
+					assert.Loosely(t, ValidateSources(sources), should.BeNil)
+				})
+				t.Run(`Invalid`, func(t *ftt.Test) {
+					ab.DataRealm = "invalid"
+					assert.Loosely(t, ValidateSources(sources), should.ErrLike(`submitted_android_build: data_realm: unknown data realm "invalid"`))
+				})
 			})
 		})
 		t.Run(`Changelists`, func(t *ftt.Test) {
@@ -387,12 +480,14 @@ func TestValidate(t *testing.T) {
 	ftt.Run(`ValidateSourceSpec`, t, func(t *ftt.Test) {
 		sourceSpec := &pb.SourceSpec{
 			Sources: &pb.Sources{
-				GitilesCommit: &pb.GitilesCommit{
-					Host:       "chromium.googlesource.com",
-					Project:    "chromium/src",
-					Ref:        "refs/heads/branch",
-					CommitHash: "123456789012345678901234567890abcdefabcd",
-					Position:   1,
+				BaseSources: &pb.Sources_GitilesCommit{
+					GitilesCommit: &pb.GitilesCommit{
+						Host:       "chromium.googlesource.com",
+						Project:    "chromium/src",
+						Ref:        "refs/heads/branch",
+						CommitHash: "123456789012345678901234567890abcdefabcd",
+						Position:   1,
+					},
 				},
 			},
 			Inherit: false,
@@ -420,8 +515,15 @@ func TestValidate(t *testing.T) {
 			assert.Loosely(t, ValidateSourceSpec(sourceSpec), should.ErrLike(`only one of inherit and sources may be set`))
 		})
 		t.Run(`Invalid Sources`, func(t *ftt.Test) {
-			sourceSpec.Sources.GitilesCommit.Host = "b@d"
-			assert.Loosely(t, ValidateSourceSpec(sourceSpec), should.ErrLike(`sources: gitiles_commit: host: does not match`))
+			sourceSpec.Sources.Changelists = []*pb.GerritChange{
+				{
+					Host:     "chromium.googlesource.com",
+					Project:  "infra/luci-go",
+					Change:   -1,
+					Patchset: 321,
+				},
+			}
+			assert.Loosely(t, ValidateSourceSpec(sourceSpec), should.ErrLike(`sources: changelists[0]: change: cannot be negative`))
 		})
 	})
 	ftt.Run(`ValidateFullResourceName`, t, func(t *ftt.Test) {
@@ -461,6 +563,101 @@ func TestValidate(t *testing.T) {
 				err := ValidateFullResourceName(name)
 				assert.Loosely(t, err, should.ErrLike(`is not in Unicode Normal Form C`))
 			})
+		})
+	})
+}
+
+func TestSourceModel(t *testing.T) {
+	gitilesCommit := &pb.GitilesCommit{
+		Host:       "host",
+		Project:    "project",
+		Ref:        "ref",
+		CommitHash: "commit_hash",
+		Position:   123,
+	}
+	submittedAndroidBuild := &pb.SubmittedAndroidBuild{
+		DataRealm: "prod",
+		Branch:    "branch",
+		BuildId:   1234567890,
+	}
+
+	ftt.Run("SourceRefFromSources", t, func(t *ftt.Test) {
+		t.Run("Gitiles", func(t *ftt.Test) {
+			src := &pb.Sources{
+				BaseSources: &pb.Sources_GitilesCommit{
+					GitilesCommit: gitilesCommit,
+				},
+			}
+			expected := &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "host",
+						Project: "project",
+						Ref:     "ref",
+					},
+				},
+			}
+			assert.Loosely(t, SourceRefFromSources(src), should.Match(expected))
+		})
+		t.Run("AndroidBuild", func(t *ftt.Test) {
+			src := &pb.Sources{
+				BaseSources: &pb.Sources_SubmittedAndroidBuild{
+					SubmittedAndroidBuild: submittedAndroidBuild,
+				},
+			}
+			expected := &pb.SourceRef{
+				System: &pb.SourceRef_AndroidBuild{
+					AndroidBuild: &pb.AndroidBuildBranch{
+						DataRealm: "prod",
+						Branch:    "branch",
+					},
+				},
+			}
+			assert.Loosely(t, SourceRefFromSources(src), should.Match(expected))
+		})
+	})
+	ftt.Run("SourcePositionFromSources", t, func(t *ftt.Test) {
+		t.Run("Gitiles", func(t *ftt.Test) {
+			src := &pb.Sources{
+				BaseSources: &pb.Sources_GitilesCommit{
+					GitilesCommit: gitilesCommit,
+				},
+			}
+			assert.Loosely(t, SourcePosition(src), should.Equal(int64(123)))
+		})
+		t.Run("AndroidBuild", func(t *ftt.Test) {
+			src := &pb.Sources{
+				BaseSources: &pb.Sources_SubmittedAndroidBuild{
+					SubmittedAndroidBuild: submittedAndroidBuild,
+				},
+			}
+			assert.Loosely(t, SourcePosition(src), should.Equal(int64(1234567890)))
+		})
+	})
+	ftt.Run("SourceRefHash", t, func(t *ftt.Test) {
+		t.Run("Gitiles", func(t *ftt.Test) {
+			ref := &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "project.googlesource.com",
+						Project: "myproject/src",
+						Ref:     "refs/heads/main",
+					},
+				},
+			}
+			hash := SourceRefHash(ref)
+			assert.Loosely(t, hex.EncodeToString(hash), should.Equal(`5d47c679cf080cb5`))
+		})
+		t.Run("AndroidBuild", func(t *ftt.Test) {
+			sr := &pb.SourceRef{
+				System: &pb.SourceRef_AndroidBuild{
+					AndroidBuild: &pb.AndroidBuildBranch{
+						DataRealm: "prod",
+						Branch:    "branch",
+					},
+				},
+			}
+			assert.Loosely(t, hex.EncodeToString(SourceRefHash(sr)), should.Equal("7abd7eb5810c61dd"))
 		})
 	})
 }

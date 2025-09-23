@@ -157,20 +157,20 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 			assert.Loosely(t, exportClient.Insertions, should.HaveLength(0))
 			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_no_sources"), should.Equal(3))
 		})
-		t.Run(`Without gitiles commit`, func(t *ftt.Test) {
-			inputs.Sources.GitilesCommit = nil
+		t.Run(`With dirty sources`, func(t *ftt.Test) {
+			inputs.Sources.IsDirty = true
 
 			err := ingester.Ingest(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, exportClient.Insertions, should.HaveLength(0))
-			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_no_commit_data"), should.Equal(3))
+			assert.Loosely(t, changepoints.RunCounter.Get(ctx, "rootproject", "skipped_dirty_sources"), should.Equal(3))
 		})
 		t.Run(`Too far out of order source position`, func(t *ftt.Test) {
 			// Out of order source positions can be accepted by changepoint analysis,
 			// so long as the positions are still covered by the 2000-run input buffer
 			// in which re-ordering can occur.
-			inputs.Sources.GitilesCommit.Position = 1
+			inputs.Sources.GetGitilesCommit().Position = 1
 
 			err := ingester.Ingest(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)

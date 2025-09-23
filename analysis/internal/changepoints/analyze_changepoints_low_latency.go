@@ -46,7 +46,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/analyzer"
 	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
-	"go.chromium.org/luci/analysis/internal/changepoints/sources"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/checkpoints"
 	"go.chromium.org/luci/analysis/internal/tracing"
@@ -65,8 +64,8 @@ var (
 		// - "ingested": The run was ingested.
 		// - "skipped_no_sources": The run was skipped because it has no source
 		//   data.
-		// - "skipped_no_commit_data": The run was skipped because its source
-		//   does not have enough commit data (e.g. commit position).
+		// - "skipped_dirty_sources": The run was skipped because the sources
+		//   were dirty and not suitable for changepoint analysis.
 		// - "skipped_out_of_order": The run was skipped because it was too
 		//   out of order.
 		// - "skipped_excluded_from_low_latency_pipeline": The run was skipped
@@ -104,8 +103,8 @@ func AnalyzeRun(ctx context.Context, tvs []*rdbpb.RunTestVerdict, opts AnalysisO
 		RunCounter.Add(ctx, int64(len(tvs)), opts.Project, "skipped_no_sources")
 		return nil
 	}
-	if !sources.HasCommitData(opts.Sources) {
-		RunCounter.Add(ctx, int64(len(tvs)), opts.Project, "skipped_no_commit_data")
+	if opts.Sources.IsDirty {
+		RunCounter.Add(ctx, int64(len(tvs)), opts.Project, "skipped_dirty_sources")
 		return nil
 	}
 	if !shouldClaimInLowLatencyPipeline(opts.Sources) {

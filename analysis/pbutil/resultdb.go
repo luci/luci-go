@@ -183,8 +183,8 @@ func ExonerationReasonFromResultDB(s rdbpb.ExonerationReason) pb.ExonerationReas
 	}
 }
 
-// GitilesCommitFromResultDB returns the LUCI Analysis gitiles commit
-// corresponding to a ResultDB gitiles commit.
+// GitilesCommitFromResultDB returns the LUCI Analysis Gitiles commit
+// corresponding to a ResultDB Gitiles commit.
 func GitilesCommitFromResultDB(c *rdbpb.GitilesCommit) *pb.GitilesCommit {
 	return &pb.GitilesCommit{
 		Host:       c.Host,
@@ -192,6 +192,16 @@ func GitilesCommitFromResultDB(c *rdbpb.GitilesCommit) *pb.GitilesCommit {
 		Ref:        c.Ref,
 		CommitHash: c.CommitHash,
 		Position:   c.Position,
+	}
+}
+
+// SubmittedAndroidBuildFromResultDB returns the LUCI Analysis submitted Android build
+// corresponding to a ResultDB submitted Android build.
+func SubmittedAndroidBuildFromResultDB(c *rdbpb.SubmittedAndroidBuild) *pb.SubmittedAndroidBuild {
+	return &pb.SubmittedAndroidBuild{
+		DataRealm: c.DataRealm,
+		Branch:    c.Branch,
+		BuildId:   c.BuildId,
 	}
 }
 
@@ -210,8 +220,23 @@ func ChangelistFromResultDB(cl *rdbpb.GerritChange) *pb.GerritChange {
 // corresponding to a ResultDB source description.
 func SourcesFromResultDB(s *rdbpb.Sources) *pb.Sources {
 	result := &pb.Sources{
-		GitilesCommit: GitilesCommitFromResultDB(s.GitilesCommit),
-		IsDirty:       s.IsDirty,
+		IsDirty: s.IsDirty,
+	}
+	// This method may deal with unvalidated source objects, so it is possible
+	// BaseSources is nil.
+	if s.BaseSources != nil {
+		switch sys := s.BaseSources.(type) {
+		case *rdbpb.Sources_GitilesCommit:
+			result.BaseSources = &pb.Sources_GitilesCommit{
+				GitilesCommit: GitilesCommitFromResultDB(sys.GitilesCommit),
+			}
+		case *rdbpb.Sources_SubmittedAndroidBuild:
+			result.BaseSources = &pb.Sources_SubmittedAndroidBuild{
+				SubmittedAndroidBuild: SubmittedAndroidBuildFromResultDB(sys.SubmittedAndroidBuild),
+			}
+		default:
+			panic("unknown source system")
+		}
 	}
 	for _, cl := range s.Changelists {
 		result.Changelists = append(result.Changelists, ChangelistFromResultDB(cl))
@@ -219,8 +244,8 @@ func SourcesFromResultDB(s *rdbpb.Sources) *pb.Sources {
 	return result
 }
 
-// GitilesCommitToResultDB returns the ResultDB gitiles commit
-// corresponding to a LUCI Analysis gitiles commit.
+// GitilesCommitToResultDB returns the ResultDB Gitiles commit
+// corresponding to a LUCI Analysis Gitiles commit.
 func GitilesCommitToResultDB(c *pb.GitilesCommit) *rdbpb.GitilesCommit {
 	if c == nil {
 		return nil
@@ -231,6 +256,19 @@ func GitilesCommitToResultDB(c *pb.GitilesCommit) *rdbpb.GitilesCommit {
 		Ref:        c.Ref,
 		CommitHash: c.CommitHash,
 		Position:   c.Position,
+	}
+}
+
+// GitilesCommitToResultDB returns the ResultDB submitted Android build
+// corresponding to a LUCI Analysis submitted Android build.
+func SubmittedAndroidBuildToResultDB(c *pb.SubmittedAndroidBuild) *rdbpb.SubmittedAndroidBuild {
+	if c == nil {
+		return nil
+	}
+	return &rdbpb.SubmittedAndroidBuild{
+		DataRealm: c.DataRealm,
+		Branch:    c.Branch,
+		BuildId:   c.BuildId,
 	}
 }
 
@@ -255,9 +293,25 @@ func SourcesToResultDB(s *pb.Sources) *rdbpb.Sources {
 		return nil
 	}
 	result := &rdbpb.Sources{
-		GitilesCommit: GitilesCommitToResultDB(s.GitilesCommit),
-		IsDirty:       s.IsDirty,
+		IsDirty: s.IsDirty,
 	}
+	// This method may deal with unvalidated source objects, so it is possible
+	// BaseSources is nil.
+	if s.BaseSources != nil {
+		switch sys := s.BaseSources.(type) {
+		case *pb.Sources_GitilesCommit:
+			result.BaseSources = &rdbpb.Sources_GitilesCommit{
+				GitilesCommit: GitilesCommitToResultDB(sys.GitilesCommit),
+			}
+		case *pb.Sources_SubmittedAndroidBuild:
+			result.BaseSources = &rdbpb.Sources_SubmittedAndroidBuild{
+				SubmittedAndroidBuild: SubmittedAndroidBuildToResultDB(sys.SubmittedAndroidBuild),
+			}
+		default:
+			panic("unknown source system")
+		}
+	}
+
 	for _, cl := range s.Changelists {
 		result.Changelists = append(result.Changelists, ChangelistToResultDB(cl))
 	}
@@ -270,33 +324,61 @@ func SourceRefToResultDB(v *pb.SourceRef) *rdbpb.SourceRef {
 	if v == nil {
 		return nil
 	}
-	// Assert system should be Gitiles
-	if _, ok := v.System.(*pb.SourceRef_Gitiles); !ok {
-		panic("system should be gitiles")
+	// This method may deal with unvalidated source refs, so it is possible
+	// System is nil.
+	result := &rdbpb.SourceRef{}
+	if v.System != nil {
+		switch sys := v.System.(type) {
+		case *pb.SourceRef_Gitiles:
+			result.System = &rdbpb.SourceRef_Gitiles{
+				Gitiles: &rdbpb.GitilesRef{
+					Host:    sys.Gitiles.Host,
+					Project: sys.Gitiles.Project,
+					Ref:     sys.Gitiles.Ref,
+				},
+			}
+		case *pb.SourceRef_AndroidBuild:
+			result.System = &rdbpb.SourceRef_AndroidBuild{
+				AndroidBuild: &rdbpb.AndroidBuildBranch{
+					DataRealm: sys.AndroidBuild.DataRealm,
+					Branch:    sys.AndroidBuild.Branch,
+				},
+			}
+		default:
+			panic("unknown source system")
+		}
 	}
-	return &rdbpb.SourceRef{
-		System: &rdbpb.SourceRef_Gitiles{
-			Gitiles: &rdbpb.GitilesRef{
-				Host:    v.GetGitiles().Host,
-				Project: v.GetGitiles().Project,
-				Ref:     v.GetGitiles().Ref,
-			},
-		},
-	}
+	return result
 }
 
 // SourceRefFromSources extracts a SourceRef from given sources.
 //
 // panics if the sources object is not valid.
 func SourceRefFromSources(sources *pb.Sources) *pb.SourceRef {
-	return &pb.SourceRef{
-		System: &pb.SourceRef_Gitiles{
-			Gitiles: &pb.GitilesRef{
-				Host:    sources.GitilesCommit.Host,
-				Project: sources.GitilesCommit.Project,
-				Ref:     sources.GitilesCommit.Ref,
+	switch base := sources.BaseSources.(type) {
+	case *pb.Sources_GitilesCommit:
+		gc := base.GitilesCommit
+		return &pb.SourceRef{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{
+					Host:    gc.Host,
+					Project: gc.Project,
+					Ref:     gc.Ref,
+				},
 			},
-		},
+		}
+	case *pb.Sources_SubmittedAndroidBuild:
+		ab := base.SubmittedAndroidBuild
+		return &pb.SourceRef{
+			System: &pb.SourceRef_AndroidBuild{
+				AndroidBuild: &pb.AndroidBuildBranch{
+					DataRealm: ab.DataRealm,
+					Branch:    ab.Branch,
+				},
+			},
+		}
+	default:
+		panic("unknown base sources type")
 	}
 }
 
@@ -310,5 +392,5 @@ func SourceRefHash(sourceRef *pb.SourceRef) []byte {
 //
 // panics if the sources object is not valid.
 func SourcePosition(sources *pb.Sources) int64 {
-	return sources.GitilesCommit.Position
+	return pbutil.SourcePosition(SourcesToResultDB(sources))
 }

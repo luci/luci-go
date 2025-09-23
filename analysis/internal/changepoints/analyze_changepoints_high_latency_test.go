@@ -85,23 +85,27 @@ func TestAnalyzeChangePoint(t *testing.T) {
 		assert.Loosely(t, countCheckPoint(ctx, t), should.Equal(1))
 	})
 
-	ftt.Run(`No commit position should skip`, t, func(t *ftt.Test) {
+	ftt.Run(`Dirty sources should skip`, t, func(t *ftt.Test) {
 		ctx := newContext(t)
 		payload := tu.SamplePayload()
 		sourcesMap := map[string]*pb.Sources{
 			"sources_id": {
-				GitilesCommit: &pb.GitilesCommit{
-					Host:    "host",
-					Project: "proj",
-					Ref:     "ref",
+				BaseSources: &pb.Sources_GitilesCommit{
+					GitilesCommit: &pb.GitilesCommit{
+						Host:     "host",
+						Project:  "proj",
+						Ref:      "ref",
+						Position: 10,
+					},
 				},
+				IsDirty: true,
 			},
 		}
 		tvs := testVariants(100)
 		err := Analyze(ctx, tvs, payload, sourcesMap, exporter)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, countCheckPoint(ctx, t), should.BeZero)
-		assert.Loosely(t, verdictCounter.Get(ctx, "chromium", "skipped_no_commit_data"), should.Equal(100))
+		assert.Loosely(t, verdictCounter.Get(ctx, "chromium", "skipped_dirty_sources"), should.Equal(100))
 	})
 
 	ftt.Run(`Filter test variant`, t, func(t *ftt.Test) {
@@ -116,11 +120,13 @@ func TestAnalyzeChangePoint(t *testing.T) {
 
 		sourcesMap := map[string]*pb.Sources{
 			"sources_id": {
-				GitilesCommit: &pb.GitilesCommit{
-					Host:     "host",
-					Project:  "proj",
-					Ref:      "ref",
-					Position: 10,
+				BaseSources: &pb.Sources_GitilesCommit{
+					GitilesCommit: &pb.GitilesCommit{
+						Host:     "host",
+						Project:  "proj",
+						Ref:      "ref",
+						Position: 10,
+					},
 				},
 				Changelists: []*pb.GerritChange{
 					{
@@ -132,11 +138,13 @@ func TestAnalyzeChangePoint(t *testing.T) {
 				},
 			},
 			"sources_id_2": {
-				GitilesCommit: &pb.GitilesCommit{
-					Host:     "host_2",
-					Project:  "proj_2",
-					Ref:      "ref_2",
-					Position: 10,
+				BaseSources: &pb.Sources_GitilesCommit{
+					GitilesCommit: &pb.GitilesCommit{
+						Host:     "host_2",
+						Project:  "proj_2",
+						Ref:      "ref_2",
+						Position: 10,
+					},
 				},
 				Changelists: []*pb.GerritChange{
 					{
@@ -233,7 +241,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 		assert.Loosely(t, len(tvs), should.Equal(1))
 		assert.Loosely(t, tvs[0].TestId, should.Equal("3"))
 		assert.Loosely(t, verdictCounter.Get(ctx, "chromium", "skipped_no_sources"), should.Equal(1))
-		assert.Loosely(t, verdictCounter.Get(ctx, "chromium", "skipped_no_commit_data"), should.Equal(1))
+		assert.Loosely(t, verdictCounter.Get(ctx, "chromium", "skipped_dirty_sources"), should.Equal(1))
 		assert.Loosely(t, verdictCounter.Get(ctx, "chromium", "skipped_all_skipped_or_unclaimed"), should.Equal(2))
 	})
 

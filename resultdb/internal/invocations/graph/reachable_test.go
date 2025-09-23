@@ -106,8 +106,10 @@ func TestReachableInvocations(t *testing.T) {
 		}
 		a.Sources = map[SourceHash]*pb.Sources{
 			"hash1": {
-				GitilesCommit: &pb.GitilesCommit{
-					Host: "host1",
+				BaseSources: &pb.Sources_GitilesCommit{
+					GitilesCommit: &pb.GitilesCommit{
+						Host: "host1",
+					},
 				},
 			},
 		}
@@ -122,8 +124,10 @@ func TestReachableInvocations(t *testing.T) {
 		}
 		b.Sources = map[SourceHash]*pb.Sources{
 			"hash2": {
-				GitilesCommit: &pb.GitilesCommit{
-					Host: "host2",
+				BaseSources: &pb.Sources_GitilesCommit{
+					GitilesCommit: &pb.GitilesCommit{
+						Host: "host2",
+					},
 				},
 			},
 		}
@@ -145,13 +149,17 @@ func TestReachableInvocations(t *testing.T) {
 			},
 			Sources: map[SourceHash]*pb.Sources{
 				"hash1": {
-					GitilesCommit: &pb.GitilesCommit{
-						Host: "host1",
+					BaseSources: &pb.Sources_GitilesCommit{
+						GitilesCommit: &pb.GitilesCommit{
+							Host: "host1",
+						},
 					},
 				},
 				"hash2": {
-					GitilesCommit: &pb.GitilesCommit{
-						Host: "host2",
+					BaseSources: &pb.Sources_GitilesCommit{
+						GitilesCommit: &pb.GitilesCommit{
+							Host: "host2",
+						},
 					},
 				},
 			},

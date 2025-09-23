@@ -333,12 +333,14 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 				})
 				t.Run("valid", func(t *ftt.Test) {
 					req.RootInvocation.Sources = &pb.Sources{
-						GitilesCommit: &pb.GitilesCommit{
-							Host:       "host",
-							Project:    "project",
-							Ref:        "refs/heads/main",
-							CommitHash: "0123456789012345678901234567890123456789",
-							Position:   5,
+						BaseSources: &pb.Sources_GitilesCommit{
+							GitilesCommit: &pb.GitilesCommit{
+								Host:       "host",
+								Project:    "project",
+								Ref:        "refs/heads/main",
+								CommitHash: "0123456789012345678901234567890123456789",
+								Position:   5,
+							},
 						},
 					}
 					err := validateCreateRootInvocationRequest(req, cfg)
@@ -346,7 +348,9 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 				})
 				t.Run("invalid", func(t *ftt.Test) {
 					req.RootInvocation.Sources = &pb.Sources{
-						GitilesCommit: &pb.GitilesCommit{},
+						BaseSources: &pb.Sources_GitilesCommit{
+							GitilesCommit: &pb.GitilesCommit{},
+						},
 					}
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: sources: gitiles_commit: host: unspecified"))
@@ -764,13 +768,17 @@ func TestCreateRootInvocation(t *testing.T) {
 			instructions := testutil.TestInstructions()
 			workUnitTags := pbutil.StringPairs("wu_key", "wu_value")
 			invTags := pbutil.StringPairs("tag_key", "tag_value")
-			sources := &pb.Sources{GitilesCommit: &pb.GitilesCommit{
-				Host:       "chromium.googlesource.com",
-				Project:    "chromium/src",
-				Ref:        "refs/heads/main",
-				CommitHash: "1234567890abcdef1234567890abcdef12345678",
-				Position:   12345,
-			}}
+			sources := &pb.Sources{
+				BaseSources: &pb.Sources_GitilesCommit{
+					GitilesCommit: &pb.GitilesCommit{
+						Host:       "chromium.googlesource.com",
+						Project:    "chromium/src",
+						Ref:        "refs/heads/main",
+						CommitHash: "1234567890abcdef1234567890abcdef12345678",
+						Position:   12345,
+					},
+				},
+			}
 			req := &pb.CreateRootInvocationRequest{
 				RootInvocationId: "u-e2e-success",
 				RequestId:        "e2e-request",

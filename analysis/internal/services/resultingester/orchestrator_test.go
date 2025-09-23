@@ -58,12 +58,14 @@ func TestSchedule(t *testing.T) {
 				Invocation:          "invocations/build-987654",
 				InvocationRealm:     "testproject:test_runner",
 				Sources: &rdbpb.Sources{
-					GitilesCommit: &rdbpb.GitilesCommit{
-						Host:       "testproject.googlesource.com",
-						Project:    "testproject/src",
-						Ref:        "refs/heads/main",
-						CommitHash: "1234567890123456789012345678901234567890",
-						Position:   123,
+					BaseSources: &rdbpb.Sources_GitilesCommit{
+						GitilesCommit: &rdbpb.GitilesCommit{
+							Host:       "testproject.googlesource.com",
+							Project:    "testproject/src",
+							Ref:        "refs/heads/main",
+							CommitHash: "1234567890123456789012345678901234567890",
+							Position:   123,
+						},
 					},
 				},
 			},

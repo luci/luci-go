@@ -23,14 +23,18 @@ option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 // Specifies the source code that was tested.
 message Sources {
   // The base version of code sources checked out. Mandatory.
-  // If necessary, we could add support for non-gitiles sources here in
-  // future, using a oneof statement. E.g.
-  // oneof system {
-  //    GitilesCommit gitiles_commit = 1;
-  //    SubversionRevision svn_revision = 4;
-  //    ...
-  // }
-  GitilesCommit gitiles_commit = 1;
+  oneof base_sources {
+    // The base version of code sources checked out.
+    GitilesCommit gitiles_commit = 1;
+
+    // The submitted Android Build ID that describes the base code sources tested.
+    //
+    // In presubmit, where the invocation is testing a pending build (a build ID
+    // starting with "P"), lookup its reference build (which will be a submitted
+    // build) and specify it here. Then specify the cherry-picked changes under
+    // `changelists`.
+    SubmittedAndroidBuild submitted_android_build = 4;
+  }
 
   // The changelist(s) which were applied upon the base version of sources
   // checked out. E.g. in commit queue tryjobs.
@@ -79,6 +83,29 @@ message GitilesCommit {
   int64 position = 5;
 }
 
+// Specifies the build ID of a submitted Android build. A submitted build is a
+// build that uses only changes that have been submitted to a branch.
+message SubmittedAndroidBuild {
+  // The Android Build API data realm.
+  // This is usually `prod`.
+  string data_realm = 1;
+
+  // The Android Build branch.
+  // E.g. `git_main`.
+  string branch = 2;
+
+  // The build ID of the *submitted* build.
+  //
+  // This must be parsed to an integer, as this will be exported to BigQuery
+  // and used for sorting results in source order.
+  //
+  // When comparing two build IDs on the same data realm and branch, we expect:
+  // - A higher number means a newer version of sources were used in a build.
+  // - An equal number means the same version of sources used in a build.
+  // - A smaller number means an earlier version of sources were used in a build.
+  int64 build_id = 3;
+}
+
 // A Gerrit patchset.
 message GerritChange {
   // Gerrit hostname, e.g. "chromium-review.googlesource.com".
@@ -107,6 +134,8 @@ message SourceRef {
   oneof system {
     // A branch in gitiles repository.
     GitilesRef gitiles = 1;
+    // A branch in Android Build API.
+    AndroidBuildBranch android_build = 2;
   }
 }
 
@@ -121,6 +150,17 @@ message GitilesRef {
   // Commit ref, e.g. "refs/heads/main" from which the commit was fetched.
   // Not the branch name, use "refs/heads/branch"
   string ref = 3;
+}
+
+// Represents a branch in Android Build API.
+message AndroidBuildBranch {
+  // The Android Build API data realm.
+  // This is usually `prod`.
+  string data_realm = 1;
+
+  // The Android Build branch.
+  // E.g. `git_main`.
+  string branch = 2;
 }
 
 // A gerrit changelist.

@@ -244,12 +244,14 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 			t.Run(`valid`, func(t *ftt.Test) {
 				request.Invocation.SourceSpec = &pb.SourceSpec{
 					Sources: &pb.Sources{
-						GitilesCommit: &pb.GitilesCommit{
-							Host:       "chromium.googlesource.com",
-							Project:    "infra/infra",
-							Ref:        "refs/heads/main",
-							CommitHash: "1234567890abcdefabcd1234567890abcdefabcd",
-							Position:   567,
+						BaseSources: &pb.Sources_GitilesCommit{
+							GitilesCommit: &pb.GitilesCommit{
+								Host:       "chromium.googlesource.com",
+								Project:    "infra/infra",
+								Ref:        "refs/heads/main",
+								CommitHash: "1234567890abcdefabcd1234567890abcdefabcd",
+								Position:   567,
+							},
 						},
 						Changelists: []*pb.GerritChange{
 							{
@@ -269,7 +271,9 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 			t.Run(`invalid source spec`, func(t *ftt.Test) {
 				request.Invocation.SourceSpec = &pb.SourceSpec{
 					Sources: &pb.Sources{
-						GitilesCommit: &pb.GitilesCommit{},
+						BaseSources: &pb.Sources_GitilesCommit{
+							GitilesCommit: &pb.GitilesCommit{},
+						},
 					},
 				}
 				err := validateUpdateInvocationRequest(request, cfg, now)

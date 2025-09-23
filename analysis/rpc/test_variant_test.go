@@ -441,14 +441,18 @@ func TestValidateQueryTestVariantStabilityRequest(t *testing.T) {
 			// This checks at least one case of invalid input is detected, sufficient to verify
 			// sources validation is invoked.
 			// Exhaustive checking of sources validation is performed in pbutil.
-			req.TestVariants[1].Sources.GitilesCommit.Host = ""
+			req.TestVariants[1].Sources.BaseSources = &pb.Sources_GitilesCommit{
+				GitilesCommit: &pb.GitilesCommit{
+					Host: "",
+				},
+			}
 			err := validateQueryTestVariantStabilityRequest(req)
 			assert.Loosely(t, err, should.ErrLike(`test_variants[1]: sources: gitiles_commit: host: unspecified`))
 		})
 
-		t.Run("multiple branches of same test variant", func(t *ftt.Test) {
+		t.Run("multiple branches for the same test variant", func(t *ftt.Test) {
 			sources2 := testSources()
-			sources2.GitilesCommit.Ref = "refs/heads/other"
+			sources2.GetGitilesCommit().Ref = "refs/heads/other"
 			req.TestVariants = append(req.TestVariants, []*pb.QueryTestVariantStabilityRequest_TestVariantPosition{
 				{
 					TestId:  "my_test",
@@ -501,12 +505,14 @@ func toTestStabilityCriteriaConfig(criteria *pb.TestStabilityCriteria) *configpb
 
 func testSources() *pb.Sources {
 	result := &pb.Sources{
-		GitilesCommit: &pb.GitilesCommit{
-			Host:       "chromium.googlesource.com",
-			Project:    "infra/infra",
-			Ref:        "refs/heads/main",
-			CommitHash: "1234567890abcdefabcd1234567890abcdefabcd",
-			Position:   12345,
+		BaseSources: &pb.Sources_GitilesCommit{
+			GitilesCommit: &pb.GitilesCommit{
+				Host:       "chromium.googlesource.com",
+				Project:    "infra/infra",
+				Ref:        "refs/heads/main",
+				CommitHash: "1234567890abcdefabcd1234567890abcdefabcd",
+				Position:   12345,
+			},
 		},
 		IsDirty: true,
 		Changelists: []*pb.GerritChange{

@@ -51,12 +51,14 @@ func TestRead(t *testing.T) {
 		},
 	}
 	sources := &pb.Sources{
-		GitilesCommit: &pb.GitilesCommit{
-			Host:       "chromium.googlesource.com",
-			Project:    "infra/infra",
-			Ref:        "refs/heads/main",
-			CommitHash: "1234567890abcdefabcd1234567890abcdefabcd",
-			Position:   567,
+		BaseSources: &pb.Sources_GitilesCommit{
+			GitilesCommit: &pb.GitilesCommit{
+				Host:       "chromium.googlesource.com",
+				Project:    "infra/infra",
+				Ref:        "refs/heads/main",
+				CommitHash: "1234567890abcdefabcd1234567890abcdefabcd",
+				Position:   567,
+			},
 		},
 		Changelists: []*pb.GerritChange{
 			{

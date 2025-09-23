@@ -163,8 +163,9 @@ func (u *testMetadataUpdator) updateOrCreateRows(ctx context.Context, realm stri
 		// Update existing metadata entries.
 		err := testmetadata.ReadTestMetadata(ctx, opts, func(tmd *testmetadata.TestMetadataRow) error {
 			seen[tmd.TestID] = true
+			position := pbutil.SourcePosition(u.sources)
 			// No update if test result from a lower commit position than existing test metadata.
-			if u.sources.GitilesCommit.Position < tmd.Position {
+			if position < tmd.Position {
 				return nil
 			}
 			newMetadata := testMetadata[testID(tmd.TestID)]
@@ -175,8 +176,8 @@ func (u *testMetadataUpdator) updateOrCreateRows(ctx context.Context, realm stri
 			// If test result from a higher commit position,
 			// then update when more or equal number of metadata fields were found in the test results
 			// OR existing test metadata expired.
-			if (u.sources.GitilesCommit.Position == tmd.Position && newBitField > existingBitField) ||
-				(u.sources.GitilesCommit.Position > tmd.Position &&
+			if (position == tmd.Position && newBitField > existingBitField) ||
+				(position > tmd.Position &&
 					(tmd.LastUpdated.Add(metadataExpiry).Before(u.start) || newBitField >= existingBitField)) {
 				mutation := u.testMetadataMutation(project, tmd.TestID, subRealm, newMetadata)
 				ms = append(ms, mutation)
@@ -217,6 +218,7 @@ var saveCols = []string{
 
 func (u *testMetadataUpdator) testMetadataMutation(project, testID, subRealm string, tm *pb.TestMetadata) *spanner.Mutation {
 	ref := pbutil.SourceRefFromSources(u.sources)
+	position := pbutil.SourcePosition(u.sources)
 	vals := []any{
 		project,
 		testID,
@@ -225,7 +227,7 @@ func (u *testMetadataUpdator) testMetadataMutation(project, testID, subRealm str
 		spanner.CommitTimestamp,
 		spanutil.Compressed(pbutil.MustMarshal(tm)).ToSpanner(),
 		spanutil.Compressed(pbutil.MustMarshal(ref)).ToSpanner(),
-		u.sources.GitilesCommit.Position,
+		position,
 		spanner.NullString{Valid: tm.GetPreviousTestId() != "", StringVal: tm.GetPreviousTestId()},
 	}
 	return spanner.InsertOrUpdate("TestMetadata", saveCols, vals)

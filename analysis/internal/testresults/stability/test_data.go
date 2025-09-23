@@ -355,12 +355,14 @@ func QueryStabilitySampleRequest() QueryStabilityOptions {
 			TestId:  "test_id",
 			Variant: var1,
 			Sources: &pb.Sources{
-				GitilesCommit: &pb.GitilesCommit{
-					Host:       "mysources.googlesource.com",
-					Project:    "myproject/src",
-					Ref:        "refs/heads/mybranch",
-					CommitHash: "aabbccddeeff00112233aabbccddeeff00112233",
-					Position:   130,
+				BaseSources: &pb.Sources_GitilesCommit{
+					GitilesCommit: &pb.GitilesCommit{
+						Host:       "mysources.googlesource.com",
+						Project:    "myproject/src",
+						Ref:        "refs/heads/mybranch",
+						CommitHash: "aabbccddeeff00112233aabbccddeeff00112233",
+						Position:   130,
+					},
 				},
 				Changelists: []*pb.GerritChange{
 					{
@@ -376,12 +378,14 @@ func QueryStabilitySampleRequest() QueryStabilityOptions {
 			TestId:  "test_id",
 			Variant: var3,
 			Sources: &pb.Sources{
-				GitilesCommit: &pb.GitilesCommit{
-					Host:       "mysources.googlesource.com",
-					Project:    "myproject/src",
-					Ref:        "refs/heads/otherbranch",
-					CommitHash: "00bbccddeeff00112233aabbccddeeff00112233",
-					Position:   120,
+				BaseSources: &pb.Sources_GitilesCommit{
+					GitilesCommit: &pb.GitilesCommit{
+						Host:       "mysources.googlesource.com",
+						Project:    "myproject/src",
+						Ref:        "refs/heads/otherbranch",
+						CommitHash: "00bbccddeeff00112233aabbccddeeff00112233",
+						Position:   120,
+					},
 				},
 			},
 		},

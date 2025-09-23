@@ -124,13 +124,6 @@ func TestResultDB(t *testing.T) {
 	})
 	ftt.Run("Sources to/from ResultDB", t, func(t *ftt.Test) {
 		rdbSources := &rdbpb.Sources{
-			GitilesCommit: &rdbpb.GitilesCommit{
-				Host:       "project.googlesource.com",
-				Project:    "myproject/src",
-				Ref:        "refs/heads/main",
-				CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
-				Position:   16801,
-			},
 			Changelists: []*rdbpb.GerritChange{
 				{
 					Host:     "project-review.googlesource.com",
@@ -142,13 +135,6 @@ func TestResultDB(t *testing.T) {
 			IsDirty: true,
 		}
 		analysisSources := &pb.Sources{
-			GitilesCommit: &pb.GitilesCommit{
-				Host:       "project.googlesource.com",
-				Project:    "myproject/src",
-				Ref:        "refs/heads/main",
-				CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
-				Position:   16801,
-			},
 			Changelists: []*pb.GerritChange{
 				{
 					Host:     "project-review.googlesource.com",
@@ -159,62 +145,186 @@ func TestResultDB(t *testing.T) {
 			},
 			IsDirty: true,
 		}
-		assert.Loosely(t, SourcesFromResultDB(rdbSources), should.Match(analysisSources))
-		assert.Loosely(t, SourcesToResultDB(analysisSources), should.Match(rdbSources))
+		t.Run("with gitiles commit", func(t *ftt.Test) {
+			rdbSources.BaseSources = &rdbpb.Sources_GitilesCommit{
+				GitilesCommit: &rdbpb.GitilesCommit{
+					Host:       "project.googlesource.com",
+					Project:    "myproject/src",
+					Ref:        "refs/heads/main",
+					CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
+					Position:   16801,
+				},
+			}
+			analysisSources.BaseSources = &pb.Sources_GitilesCommit{
+				GitilesCommit: &pb.GitilesCommit{
+					Host:       "project.googlesource.com",
+					Project:    "myproject/src",
+					Ref:        "refs/heads/main",
+					CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
+					Position:   16801,
+				},
+			}
+
+			assert.Loosely(t, SourcesFromResultDB(rdbSources), should.Match(analysisSources))
+			assert.Loosely(t, SourcesToResultDB(analysisSources), should.Match(rdbSources))
+		})
+		t.Run("with submitted android build", func(t *ftt.Test) {
+			rdbSources.BaseSources = &rdbpb.Sources_SubmittedAndroidBuild{
+				SubmittedAndroidBuild: &rdbpb.SubmittedAndroidBuild{
+					DataRealm: "data_realm",
+					Branch:    "branch",
+					BuildId:   1234567890,
+				},
+			}
+			analysisSources.BaseSources = &pb.Sources_SubmittedAndroidBuild{
+				SubmittedAndroidBuild: &pb.SubmittedAndroidBuild{
+					DataRealm: "data_realm",
+					Branch:    "branch",
+					BuildId:   1234567890,
+				},
+			}
+
+			assert.Loosely(t, SourcesFromResultDB(rdbSources), should.Match(analysisSources))
+			assert.Loosely(t, SourcesToResultDB(analysisSources), should.Match(rdbSources))
+		})
+		t.Run("with no base sources", func(t *ftt.Test) {
+			// This method may be used to support validation of sources, e.g. by
+			// converting LUCI Analysis sources to ResultDB sources so that
+			// ResultDB validation methods can be used. Verify even invalid
+			// sources will convert.
+			rdbSources.BaseSources = nil
+			analysisSources.BaseSources = nil
+
+			assert.Loosely(t, SourcesFromResultDB(rdbSources), should.Match(analysisSources))
+			assert.Loosely(t, SourcesToResultDB(analysisSources), should.Match(rdbSources))
+		})
 	})
 	ftt.Run("SourceRef to resultdb", t, func(t *ftt.Test) {
-		sourceRef := &pb.SourceRef{
-			System: &pb.SourceRef_Gitiles{
-				Gitiles: &pb.GitilesRef{
-					Host:    "host",
-					Project: "proj",
-					Ref:     "ref",
+		t.Run("With gitiles ref", func(t *ftt.Test) {
+			sourceRef := &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "host",
+						Project: "proj",
+						Ref:     "ref",
+					},
 				},
-			},
-		}
-		sourceRef1 := SourceRefToResultDB(sourceRef)
-		assert.Loosely(t, sourceRef1, should.Match(&rdbpb.SourceRef{
-			System: &rdbpb.SourceRef_Gitiles{
-				Gitiles: &rdbpb.GitilesRef{
-					Host:    "host",
-					Project: "proj",
-					Ref:     "ref",
+			}
+			sourceRef1 := SourceRefToResultDB(sourceRef)
+			assert.Loosely(t, sourceRef1, should.Match(&rdbpb.SourceRef{
+				System: &rdbpb.SourceRef_Gitiles{
+					Gitiles: &rdbpb.GitilesRef{
+						Host:    "host",
+						Project: "proj",
+						Ref:     "ref",
+					},
 				},
-			},
-		}))
+			}))
+		})
+		t.Run("With android build branch", func(t *ftt.Test) {
+			sourceRef := &pb.SourceRef{
+				System: &pb.SourceRef_AndroidBuild{
+					AndroidBuild: &pb.AndroidBuildBranch{
+						DataRealm: "prod",
+						Branch:    "branch",
+					},
+				},
+			}
+			sourceRef1 := SourceRefToResultDB(sourceRef)
+			assert.Loosely(t, sourceRef1, should.Match(&rdbpb.SourceRef{
+				System: &rdbpb.SourceRef_AndroidBuild{
+					AndroidBuild: &rdbpb.AndroidBuildBranch{
+						DataRealm: "prod",
+						Branch:    "branch",
+					},
+				},
+			}))
+		})
+		t.Run("With no system", func(t *ftt.Test) {
+			// This method may be used to support validation of source refs, e.g. by
+			// converting LUCI Analysis source ref to a ResultDB source ref so that
+			// ResultDB validation methods can be used. Verify even invalid
+			// source refs will convert.
+			sourceRef := &pb.SourceRef{}
+			sourceRef1 := SourceRefToResultDB(sourceRef)
+			assert.Loosely(t, sourceRef1, should.Match(&rdbpb.SourceRef{}))
+		})
 	})
-	ftt.Run("RefFromSources", t, func(t *ftt.Test) {
-		sources := &pb.Sources{
-			GitilesCommit: &pb.GitilesCommit{
-				Host:       "project.googlesource.com",
-				Project:    "myproject/src",
-				Ref:        "refs/heads/main",
-				CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
-				Position:   16801,
-			},
-		}
-		ref := SourceRefFromSources(sources)
-		assert.Loosely(t, ref, should.Match(&pb.SourceRef{
-			System: &pb.SourceRef_Gitiles{
-				Gitiles: &pb.GitilesRef{
-					Host:    "project.googlesource.com",
-					Project: "myproject/src",
-					Ref:     "refs/heads/main",
+	ftt.Run("SourceRefFromSources and SourcePosition", t, func(t *ftt.Test) {
+		t.Run("Gitiles", func(t *ftt.Test) {
+			sources := &pb.Sources{
+				BaseSources: &pb.Sources_GitilesCommit{
+					GitilesCommit: &pb.GitilesCommit{
+						Host:       "project.googlesource.com",
+						Project:    "myproject/src",
+						Ref:        "refs/heads/main",
+						CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
+						Position:   16801,
+					},
 				},
-			},
-		}))
+			}
+			ref := SourceRefFromSources(sources)
+			assert.Loosely(t, ref, should.Match(&pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "project.googlesource.com",
+						Project: "myproject/src",
+						Ref:     "refs/heads/main",
+					},
+				},
+			}))
+
+			pos := SourcePosition(sources)
+			assert.Loosely(t, pos, should.Equal(int64(16801)))
+		})
+		t.Run("AndroidBuild", func(t *ftt.Test) {
+			sources := &pb.Sources{
+				BaseSources: &pb.Sources_SubmittedAndroidBuild{
+					SubmittedAndroidBuild: &pb.SubmittedAndroidBuild{
+						DataRealm: "prod",
+						Branch:    "branch",
+						BuildId:   1234567890,
+					},
+				},
+			}
+			ref := SourceRefFromSources(sources)
+			assert.Loosely(t, ref, should.Match(&pb.SourceRef{
+				System: &pb.SourceRef_AndroidBuild{
+					AndroidBuild: &pb.AndroidBuildBranch{
+						DataRealm: "prod",
+						Branch:    "branch",
+					},
+				},
+			}))
+
+			pos := SourcePosition(sources)
+			assert.Loosely(t, pos, should.Equal(int64(1234567890)))
+		})
 	})
 	ftt.Run("RefHash", t, func(t *ftt.Test) {
-		ref := &pb.SourceRef{
-			System: &pb.SourceRef_Gitiles{
-				Gitiles: &pb.GitilesRef{
-					Host:    "project.googlesource.com",
-					Project: "myproject/src",
-					Ref:     "refs/heads/main",
+		t.Run("Gitiles", func(t *ftt.Test) {
+			ref := &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "project.googlesource.com",
+						Project: "myproject/src",
+						Ref:     "refs/heads/main",
+					},
 				},
-			},
-		}
-		hash := SourceRefHash(ref)
-		assert.Loosely(t, hex.EncodeToString(hash), should.Equal(`5d47c679cf080cb5`))
+			}
+			hash := SourceRefHash(ref)
+			assert.Loosely(t, hex.EncodeToString(hash), should.Equal(`5d47c679cf080cb5`))
+		})
+		t.Run("AndroidBuild", func(t *ftt.Test) {
+			sr := &pb.SourceRef{
+				System: &pb.SourceRef_AndroidBuild{
+					AndroidBuild: &pb.AndroidBuildBranch{
+						DataRealm: "prod",
+						Branch:    "branch",
+					},
+				},
+			}
+			assert.Loosely(t, hex.EncodeToString(SourceRefHash(sr)), should.Equal("7abd7eb5810c61dd"))
+		})
 	})
 }

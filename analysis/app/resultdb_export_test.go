@@ -47,12 +47,14 @@ func TestInvocationReadyForExportHandler(t *testing.T) {
 				Invocation:          "my-invocation",
 				InvocationRealm:     "includedproject:test_runner",
 				Sources: &resultpb.Sources{
-					GitilesCommit: &resultpb.GitilesCommit{
-						Host:       "testproject.googlesource.com",
-						Project:    "testproject/src",
-						Ref:        "refs/heads/main",
-						CommitHash: "1234567890123456789012345678901234567890",
-						Position:   123,
+					BaseSources: &resultpb.Sources_GitilesCommit{
+						GitilesCommit: &resultpb.GitilesCommit{
+							Host:       "testproject.googlesource.com",
+							Project:    "testproject/src",
+							Ref:        "refs/heads/main",
+							CommitHash: "1234567890123456789012345678901234567890",
+							Position:   123,
+						},
 					},
 				},
 			}

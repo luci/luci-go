@@ -103,12 +103,8 @@ func recordTestResults(ctx context.Context, input Inputs) error {
 func toTestResultSources(srcs *analysispb.Sources) (testresults.Sources, error) {
 	var result testresults.Sources
 
-	// We only know how to extract source position for gitiles-based
-	// sources for now.
-	if srcs.GitilesCommit != nil {
-		result.RefHash = pbutil.SourceRefHash(pbutil.SourceRefFromSources(srcs))
-		result.Position = srcs.GitilesCommit.Position
-	}
+	result.RefHash = pbutil.SourceRefHash(pbutil.SourceRefFromSources(srcs))
+	result.Position = pbutil.SourcePosition(srcs)
 	for _, cl := range srcs.Changelists {
 		err := testresults.ValidateGerritHostname(cl.Host)
 		if err != nil {

@@ -131,12 +131,14 @@ func TestExportTestVerdicts(t *testing.T) {
 			Verdicts: mockedQueryTestVariantsRsp().TestVariants,
 			SourcesByID: map[string]*pb.Sources{
 				"sources1": {
-					GitilesCommit: &pb.GitilesCommit{
-						Host:       "project.googlesource.com",
-						Project:    "myproject/src",
-						Ref:        "refs/heads/main",
-						CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
-						Position:   16801,
+					BaseSources: &pb.Sources_GitilesCommit{
+						GitilesCommit: &pb.GitilesCommit{
+							Host:       "project.googlesource.com",
+							Project:    "myproject/src",
+							Ref:        "refs/heads/main",
+							CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
+							Position:   16801,
+						},
 					},
 					Changelists: []*pb.GerritChange{
 						{
@@ -336,12 +338,14 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
 			Sources: &pb.Sources{
-				GitilesCommit: &pb.GitilesCommit{
-					Host:       "project.googlesource.com",
-					Project:    "myproject/src",
-					Ref:        "refs/heads/main",
-					CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
-					Position:   16801,
+				BaseSources: &pb.Sources_GitilesCommit{
+					GitilesCommit: &pb.GitilesCommit{
+						Host:       "project.googlesource.com",
+						Project:    "myproject/src",
+						Ref:        "refs/heads/main",
+						CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
+						Position:   16801,
+					},
 				},
 				Changelists: []*pb.GerritChange{
 					{

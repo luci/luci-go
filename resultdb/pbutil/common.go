@@ -66,6 +66,11 @@ const MaxDependencyStepTagValSize = 1024
 
 const MaxInstructionNameSize = 100
 
+// The maximum length allowed for Android Branch names.
+// Note: The upstream technically does not enforce a limit but we
+// enforce a reasonable limit here so that we have a number we can design with.
+const MaxAndroidBranchLength = 255
+
 // The maximum size the requests collection in a batch request, in bytes.
 const MaxBatchRequestSize = 10 * 1024 * 1024 // 10 MiB
 
@@ -326,6 +331,39 @@ func ValidateGerritChange(change *pb.GerritChange) error {
 	}
 }
 
+// ValidateSubmittedAndroidBuild validates a submitted Android build reference.
+func ValidateSubmittedAndroidBuild(buildID *pb.SubmittedAndroidBuild) error {
+	if buildID == nil {
+		return errors.New("unspecified")
+	}
+	if buildID.DataRealm == "" {
+		return errors.New("data_realm: unspecified")
+	}
+	// For now support prod only. If/when we start accepting data from
+	// non-production systems in any of our environments we can update this
+	// to accommodate.
+	if buildID.DataRealm != "prod" {
+		return errors.Fmt("data_realm: unknown data realm %q", buildID.DataRealm)
+	}
+	if buildID.Branch == "" {
+		return errors.New("branch: unspecified")
+	}
+	// The upstream does not enforce restrictions on the branch name, so
+	// we are fairly liberal in the alphabet and length we allow here.
+	// We do impose some limits here to allow us to make some assumptions when
+	// implementing UIs and RPCs.
+	if err := ValidateUTF8PrintableStrict(buildID.Branch, MaxAndroidBranchLength); err != nil {
+		return errors.Fmt("branch: %w", err)
+	}
+	if buildID.BuildId == 0 {
+		return errors.New("build_id: unspecified")
+	}
+	if buildID.BuildId < 0 {
+		return errors.New("build_id: cannot be negative")
+	}
+	return nil
+}
+
 func ValidateInstructions(instructions *pb.Instructions) error {
 	// We allows invocation with no instructions.
 	if instructions == nil {
@@ -461,24 +499,70 @@ func SortGerritChanges(changes []*pb.GerritChange) {
 }
 
 // SourceRefFromSources extracts a SourceRef from given sources.
+// This method should only be called on validated sources.
 func SourceRefFromSources(srcs *pb.Sources) *pb.SourceRef {
-	return &pb.SourceRef{
-		System: &pb.SourceRef_Gitiles{
-			Gitiles: &pb.GitilesRef{
-				Host:    srcs.GitilesCommit.Host,
-				Project: srcs.GitilesCommit.Project,
-				Ref:     srcs.GitilesCommit.Ref,
+	switch base := srcs.BaseSources.(type) {
+	case *pb.Sources_GitilesCommit:
+		gc := base.GitilesCommit
+		return &pb.SourceRef{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{
+					Host:    gc.Host,
+					Project: gc.Project,
+					Ref:     gc.Ref,
+				},
 			},
-		}}
+		}
+	case *pb.Sources_SubmittedAndroidBuild:
+		ab := base.SubmittedAndroidBuild
+		return &pb.SourceRef{
+			System: &pb.SourceRef_AndroidBuild{
+				AndroidBuild: &pb.AndroidBuildBranch{
+					DataRealm: ab.DataRealm,
+					Branch:    ab.Branch,
+				},
+			},
+		}
+	default:
+		panic("unknown base sources type")
+	}
+}
+
+// SourcePosition returns a source position from the given sources.
+//
+// The source position can only be compared with another source position
+// on the same SourceRef. When comparing:
+// - A larger source position means newer sources;
+// - The same source position means the same sources;
+// - A smaller source position means older sources.
+//
+// Depending on the underlying source system, the source position
+// may have gaps in the numbering.
+//
+// This method should only be called on validated sources.
+func SourcePosition(srcs *pb.Sources) int64 {
+	switch base := srcs.BaseSources.(type) {
+	case *pb.Sources_GitilesCommit:
+		return base.GitilesCommit.Position
+	case *pb.Sources_SubmittedAndroidBuild:
+		return base.SubmittedAndroidBuild.BuildId
+	default:
+		panic("unknown base sources type")
+	}
 }
 
 // SourceRefHash returns a short hash of the sourceRef.
+//
+// This method should only be called on validated sources.
 func SourceRefHash(sr *pb.SourceRef) []byte {
 	var result [32]byte
 	switch sr.System.(type) {
 	case *pb.SourceRef_Gitiles:
 		gitiles := sr.GetGitiles()
 		result = sha256.Sum256([]byte("gitiles" + "\n" + gitiles.Host + "\n" + gitiles.Project + "\n" + gitiles.Ref))
+	case *pb.SourceRef_AndroidBuild:
+		android := sr.GetAndroidBuild()
+		result = sha256.Sum256([]byte("androidbuild" + "\n" + android.DataRealm + "\n" + android.Branch))
 	default:
 		panic("invalid source ref")
 	}
@@ -504,8 +588,17 @@ func ValidateSources(sources *pb.Sources) error {
 	if sources == nil {
 		return errors.New("unspecified")
 	}
-	if err := ValidateGitilesCommit(sources.GetGitilesCommit()); err != nil {
-		return errors.Fmt("gitiles_commit: %w", err)
+	switch base := sources.BaseSources.(type) {
+	case *pb.Sources_GitilesCommit:
+		if err := ValidateGitilesCommit(base.GitilesCommit); err != nil {
+			return errors.Fmt("gitiles_commit: %w", err)
+		}
+	case *pb.Sources_SubmittedAndroidBuild:
+		if err := ValidateSubmittedAndroidBuild(base.SubmittedAndroidBuild); err != nil {
+			return errors.Fmt("submitted_android_build: %w", err)
+		}
+	default:
+		return errors.Fmt("base_sources: unspecified")
 	}
 
 	if len(sources.Changelists) > 10 {

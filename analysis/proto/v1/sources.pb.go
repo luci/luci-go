@@ -94,15 +94,12 @@ func (ChangelistOwnerKind) EnumDescriptor() ([]byte, []int) {
 type Sources struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The base version of code sources checked out. Mandatory.
-	// If necessary, we could add support for non-gitiles sources here in
-	// future, using a oneof statement. E.g.
 	//
-	//	oneof system {
-	//	   GitilesCommit gitiles_commit = 1;
-	//	   SubversionRevision svn_revision = 4;
-	//	   ...
-	//	}
-	GitilesCommit *GitilesCommit `protobuf:"bytes,1,opt,name=gitiles_commit,json=gitilesCommit,proto3" json:"gitiles_commit,omitempty"`
+	// Types that are valid to be assigned to BaseSources:
+	//
+	//	*Sources_GitilesCommit
+	//	*Sources_SubmittedAndroidBuild
+	BaseSources isSources_BaseSources `protobuf_oneof:"base_sources"`
 	// The changelist(s) which were applied upon the base version of sources
 	// checked out. E.g. in commit queue tryjobs.
 	//
@@ -150,9 +147,27 @@ func (*Sources) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_analysis_proto_v1_sources_proto_rawDescGZIP(), []int{0}
 }
 
+func (x *Sources) GetBaseSources() isSources_BaseSources {
+	if x != nil {
+		return x.BaseSources
+	}
+	return nil
+}
+
 func (x *Sources) GetGitilesCommit() *GitilesCommit {
 	if x != nil {
-		return x.GitilesCommit
+		if x, ok := x.BaseSources.(*Sources_GitilesCommit); ok {
+			return x.GitilesCommit
+		}
+	}
+	return nil
+}
+
+func (x *Sources) GetSubmittedAndroidBuild() *SubmittedAndroidBuild {
+	if x != nil {
+		if x, ok := x.BaseSources.(*Sources_SubmittedAndroidBuild); ok {
+			return x.SubmittedAndroidBuild
+		}
 	}
 	return nil
 }
@@ -170,6 +185,29 @@ func (x *Sources) GetIsDirty() bool {
 	}
 	return false
 }
+
+type isSources_BaseSources interface {
+	isSources_BaseSources()
+}
+
+type Sources_GitilesCommit struct {
+	// The base version of code sources checked out.
+	GitilesCommit *GitilesCommit `protobuf:"bytes,1,opt,name=gitiles_commit,json=gitilesCommit,proto3,oneof"`
+}
+
+type Sources_SubmittedAndroidBuild struct {
+	// The submitted Android Build ID that describes the base code sources tested.
+	//
+	// In presubmit, where the invocation is testing a pending build (a build ID
+	// starting with "P"), lookup its reference build (which will be a submitted
+	// build) and specify it here. Then specify the cherry-picked changes under
+	// `changelists`.
+	SubmittedAndroidBuild *SubmittedAndroidBuild `protobuf:"bytes,4,opt,name=submitted_android_build,json=submittedAndroidBuild,proto3,oneof"`
+}
+
+func (*Sources_GitilesCommit) isSources_BaseSources() {}
+
+func (*Sources_SubmittedAndroidBuild) isSources_BaseSources() {}
 
 // GitilesCommit specifies the position of the gitiles commit an invocation
 // ran against, in a repository's commit log. More specifically, a ref's commit
@@ -266,6 +304,81 @@ func (x *GitilesCommit) GetPosition() int64 {
 	return 0
 }
 
+// Specifies the build ID of a submitted Android build. A submitted build is a
+// build that uses only changes that have been submitted to a branch.
+type SubmittedAndroidBuild struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The Android Build API data realm.
+	// This is usually `prod`.
+	DataRealm string `protobuf:"bytes,1,opt,name=data_realm,json=dataRealm,proto3" json:"data_realm,omitempty"`
+	// The Android Build branch.
+	// E.g. `git_main`.
+	Branch string `protobuf:"bytes,2,opt,name=branch,proto3" json:"branch,omitempty"`
+	// The build ID of the *submitted* build.
+	//
+	// This must be parsed to an integer, as this will be exported to BigQuery
+	// and used for sorting results in source order.
+	//
+	// When comparing two build IDs on the same data realm and branch, we expect:
+	// - A higher number means a newer version of sources were used in a build.
+	// - An equal number means the same version of sources used in a build.
+	// - A smaller number means an earlier version of sources were used in a build.
+	BuildId       int64 `protobuf:"varint,3,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SubmittedAndroidBuild) Reset() {
+	*x = SubmittedAndroidBuild{}
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubmittedAndroidBuild) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubmittedAndroidBuild) ProtoMessage() {}
+
+func (x *SubmittedAndroidBuild) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubmittedAndroidBuild.ProtoReflect.Descriptor instead.
+func (*SubmittedAndroidBuild) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_sources_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SubmittedAndroidBuild) GetDataRealm() string {
+	if x != nil {
+		return x.DataRealm
+	}
+	return ""
+}
+
+func (x *SubmittedAndroidBuild) GetBranch() string {
+	if x != nil {
+		return x.Branch
+	}
+	return ""
+}
+
+func (x *SubmittedAndroidBuild) GetBuildId() int64 {
+	if x != nil {
+		return x.BuildId
+	}
+	return 0
+}
+
 // A Gerrit patchset.
 type GerritChange struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -285,7 +398,7 @@ type GerritChange struct {
 
 func (x *GerritChange) Reset() {
 	*x = GerritChange{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[2]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -297,7 +410,7 @@ func (x *GerritChange) String() string {
 func (*GerritChange) ProtoMessage() {}
 
 func (x *GerritChange) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[2]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -310,7 +423,7 @@ func (x *GerritChange) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GerritChange.ProtoReflect.Descriptor instead.
 func (*GerritChange) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_sources_proto_rawDescGZIP(), []int{2}
+	return file_go_chromium_org_luci_analysis_proto_v1_sources_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GerritChange) GetHost() string {
@@ -359,6 +472,7 @@ type SourceRef struct {
 	// Types that are valid to be assigned to System:
 	//
 	//	*SourceRef_Gitiles
+	//	*SourceRef_AndroidBuild
 	System        isSourceRef_System `protobuf_oneof:"system"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -366,7 +480,7 @@ type SourceRef struct {
 
 func (x *SourceRef) Reset() {
 	*x = SourceRef{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[3]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -378,7 +492,7 @@ func (x *SourceRef) String() string {
 func (*SourceRef) ProtoMessage() {}
 
 func (x *SourceRef) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[3]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -391,7 +505,7 @@ func (x *SourceRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SourceRef.ProtoReflect.Descriptor instead.
 func (*SourceRef) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_sources_proto_rawDescGZIP(), []int{3}
+	return file_go_chromium_org_luci_analysis_proto_v1_sources_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *SourceRef) GetSystem() isSourceRef_System {
@@ -410,6 +524,15 @@ func (x *SourceRef) GetGitiles() *GitilesRef {
 	return nil
 }
 
+func (x *SourceRef) GetAndroidBuild() *AndroidBuildBranch {
+	if x != nil {
+		if x, ok := x.System.(*SourceRef_AndroidBuild); ok {
+			return x.AndroidBuild
+		}
+	}
+	return nil
+}
+
 type isSourceRef_System interface {
 	isSourceRef_System()
 }
@@ -419,7 +542,14 @@ type SourceRef_Gitiles struct {
 	Gitiles *GitilesRef `protobuf:"bytes,1,opt,name=gitiles,proto3,oneof"`
 }
 
+type SourceRef_AndroidBuild struct {
+	// A branch in Android Build API.
+	AndroidBuild *AndroidBuildBranch `protobuf:"bytes,2,opt,name=android_build,json=androidBuild,proto3,oneof"`
+}
+
 func (*SourceRef_Gitiles) isSourceRef_System() {}
+
+func (*SourceRef_AndroidBuild) isSourceRef_System() {}
 
 // Represents a branch in a gitiles repository.
 type GitilesRef struct {
@@ -437,7 +567,7 @@ type GitilesRef struct {
 
 func (x *GitilesRef) Reset() {
 	*x = GitilesRef{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -449,7 +579,7 @@ func (x *GitilesRef) String() string {
 func (*GitilesRef) ProtoMessage() {}
 
 func (x *GitilesRef) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -462,7 +592,7 @@ func (x *GitilesRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GitilesRef.ProtoReflect.Descriptor instead.
 func (*GitilesRef) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_sources_proto_rawDescGZIP(), []int{4}
+	return file_go_chromium_org_luci_analysis_proto_v1_sources_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GitilesRef) GetHost() string {
@@ -486,6 +616,63 @@ func (x *GitilesRef) GetRef() string {
 	return ""
 }
 
+// Represents a branch in Android Build API.
+type AndroidBuildBranch struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The Android Build API data realm.
+	// This is usually `prod`.
+	DataRealm string `protobuf:"bytes,1,opt,name=data_realm,json=dataRealm,proto3" json:"data_realm,omitempty"`
+	// The Android Build branch.
+	// E.g. `git_main`.
+	Branch        string `protobuf:"bytes,2,opt,name=branch,proto3" json:"branch,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AndroidBuildBranch) Reset() {
+	*x = AndroidBuildBranch{}
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AndroidBuildBranch) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AndroidBuildBranch) ProtoMessage() {}
+
+func (x *AndroidBuildBranch) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AndroidBuildBranch.ProtoReflect.Descriptor instead.
+func (*AndroidBuildBranch) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_sources_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *AndroidBuildBranch) GetDataRealm() string {
+	if x != nil {
+		return x.DataRealm
+	}
+	return ""
+}
+
+func (x *AndroidBuildBranch) GetBranch() string {
+	if x != nil {
+		return x.Branch
+	}
+	return ""
+}
+
 // A gerrit changelist.
 type Changelist struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -503,7 +690,7 @@ type Changelist struct {
 
 func (x *Changelist) Reset() {
 	*x = Changelist{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -515,7 +702,7 @@ func (x *Changelist) String() string {
 func (*Changelist) ProtoMessage() {}
 
 func (x *Changelist) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -528,7 +715,7 @@ func (x *Changelist) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Changelist.ProtoReflect.Descriptor instead.
 func (*Changelist) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_sources_proto_rawDescGZIP(), []int{5}
+	return file_go_chromium_org_luci_analysis_proto_v1_sources_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Changelist) GetHost() string {
@@ -563,33 +750,45 @@ var File_go_chromium_org_luci_analysis_proto_v1_sources_proto protoreflect.FileD
 
 const file_go_chromium_org_luci_analysis_proto_v1_sources_proto_rawDesc = "" +
 	"\n" +
-	"4go.chromium.org/luci/analysis/proto/v1/sources.proto\x12\x10luci.analysis.v1\x1a\x1fgoogle/api/field_behavior.proto\"\xae\x01\n" +
-	"\aSources\x12F\n" +
-	"\x0egitiles_commit\x18\x01 \x01(\v2\x1f.luci.analysis.v1.GitilesCommitR\rgitilesCommit\x12@\n" +
+	"4go.chromium.org/luci/analysis/proto/v1/sources.proto\x12\x10luci.analysis.v1\x1a\x1fgoogle/api/field_behavior.proto\"\xa3\x02\n" +
+	"\aSources\x12H\n" +
+	"\x0egitiles_commit\x18\x01 \x01(\v2\x1f.luci.analysis.v1.GitilesCommitH\x00R\rgitilesCommit\x12a\n" +
+	"\x17submitted_android_build\x18\x04 \x01(\v2'.luci.analysis.v1.SubmittedAndroidBuildH\x00R\x15submittedAndroidBuild\x12@\n" +
 	"\vchangelists\x18\x02 \x03(\v2\x1e.luci.analysis.v1.GerritChangeR\vchangelists\x12\x19\n" +
-	"\bis_dirty\x18\x03 \x01(\bR\aisDirty\"\x8c\x01\n" +
+	"\bis_dirty\x18\x03 \x01(\bR\aisDirtyB\x0e\n" +
+	"\fbase_sources\"\x8c\x01\n" +
 	"\rGitilesCommit\x12\x12\n" +
 	"\x04host\x18\x01 \x01(\tR\x04host\x12\x18\n" +
 	"\aproject\x18\x02 \x01(\tR\aproject\x12\x10\n" +
 	"\x03ref\x18\x03 \x01(\tR\x03ref\x12\x1f\n" +
 	"\vcommit_hash\x18\x04 \x01(\tR\n" +
 	"commitHash\x12\x1a\n" +
-	"\bposition\x18\x05 \x01(\x03R\bposition\"\xbb\x01\n" +
+	"\bposition\x18\x05 \x01(\x03R\bposition\"i\n" +
+	"\x15SubmittedAndroidBuild\x12\x1d\n" +
+	"\n" +
+	"data_realm\x18\x01 \x01(\tR\tdataRealm\x12\x16\n" +
+	"\x06branch\x18\x02 \x01(\tR\x06branch\x12\x19\n" +
+	"\bbuild_id\x18\x03 \x01(\x03R\abuildId\"\xbb\x01\n" +
 	"\fGerritChange\x12\x12\n" +
 	"\x04host\x18\x01 \x01(\tR\x04host\x12\x18\n" +
 	"\aproject\x18\x05 \x01(\tR\aproject\x12\x16\n" +
 	"\x06change\x18\x02 \x01(\x03R\x06change\x12\x1a\n" +
 	"\bpatchset\x18\x03 \x01(\x03R\bpatchset\x12I\n" +
 	"\n" +
-	"owner_kind\x18\x04 \x01(\x0e2%.luci.analysis.v1.ChangelistOwnerKindB\x03\xe0A\x03R\townerKind\"O\n" +
+	"owner_kind\x18\x04 \x01(\x0e2%.luci.analysis.v1.ChangelistOwnerKindB\x03\xe0A\x03R\townerKind\"\x9c\x01\n" +
 	"\tSourceRef\x128\n" +
-	"\agitiles\x18\x01 \x01(\v2\x1c.luci.analysis.v1.GitilesRefH\x00R\agitilesB\b\n" +
+	"\agitiles\x18\x01 \x01(\v2\x1c.luci.analysis.v1.GitilesRefH\x00R\agitiles\x12K\n" +
+	"\randroid_build\x18\x02 \x01(\v2$.luci.analysis.v1.AndroidBuildBranchH\x00R\fandroidBuildB\b\n" +
 	"\x06system\"L\n" +
 	"\n" +
 	"GitilesRef\x12\x12\n" +
 	"\x04host\x18\x01 \x01(\tR\x04host\x12\x18\n" +
 	"\aproject\x18\x02 \x01(\tR\aproject\x12\x10\n" +
-	"\x03ref\x18\x03 \x01(\tR\x03ref\"\x9a\x01\n" +
+	"\x03ref\x18\x03 \x01(\tR\x03ref\"K\n" +
+	"\x12AndroidBuildBranch\x12\x1d\n" +
+	"\n" +
+	"data_realm\x18\x01 \x01(\tR\tdataRealm\x12\x16\n" +
+	"\x06branch\x18\x02 \x01(\tR\x06branch\"\x9a\x01\n" +
 	"\n" +
 	"Changelist\x12\x12\n" +
 	"\x04host\x18\x01 \x01(\tR\x04host\x12\x16\n" +
@@ -616,27 +815,31 @@ func file_go_chromium_org_luci_analysis_proto_v1_sources_proto_rawDescGZIP() []b
 }
 
 var file_go_chromium_org_luci_analysis_proto_v1_sources_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_go_chromium_org_luci_analysis_proto_v1_sources_proto_goTypes = []any{
-	(ChangelistOwnerKind)(0), // 0: luci.analysis.v1.ChangelistOwnerKind
-	(*Sources)(nil),          // 1: luci.analysis.v1.Sources
-	(*GitilesCommit)(nil),    // 2: luci.analysis.v1.GitilesCommit
-	(*GerritChange)(nil),     // 3: luci.analysis.v1.GerritChange
-	(*SourceRef)(nil),        // 4: luci.analysis.v1.SourceRef
-	(*GitilesRef)(nil),       // 5: luci.analysis.v1.GitilesRef
-	(*Changelist)(nil),       // 6: luci.analysis.v1.Changelist
+	(ChangelistOwnerKind)(0),      // 0: luci.analysis.v1.ChangelistOwnerKind
+	(*Sources)(nil),               // 1: luci.analysis.v1.Sources
+	(*GitilesCommit)(nil),         // 2: luci.analysis.v1.GitilesCommit
+	(*SubmittedAndroidBuild)(nil), // 3: luci.analysis.v1.SubmittedAndroidBuild
+	(*GerritChange)(nil),          // 4: luci.analysis.v1.GerritChange
+	(*SourceRef)(nil),             // 5: luci.analysis.v1.SourceRef
+	(*GitilesRef)(nil),            // 6: luci.analysis.v1.GitilesRef
+	(*AndroidBuildBranch)(nil),    // 7: luci.analysis.v1.AndroidBuildBranch
+	(*Changelist)(nil),            // 8: luci.analysis.v1.Changelist
 }
 var file_go_chromium_org_luci_analysis_proto_v1_sources_proto_depIdxs = []int32{
 	2, // 0: luci.analysis.v1.Sources.gitiles_commit:type_name -> luci.analysis.v1.GitilesCommit
-	3, // 1: luci.analysis.v1.Sources.changelists:type_name -> luci.analysis.v1.GerritChange
-	0, // 2: luci.analysis.v1.GerritChange.owner_kind:type_name -> luci.analysis.v1.ChangelistOwnerKind
-	5, // 3: luci.analysis.v1.SourceRef.gitiles:type_name -> luci.analysis.v1.GitilesRef
-	0, // 4: luci.analysis.v1.Changelist.owner_kind:type_name -> luci.analysis.v1.ChangelistOwnerKind
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	3, // 1: luci.analysis.v1.Sources.submitted_android_build:type_name -> luci.analysis.v1.SubmittedAndroidBuild
+	4, // 2: luci.analysis.v1.Sources.changelists:type_name -> luci.analysis.v1.GerritChange
+	0, // 3: luci.analysis.v1.GerritChange.owner_kind:type_name -> luci.analysis.v1.ChangelistOwnerKind
+	6, // 4: luci.analysis.v1.SourceRef.gitiles:type_name -> luci.analysis.v1.GitilesRef
+	7, // 5: luci.analysis.v1.SourceRef.android_build:type_name -> luci.analysis.v1.AndroidBuildBranch
+	0, // 6: luci.analysis.v1.Changelist.owner_kind:type_name -> luci.analysis.v1.ChangelistOwnerKind
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_v1_sources_proto_init() }
@@ -644,8 +847,13 @@ func file_go_chromium_org_luci_analysis_proto_v1_sources_proto_init() {
 	if File_go_chromium_org_luci_analysis_proto_v1_sources_proto != nil {
 		return
 	}
-	file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[3].OneofWrappers = []any{
+	file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[0].OneofWrappers = []any{
+		(*Sources_GitilesCommit)(nil),
+		(*Sources_SubmittedAndroidBuild)(nil),
+	}
+	file_go_chromium_org_luci_analysis_proto_v1_sources_proto_msgTypes[4].OneofWrappers = []any{
 		(*SourceRef_Gitiles)(nil),
+		(*SourceRef_AndroidBuild)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -653,7 +861,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_sources_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_analysis_proto_v1_sources_proto_rawDesc), len(file_go_chromium_org_luci_analysis_proto_v1_sources_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

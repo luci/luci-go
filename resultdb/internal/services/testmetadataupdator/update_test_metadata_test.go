@@ -104,14 +104,17 @@ func TestUpdateTestMetadata(t *testing.T) {
 
 		invSources := func(position int64) *pb.Sources {
 			return &pb.Sources{
-				GitilesCommit: &pb.GitilesCommit{
-					Host:       "testHost",
-					Project:    "testProject",
-					Ref:        "testRef",
-					CommitHash: "testCommitHash",
-					Position:   position,
+				BaseSources: &pb.Sources_GitilesCommit{
+					GitilesCommit: &pb.GitilesCommit{
+						Host:       "testHost",
+						Project:    "testProject",
+						Ref:        "testRef",
+						CommitHash: "testCommitHash",
+						Position:   position,
+					},
 				},
-				IsDirty: false}
+				IsDirty: false,
+			}
 		}
 		sourceRef := &pb.SourceRef{
 			System: &pb.SourceRef_Gitiles{

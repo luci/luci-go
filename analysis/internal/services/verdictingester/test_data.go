@@ -373,12 +373,14 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 		},
 		Sources: map[string]*rdbpb.Sources{
 			"sources1": {
-				GitilesCommit: &rdbpb.GitilesCommit{
-					Host:       "project.googlesource.com",
-					Project:    "myproject/src",
-					Ref:        "refs/heads/main",
-					CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
-					Position:   16801,
+				BaseSources: &rdbpb.Sources_GitilesCommit{
+					GitilesCommit: &rdbpb.GitilesCommit{
+						Host:       "project.googlesource.com",
+						Project:    "myproject/src",
+						Ref:        "refs/heads/main",
+						CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
+						Position:   16801,
+					},
 				},
 				Changelists: []*rdbpb.GerritChange{
 					{

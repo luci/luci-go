@@ -167,7 +167,9 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 
 			t.Run("invalid", func(t *ftt.Test) {
 				req.RootInvocation.Sources = &pb.Sources{
-					GitilesCommit: &pb.GitilesCommit{Host: "invalid host"},
+					BaseSources: &pb.Sources_GitilesCommit{
+						GitilesCommit: &pb.GitilesCommit{Host: "invalid host"},
+					},
 				}
 				err := validateUpdateRootInvocationRequest(ctx, req)
 				assert.Loosely(t, err, should.ErrLike("root_invocation: sources: gitiles_commit: host: does not match"))

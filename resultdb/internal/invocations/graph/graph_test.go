@@ -463,12 +463,14 @@ func TestReachCache(t *testing.T) {
 		invs := NewReachableInvocations()
 
 		source1 := &pb.Sources{
-			GitilesCommit: &pb.GitilesCommit{
-				Host:       "myproject.googlesource.com",
-				Project:    "myproject/src",
-				Ref:        "refs/heads/main",
-				CommitHash: strings.Repeat("a", 40),
-				Position:   105,
+			BaseSources: &pb.Sources_GitilesCommit{
+				GitilesCommit: &pb.GitilesCommit{
+					Host:       "myproject.googlesource.com",
+					Project:    "myproject/src",
+					Ref:        "refs/heads/main",
+					CommitHash: strings.Repeat("a", 40),
+					Position:   105,
+				},
 			},
 		}
 		invs.Sources[HashSources(source1)] = source1

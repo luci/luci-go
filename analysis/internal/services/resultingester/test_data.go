@@ -213,12 +213,14 @@ func gerritChangesByHostForTesting() map[string][]*gerritpb.ChangeInfo {
 
 func resultdbSourcesForTesting() *rdbpb.Sources {
 	return &rdbpb.Sources{
-		GitilesCommit: &rdbpb.GitilesCommit{
-			Host:       "project.googlesource.com",
-			Project:    "myproject/src",
-			Ref:        "refs/heads/main",
-			CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
-			Position:   16801,
+		BaseSources: &rdbpb.Sources_GitilesCommit{
+			GitilesCommit: &rdbpb.GitilesCommit{
+				Host:       "project.googlesource.com",
+				Project:    "myproject/src",
+				Ref:        "refs/heads/main",
+				CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
+				Position:   16801,
+			},
 		},
 		Changelists: []*rdbpb.GerritChange{
 			{
@@ -234,12 +236,14 @@ func resultdbSourcesForTesting() *rdbpb.Sources {
 
 func resolvedSourcesForTesting() *analysispb.Sources {
 	return &analysispb.Sources{
-		GitilesCommit: &analysispb.GitilesCommit{
-			Host:       "project.googlesource.com",
-			Project:    "myproject/src",
-			Ref:        "refs/heads/main",
-			CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
-			Position:   16801,
+		BaseSources: &analysispb.Sources_GitilesCommit{
+			GitilesCommit: &analysispb.GitilesCommit{
+				Host:       "project.googlesource.com",
+				Project:    "myproject/src",
+				Ref:        "refs/heads/main",
+				CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
+				Position:   16801,
+			},
 		},
 		Changelists: []*analysispb.GerritChange{
 			{

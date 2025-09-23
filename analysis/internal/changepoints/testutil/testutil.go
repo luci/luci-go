@@ -44,11 +44,13 @@ func SamplePayload() *taskspb.IngestTestVerdicts {
 func SampleSourcesMap(commitPosition int) map[string]*pb.Sources {
 	return map[string]*pb.Sources{
 		"sources_id": {
-			GitilesCommit: &pb.GitilesCommit{
-				Host:     "host",
-				Project:  "proj",
-				Ref:      "ref",
-				Position: int64(commitPosition),
+			BaseSources: &pb.Sources_GitilesCommit{
+				GitilesCommit: &pb.GitilesCommit{
+					Host:     "host",
+					Project:  "proj",
+					Ref:      "ref",
+					Position: int64(commitPosition),
+				},
 			},
 		},
 	}
@@ -57,11 +59,13 @@ func SampleSourcesMap(commitPosition int) map[string]*pb.Sources {
 func SampleSourcesWithChangelistsMap(commitPosition int) map[string]*pb.Sources {
 	return map[string]*pb.Sources{
 		"sources_id": {
-			GitilesCommit: &pb.GitilesCommit{
-				Host:     "host",
-				Project:  "proj",
-				Ref:      "ref",
-				Position: int64(commitPosition),
+			BaseSources: &pb.Sources_GitilesCommit{
+				GitilesCommit: &pb.GitilesCommit{
+					Host:     "host",
+					Project:  "proj",
+					Ref:      "ref",
+					Position: int64(commitPosition),
+				},
 			},
 			Changelists: []*pb.GerritChange{
 				{

@@ -464,7 +464,9 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 		t.Run(`invalid source spec`, func(t *ftt.Test) {
 			request.Invocation.SourceSpec = &pb.SourceSpec{
 				Sources: &pb.Sources{
-					GitilesCommit: &pb.GitilesCommit{},
+					BaseSources: &pb.Sources_GitilesCommit{
+						GitilesCommit: &pb.GitilesCommit{},
+					},
 				},
 			}
 			err := validateCreateInvocationRequest(request, cfg, now, addedInvs)

@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/analyzer"
 	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
-	"go.chromium.org/luci/analysis/internal/changepoints/sources"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/checkpoints"
 	"go.chromium.org/luci/analysis/internal/config"
@@ -52,8 +51,8 @@ var (
 		// - "ingested": The verdict was ingested.
 		// - "skipped_no_sources": The verdict was skipped because it has no source
 		//   data.
-		// - "skipped_no_commit_data": The verdict was skipped because its source
-		//   does not have enough commit data (e.g. commit position).
+		// - "skipped_dirty_sources": The verdict was skipped because its sources
+		//   were dirty and cannot be used in the changepoint analysis model.
 		// - "skipped_out_of_order": The verdict was skipped because it was too
 		//   out of order.
 		// - "skipped_unsubmitted_code": The verdict was skipped because is was
@@ -307,8 +306,8 @@ func filterTestVariantsHighLatency(ctx context.Context, tvs []*rdbpb.TestVariant
 			verdictCounter.Add(ctx, 1, project, "skipped_no_sources")
 			continue
 		}
-		if !sources.HasCommitData(src) {
-			verdictCounter.Add(ctx, 1, project, "skipped_no_commit_data")
+		if src.IsDirty {
+			verdictCounter.Add(ctx, 1, project, "skipped_dirty_sources")
 			continue
 		}
 		wasSubmittedByPresubmit := presubmit != nil &&

@@ -57,12 +57,14 @@ func NewBuilder(id ID) *Builder {
 				},
 			},
 			Sources: &pb.Sources{
-				GitilesCommit: &pb.GitilesCommit{
-					Host:       "chromium.googlesource.com",
-					Project:    "chromium/src",
-					Ref:        "refs/heads/main",
-					CommitHash: "1234567890abcdef1234567890abcdef12345678",
-					Position:   12345,
+				BaseSources: &pb.Sources_GitilesCommit{
+					GitilesCommit: &pb.GitilesCommit{
+						Host:       "chromium.googlesource.com",
+						Project:    "chromium/src",
+						Ref:        "refs/heads/main",
+						CommitHash: "1234567890abcdef1234567890abcdef12345678",
+						Position:   12345,
+					},
 				},
 			},
 			IsSourcesFinal: true,

@@ -85,12 +85,14 @@ func TestQueryStability(t *testing.T) {
 					TestId:  "not_exists_test_id",
 					Variant: var1,
 					Sources: &pb.Sources{
-						GitilesCommit: &pb.GitilesCommit{
-							Host:       "mysources.googlesource.com",
-							Project:    "myproject/src",
-							Ref:        "refs/heads/mybranch",
-							CommitHash: "aabbccddeeff00112233aabbccddeeff00112233",
-							Position:   130,
+						BaseSources: &pb.Sources_GitilesCommit{
+							GitilesCommit: &pb.GitilesCommit{
+								Host:       "mysources.googlesource.com",
+								Project:    "myproject/src",
+								Ref:        "refs/heads/mybranch",
+								CommitHash: "aabbccddeeff00112233aabbccddeeff00112233",
+								Position:   130,
+							},
 						},
 					},
 				},
@@ -98,12 +100,14 @@ func TestQueryStability(t *testing.T) {
 					TestId:  "test_id",
 					Variant: notExistsVariant,
 					Sources: &pb.Sources{
-						GitilesCommit: &pb.GitilesCommit{
-							Host:       "mysources.googlesource.com",
-							Project:    "myproject/src",
-							Ref:        "refs/heads/mybranch",
-							CommitHash: "aabbccddeeff00112233aabbccddeeff00112233",
-							Position:   130,
+						BaseSources: &pb.Sources_GitilesCommit{
+							GitilesCommit: &pb.GitilesCommit{
+								Host:       "mysources.googlesource.com",
+								Project:    "myproject/src",
+								Ref:        "refs/heads/mybranch",
+								CommitHash: "aabbccddeeff00112233aabbccddeeff00112233",
+								Position:   130,
+							},
 						},
 					},
 				})
@@ -127,12 +131,14 @@ func TestQueryStability(t *testing.T) {
 					TestId:  testID,
 					Variant: var1,
 					Sources: &pb.Sources{
-						GitilesCommit: &pb.GitilesCommit{
-							Host:       "mysources.googlesource.com",
-							Project:    "myproject/src",
-							Ref:        "refs/heads/mybranch",
-							CommitHash: "aabbccddeeff00112233aabbccddeeff00112233",
-							Position:   130,
+						BaseSources: &pb.Sources_GitilesCommit{
+							GitilesCommit: &pb.GitilesCommit{
+								Host:       "mysources.googlesource.com",
+								Project:    "myproject/src",
+								Ref:        "refs/heads/mybranch",
+								CommitHash: "aabbccddeeff00112233aabbccddeeff00112233",
+								Position:   130,
+							},
 						},
 					},
 				})

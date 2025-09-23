@@ -115,6 +115,8 @@ type TestResult struct {
 
 // ReadTestVerdictAfterPosition returns the first source verdict after
 // the given position on the given branch.
+//
+// This method supports sources specified in terms of git repositories only.
 func (c *ReadClient) ReadTestVerdictAfterPosition(ctx context.Context, options ReadVerdictAtOrAfterPositionOptions) (*SourceVerdict, error) {
 	query := `
 	SELECT
