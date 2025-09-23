@@ -87,7 +87,7 @@ func ResolveSpec(c context.Context, l *Loader, target python.Target, workDir str
 	// Additionally, track whether it's a file or a module (directory).
 	isModule := false
 	if isScriptTarget {
-		logging.Debugf(c, "Resolved Python target script: %s", target)
+		logging.Debugf(c, "Resolved Python target script: %v", target)
 
 		// Resolve to absolute script path.
 		if err := filesystem.AbsPath(&script.Path); err != nil {
