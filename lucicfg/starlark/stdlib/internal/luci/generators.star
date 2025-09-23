@@ -1467,6 +1467,7 @@ def gen_notify_cfg(ctx):
         # Get all project + builder pairs belonging to email
         owner_email = n.props.owner_email
         ignore_buckets = n.props.ignore_buckets
+        gardened_builders_only = n.props.gardened_builders_only
         cfg = None
         for f in ctx.output:
             if f.startswith("luci/cr-buildbucket"):
@@ -1480,6 +1481,8 @@ def gen_notify_cfg(ctx):
                 continue
             for builder in bucket.swarming.builders:
                 if builder.contact_team_email == owner_email:
+                    if gardened_builders_only and not "gardener_rotations" in json.decode(builder.properties):
+                        continue
                     builders.append(
                         notify_pb.Builder(
                             bucket = bucket.name,
