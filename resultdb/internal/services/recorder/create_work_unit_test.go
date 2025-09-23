@@ -812,6 +812,8 @@ func TestCreateWorkUnit(t *testing.T) {
 				ProducerResource:       "//producer.example.com/builds/123",
 				Tags:                   pbutil.StringPairs("e2e_key", "e2e_value"),
 				Properties:             wuProperties,
+				SourceSpec:             &pb.SourceSpec{Inherit: true},
+				IsSourceSpecFinal:      true,
 				ExtendedProperties:     extendedProperties,
 				Instructions:           instructionutil.InstructionsWithNames(instructions, "invocations/workunit:root-inv-id:wu-new"),
 				TestResultVariantUnion: pbutil.Variant("k", "v"), // From ModuleId.ModuleVariant.

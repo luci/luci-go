@@ -301,7 +301,8 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		"CreateRequestId":                   w.CreateRequestID,
 		"ProducerResource":                  w.ProducerResource,
 		"Properties":                        spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
-		"InheritSources":                    spanner.NullBool{Valid: false},
+		"InheritSources":                    spanner.NullBool{Valid: true, Bool: true}, // work unit always inherits source from root invocation.
+		"IsSourceSpecFinal":                 true,
 		"IsExportRoot":                      spanner.NullBool{Bool: false, Valid: true},
 		"Instructions":                      spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
 		"ExtendedProperties":                spanutil.Compressed(pbutil.MustMarshal(&invocationspb.ExtendedProperties{ExtendedProperties: w.ExtendedProperties})),

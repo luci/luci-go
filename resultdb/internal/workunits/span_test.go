@@ -105,6 +105,8 @@ func TestWriteWorkUnit(t *testing.T) {
 			Tags:                   row.Tags,
 			ProducerResource:       row.ProducerResource,
 			Properties:             row.Properties,
+			SourceSpec:             &pb.SourceSpec{Inherit: true},
+			IsSourceSpecFinal:      true,
 			Instructions:           row.Instructions,
 			ExtendedProperties:     row.ExtendedProperties,
 			IsExportRoot:           false,

@@ -226,8 +226,9 @@ func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *span
 		"CreateRequestId":                   w.CreateRequestID,
 		"ProducerResource":                  w.ProducerResource,
 		"Properties":                        spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
-		// Source are not set for work unit.
-		"InheritSources": spanner.NullBool{Valid: false},
+		// Work unit always inherits source from root invocation.
+		"InheritSources":    spanner.NullBool{Valid: true, Bool: true},
+		"IsSourceSpecFinal": true,
 		// Work units are not export roots.
 		"IsExportRoot": spanner.NullBool{Bool: false, Valid: true},
 		"Instructions": spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
@@ -277,6 +278,8 @@ func (w *WorkUnitRow) ToLegacyInvocationProto() *pb.Invocation {
 		Deadline:               pbutil.MustTimestampProto(w.Deadline),
 		Tags:                   w.Tags,
 		Properties:             w.Properties,
+		SourceSpec:             &pb.SourceSpec{Inherit: true},
+		IsSourceSpecFinal:      true,
 		ProducerResource:       w.ProducerResource,
 		Instructions:           instructionutil.InstructionsWithNames(w.Instructions, w.ID.LegacyInvocationID().Name()),
 		ExtendedProperties:     w.ExtendedProperties,
