@@ -14,6 +14,7 @@
 
 import { TableCell, TableSortLabel } from '@mui/material';
 
+import { useProjectCtx } from '@/common/components/page_meta';
 import { useFeatureFlag } from '@/common/feature_flags';
 import { SHOW_GEN_AI_SUSPECTS } from '@/monitoringv2/pages/monitoring_page/features';
 import { SortColumn } from '@/monitoringv2/util/alerts';
@@ -29,7 +30,9 @@ export const ColumnHeaders = ({
   sortDirection,
   clickSortColumn,
 }: ColumnHeadersProps) => {
-  const showGenAiSuspects: boolean = useFeatureFlag(SHOW_GEN_AI_SUSPECTS);
+  const project = useProjectCtx();
+  const showGenAiSuspects: boolean =
+    useFeatureFlag(SHOW_GEN_AI_SUSPECTS) && project === 'chromium';
   return (
     <>
       <TableCell>
@@ -51,7 +54,7 @@ export const ColumnHeaders = ({
         </TableSortLabel>
       </TableCell>
       {showGenAiSuspects ? (
-        <TableCell width="200px">Culprit</TableCell>
+        <TableCell width="150px">GenAI Culprit Analysis</TableCell>
       ) : (
         <TableCell width="120px">First Failure</TableCell>
       )}

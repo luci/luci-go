@@ -14,14 +14,16 @@
 
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { Link, Checkbox, IconButton, TableCell, TableRow } from '@mui/material';
+import { Checkbox, IconButton, Link, TableCell, TableRow } from '@mui/material';
 
+import { useProjectCtx } from '@/common/components/page_meta';
 import { useFeatureFlag } from '@/common/feature_flags';
 import { SHOW_GEN_AI_SUSPECTS } from '@/monitoringv2/pages/monitoring_page/features';
 import { GenericAlert, StructuredAlert } from '@/monitoringv2/util/alerts';
 
 import { BuilderHistorySparkline } from '../builder_history_sparkline';
 
+import { GenAiCulpritAnalysis } from './gen_ai_culprit_analysis';
 import { PrefillFilterIcon } from './prefill_filter_icon';
 import { TruncatedHistoryExplanation } from './truncated_history_explanation';
 
@@ -49,13 +51,16 @@ export const BuildAlertRow = ({
   const id = buildAlert.builderID;
   const consecutiveFailures = buildAlert.consecutiveFailures;
   const firstFailureId = buildAlert.history[consecutiveFailures - 1]?.buildId;
-  const showGenAiSuspects: boolean = useFeatureFlag(SHOW_GEN_AI_SUSPECTS);
+  const project = useProjectCtx();
+  const showGenAiSuspects: boolean =
+    useFeatureFlag(SHOW_GEN_AI_SUSPECTS) && project === 'chromium';
 
   if (buildAlert.kind !== 'builder' && buildAlert.kind !== 'step') {
     throw new Error(
       `StepAlertRow can only display builder and step alerts, not ${buildAlert.kind}`,
     );
   }
+
   return (
     <TableRow
       hover
@@ -131,16 +136,9 @@ export const BuildAlertRow = ({
         />
       </TableCell>
       {showGenAiSuspects ? (
-        <TableCell width="200px">
-          {buildAlert.kind === 'builder' && buildAlert.suspectedCulprit && (
-            <Link
-              href={buildAlert.suspectedCulprit.reviewUrl}
-              target="_blank"
-              rel="noreferrer"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {buildAlert.suspectedCulprit.reviewTitle}
-            </Link>
+        <TableCell width="150px">
+          {(buildAlert.kind === 'builder' || buildAlert.kind === 'step') && (
+            <GenAiCulpritAnalysis analysis={buildAlert.analysis} />
           )}
         </TableCell>
       ) : (

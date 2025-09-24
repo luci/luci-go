@@ -224,6 +224,8 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
       });
       return {
         ...bisectionClient.QueryAnalysis.query(req),
+        staleTime: 300000,
+        enabled: !!(treeName && tree && uniqueBuilders.length > 0),
       };
     }),
   });
@@ -276,7 +278,8 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
         alertsLoading:
           alertsQuery.isLoading ||
           extendedAlertsQuery.some((q) => q.isLoading) ||
-          historiesQueries.some((q) => q.isLoading),
+          historiesQueries.some((q) => q.isLoading) ||
+          analysesQueries.some((q) => q.isLoading),
         alertsLoadingStatus,
         builderAlerts: builderAlerts,
         stepAlerts: stepAlerts,
@@ -296,6 +299,7 @@ const createBuilderAlerts = (histories: BuildAndTestVariants[][]) => {
     const firstFailIndex = history.findIndex(
       (btv) => btv.build.status && btv.build.status !== Status.SUCCESS,
     );
+
     const alert: BuilderAlert = {
       kind: 'builder',
       key: builderPath(history[0].build.builder!),
@@ -308,7 +312,7 @@ const createBuilderAlerts = (histories: BuildAndTestVariants[][]) => {
       })),
       consecutiveFailures: firstPassIndex === -1 ? 10 : firstPassIndex,
       consecutivePasses: firstFailIndex === -1 ? 10 : firstFailIndex,
-      suspectedCulprit: history[0].analysis?.genAiResult?.suspect,
+      analysis: history[0].analysis || undefined,
     };
     return alert;
   });
@@ -354,6 +358,7 @@ const createStepAlertsforBuilder = (history: BuildAndTestVariants[]) => {
       history: stepHistory,
       consecutiveFailures: firstPassIndex === -1 ? 10 : firstPassIndex,
       consecutivePasses: firstFailIndex === -1 ? 10 : firstFailIndex,
+      analysis: history[0].analysis || undefined,
     };
     return alert;
   });
