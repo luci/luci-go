@@ -17,6 +17,12 @@ indexes:
   - name: is_revert_committed
   - name: revert_commit_time
 
+- kind: Suspect
+  properties:
+  - name: type
+  - name: commit_time
+    direction: desc
+
 - kind: SingleRerun
   properties:
   - name: rerun_build
