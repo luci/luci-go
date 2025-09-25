@@ -344,7 +344,7 @@ func TestReachable(t *testing.T) {
 				name := invocations.ID("b" + strconv.FormatInt(int64(i), 10))
 				childInvs = append(childInvs, name)
 				nodes = append(nodes, node(name, nil))
-				nodes = append(nodes, insert.TestResults(t, string(name), "testID", nil, pb.TestResult_SKIPPED))
+				nodes = append(nodes, insert.TestResults(t, name, "testID", nil, pb.TestResult_SKIPPED))
 				nodes = append(nodes, insert.TestExonerations(name, "testID", nil, pb.ExonerationReason_NOT_CRITICAL))
 				nodeSet = append(nodeSet, name)
 			}

@@ -80,7 +80,7 @@ func TestListTestResults(t *testing.T) {
 			req := &pb.ListTestResultsRequest{Invocation: "invocations/reqx"}
 			_, err := srv.ListTestResults(ctx, req)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.testResults.list in realm of invocation reqx"))
+			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.testResults.list in realm of \"invocations/reqx\""))
 		})
 
 		t.Run(`Works`, func(t *ftt.Test) {

@@ -150,7 +150,7 @@ func TestListArtifacts(t *testing.T) {
 				req.Parent = "invocations/invx/tests/t%20t/results/r"
 				_, err := srv.ListArtifacts(ctx, req)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.artifacts.list in realm of invocation invx"))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.artifacts.list in realm of \"invocations/invx\""))
 			})
 		})
 		t.Run(`work units`, func(t *ftt.Test) {

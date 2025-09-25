@@ -144,7 +144,7 @@ func TestGetTestResult(t *testing.T) {
 			tr, err := srv.GetTestResult(ctx, req)
 			assert.Loosely(t, tr, should.BeNil)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.testResults.get in realm of invocation inv_s"))
+			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.testResults.get in realm of \"invocations/inv_s\""))
 		})
 		t.Run(`works with failed result`, func(t *ftt.Test) {
 			testResultCells["Status"] = pb.TestStatus_FAIL

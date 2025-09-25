@@ -95,7 +95,7 @@ func TestQueryTestResultStatistics(t *testing.T) {
 				Invocations: []string{"invocations/x"},
 			})
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.testResults.list in realm of invocation x`))
+			assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.testResults.list in realm of "invocations/x"`))
 		})
 
 		t.Run(`Valid with included invocation`, func(t *ftt.Test) {

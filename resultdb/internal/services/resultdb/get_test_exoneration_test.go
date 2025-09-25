@@ -95,7 +95,7 @@ func TestGetTestExoneration(t *testing.T) {
 			tr, err := srv.GetTestExoneration(ctx, req)
 			assert.Loosely(t, tr, should.BeNil)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.testExonerations.get in realm of invocation inv_0"))
+			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.testExonerations.get in realm of \"invocations/inv_0\""))
 		})
 		t.Run("Valid", func(t *ftt.Test) {
 			tr, err := srv.GetTestExoneration(ctx, req)

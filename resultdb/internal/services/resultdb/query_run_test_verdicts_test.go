@@ -184,7 +184,7 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 			})
 
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.testResults.list in realm of invocation y"))
+			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.testResults.list in realm of \"invocations/y\""))
 		})
 		t.Run(`Invalid argument`, func(t *ftt.Test) {
 			t.Run(`Empty request`, func(t *ftt.Test) {

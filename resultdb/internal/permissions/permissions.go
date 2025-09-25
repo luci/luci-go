@@ -249,15 +249,29 @@ func VerifyInvocationByName(ctx context.Context, invName string, permissions ...
 	return VerifyInvocationsByName(ctx, []string{invName}, permissions...)
 }
 
-// HasPermissionsInRealms checks multiple invocations' realms for the specified
-// permissions. Returns:
-//   - whether the caller has all permissions in all invocations' realms
-//   - description of the first identified missing permission for an invocation
+// Represents a resource, such as root invocation or work unit.
+type namedResource interface {
+	// Name returns the resource name of the resource.
+	// See also: google.aip.dev/122.
+	Name() string
+}
+
+// HasPermissionsInRealms checks if the caller has a given set of permissions
+// for a collection of invocations, rootInvocations or workunits.
+//
+// The realms map is from a resource identifier (like invocations.ID) to the
+// resource's realm (e.g. "project:realm").
+// Returns:
+//   - whether the caller has all permissions in all realms
+//   - description of the first identified missing permission for an invocation/rootInvocation/workunit.
 //     (if applicable)
 //   - an error if one occurred
-func HasPermissionsInRealms(ctx context.Context, realms map[invocations.ID]string, permissions ...realms.Permission) (bool, string, error) {
+func HasPermissionsInRealms[T interface {
+	namedResource
+	comparable
+}](ctx context.Context, realms map[T]string, permissions ...realms.Permission) (bool, string, error) {
 	checked := stringset.New(1)
-	for id, realm := range realms {
+	for res, realm := range realms {
 		if !checked.Add(realm) {
 			continue
 		}
@@ -267,7 +281,7 @@ func HasPermissionsInRealms(ctx context.Context, realms map[invocations.ID]strin
 			case err != nil:
 				return false, "", err
 			case !allowed:
-				return false, fmt.Sprintf(`caller does not have permission %s in realm of invocation %s`, permission, id), nil
+				return false, fmt.Sprintf(`caller does not have permission %s in realm of %q`, permission, res.Name()), nil
 			}
 		}
 	}

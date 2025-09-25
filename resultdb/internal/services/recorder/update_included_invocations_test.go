@@ -158,7 +158,7 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 
 					_, err := recorder.UpdateIncludedInvocations(ctx, req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-					assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.invocations.include in realm of invocation included2`))
+					assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.invocations.include in realm of "invocations/included2"`))
 					assertNotIncluded("included2")
 				})
 

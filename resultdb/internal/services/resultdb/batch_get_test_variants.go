@@ -20,10 +20,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/permissions"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testvariants"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -31,12 +33,10 @@ import (
 )
 
 func validateBatchGetTestVariantsRequest(in *pb.BatchGetTestVariantsRequest) error {
+	// Invocation and parent already validated in verifyBatchGetTestVariantPermissions.
+
 	if len(in.TestVariants) > 500 {
 		return errors.New("a maximum of 500 test variants can be requested at once")
-	}
-
-	if err := pbutil.ValidateInvocationName(in.Invocation); err != nil {
-		return errors.Fmt("invocation: %q: %w", in.Invocation, err)
 	}
 
 	for i, tvID := range in.TestVariants {
@@ -77,14 +77,10 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
-	if err := permissions.VerifyInvocationByName(ctx, in.Invocation, rdbperms.PermListTestResults, rdbperms.PermListTestExonerations); err != nil {
+	accessLevel, err := verifyBatchGetTestVariantPermissions(ctx, in)
+	if err != nil {
 		return nil, err
 	}
-
-	// Caller has permissions rdbperms.PermListTestResults and
-	// rdbperms.PermListTestExonerations, so they have unrestricted access
-	accessLevel := testvariants.AccessLevelUnrestricted
-
 	if err := validateBatchGetTestVariantsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
@@ -110,7 +106,14 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 		testIDs[i] = testID
 	}
 
-	invs, err := graph.Reachable(ctx, invocations.NewIDSet(invocations.MustParseName(in.Invocation)))
+	var requestedLegacyInvID invocations.ID
+	if in.Parent != "" {
+		requestedLegacyInvID = rootinvocations.MustParseName(in.Parent).LegacyInvocationID()
+	} else {
+		requestedLegacyInvID = invocations.MustParseName(in.Invocation)
+	}
+
+	invs, err := graph.Reachable(ctx, invocations.NewIDSet(requestedLegacyInvID))
 	if err != nil {
 		return nil, errors.Fmt("failed to fetch invocations: %w", err)
 	}
@@ -174,4 +177,63 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 		TestVariants: tvs,
 		Sources:      distinctSources,
 	}, nil
+}
+
+func verifyBatchGetTestVariantPermissions(ctx context.Context, in *pb.BatchGetTestVariantsRequest) (a testvariants.AccessLevel, err error) {
+	// Perform necessary validation for the permission check.
+	var rootInvID rootinvocations.ID
+	var invID invocations.ID
+	if in.Parent != "" {
+		rootInvID, err = rootinvocations.ParseName(in.Parent)
+		if err != nil {
+			return testvariants.AccessLevelInvalid, appstatus.BadRequest(errors.Fmt("parent: %w", err))
+		}
+		if in.Invocation != "" {
+			return testvariants.AccessLevelInvalid, appstatus.BadRequest(errors.New("invocation: must not be specified if parent is specified"))
+		}
+	} else if in.Invocation != "" {
+		id, err := pbutil.ParseInvocationName(in.Invocation)
+		if err != nil {
+			return testvariants.AccessLevelInvalid, appstatus.BadRequest(errors.Fmt("invocation: %w", err))
+		}
+		invID = invocations.ID(id)
+	} else {
+		return testvariants.AccessLevelInvalid, appstatus.BadRequest(errors.New("either parent or invocation must be specified"))
+	}
+
+	if rootInvID != "" {
+		// Verify permissions for root invocation.
+		realm, err := rootinvocations.ReadRealm(ctx, rootInvID)
+		if err != nil {
+			return testvariants.AccessLevelInvalid, err
+		}
+		realmMap := map[rootinvocations.ID]string{
+			rootInvID: realm,
+		}
+		// Check for unrestricted access.
+		hasUnrestricted, _, err := permissions.HasPermissionsInRealms(ctx, realmMap, rdbperms.PermGetTestResult, rdbperms.PermGetTestExoneration)
+		if err != nil {
+			return testvariants.AccessLevelInvalid, err // Internal error.
+		}
+		if hasUnrestricted {
+			return testvariants.AccessLevelUnrestricted, nil
+		}
+
+		// Check for limited access.
+		hasLimited, desc, err := permissions.HasPermissionsInRealms(ctx, realmMap, rdbperms.PermListLimitedTestResults, rdbperms.PermListLimitedTestExonerations)
+		if err != nil {
+			return testvariants.AccessLevelInvalid, err // Internal error.
+		}
+		if hasLimited {
+			return testvariants.AccessLevelLimited, nil
+		}
+		// Caller does not have access.
+		return testvariants.AccessLevelInvalid, appstatus.Error(codes.PermissionDenied, desc)
+	}
+
+	// Verify permission for legacy invocation. Limited access not supported.
+	if err := permissions.VerifyInvocation(ctx, invID, rdbperms.PermListTestResults, rdbperms.PermListTestExonerations); err != nil {
+		return testvariants.AccessLevelInvalid, err // PermissionDenied, NotFound error.
+	}
+	return testvariants.AccessLevelUnrestricted, nil
 }

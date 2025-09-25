@@ -370,7 +370,7 @@ func TestQueryInstruction(t *testing.T) {
 							Nodes: []*pb.InstructionDependencyChain_Node{
 								{
 									InstructionName: "invocations/build-restricted/instructions/my_instruction",
-									Error:           "caller does not have permission resultdb.instructions.get in realm of invocation build-restricted",
+									Error:           "caller does not have permission resultdb.instructions.get in realm of \"invocations/build-restricted\"",
 								},
 							},
 						},

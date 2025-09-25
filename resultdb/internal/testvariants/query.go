@@ -36,9 +36,11 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/tracing"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
@@ -344,8 +346,13 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 		Status:   pb.TestStatus(r.Status),
 		StatusV2: pb.TestResult_Status(r.StatusV2),
 	}
-	tr.Name = pbutil.LegacyTestResultName(
-		string(invocations.IDFromRowID(r.InvocationID)), testID, r.ResultID)
+	readInvocationID := invocations.IDFromRowID(r.InvocationID)
+	if readInvocationID.IsWorkUnit() {
+		wuID := workunits.MustParseLegacyInvocationID(readInvocationID)
+		tr.Name = pbutil.TestResultName(string(wuID.RootInvocationID), wuID.WorkUnitID, testID, r.ResultID)
+	} else {
+		tr.Name = pbutil.LegacyTestResultName(string(readInvocationID), testID, r.ResultID)
+	}
 
 	if r.StartTime.Valid {
 		tr.StartTime = pbutil.MustTimestampProto(r.StartTime.Time)
@@ -392,12 +399,12 @@ func (q *Query) populateSources(tv *pb.TestVariant, distinctSources map[string]*
 	}
 	// Find the invocation for one of the test results in the test variant.
 	tr := tv.Results[0].Result
-	invID, _, _, err := pbutil.ParseLegacyTestResultName(tr.Name)
+	invID, err := legacyInvocationIDFromTestResultName(tr.Name)
 	if err != nil {
 		return err
 	}
 	// Look up that invocation's sources.
-	inv, ok := q.ReachableInvocations.Invocations[invocations.ID(invID)]
+	inv, ok := q.ReachableInvocations.Invocations[invID]
 	if !ok {
 		return errors.New("test result in response referenced an unreachable invocation")
 	}
@@ -425,13 +432,13 @@ func (q *Query) toLimitedData(ctx context.Context, tv *pb.TestVariant,
 	shouldMaskVariant := true
 	for _, resultBundle := range tv.Results {
 		tr := resultBundle.Result
-		invID, _, _, err := pbutil.ParseLegacyTestResultName(tr.Name)
+		invID, err := legacyInvocationIDFromTestResultName(tr.Name)
 		if err != nil {
 			return err
 		}
 
 		// Get the immediate invocation to which this test result belongs.
-		reachableInv, ok := q.ReachableInvocations.Invocations[invocations.ID(invID)]
+		reachableInv, ok := q.ReachableInvocations.Invocations[invID]
 		if !ok {
 			return fmt.Errorf("error finding realm: invocation %s not found", invID)
 		}
@@ -1103,11 +1110,10 @@ func calculateStatusV2(trs []*pb.TestResultBundle) pb.TestVerdict_Status {
 // Returns instruction of the invocation of the first test result.
 func fetchVerdictInstruction(tv *pb.TestVariant, instructionMap map[invocations.ID]*pb.VerdictInstruction) (*pb.VerdictInstruction, error) {
 	resultName := tv.Results[0].Result.Name
-	invID, _, _, err := pbutil.ParseLegacyTestResultName(resultName)
+	invocationID, err := legacyInvocationIDFromTestResultName(resultName)
 	if err != nil {
-		return nil, errors.Fmt("parse test result name: %w", err)
+		return nil, err
 	}
-	invocationID := invocations.ID(invID)
 	if instruction, ok := instructionMap[invocationID]; ok {
 		return instruction, nil
 	}
@@ -1445,4 +1451,20 @@ func estimateTestVariantSize(tv *pb.TestVariant) int {
 	// as the sum of the sizes of its fields, plus
 	// an overhead (for JSON grammar and the field names).
 	return 1000 + proto.Size(tv)
+}
+
+func legacyInvocationIDFromTestResultName(name string) (invocations.ID, error) {
+	if pbutil.IsLegacyTestResultName(name) {
+		id, _, _, err := pbutil.ParseLegacyTestResultName(name)
+		if err != nil {
+			return "", err
+		}
+		return invocations.ID(id), nil
+	}
+	parts, err := pbutil.ParseTestResultName(name)
+	if err != nil {
+		return "", err
+	}
+	wuID := workunits.ID{RootInvocationID: rootinvocations.ID(parts.RootInvocationID), WorkUnitID: parts.WorkUnitID}
+	return wuID.LegacyInvocationID(), nil
 }

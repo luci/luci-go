@@ -58,7 +58,6 @@ func determineListAccessLevel(ctx context.Context, ids invocations.IDSet) (a tes
 	if err != nil {
 		return testvariants.AccessLevelInvalid, err
 	}
-
 	// Check for unrestricted access
 	hasUnrestricted, _, err := permissions.HasPermissionsInRealms(ctx, realms,
 		rdbperms.PermListTestResults, rdbperms.PermListTestExonerations)

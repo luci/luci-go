@@ -126,7 +126,7 @@ func TestQueryArtifacts(t *testing.T) {
 			req.Invocations = []string{"invocations/invx"}
 			_, err := srv.QueryArtifacts(ctx, req)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.artifacts.list in realm of invocation invx"))
+			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.artifacts.list in realm of \"invocations/invx\""))
 		})
 
 		t.Run(`Read mask`, func(t *ftt.Test) {

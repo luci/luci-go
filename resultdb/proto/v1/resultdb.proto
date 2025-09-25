@@ -772,6 +772,7 @@ message QueryRunTestVerdictsResponse {
 }
 
 // A request message for BatchGetTestVariants RPC.
+// Next ID: 5.
 message BatchGetTestVariantsRequest {
   message TestVariantIdentifier {
     // Option 1: Structured test identifier.
@@ -793,8 +794,13 @@ message BatchGetTestVariantsRequest {
     string variant_hash = 2 [ (google.api.field_behavior) = REQUIRED ];
   }
 
+  // Name of the root invocation that the test variants are in. (see RootInvocation.name).
+  // Should be empty if invocation is specified.
+  string parent = 4 [ (google.api.field_behavior) = REQUIRED ];
+
   // Name of the invocation that the test variants are in.
-  string invocation = 1;
+  // DEPRECATED: Use parent instead.
+  string invocation = 1 [ deprecated = true ];
 
   // A list of test variants to query. Size is limited to 500.
   // Any request for more than 500 variants will return an error.

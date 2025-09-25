@@ -103,7 +103,7 @@ func Inclusion(including, included invocations.ID) *spanner.Mutation {
 }
 
 // TestResults returns spanner mutations to insert test results.
-func TestResults(t testing.TB, invID, testID string, v *pb.Variant, statuses ...pb.TestResult_Status) []*spanner.Mutation {
+func TestResults(t testing.TB, invID invocations.ID, testID string, v *pb.Variant, statuses ...pb.TestResult_Status) []*spanner.Mutation {
 	return TestResultMessages(t, MakeTestResults(invID, testID, v, statuses...))
 }
 
@@ -118,11 +118,25 @@ func TestResultMessages(t testing.TB, trs []*pb.TestResult) []*spanner.Mutation 
 
 	ms := make([]*spanner.Mutation, len(trs))
 	for i, tr := range trs {
-		invID, testID, resultID, err := pbutil.ParseLegacyTestResultName(tr.Name)
-		assert.Loosely(t, err, should.BeNil, truth.LineContext())
+		var invID invocations.ID
+		var testID, resultID string
+		if pbutil.IsLegacyTestResultName(tr.Name) {
+			var err error
+			var invIDString string
+			invIDString, testID, resultID, err = pbutil.ParseLegacyTestResultName(tr.Name)
+			assert.Loosely(t, err, should.BeNil, truth.LineContext())
+			invID = invocations.ID(invIDString)
+		} else {
+			parts, err := pbutil.ParseTestResultName(tr.Name)
+			assert.Loosely(t, err, should.BeNil, truth.LineContext())
+			wuID := workunits.ID{RootInvocationID: rootinvocations.ID(parts.RootInvocationID), WorkUnitID: parts.WorkUnitID}
+			invID = wuID.LegacyInvocationID()
+			testID = parts.TestID
+			resultID = parts.ResultID
+		}
 
 		mutMap := map[string]any{
-			"InvocationId":    invocations.ID(invID),
+			"InvocationId":    invID,
 			"TestId":          testID,
 			"ResultId":        resultID,
 			"Variant":         tr.Variant,
@@ -327,7 +341,8 @@ func MakeTestMetadataRow(project, testID, subRealm string, refHash []byte) *test
 
 // MakeTestResult creates test results. Test results are returned with
 // output only fields set.
-func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestResult_Status) []*pb.TestResult {
+// invID can be a native invocation id or a the shadow invocation id for a work unit.
+func MakeTestResults(invID invocations.ID, testID string, v *pb.Variant, statuses ...pb.TestResult_Status) []*pb.TestResult {
 	trs := make([]*pb.TestResult, len(statuses))
 	for i, status := range statuses {
 		resultID := fmt.Sprintf("%d", i)
@@ -378,8 +393,17 @@ func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestRes
 			panic(errors.Fmt("parse test variant identifier: %w", err))
 		}
 
+		var name string
+		if invID.IsWorkUnit() {
+			wuID := workunits.MustParseLegacyInvocationID(invID)
+			name = pbutil.TestResultName(string(wuID.RootInvocationID), wuID.WorkUnitID, testID, resultID)
+		} else if invID.IsRootInvocation() {
+			panic("invocation id should not belong to a root invocation")
+		} else {
+			name = pbutil.LegacyTestResultName(string(invID), testID, resultID)
+		}
 		trs[i] = &pb.TestResult{
-			Name:             pbutil.LegacyTestResultName(invID, testID, resultID),
+			Name:             name,
 			TestId:           testID,
 			ResultId:         resultID,
 			TestIdStructured: tvID,

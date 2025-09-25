@@ -71,17 +71,17 @@ func TestVerifyInvocations(t *testing.T) {
 			ids := invocations.NewIDSet(invocations.ID("i0"))
 			err := VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListArtifacts)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of invocation i0"))
+			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of \"invocations/i0\""))
 
 			ids = invocations.NewIDSet(invocations.ID("i1"), invocations.ID("i2"))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListArtifacts, rdbperms.PermListTestExonerations)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("resultdb.testExonerations.list in realm of invocation i1"))
+			assert.Loosely(t, err, should.ErrLike("resultdb.testExonerations.list in realm of \"invocations/i1\""))
 
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults, rdbperms.PermListArtifacts)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of invocation i3"))
+			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of \"invocations/i3\""))
 		})
 		t.Run("Duplicate invocations", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"), invocations.ID("i3"))
@@ -91,7 +91,7 @@ func TestVerifyInvocations(t *testing.T) {
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"), invocations.ID("i3"))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults, rdbperms.PermListArtifacts)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of invocation i3"))
+			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of \"invocations/i3\""))
 		})
 		t.Run("Duplicate realms", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"), invocations.ID("i3b"))
@@ -101,7 +101,8 @@ func TestVerifyInvocations(t *testing.T) {
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"), invocations.ID("i3b"))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults, rdbperms.PermListArtifacts)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of invocation i3"))
+			// The error can be either for i3 or i3b, the order is undeterministic.
+			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of \"invocations/i3"))
 		})
 		t.Run("Invocations do not exist", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i2"), invocations.ID("iX"))

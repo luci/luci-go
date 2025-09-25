@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -167,7 +168,15 @@ func (r ReachableInvocations) InstructionMap() (map[invocations.ID]*pb.VerdictIn
 				if instruction.Type != pb.InstructionType_TEST_RESULT_INSTRUCTION {
 					continue
 				}
-				instructionName := instructionutil.InstructionName(invID.Name(), instruction.Id)
+				var parentName string
+				if invID.IsWorkUnit() {
+					parentName = workunits.MustParseLegacyInvocationID(invID).Name()
+				} else if invID.IsRootInvocation() {
+					panic("root invocation shouldn't have instruction, logic error?")
+				} else {
+					parentName = invID.Name()
+				}
+				instructionName := instructionutil.InstructionName(parentName, instruction.Id)
 				filter := instruction.InstructionFilter
 				// If there is no filter, the instruction is for this invocation and
 				// all included invocations (recursively).

@@ -83,7 +83,7 @@ func TestQueryTestExonerations(t *testing.T) {
 				Invocations: []string{"invocations/x"},
 			})
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.testExonerations.list in realm of invocation x"))
+			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.testExonerations.list in realm of \"invocations/x\""))
 		})
 		t.Run(`More than one invocation requested`, func(t *ftt.Test) {
 			_, err := srv.QueryTestExonerations(ctx, &pb.QueryTestExonerationsRequest{
