@@ -196,7 +196,7 @@ func resolveFormat(request *http.Request) string {
 	// If a known format is specified, return it.
 	format := request.URL.Query().Get("format")
 	switch f := strings.ToLower(format); f {
-	case formatHTMLLite, formatHTMLFull, formatRAW:
+	case formatHTMLLite, formatHTMLFull, formatRAW, formatLogcat:
 		return f
 	}
 	// TODO(hinoka): Check accept header first.
