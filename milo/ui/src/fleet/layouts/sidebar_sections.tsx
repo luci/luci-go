@@ -15,6 +15,7 @@
 import ConstructionIcon from '@mui/icons-material/Construction';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import DevicesIcon from '@mui/icons-material/Devices';
+import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
 import EmojiNatureIcon from '@mui/icons-material/EmojiNature';
 import LanIcon from '@mui/icons-material/Lan';
 import TopicIcon from '@mui/icons-material/Topic';
@@ -66,6 +67,11 @@ function generateFleetConsoleSection(): SidebarSection {
         label: 'Repairs',
         url: generateRepairsURL(ANDROID_PLATFORM),
         icon: <ConstructionIcon />,
+      },
+      {
+        label: 'Resource Requests',
+        url: '/ui/fleet/labs/requests',
+        icon: <DevicesOtherIcon />,
       },
     ],
   };
