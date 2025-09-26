@@ -1308,66 +1308,6 @@ func (*SourceRef_Gitiles) isSourceRef_System() {}
 
 func (*SourceRef_AndroidBuild) isSourceRef_System() {}
 
-// Represents a branch in Android Build API.
-type AndroidBuildBranch struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// The Android Build API data realm.
-	// This is usually `prod`.
-	DataRealm string `protobuf:"bytes,1,opt,name=data_realm,json=dataRealm,proto3" json:"data_realm,omitempty"`
-	// The Android Build branch.
-	// E.g. `git_main`.
-	Branch string `protobuf:"bytes,2,opt,name=branch,proto3" json:"branch,omitempty"`
-}
-
-func (x *AndroidBuildBranch) Reset() {
-	*x = AndroidBuildBranch{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[11]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *AndroidBuildBranch) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AndroidBuildBranch) ProtoMessage() {}
-
-func (x *AndroidBuildBranch) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[11]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AndroidBuildBranch.ProtoReflect.Descriptor instead.
-func (*AndroidBuildBranch) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *AndroidBuildBranch) GetDataRealm() string {
-	if x != nil {
-		return x.DataRealm
-	}
-	return ""
-}
-
-func (x *AndroidBuildBranch) GetBranch() string {
-	if x != nil {
-		return x.Branch
-	}
-	return ""
-}
-
 // Represents a branch in a gitiles repository.
 type GitilesRef struct {
 	state         protoimpl.MessageState
@@ -1386,7 +1326,7 @@ type GitilesRef struct {
 func (x *GitilesRef) Reset() {
 	*x = GitilesRef{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[12]
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1399,7 +1339,7 @@ func (x *GitilesRef) String() string {
 func (*GitilesRef) ProtoMessage() {}
 
 func (x *GitilesRef) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[12]
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1412,7 +1352,7 @@ func (x *GitilesRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GitilesRef.ProtoReflect.Descriptor instead.
 func (*GitilesRef) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescGZIP(), []int{12}
+	return file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GitilesRef) GetHost() string {
@@ -1432,6 +1372,66 @@ func (x *GitilesRef) GetProject() string {
 func (x *GitilesRef) GetRef() string {
 	if x != nil {
 		return x.Ref
+	}
+	return ""
+}
+
+// Represents a branch in Android Build API.
+type AndroidBuildBranch struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The Android Build API data realm.
+	// This is usually `prod`.
+	DataRealm string `protobuf:"bytes,1,opt,name=data_realm,json=dataRealm,proto3" json:"data_realm,omitempty"`
+	// The Android Build branch.
+	// E.g. `git_main`.
+	Branch string `protobuf:"bytes,2,opt,name=branch,proto3" json:"branch,omitempty"`
+}
+
+func (x *AndroidBuildBranch) Reset() {
+	*x = AndroidBuildBranch{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *AndroidBuildBranch) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AndroidBuildBranch) ProtoMessage() {}
+
+func (x *AndroidBuildBranch) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AndroidBuildBranch.ProtoReflect.Descriptor instead.
+func (*AndroidBuildBranch) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *AndroidBuildBranch) GetDataRealm() string {
+	if x != nil {
+		return x.DataRealm
+	}
+	return ""
+}
+
+func (x *AndroidBuildBranch) GetBranch() string {
+	if x != nil {
+		return x.Branch
 	}
 	return ""
 }
@@ -1551,17 +1551,17 @@ var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDesc = []byte{
 	0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31,
 	0x2e, 0x41, 0x6e, 0x64, 0x72, 0x6f, 0x69, 0x64, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x42, 0x72, 0x61,
 	0x6e, 0x63, 0x68, 0x48, 0x00, 0x52, 0x0c, 0x61, 0x6e, 0x64, 0x72, 0x6f, 0x69, 0x64, 0x42, 0x75,
-	0x69, 0x6c, 0x64, 0x42, 0x08, 0x0a, 0x06, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x22, 0x4b, 0x0a,
-	0x12, 0x41, 0x6e, 0x64, 0x72, 0x6f, 0x69, 0x64, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x42, 0x72, 0x61,
-	0x6e, 0x63, 0x68, 0x12, 0x1d, 0x0a, 0x0a, 0x64, 0x61, 0x74, 0x61, 0x5f, 0x72, 0x65, 0x61, 0x6c,
-	0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x64, 0x61, 0x74, 0x61, 0x52, 0x65, 0x61,
-	0x6c, 0x6d, 0x12, 0x16, 0x0a, 0x06, 0x62, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x06, 0x62, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x22, 0x4c, 0x0a, 0x0a, 0x47, 0x69,
-	0x74, 0x69, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x66, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x6f, 0x73, 0x74,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x6f, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07,
-	0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70,
-	0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x72, 0x65, 0x66, 0x18, 0x03, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x03, 0x72, 0x65, 0x66, 0x2a, 0x71, 0x0a, 0x10, 0x41, 0x67, 0x67, 0x72,
+	0x69, 0x6c, 0x64, 0x42, 0x08, 0x0a, 0x06, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x22, 0x4c, 0x0a,
+	0x0a, 0x47, 0x69, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x66, 0x12, 0x12, 0x0a, 0x04, 0x68,
+	0x6f, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x6f, 0x73, 0x74, 0x12,
+	0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x72, 0x65, 0x66,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x72, 0x65, 0x66, 0x22, 0x4b, 0x0a, 0x12, 0x41,
+	0x6e, 0x64, 0x72, 0x6f, 0x69, 0x64, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x42, 0x72, 0x61, 0x6e, 0x63,
+	0x68, 0x12, 0x1d, 0x0a, 0x0a, 0x64, 0x61, 0x74, 0x61, 0x5f, 0x72, 0x65, 0x61, 0x6c, 0x6d, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x64, 0x61, 0x74, 0x61, 0x52, 0x65, 0x61, 0x6c, 0x6d,
+	0x12, 0x16, 0x0a, 0x06, 0x62, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x06, 0x62, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x2a, 0x71, 0x0a, 0x10, 0x41, 0x67, 0x67, 0x72,
 	0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x12, 0x21, 0x0a, 0x1d,
 	0x41, 0x47, 0x47, 0x52, 0x45, 0x47, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x4c, 0x45, 0x56, 0x45,
 	0x4c, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12,
@@ -1611,8 +1611,8 @@ var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_goTypes = []interfa
 	(*Sources)(nil),               // 10: luci.resultdb.v1.Sources
 	(*CommitPosition)(nil),        // 11: luci.resultdb.v1.CommitPosition
 	(*SourceRef)(nil),             // 12: luci.resultdb.v1.SourceRef
-	(*AndroidBuildBranch)(nil),    // 13: luci.resultdb.v1.AndroidBuildBranch
-	(*GitilesRef)(nil),            // 14: luci.resultdb.v1.GitilesRef
+	(*GitilesRef)(nil),            // 13: luci.resultdb.v1.GitilesRef
+	(*AndroidBuildBranch)(nil),    // 14: luci.resultdb.v1.AndroidBuildBranch
 	nil,                           // 15: luci.resultdb.v1.Variant.DefEntry
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_depIdxs = []int32{
@@ -1624,8 +1624,8 @@ var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_depIdxs = []int32{
 	7,  // 5: luci.resultdb.v1.Sources.gitiles_commit:type_name -> luci.resultdb.v1.GitilesCommit
 	9,  // 6: luci.resultdb.v1.Sources.submitted_android_build:type_name -> luci.resultdb.v1.SubmittedAndroidBuild
 	8,  // 7: luci.resultdb.v1.Sources.changelists:type_name -> luci.resultdb.v1.GerritChange
-	14, // 8: luci.resultdb.v1.SourceRef.gitiles:type_name -> luci.resultdb.v1.GitilesRef
-	13, // 9: luci.resultdb.v1.SourceRef.android_build:type_name -> luci.resultdb.v1.AndroidBuildBranch
+	13, // 8: luci.resultdb.v1.SourceRef.gitiles:type_name -> luci.resultdb.v1.GitilesRef
+	14, // 9: luci.resultdb.v1.SourceRef.android_build:type_name -> luci.resultdb.v1.AndroidBuildBranch
 	10, // [10:10] is the sub-list for method output_type
 	10, // [10:10] is the sub-list for method input_type
 	10, // [10:10] is the sub-list for extension type_name
@@ -1772,7 +1772,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_common_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AndroidBuildBranch); i {
+			switch v := v.(*GitilesRef); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1784,7 +1784,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_common_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GitilesRef); i {
+			switch v := v.(*AndroidBuildBranch); i {
 			case 0:
 				return &v.state
 			case 1:

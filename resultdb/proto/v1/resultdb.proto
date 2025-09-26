@@ -609,13 +609,19 @@ message QueryArtifactFailureOnlyLinesResponse {
 }
 
 // A request message for QueryTestVariants RPC.
-// Next id: 10.
+// Next id: 12.
 message QueryTestVariantsRequest {
+
+  // The name of the root invocation to retrieve test variants from, see RootInvocation.name.
+  // Should be empty if invocations field is specified.
+  string parent = 11 [ (google.api.field_behavior) = REQUIRED ];
+
   // Retrieve test verdicts included in these invocations, directly or indirectly
   // (via Invocation.included_invocations).
   //
   // As of April 2024, a maximum of one invocation may be specified.
-  repeated string invocations = 2;
+  // DEPRECATED: Use parent instead.
+  repeated string invocations = 2 [ deprecated = true ];
 
   // A test variant must satisfy this predicate.
   TestVariantPredicate predicate = 6;
@@ -794,7 +800,7 @@ message BatchGetTestVariantsRequest {
     string variant_hash = 2 [ (google.api.field_behavior) = REQUIRED ];
   }
 
-  // Name of the root invocation that the test variants are in. (see RootInvocation.name).
+  // Name of the root invocation that the test variants are in, see RootInvocation.name.
   // Should be empty if invocation is specified.
   string parent = 4 [ (google.api.field_behavior) = REQUIRED ];
 

@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/permissions"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testvariants"
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -44,35 +45,60 @@ var (
 
 // determineListAccessLevel determines the list access level the caller has for
 // a set of invocations.
-// There must not already be a transaction in the given context.
-func determineListAccessLevel(ctx context.Context, ids invocations.IDSet) (a testvariants.AccessLevel, err error) {
-	if len(ids) == 0 {
-		// nothing to check, so the caller's access is unconfirmed
-		return testvariants.AccessLevelInvalid, nil
-	}
-
+func determineListAccessLevel(ctx context.Context, in *pb.QueryTestVariantsRequest) (a testvariants.AccessLevel, err error) {
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/resultdb.determineListAccessLevel")
 	defer func() { tracing.End(ts, err) }()
 
-	realms, err := invocations.ReadRealms(span.Single(ctx), ids)
-	if err != nil {
-		return testvariants.AccessLevelInvalid, err
+	// Perform request validation that is necessary for the permission check.
+	var rootInvID rootinvocations.ID
+	var invIDs invocations.IDSet
+	if in.Parent != "" {
+		rootInvID, err = rootinvocations.ParseName(in.Parent)
+		if err != nil {
+			return testvariants.AccessLevelInvalid, appstatus.BadRequest(errors.Fmt("parent: %w", err))
+		}
+		if len(in.Invocations) > 0 {
+			return testvariants.AccessLevelInvalid, appstatus.BadRequest(errors.New("invocations: must not be specified if parent is specified"))
+		}
+	} else if len(in.Invocations) > 0 {
+		invIDs, err = invocations.ParseNames(in.Invocations)
+		if err != nil {
+			return testvariants.AccessLevelInvalid, appstatus.BadRequest(errors.Fmt("invocations: %w", err))
+		}
+	} else {
+		return testvariants.AccessLevelInvalid, appstatus.BadRequest(errors.New("must specify either parent or invocations"))
+	}
+	realmMap := make(map[permissions.NamedResource]string)
+	if rootInvID != "" {
+		realm, err := rootinvocations.ReadRealm(ctx, rootInvID)
+		if err != nil {
+			return testvariants.AccessLevelInvalid, err
+		}
+		realmMap[rootInvID] = realm
+	} else {
+		realms, err := invocations.ReadRealms(ctx, invIDs)
+		if err != nil {
+			return testvariants.AccessLevelInvalid, err
+		}
+		for id, realm := range realms {
+			realmMap[id] = realm
+		}
 	}
 	// Check for unrestricted access
-	hasUnrestricted, _, err := permissions.HasPermissionsInRealms(ctx, realms,
+	hasUnrestricted, _, err := permissions.HasPermissionsInRealms(ctx, realmMap,
 		rdbperms.PermListTestResults, rdbperms.PermListTestExonerations)
 	if err != nil {
-		return testvariants.AccessLevelInvalid, err
+		return testvariants.AccessLevelInvalid, err // Internal error.
 	}
 	if hasUnrestricted {
 		return testvariants.AccessLevelUnrestricted, nil
 	}
 
 	// Check for limited access
-	hasLimited, desc, err := permissions.HasPermissionsInRealms(ctx, realms,
+	hasLimited, desc, err := permissions.HasPermissionsInRealms(ctx, realmMap,
 		rdbperms.PermListLimitedTestResults, rdbperms.PermListLimitedTestExonerations)
 	if err != nil {
-		return testvariants.AccessLevelInvalid, err
+		return testvariants.AccessLevelInvalid, err // Internal error.
 	}
 	if hasLimited {
 		return testvariants.AccessLevelLimited, nil
@@ -84,11 +110,12 @@ func determineListAccessLevel(ctx context.Context, ids invocations.IDSet) (a tes
 
 // QueryTestVariants implements pb.ResultDBServer.
 func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error) {
-	ids, err := invocations.ParseNames(in.Invocations)
-	if err != nil {
-		return nil, appstatus.BadRequest(err)
-	}
-	accessLevel, err := determineListAccessLevel(ctx, ids)
+	// Use one transaction for the entire RPC so that we work with a
+	// consistent snapshot of the system state. This is important to
+	// prevent subtle bugs and TOC-TOU vulnerabilities.
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+	accessLevel, err := determineListAccessLevel(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -121,12 +148,15 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 	// Query is valid - increment the queryInvocationsCount metric
 	queryInvocationsCount.Add(ctx, 1, "QueryTestVariants", len(in.Invocations))
 
-	// Open a transaction.
-	ctx, cancel := span.ReadOnlyTransaction(ctx)
-	defer cancel()
-
+	var requestedLegacyInvID invocations.ID
+	if in.Parent != "" {
+		requestedLegacyInvID = rootinvocations.MustParseName(in.Parent).LegacyInvocationID()
+	} else {
+		// validateQueryTestVariantsRequest enforces only one invocation can be in the request.
+		requestedLegacyInvID = invocations.MustParseName(in.Invocations[0])
+	}
 	// Get the transitive closure.
-	invs, err := graph.Reachable(ctx, ids)
+	invs, err := graph.Reachable(ctx, invocations.NewIDSet(requestedLegacyInvID))
 	if err != nil {
 		return nil, errors.Fmt("resolving reachable invocations: %w", err)
 	}
@@ -173,15 +203,17 @@ func outOfTime(ctx context.Context) bool {
 // validateQueryTestVariantsRequest returns a non-nil error if req is determined
 // to be invalid.
 func validateQueryTestVariantsRequest(in *pb.QueryTestVariantsRequest) error {
-	if err := validateQueryRequest(in); err != nil {
-		return err
-	}
+	// Invocations and parent are validated in determineListAccessLevel.
 
 	if len(in.Invocations) > 1 {
 		return errors.New("invocations: only one invocation is allowed")
 	}
 	if err := testvariants.ValidateResultLimit(in.ResultLimit); err != nil {
 		return errors.Fmt("result_limit: %w", err)
+	}
+	// validate paging
+	if err := pagination.ValidatePageSize(in.PageSize); err != nil {
+		return errors.Fmt("page_size: %w", err)
 	}
 
 	// We support a limited subset of AIP-132 order by syntax, so as to specify

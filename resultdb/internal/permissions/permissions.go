@@ -250,7 +250,7 @@ func VerifyInvocationByName(ctx context.Context, invName string, permissions ...
 }
 
 // Represents a resource, such as root invocation or work unit.
-type namedResource interface {
+type NamedResource interface {
 	// Name returns the resource name of the resource.
 	// See also: google.aip.dev/122.
 	Name() string
@@ -267,7 +267,7 @@ type namedResource interface {
 //     (if applicable)
 //   - an error if one occurred
 func HasPermissionsInRealms[T interface {
-	namedResource
+	NamedResource
 	comparable
 }](ctx context.Context, realms map[T]string, permissions ...realms.Permission) (bool, string, error) {
 	checked := stringset.New(1)
