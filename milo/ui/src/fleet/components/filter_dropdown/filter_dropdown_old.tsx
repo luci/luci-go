@@ -139,6 +139,17 @@ export function FilterDropdownOld<T>({
     const openCategoryData = filterOptions.find(
       (option) => option.value === openCategory.value,
     )!;
+    if (openCategory.anchor === null) {
+      closeInnerMenu();
+      return <></>;
+    }
+    const boundingClient = openCategory.anchor.getBoundingClientRect();
+    if (boundingClient.height === 0 && boundingClient.width === 0) {
+      // means that the ref is actually not being rendered
+      closeInnerMenu();
+      return <></>;
+    }
+
     const OptionComponent = openCategoryData.optionsComponent;
     return (
       <Card onClick={(e) => e.stopPropagation()}>
