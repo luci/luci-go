@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 async function populate(url) {
-  var text;
+  let text;
   try {
     const response = await fetch(url);
     if (response.ok) {
@@ -27,6 +27,10 @@ async function populate(url) {
   preEl.textContent = text;
 }
 
-const urlParams = new URLSearchParams('?' + window.location.hash.substr(1));
-const logUrl = urlParams.get('url');
-populate(`/logs/${logUrl}?format=raw`);
+const urlHash = window.location.hash.substr(1)
+// Manually parse the query string to avoid URLSearchParams converting '+' to spaces
+const idx = urlHash.indexOf('url=');
+if (idx !== -1) {
+  const logUrl = urlHash.substr(idx + 4);
+  populate(`/logs${logUrl}?format=raw`);
+}
