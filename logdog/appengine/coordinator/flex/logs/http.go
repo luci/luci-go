@@ -158,6 +158,7 @@ const (
 	formatRAW      = "raw"
 	formatHTMLLite = "lite"
 	formatHTMLFull = "full"
+	formatLogcat   = "logcat"
 )
 
 // userOptions encapsulate the entirety of input parameters to the log viewer.
@@ -167,7 +168,7 @@ type userOptions struct {
 	// path is the full path (prefix + name) of the requested log stream.
 	path types.StreamPath
 	// format indicates the format the user wants the data back in.
-	// Valid formats are "raw", "lite", and "full.
+	// Valid formats are "raw", "lite", "logcat", and "full".
 	// If the user specifies "?format=html",
 	// it will get resolved to either "lite" or "full" depending on:
 	//   * What cookies are set.
@@ -305,6 +306,12 @@ func startFetch(c context.Context, request *http.Request, pathStr string) (data 
 	if err != nil {
 		return
 	}
+
+        // Don't fetch the stream for logcat mode (going to do a redirect).
+        if data.options.format == formatLogcat {
+                param.storage.Close()
+                return
+        }
 
 	// Create a channel to transfer log data.  This channel will be closed by
 	// fetch() to signal that all logs have been returned (or an error was encountered).
@@ -771,10 +778,19 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 func GetHandler(ctx *router.Context) {
 	start := clock.Now(ctx.Request.Context())
 	// Start the fetcher and wait for fetched logs to arrive into ch.
-	data, err := startFetch(ctx.Request.Context(), ctx.Request, ctx.Params.ByName("path"))
+	path :=  ctx.Params.ByName("path")
+	data, err := startFetch(ctx.Request.Context(), ctx.Request, path)
 	if err != nil {
 		err = errors.Fmt("start fetch: %w", err)
 		writeErrorPage(ctx, err, data)
+		return
+	}
+	
+	// The logcat webapp is hosted under /static for simplicity. Redirect
+	// there once we have checked ACLs on the logs.
+	if data.options.format == formatLogcat {
+		// TODO(425725671): Replace test.html with correct page once it exists.
+		http.Redirect(ctx.Writer, ctx.Request, "/static/test.html#url=" + path, http.StatusFound)
 		return
 	}
 	writeOKHeaders(ctx, data)
