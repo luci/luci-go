@@ -468,7 +468,7 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
     if (selectedOptions.error) return;
 
     const missingParamsFilters = Object.keys(selectedOptions.filters).filter(
-      (filterKey) => !COLUMNS[_.camelCase(filterKey) as keyof typeof COLUMNS],
+      (filterKey) => !COLUMNS[_.snakeCase(filterKey) as keyof typeof COLUMNS],
     );
     if (missingParamsFilters.length === 0) return;
     addWarning(
