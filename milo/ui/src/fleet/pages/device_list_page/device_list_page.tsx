@@ -166,6 +166,9 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
       (filterKey) =>
         isDimensionsQueryProperlyLoaded &&
         !dimensionsQuery.data.labels[filterKey.replace('labels.', '')] &&
+        !dimensionsQuery.data.labels[
+          filterKey.replace('labels."', '').slice(0, -1)
+        ] &&
         !dimensionsQuery.data.baseDimensions[filterKey],
     );
     if (missingParamsFilters.length === 0) return;

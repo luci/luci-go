@@ -50,7 +50,7 @@ export const dimensionsToFilterOptions = (
     return [
       {
         label: CROS_DIMENSION_OVERRIDES[key]?.displayName || key,
-        value: 'labels.' + key,
+        value: `labels."${key}"`,
         options: value.values.map((value) => {
           return { label: value, value: value };
         }),

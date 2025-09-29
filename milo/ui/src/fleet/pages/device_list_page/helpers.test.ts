@@ -24,7 +24,7 @@ describe('dimensionsToFilterOptions', () => {
     expect(options).toEqual([]);
   });
 
-  it('hndles baseDimensions and labels', async () => {
+  it('hadles baseDimensions and labels', async () => {
     const options = dimensionsToFilterOptions({
       baseDimensions: { testDim: { values: ['one', 'two'] } },
       labels: { testLabel: { values: ['a', 'b', 'c'] } },
@@ -41,7 +41,7 @@ describe('dimensionsToFilterOptions', () => {
       },
       {
         label: 'testLabel',
-        value: 'labels.testLabel',
+        value: 'labels."testLabel"',
         options: [
           { label: 'a', value: 'a' },
           { label: 'b', value: 'b' },
