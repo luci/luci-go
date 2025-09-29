@@ -21,6 +21,8 @@ import {
   useMaterialReactTable,
 } from 'material-react-table';
 
+import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
+
 import { useSettings } from './use_settings';
 
 export const useFCDataTable = <TData extends MRT_RowData>(
@@ -36,8 +38,9 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     enableColumnActions: false,
     layoutMode: 'grid',
     defaultColumn: {
-      grow: true,
-      minSize: 10,
+      grow: 1,
+      size: 40,
+      Cell: (c) => <EllipsisTooltip>{c.renderedCellValue}</EllipsisTooltip>,
     },
     onDensityChange: (updater) => {
       const newDensity =
@@ -52,6 +55,7 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     state: {
       density: settings.tableMRT.density,
     },
+
     muiPaginationProps: {
       rowsPerPageOptions: [10, 25, 50, 100, 500, 1000],
       showFirstButton: false,
@@ -61,21 +65,50 @@ export const useFCDataTable = <TData extends MRT_RowData>(
       elevation: 0,
       sx: { border: 'none' },
     },
-    muiTableHeadCellProps: {
+    muiTableHeadCellProps: (column) => ({
       sx: {
         backgroundColor: colors.grey[100],
         py: 1.6,
-        lineHeight: 1.1,
         fontWeight: 500,
         justifyContent: 'center',
         [`& .Mui-TableHeadCell-ResizeHandle-Divider`]: {
           borderWidth: '1px',
         },
-        [`& .MuiTableSortLabel-icon`]: {
-          opacity: 0,
+        [`& .MuiBadge-root`]: {
+          transition: 'opacity 0.2s ease',
+          ...(column.column.getIsSorted()
+            ? {
+                opacity: 1,
+                width: 'auto',
+              }
+            : {
+                opacity: 0,
+                width: 0,
+              }),
+        },
+        '&:hover .MuiBadge-root': column.column.getIsSorted()
+          ? {}
+          : {
+              opacity: 1,
+              width: 'auto',
+              position: 'absolute',
+              zIndex: 100,
+              backgroundColor: '#f5f5f5',
+              right: 0,
+              maskImage:
+                'radial-gradient(ellipse at center, black 45%, transparent 90%)',
+            },
+        [`& .Mui-TableHeadCell-Content-Wrapper`]: {
+          textWrap: 'wrap',
+        },
+        paddingTop: '4px',
+        paddingBottom: '4px',
+        minHeight: '40px',
+        [`& .MuiTypography-root`]: {
+          lineHeight: 'normal',
         },
       },
-    },
+    }),
     muiBottomToolbarProps: {
       sx: {
         boxShadow: 'none',

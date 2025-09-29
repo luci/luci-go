@@ -17,9 +17,13 @@ import ErrorIcon from '@mui/icons-material/Error';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import WarningIcon from '@mui/icons-material/Warning';
 import { Alert, Chip, Divider, Typography } from '@mui/material';
-import { GridColDef, GridColumnHeaderTitle } from '@mui/x-data-grid';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
+import {
+  MaterialReactTable,
+  MRT_ColumnDef,
+  MRT_PaginationState,
+} from 'material-react-table';
 import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router';
 
@@ -29,9 +33,11 @@ import {
   getCurrentPageIndex,
   getPageSize,
   getPageToken,
+  nextPageTokenUpdater,
+  pageSizeUpdater,
+  prevPageTokenUpdater,
   usePagerContext,
 } from '@/common/components/params_pager';
-import { Pagination } from '@/fleet/components/device_table/pagination';
 import { FilterBarOld } from '@/fleet/components/filter_dropdown/filter_bar_old';
 import {
   filtersUpdater,
@@ -41,20 +47,26 @@ import {
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
-import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
-import { useOrderByParam } from '@/fleet/hooks/order_by';
+import {
+  ORDER_BY_PARAM_KEY,
+  OrderByDirection,
+  useOrderByParam,
+} from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { usePlatform } from '@/fleet/hooks/usePlatform';
+import { useFCDataTable } from '@/fleet/hooks/use_fc_data_table';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { colors } from '@/fleet/theme/colors';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import { parseOrderByParam } from '@/fleet/utils/search_param';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   Platform,
+  RepairMetric,
   RepairMetric_Priority,
   repairMetric_PriorityToJSON,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
@@ -75,155 +87,196 @@ const getPriorityIcon = (priority: RepairMetric_Priority) => {
   }
 };
 
-const COLUMNS: Record<string, GridColDef> = {
+// mapping to snake case is needed to send the right sort "by" to the backend
+const getRow = (rm: RepairMetric) => ({
+  id: rm.labName + rm.hostGroup + rm.runTarget,
+  priority: rm.priority,
+  lab_name: rm.labName,
+  host_group: rm.hostGroup,
+  run_target: rm.runTarget,
+  minimum_repairs: rm.minimumRepairs,
+  devices_offline_ratio: `${rm.devicesOffline} / ${rm.totalDevices}`,
+  devices_offline_percentage: (
+    rm.devicesOffline / rm.totalDevices
+  ).toLocaleString('en-GB', {
+    style: 'percent',
+    minimumFractionDigits: 1,
+  }),
+  peak_usage: rm.peakUsage,
+  total_devices: rm.totalDevices,
+});
+
+type Row = ReturnType<typeof getRow>;
+
+const COLUMNS = {
   priority: {
-    field: 'priority',
-    flex: 1,
-    renderHeader: () => {
+    accessorKey: 'priority',
+    header: 'Priority',
+    Header: () => {
       return (
         <>
-          <GridColumnHeaderTitle label="Priority" columnWidth={Infinity} />
-          <InfoTooltip infoCss={{ marginLeft: '10px' }}>
-            <div
-              css={{
-                display: 'grid',
-                gridTemplateColumns: 'auto auto',
-                rowGap: '4px',
-              }}
+          <div
+            css={{
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <Typography
+              variant="subhead2"
+              sx={{ overflowX: 'hidden', textOverflow: 'ellipsis' }}
             >
-              <div>
-                <div
-                  css={{
-                    gap: '4px',
-                    paddingRight: 8, // columnGap doesn't work because of the line divider
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  {getPriorityIcon(RepairMetric_Priority.BREACHED)}
-                  <Typography variant="body2">BREACHED</Typography>
-                </div>
-              </div>
-              <Typography variant="body2">
-                The minimum number of repairs needed to meet SLOs SLO-2 is
-                considered breached when the Offline Ratio is above 10% and
-                allocated Ratio is above 80%
-              </Typography>
-              <Divider
+              Priority
+            </Typography>
+            <InfoTooltip infoCss={{ marginLeft: '10px' }}>
+              <div
                 css={{
-                  backgroundColor: 'transparent',
-                  gridColumn: '1 / span 99',
+                  display: 'grid',
+                  gridTemplateColumns: 'auto auto',
+                  rowGap: '4px',
                 }}
-              />
-              <div>
-                <div
-                  css={{
-                    gap: '4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  {getPriorityIcon(RepairMetric_Priority.WATCH)}
-                  <Typography variant="body2">WATCH</Typography>
+              >
+                <div>
+                  <div
+                    css={{
+                      gap: '4px',
+                      paddingRight: 8, // columnGap doesn't work because of the line divider
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    {getPriorityIcon(RepairMetric_Priority.BREACHED)}
+                    <Typography variant="body2">BREACHED</Typography>
+                  </div>
                 </div>
-              </div>
-              <Typography variant="body2">
-                SLO-2 is considered at risk when the Offline Ratio is above 8%
-                and this time we check for Peak Utilization to be above 80%
-              </Typography>
-              <Divider
-                css={{
-                  backgroundColor: 'transparent',
-                  gridColumn: '1 / span 99',
-                }}
-              />
-              <div>
-                <div
+                <Typography variant="body2">
+                  The minimum number of repairs needed to meet SLOs SLO-2 is
+                  considered breached when the Offline Ratio is above 10% and
+                  allocated Ratio is above 80%
+                </Typography>
+                <Divider
                   css={{
-                    gap: '4px',
-                    display: 'flex',
-                    alignContent: 'center',
+                    backgroundColor: 'transparent',
+                    gridColumn: '1 / span 99',
                   }}
-                >
-                  {getPriorityIcon(RepairMetric_Priority.NICE)}
-                  {/*
+                />
+                <div>
+                  <div
+                    css={{
+                      gap: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    {getPriorityIcon(RepairMetric_Priority.WATCH)}
+                    <Typography variant="body2">WATCH</Typography>
+                  </div>
+                </div>
+                <Typography variant="body2">
+                  SLO-2 is considered at risk when the Offline Ratio is above 8%
+                  and this time we check for Peak Utilization to be above 80%
+                </Typography>
+                <Divider
+                  css={{
+                    backgroundColor: 'transparent',
+                    gridColumn: '1 / span 99',
+                  }}
+                />
+                <div>
+                  <div
+                    css={{
+                      gap: '4px',
+                      display: 'flex',
+                      alignContent: 'center',
+                    }}
+                  >
+                    {getPriorityIcon(RepairMetric_Priority.NICE)}
+                    {/*
                     the `tick` icon is very visually bottom heavy so to look aligned
                     we need to move the text a bit further down
                   */}
-                  <Typography variant="body2" css={{ paddingTop: 3 }}>
-                    NICE
-                  </Typography>
+                    <Typography variant="body2" css={{ paddingTop: 3 }}>
+                      NICE
+                    </Typography>
+                  </div>
                 </div>
+                <Typography variant="body2" css={{ paddingTop: 4 }}>
+                  Everything else is considered nice
+                </Typography>
               </div>
-              <Typography variant="body2" css={{ paddingTop: 4 }}>
-                Everything else is considered nice
-              </Typography>
-            </div>
-          </InfoTooltip>
+            </InfoTooltip>
+          </div>
         </>
       );
     },
-    renderCell: (x) => (
-      <div
-        css={{
-          gap: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          height: '100%',
-        }}
-      >
-        {getPriorityIcon(x.value as RepairMetric_Priority)}
-        <Typography variant="body2" noWrap={true}>
-          {repairMetric_PriorityToJSON(x.value)}
-        </Typography>
-      </div>
-    ),
-  },
-  labName: {
-    field: 'lab_name',
-    headerName: 'Lab Name',
-    flex: 1,
-  },
-  hostGroup: {
-    field: 'host_group',
-    headerName: 'Host Group',
-    flex: 2,
-  },
-  runTarget: {
-    field: 'run_target',
-    headerName: 'Run Target',
-    flex: 1,
-  },
-  minimumRepairs: {
-    field: 'minimum_repairs',
-    headerName: 'Minimum Repairs',
-    flex: 1,
-    renderHeader: () => {
+    Cell: (x) => {
       return (
-        <>
-          <GridColumnHeaderTitle
-            label="Minimum Repairs"
-            columnWidth={Infinity}
-          />
+        <div
+          css={{
+            gap: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            height: '100%',
+          }}
+        >
+          {getPriorityIcon(x.cell.getValue())}
+          <Typography variant="body2" noWrap={true}>
+            {repairMetric_PriorityToJSON(x.cell.getValue())}
+          </Typography>
+        </div>
+      );
+    },
+  },
+  lab_name: {
+    accessorKey: 'lab_name',
+    header: 'Lab Name',
+  },
+  host_group: {
+    accessorKey: 'host_group',
+    header: 'Host Group',
+    size: 120,
+  },
+  run_target: {
+    accessorKey: 'run_target',
+    header: 'Run Target',
+    size: 60,
+  },
+  minimum_repairs: {
+    accessorKey: 'minimum_repairs',
+    header: 'Minimum Repairs',
+    sortDescFirst: true,
+    Header: () => {
+      return (
+        <div
+          css={{
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <Typography
+            variant="subhead2"
+            sx={{ overflowX: 'hidden', textOverflow: 'ellipsis' }}
+          >
+            Minimum Repairs
+          </Typography>
           <InfoTooltip infoCss={{ marginLeft: '10px' }}>
             The minimum number of repairs needed to meet SLOs
           </InfoTooltip>
-        </>
+        </div>
       );
     },
   },
-  devicesOfflinePercentage: {
-    field: 'devices_offline_percentage',
-    headerName: 'Devices Offline %',
-    flex: 1,
-    renderHeader: () => {
+  devices_offline_percentage: {
+    accessorKey: 'devices_offline_percentage',
+    header: 'Devices Offline %',
+    sortDescFirst: true,
+    Header: () => {
       return (
         <Typography
           variant="subhead2"
           css={{
             fontWeight: 500,
             textWrap: 'wrap',
-            overflow: 'hidden',
+            overflowX: 'hidden',
             textOverflow: 'ellipsis',
           }}
         >
@@ -232,16 +285,17 @@ const COLUMNS: Record<string, GridColDef> = {
       );
     },
   },
-  devicesOfflineRatio: {
-    field: 'devices_offline_ratio',
-    headerName: 'Offline / Total Devices',
-    flex: 1,
+  devices_offline_ratio: {
+    accessorKey: 'devices_offline_ratio',
+    header: 'Offline / Total Devices',
+    sortDescFirst: true,
+    size: 45,
   },
-  peakUsage: {
-    field: 'peak_usage',
-    headerName: 'Peak Usage',
-    flex: 1,
-    renderCell: (x) => (
+  peak_usage: {
+    accessorKey: 'peak_usage',
+    header: 'Peak Usage',
+    sortDescFirst: true,
+    Cell: (x) => (
       <div
         css={{
           gap: '4px',
@@ -251,12 +305,15 @@ const COLUMNS: Record<string, GridColDef> = {
         }}
       >
         <Typography variant="body2" noWrap={true}>
-          {x.value}
+          {x.cell.getValue()}
         </Typography>
         <Typography variant="caption" sx={{ color: colors.grey[500] }}>
           /{' '}
-          {x.row.peak_usage && x.row.total_devices
-            ? (x.row.peak_usage / x.row.total_devices).toLocaleString('en-US', {
+          {x.cell.getValue() && x.row.original.total_devices
+            ? (x.row.original.total_devices
+                ? x.cell.getValue() / x.row.original.total_devices
+                : 0
+              ).toLocaleString('en-US', {
                 style: 'percent',
               })
             : ''}
@@ -264,10 +321,20 @@ const COLUMNS: Record<string, GridColDef> = {
       </div>
     ),
 
-    renderHeader: () => {
+    Header: () => {
       return (
-        <>
-          <GridColumnHeaderTitle label="Peak Usage" columnWidth={Infinity} />
+        <div
+          css={{
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <Typography
+            variant="subhead2"
+            sx={{ overflowX: 'hidden', textOverflow: 'ellipsis' }}
+          >
+            Peak Usage
+          </Typography>
           <InfoTooltip infoCss={{ marginLeft: '10px' }}>
             <Typography variant="body2">
               The maxiumum number of busy devices in the past 14 days
@@ -282,39 +349,45 @@ const COLUMNS: Record<string, GridColDef> = {
               devices.
             </Typography>
           </InfoTooltip>
-        </>
+        </div>
       );
     },
   },
-  omnilab_link: {
-    field: 'omnilab_link',
-    headerName: 'Explore in Arsenal',
-    flex: 1,
-    sortable: false,
-    renderCell: (x) => {
+  'static-omnilab_link': {
+    accessorKey: 'static-omnilab_link',
+    header: 'Explore in Arsenal',
+    enableSorting: false,
+    size: 15,
+    Cell: (x) => {
+      x.cell.getValue();
       // Double encodeURIComponent because omnilab is weird i guess
       const params = new URLSearchParams();
-      if (x.row.lab_name)
+      if (x.row.original.lab_name)
         params.append(
           'host',
-          'lab_location:include:' + encodeURIComponent(x.row.lab_name),
+          'lab_location:include:' + encodeURIComponent(x.row.original.lab_name),
         );
-      if (x.row.host_group)
+      if (x.row.original.host_group)
         params.append(
           'host',
-          'host_group:include:' + encodeURIComponent(x.row.host_group),
+          'host_group:include:' + encodeURIComponent(x.row.original.host_group),
         );
-      if (x.row.run_target)
-        if (x.row.host_group?.includes('crystalball'))
+      if (x.row.original.run_target)
+        if (
+          x.row
+            .getValue<Row['host_group']>('host_group')
+            ?.includes('crystalball')
+        )
           // this team uses the run target label a bit differently so we are making an exeption for them
           params.append(
             'device',
-            'product_board:include:' + encodeURIComponent(x.row.run_target),
+            'product_board:include:' +
+              encodeURIComponent(x.row.original.run_target),
           );
         else
           params.append(
             'device',
-            'hardware:include:' + encodeURIComponent(x.row.run_target),
+            'hardware:include:' + encodeURIComponent(x.row.original.run_target),
           );
 
       const to = `https://omnilab.corp.google.com/recovery?${params.toString()}`;
@@ -335,7 +408,13 @@ const COLUMNS: Record<string, GridColDef> = {
       );
     },
   },
-};
+} satisfies Partial<{
+  [Key in keyof Row | `static-${string}`]: Key extends keyof Row
+    ? MRT_ColumnDef<Row, Row[Key]> & {
+        accessorKey: Key;
+      }
+    : MRT_ColumnDef<Row, undefined>;
+}>;
 
 export const RepairListPage = ({ platform }: { platform: Platform }) => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
@@ -389,7 +468,7 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
     if (selectedOptions.error) return;
 
     const missingParamsFilters = Object.keys(selectedOptions.filters).filter(
-      (filterKey) => !COLUMNS[_.camelCase(filterKey)],
+      (filterKey) => !COLUMNS[_.camelCase(filterKey) as keyof typeof COLUMNS],
     );
     if (missingParamsFilters.length === 0) return;
     addWarning(
@@ -407,6 +486,108 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
     addWarning('Invalid filters');
     setSearchParams(filtersUpdater({}));
   }, [addWarning, selectedOptions.error, setSearchParams]);
+
+  const orderBy = parseOrderByParam(searchParams.get(ORDER_BY_PARAM_KEY) ?? '');
+  const sorting =
+    orderBy !== null
+      ? [
+          {
+            id: orderBy.field,
+            desc: orderBy.direction === OrderByDirection.DESC,
+          },
+        ]
+      : [];
+  const pagination = useMemo<MRT_PaginationState>(
+    () => ({
+      pageIndex: getCurrentPageIndex(pagerCtx),
+      pageSize: getPageSize(pagerCtx, searchParams),
+    }),
+    [pagerCtx, searchParams],
+  );
+
+  const table = useFCDataTable({
+    columns: Object.values(COLUMNS),
+    data: repairMetricsList.data?.repairMetrics.map(getRow) ?? [],
+    getRowId: (row) => row.lab_name + row.host_group + row.run_target,
+    state: {
+      sorting,
+      showProgressBars:
+        repairMetricsList.isPending || repairMetricsList.isPlaceholderData,
+      showAlertBanner: repairMetricsList.isError,
+      pagination: pagination,
+    },
+    muiTableContainerProps: { sx: { maxWidth: '100%', overflowX: 'hidden' } },
+    muiPaginationProps: {
+      rowsPerPageOptions: DEFAULT_PAGE_SIZE_OPTIONS,
+    },
+    muiToolbarAlertBannerProps: repairMetricsList.isError
+      ? {
+          color: 'error',
+          children: getErrorMessage(
+            repairMetricsList.error,
+            'get repair metrics',
+          ),
+        }
+      : undefined,
+
+    // Sorting
+    manualSorting: true,
+    onSortingChange: (updater) => {
+      const newSorting =
+        typeof updater === 'function' ? updater(sorting) : updater;
+
+      if (newSorting.length !== 1) {
+        updateOrderByParam('');
+        setSearchParams((prev) => emptyPageTokenUpdater(pagerCtx)(prev), {
+          replace: true,
+        });
+        return;
+      }
+
+      const by =
+        newSorting[0].id === 'devicesOfflineRatio'
+          ? 'devices_offline'
+          : (table.getColumn(newSorting[0].id).columnDef.sortKey ??
+            newSorting[0].id);
+
+      const order = newSorting[0].desc ? 'desc' : '';
+      updateOrderByParam(`${by} ${order}`);
+      setSearchParams((prev) => emptyPageTokenUpdater(pagerCtx)(prev), {
+        replace: true,
+      });
+    },
+
+    // Pagination
+    rowCount: repairMetricsList.data?.totalSize ?? 0,
+    manualPagination: true,
+    onPaginationChange: (updater) => {
+      const oldPagination = {
+        pageIndex: getCurrentPageIndex(pagerCtx),
+        pageSize: getPageSize(pagerCtx, searchParams),
+      };
+
+      const newPagination =
+        typeof updater === 'function' ? updater(oldPagination) : updater;
+
+      setSearchParams(pageSizeUpdater(pagerCtx, newPagination.pageSize));
+      const currentPage = getCurrentPageIndex(pagerCtx);
+      const isPrevPage = newPagination.pageIndex < currentPage;
+      const isNextPage = newPagination.pageIndex > currentPage;
+
+      setSearchParams((prev) => {
+        let next = pageSizeUpdater(pagerCtx, newPagination.pageSize)(prev);
+        if (isPrevPage) {
+          next = prevPageTokenUpdater(pagerCtx)(next);
+        } else if (isNextPage) {
+          next = nextPageTokenUpdater(
+            pagerCtx,
+            repairMetricsList.data?.nextPageToken ?? '',
+          )(next);
+        }
+        return next;
+      });
+    },
+  });
 
   return (
     <div
@@ -450,7 +631,10 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
             )}
             selectedOptions={selectedOptions.filters}
             onSelectedOptionsChange={onSelectedOptionsChange}
-            isLoading={repairMetricsFilterValues.isPending}
+            isLoading={
+              repairMetricsFilterValues.isPending ||
+              repairMetricsFilterValues.isPlaceholderData
+            }
           />
         )}
       </div>
@@ -460,61 +644,7 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
           marginTop: 24,
         }}
       >
-        {/* TODO add error message if repairMetricsList fails */}
-        <StyledGrid
-          columns={Object.values(COLUMNS)}
-          rows={repairMetricsList.data?.repairMetrics.map((rm) => ({
-            id: rm.labName + rm.hostGroup + rm.runTarget,
-            priority: rm.priority,
-            lab_name: rm.labName,
-            host_group: rm.hostGroup,
-            run_target: rm.runTarget,
-            minimum_repairs: rm.minimumRepairs,
-            devices_offline_ratio: `${rm.devicesOffline} / ${rm.totalDevices}`,
-            devices_offline_percentage: (
-              rm.devicesOffline / rm.totalDevices
-            ).toLocaleString('en-GB', {
-              style: 'percent',
-              minimumFractionDigits: 1,
-            }),
-            peak_usage: rm.peakUsage,
-            total_devices: rm.totalDevices,
-          }))}
-          slots={{
-            pagination: Pagination,
-          }}
-          slotProps={{
-            pagination: {
-              pagerCtx: pagerCtx,
-              nextPageToken: repairMetricsList.data?.nextPageToken,
-              totalRowCount: repairMetricsList.data?.totalSize,
-            },
-          }}
-          rowSelection={false}
-          sortingMode="server"
-          rowCount={repairMetricsList.data?.totalSize}
-          paginationMode="server"
-          paginationModel={{
-            page: getCurrentPageIndex(pagerCtx),
-            pageSize: getPageSize(pagerCtx, searchParams),
-          }}
-          onSortModelChange={(newModel) => {
-            if (newModel.length !== 1) {
-              updateOrderByParam('');
-              setSearchParams(emptyPageTokenUpdater(pagerCtx));
-              return;
-            }
-
-            const by = newModel[0].field;
-            const order = newModel[0].sort === 'asc' ? '' : 'desc';
-            updateOrderByParam(`${by} ${order}`);
-            setSearchParams(emptyPageTokenUpdater(pagerCtx));
-          }}
-          loading={repairMetricsList.isPending}
-          disableColumnFilter={true}
-          disableColumnSelector
-          disableColumnMenu
-        />
+        <MaterialReactTable table={table} />
       </div>
     </div>
   );

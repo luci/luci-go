@@ -27,20 +27,19 @@ export interface Settings {
   };
 }
 
-export const defaultSettings: Settings = {
-  table: {
-    density: 'compact',
-  },
-  tableMRT: {
-    density: 'compact',
-  },
-};
-
 export function useSettings(): [Settings, (value: Settings) => void] {
   const [settings, setSettings] = useLocalStorage<Settings>(
     SETTINGS_LOCAL_STORAGE_KEY,
-    defaultSettings,
   );
 
-  return [settings || defaultSettings, setSettings];
+  const actualSettings = {
+    table: {
+      density: settings?.table?.density ?? 'compact',
+    },
+    tableMRT: {
+      density: settings?.tableMRT?.density ?? 'compact',
+    },
+  };
+
+  return [actualSettings, setSettings];
 }
