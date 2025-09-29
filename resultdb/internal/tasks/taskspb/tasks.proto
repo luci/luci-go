@@ -30,6 +30,11 @@ message NotifyInvocationFinalized {
   luci.resultdb.v1.InvocationFinalizedNotification message = 1;
 }
 
+message NotifyRootInvocationFinalized {
+  // The message to publish to Cloud Pub/Sub.
+  luci.resultdb.v1.RootInvocationFinalizedNotification message = 1;
+}
+
 message ExportInvocationTestResultsToBQ {
   string invocation_id = 1;
   luci.resultdb.v1.BigQueryExport bq_export = 2;

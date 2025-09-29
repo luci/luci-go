@@ -23,6 +23,21 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 option java_package = "com.google.luci.resultdb.v1";
 option java_multiple_files = true;
 
+// RootInvocationInfo captures the basic info of the root invocation.
+// Next id: 4
+message RootInvocationInfo {
+    // The name of the invocation that was finalized.
+    // Format: rootInvocations/{ROOT_INVOCATION_ID}.
+    string name = 1;
+
+    // The LUCI realm that owns the root invocation.
+    // E.g. "chromium:ci".
+    string realm = 2;
+
+    // When the root invocation was created.
+    google.protobuf.Timestamp create_time = 3;
+}
+
 // A message notifying that an invocation has been finalized,
 // i.e. that an invocation's test results are now immutable and are
 // safe to be exported.
@@ -56,6 +71,24 @@ message InvocationFinalizedNotification {
 
     // When the invocation was created.
     google.protobuf.Timestamp create_time = 5;
+}
+
+// A message notifying that a root invocation has been finalized,
+// i.e. that a root invocation's test results are now immutable and are
+// safe to be exported.
+//
+// The message is sent over the `v1.root_invocation_finalized` Cloud Pub/Sub
+// topic in JSON-serialized form.
+//
+// Next id: 3
+message RootInvocationFinalizedNotification {
+    // The root invocation that was finalized.
+    RootInvocationInfo root_invocation = 1;
+
+    // The hostname of the luci.resultdb.v1.ResultDB service which
+    // can be used to query more information about the invocation(s)
+    // notified in this message.
+    string resultdb_host = 2;
 }
 
 // InvocationReadyForExportNotification notifies that the properties, test results
