@@ -24,6 +24,8 @@ import {
   TestAlert,
 } from '@/monitoringv2/util/alerts';
 import { builderPath } from '@/monitoringv2/util/server_json';
+import { AnalysisRunStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { AnalysisStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { TestVariantStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
@@ -34,6 +36,24 @@ const defaultBuilderID = {
   builder: 'linux-rel',
 };
 
+const defaultAnalysis = {
+  analysisId: '0',
+  buildFailure: undefined,
+  status: AnalysisStatus.ANALYSIS_STATUS_UNSPECIFIED,
+  runStatus: AnalysisRunStatus.ANALYSIS_RUN_STATUS_UNSPECIFIED,
+  lastPassedBbid: '0',
+  firstFailedBbid: '0',
+  createdTime: undefined,
+  lastUpdatedTime: undefined,
+  endTime: undefined,
+  heuristicResult: undefined,
+  nthSectionResult: undefined,
+  builder: undefined,
+  buildFailureType: 0,
+  culprits: [],
+  genAiResult: undefined,
+};
+
 export class BuilderAlertBuilder {
   private builderAlert: BuilderAlert = {
     kind: 'builder',
@@ -42,6 +62,7 @@ export class BuilderAlertBuilder {
     consecutiveFailures: 2,
     consecutivePasses: 0,
     history: [],
+    analysis: defaultAnalysis,
   };
 
   withBuilderID(builderID: BuilderID): this {
@@ -127,6 +148,7 @@ export class StepAlertBuilder {
     consecutiveFailures: 2,
     consecutivePasses: 0,
     history: [],
+    analysis: defaultAnalysis,
   };
 
   withBuilderID(builderID: BuilderID): this {
@@ -310,6 +332,7 @@ export const testBuilderAlert: BuilderAlert = {
   consecutiveFailures: 2,
   consecutivePasses: 0,
   history: [],
+  analysis: defaultAnalysis,
 };
 
 export const testStepAlert: StepAlert = {
@@ -320,6 +343,7 @@ export const testStepAlert: StepAlert = {
   consecutiveFailures: 2,
   consecutivePasses: 0,
   history: [],
+  analysis: defaultAnalysis,
 };
 
 export const testAlerts: StructuredAlert[] = buildStructuredAlerts([
@@ -340,6 +364,7 @@ export const testBuilderAlert2: BuilderAlert = {
   consecutiveFailures: 2,
   consecutivePasses: 0,
   history: [],
+  analysis: defaultAnalysis,
 };
 
 export const testAlerts2: StructuredAlert[] = buildStructuredAlerts([

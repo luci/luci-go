@@ -15,7 +15,10 @@
 import { UseQueryResult } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 
-import { CountDevicesResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import {
+  CountDevicesResponse,
+  Platform,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ChromeOSMainMetrics, MainMetricsContainer } from './main_metrics';
@@ -86,7 +89,10 @@ describe('<MainMetricsContainer />', () => {
   it('should render', async () => {
     render(
       <FakeContextProvider>
-        <MainMetricsContainer selectedOptions={{}} />
+        <MainMetricsContainer
+          selectedOptions={{}}
+          platform={Platform.UNSPECIFIED}
+        />
       </FakeContextProvider>,
     );
 

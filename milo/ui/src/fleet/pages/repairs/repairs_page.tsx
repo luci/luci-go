@@ -544,11 +544,7 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
         return;
       }
 
-      const by =
-        newSorting[0].id === 'devicesOfflineRatio'
-          ? 'devices_offline'
-          : (table.getColumn(newSorting[0].id).columnDef.sortKey ??
-            newSorting[0].id);
+      const by = newSorting[0].id;
 
       const order = newSorting[0].desc ? 'desc' : '';
       updateOrderByParam(`${by} ${order}`);

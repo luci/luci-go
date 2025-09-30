@@ -52,22 +52,18 @@ import { useFCDataTable } from './use_fc_data_table';
 const COLUMNS: MRT_ColumnDef<Device>[] = [
   {
     accessorKey: 'id',
-    sortKey: 'id',
     header: 'ID',
   },
   {
     accessorKey: 'dutId',
-    sortKey: 'dut_id',
     header: 'DUT ID',
   },
   {
     accessorKey: 'state',
-    sortKey: 'state',
     header: 'State',
   },
   {
     accessorKey: 'type',
-    sortKey: 'type',
     header: 'Type',
   },
 ];

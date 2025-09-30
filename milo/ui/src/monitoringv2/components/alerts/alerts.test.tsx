@@ -16,19 +16,9 @@ import { render, screen } from '@testing-library/react';
 
 import { MonitoringCtxForTest } from '@/monitoringv2/pages/monitoring_page/context';
 import { configuredTrees } from '@/monitoringv2/util/config';
-import { Bug } from '@/monitoringv2/util/server_json';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { Alerts } from './alerts';
-
-const hotlistBug: Bug = {
-  summary: 'Hotlist Bug',
-  labels: [],
-  link: 'https://b/1234',
-  number: '1234',
-  priority: 1,
-  status: 'Fixed',
-};
 
 describe('<Alerts />', () => {
   it('displays filter and alert groups', async () => {
@@ -41,7 +31,6 @@ describe('<Alerts />', () => {
         <MonitoringCtxForTest.Provider
           value={{
             alerts: [],
-            bugs: [],
             tree: configuredTrees[0],
             builderAlerts: [],
             stepAlerts: [],
@@ -68,7 +57,6 @@ describe('<Alerts />', () => {
         <MonitoringCtxForTest.Provider
           value={{
             alerts: [],
-            bugs: [hotlistBug],
             tree: configuredTrees[0],
             builderAlerts: [],
             stepAlerts: [],
