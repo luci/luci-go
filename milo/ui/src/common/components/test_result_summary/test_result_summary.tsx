@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { memo } from 'react';
+
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
@@ -21,7 +23,9 @@ export interface TestResultSummaryProps {
   readonly testResult: TestResult;
 }
 
-export function TestResultSummary({ testResult }: TestResultSummaryProps) {
+export const TestResultSummary = memo(function TestResultSummary({
+  testResult,
+}: TestResultSummaryProps) {
   return (
     <RecoverableErrorBoundary>
       <ArtifactTagScope resultName={testResult.name}>
@@ -50,4 +54,4 @@ export function TestResultSummary({ testResult }: TestResultSummaryProps) {
       </ArtifactTagScope>
     </RecoverableErrorBoundary>
   );
-}
+});

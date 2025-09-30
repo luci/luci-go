@@ -11,26 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import {
-  Box,
-  Chip,
-  Link,
-  CircularProgress,
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Typography,
-} from '@mui/material';
-import createDomPurify from 'dompurify';
+import { Box, Chip, CircularProgress } from '@mui/material';
 import { useMemo, useCallback, useEffect, useState } from 'react';
-import { useParams } from 'react-router';
 
-import {
-  getStatusStyle,
-  semanticStatusForTestVariant,
-  SemanticStatusType,
-} from '@/common/styles/status_styles';
+import { SemanticStatusType } from '@/common/styles/status_styles';
 import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
 import {
   CategoryOption,
@@ -45,13 +29,9 @@ import {
   VirtualTreeTable,
 } from '@/generic_libs/components/table';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import {
-  TestResult,
-  TestResult_Status,
-} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import { TestNavigationTreeNode } from '@/test_investigation/components/test_navigation_drawer/types';
+
+import { FailureSummary } from './failure_summary';
 
 /**
  * Recursively traverses the node tree to find the IDs of all nodes.
@@ -91,13 +71,9 @@ export function TestVariantsTable({
   selectedStatuses,
   setSelectedStatuses,
 }: TestVariantsTableProps) {
-  const { invocationId } = useParams<{ invocationId: string }>();
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [_, setSearchParams] = useSyncedSearchParams();
   const filteredHierarchyTreeData = treeData;
-  const domPurify = useMemo(() => {
-    return createDomPurify(window);
-  }, []);
 
   const handleTestIdChange = useCallback(
     (testId: string | null) => {
@@ -134,65 +110,6 @@ export function TestVariantsTable({
     [setSearchParams, parsedVariantDef],
   );
 
-  const getTestVariantURL = useCallback(
-    (testId: string, variantHash: string) => {
-      if (invocationId && testId && variantHash) {
-        return `/ui/test-investigate/invocations/${invocationId}/tests/${encodeURIComponent(
-          testId,
-        )}/variants/${variantHash}`;
-      }
-      return '#';
-    },
-    [invocationId],
-  );
-
-  const getFailureSummary = useCallback(
-    (testVariant: TestVariant) => {
-      const resultsBundle = testVariant.results as TestResultBundle[];
-      const results: TestResult[] = resultsBundle
-        .filter((resultsBundle) => resultsBundle.result !== undefined)
-        .map((resultsBundle) => resultsBundle.result!);
-      if (!results || results.length === 0) {
-        return undefined;
-      }
-
-      // Prioritise displaying failed -> skipped -> execution errored test results.
-      const statusPriorityMap = {
-        [TestResult_Status.FAILED]: 0,
-        [TestResult_Status.SKIPPED]: 1,
-        [TestResult_Status.EXECUTION_ERRORED]: 2,
-        [TestResult_Status.PASSED]: 3,
-        [TestResult_Status.PRECLUDED]: 4,
-        [TestResult_Status.STATUS_UNSPECIFIED]: 5,
-      };
-
-      results.sort((a, b) => {
-        return statusPriorityMap[a.statusV2] - statusPriorityMap[b.statusV2];
-      });
-
-      const resultToDisplay = results[0];
-      // Show in priority of failure or skipped reason -> stack trace -> summary_html.
-      const summary =
-        resultToDisplay.failureReason?.primaryErrorMessage ||
-        resultToDisplay.failureReason?.errors?.[0]?.message ||
-        resultToDisplay?.skippedReason?.reasonMessage;
-
-      if (summary) {
-        return summary;
-      }
-      // If none of the above, display summary_html.
-      if (resultToDisplay.summaryHtml) {
-        const innerText = domPurify.sanitize(resultToDisplay.summaryHtml, {
-          ALLOWED_TAGS: ['#text'],
-        });
-        return innerText;
-      }
-      // TODO: fetch text artifact content also.
-      return undefined;
-    },
-    [domPurify],
-  );
-
   const columns: ColumnDefinition[] = useMemo(() => {
     return [
       {
@@ -206,161 +123,17 @@ export function TestVariantsTable({
 
           if (isLeafWithVariant) {
             const testVariant = rowData.testVariant!;
-            const semanticStatus = semanticStatusForTestVariant(testVariant);
-            const styles = getStatusStyle(semanticStatus);
-            const IconComponent = styles.icon;
 
             const testTextToCopy = isTestIdStructured
               ? rowData.label
               : testVariant.testId;
 
-            const failureSummary = getFailureSummary(testVariant);
             return (
-              <>
-                {failureSummary ? (
-                  <Accordion
-                    sx={{
-                      p: 0,
-                      border: 'none',
-                      backgroundColor: 'rgba(0, 0, 255, 0)',
-                    }}
-                  >
-                    <AccordionSummary
-                      expandIcon={<ExpandMoreIcon />}
-                      sx={{
-                        p: 0,
-                        flexDirection: 'row-reverse',
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                          p: 0,
-                        }}
-                      >
-                        {IconComponent && (
-                          <IconComponent
-                            sx={{
-                              fontSize: '18px',
-                              color: styles.iconColor,
-                            }}
-                          />
-                        )}
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            maxWidth: '82vw',
-                          }}
-                        >
-                          <Link
-                            href={getTestVariantURL(
-                              testVariant.testId,
-                              testVariant.variantHash,
-                            )}
-                            variant="body2"
-                            sx={{
-                              textAlign: 'left',
-                              textTransform: 'none',
-                              textDecoration: 'none',
-                              color: styles.textColor,
-                            }}
-                            onClick={(e) => {
-                              {
-                                e.stopPropagation();
-                              }
-                            }}
-                          >
-                            {rowData.label}
-                          </Link>
-                          <CopyToClipboard
-                            textToCopy={testTextToCopy}
-                            aria-label="Copy text."
-                            sx={{ ml: 0.5, minWidth: '18px' }}
-                          />
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              p: 1,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              display: '-webkit-box',
-                              WebkitLineClamp: '1',
-                              whiteSpace: 'nowrap',
-                              WebkitBoxOrient: 'vertical',
-                              color: 'text.secondary',
-                            }}
-                          >
-                            {failureSummary}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </AccordionSummary>
-                    <AccordionDetails sx={{ p: 0 }}>
-                      <Box sx={{ maxWidth: '90vw' }}>
-                        <Typography
-                          sx={{
-                            p: 1,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: '-webkit-box',
-                            WebkitLineClamp: '6',
-                            WebkitBoxOrient: 'vertical',
-                          }}
-                          variant="caption"
-                        >
-                          {failureSummary}
-                        </Typography>
-                      </Box>
-                    </AccordionDetails>
-                  </Accordion>
-                ) : (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      p: 0,
-                    }}
-                  >
-                    {IconComponent && (
-                      <IconComponent
-                        sx={{
-                          fontSize: '18px',
-                          color: styles.iconColor,
-                        }}
-                      />
-                    )}
-                    <Link
-                      href={getTestVariantURL(
-                        testVariant.testId,
-                        testVariant.variantHash,
-                      )}
-                      variant="body2"
-                      sx={{
-                        textAlign: 'left',
-                        textTransform: 'none',
-                        textDecoration: 'none',
-                        color: styles.textColor,
-                      }}
-                      onClick={(e) => {
-                        {
-                          e.stopPropagation();
-                        }
-                      }}
-                    >
-                      {rowData.label}
-                    </Link>
-                    <CopyToClipboard
-                      textToCopy={testTextToCopy}
-                      aria-label="Copy text."
-                      sx={{ ml: 0.5 }}
-                    />
-                  </Box>
-                )}
-              </>
+              <FailureSummary
+                testVariant={testVariant}
+                testTextToCopy={testTextToCopy}
+                rowLabel={rowData.label}
+              ></FailureSummary>
             );
           } else {
             return (
@@ -380,7 +153,7 @@ export function TestVariantsTable({
         },
       },
     ];
-  }, [getTestVariantURL, getFailureSummary]);
+  }, []);
 
   useEffect(() => {
     const idsToExpand = getIdsOfAllNodes(filteredHierarchyTreeData);

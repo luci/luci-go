@@ -160,6 +160,7 @@ export function InvocationPage() {
         'results.*.result.skipped_reason',
         'results.*.result.summary_html',
         'results.*.result.status_v2',
+        'results.*.result.name',
       ],
       filter,
     });

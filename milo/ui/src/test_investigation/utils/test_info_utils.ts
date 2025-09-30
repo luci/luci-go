@@ -255,3 +255,16 @@ export function isPresubmitRun(invocation: Invocation | null): boolean {
   if (!invocation) return false;
   return (invocation.sourceSpec?.sources?.changelists?.length || 0) > 0;
 }
+
+export function getTestVariantURL(
+  invocationId: string | undefined,
+  testId: string,
+  variantHash: string,
+) {
+  if (invocationId && testId && variantHash) {
+    return `/ui/test-investigate/invocations/${invocationId}/tests/${encodeURIComponent(
+      testId,
+    )}/variants/${variantHash}`;
+  }
+  return '#';
+}
