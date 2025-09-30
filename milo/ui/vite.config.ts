@@ -50,6 +50,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: '/ui',
+    clearScreen: false,
     define: {
       // Some Babel packages check process.env variables which don't exist
       // in the browser, causing `ReferenceError: process is not defined`.
