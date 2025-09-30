@@ -173,7 +173,6 @@ message ClusterRequest {
         string request_tag = 1;
 
         // Identifier of the test (as reported to ResultDB).
-        // For chromium projects, this starts with ninja://.
         string test_id = 2;
 
         // The failure reason of the test (if any).
@@ -361,7 +360,7 @@ message QueryClusterSummariesRequest {
     // All values are case-sensitive.
     //
     // A bare value is searched for in the columns test_id and
-    // failure_reason. E.g. ninja or "test failed".
+    // failure_reason. E.g. gfx_unittests or "test failed".
     //
     // You can use AND, OR and NOT (case sensitive) logical operators, along
     // with grouping. '-' is equivalent to NOT. Multiple bare values are

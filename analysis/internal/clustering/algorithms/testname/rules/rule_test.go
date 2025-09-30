@@ -30,50 +30,49 @@ func TestRule(t *testing.T) {
 			t.Run(`Blink Web Tests`, func(t *ftt.Test) {
 				rule := &configpb.TestNameClusteringRule{
 					Name:         "Blink Web Tests",
-					Pattern:      `^ninja://:blink_web_tests/(virtual/[^/]+/)?(?P<testname>([^/]+/)+[^/]+\.[a-zA-Z]+).*$`,
-					LikeTemplate: `ninja://:blink\_web\_tests/%${testname}%`,
+					Pattern:      `^:(?P<target>//\\:\w*blink_web_tests)!webtest::(virtual/[^/]+/)?(?P<path>[^/]+(/[^/]+)*)#(?P<test>[^/]+\.[a-zA-Z]+).*$`,
+					LikeTemplate: ":${target}!webtest::%${path}#${test}%",
 				}
 				eval, err := Compile(rule)
 				assert.Loosely(t, err, should.BeNil)
 
 				inputs := []string{
-					"ninja://:blink_web_tests/virtual/oopr-canvas2d/fast/canvas/canvas-getImageData.html",
-					"ninja://:blink_web_tests/virtual/oopr-canvas2d/fast/canvas/canvas-getImageData.html?param=a",
-					"ninja://:blink_web_tests/virtual/oopr-canvas3d/fast/canvas/canvas-getImageData.html?param=b",
-					"ninja://:blink_web_tests/fast/canvas/canvas-getImageData.html",
+					`://\:blink_web_tests!webtest::virtual/oopr-canvas2d/fast/canvas#canvas-getImageData.html`,
+					`://\:blink_web_tests!webtest::virtual/oopr-canvas2d/fast/canvas#canvas-getImageData.html?param=a`,
+					`://\:blink_web_tests!webtest::virtual/oopr-canvas3d/fast/canvas#canvas-getImageData.html?param=b`,
+					`://\:blink_web_tests!webtest::fast/canvas#canvas-getImageData.html`,
 				}
 				for _, testname := range inputs {
 					like, ok := eval(testname)
 					assert.Loosely(t, ok, should.BeTrue)
-					assert.Loosely(t, like, should.Equal(`ninja://:blink\_web\_tests/%fast/canvas/canvas-getImageData.html%`))
+					assert.Loosely(t, like, should.Equal(`://\\:blink\_web\_tests!webtest::%fast/canvas#canvas-getImageData.html%`))
 				}
 
-				_, ok := eval("ninja://:not_blink_web_tests/fast/canvas/canvas-getImageData.html")
+				_, ok := eval(`://\:not_web_tests!webtest::fast/canvas#canvas-getImageData.html`)
 				assert.Loosely(t, ok, should.BeFalse)
 			})
 			t.Run(`Google Tests`, func(t *ftt.Test) {
 				rule := &configpb.TestNameClusteringRule{
-					Name: "Google Test (Value-parameterized)",
-					// E.g. ninja:{target}/Prefix/ColorSpaceTest.testNullTransform/11
-					// Note that "Prefix/" portion may be blank/omitted.
-					Pattern:      `^ninja:(?P<target>[\w/]+:\w+)/(\w+/)?(?P<suite>\w+)\.(?P<case>\w+)/\w+$`,
-					LikeTemplate: `ninja:${target}/%${suite}.${case}%`,
+					Name: "Google Test (Type or Value-parameterized)",
+					// Example test ID: ://content/test\:content_unittests!gtest::MySuite#MyTest/MyValueOrTypeInstantiation.1
+					Pattern:      `^:(?P<target>[\w/]+\\:\w+)!gtest::(?P<suite>\w+)#(?P<test>\w+)/[\w.]+$`,
+					LikeTemplate: `:${target}!gtest::${suite}#${test}%`,
 				}
 				eval, err := Compile(rule)
 				assert.Loosely(t, err, should.BeNil)
 
 				inputs := []string{
-					"ninja://chrome/test:interactive_ui_tests/Name/ColorSpaceTest.testNullTransform/0",
-					"ninja://chrome/test:interactive_ui_tests/Name/ColorSpaceTest.testNullTransform/0",
-					"ninja://chrome/test:interactive_ui_tests/Name/ColorSpaceTest.testNullTransform/11",
+					`://chrome/test\:interactive_ui_tests!gtest::ColorSpaceTest#testNullTransform/Name.0`,
+					`://chrome/test\:interactive_ui_tests!gtest::ColorSpaceTest#testNullTransform/Name.0`,
+					`://chrome/test\:interactive_ui_tests!gtest::ColorSpaceTest#testNullTransform/Name.11`,
 				}
 				for _, testname := range inputs {
 					like, ok := eval(testname)
 					assert.Loosely(t, ok, should.BeTrue)
-					assert.Loosely(t, like, should.Equal("ninja://chrome/test:interactive\\_ui\\_tests/%ColorSpaceTest.testNullTransform%"))
+					assert.Loosely(t, like, should.Equal(`://chrome/test\\:interactive\_ui\_tests!gtest::ColorSpaceTest#testNullTransform%`))
 				}
 
-				_, ok := eval("ninja://:blink_web_tests/virtual/oopr-canvas2d/fast/canvas/canvas-getImageData.html")
+				_, ok := eval(`://\:blink_web_tests!webtest::virtual/oopr-canvas2d/fast/canvas#canvas-getImageData.html`)
 				assert.Loosely(t, ok, should.BeFalse)
 			})
 		})

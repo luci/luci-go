@@ -230,7 +230,6 @@ func TestProjectConfigValidator(t *testing.T) {
 		})
 	})
 	ftt.Run("bug management", t, func(t *ftt.Test) {
-		assert.Loosely(t, printableASCIIRE.MatchString("ninja:${target}/%${suite}.${case}%"), should.BeTrue)
 		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.BugSystem_BUGANIZER)
 		bm := cfg.BugManagement
 

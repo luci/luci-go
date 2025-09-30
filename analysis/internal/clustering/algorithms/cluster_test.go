@@ -179,7 +179,7 @@ func upToDateScenario(size int) *scenario {
 
 	rule1, err := cache.NewCachedRule(
 		rules.NewRule(100).
-			WithRuleDefinition(`test = "ninja://test_name/2"`).
+			WithRuleDefinition(`test = "test_name/2"`).
 			WithPredicateLastUpdateTime(rulesVersion.Predicates.Add(-1 * time.Hour)).
 			Build())
 	if err != nil {
@@ -210,13 +210,13 @@ func upToDateScenario(size int) *scenario {
 
 	failures := []*clustering.Failure{
 		{
-			TestID: "ninja://test_name/1",
+			TestID: "test_name/1",
 		},
 	}
 	for range size {
 		failures = append(failures,
 			&clustering.Failure{
-				TestID: "ninja://test_name/2",
+				TestID: "test_name/2",
 				Reason: &pb.FailureReason{
 					PrimaryErrorMessage: "failed to connect to 192.168.0.1",
 				},

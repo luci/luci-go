@@ -98,7 +98,7 @@ func TestClusters(t *testing.T) {
 		rs := []*rules.Entry{
 			rules.NewRule(0).
 				WithProject("testproject").
-				WithRuleDefinition(`test LIKE "%TestSuite.TestName%"`).
+				WithRuleDefinition(`test LIKE "%TestSuite#TestName%"`).
 				WithPredicateLastUpdateTime(rulesVersion.Add(-1 * time.Hour)).
 				WithBug(bugs.BugID{
 					System: "monorail",
@@ -160,7 +160,7 @@ func TestClusters(t *testing.T) {
 				TestResults: []*pb.ClusterRequest_TestResult{
 					{
 						RequestTag: "my tag 1",
-						TestId:     "ninja://chrome/test:interactive_ui_tests/TestSuite.TestName",
+						TestId:     "://chrome/test\\:interactive_ui_tests!gtest::TestSuite#TestName",
 						FailureReason: &pb.FailureReason{
 							PrimaryErrorMessage: "my_file.cc(123): Check failed: false.",
 						},
@@ -222,7 +222,7 @@ func TestClusters(t *testing.T) {
 									},
 								},
 								failureReasonClusterEntry(compiledTestProjectCfg, "my_file.cc(123): Check failed: false."),
-								testNameClusterEntry(compiledTestProjectCfg, "ninja://chrome/test:interactive_ui_tests/TestSuite.TestName"),
+								testNameClusterEntry(compiledTestProjectCfg, "://chrome/test\\:interactive_ui_tests!gtest::TestSuite#TestName"),
 							}),
 						},
 						{

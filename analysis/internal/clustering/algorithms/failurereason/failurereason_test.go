@@ -178,18 +178,18 @@ func TestAlgorithm(t *testing.T) {
 					Reason: &pb.FailureReason{PrimaryErrorMessage: "Null pointer exception at ip 0x45637271"},
 				},
 				TopTests: []string{
-					"ninja://test_one",
-					"ninja://test_two",
-					"ninja://test_three",
+					"test_one",
+					"test_two",
+					"test_three",
 				},
 			}
 			description, err := a.ClusterDescription(cfg, failure)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, description.Title, should.Equal(`Null pointer exception at ip 0x45637271`))
 			assert.Loosely(t, description.Description, should.ContainSubstring(`Null pointer exception at ip 0x45637271`))
-			assert.Loosely(t, description.Description, should.ContainSubstring(`- ninja://test_one`))
-			assert.Loosely(t, description.Description, should.ContainSubstring(`- ninja://test_three`))
-			assert.Loosely(t, description.Description, should.ContainSubstring(`- ninja://test_three`))
+			assert.Loosely(t, description.Description, should.ContainSubstring(`- test_one`))
+			assert.Loosely(t, description.Description, should.ContainSubstring(`- test_three`))
+			assert.Loosely(t, description.Description, should.ContainSubstring(`- test_three`))
 		})
 		t.Run(`Escaping`, func(t *ftt.Test) {
 			summary := &clustering.ClusterSummary{

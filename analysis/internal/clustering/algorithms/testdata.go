@@ -23,8 +23,8 @@ func TestClusteringConfig() *configpb.Clustering {
 		TestNameRules: []*configpb.TestNameClusteringRule{
 			{
 				Name:         "Google Test (Value-parameterized)",
-				Pattern:      `^ninja://test_name/1[0-9]*$`,
-				LikeTemplate: `ninja://test_name/1%`,
+				Pattern:      `^test_name/1[0-9]*$`,
+				LikeTemplate: `test_name/1%`,
 			},
 		},
 	}

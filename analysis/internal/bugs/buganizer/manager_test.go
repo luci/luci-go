@@ -239,11 +239,11 @@ func TestBugManager(t *testing.T) {
 				})
 			})
 			t.Run("With test name failure cluster", func(t *ftt.Test) {
-				createRequest.Description.Title = "ninja://:blink_web_tests/media/my-suite/my-test.html"
+				createRequest.Description.Title = `://\:blink_web_tests!webtest::media/my-suite#my-test.html`
 				createRequest.Description.Description = "A test is failing " + createRequest.Description.Title
 				expectedIssue.Description = &issuetracker.IssueComment{
 					CommentNumber: 1,
-					Comment: "A test is failing ninja://:blink_web_tests/media/my-suite/my-test.html\n" +
+					Comment: "A test is failing ://\\:blink_web_tests!webtest::media/my-suite#my-test.html\n" +
 						"\n" +
 						"These test failures are causing problem(s) which require your attention, including:\n" +
 						"- Problem A\n" +
@@ -254,7 +254,7 @@ func TestBugManager(t *testing.T) {
 						"Provide feedback: https://luci-analysis-test.appspot.com/help#feedback\n" +
 						"Was this bug filed in the wrong component? See: https://luci-analysis-test.appspot.com/help#component-selection",
 				}
-				expectedIssue.IssueState.Title = "Tests are failing: ninja://:blink_web_tests/media/my-suite/my-test.html"
+				expectedIssue.IssueState.Title = "Tests are failing: ://\\:blink_web_tests!webtest::media/my-suite#my-test.html"
 
 				response := bm.Create(ctx, createRequest)
 				assert.Loosely(t, response, should.Match(bugs.BugCreateResponse{

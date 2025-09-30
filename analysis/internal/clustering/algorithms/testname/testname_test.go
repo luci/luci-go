@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
@@ -32,8 +33,8 @@ func TestAlgorithm(t *testing.T) {
 	rules := []*configpb.TestNameClusteringRule{
 		{
 			Name:         "Blink Web Tests",
-			Pattern:      `^ninja://:blink_web_tests/(virtual/[^/]+/)?(?P<testname>([^/]+/)+[^/]+\.[a-zA-Z]+).*$`,
-			LikeTemplate: "ninja://:blink\\_web\\_tests/%${testname}%",
+			Pattern:      `^:(?P<target>//\\:\w*blink_web_tests)!webtest::(virtual/[^/]+/)?(?P<path>[^/]+(/[^/]+)*)#(?P<test>[^/]+\.[a-zA-Z]+).*$`,
+			LikeTemplate: ":${target}!webtest::%${path}#${test}%",
 		},
 	}
 	cfgpb := &configpb.ProjectConfig{
@@ -54,7 +55,7 @@ func TestAlgorithm(t *testing.T) {
 
 		t.Run(`ID of appropriate length`, func(t *ftt.Test) {
 			id := a.Cluster(cfg, &clustering.Failure{
-				TestID: "ninja://test_name",
+				TestID: "://module!junit:package:class#method_name",
 			})
 			// IDs may be 16 bytes at most.
 			assert.Loosely(t, len(id), should.BeGreaterThan(0))
@@ -63,22 +64,22 @@ func TestAlgorithm(t *testing.T) {
 		t.Run(`Same ID for same test name`, func(t *ftt.Test) {
 			t.Run(`No matching rules`, func(t *ftt.Test) {
 				id1 := a.Cluster(cfg, &clustering.Failure{
-					TestID: "ninja://test_name_one/",
+					TestID: "://module!junit:package:class#method_name",
 					Reason: &pb.FailureReason{PrimaryErrorMessage: "A"},
 				})
 				id2 := a.Cluster(cfg, &clustering.Failure{
-					TestID: "ninja://test_name_one/",
+					TestID: "://module!junit:package:class#method_name",
 					Reason: &pb.FailureReason{PrimaryErrorMessage: "B"},
 				})
 				assert.Loosely(t, id2, should.Match(id1))
 			})
 			t.Run(`Matching rules`, func(t *ftt.Test) {
 				id1 := a.Cluster(cfg, &clustering.Failure{
-					TestID: "ninja://:blink_web_tests/virtual/abc/folder/test-name.html",
+					TestID: `://\:blink_web_tests!webtest::virtual/abc/folder#test-name.html`,
 					Reason: &pb.FailureReason{PrimaryErrorMessage: "A"},
 				})
 				id2 := a.Cluster(cfg, &clustering.Failure{
-					TestID: "ninja://:blink_web_tests/folder/test-name.html?param=2",
+					TestID: `://\:blink_web_tests!webtest::folder#test-name.html?param=2`,
 					Reason: &pb.FailureReason{PrimaryErrorMessage: "B"},
 				})
 				assert.Loosely(t, id2, should.Match(id1))
@@ -87,20 +88,20 @@ func TestAlgorithm(t *testing.T) {
 		t.Run(`Different ID for different clusters`, func(t *ftt.Test) {
 			t.Run(`No matching rules`, func(t *ftt.Test) {
 				id1 := a.Cluster(cfg, &clustering.Failure{
-					TestID: "ninja://test_name_one/",
+					TestID: "://module!junit:package:class#method_one",
 				})
 				id2 := a.Cluster(cfg, &clustering.Failure{
-					TestID: "ninja://test_name_two/",
+					TestID: "://module!junit:package:class#method_two",
 				})
 				assert.Loosely(t, id2, should.NotResemble(id1))
 			})
 			t.Run(`Matching rules`, func(t *ftt.Test) {
 				id1 := a.Cluster(cfg, &clustering.Failure{
-					TestID: "ninja://:blink_web_tests/virtual/abc/folder/test-name-a.html",
+					TestID: `://\::blink_web_tests!webtest::virtual/abc/folder#test-name-a.html`,
 					Reason: &pb.FailureReason{PrimaryErrorMessage: "A"},
 				})
 				id2 := a.Cluster(cfg, &clustering.Failure{
-					TestID: "ninja://:blink_web_tests/folder/test-name-b.html?param=2",
+					TestID: `://\:blink_web_tests!webtest::folder#test-name-b.html?param=2`,
 					Reason: &pb.FailureReason{PrimaryErrorMessage: "B"},
 				})
 				assert.Loosely(t, id2, should.NotResemble(id1))
@@ -114,7 +115,7 @@ func TestAlgorithm(t *testing.T) {
 
 		test := func(failure *clustering.Failure, expectedRule string) {
 			rule := a.FailureAssociationRule(cfg, failure)
-			assert.Loosely(t, rule, should.Equal(expectedRule))
+			assert.Loosely(t, rule, should.Equal(expectedRule), truth.LineContext(1))
 
 			// Test the rule is valid syntax and matches at least the example failure.
 			expr, err := lang.Parse(rule)
@@ -123,21 +124,24 @@ func TestAlgorithm(t *testing.T) {
 		}
 		t.Run(`No matching rules`, func(t *ftt.Test) {
 			failure := &clustering.Failure{
-				TestID: "ninja://test_name_one/",
+				TestID: "://module!junit:package:class#method_name",
 			}
-			test(failure, `test = "ninja://test_name_one/"`)
+			test(failure, `test = "://module!junit:package:class#method_name"`)
 		})
 		t.Run(`Matching rule`, func(t *ftt.Test) {
 			failure := &clustering.Failure{
-				TestID: "ninja://:blink_web_tests/virtual/dark-color-scheme/fast/forms/color-scheme/select/select-multiple-hover-unselected.html",
+				TestID: `://\:blink_web_tests!webtest::virtual/dark-color-scheme/fast/forms/color-scheme/select#select-multiple-hover-unselected.html`,
 			}
-			test(failure, `test LIKE "ninja://:blink\\_web\\_tests/%fast/forms/color-scheme/select/select-multiple-hover-unselected.html%"`)
+			test(failure, `test LIKE "://\\\\:blink\\_web\\_tests!webtest::%fast/forms/color-scheme/select#select-multiple-hover-unselected.html%"`)
 		})
 		t.Run(`Escapes LIKE syntax`, func(t *ftt.Test) {
 			failure := &clustering.Failure{
-				TestID: `ninja://:blink_web_tests/a/b_\%c.html`,
+				TestID: `://\:blink_web_tests!webtest::a#b_\%c.html`,
 			}
-			test(failure, `test LIKE "ninja://:blink\\_web\\_tests/%a/b\\_\\\\\\%c.html%"`)
+			// _, \ and % needs to be escaped in LIKE expressions for literal match to occur.
+			// Because the LIKE expression is in a double-quoted string (""), the \ used for
+			// escaping themselves needs to be escaped.
+			test(failure, `test LIKE "://\\\\:blink\\_web\\_tests!webtest::%a#b\\_\\\\\\%c.html%"`)
 		})
 		t.Run(`Escapes non-graphic Unicode characters`, func(t *ftt.Test) {
 			failure := &clustering.Failure{
@@ -153,17 +157,17 @@ func TestAlgorithm(t *testing.T) {
 
 		t.Run(`No matching rules`, func(t *ftt.Test) {
 			failure := &clustering.Failure{
-				TestID: "ninja://test_name_one",
+				TestID: "://module!junit:package:class#method_name",
 			}
 			title := a.ClusterTitle(cfg, failure)
-			assert.Loosely(t, title, should.Equal("ninja://test_name_one"))
+			assert.Loosely(t, title, should.Equal("://module!junit:package:class#method_name"))
 		})
 		t.Run(`Matching rule`, func(t *ftt.Test) {
 			failure := &clustering.Failure{
-				TestID: "ninja://:blink_web_tests/virtual/dark-color-scheme/fast/forms/color-scheme/select/select-multiple-hover-unselected.html",
+				TestID: `://\:blink_web_tests!webtest::virtual/dark-color-scheme/fast/forms/color-scheme/select#select-multiple-hover-unselected.html`,
 			}
 			title := a.ClusterTitle(cfg, failure)
-			assert.Loosely(t, title, should.Equal(`ninja://:blink\\_web\\_tests/%fast/forms/color-scheme/select/select-multiple-hover-unselected.html%`))
+			assert.Loosely(t, title, should.Equal(`://\\\\:blink\\_web\\_tests!webtest::%fast/forms/color-scheme/select#select-multiple-hover-unselected.html%`))
 		})
 	})
 	ftt.Run(`Cluster Description`, t, func(t *ftt.Test) {
@@ -174,24 +178,24 @@ func TestAlgorithm(t *testing.T) {
 		t.Run(`No matching rules`, func(t *ftt.Test) {
 			summary := &clustering.ClusterSummary{
 				Example: clustering.Failure{
-					TestID: "ninja://test_name_one",
+					TestID: "://module!junit:package:class#method_name",
 				},
 			}
 			description, err := a.ClusterDescription(cfg, summary)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, description.Title, should.Equal("ninja://test_name_one"))
-			assert.Loosely(t, description.Description, should.ContainSubstring("ninja://test_name_one"))
+			assert.Loosely(t, description.Title, should.Equal("://module!junit:package:class#method_name"))
+			assert.Loosely(t, description.Description, should.ContainSubstring("://module!junit:package:class#method_name"))
 		})
 		t.Run(`Matching rule`, func(t *ftt.Test) {
 			summary := &clustering.ClusterSummary{
 				Example: clustering.Failure{
-					TestID: "ninja://:blink_web_tests/virtual/dark-color-scheme/fast/forms/color-scheme/select/select-multiple-hover-unselected.html",
+					TestID: `://\:blink_web_tests!webtest::virtual/dark-color-scheme/fast/forms/color-scheme/select#select-multiple-hover-unselected.html`,
 				},
 			}
 			description, err := a.ClusterDescription(cfg, summary)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, description.Title, should.Equal(`ninja://:blink\\_web\\_tests/%fast/forms/color-scheme/select/select-multiple-hover-unselected.html%`))
-			assert.Loosely(t, description.Description, should.ContainSubstring(`ninja://:blink\\_web\\_tests/%fast/forms/color-scheme/select/select-multiple-hover-unselected.html%`))
+			assert.Loosely(t, description.Title, should.Equal(`://\\\\:blink\\_web\\_tests!webtest::%fast/forms/color-scheme/select#select-multiple-hover-unselected.html%`))
+			assert.Loosely(t, description.Description, should.ContainSubstring(`://\\\\:blink\\_web\\_tests!webtest::%fast/forms/color-scheme/select#select-multiple-hover-unselected.html%`))
 		})
 	})
 }

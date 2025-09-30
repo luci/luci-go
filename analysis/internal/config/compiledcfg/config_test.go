@@ -62,7 +62,7 @@ func TestCompiledConfig(t *testing.T) {
 			assert.That(t, cfg.LastUpdated, should.Match(expectedCfg.LastUpdated.AsTime()))
 			assert.Loosely(t, len(cfg.TestNameRules), should.Equal(1))
 
-			testName := fmt.Sprintf(`ninja://test_name/%v`, uniqifier)
+			testName := fmt.Sprintf(`test_name/%v`, uniqifier)
 			rule := cfg.TestNameRules[0]
 			like, ok := rule(testName)
 			assert.Loosely(t, ok, should.BeTrue)
@@ -161,8 +161,8 @@ func generateProjectConfig(uniqifier int) *configpb.ProjectConfig {
 		TestNameRules: []*configpb.TestNameClusteringRule{
 			{
 				Name:         "Google Test (Value-parameterized)",
-				Pattern:      fmt.Sprintf(`^ninja://test_name/%v$`, uniqifier),
-				LikeTemplate: fmt.Sprintf(`ninja://test_name/%v%%`, uniqifier),
+				Pattern:      fmt.Sprintf(`^test_name/%v$`, uniqifier),
+				LikeTemplate: fmt.Sprintf(`test_name/%v%%`, uniqifier),
 			},
 		},
 		ReasonMaskPatterns: []string{`(?:^\[Fixture failure\] )[a-zA-Z0-9_]+(?:[:])`},

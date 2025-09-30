@@ -575,7 +575,7 @@ type QueryClusterSummariesRequest struct {
 	// All values are case-sensitive.
 	//
 	// A bare value is searched for in the columns test_id and
-	// failure_reason. E.g. ninja or "test failed".
+	// failure_reason. E.g. gfx_unittests or "test failed".
 	//
 	// You can use AND, OR and NOT (case sensitive) logical operators, along
 	// with grouping. '-' is equivalent to NOT. Multiple bare values are
@@ -1681,7 +1681,6 @@ type ClusterRequest_TestResult struct {
 	// Does not need to be unique. Optional.
 	RequestTag string `protobuf:"bytes,1,opt,name=request_tag,json=requestTag,proto3" json:"request_tag,omitempty"`
 	// Identifier of the test (as reported to ResultDB).
-	// For chromium projects, this starts with ninja://.
 	TestId string `protobuf:"bytes,2,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
 	// The failure reason of the test (if any).
 	FailureReason *FailureReason `protobuf:"bytes,3,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`

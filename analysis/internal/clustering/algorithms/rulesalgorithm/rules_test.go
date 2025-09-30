@@ -48,7 +48,7 @@ func TestAlgorithm(t *testing.T) {
 		t.Run(`With Rules`, func(t *ftt.Test) {
 			ruleOnTest, err := cache.NewCachedRule(
 				rules.NewRule(100).
-					WithRuleDefinition(`test = "ninja://test_name_one/"`).
+					WithRuleDefinition(`test = "://module!junit:package:class#method_one"`).
 					Build())
 			assert.Loosely(t, err, should.BeNil)
 			ruleOnReason, err := cache.NewCachedRule(
@@ -67,7 +67,7 @@ func TestAlgorithm(t *testing.T) {
 			t.Run(`Without failure reason`, func(t *ftt.Test) {
 				t.Run(`Matching`, func(t *ftt.Test) {
 					a.Cluster(ruleset, existingRulesVersion, ids, &clustering.Failure{
-						TestID: "ninja://test_name_one/",
+						TestID: "://module!junit:package:class#method_one",
 					})
 					assert.Loosely(t, ids, should.Match(map[string]struct{}{
 						ruleOnTest.Rule.RuleID: {},
@@ -75,14 +75,14 @@ func TestAlgorithm(t *testing.T) {
 				})
 				t.Run(`Non-matcing`, func(t *ftt.Test) {
 					a.Cluster(ruleset, existingRulesVersion, ids, &clustering.Failure{
-						TestID: "ninja://test_name_two/",
+						TestID: "://module!junit:package:class#method_two",
 					})
 					assert.Loosely(t, ids, should.BeEmpty)
 				})
 			})
 			t.Run(`Matches one`, func(t *ftt.Test) {
 				a.Cluster(ruleset, existingRulesVersion, ids, &clustering.Failure{
-					TestID: "ninja://test_name_three/",
+					TestID: "://module!junit:package:class#method_three",
 					Reason: &pb.FailureReason{
 						PrimaryErrorMessage: "failed to connect to 192.168.0.1",
 					},
@@ -93,7 +93,7 @@ func TestAlgorithm(t *testing.T) {
 			})
 			t.Run(`Matches multiple`, func(t *ftt.Test) {
 				a.Cluster(ruleset, existingRulesVersion, ids, &clustering.Failure{
-					TestID: "ninja://test_name_one/",
+					TestID: "://module!junit:package:class#method_one",
 					Reason: &pb.FailureReason{
 						PrimaryErrorMessage: "failed to connect to 192.168.0.1",
 					},
@@ -107,8 +107,8 @@ func TestAlgorithm(t *testing.T) {
 			})
 			t.Run(`Matches on PreviousTestID, if set`, func(t *ftt.Test) {
 				a.Cluster(ruleset, existingRulesVersion, ids, &clustering.Failure{
-					TestID:         ":module!scheme::#new_test",
-					PreviousTestID: "ninja://test_name_one/",
+					TestID:         "://module!junit:package:class#new_method",
+					PreviousTestID: "://module!junit:package:class#method_one",
 				})
 				expectedIDs := []string{ruleOnTest.Rule.RuleID, ruleOnReason.Rule.RuleID}
 				sort.Strings(expectedIDs)
@@ -122,7 +122,7 @@ func TestAlgorithm(t *testing.T) {
 		a := &Algorithm{}
 		originalRulesVersion := time.Date(2020, time.January, 1, 1, 0, 0, 0, time.UTC)
 		testFailure := &clustering.Failure{
-			TestID: "ninja://test_name_one/",
+			TestID: "://module!junit:package:class#method_one",
 			Reason: &pb.FailureReason{
 				PrimaryErrorMessage: "failed to connect to 192.168.0.1",
 			},

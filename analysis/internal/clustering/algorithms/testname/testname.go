@@ -54,7 +54,6 @@ func (a *Algorithm) Name() string {
 // name itself. However, by using rules, projects can configure
 // it to mask out parts of the test name (e.g. corresponding
 // to test variants).
-// "ninja://chrome/test:interactive_ui_tests/ColorSpaceTest.testNullTransform/%"
 func clusterLike(config *compiledcfg.ProjectConfig, failure *clustering.Failure) (like string, ok bool) {
 	testID := failure.TestID
 	for _, r := range config.TestNameRules {

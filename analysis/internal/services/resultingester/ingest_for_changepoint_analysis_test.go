@@ -175,7 +175,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 			err := ingester.Ingest(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
-			// Only "ninja://test_expected" should be ingested as it is has no
+			// Only ":module!junit:package:class#test_expected" should be ingested as it is has no
 			// record in the test variant branch table yet, so it cannot be
 			// out of order.
 			expectedExports = expectedExports[1:]

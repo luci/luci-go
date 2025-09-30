@@ -1411,7 +1411,7 @@ func TestRules(t *testing.T) {
 				request := &pb.PrepareRuleDefaultsRequest{
 					Parent: fmt.Sprintf("projects/%s", testProject),
 					TestResult: &pb.PrepareRuleDefaultsRequest_TestResult{
-						TestId: "ninja://some_package/some_test",
+						TestId: "some_package/some_test",
 						FailureReason: &pb.FailureReason{
 							PrimaryErrorMessage: "Some error 12345678.",
 						},
@@ -1455,7 +1455,7 @@ func TestRules(t *testing.T) {
 						response, err := srv.PrepareDefaults(ctx, request)
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, response.Rule, should.Match(&pb.Rule{
-							RuleDefinition: `test = "ninja://some_package/some_test" AND reason LIKE "Some error %."`,
+							RuleDefinition: `test = "some_package/some_test" AND reason LIKE "Some error %."`,
 							IsActive:       true,
 						}))
 					})
@@ -1465,7 +1465,7 @@ func TestRules(t *testing.T) {
 						response, err := srv.PrepareDefaults(ctx, request)
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, response.Rule, should.Match(&pb.Rule{
-							RuleDefinition: `test = "ninja://some_package/some_test"`,
+							RuleDefinition: `test = "some_package/some_test"`,
 							IsActive:       true,
 						}))
 					})
