@@ -254,6 +254,40 @@ function toggleDropdown(dropdownList) {
 }
 
 /**
+ * Get the logcat from the specified URL via the Fetch API.
+ * @param {string} url The URL from which to fetch the logcat.
+ */
+async function fetchLogcat(url) {
+  try {
+    const response = await fetch(url);
+    if (response.ok) {
+      const logcatText = await response.text();
+      setUpElements(logcatText.split('\n'));
+      updateTextDisplayArea(false);
+    } else {
+      setUpElements([]);
+      textDisplayArea.textContent = `Encountered an HTTP error when `
+        + `fetching the logcat. HTTP status code: ${response.status}`;
+    }
+  } catch (error) {
+    setUpElements([]);
+    textDisplayArea.textContent = `Encountered an error when `
+      + `fetching the logcat: ${error}`;
+  }
+}
+
+const urlHash = window.location.hash.substring(1);
+const urlIdx = urlHash.indexOf('url=');
+if (urlIdx !== -1) {
+  const logcatUrl = urlHash.substring(urlIdx + 4);
+  fetchLogcat(`/logs${logcatUrl}?format=raw`);
+} else {
+  setUpElements([]);
+  textDisplayArea.textContent = 'Encountered an error when parsing the URL';
+}
+
+
+/**
  * This function is called when the user clicks on the file upload button.
  * @param {Event} event
  */
