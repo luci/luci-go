@@ -161,7 +161,7 @@ func (u *Updater) Do(ctx context.Context) (*model.BuildStatus, error) {
 	// Currently only the consecutive failure count metrics need to be evaluated
 	// at build completion, so skip this for the successful ones.
 	if protoutil.IsEnded(newBuildStatus.Status) && newBuildStatus.Status != pb.Status_SUCCESS {
-		err := model.EvaluateBuildForCustomBuilderMetrics(ctx, u.Build, true)
+		err := model.EvaluateBuildForCustomBuilderMetrics(ctx, u.Build, nil, true)
 		if err != nil {
 			logging.Errorf(ctx, "failed to evaluate build for custom builder metrics: %s", err)
 		}

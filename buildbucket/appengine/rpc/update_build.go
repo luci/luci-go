@@ -617,11 +617,11 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 		}
 
 		// Evaluate the build with builder metrics
-		// Up until now b.Proto contains all the info for the build, including the
+		// req.Build contains all the info for the build, including the
 		// newest update that has not been saved to datastore. So no need to load
 		// details.
 		if !isEndedStatus {
-			if err := model.EvaluateBuildForCustomBuilderMetrics(ctx, b, false); err != nil {
+			if err := model.EvaluateBuildForCustomBuilderMetrics(ctx, b, req.Build, false); err != nil {
 				logging.Errorf(ctx, "failed to evaluate build for custom builder metrics: %s", err)
 			}
 		}

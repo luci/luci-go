@@ -627,7 +627,7 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 			// Evaluate the builds for custom builder metrics.
 			// The builds have not been saved in datastore, so nothing to load as build details.
 			for _, bld := range validBlds {
-				if err := model.EvaluateBuildForCustomBuilderMetrics(ctx, bld, false); err != nil {
+				if err := model.EvaluateBuildForCustomBuilderMetrics(ctx, bld, bld.Proto, false); err != nil {
 					logging.Errorf(ctx, "failed to evaluate build for custom builder metrics: %s", err)
 				}
 			}

@@ -377,21 +377,21 @@ func TestBuild(t *testing.T) {
 				t.Run("include", func(t *ftt.Test) {
 					m := HardcodedBuildMask("id")
 					p, err := b.ToProto(ctx, m, nil)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, p.Id, should.Equal(1))
 				})
 
 				t.Run("exclude", func(t *ftt.Test) {
 					m := HardcodedBuildMask("builder")
 					p, err := b.ToProto(ctx, m, nil)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, p.Id, should.BeZero)
 				})
 			})
 
 			t.Run("tags", func(t *ftt.Test) {
 				p, err := b.ToProto(ctx, m, nil)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, p.Tags, should.Resemble([]*pb.StringPair{
 					{
 						Key:   "key1",
@@ -407,7 +407,7 @@ func TestBuild(t *testing.T) {
 
 			t.Run("infra", func(t *ftt.Test) {
 				p, err := b.ToProto(ctx, m, nil)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, p.Infra, should.Resemble(&pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
 						Hostname: "example.com",
@@ -418,7 +418,7 @@ func TestBuild(t *testing.T) {
 
 			t.Run("input properties", func(t *ftt.Test) {
 				p, err := b.ToProto(ctx, m, nil)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, p.Input.Properties, should.Resemble(mustStruct(map[string]any{
 					"input": "input value",
 				})))
@@ -439,7 +439,7 @@ func TestBuild(t *testing.T) {
 					},
 				}), should.BeNil)
 				p, err := b.ToProto(ctx, m, nil)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, p.Output.Properties, should.Resemble(mustStruct(map[string]any{
 					"output": "output value",
 				})))
@@ -463,7 +463,7 @@ func TestBuild(t *testing.T) {
 
 			t.Run("output properties(large)", func(t *ftt.Test) {
 				largeProps, err := structpb.NewStruct(map[string]any{})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
 				v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
 				for i := range 10000 {
@@ -480,7 +480,7 @@ func TestBuild(t *testing.T) {
 				assert.Loosely(t, outProp.Put(ctx), should.BeNil)
 
 				p, err := b.ToProto(ctx, m, nil)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, p.Output.Properties, should.Resemble(largeProps))
 				assert.Loosely(t, b.Proto.Output, should.BeNil)
 			})
@@ -493,14 +493,14 @@ func TestBuild(t *testing.T) {
 						},
 					},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, datastore.Put(ctx, &BuildSteps{
 					Build:    key,
 					Bytes:    s,
 					IsZipped: false,
 				}), should.BeNil)
 				p, err := b.ToProto(ctx, m, nil)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, p.Steps, should.Resemble([]*pb.Step{
 					{
 						Name: "step",
@@ -670,8 +670,8 @@ func TestBuild(t *testing.T) {
 					},
 				}
 				for _, bld := range blds {
-					err := EvaluateBuildForCustomBuilderMetrics(ctx, bld, false)
-					assert.Loosely(t, err, should.BeNil)
+					err := EvaluateBuildForCustomBuilderMetrics(ctx, bld, bld.Proto, false)
+					assert.NoErr(t, err)
 				}
 			})
 
@@ -696,7 +696,7 @@ func TestBuild(t *testing.T) {
 						},
 					},
 				}
-				err := EvaluateBuildForCustomBuilderMetrics(ctx, bld, false)
+				err := EvaluateBuildForCustomBuilderMetrics(ctx, bld, bld.Proto, false)
 				assert.Loosely(t, err, should.NotBeNil)
 			})
 
@@ -731,9 +731,74 @@ func TestBuild(t *testing.T) {
 					},
 					CustomBuilderCountMetrics: []string{"custom_metric_count1"},
 				}
-				err := EvaluateBuildForCustomBuilderMetrics(ctx, b, false)
-				assert.Loosely(t, err, should.BeNil)
+				err := EvaluateBuildForCustomBuilderMetrics(ctx, b, b.Proto, false)
+				assert.NoErr(t, err)
 				assert.Loosely(t, b.CustomBuilderCountMetrics, should.Resemble([]string{"custom_metric_count2"}))
+			})
+
+			t.Run("re-evaluate with provided build proto", func(t *ftt.Test) {
+				b := &Build{
+					ID: 1,
+					Proto: &pb.Build{
+						Id:     1,
+						Status: pb.Status_STARTED,
+						Tags: []*pb.StringPair{
+							{
+								Key:   "os",
+								Value: "mac",
+							},
+						},
+					},
+					CustomMetrics: []CustomMetric{
+						{
+							Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
+							Metric: &pb.CustomMetricDefinition{
+								Name:       "custom_metric_count1",
+								Predicates: []string{`build.tags.get_value("os")==""`},
+							},
+						},
+						{
+							Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
+							Metric: &pb.CustomMetricDefinition{
+								Name:       "custom_metric_count2",
+								Predicates: []string{`build.tags.get_value("os")!=""`},
+							},
+						},
+						{
+							Base: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
+							Metric: &pb.CustomMetricDefinition{
+								Name:       "custom_metric_count3",
+								Predicates: []string{`has(build.input.properties.key)`},
+							},
+						},
+					},
+					CustomBuilderCountMetrics: []string{"custom_metric_count1"},
+				}
+
+				bp := &pb.Build{
+					Id:     1,
+					Status: pb.Status_STARTED,
+					Tags: []*pb.StringPair{
+						{
+							Key:   "os",
+							Value: "mac",
+						},
+					},
+					Input: &pb.Build_Input{
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"key": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "value",
+									},
+								},
+							},
+						},
+					},
+				}
+				err := EvaluateBuildForCustomBuilderMetrics(ctx, b, bp, false)
+				assert.NoErr(t, err)
+				assert.Loosely(t, b.CustomBuilderCountMetrics, should.Resemble([]string{"custom_metric_count2", "custom_metric_count3"}))
 			})
 
 			t.Run("loadDetails", func(t *ftt.Test) {
@@ -766,11 +831,11 @@ func TestBuild(t *testing.T) {
 						},
 					},
 				}), should.BeNil)
-				err := EvaluateBuildForCustomBuilderMetrics(ctx, b, false)
-				assert.Loosely(t, err, should.BeNil)
+				err := EvaluateBuildForCustomBuilderMetrics(ctx, b, nil, false)
+				assert.NoErr(t, err)
 				assert.Loosely(t, len(b.CustomBuilderCountMetrics), should.BeZero)
-				err = EvaluateBuildForCustomBuilderMetrics(ctx, b, true)
-				assert.Loosely(t, err, should.BeNil)
+				err = EvaluateBuildForCustomBuilderMetrics(ctx, b, nil, true)
+				assert.NoErr(t, err)
 				assert.Loosely(t, b.CustomBuilderCountMetrics, should.Resemble([]string{"custom_metric_count"}))
 			})
 		})

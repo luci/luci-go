@@ -564,7 +564,7 @@ func getBuilderMetricBasesByStatus(status pb.Status) map[pb.CustomMetricBase][]*
 // EvaluateBuildForCustomBuilderMetrics finds the custom builder metrics from
 // bld.CustomMetrics and evaluates the build against those metrics' predicates.
 // Update bld.CustomBuilderXXMetrics to add names of the matching metrics.
-func EvaluateBuildForCustomBuilderMetrics(ctx context.Context, bld *Build, loadDetails bool) error {
+func EvaluateBuildForCustomBuilderMetrics(ctx context.Context, bld *Build, bp *pb.Build, loadDetails bool) error {
 	toEvaluate := getBuilderMetricBasesByStatus(bld.Proto.Status)
 	needToEvaluate := false
 	for _, cm := range bld.CustomMetrics {
@@ -578,17 +578,19 @@ func EvaluateBuildForCustomBuilderMetrics(ctx context.Context, bld *Build, loadD
 	}
 
 	// Load build details if needed.
-	bp := bld.Proto
-	if loadDetails {
-		// Use a copy of bld.Proto here since we need to load details to it.
-		bp = bld.ToSimpleBuildProto(ctx)
-		m, err := NewBuildMask("", nil, &pb.BuildMask{AllFields: true})
-		if err != nil {
-			return err
-		}
-		err = LoadBuildDetails(ctx, m, func(b *pb.Build) error { return nil }, bp)
-		if err != nil {
-			return err
+	if bp == nil {
+		bp = bld.Proto
+		if loadDetails {
+			// Use a copy of bld.Proto here since we need to load details to it.
+			bp = bld.ToSimpleBuildProto(ctx)
+			m, err := NewBuildMask("", nil, &pb.BuildMask{AllFields: true})
+			if err != nil {
+				return err
+			}
+			err = LoadBuildDetails(ctx, m, func(b *pb.Build) error { return nil }, bp)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
