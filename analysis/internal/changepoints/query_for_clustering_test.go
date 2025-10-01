@@ -220,7 +220,7 @@ func TestQueryForClustering(t *testing.T) {
 
 func unexpectedRunAtPositionAndHour(position, hour int) inputbuffer.Run {
 	return inputbuffer.Run{
-		CommitPosition: int64(position),
+		SourcePosition: int64(position),
 		Hour:           time.Unix(int64(hour)*3600, 0),
 		Unexpected: inputbuffer.ResultCounts{
 			FailCount: 1,
@@ -230,7 +230,7 @@ func unexpectedRunAtPositionAndHour(position, hour int) inputbuffer.Run {
 
 func flakyRunAtPositionAndHour(position, hour int) inputbuffer.Run {
 	return inputbuffer.Run{
-		CommitPosition: int64(position),
+		SourcePosition: int64(position),
 		Hour:           time.Unix(int64(hour)*3600, 0),
 		Unexpected: inputbuffer.ResultCounts{
 			FailCount: 1,

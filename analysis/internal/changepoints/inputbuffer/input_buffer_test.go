@@ -29,14 +29,14 @@ func TestEncodeAndDecode(t *testing.T) {
 		history := History{
 			Runs: []Run{
 				{
-					CommitPosition: 1345,
+					SourcePosition: 1345,
 					Hour:           time.Unix(1000*3600, 0),
 					// Simple expected pass. Such runs represent ~97% of
 					// runs in practice and are treated specially in the encoding.
 					Expected: ResultCounts{PassCount: 1},
 				},
 				{
-					CommitPosition: 1355,
+					SourcePosition: 1355,
 					Hour:           time.Unix(1005*3600, 0),
 					Expected: ResultCounts{
 						PassCount:  1,
@@ -52,16 +52,16 @@ func TestEncodeAndDecode(t *testing.T) {
 					},
 				},
 				{
-					CommitPosition: 1355,
+					SourcePosition: 1355,
 					Hour:           time.Unix(1005*3600, 0),
 				},
 				{
-					CommitPosition: 1357,
+					SourcePosition: 1357,
 					Expected:       ResultCounts{PassCount: 1},
 					Hour:           time.Unix(1003*3600, 0),
 				},
 				{
-					CommitPosition: 1357,
+					SourcePosition: 1357,
 					Hour:           time.Unix(1005*3600, 0),
 					Expected: ResultCounts{
 						PassCount: 1,
@@ -71,7 +71,7 @@ func TestEncodeAndDecode(t *testing.T) {
 					},
 				},
 				{
-					CommitPosition: 1357,
+					SourcePosition: 1357,
 					Hour:           time.Unix(1005*3600, 0),
 					Expected: ResultCounts{
 						PassCount:  9,
@@ -105,7 +105,7 @@ func TestEncodeAndDecode(t *testing.T) {
 		history.Runs = make([]Run, 2000)
 		for i := range 2000 {
 			history.Runs[i] = Run{
-				CommitPosition: int64(i),
+				SourcePosition: int64(i),
 				Hour:           time.Unix(int64(i*3600), 0),
 				Expected: ResultCounts{
 					PassCount: 1,
@@ -140,12 +140,12 @@ func TestEncodeAndDecode(t *testing.T) {
 
 			expectedRuns := []Run{
 				{
-					CommitPosition: 1345,
+					SourcePosition: 1345,
 					Hour:           time.Unix(1000*3600, 0),
 					Expected:       ResultCounts{PassCount: 1},
 				},
 				{
-					CommitPosition: 1355,
+					SourcePosition: 1355,
 					Hour:           time.Unix(1005*3600, 0),
 					Expected: ResultCounts{
 						PassCount:  1,
@@ -161,12 +161,12 @@ func TestEncodeAndDecode(t *testing.T) {
 					},
 				},
 				{
-					CommitPosition: 1357,
+					SourcePosition: 1357,
 					Expected:       ResultCounts{PassCount: 1},
 					Hour:           time.Unix(1003*3600, 0),
 				},
 				{
-					CommitPosition: 1357,
+					SourcePosition: 1357,
 					Hour:           time.Unix(1005*3600, 0),
 					Expected: ResultCounts{
 						PassCount:  9,
@@ -189,7 +189,7 @@ func TestEncodeAndDecode(t *testing.T) {
 			for i := range 2000 {
 				for range 3 {
 					expectedRuns = append(expectedRuns, Run{
-						CommitPosition: int64(i),
+						SourcePosition: int64(i),
 						Hour:           time.Unix(int64(i*3600), 0),
 						Expected:       ResultCounts{PassCount: 1},
 						Unexpected:     ResultCounts{FailCount: 2},
@@ -490,7 +490,7 @@ func TestInputBuffer(t *testing.T) {
 
 func createTestRun(pos int, hour int) Run {
 	return Run{
-		CommitPosition: int64(pos),
+		SourcePosition: int64(pos),
 		Hour:           time.Unix(int64(3600*hour), 0),
 		Expected: ResultCounts{
 			PassCount: 1,

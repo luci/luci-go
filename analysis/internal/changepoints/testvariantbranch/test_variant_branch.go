@@ -156,15 +156,15 @@ func (tvb *Entry) isTooFarOutOfOrder(r inputbuffer.Run) bool {
 	hotRuns := tvb.InputBuffer.HotBuffer.Runs
 	coldRuns := tvb.InputBuffer.ColdBuffer.Runs
 	minPos := int64(math.MaxInt64)
-	if len(hotRuns) > 0 && minPos > hotRuns[0].CommitPosition {
-		minPos = hotRuns[0].CommitPosition
+	if len(hotRuns) > 0 && minPos > hotRuns[0].SourcePosition {
+		minPos = hotRuns[0].SourcePosition
 	}
-	if len(coldRuns) > 0 && minPos > coldRuns[0].CommitPosition {
-		minPos = coldRuns[0].CommitPosition
+	if len(coldRuns) > 0 && minPos > coldRuns[0].SourcePosition {
+		minPos = coldRuns[0].SourcePosition
 	}
 	// Do not accept runs which are earlier than the starting
 	// commit position still in the input buffer.
-	return r.CommitPosition < minPos
+	return r.SourcePosition < minPos
 }
 
 // InsertFinalizedSegment inserts a segment to the end of finalized segments.

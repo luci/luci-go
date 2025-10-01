@@ -61,10 +61,10 @@ func VerifyRunsOrdered(runs []*Run) error {
 			continue
 		}
 		previousRun := runs[i-1]
-		invariant := previousRun.CommitPosition < run.CommitPosition || (previousRun.CommitPosition == run.CommitPosition && !previousRun.Hour.After(run.Hour))
+		invariant := previousRun.SourcePosition < run.SourcePosition || (previousRun.SourcePosition == run.SourcePosition && !previousRun.Hour.After(run.Hour))
 		if !invariant {
 			return errors.Fmt("runs at index %v is out of order, (previous commit position %v, previous hour %v, current commit position %v, current hour %v)",
-				i, previousRun.CommitPosition, previousRun.Hour, run.CommitPosition, run.Hour)
+				i, previousRun.SourcePosition, previousRun.Hour, run.SourcePosition, run.Hour)
 		}
 	}
 	return nil

@@ -21,12 +21,16 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 )
 
+// ChangepointPredictor estimates the likely position of, and uncertainty
+// around, change points in test histories.
 type ChangepointPredictor struct {
-	// Threshold for creating new change points.
+	// The assumed prior likelihood of a change point existing at any given
+	// source position. This should not be too high or we will infer the
+	// presence of too many changepoints.
 	ChangepointLikelihood float64
 
 	// The prior for the rate at which a test's runs have any
-	// unexpected test result.
+	// failing test result.
 	// This is the prior for estimating the ratio
 	// HasUnexpected / Runs of a segment.
 	//
@@ -36,9 +40,9 @@ type ChangepointPredictor struct {
 	// are typically selected (e.g. alpha = 0.3, beta = 0.5).
 	HasUnexpectedPrior BetaDistribution
 
-	// The prior for the rate at which a test's runs have
-	// only unexpected results, given they have at least
-	// two results and one is unexpected.
+	// The prior for the rate at which a retried test's runs have
+	// only failing results, given they have at least
+	// two results and one is failing.
 	//
 	// This is the prior for estimating UnexpectedAfterRetry / Retried.
 	// Generally the result of retrying a fail inside a test run
@@ -46,13 +50,42 @@ type ChangepointPredictor struct {
 	// (fairly consistently). Consequently, shape parameters Alpha < 1,
 	// Beta < 1 are advised (e.g. alpha = 0.5, beta = 0.5).
 	UnexpectedAfterRetryPrior BetaDistribution
+
+	// Whether the source system is assigning source positions on a source ref
+	// consecutively, with no gaps.
+	//
+	// The test results for a test history are usually sparse. I.E. there
+	// are test results missing for some source positions even though
+	// those source positions 'exist' (correspond to real commits/CLs).
+	//
+	// When quantifying the uncertainty of a change point's position,
+	// we assume that the prior likelihood of the change point being at
+	// any given source position is uniform (the same)**. If we know that
+	// source positions are assigned consecutively, we can infer that there
+	// is proportionately more likelihood a changepoint will fall in a range
+	// where there is a large source position gap between test results than one
+	// in which there is a small gap between test results.
+	//
+	// If source positions are not assigned consecutively, we cannot make
+	// this assumption (as e.g. positions 10, 20, 1000 could be sequential
+	// Android builds on a release branch). In this case, will assume the
+	// prior likelihood of a changepoint occurring at any source position
+	// *with a test result* is equally likely and assume all other positions
+	// do not exist.
+	//
+	// ** At some point we will want to revise our uniform prior assumption if
+	// risk-based testing becomes common (e.g. projects only run tests at a
+	// position if that change can affect a test), as then the likelihood
+	// of a changepoint occuring at a non-tested position is lower than a
+	// tested position.
+	SourcePositionsConsecutive bool
 }
 
 // identifyChangePoints identifies all change point for given test history.
 //
-// This method requires the provided history to be sorted by commit position
+// This method requires the provided history to be sorted by source position
 // (either ascending or descending is fine).
-// It allows multiple runs to be specified per commit position, by
+// It allows multiple runs to be specified per source position, by
 // including those runs as adjacent elements in the history slice.
 //
 // This function returns the indices (in the history slice) of the change points
@@ -86,25 +119,27 @@ func (a ChangepointPredictor) identifyChangePoints(history []*inputbuffer.Run) [
 // the likelihood of observing the given test history.
 //
 // It returns the position of the change point in the history slice,
-// as well as the change in log-likelihood attributable to the change point,
-// relative to the `no change point` case.
+// as well as the change in the log-likelihood of observing the given test
+// history that comes from assuming there is a changepoint at that
+// position (relative to the `no change point` case).
 //
 // The semantics of the returned position are as follows:
 // a position p means the history is segmented as
-// history[:p] and history[p:].
+// history[:p] and history[p:], i.e. the new behaviour starts at p
+// inclusive.
 // If the returned position is 0, it means no change point position was
 // better than the `no change point` case.
 //
 // This method requires the provided history to be sorted by
-// commit position (either ascending or descending is fine).
+// source position (either ascending or descending is fine).
 // It allows multiple runs to be specified per
-// commit position, by including those runs as adjacent
+// source position, by including those runs as adjacent
 // elements in the history slice.
 //
-// Note that if multiple runs are specified per commit position,
-// the returned position will only ever be between two commit
+// Note that if multiple runs are specified per source position,
+// the returned position will only ever be between two source
 // positions in the history, i.e. it holds that
-// history[position-1].CommitPosition != history[position].CommitPosition
+// history[position-1].SourcePosition != history[position].SourcePosition
 // (or position == 0).
 //
 // This method assumes a uniform prior for all change point positions,
@@ -145,17 +180,17 @@ func (a ChangepointPredictor) FindBestChangepoint(history []*inputbuffer.Run) (r
 	var heuristic changePointHeuristic
 
 	// The provided history may have multiple runs for the same
-	// commit position. As we should only consider change points between
-	// commit positions (not inside them), we will iterate over the
+	// source position. As we should only consider change points between
+	// source positions (not inside them), we will iterate over the
 	// history using nextPosition().
 
-	// Advance past the first commit position.
+	// Advance past the first source position.
 	i, pending := nextPosition(history, 0)
 	left = left.add(pending)
 	heuristic.addToHistory(pending)
 
 	for i < length {
-		// Find the end of the next commit position.
+		// Find the end of the next source position.
 		// Pending contains the counts from history[i:nextIndex].
 		nextIndex, pending := nextPosition(history, i)
 
@@ -179,7 +214,7 @@ func (a ChangepointPredictor) FindBestChangepoint(history []*inputbuffer.Run) (r
 			}
 		}
 
-		// Advance to the next commit position.
+		// Advance to the next source position.
 		left = left.add(pending)
 		heuristic.addToHistory(pending)
 		i = nextIndex
@@ -187,26 +222,26 @@ func (a ChangepointPredictor) FindBestChangepoint(history []*inputbuffer.Run) (r
 	return bestLikelihood - prioriLogLikelihood, bestChangepoint
 }
 
-// nextPosition allows iterating over test history one commit position at a time.
+// nextPosition allows iterating over test history one source position at a time.
 //
-// It finds the index `nextIndex` that represents advancing exactly one commit
+// It finds the index `nextIndex` that represents advancing exactly one source
 // position from `index`, and returns the counts of runs that were
 // advanced over.
 //
-// If there is only one run for a commit position, nextIndex will be index + 1,
-// otherwise, if there are a number of runs for a commit position, nextIndex
+// If there is only one run for a source position, nextIndex will be index + 1,
+// otherwise, if there are a number of runs for a source position, nextIndex
 // will be advanced by that number.
 //
 // Preconditions:
-// The provided history is in order by commit position (either ascending or
+// The provided history is in order by source position (either ascending or
 // descending order is fine).
 func nextPosition(history []*inputbuffer.Run, index int) (nextIndex int, pending counts) {
-	// The commit position for which we are accumulating test runs.
-	commitPosition := history[index].CommitPosition
+	// The source position for which we are accumulating test runs.
+	sourcePosition := history[index].SourcePosition
 
 	var c counts
 	nextIndex = index
-	for ; nextIndex < len(history) && history[nextIndex].CommitPosition == commitPosition; nextIndex++ {
+	for ; nextIndex < len(history) && history[nextIndex].SourcePosition == sourcePosition; nextIndex++ {
 		c = c.addRun(history[nextIndex])
 	}
 	return nextIndex, c

@@ -328,7 +328,7 @@ func TestEvictSegments(t *testing.T) {
 		ib.HotBuffer = History{
 			Runs: []Run{
 				{
-					CommitPosition: 10,
+					SourcePosition: 10,
 				},
 			},
 		}
@@ -370,14 +370,14 @@ func TestEvictSegments(t *testing.T) {
 
 		expectedRuns := []Run{
 			// The run in the hot buffer.
-			{CommitPosition: 10},
+			{SourcePosition: 10},
 		}
 		// Plus the evicted runs in the cold buffer.
 		expectedRuns = append(expectedRuns, simpleVerdicts(39, 1, []int{})...)
 		sort.Slice(expectedRuns, func(i, j int) bool {
 			ri, rj := expectedRuns[i], expectedRuns[j]
-			if ri.CommitPosition != rj.CommitPosition {
-				return ri.CommitPosition < rj.CommitPosition
+			if ri.SourcePosition != rj.SourcePosition {
+				return ri.SourcePosition < rj.SourcePosition
 			}
 			return ri.Hour.Before(rj.Hour)
 		})

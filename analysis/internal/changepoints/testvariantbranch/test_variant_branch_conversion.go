@@ -59,7 +59,7 @@ func ToRuns(tv *rdbpb.TestVariant, partitionTime time.Time, claimedInvs map[stri
 			run = result[index]
 		} else {
 			run = inputbuffer.Run{
-				CommitPosition: commitPosition,
+				SourcePosition: commitPosition,
 				Hour:           hour,
 			}
 			index = len(result)
@@ -105,7 +105,7 @@ func ToRun(v *rdbpb.RunTestVerdict, partitionTime time.Time, src *pb.Sources) in
 	hour := partitionTime.Truncate(time.Hour)
 
 	result := inputbuffer.Run{
-		CommitPosition: commitPosition,
+		SourcePosition: commitPosition,
 		Hour:           hour,
 	}
 	for _, r := range v.Results {

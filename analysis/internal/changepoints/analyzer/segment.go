@@ -31,7 +31,7 @@ type Segment struct {
 	// The nominal commit position at which the segment starts (inclusive).
 	StartPosition int64
 	// The lower bound of the starting changepoint position in a 99% two-tailed
-	// confidence interval. Inclusive.
+	// confidence interval. Exclusive.
 	// Only set if HasStartChangepoint is set.
 	StartPositionLowerBound99Th int64
 	// The upper bound of the starting changepoint position in a 99% two-tailed

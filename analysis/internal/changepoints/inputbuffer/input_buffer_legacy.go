@@ -72,8 +72,8 @@ func LegacyV2DecodeInto(history *History, reader *bytes.Reader) error {
 		deltaPos, isSimple := decodeLegacyV2PositionSimpleVerdict(posSim)
 
 		// deltaPos records the relative difference.
-		baseRun.CommitPosition = lastPosition + deltaPos
-		lastPosition = baseRun.CommitPosition
+		baseRun.SourcePosition = lastPosition + deltaPos
+		lastPosition = baseRun.SourcePosition
 
 		// Get the hour.
 		deltaHour, err := binary.ReadVarint(reader)

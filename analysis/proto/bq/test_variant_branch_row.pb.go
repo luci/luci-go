@@ -77,8 +77,8 @@ type TestVariantBranchRow struct {
 	RefHash string `protobuf:"bytes,4,opt,name=ref_hash,json=refHash,proto3" json:"ref_hash,omitempty"`
 	// The branch in source control.
 	Ref *v1.SourceRef `protobuf:"bytes,6,opt,name=ref,proto3" json:"ref,omitempty"`
-	// The test history represented as a set of [start commit position,
-	// end commit position] segments, where segments have statistically
+	// The test history represented as a set of [start source position,
+	// end source position] segments, where segments have statistically
 	// different failure and/or flake rates. The segments are ordered so that
 	// the most recent segment appears first.
 	// If a client is only interested in the current failure/flake rate, they
@@ -210,16 +210,16 @@ type Segment struct {
 	// is deleted after 90 days of no results, so this means there were
 	// no results for at least 90 days before the segment.)
 	HasStartChangepoint bool `protobuf:"varint,1,opt,name=has_start_changepoint,json=hasStartChangepoint,proto3" json:"has_start_changepoint,omitempty"`
-	// The nominal commit position at which the segment starts (inclusive).
+	// The nominal source position at which the segment starts (inclusive).
 	// Guaranteed to be strictly greater than the end_position of the
 	// chronologically previous segment (if any).
 	// If this segment has a starting changepoint, this is the nominal position
 	// of the changepoint (when the new test behaviour started).
 	// If this segment does not have a starting changepoint, this is the
-	// simply the first commit position in the known history of the test.
+	// simply the first source position in the known history of the test.
 	StartPosition int64 `protobuf:"varint,2,opt,name=start_position,json=startPosition,proto3" json:"start_position,omitempty"`
 	// The lower bound of the starting changepoint position in a 99% two-tailed
-	// confidence interval. Inclusive.
+	// confidence interval. Exclusive.
 	// Only set if has_start_changepoint is set.
 	StartPositionLowerBound_99Th int64 `protobuf:"varint,3,opt,name=start_position_lower_bound_99th,json=startPositionLowerBound99th,proto3" json:"start_position_lower_bound_99th,omitempty"`
 	// The upper bound of the starting changepoint position in a 99% two-tailed
@@ -233,8 +233,8 @@ type Segment struct {
 	// was recorded. Gives an approximate upper bound on the timestamp the
 	// changepoint occurred, for systems which need to filter by date.
 	StartHour *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=start_hour,json=startHour,proto3" json:"start_hour,omitempty"`
-	// The nominal commit position at which the segment ends (inclusive).
-	// This is either the last recorded commit position in the test history
+	// The nominal source position at which the segment ends (inclusive).
+	// This is either the last recorded source position in the test history
 	// (for this test variant branch), or the position of the last verdict
 	// seen before the next detected changepoint.
 	EndPosition int64 `protobuf:"varint,6,opt,name=end_position,json=endPosition,proto3" json:"end_position,omitempty"`
@@ -383,14 +383,14 @@ type Segment_Counts struct {
 	// The total number of test runs.
 	TotalRuns int64 `protobuf:"varint,6,opt,name=total_runs,json=totalRuns,proto3" json:"total_runs,omitempty"`
 	// The number of source verdicts with only unexpected test results.
-	// A source verdict refers to all test results at a commit position.
+	// A source verdict refers to all test results at a source position.
 	UnexpectedVerdicts int64 `protobuf:"varint,7,opt,name=unexpected_verdicts,json=unexpectedVerdicts,proto3" json:"unexpected_verdicts,omitempty"`
 	// The number of source verdicts with a mix of expected and unexpected test results.
-	// A source verdict refers to all test results at a commit position.
+	// A source verdict refers to all test results at a source position.
 	// As such, is a signal of either in- or cross- build flakiness.
 	FlakyVerdicts int64 `protobuf:"varint,8,opt,name=flaky_verdicts,json=flakyVerdicts,proto3" json:"flaky_verdicts,omitempty"`
 	// The total number of source verdicts.
-	// A source verdict refers to all test results at a commit position.
+	// A source verdict refers to all test results at a source position.
 	// As such, this is also the total number of source positions with
 	// test results in the segment.
 	TotalVerdicts int64 `protobuf:"varint,9,opt,name=total_verdicts,json=totalVerdicts,proto3" json:"total_verdicts,omitempty"`

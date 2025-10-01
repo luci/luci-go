@@ -81,10 +81,10 @@ func NewRunStreamAggregator(partialVerdict *cpb.PartialSourceVerdict) *runStream
 func (s *runStreamAggregator) Insert(run *inputbuffer.Run) (yield sourceVerdict, ok bool) {
 	var toYield sourceVerdict
 	var shouldYield bool
-	if s.hasPartial && s.partial.CommitPosition != run.CommitPosition {
+	if s.hasPartial && s.partial.CommitPosition != run.SourcePosition {
 		// We have advanced past the commit position of the partial
 		// source verdict. The partial source verdict is now complete.
-		if run.CommitPosition < s.partial.CommitPosition {
+		if run.SourcePosition < s.partial.CommitPosition {
 			panic("run commit position should not advance backwards")
 		}
 		// The current source verdict is final.
@@ -98,7 +98,7 @@ func (s *runStreamAggregator) Insert(run *inputbuffer.Run) (yield sourceVerdict,
 		// Start a new source verdict for this commit position.
 		s.hasPartial = true
 		s.partial = sourceVerdict{
-			CommitPosition: run.CommitPosition,
+			CommitPosition: run.SourcePosition,
 			LastHour:       run.Hour,
 		}
 	}

@@ -196,7 +196,7 @@ func BenchmarkBayesianAnalysisConsistentPass(b *testing.B) {
 	// Consistently passing test. This represents ~99% of tests.
 	for i := range 2000 {
 		vs = append(vs, &inputbuffer.Run{
-			CommitPosition: int64(i),
+			SourcePosition: int64(i),
 			Expected:       inputbuffer.ResultCounts{PassCount: 1},
 		})
 	}
@@ -227,12 +227,12 @@ func BenchmarkBayesianAnalysisFlaky(b *testing.B) {
 	for i := range 2000 {
 		if i%2 == 0 {
 			vs = append(vs, &inputbuffer.Run{
-				CommitPosition: int64(i),
+				SourcePosition: int64(i),
 				Expected:       inputbuffer.ResultCounts{PassCount: 1},
 			})
 		} else {
 			vs = append(vs, &inputbuffer.Run{
-				CommitPosition: int64(i),
+				SourcePosition: int64(i),
 				Expected: inputbuffer.ResultCounts{
 					PassCount: 1,
 				},

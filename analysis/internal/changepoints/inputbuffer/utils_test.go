@@ -25,14 +25,14 @@ func BenchmarkMergeOrderedRuns(b *testing.B) {
 	// Consistently passing test. This represents ~99% of tests.
 	for i := range 100 {
 		hotBuffer = append(hotBuffer, Run{
-			CommitPosition: int64(i),
+			SourcePosition: int64(i),
 			Expected:       ResultCounts{PassCount: 1},
 		})
 	}
 
 	for i := range 2000 {
 		coldBuffer = append(coldBuffer, Run{
-			CommitPosition: int64(i),
+			SourcePosition: int64(i),
 			Expected:       ResultCounts{PassCount: 1},
 		})
 	}

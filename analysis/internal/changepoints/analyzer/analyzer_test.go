@@ -69,28 +69,28 @@ func TestAnalyzer(t *testing.T) {
 
 			runs := []inputbuffer.Run{
 				{
-					CommitPosition: 1,
+					SourcePosition: 1,
 					Hour:           time.Unix(1000*3600, 0),
 					Expected: inputbuffer.ResultCounts{
 						PassCount: 1,
 					},
 				},
 				{
-					CommitPosition: 1,
+					SourcePosition: 1,
 					Hour:           time.Unix(1001*3600, 0),
 					Expected: inputbuffer.ResultCounts{
 						PassCount: 1,
 					},
 				},
 				{
-					CommitPosition: 2,
+					SourcePosition: 2,
 					Hour:           time.Unix(2000*3600, 0),
 					Unexpected: inputbuffer.ResultCounts{
 						FailCount: 1,
 					},
 				},
 				{
-					CommitPosition: 2,
+					SourcePosition: 2,
 					Hour:           time.Unix(2001*3600, 0),
 					Unexpected: inputbuffer.ResultCounts{
 						CrashCount: 1,
@@ -148,14 +148,14 @@ func TestAnalyzer(t *testing.T) {
 					ColdBuffer: inputbuffer.History{
 						Runs: []inputbuffer.Run{
 							{
-								CommitPosition: 2,
+								SourcePosition: 2,
 								Hour:           time.Unix(2000*3600, 0),
 								Unexpected: inputbuffer.ResultCounts{
 									FailCount: 1,
 								},
 							},
 							{
-								CommitPosition: 2,
+								SourcePosition: 2,
 								Hour:           time.Unix(2001*3600, 0),
 								Unexpected: inputbuffer.ResultCounts{
 									CrashCount: 1,
@@ -288,7 +288,7 @@ func TestAnalyzer(t *testing.T) {
 				{
 					HasStartChangepoint:            true,
 					StartPosition:                  34,
-					StartPositionLowerBound99Th:    34,
+					StartPositionLowerBound99Th:    33, // Exclusive
 					StartPositionUpperBound99Th:    34,
 					StartPositionDistribution:      model.SimpleDistribution(34, 0),
 					StartHour:                      time.Unix(34*3600, 0),
@@ -368,7 +368,7 @@ func TestAnalyzer(t *testing.T) {
 
 			t.Run("without eviction", func(t *ftt.Test) {
 				// By increasing capacity, we avoid eviction due to
-				// the changepoint occuring in the old half of the input
+				// the changepoint occurring in the old half of the input
 				// buffer.
 				row.InputBuffer.ColdBufferCapacity = 100
 
@@ -423,7 +423,7 @@ func TestAnalyzer(t *testing.T) {
 			var hotRuns []inputbuffer.Run
 			for i := range 300 {
 				hotRuns = append(hotRuns, inputbuffer.Run{
-					CommitPosition: int64(i + 1000),
+					SourcePosition: int64(i + 1000),
 					Hour:           time.Unix(int64(i)*3600, 0),
 					Expected:       inputbuffer.ResultCounts{PassCount: 1},
 				})
@@ -431,7 +431,7 @@ func TestAnalyzer(t *testing.T) {
 			var coldRuns []inputbuffer.Run
 			for i := range 6000 {
 				coldRuns = append(coldRuns, inputbuffer.Run{
-					CommitPosition: int64(i + 1300),
+					SourcePosition: int64(i + 1300),
 					Hour:           time.Unix(int64(i+1300)*3600, 0),
 					Expected:       inputbuffer.ResultCounts{PassCount: 1},
 				})
@@ -514,7 +514,7 @@ func BenchmarkAnalyzer(b *testing.B) {
 	var hotRuns []inputbuffer.Run
 	for i := range 100 {
 		hotRuns = append(hotRuns, inputbuffer.Run{
-			CommitPosition: int64(i + 1000),
+			SourcePosition: int64(i + 1000),
 			Hour:           time.Unix(int64(i)*3600, 0),
 			Expected:       inputbuffer.ResultCounts{PassCount: 1},
 		})
@@ -522,7 +522,7 @@ func BenchmarkAnalyzer(b *testing.B) {
 	var coldRuns []inputbuffer.Run
 	for i := range 2000 {
 		coldRuns = append(coldRuns, inputbuffer.Run{
-			CommitPosition: int64(i + 1300),
+			SourcePosition: int64(i + 1300),
 			Hour:           time.Unix(int64(i+1300)*3600, 0),
 			Expected:       inputbuffer.ResultCounts{PassCount: 1},
 		})
@@ -600,7 +600,7 @@ func BenchmarkAnalyzerWithChangepoint(b *testing.B) {
 	var coldRuns []inputbuffer.Run
 	for i := range 100 {
 		hotRuns = append(hotRuns, inputbuffer.Run{
-			CommitPosition: int64(i + 3000),
+			SourcePosition: int64(i + 3000),
 			Hour:           time.Unix(int64(i)*3600, 0),
 			Unexpected:     inputbuffer.ResultCounts{FailCount: 1},
 		})
@@ -608,7 +608,7 @@ func BenchmarkAnalyzerWithChangepoint(b *testing.B) {
 
 	for i := range 2000 {
 		coldRuns = append(coldRuns, inputbuffer.Run{
-			CommitPosition: int64(i + 1000),
+			SourcePosition: int64(i + 1000),
 			Hour:           time.Unix(int64(i+1300)*3600, 0),
 			Expected:       inputbuffer.ResultCounts{PassCount: 1},
 		})

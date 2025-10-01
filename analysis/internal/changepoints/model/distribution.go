@@ -41,9 +41,8 @@ const TailLikelihoodsLength = 17
 // only those points.
 //
 // The current design allows for common one and two-tailed intervals (e.g.
-// 99.9%, 99%, 95%, 90%, etc.) to be calculated, and for the entire CDF to
-// be re-constructed with absolute error of not more than 2.5%, to allow
-// for probability density heatmaps.
+// 99.9%, 99%, 95%, 90%, etc.) to be calculated exactly and the remainder
+// to be approximated.
 //
 // IMPORTANT: Do not change these points unless you handle data
 // compatibility for old distributions that are already stored.
@@ -82,8 +81,12 @@ var TailLikelihoods = [TailLikelihoodsLength]float64{
 // X < 0.5 represents the left half of the distribution, and X > 0.5
 // represents the right half. Note that the value of k that gives
 // P(C <= k) closest to 0.5 is not necessarily the same as the nominal
-// start position of the change point, in much the same way that
-// the median of a distribution is not the same as its mode.
+// start position of the change point, in the same way that
+// the median of a distribution is not the same as its mode (most
+// likely value).
+//
+// k is always anchored to source position values with a test
+// result and selected conservatively.
 type PositionDistribution [TailLikelihoodsLength]int64
 
 // ConfidenceInterval returns the (y*100)% two-tailed confidence interval
@@ -94,7 +97,7 @@ type PositionDistribution [TailLikelihoodsLength]int64
 //
 // The interpretation of (min, max) is as follows:
 // There is at least a Y probability that the change which represents the start
-// of the 'new' behaviour is between commit positions min and max inclusive.
+// of the 'new' behaviour is between commit positions min exclusive and max inclusive.
 //
 // y shall be between 0.0 and 0.999.
 func (d PositionDistribution) ConfidenceInterval(y float64) (min int64, max int64) {
@@ -174,10 +177,12 @@ func SimpleDistribution(center int64, width int64) *PositionDistribution {
 
 	for i := range len(result) {
 		if TailLikelihoods[i] < 0.005 {
-			result[i] = center - width*2
+			result[i] = center - width*2 - 1
 		} else if TailLikelihoods[i] == 0.005 {
-			result[i] = center - width
-		} else if 0.005 < TailLikelihoods[i] && TailLikelihoods[i] < 0.995 {
+			result[i] = center - width - 1
+		} else if TailLikelihoods[i] < 0.5 {
+			result[i] = center - 1
+		} else if TailLikelihoods[i] < 0.995 {
 			result[i] = center
 		} else if TailLikelihoods[i] == 0.995 {
 			result[i] = center + width

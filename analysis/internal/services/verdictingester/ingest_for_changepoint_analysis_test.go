@@ -190,7 +190,7 @@ func verifyTestVariantAnalysis(ctx context.Context, t testing.TB, partitionTime 
 			HotBuffer: inputbuffer.History{
 				Runs: []inputbuffer.Run{
 					{
-						CommitPosition: 16801,
+						SourcePosition: 16801,
 						Hour:           hour,
 						Unexpected: inputbuffer.ResultCounts{
 							FailCount: 1,

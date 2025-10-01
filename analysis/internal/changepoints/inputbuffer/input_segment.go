@@ -63,7 +63,7 @@ func (s *Segment) Length() int {
 // from the input buffer.
 //
 // A segment may be partially evicted for one or both of the following reasons:
-//   - The eviction is occuring because of limited input buffer space
+//   - The eviction is occurring because of limited input buffer space
 //     (not because of a finalized changepoint), so only a fraction
 //     of the segment needs to be evicted.
 //   - Previously, part of the segment was evicted (for the above
@@ -171,8 +171,8 @@ func inputBufferSegment(startIndex, endIndex int, history []*Run) *Segment {
 	return &Segment{
 		StartIndex:                     startIndex,
 		EndIndex:                       endIndex,
-		StartPosition:                  int64(history[startIndex].CommitPosition),
-		EndPosition:                    int64(history[endIndex].CommitPosition),
+		StartPosition:                  int64(history[startIndex].SourcePosition),
+		EndPosition:                    int64(history[endIndex].SourcePosition),
 		StartHour:                      history[startIndex].Hour,
 		EndHour:                        history[endIndex].Hour,
 		MostRecentUnexpectedResultHour: mostRecentUnexpectedResultHour(history[startIndex : endIndex+1]),
@@ -301,7 +301,7 @@ func (ib *Buffer) evictFinalizedSegment(seg *Segment) EvictedSegment {
 	// Evict hot buffer.
 	evictEndIndex := -1
 	for i, v := range ib.HotBuffer.Runs {
-		if v.CommitPosition <= seg.EndPosition {
+		if v.SourcePosition <= seg.EndPosition {
 			evictEndIndex = i
 		} else {
 			break
@@ -317,7 +317,7 @@ func (ib *Buffer) evictFinalizedSegment(seg *Segment) EvictedSegment {
 	// Evict cold buffer.
 	evictEndIndex = -1
 	for i, v := range ib.ColdBuffer.Runs {
-		if v.CommitPosition <= seg.EndPosition {
+		if v.SourcePosition <= seg.EndPosition {
 			evictEndIndex = i
 		} else {
 			break
@@ -403,10 +403,10 @@ func (ib *Buffer) evictFinalizingSegment(endPos int, seg *Segment) (evicted Evic
 	// Remaining segment.
 	remaining = &Segment{
 		StartIndex:                     0,
-		StartPosition:                  remainingRuns[0].CommitPosition,
+		StartPosition:                  remainingRuns[0].SourcePosition,
 		StartHour:                      remainingRuns[0].Hour,
 		EndIndex:                       len(remainingRuns) - 1,
-		EndPosition:                    remainingRuns[len(remainingRuns)-1].CommitPosition,
+		EndPosition:                    remainingRuns[len(remainingRuns)-1].SourcePosition,
 		EndHour:                        remainingRuns[len(remainingRuns)-1].Hour,
 		MostRecentUnexpectedResultHour: mostRecentUnexpectedResultHour(copyAndUnflattenRuns(remainingRuns)),
 	}

@@ -65,8 +65,16 @@ type History struct {
 
 // Run represents all tries of a test in a single invocation.
 type Run struct {
-	// The commit position of the run.
-	CommitPosition int64
+	// The source position of the run.
+	//
+	// This abstracts away the underlying source control system and
+	// identifies the version of code sources (e.g. git commit or repo snapshot)
+	// tested with a number.
+	//
+	// A larger value indicates "newer" sources, an equal value means
+	// "equal" sources, and a small number means "older" sources.
+	// See pbutil.SourcePosition for precise definition.
+	SourcePosition int64
 	// The partition time for this run, truncated to the nearest hour.
 	Hour time.Time
 	// Counts for expected results.
@@ -320,7 +328,7 @@ func (hs *HistorySerializer) Encode(history History) []byte {
 
 		// We encode the relative deltaPosition between the current run and the
 		// previous runs.
-		deltaPosition := uint64(run.CommitPosition) - lastPosition
+		deltaPosition := uint64(run.SourcePosition) - lastPosition
 		// Shift two bits to leave space for flags.
 		// The last bit is set to 1 for non-simple runs.
 		// The second last bit is reserved for future use.
@@ -331,7 +339,7 @@ func (hs *HistorySerializer) Encode(history History) []byte {
 			deltaPosition |= 1
 		}
 		buf = binary.AppendUvarint(buf, deltaPosition)
-		lastPosition = uint64(run.CommitPosition)
+		lastPosition = uint64(run.SourcePosition)
 
 		// Encode the "relative" hour.
 		// Note that the relative hour may be positive or negative. So we are encoding
@@ -415,10 +423,10 @@ func (hs *HistorySerializer) DecodeInto(history *History, buf []byte) error {
 
 		if i == 0 {
 			// For the first run, deltaPos is the absolute commit position.
-			run.CommitPosition = deltaPos
+			run.SourcePosition = deltaPos
 		} else {
 			// For later runs, deltaPos records the relative difference.
-			run.CommitPosition = runs[i-1].CommitPosition + deltaPos
+			run.SourcePosition = runs[i-1].SourcePosition + deltaPos
 		}
 
 		// Get the hour.
@@ -554,10 +562,10 @@ func uInt64ToBool(u uint64) bool {
 // v2, and 0 if they are at the same time.
 // The comparision is done on commit position, then on hour.
 func compareRun(v1 *Run, v2 *Run) int {
-	if v1.CommitPosition > v2.CommitPosition {
+	if v1.SourcePosition > v2.SourcePosition {
 		return 1
 	}
-	if v1.CommitPosition < v2.CommitPosition {
+	if v1.SourcePosition < v2.SourcePosition {
 		return -1
 	}
 	if v1.Hour.After(v2.Hour) {

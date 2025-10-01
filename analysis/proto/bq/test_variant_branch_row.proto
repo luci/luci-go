@@ -111,7 +111,7 @@ message Segment {
   int64 start_position = 2;
 
   // The lower bound of the starting changepoint position in a 99% two-tailed
-  // confidence interval. Inclusive.
+  // confidence interval. Exclusive.
   // Only set if has_start_changepoint is set.
   int64 start_position_lower_bound_99th = 3;
 

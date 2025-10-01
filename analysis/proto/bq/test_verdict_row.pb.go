@@ -1150,7 +1150,7 @@ var File_go_chromium_org_luci_analysis_proto_bq_test_verdict_row_proto protorefl
 
 const file_go_chromium_org_luci_analysis_proto_bq_test_verdict_row_proto_rawDesc = "" +
 	"\n" +
-	"=go.chromium.org/luci/analysis/proto/bq/test_verdict_row.proto\x12\x10luci.analysis.bq\x1a\x1fgoogle/protobuf/timestamp.proto\x1a3go.chromium.org/luci/analysis/proto/bq/common.proto\x1a:go.chromium.org/luci/analysis/proto/bq/test_metadata.proto\x1a3go.chromium.org/luci/analysis/proto/v1/common.proto\x1a4go.chromium.org/luci/analysis/proto/v1/sources.proto\x1a9go.chromium.org/luci/analysis/proto/v1/test_verdict.proto\x1a;go.chromium.org/luci/resultdb/proto/v1/failure_reason.proto\x1a8go.chromium.org/luci/resultdb/proto/v1/test_result.proto\x1a/go.chromium.org/luci/common/bq/pb/options.proto\"\x95\x1a\n" +
+	"=go.chromium.org/luci/analysis/proto/bq/test_verdict_row.proto\x12\x10luci.analysis.bq\x1a\x1fgoogle/protobuf/timestamp.proto\x1a3go.chromium.org/luci/analysis/proto/bq/common.proto\x1a:go.chromium.org/luci/analysis/proto/bq/test_metadata.proto\x1a3go.chromium.org/luci/analysis/proto/v1/common.proto\x1a4go.chromium.org/luci/analysis/proto/v1/sources.proto\x1a9go.chromium.org/luci/analysis/proto/v1/test_verdict.proto\x1a;go.chromium.org/luci/resultdb/proto/v1/failure_reason.proto\x1a;go.chromium.org/luci/resultdb/proto/v1/skipped_reason.proto\x1a8go.chromium.org/luci/resultdb/proto/v1/test_result.proto\x1a/go.chromium.org/luci/common/bq/pb/options.proto\"\x95\x1a\n" +
 	"\x0eTestVerdictRow\x12\x18\n" +
 	"\aproject\x18\x01 \x01(\tR\aproject\x12N\n" +
 	"\x12test_id_structured\x18\x12 \x01(\v2 .luci.analysis.bq.TestIdentifierR\x10testIdStructured\x12\x17\n" +

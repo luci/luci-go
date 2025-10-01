@@ -268,7 +268,7 @@ func toInputBufferProto(history inputbuffer.History) *pb.InputBuffer {
 	}
 	for _, run := range history.Runs {
 		runpb := &pb.InputBuffer_Run{
-			CommitPosition: int64(run.CommitPosition),
+			CommitPosition: int64(run.SourcePosition),
 			Hour:           timestamppb.New(run.Hour),
 		}
 		runpb.Counts = &pb.InputBuffer_Run_Counts{

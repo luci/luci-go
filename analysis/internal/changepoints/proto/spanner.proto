@@ -22,7 +22,7 @@ option go_package = "go.chromium.org/luci/analysis/internal/changepoints/proto;c
 
 // Segments is used to store the finalized segments in Spanner.
 message Segments {
-  // Segments, in ascending commit position order (oldest segment first).
+  // Segments, in ascending source position order (oldest segment first).
   repeated Segment segments = 1;
 }
 
@@ -40,18 +40,18 @@ message Segment {
   // If unset, means the segment started because this was the first result in
   // the known history of the test.
   bool has_start_changepoint = 2;
-  // The earliest commit position included in the segment.
+  // The earliest source position included in the segment.
   int64 start_position = 3;
   // The earliest hour a run with the given start_position was recorded.
   google.protobuf.Timestamp start_hour = 4;
-  // The end commit position of the segment.
+  // The end source position of the segment.
   // If set, the invariant end_position >= start_position holds.
   int64 end_position = 5;
-  // The latest hour a run with the last commit position in the segment
+  // The latest hour a run with the last source position in the segment
   // was recorded.
   google.protobuf.Timestamp end_hour = 6;
   // The lower bound of the change point position at the start of the segment
-  // in a 99% two-tailed confidence interval. Inclusive.
+  // in a 99% two-tailed confidence interval. Exclusive.
   // Only set if has_start_changepoint is set. If set, the invariant
   // previous_segment.start_position <= start_position_lower_bound_99th <= start_position_upper_bound_99th
   // holds.
@@ -94,14 +94,14 @@ message Segment {
 
 enum SegmentState {
   SEGMENT_STATE_UNSPECIFIED = 0;
-  // Both the start and end commit positions of the segment are the result
+  // Both the start and end source positions of the segment are the result
   // of analysis on the current input buffer.
   ACTIVE = 1;
-  // The end commit position of the segment is the result of analysis on the
-  // current input buffer, but the start commit position is the result of
+  // The end source position of the segment is the result of analysis on the
+  // current input buffer, but the start source position is the result of
   // past analysis.
   FINALIZING = 2;
-  // Both the start and end commit positions of the segment are the result
+  // Both the start and end source positions of the segment are the result
   // of past analysis.
   FINALIZED = 3;
 }
@@ -240,15 +240,15 @@ message Statistics {
 }
 
 // Statistics about a source verdict. A source verdict comprises
-// all test results at a commit postiion.
+// all test results at a source position.
 message PartialSourceVerdict {
   // The source position.
   int64 commit_position = 1;
-  // The most recent hour at which a result was recorded for this commit
+  // The most recent hour at which a result was recorded for this source
   // position.
   google.protobuf.Timestamp last_hour = 2;
-  // The number of unexpected test results at this commit position (so far).
+  // The number of unexpected test results at this source position (so far).
   int64 unexpected_results = 3;
-  // The number of test results at this commit position (so far).
+  // The number of test results at this source position (so far).
   int64 expected_results = 4;
 }

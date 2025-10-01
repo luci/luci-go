@@ -54,6 +54,14 @@ func (a *Analyzer) Run(tvb *testvariantbranch.Entry) []Segment {
 			Alpha: 0.5,
 			Beta:  0.5,
 		},
+		// For gitiles, we assume the source numberer plugin assigns
+		// source positions consecutively. This gives us an idea of commit
+		// density which helps us optimize the shape of confidence intervals
+		// around changepoints.
+		//
+		// For Android build, the source positions we have are meaningless
+		// build numbers and cannot be used to shape the confidence intervals.
+		SourcePositionsConsecutive: tvb.SourceRef.GetGitiles() != nil,
 	}
 	tvb.InputBuffer.CompactIfRequired()
 	tvb.InputBuffer.MergeBuffer(&a.mergeBuffer)
@@ -263,8 +271,8 @@ func segmentCounts(counts *cpb.Counts, runs []*inputbuffer.Run) Counts {
 		}
 
 		// Verdict-level statistics.
-		if run.CommitPosition != verdictCommitPosition {
-			if run.CommitPosition < verdictCommitPosition {
+		if run.SourcePosition != verdictCommitPosition {
+			if run.SourcePosition < verdictCommitPosition {
 				panic("run commit position should not advance backwards")
 			}
 
@@ -279,7 +287,7 @@ func segmentCounts(counts *cpb.Counts, runs []*inputbuffer.Run) Counts {
 					}
 				}
 			}
-			verdictCommitPosition = run.CommitPosition
+			verdictCommitPosition = run.SourcePosition
 			verdictExpectedResults = expectedCount
 			verdictUnexpectedResults = unexpectedCount
 		} else {

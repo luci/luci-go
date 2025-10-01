@@ -429,7 +429,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				HotBuffer: inputbuffer.History{
 					Runs: []inputbuffer.Run{
 						{
-							CommitPosition: 10,
+							SourcePosition: 10,
 							Hour:           payload.PartitionTime.AsTime(),
 							Expected: inputbuffer.ResultCounts{
 								PassCount: 1,
@@ -468,7 +468,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				HotBuffer: inputbuffer.History{
 					Runs: []inputbuffer.Run{
 						{
-							CommitPosition: 10,
+							SourcePosition: 10,
 							Hour:           payload.PartitionTime.AsTime(),
 							Expected: inputbuffer.ResultCounts{
 								PassCount:  1,
@@ -710,7 +710,9 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 
 		var expectedDistribution model.PositionDistribution
 		for i, pr := range model.TailLikelihoods {
-			if pr <= 0.995 {
+			if pr < 0.50 {
+				expectedDistribution[i] = 100
+			} else if pr <= 0.995 {
 				expectedDistribution[i] = 101
 			} else {
 				expectedDistribution[i] = 102
@@ -753,7 +755,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				StartHour:                    timestamppb.New(time.Unix(101*3600, 0)),
 				FinalizedCounts:              &cpb.Counts{},
 				StartPositionDistribution:    expectedDistribution.Serialize(),
-				StartPositionLowerBound_99Th: 101,
+				StartPositionLowerBound_99Th: 100,
 				StartPositionUpperBound_99Th: 101,
 			},
 			FinalizedSegments: &cpb.Segments{
@@ -819,7 +821,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				HotBuffer: inputbuffer.History{
 					Runs: []inputbuffer.Run{
 						{
-							CommitPosition: 1,
+							SourcePosition: 1,
 							Expected: inputbuffer.ResultCounts{
 								PassCount: 1,
 							},
@@ -904,13 +906,13 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				HotBuffer: inputbuffer.History{
 					Runs: []inputbuffer.Run{
 						{
-							CommitPosition: 1,
+							SourcePosition: 1,
 							Expected: inputbuffer.ResultCounts{
 								PassCount: 1,
 							},
 						},
 						{
-							CommitPosition: 10,
+							SourcePosition: 10,
 							Hour:           payload.PartitionTime.AsTime(),
 							Expected: inputbuffer.ResultCounts{
 								PassCount: 1,

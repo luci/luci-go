@@ -42,7 +42,7 @@ func TestConfidenceInterval(t *testing.T) {
 	ftt.Run(`ConfidenceInterval`, t, func(t *ftt.Test) {
 		d := SimpleDistribution(100, 10)
 		min, max := d.ConfidenceInterval(0.99)
-		assert.Loosely(t, min, should.Equal(90))
-		assert.Loosely(t, max, should.Equal(110))
+		assert.Loosely(t, min, should.Equal(89))  // Exclusive
+		assert.Loosely(t, max, should.Equal(110)) // Inclusive
 	})
 }

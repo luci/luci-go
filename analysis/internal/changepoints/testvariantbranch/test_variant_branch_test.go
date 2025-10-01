@@ -77,14 +77,14 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				HotBuffer: inputbuffer.History{
 					Runs: []inputbuffer.Run{
 						{
-							CommitPosition: 15,
+							SourcePosition: 15,
 							Hour:           time.Unix(0, 0),
 							Expected: inputbuffer.ResultCounts{
 								PassCount: 1,
 							},
 						},
 						{
-							CommitPosition: 18,
+							SourcePosition: 18,
 							Hour:           time.Unix(0, 0),
 							Expected: inputbuffer.ResultCounts{
 								PassCount:  1,
@@ -126,7 +126,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				HotBuffer: inputbuffer.History{
 					Runs: []inputbuffer.Run{
 						{
-							CommitPosition: 20,
+							SourcePosition: 20,
 							Hour:           time.Unix(0, 0),
 							Expected: inputbuffer.ResultCounts{
 								PassCount: 1,
@@ -198,7 +198,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				HotBuffer: inputbuffer.History{
 					Runs: []inputbuffer.Run{
 						{
-							CommitPosition: 15,
+							SourcePosition: 15,
 							Hour:           time.Unix(0, 0),
 							Expected: inputbuffer.ResultCounts{
 								PassCount: 1,
@@ -241,7 +241,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				HotBuffer: inputbuffer.History{
 					Runs: []inputbuffer.Run{
 						{
-							CommitPosition: 16,
+							SourcePosition: 16,
 							Hour:           time.Unix(0, 0),
 							Expected: inputbuffer.ResultCounts{
 								PassCount: 1,
@@ -253,7 +253,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				ColdBuffer: inputbuffer.History{
 					Runs: []inputbuffer.Run{
 						{
-							CommitPosition: 15,
+							SourcePosition: 15,
 							Hour:           time.Unix(0, 0),
 							Expected: inputbuffer.ResultCounts{
 								PassCount:  1,
@@ -390,7 +390,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 		assert.Loosely(t, len(tvb.InputBuffer.HotBuffer.Runs), should.Equal(1))
 
 		assert.Loosely(t, tvb.InputBuffer.HotBuffer.Runs[0], should.Match(inputbuffer.Run{
-			CommitPosition: 12,
+			SourcePosition: 12,
 			Hour:           time.Date(2031, time.January, 1, 15, 0, 0, 0, time.UTC),
 			Expected: inputbuffer.ResultCounts{
 				PassCount: 1,
@@ -497,7 +497,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 		assert.Loosely(t, tvb.InputBuffer.HotBuffer.Runs, should.Match([]inputbuffer.Run{
 			{
 				// run-4
-				CommitPosition: 12,
+				SourcePosition: 12,
 				Hour:           time.Date(2031, time.January, 1, 15, 0, 0, 0, time.UTC),
 				Unexpected: inputbuffer.ResultCounts{
 					CrashCount: 1,
@@ -506,7 +506,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 			},
 			{
 				// run-3
-				CommitPosition: 12,
+				SourcePosition: 12,
 				Hour:           time.Date(2031, time.January, 1, 15, 0, 0, 0, time.UTC),
 				Unexpected: inputbuffer.ResultCounts{
 					PassCount: 1,
@@ -515,7 +515,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 			},
 			{
 				// run-2
-				CommitPosition: 12,
+				SourcePosition: 12,
 				Hour:           time.Date(2031, time.January, 1, 15, 0, 0, 0, time.UTC),
 				Expected: inputbuffer.ResultCounts{
 					AbortCount: 1,
@@ -523,7 +523,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 			},
 			{
 				// run-1
-				CommitPosition: 12,
+				SourcePosition: 12,
 				Hour:           time.Date(2031, time.January, 1, 15, 0, 0, 0, time.UTC),
 				Expected: inputbuffer.ResultCounts{
 					PassCount:  1,
@@ -547,7 +547,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				EndHour:       time.Unix(10*3600, 0),
 				Runs: []*inputbuffer.Run{
 					{
-						CommitPosition: 2,
+						SourcePosition: 2,
 						Hour:           time.Unix(10*3600, 0),
 						Expected: inputbuffer.ResultCounts{
 							PassCount:  1,
@@ -574,28 +574,28 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				MostRecentUnexpectedResultHour: time.Unix((100000-StatisticsRetentionDays*24)*3600, 0),
 				Runs: []*inputbuffer.Run{
 					{
-						CommitPosition: 11,
+						SourcePosition: 11,
 						Hour:           time.Unix(11*3600, 0),
 						Expected: inputbuffer.ResultCounts{
 							PassCount: 1,
 						},
 					},
 					{
-						CommitPosition: 11,
+						SourcePosition: 11,
 						Hour:           time.Unix(100000*3600, 0),
 						Unexpected: inputbuffer.ResultCounts{
 							CrashCount: 1,
 						},
 					},
 					{
-						CommitPosition: 12,
+						SourcePosition: 12,
 						Hour:           time.Unix((100000-StatisticsRetentionDays*24)*3600, 0),
 						Expected: inputbuffer.ResultCounts{
 							PassCount: 1,
 						},
 					},
 					{
-						CommitPosition: 13,
+						SourcePosition: 13,
 						Hour:           time.Unix((100000-StatisticsRetentionDays*24+1)*3600, 0),
 						Expected: inputbuffer.ResultCounts{
 							PassCount: 1,
@@ -615,7 +615,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			HasStartChangepoint:          true,
 			StartPosition:                11,
 			StartHour:                    timestamppb.New(time.Unix(11*3600, 0)),
-			StartPositionLowerBound_99Th: 9,
+			StartPositionLowerBound_99Th: 8,
 			StartPositionUpperBound_99Th: 13,
 			StartPositionDistribution:    model.SimpleDistribution(11, 2).Serialize(),
 			FinalizedCounts: &cpb.Counts{
@@ -706,7 +706,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPosition:                100,
 				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 				HasStartChangepoint:          true,
-				StartPositionLowerBound_99Th: 90,
+				StartPositionLowerBound_99Th: 89,
 				StartPositionUpperBound_99Th: 110,
 				StartPositionDistribution:    model.SimpleDistribution(100, 10).Serialize(),
 				FinalizedCounts: &cpb.Counts{
@@ -748,7 +748,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				MostRecentUnexpectedResultHour: time.Unix(10*3600, 0),
 				Runs: []*inputbuffer.Run{
 					{
-						CommitPosition: 200,
+						SourcePosition: 200,
 						Hour:           time.Unix(5*3600, 0),
 						Expected: inputbuffer.ResultCounts{
 							PassCount:  100,
@@ -764,7 +764,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 						},
 					},
 					{
-						CommitPosition: 250,
+						SourcePosition: 250,
 						Hour:           time.Unix(15*3600, 0),
 						Expected: inputbuffer.ResultCounts{
 							FailCount: 1,
@@ -782,7 +782,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			StartPosition:                100,
 			StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 			HasStartChangepoint:          true,
-			StartPositionLowerBound_99Th: 90,
+			StartPositionLowerBound_99Th: 89,
 			StartPositionUpperBound_99Th: 110,
 			StartPositionDistribution:    model.SimpleDistribution(100, 10).Serialize(),
 			FinalizedCounts: &cpb.Counts{
@@ -824,7 +824,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPosition:                100,
 				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 				HasStartChangepoint:          true,
-				StartPositionLowerBound_99Th: 90,
+				StartPositionLowerBound_99Th: 89,
 				StartPositionUpperBound_99Th: 110,
 				StartPositionDistribution:    model.SimpleDistribution(100, 10).Serialize(),
 				FinalizedCounts: &cpb.Counts{
@@ -868,7 +868,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				MostRecentUnexpectedResultHour: time.Unix(10*3600, 0),
 				Runs: []*inputbuffer.Run{
 					{
-						CommitPosition: 200,
+						SourcePosition: 200,
 						Hour:           time.Unix(5*3600, 0),
 						Expected: inputbuffer.ResultCounts{
 							PassCount:  100,
@@ -884,7 +884,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 						},
 					},
 					{
-						CommitPosition: 250,
+						SourcePosition: 250,
 						Hour:           time.Unix(15*3600, 0),
 						Expected: inputbuffer.ResultCounts{
 							FailCount: 1,
@@ -901,14 +901,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				EndPosition:               800,
 				Runs: []*inputbuffer.Run{
 					{
-						CommitPosition: 500,
+						SourcePosition: 500,
 						Hour:           time.Unix(20*3600, 0),
 						Unexpected: inputbuffer.ResultCounts{
 							CrashCount: 2,
 						},
 					},
 					{
-						CommitPosition: 510,
+						SourcePosition: 510,
 						Hour:           time.Unix(25*3600, 0),
 						Unexpected: inputbuffer.ResultCounts{
 							CrashCount: 4,
@@ -925,7 +925,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			StartPosition:                100,
 			StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 			HasStartChangepoint:          true,
-			StartPositionLowerBound_99Th: 90,
+			StartPositionLowerBound_99Th: 89,
 			StartPositionUpperBound_99Th: 110,
 			StartPositionDistribution:    model.SimpleDistribution(100, 10).Serialize(),
 			EndPosition:                  400,
@@ -961,7 +961,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			HasStartChangepoint:          true,
 			StartPosition:                500,
 			StartHour:                    timestamppb.New(time.Unix(20*3600, 0)),
-			StartPositionLowerBound_99Th: 490,
+			StartPositionLowerBound_99Th: 489,
 			StartPositionUpperBound_99Th: 510,
 			StartPositionDistribution:    model.SimpleDistribution(500, 10).Serialize(),
 			FinalizedCounts: &cpb.Counts{
@@ -992,7 +992,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPosition:                100,
 				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 				HasStartChangepoint:          true,
-				StartPositionLowerBound_99Th: 90,
+				StartPositionLowerBound_99Th: 89,
 				StartPositionUpperBound_99Th: 110,
 				StartPositionDistribution:    model.SimpleDistribution(100, 10).Serialize(),
 				FinalizedCounts: &cpb.Counts{
@@ -1036,14 +1036,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				MostRecentUnexpectedResultHour: time.Unix(10*3600, 0),
 				Runs: []*inputbuffer.Run{
 					{
-						CommitPosition: 200,
+						SourcePosition: 200,
 						Hour:           time.Unix(100*3600, 0),
 						Unexpected: inputbuffer.ResultCounts{
 							CrashCount: 1,
 						},
 					},
 					{
-						CommitPosition: 400,
+						SourcePosition: 400,
 						Hour:           time.Unix(90*3600, 0),
 						Unexpected: inputbuffer.ResultCounts{
 							CrashCount: 1,
@@ -1067,7 +1067,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			StartPosition:                100,
 			StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 			HasStartChangepoint:          true,
-			StartPositionLowerBound_99Th: 90,
+			StartPositionLowerBound_99Th: 89,
 			StartPositionUpperBound_99Th: 110,
 			StartPositionDistribution:    model.SimpleDistribution(100, 10).Serialize(),
 			EndPosition:                  400,
@@ -1103,7 +1103,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			StartPosition:                500,
 			StartHour:                    timestamppb.New(time.Unix(500*3600, 0)),
 			HasStartChangepoint:          true,
-			StartPositionLowerBound_99Th: 490,
+			StartPositionLowerBound_99Th: 489,
 			StartPositionUpperBound_99Th: 510,
 			StartPositionDistribution:    model.SimpleDistribution(500, 10).Serialize(),
 			FinalizedCounts:              &cpb.Counts{},
@@ -1120,7 +1120,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPosition:                100,
 				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 				HasStartChangepoint:          true,
-				StartPositionLowerBound_99Th: 90,
+				StartPositionLowerBound_99Th: 89,
 				StartPositionUpperBound_99Th: 110,
 				StartPositionDistribution:    model.SimpleDistribution(100, 10).Serialize(),
 				FinalizedCounts: &cpb.Counts{
@@ -1185,26 +1185,26 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				Runs: []*inputbuffer.Run{
 					// Expected source verdict.
 					{
-						CommitPosition: 190,
+						SourcePosition: 190,
 						Hour:           time.Unix(1000*3600, 0),
 						Expected:       inputbuffer.ResultCounts{PassCount: 1},
 					},
 					// Expected source verdict.
 					{
-						CommitPosition: 191,
+						SourcePosition: 191,
 						Hour:           time.Unix(1000*3600, 0),
 						Expected:       inputbuffer.ResultCounts{PassCount: 2},
 					},
 					// Flaky source verdict.
 					{
-						CommitPosition: 192,
+						SourcePosition: 192,
 						Hour:           time.Unix(992*3600, 0),
 						Expected: inputbuffer.ResultCounts{
 							PassCount: 1,
 						},
 					},
 					{
-						CommitPosition: 192,
+						SourcePosition: 192,
 						Hour:           time.Unix(992*3600, 0),
 						Unexpected: inputbuffer.ResultCounts{
 							FailCount: 1,
@@ -1212,14 +1212,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 					},
 					// Unexpected source verdict which is too old for the retention policy.
 					{
-						CommitPosition: 193,
+						SourcePosition: 193,
 						Hour:           time.Unix(1*3600, 0),
 						Unexpected: inputbuffer.ResultCounts{
 							FailCount: 1,
 						},
 					},
 					{
-						CommitPosition: 193,
+						SourcePosition: 193,
 						Hour:           time.Unix((1000-StatisticsRetentionDays*24)*3600, 0),
 						Unexpected: inputbuffer.ResultCounts{
 							FailCount: 1,
@@ -1227,14 +1227,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 					},
 					// Unexpected source verdict which is (just) within the retention policy.
 					{
-						CommitPosition: 194,
+						SourcePosition: 194,
 						Hour:           time.Unix(1*3600, 0),
 						Unexpected: inputbuffer.ResultCounts{
 							FailCount: 1,
 						},
 					},
 					{
-						CommitPosition: 194,
+						SourcePosition: 194,
 						Hour:           time.Unix((1000-StatisticsRetentionDays*24+1)*3600, 0),
 						Unexpected: inputbuffer.ResultCounts{
 							FailCount: 1,
@@ -1244,7 +1244,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 					// the verdict will be too old to be retained in a bucket, this can change
 					// if a recent run is obtained at this commit position.
 					{
-						CommitPosition: 195,
+						SourcePosition: 195,
 						Hour:           time.Unix(10*3600, 0),
 						Unexpected: inputbuffer.ResultCounts{
 							FailCount: 1,
@@ -1328,15 +1328,15 @@ func TestOutOfOrderRuns(t *testing.T) {
 			tvb.InputBuffer.HotBuffer.Runs = nil
 			tvb.FinalizingSegment = nil
 
-			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 100}), should.BeTrue)
-			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 1}), should.BeTrue)
-			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 100}), should.BeTrue)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{SourcePosition: 100}), should.BeTrue)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{SourcePosition: 1}), should.BeTrue)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{SourcePosition: 100}), should.BeTrue)
 			assert.Loosely(t, tvb.InputBuffer.HotBuffer.Runs, should.HaveLength(3))
 		})
 		t.Run("With finalizing segment and cold buffer setting bound", func(t *ftt.Test) {
 			tvb.InputBuffer.ColdBuffer.Runs = []inputbuffer.Run{
 				{
-					CommitPosition: 20,
+					SourcePosition: 20,
 					Hour:           time.Unix(0, 0),
 					Expected: inputbuffer.ResultCounts{
 						PassCount: 1,
@@ -1346,16 +1346,16 @@ func TestOutOfOrderRuns(t *testing.T) {
 			tvb.FinalizingSegment = &cpb.Segment{
 				State: cpb.SegmentState_FINALIZING,
 			}
-			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 20}), should.BeTrue)
-			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 21}), should.BeTrue)
-			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 19}), should.BeFalse)
-			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 20}), should.BeTrue)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{SourcePosition: 20}), should.BeTrue)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{SourcePosition: 21}), should.BeTrue)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{SourcePosition: 19}), should.BeFalse)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{SourcePosition: 20}), should.BeTrue)
 			assert.Loosely(t, tvb.InputBuffer.HotBuffer.Runs, should.HaveLength(3))
 		})
 		t.Run("With finalizing segment and hot buffer setting bound", func(t *ftt.Test) {
 			tvb.InputBuffer.HotBuffer.Runs = []inputbuffer.Run{
 				{
-					CommitPosition: 20,
+					SourcePosition: 20,
 					Hour:           time.Unix(0, 0),
 					Expected: inputbuffer.ResultCounts{
 						PassCount: 1,
@@ -1365,10 +1365,10 @@ func TestOutOfOrderRuns(t *testing.T) {
 			tvb.FinalizingSegment = &cpb.Segment{
 				State: cpb.SegmentState_FINALIZING,
 			}
-			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 20}), should.BeTrue)
-			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 21}), should.BeTrue)
-			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 19}), should.BeFalse)
-			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{CommitPosition: 20}), should.BeTrue)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{SourcePosition: 20}), should.BeTrue)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{SourcePosition: 21}), should.BeTrue)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{SourcePosition: 19}), should.BeFalse)
+			assert.Loosely(t, tvb.InsertToInputBuffer(inputbuffer.Run{SourcePosition: 20}), should.BeTrue)
 			assert.Loosely(t, tvb.InputBuffer.HotBuffer.Runs, should.HaveLength(4))
 		})
 	})

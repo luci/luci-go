@@ -223,7 +223,7 @@ func createTestVariantBranchRecords(ctx context.Context) error {
 			HotBuffer: inputbuffer.History{
 				Runs: []inputbuffer.Run{
 					{
-						CommitPosition: 18,
+						SourcePosition: 18,
 						Hour:           time.Date(2020, time.October, 9, 8, 0, 0, 0, time.UTC),
 						Unexpected: inputbuffer.ResultCounts{
 							FailCount: 1,

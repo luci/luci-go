@@ -180,7 +180,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 						HotBuffer: inputbuffer.History{
 							Runs: []inputbuffer.Run{
 								{
-									CommitPosition: 120,
+									SourcePosition: 120,
 									Hour:           time.Unix(3600, 0),
 									Expected: inputbuffer.ResultCounts{
 										PassCount: 1,
@@ -191,7 +191,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 						ColdBuffer: inputbuffer.History{
 							Runs: []inputbuffer.Run{
 								{
-									CommitPosition: 130,
+									SourcePosition: 130,
 									Hour:           time.Unix(2*3600, 0),
 									Expected: inputbuffer.ResultCounts{
 										PassCount: 1,
@@ -203,7 +203,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 									},
 								},
 								{
-									CommitPosition: 131,
+									SourcePosition: 131,
 									Hour:           time.Unix(3*3600, 0),
 									Expected: inputbuffer.ResultCounts{
 										CrashCount: 5,
@@ -430,7 +430,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 						HotBuffer: inputbuffer.History{
 							Runs: []inputbuffer.Run{
 								{
-									CommitPosition: 200,
+									SourcePosition: 200,
 									Hour:           time.Unix(2*3600, 0),
 									Expected: inputbuffer.ResultCounts{
 										PassCount: 1,
@@ -521,7 +521,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 									0.75, 0.8, 0.85, 0.9, 0.95, 0.975, 0.995, 0.9995,
 								},
 								SourcePositions: []int64{
-									90, 95, 100, 100, 100, 100, 100, 100, 100,
+									89, 94, 99, 99, 99, 99, 99, 99, 100,
 									100, 100, 100, 100, 100, 100, 105, 110,
 								},
 							},
@@ -1266,7 +1266,7 @@ func (b *testVariantBranchBuilder) buildEntry() *testvariantbranch.Entry {
 			HotBuffer: inputbuffer.History{
 				Runs: []inputbuffer.Run{
 					{
-						CommitPosition: 200,
+						SourcePosition: 200,
 						Hour:           time.Unix(3*3600, 0),
 						Expected: inputbuffer.ResultCounts{
 							PassCount: 1,

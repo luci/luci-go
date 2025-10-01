@@ -347,7 +347,7 @@ type InputBuffer struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The number of test runs in the input buffer.
 	Length int64 `protobuf:"varint,1,opt,name=length,proto3" json:"length,omitempty"`
-	// Runs, sorted by commit position (oldest first), and
+	// Runs, sorted by source position (oldest first), and
 	// then result time (oldest first).
 	Runs          []*InputBuffer_Run `protobuf:"bytes,2,rep,name=runs,proto3" json:"runs,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -670,8 +670,8 @@ type TestVariantBranch struct {
 	Variant *Variant `protobuf:"bytes,6,opt,name=variant,proto3" json:"variant,omitempty"`
 	// The branch in source control.
 	Ref *SourceRef `protobuf:"bytes,7,opt,name=ref,proto3" json:"ref,omitempty"`
-	// The test history represented as a set of [start commit position,
-	// end commit position] segments, where segments have statistically
+	// The test history represented as a set of [start source position,
+	// end source position] segments, where segments have statistically
 	// different failure and/or flake rates. The segments are ordered so that
 	// the most recent segment appears first.
 	// If a client is only interested in the current failure/flake rate, they
@@ -782,16 +782,16 @@ type Segment struct {
 	// is deleted after 90 days of no results, so this means there were
 	// no results for at least 90 days before the segment.)
 	HasStartChangepoint bool `protobuf:"varint,1,opt,name=has_start_changepoint,json=hasStartChangepoint,proto3" json:"has_start_changepoint,omitempty"`
-	// The nominal commit position at which the segment starts (inclusive).
+	// The nominal source position at which the segment starts (inclusive).
 	// Guaranteed to be strictly greater than the end_position of the
 	// chronologically previous segment (if any).
 	// If this segment has a starting changepoint, this is the nominal position
 	// of the changepoint (when the new test behaviour started).
 	// If this segment does not have a starting changepoint, this is the
-	// simply the first commit position in the known history of the test.
+	// simply the first source position in the known history of the test.
 	StartPosition int64 `protobuf:"varint,2,opt,name=start_position,json=startPosition,proto3" json:"start_position,omitempty"`
 	// The lower bound of the starting changepoint position in a 99% two-tailed
-	// confidence interval. Inclusive.
+	// confidence interval. Exclusive.
 	// Only set if has_start_changepoint is set.
 	StartPositionLowerBound_99Th int64 `protobuf:"varint,3,opt,name=start_position_lower_bound_99th,json=startPositionLowerBound99th,proto3" json:"start_position_lower_bound_99th,omitempty"`
 	// The upper bound of the starting changepoint position in a 99% two-tailed
@@ -808,8 +808,8 @@ type Segment struct {
 	// was recorded. Gives an approximate upper bound on the timestamp the
 	// changepoint occurred, for systems which need to filter by date.
 	StartHour *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=start_hour,json=startHour,proto3" json:"start_hour,omitempty"`
-	// The nominal commit position at which the segment ends (inclusive).
-	// This is either the last recorded commit position in the test history
+	// The nominal source position at which the segment ends (inclusive).
+	// This is either the last recorded source position in the test history
 	// (for this test variant branch), or the position of the last run
 	// seen before the next detected changepoint.
 	EndPosition int64 `protobuf:"varint,6,opt,name=end_position,json=endPosition,proto3" json:"end_position,omitempty"`
@@ -1192,10 +1192,10 @@ func (x *QueryChangepointAIAnalysisResponse) GetPrompt() string {
 	return ""
 }
 
-// Run represents a test run at a commit position.
+// Run represents a test run at a source position.
 type InputBuffer_Run struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The commit position of the run.
+	// The source position of the run.
 	CommitPosition int64 `protobuf:"varint,1,opt,name=commitPosition,proto3" json:"commitPosition,omitempty"`
 	// The time that this run was produced, truncated to the nearest hour.
 	Hour          *timestamppb.Timestamp  `protobuf:"bytes,2,opt,name=hour,proto3" json:"hour,omitempty"`
@@ -1383,7 +1383,7 @@ type Segment_PositionDistribution struct {
 	// The source positions corresponding to each of the above cdf values.
 	// I.E. source_positions[i] corresponds to cfs[i].
 	//
-	// The probability of a changepoint occuring at or before source_positions[i]
+	// The probability of a changepoint occurring at or before source_positions[i]
 	// is at least cdfs[i].
 	//
 	// Invariant: length(source_positions) == len(cdfs).
@@ -1491,14 +1491,14 @@ type Segment_Counts struct {
 	// The total number of test runs.
 	TotalRuns int32 `protobuf:"varint,14,opt,name=total_runs,json=totalRuns,proto3" json:"total_runs,omitempty"`
 	// The number of source verdicts with only unexpected test results.
-	// A source verdict refers to all test results at a commit position.
+	// A source verdict refers to all test results at a source position.
 	UnexpectedVerdicts int32 `protobuf:"varint,15,opt,name=unexpected_verdicts,json=unexpectedVerdicts,proto3" json:"unexpected_verdicts,omitempty"`
 	// The number of source verdicts with a mix of expected and unexpected test results.
-	// A source verdict refers to all test results at a commit position.
+	// A source verdict refers to all test results at a source position.
 	// As such, is a signal of either in- or cross- build flakiness.
 	FlakyVerdicts int32 `protobuf:"varint,16,opt,name=flaky_verdicts,json=flakyVerdicts,proto3" json:"flaky_verdicts,omitempty"`
 	// The total number of source verdicts.
-	// A source verdict refers to all test results at a commit position.
+	// A source verdict refers to all test results at a source position.
 	// As such, this is also the total number of source positions with
 	// test results in the segment.
 	TotalVerdicts int32 `protobuf:"varint,17,opt,name=total_verdicts,json=totalVerdicts,proto3" json:"total_verdicts,omitempty"`

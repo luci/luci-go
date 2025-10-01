@@ -51,7 +51,7 @@ func VerdictsWithRetries(positions, total, hasUnexpected, retried, unexpectedAft
 		unexpectedAfterRetryCount := unexpectedAfterRetry[i] // As above, plus all test runs have only unexpected results.
 
 		baseRun := Run{
-			CommitPosition: int64(positions[i]),
+			SourcePosition: int64(positions[i]),
 			Hour:           time.Unix(int64(3600*(positions[i])), 0),
 		}
 		for i := range totalCount {
