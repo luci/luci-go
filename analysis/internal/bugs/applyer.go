@@ -273,7 +273,7 @@ func (p PolicyApplyer) PreparePriorityAndVerifiedChange(opts BugOptions, uiBaseU
 			body.WriteString(fmt.Sprintf("The bug has been re-opened as %s.", recommendedPriority))
 		} else if isChangingVerified {
 			if recommendedVerified {
-				body.WriteString("The bug has been verified.")
+				body.WriteString("The bug has been verified.  If this is incorrect (e.g. test was disabled), please turn off the \"Update Bug\" toggle on the rule page linked below.")
 			} else {
 				body.WriteString("The bug has been re-opened.")
 			}
