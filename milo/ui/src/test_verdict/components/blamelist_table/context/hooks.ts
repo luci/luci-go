@@ -65,7 +65,7 @@ export function useSegmentWithCommit(commitPosition: string) {
 
 /**
  * Find the segments where the commit position is in range
- * [segment.startPositionUpperBound99th, segment.startPositionLowerBound99th].
+ * [segment.startPositionUpperBound99th, segment.startPositionLowerBound99th[.
  */
 export function useStartPointsWithCommit(
   commitPosition: string,
@@ -85,14 +85,20 @@ export function useStartPointsWithCommit(
     // Linear search should be good enough since the array should be very small.
     for (const entry of ctx.segmentsSortedByStartUpperBound) {
       const seg = entry[1];
+      // Lower bound is exclusive.
       const lower = parseInt(seg.startPositionLowerBound99th);
-      if (lower > cp) {
+      if (lower >= cp) {
         continue;
       }
+      // Upper bound is inclusive.
       const upper = parseInt(seg.startPositionUpperBound99th);
-      if (upper < cp) {
+      if (cp > upper) {
+        // As the list is sorted in descending upper bound order, the
+        // next segments will have even smaller upper bounds and
+        // therefore won't match either. Exit early.
         break;
       }
+      // lower < cp <= upper.
       segments.push(entry);
     }
     return segments;

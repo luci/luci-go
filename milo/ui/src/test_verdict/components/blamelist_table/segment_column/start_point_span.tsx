@@ -81,6 +81,7 @@ export interface StartPointSpanProps {
 
 export function StartPointSpan({ position }: StartPointSpanProps) {
   const startPoints = useStartPointsWithCommit(position);
+  const sourcePosition = parseInt(position);
 
   return (
     <>
@@ -91,10 +92,12 @@ export function StartPointSpan({ position }: StartPointSpanProps) {
           spIndex % 2 === 0 ? 'start-point-right' : 'start-point-left',
         ];
 
-        if (sp.startPositionUpperBound99th === position) {
+        // Upper bound is inclusive.
+        if (parseInt(sp.startPositionUpperBound99th) === sourcePosition) {
           classNames.push('start-point-upper-bound');
         }
-        if (sp.startPositionLowerBound99th === position) {
+        // Lower bound is exclusive.
+        if (parseInt(sp.startPositionLowerBound99th) + 1 === sourcePosition) {
           classNames.push('start-point-lower-bound');
         }
 

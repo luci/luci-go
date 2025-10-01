@@ -145,7 +145,11 @@ export function StartPointSpan({
   ];
 
   const start = commitMap[segment.startPositionUpperBound99th];
-  const end = commitMap[segment.startPositionLowerBound99th] + 1;
+  const end =
+    // The lower bound is exclusive, so add one to convert it to an inclusive bound.
+    commitMap[(parseInt(segment.startPositionLowerBound99th) + 1).toString()] +
+    // Finally, add +1 so we draw a line to the end of the cell, not the start of the cell.
+    1;
   const y =
     rowHeight / 2 +
     (position === 'top'
@@ -153,8 +157,7 @@ export function StartPointSpan({
       : SEGMENT_SPAN_HEIGHT / 2);
   const commitCount =
     parseInt(segment.startPositionUpperBound99th) -
-    parseInt(segment.startPositionLowerBound99th) +
-    1;
+    parseInt(segment.startPositionLowerBound99th);
 
   return (
     <foreignObject

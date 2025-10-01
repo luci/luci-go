@@ -25,10 +25,14 @@ export function StartPointInfo({
   segment,
   instructionRow,
 }: StartPointInfoProps) {
+  // Upper bound is inclusive, lower bound is exclusive.
   const commitCount =
     parseInt(segment.startPositionUpperBound99th) -
-    parseInt(segment.startPositionLowerBound99th) +
-    1;
+    parseInt(segment.startPositionLowerBound99th);
+  // The 99th percentile lower bound is exclusive. Make it inclusive.
+  const lowerBound99thInclusive = (
+    parseInt(segment.startPositionLowerBound99th) + 1
+  ).toString();
   return (
     <table>
       <thead>
@@ -44,7 +48,7 @@ export function StartPointInfo({
           <td>Commits:</td>
           <td>
             {segment.startPositionUpperBound99th}...
-            {segment.startPositionLowerBound99th}~ ({commitCount} commits)
+            {lowerBound99thInclusive}~ ({commitCount} commits)
           </td>
         </tr>
       </tbody>

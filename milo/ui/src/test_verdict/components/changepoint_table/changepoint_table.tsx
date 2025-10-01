@@ -89,7 +89,11 @@ export function ChangepointTable({
       seg.startPosition,
       seg.endPosition,
       ...(seg.hasStartChangepoint
-        ? [seg.startPositionLowerBound99th, seg.startPositionUpperBound99th]
+        ? [
+            // Lower bound is exclusive, so pick the next position.
+            (parseInt(seg.startPositionLowerBound99th) + 1).toString(),
+            seg.startPositionUpperBound99th,
+          ]
         : []),
     ]),
   );
