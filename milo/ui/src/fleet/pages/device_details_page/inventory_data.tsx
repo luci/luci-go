@@ -52,10 +52,14 @@ export const InventoryData = ({ hostname }: { hostname: string }) => {
     );
   } else if (machineLse.isLoading) {
     responseDisplay = <CentralizedProgress />;
+  } else if (!machineLse.data) {
+    responseDisplay = (
+      <Alert severity="error">{'MachineLSE data missing from shivas'}</Alert>
+    );
   } else {
     responseDisplay = (
       <CodeMirrorEditor
-        value={JSON.stringify(machineLse.data, undefined, 2)}
+        value={JSON.stringify(machineLse.data ?? '', undefined, 2)}
         initOptions={editorOptions.current}
       />
     );
