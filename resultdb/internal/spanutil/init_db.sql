@@ -400,10 +400,10 @@ CREATE TABLE WorkUnitUpdateRequests(
   CreateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 ) PRIMARY KEY (RootInvocationShardId, WorkUnitId, UpdatedBy, UpdateRequestId),
   INTERLEAVE IN PARENT WorkUnits ON DELETE CASCADE,
-  -- Records are retained for 6 days. This duration is aligned with the
-  -- lifetime of update tokens. Beyond this, any idempotent RPC retry
-  -- will fail as it will not be authorizable.
-  ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 6 DAY));
+  -- Records are retained for 9 days. This duration is aligned with the
+  -- lifetime of update tokens (8 days, 1 hour). Beyond this, any idempotent
+  -- RPC retry will fail as it will not be authorizable.
+  ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 9 DAY));
 
 -- Stores records of root invocation update requests to support idempotency.
 -- When a root invocation is updated, a record is inserted into this table. If a
@@ -420,10 +420,10 @@ CREATE TABLE RootInvocationUpdateRequests(
   CreateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 ) PRIMARY KEY (RootInvocationId, UpdatedBy, UpdateRequestId),
   INTERLEAVE IN PARENT RootInvocations ON DELETE CASCADE,
-  -- Records are retained for 6 days. This duration is aligned with the
-  -- lifetime of update tokens. Beyond this, any idempotent RPC retry
-  -- will fail as it will not be authorizable.
-  ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 6 DAY));
+  -- Records are retained for 9 days. This duration is aligned with the
+  -- lifetime of update tokens (8 days, 1 hour). Beyond this, any idempotent
+  -- RPC retry will fail as it will not be authorizable.
+  ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 9 DAY));
 
 -- Stores the invocations.
 -- Invocations are a legacy concept, representing a container of test results.

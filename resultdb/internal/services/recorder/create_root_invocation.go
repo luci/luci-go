@@ -46,7 +46,14 @@ import (
 const (
 	// maxDeadlineDuration is the maximum amount of time a root invocation or
 	// work unit can spend in the ACTIVE state before it should be finalized.
-	maxDeadlineDuration = 5 * 24 * time.Hour // 5 days
+	//
+	// The longest root invocations are currently from Android Test Production
+	// which has a deadline of 7 days. This is set with a margin to that to
+	// allow for clock drift.
+	//
+	// If updating this value, also update WorkUnitUpdateRequests and
+	// RootInvocationUpdateRequests row deletion TTLs.
+	maxDeadlineDuration = (7*24 + 1) * time.Hour // 7 days, 1 hour
 
 	// By default, finalize root invocation and work unit 2d after creation if it is still
 	// not finalized.

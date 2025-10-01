@@ -629,7 +629,7 @@ func TestValidateDeadline(t *testing.T) {
 		t.Run(`deadline too far in the future`, func(t *ftt.Test) {
 			deadline := pbutil.MustTimestampProto(now.Add(1e3 * time.Hour))
 			err := validateDeadline(deadline, now)
-			assert.Loosely(t, err, should.ErrLike(`must be before 120h in the future`))
+			assert.Loosely(t, err, should.ErrLike(`must be before 169h in the future`))
 		})
 
 		t.Run(`valid`, func(t *ftt.Test) {
