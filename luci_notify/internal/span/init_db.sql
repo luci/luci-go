@@ -50,7 +50,7 @@ CREATE TABLE AlertGroups (
   -- A message describing the status of the alert group.
   StatusMessage STRING(MAX),
   -- The keys of the alerts in this group.
-  AlertKeys ARRAY<STRING(256)> NOT NULL,
+  AlertKeys ARRAY<STRING(MAX)> NOT NULL,
   -- The bugs associated with this alert group.
   Bugs ARRAY<INT64> NOT NULL,
   -- The time the alert group was last updated.
