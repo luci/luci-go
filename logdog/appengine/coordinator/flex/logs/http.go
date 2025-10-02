@@ -789,8 +789,7 @@ func GetHandler(ctx *router.Context) {
 	// The logcat webapp is hosted under /static for simplicity. Redirect
 	// there once we have checked ACLs on the logs.
 	if data.options.format == formatLogcat {
-		// TODO(425725671): Replace test.html with correct page once it exists.
-		http.Redirect(ctx.Writer, ctx.Request, "/static/test.html#url=" + path, http.StatusFound)
+		http.Redirect(ctx.Writer, ctx.Request, "/static/logcat.html#url=" + path, http.StatusFound)
 		return
 	}
 	writeOKHeaders(ctx, data)
