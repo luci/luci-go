@@ -159,57 +159,6 @@ export interface PingUfsRequest {
 export interface PingUfsResponse {
 }
 
-export interface LogFrontendRequest {
-  readonly message: string;
-  readonly source: string;
-  readonly lineno: number;
-  readonly colno: number;
-  readonly stack: string;
-  /** Captures which react component contains the error */
-  readonly componentStack: string;
-  readonly url: string;
-  readonly severity: LogFrontendRequest_Severity;
-}
-
-export enum LogFrontendRequest_Severity {
-  INFO = 0,
-  WARNING = 1,
-  ERROR = 2,
-}
-
-export function logFrontendRequest_SeverityFromJSON(object: any): LogFrontendRequest_Severity {
-  switch (object) {
-    case 0:
-    case "INFO":
-      return LogFrontendRequest_Severity.INFO;
-    case 1:
-    case "WARNING":
-      return LogFrontendRequest_Severity.WARNING;
-    case 2:
-    case "ERROR":
-      return LogFrontendRequest_Severity.ERROR;
-    default:
-      throw new globalThis.Error("Unrecognized enum value " + object + " for enum LogFrontendRequest_Severity");
-  }
-}
-
-export function logFrontendRequest_SeverityToJSON(object: LogFrontendRequest_Severity): string {
-  switch (object) {
-    case LogFrontendRequest_Severity.INFO:
-      return "INFO";
-    case LogFrontendRequest_Severity.WARNING:
-      return "WARNING";
-    case LogFrontendRequest_Severity.ERROR:
-      return "ERROR";
-    default:
-      throw new globalThis.Error("Unrecognized enum value " + object + " for enum LogFrontendRequest_Severity");
-  }
-}
-
-/** LogFrontendResponse intentionally contains nothing. */
-export interface LogFrontendResponse {
-}
-
 export interface Device {
   /**
    * In the case of VMs, device id could be the GCE instance name. For physical
@@ -1089,221 +1038,6 @@ export const PingUfsResponse: MessageFns<PingUfsResponse> = {
   },
   fromPartial(_: DeepPartial<PingUfsResponse>): PingUfsResponse {
     const message = createBasePingUfsResponse() as any;
-    return message;
-  },
-};
-
-function createBaseLogFrontendRequest(): LogFrontendRequest {
-  return { message: "", source: "", lineno: 0, colno: 0, stack: "", componentStack: "", url: "", severity: 0 };
-}
-
-export const LogFrontendRequest: MessageFns<LogFrontendRequest> = {
-  encode(message: LogFrontendRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.message !== "") {
-      writer.uint32(10).string(message.message);
-    }
-    if (message.source !== "") {
-      writer.uint32(18).string(message.source);
-    }
-    if (message.lineno !== 0) {
-      writer.uint32(24).int32(message.lineno);
-    }
-    if (message.colno !== 0) {
-      writer.uint32(32).int32(message.colno);
-    }
-    if (message.stack !== "") {
-      writer.uint32(42).string(message.stack);
-    }
-    if (message.componentStack !== "") {
-      writer.uint32(50).string(message.componentStack);
-    }
-    if (message.url !== "") {
-      writer.uint32(58).string(message.url);
-    }
-    if (message.severity !== 0) {
-      writer.uint32(64).int32(message.severity);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): LogFrontendRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseLogFrontendRequest() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.message = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.source = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag !== 24) {
-            break;
-          }
-
-          message.lineno = reader.int32();
-          continue;
-        }
-        case 4: {
-          if (tag !== 32) {
-            break;
-          }
-
-          message.colno = reader.int32();
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.stack = reader.string();
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
-            break;
-          }
-
-          message.componentStack = reader.string();
-          continue;
-        }
-        case 7: {
-          if (tag !== 58) {
-            break;
-          }
-
-          message.url = reader.string();
-          continue;
-        }
-        case 8: {
-          if (tag !== 64) {
-            break;
-          }
-
-          message.severity = reader.int32() as any;
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): LogFrontendRequest {
-    return {
-      message: isSet(object.message) ? globalThis.String(object.message) : "",
-      source: isSet(object.source) ? globalThis.String(object.source) : "",
-      lineno: isSet(object.lineno) ? globalThis.Number(object.lineno) : 0,
-      colno: isSet(object.colno) ? globalThis.Number(object.colno) : 0,
-      stack: isSet(object.stack) ? globalThis.String(object.stack) : "",
-      componentStack: isSet(object.componentStack) ? globalThis.String(object.componentStack) : "",
-      url: isSet(object.url) ? globalThis.String(object.url) : "",
-      severity: isSet(object.severity) ? logFrontendRequest_SeverityFromJSON(object.severity) : 0,
-    };
-  },
-
-  toJSON(message: LogFrontendRequest): unknown {
-    const obj: any = {};
-    if (message.message !== "") {
-      obj.message = message.message;
-    }
-    if (message.source !== "") {
-      obj.source = message.source;
-    }
-    if (message.lineno !== 0) {
-      obj.lineno = Math.round(message.lineno);
-    }
-    if (message.colno !== 0) {
-      obj.colno = Math.round(message.colno);
-    }
-    if (message.stack !== "") {
-      obj.stack = message.stack;
-    }
-    if (message.componentStack !== "") {
-      obj.componentStack = message.componentStack;
-    }
-    if (message.url !== "") {
-      obj.url = message.url;
-    }
-    if (message.severity !== 0) {
-      obj.severity = logFrontendRequest_SeverityToJSON(message.severity);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<LogFrontendRequest>): LogFrontendRequest {
-    return LogFrontendRequest.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<LogFrontendRequest>): LogFrontendRequest {
-    const message = createBaseLogFrontendRequest() as any;
-    message.message = object.message ?? "";
-    message.source = object.source ?? "";
-    message.lineno = object.lineno ?? 0;
-    message.colno = object.colno ?? 0;
-    message.stack = object.stack ?? "";
-    message.componentStack = object.componentStack ?? "";
-    message.url = object.url ?? "";
-    message.severity = object.severity ?? 0;
-    return message;
-  },
-};
-
-function createBaseLogFrontendResponse(): LogFrontendResponse {
-  return {};
-}
-
-export const LogFrontendResponse: MessageFns<LogFrontendResponse> = {
-  encode(_: LogFrontendResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): LogFrontendResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseLogFrontendResponse() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(_: any): LogFrontendResponse {
-    return {};
-  },
-
-  toJSON(_: LogFrontendResponse): unknown {
-    const obj: any = {};
-    return obj;
-  },
-
-  create(base?: DeepPartial<LogFrontendResponse>): LogFrontendResponse {
-    return LogFrontendResponse.fromPartial(base ?? {});
-  },
-  fromPartial(_: DeepPartial<LogFrontendResponse>): LogFrontendResponse {
-    const message = createBaseLogFrontendResponse() as any;
     return message;
   },
 };
@@ -6701,8 +6435,6 @@ export interface FleetConsole {
    * debugging.
    */
   PingUfs(request: PingUfsRequest): Promise<PingUfsResponse>;
-  /** LogFrontend used to collect logs from the frontend */
-  LogFrontend(request: LogFrontendRequest): Promise<LogFrontendResponse>;
   /** ListDevices managed by Device Manager. */
   ListDevices(request: ListDevicesRequest): Promise<ListDevicesResponse>;
   /**
@@ -6759,7 +6491,6 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.PingBigQuery = this.PingBigQuery.bind(this);
     this.PingDeviceManager = this.PingDeviceManager.bind(this);
     this.PingUfs = this.PingUfs.bind(this);
-    this.LogFrontend = this.LogFrontend.bind(this);
     this.ListDevices = this.ListDevices.bind(this);
     this.GetDeviceDimensions = this.GetDeviceDimensions.bind(this);
     this.CountDevices = this.CountDevices.bind(this);
@@ -6800,12 +6531,6 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = PingUfsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "PingUfs", data);
     return promise.then((data) => PingUfsResponse.fromJSON(data));
-  }
-
-  LogFrontend(request: LogFrontendRequest): Promise<LogFrontendResponse> {
-    const data = LogFrontendRequest.toJSON(request);
-    const promise = this.rpc.request(this.service, "LogFrontend", data);
-    return promise.then((data) => LogFrontendResponse.fromJSON(data));
   }
 
   ListDevices(request: ListDevicesRequest): Promise<ListDevicesResponse> {
