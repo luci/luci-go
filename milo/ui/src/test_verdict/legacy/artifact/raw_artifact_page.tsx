@@ -42,7 +42,7 @@ export function RawArtifactPage() {
     // Use window.location.replace instead of useNavigate so the route isn't
     // intercepted by react-router.
     window.location.replace(getRawArtifactURLPath(artifactName));
-  }, []);
+  }, [artifactName]);
 
   return <>Redirecting to the new raw artifact URL...</>;
 }

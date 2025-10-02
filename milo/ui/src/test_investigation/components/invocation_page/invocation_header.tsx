@@ -16,6 +16,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import CommitIcon from '@mui/icons-material/Commit';
 import { Link } from '@mui/material';
 import { DateTime } from 'luxon';
+import { useMemo } from 'react';
 
 import {
   PageSummaryLine,
@@ -23,27 +24,38 @@ import {
 } from '@/common/components/page_summary_line';
 import { PageTitle } from '@/common/components/page_title';
 import { Timestamp } from '@/common/components/timestamp';
-import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
+import { Sources } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 import {
   formatAllCLs,
+  getBuildId,
   getCommitGitilesUrlFromInvocation,
   getCommitInfoFromInvocation,
+  getSourcesFromInvocation,
 } from '@/test_investigation/utils/test_info_utils';
 
 interface InvocationHeaderProps {
-  invocation: Invocation;
+  invocation: AnyInvocation;
 }
 
 export function InvocationHeader({ invocation }: InvocationHeaderProps) {
-  const displayInvocationId = invocation.name.startsWith('invocations/')
-    ? invocation.name.substring('invocations/'.length)
-    : invocation.name;
-  const buildbucketId = displayInvocationId.startsWith('build-')
-    ? displayInvocationId.substring('build-'.length)
-    : undefined;
+  const displayInvocationId = invocation.name.substring(
+    invocation.name.indexOf('/') + 1,
+  );
+  const buildbucketId = getBuildId(invocation);
+
   const commitInfo = getCommitInfoFromInvocation(invocation);
   const commitLink = getCommitGitilesUrlFromInvocation(invocation);
-  const cls = formatAllCLs(invocation.sourceSpec?.sources?.changelists);
+
+  const sources: Sources | undefined | null = useMemo(() => {
+    if (!invocation) {
+      return undefined;
+    }
+    return getSourcesFromInvocation(invocation);
+  }, [invocation]);
+
+  const cls = formatAllCLs(sources?.changelists);
+
   return (
     <>
       <PageTitle viewName="Invocation" resourceName={displayInvocationId} />
@@ -72,7 +84,6 @@ export function InvocationHeader({ invocation }: InvocationHeaderProps) {
             <Link href={cls[0].url} target="_blank" rel="noopener noreferrer">
               {cls[0].display}
             </Link>
-            {/* TODO: Add CL popover here */}
             {cls.length > 1 && <> + {cls.length - 1} more</>}
           </SummaryLineItem>
         )}

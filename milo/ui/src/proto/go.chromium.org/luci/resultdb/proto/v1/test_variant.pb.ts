@@ -7,8 +7,9 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { TestIdentifier, Variant } from "./common.pb";
+import { TestExoneration } from "./test_exoneration.pb";
 import { TestMetadata } from "./test_metadata.pb";
-import { TestExoneration, TestResult } from "./test_result.pb";
+import { TestResult } from "./test_result.pb";
 import {
   TestVerdict_Status,
   testVerdict_StatusFromJSON,

@@ -15,7 +15,7 @@
 import React from 'react';
 
 import { OutputTestVerdict } from '@/common/types/verdict';
-import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 
 import { InvocationContext, TestVariantContext } from './context';
 
@@ -24,9 +24,10 @@ interface Props {
 }
 
 interface InvocationProviderProps extends Props {
-  invocation: Invocation;
+  invocation: AnyInvocation;
   rawInvocationId: string;
   project: string | undefined;
+  isLegacyInvocation: boolean;
   children: React.ReactNode;
 }
 
@@ -34,6 +35,7 @@ export function InvocationProvider({
   invocation,
   rawInvocationId,
   project,
+  isLegacyInvocation,
   children,
 }: InvocationProviderProps) {
   return (
@@ -42,6 +44,7 @@ export function InvocationProvider({
         invocation,
         rawInvocationId,
         project,
+        isLegacyInvocation,
       }}
     >
       {children}

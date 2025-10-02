@@ -8,7 +8,7 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Struct } from "../../../../../google/protobuf/struct.pb";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
-import { ModuleIdentifier, StringPair } from "./common.pb";
+import { ModuleIdentifier, StringPair, WorkUnitView, workUnitViewFromJSON, workUnitViewToJSON } from "./common.pb";
 import { Instructions } from "./instruction.pb";
 
 export const protobufPackage = "luci.resultdb.v1";
@@ -318,6 +318,53 @@ export function workUnit_StateToJSON(object: WorkUnit_State): string {
 export interface WorkUnit_ExtendedPropertiesEntry {
   readonly key: string;
   readonly value: { readonly [key: string]: any } | undefined;
+}
+
+/** A request message for the GetWorkUnit RPC. */
+export interface GetWorkUnitRequest {
+  /** The name of the work unit to read, see WorkUnit.name. */
+  readonly name: string;
+  /** The view to apply to the returned work unit. Defaults to BASIC. */
+  readonly view: WorkUnitView;
+}
+
+/**
+ * A request message for the BatchGetWorkUnits RPC.
+ *
+ * As per google.aip.dev/231, this request will be handled atomically:
+ * either it will succeed in reading all nominated work units or it will fail.
+ */
+export interface BatchGetWorkUnitsRequest {
+  /**
+   * The parent root invocation shared by all work units being retrieved.
+   * Format: rootInvocations/{root_invocation_id}
+   * The parent of all work units specified in `names` must match this
+   * field.
+   * Required.
+   */
+  readonly parent: string;
+  /**
+   * The names of the work units to retrieve.
+   * A maximum of 500 work units can be retrieved in a batch.
+   * Format: rootInvocations/{root_invocation_id}/workUnits/{work_unit_id}
+   */
+  readonly names: readonly string[];
+  /**
+   * The view to apply to returned work units. Using the view BASIC is
+   * strongly recommended as response size limits could be easily exceeded
+   * if FULL is used (as each work unit's extended properties may be up to
+   * ~2MB). Defaults to BASIC.
+   */
+  readonly view: WorkUnitView;
+}
+
+/** A response message for the BatchGetWorkUnits RPC. */
+export interface BatchGetWorkUnitsResponse {
+  /**
+   * The work units requested. These will appear in the same order as
+   * names in the request, i.e. work_units[i] corresponds to names[i].
+   */
+  readonly workUnits: readonly WorkUnit[];
 }
 
 function createBaseWorkUnit(): WorkUnit {
@@ -827,6 +874,236 @@ export const WorkUnit_ExtendedPropertiesEntry: MessageFns<WorkUnit_ExtendedPrope
     const message = createBaseWorkUnit_ExtendedPropertiesEntry() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? undefined;
+    return message;
+  },
+};
+
+function createBaseGetWorkUnitRequest(): GetWorkUnitRequest {
+  return { name: "", view: 0 };
+}
+
+export const GetWorkUnitRequest: MessageFns<GetWorkUnitRequest> = {
+  encode(message: GetWorkUnitRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.view !== 0) {
+      writer.uint32(16).int32(message.view);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetWorkUnitRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetWorkUnitRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.view = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetWorkUnitRequest {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      view: isSet(object.view) ? workUnitViewFromJSON(object.view) : 0,
+    };
+  },
+
+  toJSON(message: GetWorkUnitRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.view !== 0) {
+      obj.view = workUnitViewToJSON(message.view);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetWorkUnitRequest>): GetWorkUnitRequest {
+    return GetWorkUnitRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetWorkUnitRequest>): GetWorkUnitRequest {
+    const message = createBaseGetWorkUnitRequest() as any;
+    message.name = object.name ?? "";
+    message.view = object.view ?? 0;
+    return message;
+  },
+};
+
+function createBaseBatchGetWorkUnitsRequest(): BatchGetWorkUnitsRequest {
+  return { parent: "", names: [], view: 0 };
+}
+
+export const BatchGetWorkUnitsRequest: MessageFns<BatchGetWorkUnitsRequest> = {
+  encode(message: BatchGetWorkUnitsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.parent !== "") {
+      writer.uint32(10).string(message.parent);
+    }
+    for (const v of message.names) {
+      writer.uint32(18).string(v!);
+    }
+    if (message.view !== 0) {
+      writer.uint32(24).int32(message.view);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BatchGetWorkUnitsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBatchGetWorkUnitsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.parent = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.names.push(reader.string());
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.view = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BatchGetWorkUnitsRequest {
+    return {
+      parent: isSet(object.parent) ? globalThis.String(object.parent) : "",
+      names: globalThis.Array.isArray(object?.names) ? object.names.map((e: any) => globalThis.String(e)) : [],
+      view: isSet(object.view) ? workUnitViewFromJSON(object.view) : 0,
+    };
+  },
+
+  toJSON(message: BatchGetWorkUnitsRequest): unknown {
+    const obj: any = {};
+    if (message.parent !== "") {
+      obj.parent = message.parent;
+    }
+    if (message.names?.length) {
+      obj.names = message.names;
+    }
+    if (message.view !== 0) {
+      obj.view = workUnitViewToJSON(message.view);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BatchGetWorkUnitsRequest>): BatchGetWorkUnitsRequest {
+    return BatchGetWorkUnitsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BatchGetWorkUnitsRequest>): BatchGetWorkUnitsRequest {
+    const message = createBaseBatchGetWorkUnitsRequest() as any;
+    message.parent = object.parent ?? "";
+    message.names = object.names?.map((e) => e) || [];
+    message.view = object.view ?? 0;
+    return message;
+  },
+};
+
+function createBaseBatchGetWorkUnitsResponse(): BatchGetWorkUnitsResponse {
+  return { workUnits: [] };
+}
+
+export const BatchGetWorkUnitsResponse: MessageFns<BatchGetWorkUnitsResponse> = {
+  encode(message: BatchGetWorkUnitsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.workUnits) {
+      WorkUnit.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BatchGetWorkUnitsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBatchGetWorkUnitsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.workUnits.push(WorkUnit.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BatchGetWorkUnitsResponse {
+    return {
+      workUnits: globalThis.Array.isArray(object?.workUnits)
+        ? object.workUnits.map((e: any) => WorkUnit.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: BatchGetWorkUnitsResponse): unknown {
+    const obj: any = {};
+    if (message.workUnits?.length) {
+      obj.workUnits = message.workUnits.map((e) => WorkUnit.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BatchGetWorkUnitsResponse>): BatchGetWorkUnitsResponse {
+    return BatchGetWorkUnitsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BatchGetWorkUnitsResponse>): BatchGetWorkUnitsResponse {
+    const message = createBaseBatchGetWorkUnitsResponse() as any;
+    message.workUnits = object.workUnits?.map((e) => WorkUnit.fromPartial(e)) || [];
     return message;
   },
 };

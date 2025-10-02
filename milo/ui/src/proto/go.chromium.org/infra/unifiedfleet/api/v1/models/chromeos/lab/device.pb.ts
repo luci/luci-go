@@ -197,10 +197,15 @@ export interface Labstation {
   readonly hive: string;
 }
 
-/** Next Tag: 3 */
+/** Next Tag: 5 */
 export interface Devboard {
+  /** @deprecated */
   readonly servo: Servo | undefined;
   readonly pools: readonly string[];
+  /** USB serial number of debugger (for ex. hyperdebug) attached to the shield. */
+  readonly debugger: string;
+  /** GSC serial of the chip in the shield board. */
+  readonly gsc: string;
 }
 
 function createBaseChromeOSDevice(): ChromeOSDevice {
@@ -879,7 +884,7 @@ export const Labstation: MessageFns<Labstation> = {
 };
 
 function createBaseDevboard(): Devboard {
-  return { servo: undefined, pools: [] };
+  return { servo: undefined, pools: [], debugger: "", gsc: "" };
 }
 
 export const Devboard: MessageFns<Devboard> = {
@@ -889,6 +894,12 @@ export const Devboard: MessageFns<Devboard> = {
     }
     for (const v of message.pools) {
       writer.uint32(18).string(v!);
+    }
+    if (message.debugger !== "") {
+      writer.uint32(26).string(message.debugger);
+    }
+    if (message.gsc !== "") {
+      writer.uint32(34).string(message.gsc);
     }
     return writer;
   },
@@ -916,6 +927,22 @@ export const Devboard: MessageFns<Devboard> = {
           message.pools.push(reader.string());
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.debugger = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.gsc = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -929,6 +956,8 @@ export const Devboard: MessageFns<Devboard> = {
     return {
       servo: isSet(object.servo) ? Servo.fromJSON(object.servo) : undefined,
       pools: globalThis.Array.isArray(object?.pools) ? object.pools.map((e: any) => globalThis.String(e)) : [],
+      debugger: isSet(object.debugger) ? globalThis.String(object.debugger) : "",
+      gsc: isSet(object.gsc) ? globalThis.String(object.gsc) : "",
     };
   },
 
@@ -940,6 +969,12 @@ export const Devboard: MessageFns<Devboard> = {
     if (message.pools?.length) {
       obj.pools = message.pools;
     }
+    if (message.debugger !== "") {
+      obj.debugger = message.debugger;
+    }
+    if (message.gsc !== "") {
+      obj.gsc = message.gsc;
+    }
     return obj;
   },
 
@@ -950,6 +985,8 @@ export const Devboard: MessageFns<Devboard> = {
     const message = createBaseDevboard() as any;
     message.servo = (object.servo !== undefined && object.servo !== null) ? Servo.fromPartial(object.servo) : undefined;
     message.pools = object.pools?.map((e) => e) || [];
+    message.debugger = object.debugger ?? "";
+    message.gsc = object.gsc ?? "";
     return message;
   },
 };

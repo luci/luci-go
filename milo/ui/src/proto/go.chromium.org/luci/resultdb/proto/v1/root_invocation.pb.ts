@@ -180,6 +180,13 @@ export interface RootInvocation {
    * presubmit checks, such as to validate they are not flaky.
    */
   readonly baselineId: string;
+  /**
+   * This checksum is computed by the server based on the value of other
+   * fields, and may be sent on update requests to ensure the client
+   * has an up-to-date value before proceeding.
+   * See also https://google.aip.dev/154.
+   */
+  readonly etag: string;
 }
 
 export enum RootInvocation_State {
@@ -237,6 +244,12 @@ export function rootInvocation_StateToJSON(object: RootInvocation_State): string
   }
 }
 
+/** A request message for the GetRootInvocation RPC. */
+export interface GetRootInvocationRequest {
+  /** The name of the root invocation to read, see RootInvocation.name. */
+  readonly name: string;
+}
+
 function createBaseRootInvocation(): RootInvocation {
   return {
     name: "",
@@ -255,6 +268,7 @@ function createBaseRootInvocation(): RootInvocation {
     tags: [],
     properties: undefined,
     baselineId: "",
+    etag: "",
   };
 }
 
@@ -307,6 +321,9 @@ export const RootInvocation: MessageFns<RootInvocation> = {
     }
     if (message.baselineId !== "") {
       writer.uint32(122).string(message.baselineId);
+    }
+    if (message.etag !== "") {
+      writer.uint32(130).string(message.etag);
     }
     return writer;
   },
@@ -446,6 +463,14 @@ export const RootInvocation: MessageFns<RootInvocation> = {
           message.baselineId = reader.string();
           continue;
         }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.etag = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -473,6 +498,7 @@ export const RootInvocation: MessageFns<RootInvocation> = {
       tags: globalThis.Array.isArray(object?.tags) ? object.tags.map((e: any) => StringPair.fromJSON(e)) : [],
       properties: isObject(object.properties) ? object.properties : undefined,
       baselineId: isSet(object.baselineId) ? globalThis.String(object.baselineId) : "",
+      etag: isSet(object.etag) ? globalThis.String(object.etag) : "",
     };
   },
 
@@ -526,6 +552,9 @@ export const RootInvocation: MessageFns<RootInvocation> = {
     if (message.baselineId !== "") {
       obj.baselineId = message.baselineId;
     }
+    if (message.etag !== "") {
+      obj.etag = message.etag;
+    }
     return obj;
   },
 
@@ -552,6 +581,65 @@ export const RootInvocation: MessageFns<RootInvocation> = {
     message.tags = object.tags?.map((e) => StringPair.fromPartial(e)) || [];
     message.properties = object.properties ?? undefined;
     message.baselineId = object.baselineId ?? "";
+    message.etag = object.etag ?? "";
+    return message;
+  },
+};
+
+function createBaseGetRootInvocationRequest(): GetRootInvocationRequest {
+  return { name: "" };
+}
+
+export const GetRootInvocationRequest: MessageFns<GetRootInvocationRequest> = {
+  encode(message: GetRootInvocationRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetRootInvocationRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetRootInvocationRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetRootInvocationRequest {
+    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
+  },
+
+  toJSON(message: GetRootInvocationRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetRootInvocationRequest>): GetRootInvocationRequest {
+    return GetRootInvocationRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetRootInvocationRequest>): GetRootInvocationRequest {
+    const message = createBaseGetRootInvocationRequest() as any;
+    message.name = object.name ?? "";
     return message;
   },
 };

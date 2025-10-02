@@ -19,12 +19,12 @@ import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { InstructionDialog } from '@/common/components/instruction_hint/instruction_dialog';
 import { pairsToPlaceholderDict } from '@/common/tools/instruction/instruction_utils';
 import { useInvocation, useTestVariant } from '@/test_investigation/context';
-
 import {
   constructFileBugUrl,
   constructCodesearchUrl,
   getVariantValue,
-} from '../../../utils/test_info_utils';
+  getSourcesFromInvocation,
+} from '@/test_investigation/utils/test_info_utils';
 
 import { SourceInfoTooltipContent } from './source_info_tooltip_content';
 
@@ -51,7 +51,7 @@ export function OverviewActionsSection() {
     [testLocation],
   );
 
-  const sourceRef = invocation.sourceSpec?.sources?.gitilesCommit?.ref;
+  const sourceRef = getSourcesFromInvocation(invocation)?.gitilesCommit?.ref;
 
   const instructionPlaceHolderData = () => {
     const resultBundle = testVariant.results || [];

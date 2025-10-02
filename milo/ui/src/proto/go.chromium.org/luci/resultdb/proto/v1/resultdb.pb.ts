@@ -26,11 +26,11 @@ import {
   TestMetadataPredicate,
   TestResultPredicate,
 } from "./predicate.pb";
-import { RootInvocation } from "./root_invocation.pb";
+import { GetRootInvocationRequest, RootInvocation } from "./root_invocation.pb";
 import { TestAggregation } from "./test_aggregation.pb";
+import { TestExoneration } from "./test_exoneration.pb";
 import { TestMetadataDetail } from "./test_metadata.pb";
 import {
-  TestExoneration,
   TestResult,
   TestResult_Status,
   testResult_StatusFromJSON,
@@ -41,107 +41,9 @@ import {
 } from "./test_result.pb";
 import { RunTestVerdict, TestVariant, TestVariantPredicate } from "./test_variant.pb";
 import { TestVerdict } from "./test_verdict.pb";
-import { WorkUnit } from "./work_unit.pb";
+import { BatchGetWorkUnitsRequest, BatchGetWorkUnitsResponse, GetWorkUnitRequest, WorkUnit } from "./work_unit.pb";
 
 export const protobufPackage = "luci.resultdb.v1";
-
-/**
- * WorkUnitView represents the set of work unit fields to be retrieved.
- * See https://google.aip.dev/157.
- */
-export enum WorkUnitView {
-  /** WORK_UNIT_VIEW_UNSPECIFIED - The default / unset value. The API will default to the basic view. */
-  WORK_UNIT_VIEW_UNSPECIFIED = 0,
-  /**
-   * WORK_UNIT_VIEW_BASIC - Include basic information about the work unit. Excludes
-   * extended_properties.
-   */
-  WORK_UNIT_VIEW_BASIC = 1,
-  /** WORK_UNIT_VIEW_FULL - Include all fields, including extended_properties. */
-  WORK_UNIT_VIEW_FULL = 2,
-}
-
-export function workUnitViewFromJSON(object: any): WorkUnitView {
-  switch (object) {
-    case 0:
-    case "WORK_UNIT_VIEW_UNSPECIFIED":
-      return WorkUnitView.WORK_UNIT_VIEW_UNSPECIFIED;
-    case 1:
-    case "WORK_UNIT_VIEW_BASIC":
-      return WorkUnitView.WORK_UNIT_VIEW_BASIC;
-    case 2:
-    case "WORK_UNIT_VIEW_FULL":
-      return WorkUnitView.WORK_UNIT_VIEW_FULL;
-    default:
-      throw new globalThis.Error("Unrecognized enum value " + object + " for enum WorkUnitView");
-  }
-}
-
-export function workUnitViewToJSON(object: WorkUnitView): string {
-  switch (object) {
-    case WorkUnitView.WORK_UNIT_VIEW_UNSPECIFIED:
-      return "WORK_UNIT_VIEW_UNSPECIFIED";
-    case WorkUnitView.WORK_UNIT_VIEW_BASIC:
-      return "WORK_UNIT_VIEW_BASIC";
-    case WorkUnitView.WORK_UNIT_VIEW_FULL:
-      return "WORK_UNIT_VIEW_FULL";
-    default:
-      throw new globalThis.Error("Unrecognized enum value " + object + " for enum WorkUnitView");
-  }
-}
-
-/** A request message for the GetRootInvocation RPC. */
-export interface GetRootInvocationRequest {
-  /** The name of the root invocation to read, see RootInvocation.name. */
-  readonly name: string;
-}
-
-/** A request message for the GetWorkUnit RPC. */
-export interface GetWorkUnitRequest {
-  /** The name of the work unit to read, see WorkUnit.name. */
-  readonly name: string;
-  /** The view to apply to the returned work unit. Defaults to BASIC. */
-  readonly view: WorkUnitView;
-}
-
-/**
- * A request message for the BatchGetWorkUnits RPC.
- *
- * As per google.aip.dev/231, this request will be handled atomically:
- * either it will succeed in reading all nominated work units or it will fail.
- */
-export interface BatchGetWorkUnitsRequest {
-  /**
-   * The parent root invocation shared by all work units being retrieved.
-   * Format: rootInvocations/{root_invocation_id}
-   * The parent of all work units specified in `names` must match this
-   * field.
-   * Required.
-   */
-  readonly parent: string;
-  /**
-   * The names of the work units to retrieve.
-   * A maximum of 500 work units can be retrieved in a batch.
-   * Format: rootInvocations/{root_invocation_id}/workUnits/{work_unit_id}
-   */
-  readonly names: readonly string[];
-  /**
-   * The view to apply to returned work units. Using the view BASIC is
-   * strongly recommended as response size limits could be easily exceeded
-   * if FULL is used (as each work unit's extended properties may be up to
-   * ~2MB). Defaults to BASIC.
-   */
-  readonly view: WorkUnitView;
-}
-
-/** A response message for the BatchGetWorkUnits RPC. */
-export interface BatchGetWorkUnitsResponse {
-  /**
-   * The work units requested. These will appear in the same order as
-   * names in the request, i.e. work_units[i] corresponds to names[i].
-   */
-  readonly workUnits: readonly WorkUnit[];
-}
 
 /** A request message for GetInvocation RPC. */
 export interface GetInvocationRequest {
@@ -390,8 +292,9 @@ export interface GetArtifactRequest {
 /** A request message for ListArtifacts RPC. */
 export interface ListArtifactsRequest {
   /**
-   * Name of the parent, e.g. an invocation (see Invocation.name) or
-   * a test result (see TestResult.name).
+   * Name of the parent, e.g. a work unit (see WorkUnit.name),
+   * a test result (see TestResult.name), or a legacy invocation name
+   * (see Invocation.name).
    */
   readonly parent: string;
   /**
@@ -420,7 +323,7 @@ export interface ListArtifactsResponse {
    * A token, which can be sent as `page_token` to retrieve the next page.
    * If this field is omitted, there were no subsequent pages at the time of
    * request.
-   * If the invocation is not finalized, more results may appear later.
+   * If the work unit is not finalized, more results may appear later.
    */
   readonly nextPageToken: string;
 }
@@ -584,14 +487,22 @@ export interface QueryArtifactFailureOnlyLinesResponse_LineRange {
 
 /**
  * A request message for QueryTestVariants RPC.
- * Next id: 10.
+ * Next id: 12.
  */
 export interface QueryTestVariantsRequest {
+  /**
+   * The name of the root invocation to retrieve test variants from, see RootInvocation.name.
+   * Should be empty if invocations field is specified.
+   */
+  readonly parent: string;
   /**
    * Retrieve test verdicts included in these invocations, directly or indirectly
    * (via Invocation.included_invocations).
    *
    * As of April 2024, a maximum of one invocation may be specified.
+   * DEPRECATED: Use parent instead.
+   *
+   * @deprecated
    */
   readonly invocations: readonly string[];
   /** A test variant must satisfy this predicate. */
@@ -775,9 +686,22 @@ export interface QueryRunTestVerdictsResponse {
   readonly nextPageToken: string;
 }
 
-/** A request message for BatchGetTestVariants RPC. */
+/**
+ * A request message for BatchGetTestVariants RPC.
+ * Next ID: 5.
+ */
 export interface BatchGetTestVariantsRequest {
-  /** Name of the invocation that the test variants are in. */
+  /**
+   * Name of the root invocation that the test variants are in, see RootInvocation.name.
+   * Should be empty if invocation is specified.
+   */
+  readonly parent: string;
+  /**
+   * Name of the invocation that the test variants are in.
+   * DEPRECATED: Use parent instead.
+   *
+   * @deprecated
+   */
   readonly invocation: string;
   /**
    * A list of test variants to query. Size is limited to 500.
@@ -1498,294 +1422,6 @@ export interface QueryTestVerdictsResponse {
    */
   readonly nextPageToken: string;
 }
-
-function createBaseGetRootInvocationRequest(): GetRootInvocationRequest {
-  return { name: "" };
-}
-
-export const GetRootInvocationRequest: MessageFns<GetRootInvocationRequest> = {
-  encode(message: GetRootInvocationRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.name !== "") {
-      writer.uint32(10).string(message.name);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): GetRootInvocationRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetRootInvocationRequest() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.name = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): GetRootInvocationRequest {
-    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
-  },
-
-  toJSON(message: GetRootInvocationRequest): unknown {
-    const obj: any = {};
-    if (message.name !== "") {
-      obj.name = message.name;
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<GetRootInvocationRequest>): GetRootInvocationRequest {
-    return GetRootInvocationRequest.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<GetRootInvocationRequest>): GetRootInvocationRequest {
-    const message = createBaseGetRootInvocationRequest() as any;
-    message.name = object.name ?? "";
-    return message;
-  },
-};
-
-function createBaseGetWorkUnitRequest(): GetWorkUnitRequest {
-  return { name: "", view: 0 };
-}
-
-export const GetWorkUnitRequest: MessageFns<GetWorkUnitRequest> = {
-  encode(message: GetWorkUnitRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.name !== "") {
-      writer.uint32(10).string(message.name);
-    }
-    if (message.view !== 0) {
-      writer.uint32(16).int32(message.view);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): GetWorkUnitRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetWorkUnitRequest() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.name = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 16) {
-            break;
-          }
-
-          message.view = reader.int32() as any;
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): GetWorkUnitRequest {
-    return {
-      name: isSet(object.name) ? globalThis.String(object.name) : "",
-      view: isSet(object.view) ? workUnitViewFromJSON(object.view) : 0,
-    };
-  },
-
-  toJSON(message: GetWorkUnitRequest): unknown {
-    const obj: any = {};
-    if (message.name !== "") {
-      obj.name = message.name;
-    }
-    if (message.view !== 0) {
-      obj.view = workUnitViewToJSON(message.view);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<GetWorkUnitRequest>): GetWorkUnitRequest {
-    return GetWorkUnitRequest.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<GetWorkUnitRequest>): GetWorkUnitRequest {
-    const message = createBaseGetWorkUnitRequest() as any;
-    message.name = object.name ?? "";
-    message.view = object.view ?? 0;
-    return message;
-  },
-};
-
-function createBaseBatchGetWorkUnitsRequest(): BatchGetWorkUnitsRequest {
-  return { parent: "", names: [], view: 0 };
-}
-
-export const BatchGetWorkUnitsRequest: MessageFns<BatchGetWorkUnitsRequest> = {
-  encode(message: BatchGetWorkUnitsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.parent !== "") {
-      writer.uint32(10).string(message.parent);
-    }
-    for (const v of message.names) {
-      writer.uint32(18).string(v!);
-    }
-    if (message.view !== 0) {
-      writer.uint32(24).int32(message.view);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): BatchGetWorkUnitsRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseBatchGetWorkUnitsRequest() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.parent = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.names.push(reader.string());
-          continue;
-        }
-        case 3: {
-          if (tag !== 24) {
-            break;
-          }
-
-          message.view = reader.int32() as any;
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): BatchGetWorkUnitsRequest {
-    return {
-      parent: isSet(object.parent) ? globalThis.String(object.parent) : "",
-      names: globalThis.Array.isArray(object?.names) ? object.names.map((e: any) => globalThis.String(e)) : [],
-      view: isSet(object.view) ? workUnitViewFromJSON(object.view) : 0,
-    };
-  },
-
-  toJSON(message: BatchGetWorkUnitsRequest): unknown {
-    const obj: any = {};
-    if (message.parent !== "") {
-      obj.parent = message.parent;
-    }
-    if (message.names?.length) {
-      obj.names = message.names;
-    }
-    if (message.view !== 0) {
-      obj.view = workUnitViewToJSON(message.view);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<BatchGetWorkUnitsRequest>): BatchGetWorkUnitsRequest {
-    return BatchGetWorkUnitsRequest.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<BatchGetWorkUnitsRequest>): BatchGetWorkUnitsRequest {
-    const message = createBaseBatchGetWorkUnitsRequest() as any;
-    message.parent = object.parent ?? "";
-    message.names = object.names?.map((e) => e) || [];
-    message.view = object.view ?? 0;
-    return message;
-  },
-};
-
-function createBaseBatchGetWorkUnitsResponse(): BatchGetWorkUnitsResponse {
-  return { workUnits: [] };
-}
-
-export const BatchGetWorkUnitsResponse: MessageFns<BatchGetWorkUnitsResponse> = {
-  encode(message: BatchGetWorkUnitsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.workUnits) {
-      WorkUnit.encode(v!, writer.uint32(10).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): BatchGetWorkUnitsResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseBatchGetWorkUnitsResponse() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.workUnits.push(WorkUnit.decode(reader, reader.uint32()));
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): BatchGetWorkUnitsResponse {
-    return {
-      workUnits: globalThis.Array.isArray(object?.workUnits)
-        ? object.workUnits.map((e: any) => WorkUnit.fromJSON(e))
-        : [],
-    };
-  },
-
-  toJSON(message: BatchGetWorkUnitsResponse): unknown {
-    const obj: any = {};
-    if (message.workUnits?.length) {
-      obj.workUnits = message.workUnits.map((e) => WorkUnit.toJSON(e));
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<BatchGetWorkUnitsResponse>): BatchGetWorkUnitsResponse {
-    return BatchGetWorkUnitsResponse.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<BatchGetWorkUnitsResponse>): BatchGetWorkUnitsResponse {
-    const message = createBaseBatchGetWorkUnitsResponse() as any;
-    message.workUnits = object.workUnits?.map((e) => WorkUnit.fromPartial(e)) || [];
-    return message;
-  },
-};
 
 function createBaseGetInvocationRequest(): GetInvocationRequest {
   return { name: "" };
@@ -3817,6 +3453,7 @@ export const QueryArtifactFailureOnlyLinesResponse_LineRange: MessageFns<
 
 function createBaseQueryTestVariantsRequest(): QueryTestVariantsRequest {
   return {
+    parent: "",
     invocations: [],
     predicate: undefined,
     resultLimit: 0,
@@ -3830,6 +3467,9 @@ function createBaseQueryTestVariantsRequest(): QueryTestVariantsRequest {
 
 export const QueryTestVariantsRequest: MessageFns<QueryTestVariantsRequest> = {
   encode(message: QueryTestVariantsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.parent !== "") {
+      writer.uint32(90).string(message.parent);
+    }
     for (const v of message.invocations) {
       writer.uint32(18).string(v!);
     }
@@ -3864,6 +3504,14 @@ export const QueryTestVariantsRequest: MessageFns<QueryTestVariantsRequest> = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.parent = reader.string();
+          continue;
+        }
         case 2: {
           if (tag !== 18) {
             break;
@@ -3939,6 +3587,7 @@ export const QueryTestVariantsRequest: MessageFns<QueryTestVariantsRequest> = {
 
   fromJSON(object: any): QueryTestVariantsRequest {
     return {
+      parent: isSet(object.parent) ? globalThis.String(object.parent) : "",
       invocations: globalThis.Array.isArray(object?.invocations)
         ? object.invocations.map((e: any) => globalThis.String(e))
         : [],
@@ -3954,6 +3603,9 @@ export const QueryTestVariantsRequest: MessageFns<QueryTestVariantsRequest> = {
 
   toJSON(message: QueryTestVariantsRequest): unknown {
     const obj: any = {};
+    if (message.parent !== "") {
+      obj.parent = message.parent;
+    }
     if (message.invocations?.length) {
       obj.invocations = message.invocations;
     }
@@ -3986,6 +3638,7 @@ export const QueryTestVariantsRequest: MessageFns<QueryTestVariantsRequest> = {
   },
   fromPartial(object: DeepPartial<QueryTestVariantsRequest>): QueryTestVariantsRequest {
     const message = createBaseQueryTestVariantsRequest() as any;
+    message.parent = object.parent ?? "";
     message.invocations = object.invocations?.map((e) => e) || [];
     message.predicate = (object.predicate !== undefined && object.predicate !== null)
       ? TestVariantPredicate.fromPartial(object.predicate)
@@ -4378,11 +4031,14 @@ export const QueryRunTestVerdictsResponse: MessageFns<QueryRunTestVerdictsRespon
 };
 
 function createBaseBatchGetTestVariantsRequest(): BatchGetTestVariantsRequest {
-  return { invocation: "", testVariants: [], resultLimit: 0 };
+  return { parent: "", invocation: "", testVariants: [], resultLimit: 0 };
 }
 
 export const BatchGetTestVariantsRequest: MessageFns<BatchGetTestVariantsRequest> = {
   encode(message: BatchGetTestVariantsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.parent !== "") {
+      writer.uint32(34).string(message.parent);
+    }
     if (message.invocation !== "") {
       writer.uint32(10).string(message.invocation);
     }
@@ -4402,6 +4058,14 @@ export const BatchGetTestVariantsRequest: MessageFns<BatchGetTestVariantsRequest
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.parent = reader.string();
+          continue;
+        }
         case 1: {
           if (tag !== 10) {
             break;
@@ -4437,6 +4101,7 @@ export const BatchGetTestVariantsRequest: MessageFns<BatchGetTestVariantsRequest
 
   fromJSON(object: any): BatchGetTestVariantsRequest {
     return {
+      parent: isSet(object.parent) ? globalThis.String(object.parent) : "",
       invocation: isSet(object.invocation) ? globalThis.String(object.invocation) : "",
       testVariants: globalThis.Array.isArray(object?.testVariants)
         ? object.testVariants.map((e: any) => BatchGetTestVariantsRequest_TestVariantIdentifier.fromJSON(e))
@@ -4447,6 +4112,9 @@ export const BatchGetTestVariantsRequest: MessageFns<BatchGetTestVariantsRequest
 
   toJSON(message: BatchGetTestVariantsRequest): unknown {
     const obj: any = {};
+    if (message.parent !== "") {
+      obj.parent = message.parent;
+    }
     if (message.invocation !== "") {
       obj.invocation = message.invocation;
     }
@@ -4464,6 +4132,7 @@ export const BatchGetTestVariantsRequest: MessageFns<BatchGetTestVariantsRequest
   },
   fromPartial(object: DeepPartial<BatchGetTestVariantsRequest>): BatchGetTestVariantsRequest {
     const message = createBaseBatchGetTestVariantsRequest() as any;
+    message.parent = object.parent ?? "";
     message.invocation = object.invocation ?? "";
     message.testVariants =
       object.testVariants?.map((e) => BatchGetTestVariantsRequest_TestVariantIdentifier.fromPartial(e)) || [];

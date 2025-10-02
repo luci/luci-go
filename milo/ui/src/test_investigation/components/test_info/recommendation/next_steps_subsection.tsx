@@ -26,6 +26,7 @@ import {
   useProject,
   useTestVariant,
 } from '@/test_investigation/context';
+import { getSourcesFromInvocation } from '@/test_investigation/utils/test_info_utils';
 
 import {
   useAssociatedBugs,
@@ -48,13 +49,15 @@ export function NextStepsSubsection({ expanded }: NextStepsSubsectionProps) {
   const invocation = useInvocation();
   const testVariantBranch = useTestVariantBranch();
 
+  const sources = getSourcesFromInvocation(invocation);
+
   const testVariantReq =
     QueryTestVariantStabilityRequest_TestVariantPosition.fromPartial({
       testId: testVariant.testId,
       variant: {
         def: testVariant.variant?.def || {},
       },
-      sources: Sources.fromPartial(invocation?.sourceSpec?.sources || {}),
+      sources: Sources.fromPartial(sources || {}),
     });
   const { data } = useQuery({
     ...client.QueryStability.query({

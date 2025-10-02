@@ -14,115 +14,18 @@
 
 import MenuIcon from '@mui/icons-material/Menu';
 import { Drawer, IconButton, Paper, Tooltip, useTheme } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useState } from 'react';
 
-import { useResultDbClient } from '@/common/hooks/prpc_clients';
-import {
-  QueryTestVariantsRequest,
-  QueryTestVariantsResponse,
-} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-import { useInvocation, useTestVariant } from '@/test_investigation/context';
-import { useRawInvocationId } from '@/test_investigation/context/context';
-
-import {
-  buildHierarchyTree,
-  buildFailureReasonTree,
-  HierarchyBuildResult,
-} from '../../utils/drawer_tree_utils';
-
+import { TestDrawerProvider } from './context'; // Import from the context directory
 import { DrawerContent } from './drawer_content';
 
 const DRAWER_WIDTH_OPEN = 600;
 
 export function TestNavigationDrawer() {
-  const navigate = useNavigate();
-
   const theme = useTheme();
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedTab, setSelectedTab] = useState(0);
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-
-  const resultDbClient = useResultDbClient();
-
-  const invocation = useInvocation();
-  const testVariant = useTestVariant();
-  const rawInvocationId = useRawInvocationId();
-
-  // TODO: Need to page if there is more than 1000 variants.
-  const { data: testVariantsResponse, isPending: isLoadingTestVariants } =
-    useQuery<QueryTestVariantsResponse | null, Error, readonly TestVariant[]>({
-      ...resultDbClient.QueryTestVariants.query(
-        QueryTestVariantsRequest.fromPartial({
-          invocations: [invocation.name],
-          resultLimit: 100,
-          pageSize: 1000,
-          readMask: [
-            'test_id',
-            'test_id_structured',
-            'variant_hash',
-            'variant.def',
-            'test_metadata.name',
-            'results.*.result.status_v2',
-            'results.*.result.failure_reason.primary_error_message',
-            'status',
-            'results.*.result.expected',
-          ],
-          orderBy: 'status_v2_effective',
-        }),
-      ),
-      enabled: !!invocation.name,
-      staleTime: 5 * 60 * 1000,
-      select: (data) => data?.testVariants || [],
-    });
-
-  const testVariants: readonly TestVariant[] = useMemo(
-    () => testVariantsResponse || [],
-    [testVariantsResponse],
-  );
-
-  const { tree: hierarchyTreeData, idsToExpand: hierarchyIdsToExpand } =
-    useMemo((): HierarchyBuildResult => {
-      return buildHierarchyTree(testVariants);
-    }, [testVariants]);
-
-  const failureReasonTreeData = useMemo(
-    () => buildFailureReasonTree(testVariants),
-    [testVariants],
-  );
-
-  // Effect to update expanded nodes when the current item or its expansion path changes
-  useEffect(() => {
-    if (hierarchyIdsToExpand && hierarchyIdsToExpand.length > 0) {
-      setExpandedNodes(new Set(hierarchyIdsToExpand));
-    }
-  }, [hierarchyIdsToExpand]);
 
   const handleToggleDrawer = () => setIsOpen(!isOpen);
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) =>
-    setSelectedTab(newValue);
-
-  const toggleNodeExpansion = useCallback((nodeId: string) => {
-    setExpandedNodes((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(nodeId)) newSet.delete(nodeId);
-      else newSet.add(nodeId);
-      return newSet;
-    });
-  }, []);
-
-  const handleDrawerTestSelection = (
-    selectedTestId: string,
-    selectedVariantHash: string,
-  ) => {
-    if (rawInvocationId && selectedTestId && selectedVariantHash) {
-      navigate(
-        `/ui/test-investigate/invocations/${rawInvocationId}/tests/${encodeURIComponent(selectedTestId)}/variants/${selectedVariantHash}`,
-      );
-    }
-  };
 
   return (
     <>
@@ -179,18 +82,9 @@ export function TestNavigationDrawer() {
         }}
         ModalProps={{ keepMounted: true }}
       >
-        <DrawerContent
-          selectedTab={selectedTab}
-          onTabChange={handleTabChange}
-          isLoadingTestVariants={isLoadingTestVariants}
-          hierarchyTreeData={hierarchyTreeData}
-          failureReasonTreeData={failureReasonTreeData}
-          expandedNodes={expandedNodes}
-          toggleNodeExpansion={toggleNodeExpansion}
-          currentTestId={testVariant.testId}
-          currentVariantHash={testVariant.variantHash}
-          onSelectTestVariant={handleDrawerTestSelection}
-        />
+        <TestDrawerProvider>
+          <DrawerContent />
+        </TestDrawerProvider>
       </Drawer>
     </>
   );

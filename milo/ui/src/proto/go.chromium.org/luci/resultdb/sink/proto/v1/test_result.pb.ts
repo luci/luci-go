@@ -11,10 +11,10 @@ import { Struct } from "../../../../../../google/protobuf/struct.pb";
 import { Timestamp } from "../../../../../../google/protobuf/timestamp.pb";
 import { StringPair, Variant } from "../../../proto/v1/common.pb";
 import { FailureReason } from "../../../proto/v1/failure_reason.pb";
+import { SkippedReason } from "../../../proto/v1/skipped_reason.pb";
 import { TestMetadata } from "../../../proto/v1/test_metadata.pb";
 import {
   FrameworkExtensions,
-  SkippedReason,
   TestResult_Status,
   testResult_StatusFromJSON,
   testResult_StatusToJSON,

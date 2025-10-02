@@ -106,6 +106,7 @@ describe('<AnalysisSubsection />', () => {
           project="test-project"
           invocation={effectiveInv}
           rawInvocationId={MOCK_RAW_INVOCATION_ID}
+          isLegacyInvocation={true}
         >
           <TestVariantProvider
             testVariant={effectiveTv as OutputTestVerdict}

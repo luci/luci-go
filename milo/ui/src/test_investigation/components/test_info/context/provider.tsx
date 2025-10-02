@@ -30,13 +30,17 @@ import {
   GitilesRef as AnalysisGitilesRef,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
 import { QueryTestVariantBranchRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { Sources } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import { TestStatus as ResultDbTestStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import {
   useInvocation,
   useProject,
   useTestVariant,
 } from '@/test_investigation/context';
-import { formatAllCLs } from '@/test_investigation/utils/test_info_utils';
+import {
+  formatAllCLs,
+  getSourcesFromInvocation,
+} from '@/test_investigation/utils/test_info_utils';
 
 import { TestInfoContext } from './context';
 interface Props {
@@ -47,9 +51,18 @@ export function TestInfoProvider({ children }: Props) {
   const invocation = useInvocation();
   const testVariant = useTestVariant();
   const project = useProject();
+
+  // Get the correct 'Sources' object based on invocation type.
+  const sources: Sources | undefined | null = useMemo(() => {
+    if (!invocation) {
+      return undefined;
+    }
+    return getSourcesFromInvocation(invocation);
+  }, [invocation]);
+
   const allFormattedCLs = useMemo(
-    () => formatAllCLs(invocation.sourceSpec?.sources?.changelists),
-    [invocation.sourceSpec?.sources?.changelists],
+    () => formatAllCLs(sources?.changelists),
+    [sources?.changelists],
   );
   const analysisClustersClient = useBatchedClustersClient();
   const analysisBranchesClient = useTestVariantBranchesClient();
@@ -116,7 +129,7 @@ export function TestInfoProvider({ children }: Props) {
   }, [associatedBugsQueries]);
 
   const sourceRefForAnalysis: AnalysisSourceRef | undefined = useMemo(() => {
-    const gc = invocation?.sourceSpec?.sources?.gitilesCommit;
+    const gc = sources?.gitilesCommit; // gc is resultdb.GitilesCommit
     if (gc?.host && gc.project && gc.ref) {
       return AnalysisSourceRef.fromPartial({
         gitiles: AnalysisGitilesRef.fromPartial({
@@ -127,7 +140,7 @@ export function TestInfoProvider({ children }: Props) {
       });
     }
     return undefined;
-  }, [invocation?.sourceSpec?.sources?.gitilesCommit]);
+  }, [sources?.gitilesCommit]);
 
   const testVariantBranchQueryEnabled = !!(
     project &&

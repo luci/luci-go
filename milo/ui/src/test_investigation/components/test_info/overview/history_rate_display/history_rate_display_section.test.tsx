@@ -1,4 +1,3 @@
-// src/test_investigation/components/test_info/overview/history_rate_display_section.test.tsx
 // Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,12 +22,14 @@ import {
   TestVariantBranch,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
+import { RootInvocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/root_invocation.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import { NO_HISTORY_DATA_TEXT } from '@/test_investigation/components/test_info/constants';
 import {
   InvocationProvider,
   TestVariantProvider,
 } from '@/test_investigation/context';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 import { FormattedCLInfo } from '@/test_investigation/utils/test_info_utils';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -62,13 +63,21 @@ const createMockSegment = (
 
 describe('<HistoryRateDisplaySection />', () => {
   let mockInvocation: Invocation;
+  let mockRootInvocation: RootInvocation;
   let mockTestVariant: TestVariant;
   let defaultTestInfoContextValue: TestInfoContextValue;
 
   beforeEach(() => {
     mockInvocation = Invocation.fromPartial({
+      name: 'invocations/inv-123',
       realm: `${MOCK_PROJECT_ID}:some-realm`,
       sourceSpec: { sources: { gitilesCommit: { position: '105' } } },
+    });
+    mockRootInvocation = RootInvocation.fromPartial({
+      name: 'rootInvocations/root-123',
+      realm: `${MOCK_PROJECT_ID}:some-realm`,
+      rootInvocationId: 'root-123',
+      sources: { gitilesCommit: { position: '105' } },
     });
     mockTestVariant = TestVariant.fromPartial({
       testId: MOCK_TEST_ID,
@@ -84,7 +93,7 @@ describe('<HistoryRateDisplaySection />', () => {
 
   const renderComponent = (
     currentTimeForAgo?: Date,
-    customInvocation?: Invocation,
+    customInvocation?: AnyInvocation,
     customTestVariant?: TestVariant,
     customTestInfoContextValue?: Partial<TestInfoContextValue>,
   ) => {
@@ -100,6 +109,7 @@ describe('<HistoryRateDisplaySection />', () => {
           project="test-project"
           invocation={inv}
           rawInvocationId={MOCK_RAW_INVOCATION_ID}
+          isLegacyInvocation={true}
         >
           <TestVariantProvider
             testVariant={tv as OutputTestVerdict}
@@ -148,14 +158,12 @@ describe('<HistoryRateDisplaySection />', () => {
     expect(screen.getByText('Postsubmit history')).toBeInTheDocument();
   });
 
-  it('should display a single segment as invocation segment', async () => {
+  it('should display a single segment as invocation segment (Legacy Inv)', async () => {
     const segmentsData = [
       createMockSegment('s1', '100', '110', 10, 100, '2024-01-10T10:00:00Z'),
     ];
-    const currentInv = Invocation.fromPartial({
-      ...mockInvocation,
-      sourceSpec: { sources: { gitilesCommit: { position: '105' } } },
-    });
+    // Use legacy Invocation (default mock)
+    const currentInv = mockInvocation;
     renderComponent(new Date('2024-01-10T12:00:00Z'), currentInv, undefined, {
       testVariantBranch: TestVariantBranch.fromPartial({
         segments: segmentsData,
@@ -188,15 +196,74 @@ describe('<HistoryRateDisplaySection />', () => {
     );
   });
 
-  it('should display three segments with invocation in the middle', () => {
+  it('should display a single segment as invocation segment (Root Inv)', async () => {
+    const segmentsData = [
+      createMockSegment('s1', '100', '110', 10, 100, '2024-01-10T10:00:00Z'),
+    ];
+    // Use RootInvocation
+    const currentInv = mockRootInvocation;
+    renderComponent(new Date('2024-01-10T12:00:00Z'), currentInv, undefined, {
+      testVariantBranch: TestVariantBranch.fromPartial({
+        segments: segmentsData,
+        refHash: 'test-ref-hash',
+      }),
+    });
+    const failureRateView = screen.getByText('10% now failing');
+    expect(failureRateView).toBeInTheDocument();
+    // Check tooltip for FailureRateView
+    fireEvent.mouseOver(failureRateView);
+    const tooltip = await screen.findByRole('tooltip');
+    expect(
+      within(tooltip).getByText('Failure Rate: 10% (10 / 100 failed)'),
+    ).toBeInTheDocument();
+    expect(within(tooltip).getByText('Start:')).toBeInTheDocument();
+    expect(within(tooltip).getByText('(2 hours ago)')).toBeInTheDocument();
+    expect(
+      within(tooltip).getByText(
+        'This segment contains the current test result',
+      ),
+    ).toBeInTheDocument();
+
+    // Check TestAddedDisplay
+    expect(screen.getByText('Test added 2 hours ago')).toBeInTheDocument();
+  });
+
+  it('should display three segments with invocation in the middle (Legacy Inv)', () => {
     const segmentsData = [
       createMockSegment('sNew', '111', '120', 5, 100),
       createMockSegment('sCtx', '100', '110', 50, 100),
       createMockSegment('sOld', '90', '99', 95, 100),
     ];
+    // Use legacy Invocation
     const currentInv = Invocation.fromPartial({
       ...mockInvocation,
       sourceSpec: { sources: { gitilesCommit: { position: '105' } } },
+    });
+    renderComponent(undefined, currentInv, undefined, {
+      testVariantBranch: TestVariantBranch.fromPartial({
+        segments: segmentsData,
+        refHash: 'test-ref-hash',
+      }),
+    });
+    expect(screen.getByText('5% failing')).toBeInTheDocument(); // Newer segment
+    expect(screen.getByText('50% failing at invocation')).toBeInTheDocument(); // Invocation segment
+    expect(screen.getByText('95% failed')).toBeInTheDocument(); // Older segment
+
+    expect(screen.getAllByTestId('ArrowBackIcon')).toHaveLength(2);
+    // TestAddedDisplay should not be rendered here as the third segment is shown directly
+    expect(screen.queryByText(/Test added/)).not.toBeInTheDocument();
+  });
+
+  it('should display three segments with invocation in the middle (Root Inv)', () => {
+    const segmentsData = [
+      createMockSegment('sNew', '111', '120', 5, 100),
+      createMockSegment('sCtx', '100', '110', 50, 100),
+      createMockSegment('sOld', '90', '99', 95, 100),
+    ];
+    // Use RootInvocation
+    const currentInv = RootInvocation.fromPartial({
+      ...mockRootInvocation,
+      sources: { gitilesCommit: { position: '105' } },
     });
     renderComponent(undefined, currentInv, undefined, {
       testVariantBranch: TestVariantBranch.fromPartial({

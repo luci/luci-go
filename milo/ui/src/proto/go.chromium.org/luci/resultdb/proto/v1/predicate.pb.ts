@@ -121,7 +121,10 @@ export interface VariantPredicate {
   readonly contains?: Variant | undefined;
 }
 
-/** Represents a function Artifact -> bool. */
+/**
+ * Represents a function Artifact -> bool.
+ * Next id: 6;
+ */
 export interface ArtifactPredicate {
   /**
    * Specifies which edges to follow when retrieving directly/indirectly
@@ -156,6 +159,12 @@ export interface ArtifactPredicate {
    * the expression is implicitly wrapped with ^ and $.  Defaults to ".*".
    */
   readonly artifactIdRegexp: string;
+  /**
+   * An artifact must have an artifact type matching this regular expression
+   * entirely, i.e. the expression is implicitly wrapped with ^ and $.
+   * Defaults to ".*".
+   */
+  readonly artifactTypeRegexp: string;
 }
 
 /** A set of Invocation's outgoing edge types. */
@@ -171,8 +180,14 @@ export interface ArtifactPredicate_EdgeTypeSet {
  * Empty message matches all test metadata.
  */
 export interface TestMetadataPredicate {
-  /** A test metadata must have the test id in this list. */
+  /** Filters to tests with a test_id in this list. */
   readonly testIds: readonly string[];
+  /**
+   * Filters to tests which have a test_metadata.previous_test_id in this list.
+   * Use to find newer tests corresponding to a given old test ID.
+   * May not be used in conjunction with test_ids.
+   */
+  readonly previousTestIds: readonly string[];
 }
 
 function createBaseTestResultPredicate(): TestResultPredicate {
@@ -444,7 +459,13 @@ export const VariantPredicate: MessageFns<VariantPredicate> = {
 };
 
 function createBaseArtifactPredicate(): ArtifactPredicate {
-  return { followEdges: undefined, testResultPredicate: undefined, contentTypeRegexp: "", artifactIdRegexp: "" };
+  return {
+    followEdges: undefined,
+    testResultPredicate: undefined,
+    contentTypeRegexp: "",
+    artifactIdRegexp: "",
+    artifactTypeRegexp: "",
+  };
 }
 
 export const ArtifactPredicate: MessageFns<ArtifactPredicate> = {
@@ -460,6 +481,9 @@ export const ArtifactPredicate: MessageFns<ArtifactPredicate> = {
     }
     if (message.artifactIdRegexp !== "") {
       writer.uint32(34).string(message.artifactIdRegexp);
+    }
+    if (message.artifactTypeRegexp !== "") {
+      writer.uint32(42).string(message.artifactTypeRegexp);
     }
     return writer;
   },
@@ -503,6 +527,14 @@ export const ArtifactPredicate: MessageFns<ArtifactPredicate> = {
           message.artifactIdRegexp = reader.string();
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.artifactTypeRegexp = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -520,6 +552,7 @@ export const ArtifactPredicate: MessageFns<ArtifactPredicate> = {
         : undefined,
       contentTypeRegexp: isSet(object.contentTypeRegexp) ? globalThis.String(object.contentTypeRegexp) : "",
       artifactIdRegexp: isSet(object.artifactIdRegexp) ? globalThis.String(object.artifactIdRegexp) : "",
+      artifactTypeRegexp: isSet(object.artifactTypeRegexp) ? globalThis.String(object.artifactTypeRegexp) : "",
     };
   },
 
@@ -537,6 +570,9 @@ export const ArtifactPredicate: MessageFns<ArtifactPredicate> = {
     if (message.artifactIdRegexp !== "") {
       obj.artifactIdRegexp = message.artifactIdRegexp;
     }
+    if (message.artifactTypeRegexp !== "") {
+      obj.artifactTypeRegexp = message.artifactTypeRegexp;
+    }
     return obj;
   },
 
@@ -553,6 +589,7 @@ export const ArtifactPredicate: MessageFns<ArtifactPredicate> = {
       : undefined;
     message.contentTypeRegexp = object.contentTypeRegexp ?? "";
     message.artifactIdRegexp = object.artifactIdRegexp ?? "";
+    message.artifactTypeRegexp = object.artifactTypeRegexp ?? "";
     return message;
   },
 };
@@ -634,13 +671,16 @@ export const ArtifactPredicate_EdgeTypeSet: MessageFns<ArtifactPredicate_EdgeTyp
 };
 
 function createBaseTestMetadataPredicate(): TestMetadataPredicate {
-  return { testIds: [] };
+  return { testIds: [], previousTestIds: [] };
 }
 
 export const TestMetadataPredicate: MessageFns<TestMetadataPredicate> = {
   encode(message: TestMetadataPredicate, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.testIds) {
       writer.uint32(10).string(v!);
+    }
+    for (const v of message.previousTestIds) {
+      writer.uint32(18).string(v!);
     }
     return writer;
   },
@@ -660,6 +700,14 @@ export const TestMetadataPredicate: MessageFns<TestMetadataPredicate> = {
           message.testIds.push(reader.string());
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.previousTestIds.push(reader.string());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -672,6 +720,9 @@ export const TestMetadataPredicate: MessageFns<TestMetadataPredicate> = {
   fromJSON(object: any): TestMetadataPredicate {
     return {
       testIds: globalThis.Array.isArray(object?.testIds) ? object.testIds.map((e: any) => globalThis.String(e)) : [],
+      previousTestIds: globalThis.Array.isArray(object?.previousTestIds)
+        ? object.previousTestIds.map((e: any) => globalThis.String(e))
+        : [],
     };
   },
 
@@ -679,6 +730,9 @@ export const TestMetadataPredicate: MessageFns<TestMetadataPredicate> = {
     const obj: any = {};
     if (message.testIds?.length) {
       obj.testIds = message.testIds;
+    }
+    if (message.previousTestIds?.length) {
+      obj.previousTestIds = message.previousTestIds;
     }
     return obj;
   },
@@ -689,6 +743,7 @@ export const TestMetadataPredicate: MessageFns<TestMetadataPredicate> = {
   fromPartial(object: DeepPartial<TestMetadataPredicate>): TestMetadataPredicate {
     const message = createBaseTestMetadataPredicate() as any;
     message.testIds = object.testIds?.map((e) => e) || [];
+    message.previousTestIds = object.previousTestIds?.map((e) => e) || [];
     return message;
   },
 };

@@ -20,26 +20,23 @@ import {
   testVerdict_StatusToJSON,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb.js';
 
+import { useTestDrawer } from './context';
 import { ExpandableListItem } from './expandable_list_item';
 import { TestNavigationTreeNode } from './types';
 
 interface DrawerTreeItemProps {
   node: TestNavigationTreeNode;
-  expandedNodes: Set<string>;
-  toggleNodeExpansion: (nodeId: string) => void;
-  currentTestId?: string;
-  currentVariantHash?: string;
-  onSelectTestVariant?: (testId: string, variantHash: string) => void;
 }
 
-export function DrawerTreeItem({
-  node,
-  expandedNodes,
-  toggleNodeExpansion,
-  currentTestId,
-  currentVariantHash,
-  onSelectTestVariant,
-}: DrawerTreeItemProps) {
+export function DrawerTreeItem({ node }: DrawerTreeItemProps) {
+  const {
+    expandedNodes,
+    toggleNodeExpansion,
+    currentTestId,
+    currentVariantHash,
+    onSelectTestVariant,
+  } = useTestDrawer();
+
   const isExpanded = expandedNodes.has(node.id);
   const hasChildren = node.children && node.children.length > 0;
 
@@ -47,10 +44,7 @@ export function DrawerTreeItem({
     if (hasChildren) {
       toggleNodeExpansion(node.id);
     } else if (node.testVariant !== undefined && onSelectTestVariant) {
-      onSelectTestVariant(
-        node.testVariant.testId,
-        node.testVariant.variantHash,
-      );
+      onSelectTestVariant(node.testVariant);
     }
   };
 
@@ -64,7 +58,7 @@ export function DrawerTreeItem({
       [TestVerdict_Status.PASSED]: node.passedTests,
       [TestVerdict_Status.STATUS_UNSPECIFIED]: node.unknownTests,
     };
-  }, [node]); // Dependency array: Recalculate only if 'node' changes
+  }, [node]);
   const countsArray: { type: TestVerdict_Status; value: number }[] = [];
 
   for (const [key, count] of Object.entries(testStatusTotals)) {
@@ -115,15 +109,7 @@ export function DrawerTreeItem({
       {hasChildren && (
         <List component="div" disablePadding dense>
           {node.children!.map((child) => (
-            <DrawerTreeItem
-              key={child.id}
-              node={child}
-              expandedNodes={expandedNodes}
-              toggleNodeExpansion={toggleNodeExpansion}
-              currentTestId={currentTestId}
-              currentVariantHash={currentVariantHash}
-              onSelectTestVariant={onSelectTestVariant}
-            />
+            <DrawerTreeItem key={child.id} node={child} />
           ))}
         </List>
       )}

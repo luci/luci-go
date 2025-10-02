@@ -31,6 +31,10 @@ import {
   SemanticStatusType,
 } from '@/common/styles/status_styles';
 import { gm3PageTheme } from '@/common/themes/gm3_theme';
+import {
+  generateTestInvestigateUrl,
+  generateTestInvestigateUrlForLegacyInvocations,
+} from '@/common/tools/url_utils';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Invocation_State } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
@@ -38,6 +42,7 @@ import {
   GetInvocationRequest,
   QueryTestVariantsRequest,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { GetRootInvocationRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/root_invocation.pb';
 import {
   InvocationCounts,
   InvocationHeader,
@@ -85,8 +90,9 @@ export function InvocationPage() {
   const navigate = useNavigate();
   const [searchParams] = useSyncedSearchParams();
   const hasPerformedInitialRedirect = useRef(false);
-
   const resultDbClient = useResultDbClient();
+
+  const isLegacyInvocation = searchParams.get('invMode') === 'legacy';
 
   if (!invocationId) {
     throw new Error('Invalid URL: Missing invocationId');
@@ -120,7 +126,7 @@ export function InvocationPage() {
     return new Set(['failed', 'execution_errored']);
   });
 
-  const { data: invocation, isPending: isLoadingInvocation } = useQuery({
+  const { data: legacyInvocation, isPending: isLoadingLegacyInv } = useQuery({
     ...resultDbClient.GetInvocation.query(
       GetInvocationRequest.fromPartial({
         name: `invocations/${invocationId}`,
@@ -128,7 +134,24 @@ export function InvocationPage() {
     ),
     retry: false,
     staleTime: 5 * 60 * 1000,
+    enabled: isLegacyInvocation,
   });
+
+  const { data: rootInvocation, isPending: isLoadingRootInv } = useQuery({
+    ...resultDbClient.GetRootInvocation.query(
+      GetRootInvocationRequest.fromPartial({
+        name: `rootInvocations/${invocationId}`,
+      }),
+    ),
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+    enabled: !isLegacyInvocation,
+  });
+
+  const invocation = isLegacyInvocation ? legacyInvocation : rootInvocation;
+  const isLoadingInvocation = isLegacyInvocation
+    ? isLoadingLegacyInv
+    : isLoadingRootInv;
 
   const queryRequest = useMemo(() => {
     const filterParts: string[] = [];
@@ -146,25 +169,40 @@ export function InvocationPage() {
       });
     }
     const filter = filterParts.join(' AND ') || undefined;
-    return QueryTestVariantsRequest.fromPartial({
-      invocations: [`invocations/${invocationId}`],
-      pageSize: 10000,
-      resultLimit: 10,
-      readMask: [
-        'test_id',
-        'test_id_structured',
-        'variant_hash',
-        'variant.def',
-        'status_v2',
-        'results.*.result.failure_reason',
-        'results.*.result.skipped_reason',
-        'results.*.result.summary_html',
-        'results.*.result.status_v2',
-        'results.*.result.name',
-      ],
-      filter,
-    });
-  }, [invocationId, parsedTestId, parsedVariantDef]);
+
+    const readMask = [
+      'test_id',
+      'test_id_structured',
+      'variant_hash',
+      'variant.def',
+      'status_v2',
+      'results.*.result.failure_reason',
+      'results.*.result.skipped_reason',
+      'results.*.result.summary_html',
+      'results.*.result.status_v2',
+      'results.*.result.name',
+    ];
+    const pageSize = 10000;
+    const resultLimit = 10;
+
+    if (isLegacyInvocation) {
+      return QueryTestVariantsRequest.fromPartial({
+        invocations: [`invocations/${invocationId}`],
+        pageSize,
+        resultLimit,
+        readMask,
+        filter,
+      });
+    } else {
+      return QueryTestVariantsRequest.fromPartial({
+        parent: `rootInvocations/${invocationId}`,
+        pageSize,
+        resultLimit,
+        readMask,
+        filter,
+      });
+    }
+  }, [invocationId, parsedTestId, parsedVariantDef, isLegacyInvocation]);
 
   const {
     data: testVariantsResponse,
@@ -206,30 +244,45 @@ export function InvocationPage() {
     };
   }, [testVariants, selectedStatuses]);
 
-  // If there is a unique match (excluding status filtering) navigate directly to
-  // it, skipping the invocation page.
+  const isUniqueResult =
+    isSuccess &&
+    (parsedTestId || parsedVariantDef) &&
+    finalFilteredVariants.length === 1;
+
   useEffect(() => {
     if (isSuccess && !hasPerformedInitialRedirect.current) {
-      // Once we have the first successful response, we can check for redirection.
-      // We should only do this once per page load to avoid redirecting the
-      // user when they are actively changing filters.
       hasPerformedInitialRedirect.current = true;
 
-      if (!parsedTestId && !parsedVariantDef) {
+      if (!isUniqueResult) {
         return;
       }
-      const isUniqueResult = finalFilteredVariants.length === 1;
 
-      if (isUniqueResult) {
-        const variantHash = finalFilteredVariants[0].variantHash;
-        const resolvedTestId = finalFilteredVariants[0].testId;
+      const variantToRedirect = finalFilteredVariants[0];
+      let newPath: string;
 
-        const newPath =
-          `/ui/test-investigate/invocations/${invocationId}` +
-          `/tests/${encodeURIComponent(resolvedTestId)}` +
-          `/variants/${variantHash}`;
-        navigate(newPath, { replace: true });
+      if (isLegacyInvocation) {
+        newPath = generateTestInvestigateUrlForLegacyInvocations(
+          invocationId,
+          variantToRedirect.testId,
+          variantToRedirect.variantHash,
+        );
+      } else {
+        // We are on a RootInvocation, generate the new structured URL.
+        if (variantToRedirect.testIdStructured) {
+          newPath = generateTestInvestigateUrl(
+            invocationId,
+            variantToRedirect.testIdStructured,
+          );
+        } else {
+          // Fallback to legacy structure just in case
+          newPath = generateTestInvestigateUrlForLegacyInvocations(
+            invocationId,
+            variantToRedirect.testId,
+            variantToRedirect.variantHash,
+          );
+        }
       }
+      navigate(newPath, { replace: true });
     }
   }, [
     isSuccess,
@@ -238,6 +291,8 @@ export function InvocationPage() {
     invocationId,
     navigate,
     finalFilteredVariants,
+    isUniqueResult,
+    isLegacyInvocation,
   ]);
 
   const project = useMemo(
@@ -246,17 +301,9 @@ export function InvocationPage() {
   );
 
   useEstablishProjectCtx(project);
-  const isUniqueResult =
-    isSuccess &&
-    (parsedTestId || parsedVariantDef) &&
-    finalFilteredVariants.length === 1;
 
-  // Show the full-page loader on the initial load while we don't have data yet.
   const showInitialLoader =
     isFetchingTestVariants && !hasPerformedInitialRedirect.current;
-
-  // Also keep the loader if we are about to redirect, to avoid flashing content.
-  // This should only happen on the initial load.
   const isRedirecting = isUniqueResult && !hasPerformedInitialRedirect.current;
 
   if (isLoadingInvocation || showInitialLoader || isRedirecting) {
@@ -285,6 +332,7 @@ export function InvocationPage() {
       project={project}
       invocation={invocation}
       rawInvocationId={invocationId}
+      isLegacyInvocation={isLegacyInvocation}
     >
       <ThemeProvider theme={gm3PageTheme}>
         <RedirectBackBanner
@@ -332,6 +380,7 @@ export function InvocationPage() {
               parsedVariantDef={parsedVariantDef}
               selectedStatuses={selectedStatuses}
               setSelectedStatuses={setSelectedStatuses}
+              isLegacyInvocation={isLegacyInvocation}
             />
           </Box>
         </Box>

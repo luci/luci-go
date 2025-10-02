@@ -17,8 +17,8 @@ import {
   TestVerdict_StatusOverride,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 import { FailureReason_Kind } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/failure_reason.pb';
+import { SkippedReason_Kind } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/skipped_reason.pb';
 import {
-  SkippedReason_Kind,
   TestResult,
   TestResult_Status,
   TestStatus,

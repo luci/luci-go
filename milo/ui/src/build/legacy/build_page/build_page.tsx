@@ -48,6 +48,7 @@ import { usePermCheck } from '@/common/hooks/perm_check';
 import { Build as JsonBuild } from '@/common/services/buildbucket';
 import { useStore } from '@/common/store';
 import { InvocationProvider } from '@/common/store/invocation_state';
+import { generateTestInvestigateUrlForLegacyInvocations } from '@/common/tools/url_utils';
 import {
   ContentGroup,
   useGoogleAnalytics,
@@ -216,10 +217,11 @@ export const BuildPage = observer(() => {
 
     // Deep link with a pre-computed variant hash.
     if (testId && variantHash) {
-      const newPath =
-        `/ui/test-investigate/invocations/build-${build.id}` +
-        `/tests/${encodeURIComponent(testId)}` +
-        `/variants/${variantHash}`;
+      const newPath = generateTestInvestigateUrlForLegacyInvocations(
+        `build-${build.id}`,
+        testId,
+        variantHash,
+      );
       navigate(newPath, { replace: true });
       return;
     }
@@ -237,12 +239,12 @@ export const BuildPage = observer(() => {
           search.append('v', `${key}:${value}`);
         });
       }
-      const newPath = `/ui/test-investigate/invocations/build-${build.id}?${search.toString()}`;
+      const newPath = `/ui/test-investigate/invocations/build-${build.id}?${search.toString()}&invMode=legacy`;
       navigate(newPath, { replace: true });
       return;
     }
 
-    const newPath = `/ui/test-investigate/invocations/build-${build.id}`;
+    const newPath = `/ui/test-investigate/invocations/build-${build.id}?invMode=legacy`;
     navigate(newPath, { replace: true });
   }, [
     forceLegacyView,

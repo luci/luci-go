@@ -7,8 +7,9 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { TestIdentifier } from "./common.pb";
+import { TestExoneration } from "./test_exoneration.pb";
 import { TestMetadata } from "./test_metadata.pb";
-import { TestExoneration, TestResult } from "./test_result.pb";
+import { TestResult } from "./test_result.pb";
 
 export const protobufPackage = "luci.resultdb.v1";
 

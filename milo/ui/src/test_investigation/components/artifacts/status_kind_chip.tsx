@@ -24,8 +24,10 @@ import {
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/failure_reason.pb';
 import {
   SkippedReason_Kind,
-  TestResult_Status,
   skippedReason_KindToJSON,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/skipped_reason.pb';
+import {
+  TestResult_Status,
   testResult_StatusToJSON,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 

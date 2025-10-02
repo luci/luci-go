@@ -308,7 +308,7 @@ export interface TestStabilityCriteria {
  * a set of (up to) 20 test runs centered on the queried commit
  * position (10 prior and 10 after) and applies criteria
  * to this in various ways.
- * The 20 test runs are sorted by commit position and then time.
+ * The 20 test runs are sorted by source position and then time.
  *
  * See go/luci-exoneration-v2 for more detail.
  */
@@ -359,7 +359,7 @@ export interface TestStabilityCriteria_FailureRateCriteria {
    *
    * (N.B. Direction of history is irrelevant as criteria is
    * applied symmetrically. Either the left or right could
-   * represent 'later' by commit position.)
+   * represent 'later' by source position.)
    */
   readonly consecutiveFailureThreshold: number;
 }
@@ -385,7 +385,7 @@ export interface TestStabilityCriteria_FlakeRateCriteria {
    *
    * As standard, all source verdicts for sources
    * +/- 7 days from the queried position are used.
-   * The conversion between time and commit position is discussed
+   * The conversion between time and source position is discussed
    * in go/luci-exoneration-v2.
    *
    * However, if the number of verdicts is not equal
@@ -428,7 +428,7 @@ export interface TestStabilityCriteria_FlakeRateCriteria {
    * occur on sources within one weekday either side of the
    * queried source position.
    *
-   * The conversion between time and commit position is discussed
+   * The conversion between time and source position is discussed
    * in go/luci-exoneration-v2.
    *
    * One weekday means 24 hours on a weekday as observed in
@@ -505,7 +505,7 @@ export interface TestVariantStabilityAnalysis_FailureRate {
 }
 
 export interface TestVariantStabilityAnalysis_FailureRate_RecentVerdict {
-  /** The commit position of the source verdict on the queried branch. */
+  /** The source position of the source verdict on the queried branch. */
   readonly position: string;
   /** The changelist(s) tested, if any. */
   readonly changelists: readonly Changelist[];
@@ -584,7 +584,7 @@ export interface TestVariantStabilityAnalysis_FlakeRate {
  * such as in the case of retried presubmit runs on the same patchset.
  */
 export interface TestVariantStabilityAnalysis_FlakeRate_VerdictExample {
-  /** The commit position of the verdict on the queried branch. */
+  /** The source position of the verdict on the queried branch. */
   readonly position: string;
   /** The changelist(s) tested, if any. */
   readonly changelists: readonly Changelist[];

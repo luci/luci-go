@@ -53,18 +53,20 @@ export function changelistOwnerKindToJSON(object: ChangelistOwnerKind): string {
 
 /** Specifies the source code that was tested. */
 export interface Sources {
-  /**
-   * The base version of code sources checked out. Mandatory.
-   * If necessary, we could add support for non-gitiles sources here in
-   * future, using a oneof statement. E.g.
-   * oneof system {
-   *    GitilesCommit gitiles_commit = 1;
-   *    SubversionRevision svn_revision = 4;
-   *    ...
-   * }
-   */
-  readonly gitilesCommit:
+  /** The base version of code sources checked out. */
+  readonly gitilesCommit?:
     | GitilesCommit
+    | undefined;
+  /**
+   * The submitted Android Build ID that describes the base code sources tested.
+   *
+   * In presubmit, where the invocation is testing a pending build (a build ID
+   * starting with "P"), lookup its reference build (which will be a submitted
+   * build) and specify it here. Then specify the cherry-picked changes under
+   * `changelists`.
+   */
+  readonly submittedAndroidBuild?:
+    | SubmittedAndroidBuild
     | undefined;
   /**
    * The changelist(s) which were applied upon the base version of sources
@@ -120,6 +122,35 @@ export interface GitilesCommit {
   readonly position: string;
 }
 
+/**
+ * Specifies the build ID of a submitted Android build. A submitted build is a
+ * build that uses only changes that have been submitted to a branch.
+ */
+export interface SubmittedAndroidBuild {
+  /**
+   * The Android Build API data realm.
+   * This is usually `prod`.
+   */
+  readonly dataRealm: string;
+  /**
+   * The Android Build branch.
+   * E.g. `git_main`.
+   */
+  readonly branch: string;
+  /**
+   * The build ID of the *submitted* build.
+   *
+   * This must be parsed to an integer, as this will be exported to BigQuery
+   * and used for sorting results in source order.
+   *
+   * When comparing two build IDs on the same data realm and branch, we expect:
+   * - A higher number means a newer version of sources were used in a build.
+   * - An equal number means the same version of sources used in a build.
+   * - A smaller number means an earlier version of sources were used in a build.
+   */
+  readonly buildId: string;
+}
+
 /** A Gerrit patchset. */
 export interface GerritChange {
   /** Gerrit hostname, e.g. "chromium-review.googlesource.com". */
@@ -137,7 +168,11 @@ export interface GerritChange {
 /** Represents a reference in a source control system. */
 export interface SourceRef {
   /** A branch in gitiles repository. */
-  readonly gitiles?: GitilesRef | undefined;
+  readonly gitiles?:
+    | GitilesRef
+    | undefined;
+  /** A branch in Android Build API. */
+  readonly androidBuild?: AndroidBuildBranch | undefined;
 }
 
 /** Represents a branch in a gitiles repository. */
@@ -153,6 +188,20 @@ export interface GitilesRef {
   readonly ref: string;
 }
 
+/** Represents a branch in Android Build API. */
+export interface AndroidBuildBranch {
+  /**
+   * The Android Build API data realm.
+   * This is usually `prod`.
+   */
+  readonly dataRealm: string;
+  /**
+   * The Android Build branch.
+   * E.g. `git_main`.
+   */
+  readonly branch: string;
+}
+
 /** A gerrit changelist. */
 export interface Changelist {
   /** Gerrit hostname, e.g. "chromium-review.googlesource.com". */
@@ -166,13 +215,16 @@ export interface Changelist {
 }
 
 function createBaseSources(): Sources {
-  return { gitilesCommit: undefined, changelists: [], isDirty: false };
+  return { gitilesCommit: undefined, submittedAndroidBuild: undefined, changelists: [], isDirty: false };
 }
 
 export const Sources: MessageFns<Sources> = {
   encode(message: Sources, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.gitilesCommit !== undefined) {
       GitilesCommit.encode(message.gitilesCommit, writer.uint32(10).fork()).join();
+    }
+    if (message.submittedAndroidBuild !== undefined) {
+      SubmittedAndroidBuild.encode(message.submittedAndroidBuild, writer.uint32(34).fork()).join();
     }
     for (const v of message.changelists) {
       GerritChange.encode(v!, writer.uint32(18).fork()).join();
@@ -196,6 +248,14 @@ export const Sources: MessageFns<Sources> = {
           }
 
           message.gitilesCommit = GitilesCommit.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.submittedAndroidBuild = SubmittedAndroidBuild.decode(reader, reader.uint32());
           continue;
         }
         case 2: {
@@ -226,6 +286,9 @@ export const Sources: MessageFns<Sources> = {
   fromJSON(object: any): Sources {
     return {
       gitilesCommit: isSet(object.gitilesCommit) ? GitilesCommit.fromJSON(object.gitilesCommit) : undefined,
+      submittedAndroidBuild: isSet(object.submittedAndroidBuild)
+        ? SubmittedAndroidBuild.fromJSON(object.submittedAndroidBuild)
+        : undefined,
       changelists: globalThis.Array.isArray(object?.changelists)
         ? object.changelists.map((e: any) => GerritChange.fromJSON(e))
         : [],
@@ -237,6 +300,9 @@ export const Sources: MessageFns<Sources> = {
     const obj: any = {};
     if (message.gitilesCommit !== undefined) {
       obj.gitilesCommit = GitilesCommit.toJSON(message.gitilesCommit);
+    }
+    if (message.submittedAndroidBuild !== undefined) {
+      obj.submittedAndroidBuild = SubmittedAndroidBuild.toJSON(message.submittedAndroidBuild);
     }
     if (message.changelists?.length) {
       obj.changelists = message.changelists.map((e) => GerritChange.toJSON(e));
@@ -255,6 +321,10 @@ export const Sources: MessageFns<Sources> = {
     message.gitilesCommit = (object.gitilesCommit !== undefined && object.gitilesCommit !== null)
       ? GitilesCommit.fromPartial(object.gitilesCommit)
       : undefined;
+    message.submittedAndroidBuild =
+      (object.submittedAndroidBuild !== undefined && object.submittedAndroidBuild !== null)
+        ? SubmittedAndroidBuild.fromPartial(object.submittedAndroidBuild)
+        : undefined;
     message.changelists = object.changelists?.map((e) => GerritChange.fromPartial(e)) || [];
     message.isDirty = object.isDirty ?? false;
     return message;
@@ -385,6 +455,98 @@ export const GitilesCommit: MessageFns<GitilesCommit> = {
   },
 };
 
+function createBaseSubmittedAndroidBuild(): SubmittedAndroidBuild {
+  return { dataRealm: "", branch: "", buildId: "0" };
+}
+
+export const SubmittedAndroidBuild: MessageFns<SubmittedAndroidBuild> = {
+  encode(message: SubmittedAndroidBuild, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.dataRealm !== "") {
+      writer.uint32(10).string(message.dataRealm);
+    }
+    if (message.branch !== "") {
+      writer.uint32(18).string(message.branch);
+    }
+    if (message.buildId !== "0") {
+      writer.uint32(24).int64(message.buildId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SubmittedAndroidBuild {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSubmittedAndroidBuild() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.dataRealm = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.branch = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.buildId = reader.int64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SubmittedAndroidBuild {
+    return {
+      dataRealm: isSet(object.dataRealm) ? globalThis.String(object.dataRealm) : "",
+      branch: isSet(object.branch) ? globalThis.String(object.branch) : "",
+      buildId: isSet(object.buildId) ? globalThis.String(object.buildId) : "0",
+    };
+  },
+
+  toJSON(message: SubmittedAndroidBuild): unknown {
+    const obj: any = {};
+    if (message.dataRealm !== "") {
+      obj.dataRealm = message.dataRealm;
+    }
+    if (message.branch !== "") {
+      obj.branch = message.branch;
+    }
+    if (message.buildId !== "0") {
+      obj.buildId = message.buildId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SubmittedAndroidBuild>): SubmittedAndroidBuild {
+    return SubmittedAndroidBuild.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SubmittedAndroidBuild>): SubmittedAndroidBuild {
+    const message = createBaseSubmittedAndroidBuild() as any;
+    message.dataRealm = object.dataRealm ?? "";
+    message.branch = object.branch ?? "";
+    message.buildId = object.buildId ?? "0";
+    return message;
+  },
+};
+
 function createBaseGerritChange(): GerritChange {
   return { host: "", project: "", change: "0", patchset: "0", ownerKind: 0 };
 }
@@ -510,13 +672,16 @@ export const GerritChange: MessageFns<GerritChange> = {
 };
 
 function createBaseSourceRef(): SourceRef {
-  return { gitiles: undefined };
+  return { gitiles: undefined, androidBuild: undefined };
 }
 
 export const SourceRef: MessageFns<SourceRef> = {
   encode(message: SourceRef, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.gitiles !== undefined) {
       GitilesRef.encode(message.gitiles, writer.uint32(10).fork()).join();
+    }
+    if (message.androidBuild !== undefined) {
+      AndroidBuildBranch.encode(message.androidBuild, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -536,6 +701,14 @@ export const SourceRef: MessageFns<SourceRef> = {
           message.gitiles = GitilesRef.decode(reader, reader.uint32());
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.androidBuild = AndroidBuildBranch.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -546,13 +719,19 @@ export const SourceRef: MessageFns<SourceRef> = {
   },
 
   fromJSON(object: any): SourceRef {
-    return { gitiles: isSet(object.gitiles) ? GitilesRef.fromJSON(object.gitiles) : undefined };
+    return {
+      gitiles: isSet(object.gitiles) ? GitilesRef.fromJSON(object.gitiles) : undefined,
+      androidBuild: isSet(object.androidBuild) ? AndroidBuildBranch.fromJSON(object.androidBuild) : undefined,
+    };
   },
 
   toJSON(message: SourceRef): unknown {
     const obj: any = {};
     if (message.gitiles !== undefined) {
       obj.gitiles = GitilesRef.toJSON(message.gitiles);
+    }
+    if (message.androidBuild !== undefined) {
+      obj.androidBuild = AndroidBuildBranch.toJSON(message.androidBuild);
     }
     return obj;
   },
@@ -564,6 +743,9 @@ export const SourceRef: MessageFns<SourceRef> = {
     const message = createBaseSourceRef() as any;
     message.gitiles = (object.gitiles !== undefined && object.gitiles !== null)
       ? GitilesRef.fromPartial(object.gitiles)
+      : undefined;
+    message.androidBuild = (object.androidBuild !== undefined && object.androidBuild !== null)
+      ? AndroidBuildBranch.fromPartial(object.androidBuild)
       : undefined;
     return message;
   },
@@ -657,6 +839,82 @@ export const GitilesRef: MessageFns<GitilesRef> = {
     message.host = object.host ?? "";
     message.project = object.project ?? "";
     message.ref = object.ref ?? "";
+    return message;
+  },
+};
+
+function createBaseAndroidBuildBranch(): AndroidBuildBranch {
+  return { dataRealm: "", branch: "" };
+}
+
+export const AndroidBuildBranch: MessageFns<AndroidBuildBranch> = {
+  encode(message: AndroidBuildBranch, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.dataRealm !== "") {
+      writer.uint32(10).string(message.dataRealm);
+    }
+    if (message.branch !== "") {
+      writer.uint32(18).string(message.branch);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AndroidBuildBranch {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAndroidBuildBranch() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.dataRealm = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.branch = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AndroidBuildBranch {
+    return {
+      dataRealm: isSet(object.dataRealm) ? globalThis.String(object.dataRealm) : "",
+      branch: isSet(object.branch) ? globalThis.String(object.branch) : "",
+    };
+  },
+
+  toJSON(message: AndroidBuildBranch): unknown {
+    const obj: any = {};
+    if (message.dataRealm !== "") {
+      obj.dataRealm = message.dataRealm;
+    }
+    if (message.branch !== "") {
+      obj.branch = message.branch;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<AndroidBuildBranch>): AndroidBuildBranch {
+    return AndroidBuildBranch.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<AndroidBuildBranch>): AndroidBuildBranch {
+    const message = createBaseAndroidBuildBranch() as any;
+    message.dataRealm = object.dataRealm ?? "";
+    message.branch = object.branch ?? "";
     return message;
   },
 };

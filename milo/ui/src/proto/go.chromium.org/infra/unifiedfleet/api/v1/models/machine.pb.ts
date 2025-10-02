@@ -30,6 +30,7 @@ export enum ChromeOSDeviceType {
   DEVICE_CHROMEBOOK = 1,
   DEVICE_LABSTATION = 2,
   DEVICE_SERVO = 3,
+  DEVICE_DEVBOARD = 4,
 }
 
 export function chromeOSDeviceTypeFromJSON(object: any): ChromeOSDeviceType {
@@ -46,6 +47,9 @@ export function chromeOSDeviceTypeFromJSON(object: any): ChromeOSDeviceType {
     case 3:
     case "DEVICE_SERVO":
       return ChromeOSDeviceType.DEVICE_SERVO;
+    case 4:
+    case "DEVICE_DEVBOARD":
+      return ChromeOSDeviceType.DEVICE_DEVBOARD;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum ChromeOSDeviceType");
   }
@@ -61,6 +65,8 @@ export function chromeOSDeviceTypeToJSON(object: ChromeOSDeviceType): string {
       return "DEVICE_LABSTATION";
     case ChromeOSDeviceType.DEVICE_SERVO:
       return "DEVICE_SERVO";
+    case ChromeOSDeviceType.DEVICE_DEVBOARD:
+      return "DEVICE_DEVBOARD";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum ChromeOSDeviceType");
   }
@@ -445,12 +451,24 @@ export function attachedDevice_SIM_SIMTypeToJSON(object: AttachedDevice_SIM_SIMT
 /**
  * Devboard refers to development boards for component firmware testing.
  *
- * Next Tag: 2
+ * Next Tag: 7
  */
 export interface Devboard {
   readonly andreiboard?: Andreiboard | undefined;
   readonly icetower?: Icetower | undefined;
-  readonly dragonclaw?: Dragonclaw | undefined;
+  readonly dragonclaw?:
+    | Dragonclaw
+    | undefined;
+  /** GSC Dauntless */
+  readonly dt?:
+    | Dt
+    | undefined;
+  /** GSC Nuovotitan */
+  readonly nt?:
+    | Nt
+    | undefined;
+  /** GSC H1 */
+  readonly h1?: H1 | undefined;
 }
 
 /**
@@ -484,6 +502,39 @@ export interface Icetower {
 export interface Dragonclaw {
   /** Fingerprint module ID. */
   readonly fingerprintId: string;
+}
+
+/**
+ * GSC dt devboard
+ * Next Tag: 3
+ */
+export interface Dt {
+  /** Debugger serial */
+  readonly debugger: string;
+  /** GSC serial */
+  readonly gsc: string;
+}
+
+/**
+ * GSC nt devboard
+ * Next Tag: 3
+ */
+export interface Nt {
+  /** Debugger serial */
+  readonly debugger: string;
+  /** GSC serial */
+  readonly gsc: string;
+}
+
+/**
+ * GSC h1 devboard
+ * Next Tag: 3
+ */
+export interface H1 {
+  /** Debugger serial */
+  readonly debugger: string;
+  /** GSC serial */
+  readonly gsc: string;
 }
 
 /**
@@ -1784,7 +1835,14 @@ export const AttachedDevice_SIM: MessageFns<AttachedDevice_SIM> = {
 };
 
 function createBaseDevboard(): Devboard {
-  return { andreiboard: undefined, icetower: undefined, dragonclaw: undefined };
+  return {
+    andreiboard: undefined,
+    icetower: undefined,
+    dragonclaw: undefined,
+    dt: undefined,
+    nt: undefined,
+    h1: undefined,
+  };
 }
 
 export const Devboard: MessageFns<Devboard> = {
@@ -1797,6 +1855,15 @@ export const Devboard: MessageFns<Devboard> = {
     }
     if (message.dragonclaw !== undefined) {
       Dragonclaw.encode(message.dragonclaw, writer.uint32(26).fork()).join();
+    }
+    if (message.dt !== undefined) {
+      Dt.encode(message.dt, writer.uint32(34).fork()).join();
+    }
+    if (message.nt !== undefined) {
+      Nt.encode(message.nt, writer.uint32(42).fork()).join();
+    }
+    if (message.h1 !== undefined) {
+      H1.encode(message.h1, writer.uint32(50).fork()).join();
     }
     return writer;
   },
@@ -1832,6 +1899,30 @@ export const Devboard: MessageFns<Devboard> = {
           message.dragonclaw = Dragonclaw.decode(reader, reader.uint32());
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.dt = Dt.decode(reader, reader.uint32());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.nt = Nt.decode(reader, reader.uint32());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.h1 = H1.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1846,6 +1937,9 @@ export const Devboard: MessageFns<Devboard> = {
       andreiboard: isSet(object.andreiboard) ? Andreiboard.fromJSON(object.andreiboard) : undefined,
       icetower: isSet(object.icetower) ? Icetower.fromJSON(object.icetower) : undefined,
       dragonclaw: isSet(object.dragonclaw) ? Dragonclaw.fromJSON(object.dragonclaw) : undefined,
+      dt: isSet(object.dt) ? Dt.fromJSON(object.dt) : undefined,
+      nt: isSet(object.nt) ? Nt.fromJSON(object.nt) : undefined,
+      h1: isSet(object.h1) ? H1.fromJSON(object.h1) : undefined,
     };
   },
 
@@ -1859,6 +1953,15 @@ export const Devboard: MessageFns<Devboard> = {
     }
     if (message.dragonclaw !== undefined) {
       obj.dragonclaw = Dragonclaw.toJSON(message.dragonclaw);
+    }
+    if (message.dt !== undefined) {
+      obj.dt = Dt.toJSON(message.dt);
+    }
+    if (message.nt !== undefined) {
+      obj.nt = Nt.toJSON(message.nt);
+    }
+    if (message.h1 !== undefined) {
+      obj.h1 = H1.toJSON(message.h1);
     }
     return obj;
   },
@@ -1877,6 +1980,9 @@ export const Devboard: MessageFns<Devboard> = {
     message.dragonclaw = (object.dragonclaw !== undefined && object.dragonclaw !== null)
       ? Dragonclaw.fromPartial(object.dragonclaw)
       : undefined;
+    message.dt = (object.dt !== undefined && object.dt !== null) ? Dt.fromPartial(object.dt) : undefined;
+    message.nt = (object.nt !== undefined && object.nt !== null) ? Nt.fromPartial(object.nt) : undefined;
+    message.h1 = (object.h1 !== undefined && object.h1 !== null) ? H1.fromPartial(object.h1) : undefined;
     return message;
   },
 };
@@ -2051,6 +2157,234 @@ export const Dragonclaw: MessageFns<Dragonclaw> = {
   fromPartial(object: DeepPartial<Dragonclaw>): Dragonclaw {
     const message = createBaseDragonclaw() as any;
     message.fingerprintId = object.fingerprintId ?? "";
+    return message;
+  },
+};
+
+function createBaseDt(): Dt {
+  return { debugger: "", gsc: "" };
+}
+
+export const Dt: MessageFns<Dt> = {
+  encode(message: Dt, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.debugger !== "") {
+      writer.uint32(10).string(message.debugger);
+    }
+    if (message.gsc !== "") {
+      writer.uint32(18).string(message.gsc);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Dt {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDt() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.debugger = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.gsc = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Dt {
+    return {
+      debugger: isSet(object.debugger) ? globalThis.String(object.debugger) : "",
+      gsc: isSet(object.gsc) ? globalThis.String(object.gsc) : "",
+    };
+  },
+
+  toJSON(message: Dt): unknown {
+    const obj: any = {};
+    if (message.debugger !== "") {
+      obj.debugger = message.debugger;
+    }
+    if (message.gsc !== "") {
+      obj.gsc = message.gsc;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Dt>): Dt {
+    return Dt.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Dt>): Dt {
+    const message = createBaseDt() as any;
+    message.debugger = object.debugger ?? "";
+    message.gsc = object.gsc ?? "";
+    return message;
+  },
+};
+
+function createBaseNt(): Nt {
+  return { debugger: "", gsc: "" };
+}
+
+export const Nt: MessageFns<Nt> = {
+  encode(message: Nt, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.debugger !== "") {
+      writer.uint32(10).string(message.debugger);
+    }
+    if (message.gsc !== "") {
+      writer.uint32(18).string(message.gsc);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Nt {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseNt() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.debugger = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.gsc = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Nt {
+    return {
+      debugger: isSet(object.debugger) ? globalThis.String(object.debugger) : "",
+      gsc: isSet(object.gsc) ? globalThis.String(object.gsc) : "",
+    };
+  },
+
+  toJSON(message: Nt): unknown {
+    const obj: any = {};
+    if (message.debugger !== "") {
+      obj.debugger = message.debugger;
+    }
+    if (message.gsc !== "") {
+      obj.gsc = message.gsc;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Nt>): Nt {
+    return Nt.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Nt>): Nt {
+    const message = createBaseNt() as any;
+    message.debugger = object.debugger ?? "";
+    message.gsc = object.gsc ?? "";
+    return message;
+  },
+};
+
+function createBaseH1(): H1 {
+  return { debugger: "", gsc: "" };
+}
+
+export const H1: MessageFns<H1> = {
+  encode(message: H1, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.debugger !== "") {
+      writer.uint32(10).string(message.debugger);
+    }
+    if (message.gsc !== "") {
+      writer.uint32(18).string(message.gsc);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): H1 {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseH1() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.debugger = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.gsc = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): H1 {
+    return {
+      debugger: isSet(object.debugger) ? globalThis.String(object.debugger) : "",
+      gsc: isSet(object.gsc) ? globalThis.String(object.gsc) : "",
+    };
+  },
+
+  toJSON(message: H1): unknown {
+    const obj: any = {};
+    if (message.debugger !== "") {
+      obj.debugger = message.debugger;
+    }
+    if (message.gsc !== "") {
+      obj.gsc = message.gsc;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<H1>): H1 {
+    return H1.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<H1>): H1 {
+    const message = createBaseH1() as any;
+    message.debugger = object.debugger ?? "";
+    message.gsc = object.gsc ?? "";
     return message;
   },
 };

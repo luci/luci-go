@@ -14,17 +14,25 @@
 
 import { SemanticStatusType } from '@/common/styles/status_styles';
 import {
+  generateTestInvestigateUrl,
+  generateTestInvestigateUrlForLegacyInvocations,
+} from '@/common/tools/url_utils';
+import {
   StringPair,
   GerritChange,
   Variant,
+  Sources,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
-import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
 import { TestResult_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import {
   TestVariant,
   TestVariantStatus,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import {
+  AnyInvocation,
+  isRootInvocation,
+} from '@/test_investigation/utils/invocation_utils';
 
 export interface FormattedCLInfo {
   display: string;
@@ -66,10 +74,12 @@ export function getInvocationTag(
 }
 
 export function getCommitInfoFromInvocation(
-  invocation: Invocation | null,
+  invocation: AnyInvocation | null,
 ): string | undefined {
   if (!invocation) return undefined;
-  const gc = invocation.sourceSpec?.sources?.gitilesCommit;
+
+  const gc = getSourcesFromInvocation(invocation)?.gitilesCommit;
+
   if (gc) {
     let str =
       gc.ref?.replace(/^refs\/heads\//, '').replace(/^refs\/tags\//, 'tag:') ||
@@ -82,6 +92,7 @@ export function getCommitInfoFromInvocation(
     }
     return str || undefined;
   }
+
   const commitHashFromTag = getInvocationTag(
     invocation.tags,
     'git.commit.hash',
@@ -99,9 +110,10 @@ export function getCommitInfoFromInvocation(
  * @returns A fully-formed Gitiles URL string, or undefined if essential information is missing.
  */
 export function getCommitGitilesUrlFromInvocation(
-  invocation: Invocation,
+  invocation: AnyInvocation,
 ): string | undefined {
-  const gc = invocation.sourceSpec?.sources?.gitilesCommit;
+  const gc = getSourcesFromInvocation(invocation)?.gitilesCommit;
+
   if (gc && gc.host && gc.project && gc.commitHash) {
     return `https://${gc.host}/${gc.project}/+/${gc.commitHash}`;
   }
@@ -168,7 +180,7 @@ export function constructTestHistoryUrl(
 }
 
 export function constructFileBugUrl(
-  invocation: Invocation | null,
+  invocation: AnyInvocation | null,
   testVariant: TestVariant | null,
   builderName?: string,
   hotlistId?: string,
@@ -211,7 +223,6 @@ export function constructFileBugUrl(
     typeof window !== 'undefined' && window.location.href !== 'about:blank'
       ? window.location.href
       : '[Current Page URL]';
-  // Note that whitespace is significant in this string.
   const description = `Test: ${testDisplayName}
 Variant: ${JSON.stringify(testVariant.variant?.def || {})}
 Failure Reason: ${primaryFailureReason}
@@ -251,20 +262,93 @@ export function constructCodesearchUrl(
 /**
  * Checks if the current invocation is for a presubmit (CL) run.
  */
-export function isPresubmitRun(invocation: Invocation | null): boolean {
+export function isPresubmitRun(invocation: AnyInvocation | null): boolean {
   if (!invocation) return false;
-  return (invocation.sourceSpec?.sources?.changelists?.length || 0) > 0;
+
+  return (getSourcesFromInvocation(invocation)?.changelists?.length || 0) > 0;
 }
 
-export function getTestVariantURL(
-  invocationId: string | undefined,
-  testId: string,
-  variantHash: string,
-) {
-  if (invocationId && testId && variantHash) {
-    return `/ui/test-investigate/invocations/${invocationId}/tests/${encodeURIComponent(
-      testId,
-    )}/variants/${variantHash}`;
+/**
+ * Extracts a build ID from an invocation.
+ * It robustly checks the producerResource (which exists on both legacy
+ * and root invocations) and falls back to the legacy name format.
+ */
+export function getBuildId(
+  invocation: AnyInvocation | null,
+): string | undefined {
+  if (!invocation) {
+    return undefined;
   }
-  return '#';
+
+  const resource = invocation.producerResource;
+
+  if (resource) {
+    const match = resource.match(/\/builds\/(\d+)$/);
+    if (match) {
+      return match[1];
+    }
+    return undefined;
+  }
+
+  // Fallback to checking the legacy name format.
+  if (
+    !isRootInvocation(invocation) &&
+    invocation.name.startsWith('invocations/build-')
+  ) {
+    return invocation.name.substring('invocations/build-'.length);
+  }
+
+  return undefined;
+}
+
+/**
+ * A helper to robustly get the Sources object from either a
+ * RootInvocation or a legacy Invocation.
+ */
+export function getSourcesFromInvocation(
+  invocation: AnyInvocation | null,
+): Sources | null | undefined {
+  if (!invocation) {
+    return null;
+  }
+  if (isRootInvocation(invocation)) {
+    return invocation.sources;
+  }
+  // It must be a legacy Invocation
+  return invocation.sourceSpec?.sources;
+}
+
+/**
+ * Generates the correct URL to a test investigation page, deciding whether
+ * to use the legacy or structured format based on the invocation mode.
+ */
+export function getTestVariantURL(
+  invocationId: string,
+  testVariant: TestVariant,
+  isLegacyInvocation: boolean,
+): string {
+  // If the invocation is legacy, always generate the legacy-structured URL.
+  if (isLegacyInvocation) {
+    return generateTestInvestigateUrlForLegacyInvocations(
+      invocationId,
+      testVariant.testId,
+      testVariant.variantHash,
+    );
+  }
+
+  // Otherwise, we are on a RootInvocation.
+  // Prefer the fully-structured URL if the structured ID is available.
+  if (testVariant.testIdStructured) {
+    return generateTestInvestigateUrl(
+      invocationId,
+      testVariant.testIdStructured,
+    );
+  }
+
+  // Fallback for root invocations that might have non-structured test variants.
+  return generateTestInvestigateUrlForLegacyInvocations(
+    invocationId,
+    testVariant.testId,
+    testVariant.variantHash,
+  );
 }

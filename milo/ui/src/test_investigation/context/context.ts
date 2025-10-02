@@ -15,12 +15,13 @@
 import { createContext, useContext } from 'react';
 
 import { OutputTestVerdict } from '@/common/types/verdict';
-import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 
 export interface InvocationContextValue {
-  invocation: Invocation;
+  invocation: AnyInvocation;
   rawInvocationId: string;
   project: string | undefined;
+  isLegacyInvocation: boolean;
 }
 
 export const InvocationContext = createContext<InvocationContextValue | null>(
@@ -59,6 +60,16 @@ export function useProject() {
     throw new Error('useProject must be used within a InvocationProvider');
   }
   return ctx.project;
+}
+
+export function useIsLegacyInvocation() {
+  const ctx = useContext(InvocationContext);
+  if (!ctx) {
+    throw new Error(
+      'useIsLegacyInvocation must be used within an InvocationProvider',
+    );
+  }
+  return ctx.isLegacyInvocation;
 }
 
 export function useTestVariant() {

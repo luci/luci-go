@@ -18,11 +18,12 @@ import type { RouteObject } from 'react-router';
 // not supported in vite.config.ts. And we need to import those routes in
 // vite.config.ts to compute a regex at build time.
 
-import { authRoutes } from '../../authdb/routes';
-import { clustersRoutes } from '../../clusters/routes';
-import { fleetRoutes } from '../../fleet/routes';
-import { swarmingRoutes } from '../../swarming/routes';
-import { treeStatusRoutes } from '../../tree_status/routes';
+import { authRoutes } from '@/authdb/routes';
+import { clustersRoutes } from '@/clusters/routes';
+import { fleetRoutes } from '@/fleet/routes';
+import { swarmingRoutes } from '@/swarming/routes';
+import { testInvestigationRoutes } from '@/test_investigation/routes';
+import { treeStatusRoutes } from '@/tree_status/routes';
 
 // IMPORTANT:
 // When adding new routes, ensure that the path param does not contain PII.
@@ -316,18 +317,7 @@ export const routes: RouteObject[] = [
   },
   {
     path: 'test-investigate',
-    // TODO: Add child for new URL structure:
-    // inv/:inv-id/module/:module-name/scheme/:module-scheme/variant/:variant/coarse/:coarse-name/fine/:fine-name/test-id/:test-id
-    children: [
-      {
-        path: 'invocations/:invocationId',
-        lazy: () => import('@/test_investigation/pages/invocation_page'),
-      },
-      {
-        path: 'invocations/:invocationId/tests/:testId/variants/:variantHash',
-        lazy: () => import('@/test_investigation/pages/test_investigate_page'),
-      },
-    ],
+    children: testInvestigationRoutes,
   },
   {
     path: 'fleet',

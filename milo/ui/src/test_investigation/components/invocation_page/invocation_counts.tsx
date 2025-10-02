@@ -21,11 +21,11 @@ import {
   SemanticStatusType,
   StatusStyle,
 } from '@/common/styles/status_styles';
-import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 
 interface InvocationSummaryProps {
-  invocation: Invocation;
+  invocation: AnyInvocation;
   testVariants: readonly TestVariant[] | undefined;
   isLoadingTestVariants: boolean;
 }

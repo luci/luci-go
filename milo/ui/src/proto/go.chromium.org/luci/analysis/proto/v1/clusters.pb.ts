@@ -97,10 +97,7 @@ export interface ClusterRequest_TestResult {
    * Does not need to be unique. Optional.
    */
   readonly requestTag: string;
-  /**
-   * Identifier of the test (as reported to ResultDB).
-   * For chromium projects, this starts with ninja://.
-   */
+  /** Identifier of the test (as reported to ResultDB). */
   readonly testId: string;
   /** The failure reason of the test (if any). */
   readonly failureReason: FailureReason | undefined;
@@ -305,7 +302,7 @@ export interface QueryClusterSummariesRequest {
    * All values are case-sensitive.
    *
    * A bare value is searched for in the columns test_id and
-   * failure_reason. E.g. ninja or "test failed".
+   * failure_reason. E.g. gfx_unittests or "test failed".
    *
    * You can use AND, OR and NOT (case sensitive) logical operators, along
    * with grouping. '-' is equivalent to NOT. Multiple bare values are

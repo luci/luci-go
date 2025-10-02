@@ -29,6 +29,13 @@ export interface QueryTestHistoryRequest {
     | TestVerdictPredicate
     | undefined;
   /**
+   * If set, includes data from up to one prior ID of this test (if any).
+   *
+   * This has a performance cost and depends on the availability of
+   * identifying the previous ID of this test (if indeed it was renamed).
+   */
+  readonly followTestIdRenaming: boolean;
+  /**
    * The maximum number of entries to return.
    *
    * The service may return fewer than this value.
@@ -76,6 +83,13 @@ export interface QueryTestHistoryStatsRequest {
   readonly predicate:
     | TestVerdictPredicate
     | undefined;
+  /**
+   * If set, includes data from up to one prior ID of this test (if any).
+   *
+   * This has a performance cost and depends on the availability of
+   * identifying the previous ID of this test (if indeed it was renamed).
+   */
+  readonly followTestIdRenaming: boolean;
   /**
    * The maximum number of entries to return.
    *
@@ -212,6 +226,13 @@ export interface QueryVariantsRequest {
     | VariantPredicate
     | undefined;
   /**
+   * If set, includes data from up to one prior ID of this test (if any).
+   *
+   * This has a performance cost and depends on the availability of
+   * identifying the previous ID of this test (if indeed it was renamed).
+   */
+  readonly followTestIdRenaming: boolean;
+  /**
    * The maximum number of variants to return.
    *
    * The service may return fewer than this value.
@@ -299,7 +320,7 @@ export interface QueryTestsResponse {
 }
 
 function createBaseQueryTestHistoryRequest(): QueryTestHistoryRequest {
-  return { project: "", testId: "", predicate: undefined, pageSize: 0, pageToken: "" };
+  return { project: "", testId: "", predicate: undefined, followTestIdRenaming: false, pageSize: 0, pageToken: "" };
 }
 
 export const QueryTestHistoryRequest: MessageFns<QueryTestHistoryRequest> = {
@@ -312,6 +333,9 @@ export const QueryTestHistoryRequest: MessageFns<QueryTestHistoryRequest> = {
     }
     if (message.predicate !== undefined) {
       TestVerdictPredicate.encode(message.predicate, writer.uint32(26).fork()).join();
+    }
+    if (message.followTestIdRenaming !== false) {
+      writer.uint32(48).bool(message.followTestIdRenaming);
     }
     if (message.pageSize !== 0) {
       writer.uint32(32).int32(message.pageSize);
@@ -353,6 +377,14 @@ export const QueryTestHistoryRequest: MessageFns<QueryTestHistoryRequest> = {
           message.predicate = TestVerdictPredicate.decode(reader, reader.uint32());
           continue;
         }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.followTestIdRenaming = reader.bool();
+          continue;
+        }
         case 4: {
           if (tag !== 32) {
             break;
@@ -383,6 +415,9 @@ export const QueryTestHistoryRequest: MessageFns<QueryTestHistoryRequest> = {
       project: isSet(object.project) ? globalThis.String(object.project) : "",
       testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
       predicate: isSet(object.predicate) ? TestVerdictPredicate.fromJSON(object.predicate) : undefined,
+      followTestIdRenaming: isSet(object.followTestIdRenaming)
+        ? globalThis.Boolean(object.followTestIdRenaming)
+        : false,
       pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
       pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
     };
@@ -398,6 +433,9 @@ export const QueryTestHistoryRequest: MessageFns<QueryTestHistoryRequest> = {
     }
     if (message.predicate !== undefined) {
       obj.predicate = TestVerdictPredicate.toJSON(message.predicate);
+    }
+    if (message.followTestIdRenaming !== false) {
+      obj.followTestIdRenaming = message.followTestIdRenaming;
     }
     if (message.pageSize !== 0) {
       obj.pageSize = Math.round(message.pageSize);
@@ -418,6 +456,7 @@ export const QueryTestHistoryRequest: MessageFns<QueryTestHistoryRequest> = {
     message.predicate = (object.predicate !== undefined && object.predicate !== null)
       ? TestVerdictPredicate.fromPartial(object.predicate)
       : undefined;
+    message.followTestIdRenaming = object.followTestIdRenaming ?? false;
     message.pageSize = object.pageSize ?? 0;
     message.pageToken = object.pageToken ?? "";
     return message;
@@ -503,7 +542,7 @@ export const QueryTestHistoryResponse: MessageFns<QueryTestHistoryResponse> = {
 };
 
 function createBaseQueryTestHistoryStatsRequest(): QueryTestHistoryStatsRequest {
-  return { project: "", testId: "", predicate: undefined, pageSize: 0, pageToken: "" };
+  return { project: "", testId: "", predicate: undefined, followTestIdRenaming: false, pageSize: 0, pageToken: "" };
 }
 
 export const QueryTestHistoryStatsRequest: MessageFns<QueryTestHistoryStatsRequest> = {
@@ -516,6 +555,9 @@ export const QueryTestHistoryStatsRequest: MessageFns<QueryTestHistoryStatsReque
     }
     if (message.predicate !== undefined) {
       TestVerdictPredicate.encode(message.predicate, writer.uint32(26).fork()).join();
+    }
+    if (message.followTestIdRenaming !== false) {
+      writer.uint32(48).bool(message.followTestIdRenaming);
     }
     if (message.pageSize !== 0) {
       writer.uint32(32).int32(message.pageSize);
@@ -557,6 +599,14 @@ export const QueryTestHistoryStatsRequest: MessageFns<QueryTestHistoryStatsReque
           message.predicate = TestVerdictPredicate.decode(reader, reader.uint32());
           continue;
         }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.followTestIdRenaming = reader.bool();
+          continue;
+        }
         case 4: {
           if (tag !== 32) {
             break;
@@ -587,6 +637,9 @@ export const QueryTestHistoryStatsRequest: MessageFns<QueryTestHistoryStatsReque
       project: isSet(object.project) ? globalThis.String(object.project) : "",
       testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
       predicate: isSet(object.predicate) ? TestVerdictPredicate.fromJSON(object.predicate) : undefined,
+      followTestIdRenaming: isSet(object.followTestIdRenaming)
+        ? globalThis.Boolean(object.followTestIdRenaming)
+        : false,
       pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
       pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
     };
@@ -602,6 +655,9 @@ export const QueryTestHistoryStatsRequest: MessageFns<QueryTestHistoryStatsReque
     }
     if (message.predicate !== undefined) {
       obj.predicate = TestVerdictPredicate.toJSON(message.predicate);
+    }
+    if (message.followTestIdRenaming !== false) {
+      obj.followTestIdRenaming = message.followTestIdRenaming;
     }
     if (message.pageSize !== 0) {
       obj.pageSize = Math.round(message.pageSize);
@@ -622,6 +678,7 @@ export const QueryTestHistoryStatsRequest: MessageFns<QueryTestHistoryStatsReque
     message.predicate = (object.predicate !== undefined && object.predicate !== null)
       ? TestVerdictPredicate.fromPartial(object.predicate)
       : undefined;
+    message.followTestIdRenaming = object.followTestIdRenaming ?? false;
     message.pageSize = object.pageSize ?? 0;
     message.pageToken = object.pageToken ?? "";
     return message;
@@ -1122,7 +1179,15 @@ export const QueryTestHistoryStatsResponse_Group_VerdictCounts: MessageFns<
 };
 
 function createBaseQueryVariantsRequest(): QueryVariantsRequest {
-  return { project: "", testId: "", subRealm: "", variantPredicate: undefined, pageSize: 0, pageToken: "" };
+  return {
+    project: "",
+    testId: "",
+    subRealm: "",
+    variantPredicate: undefined,
+    followTestIdRenaming: false,
+    pageSize: 0,
+    pageToken: "",
+  };
 }
 
 export const QueryVariantsRequest: MessageFns<QueryVariantsRequest> = {
@@ -1138,6 +1203,9 @@ export const QueryVariantsRequest: MessageFns<QueryVariantsRequest> = {
     }
     if (message.variantPredicate !== undefined) {
       VariantPredicate.encode(message.variantPredicate, writer.uint32(50).fork()).join();
+    }
+    if (message.followTestIdRenaming !== false) {
+      writer.uint32(56).bool(message.followTestIdRenaming);
     }
     if (message.pageSize !== 0) {
       writer.uint32(32).int32(message.pageSize);
@@ -1187,6 +1255,14 @@ export const QueryVariantsRequest: MessageFns<QueryVariantsRequest> = {
           message.variantPredicate = VariantPredicate.decode(reader, reader.uint32());
           continue;
         }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.followTestIdRenaming = reader.bool();
+          continue;
+        }
         case 4: {
           if (tag !== 32) {
             break;
@@ -1218,6 +1294,9 @@ export const QueryVariantsRequest: MessageFns<QueryVariantsRequest> = {
       testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
       subRealm: isSet(object.subRealm) ? globalThis.String(object.subRealm) : "",
       variantPredicate: isSet(object.variantPredicate) ? VariantPredicate.fromJSON(object.variantPredicate) : undefined,
+      followTestIdRenaming: isSet(object.followTestIdRenaming)
+        ? globalThis.Boolean(object.followTestIdRenaming)
+        : false,
       pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
       pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
     };
@@ -1236,6 +1315,9 @@ export const QueryVariantsRequest: MessageFns<QueryVariantsRequest> = {
     }
     if (message.variantPredicate !== undefined) {
       obj.variantPredicate = VariantPredicate.toJSON(message.variantPredicate);
+    }
+    if (message.followTestIdRenaming !== false) {
+      obj.followTestIdRenaming = message.followTestIdRenaming;
     }
     if (message.pageSize !== 0) {
       obj.pageSize = Math.round(message.pageSize);
@@ -1257,6 +1339,7 @@ export const QueryVariantsRequest: MessageFns<QueryVariantsRequest> = {
     message.variantPredicate = (object.variantPredicate !== undefined && object.variantPredicate !== null)
       ? VariantPredicate.fromPartial(object.variantPredicate)
       : undefined;
+    message.followTestIdRenaming = object.followTestIdRenaming ?? false;
     message.pageSize = object.pageSize ?? 0;
     message.pageToken = object.pageToken ?? "";
     return message;

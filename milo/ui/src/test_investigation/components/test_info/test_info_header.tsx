@@ -21,15 +21,16 @@ import {
 import { PageTitle } from '@/common/components/page_title';
 import { OutputTestVerdict } from '@/common/types/verdict';
 import { TestVariantBranch } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
-import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import {
   useInvocation,
   useProject,
   useTestVariant,
 } from '@/test_investigation/context';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 import {
   getCommitGitilesUrlFromInvocation,
   getCommitInfoFromInvocation,
+  getSourcesFromInvocation,
 } from '@/test_investigation/utils/test_info_utils';
 
 import { useTestVariantBranch } from './context';
@@ -88,12 +89,14 @@ function constructBlamelistCommitLink(
   project: string | undefined,
   testVariant: OutputTestVerdict,
   testVariantBranch: TestVariantBranch | null | undefined,
-  invocation: Invocation,
+  invocation: AnyInvocation,
 ): string | undefined {
   // TODO: get this refhash from the invocation rather than the testVariantBranch once it is populated by the backend.
   const refHash = testVariantBranch?.refHash;
-  const commitPosition =
-    invocation.sourceSpec?.sources?.gitilesCommit?.position;
+
+  const sources = getSourcesFromInvocation(invocation);
+
+  const commitPosition = sources?.gitilesCommit?.position;
 
   if (
     project &&

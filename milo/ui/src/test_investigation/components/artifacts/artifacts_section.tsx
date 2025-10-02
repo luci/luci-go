@@ -21,6 +21,7 @@ import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { parseTestResultName } from '@/common/tools/test_result_utils/index';
 import { ListArtifactsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { useTestVariant } from '@/test_investigation/context';
+import { useIsLegacyInvocation } from '@/test_investigation/context/context';
 import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries';
 
 import { ArtifactContentView, ArtifactSummaryView } from './artifact_content';
@@ -31,6 +32,7 @@ import { ArtifactTreeNodeData } from './types';
 function ArtifactsSectionContent() {
   const resultDbClient = useResultDbClient();
   const { currentResult, selectedAttemptIndex } = useArtifactsContext();
+  const isLegacyInvocation = useIsLegacyInvocation();
 
   const [selectedArtifactNode, setSelectedArtifactNode] =
     useState<ArtifactTreeNodeData | null>(null);
@@ -71,14 +73,15 @@ function ArtifactsSectionContent() {
   } = useInfiniteQuery({
     ...resultDbClient.ListArtifacts.queryPaged(
       ListArtifactsRequest.fromPartial({
-        parent: currentResult?.name
-          ? 'invocations/' +
-            parseTestResultName(currentResult.name).invocationId
-          : undefined,
+        parent:
+          isLegacyInvocation && currentResult?.name
+            ? 'invocations/' +
+              parseTestResultName(currentResult.name).invocationId
+            : undefined,
         pageSize: 1000,
       }),
     ),
-    enabled: !!currentResult?.name,
+    enabled: !!currentResult?.name && isLegacyInvocation,
     staleTime: Infinity,
     refetchInterval: 10 * 60 * 1000,
     select: (res) => res.pages.flatMap((page) => page.artifacts) || [],
@@ -122,7 +125,8 @@ function ArtifactsSectionContent() {
   };
 
   const isOverallArtifactListsLoading =
-    isLoadingTestResultArtifacts || isLoadingInvocationScopeArtifacts;
+    isLoadingTestResultArtifacts ||
+    (isLegacyInvocation && isLoadingInvocationScopeArtifacts);
 
   const containsArtifacts = useMemo(() => {
     return (

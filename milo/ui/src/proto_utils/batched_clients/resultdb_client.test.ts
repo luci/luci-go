@@ -114,7 +114,7 @@ describe('BatchedResultDBClientImpl', () => {
     // `invocation` + `resultLimit` combination.
     expect(batchGetTestVariants).toHaveBeenCalledTimes(3);
     expect(batchGetTestVariants).toHaveBeenCalledWith(
-      BatchGetTestVariantsRequest.fromPartial({
+      expect.objectContaining({
         invocation: 'invocations/inv1',
         resultLimit: 10,
         testVariants: [
@@ -126,7 +126,7 @@ describe('BatchedResultDBClientImpl', () => {
       }),
     );
     expect(batchGetTestVariants).toHaveBeenCalledWith(
-      BatchGetTestVariantsRequest.fromPartial({
+      expect.objectContaining({
         invocation: 'invocations/inv2',
         resultLimit: 10,
         testVariants: [

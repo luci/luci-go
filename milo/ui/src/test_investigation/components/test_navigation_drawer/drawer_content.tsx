@@ -20,53 +20,37 @@ import {
   ToggleButtonGroup,
   ToggleButton,
 } from '@mui/material';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 import {
   TestVerdict_Status,
   testVerdict_StatusToJSON,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 
+import { useTestDrawer } from './context';
 import { DrawerTreeItem } from './drawer_tree_item';
 import { ExpandableListItem } from './expandable_list_item';
-import { TestNavigationTreeGroup, TestNavigationTreeNode } from './types';
+import { TestNavigationTreeGroup } from './types';
 
-interface DrawerContentProps {
-  selectedTab: number;
-  onTabChange: (event: React.SyntheticEvent, newValue: number) => void;
-  isLoadingTestVariants: boolean;
-  hierarchyTreeData: readonly TestNavigationTreeNode[];
-  failureReasonTreeData: readonly TestNavigationTreeGroup[];
-  expandedNodes: Set<string>;
-  toggleNodeExpansion: (nodeId: string) => void;
-  currentTestId?: string;
-  currentVariantHash?: string;
-  onSelectTestVariant?: (testId: string, variantHash: string) => void;
-}
+export function DrawerContent() {
+  const {
+    isLoading: isLoadingTestVariants,
+    hierarchyTree: hierarchyTreeData,
+    failureReasonTree: failureReasonTreeData,
+  } = useTestDrawer();
 
-export function DrawerContent({
-  selectedTab,
-  onTabChange,
-  isLoadingTestVariants,
-  hierarchyTreeData,
-  failureReasonTreeData,
-  expandedNodes,
-  toggleNodeExpansion,
-  currentTestId,
-  currentVariantHash,
-  onSelectTestVariant,
-}: DrawerContentProps) {
-  const handleTabChange = (
-    event: React.SyntheticEvent,
-    newValue: number | null,
-  ) => {
-    if (newValue !== null) {
-      onTabChange(event, newValue);
-    }
-  };
-
+  const [selectedTab, setSelectedTab] = useState(0);
   const [openGroups, setOpenGroups] = useState<{ [groupId: string]: boolean }>(
     {},
+  );
+
+  const handleTabChange = useCallback(
+    (_event: React.SyntheticEvent, newValue: number | null) => {
+      if (newValue !== null) {
+        setSelectedTab(newValue);
+      }
+    },
+    [],
   );
 
   const toggleGroup = (groupId: string) => {
@@ -167,15 +151,7 @@ export function DrawerContent({
             {selectedTab === 0 &&
               (hierarchyTreeData.length > 0 ? (
                 hierarchyTreeData.map((node) => (
-                  <DrawerTreeItem
-                    key={node.id}
-                    node={node}
-                    expandedNodes={expandedNodes}
-                    toggleNodeExpansion={toggleNodeExpansion}
-                    currentTestId={currentTestId}
-                    currentVariantHash={currentVariantHash}
-                    onSelectTestVariant={onSelectTestVariant}
-                  />
+                  <DrawerTreeItem key={node.id} node={node} />
                 ))
               ) : (
                 <Typography
@@ -198,15 +174,7 @@ export function DrawerContent({
                   >
                     <List dense component="div" disablePadding>
                       {group.nodes.map((node) => (
-                        <DrawerTreeItem
-                          key={node.id}
-                          node={node}
-                          expandedNodes={expandedNodes}
-                          toggleNodeExpansion={toggleNodeExpansion}
-                          currentTestId={currentTestId}
-                          currentVariantHash={currentVariantHash}
-                          onSelectTestVariant={onSelectTestVariant}
-                        />
+                        <DrawerTreeItem key={node.id} node={node} />
                       ))}
                     </List>
                   </ExpandableListItem>

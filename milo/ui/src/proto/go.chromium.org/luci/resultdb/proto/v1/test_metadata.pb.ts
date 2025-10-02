@@ -48,9 +48,8 @@ export interface TestMetadataDetail {
 export interface TestMetadata {
   /**
    * The original test name.
-   * Deprecated: This was an attempt to solve the problem of test IDs that were
-   * too long to show on the UI. Structured test IDs are now the recommended
-   * solution instead.
+   * This is useful for users who are familiar with the underlying test harness
+   * and want to re-run the test outside of the CI system.
    */
   readonly name: string;
   /**

@@ -1,3 +1,17 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Accordion,
@@ -27,9 +41,9 @@ export interface FailureSummaryProps {
   testVariant: TestVariant;
   testTextToCopy: string;
   rowLabel: string;
+  isLegacyInvocation: boolean;
 }
 
-// Prioritise displaying failed -> skipped -> execution errored test results.
 const statusPriorityMap = {
   [TestResult_Status.FAILED]: 0,
   [TestResult_Status.SKIPPED]: 1,
@@ -43,8 +57,12 @@ export function FailureSummary({
   testVariant,
   testTextToCopy,
   rowLabel,
+  isLegacyInvocation,
 }: FailureSummaryProps) {
   const { invocationId } = useParams<{ invocationId: string }>();
+  if (!invocationId) {
+    throw new Error('Invocation ID is required');
+  }
 
   const resultToDisplay: TestResult = useMemo(() => {
     const resultsBundle = testVariant.results;
@@ -56,7 +74,6 @@ export function FailureSummary({
       })[0];
   }, [testVariant.results]);
 
-  // Show in priority of summary_html with text artifact -> failure or skipped reason -> stack trace.
   let failureSummaryText = '';
   if (!resultToDisplay.summaryHtml) {
     failureSummaryText =
@@ -115,8 +132,8 @@ export function FailureSummary({
                 <Link
                   href={getTestVariantURL(
                     invocationId,
-                    testVariant.testId,
-                    testVariant.variantHash,
+                    testVariant,
+                    isLegacyInvocation,
                   )}
                   variant="body2"
                   sx={{
@@ -189,8 +206,8 @@ export function FailureSummary({
           <Link
             href={getTestVariantURL(
               invocationId,
-              testVariant.testId,
-              testVariant.variantHash,
+              testVariant,
+              isLegacyInvocation,
             )}
             variant="body2"
             sx={{

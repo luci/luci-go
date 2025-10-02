@@ -17,14 +17,17 @@ import { DateTime } from 'luxon';
 import { useMemo } from 'react';
 
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
-import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { NO_HISTORY_DATA_TEXT } from '@/test_investigation/components/test_info/constants';
 import {
   useInvocation,
   useProject,
   useTestVariant,
 } from '@/test_investigation/context';
-import { constructTestHistoryUrl } from '@/test_investigation/utils/test_info_utils';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
+import {
+  constructTestHistoryUrl,
+  getSourcesFromInvocation,
+} from '@/test_investigation/utils/test_info_utils';
 
 import { useTestVariantBranch } from '../../context';
 
@@ -34,12 +37,11 @@ import { TestAddedInfo } from './test_added_info';
 
 function findInvocationSegmentIndex(
   segments: readonly Segment[],
-  invocation: Invocation | null,
+  invocation: AnyInvocation | null,
 ): number {
-  const position = parseInt(
-    invocation?.sourceSpec?.sources?.gitilesCommit?.position || '',
-    10,
-  );
+  const gc = getSourcesFromInvocation(invocation)?.gitilesCommit;
+
+  const position = parseInt(gc?.position || '', 10);
   if (isNaN(position)) {
     return -1;
   }

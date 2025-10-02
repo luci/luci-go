@@ -16,8 +16,8 @@ import { SemanticStatusType } from '@/common/styles/status_styles';
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { QueryTestVariantStabilityResponse } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 import { TestVerdict_StatusOverride } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
-import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 
 import {
   findInvocationSegment,
@@ -36,7 +36,7 @@ export interface NextStepsInfo {
 export function getNextStepsInfo(
   testStability: QueryTestVariantStabilityResponse | undefined,
   testVariant: TestVariant,
-  invocation: Invocation,
+  invocation: AnyInvocation,
   segments: Segment[],
 ): NextStepsInfo | undefined {
   if (isAlreadyFixed(invocation, segments)) {
@@ -97,7 +97,10 @@ function failingSinceAdded(segments: Segment[]): boolean {
   );
 }
 
-function isAlreadyFixed(invocation: Invocation, segments: Segment[]): boolean {
+function isAlreadyFixed(
+  invocation: AnyInvocation,
+  segments: Segment[],
+): boolean {
   const invocationSegment = findInvocationSegment(segments, invocation);
   if (invocationSegment === -1 || !segments || segments.length === 0) {
     return false;

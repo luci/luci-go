@@ -21,9 +21,12 @@ import {
   TestVerdict_Status,
   TestVerdict_StatusOverride,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
-import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-import { isPresubmitRun } from '@/test_investigation/utils/test_info_utils';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
+import {
+  getSourcesFromInvocation,
+  isPresubmitRun,
+} from '@/test_investigation/utils/test_info_utils';
 
 export interface AnalysisItemContent {
   status?: SemanticStatusType;
@@ -31,7 +34,7 @@ export interface AnalysisItemContent {
 }
 
 export interface AnalysisData {
-  invocation: Invocation;
+  invocation: AnyInvocation;
   testVariant: TestVariant;
   segments: readonly Segment[] | undefined;
   /** Current time to use in any analyses requiring it (e.g. for calculating human readable times like "3 hours ago") */
@@ -50,12 +53,10 @@ export type AnalysisPointGenerator = (
  */
 export function findInvocationSegment(
   segments: readonly Segment[],
-  invocation: Invocation | null,
+  invocation: AnyInvocation | null,
 ): number {
-  const position = parseInt(
-    invocation?.sourceSpec?.sources?.gitilesCommit?.position || '',
-    10,
-  );
+  const sources = getSourcesFromInvocation(invocation);
+  const position = parseInt(sources?.gitilesCommit?.position || '', 10);
   if (isNaN(position)) {
     return -1;
   }
@@ -82,7 +83,8 @@ export function segmentFailureRatePercent(segment: Segment) {
 
 // --- Individual Analysis Point Generators ---
 export const noSources: AnalysisPointGenerator = ({ invocation }) => {
-  if (!invocation.sourceSpec?.sources?.gitilesCommit?.position) {
+  const sources = getSourcesFromInvocation(invocation);
+  if (!sources?.gitilesCommit?.position) {
     return [
       {
         text: 'History analysis is unavailable because no source commit position information was uploaded with this invocation.',
@@ -342,7 +344,7 @@ export const postsubmitCurrentStatus: AnalysisPointGenerator = (data) => {
 export function generateAnalysisPoints(
   currentTimeForAgoDt: DateTime,
   rawSegments: readonly Segment[] | undefined,
-  invocation: Invocation,
+  invocation: AnyInvocation,
   testVariant: TestVariant,
 ): AnalysisItemContent[] {
   const analysisGenerators: AnalysisPointGenerator[] = [

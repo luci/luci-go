@@ -20,23 +20,20 @@ import { Link as RouterLink } from 'react-router';
 
 import { useFeatureFlag } from '@/common/feature_flags';
 import { genFeedbackUrl } from '@/common/tools/utils';
+import { OutputTestVerdict } from '@/common/types/verdict';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
-import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
-import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import { useProject } from '@/test_investigation/context';
 import { NEW_TEST_INVESTIGATION_PAGE_FLAG } from '@/test_investigation/pages/features';
-import { isPresubmitRun } from '@/test_investigation/utils/test_info_utils';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
+import {
+  isPresubmitRun,
+  getBuildId,
+} from '@/test_investigation/utils/test_info_utils';
 
 export interface RedirectBackBannerProps extends AlertProps {
-  invocation: Invocation;
-  /**
-   * Optional. If supplied, the redirect will deep link directly to this test variant.
-   * Takes precedence over parsedTestId/parsedVariantDef.
-   */
-  testVariant?: TestVariant;
-  /** Optional. Test ID parsed from the URL. Used if testVariant is not provided. */
+  invocation: AnyInvocation;
+  testVariant?: OutputTestVerdict | null;
   parsedTestId?: string | null;
-  /** Optional. Variant definition parsed from the URL. Used if testVariant is not provided. */
   parsedVariantDef?: Readonly<Record<string, string>> | null;
 }
 
@@ -53,9 +50,7 @@ export function RedirectBackBanner({
   const { trackEvent } = useGoogleAnalytics();
   const project = useProject();
 
-  const buildId = invocation.name.startsWith('invocations/build-')
-    ? invocation.name.substring('invocations/build-'.length)
-    : undefined;
+  const buildId = useMemo(() => getBuildId(invocation), [invocation]);
 
   const legacyUrl = useMemo(() => {
     if (!buildId) {

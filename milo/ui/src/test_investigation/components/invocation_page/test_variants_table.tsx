@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 import { Box, Chip, CircularProgress } from '@mui/material';
 import { useMemo, useCallback, useEffect, useState } from 'react';
 
@@ -35,8 +36,6 @@ import { FailureSummary } from './failure_summary';
 
 /**
  * Recursively traverses the node tree to find the IDs of all nodes.
- * @param nodes The nodes to search through.
- * @returns A flat array of node IDs to be expanded.
  */
 function getIdsOfAllNodes(nodes: TestNavigationTreeNode[]): string[] {
   let ids: string[] = [];
@@ -56,6 +55,7 @@ interface TestVariantsTableProps {
   parsedVariantDef: Readonly<Record<string, string>> | null;
   selectedStatuses: Set<SemanticStatusType>;
   setSelectedStatuses: (newSelection: Set<SemanticStatusType>) => void;
+  isLegacyInvocation: boolean;
 }
 
 /**
@@ -70,6 +70,7 @@ export function TestVariantsTable({
   parsedVariantDef,
   selectedStatuses,
   setSelectedStatuses,
+  isLegacyInvocation,
 }: TestVariantsTableProps) {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [_, setSearchParams] = useSyncedSearchParams();
@@ -133,7 +134,8 @@ export function TestVariantsTable({
                 testVariant={testVariant}
                 testTextToCopy={testTextToCopy}
                 rowLabel={rowData.label}
-              ></FailureSummary>
+                isLegacyInvocation={isLegacyInvocation}
+              />
             );
           } else {
             return (
@@ -153,7 +155,7 @@ export function TestVariantsTable({
         },
       },
     ];
-  }, []);
+  }, [isLegacyInvocation]);
 
   useEffect(() => {
     const idsToExpand = getIdsOfAllNodes(filteredHierarchyTreeData);

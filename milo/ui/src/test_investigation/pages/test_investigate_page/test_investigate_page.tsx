@@ -1,17 +1,3 @@
-// Copyright 2025 The LUCI Authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import {
   Box,
@@ -44,10 +30,13 @@ import {
   TrackLeafRoutePageView,
   useGoogleAnalytics,
 } from '@/generic_libs/components/google_analytics';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { TestIdentifier } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import {
   GetInvocationRequest,
   BatchGetTestVariantsRequest,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { GetRootInvocationRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/root_invocation.pb';
 import { TestVerdict_StatusOverride } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { ArtifactsSection } from '@/test_investigation/components/artifacts/artifacts_section';
 import { RedirectBackBanner } from '@/test_investigation/components/redirect_back_banner';
@@ -60,43 +49,83 @@ import {
 import { isPresubmitRun } from '@/test_investigation/utils/test_info_utils';
 import { getProjectFromRealm } from '@/test_investigation/utils/test_variant_utils';
 
+// Define the shape of the URL parameters.
+// `coarse` and `fine` will be undefined if not in the URL.
+type TestInvestigateParams = {
+  invocationId: string;
+  module: string;
+  scheme: string;
+  variant: string;
+  coarse?: string;
+  fine?: string;
+  case: string;
+};
+
 export function TestInvestigatePage() {
-  const {
-    invocationId: rawInvocationId,
-    testId: rawTestId,
-    variantHash: rawVariantHash,
-  } = useParams<{
-    invocationId: string;
-    testId: string;
-    variantHash: string;
-  }>();
+  const params = useParams<TestInvestigateParams>();
+  const [searchParams] = useSyncedSearchParams();
+  const isLegacyInvocation = searchParams.get('invMode') === 'legacy';
+
   const authState = useAuthState();
   const resultDbClient = useResultDbClient();
 
-  if (!rawInvocationId || !rawTestId || !rawVariantHash) {
-    throw new Error(
-      'Invalid URL: Missing invocationId, testId, or variantHash.',
-    );
+  // Destructure all params needed for both legacy and root invocations.
+  const {
+    invocationId: rawInvocationId,
+    variant: rawVariantHash,
+    case: decodedTestId, // The router already decodes the 'case' parameter
+    module,
+    scheme,
+    coarse,
+    fine,
+  } = params;
+
+  if (
+    !rawInvocationId ||
+    !rawVariantHash ||
+    !decodedTestId ||
+    !module ||
+    !scheme
+  ) {
+    throw new Error('Invalid URL: Missing required parameters.');
   }
 
-  const decodedTestId = useMemo(
-    () => decodeURIComponent(rawTestId),
-    [rawTestId],
-  );
-
-  const { data: invocation, isPending: isLoadingInvocation } = useQuery({
+  // Fetch Legacy Invocation (only if in legacy mode)
+  const { data: legacyInvocation, isPending: isLoadingLegacyInv } = useQuery({
     ...resultDbClient.GetInvocation.query(
       GetInvocationRequest.fromPartial({
         name: `invocations/${rawInvocationId}`,
       }),
     ),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
+    enabled: isLegacyInvocation,
   });
 
-  const { data: testVariant, isPending: isLoadingTestVariant } = useQuery({
-    ...resultDbClient.BatchGetTestVariants.query(
-      BatchGetTestVariantsRequest.fromPartial({
-        invocation: `invocations/${rawInvocationId}`,
+  // Fetch Root Invocation (only if NOT in legacy mode)
+  const { data: rootInvocation, isPending: isLoadingRootInv } = useQuery({
+    ...resultDbClient.GetRootInvocation.query(
+      GetRootInvocationRequest.fromPartial({
+        name: `rootInvocations/${rawInvocationId}`,
+      }),
+    ),
+    staleTime: 5 * 60 * 1000,
+    enabled: !isLegacyInvocation,
+  });
+
+  const invocation = isLegacyInvocation ? legacyInvocation : rootInvocation;
+  const isLoadingInvocation = isLegacyInvocation
+    ? isLoadingLegacyInv
+    : isLoadingRootInv;
+
+  const invocationNameForTestVariants = isLegacyInvocation
+    ? `invocations/${rawInvocationId}`
+    : `rootInvocations/${rawInvocationId}`;
+
+  const request = useMemo(() => {
+    if (isLegacyInvocation) {
+      // For legacy invocations, query by testId and variantHash.
+      return BatchGetTestVariantsRequest.fromPartial({
+        invocation: invocationNameForTestVariants,
         testVariants: [
           {
             testId: decodedTestId,
@@ -104,15 +133,48 @@ export function TestInvestigatePage() {
           },
         ],
         resultLimit: 100,
-      }),
-    ),
-    staleTime: Infinity, // TestVariant data for a specific inv and hash is usually immutable
+      });
+    } else {
+      // For root invocations, query by the structured test identifier.
+      return BatchGetTestVariantsRequest.fromPartial({
+        parent: invocationNameForTestVariants,
+        testVariants: [
+          {
+            testIdStructured: TestIdentifier.fromPartial({
+              moduleName: module,
+              moduleScheme: scheme,
+              moduleVariantHash: rawVariantHash,
+              caseName: decodedTestId,
+              coarseName: coarse,
+              fineName: fine,
+            }),
+          },
+        ],
+        resultLimit: 100,
+      });
+    }
+  }, [
+    isLegacyInvocation,
+    invocationNameForTestVariants,
+    decodedTestId,
+    rawVariantHash,
+    module,
+    scheme,
+    coarse,
+    fine,
+  ]);
+
+  const { data: testVariant, isPending: isLoadingTestVariant } = useQuery({
+    ...resultDbClient.BatchGetTestVariants.query(request),
+    staleTime: Infinity,
     select: (data): OutputTestVerdict | null => {
-      if (!data || !data.testVariants || data.testVariants.length === 0) {
+      if (!data?.testVariants?.length) {
         return null;
       }
       return data.testVariants[0] as OutputTestVerdict;
     },
+    // Only enable the query once the request is fully formed.
+    enabled: !!request,
   });
 
   const project = useMemo(
@@ -225,6 +287,7 @@ export function TestInvestigatePage() {
       invocation={invocation}
       rawInvocationId={rawInvocationId}
       project={project}
+      isLegacyInvocation={isLegacyInvocation}
     >
       <Helmet>
         {/** TODO: Add favicon */}

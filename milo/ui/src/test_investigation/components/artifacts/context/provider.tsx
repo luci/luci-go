@@ -21,6 +21,8 @@ import {
 import {
   SkippedReason_Kind,
   skippedReason_KindToJSON,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/skipped_reason.pb';
+import {
   TestResult_Status,
   testResult_StatusToJSON,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';

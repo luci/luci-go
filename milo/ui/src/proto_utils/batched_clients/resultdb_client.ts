@@ -67,6 +67,7 @@ export class BatchedResultDBClientImpl extends ResultDBClientImpl {
             {
               invocation: req1.invocation,
               resultLimit: req1.resultLimit,
+              parent: '',
               testVariants: [...req1.testVariants, ...req2.testVariants],
             },
           ],

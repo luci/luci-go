@@ -92,6 +92,7 @@ export function TestVerdictEntry({
   const { data, isPending, isError, error } = useQuery({
     ...client.BatchGetTestVariants.query({
       invocation: 'invocations/' + invocationId,
+      parent: '',
       testVariants: [
         BatchGetTestVariantsRequest_TestVariantIdentifier.fromPartial({
           testId,

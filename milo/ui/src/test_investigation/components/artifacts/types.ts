@@ -14,10 +14,8 @@
 
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { FailureReason_Kind } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/failure_reason.pb';
-import {
-  SkippedReason_Kind,
-  TestResult_Status,
-} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import { SkippedReason_Kind } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/skipped_reason.pb';
+import { TestResult_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
 export type SelectedArtifactSource = 'result' | 'invocation';
