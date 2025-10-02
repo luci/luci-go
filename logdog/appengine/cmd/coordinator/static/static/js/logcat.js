@@ -283,7 +283,8 @@ if (urlIdx !== -1) {
   fetchLogcat(`/logs${logcatUrl}?format=raw`);
 } else {
   setUpElements([]);
-  textDisplayArea.textContent = 'Encountered an error when parsing the URL';
+  textDisplayArea.textContent = 'Please upload a text file containing '
+    + 'your logcat';
 }
 
 
