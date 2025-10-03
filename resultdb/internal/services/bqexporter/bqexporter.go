@@ -228,16 +228,15 @@ func hasReason(apiErr *googleapi.Error, reason string) bool {
 	return false
 }
 
-// rowInput is information required to generate a BigQuery row.
-type rowInput interface {
-	// row returns a BigQuery row.
-	row() proto.Message
-
-	// id returns an identifier for the row.
-	id() []byte
+// bigqueryRow represents a BigQuery row to be exported.
+type bigqueryRow struct {
+	// The BigQuery row contents.
+	content proto.Message
+	// The deduplication identifier for the row.
+	id []byte
 }
 
-func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC chan []rowInput, errorLogger func(ctx context.Context, err bigquery.PutMultiError, rows []*bq.Row)) error {
+func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC chan []bigqueryRow, errorLogger func(ctx context.Context, err bigquery.PutMultiError, rows []*bq.Row)) error {
 	eg, ctx := errgroup.WithContext(ctx)
 
 	for rows := range batchC {
@@ -262,20 +261,20 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 
 // insertRowsWithRetries inserts rows into BigQuery.
 // Retries on quotaExceeded errors.
-func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, rowInputs []rowInput, errorLogger func(ctx context.Context, err bigquery.PutMultiError, rows []*bq.Row)) error {
+func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, rowInputs []bigqueryRow, errorLogger func(ctx context.Context, err bigquery.PutMultiError, rows []*bq.Row)) error {
 	if err := b.putLimiter.Wait(ctx); err != nil {
 		return err
 	}
 
 	rows := make([]*bq.Row, 0, len(rowInputs))
 	for _, ri := range rowInputs {
-		row := &bq.Row{Message: ri.row()}
+		row := &bq.Row{Message: ri.content}
 
 		if b.UseInsertIDs {
 			// InsertID cannot exceed 128 bytes.
 			// https://cloud.google.com/bigquery/quotas#streaming_inserts
 			// Use SHA512 which is exactly 128 bytes in hex.
-			hash := sha512.Sum512(ri.id())
+			hash := sha512.Sum512(ri.id)
 			row.InsertID = hex.EncodeToString(hash[:])
 		} else {
 			row.InsertID = bigquery.NoDedupeID

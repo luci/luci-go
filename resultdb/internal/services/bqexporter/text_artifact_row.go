@@ -80,12 +80,12 @@ type textArtifactRowInput struct {
 	content  string
 }
 
-func (i *textArtifactRowInput) row() proto.Message {
+func (i textArtifactRowInput) toRow() bigqueryRow {
 	_, testID, resultID, artifactID := artifacts.MustParseLegacyName(i.a.Name)
 	expRec := invocationProtoToRecord(i.exported)
 	parRec := invocationProtoToRecord(i.parent)
 
-	return &bqpb.TextArtifactRowLegacy{
+	rowContent := &bqpb.TextArtifactRowLegacy{
 		Exported:      expRec,
 		Parent:        parRec,
 		TestId:        testID,
@@ -95,13 +95,13 @@ func (i *textArtifactRowInput) row() proto.Message {
 		Content:       i.content,
 		PartitionTime: i.exported.CreateTime,
 	}
+	return bigqueryRow{
+		content: rowContent,
+		id:      []byte(fmt.Sprintf("%s/%d", i.a.Name, i.shardID)),
+	}
 }
 
-func (i *textArtifactRowInput) id() []byte {
-	return []byte(fmt.Sprintf("%s/%d", i.a.Name, i.shardID))
-}
-
-func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifact, rowC chan rowInput) error {
+func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifact, rowC chan bigqueryRow) error {
 	ac := artifactcontent.Reader{
 		RBEInstance: b.Options.ArtifactRBEInstance,
 		Hash:        a.RBECASHash,
@@ -110,14 +110,14 @@ func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifact, r
 
 	var str strings.Builder
 	shardId := 0
-	input := func() *textArtifactRowInput {
-		return &textArtifactRowInput{
+	input := func() bigqueryRow {
+		return textArtifactRowInput{
 			exported: a.exported,
 			parent:   a.parent,
 			a:        a.Artifact.Artifact,
 			shardID:  int32(shardId),
 			content:  str.String(),
-		}
+		}.toRow()
 	}
 
 	err := ac.DownloadRBECASContent(ctx, b.rbecasClient, func(ctx context.Context, pr io.Reader) error {
@@ -224,22 +224,27 @@ func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocati
 	return nil
 }
 
-func (b *bqExporter) artifactRowInputToBatch(ctx context.Context, rowC chan rowInput, batchC chan []rowInput) error {
-	rows := make([]rowInput, 0, b.MaxBatchRowCount)
+func (b *bqExporter) artifactRowInputToBatch(ctx context.Context, rowC chan bigqueryRow, batchC chan []bigqueryRow) error {
+	rows := make([]bigqueryRow, 0, b.MaxBatchRowCount)
 	batchSize := 0 // Estimated size of rows in bytes.
 	for row := range rowC {
-		contentLength := len(row.(*textArtifactRowInput).content)
-		if len(rows)+1 >= b.MaxBatchRowCount || batchSize+contentLength >= b.MaxBatchSizeApprox {
+		// Calculate the size of the row if it was encoded in binary format. In actuality,
+		// the row will be sent in JSON as we are still using the legacy BigQuery Write API,
+		// so it will be a bit larger. For this reason, MaxBatchSizeApprox is typically set
+		// conservatively.
+		rowSize := proto.Size(row.content)
+
+		if len(rows)+1 >= b.MaxBatchRowCount || batchSize+rowSize >= b.MaxBatchSizeApprox {
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
 			case batchC <- rows:
 			}
-			rows = make([]rowInput, 0, b.MaxBatchRowCount)
+			rows = make([]bigqueryRow, 0, b.MaxBatchRowCount)
 			batchSize = 0
 		}
 		rows = append(rows, row)
-		batchSize += contentLength
+		batchSize += rowSize
 	}
 	if len(rows) > 0 {
 		select {
@@ -257,8 +262,8 @@ func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, ins inse
 	defer cancel()
 
 	// Query artifacts and export to BigQuery.
-	batchC := make(chan []rowInput)
-	rowC := make(chan rowInput)
+	batchC := make(chan []bigqueryRow)
+	rowC := make(chan bigqueryRow)
 	artifactC := make(chan *artifact, artifactWorkers)
 
 	// Batch exports rows to BigQuery.

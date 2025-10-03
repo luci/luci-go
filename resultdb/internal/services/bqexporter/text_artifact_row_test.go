@@ -48,11 +48,11 @@ func TestGenerateArtifactBQRow(t *testing.T) {
 			shardID: 0,
 			content: "deadbeef",
 		}
-		row := input.row()
-		actual, ok := row.(*bqpb.TextArtifactRowLegacy)
+		row := input.toRow()
+		actual, ok := row.content.(*bqpb.TextArtifactRowLegacy)
 		assert.Loosely(t, ok, should.BeTrue)
 		assert.Loosely(t, actual.Content, should.Match(input.content))
 
-		assert.Loosely(t, input.id(), should.Match([]byte(fmt.Sprintf("%s/%d", input.a.Name, input.shardID))))
+		assert.Loosely(t, row.id, should.Match([]byte(fmt.Sprintf("%s/%d", input.a.Name, input.shardID))))
 	})
 }

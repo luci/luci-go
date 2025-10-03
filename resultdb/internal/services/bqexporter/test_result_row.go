@@ -89,7 +89,7 @@ type testResultRowInput struct {
 	insertTime time.Time
 }
 
-func (i *testResultRowInput) row() proto.Message {
+func (i testResultRowInput) toRow() bigqueryRow {
 	tr := i.tr
 
 	ret := &bqpb.TestResultRow{
@@ -123,11 +123,10 @@ func (i *testResultRowInput) row() proto.Message {
 		ret.SummaryHtml = "[Trimmed] " + ret.SummaryHtml[:maxSummaryLength]
 	}
 
-	return ret
-}
-
-func (i *testResultRowInput) id() []byte {
-	return []byte(i.tr.Name)
+	return bigqueryRow{
+		content: ret,
+		id:      []byte(tr.Name),
+	}
 }
 
 type testVariantKey struct {
@@ -165,7 +164,7 @@ func (b *bqExporter) queryTestResults(
 	exported *pb.Invocation,
 	predicate *pb.TestResultPredicate,
 	exoneratedTestVariants map[testVariantKey]struct{},
-	batchC chan []rowInput) error {
+	batchC chan []bigqueryRow) error {
 	invocationIds, err := reachableInvs.WithTestResultsIDSet()
 	if err != nil {
 		return err
@@ -181,7 +180,7 @@ func (b *bqExporter) queryTestResults(
 		return err
 	}
 
-	rows := make([]rowInput, 0, b.MaxBatchRowCount)
+	rows := make([]bigqueryRow, 0, b.MaxBatchRowCount)
 	batchSize := 0 // Estimated size of rows in bytes.
 	rowCount := 0
 	now := clock.Now(ctx).UTC()
@@ -194,15 +193,21 @@ func (b *bqExporter) queryTestResults(
 			sources = reachableInvs.Sources[sourceHash]
 		}
 
-		rows = append(rows, &testResultRowInput{
+		row := testResultRowInput{
 			exported:   exported,
 			parent:     invs[parentID],
 			tr:         tr,
 			sources:    sources,
 			exonerated: exonerated,
 			insertTime: now,
-		})
-		batchSize += proto.Size(tr)
+		}.toRow()
+		rows = append(rows, row)
+
+		// Calculate the size of the row if it was encoded in binary format. In actuality,
+		// the row will be sent in JSON as we are still using the legacy BigQuery Write API,
+		// so it will be a bit larger. For this reason, MaxBatchSizeApprox is typically set
+		// conservatively.
+		batchSize += proto.Size(row.content)
 		rowCount++
 		if len(rows) >= b.MaxBatchRowCount || batchSize >= b.MaxBatchSizeApprox {
 			select {
@@ -210,7 +215,7 @@ func (b *bqExporter) queryTestResults(
 				return ctx.Err()
 			case batchC <- rows:
 			}
-			rows = make([]rowInput, 0, b.MaxBatchRowCount)
+			rows = make([]bigqueryRow, 0, b.MaxBatchRowCount)
 			batchSize = 0
 		}
 		return nil
@@ -266,7 +271,7 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 	for _, batch := range invs.Batches() {
 		// Within each batch of invocations, batch the querying of
 		// test results and export to BigQuery.
-		batchC := make(chan []rowInput)
+		batchC := make(chan []bigqueryRow)
 
 		// Batch exports rows to BigQuery.
 		eg, ctx := errgroup.WithContext(ctx)
