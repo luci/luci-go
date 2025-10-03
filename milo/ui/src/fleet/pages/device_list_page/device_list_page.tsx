@@ -116,17 +116,26 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
   const devicesQuery = useDevices(request);
 
   const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
-  const columns = useMemo(
-    () =>
-      isDimensionsQueryProperlyLoaded
-        ? _.uniq(
-            Object.keys(dimensionsQuery.data.baseDimensions)
-              .concat(Object.keys(dimensionsQuery.data.labels))
-              .concat('current_task'),
-          )
-        : [],
-    [isDimensionsQueryProperlyLoaded, dimensionsQuery.data],
-  );
+  const columns = useMemo(() => {
+    if (isDimensionsQueryProperlyLoaded)
+      return _.uniq(
+        Object.keys(dimensionsQuery.data.baseDimensions)
+          .concat(Object.keys(dimensionsQuery.data.labels))
+          .concat('current_task'),
+      );
+    if (devicesQuery.data)
+      return _.uniq(
+        devicesQuery.data.devices.flatMap((d) =>
+          Object.keys(d.deviceSpec?.labels ?? {}),
+        ),
+      );
+
+    return [];
+  }, [
+    isDimensionsQueryProperlyLoaded,
+    dimensionsQuery.data,
+    devicesQuery.data,
+  ]);
 
   const [warnings, addWarning] = useWarnings();
   useEffect(() => {
