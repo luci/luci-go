@@ -12,36 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 
-const queryClient = new QueryClient();
+import { getIndexedDBWrapper } from './indexed_db_wrapper';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { staleTime: Infinity, gcTime: Infinity }, // Keep gcTime Infinity
+  },
+});
+
+const idbPersister = createAsyncStoragePersister({
+  storage: getIndexedDBWrapper(),
+});
 
 /*
- * Persists queries with the key `['persist-local-storage']` in the local storage.
+ * Persists queries with the key `['persist-local-storage']` in IndexedDB.
  */
 export function LocalStoragePersistClientProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const localStoragePersister = createSyncStoragePersister({
-    storage: window.localStorage,
-  });
-
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      // Followed the TkDodo suggestion: https://github.com/TanStack/query/discussions/7131#discussioncomment-8824550
       persistOptions={{
-        persister: localStoragePersister,
+        persister: idbPersister,
         dehydrateOptions: {
           shouldDehydrateQuery: (query) => {
-            return (
+            const ret =
               query.queryKey.includes('persist-local-storage') &&
-              query.state.status === 'success'
-            );
+              query.state.status === 'success';
+            return ret;
           },
         },
       }}
