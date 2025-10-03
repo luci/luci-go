@@ -228,6 +228,7 @@ func readyToFinalize(ctx context.Context, invID invocations.ID) (ready bool, err
 	}
 }
 
+// ensureFinalizing checks if the given invocation is in the FINALIZING state.
 func ensureFinalizing(ctx context.Context, invID invocations.ID) error {
 	switch state, err := invocations.ReadState(ctx, invID); {
 	case err != nil:
@@ -239,6 +240,53 @@ func ensureFinalizing(ctx context.Context, invID invocations.ID) error {
 	default:
 		return nil
 	}
+}
+
+// publishFinalizedInvocation publishes a pub/sub message for a finalized
+// invocation.
+func publishFinalizedInvocation(ctx context.Context, invID invocations.ID, opts Options) error {
+	// Enqueue a notification to pub/sub listeners that the invocation
+	// has been finalized.
+	inv, err := invocations.ReadFinalizedNotificationInfo(ctx, invID)
+	if err != nil {
+		return errors.Fmt("failed to read finalized notification info: %w", err)
+	}
+
+	// Note that this submits the notification transactionally,
+	// i.e. conditionally on this transaction committing.
+	notification := &pb.InvocationFinalizedNotification{
+		Invocation:   invID.Name(),
+		Realm:        inv.Realm,
+		IsExportRoot: inv.IsExportRoot,
+		ResultdbHost: opts.ResultDBHostname,
+		CreateTime:   inv.CreateTime,
+	}
+	tasks.NotifyInvocationFinalized(ctx, notification)
+	return nil
+}
+
+// publishFinalizedRootInvocation publishes a pub/sub message for a finalized
+// root invocation.
+func publishFinalizedRootInvocation(ctx context.Context, rootInvID rootinvocations.ID, opts Options) error {
+	// Enqueue a notification to pub/sub listeners that the root invocation
+	// has been finalized.
+	inv, err := rootinvocations.ReadFinalizedNotificationInfo(ctx, rootInvID)
+	if err != nil {
+		return errors.Fmt("failed to read finalized root notification info: %w", err)
+	}
+
+	// Note that this submits the notification transactionally,
+	// i.e. conditionally on this transaction committing.
+	notification := &pb.RootInvocationFinalizedNotification{
+		RootInvocation: &pb.RootInvocationInfo{
+			Name:       rootInvID.Name(),
+			Realm:      inv.Realm,
+			CreateTime: inv.CreateTime,
+		},
+		ResultdbHost: opts.ResultDBHostname,
+	}
+	tasks.NotifyRootInvocationFinalized(ctx, notification)
+	return nil
 }
 
 // finalizeInvocation updates the invocation state to FINALIZED.
@@ -272,23 +320,10 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID, opts Options)
 		// None of this work yet for work units and root invocations.
 		// We can enable it piecemeal once implemented.
 		if !invID.IsRootInvocation() && !invID.IsWorkUnit() {
-			// Enqueue a notification to pub/sub listeners that the invocation
-			// has been finalized.
-			inv, err := invocations.ReadFinalizedNotificationInfo(ctx, invID)
-			if err != nil {
-				return errors.Fmt("failed to read finalized notification info: %w", err)
+			// Publish a finalized invocation transactionally.
+			if err := publishFinalizedInvocation(ctx, invID, opts); err != nil {
+				return err
 			}
-
-			// Note that this submits the notification transactionally,
-			// i.e. conditionally on this transaction committing.
-			notification := &pb.InvocationFinalizedNotification{
-				Invocation:   invID.Name(),
-				Realm:        inv.Realm,
-				IsExportRoot: inv.IsExportRoot,
-				ResultdbHost: opts.ResultDBHostname,
-				CreateTime:   inv.CreateTime,
-			}
-			tasks.NotifyInvocationFinalized(ctx, notification)
 
 			// Enqueue update test metadata task transactionally.
 			if err := testmetadataupdator.Schedule(ctx, invID); err != nil {
@@ -322,10 +357,18 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID, opts Options)
 		// If the invocation is a shadow record for a root invocation
 		// or work unit, update via the source of truth.
 		if invID.IsRootInvocation() {
-			// Also updates the legacy invocation.
-			span.BufferWrite(ctx, rootinvocations.MarkFinalized(rootinvocations.MustParseLegacyInvocationID(invID))...)
+			// Publish a finalized root invocation transactionally.
+			rootInvID := rootinvocations.MustParseLegacyInvocationID(invID)
+			if err := publishFinalizedRootInvocation(ctx, rootInvID, opts); err != nil {
+				return err
+			}
+
+			// This updates both the root invocation and the corresponding
+			// legacy invocation to FINALIZED.
+			span.BufferWrite(ctx, rootinvocations.MarkFinalized(rootInvID)...)
 		} else if invID.IsWorkUnit() {
-			// Also updates the legacy invocation.
+			// This updates both the work unit and the corresponding legacy
+			// invocation to FINALIZED.
 			span.BufferWrite(ctx, workunits.MarkFinalized(workunits.MustParseLegacyInvocationID(invID))...)
 		} else {
 			span.BufferWrite(ctx, invocations.MarkFinalized(invID))

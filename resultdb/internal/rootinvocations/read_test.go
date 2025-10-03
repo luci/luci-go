@@ -164,6 +164,28 @@ func TestReadFunctions(t *testing.T) {
 				assert.That(t, err, should.ErrLike("id is unspecified"))
 			})
 		})
+
+		t.Run("ReadFinalizedNotificationInfo", func(t *ftt.Test) {
+			t.Run("happy path", func(t *ftt.Test) {
+				info, err := ReadFinalizedNotificationInfo(span.Single(ctx), id)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, info.Realm, should.Equal(testData.Realm))
+				assert.That(t, info.CreateTime.AsTime(), should.Match(testData.CreateTime))
+			})
+
+			t.Run("not found", func(t *ftt.Test) {
+				_, err := ReadFinalizedNotificationInfo(span.Single(ctx), "non-existent-id")
+				st, ok := appstatus.Get(err)
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, st.Code(), should.Equal(codes.NotFound))
+				assert.Loosely(t, st.Message(), should.ContainSubstring(`"rootInvocations/non-existent-id" not found`))
+			})
+
+			t.Run("empty ID", func(t *ftt.Test) {
+				_, err := ReadFinalizedNotificationInfo(span.Single(ctx), "")
+				assert.That(t, err, should.ErrLike("id is unspecified"))
+			})
+		})
 	})
 }
 

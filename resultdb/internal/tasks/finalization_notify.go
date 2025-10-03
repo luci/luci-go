@@ -32,8 +32,9 @@ import (
 )
 
 const (
-	v1NotifyFinalizedTaskClass = "v1-publish-invocation-finalized"
-	v1NotifyFinalizedTopic     = "v1.invocation_finalized"
+	v1NotifyFinalizedTaskClass           = "v1-publish-invocation-finalized"
+	v1NotifyFinalizedTopic               = "v1.invocation_finalized"
+	v1NotifyRootInvocationFinalizedTopic = "v1.root_invocation_finalized"
 )
 
 // NotifyFinalizedPublisher describes how to publish to cloud pub/sub
@@ -71,11 +72,53 @@ var NotifyFinalizedPublisher = tq.RegisterTaskClass(tq.TaskClass{
 	},
 })
 
-// NotifyInvocationFinalized transactionally enqueues
-// a task to publish that the given invocation has been
-// finalized.
+// NotifyRootInvocationFinalizedPublisher describes how to publish to cloud
+// pub/sub notifications that a root invocation has been finalized.
+var NotifyRootInvocationFinalizedPublisher = tq.RegisterTaskClass(tq.TaskClass{
+	ID:        "notify-root-invocation-finalized",
+	Topic:     v1NotifyRootInvocationFinalizedTopic,
+	Prototype: &taskspb.NotifyRootInvocationFinalized{},
+	Kind:      tq.Transactional,
+	Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
+		// Custom serialisation handler needed to control how the message is
+		// sent, as the backend is Cloud Pub/Sub and not Cloud Tasks.
+		t := m.(*taskspb.NotifyRootInvocationFinalized)
+		notification := t.GetMessage()
+		blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(notification)
+		if err != nil {
+			return nil, err
+		}
+
+		// Prepare attributes, which are can be used by subscribers to filter
+		// the messages they receive.
+		rootInvocation := notification.RootInvocation
+		if err := realms.ValidateRealmName(rootInvocation.Realm, realms.GlobalScope); err != nil {
+			return nil, err
+		}
+		project, _ := realms.Split(rootInvocation.Realm)
+		attrs := map[string]string{
+			"luci_project": project,
+		}
+
+		return &tq.CustomPayload{
+			Meta: attrs,
+			Body: blob,
+		}, nil
+	},
+})
+
+// NotifyInvocationFinalized transactionally enqueues a task to publish that the
+// given invocation has been finalized.
 func NotifyInvocationFinalized(ctx context.Context, message *pb.InvocationFinalizedNotification) {
 	tq.MustAddTask(ctx, &tq.Task{
 		Payload: &taskspb.NotifyInvocationFinalized{Message: message},
+	})
+}
+
+// NotifyRootInvocationFinalized transactionally enqueues a task to publish that
+// the given root invocation has been finalized.
+func NotifyRootInvocationFinalized(ctx context.Context, message *pb.RootInvocationFinalizedNotification) {
+	tq.MustAddTask(ctx, &tq.Task{
+		Payload: &taskspb.NotifyRootInvocationFinalized{Message: message},
 	})
 }

@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -265,4 +266,29 @@ func CheckRootInvocationUpdateRequestExist(ctx context.Context, id ID, updatedBy
 	default:
 		return true, nil
 	}
+}
+
+// FinalizedNotificationInfo captures information for sending a root invocation
+// finalized notification.
+type FinalizedNotificationInfo struct {
+	// The realm of the invocation.
+	Realm string
+	// When the invocation was created.
+	CreateTime *timestamppb.Timestamp
+}
+
+// ReadFinalizedNotificationInfo reads information for sending a root invocation
+// finalized notification.
+func ReadFinalizedNotificationInfo(ctx context.Context, rootInvID ID) (result FinalizedNotificationInfo, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/rootinvocations.ReadFinalizedNotificationInfo")
+	defer func() { tracing.End(ts, err) }()
+
+	var info FinalizedNotificationInfo
+	if err := readColumns(ctx, rootInvID, map[string]any{
+		"Realm":      &info.Realm,
+		"CreateTime": &info.CreateTime,
+	}); err != nil {
+		return FinalizedNotificationInfo{}, errors.Fmt("read columns: %w", err)
+	}
+	return info, nil
 }

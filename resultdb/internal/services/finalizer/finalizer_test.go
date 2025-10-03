@@ -257,11 +257,16 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		t.Run("For a root invocation", func(t *ftt.Test) {
 			rootInvID := rootinvocations.ID("root-inv")
+			realm := "myproject:myrealm"
+			createTime := time.Unix(1000, 0)
 
 			// Create a root invocation and its legacy shadow.
 			// The root invocation needs to be in FINALIZING state.
 			// The root invocation root work unit will also be in FINALIZING state.
-			row := rootinvocations.NewBuilder(rootInvID).WithState(pb.RootInvocation_FINALIZING).Build()
+			row := rootinvocations.NewBuilder(rootInvID).
+				WithRealm(realm).
+				WithCreateTime(createTime).
+				WithState(pb.RootInvocation_FINALIZING).Build()
 			testutil.MustApply(ctx, t, insert.RootInvocationWithRootWorkUnit(row)...)
 
 			err := finalizeInvocation(ctx, rootInvID.LegacyInvocationID(), opts)
@@ -287,7 +292,18 @@ func TestFinalizeInvocation(t *testing.T) {
 			assert.Loosely(t, legacyState, should.Equal(pb.Invocation_FINALIZED))
 			assert.Loosely(t, legacyFinalizeTime, should.Equal(finalizeTime))
 
-			assert.Loosely(t, sched.Tasks().Payloads(), should.HaveLength(0))
+			assert.Loosely(t, sched.Tasks().Payloads(), should.HaveLength(1))
+			// Enqueued pub/sub notification.
+			assert.Loosely(t, sched.Tasks().Payloads()[0], should.Match(&taskspb.NotifyRootInvocationFinalized{
+				Message: &pb.RootInvocationFinalizedNotification{
+					RootInvocation: &pb.RootInvocationInfo{
+						Name:       rootInvID.Name(),
+						Realm:      realm,
+						CreateTime: timestamppb.New(createTime),
+					},
+					ResultdbHost: "rdb-host",
+				},
+			}))
 		})
 
 		t.Run("For a work unit", func(t *ftt.Test) {
