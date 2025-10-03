@@ -12,6 +12,10 @@ help:
 lint:
 	npm run lint
 
+# Used to type check in a builder.
+type-check:
+	npm run type-check
+
 format:
 	npm run lint -- --fix
 
