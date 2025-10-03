@@ -487,16 +487,14 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
     setSearchParams(filtersUpdater({}));
   }, [addWarning, selectedOptions.error, setSearchParams]);
 
-  const orderBy = parseOrderByParam(searchParams.get(ORDER_BY_PARAM_KEY) ?? '');
-  const sorting =
-    orderBy !== null
-      ? [
-          {
-            id: orderBy.field,
-            desc: orderBy.direction === OrderByDirection.DESC,
-          },
-        ]
-      : [];
+  const sorting = (searchParams.get(ORDER_BY_PARAM_KEY) ?? '')
+    .split(', ')
+    .map(parseOrderByParam)
+    .filter((orderBy) => orderBy !== null)
+    .map((orderBy) => ({
+      id: COLUMNS[orderBy.field as keyof typeof COLUMNS].accessorKey,
+      desc: orderBy.direction === OrderByDirection.DESC,
+    }));
   const pagination = useMemo<MRT_PaginationState>(
     () => ({
       pageIndex: getCurrentPageIndex(pagerCtx),
@@ -536,18 +534,15 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
       const newSorting =
         typeof updater === 'function' ? updater(sorting) : updater;
 
-      if (newSorting.length !== 1) {
-        updateOrderByParam('');
-        setSearchParams((prev) => emptyPageTokenUpdater(pagerCtx)(prev), {
-          replace: true,
-        });
-        return;
-      }
+      updateOrderByParam(
+        newSorting
+          .map((sort) => {
+            if (sort.desc) return `${sort.id} desc`;
+            return sort.id;
+          })
+          .join(', '),
+      );
 
-      const by = newSorting[0].id;
-
-      const order = newSorting[0].desc ? 'desc' : '';
-      updateOrderByParam(`${by} ${order}`);
       setSearchParams((prev) => emptyPageTokenUpdater(pagerCtx)(prev), {
         replace: true,
       });
