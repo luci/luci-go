@@ -38,6 +38,8 @@ import {
   prevPageTokenUpdater,
   usePagerContext,
 } from '@/common/components/params_pager';
+import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
+import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { FilterBarOld } from '@/fleet/components/filter_dropdown/filter_bar_old';
 import {
   filtersUpdater,
@@ -55,7 +57,6 @@ import {
 } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { usePlatform } from '@/fleet/hooks/usePlatform';
-import { useFCDataTable } from '@/fleet/hooks/use_fc_data_table';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { colors } from '@/fleet/theme/colors';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
@@ -504,6 +505,11 @@ export const RepairListPage = ({ platform }: { platform: Platform }) => {
   );
 
   const table = useFCDataTable({
+    positionToolbarAlertBanner: 'none',
+    enableRowSelection: true,
+    renderTopToolbarCustomActions: ({ table }) => (
+      <FCDataTableCopy table={table} />
+    ),
     columns: Object.values(COLUMNS),
     data: repairMetricsList.data?.repairMetrics.map(getRow) ?? [],
     getRowId: (row) => row.lab_name + row.host_group + row.run_target,

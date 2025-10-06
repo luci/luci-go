@@ -22,8 +22,7 @@ import {
 } from 'material-react-table';
 
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
-
-import { useSettings } from './use_settings';
+import { useSettings } from '@/fleet/hooks/use_settings';
 
 export const useFCDataTable = <TData extends MRT_RowData>(
   tableOptions: MRT_TableOptions<TData>,
