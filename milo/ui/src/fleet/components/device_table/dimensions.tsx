@@ -151,6 +151,17 @@ export const COLUMN_OVERRIDES: Record<Platform, Dimension> = {
     ...BASE_DIMENSIONS,
     ...CROS_DIMENSION_OVERRIDES,
   },
-  [Platform.ANDROID]: {},
+  [Platform.ANDROID]: {
+    id: {
+      renderCell: (props) => {
+        const row = props.row;
+        if (!(row.host_name && row.host_ip && row.id)) return undefined;
+
+        return renderCellWithLink((_, { row }) => {
+          return `https://mobileharness-fe.corp.google.com/devicedetailview/${row.host_name}/${row.host_ip}/${row.id}`;
+        })(props);
+      },
+    },
+  },
   [Platform.CHROMIUM]: {},
 };
