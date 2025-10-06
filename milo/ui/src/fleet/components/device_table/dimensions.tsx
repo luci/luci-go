@@ -24,6 +24,7 @@ import { getTaskURL } from '@/fleet/utils/swarming';
 import {
   Device,
   DeviceType,
+  Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { renderCellWithLink } from '../table/cell_with_link';
@@ -42,11 +43,13 @@ type Dimension = Record<
     displayName?: string;
     sortable?: boolean;
     getValue?: (device: Device) => string;
-    renderCell?: (props: GridRenderCellParams) => React.JSX.Element;
+    renderCell?: (props: GridRenderCellParams) => React.JSX.Element | undefined;
   }
 >;
 
-const renderCurrentTaskCell = renderCellWithLink(getTaskURL);
+const renderCurrentTaskCell = renderCellWithLink((task_id) =>
+  getTaskURL(task_id),
+);
 
 /**
  * BASE_DIMENSIONS are dimensions associated with a device that are not labels,
@@ -142,7 +145,12 @@ export const CROS_DIMENSION_OVERRIDES: Dimension = {
  * in the case of certain commonly used labels (ie: labels containing
  * links to docs)
  */
-export const COLUMN_OVERRIDES: Dimension = {
-  ...BASE_DIMENSIONS,
-  ...CROS_DIMENSION_OVERRIDES,
+export const COLUMN_OVERRIDES: Record<Platform, Dimension> = {
+  [Platform.UNSPECIFIED]: {},
+  [Platform.CHROMEOS]: {
+    ...BASE_DIMENSIONS,
+    ...CROS_DIMENSION_OVERRIDES,
+  },
+  [Platform.ANDROID]: {},
+  [Platform.CHROMIUM]: {},
 };

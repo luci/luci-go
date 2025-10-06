@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+
 import { orderColumns, getColumns } from './columns';
 
 describe('getColumns - Ordering Tests', () => {
@@ -26,9 +28,11 @@ describe('getColumns - Ordering Tests', () => {
     ];
     const visibleColumnIds = ['type', 'dut_id', 'port'];
 
-    const result = orderColumns(getColumns(columnIds), visibleColumnIds).map(
-      (col) => col.field,
-    ); // Extract just the field for ordering check
+    const result = orderColumns(
+      Platform.UNSPECIFIED,
+      getColumns(columnIds, Platform.UNSPECIFIED),
+      visibleColumnIds,
+    ).map((col) => col.field); // Extract just the field for ordering check
 
     expect(result).toEqual(['dut_id', 'port', 'type', 'id', 'state', 'host']);
   });
@@ -37,9 +41,11 @@ describe('getColumns - Ordering Tests', () => {
     const columnIds = ['col2', 'col1'];
     const visibleColumnIds = ['col3', 'col1'];
 
-    const result = orderColumns(getColumns(columnIds), visibleColumnIds).map(
-      (col) => col.field,
-    );
+    const result = orderColumns(
+      Platform.UNSPECIFIED,
+      getColumns(columnIds, Platform.UNSPECIFIED),
+      visibleColumnIds,
+    ).map((col) => col.field);
 
     expect(result).toEqual(['col1', 'col2']);
   });

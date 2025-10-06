@@ -31,7 +31,7 @@ const getPathnameWithParams = () => {
  */
 // TODO: b/394202288 - Add tests for this function.
 export function renderCellWithLink(
-  linkGenerator: (value: string) => string,
+  linkGenerator: (value: string, props: GridRenderCellParams) => string,
   newTab: boolean = true,
 ): (props: GridRenderCellParams) => React.ReactElement {
   const CellWithLink = (props: GridRenderCellParams) => {
@@ -45,7 +45,7 @@ export function renderCellWithLink(
           <React.Fragment key={v}>
             <Link
               key={v}
-              to={linkGenerator(v)}
+              to={linkGenerator(v, props)}
               state={{
                 navigatedFromLink: getPathnameWithParams(),
               }}

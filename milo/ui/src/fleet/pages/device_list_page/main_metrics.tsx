@@ -314,7 +314,7 @@ export function AndroidMainMetrics({
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
               filterUrl={getFilterQueryString({
-                state: ['idle'],
+                state: ['IDLE'],
               })}
             />
             <SingleMetric
@@ -323,7 +323,7 @@ export function AndroidMainMetrics({
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
               filterUrl={getFilterQueryString({
-                state: ['busy'],
+                state: ['BUSY'],
               })}
             />
             <SingleMetric
@@ -332,7 +332,7 @@ export function AndroidMainMetrics({
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
               filterUrl={getFilterQueryString({
-                state: ['prepping'],
+                state: ['PREPPING'],
               })}
             />
             <SingleMetric
@@ -341,7 +341,7 @@ export function AndroidMainMetrics({
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
               filterUrl={getFilterQueryString({
-                state: ['missing'],
+                state: ['MISSING'],
               })}
               Icon={
                 <WarningIcon
@@ -355,7 +355,7 @@ export function AndroidMainMetrics({
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
               filterUrl={getFilterQueryString({
-                state: ['dying'],
+                state: ['DYING'],
               })}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
             />

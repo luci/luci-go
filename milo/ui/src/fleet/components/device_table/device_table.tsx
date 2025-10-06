@@ -89,7 +89,7 @@ const getRow = (
             ([label, { values }]) =>
               [
                 label,
-                COLUMN_OVERRIDES[label]?.getValue?.(device) ??
+                COLUMN_OVERRIDES[platform][label]?.getValue?.(device) ??
                   labelValuesToString(values),
               ] as const,
           ),
@@ -103,7 +103,7 @@ const getRow = (
             ([label, { values }]) =>
               [
                 label,
-                COLUMN_OVERRIDES[label]?.getValue?.(device) ??
+                COLUMN_OVERRIDES[platform][label]?.getValue?.(device) ??
                   labelValuesToString(values),
               ] as const,
           ),
@@ -174,10 +174,11 @@ export function DeviceTable({
     temporaryColumnSx,
     addUserVisibleColumn,
   } = useColumnManagement({
-    allColumns: getColumns(columnIds),
+    allColumns: getColumns(columnIds, platform),
     highlightedColumnIds: getFilteredColumnIds(),
     defaultColumns: DEFAULT_DEVICE_COLUMNS[platform],
     localStorageKey: DEVICES_COLUMNS_LOCAL_STORAGE_KEY[platform],
+    platform: platform,
   });
 
   const rows = useMemo(

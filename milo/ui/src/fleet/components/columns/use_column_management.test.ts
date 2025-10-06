@@ -17,6 +17,7 @@ import { act, renderHook } from '@testing-library/react';
 
 import { fakeLocalStorage } from '@/fleet/testing_tools/mocks/fake_local_storage';
 import { fakeUseSyncedSearchParams } from '@/fleet/testing_tools/mocks/fake_search_params';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import {
   ColumnManagementConfig,
@@ -39,6 +40,7 @@ describe('useColumnManagement', () => {
     highlightedColumnIds: [],
     defaultColumns: DEFAULT_COLUMNS,
     localStorageKey: LOCAL_STORAGE_KEY,
+    platform: Platform.CHROMEOS,
   };
 
   beforeEach(() => {
@@ -153,7 +155,10 @@ describe('useColumnManagement', () => {
 
   it('should highlight highlighted column', () => {
     const { result } = renderHook(useColumnManagement, {
-      initialProps: { ...config, highlightedColumnIds: ['os'] },
+      initialProps: {
+        ...config,
+        highlightedColumnIds: ['os'],
+      },
     });
     expect(result.current.columnVisibilityModel).toEqual({
       name: true,

@@ -242,7 +242,7 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
           <DeviceListFilterBar
             filterOptions={
               isDimensionsQueryProperlyLoaded
-                ? dimensionsToFilterOptions(dimensionsQuery.data)
+                ? dimensionsToFilterOptions(dimensionsQuery.data, platform)
                 : filterOptionsPlaceholder(selectedOptions.filters)
             }
             selectedOptions={selectedOptions.filters}

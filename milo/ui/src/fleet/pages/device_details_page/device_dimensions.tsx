@@ -21,13 +21,19 @@ import {
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { CellWithTooltip } from '@/fleet/components/table/cell_with_tooltip';
 import { getDeviceStateString } from '@/fleet/utils/devices';
-import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import {
+  Device,
+  Platform,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 interface DeviceDimensionsProps {
   device?: Device;
 }
 
-export const DeviceDimensions = ({ device }: DeviceDimensionsProps) => {
+export const DeviceDimensions = (
+  { device }: DeviceDimensionsProps,
+  platform = Platform.CHROMEOS,
+) => {
   if (device?.deviceSpec === undefined) {
     return <></>;
   }
@@ -51,7 +57,7 @@ export const DeviceDimensions = ({ device }: DeviceDimensionsProps) => {
       headerName: 'Value',
       flex: 3,
       renderCell: (props: GridRenderCellParams) =>
-        COLUMN_OVERRIDES[props.id]?.renderCell?.(props) || (
+        COLUMN_OVERRIDES[platform][props.id]?.renderCell?.(props) || (
           <CellWithTooltip {...props}></CellWithTooltip>
         ),
     },

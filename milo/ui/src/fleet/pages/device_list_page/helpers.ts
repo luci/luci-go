@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  COLUMN_OVERRIDES,
-  CROS_DIMENSION_OVERRIDES,
-} from '@/fleet/components/device_table/dimensions';
+import { COLUMN_OVERRIDES } from '@/fleet/components/device_table/dimensions';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
-import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import {
+  GetDeviceDimensionsResponse,
+  Platform,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 /**
  * Converts a response from GetDeviceDimensions into a list of options
@@ -27,11 +27,12 @@ import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleet
  */
 export const dimensionsToFilterOptions = (
   response: GetDeviceDimensionsResponse,
+  platform: Platform,
 ): OptionCategory[] => {
   const baseDimensions = Object.entries(response.baseDimensions).map(
     ([key, value]) => {
       return {
-        label: COLUMN_OVERRIDES[key]?.displayName || key,
+        label: COLUMN_OVERRIDES[platform][key]?.displayName || key,
         value: key,
         options: value.values.map((value) => {
           return { label: value, value: value };
@@ -49,7 +50,7 @@ export const dimensionsToFilterOptions = (
 
     return [
       {
-        label: CROS_DIMENSION_OVERRIDES[key]?.displayName || key,
+        label: COLUMN_OVERRIDES[platform][key]?.displayName || key,
         value: `labels."${key}"`,
         options: value.values.map((value) => {
           return { label: value, value: value };
@@ -85,7 +86,7 @@ export const filterOptionPlaceholder = (
   const value = key;
   key = key.replace('labels.', '');
   return {
-    label: COLUMN_OVERRIDES[key]?.displayName || key,
+    label: COLUMN_OVERRIDES[Platform.CHROMEOS][key]?.displayName || key,
     value: value,
     options: values.map((value) => {
       return { label: value, value: value };

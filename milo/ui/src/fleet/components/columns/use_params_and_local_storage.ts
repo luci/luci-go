@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import _ from 'lodash';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useLocalStorage } from 'react-use';
 
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -33,6 +33,9 @@ export const useParamsAndLocalStorage = (
   const [localStorage, setLocalStorage, clearLocalStorage] =
     useLocalStorage<string[]>(localStorageKey);
 
+  // improves performance
+  const justCalledSetter = useRef(false);
+
   // We also keep an internal state, this allows us to return this to the user
   // so they can speedup their computations and not wait for
   // query parameters and local storage to update
@@ -42,25 +45,49 @@ export const useParamsAndLocalStorage = (
 
   // Sets the query parameters if they are not set and only local storage is present
   // useful on page load
-  useEffect(
-    () =>
-      synchSearchParamToLocalStorage(
-        searchParams,
-        searchParamsKey,
-        localStorage,
-        setSearchParams,
-        defaultValue,
-      ),
-    [
-      defaultValue,
-      localStorage,
+  useEffect(() => {
+    synchSearchParamToLocalStorage(
       searchParams,
       searchParamsKey,
+      localStorage,
       setSearchParams,
-    ],
-  );
+      defaultValue,
+    );
+  }, [
+    defaultValue,
+    localStorage,
+    searchParams,
+    searchParamsKey,
+    setSearchParams,
+  ]);
+
+  // Reset internal state if underlying locaStorage or searchParams change
+  useEffect(() => {
+    if (justCalledSetter.current) {
+      justCalledSetter.current = false;
+      return;
+    }
+
+    const newValue = getInitialValue(
+      searchParams,
+      searchParamsKey,
+      localStorage,
+      defaultValue,
+    );
+    if (!_.isEqual(newValue, syncedState)) {
+      setSyncedState(newValue);
+    }
+  }, [
+    searchParamsKey,
+    localStorageKey,
+    searchParams,
+    localStorage,
+    defaultValue,
+    syncedState,
+  ]);
 
   const setter = (newList: string[]) => {
+    justCalledSetter.current = true;
     setSyncedState(newList);
 
     const newState = getNewStates(

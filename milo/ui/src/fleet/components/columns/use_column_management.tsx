@@ -17,6 +17,7 @@ import { useMemo } from 'react';
 
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { colors } from '@/fleet/theme/colors';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { orderColumns } from '../device_table/columns';
 
@@ -48,13 +49,14 @@ const columnHighlightSx = {
   },
 };
 
-export interface ColumnManagementConfig {
-  readonly allColumns: readonly GridColDef[];
-  readonly highlightedColumnIds: readonly string[];
-  readonly defaultColumns: readonly string[];
-  readonly localStorageKey: string;
-  readonly preserveOrder?: boolean;
-}
+export type ColumnManagementConfig = {
+  allColumns: readonly GridColDef[];
+  highlightedColumnIds: readonly string[];
+  defaultColumns: readonly string[];
+  localStorageKey: string;
+  preserveOrder?: boolean;
+  platform?: Platform;
+};
 
 /**
  * A hook to manage the state of DataGrid columns, including visibility,
@@ -70,6 +72,7 @@ export function useColumnManagement({
   defaultColumns,
   localStorageKey,
   preserveOrder = false,
+  platform,
 }: ColumnManagementConfig) {
   // Manages columns the user has explicitly chosen to see.
   // This state is persisted in local storage and the URL.
@@ -130,15 +133,21 @@ export function useColumnManagement({
       }
       return colDef;
     });
-    return preserveOrder
+    return preserveOrder || !platform
       ? styledColumns
-      : orderColumns(styledColumns, userVisibleColumns, temporaryColumnIds);
+      : orderColumns(
+          platform,
+          styledColumns,
+          userVisibleColumns,
+          temporaryColumnIds,
+        );
   }, [
     allColumns,
     highlightedColumnIds,
     userVisibleColumns,
     temporaryColumnIds,
     preserveOrder,
+    platform,
   ]);
 
   // Callback to explicitly add a temporary column to user defaults.

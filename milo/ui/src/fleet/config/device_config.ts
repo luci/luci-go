@@ -40,7 +40,16 @@ export const DEFAULT_DEVICE_COLUMNS: Record<Platform, string[]> = {
   [Platform.CHROMEOS]: CHROMEOS_DEFAULT_COLUMNS,
   // TODO(vaghinak):This list should be adjusted when the
   // Android ListDevices is implemented.
-  [Platform.ANDROID]: ['id', 'lab_name', 'run_target'],
+  [Platform.ANDROID]: [
+    'id',
+    'host_group',
+    'state',
+    'build',
+    'model',
+    'pool',
+    'type',
+    'version',
+  ],
   [Platform.CHROMIUM]: [],
 };
 
