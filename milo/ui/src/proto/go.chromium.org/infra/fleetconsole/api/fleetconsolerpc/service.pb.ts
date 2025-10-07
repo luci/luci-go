@@ -346,6 +346,7 @@ export interface ScheduleAutorepairRequest {
 export enum ScheduleAutorepairRequest_AutorepairFlag {
   FLAG_UNSPECIFIED = 0,
   DEEP_REPAIR = 1,
+  LATEST = 2,
 }
 
 export function scheduleAutorepairRequest_AutorepairFlagFromJSON(
@@ -358,6 +359,9 @@ export function scheduleAutorepairRequest_AutorepairFlagFromJSON(
     case 1:
     case "DEEP_REPAIR":
       return ScheduleAutorepairRequest_AutorepairFlag.DEEP_REPAIR;
+    case 2:
+    case "LATEST":
+      return ScheduleAutorepairRequest_AutorepairFlag.LATEST;
     default:
       throw new globalThis.Error(
         "Unrecognized enum value " + object + " for enum ScheduleAutorepairRequest_AutorepairFlag",
@@ -373,6 +377,8 @@ export function scheduleAutorepairRequest_AutorepairFlagToJSON(
       return "FLAG_UNSPECIFIED";
     case ScheduleAutorepairRequest_AutorepairFlag.DEEP_REPAIR:
       return "DEEP_REPAIR";
+    case ScheduleAutorepairRequest_AutorepairFlag.LATEST:
+      return "LATEST";
     default:
       throw new globalThis.Error(
         "Unrecognized enum value " + object + " for enum ScheduleAutorepairRequest_AutorepairFlag",
