@@ -24,7 +24,13 @@ export const HighlightCharacter = ({
   children: string;
   highlightIndexes?: number[];
 }) => (
-  <Typography {...typographyProps}>
+  <Typography
+    {...typographyProps}
+    sx={{
+      display: 'block',
+      ...typographyProps.sx,
+    }}
+  >
     {highlightIndexes && highlightIndexes.length > 0
       ? children.split('').map((letter, i) => (
           <span

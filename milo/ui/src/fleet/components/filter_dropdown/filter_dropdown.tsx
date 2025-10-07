@@ -36,6 +36,7 @@ import { colors } from '@/fleet/theme/colors';
 import { hasAnyModifier, keyboardListNavigationHandler } from '@/fleet/utils';
 import { fuzzySubstring, SortedElement } from '@/fleet/utils/fuzzy_sort';
 
+import { EllipsisTooltip } from '../ellipsis_tooltip';
 import { HighlightCharacter } from '../highlight_character';
 import { Footer } from '../options_dropdown/footer';
 
@@ -373,9 +374,18 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
           minHeight: 'auto',
         }}
       >
-        <HighlightCharacter variant="body2" highlightIndexes={parentMatches}>
-          {parent.el.label}
-        </HighlightCharacter>
+        <EllipsisTooltip tooltip={parent.el.label}>
+          <HighlightCharacter
+            variant="body2"
+            highlightIndexes={parentMatches}
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {parent.el.label}
+          </HighlightCharacter>
+        </EllipsisTooltip>
         <ArrowRightIcon />
       </MenuItem>
     );
@@ -406,13 +416,17 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
           <Card
             elevation={2}
             onClick={(e) => e.stopPropagation()}
-            sx={{ position: 'absolute', ...getCardRefPosition(anchorEl) }}
+            sx={{
+              position: 'absolute',
+              ...getCardRefPosition(anchorEl),
+            }}
           >
             <MenuList
               sx={{
                 minWidth: 300,
                 maxHeight: 400,
                 overflow: 'auto',
+                maxWidth: '700px',
               }}
               onKeyDown={(e) => {
                 const isFirstElement = e.target === firstElementRef.current;
