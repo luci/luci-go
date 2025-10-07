@@ -16,7 +16,7 @@ import { Link } from '@mui/material';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from 'react-router';
 
-import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
+import { getAuthGroupURLPath } from '@/common/tools/url_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 interface GroupLinkProps {
@@ -29,7 +29,7 @@ export function GroupLink({ name }: GroupLinkProps) {
   return (
     <Link
       component={RouterLink}
-      to={getURLPathFromAuthGroup(name, searchParams.get('tab'))}
+      to={getAuthGroupURLPath(name, searchParams.get('tab'))}
       data-testid={`${name}-link`}
     >
       <Typography variant="body2">{name}</Typography>

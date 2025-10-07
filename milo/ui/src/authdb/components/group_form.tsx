@@ -42,7 +42,7 @@ import {
   FormListElement,
 } from '@/authdb/components/groups_form_list';
 import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
-import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
+import { getAuthGroupURLPath } from '@/common/tools/url_utils';
 import {
   AuthGroup,
   UpdateGroupRequest,
@@ -144,7 +144,7 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
       return client.DeleteGroup(request);
     },
     onSuccess: () => {
-      navigate(getURLPathFromAuthGroup('administrators'), {
+      navigate(getAuthGroupURLPath('administrators'), {
         replace: true,
       });
       // The list of groups must be the latest, to ensure the group that

@@ -27,7 +27,7 @@ import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 
 import { GroupsListItem } from '@/authdb/components/groups_list_item';
 import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
-import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
+import { getAuthGroupURLPath } from '@/common/tools/url_utils';
 import {
   AuthGroup,
   ListGroupsRequest,
@@ -150,7 +150,7 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
             sx={{ m: '16px', mb: 0 }}
             data-testid="create-button"
             component={Link}
-            to={getURLPathFromAuthGroup('new!')}
+            to={getAuthGroupURLPath('new!')}
             endIcon={<AddCircleOutlineIcon />}
           >
             Create Group

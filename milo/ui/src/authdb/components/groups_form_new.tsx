@@ -35,7 +35,7 @@ import {
   isSubgroup,
 } from '@/authdb/common/helpers';
 import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
-import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
+import { getAuthGroupURLPath } from '@/common/tools/url_utils';
 import {
   AuthGroup,
   CreateGroupRequest,
@@ -98,7 +98,7 @@ export function GroupsFormNew({ onCreate }: GroupsFormNewProps) {
     onSuccess: (response) => {
       setErrorMessage('');
       onCreate();
-      navigate(getURLPathFromAuthGroup(response.name), {
+      navigate(getAuthGroupURLPath(response.name), {
         replace: true,
       });
     },

@@ -29,7 +29,7 @@ import { GroupsList, GroupsListElement } from '@/authdb/components/groups_list';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useDeclarePageId } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
-import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
+import { getAuthGroupURLPath } from '@/common/tools/url_utils';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
@@ -41,12 +41,9 @@ export function GroupsPage() {
 
   useEffect(() => {
     if (!groupName) {
-      navigate(
-        getURLPathFromAuthGroup('administrators', searchParams.get('tab')),
-        {
-          replace: true,
-        },
-      );
+      navigate(getAuthGroupURLPath('administrators', searchParams.get('tab')), {
+        replace: true,
+      });
     }
     if (groupName) {
       listRef.current?.scrollToGroup(groupName);

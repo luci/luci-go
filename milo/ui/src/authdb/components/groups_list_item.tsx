@@ -19,7 +19,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Tooltip from '@mui/material/Tooltip';
 import { Link as RouterLink } from 'react-router';
 
-import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
+import { getAuthGroupURLPath } from '@/common/tools/url_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
@@ -47,7 +47,7 @@ export function GroupsListItem({ group, selected }: GroupsItemProps) {
       <ListItemButton
         selected={selected}
         component={RouterLink}
-        to={getURLPathFromAuthGroup(group.name, searchParams.get('tab'))}
+        to={getAuthGroupURLPath(group.name, searchParams.get('tab'))}
       >
         <ListItemText
           primary={group.name}

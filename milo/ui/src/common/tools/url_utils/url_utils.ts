@@ -162,21 +162,34 @@ export function setSingleQueryParam(
   return updatedSearchParams;
 }
 
-export function getURLPathFromAuthGroup(
+/**
+ * Returns a link to the AuthDB group page for the given group.
+ *
+ * @param groupName Name of the group.
+ * @param currentTab Optional arg specifying the selected tab when loading
+ * group details. If not specified, the default tab set by the group details
+ * page will be selected instead.
+ * @returns relative path to the group's details page.
+ */
+export function getAuthGroupURLPath(
   groupName: string,
-  // Optional arg to specify selecting specific tab when loading group details page.
-  // If not specified, only the group path is returned.
-  // This will default to the overview tab on the group details page.
   currentTab?: string | null,
 ) {
+  const target = `/ui/auth/groups/${encodeURIComponent(groupName)}`;
   if (!currentTab) {
-    return `/ui/auth/groups/${groupName}`;
+    return target;
   }
-  return `/ui/auth/groups/${groupName}?tab=${currentTab}`;
+  return `${target}?tab=${currentTab}`;
 }
 
 /**
  * Returns a link to the AuthDB lookup page for the given principal.
+ *
+ * @param principal Principal to be searched, e.g. a@example.com, service:*.
+ * @param currentTab Optional arg specifying the selected tab when loading
+ * group details. If not specified, the default tab set by the lookup page will
+ * be selected instead.
+ * @returns relative path to the lookup page for the principal.
  */
 export function getAuthLookupURLPath(
   principal: string,
