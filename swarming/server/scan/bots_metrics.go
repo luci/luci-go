@@ -136,10 +136,11 @@ var ignoredDimensionAllowlist = stringset.NewFromSlice(
 	// We want to block all "label-*" except for the following:
 	// "label-pool" is a sub-pool dimension.
 	"label-pool",
-	// "label-board" and "label-model" are used by Fleet Infra Software
-	// for fleet monitoring
+	// "label-board", "label-model", and "label-servo_state" are used by
+	// Fleet Infra Software for fleet monitoring
 	"label-board",
 	"label-model",
+	"label-servo_state",
 )
 
 type metricsReporterShardState struct {
