@@ -64,13 +64,16 @@ export function useInfiniteGapiQuery<
     queryFn: async ({ pageParam }): Promise<Response> => {
       const accessToken = await getAccessToken();
       gapi.client.setToken({ access_token: accessToken });
+      // Create a deep copy of `args` to prevent mutation by the gapi client.
+      // Without this, the request is fired twice because react runs the effect twice in strict mode.
+      const requestArgs = JSON.parse(JSON.stringify(args));
       if (pageParam) {
-        args.body = {
-          ...args.body,
+        requestArgs.params = {
+          ...(requestArgs.params || {}),
           pageToken: pageParam,
         };
       }
-      const response = await gapi.client.request(args);
+      const response = await gapi.client.request(requestArgs);
       return JSON.parse(response.body);
     },
     getNextPageParam: (response) => {

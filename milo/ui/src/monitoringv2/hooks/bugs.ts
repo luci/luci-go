@@ -63,7 +63,7 @@ export function useBugs(): BugsData {
     if (bugHasNextPage) {
       bugFetchNextPage();
     }
-  }, [bugFetchNextPage, bugHasNextPage]);
+  }, [bugFetchNextPage, bugHasNextPage, bugData?.pages.length]);
 
   const bugs = useMemo(
     () =>
