@@ -176,6 +176,20 @@ export function getURLPathFromAuthGroup(
 }
 
 /**
+ * Returns a link to the AuthDB lookup page for the given principal.
+ */
+export function getAuthLookupURLPath(
+  principal: string,
+  currentTab?: string | null,
+) {
+  const target = `/ui/auth/lookup?p=${encodeURIComponent(principal)}`;
+  if (!currentTab) {
+    return target;
+  }
+  return `${target}&tab=${currentTab}`;
+}
+
+/**
  * Regex to extract the old URL values.
  */
 const LEGACY_URL_REGEX =

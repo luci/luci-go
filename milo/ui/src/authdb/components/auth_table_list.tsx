@@ -19,18 +19,22 @@ import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
-import { stripPrefix } from '@/authdb/common/helpers';
+import { GroupLink } from '@/authdb/components/group_link';
+import { AuthLookupLink } from '@/authdb/components/lookup_link';
 
 import './groups.css';
 
 interface TableListProps {
   items: string[];
   name: string;
+  renderAsGroupLinks?: boolean;
 }
 
-export function AuthTableList({ items, name }: TableListProps) {
-  const renderedItems = items.map((element) => stripPrefix('user', element));
-
+export function AuthTableList({
+  items,
+  name,
+  renderAsGroupLinks,
+}: TableListProps) {
   return (
     <TableContainer data-testid="auth-table-list">
       <Table sx={{ p: 0, pt: '15px', width: '100%' }}>
@@ -40,7 +44,7 @@ export function AuthTableList({ items, name }: TableListProps) {
               <Typography variant="h6">{name}</Typography>
             </TableCell>
           </TableRow>
-          {renderedItems.map((item) => (
+          {items.map((item) => (
             <TableRow
               key={item}
               style={{ height: '34px' }}
@@ -48,9 +52,11 @@ export function AuthTableList({ items, name }: TableListProps) {
               data-testid={`item-row-${item}`}
             >
               <TableCell sx={{ p: 0, pt: '1px' }} style={{ minHeight: '30px' }}>
-                <Typography variant="body2" sx={{ ml: 1.5 }}>
-                  {item}
-                </Typography>
+                {renderAsGroupLinks ? (
+                  <GroupLink name={item} />
+                ) : (
+                  <AuthLookupLink principal={item} />
+                )}
               </TableCell>
             </TableRow>
           ))}

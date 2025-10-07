@@ -20,6 +20,8 @@ import {
   Subgraph,
 } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
+export const userPrefix = 'user';
+
 // Pattern for a valid group name.
 export const nameRe = /^([a-z\-]+\/)?[0-9a-z_\-\.@]{1,100}$/;
 
@@ -62,7 +64,7 @@ export const isMember = (item: string) => {
       return projectIdentityRe.test(item);
     case 'service':
       return serviceIdentityRe.test(item);
-    case 'user':
+    case userPrefix:
     default:
       // The member identity type is "user" (either explicitly,
       // or implicitly assumed when no type is specified).
@@ -84,6 +86,11 @@ export function stripPrefix(prefix: string, value: string) {
     return value.slice(prefix.length + 1, value.length);
   }
   return value;
+}
+
+// Strips 'user:' from the given string, if it starts with it.
+export function stripUserPrefix(value: string) {
+  return stripPrefix(userPrefix, value);
 }
 
 // Applies 'stripPrefix' to each item of a list.
@@ -190,7 +197,7 @@ export const interpretLookupResults = (subgraph: Subgraph) => {
       // The entire path is 'principalNode -> GLOB -> lastNode', meaning
       // 'last' includes the principal via the GLOB.
       groupIncluder!.includesViaGlobs.push(
-        stripPrefix('user', path[1]!.principal!.name),
+        stripPrefix(userPrefix, path[1]!.principal!.name),
       );
     } else {
       // Some arbitrarily long indirect inclusion path. Just record all
@@ -230,7 +237,7 @@ export const interpretLookupResults = (subgraph: Subgraph) => {
   sortGroupsByName(indirectIncluders);
 
   return {
-    principalName: stripPrefix('user', principal!.name),
+    principalName: stripPrefix(userPrefix, principal!.name),
     principalIsGroup: principal!.kind === PrincipalKind.GROUP,
     includers: includers, // will be used to construct popovers
     directIncluders: directIncluders,

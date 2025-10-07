@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
-import { stripPrefix } from '@/authdb/common/helpers';
+import { stripUserPrefix } from '@/authdb/common/helpers';
 import { AuthTableList } from '@/authdb/components/auth_table_list';
 import { createMockGroupIndividual } from '@/authdb/testing_tools/mocks/group_individual_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -34,20 +34,20 @@ describe('<AuthTableList />', () => {
     expect(screen.getByText('Members')).toBeInTheDocument();
   });
 
+  test('shows members', async () => {
+    mockGroup.members.forEach((member) => {
+      const expectedValue = stripUserPrefix(member);
+      expect(screen.getByText(expectedValue)).toBeInTheDocument();
+    });
+  });
+
   test('does not show add button', async () => {
     const addButton = screen.queryByTestId('add-button');
     expect(addButton).toBeNull();
   });
 
-  test('does not show remove button on hover', async () => {
-    const members = mockGroup.members.map((member) =>
-      stripPrefix('user', member),
-    );
-    // Simulate mouse enter event each row.
-    for (let i = 0; i < mockGroup.members.length; i++) {
-      const row = screen.getByTestId(`item-row-${members[i]}`);
-      fireEvent.mouseEnter(row);
-      expect(screen.queryByTestId(`remove-button-${members[i]}`)).toBeNull();
-    }
+  test('does not show remove button', async () => {
+    const removeButton = screen.queryByTestId('remove-button');
+    expect(removeButton).toBeNull();
   });
 });

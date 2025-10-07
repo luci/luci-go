@@ -493,7 +493,11 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
                   </Typography>
                 )}
                 <AuthTableList name="Globs" items={globs} />
-                <AuthTableList name="Subgroups" items={subgroups} />
+                <AuthTableList
+                  name="Subgroups"
+                  items={subgroups}
+                  renderAsGroupLinks={true}
+                />
                 <Typography
                   variant="caption"
                   sx={{ p: '16px' }}
