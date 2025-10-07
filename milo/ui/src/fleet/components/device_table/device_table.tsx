@@ -164,7 +164,11 @@ export function DeviceTable({
   const getFilteredColumnIds = () => {
     const filters = getFilters(searchParams)?.filters;
     if (!filters) return [];
-    return Object.keys(filters).map((key) => key.replace('labels.', ''));
+
+    // TODO - b/449694092 this is a temporary fix until we have a streamlined solution for managing filters that puts the logic in one place
+    return Object.keys(filters).map((key) =>
+      key.replace(/labels\."?(.*?)"?$/, '$1'),
+    );
   };
 
   const {

@@ -84,7 +84,7 @@ export const filterOptionPlaceholder = (
   values: string[],
 ): OptionCategory => {
   const value = key;
-  key = key.replace('labels.', '');
+  key = key.replace(/labels\."?(.*?)"?$/, '$1');
   return {
     label: COLUMN_OVERRIDES[Platform.CHROMEOS][key]?.displayName || key,
     value: value,
