@@ -33,7 +33,10 @@ import {
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import { useInvocation, useTestVariant } from '@/test_investigation/context';
-import { useRawInvocationId } from '@/test_investigation/context/context';
+import {
+  useIsLegacyInvocation,
+  useRawInvocationId,
+} from '@/test_investigation/context/context';
 // This import path is now corrected
 import {
   buildHierarchyTree,
@@ -44,6 +47,21 @@ import { isRootInvocation } from '@/test_investigation/utils/invocation_utils';
 
 import { TestDrawerContext } from './context';
 
+const readMask = [
+  'test_id',
+  'test_id_structured',
+  'variant_hash',
+  'variant.def',
+  'test_metadata.name',
+  'results.*.result.status_v2',
+  'results.*.result.failure_reason.primary_error_message',
+  'status',
+  'results.*.result.expected',
+];
+const orderBy = 'status_v2_effective';
+const resultLimit = 100;
+const pageSize = 1000;
+
 export function TestDrawerProvider({ children }: PropsWithChildren) {
   const navigate = useNavigate();
 
@@ -51,30 +69,34 @@ export function TestDrawerProvider({ children }: PropsWithChildren) {
   const currentTestVariant = useTestVariant();
   const rawInvocationId = useRawInvocationId();
   const resultDbClient = useResultDbClient();
-
+  const isLegacyInvocation = useIsLegacyInvocation();
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const query = useMemo(() => {
+    if (isLegacyInvocation) {
+      return resultDbClient.QueryTestVariants.query(
+        QueryTestVariantsRequest.fromPartial({
+          invocations: [invocation.name],
+          resultLimit,
+          pageSize,
+          readMask,
+          orderBy,
+        }),
+      );
+    }
+    return resultDbClient.QueryTestVariants.query(
+      QueryTestVariantsRequest.fromPartial({
+        parent: invocation.name,
+        resultLimit,
+        pageSize,
+        readMask,
+        orderBy,
+      }),
+    );
+  }, [invocation.name, isLegacyInvocation, resultDbClient.QueryTestVariants]);
 
   const { data: testVariantsResponse, isPending: isLoadingTestVariants } =
     useQuery<QueryTestVariantsResponse | null, Error, readonly TestVariant[]>({
-      ...resultDbClient.QueryTestVariants.query(
-        QueryTestVariantsRequest.fromPartial({
-          invocations: [invocation.name],
-          resultLimit: 100,
-          pageSize: 1000,
-          readMask: [
-            'test_id',
-            'test_id_structured',
-            'variant_hash',
-            'variant.def',
-            'test_metadata.name',
-            'results.*.result.status_v2',
-            'results.*.result.failure_reason.primary_error_message',
-            'status',
-            'results.*.result.expected',
-          ],
-          orderBy: 'status_v2_effective',
-        }),
-      ),
+      ...query,
       enabled: !!invocation.name,
       staleTime: 5 * 60 * 1000,
       select: (data) => data?.testVariants || [],
