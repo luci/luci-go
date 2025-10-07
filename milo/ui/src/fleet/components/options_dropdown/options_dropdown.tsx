@@ -48,7 +48,7 @@ export function OptionsDropdown({
   },
   onKeyDown,
   enableSearchInput = false,
-  maxHeight = 200,
+  maxHeight = 215,
   onResetClick,
   footerButtons = ['apply', 'cancel'],
   ...menuProps
