@@ -19,6 +19,7 @@ import type { RouteObject } from 'react-router';
 // vite.config.ts to compute a regex at build time.
 
 import { authRoutes } from '@/authdb/routes';
+import { chronicleRoutes } from '@/chronicle/routes';
 import { clustersRoutes } from '@/clusters/routes';
 import { fleetRoutes } from '@/fleet/routes';
 import { swarmingRoutes } from '@/swarming/routes';
@@ -314,6 +315,10 @@ export const routes: RouteObject[] = [
         ],
       },
     ],
+  },
+  {
+    path: 'chronicle',
+    children: chronicleRoutes,
   },
   {
     path: 'test-investigate',
