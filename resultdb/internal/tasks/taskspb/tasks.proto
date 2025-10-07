@@ -25,6 +25,19 @@ message TryFinalizeInvocation {
   string invocation_id = 1;
 }
 
+// SweepWorkUnitsForFinalization defines the payload for a task to
+// batch finalize work units in a root invocation. The task transitions
+// work units that are FINALIZING and have no ACTIVE descendant to FINALIZED.
+message SweepWorkUnitsForFinalization {
+  // The ID of the root invocation that contains work units to be finalized.
+  string root_invocation_id = 1;
+
+  // The sequence number of the current task. It is compared with the latest
+  // task sequence number scheduled for the root invocation. If they don't match,
+  // the task is stale and should be skipped to avoid task overruns.
+  int64 sequence_number = 2;
+}
+
 message NotifyInvocationFinalized {
   // The message to publish to Cloud Pub/Sub.
   luci.resultdb.v1.InvocationFinalizedNotification message = 1;

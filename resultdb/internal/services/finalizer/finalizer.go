@@ -58,6 +58,10 @@ func InitServer(srv *server.Server, opts Options) {
 		task := msg.(*taskspb.TryFinalizeInvocation)
 		return tryFinalizeInvocation(ctx, invocations.ID(task.InvocationId), opts)
 	})
+	tasks.FinalizeWorkUnitsTask.AttachHandler(func(ctx context.Context, msg proto.Message) error {
+		// TODO: implement the work unit finalizer.
+		return nil
+	})
 }
 
 // Invocation finalization is asynchronous. First, an invocation transitions

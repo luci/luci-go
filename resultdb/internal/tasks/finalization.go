@@ -38,6 +38,17 @@ var FinalizationTasks = tq.RegisterTaskClass(tq.TaskClass{
 	RoutingPrefix: "/internal/tasks/finalizer", // for routing to "finalizer" service
 })
 
+// FinalizeWorkUnitsTask describes how to route finalize work unit tasks.
+//
+// The handler is implemented in internal/services/finalizer.
+var FinalizeWorkUnitsTask = tq.RegisterTaskClass(tq.TaskClass{
+	ID:            "finalize-work-units",
+	Prototype:     &taskspb.SweepWorkUnitsForFinalization{},
+	Kind:          tq.Transactional,
+	Queue:         "workunitfinalizer",
+	RoutingPrefix: "/internal/tasks/finalizer", // for routing to "finalizer" service
+})
+
 // StartInvocationFinalization enqueues a TryFinalizeInvocation task.
 //
 // The caller is responsible for ensuring that the invocation was
