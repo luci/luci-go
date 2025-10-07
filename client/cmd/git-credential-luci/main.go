@@ -237,6 +237,12 @@ func main() {
 		}
 		ra := auth.NewReAuthenticator(a)
 		if err := ra.RenewRAPT(ctx); err != nil {
+			if errors.Is(err, auth.ErrLoginRequired) {
+				fmt.Fprint(os.Stderr, "error: not logged in.\n\n")
+				fmt.Fprint(os.Stderr, "You must login first before doing ReAuth, please run: git-credential-luci login\n\n")
+				os.Exit(EXIT_LOGIN_REQUIRED)
+			}
+
 			fmt.Fprintf(os.Stderr, "ReAuth failed: %v\n", err)
 			fmt.Fprintf(os.Stderr, reAuthTroubleshootMsg)
 			os.Exit(EXIT_ERROR)
