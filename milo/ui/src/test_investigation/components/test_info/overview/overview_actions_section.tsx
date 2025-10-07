@@ -13,11 +13,9 @@
 // limitations under the License.
 
 import { Box, Button } from '@mui/material';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { HtmlTooltip } from '@/common/components/html_tooltip';
-import { InstructionDialog } from '@/common/components/instruction_hint/instruction_dialog';
-import { pairsToPlaceholderDict } from '@/common/tools/instruction/instruction_utils';
 import { useInvocation, useTestVariant } from '@/test_investigation/context';
 import {
   constructFileBugUrl,
@@ -26,13 +24,14 @@ import {
   getSourcesFromInvocation,
 } from '@/test_investigation/utils/test_info_utils';
 
+import { RerunButton } from './rerun_button';
 import { SourceInfoTooltipContent } from './source_info_tooltip_content';
 
 export function OverviewActionsSection() {
   const testVariant = useTestVariant();
   const invocation = useInvocation();
+
   const builder = getVariantValue(testVariant.variant, 'builder');
-  const [open, setOpen] = useState(false);
 
   const fileBugUrl = useMemo(
     () =>
@@ -53,19 +52,7 @@ export function OverviewActionsSection() {
 
   const sourceRef = getSourcesFromInvocation(invocation)?.gitilesCommit?.ref;
 
-  const instructionPlaceHolderData = () => {
-    const resultBundle = testVariant.results || [];
-    const tagDict = pairsToPlaceholderDict(resultBundle[0].result.tags);
-    return {
-      test: {
-        id: testVariant.testId,
-        metadata: testVariant.testMetadata || {},
-        variant: testVariant.variant?.def || {},
-        tags: tagDict,
-      },
-    };
-  };
-
+  // TODO(b/445559255): conditionally render 'test case' or 'module' in rerun button labels when module page available.
   return (
     <Box
       sx={{
@@ -75,27 +62,7 @@ export function OverviewActionsSection() {
         justifyContent: 'flex-start',
       }}
     >
-      <Button
-        variant="outlined"
-        size="small"
-        onClick={() => {
-          setOpen(true);
-        }}
-      >
-        Rerun
-      </Button>
-      {testVariant.instruction?.instruction && (
-        <InstructionDialog
-          open={open}
-          onClose={(e) => {
-            setOpen(false);
-            e.stopPropagation();
-          }}
-          title={'rerun instructions'}
-          instructionName={testVariant.instruction?.instruction}
-          placeholderData={instructionPlaceHolderData()}
-        />
-      )}
+      <RerunButton />
       <Button
         variant="outlined"
         size="small"
