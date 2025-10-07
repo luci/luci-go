@@ -64,6 +64,7 @@ export function NextStepsSubsection({ expanded }: NextStepsSubsectionProps) {
       project: project || '',
       testVariants: [testVariantReq],
     }),
+    enabled: !!sources,
   });
 
   const nextStepsInfo = getNextStepsInfo(

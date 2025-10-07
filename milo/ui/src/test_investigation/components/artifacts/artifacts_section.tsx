@@ -128,13 +128,6 @@ function ArtifactsSectionContent() {
     isLoadingTestResultArtifacts ||
     (isLegacyInvocation && isLoadingInvocationScopeArtifacts);
 
-  const containsArtifacts = useMemo(() => {
-    return (
-      (testResultArtifactsData && testResultArtifactsData.length > 0) ||
-      (invocationScopeArtifactsData && invocationScopeArtifactsData?.length > 0)
-    );
-  }, [testResultArtifactsData, invocationScopeArtifactsData]);
-
   return (
     <Box
       sx={{
@@ -155,7 +148,7 @@ function ArtifactsSectionContent() {
           <CircularProgress />
           <Typography sx={{ ml: 1 }}>Loading artifact lists...</Typography>
         </Box>
-      ) : currentResult && containsArtifacts ? (
+      ) : currentResult ? (
         <PanelGroup
           direction="horizontal"
           style={{ height: '100%', minHeight: '600px' }}
