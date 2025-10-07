@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Chip, Typography } from '@mui/material';
+import { Box, Button, Chip, Typography } from '@mui/material';
+import copy from 'copy-to-clipboard';
 import { useMemo } from 'react';
 
 import { TestResultSummary } from '@/common/components/test_result_summary';
@@ -153,29 +154,44 @@ export function ArtifactSummaryView({
             {currentResult
               .failureReason!.errors.filter((e) => e.trace)
               .map((error, index) => (
-                <Box
-                  key={index}
-                  sx={{
-                    p: 1,
-                    border: `1px solid ${neutralStatusStyle.borderColor}`,
-                    borderRadius: '4px',
-                    backgroundColor: neutralStatusStyle.backgroundColor,
-                    '&:not(:last-child)': {
-                      mb: 1,
-                    },
-                  }}
-                >
-                  <Typography
-                    variant="body2"
+                <>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      sx={{ mb: 1.5 }}
+                      onClick={() => {
+                        copy(error.trace);
+                      }}
+                    >
+                      Copy to clipboard
+                    </Button>
+                  </Box>
+
+                  <Box
+                    key={index}
                     sx={{
-                      whiteSpace: 'pre-wrap',
-                      fontFamily: 'monospace',
-                      color: neutralStatusStyle.textColor,
+                      p: 1,
+                      border: `1px solid ${neutralStatusStyle.borderColor}`,
+                      borderRadius: '4px',
+                      backgroundColor: neutralStatusStyle.backgroundColor,
+                      '&:not(:last-child)': {
+                        mb: 1,
+                      },
                     }}
                   >
-                    {error.trace}
-                  </Typography>
-                </Box>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        whiteSpace: 'pre-wrap',
+                        fontFamily: 'monospace',
+                        color: neutralStatusStyle.textColor,
+                      }}
+                    >
+                      {error.trace}
+                    </Typography>
+                  </Box>
+                </>
               ))}
           </Box>
         </CollapsibleArtifactSummarySection>
