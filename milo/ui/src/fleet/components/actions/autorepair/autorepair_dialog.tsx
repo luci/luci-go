@@ -42,6 +42,8 @@ export interface AutorepairDialogProps {
   handleOk: () => void;
   deepRepair: boolean;
   handleDeepRepairChange: (checked: boolean) => void;
+  latestRepair: boolean;
+  handleLatestRepairChange: (checked: boolean) => void;
   loading: boolean;
 }
 
@@ -70,9 +72,11 @@ export default function AutorepairDialog({
   handleOk,
   deepRepair,
   handleDeepRepairChange,
+  latestRepair,
+  handleLatestRepairChange,
   loading,
 }: AutorepairDialogProps) {
-  const shivasCommand = `shivas repair${deepRepair ? ' -deep' : ''} ${dutNames.join(' ')}`;
+  const shivasCommand = `shivas repair${deepRepair ? ' -deep' : ''}${latestRepair ? ' -latest' : ''} ${dutNames.join(' ')}`;
 
   const loadingScreen = (
     <>
@@ -116,6 +120,19 @@ export default function AutorepairDialog({
               }
               style={{ marginBottom: '8px', marginLeft: '24px' }}
               label="Deep repair these devices"
+            />
+            <br />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={latestRepair}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    handleLatestRepairChange(e.target.checked)
+                  }
+                />
+              }
+              style={{ marginBottom: '8px', marginLeft: '24px' }}
+              label="Use latest repair version"
             />
 
             <p>Equivalent shivas command:</p>

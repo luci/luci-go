@@ -20,12 +20,15 @@ describe('<AutorepairDialog />', () => {
   let handleCloseMock: jest.Mock;
   let handleOkMock: jest.Mock;
   let handleDeepRepairChangeMock: jest.Mock;
+  let handleLatestRepairChangeMock: jest.Mock;
   let sharedTestProps: AutorepairDialogProps = {
     open: true,
     handleClose: () => undefined,
     handleOk: () => undefined,
     deepRepair: false,
     handleDeepRepairChange: () => undefined,
+    latestRepair: false,
+    handleLatestRepairChange: () => undefined,
     sessionInfo: {},
     loading: false,
   };
@@ -34,6 +37,7 @@ describe('<AutorepairDialog />', () => {
     handleCloseMock = jest.fn();
     handleOkMock = jest.fn();
     handleDeepRepairChangeMock = jest.fn();
+    handleLatestRepairChangeMock = jest.fn();
 
     sharedTestProps = {
       open: true,
@@ -41,6 +45,8 @@ describe('<AutorepairDialog />', () => {
       handleOk: handleOkMock,
       deepRepair: false,
       handleDeepRepairChange: handleDeepRepairChangeMock,
+      latestRepair: false,
+      handleLatestRepairChange: handleLatestRepairChangeMock,
       sessionInfo: {},
       loading: false,
     };
