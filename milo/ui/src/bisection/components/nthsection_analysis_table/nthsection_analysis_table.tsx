@@ -48,7 +48,7 @@ export function NthSectionAnalysisTable({
     );
   }
 
-  const reruns = [...result.reruns];
+  const reruns = result.reruns.filter((rerun) => rerun.type === 'NthSection');
   const sortedReruns = reruns.sort(
     (a, b) => parseInt(a.index) - parseInt(b.index),
   );
