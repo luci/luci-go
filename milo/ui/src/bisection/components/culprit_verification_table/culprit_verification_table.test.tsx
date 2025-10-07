@@ -16,7 +16,7 @@ import { render, screen } from '@testing-library/react';
 
 import { GenericSuspect } from '@/bisection/types';
 import { RerunStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
-import { HeuristicSuspect } from '@/proto/go.chromium.org/luci/bisection/proto/v1/heuristic.pb';
+import { GenAiSuspect } from '@/proto/go.chromium.org/luci/bisection/proto/v1/genai.pb';
 import { NthSectionSuspect } from '@/proto/go.chromium.org/luci/bisection/proto/v1/nthsection.pb';
 
 import { CulpritVerificationTable } from './culprit_verification_table';
@@ -32,7 +32,7 @@ describe('<CulpritVerificationTable />', () => {
     expect(screen.getByText('Verification Status')).toBeInTheDocument();
     expect(screen.getByText('Reruns')).toBeInTheDocument();
     expect(screen.getByText('def456d: CL 1')).toBeInTheDocument();
-    expect(screen.getByText('Heuristic')).toBeInTheDocument();
+    expect(screen.getByText('AI Analysis')).toBeInTheDocument();
     expect(screen.getByText('Confirmed Culprit')).toBeInTheDocument();
     expect(screen.getByText('Failed')).toHaveAttribute(
       'href',
@@ -58,9 +58,9 @@ describe('<CulpritVerificationTable />', () => {
 
 function createMockSuspects(): GenericSuspect[] {
   return [
-    GenericSuspect.fromHeuristic(
-      HeuristicSuspect.fromPartial({
-        gitilesCommit: {
+    GenericSuspect.fromGenAi(
+      GenAiSuspect.fromPartial({
+        commit: {
           host: 'testHost',
           project: 'testProject',
           ref: 'test/ref/dev',

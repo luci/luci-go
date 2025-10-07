@@ -29,7 +29,6 @@ import { AnalysisOverview } from '@/bisection/components/analysis_overview';
 import { CulpritVerificationTable } from '@/bisection/components/culprit_verification_table';
 import { CulpritsTable } from '@/bisection/components/culprits_table/culprits_table';
 import { GenAiAnalysisTable } from '@/bisection/components/gen_ai_analysis_table';
-import { HeuristicAnalysisTable } from '@/bisection/components/heuristic_analysis_table';
 import { NthSectionAnalysisTable } from '@/bisection/components/nthsection_analysis_table';
 import {
   GenericCulpritWithDetails,
@@ -59,20 +58,18 @@ export function TabPanel({ value, name, children }: TabPanelProps) {
   );
 }
 function getSuspects(analysis: Analysis): readonly GenericSuspect[] {
-  const heuristicSuspects = analysis.heuristicResult?.suspects || [];
-  const suspects = heuristicSuspects.map(GenericSuspect.fromHeuristic);
+  const suspects: GenericSuspect[] = [];
   const nthSectionSuspect = analysis.nthSectionResult?.suspect;
-  if (nthSectionSuspect) {
-    suspects.push(GenericSuspect.fromNthSection(nthSectionSuspect));
-  }
   if (analysis.genAiResult?.suspect !== undefined) {
     suspects.push(GenericSuspect.fromGenAi(analysis.genAiResult.suspect));
+  }
+  if (nthSectionSuspect) {
+    suspects.push(GenericSuspect.fromNthSection(nthSectionSuspect));
   }
   return suspects;
 }
 
 enum AnalysisComponentTabs {
-  HEURISTIC = 'Heuristic analysis',
   NTH_SECTION = 'Nth section analysis',
   CULPRIT_VERIFICATION = 'Culprit verification',
   GEN_AI_CULPRIT = 'GenAI analysis',
@@ -85,7 +82,9 @@ export function AnalysisDetailsPage() {
     throw new Error('invariant violated: bbid must be set');
   }
 
-  const [currentTab, setCurrentTab] = useState(AnalysisComponentTabs.HEURISTIC);
+  const [currentTab, setCurrentTab] = useState(
+    AnalysisComponentTabs.GEN_AI_CULPRIT,
+  );
 
   const handleTabChange = (
     _: React.SyntheticEvent,
@@ -170,11 +169,6 @@ export function AnalysisDetailsPage() {
           aria-label="Analysis components tabs"
           className="rounded-tabs"
         >
-          <Tab
-            className="rounded-tab"
-            value={AnalysisComponentTabs.HEURISTIC}
-            label={AnalysisComponentTabs.HEURISTIC}
-          />
           {analysis.buildFailureType === BuildFailureType.COMPILE && (
             <Tab
               className="rounded-tab"
@@ -200,9 +194,6 @@ export function AnalysisDetailsPage() {
           <GenAiAnalysisTable
             result={analysis.genAiResult}
           ></GenAiAnalysisTable>
-        </TabPanel>
-        <TabPanel value={currentTab} name={AnalysisComponentTabs.HEURISTIC}>
-          <HeuristicAnalysisTable result={analysis.heuristicResult} />
         </TabPanel>
         <TabPanel value={currentTab} name={AnalysisComponentTabs.NTH_SECTION}>
           <NthSectionAnalysisTable

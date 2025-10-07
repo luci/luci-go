@@ -31,7 +31,6 @@ import {
   CulpritAction,
 } from '@/proto/go.chromium.org/luci/bisection/proto/v1/culprits.pb';
 import { GenAiSuspect } from '@/proto/go.chromium.org/luci/bisection/proto/v1/genai.pb';
-import { HeuristicSuspect } from '@/proto/go.chromium.org/luci/bisection/proto/v1/heuristic.pb';
 import {
   NthSectionAnalysisResult,
   NthSectionSuspect,
@@ -186,17 +185,6 @@ export const GenericSuspect = {
         assertNonNullable(suspect.verificationDetails),
       ),
       commit: assertNonNullable(suspect.commit),
-    };
-  },
-  fromHeuristic(suspect: HeuristicSuspect): GenericSuspect {
-    return {
-      type: 'Heuristic',
-      reviewUrl: suspect.reviewUrl,
-      reviewTitle: suspect.reviewTitle,
-      verificationDetails: GenericSuspectVerificationDetails.from(
-        assertNonNullable(suspect.verificationDetails),
-      ),
-      commit: assertNonNullable(suspect.gitilesCommit),
     };
   },
   fromTestCulprit(culprit: TestCulprit): GenericSuspect {

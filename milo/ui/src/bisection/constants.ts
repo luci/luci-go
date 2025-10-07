@@ -14,7 +14,6 @@
 
 import { BuildFailureType } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { AnalysisStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
-import { SuspectConfidenceLevel } from '@/proto/go.chromium.org/luci/bisection/proto/v1/heuristic.pb';
 
 export const COMPLETE_STATUSES = Object.freeze([
   AnalysisStatus.FOUND,
@@ -42,11 +41,4 @@ export const BUILD_FAILURE_TYPE_DISPLAY_MAP = Object.freeze({
   [BuildFailureType.TEST]: 'TEST',
   [BuildFailureType.INFRA]: 'INFRA',
   [BuildFailureType.OTHER]: 'OTHER',
-});
-
-export const SUSPECT_CONFIDENCE_LEVEL_DISPLAY_MAP = Object.freeze({
-  [SuspectConfidenceLevel.SUSPECT_CONFIDENCE_LEVEL_UNSPECIFIED]: 'UNSPECIFIED',
-  [SuspectConfidenceLevel.LOW]: 'LOW',
-  [SuspectConfidenceLevel.MEDIUM]: 'MEDIUM',
-  [SuspectConfidenceLevel.HIGH]: 'HIGH',
 });

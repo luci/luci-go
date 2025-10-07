@@ -38,7 +38,7 @@ export function createMockAnalysis(id: string) {
       builder: 'mock-builder-cc64',
     },
     buildFailureType: BuildFailureType.COMPILE,
-    heuristicResult: {
+    genAiResult: {
       status: AnalysisStatus.NOTFOUND,
     },
     nthSectionResult: {
