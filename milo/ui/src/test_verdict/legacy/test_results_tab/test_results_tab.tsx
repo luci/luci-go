@@ -97,7 +97,6 @@ export class TestResultsTabElement extends MobxExtLitElement {
     }
     const groupBy = searchParams.get('groupby');
     if (groupBy !== null) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.invState.setGroupingKeys(
         groupBy.split(',').filter((key) => key !== ''),
       );

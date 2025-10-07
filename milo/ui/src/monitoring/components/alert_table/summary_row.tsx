@@ -65,7 +65,6 @@ export const AlertSummaryRow = ({
   const client = useNotifyAlertsClient();
   const silenceMutation = useMutation({
     mutationFn: (builder: AlertBuilderJson | null) => {
-      // eslint-disable-next-line new-cap
       return client.BatchUpdateAlerts(
         BatchUpdateAlertsRequest.fromPartial({
           requests: [

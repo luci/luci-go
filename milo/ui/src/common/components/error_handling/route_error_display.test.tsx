@@ -37,7 +37,6 @@ describe('<RouteErrorDisplay />', () => {
     // ```
     // jest.spyOn(console, 'error').mockImplementation(() => {});
     // ```
-    // eslint-disable-next-line no-console
     silence('error', (...params) =>
       `${params}`.includes(SILENCED_ERROR_MAGIC_STRING),
     );

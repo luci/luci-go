@@ -49,7 +49,6 @@ export const BugMenu = ({
   const client = useNotifyAlertsClient();
   const linkBugMutation = useMutation({
     mutationFn: (bug: string) => {
-      // eslint-disable-next-line new-cap
       return client.BatchUpdateAlerts(
         BatchUpdateAlertsRequest.fromPartial({
           requests: alerts.map((a) => {

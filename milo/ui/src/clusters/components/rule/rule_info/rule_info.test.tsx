@@ -36,7 +36,6 @@ describe('Test RuleInfo component', () => {
     await screen.findByText('Rule Details');
 
     expect(screen.getByText(mockRule.ruleDefinition)).toBeInTheDocument();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(
       screen.getByText(
         `${mockRule.sourceCluster!.algorithm}/${mockRule.sourceCluster!.id}`,
@@ -76,7 +75,7 @@ describe('Test RuleInfo component', () => {
     mockUpdateRule(updatedRule);
 
     fireEvent.click(screen.getByText('Confirm'));
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     await waitFor(
       () =>
         fetchMock.lastCall() !== undefined &&
@@ -84,7 +83,6 @@ describe('Test RuleInfo component', () => {
           'http://localhost/prpc/luci.analysis.v1.Rules/Update',
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(fetchMock.lastCall()![1]!.body).toEqual(
       '{"rule":{"name":"projects/chromium/rules/ce83f8395178a0f2edad59fc1a167818"},' +
         '"updateMask":"isActive","etag":"W/\\"2022-01-31T03:36:14.89643Z\\""' +

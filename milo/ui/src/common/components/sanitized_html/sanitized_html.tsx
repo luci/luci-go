@@ -57,7 +57,6 @@ export function SanitizedHtmlComponent({
       sx={sx}
       className={className}
       // We've sanitized the HTML.
-      // eslint-disable-next-line react/no-danger
       dangerouslySetInnerHTML={{
         __html: sanitizedHtml,
       }}

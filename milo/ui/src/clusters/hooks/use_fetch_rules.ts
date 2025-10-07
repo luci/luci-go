@@ -39,7 +39,6 @@ const useFetchRules = (project: string) => {
         // significant, any string sort that produces a lexicographical
         // ordering should also sort by time.
 
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return b.lastAuditableUpdateTime!.localeCompare(
           a.lastAuditableUpdateTime!,
         );

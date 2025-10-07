@@ -85,7 +85,7 @@ export function ConsoleSnapshotRow({ snapshot }: ConsoleSnapshotRowProps) {
           [
             [...(b.category || '').split('|'), formatBuilderId(b.id)],
             // The number of builder snapshots always match the number of builders.
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
             snapshot.builderSnapshots![i],
           ] as const,
       ) || [];

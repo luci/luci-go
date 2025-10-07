@@ -60,7 +60,7 @@ describe('Test FailureTable component', () => {
     );
 
     await screen.findByRole('table');
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     await waitFor(() =>
       expect(screen.getByText(mockFailures[0].testId!)).toBeInTheDocument(),
     );

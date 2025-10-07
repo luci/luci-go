@@ -54,7 +54,7 @@ async function getSourceMapConsumer(
 
       const sourceMapJson = await response.json();
       return await new SourceMapConsumer(sourceMapJson);
-    } catch (error) {
+    } catch (_) {
       // By returning null, we ensure that failed requests aren't retried constantly.
       return null;
     }

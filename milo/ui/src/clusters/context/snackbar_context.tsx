@@ -34,7 +34,6 @@ export const snackContextDefaultState: Snack = {
 
 export const SnackbarContext = createContext<SnackbarContextData>({
   snack: snackContextDefaultState,
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   setSnack: () => {},
 });
 

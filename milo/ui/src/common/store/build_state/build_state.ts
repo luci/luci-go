@@ -264,7 +264,6 @@ export const BuildState = types
       for (const step of self.data.steps || []) {
         const splitName = step.name.split('|');
         // There must be at least one element in a split string array.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const selfName = splitName.pop()!;
         const depth = splitName.length;
         const parentName = splitName.join('|');

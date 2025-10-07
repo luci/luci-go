@@ -14,7 +14,6 @@
 
 // Relax length limit to prevent wrapping caused by long paths and make the test
 // cases more readable.
-/* eslint-disable max-len */
 /* eslint prettier/prettier: ['error', {singleQuote: true, printWidth: 180}] */
 
 import { RouteObject } from 'react-router';

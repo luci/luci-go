@@ -73,7 +73,6 @@ export class TestVariantsTableElement extends MobxExtLitElement {
 
   toggleAllVariants(expand: boolean) {
     // `shadowRoot` is always defined with an open shadow root.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.shadowRoot!.querySelectorAll<TestVariantEntryElement>(
       'milo-test-variant-entry',
     ).forEach((e) => (e.expanded = expand));

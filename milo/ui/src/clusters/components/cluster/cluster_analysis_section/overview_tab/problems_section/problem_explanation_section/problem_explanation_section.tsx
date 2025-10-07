@@ -69,7 +69,6 @@ export const ProblemExplanationSection = ({ problem }: Props) => {
       </Typography>
       <Typography component="div" gutterBottom>
         {/* Explanation field is always set on policies. This is enforced by config validation. */}
-        {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
         <SanitizedHtml html={problem.policy.explanation!.problemHtml} />
       </Typography>
       <Typography
@@ -82,7 +81,6 @@ export const ProblemExplanationSection = ({ problem }: Props) => {
       </Typography>
       <Typography component="div" gutterBottom>
         {/* Explanation field is always set on policies. This is enforced by config validation. */}
-        {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
         <SanitizedHtml html={problem.policy.explanation!.actionHtml} />
       </Typography>
       {problem.state.isActive && (

@@ -93,6 +93,7 @@ export abstract class ReactLitElement extends LitElement {
   abstract renderReact(): ReactNode;
 
   readonly [USE_REACT_NODE] = () => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const [_, setState] = useState({});
     // Create a handle that can trigger update on the React side.
     // `setState` is referentially stable once its created.

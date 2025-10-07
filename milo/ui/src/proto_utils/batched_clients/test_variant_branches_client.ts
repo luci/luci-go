@@ -46,7 +46,6 @@ export class BatchedTestVariantBranchesClientImpl extends TestVariantBranchesCli
     const maxBatchGetSize = opts?.maxBatchGetSize || MAX_BATCH_SIZE;
 
     this.autoBatchedBatchGet = batched({
-      // eslint-disable-next-line new-cap
       fn: (req: BatchGetTestVariantBranchRequest) => super.BatchGet(req),
       combineParamSets([req1], [req2]) {
         if (req1.names.length + req2.names.length > maxBatchGetSize) {

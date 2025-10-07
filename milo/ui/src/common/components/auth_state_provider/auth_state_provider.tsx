@@ -77,7 +77,6 @@ export function AuthStateProvider({
     },
   });
   // Placeholder data is provided. Cannot be null.
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const authState = data!;
 
   // Populate the auth state cache so it can be used by other browser tabs on
@@ -120,7 +119,7 @@ export function AuthStateProvider({
   const ctxValue = useMemo(() => {
     // Establish a dependency on user identity so the provided getters are
     // refreshed whenever the identity changes.
-    authState.identity;
+    void authState.identity;
 
     // Build a function that returns the next valid auth state with
     // `nextValidAuthStateHandlesRef`.

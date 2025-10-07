@@ -114,7 +114,6 @@ const useFetchExoneratedTestVariantBranches = (
       const result: ExoneratedTestVariantBranches = {
         testVariantBranches: exoneratedTVBs,
         // Criteria will always be set if the RPC succeeds.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         criteria: tvResponse.criteria!,
       };
       return result;
@@ -134,16 +133,16 @@ function testVariantBranchFromAnalysis(
     testId: ctvb.testId,
     variant: ctvb.variant,
     // Source ref will always be set.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     sourceRef: ctvb.sourceRef!,
     // Last exoneration will always be set.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     lastExoneration: ctvb.lastExoneration!,
     criticalFailuresExonerated: ctvb.criticalFailuresExonerated,
     // It is a guarantee of the RPC that both failure rate and flake rate will be set.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     failureRate: analysis.failureRate!,
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     flakeRate: analysis.flakeRate!,
   };
 }

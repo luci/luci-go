@@ -49,7 +49,6 @@ const BugInfo = ({ rule }: Props) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Rules always have a bug set.
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const bug = rule.bug!;
 
   const mutateRule = useMutateRule();

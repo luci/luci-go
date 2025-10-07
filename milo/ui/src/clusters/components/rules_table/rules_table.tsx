@@ -69,7 +69,6 @@ const RulesTable = ({ project }: Props) => {
     return policyIDs.indexOf(policyID);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const filteredRules = (rules || []).filter(
     (r) =>
       problemFilter === '' ||

@@ -365,7 +365,7 @@ export class TestVariantEntryElement
     // Trigger the cluster RPC even when the entry is not rendered yet.
     // So we can batch more requests into one instead of waiting for new entries
     // to be progressively rendered.
-    this.clustersByResultId$;
+    void this.clustersByResultId$;
     return '';
   }
 

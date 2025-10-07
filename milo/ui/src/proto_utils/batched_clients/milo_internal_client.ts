@@ -47,7 +47,6 @@ export class BatchedMiloInternalClientImpl extends MiloInternalClientImpl {
 
     this.autoBatchedBatchCheckPermissions = batched({
       fn: (req: BatchCheckPermissionsRequest) =>
-        // eslint-disable-next-line new-cap
         super.BatchCheckPermissions(req),
       shardFn: (req) => req.realm,
       combineParamSets([req1], [req2]) {

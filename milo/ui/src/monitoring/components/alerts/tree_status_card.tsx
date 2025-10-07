@@ -48,7 +48,6 @@ interface AlertGroupProps {
 export const TreeStatusCard = ({ tree }: AlertGroupProps) => {
   const treeStatusClient = useTreeStatusClient();
   const statusQuery = useQuery({
-    // eslint-disable-next-line new-cap
     ...treeStatusClient.ListStatus.query(
       ListStatusRequest.fromPartial({
         parent: `trees/${tree.treeStatusName}/status`,

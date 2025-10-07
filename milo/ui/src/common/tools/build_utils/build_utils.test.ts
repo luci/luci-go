@@ -26,19 +26,15 @@ import {
 describe('getLogdogRawUrl', () => {
   test('should get correct logdog url for prod', async () => {
     const logdogURL =
-      // eslint-disable-next-line max-len
       'logdog://logs.chromium.org/chromium/buildbucket/cr-buildbucket.appspot.com/8865799866429037440/+/steps/compile__with_patch_/0/stdout';
     expect(getLogdogRawUrl(logdogURL)).toStrictEqual(
-      // eslint-disable-next-line max-len
       'https://logs.chromium.org/logs/chromium/buildbucket/cr-buildbucket.appspot.com/8865799866429037440/+/steps/compile__with_patch_/0/stdout?format=raw',
     );
   });
   test('should get correct logdog url for dev', async () => {
     const logdogURL =
-      // eslint-disable-next-line max-len
       'logdog://luci-logdog-dev.appspot.com/chromium/buildbucket/cr-buildbucket-dev.appspot.com/8865403731021509824/+/u/ensure_output_directory/stdout';
     expect(getLogdogRawUrl(logdogURL)).toStrictEqual(
-      // eslint-disable-next-line max-len
       'https://luci-logdog-dev.appspot.com/logs/chromium/buildbucket/cr-buildbucket-dev.appspot.com/8865403731021509824/+/u/ensure_output_directory/stdout?format=raw',
     );
   });
@@ -55,7 +51,6 @@ describe('getBuildbucketLink', () => {
       '123',
     );
     expect(buildbucketLink.url).toStrictEqual(
-      // eslint-disable-next-line max-len
       'https://cr-buildbucket-dev.appspot.com/rpcexplorer/services/buildbucket.v2.Builds/GetBuild?request=%7B%22id%22%3A%22123%22%7D',
     );
   });
@@ -111,7 +106,6 @@ describe('renderBugUrlTemplate', () => {
 
   test('should render the chromium bug URL correctly', () => {
     const url = renderBugUrlTemplate(
-      // eslint-disable-next-line max-len
       'https://bugs.chromium.org/p/chromium/issues/entry?summary=summary&description=project%3A+{{{build.builder.project}}}%0Abucket%3A+{{{build.builder.bucket}}}%0Abuilder%3A+{{{build.builder.builder}}}%0Abuilder+url%3A+{{{milo_builder_url}}}%0Abuild+url%3A+{{{milo_build_url}}}',
       {
         id: '123',
@@ -124,14 +118,12 @@ describe('renderBugUrlTemplate', () => {
       'https://luci-milo-dev.appspot.com',
     );
     expect(url).toStrictEqual(
-      // eslint-disable-next-line max-len
       'https://bugs.chromium.org/p/chromium/issues/entry?summary=summary&description=project%3A+testproject%0Abucket%3A+testbucket%0Abuilder%3A+test%20builder%0Abuilder+url%3A+https%3A%2F%2Fluci-milo-dev.appspot.com%2Fui%2Fp%2Ftestproject%2Fbuilders%2Ftestbucket%2Ftest%2520builder%0Abuild+url%3A+https%3A%2F%2Fluci-milo-dev.appspot.com%2Fb%2F123',
     );
   });
 
   test('should render the buganizer bug URL correctly', () => {
     const url = renderBugUrlTemplate(
-      // eslint-disable-next-line max-len
       'https://b.corp.google.com/createIssue?title=title&description=project%3A+{{{build.builder.project}}}%0Abucket%3A+{{{build.builder.bucket}}}%0Abuilder%3A+{{{build.builder.builder}}}%0Abuilder_url%3A+{{{milo_builder_url}}}%0Abuild_url%3A+{{{milo_build_url}}}',
       {
         id: '123',
@@ -144,14 +136,12 @@ describe('renderBugUrlTemplate', () => {
       'https://luci-milo-dev.appspot.com',
     );
     expect(url).toStrictEqual(
-      // eslint-disable-next-line max-len
       'https://b.corp.google.com/createIssue?title=title&description=project%3A+testproject%0Abucket%3A+testbucket%0Abuilder%3A+test%20builder%0Abuilder_url%3A+https%3A%2F%2Fluci-milo-dev.appspot.com%2Fui%2Fp%2Ftestproject%2Fbuilders%2Ftestbucket%2Ftest%2520builder%0Abuild_url%3A+https%3A%2F%2Fluci-milo-dev.appspot.com%2Fb%2F123',
     );
   });
 
   test("should return empty string if the domain doesn't match", () => {
     const url = renderBugUrlTemplate(
-      // eslint-disable-next-line max-len
       'https://bug.chromium.org/p/chromium/issues/entry',
       {
         id: '123',
@@ -168,7 +158,6 @@ describe('renderBugUrlTemplate', () => {
 
   test("should return empty string if the schema doesn't match", () => {
     const url = renderBugUrlTemplate(
-      // eslint-disable-next-line max-len
       'http://bugs.chromium.org/p/chromium/issues/entry',
       {
         id: '123',
@@ -191,7 +180,6 @@ describe('getCipdLink', () => {
       'bHf2s_9KYiixd4SlHDugMeMqrngwz2QOGB_7bUcVpUoC',
     );
     expect(cipdLink.url).toStrictEqual(
-      // eslint-disable-next-line max-len
       'https://chrome-infra-packages.appspot.com/p/infra/3pp/tools/git/mac-amd64/+/bHf2s_9KYiixd4SlHDugMeMqrngwz2QOGB_7bUcVpUoC',
     );
   });

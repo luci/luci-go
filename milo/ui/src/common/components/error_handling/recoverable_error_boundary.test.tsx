@@ -70,7 +70,6 @@ describe('<RecoverableErrorBoundary />', () => {
     // ```
     // jest.spyOn(console, 'error').mockImplementation(() => {});
     // ```
-    // eslint-disable-next-line no-console
     silence('error', (err) => `${err}`.includes(SILENCED_ERROR_MAGIC_STRING));
     silence('error', (err) =>
       `${err}`.includes(

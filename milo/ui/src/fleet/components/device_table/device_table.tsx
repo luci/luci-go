@@ -57,7 +57,9 @@ const UNKNOWN_ROW_COUNT = -1;
 // Used to get around TypeScript issues with custom toolbars.
 // See: https://mui.com/x/react-data-grid/components/?srsltid=AfmBOoqlDTexbfxLLrstTWIEaJ97nrqXGVqhaMHF3Q2yIujjoMRTtTvF#custom-slot-props-with-typescript
 declare module '@mui/x-data-grid' {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface ToolbarPropsOverrides extends FleetToolbarProps {}
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface ColumnMenuPropsOverrides extends ColumnMenuProps {}
 }
 

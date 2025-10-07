@@ -63,7 +63,6 @@ describe('test ClusterInfo component', () => {
     await screen.findByText('Failure reason cluster');
     await screen.findByTestId('cluster-definition');
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(screen.getByText(mockCluster.title!)).toBeInTheDocument();
   });
 
@@ -93,7 +92,6 @@ describe('test ClusterInfo component', () => {
     await screen.findByText('Test name cluster');
     await screen.findByTestId('cluster-definition');
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(screen.getByText(mockCluster.title!)).toBeInTheDocument();
   });
 });

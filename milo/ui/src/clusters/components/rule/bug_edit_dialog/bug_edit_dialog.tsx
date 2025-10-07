@@ -52,7 +52,6 @@ const BugEditDialog = ({ open, setOpen }: Props) => {
   useEffect(() => {
     if (rule) {
       // Rules always have a bug set.
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const bug = rule.bug!;
       setBugId(bug.id);
     }
@@ -82,7 +81,7 @@ const BugEditDialog = ({ open, setOpen }: Props) => {
 
   const handleClose = () => {
     // Rules always have a bug set.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     const bug = rule.bug!;
     setBugId(bug.id);
     setOpen(false);

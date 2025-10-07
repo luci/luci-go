@@ -176,7 +176,7 @@ export class ASTCache {
 
       this.cache.set(source, ast);
       return ast;
-    } catch (err) {
+    } catch (_) {
       this.cache.set(source, null);
       return null;
     }

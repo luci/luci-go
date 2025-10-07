@@ -60,8 +60,7 @@ export function IndentBorder({
         paddingRight: `${
           index === 0
             ? 4
-            : // eslint-disable-next-line max-len
-              /* adjust the starting element to line under the parent border */ nodeIndentation /
+            : /* adjust the starting element to line under the parent border */ nodeIndentation /
               2
         }px`,
       }}

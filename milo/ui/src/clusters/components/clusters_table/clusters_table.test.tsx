@@ -142,7 +142,6 @@ describe('Test ClustersTable component', () => {
 
     renderWithRouterAndClient(<ClustersTable project="testproject" />);
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await waitFor(() =>
       expect(
         screen.getByText(mockClusters[1].bug!.linkText),
@@ -227,7 +226,7 @@ describe('Test ClustersTable component', () => {
     const ruleCluster2 = getMockRuleBasicClusterSummary(
       '20000000000000002000000000000000',
     );
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     ruleCluster2.bug!.linkText = 'crbug.com/2222222';
     const updatedResponse: QueryClusterSummariesResponse = {
       clusterSummaries: [suggestedCluster, ruleCluster2],
@@ -288,7 +287,7 @@ describe('Test ClustersTable component', () => {
     const ruleCluster2 = getMockRuleBasicClusterSummary(
       '20000000000000002000000000000000',
     );
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     ruleCluster2.bug!.linkText = 'crbug.com/3333333';
     const updatedResponse: QueryClusterSummariesResponse = {
       clusterSummaries: [suggestedCluster, ruleCluster2],
@@ -574,7 +573,6 @@ describe('Test ClustersTable component', () => {
     expect(screen.getByText('Last 7 days')).toBeInTheDocument();
 
     // Clusters for the last week should be displayed.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(
       screen.getByText(mockFullClusterSummaries[1].bug!.linkText),
     ).toBeInTheDocument();

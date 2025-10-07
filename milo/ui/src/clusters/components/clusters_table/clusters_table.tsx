@@ -42,7 +42,6 @@ const ClustersTable = ({ project }: Props) => {
     return metrics || [];
   }, [metrics]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedMetrics, updateSelectedMetricsParam] =
     useSelectedMetricsParam(stableMetrics);
 

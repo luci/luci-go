@@ -311,7 +311,7 @@ class ContextConsumerWrapper extends LitElement {
     return html` <milo-context-consumer-test></milo-context-consumer-test> `;
   }
 }
-ContextConsumerWrapper;
+void ContextConsumerWrapper;
 
 // TODO(weiweilin): test what happens when ContextProvider is disconnected from
 // DOM then reconnected to DOM.

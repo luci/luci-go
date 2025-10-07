@@ -71,7 +71,6 @@ export const Alerts = () => {
     setFilter('');
     // Although we use setFilter here, we don't want to run this every time setFilter changes
     // because otherwise we cannot actually enter a filter.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTab]);
 
   const alertGroupsData = useAlertGroups();

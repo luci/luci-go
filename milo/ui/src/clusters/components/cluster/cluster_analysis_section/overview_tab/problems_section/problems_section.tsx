@@ -79,7 +79,6 @@ export const ProblemsSection = () => {
       )}
       {projectConfig && rule && (
         <ProblemsSummary
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           bugManagementState={rule.bugManagementState!}
           config={projectConfig.bugManagement}
         ></ProblemsSummary>

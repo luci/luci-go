@@ -41,7 +41,6 @@ export const progressToLatestAlgorithms = (
 ): number => {
   return progressTo(progress, (target: ClusteringVersion) => {
     // 'next' will be set on all progress objects.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return target.algorithmsVersion >= progress.next!.algorithmsVersion;
   });
 };
@@ -50,7 +49,6 @@ export const progressToLatestConfig = (
   progress: ReclusteringProgress,
 ): number => {
   // 'next' will be set on all progress objects.
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const targetConfigVersion = DateTime.fromISO(
     progress.next!.configVersion || '',
   );
@@ -79,14 +77,14 @@ const progressTo = (
   predicate: (target: ClusteringVersion) => boolean,
 ): number => {
   // 'last' will be set on all progress objects.
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
   if (predicate(progress.last!)) {
     // Completed
     return 1000;
   }
 
   // 'next' will be set on all progress objects.
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
   if (predicate(progress.next!)) {
     return progress.progressPerMille || 0;
   }

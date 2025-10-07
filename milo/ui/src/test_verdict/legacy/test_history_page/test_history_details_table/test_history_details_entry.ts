@@ -107,7 +107,6 @@ export class TestHistoryDetailsEntryElement
       })
       .then((res) => {
         // There must be a matching variant from ResultDB.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return res.testVariants![0];
       });
     return fromPromise(testVariant);

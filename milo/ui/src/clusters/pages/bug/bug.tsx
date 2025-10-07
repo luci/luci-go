@@ -54,7 +54,6 @@ export const BugPage = () => {
     queryFn: async () => {
       const request: LookupBugRequest = {
         system: bugSystem,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         id: id!,
       };
       return await service.LookupBug(request);

@@ -47,7 +47,7 @@ class WrapperElement extends LitElement {
     `;
   }
 }
-WrapperElement; // 'Use' the class to silence eslint/tsc warnings.
+void WrapperElement; // 'Use' the class to silence eslint/tsc warnings.
 
 declare module 'react' {
   // eslint-disable-next-line @typescript-eslint/no-namespace

@@ -14,15 +14,12 @@
 
 import { GitilesCommit, StringPair } from '@/common/services/common';
 
-/* eslint-disable max-len */
 /**
  * Manually coded type definition and classes for buildbucket services.
  * TODO(weiweilin): To be replaced by code generated version once we have one.
  * source:                  https://chromium.googlesource.com/infra/luci/luci-go/+/04a118946d13ad326c44dba9a635116ff7f31c4e/buildbucket/proto/builds_service.proto
  * Builder metadata source: https://chromium.googlesource.com/infra/luci/luci-go/+/fe56f864b0e1dc61eaa6b9062fabb1119e872306/buildbucket/proto/builder_service.proto
  */
-/* eslint-enable max-len */
-
 export const TEST_PRESENTATION_KEY =
   '$recipe_engine/resultdb/test_presentation';
 

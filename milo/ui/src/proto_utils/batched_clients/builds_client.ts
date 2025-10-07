@@ -53,7 +53,6 @@ export class BatchedBuildsClientImpl extends BuildsClientImpl {
     const maxBatchSize = opts?.maxBatchSize || MAX_BATCH_SIZE;
 
     this.autoBatchedBatch = batched({
-      // eslint-disable-next-line new-cap
       fn: (req: BatchRequest) => super.Batch(req),
       combineParamSets([req1], [req2]) {
         if (req1.requests.length + req2.requests.length > maxBatchSize) {

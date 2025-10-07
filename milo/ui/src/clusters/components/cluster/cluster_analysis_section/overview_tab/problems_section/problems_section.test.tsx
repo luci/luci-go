@@ -74,7 +74,7 @@ describe('Test ProblemSection component', () => {
 
   it('given a rule with active or previously active problems, it should show those problems', async () => {
     const mockRule = createDefaultMockRule();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     mockRule.bugManagementState!.policyState = [
       {
         policyId: 'exonerations',
@@ -179,7 +179,7 @@ describe('Test ProblemSection component', () => {
 
   it('given a rule with no active or previously active problems, it should show placeholder text', async () => {
     const mockRule = createDefaultMockRule();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     mockRule.bugManagementState!.policyState = [
       {
         policyId: 'exonerations',
@@ -220,7 +220,7 @@ describe('Test ProblemSection component', () => {
     mockFetchRule(mockRule);
 
     const mockConfig = createMockProjectConfig();
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     mockConfig.bugManagement!.policies = [];
     mockFetchProjectConfig(mockConfig);
 

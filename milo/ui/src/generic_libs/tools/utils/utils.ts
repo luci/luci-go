@@ -129,7 +129,6 @@ export function deferred<T = void>(): [
     resolvePromise = resolve;
     rejectPromise = reject;
   });
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return [promise, resolvePromise!, rejectPromise!];
 }
 

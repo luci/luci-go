@@ -45,7 +45,6 @@ const RuleRow = ({
   focusPolicyID,
   colorIndexFunc,
 }: RowProps) => {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const problems = identifyProblems(
     bugManagementConfig,
     rule.bugManagementState!,
@@ -109,7 +108,6 @@ const RuleRow = ({
           </Tooltip>
         ))}
       </TableCell>
-      {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
       <TableCell>
         <Link href={rule.bug!.url} underline="hover">
           {rule.bug!.linkText}

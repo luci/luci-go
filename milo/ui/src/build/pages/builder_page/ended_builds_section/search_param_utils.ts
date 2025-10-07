@@ -49,7 +49,7 @@ export function getStatus(params: URLSearchParams) {
   const status = params.get(STATUS_PARAM_KEY);
   try {
     return status ? statusFromJSON(status) : DEFAULT_STATUS;
-  } catch (err) {
+  } catch (_) {
     return DEFAULT_STATUS;
   }
 }

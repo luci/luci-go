@@ -55,7 +55,6 @@ export const TreeStatusListPage = () => {
 
   const treeStatusClient = useTreeStatusClient();
   const status = useQuery({
-    // eslint-disable-next-line new-cap
     ...treeStatusClient.ListStatus.query(
       ListStatusRequest.fromPartial({
         parent: `trees/${treeName}/status`,
@@ -70,7 +69,6 @@ export const TreeStatusListPage = () => {
   // Get tree.
   const treesClient = useTreesClient();
   const tree = useQuery({
-    // eslint-disable-next-line new-cap
     ...treesClient.GetTree.query(
       GetTreeRequest.fromPartial({
         name: `trees/${treeName}`,

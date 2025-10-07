@@ -20,7 +20,6 @@ import { RouteErrorDisplay } from '@/common/components/error_handling';
 export function ServerPage() {
   // Trigger navigation to itself so we can let the server handle the navigation
   // request and therefore escapes react-router's control.
-  // eslint-disable-next-line no-self-assign
   self.location.href = self.location.href;
 
   return <></>;

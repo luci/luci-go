@@ -212,7 +212,7 @@ const FailuresTableRows = ({
                   variant="outlined"
                   clickable
                   // Will always be non-null if presubmitRun is non-null.
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
                   href={presubmitRunLink(
                     group.failure.presubmitRun.presubmitRunId!,
                   )}

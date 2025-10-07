@@ -90,7 +90,6 @@ const TestRow = ({ project, testId }: TestRowProps) => {
     <li key={testId}>
       <Link
         href={`/ui/test/${encodeURIComponent(
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           project!,
         )}/${encodeURIComponent(testId)}`}
         target="_blank"

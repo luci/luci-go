@@ -172,14 +172,12 @@ export function displayApproxDuration(duration: Duration | null): string {
   }
 }
 
-/* eslint-disable max-len */
 /**
  * Parses the JSON encoding of google.protobuf.Duration (e.g. '4.5s').
  * https://github.com/protocolbuffers/protobuf/blob/68cb69ea68822d96eee6d6104463edf85e70d689/src/google/protobuf/duration.proto#L92
  *
  * Returns the number of milliseconds.
  */
-/* eslint-disable max-len */
 export function parseProtoDurationStr(duration: string): Duration {
   return Duration.fromObject({
     second: Number(duration.substring(0, duration.length - 1)),

@@ -76,7 +76,7 @@ const getPlatformEnum = (platform: string | undefined) => {
   if (!platform) return undefined;
   try {
     return platformFromJSON(platform.toUpperCase());
-  } catch (e) {
+  } catch (_) {
     return undefined;
   }
 };

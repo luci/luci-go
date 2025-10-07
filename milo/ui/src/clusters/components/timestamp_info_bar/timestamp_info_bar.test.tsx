@@ -21,7 +21,6 @@ import { createDefaultMockRule } from '@/clusters/testing_tools/mocks/rule_mock'
 import TimestampInfoBar from './timestamp_info_bar';
 
 // Disabled until we can support dayjs relative time format.
-// eslint-disable-next-line jest/no-disabled-tests
 describe('Test TimestampInfoBar component', () => {
   it('when proved with rule, then should render username and timestamps', async () => {
     const rule = createDefaultMockRule();

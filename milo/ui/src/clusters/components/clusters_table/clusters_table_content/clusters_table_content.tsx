@@ -92,7 +92,6 @@ const ClustersTableContent = ({ project }: Props) => {
               return (
                 <ClustersTableRow
                   // Cluster ID will be set on all clusters.
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   key={`${row.clusterId!.algorithm}:${row.clusterId!.id}`}
                   project={project}
                   cluster={row}

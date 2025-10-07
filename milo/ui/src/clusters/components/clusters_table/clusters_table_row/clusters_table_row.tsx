@@ -136,7 +136,6 @@ const ClustersTableRow = ({
   return (
     <TableRow>
       <TableCell data-testid="clusters_table_title">
-        {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
         <Link
           component={RouterLink}
           to={linkToCluster(project, cluster.clusterId!)}

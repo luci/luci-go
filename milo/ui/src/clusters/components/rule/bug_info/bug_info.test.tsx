@@ -53,7 +53,6 @@ describe('Test BugInfo component', () => {
 
     renderWithRouterAndClient(<BugInfo rule={mockRule} />);
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await waitFor(() =>
       expect(screen.getByText(mockRule.bug!.linkText)).toBeInTheDocument(),
     );

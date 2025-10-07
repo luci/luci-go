@@ -68,7 +68,6 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
   const client = useNotifyAlertsClient();
   const silenceAllMutation = useMutation({
     mutationFn: (alerts: AlertJson[]) => {
-      // eslint-disable-next-line new-cap
       return client.BatchUpdateAlerts(
         BatchUpdateAlertsRequest.fromPartial({
           requests: alerts.map((a) =>

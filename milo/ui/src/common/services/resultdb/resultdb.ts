@@ -26,13 +26,11 @@ import { PrpcClientExt } from '@/generic_libs/tools/prpc_client_ext';
 import { sha256 } from '@/generic_libs/tools/utils';
 import { ToString } from '@/generic_libs/types';
 
-/* eslint-disable max-len */
 /**
  * Manually coded type definition and classes for resultdb service.
  * TODO(weiweilin): To be replaced by code generated version once we have one.
  * source: https://chromium.googlesource.com/infra/luci/luci-go/+/4525018bc0953bfa8597bd056f814dcf5e765142/resultdb/proto/rpc/v1/resultdb.proto
  */
-/* eslint-enable max-len */
 
 export enum TestVerdict_Status {
   STATUS_UNSPECIFIED = 'STATUS_UNSPECIFIED',
@@ -629,6 +627,5 @@ export function createTVCmpFn(
 export function getPropKeyLabel(key: string) {
   // If the key has the format of '{type}.{value}', hide the '{type}.' prefix.
   // It's safe to cast here because the 2nd capture group must match something.
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return key.match(/^([^.]*\.)?(.*)$/)![2];
 }
