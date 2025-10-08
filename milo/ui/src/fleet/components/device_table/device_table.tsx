@@ -217,7 +217,7 @@ export function DeviceTable({
           toolbar: FleetToolbar,
         }}
         slotProps={{
-          columnMenu: { platform: platform },
+          columnMenu: { platform },
           pagination: {
             pagerCtx: pagerCtx,
             nextPageToken: nextPageToken,
@@ -229,6 +229,7 @@ export function DeviceTable({
             resetDefaultColumns: resetDefaultColumns,
             temporaryColumns: temporaryColumns,
             addUserVisibleColumn: addUserVisibleColumn,
+            platform,
           },
         }}
         disableRowSelectionOnClick

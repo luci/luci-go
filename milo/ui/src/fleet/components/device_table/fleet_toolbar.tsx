@@ -17,6 +17,9 @@ import {
   GridToolbarContainer,
   GridToolbarDensitySelector,
 } from '@mui/x-data-grid';
+import { useMemo } from 'react';
+
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { RunAutorepair } from '../actions/autorepair/run_autorepair';
 import { CopyButton } from '../actions/copy/copy_button';
@@ -31,6 +34,7 @@ export interface FleetToolbarProps {
   resetDefaultColumns?: () => void;
   temporaryColumns?: string[];
   addUserVisibleColumn?: (column: string) => void;
+  platform: Platform;
 }
 
 /**
@@ -42,6 +46,7 @@ export function FleetToolbar({
   resetDefaultColumns,
   temporaryColumns,
   addUserVisibleColumn,
+  platform,
 }: FleetToolbarProps) {
   const selectedDuts = selectedRows.map((row) => ({
     name: `${row.dut_name}`,
@@ -52,18 +57,30 @@ export function FleetToolbar({
     model: row['label-model'],
   }));
 
+  const tools: Partial<Record<Platform, React.ReactNode>> = useMemo(
+    () => ({
+      [Platform.CHROMEOS]: (
+        <>
+          {selectedRows.length > 0 && (
+            <>
+              <RunAutorepair selectedDuts={selectedDuts} />
+              <CopyButton />
+              <RequestRepair selectedDuts={selectedDuts} />
+            </>
+          )}
+          <ExportButton
+            selectedRowIds={selectedRows.map((row) => `${row.id}`)}
+          />
+        </>
+      ),
+      [Platform.ANDROID]: selectedRows.length > 0 && <CopyButton />,
+    }),
+    [selectedDuts, selectedRows],
+  );
+
   return (
     <GridToolbarContainer>
-      {selectedRows.length ? (
-        <>
-          <RunAutorepair selectedDuts={selectedDuts} />
-          <CopyButton />
-          <RequestRepair selectedDuts={selectedDuts} />
-        </>
-      ) : (
-        <></>
-      )}
-      <ExportButton selectedRowIds={selectedRows.map((row) => `${row.id}`)} />
+      {tools[platform] ?? null}
       <Box sx={{ flexGrow: 1 }} />
       <GridToolbarDensitySelector />
       <ColumnsButton
