@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -103,7 +104,7 @@ func (c *ReAuthChecker) Check(ctx context.Context, attrs *creds.Attrs) (*ReAuthC
 	if project == "" {
 		return nil, errors.Fmt("check Gerrit ReAuth: empty project not allowed")
 	}
-	if !supportedHosts[host] {
+	if !isSupportedHost(host) {
 		// Unsupported hosts never need ReAuth.
 		logging.Debugf(ctx, "Skipping ReAuth check for unsupported host %q", host)
 		return &ReAuthCheckResult{
@@ -128,19 +129,33 @@ func (c *ReAuthChecker) Check(ctx context.Context, attrs *creds.Attrs) (*ReAuthC
 	return r, nil
 }
 
-// supportedHosts contains Gerrit hosts that support ReAuth and the "Check Rapt" API.
+// reauthCapableHosts are Gerrit hosts that supports ReAuth.
 //
-// Used to short circuit checks.
+// Hosts here are without -review or domain suffix.
+var reauthCapableHosts = []string{
+	"chromium",
+	"dawn",
+	"webrtc",
+}
+
+// Gerrit host suffixes.
+var gerritHostSuffixes = []string{
+	".googlesource.com",
+	"-review.googlesource.com",
+}
+
+// isSupportedHost checks if the given host is a supported Gerrit host for ReAuth.
 //
-// Note that the API can only be called using the `-review` hostname,
-// see [normalizeGerritHost].
-var supportedHosts = map[string]bool{
-	"chromium.googlesource.com":        true,
-	"chromium-review.googlesource.com": true,
-	"dawn.googlesource.com":            true,
-	"dawn-review.googlesource.com":     true,
-	"webrtc.googlesource.com":          true,
-	"webrtc-review.googlesource.com":   true,
+// `host` is the host part of a URL (e.g. `chromium.googlesource.com`).
+func isSupportedHost(host string) bool {
+	for _, prefix := range reauthCapableHosts {
+		if remaining, found := strings.CutPrefix(host, prefix); found {
+			if slices.Contains(gerritHostSuffixes, remaining) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // checkProjectReAuth checks whether the user needs ReAuth for a

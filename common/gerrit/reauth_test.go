@@ -143,3 +143,20 @@ func TestNormalizeGerritHost(t *testing.T) {
 		})
 	}
 }
+
+func TestIsSupportedURLHost(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		host     string
+		expected bool
+	}{
+		{"chromium.googlesource.com", true},
+		{"chromium-review.googlesource.com", true},
+		{"foo.googlesource.com", false},
+		{"chromium.example.com", false},
+		{"", false},
+	}
+	for _, tc := range testCases {
+		assert.That(t, isSupportedHost(tc.host), should.Equal(tc.expected))
+	}
+}
