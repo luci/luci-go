@@ -41,8 +41,15 @@ cd ../../../../..
 #
 # The best way I can think of to do that right now is to create a symlink and
 # then remove it when I'm done. I am still working on a longer-term solution.
+#
+# To generate protos for turboci/proto, we clone the repo into a temporary
+# directory which will be cleaned up.
+TURBOCI_PROTO_DIR=$(mktemp -d)
+git clone https://chromium.googlesource.com/infra/turboci/proto "${TURBOCI_PROTO_DIR}"
+
 cleanup() {
-    unlink ./go.chromium.org/infra 1>/dev/null 2>/dev/null
+  unlink ./go.chromium.org/infra 1>/dev/null 2>/dev/null
+  rm -rf "${TURBOCI_PROTO_DIR}"
 }
 unlink ./go.chromium.org/infra 1>/dev/null 2>/dev/null
 ln -s ../infra ./go.chromium.org/infra || die 'failed to make infra symlink'
@@ -55,11 +62,12 @@ protoc \
   --plugin=./go.chromium.org/luci/milo/ui/node_modules/.bin/protoc-gen-ts_proto \
   \
   `# All the base directory to resolve the proto file dependencies from must be
-   # listed here. Otherwise, protoc may not able to resolve the dependencies
-   # listed in a proto file.` \
+  # listed here. Otherwise, protoc may not able to resolve the dependencies
+  # listed in a proto file.` \
   -I=./go.chromium.org/luci/common/proto/googleapis \
   -I=./go.chromium.org/chromiumos/config/proto \
   -I=./ \
+  -I="${TURBOCI_PROTO_DIR}" \
   \
   --ts_proto_out=./go.chromium.org/luci/milo/ui/src/proto \
   \
@@ -84,8 +92,8 @@ protoc \
   --ts_proto_opt=useExactTypes=false \
   \
   `# Do not use remove enum prefix because it will generate invalid enum variant
-   # identifiers when the identifier begins with a digit after the prefix is
-   # removed.` \
+  # identifiers when the identifier begins with a digit after the prefix is
+  # removed.` \
   --ts_proto_opt=removeEnumPrefix=false \
   \
   --ts_proto_opt=forceLong=string,esModuleInterop=true \
@@ -120,3 +128,5 @@ protoc \
   ./go.chromium.org/infra/appengine/sheriff-o-matic/proto/v1/alerts.proto \
   ./go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.proto \
   ./go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.proto \
+  "${TURBOCI_PROTO_DIR}/turboci/graph/orchestrator/v1/graph_view.proto" \
+
