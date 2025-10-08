@@ -170,7 +170,7 @@ func sendRevertForReview(ctx context.Context, gerritClient *gerrit.Client,
 	logging.Debugf(ctx, "sending revert %s~%d for review because %s",
 		revert.Project, revert.Number, reason)
 
-	// Get on-call arborists
+	// Get on-call gardeners
 	reviewerEmails, err := rotationproxy.GetOnCallEmails(ctx,
 		culpritModel.GitilesCommit.Project)
 	if err != nil {

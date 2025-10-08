@@ -80,7 +80,7 @@ func canCommit(ctx context.Context, culprit *gerritpb.ChangeInfo, culpritModel *
 //   - the culprit is not yet older than the maximum revertible culprit age
 func commitRevert(ctx context.Context, gerritClient *gerrit.Client,
 	culpritModel *model.Suspect, revert *gerritpb.ChangeInfo) error {
-	// CC on-call arborists
+	// CC on-call gardeners
 	ccEmails, err := rotationproxy.GetOnCallEmails(ctx,
 		culpritModel.GitilesCommit.Project)
 	if err != nil {

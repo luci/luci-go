@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package rotationproxy contains the logic to query for the on-call arborists
+// Package rotationproxy contains the logic to query for the on-call gardeners
 // from the Chrome Ops Rotation Proxy
 package rotationproxy
 
@@ -30,7 +30,7 @@ import (
 
 var MockedRotationProxyClientKey = "mocked chrome-ops-rotation-proxy client"
 
-// GetOnCallEmails returns the emails of the on-call arborists for the given
+// GetOnCallEmails returns the emails of the on-call gardeners for the given
 // project.
 func GetOnCallEmails(ctx context.Context, project string) ([]string, error) {
 	switch project {
@@ -49,7 +49,7 @@ type rotationResponse struct {
 }
 
 // getOnCallEmails is a helper function to get the emails of the on-call
-// arborists using the given rotation proxy name.
+// gardeners using the given rotation proxy name.
 func getOnCallEmails(ctx context.Context, rotationProxyName string) ([]string, error) {
 	client := GetClient(ctx)
 	data, err := client.sendRequest(ctx, rotationProxyName)
