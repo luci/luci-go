@@ -121,21 +121,26 @@ func (p PluginIO) CheckAvailable(ctx context.Context) error {
 	return nil
 }
 
-// Send executes PluginCmd() and sends `r` to the child process's stdin, then returns the output.
+// Send executes PluginCmd() and sends `r` to the child process's stdin, then
+// returns the output.
+//
+// This function might return a non-empty output and an error at the same time.
+// It's up to the caller to interpret the output and exit code in this case.
+//
+// This function logs a warning when the plugin's exit code isn't 0.
 func (p PluginIO) Send(ctx context.Context, r io.Reader) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, p.PluginCmd())
 	cmd.Stdin = r
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
+
 	logging.Debugf(ctx, "signing plugin stderr: %q", stderr.Bytes())
-	if err != nil {
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
-			logging.Debugf(ctx, "signing plugin exit code: %v", exitErr.ExitCode())
-			logging.Errorf(ctx, "signing plugin stderr: %q", stderr.Bytes())
-		}
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		logging.Warningf(ctx, "signing plugin stderr: %q", stderr.Bytes())
 	}
+
 	return out, err
 }
 
@@ -204,9 +209,10 @@ func (h pluginHandler) Handle(ctx context.Context, c challenge) (*proposalReply,
 	if err != nil {
 		return nil, errors.Fmt("pluginHandler: %w", err)
 	}
+
 	logging.Debugf(ctx, "Got plugin response: %+v", resp)
 	if resp.Error != "" {
-		return nil, errors.Fmt("pluginHandler: error from plugin: %s", resp.Error)
+		return nil, errors.Fmt("pluginHandler: plugin returned an error: %s", resp.Error)
 	}
 
 	reply := skReply{
@@ -234,25 +240,40 @@ func (h pluginHandler) authWithPlugin(ctx context.Context, req *webauthn.GetAsse
 
 // sendRequest sends a request to the signing plugin.
 //
-// Note that this may return both a response and an error.
-// In this case, [pluginResponse.Code] may be zero, but it should be
-// treated as an error.
-// The response may contain more details about the error from the plugin.
+// This function may return a `webauthn.GetAssertionResponse` with Error
+// attribute set. The caller should handle this accordingly.
 func (h pluginHandler) sendRequest(ctx context.Context, req *webauthn.GetAssertionRequest) (*webauthn.GetAssertionResponse, error) {
 	ereq, err := PluginEncode(req)
 	if err != nil {
-		return nil, errors.Fmt("pluginHandler.sendRequest: %w", err)
+		return nil, errors.Fmt("pluginHandler.sendRequest: failed to encode plugin request: %w", err)
 	}
+
 	logging.Debugf(ctx, "Sending signing plugin input: %q", ereq)
 	out, err := h.Send(ctx, bytes.NewReader(ereq))
-	if err != nil {
-		return nil, errors.Fmt("pluginHandler.sendRequest: %w", err)
+
+	// It's fine to continue on exec.ExitError, if the plugin produces a valid
+	// webauthn.GetAssertionResponse. Early return in other cases.
+	var exitErr *exec.ExitError
+	if err != nil && !errors.As(err, &exitErr) {
+		return nil, errors.Fmt("pluginHandler.sendRequest: failed to invoke the plugin: %w", err)
 	}
+
+	if len(out) == 0 {
+		if exitErr != nil {
+			return nil, errors.Fmt("pluginHandler.sendRequest: signing plugin output is empty, plugin exited with error: %w", err)
+		}
+
+		logging.Errorf(ctx, "signing plugin exited successfully but produced no output.")
+		logging.Errorf(ctx, "possibly a bad plugin? plugin command: %s", h.PluginCmd())
+		return nil, errors.Fmt("pluginHandler.sendRequest: signing plugin exited successfully, but produced no output")
+	}
+
 	var resp *webauthn.GetAssertionResponse
 	if err := PluginDecode(out, &resp); err != nil {
-		logging.Debugf(ctx, "Error unmarshalling plugin response: %q", out)
-		return nil, errors.Fmt("pluginHandler.sendRequest: %w", err)
+		logging.Errorf(ctx, "Error unmarshalling plugin response: %q", out)
+		return nil, errors.Fmt("pluginHandler.sendRequest: failed to unmarshal plugin response: %w", err)
 	}
+
 	return resp, nil
 }
 
