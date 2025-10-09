@@ -18,36 +18,12 @@ die() {
   exit 1
 }
 
-oldpwd="$PWD"
-nominal_self_dir="$(dirname -- "$0")" || die 'failed to determine nominal self dir'
-my_basename="$(basename -- "$0")" || die 'failed to get basename'
-self="$( cd -P -- "$nominal_self_dir" && printf '%s/%s' "$(pwd -P)" "$my_basename" )" || die 'failed to find self'
-selfdir="$(dirname -- "$self")" || die 'cannot find own directory'
-
-cd -P -- "$selfdir" || die 'cannot chdir'
-
-eval "$(../../../../../../env.py)"
-
+cd -- "$(dirname "$0")" || die 'cannot chdir'
+[ -f run_e2e.sh ] || die 'failed to find own directory'
 cd ../
 
-# Check if any vite-flavored processes are running
-if ps aux | grep -q 'vit[e]'; then
-  die 'vite is also running right now! cowardly refusing to run cypress'
-fi
-
 # Run the preview server in the background.
-npx vite preview &
-cpid="$!"
-cleanup() {
-  # This cleans up all vite-flavored processes with a sledgehammer.
-  # Any process with the word "vite" appearing anywhere in its output will be
-  # terminated.
-  #
-  # Unfortunately, just doing the basic 'kill -INT "$cpid"' seems not to work.
-  #
-  # TODO(gregorynisbet): Make this less terrible.
-  kill -INT $(ps ax | grep 'vit[e]' | awk '{print $1}')
-}
-trap "cleanup" INT TERM EXIT
+vite preview & pid_preview_server=($!)
+trap "kill $pid_preview_server" INT TERM EXIT
 
-npx cypress run
+cypress run
