@@ -107,8 +107,10 @@ type GenAiSuspect struct {
 	Verified bool `protobuf:"varint,4,opt,name=verified,proto3" json:"verified,omitempty"`
 	// The details of suspect verification for the suspect.
 	VerificationDetails *SuspectVerificationDetails `protobuf:"bytes,5,opt,name=verification_details,json=verificationDetails,proto3" json:"verification_details,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Justification for why the commit was chosen as a suspect.
+	Justification string `protobuf:"bytes,6,opt,name=justification,proto3" json:"justification,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GenAiSuspect) Reset() {
@@ -176,6 +178,13 @@ func (x *GenAiSuspect) GetVerificationDetails() *SuspectVerificationDetails {
 	return nil
 }
 
+func (x *GenAiSuspect) GetJustification() string {
+	if x != nil {
+		return x.Justification
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_bisection_proto_v1_genai_proto protoreflect.FileDescriptor
 
 const file_go_chromium_org_luci_bisection_proto_v1_genai_proto_rawDesc = "" +
@@ -192,7 +201,8 @@ const file_go_chromium_org_luci_bisection_proto_v1_genai_proto_rawDesc = "" +
 	"\treviewUrl\x18\x02 \x01(\tR\treviewUrl\x12 \n" +
 	"\vreviewTitle\x18\x03 \x01(\tR\vreviewTitle\x12\x1a\n" +
 	"\bverified\x18\x04 \x01(\bR\bverified\x12`\n" +
-	"\x14verification_details\x18\x05 \x01(\v2-.luci.bisection.v1.SuspectVerificationDetailsR\x13verificationDetailsB5Z3go.chromium.org/luci/bisection/proto/v1;bisectionpbb\x06proto3"
+	"\x14verification_details\x18\x05 \x01(\v2-.luci.bisection.v1.SuspectVerificationDetailsR\x13verificationDetails\x12$\n" +
+	"\rjustification\x18\x06 \x01(\tR\rjustificationB5Z3go.chromium.org/luci/bisection/proto/v1;bisectionpbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_bisection_proto_v1_genai_proto_rawDescOnce sync.Once

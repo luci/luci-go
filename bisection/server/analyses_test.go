@@ -206,6 +206,7 @@ func TestQueryAnalysis(t *testing.T) {
 			ReviewTitle:        "This is review title2",
 			VerificationStatus: model.SuspectVerificationStatus_Unverified,
 			ParentAnalysis:     datastore.KeyForObj(c, genaiAnalysis),
+			Justification:      "GenAI Justification",
 		}
 		assert.Loosely(t, datastore.Put(c, genaiSuspect), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
@@ -543,6 +544,23 @@ func TestQueryAnalysis(t *testing.T) {
 		}))
 
 		assert.Loosely(t, nthSectionResult.BlameList, should.Match(nsa.BlameList))
+
+		genaiResult := analysis.GenAiResult
+		assert.Loosely(t, genaiResult, should.NotBeNil)
+		expectedGenAiSuspect := &pb.GenAiSuspect{
+			Commit: &buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Id:      "commit7",
+			},
+			ReviewUrl:     "http://this/is/review/url2",
+			ReviewTitle:   "This is review title2",
+			Justification: "GenAI Justification",
+			VerificationDetails: &pb.SuspectVerificationDetails{
+				Status: string(model.SuspectVerificationStatus_Unverified),
+			},
+		}
+		assert.Loosely(t, proto.Equal(genaiResult.Suspect, expectedGenAiSuspect), should.BeTrue)
 	})
 
 	ftt.Run("Analysis found for a similar failure", t, func(t *ftt.Test) {

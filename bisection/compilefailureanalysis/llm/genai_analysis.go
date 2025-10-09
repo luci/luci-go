@@ -40,7 +40,9 @@ Failure: %s
 
 Blamelist: %s
 
-Find the culprit CL from the log range which caused the compile failure, just let me know the Commit ID without any other information.`
+Find the culprit CL from the log range which caused the compile failure, provide the output with the commit ID and a short justification (less than 1024 characters) for the failure in the following format:
+Commit ID: <commit_id>
+Justification: <justification>`
 )
 
 // Analyze performs LLM-powered analysis to identify the culprit CL
@@ -94,15 +96,21 @@ func Analyze(c context.Context, client Client, cfa *model.CompileFailureAnalysis
 	prompt := fmt.Sprintf(promptTemplate, stackTrace, blamelist)
 
 	// Call genai model
-	suspectCommitID, err := client.GenerateContent(c, prompt)
+	rawResponse, err := client.GenerateContent(c, prompt)
 
 	if err != nil {
 		setStatusError(c, genaiAnalysis)
 		return genaiAnalysis, errors.Fmt("failed to call GenAI: %w", err)
 	}
-	// Process the raw string, the commit should be a valid ID to GitlesCommit
 
-	logging.Infof(c, "GenAI analysis identified culprit CL: %s", suspectCommitID)
+	// Parse the raw response to get commit ID and justification
+	suspectCommitID, justification, err := parseGenAIResponse(rawResponse)
+	if err != nil {
+		setStatusError(c, genaiAnalysis)
+		return genaiAnalysis, errors.Fmt("failed to parse GenAI response: %w", err)
+	}
+
+	logging.Infof(c, "GenAI analysis identified culprit CL: %s with justification: %s", suspectCommitID, justification)
 
 	// Find the changelog for the suspect commit to extract review info
 	var reviewUrl, reviewTitle string
@@ -127,6 +135,7 @@ func Analyze(c context.Context, client Client, cfa *model.CompileFailureAnalysis
 		ParentAnalysis: datastore.KeyForObj(c, genaiAnalysis),
 		ReviewUrl:      reviewUrl,
 		ReviewTitle:    reviewTitle,
+		Justification:  justification,
 		Score:          30, // Default HighConfidence for PriorityCulpritVerification
 		GitilesCommit: buildbucketpb.GitilesCommit{
 			Host:    regressionRange.LastPassed.Host,
@@ -151,6 +160,28 @@ func Analyze(c context.Context, client Client, cfa *model.CompileFailureAnalysis
 	}
 
 	return genaiAnalysis, nil
+}
+
+// parseGenAIResponse parses the raw response from the GenAI model.
+// It expects the response in the format:
+// Commit ID: <commit_id>
+// Justification: <justification>
+// It returns the commit ID and justification, or an error if parsing fails.
+func parseGenAIResponse(response string) (string, string, error) {
+	var commitID, justification string
+	lines := strings.Split(response, "\n")
+	for _, line := range lines {
+		trimmedLine := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmedLine, "Commit ID:") {
+			commitID = strings.TrimSpace(strings.TrimPrefix(trimmedLine, "Commit ID:"))
+		} else if strings.HasPrefix(trimmedLine, "Justification:") {
+			justification = strings.TrimSpace(strings.TrimPrefix(trimmedLine, "Justification:"))
+		}
+	}
+	if commitID == "" || justification == "" {
+		return "", "", fmt.Errorf("failed to parse commitID or justification from response: %q", response)
+	}
+	return commitID, justification, nil
 }
 
 // prepareStackTrace extracts and formats compile failure information

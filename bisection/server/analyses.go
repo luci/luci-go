@@ -531,6 +531,7 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 					Commit:      &suspect.GitilesCommit,
 					ReviewUrl:   suspect.ReviewUrl,
 					ReviewTitle: suspect.ReviewTitle,
+					Justification: suspect.Justification,
 				}
 				verificationDetails, err := constructSuspectVerificationDetails(c, suspect)
 				if err != nil {

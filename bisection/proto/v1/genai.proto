@@ -30,4 +30,6 @@ message GenAiSuspect {
   bool verified = 4;
   // The details of suspect verification for the suspect.
   luci.bisection.v1.SuspectVerificationDetails verification_details = 5;
+  // Justification for why the commit was chosen as a suspect.
+  string justification = 6;
 }

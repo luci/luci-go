@@ -151,8 +151,9 @@ func TestGenAiAnalysis(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockClient := NewMockClient(ctrl)
-	// Mock the GenAI response to return the first commit ID from our test data
-	mockClient.EXPECT().GenerateContent(gomock.Any(), gomock.Any()).Return("abc123def456", nil)
+	// Mock the GenAI response to return commit ID and justification
+	mockResponse := "Commit ID: abc123def456\nJustification: Fix undefined function in test.cc"
+	mockClient.EXPECT().GenerateContent(gomock.Any(), gomock.Any()).Return(mockResponse, nil)
 
 	// Test the Analyze function with mock client
 	result, err := Analyze(ctx, mockClient, cfa, regressionRange, compileLogs)
@@ -179,6 +180,7 @@ func TestGenAiAnalysis(t *testing.T) {
 			suspect := suspects[0]
 			assert.Loosely(t, suspect.Type, should.Equal(model.SuspectType_GenAI))
 			assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_Unverified))
+			assert.Loosely(t, suspect.Justification, should.Equal("Fix undefined function in test.cc"))
 			// Verify commit time is set (should match the time from mock Gitiles data)
 			assert.Loosely(t, suspect.CommitTime.IsZero(), should.BeFalse)
 			t.Logf("Suspect commit time: %v", suspect.CommitTime)
@@ -330,5 +332,51 @@ func TestPrepareBlamelist(t *testing.T) {
 		assert.Loosely(t, result, should.ContainSubstring("Commit ID: abc123def456"))
 		assert.Loosely(t, result, should.ContainSubstring("Simple commit without file changes"))
 		assert.Loosely(t, result, should.NotContainSubstring("Changed files:"))
+	})
+}
+
+func TestParseGenAIResponse(t *testing.T) {
+	t.Parallel()
+
+	t.Run("valid_response", func(t *testing.T) {
+		response := "Commit ID: abc123def456\nJustification: Fix for bug #12345"
+		commitID, justification, err := parseGenAIResponse(response)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, commitID, should.Equal("abc123def456"))
+		assert.Loosely(t, justification, should.Equal("Fix for bug #12345"))
+	})
+
+	t.Run("missing_commit_id", func(t *testing.T) {
+		response := "Justification: Missing commit ID"
+		_, _, err := parseGenAIResponse(response)
+		assert.Loosely(t, err, should.NotBeNil)
+	})
+
+	t.Run("missing_justification", func(t *testing.T) {
+		response := "Commit ID: abc123def456"
+		_, _, err := parseGenAIResponse(response)
+		assert.Loosely(t, err, should.NotBeNil)
+	})
+
+	t.Run("empty_response", func(t *testing.T) {
+		response := ""
+		_, _, err := parseGenAIResponse(response)
+		assert.Loosely(t, err, should.NotBeNil)
+	})
+
+	t.Run("extra_whitespace", func(t *testing.T) {
+		response := "  Commit ID:  abc123def456  \n  Justification:  Leading and trailing spaces.  "
+		commitID, justification, err := parseGenAIResponse(response)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, commitID, should.Equal("abc123def456"))
+		assert.Loosely(t, justification, should.Equal("Leading and trailing spaces."))
+	})
+
+	t.Run("unordered_response", func(t *testing.T) {
+		response := "Justification: Unordered response\nCommit ID: abc123def456"
+		commitID, justification, err := parseGenAIResponse(response)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, commitID, should.Equal("abc123def456"))
+		assert.Loosely(t, justification, should.Equal("Unordered response"))
 	})
 }
