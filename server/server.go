@@ -264,9 +264,10 @@ const (
 	healthEndpoint = "/healthz"
 
 	// Log a warning if health check is slower than this.
-	healthTimeLogThreshold    = 50 * time.Millisecond
-	defaultTsMonFlushInterval = 60 * time.Second
-	defaultTsMonFlushTimeout  = 15 * time.Second
+	healthTimeLogThreshold      = 50 * time.Millisecond
+	defaultTsMonFlushInterval   = 60 * time.Second
+	defaultTsMonFlushTimeout    = 15 * time.Second
+	defaultTsMonNumFlushWorkers = 4
 )
 
 var (
@@ -384,11 +385,12 @@ type Options struct {
 
 	TraceSampling string // what portion of traces to upload to Cloud Trace (ignored on GAE and Cloud Run)
 
-	TsMonAccount       string        // service account to flush metrics as
-	TsMonServiceName   string        // service name of tsmon target
-	TsMonJobName       string        // job name of tsmon target
-	TsMonFlushInterval time.Duration // how often to flush metrics
-	TsMonFlushTimeout  time.Duration // timeout for flushing
+	TsMonAccount         string        // service account to flush metrics as
+	TsMonServiceName     string        // service name of tsmon target
+	TsMonJobName         string        // job name of tsmon target
+	TsMonFlushInterval   time.Duration // how often to flush metrics
+	TsMonFlushTimeout    time.Duration // timeout for flushing
+	TsMonNumFlushWorkers int           // number of flush workers
 
 	ProfilingProbability float64 // an [0; 1.0] float with a chance to enable Cloud Profiler in the process
 	ProfilingServiceID   string  // service name to associated with profiles in Cloud Profiler
@@ -475,6 +477,9 @@ func (o *Options) Register(f *flag.FlagSet) {
 	}
 	if o.TsMonFlushTimeout == 0 {
 		o.TsMonFlushTimeout = defaultTsMonFlushTimeout
+	}
+	if o.TsMonNumFlushWorkers == 0 {
+		o.TsMonNumFlushWorkers = defaultTsMonNumFlushWorkers
 	}
 	if o.ProfilingProbability == 0 {
 		o.ProfilingProbability = 1.0
@@ -600,6 +605,12 @@ func (o *Options) Register(f *flag.FlagSet) {
 		"ts-mon-flush-timeout",
 		o.TsMonFlushTimeout,
 		fmt.Sprintf("Timeout for tsmon flush. Default to %s if < 1s or unset. Must be shorter than --ts-mon-flush-interval.", o.TsMonFlushTimeout),
+	)
+	f.IntVar(
+		&o.TsMonNumFlushWorkers,
+		"ts-mon-num-flush-workers",
+		o.TsMonNumFlushWorkers,
+		fmt.Sprintf("Number of tsmon flush workers. Default to %d if == 0 or unset", o.TsMonNumFlushWorkers),
 	)
 	f.Float64Var(
 		&o.ProfilingProbability,
@@ -2695,6 +2706,10 @@ func (s *Server) initTSMon() error {
 	if timeout >= interval {
 		return errors.Fmt("-ts-mon-flush-timeout (%ds) must be shorter than -ts-mon-flush-interval (%ds)", timeout, interval)
 	}
+	workers := s.Options.TsMonNumFlushWorkers
+	if workers == 0 {
+		workers = defaultTsMonNumFlushWorkers
+	}
 	s.tsmon = &tsmon.State{
 		CustomMonitor: customMonitor,
 		Settings: &tsmon.Settings{
@@ -2702,6 +2717,7 @@ func (s *Server) initTSMon() error {
 			ProdXAccount:       s.Options.TsMonAccount,
 			FlushIntervalSec:   interval,
 			FlushTimeoutSec:    timeout,
+			NumFlushWorkers:    workers,
 			ReportRuntimeStats: true,
 		},
 		Target: func(c context.Context) target.Task {

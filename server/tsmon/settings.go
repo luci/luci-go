@@ -66,6 +66,10 @@ type Settings struct {
 	// Default is 5 sec.
 	FlushTimeoutSec int `json:"flush_timeout_sec"`
 
+	// NumFlushWorkers defines flush worker's pool size
+	// Default is 4.
+	NumFlushWorkers int `json:"num_flush_workers"`
+
 	// ReportRuntimeStats is true to enable reporting of Go RT stats on flush.
 	//
 	// Default is false.
@@ -76,6 +80,7 @@ type Settings struct {
 var defaultSettings = Settings{
 	FlushIntervalSec: 60,
 	FlushTimeoutSec:  5,
+	NumFlushWorkers:  4,
 }
 
 // fetchCachedSettings fetches Settings from the settings store or panics.
@@ -254,6 +259,7 @@ func (p *settingsPage) ReadSettings(c context.Context) (map[string]string, error
 		"ProdXAccount":       s.ProdXAccount,
 		"FlushIntervalSec":   strconv.Itoa(s.FlushIntervalSec),
 		"FlushTimeoutSec":    strconv.Itoa(s.FlushTimeoutSec),
+		"NumFlushWorkers":    strconv.Itoa(s.NumFlushWorkers),
 		"ReportRuntimeStats": s.ReportRuntimeStats.String(),
 	}, nil
 }
@@ -276,6 +282,9 @@ func (p *settingsPage) WriteSettings(c context.Context, values map[string]string
 		return err
 	}
 	if modified.FlushTimeoutSec, err = strconv.Atoi(values["FlushTimeoutSec"]); err != nil {
+		return err
+	}
+	if modified.NumFlushWorkers, err = strconv.Atoi(values["NumFlushWorkers"]); err != nil {
 		return err
 	}
 	if err := modified.ReportRuntimeStats.Set(values["ReportRuntimeStats"]); err != nil {

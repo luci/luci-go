@@ -356,11 +356,11 @@ func (s *State) flushIfNeededImpl(ctx context.Context, state *tsmon.State, setti
 	if err != nil {
 		if err == ErrNoTaskNumber {
 			logging.Warningf(ctx, "Skipping the tsmon flush: no task number assigned yet")
-		} else {
-			logging.WithError(err).Errorf(ctx, "Failed to flush tsmon metrics (tried to act as %q)", settings.ProdXAccount)
+		} else if !errors.Is(err, context.Canceled) {
+			logging.WithError(err).Warningf(ctx, "Failed to flush tsmon metrics (tried to act as %q)", settings.ProdXAccount)
 		}
 		if sinceLastFlush := now.Sub(lastFlush); sinceLastFlush > noFlushErrorThreshold {
-			logging.Errorf(ctx, "No successful tsmon flush for %s", sinceLastFlush)
+			logging.WithError(err).Errorf(ctx, "No successful tsmon flush for %s", sinceLastFlush)
 			if s.TaskNumAllocator != nil {
 				logging.Errorf(ctx, "Is /internal/cron/ts_mon/housekeeping running?")
 			}
@@ -400,6 +400,12 @@ func (s *State) ensureTaskNumAndFlush(ctx context.Context, state *tsmon.State, s
 	} else {
 		task.TaskNum = 0
 	}
+
+	workers := settings.NumFlushWorkers
+	if workers == 0 {
+		workers = defaultSettings.NumFlushWorkers
+	}
+
 	state.Store().SetDefaultTarget(&task)
-	return state.ParallelFlush(ctx, state.Monitor(), 4)
+	return state.ParallelFlush(ctx, state.Monitor(), workers)
 }

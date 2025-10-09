@@ -1040,6 +1040,7 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	opts.TsMonJobName = "namespace/job"
 	opts.TsMonFlushInterval = 234 * time.Second
 	opts.TsMonFlushTimeout = 123 * time.Second
+	opts.TsMonNumFlushWorkers = 5
 	opts.ContainerImageID = "registry/image:" + testImageVersion
 	opts.EnableExperiments = []string{testExperiment.String()}
 
