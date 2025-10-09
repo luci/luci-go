@@ -174,9 +174,9 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
     const missingParamsFilters = Object.keys(selectedOptions.filters).filter(
       (filterKey) =>
         isDimensionsQueryProperlyLoaded &&
-        !dimensionsQuery.data.labels[filterKey.replace('labels.', '')] &&
+        // TODO: Hotfix for b/449956551, needs further investigation on quote handling
         !dimensionsQuery.data.labels[
-          filterKey.replace('labels."', '').slice(0, -1)
+          filterKey.replace(/labels\."?([^"]+)"?/, '$1')
         ] &&
         !dimensionsQuery.data.baseDimensions[filterKey],
     );

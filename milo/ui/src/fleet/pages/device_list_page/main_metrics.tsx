@@ -156,7 +156,7 @@ export function ChromeOSMainMetrics({
               total={countQuery.data?.total}
               loading={countQuery.isPending}
               filterUrl={getFilterQueryString({
-                'labels.dut_state': ['ready'],
+                'labels."dut_state"': ['ready'], // TODO: Hotfix for b/449956551, needs further investigation on quote handling
               })}
             />
             <SingleMetric
@@ -165,7 +165,7 @@ export function ChromeOSMainMetrics({
               total={countQuery.data?.total}
               loading={countQuery.isPending}
               filterUrl={getFilterQueryString({
-                'labels.dut_state': ['needs_repair'],
+                'labels."dut_state"': ['needs_repair'],
               })}
             />
             <SingleMetric
@@ -174,7 +174,7 @@ export function ChromeOSMainMetrics({
               total={countQuery.data?.total}
               loading={countQuery.isPending}
               filterUrl={getFilterQueryString({
-                'labels.dut_state': ['repair_failed'],
+                'labels."dut_state"': ['repair_failed'],
               })}
             />
             <SingleMetric
@@ -188,7 +188,7 @@ export function ChromeOSMainMetrics({
               }
               loading={countQuery.isPending}
               filterUrl={getFilterQueryString({
-                'labels.dut_state': ['needs_deploy'],
+                'labels."dut_state"': ['needs_deploy'],
               })}
             />
             <SingleMetric
@@ -202,7 +202,7 @@ export function ChromeOSMainMetrics({
               }
               loading={countQuery.isPending}
               filterUrl={getFilterQueryString({
-                'labels.dut_state': ['needs_replacement'],
+                'labels."dut_state"': ['needs_replacement'],
               })}
             />
             <SingleMetric
@@ -212,7 +212,7 @@ export function ChromeOSMainMetrics({
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isPending}
               filterUrl={getFilterQueryString({
-                'labels.dut_state': ['needs_manual_repair'],
+                'labels."dut_state"': ['needs_manual_repair'],
               })}
             />
           </div>
@@ -226,7 +226,7 @@ export function ChromeOSMainMetrics({
               total={countQuery.data?.total}
               loading={labstationsQuery.isPending}
               filterUrl={getFilterQueryString({
-                'labels.dut_state': ['ready'],
+                'labels."dut_state"': ['ready'],
                 ...LABSTATION_FILTERS,
               })}
             />
@@ -236,7 +236,7 @@ export function ChromeOSMainMetrics({
               total={countQuery.data?.total}
               loading={labstationsQuery.isPending}
               filterUrl={getFilterQueryString({
-                'labels.dut_state': ['repair_failed'],
+                'labels."dut_state"': ['repair_failed'],
                 ...LABSTATION_FILTERS,
               })}
             />
@@ -251,7 +251,7 @@ export function ChromeOSMainMetrics({
               }
               loading={labstationsQuery.isPending}
               filterUrl={getFilterQueryString({
-                'labels.dut_state': ['needs_deploy'],
+                'labels."dut_state"': ['needs_deploy'],
                 ...LABSTATION_FILTERS,
               })}
             />

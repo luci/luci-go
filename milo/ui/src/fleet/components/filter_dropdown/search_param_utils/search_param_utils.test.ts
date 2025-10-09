@@ -35,10 +35,10 @@ const sharedTestCases: [SelectedOptions, string][] = [
   ],
   [
     {
-      'labels.key1': ['value1'],
+      'labels."key1"': ['value1'],
       key2: ['value2'],
     },
-    'labels.key1 = "value1" key2 = "value2"',
+    'labels."key1" = "value1" key2 = "value2"',
   ],
   [
     {
@@ -93,7 +93,7 @@ const justParseCases: [SelectedOptions, string][] = [
   ],
   [
     {
-      'labels.key': ['value1'],
+      'labels."key"': ['value1'],
     },
     'labels.key="value1"',
   ],

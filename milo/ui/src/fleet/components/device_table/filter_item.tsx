@@ -56,7 +56,7 @@ const getDimensionInfo = (
   if (dimensionsData.labels[field]) {
     return {
       dimensionValues: dimensionsData.labels[field].values,
-      filterKey: `labels.${field}`,
+      filterKey: `labels."${field}"`, // TODO: Hotfix for b/449956551, needs further investigation on quote handling
     };
   }
   return null;

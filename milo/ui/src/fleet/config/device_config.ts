@@ -55,12 +55,13 @@ export const DEFAULT_DEVICE_COLUMNS: Record<Platform, string[]> = {
 
 // Define a list of device filters commonly used by FLOPS to show in the
 // filter options for the device.
+// TODO: Hotfix for b/449956551, needs further investigation on quote handling
 export const COMMON_DEVICE_FILTERS: string[] = [
-  'labels.dut_state',
-  'labels.label-board',
-  'labels.label-model',
-  'labels.label-pool',
-  'labels.label-phase',
+  'labels."dut_state"',
+  'labels."label-board"',
+  'labels."label-model"',
+  'labels."label-pool"',
+  'labels."label-phase"',
 ];
 
 /**

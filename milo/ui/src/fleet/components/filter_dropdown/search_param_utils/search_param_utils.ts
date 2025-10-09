@@ -36,7 +36,11 @@ export const parseFilters = (
   const firstEqIdx = str.indexOf('=');
   if (firstEqIdx === -1) return { filters, error: undefined };
 
-  const key = str.substring(0, firstEqIdx).trim();
+  // TODO: Hotfix for b/449956551, needs further investigation on quote handling
+  const key = str
+    .substring(0, firstEqIdx)
+    .trim()
+    .replace(/labels\.([^"]+)/, 'labels."$1"');
 
   const rest = str.substring(firstEqIdx + 1).trim();
 
