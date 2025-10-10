@@ -186,7 +186,7 @@ func (c *ServerConfig) Validate() error {
 	if c.ArtifactStreamClient == nil {
 		return errors.New("ArtifactStreamClient: unspecified")
 	}
-	if err := pbutil.ValidateStringPairs(c.BaseTags); err != nil {
+	if err := pbutil.ValidateTestResultTags(c.BaseTags); err != nil {
 		return errors.Fmt("BaseTags: %w", err)
 	}
 	if err := pbutil.ValidateVariant(c.Variant); err != nil {

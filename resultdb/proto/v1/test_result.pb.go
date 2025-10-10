@@ -478,6 +478,8 @@ type TestResult struct {
 	// Metadata for this test result.
 	// It might describe this particular execution or the test case.
 	// A key can be repeated.
+	//
+	// Total size (as measured by proto.Size()) must be <= 16 KB.
 	Tags []*StringPair `protobuf:"bytes,10,rep,name=tags,proto3" json:"tags,omitempty"`
 	// This is a SHA256 hash of the `test_id_structured.module_variant` key-value pairs,
 	// encoded as hex.

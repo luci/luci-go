@@ -337,6 +337,13 @@ func TestValidateTestResult(t *testing.T) {
 				msg.Tags = StringPairs("", "")
 				assert.Loosely(t, validateTR(msg), should.ErrLike(`"":"": key: unspecified`))
 			})
+			t.Run("too large", func(t *ftt.Test) {
+				msg.Tags = make([]*pb.StringPair, 0, 100)
+				for i := 0; i < 100; i++ {
+					msg.Tags = append(msg.Tags, StringPair(strings.Repeat("k", 10), strings.Repeat("v", 190)))
+				}
+				assert.Loosely(t, validateTR(msg), should.ErrLike(`tags: got 20500 bytes; exceeds the maximum size of 16384 bytes`))
+			})
 		})
 
 		t.Run("with nil", func(t *ftt.Test) {

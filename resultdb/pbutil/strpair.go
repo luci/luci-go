@@ -16,7 +16,6 @@ package pbutil
 
 import (
 	"fmt"
-	"math"
 	"sort"
 	"strings"
 
@@ -32,6 +31,8 @@ import (
 const maxStringPairKeyLength = 64
 const maxStringPairValueLength = 256
 
+const maxTestResultsTagsSize = 16 * 1024    // 16 KiB
+const maxInvocationTagsSize = 16 * 1024     // 16 KiB
 const maxRootInvocationTagsSize = 16 * 1024 // 16 KiB
 const maxWorkUnitTagsSize = 16 * 1024       // 16 KiB
 
@@ -115,15 +116,26 @@ func validateStringPairsInternal(pairs []*pb.StringPair, sizeLimitBytes int, str
 	return nil
 }
 
-// ValidateStringPairs returns an error if any of the pairs is invalid.
-func ValidateStringPairs(pairs []*pb.StringPair) error {
-	return validateStringPairsInternal(pairs, math.MaxInt, false)
+// ValidateTestResultTags returns an error if any of the tags are invalid,
+// or if the overall size is too large.
+func ValidateTestResultTags(pairs []*pb.StringPair) error {
+	return validateStringPairsInternal(pairs, maxTestResultsTagsSize, false)
 }
 
+// ValidateInvocationTags returns an error if any of the tags are invalid,
+// or if the overall size is too large.
+func ValidateInvocationTags(pairs []*pb.StringPair) error {
+	return validateStringPairsInternal(pairs, maxInvocationTagsSize, false)
+}
+
+// ValidateRootInvocationTags returns an error if any of the tags are invalid,
+// or if the overall size is too large.
 func ValidateRootInvocationTags(tags []*pb.StringPair) error {
 	return validateStringPairsInternal(tags, maxRootInvocationTagsSize, true)
 }
 
+// ValidateWorkUnitTags returns an error if any of the tags are invalid,
+// or if the overall size is too large.
 func ValidateWorkUnitTags(tags []*pb.StringPair) error {
 	return validateStringPairsInternal(tags, maxWorkUnitTagsSize, true)
 }

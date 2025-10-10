@@ -131,6 +131,10 @@ type Invocation struct {
 	CreateTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	// Invocation-level string key-value pairs.
 	// A key can be repeated.
+	//
+	// These tags may be re-exported alongside each test result.
+	//
+	// Total size (as measured by proto.Size()) must be <= 16 KB.
 	Tags []*StringPair `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
 	// When the invocation started to finalize, i.e. transitioned to FINALIZING
 	// state. This means the invocation is immutable but directly or indirectly

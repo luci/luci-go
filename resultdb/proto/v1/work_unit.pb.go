@@ -217,6 +217,8 @@ type WorkUnit struct {
 	// Work unit-level string key-value pairs.
 	// A key can be repeated.
 	//
+	// These tags may be re-exported alongside each test result.
+	//
 	// Total size (as measured by proto.Size()) must be <= 16 KB.
 	Tags []*StringPair `protobuf:"bytes,14,rep,name=tags,proto3" json:"tags,omitempty"`
 	// Arbitrary JSON object that contains structured, domain-specific properties

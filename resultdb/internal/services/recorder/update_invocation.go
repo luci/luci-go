@@ -150,7 +150,7 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, cfg *confi
 			}
 
 		case "tags":
-			if err := pbutil.ValidateStringPairs(req.Invocation.GetTags()); err != nil {
+			if err := pbutil.ValidateInvocationTags(req.Invocation.GetTags()); err != nil {
 				return errors.Fmt("invocation: tags: %w", err)
 			}
 

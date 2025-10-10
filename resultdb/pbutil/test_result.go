@@ -204,7 +204,7 @@ func ValidateTestResult(now time.Time, validateToScheme ValidateToScheme, tr *pb
 	if err := ValidateStartTimeWithDuration(now, tr.StartTime, tr.Duration); err != nil {
 		return err
 	}
-	if err := ValidateStringPairs(tr.Tags); err != nil {
+	if err := ValidateTestResultTags(tr.Tags); err != nil {
 		return errors.Fmt("tags: %w", err)
 	}
 	if tr.TestMetadata != nil {

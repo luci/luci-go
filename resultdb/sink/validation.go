@@ -88,7 +88,7 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 	if err := pbutil.ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration); err != nil {
 		return err
 	}
-	if err := pbutil.ValidateStringPairs(msg.Tags); err != nil {
+	if err := pbutil.ValidateTestResultTags(msg.Tags); err != nil {
 		return errors.Fmt("tags: %w", err)
 	}
 	if err := validateArtifacts(msg.Artifacts); err != nil {

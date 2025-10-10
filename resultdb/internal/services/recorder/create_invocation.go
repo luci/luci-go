@@ -97,7 +97,7 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, cfg *confi
 		return errors.New("invocation: unspecified")
 	}
 
-	if err := pbutil.ValidateStringPairs(inv.GetTags()); err != nil {
+	if err := pbutil.ValidateInvocationTags(inv.GetTags()); err != nil {
 		return errors.Fmt("invocation: tags: %w", err)
 	}
 
