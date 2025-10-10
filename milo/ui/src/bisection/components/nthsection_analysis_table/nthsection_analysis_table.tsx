@@ -22,8 +22,8 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import Typography from '@mui/material/Typography';
 
-import { PlainTable } from '@/bisection/components/plain_table';
 import { AnalysisStatusInfo } from '@/bisection/components/status_info';
 import { getCommitShortHash } from '@/bisection/tools/commit_formatters';
 import { EMPTY_LINK } from '@/bisection/tools/link_constructors';
@@ -77,40 +77,43 @@ function NthSectionAnalysisDetail({ result }: NthSectionAnalysisDetailProps) {
     }
   }
   return (
-    <TableContainer>
-      <PlainTable>
-        <colgroup>
-          <col style={{ width: '15%' }} />
-          <col style={{ width: '35%' }} />
-          <col style={{ width: '15%' }} />
-          <col style={{ width: '35%' }} />
-        </colgroup>
-        <TableBody data-testid="nthsection-analysis-detail">
+    <TableContainer
+      css={{ marginBottom: '20px' }}
+      component={Paper}
+      className="nthsection-analysis-table-container"
+      data-testid="nthsection-analysis-detail"
+    >
+      <Table className="nthsection-analysis-table" size="small">
+        <TableHead>
           <TableRow>
-            <TableCell variant="head">Start time</TableCell>
-            <TableCell>{getFormattedTimestamp(result.startTime)}</TableCell>
-            <TableCell variant="head">End time</TableCell>
-            <TableCell>{getFormattedTimestamp(result.endTime)}</TableCell>
+            {suspect && <TableCell>Suspect CL</TableCell>}
+            <TableCell>Status</TableCell>
+            <TableCell>Start time</TableCell>
+            <TableCell>End time</TableCell>
           </TableRow>
+        </TableHead>
+        <TableBody>
           <TableRow>
-            <TableCell variant="head">Status</TableCell>
+            {suspect && (
+              <TableCell>
+                <Link
+                  href={commitLink.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  underline="always"
+                >
+                  {commitLink.linkText}
+                </Link>
+              </TableCell>
+            )}
             <TableCell>
               <AnalysisStatusInfo status={result.status}></AnalysisStatusInfo>
             </TableCell>
-            <TableCell variant="head">Suspect</TableCell>
-            <TableCell>
-              <Link
-                href={commitLink.url}
-                target="_blank"
-                rel="noreferrer"
-                underline="always"
-              >
-                {commitLink.linkText}
-              </Link>
-            </TableCell>
+            <TableCell>{getFormattedTimestamp(result.startTime)}</TableCell>
+            <TableCell>{getFormattedTimestamp(result.endTime)}</TableCell>
           </TableRow>
         </TableBody>
-      </PlainTable>
+      </Table>
     </TableContainer>
   );
 }
@@ -126,39 +129,44 @@ export function NthSectionAnalysisRerunsTable({
     return <span className="data-placeholder">No reruns found</span>;
   }
   return (
-    <TableContainer
-      component={Paper}
-      className="nthsection-analysis-table-container"
-    >
-      <Table
-        className="nthsection-analysis-table"
-        size="small"
-        data-testid="nthsection-analysis-rerun-table"
+    <>
+      <Typography variant="subtitle1" gutterBottom>
+        Reruns
+      </Typography>
+      <TableContainer
+        component={Paper}
+        className="nthsection-analysis-table-container"
       >
-        <TableHead>
-          <TableRow>
-            {/* Commit position is filled either for all reruns or no reruns of an analysis.
+        <Table
+          className="nthsection-analysis-table"
+          size="small"
+          data-testid="nthsection-analysis-rerun-table"
+        >
+          <TableHead>
+            <TableRow>
+              {/* Commit position is filled either for all reruns or no reruns of an analysis.
             If no commit position is available, rerun index is used instead. */}
-            {reruns[0].commit.position ? (
-              <TableCell>Commit position</TableCell>
-            ) : (
-              <TableCell>Index</TableCell>
-            )}
-            <TableCell>Commit</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell>Run</TableCell>
-            <TableCell>Type</TableCell>
-            <TableCell>Start time</TableCell>
-            <TableCell>End time</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {/* TODO (nqmtuan): Show the "anchors" (last passed, first failed, number of commits in between etc) */}
-          {reruns.map((rerun) => (
-            <NthSectionAnalysisTableRow key={rerun.bbid} rerun={rerun} />
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+              {reruns[0].commit.position ? (
+                <TableCell>Commit position</TableCell>
+              ) : (
+                <TableCell>Index</TableCell>
+              )}
+              <TableCell>Commit</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Run</TableCell>
+              <TableCell>Type</TableCell>
+              <TableCell>Start time</TableCell>
+              <TableCell>End time</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {/* TODO (nqmtuan): Show the "anchors" (last passed, first failed, number of commits in between etc) */}
+            {reruns.map((rerun) => (
+              <NthSectionAnalysisTableRow key={rerun.bbid} rerun={rerun} />
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </>
   );
 }
