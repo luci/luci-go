@@ -14,7 +14,7 @@
 
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { stringifyFilters } from '../components/filter_dropdown/search_param_utils/search_param_utils';
+import { stringifyFilters } from '../components/filter_dropdown/parser/parser';
 
 const CHROMEOS_DEFAULT_COLUMNS = [
   'id',

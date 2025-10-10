@@ -15,10 +15,8 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
-import {
-  getFilters,
-  stringifyFilters,
-} from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
+import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
+import { getFilters } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';

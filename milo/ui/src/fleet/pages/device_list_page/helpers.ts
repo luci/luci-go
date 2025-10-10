@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { COLUMN_OVERRIDES } from '@/fleet/components/device_table/dimensions';
+import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import {
   GetDeviceDimensionsResponse,
@@ -34,9 +35,12 @@ export const dimensionsToFilterOptions = (
       return {
         label: COLUMN_OVERRIDES[platform][key]?.displayName || key,
         value: key,
-        options: value.values.map((value) => {
-          return { label: value, value: value };
-        }),
+        options: [
+          { label: BLANK_VALUE, value: BLANK_VALUE },
+          ...value.values.map((value) => {
+            return { label: value, value: value };
+          }),
+        ],
       } as OptionCategory;
     },
   );
@@ -52,9 +56,12 @@ export const dimensionsToFilterOptions = (
       {
         label: COLUMN_OVERRIDES[platform][key]?.displayName || key,
         value: `labels."${key}"`,
-        options: value.values.map((value) => {
-          return { label: value, value: value };
-        }),
+        options: [
+          { label: BLANK_VALUE, value: BLANK_VALUE },
+          ...value.values.map((value) => {
+            return { label: value, value: value };
+          }),
+        ],
       } as OptionCategory,
     ];
   });

@@ -30,10 +30,8 @@ import {
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import {
-  addNewFilterToParams,
-  stringifyFilters,
-} from '../../components/filter_dropdown/search_param_utils/search_param_utils';
+import { stringifyFilters } from '../../components/filter_dropdown/parser/parser';
+import { addNewFilterToParams } from '../../components/filter_dropdown/search_param_utils';
 import { SingleMetric } from '../../components/summary_header/single_metric';
 
 const HAS_RIGHT_SIBLING_STYLES: CSSObject = {

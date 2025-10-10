@@ -40,7 +40,7 @@ import {
 
 import { CopySnackbar } from '../actions/copy/copy_snackbar';
 import { useColumnManagement } from '../columns/use_column_management';
-import { getFilters } from '../filter_dropdown/search_param_utils/search_param_utils';
+import { getFilters } from '../filter_dropdown/search_param_utils';
 
 import { ColumnMenu, ColumnMenuProps } from './column_menu';
 import { getColumns } from './columns';

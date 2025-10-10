@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Checkbox, MenuItem } from '@mui/material';
+import { Checkbox, colors, MenuItem } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import React, { useRef } from 'react';
 
+import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { OptionValue } from '@/fleet/types/option';
 import { keyboardListNavigationHandler } from '@/fleet/utils';
 import { SortedElement } from '@/fleet/utils/fuzzy_sort';
@@ -116,11 +117,14 @@ export const OptionsMenu = ({
                       : undefined,
                   )
                 }
-                css={{
+                sx={{
                   display: 'flex',
                   alignItems: 'center',
                   padding: '6px 12px',
                   textOverflow: 'ellipsis',
+                  ...(item.el.label === BLANK_VALUE && {
+                    color: colors.grey[500],
+                  }),
                 }}
               >
                 <Checkbox

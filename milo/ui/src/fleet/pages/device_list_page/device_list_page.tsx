@@ -27,11 +27,11 @@ import {
 import { DeviceTable } from '@/fleet/components/device_table';
 import { DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_ft_selector';
 import { useCurrentTasks } from '@/fleet/components/device_table/use_current_tasks';
+import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import {
   filtersUpdater,
   getFilters,
-  stringifyFilters,
-} from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
+} from '@/fleet/components/filter_dropdown/search_param_utils';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
 import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';

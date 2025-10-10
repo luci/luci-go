@@ -16,7 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { OptionComponent } from '@/fleet/components/filter_dropdown/filter_dropdown_old';
-import { FILTERS_PARAM_KEY } from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
+import { FILTERS_PARAM_KEY } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import {
   multiselectFilterToUrlString,

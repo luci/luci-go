@@ -41,11 +41,11 @@ import {
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { FilterBarOld } from '@/fleet/components/filter_dropdown/filter_bar_old';
+import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import {
   filtersUpdater,
   getFilters,
-  stringifyFilters,
-} from '@/fleet/components/filter_dropdown/search_param_utils/search_param_utils';
+} from '@/fleet/components/filter_dropdown/search_param_utils';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';

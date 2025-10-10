@@ -37,7 +37,7 @@ import { OptionsMenuOld } from '../filter_dropdown/options_menu_old';
 import {
   filtersUpdater,
   getFilters,
-} from '../filter_dropdown/search_param_utils/search_param_utils';
+} from '../filter_dropdown/search_param_utils';
 
 export type FilterItemProps = GridColumnMenuItemProps & {
   platform: Platform;

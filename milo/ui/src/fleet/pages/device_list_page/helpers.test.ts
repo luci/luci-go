@@ -43,6 +43,7 @@ describe('dimensionsToFilterOptions', () => {
         label: 'testDim',
         value: 'testDim',
         options: [
+          { label: '(Blank)', value: '(Blank)' },
           { label: 'one', value: 'one' },
           { label: 'two', value: 'two' },
         ],
@@ -51,6 +52,7 @@ describe('dimensionsToFilterOptions', () => {
         label: 'testLabel',
         value: 'labels."testLabel"',
         options: [
+          { label: '(Blank)', value: '(Blank)' },
           { label: 'a', value: 'a' },
           { label: 'b', value: 'b' },
           { label: 'c', value: 'c' },
