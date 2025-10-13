@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Link } from '@mui/material';
+import { Box, Link, Typography } from '@mui/material';
 
 import {
   PageSummaryLine,
@@ -20,7 +20,9 @@ import {
 } from '@/common/components/page_summary_line';
 import { PageTitle } from '@/common/components/page_title';
 import { OutputTestVerdict } from '@/common/types/verdict';
+import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
 import { TestVariantBranch } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import {
   useInvocation,
   useProject,
@@ -56,6 +58,22 @@ export function TestInfoHeader() {
     invocation,
   );
 
+  const isJunit =
+    testVariant?.testIdStructured?.moduleScheme === 'junit' || false;
+
+  const getFullMethodName = (testVariant: TestVariant): string => {
+    const testCaseName = testVariant?.testIdStructured?.caseName ?? '';
+    if (testCaseName === '') {
+      return '';
+    }
+    const className = testVariant?.testIdStructured?.coarseName ?? '';
+    const packageName = testVariant?.testIdStructured?.fineName ?? '';
+    return `${className}.${packageName}#${testCaseName}`;
+  };
+
+  // TODO(b/445559255): update copied text when module page is available.
+  const fullMethodName = getFullMethodName(testVariant);
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, pl: 3 }}>
       <TestInfoBreadcrumbs
@@ -63,6 +81,14 @@ export function TestInfoHeader() {
         testIdStructured={testVariant?.testIdStructured || undefined}
       />
       <PageTitle viewName="Test case" resourceName={testDisplayName} />
+      {isJunit && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pt: 0 }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            {fullMethodName}
+          </Typography>
+          <CopyToClipboard textToCopy={fullMethodName}></CopyToClipboard>
+        </Box>
+      )}
       <PageSummaryLine>
         {Object.entries(testVariant.variant?.def || {}).map(([key, value]) => (
           <SummaryLineItem key={key} label={key}>
