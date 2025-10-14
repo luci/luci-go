@@ -16,6 +16,7 @@ package workunits
 
 import (
 	"testing"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -604,6 +605,222 @@ func TestReadFunctions(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, results, should.HaveLength(0))
 			})
+		})
+
+		t.Run("ReadParents", func(t *ftt.Test) {
+			// Insert an additional work unit in the existing root invocation.
+			wu2 := NewBuilder(rootInvID, "work-unit-id2").WithParentWorkUnitID(rootWU.ID.WorkUnitID).Build()
+			ms := InsertForTesting(wu2)
+
+			// Create a further root invocation with a work unit.
+			rootInv2 := rootinvocations.NewBuilder("root-inv-id2").Build()
+			wu2Root := NewBuilder("root-inv-id2", "root").Build()
+			wu21 := NewBuilder("root-inv-id2", "work-unit-id").WithParentWorkUnitID(wu2Root.ID.WorkUnitID).WithFinalizationState(pb.WorkUnit_FINALIZING).Build()
+			wu22 := NewBuilder("root-inv-id2", "work-unit-id2").WithParentWorkUnitID(wu21.ID.WorkUnitID).Build()
+			ms = append(ms, rootinvocations.InsertForTesting(rootInv2)...)
+			ms = append(ms, InsertForTesting(wu2Root)...)
+			ms = append(ms, InsertForTesting(wu21)...)
+			ms = append(ms, InsertForTesting(wu22)...)
+			testutil.MustApply(ctx, t, ms...)
+			t.Run("happy path", func(t *ftt.Test) {
+				ids := []ID{
+					wu2Root.ID,
+					wu22.ID,
+					wu22.ID, // Duplicate ID.
+					rootWU.ID,
+					wu21.ID,
+					wu2Root.ID, // Duplicate ID.
+					wu2.ID,
+				}
+				parents, err := ReadParents(span.Single(ctx), ids)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, parents, should.Match([]ID{
+					{}, // root has no parent
+					wu21.ID,
+					wu21.ID,
+					{},
+					wu2Root.ID,
+					{},
+					rootWU.ID,
+				}))
+			})
+			t.Run("empty request", func(t *ftt.Test) {
+				results, err := ReadParents(span.Single(ctx), []ID{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, results, should.HaveLength(0))
+			})
+			t.Run("not found", func(t *ftt.Test) {
+				ids := []ID{{RootInvocationID: rootInvID, WorkUnitID: "non-existent"}}
+				_, err := ReadParents(span.Single(ctx), ids)
+				assert.That(t, appstatus.Code(err), should.Equal(codes.NotFound))
+				assert.That(t, err, should.ErrLike(`"rootInvocations/root-inv-id/workUnits/non-existent" not found`))
+			})
+
+			t.Run("empty root invocation ID", func(t *ftt.Test) {
+				id.RootInvocationID = ""
+				_, err := ReadParents(span.Single(ctx), []ID{id})
+				assert.That(t, err, should.ErrLike("ids[0]: rootInvocationID: unspecified"))
+			})
+
+			t.Run("empty work unit ID", func(t *ftt.Test) {
+				id.WorkUnitID = ""
+				_, err := ReadParents(span.Single(ctx), []ID{id})
+				assert.That(t, err, should.ErrLike("ids[0]: workUnitID: unspecified"))
+			})
+		})
+	})
+}
+
+func TestQueryFinalizerCandidates(t *testing.T) {
+	ftt.Run("QueryFinalizerCandidates", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+		rootInvID := rootinvocations.ID("test-root-inv")
+		limit := 2
+		t.Run("happy path", func(t *ftt.Test) {
+			// Insert a root invocation with root work unit.
+			rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:root").Build()
+			rootWU := NewBuilder(rootInvID, "root").WithRealm("testproject:root").Build()
+
+			// Insert two work units that is a finalizer candidate.
+			wu1 := NewBuilder(rootInvID, "wu1").
+				WithFinalizationState(pb.WorkUnit_FINALIZING).
+				WithFinalizerCandidateTime(spanner.CommitTimestamp).
+				Build()
+			wu4 := NewBuilder(rootInvID, "wu4").
+				WithFinalizationState(pb.WorkUnit_FINALIZING).
+				WithFinalizerCandidateTime(time.Date(2025, time.October, 10, 13, 1, 2, 3, time.UTC)).
+				Build()
+
+			// Insert a work unit that is NOT a finalizer candidate (wrong state).
+			wu2 := NewBuilder(rootInvID, "wu2").
+				WithFinalizationState(pb.WorkUnit_ACTIVE).
+				WithFinalizerCandidateTime(spanner.CommitTimestamp).
+				Build()
+
+			// Insert a work unit that is NOT a finalizer candidate (no candidate time).
+			wu3 := NewBuilder(rootInvID, "wu3").
+				WithFinalizationState(pb.WorkUnit_FINALIZING).
+				Build()
+
+			ct := testutil.MustApply(ctx, t, testutil.CombineMutations(
+				rootinvocations.InsertForTesting(rootInv),
+				InsertForTesting(rootWU),
+				InsertForTesting(wu1),
+				InsertForTesting(wu2),
+				InsertForTesting(wu3),
+				InsertForTesting(wu4),
+			)...)
+
+			t.Run("number of candidates below limit", func(t *ftt.Test) {
+				candidates, err := QueryFinalizerCandidates(span.Single(ctx), rootInvID, limit)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, candidates, should.HaveLength(2))
+				assert.Loosely(t, candidates[0].ID, should.Equal(wu1.ID))
+				assert.Loosely(t, candidates[0].FinalizerCandidateTime, should.Match(ct))
+				assert.Loosely(t, candidates[1].ID, should.Equal(wu4.ID))
+				assert.Loosely(t, candidates[1].FinalizerCandidateTime, should.Match(wu4.FinalizerCandidateTime.Time))
+			})
+
+			t.Run("limit works", func(t *ftt.Test) {
+				limit = 1
+				candidates, err := QueryFinalizerCandidates(span.Single(ctx), rootInvID, limit)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, candidates, should.HaveLength(1))
+				assert.Loosely(t, candidates[0].ID, should.Equal(wu1.ID))
+				assert.Loosely(t, candidates[0].FinalizerCandidateTime, should.Match(ct))
+			})
+		})
+
+		t.Run("root invocation doesn't exist", func(t *ftt.Test) {
+			candidates, err := QueryFinalizerCandidates(span.Single(ctx), "non-existent", limit)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, candidates, should.HaveLength(0))
+		})
+	})
+}
+
+func TestReadyToFinalize(t *testing.T) {
+	ftt.Run("ReadyToFinalize", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+		rootInvID := rootinvocations.ID("ready-to-finalize-inv")
+
+		// Work units for testing.
+		// Case 1: finalizing leaf work unit.
+		wu1FinalizingLeaf := NewBuilder(rootInvID, "1").WithFinalizationState(pb.WorkUnit_FINALIZING).Build()
+
+		// Case 2: active leaf work unit.
+		wu2ActiveLeaf := NewBuilder(rootInvID, "2").WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
+
+		// Case 3: Finalizing work unit with all children finalized.
+		wu3Finalizing := NewBuilder(rootInvID, "3").WithFinalizationState(pb.WorkUnit_FINALIZING).Build()
+		wu31Finalized := NewBuilder(rootInvID, "31").WithParentWorkUnitID(wu3Finalizing.ID.WorkUnitID).WithFinalizationState(pb.WorkUnit_FINALIZED).Build()
+
+		// Case 4: Finalizing work unit with active and finalized children.
+		wu4Finalizing := NewBuilder(rootInvID, "4").WithFinalizationState(pb.WorkUnit_FINALIZING).Build()
+		wu41Finalized := NewBuilder(rootInvID, "41").WithParentWorkUnitID(wu4Finalizing.ID.WorkUnitID).WithFinalizationState(pb.WorkUnit_FINALIZED).Build()
+		wu42Active := NewBuilder(rootInvID, "42").WithParentWorkUnitID(wu4Finalizing.ID.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
+
+		// Case 5: Finalizing work unit with finalizing and finalized children.
+		wu5Finalizing := NewBuilder(rootInvID, "5").WithFinalizationState(pb.WorkUnit_FINALIZING).Build()
+		wu51Finalized := NewBuilder(rootInvID, "51").WithParentWorkUnitID(wu5Finalizing.ID.WorkUnitID).WithFinalizationState(pb.WorkUnit_FINALIZED).Build()
+		wu52Finalizing := NewBuilder(rootInvID, "52").WithParentWorkUnitID(wu5Finalizing.ID.WorkUnitID).WithFinalizationState(pb.WorkUnit_FINALIZING).Build()
+
+		// Case 6: Active work unit with all children finalized.
+		wu6Active := NewBuilder(rootInvID, "6").WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
+		wu61Finalized := NewBuilder(rootInvID, "61").WithParentWorkUnitID(wu6Active.ID.WorkUnitID).WithFinalizationState(pb.WorkUnit_FINALIZED).Build()
+
+		testutil.MustApply(ctx, t, testutil.CombineMutations(
+			rootinvocations.InsertForTesting(rootinvocations.NewBuilder(rootInvID).Build()),
+			InsertForTesting(NewBuilder(rootInvID, "root").Build()),
+			InsertForTesting(wu1FinalizingLeaf),
+			InsertForTesting(wu2ActiveLeaf),
+			InsertForTesting(wu3Finalizing),
+			InsertForTesting(wu31Finalized),
+			InsertForTesting(wu4Finalizing),
+			InsertForTesting(wu41Finalized),
+			InsertForTesting(wu42Active),
+			InsertForTesting(wu5Finalizing),
+			InsertForTesting(wu51Finalized),
+			InsertForTesting(wu52Finalizing),
+			InsertForTesting(wu6Active),
+			InsertForTesting(wu61Finalized),
+		)...)
+		ids := []ID{
+			wu1FinalizingLeaf.ID, // ready
+			wu2ActiveLeaf.ID,
+			wu3Finalizing.ID, // ready
+			wu31Finalized.ID,
+			wu4Finalizing.ID,
+			wu41Finalized.ID,
+			wu42Active.ID,
+			wu5Finalizing.ID,
+			wu51Finalized.ID,
+			wu52Finalizing.ID, // ready
+			wu6Active.ID,
+			wu61Finalized.ID,
+		}
+
+		t.Run("empty ids", func(t *ftt.Test) {
+			readyIDs, err := ReadyToFinalize(span.Single(ctx), NewIDSet(), NewIDSet(wu1FinalizingLeaf.ID))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, readyIDs, should.HaveLength(0))
+		})
+		t.Run("no ignore ids", func(t *ftt.Test) {
+			readyIDs, err := ReadyToFinalize(span.Single(ctx), NewIDSet(ids...), NewIDSet())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, readyIDs, should.HaveLength(3))
+			assert.Loosely(t, readyIDs.Has(wu1FinalizingLeaf.ID), should.BeTrue)
+			assert.Loosely(t, readyIDs.Has(wu3Finalizing.ID), should.BeTrue)
+			assert.Loosely(t, readyIDs.Has(wu52Finalizing.ID), should.BeTrue)
+		})
+		t.Run("with ignore ids", func(t *ftt.Test) {
+			readyIDs, err := ReadyToFinalize(span.Single(ctx), NewIDSet(ids...), NewIDSet(wu42Active.ID, wu4Finalizing.ID, wu61Finalized.ID))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, readyIDs, should.HaveLength(4))
+			assert.Loosely(t, readyIDs.Has(wu1FinalizingLeaf.ID), should.BeTrue)
+			assert.Loosely(t, readyIDs.Has(wu3Finalizing.ID), should.BeTrue)
+			assert.Loosely(t, readyIDs.Has(wu4Finalizing.ID), should.BeTrue) // Becomes ready because the active child is ignored.
+			assert.Loosely(t, readyIDs.Has(wu52Finalizing.ID), should.BeTrue)
 		})
 	})
 }

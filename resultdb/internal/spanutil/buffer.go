@@ -112,6 +112,10 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 		spanPtr = &b.Int64
 	case *pb.Invocation_State:
 		spanPtr = &b.Int64
+	case *pb.WorkUnit_FinalizationState:
+		spanPtr = &b.Int64
+	case *pb.RootInvocation_FinalizationState:
+		spanPtr = &b.Int64
 	case **pb.Variant:
 		spanPtr = &b.StringSlice
 	case *[]*pb.StringPair:
@@ -156,6 +160,12 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 
 	case *pb.Invocation_State:
 		*goPtr = pb.Invocation_State(b.Int64)
+
+	case *pb.WorkUnit_FinalizationState:
+		*goPtr = pb.WorkUnit_FinalizationState(b.Int64)
+
+	case *pb.RootInvocation_FinalizationState:
+		*goPtr = pb.RootInvocation_FinalizationState(b.Int64)
 
 	case *pb.TestStatus:
 		*goPtr = pb.TestStatus(b.Int64)
@@ -233,6 +243,12 @@ func ToSpanner(v any) any {
 		return int64(v)
 
 	case pb.Invocation_State:
+		return int64(v)
+
+	case pb.WorkUnit_FinalizationState:
+		return int64(v)
+
+	case pb.RootInvocation_FinalizationState:
 		return int64(v)
 
 	case pb.TestStatus:

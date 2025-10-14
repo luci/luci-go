@@ -172,6 +172,12 @@ func (b *Builder) WithFinalizeTime(t time.Time) *Builder {
 	return b
 }
 
+// WithFinalizerCandidateTime sets the finalizer candidate time.
+func (b *Builder) WithFinalizerCandidateTime(t time.Time) *Builder {
+	b.row.FinalizerCandidateTime = spanner.NullTime{Valid: true, Time: t}
+	return b
+}
+
 // WithDeadline sets the deadline of the work unit.
 func (b *Builder) WithDeadline(t time.Time) *Builder {
 	b.row.Deadline = t
@@ -247,24 +253,25 @@ func (b *Builder) Build() *WorkUnitRow {
 // legacy invocation record for testing purposes.
 func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 	row := map[string]any{
-		"RootInvocationShardId": w.ID.RootInvocationShardID(),
-		"WorkUnitId":            w.ID.WorkUnitID,
-		"ParentWorkUnitId":      w.ParentWorkUnitID,
-		"SecondaryIndexShardId": w.SecondaryIndexShardID,
-		"State":                 w.FinalizationState,
-		"Realm":                 w.Realm,
-		"CreateTime":            w.CreateTime,
-		"CreatedBy":             w.CreatedBy,
-		"LastUpdated":           w.LastUpdated,
-		"FinalizeStartTime":     w.FinalizeStartTime,
-		"FinalizeTime":          w.FinalizeTime,
-		"Deadline":              w.Deadline,
-		"CreateRequestId":       w.CreateRequestID,
-		"ProducerResource":      w.ProducerResource,
-		"Tags":                  w.Tags,
-		"Properties":            spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
-		"Instructions":          spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
-		"ExtendedProperties":    spanutil.Compressed(pbutil.MustMarshal(&invocationspb.ExtendedProperties{ExtendedProperties: w.ExtendedProperties})),
+		"RootInvocationShardId":  w.ID.RootInvocationShardID(),
+		"WorkUnitId":             w.ID.WorkUnitID,
+		"ParentWorkUnitId":       w.ParentWorkUnitID,
+		"SecondaryIndexShardId":  w.SecondaryIndexShardID,
+		"State":                  w.FinalizationState,
+		"Realm":                  w.Realm,
+		"CreateTime":             w.CreateTime,
+		"CreatedBy":              w.CreatedBy,
+		"LastUpdated":            w.LastUpdated,
+		"FinalizeStartTime":      w.FinalizeStartTime,
+		"FinalizeTime":           w.FinalizeTime,
+		"FinalizerCandidateTime": w.FinalizerCandidateTime,
+		"Deadline":               w.Deadline,
+		"CreateRequestId":        w.CreateRequestID,
+		"ProducerResource":       w.ProducerResource,
+		"Tags":                   w.Tags,
+		"Properties":             spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
+		"Instructions":           spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
+		"ExtendedProperties":     spanutil.Compressed(pbutil.MustMarshal(&invocationspb.ExtendedProperties{ExtendedProperties: w.ExtendedProperties})),
 	}
 	if w.ModuleID != nil {
 		row["ModuleName"] = w.ModuleID.ModuleName
@@ -278,9 +285,10 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 	if w.ParentWorkUnitID.Valid {
 		parentWorkUnitID := ID{RootInvocationID: w.ID.RootInvocationID, WorkUnitID: w.ParentWorkUnitID.StringVal}
 		childMutation = spanutil.InsertMap("ChildWorkUnits", map[string]any{
-			"RootInvocationShardId": parentWorkUnitID.RootInvocationShardID(),
-			"WorkUnitId":            parentWorkUnitID.WorkUnitID,
-			"ChildWorkUnitId":       w.ID.WorkUnitID,
+			"RootInvocationShardId":      parentWorkUnitID.RootInvocationShardID(),
+			"WorkUnitId":                 parentWorkUnitID.WorkUnitID,
+			"ChildRootInvocationShardId": w.ID.RootInvocationShardID(),
+			"ChildWorkUnitId":            w.ID.WorkUnitID,
 		})
 	}
 

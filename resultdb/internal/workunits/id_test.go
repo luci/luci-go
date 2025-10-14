@@ -144,6 +144,14 @@ func TestIDConversion(t *testing.T) {
 				assert.Loosely(t, s.Has(id5), should.BeTrue)
 			})
 		})
+		t.Run("NonEmptyIDs", func(t *ftt.Test) {
+			s := NewIDSet(id1, ID{}, id2)
+			nonEmptySet := s.NonEmptyIDs()
+			assert.Loosely(t, len(nonEmptySet), should.Equal(2))
+			assert.Loosely(t, nonEmptySet.Has(id1), should.BeTrue)
+			assert.Loosely(t, nonEmptySet.Has(id2), should.BeTrue)
+			assert.Loosely(t, nonEmptySet.Has(ID{}), should.BeFalse)
+		})
 		t.Run("SortedByID", func(t *ftt.Test) {
 			t.Run("Empty", func(t *ftt.Test) {
 				emptySet := NewIDSet()

@@ -182,6 +182,17 @@ func (s IDSet) Remove(id ID) {
 	delete(s, id)
 }
 
+// NonEmptyIDs returns a new id set with only non empty ids.
+func (s IDSet) NonEmptyIDs() IDSet {
+	result := NewIDSet()
+	for item := range s {
+		if item != (ID{}) {
+			result.Add(item)
+		}
+	}
+	return result
+}
+
 // SortedByRowID returns IDs in the set sorted by row id.
 func (s IDSet) SortedByRowID() []ID {
 	shardIDs := make(map[ID]string)

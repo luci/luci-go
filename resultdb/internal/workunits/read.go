@@ -16,6 +16,7 @@ package workunits
 
 import (
 	"context"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -175,6 +177,44 @@ func ReadFinalizationStates(ctx context.Context, ids []ID) (states []pb.WorkUnit
 			return ID{}, pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED, err
 		}
 		return IDFromRowID(rootInvocationShardID, workUnitID), state, nil
+	}
+
+	resultMap, err := readRows(ctx, ids, columns, parseRow)
+	if err != nil {
+		return nil, err
+	}
+	// Returns NotFound appstatus error if a row for an ID is missing.
+	return rowsForIDsMandatory(resultMap, ids)
+}
+
+// ReadParents reads the parent of the given work units. If any of the work
+// units are not found, returns a NotFound appstatus error. Returned state
+// match 1:1 with the requested ids, i.e. parents[i] corresponds to ids[i].
+// Duplicate IDs are allowed.
+// For root work unit the parent is a empty ID.
+func ReadParents(ctx context.Context, ids []ID) (parents []ID, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadParents")
+	defer func() { tracing.End(ts, err) }()
+
+	var b spanutil.Buffer
+	columns := []string{"ParentWorkUnitId"}
+	parseRow := func(r *spanner.Row) (ID, ID, error) {
+		var rootInvocationShardID string
+		var workUnitID string
+		var parentWorkUnitId spanner.NullString
+		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &parentWorkUnitId)
+		if err != nil {
+			return ID{}, ID{}, err
+		}
+		childID := IDFromRowID(rootInvocationShardID, workUnitID)
+		if !parentWorkUnitId.Valid {
+			return childID, ID{}, nil
+		}
+		parentID := ID{
+			RootInvocationID: childID.RootInvocationID,
+			WorkUnitID:       parentWorkUnitId.StringVal,
+		}
+		return childID, parentID, nil
 	}
 
 	resultMap, err := readRows(ctx, ids, columns, parseRow)
@@ -420,6 +460,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			w.LastUpdated,
 			w.FinalizeStartTime,
 			w.FinalizeTime,
+			w.FinalizerCandidateTime,
 			w.Deadline,
 			w.ModuleName,
 			w.ModuleScheme,
@@ -488,6 +529,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			&wu.LastUpdated,
 			&wu.FinalizeStartTime,
 			&wu.FinalizeTime,
+			&wu.FinalizerCandidateTime,
 			&wu.Deadline,
 			&moduleName,
 			&moduleScheme,
@@ -656,4 +698,129 @@ func CheckWorkUnitUpdateRequestsExist(ctx context.Context, ids []ID, updatedBy s
 		return nil, err
 	}
 	return exists, nil
+}
+
+// FinalizerCandidate represents a work unit that is a candidate for finalizer.
+type FinalizerCandidate struct {
+	ID ID
+	// The time at which the work unit became a finalizer candidate.
+	FinalizerCandidateTime time.Time
+}
+
+// QueryFinalizerCandidates finds at most `limit` number of work units under a root invocation that
+// are marked as candidates for finalization.
+func QueryFinalizerCandidates(ctx context.Context, rootInvID rootinvocations.ID, limit int) (candidates []FinalizerCandidate, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.QueryFinalizerCandidates")
+	defer func() { tracing.End(ts, err) }()
+
+	st := spanner.NewStatement(`
+		SELECT RootInvocationShardId, WorkUnitId, FinalizerCandidateTime
+		FROM WorkUnits
+		WHERE RootInvocationShardId IN UNNEST(@ids)
+			AND FinalizerCandidateTime IS NOT NULL
+			AND State = @finalizing
+		ORDER BY 1,2
+		LIMIT @limit
+	`)
+
+	st.Params = spanutil.ToSpannerMap(map[string]any{
+		"ids":        rootInvID.AllShardIDs(),
+		"finalizing": pb.WorkUnit_FINALIZING,
+		"limit":      limit,
+	})
+	b := &spanutil.Buffer{}
+	candidates = []FinalizerCandidate{}
+	err = spanutil.Query(ctx, st, func(r *spanner.Row) error {
+		var rootInvocationShardID string
+		var workUnitID string
+		var finalizerCandidateTime time.Time
+
+		if err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &finalizerCandidateTime); err != nil {
+			return err
+		}
+		candidates = append(candidates, FinalizerCandidate{
+			ID:                     IDFromRowID(rootInvocationShardID, workUnitID),
+			FinalizerCandidateTime: finalizerCandidateTime,
+		})
+		return nil
+	})
+	return candidates, err
+}
+
+// ReadyToFinalize finds work units from the given set of `ids` that are ready
+// to be finalized. A work unit is ready if it is in the FINALIZING state and
+// all of its direct children are either in the FINALIZED state or are included
+// in the `ignoreIDs` set.
+func ReadyToFinalize(ctx context.Context, ids IDSet, ignoreIDs IDSet) (readyIDs IDSet, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadyToFinalize")
+	defer func() { tracing.End(ts, err) }()
+
+	st := spanner.NewStatement(`
+	SELECT
+		wu.RootInvocationShardId,
+		wu.WorkUnitId
+	FROM
+		WorkUnits AS wu
+	WHERE
+		STRUCT(wu.RootInvocationShardId, wu.WorkUnitId) IN UNNEST(@ids)
+		-- Must be FINALIZING to be ready for finalization.
+		AND wu.State = @finalizing
+		-- Must not exist any child work unit that is NOT in the 'Finalized' state.
+		-- Ignore children in ignoreIDs list.
+		AND NOT EXISTS (
+			SELECT 1
+			FROM ChildWorkUnits AS c
+			JOIN WorkUnits AS cwu
+				ON c.ChildRootInvocationShardId = cwu.RootInvocationShardId
+				AND c.ChildWorkUnitId = cwu.WorkUnitId
+			WHERE
+				c.RootInvocationShardId = wu.RootInvocationShardId
+				AND c.WorkUnitId = wu.WorkUnitId
+				AND STRUCT(cwu.RootInvocationShardId, cwu.WorkUnitId) NOT IN UNNEST(@ignoreIDs)
+				AND cwu.State != @finalized
+		)
+	`)
+	// Struct to use as Spanner Query Parameter.
+	type workUnitID struct {
+		RootInvocationShardId string
+		WorkUnitId            string
+	}
+
+	var workUnitIDs []workUnitID
+	for id := range ids {
+		workUnitIDs = append(workUnitIDs, workUnitID{
+			RootInvocationShardId: id.RootInvocationShardID().RowID(),
+			WorkUnitId:            id.WorkUnitID,
+		})
+	}
+	var ignoreWorkUnitIDs []workUnitID
+	for id := range ignoreIDs {
+		ignoreWorkUnitIDs = append(ignoreWorkUnitIDs, workUnitID{
+			RootInvocationShardId: id.RootInvocationShardID().RowID(),
+			WorkUnitId:            id.WorkUnitID,
+		})
+	}
+
+	st.Params = spanutil.ToSpannerMap(map[string]any{
+		"ids":        workUnitIDs,
+		"ignoreIDs":  ignoreWorkUnitIDs,
+		"finalized":  pb.WorkUnit_FINALIZED,
+		"finalizing": pb.WorkUnit_FINALIZING,
+	})
+	readyIDs = NewIDSet()
+	b := &spanutil.Buffer{}
+
+	err = span.Query(ctx, st).Do(func(r *spanner.Row) error {
+		var rootInvocationShardID string
+		var workUnitID string
+		if err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID); err != nil {
+			return err
+		}
+		readyIDs.Add(IDFromRowID(rootInvocationShardID, workUnitID))
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return readyIDs, nil
 }

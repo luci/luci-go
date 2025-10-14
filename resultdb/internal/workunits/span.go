@@ -87,26 +87,27 @@ func (w *WorkUnitRow) Normalize() {
 // WorkUnitRow is the logical representation of the schema of the WorkUnits Spanner table.
 // The values for the output only fields are ignored during writing.
 type WorkUnitRow struct {
-	ID                    ID
-	ParentWorkUnitID      spanner.NullString
-	SecondaryIndexShardID int64 // Output only.
-	FinalizationState     pb.WorkUnit_FinalizationState
-	Realm                 string
-	CreateTime            time.Time // Output only.
-	CreatedBy             string
-	LastUpdated           time.Time        // Output only
-	FinalizeStartTime     spanner.NullTime // Output only.
-	FinalizeTime          spanner.NullTime // Output only.
-	Deadline              time.Time
-	CreateRequestID       string
-	ModuleID              *pb.ModuleIdentifier
-	ProducerResource      string
-	Tags                  []*pb.StringPair
-	Properties            *structpb.Struct
-	Instructions          *pb.Instructions
-	ExtendedProperties    map[string]*structpb.Struct
-	ChildWorkUnits        []ID             // Output only.
-	ChildInvocations      []invocations.ID // Output only.
+	ID                     ID
+	ParentWorkUnitID       spanner.NullString
+	SecondaryIndexShardID  int64 // Output only.
+	FinalizationState      pb.WorkUnit_FinalizationState
+	Realm                  string
+	CreateTime             time.Time // Output only.
+	CreatedBy              string
+	LastUpdated            time.Time        // Output only
+	FinalizeStartTime      spanner.NullTime // Output only.
+	FinalizeTime           spanner.NullTime // Output only.
+	FinalizerCandidateTime spanner.NullTime // Output only.
+	Deadline               time.Time
+	CreateRequestID        string
+	ModuleID               *pb.ModuleIdentifier
+	ProducerResource       string
+	Tags                   []*pb.StringPair
+	Properties             *structpb.Struct
+	Instructions           *pb.Instructions
+	ExtendedProperties     map[string]*structpb.Struct
+	ChildWorkUnits         []ID             // Output only.
+	ChildInvocations       []invocations.ID // Output only.
 }
 
 // Clone makes a deep copy of the row.
@@ -200,9 +201,10 @@ func (w *WorkUnitRow) toChildWorkUnitsMutations() []*spanner.Mutation {
 		"LastUpdated":           spanner.CommitTimestamp,
 	}
 	inclusionRow := map[string]interface{}{
-		"RootInvocationShardId": parentID.RootInvocationShardID(),
-		"WorkUnitId":            parentID.WorkUnitID,
-		"ChildWorkUnitId":       w.ID.WorkUnitID,
+		"RootInvocationShardId":      parentID.RootInvocationShardID(),
+		"WorkUnitId":                 parentID.WorkUnitID,
+		"ChildRootInvocationShardId": w.ID.RootInvocationShardID(),
+		"ChildWorkUnitId":            w.ID.WorkUnitID,
 	}
 	var ms []*spanner.Mutation
 	ms = append(ms, spanutil.UpdateMap("WorkUnits", parentRow))
@@ -337,11 +339,12 @@ func MarkFinalizing(id ID) []*spanner.Mutation {
 func MarkFinalized(id ID) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, 0, 2)
 	ms = append(ms, spanutil.UpdateMap("WorkUnits", map[string]any{
-		"RootInvocationShardId": id.RootInvocationShardID(),
-		"WorkUnitId":            id.WorkUnitID,
-		"State":                 pb.WorkUnit_FINALIZED,
-		"LastUpdated":           spanner.CommitTimestamp,
-		"FinalizeTime":          spanner.CommitTimestamp,
+		"RootInvocationShardId":  id.RootInvocationShardID(),
+		"WorkUnitId":             id.WorkUnitID,
+		"State":                  pb.WorkUnit_FINALIZED,
+		"LastUpdated":            spanner.CommitTimestamp,
+		"FinalizeTime":           spanner.CommitTimestamp,
+		"FinalizerCandidateTime": nil,
 	}))
 	ms = append(ms, invocations.MarkFinalized(id.LegacyInvocationID()))
 	return ms

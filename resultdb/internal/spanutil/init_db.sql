@@ -283,6 +283,7 @@ CREATE TABLE WorkUnits (
   -- When the work unit row was last updated.
   -- This includes a change to one of the nested ChildWorkUnits or ChildInvocations
   -- tables but not any new test results, artifacts or exonerations.
+  -- It also excludes changes to columns used for internal processing only: FinalizerCandidateTime.
   LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 
   -- Finalization fields.
@@ -298,6 +299,15 @@ CREATE TABLE WorkUnits (
   -- This means the work unit and all its directly or indirectly
   -- included work units (and invocations) became immutable.
   FinalizeTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
+
+  -- If set on a FINALIZING work unit, it becomes a candidate for the next
+  -- work unit finalizer task.
+  -- While work units in any state can set this field, only those in the
+  -- FINALIZING state are eligible for finalization.
+  -- This is a timestamp instead of a boolean to allow set/clear races
+  -- (e.g. from two instances of the finalizer task) to be detected.
+  -- If a race is detected, the last set wins.
+  FinalizerCandidateTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
 
   -- When to force work unit finalization.
   Deadline TIMESTAMP NOT NULL,
@@ -363,6 +373,8 @@ CREATE TABLE ChildWorkUnits (
   RootInvocationShardId STRING(MAX) NOT NULL,
   -- The ID of the parent work unit.
   WorkUnitId STRING(MAX) NOT NULL,
+  -- The root invocation-shard of the child work unit.
+  ChildRootInvocationShardId STRING(MAX) NOT NULL,
   -- The ID of the child work unit.
   ChildWorkUnitId STRING(MAX) NOT NULL,
 ) PRIMARY KEY (RootInvocationShardId, WorkUnitId, ChildWorkUnitId),
