@@ -120,7 +120,7 @@ func (c *client) Register(f *flag.FlagSet) {
 		&c.resourcePrefix,
 		"slsa-resource-prefix",
 		c.resourcePrefix,
-		"The prefix for slsa resource uri. e.g. cipd_package://chrome-infra-packages.appspot.com",
+		"The prefix for slsa resource uri. e.g. cipd_package://prod/",
 	)
 }
 

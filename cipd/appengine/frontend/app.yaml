@@ -16,7 +16,7 @@ luci_gae_vars:
     OAUTH_REDIRECT_URL: https://chrome-infra-packages-dev.appspot.com/auth/openid/callback
     TINK_AEAD_KEY: sm://tink-aead-primary
     SOFTWARE_VERIFIER_HOST: "https://bcidsoftwareverifier-pa.googleapis.com"
-    SLSA_RESOURCE_PREFIX: "cipd_package://chrome-infra-packages-dev.appspot.com/"
+    SLSA_RESOURCE_PREFIX: "cipd_package://dev/"
 
 instance_class: ${FRONTEND_INSTANCE_CLASS}
 

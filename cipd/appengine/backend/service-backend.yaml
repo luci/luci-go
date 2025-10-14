@@ -12,7 +12,7 @@ luci_gae_vars:
     REDIS_ADDR: 10.248.220.35:6379
     DS_CACHE: redis
     SOFTWARE_VERIFIER_HOST: "https://bcidsoftwareverifier-pa.googleapis.com"
-    SLSA_RESOURCE_PREFIX: "cipd_package://chrome-infra-packages-dev.appspot.com/"
+    SLSA_RESOURCE_PREFIX: "cipd_package://dev/"
 
 instance_class: ${BACKEND_INSTANCE_CLASS}
 basic_scaling:
