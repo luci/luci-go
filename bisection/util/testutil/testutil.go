@@ -91,16 +91,6 @@ func CreateCompileFailureAnalysisAnalysisChain(c context.Context, t testing.TB, 
 	return fb, cf, cfa
 }
 
-func CreateHeuristicAnalysis(c context.Context, t testing.TB, cfa *model.CompileFailureAnalysis) *model.CompileHeuristicAnalysis {
-	t.Helper()
-	ha := &model.CompileHeuristicAnalysis{
-		ParentAnalysis: datastore.KeyForObj(c, cfa),
-	}
-	assert.Loosely(t, datastore.Put(c, ha), should.BeNil, truth.LineContext())
-	datastore.GetTestable(c).CatchupIndexes()
-	return ha
-}
-
 func CreateNthSectionAnalysis(c context.Context, t testing.TB, cfa *model.CompileFailureAnalysis) *model.CompileNthSectionAnalysis {
 	t.Helper()
 	nsa := &model.CompileNthSectionAnalysis{
@@ -119,18 +109,6 @@ func CreateGenAIAnalysis(c context.Context, t testing.TB, cfa *model.CompileFail
 	assert.Loosely(t, datastore.Put(c, ga), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 	return ga
-}
-
-func CreateHeuristicSuspect(c context.Context, t testing.TB, ha *model.CompileHeuristicAnalysis, status model.SuspectVerificationStatus) *model.Suspect {
-	t.Helper()
-	suspect := &model.Suspect{
-		ParentAnalysis:     datastore.KeyForObj(c, ha),
-		Type:               model.SuspectType_Heuristic,
-		VerificationStatus: status,
-	}
-	assert.Loosely(t, datastore.Put(c, suspect), should.BeNil, truth.LineContext())
-	datastore.GetTestable(c).CatchupIndexes()
-	return suspect
 }
 
 func CreateNthSectionSuspect(c context.Context, t testing.TB, nsa *model.CompileNthSectionAnalysis) *model.Suspect {

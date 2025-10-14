@@ -17,6 +17,8 @@ package culpritverification
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"google.golang.org/protobuf/proto"
 
@@ -26,7 +28,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
 	cpvt "go.chromium.org/luci/bisection/culpritverification/task"
 	"go.chromium.org/luci/bisection/hosts"
@@ -225,7 +226,7 @@ func hasNewTarget(c context.Context, failedFiles []string, changelog *model.Chan
 	for _, file := range failedFiles {
 		for _, diff := range changelog.ChangeLogDiffs {
 			if diff.Type == model.ChangeType_ADD || diff.Type == model.ChangeType_COPY || diff.Type == model.ChangeType_RENAME {
-				if heuristic.IsSameFile(diff.NewPath, file) {
+				if isSameFile(diff.NewPath, file) {
 					return true
 				}
 			}
@@ -277,7 +278,7 @@ func getSuspectPriority(c context.Context, suspect *model.Suspect) (int32, error
 	// TODO (nqmtuan): Support priority for nth-section case
 	// For now let's return the baseline for culprit verification
 	// We can add offset later
-	confidence := heuristic.GetConfidenceLevel(suspect.Score)
+	confidence := getConfidenceLevel(suspect.Score)
 	var pri int32 = 0
 	switch confidence {
 	case pb.SuspectConfidenceLevel_HIGH:
@@ -371,4 +372,27 @@ func getParentCommit(ctx context.Context, commit *buildbucketpb.GitilesCommit) (
 		Ref:     commit.Ref,
 		Id:      p,
 	}, nil
+}
+
+func isSameFile(fullFilePath string, fileInLog string) bool {
+	// In some cases, fileInLog is prepended with "src/", we want a relative path to src/
+	fileInLog = strings.TrimPrefix(fileInLog, "src/")
+	if fileInLog == fullFilePath {
+		return true
+	}
+	return strings.HasSuffix(fullFilePath, fmt.Sprintf("/%s", fileInLog))
+}
+
+// getConfidenceLevel returns a description of how likely a suspect to be the
+// real culprit.
+func getConfidenceLevel(score int) pb.SuspectConfidenceLevel {
+	switch {
+	// score >= 10 means at least the suspect touched a file in the failure log
+	case score >= 10:
+		return pb.SuspectConfidenceLevel_HIGH
+	case score >= 5:
+		return pb.SuspectConfidenceLevel_MEDIUM
+	default:
+		return pb.SuspectConfidenceLevel_LOW
+	}
 }

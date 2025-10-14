@@ -156,8 +156,8 @@ func processRevertCulpritTask(ctx context.Context, payload proto.Message) error 
 }
 
 func isSuspectGerritActionReady(ctx context.Context, culpritModel *model.Suspect, gerritConfig *configpb.GerritConfig) (bool, error) {
-	// We only proceed with genai or heuristic culprit if it is a confirmed culprit
-	if culpritModel.Type == model.SuspectType_Heuristic || culpritModel.Type == model.SuspectType_GenAI {
+	// We only proceed with GenAI culprit if it is a confirmed culprit
+	if culpritModel.Type == model.SuspectType_GenAI {
 		if culpritModel.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit {
 			return true, nil
 		}
@@ -182,7 +182,7 @@ func isSuspectGerritActionReady(ctx context.Context, culpritModel *model.Suspect
 
 // TakeCulpritAction attempts to comment culprit, comment revert, create revert and commit revert for a culprit
 // when the culprit satisfies the critieria of the action.
-// A culprit is identified as a result of a heuristic analysis or an nthsection analysis.
+// A culprit is identified as a result of a GenAI analysis or an nthsection analysis.
 func TakeCulpritAction(ctx context.Context, culpritModel *model.Suspect) error {
 	project, err := datastoreutil.GetProjectForSuspect(ctx, culpritModel)
 	if err != nil {

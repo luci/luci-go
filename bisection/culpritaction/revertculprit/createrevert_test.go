@@ -42,16 +42,16 @@ func TestGenerateRevertDescription(t *testing.T) {
 		// Setup datastore
 		failedBuild, _, analysis := testutil.CreateCompileFailureAnalysisAnalysisChain(
 			ctx, t, 88128398584903, "chromium", 444)
-		heuristicAnalysis := &model.CompileHeuristicAnalysis{
+		genaiAnalysis := &model.CompileGenAIAnalysis{
 			ParentAnalysis: datastore.KeyForObj(ctx, analysis),
 		}
-		assert.Loosely(t, datastore.Put(ctx, heuristicAnalysis), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, genaiAnalysis), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		suspect := &model.Suspect{
 			Id:             1,
-			Type:           model.SuspectType_Heuristic,
+			Type:           model.SuspectType_GenAI,
 			Score:          10,
-			ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+			ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 			GitilesCommit: buildbucketpb.GitilesCommit{
 				Host:    "test.googlesource.com",
 				Project: "chromium/src",

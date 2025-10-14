@@ -256,15 +256,15 @@ func TestCreateRerunBuildModel(t *testing.T) {
 		assert.Loosely(t, datastore.Put(c, nsa), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		heuristicAnalysis := &model.CompileHeuristicAnalysis{
+		genaiAnalysis := &model.CompileGenAIAnalysis{
 			ParentAnalysis: datastore.KeyForObj(c, analysis),
 		}
-		assert.Loosely(t, datastore.Put(c, heuristicAnalysis), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, genaiAnalysis), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		suspect := &model.Suspect{
 			Score:          10,
-			ParentAnalysis: datastore.KeyForObj(c, heuristicAnalysis),
+			ParentAnalysis: datastore.KeyForObj(c, genaiAnalysis),
 			GitilesCommit: bbpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
 				Project: "chromium/src",

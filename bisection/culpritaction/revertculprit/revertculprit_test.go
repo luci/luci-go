@@ -65,10 +65,10 @@ func TestRevertCulprit(t *testing.T) {
 		// Setup datastore
 		failedBuild, _, analysis := testutil.CreateCompileFailureAnalysisAnalysisChain(
 			ctx, t, 88128398584903, "chromium", 444)
-		heuristicAnalysis := &model.CompileHeuristicAnalysis{
+		genaiAnalysis := &model.CompileGenAIAnalysis{
 			ParentAnalysis: datastore.KeyForObj(ctx, analysis),
 		}
-		assert.Loosely(t, datastore.Put(ctx, heuristicAnalysis), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, genaiAnalysis), should.BeNil)
 
 		nsa := &model.CompileNthSectionAnalysis{
 			ParentAnalysis: datastore.KeyForObj(ctx, analysis),
@@ -112,11 +112,11 @@ func TestRevertCulprit(t *testing.T) {
 
 		t.Run("must be confirmed culprit", func(t *ftt.Test) {
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             1,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -126,18 +126,18 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_UnderVerification,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
-			err := TakeCulpritAction(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, genaiSuspect)
 			expectedErr := fmt.Sprintf("suspect (commit %s) has verification status"+
-				" %s and should not be reverted", heuristicSuspect.GitilesCommit.Id,
-				heuristicSuspect.VerificationStatus)
+				" %s and should not be reverted", genaiSuspect.GitilesCommit.Id,
+				genaiSuspect.VerificationStatus)
 			assert.Loosely(t, err, should.ErrLike(expectedErr))
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
@@ -226,11 +226,11 @@ func TestRevertCulprit(t *testing.T) {
 
 		t.Run("all Gerrit actions disabled", func(t *ftt.Test) {
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             2,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -240,7 +240,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set the project-level config for this test
@@ -250,12 +250,12 @@ func TestRevertCulprit(t *testing.T) {
 			cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
 			assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil)
 
-			err := TakeCulpritAction(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, genaiSuspect)
 			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
@@ -270,11 +270,11 @@ func TestRevertCulprit(t *testing.T) {
 
 		t.Run("already reverted", func(t *ftt.Test) {
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             3,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -284,7 +284,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -327,12 +327,12 @@ func TestRevertCulprit(t *testing.T) {
 			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
 				Return(revertRes, nil).Times(1)
 
-			err := TakeCulpritAction(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, genaiSuspect)
 			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
@@ -347,11 +347,11 @@ func TestRevertCulprit(t *testing.T) {
 
 		t.Run("only abandoned revert exists", func(t *ftt.Test) {
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             4,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -361,7 +361,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -410,12 +410,12 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := TakeCulpritAction(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, genaiSuspect)
 			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
@@ -431,11 +431,11 @@ func TestRevertCulprit(t *testing.T) {
 
 		t.Run("active revert exists", func(t *ftt.Test) {
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             5,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -445,7 +445,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -500,12 +500,12 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := TakeCulpritAction(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, genaiSuspect)
 			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
@@ -524,11 +524,11 @@ func TestRevertCulprit(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, failedBuild), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             6,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -538,7 +538,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -580,12 +580,12 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := TakeCulpritAction(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, genaiSuspect)
 			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
@@ -601,11 +601,11 @@ func TestRevertCulprit(t *testing.T) {
 
 		t.Run("revert has auto-revert off flag set", func(t *ftt.Test) {
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             6,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -615,7 +615,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -657,12 +657,12 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := TakeCulpritAction(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, genaiSuspect)
 			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
@@ -678,11 +678,11 @@ func TestRevertCulprit(t *testing.T) {
 
 		t.Run("revert was from an irrevertible author", func(t *ftt.Test) {
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             7,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -692,7 +692,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -734,12 +734,12 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := TakeCulpritAction(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, genaiSuspect)
 			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
@@ -755,11 +755,11 @@ func TestRevertCulprit(t *testing.T) {
 
 		t.Run("culprit has a downstream dependency", func(t *ftt.Test) {
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             8,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -769,7 +769,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -830,12 +830,12 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := TakeCulpritAction(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, genaiSuspect)
 			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
@@ -851,11 +851,11 @@ func TestRevertCulprit(t *testing.T) {
 
 		t.Run("revert creation is disabled", func(t *ftt.Test) {
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             9,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -865,7 +865,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set the project-level config for this test
@@ -916,12 +916,12 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := TakeCulpritAction(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, genaiSuspect)
 			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
@@ -937,11 +937,11 @@ func TestRevertCulprit(t *testing.T) {
 
 		t.Run("culprit was committed too long ago", func(t *ftt.Test) {
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             10,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -951,7 +951,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -1018,12 +1018,12 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := TakeCulpritAction(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, genaiSuspect)
 			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
@@ -1039,11 +1039,11 @@ func TestRevertCulprit(t *testing.T) {
 
 		t.Run("revert commit is disabled", func(t *ftt.Test) {
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             11,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -1053,7 +1053,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set the project-level config for this test
@@ -1127,12 +1127,12 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := TakeCulpritAction(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, genaiSuspect)
 			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
@@ -1148,11 +1148,11 @@ func TestRevertCulprit(t *testing.T) {
 
 		t.Run("revert for culprit is created and bot-committed", func(t *ftt.Test) {
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             12,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -1162,7 +1162,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -1234,12 +1234,12 @@ func TestRevertCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := TakeCulpritAction(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, genaiSuspect)
 			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
@@ -1257,11 +1257,11 @@ func TestRevertCulprit(t *testing.T) {
 
 		t.Run("revert for culprit is created then manually committed", func(t *ftt.Test) {
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             13,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -1271,7 +1271,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -1319,12 +1319,12 @@ func TestRevertCulprit(t *testing.T) {
 					},
 				}, nil).Times(1)
 
-			err := TakeCulpritAction(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, genaiSuspect)
 			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
@@ -1340,11 +1340,11 @@ func TestRevertCulprit(t *testing.T) {
 
 		t.Run("revert for culprit is created but another revert was merged in the meantime", func(t *ftt.Test) {
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             14,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -1354,7 +1354,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -1407,12 +1407,12 @@ func TestRevertCulprit(t *testing.T) {
 					},
 				}, nil).Times(1)
 
-			err := TakeCulpritAction(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, genaiSuspect)
 			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
@@ -1428,11 +1428,11 @@ func TestRevertCulprit(t *testing.T) {
 
 		t.Run("revert can be created and bot-committed even if creation request times out", func(t *ftt.Test) {
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             15,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -1442,7 +1442,7 @@ func TestRevertCulprit(t *testing.T) {
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -1555,12 +1555,12 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				},
 			)).Times(1)
 
-			err = TakeCulpritAction(ctx, heuristicSuspect)
+			err = TakeCulpritAction(ctx, genaiSuspect)
 			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
@@ -1578,11 +1578,11 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 
 		t.Run("revert is not bot-committed for non-timeout error when creating a revert", func(t *ftt.Test) {
 			// Setup suspect in datastore
-			heuristicSuspect := &model.Suspect{
+			genaiSuspect := &model.Suspect{
 				Id:             16,
-				Type:           model.SuspectType_Heuristic,
+				Type:           model.SuspectType_GenAI,
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
 					Project: "chromium/src",
@@ -1592,7 +1592,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 			}
-			assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+			assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Set up mock responses
@@ -1627,12 +1627,12 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				Return(nil, status.Errorf(codes.Internal, "revert creation failed internally")).
 				Times(1)
 
-			err := TakeCulpritAction(ctx, heuristicSuspect)
+			err := TakeCulpritAction(ctx, genaiSuspect)
 			assert.Loosely(t, err, should.NotBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
-				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+				genaiSuspect.Id, genaiSuspect.ParentAnalysis)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{

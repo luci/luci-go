@@ -81,7 +81,7 @@ func GetSuspect(ctx context.Context, suspectID int64,
 
 // GetAssociatedBuildID returns the build ID of the failure associated with the suspect
 func GetAssociatedBuildID(ctx context.Context, suspect *model.Suspect) (int64, error) {
-	// Get parent analysis - either heuristic or nth section
+	// Get parent analysis - either genai or nth section
 	if suspect.ParentAnalysis == nil {
 		return 0, fmt.Errorf("suspect with ID '%d' had no parent analysis",
 			suspect.Id)
@@ -107,7 +107,7 @@ func GetBuildIDForCompileSuspect(ctx context.Context, suspect *model.Suspect) (i
 	if suspect.AnalysisType != pb.AnalysisType_COMPILE_FAILURE_ANALYSIS {
 		return 0, errors.Fmt("Invalid suspect type %v", suspect.AnalysisType)
 	}
-	// Get failure analysis that the heuristic/nth section analysis relates to
+	// Get failure analysis that the genai/nth section analysis relates to
 	analysisKey := suspect.ParentAnalysis.Parent()
 	if analysisKey == nil {
 		return 0, fmt.Errorf("suspect with ID '%d' had no parent failure analysis",
@@ -126,7 +126,7 @@ func GetBuildIDForCompileSuspect(ctx context.Context, suspect *model.Suspect) (i
 	return compileFailure.Build.IntID(), nil
 }
 
-// FetchSuspectsForAnalysis returns all suspects (from genai, heuristic and nthsection) for an analysis
+// FetchSuspectsForAnalysis returns all suspects (from genai and nthsection) for an analysis
 func FetchSuspectsForAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) ([]*model.Suspect, error) {
 	suspects := []*model.Suspect{}
 	ga, err := GetGenAIAnalysis(c, cfa)
@@ -139,18 +139,6 @@ func FetchSuspectsForAnalysis(c context.Context, cfa *model.CompileFailureAnalys
 			return nil, errors.Fmt("fetchSuspects genai analysis: %w", err)
 		}
 		suspects = append(suspects, gaSuspect...)
-	}
-
-	ha, err := GetHeuristicAnalysis(c, cfa)
-	if err != nil {
-		return nil, errors.Fmt("getHeuristicAnalysis: %w", err)
-	}
-	if ha != nil {
-		haSuspects, err := fetchSuspectsForParentKey(c, datastore.KeyForObj(c, ha))
-		if err != nil {
-			return nil, errors.Fmt("fetchSuspects heuristic analysis: %w", err)
-		}
-		suspects = append(suspects, haSuspects...)
 	}
 
 	nsa, err := GetNthSectionAnalysis(c, cfa)

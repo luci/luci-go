@@ -86,30 +86,6 @@ func GetAnalysisForBuild(c context.Context, bbid int64) (*model.CompileFailureAn
 	return analyses[0], nil
 }
 
-// GetHeuristicAnalysis returns the heuristic analysis associated with the given failure analysis
-func GetHeuristicAnalysis(c context.Context, analysis *model.CompileFailureAnalysis) (*model.CompileHeuristicAnalysis, error) {
-	// Gets heuristic analysis results.
-	q := datastore.NewQuery("CompileHeuristicAnalysis").Ancestor(datastore.KeyForObj(c, analysis))
-	heuristicAnalyses := []*model.CompileHeuristicAnalysis{}
-	err := datastore.GetAll(c, q, &heuristicAnalyses)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if len(heuristicAnalyses) == 0 {
-		// No heuristic analysis
-		return nil, nil
-	}
-
-	if len(heuristicAnalyses) > 1 {
-		logging.Warningf(c, "Found multiple heuristic analysis for analysis %d", analysis.Id)
-	}
-
-	heuristicAnalysis := heuristicAnalyses[0]
-	return heuristicAnalysis, nil
-}
-
 func GetGenAIAnalysis(c context.Context, analysis *model.CompileFailureAnalysis) (*model.CompileGenAIAnalysis, error) {
 	// Gets genai analysis results.
 	q := datastore.NewQuery("CompileGenAIAnalysis").Ancestor(datastore.KeyForObj(c, analysis))
@@ -151,20 +127,7 @@ func GetSuspectsForGenAIAnalysis(c context.Context, genaiAnalysis *model.Compile
 	return suspects[0], nil
 }
 
-// GetSuspectsForHeuristicAnalysis returns the heuristic suspects identified by the given heuristic analysis
-func GetSuspectsForHeuristicAnalysis(c context.Context, heuristicAnalysis *model.CompileHeuristicAnalysis) ([]*model.Suspect, error) {
-	// Getting the suspects for heuristic analysis
-	suspects := []*model.Suspect{}
-	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, heuristicAnalysis)).Order("-score")
-	err := datastore.GetAll(c, q, &suspects)
-	if err != nil {
-		return nil, err
-	}
-
-	return suspects, nil
-}
-
-// GetSuspectForNthSectionAnalysis returns the heuristic suspects identified by the given heuristic analysis
+// GetSuspectForNthSectionAnalysis returns the suspect identified by the given nthsection analysis
 func GetSuspectForNthSectionAnalysis(c context.Context, nthsectionAnalysis *model.CompileNthSectionAnalysis) (*model.Suspect, error) {
 	// Getting the suspects for nthsection analysis
 	suspects := []*model.Suspect{}

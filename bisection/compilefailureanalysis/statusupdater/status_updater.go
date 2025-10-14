@@ -33,14 +33,10 @@ func UpdateAnalysisStatus(c context.Context, cfa *model.CompileFailureAnalysis) 
 		return UpdateStatus(c, cfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
 	}
 
-	// Fetch genai, heuristic and nthsection analysis
+	// Fetch genai and nthsection analysis
 	ga, err := datastoreutil.GetGenAIAnalysis(c, cfa)
 	if err != nil {
 		return errors.Fmt("couldn't fetch genai analysis of analysis %d: %w", cfa.Id, err)
-	}
-	ha, err := datastoreutil.GetHeuristicAnalysis(c, cfa)
-	if err != nil {
-		return errors.Fmt("couldn't fetch heuristic analysis of analysis %d: %w", cfa.Id, err)
 	}
 
 	nsa, err := datastoreutil.GetNthSectionAnalysis(c, cfa)
@@ -57,45 +53,30 @@ func UpdateAnalysisStatus(c context.Context, cfa *model.CompileFailureAnalysis) 
 		return errors.Fmt("couldn't decide if analysis %d has suspect pending verification: %w", cfa.Id, err)
 	}
 
-	// No nth-section run. Just consider the heuristic analysis.
-	if nsa == nil || nsa.Status == pb.AnalysisStatus_ERROR {
-		if ha == nil || ha.Status == pb.AnalysisStatus_ERROR {
-			return UpdateStatus(c, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
-		}
-		if ha.Status != pb.AnalysisStatus_SUSPECTFOUND {
-			return UpdateStatus(c, cfa, ha.Status, ha.RunStatus)
-		}
-		// Heuristic found suspect. So analysis could be in progress or ended
-		// depend on if there is any rerun in progress
-		if haveUnfinishedReruns || havePendingVerificationSuspect {
-			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
-		} else {
-			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
-		}
+	// If both GenAI and NthSection are in error, mark the analysis as error
+	if (ga == nil || ga.Status == pb.AnalysisStatus_ERROR) && (nsa == nil || nsa.Status == pb.AnalysisStatus_ERROR) {
+		return UpdateStatus(c, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
 	}
 
-	// No heuristic analysis (for some reasons). Just consider nth section
-	if ha == nil || ha.Status == pb.AnalysisStatus_ERROR {
-		if nsa == nil || nsa.Status == pb.AnalysisStatus_ERROR {
-			return UpdateStatus(c, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
-		}
-
-		if nsa.Status != pb.AnalysisStatus_SUSPECTFOUND {
-			return UpdateStatus(c, cfa, nsa.Status, nsa.RunStatus)
-		}
-		// nsa found suspect. So analysis could be in progress or ended
-		// depend on if there is any rerun in progress
-		if haveUnfinishedReruns || havePendingVerificationSuspect {
-			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
-		} else {
-			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
-		}
+	// Check if any analysis found a suspect
+	gotSuspect := false
+	if ga != nil && ga.Status == pb.AnalysisStatus_SUSPECTFOUND {
+		gotSuspect = true
+	}
+	if nsa != nil && nsa.Status == pb.AnalysisStatus_SUSPECTFOUND {
+		gotSuspect = true
 	}
 
-	// Both heuristic and nthsection analysis present
-	gotSuspect := (ha.Status == pb.AnalysisStatus_SUSPECTFOUND || nsa.Status == pb.AnalysisStatus_SUSPECTFOUND)
 	if gotSuspect {
-		inProgress := (ha.Status == pb.AnalysisStatus_RUNNING || nsa.Status == pb.AnalysisStatus_RUNNING)
+		// Check if any analysis is still running
+		inProgress := false
+		if ga != nil && ga.Status == pb.AnalysisStatus_RUNNING {
+			inProgress = true
+		}
+		if nsa != nil && nsa.Status == pb.AnalysisStatus_RUNNING {
+			inProgress = true
+		}
+
 		if haveUnfinishedReruns || havePendingVerificationSuspect || inProgress {
 			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
 		} else {
@@ -103,10 +84,20 @@ func UpdateAnalysisStatus(c context.Context, cfa *model.CompileFailureAnalysis) 
 		}
 	}
 
-	// No suspect -> either in progress or notfound
-	if ha.Status == pb.AnalysisStatus_NOTFOUND && ga.Status == pb.AnalysisStatus_NOTFOUND && nsa.Status == pb.AnalysisStatus_NOTFOUND {
+	// No suspect -> check if all available analyses returned NOTFOUND
+	// Consider an analysis as NOTFOUND if it's either nil/error or explicitly NOTFOUND
+	gaNotFoundOrMissing := (ga == nil || ga.Status == pb.AnalysisStatus_ERROR || ga.Status == pb.AnalysisStatus_NOTFOUND)
+	nsaNotFoundOrMissing := (nsa == nil || nsa.Status == pb.AnalysisStatus_ERROR || nsa.Status == pb.AnalysisStatus_NOTFOUND)
+
+	// At least one analysis must explicitly return NOTFOUND (not just missing)
+	gaExplicitlyNotFound := (ga != nil && ga.Status == pb.AnalysisStatus_NOTFOUND)
+	nsaExplicitlyNotFound := (nsa != nil && nsa.Status == pb.AnalysisStatus_NOTFOUND)
+
+	if (gaExplicitlyNotFound || nsaExplicitlyNotFound) && gaNotFoundOrMissing && nsaNotFoundOrMissing {
 		return UpdateStatus(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
 	}
+
+	// Otherwise, analysis is still running
 	return UpdateStatus(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 }
 

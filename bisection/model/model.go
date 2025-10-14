@@ -57,7 +57,6 @@ const (
 type SuspectType string
 
 const (
-	SuspectType_Heuristic  SuspectType = "Heuristic"
 	SuspectType_GenAI      SuspectType = "GenAI"
 	SuspectType_NthSection SuspectType = "NthSection"
 )
@@ -172,7 +171,7 @@ type CompileFailureAnalysis struct {
 	LastPassedBuildId int64 `gae:"last_passed_build_id"`
 	// Initial regression range to find the culprit
 	InitialRegressionRange *pb.RegressionRange `gae:"initial_regression_range"`
-	// Key to the heuristic suspects that was verified by Culprit verification
+	// Key to the suspects that was verified by Culprit verification
 	// In some rare cases, there are more than 1 culprit for the regression range.
 	VerifiedCulprits []*datastore.Key `gae:"verified_culprits"`
 	// Indicates whether the analysis should be cancelled or not,
@@ -271,14 +270,14 @@ type ActionDetails struct {
 	HasTakenActions bool `gae:"has_taken_actions"`
 }
 
-// Suspect is the suspect of heuristic analysis or nthsection.
+// Suspect is the suspect of GenAI analysis or nthsection.
 type Suspect struct {
 	Id int64 `gae:"$id"`
 
-	// Type of the suspect, either heuristic or nthsection
+	// Type of the suspect, either GenAI or nthsection
 	Type SuspectType `gae:"type"`
 
-	// Key to the CompileFailureHeuristicAnalysis or CompileFailureNthSectionAnalysis
+	// Key to the CompileGenAIAnalysis or CompileNthSectionAnalysis
 	// or TestNthSectionAnalysis that results in this suspect
 	ParentAnalysis *datastore.Key `gae:"$parent"`
 
@@ -295,12 +294,12 @@ type Suspect struct {
 	// is indeed the culprit.
 	// A higher score means a stronger signal that the suspect is responsible for
 	// a failure.
-	// Only applies to Heuristic suspect and GenAI suspect
+	// Only applies to GenAI suspect
 	Score int `gae:"score"`
 
 	// A short, human-readable string that concisely describes a fact about the
 	// suspect. e.g. 'add a/b/x.cc'
-	// Only applies to Heuristic suspect
+	// Only applies to GenAI suspect
 	Justification string `gae:"justification,noindex"`
 
 	// Whether if a suspect has been verified
@@ -329,21 +328,6 @@ type Suspect struct {
 
 // CompileGenAIAnalysis is GenAI analysis for compile failures.
 type CompileGenAIAnalysis struct {
-	Id int64 `gae:"$id"`
-	// Key to the parent CompileFailureAnalysis
-	ParentAnalysis *datastore.Key `gae:"$parent"`
-	// Time when the analysis starts to run.
-	StartTime time.Time `gae:"start_time"`
-	// Time when the analysis ends, or canceled
-	EndTime time.Time `gae:"end_time"`
-	// Status of the analysis
-	Status pb.AnalysisStatus `gae:"status"`
-	// Run status of the analysis
-	RunStatus pb.AnalysisRunStatus `gae:"run_status"`
-}
-
-// CompileHeuristicAnalysis is heuristic analysis for compile failures.
-type CompileHeuristicAnalysis struct {
 	Id int64 `gae:"$id"`
 	// Key to the parent CompileFailureAnalysis
 	ParentAnalysis *datastore.Key `gae:"$parent"`
@@ -569,10 +553,6 @@ func (tfa *TestFailureAnalysis) HasEnded() bool {
 
 func (tfa *TestFailureAnalysis) HasStarted() bool {
 	return tfa.RunStatus == pb.AnalysisRunStatus_ENDED || tfa.RunStatus == pb.AnalysisRunStatus_CANCELED || tfa.RunStatus == pb.AnalysisRunStatus_STARTED
-}
-
-func (ha *CompileHeuristicAnalysis) HasEnded() bool {
-	return ha.RunStatus == pb.AnalysisRunStatus_ENDED || ha.RunStatus == pb.AnalysisRunStatus_CANCELED
 }
 
 func (ga *CompileGenAIAnalysis) HasEnded() bool {

@@ -155,15 +155,11 @@ func TestQueryAnalysis(t *testing.T) {
 		assert.Loosely(t, datastore.Put(c, compileFailureAnalysis), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		heuristicAnalysis := &model.CompileHeuristicAnalysis{
-			ParentAnalysis: datastore.KeyForObj(c, compileFailureAnalysis),
-		}
-		assert.Loosely(t, datastore.Put(c, heuristicAnalysis), should.BeNil)
-		datastore.GetTestable(c).CatchupIndexes()
-
 		// Create genai analysis
 		genaiAnalysis := &model.CompileGenAIAnalysis{
 			ParentAnalysis: datastore.KeyForObj(c, compileFailureAnalysis),
+			Status:         pb.AnalysisStatus_FOUND,
+			RunStatus:      pb.AnalysisRunStatus_ENDED,
 		}
 		assert.Loosely(t, datastore.Put(c, genaiAnalysis), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
@@ -197,6 +193,7 @@ func TestQueryAnalysis(t *testing.T) {
 
 		// Create suspect for genai
 		genaiSuspect := &model.Suspect{
+			Type: model.SuspectType_GenAI,
 			GitilesCommit: buildbucketpb.GitilesCommit{
 				Host:    "host1",
 				Project: "proj1",
@@ -298,8 +295,15 @@ func TestQueryAnalysis(t *testing.T) {
 		assert.Loosely(t, datastore.Put(c, parentSingleRerun), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
+		// Create a separate GenAI analysis for the culprit suspect
+		ga := &model.CompileGenAIAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, compileFailureAnalysis),
+		}
+		assert.Loosely(t, datastore.Put(c, ga), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
 		// Update suspect's culprit verification results
-		suspect.ParentAnalysis = datastore.KeyForObj(c, heuristicAnalysis)
+		suspect.ParentAnalysis = datastore.KeyForObj(c, ga)
 		suspect.VerificationStatus = model.SuspectVerificationStatus_ConfirmedCulprit
 		suspect.SuspectRerunBuild = datastore.KeyForObj(c, suspectRerunBuild)
 		suspect.ParentRerunBuild = datastore.KeyForObj(c, parentRerunBuild)
@@ -374,51 +378,6 @@ func TestQueryAnalysis(t *testing.T) {
 					ActionTime:  &timestamppb.Timestamp{Seconds: 200},
 				},
 			},
-			VerificationDetails: &pb.SuspectVerificationDetails{
-				Status: string(model.SuspectVerificationStatus_ConfirmedCulprit),
-				SuspectRerun: &pb.SingleRerun{
-					Bbid:      8877665544332211,
-					StartTime: &timestamppb.Timestamp{Seconds: 101},
-					EndTime:   &timestamppb.Timestamp{Seconds: 102},
-					RerunResult: &pb.RerunResult{
-						RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
-					},
-					Commit: &buildbucketpb.GitilesCommit{
-						Host:    "host1",
-						Project: "proj1",
-						Ref:     "ref",
-						Id:      "commit5",
-					},
-				},
-				ParentRerun: &pb.SingleRerun{
-					Bbid:      7766554433221100,
-					StartTime: &timestamppb.Timestamp{Seconds: 201},
-					EndTime:   &timestamppb.Timestamp{Seconds: 202},
-					RerunResult: &pb.RerunResult{
-						RerunStatus: pb.RerunStatus_RERUN_STATUS_PASSED,
-					},
-					Commit: &buildbucketpb.GitilesCommit{
-						Host:    "host1",
-						Project: "proj1",
-						Ref:     "ref",
-						Id:      "commit6",
-					},
-				},
-			},
-		}), should.BeTrue)
-
-		assert.Loosely(t, len(analysis.HeuristicResult.Suspects), should.Equal(1))
-		assert.Loosely(t, proto.Equal(analysis.HeuristicResult.Suspects[0], &pb.HeuristicSuspect{
-			GitilesCommit: &buildbucketpb.GitilesCommit{
-				Host:    "host1",
-				Project: "proj1",
-				Id:      "commit5",
-			},
-			ReviewUrl:       "http://this/is/review/url",
-			ReviewTitle:     "This is review title",
-			Score:           100,
-			Justification:   "Justification",
-			ConfidenceLevel: pb.SuspectConfidenceLevel_HIGH,
 			VerificationDetails: &pb.SuspectVerificationDetails{
 				Status: string(model.SuspectVerificationStatus_ConfirmedCulprit),
 				SuspectRerun: &pb.SingleRerun{
@@ -547,20 +506,14 @@ func TestQueryAnalysis(t *testing.T) {
 
 		genaiResult := analysis.GenAiResult
 		assert.Loosely(t, genaiResult, should.NotBeNil)
-		expectedGenAiSuspect := &pb.GenAiSuspect{
-			Commit: &buildbucketpb.GitilesCommit{
-				Host:    "host1",
-				Project: "proj1",
-				Id:      "commit7",
-			},
-			ReviewUrl:     "http://this/is/review/url2",
-			ReviewTitle:   "This is review title2",
-			Justification: "GenAI Justification",
-			VerificationDetails: &pb.SuspectVerificationDetails{
-				Status: string(model.SuspectVerificationStatus_Unverified),
-			},
-		}
-		assert.Loosely(t, proto.Equal(genaiResult.Suspect, expectedGenAiSuspect), should.BeTrue)
+		assert.Loosely(t, genaiResult.Suspect, should.NotBeNil)
+		assert.Loosely(t, genaiResult.Suspect.Commit.Host, should.Equal("host1"))
+		assert.Loosely(t, genaiResult.Suspect.Commit.Project, should.Equal("proj1"))
+		assert.Loosely(t, genaiResult.Suspect.Commit.Id, should.Equal("commit7"))
+		assert.Loosely(t, genaiResult.Suspect.ReviewUrl, should.Equal("http://this/is/review/url2"))
+		assert.Loosely(t, genaiResult.Suspect.ReviewTitle, should.Equal("This is review title2"))
+		assert.Loosely(t, genaiResult.Suspect.Justification, should.Equal("GenAI Justification"))
+		assert.Loosely(t, genaiResult.Suspect.VerificationDetails.Status, should.Equal(string(model.SuspectVerificationStatus_Unverified)))
 	})
 
 	ftt.Run("Analysis found for a similar failure", t, func(t *ftt.Test) {

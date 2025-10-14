@@ -42,7 +42,6 @@ import (
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 
 	"go.chromium.org/luci/bisection/analysis"
-	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/internal/tracing"
 	"go.chromium.org/luci/bisection/model"
@@ -545,48 +544,6 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 				pbGenAIResult.EndTime = timestamppb.New(genaiAnalysisResult.EndTime)
 			}
 			result.GenAiResult = pbGenAIResult
-		}
-	}
-
-	heuristicAnalysis, err := datastoreutil.GetHeuristicAnalysis(c, analysis)
-	if err != nil {
-		logging.Errorf(c, "Failed to get Heuristic result for analysis %d: %w", analysis.Id, err)
-	} else if heuristicAnalysis != nil {
-		suspects, err := datastoreutil.GetSuspectsForHeuristicAnalysis(c, heuristicAnalysis)
-		if err != nil {
-			logging.Errorf(c, "Failed to get suspects for Heuristic analysis: %s", err)
-		} else {
-			pbSuspects := make([]*pb.HeuristicSuspect, len(suspects))
-			for i, suspect := range suspects {
-				pbSuspects[i] = &pb.HeuristicSuspect{
-					GitilesCommit:   &suspect.GitilesCommit,
-					ReviewUrl:       suspect.ReviewUrl,
-					Score:           int32(suspect.Score),
-					Justification:   suspect.Justification,
-					ConfidenceLevel: heuristic.GetConfidenceLevel(suspect.Score),
-				}
-
-				verificationDetails, err := constructSuspectVerificationDetails(c, suspect)
-				if err != nil {
-					return nil, errors.Fmt("couldn't constructSuspectVerificationDetails: %w", err)
-				}
-				pbSuspects[i].VerificationDetails = verificationDetails
-
-				// TODO: check access permissions before including the review title.
-				//       For now, we will include it by default as LUCI Bisection access
-				//       should already be restricted to internal users only.
-				pbSuspects[i].ReviewTitle = suspect.ReviewTitle
-			}
-			heuristicResult := &pb.HeuristicAnalysisResult{
-				Status:    heuristicAnalysis.Status,
-				StartTime: timestamppb.New(heuristicAnalysis.StartTime),
-				Suspects:  pbSuspects,
-			}
-			if heuristicAnalysis.HasEnded() {
-				heuristicResult.EndTime = timestamppb.New(heuristicAnalysis.EndTime)
-			}
-
-			result.HeuristicResult = heuristicResult
 		}
 	}
 

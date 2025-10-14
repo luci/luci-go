@@ -14,7 +14,7 @@
 
 // Package compilefailureanalysis is the component for analyzing
 // compile failures.
-// It has 2 main components: heuristic analysis and nth_section analysis
+// It has 2 main components: genai analysis and nth_section analysis
 package compilefailureanalysis
 
 import (
@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
-	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/llm"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
@@ -122,29 +121,6 @@ func AnalyzeFailure(
 		}
 	}
 
-	// Heuristic analysis
-	heuristicResult, e := heuristic.Analyze(c, analysis, regressionRange, compileLogs)
-	if e != nil {
-		// As this is only heuristic analysis, we log the error and continue with nthsection analysis
-		logging.Errorf(c, "Error during heuristic analysis for build %d: %v", firstFailedBuildID, e)
-	}
-
-	// If heuristic analysis does not return error, we proceed to verify its results (if any)
-	if e == nil {
-		shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c, analysis)
-		if err != nil {
-			return nil, errors.Fmt("couldn't fetch config for culprit verification. Build %d: %w", firstFailedBuildID, err)
-		}
-		if shouldRunCulpritVerification {
-			if !analysis.ShouldCancel {
-				if err := verifyHeuristicResults(c, heuristicResult, firstFailedBuildID, analysis.Id); err != nil {
-					// Do not return error here, just log
-					logging.Errorf(c, "Error verifying heuristic result for build %d: %s", firstFailedBuildID, err)
-				}
-			}
-		}
-	}
-
 	// Nth-section analysis
 	shouldRunNthSection, err := nthsection.ShouldRunNthSectionAnalysis(c, analysis)
 	if err != nil {
@@ -184,45 +160,6 @@ func verifyGenAIResult(c context.Context, genaiAnalysis *model.CompileGenAIAnaly
 		logging.Errorf(c, "Error in verifying GenAI suspect %d for analysis %d", suspects[0].Id, analysisID)
 	}
 	return nil
-}
-
-// verifyHeuristicResults verifies if the suspects of heuristic analysis are the real culprit.
-// analysisID is CompileFailureAnalysis ID. It is meant to be propagated all the way to the
-// recipe, so we can identify the analysis in buildbucket.
-func verifyHeuristicResults(c context.Context, heuristicAnalysis *model.CompileHeuristicAnalysis, failedBuildID int64, analysisID int64) error {
-	// TODO (nqmtuan): Move the verification into a task queue
-	suspects, err := getHeuristicSuspectsToVerify(c, heuristicAnalysis)
-	if err != nil {
-		return err
-	}
-	for _, suspect := range suspects {
-		err := culpritverification.VerifySuspect(c, suspect, failedBuildID, analysisID)
-		if err != nil {
-			// Just log the error and continue for other suspects
-			logging.Errorf(c, "Error in verifying suspect %d for analysis %d", suspect.Id, analysisID)
-		}
-	}
-	return nil
-}
-
-// In case heuristic analysis returns too many results, we don't want to verify all of them.
-// Instead, we want to be selective in what we want to verify.
-// For now, we will just take top 3 results of heuristic analysis.
-func getHeuristicSuspectsToVerify(c context.Context, heuristicAnalysis *model.CompileHeuristicAnalysis) ([]*model.Suspect, error) {
-	// Getting the suspects for heuristic analysis
-	suspects := []*model.Suspect{}
-	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, heuristicAnalysis)).Order("-score")
-	err := datastore.GetAll(c, q, &suspects)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get top 3 suspects to verify
-	nSuspects := 3
-	if nSuspects > len(suspects) {
-		nSuspects = len(suspects)
-	}
-	return suspects[:nSuspects], nil
 }
 
 // findRegressionRange takes in the first failed and last passed buildID

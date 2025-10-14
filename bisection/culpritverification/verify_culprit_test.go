@@ -143,15 +143,15 @@ func TestVerifySuspect(t *testing.T) {
 			assert.Loosely(t, datastore.Put(c, analysis), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
-			heuristicAnalysis := &model.CompileHeuristicAnalysis{
+			genaiAnalysis := &model.CompileGenAIAnalysis{
 				ParentAnalysis: datastore.KeyForObj(c, analysis),
 			}
-			assert.Loosely(t, datastore.Put(c, heuristicAnalysis), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, genaiAnalysis), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			suspect := &model.Suspect{
 				Score:          10,
-				ParentAnalysis: datastore.KeyForObj(c, heuristicAnalysis),
+				ParentAnalysis: datastore.KeyForObj(c, genaiAnalysis),
 				GitilesCommit: bbpb.GitilesCommit{
 					Host:    "chromium.googlesource.com",
 					Project: "chromium/src",
@@ -378,7 +378,7 @@ func TestGetPriority(t *testing.T) {
 		assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		ha := &model.CompileHeuristicAnalysis{
+		ha := &model.CompileGenAIAnalysis{
 			ParentAnalysis: datastore.KeyForObj(c, cfa),
 		}
 		assert.Loosely(t, datastore.Put(c, ha), should.BeNil)
@@ -439,8 +439,8 @@ func TestCheckSuspectWithSameCommitExist(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, exist, should.BeFalse)
 
-		ha := testutil.CreateHeuristicAnalysis(c, t, cfa)
-		s1 := testutil.CreateHeuristicSuspect(c, t, ha, model.SuspectVerificationStatus_Unverified)
+		ha := testutil.CreateGenAIAnalysis(c, t, cfa)
+		s1 := testutil.CreateGenAISuspect(c, t, ha, model.SuspectVerificationStatus_Unverified)
 
 		exist, err = checkSuspectWithSameCommitExist(c, cfa, suspect)
 		assert.Loosely(t, err, should.BeNil)

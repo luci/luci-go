@@ -98,14 +98,6 @@ func TestDatastoreModel(t *testing.T) {
 			}
 			assert.Loosely(t, datastore.Put(c, genai_analysis), should.BeNil)
 
-			heuristic_analysis := &CompileHeuristicAnalysis{
-				ParentAnalysis: datastore.KeyForObj(c, compile_failure_analysis),
-				StartTime:      cl.Now(),
-				EndTime:        cl.Now(),
-				Status:         pb.AnalysisStatus_CREATED,
-			}
-			assert.Loosely(t, datastore.Put(c, heuristic_analysis), should.BeNil)
-
 			nthsection_analysis := &CompileNthSectionAnalysis{
 				ParentAnalysis: datastore.KeyForObj(c, compile_failure_analysis),
 				StartTime:      cl.Now(),

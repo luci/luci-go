@@ -73,14 +73,14 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		assert.Loosely(t, datastore.Put(c, analysis), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		heuristicAnalysis := &model.CompileHeuristicAnalysis{
+		genaiAnalysis := &model.CompileGenAIAnalysis{
 			ParentAnalysis: datastore.KeyForObj(c, analysis),
 		}
-		assert.Loosely(t, datastore.Put(c, heuristicAnalysis), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, genaiAnalysis), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		suspect := &model.Suspect{
-			ParentAnalysis: datastore.KeyForObj(c, heuristicAnalysis),
+			ParentAnalysis: datastore.KeyForObj(c, genaiAnalysis),
 			Score:          10,
 			GitilesCommit: bbpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",

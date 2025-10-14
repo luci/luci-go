@@ -151,41 +151,6 @@ func TestGetAnalysisForBuild(t *testing.T) {
 	})
 }
 
-func TestGetHeuristicAnalysis(t *testing.T) {
-	t.Parallel()
-	c := memory.Use(context.Background())
-
-	ftt.Run("No heuristic analysis found", t, func(t *ftt.Test) {
-		compileFailureAnalysis := &model.CompileFailureAnalysis{
-			Id: 1230003,
-		}
-		heuristicAnalysis, err := GetHeuristicAnalysis(c, compileFailureAnalysis)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, heuristicAnalysis, should.BeNil)
-	})
-
-	ftt.Run("Heuristic analysis found", t, func(t *ftt.Test) {
-		// Prepare datastore
-		compileFailureAnalysis := &model.CompileFailureAnalysis{
-			Id: 1230003,
-		}
-		assert.Loosely(t, datastore.Put(c, compileFailureAnalysis), should.BeNil)
-
-		compileHeuristicAnalysis := &model.CompileHeuristicAnalysis{
-			Id:             4560001,
-			ParentAnalysis: datastore.KeyForObj(c, compileFailureAnalysis),
-		}
-		assert.Loosely(t, datastore.Put(c, compileHeuristicAnalysis), should.BeNil)
-
-		datastore.GetTestable(c).CatchupIndexes()
-
-		heuristicAnalysis, err := GetHeuristicAnalysis(c, compileFailureAnalysis)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, heuristicAnalysis, should.NotBeNil)
-		assert.Loosely(t, heuristicAnalysis.Id, should.Equal(4560001))
-	})
-}
-
 func TestGetGenAIAnalysis(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
@@ -218,75 +183,6 @@ func TestGetGenAIAnalysis(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, genaiAnalysis, should.NotBeNil)
 		assert.Loosely(t, genaiAnalysis.Id, should.Equal(4560002))
-	})
-}
-
-func TestGetSuspectsForHeuristicAnalysis(t *testing.T) {
-	t.Parallel()
-	c := memory.Use(context.Background())
-	datastore.GetTestable(c).AutoIndex(true)
-
-	ftt.Run("No suspects found", t, func(t *ftt.Test) {
-		// Prepare datastore
-		heuristicAnalysis := &model.CompileHeuristicAnalysis{
-			Id: 700,
-		}
-		assert.Loosely(t, datastore.Put(c, heuristicAnalysis), should.BeNil)
-		datastore.GetTestable(c).CatchupIndexes()
-
-		suspects, err := GetSuspectsForHeuristicAnalysis(c, heuristicAnalysis)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, len(suspects), should.BeZero)
-	})
-
-	ftt.Run("All suspects found", t, func(t *ftt.Test) {
-		// Prepare datastore
-		heuristicAnalysis := &model.CompileHeuristicAnalysis{
-			Id: 701,
-		}
-		assert.Loosely(t, datastore.Put(c, heuristicAnalysis), should.BeNil)
-
-		suspect1 := &model.Suspect{
-			ParentAnalysis: datastore.KeyForObj(c, heuristicAnalysis),
-			Score:          1,
-		}
-		suspect2 := &model.Suspect{
-			ParentAnalysis: datastore.KeyForObj(c, heuristicAnalysis),
-			Score:          3,
-		}
-		suspect3 := &model.Suspect{
-			ParentAnalysis: datastore.KeyForObj(c, heuristicAnalysis),
-			Score:          4,
-		}
-		suspect4 := &model.Suspect{
-			ParentAnalysis: datastore.KeyForObj(c, heuristicAnalysis),
-			Score:          2,
-		}
-		assert.Loosely(t, datastore.Put(c, suspect1), should.BeNil)
-		assert.Loosely(t, datastore.Put(c, suspect2), should.BeNil)
-		assert.Loosely(t, datastore.Put(c, suspect3), should.BeNil)
-		assert.Loosely(t, datastore.Put(c, suspect4), should.BeNil)
-
-		// Add a different heuristic analysis with its own suspect
-		otherHeuristicAnalysis := &model.CompileHeuristicAnalysis{
-			Id: 702,
-		}
-		assert.Loosely(t, datastore.Put(c, heuristicAnalysis), should.BeNil)
-		otherSuspect := &model.Suspect{
-			ParentAnalysis: datastore.KeyForObj(c, otherHeuristicAnalysis),
-			Score:          5,
-		}
-		assert.Loosely(t, datastore.Put(c, otherSuspect), should.BeNil)
-
-		datastore.GetTestable(c).CatchupIndexes()
-
-		suspects, err := GetSuspectsForHeuristicAnalysis(c, heuristicAnalysis)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, len(suspects), should.Equal(4))
-		assert.Loosely(t, suspects[0].Score, should.Equal(4))
-		assert.Loosely(t, suspects[1].Score, should.Equal(3))
-		assert.Loosely(t, suspects[2].Score, should.Equal(2))
-		assert.Loosely(t, suspects[3].Score, should.Equal(1))
 	})
 }
 

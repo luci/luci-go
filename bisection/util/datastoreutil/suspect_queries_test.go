@@ -199,7 +199,7 @@ func TestCountLatestRevertsCommitted(t *testing.T) {
 func TestGetAssociatedBuildID(t *testing.T) {
 	ctx := memory.Use(context.Background())
 
-	ftt.Run("Associated failed build ID for heuristic suspect", t, func(t *ftt.Test) {
+	ftt.Run("Associated failed build ID for genai suspect", t, func(t *ftt.Test) {
 		failedBuild := &model.LuciFailedBuild{
 			Id: 88128398584903,
 			LuciBuild: model.LuciBuild{
@@ -224,17 +224,17 @@ func TestGetAssociatedBuildID(t *testing.T) {
 		}
 		assert.Loosely(t, datastore.Put(ctx, analysis), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
-		heuristicAnalysis := &model.CompileHeuristicAnalysis{
+		genaiAnalysis := &model.CompileGenAIAnalysis{
 			ParentAnalysis: datastore.KeyForObj(ctx, analysis),
 		}
-		assert.Loosely(t, datastore.Put(ctx, heuristicAnalysis), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, genaiAnalysis), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
-		heuristicSuspect := &model.Suspect{
+		genaiSuspect := &model.Suspect{
 			Id:             1,
-			Type:           model.SuspectType_Heuristic,
+			Type:           model.SuspectType_GenAI,
 			Score:          10,
-			ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+			ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
 			GitilesCommit: buildbucketpb.GitilesCommit{
 				Host:    "test.googlesource.com",
 				Project: "chromium/test",
@@ -244,10 +244,10 @@ func TestGetAssociatedBuildID(t *testing.T) {
 			VerificationStatus: model.SuspectVerificationStatus_UnderVerification,
 			AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
 		}
-		assert.Loosely(t, datastore.Put(ctx, heuristicSuspect), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, genaiSuspect), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
-		bbid, err := GetAssociatedBuildID(ctx, heuristicSuspect)
+		bbid, err := GetAssociatedBuildID(ctx, genaiSuspect)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, bbid, should.Equal(88128398584903))
 	})
@@ -266,11 +266,11 @@ func TestGetSuspect(t *testing.T) {
 
 		parentAnalysis := datastore.KeyForObj(ctx, compileFailureAnalysis)
 
-		compileHeuristicAnalysis := &model.CompileHeuristicAnalysis{
+		compileGenAIAnalysis := &model.CompileGenAIAnalysis{
 			Id:             45600001,
 			ParentAnalysis: parentAnalysis,
 		}
-		assert.Loosely(t, datastore.Put(ctx, compileHeuristicAnalysis), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, compileGenAIAnalysis), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		t.Run("no suspect exists", func(t *ftt.Test) {
@@ -304,8 +304,8 @@ func TestFetchSuspectsForAnalysis(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(suspects), should.BeZero)
 
-		ha := testutil.CreateHeuristicAnalysis(c, t, cfa)
-		testutil.CreateHeuristicSuspect(c, t, ha, model.SuspectVerificationStatus_Unverified)
+		ga := testutil.CreateGenAIAnalysis(c, t, cfa)
+		testutil.CreateGenAISuspect(c, t, ga, model.SuspectVerificationStatus_Unverified)
 
 		suspects, err = FetchSuspectsForAnalysis(c, cfa)
 		assert.Loosely(t, err, should.BeNil)
@@ -317,13 +317,6 @@ func TestFetchSuspectsForAnalysis(t *testing.T) {
 		suspects, err = FetchSuspectsForAnalysis(c, cfa)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(suspects), should.Equal(2))
-
-		ga := testutil.CreateGenAIAnalysis(c, t, cfa)
-		testutil.CreateGenAISuspect(c, t, ga, model.SuspectVerificationStatus_Unverified)
-
-		suspects, err = FetchSuspectsForAnalysis(c, cfa)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, len(suspects), should.Equal(3))
 	})
 }
 

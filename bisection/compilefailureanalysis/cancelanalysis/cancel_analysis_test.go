@@ -57,18 +57,6 @@ func TestCancelAnalysis(t *testing.T) {
 		assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		ha := &model.CompileHeuristicAnalysis{
-			ParentAnalysis: datastore.KeyForObj(c, cfa),
-		}
-		assert.Loosely(t, datastore.Put(c, ha), should.BeNil)
-		datastore.GetTestable(c).CatchupIndexes()
-
-		suspect := &model.Suspect{
-			ParentAnalysis: datastore.KeyForObj(c, ha),
-		}
-		assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
-		datastore.GetTestable(c).CatchupIndexes()
-
 		nsa := &model.CompileNthSectionAnalysis{
 			Status:         pb.AnalysisStatus_RUNNING,
 			RunStatus:      pb.AnalysisRunStatus_STARTED,
@@ -93,7 +81,6 @@ func TestCancelAnalysis(t *testing.T) {
 		rr1 := &model.SingleRerun{
 			RerunBuild: datastore.KeyForObj(c, rb1),
 			Analysis:   datastore.KeyForObj(c, cfa),
-			Suspect:    datastore.KeyForObj(c, suspect),
 			Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 		}
 		rr2 := &model.SingleRerun{
@@ -122,7 +109,6 @@ func TestCancelAnalysis(t *testing.T) {
 		assert.Loosely(t, datastore.Get(c, rr3), should.BeNil)
 		assert.Loosely(t, datastore.Get(c, rb1), should.BeNil)
 		assert.Loosely(t, datastore.Get(c, rb3), should.BeNil)
-		assert.Loosely(t, datastore.Get(c, suspect), should.BeNil)
 
 		assert.Loosely(t, cfa.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
 		assert.Loosely(t, cfa.RunStatus, should.Equal(pb.AnalysisRunStatus_CANCELED))
@@ -132,6 +118,5 @@ func TestCancelAnalysis(t *testing.T) {
 		assert.Loosely(t, rr3.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_CANCELED))
 		assert.Loosely(t, rb1.Status, should.Equal(bbpb.Status_CANCELED))
 		assert.Loosely(t, rb3.Status, should.Equal(bbpb.Status_CANCELED))
-		assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_Canceled))
 	})
 }
