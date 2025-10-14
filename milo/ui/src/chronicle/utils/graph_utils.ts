@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import dagre from 'dagre';
+import dagre from '@dagrejs/dagre';
 import { Edge, Node, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 

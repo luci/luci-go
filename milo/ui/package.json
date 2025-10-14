@@ -25,6 +25,7 @@
   "dependencies": {
     "@adobe/lit-mobx": "^2.2.2",
     "@chopsui/prpc-client": "^1.1.0",
+    "@dagrejs/dagre": "^1.1.5",
     "@emotion/cache": "^11.13.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
@@ -47,7 +48,6 @@
     "codemirror": "^5.65.18",
     "copy-to-clipboard": "^3.3.3",
     "d3": "^7.9.0",
-    "dagre": "^0.8.5",
     "diff2html": "^3.4.48",
     "dompurify": "^3.1.7",
     "error-stack-parser": "^2.1.4",
