@@ -459,5 +459,36 @@ func TestBqTableCache(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, tm.mdCalls, should.BeGreaterThan(calls)) // new calls were made.
 		})
+
+		t.Run(`Cache key includes project`, func(t *ftt.Test) {
+			// Use a fresh mock and schema applier to ensure isolation.
+			localMock := &tableMock{
+				fullyQualifiedName: "project.dataset.table",
+				md:                 &bigquery.TableMetadata{},
+			}
+			localSA := NewSchemaApplyer(cache)
+
+			// First call with a project should miss the cache and make a BQ call.
+			err := localSA.EnsureTable(ctx, localMock, table, WithProject("project-a"))
+			assert.Loosely(t, err, should.BeNil)
+			calls := localMock.mdCalls
+			// Each uncached call on an existing table makes two calls to Metadata.
+			assert.Loosely(t, calls, should.Equal(2))
+
+			// A second call with the same project should hit the cache.
+			err = localSA.EnsureTable(ctx, localMock, table, WithProject("project-a"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, localMock.mdCalls, should.Equal(calls)) // No new call.
+
+			// A call with a different project should miss the cache, adding 2 more calls.
+			err = localSA.EnsureTable(ctx, localMock, table, WithProject("project-b"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, localMock.mdCalls, should.Equal(calls+2)) // Two new calls were made.
+
+			// A call with no project should also miss the cache, adding 2 more calls.
+			err = localSA.EnsureTable(ctx, localMock, table)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, localMock.mdCalls, should.Equal(calls+4)) // Two more new calls.
+		})
 	})
 }

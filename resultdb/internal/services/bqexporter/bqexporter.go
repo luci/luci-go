@@ -56,7 +56,7 @@ import (
 const partitionExpirationTime = 540 * 24 * time.Hour // ~1.5y
 
 // schemaApplyer ensures BQ schema matches the row proto definitons.
-var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(50))
+var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(500))
 
 // Options is bqexporter configuration.
 type Options struct {
@@ -331,7 +331,7 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 	switch bqExport.ResultType.(type) {
 	case *pb.BigQueryExport_TestResults_:
 		tableMetadata.Schema = testResultRowSchema.Relax()
-		if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata); err != nil {
+		if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata, bq.WithProject(client.Project())); err != nil {
 			if !transient.Tag.In(err) {
 				err = tq.Fatal.Apply(err)
 			}
@@ -340,7 +340,7 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 		return errors.WrapIf(b.exportTestResultsToBigQuery(ctx, ins, invID, bqExport), "export test results")
 	case *pb.BigQueryExport_TextArtifacts_:
 		tableMetadata.Schema = textArtifactRowSchema.Relax()
-		if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata); err != nil {
+		if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata, bq.WithProject(client.Project())); err != nil {
 			if !transient.Tag.In(err) {
 				err = tq.Fatal.Apply(err)
 			}

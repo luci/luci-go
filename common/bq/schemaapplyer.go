@@ -122,9 +122,22 @@ func NewSchemaApplyer(cache SchemaApplyerCache) *SchemaApplyer {
 //	   }
 //	}
 func (s *SchemaApplyer) EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata, options ...EnsureTableOption) error {
+	var opts ensureTableOpts
+	for _, apply := range options {
+		apply(&opts)
+	}
+
+	// For exports using project-scoped service accounts, scope the cache key to each
+	// project. This avoids errors using one project's service account propagating to
+	// another project's service account.
+	key := t.FullyQualifiedName()
+	if opts.project != "" {
+		key = fmt.Sprintf("%q:%q", opts.project, key)
+	}
+
 	// Note: creating/updating the table inside GetOrCreate ensures that different
 	// goroutines do not attempt to create/update the same table concurrently.
-	cachedErr, err := s.cache.handle.LRU(ctx).GetOrCreate(ctx, t.FullyQualifiedName(), func() (error, time.Duration, error) {
+	cachedErr, err := s.cache.handle.LRU(ctx).GetOrCreate(ctx, key, func() (error, time.Duration, error) {
 		if err := EnsureTable(ctx, t, spec, options...); err != nil {
 			if !transient.Tag.In(err) {
 				// Cache the fatal error for one minute.
@@ -152,6 +165,9 @@ type ensureTableOpts struct {
 	viewRefreshEnabled bool
 	// The view refresh interval.
 	viewRefreshInterval time.Duration
+	// The LUCI project performing the export. This is used when
+	// using project-scoped service accounts to perform exports.
+	project string
 }
 
 // EnsureTableOption defines an option passed to EnsureTable(...).
@@ -237,6 +253,15 @@ const MetadataVersionKey = "metadata_version"
 func UpdateMetadata() EnsureTableOption {
 	return func(opts *ensureTableOpts) {
 		opts.metadataVersioned = true
+	}
+}
+
+// WithProject states the LUCI project on whose behalf the export is being
+// executed. Set this if you are using a project-scoped
+// service account to perform the export.
+func WithProject(project string) EnsureTableOption {
+	return func(opts *ensureTableOpts) {
+		opts.project = project
 	}
 }
 
