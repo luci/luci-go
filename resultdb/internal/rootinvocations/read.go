@@ -75,11 +75,11 @@ func readColumnsFromShard(ctx context.Context, id ShardID, ptrMap map[string]any
 	}
 }
 
-// ReadState reads the state of the given root invocation.
+// ReadFinalizationState reads the finalization state of the given root invocation.
 // If the root invocation is not found, returns a NotFound appstatus error.
 // Otherwise returns the internal error.
-func ReadState(ctx context.Context, id ID) (state pb.RootInvocation_State, err error) {
-	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/rootinvocations.ReadState")
+func ReadFinalizationState(ctx context.Context, id ID) (state pb.RootInvocation_FinalizationState, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/rootinvocations.ReadFinalizationState")
 	defer func() { tracing.End(ts, err) }()
 
 	err = readColumns(ctx, id, map[string]any{
@@ -180,7 +180,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 		dest := []any{
 			&inv.RootInvocationID,
 			&inv.SecondaryIndexShardID,
-			&inv.State,
+			&inv.FinalizationState,
 			&inv.Realm,
 			&inv.CreateTime,
 			&inv.CreatedBy,

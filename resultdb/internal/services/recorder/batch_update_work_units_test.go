@@ -88,12 +88,12 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 		// Insert root invocation and work units into spanner.
 		wuRow1Expected := workunits.
 			NewBuilder(wuID1.RootInvocationID, wuID1.WorkUnitID).
-			WithState(pb.WorkUnit_ACTIVE).
+			WithFinalizationState(pb.WorkUnit_ACTIVE).
 			WithModuleID(nil).
 			Build()
 		wuRow2Expected := workunits.
 			NewBuilder(wuID2.RootInvocationID, wuID2.WorkUnitID).
-			WithState(pb.WorkUnit_ACTIVE).
+			WithFinalizationState(pb.WorkUnit_ACTIVE).
 			WithTags([]*pb.StringPair{{Key: "k2", Value: "v2"}}).
 			WithModuleID(nil).
 			Build()
@@ -112,17 +112,17 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 			Requests: []*pb.UpdateWorkUnitRequest{
 				{
 					WorkUnit: &pb.WorkUnit{
-						Name:  wuID1.Name(),
-						State: pb.WorkUnit_ACTIVE,
+						Name:              wuID1.Name(),
+						FinalizationState: pb.WorkUnit_ACTIVE,
 					},
-					UpdateMask: &field_mask.FieldMask{Paths: []string{"state"}},
+					UpdateMask: &field_mask.FieldMask{Paths: []string{"finalization_state"}},
 				},
 				{
 					WorkUnit: &pb.WorkUnit{
-						Name:  wuID2.Name(),
-						State: pb.WorkUnit_ACTIVE,
+						Name:              wuID2.Name(),
+						FinalizationState: pb.WorkUnit_ACTIVE,
 					},
-					UpdateMask: &field_mask.FieldMask{Paths: []string{"state"}},
+					UpdateMask: &field_mask.FieldMask{Paths: []string{"finalization_state"}},
 				},
 			},
 			RequestId: "test-request-id",
@@ -155,15 +155,15 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 						assert.Loosely(t, err, should.ErrLike("bad request: requests[0]: work_unit: name: does not match pattern"))
 					})
 
-					t.Run("invalid state", func(t *ftt.Test) {
+					t.Run("invalid finalization_state", func(t *ftt.Test) {
 						// validateUpdateWorkUnitRequest has its own exhaustive test cases,
 						// simply check that it is called for each sub-request.
-						req.Requests[1].WorkUnit.State = pb.WorkUnit_FINALIZED
-						req.Requests[1].UpdateMask.Paths = []string{"state"}
+						req.Requests[1].WorkUnit.FinalizationState = pb.WorkUnit_FINALIZED
+						req.Requests[1].UpdateMask.Paths = []string{"finalization_state"}
 
 						_, err := recorder.BatchUpdateWorkUnits(ctx, req)
 						assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike("bad request: requests[1]: work_unit: state: must be FINALIZING or ACTIVE"))
+						assert.Loosely(t, err, should.ErrLike("bad request: requests[1]: work_unit: finalization_state: must be FINALIZING or ACTIVE"))
 					})
 
 					t.Run("request_id", func(t *ftt.Test) {
@@ -293,8 +293,8 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 		t.Run("work unit not active", func(t *ftt.Test) {
 			// Finalize the second work unit.
 			finalizeReq := &pb.UpdateWorkUnitRequest{
-				WorkUnit:   &pb.WorkUnit{Name: wuID2.Name(), State: pb.WorkUnit_FINALIZING},
-				UpdateMask: &field_mask.FieldMask{Paths: []string{"state"}},
+				WorkUnit:   &pb.WorkUnit{Name: wuID2.Name(), FinalizationState: pb.WorkUnit_FINALIZING},
+				UpdateMask: &field_mask.FieldMask{Paths: []string{"finalization_state"}},
 			}
 			req.Requests[1] = finalizeReq
 			_, err = recorder.BatchUpdateWorkUnits(ctx, req)
@@ -316,7 +316,7 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 				// LastUpdated time must move forward.
 				assert.That(t, wu.LastUpdated.AsTime(), should.HappenAfter(expected.LastUpdated.AsTime()), truth.LineContext())
 				// FinalizeStartTime must be set if state is updated.
-				if expected.State != pb.WorkUnit_ACTIVE {
+				if expected.FinalizationState != pb.WorkUnit_ACTIVE {
 					assert.Loosely(t, wu.FinalizeStartTime, should.Match(wu.LastUpdated), truth.LineContext())
 				} else {
 					assert.Loosely(t, wu.FinalizeStartTime, should.BeNil, truth.LineContext())
@@ -336,7 +336,7 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 				// LastUpdated time must move forward.
 				assert.That(t, wuRow.LastUpdated, should.HappenAfter(expectedRow.LastUpdated), truth.LineContext())
 				// FinalizeStartTime must be set if state is updated.
-				shouldSetfinalizeStartTime := expectedRow.State != pb.WorkUnit_ACTIVE
+				shouldSetfinalizeStartTime := expectedRow.FinalizationState != pb.WorkUnit_ACTIVE
 				assert.Loosely(t, wuRow.FinalizeStartTime.Valid, should.Equal(shouldSetfinalizeStartTime), truth.LineContext())
 				if shouldSetfinalizeStartTime {
 					assert.Loosely(t, wuRow.FinalizeStartTime.Time, should.Match(wuRow.LastUpdated), truth.LineContext())
@@ -383,19 +383,19 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 			})
 
 			t.Run("update one, no-op for another", func(t *ftt.Test) {
-				t.Run("state", func(t *ftt.Test) {
-					req.Requests[1].UpdateMask.Paths = []string{"state"}
-					req.Requests[1].WorkUnit.State = pb.WorkUnit_FINALIZING
+				t.Run("finalization_state", func(t *ftt.Test) {
+					req.Requests[1].UpdateMask.Paths = []string{"finalization_state"}
+					req.Requests[1].WorkUnit.FinalizationState = pb.WorkUnit_FINALIZING
 
 					res, err := recorder.BatchUpdateWorkUnits(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, res.WorkUnits, should.HaveLength(2))
 
-					wu2Expected.State = pb.WorkUnit_FINALIZING
+					wu2Expected.FinalizationState = pb.WorkUnit_FINALIZING
 					assertResponse(res.WorkUnits[1], wu2Expected)
 
 					// Validate work unit table.
-					wuRow2Expected.State = pb.WorkUnit_FINALIZING
+					wuRow2Expected.FinalizationState = pb.WorkUnit_FINALIZING
 					assertSpannerRows(wuRow2Expected)
 
 					// Enqueued the finalization task.
@@ -589,12 +589,12 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 					}
 					req.Requests[1] = &pb.UpdateWorkUnitRequest{
 						WorkUnit: &pb.WorkUnit{
-							Name:         wuID2.Name(),
-							Deadline:     newDeadline,
-							Properties:   newProperties,
-							Instructions: instruction,
-							Tags:         newTags,
-							State:        pb.WorkUnit_FINALIZING,
+							Name:              wuID2.Name(),
+							Deadline:          newDeadline,
+							Properties:        newProperties,
+							Instructions:      instruction,
+							Tags:              newTags,
+							FinalizationState: pb.WorkUnit_FINALIZING,
 						},
 						UpdateMask: updateMask,
 					}

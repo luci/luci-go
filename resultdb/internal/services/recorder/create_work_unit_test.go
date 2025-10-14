@@ -80,27 +80,27 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 				err := validateCreateWorkUnitRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("work_unit: unspecified"))
 			})
-			t.Run("state", func(t *ftt.Test) {
+			t.Run("finalization_state", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					// If it is unset, we will populate a default value.
-					req.WorkUnit.State = pb.WorkUnit_STATE_UNSPECIFIED
+					req.WorkUnit.FinalizationState = pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED
 					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("active", func(t *ftt.Test) {
-					req.WorkUnit.State = pb.WorkUnit_ACTIVE
+					req.WorkUnit.FinalizationState = pb.WorkUnit_ACTIVE
 					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("finalizing", func(t *ftt.Test) {
-					req.WorkUnit.State = pb.WorkUnit_FINALIZING
+					req.WorkUnit.FinalizationState = pb.WorkUnit_FINALIZING
 					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
-					req.WorkUnit.State = pb.WorkUnit_FINALIZED
+					req.WorkUnit.FinalizationState = pb.WorkUnit_FINALIZED
 					err := validateCreateWorkUnitRequest(req, cfg)
-					assert.Loosely(t, err, should.ErrLike("work_unit: state: cannot be created in the state FINALIZED"))
+					assert.Loosely(t, err, should.ErrLike("work_unit: finalization_state: cannot be created in the state FINALIZED"))
 				})
 			})
 			t.Run("deadline", func(t *ftt.Test) {
@@ -404,8 +404,8 @@ func TestCreateWorkUnit(t *testing.T) {
 			WorkUnitID:       "wu-new",
 		}
 		rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:testrealm").Build()
-		parentWu := workunits.NewBuilder(rootInvID, parentWorkUnitID.WorkUnitID).WithState(pb.WorkUnit_ACTIVE).Build()
-		parentPrefixedWu := workunits.NewBuilder(rootInvID, prefixedParentWorkUnitID.WorkUnitID).WithState(pb.WorkUnit_ACTIVE).Build()
+		parentWu := workunits.NewBuilder(rootInvID, parentWorkUnitID.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
+		parentPrefixedWu := workunits.NewBuilder(rootInvID, prefixedParentWorkUnitID.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
 		testutil.MustApply(ctx, t, insert.RootInvocationWithRootWorkUnit(rootInv)...)
 		testutil.MustApply(ctx, t, insert.WorkUnit(parentWu)...)
 		testutil.MustApply(ctx, t, insert.WorkUnit(parentPrefixedWu)...)
@@ -462,10 +462,10 @@ func TestCreateWorkUnit(t *testing.T) {
 				t.Run("other invalid", func(t *ftt.Test) {
 					// validateCreateWorkUnitRequest has its own exhaustive test cases,
 					// simply check that it is called.
-					req.WorkUnit.State = pb.WorkUnit_FINALIZED
+					req.WorkUnit.FinalizationState = pb.WorkUnit_FINALIZED
 					_, err := recorder.CreateWorkUnit(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("bad request: work_unit: state: cannot be created in the state FINALIZED"))
+					assert.Loosely(t, err, should.ErrLike("bad request: work_unit: finalization_state: cannot be created in the state FINALIZED"))
 				})
 			})
 			t.Run("work_unit_id", func(t *ftt.Test) {
@@ -764,12 +764,12 @@ func TestCreateWorkUnit(t *testing.T) {
 
 			expectedWU := proto.Clone(req.WorkUnit).(*pb.WorkUnit)
 			proto.Merge(expectedWU, &pb.WorkUnit{ // Merge defaulted and output-only fields.
-				Name:       workUnitID.Name(),
-				Parent:     parentWorkUnitID.Name(),
-				WorkUnitId: workUnitID.WorkUnitID,
-				State:      pb.WorkUnit_ACTIVE, // Default state is ACTIVE.
-				Creator:    "user:someone@example.com",
-				Deadline:   timestamppb.New(start.Add(defaultDeadlineDuration)),
+				Name:              workUnitID.Name(),
+				Parent:            parentWorkUnitID.Name(),
+				WorkUnitId:        workUnitID.WorkUnitID,
+				FinalizationState: pb.WorkUnit_ACTIVE, // Default state is ACTIVE.
+				Creator:           "user:someone@example.com",
+				Deadline:          timestamppb.New(start.Add(defaultDeadlineDuration)),
 			})
 			expectedWU.Instructions = instructionutil.InstructionsWithNames(instructions, workUnitID.Name())
 			pbutil.PopulateModuleIdentifierHashes(expectedWU.ModuleId)
@@ -777,7 +777,7 @@ func TestCreateWorkUnit(t *testing.T) {
 			expectWURow := &workunits.WorkUnitRow{
 				ID:                workUnitID,
 				ParentWorkUnitID:  spanner.NullString{Valid: true, StringVal: parentWorkUnitID.WorkUnitID},
-				State:             pb.WorkUnit_ACTIVE,
+				FinalizationState: pb.WorkUnit_ACTIVE,
 				Realm:             "testproject:testrealm",
 				CreatedBy:         "user:someone@example.com",
 				FinalizeStartTime: spanner.NullTime{},
@@ -862,7 +862,7 @@ func TestCreateWorkUnit(t *testing.T) {
 			})
 
 			t.Run("finalizing work unit", func(t *ftt.Test) {
-				req.WorkUnit.State = pb.WorkUnit_FINALIZING
+				req.WorkUnit.FinalizationState = pb.WorkUnit_FINALIZING
 				var headers metadata.MD
 				res, err := recorder.CreateWorkUnit(ctx, req, grpc.Header(&headers))
 				assert.Loosely(t, err, should.BeNil)
@@ -870,7 +870,7 @@ func TestCreateWorkUnit(t *testing.T) {
 				// Merge server-populated fields for comparison.
 				commitTime := res.CreateTime.AsTime()
 				proto.Merge(expectedWU, &pb.WorkUnit{
-					State:             pb.WorkUnit_FINALIZING,
+					FinalizationState: pb.WorkUnit_FINALIZING,
 					CreateTime:        timestamppb.New(commitTime),
 					LastUpdated:       timestamppb.New(commitTime),
 					FinalizeStartTime: timestamppb.New(commitTime),
@@ -889,7 +889,7 @@ func TestCreateWorkUnit(t *testing.T) {
 				row, err := workunits.Read(readCtx, workUnitID, workunits.AllFields)
 				assert.Loosely(t, err, should.BeNil)
 				expectWURow.SecondaryIndexShardID = row.SecondaryIndexShardID
-				expectWURow.State = pb.WorkUnit_FINALIZING
+				expectWURow.FinalizationState = pb.WorkUnit_FINALIZING
 				expectWURow.CreateTime = commitTime
 				expectWURow.FinalizeStartTime = spanner.NullTime{Time: commitTime, Valid: true}
 				expectWURow.LastUpdated = commitTime

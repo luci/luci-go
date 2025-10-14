@@ -26,6 +26,7 @@ option java_package = "com.google.luci.resultdb.v1";
 option java_multiple_files = true;
 
 // A top-level container of test results.
+// Next ID: 18.
 message RootInvocation {
   // The resource name of this root invocation.
   // Format: `rootInvocations/{ROOT_INVOCATION_ID}`
@@ -45,9 +46,10 @@ message RootInvocation {
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  enum State {
-    // The default value. This value is used if the state is omitted.
-    STATE_UNSPECIFIED = 0;
+  // Indicates whether the root invocation, and its work units, are immutable.
+  enum FinalizationState {
+    // The default value. This value is used if the finalization state is omitted.
+    FINALIZATION_STATE_UNSPECIFIED = 0;
 
     // The root invocation is mutable.
     ACTIVE = 1;
@@ -65,7 +67,7 @@ message RootInvocation {
     FINALIZED = 3;
   }
 
-  // Current state of the root invocation.
+  // Current finalization state of the root invocation.
   //
   // At creation time, this can be set to ACTIVE or FINALIZING (if all fields
   // are known at creation time). When updating or via the FinalizeRootInvocation
@@ -76,7 +78,16 @@ message RootInvocation {
   // `deadline` expires (if the invocation is not already in FINALIZING state).
   // FINALIZING invocations will transition onward to FINALIZED when all included
   // work units are FINALIZED.
-  State state = 3;
+  FinalizationState finalization_state = 3;
+
+  enum State {
+    // The default value. This value is used if the state is omitted.
+    STATE_UNSPECIFIED = 0;
+  }
+
+  // Do not use this field, it exists only so that field masks for the old "state"
+  // field can still parse. It will be repurposed soon. Use `finalization_state` instead.
+  State state = 17;
 
   // The realm of the root invocation. This controls the ACLs that apply to the
   // root invocation and its contents.
@@ -115,15 +126,16 @@ message RootInvocation {
 
   // == Finalization ===========================================================
 
-  // When the invocation started to finalize, i.e. transitioned to FINALIZING
-  // state. This means the invocation is immutable but directly or indirectly
-  // included invocations may not be.
+  // When the invocation started to finalize, i.e. transitioned to a finalization
+  // state of FINALIZING. This means the invocation is immutable but directly or
+  // indirectly included invocations may not be.
   //
   // Output only.
   google.protobuf.Timestamp finalize_start_time = 7
       [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
-  // When the invocation was finalized, i.e. transitioned to FINALIZED state.
+  // When the invocation was finalized, i.e. transitioned to a finalization state
+  // of FINALIZED.
   // If this field is set, implies that the invocation is finalized. This
   // means the invocation and directly or indirectly included invocations
   // are immutable.

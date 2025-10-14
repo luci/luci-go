@@ -325,7 +325,7 @@ func batchCreateResultsInWorkUnits(ctx context.Context, in *pb.BatchCreateTestRe
 				// If the parent was not read, we should have errored out already above.
 				panic("logic error: parentID not in parentInfos")
 			}
-			if parentInfo.State != pb.WorkUnit_ACTIVE {
+			if parentInfo.FinalizationState != pb.WorkUnit_ACTIVE {
 				return appstatus.Errorf(codes.FailedPrecondition, "requests[%d]: parent %q is not active", i, parentID.Name())
 			}
 			const strictValidation = true

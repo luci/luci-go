@@ -524,7 +524,7 @@ func checkInvocationOrWorkUnitState(ctx context.Context, arts []*artifactCreatio
 			return nil, nil, err // NotFound or internal error.
 		}
 		for _, wuID := range workUnitIDs.SortedByID() {
-			if parentInfos[wuID].State != pb.WorkUnit_ACTIVE {
+			if parentInfos[wuID].FinalizationState != pb.WorkUnit_ACTIVE {
 				return nil, nil, appstatus.Errorf(codes.FailedPrecondition, "%q is not active", wuID.Name())
 			}
 		}

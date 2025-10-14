@@ -120,25 +120,25 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike(`update_mask: "deadline" should not have any submask`))
 		})
 
-		t.Run("state", func(t *ftt.Test) {
-			req.UpdateMask.Paths = []string{"state"}
+		t.Run("finalization_state", func(t *ftt.Test) {
+			req.UpdateMask.Paths = []string{"finalization_state"}
 
 			t.Run("valid FINALIZING", func(t *ftt.Test) {
-				req.RootInvocation.State = pb.RootInvocation_FINALIZING
+				req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZING
 				err := validateUpdateRootInvocationRequest(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
 			t.Run("valid ACTIVE", func(t *ftt.Test) {
-				req.RootInvocation.State = pb.RootInvocation_ACTIVE
+				req.RootInvocation.FinalizationState = pb.RootInvocation_ACTIVE
 				err := validateUpdateRootInvocationRequest(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
 			t.Run("invalid FINALIZED", func(t *ftt.Test) {
-				req.RootInvocation.State = pb.RootInvocation_FINALIZED
+				req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZED
 				err := validateUpdateRootInvocationRequest(ctx, req)
-				assert.Loosely(t, err, should.ErrLike("root_invocation: state: must be FINALIZING or ACTIVE"))
+				assert.Loosely(t, err, should.ErrLike("root_invocation: finalization_state: must be FINALIZING or ACTIVE"))
 			})
 		})
 
@@ -256,14 +256,14 @@ func TestUpdateRootInvocation(t *testing.T) {
 
 		// A simple valid request.
 		req := &pb.UpdateRootInvocationRequest{
-			RootInvocation: &pb.RootInvocation{Name: rootInvID.Name(), State: pb.RootInvocation_FINALIZING},
-			UpdateMask:     &field_mask.FieldMask{Paths: []string{"state"}},
+			RootInvocation: &pb.RootInvocation{Name: rootInvID.Name(), FinalizationState: pb.RootInvocation_FINALIZING},
+			UpdateMask:     &field_mask.FieldMask{Paths: []string{"finalization_state"}},
 			RequestId:      "test-request-id",
 		}
 
 		// Insert root invocation.
 		expectedRootInvRow := rootinvocations.NewBuilder(rootInvID).
-			WithState(pb.RootInvocation_ACTIVE).
+			WithFinalizationState(pb.RootInvocation_ACTIVE).
 			WithIsSourcesFinal(false).
 			Build()
 		testutil.MustApply(ctx, t, insert.RootInvocationOnly(expectedRootInvRow)...)
@@ -293,10 +293,10 @@ func TestUpdateRootInvocation(t *testing.T) {
 			// validateUpdateRootInvocationRequest has its own exhaustive test cases,
 			// simply check that it is called.
 			t.Run("other invalid", func(t *ftt.Test) {
-				req.RootInvocation.State = pb.RootInvocation_FINALIZED
+				req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZED
 				_, err := recorder.UpdateRootInvocation(ctx, req)
 				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-				assert.Loosely(t, err, should.ErrLike("bad request: root_invocation: state: must be FINALIZING or ACTIVE"))
+				assert.Loosely(t, err, should.ErrLike("bad request: root_invocation: finalization_state: must be FINALIZING or ACTIVE"))
 			})
 		})
 
@@ -368,8 +368,8 @@ func TestUpdateRootInvocation(t *testing.T) {
 		})
 
 		t.Run("root invocation not active", func(t *ftt.Test) {
-			req.UpdateMask.Paths = []string{"state"}
-			req.RootInvocation.State = pb.RootInvocation_FINALIZING
+			req.UpdateMask.Paths = []string{"finalization_state"}
+			req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZING
 			_, err := recorder.UpdateRootInvocation(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 
@@ -412,7 +412,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 				// LastUpdated time must move forward.
 				assert.That(t, rootInv.LastUpdated.AsTime(), should.HappenAfter(expected.LastUpdated.AsTime()), truth.LineContext())
 				// FinalizeStartTime must be set if state is updated.
-				if expected.State != pb.RootInvocation_ACTIVE {
+				if expected.FinalizationState != pb.RootInvocation_ACTIVE {
 					assert.Loosely(t, rootInv.FinalizeStartTime, should.Match(rootInv.LastUpdated), truth.LineContext())
 				} else {
 					assert.Loosely(t, rootInv.FinalizeStartTime, should.BeNil, truth.LineContext())
@@ -431,7 +431,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 				// LastUpdated time must move forward.
 				assert.That(t, rootInvRow.LastUpdated, should.HappenAfter(expectedRow.LastUpdated), truth.LineContext())
 				// FinalizeStartTime must be set if state is updated.
-				shouldSetfinalizeStartTime := expectedRow.State != pb.RootInvocation_ACTIVE
+				shouldSetfinalizeStartTime := expectedRow.FinalizationState != pb.RootInvocation_ACTIVE
 				assert.Loosely(t, rootInvRow.FinalizeStartTime.Valid, should.Equal(shouldSetfinalizeStartTime), truth.LineContext())
 				if shouldSetfinalizeStartTime {
 					assert.Loosely(t, rootInvRow.FinalizeStartTime.Time, should.Match(rootInvRow.LastUpdated), truth.LineContext())
@@ -447,7 +447,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 				// Validate RootInvocationShards table.
 				for shardID := range rootInvID.AllShardIDs() {
 					var compressedSources spanutil.Compressed
-					var shardState pb.RootInvocation_State
+					var shardState pb.RootInvocation_FinalizationState
 					var shardRealm string
 					var shardIsSourcesFinal bool
 					err := spanutil.ReadRow(span.Single(ctx), "RootInvocationShards", shardID.Key(), map[string]any{
@@ -459,7 +459,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 					shardSources := &pb.Sources{}
 					assert.Loosely(t, proto.Unmarshal(compressedSources, shardSources), should.BeNil)
-					assert.Loosely(t, shardState, should.Equal(expectedRowCopy.State), truth.LineContext())
+					assert.Loosely(t, shardState, should.Equal(expectedRowCopy.FinalizationState), truth.LineContext())
 					assert.Loosely(t, shardRealm, should.Equal(expectedRowCopy.Realm), truth.LineContext())
 					assert.Loosely(t, shardSources, should.Match(expectedRowCopy.Sources), truth.LineContext())
 					assert.Loosely(t, shardIsSourcesFinal, should.Equal(expectedRowCopy.IsSourcesFinal), truth.LineContext())
@@ -489,17 +489,37 @@ func TestUpdateRootInvocation(t *testing.T) {
 				assert.Loosely(t, exist, should.BeTrue)
 			}
 
-			t.Run("state", func(t *ftt.Test) {
-				req.UpdateMask.Paths = []string{"state"}
-				req.RootInvocation.State = pb.RootInvocation_FINALIZING
+			t.Run("finalization_state", func(t *ftt.Test) {
+				req.UpdateMask.Paths = []string{"finalization_state"}
+				req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZING
 
 				ri, err := recorder.UpdateRootInvocation(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				expectedRootInv.State = pb.RootInvocation_FINALIZING
+				expectedRootInv.FinalizationState = pb.RootInvocation_FINALIZING
 				assertResponse(ri, expectedRootInv)
 
 				// Validate spanner records are updated.
-				expectedRootInvRow.State = pb.RootInvocation_FINALIZING
+				expectedRootInvRow.FinalizationState = pb.RootInvocation_FINALIZING
+				assertSpannerRows(expectedRootInvRow)
+
+				// Enqueued the finalization task.
+				assert.Loosely(t, sched.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
+					&taskspb.RunExportNotifications{InvocationId: string(rootInvID.LegacyInvocationID())},
+					&taskspb.TryFinalizeInvocation{InvocationId: string(rootInvID.LegacyInvocationID())},
+				}))
+			})
+
+			t.Run("finalization_state (legacy field mask)", func(t *ftt.Test) {
+				req.UpdateMask.Paths = []string{"state"}
+				req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZING
+
+				ri, err := recorder.UpdateRootInvocation(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				expectedRootInv.FinalizationState = pb.RootInvocation_FINALIZING
+				assertResponse(ri, expectedRootInv)
+
+				// Validate spanner records are updated.
+				expectedRootInvRow.FinalizationState = pb.RootInvocation_FINALIZING
 				assertSpannerRows(expectedRootInvRow)
 
 				// Enqueued the finalization task.

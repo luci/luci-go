@@ -79,13 +79,13 @@ func TestReadFunctions(t *testing.T) {
 
 		t.Run("ReadState", func(t *ftt.Test) {
 			t.Run("happy path", func(t *ftt.Test) {
-				state, err := ReadState(span.Single(ctx), id)
+				state, err := ReadFinalizationState(span.Single(ctx), id)
 				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, state, should.Equal(testData.State))
+				assert.That(t, state, should.Equal(testData.FinalizationState))
 			})
 
 			t.Run("not found", func(t *ftt.Test) {
-				_, err := ReadState(span.Single(ctx), "non-existent-id")
+				_, err := ReadFinalizationState(span.Single(ctx), "non-existent-id")
 				st, ok := appstatus.Get(err)
 				assert.Loosely(t, ok, should.BeTrue)
 				assert.Loosely(t, st.Code(), should.Equal(codes.NotFound))
@@ -93,7 +93,7 @@ func TestReadFunctions(t *testing.T) {
 			})
 
 			t.Run("empty ID", func(t *ftt.Test) {
-				_, err := ReadState(span.Single(ctx), "")
+				_, err := ReadFinalizationState(span.Single(ctx), "")
 				assert.That(t, err, should.ErrLike("id is unspecified"))
 			})
 		})
@@ -197,7 +197,7 @@ func TestRootInvocationRequests(t *testing.T) {
 			updatedBy := "user:someone@example.com"
 			requestID := "test-request-id"
 			// Create a root invocation.
-			rootInvocation := NewBuilder(rootInvID).WithState(pb.RootInvocation_ACTIVE).Build()
+			rootInvocation := NewBuilder(rootInvID).WithFinalizationState(pb.RootInvocation_ACTIVE).Build()
 			testutil.MustApply(ctx, t, InsertForTesting(rootInvocation)...)
 
 			// Insert a request.

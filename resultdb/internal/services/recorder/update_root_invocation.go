@@ -97,7 +97,7 @@ func (s *recorderServer) UpdateRootInvocation(ctx context.Context, in *pb.Update
 				return appstatus.Attach(err, status.New(codes.Aborted, "the root invocation was modified since it was last read; the update was not applied"))
 			}
 		}
-		if originalRootInvRow.State != pb.RootInvocation_ACTIVE {
+		if originalRootInvRow.FinalizationState != pb.RootInvocation_ACTIVE {
 			return appstatus.Errorf(codes.FailedPrecondition, "root invocation %q is not active", rootInvID.Name())
 		}
 		var updateMutations []*spanner.Mutation
@@ -108,7 +108,7 @@ func (s *recorderServer) UpdateRootInvocation(ctx context.Context, in *pb.Update
 		updated = len(updateMutations) > 0
 		if updated {
 			// Trigger finalization task, when the root invocation is updated to finalizing.
-			if updatedRootInvRow.State == pb.RootInvocation_FINALIZING {
+			if updatedRootInvRow.FinalizationState == pb.RootInvocation_FINALIZING {
 				tasks.StartInvocationFinalization(ctx, rootInvID.LegacyInvocationID())
 				shouldFinalizeRootInvocation = true
 			}
@@ -156,15 +156,17 @@ func updateRootInvocationInternal(in *pb.UpdateRootInvocationRequest, originalRo
 		switch path {
 		// The cases in this switch statement must be synchronized with a
 		// similar switch statement in validateUpdateRootInvocationRequest.
-		case "state":
+
+		// TODO(meiring): Remove "state" here once clients have updated to the new field name.
+		case "finalization_state", "state":
 			// In the case of ACTIVE it should be a No-op.
-			if in.RootInvocation.State == pb.RootInvocation_FINALIZING {
+			if in.RootInvocation.FinalizationState == pb.RootInvocation_FINALIZING {
 				rootInvocationValues["State"] = pb.RootInvocation_FINALIZING
 				rootInvocationValues["FinalizeStartTime"] = spanner.CommitTimestamp
 				legacyInvocationValues["State"] = pb.Invocation_FINALIZING
 				legacyInvocationValues["FinalizeStartTime"] = spanner.CommitTimestamp
 				shardRootInvocationValues["State"] = pb.RootInvocation_FINALIZING
-				updatedRootInvRow.State = pb.RootInvocation_FINALIZING
+				updatedRootInvRow.FinalizationState = pb.RootInvocation_FINALIZING
 			}
 
 		case "deadline":
@@ -280,12 +282,13 @@ func validateUpdateRootInvocationRequest(ctx context.Context, req *pb.UpdateRoot
 		// The cases in this switch statement must be synchronized with a
 		// similar switch statement in the UpdateRootInvocation implementation.
 
-		case "state":
-			// If "state" is set, we only allow "FINALIZING" or "ACTIVE" state.
+		// TODO(meiring): Remove "state" here once clients have updated to the new field name.
+		case "finalization_state", "state":
+			// If "finalization_state" is set, we only allow "FINALIZING" or "ACTIVE" state.
 			// Setting to "FINALIZING" will trigger the finalization process.
 			// Setting to "ACTIVE" is a no-op.
-			if req.RootInvocation.State != pb.RootInvocation_FINALIZING && req.RootInvocation.State != pb.RootInvocation_ACTIVE {
-				return errors.New("root_invocation: state: must be FINALIZING or ACTIVE")
+			if req.RootInvocation.FinalizationState != pb.RootInvocation_FINALIZING && req.RootInvocation.FinalizationState != pb.RootInvocation_ACTIVE {
+				return errors.New("root_invocation: finalization_state: must be FINALIZING or ACTIVE")
 			}
 
 		case "deadline":

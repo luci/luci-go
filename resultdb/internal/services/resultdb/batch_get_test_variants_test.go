@@ -105,11 +105,11 @@ func TestBatchGetTestVariants(t *testing.T) {
 		// Set up root invocation, work units and their test results.
 		// root-inv1 -> root wu -> wu1
 		// root-inv2 -> root wu
-		rootInv := rootinvocations.NewBuilder("root-inv1").WithState(pb.RootInvocation_ACTIVE).WithRealm("testproject:rootrealm").Build()
-		rootWU := workunits.NewBuilder(rootInv.RootInvocationID, "root").WithState(pb.WorkUnit_ACTIVE).WithRealm("testproject:wurealm").Build()
+		rootInv := rootinvocations.NewBuilder("root-inv1").WithFinalizationState(pb.RootInvocation_ACTIVE).WithRealm("testproject:rootrealm").Build()
+		rootWU := workunits.NewBuilder(rootInv.RootInvocationID, "root").WithFinalizationState(pb.WorkUnit_ACTIVE).WithRealm("testproject:wurealm").Build()
 		wu1 := workunits.
 			NewBuilder(rootInv.RootInvocationID, "wu1").
-			WithState(pb.WorkUnit_ACTIVE).
+			WithFinalizationState(pb.WorkUnit_ACTIVE).
 			WithRealm("testproject:wurealm").
 			WithInstructions(testInstructions).
 			Build()
@@ -119,8 +119,8 @@ func TestBatchGetTestVariants(t *testing.T) {
 		tr14 := insert.MakeTestResults(wu1.ID.LegacyInvocationID(), "test4", pbutil.Variant("g", "h"), pb.TestResult_EXECUTION_ERRORED)[0]
 		tr15 := insert.MakeTestResults(wu1.ID.LegacyInvocationID(), "test5", pbutil.Variant(), pb.TestResult_PRECLUDED)[0]
 
-		rootInv2 := rootinvocations.NewBuilder("root-inv2").WithState(pb.RootInvocation_ACTIVE).WithRealm("testproject:rootrealm").Build()
-		rootWU2 := workunits.NewBuilder(rootInv2.RootInvocationID, "root").WithState(pb.WorkUnit_ACTIVE).WithRealm("testproject:wurealm").Build()
+		rootInv2 := rootinvocations.NewBuilder("root-inv2").WithFinalizationState(pb.RootInvocation_ACTIVE).WithRealm("testproject:rootrealm").Build()
+		rootWU2 := workunits.NewBuilder(rootInv2.RootInvocationID, "root").WithFinalizationState(pb.WorkUnit_ACTIVE).WithRealm("testproject:wurealm").Build()
 		tr21 := insert.MakeTestResults(rootWU2.ID.LegacyInvocationID(), "test1", pbutil.Variant("e", "f"), pb.TestResult_PASSED)[0]
 		tr23 := insert.MakeTestResults(rootWU2.ID.LegacyInvocationID(), "test3", pbutil.Variant("c", "d"), pb.TestResult_PASSED)[0]
 		testutil.MustApply(ctx, t, testutil.CombineMutations(

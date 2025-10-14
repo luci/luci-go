@@ -51,10 +51,10 @@ func (s *recorderServer) FinalizeRootInvocation(ctx context.Context, in *pb.Fina
 		if err != nil {
 			return err
 		}
-		if invRow.State == pb.RootInvocation_ACTIVE {
+		if invRow.FinalizationState == pb.RootInvocation_ACTIVE {
 			// Finalize as requested.
 			span.BufferWrite(ctx, rootinvocations.MarkFinalizing(rootInvocationID)...)
-			invRow.State = pb.RootInvocation_FINALIZING
+			invRow.FinalizationState = pb.RootInvocation_FINALIZING
 
 			tasks.StartInvocationFinalization(ctx, rootInvocationID.LegacyInvocationID())
 		} else {
@@ -65,7 +65,7 @@ func (s *recorderServer) FinalizeRootInvocation(ctx context.Context, in *pb.Fina
 		}
 
 		if in.FinalizationScope == pb.FinalizeRootInvocationRequest_INCLUDE_ROOT_WORK_UNIT {
-			wuState, err := workunits.ReadState(ctx, rootWorkUnitID)
+			wuState, err := workunits.ReadFinalizationState(ctx, rootWorkUnitID)
 			if err != nil {
 				return err
 			}

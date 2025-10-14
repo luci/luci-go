@@ -229,7 +229,7 @@ func (s *recorderServer) BatchCreateTestExonerations(ctx context.Context, in *pb
 		// Request using work units.
 		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 			// Ensures all work units are active.
-			states, err := workunits.ReadStates(ctx, workUnitIDs)
+			states, err := workunits.ReadFinalizationStates(ctx, workUnitIDs)
 			if err != nil {
 				return err
 			}

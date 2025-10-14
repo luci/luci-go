@@ -266,20 +266,20 @@ func TestFinalizeInvocation(t *testing.T) {
 			row := rootinvocations.NewBuilder(rootInvID).
 				WithRealm(realm).
 				WithCreateTime(createTime).
-				WithState(pb.RootInvocation_FINALIZING).Build()
+				WithFinalizationState(pb.RootInvocation_FINALIZING).Build()
 			testutil.MustApply(ctx, t, insert.RootInvocationWithRootWorkUnit(row)...)
 
 			err := finalizeInvocation(ctx, rootInvID.LegacyInvocationID(), opts)
 			assert.Loosely(t, err, should.BeNil)
 
 			// Check RootInvocations table.
-			var state pb.RootInvocation_State
+			var finalizationState pb.RootInvocation_FinalizationState
 			var finalizeTime spanner.NullTime
 			testutil.MustReadRow(ctx, t, "RootInvocations", rootInvID.Key(), map[string]any{
-				"State":        &state,
+				"State":        &finalizationState,
 				"FinalizeTime": &finalizeTime,
 			})
-			assert.Loosely(t, state, should.Equal(pb.RootInvocation_FINALIZED))
+			assert.Loosely(t, finalizationState, should.Equal(pb.RootInvocation_FINALIZED))
 			assert.Loosely(t, finalizeTime.Valid, should.BeTrue)
 
 			// Check Invocations table.
@@ -311,14 +311,14 @@ func TestFinalizeInvocation(t *testing.T) {
 
 			// Create a root invocation for the work unit to be created in.
 			rootInvID := rootinvocations.ID("root-inv-for-wu")
-			rootRow := rootinvocations.NewBuilder(rootInvID).WithState(pb.RootInvocation_FINALIZING).Build()
+			rootRow := rootinvocations.NewBuilder(rootInvID).WithFinalizationState(pb.RootInvocation_FINALIZING).Build()
 			ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootRow)...)
 
 			wuID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "my-work-unit"}
 
 			// Create a work unit.
 			// The work unit needs to be in FINALIZING state.
-			wuRow := workunits.NewBuilder(rootInvID, "my-work-unit").WithState(pb.WorkUnit_FINALIZING).Build()
+			wuRow := workunits.NewBuilder(rootInvID, "my-work-unit").WithFinalizationState(pb.WorkUnit_FINALIZING).Build()
 			ms = append(ms, insert.WorkUnit(wuRow)...)
 			testutil.MustApply(ctx, t, ms...)
 
@@ -326,7 +326,7 @@ func TestFinalizeInvocation(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			// Check WorkUnits table.
-			var state pb.WorkUnit_State
+			var state pb.WorkUnit_FinalizationState
 			var finalizeTime spanner.NullTime
 			testutil.MustReadRow(ctx, t, "WorkUnits", wuID.Key(), map[string]any{
 				"State":        &state,

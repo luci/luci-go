@@ -29,7 +29,7 @@ option java_multiple_files = true;
 // A process step that contributes results to a root invocation.
 // Work units contain test results, artifacts and exonerations. Work units may
 // also contain other work units and (legacy) invocations.
-// Next ID: 22.
+// Next ID: 23.
 message WorkUnit {
   // The resource name of this work unit.
   // Format: `rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}`
@@ -50,9 +50,10 @@ message WorkUnit {
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  enum State {
-    // The default value. This value is used if the state is omitted.
-    STATE_UNSPECIFIED = 0;
+  // Indicates whether the work unit, and its children, are immutable.
+  enum FinalizationState {
+    // The default value. This value is used if the finalization state is omitted.
+    FINALIZATION_STATE_UNSPECIFIED = 0;
 
     // The work unit is mutable.
     ACTIVE = 1;
@@ -73,7 +74,7 @@ message WorkUnit {
     FINALIZED = 3;
   }
 
-  // Current state of the work unit.
+  // Current finalization state of the work unit.
   //
   // At creation time, this can be set to ACTIVE or FINALIZING (if all fields
   // are known at creation time). When updating or via the FinalizeWorkUnit
@@ -84,7 +85,16 @@ message WorkUnit {
   // `deadline` expires (if the work unit is not already in FINALIZING state).
   // FINALIZING work units will transition onward to FINALIZED when all included
   // work units are FINALIZED.
-  State state = 3;
+  FinalizationState finalization_state = 3;
+
+  enum State {
+    // The default value. This value is used if the state is omitted.
+    STATE_UNSPECIFIED = 0;
+  }
+
+  // Do not use this field, it exists only so that field masks for the old "state"
+  // field can still parse. It will be repurposed soon. Use `finalization_state` instead.
+  State state = 22;
 
   // The realm of the work unit. This controls the ACLs that apply to the
   // work unit and its contents.
@@ -123,17 +133,18 @@ message WorkUnit {
 
   // == Finalization ===========================================================
 
-  // When the work unit started to finalize, i.e. transitioned to FINALIZING
-  // state. This means the work unit is immutable but directly or indirectly
-  // included work units may not be.
+  // When the work unit started to finalize, i.e. transitioned to a finalization
+  // state of FINALIZING. This means the work unit is immutable but directly or
+  // indirectly included work units may not be.
   //
   // Output only.
   google.protobuf.Timestamp finalize_start_time = 7
       [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
-  // When the work unit was finalized, i.e. transitioned to FINALIZED state.
+  // When the work unit was finalized, i.e. transitioned to a finalization
+  // state of FINALIZED.
   // If this field is set, implies that the work units is finalized. This
-  // means the work units and directly or indirectly included work units
+  // means the work unit, and all directly and indirectly included work units,
   // are immutable.
   //
   // Output only.
@@ -262,7 +273,7 @@ message WorkUnit {
   // The metadata fields for a WorkUnit are:
   // * name
   // * work_unit_id
-  // * state
+  // * finalization_state
   // * realm
   // * create_time
   // * creator

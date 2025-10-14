@@ -100,7 +100,7 @@ func updateWorkUnits(ctx context.Context, requests []*pb.UpdateWorkUnitRequest, 
 		// - All work units are active.
 		// - Etag match.
 		for i, originalWU := range originalWUs {
-			if originalWU.State != pb.WorkUnit_ACTIVE {
+			if originalWU.FinalizationState != pb.WorkUnit_ACTIVE {
 				return appstatus.Errorf(codes.FailedPrecondition, "requests[%d]: work unit %q is not active", i, originalWU.ID.Name())
 			}
 			reqWU := requests[i].WorkUnit
@@ -132,7 +132,7 @@ func updateWorkUnits(ctx context.Context, requests []*pb.UpdateWorkUnitRequest, 
 			if updated {
 				ms = append(ms, updateMutations...)
 				// Trigger finalization task, when the work unit is updated to finalizing.
-				if updatedWURow.State == pb.WorkUnit_FINALIZING {
+				if updatedWURow.FinalizationState == pb.WorkUnit_FINALIZING {
 					tasks.StartInvocationFinalization(ctx, wuIDs[i].LegacyInvocationID())
 					shouldFinalizeWUs[i] = true
 				}

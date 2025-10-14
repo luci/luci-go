@@ -40,17 +40,17 @@ func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, v
 
 	result := &pb.WorkUnit{
 		// Include metadata-only fields by default.
-		Name:             row.ID.Name(),
-		WorkUnitId:       row.ID.WorkUnitID,
-		State:            row.State,
-		Realm:            row.Realm,
-		CreateTime:       pbutil.MustTimestampProto(row.CreateTime),
-		Creator:          row.CreatedBy,
-		LastUpdated:      pbutil.MustTimestampProto(row.LastUpdated),
-		Deadline:         pbutil.MustTimestampProto(row.Deadline),
-		ProducerResource: row.ProducerResource,
-		IsMasked:         true,
-		Etag:             WorkUnitETag(row, accessLevel, view),
+		Name:              row.ID.Name(),
+		WorkUnitId:        row.ID.WorkUnitID,
+		FinalizationState: row.FinalizationState,
+		Realm:             row.Realm,
+		CreateTime:        pbutil.MustTimestampProto(row.CreateTime),
+		Creator:           row.CreatedBy,
+		LastUpdated:       pbutil.MustTimestampProto(row.LastUpdated),
+		Deadline:          pbutil.MustTimestampProto(row.Deadline),
+		ProducerResource:  row.ProducerResource,
+		IsMasked:          true,
+		Etag:              WorkUnitETag(row, accessLevel, view),
 	}
 	result.ChildWorkUnits = make([]string, 0, len(row.ChildWorkUnits))
 	for _, child := range row.ChildWorkUnits {

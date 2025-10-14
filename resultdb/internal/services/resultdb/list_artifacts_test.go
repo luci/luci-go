@@ -49,8 +49,8 @@ func TestListArtifacts(t *testing.T) {
 		}
 		ctx := auth.WithState(testutil.SpannerTestContext(t), authState)
 
-		rootInv := rootinvocations.NewBuilder("root-inv1").WithState(pb.RootInvocation_ACTIVE).WithRealm("testproject:rootrealm").Build()
-		wu := workunits.NewBuilder(rootInv.RootInvocationID, "wu1").WithState(pb.WorkUnit_ACTIVE).WithRealm("testproject:wurealm").Build()
+		rootInv := rootinvocations.NewBuilder("root-inv1").WithFinalizationState(pb.RootInvocation_ACTIVE).WithRealm("testproject:rootrealm").Build()
+		wu := workunits.NewBuilder(rootInv.RootInvocationID, "wu1").WithFinalizationState(pb.WorkUnit_ACTIVE).WithRealm("testproject:wurealm").Build()
 
 		var ms []*spanner.Mutation
 		ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootInv)...)

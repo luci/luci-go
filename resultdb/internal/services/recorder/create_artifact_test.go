@@ -220,8 +220,8 @@ func TestCreateArtifact(t *testing.T) {
 		// Create some sample work units and a sample root invocation.
 		var ms []*spanner.Mutation
 		ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootinvocations.NewBuilder(rootInvID).Build())...)
-		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:junit").WithState(pb.WorkUnit_ACTIVE).WithModuleID(junitModuleID).Build())...)
-		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:legacy").WithState(pb.WorkUnit_ACTIVE).WithModuleID(legacyModuleID).Build())...)
+		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:junit").WithFinalizationState(pb.WorkUnit_ACTIVE).WithModuleID(junitModuleID).Build())...)
+		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:legacy").WithFinalizationState(pb.WorkUnit_ACTIVE).WithModuleID(legacyModuleID).Build())...)
 		testutil.MustApply(ctx, t, ms...)
 
 		tvID := &pb.TestIdentifier{

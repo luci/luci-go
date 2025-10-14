@@ -55,7 +55,7 @@ func Create(workUnit *WorkUnitRow, opts LegacyCreateOptions) []*spanner.Mutation
 	if workUnit.ID.WorkUnitID == "" {
 		panic("do not create work units with empty work unit id")
 	}
-	if workUnit.State != pb.WorkUnit_FINALIZING && workUnit.State != pb.WorkUnit_ACTIVE {
+	if workUnit.FinalizationState != pb.WorkUnit_FINALIZING && workUnit.FinalizationState != pb.WorkUnit_ACTIVE {
 		panic("do not create work units in states other than active or finalizing")
 	}
 	if workUnit.Realm == "" {
@@ -90,7 +90,7 @@ type WorkUnitRow struct {
 	ID                    ID
 	ParentWorkUnitID      spanner.NullString
 	SecondaryIndexShardID int64 // Output only.
-	State                 pb.WorkUnit_State
+	FinalizationState     pb.WorkUnit_FinalizationState
 	Realm                 string
 	CreateTime            time.Time // Output only.
 	CreatedBy             string
@@ -150,7 +150,7 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 		"WorkUnitId":            w.ID.WorkUnitID,
 		"ParentWorkUnitId":      w.ParentWorkUnitID,
 		"SecondaryIndexShardId": w.ID.shardID(secondaryIndexShardCount),
-		"State":                 w.State,
+		"State":                 w.FinalizationState,
 		"Realm":                 w.Realm,
 		"CreateTime":            spanner.CommitTimestamp,
 		"CreatedBy":             w.CreatedBy,
@@ -175,7 +175,7 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 	}
 	row["ExtendedProperties"] = spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties))
 
-	if w.State == pb.WorkUnit_FINALIZING {
+	if w.FinalizationState == pb.WorkUnit_FINALIZING {
 		row["FinalizeStartTime"] = spanner.CommitTimestamp
 	}
 	return spanutil.InsertMap("WorkUnits", row)
@@ -215,7 +215,7 @@ func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *span
 		"InvocationId":                      w.ID.LegacyInvocationID(),
 		"Type":                              invocations.WorkUnit,
 		"ShardId":                           w.ID.shardID(invocations.Shards),
-		"State":                             w.State,
+		"State":                             w.FinalizationState,
 		"Realm":                             w.Realm,
 		"InvocationExpirationTime":          time.Unix(0, 0), // unused field, but spanner schema enforce it to be not null.
 		"ExpectedTestResultsExpirationTime": opts.ExpectedTestResultsExpirationTime,
@@ -250,7 +250,7 @@ func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *span
 	}
 	row["ExtendedProperties"] = spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties))
 
-	if w.State == pb.WorkUnit_FINALIZING {
+	if w.FinalizationState == pb.WorkUnit_FINALIZING {
 		row["FinalizeStartTime"] = spanner.CommitTimestamp
 	}
 	return spanutil.InsertMap("Invocations", row)
@@ -258,7 +258,7 @@ func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *span
 
 func (w *WorkUnitRow) ToLegacyInvocationProto() *pb.Invocation {
 	var state pb.Invocation_State
-	switch w.State {
+	switch w.FinalizationState {
 	case pb.WorkUnit_ACTIVE:
 		state = pb.Invocation_ACTIVE
 	case pb.WorkUnit_FINALIZING:
@@ -266,7 +266,7 @@ func (w *WorkUnitRow) ToLegacyInvocationProto() *pb.Invocation {
 	case pb.WorkUnit_FINALIZED:
 		state = pb.Invocation_FINALIZED
 	default:
-		panic(fmt.Sprintf("unknown work unit state %s", w.State))
+		panic(fmt.Sprintf("unknown work unit state %s", w.FinalizationState))
 	}
 	ret := &pb.Invocation{
 		Name:                   w.ID.LegacyInvocationID().Name(),

@@ -107,7 +107,7 @@ func TestFinalizeRootInvocation(t *testing.T) {
 
 		t.Run("success", func(t *ftt.Test) {
 			// Insert a root invocation and the work unit.
-			rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:testrealm").WithState(pb.RootInvocation_ACTIVE).Build()
+			rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:testrealm").WithFinalizationState(pb.RootInvocation_ACTIVE).Build()
 			testutil.MustApply(ctx, t, insert.RootInvocationWithRootWorkUnit(rootInv)...)
 
 			t.Run("include root work unit", func(t *ftt.Test) {
@@ -115,13 +115,13 @@ func TestFinalizeRootInvocation(t *testing.T) {
 
 				riProto, err := recorder.FinalizeRootInvocation(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, riProto.State, should.Equal(pb.WorkUnit_FINALIZING))
+				assert.Loosely(t, riProto.FinalizationState, should.Equal(pb.WorkUnit_FINALIZING))
 				assert.Loosely(t, riProto.FinalizeStartTime, should.NotBeNil)
 				finalizeTime := riProto.FinalizeStartTime.AsTime()
 				assert.Loosely(t, riProto.LastUpdated.AsTime(), should.Match(finalizeTime))
 
 				expectedRootInv := *rootInv
-				expectedRootInv.State = pb.RootInvocation_FINALIZING
+				expectedRootInv.FinalizationState = pb.RootInvocation_FINALIZING
 				expectedRootInv.LastUpdated = finalizeTime
 				expectedRootInv.FinalizeStartTime = spanner.NullTime{Valid: true, Time: finalizeTime}
 
@@ -132,7 +132,7 @@ func TestFinalizeRootInvocation(t *testing.T) {
 
 				wuRow, err := workunits.Read(span.Single(ctx), rootWorkUnitID, workunits.AllFields)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, wuRow.State, should.Match(pb.WorkUnit_FINALIZING))
+				assert.Loosely(t, wuRow.FinalizationState, should.Match(pb.WorkUnit_FINALIZING))
 				assert.Loosely(t, wuRow.LastUpdated, should.Match(finalizeTime))
 				assert.Loosely(t, wuRow.FinalizeStartTime, should.Match(spanner.NullTime{Valid: true, Time: finalizeTime}))
 
@@ -168,13 +168,13 @@ func TestFinalizeRootInvocation(t *testing.T) {
 
 				riProto, err := recorder.FinalizeRootInvocation(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, riProto.State, should.Equal(pb.WorkUnit_FINALIZING))
+				assert.Loosely(t, riProto.FinalizationState, should.Equal(pb.WorkUnit_FINALIZING))
 				assert.Loosely(t, riProto.FinalizeStartTime, should.NotBeNil)
 				finalizeTime := riProto.FinalizeStartTime.AsTime()
 				assert.Loosely(t, riProto.LastUpdated.AsTime(), should.Match(finalizeTime))
 
 				expectedRootInv := *rootInv
-				expectedRootInv.State = pb.RootInvocation_FINALIZING
+				expectedRootInv.FinalizationState = pb.RootInvocation_FINALIZING
 				expectedRootInv.LastUpdated = finalizeTime
 				expectedRootInv.FinalizeStartTime = spanner.NullTime{Valid: true, Time: finalizeTime}
 
@@ -185,7 +185,7 @@ func TestFinalizeRootInvocation(t *testing.T) {
 
 				wuRow, err := workunits.Read(span.Single(ctx), rootWorkUnitID, workunits.AllFields)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, wuRow.State, should.Match(pb.WorkUnit_ACTIVE))
+				assert.Loosely(t, wuRow.FinalizationState, should.Match(pb.WorkUnit_ACTIVE))
 				assert.Loosely(t, wuRow.FinalizeStartTime, should.Match(spanner.NullTime{Valid: false}))
 
 				// Enqueued the finalization task for the legacy invocation.

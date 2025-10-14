@@ -234,27 +234,27 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 				err := validateCreateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_invocation: unspecified"))
 			})
-			t.Run("state", func(t *ftt.Test) {
+			t.Run("finalization_state", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					// If it is unset, we will populate a default value.
-					req.RootInvocation.State = pb.RootInvocation_STATE_UNSPECIFIED
+					req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZATION_STATE_UNSPECIFIED
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("active", func(t *ftt.Test) {
-					req.RootInvocation.State = pb.RootInvocation_ACTIVE
+					req.RootInvocation.FinalizationState = pb.RootInvocation_ACTIVE
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("finalizing", func(t *ftt.Test) {
-					req.RootInvocation.State = pb.RootInvocation_FINALIZING
+					req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZING
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
 				t.Run("invalid", func(t *ftt.Test) {
-					req.RootInvocation.State = pb.RootInvocation_FINALIZED
+					req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZED
 					err := validateCreateRootInvocationRequest(req, cfg)
-					assert.Loosely(t, err, should.ErrLike("root_invocation: state: cannot be created in the state FINALIZED"))
+					assert.Loosely(t, err, should.ErrLike("root_invocation: finalization_state: cannot be created in the state FINALIZED"))
 				})
 			})
 			t.Run("realm", func(t *ftt.Test) {
@@ -411,11 +411,11 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 				err := validateCreateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_work_unit: unspecified"))
 			})
-			t.Run("state", func(t *ftt.Test) {
+			t.Run("finalization_state", func(t *ftt.Test) {
 				// Must not be set.
-				req.RootWorkUnit.State = pb.WorkUnit_ACTIVE
+				req.RootWorkUnit.FinalizationState = pb.WorkUnit_ACTIVE
 				err := validateCreateRootInvocationRequest(req, cfg)
-				assert.Loosely(t, err, should.ErrLike("root_work_unit: state: must not be set; always inherited from root invocation"))
+				assert.Loosely(t, err, should.ErrLike("root_work_unit: finalization_state: must not be set; always inherited from root invocation"))
 			})
 			t.Run("realm", func(t *ftt.Test) {
 				// Must not be set.
@@ -807,11 +807,11 @@ func TestCreateRootInvocation(t *testing.T) {
 			// Expected Response.
 			expectedInv := proto.Clone(req.RootInvocation).(*pb.RootInvocation)
 			proto.Merge(expectedInv, &pb.RootInvocation{ // Merge defaulted and output-only fields.
-				Name:             "rootInvocations/u-e2e-success",
-				RootInvocationId: "u-e2e-success",
-				State:            pb.RootInvocation_ACTIVE, // State is defaulted to ACTIVE.
-				Creator:          "user:someone@example.com",
-				Deadline:         timestamppb.New(start.Add(defaultDeadlineDuration)),
+				Name:              "rootInvocations/u-e2e-success",
+				RootInvocationId:  "u-e2e-success",
+				FinalizationState: pb.RootInvocation_ACTIVE, // FinalizationState is defaulted to ACTIVE.
+				Creator:           "user:someone@example.com",
+				Deadline:          timestamppb.New(start.Add(defaultDeadlineDuration)),
 			})
 			wuID := workunits.ID{
 				RootInvocationID: "u-e2e-success",
@@ -819,14 +819,14 @@ func TestCreateRootInvocation(t *testing.T) {
 			}
 			expectedWU := proto.Clone(req.RootWorkUnit).(*pb.WorkUnit)
 			proto.Merge(expectedWU, &pb.WorkUnit{ // Merge defaulted and output-only fields.
-				Name:             "rootInvocations/u-e2e-success/workUnits/root",
-				Parent:           "rootInvocations/u-e2e-success",
-				WorkUnitId:       "root",
-				State:            pb.WorkUnit_ACTIVE,
-				Realm:            "testproject:testrealm",
-				Creator:          "user:someone@example.com",
-				Deadline:         timestamppb.New(start.Add(defaultDeadlineDuration)),
-				ProducerResource: "//builds.example.com/builds/1",
+				Name:              "rootInvocations/u-e2e-success/workUnits/root",
+				Parent:            "rootInvocations/u-e2e-success",
+				WorkUnitId:        "root",
+				FinalizationState: pb.WorkUnit_ACTIVE,
+				Realm:             "testproject:testrealm",
+				Creator:           "user:someone@example.com",
+				Deadline:          timestamppb.New(start.Add(defaultDeadlineDuration)),
+				ProducerResource:  "//builds.example.com/builds/1",
 			})
 			expectedWU.Instructions = instructionutil.InstructionsWithNames(instructions, wuID.Name())
 			pbutil.PopulateModuleIdentifierHashes(expectedWU.ModuleId)
@@ -834,7 +834,7 @@ func TestCreateRootInvocation(t *testing.T) {
 			rootInvocationID := rootinvocations.ID("u-e2e-success")
 			expectInvRow := &rootinvocations.RootInvocationRow{
 				RootInvocationID:                        rootInvocationID,
-				State:                                   pb.RootInvocation_ACTIVE,
+				FinalizationState:                       pb.RootInvocation_ACTIVE,
 				Realm:                                   "testproject:testrealm",
 				CreatedBy:                               "user:someone@example.com",
 				FinalizeStartTime:                       spanner.NullTime{},
@@ -854,7 +854,7 @@ func TestCreateRootInvocation(t *testing.T) {
 			expectWURow := &workunits.WorkUnitRow{
 				ID:                wuID,
 				ParentWorkUnitID:  spanner.NullString{Valid: false},
-				State:             pb.WorkUnit_ACTIVE,
+				FinalizationState: pb.WorkUnit_ACTIVE,
 				Realm:             "testproject:testrealm",
 				CreatedBy:         "user:someone@example.com",
 				FinalizeStartTime: spanner.NullTime{},
@@ -922,14 +922,14 @@ func TestCreateRootInvocation(t *testing.T) {
 			})
 
 			t.Run("finalizing root invocation", func(t *ftt.Test) {
-				req.RootInvocation.State = pb.RootInvocation_FINALIZING
+				req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZING
 
 				var headers metadata.MD
 				res, err := recorder.CreateRootInvocation(ctx, req, grpc.Header(&headers))
 				assert.Loosely(t, err, should.BeNil)
 				commitTime := res.RootInvocation.CreateTime.AsTime()
 				proto.Merge(expectedInv, &pb.RootInvocation{
-					State:             pb.RootInvocation_FINALIZING,
+					FinalizationState: pb.RootInvocation_FINALIZING,
 					CreateTime:        timestamppb.New(commitTime),
 					LastUpdated:       timestamppb.New(commitTime),
 					FinalizeStartTime: timestamppb.New(commitTime),
@@ -937,7 +937,7 @@ func TestCreateRootInvocation(t *testing.T) {
 				})
 				assert.That(t, res.RootInvocation, should.Match(expectedInv))
 				proto.Merge(expectedWU, &pb.WorkUnit{
-					State:             pb.WorkUnit_FINALIZING,
+					FinalizationState: pb.WorkUnit_FINALIZING,
 					CreateTime:        timestamppb.New(commitTime),
 					LastUpdated:       timestamppb.New(commitTime),
 					FinalizeStartTime: timestamppb.New(commitTime),
@@ -956,7 +956,7 @@ func TestCreateRootInvocation(t *testing.T) {
 				row, err := rootinvocations.Read(ctx, rootInvocationID)
 				assert.Loosely(t, err, should.BeNil)
 				expectInvRow.SecondaryIndexShardID = row.SecondaryIndexShardID
-				expectInvRow.State = pb.RootInvocation_FINALIZING
+				expectInvRow.FinalizationState = pb.RootInvocation_FINALIZING
 				expectInvRow.CreateTime = commitTime
 				expectInvRow.LastUpdated = commitTime
 				expectInvRow.FinalizeStartTime = spanner.NullTime{Time: commitTime, Valid: true}
@@ -967,7 +967,7 @@ func TestCreateRootInvocation(t *testing.T) {
 				wuRow, err := workunits.Read(ctx, wuID, workunits.AllFields)
 				assert.Loosely(t, err, should.BeNil)
 				expectWURow.SecondaryIndexShardID = wuRow.SecondaryIndexShardID
-				expectWURow.State = pb.WorkUnit_FINALIZING
+				expectWURow.FinalizationState = pb.WorkUnit_FINALIZING
 				expectWURow.CreateTime = commitTime
 				expectWURow.LastUpdated = commitTime
 				expectWURow.FinalizeStartTime = spanner.NullTime{Time: commitTime, Valid: true}

@@ -87,8 +87,8 @@ func TestDeadlineEnforcer(t *testing.T) {
 		})
 		t.Run(`Expired Root Invocations and Work Units`, func(t *ftt.Test) {
 			var ms []*spanner.Mutation
-			ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootinvocations.NewBuilder("expired").WithDeadline(past).WithState(resultpb.RootInvocation_ACTIVE).Build())...)
-			ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootinvocations.NewBuilder("unexpired").WithDeadline(future).WithState(resultpb.RootInvocation_ACTIVE).Build())...)
+			ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootinvocations.NewBuilder("expired").WithDeadline(past).WithFinalizationState(resultpb.RootInvocation_ACTIVE).Build())...)
+			ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootinvocations.NewBuilder("unexpired").WithDeadline(future).WithFinalizationState(resultpb.RootInvocation_ACTIVE).Build())...)
 			testutil.MustApply(ctx, t, ms...)
 
 			const expiredRootInvocationID = rootinvocations.ID("expired")
@@ -110,16 +110,16 @@ func TestDeadlineEnforcer(t *testing.T) {
 			}
 			assert.That(t, sched.Tasks().Payloads(), should.Match(expectedTasks))
 
-			invState, err := rootinvocations.ReadState(span.Single(ctx), expiredRootInvocationID)
+			invState, err := rootinvocations.ReadFinalizationState(span.Single(ctx), expiredRootInvocationID)
 			assert.That(t, invState, should.Equal(resultpb.RootInvocation_FINALIZING))
 
-			invState, err = rootinvocations.ReadState(span.Single(ctx), unexpiredRootInvocationID)
+			invState, err = rootinvocations.ReadFinalizationState(span.Single(ctx), unexpiredRootInvocationID)
 			assert.That(t, invState, should.Equal(resultpb.RootInvocation_ACTIVE))
 
-			state, err := workunits.ReadState(span.Single(ctx), expiredWorkUnitID)
+			state, err := workunits.ReadFinalizationState(span.Single(ctx), expiredWorkUnitID)
 			assert.That(t, state, should.Equal(resultpb.WorkUnit_FINALIZING))
 
-			state, err = workunits.ReadState(span.Single(ctx), unexpiredWorkUnitID)
+			state, err = workunits.ReadFinalizationState(span.Single(ctx), unexpiredWorkUnitID)
 			assert.That(t, state, should.Equal(resultpb.WorkUnit_ACTIVE))
 
 			assert.Loosely(t, store.Get(ctx, overdueInvocationsFinalized, []any{insert.TestRealm}), should.Equal(2))

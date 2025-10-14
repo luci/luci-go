@@ -88,8 +88,8 @@ func TestBatchCreateTestResults(t *testing.T) {
 		// Create some sample work units and a sample invocation.
 		var ms []*spanner.Mutation
 		ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootinvocations.NewBuilder(rootInvID).Build())...)
-		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-1").WithState(pb.WorkUnit_ACTIVE).WithModuleID(junitModuleID).Build())...)
-		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-2").WithState(pb.WorkUnit_ACTIVE).WithModuleID(legacyModuleID).Build())...)
+		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-1").WithFinalizationState(pb.WorkUnit_ACTIVE).WithModuleID(junitModuleID).Build())...)
+		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-2").WithFinalizationState(pb.WorkUnit_ACTIVE).WithModuleID(legacyModuleID).Build())...)
 		testutil.MustApply(ctx, t, ms...)
 
 		tvID := &pb.TestIdentifier{
@@ -287,7 +287,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 							RootInvocationID: "root-inv-id",
 							WorkUnitID:       "work-unit:nomodule",
 						}
-						testutil.MustApply(ctx, t, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:nomodule").WithState(pb.WorkUnit_ACTIVE).WithModuleID(nil).Build())...)
+						testutil.MustApply(ctx, t, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:nomodule").WithFinalizationState(pb.WorkUnit_ACTIVE).WithModuleID(nil).Build())...)
 						req.Requests[0].Parent = wuIDNoModule.Name()
 						_, err := recorder.BatchCreateTestResults(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
@@ -298,7 +298,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 							RootInvocationID: "root-inv-id",
 							WorkUnitID:       "work-unit:nomodule",
 						}
-						testutil.MustApply(ctx, t, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:nomodule").WithState(pb.WorkUnit_ACTIVE).WithModuleID(nil).Build())...)
+						testutil.MustApply(ctx, t, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:nomodule").WithFinalizationState(pb.WorkUnit_ACTIVE).WithModuleID(nil).Build())...)
 						req.Requests[1].Parent = wuIDNoModule.Name()
 						_, err := recorder.BatchCreateTestResults(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))

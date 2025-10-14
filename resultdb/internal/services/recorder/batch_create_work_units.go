@@ -117,8 +117,8 @@ func createWorkUnitsIdempotent(
 		}
 		for i, r := range in.Requests {
 			wu := r.WorkUnit
-			state := wu.State
-			if state == pb.WorkUnit_STATE_UNSPECIFIED {
+			state := wu.FinalizationState
+			if state == pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED {
 				state = pb.WorkUnit_ACTIVE
 			}
 			deadline := wu.Deadline.AsTime()
@@ -129,7 +129,7 @@ func createWorkUnitsIdempotent(
 			wuRow := &workunits.WorkUnitRow{
 				ID:                 ids[i],
 				ParentWorkUnitID:   spanner.NullString{Valid: true, StringVal: parentIDs[i].WorkUnitID},
-				State:              state,
+				FinalizationState:  state,
 				Realm:              wu.Realm,
 				CreatedBy:          createdBy,
 				Deadline:           deadline,
@@ -472,7 +472,7 @@ func mutateWorkUnitsForCreate(ctx context.Context, parentIDs []workunits.ID, new
 	parentsToCheck := parentsToCheckSet.SortedByRowID()
 
 	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-		states, err := workunits.ReadStates(ctx, parentsToCheck)
+		states, err := workunits.ReadFinalizationStates(ctx, parentsToCheck)
 		if err != nil {
 			return err
 		}

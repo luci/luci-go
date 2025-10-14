@@ -59,7 +59,7 @@ func TestGetRootInvocation(t *testing.T) {
 		t.Run("happy path", func(t *ftt.Test) {
 			// Insert a root invocation.
 			testData := rootinvocations.NewBuilder(rootInvID).
-				WithState(pb.RootInvocation_FINALIZED).
+				WithFinalizationState(pb.RootInvocation_FINALIZED).
 				WithRealm(realm).Build()
 			testutil.MustApply(ctx, t, insert.RootInvocationOnly(testData)...)
 
@@ -67,7 +67,7 @@ func TestGetRootInvocation(t *testing.T) {
 				Name:              "rootInvocations/root-inv-id",
 				RootInvocationId:  "root-inv-id",
 				Realm:             realm,
-				State:             pb.RootInvocation_FINALIZED,
+				FinalizationState: pb.RootInvocation_FINALIZED,
 				CreateTime:        pbutil.MustTimestampProto(testData.CreateTime),
 				Creator:           testData.CreatedBy,
 				LastUpdated:       pbutil.MustTimestampProto(testData.LastUpdated),

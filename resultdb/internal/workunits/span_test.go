@@ -50,10 +50,10 @@ func TestWriteWorkUnit(t *testing.T) {
 			WorkUnitID:       "root",
 		}
 		row := NewBuilder("root-inv-id", "work-unit-id").
-			WithState(pb.WorkUnit_ACTIVE).
+			WithFinalizationState(pb.WorkUnit_ACTIVE).
 			WithParentWorkUnitID(parentID.WorkUnitID).
 			Build()
-		parentRow := NewBuilder("root-inv-id", "root").WithState(pb.WorkUnit_ACTIVE).Build()
+		parentRow := NewBuilder("root-inv-id", "root").WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
 
 		LegacyCreateOptions := LegacyCreateOptions{
 			ExpectedTestResultsExpirationTime: now.Add(2 * 24 * time.Hour),
@@ -96,7 +96,7 @@ func TestWriteWorkUnit(t *testing.T) {
 
 		expectedLegacyInv := &pb.Invocation{
 			Name:                   legacyInvID.Name(),
-			State:                  pb.Invocation_State(row.State),
+			State:                  pb.Invocation_State(row.FinalizationState),
 			Realm:                  row.Realm,
 			Deadline:               pbutil.MustTimestampProto(row.Deadline),
 			CreateTime:             timestamppb.New(commitTime),
@@ -162,7 +162,7 @@ func TestFinalizationMethods(t *testing.T) {
 			RootInvocationID: rootinvocations.ID(rootInvocationID),
 			WorkUnitID:       "work-unit-id",
 		}
-		workUnit := NewBuilder(rootInvocationID, "work-unit-id").WithState(pb.WorkUnit_ACTIVE).Build()
+		workUnit := NewBuilder(rootInvocationID, "work-unit-id").WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
 		ms = append(ms, InsertForTesting(workUnit)...)
 
 		// Insert rows in the parent RootInvocationShards table.
@@ -173,7 +173,7 @@ func TestFinalizationMethods(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			expectedWU := workUnit.Clone()
-			expectedWU.State = pb.WorkUnit_FINALIZING
+			expectedWU.FinalizationState = pb.WorkUnit_FINALIZING
 			expectedWU.LastUpdated = ct.In(time.UTC)
 			expectedWU.FinalizeStartTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
 
@@ -191,7 +191,7 @@ func TestFinalizationMethods(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			expectedWU := workUnit.Clone()
-			expectedWU.State = pb.WorkUnit_FINALIZED
+			expectedWU.FinalizationState = pb.WorkUnit_FINALIZED
 			expectedWU.LastUpdated = ct.In(time.UTC)
 			expectedWU.FinalizeTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
 
@@ -221,7 +221,7 @@ func TestWorkUnitUpdateRequestsMethods(t *testing.T) {
 			RootInvocationID: rootinvocations.ID(rootInvID),
 			WorkUnitID:       "work-unit-id",
 		}
-		workUnit := NewBuilder(rootInvID, "work-unit-id").WithState(pb.WorkUnit_ACTIVE).Build()
+		workUnit := NewBuilder(rootInvID, "work-unit-id").WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
 		ms = append(ms, InsertForTesting(workUnit)...)
 		testutil.MustApply(ctx, t, ms...)
 		t.Run("CreateWorkUnitUpdateRequest", func(t *ftt.Test) {

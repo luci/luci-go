@@ -39,7 +39,7 @@ func NewBuilder(id ID) *Builder {
 			// Set all fields by default. This helps optimise test coverage.
 			RootInvocationID:                        id,
 			SecondaryIndexShardID:                   id.shardID(secondaryIndexShardCount),
-			State:                                   pb.RootInvocation_FINALIZED,
+			FinalizationState:                       pb.RootInvocation_FINALIZED,
 			Realm:                                   "testproject:testrealm",
 			CreateTime:                              time.Date(2025, 4, 25, 1, 2, 3, 4000, time.UTC),
 			CreatedBy:                               "user:test@example.com",
@@ -82,7 +82,7 @@ func (b *Builder) WithMinimalFields() *Builder {
 		SecondaryIndexShardID: b.row.SecondaryIndexShardID,
 		// Means the finalized time and start time will be cleared in Build() unless state is
 		// subsequently overridden.
-		State:             pb.RootInvocation_ACTIVE,
+		FinalizationState: pb.RootInvocation_ACTIVE,
 		Realm:             b.row.Realm,
 		CreateTime:        b.row.CreateTime,
 		CreatedBy:         b.row.CreatedBy,
@@ -105,9 +105,9 @@ func (b *Builder) WithRootInvocationID(id ID) *Builder {
 	return b
 }
 
-// WithState sets the state of the root invocation.
-func (b *Builder) WithState(state pb.RootInvocation_State) *Builder {
-	b.row.State = state
+// WithFinalizationState sets the finalization state of the root invocation.
+func (b *Builder) WithFinalizationState(state pb.RootInvocation_FinalizationState) *Builder {
+	b.row.FinalizationState = state
 	return b
 }
 
@@ -213,11 +213,11 @@ func (b *Builder) Build() *RootInvocationRow {
 	// flowing back into the builder.
 	r := b.row.Clone()
 
-	if r.State == pb.RootInvocation_ACTIVE {
+	if r.FinalizationState == pb.RootInvocation_ACTIVE {
 		r.FinalizeStartTime = spanner.NullTime{}
 		r.FinalizeTime = spanner.NullTime{}
 	}
-	if r.State == pb.RootInvocation_FINALIZING {
+	if r.FinalizationState == pb.RootInvocation_FINALIZING {
 		r.FinalizeTime = spanner.NullTime{}
 	}
 	return r
@@ -230,7 +230,7 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 	ms = append(ms, spanutil.InsertMap("RootInvocations", map[string]any{
 		"RootInvocationId":      r.RootInvocationID,
 		"SecondaryIndexShardId": r.SecondaryIndexShardID,
-		"State":                 r.State,
+		"State":                 r.FinalizationState,
 		"Realm":                 r.Realm,
 		"CreateTime":            r.CreateTime,
 		"CreatedBy":             r.CreatedBy,
@@ -254,7 +254,7 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 			"RootInvocationShardId": ShardID{RootInvocationID: r.RootInvocationID, ShardIndex: i},
 			"ShardIndex":            i,
 			"RootInvocationId":      r.RootInvocationID,
-			"State":                 r.State,
+			"State":                 r.FinalizationState,
 			"Realm":                 r.Realm,
 			"CreateTime":            r.CreateTime,
 			"Sources":               spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
@@ -267,7 +267,7 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 		"InvocationId":                      r.RootInvocationID.LegacyInvocationID(),
 		"Type":                              invocations.Root,
 		"ShardId":                           r.RootInvocationID.shardID(invocations.Shards),
-		"State":                             r.State,
+		"State":                             r.FinalizationState,
 		"Realm":                             r.Realm,
 		"InvocationExpirationTime":          time.Unix(0, 0), // unused field, but spanner schema enforce it to be not null.
 		"ExpectedTestResultsExpirationTime": r.UninterestingTestVerdictsExpirationTime,

@@ -50,7 +50,7 @@ func NewBuilder(rootInvocationID rootinvocations.ID, workUnitID string) *Builder
 			ID:                    id,
 			SecondaryIndexShardID: id.shardID(secondaryIndexShardCount),
 			ParentWorkUnitID:      parentID,
-			State:                 pb.WorkUnit_FINALIZED,
+			FinalizationState:     pb.WorkUnit_FINALIZED,
 			Realm:                 "testproject:testrealm",
 			CreateTime:            time.Date(2025, 4, 25, 1, 2, 3, 4000, time.UTC),
 			CreatedBy:             "user:test@example.com",
@@ -101,7 +101,7 @@ func (b *Builder) WithMinimalFields() *Builder {
 		SecondaryIndexShardID: b.row.SecondaryIndexShardID,
 		// Means the finalized time and start time will be cleared in Build() unless state is
 		// subsequently overridden.
-		State:             pb.WorkUnit_ACTIVE,
+		FinalizationState: pb.WorkUnit_ACTIVE,
 		Realm:             b.row.Realm,
 		CreateTime:        b.row.CreateTime,
 		CreatedBy:         b.row.CreatedBy,
@@ -130,9 +130,9 @@ func (b *Builder) WithParentWorkUnitID(parentID string) *Builder {
 	return b
 }
 
-// WithState sets the state of the work unit.
-func (b *Builder) WithState(state pb.WorkUnit_State) *Builder {
-	b.row.State = state
+// WithState sets the finalization state of the work unit.
+func (b *Builder) WithFinalizationState(state pb.WorkUnit_FinalizationState) *Builder {
+	b.row.FinalizationState = state
 	return b
 }
 
@@ -233,11 +233,11 @@ func (b *Builder) Build() *WorkUnitRow {
 		pbutil.PopulateModuleIdentifierHashes(r.ModuleID)
 	}
 
-	if r.State == pb.WorkUnit_ACTIVE {
+	if r.FinalizationState == pb.WorkUnit_ACTIVE {
 		r.FinalizeStartTime = spanner.NullTime{}
 		r.FinalizeTime = spanner.NullTime{}
 	}
-	if r.State == pb.WorkUnit_FINALIZING {
+	if r.FinalizationState == pb.WorkUnit_FINALIZING {
 		r.FinalizeTime = spanner.NullTime{}
 	}
 	return r
@@ -251,7 +251,7 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		"WorkUnitId":            w.ID.WorkUnitID,
 		"ParentWorkUnitId":      w.ParentWorkUnitID,
 		"SecondaryIndexShardId": w.SecondaryIndexShardID,
-		"State":                 w.State,
+		"State":                 w.FinalizationState,
 		"Realm":                 w.Realm,
 		"CreateTime":            w.CreateTime,
 		"CreatedBy":             w.CreatedBy,
@@ -288,7 +288,7 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		"InvocationId":                      w.ID.LegacyInvocationID(),
 		"Type":                              invocations.WorkUnit,
 		"ShardId":                           w.ID.shardID(invocations.Shards),
-		"State":                             w.State,
+		"State":                             w.FinalizationState,
 		"Realm":                             w.Realm,
 		"InvocationExpirationTime":          time.Unix(0, 0), // unused field, but spanner schema enforce it to be not null.
 		"ExpectedTestResultsExpirationTime": w.CreateTime.Add(90 * 24 * time.Hour),

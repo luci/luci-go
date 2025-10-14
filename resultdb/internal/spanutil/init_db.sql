@@ -30,13 +30,14 @@ CREATE TABLE RootInvocations (
   -- This value is independent of RootInvocationShardId.
   SecondaryIndexShardId INT64 NOT NULL,
 
-  -- Root invocation state. One of:
+  -- Root invocation finalization state. One of:
   -- - Active (1): the root invocation is mutable.
   -- - Finalizing (2): the root invocation record is immutable, but
   --   directly or indirectly contained work units (or invocations)
   --   may still be mutable.
   -- - Finalized (3): the root invocation and all directly and indirectly
   --   contained work units (and invocations) are immutable.
+  -- Referred to as 'finalization_state' in protos.
   State INT64 NOT NULL,
 
   -- Security realm this root invocation belongs to.
@@ -194,11 +195,11 @@ CREATE TABLE RootInvocationShards (
   -- hotspotting.
   RootInvocationId STRING(MAX) NOT NULL,
 
-  -- Replica of root invocation state, to avoid hotspotting the root invocation
-  -- in operations that don't need the whole root invocation, such as test result
-  -- uploads or work unit reads.
+  -- Replica of root invocation finalization state, to avoid hotspotting the
+  -- root invocation in operations that don't need the whole root invocation,
+  -- such as test result uploads or work unit reads.
   --
-  -- See RootInvocations.State for more information.
+  -- See RootInvocations.FinalizationState for more information.
   State INT64 NOT NULL,
 
   -- Replicate of root invocation realm, to avoid hotspotting the root invocation
@@ -259,13 +260,14 @@ CREATE TABLE WorkUnits (
   -- This value is independent of RootInvocationShardId.
   SecondaryIndexShardId INT64 NOT NULL,
 
-  -- Work unit state. One of:
+  -- Work unit finalization state. One of:
   -- - Active (1): the work unit is mutable.
   -- - Finalizing (2): the work unit record is immutable, but
   --   directly or indirectly included work units (or invocations)
   --   may still be mutable.
   -- - Finalized (3): the work unit and all directly and indirectly
   --   included work units (and invocations) are immutable.
+  -- Referred to as 'finalization_state' in protos.
   State INT64 NOT NULL,
 
   -- Security realm this work unit (including its test results, exonerations and

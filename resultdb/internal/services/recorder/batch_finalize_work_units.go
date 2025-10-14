@@ -51,7 +51,7 @@ func (s *recorderServer) BatchFinalizeWorkUnits(ctx context.Context, in *pb.Batc
 		}
 
 		for _, wuRow := range wuRows {
-			if wuRow.State != pb.WorkUnit_ACTIVE {
+			if wuRow.FinalizationState != pb.WorkUnit_ACTIVE {
 				// Finalization already started. Do not start finalization
 				// again as doing so would overwrite the existing FinalizeStartTime
 				// and create an unnecessary task.
@@ -61,7 +61,7 @@ func (s *recorderServer) BatchFinalizeWorkUnits(ctx context.Context, in *pb.Batc
 
 			// Finalize as requested.
 			span.BufferWrite(ctx, workunits.MarkFinalizing(wuRow.ID)...)
-			wuRow.State = pb.WorkUnit_FINALIZING
+			wuRow.FinalizationState = pb.WorkUnit_FINALIZING
 
 			tasks.StartInvocationFinalization(ctx, wuRow.ID.LegacyInvocationID())
 		}

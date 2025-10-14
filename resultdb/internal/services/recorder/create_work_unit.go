@@ -120,7 +120,7 @@ func workUnitUpdateTokenState(id workunits.ID) string {
 // On success, it returns the Spanner commit timestamp.
 func mutateWorkUnit(ctx context.Context, id workunits.ID, f func(context.Context) error) (time.Time, error) {
 	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-		state, err := workunits.ReadState(ctx, id)
+		state, err := workunits.ReadFinalizationState(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -161,11 +161,11 @@ func validateNonRootWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServi
 	// as per https://google.aip.dev/203.
 
 	// Validate state.
-	switch wu.State {
-	case pb.WorkUnit_STATE_UNSPECIFIED, pb.WorkUnit_ACTIVE, pb.WorkUnit_FINALIZING:
+	switch wu.FinalizationState {
+	case pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED, pb.WorkUnit_ACTIVE, pb.WorkUnit_FINALIZING:
 		// Allowed states for creation.
 	default:
-		return errors.Fmt("state: cannot be created in the state %s", wu.State)
+		return errors.Fmt("finalization_state: cannot be created in the state %s", wu.FinalizationState)
 	}
 
 	// Validate realm.

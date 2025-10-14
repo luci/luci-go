@@ -59,7 +59,7 @@ func TestReadFunctions(t *testing.T) {
 			WithRealm("testproject:wu1").
 			WithCreatedBy("test-user").
 			WithCreateRequestID("test-request-id").
-			WithState(pb.WorkUnit_FINALIZED).
+			WithFinalizationState(pb.WorkUnit_FINALIZED).
 			Build()
 		ms = append(ms, InsertForTesting(testData)...)
 
@@ -256,9 +256,9 @@ func TestReadFunctions(t *testing.T) {
 
 		t.Run("ReadState", func(t *ftt.Test) {
 			t.Run("happy path", func(t *ftt.Test) {
-				state, err := ReadState(span.Single(ctx), id)
+				state, err := ReadFinalizationState(span.Single(ctx), id)
 				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, state, should.Equal(testData.State))
+				assert.That(t, state, should.Equal(testData.FinalizationState))
 			})
 
 			t.Run("not found", func(t *ftt.Test) {
@@ -266,7 +266,7 @@ func TestReadFunctions(t *testing.T) {
 					RootInvocationID: rootInvID,
 					WorkUnitID:       "non-existent-id",
 				}
-				_, err := ReadState(span.Single(ctx), nonExistentID)
+				_, err := ReadFinalizationState(span.Single(ctx), nonExistentID)
 				st, ok := appstatus.Get(err)
 				assert.Loosely(t, ok, should.BeTrue)
 				assert.Loosely(t, st.Code(), should.Equal(codes.NotFound))
@@ -274,12 +274,12 @@ func TestReadFunctions(t *testing.T) {
 			})
 
 			t.Run("empty root invocation ID", func(t *ftt.Test) {
-				_, err := ReadState(span.Single(ctx), ID{WorkUnitID: "work-unit-id"})
+				_, err := ReadFinalizationState(span.Single(ctx), ID{WorkUnitID: "work-unit-id"})
 				assert.That(t, err, should.ErrLike("rootInvocationID: unspecified"))
 			})
 
 			t.Run("empty work unit ID", func(t *ftt.Test) {
-				_, err := ReadState(span.Single(ctx), ID{RootInvocationID: rootInvID})
+				_, err := ReadFinalizationState(span.Single(ctx), ID{RootInvocationID: rootInvID})
 				assert.That(t, err, should.ErrLike("workUnitID: unspecified"))
 			})
 		})
@@ -385,14 +385,14 @@ func TestReadFunctions(t *testing.T) {
 
 		t.Run("ReadStates", func(t *ftt.Test) {
 			// Insert an additional work unit in the existing root invocation.
-			wu2 := NewBuilder(rootInvID, "work-unit-id2").WithState(pb.WorkUnit_ACTIVE).Build()
+			wu2 := NewBuilder(rootInvID, "work-unit-id2").WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
 			ms := InsertForTesting(wu2)
 
 			// Create a further root invocation with a work unit.
 			rootInv2 := rootinvocations.NewBuilder("root-inv-id2").Build()
-			wuRoot := NewBuilder("root-inv-id2", "root").WithState(pb.WorkUnit_ACTIVE).Build()
-			wu21 := NewBuilder("root-inv-id2", "work-unit-id").WithState(pb.WorkUnit_FINALIZING).Build()
-			wu22 := NewBuilder("root-inv-id2", "work-unit-id2").WithState(pb.WorkUnit_FINALIZED).Build()
+			wuRoot := NewBuilder("root-inv-id2", "root").WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
+			wu21 := NewBuilder("root-inv-id2", "work-unit-id").WithFinalizationState(pb.WorkUnit_FINALIZING).Build()
+			wu22 := NewBuilder("root-inv-id2", "work-unit-id2").WithFinalizationState(pb.WorkUnit_FINALIZED).Build()
 			ms = append(ms, rootinvocations.InsertForTesting(rootInv2)...)
 			ms = append(ms, InsertForTesting(wuRoot)...)
 			ms = append(ms, InsertForTesting(wu21)...)
@@ -408,9 +408,9 @@ func TestReadFunctions(t *testing.T) {
 					{RootInvocationID: rootInvID, WorkUnitID: "work-unit-id"}, // Duplicates are allowed.
 					{RootInvocationID: "root-inv-id2", WorkUnitID: "work-unit-id2"},
 				}
-				states, err := ReadStates(span.Single(ctx), ids)
+				states, err := ReadFinalizationStates(span.Single(ctx), ids)
 				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, states, should.Match([]pb.WorkUnit_State{
+				assert.That(t, states, should.Match([]pb.WorkUnit_FinalizationState{
 					pb.WorkUnit_ACTIVE,
 					pb.WorkUnit_FINALIZED,
 					pb.WorkUnit_ACTIVE,
@@ -425,7 +425,7 @@ func TestReadFunctions(t *testing.T) {
 					id,
 					{RootInvocationID: rootInvID, WorkUnitID: "non-existent-id"},
 				}
-				_, err := ReadStates(span.Single(ctx), ids)
+				_, err := ReadFinalizationStates(span.Single(ctx), ids)
 				st, ok := appstatus.Get(err)
 				assert.Loosely(t, ok, should.BeTrue)
 				assert.Loosely(t, st.Code(), should.Equal(codes.NotFound))
@@ -437,7 +437,7 @@ func TestReadFunctions(t *testing.T) {
 					id,
 					{WorkUnitID: "work-unit-id2"},
 				}
-				_, err := ReadStates(span.Single(ctx), ids)
+				_, err := ReadFinalizationStates(span.Single(ctx), ids)
 				assert.That(t, err, should.ErrLike("ids[1]: rootInvocationID: unspecified"))
 			})
 
@@ -446,7 +446,7 @@ func TestReadFunctions(t *testing.T) {
 					id,
 					{RootInvocationID: rootInvID},
 				}
-				_, err := ReadStates(span.Single(ctx), ids)
+				_, err := ReadFinalizationStates(span.Single(ctx), ids)
 				assert.That(t, err, should.ErrLike("ids[1]: workUnitID: unspecified"))
 			})
 		})
@@ -547,7 +547,7 @@ func TestReadFunctions(t *testing.T) {
 			t.Run("happy path", func(t *ftt.Test) {
 				// Create some further work units for testing.
 				wu1 := NewBuilder(rootInvID, "content-1").
-					WithState(pb.WorkUnit_FINALIZED).
+					WithFinalizationState(pb.WorkUnit_FINALIZED).
 					WithRealm("testproject:realm-a").
 					WithModuleID(&pb.ModuleIdentifier{
 						ModuleName:    "module_name",
@@ -557,7 +557,7 @@ func TestReadFunctions(t *testing.T) {
 				wu1ID := ID{RootInvocationID: rootInvID, WorkUnitID: "content-1"}
 
 				wu2 := NewBuilder(rootInvID, "content-2").
-					WithState(pb.WorkUnit_ACTIVE).
+					WithFinalizationState(pb.WorkUnit_ACTIVE).
 					WithRealm("testproject:realm-b").
 					WithModuleID(nil).
 					Build()
@@ -573,8 +573,8 @@ func TestReadFunctions(t *testing.T) {
 
 				assert.That(t, results, should.Match(map[ID]TestResultInfo{
 					wu1ID: {
-						State: pb.WorkUnit_FINALIZED,
-						Realm: "testproject:realm-a",
+						FinalizationState: pb.WorkUnit_FINALIZED,
+						Realm:             "testproject:realm-a",
 						ModuleID: &pb.ModuleIdentifier{
 							ModuleName:        "module_name",
 							ModuleScheme:      "module_scheme",
@@ -583,8 +583,8 @@ func TestReadFunctions(t *testing.T) {
 						},
 					},
 					wu2ID: {
-						State: pb.WorkUnit_ACTIVE,
-						Realm: "testproject:realm-b",
+						FinalizationState: pb.WorkUnit_ACTIVE,
+						Realm:             "testproject:realm-b",
 					},
 				}))
 			})
@@ -627,10 +627,10 @@ func TestWorkUnitUpdateRequests(t *testing.T) {
 		ms = append(ms, InsertForTesting(NewBuilder(rootInvID, "root").Build())...)
 		ms = append(ms, InsertForTesting(NewBuilder(rootInvID2, "root").Build())...)
 
-		ms = append(ms, InsertForTesting(NewBuilder(rootInvID, id.WorkUnitID).WithState(pb.WorkUnit_ACTIVE).Build())...)
-		ms = append(ms, InsertForTesting(NewBuilder(rootInvID, id2.WorkUnitID).WithState(pb.WorkUnit_ACTIVE).Build())...)
-		ms = append(ms, InsertForTesting(NewBuilder(rootInvID, id3.WorkUnitID).WithState(pb.WorkUnit_ACTIVE).Build())...)
-		ms = append(ms, InsertForTesting(NewBuilder(rootInvID2, id20.WorkUnitID).WithState(pb.WorkUnit_ACTIVE).Build())...)
+		ms = append(ms, InsertForTesting(NewBuilder(rootInvID, id.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build())...)
+		ms = append(ms, InsertForTesting(NewBuilder(rootInvID, id2.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build())...)
+		ms = append(ms, InsertForTesting(NewBuilder(rootInvID, id3.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build())...)
+		ms = append(ms, InsertForTesting(NewBuilder(rootInvID2, id20.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build())...)
 
 		updatedBy := "user:test@example.com"
 		requestID := "request-123"

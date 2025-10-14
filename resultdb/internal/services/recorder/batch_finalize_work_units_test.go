@@ -216,8 +216,8 @@ func TestBatchFinalizeWorkUnits(t *testing.T) {
 		t.Run("success", func(t *ftt.Test) {
 			// Insert a root invocation and the work unit.
 			rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:testrealm").Build()
-			wu1 := workunits.NewBuilder(rootInvID, wuID1.WorkUnitID).WithState(pb.WorkUnit_ACTIVE).Build()
-			wu2 := workunits.NewBuilder(rootInvID, wuID2.WorkUnitID).WithState(pb.WorkUnit_ACTIVE).Build()
+			wu1 := workunits.NewBuilder(rootInvID, wuID1.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
+			wu2 := workunits.NewBuilder(rootInvID, wuID2.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
 
 			testutil.MustApply(ctx, t, insert.RootInvocationWithRootWorkUnit(rootInv)...)
 			testutil.MustApply(ctx, t, insert.WorkUnit(wu1)...)
@@ -225,24 +225,24 @@ func TestBatchFinalizeWorkUnits(t *testing.T) {
 
 			resp, err := recorder.BatchFinalizeWorkUnits(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp.WorkUnits[0].State, should.Equal(pb.WorkUnit_FINALIZING))
+			assert.Loosely(t, resp.WorkUnits[0].FinalizationState, should.Equal(pb.WorkUnit_FINALIZING))
 			assert.Loosely(t, resp.WorkUnits[0].FinalizeStartTime, should.NotBeNil)
 			finalizeTime := resp.WorkUnits[0].FinalizeStartTime.AsTime()
 			assert.Loosely(t, resp.WorkUnits[0].LastUpdated.AsTime(), should.Match(finalizeTime))
-			assert.Loosely(t, resp.WorkUnits[1].State, should.Equal(pb.WorkUnit_FINALIZING))
+			assert.Loosely(t, resp.WorkUnits[1].FinalizationState, should.Equal(pb.WorkUnit_FINALIZING))
 			assert.Loosely(t, resp.WorkUnits[1].FinalizeStartTime.AsTime(), should.Match(finalizeTime))
 			assert.Loosely(t, resp.WorkUnits[1].LastUpdated.AsTime(), should.Match(finalizeTime))
 
 			// Read the work unit from Spanner to confirm it's really FINALIZING.
 			wuRow1, err := workunits.Read(span.Single(ctx), wuID1, workunits.AllFields)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, wuRow1.State, should.Equal(pb.WorkUnit_FINALIZING))
+			assert.Loosely(t, wuRow1.FinalizationState, should.Equal(pb.WorkUnit_FINALIZING))
 			assert.Loosely(t, wuRow1.LastUpdated, should.Match(finalizeTime))
 			assert.Loosely(t, wuRow1.FinalizeStartTime, should.Match(spanner.NullTime{Valid: true, Time: finalizeTime}))
 
 			wuRow2, err := workunits.Read(span.Single(ctx), wuID2, workunits.AllFields)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, wuRow2.State, should.Equal(pb.WorkUnit_FINALIZING))
+			assert.Loosely(t, wuRow2.FinalizationState, should.Equal(pb.WorkUnit_FINALIZING))
 			assert.Loosely(t, wuRow1.LastUpdated, should.Match(finalizeTime))
 			assert.Loosely(t, wuRow2.FinalizeStartTime, should.Match(spanner.NullTime{Valid: true, Time: finalizeTime}))
 

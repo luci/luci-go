@@ -193,7 +193,7 @@ func TestCreateTestExoneration(t *testing.T) {
 		// Create some sample work units and a sample invocation.
 		var ms []*spanner.Mutation
 		ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootinvocations.NewBuilder(rootInvID).Build())...)
-		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-1").WithState(pb.WorkUnit_ACTIVE).Build())...)
+		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-1").WithFinalizationState(pb.WorkUnit_ACTIVE).Build())...)
 		testutil.MustApply(ctx, t, ms...)
 
 		req := &pb.CreateTestExonerationRequest{

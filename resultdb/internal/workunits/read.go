@@ -72,11 +72,11 @@ func ReadRealm(ctx context.Context, id ID) (realm string, err error) {
 	return realm, nil
 }
 
-// ReadState reads the state of the given work unit.
+// ReadFinalizationState reads the finalization state of the given work unit.
 // If the work unit is not found, returns a NotFound appstatus error.
 // Otherwise returns the internal error.
-func ReadState(ctx context.Context, id ID) (state pb.WorkUnit_State, err error) {
-	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadState")
+func ReadFinalizationState(ctx context.Context, id ID) (state pb.WorkUnit_FinalizationState, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadFinalizationState")
 	defer func() { tracing.End(ts, err) }()
 
 	err = readColumns(ctx, id, map[string]any{
@@ -155,23 +155,24 @@ func ReadRealms(ctx context.Context, ids []ID) (realms map[ID]string, err error)
 	return resultMap, nil
 }
 
-// ReadStates reads the state of the given work units. If any of the work
-// units are not found, returns a NotFound appstatus error. Returned state
-// match 1:1 with the requested ids, i.e. result[i] corresponds to ids[i].
+// ReadFinalizationStates reads the finalization state of the given work units.
+// If any of the work units are not found, returns a NotFound appstatus error.
+// Returned state match 1:1 with the requested ids, i.e. result[i] corresponds
+// to ids[i].
 // Duplicate IDs are allowed.
-func ReadStates(ctx context.Context, ids []ID) (states []pb.WorkUnit_State, err error) {
-	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadStates")
+func ReadFinalizationStates(ctx context.Context, ids []ID) (states []pb.WorkUnit_FinalizationState, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadFinalizationStates")
 	defer func() { tracing.End(ts, err) }()
 
 	var b spanutil.Buffer
 	columns := []string{"State"}
-	parseRow := func(r *spanner.Row) (ID, pb.WorkUnit_State, error) {
+	parseRow := func(r *spanner.Row) (ID, pb.WorkUnit_FinalizationState, error) {
 		var rootInvocationShardID string
 		var workUnitID string
-		var state pb.WorkUnit_State
+		var state pb.WorkUnit_FinalizationState
 		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &state)
 		if err != nil {
-			return ID{}, pb.WorkUnit_STATE_UNSPECIFIED, err
+			return ID{}, pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED, err
 		}
 		return IDFromRowID(rootInvocationShardID, workUnitID), state, nil
 	}
@@ -225,7 +226,7 @@ func ReadRequestIDsAndCreatedBys(ctx context.Context, ids []ID) (results []*Requ
 // TestResultInfo contains fields about the work unit that are useful to RPCs
 // populating test results into the work unit.
 type TestResultInfo struct {
-	State pb.WorkUnit_State
+	FinalizationState pb.WorkUnit_FinalizationState
 	// The realm of the work unit.
 	Realm string
 	// The module associated with the work unit.
@@ -243,13 +244,13 @@ func ReadTestResultInfos(ctx context.Context, ids []ID) (results map[ID]TestResu
 	parseRow := func(r *spanner.Row) (ID, TestResultInfo, error) {
 		var rootInvocationShardID string
 		var workUnitID string
-		var state pb.WorkUnit_State
+		var finalizationState pb.WorkUnit_FinalizationState
 		var realm string
 		var moduleName spanner.NullString
 		var moduleScheme spanner.NullString
 		var moduleVariant *pb.Variant
 
-		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &state, &realm, &moduleName, &moduleScheme, &moduleVariant)
+		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &finalizationState, &realm, &moduleName, &moduleScheme, &moduleVariant)
 		if err != nil {
 			return ID{}, TestResultInfo{}, err
 		}
@@ -268,9 +269,9 @@ func ReadTestResultInfos(ctx context.Context, ids []ID) (results map[ID]TestResu
 		}
 
 		result := TestResultInfo{
-			State:    state,
-			Realm:    realm,
-			ModuleID: moduleID,
+			FinalizationState: finalizationState,
+			Realm:             realm,
+			ModuleID:          moduleID,
 		}
 		return IDFromRowID(rootInvocationShardID, workUnitID), result, nil
 	}
@@ -480,7 +481,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			&workUnitID,
 			&wu.ParentWorkUnitID,
 			&wu.SecondaryIndexShardID,
-			&wu.State,
+			&wu.FinalizationState,
 			&wu.Realm,
 			&wu.CreateTime,
 			&wu.CreatedBy,

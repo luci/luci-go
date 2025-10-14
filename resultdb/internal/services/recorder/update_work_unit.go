@@ -82,13 +82,14 @@ func updateWorkUnitInternal(in *pb.UpdateWorkUnitRequest, curWorkUnitRow *workun
 		// The cases in this switch statement must be synchronized with a
 		// similar switch statement in validateUpdateWorkUnitRequest.
 
-		case "state":
-			if in.WorkUnit.State == pb.WorkUnit_FINALIZING {
+		// TODO(meiring): Remove "state" here once clients have updated to the new field name.
+		case "finalization_state", "state":
+			if in.WorkUnit.FinalizationState == pb.WorkUnit_FINALIZING {
 				values["State"] = pb.WorkUnit_FINALIZING
 				values["FinalizeStartTime"] = spanner.CommitTimestamp
 				legacyInvocationValues["State"] = pb.Invocation_FINALIZING
 				legacyInvocationValues["FinalizeStartTime"] = spanner.CommitTimestamp
-				updatedRow.State = pb.WorkUnit_FINALIZING
+				updatedRow.FinalizationState = pb.WorkUnit_FINALIZING
 			}
 		case "deadline":
 			if !curWorkUnitRow.Deadline.Equal(in.WorkUnit.Deadline.AsTime()) {
@@ -207,12 +208,13 @@ func validateUpdateWorkUnitRequest(ctx context.Context, req *pb.UpdateWorkUnitRe
 		// The cases in this switch statement must be synchronized with a
 		// similar switch statement in UpdateWorkUnit implementation.
 
-		case "state":
-			// If "state" is set, we only allow "FINALIZING" or "ACTIVE" state.
+		// TODO(meiring): Remove "state" here once clients have updated to the new field name.
+		case "finalization_state", "state":
+			// If "finalization_state" is set, we only allow "FINALIZING" or "ACTIVE" state.
 			// Setting to "FINALIZING" will trigger the finalization process.
 			// Setting to "ACTIVE" is a no-op.
-			if req.WorkUnit.State != pb.WorkUnit_FINALIZING && req.WorkUnit.State != pb.WorkUnit_ACTIVE {
-				return errors.New("work_unit: state: must be FINALIZING or ACTIVE")
+			if req.WorkUnit.FinalizationState != pb.WorkUnit_FINALIZING && req.WorkUnit.FinalizationState != pb.WorkUnit_ACTIVE {
+				return errors.New("work_unit: finalization_state: must be FINALIZING or ACTIVE")
 			}
 
 		case "deadline":

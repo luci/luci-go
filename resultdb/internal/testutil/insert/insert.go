@@ -530,16 +530,16 @@ func RootInvocationOnly(row *rootinvocations.RootInvocationRow) []*spanner.Mutat
 // RootInvocationWithRootWorkUnit returns spanner mutations to create the given root invocation
 // with a default root work unit.
 func RootInvocationWithRootWorkUnit(row *rootinvocations.RootInvocationRow) []*spanner.Mutation {
-	var state pb.WorkUnit_State
-	switch row.State {
+	var finalizationState pb.WorkUnit_FinalizationState
+	switch row.FinalizationState {
 	case pb.RootInvocation_ACTIVE:
-		state = pb.WorkUnit_ACTIVE
+		finalizationState = pb.WorkUnit_ACTIVE
 	case pb.RootInvocation_FINALIZING:
-		state = pb.WorkUnit_FINALIZING
+		finalizationState = pb.WorkUnit_FINALIZING
 	case pb.RootInvocation_FINALIZED:
-		state = pb.WorkUnit_FINALIZED
+		finalizationState = pb.WorkUnit_FINALIZED
 	default:
-		panic(fmt.Sprintf("unrecognised work unit state: %v", row.State))
+		panic(fmt.Sprintf("unrecognised work unit state: %v", row.FinalizationState))
 	}
 
 	workUnit := workunits.NewBuilder(row.RootInvocationID, "root").
@@ -548,7 +548,7 @@ func RootInvocationWithRootWorkUnit(row *rootinvocations.RootInvocationRow) []*s
 		WithCreatedBy(row.CreatedBy).
 		WithDeadline(row.Deadline).
 		WithProducerResource(row.ProducerResource).
-		WithState(state).
+		WithFinalizationState(finalizationState).
 		Build()
 
 	ms := rootinvocations.InsertForTesting(row)

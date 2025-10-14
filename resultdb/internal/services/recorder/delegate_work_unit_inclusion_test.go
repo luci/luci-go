@@ -65,7 +65,7 @@ func TestDelegateWorkUnitInclusion(t *testing.T) {
 
 		// Insert a root invocation and the parent work unit.
 		rootInv := rootinvocations.NewBuilder(rootInvID).Build()
-		wu := workunits.NewBuilder(rootInvID, workUnitID.WorkUnitID).WithState(pb.WorkUnit_ACTIVE).Build()
+		wu := workunits.NewBuilder(rootInvID, workUnitID.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
 		testutil.MustApply(ctx, t, insert.RootInvocationWithRootWorkUnit(rootInv)...)
 		testutil.MustApply(ctx, t, insert.WorkUnit(wu)...)
 

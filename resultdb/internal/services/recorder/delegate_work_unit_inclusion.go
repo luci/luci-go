@@ -45,7 +45,7 @@ func (s *recorderServer) DelegateWorkUnitInclusion(ctx context.Context, in *pb.D
 	wuID := workunits.MustParseName(in.WorkUnit)
 
 	// Check the work unit is still active.
-	state, err := workunits.ReadState(span.Single(ctx), wuID)
+	state, err := workunits.ReadFinalizationState(span.Single(ctx), wuID)
 	if state != pb.WorkUnit_ACTIVE {
 		return nil, appstatus.Errorf(codes.FailedPrecondition, "work unit %q is not active", wuID.Name())
 	}

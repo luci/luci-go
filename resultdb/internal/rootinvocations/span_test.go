@@ -43,7 +43,7 @@ func TestWriteRootInvocation(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, now)
 
 		id := "root-inv-id"
-		row := NewBuilder("root-inv-id").WithState(pb.RootInvocation_ACTIVE).Build()
+		row := NewBuilder("root-inv-id").WithFinalizationState(pb.RootInvocation_ACTIVE).Build()
 
 		commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 			mutations := Create(row)
@@ -72,7 +72,7 @@ func TestWriteRootInvocation(t *testing.T) {
 		// The legacy invocation should be a reflection of the root invocation.
 		expectedLegacyInv := &pb.Invocation{
 			Name:             legacyInvID.Name(),
-			State:            pb.Invocation_State(row.State),
+			State:            pb.Invocation_State(row.FinalizationState),
 			Realm:            row.Realm,
 			Deadline:         pbutil.MustTimestampProto(row.Deadline),
 			CreateTime:       timestamppb.New(commitTime),
@@ -113,7 +113,7 @@ func TestWriteRootInvocation(t *testing.T) {
 			shardID := ShardID{RootInvocationID: ID(id), ShardIndex: i}
 			var shardIndex int64
 			var rootInvID ID
-			var state pb.RootInvocation_State
+			var finalizationState pb.RootInvocation_FinalizationState
 			var realm string
 			var createTime time.Time
 			var sourcesCmp spanutil.Compressed
@@ -121,7 +121,7 @@ func TestWriteRootInvocation(t *testing.T) {
 			err := spanutil.ReadRow(ctx, "RootInvocationShards", shardID.Key(), map[string]any{
 				"ShardIndex":       &shardIndex,
 				"RootInvocationId": &rootInvID,
-				"State":            &state,
+				"State":            &finalizationState,
 				"Realm":            &realm,
 				"CreateTime":       &createTime,
 				"Sources":          &sourcesCmp,
@@ -136,7 +136,7 @@ func TestWriteRootInvocation(t *testing.T) {
 
 			assert.Loosely(t, shardIndex, should.Equal(i))
 			assert.That(t, rootInvID, should.Equal(ID(id)))
-			assert.That(t, state, should.Equal(row.State))
+			assert.That(t, finalizationState, should.Equal(row.FinalizationState))
 			assert.That(t, realm, should.Equal(row.Realm))
 			assert.That(t, createTime, should.Match(commitTime))
 			assert.That(t, sources, should.Match(row.Sources))
@@ -196,7 +196,7 @@ func TestFinalizationMethods(t *testing.T) {
 		const rootInvocationID = ID("root-inv-id")
 
 		// Create a root invocation.
-		rootInvocation := NewBuilder(rootInvocationID).WithState(pb.RootInvocation_ACTIVE).Build()
+		rootInvocation := NewBuilder(rootInvocationID).WithFinalizationState(pb.RootInvocation_ACTIVE).Build()
 		testutil.MustApply(ctx, t, InsertForTesting(rootInvocation)...)
 
 		t.Run(`MarkFinalizing`, func(t *ftt.Test) {
@@ -204,7 +204,7 @@ func TestFinalizationMethods(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			expected := rootInvocation.Clone()
-			expected.State = pb.RootInvocation_FINALIZING
+			expected.FinalizationState = pb.RootInvocation_FINALIZING
 			expected.LastUpdated = ct.In(time.UTC)
 			expected.FinalizeStartTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
 
@@ -214,7 +214,7 @@ func TestFinalizationMethods(t *testing.T) {
 
 			// Check RootInvocationShards state is also updated.
 			for i := 0; i < RootInvocationShardCount; i++ {
-				var state pb.RootInvocation_State
+				var state pb.RootInvocation_FinalizationState
 				shardID := ShardID{RootInvocationID: rootInvocationID, ShardIndex: i}
 				err := readColumnsFromShard(span.Single(ctx), shardID, map[string]any{
 					"State": &state,
@@ -233,7 +233,7 @@ func TestFinalizationMethods(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			expected := rootInvocation.Clone()
-			expected.State = pb.RootInvocation_FINALIZED
+			expected.FinalizationState = pb.RootInvocation_FINALIZED
 			expected.LastUpdated = ct.In(time.UTC)
 			expected.FinalizeTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
 
@@ -243,7 +243,7 @@ func TestFinalizationMethods(t *testing.T) {
 
 			// Check RootInvocationShards state is also updated.
 			for i := 0; i < RootInvocationShardCount; i++ {
-				var state pb.RootInvocation_State
+				var state pb.RootInvocation_FinalizationState
 				shardID := ShardID{RootInvocationID: rootInvocationID, ShardIndex: i}
 				err := readColumnsFromShard(span.Single(ctx), shardID, map[string]any{
 					"State": &state,
@@ -268,7 +268,7 @@ func TestCreateRootInvocationUpdateRequest(t *testing.T) {
 		requestID := "test-request-id"
 
 		// Create a root invocation.
-		rootInvocation := NewBuilder(rootInvID).WithState(pb.RootInvocation_ACTIVE).Build()
+		rootInvocation := NewBuilder(rootInvID).WithFinalizationState(pb.RootInvocation_ACTIVE).Build()
 		testutil.MustApply(ctx, t, InsertForTesting(rootInvocation)...)
 
 		t.Run(`ReadRootInvocationUpdateRequest`, func(t *ftt.Test) {

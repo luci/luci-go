@@ -140,9 +140,9 @@ func createIdempotentRootInvocation(
 			return nil
 		}
 		// Root invocation doesn't exist, create it.
-		state := req.RootInvocation.State
-		if state == pb.RootInvocation_STATE_UNSPECIFIED {
-			state = pb.RootInvocation_ACTIVE
+		finalizationState := req.RootInvocation.FinalizationState
+		if finalizationState == pb.RootInvocation_FINALIZATION_STATE_UNSPECIFIED {
+			finalizationState = pb.RootInvocation_ACTIVE
 		}
 		deadline := req.RootInvocation.Deadline.AsTime()
 		if req.RootInvocation.Deadline == nil {
@@ -151,7 +151,7 @@ func createIdempotentRootInvocation(
 
 		rootInvocationRow := &rootinvocations.RootInvocationRow{
 			RootInvocationID:                        rootInvocationID,
-			State:                                   state,
+			FinalizationState:                       finalizationState,
 			Realm:                                   req.RootInvocation.Realm,
 			CreatedBy:                               createdBy,
 			Deadline:                                deadline,
@@ -177,13 +177,13 @@ func createIdempotentRootInvocation(
 			// Root work unit has parent work unit set to null.
 			ParentWorkUnitID: spanner.NullString{Valid: false},
 			// Fields should be the same as root invocation.
-			State:            rootInvocationStateToWorkUnitState(rootInvocationRow.State),
-			Realm:            rootInvocationRow.Realm,
-			CreatedBy:        createdBy,
-			Deadline:         rootInvocationRow.Deadline,
-			CreateRequestID:  req.RequestId,
-			ModuleID:         req.RootWorkUnit.ModuleId,
-			ProducerResource: rootInvocationRow.ProducerResource,
+			FinalizationState: rootInvocationStateToWorkUnitState(rootInvocationRow.FinalizationState),
+			Realm:             rootInvocationRow.Realm,
+			CreatedBy:         createdBy,
+			Deadline:          rootInvocationRow.Deadline,
+			CreateRequestID:   req.RequestId,
+			ModuleID:          req.RootWorkUnit.ModuleId,
+			ProducerResource:  rootInvocationRow.ProducerResource,
 			// Fields should be set with value in request.RootWorkUnit.
 			Tags:               req.RootWorkUnit.Tags,
 			Properties:         req.RootWorkUnit.Properties,
@@ -229,7 +229,7 @@ func deduplicateCreateRootInvocations(ctx context.Context, id rootinvocations.ID
 	return true, nil
 }
 
-func rootInvocationStateToWorkUnitState(state pb.RootInvocation_State) pb.WorkUnit_State {
+func rootInvocationStateToWorkUnitState(state pb.RootInvocation_FinalizationState) pb.WorkUnit_FinalizationState {
 	switch state {
 	case pb.RootInvocation_ACTIVE:
 		return pb.WorkUnit_ACTIVE
@@ -238,7 +238,7 @@ func rootInvocationStateToWorkUnitState(state pb.RootInvocation_State) pb.WorkUn
 	case pb.RootInvocation_FINALIZED:
 		return pb.WorkUnit_FINALIZED
 	default:
-		return pb.WorkUnit_STATE_UNSPECIFIED
+		return pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED
 	}
 }
 
@@ -346,11 +346,11 @@ func validateRootInvocationForCreate(inv *pb.RootInvocation) error {
 	// as per https://google.aip.dev/203.
 
 	// Validate state.
-	switch inv.State {
-	case pb.RootInvocation_STATE_UNSPECIFIED, pb.RootInvocation_ACTIVE, pb.RootInvocation_FINALIZING:
+	switch inv.FinalizationState {
+	case pb.RootInvocation_FINALIZATION_STATE_UNSPECIFIED, pb.RootInvocation_ACTIVE, pb.RootInvocation_FINALIZING:
 		// Allowed states for creation.
 	default:
-		return errors.Fmt("state: cannot be created in the state %s", inv.State)
+		return errors.Fmt("finalization_state: cannot be created in the state %s", inv.FinalizationState)
 	}
 
 	if inv.Realm == "" {
@@ -419,8 +419,8 @@ func validateRootWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServiceC
 	// Name and WorkUnitId is output only and should be ignored
 	// as per https://google.aip.dev/203.
 
-	if wu.State != pb.WorkUnit_STATE_UNSPECIFIED {
-		return errors.New("state: must not be set; always inherited from root invocation")
+	if wu.FinalizationState != pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED {
+		return errors.New("finalization_state: must not be set; always inherited from root invocation")
 	}
 	if wu.Realm != "" {
 		return errors.New("realm: must not be set; always inherited from root invocation")

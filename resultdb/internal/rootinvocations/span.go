@@ -46,7 +46,7 @@ func Create(rootInvocation *RootInvocationRow) []*spanner.Mutation {
 	if rootInvocation.RootInvocationID == "" {
 		panic("do not create root invocations with empty id")
 	}
-	if rootInvocation.State != pb.RootInvocation_FINALIZING && rootInvocation.State != pb.RootInvocation_ACTIVE {
+	if rootInvocation.FinalizationState != pb.RootInvocation_FINALIZING && rootInvocation.FinalizationState != pb.RootInvocation_ACTIVE {
 		// validateCreateInvocationRequest should have rejected any other states.
 		panic("do not create root invocations in states other than active or finalizing")
 	}
@@ -82,7 +82,7 @@ func Create(rootInvocation *RootInvocationRow) []*spanner.Mutation {
 type RootInvocationRow struct {
 	RootInvocationID                        ID
 	SecondaryIndexShardID                   int64 // Output only.
-	State                                   pb.RootInvocation_State
+	FinalizationState                       pb.RootInvocation_FinalizationState
 	Realm                                   string
 	CreateTime                              time.Time // Output only.
 	CreatedBy                               string    // Output only.
@@ -131,7 +131,7 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 	row := map[string]interface{}{
 		"RootInvocationId":      r.RootInvocationID,
 		"SecondaryIndexShardId": r.RootInvocationID.shardID(secondaryIndexShardCount),
-		"State":                 r.State,
+		"State":                 r.FinalizationState,
 		"Realm":                 r.Realm,
 		"CreateTime":            spanner.CommitTimestamp,
 		"CreatedBy":             r.CreatedBy,
@@ -148,7 +148,7 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 		"Submitted":                               r.Submitted,
 	}
 
-	if r.State == pb.RootInvocation_FINALIZING {
+	if r.FinalizationState == pb.RootInvocation_FINALIZING {
 		// Invocation immediately transitioning to finalizing.
 		row["FinalizeStartTime"] = spanner.CommitTimestamp
 	}
@@ -160,7 +160,7 @@ func (r *RootInvocationRow) toLegacyInvocationMutation() *spanner.Mutation {
 		"InvocationId":                      r.RootInvocationID.LegacyInvocationID(),
 		"Type":                              invocations.Root,
 		"ShardId":                           r.RootInvocationID.shardID(invocations.Shards),
-		"State":                             r.State,
+		"State":                             r.FinalizationState,
 		"Realm":                             r.Realm,
 		"InvocationExpirationTime":          time.Unix(0, 0), // unused field, but spanner schema enforce it to be not null.
 		"ExpectedTestResultsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
@@ -179,7 +179,7 @@ func (r *RootInvocationRow) toLegacyInvocationMutation() *spanner.Mutation {
 		"Submitted":                         r.Submitted,
 	}
 
-	if r.State == pb.RootInvocation_FINALIZING {
+	if r.FinalizationState == pb.RootInvocation_FINALIZING {
 		// Invocation immediately transitioning to finalizing.
 		row["FinalizeStartTime"] = spanner.CommitTimestamp
 	}
@@ -193,7 +193,7 @@ func (r *RootInvocationRow) toShardsMutations() []*spanner.Mutation {
 			"RootInvocationShardId": ShardID{RootInvocationID: r.RootInvocationID, ShardIndex: i},
 			"ShardIndex":            i,
 			"RootInvocationId":      r.RootInvocationID,
-			"State":                 r.State,
+			"State":                 r.FinalizationState,
 			"Realm":                 r.Realm,
 			"CreateTime":            spanner.CommitTimestamp,
 			"Sources":               spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
@@ -206,21 +206,21 @@ func (r *RootInvocationRow) toShardsMutations() []*spanner.Mutation {
 
 func (r *RootInvocationRow) ToProto() *pb.RootInvocation {
 	result := &pb.RootInvocation{
-		Name:             r.RootInvocationID.Name(),
-		RootInvocationId: string(r.RootInvocationID),
-		State:            r.State,
-		Realm:            r.Realm,
-		CreateTime:       pbutil.MustTimestampProto(r.CreateTime),
-		Creator:          r.CreatedBy,
-		LastUpdated:      pbutil.MustTimestampProto(r.LastUpdated),
-		Deadline:         pbutil.MustTimestampProto(r.Deadline),
-		ProducerResource: r.ProducerResource,
-		Sources:          r.Sources,
-		SourcesFinal:     r.IsSourcesFinal,
-		Tags:             r.Tags,
-		Properties:       r.Properties,
-		BaselineId:       r.BaselineID,
-		Etag:             Etag(r),
+		Name:              r.RootInvocationID.Name(),
+		RootInvocationId:  string(r.RootInvocationID),
+		FinalizationState: r.FinalizationState,
+		Realm:             r.Realm,
+		CreateTime:        pbutil.MustTimestampProto(r.CreateTime),
+		Creator:           r.CreatedBy,
+		LastUpdated:       pbutil.MustTimestampProto(r.LastUpdated),
+		Deadline:          pbutil.MustTimestampProto(r.Deadline),
+		ProducerResource:  r.ProducerResource,
+		Sources:           r.Sources,
+		SourcesFinal:      r.IsSourcesFinal,
+		Tags:              r.Tags,
+		Properties:        r.Properties,
+		BaselineId:        r.BaselineID,
+		Etag:              Etag(r),
 	}
 	if r.FinalizeStartTime.Valid {
 		result.FinalizeStartTime = pbutil.MustTimestampProto(r.FinalizeStartTime.Time)
@@ -233,7 +233,7 @@ func (r *RootInvocationRow) ToProto() *pb.RootInvocation {
 
 func (r *RootInvocationRow) ToLegacyInvocationProto() *pb.Invocation {
 	var state pb.Invocation_State
-	switch r.State {
+	switch r.FinalizationState {
 	case pb.RootInvocation_ACTIVE:
 		state = pb.Invocation_ACTIVE
 	case pb.RootInvocation_FINALIZING:
@@ -241,7 +241,7 @@ func (r *RootInvocationRow) ToLegacyInvocationProto() *pb.Invocation {
 	case pb.RootInvocation_FINALIZED:
 		state = pb.Invocation_FINALIZED
 	default:
-		panic(fmt.Sprintf("unknown root invocation state %s", r.State))
+		panic(fmt.Sprintf("unknown root invocation state %s", r.FinalizationState))
 	}
 
 	var sourceSpec *pb.SourceSpec

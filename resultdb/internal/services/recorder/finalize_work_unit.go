@@ -48,7 +48,7 @@ func (s *recorderServer) FinalizeWorkUnit(ctx context.Context, in *pb.FinalizeWo
 			return err
 		}
 
-		if wuRow.State != pb.WorkUnit_ACTIVE {
+		if wuRow.FinalizationState != pb.WorkUnit_ACTIVE {
 			// Finalization already started. Do not start finalization
 			// again as doing so would overwrite the existing FinalizeStartTime
 			// and create an unnecessary task.
@@ -58,7 +58,7 @@ func (s *recorderServer) FinalizeWorkUnit(ctx context.Context, in *pb.FinalizeWo
 
 		// Finalize as requested.
 		span.BufferWrite(ctx, workunits.MarkFinalizing(wuID)...)
-		wuRow.State = pb.WorkUnit_FINALIZING
+		wuRow.FinalizationState = pb.WorkUnit_FINALIZING
 
 		tasks.StartInvocationFinalization(ctx, wuID.LegacyInvocationID())
 		return nil

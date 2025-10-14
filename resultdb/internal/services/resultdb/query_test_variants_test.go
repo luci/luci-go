@@ -70,7 +70,7 @@ func TestQueryTestVariants(t *testing.T) {
 		req := &pb.QueryTestVariantsRequest{
 			Parent: "rootInvocations/root-inv1",
 		}
-		rootInv := rootinvocations.NewBuilder("root-inv1").WithState(pb.RootInvocation_ACTIVE).WithRealm("testproject:testrealm").Build()
+		rootInv := rootinvocations.NewBuilder("root-inv1").WithFinalizationState(pb.RootInvocation_ACTIVE).WithRealm("testproject:testrealm").Build()
 		testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInv)...)
 
 		t.Run(`request validation`, func(t *ftt.Test) {
@@ -108,7 +108,7 @@ func TestQueryTestVariants(t *testing.T) {
 
 		// Permission is check in TestDetermineListAccessLevel. Here we just make sure the function is called.
 		t.Run(`permission denied`, func(t *ftt.Test) {
-			rootInv := rootinvocations.NewBuilder("root-invsecret").WithState(pb.RootInvocation_ACTIVE).WithRealm("testproject:secret").Build()
+			rootInv := rootinvocations.NewBuilder("root-invsecret").WithFinalizationState(pb.RootInvocation_ACTIVE).WithRealm("testproject:secret").Build()
 			testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInv)...)
 			req.Parent = "rootInvocations/root-invsecret"
 
@@ -122,10 +122,10 @@ func TestQueryTestVariants(t *testing.T) {
 
 			// Set up root invocation, work units and their test results.
 			// root-inv1 -> root wu -> wu1
-			rootWU := workunits.NewBuilder(rootInv.RootInvocationID, "root").WithState(pb.WorkUnit_ACTIVE).WithRealm("testproject:wurealm").Build()
+			rootWU := workunits.NewBuilder(rootInv.RootInvocationID, "root").WithFinalizationState(pb.WorkUnit_ACTIVE).WithRealm("testproject:wurealm").Build()
 			wu1 := workunits.
 				NewBuilder(rootInv.RootInvocationID, "wu1").
-				WithState(pb.WorkUnit_ACTIVE).
+				WithFinalizationState(pb.WorkUnit_ACTIVE).
 				WithRealm("testproject:wurealm").
 				WithInstructions(&pb.Instructions{
 					Instructions: []*pb.Instruction{

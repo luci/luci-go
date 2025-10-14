@@ -116,8 +116,8 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		// Create some sample work units and a sample root invocation.
 		var ms []*spanner.Mutation
 		ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootinvocations.NewBuilder(rootInvID).Build())...)
-		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-1").WithState(pb.WorkUnit_ACTIVE).WithModuleID(junitModuleID).Build())...)
-		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-2").WithState(pb.WorkUnit_ACTIVE).WithModuleID(legacyModuleID).Build())...)
+		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-1").WithFinalizationState(pb.WorkUnit_ACTIVE).WithModuleID(junitModuleID).Build())...)
+		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-2").WithFinalizationState(pb.WorkUnit_ACTIVE).WithModuleID(legacyModuleID).Build())...)
 		testutil.MustApply(ctx, t, ms...)
 
 		tvID := &pb.TestIdentifier{
