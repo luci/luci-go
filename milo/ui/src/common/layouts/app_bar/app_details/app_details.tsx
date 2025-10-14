@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import MenuIcon from '@mui/icons-material/Menu';
-import { Link } from '@mui/material';
 import Box from '@mui/material/Box';
 import { Link as RouterLink } from 'react-router';
 
@@ -46,33 +45,12 @@ export const AppDetails = ({ open, handleSidebarChanged }: Props) => {
       >
         <MenuIcon />
       </StyledIconButton>
-      <Box
-        sx={{
-          display: { md: 'flex' },
-          mr: 1,
-          width: '2.5rem',
-          alignItems: 'center',
-        }}
-      >
-        <Link
-          component={RouterLink}
-          to="/ui/"
-          sx={{ display: 'flex', alignItems: 'center' }}
-        >
-          <img
-            style={{ width: '100%', display: 'block' }}
-            alt="logo"
-            id="luci-icon"
-            src="https://storage.googleapis.com/chrome-infra/lucy-small.png"
-          />
-        </Link>
-      </Box>
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <StyledAppBarLink
           component={RouterLink}
           to="/ui/"
           underline="none"
-          sx={{ pr: 2 }}
+          sx={{ pr: 2, pl: 2 }}
         >
           LUCI
         </StyledAppBarLink>

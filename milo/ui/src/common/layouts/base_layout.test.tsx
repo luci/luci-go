@@ -172,7 +172,6 @@ describe('<BaseLayout />', () => {
       </StoreProvider>,
     );
 
-    expect(screen.queryByAltText('logo')).toBeInTheDocument();
     expect(screen.queryByTitle('Send feedback')).toBeInTheDocument();
     expect(screen.queryByText('Privacy')).toBeInTheDocument();
   });
