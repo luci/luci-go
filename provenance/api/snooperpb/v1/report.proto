@@ -122,6 +122,9 @@ message CipdReport {
     // to luci services.
     string requestor_id = 1;
 
+    // URL ("https://...") of the CIPD backend that hosts the package.
+    string service_url = 7;
+
     // CIPD package name requested/installed on the machine.
     string package_name = 2;
 

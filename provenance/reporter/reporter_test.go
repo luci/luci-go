@@ -38,7 +38,7 @@ func TestSelfReportClient(t *testing.T) {
 		reporter := Report{RClient: &fakeClient{}}
 
 		t.Run("cipd admission works", func(t *ftt.Test) {
-			ok, err := reporter.ReportCipdAdmission(ctx, "package", "deadbeef")
+			ok, err := reporter.ReportCipdAdmission(ctx, "https://chrome-infra-packages-dev.appspot.com/", "package", "deadbeef")
 			assert.Loosely(t, ok, should.Equal(true))
 			assert.Loosely(t, err, should.BeNil)
 		})

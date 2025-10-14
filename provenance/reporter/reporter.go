@@ -52,9 +52,10 @@ type Report struct {
 // annotated error. This is to indicate, the user should continue normal
 // execution.
 // All other errors are annotated to indicate permanent failures.
-func (r *Report) ReportCipdAdmission(ctx context.Context, pkgName, iid string) (bool, error) {
+func (r *Report) ReportCipdAdmission(ctx context.Context, serviceURL, pkgName, iid string) (bool, error) {
 	req := &snooperpb.ReportCipdRequest{
 		CipdReport: &snooperpb.CipdReport{
+			ServiceUrl:  serviceURL,
 			PackageName: pkgName,
 			Iid:         iid,
 			EventTs:     timestamppb.New(clock.Now(ctx)),
