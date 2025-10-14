@@ -17,6 +17,7 @@ package rbe
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -149,6 +150,11 @@ func (s *ReservationServer) RegisterPSHandlers(disp *pubsub.Dispatcher) {
 
 // handleEnqueueRBETask is responsible for creating a reservation.
 func (s *ReservationServer) handleEnqueueRBETask(ctx context.Context, task *internalspb.EnqueueRBETask) (err error) {
+	// This handler should be mostly instantaneous if everything is healthy. If
+	// not, abort and retry early instead of waiting default 10 min deadline.
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	// On fatal errors need to mark the TaskToRun in Swarming DB as failed. On
 	// transient errors just let the TQ to call us again for a retry. Note that
 	// CreateReservation will fail with AlreadyExists if we actually managed to
@@ -560,11 +566,17 @@ func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datast
 
 // handleCancelRBETask cancels a reservation.
 func (s *ReservationServer) handleCancelRBETask(ctx context.Context, task *internalspb.CancelRBETask) error {
+	// This handler should be mostly instantaneous if everything is healthy. If
+	// not, abort and retry early instead of waiting default 10 min deadline.
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	logging.Infof(ctx, "Cancelling reservation %q", task.ReservationId)
 	resp, err := s.rbe.CancelReservation(ctx, &remoteworkers.CancelReservationRequest{
 		Name:   fmt.Sprintf("%s/reservations/%s", task.RbeInstance, task.ReservationId),
 		Intent: remoteworkers.CancelReservationIntent_ANY,
 	})
+
 	switch status.Code(err) {
 	case codes.OK:
 		logging.Infof(ctx, "Cancel result: %s", resp.Result)

@@ -55,7 +55,7 @@ luci_gae_vars:
 
 entrypoint: >
   main
-  -rbe-conn-pool 4
+  -rbe-conn-pool 8
   -buildbucket-service-account ${BUILDBUCKET_SERVICE_ACCOUNT}
   -auth-service-host ${AUTH_SERVICE_HOST}
   -config-service-host ${CONFIG_SERVICE_HOST}
