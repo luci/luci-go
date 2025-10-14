@@ -19,6 +19,7 @@ import { OptionValue } from '@/fleet/types/option';
 import { keyboardListNavigationHandler } from '@/fleet/utils';
 import { SortedElement } from '@/fleet/utils/fuzzy_sort';
 
+import { EllipsisTooltip } from '../ellipsis_tooltip';
 import { HighlightCharacter } from '../highlight_character';
 interface OptionsMenuProps {
   elements: SortedElement<OptionValue>[];
@@ -67,7 +68,8 @@ export const OptionsMenuOld = ({
         overflowY: 'hidden',
         overflow: 'auto',
         maxHeight: 'inherit',
-        width: '100%',
+        minWidth: '100%',
+        width: Math.max(...elements.map((c) => c.el.label.length * 8)),
       }}
     >
       <div
@@ -122,17 +124,18 @@ export const OptionsMenuOld = ({
                   }
                   tabIndex={-1}
                 />
-                <HighlightCharacter
-                  variant="body2"
-                  highlightIndexes={item.matches}
-                  css={{
-                    overflow: 'hidden',
-                    textWrap: 'wrap',
-                    width: '100%',
-                  }}
-                >
-                  {item.el.label}
-                </HighlightCharacter>
+                <EllipsisTooltip tooltip={item.el.label}>
+                  <HighlightCharacter
+                    variant="body2"
+                    highlightIndexes={item.matches}
+                    css={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {item.el.label}
+                  </HighlightCharacter>
+                </EllipsisTooltip>
               </MenuItem>
             );
           })}

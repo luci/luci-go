@@ -152,6 +152,7 @@ export function OptionsDropdown({
           css={{
             maxHeight: maxHeight,
             overflow: 'hidden',
+            maxWidth: 500,
           }}
           tabIndex={-1}
           key="options-menu-container"
