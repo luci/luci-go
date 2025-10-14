@@ -207,6 +207,69 @@ func TestPluginHandler(t *testing.T) {
 	assert.Loosely(t, pluginResult.Got, should.Match(sendWant))
 }
 
+func TestPrettifyPluginStderr(t *testing.T) {
+	t.Parallel()
+	// Define a struct for our test cases
+	testCases := []struct {
+		name     string
+		text     string
+		prefix   string
+		expected string
+	}{
+		{
+			name:     "Empty string",
+			text:     "",
+			prefix:   "  ",
+			expected: "<empty>",
+		},
+		{
+			name:     "Single line without newline",
+			text:     "hello world",
+			prefix:   "  ",
+			expected: "hello world",
+		},
+		{
+			name:     "Single line with newline",
+			text:     "hello world\n",
+			prefix:   "  ",
+			expected: "hello world",
+		},
+		{
+			name:     "Two lines without trailing newline",
+			text:     "line 1\nline 2",
+			prefix:   "  ",
+			expected: "\n  line 1\n  line 2\n",
+		},
+		{
+			name:     "Two lines with trailing newline",
+			text:     "line 1\nline 2\n",
+			prefix:   "  ",
+			expected: "\n  line 1\n  line 2\n",
+		},
+		{
+			name:     "Multiple lines with a different prefix",
+			text:     "first\nsecond\nthird",
+			prefix:   "PREFIX: ",
+			expected: "\nPREFIX: first\nPREFIX: second\nPREFIX: third\n",
+		},
+		{
+			name:     "Text with an empty line in the middle",
+			text:     "line 1\n\nline 3",
+			prefix:   "> ",
+			expected: "\n> line 1\n> \n> line 3\n",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := prettifyPluginStderr(tc.text, tc.prefix)
+			if result != tc.expected {
+				t.Errorf("prettifyPluginStderr(%q, %q) = %q; want %q", tc.text, tc.prefix, result, tc.expected)
+			}
+		})
+	}
+}
+
 func TestMain(m *testing.M) {
 	execmock.Intercept(true)
 	os.Exit(m.Run())

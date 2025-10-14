@@ -15,6 +15,7 @@
 package reauth
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/binary"
@@ -121,13 +122,39 @@ func (p PluginIO) CheckAvailable(ctx context.Context) error {
 	return nil
 }
 
-// Send executes PluginCmd() and sends `r` to the child process's stdin, then
-// returns the output.
+// Prettify plugin's stderr text for `logging` with %s format.
 //
-// This function might return a non-empty output and an error at the same time.
-// It's up to the caller to interpret the output and exit code in this case.
-//
-// This function logs a warning when the plugin's exit code isn't 0.
+//   - For empty output, returns a special "<empty>" text.
+//   - For single line text, it's printed in-place.
+//   - For multi line text, it adds a linebreak at the beginning (to form a
+//     newline from the preceding text), then prepend each line in `text` with
+//     `prefix`.
+func prettifyPluginStderr(text string, prefix string) string {
+	var lines []string
+
+	// bufio.Scanner handles the following nicely:
+	//
+	//  - One line without linebreak
+	//  - One line with linebreak
+	//  - Multiple lines
+	s := bufio.NewScanner(strings.NewReader(text))
+	for s.Scan() {
+		lines = append(lines, s.Text())
+	}
+
+	if len(lines) == 0 {
+		return "<empty>"
+	}
+
+	if len(lines) == 1 {
+		return lines[0]
+	}
+
+	// Start and end multi-line text with a newline to form a hunk.
+	return "\n" + prefix + strings.Join(lines, "\n"+prefix) + "\n"
+}
+
+// Send executes PluginCmd() and sends `r` to the child process's stdin, then returns the output.
 func (p PluginIO) Send(ctx context.Context, r io.Reader) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, p.PluginCmd())
 	cmd.Stdin = r
@@ -138,7 +165,7 @@ func (p PluginIO) Send(ctx context.Context, r io.Reader) ([]byte, error) {
 	logging.Debugf(ctx, "signing plugin stderr: %q", stderr.Bytes())
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
-		logging.Warningf(ctx, "signing plugin stderr: %q", stderr.Bytes())
+		logging.Warningf(ctx, "signing plugin stderr: %q", prettifyPluginStderr(stderr.String(), "  signing plugin stderr> "))
 	}
 
 	return out, err
