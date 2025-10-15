@@ -174,6 +174,10 @@ type userOptions struct {
 	//   * What cookies are set.
 	//   * Whether or not a URL fragment is in the path.
 	format string
+	// packageName is the name of the package where only the logcat lines
+	// belonging to that package will be displayed.
+	// This is only applicable to the "logcat" format.
+	packageName string
 }
 
 func (uo userOptions) isHTML() bool {
@@ -244,6 +248,8 @@ func resolveOptions(request *http.Request, pathStr string) (options userOptions,
 
 	options.project = parts[0]
 	err = config.ValidateProjectName(options.project)
+
+	options.packageName = request.URL.Query().Get("package")
 	return
 }
 
@@ -785,11 +791,15 @@ func GetHandler(ctx *router.Context) {
 		writeErrorPage(ctx, err, data)
 		return
 	}
-	
+
 	// The logcat webapp is hosted under /static for simplicity. Redirect
 	// there once we have checked ACLs on the logs.
 	if data.options.format == formatLogcat {
-		http.Redirect(ctx.Writer, ctx.Request, "/static/logcat.html#url=" + path, http.StatusFound)
+		redirected_url := "/static/logcat.html#url=" + path
+		if data.options.packageName != "" {
+			redirected_url += "&package=" + data.options.packageName
+		}
+		http.Redirect(ctx.Writer, ctx.Request, redirected_url, http.StatusFound)
 		return
 	}
 	writeOKHeaders(ctx, data)

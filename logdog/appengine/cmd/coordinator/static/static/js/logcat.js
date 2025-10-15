@@ -187,6 +187,9 @@ let displaySingleNamedProcess = [];
 /** @type {Array<FilterOption>} */
 let displaySingleUnnamedProcess = [];
 
+/** @type {string|undefined} */
+let defaultFilteredProcess = undefined;
+
 /** @type {Set<number>} */
 let allPids = new Set();
 
@@ -256,8 +259,11 @@ function toggleDropdown(dropdownList) {
 /**
  * Get the logcat from the specified URL via the Fetch API.
  * @param {string} url The URL from which to fetch the logcat.
+ * @param {string} packageName The name of the process that
+ * we want to be filtered by default.
  */
-async function fetchLogcat(url) {
+async function fetchLogcat(url, packageName) {
+  defaultFilteredProcess = packageName;
   try {
     const response = await fetch(url);
     if (response.ok) {
@@ -273,14 +279,23 @@ async function fetchLogcat(url) {
     setUpElements([]);
     textDisplayArea.textContent = `Encountered an error when `
       + `fetching the logcat: ${error}`;
+  } finally {
+    defaultFilteredProcess = undefined;
   }
 }
 
-const urlHash = window.location.hash.substring(1);
-const urlIdx = urlHash.indexOf('url=');
+const queryString = window.location.hash.substring(1);
+const urlIdx = queryString.indexOf('url=');
 if (urlIdx !== -1) {
-  const logcatUrl = urlHash.substring(urlIdx + 4);
-  fetchLogcat(`/logs${logcatUrl}?format=raw`);
+  const packageIdx = queryString.indexOf('package=');
+  if (packageIdx !== -1) {
+    const url = queryString.substring(urlIdx + 4, packageIdx - 1);
+    const packageName = queryString.substring(packageIdx + 8);
+    fetchLogcat(`/logs${url}?format=raw`, packageName);
+  } else {
+    const url = queryString.substring(urlIdx + 4);
+    fetchLogcat(`/logs${url}?format=raw`);
+  }
 } else {
   setUpElements([]);
   textDisplayArea.textContent = 'Please upload a text file containing '
@@ -467,10 +482,12 @@ function setUpProcessDropdownList() {
 
   // Automatically select 'Display All Processes' and consequently all other
   // options in the dropdown when the user uploads a new file.
-  displayAllProcesses.li.classList.add('selected');
-  displayAllProcesses.checkbox.checked = true;
-  displayNamedProcesses.li.classList.add('selected');
-  displayNamedProcesses.checkbox.checked = true;
+  if (defaultFilteredProcess === undefined) {
+    displayAllProcesses.li.classList.add('selected');
+    displayAllProcesses.checkbox.checked = true;
+    displayNamedProcesses.li.classList.add('selected');
+    displayNamedProcesses.checkbox.checked = true;
+  }
 
   const sortedPid = Array.from(allPids).sort((a, b) => a - b);
 
@@ -502,11 +519,15 @@ function createProcessListItem(pid, processName) {
     listItem.dataset.type = 'named-process';
   }
   listItem.classList.add('dropdown-item');
-  listItem.classList.add('selected');
 
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
-  checkbox.checked = true;
+
+  if (defaultFilteredProcess === undefined || (processName !== undefined
+    && processName === defaultFilteredProcess)) {
+    listItem.classList.add('selected');
+    checkbox.checked = true;
+  }
 
   const label = document.createElement('label');
   if (processName === undefined) {
