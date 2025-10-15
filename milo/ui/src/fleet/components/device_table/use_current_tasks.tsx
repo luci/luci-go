@@ -28,7 +28,7 @@ import { useBotsClient } from '@/swarming/hooks/prpc_clients';
 
 export interface CurrentTasksResult {
   map: Map<string, string>;
-  error: unknown;
+  error: Error | null;
   isError: boolean;
   isPending: boolean;
 }

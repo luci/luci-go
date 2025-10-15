@@ -32,6 +32,7 @@ import { DEVICES_COLUMNS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_stora
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { extractDutId } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import { InvalidPageTokenAlert } from '@/fleet/utils/invalid-page-token-alert';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   Device,
@@ -133,7 +134,7 @@ interface DeviceTableProps {
   nextPageToken: string;
   pagerCtx: PagerContext;
   isError: boolean;
-  error: unknown;
+  error: Error | null;
   isLoading: boolean;
   isLoadingColumns: boolean;
   totalRowCount?: number;
@@ -200,6 +201,13 @@ export function DeviceTable({
   };
 
   if (isError) {
+    if (error?.message.includes('invalid_page_token'))
+      return (
+        <InvalidPageTokenAlert
+          pagerCtx={pagerCtx}
+          setSearchParams={setSearchParams}
+        />
+      );
     return (
       <Alert severity="error">
         Something went wrong: {getErrorMessage(error, 'list devices')}

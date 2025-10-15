@@ -17,6 +17,7 @@ import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { InvalidPageTokenAlert } from '@/fleet/utils/invalid-page-token-alert';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import {
@@ -133,6 +134,14 @@ export const ResourceRequestTable = () => {
   };
 
   if (query.isError) {
+    if (query.error?.message.includes('invalid_page_token')) {
+      return (
+        <InvalidPageTokenAlert
+          pagerCtx={pagerCtx}
+          setSearchParams={setSearchParams}
+        />
+      );
+    }
     return <Alert severity="error">Something went wrong</Alert>; // TODO: b/397421370 add nice error handling
   }
 

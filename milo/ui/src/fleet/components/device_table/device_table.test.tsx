@@ -183,7 +183,7 @@ function TestComponent({
       nextPageToken={nextPageToken}
       pagerCtx={pagerCtx}
       isError={false}
-      error={undefined}
+      error={null}
       isLoading={false}
       isLoadingColumns={false}
       totalRowCount={withKnownTotalRowCount ? totalRowCount : undefined}
