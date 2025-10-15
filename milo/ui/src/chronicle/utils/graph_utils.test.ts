@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { CheckKind } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
+import { CheckState } from '@/proto/turboci/graph/orchestrator/v1/check_state.pb';
 import { GraphView as TurboCIGraphView } from '@/proto/turboci/graph/orchestrator/v1/graph_view.pb';
 
 import {
@@ -48,17 +49,21 @@ describe('graph_utils', () => {
 
       // Check edges
       const edgeIds = edges.map((e) => e.id);
-      expect(edgeIds).toEqual(['e-S1-C1', 'e-S1-C2', 'e-C3-C2']);
+      expect(edgeIds).toEqual([
+        'dependency-S1-C1',
+        'dependency-S1-C2',
+        'dependency-C3-C2',
+      ]);
 
-      const edge1 = edges.find((e) => e.id === 'e-S1-C1');
+      const edge1 = edges.find((e) => e.id === 'dependency-S1-C1');
       expect(edge1?.source).toBe('C1');
       expect(edge1?.target).toBe('S1');
 
-      const edge2 = edges.find((e) => e.id === 'e-S1-C2');
+      const edge2 = edges.find((e) => e.id === 'dependency-S1-C2');
       expect(edge2?.source).toBe('C2');
       expect(edge2?.target).toBe('S1');
 
-      const edge3 = edges.find((e) => e.id === 'e-C3-C2');
+      const edge3 = edges.find((e) => e.id === 'dependency-C3-C2');
       expect(edge3?.source).toBe('C2');
       expect(edge3?.target).toBe('C3');
     });
@@ -106,6 +111,82 @@ describe('graph_utils', () => {
           invalidCheckGraph as unknown as TurboCIGraphView,
         ),
       ).toThrow('Invalid CheckView: {"check":{}}');
+    });
+
+    it('should create one edit edge for each check', () => {
+      const config: GraphGenerationConfig = {
+        workPlanIdStr: 'workplan-1',
+        checkIds: ['C1'],
+        stageIds: ['S1'],
+        dependencies: {},
+        checkEdits: [
+          {
+            stageId: 'S1',
+            checkId: 'C1',
+            state: CheckState.CHECK_STATE_PLANNING,
+          },
+          {
+            stageId: 'S1',
+            checkId: 'C1',
+            state: CheckState.CHECK_STATE_PLANNED,
+          },
+          {
+            stageId: 'S1',
+            checkId: 'C1',
+            state: CheckState.CHECK_STATE_WAITING,
+          },
+          // Only the last edit will have an edge created
+          {
+            stageId: 'S1',
+            checkId: 'C1',
+            state: CheckState.CHECK_STATE_FINAL,
+          },
+        ],
+      };
+      const generator = new FakeGraphGenerator(config);
+      const graph = generator.generate();
+
+      const { edges } = convertTurboCIGraphToNodesAndEdges(graph);
+
+      // There should only be one edge for the FINAL state transition.
+      expect(edges).toHaveLength(1);
+      const editEdge = edges[0];
+
+      // Check the edge details.
+      expect(editEdge.id).toBe('edit-S1-C1');
+      expect(editEdge.source).toBe('S1');
+      expect(editEdge.target).toBe('C1');
+      expect(editEdge.label).toBe('Final');
+    });
+
+    it('should create both dependency and edit edges between the same source/target nodes', () => {
+      const config: GraphGenerationConfig = {
+        workPlanIdStr: 'workplan-1',
+        checkIds: ['C1'],
+        stageIds: ['S1'],
+        dependencies: { C1: ['S1'] },
+        checkEdits: [
+          {
+            stageId: 'S1',
+            checkId: 'C1',
+            state: CheckState.CHECK_STATE_PLANNING,
+          },
+        ],
+      };
+      const generator = new FakeGraphGenerator(config);
+      const graph = generator.generate();
+
+      const { edges } = convertTurboCIGraphToNodesAndEdges(graph);
+
+      expect(edges).toHaveLength(2);
+      const dependencyEdge = edges.find((e) => e.id === 'dependency-C1-S1');
+      expect(dependencyEdge?.source).toBe('S1');
+      expect(dependencyEdge?.target).toBe('C1');
+
+      const editEdge = edges.find((e) => e.id === 'edit-S1-C1');
+      expect(editEdge?.source).toBe('S1');
+      expect(editEdge?.target).toBe('C1');
+      expect(editEdge?.label).toBe('Planning');
     });
 
     it('should throw an error for an invalid stage', () => {

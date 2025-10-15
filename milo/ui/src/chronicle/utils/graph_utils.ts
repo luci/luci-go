@@ -13,11 +13,12 @@
 // limitations under the License.
 
 import dagre from '@dagrejs/dagre';
-import { Edge, Node, Position } from 'reactflow';
+import { Edge, MarkerType, Node, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 import { Check } from '../../proto/turboci/graph/orchestrator/v1/check.pb';
 import { CheckKind } from '../../proto/turboci/graph/orchestrator/v1/check_kind.pb';
+import { CheckState } from '../../proto/turboci/graph/orchestrator/v1/check_state.pb';
 import { CheckView } from '../../proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { Edge as TurboCIEdge } from '../../proto/turboci/graph/orchestrator/v1/edge.pb';
 import { GraphView as TurboCIGraphView } from '../../proto/turboci/graph/orchestrator/v1/graph_view.pb';
@@ -43,6 +44,13 @@ const commonNodeProperties = {
   position: { x: 0, y: 0 }, // Position will be calculated by Dagre
   sourcePosition: Position.Right,
   targetPosition: Position.Left,
+};
+const markerStyle = {
+  markerEnd: {
+    type: MarkerType.ArrowClosed,
+    width: 20,
+    height: 20,
+  },
 };
 
 /**
@@ -93,6 +101,21 @@ function getCheckNodeLabel(check: Check): string {
   }
 }
 
+function getCheckStateEditLabel(state?: CheckState): string | undefined {
+  switch (state) {
+    case CheckState.CHECK_STATE_PLANNING:
+      return 'Planning';
+    case CheckState.CHECK_STATE_PLANNED:
+      return 'Planned';
+    case CheckState.CHECK_STATE_WAITING:
+      return 'Waiting';
+    case CheckState.CHECK_STATE_FINAL:
+      return 'Final';
+    default:
+      return undefined;
+  }
+}
+
 function createCheckNode(checkView: CheckView): Node {
   const check = checkView.check!;
   return {
@@ -113,16 +136,32 @@ function createStageNode(stageView: StageView): Node {
   };
 }
 
-function createEdge(sourceId: string, depEdge: TurboCIEdge): Edge {
+function createDependencyEdge(sourceId: string, depEdge: TurboCIEdge): Edge {
   const targetId = (depEdge.target!.check?.id || depEdge.target!.stage?.id)!;
   if (!targetId) {
     throw new Error(`Edge target has no ID: ${depEdge}`);
   }
   return {
-    id: `e-${sourceId}-${targetId}`,
+    id: `dependency-${sourceId}-${targetId}`,
     source: targetId,
     target: sourceId,
+    type: 'smoothstep',
+    ...markerStyle,
+  };
+}
+
+function createEditEdge(
+  sourceId: string,
+  targetId: string,
+  state?: CheckState,
+): Edge {
+  return {
+    id: `edit-${sourceId}-${targetId}`,
+    source: sourceId,
+    target: targetId,
+    label: getCheckStateEditLabel(state),
     animated: true,
+    ...markerStyle,
   };
 }
 
@@ -146,7 +185,9 @@ export function convertTurboCIGraphToNodesAndEdges(graph: TurboCIGraphView) {
     // Create edges for dependencies
     stageView.stage.dependencies.forEach((depGroup) => {
       depGroup.edges.forEach((edge) => {
-        edges.push(createEdge(stageView.stage!.identifier!.id!, edge));
+        edges.push(
+          createDependencyEdge(stageView.stage!.identifier!.id!, edge),
+        );
       });
     });
   });
@@ -162,16 +203,35 @@ export function convertTurboCIGraphToNodesAndEdges(graph: TurboCIGraphView) {
       throw new Error(`Invalid CheckView: ${JSON.stringify(checkView)}`);
     }
 
+    const checkId = checkView.check!.identifier!.id!;
+
     nodes.push(createCheckNode(checkView));
 
     // Create edges for dependencies
     checkView.check.dependencies.forEach((depGroup) => {
       depGroup.edges.forEach((edge) => {
-        edges.push(createEdge(checkView.check!.identifier!.id!, edge));
+        edges.push(createDependencyEdge(checkId, edge));
       });
     });
 
-    // TODO - Create edges for check edits
+    // Create edit edge for the check. We will only create a singular edit edge
+    // using the latest edit on the check (ordered by revision timestamp).
+    const latestEdit = checkView.edits
+      .filter(
+        (editView) =>
+          editView.edit?.version?.ts &&
+          editView.edit?.editor?.stageAttempt?.stage?.id,
+      )
+      .sort((a, b) => {
+        return b.edit!.version!.ts!.localeCompare(a.edit!.version!.ts!);
+      })[0];
+
+    if (latestEdit) {
+      const editorStageId = latestEdit.edit!.editor!.stageAttempt!.stage!.id!;
+      edges.push(
+        createEditEdge(editorStageId, checkId, latestEdit.edit!.check?.state),
+      );
+    }
   });
 
   return { nodes, edges };

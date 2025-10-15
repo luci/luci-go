@@ -40,7 +40,10 @@ import { CheckDelta } from '../proto/turboci/graph/orchestrator/v1/check_delta.p
 import { CheckEditView } from '../proto/turboci/graph/orchestrator/v1/check_edit_view.pb';
 import { CheckKind } from '../proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { CheckResultView } from '../proto/turboci/graph/orchestrator/v1/check_result_view.pb';
-import { CheckState } from '../proto/turboci/graph/orchestrator/v1/check_state.pb';
+import {
+  CheckState,
+  checkStateToJSON,
+} from '../proto/turboci/graph/orchestrator/v1/check_state.pb';
 import { CheckView } from '../proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { Datum } from '../proto/turboci/graph/orchestrator/v1/datum.pb';
 import {
@@ -88,6 +91,11 @@ export interface GraphGenerationConfig {
    * If not provided, defaults to CHECK_KIND_BUILD.
    */
   checkKinds?: Record<string, CheckKind>;
+  /**
+   * Optional list of check edits.
+   * Each edit represents a stage editing a check's state.
+   */
+  checkEdits?: { stageId: string; checkId: string; state: CheckState }[];
 }
 
 export class FakeGraphGenerator {
@@ -210,8 +218,48 @@ export class FakeGraphGenerator {
       ],
     });
 
-    // Generate 1 Sample Edit
-    const edits: CheckEditView[] = this.generateSampleCheckEdit(checkId, realm);
+    // Generate edits for this check
+    const edits: CheckEditView[] = [];
+    const checkEdits = this.config.checkEdits?.filter(
+      (e) => e.checkId === idStr,
+    );
+
+    if (checkEdits) {
+      for (const editInfo of checkEdits) {
+        const stageId = this.stageIdMap.get(editInfo.stageId);
+        if (!stageId) {
+          throw new Error(
+            `Stage ID ${editInfo.stageId} for check edit not found in configured stage IDs.`,
+          );
+        }
+
+        const editVersion = this.nextRevision();
+
+        const checkDelta: CheckDelta = {
+          state: editInfo.state,
+          dependencies: [],
+          options: [],
+          result: [],
+        };
+
+        const editor: Actor = {
+          stageAttempt: {
+            stage: stageId,
+          },
+        };
+
+        const edit: Edit = this.createEdit(
+          { check: checkId },
+          realm,
+          editVersion,
+          `State changed to ${checkStateToJSON(editInfo.state)}`,
+          { check: checkDelta },
+          editor,
+        );
+
+        edits.push({ edit: edit, optionData: [] });
+      }
+    }
 
     return {
       check: check,
@@ -371,38 +419,6 @@ export class FakeGraphGenerator {
   // Edit and Delta Generators
   // ==========================================
 
-  private generateSampleCheckEdit(
-    checkId: CheckId,
-    realm: string,
-  ): CheckEditView[] {
-    const editVersion = this.nextRevision();
-
-    // An edit that changed the state and added a result
-    const delta: CheckDelta = {
-      state: CheckState.CHECK_STATE_WAITING,
-      dependencies: [],
-      options: [],
-      result: [
-        {
-          identifier: { check: checkId, idx: 1 },
-          created: true,
-          finalized: false,
-          data: [],
-        },
-      ],
-    };
-
-    const edit: Edit = this.createEdit(
-      { check: checkId },
-      realm,
-      editVersion,
-      'Moved to WAITING and created result slots',
-      { check: delta },
-    );
-
-    return [{ edit: edit, optionData: [] }];
-  }
-
   private generateSampleStageEdit(
     stageId: StageId,
     realm: string,
@@ -431,6 +447,7 @@ export class FakeGraphGenerator {
     version: Revision,
     reasonMsg: string,
     delta: { check?: CheckDelta; stage?: StageDelta },
+    editor?: Actor,
   ): Edit {
     // Hardcoded expiries roughly 30/180 days in future based on start time
     const futureTime = this.currentSimulatedTimeMs + 30 * 24 * 60 * 60 * 1000;
@@ -442,7 +459,7 @@ export class FakeGraphGenerator {
       expireAt: expireStr, // Roughly +180 days
       dataExpireAt: expireStr, // Roughly +30 days
       realm: realm,
-      editor: this.getOrchestratorActor(),
+      editor: editor || this.getOrchestratorActor(),
       transactionalSet: [forNode],
       reasons: [
         {

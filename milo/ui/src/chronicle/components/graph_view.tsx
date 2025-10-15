@@ -23,6 +23,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
+import { CheckState } from '@/proto/turboci/graph/orchestrator/v1/check_state.pb';
 
 import { CheckKind } from '../../proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { FakeGraphGenerator } from '../fake_turboci_graph';
@@ -55,6 +56,7 @@ const graphGenerator = new FakeGraphGenerator({
     CheckH: ['CheckF', 'CheckG'],
     StageB: ['StageA'],
     StageC: ['StageB'],
+    CheckA: ['StageA'],
   },
   checkKinds: {
     CheckA: CheckKind.CHECK_KIND_SOURCE,
@@ -66,6 +68,63 @@ const graphGenerator = new FakeGraphGenerator({
     CheckG: CheckKind.CHECK_KIND_TEST,
     CheckH: CheckKind.CHECK_KIND_TEST,
   },
+  checkEdits: [
+    {
+      stageId: 'StageA',
+      checkId: 'CheckA',
+      state: CheckState.CHECK_STATE_PLANNING,
+    },
+    {
+      stageId: 'StageA',
+      checkId: 'CheckA',
+      state: CheckState.CHECK_STATE_PLANNED,
+    },
+    {
+      stageId: 'StageA',
+      checkId: 'CheckA',
+      state: CheckState.CHECK_STATE_WAITING,
+    },
+    {
+      stageId: 'StageA',
+      checkId: 'CheckA',
+      state: CheckState.CHECK_STATE_FINAL,
+    },
+    {
+      stageId: 'StageB',
+      checkId: 'CheckB',
+      state: CheckState.CHECK_STATE_FINAL,
+    },
+    {
+      stageId: 'StageB',
+      checkId: 'CheckC',
+      state: CheckState.CHECK_STATE_FINAL,
+    },
+    {
+      stageId: 'StageB',
+      checkId: 'CheckD',
+      state: CheckState.CHECK_STATE_PLANNED,
+    },
+    {
+      stageId: 'StageB',
+      checkId: 'CheckE',
+      state: CheckState.CHECK_STATE_WAITING,
+    },
+    {
+      stageId: 'StageB',
+      checkId: 'CheckF',
+      state: CheckState.CHECK_STATE_WAITING,
+    },
+    {
+      stageId: 'StageC',
+      checkId: 'CheckG',
+      state: CheckState.CHECK_STATE_PLANNING,
+    },
+    {
+      stageId: 'StageC',
+      checkId: 'CheckH',
+      state: CheckState.CHECK_STATE_PLANNING,
+    },
+  ],
 });
 const turboCiGraph = graphGenerator.generate();
 
