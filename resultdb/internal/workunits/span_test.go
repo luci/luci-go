@@ -207,6 +207,77 @@ func TestFinalizationMethods(t *testing.T) {
 	})
 }
 
+func TestFinalizerCandidateMethods(t *testing.T) {
+	ftt.Run("TestFinalizerCandidateMethods", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+
+		const rootInvocationID = "root-inv-id"
+		rootwu := NewBuilder(rootInvocationID, "root").Build()
+
+		finalizerCandidateTime := time.Date(2025, time.October, 10, 13, 1, 2, 3, time.UTC)
+		wu1 := NewBuilder(rootInvocationID, "work-unit-id").
+			WithFinalizationState(pb.WorkUnit_FINALIZING).
+			WithFinalizerCandidateTime(finalizerCandidateTime).
+			Build()
+		testutil.MustApply(ctx, t, testutil.CombineMutations(
+			rootinvocations.InsertForTesting(rootinvocations.NewBuilder(rootInvocationID).Build()),
+			InsertForTesting(rootwu),
+			InsertForTesting(wu1),
+		)...)
+
+		t.Run(`SetFinalizerCandidateTime`, func(t *ftt.Test) {
+			ct, err := span.Apply(ctx, []*spanner.Mutation{SetFinalizerCandidateTime(wu1.ID)})
+			assert.Loosely(t, err, should.BeNil)
+
+			readWU, err := Read(span.Single(ctx), wu1.ID, AllFields)
+			assert.Loosely(t, err, should.BeNil)
+			expectedWU := wu1.Clone()
+			expectedWU.FinalizerCandidateTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
+			assert.That(t, readWU, should.Match(expectedWU))
+		})
+		t.Run(`ResetFinalizerCandidateTime`, func(t *ftt.Test) {
+			wu2 := NewBuilder(rootInvocationID, "work-unit-id-2").
+				WithFinalizationState(pb.WorkUnit_FINALIZING).
+				WithFinalizerCandidateTime(finalizerCandidateTime.Add(time.Millisecond)).
+				Build()
+			testutil.MustApply(ctx, t, InsertForTesting(wu2)...)
+			candidates := []FinalizerCandidate{
+				{
+					ID:                     wu1.ID,
+					FinalizerCandidateTime: finalizerCandidateTime,
+				},
+				{
+					ID:                     wu2.ID,
+					FinalizerCandidateTime: finalizerCandidateTime,
+				},
+			}
+			var rowCount int64
+			var err error
+			_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+				rowCount, err = span.Update(ctx, ResetFinalizerCandidateTime(candidates))
+				if err != nil {
+					return err
+				}
+				return nil
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, rowCount, should.Equal(int64(1)))
+
+			// wu1 has been reset.
+			wuread, err := Read(span.Single(ctx), wu1.ID, AllFields)
+			assert.Loosely(t, err, should.BeNil)
+			expectedWU := wu1.Clone()
+			expectedWU.FinalizerCandidateTime = spanner.NullTime{Valid: false}
+			assert.That(t, wuread, should.Match(expectedWU))
+
+			// wu2 has not been reset.
+			wuread, err = Read(span.Single(ctx), wu2.ID, AllFields)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, wuread, should.Match(wu2))
+		})
+	})
+}
+
 func TestWorkUnitUpdateRequestsMethods(t *testing.T) {
 	ftt.Run("TestWorkUnitUpdateRequestsMethods", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)

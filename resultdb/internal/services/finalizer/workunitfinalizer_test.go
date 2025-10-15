@@ -19,6 +19,7 @@ import (
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
@@ -37,15 +38,145 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 		testutil.MustApply(ctx, t,
 			rootinvocations.InsertForTesting(rootinvocations.NewBuilder(rootInvID).WithFinalizerPending(true).WithFinalizerSequence(seq).Build())...,
 		)
+		opts := sweepWorkUnitsForFinalizationOptions{writeBatchSizeOverride: 3, readLimitOverride: 10}
+
 		t.Run("Stale task exits early", func(t *ftt.Test) {
 			// Execute the sweep with an older sequence number.
-			err := sweepWorkUnitsForFinalization(ctx, rootInvID, seq-1)
+			err := sweepWorkUnitsForFinalization(ctx, rootInvID, seq-1, opts)
 			assert.Loosely(t, err, should.BeNil)
 
 			taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, taskState.Pending, should.BeTrue) // the pending flag should not reset.
 			assert.Loosely(t, taskState.Sequence, should.Equal(seq))
+		})
+
+		t.Run("e2e", func(t *ftt.Test) {
+			t.Run("a complex tree", func(t *ftt.Test) {
+				// A tree as below.
+				// root*
+				// ├── wu1*
+				// │   ├── w11* (c)
+				// │   └── w12*
+				// │       └── w121* (c)
+				// └── wu2* (c)
+				//     └── wu21 (active)
+				//     └── wu22* (c)
+				// wu* means wu is a finalizing state
+				// wu (c) means wu is a candidate
+				wuroot := workunits.NewBuilder(rootInvID, "root").WithFinalizationState(pb.WorkUnit_FINALIZING).Build()
+				wu1 := workunits.NewBuilder(rootInvID, "wu1").
+					WithFinalizationState(pb.WorkUnit_FINALIZING).
+					WithParentWorkUnitID("root").
+					Build()
+				wu11 := workunits.NewBuilder(rootInvID, "wu11").
+					WithFinalizationState(pb.WorkUnit_FINALIZING).
+					WithParentWorkUnitID(wu1.ID.WorkUnitID).
+					WithFinalizerCandidateTime(spanner.CommitTimestamp).
+					Build()
+				wu12 := workunits.NewBuilder(rootInvID, "wu12").
+					WithFinalizationState(pb.WorkUnit_FINALIZING).
+					WithParentWorkUnitID(wu1.ID.WorkUnitID).
+					Build()
+				wu121 := workunits.NewBuilder(rootInvID, "wu121").
+					WithFinalizationState(pb.WorkUnit_FINALIZING).
+					WithParentWorkUnitID(wu12.ID.WorkUnitID).
+					WithFinalizerCandidateTime(spanner.CommitTimestamp).
+					Build()
+				wu2 := workunits.NewBuilder(rootInvID, "wu2").
+					WithFinalizationState(pb.WorkUnit_FINALIZING).
+					WithParentWorkUnitID("root").
+					WithFinalizerCandidateTime(spanner.CommitTimestamp).
+					Build()
+				wu21 := workunits.NewBuilder(rootInvID, "wu21").
+					WithFinalizationState(pb.WorkUnit_ACTIVE).
+					WithParentWorkUnitID(wu2.ID.WorkUnitID).
+					Build()
+				wu22 := workunits.NewBuilder(rootInvID, "wu22").
+					WithFinalizationState(pb.WorkUnit_FINALIZING).
+					WithParentWorkUnitID(wu2.ID.WorkUnitID).
+					WithFinalizerCandidateTime(spanner.CommitTimestamp).
+					Build()
+
+				createTime := testutil.MustApply(ctx, t, testutil.CombineMutations(
+					workunits.InsertForTesting(wuroot),
+					workunits.InsertForTesting(wu1),
+					workunits.InsertForTesting(wu2),
+					workunits.InsertForTesting(wu11),
+					workunits.InsertForTesting(wu12),
+					workunits.InsertForTesting(wu121),
+					workunits.InsertForTesting(wu21),
+					workunits.InsertForTesting(wu22),
+				)...)
+				verifyWU := func(wu *workunits.WorkUnitRow, expectedState pb.WorkUnit_FinalizationState, hasFinalizerCandidateTime bool) {
+					t.Helper()
+					readWU, err := workunits.Read(span.Single(ctx), wu.ID, workunits.ExcludeExtendedProperties)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, readWU.FinalizationState, should.Equal(expectedState), truth.LineContext())
+					if expectedState == pb.WorkUnit_FINALIZED {
+						assert.That(t, readWU.FinalizeTime.Valid, should.BeTrue)
+						assert.That(t, readWU.FinalizeTime.Time, should.HappenAfter(createTime), truth.LineContext())
+					}
+					assert.That(t, readWU.FinalizerCandidateTime.Valid, should.Equal(hasFinalizerCandidateTime), truth.LineContext())
+					if hasFinalizerCandidateTime {
+						assert.That(t, readWU.FinalizerCandidateTime.Time, should.HappenAfter(createTime), truth.LineContext())
+					}
+				}
+				t.Run("one read", func(t *ftt.Test) {
+					// The tree after.
+					// root* (c)
+					// ├── wu1(finalized)
+					// │   ├── w11 (finalized)
+					// │   └── w12 (finalized)
+					// │       └── w121 (finalized)
+					// └── wu2* (c updated)
+					//     └── wu21 (active)
+					//     └── wu22 (finalized)
+
+					err := sweepWorkUnitsForFinalization(ctx, rootInvID, seq, opts)
+					assert.Loosely(t, err, should.BeNil)
+					// wuroot can't be finalized, and becomes a candidate.
+					verifyWU(wuroot, pb.WorkUnit_FINALIZING, true)
+					// Finalize wu1, wu11, wu12, w121
+					verifyWU(wu1, pb.WorkUnit_FINALIZED, false)
+					verifyWU(wu11, pb.WorkUnit_FINALIZED, false)
+					verifyWU(wu12, pb.WorkUnit_FINALIZED, false)
+					verifyWU(wu121, pb.WorkUnit_FINALIZED, false)
+					// wu2 can't be finalized.
+					verifyWU(wu2, pb.WorkUnit_FINALIZING, true)
+					verifyWU(wu21, pb.WorkUnit_ACTIVE, false)
+					verifyWU(wu22, pb.WorkUnit_FINALIZED, false)
+
+					// Assert root invocation sweep state was reset
+					taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, taskState.Pending, should.BeFalse)
+				})
+
+				t.Run("multiple read", func(t *ftt.Test) {
+					opts.readLimitOverride = 2
+
+					err := sweepWorkUnitsForFinalization(ctx, rootInvID, seq, opts)
+					assert.Loosely(t, err, should.BeNil)
+					// wuroot can't be finalized, becomes a candidate when wu1 finalizes
+					// but gets reset in later iteration since it is not ready to be finalized.
+					verifyWU(wuroot, pb.WorkUnit_FINALIZING, false)
+					// Finalize wu1, wu11, wu12, w121
+					verifyWU(wu1, pb.WorkUnit_FINALIZED, false)
+					verifyWU(wu11, pb.WorkUnit_FINALIZED, false)
+					verifyWU(wu12, pb.WorkUnit_FINALIZED, false)
+					verifyWU(wu121, pb.WorkUnit_FINALIZED, false)
+					// wu2 can't be finalized.
+					verifyWU(wu2, pb.WorkUnit_FINALIZING, false)
+					verifyWU(wu21, pb.WorkUnit_ACTIVE, false)
+					verifyWU(wu22, pb.WorkUnit_FINALIZED, false)
+
+					// Assert root invocation sweep state was reset
+					taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, taskState.Pending, should.BeFalse)
+				})
+			})
 		})
 	})
 }
@@ -266,7 +397,7 @@ func TestFindWorkUnitsReadyForFinalization(t *testing.T) {
 			})
 
 			t.Run("limit works", func(t *ftt.Test) {
-				opts.limitOverwrite = 3
+				opts.limitOverride = 3
 				ineligible, toFinalize, moreToRead, err := findWorkUnitsReadyForFinalization(ctx, rootInvID, opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, moreToRead, should.BeTrue)

@@ -18,15 +18,54 @@ import (
 	"context"
 	"fmt"
 
+	"cloud.google.com/go/spanner"
+	"go.opentelemetry.io/otel/attribute"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/internal/workunits"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-func sweepWorkUnitsForFinalization(ctx context.Context, rootInvID rootinvocations.ID, seq int64) error {
+type sweepWorkUnitsForFinalizationOptions struct {
+	// Overrides the default number of work units to finalize in a single
+	// database transaction. If 0, the value of 2,000 is used.
+	// For testing only.
+	writeBatchSizeOverride int
+	// Overrides the default limit for the number of candidates to read in one
+	// round. If 0, the value of 10,000 is used.
+	// For testing only.
+	readLimitOverride int
+}
+
+// sweepWorkUnitsForFinalization implements the batch-based finalizer for work units.
+// It finalizes work units within a given root invocation.
+//
+// The finalization process is iterative. In each iteration, the function:
+//  1. Finds a batch of work units that are ready for finalization. A work unit
+//     is ready if it's in the FINALIZING state and all its children are FINALIZED.
+//     This is done by starting with known candidates and walking up the work unit
+//     tree.
+//  2. Finalizes the ready work units by setting their state to FINALIZED, and
+//     in the same transaction sets the `FinalizerCandidateTime` for the parents of the just-finalized
+//     work units. (while 1. will attempt to identify parents that are eligible to be finalized at the
+//     same time, due to batching size limits not all parents may be evaluated)
+//  3. Resets the `FinalizerCandidateTime` for any initial candidates that were
+//     not ready for finalization.
+//
+// This process repeats until no more finalization candidates are found.
+//
+// The follow invariants always holds:
+// 1. Never enter a state that a finalizing work unit has empty finalizerCandidateTime, and all children are finalized.
+// 2. Only transition a work unit to finalized when it has no active/finalizing children.
+func sweepWorkUnitsForFinalization(ctx context.Context, rootInvID rootinvocations.ID, seq int64, opts sweepWorkUnitsForFinalizationOptions) (err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/finalizer.sweepWorkUnitsForFinalization")
+	defer func() { tracing.End(ts, err) }()
+
 	isStaleTask, err := checkAndResetFinalizerPending(ctx, rootInvID, seq)
 	if err != nil {
 		return errors.Fmt("check and reset finalizer pending state: %w", err)
@@ -35,33 +74,61 @@ func sweepWorkUnitsForFinalization(ctx context.Context, rootInvID rootinvocation
 		logging.Infof(ctx, "exiting stale finalizer task for %q (task seq: %d)", rootInvID.Name(), seq)
 		return nil
 	}
+	readOpts := findWorkUnitsReadyForFinalizationOptions{
+		limitOverride: opts.readLimitOverride,
+	}
 	for {
-		ineligibleCandidates, workUnitsToFinalize, moreToRead, err := findWorkUnitsReadyForFinalization(ctx, rootInvID, findWorkUnitsReadyForFinalizationOptions{})
+		ineligibleCandidates, workUnitsToFinalize, moreToRead, err := findWorkUnitsReadyForFinalization(ctx, rootInvID, readOpts)
 		if err != nil {
 			return errors.Fmt("findWorkUnitsReadyForFinalization: %w", err)
 		}
-		logging.Infof(ctx, "finalizing %d work units, reset %d not ready work units for %q", len(workUnitsToFinalize), len(ineligibleCandidates), rootInvID.Name())
+		logging.Infof(ctx, "finalizing %d work units, reseting %d not ready work units for %q", len(workUnitsToFinalize), len(ineligibleCandidates), rootInvID.Name())
+
+		err = applyFinalizationUpdates(ctx, workUnitsToFinalize, opts.writeBatchSizeOverride)
+		if err != nil {
+			return errors.Fmt("apply  work unit finalization updates: %w", err)
+		}
+		// Reset the finalizer candidate time for ineligible candidates. It is safe to perform
+		// this in a separate transaction, because this is a conditional update, it only resets
+		// when the finalizerCandidateTime matches the original read.
+		_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+			st := workunits.ResetFinalizerCandidateTime(ineligibleCandidates)
+			_, err := span.Update(ctx, st)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+		if err != nil {
+			return errors.Fmt("reset finalizer candidate time for ineligible candidates: %w", err)
+		}
 		if !moreToRead {
 			break
 		}
 	}
-	// TODO(beining): implement the write phase.
 	return nil
 }
 
 // checkAndResetFinalizerPending checks if the finalizer task is stale.
 // If the task is not stale, it resets the pending state for the finalizer.
 func checkAndResetFinalizerPending(ctx context.Context, rootInvID rootinvocations.ID, seq int64) (isStaleTask bool, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/finalizer.checkAndResetFinalizerPending")
+	defer func() { tracing.End(ts, err) }()
+
 	isStaleTask = false
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		taskState, err := rootinvocations.ReadFinalizerTaskState(ctx, rootInvID)
 		if err != nil {
 			return err
 		}
+		// If the sequence number on the root invocation is different, it means a newer sweep
+		// has been scheduled, so this task is stale and should exit.
 		if taskState.Sequence != seq {
 			isStaleTask = true
 			return nil
 		}
+		// The task is current, so reset the pending flag. This allows a new
+		// task to be scheduled if another candidate appears later.
 		span.BufferWrite(ctx, rootinvocations.ResetFinalizerPending(rootInvID))
 		return nil
 	})
@@ -79,9 +146,9 @@ type workUnitWithParent struct {
 }
 
 type findWorkUnitsReadyForFinalizationOptions struct {
-	// limitOverwrite overwrites the default limit for the number of work units to
+	// limitOverride overrides the default limit for the number of work units to
 	// process. If 0, a default value is used. For testing only.
-	limitOverwrite int
+	limitOverride int
 }
 
 // findWorkUnitsReadyForFinalization identifies work units that are ready to be
@@ -96,11 +163,13 @@ type findWorkUnitsReadyForFinalizationOptions struct {
 // work unit tree to find their parents that may now also be ready.
 //
 // It returns:
-//   - ineligibleCandidates: A list of the initial candidates that were not ready for finalization in this batch.
+//   - ineligibleCandidates: A list of the initial candidates that were not ready for finalization in this batch. The size of this list is at most 10K.
 //   - workUnitsToFinalize: A list of work units that are ready to be finalized, including those identified by walking up the hierarchy.
-//     The list is ordered so that parents always appear after their children.
+//     The list is ordered so that parents always appear after their children, and the size of this list is at most 10K.
 //   - moreToRead: A boolean indicating if there might be more work units to process.
 func findWorkUnitsReadyForFinalization(ctx context.Context, rootInvID rootinvocations.ID, opts findWorkUnitsReadyForFinalizationOptions) (ineligibleCandidates []workunits.FinalizerCandidate, workUnitsToFinalize []workUnitWithParent, moreToRead bool, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/finalizer.findWorkUnitsReadyForFinalization")
+	defer func() { tracing.End(ts, err) }()
 	// It is safe to perform write in a separate transaction to this read, as any work units
 	// that are eligible to be finalized now will still be eligible in future.
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
@@ -109,10 +178,10 @@ func findWorkUnitsReadyForFinalization(ctx context.Context, rootInvID rootinvoca
 	// The limit caps the number of work units in `candidates` and `workUnitsToFinalize` lists.
 	// This is necessary because subsequent queries use the IN operator, which has a limit of 10,000.
 	// See https://cloud.google.com/spanner/quotas#query-limits.
-	const maxLimit = 10000
-	limit := opts.limitOverwrite
-	if opts.limitOverwrite < 0 || opts.limitOverwrite > maxLimit {
-		return nil, nil, false, errors.New(fmt.Sprintf("limit must be between 0 and %d, got %d", maxLimit, opts.limitOverwrite))
+	const maxLimit = 10_000
+	limit := opts.limitOverride
+	if opts.limitOverride < 0 || opts.limitOverride > maxLimit {
+		return nil, nil, false, errors.New(fmt.Sprintf("limit must be between 0 and %d, got %d", maxLimit, opts.limitOverride))
 	}
 	if limit == 0 {
 		limit = maxLimit
@@ -184,6 +253,87 @@ func findWorkUnitsReadyForFinalization(ctx context.Context, rootInvID rootinvoca
 	return ineligibleCandidates, workUnitsToFinalize, moreToRead, nil
 }
 
+// applyFinalizationUpdates commits the finalization state for a given list of work units.
+//
+// The function relies on the caller to provide `workUnitsToFinalize` sorted with
+// children appearing before parents. This ordering guarantees that a parent is only
+// processed after its dependent children are finalized.
+func applyFinalizationUpdates(ctx context.Context, workUnitsToFinalize []workUnitWithParent, batchSize int) (err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/finalizer.applyFinalizationUpdates",
+		attribute.Int("count", len(workUnitsToFinalize)))
+	defer func() { tracing.End(ts, err) }()
+	// Batching is necessary because spanner has a limit of 80,000 for the number of mutations per commit.
+	// See https://cloud.google.com/spanner/quotas#limits-for.
+	// Default batch size is 2000 work units per transaction, this allows 40 mutations per work unit.
+	defaultBatchSize := 2000
+	if batchSize < 0 || batchSize > defaultBatchSize {
+		return errors.New(fmt.Sprintf("batchSize must be between 0 and %d, got %d", defaultBatchSize, batchSize))
+	}
+	if batchSize == 0 {
+		batchSize = defaultBatchSize
+	}
+	batches := batch(workUnitsToFinalize, batchSize)
+	for _, finalizeBatch := range batches {
+		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+			mutations := []*spanner.Mutation{}
+			parents := toFinalizeReadyWorkUnitParents(finalizeBatch)
+			for parent := range parents {
+				if parent == (workunits.ID{}) {
+					// TODO: parent is a root invocation, finalize the root invocation.
+					continue
+				}
+				// For each work unit being finalized, mark its parent (no matter the finalization state of the parent) as a candidate for the next iteration.
+				// The blind write is to avoid a read-lock on the parent record.
+				// While it would be more efficient to not mark parents which we will finalize in later write batches,
+				// the task could fail between applying batches. This ensures those parents will always be picked up for finalization when the task is retried.
+				mutations = append(mutations, workunits.SetFinalizerCandidateTime(parent))
+			}
+
+			// Re-read the state of work units just before finalizing them. This is a crucial
+			// check to prevent a race condition where the state might have changed since the initial read.
+			finalizeReadyIDs := toFinalizeReadyIDs(finalizeBatch).SortedByID()
+			states, err := workunits.ReadFinalizationStates(ctx, finalizeReadyIDs)
+			if err != nil {
+				return err
+			}
+			// Create mutations only for work units that are still in the FINALIZING state.
+			for i, id := range finalizeReadyIDs {
+				if states[i] == pb.WorkUnit_FINALIZING {
+					mutations = append(mutations, workunits.MarkFinalized(id)...)
+				}
+			}
+			span.BufferWrite(ctx, mutations...)
+			return nil
+		})
+		if err != nil {
+			return errors.Fmt("commit updates for finalization ready work units: %w", err)
+		}
+	}
+	return nil
+}
+
+func batch(ids []workUnitWithParent, batchSize int) [][]workUnitWithParent {
+	if len(ids) == 0 {
+		return nil
+	}
+	var batches [][]workUnitWithParent
+	for i := 0; i < len(ids); i += batchSize {
+		end := min(len(ids), i+batchSize)
+		batches = append(batches, ids[i:end])
+	}
+	return batches
+}
+
+// Extract all parents to a IDSet.
+func toFinalizeReadyWorkUnitParents(ids []workUnitWithParent) workunits.IDSet {
+	result := workunits.NewIDSet()
+	for _, id := range ids {
+		result.Add(id.Parent)
+	}
+	return result
+}
+
+// Extract all IDs to a IDSet.
 func toFinalizeReadyIDs(ids []workUnitWithParent) workunits.IDSet {
 	result := workunits.NewIDSet()
 	for _, id := range ids {

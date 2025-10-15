@@ -359,3 +359,44 @@ func CreateWorkUnitUpdateRequest(id ID, updatedBy, requestID string) *spanner.Mu
 		"CreateTime":            spanner.CommitTimestamp,
 	})
 }
+
+// SetFinalizerCandidateTime creates a mutation to set the FinalizerCandidateTime for a work unit.
+func SetFinalizerCandidateTime(id ID) *spanner.Mutation {
+	return spanutil.UpdateMap("WorkUnits", map[string]any{
+		"RootInvocationShardId":  id.RootInvocationShardID(),
+		"WorkUnitId":             id.WorkUnitID,
+		"FinalizerCandidateTime": spanner.CommitTimestamp,
+	})
+}
+
+// ResetFinalizerCandidateTime conditionally reset the ResetFinalizerCandidateTime for work units
+// when the read FinalizerCandidateTime matches the input.
+// The reset is conditional to avoid clearing the candidate time
+// if the work unit became a candidate (again) since the task read the state of work units.
+func ResetFinalizerCandidateTime(candidates []FinalizerCandidate) spanner.Statement {
+	st := spanner.NewStatement(`
+			UPDATE WorkUnits
+			SET
+				FinalizerCandidateTime = NULL
+			WHERE
+				STRUCT(RootInvocationShardId, WorkUnitId, FinalizerCandidateTime) IN UNNEST(@candidates)
+		`)
+	// Struct to use as Spanner Query Parameter.
+	type candiate struct {
+		RootInvocationShardId  string
+		WorkUnitId             string
+		FinalizerCandidateTime time.Time
+	}
+	candidateParam := make([]candiate, 0, len(candidates))
+	for _, candidate := range candidates {
+		candidateParam = append(candidateParam, candiate{
+			RootInvocationShardId:  candidate.ID.RootInvocationShardID().RowID(),
+			WorkUnitId:             candidate.ID.WorkUnitID,
+			FinalizerCandidateTime: candidate.FinalizerCandidateTime,
+		})
+	}
+	st.Params = map[string]interface{}{
+		"candidates": candidateParam,
+	}
+	return st
+}
