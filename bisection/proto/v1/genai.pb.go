@@ -195,7 +195,7 @@ const file_go_chromium_org_luci_bisection_proto_v1_genai_proto_rawDesc = "" +
 	"\asuspect\x18\x02 \x01(\v2\x1f.luci.bisection.v1.GenAiSuspectR\asuspect\x129\n" +
 	"\n" +
 	"start_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tstartTime\x125\n" +
-	"\bend_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\aendTime\"\x83\x02\n" +
+	"\bend_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\aendTime\"\xa9\x02\n" +
 	"\fGenAiSuspect\x125\n" +
 	"\x06commit\x18\x01 \x01(\v2\x1d.buildbucket.v2.GitilesCommitR\x06commit\x12\x1c\n" +
 	"\treviewUrl\x18\x02 \x01(\tR\treviewUrl\x12 \n" +
