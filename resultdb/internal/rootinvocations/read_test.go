@@ -43,6 +43,8 @@ func TestReadFunctions(t *testing.T) {
 			WithRealm(realm).
 			WithCreatedBy(createdBy).
 			WithCreateRequestID(requestID).
+			WithFinalizerSequence(8).
+			WithFinalizerPending(true).
 			Build()
 		ms := InsertForTesting(testData)
 
@@ -161,6 +163,28 @@ func TestReadFunctions(t *testing.T) {
 
 			t.Run("empty ID", func(t *ftt.Test) {
 				_, _, err := ReadRequestIDAndCreatedBy(span.Single(ctx), "")
+				assert.That(t, err, should.ErrLike("id is unspecified"))
+			})
+		})
+
+		t.Run("ReadFinalizerTaskState", func(t *ftt.Test) {
+			t.Run("happy path", func(t *ftt.Test) {
+				taskState, err := ReadFinalizerTaskState(span.Single(ctx), id)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, taskState.Pending, should.Equal(testData.FinalizerPending))
+				assert.That(t, taskState.Sequence, should.Equal(testData.FinalizerSequence))
+			})
+
+			t.Run("not found", func(t *ftt.Test) {
+				_, err := ReadFinalizerTaskState(span.Single(ctx), "non-existent-id")
+				st, ok := appstatus.Get(err)
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, st.Code(), should.Equal(codes.NotFound))
+				assert.Loosely(t, st.Message(), should.ContainSubstring(`"rootInvocations/non-existent-id" not found`))
+			})
+
+			t.Run("empty ID", func(t *ftt.Test) {
+				_, err := ReadFinalizerTaskState(span.Single(ctx), "")
 				assert.That(t, err, should.ErrLike("id is unspecified"))
 			})
 		})

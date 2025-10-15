@@ -67,9 +67,11 @@ func NewBuilder(id ID) *Builder {
 					},
 				},
 			},
-			IsSourcesFinal: true,
-			BaselineID:     "baseline",
-			Submitted:      true,
+			IsSourcesFinal:    true,
+			BaselineID:        "baseline",
+			Submitted:         true,
+			FinalizerPending:  false,
+			FinalizerSequence: 0,
 		},
 	}
 }
@@ -207,6 +209,16 @@ func (b *Builder) WithSubmitted(submitted bool) *Builder {
 	return b
 }
 
+func (b *Builder) WithFinalizerPending(pending bool) *Builder {
+	b.row.FinalizerPending = pending
+	return b
+}
+
+func (b *Builder) WithFinalizerSequence(seq int64) *Builder {
+	b.row.FinalizerSequence = seq
+	return b
+}
+
 // Build returns the constructed RootInvocationRow.
 func (b *Builder) Build() *RootInvocationRow {
 	// Return a copy to avoid changes to the returned row
@@ -247,6 +259,8 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 		"IsSourcesFinal":                          r.IsSourcesFinal,
 		"BaselineId":                              r.BaselineID,
 		"Submitted":                               r.Submitted,
+		"FinalizerPending":                        r.FinalizerPending,
+		"FinalizerSequence":                       r.FinalizerSequence,
 	}))
 
 	for i := 0; i < 16; i++ {

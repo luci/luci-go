@@ -849,6 +849,8 @@ func TestCreateRootInvocation(t *testing.T) {
 				IsSourcesFinal:                          true,
 				BaselineID:                              "testrealm:test-builder",
 				Submitted:                               false,
+				FinalizerPending:                        false,
+				FinalizerSequence:                       0,
 			}
 
 			expectWURow := &workunits.WorkUnitRow{

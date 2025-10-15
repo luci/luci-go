@@ -260,6 +260,41 @@ func TestFinalizationMethods(t *testing.T) {
 	})
 }
 
+func TestFinalizerTaskStateMethods(t *testing.T) {
+	ftt.Run("TestFinalizerTaskStateMethods", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+		const rootInvocationID = ID("root-inv-id")
+		// Create a root invocation.
+		rootInvocation := NewBuilder(rootInvocationID).
+			WithFinalizationState(pb.RootInvocation_ACTIVE).
+			WithFinalizerPending(false).
+			WithFinalizerSequence(1).
+			Build()
+		testutil.MustApply(ctx, t, InsertForTesting(rootInvocation)...)
+
+		t.Run(`SetFinalizerPending`, func(t *ftt.Test) {
+			newSeq := int64(123)
+			_, err := span.Apply(ctx, []*spanner.Mutation{SetFinalizerPending(rootInvocationID, newSeq)})
+			assert.Loosely(t, err, should.BeNil)
+
+			taskState, err := ReadFinalizerTaskState(span.Single(ctx), rootInvocationID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, taskState.Pending, should.BeTrue)
+			assert.That(t, taskState.Sequence, should.Equal(newSeq))
+
+			t.Run(`ResetFinalizerPending`, func(t *ftt.Test) {
+				_, err := span.Apply(ctx, []*spanner.Mutation{ResetFinalizerPending(rootInvocationID)})
+				assert.Loosely(t, err, should.BeNil)
+
+				taskState, err := ReadFinalizerTaskState(span.Single(ctx), rootInvocationID)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, taskState.Pending, should.BeFalse)
+				assert.That(t, taskState.Sequence, should.Equal(newSeq))
+			})
+		})
+	})
+}
+
 func TestCreateRootInvocationUpdateRequest(t *testing.T) {
 	ftt.Run("TestCreateRootInvocationUpdateRequest", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)

@@ -164,6 +164,8 @@ func createIdempotentRootInvocation(
 			IsSourcesFinal:                          req.RootInvocation.SourcesFinal,
 			BaselineID:                              req.RootInvocation.BaselineId,
 			Submitted:                               false, // Submitted is set in separate MarkInvocationSubmitted call.
+			FinalizerPending:                        false,
+			FinalizerSequence:                       0,
 		}
 		span.BufferWrite(ctx, rootinvocations.Create(rootInvocationRow)...)
 

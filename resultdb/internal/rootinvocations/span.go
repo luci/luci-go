@@ -99,6 +99,8 @@ type RootInvocationRow struct {
 	IsSourcesFinal                          bool
 	BaselineID                              string
 	Submitted                               bool
+	FinalizerPending                        bool
+	FinalizerSequence                       int64
 }
 
 // Clone makes a deep copy of the row.
@@ -146,6 +148,8 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 		"IsSourcesFinal":                          r.IsSourcesFinal,
 		"BaselineId":                              r.BaselineID,
 		"Submitted":                               r.Submitted,
+		"FinalizerPending":                        r.FinalizerPending,
+		"FinalizerSequence":                       r.FinalizerSequence,
 	}
 
 	if r.FinalizationState == pb.RootInvocation_FINALIZING {
@@ -351,5 +355,27 @@ func CreateRootInvocationUpdateRequest(id ID, updatedBy, requestID string) *span
 		"UpdatedBy":        updatedBy,
 		"UpdateRequestId":  requestID,
 		"CreateTime":       spanner.CommitTimestamp,
+	})
+}
+
+// SetFinalizerPending returns mutations to set FinalizerPending to true,
+// and sets the new sequence number.
+// Note: The LastUpdated time is not updated because FinalizerPending and
+// FinalizerSequence are internal control fields for managing background tasks.
+func SetFinalizerPending(id ID, newSeq int64) *spanner.Mutation {
+	return spanutil.UpdateMap("RootInvocations", map[string]any{
+		"RootInvocationId":  id,
+		"FinalizerPending":  true,
+		"FinalizerSequence": newSeq,
+	})
+}
+
+// ResetFinalizerPending returns a mutation which set FinalizerPending to false.
+// Note: The LastUpdated time is not updated because FinalizerPending is an
+// internal control field for managing background tasks.
+func ResetFinalizerPending(id ID) *spanner.Mutation {
+	return spanutil.UpdateMap("RootInvocations", map[string]any{
+		"RootInvocationId": id,
+		"FinalizerPending": false,
 	})
 }

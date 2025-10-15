@@ -21,12 +21,34 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+func TestSweepWorkUnitsForFinalization(t *testing.T) {
+	ftt.Run("SweepWorkUnitsForFinalization", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+		rootInvID := rootinvocations.ID("test-root-inv")
+		const seq = int64(2)
+		testutil.MustApply(ctx, t,
+			rootinvocations.InsertForTesting(rootinvocations.NewBuilder(rootInvID).WithFinalizerPending(true).WithFinalizerSequence(seq).Build())...,
+		)
+		t.Run("Stale task exits early", func(t *ftt.Test) {
+			// Execute the sweep with an older sequence number.
+			err := sweepWorkUnitsForFinalization(ctx, rootInvID, seq-1)
+			assert.Loosely(t, err, should.BeNil)
+
+			taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, taskState.Pending, should.BeTrue) // the pending flag should not reset.
+			assert.Loosely(t, taskState.Sequence, should.Equal(seq))
+		})
+	})
+}
 
 func TestFindWorkUnitsReadyForFinalization(t *testing.T) {
 	ftt.Run("findWorkUnitsReadyForFinalization", t, func(t *ftt.Test) {

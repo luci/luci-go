@@ -124,6 +124,29 @@ func ReadRequestIDAndCreatedBy(ctx context.Context, id ID) (requestID string, cr
 	return requestID, createdBy, nil
 }
 
+// FinalizerTaskState is the state of the work unit finalizer task.
+type FinalizerTaskState struct {
+	// Pending indicates whether there is a pending work unit finalizer task.
+	Pending bool
+	// The sequence number of the latest work unit finalizer task that has been scheduled.
+	Sequence int64
+}
+
+// ReadFinalizerTaskState reads the state of work unit finalizer.
+func ReadFinalizerTaskState(ctx context.Context, id ID) (taskState FinalizerTaskState, err error) {
+	var pending bool
+	var seq int64
+
+	err = readColumns(ctx, id, map[string]any{
+		"FinalizerPending":  &pending,
+		"FinalizerSequence": &seq,
+	})
+	if err != nil {
+		return FinalizerTaskState{}, err
+	}
+	return FinalizerTaskState{Pending: pending, Sequence: seq}, nil
+}
+
 // ReadRealmFromShard reads the realm of the given root invocation shard. If the
 // root invocation is not found, returns a NotFound appstatus error. Otherwise
 // returns the internal error.
@@ -168,6 +191,8 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 		"IsSourcesFinal",
 		"BaselineId",
 		"Submitted",
+		"FinalizerPending",
+		"FinalizerSequence",
 	}
 	var b spanutil.Buffer
 	return span.Read(ctx, "RootInvocations", ids.Keys(), cols).Do(func(row *spanner.Row) error {
@@ -197,6 +222,8 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 			&inv.IsSourcesFinal,
 			&inv.BaselineID,
 			&inv.Submitted,
+			&inv.FinalizerPending,
+			&inv.FinalizerSequence,
 		}
 
 		if err := b.FromSpanner(row, dest...); err != nil {

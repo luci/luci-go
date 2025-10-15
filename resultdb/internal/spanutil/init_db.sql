@@ -51,6 +51,7 @@ CREATE TABLE RootInvocations (
   CreatedBy STRING(MAX) NOT NULL,
 
   -- When the root invocation was last updated.
+  -- It excludes changes to columns used for internal processing only: FinalizerPending, FinalizerSequence.
   LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 
   -- When the root invocation started finalizing (state was set to
@@ -127,6 +128,15 @@ CREATE TABLE RootInvocations (
   -- Finalization does not make this field immutable - it can can be updated
   -- after the invocation has been finalized.
   Submitted BOOL NOT NULL,
+
+  -- A flag to indicate whether there is a pending work unit finalizer task.
+  -- Set to true when a task is enqueued and reset to false when the task starts to run.
+  FinalizerPending BOOL NOT NULL,
+
+  -- The sequence number of the latest work unit finalizer task that has been
+  -- scheduled. This is incremented each time a new finalizer task is
+  -- scheduled, and is used to detect and discard stale tasks.
+  FinalizerSequence INT64 NOT NULL,
 ) PRIMARY KEY (RootInvocationId),
   -- Apply 1.5 year TTL to root invocations. The deletion policy applied here will
   -- apply to interleaved child tables. Leave 30 days for Spanner to actually

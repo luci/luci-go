@@ -19,11 +19,57 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 )
+
+func sweepWorkUnitsForFinalization(ctx context.Context, rootInvID rootinvocations.ID, seq int64) error {
+	isStaleTask, err := checkAndResetFinalizerPending(ctx, rootInvID, seq)
+	if err != nil {
+		return errors.Fmt("check and reset finalizer pending state: %w", err)
+	}
+	if isStaleTask {
+		logging.Infof(ctx, "exiting stale finalizer task for %q (task seq: %d)", rootInvID.Name(), seq)
+		return nil
+	}
+	for {
+		ineligibleCandidates, workUnitsToFinalize, moreToRead, err := findWorkUnitsReadyForFinalization(ctx, rootInvID, findWorkUnitsReadyForFinalizationOptions{})
+		if err != nil {
+			return errors.Fmt("findWorkUnitsReadyForFinalization: %w", err)
+		}
+		logging.Infof(ctx, "finalizing %d work units, reset %d not ready work units for %q", len(workUnitsToFinalize), len(ineligibleCandidates), rootInvID.Name())
+		if !moreToRead {
+			break
+		}
+	}
+	// TODO(beining): implement the write phase.
+	return nil
+}
+
+// checkAndResetFinalizerPending checks if the finalizer task is stale.
+// If the task is not stale, it resets the pending state for the finalizer.
+func checkAndResetFinalizerPending(ctx context.Context, rootInvID rootinvocations.ID, seq int64) (isStaleTask bool, err error) {
+	isStaleTask = false
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		taskState, err := rootinvocations.ReadFinalizerTaskState(ctx, rootInvID)
+		if err != nil {
+			return err
+		}
+		if taskState.Sequence != seq {
+			isStaleTask = true
+			return nil
+		}
+		span.BufferWrite(ctx, rootinvocations.ResetFinalizerPending(rootInvID))
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+	return isStaleTask, nil
+}
 
 type workUnitWithParent struct {
 	ID workunits.ID
@@ -124,7 +170,10 @@ func findWorkUnitsReadyForFinalization(ctx context.Context, rootInvID rootinvoca
 	}
 	moreToRead = moreToRead || len(workUnitsToFinalize) == limit
 
-	// Any initial candidate that is not in the final `workUnitsToFinalize` list is considered ineligible.
+	// Some candidates that were initially ineligible may have become eligible in
+	// subsequent iterations as we realised their children are eligible to become
+	// FINALIZED. Filter these out so that ineligibleCandidates and workUnitsToFinalize
+	// are mutually exclusive sets.
 	finalizeWorkUnitIDs := toFinalizeReadyIDs(workUnitsToFinalize)
 	ineligibleCandidates = make([]workunits.FinalizerCandidate, 0, len(candidates))
 	for i := range candidates {
