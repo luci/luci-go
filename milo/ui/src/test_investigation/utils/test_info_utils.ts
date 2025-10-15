@@ -66,6 +66,20 @@ export interface HistoryAnalysis {
   itemStatus?: SemanticStatusType;
 }
 
+/**
+ * Query params used to navigate the Android Test Hub page.
+ */
+interface AndroidTestHubQueryParams {
+  configPath?: string | null;
+  query?: string | null;
+  tab?: string | null;
+  clusterId?: string | null;
+  filters?: string[] | null;
+}
+
+/** The host for the Android Build Corp server. */
+export const ANDROID_BUILD_CORP_HOST = 'https://android-build.corp.google.com';
+
 export function getInvocationTag(
   tags: readonly StringPair[] | undefined,
   key: string,
@@ -360,4 +374,43 @@ export function isAnTSInvocation(invocationName: string) {
     return invocation.startsWith('ants-');
   }
   return false;
+}
+
+/**
+ * Returns the full method name including the package and class.
+ */
+export function getFullMethodName(testVariant: TestVariant): string {
+  const testCaseName = testVariant?.testIdStructured?.caseName ?? '';
+  if (testCaseName === '') {
+    return '';
+  }
+  const className = testVariant?.testIdStructured?.coarseName ?? '';
+  const packageName = testVariant?.testIdStructured?.fineName ?? '';
+  return `${className}.${packageName}#${testCaseName}`;
+}
+
+/**
+ * Generate url link to Android Test Hub.
+ */
+export function getAndroidTestHubUrl(inputParams: AndroidTestHubQueryParams) {
+  const params = new URLSearchParams();
+  if (inputParams.configPath) {
+    params.append('config', String(inputParams.configPath));
+  }
+  if (inputParams.query) {
+    params.append('query', String(inputParams.query));
+  }
+  if (inputParams.tab) {
+    params.append('tab', String(inputParams.tab));
+  }
+  if (inputParams.clusterId) {
+    params.append('clusterId', String(inputParams.clusterId));
+  }
+  if (inputParams.filters) {
+    for (const filter of inputParams.filters) {
+      params.append('filter', filter);
+    }
+  }
+
+  return `${ANDROID_BUILD_CORP_HOST}/builds/tests/search?${params.toString()}`;
 }

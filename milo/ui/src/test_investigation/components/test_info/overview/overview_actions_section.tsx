@@ -24,6 +24,7 @@ import {
   getSourcesFromInvocation,
 } from '@/test_investigation/utils/test_info_utils';
 
+import { AthButton } from './ath_button';
 import { RerunButton } from './rerun_button';
 import { SourceInfoTooltipContent } from './source_info_tooltip_content';
 
@@ -63,6 +64,7 @@ export function OverviewActionsSection() {
       }}
     >
       <RerunButton />
+      <AthButton />
       <Button
         variant="outlined"
         size="small"

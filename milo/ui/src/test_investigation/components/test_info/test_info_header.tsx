@@ -22,7 +22,6 @@ import { PageTitle } from '@/common/components/page_title';
 import { OutputTestVerdict } from '@/common/types/verdict';
 import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
 import { TestVariantBranch } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
-import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import {
   useInvocation,
   useProject,
@@ -32,6 +31,7 @@ import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 import {
   getCommitGitilesUrlFromInvocation,
   getCommitInfoFromInvocation,
+  getFullMethodName,
   getSourcesFromInvocation,
 } from '@/test_investigation/utils/test_info_utils';
 
@@ -60,16 +60,6 @@ export function TestInfoHeader() {
 
   const isJunit =
     testVariant?.testIdStructured?.moduleScheme === 'junit' || false;
-
-  const getFullMethodName = (testVariant: TestVariant): string => {
-    const testCaseName = testVariant?.testIdStructured?.caseName ?? '';
-    if (testCaseName === '') {
-      return '';
-    }
-    const className = testVariant?.testIdStructured?.coarseName ?? '';
-    const packageName = testVariant?.testIdStructured?.fineName ?? '';
-    return `${className}.${packageName}#${testCaseName}`;
-  };
 
   // TODO(b/445559255): update copied text when module page is available.
   const fullMethodName = getFullMethodName(testVariant);
