@@ -14,8 +14,10 @@
 
 import { render, screen } from '@testing-library/react';
 import { act } from 'react';
+import { MemoryRouter } from 'react-router';
 import { VirtuosoMockContext } from 'react-virtuoso';
 
+import { Analysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { Commit } from '@/proto/go.chromium.org/luci/common/proto/git/commit.pb';
 import { QueryBlamelistResponse } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
@@ -78,12 +80,56 @@ describe('<BlamelistTable />', () => {
     );
 
     await act(() => jest.runAllTimersAsync());
-
     expect(screen.getByText('commit1').closest('tr')).toHaveTextContent('1.');
     expect(screen.getByText('commit2').closest('tr')).toHaveTextContent('2.');
     expect(screen.getByText('commit3').closest('tr')).toHaveTextContent('3.');
     expect(screen.getByText('commit4').closest('tr')).toHaveTextContent('4.');
     expect(screen.getByText('commit5').closest('tr')).toHaveTextContent('5.');
     expect(screen.getByText('commit6').closest('tr')).toHaveTextContent('6.');
+    expect(screen.queryByText('Culprit Analysis')).not.toBeInTheDocument();
+  });
+
+  it('displays the Culprit Analysis column', async () => {
+    render(
+      <MemoryRouter>
+        <VirtuosoMockContext.Provider
+          value={{ viewportHeight: 300, itemHeight: 10 }}
+        >
+          <BlamelistTable
+            repoUrl="https://repo.url"
+            pages={[
+              QueryBlamelistResponse.fromPartial({
+                commits: [
+                  makeCommit('commit1'),
+                  makeCommit('commit2'),
+                  makeCommit('commit3'),
+                  makeCommit('badcommit'),
+                ],
+              }) as OutputQueryBlamelistResponse,
+            ]}
+            analysis={Analysis.fromPartial({
+              firstFailedBbid: '0123456789',
+              genAiResult: {
+                suspect: {
+                  commit: {
+                    id: 'badcommit',
+                  },
+                  verificationDetails: {
+                    status: 'Under Verification',
+                  },
+                },
+              },
+            })}
+          />
+        </VirtuosoMockContext.Provider>
+      </MemoryRouter>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+    expect(screen.getByText('Culprit Analysis')).toBeInTheDocument();
+    expect(screen.queryByTestId('culprit')).toHaveTextContent('Suspect');
+    expect(screen.getByText('commit1').closest('tr')).toHaveTextContent('1.');
+    expect(screen.getByText('commit2').closest('tr')).toHaveTextContent('2.');
+    expect(screen.getByText('commit3').closest('tr')).toHaveTextContent('3.');
   });
 });

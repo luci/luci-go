@@ -12,15 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useQuery } from '@tanstack/react-query';
 import { ReactNode, createContext } from 'react';
 
 import { OutputBuild } from '@/build/types';
+import { useAnalysesClient } from '@/common/hooks/prpc_clients';
+import {
+  Analysis,
+  QueryAnalysisRequest,
+} from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
+interface BuildContext {
+  readonly build?: OutputBuild;
+  readonly analysis?: Analysis;
+}
 /**
  * `null` means there's no build.
  * `undefined` means the context provider is missing.
  */
-export const BuildCtx = createContext<OutputBuild | null | undefined>(
+export const BuildCtx = createContext<BuildContext | null | undefined>(
   undefined,
 );
 
@@ -30,7 +40,24 @@ export interface BuildProviderProps {
 }
 
 export function BuildContextProvider({ build, children }: BuildProviderProps) {
+  const analysisClient = useAnalysesClient();
+  const { data: response } = useQuery({
+    ...analysisClient.QueryAnalysis.query(
+      QueryAnalysisRequest.fromPartial({
+        buildFailure: {
+          bbid: build?.id,
+          failedStepName: 'compile',
+        },
+      }),
+    ),
+    // only use the query if a Buildbucket ID has been provided
+    enabled: !!(build && build.id),
+  });
+  const analysis = response?.analyses[0];
   return (
-    <BuildCtx.Provider value={build || null}>{children}</BuildCtx.Provider>
+    <BuildCtx.Provider value={{ build, analysis }}>
+      {' '}
+      {children}
+    </BuildCtx.Provider>
   );
 }

@@ -23,22 +23,23 @@ import {
   succeededTimeoutBuild,
   timeoutBuild,
 } from '@/build/testing_tools/mock_builds';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { BuildContextProvider } from '../../context';
 
 import { AlertsSection } from './alerts_section';
-
 describe('<AlertsSection />', () => {
   describe('canary warning', () => {
     afterEach(() => {
       cleanup();
     });
-
     it('should render canary warning correctly', () => {
       render(
-        <BuildContextProvider build={canaryFailedBuild}>
-          <AlertsSection />
-        </BuildContextProvider>,
+        <FakeContextProvider>
+          <BuildContextProvider build={canaryFailedBuild}>
+            <AlertsSection />
+          </BuildContextProvider>
+        </FakeContextProvider>,
       );
 
       const alert = screen.getByRole('alert');
@@ -50,9 +51,11 @@ describe('<AlertsSection />', () => {
 
     it('should not render canary warning when the build passed', () => {
       render(
-        <BuildContextProvider build={canarySucceededBuild}>
-          <AlertsSection />
-        </BuildContextProvider>,
+        <FakeContextProvider>
+          <BuildContextProvider build={canarySucceededBuild}>
+            <AlertsSection />
+          </BuildContextProvider>
+        </FakeContextProvider>,
       );
       expect(screen.queryByRole('alert')).toBeNull();
     });
@@ -65,9 +68,11 @@ describe('<AlertsSection />', () => {
 
     it('should render cancel schedule info correctly', () => {
       render(
-        <BuildContextProvider build={scheduledToBeCanceledBuild}>
-          <AlertsSection />
-        </BuildContextProvider>,
+        <FakeContextProvider>
+          <BuildContextProvider build={scheduledToBeCanceledBuild}>
+            <AlertsSection />
+          </BuildContextProvider>
+        </FakeContextProvider>,
       );
       const alert = screen.getByRole('alert');
       expect(alert).toHaveClass('MuiAlert-standardInfo');
@@ -78,9 +83,12 @@ describe('<AlertsSection />', () => {
 
     it('should not render cancel schedule info when the build is already canceled', () => {
       render(
-        <BuildContextProvider build={alreadyCanceledBuild}>
-          <AlertsSection />
-        </BuildContextProvider>,
+        <FakeContextProvider>
+          <BuildContextProvider build={alreadyCanceledBuild}>
+            <AlertsSection />
+          </BuildContextProvider>
+          ,
+        </FakeContextProvider>,
       );
       expect(screen.queryByRole('alert')).toBeNull();
     });
@@ -93,9 +101,12 @@ describe('<AlertsSection />', () => {
 
     it('should render resource exhaustion error correctly', () => {
       render(
-        <BuildContextProvider build={resourceExhaustionBuild}>
-          <AlertsSection />
-        </BuildContextProvider>,
+        <FakeContextProvider>
+          <BuildContextProvider build={resourceExhaustionBuild}>
+            <AlertsSection />
+          </BuildContextProvider>
+          ,
+        </FakeContextProvider>,
       );
       const alert = screen.getByRole('alert');
       expect(alert).toHaveClass('MuiAlert-standardError');
@@ -106,9 +117,11 @@ describe('<AlertsSection />', () => {
 
     it('should render timeout error correctly', () => {
       render(
-        <BuildContextProvider build={timeoutBuild}>
-          <AlertsSection />
-        </BuildContextProvider>,
+        <FakeContextProvider>
+          <BuildContextProvider build={timeoutBuild}>
+            <AlertsSection />
+          </BuildContextProvider>
+        </FakeContextProvider>,
       );
       const alert = screen.getByRole('alert');
       expect(alert).toHaveClass('MuiAlert-standardError');
@@ -118,9 +131,11 @@ describe('<AlertsSection />', () => {
     // This may happen when the timeout build finishes during the grace period.
     it('should not render timeout error when the build succeeded', () => {
       render(
-        <BuildContextProvider build={succeededTimeoutBuild}>
-          <AlertsSection />
-        </BuildContextProvider>,
+        <FakeContextProvider>
+          <BuildContextProvider build={succeededTimeoutBuild}>
+            <AlertsSection />
+          </BuildContextProvider>
+        </FakeContextProvider>,
       );
       expect(screen.queryByRole('alert')).toBeNull();
     });

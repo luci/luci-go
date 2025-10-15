@@ -27,12 +27,13 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs';
 import { getGitilesRepoURL } from '@/gitiles/tools/utils';
 
-import { useBuild } from '../context';
+import { useAnalysis, useBuild } from '../context';
 
 import { BlamelistDisplay } from './blamelist_display';
 
 export function BlamelistTab() {
   const build = useBuild();
+  const analysis = useAnalysis();
 
   const repoSelectorLabelId = useId();
 
@@ -78,6 +79,7 @@ export function BlamelistTab() {
       <BlamelistDisplay
         blamelistPin={selectedBlamelistPin}
         builder={build.builder}
+        analysis={analysis}
       />
     </>
   );

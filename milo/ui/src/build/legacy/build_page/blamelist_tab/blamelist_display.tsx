@@ -17,6 +17,7 @@ import { InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
 
 import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
 import { getGitilesRepoURL } from '@/gitiles/tools/utils';
+import { Analysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { QueryBlamelistRequest } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
@@ -28,11 +29,13 @@ import { OutputQueryBlamelistResponse } from './types';
 export interface BlamelistDisplayProps {
   readonly blamelistPin: GitilesCommit;
   readonly builder: BuilderID;
+  readonly analysis?: Analysis;
 }
 
 export function BlamelistDisplay({
   blamelistPin,
   builder,
+  analysis,
 }: BlamelistDisplayProps) {
   const client = useMiloInternalClient();
   const {
@@ -79,7 +82,11 @@ export function BlamelistDisplay({
           }
         />
       </div>
-      <BlamelistTable repoUrl={getGitilesRepoURL(blamelistPin)} pages={pages} />
+      <BlamelistTable
+        repoUrl={getGitilesRepoURL(blamelistPin)}
+        pages={pages}
+        analysis={analysis}
+      />
       <div css={{ padding: '5px 10px' }}>
         <Button
           disabled={isLoadingPage || !hasNextPage}

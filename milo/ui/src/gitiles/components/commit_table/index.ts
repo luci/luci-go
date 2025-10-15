@@ -27,6 +27,7 @@ export * from './commit_table_head';
 export * from './commit_table_body';
 export * from './commit_table_row';
 
+export * from './analysis_cell';
 export * from './author_column';
 export * from './id_column';
 export * from './num_column';

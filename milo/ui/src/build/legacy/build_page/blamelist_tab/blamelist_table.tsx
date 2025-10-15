@@ -15,7 +15,10 @@
 import { memo } from 'react';
 import { useLocalStorage } from 'react-use';
 
+import { GenericSuspect } from '@/bisection/types';
 import {
+  AnalysisContentCell,
+  AnalysisHeadCell,
   AuthorContentCell,
   AuthorHeadCell,
   CommitTable,
@@ -33,6 +36,7 @@ import {
   ToggleContentCell,
   ToggleHeadCell,
 } from '@/gitiles/components/commit_table';
+import { Analysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
 import { OutputQueryBlamelistResponse } from './types';
 
@@ -41,6 +45,8 @@ const BLAMELIST_TABLE_DEFAULT_EXPANDED_KEY = 'blamelist-table-default-expanded';
 interface CommitTablePageProps {
   readonly prevCommitCount: number;
   readonly page: OutputQueryBlamelistResponse;
+  readonly suspect?: GenericSuspect;
+  readonly bbid?: string;
 }
 
 // The table body can be large and expensive to render.
@@ -52,19 +58,30 @@ interface CommitTablePageProps {
 const CommitTablePage = memo(function CommitTablePage({
   prevCommitCount,
   page,
+  suspect,
+  bbid,
 }: CommitTablePageProps) {
   return (
     <>
-      {page.commits.map((commit, i) => (
-        <CommitTableRow key={i} commit={commit}>
-          <ToggleContentCell />
-          <NumContentCell num={prevCommitCount + i + 1} />
-          <IdContentCell />
-          <AuthorContentCell />
-          <TimeContentCell />
-          <TitleContentCell />
-        </CommitTableRow>
-      ))}
+      {page.commits.map((commit, i) => {
+        const isSuspect = suspect?.commit?.id === commit.id;
+        return (
+          <CommitTableRow key={i} commit={commit}>
+            <ToggleContentCell />
+            <NumContentCell num={prevCommitCount + i + 1} />
+            {suspect && (
+              <AnalysisContentCell
+                suspect={isSuspect ? suspect : undefined}
+                bbid={bbid}
+              />
+            )}
+            <IdContentCell />
+            <AuthorContentCell />
+            <TimeContentCell />
+            <TitleContentCell />
+          </CommitTableRow>
+        );
+      })}
     </>
   );
 });
@@ -72,13 +89,44 @@ const CommitTablePage = memo(function CommitTablePage({
 export interface BlamelistTableProps {
   readonly repoUrl: string;
   readonly pages: readonly OutputQueryBlamelistResponse[];
+  readonly analysis?: Analysis;
 }
 
-export function BlamelistTable({ repoUrl, pages }: BlamelistTableProps) {
+export function BlamelistTable({
+  repoUrl,
+  pages,
+  analysis,
+}: BlamelistTableProps) {
   const [defaultExpanded = false, setDefaultExpanded] =
     useLocalStorage<boolean>(BLAMELIST_TABLE_DEFAULT_EXPANDED_KEY);
 
   let commitCount = 0;
+  const verificationStates = [
+    'Confirmed Culprit',
+    'Verification Scheduled',
+    'Under Verification',
+  ];
+
+  let suspect: GenericSuspect | undefined;
+  // GenAI suspect is generally identified and verified well before the
+  // nthsection so we use that unless verfication vindicates it.
+  if (
+    verificationStates.includes(
+      analysis?.genAiResult?.suspect?.verificationDetails?.status || '',
+    )
+  ) {
+    suspect = analysis?.genAiResult?.suspect
+      ? GenericSuspect.fromGenAi(analysis?.genAiResult?.suspect)
+      : undefined;
+  } else if (
+    verificationStates.includes(
+      analysis?.nthSectionResult?.suspect?.verificationDetails?.status || '',
+    )
+  ) {
+    suspect = analysis?.nthSectionResult?.suspect
+      ? GenericSuspect.fromNthSection(analysis?.nthSectionResult?.suspect)
+      : undefined;
+  }
   return (
     <CommitTable
       repoUrl={repoUrl}
@@ -88,6 +136,7 @@ export function BlamelistTable({ repoUrl, pages }: BlamelistTableProps) {
       <CommitTableHead>
         <ToggleHeadCell hotkey="x" />
         <NumHeadCell />
+        {suspect && <AnalysisHeadCell />}
         <IdHeadCell />
         <AuthorHeadCell />
         <TimeHeadCell />
@@ -98,7 +147,13 @@ export function BlamelistTable({ repoUrl, pages }: BlamelistTableProps) {
           const prevCount = commitCount;
           commitCount += page.commits.length;
           return (
-            <CommitTablePage key={i} page={page} prevCommitCount={prevCount} />
+            <CommitTablePage
+              key={i}
+              page={page}
+              prevCommitCount={prevCount}
+              suspect={suspect}
+              bbid={analysis?.firstFailedBbid}
+            />
           );
         })}
       </CommitTableBody>

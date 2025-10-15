@@ -21,5 +21,13 @@ export function useBuild() {
   if (ctx === undefined) {
     throw new Error('useBuild can only be used in a BuildContextProvider');
   }
-  return ctx;
+  return ctx?.build;
+}
+
+export function useAnalysis() {
+  const ctx = useContext(BuildCtx);
+  if (ctx === undefined) {
+    throw new Error('useAnalysis can only be used in a BuildContextProvider');
+  }
+  return ctx?.analysis;
 }
