@@ -12,13 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useDebounce } from 'react-use';
 import ReactFlow, {
   Background,
   Controls,
   MiniMap,
   useNodesState,
   useEdgesState,
+  ReactFlowProvider,
+  useReactFlow,
+  Panel,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -128,11 +132,16 @@ const graphGenerator = new FakeGraphGenerator({
 });
 const turboCiGraph = graphGenerator.generate();
 
-function GraphView() {
-  useDeclareTabId('graph');
+const matchingNodeStyle = {
+  border: '2px solid #007bff',
+  boxShadow: '0 0 10px #007bff',
+};
 
+function Graph() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const { fitView } = useReactFlow();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { layoutedNodes, layoutedEdges } = useMemo(() => {
     // Convert TurboCI Graph to list of nodes and edges that React Flow understands.
@@ -151,19 +160,77 @@ function GraphView() {
     setEdges(layoutedEdges);
   }, [layoutedNodes, layoutedEdges]);
 
+  useDebounce(
+    () => {
+      const matchedNodeIds: string[] = [];
+      const searchFilteredNodes = layoutedNodes.map((node) => {
+        const nodeMatch =
+          searchQuery &&
+          node.data.label
+            ?.toLocaleLowerCase()
+            .includes(searchQuery.toLocaleLowerCase());
+
+        if (nodeMatch) {
+          matchedNodeIds.push(node.id);
+          return {
+            ...node,
+            style: {
+              ...node.style,
+              ...matchingNodeStyle,
+            },
+          };
+        } else {
+          return node;
+        }
+      });
+
+      if (matchedNodeIds.length > 0) {
+        fitView({
+          nodes: matchedNodeIds.map((id) => ({ id })),
+          duration: 500,
+        });
+      }
+
+      setNodes(searchFilteredNodes);
+    },
+    300,
+    [searchQuery],
+  );
+
+  return (
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      fitView
+    >
+      <Background />
+      <Controls />
+      <MiniMap />
+      <Panel position="top-left">
+        <input
+          type="text"
+          placeholder="Search nodes..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{ padding: '8px', width: '200px' }}
+        />
+      </Panel>
+    </ReactFlow>
+  );
+}
+
+// ReactFlowProvider must wrap the child component in order for the child component
+// to utilize React Flow hooks.
+function GraphView() {
+  useDeclareTabId('graph');
+
   return (
     <div style={{ height: '80vh' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        fitView
-      >
-        <Background />
-        <Controls />
-        <MiniMap />
-      </ReactFlow>
+      <ReactFlowProvider>
+        <Graph />
+      </ReactFlowProvider>
     </div>
   );
 }
