@@ -73,6 +73,9 @@ const alwaysShowActivityManagerCheckbox = document.getElementById(
   'always-show-activity-manager-checkbox');
 const toggleDarkModeCheckbox = document.getElementById(
   'toggle-dark-mode-checkbox');
+const helpButton = document.getElementById('help-button');
+const helpDialog = document.getElementById('help-dialog');
+const helpDialogOkButton = document.getElementById('help-dialog-ok-button');
 const textDisplayArea = document.getElementById('text-display-area');
 
 // Event listeners:
@@ -130,6 +133,14 @@ dropdownHeaderSettings.addEventListener('click', (event) => {
 });
 
 dropdownListSettings.addEventListener('click', handleSettingsOptionClick);
+
+helpButton.addEventListener('click', () => {
+  helpDialog.classList.toggle('hidden-element');
+});
+
+helpDialogOkButton.addEventListener('click', () => {
+  helpDialog.classList.add('hidden-element');
+});
 
 // Global click listener to close dropdowns when clicking outside
 document.addEventListener('click', (event) => {

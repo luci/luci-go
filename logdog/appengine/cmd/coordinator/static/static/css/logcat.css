@@ -264,6 +264,44 @@ body {
   white-space: nowrap;
 }
 
+#help-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  /* Appear on top of controls and dropdowns */
+  z-index: 1000;
+  color: var(--text-display-text-color);
+  background-color: var(--body-bg-color);
+  border: 1px solid var(--dropdown-border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  max-width: 400px;
+  text-align: center;
+}
+
+#help-dialog a {
+  /* Make the link look like a google button */
+  display: inline-block;
+  margin-top: 15px;
+  padding: 10px 24px;
+  background-color: var(--google-button-bg-color);
+  color: var(--google-button-text-color);
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+#help-dialog a:hover {
+  background-color: var(--google-button-hover-bg-color);
+}
+
+#help-dialog-ok-button {
+  margin-left: 10px;
+}
+
 #text-display-area {
   /* Monospace font for code-like text */
   font-family: 'Roboto Mono', monospace;
