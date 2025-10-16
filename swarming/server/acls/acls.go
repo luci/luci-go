@@ -447,7 +447,18 @@ func (chk *Checker) CheckTaskPerm(ctx context.Context, task Task, perm realms.Pe
 
 	// Check if the caller has the permission in the task's own realm.
 	if info.Realm != "" {
-		if res := chk.hasPermission(ctx, perm, info.Realm); res.Permitted || res.InternalError {
+		res := chk.hasPermission(ctx, perm, info.Realm)
+		if res.InternalError {
+			return res
+		}
+		if res.Permitted {
+			// TODO: b/429501938: remove the warning below once the realms have been
+			// cleaned up.
+			if (info.Realm == "chromeos:release" || info.Realm == "chromeos:firmware") &&
+				(perm == PermTasksCancel) && (chk.caller.Kind() != identity.Project) {
+				logging.Warningf(ctx, "cros-realms-lockdown: %q used in realm %q by caller %q",
+					PermTasksCancel, info.Realm, chk.caller)
+			}
 			return res
 		}
 	}
@@ -499,7 +510,17 @@ func (chk *Checker) CheckTaskPerm(ctx context.Context, task Task, perm realms.Pe
 // a realm.
 func (chk *Checker) CheckCanCreateInRealm(ctx context.Context, taskRealm string) CheckResult {
 	res := chk.hasPermission(ctx, PermTasksCreateInRealm, taskRealm)
-	if res.Permitted || res.InternalError {
+	if res.InternalError {
+		return res
+	}
+	if res.Permitted {
+		// TODO: b/429501938: remove the warning below once the realms have been
+		// cleaned up.
+		if (taskRealm == "chromeos:release" || taskRealm == "chromeos:firmware") &&
+			(chk.caller.Kind() != identity.Project) {
+			logging.Warningf(ctx, "cros-realms-lockdown: %q used in realm %q by caller %q",
+				PermTasksCreateInRealm, taskRealm, chk.caller)
+		}
 		return res
 	}
 	return CheckResult{
