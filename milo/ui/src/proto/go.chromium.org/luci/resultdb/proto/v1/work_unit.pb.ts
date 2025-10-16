@@ -17,7 +17,7 @@ export const protobufPackage = "luci.resultdb.v1";
  * A process step that contributes results to a root invocation.
  * Work units contain test results, artifacts and exonerations. Work units may
  * also contain other work units and (legacy) invocations.
- * Next ID: 22.
+ * Next ID: 23.
  */
 export interface WorkUnit {
   /**
@@ -36,7 +36,7 @@ export interface WorkUnit {
    */
   readonly workUnitId: string;
   /**
-   * Current state of the work unit.
+   * Current finalization state of the work unit.
    *
    * At creation time, this can be set to ACTIVE or FINALIZING (if all fields
    * are known at creation time). When updating or via the FinalizeWorkUnit
@@ -47,6 +47,11 @@ export interface WorkUnit {
    * `deadline` expires (if the work unit is not already in FINALIZING state).
    * FINALIZING work units will transition onward to FINALIZED when all included
    * work units are FINALIZED.
+   */
+  readonly finalizationState: WorkUnit_FinalizationState;
+  /**
+   * Do not use this field, it exists only so that field masks for the old "state"
+   * field can still parse. It will be repurposed soon. Use `finalization_state` instead.
    */
   readonly state: WorkUnit_State;
   /**
@@ -82,9 +87,9 @@ export interface WorkUnit {
     | string
     | undefined;
   /**
-   * When the work unit started to finalize, i.e. transitioned to FINALIZING
-   * state. This means the work unit is immutable but directly or indirectly
-   * included work units may not be.
+   * When the work unit started to finalize, i.e. transitioned to a finalization
+   * state of FINALIZING. This means the work unit is immutable but directly or
+   * indirectly included work units may not be.
    *
    * Output only.
    */
@@ -92,9 +97,10 @@ export interface WorkUnit {
     | string
     | undefined;
   /**
-   * When the work unit was finalized, i.e. transitioned to FINALIZED state.
+   * When the work unit was finalized, i.e. transitioned to a finalization
+   * state of FINALIZED.
    * If this field is set, implies that the work units is finalized. This
-   * means the work units and directly or indirectly included work units
+   * means the work unit, and all directly and indirectly included work units,
    * are immutable.
    *
    * Output only.
@@ -169,6 +175,8 @@ export interface WorkUnit {
    * Work unit-level string key-value pairs.
    * A key can be repeated.
    *
+   * These tags may be re-exported alongside each test result.
+   *
    * Total size (as measured by proto.Size()) must be <= 16 KB.
    */
   readonly tags: readonly StringPair[];
@@ -232,7 +240,7 @@ export interface WorkUnit {
    * The metadata fields for a WorkUnit are:
    * * name
    * * work_unit_id
-   * * state
+   * * finalization_state
    * * realm
    * * create_time
    * * creator
@@ -257,9 +265,10 @@ export interface WorkUnit {
   readonly etag: string;
 }
 
-export enum WorkUnit_State {
-  /** STATE_UNSPECIFIED - The default value. This value is used if the state is omitted. */
-  STATE_UNSPECIFIED = 0,
+/** Indicates whether the work unit, and its children, are immutable. */
+export enum WorkUnit_FinalizationState {
+  /** FINALIZATION_STATE_UNSPECIFIED - The default value. This value is used if the finalization state is omitted. */
+  FINALIZATION_STATE_UNSPECIFIED = 0,
   /** ACTIVE - The work unit is mutable. */
   ACTIVE = 1,
   /**
@@ -281,20 +290,50 @@ export enum WorkUnit_State {
   FINALIZED = 3,
 }
 
+export function workUnit_FinalizationStateFromJSON(object: any): WorkUnit_FinalizationState {
+  switch (object) {
+    case 0:
+    case "FINALIZATION_STATE_UNSPECIFIED":
+      return WorkUnit_FinalizationState.FINALIZATION_STATE_UNSPECIFIED;
+    case 1:
+    case "ACTIVE":
+      return WorkUnit_FinalizationState.ACTIVE;
+    case 2:
+    case "FINALIZING":
+      return WorkUnit_FinalizationState.FINALIZING;
+    case 3:
+    case "FINALIZED":
+      return WorkUnit_FinalizationState.FINALIZED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum WorkUnit_FinalizationState");
+  }
+}
+
+export function workUnit_FinalizationStateToJSON(object: WorkUnit_FinalizationState): string {
+  switch (object) {
+    case WorkUnit_FinalizationState.FINALIZATION_STATE_UNSPECIFIED:
+      return "FINALIZATION_STATE_UNSPECIFIED";
+    case WorkUnit_FinalizationState.ACTIVE:
+      return "ACTIVE";
+    case WorkUnit_FinalizationState.FINALIZING:
+      return "FINALIZING";
+    case WorkUnit_FinalizationState.FINALIZED:
+      return "FINALIZED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum WorkUnit_FinalizationState");
+  }
+}
+
+export enum WorkUnit_State {
+  /** STATE_UNSPECIFIED - The default value. This value is used if the state is omitted. */
+  STATE_UNSPECIFIED = 0,
+}
+
 export function workUnit_StateFromJSON(object: any): WorkUnit_State {
   switch (object) {
     case 0:
     case "STATE_UNSPECIFIED":
       return WorkUnit_State.STATE_UNSPECIFIED;
-    case 1:
-    case "ACTIVE":
-      return WorkUnit_State.ACTIVE;
-    case 2:
-    case "FINALIZING":
-      return WorkUnit_State.FINALIZING;
-    case 3:
-    case "FINALIZED":
-      return WorkUnit_State.FINALIZED;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum WorkUnit_State");
   }
@@ -304,12 +343,6 @@ export function workUnit_StateToJSON(object: WorkUnit_State): string {
   switch (object) {
     case WorkUnit_State.STATE_UNSPECIFIED:
       return "STATE_UNSPECIFIED";
-    case WorkUnit_State.ACTIVE:
-      return "ACTIVE";
-    case WorkUnit_State.FINALIZING:
-      return "FINALIZING";
-    case WorkUnit_State.FINALIZED:
-      return "FINALIZED";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum WorkUnit_State");
   }
@@ -371,6 +404,7 @@ function createBaseWorkUnit(): WorkUnit {
   return {
     name: "",
     workUnitId: "",
+    finalizationState: 0,
     state: 0,
     realm: "",
     createTime: undefined,
@@ -401,8 +435,11 @@ export const WorkUnit: MessageFns<WorkUnit> = {
     if (message.workUnitId !== "") {
       writer.uint32(18).string(message.workUnitId);
     }
+    if (message.finalizationState !== 0) {
+      writer.uint32(24).int32(message.finalizationState);
+    }
     if (message.state !== 0) {
-      writer.uint32(24).int32(message.state);
+      writer.uint32(176).int32(message.state);
     }
     if (message.realm !== "") {
       writer.uint32(34).string(message.realm);
@@ -488,6 +525,14 @@ export const WorkUnit: MessageFns<WorkUnit> = {
         }
         case 3: {
           if (tag !== 24) {
+            break;
+          }
+
+          message.finalizationState = reader.int32() as any;
+          continue;
+        }
+        case 22: {
+          if (tag !== 176) {
             break;
           }
 
@@ -654,6 +699,9 @@ export const WorkUnit: MessageFns<WorkUnit> = {
     return {
       name: isSet(object.name) ? globalThis.String(object.name) : "",
       workUnitId: isSet(object.workUnitId) ? globalThis.String(object.workUnitId) : "",
+      finalizationState: isSet(object.finalizationState)
+        ? workUnit_FinalizationStateFromJSON(object.finalizationState)
+        : 0,
       state: isSet(object.state) ? workUnit_StateFromJSON(object.state) : 0,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : "",
       createTime: isSet(object.createTime) ? globalThis.String(object.createTime) : undefined,
@@ -694,6 +742,9 @@ export const WorkUnit: MessageFns<WorkUnit> = {
     }
     if (message.workUnitId !== "") {
       obj.workUnitId = message.workUnitId;
+    }
+    if (message.finalizationState !== 0) {
+      obj.finalizationState = workUnit_FinalizationStateToJSON(message.finalizationState);
     }
     if (message.state !== 0) {
       obj.state = workUnit_StateToJSON(message.state);
@@ -768,6 +819,7 @@ export const WorkUnit: MessageFns<WorkUnit> = {
     const message = createBaseWorkUnit() as any;
     message.name = object.name ?? "";
     message.workUnitId = object.workUnitId ?? "";
+    message.finalizationState = object.finalizationState ?? 0;
     message.state = object.state ?? 0;
     message.realm = object.realm ?? "";
     message.createTime = object.createTime ?? undefined;

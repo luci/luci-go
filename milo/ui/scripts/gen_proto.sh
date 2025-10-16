@@ -46,6 +46,7 @@ cd ../../../../..
 # directory which will be cleaned up.
 TURBOCI_PROTO_DIR=$(mktemp -d)
 git clone https://chromium.googlesource.com/infra/turboci/proto "${TURBOCI_PROTO_DIR}"
+TURBOCI_PROTOS=$(find "${TURBOCI_PROTO_DIR}/turboci/graph" "${TURBOCI_PROTO_DIR}/turboci/data" -name "*.proto")
 
 cleanup() {
   unlink ./go.chromium.org/infra 1>/dev/null 2>/dev/null
@@ -128,5 +129,4 @@ protoc \
   ./go.chromium.org/infra/appengine/sheriff-o-matic/proto/v1/alerts.proto \
   ./go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.proto \
   ./go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.proto \
-  "${TURBOCI_PROTO_DIR}/turboci/graph/orchestrator/v1/graph_view.proto" \
-
+  ${TURBOCI_PROTOS} \

@@ -12,7 +12,10 @@ import { Sources, StringPair } from "./common.pb";
 
 export const protobufPackage = "luci.resultdb.v1";
 
-/** A top-level container of test results. */
+/**
+ * A top-level container of test results.
+ * Next ID: 18.
+ */
 export interface RootInvocation {
   /**
    * The resource name of this root invocation.
@@ -29,7 +32,7 @@ export interface RootInvocation {
    */
   readonly rootInvocationId: string;
   /**
-   * Current state of the root invocation.
+   * Current finalization state of the root invocation.
    *
    * At creation time, this can be set to ACTIVE or FINALIZING (if all fields
    * are known at creation time). When updating or via the FinalizeRootInvocation
@@ -40,6 +43,11 @@ export interface RootInvocation {
    * `deadline` expires (if the invocation is not already in FINALIZING state).
    * FINALIZING invocations will transition onward to FINALIZED when all included
    * work units are FINALIZED.
+   */
+  readonly finalizationState: RootInvocation_FinalizationState;
+  /**
+   * Do not use this field, it exists only so that field masks for the old "state"
+   * field can still parse. It will be repurposed soon. Use `finalization_state` instead.
    */
   readonly state: RootInvocation_State;
   /**
@@ -75,9 +83,9 @@ export interface RootInvocation {
     | string
     | undefined;
   /**
-   * When the invocation started to finalize, i.e. transitioned to FINALIZING
-   * state. This means the invocation is immutable but directly or indirectly
-   * included invocations may not be.
+   * When the invocation started to finalize, i.e. transitioned to a finalization
+   * state of FINALIZING. This means the invocation is immutable but directly or
+   * indirectly included invocations may not be.
    *
    * Output only.
    */
@@ -85,7 +93,8 @@ export interface RootInvocation {
     | string
     | undefined;
   /**
-   * When the invocation was finalized, i.e. transitioned to FINALIZED state.
+   * When the invocation was finalized, i.e. transitioned to a finalization state
+   * of FINALIZED.
    * If this field is set, implies that the invocation is finalized. This
    * means the invocation and directly or indirectly included invocations
    * are immutable.
@@ -189,9 +198,10 @@ export interface RootInvocation {
   readonly etag: string;
 }
 
-export enum RootInvocation_State {
-  /** STATE_UNSPECIFIED - The default value. This value is used if the state is omitted. */
-  STATE_UNSPECIFIED = 0,
+/** Indicates whether the root invocation, and its work units, are immutable. */
+export enum RootInvocation_FinalizationState {
+  /** FINALIZATION_STATE_UNSPECIFIED - The default value. This value is used if the finalization state is omitted. */
+  FINALIZATION_STATE_UNSPECIFIED = 0,
   /** ACTIVE - The root invocation is mutable. */
   ACTIVE = 1,
   /**
@@ -210,20 +220,50 @@ export enum RootInvocation_State {
   FINALIZED = 3,
 }
 
+export function rootInvocation_FinalizationStateFromJSON(object: any): RootInvocation_FinalizationState {
+  switch (object) {
+    case 0:
+    case "FINALIZATION_STATE_UNSPECIFIED":
+      return RootInvocation_FinalizationState.FINALIZATION_STATE_UNSPECIFIED;
+    case 1:
+    case "ACTIVE":
+      return RootInvocation_FinalizationState.ACTIVE;
+    case 2:
+    case "FINALIZING":
+      return RootInvocation_FinalizationState.FINALIZING;
+    case 3:
+    case "FINALIZED":
+      return RootInvocation_FinalizationState.FINALIZED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum RootInvocation_FinalizationState");
+  }
+}
+
+export function rootInvocation_FinalizationStateToJSON(object: RootInvocation_FinalizationState): string {
+  switch (object) {
+    case RootInvocation_FinalizationState.FINALIZATION_STATE_UNSPECIFIED:
+      return "FINALIZATION_STATE_UNSPECIFIED";
+    case RootInvocation_FinalizationState.ACTIVE:
+      return "ACTIVE";
+    case RootInvocation_FinalizationState.FINALIZING:
+      return "FINALIZING";
+    case RootInvocation_FinalizationState.FINALIZED:
+      return "FINALIZED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum RootInvocation_FinalizationState");
+  }
+}
+
+export enum RootInvocation_State {
+  /** STATE_UNSPECIFIED - The default value. This value is used if the state is omitted. */
+  STATE_UNSPECIFIED = 0,
+}
+
 export function rootInvocation_StateFromJSON(object: any): RootInvocation_State {
   switch (object) {
     case 0:
     case "STATE_UNSPECIFIED":
       return RootInvocation_State.STATE_UNSPECIFIED;
-    case 1:
-    case "ACTIVE":
-      return RootInvocation_State.ACTIVE;
-    case 2:
-    case "FINALIZING":
-      return RootInvocation_State.FINALIZING;
-    case 3:
-    case "FINALIZED":
-      return RootInvocation_State.FINALIZED;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum RootInvocation_State");
   }
@@ -233,12 +273,6 @@ export function rootInvocation_StateToJSON(object: RootInvocation_State): string
   switch (object) {
     case RootInvocation_State.STATE_UNSPECIFIED:
       return "STATE_UNSPECIFIED";
-    case RootInvocation_State.ACTIVE:
-      return "ACTIVE";
-    case RootInvocation_State.FINALIZING:
-      return "FINALIZING";
-    case RootInvocation_State.FINALIZED:
-      return "FINALIZED";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum RootInvocation_State");
   }
@@ -254,6 +288,7 @@ function createBaseRootInvocation(): RootInvocation {
   return {
     name: "",
     rootInvocationId: "",
+    finalizationState: 0,
     state: 0,
     realm: "",
     createTime: undefined,
@@ -280,8 +315,11 @@ export const RootInvocation: MessageFns<RootInvocation> = {
     if (message.rootInvocationId !== "") {
       writer.uint32(18).string(message.rootInvocationId);
     }
+    if (message.finalizationState !== 0) {
+      writer.uint32(24).int32(message.finalizationState);
+    }
     if (message.state !== 0) {
-      writer.uint32(24).int32(message.state);
+      writer.uint32(136).int32(message.state);
     }
     if (message.realm !== "") {
       writer.uint32(34).string(message.realm);
@@ -353,6 +391,14 @@ export const RootInvocation: MessageFns<RootInvocation> = {
         }
         case 3: {
           if (tag !== 24) {
+            break;
+          }
+
+          message.finalizationState = reader.int32() as any;
+          continue;
+        }
+        case 17: {
+          if (tag !== 136) {
             break;
           }
 
@@ -484,6 +530,9 @@ export const RootInvocation: MessageFns<RootInvocation> = {
     return {
       name: isSet(object.name) ? globalThis.String(object.name) : "",
       rootInvocationId: isSet(object.rootInvocationId) ? globalThis.String(object.rootInvocationId) : "",
+      finalizationState: isSet(object.finalizationState)
+        ? rootInvocation_FinalizationStateFromJSON(object.finalizationState)
+        : 0,
       state: isSet(object.state) ? rootInvocation_StateFromJSON(object.state) : 0,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : "",
       createTime: isSet(object.createTime) ? globalThis.String(object.createTime) : undefined,
@@ -509,6 +558,9 @@ export const RootInvocation: MessageFns<RootInvocation> = {
     }
     if (message.rootInvocationId !== "") {
       obj.rootInvocationId = message.rootInvocationId;
+    }
+    if (message.finalizationState !== 0) {
+      obj.finalizationState = rootInvocation_FinalizationStateToJSON(message.finalizationState);
     }
     if (message.state !== 0) {
       obj.state = rootInvocation_StateToJSON(message.state);
@@ -565,6 +617,7 @@ export const RootInvocation: MessageFns<RootInvocation> = {
     const message = createBaseRootInvocation() as any;
     message.name = object.name ?? "";
     message.rootInvocationId = object.rootInvocationId ?? "";
+    message.finalizationState = object.finalizationState ?? 0;
     message.state = object.state ?? 0;
     message.realm = object.realm ?? "";
     message.createTime = object.createTime ?? undefined;

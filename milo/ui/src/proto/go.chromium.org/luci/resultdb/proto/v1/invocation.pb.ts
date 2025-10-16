@@ -56,6 +56,10 @@ export interface Invocation {
   /**
    * Invocation-level string key-value pairs.
    * A key can be repeated.
+   *
+   * These tags may be re-exported alongside each test result.
+   *
+   * Total size (as measured by proto.Size()) must be <= 16 KB.
    */
   readonly tags: readonly StringPair[];
   /**

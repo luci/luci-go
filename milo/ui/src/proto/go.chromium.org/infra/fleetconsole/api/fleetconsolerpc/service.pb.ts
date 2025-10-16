@@ -159,8 +159,9 @@ export interface PingUfsRequest {
 export interface PingUfsResponse {
 }
 
-/** PingSwarmingRequest intentionally contains nothing. */
+/** PingSwarmingRequest contains the host to ping. */
 export interface PingSwarmingRequest {
+  readonly host: string;
 }
 
 /** PingSwarmingResponse intentionally contains nothing. */
@@ -1057,11 +1058,14 @@ export const PingUfsResponse: MessageFns<PingUfsResponse> = {
 };
 
 function createBasePingSwarmingRequest(): PingSwarmingRequest {
-  return {};
+  return { host: "" };
 }
 
 export const PingSwarmingRequest: MessageFns<PingSwarmingRequest> = {
-  encode(_: PingSwarmingRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(message: PingSwarmingRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.host !== "") {
+      writer.uint32(10).string(message.host);
+    }
     return writer;
   },
 
@@ -1072,6 +1076,14 @@ export const PingSwarmingRequest: MessageFns<PingSwarmingRequest> = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.host = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1081,20 +1093,24 @@ export const PingSwarmingRequest: MessageFns<PingSwarmingRequest> = {
     return message;
   },
 
-  fromJSON(_: any): PingSwarmingRequest {
-    return {};
+  fromJSON(object: any): PingSwarmingRequest {
+    return { host: isSet(object.host) ? globalThis.String(object.host) : "" };
   },
 
-  toJSON(_: PingSwarmingRequest): unknown {
+  toJSON(message: PingSwarmingRequest): unknown {
     const obj: any = {};
+    if (message.host !== "") {
+      obj.host = message.host;
+    }
     return obj;
   },
 
   create(base?: DeepPartial<PingSwarmingRequest>): PingSwarmingRequest {
     return PingSwarmingRequest.fromPartial(base ?? {});
   },
-  fromPartial(_: DeepPartial<PingSwarmingRequest>): PingSwarmingRequest {
+  fromPartial(object: DeepPartial<PingSwarmingRequest>): PingSwarmingRequest {
     const message = createBasePingSwarmingRequest() as any;
+    message.host = object.host ?? "";
     return message;
   },
 };

@@ -284,6 +284,8 @@ export interface TestResult {
    * Metadata for this test result.
    * It might describe this particular execution or the test case.
    * A key can be repeated.
+   *
+   * Total size (as measured by proto.Size()) must be <= 16 KB.
    */
   readonly tags: readonly StringPair[];
   /**

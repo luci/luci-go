@@ -39,7 +39,11 @@ export interface GenAiSuspect {
   /** True if the suspect is confirmed as the culprit by bisection. */
   readonly verified: boolean;
   /** The details of suspect verification for the suspect. */
-  readonly verificationDetails: SuspectVerificationDetails | undefined;
+  readonly verificationDetails:
+    | SuspectVerificationDetails
+    | undefined;
+  /** Justification for why the commit was chosen as a suspect. */
+  readonly justification: string;
 }
 
 function createBaseGenAiAnalysisResult(): GenAiAnalysisResult {
@@ -153,7 +157,14 @@ export const GenAiAnalysisResult: MessageFns<GenAiAnalysisResult> = {
 };
 
 function createBaseGenAiSuspect(): GenAiSuspect {
-  return { commit: undefined, reviewUrl: "", reviewTitle: "", verified: false, verificationDetails: undefined };
+  return {
+    commit: undefined,
+    reviewUrl: "",
+    reviewTitle: "",
+    verified: false,
+    verificationDetails: undefined,
+    justification: "",
+  };
 }
 
 export const GenAiSuspect: MessageFns<GenAiSuspect> = {
@@ -172,6 +183,9 @@ export const GenAiSuspect: MessageFns<GenAiSuspect> = {
     }
     if (message.verificationDetails !== undefined) {
       SuspectVerificationDetails.encode(message.verificationDetails, writer.uint32(42).fork()).join();
+    }
+    if (message.justification !== "") {
+      writer.uint32(50).string(message.justification);
     }
     return writer;
   },
@@ -223,6 +237,14 @@ export const GenAiSuspect: MessageFns<GenAiSuspect> = {
           message.verificationDetails = SuspectVerificationDetails.decode(reader, reader.uint32());
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.justification = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -241,6 +263,7 @@ export const GenAiSuspect: MessageFns<GenAiSuspect> = {
       verificationDetails: isSet(object.verificationDetails)
         ? SuspectVerificationDetails.fromJSON(object.verificationDetails)
         : undefined,
+      justification: isSet(object.justification) ? globalThis.String(object.justification) : "",
     };
   },
 
@@ -261,6 +284,9 @@ export const GenAiSuspect: MessageFns<GenAiSuspect> = {
     if (message.verificationDetails !== undefined) {
       obj.verificationDetails = SuspectVerificationDetails.toJSON(message.verificationDetails);
     }
+    if (message.justification !== "") {
+      obj.justification = message.justification;
+    }
     return obj;
   },
 
@@ -278,6 +304,7 @@ export const GenAiSuspect: MessageFns<GenAiSuspect> = {
     message.verificationDetails = (object.verificationDetails !== undefined && object.verificationDetails !== null)
       ? SuspectVerificationDetails.fromPartial(object.verificationDetails)
       : undefined;
+    message.justification = object.justification ?? "";
     return message;
   },
 };

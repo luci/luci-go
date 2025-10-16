@@ -197,7 +197,7 @@ export interface Labstation {
   readonly hive: string;
 }
 
-/** Next Tag: 6 */
+/** Next Tag: 7 */
 export interface Devboard {
   /** @deprecated */
   readonly servo: Servo | undefined;
@@ -207,6 +207,11 @@ export interface Devboard {
   /** GSC serial of the chip in the shield board. */
   readonly gsc: string;
   readonly devboardType: Devboard_DevboardType;
+  /**
+   * Provide DUT/drone affinity
+   * Example: satlab-abc123
+   */
+  readonly hive: string;
 }
 
 /** Devboard Type. */
@@ -921,7 +926,7 @@ export const Labstation: MessageFns<Labstation> = {
 };
 
 function createBaseDevboard(): Devboard {
-  return { servo: undefined, pools: [], debugger: "", gsc: "", devboardType: 0 };
+  return { servo: undefined, pools: [], debugger: "", gsc: "", devboardType: 0, hive: "" };
 }
 
 export const Devboard: MessageFns<Devboard> = {
@@ -940,6 +945,9 @@ export const Devboard: MessageFns<Devboard> = {
     }
     if (message.devboardType !== 0) {
       writer.uint32(40).int32(message.devboardType);
+    }
+    if (message.hive !== "") {
+      writer.uint32(50).string(message.hive);
     }
     return writer;
   },
@@ -991,6 +999,14 @@ export const Devboard: MessageFns<Devboard> = {
           message.devboardType = reader.int32() as any;
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.hive = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1007,6 +1023,7 @@ export const Devboard: MessageFns<Devboard> = {
       debugger: isSet(object.debugger) ? globalThis.String(object.debugger) : "",
       gsc: isSet(object.gsc) ? globalThis.String(object.gsc) : "",
       devboardType: isSet(object.devboardType) ? devboard_DevboardTypeFromJSON(object.devboardType) : 0,
+      hive: isSet(object.hive) ? globalThis.String(object.hive) : "",
     };
   },
 
@@ -1027,6 +1044,9 @@ export const Devboard: MessageFns<Devboard> = {
     if (message.devboardType !== 0) {
       obj.devboardType = devboard_DevboardTypeToJSON(message.devboardType);
     }
+    if (message.hive !== "") {
+      obj.hive = message.hive;
+    }
     return obj;
   },
 
@@ -1040,6 +1060,7 @@ export const Devboard: MessageFns<Devboard> = {
     message.debugger = object.debugger ?? "";
     message.gsc = object.gsc ?? "";
     message.devboardType = object.devboardType ?? 0;
+    message.hive = object.hive ?? "";
     return message;
   },
 };
