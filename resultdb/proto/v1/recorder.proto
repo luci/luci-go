@@ -81,8 +81,8 @@ service Recorder {
   // optimistic locking). It should be used (and only used by) recorders.
   rpc GetRootInvocation(GetRootInvocationRequest) returns (RootInvocation) {};
 
-  // Marks the given RootInvocation as final and begins the process of
-  // transitioning it to the state FINALIZED.
+  // Deprecated: Use FinalizeWorkUnit on the root work unit instead.
+  // Will be removed soon.
   rpc FinalizeRootInvocation(FinalizeRootInvocationRequest) returns (RootInvocation) {};
 
   // == Work Units =============================================================
@@ -129,16 +129,31 @@ service Recorder {
   // uses update tokens to authorise reads. It is designed for use with
   // BatchUpdateWorkUnits to make atomic updates (using aip.dev/154 etags for
   // optimistic locking). It should be used (and only used by) recorders.
-  rpc BatchGetWorkUnits(BatchGetWorkUnitsRequest) returns (BatchGetWorkUnitsResponse) {};
+  rpc BatchGetWorkUnits(BatchGetWorkUnitsRequest)
+      returns (BatchGetWorkUnitsResponse) {};
 
-  // Marks the given work unit as final and begins the process of
-  // transitioning it to the state FINALIZED.
-  rpc FinalizeWorkUnit(FinalizeWorkUnitRequest) returns (WorkUnit) {};
+  // Ensures the given work unit is final, assigning it the given
+  // final state if it does not yet have one. This begins the process of
+  // transitioning the work unit to the finalization state FINALIZED.
+  //
+  // Suitable for reporting status of a work unit when exiting and
+  // for use by task schedulers to speculatively clean up after an
+  // upload task finishes.
+  rpc FinalizeWorkUnit(FinalizeWorkUnitRequest)
+      returns (WorkUnit) {};
 
-  // Marks a set of work units as final and begins the process offer
-  // transitioning them to the state FINALIZED.
+  // Ensures the given work units are final, assigning them the given
+  // final state(s) if they do not yet have one. This begins the process of
+  // transitioning them to the finalization state FINALIZED.
   rpc BatchFinalizeWorkUnits(BatchFinalizeWorkUnitsRequest)
       returns (BatchFinalizeWorkUnitsResponse) {};
+
+  // Ensures descendants of the given work unit are final, assigning them
+  // a given final state if they do not yet have one. Both this RPC and
+  // FinalizeWorkUnit should be called by task schedulers to speculatively
+  // clean up after upload tasks after they exit.
+  rpc FinalizeWorkUnitDescendants(FinalizeWorkUnitDescendantsRequest)
+      returns (google.protobuf.Empty) {};
 
   // Mints an 'inclusion token' which can be used by another system to
   // include new child invocations (of a nominated realm) in a work unit.
@@ -146,7 +161,8 @@ service Recorder {
   // from the nominated realm to the realm of the root invocation.
   //
   // See DelegateWorkUnitInclusionRequest for details.
-  rpc DelegateWorkUnitInclusion(DelegateWorkUnitInclusionRequest) returns (DelegateWorkUnitInclusionResponse) {};
+  rpc DelegateWorkUnitInclusion(DelegateWorkUnitInclusionRequest)
+      returns (DelegateWorkUnitInclusionResponse) {};
 
   // == Baselines ==============================================================
 
@@ -342,10 +358,11 @@ message FinalizeRootInvocationRequest {
 //    work unit implicitly declassifies the results in the the realm of the
 //    root invocation. This is not necessary if an inclusion token was provided
 //    at point (1.) as this permission was checked when the token was minted.
-// 3. if an ID not starting with "u-" is specified,
-//   the resultdb.workUnits.createWithReservedID permission
-// 4. if the producer resource is set,
+// 3. if the producer resource is set,
 //   the resultdb.workUnits.setProducerResource permission
+// 4. if a new base work unit ID not starting with "u-" is specified,
+//   the resultdb.workUnits.createWithReservedID permission (see work_unit_id
+//   below).
 //
 // This RPC returns an update token in a response header named "update-token".
 // This token is required to make future updates. Treat this token as you might
@@ -356,39 +373,62 @@ message CreateWorkUnitRequest {
   string parent = 1;
 
   // WorkUnit identifier, becomes a part of the work_unit.name.
+  //
+  // # Base work unit IDs
+  //
+  // A base work unit ID looks like "build-1234567890" or "task-123456980a".
+  // It is any work ID that is not a prefixed work unit ID (see below).
+  //
+  // Each unique base work unit ID has its own update token which allows
+  // results to uploaded it only.
+  //
+  // Base work unit IDs are typically created by task scheduling systems,
+  // such as Swarming, ATE or ATP. Such systems are characterised by
+  // having a resilient backend that can guarantee FinalizeWorkUnit and
+  // FinalizeWorkUnitDescendants(...) are eventually called on the work unit.
+  //
   // Only trusted systems with an agreed format negotiated with ResultDB
-  // may create nicely formatted IDs (e.g. "build-1234567890"), other
-  // clients must use IDs of the form "u-{GUID}".
+  // (having resultdb.workUnits.createWithReservedID permission)
+  // may create base work unit IDs that are nicely formatted (e.g.
+  // "build-1234567890"). Other clients must use IDs of the form "u-{GUID}"
+  // or prefixed work unit IDs (see below).
   //
   // # Prefixed Work Unit IDs (:)
   //
-  // Sometimes the a process wishes to allocate multiple work units
-  // for its own use that share the same update token. A common reason is to
-  // enable batch uploading test results to those multiple work units in
-  // the same BatchCreateTestResults request, for efficiency.
+  // A prefixed work unit ID is a work unit ID of the form
+  // `<base_id>:<child_id>`. A prefixed work unit 'derives' from
+  // a given base work unit ID and shares its update token.
   //
-  // For this purpose, we offer prefixed work unit IDs. Create a
-  // work unit with an ID of form `<base_id>:<child_id>` and specify its
-  // parent as `<base_id>` or `<base_id>:<other_child_id>`. The newly
-  // created work unit will use the same update token as the work unit
-  // `<base_id>` and other work units prefixed with `<base_id>:` in
-  // the same root invocation.
+  // Prefixed work units IDs are useful for:
+  // - Creating and uploading to multiple work units from the same bot
+  //   (e.g. for multi-module or multi-attempt uploads).
+  //   As all prefixed work units share the same update token as the
+  //   base work unit ID, authentication is simpler and uploads to
+  //   multiple work units can be combined in the same Batch...()
+  //   RPC for efficiency.
+  // - Ensuring timely finalization for bot-created work units. Task
+  //   scheduling systems can clean up any forgotten work units following
+  //   non-graceful exit of the bot using the FinalizeWorkUnitDescendants RPC
+  //   on the base work unit ID, without accidentally finalizing other
+  //   work unit descendents owned by other task scheduling systems.
   //
-  // Note that only single prefixing is possible; the ID construction
+  // Prefixed work units may only be created within their corresponding
+  // base work unit or a prefixed child thereof, i.e.
+  //
+  // Parent                 -> Child
+  // `<base_id>`            -> `<base_id>:child_1` is allowed
+  // `<base_id>:some_child` -> `<base_id>:child_2` is allowed
+  // `<other_id>`           -> `<base_id>:child_1` is not allowed
+  //
+  // Only single prefixing is possible; the ID construction
   // `<base_id>:<child_1>:<grandchild_1>` is not allowed. You may
   // however create `<base_id>:<grandchild_1>` under `<base_id>:<child_1>`
-  // to have the grandchild share the same update token as the child,
-  // the base work unit and all other `<base_id>:`-prefixed descendents.
-  //
-  // Prefixed work units can be created by any caller with access to the
-  // base work unit's update token, regardless of if the caller also has
-  // resultdb.workUnits.createWithReservedID. I.E. the owner of a nicely
-  // named work unit is entitled to all its prefixed children.
+  // to achieve the same effect.
   //
   // Prefixed work units do not offer the same isolation and integrity
   // guarantees as non-prefixed work units because of the shared update
-  // token, so are only suitable for uploads within the same security context
-  // (i.e. same machine, task and account). They must not be delegated.
+  // token. Therefore, they should not be used outside the scope of a
+  // single bot and its scheduling backend.
   //
   // Regex: ^[a-z][a-z0-9_\-]*(:[a-z][a-z0-9_\-])?$. Limited to
   // 100 characters in length.
@@ -571,14 +611,53 @@ message BatchUpdateWorkUnitsResponse {
 
 // A request message for FinalizeWorkUnit RPC.
 //
-// This RPC is idempotent: attempting to finalize an already finalized
-// (or finalizing) work unit will have no effect.
+// This RPC is idempotent: attempting to set a final state on a work unit
+// which already has a final state will have no effect.
 //
 // To limit response size, the `extended_properties` field is elided
 // from the work unit returned by the RPC.
 message FinalizeWorkUnitRequest {
   // Resource name of the work unit to finalize.
   string name = 1 [ (google.api.field_behavior) = REQUIRED ];
+
+  // The final state to transition the work unit to.
+  WorkUnit.State state = 2 [ (google.api.field_behavior) = REQUIRED ];
+}
+
+// A request message for FinalizeWorkUnitDescendants RPC.
+//
+// This RPC is idempotent: attempting to set a final state on work unit(s)
+// which already have a final state will have no effect.
+//
+// Due to the large number of descendent work units that might exist, this
+// RPC is not guaranteed to be atomic.
+message FinalizeWorkUnitDescendantsRequest {
+  // Resource name of the work unit to finalize.
+  string name = 1;
+
+  // The final state to transition descendant work units to.
+  WorkUnit.State state = 2 [ (google.api.field_behavior) = REQUIRED ];
+
+  // Describes the scope to finalize.
+  enum FinalizationScope {
+    // The scope is not specified. Do not use.
+    FINALIZATION_SCOPE_UNSPECIFIED = 0;
+
+    // Finalizes all prefixed descendents of a base work unit ID.
+    // See CreateWorkUnitRequest.work_unit_id for details about
+    // prefixed work unit IDs and base work unit IDs. The `name`
+    // field must refer to the base work unit.
+    //
+    // This is for use by a task scheduling system to speculatively
+    // clean up descendant work units for a task that has exited.
+    // Typically, the task scheduler will attempt to set state = FAILED
+    // or state = CANCELLED on these descendant work units to flag that
+    // the task failed to report a state for them.
+    PREFIXED_DESCENDANTS_ONLY = 1;
+  }
+
+  // Specifies the scope of finalization.
+  FinalizationScope finalization_scope = 3;
 }
 
 // A request message for BatchFinalizeWorkUnits RPC.

@@ -229,6 +229,23 @@ func (s *DecoratedRecorder) BatchFinalizeWorkUnits(ctx context.Context, req *Bat
 	return
 }
 
+func (s *DecoratedRecorder) FinalizeWorkUnitDescendants(ctx context.Context, req *FinalizeWorkUnitDescendantsRequest) (rsp *emptypb.Empty, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "FinalizeWorkUnitDescendants", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.FinalizeWorkUnitDescendants(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "FinalizeWorkUnitDescendants", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedRecorder) DelegateWorkUnitInclusion(ctx context.Context, req *DelegateWorkUnitInclusionRequest) (rsp *DelegateWorkUnitInclusionResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context

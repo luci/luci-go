@@ -50,17 +50,97 @@ message WorkUnit {
     (google.api.field_behavior) = IMMUTABLE
   ];
 
+  // The execution state of the work unit.
+  enum State {
+    // The default value. This value is unused.
+    STATE_UNSPECIFIED = 0;
+
+    // Non-final states.
+
+    // The work unit has not yet started running.
+    PENDING = 1;
+
+    // The work unit is currently running.
+    RUNNING = 2;
+
+    // Final states. When transitioned to one of these states, the
+    // the work unit will also become immutable.
+
+    // The work unit, including its child work units, completed
+    // successfully. If any child work units failed, they were
+    // retried, and those retries succeeded.
+    //
+    // This status means results are complete and correct, i.e.:
+    // - all tests to be run (or skipped) were identified.
+    // - test results were successfully uploaded to ResultDB
+    //   for each such test.
+    //
+    // This status generally does not say anything about the test content;
+    // tests could have FAILED, some could have even failed to
+    // produce a result (EXECUTION_ERRORED).
+    //
+    // If any test results were reported with a status of PRECLUDED (i.e.
+    // had their execution blocked by a higher-level error), do not use
+    // this status. Instead report the status ERRORED, and indicate what
+    // higher-level error precluded the execution of those tests (e.g.
+    // loss of system under test).
+    SUCCEEDED = 3;
+
+    // The work unit, or one of its child work units, encountered an error.
+    // Moreover, that error was not resolved by retry within the work unit.
+    //
+    // This status means the results may be incomplete, e.g. because of an
+    // issue:
+    // - identifying the tests to be run (and skipped), or
+    // - running those tests, or
+    // - uploading the work unit, or any of its test results or artifacts,
+    //   to ResultDB.
+    //
+    // Common causes are timeout, crash of the device under test and tool failure.
+    // It can also indicate the bot running the work unit was shut down
+    // unexpectedly.
+    //
+    // If you report any test results with a status of `PRECLUDED`, you
+    // MUST use this status and indicate what higher-level error
+    // precluded their execution (e.g. timeout or loss of system
+    // under test).
+    // TODO(meiring): specify the field where uploaders will indicate
+    // the error.
+    //
+    // If this work unit is forcefully finalized because the `deadline`
+    // expired, it will be automatically transitioned to this state as
+    // there is an implied failure to upload results to ResultDB.
+    FAILED = 4;
+
+    // The work unit never started or may be incomplete, because
+    // an external factor requested its cancellation (e.g. presubmit
+    // run was no longer needed).
+    CANCELLED = 5;
+
+    // The work unit determined no tests need to be run.
+    // For example, the build dependency graph indicates the CL did
+    // not modify the module to be tested.
+    // This status usually indicates no test results were uploaded.
+    SKIPPED = 6;
+  }
+
+  // The overall state of the work unit, including any child work units.
+  // See also: https://google.aip.dev/216.
+  State state = 22;
+
   // Indicates whether the work unit, and its children, are immutable.
   enum FinalizationState {
-    // The default value. This value is used if the finalization state is omitted.
+    // The default value. This value is unused.
     FINALIZATION_STATE_UNSPECIFIED = 0;
 
     // The work unit is mutable.
+    // The work unit will be int his state when `state` is in a non-final
+    // state.
     ACTIVE = 1;
 
     // The work unit is in the process of moving to the FINALIZED state.
-    // This will happen automatically soon after all of its directly or
-    // indirectly included work units become inactive.
+    // This will happen automatically when `state` transitions to one
+    // of the final states.
     //
     // In this state, the work unit itself is immutable, but its
     // contained work units may still be mutable. When the work unit
@@ -71,30 +151,19 @@ message WorkUnit {
 
     // The work unit is immutable and no longer accepts new results
     // directly or indirectly.
+    //
+    // This will happen automatically soon after the work unit enters
+    // FINALIZING state, and all of its directly or indirectly included
+    // work units become inactive.
     FINALIZED = 3;
   }
 
   // Current finalization state of the work unit.
   //
-  // At creation time, this can be set to ACTIVE or FINALIZING (if all fields
-  // are known at creation time). When updating or via the FinalizeWorkUnit
-  // RPC, the state can also be updated from ACTIVE to FINALIZING.
-  //
-  // In all other cases, this field should be treated as output only. ResultDB
-  // will automatically transition the work unit to FINALIZING when the provided
-  // `deadline` expires (if the work unit is not already in FINALIZING state).
-  // FINALIZING work units will transition onward to FINALIZED when all included
-  // work units are FINALIZED.
-  FinalizationState finalization_state = 3;
-
-  enum State {
-    // The default value. This value is used if the state is omitted.
-    STATE_UNSPECIFIED = 0;
-  }
-
-  // Do not use this field, it exists only so that field masks for the old "state"
-  // field can still parse. It will be repurposed soon. Use `finalization_state` instead.
-  State state = 22;
+  // Output only.
+  FinalizationState finalization_state = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
 
   // The realm of the work unit. This controls the ACLs that apply to the
   // work unit and its contents.

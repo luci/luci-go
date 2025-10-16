@@ -55,39 +55,78 @@ message RootInvocation {
     ACTIVE = 1;
 
     // The root invocation is in the process of moving to the FINALIZED state.
-    // This will happen automatically soon after all of its directly or
-    // indirectly included invocations become inactive.
+    // This will happen automatically as soon as the root work unit
+    // becomes FINALIZING.
     //
-    // In this state, the root invocation record itself is immutable, but its
-    // contained work units may still be mutable.
+    // In this state, the root invocation and root work unit records are immutable,
+    // but its contained work units may still be mutable.
     FINALIZING = 2;
 
-    // The invocation is immutable and no longer accepts new results
-    // directly or indirectly.
+    // The root invocation is immutable and no longer accepts new results
+    // directly or indirectly. This will happen automatically as soon as the
+    // root work unit becomes FINALIZED.
     FINALIZED = 3;
   }
 
-  // Current finalization state of the root invocation.
-  //
-  // At creation time, this can be set to ACTIVE or FINALIZING (if all fields
-  // are known at creation time). When updating or via the FinalizeRootInvocation
-  // RPC, the state can also be updated from ACTIVE to FINALIZING.
-  //
-  // In all other cases, this field should be treated as output only. ResultDB
-  // will automatically transition the invocation to FINALIZING when the provided
-  // `deadline` expires (if the invocation is not already in FINALIZING state).
-  // FINALIZING invocations will transition onward to FINALIZED when all included
-  // work units are FINALIZED.
-  FinalizationState finalization_state = 3;
+  // Current finalization state of the root invocation. This is an output only
+  // field and is based on the finalization state of the root work unit.
+  FinalizationState finalization_state = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
 
+  // The execution state of the root invocation.
   enum State {
-    // The default value. This value is used if the state is omitted.
+    // The default value. This value is unused.
     STATE_UNSPECIFIED = 0;
+
+    // Non-final states.
+
+    // The root invocation has not yet started running.
+    PENDING = 1;
+
+    // The root invocation is currently running.
+    RUNNING = 2;
+
+    // Final states. When transitioned to one of these states, the
+    // the root invocation will also become immutable.
+
+    // The root invocation completed successfully.
+    //
+    // This status means results are complete and correct, i.e.:
+    // - all tests to be run (or skipped) were identified.
+    // - test results were successfully uploaded to ResultDB
+    //   for each such test.
+    //
+    // This status generally does not say anything about the test content;
+    // tests could have FAILED, some could have even failed to
+    // produce a result (EXECUTION_ERRORED).
+    SUCCEEDED = 3;
+
+    // The root invocation encountered an error, which was not resolved
+    // by retry.
+    //
+    // This status means the results may be incomplete.
+    FAILED = 4;
+
+    // The root invocation never started or may be incomplete, because
+    // an external factor requested its cancellation (e.g. presubmit
+    // run was no longer needed).
+    CANCELLED = 5;
+
+    // The root invocation determined no tests need to be run.
+    // For example, the build dependency graph indicates the CL did
+    // not modify the module to be tested.
+    // This status usually indicates no test results were uploaded.
+    SKIPPED = 6;
   }
 
-  // Do not use this field, it exists only so that field masks for the old "state"
-  // field can still parse. It will be repurposed soon. Use `finalization_state` instead.
-  State state = 17;
+  // The overall state of the root invocation. This is an output only
+  // field and is based on the state of the root work unit.
+  //
+  // See also: https://google.aip.dev/216.
+  State state = 17  [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
 
   // The realm of the root invocation. This controls the ACLs that apply to the
   // root invocation and its contents.

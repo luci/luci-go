@@ -375,6 +375,26 @@ func (mr *MockRecorderClientMockRecorder) FinalizeWorkUnit(ctx, in interface{}, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeWorkUnit", reflect.TypeOf((*MockRecorderClient)(nil).FinalizeWorkUnit), varargs...)
 }
 
+// FinalizeWorkUnitDescendants mocks base method.
+func (m *MockRecorderClient) FinalizeWorkUnitDescendants(ctx context.Context, in *FinalizeWorkUnitDescendantsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FinalizeWorkUnitDescendants", varargs...)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FinalizeWorkUnitDescendants indicates an expected call of FinalizeWorkUnitDescendants.
+func (mr *MockRecorderClientMockRecorder) FinalizeWorkUnitDescendants(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeWorkUnitDescendants", reflect.TypeOf((*MockRecorderClient)(nil).FinalizeWorkUnitDescendants), varargs...)
+}
+
 // GetRootInvocation mocks base method.
 func (m *MockRecorderClient) GetRootInvocation(ctx context.Context, in *GetRootInvocationRequest, opts ...grpc.CallOption) (*RootInvocation, error) {
 	m.ctrl.T.Helper()
@@ -791,6 +811,21 @@ func (m *MockRecorderServer) FinalizeWorkUnit(arg0 context.Context, arg1 *Finali
 func (mr *MockRecorderServerMockRecorder) FinalizeWorkUnit(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeWorkUnit", reflect.TypeOf((*MockRecorderServer)(nil).FinalizeWorkUnit), arg0, arg1)
+}
+
+// FinalizeWorkUnitDescendants mocks base method.
+func (m *MockRecorderServer) FinalizeWorkUnitDescendants(arg0 context.Context, arg1 *FinalizeWorkUnitDescendantsRequest) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FinalizeWorkUnitDescendants", arg0, arg1)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FinalizeWorkUnitDescendants indicates an expected call of FinalizeWorkUnitDescendants.
+func (mr *MockRecorderServerMockRecorder) FinalizeWorkUnitDescendants(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeWorkUnitDescendants", reflect.TypeOf((*MockRecorderServer)(nil).FinalizeWorkUnitDescendants), arg0, arg1)
 }
 
 // GetRootInvocation mocks base method.
