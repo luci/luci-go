@@ -271,7 +271,7 @@ func publishFinalizedInvocation(ctx context.Context, invID invocations.ID, opts 
 
 // publishFinalizedRootInvocation publishes a pub/sub message for a finalized
 // root invocation.
-func publishFinalizedRootInvocation(ctx context.Context, rootInvID rootinvocations.ID, opts Options) error {
+func publishFinalizedRootInvocation(ctx context.Context, rootInvID rootinvocations.ID, rdbHostName string) error {
 	// Enqueue a notification to pub/sub listeners that the root invocation
 	// has been finalized.
 	inv, err := rootinvocations.ReadFinalizedNotificationInfo(ctx, rootInvID)
@@ -287,7 +287,7 @@ func publishFinalizedRootInvocation(ctx context.Context, rootInvID rootinvocatio
 			Realm:      inv.Realm,
 			CreateTime: inv.CreateTime,
 		},
-		ResultdbHost: opts.ResultDBHostname,
+		ResultdbHost: rdbHostName,
 	}
 	tasks.NotifyRootInvocationFinalized(ctx, notification)
 	return nil
@@ -363,7 +363,7 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID, opts Options)
 		if invID.IsRootInvocation() {
 			// Publish a finalized root invocation transactionally.
 			rootInvID := rootinvocations.MustParseLegacyInvocationID(invID)
-			if err := publishFinalizedRootInvocation(ctx, rootInvID, opts); err != nil {
+			if err := publishFinalizedRootInvocation(ctx, rootInvID, opts.ResultDBHostname); err != nil {
 				return err
 			}
 

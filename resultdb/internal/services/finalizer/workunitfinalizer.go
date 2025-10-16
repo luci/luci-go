@@ -40,6 +40,10 @@ type sweepWorkUnitsForFinalizationOptions struct {
 	// round. If 0, the value of 10,000 is used.
 	// For testing only.
 	readLimitOverride int
+	// Hostname of the luci.resultdb.v1.ResultDB service which can be
+	// queried to fetch the details of root invocations being sent via pubsub.
+	// E.g. "results.api.luci.app".
+	resultDBHostname string
 }
 
 // sweepWorkUnitsForFinalization implements the batch-based finalizer for work units.
@@ -84,7 +88,11 @@ func sweepWorkUnitsForFinalization(ctx context.Context, rootInvID rootinvocation
 		}
 		logging.Infof(ctx, "finalizing %d work units, reseting %d not ready work units for %q", len(workUnitsToFinalize), len(ineligibleCandidates), rootInvID.Name())
 
-		err = applyFinalizationUpdates(ctx, workUnitsToFinalize, opts.writeBatchSizeOverride)
+		writeOpts := applyFinalizationUpdatesOptions{
+			batchSizeOverride: opts.writeBatchSizeOverride,
+			resultDBHostname:  opts.resultDBHostname,
+		}
+		err = applyFinalizationUpdates(ctx, rootInvID, workUnitsToFinalize, writeOpts)
 		if err != nil {
 			return errors.Fmt("apply  work unit finalization updates: %w", err)
 		}
@@ -253,12 +261,17 @@ func findWorkUnitsReadyForFinalization(ctx context.Context, rootInvID rootinvoca
 	return ineligibleCandidates, workUnitsToFinalize, moreToRead, nil
 }
 
+type applyFinalizationUpdatesOptions struct {
+	batchSizeOverride int
+	resultDBHostname  string
+}
+
 // applyFinalizationUpdates commits the finalization state for a given list of work units.
 //
 // The function relies on the caller to provide `workUnitsToFinalize` sorted with
 // children appearing before parents. This ordering guarantees that a parent is only
 // processed after its dependent children are finalized.
-func applyFinalizationUpdates(ctx context.Context, workUnitsToFinalize []workUnitWithParent, batchSize int) (err error) {
+func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID, workUnitsToFinalize []workUnitWithParent, opts applyFinalizationUpdatesOptions) (err error) {
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/finalizer.applyFinalizationUpdates",
 		attribute.Int("count", len(workUnitsToFinalize)))
 	defer func() { tracing.End(ts, err) }()
@@ -266,9 +279,10 @@ func applyFinalizationUpdates(ctx context.Context, workUnitsToFinalize []workUni
 	// See https://cloud.google.com/spanner/quotas#limits-for.
 	// Default batch size is 2000 work units per transaction, this allows 40 mutations per work unit.
 	defaultBatchSize := 2000
-	if batchSize < 0 || batchSize > defaultBatchSize {
-		return errors.New(fmt.Sprintf("batchSize must be between 0 and %d, got %d", defaultBatchSize, batchSize))
+	if opts.batchSizeOverride < 0 || opts.batchSizeOverride > defaultBatchSize {
+		return errors.New(fmt.Sprintf("batchSize must be between 0 and %d, got %d", defaultBatchSize, opts.batchSizeOverride))
 	}
+	batchSize := opts.batchSizeOverride
 	if batchSize == 0 {
 		batchSize = defaultBatchSize
 	}
@@ -276,12 +290,8 @@ func applyFinalizationUpdates(ctx context.Context, workUnitsToFinalize []workUni
 	for _, finalizeBatch := range batches {
 		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 			mutations := []*spanner.Mutation{}
-			parents := toFinalizeReadyWorkUnitParents(finalizeBatch)
+			parents := toFinalizeReadyWorkUnitParents(finalizeBatch).NonEmptyIDs()
 			for parent := range parents {
-				if parent == (workunits.ID{}) {
-					// TODO: parent is a root invocation, finalize the root invocation.
-					continue
-				}
 				// For each work unit being finalized, mark its parent (no matter the finalization state of the parent) as a candidate for the next iteration.
 				// The blind write is to avoid a read-lock on the parent record.
 				// While it would be more efficient to not mark parents which we will finalize in later write batches,
@@ -296,10 +306,34 @@ func applyFinalizationUpdates(ctx context.Context, workUnitsToFinalize []workUni
 			if err != nil {
 				return err
 			}
-			// Create mutations only for work units that are still in the FINALIZING state.
+			shouldFinalizeRootInvocation := false
+			// Finalize work units only for work units that are still in the FINALIZING state.
 			for i, id := range finalizeReadyIDs {
-				if states[i] == pb.WorkUnit_FINALIZING {
-					mutations = append(mutations, workunits.MarkFinalized(id)...)
+				if states[i] != pb.WorkUnit_FINALIZING {
+					continue
+				}
+				mutations = append(mutations, workunits.MarkFinalized(id)...)
+				if id.WorkUnitID == workunits.RootWorkUnitID {
+					// Finalize the root invocation when transition root work unit to finalized.
+					shouldFinalizeRootInvocation = true
+				}
+			}
+
+			if shouldFinalizeRootInvocation {
+				// TODO(b/442447678): We are planning to always transition root invocation and root work unit
+				// to FINALIZING together. Once we have done that, the root invocation
+				// will be guaranteed to be in the FINALIZING state when its root
+				// work unit becomes FINALIZED.
+				state, err := rootinvocations.ReadFinalizationState(ctx, rootInvID)
+				if err != nil {
+					return err
+				}
+				if state == pb.RootInvocation_FINALIZING {
+					// Publish a finalized root invocation pubsub transactionally.
+					if err := publishFinalizedRootInvocation(ctx, rootInvID, opts.resultDBHostname); err != nil {
+						return err
+					}
+					mutations = append(mutations, rootinvocations.MarkFinalized(rootInvID)...)
 				}
 			}
 			span.BufferWrite(ctx, mutations...)
