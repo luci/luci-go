@@ -26,8 +26,13 @@ import (
 var projectIntegrationTestPattern = regexp.MustCompile(`[A-Z][A-Z_]*[A-Z]_INTEGRATION_TESTS`)
 var bugPattern = regexp.MustCompile(`b/[0-9]+`)
 
-// isRunningInCI guesses whether we are running in CI.
-func isRunningInCI() bool {
+// IsRunningInCI guesses whether we are running in CI.
+//
+// TODO(gregorynisbet): Make this private again after we know
+// how the fleet console is going to use this information.
+// Exposing this function at all is abstraction-breaking, but
+// it is still a good idea to use the same heuristic everywhere.
+func IsRunningInCI() bool {
 	switch {
 	case os.Getenv("CI") != "":
 		return true
@@ -87,7 +92,7 @@ func LocalOnlyBecause(t testing.TB, bug string) {
 	if !bugPattern.MatchString(bug) {
 		t.Fatal(`Local only tests are technical debt. You must include a valid bug number.`)
 	}
-	if isRunningInCI() {
+	if IsRunningInCI() {
 		t.Skipf("skipping test in CI due to %s", bug)
 	} else {
 		t.Logf("test is marked local-only due to %s", bug)
