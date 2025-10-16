@@ -18,9 +18,27 @@
  * The intention is that this will be used to generate fake data for a TurboCI graph while the
  * corresponding Turbo CI QueryNodes API meant to provide this data is still in development. Once
  * the API is available and integrated, we can remove this file.
+ *
+ * TODO - Remove the fakerjs dependency added in crrev.com/c/7047404 when this file is deleted.
  */
 
+import { faker } from '@faker-js/faker';
+
 import { Duration } from '../proto/google/protobuf/duration.pb';
+import {
+  BuildCheckOptions,
+  Product,
+} from '../proto/turboci/data/build/v1/build_check_options.pb';
+import { BuildCheckResult } from '../proto/turboci/data/build/v1/build_check_results.pb';
+import {
+  GerritChangeInfo,
+  GerritChangeInfo_Status,
+} from '../proto/turboci/data/gerrit/v1/gerrit_change_info.pb';
+import {
+  GobSourceCheckOptions,
+  GobSourceCheckOptions_GerritChange,
+} from '../proto/turboci/data/gerrit/v1/gob_source_check_options.pb';
+import { GobSourceCheckResults } from '../proto/turboci/data/gerrit/v1/gob_source_check_results.pb';
 import {
   Identifier,
   WorkPlan,
@@ -67,9 +85,48 @@ import {
 import { StageAttemptState } from '../proto/turboci/graph/orchestrator/v1/stage_attempt_state.pb';
 import { StageDelta } from '../proto/turboci/graph/orchestrator/v1/stage_delta.pb';
 import { StageEditView } from '../proto/turboci/graph/orchestrator/v1/stage_edit_view.pb';
-import { StageState } from '../proto/turboci/graph/orchestrator/v1/stage_state.pb';
 import { StageView } from '../proto/turboci/graph/orchestrator/v1/stage_view.pb';
 import { Value } from '../proto/turboci/graph/orchestrator/v1/value.pb';
+
+// Type URLs for the data protos
+const TYPE_URL_GOB_SOURCE_OPTIONS =
+  'type.googleapis.com/turboci.data.gerrit.v1.GobSourceCheckOptions';
+const TYPE_URL_GOB_SOURCE_RESULTS =
+  'type.googleapis.com/turboci.data.gerrit.v1.GobSourceCheckResults';
+const TYPE_URL_BUILD_OPTIONS =
+  'type.googleapis.com/turboci.data.build.v1.BuildCheckOptions';
+const TYPE_URL_BUILD_RESULTS =
+  'type.googleapis.com/turboci.data.build.v1.BuildCheckResult';
+
+// Fake data pools used by Faker.js
+const FAKE_GERRIT_HOSTS = [
+  'chromium',
+  'android',
+  'googleplex-android',
+  'partner-android',
+];
+const FAKE_GERRIT_PROJECTS = [
+  'device/google/cuttlefish',
+  'platform/frameworks/support',
+  'platform/frameworks/base',
+  'kernel/build',
+];
+const FAKE_GIT_BRANCHES = ['main', 'androidx-main', 'android14-tests-release'];
+const FAKE_TARGET_NAMES = [
+  'husky-userdebug',
+  'shiba-userdebug',
+  'oriole-userdebug',
+  'raven-userdebug',
+  'rango-userdebug',
+  'mustang-userdebug',
+];
+const FAKE_ANDROID_BRANCHES = [
+  'git-main',
+  'git_25Q1-release',
+  'git_25Q2-release',
+  'git_25Q3-release',
+  'git_trunk-release',
+];
 
 /**
  * Configuration for the FakeGraphGenerator.
@@ -98,6 +155,13 @@ export interface GraphGenerationConfig {
   checkEdits?: { stageId: string; checkId: string; state: CheckState }[];
 }
 
+interface CheckData {
+  optionsRefs: Check_OptionRef[];
+  optionDatums: Datum[];
+  results: Check_Result[];
+  resultViews: CheckResultView[];
+}
+
 export class FakeGraphGenerator {
   private workPlanId: WorkPlan;
   private checkIdMap: Map<string, CheckId> = new Map();
@@ -108,6 +172,14 @@ export class FakeGraphGenerator {
   private currentSimulatedTimeMs = Date.UTC(2024, 0, 1, 12, 0, 0);
 
   constructor(private config: GraphGenerationConfig) {
+    // Initialize faker seed for reproducible graphs based on workplan ID
+    let seed = 0;
+    for (let i = 0; i < config.workPlanIdStr.length; i++) {
+      seed = (seed << 5) - seed + config.workPlanIdStr.charCodeAt(i);
+      seed |= 0;
+    }
+    faker.seed(seed);
+
     // 1. Initialize base Identifiers
     this.workPlanId = { id: config.workPlanIdStr };
 
@@ -152,138 +224,53 @@ export class FakeGraphGenerator {
   private generateCheckView(idStr: string): CheckView {
     const checkId = this.checkIdMap.get(idStr)!;
     const realm = `${idStr}-realm`; // Deterministic realm
+    const kind = this.config.checkKinds?.[idStr] ?? CheckKind.CHECK_KIND_BUILD;
+
+    // Generate data based on CheckKind
+    let data: CheckData;
+    if (kind === CheckKind.CHECK_KIND_SOURCE) {
+      data = this.generateSourceCheckData(checkId, realm);
+    } else if (kind === CheckKind.CHECK_KIND_BUILD) {
+      data = this.generateBuildCheckData(checkId, realm);
+    } else {
+      // Fallback for other kinds not yet specified
+      data = this.generateGenericCheckData(checkId, realm, idStr);
+    }
 
     // Generate foundational Check structure
     const check: Check = {
       identifier: checkId,
-      // Use the configured kind, or default to BUILD.
-      kind: this.config.checkKinds?.[idStr] ?? CheckKind.CHECK_KIND_BUILD,
+      kind: kind,
       realm: realm,
       version: this.nextRevision(),
-      state: CheckState.CHECK_STATE_WAITING,
       dependencies: this.resolveDependencies(idStr),
-      options: [], // Filled below
-      results: [], // Filled below
+      options: data.optionsRefs,
+      results: data.results,
     };
-
-    const optionData: Datum[] = [];
-    const resultsViews: CheckResultView[] = [];
-
-    // Populate 2 hardcoded Options
-    for (let i = 1; i <= 2; i++) {
-      const optId: CheckOptionId = { check: checkId, idx: i };
-      const typeUrl = `type.googleapis.com/turboci.demo.CheckOptionConfig`;
-
-      // Add ref to Check
-      (check.options as Check_OptionRef[]).push({
-        identifier: optId,
-        typeUrl: typeUrl,
-      });
-
-      // Create actual Datum
-      optionData.push(
-        this.createDatum(
-          { checkOption: optId },
-          realm,
-          typeUrl,
-          `Option ${i} for ${idStr}`,
-        ),
-      );
-    }
-
-    // Populate 1 hardcoded Result with 1 Datum
-    const resultId: CheckResultId = { check: checkId, idx: 1 };
-    const datumId: CheckResultDatumId = { result: resultId, idx: 1 };
-    const resTypeUrl = `type.googleapis.com/turboci.demo.BuildArtifact`;
-
-    const checkResult: Check_Result = {
-      identifier: resultId,
-      owner: this.getOrchestratorActor(),
-      createdAt: this.nextRevision(),
-      data: [{ identifier: datumId, typeUrl: resTypeUrl }],
-      // Result not finalized yet in this "WAITING" state example
-      finalizedAt: undefined,
-    };
-    (check.results as Check_Result[]).push(checkResult);
-
-    // The view of the data for that result
-    resultsViews.push({
-      data: [
-        this.createDatum(
-          { checkResultDatum: datumId },
-          realm,
-          resTypeUrl,
-          `Artifact for ${idStr}`,
-        ),
-      ],
-    });
 
     // Generate edits for this check
-    const edits: CheckEditView[] = [];
-    const checkEdits = this.config.checkEdits?.filter(
-      (e) => e.checkId === idStr,
+    const edits: CheckEditView[] = this.generateCheckEdits(
+      idStr,
+      checkId,
+      realm,
     );
-
-    if (checkEdits) {
-      for (const editInfo of checkEdits) {
-        const stageId = this.stageIdMap.get(editInfo.stageId);
-        if (!stageId) {
-          throw new Error(
-            `Stage ID ${editInfo.stageId} for check edit not found in configured stage IDs.`,
-          );
-        }
-
-        const editVersion = this.nextRevision();
-
-        const checkDelta: CheckDelta = {
-          state: editInfo.state,
-          dependencies: [],
-          options: [],
-          result: [],
-        };
-
-        const editor: Actor = {
-          stageAttempt: {
-            stage: stageId,
-          },
-        };
-
-        const edit: Edit = this.createEdit(
-          { check: checkId },
-          realm,
-          editVersion,
-          `State changed to ${checkStateToJSON(editInfo.state)}`,
-          { check: checkDelta },
-          editor,
-        );
-
-        edits.push({ edit: edit, optionData: [] });
-      }
-    }
 
     return {
       check: check,
-      optionData: optionData,
+      optionData: data.optionDatums,
       edits: edits,
-      results: resultsViews,
+      results: data.resultViews,
     };
   }
 
   private generateStageView(idStr: string): StageView {
     const stageId = this.stageIdMap.get(idStr)!;
     const realm = `${idStr}-realm`;
-
     const stage: Stage = {
       identifier: stageId,
       realm: realm,
       createTs: this.nextRevision(),
-      args: this.createValue(
-        'type.googleapis.com/turboci.demo.StageArgs',
-        `Args for ${idStr}`,
-      ),
       version: this.nextRevision(),
-      // Hardcoded "running" state
-      state: StageState.STAGE_STATE_ATTEMPTING,
       dependencies: this.resolveDependencies(idStr),
       executionPolicy: this.createExecutionPolicyState(),
       attempts: this.generateActiveStageAttempt(idStr),
@@ -297,6 +284,233 @@ export class FakeGraphGenerator {
       stage: stage,
       edits: edits,
     };
+  }
+
+  // ==========================================
+  // Check Data Generators (Options & Results)
+  // ==========================================
+
+  private generateSourceCheckData(checkId: CheckId, realm: string): CheckData {
+    const host = faker.helpers.arrayElement(FAKE_GERRIT_HOSTS);
+    const project = faker.helpers.arrayElement(FAKE_GERRIT_PROJECTS);
+
+    // Generate 1-2 input CLs
+    const numCls = faker.number.int({ min: 1, max: 2 });
+    const gerritChangesInput: GobSourceCheckOptions_GerritChange[] = [];
+    const gerritChangesOutput: GerritChangeInfo[] = [];
+
+    for (let i = 0; i < numCls; i++) {
+      const changeNum = faker.number
+        .int({ min: 100000, max: 999999 })
+        .toString();
+      const ps = faker.number.int({ min: 1, max: 10 });
+
+      const inputCl: GobSourceCheckOptions_GerritChange = {
+        hostname: host,
+        changeNumber: changeNum,
+        patchset: ps,
+        mountsToApply: [], // Apply to all
+      };
+      gerritChangesInput.push(inputCl);
+
+      // Expanded GerritChangeInfo
+      const ownerEmail = faker.internet.email();
+      const outputCl: GerritChangeInfo = {
+        host: host,
+        project: project,
+        branch: faker.helpers.arrayElement(FAKE_GIT_BRANCHES),
+        changeNumber: changeNum,
+        patchset: ps,
+        status: GerritChangeInfo_Status.STATUS_NEW,
+        creationTime: faker.date.recent().toISOString(),
+        owner: {
+          email: ownerEmail,
+          name: faker.person.fullName(),
+          username: ownerEmail.split('@')[0],
+          secondaryEmails: [],
+          tags: [],
+        },
+        // Other fields omitted for brevity in fake data
+        revisions: {},
+        reviewers: {},
+        labels: {},
+        messages: [],
+      };
+      gerritChangesOutput.push(outputCl);
+    }
+
+    // --- Options ---
+    const optId: CheckOptionId = { check: checkId, idx: 1 };
+    const sourceOptions: GobSourceCheckOptions = {
+      gerritChanges: gerritChangesInput,
+    };
+
+    const optionDatum = this.createDatum(
+      { checkOption: optId },
+      realm,
+      TYPE_URL_GOB_SOURCE_OPTIONS,
+      sourceOptions,
+    );
+
+    // --- Results ---
+    const resId: CheckResultId = { check: checkId, idx: 1 };
+    const datumId: CheckResultDatumId = { result: resId, idx: 1 };
+
+    const sourceResults: GobSourceCheckResults = {
+      changes: gerritChangesOutput,
+    };
+
+    const resultDatum = this.createDatum(
+      { checkResultDatum: datumId },
+      realm,
+      TYPE_URL_GOB_SOURCE_RESULTS,
+      sourceResults,
+    );
+
+    return this.assembleCheckData(
+      optId,
+      optionDatum,
+      resId,
+      datumId,
+      resultDatum,
+    );
+  }
+
+  private generateBuildCheckData(checkId: CheckId, realm: string): CheckData {
+    // --- Options ---
+    const optId: CheckOptionId = { check: checkId, idx: 1 };
+    const buildOptions: BuildCheckOptions = {
+      target: {
+        name: faker.helpers.arrayElement(FAKE_TARGET_NAMES),
+        product: faker.helpers.enumValue(Product),
+        namespace: faker.helpers.arrayElement(FAKE_ANDROID_BRANCHES),
+      },
+    };
+
+    const optionDatum = this.createDatum(
+      { checkOption: optId },
+      realm,
+      TYPE_URL_BUILD_OPTIONS,
+      buildOptions,
+    );
+
+    // --- Results ---
+    const resId: CheckResultId = { check: checkId, idx: 1 };
+    const datumId: CheckResultDatumId = { result: resId, idx: 1 };
+    const isSuccess = faker.datatype.boolean({ probability: 0.8 });
+
+    const buildId = faker.string.numeric(16);
+
+    const buildResult: BuildCheckResult = {
+      success: isSuccess,
+      displayMessage: {
+        message: isSuccess
+          ? 'Build completed successfully.'
+          : `Build failed: ${faker.hacker.phrase()}`,
+      },
+      viewUrl: faker.internet.url({ appendSlash: false }) + `/b/${buildId}`,
+      gcsArtifacts: {},
+    };
+
+    const resultDatum = this.createDatum(
+      { checkResultDatum: datumId },
+      realm,
+      TYPE_URL_BUILD_RESULTS,
+      buildResult,
+    );
+
+    return this.assembleCheckData(
+      optId,
+      optionDatum,
+      resId,
+      datumId,
+      resultDatum,
+    );
+  }
+
+  private generateGenericCheckData(
+    checkId: CheckId,
+    realm: string,
+    idStr: string,
+  ): CheckData {
+    const typeUrl = 'type.googleapis.com/turboci.demo.GenericData';
+
+    const optId: CheckOptionId = { check: checkId, idx: 1 };
+    const optionDatum = this.createDatum(
+      { checkOption: optId },
+      realm,
+      typeUrl,
+      {
+        description: `Generic options for ${idStr}`,
+        value: faker.lorem.sentence(),
+      },
+    );
+
+    const resId: CheckResultId = { check: checkId, idx: 1 };
+    const datumId: CheckResultDatumId = { result: resId, idx: 1 };
+    const resultDatum = this.createDatum(
+      { checkResultDatum: datumId },
+      realm,
+      typeUrl,
+      {
+        description: `Generic result for ${idStr}`,
+        summary: faker.lorem.sentence(),
+      },
+    );
+
+    return this.assembleCheckData(
+      optId,
+      optionDatum,
+      resId,
+      datumId,
+      resultDatum,
+    );
+  }
+
+  // Helper to package options and results into a data interface used for constructing Checks.
+  private assembleCheckData(
+    optId: CheckOptionId,
+    optDatum: Datum,
+    resId: CheckResultId,
+    datumId: CheckResultDatumId,
+    resDatum: Datum,
+  ): CheckData {
+    const checkResult: Check_Result = {
+      identifier: resId,
+      owner: this.getOrchestratorActor(),
+      createdAt: this.nextRevision(),
+      data: [
+        {
+          identifier: datumId,
+          typeUrl: this.getTypeUrlFromDatum(resDatum),
+        },
+      ],
+      finalizedAt: this.nextRevision(),
+    };
+
+    return {
+      optionsRefs: [
+        {
+          identifier: optId,
+          typeUrl: this.getTypeUrlFromDatum(optDatum),
+        },
+      ],
+      optionDatums: [optDatum],
+      results: [checkResult],
+      resultViews: [{ data: [resDatum] }],
+    };
+  }
+
+  private getTypeUrlFromDatum(datum: Datum): string {
+    if (datum.value && datum.value.valueJson) {
+      try {
+        const obj = JSON.parse(datum.value.valueJson);
+        return obj['@type'] || '';
+      } catch {
+        return '';
+      }
+    }
+    return '';
   }
 
   // ==========================================
@@ -351,35 +565,29 @@ export class FakeGraphGenerator {
   // ==========================================
 
   private generateActiveStageAttempt(stageIdStr: string): Stage_Attempt[] {
-    // One historical failed attempt, one currently running attempt.
-    const histRev = this.nextRevision();
-    const historical: Stage_Attempt = {
-      state: StageAttemptState.STAGE_ATTEMPT_STATE_INCOMPLETE,
-      version: histRev,
+    // One historical successful attempt
+    const rev = this.nextRevision();
+    const attempt: Stage_Attempt = {
+      state: StageAttemptState.STAGE_ATTEMPT_STATE_COMPLETE,
+      version: rev,
+      processUid: `worker-${faker.string.alphanumeric(8)}:${stageIdStr}:1`,
       details: [
-        this.createValue('type.u/log', `Attempt 1 failed for ${stageIdStr}`),
-      ],
-      progress: [
-        { msg: 'Setup done', version: histRev, details: [] },
-        { msg: 'Failed', version: histRev, details: [] },
-      ],
-    };
-
-    const activeRev = this.nextRevision();
-    const active: Stage_Attempt = {
-      state: StageAttemptState.STAGE_ATTEMPT_STATE_RUNNING,
-      version: activeRev,
-      processUid: `worker-pool-REGION-1:${stageIdStr}:attempt-2`,
-      details: [
-        this.createValue(
-          'type.u/executor-link',
-          `http://executor.example.com/task/${stageIdStr}`,
+        this.createValueFromObj(
+          'type.googleapis.com/turboci.demo.ExecutorLink',
+          {
+            url: faker.internet.url(),
+            label: 'Swarming Task',
+          },
         ),
       ],
-      progress: [{ msg: 'Initialized', version: activeRev, details: [] }],
+      progress: [
+        { msg: 'Initialized', version: rev, details: [] },
+        { msg: 'Running', version: rev, details: [] },
+        { msg: 'Complete', version: rev, details: [] },
+      ],
     };
 
-    return [historical, active];
+    return [attempt];
   }
 
   private generateSampleAssignment(): Stage_Assignment[] {
@@ -418,6 +626,54 @@ export class FakeGraphGenerator {
   // ==========================================
   // Edit and Delta Generators
   // ==========================================
+
+  private generateCheckEdits(
+    idStr: string,
+    checkId: CheckId,
+    realm: string,
+  ): CheckEditView[] {
+    const edits: CheckEditView[] = [];
+    const confEdits = this.config.checkEdits?.filter(
+      (e) => e.checkId === idStr,
+    );
+
+    if (confEdits) {
+      for (const editInfo of confEdits) {
+        const stageId = this.stageIdMap.get(editInfo.stageId);
+        if (!stageId) {
+          // Normally an error, but for fake data gen, skip if not found.
+          continue;
+        }
+
+        const editVersion = this.nextRevision();
+        const checkDelta: CheckDelta = {
+          state: editInfo.state,
+          dependencies: [],
+          options: [],
+          result: [],
+        };
+
+        const editor: Actor = {
+          stageAttempt: {
+            stage: stageId,
+            attemptsIdx: 1,
+          },
+        };
+
+        const edit: Edit = this.createEdit(
+          { check: checkId },
+          realm,
+          editVersion,
+          `State changed to ${checkStateToJSON(editInfo.state)}`,
+          { check: checkDelta },
+          editor,
+        );
+
+        edits.push({ edit: edit, optionData: [] });
+      }
+    }
+    return edits;
+  }
 
   private generateSampleStageEdit(
     stageId: StageId,
@@ -500,28 +756,29 @@ export class FakeGraphGenerator {
     id: Identifier,
     realm: string,
     typeUrl: string,
-    description: string,
+    payloadObj: object,
   ): Datum {
     return {
       identifier: id,
       realm: realm,
       version: this.nextRevision(),
-      value: this.createValue(typeUrl, description),
+      value: this.createValueFromObj(typeUrl, payloadObj),
     };
   }
 
-  private createValue(typeUrl: string, description: string): Value {
-    // Create a hardcoded JSON payload representing the Any
-    const jsonContent = JSON.stringify({
+  /**
+   * Creates a Value proto from a plain JS object.
+   * Simulates ProtoJSON serialization by adding the @type field.
+   */
+  private createValueFromObj(typeUrl: string, payloadObj: object): Value {
+    const jsonPayload = {
       '@type': typeUrl,
-      description: description,
-      static_flag: true,
-    });
+      ...payloadObj,
+    };
 
     return {
-      // Binary 'value' is omitted, relying on valueJson for view representation
       hasUnknownFields: false,
-      valueJson: jsonContent,
+      valueJson: JSON.stringify(jsonPayload),
     };
   }
 }
