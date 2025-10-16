@@ -165,7 +165,7 @@ func (p PluginIO) Send(ctx context.Context, r io.Reader) ([]byte, error) {
 	logging.Debugf(ctx, "signing plugin stderr: %q", stderr.Bytes())
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
-		logging.Warningf(ctx, "signing plugin stderr: %q", prettifyPluginStderr(stderr.String(), "  signing plugin stderr> "))
+		logging.Warningf(ctx, "signing plugin stderr: %s", prettifyPluginStderr(stderr.String(), "  signing plugin stderr> "))
 	}
 
 	return out, err
