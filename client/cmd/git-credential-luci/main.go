@@ -85,10 +85,10 @@ var (
 )
 
 const (
-	EXIT_OK              = 0
-	EXIT_ERROR           = 1 // Generic error
-	EXIT_LOGIN_REQUIRED  = 2
-	EXIT_REAUTH_REQUIRED = 3
+	ExitOK             = 0
+	ExitError          = 1 // Generic error
+	ExitLoginRequired  = 2
+	ExitReauthRequired = 3
 )
 
 func init() {
@@ -177,17 +177,17 @@ func main() {
 
 	if len(flag.Args()) != 1 {
 		fmt.Fprintln(os.Stderr, "invalid number of arguments")
-		os.Exit(EXIT_ERROR)
+		os.Exit(ExitError)
 	}
 
 	opts, err := flags.Options()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(EXIT_ERROR)
+		os.Exit(ExitError)
 	}
 	if lifetime > 30*time.Minute {
 		fmt.Fprintln(os.Stderr, "lifetime cannot exceed 30m")
-		os.Exit(EXIT_ERROR)
+		os.Exit(ExitError)
 	}
 
 	ctx := gologger.StdConfig.Use(context.Background())
@@ -215,7 +215,7 @@ func main() {
 		a := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 		if err := a.PurgeCredentialsCache(); err != nil {
 			fmt.Fprintf(os.Stderr, "cannot erase cache: %v\n", err)
-			os.Exit(EXIT_ERROR)
+			os.Exit(ExitError)
 		}
 	case "login":
 		// This is not part of the Git credential helper
@@ -225,7 +225,7 @@ func main() {
 		a := auth.NewAuthenticator(ctx, auth.InteractiveLogin, opts)
 		if err := a.Login(); err != nil {
 			fmt.Fprintf(os.Stderr, "login failed: %v\n", err)
-			os.Exit(EXIT_ERROR)
+			os.Exit(ExitError)
 		}
 		if reAuthEnabled() {
 			ra := auth.NewReAuthenticator(a)
@@ -233,7 +233,7 @@ func main() {
 				fmt.Fprintf(os.Stderr, "\nWarning: Login successful, but ReAuth failed: %v\n", err)
 				fmt.Fprintf(os.Stderr, "If you're asked for ReAuth later, run `git credential-luci reauth` to retry.\n")
 				fmt.Fprintf(os.Stderr, "For context, see: https://chromium.googlesource.com/chromium/src.git/+/HEAD/docs/gerrit_reauth.md\n")
-				os.Exit(EXIT_OK)
+				os.Exit(ExitOK)
 			}
 		}
 
@@ -255,12 +255,12 @@ func main() {
 			if errors.Is(err, auth.ErrLoginRequired) {
 				fmt.Fprint(os.Stderr, "error: not logged in.\n\n")
 				fmt.Fprint(os.Stderr, "You must login first before doing ReAuth, please run: git-credential-luci login\n\n")
-				os.Exit(EXIT_LOGIN_REQUIRED)
+				os.Exit(ExitLoginRequired)
 			}
 
 			fmt.Fprintf(os.Stderr, "ReAuth failed: %v\n", err)
 			fmt.Fprintf(os.Stderr, "\n"+reAuthTroubleshootMsg)
-			os.Exit(EXIT_ERROR)
+			os.Exit(ExitError)
 		}
 		fmt.Fprintf(os.Stderr, "ReAuth successful!\n")
 	case "info":
@@ -282,7 +282,7 @@ func main() {
 		email, err := a.GetEmail()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "cannot get email: %v\n", err)
-			os.Exit(EXIT_ERROR)
+			os.Exit(ExitError)
 		}
 		fmt.Printf("email=%s\n", email)
 		ra := auth.NewReAuthenticator(a)
@@ -314,10 +314,10 @@ func handleGet(ctx context.Context, opts auth.Options) {
 	if err != nil {
 		if errors.Is(err, auth.ErrLoginRequired) {
 			fmt.Fprint(os.Stderr, loginRequiredMsg)
-			os.Exit(EXIT_LOGIN_REQUIRED)
+			os.Exit(ExitLoginRequired)
 		} else {
 			fmt.Fprintf(os.Stderr, "cannot get access token: %v\n", err)
-			os.Exit(EXIT_ERROR)
+			os.Exit(ExitError)
 		}
 	}
 	if reAuthEnabled() {
@@ -331,7 +331,7 @@ func handleGet(ctx context.Context, opts auth.Options) {
 			if !attrs.SupportsAuthtype() {
 				fmt.Fprintf(os.Stderr, "Git client does not support authtype capability, so cannot continue with ReAuth.\n")
 				fmt.Fprintf(os.Stderr, "ReAuth requires git version >=2.46.0.\n")
-				os.Exit(EXIT_ERROR)
+				os.Exit(ExitError)
 			}
 			ra := auth.NewReAuthenticator(a)
 			rapt, err := ra.GetRAPT(ctx)
@@ -339,7 +339,7 @@ func handleGet(ctx context.Context, opts auth.Options) {
 				fmt.Printf("authtype=BearerReAuth\n")
 				fmt.Printf("credential=%s:%s\n", t.AccessToken, rapt)
 				fmt.Printf("ephemeral=true\n")
-				os.Exit(EXIT_OK)
+				os.Exit(ExitOK)
 			}
 			if bypassReAuth() {
 				logging.Debugf(ctx, "Error getting RAPT: %s", err)
@@ -348,7 +348,7 @@ func handleGet(ctx context.Context, opts auth.Options) {
 			} else {
 				fmt.Fprintf(os.Stderr, "Error: %v\n\n", err)
 				fmt.Fprint(os.Stderr, reAuthRequiredMsg)
-				os.Exit(EXIT_REAUTH_REQUIRED)
+				os.Exit(ExitReauthRequired)
 			}
 		}
 		// Fall through if ReAuth is not needed
@@ -362,7 +362,7 @@ func readAttrsOrDie(ctx context.Context) *creds.Attrs {
 	attrs, err := creds.ReadAttrs(io.TeeReader(os.Stdin, &readInput))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(EXIT_ERROR)
+		os.Exit(ExitError)
 	}
 	logging.Debugf(ctx, "Read input for attributes: %q", readInput.Bytes())
 	logging.Debugf(ctx, "Got attributes %+v", attrs)
