@@ -1,0 +1,60 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.bisection.proto.bq;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/bisection/proto/v1/analyses.proto";
+import "go.chromium.org/luci/bisection/proto/v1/common.proto";
+import "go.chromium.org/luci/bisection/proto/v1/culprits.proto";
+import "go.chromium.org/luci/bisection/proto/v1/genai.proto";
+import "go.chromium.org/luci/bisection/proto/v1/nthsection.proto";
+import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
+
+option go_package = "go.chromium.org/luci/bisection/proto/bq;bqpb";
+
+// CompileAnalysisRow represents a compile analysis exported to BigQuery.
+// A compile analysis is only exported to BigQuery if it has finished,
+// and all the culprit actions have been taken.
+// It means once a row has been exported, its data is immutable.
+message CompileAnalysisRow {
+  // The project of the analysis.
+  string project = 1;
+  // ID to identify this analysis, same as the one in Datastore.
+  int64 analysis_id = 2;
+  // Timestamp for the create time of the analysis.
+  google.protobuf.Timestamp created_time = 3;
+  // Timestamp for the start time of the analysis.
+  google.protobuf.Timestamp start_time = 4;
+  // Timestamp for the end time of the analysis.
+  google.protobuf.Timestamp end_time = 5;
+  // Result status of the analysis.
+  luci.bisection.v1.AnalysisStatus status = 6;
+  // Run status of the analysis.
+  luci.bisection.v1.AnalysisRunStatus run_status = 7;
+  // The culprits for the analysis.
+  repeated luci.bisection.v1.Culprit culprits = 8;
+  // The builder that the analysis analyzed.
+  buildbucket.v2.BuilderID builder = 9;
+  // The build failure that the analysis analyzed.
+  luci.bisection.v1.BuildFailure build_failure = 10;
+  // Sample build bucket ID where the build failure occurred.
+  int64 sample_bbid = 11;
+  // Details of nthsection analysis, including the reruns.
+  luci.bisection.v1.NthSectionAnalysisResult nth_section_result = 12;
+  // Result of the GenAI culprit finder analysis.
+  luci.bisection.v1.GenAiAnalysisResult genai_result = 13;
+}
