@@ -17,6 +17,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"time"
@@ -58,6 +59,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/rpc"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
 	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
+	executorgrpcpb "go.chromium.org/turboci/proto/go/graph/executor/v1/grpcpb"
 
 	// Store auth sessions in the datastore.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
@@ -97,6 +99,12 @@ func main() {
 		redisconn.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
 	}
+
+	turboCIStagesServiceAccount := flag.String(
+		"turbo-ci-stages-service-account",
+		"",
+		"Service account email of turbo-ci-stages. Used to authorize calls to TurboCIStageExecutor service.",
+	)
 
 	server.Main(nil, mods, func(srv *server.Server) error {
 		o := srv.Options
@@ -216,10 +224,22 @@ func main() {
 					Interceptor: rpc.UnaryInterceptor,
 				},
 			}),
+			grpcutil.UnaryBranchingInterceptor([]grpcutil.UnaryBranch{
+				{
+					Match: grpcutil.MatchServices(
+						"turboci.graph.executor.v1.TurboCIStageExecutor",
+					),
+					Interceptor: grpcutil.ChainUnaryServerInterceptors(
+						rpc.UnaryInterceptor,
+						rpc.TurboCIInterceptor(srv.Context, *turboCIStagesServiceAccount),
+					),
+				},
+			}),
 		)
 
 		grpcpb.RegisterBuildsServer(srv, &rpc.Builds{})
 		grpcpb.RegisterBuildersServer(srv, &rpc.Builders{})
+		executorgrpcpb.RegisterTurboCIStageExecutorServer(srv, &rpc.TurboCIStageExecutor{})
 
 		cron.RegisterHandler("delete_builds", buildcron.DeleteOldBuilds)
 		cron.RegisterHandler("expire_builds", buildcron.TimeoutExpiredBuilds)

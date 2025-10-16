@@ -77,6 +77,7 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	github.com/yosuke-furukawa/json5 v0.1.1
 	github.com/yuin/gopher-lua v1.1.1
+	go.chromium.org/turboci/proto/go v0.0.0-20251015004543-18f978db02d6
 	go.opentelemetry.io/contrib/detectors/gcp v1.37.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.62.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.62.0
@@ -104,9 +105,9 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250818200422-3122310a409c
 	google.golang.org/genproto/googleapis/bytestream v0.0.0-20250818200422-3122310a409c
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c
-	google.golang.org/grpc v1.75.0
+	google.golang.org/grpc v1.75.1
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.5.1
-	google.golang.org/protobuf v1.36.8
+	google.golang.org/protobuf v1.36.9
 	honnef.co/go/tools v0.6.1
 	modernc.org/sqlite v1.21.2
 )

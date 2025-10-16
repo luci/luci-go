@@ -14,6 +14,7 @@ luci_gae_vars:
     OAUTH_CLIENT_ID: 1037694916935-kf96dqdbptp98pahigutgighdft4s9s9.apps.googleusercontent.com
     OAUTH_CLIENT_SECRET: sm://oauth-client-secret
     OAUTH_REDIRECT_URL: https://cr-buildbucket-dev.appspot.com/auth/openid/callback
+    TURBO_CI_STAGES_SERVICE_ACCOUNT: turbo-ci-stages-qual-jobs@system.gserviceaccount.com
   cr-buildbucket:
     AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
     PROFILING_PROBABILITY: "0.02"
@@ -24,6 +25,7 @@ luci_gae_vars:
     OAUTH_CLIENT_ID: 174799409470-0041crblugt4hrqsdrjatu869a41jdbq.apps.googleusercontent.com
     OAUTH_CLIENT_SECRET: sm://oauth-client-secret
     OAUTH_REDIRECT_URL: https://cr-buildbucket.appspot.com/auth/openid/callback
+    TURBO_CI_STAGES_SERVICE_ACCOUNT: turbo-ci-stages@system.gserviceaccount.com
 
 vpc_access_connector:
   name: ${VPC_CONNECTOR}
@@ -56,6 +58,7 @@ entrypoint: >
   -encrypted-cookies-client-id ${OAUTH_CLIENT_ID}
   -encrypted-cookies-client-secret ${OAUTH_CLIENT_SECRET}
   -encrypted-cookies-redirect-url ${OAUTH_REDIRECT_URL}
+  -turbo-ci-stages-service-account ${TURBO_CI_STAGES_SERVICE_ACCOUNT}
 
 handlers:
 - url: /.*
