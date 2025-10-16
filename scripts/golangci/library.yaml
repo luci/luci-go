@@ -39,8 +39,8 @@ formatters:
         - standard
         # All packages that didn't fit other categories, usually third party.
         - default
-        # All luci-go imports.
-        - prefix(go.chromium.org/luci)
+        # All Chromium imports (including luci-go).
+        - prefix(go.chromium.org)
         # All blank (import "_" ...) imports.
         - blank
         # All dot (import ".' ...") imports.

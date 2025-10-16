@@ -40,8 +40,8 @@ formatters:
         - standard
         # All packages that didn't fit other categories, usually third party.
         - default
-        # All other luci-go imports.
-        - prefix(go.chromium.org/luci)
+        # All Chromium imports (including luci-go).
+        - prefix(go.chromium.org)
         # Imports from the local package tree.
         - prefix(go.chromium.org/luci/provenance)
         # All blank (import "_" ...) imports.
