@@ -24,11 +24,22 @@ import (
 	pb "go.chromium.org/luci/bisection/proto/v1"
 )
 
-// Check if a step is compile step.
-// For the moment, we only check for the step name.
-// In the future, we may want to check for step tag (crbug.com/1353978)
-func IsCompileStep(step *bbpb.Step) bool {
-	return step.GetName() == "compile"
+// IsBuildStep checks if a step is a build step.
+// It checks if the step has a tag "luci-bisection.is_bisectable:true".
+// For backward-compatibility, we also check for legacy step names.
+// TODO(crbug.com/1353978): remove the check for step names.
+func IsBuildStep(step *bbpb.Step) bool {
+	for _, tag := range step.GetTags() {
+		if tag.Key == "luci-bisection.is_bisectable" && tag.Value == "true" {
+			return true
+		}
+	}
+	// For backward-compatibility, we check for legacy step names.
+	// TODO(crbug.com/1353978): remove this.
+	if step.Name == "compile" || step.Name == "generate_build_files" {
+		return true
+	}
+	return false
 }
 
 // GetGitilesCommitForBuild returns the gitiles commit for a build

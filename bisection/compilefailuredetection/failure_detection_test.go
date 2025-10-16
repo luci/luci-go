@@ -44,15 +44,15 @@ import (
 func TestFailureDetection(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("Has Compile Step Status", t, func(t *ftt.Test) {
+	ftt.Run("Has Build Step Status", t, func(t *ftt.Test) {
 		c := context.Background()
-		t.Run("No Compile Step", func(t *ftt.Test) {
+		t.Run("No Build Step", func(t *ftt.Test) {
 			build := &buildbucketpb.Build{
 				Steps: []*buildbucketpb.Step{},
 			}
-			assert.Loosely(t, hasCompileStepStatus(c, build, buildbucketpb.Status_FAILURE), should.BeFalse)
+			assert.Loosely(t, hasBuildStepStatus(c, build, buildbucketpb.Status_FAILURE), should.BeFalse)
 		})
-		t.Run("Has Compile Step", func(t *ftt.Test) {
+		t.Run("Has compile Step", func(t *ftt.Test) {
 			build := &buildbucketpb.Build{
 				Steps: []*buildbucketpb.Step{
 					{
@@ -61,8 +61,20 @@ func TestFailureDetection(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, hasCompileStepStatus(c, build, buildbucketpb.Status_FAILURE), should.BeTrue)
-			assert.Loosely(t, hasCompileStepStatus(c, build, buildbucketpb.Status_SUCCESS), should.BeFalse)
+			assert.Loosely(t, hasBuildStepStatus(c, build, buildbucketpb.Status_FAILURE), should.BeTrue)
+			assert.Loosely(t, hasBuildStepStatus(c, build, buildbucketpb.Status_SUCCESS), should.BeFalse)
+		})
+		t.Run("Has generate_build_files Step", func(t *ftt.Test) {
+			build := &buildbucketpb.Build{
+				Steps: []*buildbucketpb.Step{
+					{
+						Name:   "generate_build_files",
+						Status: buildbucketpb.Status_FAILURE,
+					},
+				},
+			}
+			assert.Loosely(t, hasBuildStepStatus(c, build, buildbucketpb.Status_FAILURE), should.BeTrue)
+			assert.Loosely(t, hasBuildStepStatus(c, build, buildbucketpb.Status_SUCCESS), should.BeFalse)
 		})
 	})
 

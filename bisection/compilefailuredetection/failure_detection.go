@@ -218,9 +218,9 @@ func shouldAnalyzeBuild(c context.Context, build *buildbucketpb.Build) bool {
 		return false
 	}
 
-	// We only care about builds with compile failure
-	if !hasCompileStepStatus(c, build, buildbucketpb.Status_FAILURE) {
-		logging.Infof(c, "No compile step for build %d", build.Id)
+	// We only care about builds with compile failure or generate_build_files failure
+	if !hasBuildStepStatus(c, build, buildbucketpb.Status_FAILURE) {
+		logging.Infof(c, "No compile step or generate_build_files step for build %d", build.Id)
 		return false
 	}
 	return true
@@ -230,7 +230,7 @@ func shouldAnalyzeBuild(c context.Context, build *buildbucketpb.Build) bool {
 func getLastPassedFirstFailedBuilds(c context.Context, refBuild *buildbucketpb.Build) (*buildbucketpb.Build, *buildbucketpb.Build, error) {
 	firstFailedBuild := refBuild
 
-	// Query buildbucket for the first build with compile failure
+	// Query buildbucket for the first build with compile failure or generate_build_files failure
 	// We only consider maximum of 100 builds before the failed build.
 	// If we cannot find the regression range within 100 builds, the failure is
 	// too old for the analysis to be useful.
@@ -260,10 +260,10 @@ func getLastPassedFirstFailedBuilds(c context.Context, refBuild *buildbucketpb.B
 		// Search this batch of older builds for the last passed and first failed build
 		for _, oldBuild := range olderBuilds {
 			// We found the last passed build
-			if oldBuild.Status == buildbucketpb.Status_SUCCESS && hasCompileStepStatus(c, oldBuild, buildbucketpb.Status_SUCCESS) {
+			if oldBuild.Status == buildbucketpb.Status_SUCCESS && hasBuildStepStatus(c, oldBuild, buildbucketpb.Status_SUCCESS) {
 				return oldBuild, firstFailedBuild, nil
 			}
-			if oldBuild.Status == buildbucketpb.Status_FAILURE && hasCompileStepStatus(c, oldBuild, buildbucketpb.Status_FAILURE) {
+			if oldBuild.Status == buildbucketpb.Status_FAILURE && hasBuildStepStatus(c, oldBuild, buildbucketpb.Status_FAILURE) {
 				firstFailedBuild = oldBuild
 			}
 		}
@@ -404,10 +404,10 @@ func searchAnalysis(c context.Context, firstFailedBuildId int64) (*model.Compile
 	return analyses[0], nil
 }
 
-// hasCompileStepStatus checks if the compile step for a build has the specified status.
-func hasCompileStepStatus(c context.Context, build *buildbucketpb.Build, status buildbucketpb.Status) bool {
+// hasBuildStepStatus checks if a build step for a build has the specified status.
+func hasBuildStepStatus(c context.Context, build *buildbucketpb.Build, status buildbucketpb.Status) bool {
 	for _, step := range build.Steps {
-		if util.IsCompileStep(step) && step.Status == status {
+		if util.IsBuildStep(step) && step.Status == status {
 			return true
 		}
 	}

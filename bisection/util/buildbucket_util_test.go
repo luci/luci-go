@@ -132,6 +132,34 @@ func TestGetSheriffRotationsForBuild(t *testing.T) {
 	})
 }
 
+func TestIsBuildStep(t *testing.T) {
+	t.Parallel()
+	ftt.Run("IsBuildStep", t, func(t *ftt.Test) {
+		stepWithTag := &bbpb.Step{
+			Name: "some step",
+			Tags: []*bbpb.StringPair{
+				{
+					Key:   "luci-bisection.is_bisectable",
+					Value: "true",
+				},
+			},
+		}
+		stepWithLegacyNameCompile := &bbpb.Step{
+			Name: "compile",
+		}
+		stepWithLegacyNameGenerate := &bbpb.Step{
+			Name: "generate_build_files",
+		}
+		nonBuildStep := &bbpb.Step{
+			Name: "some other step",
+		}
+		assert.Loosely(t, IsBuildStep(stepWithTag), should.BeTrue)
+		assert.Loosely(t, IsBuildStep(stepWithLegacyNameCompile), should.BeTrue)
+		assert.Loosely(t, IsBuildStep(stepWithLegacyNameGenerate), should.BeTrue)
+		assert.Loosely(t, IsBuildStep(nonBuildStep), should.BeFalse)
+	})
+}
+
 func TestGetTaskDimensions(t *testing.T) {
 	dims := []*bbpb.RequestedDimension{
 		{
