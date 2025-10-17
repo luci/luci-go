@@ -23,8 +23,9 @@ import (
 )
 
 type TestRealm struct {
-	TestID string
-	Realm  string
+	TestID   string
+	TestName string
+	Realm    string
 }
 
 // Provides a fake implementation of the test search client for testing purposes.
@@ -55,11 +56,11 @@ func (c *FakeClient) QueryTests(ctx context.Context, project, testIDSubstring st
 			continue
 		}
 		if opts.CaseSensitive {
-			if strings.Contains(tr.TestID, testIDSubstring) {
+			if strings.Contains(tr.TestID, testIDSubstring) || strings.Contains(tr.TestName, testIDSubstring) {
 				testIDs = append(testIDs, tr.TestID)
 			}
 		} else {
-			if strings.Contains(strings.ToLower(tr.TestID), strings.ToLower(testIDSubstring)) {
+			if strings.Contains(strings.ToLower(tr.TestID), strings.ToLower(testIDSubstring)) || strings.Contains(strings.ToLower(tr.TestName), strings.ToLower(testIDSubstring)) {
 				testIDs = append(testIDs, tr.TestID)
 			}
 		}

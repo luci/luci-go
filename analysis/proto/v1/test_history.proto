@@ -285,7 +285,9 @@ message QueryTestsRequest {
   string project = 1
     [(google.api.field_behavior) = REQUIRED];
 
-  // Required. Only tests that contain the substring will be returned.
+  // Required. The search string.
+  // Only tests that contain the substring in the test_id or test_metadata.name
+  // will be returned.
   string test_id_substring = 2
     [(google.api.field_behavior) = REQUIRED];
 

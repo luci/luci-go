@@ -64,7 +64,7 @@ func (c *Client) QueryTests(ctx context.Context, project, testIDSubstring string
 
 	q.Parameters = []bigquery.QueryParameter{
 		{Name: "project", Value: project},
-		{Name: "testIdPattern", Value: "%" + spanutil.QuoteLike(testIDSubstring) + "%"},
+		{Name: "searchPattern", Value: "%" + spanutil.QuoteLike(testIDSubstring) + "%"},
 		{Name: "realms", Value: opts.Realms},
 		{Name: "limit", Value: opts.PageSize},
 		{Name: "paginationTestId", Value: paginationTestID},
@@ -128,9 +128,15 @@ var QueryTestsQueryTmpl = template.Must(template.New("QueryTestsQuery").Parse(`
 			AND test_id > @paginationTestId
 			AND realm IN UNNEST(@realms)
 			{{if .caseSensitive}}
-				AND test_id LIKE @testIdPattern
+				AND (
+					test_id LIKE @searchPattern
+					OR test_name LIKE @searchPattern
+				)
 			{{else}}
-				AND test_id_lower LIKE LOWER(@testIdPattern)
+				AND (
+					test_id_lower LIKE LOWER(@searchPattern)
+					OR test_name_lower LIKE LOWER(@searchPattern)
+				)
 			{{end}}
 	GROUP BY test_id
 	ORDER BY test_id ASC

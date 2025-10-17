@@ -60,6 +60,11 @@ type TestRealmRow struct {
 	// The structured test identifier in lower case, excluding variant information.
 	// For case-insensitive structured test ID search.
 	TestIdStructuredLower *TestIdentifierBase `protobuf:"bytes,6,opt,name=test_id_structured_lower,json=testIdStructuredLower,proto3" json:"test_id_structured_lower,omitempty"`
+	// The test name, from test_metadata.name.
+	TestName string `protobuf:"bytes,8,opt,name=test_name,json=testName,proto3" json:"test_name,omitempty"`
+	// The test name (from test_metadata.name), in lowercase.
+	// For case-insensitive structured test ID search.
+	TestNameLower string `protobuf:"bytes,9,opt,name=test_name_lower,json=testNameLower,proto3" json:"test_name_lower,omitempty"`
 	// The partition time of the last test result observed for this test realm.
 	LastSeen      *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_seen,json=lastSeen,proto3" json:"last_seen,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -138,6 +143,20 @@ func (x *TestRealmRow) GetTestIdStructuredLower() *TestIdentifierBase {
 	return nil
 }
 
+func (x *TestRealmRow) GetTestName() string {
+	if x != nil {
+		return x.TestName
+	}
+	return ""
+}
+
+func (x *TestRealmRow) GetTestNameLower() string {
+	if x != nil {
+		return x.TestNameLower
+	}
+	return ""
+}
+
 func (x *TestRealmRow) GetLastSeen() *timestamppb.Timestamp {
 	if x != nil {
 		return x.LastSeen
@@ -149,14 +168,16 @@ var File_go_chromium_org_luci_analysis_proto_bq_test_realm_row_proto protoreflec
 
 const file_go_chromium_org_luci_analysis_proto_bq_test_realm_row_proto_rawDesc = "" +
 	"\n" +
-	";go.chromium.org/luci/analysis/proto/bq/test_realm_row.proto\x12\x10luci.analysis.bq\x1a\x1fgoogle/protobuf/timestamp.proto\x1a3go.chromium.org/luci/analysis/proto/bq/common.proto\"\xe7\x02\n" +
+	";go.chromium.org/luci/analysis/proto/bq/test_realm_row.proto\x12\x10luci.analysis.bq\x1a\x1fgoogle/protobuf/timestamp.proto\x1a3go.chromium.org/luci/analysis/proto/bq/common.proto\"\xac\x03\n" +
 	"\fTestRealmRow\x12\x18\n" +
 	"\aproject\x18\x01 \x01(\tR\aproject\x12\x17\n" +
 	"\atest_id\x18\x02 \x01(\tR\x06testId\x12\x14\n" +
 	"\x05realm\x18\x03 \x01(\tR\x05realm\x12\"\n" +
 	"\rtest_id_lower\x18\x04 \x01(\tR\vtestIdLower\x12R\n" +
 	"\x12test_id_structured\x18\x05 \x01(\v2$.luci.analysis.bq.TestIdentifierBaseR\x10testIdStructured\x12]\n" +
-	"\x18test_id_structured_lower\x18\x06 \x01(\v2$.luci.analysis.bq.TestIdentifierBaseR\x15testIdStructuredLower\x127\n" +
+	"\x18test_id_structured_lower\x18\x06 \x01(\v2$.luci.analysis.bq.TestIdentifierBaseR\x15testIdStructuredLower\x12\x1b\n" +
+	"\ttest_name\x18\b \x01(\tR\btestName\x12&\n" +
+	"\x0ftest_name_lower\x18\t \x01(\tR\rtestNameLower\x127\n" +
 	"\tlast_seen\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\blastSeenB-Z+go.chromium.org/luci/analysis/proto/bq;bqpbb\x06proto3"
 
 var (

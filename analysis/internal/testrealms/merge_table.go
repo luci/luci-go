@@ -72,6 +72,7 @@ func runDMLMerge(ctx context.Context, client *bigquery.Client) error {
 				-- Use exported invocation realm instead for for consistency with TestResults spanner table.
 				-- (Consistent ACLing with test history view.)
 				invocation.realm,
+				-- Test IDs in lowercase to support faster case-insensitive matching.
 				LOWER(test_id) as test_id_lower,
 				STRUCT(
 					LOWER(ANY_VALUE(test_id_structured).module_name) as module_name,
@@ -80,10 +81,16 @@ func runDMLMerge(ctx context.Context, client *bigquery.Client) error {
 					LOWER(ANY_VALUE(test_id_structured).fine_name) as fine_name,
 					LOWER(ANY_VALUE(test_id_structured).case_name) as case_name
 				) as test_id_structured_lower,
+				-- Select test name, preferring to take it from rows that have it set.
+				ANY_VALUE(test_metadata.name HAVING MAX COALESCE(IF(test_metadata.name <> '', 10, 0), 0)) as test_name,
+				LOWER(ANY_VALUE(test_metadata.name HAVING MAX COALESCE(IF(test_metadata.name <> '', 10, 0), 0))) as test_name_lower,
 			  -- Use partition time to determine the last seen (retention) time, not the insert time, as all data
 				-- retention intervals are based on partition time.
 				MAX(partition_time) as last_seen
 			FROM test_verdicts
+			-- Query recent data (e.g. last 2 days) but not the super new data as that is not
+			-- yet compacted and slower to query. It doesn't matter if test search does not
+			-- update immediately.
 			WHERE insert_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 HOUR)
    		  AND partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 2 DAY)
 			GROUP BY project, test_id, invocation.realm
@@ -94,8 +101,8 @@ func runDMLMerge(ctx context.Context, client *bigquery.Client) error {
 			UPDATE SET T.last_seen = S.last_seen
 		-- Row in source that does not exist in target. Insert.
 		WHEN NOT MATCHED BY TARGET THEN
-			INSERT (project, test_id, realm, test_id_lower, test_id_structured, test_id_structured_lower, last_seen) VALUES (S.project, S.test_id, S.realm, S.test_id_lower, S.test_id_structured, S.test_id_structured_lower, S.last_seen)
-		-- Delete rows that are older than 90 days (that are not being updated).
+			INSERT (project, test_id, realm, test_id_lower, test_id_structured, test_id_structured_lower, test_metadata, last_seen) VALUES (S.project, S.test_id, S.realm, S.test_id_lower, S.test_id_structured, S.test_id_structured_lower, S.test_metadata, S.last_seen)
+		-- Delete tests which have not been seen within the last 90 days.
 		WHEN NOT MATCHED BY SOURCE AND T.last_seen < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY) THEN
 			DELETE;
 	`)

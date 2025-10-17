@@ -824,24 +824,29 @@ func TestTestHistoryServer(t *testing.T) {
 		t.Run("QueryTests", func(t *ftt.Test) {
 			searchClient.TestRealms = []testrealms.TestRealm{
 				{
-					TestID: "test_id",
-					Realm:  "project:realm",
+					TestID:   "test_id",
+					TestName: "test_name",
+					Realm:    "project:realm",
 				},
 				{
-					TestID: "test_id1",
-					Realm:  "project:realm",
+					TestID:   "test_id1",
+					TestName: "a_special_name",
+					Realm:    "project:realm",
 				},
 				{
-					TestID: "test_id2",
-					Realm:  "project:realm",
+					TestID:   "test_id2",
+					TestName: "a_special_name2",
+					Realm:    "project:realm",
 				},
 				{
-					TestID: "test_id3",
-					Realm:  "project:other-realm",
+					TestID:   "test_id3",
+					TestName: "a_special_name3",
+					Realm:    "project:other-realm",
 				},
 				{
-					TestID: "test_id4",
-					Realm:  "project:forbidden-realm",
+					TestID:   "test_id4",
+					TestName: "a_special_name4",
+					Realm:    "project:forbidden-realm",
 				},
 			}
 
@@ -895,6 +900,16 @@ func TestTestHistoryServer(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res, should.Match(&pb.QueryTestsResponse{
 					TestIds: []string{"test_id2"},
+				}))
+			})
+
+			t.Run("search on test name", func(t *ftt.Test) {
+				req.PageSize = 0
+				req.TestIdSubstring = "special_name"
+				res, err := server.QueryTests(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Match(&pb.QueryTestsResponse{
+					TestIds: []string{"test_id1", "test_id2"},
 				}))
 			})
 		})

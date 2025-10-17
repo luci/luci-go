@@ -50,6 +50,13 @@ message TestRealmRow {
   // For case-insensitive structured test ID search.
   TestIdentifierBase test_id_structured_lower = 6;
 
+  // The test name, from test_metadata.name.
+  string test_name = 8;
+
+  // The test name (from test_metadata.name), in lowercase.
+  // For case-insensitive structured test ID search.
+  string test_name_lower = 9;
+
   // The partition time of the last test result observed for this test realm.
   google.protobuf.Timestamp last_seen = 7;
 }
