@@ -123,6 +123,7 @@ func updateWorkUnits(ctx context.Context, requests []*pb.UpdateWorkUnitRequest, 
 		// At most 3 mutations for each work unit - one for work unit row, one for legacy invocation row,
 		// one for WorkUnitUpdateRequests row.
 		ms := make([]*spanner.Mutation, 0, len(originalWUs)*3)
+		hasWorkUnitFinalizing := false
 		for i, originalWU := range originalWUs {
 			updateMutations, updatedWURow, err := updateWorkUnitInternal(requests[i], originalWU, i)
 			if err != nil {
@@ -133,15 +134,20 @@ func updateWorkUnits(ctx context.Context, requests []*pb.UpdateWorkUnitRequest, 
 				ms = append(ms, updateMutations...)
 				// Trigger finalization task, when the work unit is updated to finalizing.
 				if updatedWURow.FinalizationState == pb.WorkUnit_FINALIZING {
-					tasks.StartInvocationFinalization(ctx, wuIDs[i].LegacyInvocationID())
+					hasWorkUnitFinalizing = true
 					shouldFinalizeWUs[i] = true
 				}
 			}
 			updatedRows[i] = updatedWURow
 			updatedWUs[i] = updated
-
 			// Insert into WorkUnitUpdateRequests table.
 			ms = append(ms, workunits.CreateWorkUnitUpdateRequest(wuIDs[i], updatedBy, requestID))
+		}
+		if hasWorkUnitFinalizing {
+			// Transactionally schedule a work unit finalization task if any work unit transitions to FINALIZING.
+			if err := tasks.ScheduleWorkUnitsFinalization(ctx, originalWUs[0].ID.RootInvocationID); err != nil {
+				return err
+			}
 		}
 		span.BufferWrite(ctx, ms...)
 		return nil

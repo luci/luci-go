@@ -87,6 +87,7 @@ func updateWorkUnitInternal(in *pb.UpdateWorkUnitRequest, curWorkUnitRow *workun
 			if in.WorkUnit.FinalizationState == pb.WorkUnit_FINALIZING {
 				values["State"] = pb.WorkUnit_FINALIZING
 				values["FinalizeStartTime"] = spanner.CommitTimestamp
+				values["FinalizerCandidateTime"] = spanner.CommitTimestamp
 				legacyInvocationValues["State"] = pb.Invocation_FINALIZING
 				legacyInvocationValues["FinalizeStartTime"] = spanner.CommitTimestamp
 				updatedRow.FinalizationState = pb.WorkUnit_FINALIZING

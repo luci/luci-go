@@ -60,7 +60,10 @@ func (s *recorderServer) FinalizeWorkUnit(ctx context.Context, in *pb.FinalizeWo
 		span.BufferWrite(ctx, workunits.MarkFinalizing(wuID)...)
 		wuRow.FinalizationState = pb.WorkUnit_FINALIZING
 
-		tasks.StartInvocationFinalization(ctx, wuID.LegacyInvocationID())
+		// Transactionally schedule a work unit finalization task.
+		if err := tasks.ScheduleWorkUnitsFinalization(ctx, wuID.RootInvocationID); err != nil {
+			return err
+		}
 		return nil
 	})
 	if err != nil {

@@ -56,7 +56,8 @@ func (s *recorderServer) FinalizeRootInvocation(ctx context.Context, in *pb.Fina
 			span.BufferWrite(ctx, rootinvocations.MarkFinalizing(rootInvocationID)...)
 			invRow.FinalizationState = pb.RootInvocation_FINALIZING
 
-			tasks.StartInvocationFinalization(ctx, rootInvocationID.LegacyInvocationID())
+			// No finalizer task schedule, the work unit finalizer will handle the finalization of root invocation.
+			// This RPC will be deprecating soon.
 		} else {
 			// Finalization already started. Do not start finalization
 			// again as doing so would overwrite the existing FinalizeStartTime
@@ -71,7 +72,10 @@ func (s *recorderServer) FinalizeRootInvocation(ctx context.Context, in *pb.Fina
 			}
 			if wuState == pb.WorkUnit_ACTIVE {
 				span.BufferWrite(ctx, workunits.MarkFinalizing(rootWorkUnitID)...)
-				tasks.StartInvocationFinalization(ctx, rootWorkUnitID.LegacyInvocationID())
+				// Transactionally schedule a work unit finalization task.
+				if err := tasks.ScheduleWorkUnitsFinalization(ctx, rootInvocationID); err != nil {
+					return err
+				}
 			} else {
 				// Finalization already started. Do not start finalization again
 				// for the same reasons as for root invocations.

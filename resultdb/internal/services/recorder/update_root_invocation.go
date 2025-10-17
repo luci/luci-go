@@ -32,7 +32,6 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
-	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -109,7 +108,8 @@ func (s *recorderServer) UpdateRootInvocation(ctx context.Context, in *pb.Update
 		if updated {
 			// Trigger finalization task, when the root invocation is updated to finalizing.
 			if updatedRootInvRow.FinalizationState == pb.RootInvocation_FINALIZING {
-				tasks.StartInvocationFinalization(ctx, rootInvID.LegacyInvocationID())
+				// No finalizer task schedule, the work unit finalizer will handle the finalization of root invocation.
+				// The ability to finalize a root invocation in UpdateRootInvocation RPC will be deprecating soon.
 				shouldFinalizeRootInvocation = true
 			}
 		}

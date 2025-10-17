@@ -50,6 +50,7 @@ func (s *recorderServer) BatchFinalizeWorkUnits(ctx context.Context, in *pb.Batc
 			return err
 		}
 
+		hasWorkUnitFinalizing := false
 		for _, wuRow := range wuRows {
 			if wuRow.FinalizationState != pb.WorkUnit_ACTIVE {
 				// Finalization already started. Do not start finalization
@@ -60,10 +61,15 @@ func (s *recorderServer) BatchFinalizeWorkUnits(ctx context.Context, in *pb.Batc
 			}
 
 			// Finalize as requested.
+			hasWorkUnitFinalizing = true
 			span.BufferWrite(ctx, workunits.MarkFinalizing(wuRow.ID)...)
 			wuRow.FinalizationState = pb.WorkUnit_FINALIZING
-
-			tasks.StartInvocationFinalization(ctx, wuRow.ID.LegacyInvocationID())
+		}
+		if hasWorkUnitFinalizing {
+			// Transactionally schedule a work unit finalization task if any work unit transitions to finalizing state.
+			if err := tasks.ScheduleWorkUnitsFinalization(ctx, wuRows[0].ID.RootInvocationID); err != nil {
+				return err
+			}
 		}
 		return nil
 	})

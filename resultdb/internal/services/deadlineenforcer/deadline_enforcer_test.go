@@ -96,6 +96,10 @@ func TestDeadlineEnforcer(t *testing.T) {
 			expiredWorkUnitID := workunits.ID{RootInvocationID: expiredRootInvocationID, WorkUnitID: "root"}
 			unexpiredWorkUnitID := workunits.ID{RootInvocationID: unexpiredRootInvocationID, WorkUnitID: "root"}
 
+			// A expired child work unit in the unexpired root invocation.
+			expiredChildWorkUnit := workunits.NewBuilder(unexpiredRootInvocationID, "expiredChild").WithDeadline(past).WithFinalizationState(resultpb.WorkUnit_ACTIVE).Build()
+			testutil.MustApply(ctx, t, workunits.InsertForTesting(expiredChildWorkUnit)...)
+
 			s, err := invocations.CurrentMaxShard(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			for i := 0; i < s+1; i++ {
@@ -103,12 +107,17 @@ func TestDeadlineEnforcer(t *testing.T) {
 			}
 
 			expectedTasks := []protoreflect.ProtoMessage{
-				&taskspb.RunExportNotifications{InvocationId: string(expiredWorkUnitID.LegacyInvocationID())},
-				&taskspb.TryFinalizeInvocation{InvocationId: string(expiredWorkUnitID.LegacyInvocationID())},
-				&taskspb.RunExportNotifications{InvocationId: string(expiredRootInvocationID.LegacyInvocationID())},
-				&taskspb.TryFinalizeInvocation{InvocationId: string(expiredRootInvocationID.LegacyInvocationID())},
+				&taskspb.SweepWorkUnitsForFinalization{RootInvocationId: string(expiredRootInvocationID), SequenceNumber: 1},
+				&taskspb.SweepWorkUnitsForFinalization{RootInvocationId: string(unexpiredRootInvocationID), SequenceNumber: 1},
 			}
 			assert.That(t, sched.Tasks().Payloads(), should.Match(expectedTasks))
+			// Finalizer task state updated on root invocation.
+			taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), expiredRootInvocationID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, taskState, should.Match(rootinvocations.FinalizerTaskState{Pending: true, Sequence: 1}))
+			taskState, err = rootinvocations.ReadFinalizerTaskState(span.Single(ctx), unexpiredRootInvocationID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, taskState, should.Match(rootinvocations.FinalizerTaskState{Pending: true, Sequence: 1}))
 
 			invState, err := rootinvocations.ReadFinalizationState(span.Single(ctx), expiredRootInvocationID)
 			assert.That(t, invState, should.Equal(resultpb.RootInvocation_FINALIZING))
@@ -116,11 +125,17 @@ func TestDeadlineEnforcer(t *testing.T) {
 			invState, err = rootinvocations.ReadFinalizationState(span.Single(ctx), unexpiredRootInvocationID)
 			assert.That(t, invState, should.Equal(resultpb.RootInvocation_ACTIVE))
 
-			state, err := workunits.ReadFinalizationState(span.Single(ctx), expiredWorkUnitID)
-			assert.That(t, state, should.Equal(resultpb.WorkUnit_FINALIZING))
+			readWU, err := workunits.Read(span.Single(ctx), expiredWorkUnitID, workunits.AllFields)
+			assert.That(t, readWU.FinalizationState, should.Match(resultpb.WorkUnit_FINALIZING))
+			assert.That(t, readWU.FinalizerCandidateTime.Valid, should.BeTrue)
 
-			state, err = workunits.ReadFinalizationState(span.Single(ctx), unexpiredWorkUnitID)
-			assert.That(t, state, should.Equal(resultpb.WorkUnit_ACTIVE))
+			readWU, err = workunits.Read(span.Single(ctx), unexpiredWorkUnitID, workunits.AllFields)
+			assert.That(t, readWU.FinalizationState, should.Match(resultpb.WorkUnit_ACTIVE))
+			assert.That(t, readWU.FinalizerCandidateTime.Valid, should.BeFalse)
+
+			readWU, err = workunits.Read(span.Single(ctx), expiredChildWorkUnit.ID, workunits.AllFields)
+			assert.That(t, readWU.FinalizationState, should.Match(resultpb.WorkUnit_FINALIZING))
+			assert.That(t, readWU.FinalizerCandidateTime.Valid, should.BeTrue)
 
 			assert.Loosely(t, store.Get(ctx, overdueInvocationsFinalized, []any{insert.TestRealm}), should.Equal(2))
 			d := store.Get(ctx, timeOverdue, []any{insert.TestRealm}).(*distribution.Distribution)

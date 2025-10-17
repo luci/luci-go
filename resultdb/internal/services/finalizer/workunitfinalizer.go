@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -343,6 +344,30 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 			return errors.Fmt("commit updates for finalization ready work units: %w", err)
 		}
 	}
+	return nil
+}
+
+// publishFinalizedRootInvocation publishes a pub/sub message for a finalized
+// root invocation.
+func publishFinalizedRootInvocation(ctx context.Context, rootInvID rootinvocations.ID, rdbHostName string) error {
+	// Enqueue a notification to pub/sub listeners that the root invocation
+	// has been finalized.
+	inv, err := rootinvocations.ReadFinalizedNotificationInfo(ctx, rootInvID)
+	if err != nil {
+		return errors.Fmt("failed to read finalized root notification info: %w", err)
+	}
+
+	// Note that this submits the notification transactionally,
+	// i.e. conditionally on this transaction committing.
+	notification := &pb.RootInvocationFinalizedNotification{
+		RootInvocation: &pb.RootInvocationInfo{
+			Name:       rootInvID.Name(),
+			Realm:      inv.Realm,
+			CreateTime: inv.CreateTime,
+		},
+		ResultdbHost: rdbHostName,
+	}
+	tasks.NotifyRootInvocationFinalized(ctx, notification)
 	return nil
 }
 

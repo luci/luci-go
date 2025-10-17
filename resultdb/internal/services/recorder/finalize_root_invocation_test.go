@@ -124,6 +124,9 @@ func TestFinalizeRootInvocation(t *testing.T) {
 				expectedRootInv.FinalizationState = pb.RootInvocation_FINALIZING
 				expectedRootInv.LastUpdated = finalizeTime
 				expectedRootInv.FinalizeStartTime = spanner.NullTime{Valid: true, Time: finalizeTime}
+				// Finalizer task state updated on root invocation.
+				expectedRootInv.FinalizerPending = true
+				expectedRootInv.FinalizerSequence = 1
 
 				// Read the root invocation and work unit from Spanner to confirm they have been updated.
 				riRow, err := rootinvocations.Read(span.Single(ctx), rootInvID)
@@ -135,13 +138,11 @@ func TestFinalizeRootInvocation(t *testing.T) {
 				assert.Loosely(t, wuRow.FinalizationState, should.Match(pb.WorkUnit_FINALIZING))
 				assert.Loosely(t, wuRow.LastUpdated, should.Match(finalizeTime))
 				assert.Loosely(t, wuRow.FinalizeStartTime, should.Match(spanner.NullTime{Valid: true, Time: finalizeTime}))
+				assert.Loosely(t, wuRow.FinalizerCandidateTime, should.Match(spanner.NullTime{Valid: true, Time: finalizeTime}))
 
-				// Enqueued the finalization task for the legacy invocation.
+				// Enqueued the work unit finalization task.
 				expectedTasks := []protoreflect.ProtoMessage{
-					&taskspb.RunExportNotifications{InvocationId: string(rootWorkUnitID.LegacyInvocationID())},
-					&taskspb.TryFinalizeInvocation{InvocationId: string(rootWorkUnitID.LegacyInvocationID())},
-					&taskspb.RunExportNotifications{InvocationId: string(rootInvID.LegacyInvocationID())},
-					&taskspb.TryFinalizeInvocation{InvocationId: string(rootInvID.LegacyInvocationID())},
+					&taskspb.SweepWorkUnitsForFinalization{RootInvocationId: string(rootInvID), SequenceNumber: 1},
 				}
 				assert.Loosely(t, sched.Tasks().Payloads(), should.Match(expectedTasks))
 
@@ -188,12 +189,8 @@ func TestFinalizeRootInvocation(t *testing.T) {
 				assert.Loosely(t, wuRow.FinalizationState, should.Match(pb.WorkUnit_ACTIVE))
 				assert.Loosely(t, wuRow.FinalizeStartTime, should.Match(spanner.NullTime{Valid: false}))
 
-				// Enqueued the finalization task for the legacy invocation.
-				expectedTasks := []protoreflect.ProtoMessage{
-					&taskspb.RunExportNotifications{InvocationId: string(rootInvID.LegacyInvocationID())},
-					&taskspb.TryFinalizeInvocation{InvocationId: string(rootInvID.LegacyInvocationID())},
-				}
-				assert.Loosely(t, sched.Tasks().Payloads(), should.Match(expectedTasks))
+				// No task is enqueued for root invocation finalize.
+				assert.Loosely(t, sched.Tasks().Payloads(), should.HaveLength(0))
 
 				t.Run("idempotent", func(t *ftt.Test) {
 					riProto2, err := recorder.FinalizeRootInvocation(ctx, req)
@@ -210,7 +207,7 @@ func TestFinalizeRootInvocation(t *testing.T) {
 					assert.Loosely(t, wuRow2, should.Match(wuRow))
 
 					// No new tasks should be enqueued.
-					assert.Loosely(t, sched.Tasks().Payloads(), should.Match(expectedTasks))
+					assert.Loosely(t, sched.Tasks().Payloads(), should.HaveLength(0))
 				})
 			})
 		})

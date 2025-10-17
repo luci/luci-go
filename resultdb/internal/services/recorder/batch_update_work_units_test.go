@@ -310,6 +310,7 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 
 		t.Run("e2e", func(t *ftt.Test) {
 			assertResponse := func(wu *pb.WorkUnit, expected *pb.WorkUnit) {
+				t.Helper()
 				// Etag is must be different if updated.
 				assert.That(t, wu.Etag, should.NotEqual(expected.Etag), truth.LineContext())
 				assert.Loosely(t, wu.Etag, should.NotBeEmpty, truth.LineContext())
@@ -330,22 +331,26 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 			}
 
 			assertSpannerRows := func(expectedRow *workunits.WorkUnitRow) {
+				t.Helper()
 				wuID := expectedRow.ID
 				wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.AllFields)
 				assert.Loosely(t, err, should.BeNil, truth.LineContext())
 				// LastUpdated time must move forward.
 				assert.That(t, wuRow.LastUpdated, should.HappenAfter(expectedRow.LastUpdated), truth.LineContext())
 				// FinalizeStartTime must be set if state is updated.
-				shouldSetfinalizeStartTime := expectedRow.FinalizationState != pb.WorkUnit_ACTIVE
-				assert.Loosely(t, wuRow.FinalizeStartTime.Valid, should.Equal(shouldSetfinalizeStartTime), truth.LineContext())
-				if shouldSetfinalizeStartTime {
+				isFinalizing := expectedRow.FinalizationState == pb.WorkUnit_FINALIZING
+				assert.Loosely(t, wuRow.FinalizeStartTime.Valid, should.Equal(isFinalizing), truth.LineContext())
+				assert.Loosely(t, wuRow.FinalizerCandidateTime.Valid, should.Equal(isFinalizing), truth.LineContext())
+				if isFinalizing {
 					assert.Loosely(t, wuRow.FinalizeStartTime.Time, should.Match(wuRow.LastUpdated), truth.LineContext())
+					assert.Loosely(t, wuRow.FinalizerCandidateTime.Time, should.Match(wuRow.LastUpdated), truth.LineContext())
 				}
 
 				// Match lastUpdated, etag, finalizeStartTime before comparing the full proto.
 				expectedRowCopy := expectedRow.Clone()
 				expectedRowCopy.LastUpdated = wuRow.LastUpdated
 				expectedRowCopy.FinalizeStartTime = wuRow.FinalizeStartTime
+				expectedRowCopy.FinalizerCandidateTime = wuRow.FinalizerCandidateTime
 				// Validate WorkUnits table.
 				assert.That(t, wuRow, should.Match(expectedRowCopy), truth.LineContext())
 
@@ -399,10 +404,14 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 					assertSpannerRows(wuRow2Expected)
 
 					// Enqueued the finalization task.
-					assert.Loosely(t, sched.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
-						&taskspb.RunExportNotifications{InvocationId: string(wuID2.LegacyInvocationID())},
-						&taskspb.TryFinalizeInvocation{InvocationId: string(wuID2.LegacyInvocationID())},
-					}))
+					expectedTasks := []protoreflect.ProtoMessage{
+						&taskspb.SweepWorkUnitsForFinalization{RootInvocationId: string(rootInvID), SequenceNumber: 1},
+					}
+					assert.Loosely(t, sched.Tasks().Payloads(), should.Match(expectedTasks))
+					// Finalizer task state updated on root invocation.
+					taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, taskState, should.Match(rootinvocations.FinalizerTaskState{Pending: true, Sequence: 1}))
 
 					// Work unit 1 is no-op.
 					assertNoOp(res.WorkUnits[0], wuRow1Expected, wu1Expected)

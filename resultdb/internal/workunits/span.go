@@ -317,17 +317,19 @@ func (w *WorkUnitRow) toLegacyInclusionMutation() *spanner.Mutation {
 	})
 }
 
-// MarkFinalizing creates mutations to mark the given work unit as finalizing.
+// MarkFinalizing creates mutations to mark the given work unit as finalizing,
+// and sets the FinalizerCandidateTime to mark it as a candidate for the work unit finalizer.
 // The caller MUST check the work unit is currently in ACTIVE state, or this
 // may incorrectly overwrite the FinalizeStartTime.
 func MarkFinalizing(id ID) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, 0, 2)
 	ms = append(ms, spanutil.UpdateMap("WorkUnits", map[string]any{
-		"RootInvocationShardId": id.RootInvocationShardID(),
-		"WorkUnitId":            id.WorkUnitID,
-		"State":                 pb.WorkUnit_FINALIZING,
-		"LastUpdated":           spanner.CommitTimestamp,
-		"FinalizeStartTime":     spanner.CommitTimestamp,
+		"RootInvocationShardId":  id.RootInvocationShardID(),
+		"WorkUnitId":             id.WorkUnitID,
+		"State":                  pb.WorkUnit_FINALIZING,
+		"LastUpdated":            spanner.CommitTimestamp,
+		"FinalizeStartTime":      spanner.CommitTimestamp,
+		"FinalizerCandidateTime": spanner.CommitTimestamp,
 	}))
 	ms = append(ms, invocations.MarkFinalizing(id.LegacyInvocationID()))
 	return ms

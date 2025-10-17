@@ -176,6 +176,7 @@ func TestFinalizationMethods(t *testing.T) {
 			expectedWU.FinalizationState = pb.WorkUnit_FINALIZING
 			expectedWU.LastUpdated = ct.In(time.UTC)
 			expectedWU.FinalizeStartTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
+			expectedWU.FinalizerCandidateTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
 
 			wu, err := Read(span.Single(ctx), id, AllFields)
 			assert.Loosely(t, err, should.BeNil)

@@ -23,7 +23,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -36,12 +35,10 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/span"
-	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
-	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/internal/workunits"
@@ -243,7 +240,6 @@ func TestUpdateRootInvocation(t *testing.T) {
 
 		recorder := newTestRecorderServer()
 		rootInvID := rootinvocations.ID("rootid")
-		ctx, sched := tq.TestingContext(ctx, nil)
 		now := testclock.TestRecentTimeUTC
 		ctx, _ = testclock.UseTime(ctx, now)
 		user := "user:someone@example.com"
@@ -501,12 +497,6 @@ func TestUpdateRootInvocation(t *testing.T) {
 				// Validate spanner records are updated.
 				expectedRootInvRow.FinalizationState = pb.RootInvocation_FINALIZING
 				assertSpannerRows(expectedRootInvRow)
-
-				// Enqueued the finalization task.
-				assert.Loosely(t, sched.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
-					&taskspb.RunExportNotifications{InvocationId: string(rootInvID.LegacyInvocationID())},
-					&taskspb.TryFinalizeInvocation{InvocationId: string(rootInvID.LegacyInvocationID())},
-				}))
 			})
 
 			t.Run("finalization_state (legacy field mask)", func(t *ftt.Test) {
@@ -521,12 +511,6 @@ func TestUpdateRootInvocation(t *testing.T) {
 				// Validate spanner records are updated.
 				expectedRootInvRow.FinalizationState = pb.RootInvocation_FINALIZING
 				assertSpannerRows(expectedRootInvRow)
-
-				// Enqueued the finalization task.
-				assert.Loosely(t, sched.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
-					&taskspb.RunExportNotifications{InvocationId: string(rootInvID.LegacyInvocationID())},
-					&taskspb.TryFinalizeInvocation{InvocationId: string(rootInvID.LegacyInvocationID())},
-				}))
 			})
 
 			t.Run("sources and sources_final", func(t *ftt.Test) {

@@ -41,7 +41,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/tracing"
-	"go.chromium.org/luci/resultdb/internal/workunits"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -59,8 +58,9 @@ func InitServer(srv *server.Server, opts Options) {
 		return tryFinalizeInvocation(ctx, invocations.ID(task.InvocationId), opts)
 	})
 	tasks.FinalizeWorkUnitsTask.AttachHandler(func(ctx context.Context, msg proto.Message) error {
-		// TODO: implement the work unit finalizer.
-		return nil
+		task := msg.(*taskspb.SweepWorkUnitsForFinalization)
+		taskOpts := sweepWorkUnitsForFinalizationOptions{resultDBHostname: opts.ResultDBHostname}
+		return sweepWorkUnitsForFinalization(ctx, rootinvocations.ID(task.RootInvocationId), task.SequenceNumber, taskOpts)
 	})
 }
 
@@ -110,6 +110,11 @@ func InitServer(srv *server.Server, opts Options) {
 // If the invocation is too early to finalize, logs the reason and returns nil.
 // Idempotent.
 func tryFinalizeInvocation(ctx context.Context, invID invocations.ID, opts Options) error {
+
+	if invID.IsRootInvocation() || invID.IsWorkUnit() {
+		return tq.Fatal.Apply(errors.Fmt("root invocation and work unit shouldn't use legacy finalizer"))
+	}
+
 	// The check whether the invocation is ready to finalize involves traversing
 	// the invocation graph and reading Invocations.State column. Doing so in a
 	// RW transaction will cause contention. Fortunately, once an invocation
@@ -269,30 +274,6 @@ func publishFinalizedInvocation(ctx context.Context, invID invocations.ID, opts 
 	return nil
 }
 
-// publishFinalizedRootInvocation publishes a pub/sub message for a finalized
-// root invocation.
-func publishFinalizedRootInvocation(ctx context.Context, rootInvID rootinvocations.ID, rdbHostName string) error {
-	// Enqueue a notification to pub/sub listeners that the root invocation
-	// has been finalized.
-	inv, err := rootinvocations.ReadFinalizedNotificationInfo(ctx, rootInvID)
-	if err != nil {
-		return errors.Fmt("failed to read finalized root notification info: %w", err)
-	}
-
-	// Note that this submits the notification transactionally,
-	// i.e. conditionally on this transaction committing.
-	notification := &pb.RootInvocationFinalizedNotification{
-		RootInvocation: &pb.RootInvocationInfo{
-			Name:       rootInvID.Name(),
-			Realm:      inv.Realm,
-			CreateTime: inv.CreateTime,
-		},
-		ResultdbHost: rdbHostName,
-	}
-	tasks.NotifyRootInvocationFinalized(ctx, notification)
-	return nil
-}
-
 // finalizeInvocation updates the invocation state to FINALIZED.
 // Enqueues BigQuery export tasks.
 // For each FINALIZING invocation that includes the given one, enqueues
@@ -321,63 +302,37 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID, opts Options)
 			})
 		}
 
-		// None of this work yet for work units and root invocations.
-		// We can enable it piecemeal once implemented.
-		if !invID.IsRootInvocation() && !invID.IsWorkUnit() {
-			// Publish a finalized invocation transactionally.
-			if err := publishFinalizedInvocation(ctx, invID, opts); err != nil {
-				return err
-			}
+		// Publish a finalized invocation transactionally.
+		if err := publishFinalizedInvocation(ctx, invID, opts); err != nil {
+			return err
+		}
 
-			// Enqueue update test metadata task transactionally.
-			if err := testmetadataupdator.Schedule(ctx, invID); err != nil {
-				return err
-			}
+		// Enqueue update test metadata task transactionally.
+		if err := testmetadataupdator.Schedule(ctx, invID); err != nil {
+			return err
+		}
 
-			// Enqueue export artifact task transactionally.
-			if err := artifactexporter.Schedule(ctx, invID); err != nil {
-				return err
-			}
+		// Enqueue export artifact task transactionally.
+		if err := artifactexporter.Schedule(ctx, invID); err != nil {
+			return err
+		}
 
-			// Enqueue BigQuery exports transactionally.
-			if err := bqexporter.Schedule(ctx, invID); err != nil {
-				return err
-			}
+		// Enqueue BigQuery exports transactionally.
+		if err := bqexporter.Schedule(ctx, invID); err != nil {
+			return err
+		}
 
-			// Work units do not have a submitted state.
-			if !invID.IsWorkUnit() {
-				// Enqueue baseline update task transactionally.
-				submitted, err := invocations.ReadSubmitted(ctx, invID)
-				if err != nil {
-					return err
-				}
-				if submitted {
-					baselineupdater.Schedule(ctx, string(invID))
-				}
-			}
+		// Enqueue baseline update task transactionally.
+		submitted, err := invocations.ReadSubmitted(ctx, invID)
+		if err != nil {
+			return err
+		}
+		if submitted {
+			baselineupdater.Schedule(ctx, string(invID))
 		}
 
 		// Mark the invocation finalized.
-		// If the invocation is a shadow record for a root invocation
-		// or work unit, update via the source of truth.
-		if invID.IsRootInvocation() {
-			// Publish a finalized root invocation transactionally.
-			rootInvID := rootinvocations.MustParseLegacyInvocationID(invID)
-			if err := publishFinalizedRootInvocation(ctx, rootInvID, opts.ResultDBHostname); err != nil {
-				return err
-			}
-
-			// This updates both the root invocation and the corresponding
-			// legacy invocation to FINALIZED.
-			span.BufferWrite(ctx, rootinvocations.MarkFinalized(rootInvID)...)
-		} else if invID.IsWorkUnit() {
-			// This updates both the work unit and the corresponding legacy
-			// invocation to FINALIZED.
-			span.BufferWrite(ctx, workunits.MarkFinalized(workunits.MustParseLegacyInvocationID(invID))...)
-		} else {
-			span.BufferWrite(ctx, invocations.MarkFinalized(invID))
-		}
-
+		span.BufferWrite(ctx, invocations.MarkFinalized(invID))
 		return nil
 	})
 	switch {

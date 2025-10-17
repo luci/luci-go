@@ -162,14 +162,18 @@ func TestFinalizeWorkUnit(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, wuRow.FinalizationState, should.Equal(pb.WorkUnit_FINALIZING))
 			assert.Loosely(t, wuRow.FinalizeStartTime, should.Match(spanner.NullTime{Valid: true, Time: finalizeTime}))
+			assert.Loosely(t, wuRow.FinalizerCandidateTime, should.Match(spanner.NullTime{Valid: true, Time: finalizeTime}))
 			assert.Loosely(t, wuRow.LastUpdated, should.Match(finalizeTime))
 
 			// Enqueued the finalization task for the legacy invocation.
 			expectedTasks := []protoreflect.ProtoMessage{
-				&taskspb.RunExportNotifications{InvocationId: string(wuID.LegacyInvocationID())},
-				&taskspb.TryFinalizeInvocation{InvocationId: string(wuID.LegacyInvocationID())},
+				&taskspb.SweepWorkUnitsForFinalization{RootInvocationId: string(rootInvID), SequenceNumber: 1},
 			}
 			assert.Loosely(t, sched.Tasks().Payloads(), should.Match(expectedTasks))
+			// Finalizer task state updated on root invocation.
+			taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, taskState, should.Match(rootinvocations.FinalizerTaskState{Pending: true, Sequence: 1}))
 
 			t.Run("idempotent", func(t *ftt.Test) {
 				wuProto2, err := recorder.FinalizeWorkUnit(ctx, req)

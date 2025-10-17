@@ -149,15 +149,23 @@ func enforce(ctx context.Context, shard, limit int) (int, error) {
 			}
 
 			if id.IsRootInvocation() {
-				// This also updates the legacy invocation.
-				span.BufferWrite(ctx, rootinvocations.MarkFinalizing(rootinvocations.MustParseLegacyInvocationID(id))...)
+				// Do nothing, root invocation should transition to finalizing with root work unit.
 			} else if id.IsWorkUnit() {
+				wuID := workunits.MustParseLegacyInvocationID(id)
 				// This also updates the legacy invocation.
-				span.BufferWrite(ctx, workunits.MarkFinalizing(workunits.MustParseLegacyInvocationID(id))...)
+				span.BufferWrite(ctx, workunits.MarkFinalizing(wuID)...)
+				// Transactionally schedule a work unit finalization task.
+				if err := tasks.ScheduleWorkUnitsFinalization(ctx, wuID.RootInvocationID); err != nil {
+					return err
+				}
+				if wuID.WorkUnitID == workunits.RootWorkUnitID {
+					// Finalizing the root invocation if it is root work unit.
+					span.BufferWrite(ctx, rootinvocations.MarkFinalizing(wuID.RootInvocationID)...)
+				}
 			} else {
 				span.BufferWrite(ctx, invocations.MarkFinalizing(id))
+				tasks.StartInvocationFinalization(ctx, id)
 			}
-			tasks.StartInvocationFinalization(ctx, id)
 			return nil
 		})
 		if err == nil {
