@@ -29,10 +29,7 @@ import 'reactflow/dist/style.css';
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 
 import { FakeGraphGenerator } from '../fake_turboci_graph';
-import {
-  convertTurboCIGraphToNodesAndEdges,
-  getLayoutedElements,
-} from '../utils/graph_utils';
+import { TurboCIGraphBuilder } from '../utils/graph_builder';
 
 // Fake TurboCI data. To be replaced once TurboCI APIs are available.
 const graphGenerator = new FakeGraphGenerator({
@@ -56,14 +53,8 @@ function Graph() {
 
   const { layoutedNodes, layoutedEdges } = useMemo(() => {
     // Convert TurboCI Graph to list of nodes and edges that React Flow understands.
-    const { nodes: initialNodes, edges: initialEdges } =
-      convertTurboCIGraphToNodesAndEdges(turboCiGraph);
-    // Use Dagre to layout and position nodes according to their edges.
-    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-      initialNodes,
-      initialEdges,
-    );
-    return { layoutedNodes, layoutedEdges };
+    const { nodes, edges } = new TurboCIGraphBuilder(turboCiGraph).build();
+    return { layoutedNodes: nodes, layoutedEdges: edges };
   }, []);
 
   useEffect(() => {
