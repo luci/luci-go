@@ -27,9 +27,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
-import { CheckState } from '@/proto/turboci/graph/orchestrator/v1/check_state.pb';
 
-import { CheckKind } from '../../proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { FakeGraphGenerator } from '../fake_turboci_graph';
 import {
   convertTurboCIGraphToNodesAndEdges,
@@ -39,96 +37,9 @@ import {
 // Fake TurboCI data. To be replaced once TurboCI APIs are available.
 const graphGenerator = new FakeGraphGenerator({
   workPlanIdStr: 'test-plan',
-  checkIds: [
-    'CheckA',
-    'CheckB',
-    'CheckC',
-    'CheckD',
-    'CheckE',
-    'CheckF',
-    'CheckG',
-    'CheckH',
-  ],
-  stageIds: ['StageA', 'StageB', 'StageC'],
-  dependencies: {
-    CheckB: ['CheckA'],
-    CheckC: ['CheckA'],
-    CheckD: ['CheckA'],
-    CheckE: ['CheckA'],
-    CheckF: ['CheckA'],
-    CheckG: ['CheckC', 'CheckD', 'CheckE'],
-    CheckH: ['CheckF', 'CheckG'],
-    StageB: ['StageA'],
-    StageC: ['StageB'],
-    CheckA: ['StageA'],
-  },
-  checkKinds: {
-    CheckA: CheckKind.CHECK_KIND_SOURCE,
-    CheckB: CheckKind.CHECK_KIND_BUILD,
-    CheckC: CheckKind.CHECK_KIND_BUILD,
-    CheckD: CheckKind.CHECK_KIND_BUILD,
-    CheckE: CheckKind.CHECK_KIND_BUILD,
-    CheckF: CheckKind.CHECK_KIND_BUILD,
-    CheckG: CheckKind.CHECK_KIND_TEST,
-    CheckH: CheckKind.CHECK_KIND_TEST,
-  },
-  checkEdits: [
-    {
-      stageId: 'StageA',
-      checkId: 'CheckA',
-      state: CheckState.CHECK_STATE_PLANNING,
-    },
-    {
-      stageId: 'StageA',
-      checkId: 'CheckA',
-      state: CheckState.CHECK_STATE_PLANNED,
-    },
-    {
-      stageId: 'StageA',
-      checkId: 'CheckA',
-      state: CheckState.CHECK_STATE_WAITING,
-    },
-    {
-      stageId: 'StageA',
-      checkId: 'CheckA',
-      state: CheckState.CHECK_STATE_FINAL,
-    },
-    {
-      stageId: 'StageB',
-      checkId: 'CheckB',
-      state: CheckState.CHECK_STATE_FINAL,
-    },
-    {
-      stageId: 'StageB',
-      checkId: 'CheckC',
-      state: CheckState.CHECK_STATE_FINAL,
-    },
-    {
-      stageId: 'StageB',
-      checkId: 'CheckD',
-      state: CheckState.CHECK_STATE_PLANNED,
-    },
-    {
-      stageId: 'StageB',
-      checkId: 'CheckE',
-      state: CheckState.CHECK_STATE_WAITING,
-    },
-    {
-      stageId: 'StageB',
-      checkId: 'CheckF',
-      state: CheckState.CHECK_STATE_WAITING,
-    },
-    {
-      stageId: 'StageC',
-      checkId: 'CheckG',
-      state: CheckState.CHECK_STATE_PLANNING,
-    },
-    {
-      stageId: 'StageC',
-      checkId: 'CheckH',
-      state: CheckState.CHECK_STATE_PLANNING,
-    },
-  ],
+  numBuilds: 30,
+  avgTestsPerBuild: 3,
+  numSourceChanges: 3,
 });
 const turboCiGraph = graphGenerator.generate();
 

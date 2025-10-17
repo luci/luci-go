@@ -58,10 +58,7 @@ import { CheckDelta } from '../proto/turboci/graph/orchestrator/v1/check_delta.p
 import { CheckEditView } from '../proto/turboci/graph/orchestrator/v1/check_edit_view.pb';
 import { CheckKind } from '../proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { CheckResultView } from '../proto/turboci/graph/orchestrator/v1/check_result_view.pb';
-import {
-  CheckState,
-  checkStateToJSON,
-} from '../proto/turboci/graph/orchestrator/v1/check_state.pb';
+import { CheckState } from '../proto/turboci/graph/orchestrator/v1/check_state.pb';
 import { CheckView } from '../proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { Datum } from '../proto/turboci/graph/orchestrator/v1/datum.pb';
 import {
@@ -78,13 +75,13 @@ import { GraphView } from '../proto/turboci/graph/orchestrator/v1/graph_view.pb'
 import { Revision } from '../proto/turboci/graph/orchestrator/v1/revision.pb';
 import {
   Stage,
-  Stage_Assignment,
   Stage_Attempt,
   Stage_ExecutionPolicyState,
 } from '../proto/turboci/graph/orchestrator/v1/stage.pb';
 import { StageAttemptState } from '../proto/turboci/graph/orchestrator/v1/stage_attempt_state.pb';
 import { StageDelta } from '../proto/turboci/graph/orchestrator/v1/stage_delta.pb';
 import { StageEditView } from '../proto/turboci/graph/orchestrator/v1/stage_edit_view.pb';
+import { StageState } from '../proto/turboci/graph/orchestrator/v1/stage_state.pb';
 import { StageView } from '../proto/turboci/graph/orchestrator/v1/stage_view.pb';
 import { Value } from '../proto/turboci/graph/orchestrator/v1/value.pb';
 
@@ -97,6 +94,7 @@ const TYPE_URL_BUILD_OPTIONS =
   'type.googleapis.com/turboci.data.build.v1.BuildCheckOptions';
 const TYPE_URL_BUILD_RESULTS =
   'type.googleapis.com/turboci.data.build.v1.BuildCheckResult';
+const TYPE_URL_GENERIC_DATA = 'type.googleapis.com/turboci.demo.GenericData';
 
 // Fake data pools used by Faker.js
 const FAKE_GERRIT_HOSTS = [
@@ -110,16 +108,9 @@ const FAKE_GERRIT_PROJECTS = [
   'platform/frameworks/support',
   'platform/frameworks/base',
   'kernel/build',
+  'platform/vendor/google/camera',
 ];
 const FAKE_GIT_BRANCHES = ['main', 'androidx-main', 'android14-tests-release'];
-const FAKE_TARGET_NAMES = [
-  'husky-userdebug',
-  'shiba-userdebug',
-  'oriole-userdebug',
-  'raven-userdebug',
-  'rango-userdebug',
-  'mustang-userdebug',
-];
 const FAKE_ANDROID_BRANCHES = [
   'git-main',
   'git_25Q1-release',
@@ -127,49 +118,70 @@ const FAKE_ANDROID_BRANCHES = [
   'git_25Q3-release',
   'git_trunk-release',
 ];
+const FAKE_TARGET_NAMES = [
+  'stallion-trunk_staging-userdebug',
+  'lynx-trunk_staging-userdebug',
+  'husky-trunk_staging-userdebug',
+  'komodo-trunk_staging-userdebug',
+  'cheetah-trunk_staging-userdebug',
+  'cheetah-next-userdebug',
+  'yogi-cd1a-userdebug',
+  'oriole-trunk_staging-userdebug',
+  'rango-trunk_staging-userdebug',
+  'tokay-trunk_staging-userdebug',
+  'akita-trunk_staging-userdebug',
+  'comet-trunk_staging-userdebug',
+  'tegu-trunk_staging-userdebug',
+];
+const FAKE_TEST_NAMES = [
+  'v2/pixel-health-guard/device-boot-test',
+  'v2/pts-presubmit/device-presubmit-wifi',
+  'v2/pixel-camera-automation/pts-presubmit-with-scene-sta5',
+  'v2/pixel-camera-automation/cts-presubmit-with-scene-sta5',
+  'v2/pc3a/camera_3a/device_unit_tests',
+  'v2/android-camera/pact-cfa-pre-mh-tests',
+  'v2/android-lyric-code-silo-access/isp-test-health/zumapro/presubmit_eligible_unit_tests',
+  'v2/pixel-camera-flextape-team/leakr-scan/lyric',
+  'v2/android-test-harness-team/suite/host_unit_tests',
+  'v2/sysui/systemui/robo_rng_keyguard_tests',
+  'v2/android-crystalball-eng/health/microbench/uibench/uibench-jank-presubmit',
+  'v2/faceauth-eng/husky_presubmit_camera',
+  'v2/android-multiuser/preinstall-allowlist-test',
+  'v2/android-gki/test_mapping_kernel_presubmit',
+];
 
 /**
  * Configuration for the FakeGraphGenerator.
  */
 export interface GraphGenerationConfig {
   workPlanIdStr: string;
-  /** List of unique string IDs for Checks */
-  checkIds: string[];
-  /** List of unique string IDs for Stages */
-  stageIds: string[];
-  /**
-   * Adjacency list for dependencies.
-   * Key is the ID of the node (Check or Stage) that has dependencies.
-   * Value is a list of IDs (Checks or Stages) that it depends on.
-   */
-  dependencies: Record<string, string[]>;
-  /**
-   * Optional mapping of Check ID to its CheckKind.
-   * If not provided, defaults to CHECK_KIND_BUILD.
-   */
-  checkKinds?: Record<string, CheckKind>;
-  /**
-   * Optional list of check edits.
-   * Each edit represents a stage editing a check's state.
-   */
-  checkEdits?: { stageId: string; checkId: string; state: CheckState }[];
+  /** Number of Gerrit changes to include in the source check. */
+  numSourceChanges: number;
+  /** Number of distinct build targets to simulate. */
+  numBuilds: number;
+  /** Average number of tests dependent on each build. */
+  avgTestsPerBuild: number;
 }
 
 interface CheckData {
-  optionsRefs: Check_OptionRef[];
-  optionDatums: Datum[];
-  results: Check_Result[];
-  resultViews: CheckResultView[];
+  optionsRef: Check_OptionRef;
+  optionDatum: Datum;
+  resultRef: Check_Result;
+  resultView: CheckResultView;
 }
 
 export class FakeGraphGenerator {
   private workPlanId: WorkPlan;
-  private checkIdMap: Map<string, CheckId> = new Map();
-  private stageIdMap: Map<string, StageId> = new Map();
-  private genericIdMap: Map<string, Identifier> = new Map();
+  private sourcePlanningStageId: StageId;
+  private buildPlanningStageId: StageId;
+  private testPlanningStageId: StageId;
 
   // Simulated time to ensure Revisions allow logical ordering (createdAt < finalizedAt)
   private currentSimulatedTimeMs = Date.UTC(2024, 0, 1, 12, 0, 0);
+
+  // Accumulators for generated views
+  private checkViews: CheckView[] = [];
+  private stageViews: StageView[] = [];
 
   constructor(private config: GraphGenerationConfig) {
     // Initialize faker seed for reproducible graphs based on workplan ID
@@ -180,126 +192,437 @@ export class FakeGraphGenerator {
     }
     faker.seed(seed);
 
-    // 1. Initialize base Identifiers
     this.workPlanId = { id: config.workPlanIdStr };
-
-    // 2. Create all Node Identifiers first so dependencies can be resolved.
-    for (const id of config.checkIds) {
-      const checkId: CheckId = { workPlan: this.workPlanId, id: id };
-      this.checkIdMap.set(id, checkId);
-      this.genericIdMap.set(id, { check: checkId });
-    }
-
-    for (const id of config.stageIds) {
-      // Ensure ID format complies with proto comments (S or N prefix)
-      const formattedId = id.match(/^[SN]/) ? id : `S_${id}`;
-      const stageId: StageId = { workPlan: this.workPlanId, id: formattedId };
-      this.stageIdMap.set(id, stageId);
-      this.genericIdMap.set(id, { stage: stageId });
-    }
+    this.sourcePlanningStageId = this.createStageId('S_Planning_Source');
+    this.buildPlanningStageId = this.createStageId('S_Planning_Build');
+    this.testPlanningStageId = this.createStageId('S_Planning_Test');
   }
 
   /**
    * Generates the complete GraphView based on the configuration.
    */
   public generate(): GraphView {
-    const checkViews: CheckView[] = this.config.checkIds.map((id) =>
-      this.generateCheckView(id),
-    );
-    const stageViews: StageView[] = this.config.stageIds.map((id) =>
-      this.generateStageView(id),
-    );
+    this.checkViews = [];
+    this.stageViews = [];
+    // Reset time for each generation to maintain reproducibility based on seed
+    this.currentSimulatedTimeMs = Date.UTC(2024, 0, 1, 12, 0, 0);
+
+    const sourceCheckIds: CheckId[] = [];
+    const buildCheckIds: CheckId[] = [];
+    const testCheckIds: CheckId[] = [];
+
+    // 1. Generate Source Node (1 Check, 1 Stage)
+    const sourceId = this.createSourcePair();
+    sourceCheckIds.push(sourceId);
+
+    // 2. Generate Build Nodes, dependent on Source
+    for (let i = 0; i < this.config.numBuilds; i++) {
+      buildCheckIds.push(this.createBuildPair(i, sourceId));
+    }
+
+    // 3. Generate Test Nodes, dependent on Builds
+    for (let i = 0; i < buildCheckIds.length; i++) {
+      // Vary number of tests per build slightly
+      const numTests = faker.number.int({
+        min: Math.max(1, this.config.avgTestsPerBuild - 2),
+        max: this.config.avgTestsPerBuild + 2,
+      });
+
+      for (let j = 0; j < numTests; j++) {
+        testCheckIds.push(this.createTestPair(i, j, buildCheckIds[i]));
+      }
+    }
+
+    // 4. Create Planning Stages per check type.
+    this.createPlanningStage(this.sourcePlanningStageId, sourceCheckIds);
+    this.createPlanningStage(this.buildPlanningStageId, buildCheckIds);
+    this.createPlanningStage(this.testPlanningStageId, testCheckIds);
 
     return {
       version: this.nextRevision(),
-      checks: checkViews,
-      stages: stageViews,
+      checks: this.checkViews,
+      stages: this.stageViews,
     };
   }
 
   // ==========================================
-  // Core View Generators
+  // Procedural Generation Orchestration
   // ==========================================
 
-  private generateCheckView(idStr: string): CheckView {
-    const checkId = this.checkIdMap.get(idStr)!;
-    const realm = `${idStr}-realm`; // Deterministic realm
-    const kind = this.config.checkKinds?.[idStr] ?? CheckKind.CHECK_KIND_BUILD;
+  private createSourcePair(): CheckId {
+    const idStr = 'Source';
+    const checkId = this.createCheckId(`C_${idStr}`);
+    const stageId = this.createStageId(`S_${idStr}`);
+    const realm = `${idStr}-realm`;
 
-    // Generate data based on CheckKind
-    let data: CheckData;
-    if (kind === CheckKind.CHECK_KIND_SOURCE) {
-      data = this.generateSourceCheckData(checkId, realm);
-    } else if (kind === CheckKind.CHECK_KIND_BUILD) {
-      data = this.generateBuildCheckData(checkId, realm);
-    } else {
-      // Fallback for other kinds not yet specified
-      data = this.generateGenericCheckData(checkId, realm, idStr);
+    // Generate Data
+    const data = this.generateSourceCheckData(checkId, realm, stageId);
+
+    // Generate Views (simulating lifecycle)
+    this.generateCheckView(
+      checkId,
+      CheckKind.CHECK_KIND_SOURCE,
+      realm,
+      [], // No dependencies
+      stageId,
+      data,
+    );
+    // Source stages always succeed in this simulation
+    this.generateStageView(stageId, realm, [], true, [checkId]);
+
+    return checkId;
+  }
+
+  private createBuildPair(index: number, sourceCheckId: CheckId): CheckId {
+    const idStr = `Build_${index}`;
+    const checkId = this.createCheckId(`C_${idStr}`);
+    const stageId = this.createStageId(`S_${idStr}`);
+    const realm = `${idStr}-realm`;
+
+    // Random success/failure
+    const success = faker.datatype.boolean();
+
+    // Generate Data
+    const data = this.generateBuildCheckData(checkId, realm, stageId, success);
+
+    // Generate Views
+    this.generateCheckView(
+      checkId,
+      CheckKind.CHECK_KIND_BUILD,
+      realm,
+      [{ check: sourceCheckId }],
+      stageId,
+      data,
+    );
+    this.generateStageView(stageId, realm, [], success, [checkId]);
+
+    return checkId;
+  }
+
+  private createTestPair(
+    buildIndex: number,
+    testIndex: number,
+    buildCheckId: CheckId,
+  ): CheckId {
+    const idStr = `Build_${buildIndex}_Test_${testIndex}`;
+    const checkId = this.createCheckId(`C_${idStr}`);
+    const realm = `${idStr}-realm`;
+
+    const success = faker.datatype.boolean();
+
+    // 10% of the time, create 2-4 stages assigned to the same test check
+    const numStages = faker.datatype.boolean(0.1)
+      ? faker.number.int({ min: 2, max: 4 })
+      : 1;
+    const stageIds: StageId[] = [];
+    for (let i = 0; i < numStages; i++) {
+      const stageId = this.createStageId(
+        `S_${idStr}` + (numStages > 1 ? `-${i}` : ''),
+      );
+      stageIds.push(stageId);
+      this.generateStageView(stageId, realm, [], success, [checkId]);
     }
 
-    // Generate foundational Check structure
+    // If we created multiple stages, we still need one to be the actual editor to FINAL state
+    // so just pick the first one.
+    const finalizingStageId = stageIds[0];
+
+    // Generate Data
+    const data = this.generateGenericCheckData(
+      checkId,
+      realm,
+      finalizingStageId,
+    );
+
+    // Generate Views
+    this.generateCheckView(
+      checkId,
+      CheckKind.CHECK_KIND_TEST,
+      realm,
+      [{ check: buildCheckId }],
+      finalizingStageId,
+      data,
+    );
+
+    return checkId;
+  }
+
+  private createPlanningStage(
+    stageId: StageId,
+    assignedCheckIds: CheckId[],
+  ): void {
+    if (assignedCheckIds.length === 0) {
+      return;
+    }
+    this.generateStageView(
+      stageId,
+      'planning_realm',
+      [],
+      true,
+      assignedCheckIds,
+      CheckState.CHECK_STATE_PLANNED,
+    );
+  }
+
+  // ==========================================
+  // Core View Generators (Simulated Lifecycle)
+  // ==========================================
+
+  private generateCheckView(
+    checkId: CheckId,
+    kind: CheckKind,
+    realm: string,
+    dependencies: Identifier[],
+    executingStageId: StageId,
+    data: CheckData,
+  ): void {
+    // Determine the specific planning stage based on kind.
+    let planningStageId: StageId;
+    switch (kind) {
+      case CheckKind.CHECK_KIND_SOURCE:
+        planningStageId = this.sourcePlanningStageId;
+        break;
+      case CheckKind.CHECK_KIND_BUILD:
+        planningStageId = this.buildPlanningStageId;
+        break;
+      case CheckKind.CHECK_KIND_TEST:
+        planningStageId = this.testPlanningStageId;
+        break;
+      default:
+        // Fallback, should not happen in this fake generator
+        planningStageId = this.sourcePlanningStageId;
+    }
+
+    const edits: CheckEditView[] = [];
+    const actor: Actor = {
+      stageAttempt: { stage: executingStageId, attemptsIdx: 1 },
+    };
+    const planningActor: Actor = {
+      stageAttempt: { stage: planningStageId, attemptsIdx: 1 },
+    };
+
+    // Timestamps for lifecycle
+    const creationRev = this.nextRevision();
+    const plannedRev = this.nextRevision();
+    const finalRev = this.nextRevision();
+
+    const deps = this.buildEdgesFromIdentifiers(dependencies);
+
+    // 1. Creation Edit (PLANNING)
+    edits.push({
+      edit: this.createEdit(
+        { check: checkId },
+        realm,
+        creationRev,
+        'Creation',
+        {
+          check: {
+            state: CheckState.CHECK_STATE_PLANNING,
+            options: [data.optionsRef.identifier!],
+            dependencies: deps,
+            result: [],
+          },
+        },
+        this.getOrchestratorActor(),
+      ),
+      optionData: [data.optionDatum],
+    });
+
+    // 2. Planned (by planning stage)
+    edits.push({
+      edit: this.createEdit(
+        { check: checkId },
+        realm,
+        plannedRev,
+        'Planned',
+        {
+          check: {
+            state: CheckState.CHECK_STATE_PLANNED,
+            options: [data.optionsRef.identifier!],
+            dependencies: deps,
+            result: [],
+          },
+        },
+        planningActor,
+      ),
+      optionData: [data.optionDatum],
+    });
+
+    // 3. Waiting Edit (simulated orchestration steps)
+    edits.push({
+      edit: this.createEdit(
+        { check: checkId },
+        realm,
+        plannedRev,
+        'Waiting for dependencies',
+        {
+          check: {
+            state: CheckState.CHECK_STATE_WAITING,
+            result: [],
+            options: [],
+            dependencies: [],
+          },
+        },
+        this.getOrchestratorActor(),
+      ),
+      optionData: [],
+    });
+
+    // Construct finalized result ref based on generated data and time
+    const finalizedResultRef: Check_Result = {
+      identifier: data.resultRef.identifier,
+      owner: data.resultRef.owner,
+      data: data.resultRef.data,
+      createdAt: finalRev,
+      finalizedAt: finalRev,
+    };
+
+    // 4. Final Edit by executing stage (Results Posted)
+    edits.push({
+      edit: this.createEdit(
+        { check: checkId },
+        realm,
+        finalRev,
+        'Results posted and finalized',
+        {
+          check: {
+            state: CheckState.CHECK_STATE_FINAL,
+            options: [],
+            dependencies: [],
+            result: [
+              {
+                identifier: finalizedResultRef.identifier,
+                created: true,
+                finalized: true,
+                data: finalizedResultRef.data.map((d) => d.identifier!),
+              },
+            ],
+          },
+        },
+        actor,
+      ),
+      optionData: data.resultView.data,
+    });
+
+    // Construct Final Check Object (immutable components + final state)
     const check: Check = {
       identifier: checkId,
       kind: kind,
       realm: realm,
-      version: this.nextRevision(),
-      dependencies: this.resolveDependencies(idStr),
-      options: data.optionsRefs,
-      results: data.results,
+      version: finalRev,
+      dependencies: deps,
+      options: [data.optionsRef],
+      results: [finalizedResultRef],
+      state: CheckState.CHECK_STATE_FINAL,
     };
 
-    // Generate edits for this check
-    const edits: CheckEditView[] = this.generateCheckEdits(
-      idStr,
-      checkId,
-      realm,
-    );
-
-    return {
+    this.checkViews.push({
       check: check,
-      optionData: data.optionDatums,
+      optionData: [data.optionDatum, ...data.resultView.data],
       edits: edits,
-      results: data.resultViews,
-    };
+      results: [data.resultView],
+    });
   }
 
-  private generateStageView(idStr: string): StageView {
-    const stageId = this.stageIdMap.get(idStr)!;
-    const realm = `${idStr}-realm`;
+  private generateStageView(
+    stageId: StageId,
+    realm: string,
+    dependencies: Identifier[],
+    success: boolean,
+    assignments: CheckId[],
+    assignmentGoalState = CheckState.CHECK_STATE_FINAL,
+  ): void {
+    const idStr = stageId.id!;
+    const edits: StageEditView[] = [];
+
+    // Timestamps
+    const createRev = this.nextRevision();
+    const attemptRev = this.nextRevision();
+    const finalRev = this.nextRevision();
+
+    // 1. Creation Edit (PLANNED)
+    edits.push({
+      edit: this.createEdit({ stage: stageId }, realm, createRev, 'Creation', {
+        stage: { state: StageState.STAGE_STATE_PLANNED, executionPolicies: [] },
+      }),
+    });
+
+    // 2. Attempting Edit
+    edits.push({
+      edit: this.createEdit(
+        { stage: stageId },
+        realm,
+        attemptRev,
+        'Dispatched to executor',
+        {
+          stage: {
+            state: StageState.STAGE_STATE_ATTEMPTING,
+            executionPolicies: [],
+          },
+        },
+      ),
+    });
+
+    // Generate attempt data based on final time
+    const attempts = this.generateStageAttempt(
+      idStr,
+      attemptRev,
+      finalRev,
+      success,
+    );
+
+    // 3. Final Edit
+    edits.push({
+      edit: this.createEdit(
+        { stage: stageId },
+        realm,
+        finalRev,
+        'Execution completed',
+        {
+          stage: { state: StageState.STAGE_STATE_FINAL, executionPolicies: [] },
+        },
+      ),
+    });
+
+    // Construct Final Stage Object
     const stage: Stage = {
       identifier: stageId,
       realm: realm,
-      createTs: this.nextRevision(),
-      version: this.nextRevision(),
-      dependencies: this.resolveDependencies(idStr),
+      createTs: createRev,
+      version: finalRev,
+      dependencies: this.buildEdgesFromIdentifiers(dependencies),
       executionPolicy: this.createExecutionPolicyState(),
-      attempts: this.generateActiveStageAttempt(idStr),
-      assignments: this.generateSampleAssignment(),
-      continuationGroup: [], // Kept empty for simplicity
+      state: StageState.STAGE_STATE_FINAL,
+      attempts: attempts,
+      assignments: assignments.map((assignment) => ({
+        target: assignment,
+        goalState: assignmentGoalState,
+      })),
+      continuationGroup: [],
     };
 
-    const edits: StageEditView[] = this.generateSampleStageEdit(stageId, realm);
-
-    return {
+    this.stageViews.push({
       stage: stage,
       edits: edits,
-    };
+    });
   }
 
   // ==========================================
   // Check Data Generators (Options & Results)
   // ==========================================
 
-  private generateSourceCheckData(checkId: CheckId, realm: string): CheckData {
+  private generateSourceCheckData(
+    checkId: CheckId,
+    realm: string,
+    stageId: StageId,
+  ): CheckData {
     const host = faker.helpers.arrayElement(FAKE_GERRIT_HOSTS);
     const project = faker.helpers.arrayElement(FAKE_GERRIT_PROJECTS);
 
-    // Generate 1-2 input CLs
-    const numCls = faker.number.int({ min: 1, max: 2 });
     const gerritChangesInput: GobSourceCheckOptions_GerritChange[] = [];
     const gerritChangesOutput: GerritChangeInfo[] = [];
 
-    for (let i = 0; i < numCls; i++) {
+    for (let i = 0; i < this.config.numSourceChanges; i++) {
       const changeNum = faker.number
         .int({ min: 100000, max: 999999 })
         .toString();
@@ -373,16 +696,23 @@ export class FakeGraphGenerator {
       resId,
       datumId,
       resultDatum,
+      stageId,
     );
   }
 
-  private generateBuildCheckData(checkId: CheckId, realm: string): CheckData {
+  private generateBuildCheckData(
+    checkId: CheckId,
+    realm: string,
+    stageId: StageId,
+    isSuccess: boolean,
+  ): CheckData {
     // --- Options ---
     const optId: CheckOptionId = { check: checkId, idx: 1 };
+    const targetName = faker.helpers.arrayElement(FAKE_TARGET_NAMES);
     const buildOptions: BuildCheckOptions = {
       target: {
-        name: faker.helpers.arrayElement(FAKE_TARGET_NAMES),
-        product: faker.helpers.enumValue(Product),
+        name: targetName,
+        product: Product.PRODUCT_ANDROID,
         namespace: faker.helpers.arrayElement(FAKE_ANDROID_BRANCHES),
       },
     };
@@ -397,18 +727,17 @@ export class FakeGraphGenerator {
     // --- Results ---
     const resId: CheckResultId = { check: checkId, idx: 1 };
     const datumId: CheckResultDatumId = { result: resId, idx: 1 };
-    const isSuccess = faker.datatype.boolean({ probability: 0.8 });
 
-    const buildId = faker.string.numeric(16);
+    const buildId = 'P' + faker.string.numeric(8);
 
     const buildResult: BuildCheckResult = {
       success: isSuccess,
       displayMessage: {
         message: isSuccess
-          ? 'Build completed successfully.'
-          : `Build failed: ${faker.hacker.phrase()}`,
+          ? `Build ${buildId} for ${targetName} completed successfully.`
+          : `Build ${buildId} for ${targetName} failed.`,
       },
-      viewUrl: faker.internet.url({ appendSlash: false }) + `/b/${buildId}`,
+      viewUrl: `https://android-build.googleplex.com/builds/submitted/${buildId}/${targetName}/latest`,
       gcsArtifacts: {},
     };
 
@@ -425,23 +754,24 @@ export class FakeGraphGenerator {
       resId,
       datumId,
       resultDatum,
+      stageId,
     );
   }
 
   private generateGenericCheckData(
     checkId: CheckId,
     realm: string,
-    idStr: string,
+    stageId: StageId,
   ): CheckData {
-    const typeUrl = 'type.googleapis.com/turboci.demo.GenericData';
-
+    const typeUrl = TYPE_URL_GENERIC_DATA;
+    const testName = faker.helpers.arrayElement(FAKE_TEST_NAMES);
     const optId: CheckOptionId = { check: checkId, idx: 1 };
     const optionDatum = this.createDatum(
       { checkOption: optId },
       realm,
       typeUrl,
       {
-        description: `Generic options for ${idStr}`,
+        description: `Generic options for ${testName}`,
         value: faker.lorem.sentence(),
       },
     );
@@ -453,7 +783,7 @@ export class FakeGraphGenerator {
       realm,
       typeUrl,
       {
-        description: `Generic result for ${idStr}`,
+        description: `Generic result for ${testName}`,
         summary: faker.lorem.sentence(),
       },
     );
@@ -464,6 +794,7 @@ export class FakeGraphGenerator {
       resId,
       datumId,
       resultDatum,
+      stageId,
     );
   }
 
@@ -474,30 +805,27 @@ export class FakeGraphGenerator {
     resId: CheckResultId,
     datumId: CheckResultDatumId,
     resDatum: Datum,
+    stageId: StageId,
   ): CheckData {
     const checkResult: Check_Result = {
       identifier: resId,
-      owner: this.getOrchestratorActor(),
-      createdAt: this.nextRevision(),
+      owner: { stageAttempt: { stage: stageId, attemptsIdx: 1 } },
       data: [
         {
           identifier: datumId,
           typeUrl: this.getTypeUrlFromDatum(resDatum),
         },
       ],
-      finalizedAt: this.nextRevision(),
     };
 
     return {
-      optionsRefs: [
-        {
-          identifier: optId,
-          typeUrl: this.getTypeUrlFromDatum(optDatum),
-        },
-      ],
-      optionDatums: [optDatum],
-      results: [checkResult],
-      resultViews: [{ data: [resDatum] }],
+      optionsRef: {
+        identifier: optId,
+        typeUrl: this.getTypeUrlFromDatum(optDatum),
+      },
+      optionDatum: optDatum,
+      resultRef: checkResult,
+      resultView: { data: [resDatum] },
     };
   }
 
@@ -514,25 +842,26 @@ export class FakeGraphGenerator {
   }
 
   // ==========================================
-  // Dependency / Edge Logic
+  // ID & Dependency / Edge Logic
   // ==========================================
 
-  private resolveDependencies(sourceIdStr: string): EdgeGroup[] {
-    const targetIds = this.config.dependencies[sourceIdStr];
-    if (!targetIds || targetIds.length === 0) {
+  private createCheckId(id: string): CheckId {
+    return { workPlan: this.workPlanId, id: id };
+  }
+
+  private createStageId(id: string): StageId {
+    return { workPlan: this.workPlanId, id: id };
+  }
+
+  private buildEdgesFromIdentifiers(dependencies: Identifier[]): EdgeGroup[] {
+    if (!dependencies || dependencies.length === 0) {
       return [];
     }
 
     // Create a simple AND group of all dependencies, all resolved.
-    const edges: Edge[] = targetIds.map((targetIdStr) => {
-      const targetIdentifier = this.genericIdMap.get(targetIdStr);
-      if (!targetIdentifier) {
-        throw new Error(
-          `Dependency target ID specified but not found in configured IDs: ${targetIdStr}`,
-        );
-      }
-      return this.createResolvedEdge(targetIdentifier);
-    });
+    const edges: Edge[] = dependencies.map((target) =>
+      this.createResolvedEdge(target),
+    );
 
     return [
       {
@@ -556,7 +885,7 @@ export class FakeGraphGenerator {
     return {
       satisfied: true,
       targetVersion: targetV,
-      at: this.nextRevision(), // 'at' must be >= targetVersion
+      at: targetV,
     };
   }
 
@@ -564,43 +893,35 @@ export class FakeGraphGenerator {
   // Complex Sub-Object Generators
   // ==========================================
 
-  private generateActiveStageAttempt(stageIdStr: string): Stage_Attempt[] {
-    // One historical successful attempt
-    const rev = this.nextRevision();
+  private generateStageAttempt(
+    stageIdStr: string,
+    startRev: Revision,
+    endRev: Revision,
+    success: boolean,
+  ): Stage_Attempt[] {
+    const state = success
+      ? StageAttemptState.STAGE_ATTEMPT_STATE_COMPLETE
+      : StageAttemptState.STAGE_ATTEMPT_STATE_INCOMPLETE;
+    const msg = success ? 'Complete' : 'Failed';
+
     const attempt: Stage_Attempt = {
-      state: StageAttemptState.STAGE_ATTEMPT_STATE_COMPLETE,
-      version: rev,
-      processUid: `worker-${faker.string.alphanumeric(8)}:${stageIdStr}:1`,
+      state: state,
+      version: endRev,
+      processUid: `worker-pool-REGION-1:${stageIdStr}:attempt-2`,
       details: [
-        this.createValueFromObj(
-          'type.googleapis.com/turboci.demo.ExecutorLink',
-          {
-            url: faker.internet.url(),
-            label: 'Swarming Task',
-          },
-        ),
+        this.createValueFromObj(TYPE_URL_GENERIC_DATA, {
+          url: faker.internet.url(),
+          label: 'Executor Logs',
+        }),
       ],
       progress: [
-        { msg: 'Initialized', version: rev, details: [] },
-        { msg: 'Running', version: rev, details: [] },
-        { msg: 'Complete', version: rev, details: [] },
+        { msg: 'Scheduled', version: startRev, details: [] },
+        { msg: 'Running', version: startRev, details: [] },
+        { msg: msg, version: endRev, details: [] },
       ],
     };
 
     return [attempt];
-  }
-
-  private generateSampleAssignment(): Stage_Assignment[] {
-    // If there are checks, assign this stage to the first one as a sample.
-    if (this.config.checkIds.length > 0) {
-      return [
-        {
-          target: this.checkIdMap.get(this.config.checkIds[0]),
-          goalState: CheckState.CHECK_STATE_PLANNED,
-        },
-      ];
-    }
-    return [];
   }
 
   private createExecutionPolicyState(): Stage_ExecutionPolicyState {
@@ -626,76 +947,6 @@ export class FakeGraphGenerator {
   // ==========================================
   // Edit and Delta Generators
   // ==========================================
-
-  private generateCheckEdits(
-    idStr: string,
-    checkId: CheckId,
-    realm: string,
-  ): CheckEditView[] {
-    const edits: CheckEditView[] = [];
-    const confEdits = this.config.checkEdits?.filter(
-      (e) => e.checkId === idStr,
-    );
-
-    if (confEdits) {
-      for (const editInfo of confEdits) {
-        const stageId = this.stageIdMap.get(editInfo.stageId);
-        if (!stageId) {
-          // Normally an error, but for fake data gen, skip if not found.
-          continue;
-        }
-
-        const editVersion = this.nextRevision();
-        const checkDelta: CheckDelta = {
-          state: editInfo.state,
-          dependencies: [],
-          options: [],
-          result: [],
-        };
-
-        const editor: Actor = {
-          stageAttempt: {
-            stage: stageId,
-            attemptsIdx: 1,
-          },
-        };
-
-        const edit: Edit = this.createEdit(
-          { check: checkId },
-          realm,
-          editVersion,
-          `State changed to ${checkStateToJSON(editInfo.state)}`,
-          { check: checkDelta },
-          editor,
-        );
-
-        edits.push({ edit: edit, optionData: [] });
-      }
-    }
-    return edits;
-  }
-
-  private generateSampleStageEdit(
-    stageId: StageId,
-    realm: string,
-  ): StageEditView[] {
-    const editVersion = this.nextRevision();
-
-    // An edit that updated policy
-    const delta: StageDelta = {
-      executionPolicies: [this.createExecutionPolicy()],
-    };
-
-    const edit: Edit = this.createEdit(
-      { stage: stageId },
-      realm,
-      editVersion,
-      'Executor validated policies',
-      { stage: delta },
-    );
-
-    return [{ edit: edit }];
-  }
 
   private createEdit(
     forNode: Identifier,

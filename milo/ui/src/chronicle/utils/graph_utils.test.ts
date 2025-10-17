@@ -12,31 +12,164 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { DeepPartial } from '@/proto/turboci/data/build/v1/build_check_options.pb';
+import {
+  Check as CheckId,
+  Stage as StageId,
+  WorkPlan,
+} from '@/proto/turboci/graph/ids/v1/identifier.pb';
+import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
+import { CheckDelta } from '@/proto/turboci/graph/orchestrator/v1/check_delta.pb';
+import { CheckEditView } from '@/proto/turboci/graph/orchestrator/v1/check_edit_view.pb';
 import { CheckKind } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { CheckState } from '@/proto/turboci/graph/orchestrator/v1/check_state.pb';
+import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
+import { EdgeGroup } from '@/proto/turboci/graph/orchestrator/v1/edge_group.pb';
+import { Edit } from '@/proto/turboci/graph/orchestrator/v1/edit.pb';
 import { GraphView as TurboCIGraphView } from '@/proto/turboci/graph/orchestrator/v1/graph_view.pb';
-
-import {
-  FakeGraphGenerator,
-  GraphGenerationConfig,
-} from '../fake_turboci_graph';
+import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
+import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
 
 import { convertTurboCIGraphToNodesAndEdges } from './graph_utils';
+
+const WORKPLAN: WorkPlan = { id: 'workplan-1' };
+
+// Helper to create IDs for manual graph construction in tests.
+function createCheckId(id: string): CheckId {
+  return { workPlan: WORKPLAN, id };
+}
+function createStageId(id: string): StageId {
+  return { workPlan: WORKPLAN, id };
+}
+
+// Helper to create a minimal valid Check object for tests
+function createCheck(params: DeepPartial<Check>): Check {
+  return {
+    dependencies: [],
+    options: [],
+    results: [],
+    ...params,
+  } as Check;
+}
+
+// Helper to create a minimal valid CheckView object for tests
+function createCheckView(params: DeepPartial<CheckView>): CheckView {
+  return {
+    optionData: [],
+    edits: [],
+    results: [],
+    ...params,
+  } as CheckView;
+}
+
+// Helper to create a minimal valid Stage object for tests
+function createStage(params: DeepPartial<Stage>): Stage {
+  return {
+    dependencies: [],
+    attempts: [],
+    assignments: [],
+    continuationGroup: [],
+    ...params,
+  } as Stage;
+}
+
+// Helper to create a minimal valid StageView object for tests
+function createStageView(params: DeepPartial<StageView>): StageView {
+  return {
+    edits: [],
+    ...params,
+  } as StageView;
+}
+
+// Helper to create a minimal valid CheckDelta for tests
+function createCheckDelta(params: DeepPartial<CheckDelta>): CheckDelta {
+  return {
+    dependencies: [],
+    options: [],
+    result: [],
+    ...params,
+  } as CheckDelta;
+}
+
+// Helper to create a minimal valid Edit for tests
+function createEdit(params: DeepPartial<Edit>): Edit {
+  return {
+    transactionalSet: [],
+    reasons: [],
+    ...params,
+  } as Edit;
+}
+
+// Helper to create a minimal valid CheckEditView for tests
+function createCheckEditView(
+  params: DeepPartial<CheckEditView>,
+): CheckEditView {
+  return {
+    optionData: [],
+    ...params,
+  } as CheckEditView;
+}
+
+// Helper to create a minimal valid EdgeGroup for tests
+function createEdgeGroup(params: DeepPartial<EdgeGroup>): EdgeGroup {
+  return {
+    edges: [],
+    groups: [],
+    ...params,
+  } as EdgeGroup;
+}
 
 describe('graph_utils', () => {
   describe('convertTurboCIGraphToNodesAndEdges', () => {
     it('should create nodes and edges correctly for a simple graph', () => {
-      const config: GraphGenerationConfig = {
-        workPlanIdStr: 'workplan-1',
-        checkIds: ['C1', 'C2', 'C3'],
-        stageIds: ['S1'],
-        dependencies: {
-          S1: ['C1', 'C2'],
-          C3: ['C2'],
-        },
+      // Manually construct a graph:
+      // S1 depends on C1, C2
+      // C3 depends on C2
+      const c1Id = createCheckId('C1');
+      const c2Id = createCheckId('C2');
+      const c3Id = createCheckId('C3');
+      const s1Id = createStageId('S1');
+
+      const graph: TurboCIGraphView = {
+        checks: [
+          createCheckView({
+            check: createCheck({
+              identifier: c1Id,
+              kind: CheckKind.CHECK_KIND_SOURCE,
+            }),
+          }),
+          createCheckView({
+            check: createCheck({
+              identifier: c2Id,
+              kind: CheckKind.CHECK_KIND_BUILD,
+            }),
+          }),
+          createCheckView({
+            check: createCheck({
+              identifier: c3Id,
+              kind: CheckKind.CHECK_KIND_TEST,
+              dependencies: [
+                createEdgeGroup({ edges: [{ target: { check: c2Id } }] }),
+              ],
+            }),
+          }),
+        ],
+        stages: [
+          createStageView({
+            stage: createStage({
+              identifier: s1Id,
+              dependencies: [
+                createEdgeGroup({
+                  edges: [
+                    { target: { check: c1Id } },
+                    { target: { check: c2Id } },
+                  ],
+                }),
+              ],
+            }),
+          }),
+        ],
       };
-      const generator = new FakeGraphGenerator(config);
-      const graph = generator.generate();
 
       const { nodes, edges } = convertTurboCIGraphToNodesAndEdges(graph);
 
@@ -69,20 +202,35 @@ describe('graph_utils', () => {
     });
 
     it('should have the right node labels for different check kinds', () => {
-      const config: GraphGenerationConfig = {
-        workPlanIdStr: 'workplan-1',
-        checkIds: ['C1', 'C2', 'C3', 'C4'],
-        stageIds: [],
-        dependencies: {},
-        checkKinds: {
-          C1: CheckKind.CHECK_KIND_BUILD,
-          C2: CheckKind.CHECK_KIND_TEST,
-          C3: CheckKind.CHECK_KIND_SOURCE,
-          C4: CheckKind.CHECK_KIND_ANALYSIS,
-        },
+      const graph: TurboCIGraphView = {
+        checks: [
+          createCheckView({
+            check: createCheck({
+              identifier: createCheckId('C1'),
+              kind: CheckKind.CHECK_KIND_BUILD,
+            }),
+          }),
+          createCheckView({
+            check: createCheck({
+              identifier: createCheckId('C2'),
+              kind: CheckKind.CHECK_KIND_TEST,
+            }),
+          }),
+          createCheckView({
+            check: createCheck({
+              identifier: createCheckId('C3'),
+              kind: CheckKind.CHECK_KIND_SOURCE,
+            }),
+          }),
+          createCheckView({
+            check: createCheck({
+              identifier: createCheckId('C4'),
+              kind: CheckKind.CHECK_KIND_ANALYSIS,
+            }),
+          }),
+        ],
+        stages: [],
       };
-      const generator = new FakeGraphGenerator(config);
-      const graph = generator.generate();
 
       const { nodes } = convertTurboCIGraphToNodesAndEdges(graph);
 
@@ -113,38 +261,42 @@ describe('graph_utils', () => {
       ).toThrow('Invalid CheckView: {"check":{}}');
     });
 
-    it('should create one edit edge for each check', () => {
-      const config: GraphGenerationConfig = {
-        workPlanIdStr: 'workplan-1',
-        checkIds: ['C1'],
-        stageIds: ['S1'],
-        dependencies: {},
-        checkEdits: [
-          {
-            stageId: 'S1',
-            checkId: 'C1',
-            state: CheckState.CHECK_STATE_PLANNING,
-          },
-          {
-            stageId: 'S1',
-            checkId: 'C1',
-            state: CheckState.CHECK_STATE_PLANNED,
-          },
-          {
-            stageId: 'S1',
-            checkId: 'C1',
-            state: CheckState.CHECK_STATE_WAITING,
-          },
-          // Only the last edit will have an edge created
-          {
-            stageId: 'S1',
-            checkId: 'C1',
-            state: CheckState.CHECK_STATE_FINAL,
-          },
+    it('should create edit edges based on latest state change', () => {
+      // S1 edits C1.
+      const c1Id = createCheckId('C1');
+      const s1Id = createStageId('S1');
+
+      const graph: TurboCIGraphView = {
+        stages: [createStageView({ stage: createStage({ identifier: s1Id }) })],
+        checks: [
+          createCheckView({
+            check: createCheck({
+              identifier: c1Id,
+              kind: CheckKind.CHECK_KIND_BUILD,
+            }),
+            edits: [
+              createCheckEditView({
+                edit: createEdit({
+                  editor: { stageAttempt: { stage: s1Id } },
+                  check: createCheckDelta({
+                    state: CheckState.CHECK_STATE_PLANNING,
+                  }),
+                  version: { ts: '100' }, // Older
+                }),
+              }),
+              createCheckEditView({
+                edit: createEdit({
+                  editor: { stageAttempt: { stage: s1Id } },
+                  check: createCheckDelta({
+                    state: CheckState.CHECK_STATE_FINAL,
+                  }),
+                  version: { ts: '200' }, // Newer
+                }),
+              }),
+            ],
+          }),
         ],
       };
-      const generator = new FakeGraphGenerator(config);
-      const graph = generator.generate();
 
       const { edges } = convertTurboCIGraphToNodesAndEdges(graph);
 
@@ -160,21 +312,36 @@ describe('graph_utils', () => {
     });
 
     it('should create both dependency and edit edges between the same source/target nodes', () => {
-      const config: GraphGenerationConfig = {
-        workPlanIdStr: 'workplan-1',
-        checkIds: ['C1'],
-        stageIds: ['S1'],
-        dependencies: { C1: ['S1'] },
-        checkEdits: [
-          {
-            stageId: 'S1',
-            checkId: 'C1',
-            state: CheckState.CHECK_STATE_PLANNING,
-          },
+      // C1 depends on S1.
+      // S1 edits C1.
+      const c1Id = createCheckId('C1');
+      const s1Id = createStageId('S1');
+
+      const graph: TurboCIGraphView = {
+        stages: [createStageView({ stage: createStage({ identifier: s1Id }) })],
+        checks: [
+          createCheckView({
+            check: createCheck({
+              identifier: c1Id,
+              kind: CheckKind.CHECK_KIND_BUILD,
+              dependencies: [
+                createEdgeGroup({ edges: [{ target: { stage: s1Id } }] }),
+              ],
+            }),
+            edits: [
+              createCheckEditView({
+                edit: createEdit({
+                  editor: { stageAttempt: { stage: s1Id } },
+                  check: createCheckDelta({
+                    state: CheckState.CHECK_STATE_FINAL,
+                  }),
+                  version: { ts: '200' },
+                }),
+              }),
+            ],
+          }),
         ],
       };
-      const generator = new FakeGraphGenerator(config);
-      const graph = generator.generate();
 
       const { edges } = convertTurboCIGraphToNodesAndEdges(graph);
 
@@ -186,7 +353,7 @@ describe('graph_utils', () => {
       const editEdge = edges.find((e) => e.id === 'edit-S1-C1');
       expect(editEdge?.source).toBe('S1');
       expect(editEdge?.target).toBe('C1');
-      expect(editEdge?.label).toBe('Planning');
+      expect(editEdge?.label).toBe('Final');
     });
 
     it('should throw an error for an invalid stage', () => {
