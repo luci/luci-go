@@ -620,8 +620,15 @@ message FinalizeWorkUnitRequest {
   // Resource name of the work unit to finalize.
   string name = 1 [ (google.api.field_behavior) = REQUIRED ];
 
-  // The final state to transition the work unit to.
+  // The state to transition the work unit to. This must be
+  // a final state.
   WorkUnit.State state = 2 [ (google.api.field_behavior) = REQUIRED ];
+
+  // A summary of the final state of the work unit, to be displayed on the UI.
+  //
+  // The size of the summary must be equal to or smaller than 4096 bytes in
+  // UTF-8.
+  string summary_markdown = 3;
 }
 
 // A request message for FinalizeWorkUnitDescendants RPC.
@@ -631,12 +638,20 @@ message FinalizeWorkUnitRequest {
 //
 // Due to the large number of descendent work units that might exist, this
 // RPC is not guaranteed to be atomic.
+//
+// Next ID: 5.
 message FinalizeWorkUnitDescendantsRequest {
   // Resource name of the work unit to finalize.
   string name = 1;
 
   // The final state to transition descendant work units to.
   WorkUnit.State state = 2 [ (google.api.field_behavior) = REQUIRED ];
+
+  // A summary of the final state of the work unit, to be displayed on the UI.
+  //
+  // The size of the summary must be equal to or smaller than 4096 bytes in
+  // UTF-8.
+  string summary_markdown = 4;
 
   // Describes the scope to finalize.
   enum FinalizationScope {

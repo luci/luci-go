@@ -29,7 +29,7 @@ option java_multiple_files = true;
 // A process step that contributes results to a root invocation.
 // Work units contain test results, artifacts and exonerations. Work units may
 // also contain other work units and (legacy) invocations.
-// Next ID: 23.
+// Next ID: 25.
 message WorkUnit {
   // The resource name of this work unit.
   // Format: `rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}`
@@ -49,6 +49,25 @@ message WorkUnit {
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE
   ];
+
+  // The type of work unit. This captures the process the work unit is
+  // performing and the infrastructure that is creating it.
+  //
+  // Each infrastructure layer should reserve its own prefix (e.g. TF_, TFC_...)
+  // and document it below to avoid generating conflicts. Reach out to ResultDB
+  // owners if you'd like help updating this comment.
+  //
+  // Known values:
+  // - Android Test Production: ATP_INVOCATION
+  // - Tradefed: TF_MODULE, TF_TEST_RUN
+  // - Tradefed Cluster: TFC_COMMAND, TFC_COMMAND_TASK
+  // - Bazel: G3_BLAZE_INVOCATION, G3_TEST_TARGET, G3_ACTION, G3_MODULE
+  // - Buildbucket: BUILDBUCKET_BUILD
+  // - ResultSink: RDB_STREAM
+  //
+  // Regex: ^[A-Z0-9]+(_[A-Z0-9]+)+$. Limited to 50 characters in length.
+  // Required.
+  string kind = 25;
 
   // The execution state of the work unit.
   enum State {
@@ -103,9 +122,7 @@ message WorkUnit {
     // If you report any test results with a status of `PRECLUDED`, you
     // MUST use this status and indicate what higher-level error
     // precluded their execution (e.g. timeout or loss of system
-    // under test).
-    // TODO(meiring): specify the field where uploaders will indicate
-    // the error.
+    // under test) in the summary_markdown field.
     //
     // If this work unit is forcefully finalized because the `deadline`
     // expired, it will be automatically transitioned to this state as
@@ -126,7 +143,17 @@ message WorkUnit {
 
   // The overall state of the work unit, including any child work units.
   // See also: https://google.aip.dev/216.
+  //
+  // An accompanying human-readable description should be uploaded for FAILED,
+  // CANCELLED and SKIPPED states to `summary_markdown`.
   State state = 22;
+
+  // A summary of the final state of the work unit, to be displayed on the UI.
+  // MUST be escaped prior to rendering on the UI.
+  //
+  // The size of the summary must be equal to or smaller than 4096 bytes in
+  // UTF-8.
+  string summary_markdown = 23;
 
   // Indicates whether the work unit, and its children, are immutable.
   enum FinalizationState {
@@ -272,6 +299,26 @@ message WorkUnit {
   // Once this field is set to a non-empty value, it becomes invariant and may
   // not be changed.
   ModuleIdentifier module_id = 19;
+
+  // The identifier of the module-shard this work unit is running.
+  //
+  // This is used when computing module aggregations. Module aggregations
+  // consider only top-level module work units; a top-level module work unit is
+  // any work unit that sets module_id AND has no ancestor (parent, grandparent
+  // etc.) that sets a module_id (whether it is the same module or not).
+  //
+  // A module is only considered to succeed only if there is at least one SUCCEEDED
+  // or SKIPPED top-level module work unit for each shard key seen.
+  // (Or if no sharding key is reported, there is at least one SUCCEEDED or SKIPPED
+  // top-level module work unit for the module.)
+  //
+  // If sharding is not used, leave blank. Shard keys must be coordinated within
+  // a root invocation-module so that the same shard key refers to the same shard,
+  // wherever it is used.
+  // This field is only used when set on a top-level module work unit.
+  //
+  // Regex: ^[a-z0-9_\-]+$. Limited to 50 characters in length.
+  string module_shard_key = 24;
 
   // Full name of the resource that produced results in this work unit.
   // See also https://aip.dev/122#full-resource-names
