@@ -82,11 +82,16 @@ func ReadFinalizationState(ctx context.Context, id ID) (state pb.RootInvocation_
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/rootinvocations.ReadFinalizationState")
 	defer func() { tracing.End(ts, err) }()
 
+	var legacyState pb.RootInvocation_FinalizationState
 	err = readColumns(ctx, id, map[string]any{
-		"State": &state,
+		"FinalizationState": &state,
+		"State":             &legacyState,
 	})
 	if err != nil {
 		return 0, err
+	}
+	if state == 0 {
+		state = legacyState
 	}
 	return state, nil
 }
@@ -174,6 +179,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 	cols := []string{
 		"RootInvocationId",
 		"SecondaryIndexShardId",
+		"FinalizationState",
 		"State",
 		"Realm",
 		"CreateTime",
@@ -198,14 +204,16 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 	return span.Read(ctx, "RootInvocations", ids.Keys(), cols).Do(func(row *spanner.Row) error {
 		inv := &RootInvocationRow{}
 		var (
-			properties spanutil.Compressed
-			sources    spanutil.Compressed
+			legacyState pb.RootInvocation_FinalizationState
+			properties  spanutil.Compressed
+			sources     spanutil.Compressed
 		)
 
 		dest := []any{
 			&inv.RootInvocationID,
 			&inv.SecondaryIndexShardID,
 			&inv.FinalizationState,
+			&legacyState,
 			&inv.Realm,
 			&inv.CreateTime,
 			&inv.CreatedBy,
@@ -228,6 +236,10 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 
 		if err := b.FromSpanner(row, dest...); err != nil {
 			return err
+		}
+
+		if inv.FinalizationState == 0 {
+			inv.FinalizationState = legacyState
 		}
 
 		if len(properties) > 0 {

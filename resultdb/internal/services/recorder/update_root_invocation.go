@@ -161,11 +161,11 @@ func updateRootInvocationInternal(in *pb.UpdateRootInvocationRequest, originalRo
 		case "finalization_state", "state":
 			// In the case of ACTIVE it should be a No-op.
 			if in.RootInvocation.FinalizationState == pb.RootInvocation_FINALIZING {
+				rootInvocationValues["FinalizationState"] = pb.RootInvocation_FINALIZING
 				rootInvocationValues["State"] = pb.RootInvocation_FINALIZING
 				rootInvocationValues["FinalizeStartTime"] = spanner.CommitTimestamp
 				legacyInvocationValues["State"] = pb.Invocation_FINALIZING
 				legacyInvocationValues["FinalizeStartTime"] = spanner.CommitTimestamp
-				shardRootInvocationValues["State"] = pb.RootInvocation_FINALIZING
 				updatedRootInvRow.FinalizationState = pb.RootInvocation_FINALIZING
 			}
 

@@ -443,11 +443,9 @@ func TestUpdateRootInvocation(t *testing.T) {
 				// Validate RootInvocationShards table.
 				for shardID := range rootInvID.AllShardIDs() {
 					var compressedSources spanutil.Compressed
-					var shardState pb.RootInvocation_FinalizationState
 					var shardRealm string
 					var shardIsSourcesFinal bool
 					err := spanutil.ReadRow(span.Single(ctx), "RootInvocationShards", shardID.Key(), map[string]any{
-						"State":          &shardState,
 						"Realm":          &shardRealm,
 						"Sources":        &compressedSources,
 						"IsSourcesFinal": &shardIsSourcesFinal,
@@ -455,7 +453,6 @@ func TestUpdateRootInvocation(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 					shardSources := &pb.Sources{}
 					assert.Loosely(t, proto.Unmarshal(compressedSources, shardSources), should.BeNil)
-					assert.Loosely(t, shardState, should.Equal(expectedRowCopy.FinalizationState), truth.LineContext())
 					assert.Loosely(t, shardRealm, should.Equal(expectedRowCopy.Realm), truth.LineContext())
 					assert.Loosely(t, shardSources, should.Match(expectedRowCopy.Sources), truth.LineContext())
 					assert.Loosely(t, shardIsSourcesFinal, should.Equal(expectedRowCopy.IsSourcesFinal), truth.LineContext())

@@ -257,7 +257,8 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		"WorkUnitId":             w.ID.WorkUnitID,
 		"ParentWorkUnitId":       w.ParentWorkUnitID,
 		"SecondaryIndexShardId":  w.SecondaryIndexShardID,
-		"State":                  w.FinalizationState,
+		"FinalizationState":      w.FinalizationState,
+		"State":                  pb.WorkUnit_STATE_UNSPECIFIED,
 		"Realm":                  w.Realm,
 		"CreateTime":             w.CreateTime,
 		"CreatedBy":              w.CreatedBy,
@@ -296,7 +297,7 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		"InvocationId":                      w.ID.LegacyInvocationID(),
 		"Type":                              invocations.WorkUnit,
 		"ShardId":                           w.ID.shardID(invocations.Shards),
-		"State":                             w.FinalizationState,
+		"State":                             toInvocationState(w.FinalizationState),
 		"Realm":                             w.Realm,
 		"InvocationExpirationTime":          time.Unix(0, 0), // unused field, but spanner schema enforce it to be not null.
 		"ExpectedTestResultsExpirationTime": w.CreateTime.Add(90 * 24 * time.Hour),

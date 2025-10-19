@@ -113,7 +113,6 @@ func TestWriteRootInvocation(t *testing.T) {
 			shardID := ShardID{RootInvocationID: ID(id), ShardIndex: i}
 			var shardIndex int64
 			var rootInvID ID
-			var finalizationState pb.RootInvocation_FinalizationState
 			var realm string
 			var createTime time.Time
 			var sourcesCmp spanutil.Compressed
@@ -121,7 +120,6 @@ func TestWriteRootInvocation(t *testing.T) {
 			err := spanutil.ReadRow(ctx, "RootInvocationShards", shardID.Key(), map[string]any{
 				"ShardIndex":       &shardIndex,
 				"RootInvocationId": &rootInvID,
-				"State":            &finalizationState,
 				"Realm":            &realm,
 				"CreateTime":       &createTime,
 				"Sources":          &sourcesCmp,
@@ -136,7 +134,6 @@ func TestWriteRootInvocation(t *testing.T) {
 
 			assert.Loosely(t, shardIndex, should.Equal(i))
 			assert.That(t, rootInvID, should.Equal(ID(id)))
-			assert.That(t, finalizationState, should.Equal(row.FinalizationState))
 			assert.That(t, realm, should.Equal(row.Realm))
 			assert.That(t, createTime, should.Match(commitTime))
 			assert.That(t, sources, should.Match(row.Sources))
@@ -212,17 +209,6 @@ func TestFinalizationMethods(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, ri, should.Match(expected))
 
-			// Check RootInvocationShards state is also updated.
-			for i := 0; i < RootInvocationShardCount; i++ {
-				var state pb.RootInvocation_FinalizationState
-				shardID := ShardID{RootInvocationID: rootInvocationID, ShardIndex: i}
-				err := readColumnsFromShard(span.Single(ctx), shardID, map[string]any{
-					"State": &state,
-				})
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, state, should.Equal(pb.RootInvocation_FINALIZING))
-			}
-
 			// Check the legacy invocation state is also updated.
 			state, err := invocations.ReadState(span.Single(ctx), rootInvocationID.LegacyInvocationID())
 			assert.Loosely(t, err, should.BeNil)
@@ -240,17 +226,6 @@ func TestFinalizationMethods(t *testing.T) {
 			ri, err := Read(span.Single(ctx), rootInvocationID)
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, ri, should.Match(expected))
-
-			// Check RootInvocationShards state is also updated.
-			for i := 0; i < RootInvocationShardCount; i++ {
-				var state pb.RootInvocation_FinalizationState
-				shardID := ShardID{RootInvocationID: rootInvocationID, ShardIndex: i}
-				err := readColumnsFromShard(span.Single(ctx), shardID, map[string]any{
-					"State": &state,
-				})
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, state, should.Equal(pb.RootInvocation_FINALIZED))
-			}
 
 			// Check the legacy invocation state is also updated.
 			state, err := invocations.ReadState(span.Single(ctx), rootInvocationID.LegacyInvocationID())

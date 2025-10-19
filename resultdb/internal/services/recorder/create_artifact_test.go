@@ -583,7 +583,7 @@ func TestCreateArtifact(t *testing.T) {
 					testutil.MustApply(ctx, t, spanutil.UpdateMap("WorkUnits", map[string]any{
 						"RootInvocationShardId": wuIDJUnit.RootInvocationShardID(),
 						"WorkUnitId":            wuIDJUnit.WorkUnitID,
-						"State":                 pb.WorkUnit_FINALIZED,
+						"FinalizationState":     pb.WorkUnit_FINALIZED,
 					}))
 					rsp := send(ctx, req)
 					assert.Loosely(t, rsp.Code, should.Equal(http.StatusBadRequest))

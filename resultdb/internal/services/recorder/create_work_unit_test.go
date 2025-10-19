@@ -697,7 +697,7 @@ func TestCreateWorkUnit(t *testing.T) {
 			testutil.MustApply(ctx, t, spanutil.UpdateMap("WorkUnits", map[string]any{
 				"RootInvocationShardId": parentWorkUnitID.RootInvocationShardID(),
 				"WorkUnitId":            parentWorkUnitID.WorkUnitID,
-				"State":                 pb.WorkUnit_FINALIZING,
+				"FinalizationState":     pb.WorkUnit_FINALIZING,
 			}))
 
 			_, err = recorder.CreateWorkUnit(ctx, req)

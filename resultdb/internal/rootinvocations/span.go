@@ -133,6 +133,7 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 	row := map[string]interface{}{
 		"RootInvocationId":      r.RootInvocationID,
 		"SecondaryIndexShardId": r.RootInvocationID.shardID(secondaryIndexShardCount),
+		"FinalizationState":     r.FinalizationState,
 		"State":                 r.FinalizationState,
 		"Realm":                 r.Realm,
 		"CreateTime":            spanner.CommitTimestamp,
@@ -164,7 +165,7 @@ func (r *RootInvocationRow) toLegacyInvocationMutation() *spanner.Mutation {
 		"InvocationId":                      r.RootInvocationID.LegacyInvocationID(),
 		"Type":                              invocations.Root,
 		"ShardId":                           r.RootInvocationID.shardID(invocations.Shards),
-		"State":                             r.FinalizationState,
+		"State":                             toInvocationState(r.FinalizationState),
 		"Realm":                             r.Realm,
 		"InvocationExpirationTime":          time.Unix(0, 0), // unused field, but spanner schema enforce it to be not null.
 		"ExpectedTestResultsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
@@ -197,7 +198,6 @@ func (r *RootInvocationRow) toShardsMutations() []*spanner.Mutation {
 			"RootInvocationShardId": ShardID{RootInvocationID: r.RootInvocationID, ShardIndex: i},
 			"ShardIndex":            i,
 			"RootInvocationId":      r.RootInvocationID,
-			"State":                 r.FinalizationState,
 			"Realm":                 r.Realm,
 			"CreateTime":            spanner.CommitTimestamp,
 			"Sources":               spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
@@ -235,26 +235,27 @@ func (r *RootInvocationRow) ToProto() *pb.RootInvocation {
 	return result
 }
 
-func (r *RootInvocationRow) ToLegacyInvocationProto() *pb.Invocation {
-	var state pb.Invocation_State
-	switch r.FinalizationState {
+func toInvocationState(finalizationState pb.RootInvocation_FinalizationState) pb.Invocation_State {
+	switch finalizationState {
 	case pb.RootInvocation_ACTIVE:
-		state = pb.Invocation_ACTIVE
+		return pb.Invocation_ACTIVE
 	case pb.RootInvocation_FINALIZING:
-		state = pb.Invocation_FINALIZING
+		return pb.Invocation_FINALIZING
 	case pb.RootInvocation_FINALIZED:
-		state = pb.Invocation_FINALIZED
+		return pb.Invocation_FINALIZED
 	default:
-		panic(fmt.Sprintf("unknown root invocation state %s", r.FinalizationState))
+		panic(fmt.Sprintf("unknown root invocation state %s", finalizationState))
 	}
+}
 
+func (r *RootInvocationRow) ToLegacyInvocationProto() *pb.Invocation {
 	var sourceSpec *pb.SourceSpec
 	if r.Sources != nil {
 		sourceSpec = &pb.SourceSpec{Sources: r.Sources}
 	}
 	result := &pb.Invocation{
 		Name:                   r.RootInvocationID.LegacyInvocationID().Name(),
-		State:                  state,
+		State:                  toInvocationState(r.FinalizationState),
 		Realm:                  r.Realm,
 		CreateTime:             pbutil.MustTimestampProto(r.CreateTime),
 		CreatedBy:              r.CreatedBy,
@@ -309,20 +310,14 @@ func IsEtagMatch(r *RootInvocationRow, etag string) (bool, error) {
 // The caller MUST check the root invocation is currently in ACTIVE state, or this
 // may incorrectly overwrite the FinalizeStartTime.
 func MarkFinalizing(id ID) []*spanner.Mutation {
-	ms := make([]*spanner.Mutation, 0, 2+RootInvocationShardCount)
+	ms := make([]*spanner.Mutation, 0, 2)
 	ms = append(ms, spanutil.UpdateMap("RootInvocations", map[string]any{
 		"RootInvocationId":  id,
+		"FinalizationState": pb.RootInvocation_FINALIZING,
 		"State":             pb.RootInvocation_FINALIZING,
 		"LastUpdated":       spanner.CommitTimestamp,
 		"FinalizeStartTime": spanner.CommitTimestamp,
 	}))
-
-	for i := 0; i < RootInvocationShardCount; i++ {
-		ms = append(ms, spanutil.UpdateMap("RootInvocationShards", map[string]any{
-			"RootInvocationShardId": ShardID{RootInvocationID: id, ShardIndex: i},
-			"State":                 pb.RootInvocation_FINALIZING,
-		}))
-	}
 	ms = append(ms, invocations.MarkFinalizing(id.LegacyInvocationID()))
 	return ms
 }
@@ -331,20 +326,14 @@ func MarkFinalizing(id ID) []*spanner.Mutation {
 // The caller MUST check the root invocation is currently in FINALIZING state, or this
 // may incorrectly overwrite the FinalizeTime.
 func MarkFinalized(id ID) []*spanner.Mutation {
-	ms := make([]*spanner.Mutation, 0, 2+RootInvocationShardCount)
+	ms := make([]*spanner.Mutation, 0, 2)
 	ms = append(ms, spanutil.UpdateMap("RootInvocations", map[string]any{
-		"RootInvocationId": id,
-		"State":            pb.RootInvocation_FINALIZED,
-		"LastUpdated":      spanner.CommitTimestamp,
-		"FinalizeTime":     spanner.CommitTimestamp,
+		"RootInvocationId":  id,
+		"FinalizationState": pb.RootInvocation_FINALIZED,
+		"State":             pb.RootInvocation_FINALIZED,
+		"LastUpdated":       spanner.CommitTimestamp,
+		"FinalizeTime":      spanner.CommitTimestamp,
 	}))
-
-	for i := 0; i < RootInvocationShardCount; i++ {
-		ms = append(ms, spanutil.UpdateMap("RootInvocationShards", map[string]any{
-			"RootInvocationShardId": ShardID{RootInvocationID: id, ShardIndex: i},
-			"State":                 pb.RootInvocation_FINALIZED,
-		}))
-	}
 	ms = append(ms, invocations.MarkFinalized(id.LegacyInvocationID()))
 	return ms
 }

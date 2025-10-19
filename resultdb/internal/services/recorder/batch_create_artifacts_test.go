@@ -753,7 +753,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					testutil.MustApply(ctx, t, spanutil.UpdateMap("WorkUnits", map[string]any{
 						"RootInvocationShardId": wuID1.RootInvocationShardID(),
 						"WorkUnitId":            wuID1.WorkUnitID,
-						"State":                 pb.WorkUnit_FINALIZED,
+						"FinalizationState":     pb.WorkUnit_FINALIZED,
 					}))
 					_, err := recorder.BatchCreateArtifacts(ctx, req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))

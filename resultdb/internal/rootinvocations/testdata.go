@@ -242,7 +242,8 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 	ms = append(ms, spanutil.InsertMap("RootInvocations", map[string]any{
 		"RootInvocationId":      r.RootInvocationID,
 		"SecondaryIndexShardId": r.SecondaryIndexShardID,
-		"State":                 r.FinalizationState,
+		"FinalizationState":     r.FinalizationState,
+		"State":                 pb.RootInvocation_STATE_UNSPECIFIED,
 		"Realm":                 r.Realm,
 		"CreateTime":            r.CreateTime,
 		"CreatedBy":             r.CreatedBy,
@@ -268,7 +269,6 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 			"RootInvocationShardId": ShardID{RootInvocationID: r.RootInvocationID, ShardIndex: i},
 			"ShardIndex":            i,
 			"RootInvocationId":      r.RootInvocationID,
-			"State":                 r.FinalizationState,
 			"Realm":                 r.Realm,
 			"CreateTime":            r.CreateTime,
 			"Sources":               spanutil.Compressed(pbutil.MustMarshal(r.Sources)),

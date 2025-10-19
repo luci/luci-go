@@ -81,11 +81,16 @@ func ReadFinalizationState(ctx context.Context, id ID) (state pb.WorkUnit_Finali
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadFinalizationState")
 	defer func() { tracing.End(ts, err) }()
 
+	var legacyState pb.WorkUnit_FinalizationState
 	err = readColumns(ctx, id, map[string]any{
-		"State": &state,
+		"FinalizationState": &state,
+		"State":             &legacyState,
 	})
 	if err != nil {
 		return 0, err
+	}
+	if state == 0 {
+		state = legacyState
 	}
 	return state, nil
 }
@@ -167,14 +172,18 @@ func ReadFinalizationStates(ctx context.Context, ids []ID) (states []pb.WorkUnit
 	defer func() { tracing.End(ts, err) }()
 
 	var b spanutil.Buffer
-	columns := []string{"State"}
+	columns := []string{"FinalizationState", "State"}
 	parseRow := func(r *spanner.Row) (ID, pb.WorkUnit_FinalizationState, error) {
 		var rootInvocationShardID string
 		var workUnitID string
 		var state pb.WorkUnit_FinalizationState
-		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &state)
+		var legacyState pb.WorkUnit_FinalizationState
+		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &state, &legacyState)
 		if err != nil {
 			return ID{}, pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED, err
+		}
+		if state == 0 {
+			state = legacyState
 		}
 		return IDFromRowID(rootInvocationShardID, workUnitID), state, nil
 	}
@@ -285,14 +294,19 @@ func ReadTestResultInfos(ctx context.Context, ids []ID) (results map[ID]TestResu
 		var rootInvocationShardID string
 		var workUnitID string
 		var finalizationState pb.WorkUnit_FinalizationState
+		var legacyState pb.WorkUnit_FinalizationState
 		var realm string
 		var moduleName spanner.NullString
 		var moduleScheme spanner.NullString
 		var moduleVariant *pb.Variant
 
-		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &finalizationState, &realm, &moduleName, &moduleScheme, &moduleVariant)
+		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &finalizationState, &legacyState, &realm, &moduleName, &moduleScheme, &moduleVariant)
 		if err != nil {
 			return ID{}, TestResultInfo{}, err
+		}
+
+		if finalizationState == 0 {
+			finalizationState = legacyState
 		}
 
 		var moduleID *pb.ModuleIdentifier
@@ -316,7 +330,8 @@ func ReadTestResultInfos(ctx context.Context, ids []ID) (results map[ID]TestResu
 		return IDFromRowID(rootInvocationShardID, workUnitID), result, nil
 	}
 
-	resultMap, err := readRows(ctx, ids, []string{"State", "Realm", "ModuleName", "ModuleScheme", "ModuleVariant"}, parseRow)
+	columns := []string{"FinalizationState", "State", "Realm", "ModuleName", "ModuleScheme", "ModuleVariant"}
+	resultMap, err := readRows(ctx, ids, columns, parseRow)
 	if err != nil {
 		return nil, err
 	}
@@ -453,6 +468,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			w.WorkUnitId,
 			w.ParentWorkUnitId,
 			w.SecondaryIndexShardId,
+			w.FinalizationState,
 			w.State,
 			w.Realm,
 			w.CreateTime,
@@ -507,6 +523,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 		var (
 			rootInvocationShardID string
 			workUnitID            string
+			legacyState           pb.WorkUnit_FinalizationState
 			properties            spanutil.Compressed
 			instructions          spanutil.Compressed
 			extendedProperties    spanutil.Compressed
@@ -523,6 +540,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			&wu.ParentWorkUnitID,
 			&wu.SecondaryIndexShardID,
 			&wu.FinalizationState,
+			&legacyState,
 			&wu.Realm,
 			&wu.CreateTime,
 			&wu.CreatedBy,
@@ -551,6 +569,10 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			return errors.Fmt("read spanner row for work unit: %w", err)
 		}
 		wu.ID = IDFromRowID(rootInvocationShardID, workUnitID)
+
+		if wu.FinalizationState == 0 {
+			wu.FinalizationState = legacyState
+		}
 
 		if moduleName.Valid != moduleScheme.Valid {
 			panic("invariant violated: moduleName.Valid == moduleScheme.Valid, is there data corruption?")
@@ -718,7 +740,7 @@ func QueryFinalizerCandidates(ctx context.Context, rootInvID rootinvocations.ID,
 		FROM WorkUnits
 		WHERE RootInvocationShardId IN UNNEST(@ids)
 			AND FinalizerCandidateTime IS NOT NULL
-			AND State = @finalizing
+			AND (CASE	WHEN FinalizationState <> 0 THEN FinalizationState ELSE State	END) = @finalizing
 		ORDER BY 1,2
 		LIMIT @limit
 	`)
@@ -764,20 +786,20 @@ func ReadyToFinalize(ctx context.Context, ids IDSet, ignoreIDs IDSet) (readyIDs 
 	WHERE
 		STRUCT(wu.RootInvocationShardId, wu.WorkUnitId) IN UNNEST(@ids)
 		-- Must be FINALIZING to be ready for finalization.
-		AND wu.State = @finalizing
+		AND (CASE	WHEN wu.FinalizationState <> 0 THEN wu.FinalizationState ELSE wu.State END) = @finalizing
 		-- Must not exist any child work unit that is NOT in the 'Finalized' state.
 		-- Ignore children in ignoreIDs list.
 		AND NOT EXISTS (
 			SELECT 1
 			FROM ChildWorkUnits AS c
 			JOIN WorkUnits AS cwu
-				ON c.ChildRootInvocationShardId = cwu.RootInvocationShardId
-				AND c.ChildWorkUnitId = cwu.WorkUnitId
+				ON cwu.RootInvocationShardId = c.ChildRootInvocationShardId
+				AND cwu.WorkUnitId = c.ChildWorkUnitId
 			WHERE
 				c.RootInvocationShardId = wu.RootInvocationShardId
 				AND c.WorkUnitId = wu.WorkUnitId
 				AND STRUCT(cwu.RootInvocationShardId, cwu.WorkUnitId) NOT IN UNNEST(@ignoreIDs)
-				AND cwu.State != @finalized
+				AND (CASE	WHEN cwu.FinalizationState <> 0 THEN cwu.FinalizationState ELSE cwu.State	END) != @finalized
 		)
 	`)
 	// Struct to use as Spanner Query Parameter.

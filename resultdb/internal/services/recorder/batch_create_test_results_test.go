@@ -376,7 +376,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 				testutil.MustApply(ctx, t, spanner.UpdateMap("WorkUnits", map[string]any{
 					"RootInvocationShardId": wuID2.RootInvocationShardID().RowID(),
 					"WorkUnitId":            wuID2.WorkUnitID,
-					"State":                 pb.WorkUnit_FINALIZING,
+					"FinalizationState":     pb.WorkUnit_FINALIZING,
 				}))
 
 				_, err := recorder.BatchCreateTestResults(ctx, req)

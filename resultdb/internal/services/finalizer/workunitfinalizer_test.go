@@ -160,8 +160,8 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 					t.Run("root invocation is active", func(t *ftt.Test) {
 						// update root invocation state to active
 						testutil.MustApply(ctx, t, spanutil.UpdateMap("RootInvocations", map[string]any{
-							"RootInvocationId": rootInvID,
-							"State":            pb.RootInvocation_ACTIVE,
+							"RootInvocationId":  rootInvID,
+							"FinalizationState": pb.RootInvocation_ACTIVE,
 						}))
 
 						err := sweepWorkUnitsForFinalization(ctx, rootInvID, seq, opts)

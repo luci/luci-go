@@ -151,6 +151,7 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 		"WorkUnitId":            w.ID.WorkUnitID,
 		"ParentWorkUnitId":      w.ParentWorkUnitID,
 		"SecondaryIndexShardId": w.ID.shardID(secondaryIndexShardCount),
+		"FinalizationState":     w.FinalizationState,
 		"State":                 w.FinalizationState,
 		"Realm":                 w.Realm,
 		"CreateTime":            spanner.CommitTimestamp,
@@ -217,7 +218,7 @@ func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *span
 		"InvocationId":                      w.ID.LegacyInvocationID(),
 		"Type":                              invocations.WorkUnit,
 		"ShardId":                           w.ID.shardID(invocations.Shards),
-		"State":                             w.FinalizationState,
+		"State":                             toInvocationState(w.FinalizationState),
 		"Realm":                             w.Realm,
 		"InvocationExpirationTime":          time.Unix(0, 0), // unused field, but spanner schema enforce it to be not null.
 		"ExpectedTestResultsExpirationTime": opts.ExpectedTestResultsExpirationTime,
@@ -258,21 +259,23 @@ func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *span
 	return spanutil.InsertMap("Invocations", row)
 }
 
-func (w *WorkUnitRow) ToLegacyInvocationProto() *pb.Invocation {
-	var state pb.Invocation_State
-	switch w.FinalizationState {
+func toInvocationState(finalizationState pb.WorkUnit_FinalizationState) pb.Invocation_State {
+	switch finalizationState {
 	case pb.WorkUnit_ACTIVE:
-		state = pb.Invocation_ACTIVE
+		return pb.Invocation_ACTIVE
 	case pb.WorkUnit_FINALIZING:
-		state = pb.Invocation_FINALIZING
+		return pb.Invocation_FINALIZING
 	case pb.WorkUnit_FINALIZED:
-		state = pb.Invocation_FINALIZED
+		return pb.Invocation_FINALIZED
 	default:
-		panic(fmt.Sprintf("unknown work unit state %s", w.FinalizationState))
+		panic(fmt.Sprintf("unknown work unit state %s", finalizationState))
 	}
+}
+
+func (w *WorkUnitRow) ToLegacyInvocationProto() *pb.Invocation {
 	ret := &pb.Invocation{
 		Name:                   w.ID.LegacyInvocationID().Name(),
-		State:                  state,
+		State:                  toInvocationState(w.FinalizationState),
 		Realm:                  w.Realm,
 		ModuleId:               w.ModuleID,
 		CreateTime:             pbutil.MustTimestampProto(w.CreateTime),
@@ -326,6 +329,7 @@ func MarkFinalizing(id ID) []*spanner.Mutation {
 	ms = append(ms, spanutil.UpdateMap("WorkUnits", map[string]any{
 		"RootInvocationShardId":  id.RootInvocationShardID(),
 		"WorkUnitId":             id.WorkUnitID,
+		"FinalizationState":      pb.WorkUnit_FINALIZING,
 		"State":                  pb.WorkUnit_FINALIZING,
 		"LastUpdated":            spanner.CommitTimestamp,
 		"FinalizeStartTime":      spanner.CommitTimestamp,
@@ -343,6 +347,7 @@ func MarkFinalized(id ID) []*spanner.Mutation {
 	ms = append(ms, spanutil.UpdateMap("WorkUnits", map[string]any{
 		"RootInvocationShardId":  id.RootInvocationShardID(),
 		"WorkUnitId":             id.WorkUnitID,
+		"FinalizationState":      pb.WorkUnit_FINALIZED,
 		"State":                  pb.WorkUnit_FINALIZED,
 		"LastUpdated":            spanner.CommitTimestamp,
 		"FinalizeTime":           spanner.CommitTimestamp,

@@ -85,6 +85,7 @@ func updateWorkUnitInternal(in *pb.UpdateWorkUnitRequest, curWorkUnitRow *workun
 		// TODO(meiring): Remove "state" here once clients have updated to the new field name.
 		case "finalization_state", "state":
 			if in.WorkUnit.FinalizationState == pb.WorkUnit_FINALIZING {
+				values["FinalizationState"] = pb.WorkUnit_FINALIZING
 				values["State"] = pb.WorkUnit_FINALIZING
 				values["FinalizeStartTime"] = spanner.CommitTimestamp
 				values["FinalizerCandidateTime"] = spanner.CommitTimestamp

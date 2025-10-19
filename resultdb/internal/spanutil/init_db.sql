@@ -37,7 +37,21 @@ CREATE TABLE RootInvocations (
   --   may still be mutable.
   -- - Finalized (3): the root invocation and all directly and indirectly
   --   contained work units (and invocations) are immutable.
-  -- Referred to as 'finalization_state' in protos.
+  --
+  -- This will always match the root work unit finalization state,
+  -- but it is replicated here for convenience.
+  FinalizationState INT64 NOT NULL DEFAULT(0),
+
+  -- Root invocation execution state. One of:
+  -- - Pending (1)
+  -- - Running (2)
+  -- - Succeeded (3)
+  -- - Failed (4)
+  -- - Cancelled (5)
+  -- - Skipped (6)
+  --
+  -- This will always match the root work unit's state,
+  -- but it is replicated here for convenience.
   State INT64 NOT NULL,
 
   -- Security realm this root invocation belongs to.
@@ -205,12 +219,8 @@ CREATE TABLE RootInvocationShards (
   -- hotspotting.
   RootInvocationId STRING(MAX) NOT NULL,
 
-  -- Replica of root invocation finalization state, to avoid hotspotting the
-  -- root invocation in operations that don't need the whole root invocation,
-  -- such as test result uploads or work unit reads.
-  --
-  -- See RootInvocations.FinalizationState for more information.
-  State INT64 NOT NULL,
+  -- To be removed.
+  State INT64 NOT NULL DEFAULT(0),
 
   -- Replicate of root invocation realm, to avoid hotspotting the root invocation
   -- in operations that don't need the whole root invocation, such as test result
@@ -277,7 +287,15 @@ CREATE TABLE WorkUnits (
   --   may still be mutable.
   -- - Finalized (3): the work unit and all directly and indirectly
   --   included work units (and invocations) are immutable.
-  -- Referred to as 'finalization_state' in protos.
+  FinalizationState INT64 NOT NULL DEFAULT(0),
+
+  -- Work unit execution state. One of:
+  -- - Pending (1)
+  -- - Running (2)
+  -- - Succeeded (3)
+  -- - Failed (4)
+  -- - Cancelled (5)
+  -- - Skipped (6)
   State INT64 NOT NULL,
 
   -- Security realm this work unit (including its test results, exonerations and

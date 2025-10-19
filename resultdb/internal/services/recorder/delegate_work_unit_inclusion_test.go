@@ -125,7 +125,7 @@ func TestDelegateWorkUnitInclusion(t *testing.T) {
 			testutil.MustApply(ctx, t, spanutil.UpdateMap("WorkUnits", map[string]any{
 				"RootInvocationShardId": workUnitID.RootInvocationShardID(),
 				"WorkUnitId":            workUnitID.WorkUnitID,
-				"State":                 pb.WorkUnit_FINALIZING,
+				"FinalizationState":     pb.WorkUnit_FINALIZING,
 			}))
 
 			_, err = recorder.DelegateWorkUnitInclusion(ctx, req)
