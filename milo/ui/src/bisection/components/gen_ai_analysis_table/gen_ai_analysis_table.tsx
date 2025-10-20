@@ -70,15 +70,15 @@ export function GenAiAnalysisTable({ result }: GenAiAnalysisTableProps) {
       <Table className="genai-table" size="small">
         <TableHead>
           <TableRow>
-            <TableCell>Suspect CL</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell>Start Time</TableCell>
-            <TableCell>End Time</TableCell>
+            <TableCell sx={{ whiteSpace: 'nowrap' }}>Suspect CL</TableCell>
+            <TableCell sx={{ whiteSpace: 'nowrap' }}>Status</TableCell>
+            <TableCell sx={{ whiteSpace: 'nowrap' }}>Start Time</TableCell>
+            <TableCell sx={{ whiteSpace: 'nowrap' }}>End Time</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           <TableRow>
-            <TableCell>
+            <TableCell sx={{ whiteSpace: 'nowrap' }}>
               <Link
                 href={suspect.reviewUrl}
                 target="_blank"
@@ -88,11 +88,21 @@ export function GenAiAnalysisTable({ result }: GenAiAnalysisTableProps) {
                 {suspect.reviewTitle}
               </Link>
             </TableCell>
-            <TableCell>
+            <TableCell sx={{ whiteSpace: 'nowrap' }}>
               <AnalysisStatusInfo status={result.status}></AnalysisStatusInfo>
             </TableCell>
-            <TableCell>{getFormattedTimestamp(startTime)}</TableCell>
-            <TableCell>{getFormattedTimestamp(endTime)}</TableCell>
+            <TableCell sx={{ whiteSpace: 'nowrap' }}>
+              {getFormattedTimestamp(startTime)}
+            </TableCell>
+            <TableCell sx={{ whiteSpace: 'nowrap' }}>
+              {getFormattedTimestamp(endTime)}
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell colSpan={4} sx={{ whiteSpace: 'pre-wrap' }}>
+              <b>Justification:</b>
+              <div style={{ paddingTop: '5px' }}>{suspect.justification}</div>
+            </TableCell>
           </TableRow>
         </TableBody>
       </Table>

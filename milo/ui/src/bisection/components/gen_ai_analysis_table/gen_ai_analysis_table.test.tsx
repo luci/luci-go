@@ -90,6 +90,7 @@ describe('<GenAiAnalysisTable />', () => {
     const suspectReviewLink = screen.getByRole('link');
     expect(suspectReviewLink.getAttribute('href')).toBe(mockSuspect.reviewUrl);
     expect(screen.getByText(mockSuspect.reviewTitle)).toBeInTheDocument();
+    expect(screen.getByText(mockSuspect.justification)).toBeInTheDocument();
 
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
@@ -110,5 +111,6 @@ describe('<GenAiAnalysisTable />', () => {
     const suspectReviewLink = screen.getByRole('link');
     expect(suspectReviewLink.getAttribute('href')).toBe(mockSuspect.reviewUrl);
     expect(screen.getByText(mockSuspect.reviewTitle)).toBeInTheDocument();
+    expect(screen.getByText(mockSuspect.justification)).toBeInTheDocument();
   });
 });

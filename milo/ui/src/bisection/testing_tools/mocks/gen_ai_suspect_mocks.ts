@@ -29,5 +29,6 @@ export function createMockGenAiSuspect(verfied: boolean) {
     verificationDetails: {
       status: 'Vindicated',
     },
+    justification: 'this is a justification',
   });
 }
