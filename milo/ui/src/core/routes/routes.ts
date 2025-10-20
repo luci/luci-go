@@ -21,6 +21,7 @@ import type { RouteObject } from 'react-router';
 import { authRoutes } from '@/authdb/routes';
 import { chronicleRoutes } from '@/chronicle/routes';
 import { clustersRoutes } from '@/clusters/routes';
+import { crystalBallRoutes } from '@/crystal_ball/routes';
 import { fleetRoutes } from '@/fleet/routes';
 import { swarmingRoutes } from '@/swarming/routes';
 import { testInvestigationRoutes } from '@/test_investigation/routes';
@@ -313,6 +314,10 @@ export const routes: RouteObject[] = [
               import('@/test_verdict/pages/invocation_page/details_tab'),
           },
         ],
+      },
+      {
+        path: 'crystal-ball',
+        children: crystalBallRoutes,
       },
     ],
   },
