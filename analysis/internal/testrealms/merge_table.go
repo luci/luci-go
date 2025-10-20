@@ -82,8 +82,8 @@ func runDMLMerge(ctx context.Context, client *bigquery.Client) error {
 					LOWER(ANY_VALUE(test_id_structured).case_name) as case_name
 				) as test_id_structured_lower,
 				-- Select test name, preferring to take it from rows that have it set.
-				ANY_VALUE(test_metadata.name HAVING MAX COALESCE(IF(test_metadata.name <> '', 10, 0), 0)) as test_name,
-				LOWER(ANY_VALUE(test_metadata.name HAVING MAX COALESCE(IF(test_metadata.name <> '', 10, 0), 0))) as test_name_lower,
+				ANY_VALUE(test_metadata.name HAVING MAX COALESCE(LENGTH(test_metadata.name), 0)) as test_name,
+				LOWER(ANY_VALUE(test_metadata.name HAVING MAX COALESCE(LENGTH(test_metadata.name), 0))) as test_name_lower,
 			  -- Use partition time to determine the last seen (retention) time, not the insert time, as all data
 				-- retention intervals are based on partition time.
 				MAX(partition_time) as last_seen
@@ -98,10 +98,10 @@ func runDMLMerge(ctx context.Context, client *bigquery.Client) error {
 		ON T.project = S.project AND T.test_id = S.test_id AND T.realm = S.realm
 		-- Row in source is newer than target, update.
 		WHEN MATCHED AND S.last_seen > T.last_seen THEN
-			UPDATE SET T.last_seen = S.last_seen
+			UPDATE SET T.last_seen = S.last_seen, T.test_name = S.test_name, T.test_name_lower = S.test_name_lower
 		-- Row in source that does not exist in target. Insert.
 		WHEN NOT MATCHED BY TARGET THEN
-			INSERT (project, test_id, realm, test_id_lower, test_id_structured, test_id_structured_lower, test_metadata, last_seen) VALUES (S.project, S.test_id, S.realm, S.test_id_lower, S.test_id_structured, S.test_id_structured_lower, S.test_metadata, S.last_seen)
+			INSERT (project, test_id, realm, test_id_lower, test_id_structured, test_id_structured_lower, test_name, test_name_lower, last_seen) VALUES (S.project, S.test_id, S.realm, S.test_id_lower, S.test_id_structured, S.test_id_structured_lower, S.test_name, S.test_name_lower, S.last_seen)
 		-- Delete tests which have not been seen within the last 90 days.
 		WHEN NOT MATCHED BY SOURCE AND T.last_seen < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY) THEN
 			DELETE;
