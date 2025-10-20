@@ -904,3 +904,138 @@ func TestWorkUnitUpdateRequests(t *testing.T) {
 		})
 	})
 }
+
+func TestReadDeadlineExpired(t *testing.T) {
+	ftt.Run("ReadDeadlineExpired", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+
+		rootInvID := rootinvocations.ID("root-inv-id")
+		rootInvID2 := rootinvocations.ID("root-inv-id2")
+
+		// Create a root invocation and work units.
+		var ms []*spanner.Mutation
+		ms = append(ms, rootinvocations.InsertForTesting(rootinvocations.NewBuilder(rootInvID).Build())...)
+		ms = append(ms, rootinvocations.InsertForTesting(rootinvocations.NewBuilder(rootInvID2).Build())...)
+
+		ms = append(ms, InsertForTesting(NewBuilder(rootInvID, "root").Build())...)
+		ms = append(ms, InsertForTesting(NewBuilder(rootInvID2, "root").Build())...)
+
+		now := time.Now()
+		past := now.Add(-10 * time.Minute)
+		future := now.Add(10 * time.Minute)
+
+		wuExpired1 := NewBuilder(rootInvID, "expired1").WithDeadline(past).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
+		wuExpired2 := NewBuilder(rootInvID, "expired2").WithDeadline(past).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
+		wuUnexpired1 := NewBuilder(rootInvID, "unexpired1").WithDeadline(future).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
+		wuFinalized1 := NewBuilder(rootInvID, "finalized1").WithDeadline(past).WithFinalizationState(pb.WorkUnit_FINALIZED).Build()
+		wuExpiredOtherRoot := NewBuilder(rootInvID2, "expired_other_root").WithDeadline(past).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
+
+		ms = append(ms, InsertForTesting(wuExpired1)...)
+		ms = append(ms, InsertForTesting(wuExpired2)...)
+		ms = append(ms, InsertForTesting(wuUnexpired1)...)
+		ms = append(ms, InsertForTesting(wuFinalized1)...)
+
+		ms = append(ms, InsertForTesting(wuExpiredOtherRoot)...)
+
+		testutil.MustApply(ctx, t, ms...)
+
+		// The sort order is based on the RootInvocationShardId.
+		expectedEntries := []DeadlineExpiredEntry{
+			{
+				ID:             wuExpiredOtherRoot.ID,
+				ActiveDeadline: wuExpiredOtherRoot.Deadline,
+				Realm:          wuExpiredOtherRoot.Realm,
+			},
+			{
+				ID:             wuExpired1.ID,
+				ActiveDeadline: wuExpired1.Deadline,
+				Realm:          wuExpired1.Realm,
+			},
+			{
+				ID:             wuExpired2.ID,
+				ActiveDeadline: wuExpired2.Deadline,
+				Realm:          wuExpired2.Realm,
+			},
+		}
+		t.Run("read expired work units", func(t *ftt.Test) {
+			opts := ReadDeadlineExpiredOptions{
+				ShardIndex: 0,
+				ShardCount: 1,
+				Limit:      100,
+			}
+			entries, err := ReadDeadlineExpired(span.Single(ctx), opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, entries, should.Match(expectedEntries))
+		})
+
+		t.Run("limit works", func(t *ftt.Test) {
+			opts := ReadDeadlineExpiredOptions{
+				ShardIndex: 0,
+				ShardCount: 1,
+				Limit:      2,
+			}
+			entries, err := ReadDeadlineExpired(span.Single(ctx), opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, entries, should.Match(expectedEntries[:2]))
+		})
+
+		t.Run("sharding works", func(t *ftt.Test) {
+			opts := ReadDeadlineExpiredOptions{
+				ShardIndex: 0,
+				ShardCount: 2,
+				Limit:      100,
+			}
+			entries, err := ReadDeadlineExpired(span.Single(ctx), opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, entries, should.HaveLength(1))
+			assert.Loosely(t, entries[0].ID, should.Equal(wuExpiredOtherRoot.ID))
+
+			opts.ShardIndex = 1
+			entries, err = ReadDeadlineExpired(span.Single(ctx), opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, entries, should.HaveLength(2))
+			assert.Loosely(t, entries[0].ID, should.Equal(wuExpired1.ID))
+			assert.Loosely(t, entries[1].ID, should.Equal(wuExpired2.ID))
+		})
+	})
+}
+
+func TestRootInvocationShardShardKey(t *testing.T) {
+	ftt.Run("rootInvocationShardShardKey", t, func(t *ftt.Test) {
+		mustShard := func(i, count int) string {
+			key, err := rootInvocationShardShardKey(i, count)
+			assert.Loosely(t, err, should.BeNil)
+			return key
+		}
+		t.Run("count of 1", func(t *ftt.Test) {
+			assert.That(t, mustShard(0, 1), should.Equal(""))
+			assert.That(t, mustShard(1, 1), should.Equal("ffffffff~"))
+		})
+		t.Run("count of 10", func(t *ftt.Test) {
+			var keys []string
+			for i := 0; i <= 10; i++ {
+				keys = append(keys, mustShard(i, 10))
+			}
+			expectedKeys := []string{
+				"",
+				"19999998~",
+				"33333332~",
+				"4ccccccb~",
+				"66666665~",
+				"7fffffff~",
+				"99999998~",
+				"b3333332~",
+				"cccccccb~",
+				"e6666665~",
+				"ffffffff~",
+			}
+			assert.That(t, keys, should.Match(expectedKeys))
+		})
+		t.Run("count of many", func(t *ftt.Test) {
+			assert.That(t, mustShard(0, 1024), should.Equal(""))
+			assert.That(t, mustShard(1, 1024), should.Equal("003fffff~"))
+			assert.That(t, mustShard(512, 1024), should.Equal("7fffffff~"))
+			assert.That(t, mustShard(1024, 1024), should.Equal("ffffffff~"))
+		})
+	})
+}

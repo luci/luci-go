@@ -16,6 +16,8 @@ package workunits
 
 import (
 	"context"
+	"encoding/binary"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -845,4 +847,108 @@ func ReadyToFinalize(ctx context.Context, ids IDSet, ignoreIDs IDSet) (readyIDs 
 		return nil, err
 	}
 	return readyIDs, nil
+}
+
+// DeadlineExpiredEntry represents a work unit which is overdue for finalization.
+type DeadlineExpiredEntry struct {
+	ID ID
+	// The time at which the work unit became overdue.
+	ActiveDeadline time.Time
+	Realm          string
+}
+
+// DeadlineReadDeadlineExpiredOptionsExpiredOptions specifies options for querying work units with an expired deadline.
+type ReadDeadlineExpiredOptions struct {
+	// The number of shards to split the work units into.
+	ShardCount int
+	// The index of the shard to read.
+	ShardIndex int
+	// The maximum number of work units to read.
+	Limit int
+}
+
+// ReadDeadlineExpired reads work units which are overdue for finalization.
+func ReadDeadlineExpired(ctx context.Context, opts ReadDeadlineExpiredOptions) ([]DeadlineExpiredEntry, error) {
+	startKey, err := rootInvocationShardShardKey(opts.ShardIndex, opts.ShardCount)
+	if err != nil {
+		return nil, err
+	}
+	endKey, err := rootInvocationShardShardKey(opts.ShardIndex+1, opts.ShardCount)
+	if err != nil {
+		return nil, err
+	}
+
+	// Select the shards with overdue work units.
+	st := spanner.NewStatement(`
+		SELECT RootInvocationShardId, WorkUnitId, ActiveDeadline, Realm
+		FROM WorkUnits@{FORCE_INDEX=WorkUnitsByActiveDeadline, spanner_emulator.disable_query_null_filtered_index_check=true}
+		WHERE RootInvocationShardId >= @startKey
+		  AND RootInvocationShardId < @endKey
+			AND ActiveDeadline < CURRENT_TIMESTAMP()
+		ORDER BY RootInvocationShardId, WorkUnitId
+		LIMIT @limit
+	`)
+	st.Params["startKey"] = startKey
+	st.Params["endKey"] = endKey
+	st.Params["limit"] = opts.Limit
+
+	var results []DeadlineExpiredEntry
+	err = spanutil.Query(ctx, st, func(row *spanner.Row) error {
+		var id rootinvocations.ShardID
+		var wuID string
+		var activeDeadline time.Time
+		var realm string
+		if err := spanutil.FromSpanner(row, &id, &wuID, &activeDeadline, &realm); err != nil {
+			return err
+		}
+		results = append(results, DeadlineExpiredEntry{
+			ID:             IDFromRowID(id.RowID(), wuID),
+			ActiveDeadline: activeDeadline,
+			Realm:          realm,
+		})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+// rootInvocationShardShardKey calculates a shard start or end point
+// in the root invocation shard ID key space.
+//
+// Usage: the key range from rootInvocationShardShardKey(i, N) inclusive to rootInvocationShardShardKey(i+i, N)
+// exclusive will contain approximately 1/N of all root invocation shards, where 0 <= i < N.
+func rootInvocationShardShardKey(i, count int) (string, error) {
+	if count < 0 {
+		return "", errors.Fmt("count (%v) must be non-negative", count)
+	}
+	if i < 0 || i > count {
+		return "", errors.Fmt("i (%v) out of range, must be between 0 and count (%v) (inclusive)", i, count)
+	}
+	if i == 0 {
+		// The first shard key is always empty, this is interpreted as
+		// the start of the keyspace by Spanner.
+		return "", nil
+	}
+	// 32 bits keyspace size.
+	keySpaceSize := uint64(1 << 32)
+
+	// Identify the split point between two partitions.
+	// split = keyspaceSize * i / count
+	split := (keySpaceSize * uint64(i)) / uint64(count)
+
+	// Subtract one to adjust for the upper bound being inclusive
+	// and not exclusive. (e.g. the last split should be (1 << 32) - 1,
+	// which is ffffffff in hexadecimal,  not (1 << 32),
+	// which is a "100000000" in hexadecimal).
+	split -= 1
+
+	// Format the 4-byte shardKey as an 8-character hex string.
+	// Use an end key of the form "ffffffff~" so that actual keys
+	// like "ffffffff:some-root-invocation" are included in the range,
+	// as "~" appears after ":" in a string sort.
+	var shardKeyBytes [4]byte
+	binary.BigEndian.PutUint32(shardKeyBytes[:], uint32(split))
+	return fmt.Sprintf("%x~", shardKeyBytes), nil
 }

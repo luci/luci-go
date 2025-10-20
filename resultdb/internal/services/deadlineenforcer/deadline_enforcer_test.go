@@ -53,17 +53,27 @@ func TestDeadlineEnforcer(t *testing.T) {
 		past := clock.Now(ctx).Add(-10 * time.Minute)
 		future := clock.Now(ctx).Add(10 * time.Minute)
 
+		runEnforcer := func() {
+			// Run legacy enforcer.
+			s, err := invocations.CurrentMaxShard(ctx)
+			assert.Loosely(t, err, should.BeNil)
+			for i := 0; i < s+1; i++ {
+				assert.Loosely(t, enforceOneShardLegacy(ctx, i), should.BeNil)
+			}
+
+			// Run new enforcer.
+			for i := 0; i < enforcerShardCount; i++ {
+				assert.Loosely(t, enforceOneShard(ctx, i), should.BeNil)
+			}
+		}
+
 		t.Run(`Expired Invocations`, func(t *ftt.Test) {
 			testutil.MustApply(ctx, t,
 				insert.Invocation("expired", resultpb.Invocation_ACTIVE, map[string]any{"Deadline": past}),
 				insert.Invocation("unexpired", resultpb.Invocation_ACTIVE, map[string]any{"Deadline": future}),
 			)
 
-			s, err := invocations.CurrentMaxShard(ctx)
-			assert.Loosely(t, err, should.BeNil)
-			for i := 0; i < s+1; i++ {
-				assert.Loosely(t, enforceOneShard(ctx, i), should.BeNil)
-			}
+			runEnforcer()
 
 			assert.Loosely(t, sched.Tasks().Payloads(), should.Match([]protoreflect.ProtoMessage{
 				&taskspb.RunExportNotifications{InvocationId: "expired"},
@@ -80,7 +90,7 @@ func TestDeadlineEnforcer(t *testing.T) {
 			assert.Loosely(t, state, should.Equal(resultpb.Invocation_ACTIVE))
 
 			assert.Loosely(t, store.Get(ctx, overdueInvocationsFinalized, []any{insert.TestRealm}), should.Equal(1))
-			d := store.Get(ctx, timeOverdue, []any{insert.TestRealm}).(*distribution.Distribution)
+			d := store.Get(ctx, timeInvocationsOverdue, []any{insert.TestRealm}).(*distribution.Distribution)
 			// The 10 minute (600 s) delay should fall into bucket 29 (~400k - ~630k ms).
 			// allow +/- 1 bucket for clock shenanigans.
 			assert.Loosely(t, d.Buckets()[28] == 1 || d.Buckets()[29] == 1 || d.Buckets()[30] == 1, should.BeTrue)
@@ -100,11 +110,7 @@ func TestDeadlineEnforcer(t *testing.T) {
 			expiredChildWorkUnit := workunits.NewBuilder(unexpiredRootInvocationID, "expiredChild").WithDeadline(past).WithFinalizationState(resultpb.WorkUnit_ACTIVE).Build()
 			testutil.MustApply(ctx, t, workunits.InsertForTesting(expiredChildWorkUnit)...)
 
-			s, err := invocations.CurrentMaxShard(ctx)
-			assert.Loosely(t, err, should.BeNil)
-			for i := 0; i < s+1; i++ {
-				assert.Loosely(t, enforceOneShard(ctx, i), should.BeNil)
-			}
+			runEnforcer()
 
 			expectedTasks := []protoreflect.ProtoMessage{
 				&taskspb.SweepWorkUnitsForFinalization{RootInvocationId: string(expiredRootInvocationID), SequenceNumber: 1},
@@ -137,8 +143,8 @@ func TestDeadlineEnforcer(t *testing.T) {
 			assert.That(t, readWU.FinalizationState, should.Match(resultpb.WorkUnit_FINALIZING))
 			assert.That(t, readWU.FinalizerCandidateTime.Valid, should.BeTrue)
 
-			assert.Loosely(t, store.Get(ctx, overdueInvocationsFinalized, []any{insert.TestRealm}), should.Equal(2))
-			d := store.Get(ctx, timeOverdue, []any{insert.TestRealm}).(*distribution.Distribution)
+			assert.Loosely(t, store.Get(ctx, overdueWorkUnitsFinalized, []any{insert.TestRealm}), should.Equal(2))
+			d := store.Get(ctx, timeWorkUnitsOverdue, []any{insert.TestRealm}).(*distribution.Distribution)
 
 			// The 10 minute (600 s) delay should fall into bucket 29 (~400k - ~630k ms).
 			// allow +/- 1 bucket for clock shenanigans.
@@ -151,17 +157,13 @@ func TestDeadlineEnforcer(t *testing.T) {
 			assert.Loosely(t, bucketSum, should.Equal(2))
 
 			t.Run(`Enforcer is idempotent`, func(t *ftt.Test) {
-				s, err := invocations.CurrentMaxShard(ctx)
-				assert.Loosely(t, err, should.BeNil)
-				for i := 0; i < s+1; i++ {
-					assert.Loosely(t, enforceOneShard(ctx, i), should.BeNil)
-				}
+				runEnforcer()
 
 				// No further tasks have been enqueued.
 				assert.That(t, sched.Tasks().Payloads(), should.Match(expectedTasks))
 
 				// Counts remain the same.
-				assert.Loosely(t, store.Get(ctx, overdueInvocationsFinalized, []any{insert.TestRealm}), should.Equal(2))
+				assert.Loosely(t, store.Get(ctx, overdueWorkUnitsFinalized, []any{insert.TestRealm}), should.Equal(2))
 			})
 		})
 	})

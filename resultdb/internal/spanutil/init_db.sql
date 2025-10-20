@@ -340,6 +340,9 @@ CREATE TABLE WorkUnits (
   -- When to force work unit finalization.
   Deadline TIMESTAMP NOT NULL,
 
+  -- The deadline, but is NULL if the work unit is not active.
+  ActiveDeadline TIMESTAMP AS (IF(FinalizationState = 1, Deadline, NULL)) STORED,
+
   -- Details of the module associated with this work unit.
 
   -- Module name.
@@ -389,6 +392,12 @@ CREATE TABLE WorkUnits (
   ExtendedProperties BYTES(MAX),
 ) PRIMARY KEY (RootInvocationShardId, WorkUnitId),
   INTERLEAVE IN PARENT RootInvocationShards ON DELETE CASCADE;
+
+-- Index of active invocations by deadline.
+-- Used to query invocations overdue to be finalized.
+CREATE NULL_FILTERED INDEX WorkUnitsByActiveDeadline
+  ON WorkUnits (RootInvocationShardId, WorkUnitId, ActiveDeadline),
+  INTERLEAVE IN RootInvocationShards;
 
 -- ChildWorkUnits stores which work units are children of a given parent work unit.
 -- This is an index maintained by the application layer that is updated atomically with
