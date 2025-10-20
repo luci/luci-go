@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
+	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/common"
@@ -39,7 +40,7 @@ import (
 // Client can talk to the CIPD server.
 type Client struct {
 	m      sync.RWMutex
-	perSrv map[string]cipdpb.RepositoryClient
+	perSrv map[string]cipdgrpcpb.RepositoryClient
 }
 
 // ResolveVersion asks the CIPD server to resolve a version label into a
@@ -133,7 +134,7 @@ func (c *Client) FetchInstance(ctx context.Context, server, cipdpkg, iid string)
 }
 
 // client returns a CIPD client connected to a backend at the given address.
-func (c *Client) client(ctx context.Context, server string) (cipdpb.RepositoryClient, error) {
+func (c *Client) client(ctx context.Context, server string) (cipdgrpcpb.RepositoryClient, error) {
 	parsed, err := url.Parse(server)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "not a valid CIPD URL %q", server)
@@ -158,7 +159,7 @@ func (c *Client) client(ctx context.Context, server string) (cipdpb.RepositoryCl
 	}
 
 	logging.Infof(ctx, "Connecting to CIPD at %s", server)
-	client = cipdpb.NewRepositoryClient(&prpc.Client{
+	client = cipdgrpcpb.NewRepositoryClient(&prpc.Client{
 		C:    http.DefaultClient, // no authentication, bot packages are public
 		Host: parsed.Host,
 		Options: &prpc.Options{
@@ -175,7 +176,7 @@ func (c *Client) client(ctx context.Context, server string) (cipdpb.RepositoryCl
 	})
 
 	if c.perSrv == nil {
-		c.perSrv = make(map[string]cipdpb.RepositoryClient, 1)
+		c.perSrv = make(map[string]cipdgrpcpb.RepositoryClient, 1)
 	}
 	c.perSrv[server] = client
 

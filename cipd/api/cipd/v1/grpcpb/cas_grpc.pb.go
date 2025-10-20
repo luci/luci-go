@@ -18,7 +18,9 @@
 // - protoc             v6.32.0
 // source: go.chromium.org/luci/cipd/api/cipd/v1/cas.proto
 
-package api
+package apigrpcpb
+
+import . "go.chromium.org/luci/cipd/api/cipd/v1"
 
 import (
 	context "context"

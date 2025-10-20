@@ -73,6 +73,7 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
 	"go.chromium.org/luci/cipd/client/cipd/configpb"
 	"go.chromium.org/luci/cipd/client/cipd/deployer"
 	"go.chromium.org/luci/cipd/client/cipd/digests"
@@ -448,8 +449,8 @@ type ClientOptions struct {
 	ProxyURL string
 
 	// Mocks used by tests.
-	casMock          api.StorageClient
-	repoMock         api.RepositoryClient
+	casMock          cipdgrpcpb.StorageClient
+	repoMock         cipdgrpcpb.RepositoryClient
 	storageMock      storage
 	mockedConfigFile string
 }
@@ -722,11 +723,11 @@ func NewClient(opts ClientOptions) (Client, error) {
 
 	cas := opts.casMock
 	if cas == nil {
-		cas = api.NewStorageClient(prpcC)
+		cas = cipdgrpcpb.NewStorageClient(prpcC)
 	}
 	repo := opts.repoMock
 	if repo == nil {
-		repo = api.NewRepositoryClient(prpcC)
+		repo = cipdgrpcpb.NewRepositoryClient(prpcC)
 	}
 	s := opts.storageMock
 	if s == nil {
@@ -823,8 +824,8 @@ type clientImpl struct {
 	ClientOptions
 
 	// pRPC API clients.
-	cas  api.StorageClient
-	repo api.RepositoryClient
+	cas  cipdgrpcpb.StorageClient
+	repo cipdgrpcpb.RepositoryClient
 
 	// batchLock protects guts of by BeginBatch/EndBatch implementation.
 	batchLock    sync.Mutex

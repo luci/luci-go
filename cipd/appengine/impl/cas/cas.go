@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/upload"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
@@ -60,7 +61,7 @@ const minimumSpeedLimit = 10 * 1024 * 1024
 // StorageServer extends StorageServer RPC interface with some methods used
 // internally by other CIPD server modules.
 type StorageServer interface {
-	api.StorageServer
+	cipdgrpcpb.StorageServer
 
 	// GetReader returns an io.ReaderAt implementation to read contents of an
 	// object in the storage.
@@ -99,7 +100,7 @@ func Internal(d *tq.Dispatcher, b *bqlog.Bundler, s *settings.Settings, opts *se
 //
 // Doesn't do any ACL checks.
 type storageImpl struct {
-	api.UnimplementedStorageServer
+	cipdgrpcpb.UnimplementedStorageServer
 
 	tq       *tq.Dispatcher
 	settings *settings.Settings

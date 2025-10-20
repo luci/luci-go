@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
+	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -38,10 +39,10 @@ import (
 // RemoteFactory creates a client connected to a remote CIPD backend.
 type RemoteFactory func(ctx context.Context, hostname string) (grpc.ClientConnInterface, error)
 
-// ProxyRepositoryServer implements cipdpb.RepositoryServer by proxying calls
+// ProxyRepositoryServer implements RepositoryServer by proxying calls
 // to a set of remote RepositoryServers.
 type ProxyRepositoryServer struct {
-	cipdpb.UnimplementedRepositoryServer
+	cipdgrpcpb.UnimplementedRepositoryServer
 
 	// Policy defines what actions are allowed to be performed through the proxy.
 	Policy *proxypb.Policy
@@ -53,7 +54,7 @@ type ProxyRepositoryServer struct {
 	UserAgent string
 
 	m       sync.RWMutex
-	remotes map[string]cipdpb.RepositoryClient
+	remotes map[string]cipdgrpcpb.RepositoryClient
 }
 
 // DefaultRemoteFactory creates a factory that makes real pRPC clients.
@@ -74,7 +75,7 @@ func DefaultRemoteFactory(client *http.Client) RemoteFactory {
 // allowed by the policy.
 //
 // Returns gRPC errors.
-func (s *ProxyRepositoryServer) remote(ctx context.Context, hostname string) (cipdpb.RepositoryClient, error) {
+func (s *ProxyRepositoryServer) remote(ctx context.Context, hostname string) (cipdgrpcpb.RepositoryClient, error) {
 	if hostname == "" {
 		return nil, status.Errorf(codes.Internal, "unexpectedly missing remote name in a proxied CIPD call")
 	}
@@ -100,10 +101,10 @@ func (s *ProxyRepositoryServer) remote(ctx context.Context, hostname string) (ci
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to initialize remote in the CIPD proxy: %s", err)
 	}
-	r = cipdpb.NewRepositoryClient(conn)
+	r = cipdgrpcpb.NewRepositoryClient(conn)
 
 	if s.remotes == nil {
-		s.remotes = make(map[string]cipdpb.RepositoryClient, 1)
+		s.remotes = make(map[string]cipdgrpcpb.RepositoryClient, 1)
 	}
 	s.remotes[hostname] = r
 	return r, nil

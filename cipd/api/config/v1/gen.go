@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto -use-grpc-plugin
+//go:generate cproto -use-modern-protoc-gen-go
 
 // Package api contains CIPD backend API definitions.
 package api

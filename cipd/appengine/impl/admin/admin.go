@@ -27,12 +27,13 @@ import (
 	"go.chromium.org/luci/server/dsmapper"
 
 	api "go.chromium.org/luci/cipd/api/admin/v1"
+	admingrpcpb "go.chromium.org/luci/cipd/api/admin/v1/grpcpb"
 	"go.chromium.org/luci/cipd/appengine/impl/rpcacl"
 )
 
 // AdminAPI returns an ACL-protected implementation of cipd.AdminServer that can
 // be exposed as a public API (i.e. admins can use it via external RPCs).
-func AdminAPI(ctl *dsmapper.Controller) api.AdminServer {
+func AdminAPI(ctl *dsmapper.Controller) admingrpcpb.AdminServer {
 	impl := &adminImpl{
 		acl: rpcacl.CheckAdmin,
 		ctl: ctl,
@@ -43,7 +44,7 @@ func AdminAPI(ctl *dsmapper.Controller) api.AdminServer {
 
 // adminImpl implements cipd.AdminServer.
 type adminImpl struct {
-	api.UnimplementedAdminServer
+	admingrpcpb.UnimplementedAdminServer
 
 	acl func(context.Context) error
 	ctl *dsmapper.Controller

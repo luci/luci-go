@@ -33,8 +33,8 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 
-	adminapi "go.chromium.org/luci/cipd/api/admin/v1"
-	cipdapi "go.chromium.org/luci/cipd/api/cipd/v1"
+	admingrpcpb "go.chromium.org/luci/cipd/api/admin/v1/grpcpb"
+	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
 	"go.chromium.org/luci/cipd/appengine/impl/admin"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
@@ -51,7 +51,7 @@ type Services struct {
 
 	// PublicCAS is ACL-protected implementation of cas.StorageServer that can be
 	// exposed as a public API.
-	PublicCAS cipdapi.StorageServer
+	PublicCAS cipdgrpcpb.StorageServer
 
 	// PublicRepo is ACL-protected implementation of cipd.RepositoryServer that
 	// can be exposed as a public API.
@@ -59,7 +59,7 @@ type Services struct {
 
 	// AdminAPI is ACL-protected implementation of cipd.AdminServer that can be
 	// exposed as an external API to be used by administrators.
-	AdminAPI adminapi.AdminServer
+	AdminAPI admingrpcpb.AdminServer
 
 	// EventLogger can flush events to BigQuery.
 	EventLogger *model.BigQueryEventLogger

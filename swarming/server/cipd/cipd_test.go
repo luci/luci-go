@@ -29,6 +29,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
+	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
 	"go.chromium.org/luci/cipd/client/cipd/builder"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"
@@ -65,7 +66,7 @@ func TestClient(t *testing.T) {
 	// A fake CIPD backend.
 	mockedRepo := &mockedCIPDRepo{testPin: testPin}
 	rpcSrv := prpctest.Server{}
-	cipdpb.RegisterRepositoryServer(&rpcSrv, mockedRepo)
+	cipdgrpcpb.RegisterRepositoryServer(&rpcSrv, mockedRepo)
 	rpcSrv.Start(ctx)
 	defer rpcSrv.Close()
 	cipdSrv := "http://" + rpcSrv.Host
@@ -147,7 +148,7 @@ func TestClient(t *testing.T) {
 }
 
 type mockedCIPDRepo struct {
-	cipdpb.UnimplementedRepositoryServer
+	cipdgrpcpb.UnimplementedRepositoryServer
 
 	testPin    common.Pin
 	storageURL string

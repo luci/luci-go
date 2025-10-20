@@ -18,12 +18,13 @@ import (
 	"context"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 )
 
 // MockCAS implements cas.StorageServer interface.
 type MockCAS struct {
-	api.UnimplementedStorageServer
+	cipdgrpcpb.UnimplementedStorageServer
 
 	Err error // an error to return or nil to pass through to the callback
 

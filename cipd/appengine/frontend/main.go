@@ -25,8 +25,8 @@ import (
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
 
-	adminapi "go.chromium.org/luci/cipd/api/admin/v1"
-	pubapi "go.chromium.org/luci/cipd/api/cipd/v1"
+	admingrpcpb "go.chromium.org/luci/cipd/api/admin/v1/grpcpb"
+	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
 	"go.chromium.org/luci/cipd/appengine/impl"
 	"go.chromium.org/luci/cipd/appengine/impl/accesslog"
 	"go.chromium.org/luci/cipd/appengine/ui"
@@ -60,9 +60,9 @@ func main() {
 		}
 
 		// All RPC services.
-		adminapi.RegisterAdminServer(srv, svc.AdminAPI)
-		pubapi.RegisterStorageServer(srv, svc.PublicCAS)
-		pubapi.RegisterRepositoryServer(srv, svc.PublicRepo)
+		admingrpcpb.RegisterAdminServer(srv, svc.AdminAPI)
+		cipdgrpcpb.RegisterStorageServer(srv, svc.PublicCAS)
+		cipdgrpcpb.RegisterRepositoryServer(srv, svc.PublicRepo)
 
 		// Log RPC requests to BigQuery.
 		srv.RegisterUnaryServerInterceptors(accesslog.NewUnaryServerInterceptor(&srv.Options))

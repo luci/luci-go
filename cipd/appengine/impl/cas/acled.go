@@ -21,20 +21,21 @@ import (
 	"google.golang.org/grpc/status"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
 	"go.chromium.org/luci/cipd/appengine/impl/rpcacl"
 )
 
 // Public returns publicly exposed implementation of cipd.Storage service that
 // wraps the given internal implementation with ACLs.
-func Public(internal api.StorageServer) api.StorageServer {
+func Public(internal cipdgrpcpb.StorageServer) cipdgrpcpb.StorageServer {
 	return &acledStorage{internal: internal}
 }
 
 type acledStorage struct {
 	// We want the compilation to fail when new methods are added.
-	api.UnsafeStorageServer
+	cipdgrpcpb.UnsafeStorageServer
 
-	internal api.StorageServer
+	internal cipdgrpcpb.StorageServer
 }
 
 func (s *acledStorage) GetObjectURL(ctx context.Context, req *api.GetObjectURLRequest) (*api.ObjectURL, error) {

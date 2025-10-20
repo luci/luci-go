@@ -34,7 +34,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/router"
 
-	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
+	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
 )
 
@@ -43,8 +43,8 @@ import (
 //
 // Requests from the proxy client sent to "cipd.local" will be treated as
 // requests to fetch an object from the CAS. It is responsibility of the
-// cipdpb.RepositoryServer and/or cipdpb.StorageServer implementations to
-// make sure all object URLs point to this domain by using an instance of
+// RepositoryServer and/or StorageServer implementations to make sure all object
+// URLs point to this domain by using an instance of
 // CASURLObfuscator to generate them.
 const ProxiedCASDomain = "cipd.local"
 
@@ -63,9 +63,9 @@ type Server struct {
 	Listener net.Listener
 
 	// Repository is the implementation of the cipd.Repository RPC service.
-	Repository cipdpb.RepositoryServer
+	Repository cipdgrpcpb.RepositoryServer
 	// Storage is the implementation of the cipd.Storage RPC service.
-	Storage cipdpb.StorageServer
+	Storage cipdgrpcpb.StorageServer
 
 	// UnaryServerInterceptors are applied to all incoming RPCs.
 	UnaryServerInterceptors []grpc.UnaryServerInterceptor
@@ -139,8 +139,8 @@ func (srv *Server) initialize(ctx context.Context) (*http.Server, chan struct{},
 		UnaryServerInterceptor: grpcutil.ChainUnaryServerInterceptors(srv.UnaryServerInterceptors...),
 		ResponseCompression:    prpc.CompressNever,
 	}
-	cipdpb.RegisterRepositoryServer(srv.prpcSrv, srv.Repository)
-	cipdpb.RegisterStorageServer(srv.prpcSrv, srv.Storage)
+	cipdgrpcpb.RegisterRepositoryServer(srv.prpcSrv, srv.Repository)
+	cipdgrpcpb.RegisterStorageServer(srv.prpcSrv, srv.Storage)
 
 	prpcRouter := router.New()
 	srv.prpcSrv.InstallHandlers(prpcRouter, nil)

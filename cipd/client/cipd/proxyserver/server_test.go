@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
+	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
 	"go.chromium.org/luci/cipd/client/cipd/proxyclient"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
 )
@@ -64,7 +65,7 @@ func TestServer(t *testing.T) {
 	defer func() { assert.NoErr(t, pt.Close()) }()
 
 	httpC := &http.Client{Transport: pt.RoundTripper}
-	repoC := cipdpb.NewRepositoryClient(&prpc.Client{
+	repoC := cipdgrpcpb.NewRepositoryClient(&prpc.Client{
 		C:    httpC,
 		Host: fakeHost,
 		Options: &prpc.Options{
@@ -88,7 +89,7 @@ func TestServer(t *testing.T) {
 	srv := &Server{
 		Listener:         listener,
 		Repository:       repoS,
-		Storage:          &cipdpb.UnimplementedStorageServer{},
+		Storage:          &cipdgrpcpb.UnimplementedStorageServer{},
 		CASURLObfuscator: repoS.ob,
 		CAS: func(obj *proxypb.ProxiedCASObject, rw http.ResponseWriter, req *http.Request) {
 			assert.That(t, obj, should.Match(&proxypb.ProxiedCASObject{
@@ -123,7 +124,7 @@ func TestServer(t *testing.T) {
 }
 
 type repoSrv struct {
-	cipdpb.UnimplementedRepositoryServer
+	cipdgrpcpb.UnimplementedRepositoryServer
 
 	t  *testing.T
 	ob *CASURLObfuscator

@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/system/unixsock"
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
+	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
 )
 
@@ -86,7 +87,7 @@ func Run(ctx context.Context, params ProxyParams) error {
 			CASURLObfuscator: obfuscator,
 			UserAgent:        params.UserAgent,
 		},
-		Storage: &cipdpb.UnimplementedStorageServer{},
+		Storage: &cipdgrpcpb.UnimplementedStorageServer{},
 		UnaryServerInterceptors: []grpc.UnaryServerInterceptor{
 			AccessLogInterceptor(params.AccessLog),
 			UnimplementedProxyInterceptor(),

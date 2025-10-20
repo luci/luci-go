@@ -44,6 +44,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
@@ -75,7 +76,7 @@ func Public(internalCAS cas.StorageServer, d *tq.Dispatcher, c vsa.Client) Serve
 
 // Server is api.RepositoryServer that can also expose some non-pRPC routes.
 type Server interface {
-	api.RepositoryServer
+	cipdgrpcpb.RepositoryServer
 
 	// InstallHandlers installs non-pRPC HTTP handlers into the router.
 	//
@@ -85,7 +86,7 @@ type Server interface {
 
 // repoImpl implements api.RepositoryServer.
 type repoImpl struct {
-	api.UnimplementedRepositoryServer
+	cipdgrpcpb.UnimplementedRepositoryServer
 
 	tq *tq.Dispatcher
 

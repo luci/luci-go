@@ -30,12 +30,13 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
 )
 
 func TestACLDecorator(t *testing.T) {
 	t.Parallel()
 
-	acledSrv := Public(&api.UnimplementedStorageServer{})
+	acledSrv := Public(&cipdgrpcpb.UnimplementedStorageServer{})
 
 	anon := identity.AnonymousIdentity
 	someone := identity.Identity("user:someone@example.com")

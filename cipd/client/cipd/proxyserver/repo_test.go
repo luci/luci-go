@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
+	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
 )
 
@@ -40,14 +41,14 @@ func TestProxyRepositoryServer(t *testing.T) {
 	repoImpl := &repoImpl{}
 
 	remote := &prpctest.Server{}
-	cipdpb.RegisterRepositoryServer(remote, repoImpl)
+	cipdgrpcpb.RegisterRepositoryServer(remote, repoImpl)
 	remote.Start(ctx)
 	defer remote.Close()
 
 	obfuscator := NewCASURLObfuscator()
 
 	local := &prpctest.Server{}
-	cipdpb.RegisterRepositoryServer(local, &ProxyRepositoryServer{
+	cipdgrpcpb.RegisterRepositoryServer(local, &ProxyRepositoryServer{
 		Policy: &proxypb.Policy{
 			AllowedRemotes: []string{"allowed"},
 			ResolveVersion: &proxypb.Policy_ResolveVersionPolicy{AllowTags: true},
@@ -84,7 +85,7 @@ func TestProxyRepositoryServer(t *testing.T) {
 		UserAgent: "client-user-agent",
 	})
 	assert.NoErr(t, err)
-	repoC := cipdpb.NewRepositoryClient(prpcC)
+	repoC := cipdgrpcpb.NewRepositoryClient(prpcC)
 
 	t.Run("ResolveVersion: OK", func(t *testing.T) {
 		resp, err := repoC.ResolveVersion(callCtx("allowed"), &cipdpb.ResolveVersionRequest{
@@ -146,7 +147,7 @@ func TestProxyRepositoryServer(t *testing.T) {
 }
 
 type repoImpl struct {
-	cipdpb.UnimplementedRepositoryServer
+	cipdgrpcpb.UnimplementedRepositoryServer
 
 	lastUserAgent string
 }
