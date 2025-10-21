@@ -56,6 +56,7 @@ import (
 var textContentTypes = stringset.NewFromSlice(
 	"application/json",
 	"application/jwt",
+	"application/vnd.in-toto.bundle",
 )
 
 // EventsEpoch is used to calculate timestamps used to order entities in the

@@ -1167,7 +1167,7 @@ const (
 	vsaAttestationsContentType = "application/vnd.in-toto.bundle"
 	// slsaVSAKey is the key for metadata entries that contains SLSA Verification
 	// Summary Attestation.
-	slsaVSAKey = "luci-slsa-VSA"
+	slsaVSAKey = "luci-slsa-vsa"
 )
 
 // AttachMetadata implements the corresponding RPC method, see the proto doc.
