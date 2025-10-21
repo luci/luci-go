@@ -97,17 +97,7 @@ func sweepWorkUnitsForFinalization(ctx context.Context, rootInvID rootinvocation
 		if err != nil {
 			return errors.Fmt("apply  work unit finalization updates: %w", err)
 		}
-		// Reset the finalizer candidate time for ineligible candidates. It is safe to perform
-		// this in a separate transaction, because this is a conditional update, it only resets
-		// when the finalizerCandidateTime matches the original read.
-		_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-			st := workunits.ResetFinalizerCandidateTime(ineligibleCandidates)
-			_, err := span.Update(ctx, st)
-			if err != nil {
-				return err
-			}
-			return nil
-		})
+		err = markIneligibleCandidates(ctx, ineligibleCandidates)
 		if err != nil {
 			return errors.Fmt("reset finalizer candidate time for ineligible candidates: %w", err)
 		}
@@ -369,6 +359,28 @@ func publishFinalizedRootInvocation(ctx context.Context, rootInvID rootinvocatio
 	}
 	tasks.NotifyRootInvocationFinalized(ctx, notification)
 	return nil
+}
+
+// markIneligibleCandidates resets the finalizer candidate time for work units
+// that were initially identified as candidates but were not ready for
+// finalization in the current sweep.
+func markIneligibleCandidates(ctx context.Context, ineligibleCandidates []workunits.FinalizerCandidate) (err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/finalizer.markIneligibleCandidates",
+		attribute.Int("count", len(ineligibleCandidates)))
+	defer func() { tracing.End(ts, err) }()
+
+	// Reset the finalizer candidate time for ineligible candidates. It is safe to perform
+	// this in a separate transaction, because this is a conditional update, it only resets
+	// when the finalizerCandidateTime matches the original read.
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		st := workunits.ResetFinalizerCandidateTime(ineligibleCandidates)
+		_, err := span.Update(ctx, st)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	return err
 }
 
 func batch(ids []workUnitWithParent, batchSize int) [][]workUnitWithParent {

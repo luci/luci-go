@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -189,7 +190,7 @@ func ReadFinalizationStates(ctx context.Context, ids []ID) (states []pb.WorkUnit
 	return rowsForIDsMandatory(resultMap, ids)
 }
 
-// ReadParents reads the parent of the given work units. If any of the work
+// ReadParents reads the parents of the given work units. If any of the work
 // units are not found, returns a NotFound appstatus error. Returned state
 // match 1:1 with the requested ids, i.e. parents[i] corresponds to ids[i].
 // Duplicate IDs are allowed.
@@ -197,6 +198,11 @@ func ReadFinalizationStates(ctx context.Context, ids []ID) (states []pb.WorkUnit
 func ReadParents(ctx context.Context, ids []ID) (parents []ID, err error) {
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadParents")
 	defer func() { tracing.End(ts, err) }()
+
+	if isRootsOnly(ids) {
+		// Exit early: root work units have no parents.
+		return make([]ID, len(ids)), nil
+	}
 
 	var b spanutil.Buffer
 	columns := []string{"ParentWorkUnitId"}
@@ -225,6 +231,17 @@ func ReadParents(ctx context.Context, ids []ID) (parents []ID, err error) {
 	}
 	// Returns NotFound appstatus error if a row for an ID is missing.
 	return rowsForIDsMandatory(resultMap, ids)
+}
+
+// isRootsOnly returns whether all IDs in the list are root invocations.
+// If the list is empty, this is trivially satisfied.
+func isRootsOnly(ids []ID) bool {
+	for _, id := range ids {
+		if id.WorkUnitID != RootWorkUnitID {
+			return false
+		}
+	}
+	return true
 }
 
 type RequestIDAndCreatedBy struct {
@@ -721,7 +738,7 @@ type FinalizerCandidate struct {
 // are marked as candidates for finalization.
 func QueryFinalizerCandidates(ctx context.Context, rootInvID rootinvocations.ID, limit int) (candidates []FinalizerCandidate, err error) {
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.QueryFinalizerCandidates")
-	defer func() { tracing.End(ts, err) }()
+	defer func() { tracing.End(ts, err, attribute.Int("limit", limit), attribute.Int("count", len(candidates))) }()
 
 	st := spanner.NewStatement(`
 		SELECT RootInvocationShardId, WorkUnitId, FinalizerCandidateTime
@@ -764,6 +781,11 @@ func QueryFinalizerCandidates(ctx context.Context, rootInvID rootinvocations.ID,
 func ReadyToFinalize(ctx context.Context, ids IDSet, ignoreIDs IDSet) (readyIDs IDSet, err error) {
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadyToFinalize")
 	defer func() { tracing.End(ts, err) }()
+
+	if len(ids) == 0 {
+		// Exit early.
+		return NewIDSet(), nil
+	}
 
 	st := spanner.NewStatement(`
 	SELECT
