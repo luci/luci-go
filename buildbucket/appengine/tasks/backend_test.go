@@ -36,7 +36,8 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
@@ -75,28 +76,28 @@ func describeBootstrapBundle(t testing.TB, hasBadPkgFile bool) http.HandlerFunc 
 		numCipdCalls++
 		reqBody, err := io.ReadAll(r.Body)
 		assert.Loosely(t, err, should.BeNil)
-		req := &cipdpb.DescribeBootstrapBundleRequest{}
+		req := &repopb.DescribeBootstrapBundleRequest{}
 		err = proto.Unmarshal(reqBody, req)
 		assert.Loosely(t, err, should.BeNil)
 		variants := []string{
 			"linux-amd64",
 			"mac-amd64",
 		}
-		bootstrapFiles := []*cipdpb.DescribeBootstrapBundleResponse_BootstrapFile{}
+		bootstrapFiles := []*repopb.DescribeBootstrapBundleResponse_BootstrapFile{}
 		for _, variant := range variants {
 			pkdName := req.Prefix + "/" + variant
-			bootstrapFile := &cipdpb.DescribeBootstrapBundleResponse_BootstrapFile{
+			bootstrapFile := &repopb.DescribeBootstrapBundleResponse_BootstrapFile{
 				Package: pkdName,
 				Size:    100,
-				Instance: &cipdpb.ObjectRef{
-					HashAlgo:  cipdpb.HashAlgo_SHA256,
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA256,
 					HexDigest: "this_is_a_sha_256_I_swear",
 				},
 			}
 			bootstrapFiles = append(bootstrapFiles, bootstrapFile)
 		}
 		if hasBadPkgFile {
-			bootstrapFiles = append(bootstrapFiles, &cipdpb.DescribeBootstrapBundleResponse_BootstrapFile{
+			bootstrapFiles = append(bootstrapFiles, &repopb.DescribeBootstrapBundleResponse_BootstrapFile{
 				Package: req.Prefix + "/" + "bad-platform",
 				Status: &statuspb.Status{
 					Code:    int32(codepb.Code_NOT_FOUND),
@@ -104,7 +105,7 @@ func describeBootstrapBundle(t testing.TB, hasBadPkgFile bool) http.HandlerFunc 
 				},
 			})
 		}
-		res := &cipdpb.DescribeBootstrapBundleResponse{
+		res := &repopb.DescribeBootstrapBundleResponse{
 			Files: bootstrapFiles,
 		}
 		var buf []byte

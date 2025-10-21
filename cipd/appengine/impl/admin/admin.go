@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/dsmapper"
 
-	api "go.chromium.org/luci/cipd/api/admin/v1"
+	adminpb "go.chromium.org/luci/cipd/api/admin/v1"
 	admingrpcpb "go.chromium.org/luci/cipd/api/admin/v1/grpcpb"
 	"go.chromium.org/luci/cipd/appengine/impl/rpcacl"
 )
@@ -74,7 +74,7 @@ func toStatus(err error) error {
 }
 
 // LaunchJob implements the corresponding RPC method, see the proto doc.
-func (impl *adminImpl) LaunchJob(ctx context.Context, cfg *api.JobConfig) (*api.JobID, error) {
+func (impl *adminImpl) LaunchJob(ctx context.Context, cfg *adminpb.JobConfig) (*adminpb.JobID, error) {
 	if err := impl.acl(ctx); err != nil {
 		return nil, err
 	}
@@ -98,11 +98,11 @@ func (impl *adminImpl) LaunchJob(ctx context.Context, cfg *api.JobConfig) (*api.
 		return nil, toStatus(err)
 	}
 
-	return &api.JobID{JobId: int64(jid)}, nil
+	return &adminpb.JobID{JobId: int64(jid)}, nil
 }
 
 // AbortJob implements the corresponding RPC method, see the proto doc.
-func (impl *adminImpl) AbortJob(ctx context.Context, id *api.JobID) (*emptypb.Empty, error) {
+func (impl *adminImpl) AbortJob(ctx context.Context, id *adminpb.JobID) (*emptypb.Empty, error) {
 	if err := impl.acl(ctx); err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (impl *adminImpl) AbortJob(ctx context.Context, id *api.JobID) (*emptypb.Em
 }
 
 // GetJobState implements the corresponding RPC method, see the proto doc.
-func (impl *adminImpl) GetJobState(ctx context.Context, id *api.JobID) (*api.JobState, error) {
+func (impl *adminImpl) GetJobState(ctx context.Context, id *adminpb.JobID) (*adminpb.JobState, error) {
 	if err := impl.acl(ctx); err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (impl *adminImpl) GetJobState(ctx context.Context, id *api.JobID) (*api.Job
 	if err != nil {
 		return nil, toStatus(err)
 	}
-	cfg := &api.JobConfig{}
+	cfg := &adminpb.JobConfig{}
 	if err := proto.Unmarshal(job.Config.Params, cfg); err != nil {
 		return nil, toStatus(errors.Fmt("failed to unmarshal JobConfig: %w", err))
 	}
@@ -130,11 +130,11 @@ func (impl *adminImpl) GetJobState(ctx context.Context, id *api.JobID) (*api.Job
 	if err != nil {
 		return nil, toStatus(err)
 	}
-	return &api.JobState{Config: cfg, Info: info}, nil
+	return &adminpb.JobState{Config: cfg, Info: info}, nil
 }
 
 // GetJobState implements the corresponding RPC method, see the proto doc.
-func (impl *adminImpl) FixMarkedTags(ctx context.Context, id *api.JobID) (*api.TagFixReport, error) {
+func (impl *adminImpl) FixMarkedTags(ctx context.Context, id *adminpb.JobID) (*adminpb.TagFixReport, error) {
 	if err := impl.acl(ctx); err != nil {
 		return nil, err
 	}
@@ -142,5 +142,5 @@ func (impl *adminImpl) FixMarkedTags(ctx context.Context, id *api.JobID) (*api.T
 	if err != nil {
 		return nil, toStatus(err)
 	}
-	return &api.TagFixReport{Fixed: tags}, nil
+	return &adminpb.TagFixReport{Fixed: tags}, nil
 }

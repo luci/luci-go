@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 func TestValidatePackageName(t *testing.T) {
@@ -109,21 +109,21 @@ func TestParseInstanceTag(t *testing.T) {
 	ftt.Run("ParseInstanceTag works", t, func(t *ftt.Test) {
 		pTag, err := ParseInstanceTag("good:tag")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, pTag, should.Match(&api.Tag{
+		assert.Loosely(t, pTag, should.Match(&repopb.Tag{
 			Key:   "good",
 			Value: "tag",
 		}))
 
 		pTag, err = ParseInstanceTag("good:tag:blah")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, pTag, should.Match(&api.Tag{
+		assert.Loosely(t, pTag, should.Match(&repopb.Tag{
 			Key:   "good",
 			Value: "tag:blah",
 		}))
 
 		pTag, err = ParseInstanceTag("good_tag:A a0$()*+,-./:;<=>@\\_{}~")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, pTag, should.Match(&api.Tag{
+		assert.Loosely(t, pTag, should.Match(&repopb.Tag{
 			Key:   "good_tag",
 			Value: "A a0$()*+,-./:;<=>@\\_{}~",
 		}))
@@ -262,54 +262,54 @@ func TestNormalizePrefixMetadata(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Happy path", t, func(t *ftt.Test) {
-		m := &api.PrefixMetadata{
+		m := &repopb.PrefixMetadata{
 			Prefix: "abc/",
-			Acls: []*api.PrefixMetadata_ACL{
-				{Role: api.Role_OWNER, Principals: []string{"user:abc@example.com", "group:a"}},
-				{Role: api.Role_READER, Principals: []string{"group:z"}},
+			Acls: []*repopb.PrefixMetadata_ACL{
+				{Role: repopb.Role_OWNER, Principals: []string{"user:abc@example.com", "group:a"}},
+				{Role: repopb.Role_READER, Principals: []string{"group:z"}},
 				{Role: 123}, // some future unknown role
 			},
 		}
 		assert.Loosely(t, NormalizePrefixMetadata(m), should.BeNil)
-		assert.Loosely(t, m, should.Match(&api.PrefixMetadata{
+		assert.Loosely(t, m, should.Match(&repopb.PrefixMetadata{
 			Prefix: "abc",
-			Acls: []*api.PrefixMetadata_ACL{
-				{Role: api.Role_READER, Principals: []string{"group:z"}},
-				{Role: api.Role_OWNER, Principals: []string{"group:a", "user:abc@example.com"}},
+			Acls: []*repopb.PrefixMetadata_ACL{
+				{Role: repopb.Role_READER, Principals: []string{"group:z"}},
+				{Role: repopb.Role_OWNER, Principals: []string{"group:a", "user:abc@example.com"}},
 				{Role: 123},
 			},
 		}))
 	})
 
 	ftt.Run("Validates prefix", t, func(t *ftt.Test) {
-		assert.Loosely(t, NormalizePrefixMetadata(&api.PrefixMetadata{Prefix: "//"}),
+		assert.Loosely(t, NormalizePrefixMetadata(&repopb.PrefixMetadata{Prefix: "//"}),
 			should.ErrLike("invalid package prefix"))
 	})
 
 	ftt.Run("No role", t, func(t *ftt.Test) {
-		assert.Loosely(t, NormalizePrefixMetadata(&api.PrefixMetadata{
+		assert.Loosely(t, NormalizePrefixMetadata(&repopb.PrefixMetadata{
 			Prefix: "abc",
-			Acls: []*api.PrefixMetadata_ACL{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{},
 			},
 		}), should.ErrLike("ACL entry #0 doesn't have a role specified"))
 	})
 
 	ftt.Run("Double ACL entries", t, func(t *ftt.Test) {
-		assert.Loosely(t, NormalizePrefixMetadata(&api.PrefixMetadata{
+		assert.Loosely(t, NormalizePrefixMetadata(&repopb.PrefixMetadata{
 			Prefix: "abc",
-			Acls: []*api.PrefixMetadata_ACL{
-				{Role: api.Role_READER},
-				{Role: api.Role_READER},
+			Acls: []*repopb.PrefixMetadata_ACL{
+				{Role: repopb.Role_READER},
+				{Role: repopb.Role_READER},
 			},
 		}), should.ErrLike("role READER is specified twice"))
 	})
 
 	ftt.Run("Bad principal", t, func(t *ftt.Test) {
-		assert.Loosely(t, NormalizePrefixMetadata(&api.PrefixMetadata{
+		assert.Loosely(t, NormalizePrefixMetadata(&repopb.PrefixMetadata{
 			Prefix: "abc",
-			Acls: []*api.PrefixMetadata_ACL{
-				{Role: api.Role_READER, Principals: []string{":"}},
+			Acls: []*repopb.PrefixMetadata_ACL{
+				{Role: repopb.Role_READER, Principals: []string{":"}},
 			},
 		}), should.ErrLike(`in ACL entry for role READER: ":" doesn't look like a principal id`))
 	})

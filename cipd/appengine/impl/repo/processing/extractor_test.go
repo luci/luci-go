@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
@@ -41,28 +41,28 @@ func TestExtractor(t *testing.T) {
 	ctx := context.Background()
 
 	ftt.Run("With mocks", t, func(t *ftt.Test) {
-		var publishedRef *api.ObjectRef
+		var publishedRef *caspb.ObjectRef
 		var canceled bool
 
-		expectedUploadAlgo := api.HashAlgo_SHA256
+		expectedUploadAlgo := caspb.HashAlgo_SHA256
 
 		cas := testutil.MockCAS{
-			BeginUploadImpl: func(_ context.Context, r *api.BeginUploadRequest) (*api.UploadOperation, error) {
+			BeginUploadImpl: func(_ context.Context, r *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
 				assert.Loosely(t, r.HashAlgo, should.Equal(expectedUploadAlgo))
-				return &api.UploadOperation{
+				return &caspb.UploadOperation{
 					OperationId: "op_id",
 					UploadUrl:   "http://example.com/upload",
 				}, nil
 			},
-			FinishUploadImpl: func(_ context.Context, r *api.FinishUploadRequest) (*api.UploadOperation, error) {
+			FinishUploadImpl: func(_ context.Context, r *caspb.FinishUploadRequest) (*caspb.UploadOperation, error) {
 				assert.Loosely(t, r.UploadOperationId, should.Equal("op_id"))
 				publishedRef = r.ForceHash
-				return &api.UploadOperation{Status: api.UploadStatus_PUBLISHED}, nil
+				return &caspb.UploadOperation{Status: caspb.UploadStatus_PUBLISHED}, nil
 			},
-			CancelUploadImpl: func(_ context.Context, r *api.CancelUploadRequest) (*api.UploadOperation, error) {
+			CancelUploadImpl: func(_ context.Context, r *caspb.CancelUploadRequest) (*caspb.UploadOperation, error) {
 				assert.Loosely(t, r.UploadOperationId, should.Equal("op_id"))
 				canceled = true
-				return &api.UploadOperation{Status: api.UploadStatus_CANCELED}, nil
+				return &caspb.UploadOperation{Status: caspb.UploadStatus_CANCELED}, nil
 			},
 		}
 
@@ -76,8 +76,8 @@ func TestExtractor(t *testing.T) {
 				"test/file": testFileBody,
 			}),
 			CAS:               &cas,
-			PrimaryHash:       api.HashAlgo_SHA256,
-			AlternativeHashes: []api.HashAlgo{api.HashAlgo_SHA1},
+			PrimaryHash:       caspb.HashAlgo_SHA256,
+			AlternativeHashes: []caspb.HashAlgo{caspb.HashAlgo_SHA1},
 			Uploader:          func(ctx context.Context, size int64, uploadURL string) io.Writer { return uploader },
 			BufferSize:        64 * 1024,
 		}
@@ -88,21 +88,21 @@ func TestExtractor(t *testing.T) {
 
 			// Check the return value.
 			assert.Loosely(t, res.Path, should.Equal("test/file"))
-			assert.Loosely(t, res.Ref, should.Match(&api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA256,
-				HexDigest: hexDigest(api.HashAlgo_SHA256, testFileBody),
+			assert.Loosely(t, res.Ref, should.Match(&caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA256,
+				HexDigest: hexDigest(caspb.HashAlgo_SHA256, testFileBody),
 			}))
 			assert.Loosely(t, res.Size, should.Equal(len(testFileBody)))
 			assert.Loosely(t, res.Hashes, should.HaveLength(2))
-			for _, h := range []api.HashAlgo{api.HashAlgo_SHA1, api.HashAlgo_SHA256} {
+			for _, h := range []caspb.HashAlgo{caspb.HashAlgo_SHA1, caspb.HashAlgo_SHA256} {
 				assert.Loosely(t, common.HexDigest(res.Hashes[h]), should.Equal(hexDigest(h, testFileBody)))
 			}
 
 			// Check it actually uploaded the correct thing.
 			assert.Loosely(t, extracted.String(), should.Equal(testFileBody))
-			assert.Loosely(t, publishedRef, should.Match(&api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA256,
-				HexDigest: hexDigest(api.HashAlgo_SHA256, testFileBody),
+			assert.Loosely(t, publishedRef, should.Match(&caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA256,
+				HexDigest: hexDigest(caspb.HashAlgo_SHA256, testFileBody),
 			}))
 
 			// Check it was written in 64 Kb chunks, NOT 32 Kb as used by zip.Reader.
@@ -116,7 +116,7 @@ func TestExtractor(t *testing.T) {
 		})
 
 		t.Run("Internal error when initiating the upload", func(t *ftt.Test) {
-			cas.BeginUploadImpl = func(_ context.Context, r *api.BeginUploadRequest) (*api.UploadOperation, error) {
+			cas.BeginUploadImpl = func(_ context.Context, r *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
 				return nil, status.Errorf(codes.Internal, "boo")
 			}
 			_, err := ex.Run(ctx, "test/file")
@@ -125,7 +125,7 @@ func TestExtractor(t *testing.T) {
 		})
 
 		t.Run("Internal error when finalizing the upload", func(t *ftt.Test) {
-			cas.FinishUploadImpl = func(_ context.Context, r *api.FinishUploadRequest) (*api.UploadOperation, error) {
+			cas.FinishUploadImpl = func(_ context.Context, r *caspb.FinishUploadRequest) (*caspb.UploadOperation, error) {
 				return nil, status.Errorf(codes.Internal, "boo")
 			}
 			_, err := ex.Run(ctx, "test/file")

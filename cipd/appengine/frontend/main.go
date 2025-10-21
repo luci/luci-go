@@ -26,7 +26,8 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	admingrpcpb "go.chromium.org/luci/cipd/api/admin/v1/grpcpb"
-	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
+	casgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/caspb/grpcpb"
+	repogrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/repopb/grpcpb"
 	"go.chromium.org/luci/cipd/appengine/impl"
 	"go.chromium.org/luci/cipd/appengine/impl/accesslog"
 	"go.chromium.org/luci/cipd/appengine/ui"
@@ -35,6 +36,8 @@ import (
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 	// Using transactional datastore TQ tasks.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
+	// Initialize descriptors for the RPC Explorer.
+	_ "go.chromium.org/luci/cipd/api/cipd/v1/discovery"
 )
 
 func main() {
@@ -61,8 +64,8 @@ func main() {
 
 		// All RPC services.
 		admingrpcpb.RegisterAdminServer(srv, svc.AdminAPI)
-		cipdgrpcpb.RegisterStorageServer(srv, svc.PublicCAS)
-		cipdgrpcpb.RegisterRepositoryServer(srv, svc.PublicRepo)
+		casgrpcpb.RegisterStorageServer(srv, svc.PublicCAS)
+		repogrpcpb.RegisterRepositoryServer(srv, svc.PublicRepo)
 
 		// Log RPC requests to BigQuery.
 		srv.RegisterUnaryServerInterceptors(accesslog.NewUnaryServerInterceptor(&srv.Options))

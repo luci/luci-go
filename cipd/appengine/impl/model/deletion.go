@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 // DeletePackage deletes all entities associated with a package.
@@ -76,8 +76,8 @@ func DeletePackage(ctx context.Context, pkg string) error {
 		if err := datastore.Delete(ctx, PackageKey(ctx, pkg)); err != nil {
 			return transient.Tag.Apply(err)
 		}
-		return EmitEvent(ctx, &api.Event{
-			Kind:    api.EventKind_PACKAGE_DELETED,
+		return EmitEvent(ctx, &repopb.Event{
+			Kind:    repopb.EventKind_PACKAGE_DELETED,
 			Package: pkg,
 		})
 	})

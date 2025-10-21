@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -74,7 +74,7 @@ func TestSearchInstances(t *testing.T) {
 			}
 
 			t.Run("Empty", func(t *ftt.Test) {
-				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
+				out, cur, err := SearchInstances(ctx, "pkg", []*repopb.Tag{
 					{Key: "k", Value: "missing"},
 				}, 11, nil)
 				assert.Loosely(t, err, should.BeNil)
@@ -83,7 +83,7 @@ func TestSearchInstances(t *testing.T) {
 			})
 
 			t.Run("No pagination", func(t *ftt.Test) {
-				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
+				out, cur, err := SearchInstances(ctx, "pkg", []*repopb.Tag{
 					{Key: "k", Value: "v0"},
 				}, 11, nil)
 				assert.Loosely(t, err, should.BeNil)
@@ -92,14 +92,14 @@ func TestSearchInstances(t *testing.T) {
 			})
 
 			t.Run("With pagination", func(t *ftt.Test) {
-				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
+				out, cur, err := SearchInstances(ctx, "pkg", []*repopb.Tag{
 					{Key: "k", Value: "v0"},
 				}, 6, nil)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, cur, should.NotBeNil)
 				assert.Loosely(t, ids(out), should.Match(expectedIIDs[:6]))
 
-				out, cur, err = SearchInstances(ctx, "pkg", []*api.Tag{
+				out, cur, err = SearchInstances(ctx, "pkg", []*repopb.Tag{
 					{Key: "k", Value: "v0"},
 				}, 6, cur)
 				assert.Loosely(t, err, should.BeNil)
@@ -113,7 +113,7 @@ func TestSearchInstances(t *testing.T) {
 					Package:    PackageKey(ctx, "pkg"),
 				})
 
-				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
+				out, cur, err := SearchInstances(ctx, "pkg", []*repopb.Tag{
 					{Key: "k", Value: "v0"},
 				}, 11, nil)
 				assert.Loosely(t, err, should.BeNil)
@@ -139,7 +139,7 @@ func TestSearchInstances(t *testing.T) {
 			}
 
 			t.Run("Empty result", func(t *ftt.Test) {
-				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
+				out, cur, err := SearchInstances(ctx, "pkg", []*repopb.Tag{
 					{Key: "k", Value: "v0"},
 					{Key: "k", Value: "v1"},
 					{Key: "k", Value: "missing"},
@@ -151,7 +151,7 @@ func TestSearchInstances(t *testing.T) {
 			})
 
 			t.Run("No pagination", func(t *ftt.Test) {
-				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
+				out, cur, err := SearchInstances(ctx, "pkg", []*repopb.Tag{
 					{Key: "k", Value: "v0"},
 					{Key: "k", Value: "v1"},
 					{Key: "k", Value: "v1"}, // dup
@@ -164,7 +164,7 @@ func TestSearchInstances(t *testing.T) {
 			})
 
 			t.Run("With pagination", func(t *ftt.Test) {
-				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
+				out, cur, err := SearchInstances(ctx, "pkg", []*repopb.Tag{
 					{Key: "k", Value: "v0"},
 					{Key: "k", Value: "v1"},
 				}, 3, nil)
@@ -174,7 +174,7 @@ func TestSearchInstances(t *testing.T) {
 					iid(8), iid(6), iid(4),
 				}))
 
-				out, cur, err = SearchInstances(ctx, "pkg", []*api.Tag{
+				out, cur, err = SearchInstances(ctx, "pkg", []*repopb.Tag{
 					{Key: "k", Value: "v0"},
 					{Key: "k", Value: "v1"},
 				}, 3, cur)
@@ -186,7 +186,7 @@ func TestSearchInstances(t *testing.T) {
 			})
 
 			t.Run("More filters", func(t *ftt.Test) {
-				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
+				out, cur, err := SearchInstances(ctx, "pkg", []*repopb.Tag{
 					{Key: "k", Value: "v0"},
 					{Key: "k", Value: "v1"},
 					{Key: "k", Value: "v2"},
@@ -199,7 +199,7 @@ func TestSearchInstances(t *testing.T) {
 			})
 
 			t.Run("Tags order doesn't matter", func(t *ftt.Test) {
-				out, cur, err := SearchInstances(ctx, "pkg", []*api.Tag{
+				out, cur, err := SearchInstances(ctx, "pkg", []*repopb.Tag{
 					{Key: "k", Value: "v2"},
 					{Key: "k", Value: "v1"},
 					{Key: "k", Value: "v0"},

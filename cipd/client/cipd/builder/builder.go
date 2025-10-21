@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/common"
@@ -60,7 +60,7 @@ type Options struct {
 	// HashAlgo specifies what hashing algorithm to use for computing instance ID.
 	//
 	// By default it is common.DefaultHashAlgo.
-	HashAlgo api.HashAlgo
+	HashAlgo caspb.HashAlgo
 
 	// OverrideFormatVersion, if set, will override the default format version put
 	// into the manifest file.
@@ -128,7 +128,7 @@ func BuildInstance(ctx context.Context, opts Options) (common.Pin, error) {
 	}
 	return common.Pin{
 		PackageName: opts.PackageName,
-		InstanceID: common.ObjectRefToInstanceID(&api.ObjectRef{
+		InstanceID: common.ObjectRefToInstanceID(&caspb.ObjectRef{
 			HashAlgo:  opts.HashAlgo,
 			HexDigest: common.HexDigest(hash),
 		}),

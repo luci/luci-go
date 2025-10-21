@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
@@ -142,7 +142,7 @@ func ValidateInstanceTag(t string) error {
 }
 
 // ParseInstanceTag takes "k:v" string and returns its proto representation.
-func ParseInstanceTag(t string) (*api.Tag, error) {
+func ParseInstanceTag(t string) (*repopb.Tag, error) {
 	switch chunks := strings.SplitN(t, ":", 2); {
 	case len(chunks) != 2:
 		return nil, validationErr("%q doesn't look like a tag (a key:value pair)", t)
@@ -155,7 +155,7 @@ func ParseInstanceTag(t string) (*api.Tag, error) {
 	case !tagValRe.MatchString(chunks[1]):
 		return nil, validationErr("invalid tag value in %q: should match %q", t, tagValReStr)
 	default:
-		return &api.Tag{
+		return &repopb.Tag{
 			Key:   chunks[0],
 			Value: chunks[1],
 		}, nil
@@ -164,7 +164,7 @@ func ParseInstanceTag(t string) (*api.Tag, error) {
 
 // MustParseInstanceTag takes "k:v" string returns its proto representation or
 // panics if the tag is invalid.
-func MustParseInstanceTag(t string) *api.Tag {
+func MustParseInstanceTag(t string) *repopb.Tag {
 	tag, err := ParseInstanceTag(t)
 	if err != nil {
 		panic(err)
@@ -175,7 +175,7 @@ func MustParseInstanceTag(t string) *api.Tag {
 // JoinInstanceTag returns "k:v" representation of the tag.
 //
 // Doesn't validate it.
-func JoinInstanceTag(t *api.Tag) string {
+func JoinInstanceTag(t *repopb.Tag) string {
 	return t.Key + ":" + t.Value
 }
 
@@ -240,14 +240,14 @@ func ValidatePrincipalName(p string) error {
 // Updates r.Prefix in-place by stripping trailing '/', sorts r.Acls and
 // principals lists inside them. Skips r.Fingerprint, r.UpdateTime and
 // r.UpdateUser, since they are always overridden on the server side.
-func NormalizePrefixMetadata(m *api.PrefixMetadata) error {
+func NormalizePrefixMetadata(m *repopb.PrefixMetadata) error {
 	var err error
 	if m.Prefix, err = ValidatePackagePrefix(m.Prefix); err != nil {
 		return err
 	}
 
 	// There should be only one ACL section per role.
-	perRole := make(map[api.Role]*api.PrefixMetadata_ACL, len(m.Acls))
+	perRole := make(map[repopb.Role]*repopb.PrefixMetadata_ACL, len(m.Acls))
 	keys := make([]int, 0, len(perRole))
 	for i, acl := range m.Acls {
 		switch {
@@ -276,7 +276,7 @@ func NormalizePrefixMetadata(m *api.PrefixMetadata) error {
 	}
 	sort.Ints(keys)
 	for i, role := range keys {
-		m.Acls[i] = perRole[api.Role(role)]
+		m.Acls[i] = perRole[repopb.Role(role)]
 	}
 
 	return nil

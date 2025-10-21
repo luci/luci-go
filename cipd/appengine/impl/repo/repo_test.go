@@ -45,14 +45,15 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/appengine/impl/vsa"
-	vsaapi "go.chromium.org/luci/cipd/appengine/impl/vsa/api"
+	vsapb "go.chromium.org/luci/cipd/appengine/impl/vsa/api"
 	"go.chromium.org/luci/cipd/common"
 
 	// Using transactional datastore TQ tasks.
@@ -73,36 +74,36 @@ func TestMetadataFetching(t *testing.T) {
 		meta := testutil.MetadataStore{}
 
 		// ACL.
-		rootMeta := meta.Populate("", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		rootMeta := meta.Populate("", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"user:admin@example.com"},
 				},
 			},
 		})
-		topMeta := meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		topMeta := meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"user:top-owner@example.com"},
 				},
 			},
 		})
 
 		// The metadata to be fetched.
-		leafMeta := meta.Populate("a/b/c/d", &api.PrefixMetadata{
+		leafMeta := meta.Populate("a/b/c/d", &repopb.PrefixMetadata{
 			UpdateUser: "user:someone@example.com",
 		})
 
 		impl := repoImpl{meta: &meta}
 
-		callGet := func(prefix string, user identity.Identity) (*api.PrefixMetadata, error) {
-			return impl.GetPrefixMetadata(as(user.Email()), &api.PrefixRequest{Prefix: prefix})
+		callGet := func(prefix string, user identity.Identity) (*repopb.PrefixMetadata, error) {
+			return impl.GetPrefixMetadata(as(user.Email()), &repopb.PrefixRequest{Prefix: prefix})
 		}
 
-		callGetInherited := func(prefix string, user identity.Identity) ([]*api.PrefixMetadata, error) {
-			resp, err := impl.GetInheritedPrefixMetadata(as(user.Email()), &api.PrefixRequest{Prefix: prefix})
+		callGetInherited := func(prefix string, user identity.Identity) ([]*repopb.PrefixMetadata, error) {
+			resp, err := impl.GetInheritedPrefixMetadata(as(user.Email()), &repopb.PrefixRequest{Prefix: prefix})
 			if err != nil {
 				return nil, err
 			}
@@ -124,13 +125,13 @@ func TestMetadataFetching(t *testing.T) {
 		t.Run("GetInheritedPrefixMetadata happy path", func(t *ftt.Test) {
 			resp, err := callGetInherited("a/b/c/d", "user:top-owner@example.com")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Match([]*api.PrefixMetadata{rootMeta, topMeta, leafMeta}))
+			assert.Loosely(t, resp, should.Match([]*repopb.PrefixMetadata{rootMeta, topMeta, leafMeta}))
 		})
 
 		t.Run("GetInheritedPrefixMetadata happy path via global group", func(t *ftt.Test) {
 			resp, err := callGetInherited("a/b/c/d", "user:prefixes-viewer@example.com")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Match([]*api.PrefixMetadata{rootMeta, topMeta, leafMeta}))
+			assert.Loosely(t, resp, should.Match([]*repopb.PrefixMetadata{rootMeta, topMeta, leafMeta}))
 		})
 
 		t.Run("GetPrefixMetadata bad prefix", func(t *ftt.Test) {
@@ -154,7 +155,7 @@ func TestMetadataFetching(t *testing.T) {
 		t.Run("GetInheritedPrefixMetadata no metadata, caller has access", func(t *ftt.Test) {
 			resp, err := callGetInherited("a/b", "user:top-owner@example.com")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Match([]*api.PrefixMetadata{rootMeta, topMeta}))
+			assert.Loosely(t, resp, should.Match([]*repopb.PrefixMetadata{rootMeta, topMeta}))
 		})
 
 		t.Run("GetPrefixMetadata no metadata, caller has no access", func(t *ftt.Test) {
@@ -198,18 +199,18 @@ func TestMetadataUpdating(t *testing.T) {
 		meta := testutil.MetadataStore{}
 
 		// ACL.
-		meta.Populate("", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"user:admin@example.com"},
 				},
 			},
 		})
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"user:top-owner@example.com"},
 				},
 			},
@@ -217,7 +218,7 @@ func TestMetadataUpdating(t *testing.T) {
 
 		impl := repoImpl{meta: &meta}
 
-		callUpdate := func(user identity.Identity, m *api.PrefixMetadata) (md *api.PrefixMetadata, err error) {
+		callUpdate := func(user identity.Identity, m *repopb.PrefixMetadata) (md *repopb.PrefixMetadata, err error) {
 			err = datastore.RunInTransaction(as(user.Email()), func(ctx context.Context) (err error) {
 				md, err = impl.UpdatePrefixMetadata(ctx, m)
 				return
@@ -227,34 +228,34 @@ func TestMetadataUpdating(t *testing.T) {
 
 		t.Run("Happy path", func(t *ftt.Test) {
 			// Create new metadata entry.
-			meta, err := callUpdate("user:top-owner@example.com", &api.PrefixMetadata{
+			meta, err := callUpdate("user:top-owner@example.com", &repopb.PrefixMetadata{
 				Prefix:     "a/b/",
 				UpdateTime: timestamppb.New(time.Unix(10000, 0)), // should be overwritten
 				UpdateUser: "user:zzz@example.com",               // should be overwritten
-				Acls: []*api.PrefixMetadata_ACL{
-					{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
+				Acls: []*repopb.PrefixMetadata_ACL{
+					{Role: repopb.Role_READER, Principals: []string{"user:reader@example.com"}},
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
 
-			expected := &api.PrefixMetadata{
+			expected := &repopb.PrefixMetadata{
 				Prefix:      "a/b",
 				Fingerprint: "WZllwc6m8f9C_rfwnspaPIiyPD0",
 				UpdateTime:  timestamppb.New(testutil.TestTime),
 				UpdateUser:  "user:top-owner@example.com",
-				Acls: []*api.PrefixMetadata_ACL{
-					{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
+				Acls: []*repopb.PrefixMetadata_ACL{
+					{Role: repopb.Role_READER, Principals: []string{"user:reader@example.com"}},
 				},
 			}
 			assert.Loosely(t, meta, should.Match(expected))
 
 			// Update it a bit later.
 			tc.Add(time.Hour)
-			updated := proto.Clone(expected).(*api.PrefixMetadata)
+			updated := proto.Clone(expected).(*repopb.PrefixMetadata)
 			updated.Acls = nil
 			meta, err = callUpdate("user:top-owner@example.com", updated)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, meta, should.Match(&api.PrefixMetadata{
+			assert.Loosely(t, meta, should.Match(&repopb.PrefixMetadata{
 				Prefix:      "a/b",
 				Fingerprint: "oQ2uuVbjV79prXxl4jyJkOpff90",
 				UpdateTime:  timestamppb.New(testutil.TestTime.Add(time.Hour)),
@@ -265,39 +266,39 @@ func TestMetadataUpdating(t *testing.T) {
 			datastore.GetTestable(ctx).CatchupIndexes()
 			ev, err := model.QueryEvents(ctx, model.NewEventsQuery())
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ev, should.Match([]*api.Event{
+			assert.Loosely(t, ev, should.Match([]*repopb.Event{
 				{
-					Kind:    api.EventKind_PREFIX_ACL_CHANGED,
+					Kind:    repopb.EventKind_PREFIX_ACL_CHANGED,
 					Package: "a/b",
 					Who:     "user:top-owner@example.com",
 					When:    timestamppb.New(testutil.TestTime.Add(time.Hour)),
-					RevokedRole: []*api.PrefixMetadata_ACL{
-						{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
+					RevokedRole: []*repopb.PrefixMetadata_ACL{
+						{Role: repopb.Role_READER, Principals: []string{"user:reader@example.com"}},
 					},
 				},
 				{
-					Kind:    api.EventKind_PREFIX_ACL_CHANGED,
+					Kind:    repopb.EventKind_PREFIX_ACL_CHANGED,
 					Package: "a/b",
 					Who:     "user:top-owner@example.com",
 					When:    timestamppb.New(testutil.TestTime),
-					GrantedRole: []*api.PrefixMetadata_ACL{
-						{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
+					GrantedRole: []*repopb.PrefixMetadata_ACL{
+						{Role: repopb.Role_READER, Principals: []string{"user:reader@example.com"}},
 					},
 				},
 			}))
 		})
 
 		t.Run("Validation works", func(t *ftt.Test) {
-			meta, err := callUpdate("user:top-owner@example.com", &api.PrefixMetadata{
+			meta, err := callUpdate("user:top-owner@example.com", &repopb.PrefixMetadata{
 				Prefix: "a/b//",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, meta, should.BeNil)
 
-			meta, err = callUpdate("user:top-owner@example.com", &api.PrefixMetadata{
+			meta, err = callUpdate("user:top-owner@example.com", &repopb.PrefixMetadata{
 				Prefix: "a/b",
-				Acls: []*api.PrefixMetadata_ACL{
-					{Role: api.Role_READER, Principals: []string{"huh?"}},
+				Acls: []*repopb.PrefixMetadata_ACL{
+					{Role: repopb.Role_READER, Principals: []string{"huh?"}},
 				},
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
@@ -305,14 +306,14 @@ func TestMetadataUpdating(t *testing.T) {
 		})
 
 		t.Run("ACLs work", func(t *ftt.Test) {
-			meta, err := callUpdate("user:unknown@example.com", &api.PrefixMetadata{
+			meta, err := callUpdate("user:unknown@example.com", &repopb.PrefixMetadata{
 				Prefix: "a/b",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, meta, should.BeNil)
 
 			// Same as completely unknown prefix.
-			meta, err = callUpdate("user:unknown@example.com", &api.PrefixMetadata{
+			meta, err = callUpdate("user:unknown@example.com", &repopb.PrefixMetadata{
 				Prefix: "zzz",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
@@ -320,7 +321,7 @@ func TestMetadataUpdating(t *testing.T) {
 		})
 
 		t.Run("Deleted concurrently", func(t *ftt.Test) {
-			m := meta.Populate("a/b", &api.PrefixMetadata{
+			m := meta.Populate("a/b", &repopb.PrefixMetadata{
 				UpdateUser: "user:someone@example.com",
 			})
 			meta.Purge("a/b")
@@ -337,7 +338,7 @@ func TestMetadataUpdating(t *testing.T) {
 		})
 
 		t.Run("Creating existing", func(t *ftt.Test) {
-			m := meta.Populate("a/b", &api.PrefixMetadata{
+			m := meta.Populate("a/b", &repopb.PrefixMetadata{
 				UpdateUser: "user:someone@example.com",
 			})
 
@@ -348,7 +349,7 @@ func TestMetadataUpdating(t *testing.T) {
 		})
 
 		t.Run("Changed midway", func(t *ftt.Test) {
-			m := meta.Populate("a/b", &api.PrefixMetadata{
+			m := meta.Populate("a/b", &repopb.PrefixMetadata{
 				UpdateUser: "user:someone@example.com",
 			})
 
@@ -372,18 +373,18 @@ func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 
 		meta := testutil.MetadataStore{}
 
-		meta.Populate("", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"user:admin@example.com"},
 				},
 			},
 		})
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_WRITER,
+					Role:       repopb.Role_WRITER,
 					Principals: []string{"user:writer@example.com"},
 				},
 			},
@@ -391,7 +392,7 @@ func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 
 		impl := repoImpl{meta: &meta}
 
-		call := func(prefix string, user identity.Identity, callerIsPrefixViewer bool) (*api.RolesInPrefixResponse, error) {
+		call := func(prefix string, user identity.Identity, callerIsPrefixViewer bool) (*repopb.RolesInPrefixResponse, error) {
 			caller := identity.Identity("user:roles-caller@example.com")
 			mocks := []authtest.MockedDatum{}
 			if callerIsPrefixViewer {
@@ -400,16 +401,16 @@ func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 			return impl.GetRolesInPrefixOnBehalfOf(auth.WithState(rootCtx, &authtest.FakeState{
 				Identity: caller,
 				FakeDB:   authtest.NewFakeDB(mocks...),
-			}), &api.PrefixRequestOnBehalfOf{Identity: string(user), PrefixRequest: &api.PrefixRequest{Prefix: prefix}})
+			}), &repopb.PrefixRequestOnBehalfOf{Identity: string(user), PrefixRequest: &repopb.PrefixRequest{Prefix: prefix}})
 		}
 
 		t.Run("Happy path", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "user:writer@example.com", true)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Match(&api.RolesInPrefixResponse{
-				Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
-					{Role: api.Role_READER},
-					{Role: api.Role_WRITER},
+			assert.Loosely(t, resp, should.Match(&repopb.RolesInPrefixResponse{
+				Roles: []*repopb.RolesInPrefixResponse_RoleInPrefix{
+					{Role: repopb.Role_READER},
+					{Role: repopb.Role_WRITER},
 				},
 			}))
 		})
@@ -417,17 +418,17 @@ func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 		t.Run("Anonymous", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "anonymous:anonymous", true)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Match(&api.RolesInPrefixResponse{}))
+			assert.Loosely(t, resp, should.Match(&repopb.RolesInPrefixResponse{}))
 		})
 
 		t.Run("Admin", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "user:admin@example.com", true)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Match(&api.RolesInPrefixResponse{
-				Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
-					{Role: api.Role_READER},
-					{Role: api.Role_WRITER},
-					{Role: api.Role_OWNER},
+			assert.Loosely(t, resp, should.Match(&repopb.RolesInPrefixResponse{
+				Roles: []*repopb.RolesInPrefixResponse_RoleInPrefix{
+					{Role: repopb.Role_READER},
+					{Role: repopb.Role_WRITER},
+					{Role: repopb.Role_OWNER},
 				},
 			}))
 		})
@@ -463,18 +464,18 @@ func TestGetRolesInPrefix(t *testing.T) {
 
 		meta := testutil.MetadataStore{}
 
-		meta.Populate("", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"user:admin@example.com"},
 				},
 			},
 		})
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_WRITER,
+					Role:       repopb.Role_WRITER,
 					Principals: []string{"user:writer@example.com"},
 				},
 			},
@@ -482,20 +483,20 @@ func TestGetRolesInPrefix(t *testing.T) {
 
 		impl := repoImpl{meta: &meta}
 
-		call := func(prefix string, user identity.Identity) (*api.RolesInPrefixResponse, error) {
+		call := func(prefix string, user identity.Identity) (*repopb.RolesInPrefixResponse, error) {
 			return impl.GetRolesInPrefix(auth.WithState(rootCtx, &authtest.FakeState{
 				Identity: user,
 				FakeDB:   authtest.NewFakeDB(),
-			}), &api.PrefixRequest{Prefix: prefix})
+			}), &repopb.PrefixRequest{Prefix: prefix})
 		}
 
 		t.Run("Happy path", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "user:writer@example.com")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Match(&api.RolesInPrefixResponse{
-				Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
-					{Role: api.Role_READER},
-					{Role: api.Role_WRITER},
+			assert.Loosely(t, resp, should.Match(&repopb.RolesInPrefixResponse{
+				Roles: []*repopb.RolesInPrefixResponse_RoleInPrefix{
+					{Role: repopb.Role_READER},
+					{Role: repopb.Role_WRITER},
 				},
 			}))
 		})
@@ -503,17 +504,17 @@ func TestGetRolesInPrefix(t *testing.T) {
 		t.Run("Anonymous", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "anonymous:anonymous")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Match(&api.RolesInPrefixResponse{}))
+			assert.Loosely(t, resp, should.Match(&repopb.RolesInPrefixResponse{}))
 		})
 
 		t.Run("Admin", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "user:admin@example.com")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Match(&api.RolesInPrefixResponse{
-				Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
-					{Role: api.Role_READER},
-					{Role: api.Role_WRITER},
-					{Role: api.Role_OWNER},
+			assert.Loosely(t, resp, should.Match(&repopb.RolesInPrefixResponse{
+				Roles: []*repopb.RolesInPrefixResponse_RoleInPrefix{
+					{Role: repopb.Role_READER},
+					{Role: repopb.Role_WRITER},
+					{Role: repopb.Role_OWNER},
 				},
 			}))
 		})
@@ -537,34 +538,34 @@ func TestListPrefix(t *testing.T) {
 
 		meta := testutil.MetadataStore{}
 
-		meta.Populate("", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"user:admin@example.com"},
 				},
 			},
 		})
-		meta.Populate("1/a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("1/a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"user:reader@example.com"},
 				},
 			},
 		})
-		meta.Populate("6", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("6", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"user:reader@example.com"},
 				},
 			},
 		})
-		meta.Populate("7", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("7", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"user:reader@example.com"},
 				},
 			},
@@ -572,8 +573,8 @@ func TestListPrefix(t *testing.T) {
 
 		impl := repoImpl{meta: &meta}
 
-		call := func(prefix string, recursive, hidden bool, user identity.Identity) (*api.ListPrefixResponse, error) {
-			return impl.ListPrefix(as(user.Email()), &api.ListPrefixRequest{
+		call := func(prefix string, recursive, hidden bool, user identity.Identity) (*repopb.ListPrefixResponse, error) {
+			return impl.ListPrefix(as(user.Email()), &repopb.ListPrefixRequest{
 				Prefix:        prefix,
 				Recursive:     recursive,
 				IncludeHidden: hidden,
@@ -753,10 +754,10 @@ func TestHideUnhidePackage(t *testing.T) {
 		ctx = as("owner@example.com")
 
 		meta := testutil.MetadataStore{}
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"user:owner@example.com"},
 				},
 			},
@@ -773,34 +774,34 @@ func TestHideUnhidePackage(t *testing.T) {
 		impl := repoImpl{meta: &meta}
 
 		t.Run("Hides and unhides", func(t *ftt.Test) {
-			_, err := impl.HidePackage(ctx, &api.PackageRequest{Package: "a/b"})
+			_, err := impl.HidePackage(ctx, &repopb.PackageRequest{Package: "a/b"})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, fetch("a/b").Hidden, should.BeTrue)
 
 			// Noop is fine.
-			_, err = impl.HidePackage(ctx, &api.PackageRequest{Package: "a/b"})
+			_, err = impl.HidePackage(ctx, &repopb.PackageRequest{Package: "a/b"})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, fetch("a/b").Hidden, should.BeTrue)
 
-			_, err = impl.UnhidePackage(ctx, &api.PackageRequest{Package: "a/b"})
+			_, err = impl.UnhidePackage(ctx, &repopb.PackageRequest{Package: "a/b"})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, fetch("a/b").Hidden, should.BeFalse)
 		})
 
 		t.Run("Bad package name", func(t *ftt.Test) {
-			_, err := impl.HidePackage(ctx, &api.PackageRequest{Package: "///"})
+			_, err := impl.HidePackage(ctx, &repopb.PackageRequest{Package: "///"})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("invalid package name"))
 		})
 
 		t.Run("No access", func(t *ftt.Test) {
-			_, err := impl.HidePackage(ctx, &api.PackageRequest{Package: "zzz"})
+			_, err := impl.HidePackage(ctx, &repopb.PackageRequest{Package: "zzz"})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike("not allowed to see it"))
 		})
 
 		t.Run("Missing package", func(t *ftt.Test) {
-			_, err := impl.HidePackage(ctx, &api.PackageRequest{Package: "a/b/c"})
+			_, err := impl.HidePackage(ctx, &repopb.PackageRequest{Package: "a/b/c"})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
 			assert.Loosely(t, err, should.ErrLike("no such package"))
 		})
@@ -817,18 +818,18 @@ func TestDeletePackage(t *testing.T) {
 		ctx, _, as := testutil.TestingContext()
 
 		meta := testutil.MetadataStore{}
-		meta.Populate("", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"user:root@example.com"},
 				},
 			},
 		})
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"user:non-root-owner@example.com"},
 				},
 			},
@@ -840,7 +841,7 @@ func TestDeletePackage(t *testing.T) {
 		impl := repoImpl{meta: &meta}
 
 		t.Run("Works", func(t *ftt.Test) {
-			_, err := impl.DeletePackage(as("root@example.com"), &api.PackageRequest{
+			_, err := impl.DeletePackage(as("root@example.com"), &repopb.PackageRequest{
 				Package: "a/b",
 			})
 			assert.Loosely(t, err, should.BeNil)
@@ -848,7 +849,7 @@ func TestDeletePackage(t *testing.T) {
 			// Gone now.
 			assert.Loosely(t, model.CheckPackageExists(ctx, "a/b"), should.NotBeNil)
 
-			_, err = impl.DeletePackage(as("root@example.com"), &api.PackageRequest{
+			_, err = impl.DeletePackage(as("root@example.com"), &repopb.PackageRequest{
 				Package: "a/b",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
@@ -856,7 +857,7 @@ func TestDeletePackage(t *testing.T) {
 		})
 
 		t.Run("Only reader or above can see", func(t *ftt.Test) {
-			_, err := impl.DeletePackage(as("someone@example.com"), &api.PackageRequest{
+			_, err := impl.DeletePackage(as("someone@example.com"), &repopb.PackageRequest{
 				Package: "a/b",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
@@ -864,7 +865,7 @@ func TestDeletePackage(t *testing.T) {
 		})
 
 		t.Run("Only root owner can delete", func(t *ftt.Test) {
-			_, err := impl.DeletePackage(as("non-root-owner@example.com"), &api.PackageRequest{
+			_, err := impl.DeletePackage(as("non-root-owner@example.com"), &repopb.PackageRequest{
 				Package: "a/b",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
@@ -872,7 +873,7 @@ func TestDeletePackage(t *testing.T) {
 		})
 
 		t.Run("Bad package name", func(t *ftt.Test) {
-			_, err := impl.DeletePackage(ctx, &api.PackageRequest{Package: "///"})
+			_, err := impl.DeletePackage(ctx, &repopb.PackageRequest{Package: "///"})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("invalid package name"))
 		})
@@ -892,14 +893,14 @@ func TestRegisterInstance(t *testing.T) {
 		cas := testutil.MockCAS{}
 
 		meta := testutil.MetadataStore{}
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"user:owner@example.com"},
 				},
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"user:reader@example.com"},
 				},
 			},
@@ -916,10 +917,10 @@ func TestRegisterInstance(t *testing.T) {
 		impl.registerTasks()
 
 		digest := strings.Repeat("a", 40)
-		inst := &api.Instance{
+		inst := &repopb.Instance{
 			Package: "a/b",
-			Instance: &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA1,
+			Instance: &caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA1,
 				HexDigest: digest,
 			},
 		}
@@ -934,17 +935,17 @@ func TestRegisterInstance(t *testing.T) {
 				AppliesTo: "something else",
 			})
 
-			uploadOp := api.UploadOperation{
+			uploadOp := caspb.UploadOperation{
 				OperationId: "op_id",
 				UploadUrl:   "http://fake.example.com",
-				Status:      api.UploadStatus_UPLOADING,
+				Status:      caspb.UploadStatus_UPLOADING,
 			}
 
 			// Mock "successfully started upload op".
-			cas.BeginUploadImpl = func(_ context.Context, req *api.BeginUploadRequest) (*api.UploadOperation, error) {
-				assert.Loosely(t, req, should.Match(&api.BeginUploadRequest{
-					Object: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
+			cas.BeginUploadImpl = func(_ context.Context, req *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
+				assert.Loosely(t, req, should.Match(&caspb.BeginUploadRequest{
+					Object: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA1,
 						HexDigest: digest,
 					},
 				}))
@@ -954,18 +955,18 @@ func TestRegisterInstance(t *testing.T) {
 			// The instance is not uploaded yet => asks to upload.
 			resp, err := impl.RegisterInstance(ctx, inst)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Match(&api.RegisterInstanceResponse{
-				Status:   api.RegistrationStatus_NOT_UPLOADED,
+			assert.Loosely(t, resp, should.Match(&repopb.RegisterInstanceResponse{
+				Status:   repopb.RegistrationStatus_NOT_UPLOADED,
 				UploadOp: &uploadOp,
 			}))
 
 			// Mock "already have it in the storage" response.
-			cas.BeginUploadImpl = func(context.Context, *api.BeginUploadRequest) (*api.UploadOperation, error) {
+			cas.BeginUploadImpl = func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
 				return nil, status.Errorf(codes.AlreadyExists, "already uploaded")
 			}
 
 			// The instance is already uploaded => registers it in the datastore.
-			fullInstProto := &api.Instance{
+			fullInstProto := &repopb.Instance{
 				Package:      inst.Package,
 				Instance:     inst.Instance,
 				RegisteredBy: "user:owner@example.com",
@@ -973,8 +974,8 @@ func TestRegisterInstance(t *testing.T) {
 			}
 			resp, err = impl.RegisterInstance(ctx, inst)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Match(&api.RegisterInstanceResponse{
-				Status:   api.RegistrationStatus_REGISTERED,
+			assert.Loosely(t, resp, should.Match(&repopb.RegisterInstanceResponse{
+				Status:   repopb.RegistrationStatus_REGISTERED,
 				Instance: fullInstProto,
 			}))
 
@@ -998,9 +999,9 @@ func TestRegisterInstance(t *testing.T) {
 
 			resp, err := impl.RegisterInstance(ctx, inst)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Match(&api.RegisterInstanceResponse{
-				Status: api.RegistrationStatus_ALREADY_REGISTERED,
-				Instance: &api.Instance{
+			assert.Loosely(t, resp, should.Match(&repopb.RegisterInstanceResponse{
+				Status: repopb.RegistrationStatus_ALREADY_REGISTERED,
+				Instance: &repopb.Instance{
 					Package:      inst.Package,
 					Instance:     inst.Instance,
 					RegisteredBy: "user:someone@example.com",
@@ -1009,7 +1010,7 @@ func TestRegisterInstance(t *testing.T) {
 		})
 
 		t.Run("Bad package name", func(t *ftt.Test) {
-			_, err := impl.RegisterInstance(ctx, &api.Instance{
+			_, err := impl.RegisterInstance(ctx, &repopb.Instance{
 				Package: "//a",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
@@ -1017,10 +1018,10 @@ func TestRegisterInstance(t *testing.T) {
 		})
 
 		t.Run("Bad instance ID", func(t *ftt.Test) {
-			_, err := impl.RegisterInstance(ctx, &api.Instance{
+			_, err := impl.RegisterInstance(ctx, &repopb.Instance{
 				Package: "a/b",
-				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
 					HexDigest: "abc",
 				},
 			})
@@ -1029,7 +1030,7 @@ func TestRegisterInstance(t *testing.T) {
 		})
 
 		t.Run("No reader access", func(t *ftt.Test) {
-			_, err := impl.RegisterInstance(ctx, &api.Instance{
+			_, err := impl.RegisterInstance(ctx, &repopb.Instance{
 				Package:  "some/other/root",
 				Instance: inst.Instance,
 			})
@@ -1059,10 +1060,10 @@ func TestProcessors(t *testing.T) {
 		cas := testutil.MockCAS{}
 		impl := repoImpl{cas: &cas}
 
-		inst := &api.Instance{
+		inst := &repopb.Instance{
 			Package: "a/b/c",
-			Instance: &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA1,
+			Instance: &caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA1,
 				HexDigest: strings.Repeat("a", 40),
 			},
 		}
@@ -1161,7 +1162,7 @@ func TestProcessors(t *testing.T) {
 			storeInstance([]string{"proc1", "proc2"})
 
 			// Setup the package.
-			cas.GetReaderImpl = func(_ context.Context, ref *api.ObjectRef) (gs.Reader, error) {
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef) (gs.Reader, error) {
 				assert.Loosely(t, inst.Instance, should.Match(ref))
 				return testutil.NewMockGSReader(testZip), nil
 			}
@@ -1202,7 +1203,7 @@ func TestProcessors(t *testing.T) {
 			})
 			storeInstance([]string{"proc"})
 
-			cas.GetReaderImpl = func(_ context.Context, ref *api.ObjectRef) (gs.Reader, error) {
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef) (gs.Reader, error) {
 				return testutil.NewMockGSReader([]byte("im not a zip")), nil
 			}
 
@@ -1224,7 +1225,7 @@ func TestProcessors(t *testing.T) {
 			})
 			storeInstance([]string{"good-proc", "bad-proc"})
 
-			cas.GetReaderImpl = func(_ context.Context, ref *api.ObjectRef) (gs.Reader, error) {
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef) (gs.Reader, error) {
 				return testutil.NewMockGSReader(testZip), nil
 			}
 
@@ -1245,7 +1246,7 @@ func TestProcessors(t *testing.T) {
 			})
 			storeInstance([]string{"proc"})
 
-			cas.GetReaderImpl = func(_ context.Context, ref *api.ObjectRef) (gs.Reader, error) {
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef) (gs.Reader, error) {
 				return testutil.NewMockGSReader(testZip), nil
 			}
 
@@ -1295,10 +1296,10 @@ func TestListInstances(t *testing.T) {
 		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"user:reader@example.com"},
 				},
 			},
@@ -1315,11 +1316,11 @@ func TestListInstances(t *testing.T) {
 			}), should.BeNil)
 		}
 
-		inst := func(i int) *api.Instance {
-			return &api.Instance{
+		inst := func(i int) *repopb.Instance {
+			return &repopb.Instance{
 				Package: "a/b",
-				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
 					HexDigest: fmt.Sprintf("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa%d", i),
 				},
 				RegisteredTs: timestamppb.New(ts.Add(time.Duration(i) * time.Minute)),
@@ -1329,7 +1330,7 @@ func TestListInstances(t *testing.T) {
 		impl := repoImpl{meta: &meta}
 
 		t.Run("Bad package name", func(t *ftt.Test) {
-			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
+			_, err := impl.ListInstances(ctx, &repopb.ListInstancesRequest{
 				Package: "///",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
@@ -1337,7 +1338,7 @@ func TestListInstances(t *testing.T) {
 		})
 
 		t.Run("Bad page size", func(t *ftt.Test) {
-			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
+			_, err := impl.ListInstances(ctx, &repopb.ListInstancesRequest{
 				Package:  "a/b",
 				PageSize: -1,
 			})
@@ -1346,7 +1347,7 @@ func TestListInstances(t *testing.T) {
 		})
 
 		t.Run("Bad page token", func(t *ftt.Test) {
-			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
+			_, err := impl.ListInstances(ctx, &repopb.ListInstancesRequest{
 				Package:   "a/b",
 				PageToken: "zzzz",
 			})
@@ -1355,58 +1356,58 @@ func TestListInstances(t *testing.T) {
 		})
 
 		t.Run("No access", func(t *ftt.Test) {
-			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
+			_, err := impl.ListInstances(ctx, &repopb.ListInstancesRequest{
 				Package: "z",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 		})
 
 		t.Run("No package", func(t *ftt.Test) {
-			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
+			_, err := impl.ListInstances(ctx, &repopb.ListInstancesRequest{
 				Package: "a/missing",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
 		})
 
 		t.Run("Empty listing", func(t *ftt.Test) {
-			res, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
+			res, err := impl.ListInstances(ctx, &repopb.ListInstancesRequest{
 				Package: "a/empty",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Match(&api.ListInstancesResponse{}))
+			assert.Loosely(t, res, should.Match(&repopb.ListInstancesResponse{}))
 		})
 
 		t.Run("Full listing (no pagination)", func(t *ftt.Test) {
-			res, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
+			res, err := impl.ListInstances(ctx, &repopb.ListInstancesRequest{
 				Package: "a/b",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Match(&api.ListInstancesResponse{
-				Instances: []*api.Instance{inst(3), inst(2), inst(1), inst(0)},
+			assert.Loosely(t, res, should.Match(&repopb.ListInstancesResponse{
+				Instances: []*repopb.Instance{inst(3), inst(2), inst(1), inst(0)},
 			}))
 		})
 
 		t.Run("Listing with pagination", func(t *ftt.Test) {
 			// First page.
-			res, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
+			res, err := impl.ListInstances(ctx, &repopb.ListInstancesRequest{
 				Package:  "a/b",
 				PageSize: 3,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res.Instances, should.Match([]*api.Instance{
+			assert.Loosely(t, res.Instances, should.Match([]*repopb.Instance{
 				inst(3), inst(2), inst(1),
 			}))
 			assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
 
 			// Second page.
-			res, err = impl.ListInstances(ctx, &api.ListInstancesRequest{
+			res, err = impl.ListInstances(ctx, &repopb.ListInstancesRequest{
 				Package:   "a/b",
 				PageSize:  3,
 				PageToken: res.NextPageToken,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, res, should.Match(&api.ListInstancesResponse{
-				Instances: []*api.Instance{inst(0)},
+			assert.Loosely(t, res, should.Match(&repopb.ListInstancesResponse{
+				Instances: []*repopb.Instance{inst(0)},
 			}))
 		})
 	})
@@ -1420,10 +1421,10 @@ func TestSearchInstances(t *testing.T) {
 		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"user:reader@example.com"},
 				},
 			},
@@ -1454,7 +1455,7 @@ func TestSearchInstances(t *testing.T) {
 			return strings.Repeat(ch, 40)
 		}
 
-		ids := func(inst []*api.Instance) []string {
+		ids := func(inst []*repopb.Instance) []string {
 			out := make([]string, len(inst))
 			for i, obj := range inst {
 				out[i] = common.ObjectRefToInstanceID(obj.Instance)
@@ -1471,7 +1472,7 @@ func TestSearchInstances(t *testing.T) {
 		impl := repoImpl{meta: &meta}
 
 		t.Run("Bad package name", func(t *ftt.Test) {
-			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+			_, err := impl.SearchInstances(ctx, &repopb.SearchInstancesRequest{
 				Package: "///",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
@@ -1479,7 +1480,7 @@ func TestSearchInstances(t *testing.T) {
 		})
 
 		t.Run("Bad page size", func(t *ftt.Test) {
-			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+			_, err := impl.SearchInstances(ctx, &repopb.SearchInstancesRequest{
 				Package:  "a/b",
 				PageSize: -1,
 			})
@@ -1488,7 +1489,7 @@ func TestSearchInstances(t *testing.T) {
 		})
 
 		t.Run("Bad page token", func(t *ftt.Test) {
-			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+			_, err := impl.SearchInstances(ctx, &repopb.SearchInstancesRequest{
 				Package:   "a/b",
 				PageToken: "zzzz",
 			})
@@ -1497,7 +1498,7 @@ func TestSearchInstances(t *testing.T) {
 		})
 
 		t.Run("No tags specified", func(t *ftt.Test) {
-			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+			_, err := impl.SearchInstances(ctx, &repopb.SearchInstancesRequest{
 				Package: "a/b",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
@@ -1505,34 +1506,34 @@ func TestSearchInstances(t *testing.T) {
 		})
 
 		t.Run("Bad tag given", func(t *ftt.Test) {
-			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+			_, err := impl.SearchInstances(ctx, &repopb.SearchInstancesRequest{
 				Package: "a/b",
-				Tags:    []*api.Tag{{Key: "", Value: "zz"}},
+				Tags:    []*repopb.Tag{{Key: "", Value: "zz"}},
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike(`bad tag in 'tags': invalid tag key in ":zz"`))
 		})
 
 		t.Run("No access", func(t *ftt.Test) {
-			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+			_, err := impl.SearchInstances(ctx, &repopb.SearchInstancesRequest{
 				Package: "z",
-				Tags:    []*api.Tag{{Key: "a", Value: "b"}},
+				Tags:    []*repopb.Tag{{Key: "a", Value: "b"}},
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 		})
 
 		t.Run("No package", func(t *ftt.Test) {
-			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+			_, err := impl.SearchInstances(ctx, &repopb.SearchInstancesRequest{
 				Package: "a/missing",
-				Tags:    []*api.Tag{{Key: "a", Value: "b"}},
+				Tags:    []*repopb.Tag{{Key: "a", Value: "b"}},
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
 		})
 
 		t.Run("Empty results", func(t *ftt.Test) {
-			out, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+			out, err := impl.SearchInstances(ctx, &repopb.SearchInstancesRequest{
 				Package: "a/b",
-				Tags:    []*api.Tag{{Key: "a", Value: "missing"}},
+				Tags:    []*repopb.Tag{{Key: "a", Value: "missing"}},
 			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids(out.Instances), should.HaveLength(0))
@@ -1540,9 +1541,9 @@ func TestSearchInstances(t *testing.T) {
 		})
 
 		t.Run("Full listing (no pagination)", func(t *ftt.Test) {
-			out, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+			out, err := impl.SearchInstances(ctx, &repopb.SearchInstancesRequest{
 				Package: "a/b",
-				Tags:    []*api.Tag{{Key: "a", Value: "b"}},
+				Tags:    []*repopb.Tag{{Key: "a", Value: "b"}},
 			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids(out.Instances), should.Match(expectedIIDs))
@@ -1550,18 +1551,18 @@ func TestSearchInstances(t *testing.T) {
 		})
 
 		t.Run("Listing with pagination", func(t *ftt.Test) {
-			out, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+			out, err := impl.SearchInstances(ctx, &repopb.SearchInstancesRequest{
 				Package:  "a/b",
-				Tags:     []*api.Tag{{Key: "a", Value: "b"}},
+				Tags:     []*repopb.Tag{{Key: "a", Value: "b"}},
 				PageSize: 6,
 			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids(out.Instances), should.Match(expectedIIDs[:6]))
 			assert.Loosely(t, out.NextPageToken, should.NotEqual(""))
 
-			out, err = impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+			out, err = impl.SearchInstances(ctx, &repopb.SearchInstancesRequest{
 				Package:   "a/b",
-				Tags:      []*api.Tag{{Key: "a", Value: "b"}},
+				Tags:      []*repopb.Tag{{Key: "a", Value: "b"}},
 				PageSize:  6,
 				PageToken: out.NextPageToken,
 			})
@@ -1583,10 +1584,10 @@ func TestRefs(t *testing.T) {
 		ctx = as("writer@example.com")
 
 		meta := testutil.MetadataStore{}
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_WRITER,
+					Role:       repopb.Role_WRITER,
 					Principals: []string{"user:writer@example.com"},
 				},
 			},
@@ -1609,25 +1610,25 @@ func TestRefs(t *testing.T) {
 		impl := repoImpl{meta: &meta}
 
 		t.Run("CreateRef/ListRefs/DeleteRef happy path", func(t *ftt.Test) {
-			_, err := impl.CreateRef(ctx, &api.Ref{
+			_, err := impl.CreateRef(ctx, &repopb.Ref{
 				Name:    "latest",
 				Package: "a/b/c",
-				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
 					HexDigest: digest,
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
 
 			// Can be listed now.
-			refs, err := impl.ListRefs(ctx, &api.ListRefsRequest{Package: "a/b/c"})
+			refs, err := impl.ListRefs(ctx, &repopb.ListRefsRequest{Package: "a/b/c"})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, refs.Refs, should.Match([]*api.Ref{
+			assert.Loosely(t, refs.Refs, should.Match([]*repopb.Ref{
 				{
 					Name:    "latest",
 					Package: "a/b/c",
-					Instance: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
+					Instance: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA1,
 						HexDigest: digest,
 					},
 					ModifiedBy: "user:writer@example.com",
@@ -1635,25 +1636,25 @@ func TestRefs(t *testing.T) {
 				},
 			}))
 
-			_, err = impl.DeleteRef(ctx, &api.DeleteRefRequest{
+			_, err = impl.DeleteRef(ctx, &repopb.DeleteRefRequest{
 				Name:    "latest",
 				Package: "a/b/c",
 			})
 			assert.Loosely(t, err, should.BeNil)
 
 			// Missing now.
-			refs, err = impl.ListRefs(ctx, &api.ListRefsRequest{Package: "a/b/c"})
+			refs, err = impl.ListRefs(ctx, &repopb.ListRefsRequest{Package: "a/b/c"})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, refs.Refs, should.HaveLength(0))
 		})
 
 		t.Run("Bad ref", func(t *ftt.Test) {
 			t.Run("CreateRef", func(t *ftt.Test) {
-				_, err := impl.CreateRef(ctx, &api.Ref{
+				_, err := impl.CreateRef(ctx, &repopb.Ref{
 					Name:    "bad:ref:name",
 					Package: "a/b/c",
-					Instance: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
+					Instance: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA1,
 						HexDigest: digest,
 					},
 				})
@@ -1661,7 +1662,7 @@ func TestRefs(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("bad 'name'"))
 			})
 			t.Run("DeleteRef", func(t *ftt.Test) {
-				_, err := impl.DeleteRef(ctx, &api.DeleteRefRequest{
+				_, err := impl.DeleteRef(ctx, &repopb.DeleteRefRequest{
 					Name:    "bad:ref:name",
 					Package: "a/b/c",
 				})
@@ -1672,11 +1673,11 @@ func TestRefs(t *testing.T) {
 
 		t.Run("Bad package name", func(t *ftt.Test) {
 			t.Run("CreateRef", func(t *ftt.Test) {
-				_, err := impl.CreateRef(ctx, &api.Ref{
+				_, err := impl.CreateRef(ctx, &repopb.Ref{
 					Name:    "latest",
 					Package: "///",
-					Instance: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
+					Instance: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA1,
 						HexDigest: digest,
 					},
 				})
@@ -1684,7 +1685,7 @@ func TestRefs(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 			})
 			t.Run("DeleteRef", func(t *ftt.Test) {
-				_, err := impl.DeleteRef(ctx, &api.DeleteRefRequest{
+				_, err := impl.DeleteRef(ctx, &repopb.DeleteRefRequest{
 					Name:    "latest",
 					Package: "///",
 				})
@@ -1692,7 +1693,7 @@ func TestRefs(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 			})
 			t.Run("ListRefs", func(t *ftt.Test) {
-				_, err := impl.ListRefs(ctx, &api.ListRefsRequest{
+				_, err := impl.ListRefs(ctx, &repopb.ListRefsRequest{
 					Package: "///",
 				})
 				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
@@ -1702,11 +1703,11 @@ func TestRefs(t *testing.T) {
 
 		t.Run("No access", func(t *ftt.Test) {
 			t.Run("CreateRef", func(t *ftt.Test) {
-				_, err := impl.CreateRef(ctx, &api.Ref{
+				_, err := impl.CreateRef(ctx, &repopb.Ref{
 					Name:    "latest",
 					Package: "z",
-					Instance: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
+					Instance: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA1,
 						HexDigest: digest,
 					},
 				})
@@ -1714,7 +1715,7 @@ func TestRefs(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("is not allowed to see it"))
 			})
 			t.Run("DeleteRef", func(t *ftt.Test) {
-				_, err := impl.DeleteRef(ctx, &api.DeleteRefRequest{
+				_, err := impl.DeleteRef(ctx, &repopb.DeleteRefRequest{
 					Name:    "latest",
 					Package: "z",
 				})
@@ -1722,7 +1723,7 @@ func TestRefs(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("is not allowed to see it"))
 			})
 			t.Run("ListRefs", func(t *ftt.Test) {
-				_, err := impl.ListRefs(ctx, &api.ListRefsRequest{
+				_, err := impl.ListRefs(ctx, &repopb.ListRefsRequest{
 					Package: "z",
 				})
 				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
@@ -1732,11 +1733,11 @@ func TestRefs(t *testing.T) {
 
 		t.Run("Missing package", func(t *ftt.Test) {
 			t.Run("CreateRef", func(t *ftt.Test) {
-				_, err := impl.CreateRef(ctx, &api.Ref{
+				_, err := impl.CreateRef(ctx, &repopb.Ref{
 					Name:    "latest",
 					Package: "a/b/z",
-					Instance: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
+					Instance: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA1,
 						HexDigest: digest,
 					},
 				})
@@ -1744,7 +1745,7 @@ func TestRefs(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
 			t.Run("DeleteRef", func(t *ftt.Test) {
-				_, err := impl.DeleteRef(ctx, &api.DeleteRefRequest{
+				_, err := impl.DeleteRef(ctx, &repopb.DeleteRefRequest{
 					Name:    "latest",
 					Package: "a/b/z",
 				})
@@ -1752,7 +1753,7 @@ func TestRefs(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
 			t.Run("ListRefs", func(t *ftt.Test) {
-				_, err := impl.ListRefs(ctx, &api.ListRefsRequest{
+				_, err := impl.ListRefs(ctx, &repopb.ListRefsRequest{
 					Package: "a/b/z",
 				})
 				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
@@ -1761,11 +1762,11 @@ func TestRefs(t *testing.T) {
 		})
 
 		t.Run("Bad instance", func(t *ftt.Test) {
-			_, err := impl.CreateRef(ctx, &api.Ref{
+			_, err := impl.CreateRef(ctx, &repopb.Ref{
 				Name:    "latest",
 				Package: "a/b/c",
-				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
 					HexDigest: "123",
 				},
 			})
@@ -1774,11 +1775,11 @@ func TestRefs(t *testing.T) {
 		})
 
 		t.Run("Missing instance", func(t *ftt.Test) {
-			_, err := impl.CreateRef(ctx, &api.Ref{
+			_, err := impl.CreateRef(ctx, &repopb.Ref{
 				Name:    "latest",
 				Package: "a/b/c",
-				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
 					HexDigest: strings.Repeat("b", 40),
 				},
 			})
@@ -1788,11 +1789,11 @@ func TestRefs(t *testing.T) {
 
 		t.Run("Instance is not ready yet", func(t *ftt.Test) {
 			putInst("a/b/c", digest, []string{"proc"}, nil)
-			_, err := impl.CreateRef(ctx, &api.Ref{
+			_, err := impl.CreateRef(ctx, &repopb.Ref{
 				Name:    "latest",
 				Package: "a/b/c",
-				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
 					HexDigest: digest,
 				},
 			})
@@ -1802,11 +1803,11 @@ func TestRefs(t *testing.T) {
 
 		t.Run("Failed processors", func(t *ftt.Test) {
 			putInst("a/b/c", digest, nil, []string{"proc"})
-			_, err := impl.CreateRef(ctx, &api.Ref{
+			_, err := impl.CreateRef(ctx, &repopb.Ref{
 				Name:    "latest",
 				Package: "a/b/c",
-				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
 					HexDigest: digest,
 				},
 			})
@@ -1826,18 +1827,18 @@ func TestTags(t *testing.T) {
 		ctx, _, as := testutil.TestingContext()
 
 		meta := testutil.MetadataStore{}
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"user:reader@example.com"},
 				},
 				{
-					Role:       api.Role_WRITER,
+					Role:       repopb.Role_WRITER,
 					Principals: []string{"user:writer@example.com"},
 				},
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"user:owner@example.com"},
 				},
 			},
@@ -1867,8 +1868,8 @@ func TestTags(t *testing.T) {
 			return mTag
 		}
 
-		tags := func(tag ...string) []*api.Tag {
-			out := make([]*api.Tag, len(tag))
+		tags := func(tag ...string) []*repopb.Tag {
+			out := make([]*repopb.Tag, len(tag))
 			for i, s := range tag {
 				out[i] = common.MustParseInstanceTag(s)
 			}
@@ -1877,15 +1878,15 @@ func TestTags(t *testing.T) {
 
 		digest := strings.Repeat("a", 40)
 		inst := putInst("a/b/c", digest, nil, nil)
-		objRef := &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
+		objRef := &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA1,
 			HexDigest: digest,
 		}
 
 		impl := repoImpl{meta: &meta}
 
 		t.Run("AttachTags/DetachTags happy path", func(t *ftt.Test) {
-			_, err := impl.AttachTags(as("writer@example.com"), &api.AttachTagsRequest{
+			_, err := impl.AttachTags(as("writer@example.com"), &repopb.AttachTagsRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
 				Tags:     tags("a:0", "a:1"),
@@ -1897,7 +1898,7 @@ func TestTags(t *testing.T) {
 			assert.Loosely(t, getTag(inst, "a:1").RegisteredBy, should.Equal("user:writer@example.com"))
 
 			// Detaching requires OWNER.
-			_, err = impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
+			_, err = impl.DetachTags(as("owner@example.com"), &repopb.DetachTagsRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
 				Tags:     tags("a:0", "a:1", "a:missing"),
@@ -1911,7 +1912,7 @@ func TestTags(t *testing.T) {
 
 		t.Run("Bad package", func(t *ftt.Test) {
 			t.Run("AttachTags", func(t *ftt.Test) {
-				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
+				_, err := impl.AttachTags(as("owner@example.com"), &repopb.AttachTagsRequest{
 					Package:  "a/b///",
 					Instance: objRef,
 					Tags:     tags("a:0"),
@@ -1920,7 +1921,7 @@ func TestTags(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 			})
 			t.Run("DetachTags", func(t *ftt.Test) {
-				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
+				_, err := impl.DetachTags(as("owner@example.com"), &repopb.DetachTagsRequest{
 					Package:  "a/b///",
 					Instance: objRef,
 					Tags:     tags("a:0"),
@@ -1932,7 +1933,7 @@ func TestTags(t *testing.T) {
 
 		t.Run("Bad ObjectRef", func(t *ftt.Test) {
 			t.Run("AttachTags", func(t *ftt.Test) {
-				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
+				_, err := impl.AttachTags(as("owner@example.com"), &repopb.AttachTagsRequest{
 					Package: "a/b/c",
 					Tags:    tags("a:0"),
 				})
@@ -1940,7 +1941,7 @@ func TestTags(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("bad 'instance'"))
 			})
 			t.Run("DetachTags", func(t *ftt.Test) {
-				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
+				_, err := impl.DetachTags(as("owner@example.com"), &repopb.DetachTagsRequest{
 					Package: "a/b/c",
 					Tags:    tags("a:0"),
 				})
@@ -1951,7 +1952,7 @@ func TestTags(t *testing.T) {
 
 		t.Run("Empty tag list", func(t *ftt.Test) {
 			t.Run("AttachTags", func(t *ftt.Test) {
-				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
+				_, err := impl.AttachTags(as("owner@example.com"), &repopb.AttachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
@@ -1959,7 +1960,7 @@ func TestTags(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("cannot be empty"))
 			})
 			t.Run("DetachTags", func(t *ftt.Test) {
-				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
+				_, err := impl.DetachTags(as("owner@example.com"), &repopb.DetachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
@@ -1970,19 +1971,19 @@ func TestTags(t *testing.T) {
 
 		t.Run("Bad tag", func(t *ftt.Test) {
 			t.Run("AttachTags", func(t *ftt.Test) {
-				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
+				_, err := impl.AttachTags(as("owner@example.com"), &repopb.AttachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
-					Tags:     []*api.Tag{{Key: ":"}},
+					Tags:     []*repopb.Tag{{Key: ":"}},
 				})
 				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 				assert.Loosely(t, err, should.ErrLike(`invalid tag key`))
 			})
 			t.Run("DetachTags", func(t *ftt.Test) {
-				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
+				_, err := impl.DetachTags(as("owner@example.com"), &repopb.DetachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
-					Tags:     []*api.Tag{{Key: ":"}},
+					Tags:     []*repopb.Tag{{Key: ":"}},
 				})
 				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 				assert.Loosely(t, err, should.ErrLike(`invalid tag key`))
@@ -1991,7 +1992,7 @@ func TestTags(t *testing.T) {
 
 		t.Run("No access", func(t *ftt.Test) {
 			t.Run("AttachTags", func(t *ftt.Test) {
-				_, err := impl.AttachTags(as("reader@example.com"), &api.AttachTagsRequest{
+				_, err := impl.AttachTags(as("reader@example.com"), &repopb.AttachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Tags:     tags("good:tag"),
@@ -2000,7 +2001,7 @@ func TestTags(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("has no required WRITER role"))
 			})
 			t.Run("DetachTags", func(t *ftt.Test) {
-				_, err := impl.DetachTags(as("writer@example.com"), &api.DetachTagsRequest{
+				_, err := impl.DetachTags(as("writer@example.com"), &repopb.DetachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Tags:     tags("good:tag"),
@@ -2012,7 +2013,7 @@ func TestTags(t *testing.T) {
 
 		t.Run("Missing package", func(t *ftt.Test) {
 			t.Run("AttachTags", func(t *ftt.Test) {
-				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
+				_, err := impl.AttachTags(as("owner@example.com"), &repopb.AttachTagsRequest{
 					Package:  "a/b/zzz",
 					Instance: objRef,
 					Tags:     tags("a:0"),
@@ -2021,7 +2022,7 @@ func TestTags(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
 			t.Run("DetachTags", func(t *ftt.Test) {
-				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
+				_, err := impl.DetachTags(as("owner@example.com"), &repopb.DetachTagsRequest{
 					Package:  "a/b/zzz",
 					Instance: objRef,
 					Tags:     tags("a:0"),
@@ -2032,12 +2033,12 @@ func TestTags(t *testing.T) {
 		})
 
 		t.Run("Missing instance", func(t *ftt.Test) {
-			missingRef := &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA1,
+			missingRef := &caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA1,
 				HexDigest: strings.Repeat("b", 40),
 			}
 			t.Run("AttachTags", func(t *ftt.Test) {
-				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
+				_, err := impl.AttachTags(as("owner@example.com"), &repopb.AttachTagsRequest{
 					Package:  "a/b/c",
 					Instance: missingRef,
 					Tags:     tags("a:0"),
@@ -2047,7 +2048,7 @@ func TestTags(t *testing.T) {
 			})
 			t.Run("DetachTags", func(t *ftt.Test) {
 				// DetachTags doesn't care.
-				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
+				_, err := impl.DetachTags(as("owner@example.com"), &repopb.DetachTagsRequest{
 					Package:  "a/b/c",
 					Instance: missingRef,
 					Tags:     tags("a:0"),
@@ -2069,18 +2070,18 @@ func TestInstanceMetadata(t *testing.T) {
 		ctx, _, as := testutil.TestingContext()
 
 		meta := testutil.MetadataStore{}
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"user:reader@example.com"},
 				},
 				{
-					Role:       api.Role_WRITER,
+					Role:       repopb.Role_WRITER,
 					Principals: []string{"user:writer@example.com"},
 				},
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"user:owner@example.com"},
 				},
 			},
@@ -2110,11 +2111,11 @@ func TestInstanceMetadata(t *testing.T) {
 			return nil
 		}
 
-		md := func(kv ...string) []*api.InstanceMetadata {
-			out := make([]*api.InstanceMetadata, len(kv))
+		md := func(kv ...string) []*repopb.InstanceMetadata {
+			out := make([]*repopb.InstanceMetadata, len(kv))
 			for i, s := range kv {
 				split := strings.SplitN(s, ":", 2)
-				out[i] = &api.InstanceMetadata{
+				out[i] = &repopb.InstanceMetadata{
 					Key:   split[0],
 					Value: []byte(split[1]),
 				}
@@ -2124,15 +2125,15 @@ func TestInstanceMetadata(t *testing.T) {
 
 		digest := strings.Repeat("a", 40)
 		inst := putInst("a/b/c", digest, nil, nil)
-		objRef := &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
+		objRef := &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA1,
 			HexDigest: digest,
 		}
 
 		impl := repoImpl{meta: &meta}
 
 		t.Run("AttachMetadata/DetachMetadata/ListMetadata happy path", func(t *ftt.Test) {
-			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+			_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
 				Metadata: md("k0:0", "k1:1"),
@@ -2144,7 +2145,7 @@ func TestInstanceMetadata(t *testing.T) {
 			assert.Loosely(t, getMD(inst, "k1:1").AttachedBy, should.Equal("user:writer@example.com"))
 
 			// Can retrieve it all.
-			resp, err := impl.ListMetadata(as("reader@example.com"), &api.ListMetadataRequest{
+			resp, err := impl.ListMetadata(as("reader@example.com"), &repopb.ListMetadataRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
 			})
@@ -2152,7 +2153,7 @@ func TestInstanceMetadata(t *testing.T) {
 			assert.Loosely(t, resp.Metadata, should.HaveLength(2))
 
 			// Can retrieve an individual key.
-			resp, err = impl.ListMetadata(as("reader@example.com"), &api.ListMetadataRequest{
+			resp, err = impl.ListMetadata(as("reader@example.com"), &repopb.ListMetadataRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
 				Keys:     []string{"k0"},
@@ -2162,10 +2163,10 @@ func TestInstanceMetadata(t *testing.T) {
 
 			// Detaching requires OWNER. Detach one by giving a KV pair, and another
 			// via its fingerprint.
-			_, err = impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+			_, err = impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
-				Metadata: []*api.InstanceMetadata{
+				Metadata: []*repopb.InstanceMetadata{
 					{
 						Key:   "k0",
 						Value: []byte{'0'},
@@ -2184,7 +2185,7 @@ func TestInstanceMetadata(t *testing.T) {
 
 		t.Run("Bad package", func(t *ftt.Test) {
 			t.Run("AttachMetadata", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
 					Package:  "a/b//",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
@@ -2193,7 +2194,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
-				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+				_, err := impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
 					Package:  "a/b//",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
@@ -2202,7 +2203,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 			})
 			t.Run("ListMetadata", func(t *ftt.Test) {
-				_, err := impl.ListMetadata(as("reader@example.com"), &api.ListMetadataRequest{
+				_, err := impl.ListMetadata(as("reader@example.com"), &repopb.ListMetadataRequest{
 					Package:  "a/b//",
 					Instance: objRef,
 				})
@@ -2213,7 +2214,7 @@ func TestInstanceMetadata(t *testing.T) {
 
 		t.Run("Bad ObjectRef", func(t *ftt.Test) {
 			t.Run("AttachMetadata", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Metadata: md("k:0", "k:1"),
 				})
@@ -2221,7 +2222,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("bad 'instance'"))
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
-				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+				_, err := impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Metadata: md("k:0", "k:1"),
 				})
@@ -2229,7 +2230,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("bad 'instance'"))
 			})
 			t.Run("ListMetadata", func(t *ftt.Test) {
-				_, err := impl.ListMetadata(as("reader@example.com"), &api.ListMetadataRequest{
+				_, err := impl.ListMetadata(as("reader@example.com"), &repopb.ListMetadataRequest{
 					Package: "a/b/c",
 				})
 				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
@@ -2239,7 +2240,7 @@ func TestInstanceMetadata(t *testing.T) {
 
 		t.Run("Empty metadata list", func(t *ftt.Test) {
 			t.Run("AttachMetadata", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
@@ -2247,7 +2248,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("cannot be empty"))
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
-				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+				_, err := impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
@@ -2258,7 +2259,7 @@ func TestInstanceMetadata(t *testing.T) {
 
 		t.Run("Bad metadata key", func(t *ftt.Test) {
 			t.Run("AttachMetadata", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("ZZZ:0"),
@@ -2267,7 +2268,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike(`invalid metadata key`))
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
-				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+				_, err := impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("ZZZ:0"),
@@ -2276,7 +2277,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike(`invalid metadata key`))
 			})
 			t.Run("ListMetadata", func(t *ftt.Test) {
-				_, err := impl.ListMetadata(as("reader@example.com"), &api.ListMetadataRequest{
+				_, err := impl.ListMetadata(as("reader@example.com"), &repopb.ListMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Keys:     []string{"ZZZ"},
@@ -2288,7 +2289,7 @@ func TestInstanceMetadata(t *testing.T) {
 
 		t.Run("Bad metadata value", func(t *ftt.Test) {
 			t.Run("AttachMetadata", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("k:" + strings.Repeat("z", 512*1024+1)),
@@ -2297,7 +2298,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike(`metadata with key "k": the metadata value is too long`))
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
-				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+				_, err := impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("k:" + strings.Repeat("z", 512*1024+1)),
@@ -2310,7 +2311,7 @@ func TestInstanceMetadata(t *testing.T) {
 		t.Run("Bad metadata content type in AttachMetadata", func(t *ftt.Test) {
 			m := md("k:0")
 			m[0].ContentType = "zzz zzz"
-			_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+			_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
 				Metadata: m,
@@ -2320,10 +2321,10 @@ func TestInstanceMetadata(t *testing.T) {
 		})
 
 		t.Run("Bad fingerprint in DetachMetadata", func(t *ftt.Test) {
-			_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+			_, err := impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
-				Metadata: []*api.InstanceMetadata{
+				Metadata: []*repopb.InstanceMetadata{
 					{Fingerprint: "bad"},
 				},
 			})
@@ -2333,7 +2334,7 @@ func TestInstanceMetadata(t *testing.T) {
 
 		t.Run("No access", func(t *ftt.Test) {
 			t.Run("AttachMetadata", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(as("reader@example.com"), &api.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(as("reader@example.com"), &repopb.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
@@ -2342,7 +2343,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("has no required WRITER role"))
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
-				_, err := impl.DetachMetadata(as("writer@example.com"), &api.DetachMetadataRequest{
+				_, err := impl.DetachMetadata(as("writer@example.com"), &repopb.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
@@ -2351,7 +2352,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("has no required OWNER role"))
 			})
 			t.Run("ListMetadata", func(t *ftt.Test) {
-				_, err := impl.ListMetadata(as("unknown@example.com"), &api.ListMetadataRequest{
+				_, err := impl.ListMetadata(as("unknown@example.com"), &repopb.ListMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
@@ -2362,7 +2363,7 @@ func TestInstanceMetadata(t *testing.T) {
 
 		t.Run("Missing package", func(t *ftt.Test) {
 			t.Run("AttachMetadata", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
 					Package:  "a/b/c/missing",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
@@ -2371,7 +2372,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
-				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+				_, err := impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
 					Package:  "a/b/c/missing",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
@@ -2380,7 +2381,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
 			t.Run("ListMetadata", func(t *ftt.Test) {
-				_, err := impl.ListMetadata(as("reader@example.com"), &api.ListMetadataRequest{
+				_, err := impl.ListMetadata(as("reader@example.com"), &repopb.ListMetadataRequest{
 					Package:  "a/b/c/missing",
 					Instance: objRef,
 				})
@@ -2390,12 +2391,12 @@ func TestInstanceMetadata(t *testing.T) {
 		})
 
 		t.Run("Missing instance", func(t *ftt.Test) {
-			missingRef := &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA1,
+			missingRef := &caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA1,
 				HexDigest: strings.Repeat("b", 40),
 			}
 			t.Run("AttachMetadata", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(as("writer@example.com"), &api.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: missingRef,
 					Metadata: md("k:0", "k:1"),
@@ -2404,7 +2405,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("no such instance"))
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
-				_, err := impl.DetachMetadata(as("owner@example.com"), &api.DetachMetadataRequest{
+				_, err := impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: missingRef,
 					Metadata: md("k:0", "k:1"),
@@ -2413,7 +2414,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("no such instance"))
 			})
 			t.Run("ListMetadata", func(t *ftt.Test) {
-				_, err := impl.ListMetadata(as("reader@example.com"), &api.ListMetadataRequest{
+				_, err := impl.ListMetadata(as("reader@example.com"), &repopb.ListMetadataRequest{
 					Package:  "a/b/c",
 					Instance: missingRef,
 				})
@@ -2435,10 +2436,10 @@ func TestResolveVersion(t *testing.T) {
 		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"user:reader@example.com"},
 				},
 			},
@@ -2459,17 +2460,17 @@ func TestResolveVersion(t *testing.T) {
 
 		assert.Loosely(t, datastore.Put(ctx, pkg, inst1, inst2), should.BeNil)
 		assert.Loosely(t, model.SetRef(ctx, "latest", inst2), should.BeNil)
-		assert.Loosely(t, model.AttachTags(ctx, inst1, []*api.Tag{
+		assert.Loosely(t, model.AttachTags(ctx, inst1, []*repopb.Tag{
 			{Key: "ver", Value: "1"},
 			{Key: "ver", Value: "ambiguous"},
 		}), should.BeNil)
-		assert.Loosely(t, model.AttachTags(ctx, inst2, []*api.Tag{
+		assert.Loosely(t, model.AttachTags(ctx, inst2, []*repopb.Tag{
 			{Key: "ver", Value: "2"},
 			{Key: "ver", Value: "ambiguous"},
 		}), should.BeNil)
 
 		t.Run("Happy path", func(t *ftt.Test) {
-			inst, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+			inst, err := impl.ResolveVersion(ctx, &repopb.ResolveVersionRequest{
 				Package: "a/pkg",
 				Version: "latest",
 			})
@@ -2478,7 +2479,7 @@ func TestResolveVersion(t *testing.T) {
 		})
 
 		t.Run("Bad package name", func(t *ftt.Test) {
-			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+			_, err := impl.ResolveVersion(ctx, &repopb.ResolveVersionRequest{
 				Package: "///",
 				Version: "latest",
 			})
@@ -2487,7 +2488,7 @@ func TestResolveVersion(t *testing.T) {
 		})
 
 		t.Run("Bad version name", func(t *ftt.Test) {
-			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+			_, err := impl.ResolveVersion(ctx, &repopb.ResolveVersionRequest{
 				Package: "a/pkg",
 				Version: "::",
 			})
@@ -2496,7 +2497,7 @@ func TestResolveVersion(t *testing.T) {
 		})
 
 		t.Run("No access", func(t *ftt.Test) {
-			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+			_, err := impl.ResolveVersion(ctx, &repopb.ResolveVersionRequest{
 				Package: "b",
 				Version: "latest",
 			})
@@ -2505,7 +2506,7 @@ func TestResolveVersion(t *testing.T) {
 		})
 
 		t.Run("Missing package", func(t *ftt.Test) {
-			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+			_, err := impl.ResolveVersion(ctx, &repopb.ResolveVersionRequest{
 				Package: "a/b",
 				Version: "latest",
 			})
@@ -2514,7 +2515,7 @@ func TestResolveVersion(t *testing.T) {
 		})
 
 		t.Run("Missing instance", func(t *ftt.Test) {
-			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+			_, err := impl.ResolveVersion(ctx, &repopb.ResolveVersionRequest{
 				Package: "a/pkg",
 				Version: strings.Repeat("f", 40),
 			})
@@ -2523,7 +2524,7 @@ func TestResolveVersion(t *testing.T) {
 		})
 
 		t.Run("Missing ref", func(t *ftt.Test) {
-			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+			_, err := impl.ResolveVersion(ctx, &repopb.ResolveVersionRequest{
 				Package: "a/pkg",
 				Version: "missing",
 			})
@@ -2532,7 +2533,7 @@ func TestResolveVersion(t *testing.T) {
 		})
 
 		t.Run("Missing tag", func(t *ftt.Test) {
-			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+			_, err := impl.ResolveVersion(ctx, &repopb.ResolveVersionRequest{
 				Package: "a/pkg",
 				Version: "ver:missing",
 			})
@@ -2541,7 +2542,7 @@ func TestResolveVersion(t *testing.T) {
 		})
 
 		t.Run("Ambiguous tag", func(t *ftt.Test) {
-			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+			_, err := impl.ResolveVersion(ctx, &repopb.ResolveVersionRequest{
 				Package: "a/pkg",
 				Version: "ver:ambiguous",
 			})
@@ -2559,10 +2560,10 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"user:reader@example.com"},
 				},
 			},
@@ -2578,28 +2579,28 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 		}
 		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), should.BeNil)
 
-		cas.GetObjectURLImpl = func(_ context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
-			assert.Loosely(t, r.Object.HashAlgo, should.Equal(api.HashAlgo_SHA1))
+		cas.GetObjectURLImpl = func(_ context.Context, r *caspb.GetObjectURLRequest) (*caspb.ObjectURL, error) {
+			assert.Loosely(t, r.Object.HashAlgo, should.Equal(caspb.HashAlgo_SHA1))
 			assert.Loosely(t, r.Object.HexDigest, should.Equal(inst.InstanceID))
-			return &api.ObjectURL{
+			return &caspb.ObjectURL{
 				SignedUrl: fmt.Sprintf("http://example.com/%s?d=%s", r.Object.HexDigest, r.DownloadFilename),
 			}, nil
 		}
 
 		t.Run("GetInstanceURL", func(t *ftt.Test) {
 			t.Run("Happy path", func(t *ftt.Test) {
-				resp, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+				resp, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  inst.Package.StringID(),
 					Instance: inst.Proto().Instance,
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp, should.Match(&api.ObjectURL{
+				assert.Loosely(t, resp, should.Match(&caspb.ObjectURL{
 					SignedUrl: "http://example.com/1111111111111111111111111111111111111111?d=",
 				}))
 			})
 
 			t.Run("Bad package name", func(t *ftt.Test) {
-				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+				_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  "///",
 					Instance: inst.Proto().Instance,
 				})
@@ -2608,10 +2609,10 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 			})
 
 			t.Run("Bad instance", func(t *ftt.Test) {
-				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+				_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package: "a/pkg",
-					Instance: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
+					Instance: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA1,
 						HexDigest: "huh",
 					},
 				})
@@ -2620,7 +2621,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 			})
 
 			t.Run("No access", func(t *ftt.Test) {
-				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+				_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  "b",
 					Instance: inst.Proto().Instance,
 				})
@@ -2629,7 +2630,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 			})
 
 			t.Run("Missing package", func(t *ftt.Test) {
-				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+				_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  "a/missing",
 					Instance: inst.Proto().Instance,
 				})
@@ -2638,10 +2639,10 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 			})
 
 			t.Run("Missing instance", func(t *ftt.Test) {
-				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+				_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package: "a/pkg",
-					Instance: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
+					Instance: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA1,
 						HexDigest: strings.Repeat("f", 40),
 					},
 				})
@@ -2717,10 +2718,10 @@ func TestDescribeInstance(t *testing.T) {
 		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"user:reader@example.com"},
 				},
 			},
@@ -2736,18 +2737,18 @@ func TestDescribeInstance(t *testing.T) {
 		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), should.BeNil)
 
 		t.Run("Happy path, basic info", func(t *ftt.Test) {
-			resp, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+			resp, err := impl.DescribeInstance(ctx, &repopb.DescribeInstanceRequest{
 				Package:  "a/pkg",
 				Instance: inst.Proto().Instance,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Match(&api.DescribeInstanceResponse{
+			assert.Loosely(t, resp, should.Match(&repopb.DescribeInstanceResponse{
 				Instance: inst.Proto(),
 			}))
 		})
 
 		t.Run("Happy path, full info", func(t *ftt.Test) {
-			model.AttachTags(as("tag@example.com"), inst, []*api.Tag{
+			model.AttachTags(as("tag@example.com"), inst, []*repopb.Tag{
 				{Key: "a", Value: "0"},
 				{Key: "a", Value: "1"},
 			})
@@ -2755,7 +2756,7 @@ func TestDescribeInstance(t *testing.T) {
 			model.SetRef(as("ref@example.com"), "ref_a", inst)
 			model.SetRef(as("ref@example.com"), "ref_b", inst)
 
-			model.AttachMetadata(as("metadata@example.com"), inst, []*api.InstanceMetadata{
+			model.AttachMetadata(as("metadata@example.com"), inst, []*repopb.InstanceMetadata{
 				{
 					Key:         "foo",
 					Value:       []byte("bar"),
@@ -2776,7 +2777,7 @@ func TestDescribeInstance(t *testing.T) {
 				CreatedTs: testutil.TestTime,
 			})
 
-			resp, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+			resp, err := impl.DescribeInstance(ctx, &repopb.DescribeInstanceRequest{
 				Package:            "a/pkg",
 				Instance:           inst.Proto().Instance,
 				DescribeTags:       true,
@@ -2785,9 +2786,9 @@ func TestDescribeInstance(t *testing.T) {
 				DescribeMetadata:   true,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Match(&api.DescribeInstanceResponse{
+			assert.Loosely(t, resp, should.Match(&repopb.DescribeInstanceResponse{
 				Instance: inst.Proto(),
-				Tags: []*api.Tag{
+				Tags: []*repopb.Tag{
 					{
 						Key:        "a",
 						Value:      "0",
@@ -2801,7 +2802,7 @@ func TestDescribeInstance(t *testing.T) {
 						AttachedTs: timestamppb.New(testutil.TestTime),
 					},
 				},
-				Refs: []*api.Ref{
+				Refs: []*repopb.Ref{
 					{
 						Name:       "ref_a",
 						Package:    "a/pkg",
@@ -2817,15 +2818,15 @@ func TestDescribeInstance(t *testing.T) {
 						ModifiedTs: timestamppb.New(testutil.TestTime),
 					},
 				},
-				Processors: []*api.Processor{
+				Processors: []*repopb.Processor{
 					{
 						Id:         "proc",
-						State:      api.Processor_SUCCEEDED,
+						State:      repopb.Processor_SUCCEEDED,
 						FinishedTs: timestamppb.New(testutil.TestTime),
 					},
 				},
 				// Note that metadata is returned LIFO.
-				Metadata: []*api.InstanceMetadata{
+				Metadata: []*repopb.InstanceMetadata{
 					{
 						Key:         "bar",
 						Value:       []byte("baz"),
@@ -2847,7 +2848,7 @@ func TestDescribeInstance(t *testing.T) {
 		})
 
 		t.Run("Bad package name", func(t *ftt.Test) {
-			_, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+			_, err := impl.DescribeInstance(ctx, &repopb.DescribeInstanceRequest{
 				Package:  "///",
 				Instance: inst.Proto().Instance,
 			})
@@ -2856,10 +2857,10 @@ func TestDescribeInstance(t *testing.T) {
 		})
 
 		t.Run("Bad instance", func(t *ftt.Test) {
-			_, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+			_, err := impl.DescribeInstance(ctx, &repopb.DescribeInstanceRequest{
 				Package: "a/pkg",
-				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
 					HexDigest: "huh",
 				},
 			})
@@ -2868,7 +2869,7 @@ func TestDescribeInstance(t *testing.T) {
 		})
 
 		t.Run("No access", func(t *ftt.Test) {
-			_, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+			_, err := impl.DescribeInstance(ctx, &repopb.DescribeInstanceRequest{
 				Package:  "b",
 				Instance: inst.Proto().Instance,
 			})
@@ -2877,7 +2878,7 @@ func TestDescribeInstance(t *testing.T) {
 		})
 
 		t.Run("Missing package", func(t *ftt.Test) {
-			_, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+			_, err := impl.DescribeInstance(ctx, &repopb.DescribeInstanceRequest{
 				Package:  "a/missing",
 				Instance: inst.Proto().Instance,
 			})
@@ -2886,10 +2887,10 @@ func TestDescribeInstance(t *testing.T) {
 		})
 
 		t.Run("Missing instance", func(t *ftt.Test) {
-			_, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+			_, err := impl.DescribeInstance(ctx, &repopb.DescribeInstanceRequest{
 				Package: "a/pkg",
-				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
 					HexDigest: strings.Repeat("f", 40),
 				},
 			})
@@ -2907,10 +2908,10 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"user:reader@example.com"},
 				},
 			},
@@ -2920,8 +2921,8 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 
 		putInst := func(pkg, extracted string) {
 			inst := &model.Instance{
-				InstanceID: common.ObjectRefToInstanceID(&api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA256,
+				InstanceID: common.ObjectRefToInstanceID(&caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA256,
 					HexDigest: strings.Repeat("1", 64),
 				}),
 				Package:      model.PackageKey(ctx, pkg),
@@ -2955,15 +2956,15 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 			datastore.GetTestable(ctx).CatchupIndexes()
 		}
 
-		expectedFile := func(pkg, extracted string) *api.DescribeBootstrapBundleResponse_BootstrapFile {
-			return &api.DescribeBootstrapBundleResponse_BootstrapFile{
+		expectedFile := func(pkg, extracted string) *repopb.DescribeBootstrapBundleResponse_BootstrapFile {
+			return &repopb.DescribeBootstrapBundleResponse_BootstrapFile{
 				Package: pkg,
-				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA256,
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA256,
 					HexDigest: strings.Repeat("1", 64),
 				},
-				File: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA256,
+				File: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA256,
 					HexDigest: strings.Repeat("a", 64),
 				},
 				Name: extracted,
@@ -2971,8 +2972,8 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 			}
 		}
 
-		expectedError := func(pkg string, code codes.Code, msg string) *api.DescribeBootstrapBundleResponse_BootstrapFile {
-			return &api.DescribeBootstrapBundleResponse_BootstrapFile{
+		expectedError := func(pkg string, code codes.Code, msg string) *repopb.DescribeBootstrapBundleResponse_BootstrapFile {
+			return &repopb.DescribeBootstrapBundleResponse_BootstrapFile{
 				Package: pkg,
 				Status: &statuspb.Status{
 					Code:    int32(code),
@@ -2989,13 +2990,13 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 			putInst("a/pkg/sun/package", "") // will be ignored
 
 			t.Run("With prefix listing", func(t *ftt.Test) {
-				resp, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+				resp, err := impl.DescribeBootstrapBundle(ctx, &repopb.DescribeBootstrapBundleRequest{
 					Prefix:  "a/pkg",
 					Version: "latest",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp, should.Match(&api.DescribeBootstrapBundleResponse{
-					Files: []*api.DescribeBootstrapBundleResponse_BootstrapFile{
+				assert.Loosely(t, resp, should.Match(&repopb.DescribeBootstrapBundleResponse{
+					Files: []*repopb.DescribeBootstrapBundleResponse_BootstrapFile{
 						expectedFile("a/pkg/var-1", "file1"),
 						expectedFile("a/pkg/var-2", "file2"),
 						expectedFile("a/pkg/var-3", "file3"),
@@ -3004,14 +3005,14 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 			})
 
 			t.Run("With variants", func(t *ftt.Test) {
-				resp, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+				resp, err := impl.DescribeBootstrapBundle(ctx, &repopb.DescribeBootstrapBundleRequest{
 					Prefix:   "a/pkg",
 					Variants: []string{"var-3", "var-1"},
 					Version:  "latest",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp, should.Match(&api.DescribeBootstrapBundleResponse{
-					Files: []*api.DescribeBootstrapBundleResponse_BootstrapFile{
+				assert.Loosely(t, resp, should.Match(&repopb.DescribeBootstrapBundleResponse{
+					Files: []*repopb.DescribeBootstrapBundleResponse_BootstrapFile{
 						expectedFile("a/pkg/var-3", "file3"),
 						expectedFile("a/pkg/var-1", "file1"),
 					},
@@ -3023,13 +3024,13 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 			putInst("a/pkg/var-1", "file1")
 			putInst("a/pkg/var-2", "")
 
-			resp, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+			resp, err := impl.DescribeBootstrapBundle(ctx, &repopb.DescribeBootstrapBundleRequest{
 				Prefix:  "a/pkg",
 				Version: "latest",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Match(&api.DescribeBootstrapBundleResponse{
-				Files: []*api.DescribeBootstrapBundleResponse_BootstrapFile{
+			assert.Loosely(t, resp, should.Match(&repopb.DescribeBootstrapBundleResponse{
+				Files: []*repopb.DescribeBootstrapBundleResponse_BootstrapFile{
 					expectedFile("a/pkg/var-1", "file1"),
 					expectedError("a/pkg/var-2", codes.FailedPrecondition, `"a/pkg/var-2" is not a bootstrap package`),
 				},
@@ -3041,7 +3042,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 			putInst("a/pkg/var-2", "")
 			putInst("a/pkg/var-3", "")
 
-			_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+			_, err := impl.DescribeBootstrapBundle(ctx, &repopb.DescribeBootstrapBundleRequest{
 				Prefix:  "a/pkg",
 				Version: "latest",
 			})
@@ -3050,7 +3051,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 		})
 
 		t.Run("Empty prefix", func(t *ftt.Test) {
-			_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+			_, err := impl.DescribeBootstrapBundle(ctx, &repopb.DescribeBootstrapBundleRequest{
 				Prefix:  "a/pkg",
 				Version: "latest",
 			})
@@ -3060,7 +3061,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 
 		t.Run("Missing version", func(t *ftt.Test) {
 			putInst("a/pkg/var-1", "file1")
-			_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+			_, err := impl.DescribeBootstrapBundle(ctx, &repopb.DescribeBootstrapBundleRequest{
 				Prefix:  "a/pkg",
 				Version: "not-latest",
 			})
@@ -3070,7 +3071,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 
 		t.Run("Broken processor", func(t *ftt.Test) {
 			putInst("a/pkg/var-1", "BROKEN")
-			_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+			_, err := impl.DescribeBootstrapBundle(ctx, &repopb.DescribeBootstrapBundleRequest{
 				Prefix:  "a/pkg",
 				Version: "latest",
 			})
@@ -3082,7 +3083,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 			putInst("a/pkg/var-1", "file1")
 
 			t.Run("Bad prefix format", func(t *ftt.Test) {
-				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+				_, err := impl.DescribeBootstrapBundle(ctx, &repopb.DescribeBootstrapBundleRequest{
 					Prefix:  "///",
 					Version: "latest",
 				})
@@ -3090,7 +3091,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 			})
 
 			t.Run("Variant with /", func(t *ftt.Test) {
-				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+				_, err := impl.DescribeBootstrapBundle(ctx, &repopb.DescribeBootstrapBundleRequest{
 					Prefix:   "a/pkg",
 					Variants: []string{"some/thing"},
 					Version:  "latest",
@@ -3099,7 +3100,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 			})
 
 			t.Run("Empty variant", func(t *ftt.Test) {
-				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+				_, err := impl.DescribeBootstrapBundle(ctx, &repopb.DescribeBootstrapBundleRequest{
 					Prefix:   "a/pkg",
 					Variants: []string{""},
 					Version:  "latest",
@@ -3108,7 +3109,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 			})
 
 			t.Run("Malformed variant name", func(t *ftt.Test) {
-				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+				_, err := impl.DescribeBootstrapBundle(ctx, &repopb.DescribeBootstrapBundleRequest{
 					Prefix:   "a/pkg",
 					Variants: []string{"BAD"},
 					Version:  "latest",
@@ -3117,7 +3118,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 			})
 
 			t.Run("Duplicate variants", func(t *ftt.Test) {
-				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+				_, err := impl.DescribeBootstrapBundle(ctx, &repopb.DescribeBootstrapBundleRequest{
 					Prefix:   "a/pkg",
 					Variants: []string{"var-1", "var-1"},
 					Version:  "latest",
@@ -3126,7 +3127,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 			})
 
 			t.Run("Bad version", func(t *ftt.Test) {
-				_, err := impl.DescribeBootstrapBundle(ctx, &api.DescribeBootstrapBundleRequest{
+				_, err := impl.DescribeBootstrapBundle(ctx, &repopb.DescribeBootstrapBundleRequest{
 					Prefix:  "a/pkg",
 					Version: "bad version ID",
 				})
@@ -3134,7 +3135,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 			})
 
 			t.Run("Not a reader", func(t *ftt.Test) {
-				_, err := impl.DescribeBootstrapBundle(as("someone@example.com"), &api.DescribeBootstrapBundleRequest{
+				_, err := impl.DescribeBootstrapBundle(as("someone@example.com"), &repopb.DescribeBootstrapBundleRequest{
 					Prefix:  "a/pkg",
 					Version: "latest",
 				})
@@ -3155,18 +3156,18 @@ func TestClientBootstrap(t *testing.T) {
 		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
-		meta.Populate("", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"user:reader@example.com"},
 				},
 			},
 		})
 
 		cas := testutil.MockCAS{
-			GetObjectURLImpl: func(_ context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
-				return &api.ObjectURL{
+			GetObjectURLImpl: func(_ context.Context, r *caspb.GetObjectURLRequest) (*caspb.ObjectURL, error) {
+				return &caspb.ObjectURL{
 					SignedUrl: fmt.Sprintf("http://fake/%s/%s?d=%s&blah=zzz", r.Object.HashAlgo, r.Object.HexDigest, r.DownloadFilename),
 				}, nil
 			},
@@ -3176,8 +3177,8 @@ func TestClientBootstrap(t *testing.T) {
 
 		goodPlat := "linux-amd64"
 		goodDigest := strings.Repeat("f", 64)
-		goodIID := common.ObjectRefToInstanceID(&api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA256,
+		goodIID := common.ObjectRefToInstanceID(&caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: goodDigest,
 		})
 		goodPkg, err := processing.GetClientPackage(goodPlat)
@@ -3302,11 +3303,11 @@ func TestClientBootstrap(t *testing.T) {
 		})
 
 		t.Run("DescribeClient RPC", func(t *ftt.Test) {
-			call := func(pkg, sha256Digest string) (*api.DescribeClientResponse, error) {
-				return impl.DescribeClient(ctx, &api.DescribeClientRequest{
+			call := func(pkg, sha256Digest string) (*repopb.DescribeClientResponse, error) {
+				return impl.DescribeClient(ctx, &repopb.DescribeClientRequest{
 					Package: pkg,
-					Instance: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA256,
+					Instance: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA256,
 						HexDigest: sha256Digest,
 					},
 				})
@@ -3315,30 +3316,30 @@ func TestClientBootstrap(t *testing.T) {
 			t.Run("Happy path", func(t *ftt.Test) {
 				resp, err := call(goodPkg, goodDigest)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, resp, should.Match(&api.DescribeClientResponse{
-					Instance: &api.Instance{
+				assert.Loosely(t, resp, should.Match(&repopb.DescribeClientResponse{
+					Instance: &repopb.Instance{
 						Package: goodPkg,
-						Instance: &api.ObjectRef{
-							HashAlgo:  api.HashAlgo_SHA256,
+						Instance: &caspb.ObjectRef{
+							HashAlgo:  caspb.HashAlgo_SHA256,
 							HexDigest: goodDigest,
 						},
 					},
-					ClientRef: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA256,
+					ClientRef: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA256,
 						HexDigest: res.ClientBinary.AllHashDigests["SHA256"],
 					},
-					ClientBinary: &api.ObjectURL{
+					ClientBinary: &caspb.ObjectURL{
 						SignedUrl: expectedClientURL,
 					},
 					ClientSize: res.ClientBinary.Size,
 					LegacySha1: res.ClientBinary.AllHashDigests["SHA1"],
-					ClientRefAliases: []*api.ObjectRef{
+					ClientRefAliases: []*caspb.ObjectRef{
 						{
-							HashAlgo:  api.HashAlgo_SHA1,
+							HashAlgo:  caspb.HashAlgo_SHA1,
 							HexDigest: res.ClientBinary.AllHashDigests["SHA1"],
 						},
 						{
-							HashAlgo:  api.HashAlgo_SHA256,
+							HashAlgo:  caspb.HashAlgo_SHA256,
 							HexDigest: res.ClientBinary.AllHashDigests["SHA256"],
 						},
 					},
@@ -3444,8 +3445,8 @@ func TestClientBootstrap(t *testing.T) {
 			})
 
 			t.Run("Missing instance", func(t *ftt.Test) {
-				badIID := common.ObjectRefToInstanceID(&api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA256,
+				badIID := common.ObjectRefToInstanceID(&caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA256,
 					HexDigest: strings.Repeat("d", 64),
 				})
 				code, body := call(goodPkg, badIID, "json")
@@ -3498,18 +3499,18 @@ func TestLegacyHandlers(t *testing.T) {
 		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"user:reader@example.com"},
 				},
 			},
 		})
 
 		cas := testutil.MockCAS{
-			GetObjectURLImpl: func(_ context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
-				return &api.ObjectURL{
+			GetObjectURLImpl: func(_ context.Context, r *caspb.GetObjectURLRequest) (*caspb.ObjectURL, error) {
+				return &caspb.ObjectURL{
 					SignedUrl: "http://fake/" + common.ObjectRefToInstanceID(r.Object),
 				}, nil
 			},
@@ -3529,8 +3530,8 @@ func TestLegacyHandlers(t *testing.T) {
 		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/b"}, inst1, inst2), should.BeNil)
 
 		// Make an ambiguous tag.
-		model.AttachTags(ctx, inst1, []*api.Tag{{Key: "k", Value: "v"}})
-		model.AttachTags(ctx, inst2, []*api.Tag{{Key: "k", Value: "v"}})
+		model.AttachTags(ctx, inst1, []*repopb.Tag{{Key: "k", Value: "v"}})
+		model.AttachTags(ctx, inst2, []*repopb.Tag{{Key: "k", Value: "v"}})
 
 		callHandler := func(h router.Handler, f url.Values, ct string) (code int, body string) {
 			rr := httptest.NewRecorder()
@@ -3713,8 +3714,8 @@ func (m *MockVSA) VerifySoftwareArtifact(ctx context.Context, inst *model.Instan
 func (m *MockVSA) NewVerifySoftwareArtifactTask(ctx context.Context, inst *model.Instance, bundle string) *tasks.CallVerifySoftwareArtifact {
 	return &tasks.CallVerifySoftwareArtifact{
 		Instance: inst.Proto(),
-		Request: &vsaapi.VerifySoftwareArtifactRequest{
-			ArtifactInfo: &vsaapi.ArtifactInfo{
+		Request: &vsapb.VerifySoftwareArtifactRequest{
+			ArtifactInfo: &vsapb.ArtifactInfo{
 				Attestations: []string{bundle},
 			},
 		},
@@ -3742,10 +3743,10 @@ func TestVSA(t *testing.T) {
 		ctx = as("owner@example.com")
 
 		meta := testutil.MetadataStore{}
-		meta.Populate("a", &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		meta.Populate("a", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"user:owner@example.com"},
 				},
 			},
@@ -3773,10 +3774,10 @@ func TestVSA(t *testing.T) {
 
 		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), should.BeNil)
 
-		cas.GetObjectURLImpl = func(_ context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
-			assert.Loosely(t, r.Object.HashAlgo, should.Equal(api.HashAlgo_SHA1))
+		cas.GetObjectURLImpl = func(_ context.Context, r *caspb.GetObjectURLRequest) (*caspb.ObjectURL, error) {
+			assert.Loosely(t, r.Object.HashAlgo, should.Equal(caspb.HashAlgo_SHA1))
 			assert.Loosely(t, r.Object.HexDigest, should.Equal(inst.InstanceID))
-			return &api.ObjectURL{
+			return &caspb.ObjectURL{
 				SignedUrl: fmt.Sprintf("http://example.com/%s?d=%s", r.Object.HexDigest, r.DownloadFilename),
 			}, nil
 		}
@@ -3785,10 +3786,10 @@ func TestVSA(t *testing.T) {
 			t.Run("Not Ready", func(t *ftt.Test) {
 				mvsa.VSA = func() string { t.Fail(); return "" }
 
-				_, err := impl.AttachMetadata(ctx, &api.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(ctx, &repopb.AttachMetadataRequest{
 					Package:  "a/pkg/somethingelse",
 					Instance: inst.Proto().Instance,
-					Metadata: []*api.InstanceMetadata{
+					Metadata: []*repopb.InstanceMetadata{
 						{Key: "policy-attestations", Value: []uint8("attestation bundle"), ContentType: "application/vnd.in-toto.bundle"},
 					},
 				})
@@ -3796,10 +3797,10 @@ func TestVSA(t *testing.T) {
 			})
 
 			t.Run("OK", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(ctx, &api.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(ctx, &repopb.AttachMetadataRequest{
 					Package:  inst.Package.StringID(),
 					Instance: inst.Proto().Instance,
-					Metadata: []*api.InstanceMetadata{
+					Metadata: []*repopb.InstanceMetadata{
 						{Key: "policy-attestations", Value: []uint8("attestation bundle"), ContentType: "application/vnd.in-toto.bundle"},
 					},
 				})
@@ -3816,7 +3817,7 @@ func TestVSA(t *testing.T) {
 
 				// Should not be called again when package is requested.
 				mvsa.VSA = func() string { t.Fail(); return "" }
-				_, err = impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+				_, err = impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  inst.Package.StringID(),
 					Instance: inst.Proto().Instance,
 				})
@@ -3827,10 +3828,10 @@ func TestVSA(t *testing.T) {
 			t.Run("Failed", func(t *ftt.Test) {
 				mvsa.VSA = func() string { return "" }
 
-				_, err := impl.AttachMetadata(ctx, &api.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(ctx, &repopb.AttachMetadataRequest{
 					Package:  inst.Package.StringID(),
 					Instance: inst.Proto().Instance,
-					Metadata: []*api.InstanceMetadata{
+					Metadata: []*repopb.InstanceMetadata{
 						{Key: "policy-attestations", Value: []uint8("attestation bundle"), ContentType: "application/vnd.in-toto.bundle"},
 					},
 				})
@@ -3849,13 +3850,13 @@ func TestVSA(t *testing.T) {
 			t.Run("Without VSA", func(t *ftt.Test) {
 				t.Run("With Attestation", func(t *ftt.Test) {
 					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusUnknown))
-					model.AttachMetadata(ctx, inst, []*api.InstanceMetadata{{
+					model.AttachMetadata(ctx, inst, []*repopb.InstanceMetadata{{
 						Key:         "policy-attestations",
 						Value:       []uint8("attestation bundle"),
 						ContentType: "application/vnd.in-toto.bundle"},
 					})
 
-					_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+					_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 						Package:  inst.Package.StringID(),
 						Instance: inst.Proto().Instance,
 					})
@@ -3864,8 +3865,8 @@ func TestVSA(t *testing.T) {
 					assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 					assert.Loosely(t, sched.Tasks()[0].Payload, should.Match(&tasks.CallVerifySoftwareArtifact{
 						Instance: inst.Proto(),
-						Request: &vsaapi.VerifySoftwareArtifactRequest{
-							ArtifactInfo: &vsaapi.ArtifactInfo{
+						Request: &vsapb.VerifySoftwareArtifactRequest{
+							ArtifactInfo: &vsapb.ArtifactInfo{
 								Attestations: []string{"attestation bundle"},
 							},
 						},
@@ -3882,7 +3883,7 @@ func TestVSA(t *testing.T) {
 
 				t.Run("Without Attestation", func(t *ftt.Test) {
 					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusUnknown))
-					_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+					_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 						Package:  inst.Package.StringID(),
 						Instance: inst.Proto().Instance,
 					})
@@ -3892,8 +3893,8 @@ func TestVSA(t *testing.T) {
 					assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 					assert.Loosely(t, sched.Tasks()[0].Payload, should.Match(&tasks.CallVerifySoftwareArtifact{
 						Instance: inst.Proto(),
-						Request: &vsaapi.VerifySoftwareArtifactRequest{
-							ArtifactInfo: &vsaapi.ArtifactInfo{
+						Request: &vsapb.VerifySoftwareArtifactRequest{
+							ArtifactInfo: &vsapb.ArtifactInfo{
 								Attestations: []string{""},
 							},
 						},
@@ -3911,17 +3912,17 @@ func TestVSA(t *testing.T) {
 
 			t.Run("With VSA", func(t *ftt.Test) {
 				mvsa.VSA = func() string { t.Fail(); return "" }
-				err := model.AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+				err := model.AttachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 					{Key: slsaVSAKey, Value: []uint8("something")},
 				})
 				assert.NoErr(t, err)
 
-				resp, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+				resp, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  inst.Package.StringID(),
 					Instance: inst.Proto().Instance,
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, resp, should.Match(&api.ObjectURL{
+				assert.Loosely(t, resp, should.Match(&caspb.ObjectURL{
 					SignedUrl: "http://example.com/1111111111111111111111111111111111111111?d=",
 				}))
 
@@ -3937,7 +3938,7 @@ func TestVSA(t *testing.T) {
 				mvsa.VSA = func() string { t.Fail(); return "" }
 				mvsa.status = vsa.CacheStatusPending
 
-				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+				_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  inst.Package.StringID(),
 					Instance: inst.Proto().Instance,
 				})
@@ -3945,7 +3946,7 @@ func TestVSA(t *testing.T) {
 				assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
 
 				mvsa.status = vsa.CacheStatusCompleted
-				_, err = impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+				_, err = impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  inst.Package.StringID(),
 					Instance: inst.Proto().Instance,
 				})
@@ -3953,7 +3954,7 @@ func TestVSA(t *testing.T) {
 				assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
 
 				mvsa.status = vsa.CacheStatusUnknown
-				_, err = impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+				_, err = impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  inst.Package.StringID(),
 					Instance: inst.Proto().Instance,
 				})

@@ -40,7 +40,8 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/client/cipd/builder"
 	"go.chromium.org/luci/cipd/client/cipd/digests"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
@@ -65,13 +66,13 @@ func TestFetchACL(t *testing.T) {
 		c.Run("Works", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetInheritedPrefixMetadata",
-				in:     &api.PrefixRequest{Prefix: "a/b/c"},
-				out: &api.InheritedPrefixMetadata{
-					PerPrefixMetadata: []*api.PrefixMetadata{
+				in:     &repopb.PrefixRequest{Prefix: "a/b/c"},
+				out: &repopb.InheritedPrefixMetadata{
+					PerPrefixMetadata: []*repopb.PrefixMetadata{
 						{
 							Prefix: "a",
-							Acls: []*api.PrefixMetadata_ACL{
-								{Role: api.Role_READER, Principals: []string{"group:a"}},
+							Acls: []*repopb.PrefixMetadata_ACL{
+								{Role: repopb.Role_READER, Principals: []string{"group:a"}},
 							},
 						},
 					},
@@ -98,7 +99,7 @@ func TestFetchACL(t *testing.T) {
 		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetInheritedPrefixMetadata",
-				in:     &api.PrefixRequest{Prefix: "a/b/c"},
+				in:     &repopb.PrefixRequest{Prefix: "a/b/c"},
 				err:    status.Errorf(codes.PermissionDenied, "blah error"),
 			})
 			_, err := client.FetchACL(ctx, "a/b/c")
@@ -117,22 +118,22 @@ func TestModifyACL(t *testing.T) {
 		c.Run("Modifies existing", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetPrefixMetadata",
-				in:     &api.PrefixRequest{Prefix: "a"},
-				out: &api.PrefixMetadata{
+				in:     &repopb.PrefixRequest{Prefix: "a"},
+				out: &repopb.PrefixMetadata{
 					Prefix: "a",
-					Acls: []*api.PrefixMetadata_ACL{
-						{Role: api.Role_READER, Principals: []string{"group:a"}},
+					Acls: []*repopb.PrefixMetadata_ACL{
+						{Role: repopb.Role_READER, Principals: []string{"group:a"}},
 					},
 					Fingerprint: "abc",
 				},
 			})
 			repo.expect(rpcCall{
 				method: "UpdatePrefixMetadata",
-				in: &api.PrefixMetadata{
+				in: &repopb.PrefixMetadata{
 					Prefix:      "a",
 					Fingerprint: "abc",
 				},
-				out: &api.PrefixMetadata{}, // ignored
+				out: &repopb.PrefixMetadata{}, // ignored
 			})
 
 			assert.Loosely(c, client.ModifyACL(ctx, "a", []PackageACLChange{
@@ -143,18 +144,18 @@ func TestModifyACL(t *testing.T) {
 		c.Run("Creates new", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetPrefixMetadata",
-				in:     &api.PrefixRequest{Prefix: "a"},
+				in:     &repopb.PrefixRequest{Prefix: "a"},
 				err:    status.Errorf(codes.NotFound, "no metadata"),
 			})
 			repo.expect(rpcCall{
 				method: "UpdatePrefixMetadata",
-				in: &api.PrefixMetadata{
+				in: &repopb.PrefixMetadata{
 					Prefix: "a",
-					Acls: []*api.PrefixMetadata_ACL{
-						{Role: api.Role_READER, Principals: []string{"group:a"}},
+					Acls: []*repopb.PrefixMetadata_ACL{
+						{Role: repopb.Role_READER, Principals: []string{"group:a"}},
 					},
 				},
-				out: &api.PrefixMetadata{}, // ignored
+				out: &repopb.PrefixMetadata{}, // ignored
 			})
 
 			assert.Loosely(c, client.ModifyACL(ctx, "a", []PackageACLChange{
@@ -165,11 +166,11 @@ func TestModifyACL(t *testing.T) {
 		c.Run("Noop update", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetPrefixMetadata",
-				in:     &api.PrefixRequest{Prefix: "a"},
-				out: &api.PrefixMetadata{
+				in:     &repopb.PrefixRequest{Prefix: "a"},
+				out: &repopb.PrefixMetadata{
 					Prefix: "a",
-					Acls: []*api.PrefixMetadata_ACL{
-						{Role: api.Role_READER, Principals: []string{"group:a"}},
+					Acls: []*repopb.PrefixMetadata_ACL{
+						{Role: repopb.Role_READER, Principals: []string{"group:a"}},
 					},
 					Fingerprint: "abc",
 				},
@@ -191,7 +192,7 @@ func TestModifyACL(t *testing.T) {
 		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetPrefixMetadata",
-				in:     &api.PrefixRequest{Prefix: "a/b/c"},
+				in:     &repopb.PrefixRequest{Prefix: "a/b/c"},
 				err:    status.Errorf(codes.PermissionDenied, "blah error"),
 			})
 			assert.Loosely(c, client.ModifyACL(ctx, "a/b/c", someChanges), should.ErrLike("blah error"))
@@ -209,12 +210,12 @@ func TestFetchRoles(t *testing.T) {
 		c.Run("Works", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetRolesInPrefix",
-				in:     &api.PrefixRequest{Prefix: "a/b/c"},
-				out: &api.RolesInPrefixResponse{
-					Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
-						{Role: api.Role_OWNER},
-						{Role: api.Role_WRITER},
-						{Role: api.Role_READER},
+				in:     &repopb.PrefixRequest{Prefix: "a/b/c"},
+				out: &repopb.RolesInPrefixResponse{
+					Roles: []*repopb.RolesInPrefixResponse_RoleInPrefix{
+						{Role: repopb.Role_OWNER},
+						{Role: repopb.Role_WRITER},
+						{Role: repopb.Role_READER},
 					},
 				},
 			})
@@ -232,7 +233,7 @@ func TestFetchRoles(t *testing.T) {
 		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetRolesInPrefix",
-				in:     &api.PrefixRequest{Prefix: "a/b/c"},
+				in:     &repopb.PrefixRequest{Prefix: "a/b/c"},
 				err:    status.Errorf(codes.PermissionDenied, "blah error"),
 			})
 			_, err := client.FetchRoles(ctx, "a/b/c")
@@ -251,15 +252,15 @@ func TestFetchRolesOnBehalfOf(t *testing.T) {
 		c.Run("Works", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetRolesInPrefixOnBehalfOf",
-				in: &api.PrefixRequestOnBehalfOf{
-					PrefixRequest: &api.PrefixRequest{Prefix: "a/b/c"},
+				in: &repopb.PrefixRequestOnBehalfOf{
+					PrefixRequest: &repopb.PrefixRequest{Prefix: "a/b/c"},
 					Identity:      "anonymous:anonymous",
 				},
-				out: &api.RolesInPrefixResponse{
-					Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
-						{Role: api.Role_OWNER},
-						{Role: api.Role_WRITER},
-						{Role: api.Role_READER},
+				out: &repopb.RolesInPrefixResponse{
+					Roles: []*repopb.RolesInPrefixResponse_RoleInPrefix{
+						{Role: repopb.Role_OWNER},
+						{Role: repopb.Role_WRITER},
+						{Role: repopb.Role_READER},
 					},
 				},
 			})
@@ -284,8 +285,8 @@ func TestFetchRolesOnBehalfOf(t *testing.T) {
 		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "GetRolesInPrefixOnBehalfOf",
-				in: &api.PrefixRequestOnBehalfOf{
-					PrefixRequest: &api.PrefixRequest{Prefix: "a/b/c"},
+				in: &repopb.PrefixRequestOnBehalfOf{
+					PrefixRequest: &repopb.PrefixRequest{Prefix: "a/b/c"},
 					Identity:      "anonymous:anonymous",
 				},
 				err: status.Errorf(codes.PermissionDenied, "blah error"),
@@ -314,16 +315,16 @@ func TestRegisterInstance(t *testing.T) {
 		client, cas, repo, storage := mockedCipdClient(c)
 		inst := fakeInstance(t, "pkg/inst")
 
-		registerInstanceRPC := func(s api.RegistrationStatus, op *api.UploadOperation) rpcCall {
+		registerInstanceRPC := func(s repopb.RegistrationStatus, op *caspb.UploadOperation) rpcCall {
 			return rpcCall{
 				method: "RegisterInstance",
-				in: &api.Instance{
+				in: &repopb.Instance{
 					Package:  "pkg/inst",
 					Instance: common.InstanceIDToObjectRef(inst.Pin().InstanceID),
 				},
-				out: &api.RegisterInstanceResponse{
+				out: &repopb.RegisterInstanceResponse{
 					Status: s,
-					Instance: &api.Instance{
+					Instance: &repopb.Instance{
 						Package:  "pkg/inst",
 						Instance: common.InstanceIDToObjectRef(inst.Pin().InstanceID),
 					},
@@ -332,40 +333,40 @@ func TestRegisterInstance(t *testing.T) {
 			}
 		}
 
-		finishUploadRPC := func(opID string, out *api.UploadOperation) rpcCall {
+		finishUploadRPC := func(opID string, out *caspb.UploadOperation) rpcCall {
 			return rpcCall{
 				method: "FinishUpload",
-				in:     &api.FinishUploadRequest{UploadOperationId: opID},
+				in:     &caspb.FinishUploadRequest{UploadOperationId: opID},
 				out:    out,
 			}
 		}
 
-		op := api.UploadOperation{
+		op := caspb.UploadOperation{
 			OperationId: "zzz",
 			UploadUrl:   "http://example.com/zzz_op",
 		}
 
 		c.Run("Happy path", func(c *ftt.Test) {
-			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
-			cas.expect(finishUploadRPC(op.OperationId, &api.UploadOperation{
-				Status: api.UploadStatus_VERIFYING,
+			repo.expect(registerInstanceRPC(repopb.RegistrationStatus_NOT_UPLOADED, &op))
+			cas.expect(finishUploadRPC(op.OperationId, &caspb.UploadOperation{
+				Status: caspb.UploadStatus_VERIFYING,
 			}))
-			cas.expect(finishUploadRPC(op.OperationId, &api.UploadOperation{
-				Status: api.UploadStatus_PUBLISHED,
+			cas.expect(finishUploadRPC(op.OperationId, &caspb.UploadOperation{
+				Status: caspb.UploadStatus_PUBLISHED,
 			}))
-			repo.expect(registerInstanceRPC(api.RegistrationStatus_REGISTERED, nil))
+			repo.expect(registerInstanceRPC(repopb.RegistrationStatus_REGISTERED, nil))
 
 			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.BeNil)
 			assert.Loosely(c, storage.getStored(op.UploadUrl), should.NotEqual(""))
 		})
 
 		c.Run("Already registered", func(c *ftt.Test) {
-			repo.expect(registerInstanceRPC(api.RegistrationStatus_ALREADY_REGISTERED, nil))
+			repo.expect(registerInstanceRPC(repopb.RegistrationStatus_ALREADY_REGISTERED, nil))
 			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.BeNil)
 		})
 
 		c.Run("Registration error", func(c *ftt.Test) {
-			rpc := registerInstanceRPC(api.RegistrationStatus_ALREADY_REGISTERED, nil)
+			rpc := registerInstanceRPC(repopb.RegistrationStatus_ALREADY_REGISTERED, nil)
 			rpc.err = status.Errorf(codes.PermissionDenied, "denied blah")
 			repo.expect(rpc)
 			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.ErrLike("denied blah"))
@@ -373,32 +374,32 @@ func TestRegisterInstance(t *testing.T) {
 
 		c.Run("Upload error", func(c *ftt.Test) {
 			storage.returnErr(fmt.Errorf("upload err blah"))
-			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
+			repo.expect(registerInstanceRPC(repopb.RegistrationStatus_NOT_UPLOADED, &op))
 			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.ErrLike("upload err blah"))
 		})
 
 		c.Run("Verification error", func(c *ftt.Test) {
-			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
-			cas.expect(finishUploadRPC(op.OperationId, &api.UploadOperation{
-				Status:       api.UploadStatus_ERRORED,
+			repo.expect(registerInstanceRPC(repopb.RegistrationStatus_NOT_UPLOADED, &op))
+			cas.expect(finishUploadRPC(op.OperationId, &caspb.UploadOperation{
+				Status:       caspb.UploadStatus_ERRORED,
 				ErrorMessage: "baaaaad",
 			}))
 			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.ErrLike("baaaaad"))
 		})
 
 		c.Run("Confused backend", func(c *ftt.Test) {
-			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
-			cas.expect(finishUploadRPC(op.OperationId, &api.UploadOperation{
-				Status: api.UploadStatus_PUBLISHED,
+			repo.expect(registerInstanceRPC(repopb.RegistrationStatus_NOT_UPLOADED, &op))
+			cas.expect(finishUploadRPC(op.OperationId, &caspb.UploadOperation{
+				Status: caspb.UploadStatus_PUBLISHED,
 			}))
-			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
+			repo.expect(registerInstanceRPC(repopb.RegistrationStatus_NOT_UPLOADED, &op))
 			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.ErrLike("servers asks us to upload it again"))
 		})
 
 		c.Run("Verification timeout", func(c *ftt.Test) {
-			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
-			cas.expectMany(finishUploadRPC(op.OperationId, &api.UploadOperation{
-				Status: api.UploadStatus_VERIFYING,
+			repo.expect(registerInstanceRPC(repopb.RegistrationStatus_NOT_UPLOADED, &op))
+			cas.expectMany(finishUploadRPC(op.OperationId, &caspb.UploadOperation{
+				Status: caspb.UploadStatus_VERIFYING,
 			}))
 			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.ErrLike("timeout while waiting"))
 		})
@@ -421,8 +422,8 @@ func TestAttachingStuffWhenReady(t *testing.T) {
 
 		client, _, repo, _ := mockedCipdClient(c)
 
-		objRef := &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA256,
+		objRef := &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: strings.Repeat("a", 64),
 		}
 		pin := common.Pin{
@@ -433,7 +434,7 @@ func TestAttachingStuffWhenReady(t *testing.T) {
 		createRefRPC := func() rpcCall {
 			return rpcCall{
 				method: "CreateRef",
-				in: &api.Ref{
+				in: &repopb.Ref{
 					Name:     "zzz",
 					Package:  "pkg/name",
 					Instance: objRef,
@@ -445,10 +446,10 @@ func TestAttachingStuffWhenReady(t *testing.T) {
 		attachTagsRPC := func() rpcCall {
 			return rpcCall{
 				method: "AttachTags",
-				in: &api.AttachTagsRequest{
+				in: &repopb.AttachTagsRequest{
 					Package:  "pkg/name",
 					Instance: objRef,
-					Tags: []*api.Tag{
+					Tags: []*repopb.Tag{
 						{Key: "k1", Value: "v1"},
 						{Key: "k2", Value: "v2"},
 					},
@@ -460,10 +461,10 @@ func TestAttachingStuffWhenReady(t *testing.T) {
 		attachMetadataRPC := func() rpcCall {
 			return rpcCall{
 				method: "AttachMetadata",
-				in: &api.AttachMetadataRequest{
+				in: &repopb.AttachMetadataRequest{
 					Package:  "pkg/name",
 					Instance: objRef,
-					Metadata: []*api.InstanceMetadata{
+					Metadata: []*repopb.InstanceMetadata{
 						{Key: "k1", Value: []byte("v1"), ContentType: "text/1"},
 						{Key: "k2", Value: []byte("v2"), ContentType: "text/2"},
 					},
@@ -602,12 +603,12 @@ func TestListPackages(t *testing.T) {
 		c.Run("Works", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ListPrefix",
-				in: &api.ListPrefixRequest{
+				in: &repopb.ListPrefixRequest{
 					Prefix:        "a/b/c",
 					Recursive:     true,
 					IncludeHidden: true,
 				},
-				out: &api.ListPrefixResponse{
+				out: &repopb.ListPrefixResponse{
 					Packages: []string{"a/b/c/d/pkg1", "a/b/c/d/pkg2"},
 					Prefixes: []string{"a/b/c/d", "a/b/c/e", "a/b/c/e/f"},
 				},
@@ -632,7 +633,7 @@ func TestListPackages(t *testing.T) {
 		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ListPrefix",
-				in:     &api.ListPrefixRequest{Prefix: "a/b/c"},
+				in:     &repopb.ListPrefixRequest{Prefix: "a/b/c"},
 				err:    status.Errorf(codes.PermissionDenied, "blah error"),
 			})
 			_, err := client.ListPackages(ctx, "a/b/c", false, false)
@@ -651,16 +652,16 @@ func TestSearchInstances(t *testing.T) {
 		searchInstanceRPC := func() rpcCall {
 			return rpcCall{
 				method: "SearchInstances",
-				in: &api.SearchInstancesRequest{
+				in: &repopb.SearchInstancesRequest{
 					Package: "a/b",
-					Tags: []*api.Tag{
+					Tags: []*repopb.Tag{
 						{Key: "k1", Value: "v1"},
 						{Key: "k2", Value: "v2"},
 					},
 					PageSize: 1000,
 				},
-				out: &api.SearchInstancesResponse{
-					Instances: []*api.Instance{
+				out: &repopb.SearchInstancesResponse{
+					Instances: []*repopb.Instance{
 						{
 							Package:  "a/b",
 							Instance: fakeObjectRef("0"),
@@ -729,8 +730,8 @@ func TestListInstances(t *testing.T) {
 		ctx := context.Background()
 		client, _, repo, _ := mockedCipdClient(c)
 
-		fakeAPIInst := func(id string) *api.Instance {
-			return &api.Instance{
+		fakeAPIInst := func(id string) *repopb.Instance {
+			return &repopb.Instance{
 				Package:  "a/b",
 				Instance: fakeObjectRef(id),
 			}
@@ -748,24 +749,24 @@ func TestListInstances(t *testing.T) {
 		c.Run("Works", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ListInstances",
-				in: &api.ListInstancesRequest{
+				in: &repopb.ListInstancesRequest{
 					Package:  "a/b",
 					PageSize: 2,
 				},
-				out: &api.ListInstancesResponse{
-					Instances:     []*api.Instance{fakeAPIInst("0"), fakeAPIInst("1")},
+				out: &repopb.ListInstancesResponse{
+					Instances:     []*repopb.Instance{fakeAPIInst("0"), fakeAPIInst("1")},
 					NextPageToken: "page_tok",
 				},
 			})
 			repo.expect(rpcCall{
 				method: "ListInstances",
-				in: &api.ListInstancesRequest{
+				in: &repopb.ListInstancesRequest{
 					Package:   "a/b",
 					PageSize:  2,
 					PageToken: "page_tok",
 				},
-				out: &api.ListInstancesResponse{
-					Instances: []*api.Instance{fakeAPIInst("2")},
+				out: &repopb.ListInstancesResponse{
+					Instances: []*repopb.Instance{fakeAPIInst("2")},
 				},
 			})
 
@@ -797,7 +798,7 @@ func TestListInstances(t *testing.T) {
 		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ListInstances",
-				in: &api.ListInstancesRequest{
+				in: &repopb.ListInstancesRequest{
 					Package:  "a/b",
 					PageSize: 100,
 				},
@@ -821,9 +822,9 @@ func TestFetchPackageRefs(t *testing.T) {
 		c.Run("Works", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ListRefs",
-				in:     &api.ListRefsRequest{Package: "a/b"},
-				out: &api.ListRefsResponse{
-					Refs: []*api.Ref{
+				in:     &repopb.ListRefsRequest{Package: "a/b"},
+				out: &repopb.ListRefsResponse{
+					Refs: []*repopb.Ref{
 						{
 							Name:     "r1",
 							Instance: fakeObjectRef("0"),
@@ -852,7 +853,7 @@ func TestFetchPackageRefs(t *testing.T) {
 		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ListRefs",
-				in:     &api.ListRefsRequest{Package: "a/b"},
+				in:     &repopb.ListRefsRequest{Package: "a/b"},
 				err:    status.Errorf(codes.PermissionDenied, "blah error"),
 			})
 			_, err := client.FetchPackageRefs(ctx, "a/b")
@@ -876,14 +877,14 @@ func TestDescribeInstance(t *testing.T) {
 		c.Run("Works", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "DescribeInstance",
-				in: &api.DescribeInstanceRequest{
+				in: &repopb.DescribeInstanceRequest{
 					Package:      "a/b",
 					Instance:     fakeObjectRef("0"),
 					DescribeRefs: true,
 					DescribeTags: true,
 				},
-				out: &api.DescribeInstanceResponse{
-					Instance: &api.Instance{
+				out: &repopb.DescribeInstanceResponse{
+					Instance: &repopb.Instance{
 						Package:  "a/b",
 						Instance: fakeObjectRef("0"),
 					},
@@ -910,7 +911,7 @@ func TestDescribeInstance(t *testing.T) {
 		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "DescribeInstance",
-				in: &api.DescribeInstanceRequest{
+				in: &repopb.DescribeInstanceRequest{
 					Package:  "a/b",
 					Instance: fakeObjectRef("0"),
 				},
@@ -935,35 +936,35 @@ func TestDescribeClient(t *testing.T) {
 		}
 
 		c.Run("Works", func(c *ftt.Test) {
-			sha1Ref := &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA1,
+			sha1Ref := &caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA1,
 				HexDigest: strings.Repeat("a", 40),
 			}
-			sha256Ref := &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA256,
+			sha256Ref := &caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA256,
 				HexDigest: strings.Repeat("a", 64),
 			}
-			futureRef := &api.ObjectRef{
+			futureRef := &caspb.ObjectRef{
 				HashAlgo:  345,
 				HexDigest: strings.Repeat("a", 16),
 			}
 
 			repo.expect(rpcCall{
 				method: "DescribeClient",
-				in: &api.DescribeClientRequest{
+				in: &repopb.DescribeClientRequest{
 					Package:  "a/b",
 					Instance: fakeObjectRef("0"),
 				},
-				out: &api.DescribeClientResponse{
-					Instance: &api.Instance{
+				out: &repopb.DescribeClientResponse{
+					Instance: &repopb.Instance{
 						Package:  "a/b",
 						Instance: fakeObjectRef("0"),
 					},
 					ClientSize: 12345,
-					ClientBinary: &api.ObjectURL{
+					ClientBinary: &caspb.ObjectURL{
 						SignedUrl: "http://example.com/client_binary",
 					},
-					ClientRefAliases: []*api.ObjectRef{sha1Ref, sha256Ref, futureRef},
+					ClientRefAliases: []*caspb.ObjectRef{sha1Ref, sha256Ref, futureRef},
 					LegacySha1:       sha1Ref.HexDigest,
 				},
 			})
@@ -975,7 +976,7 @@ func TestDescribeClient(t *testing.T) {
 				Size:               12345,
 				SignedURL:          "http://example.com/client_binary",
 				Digest:             sha256Ref, // best supported
-				AlternativeDigests: []*api.ObjectRef{sha1Ref, futureRef},
+				AlternativeDigests: []*caspb.ObjectRef{sha1Ref, futureRef},
 			}))
 		})
 
@@ -989,7 +990,7 @@ func TestDescribeClient(t *testing.T) {
 		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "DescribeClient",
-				in: &api.DescribeClientRequest{
+				in: &repopb.DescribeClientRequest{
 					Package:  "a/b",
 					Instance: fakeObjectRef("0"),
 				},
@@ -1015,7 +1016,7 @@ func TestResolveVersion(t *testing.T) {
 			PackageName: "a/b",
 			InstanceID:  fakeIID("0"),
 		}
-		resolvedInst := &api.Instance{
+		resolvedInst := &repopb.Instance{
 			Package:  "a/b",
 			Instance: fakeObjectRef("0"),
 		}
@@ -1023,7 +1024,7 @@ func TestResolveVersion(t *testing.T) {
 		c.Run("Resolves ref", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ResolveVersion",
-				in: &api.ResolveVersionRequest{
+				in: &repopb.ResolveVersionRequest{
 					Package: "a/b",
 					Version: "latest",
 				},
@@ -1043,7 +1044,7 @@ func TestResolveVersion(t *testing.T) {
 		c.Run("Resolves tag (no tag cache)", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ResolveVersion",
-				in: &api.ResolveVersionRequest{
+				in: &repopb.ResolveVersionRequest{
 					Package: "a/b",
 					Version: "k:v",
 				},
@@ -1060,7 +1061,7 @@ func TestResolveVersion(t *testing.T) {
 			// Only one RPC, even though we did two ResolveVersion calls.
 			repo.expect(rpcCall{
 				method: "ResolveVersion",
-				in: &api.ResolveVersionRequest{
+				in: &repopb.ResolveVersionRequest{
 					Package: "a/b",
 					Version: "k:v",
 				},
@@ -1091,7 +1092,7 @@ func TestResolveVersion(t *testing.T) {
 		c.Run("Error response", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ResolveVersion",
-				in: &api.ResolveVersionRequest{
+				in: &repopb.ResolveVersionRequest{
 					Package: "a/b",
 					Version: "k:v",
 				},
@@ -1242,8 +1243,8 @@ func TestMaybeUpdateClient(t *testing.T) {
 
 		clientOpts, _, repo, storage := mockedClientOpts(c)
 
-		clientPkgRef := &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA256,
+		clientPkgRef := &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: strings.Repeat("a", 64),
 		}
 		clientPin := common.Pin{
@@ -1253,10 +1254,10 @@ func TestMaybeUpdateClient(t *testing.T) {
 
 		clientBin := filepath.Join(tempDir, clientFileName)
 
-		caclObjRef := func(body string, algo api.HashAlgo) *api.ObjectRef {
+		caclObjRef := func(body string, algo caspb.HashAlgo) *caspb.ObjectRef {
 			h := common.MustNewHash(algo)
 			h.Write([]byte(body))
-			return &api.ObjectRef{
+			return &caspb.ObjectRef{
 				HashAlgo:  algo,
 				HexDigest: common.HexDigest(h),
 			}
@@ -1273,28 +1274,28 @@ func TestMaybeUpdateClient(t *testing.T) {
 		}
 
 		storage.putStored("http://example.com/client_bin", "up-to-date")
-		upToDateSHA256Ref := caclObjRef("up-to-date", api.HashAlgo_SHA256)
-		upToDateSHA1Ref := caclObjRef("up-to-date", api.HashAlgo_SHA256)
+		upToDateSHA256Ref := caclObjRef("up-to-date", caspb.HashAlgo_SHA256)
+		upToDateSHA1Ref := caclObjRef("up-to-date", caspb.HashAlgo_SHA256)
 
 		writeFile(clientBin, "outdated")
 
 		expectResolveVersion := func() {
 			repo.expect(rpcCall{
 				method: "ResolveVersion",
-				in: &api.ResolveVersionRequest{
+				in: &repopb.ResolveVersionRequest{
 					Package: clientPackage,
 					Version: "git:deadbeef",
 				},
-				out: &api.Instance{
+				out: &repopb.Instance{
 					Package:  clientPackage,
 					Instance: clientPkgRef,
 				},
 			})
 		}
 
-		expectDescribeClient := func(refs ...*api.ObjectRef) {
+		expectDescribeClient := func(refs ...*caspb.ObjectRef) {
 			if len(refs) == 0 {
-				refs = []*api.ObjectRef{
+				refs = []*caspb.ObjectRef{
 					upToDateSHA256Ref,
 					upToDateSHA1Ref,
 					{HashAlgo: 555, HexDigest: strings.Repeat("f", 66)},
@@ -1302,17 +1303,17 @@ func TestMaybeUpdateClient(t *testing.T) {
 			}
 			repo.expect(rpcCall{
 				method: "DescribeClient",
-				in: &api.DescribeClientRequest{
+				in: &repopb.DescribeClientRequest{
 					Package:  clientPackage,
 					Instance: clientPkgRef,
 				},
-				out: &api.DescribeClientResponse{
-					Instance: &api.Instance{
+				out: &repopb.DescribeClientResponse{
+					Instance: &repopb.Instance{
 						Package:  clientPackage,
 						Instance: clientPkgRef,
 					},
 					ClientRef: refs[0],
-					ClientBinary: &api.ObjectURL{
+					ClientBinary: &caspb.ObjectURL{
 						SignedUrl: "http://example.com/client_bin",
 					},
 					ClientSize:       10000,
@@ -1322,7 +1323,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 			})
 		}
 
-		expectRPCs := func(refs ...*api.ObjectRef) {
+		expectRPCs := func(refs ...*caspb.ObjectRef) {
 			expectResolveVersion()
 			expectDescribeClient(refs...)
 		}
@@ -1407,7 +1408,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 
 		c.Run("Refuses to update if *.digests doesn't match what backend says", func(c *ftt.Test) {
 			dig := digests.ClientDigestsFile{}
-			dig.AddClientRef(platform, caclObjRef("something-else", api.HashAlgo_SHA256))
+			dig.AddClientRef(platform, caclObjRef("something-else", caspb.HashAlgo_SHA256))
 
 			// Should refuse the update.
 			expectRPCs()
@@ -1420,7 +1421,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 		})
 
 		c.Run("Refuses to update on hash mismatch", func(c *ftt.Test) {
-			expectedRef := caclObjRef("something-else", api.HashAlgo_SHA256)
+			expectedRef := caclObjRef("something-else", caspb.HashAlgo_SHA256)
 
 			dig := digests.ClientDigestsFile{}
 			dig.AddClientRef(platform, expectedRef)
@@ -1590,15 +1591,15 @@ func fakeInstance(t testing.TB, name string) pkg.Instance {
 	assert.Loosely(t, err, should.BeNil)
 	inst, err := reader.OpenInstance(ctx, bytesInstance(out.Bytes()), reader.OpenInstanceOpts{
 		VerificationMode: reader.CalculateHash,
-		HashAlgo:         api.HashAlgo_SHA256,
+		HashAlgo:         caspb.HashAlgo_SHA256,
 	})
 	assert.Loosely(t, err, should.BeNil)
 	return inst
 }
 
-func fakeObjectRef(letter string) *api.ObjectRef {
-	return &api.ObjectRef{
-		HashAlgo:  api.HashAlgo_SHA256,
+func fakeObjectRef(letter string) *caspb.ObjectRef {
+	return &caspb.ObjectRef{
+		HashAlgo:  caspb.HashAlgo_SHA256,
 		HexDigest: strings.Repeat(letter, 64),
 	}
 }
@@ -1688,10 +1689,10 @@ func setupRemoteInstance(body []byte, pin common.Pin, repo *mockedRepoClient, st
 	// Make the planted package discoverable.
 	repo.expect(rpcCall{
 		method: "GetInstanceURL",
-		in: &api.GetInstanceURLRequest{
+		in: &repopb.GetInstanceURLRequest{
 			Package:  pin.PackageName,
 			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
 		},
-		out: &api.ObjectURL{SignedUrl: pkgURL},
+		out: &caspb.ObjectURL{SignedUrl: pkgURL},
 	})
 }

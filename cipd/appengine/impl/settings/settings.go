@@ -20,7 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 )
 
@@ -75,6 +75,6 @@ func (s *Settings) Validate() error {
 
 // ObjectPath constructs a path to the object in the Google Storage, starting
 // from StorageGSPath root.
-func (s *Settings) ObjectPath(obj *api.ObjectRef) string {
+func (s *Settings) ObjectPath(obj *caspb.ObjectRef) string {
 	return s.StorageGSPath + "/" + obj.HashAlgo.String() + "/" + obj.HexDigest
 }

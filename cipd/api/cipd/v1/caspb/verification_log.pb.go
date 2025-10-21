@@ -18,7 +18,7 @@
 // 	protoc        v6.32.0
 // source: go.chromium.org/luci/cipd/api/cipd/v1/verification_log.proto
 
-package api
+package caspb
 
 import (
 	_ "go.chromium.org/luci/common/bq/pb"
@@ -228,7 +228,7 @@ const file_go_chromium_org_luci_cipd_api_cipd_v1_verification_log_proto_rawDesc 
 	"\tfile_size\x18\f \x01(\x03R\bfileSize\x12-\n" +
 	"\x12verification_speed\x18\r \x01(\x03R\x11verificationSpeed\x12\x18\n" +
 	"\aoutcome\x18\x0e \x01(\tR\aoutcome\x12\x14\n" +
-	"\x05error\x18\x0f \x01(\tR\x05errorB+Z)go.chromium.org/luci/cipd/api/cipd/v1;apib\x06proto3"
+	"\x05error\x18\x0f \x01(\tR\x05errorB-Z+go.chromium.org/luci/cipd/api/cipd/v1/caspbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_cipd_api_cipd_v1_verification_log_proto_rawDescOnce sync.Once

@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -69,12 +69,12 @@ type Tag struct {
 // Proto returns cipd.Tag proto with information from this entity.
 //
 // Assumes the tag is valid.
-func (t *Tag) Proto() *api.Tag {
+func (t *Tag) Proto() *repopb.Tag {
 	kv := strings.SplitN(t.Tag, ":", 2)
 	if len(kv) != 2 {
 		panic(fmt.Sprintf("bad tag %q", t.Tag))
 	}
-	return &api.Tag{
+	return &repopb.Tag{
 		Key:        kv[0],
 		Value:      kv[1],
 		AttachedBy: t.RegisteredBy,
@@ -85,7 +85,7 @@ func (t *Tag) Proto() *api.Tag {
 // TagID calculates Tag entity ID (SHA1 digest) from the given tag.
 //
 // Panics if the tag is invalid.
-func TagID(t *api.Tag) string {
+func TagID(t *repopb.Tag) string {
 	tag := common.JoinInstanceTag(t)
 	if err := common.ValidateInstanceTag(tag); err != nil {
 		panic(err)
@@ -106,7 +106,7 @@ func TagID(t *api.Tag) string {
 //	FailedPrecondition if some processors are still running.
 //	Aborted if some processors have failed.
 //	Internal on tag ID collision.
-func AttachTags(ctx context.Context, inst *Instance, tags []*api.Tag) error {
+func AttachTags(ctx context.Context, inst *Instance, tags []*repopb.Tag) error {
 	return Txn(ctx, "AttachTags", func(ctx context.Context) error {
 		if err := CheckInstanceReady(ctx, inst); err != nil {
 			return err
@@ -123,8 +123,8 @@ func AttachTags(ctx context.Context, inst *Instance, tags []*api.Tag) error {
 		for _, t := range missing {
 			t.RegisteredBy = who
 			t.RegisteredTs = now
-			events.Emit(&api.Event{
-				Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
+			events.Emit(&repopb.Event{
+				Kind:     repopb.EventKind_INSTANCE_TAG_ATTACHED,
 				Package:  inst.Package.StringID(),
 				Instance: inst.InstanceID,
 				Tag:      t.Tag,
@@ -146,7 +146,7 @@ func AttachTags(ctx context.Context, inst *Instance, tags []*api.Tag) error {
 // can't be a part of a transaction itself).
 //
 // 'inst' is used only for its key.
-func DetachTags(ctx context.Context, inst *Instance, tags []*api.Tag) error {
+func DetachTags(ctx context.Context, inst *Instance, tags []*repopb.Tag) error {
 	return Txn(ctx, "DetachTags", func(ctx context.Context) error {
 		existing, _, err := checkExistingTags(ctx, inst, tags)
 		if err != nil {
@@ -159,8 +159,8 @@ func DetachTags(ctx context.Context, inst *Instance, tags []*api.Tag) error {
 
 		events := Events{}
 		for _, t := range existing {
-			events.Emit(&api.Event{
-				Kind:     api.EventKind_INSTANCE_TAG_DETACHED,
+			events.Emit(&repopb.Event{
+				Kind:     repopb.EventKind_INSTANCE_TAG_DETACHED,
 				Package:  inst.Package.StringID(),
 				Instance: inst.InstanceID,
 				Tag:      t.Tag,
@@ -180,7 +180,7 @@ func DetachTags(ctx context.Context, inst *Instance, tags []*api.Tag) error {
 //
 //	NotFound if there's no such tag at all.
 //	FailedPrecondition if the tag resolves to multiple instances.
-func ResolveTag(ctx context.Context, pkg string, tag *api.Tag) (string, error) {
+func ResolveTag(ctx context.Context, pkg string, tag *repopb.Tag) (string, error) {
 	// TODO(vadimsh): Cache the result of the resolution. This is generally not
 	// trivial to do right without race conditions, preserving the consistency
 	// guarantees of the API. This will become simpler once we have a notion of
@@ -253,7 +253,7 @@ func tagKey(kv string) string {
 //
 // Tags in 'miss' list have only their key and 'Tag' fields set and nothing
 // more.
-func checkExistingTags(ctx context.Context, inst *Instance, tags []*api.Tag) (exist, miss []*Tag, err error) {
+func checkExistingTags(ctx context.Context, inst *Instance, tags []*repopb.Tag) (exist, miss []*Tag, err error) {
 	instKey := datastore.KeyForObj(ctx, inst)
 	tagEnts := make([]*Tag, len(tags))
 	for i, tag := range tags {
@@ -262,7 +262,7 @@ func checkExistingTags(ctx context.Context, inst *Instance, tags []*api.Tag) (ex
 			Instance: instKey,
 		}
 	}
-	return fetchTags(ctx, tagEnts, func(i int) *api.Tag { return tags[i] })
+	return fetchTags(ctx, tagEnts, func(i int) *repopb.Tag { return tags[i] })
 }
 
 // fetchTags fetches given tag entities and categorized them into existing and
@@ -273,7 +273,7 @@ func checkExistingTags(ctx context.Context, inst *Instance, tags []*api.Tag) (ex
 // Checks 'Tag' field on existing tags (by comparing it to what 'expectedTag'
 // callback returns for the corresponding index), thus safeguarding against
 // malicious SHA1 collisions in TagID().
-func fetchTags(ctx context.Context, tagEnts []*Tag, expectedTag func(idx int) *api.Tag) (exist, miss []*Tag, err error) {
+func fetchTags(ctx context.Context, tagEnts []*Tag, expectedTag func(idx int) *repopb.Tag) (exist, miss []*Tag, err error) {
 	// Try to grab all entities and bail on unexpected errors.
 	existCount := 0
 	missCount := 0

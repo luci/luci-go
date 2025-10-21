@@ -34,7 +34,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	admingrpcpb "go.chromium.org/luci/cipd/api/admin/v1/grpcpb"
-	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
+	casgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/caspb/grpcpb"
 	"go.chromium.org/luci/cipd/appengine/impl/admin"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
@@ -51,7 +51,7 @@ type Services struct {
 
 	// PublicCAS is ACL-protected implementation of cas.StorageServer that can be
 	// exposed as a public API.
-	PublicCAS cipdgrpcpb.StorageServer
+	PublicCAS casgrpcpb.StorageServer
 
 	// PublicRepo is ACL-protected implementation of cipd.RepositoryServer that
 	// can be exposed as a public API.

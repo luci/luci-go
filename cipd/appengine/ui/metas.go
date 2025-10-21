@@ -22,7 +22,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 )
 
@@ -40,7 +40,7 @@ type instanceMetadataItem struct {
 	InlineTextValue string // slightly cleaned value for IsInlineText case
 }
 
-func instanceMetadataListing(md []*api.InstanceMetadata, now time.Time) []instanceMetadataItem {
+func instanceMetadataListing(md []*repopb.InstanceMetadata, now time.Time) []instanceMetadataItem {
 	l := make([]instanceMetadataItem, len(md))
 	for i, m := range md {
 		l[i] = instanceMetadataItem{

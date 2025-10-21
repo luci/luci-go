@@ -38,8 +38,8 @@ import (
 	"go.chromium.org/luci/server/bqlog"
 	"go.chromium.org/luci/server/tq"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	casgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/caspb/grpcpb"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/upload"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
@@ -61,14 +61,14 @@ const minimumSpeedLimit = 10 * 1024 * 1024
 // StorageServer extends StorageServer RPC interface with some methods used
 // internally by other CIPD server modules.
 type StorageServer interface {
-	cipdgrpcpb.StorageServer
+	casgrpcpb.StorageServer
 
 	// GetReader returns an io.ReaderAt implementation to read contents of an
 	// object in the storage.
 	//
 	// Returns grpc errors. In particular NotFound is returned if there's no such
 	// object in the storage.
-	GetReader(ctx context.Context, ref *api.ObjectRef) (gs.Reader, error)
+	GetReader(ctx context.Context, ref *caspb.ObjectRef) (gs.Reader, error)
 }
 
 // Internal returns non-ACLed implementation of StorageService.
@@ -86,21 +86,21 @@ func Internal(d *tq.Dispatcher, b *bqlog.Bundler, s *settings.Settings, opts *se
 		processID:      opts.Hostname,
 		getGS:          gs.Get,
 		getSignedURL:   getSignedURL,
-		submitLog:      func(ctx context.Context, entry *api.VerificationLogEntry) { b.Log(ctx, entry) },
+		submitLog:      func(ctx context.Context, entry *caspb.VerificationLogEntry) { b.Log(ctx, entry) },
 	}
 	impl.registerTasks()
 	b.RegisterSink(bqlog.Sink{
-		Prototype: &api.VerificationLogEntry{},
+		Prototype: &caspb.VerificationLogEntry{},
 		Table:     "verification",
 	})
 	return impl
 }
 
-// storageImpl implements api.StorageServer and task queue handlers.
+// storageImpl implements caspb.StorageServer and task queue handlers.
 //
 // Doesn't do any ACL checks.
 type storageImpl struct {
-	cipdgrpcpb.UnimplementedStorageServer
+	casgrpcpb.UnimplementedStorageServer
 
 	tq       *tq.Dispatcher
 	settings *settings.Settings
@@ -112,7 +112,7 @@ type storageImpl struct {
 	// Mocking points for tests. See Internal() for real implementations.
 	getGS        func(ctx context.Context) gs.GoogleStorage
 	getSignedURL func(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, uint64, error)
-	submitLog    func(ctx context.Context, entry *api.VerificationLogEntry)
+	submitLog    func(ctx context.Context, entry *caspb.VerificationLogEntry)
 }
 
 // registerTasks adds tasks to the tq Dispatcher.
@@ -139,7 +139,7 @@ func (s *storageImpl) registerTasks() {
 }
 
 // GetReader is part of StorageServer interface.
-func (s *storageImpl) GetReader(ctx context.Context, ref *api.ObjectRef) (r gs.Reader, err error) {
+func (s *storageImpl) GetReader(ctx context.Context, ref *caspb.ObjectRef) (r gs.Reader, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	if err = common.ValidateObjectRef(ref, common.KnownHash); err != nil {
@@ -158,7 +158,7 @@ func (s *storageImpl) GetReader(ctx context.Context, ref *api.ObjectRef) (r gs.R
 }
 
 // GetObjectURL implements the corresponding RPC method, see the proto doc.
-func (s *storageImpl) GetObjectURL(ctx context.Context, r *api.GetObjectURLRequest) (resp *api.ObjectURL, err error) {
+func (s *storageImpl) GetObjectURL(ctx context.Context, r *caspb.GetObjectURLRequest) (resp *caspb.ObjectURL, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	if err := common.ValidateObjectRef(r.Object, common.KnownHash); err != nil {
@@ -176,15 +176,15 @@ func (s *storageImpl) GetObjectURL(ctx context.Context, r *api.GetObjectURLReque
 	if err != nil {
 		return nil, errors.Fmt("failed to get signed URL: %w", err)
 	}
-	return &api.ObjectURL{SignedUrl: url}, nil
+	return &caspb.ObjectURL{SignedUrl: url}, nil
 }
 
 // BeginUpload implements the corresponding RPC method, see the proto doc.
-func (s *storageImpl) BeginUpload(ctx context.Context, r *api.BeginUploadRequest) (resp *api.UploadOperation, err error) {
+func (s *storageImpl) BeginUpload(ctx context.Context, r *caspb.BeginUploadRequest) (resp *caspb.UploadOperation, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	// Either Object or HashAlgo should be given. If both are, algos must match.
-	var hashAlgo api.HashAlgo
+	var hashAlgo caspb.HashAlgo
 	var hexDigest string
 	if r.Object != nil {
 		if err := common.ValidateObjectRef(r.Object, common.KnownHash); err != nil {
@@ -258,7 +258,7 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *api.BeginUploadRequest
 	// Save the operation. It is accessed in FinishUpload.
 	op := upload.Operation{
 		ID:         opID,
-		Status:     api.UploadStatus_UPLOADING,
+		Status:     caspb.UploadStatus_UPLOADING,
 		TempGSPath: tempGSPath,
 		UploadURL:  uploadURL,
 		HashAlgo:   hashAlgo,
@@ -276,7 +276,7 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *api.BeginUploadRequest
 }
 
 // FinishUpload implements the corresponding RPC method, see the proto doc.
-func (s *storageImpl) FinishUpload(ctx context.Context, r *api.FinishUploadRequest) (resp *api.UploadOperation, err error) {
+func (s *storageImpl) FinishUpload(ctx context.Context, r *caspb.FinishUploadRequest) (resp *caspb.UploadOperation, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	if r.ForceHash != nil {
@@ -290,7 +290,7 @@ func (s *storageImpl) FinishUpload(ctx context.Context, r *api.FinishUploadReque
 	switch {
 	case err != nil:
 		return nil, err
-	case op.Status != api.UploadStatus_UPLOADING:
+	case op.Status != caspb.UploadStatus_UPLOADING:
 		// Nothing to do if the operation is already closed or being verified.
 		return op.ToProto(r.UploadOperationId), nil
 	}
@@ -308,7 +308,7 @@ func (s *storageImpl) FinishUpload(ctx context.Context, r *api.FinishUploadReque
 
 	// Otherwise start the hash verification task, see verifyUploadTask below.
 	mutated, err := op.Advance(ctx, func(ctx context.Context, op *upload.Operation) error {
-		op.Status = api.UploadStatus_VERIFYING
+		op.Status = caspb.UploadStatus_VERIFYING
 		return s.tq.AddTask(ctx, &tq.Task{
 			Title:   fmt.Sprintf("%d", op.ID),
 			Payload: &tasks.VerifyUpload{UploadOperationId: op.ID},
@@ -322,11 +322,11 @@ func (s *storageImpl) FinishUpload(ctx context.Context, r *api.FinishUploadReque
 }
 
 // CancelUpload implements the corresponding RPC method, see the proto doc.
-func (s *storageImpl) CancelUpload(ctx context.Context, r *api.CancelUploadRequest) (resp *api.UploadOperation, err error) {
+func (s *storageImpl) CancelUpload(ctx context.Context, r *caspb.CancelUploadRequest) (resp *caspb.UploadOperation, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
-	handleOpStatus := func(op *upload.Operation) (*api.UploadOperation, error) {
-		if op.Status == api.UploadStatus_ERRORED || op.Status == api.UploadStatus_CANCELED {
+	handleOpStatus := func(op *upload.Operation) (*caspb.UploadOperation, error) {
+		if op.Status == caspb.UploadStatus_ERRORED || op.Status == caspb.UploadStatus_CANCELED {
 			return op.ToProto(r.UploadOperationId), nil
 		}
 		return nil, grpcutil.FailedPreconditionTag.Apply(errors.
@@ -338,13 +338,13 @@ func (s *storageImpl) CancelUpload(ctx context.Context, r *api.CancelUploadReque
 	switch {
 	case err != nil:
 		return nil, err
-	case op.Status != api.UploadStatus_UPLOADING:
+	case op.Status != caspb.UploadStatus_UPLOADING:
 		return handleOpStatus(op)
 	}
 
 	// Move the operation to canceled state and launch the TQ task to cleanup.
 	mutated, err := op.Advance(ctx, func(ctx context.Context, op *upload.Operation) error {
-		op.Status = api.UploadStatus_CANCELED
+		op.Status = caspb.UploadStatus_CANCELED
 		return s.tq.AddTask(ctx, &tq.Task{
 			Title: fmt.Sprintf("%d", op.ID),
 			Payload: &tasks.CleanupUpload{
@@ -392,7 +392,7 @@ func fetchOp(ctx context.Context, wrappedOpID string) (*upload.Operation, error)
 // finishAndForcedHash finalizes uploads that use ForceHash field.
 //
 // It publishes the object immediately, skipping the verification.
-func (s *storageImpl) finishAndForcedHash(ctx context.Context, op *upload.Operation, hash *api.ObjectRef) (*upload.Operation, error) {
+func (s *storageImpl) finishAndForcedHash(ctx context.Context, op *upload.Operation, hash *caspb.ObjectRef) (*upload.Operation, error) {
 	gs := s.getGS(ctx)
 
 	// Try to move the object into the final location. This may fail
@@ -414,10 +414,10 @@ func (s *storageImpl) finishAndForcedHash(ctx context.Context, op *upload.Operat
 	// or not.
 	return op.Advance(ctx, func(_ context.Context, op *upload.Operation) error {
 		if pubErr != nil {
-			op.Status = api.UploadStatus_ERRORED
+			op.Status = caspb.UploadStatus_ERRORED
 			op.Error = fmt.Sprintf("Failed to publish the object - %s", pubErr)
 		} else {
-			op.Status = api.UploadStatus_PUBLISHED
+			op.Status = caspb.UploadStatus_PUBLISHED
 			op.HashAlgo = hash.HashAlgo
 			op.HexDigest = hash.HexDigest
 		}
@@ -438,7 +438,7 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 	case err != nil:
 		return transient.Tag.Apply(errors.Fmt("failed to fetch upload operation %d: %w", op.ID, err))
 
-	case op.Status != api.UploadStatus_VERIFYING:
+	case op.Status != caspb.UploadStatus_VERIFYING:
 		logging.Infof(ctx, "The upload operation %d is not pending verification anymore (status = %s)", op.ID, op.Status)
 		return nil
 	}
@@ -450,7 +450,7 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 	// Otherwise we still need to verify the temp file, and then move it into
 	// the final location.
 	if op.HexDigest != "" {
-		exists, err := gs.Exists(ctx, s.settings.ObjectPath(&api.ObjectRef{
+		exists, err := gs.Exists(ctx, s.settings.ObjectPath(&caspb.ObjectRef{
 			HashAlgo:  op.HashAlgo,
 			HexDigest: op.HexDigest,
 		}))
@@ -463,7 +463,7 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 				return err
 			}
 			_, err = op.Advance(ctx, func(_ context.Context, op *upload.Operation) error {
-				op.Status = api.UploadStatus_PUBLISHED
+				op.Status = caspb.UploadStatus_PUBLISHED
 				return nil
 			})
 			return err
@@ -473,7 +473,7 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 	verifiedHexDigest := "" // set after the successful hash verification below
 
 	// Log some details about the verification operation.
-	logEntry := &api.VerificationLogEntry{
+	logEntry := &caspb.VerificationLogEntry{
 		OperationId:    op.ID,
 		InitiatedBy:    string(op.CreatedBy),
 		TempGsPath:     op.TempGSPath,
@@ -484,13 +484,13 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 		TraceId:        trace.SpanContextFromContext(ctx).TraceID().String(),
 	}
 	if op.HexDigest != "" {
-		logEntry.ExpectedInstanceId = common.ObjectRefToInstanceID(&api.ObjectRef{
+		logEntry.ExpectedInstanceId = common.ObjectRefToInstanceID(&caspb.ObjectRef{
 			HashAlgo:  op.HashAlgo,
 			HexDigest: op.HexDigest,
 		})
 	}
 
-	submitLog := func(outcome api.UploadStatus, error string) {
+	submitLog := func(outcome caspb.UploadStatus, error string) {
 		logEntry.Outcome = outcome.String()
 		logEntry.Error = error
 		logEntry.Finished = clock.Now(ctx).UnixNano() / 1000
@@ -514,7 +514,7 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 		// On transient errors don't touch the temp file or the operation, we need
 		// them for retries.
 		if transient.Tag.In(err) {
-			submitLog(api.UploadStatus_ERRORED, fmt.Sprintf("Transient error: %s", err))
+			submitLog(caspb.UploadStatus_ERRORED, fmt.Sprintf("Transient error: %s", err))
 			return
 		}
 
@@ -523,17 +523,17 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 		// retried.
 		advancedOp, opErr := op.Advance(ctx, func(_ context.Context, op *upload.Operation) error {
 			if err != nil {
-				op.Status = api.UploadStatus_ERRORED
+				op.Status = caspb.UploadStatus_ERRORED
 				op.Error = fmt.Sprintf("Verification failed: %s", err)
 			} else {
-				op.Status = api.UploadStatus_PUBLISHED
+				op.Status = caspb.UploadStatus_PUBLISHED
 				op.HexDigest = verifiedHexDigest
 			}
 			return nil
 		})
 		if opErr != nil {
 			err = opErr // override the error returned by the task
-			submitLog(api.UploadStatus_ERRORED, fmt.Sprintf("Error updating UploadOperation: %s", err))
+			submitLog(caspb.UploadStatus_ERRORED, fmt.Sprintf("Error updating UploadOperation: %s", err))
 			return
 		}
 
@@ -578,7 +578,7 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 	verifiedHexDigest = hex.EncodeToString(hash.Sum(nil))
 
 	// This should usually match logEntry.ExpectedInstanceId.
-	logEntry.VerifiedInstanceId = common.ObjectRefToInstanceID(&api.ObjectRef{
+	logEntry.VerifiedInstanceId = common.ObjectRefToInstanceID(&caspb.ObjectRef{
 		HashAlgo:  op.HashAlgo,
 		HexDigest: verifiedHexDigest,
 	})
@@ -594,7 +594,7 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 	// clients must not modify uploads after calling FinishUpload, this is
 	// sneaky behavior. Regardless of the outcome of this operation, the upload
 	// operation is closed in the defer above.
-	err = gs.Publish(ctx, s.settings.ObjectPath(&api.ObjectRef{
+	err = gs.Publish(ctx, s.settings.ObjectPath(&caspb.ObjectRef{
 		HashAlgo:  op.HashAlgo,
 		HexDigest: verifiedHexDigest,
 	}), op.TempGSPath, r.Generation())

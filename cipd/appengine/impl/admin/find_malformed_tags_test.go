@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	api "go.chromium.org/luci/cipd/api/admin/v1"
+	adminpb "go.chromium.org/luci/cipd/api/admin/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 )
 
@@ -68,8 +68,8 @@ func TestFixMalformedTags(t *testing.T) {
 		// Make sure allTags actually works too.
 		assert.Loosely(t, allTags("a"), should.Match([]string{"good_a:tag", "bad_a:", "bad_a:fixable\n"}))
 
-		jobID, err := RunMapper(ctx, admin, sched, &api.JobConfig{
-			Kind: api.MapperKind_FIND_MALFORMED_TAGS,
+		jobID, err := RunMapper(ctx, admin, sched, &adminpb.JobConfig{
+			Kind: adminpb.MapperKind_FIND_MALFORMED_TAGS,
 		})
 		assert.Loosely(t, err, should.BeNil)
 
@@ -94,7 +94,7 @@ func TestFixMalformedTags(t *testing.T) {
 		sort.Slice(report, func(i, j int) bool {
 			return report[i].BrokenTag < report[j].BrokenTag
 		})
-		assert.Loosely(t, report, should.Match([]*api.TagFixReport_Tag{
+		assert.Loosely(t, report, should.Match([]*adminpb.TagFixReport_Tag{
 			{Pkg: "a", Instance: iid, BrokenTag: "bad_a:", FixedTag: ""},
 			{Pkg: "a", Instance: iid, BrokenTag: "bad_a:fixable\n", FixedTag: "bad_a:fixable"},
 			{Pkg: "b", Instance: iid, BrokenTag: "bad_b:", FixedTag: ""},

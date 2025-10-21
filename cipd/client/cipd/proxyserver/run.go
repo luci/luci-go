@@ -28,8 +28,8 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/common/system/unixsock"
 
-	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
-	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
+	casgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/caspb/grpcpb"
+	logpb "go.chromium.org/luci/cipd/api/cipd/v1/logpb"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
 )
 
@@ -46,7 +46,7 @@ type ProxyParams struct {
 	// Started is called once the proxy is listening to connections.
 	Started func(proxyURL string)
 	// AccessLog is called to record calls to the proxy RPC endpoints.
-	AccessLog func(ctx context.Context, entry *cipdpb.AccessLogEntry)
+	AccessLog func(ctx context.Context, entry *logpb.AccessLogEntry)
 	// CASOpLog is called to record number of bytes passed through the CAS proxy.
 	CASOpLog func(ctx context.Context, op *CASOp)
 }
@@ -87,7 +87,7 @@ func Run(ctx context.Context, params ProxyParams) error {
 			CASURLObfuscator: obfuscator,
 			UserAgent:        params.UserAgent,
 		},
-		Storage: &cipdgrpcpb.UnimplementedStorageServer{},
+		Storage: &casgrpcpb.UnimplementedStorageServer{},
 		UnaryServerInterceptors: []grpc.UnaryServerInterceptor{
 			AccessLogInterceptor(params.AccessLog),
 			UnimplementedProxyInterceptor(),

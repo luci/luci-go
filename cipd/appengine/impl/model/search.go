@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -31,7 +31,7 @@ import (
 // Only does a query over Instances entities. Doesn't check whether the Package
 // entity exists. Returns up to pageSize entities, plus non-nil cursor (if
 // there are more results). 'pageSize' must be positive.
-func SearchInstances(ctx context.Context, pkg string, tags []*api.Tag, pageSize int32, cursor datastore.Cursor) (out []*Instance, nextCur datastore.Cursor, err error) {
+func SearchInstances(ctx context.Context, pkg string, tags []*repopb.Tag, pageSize int32, cursor datastore.Cursor) (out []*Instance, nextCur datastore.Cursor, err error) {
 	switch {
 	case len(tags) == 0:
 		panic("tags must not be empty")
@@ -52,7 +52,7 @@ func SearchInstances(ctx context.Context, pkg string, tags []*api.Tag, pageSize 
 
 	// Rest of the tags, dedupped, in the original order (the order influences the
 	// query efficiency, see below).
-	auxTags := make([]*api.Tag, 0, len(tags)-1)
+	auxTags := make([]*repopb.Tag, 0, len(tags)-1)
 	for i := 1; i < len(tags); i++ {
 		if t := common.JoinInstanceTag(tags[i]); !seen.Has(t) {
 			auxTags = append(auxTags, tags[i])
@@ -168,7 +168,7 @@ func queryByTag(ctx context.Context, pkg, tag string, cursor datastore.Cursor, p
 //
 // Fetches the tags to verify their Tag fields really match 'tag' as a safeguard
 // against malicious SHA1 collision on TagID.
-func filterByTag(ctx context.Context, page []*datastore.Key, tag *api.Tag) ([]*datastore.Key, error) {
+func filterByTag(ctx context.Context, page []*datastore.Key, tag *repopb.Tag) ([]*datastore.Key, error) {
 	tagID := TagID(tag)
 	tagEnts := make([]*Tag, len(page))
 	for i, inst := range page {
@@ -177,7 +177,7 @@ func filterByTag(ctx context.Context, page []*datastore.Key, tag *api.Tag) ([]*d
 			Instance: inst,
 		}
 	}
-	existing, _, err := fetchTags(ctx, tagEnts, func(int) *api.Tag { return tag })
+	existing, _, err := fetchTags(ctx, tagEnts, func(int) *repopb.Tag { return tag })
 	if err != nil {
 		return nil, errors.Fmt("failed by filter by tag %q: %w", common.JoinInstanceTag(tag), err)
 	}

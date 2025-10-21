@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 )
 
@@ -79,11 +79,11 @@ func TestDeletePackage(t *testing.T) {
 			}), should.BeNil)
 
 			assert.Loosely(t, SetRef(ctx, chr+"-ref", inst), should.BeNil)
-			assert.Loosely(t, AttachTags(ctx, inst, []*api.Tag{
+			assert.Loosely(t, AttachTags(ctx, inst, []*repopb.Tag{
 				{Key: "k1", Value: chr},
 				{Key: "k2", Value: chr},
 			}), should.BeNil)
-			assert.Loosely(t, AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Key: "k1", Value: []byte(chr)},
 				{Key: "k2", Value: []byte(chr)},
 			}), should.BeNil)
@@ -108,8 +108,8 @@ func TestDeletePackage(t *testing.T) {
 
 		// Have the event in the log as well.
 		events := GetEvents(ctx)
-		assert.Loosely(t, events[len(events)-1], should.Match(&api.Event{
-			Kind:    api.EventKind_PACKAGE_DELETED,
+		assert.Loosely(t, events[len(events)-1], should.Match(&repopb.Event{
+			Kind:    repopb.EventKind_PACKAGE_DELETED,
 			Package: "pkg",
 			Who:     string(testutil.TestUser),
 			When:    timestamppb.New(testutil.TestTime),

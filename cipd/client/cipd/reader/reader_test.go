@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/client/cipd/builder"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
@@ -119,7 +119,7 @@ func TestPackageReading(t *testing.T) {
 		// Open it.
 		inst, err := OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
 			VerificationMode: CalculateHash,
-			HashAlgo:         api.HashAlgo_SHA256,
+			HashAlgo:         caspb.HashAlgo_SHA256,
 		})
 		assert.Loosely(t, inst, should.NotBeNil)
 		assert.Loosely(t, err, should.BeNil)
@@ -129,7 +129,7 @@ func TestPackageReading(t *testing.T) {
 		assert.Loosely(t, len(inst.Files()), should.Equal(1))
 
 		// CalculatePin also agrees with the value of the pin.
-		calcedPin, err := CalculatePin(ctx, pkg.NewBytesSource(out.Bytes()), api.HashAlgo_SHA256)
+		calcedPin, err := CalculatePin(ctx, pkg.NewBytesSource(out.Bytes()), caspb.HashAlgo_SHA256)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, calcedPin, should.Match(pin))
 
@@ -218,7 +218,7 @@ func TestPackageReading(t *testing.T) {
 		// Read the package.
 		inst, err := OpenInstanceFile(ctx, tempFilePath, OpenInstanceOpts{
 			VerificationMode: CalculateHash,
-			HashAlgo:         api.HashAlgo_SHA256,
+			HashAlgo:         caspb.HashAlgo_SHA256,
 		})
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, inst, should.NotBeNil)
@@ -256,7 +256,7 @@ func TestPackageReading(t *testing.T) {
 		// Extract files.
 		inst, err := OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
 			VerificationMode: CalculateHash,
-			HashAlgo:         api.HashAlgo_SHA256,
+			HashAlgo:         caspb.HashAlgo_SHA256,
 		})
 		assert.Loosely(t, err, should.BeNil)
 		defer inst.Close(ctx, false)
@@ -423,7 +423,7 @@ func TestPackageReading(t *testing.T) {
 		// Extract files.
 		inst, err := OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
 			VerificationMode: CalculateHash,
-			HashAlgo:         api.HashAlgo_SHA256,
+			HashAlgo:         caspb.HashAlgo_SHA256,
 		})
 		assert.Loosely(t, err, should.BeNil)
 		defer inst.Close(ctx, false)

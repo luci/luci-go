@@ -31,7 +31,8 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -56,10 +57,10 @@ func TestRegisterInstance(t *testing.T) {
 		}
 
 		t.Run("To proto", func(t *ftt.Test) {
-			assert.Loosely(t, inst.Proto(), should.Resemble(&api.Instance{
+			assert.Loosely(t, inst.Proto(), should.Resemble(&repopb.Instance{
 				Package: "a/b/c",
-				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
 					HexDigest: inst.InstanceID,
 				},
 				RegisteredBy: "user:a@example.com",
@@ -95,16 +96,16 @@ func TestRegisterInstance(t *testing.T) {
 			assert.Loosely(t, storedInst, should.Resemble(expected))
 			assert.Loosely(t, storedPkg, should.Resemble(pkg))
 
-			assert.Loosely(t, GetEvents(ctx), should.Resemble([]*api.Event{
+			assert.Loosely(t, GetEvents(ctx), should.Resemble([]*repopb.Event{
 				{
-					Kind:     api.EventKind_INSTANCE_CREATED,
+					Kind:     repopb.EventKind_INSTANCE_CREATED,
 					Who:      string(testutil.TestUser),
 					When:     timestamppb.New(testutil.TestTime.Add(1)),
 					Package:  pkg.Name,
 					Instance: expected.InstanceID,
 				},
 				{
-					Kind:    api.EventKind_PACKAGE_CREATED,
+					Kind:    repopb.EventKind_PACKAGE_CREATED,
 					Who:     string(testutil.TestUser),
 					When:    timestamppb.New(testutil.TestTime),
 					Package: pkg.Name,
@@ -135,9 +136,9 @@ func TestRegisterInstance(t *testing.T) {
 			assert.Loosely(t, datastore.Get(ctx, storedPkg), should.BeNil)
 			assert.Loosely(t, storedPkg, should.Resemble(pkg))
 
-			assert.Loosely(t, GetEvents(ctx), should.Resemble([]*api.Event{
+			assert.Loosely(t, GetEvents(ctx), should.Resemble([]*repopb.Event{
 				{
-					Kind:     api.EventKind_INSTANCE_CREATED,
+					Kind:     repopb.EventKind_INSTANCE_CREATED,
 					Who:      string(testutil.TestUser),
 					When:     timestamppb.New(testutil.TestTime),
 					Package:  pkg.Name,
@@ -218,8 +219,8 @@ func TestCheckInstance(t *testing.T) {
 				}), should.BeNil)
 		}
 
-		iid := common.ObjectRefToInstanceID(&api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
+		iid := common.ObjectRefToInstanceID(&caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA1,
 			HexDigest: strings.Repeat("a", 40),
 		})
 		inst := &Instance{
@@ -317,30 +318,30 @@ func TestFetchProcessors(t *testing.T) {
 		t.Run("Works", func(t *ftt.Test) {
 			procs, err := FetchProcessors(ctx, inst)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, procs, should.Resemble([]*api.Processor{
+			assert.Loosely(t, procs, should.Resemble([]*repopb.Processor{
 				{
 					Id:         "f1",
-					State:      api.Processor_FAILED,
+					State:      repopb.Processor_FAILED,
 					FinishedTs: timestamppb.New(ts),
 					Error:      "fail 1",
 				},
 				{
 					Id:         "f2",
-					State:      api.Processor_FAILED,
+					State:      repopb.Processor_FAILED,
 					FinishedTs: timestamppb.New(ts),
 					Error:      "fail 2",
 				},
 				{
 					Id:    "p1",
-					State: api.Processor_PENDING,
+					State: repopb.Processor_PENDING,
 				},
 				{
 					Id:    "p2",
-					State: api.Processor_PENDING,
+					State: repopb.Processor_PENDING,
 				},
 				{
 					Id:         "s1",
-					State:      api.Processor_SUCCEEDED,
+					State:      repopb.Processor_SUCCEEDED,
 					FinishedTs: timestamppb.New(ts),
 					Result: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -350,7 +351,7 @@ func TestFetchProcessors(t *testing.T) {
 				},
 				{
 					Id:         "s2",
-					State:      api.Processor_SUCCEEDED,
+					State:      repopb.Processor_SUCCEEDED,
 					FinishedTs: timestamppb.New(ts),
 					Result: &structpb.Struct{
 						Fields: map[string]*structpb.Value{

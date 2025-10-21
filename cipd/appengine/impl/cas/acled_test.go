@@ -29,14 +29,14 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	casgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/caspb/grpcpb"
 )
 
 func TestACLDecorator(t *testing.T) {
 	t.Parallel()
 
-	acledSrv := Public(&cipdgrpcpb.UnimplementedStorageServer{})
+	acledSrv := Public(&casgrpcpb.UnimplementedStorageServer{})
 
 	anon := identity.AnonymousIdentity
 	someone := identity.Identity("user:someone@example.com")
@@ -56,13 +56,13 @@ func TestACLDecorator(t *testing.T) {
 		return acledSrv.BeginUpload(ctx, nil)
 	}
 	noForceHash := func() (any, error) {
-		return acledSrv.FinishUpload(ctx, &api.FinishUploadRequest{})
+		return acledSrv.FinishUpload(ctx, &caspb.FinishUploadRequest{})
 	}
 	withForceHash := func() (any, error) {
-		return acledSrv.FinishUpload(ctx, &api.FinishUploadRequest{ForceHash: &api.ObjectRef{}})
+		return acledSrv.FinishUpload(ctx, &caspb.FinishUploadRequest{ForceHash: &caspb.ObjectRef{}})
 	}
 	cancelReq := func() (any, error) {
-		return acledSrv.CancelUpload(ctx, &api.CancelUploadRequest{})
+		return acledSrv.CancelUpload(ctx, &caspb.CancelUploadRequest{})
 	}
 
 	var cases = []struct {

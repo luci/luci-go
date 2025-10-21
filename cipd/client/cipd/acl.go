@@ -19,7 +19,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
@@ -65,7 +65,7 @@ type PackageACLChange struct {
 
 // prefixMetadataToACLs extracts ACLs for a prefix and all its parent prefixes
 // from the prefix's metadata.
-func prefixMetadataToACLs(m *api.InheritedPrefixMetadata) (out []PackageACL) {
+func prefixMetadataToACLs(m *repopb.InheritedPrefixMetadata) (out []PackageACL) {
 	for _, p := range m.PerPrefixMetadata {
 		var acls []PackageACL
 		for _, acl := range p.Acls {
@@ -100,9 +100,9 @@ func prefixMetadataToACLs(m *api.InheritedPrefixMetadata) (out []PackageACL) {
 // mutateACLs applies changes to ACLs in the prefix metadata.
 //
 // Returns true if made some changes (even if ultimately failed), false if not.
-func mutateACLs(meta *api.PrefixMetadata, changes []PackageACLChange) (dirty bool, err error) {
+func mutateACLs(meta *repopb.PrefixMetadata, changes []PackageACLChange) (dirty bool, err error) {
 	for _, ch := range changes {
-		role := api.Role(api.Role_value[ch.Role])
+		role := repopb.Role(repopb.Role_value[ch.Role])
 		if role == 0 {
 			return dirty, cipderr.BadArgument.Apply(errors.Fmt("unrecognized role %q, not in the API definition", ch.Role))
 		}
@@ -120,8 +120,8 @@ func mutateACLs(meta *api.PrefixMetadata, changes []PackageACLChange) (dirty boo
 	return
 }
 
-func grantRole(m *api.PrefixMetadata, role api.Role, principal string) bool {
-	var roleACL *api.PrefixMetadata_ACL
+func grantRole(m *repopb.PrefixMetadata, role repopb.Role, principal string) bool {
+	var roleACL *repopb.PrefixMetadata_ACL
 	for _, acl := range m.Acls {
 		if acl.Role != role {
 			continue
@@ -139,7 +139,7 @@ func grantRole(m *api.PrefixMetadata, role api.Role, principal string) bool {
 		roleACL.Principals = append(roleACL.Principals, principal)
 	} else {
 		// Add new ACL for this role, this is the first one.
-		m.Acls = append(m.Acls, &api.PrefixMetadata_ACL{
+		m.Acls = append(m.Acls, &repopb.PrefixMetadata_ACL{
 			Role:       role,
 			Principals: []string{principal},
 		})
@@ -148,7 +148,7 @@ func grantRole(m *api.PrefixMetadata, role api.Role, principal string) bool {
 	return true
 }
 
-func revokeRole(m *api.PrefixMetadata, role api.Role, principal string) bool {
+func revokeRole(m *repopb.PrefixMetadata, role repopb.Role, principal string) bool {
 	dirty := false
 	for _, acl := range m.Acls {
 		if acl.Role != role {

@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 )
 
 // Operation is a datastore entity that represents an upload.
@@ -34,14 +34,14 @@ type Operation struct {
 
 	ID int64 `gae:"$id"`
 
-	Status api.UploadStatus
+	Status caspb.UploadStatus
 	Error  string `gae:",noindex"` // error message if the verification failed
 
 	TempGSPath string `gae:",noindex"` // the GS path to where the client uploads
 	UploadURL  string `gae:",noindex"` // resumable upload URL
 
-	HashAlgo  api.HashAlgo // the algo to use to verify the uploaded content
-	HexDigest string       // the expected content digest or "" if not known
+	HashAlgo  caspb.HashAlgo // the algo to use to verify the uploaded content
+	HexDigest string         // the expected content digest or "" if not known
 
 	CreatedBy identity.Identity // who initiated the upload, FYI
 	CreatedTS time.Time         // when the upload was initiated, FYI
@@ -51,15 +51,15 @@ type Operation struct {
 // ToProto constructs UploadOperation proto message.
 //
 // The caller must prepare the ID in advance using WrapOpID.
-func (op *Operation) ToProto(wrappedID string) *api.UploadOperation {
-	var ref *api.ObjectRef
-	if op.Status == api.UploadStatus_PUBLISHED {
-		ref = &api.ObjectRef{
+func (op *Operation) ToProto(wrappedID string) *caspb.UploadOperation {
+	var ref *caspb.ObjectRef
+	if op.Status == caspb.UploadStatus_PUBLISHED {
+		ref = &caspb.ObjectRef{
 			HashAlgo:  op.HashAlgo,
 			HexDigest: op.HexDigest,
 		}
 	}
-	return &api.UploadOperation{
+	return &caspb.UploadOperation{
 		OperationId:  wrappedID,
 		UploadUrl:    op.UploadURL,
 		Status:       op.Status,

@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
@@ -56,7 +56,7 @@ func TestVisitAndMarkTags(t *testing.T) {
 		attachTag := func(i *model.Instance, tag string) *datastore.Key {
 			parsed, err := common.ParseInstanceTag(tag)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, model.AttachTags(ctx, i, []*api.Tag{parsed}), should.BeNil)
+			assert.Loosely(t, model.AttachTags(ctx, i, []*repopb.Tag{parsed}), should.BeNil)
 			return tagKey(i, tag)
 		}
 

@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 )
 
@@ -59,9 +59,9 @@ func TestProcessingResult(t *testing.T) {
 		t.Run("Pending", func(t *ftt.Test) {
 			p, err := (&ProcessingResult{ProcID: "zzz"}).Proto()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, p, should.Match(&api.Processor{
+			assert.Loosely(t, p, should.Match(&repopb.Processor{
 				Id:    "zzz",
-				State: api.Processor_PENDING,
+				State: repopb.Processor_PENDING,
 			}))
 		})
 
@@ -75,9 +75,9 @@ func TestProcessingResult(t *testing.T) {
 
 			p, err := proc.Proto()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, p, should.Match(&api.Processor{
+			assert.Loosely(t, p, should.Match(&repopb.Processor{
 				Id:         "zzz",
-				State:      api.Processor_SUCCEEDED,
+				State:      repopb.Processor_SUCCEEDED,
 				FinishedTs: timestamppb.New(testutil.TestTime),
 				Result: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -94,9 +94,9 @@ func TestProcessingResult(t *testing.T) {
 				Error:     "blah",
 			}).Proto()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, p, should.Match(&api.Processor{
+			assert.Loosely(t, p, should.Match(&repopb.Processor{
 				Id:         "zzz",
-				State:      api.Processor_FAILED,
+				State:      repopb.Processor_FAILED,
 				FinishedTs: timestamppb.New(testutil.TestTime),
 				Error:      "blah",
 			}))

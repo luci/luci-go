@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 func TestMetadataStore(t *testing.T) {
@@ -32,7 +32,7 @@ func TestMetadataStore(t *testing.T) {
 
 	populateMD := func(s *MetadataStore, prefixes []string) {
 		for _, p := range prefixes {
-			s.Populate(p, &api.PrefixMetadata{UpdateUser: "user:someone@example.com"})
+			s.Populate(p, &repopb.PrefixMetadata{UpdateUser: "user:someone@example.com"})
 		}
 	}
 
@@ -47,7 +47,7 @@ func TestMetadataStore(t *testing.T) {
 	}
 
 	visitAll := func(s *MetadataStore, pfx string) (visited []string) {
-		err := s.VisitMetadata(ctx, pfx, func(p string, md []*api.PrefixMetadata) (bool, error) {
+		err := s.VisitMetadata(ctx, pfx, func(p string, md []*repopb.PrefixMetadata) (bool, error) {
 			visited = append(visited, p)
 			return true, nil
 		})
@@ -64,7 +64,7 @@ func TestMetadataStore(t *testing.T) {
 		assert.Loosely(t, metas, should.BeNil)
 
 		// Start creating metadata for 'a', but don't actually touch it.
-		meta, err := s.UpdateMetadata(ctx, "a/", func(_ context.Context, m *api.PrefixMetadata) error {
+		meta, err := s.UpdateMetadata(ctx, "a/", func(_ context.Context, m *repopb.PrefixMetadata) error {
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
@@ -76,7 +76,7 @@ func TestMetadataStore(t *testing.T) {
 		assert.Loosely(t, metas, should.BeNil)
 
 		// Create metadata for 'a' for real this time.
-		meta, err = s.UpdateMetadata(ctx, "a/", func(_ context.Context, m *api.PrefixMetadata) error {
+		meta, err = s.UpdateMetadata(ctx, "a/", func(_ context.Context, m *repopb.PrefixMetadata) error {
 			assert.Loosely(t, m.Prefix, should.Equal("a"))
 			assert.Loosely(t, m.Fingerprint, should.BeEmpty)
 			m.UpdateUser = "user:a@example.com"
@@ -84,7 +84,7 @@ func TestMetadataStore(t *testing.T) {
 		})
 		assert.Loosely(t, err, should.BeNil)
 
-		expected_a := &api.PrefixMetadata{
+		expected_a := &repopb.PrefixMetadata{
 			Prefix:      "a",
 			Fingerprint: "ccAI44xVAoO3SUzK2x6b0wZMD00",
 			UpdateUser:  "user:a@example.com",
@@ -92,7 +92,7 @@ func TestMetadataStore(t *testing.T) {
 		assert.Loosely(t, meta, should.Match(expected_a))
 
 		// Again, sees the updated metadata now.
-		meta, err = s.UpdateMetadata(ctx, "a/", func(_ context.Context, m *api.PrefixMetadata) error {
+		meta, err = s.UpdateMetadata(ctx, "a/", func(_ context.Context, m *repopb.PrefixMetadata) error {
 			assert.Loosely(t, m, should.Match(expected_a))
 			return nil
 		})
@@ -100,13 +100,13 @@ func TestMetadataStore(t *testing.T) {
 		assert.Loosely(t, meta, should.Match(expected_a))
 
 		// Create metadata for 'a/b/c'.
-		meta, err = s.UpdateMetadata(ctx, "a/b/c", func(_ context.Context, m *api.PrefixMetadata) error {
+		meta, err = s.UpdateMetadata(ctx, "a/b/c", func(_ context.Context, m *repopb.PrefixMetadata) error {
 			m.UpdateUser = "user:abc@example.com"
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
 
-		expected_abc := &api.PrefixMetadata{
+		expected_abc := &repopb.PrefixMetadata{
 			Prefix:      "a/b/c",
 			Fingerprint: "HZozZp-6ZMi8lZp11-w54xJBjhA",
 			UpdateUser:  "user:abc@example.com",
@@ -115,7 +115,7 @@ func TestMetadataStore(t *testing.T) {
 
 		// Create metadata for 'a/b/d' (sibling), to make sure it will not appear
 		// in responses below.
-		_, err = s.UpdateMetadata(ctx, "a/b/d", func(_ context.Context, m *api.PrefixMetadata) error {
+		_, err = s.UpdateMetadata(ctx, "a/b/d", func(_ context.Context, m *repopb.PrefixMetadata) error {
 			m.UpdateUser = "user:abd@example.com"
 			return nil
 		})
@@ -124,7 +124,7 @@ func TestMetadataStore(t *testing.T) {
 		// Fetching 'a' returns only 'a'.
 		metas, err = s.GetMetadata(ctx, "a")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, metas, should.Match([]*api.PrefixMetadata{expected_a}))
+		assert.Loosely(t, metas, should.Match([]*repopb.PrefixMetadata{expected_a}))
 
 		// Prefix matches respects '/'.
 		metas, err = s.GetMetadata(ctx, "ab")
@@ -134,30 +134,30 @@ func TestMetadataStore(t *testing.T) {
 		// Still only 'a'.
 		metas, err = s.GetMetadata(ctx, "a/b")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, metas, should.Match([]*api.PrefixMetadata{expected_a}))
+		assert.Loosely(t, metas, should.Match([]*repopb.PrefixMetadata{expected_a}))
 
 		// And now we also see 'a/b/c'.
 		metas, err = s.GetMetadata(ctx, "a/b/c")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, metas, should.Match([]*api.PrefixMetadata{expected_a, expected_abc}))
+		assert.Loosely(t, metas, should.Match([]*repopb.PrefixMetadata{expected_a, expected_abc}))
 
 		// And that's all we can ever see, even if we do deeper.
 		metas, err = s.GetMetadata(ctx, "a/b/c/d/e/f")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, metas, should.Match([]*api.PrefixMetadata{expected_a, expected_abc}))
+		assert.Loosely(t, metas, should.Match([]*repopb.PrefixMetadata{expected_a, expected_abc}))
 	})
 
 	ftt.Run("Root metadata", t, func(t *ftt.Test) {
 		s := MetadataStore{}
 
 		// Create the metadata for the root.
-		rootMeta, err := s.UpdateMetadata(ctx, "", func(_ context.Context, m *api.PrefixMetadata) error {
+		rootMeta, err := s.UpdateMetadata(ctx, "", func(_ context.Context, m *repopb.PrefixMetadata) error {
 			m.UpdateUser = "user:root@example.com"
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
 
-		assert.Loosely(t, rootMeta, should.Match(&api.PrefixMetadata{
+		assert.Loosely(t, rootMeta, should.Match(&repopb.PrefixMetadata{
 			Fingerprint: "a7QYP7C3AXksn_pfotXl2OwBevc",
 			UpdateUser:  "user:root@example.com",
 		}))
@@ -165,22 +165,22 @@ func TestMetadataStore(t *testing.T) {
 		// Fetchable now.
 		metas, err := s.GetMetadata(ctx, "")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, metas, should.Match([]*api.PrefixMetadata{rootMeta}))
+		assert.Loosely(t, metas, should.Match([]*repopb.PrefixMetadata{rootMeta}))
 
 		// "/" is also accepted.
 		metas, err = s.GetMetadata(ctx, "/")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, metas, should.Match([]*api.PrefixMetadata{rootMeta}))
+		assert.Loosely(t, metas, should.Match([]*repopb.PrefixMetadata{rootMeta}))
 
 		// Make sure UpdateMetadata see the root metadata too.
-		_, err = s.UpdateMetadata(ctx, "", func(_ context.Context, m *api.PrefixMetadata) error {
+		_, err = s.UpdateMetadata(ctx, "", func(_ context.Context, m *repopb.PrefixMetadata) error {
 			assert.Loosely(t, m, should.Match(rootMeta))
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
 
 		// Create metadata for some prefix.
-		abMeta, err := s.UpdateMetadata(ctx, "a/b", func(_ context.Context, m *api.PrefixMetadata) error {
+		abMeta, err := s.UpdateMetadata(ctx, "a/b", func(_ context.Context, m *repopb.PrefixMetadata) error {
 			m.UpdateUser = "user:ab@example.com"
 			return nil
 		})
@@ -189,10 +189,10 @@ func TestMetadataStore(t *testing.T) {
 		// Fetching meta for prefixes picks up root metadata too.
 		metas, err = s.GetMetadata(ctx, "a")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, metas, should.Match([]*api.PrefixMetadata{rootMeta}))
+		assert.Loosely(t, metas, should.Match([]*repopb.PrefixMetadata{rootMeta}))
 		metas, err = s.GetMetadata(ctx, "a/b/c")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, metas, should.Match([]*api.PrefixMetadata{rootMeta, abMeta}))
+		assert.Loosely(t, metas, should.Match([]*repopb.PrefixMetadata{rootMeta, abMeta}))
 	})
 
 	ftt.Run("GetMetadata filters by prefix correctly", t, func(t *ftt.Test) {
@@ -255,7 +255,7 @@ func TestMetadataStore(t *testing.T) {
 		})
 
 		var visited []string
-		s.VisitMetadata(ctx, "", func(p string, md []*api.PrefixMetadata) (bool, error) {
+		s.VisitMetadata(ctx, "", func(p string, md []*repopb.PrefixMetadata) (bool, error) {
 			visited = append(visited, p)
 			return len(md) <= 2, nil // explore no deeper than 3 levels
 		})

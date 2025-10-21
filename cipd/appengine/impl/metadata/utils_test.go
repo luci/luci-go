@@ -22,32 +22,32 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 func TestGetACLs(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Works", t, func(t *ftt.Test) {
-		m := &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		m := &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_WRITER,
+					Role:       repopb.Role_WRITER,
 					Principals: []string{"a", "b"},
 				},
 				{
-					Role:       api.Role_WRITER,
+					Role:       repopb.Role_WRITER,
 					Principals: []string{"b"},
 				},
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"c"},
 				},
 			},
 		}
-		assert.Loosely(t, GetACLs(m), should.Match(map[api.Role]stringset.Set{
-			api.Role_READER: {"c": struct{}{}},
-			api.Role_WRITER: {"a": struct{}{}, "b": struct{}{}},
+		assert.Loosely(t, GetACLs(m), should.Match(map[repopb.Role]stringset.Set{
+			repopb.Role_READER: {"c": struct{}{}},
+			repopb.Role_WRITER: {"a": struct{}{}, "b": struct{}{}},
 		}))
 	})
 }

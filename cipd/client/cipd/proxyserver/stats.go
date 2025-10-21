@@ -26,7 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 
-	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
+	logpb "go.chromium.org/luci/cipd/api/cipd/v1/logpb"
 )
 
 // ProxyStats are used in -json-output of `proxy` subcommand.
@@ -45,7 +45,7 @@ type ProxyStats struct {
 }
 
 // RPCCall records an RPC call outcome.
-func (p *ProxyStats) RPCCall(entry *cipdpb.AccessLogEntry) {
+func (p *ProxyStats) RPCCall(entry *logpb.AccessLogEntry) {
 	p.m.Lock()
 	defer p.m.Unlock()
 	if p.RPCs == nil {

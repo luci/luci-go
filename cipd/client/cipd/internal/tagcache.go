@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 	"go.chromium.org/luci/cipd/common"
@@ -149,12 +149,12 @@ func (c *TagCache) ResolveTag(ctx context.Context, pkg, tag string) (pin common.
 // cache.
 //
 // Returns error if the cache can't be read.
-func (c *TagCache) ResolveExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string) (*api.ObjectRef, error) {
+func (c *TagCache) ResolveExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string) (*caspb.ObjectRef, error) {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return nil, err
 	}
 
-	ignoreBrokenObjectRef := func(iid string) *api.ObjectRef {
+	ignoreBrokenObjectRef := func(iid string) *caspb.ObjectRef {
 		if err := common.ValidateInstanceID(iid, common.AnyHash); err != nil {
 			logging.Errorf(ctx, "Stored object_ref %q for %q in %s is invalid, ignoring it: %s", iid, fileName, pin, err)
 			return nil
@@ -221,7 +221,7 @@ func (c *TagCache) AddTag(ctx context.Context, pin common.Pin, tag string) error
 // digest).
 //
 // Call 'Save' later to persist these changes to the cache file on disk.
-func (c *TagCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string, ref *api.ObjectRef) error {
+func (c *TagCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string, ref *caspb.ObjectRef) error {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}

@@ -43,8 +43,9 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
+	repogrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/repopb/grpcpb"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
@@ -74,9 +75,9 @@ func Public(internalCAS cas.StorageServer, d *tq.Dispatcher, c vsa.Client) Serve
 	return impl
 }
 
-// Server is api.RepositoryServer that can also expose some non-pRPC routes.
+// Server is repopb.RepositoryServer that can also expose some non-pRPC routes.
 type Server interface {
-	cipdgrpcpb.RepositoryServer
+	repogrpcpb.RepositoryServer
 
 	// InstallHandlers installs non-pRPC HTTP handlers into the router.
 	//
@@ -84,9 +85,9 @@ type Server interface {
 	InstallHandlers(r *router.Router, base router.MiddlewareChain)
 }
 
-// repoImpl implements api.RepositoryServer.
+// repoImpl implements repopb.RepositoryServer.
 type repoImpl struct {
-	cipdgrpcpb.UnimplementedRepositoryServer
+	repogrpcpb.UnimplementedRepositoryServer
 
 	tq *tq.Dispatcher
 
@@ -138,7 +139,7 @@ func (impl *repoImpl) registerProcessor(p processing.Processor) {
 }
 
 // packageReader opens a package instance for reading.
-func (impl *repoImpl) packageReader(ctx context.Context, ref *api.ObjectRef) (*processing.PackageReader, error) {
+func (impl *repoImpl) packageReader(ctx context.Context, ref *caspb.ObjectRef) (*processing.PackageReader, error) {
 	// Get slow Google Storage based ReaderAt.
 	rawReader, err := impl.cas.GetReader(ctx, ref)
 	switch code := status.Code(err); {
@@ -162,7 +163,7 @@ func (impl *repoImpl) packageReader(ctx context.Context, ref *api.ObjectRef) (*p
 // Prefix metadata RPC methods + related helpers including ACL checks.
 
 // GetPrefixMetadata implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) GetPrefixMetadata(ctx context.Context, r *api.PrefixRequest) (resp *api.PrefixMetadata, err error) {
+func (impl *repoImpl) GetPrefixMetadata(ctx context.Context, r *repopb.PrefixRequest) (resp *repopb.PrefixMetadata, err error) {
 	// It is fine to implement this in terms of GetInheritedPrefixMetadata, since
 	// we need to fetch all inherited metadata anyway to check ACLs.
 	inherited, err := impl.GetInheritedPrefixMetadata(ctx, r)
@@ -179,7 +180,7 @@ func (impl *repoImpl) GetPrefixMetadata(ctx context.Context, r *api.PrefixReques
 	return nil, noMetadataErr(r.Prefix)
 }
 
-func (impl *repoImpl) canGetPrefixMetadata(ctx context.Context, prefix string) (metas []*api.PrefixMetadata, err error) {
+func (impl *repoImpl) canGetPrefixMetadata(ctx context.Context, prefix string) (metas []*repopb.PrefixMetadata, err error) {
 	prefixViewer, err := auth.IsMember(ctx, PrefixesViewers)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to check group membership")
@@ -187,7 +188,7 @@ func (impl *repoImpl) canGetPrefixMetadata(ctx context.Context, prefix string) (
 	if !prefixViewer {
 		// Check if have OWNER access in the prefix, this also fetches metadata as
 		// a side effect (it is needed to check ACLs too).
-		metas, err = impl.checkRole(ctx, prefix, api.Role_OWNER)
+		metas, err = impl.checkRole(ctx, prefix, repopb.Role_OWNER)
 	}
 	return
 }
@@ -196,7 +197,7 @@ func (impl *repoImpl) canGetPrefixMetadata(ctx context.Context, prefix string) (
 // proto doc.
 //
 // Note: it normalizes Prefix field inside the request.
-func (impl *repoImpl) GetInheritedPrefixMetadata(ctx context.Context, r *api.PrefixRequest) (resp *api.InheritedPrefixMetadata, err error) {
+func (impl *repoImpl) GetInheritedPrefixMetadata(ctx context.Context, r *repopb.PrefixRequest) (resp *repopb.InheritedPrefixMetadata, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	r.Prefix, err = common.ValidatePackagePrefix(r.Prefix)
@@ -212,11 +213,11 @@ func (impl *repoImpl) GetInheritedPrefixMetadata(ctx context.Context, r *api.Pre
 		metas, err = impl.meta.GetMetadata(ctx, r.Prefix)
 	}
 
-	return &api.InheritedPrefixMetadata{PerPrefixMetadata: metas}, nil
+	return &repopb.InheritedPrefixMetadata{PerPrefixMetadata: metas}, nil
 }
 
 // UpdatePrefixMetadata implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) UpdatePrefixMetadata(ctx context.Context, r *api.PrefixMetadata) (resp *api.PrefixMetadata, err error) {
+func (impl *repoImpl) UpdatePrefixMetadata(ctx context.Context, r *repopb.PrefixMetadata) (resp *repopb.PrefixMetadata, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	// Fill in server-assigned fields.
@@ -234,7 +235,7 @@ func (impl *repoImpl) UpdatePrefixMetadata(ctx context.Context, r *api.PrefixMet
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Prefix, api.Role_OWNER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Prefix, repopb.Role_OWNER); err != nil {
 		return nil, err
 	}
 
@@ -243,7 +244,7 @@ func (impl *repoImpl) UpdatePrefixMetadata(ctx context.Context, r *api.PrefixMet
 	// caller no longer has OWNER role to modify the metadata inside the
 	// transaction. We ignore it. It happens when caller's permissions are revoked
 	// by someone else exactly during UpdatePrefixMetadata call.
-	return impl.meta.UpdateMetadata(ctx, r.Prefix, func(ctx context.Context, cur *api.PrefixMetadata) error {
+	return impl.meta.UpdateMetadata(ctx, r.Prefix, func(ctx context.Context, cur *repopb.PrefixMetadata) error {
 		if cur.Fingerprint != r.Fingerprint {
 			switch {
 			case cur.Fingerprint == "":
@@ -265,7 +266,7 @@ func (impl *repoImpl) UpdatePrefixMetadata(ctx context.Context, r *api.PrefixMet
 						"changes", r.Prefix, r.Fingerprint, cur.Fingerprint)
 			}
 		}
-		prev := proto.Clone(cur).(*api.PrefixMetadata)
+		prev := proto.Clone(cur).(*repopb.PrefixMetadata)
 		proto.Reset(cur)
 		proto.Merge(cur, r)
 		return model.EmitMetadataEvents(ctx, prev, cur)
@@ -273,14 +274,14 @@ func (impl *repoImpl) UpdatePrefixMetadata(ctx context.Context, r *api.PrefixMet
 }
 
 // GetRolesInPrefix implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) GetRolesInPrefix(ctx context.Context, r *api.PrefixRequest) (resp *api.RolesInPrefixResponse, err error) {
+func (impl *repoImpl) GetRolesInPrefix(ctx context.Context, r *repopb.PrefixRequest) (resp *repopb.RolesInPrefixResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	return impl.getRolesInPrefixImpl(ctx, auth.CurrentIdentity(ctx), nil, r)
 }
 
 // GetRolesInPrefixOnBehalfOf implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) GetRolesInPrefixOnBehalfOf(ctx context.Context, r *api.PrefixRequestOnBehalfOf) (resp *api.RolesInPrefixResponse, err error) {
+func (impl *repoImpl) GetRolesInPrefixOnBehalfOf(ctx context.Context, r *repopb.PrefixRequestOnBehalfOf) (resp *repopb.RolesInPrefixResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	metas, err := impl.canGetPrefixMetadata(ctx, r.PrefixRequest.Prefix)
@@ -307,7 +308,7 @@ func (impl *repoImpl) GetRolesInPrefixOnBehalfOf(ctx context.Context, r *api.Pre
 // `metas` is optional - in the case of GetRolesInPrefixOnBehalfOf, it may be
 // fetched as a side-effect of checking permissions. In other cases, this
 // function will fetch it directly without additional permission checks.
-func (impl *repoImpl) getRolesInPrefixImpl(ctx context.Context, ident identity.Identity, metas []*api.PrefixMetadata, r *api.PrefixRequest) (resp *api.RolesInPrefixResponse, err error) {
+func (impl *repoImpl) getRolesInPrefixImpl(ctx context.Context, ident identity.Identity, metas []*repopb.PrefixMetadata, r *repopb.PrefixRequest) (resp *repopb.RolesInPrefixResponse, err error) {
 	r.Prefix, err = common.ValidatePackagePrefix(r.Prefix)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix': %s", err)
@@ -328,11 +329,11 @@ func (impl *repoImpl) getRolesInPrefixImpl(ctx context.Context, ident identity.I
 		return nil, err
 	}
 
-	resp = &api.RolesInPrefixResponse{
-		Roles: make([]*api.RolesInPrefixResponse_RoleInPrefix, len(roles)),
+	resp = &repopb.RolesInPrefixResponse{
+		Roles: make([]*repopb.RolesInPrefixResponse_RoleInPrefix, len(roles)),
 	}
 	for i, r := range roles {
-		resp.Roles[i] = &api.RolesInPrefixResponse_RoleInPrefix{Role: r}
+		resp.Roles[i] = &repopb.RolesInPrefixResponse_RoleInPrefix{Role: r}
 	}
 	return resp, nil
 }
@@ -348,7 +349,7 @@ func (impl *repoImpl) getRolesInPrefixImpl(ctx context.Context, ident identity.I
 //
 // Fetches and returns metadata of the prefix and all parent prefixes as a side
 // effect.
-func (impl *repoImpl) checkRole(ctx context.Context, prefix string, role api.Role) ([]*api.PrefixMetadata, error) {
+func (impl *repoImpl) checkRole(ctx context.Context, prefix string, role repopb.Role) ([]*repopb.PrefixMetadata, error) {
 	metas, err := impl.meta.GetMetadata(ctx, prefix)
 	if err != nil {
 		return nil, err
@@ -359,14 +360,14 @@ func (impl *repoImpl) checkRole(ctx context.Context, prefix string, role api.Rol
 		return nil, err
 	case yes:
 		return metas, nil
-	case role == api.Role_READER: // was checking for a reader, and caller is not
+	case role == repopb.Role_READER: // was checking for a reader, and caller is not
 		return nil, noAccessErr(ctx, prefix)
 	}
 
 	// We end up here if role is something other than READER, and the caller
 	// doesn't have it. Maybe caller IS a reader, then we can give more concrete
 	// error message.
-	switch yes, err := hasRole(ctx, metas, api.Role_READER); {
+	switch yes, err := hasRole(ctx, metas, repopb.Role_READER); {
 	case err != nil:
 		return nil, err
 	case yes:
@@ -401,7 +402,7 @@ func noMetadataErr(prefix string) error {
 // Prefix listing.
 
 // ListPrefix implement the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) ListPrefix(ctx context.Context, r *api.ListPrefixRequest) (resp *api.ListPrefixResponse, err error) {
+func (impl *repoImpl) ListPrefix(ctx context.Context, r *repopb.ListPrefixRequest) (resp *repopb.ListPrefixResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	r.Prefix, err = common.ValidatePackagePrefix(r.Prefix)
@@ -413,8 +414,8 @@ func (impl *repoImpl) ListPrefix(ctx context.Context, r *api.ListPrefixRequest) 
 	// r.Prefix ACL is not sufficient, since the caller may not see it, but still
 	// see some deeper prefix, thus we need to enumerate the metadata subtree.
 	var visibleRoots []string // sorted list of prefixes visible to the caller
-	err = impl.meta.VisitMetadata(ctx, r.Prefix, func(pfx string, md []*api.PrefixMetadata) (cont bool, err error) {
-		switch visible, err := hasRole(ctx, md, api.Role_READER); {
+	err = impl.meta.VisitMetadata(ctx, r.Prefix, func(pfx string, md []*repopb.PrefixMetadata) (cont bool, err error) {
+		switch visible, err := hasRole(ctx, md, repopb.Role_READER); {
 		case err != nil:
 			return false, err
 		case visible:
@@ -500,7 +501,7 @@ func (impl *repoImpl) ListPrefix(ctx context.Context, r *api.ListPrefixRequest) 
 	}
 
 	// Visit all discovered packages (in sorted order).
-	resp = &api.ListPrefixResponse{}
+	resp = &repopb.ListPrefixResponse{}
 	dirs := stringset.New(0)
 	for _, pfx := range visibleRoots {
 		for _, pkg := range perVisibleRoot[pfx] {
@@ -549,23 +550,23 @@ func (impl *repoImpl) ListPrefix(ctx context.Context, r *api.ListPrefixRequest) 
 // Hide/unhide package.
 
 // HidePackage implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) HidePackage(ctx context.Context, r *api.PackageRequest) (*emptypb.Empty, error) {
+func (impl *repoImpl) HidePackage(ctx context.Context, r *repopb.PackageRequest) (*emptypb.Empty, error) {
 	return impl.setPackageHidden(ctx, r, model.Hidden)
 }
 
 // UnhidePackage implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) UnhidePackage(ctx context.Context, r *api.PackageRequest) (*emptypb.Empty, error) {
+func (impl *repoImpl) UnhidePackage(ctx context.Context, r *repopb.PackageRequest) (*emptypb.Empty, error) {
 	return impl.setPackageHidden(ctx, r, model.Visible)
 }
 
 // setPackageHidden is common implementation of HidePackage and UnhidePackage.
-func (impl *repoImpl) setPackageHidden(ctx context.Context, r *api.PackageRequest, hidden bool) (resp *emptypb.Empty, err error) {
+func (impl *repoImpl) setPackageHidden(ctx context.Context, r *repopb.PackageRequest, hidden bool) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	if err := common.ValidatePackageName(r.Package); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
-	if _, err := impl.checkRole(ctx, r.Package, api.Role_OWNER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_OWNER); err != nil {
 		return nil, err
 	}
 
@@ -582,7 +583,7 @@ func (impl *repoImpl) setPackageHidden(ctx context.Context, r *api.PackageReques
 // Package deletion.
 
 // DeletePackage implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) DeletePackage(ctx context.Context, r *api.PackageRequest) (resp *emptypb.Empty, err error) {
+func (impl *repoImpl) DeletePackage(ctx context.Context, r *repopb.PackageRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	if err := common.ValidatePackageName(r.Package); err != nil {
@@ -593,10 +594,10 @@ func (impl *repoImpl) DeletePackage(ctx context.Context, r *api.PackageRequest) 
 	// administrators, i.e. OWNERs of the repository root (prefix ""). Before
 	// checking this, make sure the caller can otherwise modify the package at
 	// all, to give a nicer error message if they can't.
-	if _, err := impl.checkRole(ctx, r.Package, api.Role_OWNER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_OWNER); err != nil {
 		return nil, err
 	}
-	if _, err := impl.checkRole(ctx, "", api.Role_OWNER); err != nil {
+	if _, err := impl.checkRole(ctx, "", repopb.Role_OWNER); err != nil {
 		if status.Code(err) == codes.PermissionDenied {
 			return nil, status.Errorf(codes.PermissionDenied,
 				"package deletion is allowed only to service administrators")
@@ -611,7 +612,7 @@ func (impl *repoImpl) DeletePackage(ctx context.Context, r *api.PackageRequest) 
 // Package instance registration and post-registration processing.
 
 // RegisterInstance implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) RegisterInstance(ctx context.Context, r *api.Instance) (resp *api.RegisterInstanceResponse, err error) {
+func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) (resp *repopb.RegisterInstanceResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	// Validate the request format.
@@ -623,7 +624,7 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *api.Instance) (re
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, api.Role_WRITER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_WRITER); err != nil {
 		return nil, err
 	}
 
@@ -631,8 +632,8 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *api.Instance) (re
 	instance := (&model.Instance{}).FromProto(ctx, r)
 	switch err := datastore.Get(ctx, instance); {
 	case err == nil:
-		return &api.RegisterInstanceResponse{
-			Status:   api.RegistrationStatus_ALREADY_REGISTERED,
+		return &repopb.RegisterInstanceResponse{
+			Status:   repopb.RegistrationStatus_ALREADY_REGISTERED,
 			Instance: instance.Proto(),
 		}, nil
 	case err != datastore.ErrNoSuchEntity:
@@ -643,7 +644,7 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *api.Instance) (re
 	// if such object is already in the storage. This is expected (it means the
 	// client has uploaded the object already and we should just register the
 	// instance right away).
-	uploadOp, err := impl.cas.BeginUpload(ctx, &api.BeginUploadRequest{
+	uploadOp, err := impl.cas.BeginUpload(ctx, &caspb.BeginUploadRequest{
 		Object: r.Instance,
 	})
 	switch code := status.Code(err); {
@@ -652,8 +653,8 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *api.Instance) (re
 	case code == codes.OK:
 		// The object is not in the storage and we have just started the upload. Let
 		// the client finish it.
-		return &api.RegisterInstanceResponse{
-			Status:   api.RegistrationStatus_NOT_UPLOADED,
+		return &repopb.RegisterInstanceResponse{
+			Status:   repopb.RegistrationStatus_NOT_UPLOADED,
 			UploadOp: uploadOp,
 		}, nil
 	default:
@@ -662,7 +663,7 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *api.Instance) (re
 
 	// Warn about registering deprecated SHA1 packages. Eventually this will be
 	// forbidden completely.
-	if r.Instance.HashAlgo == api.HashAlgo_SHA1 {
+	if r.Instance.HashAlgo == caspb.HashAlgo_SHA1 {
 		logging.Warningf(ctx, "Deprecated SHA1 instance: %s (%s) from %s",
 			r.Package, common.ObjectRefToInstanceID(r.Instance), auth.CurrentIdentity(ctx))
 	}
@@ -677,11 +678,11 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *api.Instance) (re
 		return nil, errors.Fmt("failed to register the instance: %w", err)
 	}
 
-	resp = &api.RegisterInstanceResponse{Instance: instance.Proto()}
+	resp = &repopb.RegisterInstanceResponse{Instance: instance.Proto()}
 	if registered {
-		resp.Status = api.RegistrationStatus_REGISTERED
+		resp.Status = repopb.RegistrationStatus_REGISTERED
 	} else {
-		resp.Status = api.RegistrationStatus_ALREADY_REGISTERED
+		resp.Status = repopb.RegistrationStatus_ALREADY_REGISTERED
 	}
 	return
 }
@@ -791,7 +792,7 @@ func (impl *repoImpl) runProcessorsTask(ctx context.Context, t *tasks.RunProcess
 
 // updateProcessors transactionally creates ProcessingResult entities and
 // updates Instance.Processors* fields.
-func (impl *repoImpl) updateProcessors(ctx context.Context, inst *api.Instance, results map[string]processing.Result) error {
+func (impl *repoImpl) updateProcessors(ctx context.Context, inst *repopb.Instance, results map[string]processing.Result) error {
 	if len(results) == 0 {
 		return nil
 	}
@@ -875,7 +876,7 @@ type paginatedQueryOpts struct {
 }
 
 // paginatedQuery is a common part of ListInstances and SearchInstances.
-func (impl *repoImpl) paginatedQuery(ctx context.Context, opts paginatedQueryOpts) (out []*api.Instance, nextTok string, err error) {
+func (impl *repoImpl) paginatedQuery(ctx context.Context, opts paginatedQueryOpts) (out []*repopb.Instance, nextTok string, err error) {
 	// Validate the request, decode the cursor.
 	if err := common.ValidatePackageName(opts.Package); err != nil {
 		return nil, "", status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
@@ -902,7 +903,7 @@ func (impl *repoImpl) paginatedQuery(ctx context.Context, opts paginatedQueryOpt
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, opts.Package, api.Role_READER); err != nil {
+	if _, err := impl.checkRole(ctx, opts.Package, repopb.Role_READER); err != nil {
 		return nil, "", err
 	}
 
@@ -918,7 +919,7 @@ func (impl *repoImpl) paginatedQuery(ctx context.Context, opts paginatedQueryOpt
 	}
 
 	// Convert results to proto.
-	out = make([]*api.Instance, len(inst))
+	out = make([]*repopb.Instance, len(inst))
 	for i, ent := range inst {
 		out[i] = ent.Proto()
 	}
@@ -929,7 +930,7 @@ func (impl *repoImpl) paginatedQuery(ctx context.Context, opts paginatedQueryOpt
 }
 
 // ListInstances implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) ListInstances(ctx context.Context, r *api.ListInstancesRequest) (resp *api.ListInstancesResponse, err error) {
+func (impl *repoImpl) ListInstances(ctx context.Context, r *repopb.ListInstancesRequest) (resp *repopb.ListInstancesResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	result, nextPage, err := impl.paginatedQuery(ctx, paginatedQueryOpts{
@@ -944,14 +945,14 @@ func (impl *repoImpl) ListInstances(ctx context.Context, r *api.ListInstancesReq
 		return nil, err
 	}
 
-	return &api.ListInstancesResponse{
+	return &repopb.ListInstancesResponse{
 		Instances:     result,
 		NextPageToken: nextPage,
 	}, nil
 }
 
 // SearchInstances implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) SearchInstances(ctx context.Context, r *api.SearchInstancesRequest) (resp *api.SearchInstancesResponse, err error) {
+func (impl *repoImpl) SearchInstances(ctx context.Context, r *repopb.SearchInstancesRequest) (resp *repopb.SearchInstancesResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	who := auth.CurrentIdentity(ctx)
@@ -972,7 +973,7 @@ func (impl *repoImpl) SearchInstances(ctx context.Context, r *api.SearchInstance
 		return nil, err
 	}
 
-	return &api.SearchInstancesResponse{
+	return &repopb.SearchInstancesResponse{
 		Instances:     result,
 		NextPageToken: nextPage,
 	}, nil
@@ -982,7 +983,7 @@ func (impl *repoImpl) SearchInstances(ctx context.Context, r *api.SearchInstance
 // Refs support.
 
 // CreateRef implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) CreateRef(ctx context.Context, r *api.Ref) (resp *emptypb.Empty, err error) {
+func (impl *repoImpl) CreateRef(ctx context.Context, r *repopb.Ref) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	// Validate the request.
@@ -997,7 +998,7 @@ func (impl *repoImpl) CreateRef(ctx context.Context, r *api.Ref) (resp *emptypb.
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, api.Role_WRITER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_WRITER); err != nil {
 		return nil, err
 	}
 
@@ -1014,7 +1015,7 @@ func (impl *repoImpl) CreateRef(ctx context.Context, r *api.Ref) (resp *emptypb.
 }
 
 // DeleteRef implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) DeleteRef(ctx context.Context, r *api.DeleteRefRequest) (resp *emptypb.Empty, err error) {
+func (impl *repoImpl) DeleteRef(ctx context.Context, r *repopb.DeleteRefRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	// Validate the request.
@@ -1026,7 +1027,7 @@ func (impl *repoImpl) DeleteRef(ctx context.Context, r *api.DeleteRefRequest) (r
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, api.Role_WRITER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_WRITER); err != nil {
 		return nil, err
 	}
 
@@ -1043,7 +1044,7 @@ func (impl *repoImpl) DeleteRef(ctx context.Context, r *api.DeleteRefRequest) (r
 }
 
 // ListRefs implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) ListRefs(ctx context.Context, r *api.ListRefsRequest) (resp *api.ListRefsResponse, err error) {
+func (impl *repoImpl) ListRefs(ctx context.Context, r *repopb.ListRefsRequest) (resp *repopb.ListRefsResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	// Validate the request.
@@ -1052,7 +1053,7 @@ func (impl *repoImpl) ListRefs(ctx context.Context, r *api.ListRefsRequest) (res
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, api.Role_READER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_READER); err != nil {
 		return nil, err
 	}
 
@@ -1066,7 +1067,7 @@ func (impl *repoImpl) ListRefs(ctx context.Context, r *api.ListRefsRequest) (res
 	if err != nil {
 		return nil, errors.Fmt("failed to list refs: %w", err)
 	}
-	resp = &api.ListRefsResponse{Refs: make([]*api.Ref, len(refs))}
+	resp = &repopb.ListRefsResponse{Refs: make([]*repopb.Ref, len(refs))}
 	for i, ref := range refs {
 		resp.Refs[i] = ref.Proto()
 	}
@@ -1076,7 +1077,7 @@ func (impl *repoImpl) ListRefs(ctx context.Context, r *api.ListRefsRequest) (res
 ////////////////////////////////////////////////////////////////////////////////
 // Tags support.
 
-func validateTagList(tags []*api.Tag) error {
+func validateTagList(tags []*repopb.Tag) error {
 	if len(tags) == 0 {
 		return status.Errorf(codes.InvalidArgument, "bad 'tags': cannot be empty")
 	}
@@ -1089,7 +1090,7 @@ func validateTagList(tags []*api.Tag) error {
 	return nil
 }
 
-func validateMultiTagReq(pkg string, inst *api.ObjectRef, tags []*api.Tag) error {
+func validateMultiTagReq(pkg string, inst *caspb.ObjectRef, tags []*repopb.Tag) error {
 	if err := common.ValidatePackageName(pkg); err != nil {
 		return status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
@@ -1100,7 +1101,7 @@ func validateMultiTagReq(pkg string, inst *api.ObjectRef, tags []*api.Tag) error
 }
 
 // AttachTags implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) AttachTags(ctx context.Context, r *api.AttachTagsRequest) (resp *emptypb.Empty, err error) {
+func (impl *repoImpl) AttachTags(ctx context.Context, r *repopb.AttachTagsRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	// Validate the request.
@@ -1109,7 +1110,7 @@ func (impl *repoImpl) AttachTags(ctx context.Context, r *api.AttachTagsRequest) 
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, api.Role_WRITER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_WRITER); err != nil {
 		return nil, err
 	}
 
@@ -1126,7 +1127,7 @@ func (impl *repoImpl) AttachTags(ctx context.Context, r *api.AttachTagsRequest) 
 }
 
 // DetachTags implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) DetachTags(ctx context.Context, r *api.DetachTagsRequest) (resp *emptypb.Empty, err error) {
+func (impl *repoImpl) DetachTags(ctx context.Context, r *repopb.DetachTagsRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	// Validate the request.
@@ -1135,7 +1136,7 @@ func (impl *repoImpl) DetachTags(ctx context.Context, r *api.DetachTagsRequest) 
 	}
 
 	// Check ACLs. Note this is scoped to OWNERS, see the proto doc.
-	if _, err := impl.checkRole(ctx, r.Package, api.Role_OWNER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_OWNER); err != nil {
 		return nil, err
 	}
 
@@ -1170,7 +1171,7 @@ const (
 )
 
 // AttachMetadata implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) AttachMetadata(ctx context.Context, r *api.AttachMetadataRequest) (resp *emptypb.Empty, err error) {
+func (impl *repoImpl) AttachMetadata(ctx context.Context, r *repopb.AttachMetadataRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	// Validate the request.
@@ -1199,7 +1200,7 @@ func (impl *repoImpl) AttachMetadata(ctx context.Context, r *api.AttachMetadataR
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, api.Role_WRITER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_WRITER); err != nil {
 		return nil, err
 	}
 
@@ -1216,11 +1217,11 @@ func (impl *repoImpl) AttachMetadata(ctx context.Context, r *api.AttachMetadataR
 	}
 
 	// Call VerifySoftwareArtifact if an attestation bundle is attached to the package.
-	var extraMetadata []*api.InstanceMetadata
+	var extraMetadata []*repopb.InstanceMetadata
 	for _, m := range r.Metadata {
 		if m.Key == vsaAttestationsKey {
 			if vsa := impl.vsa.VerifySoftwareArtifact(ctx, inst, string(m.Value)); vsa != "" {
-				extraMetadata = append(extraMetadata, &api.InstanceMetadata{
+				extraMetadata = append(extraMetadata, &repopb.InstanceMetadata{
 					Key:         slsaVSAKey,
 					Value:       []byte(vsa),
 					ContentType: vsaAttestationsContentType,
@@ -1239,7 +1240,7 @@ func (impl *repoImpl) AttachMetadata(ctx context.Context, r *api.AttachMetadataR
 }
 
 // DetachMetadata implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) DetachMetadata(ctx context.Context, r *api.DetachMetadataRequest) (resp *emptypb.Empty, err error) {
+func (impl *repoImpl) DetachMetadata(ctx context.Context, r *repopb.DetachMetadataRequest) (resp *emptypb.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	// Validate the request.
@@ -1270,7 +1271,7 @@ func (impl *repoImpl) DetachMetadata(ctx context.Context, r *api.DetachMetadataR
 	}
 
 	// Check ACLs. Require OWNER role for destructive operations.
-	if _, err := impl.checkRole(ctx, r.Package, api.Role_OWNER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_OWNER); err != nil {
 		return nil, err
 	}
 
@@ -1299,7 +1300,7 @@ func listMetadata(ctx context.Context, inst *model.Instance, keys ...string) ([]
 }
 
 // ListMetadata implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) ListMetadata(ctx context.Context, r *api.ListMetadataRequest) (resp *api.ListMetadataResponse, err error) {
+func (impl *repoImpl) ListMetadata(ctx context.Context, r *repopb.ListMetadataRequest) (resp *repopb.ListMetadataResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	// Validate the request.
@@ -1319,7 +1320,7 @@ func (impl *repoImpl) ListMetadata(ctx context.Context, r *api.ListMetadataReque
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, api.Role_READER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_READER); err != nil {
 		return nil, err
 	}
 
@@ -1338,8 +1339,8 @@ func (impl *repoImpl) ListMetadata(ctx context.Context, r *api.ListMetadataReque
 	if err != nil {
 		return nil, err
 	}
-	resp = &api.ListMetadataResponse{
-		Metadata: make([]*api.InstanceMetadata, len(md)),
+	resp = &repopb.ListMetadataResponse{
+		Metadata: make([]*repopb.InstanceMetadata, len(md)),
 	}
 	for i, m := range md {
 		resp.Metadata[i] = m.Proto()
@@ -1395,7 +1396,7 @@ func (impl *repoImpl) callVerifySoftwareArtifact(ctx context.Context, t *tasks.C
 	}
 
 	inst := (&model.Instance{}).FromProto(ctx, t.Instance)
-	if err := model.AttachMetadata(ctx, inst, []*api.InstanceMetadata{{
+	if err := model.AttachMetadata(ctx, inst, []*repopb.InstanceMetadata{{
 		Key:         slsaVSAKey,
 		Value:       []byte(vsaStr),
 		ContentType: vsaAttestationsContentType,
@@ -1414,7 +1415,7 @@ func (impl *repoImpl) callVerifySoftwareArtifact(ctx context.Context, t *tasks.C
 // Version resolution and instance info fetching.
 
 // ResolveVersion implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) ResolveVersion(ctx context.Context, r *api.ResolveVersionRequest) (resp *api.Instance, err error) {
+func (impl *repoImpl) ResolveVersion(ctx context.Context, r *repopb.ResolveVersionRequest) (resp *repopb.Instance, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	// Validate the request.
@@ -1426,7 +1427,7 @@ func (impl *repoImpl) ResolveVersion(ctx context.Context, r *api.ResolveVersionR
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, api.Role_READER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_READER); err != nil {
 		return nil, err
 	}
 
@@ -1440,7 +1441,7 @@ func (impl *repoImpl) ResolveVersion(ctx context.Context, r *api.ResolveVersionR
 }
 
 // GetInstanceURL implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) GetInstanceURL(ctx context.Context, r *api.GetInstanceURLRequest) (resp *api.ObjectURL, err error) {
+func (impl *repoImpl) GetInstanceURL(ctx context.Context, r *repopb.GetInstanceURLRequest) (resp *caspb.ObjectURL, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	// Validate the request.
@@ -1452,13 +1453,13 @@ func (impl *repoImpl) GetInstanceURL(ctx context.Context, r *api.GetInstanceURLR
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, api.Role_READER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_READER); err != nil {
 		return nil, err
 	}
 
 	// Make sure this instance actually exists (without this check the caller
 	// would be able to "probe" CAS namespace unrestricted).
-	inst := (&model.Instance{}).FromProto(ctx, &api.Instance{
+	inst := (&model.Instance{}).FromProto(ctx, &repopb.Instance{
 		Package:  r.Package,
 		Instance: r.Instance,
 	})
@@ -1471,13 +1472,13 @@ func (impl *repoImpl) GetInstanceURL(ctx context.Context, r *api.GetInstanceURLR
 	}
 
 	// Ask CAS generate an URL for us. Note that CAS does caching internally.
-	return impl.cas.GetObjectURL(ctx, &api.GetObjectURLRequest{
+	return impl.cas.GetObjectURL(ctx, &caspb.GetObjectURLRequest{
 		Object: r.Instance,
 	})
 }
 
 // DescribeInstance implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) DescribeInstance(ctx context.Context, r *api.DescribeInstanceRequest) (resp *api.DescribeInstanceResponse, err error) {
+func (impl *repoImpl) DescribeInstance(ctx context.Context, r *repopb.DescribeInstanceRequest) (resp *repopb.DescribeInstanceResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	// Validate the request.
@@ -1489,12 +1490,12 @@ func (impl *repoImpl) DescribeInstance(ctx context.Context, r *api.DescribeInsta
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, api.Role_READER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_READER); err != nil {
 		return nil, err
 	}
 
 	// Make sure this instance exists and fetch basic details about it.
-	inst := (&model.Instance{}).FromProto(ctx, &api.Instance{
+	inst := (&model.Instance{}).FromProto(ctx, &repopb.Instance{
 		Package:  r.Package,
 		Instance: r.Instance,
 	})
@@ -1505,7 +1506,7 @@ func (impl *repoImpl) DescribeInstance(ctx context.Context, r *api.DescribeInsta
 	// Fetch the rest based on what the client wants.
 	var refs []*model.Ref
 	var tags []*model.Tag
-	var proc []*api.Processor
+	var proc []*repopb.Processor
 	var mds []*model.InstanceMetadata
 	err = parallel.FanOutIn(func(tasks chan<- func() error) {
 		if r.DescribeRefs {
@@ -1543,15 +1544,15 @@ func (impl *repoImpl) DescribeInstance(ctx context.Context, r *api.DescribeInsta
 
 	// Assemble the resulting proto. Apparently nil and empty slices are treated
 	// differently by jsonpb, so make sure to keep empty fields as nils.
-	resp = &api.DescribeInstanceResponse{Instance: inst.Proto()}
+	resp = &repopb.DescribeInstanceResponse{Instance: inst.Proto()}
 	if len(refs) != 0 {
-		resp.Refs = make([]*api.Ref, len(refs))
+		resp.Refs = make([]*repopb.Ref, len(refs))
 		for i, r := range refs {
 			resp.Refs[i] = r.Proto()
 		}
 	}
 	if len(tags) != 0 {
-		resp.Tags = make([]*api.Tag, len(tags))
+		resp.Tags = make([]*repopb.Tag, len(tags))
 		for i, t := range tags {
 			resp.Tags[i] = t.Proto()
 		}
@@ -1560,7 +1561,7 @@ func (impl *repoImpl) DescribeInstance(ctx context.Context, r *api.DescribeInsta
 		resp.Processors = proc
 	}
 	if len(mds) != 0 {
-		resp.Metadata = make([]*api.InstanceMetadata, len(mds))
+		resp.Metadata = make([]*repopb.InstanceMetadata, len(mds))
 		for i, md := range mds {
 			resp.Metadata[i] = md.Proto()
 		}
@@ -1569,7 +1570,7 @@ func (impl *repoImpl) DescribeInstance(ctx context.Context, r *api.DescribeInsta
 }
 
 // DescribeClient implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) DescribeClient(ctx context.Context, r *api.DescribeClientRequest) (resp *api.DescribeClientResponse, err error) {
+func (impl *repoImpl) DescribeClient(ctx context.Context, r *repopb.DescribeClientRequest) (resp *repopb.DescribeClientResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	// Validate the request.
@@ -1584,13 +1585,13 @@ func (impl *repoImpl) DescribeClient(ctx context.Context, r *api.DescribeClientR
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, api.Role_READER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_READER); err != nil {
 		return nil, err
 	}
 
 	// Make sure this instance exists, has all processors finished and fetch
 	// basic details about it.
-	inst := (&model.Instance{}).FromProto(ctx, &api.Instance{
+	inst := (&model.Instance{}).FromProto(ctx, &repopb.Instance{
 		Package:  r.Package,
 		Instance: r.Instance,
 	})
@@ -1619,7 +1620,7 @@ func (impl *repoImpl) DescribeClient(ctx context.Context, r *api.DescribeClientR
 	refAliases := proc.ObjectRefAliases()
 	sha1 := ""
 	for _, ref := range refAliases {
-		if ref.HashAlgo == api.HashAlgo_SHA1 {
+		if ref.HashAlgo == caspb.HashAlgo_SHA1 {
 			sha1 = ref.HexDigest
 			break
 		}
@@ -1631,7 +1632,7 @@ func (impl *repoImpl) DescribeClient(ctx context.Context, r *api.DescribeClientR
 			New("malformed client extraction results, missing SHA1 digest"))
 	}
 
-	signedURL, err := impl.cas.GetObjectURL(ctx, &api.GetObjectURLRequest{
+	signedURL, err := impl.cas.GetObjectURL(ctx, &caspb.GetObjectURLRequest{
 		Object:           ref,
 		DownloadFilename: processing.GetClientBinaryName(r.Package), // e.g. 'cipd.exe'
 	})
@@ -1639,7 +1640,7 @@ func (impl *repoImpl) DescribeClient(ctx context.Context, r *api.DescribeClientR
 		return nil, grpcutil.InternalTag.Apply(errors.Fmt("failed to get signed URL to the client binary: %w", err))
 	}
 
-	return &api.DescribeClientResponse{
+	return &repopb.DescribeClientResponse{
 		Instance:         inst.Proto(),
 		ClientRef:        ref,
 		ClientBinary:     signedURL,
@@ -1649,7 +1650,7 @@ func (impl *repoImpl) DescribeClient(ctx context.Context, r *api.DescribeClientR
 	}, nil
 }
 
-func (impl *repoImpl) DescribeBootstrapBundle(ctx context.Context, r *api.DescribeBootstrapBundleRequest) (resp *api.DescribeBootstrapBundleResponse, err error) {
+func (impl *repoImpl) DescribeBootstrapBundle(ctx context.Context, r *repopb.DescribeBootstrapBundleRequest) (resp *repopb.DescribeBootstrapBundleResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
 	// Validate the request.
@@ -1674,7 +1675,7 @@ func (impl *repoImpl) DescribeBootstrapBundle(ctx context.Context, r *api.Descri
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Prefix, api.Role_READER); err != nil {
+	if _, err := impl.checkRole(ctx, r.Prefix, repopb.Role_READER); err != nil {
 		return nil, err
 	}
 
@@ -1701,7 +1702,7 @@ func (impl *repoImpl) DescribeBootstrapBundle(ctx context.Context, r *api.Descri
 	}
 
 	mu := sync.Mutex{}
-	files := make(map[string]*api.DescribeBootstrapBundleResponse_BootstrapFile, len(r.Variants))
+	files := make(map[string]*repopb.DescribeBootstrapBundleResponse_BootstrapFile, len(r.Variants))
 
 	if len(r.Variants) == 1 {
 		// A resolution of only one variant is a very common case (in particular it
@@ -1728,8 +1729,8 @@ func (impl *repoImpl) DescribeBootstrapBundle(ctx context.Context, r *api.Descri
 	}
 
 	// Order the output based on r.Variants.
-	resp = &api.DescribeBootstrapBundleResponse{
-		Files: make([]*api.DescribeBootstrapBundleResponse_BootstrapFile, 0, len(files)),
+	resp = &repopb.DescribeBootstrapBundleResponse{
+		Files: make([]*repopb.DescribeBootstrapBundleResponse_BootstrapFile, 0, len(files)),
 	}
 	for _, v := range r.Variants {
 		resp.Files = append(resp.Files, files[v])
@@ -1761,11 +1762,11 @@ func (impl *repoImpl) DescribeBootstrapBundle(ctx context.Context, r *api.Descri
 //
 // Returns only transient errors as `err`. Fatal errors are communicated via
 // `status` field in the response.
-func (impl *repoImpl) describeBootstrapFile(ctx context.Context, pkg, ver string) (resp *api.DescribeBootstrapBundleResponse_BootstrapFile, err error) {
+func (impl *repoImpl) describeBootstrapFile(ctx context.Context, pkg, ver string) (resp *repopb.DescribeBootstrapBundleResponse_BootstrapFile, err error) {
 	defer func() {
 		err = grpcutil.GRPCifyAndLogErr(ctx, err)
 		if err != nil && !grpcutil.IsTransientCode(status.Code(err)) {
-			resp = &api.DescribeBootstrapBundleResponse_BootstrapFile{
+			resp = &repopb.DescribeBootstrapBundleResponse_BootstrapFile{
 				Package: pkg,
 				Status:  status.Convert(err).Proto(),
 			}
@@ -1794,8 +1795,8 @@ func (impl *repoImpl) describeBootstrapFile(ctx context.Context, pkg, ver string
 	}
 
 	// Make sure the hash algo and hex digest are recognizable.
-	fileRef := &api.ObjectRef{
-		HashAlgo:  api.HashAlgo(api.HashAlgo_value[res.HashAlgo]),
+	fileRef := &caspb.ObjectRef{
+		HashAlgo:  caspb.HashAlgo(caspb.HashAlgo_value[res.HashAlgo]),
 		HexDigest: res.HashDigest,
 	}
 	if err = common.ValidateObjectRef(fileRef, common.AnyHash); err != nil {
@@ -1803,7 +1804,7 @@ func (impl *repoImpl) describeBootstrapFile(ctx context.Context, pkg, ver string
 	}
 
 	// Everything looks good.
-	return &api.DescribeBootstrapBundleResponse_BootstrapFile{
+	return &repopb.DescribeBootstrapBundleResponse_BootstrapFile{
 		Package:  pkg,
 		Instance: common.InstanceIDToObjectRef(inst.InstanceID),
 		File:     fileRef,
@@ -1832,7 +1833,7 @@ type legacyInstance struct {
 }
 
 // FromInstance fills in legacyInstance based on data from Instance proto.
-func (l *legacyInstance) FromInstance(inst *api.Instance) *legacyInstance {
+func (l *legacyInstance) FromInstance(inst *repopb.Instance) *legacyInstance {
 	l.PackageName = inst.Package
 	l.InstanceID = common.ObjectRefToInstanceID(inst.Instance)
 	l.RegisteredBy = inst.RegisteredBy
@@ -1956,7 +1957,7 @@ func (impl *repoImpl) handleClientBootstrap(ctx *router.Context) error {
 
 	// Resolve the version into a concrete instance. This also does rigorous
 	// argument validation, ACL checks and verifies the resulting instance exists.
-	inst, err := impl.ResolveVersion(c, &api.ResolveVersionRequest{
+	inst, err := impl.ResolveVersion(c, &repopb.ResolveVersionRequest{
 		Package: pkg,
 		Version: version,
 	})
@@ -1984,7 +1985,7 @@ func (impl *repoImpl) handleClientBootstrap(ctx *router.Context) error {
 	}
 
 	// Ask CAS for a signed URL to the client binary and redirect there.
-	url, err := impl.cas.GetObjectURL(c, &api.GetObjectURLRequest{
+	url, err := impl.cas.GetObjectURL(c, &caspb.GetObjectURLRequest{
 		Object:           ref,
 		DownloadFilename: processing.GetClientBinaryName(pkg), // e.g. 'cipd.exe'
 	})
@@ -2017,7 +2018,7 @@ func (impl *repoImpl) handlePackageDownload(ctx *router.Context) error {
 
 	// Resolve the version into a concrete instance. This also does rigorous
 	// argument validation, ACL checks and verifies the resulting instance exists.
-	inst, err := impl.ResolveVersion(c, &api.ResolveVersionRequest{
+	inst, err := impl.ResolveVersion(c, &repopb.ResolveVersionRequest{
 		Package: pkg,
 		Version: version,
 	})
@@ -2040,7 +2041,7 @@ func (impl *repoImpl) handlePackageDownload(ctx *router.Context) error {
 	}
 
 	// Ask CAS for a signed URL to the package and redirect there.
-	url, err := impl.cas.GetObjectURL(c, &api.GetObjectURLRequest{
+	url, err := impl.cas.GetObjectURL(c, &caspb.GetObjectURLRequest{
 		Object:           inst.Instance,
 		DownloadFilename: name + ".zip",
 	})
@@ -2083,7 +2084,7 @@ func (impl *repoImpl) handleBootstrapDownload(ctx *router.Context) error {
 
 	// Grab information about the bootstrap file. This does ACL checks, version
 	// resolution, etc.
-	bundle, err := impl.DescribeBootstrapBundle(c, &api.DescribeBootstrapBundleRequest{
+	bundle, err := impl.DescribeBootstrapBundle(c, &repopb.DescribeBootstrapBundleRequest{
 		Prefix:   prefix,
 		Variants: []string{variant},
 		Version:  version,
@@ -2107,7 +2108,7 @@ func (impl *repoImpl) handleBootstrapDownload(ctx *router.Context) error {
 	w.Header().Set(cipdDigestHeader, fmt.Sprintf("%s:%s", bf.File.HashAlgo, bf.File.HexDigest))
 
 	// Ask CAS for a signed URL to the extracted file and redirect there.
-	url, err := impl.cas.GetObjectURL(c, &api.GetObjectURLRequest{
+	url, err := impl.cas.GetObjectURL(c, &caspb.GetObjectURLRequest{
 		Object:           bf.File,
 		DownloadFilename: bf.Name,
 	})
@@ -2156,7 +2157,7 @@ func (impl *repoImpl) handleLegacyClientInfo(ctx *router.Context) error {
 		return grpcutil.InvalidArgumentTag.Apply(errors.Fmt("bad instance_id: %w", err))
 	}
 
-	desc, err := impl.DescribeClient(c, &api.DescribeClientRequest{
+	desc, err := impl.DescribeClient(c, &repopb.DescribeClientRequest{
 		Package:  r.FormValue("package_name"),
 		Instance: common.InstanceIDToObjectRef(iid),
 	})
@@ -2221,17 +2222,17 @@ func (impl *repoImpl) handleLegacyInstance(ctx *router.Context) error {
 			Fmt("bad instance_id: %w", err))
 	}
 
-	inst, err := impl.DescribeInstance(c, &api.DescribeInstanceRequest{
+	inst, err := impl.DescribeInstance(c, &repopb.DescribeInstanceRequest{
 		Package:  r.FormValue("package_name"),
 		Instance: common.InstanceIDToObjectRef(iid),
 	})
 
-	var signedURL *api.ObjectURL
+	var signedURL *caspb.ObjectURL
 	if err == nil {
 		// Here we know the instance exists and the caller has access to it, so just
 		// ask the CAS for an URL directly instead of using impl.GetInstanceURL,
 		// which will needlessly recheck ACLs and instance presence.
-		signedURL, err = impl.cas.GetObjectURL(c, &api.GetObjectURLRequest{
+		signedURL, err = impl.cas.GetObjectURL(c, &caspb.GetObjectURLRequest{
 			Object: inst.Instance.Instance,
 		})
 	}
@@ -2269,7 +2270,7 @@ func (impl *repoImpl) handleLegacyInstance(ctx *router.Context) error {
 func (impl *repoImpl) handleLegacyResolve(ctx *router.Context) error {
 	c, r, w := ctx.Request.Context(), ctx.Request, ctx.Writer
 
-	resp, err := impl.ResolveVersion(c, &api.ResolveVersionRequest{
+	resp, err := impl.ResolveVersion(c, &repopb.ResolveVersionRequest{
 		Package: r.FormValue("package_name"),
 		Version: r.FormValue("version"),
 	})

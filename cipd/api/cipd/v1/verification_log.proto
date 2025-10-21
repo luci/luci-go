@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package cipd;
 
-option go_package = "go.chromium.org/luci/cipd/api/cipd/v1;api";
+option go_package = "go.chromium.org/luci/cipd/api/cipd/v1/caspb";
 
 import "go.chromium.org/luci/common/bq/pb/options.proto";
 

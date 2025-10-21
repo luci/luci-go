@@ -23,22 +23,22 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 )
 
 func TestClientDigestsFile(t *testing.T) {
 	t.Parallel()
 
-	sha1 := func(char string) *api.ObjectRef {
-		return &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
+	sha1 := func(char string) *caspb.ObjectRef {
+		return &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA1,
 			HexDigest: strings.Repeat(char, 40),
 		}
 	}
 
-	sha256 := func(char string) *api.ObjectRef {
-		return &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA256,
+	sha256 := func(char string) *caspb.ObjectRef {
+		return &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: strings.Repeat(char, 64),
 		}
 	}
@@ -63,7 +63,7 @@ func TestClientDigestsFile(t *testing.T) {
 	ftt.Run("Errors in AddClientRef", t, func(t *ftt.Test) {
 		df := ClientDigestsFile{}
 
-		assert.Loosely(t, df.AddClientRef("linux-amd64", &api.ObjectRef{
+		assert.Loosely(t, df.AddClientRef("linux-amd64", &caspb.ObjectRef{
 			HashAlgo:  12345,
 			HexDigest: "aaaa",
 		}), should.ErrLike("unsupported unknown hash algorithm"))

@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -66,11 +66,11 @@ func listingPage(c *router.Context, pkg string) error {
 	// package and we need fetch siblings instead. Such leaf packages are shown
 	// together with their siblings in the UI in a "highlighted" state. This also
 	// detects non-existing packages or prefixes.
-	var relatives *api.ListPrefixResponse
+	var relatives *repopb.ListPrefixResponse
 	var missing bool
 	eg.Go(func() error {
 		var err error
-		relatives, err = svc.ListPrefix(gctx, &api.ListPrefixRequest{
+		relatives, err = svc.ListPrefix(gctx, &repopb.ListPrefixRequest{
 			Prefix: pkg,
 		})
 		if err != nil || pkg == rootPackage || len(relatives.Packages) != 0 || len(relatives.Prefixes) != 0 {
@@ -81,7 +81,7 @@ func listingPage(c *router.Context, pkg string) error {
 		if i := strings.LastIndex(pkg, "/"); i != -1 {
 			parent = pkg[:i]
 		}
-		relatives, err = svc.ListPrefix(gctx, &api.ListPrefixRequest{
+		relatives, err = svc.ListPrefix(gctx, &repopb.ListPrefixRequest{
 			Prefix: parent,
 		})
 		if err != nil {
@@ -104,10 +104,10 @@ func listingPage(c *router.Context, pkg string) error {
 	// Fetch instance of this package, if it is a package. This will be empty if
 	// it is not a package or it doesn't exist or not visible. Non-existing
 	// entities are already checked by the prefix listing logic above.
-	var instances []*api.Instance
+	var instances []*repopb.Instance
 	if pkg != rootPackage {
 		eg.Go(func() error {
-			resp, err := svc.ListInstances(gctx, &api.ListInstancesRequest{
+			resp, err := svc.ListInstances(gctx, &repopb.ListInstancesRequest{
 				Package:   pkg,
 				PageSize:  12,
 				PageToken: cursor,
@@ -132,10 +132,10 @@ func listingPage(c *router.Context, pkg string) error {
 	}
 
 	// Fetch refs of this package, if it is a package.
-	var refs []*api.Ref
+	var refs []*repopb.Ref
 	if pkg != rootPackage {
 		eg.Go(func() error {
-			resp, err := svc.ListRefs(gctx, &api.ListRefsRequest{
+			resp, err := svc.ListRefs(gctx, &repopb.ListRefsRequest{
 				Package: pkg,
 			})
 			switch status.Code(err) {
@@ -155,7 +155,7 @@ func listingPage(c *router.Context, pkg string) error {
 	}
 
 	// Mapping "instance ID" => list of refs pointing to it.
-	refMap := make(map[string][]*api.Ref, len(refs))
+	refMap := make(map[string][]*repopb.Ref, len(refs))
 	for _, ref := range refs {
 		iid := common.ObjectRefToInstanceID(ref.Instance)
 		refMap[iid] = append(refMap[iid], ref)
@@ -205,7 +205,7 @@ type listingItem struct {
 	Package bool
 }
 
-func prefixListing(pkg string, relatives *api.ListPrefixResponse) []*listingItem {
+func prefixListing(pkg string, relatives *repopb.ListPrefixResponse) []*listingItem {
 	var listing []*listingItem
 
 	title := func(pfx string) string {

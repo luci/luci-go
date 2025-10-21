@@ -28,7 +28,8 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 )
 
@@ -69,11 +70,11 @@ func TestRefs(t *testing.T) {
 			// Exists now.
 			ref, err = GetRef(ctx, "pkg", "latest")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ref.Proto(), should.Resemble(&api.Ref{
+			assert.Loosely(t, ref.Proto(), should.Resemble(&repopb.Ref{
 				Name:    "latest",
 				Package: "pkg",
-				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
 					HexDigest: digestA,
 				},
 				ModifiedBy: string(testutil.TestUser),
@@ -104,9 +105,9 @@ func TestRefs(t *testing.T) {
 			assert.Loosely(t, DeleteRef(ctx, "pkg", "latest"), should.BeNil)
 
 			// Collected all events correctly.
-			assert.Loosely(t, GetEvents(ctx), should.Resemble([]*api.Event{
+			assert.Loosely(t, GetEvents(ctx), should.Resemble([]*repopb.Event{
 				{
-					Kind:     api.EventKind_INSTANCE_REF_UNSET,
+					Kind:     repopb.EventKind_INSTANCE_REF_UNSET,
 					Package:  "pkg",
 					Ref:      "latest",
 					Instance: digestB,
@@ -114,7 +115,7 @@ func TestRefs(t *testing.T) {
 					When:     timestamppb.New(testutil.TestTime.Add(2 * time.Second)),
 				},
 				{
-					Kind:     api.EventKind_INSTANCE_REF_SET,
+					Kind:     repopb.EventKind_INSTANCE_REF_SET,
 					Package:  "pkg",
 					Ref:      "latest",
 					Instance: digestB,
@@ -122,7 +123,7 @@ func TestRefs(t *testing.T) {
 					When:     timestamppb.New(testutil.TestTime.Add(time.Second + 1)),
 				},
 				{
-					Kind:     api.EventKind_INSTANCE_REF_UNSET,
+					Kind:     repopb.EventKind_INSTANCE_REF_UNSET,
 					Package:  "pkg",
 					Ref:      "latest",
 					Instance: digestA,
@@ -130,7 +131,7 @@ func TestRefs(t *testing.T) {
 					When:     timestamppb.New(testutil.TestTime.Add(time.Second)),
 				},
 				{
-					Kind:     api.EventKind_INSTANCE_REF_SET,
+					Kind:     repopb.EventKind_INSTANCE_REF_SET,
 					Package:  "pkg",
 					Ref:      "latest",
 					Instance: digestA,

@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/gologger"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/plugins/admission"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 	"go.chromium.org/luci/cipd/version"
@@ -61,7 +61,7 @@ func admissionHandler(ctx context.Context, adm *protocol.Admission, info admissi
 	// many metadata entries with key "allowed-sha256". Visit them all.
 	visited := 0
 	found := false
-	err := info.VisitMetadata(ctx, []string{"allowed-sha256"}, 0, func(md *api.InstanceMetadata) bool {
+	err := info.VisitMetadata(ctx, []string{"allowed-sha256"}, 0, func(md *repopb.InstanceMetadata) bool {
 		visited++
 		found = string(md.Value) == adm.Instance.HexDigest
 		return !found

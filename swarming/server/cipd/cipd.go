@@ -27,8 +27,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
-	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
+	repogrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/repopb/grpcpb"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/common"
@@ -40,7 +40,7 @@ import (
 // Client can talk to the CIPD server.
 type Client struct {
 	m      sync.RWMutex
-	perSrv map[string]cipdgrpcpb.RepositoryClient
+	perSrv map[string]repogrpcpb.RepositoryClient
 }
 
 // ResolveVersion asks the CIPD server to resolve a version label into a
@@ -56,7 +56,7 @@ func (c *Client) ResolveVersion(ctx context.Context, server, cipdpkg, version st
 	}
 
 	resp, err := client.ResolveVersion(ctx,
-		&cipdpb.ResolveVersionRequest{
+		&repopb.ResolveVersionRequest{
 			Package: cipdpkg,
 			Version: version,
 		},
@@ -95,7 +95,7 @@ func (c *Client) FetchInstance(ctx context.Context, server, cipdpkg, iid string)
 	}
 
 	// Get a signed download URL.
-	objectURL, err := client.GetInstanceURL(ctx, &cipdpb.GetInstanceURLRequest{
+	objectURL, err := client.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 		Package:  cipdpkg,
 		Instance: common.InstanceIDToObjectRef(iid),
 	})
@@ -134,7 +134,7 @@ func (c *Client) FetchInstance(ctx context.Context, server, cipdpkg, iid string)
 }
 
 // client returns a CIPD client connected to a backend at the given address.
-func (c *Client) client(ctx context.Context, server string) (cipdgrpcpb.RepositoryClient, error) {
+func (c *Client) client(ctx context.Context, server string) (repogrpcpb.RepositoryClient, error) {
 	parsed, err := url.Parse(server)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "not a valid CIPD URL %q", server)
@@ -159,7 +159,7 @@ func (c *Client) client(ctx context.Context, server string) (cipdgrpcpb.Reposito
 	}
 
 	logging.Infof(ctx, "Connecting to CIPD at %s", server)
-	client = cipdgrpcpb.NewRepositoryClient(&prpc.Client{
+	client = repogrpcpb.NewRepositoryClient(&prpc.Client{
 		C:    http.DefaultClient, // no authentication, bot packages are public
 		Host: parsed.Host,
 		Options: &prpc.Options{
@@ -176,7 +176,7 @@ func (c *Client) client(ctx context.Context, server string) (cipdgrpcpb.Reposito
 	})
 
 	if c.perSrv == nil {
-		c.perSrv = make(map[string]cipdgrpcpb.RepositoryClient, 1)
+		c.perSrv = make(map[string]repogrpcpb.RepositoryClient, 1)
 	}
 	c.perSrv[server] = client
 

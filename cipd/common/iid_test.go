@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 )
 
 func TestValidateInstanceID(t *testing.T) {
@@ -77,59 +77,59 @@ func TestValidateObjectRef(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("SHA1", t, func(t *ftt.Test) {
-		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
+		assert.Loosely(t, ValidateObjectRef(&caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA1,
 			HexDigest: "0123456789abcdef0123456789abcdef00000000",
 		}, KnownHash), should.BeNil)
 
-		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
+		assert.Loosely(t, ValidateObjectRef(&caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA1,
 			HexDigest: "abcd",
 		}, KnownHash), should.ErrLike("expecting 40 chars, got 4"))
 
-		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
+		assert.Loosely(t, ValidateObjectRef(&caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA1,
 			HexDigest: strings.Repeat("A", 40), // uppercase are forbidden
 		}, KnownHash), should.ErrLike("wrong char"))
 	})
 
 	ftt.Run("SHA256", t, func(t *ftt.Test) {
-		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA256,
+		assert.Loosely(t, ValidateObjectRef(&caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447",
 		}, KnownHash), should.BeNil)
 
-		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA256,
+		assert.Loosely(t, ValidateObjectRef(&caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: "abcd",
 		}, KnownHash), should.ErrLike("expecting 64 chars, got 4"))
 
-		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA256,
+		assert.Loosely(t, ValidateObjectRef(&caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: strings.Repeat("A", 64), // uppercase are forbidden
 		}, KnownHash), should.ErrLike("wrong char"))
 	})
 
 	ftt.Run("Some future hash in KnownHash mode", t, func(t *ftt.Test) {
-		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
+		assert.Loosely(t, ValidateObjectRef(&caspb.ObjectRef{
 			HashAlgo:  33,
 			HexDigest: "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447",
 		}, KnownHash), should.ErrLike("unsupported unknown hash algorithm #33"))
 	})
 
 	ftt.Run("Some future hash in AnyHash mode", t, func(t *ftt.Test) {
-		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
+		assert.Loosely(t, ValidateObjectRef(&caspb.ObjectRef{
 			HashAlgo:  33,
 			HexDigest: "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447",
 		}, AnyHash), should.BeNil)
 
 		// Still checks that the hex digest looks like a digest.
-		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
+		assert.Loosely(t, ValidateObjectRef(&caspb.ObjectRef{
 			HashAlgo:  33,
 			HexDigest: "abc",
 		}, KnownHash), should.ErrLike("uneven number of symbols"))
 
-		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{
+		assert.Loosely(t, ValidateObjectRef(&caspb.ObjectRef{
 			HashAlgo:  33,
 			HexDigest: strings.Repeat("A", 64), // uppercase are forbidden
 		}, KnownHash), should.ErrLike("wrong char"))
@@ -137,7 +137,7 @@ func TestValidateObjectRef(t *testing.T) {
 
 	ftt.Run("Bad args", t, func(t *ftt.Test) {
 		assert.Loosely(t, ValidateObjectRef(nil, AnyHash), should.ErrLike("not provided"))
-		assert.Loosely(t, ValidateObjectRef(&api.ObjectRef{HashAlgo: 0}, AnyHash), should.ErrLike("unspecified hash algo"))
+		assert.Loosely(t, ValidateObjectRef(&caspb.ObjectRef{HashAlgo: 0}, AnyHash), should.ErrLike("unspecified hash algo"))
 	})
 }
 
@@ -148,13 +148,13 @@ func TestRefIIDConversion(t *testing.T) {
 		sha1hex := strings.Repeat("a", 40)
 		sha1iid := sha1hex // iid and hex digest coincide for SHA1
 
-		assert.Loosely(t, ObjectRefToInstanceID(&api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
+		assert.Loosely(t, ObjectRefToInstanceID(&caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA1,
 			HexDigest: sha1hex,
 		}), should.Equal(sha1iid))
 
-		assert.Loosely(t, InstanceIDToObjectRef(sha1iid), should.Match(&api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
+		assert.Loosely(t, InstanceIDToObjectRef(sha1iid), should.Match(&caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA1,
 			HexDigest: sha1hex,
 		}))
 	})
@@ -163,13 +163,13 @@ func TestRefIIDConversion(t *testing.T) {
 		sha256hex := "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447"
 		sha256iid := "qUiQTy8PR5uPgZdpSzAYSw0u0cHNKh7A-4XSmaGSpEcC"
 
-		assert.Loosely(t, ObjectRefToInstanceID(&api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA256,
+		assert.Loosely(t, ObjectRefToInstanceID(&caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: sha256hex,
 		}), should.Equal(sha256iid))
 
-		assert.Loosely(t, InstanceIDToObjectRef(sha256iid), should.Match(&api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA256,
+		assert.Loosely(t, InstanceIDToObjectRef(sha256iid), should.Match(&caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: sha256hex,
 		}))
 	})
@@ -178,12 +178,12 @@ func TestRefIIDConversion(t *testing.T) {
 		hex := strings.Repeat("a", 60)
 		iid := "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqIQ"
 
-		assert.Loosely(t, ObjectRefToInstanceID(&api.ObjectRef{
+		assert.Loosely(t, ObjectRefToInstanceID(&caspb.ObjectRef{
 			HashAlgo:  33,
 			HexDigest: hex,
 		}), should.Equal(iid))
 
-		assert.Loosely(t, InstanceIDToObjectRef(iid), should.Match(&api.ObjectRef{
+		assert.Loosely(t, InstanceIDToObjectRef(iid), should.Match(&caspb.ObjectRef{
 			HashAlgo:  33,
 			HexDigest: hex,
 		}))

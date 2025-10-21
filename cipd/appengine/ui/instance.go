@@ -27,7 +27,8 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -44,7 +45,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 
 	// Resolve the version first (even if is already IID). This also checks ACLs
 	// and verifies the instance exists.
-	inst, err := svc.PublicRepo.ResolveVersion(c.Request.Context(), &api.ResolveVersionRequest{
+	inst, err := svc.PublicRepo.ResolveVersion(c.Request.Context(), &repopb.ResolveVersionRequest{
 		Package: pkg,
 		Version: ver,
 	})
@@ -54,12 +55,12 @@ func instancePage(c *router.Context, pkg, ver string) error {
 
 	// Do the rest in parallel. There can be only transient errors returned here,
 	// so collect them all into single Internal error.
-	var desc *api.DescribeInstanceResponse
-	var md *api.ListMetadataResponse
-	var url *api.ObjectURL
+	var desc *repopb.DescribeInstanceResponse
+	var md *repopb.ListMetadataResponse
+	var url *caspb.ObjectURL
 	err = parallel.FanOutIn(func(tasks chan<- func() error) {
 		tasks <- func() (err error) {
-			desc, err = svc.PublicRepo.DescribeInstance(c.Request.Context(), &api.DescribeInstanceRequest{
+			desc, err = svc.PublicRepo.DescribeInstance(c.Request.Context(), &repopb.DescribeInstanceRequest{
 				Package:            inst.Package,
 				Instance:           inst.Instance,
 				DescribeRefs:       true,
@@ -69,7 +70,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 			return
 		}
 		tasks <- func() (err error) {
-			md, err = svc.PublicRepo.ListMetadata(c.Request.Context(), &api.ListMetadataRequest{
+			md, err = svc.PublicRepo.ListMetadata(c.Request.Context(), &repopb.ListMetadataRequest{
 				Package:  inst.Package,
 				Instance: inst.Instance,
 			})
@@ -83,7 +84,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 			} else {
 				name = chunks[0]
 			}
-			url, err = svc.InternalCAS.GetObjectURL(c.Request.Context(), &api.GetObjectURLRequest{
+			url, err = svc.InternalCAS.GetObjectURL(c.Request.Context(), &caspb.GetObjectURLRequest{
 				Object:           inst.Instance,
 				DownloadFilename: name + ".zip",
 			})

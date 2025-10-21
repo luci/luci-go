@@ -20,7 +20,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -31,7 +31,7 @@ type tagItem struct {
 	Age   string
 }
 
-func tagsListing(tags []*api.Tag, pkg string, now time.Time) []tagItem {
+func tagsListing(tags []*repopb.Tag, pkg string, now time.Time) []tagItem {
 	l := make([]tagItem, len(tags))
 	for i, t := range tags {
 		tag := common.JoinInstanceTag(t)

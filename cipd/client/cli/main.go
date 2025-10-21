@@ -48,7 +48,7 @@ import (
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/signals"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipd/client/cipd/builder"
 	"go.chromium.org/luci/cipd/client/cipd/deployer"
@@ -890,24 +890,24 @@ func (opts *uploadOptions) registerFlags(f *flag.FlagSet) {
 var allAlgos string
 
 func init() {
-	algos := make([]string, 0, len(api.HashAlgo_name)-1)
-	for i := len(api.HashAlgo_name) - 1; i > 0; i-- {
-		algos = append(algos, strings.ToLower(api.HashAlgo_name[int32(i)]))
+	algos := make([]string, 0, len(caspb.HashAlgo_name)-1)
+	for i := len(caspb.HashAlgo_name) - 1; i > 0; i-- {
+		algos = append(algos, strings.ToLower(caspb.HashAlgo_name[int32(i)]))
 	}
 	allAlgos = strings.Join(algos, ", ")
 }
 
-// hashAlgoFlag adapts api.HashAlgo to flag.Value interface.
-type hashAlgoFlag api.HashAlgo
+// hashAlgoFlag adapts caspb.HashAlgo to flag.Value interface.
+type hashAlgoFlag caspb.HashAlgo
 
 // String is called by 'flag' package when displaying default value of a flag.
 func (ha *hashAlgoFlag) String() string {
-	return strings.ToLower(api.HashAlgo(*ha).String())
+	return strings.ToLower(caspb.HashAlgo(*ha).String())
 }
 
 // Set is called by 'flag' package when parsing command line options.
 func (ha *hashAlgoFlag) Set(value string) error {
-	val := api.HashAlgo_value[strings.ToUpper(value)]
+	val := caspb.HashAlgo_value[strings.ToUpper(value)]
 	if val == 0 {
 		return makeCLIError("unknown hash algo %q, should be one of: %s", value, allAlgos)
 	}
@@ -930,8 +930,8 @@ func (opts *hashOptions) registerFlags(f *flag.FlagSet) {
 	f.Var(&opts.algo, "hash-algo", fmt.Sprintf("Algorithm to use for deriving package instance ID, one of: %s", allAlgos))
 }
 
-func (opts *hashOptions) hashAlgo() api.HashAlgo {
-	return api.HashAlgo(opts.algo)
+func (opts *hashOptions) hashAlgo() caspb.HashAlgo {
+	return caspb.HashAlgo(opts.algo)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2759,7 +2759,7 @@ func (c *buildRun) Run(a subcommands.Application, args []string, env subcommands
 	return c.done(inspectInstanceFile(ctx, c.outputFile, c.hashAlgo(), false))
 }
 
-func buildInstanceFile(ctx context.Context, instanceFile string, inputOpts inputOptions, algo api.HashAlgo) (common.Pin, error) {
+func buildInstanceFile(ctx context.Context, instanceFile string, inputOpts inputOptions, algo caspb.HashAlgo) (common.Pin, error) {
 	// Read the list of files to add to the package.
 	buildOpts, err := inputOpts.prepareInput()
 	if err != nil {
@@ -2833,7 +2833,7 @@ func (c *deployRun) Run(a subcommands.Application, args []string, env subcommand
 	return c.done(deployInstanceFile(ctx, c.rootDir, args[0], c.hashAlgo(), maxThreads, c.overrideInstallMode))
 }
 
-func deployInstanceFile(ctx context.Context, root, instanceFile string, hashAlgo api.HashAlgo, maxThreads int, overrideInstallMode pkg.InstallMode) (common.Pin, error) {
+func deployInstanceFile(ctx context.Context, root, instanceFile string, hashAlgo caspb.HashAlgo, maxThreads int, overrideInstallMode pkg.InstallMode) (common.Pin, error) {
 	inst, err := reader.OpenInstanceFile(ctx, instanceFile, reader.OpenInstanceOpts{
 		VerificationMode: reader.CalculateHash,
 		HashAlgo:         hashAlgo,
@@ -2981,7 +2981,7 @@ func (c *inspectRun) Run(a subcommands.Application, args []string, env subcomman
 	return c.done(inspectInstanceFile(ctx, args[0], c.hashAlgo(), true))
 }
 
-func inspectInstanceFile(ctx context.Context, instanceFile string, hashAlgo api.HashAlgo, listFiles bool) (common.Pin, error) {
+func inspectInstanceFile(ctx context.Context, instanceFile string, hashAlgo caspb.HashAlgo, listFiles bool) (common.Pin, error) {
 	inst, err := reader.OpenInstanceFile(ctx, instanceFile, reader.OpenInstanceOpts{
 		VerificationMode: reader.CalculateHash,
 		HashAlgo:         hashAlgo,

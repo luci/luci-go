@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 // impliedRoles defines what roles are "inherited" by other roles, e.g.
@@ -34,10 +34,10 @@ import (
 // indirectly".
 //
 // If a role is missing from this map, it assumed to not be implying any roles.
-var impliedRoles = map[api.Role][]api.Role{
-	api.Role_READER: {api.Role_READER},
-	api.Role_WRITER: {api.Role_WRITER, api.Role_READER},
-	api.Role_OWNER:  {api.Role_OWNER, api.Role_WRITER, api.Role_READER},
+var impliedRoles = map[repopb.Role][]repopb.Role{
+	repopb.Role_READER: {repopb.Role_READER},
+	repopb.Role_WRITER: {repopb.Role_WRITER, repopb.Role_READER},
+	repopb.Role_OWNER:  {repopb.Role_OWNER, repopb.Role_WRITER, repopb.Role_READER},
 }
 
 // impliedRolesRev is reverse of impliedRoles mapping.
@@ -47,14 +47,14 @@ var impliedRoles = map[api.Role][]api.Role{
 //
 // If a role is missing from this map, it assumed to not be inherited by
 // anything.
-var impliedRolesRev = map[api.Role]map[api.Role]struct{}{
-	api.Role_READER: roleSet(api.Role_READER, api.Role_WRITER, api.Role_OWNER),
-	api.Role_WRITER: roleSet(api.Role_WRITER, api.Role_OWNER),
-	api.Role_OWNER:  roleSet(api.Role_OWNER),
+var impliedRolesRev = map[repopb.Role]map[repopb.Role]struct{}{
+	repopb.Role_READER: roleSet(repopb.Role_READER, repopb.Role_WRITER, repopb.Role_OWNER),
+	repopb.Role_WRITER: roleSet(repopb.Role_WRITER, repopb.Role_OWNER),
+	repopb.Role_OWNER:  roleSet(repopb.Role_OWNER),
 }
 
-func roleSet(roles ...api.Role) map[api.Role]struct{} {
-	m := make(map[api.Role]struct{}, len(roles))
+func roleSet(roles ...repopb.Role) map[repopb.Role]struct{} {
+	m := make(map[repopb.Role]struct{}, len(roles))
 	for _, r := range roles {
 		m[r] = struct{}{}
 	}
@@ -71,7 +71,7 @@ func roleSet(roles ...api.Role) map[api.Role]struct{} {
 // used now, but it may change in the future.
 //
 // Returns only transient errors.
-func hasRole(ctx context.Context, metas []*api.PrefixMetadata, role api.Role) (bool, error) {
+func hasRole(ctx context.Context, metas []*repopb.PrefixMetadata, role repopb.Role) (bool, error) {
 	caller := string(auth.CurrentIdentity(ctx)) // e.g. "user:abc@example.com"
 
 	// E.g. if 'role' is READER, 'roles' will be {READER, WRITER, OWNER}.
@@ -116,7 +116,7 @@ func hasRole(ctx context.Context, metas []*api.PrefixMetadata, role api.Role) (b
 // It understands the role inheritance defined by impliedRoles map.
 //
 // Returns only transient errors.
-func rolesInPrefix(ctx context.Context, ident identity.Identity, metas []*api.PrefixMetadata) ([]api.Role, error) {
+func rolesInPrefix(ctx context.Context, ident identity.Identity, metas []*repopb.PrefixMetadata) ([]repopb.Role, error) {
 	roles := roleSet()
 	for _, meta := range metas {
 		for _, acl := range meta.Acls {
@@ -136,8 +136,8 @@ func rolesInPrefix(ctx context.Context, ident identity.Identity, metas []*api.Pr
 	}
 
 	// Arrange the result in the order of Role enum definition.
-	out := make([]api.Role, 0, len(roles))
-	for r := api.Role_READER; r <= api.Role_OWNER; r++ {
+	out := make([]repopb.Role, 0, len(roles))
+	for r := repopb.Role_READER; r <= repopb.Role_OWNER; r++ {
 		if _, ok := roles[r]; ok {
 			out = append(out, r)
 		}
@@ -148,7 +148,7 @@ func rolesInPrefix(ctx context.Context, ident identity.Identity, metas []*api.Pr
 // isInACL is true if `ident` is in the given access control list.
 //
 // Most callers will use auth.CurrentIdentity() for this value.
-func isInACL(ctx context.Context, ident identity.Identity, acl *api.PrefixMetadata_ACL) (bool, error) {
+func isInACL(ctx context.Context, ident identity.Identity, acl *repopb.PrefixMetadata_ACL) (bool, error) {
 	var groups []string
 	for _, p := range acl.Principals {
 		if p == string(ident) {

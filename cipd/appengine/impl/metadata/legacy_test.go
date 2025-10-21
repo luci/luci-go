@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 func TestLegacyMetadata(t *testing.T) {
@@ -93,16 +93,16 @@ func TestLegacyMetadata(t *testing.T) {
 		rootMeta := rootMetadata()
 
 		// Expected metadata per prefix.
-		expected := map[string]*api.PrefixMetadata{
+		expected := map[string]*repopb.PrefixMetadata{
 			"a": {
 				Prefix:      "a",
 				Fingerprint: "BK-o5e-PimWmXtF3zdzvjiyAqSU",
 				UpdateTime:  timestamppb.New(ts.Add(5 * time.Second)), // WRITER:a mod time
 				UpdateUser:  "user:a-writer-mod@example.com",
-				Acls: []*api.PrefixMetadata_ACL{
-					{Role: api.Role_OWNER, Principals: []string{"user:a-owner@example.com", "group:a-owner"}},
-					{Role: api.Role_WRITER, Principals: []string{"user:a-writer@example.com", "group:a-writer"}},
-					{Role: api.Role_READER, Principals: []string{"user:a-reader@example.com", "group:a-reader"}},
+				Acls: []*repopb.PrefixMetadata_ACL{
+					{Role: repopb.Role_OWNER, Principals: []string{"user:a-owner@example.com", "group:a-owner"}},
+					{Role: repopb.Role_WRITER, Principals: []string{"user:a-writer@example.com", "group:a-writer"}},
+					{Role: repopb.Role_READER, Principals: []string{"user:a-reader@example.com", "group:a-reader"}},
 				},
 			},
 			"a/b": {
@@ -116,9 +116,9 @@ func TestLegacyMetadata(t *testing.T) {
 				Fingerprint: "4B97z37yN22RnBHS336ROctEC2w",
 				UpdateTime:  timestamppb.New(ts),
 				UpdateUser:  "user:d-owner-mod@example.com",
-				Acls: []*api.PrefixMetadata_ACL{
+				Acls: []*repopb.PrefixMetadata_ACL{
 					// Note: bad:ident is skipped here.
-					{Role: api.Role_OWNER, Principals: []string{"user:d-owner@example.com", "group:d-owner"}},
+					{Role: repopb.Role_OWNER, Principals: []string{"user:d-owner@example.com", "group:d-owner"}},
 				},
 			},
 		}
@@ -126,11 +126,11 @@ func TestLegacyMetadata(t *testing.T) {
 		t.Run("GetMetadata returns root metadata which has fingerprint", func(t *ftt.Test) {
 			md, err := impl.GetMetadata(ctx, "")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, md, should.Resemble([]*api.PrefixMetadata{rootMeta}))
-			assert.Loosely(t, rootMeta, should.Resemble(&api.PrefixMetadata{
-				Acls: []*api.PrefixMetadata_ACL{
+			assert.Loosely(t, md, should.Resemble([]*repopb.PrefixMetadata{rootMeta}))
+			assert.Loosely(t, rootMeta, should.Resemble(&repopb.PrefixMetadata{
+				Acls: []*repopb.PrefixMetadata_ACL{
 					{
-						Role:       api.Role_OWNER,
+						Role:       repopb.Role_OWNER,
 						Principals: []string{"group:administrators"},
 					},
 				},
@@ -141,7 +141,7 @@ func TestLegacyMetadata(t *testing.T) {
 		t.Run("GetMetadata handles one prefix", func(t *ftt.Test) {
 			md, err := impl.GetMetadata(ctx, "a")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, md, should.Resemble([]*api.PrefixMetadata{
+			assert.Loosely(t, md, should.Resemble([]*repopb.PrefixMetadata{
 				rootMeta,
 				expected["a"],
 			}))
@@ -151,7 +151,7 @@ func TestLegacyMetadata(t *testing.T) {
 			// Returns only existing metadata, silently skipping undefined.
 			md, err := impl.GetMetadata(ctx, "a/b/c/d/e/")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, md, should.Resemble([]*api.PrefixMetadata{
+			assert.Loosely(t, md, should.Resemble([]*repopb.PrefixMetadata{
 				rootMeta,
 				expected["a"],
 				expected["a/b"],
@@ -162,7 +162,7 @@ func TestLegacyMetadata(t *testing.T) {
 		t.Run("GetMetadata handles root metadata", func(t *ftt.Test) {
 			md, err := impl.GetMetadata(ctx, "")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, md, should.Resemble([]*api.PrefixMetadata{rootMeta}))
+			assert.Loosely(t, md, should.Resemble([]*repopb.PrefixMetadata{rootMeta}))
 		})
 
 		t.Run("GetMetadata fails on bad prefix", func(t *ftt.Test) {
@@ -171,7 +171,7 @@ func TestLegacyMetadata(t *testing.T) {
 		})
 
 		t.Run("UpdateMetadata noop call with existing metadata", func(t *ftt.Test) {
-			updated, err := impl.UpdateMetadata(ctx, "a", func(_ context.Context, md *api.PrefixMetadata) error {
+			updated, err := impl.UpdateMetadata(ctx, "a", func(_ context.Context, md *repopb.PrefixMetadata) error {
 				assert.Loosely(t, md, should.Resemble(expected["a"]))
 				return nil
 			})
@@ -180,7 +180,7 @@ func TestLegacyMetadata(t *testing.T) {
 		})
 
 		t.Run("UpdateMetadata refuses to update root metadata", func(t *ftt.Test) {
-			_, err := impl.UpdateMetadata(ctx, "", func(_ context.Context, md *api.PrefixMetadata) error {
+			_, err := impl.UpdateMetadata(ctx, "", func(_ context.Context, md *repopb.PrefixMetadata) error {
 				panic("must not be called")
 			})
 			assert.Loosely(t, err, should.ErrLike("the root metadata is not modifiable"))
@@ -189,7 +189,7 @@ func TestLegacyMetadata(t *testing.T) {
 		t.Run("UpdateMetadata updates existing metadata", func(t *ftt.Test) {
 			modTime := ts.Add(10 * time.Second)
 
-			newMD := proto.Clone(expected["a"]).(*api.PrefixMetadata)
+			newMD := proto.Clone(expected["a"]).(*repopb.PrefixMetadata)
 			newMD.UpdateTime = timestamppb.New(modTime)
 			newMD.UpdateUser = "user:updater@example.com"
 			newMD.Acls[0].Principals = []string{
@@ -198,7 +198,7 @@ func TestLegacyMetadata(t *testing.T) {
 				"group:another-group",
 			}
 
-			updated, err := impl.UpdateMetadata(ctx, "a", func(_ context.Context, md *api.PrefixMetadata) error {
+			updated, err := impl.UpdateMetadata(ctx, "a", func(_ context.Context, md *repopb.PrefixMetadata) error {
 				assert.Loosely(t, md, should.Resemble(expected["a"]))
 				proto.Merge(md, newMD)
 				return nil
@@ -218,7 +218,7 @@ func TestLegacyMetadata(t *testing.T) {
 			// GetMetadata sees the new metadata.
 			md, err := impl.GetMetadata(ctx, "a")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, md, should.Resemble([]*api.PrefixMetadata{rootMeta, newMD}))
+			assert.Loosely(t, md, should.Resemble([]*repopb.PrefixMetadata{rootMeta, newMD}))
 
 			// Only touched "OWNER:..." legacy entity, since only owners changed.
 			legacy := prefixACLs(ctx, "a", nil)
@@ -255,8 +255,8 @@ func TestLegacyMetadata(t *testing.T) {
 		})
 
 		t.Run("UpdateMetadata noop call with missing metadata", func(t *ftt.Test) {
-			updated, err := impl.UpdateMetadata(ctx, "z", func(_ context.Context, md *api.PrefixMetadata) error {
-				assert.Loosely(t, md, should.Resemble(&api.PrefixMetadata{Prefix: "z"}))
+			updated, err := impl.UpdateMetadata(ctx, "z", func(_ context.Context, md *repopb.PrefixMetadata) error {
+				assert.Loosely(t, md, should.Resemble(&repopb.PrefixMetadata{Prefix: "z"}))
 				return nil
 			})
 			assert.Loosely(t, err, should.BeNil)
@@ -265,24 +265,24 @@ func TestLegacyMetadata(t *testing.T) {
 			// Still missing.
 			md, err := impl.GetMetadata(ctx, "z")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, md, should.Resemble([]*api.PrefixMetadata{rootMeta}))
+			assert.Loosely(t, md, should.Resemble([]*repopb.PrefixMetadata{rootMeta}))
 		})
 
 		t.Run("UpdateMetadata creates new metadata", func(t *ftt.Test) {
-			updated, err := impl.UpdateMetadata(ctx, "z", func(_ context.Context, md *api.PrefixMetadata) error {
-				assert.Loosely(t, md, should.Resemble(&api.PrefixMetadata{Prefix: "z"}))
+			updated, err := impl.UpdateMetadata(ctx, "z", func(_ context.Context, md *repopb.PrefixMetadata) error {
+				assert.Loosely(t, md, should.Resemble(&repopb.PrefixMetadata{Prefix: "z"}))
 				md.UpdateTime = timestamppb.New(ts)
 				md.UpdateUser = "user:updater@example.com"
-				md.Acls = []*api.PrefixMetadata_ACL{
+				md.Acls = []*repopb.PrefixMetadata_ACL{
 					{
-						Role: api.Role_READER,
+						Role: repopb.Role_READER,
 					},
 					{
-						Role:       api.Role_WRITER,
+						Role:       repopb.Role_WRITER,
 						Principals: []string{"group:a", "user:a@example.com"},
 					},
 					{
-						Role:       api.Role_OWNER,
+						Role:       repopb.Role_OWNER,
 						Principals: []string{"group:b"},
 					},
 				}
@@ -294,18 +294,18 @@ func TestLegacyMetadata(t *testing.T) {
 			//  * Acls are ordered by Role now.
 			//  * READER is missing, the principals list was empty.
 			//  * Principals are sorted by "users first, then groups".
-			expected := &api.PrefixMetadata{
+			expected := &repopb.PrefixMetadata{
 				Prefix:      "z",
 				Fingerprint: "ppDqWKGcl8Pu1hMiXQ1hac0vAH0",
 				UpdateTime:  timestamppb.New(ts),
 				UpdateUser:  "user:updater@example.com",
-				Acls: []*api.PrefixMetadata_ACL{
+				Acls: []*repopb.PrefixMetadata_ACL{
 					{
-						Role:       api.Role_OWNER,
+						Role:       repopb.Role_OWNER,
 						Principals: []string{"group:b"},
 					},
 					{
-						Role:       api.Role_WRITER,
+						Role:       repopb.Role_WRITER,
 						Principals: []string{"user:a@example.com", "group:a"},
 					},
 				},
@@ -315,12 +315,12 @@ func TestLegacyMetadata(t *testing.T) {
 			// Stored indeed.
 			md, err := impl.GetMetadata(ctx, "z")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, md, should.Resemble([]*api.PrefixMetadata{rootMeta, expected}))
+			assert.Loosely(t, md, should.Resemble([]*repopb.PrefixMetadata{rootMeta, expected}))
 		})
 
 		t.Run("UpdateMetadata call with failing callback", func(t *ftt.Test) {
 			cbErr := errors.New("blah")
-			updated, err := impl.UpdateMetadata(ctx, "z", func(_ context.Context, md *api.PrefixMetadata) error {
+			updated, err := impl.UpdateMetadata(ctx, "z", func(_ context.Context, md *repopb.PrefixMetadata) error {
 				md.UpdateUser = "user:must-be-ignored@example.com"
 				return cbErr
 			})
@@ -330,7 +330,7 @@ func TestLegacyMetadata(t *testing.T) {
 			// Still missing.
 			md, err := impl.GetMetadata(ctx, "z")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, md, should.Resemble([]*api.PrefixMetadata{rootMeta}))
+			assert.Loosely(t, md, should.Resemble([]*repopb.PrefixMetadata{rootMeta}))
 		})
 	})
 }
@@ -359,7 +359,7 @@ func TestVisitMetadata(t *testing.T) {
 		}
 
 		visit := func(pfx string) (res []visited) {
-			err := impl.VisitMetadata(ctx, pfx, func(p string, md []*api.PrefixMetadata) (bool, error) {
+			err := impl.VisitMetadata(ctx, pfx, func(p string, md []*repopb.PrefixMetadata) (bool, error) {
 				extract := []string{}
 				for _, m := range md {
 					for _, acl := range m.Acls {
@@ -475,7 +475,7 @@ func TestVisitMetadata(t *testing.T) {
 
 		t.Run("Callback return value is respected, stopping right away", func(t *ftt.Test) {
 			seen := []string{}
-			err := impl.VisitMetadata(ctx, "a", func(p string, md []*api.PrefixMetadata) (bool, error) {
+			err := impl.VisitMetadata(ctx, "a", func(p string, md []*repopb.PrefixMetadata) (bool, error) {
 				seen = append(seen, p)
 				return false, nil
 			})
@@ -485,7 +485,7 @@ func TestVisitMetadata(t *testing.T) {
 
 		t.Run("Callback return value is respected, stopping later", func(t *ftt.Test) {
 			seen := []string{}
-			err := impl.VisitMetadata(ctx, "a", func(p string, md []*api.PrefixMetadata) (bool, error) {
+			err := impl.VisitMetadata(ctx, "a", func(p string, md []*repopb.PrefixMetadata) (bool, error) {
 				seen = append(seen, p)
 				return p != "a/b/c", nil
 			})
@@ -587,10 +587,10 @@ func TestMetadataGraph(t *testing.T) {
 		ts := time.Unix(1525136124, 0).UTC()
 
 		gr := metadataGraph{}
-		gr.init(&api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
+		gr.init(&repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"group:root"},
 				},
 			},
@@ -616,7 +616,7 @@ func TestMetadataGraph(t *testing.T) {
 			n := gr.node(node)
 			gr.freeze(ctx)
 
-			err := n.traverse(nil, func(n *metadataNode, md []*api.PrefixMetadata) (bool, error) {
+			err := n.traverse(nil, func(n *metadataNode, md []*repopb.PrefixMetadata) (bool, error) {
 				extract := []string{}
 				for _, m := range md {
 					for _, acl := range m.Acls {

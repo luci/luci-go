@@ -20,12 +20,12 @@ import (
 	"hash"
 	"reflect"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 )
 
 // DefaultHashAlgo is a hash algorithm to use for deriving IDs of new package
 // instances. Older existing instances are allowed to use some other hash algo.
-const DefaultHashAlgo = api.HashAlgo_SHA256
+const DefaultHashAlgo = caspb.HashAlgo_SHA256
 
 // Supported algo => its digest length (in hex encoding) + factory function.
 //
@@ -35,10 +35,10 @@ var supportedAlgos = make([]struct {
 	hash         func() hash.Hash
 	typ          reflect.Type
 	hexDigestLen int
-}, len(api.HashAlgo_value))
+}, len(caspb.HashAlgo_value))
 
 // registerHash is used from hash_*.go files to update supportedAlgos.
-func registerHashAlgo(algo api.HashAlgo, h func() hash.Hash) {
+func registerHashAlgo(algo caspb.HashAlgo, h func() hash.Hash) {
 	if supportedAlgos[algo].hash != nil {
 		panic(fmt.Sprintf("hash algo %s is already registered", algo))
 	}
@@ -49,7 +49,7 @@ func registerHashAlgo(algo api.HashAlgo, h func() hash.Hash) {
 }
 
 // NewHash returns a hash implementation or an error if the algo is unknown.
-func NewHash(algo api.HashAlgo) (hash.Hash, error) {
+func NewHash(algo caspb.HashAlgo) (hash.Hash, error) {
 	if err := ValidateHashAlgo(algo); err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func NewHash(algo api.HashAlgo) (hash.Hash, error) {
 // MustNewHash as like NewHash, but panics on errors.
 //
 // Appropriate for cases when the hash algo has already been validated.
-func MustNewHash(algo api.HashAlgo) hash.Hash {
+func MustNewHash(algo caspb.HashAlgo) hash.Hash {
 	h, err := NewHash(algo)
 	if err != nil {
 		panic(err)
@@ -71,9 +71,9 @@ func MustNewHash(algo api.HashAlgo) hash.Hash {
 // e.g. either unspecified or not known to the current version of the code.
 //
 // Errors have InvalidArgument grpc code.
-func ValidateHashAlgo(h api.HashAlgo) error {
+func ValidateHashAlgo(h caspb.HashAlgo) error {
 	switch {
-	case h == api.HashAlgo_HASH_ALGO_UNSPECIFIED:
+	case h == caspb.HashAlgo_HASH_ALGO_UNSPECIFIED:
 		return validationErr("the hash algorithm is not specified or unrecognized")
 	case int(h) >= len(supportedAlgos):
 		return validationErr("unsupported unknown hash algorithm #%d", h)
@@ -92,12 +92,12 @@ func HexDigest(h hash.Hash) string {
 //
 // `h` must be one of the supported hashes (as created by `NewHash`). Panics
 // otherwise.
-func ObjectRefFromHash(h hash.Hash) *api.ObjectRef {
+func ObjectRefFromHash(h hash.Hash) *caspb.ObjectRef {
 	typ := reflect.TypeOf(h)
 	for algo, props := range supportedAlgos {
 		if props.typ == typ {
-			return &api.ObjectRef{
-				HashAlgo:  api.HashAlgo(algo),
+			return &caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo(algo),
 				HexDigest: HexDigest(h),
 			}
 		}

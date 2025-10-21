@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -33,9 +33,9 @@ import (
 func TestTagCacheWorks(t *testing.T) {
 	ctx := context.Background()
 
-	numberedObjRef := func(i int) *api.ObjectRef {
-		return &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA256,
+	numberedObjRef := func(i int) *caspb.ObjectRef {
+		return &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: strings.Repeat(fmt.Sprintf("%02x", i), 32),
 		}
 	}

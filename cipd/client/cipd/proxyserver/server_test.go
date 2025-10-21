@@ -30,8 +30,10 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/prpc"
 
-	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
-	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	casgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/caspb/grpcpb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
+	repogrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/repopb/grpcpb"
 	"go.chromium.org/luci/cipd/client/cipd/proxyclient"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
 )
@@ -65,7 +67,7 @@ func TestServer(t *testing.T) {
 	defer func() { assert.NoErr(t, pt.Close()) }()
 
 	httpC := &http.Client{Transport: pt.RoundTripper}
-	repoC := cipdgrpcpb.NewRepositoryClient(&prpc.Client{
+	repoC := repogrpcpb.NewRepositoryClient(&prpc.Client{
 		C:    httpC,
 		Host: fakeHost,
 		Options: &prpc.Options{
@@ -89,7 +91,7 @@ func TestServer(t *testing.T) {
 	srv := &Server{
 		Listener:         listener,
 		Repository:       repoS,
-		Storage:          &cipdgrpcpb.UnimplementedStorageServer{},
+		Storage:          &casgrpcpb.UnimplementedStorageServer{},
 		CASURLObfuscator: repoS.ob,
 		CAS: func(obj *proxypb.ProxiedCASObject, rw http.ResponseWriter, req *http.Request) {
 			assert.That(t, obj, should.Match(&proxypb.ProxiedCASObject{
@@ -104,10 +106,10 @@ func TestServer(t *testing.T) {
 	go func() { assert.NoErr(t, srv.Serve(ctx)) }()
 	defer func() { assert.NoErr(t, srv.Stop(ctx)) }()
 
-	res, err := repoC.GetInstanceURL(ctx, &cipdpb.GetInstanceURLRequest{
+	res, err := repoC.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 		Package: fakePackage,
-		Instance: &cipdpb.ObjectRef{
-			HashAlgo:  cipdpb.HashAlgo_SHA256,
+		Instance: &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: fakeInstanceSHA256,
 		},
 	})
@@ -124,19 +126,19 @@ func TestServer(t *testing.T) {
 }
 
 type repoSrv struct {
-	cipdgrpcpb.UnimplementedRepositoryServer
+	repogrpcpb.UnimplementedRepositoryServer
 
 	t  *testing.T
 	ob *CASURLObfuscator
 }
 
-func (s *repoSrv) GetInstanceURL(ctx context.Context, req *cipdpb.GetInstanceURLRequest) (*cipdpb.ObjectURL, error) {
+func (s *repoSrv) GetInstanceURL(ctx context.Context, req *repopb.GetInstanceURLRequest) (*caspb.ObjectURL, error) {
 	assert.That(s.t, TargetHost(ctx), should.Equal(fakeHost))
 
-	assert.That(s.t, req, should.Match(&cipdpb.GetInstanceURLRequest{
+	assert.That(s.t, req, should.Match(&repopb.GetInstanceURLRequest{
 		Package: fakePackage,
-		Instance: &cipdpb.ObjectRef{
-			HashAlgo:  cipdpb.HashAlgo_SHA256,
+		Instance: &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: fakeInstanceSHA256,
 		},
 	}))
@@ -146,7 +148,7 @@ func (s *repoSrv) GetInstanceURL(ctx context.Context, req *cipdpb.GetInstanceURL
 	})
 	assert.NoErr(s.t, err)
 
-	return &cipdpb.ObjectURL{
+	return &caspb.ObjectURL{
 		SignedUrl: url,
 	}, nil
 }

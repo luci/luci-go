@@ -27,7 +27,8 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -88,10 +89,10 @@ func TestApiDescToInfo(t *testing.T) {
 
 	ts := time.Unix(1530934723, 0).UTC()
 
-	apiInst := &api.Instance{
+	apiInst := &repopb.Instance{
 		Package: "a",
-		Instance: &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA256,
+		Instance: &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: strings.Repeat("0", 64),
 		},
 		RegisteredBy: "user:a@example.com",
@@ -109,16 +110,16 @@ func TestApiDescToInfo(t *testing.T) {
 
 	ftt.Run("Only instance info", t, func(t *ftt.Test) {
 		assert.Loosely(t,
-			apiDescToInfo(&api.DescribeInstanceResponse{Instance: apiInst}),
+			apiDescToInfo(&repopb.DescribeInstanceResponse{Instance: apiInst}),
 			should.Resemble(
 				&InstanceDescription{InstanceInfo: instInfo},
 			))
 	})
 
 	ftt.Run("With tags and refs", t, func(t *ftt.Test) {
-		in := &api.DescribeInstanceResponse{
+		in := &repopb.DescribeInstanceResponse{
 			Instance: apiInst,
-			Tags: []*api.Tag{
+			Tags: []*repopb.Tag{
 				{
 					Key:        "k",
 					Value:      "v",
@@ -126,7 +127,7 @@ func TestApiDescToInfo(t *testing.T) {
 					AttachedTs: timestamppb.New(ts.Add(time.Second)),
 				},
 			},
-			Refs: []*api.Ref{
+			Refs: []*repopb.Ref{
 				{
 					Name:       "ref",
 					Instance:   apiInst.Instance,

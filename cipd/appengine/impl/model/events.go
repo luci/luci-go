@@ -43,7 +43,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/tq"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 	"go.chromium.org/luci/cipd/appengine/impl/model/tasks"
 )
@@ -91,7 +91,7 @@ type Event struct {
 	Event   []byte         `gae:",noindex"` // serialized cipd.Event proto
 
 	// Fields extracted from cipd.Event for indexing.
-	Kind          api.EventKind
+	Kind          repopb.EventKind
 	Who           string
 	When          int64  // nanoseconds since EventsEpoch
 	Instance      string // literal 'NONE' for package events, to be able to query them
@@ -106,7 +106,7 @@ type Event struct {
 // Panics if the proto can't be serialized. This should never happen.
 //
 // Returns the entity itself for easier chaining.
-func (e *Event) FromProto(ctx context.Context, p *api.Event) *Event {
+func (e *Event) FromProto(ctx context.Context, p *repopb.Event) *Event {
 	blob, err := proto.Marshal(p)
 	if err != nil {
 		panic(err)
@@ -137,14 +137,14 @@ func NewEventsQuery() *datastore.Query {
 // them by timestamp (most recent first).
 //
 // Start the query with NewEventsQuery.
-func QueryEvents(ctx context.Context, q *datastore.Query) ([]*api.Event, error) {
+func QueryEvents(ctx context.Context, q *datastore.Query) ([]*repopb.Event, error) {
 	var ev []Event
 	if err := datastore.GetAll(ctx, q.Order("-When"), &ev); err != nil {
 		return nil, transient.Tag.Apply(err)
 	}
-	out := make([]*api.Event, len(ev))
+	out := make([]*repopb.Event, len(ev))
 	for i, e := range ev {
-		out[i] = &api.Event{}
+		out[i] = &repopb.Event{}
 		if err := proto.Unmarshal(e.Event, out[i]); err != nil {
 			return nil, errors.Fmt("failed to unmarshal Event with ID %d: %w", e.ID, err)
 		}
@@ -154,13 +154,13 @@ func QueryEvents(ctx context.Context, q *datastore.Query) ([]*api.Event, error) 
 
 // Events collects events emitted in some transaction and then flushes them.
 type Events struct {
-	ev []*api.Event
+	ev []*repopb.Event
 }
 
 // Emit adds an event to be flushed later in Flush.
 //
 // 'Who' and 'When' fields are populated in Flush using values from the context.
-func (t *Events) Emit(e *api.Event) {
+func (t *Events) Emit(e *repopb.Event) {
 	t.ev = append(t.ev, e)
 }
 
@@ -199,7 +199,7 @@ func (t *Events) Flush(ctx context.Context) error {
 // EmitEvent adds a single event to the event log.
 //
 // Prefer using Events to add multiple events at once.
-func EmitEvent(ctx context.Context, e *api.Event) error {
+func EmitEvent(ctx context.Context, e *repopb.Event) error {
 	ev := Events{}
 	ev.Emit(e)
 	return ev.Flush(ctx)
@@ -222,13 +222,13 @@ func IsTextContentType(ct string) bool {
 
 var sinkCtxKey = "cipd model events sink"
 
-type sink func(context.Context, []*api.Event) error
+type sink func(context.Context, []*repopb.Event) error
 
 func installSink(ctx context.Context, s sink) context.Context {
 	return context.WithValue(ctx, &sinkCtxKey, s)
 }
 
-func flushToSink(ctx context.Context, ev []*api.Event) error {
+func flushToSink(ctx context.Context, ev []*repopb.Event) error {
 	if s, _ := ctx.Value(&sinkCtxKey).(sink); s != nil {
 		return s(ctx, ev)
 	}
@@ -272,7 +272,7 @@ func (l *BigQueryEventLogger) RegisterSink(ctx context.Context, disp *tq.Dispatc
 			return &tq.CustomPayload{Body: blob}, nil
 		},
 	})
-	return installSink(ctx, func(ctx context.Context, ev []*api.Event) error {
+	return installSink(ctx, func(ctx context.Context, ev []*repopb.Event) error {
 		task := &tasks.LogEvents{Events: ev}
 		if logging.IsLogging(ctx, logging.Debug) {
 			blob, err := (prototext.MarshalOptions{Indent: "\t"}).Marshal(task)
@@ -314,7 +314,7 @@ func (l *BigQueryEventLogger) HandlePubSubPush(ctx context.Context, body io.Read
 }
 
 // insert inserts rows into the BQ table.
-func (l *BigQueryEventLogger) insert(ctx context.Context, ev []*api.Event, dedupID string) error {
+func (l *BigQueryEventLogger) insert(ctx context.Context, ev []*repopb.Event, dedupID string) error {
 	rows := make([]bigquery.ValueSaver, len(ev))
 	for idx, e := range ev {
 		rows[idx] = &bq.Row{
@@ -327,12 +327,12 @@ func (l *BigQueryEventLogger) insert(ctx context.Context, ev []*api.Event, dedup
 
 ////////////////////////////////////////////////////////////////////////////////
 
-var sortedRoles []api.Role
+var sortedRoles []repopb.Role
 
 func init() {
-	sortedRoles = make([]api.Role, 0, len(api.Role_name)-1)
-	for r := range api.Role_name {
-		if role := api.Role(r); role != api.Role_ROLE_UNSPECIFIED {
+	sortedRoles = make([]repopb.Role, 0, len(repopb.Role_name)-1)
+	for r := range repopb.Role_name {
+		if role := repopb.Role(r); role != repopb.Role_ROLE_UNSPECIFIED {
 			sortedRoles = append(sortedRoles, role)
 		}
 	}
@@ -343,7 +343,7 @@ func init() {
 
 // EmitMetadataEvents compares two metadatum of a prefix and emits events for
 // fields that have changed.
-func EmitMetadataEvents(ctx context.Context, before, after *api.PrefixMetadata) error {
+func EmitMetadataEvents(ctx context.Context, before, after *repopb.PrefixMetadata) error {
 	if before.Prefix != after.Prefix {
 		panic(fmt.Sprintf("comparing metadata for different prefixes: %q != %q", before.Prefix, after.Prefix))
 	}
@@ -352,18 +352,18 @@ func EmitMetadataEvents(ctx context.Context, before, after *api.PrefixMetadata) 
 	prev := metadata.GetACLs(before)
 	next := metadata.GetACLs(after)
 
-	var granted []*api.PrefixMetadata_ACL
-	var revoked []*api.PrefixMetadata_ACL
+	var granted []*repopb.PrefixMetadata_ACL
+	var revoked []*repopb.PrefixMetadata_ACL
 
 	for _, role := range sortedRoles {
 		if added := stringSetDiff(next[role], prev[role]); len(added) != 0 {
-			granted = append(granted, &api.PrefixMetadata_ACL{
+			granted = append(granted, &repopb.PrefixMetadata_ACL{
 				Role:       role,
 				Principals: added,
 			})
 		}
 		if removed := stringSetDiff(prev[role], next[role]); len(removed) != 0 {
-			revoked = append(revoked, &api.PrefixMetadata_ACL{
+			revoked = append(revoked, &repopb.PrefixMetadata_ACL{
 				Role:       role,
 				Principals: removed,
 			})
@@ -374,8 +374,8 @@ func EmitMetadataEvents(ctx context.Context, before, after *api.PrefixMetadata) 
 		return nil
 	}
 
-	return EmitEvent(ctx, &api.Event{
-		Kind:        api.EventKind_PREFIX_ACL_CHANGED,
+	return EmitEvent(ctx, &repopb.Event{
+		Kind:        repopb.EventKind_PREFIX_ACL_CHANGED,
 		Package:     prefix,
 		GrantedRole: granted,
 		RevokedRole: revoked,

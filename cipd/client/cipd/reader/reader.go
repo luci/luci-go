@@ -36,7 +36,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/ui"
@@ -104,7 +104,7 @@ type OpenInstanceOpts struct {
 	// HashAlgo specifies what hashing algorithm to use for computing instance ID.
 	//
 	// May be empty. See the comment for VerificationMode for more details.
-	HashAlgo api.HashAlgo
+	HashAlgo caspb.HashAlgo
 }
 
 // OpenInstance opens a package instance by reading it from the given source.
@@ -450,14 +450,14 @@ func (inst *packageInstance) open(opts OpenInstanceOpts) error {
 		switch {
 		case opts.InstanceID == "":
 			return cipderr.BadArgument.Apply(errors.New("InstanceID is required with VerifyHash and SkipHashVerification modes"))
-		case opts.HashAlgo != api.HashAlgo_HASH_ALGO_UNSPECIFIED:
+		case opts.HashAlgo != caspb.HashAlgo_HASH_ALGO_UNSPECIFIED:
 			return cipderr.BadArgument.Apply(errors.New("HashAlgo must not be used with VerifyHash or SkipHashVerification modes"))
 		}
 	case CalculateHash:
 		switch {
 		case opts.InstanceID != "":
 			return cipderr.BadArgument.Apply(errors.New("InstanceID must not be used with CalculateHash mode"))
-		case opts.HashAlgo == api.HashAlgo_HASH_ALGO_UNSPECIFIED:
+		case opts.HashAlgo == caspb.HashAlgo_HASH_ALGO_UNSPECIFIED:
 			return cipderr.BadArgument.Apply(errors.New("HashAlgo is required with CalculateHash mode"))
 		}
 	default:
@@ -483,7 +483,7 @@ func (inst *packageInstance) open(opts OpenInstanceOpts) error {
 		if err := calculateHash(inst.data, h); err != nil {
 			return err
 		}
-		inst.instanceID = common.ObjectRefToInstanceID(&api.ObjectRef{
+		inst.instanceID = common.ObjectRefToInstanceID(&caspb.ObjectRef{
 			HashAlgo:  opts.HashAlgo,
 			HexDigest: common.HexDigest(h),
 		})

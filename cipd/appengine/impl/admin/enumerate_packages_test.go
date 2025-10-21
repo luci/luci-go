@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	api "go.chromium.org/luci/cipd/api/admin/v1"
+	adminpb "go.chromium.org/luci/cipd/api/admin/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 )
 
@@ -42,8 +42,8 @@ func TestEnumeratePackages(t *testing.T) {
 			{Name: "a/b/c"},
 		}), should.BeNil)
 
-		_, err := RunMapper(ctx, admin, sched, &api.JobConfig{
-			Kind: api.MapperKind_ENUMERATE_PACKAGES,
+		_, err := RunMapper(ctx, admin, sched, &adminpb.JobConfig{
+			Kind: adminpb.MapperKind_ENUMERATE_PACKAGES,
 		})
 		assert.Loosely(t, err, should.BeNil)
 

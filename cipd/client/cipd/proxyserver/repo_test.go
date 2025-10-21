@@ -28,8 +28,9 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/prpc"
 
-	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
-	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
+	repogrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/repopb/grpcpb"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
 )
 
@@ -41,14 +42,14 @@ func TestProxyRepositoryServer(t *testing.T) {
 	repoImpl := &repoImpl{}
 
 	remote := &prpctest.Server{}
-	cipdgrpcpb.RegisterRepositoryServer(remote, repoImpl)
+	repogrpcpb.RegisterRepositoryServer(remote, repoImpl)
 	remote.Start(ctx)
 	defer remote.Close()
 
 	obfuscator := NewCASURLObfuscator()
 
 	local := &prpctest.Server{}
-	cipdgrpcpb.RegisterRepositoryServer(local, &ProxyRepositoryServer{
+	repogrpcpb.RegisterRepositoryServer(local, &ProxyRepositoryServer{
 		Policy: &proxypb.Policy{
 			AllowedRemotes: []string{"allowed"},
 			ResolveVersion: &proxypb.Policy_ResolveVersionPolicy{AllowTags: true},
@@ -85,18 +86,18 @@ func TestProxyRepositoryServer(t *testing.T) {
 		UserAgent: "client-user-agent",
 	})
 	assert.NoErr(t, err)
-	repoC := cipdgrpcpb.NewRepositoryClient(prpcC)
+	repoC := repogrpcpb.NewRepositoryClient(prpcC)
 
 	t.Run("ResolveVersion: OK", func(t *testing.T) {
-		resp, err := repoC.ResolveVersion(callCtx("allowed"), &cipdpb.ResolveVersionRequest{
+		resp, err := repoC.ResolveVersion(callCtx("allowed"), &repopb.ResolveVersionRequest{
 			Package: "some/pkg",
 			Version: "some:tag",
 		})
 		assert.NoErr(t, err)
-		assert.That(t, resp, should.Match(&cipdpb.Instance{
+		assert.That(t, resp, should.Match(&repopb.Instance{
 			Package: "some/pkg",
-			Instance: &cipdpb.ObjectRef{
-				HashAlgo:  cipdpb.HashAlgo_SHA256,
+			Instance: &caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA256,
 				HexDigest: "fake-digest",
 			},
 		}))
@@ -104,7 +105,7 @@ func TestProxyRepositoryServer(t *testing.T) {
 	})
 
 	t.Run("ResolveVersion: wrong host", func(t *testing.T) {
-		_, err := repoC.ResolveVersion(callCtx("unknown"), &cipdpb.ResolveVersionRequest{
+		_, err := repoC.ResolveVersion(callCtx("unknown"), &repopb.ResolveVersionRequest{
 			Package: "some/pkg",
 			Version: "some:tag",
 		})
@@ -113,7 +114,7 @@ func TestProxyRepositoryServer(t *testing.T) {
 	})
 
 	t.Run("ResolveVersion: forbidden ref", func(t *testing.T) {
-		_, err := repoC.ResolveVersion(callCtx("allowed"), &cipdpb.ResolveVersionRequest{
+		_, err := repoC.ResolveVersion(callCtx("allowed"), &repopb.ResolveVersionRequest{
 			Package: "some/pkg",
 			Version: "some-ref",
 		})
@@ -122,10 +123,10 @@ func TestProxyRepositoryServer(t *testing.T) {
 	})
 
 	t.Run("GetInstanceURL", func(t *testing.T) {
-		resp, err := repoC.GetInstanceURL(callCtx("allowed"), &cipdpb.GetInstanceURLRequest{
+		resp, err := repoC.GetInstanceURL(callCtx("allowed"), &repopb.GetInstanceURLRequest{
 			Package: "some/pkg",
-			Instance: &cipdpb.ObjectRef{
-				HashAlgo:  cipdpb.HashAlgo_SHA256,
+			Instance: &caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA256,
 				HexDigest: "fake-digest",
 			},
 		})
@@ -137,7 +138,7 @@ func TestProxyRepositoryServer(t *testing.T) {
 	})
 
 	t.Run("DescribeClient", func(t *testing.T) {
-		resp, err := repoC.DescribeClient(callCtx("allowed"), &cipdpb.DescribeClientRequest{})
+		resp, err := repoC.DescribeClient(callCtx("allowed"), &repopb.DescribeClientRequest{})
 		assert.NoErr(t, err)
 
 		original, err := obfuscator.Unobfuscate(resp.ClientBinary.SignedUrl)
@@ -147,34 +148,34 @@ func TestProxyRepositoryServer(t *testing.T) {
 }
 
 type repoImpl struct {
-	cipdgrpcpb.UnimplementedRepositoryServer
+	repogrpcpb.UnimplementedRepositoryServer
 
 	lastUserAgent string
 }
 
-func (r *repoImpl) ResolveVersion(ctx context.Context, req *cipdpb.ResolveVersionRequest) (*cipdpb.Instance, error) {
+func (r *repoImpl) ResolveVersion(ctx context.Context, req *repopb.ResolveVersionRequest) (*repopb.Instance, error) {
 	r.lastUserAgent = ""
 	if val := metadata.ValueFromIncomingContext(ctx, "user-agent"); len(val) > 0 {
 		r.lastUserAgent = val[0]
 	}
-	return &cipdpb.Instance{
+	return &repopb.Instance{
 		Package: req.Package,
-		Instance: &cipdpb.ObjectRef{
-			HashAlgo:  cipdpb.HashAlgo_SHA256,
+		Instance: &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: "fake-digest",
 		},
 	}, nil
 }
 
-func (r *repoImpl) GetInstanceURL(ctx context.Context, req *cipdpb.GetInstanceURLRequest) (*cipdpb.ObjectURL, error) {
-	return &cipdpb.ObjectURL{
+func (r *repoImpl) GetInstanceURL(ctx context.Context, req *repopb.GetInstanceURLRequest) (*caspb.ObjectURL, error) {
+	return &caspb.ObjectURL{
 		SignedUrl: "http://cas.example.com/" + req.Package,
 	}, nil
 }
 
-func (r *repoImpl) DescribeClient(ctx context.Context, req *cipdpb.DescribeClientRequest) (*cipdpb.DescribeClientResponse, error) {
-	return &cipdpb.DescribeClientResponse{
-		ClientBinary: &cipdpb.ObjectURL{
+func (r *repoImpl) DescribeClient(ctx context.Context, req *repopb.DescribeClientRequest) (*repopb.DescribeClientResponse, error) {
+	return &repopb.DescribeClientResponse{
+		ClientBinary: &caspb.ObjectURL{
 			SignedUrl: "http://cas.example.com/client",
 		},
 	}, nil

@@ -27,7 +27,8 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 func init() {
@@ -90,36 +91,36 @@ type mockedStorageClient struct {
 	mockedRPCClient
 }
 
-func (m *mockedStorageClient) GetObjectURL(ctx context.Context, in *api.GetObjectURLRequest, opts ...grpc.CallOption) (*api.ObjectURL, error) {
+func (m *mockedStorageClient) GetObjectURL(ctx context.Context, in *caspb.GetObjectURLRequest, opts ...grpc.CallOption) (*caspb.ObjectURL, error) {
 	out, err := m.call("GetObjectURL", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.ObjectURL), nil
+	return out.(*caspb.ObjectURL), nil
 }
 
-func (m *mockedStorageClient) BeginUpload(ctx context.Context, in *api.BeginUploadRequest, opts ...grpc.CallOption) (*api.UploadOperation, error) {
+func (m *mockedStorageClient) BeginUpload(ctx context.Context, in *caspb.BeginUploadRequest, opts ...grpc.CallOption) (*caspb.UploadOperation, error) {
 	out, err := m.call("BeginUpload", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.UploadOperation), nil
+	return out.(*caspb.UploadOperation), nil
 }
 
-func (m *mockedStorageClient) FinishUpload(ctx context.Context, in *api.FinishUploadRequest, opts ...grpc.CallOption) (*api.UploadOperation, error) {
+func (m *mockedStorageClient) FinishUpload(ctx context.Context, in *caspb.FinishUploadRequest, opts ...grpc.CallOption) (*caspb.UploadOperation, error) {
 	out, err := m.call("FinishUpload", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.UploadOperation), nil
+	return out.(*caspb.UploadOperation), nil
 }
 
-func (m *mockedStorageClient) CancelUpload(ctx context.Context, in *api.CancelUploadRequest, opts ...grpc.CallOption) (*api.UploadOperation, error) {
+func (m *mockedStorageClient) CancelUpload(ctx context.Context, in *caspb.CancelUploadRequest, opts ...grpc.CallOption) (*caspb.UploadOperation, error) {
 	out, err := m.call("CancelUpload", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.UploadOperation), nil
+	return out.(*caspb.UploadOperation), nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -128,55 +129,55 @@ type mockedRepoClient struct {
 	mockedRPCClient
 }
 
-func (m *mockedRepoClient) GetPrefixMetadata(ctx context.Context, in *api.PrefixRequest, opts ...grpc.CallOption) (*api.PrefixMetadata, error) {
+func (m *mockedRepoClient) GetPrefixMetadata(ctx context.Context, in *repopb.PrefixRequest, opts ...grpc.CallOption) (*repopb.PrefixMetadata, error) {
 	out, err := m.call("GetPrefixMetadata", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.PrefixMetadata), nil
+	return out.(*repopb.PrefixMetadata), nil
 }
 
-func (m *mockedRepoClient) GetInheritedPrefixMetadata(ctx context.Context, in *api.PrefixRequest, opts ...grpc.CallOption) (*api.InheritedPrefixMetadata, error) {
+func (m *mockedRepoClient) GetInheritedPrefixMetadata(ctx context.Context, in *repopb.PrefixRequest, opts ...grpc.CallOption) (*repopb.InheritedPrefixMetadata, error) {
 	out, err := m.call("GetInheritedPrefixMetadata", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.InheritedPrefixMetadata), nil
+	return out.(*repopb.InheritedPrefixMetadata), nil
 }
 
-func (m *mockedRepoClient) UpdatePrefixMetadata(ctx context.Context, in *api.PrefixMetadata, opts ...grpc.CallOption) (*api.PrefixMetadata, error) {
+func (m *mockedRepoClient) UpdatePrefixMetadata(ctx context.Context, in *repopb.PrefixMetadata, opts ...grpc.CallOption) (*repopb.PrefixMetadata, error) {
 	out, err := m.call("UpdatePrefixMetadata", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.PrefixMetadata), nil
+	return out.(*repopb.PrefixMetadata), nil
 }
 
-func (m *mockedRepoClient) GetRolesInPrefix(ctx context.Context, in *api.PrefixRequest, opts ...grpc.CallOption) (*api.RolesInPrefixResponse, error) {
+func (m *mockedRepoClient) GetRolesInPrefix(ctx context.Context, in *repopb.PrefixRequest, opts ...grpc.CallOption) (*repopb.RolesInPrefixResponse, error) {
 	out, err := m.call("GetRolesInPrefix", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.RolesInPrefixResponse), nil
+	return out.(*repopb.RolesInPrefixResponse), nil
 }
 
-func (m *mockedRepoClient) GetRolesInPrefixOnBehalfOf(ctx context.Context, in *api.PrefixRequestOnBehalfOf, opts ...grpc.CallOption) (*api.RolesInPrefixResponse, error) {
+func (m *mockedRepoClient) GetRolesInPrefixOnBehalfOf(ctx context.Context, in *repopb.PrefixRequestOnBehalfOf, opts ...grpc.CallOption) (*repopb.RolesInPrefixResponse, error) {
 	out, err := m.call("GetRolesInPrefixOnBehalfOf", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.RolesInPrefixResponse), nil
+	return out.(*repopb.RolesInPrefixResponse), nil
 }
 
-func (m *mockedRepoClient) ListPrefix(ctx context.Context, in *api.ListPrefixRequest, opts ...grpc.CallOption) (*api.ListPrefixResponse, error) {
+func (m *mockedRepoClient) ListPrefix(ctx context.Context, in *repopb.ListPrefixRequest, opts ...grpc.CallOption) (*repopb.ListPrefixResponse, error) {
 	out, err := m.call("ListPrefix", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.ListPrefixResponse), nil
+	return out.(*repopb.ListPrefixResponse), nil
 }
 
-func (m *mockedRepoClient) HidePackage(ctx context.Context, in *api.PackageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (m *mockedRepoClient) HidePackage(ctx context.Context, in *repopb.PackageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("HidePackage", in, opts)
 	if err != nil {
 		return nil, err
@@ -184,7 +185,7 @@ func (m *mockedRepoClient) HidePackage(ctx context.Context, in *api.PackageReque
 	return out.(*emptypb.Empty), nil
 }
 
-func (m *mockedRepoClient) UnhidePackage(ctx context.Context, in *api.PackageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (m *mockedRepoClient) UnhidePackage(ctx context.Context, in *repopb.PackageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("UnhidePackage", in, opts)
 	if err != nil {
 		return nil, err
@@ -192,7 +193,7 @@ func (m *mockedRepoClient) UnhidePackage(ctx context.Context, in *api.PackageReq
 	return out.(*emptypb.Empty), nil
 }
 
-func (m *mockedRepoClient) DeletePackage(ctx context.Context, in *api.PackageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (m *mockedRepoClient) DeletePackage(ctx context.Context, in *repopb.PackageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("DeletePackage", in, opts)
 	if err != nil {
 		return nil, err
@@ -200,31 +201,31 @@ func (m *mockedRepoClient) DeletePackage(ctx context.Context, in *api.PackageReq
 	return out.(*emptypb.Empty), nil
 }
 
-func (m *mockedRepoClient) RegisterInstance(ctx context.Context, in *api.Instance, opts ...grpc.CallOption) (*api.RegisterInstanceResponse, error) {
+func (m *mockedRepoClient) RegisterInstance(ctx context.Context, in *repopb.Instance, opts ...grpc.CallOption) (*repopb.RegisterInstanceResponse, error) {
 	out, err := m.call("RegisterInstance", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.RegisterInstanceResponse), nil
+	return out.(*repopb.RegisterInstanceResponse), nil
 }
 
-func (m *mockedRepoClient) ListInstances(ctx context.Context, in *api.ListInstancesRequest, opts ...grpc.CallOption) (*api.ListInstancesResponse, error) {
+func (m *mockedRepoClient) ListInstances(ctx context.Context, in *repopb.ListInstancesRequest, opts ...grpc.CallOption) (*repopb.ListInstancesResponse, error) {
 	out, err := m.call("ListInstances", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.ListInstancesResponse), nil
+	return out.(*repopb.ListInstancesResponse), nil
 }
 
-func (m *mockedRepoClient) SearchInstances(ctx context.Context, in *api.SearchInstancesRequest, opts ...grpc.CallOption) (*api.SearchInstancesResponse, error) {
+func (m *mockedRepoClient) SearchInstances(ctx context.Context, in *repopb.SearchInstancesRequest, opts ...grpc.CallOption) (*repopb.SearchInstancesResponse, error) {
 	out, err := m.call("SearchInstances", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.SearchInstancesResponse), nil
+	return out.(*repopb.SearchInstancesResponse), nil
 }
 
-func (m *mockedRepoClient) CreateRef(ctx context.Context, in *api.Ref, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (m *mockedRepoClient) CreateRef(ctx context.Context, in *repopb.Ref, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("CreateRef", in, opts)
 	if err != nil {
 		return nil, err
@@ -232,7 +233,7 @@ func (m *mockedRepoClient) CreateRef(ctx context.Context, in *api.Ref, opts ...g
 	return out.(*emptypb.Empty), nil
 }
 
-func (m *mockedRepoClient) DeleteRef(ctx context.Context, in *api.DeleteRefRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (m *mockedRepoClient) DeleteRef(ctx context.Context, in *repopb.DeleteRefRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("DeleteRef", in, opts)
 	if err != nil {
 		return nil, err
@@ -240,15 +241,15 @@ func (m *mockedRepoClient) DeleteRef(ctx context.Context, in *api.DeleteRefReque
 	return out.(*emptypb.Empty), nil
 }
 
-func (m *mockedRepoClient) ListRefs(ctx context.Context, in *api.ListRefsRequest, opts ...grpc.CallOption) (*api.ListRefsResponse, error) {
+func (m *mockedRepoClient) ListRefs(ctx context.Context, in *repopb.ListRefsRequest, opts ...grpc.CallOption) (*repopb.ListRefsResponse, error) {
 	out, err := m.call("ListRefs", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.ListRefsResponse), nil
+	return out.(*repopb.ListRefsResponse), nil
 }
 
-func (m *mockedRepoClient) AttachTags(ctx context.Context, in *api.AttachTagsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (m *mockedRepoClient) AttachTags(ctx context.Context, in *repopb.AttachTagsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("AttachTags", in, opts)
 	if err != nil {
 		return nil, err
@@ -256,7 +257,7 @@ func (m *mockedRepoClient) AttachTags(ctx context.Context, in *api.AttachTagsReq
 	return out.(*emptypb.Empty), nil
 }
 
-func (m *mockedRepoClient) DetachTags(ctx context.Context, in *api.DetachTagsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (m *mockedRepoClient) DetachTags(ctx context.Context, in *repopb.DetachTagsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("DetachTags", in, opts)
 	if err != nil {
 		return nil, err
@@ -264,7 +265,7 @@ func (m *mockedRepoClient) DetachTags(ctx context.Context, in *api.DetachTagsReq
 	return out.(*emptypb.Empty), nil
 }
 
-func (m *mockedRepoClient) AttachMetadata(ctx context.Context, in *api.AttachMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (m *mockedRepoClient) AttachMetadata(ctx context.Context, in *repopb.AttachMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("AttachMetadata", in, opts)
 	if err != nil {
 		return nil, err
@@ -272,7 +273,7 @@ func (m *mockedRepoClient) AttachMetadata(ctx context.Context, in *api.AttachMet
 	return out.(*emptypb.Empty), nil
 }
 
-func (m *mockedRepoClient) DetachMetadata(ctx context.Context, in *api.DetachMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (m *mockedRepoClient) DetachMetadata(ctx context.Context, in *repopb.DetachMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out, err := m.call("DetachMetadata", in, opts)
 	if err != nil {
 		return nil, err
@@ -280,50 +281,50 @@ func (m *mockedRepoClient) DetachMetadata(ctx context.Context, in *api.DetachMet
 	return out.(*emptypb.Empty), nil
 }
 
-func (m *mockedRepoClient) ListMetadata(ctx context.Context, in *api.ListMetadataRequest, opts ...grpc.CallOption) (*api.ListMetadataResponse, error) {
+func (m *mockedRepoClient) ListMetadata(ctx context.Context, in *repopb.ListMetadataRequest, opts ...grpc.CallOption) (*repopb.ListMetadataResponse, error) {
 	out, err := m.call("ListMetadata", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.ListMetadataResponse), nil
+	return out.(*repopb.ListMetadataResponse), nil
 }
 
-func (m *mockedRepoClient) ResolveVersion(ctx context.Context, in *api.ResolveVersionRequest, opts ...grpc.CallOption) (*api.Instance, error) {
+func (m *mockedRepoClient) ResolveVersion(ctx context.Context, in *repopb.ResolveVersionRequest, opts ...grpc.CallOption) (*repopb.Instance, error) {
 	out, err := m.call("ResolveVersion", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.Instance), nil
+	return out.(*repopb.Instance), nil
 }
 
-func (m *mockedRepoClient) GetInstanceURL(ctx context.Context, in *api.GetInstanceURLRequest, opts ...grpc.CallOption) (*api.ObjectURL, error) {
+func (m *mockedRepoClient) GetInstanceURL(ctx context.Context, in *repopb.GetInstanceURLRequest, opts ...grpc.CallOption) (*caspb.ObjectURL, error) {
 	out, err := m.call("GetInstanceURL", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.ObjectURL), nil
+	return out.(*caspb.ObjectURL), nil
 }
 
-func (m *mockedRepoClient) DescribeInstance(ctx context.Context, in *api.DescribeInstanceRequest, opts ...grpc.CallOption) (*api.DescribeInstanceResponse, error) {
+func (m *mockedRepoClient) DescribeInstance(ctx context.Context, in *repopb.DescribeInstanceRequest, opts ...grpc.CallOption) (*repopb.DescribeInstanceResponse, error) {
 	out, err := m.call("DescribeInstance", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.DescribeInstanceResponse), nil
+	return out.(*repopb.DescribeInstanceResponse), nil
 }
 
-func (m *mockedRepoClient) DescribeClient(ctx context.Context, in *api.DescribeClientRequest, opts ...grpc.CallOption) (*api.DescribeClientResponse, error) {
+func (m *mockedRepoClient) DescribeClient(ctx context.Context, in *repopb.DescribeClientRequest, opts ...grpc.CallOption) (*repopb.DescribeClientResponse, error) {
 	out, err := m.call("DescribeClient", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.DescribeClientResponse), nil
+	return out.(*repopb.DescribeClientResponse), nil
 }
 
-func (m *mockedRepoClient) DescribeBootstrapBundle(ctx context.Context, in *api.DescribeBootstrapBundleRequest, opts ...grpc.CallOption) (*api.DescribeBootstrapBundleResponse, error) {
+func (m *mockedRepoClient) DescribeBootstrapBundle(ctx context.Context, in *repopb.DescribeBootstrapBundleRequest, opts ...grpc.CallOption) (*repopb.DescribeBootstrapBundleResponse, error) {
 	out, err := m.call("DescribeBootstrapBundle", in, opts)
 	if err != nil {
 		return nil, err
 	}
-	return out.(*api.DescribeBootstrapBundleResponse), nil
+	return out.(*repopb.DescribeBootstrapBundleResponse), nil
 }

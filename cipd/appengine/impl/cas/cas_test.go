@@ -40,7 +40,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/upload"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
@@ -69,8 +69,8 @@ func TestGetReader(t *testing.T) {
 	}
 
 	ftt.Run("OK", t, func(t *ftt.Test) {
-		r, err := impl.GetReader(ctx, &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA256,
+		r, err := impl.GetReader(ctx, &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: sha256,
 		})
 		assert.Loosely(t, err, should.BeNil)
@@ -84,8 +84,8 @@ func TestGetReader(t *testing.T) {
 	})
 
 	ftt.Run("Bad object ref", t, func(t *ftt.Test) {
-		_, err := impl.GetReader(ctx, &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA256,
+		_, err := impl.GetReader(ctx, &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: "zzz",
 		})
 		assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
@@ -93,8 +93,8 @@ func TestGetReader(t *testing.T) {
 	})
 
 	ftt.Run("No such file", t, func(t *ftt.Test) {
-		_, err := impl.GetReader(ctx, &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA256,
+		_, err := impl.GetReader(ctx, &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: strings.Repeat("b", 64),
 		})
 		assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
@@ -117,24 +117,24 @@ func TestGetObjectURL(t *testing.T) {
 	}
 
 	ftt.Run("OK", t, func(t *ftt.Test) {
-		resp, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
-			Object: &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA256,
+		resp, err := impl.GetObjectURL(ctx, &caspb.GetObjectURLRequest{
+			Object: &caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA256,
 				HexDigest: strings.Repeat("a", 64),
 			},
 			DownloadFilename: "file.name",
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, resp, should.Resemble(&api.ObjectURL{
+		assert.Loosely(t, resp, should.Resemble(&caspb.ObjectURL{
 			SignedUrl: "http//signed.example.com/bucket/path/SHA256/" +
 				strings.Repeat("a", 64) + "?f=file.name",
 		}))
 	})
 
 	ftt.Run("Bad object ref", t, func(t *ftt.Test) {
-		_, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
-			Object: &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA256,
+		_, err := impl.GetObjectURL(ctx, &caspb.GetObjectURLRequest{
+			Object: &caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA256,
 				HexDigest: "zzz",
 			},
 		})
@@ -143,9 +143,9 @@ func TestGetObjectURL(t *testing.T) {
 	})
 
 	ftt.Run("Bad filename", t, func(t *ftt.Test) {
-		_, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
-			Object: &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA256,
+		_, err := impl.GetObjectURL(ctx, &caspb.GetObjectURLRequest{
+			Object: &caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA256,
 				HexDigest: strings.Repeat("a", 64),
 			},
 			DownloadFilename: "abc\ndef",
@@ -156,9 +156,9 @@ func TestGetObjectURL(t *testing.T) {
 
 	ftt.Run("No such file", t, func(t *ftt.Test) {
 		signErr = grpcutil.NotFoundTag.Apply(errors.New("blah"))
-		_, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
-			Object: &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA256,
+		_, err := impl.GetObjectURL(ctx, &caspb.GetObjectURLRequest{
+			Object: &caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA256,
 				HexDigest: strings.Repeat("a", 64),
 			},
 		})
@@ -168,9 +168,9 @@ func TestGetObjectURL(t *testing.T) {
 
 	ftt.Run("Internal error", t, func(t *ftt.Test) {
 		signErr = errors.New("internal")
-		_, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
-			Object: &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA256,
+		_, err := impl.GetObjectURL(ctx, &caspb.GetObjectURLRequest{
+			Object: &caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA256,
 				HexDigest: strings.Repeat("a", 64),
 			},
 		})
@@ -247,8 +247,8 @@ func TestBeginUpload(t *testing.T) {
 		ctx, gsMock, _, _, impl := storageMocks()
 
 		t.Run("Success (no Object)", func(t *ftt.Test) {
-			resp, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
-				HashAlgo: api.HashAlgo_SHA256,
+			resp, err := impl.BeginUpload(ctx, &caspb.BeginUploadRequest{
+				HashAlgo: caspb.HashAlgo_SHA256,
 			})
 			assert.Loosely(t, err, should.BeNil)
 
@@ -259,9 +259,9 @@ func TestBeginUpload(t *testing.T) {
 
 			// Rest of the response looks OK too.
 			resp.OperationId = ""
-			assert.Loosely(t, resp, should.Resemble(&api.UploadOperation{
+			assert.Loosely(t, resp, should.Resemble(&caspb.UploadOperation{
 				UploadUrl: "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-				Status:    api.UploadStatus_UPLOADING,
+				Status:    caspb.UploadStatus_UPLOADING,
 			}))
 
 			// Created the entity.
@@ -275,37 +275,37 @@ func TestBeginUpload(t *testing.T) {
 
 			assert.Loosely(t, op, should.Resemble(upload.Operation{
 				ID:         1,
-				Status:     api.UploadStatus_UPLOADING,
+				Status:     caspb.UploadStatus_UPLOADING,
 				TempGSPath: "/bucket/tmp_path/1454472306_1",
 				UploadURL:  "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-				HashAlgo:   api.HashAlgo_SHA256,
+				HashAlgo:   caspb.HashAlgo_SHA256,
 				CreatedBy:  testutil.TestUser,
 			}))
 		})
 
 		t.Run("Success (Object is not present in the store)", func(t *ftt.Test) {
-			resp, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
-				Object: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA256,
+			resp, err := impl.BeginUpload(ctx, &caspb.BeginUploadRequest{
+				Object: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA256,
 					HexDigest: strings.Repeat("a", 64),
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
 
 			resp.OperationId = ""
-			assert.Loosely(t, resp, should.Resemble(&api.UploadOperation{
+			assert.Loosely(t, resp, should.Resemble(&caspb.UploadOperation{
 				UploadUrl: "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-				Status:    api.UploadStatus_UPLOADING,
+				Status:    caspb.UploadStatus_UPLOADING,
 			}))
 
 			op := upload.Operation{ID: 1}
 			assert.Loosely(t, datastore.Get(ctx, &op), should.BeNil)
 			assert.Loosely(t, op, should.Resemble(upload.Operation{
 				ID:         1,
-				Status:     api.UploadStatus_UPLOADING,
+				Status:     caspb.UploadStatus_UPLOADING,
 				TempGSPath: "/bucket/tmp_path/1454472306_1",
 				UploadURL:  "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-				HashAlgo:   api.HashAlgo_SHA256,
+				HashAlgo:   caspb.HashAlgo_SHA256,
 				HexDigest:  strings.Repeat("a", 64),
 				CreatedBy:  testutil.TestUser,
 				CreatedTS:  op.CreatedTS,
@@ -315,9 +315,9 @@ func TestBeginUpload(t *testing.T) {
 
 		t.Run("Object already exists", func(t *ftt.Test) {
 			gsMock.exists = true
-			_, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
-				Object: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA256,
+			_, err := impl.BeginUpload(ctx, &caspb.BeginUploadRequest{
+				Object: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA256,
 					HexDigest: strings.Repeat("a", 64),
 				},
 			})
@@ -325,8 +325,8 @@ func TestBeginUpload(t *testing.T) {
 		})
 
 		t.Run("Bad object", func(t *ftt.Test) {
-			_, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
-				Object: &api.ObjectRef{
+			_, err := impl.BeginUpload(ctx, &caspb.BeginUploadRequest{
+				Object: &caspb.ObjectRef{
 					HashAlgo: 1234,
 				},
 			})
@@ -335,7 +335,7 @@ func TestBeginUpload(t *testing.T) {
 		})
 
 		t.Run("Bad hash_algo", func(t *ftt.Test) {
-			_, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
+			_, err := impl.BeginUpload(ctx, &caspb.BeginUploadRequest{
 				HashAlgo: 1234,
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
@@ -343,9 +343,9 @@ func TestBeginUpload(t *testing.T) {
 		})
 
 		t.Run("Mismatch in hash_algo", func(t *ftt.Test) {
-			_, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
-				Object: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA256,
+			_, err := impl.BeginUpload(ctx, &caspb.BeginUploadRequest{
+				Object: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA256,
 					HexDigest: strings.Repeat("a", 64),
 				},
 				HashAlgo: 333, // something else
@@ -358,16 +358,16 @@ func TestBeginUpload(t *testing.T) {
 
 type verificationLogs struct {
 	m    sync.Mutex
-	logs []*api.VerificationLogEntry
+	logs []*caspb.VerificationLogEntry
 }
 
-func (v *verificationLogs) submitLog(_ context.Context, entry *api.VerificationLogEntry) {
+func (v *verificationLogs) submitLog(_ context.Context, entry *caspb.VerificationLogEntry) {
 	v.m.Lock()
 	defer v.m.Unlock()
-	v.logs = append(v.logs, proto.Clone(entry).(*api.VerificationLogEntry))
+	v.logs = append(v.logs, proto.Clone(entry).(*caspb.VerificationLogEntry))
 }
 
-func (v *verificationLogs) last() *api.VerificationLogEntry {
+func (v *verificationLogs) last() *caspb.VerificationLogEntry {
 	v.m.Lock()
 	defer v.m.Unlock()
 	if len(v.logs) == 0 {
@@ -413,13 +413,13 @@ func TestFinishUpload(t *testing.T) {
 
 		t.Run("With force hash", func(t *ftt.Test) {
 			// Initiate an upload to get operation ID.
-			op, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
-				HashAlgo: api.HashAlgo_SHA256,
+			op, err := impl.BeginUpload(ctx, &caspb.BeginUploadRequest{
+				HashAlgo: caspb.HashAlgo_SHA256,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
+			assert.Loosely(t, op, should.Resemble(&caspb.UploadOperation{
 				OperationId: op.OperationId,
-				Status:      api.UploadStatus_UPLOADING,
+				Status:      caspb.UploadStatus_UPLOADING,
 				UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 			}))
 
@@ -427,20 +427,20 @@ func TestFinishUpload(t *testing.T) {
 			gsMock.files["/bucket/tmp_path/1454472306_1"] = "12345"
 
 			t.Run("Success", func(t *ftt.Test) {
-				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
+				op, err = impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
-					ForceHash: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA256,
+					ForceHash: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA256,
 						HexDigest: strings.Repeat("a", 64),
 					},
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
+				assert.Loosely(t, op, should.Resemble(&caspb.UploadOperation{
 					OperationId: op.OperationId,
-					Status:      api.UploadStatus_PUBLISHED,
+					Status:      caspb.UploadStatus_PUBLISHED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-					Object: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA256,
+					Object: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA256,
 						HexDigest: strings.Repeat("a", 64),
 					},
 				}))
@@ -458,10 +458,10 @@ func TestFinishUpload(t *testing.T) {
 
 			t.Run("Publish transient error", func(t *ftt.Test) {
 				gsMock.publishErr = transient.Tag.Apply(errors.New("blarg"))
-				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
+				op, err = impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
-					ForceHash: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA256,
+					ForceHash: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA256,
 						HexDigest: strings.Repeat("a", 64),
 					},
 				})
@@ -470,22 +470,22 @@ func TestFinishUpload(t *testing.T) {
 				// Status untouched.
 				entity := upload.Operation{ID: 1}
 				assert.Loosely(t, datastore.Get(ctx, &entity), should.BeNil)
-				assert.Loosely(t, entity.Status, should.Equal(api.UploadStatus_UPLOADING))
+				assert.Loosely(t, entity.Status, should.Equal(caspb.UploadStatus_UPLOADING))
 			})
 
 			t.Run("Publish fatal error", func(t *ftt.Test) {
 				gsMock.publishErr = errors.New("blarg")
-				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
+				op, err = impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
-					ForceHash: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA256,
+					ForceHash: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA256,
 						HexDigest: strings.Repeat("a", 64),
 					},
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
+				assert.Loosely(t, op, should.Resemble(&caspb.UploadOperation{
 					OperationId:  op.OperationId,
-					Status:       api.UploadStatus_ERRORED,
+					Status:       caspb.UploadStatus_ERRORED,
 					UploadUrl:    "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 					ErrorMessage: "Failed to publish the object - blarg",
 				}))
@@ -494,13 +494,13 @@ func TestFinishUpload(t *testing.T) {
 
 		t.Run("Without force hash, unknown expected hash", func(t *ftt.Test) {
 			// Initiate an upload to get operation ID.
-			op, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
-				HashAlgo: api.HashAlgo_SHA256,
+			op, err := impl.BeginUpload(ctx, &caspb.BeginUploadRequest{
+				HashAlgo: caspb.HashAlgo_SHA256,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
+			assert.Loosely(t, op, should.Resemble(&caspb.UploadOperation{
 				OperationId: op.OperationId,
-				Status:      api.UploadStatus_UPLOADING,
+				Status:      caspb.UploadStatus_UPLOADING,
 				UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 			}))
 
@@ -508,13 +508,13 @@ func TestFinishUpload(t *testing.T) {
 			gsMock.files["/bucket/tmp_path/1454472306_1"] = "12345"
 
 			// Kick off the verification.
-			op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
+			op, err = impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
 				UploadOperationId: op.OperationId,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
+			assert.Loosely(t, op, should.Resemble(&caspb.UploadOperation{
 				OperationId: op.OperationId,
-				Status:      api.UploadStatus_VERIFYING,
+				Status:      caspb.UploadStatus_VERIFYING,
 				UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 			}))
 
@@ -525,11 +525,11 @@ func TestFinishUpload(t *testing.T) {
 
 			t.Run("Retrying FinishUpload does nothing", func(t *ftt.Test) {
 				// Retrying the call does nothing.
-				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
+				op, err = impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, op.Status, should.Equal(api.UploadStatus_VERIFYING))
+				assert.Loosely(t, op.Status, should.Equal(caspb.UploadStatus_VERIFYING))
 
 				// Still only 1 task in the queue.
 				assert.Loosely(t, tq.Tasks(), should.HaveLength(1))
@@ -550,22 +550,22 @@ func TestFinishUpload(t *testing.T) {
 				assert.Loosely(t, gsMock.deleteCalls, should.Resemble([]string{"/bucket/tmp_path/1454472306_1"}))
 
 				// Caller sees the file is published now.
-				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
+				op, err = impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
+				assert.Loosely(t, op, should.Resemble(&caspb.UploadOperation{
 					OperationId: op.OperationId,
-					Status:      api.UploadStatus_PUBLISHED,
+					Status:      caspb.UploadStatus_PUBLISHED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-					Object: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA256,
+					Object: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA256,
 						HexDigest: "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 					},
 				}))
 
 				// There's a log entry.
-				assert.Loosely(t, verificationLogs.last(), should.Resemble(&api.VerificationLogEntry{
+				assert.Loosely(t, verificationLogs.last(), should.Resemble(&caspb.VerificationLogEntry{
 					OperationId:        1,
 					TraceId:            testutil.TestRequestID.String(),
 					InitiatedBy:        string(testutil.TestUser),
@@ -591,18 +591,18 @@ func TestFinishUpload(t *testing.T) {
 				assert.Loosely(t, len(gsMock.deleteCalls), should.BeZero)
 
 				// Caller sees the file is still being verified.
-				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
+				op, err = impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
+				assert.Loosely(t, op, should.Resemble(&caspb.UploadOperation{
 					OperationId: op.OperationId,
-					Status:      api.UploadStatus_VERIFYING,
+					Status:      caspb.UploadStatus_VERIFYING,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 				}))
 
 				// There's a log entry.
-				assert.Loosely(t, verificationLogs.last(), should.Resemble(&api.VerificationLogEntry{
+				assert.Loosely(t, verificationLogs.last(), should.Resemble(&caspb.VerificationLogEntry{
 					OperationId:        1,
 					TraceId:            testutil.TestRequestID.String(),
 					InitiatedBy:        string(testutil.TestUser),
@@ -630,19 +630,19 @@ func TestFinishUpload(t *testing.T) {
 				assert.Loosely(t, gsMock.deleteCalls, should.Resemble([]string{"/bucket/tmp_path/1454472306_1"}))
 
 				// Caller is notified about the error.
-				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
+				op, err = impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
+				assert.Loosely(t, op, should.Resemble(&caspb.UploadOperation{
 					OperationId:  op.OperationId,
-					Status:       api.UploadStatus_ERRORED,
+					Status:       caspb.UploadStatus_ERRORED,
 					UploadUrl:    "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 					ErrorMessage: "Verification failed: failed to publish the verified file: blarg",
 				}))
 
 				// There's a log entry.
-				assert.Loosely(t, verificationLogs.last(), should.Resemble(&api.VerificationLogEntry{
+				assert.Loosely(t, verificationLogs.last(), should.Resemble(&caspb.VerificationLogEntry{
 					OperationId:        1,
 					TraceId:            testutil.TestRequestID.String(),
 					InitiatedBy:        string(testutil.TestUser),
@@ -661,16 +661,16 @@ func TestFinishUpload(t *testing.T) {
 
 		t.Run("Without force hash, known expected hash", func(t *ftt.Test) {
 			// Initiate an upload to get operation ID.
-			op, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
-				Object: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA256,
+			op, err := impl.BeginUpload(ctx, &caspb.BeginUploadRequest{
+				Object: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA256,
 					HexDigest: "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
+			assert.Loosely(t, op, should.Resemble(&caspb.UploadOperation{
 				OperationId: op.OperationId,
-				Status:      api.UploadStatus_UPLOADING,
+				Status:      caspb.UploadStatus_UPLOADING,
 				UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 			}))
 
@@ -678,13 +678,13 @@ func TestFinishUpload(t *testing.T) {
 			gsMock.files["/bucket/tmp_path/1454472306_1"] = "12345"
 
 			// Kick off the verification.
-			op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
+			op, err = impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
 				UploadOperationId: op.OperationId,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
+			assert.Loosely(t, op, should.Resemble(&caspb.UploadOperation{
 				OperationId: op.OperationId,
-				Status:      api.UploadStatus_VERIFYING,
+				Status:      caspb.UploadStatus_VERIFYING,
 				UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 			}))
 
@@ -708,22 +708,22 @@ func TestFinishUpload(t *testing.T) {
 				assert.Loosely(t, gsMock.deleteCalls, should.Resemble([]string{"/bucket/tmp_path/1454472306_1"}))
 
 				// Caller sees the file is published now.
-				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
+				op, err = impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
+				assert.Loosely(t, op, should.Resemble(&caspb.UploadOperation{
 					OperationId: op.OperationId,
-					Status:      api.UploadStatus_PUBLISHED,
+					Status:      caspb.UploadStatus_PUBLISHED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-					Object: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA256,
+					Object: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA256,
 						HexDigest: "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 					},
 				}))
 
 				// There's a log entry.
-				assert.Loosely(t, verificationLogs.last(), should.Resemble(&api.VerificationLogEntry{
+				assert.Loosely(t, verificationLogs.last(), should.Resemble(&caspb.VerificationLogEntry{
 					OperationId:        1,
 					TraceId:            testutil.TestRequestID.String(),
 					InitiatedBy:        string(testutil.TestUser),
@@ -751,13 +751,13 @@ func TestFinishUpload(t *testing.T) {
 				assert.Loosely(t, gsMock.deleteCalls, should.Resemble([]string{"/bucket/tmp_path/1454472306_1"}))
 
 				// Caller is notified about the error.
-				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
+				op, err = impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
+				assert.Loosely(t, op, should.Resemble(&caspb.UploadOperation{
 					OperationId: op.OperationId,
-					Status:      api.UploadStatus_ERRORED,
+					Status:      caspb.UploadStatus_ERRORED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 					ErrorMessage: "Verification failed: expected SHA256 to be " +
 						"5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5, " +
@@ -777,16 +777,16 @@ func TestFinishUpload(t *testing.T) {
 				assert.Loosely(t, gsMock.deleteCalls, should.Resemble([]string{"/bucket/tmp_path/1454472306_1"}))
 
 				// Caller sees the file is published now.
-				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
+				op, err = impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
+				assert.Loosely(t, op, should.Resemble(&caspb.UploadOperation{
 					OperationId: op.OperationId,
-					Status:      api.UploadStatus_PUBLISHED,
+					Status:      caspb.UploadStatus_PUBLISHED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-					Object: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA256,
+					Object: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA256,
 						HexDigest: "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 					},
 				}))
@@ -797,8 +797,8 @@ func TestFinishUpload(t *testing.T) {
 		})
 
 		t.Run("Bad force_hash field", func(t *ftt.Test) {
-			_, err := impl.FinishUpload(ctx, &api.FinishUploadRequest{
-				ForceHash: &api.ObjectRef{
+			_, err := impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
+				ForceHash: &caspb.ObjectRef{
 					HashAlgo: 1234,
 				},
 			})
@@ -807,7 +807,7 @@ func TestFinishUpload(t *testing.T) {
 		})
 
 		t.Run("Bad operation_id field", func(t *ftt.Test) {
-			_, err := impl.FinishUpload(ctx, &api.FinishUploadRequest{
+			_, err := impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
 				UploadOperationId: "zzz",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
@@ -828,24 +828,24 @@ func TestCancelUpload(t *testing.T) {
 		ctx, gsMock, tq, _, impl := storageMocks()
 
 		// Initiate an upload to get operation ID.
-		op, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
-			HashAlgo: api.HashAlgo_SHA256,
+		op, err := impl.BeginUpload(ctx, &caspb.BeginUploadRequest{
+			HashAlgo: caspb.HashAlgo_SHA256,
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
+		assert.Loosely(t, op, should.Resemble(&caspb.UploadOperation{
 			OperationId: op.OperationId,
-			Status:      api.UploadStatus_UPLOADING,
+			Status:      caspb.UploadStatus_UPLOADING,
 			UploadUrl:   uploadURL,
 		}))
 
 		t.Run("Cancel right away", func(t *ftt.Test) {
-			op, err = impl.CancelUpload(ctx, &api.CancelUploadRequest{
+			op, err = impl.CancelUpload(ctx, &caspb.CancelUploadRequest{
 				UploadOperationId: op.OperationId,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, op, should.Resemble(&api.UploadOperation{
+			assert.Loosely(t, op, should.Resemble(&caspb.UploadOperation{
 				OperationId: op.OperationId,
-				Status:      api.UploadStatus_CANCELED,
+				Status:      caspb.UploadStatus_CANCELED,
 				UploadUrl:   uploadURL,
 			}))
 
@@ -859,7 +859,7 @@ func TestCancelUpload(t *testing.T) {
 			}))
 
 			// Cancel again. Noop, same single task in the queue.
-			op2, err := impl.CancelUpload(ctx, &api.CancelUploadRequest{
+			op2, err := impl.CancelUpload(ctx, &caspb.CancelUploadRequest{
 				UploadOperationId: op.OperationId,
 			})
 			assert.Loosely(t, err, should.BeNil)
@@ -875,12 +875,12 @@ func TestCancelUpload(t *testing.T) {
 		})
 
 		t.Run("Cancel after finishing", func(t *ftt.Test) {
-			_, err := impl.FinishUpload(ctx, &api.FinishUploadRequest{
+			_, err := impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
 				UploadOperationId: op.OperationId,
 			})
 			assert.Loosely(t, err, should.BeNil)
 
-			_, err = impl.CancelUpload(ctx, &api.CancelUploadRequest{
+			_, err = impl.CancelUpload(ctx, &caspb.CancelUploadRequest{
 				UploadOperationId: op.OperationId,
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.FailedPrecondition))

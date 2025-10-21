@@ -20,20 +20,20 @@ import (
 
 	"google.golang.org/grpc"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common"
 )
 
 // Config is used to initialize the plugin host.
 type Config struct {
 	ServiceURL string           // URL of the CIPD repository ("https://...") used by the client
-	Repository RepositoryClient // a subset of api.RepositoryClient available to plugins
+	Repository RepositoryClient // a subset of repopb.RepositoryClient available to plugins
 }
 
-// RepositoryClient is a subset of api.RepositoryClient available to plugins.
+// RepositoryClient is a subset of repopb.RepositoryClient available to plugins.
 type RepositoryClient interface {
 	// Lists metadata entries attached to an instance.
-	ListMetadata(ctx context.Context, in *api.ListMetadataRequest, opts ...grpc.CallOption) (*api.ListMetadataResponse, error)
+	ListMetadata(ctx context.Context, in *repopb.ListMetadataRequest, opts ...grpc.CallOption) (*repopb.ListMetadataResponse, error)
 }
 
 // Host is used by the CIPD client to launch and communicate with plugins.

@@ -18,12 +18,13 @@
 // - protoc             v6.32.0
 // source: go.chromium.org/luci/cipd/api/cipd/v1/repo.proto
 
-package apigrpcpb
+package repogrpcpb
 
-import . "go.chromium.org/luci/cipd/api/cipd/v1"
+import . "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 
 import (
 	context "context"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -423,7 +424,7 @@ type RepositoryClient interface {
 	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if there's no such instance.
-	GetInstanceURL(ctx context.Context, in *GetInstanceURLRequest, opts ...grpc.CallOption) (*ObjectURL, error)
+	GetInstanceURL(ctx context.Context, in *GetInstanceURLRequest, opts ...grpc.CallOption) (*caspb.ObjectURL, error)
 	// Returns information about a package instance.
 	//
 	// Depending on fields set in the request, returns details such as when the
@@ -702,9 +703,9 @@ func (c *repositoryClient) ResolveVersion(ctx context.Context, in *ResolveVersio
 	return out, nil
 }
 
-func (c *repositoryClient) GetInstanceURL(ctx context.Context, in *GetInstanceURLRequest, opts ...grpc.CallOption) (*ObjectURL, error) {
+func (c *repositoryClient) GetInstanceURL(ctx context.Context, in *GetInstanceURLRequest, opts ...grpc.CallOption) (*caspb.ObjectURL, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ObjectURL)
+	out := new(caspb.ObjectURL)
 	err := c.cc.Invoke(ctx, Repository_GetInstanceURL_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -1102,7 +1103,7 @@ type RepositoryServer interface {
 	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if there's no such instance.
-	GetInstanceURL(context.Context, *GetInstanceURLRequest) (*ObjectURL, error)
+	GetInstanceURL(context.Context, *GetInstanceURLRequest) (*caspb.ObjectURL, error)
 	// Returns information about a package instance.
 	//
 	// Depending on fields set in the request, returns details such as when the
@@ -1234,7 +1235,7 @@ func (UnimplementedRepositoryServer) ListMetadata(context.Context, *ListMetadata
 func (UnimplementedRepositoryServer) ResolveVersion(context.Context, *ResolveVersionRequest) (*Instance, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResolveVersion not implemented")
 }
-func (UnimplementedRepositoryServer) GetInstanceURL(context.Context, *GetInstanceURLRequest) (*ObjectURL, error) {
+func (UnimplementedRepositoryServer) GetInstanceURL(context.Context, *GetInstanceURLRequest) (*caspb.ObjectURL, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetInstanceURL not implemented")
 }
 func (UnimplementedRepositoryServer) DescribeInstance(context.Context, *DescribeInstanceRequest) (*DescribeInstanceResponse, error) {

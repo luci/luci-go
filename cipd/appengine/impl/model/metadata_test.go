@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -86,7 +86,7 @@ func TestMetadata(t *testing.T) {
 			inst := putInst("pkg", digest, nil)
 
 			// Attach one entry and verify it exist.
-			assert.Loosely(t, AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{
 					Key:   "key",
 					Value: []byte("some value"),
@@ -99,7 +99,7 @@ func TestMetadata(t *testing.T) {
 
 			// Attach few more at once.
 			tc.Add(time.Second)
-			assert.Loosely(t, AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{
 					Key:         "key",
 					Value:       []byte("some value 1"),
@@ -122,7 +122,7 @@ func TestMetadata(t *testing.T) {
 
 			// Try to reattach an existing one (notice the change in the email),
 			// should be ignored.
-			assert.Loosely(t, AttachMetadata(as("zzz@example.com"), inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(as("zzz@example.com"), inst, []*repopb.InstanceMetadata{
 				{
 					Key:         "key",
 					Value:       []byte("some value"),
@@ -135,7 +135,7 @@ func TestMetadata(t *testing.T) {
 				))
 
 			// Try to reattach a bunch of existing ones at once.
-			assert.Loosely(t, AttachMetadata(as("zzz@example.com"), inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(as("zzz@example.com"), inst, []*repopb.InstanceMetadata{
 				{
 					Key:         "key",
 					Value:       []byte("some value 1"),
@@ -158,7 +158,7 @@ func TestMetadata(t *testing.T) {
 
 			// Mixed group with new and existing entries.
 			tc.Add(time.Second)
-			assert.Loosely(t, AttachMetadata(as("zzz@example.com"), inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(as("zzz@example.com"), inst, []*repopb.InstanceMetadata{
 				{
 					Key:         "key",
 					Value:       []byte("some value 1"),
@@ -198,7 +198,7 @@ func TestMetadata(t *testing.T) {
 				))
 
 			// A duplicate in a batch. The first one wins.
-			assert.Loosely(t, AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{
 					Key:         "dup-key",
 					Value:       []byte("dup-value"),
@@ -216,9 +216,9 @@ func TestMetadata(t *testing.T) {
 				))
 
 			// All events have been collected.
-			assert.Loosely(t, GetEvents(ctx), should.Resemble([]*api.Event{
+			assert.Loosely(t, GetEvents(ctx), should.Resemble([]*repopb.Event{
 				{
-					Kind:          api.EventKind_INSTANCE_METADATA_ATTACHED,
+					Kind:          repopb.EventKind_INSTANCE_METADATA_ATTACHED,
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           "user:zzz@example.com",
@@ -229,7 +229,7 @@ func TestMetadata(t *testing.T) {
 					MdFingerprint: fp("new-key", "value 2"),
 				},
 				{
-					Kind:          api.EventKind_INSTANCE_METADATA_ATTACHED,
+					Kind:          repopb.EventKind_INSTANCE_METADATA_ATTACHED,
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           "user:zzz@example.com",
@@ -240,7 +240,7 @@ func TestMetadata(t *testing.T) {
 					MdFingerprint: fp("new-key", "value 1"),
 				},
 				{
-					Kind:          api.EventKind_INSTANCE_METADATA_ATTACHED,
+					Kind:          repopb.EventKind_INSTANCE_METADATA_ATTACHED,
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
@@ -251,7 +251,7 @@ func TestMetadata(t *testing.T) {
 					MdFingerprint: fp("dup-key", "dup-value"),
 				},
 				{
-					Kind:          api.EventKind_INSTANCE_METADATA_ATTACHED,
+					Kind:          repopb.EventKind_INSTANCE_METADATA_ATTACHED,
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
@@ -261,7 +261,7 @@ func TestMetadata(t *testing.T) {
 					MdFingerprint: fp("another", "some value 2"),
 				},
 				{
-					Kind:          api.EventKind_INSTANCE_METADATA_ATTACHED,
+					Kind:          repopb.EventKind_INSTANCE_METADATA_ATTACHED,
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
@@ -272,7 +272,7 @@ func TestMetadata(t *testing.T) {
 					MdFingerprint: fp("key", "some value 1"),
 				},
 				{
-					Kind:          api.EventKind_INSTANCE_METADATA_ATTACHED,
+					Kind:          repopb.EventKind_INSTANCE_METADATA_ATTACHED,
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
@@ -288,7 +288,7 @@ func TestMetadata(t *testing.T) {
 		t.Run("AttachMetadata to not ready instance", func(t *ftt.Test) {
 			inst := putInst("pkg", digest, []string{"proc"})
 
-			err := AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			err := AttachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{
 					Key:   "key",
 					Value: []byte("some value"),
@@ -302,7 +302,7 @@ func TestMetadata(t *testing.T) {
 			inst := putInst("pkg", digest, nil)
 
 			// Attach a bunch of metadata first, so we have something to detach.
-			assert.Loosely(t, AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Key: "a", Value: []byte("0"), ContentType: "text/0"},
 				{Key: "a", Value: []byte("1"), ContentType: "text/1"},
 				{Key: "a", Value: []byte("2"), ContentType: "text/2"},
@@ -314,7 +314,7 @@ func TestMetadata(t *testing.T) {
 			// Detach one existing using a key-value pair.
 			tc.Add(time.Second)
 			assert.Loosely(t, getMD("a", "0", inst), should.NotBeNil)
-			assert.Loosely(t, DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Key: "a", Value: []byte("0")},
 			}), should.BeNil)
 			assert.Loosely(t, getMD("a", "0", inst), should.BeNil)
@@ -322,13 +322,13 @@ func TestMetadata(t *testing.T) {
 			// Detach one existing using a fingerprint pair.
 			tc.Add(time.Second)
 			assert.Loosely(t, getMD("a", "1", inst), should.NotBeNil)
-			assert.Loosely(t, DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Fingerprint: fp("a", "1")},
 			}), should.BeNil)
 			assert.Loosely(t, getMD("a", "1", inst), should.BeNil)
 
 			// Detach one missing.
-			assert.Loosely(t, DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Key: "a", Value: []byte("z0")},
 			}), should.BeNil)
 
@@ -336,7 +336,7 @@ func TestMetadata(t *testing.T) {
 			tc.Add(time.Second)
 			assert.Loosely(t, getMD("a", "2", inst), should.NotBeNil)
 			assert.Loosely(t, getMD("a", "3", inst), should.NotBeNil)
-			assert.Loosely(t, DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Key: "a", Value: []byte("2")},
 				{Key: "a", Value: []byte("3")},
 				{Key: "a", Value: []byte("2")},
@@ -346,7 +346,7 @@ func TestMetadata(t *testing.T) {
 			assert.Loosely(t, getMD("a", "3", inst), should.BeNil)
 
 			// Detach a bunch of missing.
-			assert.Loosely(t, DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Key: "a", Value: []byte("z1")},
 				{Key: "a", Value: []byte("z2")},
 			}), should.BeNil)
@@ -355,7 +355,7 @@ func TestMetadata(t *testing.T) {
 			tc.Add(time.Second)
 			assert.Loosely(t, getMD("a", "4", inst), should.NotBeNil)
 			assert.Loosely(t, getMD("a", "5", inst), should.NotBeNil)
-			assert.Loosely(t, DetachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Key: "a", Value: []byte("z3")},
 				{Key: "a", Value: []byte("4")},
 				{Key: "a", Value: []byte("z4")},
@@ -365,9 +365,9 @@ func TestMetadata(t *testing.T) {
 			assert.Loosely(t, getMD("a", "5", inst), should.BeNil)
 
 			// All 'detach' events have been collected (skip checking 'attach' ones).
-			assert.Loosely(t, GetEvents(ctx)[:6], should.Resemble([]*api.Event{
+			assert.Loosely(t, GetEvents(ctx)[:6], should.Resemble([]*repopb.Event{
 				{
-					Kind:          api.EventKind_INSTANCE_METADATA_DETACHED,
+					Kind:          repopb.EventKind_INSTANCE_METADATA_DETACHED,
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
@@ -378,7 +378,7 @@ func TestMetadata(t *testing.T) {
 					MdFingerprint: fp("a", "5"),
 				},
 				{
-					Kind:          api.EventKind_INSTANCE_METADATA_DETACHED,
+					Kind:          repopb.EventKind_INSTANCE_METADATA_DETACHED,
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
@@ -389,7 +389,7 @@ func TestMetadata(t *testing.T) {
 					MdFingerprint: fp("a", "4"),
 				},
 				{
-					Kind:          api.EventKind_INSTANCE_METADATA_DETACHED,
+					Kind:          repopb.EventKind_INSTANCE_METADATA_DETACHED,
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
@@ -400,7 +400,7 @@ func TestMetadata(t *testing.T) {
 					MdFingerprint: fp("a", "3"),
 				},
 				{
-					Kind:          api.EventKind_INSTANCE_METADATA_DETACHED,
+					Kind:          repopb.EventKind_INSTANCE_METADATA_DETACHED,
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
@@ -411,7 +411,7 @@ func TestMetadata(t *testing.T) {
 					MdFingerprint: fp("a", "2"),
 				},
 				{
-					Kind:          api.EventKind_INSTANCE_METADATA_DETACHED,
+					Kind:          repopb.EventKind_INSTANCE_METADATA_DETACHED,
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
@@ -422,7 +422,7 @@ func TestMetadata(t *testing.T) {
 					MdFingerprint: fp("a", "1"),
 				},
 				{
-					Kind:          api.EventKind_INSTANCE_METADATA_DETACHED,
+					Kind:          repopb.EventKind_INSTANCE_METADATA_DETACHED,
 					Package:       "pkg",
 					Instance:      digest,
 					Who:           string(testutil.TestUser),
@@ -438,21 +438,21 @@ func TestMetadata(t *testing.T) {
 		t.Run("Listing works", func(t *ftt.Test) {
 			inst := putInst("pkg", digest, nil)
 
-			assert.Loosely(t, AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Key: "a", Value: []byte("0")},
 				{Key: "b", Value: []byte("0")},
 				{Key: "c", Value: []byte("0")},
 			}), should.BeNil)
 
 			tc.Add(time.Second)
-			assert.Loosely(t, AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Key: "a", Value: []byte("1")},
 				{Key: "b", Value: []byte("1")},
 				{Key: "c", Value: []byte("1")},
 			}), should.BeNil)
 
 			tc.Add(time.Second)
-			assert.Loosely(t, AttachMetadata(ctx, inst, []*api.InstanceMetadata{
+			assert.Loosely(t, AttachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Key: "a", Value: []byte("2")},
 				{Key: "b", Value: []byte("2")},
 				{Key: "c", Value: []byte("2")},

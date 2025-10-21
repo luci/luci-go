@@ -28,8 +28,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
-	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
+	repogrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/repopb/grpcpb"
 	"go.chromium.org/luci/cipd/client/cipd/builder"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"
@@ -66,7 +67,7 @@ func TestClient(t *testing.T) {
 	// A fake CIPD backend.
 	mockedRepo := &mockedCIPDRepo{testPin: testPin}
 	rpcSrv := prpctest.Server{}
-	cipdgrpcpb.RegisterRepositoryServer(&rpcSrv, mockedRepo)
+	repogrpcpb.RegisterRepositoryServer(&rpcSrv, mockedRepo)
 	rpcSrv.Start(ctx)
 	defer rpcSrv.Close()
 	cipdSrv := "http://" + rpcSrv.Host
@@ -148,18 +149,18 @@ func TestClient(t *testing.T) {
 }
 
 type mockedCIPDRepo struct {
-	cipdgrpcpb.UnimplementedRepositoryServer
+	repogrpcpb.UnimplementedRepositoryServer
 
 	testPin    common.Pin
 	storageURL string
 }
 
-func (r *mockedCIPDRepo) ResolveVersion(ctx context.Context, req *cipdpb.ResolveVersionRequest) (*cipdpb.Instance, error) {
+func (r *mockedCIPDRepo) ResolveVersion(ctx context.Context, req *repopb.ResolveVersionRequest) (*repopb.Instance, error) {
 	if req.Package == r.testPin.PackageName &&
 		(req.Version == r.testPin.InstanceID ||
 			req.Version == "latest" ||
 			req.Version == testBadIID) {
-		return &cipdpb.Instance{
+		return &repopb.Instance{
 			Package:  r.testPin.PackageName,
 			Instance: common.InstanceIDToObjectRef(r.testPin.InstanceID),
 		}, nil
@@ -167,10 +168,10 @@ func (r *mockedCIPDRepo) ResolveVersion(ctx context.Context, req *cipdpb.Resolve
 	return nil, status.Errorf(codes.NotFound, "unknown package")
 }
 
-func (r *mockedCIPDRepo) GetInstanceURL(ctx context.Context, req *cipdpb.GetInstanceURLRequest) (*cipdpb.ObjectURL, error) {
+func (r *mockedCIPDRepo) GetInstanceURL(ctx context.Context, req *repopb.GetInstanceURLRequest) (*caspb.ObjectURL, error) {
 	if req.Package == r.testPin.PackageName &&
 		common.ObjectRefToInstanceID(req.Instance) == r.testPin.InstanceID {
-		return &cipdpb.ObjectURL{
+		return &caspb.ObjectURL{
 			SignedUrl: fmt.Sprintf("%s/%s", r.storageURL, testPackageName),
 		}, nil
 	}

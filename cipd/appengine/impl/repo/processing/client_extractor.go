@@ -25,7 +25,8 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/common"
@@ -92,8 +93,8 @@ type ClientExtractorResult struct {
 // ToObjectRef returns a reference to the extracted client binary in CAS.
 //
 // The returned ObjectRef is validated to be syntactically correct already.
-func (r *ClientExtractorResult) ToObjectRef() (*api.ObjectRef, error) {
-	algo := api.HashAlgo_value[r.ClientBinary.HashAlgo]
+func (r *ClientExtractorResult) ToObjectRef() (*caspb.ObjectRef, error) {
+	algo := caspb.HashAlgo_value[r.ClientBinary.HashAlgo]
 	if algo == 0 {
 		// Note: this means OLD version of the server may not be able to serve
 		// NEW ClientExtractorResult entries due to unknown hash algo. Many other
@@ -102,8 +103,8 @@ func (r *ClientExtractorResult) ToObjectRef() (*api.ObjectRef, error) {
 		// confusing the old server version.
 		return nil, fmt.Errorf("unrecognized hash algo %q", r.ClientBinary.HashAlgo)
 	}
-	ref := &api.ObjectRef{
-		HashAlgo:  api.HashAlgo(algo),
+	ref := &caspb.ObjectRef{
+		HashAlgo:  caspb.HashAlgo(algo),
 		HexDigest: r.ClientBinary.HashDigest,
 	}
 	if err := common.ValidateObjectRef(ref, common.KnownHash); err != nil {
@@ -118,17 +119,17 @@ func (r *ClientExtractorResult) ToObjectRef() (*api.ObjectRef, error) {
 // Additionally all algos not understood by the server right NOW are skipped
 // too. This may arise if the server was rolled back, but some files have
 // already been uploaded with a newer algo.
-func (r *ClientExtractorResult) ObjectRefAliases() []*api.ObjectRef {
+func (r *ClientExtractorResult) ObjectRefAliases() []*caspb.ObjectRef {
 	all := r.ClientBinary.AllHashDigests
 
 	// Older entries do not have AllHashDigests field at all.
 	if len(all) == 0 {
-		ref := &api.ObjectRef{
-			HashAlgo:  api.HashAlgo(api.HashAlgo_value[r.ClientBinary.HashAlgo]),
+		ref := &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo(caspb.HashAlgo_value[r.ClientBinary.HashAlgo]),
 			HexDigest: r.ClientBinary.HashDigest,
 		}
 		if common.ValidateObjectRef(ref, common.KnownHash) == nil {
-			return []*api.ObjectRef{ref}
+			return []*caspb.ObjectRef{ref}
 		}
 		return nil // welp, have 0 supported algos, should not really happen
 	}
@@ -136,10 +137,10 @@ func (r *ClientExtractorResult) ObjectRefAliases() []*api.ObjectRef {
 	// Order the result by HashAlgo enum values. This loop also naturally skips
 	// algos not understood by the current version of the server, since they are
 	// not in HashAlgo_name map.
-	refs := make([]*api.ObjectRef, 0, len(all))
-	for algo := int32(1); api.HashAlgo_name[algo] != ""; algo++ { // skip UNSPECIFIED
-		if digest := all[api.HashAlgo_name[algo]]; digest != "" {
-			ref := &api.ObjectRef{HashAlgo: api.HashAlgo(algo), HexDigest: digest}
+	refs := make([]*caspb.ObjectRef, 0, len(all))
+	for algo := int32(1); caspb.HashAlgo_name[algo] != ""; algo++ { // skip UNSPECIFIED
+		if digest := all[caspb.HashAlgo_name[algo]]; digest != "" {
+			ref := &caspb.ObjectRef{HashAlgo: caspb.HashAlgo(algo), HexDigest: digest}
 			if common.ValidateObjectRef(ref, common.KnownHash) == nil {
 				refs = append(refs, ref)
 			}
@@ -197,9 +198,9 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 	// We also always calculate all other hashes we know about at the same time,
 	// for old bootstrap scripts that may not understand the most recent hash
 	// algo.
-	hashes := make([]api.HashAlgo, 0, len(api.HashAlgo_name))
-	for algo := range api.HashAlgo_name {
-		if a := api.HashAlgo(algo); a != api.HashAlgo_HASH_ALGO_UNSPECIFIED {
+	hashes := make([]caspb.HashAlgo, 0, len(caspb.HashAlgo_name))
+	for algo := range caspb.HashAlgo_name {
+		if a := caspb.HashAlgo(algo); a != caspb.HashAlgo_HASH_ALGO_UNSPECIFIED {
 			hashes = append(hashes, a)
 		}
 	}
@@ -247,7 +248,7 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 //	(nil, datastore.ErrNoSuchEntity) if results are not available.
 //	(nil, transient-tagged error) on retrieval errors.
 //	(nil, non-transient-tagged error) if the client extractor failed.
-func GetClientExtractorResult(ctx context.Context, inst *api.Instance) (*ClientExtractorResult, error) {
+func GetClientExtractorResult(ctx context.Context, inst *repopb.Instance) (*ClientExtractorResult, error) {
 	r := &model.ProcessingResult{
 		ProcID:   ClientExtractorProcID,
 		Instance: datastore.KeyForObj(ctx, (&model.Instance{}).FromProto(ctx, inst)),

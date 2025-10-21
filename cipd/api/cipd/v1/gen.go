@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto -use-grpc-plugin -use-modern-protoc-gen-go -move-grpc-into-subpackage
+//go:generate cproto -use-grpc-plugin -use-modern-protoc-gen-go -move-grpc-into-subpackage -discovery -discovery-go-pkg go.chromium.org/luci/cipd/api/cipd/v1/discovery
 
 // Package api contains CIPD backend API definitions.
 package api

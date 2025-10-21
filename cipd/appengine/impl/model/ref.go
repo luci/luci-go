@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -50,8 +50,8 @@ type Ref struct {
 }
 
 // Proto returns cipd.Ref proto with information from this entity.
-func (e *Ref) Proto() *api.Ref {
-	return &api.Ref{
+func (e *Ref) Proto() *repopb.Ref {
+	return &repopb.Ref{
 		Name:       e.Name,
 		Package:    e.Package.StringID(),
 		Instance:   common.InstanceIDToObjectRef(e.InstanceID),
@@ -90,16 +90,16 @@ func SetRef(ctx context.Context, ref string, inst *Instance) error {
 		case r.InstanceID == inst.InstanceID:
 			return nil // already set to the requested instance
 		default:
-			events.Emit(&api.Event{
-				Kind:     api.EventKind_INSTANCE_REF_UNSET,
+			events.Emit(&repopb.Event{
+				Kind:     repopb.EventKind_INSTANCE_REF_UNSET,
 				Package:  inst.Package.StringID(),
 				Instance: r.InstanceID,
 				Ref:      ref,
 			})
 		}
 
-		events.Emit(&api.Event{
-			Kind:     api.EventKind_INSTANCE_REF_SET,
+		events.Emit(&repopb.Event{
+			Kind:     repopb.EventKind_INSTANCE_REF_SET,
 			Package:  inst.Package.StringID(),
 			Instance: inst.InstanceID,
 			Ref:      ref,
@@ -154,8 +154,8 @@ func DeleteRef(ctx context.Context, pkg, ref string) error {
 			return transient.Tag.Apply(err)
 		}
 
-		return EmitEvent(ctx, &api.Event{
-			Kind:     api.EventKind_INSTANCE_REF_UNSET,
+		return EmitEvent(ctx, &repopb.Event{
+			Kind:     repopb.EventKind_INSTANCE_REF_UNSET,
 			Package:  pkg,
 			Instance: r.InstanceID,
 			Ref:      ref,

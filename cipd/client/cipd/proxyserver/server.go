@@ -34,7 +34,8 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/router"
 
-	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
+	casgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/caspb/grpcpb"
+	repogrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/repopb/grpcpb"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
 )
 
@@ -63,9 +64,9 @@ type Server struct {
 	Listener net.Listener
 
 	// Repository is the implementation of the cipd.Repository RPC service.
-	Repository cipdgrpcpb.RepositoryServer
+	Repository repogrpcpb.RepositoryServer
 	// Storage is the implementation of the cipd.Storage RPC service.
-	Storage cipdgrpcpb.StorageServer
+	Storage casgrpcpb.StorageServer
 
 	// UnaryServerInterceptors are applied to all incoming RPCs.
 	UnaryServerInterceptors []grpc.UnaryServerInterceptor
@@ -139,8 +140,8 @@ func (srv *Server) initialize(ctx context.Context) (*http.Server, chan struct{},
 		UnaryServerInterceptor: grpcutil.ChainUnaryServerInterceptors(srv.UnaryServerInterceptors...),
 		ResponseCompression:    prpc.CompressNever,
 	}
-	cipdgrpcpb.RegisterRepositoryServer(srv.prpcSrv, srv.Repository)
-	cipdgrpcpb.RegisterStorageServer(srv.prpcSrv, srv.Storage)
+	repogrpcpb.RegisterRepositoryServer(srv.prpcSrv, srv.Repository)
+	casgrpcpb.RegisterStorageServer(srv.prpcSrv, srv.Storage)
 
 	prpcRouter := router.New()
 	srv.prpcSrv.InstallHandlers(prpcRouter, nil)

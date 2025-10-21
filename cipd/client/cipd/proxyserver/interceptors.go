@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
+	logpb "go.chromium.org/luci/cipd/api/cipd/v1/logpb"
 )
 
 // UnimplementedProxyInterceptor amends Unimplemented error messages to indicate
@@ -40,11 +40,11 @@ func UnimplementedProxyInterceptor() grpc.UnaryServerInterceptor {
 }
 
 // AccessLogInterceptor reports all handled RPCs to the given callback.
-func AccessLogInterceptor(cb func(ctx context.Context, entry *cipdpb.AccessLogEntry)) grpc.UnaryServerInterceptor {
+func AccessLogInterceptor(cb func(ctx context.Context, entry *logpb.AccessLogEntry)) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		// TODO: More details.
 		resp, err := handler(ctx, req)
-		cb(ctx, &cipdpb.AccessLogEntry{
+		cb(ctx, &logpb.AccessLogEntry{
 			Method: info.FullMethod,
 		})
 		return resp, err

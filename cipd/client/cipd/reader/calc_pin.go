@@ -17,7 +17,7 @@ package reader
 import (
 	"context"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -32,7 +32,7 @@ func (noopCloserSrc) Close(ctx context.Context, corrupt bool) error { return nil
 //
 // It reads the package name from the manifest inside, and calculates package's
 // hash to get instance ID.
-func CalculatePin(ctx context.Context, src pkg.Source, algo api.HashAlgo) (common.Pin, error) {
+func CalculatePin(ctx context.Context, src pkg.Source, algo caspb.HashAlgo) (common.Pin, error) {
 	inst, err := OpenInstance(ctx, noopCloserSrc{src}, OpenInstanceOpts{
 		VerificationMode: CalculateHash,
 		HashAlgo:         algo,

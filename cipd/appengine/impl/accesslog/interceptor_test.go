@@ -20,22 +20,24 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	logpb "go.chromium.org/luci/cipd/api/cipd/v1/logpb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common"
 )
 
 func TestFields(t *testing.T) {
 	t.Parallel()
 
-	obj := &cipdpb.ObjectRef{
-		HashAlgo:  cipdpb.HashAlgo_SHA256,
+	obj := &caspb.ObjectRef{
+		HashAlgo:  caspb.HashAlgo_SHA256,
 		HexDigest: strings.Repeat("a", 64),
 	}
 	iid := common.ObjectRefToInstanceID(obj)
 	pfx := "some/prefix"
 	pkg := "some/package"
 
-	tags := []*cipdpb.Tag{
+	tags := []*repopb.Tag{
 		{Key: "k1", Value: "v1"},
 		{Key: "k2", Value: "v2"},
 	}
@@ -43,7 +45,7 @@ func TestFields(t *testing.T) {
 
 	ref := "some-ref"
 
-	md := []*cipdpb.InstanceMetadata{
+	md := []*repopb.InstanceMetadata{
 		{Key: "mk1", Value: []byte("zzz")},
 		{Key: "mk2", Value: []byte("zzz")},
 	}
@@ -51,86 +53,86 @@ func TestFields(t *testing.T) {
 
 	cases := []struct {
 		req any
-		exp *cipdpb.AccessLogEntry
+		exp *logpb.AccessLogEntry
 	}{
 		{
-			&cipdpb.GetObjectURLRequest{Object: obj},
-			&cipdpb.AccessLogEntry{Instance: iid},
+			&caspb.GetObjectURLRequest{Object: obj},
+			&logpb.AccessLogEntry{Instance: iid},
 		},
 		{
-			&cipdpb.BeginUploadRequest{Object: obj},
-			&cipdpb.AccessLogEntry{Instance: iid},
+			&caspb.BeginUploadRequest{Object: obj},
+			&logpb.AccessLogEntry{Instance: iid},
 		},
 		{
-			&cipdpb.PrefixRequest{Prefix: pfx},
-			&cipdpb.AccessLogEntry{Package: pfx},
+			&repopb.PrefixRequest{Prefix: pfx},
+			&logpb.AccessLogEntry{Package: pfx},
 		},
 		{
-			&cipdpb.PrefixMetadata{Prefix: pfx},
-			&cipdpb.AccessLogEntry{Package: pfx},
+			&repopb.PrefixMetadata{Prefix: pfx},
+			&logpb.AccessLogEntry{Package: pfx},
 		},
 		{
-			&cipdpb.ListPrefixRequest{Prefix: pfx},
-			&cipdpb.AccessLogEntry{Package: pfx},
+			&repopb.ListPrefixRequest{Prefix: pfx},
+			&logpb.AccessLogEntry{Package: pfx},
 		},
 		{
-			&cipdpb.PackageRequest{Package: pkg},
-			&cipdpb.AccessLogEntry{Package: pkg},
+			&repopb.PackageRequest{Package: pkg},
+			&logpb.AccessLogEntry{Package: pkg},
 		},
 		{
-			&cipdpb.Instance{Package: pkg, Instance: obj},
-			&cipdpb.AccessLogEntry{Package: pkg, Instance: iid},
+			&repopb.Instance{Package: pkg, Instance: obj},
+			&logpb.AccessLogEntry{Package: pkg, Instance: iid},
 		},
 		{
-			&cipdpb.ListInstancesRequest{Package: pkg},
-			&cipdpb.AccessLogEntry{Package: pkg},
+			&repopb.ListInstancesRequest{Package: pkg},
+			&logpb.AccessLogEntry{Package: pkg},
 		},
 		{
-			&cipdpb.SearchInstancesRequest{Package: pkg, Tags: tags},
-			&cipdpb.AccessLogEntry{Package: pkg, Tags: tagsStr},
+			&repopb.SearchInstancesRequest{Package: pkg, Tags: tags},
+			&logpb.AccessLogEntry{Package: pkg, Tags: tagsStr},
 		},
 		{
-			&cipdpb.Ref{Package: pkg, Instance: obj, Name: ref},
-			&cipdpb.AccessLogEntry{Package: pkg, Instance: iid, Version: ref},
+			&repopb.Ref{Package: pkg, Instance: obj, Name: ref},
+			&logpb.AccessLogEntry{Package: pkg, Instance: iid, Version: ref},
 		},
 		{
-			&cipdpb.DeleteRefRequest{Package: pkg, Name: ref},
-			&cipdpb.AccessLogEntry{Package: pkg, Version: ref},
+			&repopb.DeleteRefRequest{Package: pkg, Name: ref},
+			&logpb.AccessLogEntry{Package: pkg, Version: ref},
 		},
 		{
-			&cipdpb.ListRefsRequest{Package: pkg},
-			&cipdpb.AccessLogEntry{Package: pkg},
+			&repopb.ListRefsRequest{Package: pkg},
+			&logpb.AccessLogEntry{Package: pkg},
 		},
 		{
-			&cipdpb.AttachTagsRequest{Package: pkg, Instance: obj, Tags: tags},
-			&cipdpb.AccessLogEntry{Package: pkg, Instance: iid, Tags: tagsStr},
+			&repopb.AttachTagsRequest{Package: pkg, Instance: obj, Tags: tags},
+			&logpb.AccessLogEntry{Package: pkg, Instance: iid, Tags: tagsStr},
 		},
 		{
-			&cipdpb.DetachTagsRequest{Package: pkg, Instance: obj, Tags: tags},
-			&cipdpb.AccessLogEntry{Package: pkg, Instance: iid, Tags: tagsStr},
+			&repopb.DetachTagsRequest{Package: pkg, Instance: obj, Tags: tags},
+			&logpb.AccessLogEntry{Package: pkg, Instance: iid, Tags: tagsStr},
 		},
 		{
-			&cipdpb.AttachMetadataRequest{Package: pkg, Instance: obj, Metadata: md},
-			&cipdpb.AccessLogEntry{Package: pkg, Instance: iid, Metadata: mdStr},
+			&repopb.AttachMetadataRequest{Package: pkg, Instance: obj, Metadata: md},
+			&logpb.AccessLogEntry{Package: pkg, Instance: iid, Metadata: mdStr},
 		},
 		{
-			&cipdpb.DetachMetadataRequest{Package: pkg, Instance: obj, Metadata: md},
-			&cipdpb.AccessLogEntry{Package: pkg, Instance: iid, Metadata: mdStr},
+			&repopb.DetachMetadataRequest{Package: pkg, Instance: obj, Metadata: md},
+			&logpb.AccessLogEntry{Package: pkg, Instance: iid, Metadata: mdStr},
 		},
 		{
-			&cipdpb.ListMetadataRequest{Package: pkg, Instance: obj, Keys: mdStr},
-			&cipdpb.AccessLogEntry{Package: pkg, Instance: iid, Metadata: mdStr},
+			&repopb.ListMetadataRequest{Package: pkg, Instance: obj, Keys: mdStr},
+			&logpb.AccessLogEntry{Package: pkg, Instance: iid, Metadata: mdStr},
 		},
 		{
-			&cipdpb.ResolveVersionRequest{Package: pkg, Version: ref},
-			&cipdpb.AccessLogEntry{Package: pkg, Version: ref},
+			&repopb.ResolveVersionRequest{Package: pkg, Version: ref},
+			&logpb.AccessLogEntry{Package: pkg, Version: ref},
 		},
 		{
-			&cipdpb.GetInstanceURLRequest{Package: pkg, Instance: obj},
-			&cipdpb.AccessLogEntry{Package: pkg, Instance: iid},
+			&repopb.GetInstanceURLRequest{Package: pkg, Instance: obj},
+			&logpb.AccessLogEntry{Package: pkg, Instance: iid},
 		},
 		{
-			&cipdpb.DescribeInstanceRequest{
+			&repopb.DescribeInstanceRequest{
 				Package:            pkg,
 				Instance:           obj,
 				DescribeRefs:       true,
@@ -138,20 +140,20 @@ func TestFields(t *testing.T) {
 				DescribeProcessors: true,
 				DescribeMetadata:   true,
 			},
-			&cipdpb.AccessLogEntry{
+			&logpb.AccessLogEntry{
 				Package:  pkg,
 				Instance: iid,
 				Flags:    []string{"refs", "tags", "processors", "metadata"},
 			},
 		},
 		{
-			&cipdpb.DescribeClientRequest{Package: pkg, Instance: obj},
-			&cipdpb.AccessLogEntry{Package: pkg, Instance: iid},
+			&repopb.DescribeClientRequest{Package: pkg, Instance: obj},
+			&logpb.AccessLogEntry{Package: pkg, Instance: iid},
 		},
 	}
 
 	for _, c := range cases {
-		got := &cipdpb.AccessLogEntry{}
+		got := &logpb.AccessLogEntry{}
 		extractFieldsFromRequest(got, c.req)
 		if !proto.Equal(got, c.exp) {
 			t.Errorf("%s: %s != %s", c.req, got, c.exp)

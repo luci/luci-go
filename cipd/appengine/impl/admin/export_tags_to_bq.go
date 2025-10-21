@@ -33,14 +33,14 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/dsmapper"
 
-	api "go.chromium.org/luci/cipd/api/admin/v1"
-	cipdapi "go.chromium.org/luci/cipd/api/cipd/v1"
+	adminpb "go.chromium.org/luci/cipd/api/admin/v1"
+	exportedpb "go.chromium.org/luci/cipd/api/cipd/v1/exportedpb"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 )
 
 func init() {
 	initMapper(mapperDef{
-		Kind: api.MapperKind_EXPORT_TAGS_TO_BQ,
+		Kind: adminpb.MapperKind_EXPORT_TAGS_TO_BQ,
 		Func: exportTagsToBQ,
 		Config: dsmapper.JobConfig{
 			Query:         dsmapper.Query{Kind: "InstanceTag"},
@@ -51,7 +51,7 @@ func init() {
 	})
 }
 
-func exportTagsToBQ(ctx context.Context, job dsmapper.JobID, _ *api.JobConfig, keys []*datastore.Key) error {
+func exportTagsToBQ(ctx context.Context, job dsmapper.JobID, _ *adminpb.JobConfig, keys []*datastore.Key) error {
 	rows := make([]bigquery.ValueSaver, 0, len(keys))
 	err := multiGetTags(ctx, keys, func(key *datastore.Key, tag *model.Tag) error {
 		// These checks should never be hit, but just in case...
@@ -66,7 +66,7 @@ func exportTagsToBQ(ctx context.Context, job dsmapper.JobID, _ *api.JobConfig, k
 		msg := tag.Proto()
 		rows = append(rows, &bq.Row{
 			InsertID: bqInsertID("export_tags", job, key),
-			Message: &cipdapi.ExportedTag{
+			Message: &exportedpb.ExportedTag{
 				Id:         key.StringID(),
 				Instance:   key.Parent().StringID(),
 				Package:    key.Parent().Parent().StringID(),

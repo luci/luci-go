@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -59,12 +59,12 @@ type Instance struct {
 }
 
 // Proto returns cipd.Instance proto with information from this entity.
-func (e *Instance) Proto() *api.Instance {
+func (e *Instance) Proto() *repopb.Instance {
 	var t *timestamppb.Timestamp
 	if !e.RegisteredTs.IsZero() {
 		t = timestamppb.New(e.RegisteredTs)
 	}
-	return &api.Instance{
+	return &repopb.Instance{
 		Package:      e.Package.StringID(),
 		Instance:     common.InstanceIDToObjectRef(e.InstanceID),
 		RegisteredBy: e.RegisteredBy,
@@ -77,7 +77,7 @@ func (e *Instance) Proto() *api.Instance {
 // Returns the entity itself for easier chaining.
 //
 // Doesn't touch output-only fields at all.
-func (e *Instance) FromProto(ctx context.Context, p *api.Instance) *Instance {
+func (e *Instance) FromProto(ctx context.Context, p *repopb.Instance) *Instance {
 	e.InstanceID = common.ObjectRefToInstanceID(p.Instance)
 	e.Package = PackageKey(ctx, p.Package)
 	return e
@@ -143,8 +143,8 @@ func RegisterInstance(ctx context.Context, inst *Instance, cb func(context.Conte
 			if err != nil {
 				return transient.Tag.Apply(errors.Fmt("failed to create the package entity: %w", err))
 			}
-			events.Emit(&api.Event{
-				Kind:    api.EventKind_PACKAGE_CREATED,
+			events.Emit(&repopb.Event{
+				Kind:    repopb.EventKind_PACKAGE_CREATED,
 				Package: inst.Package.StringID(),
 			})
 		}
@@ -161,8 +161,8 @@ func RegisterInstance(ctx context.Context, inst *Instance, cb func(context.Conte
 		if err := datastore.Put(ctx, &toPut); err != nil {
 			return transient.Tag.Apply(errors.Fmt("failed to create the package instance entity: %w", err))
 		}
-		events.Emit(&api.Event{
-			Kind:     api.EventKind_INSTANCE_CREATED,
+		events.Emit(&repopb.Event{
+			Kind:     repopb.EventKind_INSTANCE_CREATED,
 			Package:  inst.Package.StringID(),
 			Instance: inst.InstanceID,
 		})
@@ -247,7 +247,7 @@ func CheckInstanceReady(ctx context.Context, inst *Instance) error {
 
 // FetchProcessors fetches results of all processors assigned to the instance
 // and returns them as cipd.Processor proto messages (sorted by processor ID).
-func FetchProcessors(ctx context.Context, inst *Instance) ([]*api.Processor, error) {
+func FetchProcessors(ctx context.Context, inst *Instance) ([]*repopb.Processor, error) {
 	count := len(inst.ProcessorsPending) +
 		len(inst.ProcessorsSuccess) +
 		len(inst.ProcessorsFailure)
@@ -273,7 +273,7 @@ func FetchProcessors(ctx context.Context, inst *Instance) ([]*api.Processor, err
 	}
 
 	// Convert all them to proto.
-	out := make([]*api.Processor, 0, count)
+	out := make([]*repopb.Processor, 0, count)
 	for _, p := range finished {
 		proc, err := p.Proto()
 		if err != nil {

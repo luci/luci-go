@@ -30,35 +30,36 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
 )
 
-func phonyHexDigest(algo api.HashAlgo, letter string) string {
-	return strings.Repeat(letter, map[api.HashAlgo]int{
-		api.HashAlgo_SHA1:   40,
-		api.HashAlgo_SHA256: 64,
+func phonyHexDigest(algo caspb.HashAlgo, letter string) string {
+	return strings.Repeat(letter, map[caspb.HashAlgo]int{
+		caspb.HashAlgo_SHA1:   40,
+		caspb.HashAlgo_SHA256: 64,
 	}[algo])
 }
 
-func phonyInstanceID(algo api.HashAlgo, letter string) string {
-	return common.ObjectRefToInstanceID(&api.ObjectRef{
+func phonyInstanceID(algo caspb.HashAlgo, letter string) string {
+	return common.ObjectRefToInstanceID(&caspb.ObjectRef{
 		HashAlgo:  algo,
 		HexDigest: phonyHexDigest(algo, letter),
 	})
 }
 
-func instance(ctx context.Context, pkg string, algo api.HashAlgo) *model.Instance {
+func instance(ctx context.Context, pkg string, algo caspb.HashAlgo) *model.Instance {
 	return &model.Instance{
 		InstanceID: phonyInstanceID(algo, "a"),
 		Package:    model.PackageKey(ctx, pkg),
 	}
 }
 
-func hexDigest(algo api.HashAlgo, body string) string {
+func hexDigest(algo caspb.HashAlgo, body string) string {
 	h := common.MustNewHash(algo)
 	if _, err := h.Write([]byte(body)); err != nil {
 		panic(err)
@@ -88,38 +89,38 @@ func TestClientExtractor(t *testing.T) {
 
 	originalBody := strings.Repeat("01234567", 8960)
 	expectedDigests := map[string]string{
-		"SHA1":   hexDigest(api.HashAlgo_SHA1, originalBody),
-		"SHA256": hexDigest(api.HashAlgo_SHA256, originalBody),
+		"SHA1":   hexDigest(caspb.HashAlgo_SHA1, originalBody),
+		"SHA256": hexDigest(caspb.HashAlgo_SHA256, originalBody),
 	}
 
-	instSHA256 := instance(ctx, "infra/tools/cipd/linux-amd64", api.HashAlgo_SHA256)
-	instSHA1 := instance(ctx, "infra/tools/cipd/linux-amd64", api.HashAlgo_SHA1)
+	instSHA256 := instance(ctx, "infra/tools/cipd/linux-amd64", caspb.HashAlgo_SHA256)
+	instSHA1 := instance(ctx, "infra/tools/cipd/linux-amd64", caspb.HashAlgo_SHA1)
 
 	goodPkg := packageReader(map[string]string{"cipd": originalBody})
 
 	ftt.Run("With mocks", t, func(t *ftt.Test) {
-		var publishedRef *api.ObjectRef
+		var publishedRef *caspb.ObjectRef
 		var canceled bool
 
-		expectedUploadAlgo := api.HashAlgo_SHA256
+		expectedUploadAlgo := caspb.HashAlgo_SHA256
 
 		cas := testutil.MockCAS{
-			BeginUploadImpl: func(_ context.Context, r *api.BeginUploadRequest) (*api.UploadOperation, error) {
+			BeginUploadImpl: func(_ context.Context, r *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
 				assert.Loosely(t, r.HashAlgo, should.Equal(expectedUploadAlgo))
-				return &api.UploadOperation{
+				return &caspb.UploadOperation{
 					OperationId: "op_id",
 					UploadUrl:   "http://example.com/upload",
 				}, nil
 			},
-			FinishUploadImpl: func(_ context.Context, r *api.FinishUploadRequest) (*api.UploadOperation, error) {
+			FinishUploadImpl: func(_ context.Context, r *caspb.FinishUploadRequest) (*caspb.UploadOperation, error) {
 				assert.Loosely(t, r.UploadOperationId, should.Equal("op_id"))
 				publishedRef = r.ForceHash
-				return &api.UploadOperation{Status: api.UploadStatus_PUBLISHED}, nil
+				return &caspb.UploadOperation{Status: caspb.UploadStatus_PUBLISHED}, nil
 			},
-			CancelUploadImpl: func(_ context.Context, r *api.CancelUploadRequest) (*api.UploadOperation, error) {
+			CancelUploadImpl: func(_ context.Context, r *caspb.CancelUploadRequest) (*caspb.UploadOperation, error) {
 				assert.Loosely(t, r.UploadOperationId, should.Equal("op_id"))
 				canceled = true
-				return &api.UploadOperation{Status: api.UploadStatus_CANCELED}, nil
+				return &caspb.UploadOperation{Status: caspb.UploadStatus_CANCELED}, nil
 			},
 		}
 
@@ -145,8 +146,8 @@ func TestClientExtractor(t *testing.T) {
 			assert.Loosely(t, r.ClientBinary.AllHashDigests, should.Match(expectedDigests))
 
 			assert.Loosely(t, extracted.String(), should.Equal(originalBody))
-			assert.Loosely(t, publishedRef, should.Match(&api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA256,
+			assert.Loosely(t, publishedRef, should.Match(&caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA256,
 				HexDigest: expectedDigests["SHA256"],
 			}))
 
@@ -156,7 +157,7 @@ func TestClientExtractor(t *testing.T) {
 
 		// TODO(vadimsh): Delete this test once SHA1 uploads are forbidden.
 		t.Run("Happy path, SHA1", func(t *ftt.Test) {
-			expectedUploadAlgo = api.HashAlgo_SHA1
+			expectedUploadAlgo = caspb.HashAlgo_SHA1
 			res, err := ce.Run(ctx, instSHA1, goodPkg)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res.Err, should.BeNil)
@@ -167,8 +168,8 @@ func TestClientExtractor(t *testing.T) {
 			assert.Loosely(t, r.ClientBinary.HashDigest, should.Equal(expectedDigests["SHA1"]))
 			assert.Loosely(t, r.ClientBinary.AllHashDigests, should.Match(expectedDigests))
 
-			assert.Loosely(t, publishedRef, should.Match(&api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA1,
+			assert.Loosely(t, publishedRef, should.Match(&caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA1,
 				HexDigest: expectedDigests["SHA1"],
 			}))
 		})
@@ -180,7 +181,7 @@ func TestClientExtractor(t *testing.T) {
 		})
 
 		t.Run("Internal error when initiating the upload", func(t *ftt.Test) {
-			cas.BeginUploadImpl = func(_ context.Context, r *api.BeginUploadRequest) (*api.UploadOperation, error) {
+			cas.BeginUploadImpl = func(_ context.Context, r *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
 				return nil, status.Errorf(codes.Internal, "boo")
 			}
 			_, err := ce.Run(ctx, instSHA256, goodPkg)
@@ -188,7 +189,7 @@ func TestClientExtractor(t *testing.T) {
 		})
 
 		t.Run("Internal error when finalizing the upload", func(t *ftt.Test) {
-			cas.FinishUploadImpl = func(_ context.Context, r *api.FinishUploadRequest) (*api.UploadOperation, error) {
+			cas.FinishUploadImpl = func(_ context.Context, r *caspb.FinishUploadRequest) (*caspb.UploadOperation, error) {
 				return nil, status.Errorf(codes.Internal, "boo")
 			}
 			_, err := ce.Run(ctx, instSHA256, goodPkg)
@@ -207,11 +208,11 @@ func TestClientExtractor(t *testing.T) {
 	ftt.Run("Applicable works", t, func(t *ftt.Test) {
 		ce := ClientExtractor{}
 
-		res, err := ce.Applicable(ctx, instance(ctx, "infra/tools/cipd/linux", api.HashAlgo_SHA256))
+		res, err := ce.Applicable(ctx, instance(ctx, "infra/tools/cipd/linux", caspb.HashAlgo_SHA256))
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, res, should.BeTrue)
 
-		res, err = ce.Applicable(ctx, instance(ctx, "infra/tools/stuff/linux", api.HashAlgo_SHA256))
+		res, err = ce.Applicable(ctx, instance(ctx, "infra/tools/stuff/linux", caspb.HashAlgo_SHA256))
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, res, should.BeFalse)
 	})
@@ -223,9 +224,9 @@ func TestGetResult(t *testing.T) {
 	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
-		instRef := &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA256,
-			HexDigest: phonyHexDigest(api.HashAlgo_SHA256, "a"),
+		instRef := &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA256,
+			HexDigest: phonyHexDigest(caspb.HashAlgo_SHA256, "a"),
 		}
 
 		write := func(res *ClientExtractorResult, err string) {
@@ -248,15 +249,15 @@ func TestGetResult(t *testing.T) {
 		t.Run("Happy path", func(t *ftt.Test) {
 			res := ClientExtractorResult{}
 			res.ClientBinary.HashAlgo = "SHA256"
-			res.ClientBinary.HashDigest = phonyHexDigest(api.HashAlgo_SHA256, "b")
+			res.ClientBinary.HashDigest = phonyHexDigest(caspb.HashAlgo_SHA256, "b")
 			res.ClientBinary.AllHashDigests = map[string]string{
-				"SHA1":   phonyHexDigest(api.HashAlgo_SHA1, "c"),
-				"SHA256": phonyHexDigest(api.HashAlgo_SHA256, "b"),
+				"SHA1":   phonyHexDigest(caspb.HashAlgo_SHA1, "c"),
+				"SHA256": phonyHexDigest(caspb.HashAlgo_SHA256, "b"),
 				"SHA999": strings.Repeat("e", 99), // should silently be skipped
 			}
 			write(&res, "")
 
-			out, err := GetClientExtractorResult(ctx, &api.Instance{
+			out, err := GetClientExtractorResult(ctx, &repopb.Instance{
 				Package:  "a/b/c",
 				Instance: instRef,
 			})
@@ -265,38 +266,38 @@ func TestGetResult(t *testing.T) {
 
 			ref, err := out.ToObjectRef()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ref, should.Match(&api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA256,
+			assert.Loosely(t, ref, should.Match(&caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA256,
 				HexDigest: res.ClientBinary.HashDigest,
 			}))
 
-			assert.Loosely(t, out.ObjectRefAliases(), should.Match([]*api.ObjectRef{
-				{HashAlgo: api.HashAlgo_SHA1, HexDigest: phonyHexDigest(api.HashAlgo_SHA1, "c")},
-				{HashAlgo: api.HashAlgo_SHA256, HexDigest: phonyHexDigest(api.HashAlgo_SHA256, "b")},
+			assert.Loosely(t, out.ObjectRefAliases(), should.Match([]*caspb.ObjectRef{
+				{HashAlgo: caspb.HashAlgo_SHA1, HexDigest: phonyHexDigest(caspb.HashAlgo_SHA1, "c")},
+				{HashAlgo: caspb.HashAlgo_SHA256, HexDigest: phonyHexDigest(caspb.HashAlgo_SHA256, "b")},
 			}))
 		})
 
 		t.Run("Legacy SHA1 record with no AllHashDigests", func(t *ftt.Test) {
 			res := ClientExtractorResult{}
 			res.ClientBinary.HashAlgo = "SHA1"
-			res.ClientBinary.HashDigest = phonyHexDigest(api.HashAlgo_SHA1, "a")
+			res.ClientBinary.HashDigest = phonyHexDigest(caspb.HashAlgo_SHA1, "a")
 
 			ref, err := res.ToObjectRef()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ref, should.Match(&api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA1,
+			assert.Loosely(t, ref, should.Match(&caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA1,
 				HexDigest: res.ClientBinary.HashDigest,
 			}))
 
-			assert.Loosely(t, res.ObjectRefAliases(), should.Match([]*api.ObjectRef{
-				{HashAlgo: api.HashAlgo_SHA1, HexDigest: res.ClientBinary.HashDigest},
+			assert.Loosely(t, res.ObjectRefAliases(), should.Match([]*caspb.ObjectRef{
+				{HashAlgo: caspb.HashAlgo_SHA1, HexDigest: res.ClientBinary.HashDigest},
 			}))
 		})
 
 		t.Run("Failed processor", func(t *ftt.Test) {
 			write(nil, "boom")
 
-			_, err := GetClientExtractorResult(ctx, &api.Instance{
+			_, err := GetClientExtractorResult(ctx, &repopb.Instance{
 				Package:  "a/b/c",
 				Instance: instRef,
 			})
@@ -304,7 +305,7 @@ func TestGetResult(t *testing.T) {
 		})
 
 		t.Run("No result", func(t *ftt.Test) {
-			_, err := GetClientExtractorResult(ctx, &api.Instance{
+			_, err := GetClientExtractorResult(ctx, &repopb.Instance{
 				Package:  "a/b/c",
 				Instance: instRef,
 			})

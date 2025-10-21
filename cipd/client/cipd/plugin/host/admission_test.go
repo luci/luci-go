@@ -36,7 +36,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/client/cipd/plugin"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/plugins/admission"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
@@ -96,7 +96,7 @@ func init() {
 			case "VISIT_METADATA_ALL":
 				var visited []string
 				err := info.VisitMetadata(ctx, []string{"some-key"}, listingPageSize,
-					func(md *api.InstanceMetadata) bool {
+					func(md *repopb.InstanceMetadata) bool {
 						visited = append(visited, string(md.Value))
 						return true
 					},
@@ -117,7 +117,7 @@ func init() {
 			case "VISIT_METADATA_ONE":
 				var visited []string
 				err := info.VisitMetadata(ctx, []string{"some-key"}, 0,
-					func(md *api.InstanceMetadata) bool {
+					func(md *repopb.InstanceMetadata) bool {
 						visited = append(visited, string(md.Value))
 						return false
 					},
@@ -226,7 +226,7 @@ func TestAdmissionPlugins(t *testing.T) {
 			plug := newPlugin("VISIT_METADATA_ALL")
 			defer plug.Close(ctx)
 			assert.Loosely(t, plug.CheckAdmission(testPin("good/a/b")).Wait(ctx), should.BeNil)
-			assert.Loosely(t, fakeRepo.Calls(), should.Match([]*api.ListMetadataRequest{
+			assert.Loosely(t, fakeRepo.Calls(), should.Match([]*repopb.ListMetadataRequest{
 				{
 					Package:  "good/a/b",
 					Instance: testObjectRef,
@@ -254,7 +254,7 @@ func TestAdmissionPlugins(t *testing.T) {
 			plug := newPlugin("VISIT_METADATA_ONE")
 			defer plug.Close(ctx)
 			assert.Loosely(t, plug.CheckAdmission(testPin("good/a/b")).Wait(ctx), should.BeNil)
-			assert.Loosely(t, fakeRepo.Calls(), should.Match([]*api.ListMetadataRequest{
+			assert.Loosely(t, fakeRepo.Calls(), should.Match([]*repopb.ListMetadataRequest{
 				{
 					Package:  "good/a/b",
 					Instance: testObjectRef,
@@ -274,7 +274,7 @@ func TestAdmissionPlugins(t *testing.T) {
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike("the listing says boo"))
 
-			assert.Loosely(t, fakeRepo.Calls(), should.Match([]*api.ListMetadataRequest{
+			assert.Loosely(t, fakeRepo.Calls(), should.Match([]*repopb.ListMetadataRequest{
 				{
 					Package:  "good/a/b",
 					Instance: testObjectRef,
@@ -376,7 +376,7 @@ func TestAdmissionPlugins(t *testing.T) {
 type fakeRepository struct {
 	m     sync.Mutex
 	err   error
-	calls []*api.ListMetadataRequest
+	calls []*repopb.ListMetadataRequest
 }
 
 func (r *fakeRepository) SetErr(err error) {
@@ -385,13 +385,13 @@ func (r *fakeRepository) SetErr(err error) {
 	r.err = err
 }
 
-func (r *fakeRepository) Calls() []*api.ListMetadataRequest {
+func (r *fakeRepository) Calls() []*repopb.ListMetadataRequest {
 	r.m.Lock()
 	defer r.m.Unlock()
 	return r.calls
 }
 
-func (r *fakeRepository) ListMetadata(ctx context.Context, in *api.ListMetadataRequest, opts ...grpc.CallOption) (*api.ListMetadataResponse, error) {
+func (r *fakeRepository) ListMetadata(ctx context.Context, in *repopb.ListMetadataRequest, opts ...grpc.CallOption) (*repopb.ListMetadataResponse, error) {
 	r.m.Lock()
 	r.calls = append(r.calls, in)
 	err := r.err
@@ -411,9 +411,9 @@ func (r *fakeRepository) ListMetadata(ctx context.Context, in *api.ListMetadataR
 		key = in.Keys[0]
 	}
 
-	var md []*api.InstanceMetadata
+	var md []*repopb.InstanceMetadata
 	for cursor < fakeMetadataLimit && len(md) < int(in.PageSize) {
-		md = append(md, &api.InstanceMetadata{
+		md = append(md, &repopb.InstanceMetadata{
 			Key:         key,
 			Value:       []byte(fmt.Sprintf("metadata-value-%d", cursor)),
 			ContentType: "text/plain",
@@ -426,7 +426,7 @@ func (r *fakeRepository) ListMetadata(ctx context.Context, in *api.ListMetadataR
 		nextPageToken = fmt.Sprintf("start-from-%d", cursor)
 	}
 
-	return &api.ListMetadataResponse{
+	return &repopb.ListMetadataResponse{
 		Metadata:      md,
 		NextPageToken: nextPageToken,
 	}, nil

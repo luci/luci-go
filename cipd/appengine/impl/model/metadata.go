@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -59,8 +59,8 @@ type InstanceMetadata struct {
 // Proto returns cipd.InstanceMetadata proto with information from this entity.
 //
 // Assumes the entity is valid.
-func (md *InstanceMetadata) Proto() *api.InstanceMetadata {
-	return &api.InstanceMetadata{
+func (md *InstanceMetadata) Proto() *repopb.InstanceMetadata {
+	return &repopb.InstanceMetadata{
 		Key:         md.Key,
 		Value:       md.Value,
 		ContentType: md.ContentType,
@@ -85,7 +85,7 @@ func (md *InstanceMetadata) Proto() *api.InstanceMetadata {
 //	FailedPrecondition if some processors are still running.
 //	Aborted if some processors have failed.
 //	Internal on fingerprint collision.
-func AttachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetadata) error {
+func AttachMetadata(ctx context.Context, inst *Instance, md []*repopb.InstanceMetadata) error {
 	now := clock.Now(ctx).UTC()
 	who := string(auth.CurrentIdentity(ctx))
 
@@ -127,7 +127,7 @@ func AttachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetad
 		// the one we try to attach. If not, we've got a hash collision in the
 		// fingerprint. This should be super rare, but it doesn't hurt to check
 		// since we fetched the entity already.
-		checkExisting := func(ent *InstanceMetadata, msg *api.InstanceMetadata) error {
+		checkExisting := func(ent *InstanceMetadata, msg *repopb.InstanceMetadata) error {
 			if ent.Key != msg.Key {
 				return grpcutil.InternalTag.Apply(errors.Fmt("fingerprint %q matches two metadata keys %q and %q, aborting", ent.Fingerprint, ent.Key, msg.Key))
 			}
@@ -182,7 +182,7 @@ func AttachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetad
 		if err := datastore.Put(ctx, missing); err != nil {
 			return transient.Tag.Apply(err)
 		}
-		return flushToEventLog(ctx, missing, api.EventKind_INSTANCE_METADATA_ATTACHED, inst, who, now)
+		return flushToEventLog(ctx, missing, repopb.EventKind_INSTANCE_METADATA_ATTACHED, inst, who, now)
 	})
 }
 
@@ -194,7 +194,7 @@ func AttachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetad
 //
 // Launches a transaction inside (and thus can't be a part of a transaction
 // itself).
-func DetachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetadata) error {
+func DetachMetadata(ctx context.Context, inst *Instance, md []*repopb.InstanceMetadata) error {
 	now := clock.Now(ctx).UTC()
 	who := string(auth.CurrentIdentity(ctx))
 
@@ -252,7 +252,7 @@ func DetachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetad
 		if err := datastore.Delete(ctx, existing); err != nil {
 			return transient.Tag.Apply(err)
 		}
-		return flushToEventLog(ctx, existing, api.EventKind_INSTANCE_METADATA_DETACHED, inst, who, now)
+		return flushToEventLog(ctx, existing, repopb.EventKind_INSTANCE_METADATA_DETACHED, inst, who, now)
 	})
 }
 
@@ -315,7 +315,7 @@ func orderByTsAndKey(md []*InstanceMetadata) {
 }
 
 // flushToEventLog emits a bunch of event log entries with metadata.
-func flushToEventLog(ctx context.Context, ents []*InstanceMetadata, kind api.EventKind, inst *Instance, who string, now time.Time) error {
+func flushToEventLog(ctx context.Context, ents []*InstanceMetadata, kind repopb.EventKind, inst *Instance, who string, now time.Time) error {
 	nowTS := timestamppb.New(now)
 	events := Events{}
 	for _, ent := range ents {
@@ -327,7 +327,7 @@ func flushToEventLog(ctx context.Context, ents []*InstanceMetadata, kind api.Eve
 				mdValue = ""
 			}
 		}
-		events.Emit(&api.Event{
+		events.Emit(&repopb.Event{
 			Kind:          kind,
 			Package:       inst.Package.StringID(),
 			Instance:      inst.InstanceID,

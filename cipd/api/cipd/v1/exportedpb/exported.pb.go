@@ -18,7 +18,7 @@
 // 	protoc        v6.32.0
 // source: go.chromium.org/luci/cipd/api/cipd/v1/exported.proto
 
-package api
+package exportedpb
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -146,7 +146,7 @@ const file_go_chromium_org_luci_cipd_api_cipd_v1_exported_proto_rawDesc = "" +
 	"\vattached_by\x18\x06 \x01(\tR\n" +
 	"attachedBy\x12;\n" +
 	"\vattached_ts\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"attachedTsB+Z)go.chromium.org/luci/cipd/api/cipd/v1;apib\x06proto3"
+	"attachedTsB2Z0go.chromium.org/luci/cipd/api/cipd/v1/exportedpbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_cipd_api_cipd_v1_exported_proto_rawDescOnce sync.Once

@@ -30,8 +30,9 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 
-	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
-	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
+	repogrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/repopb/grpcpb"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -42,7 +43,7 @@ type RemoteFactory func(ctx context.Context, hostname string) (grpc.ClientConnIn
 // ProxyRepositoryServer implements RepositoryServer by proxying calls
 // to a set of remote RepositoryServers.
 type ProxyRepositoryServer struct {
-	cipdgrpcpb.UnimplementedRepositoryServer
+	repogrpcpb.UnimplementedRepositoryServer
 
 	// Policy defines what actions are allowed to be performed through the proxy.
 	Policy *proxypb.Policy
@@ -54,7 +55,7 @@ type ProxyRepositoryServer struct {
 	UserAgent string
 
 	m       sync.RWMutex
-	remotes map[string]cipdgrpcpb.RepositoryClient
+	remotes map[string]repogrpcpb.RepositoryClient
 }
 
 // DefaultRemoteFactory creates a factory that makes real pRPC clients.
@@ -75,7 +76,7 @@ func DefaultRemoteFactory(client *http.Client) RemoteFactory {
 // allowed by the policy.
 //
 // Returns gRPC errors.
-func (s *ProxyRepositoryServer) remote(ctx context.Context, hostname string) (cipdgrpcpb.RepositoryClient, error) {
+func (s *ProxyRepositoryServer) remote(ctx context.Context, hostname string) (repogrpcpb.RepositoryClient, error) {
 	if hostname == "" {
 		return nil, status.Errorf(codes.Internal, "unexpectedly missing remote name in a proxied CIPD call")
 	}
@@ -101,10 +102,10 @@ func (s *ProxyRepositoryServer) remote(ctx context.Context, hostname string) (ci
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to initialize remote in the CIPD proxy: %s", err)
 	}
-	r = cipdgrpcpb.NewRepositoryClient(conn)
+	r = repogrpcpb.NewRepositoryClient(conn)
 
 	if s.remotes == nil {
-		s.remotes = make(map[string]cipdgrpcpb.RepositoryClient, 1)
+		s.remotes = make(map[string]repogrpcpb.RepositoryClient, 1)
 	}
 	s.remotes[hostname] = r
 	return r, nil
@@ -123,7 +124,7 @@ func (s *ProxyRepositoryServer) callCtx(ctx context.Context) context.Context {
 // obfuscated value.
 //
 // Does nothing if `obj` is nil. Returns gRPC errors.
-func (s *ProxyRepositoryServer) obfuscateObjectURL(obj *cipdpb.ObjectURL) error {
+func (s *ProxyRepositoryServer) obfuscateObjectURL(obj *caspb.ObjectURL) error {
 	if obj != nil {
 		var err error
 		obj.SignedUrl, err = s.CASURLObfuscator.Obfuscate(&proxypb.ProxiedCASObject{
@@ -137,7 +138,7 @@ func (s *ProxyRepositoryServer) obfuscateObjectURL(obj *cipdpb.ObjectURL) error 
 }
 
 // ResolveVersion implements the corresponding RPC.
-func (s *ProxyRepositoryServer) ResolveVersion(ctx context.Context, req *cipdpb.ResolveVersionRequest) (*cipdpb.Instance, error) {
+func (s *ProxyRepositoryServer) ResolveVersion(ctx context.Context, req *repopb.ResolveVersionRequest) (*repopb.Instance, error) {
 	policy := s.Policy.ResolveVersion
 	if policy == nil {
 		return nil, deniedByPolicy("ResolveVersion", "")
@@ -168,7 +169,7 @@ func (s *ProxyRepositoryServer) ResolveVersion(ctx context.Context, req *cipdpb.
 }
 
 // GetInstanceURL implements the corresponding RPC.
-func (s *ProxyRepositoryServer) GetInstanceURL(ctx context.Context, req *cipdpb.GetInstanceURLRequest) (*cipdpb.ObjectURL, error) {
+func (s *ProxyRepositoryServer) GetInstanceURL(ctx context.Context, req *repopb.GetInstanceURLRequest) (*caspb.ObjectURL, error) {
 	policy := s.Policy.GetInstanceUrl
 	if policy == nil {
 		return nil, deniedByPolicy("GetInstanceURL", "")
@@ -190,7 +191,7 @@ func (s *ProxyRepositoryServer) GetInstanceURL(ctx context.Context, req *cipdpb.
 }
 
 // DescribeClient implements the corresponding RPC.
-func (s *ProxyRepositoryServer) DescribeClient(ctx context.Context, req *cipdpb.DescribeClientRequest) (*cipdpb.DescribeClientResponse, error) {
+func (s *ProxyRepositoryServer) DescribeClient(ctx context.Context, req *repopb.DescribeClientRequest) (*repopb.DescribeClientResponse, error) {
 	policy := s.Policy.DescribeClient
 	if policy == nil {
 		return nil, deniedByPolicy("DescribeClient", "")

@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 // ProcessingResult holds information extracted from the package instance file.
@@ -122,17 +122,17 @@ func (p *ProcessingResult) ReadResultIntoStruct(s *structpb.Struct) error {
 }
 
 // Proto returns cipd.Processor proto with information from this entity.
-func (p *ProcessingResult) Proto() (*api.Processor, error) {
-	out := &api.Processor{Id: p.ProcID}
+func (p *ProcessingResult) Proto() (*repopb.Processor, error) {
+	out := &repopb.Processor{Id: p.ProcID}
 
 	if p.CreatedTs.IsZero() {
-		out.State = api.Processor_PENDING // no result yet
+		out.State = repopb.Processor_PENDING // no result yet
 		return out, nil
 	}
 	out.FinishedTs = timestamppb.New(p.CreatedTs)
 
 	if p.Success {
-		out.State = api.Processor_SUCCEEDED
+		out.State = repopb.Processor_SUCCEEDED
 		res := &structpb.Struct{}
 		if err := p.ReadResultIntoStruct(res); err != nil {
 			return nil, err
@@ -141,7 +141,7 @@ func (p *ProcessingResult) Proto() (*api.Processor, error) {
 			out.Result = res
 		}
 	} else {
-		out.State = api.Processor_FAILED
+		out.State = repopb.Processor_FAILED
 		out.Error = p.Error
 	}
 

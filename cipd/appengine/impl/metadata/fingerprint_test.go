@@ -21,20 +21,20 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 func TestCalculateFingerprint(t *testing.T) {
 	t.Parallel()
 
-	call := func(md *api.PrefixMetadata) string {
+	call := func(md *repopb.PrefixMetadata) string {
 		CalculateFingerprint(md)
 		return md.Fingerprint
 	}
 
 	ftt.Run("Works", t, func(t *ftt.Test) {
-		assert.Loosely(t, call(&api.PrefixMetadata{}), should.Equal("MvCPQuqSLssfbtMFiqBzZOdINQo"))
-		assert.Loosely(t, call(&api.PrefixMetadata{Fingerprint: "zzz"}), should.Equal("MvCPQuqSLssfbtMFiqBzZOdINQo"))
-		assert.Loosely(t, call(&api.PrefixMetadata{Prefix: "a"}), should.Equal("B96o1ElnpJUTe-Hf3dyT_S7KoTw"))
+		assert.Loosely(t, call(&repopb.PrefixMetadata{}), should.Equal("MvCPQuqSLssfbtMFiqBzZOdINQo"))
+		assert.Loosely(t, call(&repopb.PrefixMetadata{Fingerprint: "zzz"}), should.Equal("MvCPQuqSLssfbtMFiqBzZOdINQo"))
+		assert.Loosely(t, call(&repopb.PrefixMetadata{Prefix: "a"}), should.Equal("B96o1ElnpJUTe-Hf3dyT_S7KoTw"))
 	})
 }

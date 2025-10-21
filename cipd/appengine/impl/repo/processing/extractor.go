@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/srvhttp"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/common"
@@ -39,11 +39,11 @@ type Extractor struct {
 	CAS cas.StorageServer
 
 	// PrimaryHash is the hash algorithm to use to name the file in the CAS.
-	PrimaryHash api.HashAlgo
+	PrimaryHash caspb.HashAlgo
 
 	// AlternativeHashes is a list of hashes to calculate in addition to
 	// the PrimaryHash.
-	AlternativeHashes []api.HashAlgo
+	AlternativeHashes []caspb.HashAlgo
 
 	// Uploader returns io.Writer that uploads to the given destination URL.
 	//
@@ -56,16 +56,16 @@ type Extractor struct {
 
 // ExtractionResult is a result of a successful file extraction.
 type ExtractionResult struct {
-	Path   string                     // the file path passed to Run
-	Ref    *api.ObjectRef             // reference to the extracted file in the CAS
-	Size   int64                      // the size of the file in bytes
-	Hashes map[api.HashAlgo]hash.Hash // all calculated hashes
+	Path   string                       // the file path passed to Run
+	Ref    *caspb.ObjectRef             // reference to the extracted file in the CAS
+	Size   int64                        // the size of the file in bytes
+	Hashes map[caspb.HashAlgo]hash.Hash // all calculated hashes
 }
 
 // Run extracts a single file from the package.
 func (ex *Extractor) Run(ctx context.Context, path string) (*ExtractionResult, error) {
 	// Collect a map with all output hashes.
-	hashes := make(map[api.HashAlgo]hash.Hash, len(ex.AlternativeHashes)+1)
+	hashes := make(map[caspb.HashAlgo]hash.Hash, len(ex.AlternativeHashes)+1)
 	for _, algo := range ex.AlternativeHashes {
 		hashes[algo] = common.MustNewHash(algo)
 	}
@@ -81,16 +81,15 @@ func (ex *Extractor) Run(ctx context.Context, path string) (*ExtractionResult, e
 	defer reader.Close() // we don't care about errors here
 
 	// Start writing the result to CAS.
-	op, err := ex.CAS.BeginUpload(ctx, &api.BeginUploadRequest{
+	op, err := ex.CAS.BeginUpload(ctx, &caspb.BeginUploadRequest{
 		HashAlgo: ex.PrimaryHash,
 	})
 	if err != nil {
 		return nil, transient.Tag.Apply(errors.
-
-			// Grab an io.Writer that uploads to Google Storage.
 			Fmt("failed to open a CAS upload: %w", err))
 	}
 
+	// Grab an io.Writer that uploads to Google Storage.
 	factory := ex.Uploader
 	if factory == nil {
 		factory = gsUploader
@@ -138,7 +137,7 @@ func (ex *Extractor) Run(ctx context.Context, path string) (*ExtractionResult, e
 	if err != nil {
 		// Best effort cleanup of the upload session. It's not a big deal if this
 		// fails and the upload stays as garbage.
-		_, cancelErr := ex.CAS.CancelUpload(ctx, &api.CancelUploadRequest{
+		_, cancelErr := ex.CAS.CancelUpload(ctx, &caspb.CancelUploadRequest{
 			UploadOperationId: op.OperationId,
 		})
 		if cancelErr != nil {
@@ -149,11 +148,11 @@ func (ex *Extractor) Run(ctx context.Context, path string) (*ExtractionResult, e
 
 	// Skip the hash calculation in CAS by enforcing the hash, we've just
 	// calculated it.
-	extractedRef := &api.ObjectRef{
+	extractedRef := &caspb.ObjectRef{
 		HashAlgo:  ex.PrimaryHash,
 		HexDigest: common.HexDigest(hashes[ex.PrimaryHash]),
 	}
-	op, err = ex.CAS.FinishUpload(ctx, &api.FinishUploadRequest{
+	op, err = ex.CAS.FinishUpload(ctx, &caspb.FinishUploadRequest{
 		UploadOperationId: op.OperationId,
 		ForceHash:         extractedRef,
 	})
@@ -162,7 +161,7 @@ func (ex *Extractor) Run(ctx context.Context, path string) (*ExtractionResult, e
 	switch {
 	case err != nil:
 		return nil, transient.Tag.Apply(errors.Fmt("failed to finalize the CAS upload: %w", err))
-	case op.Status != api.UploadStatus_PUBLISHED:
+	case op.Status != caspb.UploadStatus_PUBLISHED:
 		return nil, errors.Fmt("unexpected upload status from CAS %s: %s", op.Status, op.ErrorMessage)
 	}
 

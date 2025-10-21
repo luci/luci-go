@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 )
 
 func TestOperation(t *testing.T) {
@@ -43,28 +43,28 @@ func TestOperation(t *testing.T) {
 		t.Run("ToProto", func(t *ftt.Test) {
 			op := Operation{
 				ID:        123,
-				Status:    api.UploadStatus_UPLOADING,
+				Status:    caspb.UploadStatus_UPLOADING,
 				UploadURL: "http://upload-url.example.com",
-				HashAlgo:  api.HashAlgo_SHA256,
+				HashAlgo:  caspb.HashAlgo_SHA256,
 				HexDigest: strings.Repeat("a", 64),
 				Error:     "zzz",
 			}
 
 			// No Object when in UPLOADING.
-			assert.Loosely(t, op.ToProto("wrappedID"), should.Resemble(&api.UploadOperation{
+			assert.Loosely(t, op.ToProto("wrappedID"), should.Resemble(&caspb.UploadOperation{
 				OperationId:  "wrappedID",
 				UploadUrl:    "http://upload-url.example.com",
-				Status:       api.UploadStatus_UPLOADING,
+				Status:       caspb.UploadStatus_UPLOADING,
 				ErrorMessage: "zzz",
 			}))
 
 			// With Object when in PUBLISHED.
-			op.Status = api.UploadStatus_PUBLISHED
-			assert.Loosely(t, op.ToProto("wrappedID"), should.Resemble(&api.UploadOperation{
+			op.Status = caspb.UploadStatus_PUBLISHED
+			assert.Loosely(t, op.ToProto("wrappedID"), should.Resemble(&caspb.UploadOperation{
 				OperationId: "wrappedID",
 				UploadUrl:   "http://upload-url.example.com",
-				Status:      api.UploadStatus_PUBLISHED,
-				Object: &api.ObjectRef{
+				Status:      caspb.UploadStatus_PUBLISHED,
+				Object: &caspb.ObjectRef{
 					HashAlgo:  op.HashAlgo,
 					HexDigest: op.HexDigest,
 				},
@@ -75,20 +75,20 @@ func TestOperation(t *testing.T) {
 		t.Run("Advance works", func(t *ftt.Test) {
 			op := &Operation{
 				ID:     123,
-				Status: api.UploadStatus_UPLOADING,
+				Status: caspb.UploadStatus_UPLOADING,
 			}
 
 			t.Run("Success", func(t *ftt.Test) {
 				assert.Loosely(t, datastore.Put(ctx, op), should.BeNil)
 				newOp, err := op.Advance(ctx, func(_ context.Context, o *Operation) error {
-					o.Status = api.UploadStatus_ERRORED
+					o.Status = caspb.UploadStatus_ERRORED
 					o.Error = "zzz"
 					return nil
 				})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, newOp, should.Resemble(&Operation{
 					ID:        123,
-					Status:    api.UploadStatus_ERRORED,
+					Status:    caspb.UploadStatus_ERRORED,
 					Error:     "zzz",
 					UpdatedTS: testTime,
 				}))
@@ -103,7 +103,7 @@ func TestOperation(t *testing.T) {
 
 			t.Run("Skips because of unexpected status", func(t *ftt.Test) {
 				cpy := *op
-				cpy.Status = api.UploadStatus_ERRORED
+				cpy.Status = caspb.UploadStatus_ERRORED
 				assert.Loosely(t, datastore.Put(ctx, &cpy), should.BeNil)
 
 				newOp, err := op.Advance(ctx, func(context.Context, *Operation) error {

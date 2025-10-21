@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -171,10 +171,10 @@ func SetPackageHidden(ctx context.Context, pkg string, hidden bool) error {
 			return transient.Tag.Apply(err)
 		}
 
-		ev := api.EventKind_PACKAGE_HIDDEN
+		ev := repopb.EventKind_PACKAGE_HIDDEN
 		if !hidden {
-			ev = api.EventKind_PACKAGE_UNHIDDEN
+			ev = repopb.EventKind_PACKAGE_UNHIDDEN
 		}
-		return EmitEvent(ctx, &api.Event{Kind: ev, Package: pkg})
+		return EmitEvent(ctx, &repopb.Event{Kind: ev, Package: pkg})
 	})
 }

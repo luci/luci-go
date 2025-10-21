@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 func TestPrefixMetadataToACLs(t *testing.T) {
@@ -33,23 +33,23 @@ func TestPrefixMetadataToACLs(t *testing.T) {
 	epoch := time.Date(2018, time.February, 1, 2, 3, 0, 0, time.UTC)
 
 	ftt.Run("Works", t, func(t *ftt.Test) {
-		out := prefixMetadataToACLs(&api.InheritedPrefixMetadata{
-			PerPrefixMetadata: []*api.PrefixMetadata{
+		out := prefixMetadataToACLs(&repopb.InheritedPrefixMetadata{
+			PerPrefixMetadata: []*repopb.PrefixMetadata{
 				{
 					Prefix: "a",
-					Acls: []*api.PrefixMetadata_ACL{
-						{Role: api.Role_READER, Principals: []string{"group:a"}},
-						{Role: api.Role_READER, Principals: []string{"group:b"}},
-						{Role: api.Role_WRITER, Principals: []string{"group:b"}},
-						{Role: api.Role_OWNER, Principals: []string{"group:c"}},
+					Acls: []*repopb.PrefixMetadata_ACL{
+						{Role: repopb.Role_READER, Principals: []string{"group:a"}},
+						{Role: repopb.Role_READER, Principals: []string{"group:b"}},
+						{Role: repopb.Role_WRITER, Principals: []string{"group:b"}},
+						{Role: repopb.Role_OWNER, Principals: []string{"group:c"}},
 					},
 					UpdateUser: "user:a-updater@example.com",
 					UpdateTime: timestamppb.New(epoch),
 				},
 				{
 					Prefix: "a/b/c",
-					Acls: []*api.PrefixMetadata_ACL{
-						{Role: api.Role_OWNER, Principals: []string{"group:c"}},
+					Acls: []*repopb.PrefixMetadata_ACL{
+						{Role: repopb.Role_OWNER, Principals: []string{"group:c"}},
 					},
 					UpdateUser: "user:c-updater@example.com",
 					UpdateTime: timestamppb.New(epoch),
@@ -93,10 +93,10 @@ func TestPrefixMetadataToACLs(t *testing.T) {
 func TestMutateACLs(t *testing.T) {
 	t.Parallel()
 
-	original := func() *api.PrefixMetadata {
-		return &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
-				{Role: api.Role_READER, Principals: []string{"group:a"}},
+	original := func() *repopb.PrefixMetadata {
+		return &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
+				{Role: repopb.Role_READER, Principals: []string{"group:a"}},
 			},
 		}
 	}
@@ -109,9 +109,9 @@ func TestMutateACLs(t *testing.T) {
 		})
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, dirty, should.BeTrue)
-		assert.That(t, meta, should.Match(&api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
-				{Role: api.Role_OWNER, Principals: []string{"group:b"}},
+		assert.That(t, meta, should.Match(&repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
+				{Role: repopb.Role_OWNER, Principals: []string{"group:b"}},
 			},
 		}))
 	})
@@ -151,34 +151,34 @@ func TestGrantRevokeRole(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Grant role", t, func(t *ftt.Test) {
-		m := &api.PrefixMetadata{}
+		m := &repopb.PrefixMetadata{}
 
-		assert.Loosely(t, grantRole(m, api.Role_READER, "group:a"), should.BeTrue)
-		assert.Loosely(t, grantRole(m, api.Role_READER, "group:b"), should.BeTrue)
-		assert.Loosely(t, grantRole(m, api.Role_READER, "group:a"), should.BeFalse)
-		assert.Loosely(t, grantRole(m, api.Role_WRITER, "group:a"), should.BeTrue)
+		assert.Loosely(t, grantRole(m, repopb.Role_READER, "group:a"), should.BeTrue)
+		assert.Loosely(t, grantRole(m, repopb.Role_READER, "group:b"), should.BeTrue)
+		assert.Loosely(t, grantRole(m, repopb.Role_READER, "group:a"), should.BeFalse)
+		assert.Loosely(t, grantRole(m, repopb.Role_WRITER, "group:a"), should.BeTrue)
 
-		assert.Loosely(t, m, should.Resemble(&api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
-				{Role: api.Role_READER, Principals: []string{"group:a", "group:b"}},
-				{Role: api.Role_WRITER, Principals: []string{"group:a"}},
+		assert.Loosely(t, m, should.Resemble(&repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
+				{Role: repopb.Role_READER, Principals: []string{"group:a", "group:b"}},
+				{Role: repopb.Role_WRITER, Principals: []string{"group:a"}},
 			},
 		}))
 	})
 
 	ftt.Run("Revoke role", t, func(t *ftt.Test) {
-		m := &api.PrefixMetadata{
-			Acls: []*api.PrefixMetadata_ACL{
-				{Role: api.Role_READER, Principals: []string{"group:a", "group:b"}},
-				{Role: api.Role_WRITER, Principals: []string{"group:a"}},
+		m := &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
+				{Role: repopb.Role_READER, Principals: []string{"group:a", "group:b"}},
+				{Role: repopb.Role_WRITER, Principals: []string{"group:a"}},
 			},
 		}
 
-		assert.Loosely(t, revokeRole(m, api.Role_READER, "group:a"), should.BeTrue)
-		assert.Loosely(t, revokeRole(m, api.Role_READER, "group:b"), should.BeTrue)
-		assert.Loosely(t, revokeRole(m, api.Role_READER, "group:a"), should.BeFalse)
-		assert.Loosely(t, revokeRole(m, api.Role_WRITER, "group:a"), should.BeTrue)
+		assert.Loosely(t, revokeRole(m, repopb.Role_READER, "group:a"), should.BeTrue)
+		assert.Loosely(t, revokeRole(m, repopb.Role_READER, "group:b"), should.BeTrue)
+		assert.Loosely(t, revokeRole(m, repopb.Role_READER, "group:a"), should.BeFalse)
+		assert.Loosely(t, revokeRole(m, repopb.Role_WRITER, "group:a"), should.BeTrue)
 
-		assert.Loosely(t, m, should.Resemble(&api.PrefixMetadata{}))
+		assert.Loosely(t, m, should.Resemble(&repopb.PrefixMetadata{}))
 	})
 }

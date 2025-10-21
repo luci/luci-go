@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 )
 
@@ -190,15 +190,15 @@ func TestSetPackageHidden(t *testing.T) {
 		assert.Loosely(t, show("a"), should.BeNil)
 		assert.Loosely(t, isHidden("a"), should.BeFalse)
 
-		assert.Loosely(t, GetEvents(ctx), should.Match([]*api.Event{
+		assert.Loosely(t, GetEvents(ctx), should.Match([]*repopb.Event{
 			{
-				Kind:    api.EventKind_PACKAGE_UNHIDDEN,
+				Kind:    repopb.EventKind_PACKAGE_UNHIDDEN,
 				Package: "a",
 				Who:     string(testutil.TestUser),
 				When:    timestamppb.New(testutil.TestTime.Add(time.Second)),
 			},
 			{
-				Kind:    api.EventKind_PACKAGE_HIDDEN,
+				Kind:    repopb.EventKind_PACKAGE_HIDDEN,
 				Package: "a",
 				Who:     string(testutil.TestUser),
 				When:    timestamppb.New(testutil.TestTime),

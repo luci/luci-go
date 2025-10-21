@@ -22,7 +22,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -32,15 +32,15 @@ import (
 // Not terribly efficient, shouldn't be used with a large number of entries.
 type MetadataStore struct {
 	l     sync.Mutex
-	metas map[string]*api.PrefixMetadata // e.g. "/a/b/c/" => metadata
+	metas map[string]*repopb.PrefixMetadata // e.g. "/a/b/c/" => metadata
 }
 
 // Populate adds a metadata entry to the storage.
 //
 // If populates Prefix and Fingerprint. Returns the added item. Panics if the
 // prefix is bad or the given metadata is empty.
-func (s *MetadataStore) Populate(prefix string, m *api.PrefixMetadata) *api.PrefixMetadata {
-	meta, err := s.UpdateMetadata(context.Background(), prefix, func(_ context.Context, e *api.PrefixMetadata) error {
+func (s *MetadataStore) Populate(prefix string, m *repopb.PrefixMetadata) *repopb.PrefixMetadata {
+	meta, err := s.UpdateMetadata(context.Background(), prefix, func(_ context.Context, e *repopb.PrefixMetadata) error {
 		proto.Reset(e)
 		proto.Merge(e, m)
 		return nil
@@ -70,7 +70,7 @@ func (s *MetadataStore) Purge(prefix string) {
 
 // GetMetadata fetches metadata associated with the given prefix and all
 // parent prefixes.
-func (s *MetadataStore) GetMetadata(ctx context.Context, prefix string) ([]*api.PrefixMetadata, error) {
+func (s *MetadataStore) GetMetadata(ctx context.Context, prefix string) ([]*repopb.PrefixMetadata, error) {
 	prefix, err := normPrefix(prefix)
 	if err != nil {
 		return nil, err
@@ -79,7 +79,7 @@ func (s *MetadataStore) GetMetadata(ctx context.Context, prefix string) ([]*api.
 	s.l.Lock()
 	defer s.l.Unlock()
 
-	var metas []*api.PrefixMetadata
+	var metas []*repopb.PrefixMetadata
 	for p := range s.metas {
 		if strings.HasPrefix(prefix, p) {
 			metas = append(metas, cloneMetadata(s.metas[p]))
@@ -123,7 +123,7 @@ func (s *MetadataStore) VisitMetadata(ctx context.Context, prefix string, cb met
 
 // UpdateMetadata transactionally updates or creates metadata of some
 // prefix.
-func (s *MetadataStore) UpdateMetadata(ctx context.Context, prefix string, cb func(ctx context.Context, m *api.PrefixMetadata) error) (*api.PrefixMetadata, error) {
+func (s *MetadataStore) UpdateMetadata(ctx context.Context, prefix string, cb func(ctx context.Context, m *repopb.PrefixMetadata) error) (*repopb.PrefixMetadata, error) {
 	prefix, err := common.ValidatePackagePrefix(prefix)
 	if err != nil {
 		return nil, err
@@ -135,7 +135,7 @@ func (s *MetadataStore) UpdateMetadata(ctx context.Context, prefix string, cb fu
 	key, _ := normPrefix(prefix)
 	before := s.metas[key] // the metadata before the callback
 	if before == nil {
-		before = &api.PrefixMetadata{Prefix: prefix}
+		before = &repopb.PrefixMetadata{Prefix: prefix}
 	}
 
 	// Don't let the callback modify or retain the internal data.
@@ -160,7 +160,7 @@ func (s *MetadataStore) UpdateMetadata(ctx context.Context, prefix string, cb fu
 	// Calculate the new fingerprint and put the metadata into the storage.
 	metadata.CalculateFingerprint(meta)
 	if s.metas == nil {
-		s.metas = make(map[string]*api.PrefixMetadata, 1)
+		s.metas = make(map[string]*repopb.PrefixMetadata, 1)
 	}
 	s.metas[key] = cloneMetadata(meta)
 	return meta, nil
@@ -253,6 +253,6 @@ func normPrefix(p string) (string, error) {
 }
 
 // cloneMetadata makes a deep copy of 'm'.
-func cloneMetadata(m *api.PrefixMetadata) *api.PrefixMetadata {
-	return proto.Clone(m).(*api.PrefixMetadata)
+func cloneMetadata(m *repopb.PrefixMetadata) *repopb.PrefixMetadata {
+	return proto.Clone(m).(*repopb.PrefixMetadata)
 }

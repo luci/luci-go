@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/appengine/impl/bootstrap"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
@@ -104,7 +104,7 @@ func (bs *BootstrapPackageExtractor) Run(ctx context.Context, inst *model.Instan
 	result, err := (&Extractor{
 		Reader:      pkg,
 		CAS:         bs.CAS,
-		PrimaryHash: api.HashAlgo_SHA256,
+		PrimaryHash: caspb.HashAlgo_SHA256,
 		Uploader:    bs.uploader,
 	}).Run(ctx, executable)
 	if err != nil {

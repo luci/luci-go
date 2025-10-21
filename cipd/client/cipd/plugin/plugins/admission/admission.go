@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/plugins"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 )
@@ -52,7 +52,7 @@ type InstanceInfo interface {
 	// Calls `cb` for each visited entry until all entries are successfully
 	// visited or the callback returns false. Returns an error if the RPC to
 	// the CIPD backend fails.
-	VisitMetadata(ctx context.Context, keys []string, pageSize int, cb func(md *api.InstanceMetadata) bool) error
+	VisitMetadata(ctx context.Context, keys []string, pageSize int, cb func(md *repopb.InstanceMetadata) bool) error
 }
 
 // Run executes the run loop of an admission plugin.
@@ -122,7 +122,7 @@ type infoImpl struct {
 	admission *protocol.Admission
 }
 
-func (v *infoImpl) VisitMetadata(ctx context.Context, keys []string, pageSize int, cb func(md *api.InstanceMetadata) bool) error {
+func (v *infoImpl) VisitMetadata(ctx context.Context, keys []string, pageSize int, cb func(md *repopb.InstanceMetadata) bool) error {
 	if pageSize <= 0 {
 		pageSize = 20
 	}

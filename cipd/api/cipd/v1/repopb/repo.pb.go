@@ -18,9 +18,10 @@
 // 	protoc        v6.32.0
 // source: go.chromium.org/luci/cipd/api/cipd/v1/repo.proto
 
-package api
+package repopb
 
 import (
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	status "google.golang.org/genproto/googleapis/rpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -667,7 +668,7 @@ type Instance struct {
 	// A name of the package, e.g. "a/b/c/d".
 	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// A reference to the instance file in the storage.
-	Instance *ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
+	Instance *caspb.ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	// User who registered the instance (output only).
 	RegisteredBy string `protobuf:"bytes,3,opt,name=registered_by,json=registeredBy,proto3" json:"registered_by,omitempty"`
 	// When the instance was registered (output only).
@@ -713,7 +714,7 @@ func (x *Instance) GetPackage() string {
 	return ""
 }
 
-func (x *Instance) GetInstance() *ObjectRef {
+func (x *Instance) GetInstance() *caspb.ObjectRef {
 	if x != nil {
 		return x.Instance
 	}
@@ -746,7 +747,7 @@ type RegisterInstanceResponse struct {
 	// For status NOT_UPLOADED contains a new upload operation that can be used
 	// together with Storage service to upload the instance file. Not set for
 	// other statuses.
-	UploadOp      *UploadOperation `protobuf:"bytes,3,opt,name=upload_op,json=uploadOp,proto3" json:"upload_op,omitempty"`
+	UploadOp      *caspb.UploadOperation `protobuf:"bytes,3,opt,name=upload_op,json=uploadOp,proto3" json:"upload_op,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -795,7 +796,7 @@ func (x *RegisterInstanceResponse) GetInstance() *Instance {
 	return nil
 }
 
-func (x *RegisterInstanceResponse) GetUploadOp() *UploadOperation {
+func (x *RegisterInstanceResponse) GetUploadOp() *caspb.UploadOperation {
 	if x != nil {
 		return x.UploadOp
 	}
@@ -1065,7 +1066,7 @@ type Ref struct {
 	// Name of the package where the ref is defined.
 	Package string `protobuf:"bytes,2,opt,name=package,proto3" json:"package,omitempty"`
 	// A package instance the ref is pointing to.
-	Instance *ObjectRef `protobuf:"bytes,3,opt,name=instance,proto3" json:"instance,omitempty"`
+	Instance *caspb.ObjectRef `protobuf:"bytes,3,opt,name=instance,proto3" json:"instance,omitempty"`
 	// User who modified this ref the last time (output only).
 	ModifiedBy string `protobuf:"bytes,4,opt,name=modified_by,json=modifiedBy,proto3" json:"modified_by,omitempty"`
 	// When the ref was modified the last time (output only).
@@ -1118,7 +1119,7 @@ func (x *Ref) GetPackage() string {
 	return ""
 }
 
-func (x *Ref) GetInstance() *ObjectRef {
+func (x *Ref) GetInstance() *caspb.ObjectRef {
 	if x != nil {
 		return x.Instance
 	}
@@ -1368,7 +1369,7 @@ type AttachTagsRequest struct {
 	// The package that holds the instance we attach tags to.
 	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// The instance we attach tags to.
-	Instance *ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
+	Instance *caspb.ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	// One or more tags to attach (order doesn't matter).
 	Tags          []*Tag `protobuf:"bytes,3,rep,name=tags,proto3" json:"tags,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1412,7 +1413,7 @@ func (x *AttachTagsRequest) GetPackage() string {
 	return ""
 }
 
-func (x *AttachTagsRequest) GetInstance() *ObjectRef {
+func (x *AttachTagsRequest) GetInstance() *caspb.ObjectRef {
 	if x != nil {
 		return x.Instance
 	}
@@ -1431,7 +1432,7 @@ type DetachTagsRequest struct {
 	// The package that holds the instance we detach tags from.
 	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// The instance we detach tags from.
-	Instance *ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
+	Instance *caspb.ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	// One or more tags to detach (order doesn't matter).
 	Tags          []*Tag `protobuf:"bytes,3,rep,name=tags,proto3" json:"tags,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1475,7 +1476,7 @@ func (x *DetachTagsRequest) GetPackage() string {
 	return ""
 }
 
-func (x *DetachTagsRequest) GetInstance() *ObjectRef {
+func (x *DetachTagsRequest) GetInstance() *caspb.ObjectRef {
 	if x != nil {
 		return x.Instance
 	}
@@ -1590,7 +1591,7 @@ type AttachMetadataRequest struct {
 	// The package that holds the instance we attach metadata to.
 	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// The instance we attach metadata to.
-	Instance *ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
+	Instance *caspb.ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	// One or more metadata entries to attach.
 	Metadata      []*InstanceMetadata `protobuf:"bytes,3,rep,name=metadata,proto3" json:"metadata,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1634,7 +1635,7 @@ func (x *AttachMetadataRequest) GetPackage() string {
 	return ""
 }
 
-func (x *AttachMetadataRequest) GetInstance() *ObjectRef {
+func (x *AttachMetadataRequest) GetInstance() *caspb.ObjectRef {
 	if x != nil {
 		return x.Instance
 	}
@@ -1653,7 +1654,7 @@ type DetachMetadataRequest struct {
 	// The package that holds the instance we detach metadata from.
 	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// The instance we detach metadata from.
-	Instance *ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
+	Instance *caspb.ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	// Entries to detach: only 'fingerprint' or 'key'+'value' are used.
 	Metadata      []*InstanceMetadata `protobuf:"bytes,3,rep,name=metadata,proto3" json:"metadata,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1697,7 +1698,7 @@ func (x *DetachMetadataRequest) GetPackage() string {
 	return ""
 }
 
-func (x *DetachMetadataRequest) GetInstance() *ObjectRef {
+func (x *DetachMetadataRequest) GetInstance() *caspb.ObjectRef {
 	if x != nil {
 		return x.Instance
 	}
@@ -1716,7 +1717,7 @@ type ListMetadataRequest struct {
 	// The package that holds the instance we list metadata of.
 	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// The instance to list metadata of.
-	Instance *ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
+	Instance *caspb.ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	// Metadata keys to limit the listing to or empty to list all metadata.
 	Keys []string `protobuf:"bytes,3,rep,name=keys,proto3" json:"keys,omitempty"`
 	// Number of results to return on one page. Ignored for now.
@@ -1764,7 +1765,7 @@ func (x *ListMetadataRequest) GetPackage() string {
 	return ""
 }
 
-func (x *ListMetadataRequest) GetInstance() *ObjectRef {
+func (x *ListMetadataRequest) GetInstance() *caspb.ObjectRef {
 	if x != nil {
 		return x.Instance
 	}
@@ -1906,7 +1907,7 @@ type GetInstanceURLRequest struct {
 	// The package that holds the instance we want to get URL of.
 	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// The instance we want to get URL of.
-	Instance      *ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
+	Instance      *caspb.ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1948,7 +1949,7 @@ func (x *GetInstanceURLRequest) GetPackage() string {
 	return ""
 }
 
-func (x *GetInstanceURLRequest) GetInstance() *ObjectRef {
+func (x *GetInstanceURLRequest) GetInstance() *caspb.ObjectRef {
 	if x != nil {
 		return x.Instance
 	}
@@ -2043,7 +2044,7 @@ type DescribeInstanceRequest struct {
 	// The package that holds the instance we want to get the info for.
 	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// The instance we want to get the info for.
-	Instance *ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
+	Instance *caspb.ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	// Whether the response should include "refs" field.
 	DescribeRefs bool `protobuf:"varint,3,opt,name=describe_refs,json=describeRefs,proto3" json:"describe_refs,omitempty"`
 	// Whether the response should include "tags" field.
@@ -2093,7 +2094,7 @@ func (x *DescribeInstanceRequest) GetPackage() string {
 	return ""
 }
 
-func (x *DescribeInstanceRequest) GetInstance() *ObjectRef {
+func (x *DescribeInstanceRequest) GetInstance() *caspb.ObjectRef {
 	if x != nil {
 		return x.Instance
 	}
@@ -2227,7 +2228,7 @@ type DescribeClientRequest struct {
 	// For example 'infra/tools/cipd/linux-amd64'.
 	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// The client instance we want to get the info about.
-	Instance      *ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
+	Instance      *caspb.ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2269,7 +2270,7 @@ func (x *DescribeClientRequest) GetPackage() string {
 	return ""
 }
 
-func (x *DescribeClientRequest) GetInstance() *ObjectRef {
+func (x *DescribeClientRequest) GetInstance() *caspb.ObjectRef {
 	if x != nil {
 		return x.Instance
 	}
@@ -2290,9 +2291,9 @@ type DescribeClientResponse struct {
 	// algo they support from client_ref_aliases list and use it for validation.
 	//
 	// Thus this field is mostly FYI.
-	ClientRef *ObjectRef `protobuf:"bytes,2,opt,name=client_ref,json=clientRef,proto3" json:"client_ref,omitempty"`
+	ClientRef *caspb.ObjectRef `protobuf:"bytes,2,opt,name=client_ref,json=clientRef,proto3" json:"client_ref,omitempty"`
 	// Signed URL pointing to the extracted client binary in the storage.
-	ClientBinary *ObjectURL `protobuf:"bytes,3,opt,name=client_binary,json=clientBinary,proto3" json:"client_binary,omitempty"`
+	ClientBinary *caspb.ObjectURL `protobuf:"bytes,3,opt,name=client_binary,json=clientBinary,proto3" json:"client_binary,omitempty"`
 	// Size of the client binary in bytes.
 	ClientSize int64 `protobuf:"varint,4,opt,name=client_size,json=clientSize,proto3" json:"client_size,omitempty"`
 	// SHA1 digest of the client binary (as hex string).
@@ -2310,7 +2311,7 @@ type DescribeClientResponse struct {
 	//
 	// The list at least includes 'client_ref' itself and SHA1 hash (matching
 	// legacy_sha1). The order is undefined.
-	ClientRefAliases []*ObjectRef `protobuf:"bytes,6,rep,name=client_ref_aliases,json=clientRefAliases,proto3" json:"client_ref_aliases,omitempty"`
+	ClientRefAliases []*caspb.ObjectRef `protobuf:"bytes,6,rep,name=client_ref_aliases,json=clientRefAliases,proto3" json:"client_ref_aliases,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -2352,14 +2353,14 @@ func (x *DescribeClientResponse) GetInstance() *Instance {
 	return nil
 }
 
-func (x *DescribeClientResponse) GetClientRef() *ObjectRef {
+func (x *DescribeClientResponse) GetClientRef() *caspb.ObjectRef {
 	if x != nil {
 		return x.ClientRef
 	}
 	return nil
 }
 
-func (x *DescribeClientResponse) GetClientBinary() *ObjectURL {
+func (x *DescribeClientResponse) GetClientBinary() *caspb.ObjectURL {
 	if x != nil {
 		return x.ClientBinary
 	}
@@ -2380,7 +2381,7 @@ func (x *DescribeClientResponse) GetLegacySha1() string {
 	return ""
 }
 
-func (x *DescribeClientResponse) GetClientRefAliases() []*ObjectRef {
+func (x *DescribeClientResponse) GetClientRefAliases() []*caspb.ObjectRef {
 	if x != nil {
 		return x.ClientRefAliases
 	}
@@ -2615,8 +2616,8 @@ type DescribeBootstrapBundleResponse_BootstrapFile struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Package       string                 `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`   // the package the file was extracted from
 	Status        *status.Status         `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`     // not OK on errors related to this package
-	Instance      *ObjectRef             `protobuf:"bytes,3,opt,name=instance,proto3" json:"instance,omitempty"` // the resolved package instance
-	File          *ObjectRef             `protobuf:"bytes,4,opt,name=file,proto3" json:"file,omitempty"`         // the extracted file in the CAS
+	Instance      *caspb.ObjectRef       `protobuf:"bytes,3,opt,name=instance,proto3" json:"instance,omitempty"` // the resolved package instance
+	File          *caspb.ObjectRef       `protobuf:"bytes,4,opt,name=file,proto3" json:"file,omitempty"`         // the extracted file in the CAS
 	Name          string                 `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`         // the name of the extracted file
 	Size          int64                  `protobuf:"varint,6,opt,name=size,proto3" json:"size,omitempty"`        // its size in bytes
 	unknownFields protoimpl.UnknownFields
@@ -2667,14 +2668,14 @@ func (x *DescribeBootstrapBundleResponse_BootstrapFile) GetStatus() *status.Stat
 	return nil
 }
 
-func (x *DescribeBootstrapBundleResponse_BootstrapFile) GetInstance() *ObjectRef {
+func (x *DescribeBootstrapBundleResponse_BootstrapFile) GetInstance() *caspb.ObjectRef {
 	if x != nil {
 		return x.Instance
 	}
 	return nil
 }
 
-func (x *DescribeBootstrapBundleResponse_BootstrapFile) GetFile() *ObjectRef {
+func (x *DescribeBootstrapBundleResponse_BootstrapFile) GetFile() *caspb.ObjectRef {
 	if x != nil {
 		return x.File
 	}
@@ -2920,7 +2921,7 @@ const file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_rawDesc = "" +
 	"\x0eGetInstanceURL\x12\x1b.cipd.GetInstanceURLRequest\x1a\x0f.cipd.ObjectURL\x12Q\n" +
 	"\x10DescribeInstance\x12\x1d.cipd.DescribeInstanceRequest\x1a\x1e.cipd.DescribeInstanceResponse\x12K\n" +
 	"\x0eDescribeClient\x12\x1b.cipd.DescribeClientRequest\x1a\x1c.cipd.DescribeClientResponse\x12f\n" +
-	"\x17DescribeBootstrapBundle\x12$.cipd.DescribeBootstrapBundleRequest\x1a%.cipd.DescribeBootstrapBundleResponseB+Z)go.chromium.org/luci/cipd/api/cipd/v1;apib\x06proto3"
+	"\x17DescribeBootstrapBundle\x12$.cipd.DescribeBootstrapBundleRequest\x1a%.cipd.DescribeBootstrapBundleResponseB.Z,go.chromium.org/luci/cipd/api/cipd/v1/repopbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_rawDescOnce sync.Once
@@ -2979,10 +2980,10 @@ var file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_goTypes = []any{
 	(*RolesInPrefixResponse_RoleInPrefix)(nil),            // 39: cipd.RolesInPrefixResponse.RoleInPrefix
 	(*DescribeBootstrapBundleResponse_BootstrapFile)(nil), // 40: cipd.DescribeBootstrapBundleResponse.BootstrapFile
 	(*timestamppb.Timestamp)(nil),                         // 41: google.protobuf.Timestamp
-	(*ObjectRef)(nil),                                     // 42: cipd.ObjectRef
-	(*UploadOperation)(nil),                               // 43: cipd.UploadOperation
+	(*caspb.ObjectRef)(nil),                               // 42: cipd.ObjectRef
+	(*caspb.UploadOperation)(nil),                         // 43: cipd.UploadOperation
 	(*structpb.Struct)(nil),                               // 44: google.protobuf.Struct
-	(*ObjectURL)(nil),                                     // 45: cipd.ObjectURL
+	(*caspb.ObjectURL)(nil),                               // 45: cipd.ObjectURL
 	(*status.Status)(nil),                                 // 46: google.rpc.Status
 	(*emptypb.Empty)(nil),                                 // 47: google.protobuf.Empty
 }
@@ -3098,7 +3099,6 @@ func file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_init() {
 	if File_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto != nil {
 		return
 	}
-	file_go_chromium_org_luci_cipd_api_cipd_v1_cas_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

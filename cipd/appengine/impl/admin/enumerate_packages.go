@@ -21,12 +21,12 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/dsmapper"
 
-	api "go.chromium.org/luci/cipd/api/admin/v1"
+	adminpb "go.chromium.org/luci/cipd/api/admin/v1"
 )
 
 func init() {
 	initMapper(mapperDef{
-		Kind: api.MapperKind_ENUMERATE_PACKAGES,
+		Kind: adminpb.MapperKind_ENUMERATE_PACKAGES,
 		Func: enumPackagesMapper,
 		Config: dsmapper.JobConfig{
 			Query:         dsmapper.Query{Kind: "Package"},
@@ -37,7 +37,7 @@ func init() {
 	})
 }
 
-func enumPackagesMapper(ctx context.Context, _ dsmapper.JobID, _ *api.JobConfig, keys []*datastore.Key) error {
+func enumPackagesMapper(ctx context.Context, _ dsmapper.JobID, _ *adminpb.JobConfig, keys []*datastore.Key) error {
 	for _, k := range keys {
 		logging.Infof(ctx, "Found package: %s", k.StringID())
 	}

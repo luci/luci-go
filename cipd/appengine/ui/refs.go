@@ -20,7 +20,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 type refItem struct {
@@ -30,7 +30,7 @@ type refItem struct {
 	Age   string
 }
 
-func refsListing(refs []*api.Ref, pkg string, now time.Time) []refItem {
+func refsListing(refs []*repopb.Ref, pkg string, now time.Time) []refItem {
 	l := make([]refItem, len(refs))
 	for i, r := range refs {
 		l[i] = refItem{

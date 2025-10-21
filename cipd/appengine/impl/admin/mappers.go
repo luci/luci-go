@@ -24,13 +24,13 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/dsmapper"
 
-	api "go.chromium.org/luci/cipd/api/admin/v1"
+	adminpb "go.chromium.org/luci/cipd/api/admin/v1"
 )
 
 // A registry of mapping job configurations.
 //
 // Populated during init time. See other *.go files in this package.
-var mappers = map[api.MapperKind]*mapperDef{}
+var mappers = map[adminpb.MapperKind]*mapperDef{}
 
 // initMapper is called during init time to register some mapper kind.
 func initMapper(d mapperDef) {
@@ -45,8 +45,8 @@ func initMapper(d mapperDef) {
 // It contains parameters for the mapper (what entity to map over, number of
 // shards, etc), and the actual mapping function.
 type mapperDef struct {
-	Kind   api.MapperKind // also used to derive dsmapper.ID
-	Func   func(context.Context, dsmapper.JobID, *api.JobConfig, []*datastore.Key) error
+	Kind   adminpb.MapperKind // also used to derive dsmapper.ID
+	Func   func(context.Context, dsmapper.JobID, *adminpb.JobConfig, []*datastore.Key) error
 	Config dsmapper.JobConfig // note: Params will be overwritten
 }
 
@@ -57,7 +57,7 @@ func (m *mapperDef) mapperID() dsmapper.ID {
 
 // newMapper creates new instance of a mapping function.
 func (m *mapperDef) newMapper(ctx context.Context, j *dsmapper.Job, shardIdx int) (dsmapper.Mapper, error) {
-	cfg := &api.JobConfig{}
+	cfg := &adminpb.JobConfig{}
 	if err := proto.Unmarshal(j.Config.Params, cfg); err != nil {
 		return nil, errors.Fmt("failed to unmarshal JobConfig: %w", err)
 	}

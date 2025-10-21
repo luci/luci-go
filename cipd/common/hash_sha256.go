@@ -17,9 +17,9 @@ package common
 import (
 	"crypto/sha256"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 )
 
 func init() {
-	registerHashAlgo(api.HashAlgo_SHA256, sha256.New)
+	registerHashAlgo(caspb.HashAlgo_SHA256, sha256.New)
 }

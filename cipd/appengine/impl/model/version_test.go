@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 )
 
@@ -66,22 +66,22 @@ func TestResolveVersion(t *testing.T) {
 				InstanceID: missing.InstanceID,
 			},
 			&Tag{
-				ID:       TagID(&api.Tag{Key: "ver", Value: "1"}),
+				ID:       TagID(&repopb.Tag{Key: "ver", Value: "1"}),
 				Instance: datastore.KeyForObj(ctx, inst1),
 				Tag:      "ver:1",
 			},
 			&Tag{
-				ID:       TagID(&api.Tag{Key: "ver", Value: "ambiguous"}),
+				ID:       TagID(&repopb.Tag{Key: "ver", Value: "ambiguous"}),
 				Instance: datastore.KeyForObj(ctx, inst1),
 				Tag:      "ver:ambiguous",
 			},
 			&Tag{
-				ID:       TagID(&api.Tag{Key: "ver", Value: "ambiguous"}),
+				ID:       TagID(&repopb.Tag{Key: "ver", Value: "ambiguous"}),
 				Instance: datastore.KeyForObj(ctx, inst2),
 				Tag:      "ver:ambiguous",
 			},
 			&Tag{
-				ID:       TagID(&api.Tag{Key: "ver", Value: "broken"}),
+				ID:       TagID(&repopb.Tag{Key: "ver", Value: "broken"}),
 				Instance: datastore.KeyForObj(ctx, missing),
 				Tag:      "ver:broken",
 			},

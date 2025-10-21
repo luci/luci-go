@@ -18,7 +18,7 @@
 // 	protoc        v6.32.0
 // source: go.chromium.org/luci/cipd/api/cipd/v1/events.proto
 
-package api
+package repopb
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -304,7 +304,7 @@ const file_go_chromium_org_luci_cipd_api_cipd_v1_events_proto_rawDesc = "" +
 	"\x15INSTANCE_TAG_ATTACHED\x10\xb0\x02\x12\x1a\n" +
 	"\x15INSTANCE_TAG_DETACHED\x10\xb1\x02\x12\x1f\n" +
 	"\x1aINSTANCE_METADATA_ATTACHED\x10\xb2\x02\x12\x1f\n" +
-	"\x1aINSTANCE_METADATA_DETACHED\x10\xb3\x02B+Z)go.chromium.org/luci/cipd/api/cipd/v1;apib\x06proto3"
+	"\x1aINSTANCE_METADATA_DETACHED\x10\xb3\x02B.Z,go.chromium.org/luci/cipd/api/cipd/v1/repopbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_cipd_api_cipd_v1_events_proto_rawDescOnce sync.Once

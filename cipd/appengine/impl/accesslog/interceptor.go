@@ -33,13 +33,15 @@ import (
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/bqlog"
 
-	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	logpb "go.chromium.org/luci/cipd/api/cipd/v1/logpb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common"
 )
 
 func init() {
 	bqlog.RegisterSink(bqlog.Sink{
-		Prototype: &cipdpb.AccessLogEntry{},
+		Prototype: &logpb.AccessLogEntry{},
 		Table:     "access",
 	})
 }
@@ -54,7 +56,7 @@ func NewUnaryServerInterceptor(opts *server.Options) grpc.UnaryServerInterceptor
 		start := clock.Now(ctx)
 		state := auth.GetState(ctx)
 
-		entry := &cipdpb.AccessLogEntry{
+		entry := &logpb.AccessLogEntry{
 			Method:         info.FullMethod,
 			Timestamp:      start.UnixNano() / 1000,
 			CallIdentity:   string(state.User().Identity),
@@ -94,16 +96,16 @@ func NewUnaryServerInterceptor(opts *server.Options) grpc.UnaryServerInterceptor
 	}
 }
 
-func extractFieldsFromRequest(entry *cipdpb.AccessLogEntry, req any) {
+func extractFieldsFromRequest(entry *logpb.AccessLogEntry, req any) {
 	if x, ok := req.(interface{ GetPackage() string }); ok {
 		entry.Package = x.GetPackage()
 	} else if x, ok := req.(interface{ GetPrefix() string }); ok {
 		entry.Package = x.GetPrefix()
 	}
 
-	if x, ok := req.(interface{ GetInstance() *cipdpb.ObjectRef }); ok {
+	if x, ok := req.(interface{ GetInstance() *caspb.ObjectRef }); ok {
 		entry.Instance = instanceID(x.GetInstance())
-	} else if x, ok := req.(interface{ GetObject() *cipdpb.ObjectRef }); ok {
+	} else if x, ok := req.(interface{ GetObject() *caspb.ObjectRef }); ok {
 		entry.Instance = instanceID(x.GetObject())
 	}
 
@@ -111,25 +113,25 @@ func extractFieldsFromRequest(entry *cipdpb.AccessLogEntry, req any) {
 		entry.Version = x.GetVersion()
 	}
 
-	if x, ok := req.(interface{ GetTags() []*cipdpb.Tag }); ok {
+	if x, ok := req.(interface{ GetTags() []*repopb.Tag }); ok {
 		entry.Tags = tagList(x.GetTags())
 	}
 
 	if x, ok := req.(interface {
-		GetMetadata() []*cipdpb.InstanceMetadata
+		GetMetadata() []*repopb.InstanceMetadata
 	}); ok {
 		entry.Metadata = metadataKeys(x.GetMetadata())
 	}
 
 	// Few one offs that do not follow the pattern.
 	switch r := req.(type) {
-	case *cipdpb.Ref:
+	case *repopb.Ref:
 		entry.Version = r.Name
-	case *cipdpb.DeleteRefRequest:
+	case *repopb.DeleteRefRequest:
 		entry.Version = r.Name
-	case *cipdpb.ListMetadataRequest:
+	case *repopb.ListMetadataRequest:
 		entry.Metadata = r.Keys
-	case *cipdpb.DescribeInstanceRequest:
+	case *repopb.DescribeInstanceRequest:
 		if r.DescribeRefs {
 			entry.Flags = append(entry.Flags, "refs")
 		}
@@ -145,7 +147,7 @@ func extractFieldsFromRequest(entry *cipdpb.AccessLogEntry, req any) {
 	}
 }
 
-func instanceID(ref *cipdpb.ObjectRef) string {
+func instanceID(ref *caspb.ObjectRef) string {
 	if ref == nil {
 		return ""
 	}
@@ -155,7 +157,7 @@ func instanceID(ref *cipdpb.ObjectRef) string {
 	return common.ObjectRefToInstanceID(ref)
 }
 
-func tagList(tags []*cipdpb.Tag) []string {
+func tagList(tags []*repopb.Tag) []string {
 	out := make([]string, len(tags))
 	for i, t := range tags {
 		out[i] = common.JoinInstanceTag(t)
@@ -163,7 +165,7 @@ func tagList(tags []*cipdpb.Tag) []string {
 	return out
 }
 
-func metadataKeys(md []*cipdpb.InstanceMetadata) []string {
+func metadataKeys(md []*repopb.InstanceMetadata) []string {
 	out := make([]string, len(md))
 	for i, d := range md {
 		out[i] = d.Key

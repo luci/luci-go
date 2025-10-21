@@ -21,7 +21,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 // CalculateFingerprint fills in Fingerprint field of the given metadata.
@@ -34,7 +34,7 @@ import (
 // care about exact meaning of the fingerprint, as long as it changes each time
 // we update the metadata (so strictly speaking we can just generate random
 // strings and call them fingerprints).
-func CalculateFingerprint(m *api.PrefixMetadata) {
+func CalculateFingerprint(m *repopb.PrefixMetadata) {
 	m.Fingerprint = ""
 	blob, err := proto.Marshal(m)
 	if err != nil {

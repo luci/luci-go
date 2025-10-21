@@ -17,26 +17,26 @@ package testutil
 import (
 	"context"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	casgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/caspb/grpcpb"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 )
 
 // MockCAS implements cas.StorageServer interface.
 type MockCAS struct {
-	cipdgrpcpb.UnimplementedStorageServer
+	casgrpcpb.UnimplementedStorageServer
 
 	Err error // an error to return or nil to pass through to the callback
 
-	GetReaderImpl    func(context.Context, *api.ObjectRef) (gs.Reader, error)
-	GetObjectURLImpl func(context.Context, *api.GetObjectURLRequest) (*api.ObjectURL, error)
-	BeginUploadImpl  func(context.Context, *api.BeginUploadRequest) (*api.UploadOperation, error)
-	FinishUploadImpl func(context.Context, *api.FinishUploadRequest) (*api.UploadOperation, error)
-	CancelUploadImpl func(context.Context, *api.CancelUploadRequest) (*api.UploadOperation, error)
+	GetReaderImpl    func(context.Context, *caspb.ObjectRef) (gs.Reader, error)
+	GetObjectURLImpl func(context.Context, *caspb.GetObjectURLRequest) (*caspb.ObjectURL, error)
+	BeginUploadImpl  func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error)
+	FinishUploadImpl func(context.Context, *caspb.FinishUploadRequest) (*caspb.UploadOperation, error)
+	CancelUploadImpl func(context.Context, *caspb.CancelUploadRequest) (*caspb.UploadOperation, error)
 }
 
 // GetReader implements the corresponding method of cas.StorageServer interface.
-func (m *MockCAS) GetReader(ctx context.Context, ref *api.ObjectRef) (gs.Reader, error) {
+func (m *MockCAS) GetReader(ctx context.Context, ref *caspb.ObjectRef) (gs.Reader, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
@@ -47,7 +47,7 @@ func (m *MockCAS) GetReader(ctx context.Context, ref *api.ObjectRef) (gs.Reader,
 }
 
 // GetObjectURL implements the corresponding RPC method, see the proto doc.
-func (m *MockCAS) GetObjectURL(ctx context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
+func (m *MockCAS) GetObjectURL(ctx context.Context, r *caspb.GetObjectURLRequest) (*caspb.ObjectURL, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
@@ -58,7 +58,7 @@ func (m *MockCAS) GetObjectURL(ctx context.Context, r *api.GetObjectURLRequest) 
 }
 
 // BeginUpload implements the corresponding RPC method, see the proto doc.
-func (m *MockCAS) BeginUpload(ctx context.Context, r *api.BeginUploadRequest) (*api.UploadOperation, error) {
+func (m *MockCAS) BeginUpload(ctx context.Context, r *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
@@ -69,7 +69,7 @@ func (m *MockCAS) BeginUpload(ctx context.Context, r *api.BeginUploadRequest) (*
 }
 
 // FinishUpload implements the corresponding RPC method, see the proto doc.
-func (m *MockCAS) FinishUpload(ctx context.Context, r *api.FinishUploadRequest) (*api.UploadOperation, error) {
+func (m *MockCAS) FinishUpload(ctx context.Context, r *caspb.FinishUploadRequest) (*caspb.UploadOperation, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
@@ -80,7 +80,7 @@ func (m *MockCAS) FinishUpload(ctx context.Context, r *api.FinishUploadRequest) 
 }
 
 // CancelUpload implements the corresponding RPC method, see the proto doc.
-func (m *MockCAS) CancelUpload(ctx context.Context, r *api.CancelUploadRequest) (*api.UploadOperation, error) {
+func (m *MockCAS) CancelUpload(ctx context.Context, r *caspb.CancelUploadRequest) (*caspb.UploadOperation, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}

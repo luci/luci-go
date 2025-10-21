@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/common/cipderr"
 )
@@ -68,14 +68,14 @@ type ClientDigestsFile struct {
 
 type clientDigestEntry struct {
 	plat string
-	ref  *api.ObjectRef
+	ref  *caspb.ObjectRef
 }
 
 // AddClientRef appends the client's digest given as ObjectRef.
 //
 // Returns an error (platform, hash algo) combination has already been added or
 // the hash is unrecognized.
-func (d *ClientDigestsFile) AddClientRef(plat string, ref *api.ObjectRef) error {
+func (d *ClientDigestsFile) AddClientRef(plat string, ref *caspb.ObjectRef) error {
 	if err := common.ValidateObjectRef(ref, common.KnownHash); err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (d *ClientDigestsFile) AddClientRef(plat string, ref *api.ObjectRef) error 
 //
 // Returns the best hash (higher algo number) or nil if there are no digests
 // for this platform at all.
-func (d *ClientDigestsFile) ClientRef(plat string) (ref *api.ObjectRef) {
+func (d *ClientDigestsFile) ClientRef(plat string) (ref *caspb.ObjectRef) {
 	for _, e := range d.entries {
 		if e.plat == plat && (ref == nil || e.ref.HashAlgo > ref.HashAlgo) {
 			ref = e.ref
@@ -104,7 +104,7 @@ func (d *ClientDigestsFile) ClientRef(plat string) (ref *api.ObjectRef) {
 // Contains returns true if the given ref is among refs for the given platform.
 //
 // Compares 'ref' to all hashes corresponding to 'plat', not only the best one.
-func (d *ClientDigestsFile) Contains(plat string, ref *api.ObjectRef) bool {
+func (d *ClientDigestsFile) Contains(plat string, ref *caspb.ObjectRef) bool {
 	for _, e := range d.entries {
 		if e.plat == plat && proto.Equal(ref, e.ref) {
 			return true
@@ -206,12 +206,12 @@ func ParseClientDigestsFile(r io.Reader) (*ClientDigestsFile, error) {
 			return nil, makeError("each line must have format \"<platform> <algo> <digest>\"")
 		}
 
-		algoIdx := api.HashAlgo_value[strings.ToUpper(tokens[1])]
+		algoIdx := caspb.HashAlgo_value[strings.ToUpper(tokens[1])]
 		if algoIdx == 0 {
 			continue // skip unknown algorithms
 		}
-		ref := &api.ObjectRef{
-			HashAlgo:  api.HashAlgo(algoIdx),
+		ref := &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo(algoIdx),
 			HexDigest: tokens[2],
 		}
 		if err := common.ValidateObjectRef(ref, common.KnownHash); err != nil {

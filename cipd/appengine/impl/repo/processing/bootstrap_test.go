@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 )
 
@@ -33,26 +33,26 @@ func TestBootstrapPackageExtractor(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("With mocks", t, func(t *ftt.Test) {
-		var publishedRef *api.ObjectRef
+		var publishedRef *caspb.ObjectRef
 
 		ctx := memory.Use(context.Background())
 
-		testInstance := instance(ctx, "some/pkg", api.HashAlgo_SHA256)
+		testInstance := instance(ctx, "some/pkg", caspb.HashAlgo_SHA256)
 		testBody := "12345678"
-		testBodyDigest := hexDigest(api.HashAlgo_SHA256, testBody)
+		testBodyDigest := hexDigest(caspb.HashAlgo_SHA256, testBody)
 
 		cas := testutil.MockCAS{
-			BeginUploadImpl: func(_ context.Context, r *api.BeginUploadRequest) (*api.UploadOperation, error) {
-				assert.Loosely(t, r.HashAlgo, should.Equal(api.HashAlgo_SHA256))
-				return &api.UploadOperation{
+			BeginUploadImpl: func(_ context.Context, r *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
+				assert.Loosely(t, r.HashAlgo, should.Equal(caspb.HashAlgo_SHA256))
+				return &caspb.UploadOperation{
 					OperationId: "op_id",
 					UploadUrl:   "http://example.com/upload",
 				}, nil
 			},
-			FinishUploadImpl: func(_ context.Context, r *api.FinishUploadRequest) (*api.UploadOperation, error) {
+			FinishUploadImpl: func(_ context.Context, r *caspb.FinishUploadRequest) (*caspb.UploadOperation, error) {
 				assert.Loosely(t, r.UploadOperationId, should.Equal("op_id"))
 				publishedRef = r.ForceHash
-				return &api.UploadOperation{Status: api.UploadStatus_PUBLISHED}, nil
+				return &caspb.UploadOperation{Status: caspb.UploadStatus_PUBLISHED}, nil
 			},
 		}
 
@@ -81,8 +81,8 @@ func TestBootstrapPackageExtractor(t *testing.T) {
 			}))
 
 			assert.Loosely(t, extracted.String(), should.Equal(testBody))
-			assert.Loosely(t, publishedRef, should.Match(&api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA256,
+			assert.Loosely(t, publishedRef, should.Match(&caspb.ObjectRef{
+				HashAlgo:  caspb.HashAlgo_SHA256,
 				HexDigest: testBodyDigest,
 			}))
 		})

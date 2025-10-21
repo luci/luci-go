@@ -38,7 +38,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/client/cipd/plugin"
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 )
@@ -308,7 +308,7 @@ func (h *Host) listMetadata(ctx context.Context, req *protocol.ListMetadataReque
 		// but it likely won't be necessary, and the implementation is not trivial.
 		return nil, status.Errorf(codes.PermissionDenied, "can query only the CIPD repository the client is using (%q)", cfg.ServiceURL)
 	default:
-		resp, err := cfg.Repository.ListMetadata(ctx, &api.ListMetadataRequest{
+		resp, err := cfg.Repository.ListMetadata(ctx, &repopb.ListMetadataRequest{
 			Package:   req.Package,
 			Instance:  req.Instance,
 			Keys:      req.Keys,

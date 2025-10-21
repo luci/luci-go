@@ -20,32 +20,32 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	casgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/caspb/grpcpb"
 	"go.chromium.org/luci/cipd/appengine/impl/rpcacl"
 )
 
 // Public returns publicly exposed implementation of cipd.Storage service that
 // wraps the given internal implementation with ACLs.
-func Public(internal cipdgrpcpb.StorageServer) cipdgrpcpb.StorageServer {
+func Public(internal casgrpcpb.StorageServer) casgrpcpb.StorageServer {
 	return &acledStorage{internal: internal}
 }
 
 type acledStorage struct {
 	// We want the compilation to fail when new methods are added.
-	cipdgrpcpb.UnsafeStorageServer
+	casgrpcpb.UnsafeStorageServer
 
-	internal cipdgrpcpb.StorageServer
+	internal casgrpcpb.StorageServer
 }
 
-func (s *acledStorage) GetObjectURL(ctx context.Context, req *api.GetObjectURLRequest) (*api.ObjectURL, error) {
+func (s *acledStorage) GetObjectURL(ctx context.Context, req *caspb.GetObjectURLRequest) (*caspb.ObjectURL, error) {
 	if err := rpcacl.CheckAdmin(ctx); err != nil {
 		return nil, err
 	}
 	return s.internal.GetObjectURL(ctx, req)
 }
 
-func (s *acledStorage) BeginUpload(ctx context.Context, req *api.BeginUploadRequest) (*api.UploadOperation, error) {
+func (s *acledStorage) BeginUpload(ctx context.Context, req *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
 	if err := rpcacl.CheckAdmin(ctx); err != nil {
 		return nil, err
 	}
@@ -58,13 +58,13 @@ func (s *acledStorage) BeginUpload(ctx context.Context, req *api.BeginUploadRequ
 // be treated as secrets). Except we don't trust external API users to assign
 // hashes, so usage of 'force_hash' field is forbidden.
 
-func (s *acledStorage) FinishUpload(ctx context.Context, req *api.FinishUploadRequest) (*api.UploadOperation, error) {
+func (s *acledStorage) FinishUpload(ctx context.Context, req *caspb.FinishUploadRequest) (*caspb.UploadOperation, error) {
 	if req.ForceHash != nil {
 		return nil, status.Errorf(codes.PermissionDenied, "usage of 'force_hash' is forbidden")
 	}
 	return s.internal.FinishUpload(ctx, req)
 }
 
-func (s *acledStorage) CancelUpload(ctx context.Context, req *api.CancelUploadRequest) (*api.UploadOperation, error) {
+func (s *acledStorage) CancelUpload(ctx context.Context, req *caspb.CancelUploadRequest) (*caspb.UploadOperation, error) {
 	return s.internal.CancelUpload(ctx, req)
 }

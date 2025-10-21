@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -52,8 +52,8 @@ func TestTags(t *testing.T) {
 			return inst
 		}
 
-		tags := func(tag ...string) []*api.Tag {
-			out := make([]*api.Tag, len(tag))
+		tags := func(tag ...string) []*repopb.Tag {
+			out := make([]*repopb.Tag, len(tag))
 			for i, s := range tag {
 				out[i] = common.MustParseInstanceTag(s)
 			}
@@ -86,7 +86,7 @@ func TestTags(t *testing.T) {
 		t.Run("Proto() works", func(t *ftt.Test) {
 			inst := putInst("pkg", digest, nil)
 			mTag := expectedTag(inst, "k:v", 0, testutil.TestUser)
-			assert.Loosely(t, mTag.Proto(), should.Resemble(&api.Tag{
+			assert.Loosely(t, mTag.Proto(), should.Resemble(&repopb.Tag{
 				Key:        "k",
 				Value:      "v",
 				AttachedBy: string(testutil.TestUser),
@@ -126,9 +126,9 @@ func TestTags(t *testing.T) {
 			assert.Loosely(t, getTag(inst, "a:1"), should.Resemble(expectedTag(inst, "a:1", 1, testutil.TestUser)))
 
 			// All events have been collected.
-			assert.Loosely(t, GetEvents(ctx), should.Resemble([]*api.Event{
+			assert.Loosely(t, GetEvents(ctx), should.Resemble([]*repopb.Event{
 				{
-					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
+					Kind:     repopb.EventKind_INSTANCE_TAG_ATTACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:4",
@@ -136,7 +136,7 @@ func TestTags(t *testing.T) {
 					When:     timestamppb.New(testutil.TestTime.Add(2*time.Second + 1)),
 				},
 				{
-					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
+					Kind:     repopb.EventKind_INSTANCE_TAG_ATTACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:3",
@@ -144,7 +144,7 @@ func TestTags(t *testing.T) {
 					When:     timestamppb.New(testutil.TestTime.Add(2 * time.Second)),
 				},
 				{
-					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
+					Kind:     repopb.EventKind_INSTANCE_TAG_ATTACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:2",
@@ -152,7 +152,7 @@ func TestTags(t *testing.T) {
 					When:     timestamppb.New(testutil.TestTime.Add(1*time.Second + 1)),
 				},
 				{
-					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
+					Kind:     repopb.EventKind_INSTANCE_TAG_ATTACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:1",
@@ -160,7 +160,7 @@ func TestTags(t *testing.T) {
 					When:     timestamppb.New(testutil.TestTime.Add(1 * time.Second)),
 				},
 				{
-					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
+					Kind:     repopb.EventKind_INSTANCE_TAG_ATTACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:0",
@@ -205,9 +205,9 @@ func TestTags(t *testing.T) {
 			assert.Loosely(t, getTag(inst, "a:4"), should.BeNil)
 
 			// All 'detach' events have been collected (skip checking 'attach' ones).
-			assert.Loosely(t, GetEvents(ctx)[:5], should.Resemble([]*api.Event{
+			assert.Loosely(t, GetEvents(ctx)[:5], should.Resemble([]*repopb.Event{
 				{
-					Kind:     api.EventKind_INSTANCE_TAG_DETACHED,
+					Kind:     repopb.EventKind_INSTANCE_TAG_DETACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:4",
@@ -215,7 +215,7 @@ func TestTags(t *testing.T) {
 					When:     timestamppb.New(testutil.TestTime.Add(3*time.Second + 1)),
 				},
 				{
-					Kind:     api.EventKind_INSTANCE_TAG_DETACHED,
+					Kind:     repopb.EventKind_INSTANCE_TAG_DETACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:3",
@@ -223,7 +223,7 @@ func TestTags(t *testing.T) {
 					When:     timestamppb.New(testutil.TestTime.Add(3 * time.Second)),
 				},
 				{
-					Kind:     api.EventKind_INSTANCE_TAG_DETACHED,
+					Kind:     repopb.EventKind_INSTANCE_TAG_DETACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:2",
@@ -231,7 +231,7 @@ func TestTags(t *testing.T) {
 					When:     timestamppb.New(testutil.TestTime.Add(2*time.Second + 1)),
 				},
 				{
-					Kind:     api.EventKind_INSTANCE_TAG_DETACHED,
+					Kind:     repopb.EventKind_INSTANCE_TAG_DETACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:1",
@@ -239,7 +239,7 @@ func TestTags(t *testing.T) {
 					When:     timestamppb.New(testutil.TestTime.Add(2 * time.Second)),
 				},
 				{
-					Kind:     api.EventKind_INSTANCE_TAG_DETACHED,
+					Kind:     repopb.EventKind_INSTANCE_TAG_DETACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:0",

@@ -32,7 +32,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -231,10 +231,10 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 	return taskReq, nil
 }
 
-func createCipdDescribeBootstrapBundleRequest(infra *pb.BuildInfra) *cipdpb.DescribeBootstrapBundleRequest {
+func createCipdDescribeBootstrapBundleRequest(infra *pb.BuildInfra) *repopb.DescribeBootstrapBundleRequest {
 	prefix := infra.Buildbucket.Agent.Source.GetCipd().GetPackage()
 	prefix = strings.TrimSuffix(prefix, "/${platform}")
-	return &cipdpb.DescribeBootstrapBundleRequest{
+	return &repopb.DescribeBootstrapBundleRequest{
 		Prefix:  prefix,
 		Version: infra.Buildbucket.Agent.Source.GetCipd().GetVersion(),
 	}
@@ -263,7 +263,7 @@ func extractCipdDetails(ctx context.Context, project string, infra *pb.BuildInfr
 	}
 	cachePrefix := base64.StdEncoding.EncodeToString(bytes)
 	cipdDetails, err := cipdDescribeBootstrapBundleCache.GetOrCreate(ctx, cachePrefix, func() (cipdPackageDetailsMap, time.Duration, error) {
-		out := &cipdpb.DescribeBootstrapBundleResponse{}
+		out := &repopb.DescribeBootstrapBundleResponse{}
 		err := cipdClient.Call(ctx, "cipd.Repository", "DescribeBootstrapBundle", req, out)
 		if err != nil {
 			return nil, 0, err

@@ -72,8 +72,10 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	cipdgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/grpcpb"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	casgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/caspb/grpcpb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
+	repogrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/repopb/grpcpb"
 	"go.chromium.org/luci/cipd/client/cipd/configpb"
 	"go.chromium.org/luci/cipd/client/cipd/deployer"
 	"go.chromium.org/luci/cipd/client/cipd/digests"
@@ -131,7 +133,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.7.8"
+	UserAgent = "cipd 2.7.9"
 )
 
 func init() {
@@ -449,8 +451,8 @@ type ClientOptions struct {
 	ProxyURL string
 
 	// Mocks used by tests.
-	casMock          cipdgrpcpb.StorageClient
-	repoMock         cipdgrpcpb.RepositoryClient
+	casMock          casgrpcpb.StorageClient
+	repoMock         repogrpcpb.RepositoryClient
 	storageMock      storage
 	mockedConfigFile string
 }
@@ -723,11 +725,11 @@ func NewClient(opts ClientOptions) (Client, error) {
 
 	cas := opts.casMock
 	if cas == nil {
-		cas = cipdgrpcpb.NewStorageClient(prpcC)
+		cas = casgrpcpb.NewStorageClient(prpcC)
 	}
 	repo := opts.repoMock
 	if repo == nil {
-		repo = cipdgrpcpb.NewRepositoryClient(prpcC)
+		repo = repogrpcpb.NewRepositoryClient(prpcC)
 	}
 	s := opts.storageMock
 	if s == nil {
@@ -824,8 +826,8 @@ type clientImpl struct {
 	ClientOptions
 
 	// pRPC API clients.
-	cas  cipdgrpcpb.StorageClient
-	repo cipdgrpcpb.RepositoryClient
+	cas  casgrpcpb.StorageClient
+	repo repogrpcpb.RepositoryClient
 
 	// batchLock protects guts of by BeginBatch/EndBatch implementation.
 	batchLock    sync.Mutex
@@ -1033,7 +1035,7 @@ func (c *clientImpl) FetchACL(ctx context.Context, prefix string) (acls []Packag
 		return nil, err
 	}
 
-	resp, err := c.repo.GetInheritedPrefixMetadata(ctx, &api.PrefixRequest{
+	resp, err := c.repo.GetInheritedPrefixMetadata(ctx, &repopb.PrefixRequest{
 		Prefix: prefix,
 	}, expectedCodes)
 	if err != nil {
@@ -1055,7 +1057,7 @@ func (c *clientImpl) ModifyACL(ctx context.Context, prefix string, changes []Pac
 	}
 
 	// Fetch existing metadata, if any.
-	meta, err := c.repo.GetPrefixMetadata(ctx, &api.PrefixRequest{
+	meta, err := c.repo.GetPrefixMetadata(ctx, &repopb.PrefixRequest{
 		Prefix: prefix,
 	}, expectedCodes)
 	if code := status.Code(err); code != codes.OK && code != codes.NotFound {
@@ -1064,7 +1066,7 @@ func (c *clientImpl) ModifyACL(ctx context.Context, prefix string, changes []Pac
 
 	// Construct new empty metadata for codes.NotFound.
 	if meta == nil {
-		meta = &api.PrefixMetadata{Prefix: prefix}
+		meta = &repopb.PrefixMetadata{Prefix: prefix}
 	}
 
 	// Apply mutations.
@@ -1088,7 +1090,7 @@ func (c *clientImpl) FetchRoles(ctx context.Context, prefix string) (roles []str
 		return nil, err
 	}
 
-	resp, err := c.repo.GetRolesInPrefix(ctx, &api.PrefixRequest{
+	resp, err := c.repo.GetRolesInPrefix(ctx, &repopb.PrefixRequest{
 		Prefix: prefix,
 	}, expectedCodes)
 	if err != nil {
@@ -1117,8 +1119,8 @@ func (c *clientImpl) FetchRolesOnBehalfOf(ctx context.Context, prefix string, id
 		return nil, err
 	}
 
-	resp, err := c.repo.GetRolesInPrefixOnBehalfOf(ctx, &api.PrefixRequestOnBehalfOf{
-		PrefixRequest: &api.PrefixRequest{Prefix: prefix},
+	resp, err := c.repo.GetRolesInPrefixOnBehalfOf(ctx, &repopb.PrefixRequestOnBehalfOf{
+		PrefixRequest: &repopb.PrefixRequest{Prefix: prefix},
 		Identity:      string(id),
 	}, expectedCodes)
 	if err != nil {
@@ -1143,7 +1145,7 @@ func (c *clientImpl) ListPackages(ctx context.Context, prefix string, recursive,
 		return nil, err
 	}
 
-	resp, err := c.repo.ListPrefix(ctx, &api.ListPrefixRequest{
+	resp, err := c.repo.ListPrefix(ctx, &repopb.ListPrefixRequest{
 		Prefix:        prefix,
 		Recursive:     recursive,
 		IncludeHidden: includeHidden,
@@ -1204,7 +1206,7 @@ func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version st
 	}
 
 	// Either resolving a ref, or a tag cache miss? Hit the backend.
-	resp, err := c.repo.ResolveVersion(ctx, &api.ResolveVersionRequest{
+	resp, err := c.repo.ResolveVersion(ctx, &repopb.ResolveVersionRequest{
 		Package: packageName,
 		Version: version,
 	}, expectedCodes)
@@ -1266,7 +1268,7 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 	targetVersion, clientExe string, digests *digests.ClientDigestsFile) (common.Pin, error) {
 	// currentHashMatches calculates the existing client binary hash and compares
 	// it to 'obj'.
-	currentHashMatches := func(obj *api.ObjectRef) (yep bool, err error) {
+	currentHashMatches := func(obj *caspb.ObjectRef) (yep bool, err error) {
 		hash, err := common.NewHash(obj.HashAlgo)
 		if err != nil {
 			return false, err
@@ -1305,7 +1307,7 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 	}
 
 	// rememberClientRef populates the extracted refs cache.
-	rememberClientRef := func(pin common.Pin, ref *api.ObjectRef) {
+	rememberClientRef := func(pin common.Pin, ref *caspb.ObjectRef) {
 		if cache := c.getTagCache(); cache != nil {
 			cache.AddExtractedObjectRef(ctx, pin, clientFileName, ref)
 			c.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
@@ -1317,7 +1319,7 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 	// miss is fine, we'll reach to the backend to get the hash. A warm cache
 	// allows skipping RPCs to the backend on a "happy path", when the client is
 	// already up-to-date.
-	var clientRef *api.ObjectRef
+	var clientRef *caspb.ObjectRef
 	if cache := c.getTagCache(); cache != nil {
 		if clientRef, err = cache.ResolveExtractedObjectRef(ctx, pin, clientFileName); err != nil {
 			return common.Pin{}, err
@@ -1422,9 +1424,9 @@ func (c *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src p
 	}()
 
 	// attemptToRegister calls RegisterInstance RPC and logs the result.
-	attemptToRegister := func() (*api.UploadOperation, error) {
+	attemptToRegister := func() (*caspb.UploadOperation, error) {
 		logging.Infof(ctx, "Registering %s", pin)
-		resp, err := c.repo.RegisterInstance(ctx, &api.Instance{
+		resp, err := c.repo.RegisterInstance(ctx, &repopb.Instance{
 			Package:  pin.PackageName,
 			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
 		}, expectedCodes)
@@ -1432,16 +1434,16 @@ func (c *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src p
 			return nil, c.rpcErr(err, nil)
 		}
 		switch resp.Status {
-		case api.RegistrationStatus_REGISTERED:
+		case repopb.RegistrationStatus_REGISTERED:
 			logging.Infof(ctx, "Instance %s was successfully registered", pin)
 			return nil, nil
-		case api.RegistrationStatus_ALREADY_REGISTERED:
+		case repopb.RegistrationStatus_ALREADY_REGISTERED:
 			logging.Infof(
 				ctx, "Instance %s is already registered by %s on %s",
 				pin, resp.Instance.RegisteredBy,
 				resp.Instance.RegisteredTs.AsTime().Local())
 			return nil, nil
-		case api.RegistrationStatus_NOT_UPLOADED:
+		case repopb.RegistrationStatus_NOT_UPLOADED:
 			return resp.UploadOp, nil
 		default:
 			return nil, cipderr.RPC.Apply(errors.Fmt("unrecognized package registration status %s", resp.Status))
@@ -1491,7 +1493,7 @@ func (c *clientImpl) finalizeUpload(ctx context.Context, opID string, timeout ti
 		default:
 		}
 
-		op, err := c.cas.FinishUpload(ctx, &api.FinishUploadRequest{
+		op, err := c.cas.FinishUpload(ctx, &caspb.FinishUploadRequest{
 			UploadOperationId: opID,
 		})
 		switch {
@@ -1499,12 +1501,12 @@ func (c *clientImpl) finalizeUpload(ctx context.Context, opID string, timeout ti
 			continue // this may be short RPC deadline, try again
 		case err != nil:
 			return c.rpcErr(err, nil)
-		case op.Status == api.UploadStatus_PUBLISHED:
+		case op.Status == caspb.UploadStatus_PUBLISHED:
 			return nil // verified!
-		case op.Status == api.UploadStatus_ERRORED:
+		case op.Status == caspb.UploadStatus_ERRORED:
 			return cipderr.CAS.Apply(errors. // fatal verification error
 								Fmt("%s", op.ErrorMessage))
-		case op.Status == api.UploadStatus_UPLOADING || op.Status == api.UploadStatus_VERIFYING:
+		case op.Status == caspb.UploadStatus_UPLOADING || op.Status == caspb.UploadStatus_VERIFYING:
 			logging.Infof(ctx, "Verifying...")
 			clock.Sleep(clock.Tag(ctx, "cipd-sleeping"), sleep)
 			if sleep < 10*time.Second {
@@ -1531,7 +1533,7 @@ func (c *clientImpl) DescribeInstance(ctx context.Context, pin common.Pin, opts 
 		opts = &DescribeInstanceOpts{}
 	}
 
-	resp, err := c.repo.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+	resp, err := c.repo.DescribeInstance(ctx, &repopb.DescribeInstanceRequest{
 		Package:          pin.PackageName,
 		Instance:         common.InstanceIDToObjectRef(pin.InstanceID),
 		DescribeRefs:     opts.DescribeRefs,
@@ -1557,7 +1559,7 @@ func (c *clientImpl) DescribeClient(ctx context.Context, pin common.Pin) (desc *
 		return nil, err
 	}
 
-	resp, err := c.repo.DescribeClient(ctx, &api.DescribeClientRequest{
+	resp, err := c.repo.DescribeClient(ctx, &repopb.DescribeClientRequest{
 		Package:  pin.PackageName,
 		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
 	}, expectedCodes)
@@ -1589,7 +1591,7 @@ func (c *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin common
 	logging.Infof(ctx, "Setting ref of %s: %q => %q", pin.PackageName, ref, pin.InstanceID)
 
 	err = c.retryUntilReady(ctx, SetRefTimeout, func(ctx context.Context) error {
-		_, err := c.repo.CreateRef(ctx, &api.Ref{
+		_, err := c.repo.CreateRef(ctx, &repopb.Ref{
 			Name:     ref,
 			Package:  pin.PackageName,
 			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
@@ -1620,7 +1622,7 @@ func (c *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pin, ta
 		return nil
 	}
 
-	apiTags := make([]*api.Tag, len(tags))
+	apiTags := make([]*repopb.Tag, len(tags))
 	for i, t := range tags {
 		var err error
 		if apiTags[i], err = common.ParseInstanceTag(t); err != nil {
@@ -1641,7 +1643,7 @@ func (c *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pin, ta
 	}
 
 	err = c.retryUntilReady(ctx, TagAttachTimeout, func(ctx context.Context) error {
-		_, err := c.repo.AttachTags(ctx, &api.AttachTagsRequest{
+		_, err := c.repo.AttachTags(ctx, &repopb.AttachTagsRequest{
 			Package:  pin.PackageName,
 			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
 			Tags:     apiTags,
@@ -1676,7 +1678,7 @@ func (c *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin common.Pin
 		return nil
 	}
 
-	apiMD := make([]*api.InstanceMetadata, len(md))
+	apiMD := make([]*repopb.InstanceMetadata, len(md))
 	for i, m := range md {
 		if err := common.ValidateInstanceMetadataKey(m.Key); err != nil {
 			return err
@@ -1687,7 +1689,7 @@ func (c *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin common.Pin
 		if err := common.ValidateContentType(m.ContentType); err != nil {
 			return errors.Fmt("bad metadata %q: %w", m.Key, err)
 		}
-		apiMD[i] = &api.InstanceMetadata{
+		apiMD[i] = &repopb.InstanceMetadata{
 			Key:         m.Key,
 			Value:       m.Value,
 			ContentType: m.ContentType,
@@ -1707,7 +1709,7 @@ func (c *clientImpl) AttachMetadataWhenReady(ctx context.Context, pin common.Pin
 	}
 
 	err = c.retryUntilReady(ctx, MetadataAttachTimeout, func(ctx context.Context) error {
-		_, err := c.repo.AttachMetadata(ctx, &api.AttachMetadataRequest{
+		_, err := c.repo.AttachMetadata(ctx, &repopb.AttachMetadataRequest{
 			Package:  pin.PackageName,
 			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
 			Metadata: apiMD,
@@ -1772,7 +1774,7 @@ func (c *clientImpl) SearchInstances(ctx context.Context, packageName string, ta
 		return nil, errors.New("at least one tag is required")
 	}
 
-	apiTags := make([]*api.Tag, len(tags))
+	apiTags := make([]*repopb.Tag, len(tags))
 	for i, t := range tags {
 		var err error
 		if apiTags[i], err = common.ParseInstanceTag(t); err != nil {
@@ -1780,7 +1782,7 @@ func (c *clientImpl) SearchInstances(ctx context.Context, packageName string, ta
 		}
 	}
 
-	resp, err := c.repo.SearchInstances(ctx, &api.SearchInstancesRequest{
+	resp, err := c.repo.SearchInstances(ctx, &repopb.SearchInstancesRequest{
 		Package:  packageName,
 		Tags:     apiTags,
 		PageSize: 1000, // TODO(vadimsh): Support pagination on the c.
@@ -1812,7 +1814,7 @@ func (c *clientImpl) ListInstances(ctx context.Context, packageName string) (enu
 
 	return &instanceEnumeratorImpl{
 		fetch: func(ctx context.Context, limit int, cursor string) ([]InstanceInfo, string, error) {
-			resp, err := c.repo.ListInstances(ctx, &api.ListInstancesRequest{
+			resp, err := c.repo.ListInstances(ctx, &repopb.ListInstancesRequest{
 				Package:   packageName,
 				PageSize:  int32(limit),
 				PageToken: cursor,
@@ -1842,7 +1844,7 @@ func (c *clientImpl) FetchPackageRefs(ctx context.Context, packageName string) (
 		return nil, err
 	}
 
-	resp, err := c.repo.ListRefs(ctx, &api.ListRefsRequest{
+	resp, err := c.repo.ListRefs(ctx, &repopb.ListRefsRequest{
 		Package: packageName,
 	}, expectedCodes)
 	if err != nil {
@@ -1958,7 +1960,7 @@ func (c *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pin, ou
 	objRef := common.InstanceIDToObjectRef(pin.InstanceID)
 
 	logging.Infof(ctx, "Resolving fetch URL for %s", pin)
-	resp, err := c.repo.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+	resp, err := c.repo.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 		Package:  pin.PackageName,
 		Instance: objRef,
 	}, expectedCodes)
@@ -2328,7 +2330,7 @@ func (c *clientImpl) makeRepairChecker(ctx context.Context, OverrideInstallMode 
 ////////////////////////////////////////////////////////////////////////////////
 // pRPC error handling.
 
-// gRPC errors that may be returned by api.RepositoryClient that we recognize
+// gRPC errors that may be returned by repopb.RepositoryClient that we recognize
 // and handle ourselves. They will not be logged by the pRPC library.
 var expectedCodes = prpc.ExpectedCode(
 	codes.Aborted,

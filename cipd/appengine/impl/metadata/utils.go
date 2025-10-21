@@ -17,12 +17,12 @@ package metadata
 import (
 	"go.chromium.org/luci/common/data/stringset"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 // GetACLs returns ACLs in the metadata as a map: role -> set of principals.
-func GetACLs(m *api.PrefixMetadata) map[api.Role]stringset.Set {
-	out := map[api.Role]stringset.Set{}
+func GetACLs(m *repopb.PrefixMetadata) map[repopb.Role]stringset.Set {
+	out := map[repopb.Role]stringset.Set{}
 	for _, acl := range m.Acls {
 		if len(acl.Principals) == 0 {
 			continue

@@ -36,7 +36,7 @@ import (
 	"go.chromium.org/luci/server/bqlog"
 	"go.chromium.org/luci/server/caching"
 
-	cipdapi "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/vsa/api"
@@ -204,9 +204,9 @@ func (c *client) NewVerifySoftwareArtifactTask(ctx context.Context, inst *model.
 
 	digests := make(map[string]string)
 	switch obj := common.InstanceIDToObjectRef(inst.InstanceID); obj.HashAlgo {
-	case cipdapi.HashAlgo_SHA1:
+	case caspb.HashAlgo_SHA1:
 		digests["sha1"] = obj.HexDigest
-	case cipdapi.HashAlgo_SHA256:
+	case caspb.HashAlgo_SHA256:
 		digests["sha256"] = obj.HexDigest
 	}
 	digests["cipd_instance_id"] = inst.InstanceID

@@ -18,7 +18,7 @@
 // 	protoc        v6.32.0
 // source: go.chromium.org/luci/cipd/api/cipd/v1/access_log.proto
 
-package api
+package logpb
 
 import (
 	_ "go.chromium.org/luci/common/bq/pb"
@@ -260,7 +260,7 @@ const file_go_chromium_org_luci_cipd_api_cipd_v1_access_log_proto_rawDesc = "" +
 	"\vauth_db_rev\x18\x10 \x01(\x03R\tauthDbRev\x12#\n" +
 	"\rresponse_code\x18\x11 \x01(\tR\fresponseCode\x12!\n" +
 	"\fresponse_err\x18\x12 \x01(\tR\vresponseErr\x12,\n" +
-	"\x12response_time_usec\x18\x13 \x01(\x03R\x10responseTimeUsecB+Z)go.chromium.org/luci/cipd/api/cipd/v1;apib\x06proto3"
+	"\x12response_time_usec\x18\x13 \x01(\x03R\x10responseTimeUsecB-Z+go.chromium.org/luci/cipd/api/cipd/v1/logpbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_cipd_api_cipd_v1_access_log_proto_rawDescOnce sync.Once

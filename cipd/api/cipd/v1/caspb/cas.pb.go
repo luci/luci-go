@@ -18,7 +18,7 @@
 // 	protoc        v6.32.0
 // source: go.chromium.org/luci/cipd/api/cipd/v1/cas.proto
 
-package api
+package caspb
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -620,7 +620,7 @@ const file_go_chromium_org_luci_cipd_api_cipd_v1_cas_proto_rawDesc = "" +
 	"\fGetObjectURL\x12\x19.cipd.GetObjectURLRequest\x1a\x0f.cipd.ObjectURL\x12>\n" +
 	"\vBeginUpload\x12\x18.cipd.BeginUploadRequest\x1a\x15.cipd.UploadOperation\x12@\n" +
 	"\fFinishUpload\x12\x19.cipd.FinishUploadRequest\x1a\x15.cipd.UploadOperation\x12@\n" +
-	"\fCancelUpload\x12\x19.cipd.CancelUploadRequest\x1a\x15.cipd.UploadOperationB+Z)go.chromium.org/luci/cipd/api/cipd/v1;apib\x06proto3"
+	"\fCancelUpload\x12\x19.cipd.CancelUploadRequest\x1a\x15.cipd.UploadOperationB-Z+go.chromium.org/luci/cipd/api/cipd/v1/caspbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_cipd_api_cipd_v1_cas_proto_rawDescOnce sync.Once

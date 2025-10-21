@@ -32,18 +32,18 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common"
 )
 
 // rootMeta is metadata of the root prefix, it is inherited by all prefixes.
 //
 // TODO(vadimsh): Make this configurable.
-var rootMeta = &api.PrefixMetadata{
-	Acls: []*api.PrefixMetadata_ACL{
+var rootMeta = &repopb.PrefixMetadata{
+	Acls: []*repopb.PrefixMetadata_ACL{
 		// Administrators have implicit permissions to do everything everywhere.
 		{
-			Role:       api.Role_OWNER,
+			Role:       repopb.Role_OWNER,
 			Principals: []string{"group:administrators"},
 		},
 	},
@@ -56,7 +56,7 @@ func init() {
 // legacyStorageImpl implements Storage on top of PackageACL entities inherited
 // from Python version of CIPD backend.
 //
-// This implementation stores api.PrefixMetadata in a deconstructed form as a
+// This implementation stores repopb.PrefixMetadata in a deconstructed form as a
 // bunch of datastore entities to be compatible with Python version of the
 // backend that has no idea about PrefixMetadata abstraction.
 //
@@ -78,7 +78,7 @@ type legacyStorageImpl struct {
 // of legacy entities.
 //
 // The result also always includes the hardcoded root metadata.
-func (legacyStorageImpl) GetMetadata(ctx context.Context, prefix string) ([]*api.PrefixMetadata, error) {
+func (legacyStorageImpl) GetMetadata(ctx context.Context, prefix string) ([]*repopb.PrefixMetadata, error) {
 	md, _, err := getMetadataImpl(ctx, prefix)
 	return md, err
 }
@@ -87,7 +87,7 @@ func (legacyStorageImpl) GetMetadata(ctx context.Context, prefix string) ([]*api
 //
 // As a bonus it returns all packageACL entities it fetched. This is used by
 // VisitMetadata to avoid unnecessary refetches.
-func getMetadataImpl(ctx context.Context, prefix string) ([]*api.PrefixMetadata, []*packageACL, error) {
+func getMetadataImpl(ctx context.Context, prefix string) ([]*repopb.PrefixMetadata, []*packageACL, error) {
 	prefix, err := common.ValidatePackagePrefix(prefix)
 	if err != nil {
 		return nil, nil, errors.Fmt("bad prefix given to GetMetadata: %w", err)
@@ -103,7 +103,7 @@ func getMetadataImpl(ctx context.Context, prefix string) ([]*api.PrefixMetadata,
 	pfxs = append(pfxs, prefix)
 
 	// Start with the root metadata.
-	out := make([]*api.PrefixMetadata, 0, len(pfxs)+1)
+	out := make([]*repopb.PrefixMetadata, 0, len(pfxs)+1)
 	out = append(out, rootMetadata())
 
 	// And finish with it if nothing else is requested.
@@ -204,7 +204,7 @@ func (legacyStorageImpl) VisitMetadata(ctx context.Context, prefix string, cb Vi
 
 	// Traverse the graph, but make sure to skip 'prefix' itself, we've already
 	// visited it at the very beginning.
-	return pfx.traverse(nil, func(n *metadataNode, md []*api.PrefixMetadata) (cont bool, err error) {
+	return pfx.traverse(nil, func(n *metadataNode, md []*repopb.PrefixMetadata) (cont bool, err error) {
 		switch {
 		case n.prefix == prefix:
 			return true, nil
@@ -221,7 +221,7 @@ func (legacyStorageImpl) VisitMetadata(ctx context.Context, prefix string, cb Vi
 // It assembles prefix metadata from a bunch of packageACL entities, passes it
 // to the callback for modification, then deconstructs it back into a bunch of
 // packageACL entities, to be saved in the datastore. All done transactionally.
-func (legacyStorageImpl) UpdateMetadata(ctx context.Context, prefix string, cb func(ctx context.Context, m *api.PrefixMetadata) error) (*api.PrefixMetadata, error) {
+func (legacyStorageImpl) UpdateMetadata(ctx context.Context, prefix string, cb func(ctx context.Context, m *repopb.PrefixMetadata) error) (*repopb.PrefixMetadata, error) {
 	prefix, err := common.ValidatePackagePrefix(prefix)
 	if err != nil {
 		return nil, errors.Fmt("bad prefix given to GetMetadata: %w", err)
@@ -230,8 +230,8 @@ func (legacyStorageImpl) UpdateMetadata(ctx context.Context, prefix string, cb f
 		return nil, errors.New("the root metadata is not modifiable")
 	}
 
-	var cbErr error                 // error from 'cb'
-	var updated *api.PrefixMetadata // updated metadata to return
+	var cbErr error                    // error from 'cb'
+	var updated *repopb.PrefixMetadata // updated metadata to return
 
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		cbErr = nil // reset in case the transaction is being retried
@@ -249,11 +249,11 @@ func (legacyStorageImpl) UpdateMetadata(ctx context.Context, prefix string, cb f
 		// Storage interface.
 		updated = mergeIntoPrefixMetadata(ctx, prefix, ents)
 		if updated == nil {
-			updated = &api.PrefixMetadata{Prefix: prefix}
+			updated = &repopb.PrefixMetadata{Prefix: prefix}
 		}
 
 		// Let the callback update the metadata. Retain the old copy for diff later.
-		before := proto.Clone(updated).(*api.PrefixMetadata)
+		before := proto.Clone(updated).(*repopb.PrefixMetadata)
 		if cbErr = cb(ctx, updated); cbErr != nil {
 			return cbErr
 		}
@@ -313,10 +313,10 @@ var legacyRoles = []string{
 //
 // Note: we can't use keys of this map instead of legacyRoles slice, since we
 // always want to enumerate roles in order.
-var legacyRoleMap = map[string]api.Role{
-	"OWNER":  api.Role_OWNER,
-	"WRITER": api.Role_WRITER,
-	"READER": api.Role_READER,
+var legacyRoleMap = map[string]repopb.Role{
+	"OWNER":  repopb.Role_OWNER,
+	"WRITER": repopb.Role_WRITER,
+	"READER": repopb.Role_READER,
 }
 
 // packageACL contains ACLs for some package prefix.
@@ -377,8 +377,8 @@ func isInternalDSError(err error) bool {
 // rootMetadata returns metadata of the root prefix (always a new copy).
 //
 // It is inherited by all prefixes.
-func rootMetadata() *api.PrefixMetadata {
-	return proto.Clone(rootMeta).(*api.PrefixMetadata)
+func rootMetadata() *repopb.PrefixMetadata {
+	return proto.Clone(rootMeta).(*repopb.PrefixMetadata)
 }
 
 // rootKey returns a key of the root entity that stores ACL hierarchy.
@@ -410,13 +410,13 @@ func prefixACLs(ctx context.Context, prefix string, in []*packageACL) []*package
 // prefixACLs(ctx, prefix). Panics otherwise.
 //
 // Logs and skips invalid principal names (should not be happening in reality).
-func mergeIntoPrefixMetadata(ctx context.Context, prefix string, ents []*packageACL) *api.PrefixMetadata {
+func mergeIntoPrefixMetadata(ctx context.Context, prefix string, ents []*packageACL) *repopb.PrefixMetadata {
 	if len(ents) != len(legacyRoles) {
 		panic(fmt.Sprintf("expecting %d entities, got %d", len(legacyRoles), len(ents)))
 	}
 
-	modTime := time.Time{}                   // max(ent.ModifiedTS)
-	md := api.PrefixMetadata{Prefix: prefix} // to be returned if not empty
+	modTime := time.Time{}                      // max(ent.ModifiedTS)
+	md := repopb.PrefixMetadata{Prefix: prefix} // to be returned if not empty
 
 	for i, r := range legacyRoles {
 		pkgACL := ents[i]
@@ -455,7 +455,7 @@ func mergeIntoPrefixMetadata(ctx context.Context, prefix string, ents []*package
 		}
 
 		if len(principals) != 0 {
-			md.Acls = append(md.Acls, &api.PrefixMetadata_ACL{
+			md.Acls = append(md.Acls, &repopb.PrefixMetadata_ACL{
 				Role:       legacyRoleMap[r],
 				Principals: principals,
 			})
@@ -484,13 +484,13 @@ func mergeIntoPrefixMetadata(ctx context.Context, prefix string, ents []*package
 //
 // 'ents' are expected to have len(legacyRoles) entries, ordered by legacyRoles
 // roles. Panics otherwise.
-func applyACLDiff(ctx context.Context, ents []*packageACL, md *api.PrefixMetadata) error {
+func applyACLDiff(ctx context.Context, ents []*packageACL, md *repopb.PrefixMetadata) error {
 	if len(ents) != len(legacyRoles) {
 		panic(fmt.Sprintf("expecting %d entities, got %d", len(legacyRoles), len(ents)))
 	}
 
 	// Convert md.ACLs to a map role -> principals, for easier access.
-	perRole := make(map[api.Role][]string, len(md.Acls))
+	perRole := make(map[repopb.Role][]string, len(md.Acls))
 	for _, acl := range md.Acls {
 		perRole[acl.Role] = acl.Principals
 	}
@@ -598,7 +598,7 @@ type metadataNode struct {
 	//
 	// It may be nil for intermediary nodes that do not have metadata attached to
 	// them.
-	md *api.PrefixMetadata
+	md *repopb.PrefixMetadata
 }
 
 // assertFrozen panics if the node is not frozen yet.
@@ -682,12 +682,12 @@ func (n *metadataNode) freeze(ctx context.Context) {
 //
 // Root metadata first. The return value is never nil. If there's no metadata,
 // returns non-nil empty slice.
-func (n *metadataNode) metadata() (md []*api.PrefixMetadata) {
+func (n *metadataNode) metadata() (md []*repopb.PrefixMetadata) {
 	n.assertFrozen()
 	if n.parent != nil {
 		md = n.parent.metadata()
 	} else {
-		md = make([]*api.PrefixMetadata, 0, 32) // 32 is picked arbitrarily
+		md = make([]*repopb.PrefixMetadata, 0, 32) // 32 is picked arbitrarily
 	}
 	if n.md != nil {
 		md = append(md, n.md)
@@ -704,7 +704,7 @@ func (n *metadataNode) metadata() (md []*api.PrefixMetadata) {
 // to inherit), no recalculation will be done in this case.
 //
 // Children are visited in lexicographical order.
-func (n *metadataNode) traverse(md []*api.PrefixMetadata, cb func(*metadataNode, []*api.PrefixMetadata) (bool, error)) error {
+func (n *metadataNode) traverse(md []*repopb.PrefixMetadata, cb func(*metadataNode, []*repopb.PrefixMetadata) (bool, error)) error {
 	n.assertFrozen()
 
 	if md == nil {
@@ -742,7 +742,7 @@ type metadataGraph struct {
 }
 
 // init initializes the root node.
-func (g *metadataGraph) init(root *api.PrefixMetadata) {
+func (g *metadataGraph) init(root *repopb.PrefixMetadata) {
 	if root != nil && root.Prefix != "" {
 		panic("the root node metadata should have empty prefix")
 	}

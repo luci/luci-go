@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 func TestRoles(t *testing.T) {
@@ -45,29 +45,29 @@ func TestRoles(t *testing.T) {
 			authtest.MockMembership("user:inner-reader@example.com", "inner-readers"),
 		)
 
-		metas := []*api.PrefixMetadata{}
-		metas = addPrefixACLs(metas, "", map[api.Role][]string{
-			api.Role_OWNER: {"group:admins"},
+		metas := []*repopb.PrefixMetadata{}
+		metas = addPrefixACLs(metas, "", map[repopb.Role][]string{
+			repopb.Role_OWNER: {"group:admins"},
 		})
-		metas = addPrefixACLs(metas, "top", map[api.Role][]string{
-			api.Role_OWNER:  {"user:direct-owner@example.com", "group:top-owners"},
-			api.Role_WRITER: {"group:top-writers"},
-			api.Role_READER: {"group:top-readers"},
+		metas = addPrefixACLs(metas, "top", map[repopb.Role][]string{
+			repopb.Role_OWNER:  {"user:direct-owner@example.com", "group:top-owners"},
+			repopb.Role_WRITER: {"group:top-writers"},
+			repopb.Role_READER: {"group:top-readers"},
 		})
-		metas = addPrefixACLs(metas, "top/something/else", map[api.Role][]string{
-			api.Role_OWNER:  {"group:inner-owners"},
-			api.Role_WRITER: {"group:inner-writers"},
-			api.Role_READER: {"group:inner-readers"},
+		metas = addPrefixACLs(metas, "top/something/else", map[repopb.Role][]string{
+			repopb.Role_OWNER:  {"group:inner-owners"},
+			repopb.Role_WRITER: {"group:inner-writers"},
+			repopb.Role_READER: {"group:inner-readers"},
 		})
 
-		allRoles := []api.Role{api.Role_READER, api.Role_WRITER, api.Role_OWNER}
-		writerRoles := []api.Role{api.Role_READER, api.Role_WRITER}
-		readerRoles := []api.Role{api.Role_READER}
-		noRoles := []api.Role{}
+		allRoles := []repopb.Role{repopb.Role_READER, repopb.Role_WRITER, repopb.Role_OWNER}
+		writerRoles := []repopb.Role{repopb.Role_READER, repopb.Role_WRITER}
+		readerRoles := []repopb.Role{repopb.Role_READER}
+		noRoles := []repopb.Role{}
 
 		expectedRoles := []struct {
 			user          identity.Identity
-			expectedRoles []api.Role
+			expectedRoles []repopb.Role
 		}{
 			{"user:admin@example.com", allRoles},
 			{"user:direct-owner@example.com", allRoles},
@@ -93,7 +93,7 @@ func TestRoles(t *testing.T) {
 
 				// Get the roles by checking explicitly each one via hasRole.
 				t.Run("hasRole works", func(t *ftt.Test) {
-					haveRoles := []api.Role{}
+					haveRoles := []repopb.Role{}
 					for _, r := range allRoles {
 						yes, err := hasRole(ctx, metas, r)
 						assert.Loosely(t, err, should.BeNil)
@@ -115,15 +115,15 @@ func TestRoles(t *testing.T) {
 	})
 }
 
-func addPrefixACLs(metas []*api.PrefixMetadata, prefix string, acls map[api.Role][]string) []*api.PrefixMetadata {
-	a := make([]*api.PrefixMetadata_ACL, 0, len(acls))
+func addPrefixACLs(metas []*repopb.PrefixMetadata, prefix string, acls map[repopb.Role][]string) []*repopb.PrefixMetadata {
+	a := make([]*repopb.PrefixMetadata_ACL, 0, len(acls))
 	for role, principals := range acls {
-		a = append(a, &api.PrefixMetadata_ACL{
+		a = append(a, &repopb.PrefixMetadata_ACL{
 			Role:       role,
 			Principals: principals,
 		})
 	}
-	return append(metas, &api.PrefixMetadata{
+	return append(metas, &repopb.PrefixMetadata{
 		Prefix: prefix,
 		Acls:   a,
 	})

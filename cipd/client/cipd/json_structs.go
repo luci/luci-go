@@ -19,7 +19,8 @@ import (
 	"fmt"
 	"time"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -174,7 +175,7 @@ type ClientDescription struct {
 	// the algos, but this is an extreme situation and it is OK to panic in this
 	// case. At very least all client binaries have SHA1 digests, and it should
 	// be understood by all clients.
-	Digest *api.ObjectRef `json:"digest"`
+	Digest *caspb.ObjectRef `json:"digest"`
 
 	// AlternativeDigests is a list of digest calculated using hash algos other
 	// than the one used by Digest.
@@ -185,13 +186,13 @@ type ClientDescription struct {
 	// Not all client versions have all digests calculated. Older versions have
 	// only SHA1 digest, which means for them Digest will be SHA1 and
 	// AlternativeDigests list will be empty.
-	AlternativeDigests []*api.ObjectRef `json:"alternative_digests"`
+	AlternativeDigests []*caspb.ObjectRef `json:"alternative_digests"`
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Converters from proto API to JSON output structs.
 
-func apiInstanceToInfo(inst *api.Instance) InstanceInfo {
+func apiInstanceToInfo(inst *repopb.Instance) InstanceInfo {
 	var t time.Time
 	if inst.RegisteredTs.IsValid() {
 		t = inst.RegisteredTs.AsTime()
@@ -206,7 +207,7 @@ func apiInstanceToInfo(inst *api.Instance) InstanceInfo {
 	}
 }
 
-func apiRefToInfo(r *api.Ref) RefInfo {
+func apiRefToInfo(r *repopb.Ref) RefInfo {
 	var t time.Time
 	if r.ModifiedTs.IsValid() {
 		t = r.ModifiedTs.AsTime()
@@ -219,7 +220,7 @@ func apiRefToInfo(r *api.Ref) RefInfo {
 	}
 }
 
-func apiTagToInfo(t *api.Tag) TagInfo {
+func apiTagToInfo(t *repopb.Tag) TagInfo {
 	return TagInfo{
 		Tag:          common.JoinInstanceTag(t),
 		RegisteredBy: t.AttachedBy,
@@ -227,7 +228,7 @@ func apiTagToInfo(t *api.Tag) TagInfo {
 	}
 }
 
-func apiMetadataToInfo(md *api.InstanceMetadata) MetadataInfo {
+func apiMetadataToInfo(md *repopb.InstanceMetadata) MetadataInfo {
 	return MetadataInfo{
 		Fingerprint: md.GetFingerprint(),
 		Key:         md.GetKey(),
@@ -238,7 +239,7 @@ func apiMetadataToInfo(md *api.InstanceMetadata) MetadataInfo {
 	}
 }
 
-func apiDescToInfo(d *api.DescribeInstanceResponse) *InstanceDescription {
+func apiDescToInfo(d *repopb.DescribeInstanceResponse) *InstanceDescription {
 	desc := &InstanceDescription{
 		InstanceInfo: apiInstanceToInfo(d.Instance),
 	}
@@ -263,23 +264,23 @@ func apiDescToInfo(d *api.DescribeInstanceResponse) *InstanceDescription {
 	return desc
 }
 
-func apiClientDescToInfo(d *api.DescribeClientResponse) *ClientDescription {
+func apiClientDescToInfo(d *repopb.DescribeClientResponse) *ClientDescription {
 	desc := &ClientDescription{
 		InstanceInfo:       apiInstanceToInfo(d.Instance),
 		Size:               d.ClientSize,
 		SignedURL:          d.ClientBinary.SignedUrl,
-		AlternativeDigests: make([]*api.ObjectRef, 0, len(d.ClientRefAliases)),
+		AlternativeDigests: make([]*caspb.ObjectRef, 0, len(d.ClientRefAliases)),
 	}
 
 	// Fallback value if the server doesn't support ClientRefAliases yet.
-	desc.Digest = &api.ObjectRef{
-		HashAlgo:  api.HashAlgo_SHA1,
+	desc.Digest = &caspb.ObjectRef{
+		HashAlgo:  caspb.HashAlgo_SHA1,
 		HexDigest: d.LegacySha1,
 	}
 
 	// Pick the best supported algo as 'Digest'.
 	for _, ref := range d.ClientRefAliases {
-		_, supported := api.HashAlgo_name[int32(ref.HashAlgo)]
+		_, supported := caspb.HashAlgo_name[int32(ref.HashAlgo)]
 		if supported && ref.HashAlgo > desc.Digest.HashAlgo {
 			desc.Digest = ref
 		}

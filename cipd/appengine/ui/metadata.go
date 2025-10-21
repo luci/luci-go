@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 // prefixMetadataBlock is passed to the templates as Metadata arg.
@@ -47,14 +47,14 @@ type prefixMetadataBlock struct {
 }
 
 type metadataACL struct {
-	RolePb     api.Role // original role enum, for sorting
-	Role       string   // e.g. "Reader"
-	Who        string   // either an email or a group name
-	WhoHref    string   // for groups, link to a group definition
-	Group      bool     // if true, this entry is a group
-	Missing    bool     // if true, this entry refers to a missing group
-	Prefix     string   // via what prefix this role is granted
-	PrefixHref string   // link to the corresponding prefix page
+	RolePb     repopb.Role // original role enum, for sorting
+	Role       string      // e.g. "Reader"
+	Who        string      // either an email or a group name
+	WhoHref    string      // for groups, link to a group definition
+	Group      bool        // if true, this entry is a group
+	Missing    bool        // if true, this entry refers to a missing group
+	Prefix     string      // via what prefix this role is granted
+	PrefixHref string      // link to the corresponding prefix page
 }
 
 // fetchPrefixMetadata fetches and formats for UI metadata of the given prefix.
@@ -62,7 +62,7 @@ type metadataACL struct {
 // It recognizes PermissionDenied errors and falls back to only displaying what
 // roles the caller has instead of the full metadata.
 func fetchPrefixMetadata(ctx context.Context, pfx string) (*prefixMetadataBlock, error) {
-	meta, err := state(ctx).services.PublicRepo.GetInheritedPrefixMetadata(ctx, &api.PrefixRequest{
+	meta, err := state(ctx).services.PublicRepo.GetInheritedPrefixMetadata(ctx, &repopb.PrefixRequest{
 		Prefix: pfx,
 	})
 	switch status.Code(err) {
@@ -158,7 +158,7 @@ func fetchPrefixMetadata(ctx context.Context, pfx string) (*prefixMetadataBlock,
 }
 
 func fetchCallerRoles(ctx context.Context, pfx string) (*prefixMetadataBlock, error) {
-	roles, err := state(ctx).services.PublicRepo.GetRolesInPrefix(ctx, &api.PrefixRequest{
+	roles, err := state(ctx).services.PublicRepo.GetRolesInPrefix(ctx, &repopb.PrefixRequest{
 		Prefix: pfx,
 	})
 	if err != nil {

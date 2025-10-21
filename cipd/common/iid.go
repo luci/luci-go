@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 )
 
 // HashAlgoValidation is passed to ValidateObjectRef.
@@ -60,10 +60,10 @@ func ValidateInstanceID(iid string, v HashAlgoValidation) (err error) {
 		err = checkIsHex(iid)
 		// Refuse SHA1s if the binary doesn't have SHA1 support compiled in.
 		if err == nil && v == KnownHash {
-			err = ValidateHashAlgo(api.HashAlgo_SHA1)
+			err = ValidateHashAlgo(caspb.HashAlgo_SHA1)
 		}
 	} else {
-		var ref *api.ObjectRef
+		var ref *caspb.ObjectRef
 		ref, err = decodeObjectRef(iid)
 		if err == nil && v == KnownHash {
 			err = ValidateObjectRef(ref, KnownHash)
@@ -85,7 +85,7 @@ func ValidateInstanceID(iid string, v HashAlgoValidation) (err error) {
 // instance IDs through the (outdated) client code back to the server.
 //
 // Errors have InvalidArgument grpc code.
-func ValidateObjectRef(ref *api.ObjectRef, v HashAlgoValidation) error {
+func ValidateObjectRef(ref *caspb.ObjectRef, v HashAlgoValidation) error {
 	if ref == nil {
 		return validationErr("the object ref is not provided")
 	}
@@ -128,11 +128,11 @@ func ValidateObjectRef(ref *api.ObjectRef, v HashAlgoValidation) error {
 //
 // The ref is not checked for correctness. Use ValidateObjectRef if this is
 // a concern. Panics if something is not right.
-func ObjectRefToInstanceID(ref *api.ObjectRef) string {
+func ObjectRefToInstanceID(ref *caspb.ObjectRef) string {
 	if err := ValidateObjectRef(ref, AnyHash); err != nil {
 		panic(err)
 	}
-	if ref.HashAlgo == api.HashAlgo_SHA1 {
+	if ref.HashAlgo == caspb.HashAlgo_SHA1 {
 		return ref.HexDigest // legacy SHA1 instance ID format
 	}
 	return encodeObjectRef(ref)
@@ -142,14 +142,14 @@ func ObjectRefToInstanceID(ref *api.ObjectRef) string {
 //
 // Panics if the instance ID is incorrect. Use ValidateInstanceID if
 // this is a concern.
-func InstanceIDToObjectRef(iid string) *api.ObjectRef {
+func InstanceIDToObjectRef(iid string) *caspb.ObjectRef {
 	// Legacy SHA1-based instances use hex(sha1) as instance ID, 40 chars.
 	if len(iid) == 40 {
 		if err := checkIsHex(iid); err != nil {
 			panic(fmt.Errorf("not a valid package instance ID %q: %s", iid, err))
 		}
-		return &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
+		return &caspb.ObjectRef{
+			HashAlgo:  caspb.HashAlgo_SHA1,
 			HexDigest: iid,
 		}
 	}
@@ -169,7 +169,7 @@ func InstanceIDToObjectRef(iid string) *api.ObjectRef {
 // encodes the resulting blob using raw URL-safe base64 encoding.
 //
 // Panics if ref is invalid.
-func encodeObjectRef(ref *api.ObjectRef) string {
+func encodeObjectRef(ref *caspb.ObjectRef) string {
 	switch {
 	case ref.HashAlgo < 0:
 		panic(fmt.Errorf("bad negative hash algo %d", ref.HashAlgo))
@@ -194,7 +194,7 @@ func encodeObjectRef(ref *api.ObjectRef) string {
 }
 
 // decodeObjectRef is a reverse of encodeObjectRef.
-func decodeObjectRef(iid string) (*api.ObjectRef, error) {
+func decodeObjectRef(iid string) (*caspb.ObjectRef, error) {
 	// Skip obviously wrong instance IDs faster and with a cleaner error message.
 	// We assume we use at least 160 bit digests here (which translates to at
 	// least 28 bytes of encoded iid).
@@ -212,7 +212,7 @@ func decodeObjectRef(iid string) (*api.ObjectRef, error) {
 		return nil, validationErr("the digest can't be odd")
 	}
 
-	hashAlgo := api.HashAlgo(blob[len(blob)-1])
+	hashAlgo := caspb.HashAlgo(blob[len(blob)-1])
 	digest := blob[:len(blob)-1]
 
 	if hashAlgo == 0 {
@@ -228,7 +228,7 @@ func decodeObjectRef(iid string) (*api.ObjectRef, error) {
 		}
 	}
 
-	return &api.ObjectRef{
+	return &caspb.ObjectRef{
 		HashAlgo:  hashAlgo,
 		HexDigest: hex.EncodeToString(digest),
 	}, nil

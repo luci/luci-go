@@ -17,13 +17,13 @@ package metadata
 import (
 	"context"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 // Visitor is a callback passed to VisitMetadata.
 //
 // It decides whether to continue exploring this metadata subtree or not.
-type Visitor func(prefix string, md []*api.PrefixMetadata) (cont bool, err error)
+type Visitor func(prefix string, md []*repopb.PrefixMetadata) (cont bool, err error)
 
 // Storage knows how to store, fetch and update prefix metadata, as well as
 // how to calculate its fingerprint.
@@ -59,7 +59,7 @@ type Storage interface {
 	//
 	// Returns a fatal error if the prefix is malformed, all other errors are
 	// transient.
-	GetMetadata(ctx context.Context, prefix string) ([]*api.PrefixMetadata, error)
+	GetMetadata(ctx context.Context, prefix string) ([]*repopb.PrefixMetadata, error)
 
 	// VisitMetadata enumerates the metadata in depth-first order.
 	//
@@ -100,7 +100,7 @@ type Storage interface {
 	//
 	// If the callback returns an error, it will be returned as is. If the
 	// transaction itself fails, returns a transient error.
-	UpdateMetadata(ctx context.Context, prefix string, cb func(ctx context.Context, m *api.PrefixMetadata) error) (*api.PrefixMetadata, error)
+	UpdateMetadata(ctx context.Context, prefix string, cb func(ctx context.Context, m *repopb.PrefixMetadata) error) (*repopb.PrefixMetadata, error)
 }
 
 // GetStorage returns production implementation of the metadata storage.

@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
-	api "go.chromium.org/luci/cipd/api/admin/v1"
+	adminpb "go.chromium.org/luci/cipd/api/admin/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 )
 
@@ -59,7 +59,7 @@ func SetupTest() (context.Context, *adminImpl, *tqtesting.Scheduler) {
 }
 
 // RunMapper launches a mapper and runs it till successful completion.
-func RunMapper(ctx context.Context, admin *adminImpl, sched *tqtesting.Scheduler, cfg *api.JobConfig) (dsmapper.JobID, error) {
+func RunMapper(ctx context.Context, admin *adminImpl, sched *tqtesting.Scheduler, cfg *adminpb.JobConfig) (dsmapper.JobID, error) {
 	// Launching the job creates an initial tq task.
 	jobID, err := admin.LaunchJob(ctx, cfg)
 	if err != nil {

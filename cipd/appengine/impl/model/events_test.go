@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 )
 
@@ -39,12 +39,12 @@ func TestEvents(t *testing.T) {
 		t.Run("Emitting events", func(t *ftt.Test) {
 			// First batch.
 			ev := Events{}
-			ev.Emit(&api.Event{
-				Kind:    api.EventKind_PACKAGE_CREATED,
+			ev.Emit(&repopb.Event{
+				Kind:    repopb.EventKind_PACKAGE_CREATED,
 				Package: "a/b/c",
 			})
-			ev.Emit(&api.Event{
-				Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
+			ev.Emit(&repopb.Event{
+				Kind:     repopb.EventKind_INSTANCE_TAG_ATTACHED,
 				Package:  "a/b/c",
 				Instance: "cccc",
 				Tag:      "k:v",
@@ -53,33 +53,33 @@ func TestEvents(t *testing.T) {
 
 			// Second batch a bit later.
 			tc.Add(time.Second)
-			ev.Emit(&api.Event{
-				Kind:    api.EventKind_INSTANCE_REF_SET,
+			ev.Emit(&repopb.Event{
+				Kind:    repopb.EventKind_INSTANCE_REF_SET,
 				Package: "x/y/z",
 			})
-			ev.Emit(&api.Event{
-				Kind:    api.EventKind_INSTANCE_TAG_ATTACHED,
+			ev.Emit(&repopb.Event{
+				Kind:    repopb.EventKind_INSTANCE_TAG_ATTACHED,
 				Package: "x/y/z",
 			})
 			assert.Loosely(t, ev.Flush(ctx), should.BeNil)
 
 			// Stored events have Who and When populated too. Ordered by newest to
 			// oldest, with events in a single batch separated by a fake nanosecond.
-			assert.Loosely(t, GetEvents(ctx), should.Match([]*api.Event{
+			assert.Loosely(t, GetEvents(ctx), should.Match([]*repopb.Event{
 				{
-					Kind:    api.EventKind_INSTANCE_TAG_ATTACHED,
+					Kind:    repopb.EventKind_INSTANCE_TAG_ATTACHED,
 					Package: "x/y/z",
 					Who:     string(testutil.TestUser),
 					When:    timestamppb.New(testutil.TestTime.Add(time.Second + 1)),
 				},
 				{
-					Kind:    api.EventKind_INSTANCE_REF_SET,
+					Kind:    repopb.EventKind_INSTANCE_REF_SET,
 					Package: "x/y/z",
 					Who:     string(testutil.TestUser),
 					When:    timestamppb.New(testutil.TestTime.Add(time.Second)),
 				},
 				{
-					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
+					Kind:     repopb.EventKind_INSTANCE_TAG_ATTACHED,
 					Package:  "a/b/c",
 					Instance: "cccc",
 					Tag:      "k:v",
@@ -87,7 +87,7 @@ func TestEvents(t *testing.T) {
 					When:     timestamppb.New(testutil.TestTime.Add(1)),
 				},
 				{
-					Kind:    api.EventKind_PACKAGE_CREATED,
+					Kind:    repopb.EventKind_PACKAGE_CREATED,
 					Package: "a/b/c",
 					Who:     string(testutil.TestUser),
 					When:    timestamppb.New(testutil.TestTime),
@@ -103,11 +103,11 @@ func TestEmitMetadataEvents(t *testing.T) {
 	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx, _, _ := testutil.TestingContext()
 
-		diffACLs := func(before, after []*api.PrefixMetadata_ACL) *api.Event {
+		diffACLs := func(before, after []*repopb.PrefixMetadata_ACL) *repopb.Event {
 			datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				assert.Loosely(t, EmitMetadataEvents(ctx,
-					&api.PrefixMetadata{Prefix: "pfx", Acls: before},
-					&api.PrefixMetadata{Prefix: "pfx", Acls: after},
+					&repopb.PrefixMetadata{Prefix: "pfx", Acls: before},
+					&repopb.PrefixMetadata{Prefix: "pfx", Acls: after},
 				), should.BeNil)
 				return nil
 			}, nil)
@@ -124,31 +124,31 @@ func TestEmitMetadataEvents(t *testing.T) {
 		})
 
 		t.Run("Add some", func(t *ftt.Test) {
-			ev := diffACLs(nil, []*api.PrefixMetadata_ACL{
+			ev := diffACLs(nil, []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"b", "a"},
 				},
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"a"},
 				},
 				{
-					Role: api.Role_WRITER,
+					Role: repopb.Role_WRITER,
 				},
 			})
-			assert.Loosely(t, ev, should.Match(&api.Event{
-				Kind:    api.EventKind_PREFIX_ACL_CHANGED,
+			assert.Loosely(t, ev, should.Match(&repopb.Event{
+				Kind:    repopb.EventKind_PREFIX_ACL_CHANGED,
 				Package: "pfx",
 				Who:     string(testutil.TestUser),
 				When:    timestamppb.New(testutil.TestTime),
-				GrantedRole: []*api.PrefixMetadata_ACL{
+				GrantedRole: []*repopb.PrefixMetadata_ACL{
 					{
-						Role:       api.Role_READER,
+						Role:       repopb.Role_READER,
 						Principals: []string{"a"},
 					},
 					{
-						Role:       api.Role_OWNER,
+						Role:       repopb.Role_OWNER,
 						Principals: []string{"a", "b"}, // sorted here
 					},
 				},
@@ -156,31 +156,31 @@ func TestEmitMetadataEvents(t *testing.T) {
 		})
 
 		t.Run("Remove some", func(t *ftt.Test) {
-			ev := diffACLs([]*api.PrefixMetadata_ACL{
+			ev := diffACLs([]*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"b", "a"},
 				},
 				{
-					Role:       api.Role_READER,
+					Role:       repopb.Role_READER,
 					Principals: []string{"a"},
 				},
 				{
-					Role: api.Role_WRITER,
+					Role: repopb.Role_WRITER,
 				},
 			}, nil)
-			assert.Loosely(t, ev, should.Match(&api.Event{
-				Kind:    api.EventKind_PREFIX_ACL_CHANGED,
+			assert.Loosely(t, ev, should.Match(&repopb.Event{
+				Kind:    repopb.EventKind_PREFIX_ACL_CHANGED,
 				Package: "pfx",
 				Who:     string(testutil.TestUser),
 				When:    timestamppb.New(testutil.TestTime),
-				RevokedRole: []*api.PrefixMetadata_ACL{
+				RevokedRole: []*repopb.PrefixMetadata_ACL{
 					{
-						Role:       api.Role_READER,
+						Role:       repopb.Role_READER,
 						Principals: []string{"a"},
 					},
 					{
-						Role:       api.Role_OWNER,
+						Role:       repopb.Role_OWNER,
 						Principals: []string{"a", "b"}, // sorted here
 					},
 				},
@@ -188,31 +188,31 @@ func TestEmitMetadataEvents(t *testing.T) {
 		})
 
 		t.Run("Change some", func(t *ftt.Test) {
-			ev := diffACLs([]*api.PrefixMetadata_ACL{
+			ev := diffACLs([]*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"b", "a", "c"},
 				},
-			}, []*api.PrefixMetadata_ACL{
+			}, []*repopb.PrefixMetadata_ACL{
 				{
-					Role:       api.Role_OWNER,
+					Role:       repopb.Role_OWNER,
 					Principals: []string{"b", "d", "e"},
 				},
 			})
-			assert.Loosely(t, ev, should.Match(&api.Event{
-				Kind:    api.EventKind_PREFIX_ACL_CHANGED,
+			assert.Loosely(t, ev, should.Match(&repopb.Event{
+				Kind:    repopb.EventKind_PREFIX_ACL_CHANGED,
 				Package: "pfx",
 				Who:     string(testutil.TestUser),
 				When:    timestamppb.New(testutil.TestTime),
-				GrantedRole: []*api.PrefixMetadata_ACL{
+				GrantedRole: []*repopb.PrefixMetadata_ACL{
 					{
-						Role:       api.Role_OWNER,
+						Role:       repopb.Role_OWNER,
 						Principals: []string{"d", "e"}, // sorted here
 					},
 				},
-				RevokedRole: []*api.PrefixMetadata_ACL{
+				RevokedRole: []*repopb.PrefixMetadata_ACL{
 					{
-						Role:       api.Role_OWNER,
+						Role:       repopb.Role_OWNER,
 						Principals: []string{"a", "c"}, // sorted here
 					},
 				},
@@ -225,7 +225,7 @@ func TestEmitMetadataEvents(t *testing.T) {
 // ordering them by timestamp (most recent first).
 //
 // Calls datastore.GetTestable(ctx).CatchupIndexes() inside.
-func GetEvents(ctx context.Context) []*api.Event {
+func GetEvents(ctx context.Context) []*repopb.Event {
 	datastore.GetTestable(ctx).CatchupIndexes()
 	ev, err := QueryEvents(ctx, NewEventsQuery())
 	if err != nil {

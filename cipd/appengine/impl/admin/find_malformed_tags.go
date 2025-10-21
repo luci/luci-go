@@ -28,14 +28,14 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/dsmapper"
 
-	api "go.chromium.org/luci/cipd/api/admin/v1"
+	adminpb "go.chromium.org/luci/cipd/api/admin/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/common"
 )
 
 func init() {
 	initMapper(mapperDef{
-		Kind: api.MapperKind_FIND_MALFORMED_TAGS,
+		Kind: adminpb.MapperKind_FIND_MALFORMED_TAGS,
 		Func: findMalformedTagsMapper,
 		Config: dsmapper.JobConfig{
 			Query:         dsmapper.Query{Kind: "InstanceTag"},
@@ -46,7 +46,7 @@ func init() {
 	})
 }
 
-func findMalformedTagsMapper(ctx context.Context, job dsmapper.JobID, _ *api.JobConfig, keys []*datastore.Key) error {
+func findMalformedTagsMapper(ctx context.Context, job dsmapper.JobID, _ *adminpb.JobConfig, keys []*datastore.Key) error {
 	return visitAndMarkTags(ctx, job, keys, func(t *model.Tag) string {
 		if err := common.ValidateInstanceTag(t.Tag); err != nil {
 			return err.Error()
@@ -55,7 +55,7 @@ func findMalformedTagsMapper(ctx context.Context, job dsmapper.JobID, _ *api.Job
 	})
 }
 
-func fixMarkedTags(ctx context.Context, job dsmapper.JobID) (fixed []*api.TagFixReport_Tag, err error) {
+func fixMarkedTags(ctx context.Context, job dsmapper.JobID) (fixed []*adminpb.TagFixReport_Tag, err error) {
 	ctx, cancel := clock.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
@@ -81,7 +81,7 @@ func fixMarkedTags(ctx context.Context, job dsmapper.JobID) (fixed []*api.TagFix
 		for _, keys := range perRoot {
 			root := keys[0].Root()
 			tasks <- func() error {
-				var fixedHere []*api.TagFixReport_Tag
+				var fixedHere []*adminpb.TagFixReport_Tag
 				err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 					fixedHere, err = txnFixTagsInEG(ctx, keys)
 					return err
@@ -99,9 +99,9 @@ func fixMarkedTags(ctx context.Context, job dsmapper.JobID) (fixed []*api.TagFix
 	return fixed, transient.Tag.Apply(err)
 }
 
-func txnFixTagsInEG(ctx context.Context, keys []*datastore.Key) (report []*api.TagFixReport_Tag, err error) {
+func txnFixTagsInEG(ctx context.Context, keys []*datastore.Key) (report []*adminpb.TagFixReport_Tag, err error) {
 	err = multiGetTags(ctx, keys, func(key *datastore.Key, tag *model.Tag) error {
-		out := &api.TagFixReport_Tag{
+		out := &adminpb.TagFixReport_Tag{
 			Pkg:       key.Parent().Parent().StringID(),
 			Instance:  key.Parent().StringID(),
 			BrokenTag: tag.Tag,

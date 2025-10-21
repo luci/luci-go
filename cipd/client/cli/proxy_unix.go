@@ -28,7 +28,7 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 
-	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
+	logpb "go.chromium.org/luci/cipd/api/cipd/v1/logpb"
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver"
 	"go.chromium.org/luci/cipd/client/cipd/proxyserver/proxypb"
@@ -49,7 +49,7 @@ func runProxyImpl(ctx context.Context, unixSocket string, policy *proxypb.Policy
 			_, _ = fmt.Fprintf(os.Stdout, "%s=%s\n", cipd.EnvCIPDProxyURL, proxyURL)
 			_ = os.Stdout.Close()
 		},
-		AccessLog: func(ctx context.Context, entry *cipdpb.AccessLogEntry) {
+		AccessLog: func(ctx context.Context, entry *logpb.AccessLogEntry) {
 			logging.Infof(ctx, "RPC %s", entry.Method)
 			stats.RPCCall(entry)
 		},
