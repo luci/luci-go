@@ -101,10 +101,22 @@ func CreateNthSectionAnalysis(c context.Context, t testing.TB, cfa *model.Compil
 	return nsa
 }
 
-func CreateGenAIAnalysis(c context.Context, t testing.TB, cfa *model.CompileFailureAnalysis) *model.CompileGenAIAnalysis {
+type CompileGenAIAnalysisCreationOption struct {
+	ParentAnalysis *model.CompileFailureAnalysis
+	StartTime      time.Time
+	EndTime        time.Time
+	Status         pb.AnalysisStatus
+	RunStatus      pb.AnalysisRunStatus
+}
+
+func CreateCompileGenAIAnalysis(c context.Context, t testing.TB, option *CompileGenAIAnalysisCreationOption) *model.CompileGenAIAnalysis {
 	t.Helper()
 	ga := &model.CompileGenAIAnalysis{
-		ParentAnalysis: datastore.KeyForObj(c, cfa),
+		ParentAnalysis: datastore.KeyForObj(c, option.ParentAnalysis),
+		StartTime:      option.StartTime,
+		EndTime:        option.EndTime,
+		Status:         option.Status,
+		RunStatus:      option.RunStatus,
 	}
 	assert.Loosely(t, datastore.Put(c, ga), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
@@ -122,12 +134,31 @@ func CreateNthSectionSuspect(c context.Context, t testing.TB, nsa *model.Compile
 	return suspect
 }
 
-func CreateGenAISuspect(c context.Context, t testing.TB, ga *model.CompileGenAIAnalysis, status model.SuspectVerificationStatus) *model.Suspect {
+type GenAISuspectCreationOption struct {
+	ParentAnalysis *model.CompileGenAIAnalysis
+	Status         model.SuspectVerificationStatus
+	CommitID       string
+	ReviewURL      string
+	ReviewTitle    string
+	Justification  string
+	Ref            string
+}
+
+func CreateGenAISuspect(c context.Context, t testing.TB, option *GenAISuspectCreationOption) *model.Suspect {
 	t.Helper()
 	suspect := &model.Suspect{
-		ParentAnalysis:     datastore.KeyForObj(c, ga),
+		ParentAnalysis:     datastore.KeyForObj(c, option.ParentAnalysis),
 		Type:               model.SuspectType_GenAI,
-		VerificationStatus: status,
+		VerificationStatus: option.Status,
+		GitilesCommit: bbpb.GitilesCommit{
+			Host:    "chromium.googlesource.com",
+			Project: "chromium/src",
+			Id:      option.CommitID,
+			Ref:     option.Ref,
+		},
+		ReviewUrl:     option.ReviewURL,
+		ReviewTitle:   option.ReviewTitle,
+		Justification: option.Justification,
 	}
 	assert.Loosely(t, datastore.Put(c, suspect), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
@@ -440,6 +471,7 @@ type SuspectCreationOption struct {
 	VerificationStatus model.SuspectVerificationStatus
 	ActionDetails      model.ActionDetails
 	AnalysisType       pb.AnalysisType
+	Ref                string
 }
 
 func CreateSuspect(ctx context.Context, t testing.TB, option *SuspectCreationOption) *model.Suspect {
@@ -454,6 +486,7 @@ func CreateSuspect(ctx context.Context, t testing.TB, option *SuspectCreationOpt
 	var verificationStatus model.SuspectVerificationStatus
 	var actionDetails model.ActionDetails
 	var analysisType pb.AnalysisType
+	ref := "ref"
 
 	if option != nil {
 		if option.ID != 0 {
@@ -461,6 +494,9 @@ func CreateSuspect(ctx context.Context, t testing.TB, option *SuspectCreationOpt
 		}
 		if option.CommitID != "" {
 			commitID = option.CommitID
+		}
+		if option.Ref != "" {
+			ref = option.Ref
 		}
 		parentKey = option.ParentKey
 		reviewURL = option.ReviewURL
@@ -477,7 +513,7 @@ func CreateSuspect(ctx context.Context, t testing.TB, option *SuspectCreationOpt
 		GitilesCommit: bbpb.GitilesCommit{
 			Host:    "chromium.googlesource.com",
 			Project: "chromium/src",
-			Ref:     "ref",
+			Ref:     ref,
 			Id:      commitID,
 		},
 		ReviewUrl:          reviewURL,

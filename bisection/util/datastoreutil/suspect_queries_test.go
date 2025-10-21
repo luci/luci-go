@@ -304,8 +304,13 @@ func TestFetchSuspectsForAnalysis(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(suspects), should.BeZero)
 
-		ga := testutil.CreateGenAIAnalysis(c, t, cfa)
-		testutil.CreateGenAISuspect(c, t, ga, model.SuspectVerificationStatus_Unverified)
+		ga := testutil.CreateCompileGenAIAnalysis(c, t, &testutil.CompileGenAIAnalysisCreationOption{
+			ParentAnalysis: cfa,
+		})
+		testutil.CreateGenAISuspect(c, t, &testutil.GenAISuspectCreationOption{
+			ParentAnalysis: ga,
+			Status:         model.SuspectVerificationStatus_Unverified,
+		})
 
 		suspects, err = FetchSuspectsForAnalysis(c, cfa)
 		assert.Loosely(t, err, should.BeNil)

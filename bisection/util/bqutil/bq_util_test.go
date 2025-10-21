@@ -454,3 +454,115 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 		}))
 	})
 }
+
+func TestCompileFailureAnalysisToBqRow(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+	testutil.UpdateIndices(ctx)
+
+	ftt.Run("CompileFailureAnalysisToBqRow", t, func(t *ftt.Test) {
+		lfb := &model.LuciFailedBuild{
+			Id: 9000,
+			LuciBuild: model.LuciBuild{
+				Project: "chromium",
+				Bucket:  "ci",
+				Builder: "mac-builder",
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Id:      "first_fail_commit",
+					Ref:     "refs/heads/main",
+				},
+			},
+		}
+		assert.Loosely(t, datastore.Put(ctx, lfb), should.BeNil)
+		cf := testutil.CreateCompileFailure(ctx, t, lfb)
+		cfa := testutil.CreateCompileFailureAnalysis(ctx, t, 123, cf)
+		cfa.FirstFailedBuildId = 9000
+		cfa.CreateTime = time.Unix(200, 0).UTC()
+		cfa.StartTime = time.Unix(210, 0).UTC()
+		cfa.EndTime = time.Unix(220, 0).UTC()
+		cfa.Status = pb.AnalysisStatus_FOUND
+		cfa.RunStatus = pb.AnalysisRunStatus_ENDED
+		assert.Loosely(t, datastore.Put(ctx, cfa), should.BeNil)
+
+		culprit := testutil.CreateSuspect(ctx, t, &testutil.SuspectCreationOption{
+			ID:                 500,
+			CommitID:           "culprit_commit_id",
+			ReviewURL:          "review_url",
+			ReviewTitle:        "review_title",
+			VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+			Ref:                "refs/heads/main",
+		})
+		cfa.VerifiedCulprits = []*datastore.Key{datastore.KeyForObj(ctx, culprit)}
+		assert.Loosely(t, datastore.Put(ctx, cfa), should.BeNil)
+
+		genaiStartTime := time.Unix(215, 0).UTC()
+		genaiEndTime := time.Unix(218, 0).UTC()
+		genaiAnalysis := testutil.CreateCompileGenAIAnalysis(ctx, t, &testutil.CompileGenAIAnalysisCreationOption{
+			ParentAnalysis: cfa,
+			StartTime:      genaiStartTime,
+			EndTime:        genaiEndTime,
+			Status:         pb.AnalysisStatus_SUSPECTFOUND,
+			RunStatus:      pb.AnalysisRunStatus_ENDED,
+		})
+		testutil.CreateGenAISuspect(ctx, t, &testutil.GenAISuspectCreationOption{
+			ParentAnalysis: genaiAnalysis,
+			Status:         model.SuspectVerificationStatus_Unverified,
+			CommitID:       "genai_commit_id",
+			ReviewURL:      "genai_review_url",
+			ReviewTitle:    "genai_review_title",
+			Justification:  "some justification",
+			Ref:            "refs/heads/main",
+		})
+
+		genaiResultPb := &pb.GenAiAnalysisResult{
+			Status:    pb.AnalysisStatus_SUSPECTFOUND,
+			StartTime: timestamppb.New(genaiStartTime),
+			EndTime:   timestamppb.New(genaiEndTime),
+			Suspect:   nil,
+		}
+
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		row, err := CompileFailureAnalysisToBqRow(ctx, cfa)
+		assert.Loosely(t, err, should.BeNil)
+
+		expectedCulprit := &pb.Culprit{
+			ReviewUrl:   "review_url",
+			ReviewTitle: "review_title",
+			Commit: &buildbucketpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Id:      "culprit_commit_id",
+				Ref:     "refs/heads/main",
+			},
+			CulpritAction: []*pb.CulpritAction{
+				{
+					ActionType: pb.CulpritActionType_NO_ACTION,
+				},
+			},
+		}
+
+		expectedRow := &bqpb.CompileAnalysisRow{
+			Project:    "chromium",
+			AnalysisId: 123,
+			Builder: &buildbucketpb.BuilderID{
+				Project: "chromium",
+				Bucket:  "ci",
+				Builder: "mac-builder",
+			},
+			CreatedTime:  timestamppb.New(time.Unix(200, 0).UTC()),
+			StartTime:    timestamppb.New(time.Unix(210, 0).UTC()),
+			EndTime:      timestamppb.New(time.Unix(220, 0).UTC()),
+			Status:       pb.AnalysisStatus_FOUND,
+			RunStatus:    pb.AnalysisRunStatus_ENDED,
+			SampleBbid:   9000,
+			BuildFailure: &pb.BuildFailure{},
+			Culprits:     []*pb.Culprit{expectedCulprit},
+			GenaiResult:  genaiResultPb,
+		}
+
+		assert.Loosely(t, row, should.Match(expectedRow))
+	})
+}

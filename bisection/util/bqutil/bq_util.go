@@ -32,6 +32,68 @@ import (
 	"go.chromium.org/luci/bisection/util/protoutil"
 )
 
+// CompileFailureAnalysisToBqRow returns a CompileAnalysisRow for a CompileFailureAnalysis.
+func CompileFailureAnalysisToBqRow(ctx context.Context, cfa *model.CompileFailureAnalysis) (*bqpb.CompileAnalysisRow, error) {
+	// Make sure that the analysis has ended.
+	if cfa.RunStatus != pb.AnalysisRunStatus_ENDED {
+		return nil, errors.Fmt("analysis %d has not ended", cfa.Id)
+	}
+	compileFailure, err := datastoreutil.GetCompileFailureForAnalysis(ctx, cfa)
+	if err != nil {
+		return nil, errors.Fmt("get compile failure for analysis: %w", err)
+	}
+
+	fb, err := datastoreutil.GetBuild(ctx, cfa.CompileFailure.Parent().IntID())
+	if err != nil {
+		return nil, errors.Fmt("getBuild: %w", err)
+	}
+	if fb == nil {
+		return nil, errors.Fmt("couldn't find build for analysis %d", cfa.Id)
+	}
+
+	result := &bqpb.CompileAnalysisRow{
+		Project:     fb.Project,
+		AnalysisId:  cfa.Id,
+		CreatedTime: timestamppb.New(cfa.CreateTime),
+		StartTime:   timestamppb.New(cfa.StartTime),
+		EndTime:     timestamppb.New(cfa.EndTime),
+		Status:      cfa.Status,
+		RunStatus:   cfa.RunStatus,
+		Builder: &buildbucketpb.BuilderID{
+			Project: fb.Project,
+			Bucket:  fb.Bucket,
+			Builder: fb.Builder,
+		},
+		BuildFailure: protoutil.CompileFailureToPb(compileFailure),
+		SampleBbid:   fb.Id,
+	}
+	// TODO(jiameil): Add nthsection result to the result.
+	culpritKeys := cfa.VerifiedCulprits
+	if len(culpritKeys) == 0 {
+		return result, nil
+	}
+
+	pbCulprits := make([]*pb.Culprit, 0, len(culpritKeys))
+	for _, key := range culpritKeys {
+		culprit, err := datastoreutil.GetSuspect(ctx, key.IntID(), key.Parent())
+		if err != nil {
+			return nil, errors.Annotate(err, "get suspect for key %s", key.String()).Err()
+		}
+		pbCulprits = append(pbCulprits, protoutil.SuspectToCulpritPb(culprit))
+	}
+	result.Culprits = pbCulprits
+
+	ga, err := datastoreutil.GetGenAIAnalysis(ctx, cfa)
+	if err != nil {
+		return nil, errors.Annotate(err, "get genai result for analysis %d", cfa.Id).Err()
+	}
+	if ga != nil {
+		result.GenaiResult = protoutil.CompileGenAIAnalysisToPb(ga)
+	}
+
+	return result, nil
+}
+
 // TestFailureAnalysisToBqRow returns a TestAnalysisRow for a TestFailureAnalysis.
 // This is very similar to TestFailureAnalysisToPb in protoutil, but we intentionally
 // keep them separate because they are for 2 different purposes.

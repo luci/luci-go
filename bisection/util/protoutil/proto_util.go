@@ -504,3 +504,44 @@ func CulpritActionsForSuspect(suspect *model.Suspect) []*pb.CulpritAction {
 	}
 	return culpritActions
 }
+
+func SuspectToCulpritPb(s *model.Suspect) *pb.Culprit {
+	if s == nil {
+		return nil
+	}
+	return &pb.Culprit{
+		Commit: &buildbucketpb.GitilesCommit{
+			Host:     s.GitilesCommit.Host,
+			Project:  s.GitilesCommit.Project,
+			Ref:      s.GitilesCommit.Ref,
+			Id:       s.GitilesCommit.Id,
+			Position: s.GitilesCommit.Position,
+		},
+		ReviewUrl:     s.ReviewUrl,
+		ReviewTitle:   s.ReviewTitle,
+		CulpritAction: CulpritActionsForSuspect(s),
+	}
+}
+
+func CompileGenAIAnalysisToPb(ga *model.CompileGenAIAnalysis) *pb.GenAiAnalysisResult {
+	if ga == nil {
+		return nil
+	}
+	res := &pb.GenAiAnalysisResult{
+		Status:    ga.Status,
+		StartTime: timestamppb.New(ga.StartTime),
+	}
+	if ga.HasEnded() {
+		res.EndTime = timestamppb.New(ga.EndTime)
+	}
+	return res
+}
+
+func CompileFailureToPb(cf *model.CompileFailure) *pb.BuildFailure {
+	if cf == nil {
+		return nil
+	}
+	return &pb.BuildFailure{
+		// TODO(b/265359409): Add fields from compile_failure.proto once it is defined
+	}
+}

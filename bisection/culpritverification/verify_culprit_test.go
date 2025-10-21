@@ -439,8 +439,13 @@ func TestCheckSuspectWithSameCommitExist(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, exist, should.BeFalse)
 
-		ha := testutil.CreateGenAIAnalysis(c, t, cfa)
-		s1 := testutil.CreateGenAISuspect(c, t, ha, model.SuspectVerificationStatus_Unverified)
+		ha := testutil.CreateCompileGenAIAnalysis(c, t, &testutil.CompileGenAIAnalysisCreationOption{
+			ParentAnalysis: cfa,
+		})
+		s1 := testutil.CreateGenAISuspect(c, t, &testutil.GenAISuspectCreationOption{
+			ParentAnalysis: ha,
+			Status:         model.SuspectVerificationStatus_Unverified,
+		})
 
 		exist, err = checkSuspectWithSameCommitExist(c, cfa, suspect)
 		assert.Loosely(t, err, should.BeNil)
