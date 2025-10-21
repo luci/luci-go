@@ -83,16 +83,11 @@ func ReadFinalizationState(ctx context.Context, id ID) (state pb.WorkUnit_Finali
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadFinalizationState")
 	defer func() { tracing.End(ts, err) }()
 
-	var legacyState pb.WorkUnit_FinalizationState
 	err = readColumns(ctx, id, map[string]any{
 		"FinalizationState": &state,
-		"State":             &legacyState,
 	})
 	if err != nil {
 		return 0, err
-	}
-	if state == 0 {
-		state = legacyState
 	}
 	return state, nil
 }
@@ -174,18 +169,14 @@ func ReadFinalizationStates(ctx context.Context, ids []ID) (states []pb.WorkUnit
 	defer func() { tracing.End(ts, err) }()
 
 	var b spanutil.Buffer
-	columns := []string{"FinalizationState", "State"}
+	columns := []string{"FinalizationState"}
 	parseRow := func(r *spanner.Row) (ID, pb.WorkUnit_FinalizationState, error) {
 		var rootInvocationShardID string
 		var workUnitID string
 		var state pb.WorkUnit_FinalizationState
-		var legacyState pb.WorkUnit_FinalizationState
-		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &state, &legacyState)
+		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &state)
 		if err != nil {
 			return ID{}, pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED, err
-		}
-		if state == 0 {
-			state = legacyState
 		}
 		return IDFromRowID(rootInvocationShardID, workUnitID), state, nil
 	}
@@ -296,19 +287,14 @@ func ReadTestResultInfos(ctx context.Context, ids []ID) (results map[ID]TestResu
 		var rootInvocationShardID string
 		var workUnitID string
 		var finalizationState pb.WorkUnit_FinalizationState
-		var legacyState pb.WorkUnit_FinalizationState
 		var realm string
 		var moduleName spanner.NullString
 		var moduleScheme spanner.NullString
 		var moduleVariant *pb.Variant
 
-		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &finalizationState, &legacyState, &realm, &moduleName, &moduleScheme, &moduleVariant)
+		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &finalizationState, &realm, &moduleName, &moduleScheme, &moduleVariant)
 		if err != nil {
 			return ID{}, TestResultInfo{}, err
-		}
-
-		if finalizationState == 0 {
-			finalizationState = legacyState
 		}
 
 		var moduleID *pb.ModuleIdentifier
@@ -332,7 +318,7 @@ func ReadTestResultInfos(ctx context.Context, ids []ID) (results map[ID]TestResu
 		return IDFromRowID(rootInvocationShardID, workUnitID), result, nil
 	}
 
-	columns := []string{"FinalizationState", "State", "Realm", "ModuleName", "ModuleScheme", "ModuleVariant"}
+	columns := []string{"FinalizationState", "Realm", "ModuleName", "ModuleScheme", "ModuleVariant"}
 	resultMap, err := readRows(ctx, ids, columns, parseRow)
 	if err != nil {
 		return nil, err
@@ -742,7 +728,7 @@ func QueryFinalizerCandidates(ctx context.Context, rootInvID rootinvocations.ID,
 		FROM WorkUnits
 		WHERE RootInvocationShardId IN UNNEST(@ids)
 			AND FinalizerCandidateTime IS NOT NULL
-			AND (CASE	WHEN FinalizationState <> 0 THEN FinalizationState ELSE State	END) = @finalizing
+			AND FinalizationState = @finalizing
 		ORDER BY 1,2
 		LIMIT @limit
 	`)
@@ -788,7 +774,7 @@ func ReadyToFinalize(ctx context.Context, ids IDSet, ignoreIDs IDSet) (readyIDs 
 	WHERE
 		STRUCT(wu.RootInvocationShardId, wu.WorkUnitId) IN UNNEST(@ids)
 		-- Must be FINALIZING to be ready for finalization.
-		AND (CASE	WHEN wu.FinalizationState <> 0 THEN wu.FinalizationState ELSE wu.State END) = @finalizing
+		AND wu.FinalizationState = @finalizing
 		-- Must not exist any child work unit that is NOT in the 'Finalized' state.
 		-- Ignore children in ignoreIDs list.
 		AND NOT EXISTS (
@@ -801,7 +787,7 @@ func ReadyToFinalize(ctx context.Context, ids IDSet, ignoreIDs IDSet) (readyIDs 
 				c.RootInvocationShardId = wu.RootInvocationShardId
 				AND c.WorkUnitId = wu.WorkUnitId
 				AND STRUCT(cwu.RootInvocationShardId, cwu.WorkUnitId) NOT IN UNNEST(@ignoreIDs)
-				AND (CASE	WHEN cwu.FinalizationState <> 0 THEN cwu.FinalizationState ELSE cwu.State	END) != @finalized
+				AND cwu.FinalizationState != @finalized
 		)
 	`)
 	// Struct to use as Spanner Query Parameter.

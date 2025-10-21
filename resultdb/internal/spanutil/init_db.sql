@@ -40,7 +40,7 @@ CREATE TABLE RootInvocations (
   --
   -- This will always match the root work unit finalization state,
   -- but it is replicated here for convenience.
-  FinalizationState INT64 NOT NULL DEFAULT(0),
+  FinalizationState INT64 NOT NULL,
 
   -- Root invocation execution state. One of:
   -- - Pending (1)
@@ -219,9 +219,6 @@ CREATE TABLE RootInvocationShards (
   -- hotspotting.
   RootInvocationId STRING(MAX) NOT NULL,
 
-  -- To be removed.
-  State INT64 NOT NULL DEFAULT(0),
-
   -- Replicate of root invocation realm, to avoid hotspotting the root invocation
   -- in operations that don't need the whole root invocation, such as test result
   -- uploads or work unit reads.
@@ -287,7 +284,7 @@ CREATE TABLE WorkUnits (
   --   may still be mutable.
   -- - Finalized (3): the work unit and all directly and indirectly
   --   included work units (and invocations) are immutable.
-  FinalizationState INT64 NOT NULL DEFAULT(0),
+  FinalizationState INT64 NOT NULL,
 
   -- Work unit execution state. One of:
   -- - Pending (1)

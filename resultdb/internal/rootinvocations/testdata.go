@@ -281,7 +281,7 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 		"InvocationId":                      r.RootInvocationID.LegacyInvocationID(),
 		"Type":                              invocations.Root,
 		"ShardId":                           r.RootInvocationID.shardID(invocations.Shards),
-		"State":                             r.FinalizationState,
+		"State":                             toInvocationState(r.FinalizationState),
 		"Realm":                             r.Realm,
 		"InvocationExpirationTime":          time.Unix(0, 0), // unused field, but spanner schema enforce it to be not null.
 		"ExpectedTestResultsExpirationTime": r.UninterestingTestVerdictsExpirationTime,

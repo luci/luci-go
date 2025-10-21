@@ -134,7 +134,7 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 		"RootInvocationId":      r.RootInvocationID,
 		"SecondaryIndexShardId": r.RootInvocationID.shardID(secondaryIndexShardCount),
 		"FinalizationState":     r.FinalizationState,
-		"State":                 r.FinalizationState,
+		"State":                 pb.RootInvocation_STATE_UNSPECIFIED,
 		"Realm":                 r.Realm,
 		"CreateTime":            spanner.CommitTimestamp,
 		"CreatedBy":             r.CreatedBy,
@@ -314,7 +314,6 @@ func MarkFinalizing(id ID) []*spanner.Mutation {
 	ms = append(ms, spanutil.UpdateMap("RootInvocations", map[string]any{
 		"RootInvocationId":  id,
 		"FinalizationState": pb.RootInvocation_FINALIZING,
-		"State":             pb.RootInvocation_FINALIZING,
 		"LastUpdated":       spanner.CommitTimestamp,
 		"FinalizeStartTime": spanner.CommitTimestamp,
 	}))
@@ -330,7 +329,6 @@ func MarkFinalized(id ID) []*spanner.Mutation {
 	ms = append(ms, spanutil.UpdateMap("RootInvocations", map[string]any{
 		"RootInvocationId":  id,
 		"FinalizationState": pb.RootInvocation_FINALIZED,
-		"State":             pb.RootInvocation_FINALIZED,
 		"LastUpdated":       spanner.CommitTimestamp,
 		"FinalizeTime":      spanner.CommitTimestamp,
 	}))
