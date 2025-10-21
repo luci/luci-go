@@ -27,15 +27,24 @@ import { StageView } from '../../proto/turboci/graph/orchestrator/v1/stage_view.
 const dagreGraph = new dagre.graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
 
+// We must explicit set all top/right/bottom/left border properties here instead
+// of just setting "border" because React does not work well when mixing shorthand
+// and non-shorthand CSS properties.
 const CHECK_NODE_STYLE: CSSProperties = {
   background: '#c3beffff',
   color: '#333',
-  border: '1px solid black',
+  borderTop: '1px solid black',
+  borderRight: '1px solid black',
+  borderBottom: '1px solid black',
+  borderLeft: '1px solid black',
 };
 const STAGE_NODE_STYLE: CSSProperties = {
   background: '#abffbdff',
   color: '#333',
-  border: '1px solid black',
+  borderTop: '1px solid black',
+  borderRight: '1px solid black',
+  borderBottom: '1px solid black',
+  borderLeft: '1px solid black',
 };
 const COMMON_NODE_PROPERTIES: Partial<Node> & Pick<Node, 'position'> = {
   position: { x: 0, y: 0 }, // Position will be calculated by Dagre
@@ -50,7 +59,6 @@ const DEPENDENCY_EDGE_STYLE: Partial<Edge> = {
     color: '#B0BEC5',
   },
   style: { strokeWidth: 1.5, stroke: '#B0BEC5' },
-  type: 'bezier',
 };
 
 const GRAPH_CONFIG = {
@@ -97,7 +105,10 @@ const NODE_STYLES = {
     ...BASE_NODE_STYLE,
     background: COLORS.check.bg,
     color: COLORS.check.text,
-    border: `${BORDER_STYLE} ${COLORS.check.border}`,
+    borderTop: createCssBorder(COLORS.check.border),
+    borderRight: createCssBorder(COLORS.check.border),
+    borderBottom: createCssBorder(COLORS.check.border),
+    borderLeft: createCssBorder(COLORS.check.border),
     borderRadius: '4px',
   },
   // Check attached below stage(s)
@@ -105,9 +116,11 @@ const NODE_STYLES = {
     ...BASE_NODE_STYLE,
     background: COLORS.check.bg,
     color: COLORS.check.text,
-    border: `${BORDER_STYLE} ${COLORS.check.border}`,
     // Visual connector to stage above. Uses stage border color.
-    borderTop: `${BORDER_STYLE} ${COLORS.stage.border}`,
+    borderTop: createCssBorder(COLORS.stage.border),
+    borderRight: createCssBorder(COLORS.check.border),
+    borderBottom: createCssBorder(COLORS.check.border),
+    borderLeft: createCssBorder(COLORS.check.border),
     borderRadius: '0 0 4px 4px', // Rounded bottom only
     // Ensure top border overlays stage bottom border area
     zIndex: 1,
@@ -119,7 +132,10 @@ const NODE_STYLES = {
     ...BASE_NODE_STYLE,
     background: COLORS.stage.bg,
     color: COLORS.stage.text,
-    border: `${BORDER_STYLE} ${COLORS.stage.border}`,
+    borderTop: createCssBorder(COLORS.stage.border),
+    borderRight: createCssBorder(COLORS.stage.border),
+    borderBottom: createCssBorder(COLORS.stage.border),
+    borderLeft: createCssBorder(COLORS.stage.border),
     borderRadius: '4px',
     fontWeight: 'bold',
   },
@@ -128,8 +144,10 @@ const NODE_STYLES = {
     ...BASE_NODE_STYLE,
     background: COLORS.stage.bg,
     color: COLORS.stage.text,
-    border: `${BORDER_STYLE} ${COLORS.stage.border}`,
+    borderTop: createCssBorder(COLORS.stage.border),
+    borderRight: createCssBorder(COLORS.stage.border),
     borderBottom: 'none', // Overlapped by check
+    borderLeft: createCssBorder(COLORS.stage.border),
     borderRadius: '4px 4px 0 0',
     fontWeight: 'bold',
   },
@@ -138,8 +156,10 @@ const NODE_STYLES = {
     ...BASE_NODE_STYLE,
     background: COLORS.stage.bg,
     color: COLORS.stage.text,
-    border: `${BORDER_STYLE} ${COLORS.stage.border}`,
+    borderTop: createCssBorder(COLORS.stage.border),
+    borderRight: createCssBorder(COLORS.stage.border),
     borderBottom: 'none', // Overlapped by next node
+    borderLeft: createCssBorder(COLORS.stage.border),
     borderRadius: '4px 4px 0 0',
     fontWeight: 'bold',
     zIndex: 2, // On top of node below
@@ -149,8 +169,8 @@ const NODE_STYLES = {
     ...BASE_NODE_STYLE,
     background: COLORS.stage.bg,
     color: COLORS.stage.text,
-    borderLeft: `${BORDER_STYLE} ${COLORS.stage.border}`,
-    borderRight: `${BORDER_STYLE} ${COLORS.stage.border}`,
+    borderLeft: createCssBorder(COLORS.stage.border),
+    borderRight: createCssBorder(COLORS.stage.border),
     borderTop: 'none', // Overlapped by node above
     borderBottom: 'none', // Overlapped by node below
     borderRadius: '0',
@@ -162,8 +182,8 @@ const NODE_STYLES = {
     ...BASE_NODE_STYLE,
     background: COLORS.stage.bg,
     color: COLORS.stage.text,
-    borderLeft: `${BORDER_STYLE} ${COLORS.stage.border}`,
-    borderRight: `${BORDER_STYLE} ${COLORS.stage.border}`,
+    borderLeft: createCssBorder(COLORS.stage.border),
+    borderRight: createCssBorder(COLORS.stage.border),
     borderTop: 'none', // Overlapped by node above
     borderBottom: 'none', // Overlapped by check border
     borderRadius: '0',
@@ -188,6 +208,11 @@ interface DagreAssignmentGroupData {
   width: number;
   height: number;
   groupInfo: CheckAssignmentGroup;
+}
+
+// Helper to generate full border string for a given color
+function createCssBorder(color: string) {
+  return `${BORDER_STYLE} ${color}`;
 }
 
 // Helper function to get the human-readable label for a check node.

@@ -40,8 +40,14 @@ const graphGenerator = new FakeGraphGenerator({
 });
 const turboCiGraph = graphGenerator.generate();
 
+// We must explicit set all top/right/bottom/left border properties here instead
+// of just setting "border" because React does not work well when mixing shorthand
+// and non-shorthand CSS properties.
 const matchingNodeStyle = {
-  border: '2px solid #007bff',
+  borderTop: '2px solid #007bff',
+  borderRight: '2px solid #007bff',
+  borderBottom: '2px solid #007bff',
+  borderLeft: '2px solid #007bff',
   boxShadow: '0 0 10px #007bff',
 };
 
