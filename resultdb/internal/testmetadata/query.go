@@ -142,7 +142,11 @@ var queryTmpl = template.Must(template.New("").Parse(`
 			tm.RefHash,
 			ANY_VALUE(tm.SourceRef) AS SourceRef,
 			ANY_VALUE(tm.TestMetadata HAVING MIN tm.SubRealm) AS TestMetadata
-		FROM TestMetadata tm
+		FROM TestMetadata
+			{{if .filterPreviousTestID}}
+			@{FORCE_INDEX=TestMetadataByPreviousTestId, spanner_emulator.disable_query_null_filtered_index_check=true}
+			{{end}}
+			tm
 		WHERE tm.Project = @project
 			{{if .filterTestID}}
 				AND tm.TestId IN UNNEST(@testIDs)
