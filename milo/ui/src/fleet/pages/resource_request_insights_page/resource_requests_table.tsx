@@ -15,6 +15,7 @@ import { Pagination } from '@/fleet/components/device_table/pagination';
 import { RriTableToolbar } from '@/fleet/components/resource_request_insights/rri_table_toolbar';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
+import { PAGE_TOKEN_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { InvalidPageTokenAlert } from '@/fleet/utils/invalid-page-token-alert';
@@ -83,6 +84,7 @@ export const ResourceRequestTable = () => {
   const pagerCtx = usePagerContext({
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     defaultPageSize: DEFAULT_PAGE_SIZE,
+    pageTokenKey: PAGE_TOKEN_PARAM_KEY,
   });
 
   const { filterData, aipString } = useRriFilters();

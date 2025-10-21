@@ -17,6 +17,7 @@ import { useMemo } from 'react';
 
 import { OptionComponent } from '@/fleet/components/filter_dropdown/filter_dropdown_old';
 import { FILTERS_PARAM_KEY } from '@/fleet/components/filter_dropdown/search_param_utils';
+import { PAGE_TOKEN_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import {
   multiselectFilterToUrlString,
@@ -580,6 +581,7 @@ export const useRriFilters = () => {
 
   const setFilters = (newFilters: RriFilters | undefined) => {
     setSearchParams(filtersUpdater(newFilters));
+    searchParams.delete(PAGE_TOKEN_PARAM_KEY);
   };
 
   const aipString = filterData ? filtersToAip(filterData) : '';

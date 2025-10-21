@@ -13,3 +13,5 @@
 // limitations under the License.
 
 export const COLUMNS_PARAM_KEY = 'c';
+
+export const PAGE_TOKEN_PARAM_KEY = 'cursor';
