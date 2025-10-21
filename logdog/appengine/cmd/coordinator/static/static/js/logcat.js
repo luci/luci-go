@@ -1300,8 +1300,10 @@ function jumpToPreviousTest() {
  * @return {boolean}
  */
 function isStartOfTest(parsedLine) {
-  return parsedLine.isLogcat && parsedLine.tag === 'TestRunner' &&
-    parsedLine.message.startsWith('started: ');
+  return (parsedLine.isLogcat && parsedLine.tag === 'TestRunner' &&
+    parsedLine.message.startsWith('started: ')) ||
+    (parsedLine.isLogcat && parsedLine.tag === 'cr_NativeTest' &&
+     parsedLine.message.startsWith('test run starting'));
 }
 
 /**
