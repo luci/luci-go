@@ -50,6 +50,11 @@ var (
 	withDiscovery    = flag.Bool(
 		"discovery", true,
 		"generate pb.discovery.go file")
+	discoveryGoPkg = flag.String(
+		"discovery-go-pkg",
+		"",
+		"a go package to put pb.discovery.go file into in case go_package proto option is ambiguous (accepts the same format as go_package proto option)",
+	)
 	descFile = flag.String(
 		"desc",
 		"",
@@ -176,7 +181,6 @@ func run(ctx context.Context, inputDir string) error {
 	}
 
 	generatedDesc := make([]*descriptorpb.FileDescriptorProto, 0, len(inputs.ProtoFiles))
-	goPackages := stringset.New(0)
 
 	// Since we use --include_imports, there may be a lot of descriptors in the
 	// set. Visit only ones we care about.
@@ -196,7 +200,6 @@ func run(ctx context.Context, inputDir string) error {
 		if idx := strings.LastIndex(goPackage, ";"); idx != -1 {
 			goPackage = goPackage[:idx]
 		}
-		goPackages.Add(goPackage)
 
 		// A file that protoc must have generated for us.
 		goFile := filepath.Join(
@@ -240,21 +243,43 @@ func run(ctx context.Context, inputDir string) error {
 		}
 	}
 
-	if !*disableGRPC && *withDiscovery {
-		// We support generating a discovery file only when all generated *.pb.go
-		// ended up in the same Go package. Otherwise it's not clear what package to
-		// put the pb.discovery.go into.
-		if goPackages.Len() != 1 {
-			return errors.Fmt("cannot generate pb.discovery.go: generated *.pb.go files are in multiple packages %v",
-				goPackages.ToSortedSlice())
+	if !*disableGRPC && *withDiscovery && hasServices(generatedDesc) {
+		// If -discovery-go-pkg is not given, choose "go_package" option as long as
+		// it is non-ambiguous.
+		discoveryPkgSpec := *discoveryGoPkg
+		if discoveryPkgSpec == "" {
+			goPackageOpts := stringset.New(0)
+			for _, desc := range generatedDesc {
+				goPackageOpts.Add(desc.Options.GetGoPackage())
+			}
+			if goPackageOpts.Len() != 1 {
+				return errors.Fmt("cannot generate pb.discovery.go: generated *.pb.go files "+
+					"are in multiple packages %v, use -discovery-go-pkg flag to specify a package to put the discovery file into",
+					goPackageOpts.ToSortedSlice(),
+				)
+			}
+			discoveryPkgSpec = goPackageOpts.ToSlice()[0]
 		}
-		goPkg := goPackages.ToSlice()[0]
+
+		var goPkgPath string // e.g. "go.chromium.org/luci/api/v1"
+		var goPkgName string // e.g. "apipb"
+		switch parts := strings.Split(discoveryPkgSpec, ";"); {
+		case len(parts) == 1:
+			goPkgPath = discoveryPkgSpec
+			goPkgName = path.Base(discoveryPkgSpec)
+		case len(parts) == 2:
+			goPkgPath = parts[0]
+			goPkgName = parts[1]
+		default:
+			return errors.Fmt("unrecognized format of go_package option spec %q", discoveryPkgSpec)
+		}
+
 		out := filepath.Join(
 			inputs.OutputDir,
-			filepath.FromSlash(goPkg),
+			filepath.FromSlash(goPkgPath),
 			"pb.discovery.go",
 		)
-		if err := genDiscoveryFile(out, goPkg, generatedDesc, rawDesc); err != nil {
+		if err := genDiscoveryFile(out, goPkgPath, goPkgName, generatedDesc, rawDesc); err != nil {
 			return err
 		}
 	}

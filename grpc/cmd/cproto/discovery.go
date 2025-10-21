@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
-	"go/build"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -71,10 +70,27 @@ func FileDescriptorSet() *descriptorpb.FileDescriptorSet {
 }
 `)))
 
+// hasServices is true if there's at least one service definition.
+func hasServices(desc []*descriptorpb.FileDescriptorProto) bool {
+	for _, f := range desc {
+		if len(f.Service) != 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // genDiscoveryFile generates a Go discovery file that calls
 // discovery.RegisterDescriptorSetCompressed(serviceNames, compressedDescBytes)
 // in an init function.
-func genDiscoveryFile(output, goPkg string, desc []*descriptorpb.FileDescriptorProto, raw []byte) error {
+//
+// `output` is the full destination path to write the generated file into.
+// The directory may not exist yet.
+//
+// `goPkgPath` is the Go package import name (i.e. the string path one uses to
+// import a package). `goPkgName` is the package name (i.e. what appears after
+// "package ..." keyword in the package file).
+func genDiscoveryFile(output, goPkgPath, goPkgName string, desc []*descriptorpb.FileDescriptorProto, raw []byte) error {
 	var serviceNames []string
 	for _, f := range desc {
 		for _, s := range f.Service {
@@ -86,14 +102,6 @@ func genDiscoveryFile(output, goPkg string, desc []*descriptorpb.FileDescriptorP
 		return nil
 	}
 
-	// Get the package name for "package ..." statement: it may be different from
-	// the directory name. Note that pkg.ImportPath almost always end up "." here
-	// when running in Go Modules mode, so we still need to keep `goPkg` argument.
-	pkg, err := build.ImportDir(filepath.Dir(output), 0)
-	if err != nil {
-		return errors.Fmt("failed to figure out Go package name for %q: %w", output, err)
-	}
-
 	compressedDescBytes, err := compress(raw)
 	if err != nil {
 		return errors.Fmt("failed to compress the descriptor set proto: %w", err)
@@ -101,8 +109,8 @@ func genDiscoveryFile(output, goPkg string, desc []*descriptorpb.FileDescriptorP
 
 	var buf bytes.Buffer
 	err = discoveryTmpl.Execute(&buf, map[string]any{
-		"GoPkg":           pkg.Name,
-		"ImportDiscovery": goPkg != discoveryPackagePath,
+		"GoPkg":           goPkgName,
+		"ImportDiscovery": goPkgPath != discoveryPackagePath,
 		"ServiceNames":    serviceNames,
 		"CompressedBytes": asByteArray(compressedDescBytes),
 	})
@@ -115,7 +123,9 @@ func genDiscoveryFile(output, goPkg string, desc []*descriptorpb.FileDescriptorP
 	if err != nil {
 		return errors.Fmt("failed to gofmt the generated discovery file: %w", err)
 	}
-
+	if err := os.MkdirAll(filepath.Dir(output), 0777); err != nil {
+		return errors.Fmt("failed to create directory for %s: %w", output, err)
+	}
 	return os.WriteFile(output, formatted, 0666)
 }
 
