@@ -498,6 +498,11 @@ function setUpProcessDropdownList() {
     displayAllProcesses.checkbox.checked = true;
     displayNamedProcesses.li.classList.add('selected');
     displayNamedProcesses.checkbox.checked = true;
+  } else {
+    displayAllProcesses.li.classList.remove('selected');
+    displayAllProcesses.checkbox.checked = false;
+    displayNamedProcesses.li.classList.remove('selected');
+    displayNamedProcesses.checkbox.checked = false;
   }
 
   const sortedPid = Array.from(allPids).sort((a, b) => a - b);
