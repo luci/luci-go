@@ -303,9 +303,12 @@ if (urlIdx !== -1) {
     const url = queryString.substring(urlIdx + 4, packageIdx - 1);
     const packageName = queryString.substring(packageIdx + 8);
     fetchLogcat(`/logs${url}?format=raw`, packageName);
+    history.replaceState({}, '',
+      `/logs${url}?format=logcat&package=${packageName}`);
   } else {
     const url = queryString.substring(urlIdx + 4);
     fetchLogcat(`/logs${url}?format=raw`);
+    history.replaceState({}, '', `/logs${url}?format=logcat`);
   }
 } else {
   setUpElements([]);
