@@ -86,8 +86,10 @@ func Submit(ctx context.Context, s Submitter, payload *reminder.Payload, path Tx
 		codes.Unavailable,
 		codes.DeadlineExceeded,
 		codes.Canceled:
+		logging.Warningf(ctx, "Transient error submitting a TQ task %q: %s", payload.TaskClass, err)
 		return transient.Tag.Apply(err)
 	default:
+		logging.Errorf(ctx, "Fatal error submitting a TQ task %q: %s", payload.TaskClass, err)
 		return err
 	}
 }
