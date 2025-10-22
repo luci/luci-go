@@ -131,7 +131,18 @@ export const AlertsSideNav = ({
               <ListItemIcon>
                 <FolderIcon />
               </ListItemIcon>
-              <ListItemText primary={group.displayName} />
+              <ListItemText
+                primary={group.displayName}
+                slotProps={{
+                  primary: {
+                    style: {
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    },
+                  },
+                }}
+              />
               <Chip
                 label={activeGroupKeys[group.name].length}
                 variant="outlined"
