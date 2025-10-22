@@ -9,6 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // MockTreeCloserClient is a mock of TreeCloserClient interface.
@@ -54,6 +55,26 @@ func (mr *MockTreeCloserClientMockRecorder) CheckTreeCloser(ctx, in interface{},
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckTreeCloser", reflect.TypeOf((*MockTreeCloserClient)(nil).CheckTreeCloser), varargs...)
 }
 
+// NotifyCulpritRevert mocks base method.
+func (m *MockTreeCloserClient) NotifyCulpritRevert(ctx context.Context, in *NotifyCulpritRevertRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "NotifyCulpritRevert", varargs...)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NotifyCulpritRevert indicates an expected call of NotifyCulpritRevert.
+func (mr *MockTreeCloserClientMockRecorder) NotifyCulpritRevert(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyCulpritRevert", reflect.TypeOf((*MockTreeCloserClient)(nil).NotifyCulpritRevert), varargs...)
+}
+
 // MockTreeCloserServer is a mock of TreeCloserServer interface.
 type MockTreeCloserServer struct {
 	ctrl     *gomock.Controller
@@ -90,4 +111,19 @@ func (m *MockTreeCloserServer) CheckTreeCloser(arg0 context.Context, arg1 *Check
 func (mr *MockTreeCloserServerMockRecorder) CheckTreeCloser(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckTreeCloser", reflect.TypeOf((*MockTreeCloserServer)(nil).CheckTreeCloser), arg0, arg1)
+}
+
+// NotifyCulpritRevert mocks base method.
+func (m *MockTreeCloserServer) NotifyCulpritRevert(arg0 context.Context, arg1 *NotifyCulpritRevertRequest) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NotifyCulpritRevert", arg0, arg1)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NotifyCulpritRevert indicates an expected call of NotifyCulpritRevert.
+func (mr *MockTreeCloserServerMockRecorder) NotifyCulpritRevert(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyCulpritRevert", reflect.TypeOf((*MockTreeCloserServer)(nil).NotifyCulpritRevert), arg0, arg1)
 }

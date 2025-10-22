@@ -16,6 +16,9 @@ syntax = "proto3";
 
 package luci.notify.v1;
 
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
 option go_package = "go.chromium.org/luci/luci_notify/api/service/v1;lucinotifypb";
 
 // Service to query tree closer data on the server.
@@ -25,6 +28,11 @@ option go_package = "go.chromium.org/luci/luci_notify/api/service/v1;lucinotifyp
 service TreeCloser {
   // Checks if the builder in CheckTreeCloserRequest is tree-closer or not
   rpc CheckTreeCloser(CheckTreeCloserRequest) returns (CheckTreeCloserResponse) {};
+
+  // Notifies luci-notify that an automated revert has landed, which should
+  // be considered when determining whether to automatically reopen the tree.
+  // This is called by luci-bisection after successfully landing a revert.
+  rpc NotifyCulpritRevert(NotifyCulpritRevertRequest) returns (google.protobuf.Empty) {};
 }
 
 message CheckTreeCloserRequest {
@@ -41,4 +49,20 @@ message CheckTreeCloserRequest {
 message CheckTreeCloserResponse {
   // Whether this is a tree closer
   bool is_tree_closer = 1;
+}
+
+message NotifyCulpritRevertRequest {
+  // The name of the tree (e.g., "chromium").
+  string tree_name = 1;
+
+  // The timestamp when the revert CL landed.
+  // This is compared against the build start times of failing tree-closer
+  // builds to determine if the revert should trigger tree reopening.
+  google.protobuf.Timestamp revert_land_time = 2;
+
+  // The review URL of the culprit CL that was reverted (e.g., Gerrit CL URL).
+  string culprit_review_url = 3;
+
+  // The review URL of the revert CL that was landed (e.g., Gerrit CL URL).
+  string revert_review_url = 4;
 }

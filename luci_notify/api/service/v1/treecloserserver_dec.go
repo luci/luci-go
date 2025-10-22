@@ -6,6 +6,8 @@ import (
 	"context"
 
 	proto "github.com/golang/protobuf/proto"
+
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 type DecoratedTreeCloser struct {
@@ -36,6 +38,23 @@ func (s *DecoratedTreeCloser) CheckTreeCloser(ctx context.Context, req *CheckTre
 	}
 	if s.Postlude != nil {
 		err = s.Postlude(ctx, "CheckTreeCloser", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedTreeCloser) NotifyCulpritRevert(ctx context.Context, req *NotifyCulpritRevertRequest) (rsp *emptypb.Empty, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "NotifyCulpritRevert", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.NotifyCulpritRevert(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "NotifyCulpritRevert", rsp, err)
 	}
 	return
 }

@@ -29,6 +29,8 @@ import (
 	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -158,21 +160,101 @@ func (x *CheckTreeCloserResponse) GetIsTreeCloser() bool {
 	return false
 }
 
+type NotifyCulpritRevertRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The name of the tree (e.g., "chromium").
+	TreeName string `protobuf:"bytes,1,opt,name=tree_name,json=treeName,proto3" json:"tree_name,omitempty"`
+	// The timestamp when the revert CL landed.
+	// This is compared against the build start times of failing tree-closer
+	// builds to determine if the revert should trigger tree reopening.
+	RevertLandTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=revert_land_time,json=revertLandTime,proto3" json:"revert_land_time,omitempty"`
+	// The review URL of the culprit CL that was reverted (e.g., Gerrit CL URL).
+	CulpritReviewUrl string `protobuf:"bytes,3,opt,name=culprit_review_url,json=culpritReviewUrl,proto3" json:"culprit_review_url,omitempty"`
+	// The review URL of the revert CL that was landed (e.g., Gerrit CL URL).
+	RevertReviewUrl string `protobuf:"bytes,4,opt,name=revert_review_url,json=revertReviewUrl,proto3" json:"revert_review_url,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *NotifyCulpritRevertRequest) Reset() {
+	*x = NotifyCulpritRevertRequest{}
+	mi := &file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NotifyCulpritRevertRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotifyCulpritRevertRequest) ProtoMessage() {}
+
+func (x *NotifyCulpritRevertRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotifyCulpritRevertRequest.ProtoReflect.Descriptor instead.
+func (*NotifyCulpritRevertRequest) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *NotifyCulpritRevertRequest) GetTreeName() string {
+	if x != nil {
+		return x.TreeName
+	}
+	return ""
+}
+
+func (x *NotifyCulpritRevertRequest) GetRevertLandTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.RevertLandTime
+	}
+	return nil
+}
+
+func (x *NotifyCulpritRevertRequest) GetCulpritReviewUrl() string {
+	if x != nil {
+		return x.CulpritReviewUrl
+	}
+	return ""
+}
+
+func (x *NotifyCulpritRevertRequest) GetRevertReviewUrl() string {
+	if x != nil {
+		return x.RevertReviewUrl
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto protoreflect.FileDescriptor
 
 const file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDesc = "" +
 	"\n" +
-	"9go.chromium.org/luci/luci_notify/api/service/v1/rpc.proto\x12\x0eluci.notify.v1\"x\n" +
+	"9go.chromium.org/luci/luci_notify/api/service/v1/rpc.proto\x12\x0eluci.notify.v1\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"x\n" +
 	"\x16CheckTreeCloserRequest\x12\x18\n" +
 	"\aproject\x18\x01 \x01(\tR\aproject\x12\x16\n" +
 	"\x06bucket\x18\x02 \x01(\tR\x06bucket\x12\x18\n" +
 	"\abuilder\x18\x03 \x01(\tR\abuilder\x12\x12\n" +
 	"\x04step\x18\x04 \x01(\tR\x04step\"?\n" +
 	"\x17CheckTreeCloserResponse\x12$\n" +
-	"\x0eis_tree_closer\x18\x01 \x01(\bR\fisTreeCloser2r\n" +
+	"\x0eis_tree_closer\x18\x01 \x01(\bR\fisTreeCloser\"\xd9\x01\n" +
+	"\x1aNotifyCulpritRevertRequest\x12\x1b\n" +
+	"\ttree_name\x18\x01 \x01(\tR\btreeName\x12D\n" +
+	"\x10revert_land_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x0erevertLandTime\x12,\n" +
+	"\x12culprit_review_url\x18\x03 \x01(\tR\x10culpritReviewUrl\x12*\n" +
+	"\x11revert_review_url\x18\x04 \x01(\tR\x0frevertReviewUrl2\xcf\x01\n" +
 	"\n" +
 	"TreeCloser\x12d\n" +
-	"\x0fCheckTreeCloser\x12&.luci.notify.v1.CheckTreeCloserRequest\x1a'.luci.notify.v1.CheckTreeCloserResponse\"\x00B>Z<go.chromium.org/luci/luci_notify/api/service/v1;lucinotifypbb\x06proto3"
+	"\x0fCheckTreeCloser\x12&.luci.notify.v1.CheckTreeCloserRequest\x1a'.luci.notify.v1.CheckTreeCloserResponse\"\x00\x12[\n" +
+	"\x13NotifyCulpritRevert\x12*.luci.notify.v1.NotifyCulpritRevertRequest\x1a\x16.google.protobuf.Empty\"\x00B>Z<go.chromium.org/luci/luci_notify/api/service/v1;lucinotifypbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDescOnce sync.Once
@@ -186,19 +268,25 @@ func file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDescGZIP(
 	return file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_goTypes = []any{
-	(*CheckTreeCloserRequest)(nil),  // 0: luci.notify.v1.CheckTreeCloserRequest
-	(*CheckTreeCloserResponse)(nil), // 1: luci.notify.v1.CheckTreeCloserResponse
+	(*CheckTreeCloserRequest)(nil),     // 0: luci.notify.v1.CheckTreeCloserRequest
+	(*CheckTreeCloserResponse)(nil),    // 1: luci.notify.v1.CheckTreeCloserResponse
+	(*NotifyCulpritRevertRequest)(nil), // 2: luci.notify.v1.NotifyCulpritRevertRequest
+	(*timestamppb.Timestamp)(nil),      // 3: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),              // 4: google.protobuf.Empty
 }
 var file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_depIdxs = []int32{
-	0, // 0: luci.notify.v1.TreeCloser.CheckTreeCloser:input_type -> luci.notify.v1.CheckTreeCloserRequest
-	1, // 1: luci.notify.v1.TreeCloser.CheckTreeCloser:output_type -> luci.notify.v1.CheckTreeCloserResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	3, // 0: luci.notify.v1.NotifyCulpritRevertRequest.revert_land_time:type_name -> google.protobuf.Timestamp
+	0, // 1: luci.notify.v1.TreeCloser.CheckTreeCloser:input_type -> luci.notify.v1.CheckTreeCloserRequest
+	2, // 2: luci.notify.v1.TreeCloser.NotifyCulpritRevert:input_type -> luci.notify.v1.NotifyCulpritRevertRequest
+	1, // 3: luci.notify.v1.TreeCloser.CheckTreeCloser:output_type -> luci.notify.v1.CheckTreeCloserResponse
+	4, // 4: luci.notify.v1.TreeCloser.NotifyCulpritRevert:output_type -> google.protobuf.Empty
+	3, // [3:5] is the sub-list for method output_type
+	1, // [1:3] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_init() }
@@ -212,7 +300,7 @@ func file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDesc), len(file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -239,6 +327,10 @@ const _ = grpc.SupportPackageIsVersion6
 type TreeCloserClient interface {
 	// Checks if the builder in CheckTreeCloserRequest is tree-closer or not
 	CheckTreeCloser(ctx context.Context, in *CheckTreeCloserRequest, opts ...grpc.CallOption) (*CheckTreeCloserResponse, error)
+	// Notifies luci-notify that an automated revert has landed, which should
+	// be considered when determining whether to automatically reopen the tree.
+	// This is called by luci-bisection after successfully landing a revert.
+	NotifyCulpritRevert(ctx context.Context, in *NotifyCulpritRevertRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 type treeCloserPRPCClient struct {
 	client *prpc.Client
@@ -251,6 +343,15 @@ func NewTreeCloserPRPCClient(client *prpc.Client) TreeCloserClient {
 func (c *treeCloserPRPCClient) CheckTreeCloser(ctx context.Context, in *CheckTreeCloserRequest, opts ...grpc.CallOption) (*CheckTreeCloserResponse, error) {
 	out := new(CheckTreeCloserResponse)
 	err := c.client.Call(ctx, "luci.notify.v1.TreeCloser", "CheckTreeCloser", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *treeCloserPRPCClient) NotifyCulpritRevert(ctx context.Context, in *NotifyCulpritRevertRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.client.Call(ctx, "luci.notify.v1.TreeCloser", "NotifyCulpritRevert", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -274,10 +375,23 @@ func (c *treeCloserClient) CheckTreeCloser(ctx context.Context, in *CheckTreeClo
 	return out, nil
 }
 
+func (c *treeCloserClient) NotifyCulpritRevert(ctx context.Context, in *NotifyCulpritRevertRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/luci.notify.v1.TreeCloser/NotifyCulpritRevert", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TreeCloserServer is the server API for TreeCloser service.
 type TreeCloserServer interface {
 	// Checks if the builder in CheckTreeCloserRequest is tree-closer or not
 	CheckTreeCloser(context.Context, *CheckTreeCloserRequest) (*CheckTreeCloserResponse, error)
+	// Notifies luci-notify that an automated revert has landed, which should
+	// be considered when determining whether to automatically reopen the tree.
+	// This is called by luci-bisection after successfully landing a revert.
+	NotifyCulpritRevert(context.Context, *NotifyCulpritRevertRequest) (*emptypb.Empty, error)
 }
 
 // UnimplementedTreeCloserServer can be embedded to have forward compatible implementations.
@@ -286,6 +400,9 @@ type UnimplementedTreeCloserServer struct {
 
 func (*UnimplementedTreeCloserServer) CheckTreeCloser(context.Context, *CheckTreeCloserRequest) (*CheckTreeCloserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckTreeCloser not implemented")
+}
+func (*UnimplementedTreeCloserServer) NotifyCulpritRevert(context.Context, *NotifyCulpritRevertRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NotifyCulpritRevert not implemented")
 }
 
 func RegisterTreeCloserServer(s prpc.Registrar, srv TreeCloserServer) {
@@ -310,6 +427,24 @@ func _TreeCloser_CheckTreeCloser_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TreeCloser_NotifyCulpritRevert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NotifyCulpritRevertRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TreeCloserServer).NotifyCulpritRevert(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.notify.v1.TreeCloser/NotifyCulpritRevert",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TreeCloserServer).NotifyCulpritRevert(ctx, req.(*NotifyCulpritRevertRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _TreeCloser_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "luci.notify.v1.TreeCloser",
 	HandlerType: (*TreeCloserServer)(nil),
@@ -317,6 +452,10 @@ var _TreeCloser_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckTreeCloser",
 			Handler:    _TreeCloser_CheckTreeCloser_Handler,
+		},
+		{
+			MethodName: "NotifyCulpritRevert",
+			Handler:    _TreeCloser_NotifyCulpritRevert_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

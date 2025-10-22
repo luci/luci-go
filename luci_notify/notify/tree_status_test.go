@@ -390,12 +390,13 @@ func TestUpdateTrees(t *testing.T) {
 				Timestamp:  time.Now().UTC(),
 			}), should.BeNil)
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
-				BuilderKey: datastore.KeyForObj(c, builder4),
-				TreeName:   "v8",
-				TreeCloser: notifypb.TreeCloser{},
-				Status:     config.Closed,
-				Timestamp:  earlierTime,
-				Message:    "Correct message",
+				BuilderKey:      datastore.KeyForObj(c, builder4),
+				TreeName:        "v8",
+				TreeCloser:      notifypb.TreeCloser{},
+				Status:          config.Closed,
+				Timestamp:       earlierTime,
+				BuildCreateTime: earlierTime,
+				Message:         "Correct message",
 			}), should.BeNil)
 
 			defer cleanup()
@@ -514,18 +515,20 @@ func TestUpdateTrees(t *testing.T) {
 			}
 
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
-				BuilderKey: datastore.KeyForObj(c, builder1),
-				TreeName:   "chromium",
-				TreeCloser: notifypb.TreeCloser{},
-				Status:     config.Open,
-				Timestamp:  time.Now().UTC(),
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				TreeCloser:      notifypb.TreeCloser{},
+				Status:          config.Open,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
 			}, &config.TreeCloser{
-				BuilderKey: datastore.KeyForObj(c, builder5),
-				TreeName:   "infra",
-				TreeCloser: notifypb.TreeCloser{},
-				Status:     config.Closed,
-				Timestamp:  time.Now().UTC(),
-				Message:    "Close it up!",
+				BuilderKey:      datastore.KeyForObj(c, builder5),
+				TreeName:        "infra",
+				TreeCloser:      notifypb.TreeCloser{},
+				Status:          config.Closed,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
+				Message:         "Close it up!",
 			}), should.BeNil)
 			defer cleanup()
 
@@ -692,6 +695,265 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, statusCloseUnicode.status, should.Equal(config.Closed))
 			assert.Loosely(t, statusCloseUnicode.message, should.Equal(expectedClosedUnicodeMessage))
 			assert.Loosely(t, len(statusCloseUnicode.message), should.Equal(1023))
+		})
+
+		// CulpritRevertEvent integration tests
+		t.Run("Revert event opens tree when revert landed after all failing builds", func(t *ftt.Test) {
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium": {
+						username:  botUsernames[0],
+						message:   "Tree is closed (Automatic: builder1 failed)",
+						status:    config.Closed,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			// Failing build that started earlier
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				Status:          config.Closed,
+				Timestamp:       earlierTime,
+				BuildCreateTime: earlierTime,
+				Message:         "builder1 failed",
+			}), should.BeNil)
+
+			// Revert event that landed after the failing build started
+			revertTime := time.Now().UTC()
+			assert.Loosely(t, datastore.Put(c, &config.CulpritRevertEvent{
+				TreeName:         "chromium",
+				RevertLandTime:   revertTime,
+				CulpritReviewURL: "https://example.com/culprit",
+				RevertReviewURL:  "https://example.com/revert",
+				CreatedAt:        revertTime,
+			}), should.BeNil)
+			defer cleanup()
+
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
+
+			// Tree should be opened
+			status, err := ts.getStatus(c, "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Open))
+			assert.Loosely(t, status.message, should.ContainSubstring("Culprit"))
+			assert.Loosely(t, status.message, should.ContainSubstring("reverted"))
+
+			// Event should still exist (stateless design - not marked as processed)
+			event := &config.CulpritRevertEvent{TreeName: "chromium"}
+			assert.Loosely(t, datastore.Get(c, event), should.BeNil)
+			assert.Loosely(t, event.RevertLandTime.Unix(), should.Equal(revertTime.Unix()))
+		})
+
+		t.Run("Revert event does NOT open tree when revert landed before failing builds", func(t *ftt.Test) {
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium": {
+						username:  botUsernames[0],
+						message:   "Tree is closed (Automatic: builder1 failed)",
+						status:    config.Closed,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			// Revert event that landed in the past
+			assert.Loosely(t, datastore.Put(c, &config.CulpritRevertEvent{
+				TreeName:         "chromium",
+				RevertLandTime:   evenEarlierTime,
+				CulpritReviewURL: "https://example.com/culprit",
+				RevertReviewURL:  "https://example.com/revert",
+				CreatedAt:        evenEarlierTime,
+			}), should.BeNil)
+
+			// Failing build that started AFTER the revert
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				Status:          config.Closed,
+				Timestamp:       earlierTime,
+				BuildCreateTime: earlierTime, // Build started after revert
+				Message:         "builder1 failed",
+			}), should.BeNil)
+			defer cleanup()
+
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
+
+			// Tree should stay closed
+			status, err := ts.getStatus(c, "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Closed))
+
+			// Event should still exist (stateless design - remains for future consideration)
+			event := &config.CulpritRevertEvent{TreeName: "chromium"}
+			assert.Loosely(t, datastore.Get(c, event), should.BeNil)
+			assert.Loosely(t, event.RevertLandTime.Unix(), should.Equal(evenEarlierTime.Unix()))
+		})
+
+		t.Run("Revert event opens tree with multiple failing builds when revert is newest", func(t *ftt.Test) {
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium": {
+						username:  botUsernames[0],
+						message:   "Tree is closed (Automatic: builder1 failed)",
+						status:    config.Closed,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			// Two failing builds, both started before revert
+			revertTime := time.Now().UTC()
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				Status:          config.Closed,
+				Timestamp:       earlierTime,
+				BuildCreateTime: earlierTime,
+				Message:         "builder1 failed",
+			}, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder2),
+				TreeName:        "chromium",
+				Status:          config.Closed,
+				Timestamp:       earlierTime.Add(30 * time.Minute),
+				BuildCreateTime: earlierTime.Add(30 * time.Minute),
+				Message:         "builder2 failed",
+			}), should.BeNil)
+
+			// Revert landed after both builds started
+			assert.Loosely(t, datastore.Put(c, &config.CulpritRevertEvent{
+				TreeName:         "chromium",
+				RevertLandTime:   revertTime,
+				CulpritReviewURL: "https://example.com/culprit",
+				RevertReviewURL:  "https://example.com/revert",
+				CreatedAt:        revertTime,
+			}), should.BeNil)
+			defer cleanup()
+
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
+
+			// Tree should be opened
+			status, err := ts.getStatus(c, "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Open))
+		})
+
+		t.Run("Latest revert is always considered (stateless design)", func(t *ftt.Test) {
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium": {
+						username:  botUsernames[0],
+						message:   "Tree is closed (Automatic: builder1 failed)",
+						status:    config.Closed,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			revertTime := time.Now().UTC()
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				Status:          config.Closed,
+				Timestamp:       earlierTime,
+				BuildCreateTime: earlierTime,
+				Message:         "builder1 failed",
+			}), should.BeNil)
+
+			// Revert event (no "processed" field - always considered)
+			assert.Loosely(t, datastore.Put(c, &config.CulpritRevertEvent{
+				TreeName:         "chromium",
+				RevertLandTime:   revertTime,
+				CulpritReviewURL: "https://example.com/culprit",
+				RevertReviewURL:  "https://example.com/revert",
+				CreatedAt:        revertTime,
+			}), should.BeNil)
+			defer cleanup()
+
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
+
+			// Tree should be opened (revert is always considered in stateless design)
+			status, err := ts.getStatus(c, "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Open))
+			assert.Loosely(t, status.message, should.ContainSubstring("reverted"))
+		})
+
+		t.Run("No revert event - normal tree closer logic applies", func(t *ftt.Test) {
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium": {
+						username:  botUsernames[0],
+						message:   "Tree is closed (Automatic: builder1 failed)",
+						status:    config.Closed,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			// All builders passing
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				Status:          config.Open,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
+			}), should.BeNil)
+			defer cleanup()
+
+			// No revert event exists
+
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
+
+			// Tree should be opened via normal logic (all builders passing)
+			status, err := ts.getStatus(c, "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Open))
+			assert.Loosely(t, status.message, should.NotContainSubstring("reverted"))
+		})
+
+		t.Run("Tree already open - revert event not needed", func(t *ftt.Test) {
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium": {
+						username:  botUsernames[0],
+						message:   "Tree is open",
+						status:    config.Open,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			revertTime := time.Now().UTC()
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				Status:          config.Open,
+				Timestamp:       revertTime,
+				BuildCreateTime: revertTime,
+			}), should.BeNil)
+
+			assert.Loosely(t, datastore.Put(c, &config.CulpritRevertEvent{
+				TreeName:         "chromium",
+				RevertLandTime:   revertTime,
+				CulpritReviewURL: "https://example.com/culprit",
+				RevertReviewURL:  "https://example.com/revert",
+				CreatedAt:        revertTime,
+			}), should.BeNil)
+			defer cleanup()
+
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
+
+			// Tree stays open (already correct status)
+			status, err := ts.getStatus(c, "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Open))
+
+			// Event should still exist (stateless design)
+			event := &config.CulpritRevertEvent{TreeName: "chromium"}
+			assert.Loosely(t, datastore.Get(c, event), should.BeNil)
+			assert.Loosely(t, event.RevertLandTime.Unix(), should.Equal(revertTime.Unix()))
 		})
 	})
 }

@@ -19,11 +19,16 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/appstatus"
 
 	pb "go.chromium.org/luci/luci_notify/api/service/v1"
 	"go.chromium.org/luci/luci_notify/config"
@@ -64,6 +69,91 @@ func (server *TreeCloserServer) CheckTreeCloser(c context.Context, req *pb.Check
 	return &pb.CheckTreeCloserResponse{
 		IsTreeCloser: false,
 	}, nil
+}
+
+// NotifyCulpritRevert handles notification from luci-bisection that an automated
+// revert has landed. This creates a CulpritRevertEvent entity that will be
+// processed by the tree status update cron job.
+func (server *TreeCloserServer) NotifyCulpritRevert(c context.Context, req *pb.NotifyCulpritRevertRequest) (*emptypb.Empty, error) {
+	if err := validateNotifyCulpritRevertRequest(req); err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+
+	logging.Infof(c, "Received culprit revert notification for tree %s: culprit=%s, revert=%s",
+		req.TreeName, req.CulpritReviewUrl, req.RevertReviewUrl)
+
+	newRevertTime := req.RevertLandTime.AsTime()
+
+	// Check if there's an existing event for this tree
+	existingEvent := &config.CulpritRevertEvent{TreeName: req.TreeName}
+	err := datastore.Get(c, existingEvent)
+	if err != nil && err != datastore.ErrNoSuchEntity {
+		logging.Errorf(c, "Failed to check existing CulpritRevertEvent: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to check existing culprit revert event: %v", err)
+	}
+
+	// Only store if this revert is more recent than any existing revert
+	if err == nil && !newRevertTime.After(existingEvent.RevertLandTime) {
+		logging.Infof(c, "Ignoring revert notification for tree %s: new revert time %v is not after existing revert time %v",
+			req.TreeName, newRevertTime, existingEvent.RevertLandTime)
+		return &emptypb.Empty{}, nil
+	}
+
+	event := &config.CulpritRevertEvent{
+		TreeName:         req.TreeName,
+		RevertLandTime:   newRevertTime.UTC(),
+		CulpritReviewURL: req.CulpritReviewUrl,
+		RevertReviewURL:  req.RevertReviewUrl,
+		CreatedAt:        time.Now().UTC(),
+	}
+
+	if err := datastore.Put(c, event); err != nil {
+		logging.Errorf(c, "Failed to save CulpritRevertEvent: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to save culprit revert event: %v", err)
+	}
+
+	logging.Infof(c, "Successfully saved CulpritRevertEvent for tree %s (revert time: %v)", req.TreeName, newRevertTime)
+	return &emptypb.Empty{}, nil
+}
+
+const (
+	// maxURLLength is the maximum length for URL fields (RFC 2616 suggests 2083 bytes)
+	maxURLLength = 2083
+	// maxClockDrift is the maximum allowed drift for RevertLandTime into the future
+	maxClockDrift = 10 * time.Second
+)
+
+func validateNotifyCulpritRevertRequest(req *pb.NotifyCulpritRevertRequest) error {
+	if req.TreeName == "" {
+		return errors.New("tree_name: unspecified")
+	}
+	if !config.TreeNameRE.MatchString(req.TreeName) {
+		return errors.Fmt("tree_name: must match pattern %s", config.TreeNameRE.String())
+	}
+
+	if req.RevertLandTime == nil {
+		return errors.New("revert_land_time: unspecified")
+	}
+	revertTime := req.RevertLandTime.AsTime()
+	if revertTime.After(time.Now().Add(maxClockDrift)) {
+		return errors.Fmt("revert_land_time: must not be more than %v in the future", maxClockDrift)
+	}
+
+	if req.CulpritReviewUrl == "" {
+		return errors.New("culprit_review_url: unspecified")
+	}
+	if len(req.CulpritReviewUrl) > maxURLLength {
+		return errors.Fmt("culprit_review_url: exceeds maximum length of %d bytes", maxURLLength)
+	}
+
+	if req.RevertReviewUrl == "" {
+		return errors.New("revert_review_url: unspecified")
+	}
+	if len(req.RevertReviewUrl) > maxURLLength {
+		return errors.Fmt("revert_review_url: exceeds maximum length of %d bytes", maxURLLength)
+	}
+
+	return nil
 }
 
 func stepMatchesRule(stepName string, failedStepRegexp string, failedStepRegexpExclude string) bool {

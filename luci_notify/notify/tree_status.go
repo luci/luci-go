@@ -249,15 +249,28 @@ func updateTree(c context.Context, ts treeStatusClient, treeClosers []*config.Tr
 		return err
 	}
 
+	// Fetch the latest culprit revert event for this tree.
+	lastRevertEvent, err := latestRevertEvent(c, treeName)
+	if err != nil {
+		logging.Errorf(c, "Failed to fetch CulpritRevertEvent: %v", err)
+		return err
+	}
+
 	// The state machine we want to implement:
 	//
 	// State                | Transitions
 	// ==================== | ========================
 	// Manually Closed      | Always leave unchanged.
 	// Manually Opened      | Transition to automatically closed if a (tree-closer)
-	//                      | build which started after the manual re-opening fails.
-	// Automatically Closed | Transition to automatically opened if all (tree-closer) builds pass.
-	// Automatically Opened | Transition to automatically closed if a (tree-closer) build is failing.
+	//                      | build which started after BOTH the manual re-opening AND
+	//                      | the last automated revert (if any) fails.
+	// Automatically Closed | Transition to automatically opened if:
+	//                      |   (1) all (tree-closer) builds pass, OR
+	//                      |   (2) all failing builds started before the last automated
+	//                      |       revert (if any) or manual reopen (if any).
+	// Automatically Opened | Transition to automatically closed if a (tree-closer)
+	//                      | build is failing and the build started after the last
+	//                      | automated revert (if any) landed.
 	//
 	// Note: Open and Closed above are an abstraction over the true tree state,
 	// which can also be in 'throttled' or 'maintenance' state.
@@ -294,10 +307,17 @@ func updateTree(c context.Context, ts treeStatusClient, treeClosers []*config.Tr
 	// automatically re-opened.)
 	anyFailingBuild := false
 
-	// The oldest failing build. This is used to justify any tree closure.
-	// If the last tree status update was a manual open, this is constrained to
-	// the oldest failing build that the started after the manual open.
+	// Whether any failing build justifies tree closure. This is false only if ALL
+	// failing builds started before the tree was manually opened or before a revert
+	// landed (meaning the gardener's hypothesis or the revert's fix has not been
+	// falsified).
+	anyBuildJustifiesTreeClosure := false
+
+	// The oldest failing build that justifies tree closure. This is used to
+	// generate the tree closure message. We use the oldest (by finish time) for
+	// determinism and to assist explainability.
 	var oldestClosed *config.TreeCloser
+
 	for _, tc := range treeClosers {
 		// If any TreeClosers are from projects with tree closing enabled,
 		// ignore any TreeClosers *not* from such projects. In general we don't
@@ -315,24 +335,29 @@ func updateTree(c context.Context, ts treeStatusClient, treeClosers []*config.Tr
 			logging.Debugf(c, "Found failing builder with message: %s", tc.Message)
 			anyFailingBuild = true
 
-			justifiesTreeClosure := false
+			// Determine the protective event time based on current tree state.
+			// For Manually Opened: must start after BOTH manual reopen AND last revert
+			// For Automatically Opened: must start after last revert only
+			var justifiesTreeClosure bool
 			if isLastUpdateManual {
-				// Only pay attention to failing builds from after the last update to
-				// the tree. Otherwise we'll close the tree even after people manually
-				// open it.
-				//
-				// We use the build start time instead of the finish time to only include
-				// builds which included all code changes that were present in the tree
-				// when it was manually opened.
-				if tc.BuildCreateTime.After(treeStatus.timestamp) {
+				// Manually Opened state: Check against max(manual_reopen_time, revert_time)
+				protectiveTime := treeStatus.timestamp
+				if lastRevertEvent != nil && lastRevertEvent.RevertLandTime.After(protectiveTime) {
+					protectiveTime = lastRevertEvent.RevertLandTime
+				}
+				justifiesTreeClosure = tc.BuildCreateTime.After(protectiveTime)
+			} else {
+				// Automatically Opened state: Check against revert time only
+				if lastRevertEvent != nil {
+					justifiesTreeClosure = tc.BuildCreateTime.After(lastRevertEvent.RevertLandTime)
+				} else {
+					// No revert, so any failing build justifies closure
 					justifiesTreeClosure = true
 				}
-			} else {
-				// Last state update was automatic. When the tree is under automatic
-				// control, all failing builds can justify closure.
-				justifiesTreeClosure = true
 			}
+
 			if justifiesTreeClosure {
+				anyBuildJustifiesTreeClosure = true
 				// Keep track of the oldest failing build (by finish time) that can
 				// justify tree closure. We use the oldest for determinism and to
 				// assist explainability.
@@ -344,26 +369,45 @@ func updateTree(c context.Context, ts treeStatusClient, treeClosers []*config.Tr
 		}
 	}
 
+	// Determine the new tree status.
 	var newStatus config.TreeCloserStatus
-	if !anyFailingBuild {
-		// We can open the tree, as no builders are failing, including builders
-		// that haven't run since the last update to the tree.
-		logging.Debugf(c, "No failing builders; new status is Open")
+	openedByRevert := false
+
+	if !anyBuildJustifiesTreeClosure {
+		// No failing builds justify closure. This can happen when:
+		// (1) No builds are failing, OR
+		// (2) All failing builds started before a manual open, OR
+		// (3) All failing builds started before a revert landed.
+		// In all cases, we should open the tree.
+		if !anyFailingBuild {
+			logging.Debugf(c, "No failing builders; new status is Open")
+		} else {
+			// There are failing builds, but none started after the most recent
+			// protective event (manual open or revert).
+			// Determine which event is protecting the tree.
+			revertTime := time.Time{} // zero value
+			if lastRevertEvent != nil {
+				revertTime = lastRevertEvent.RevertLandTime
+			}
+			manualOpenTime := time.Time{} // zero value
+			if isLastUpdateManual {
+				manualOpenTime = treeStatus.timestamp
+			}
+
+			if revertTime.After(manualOpenTime) {
+				logging.Infof(c, "Opening tree: revert %s landed and all failing builds started before it",
+					lastRevertEvent.RevertReviewURL)
+				openedByRevert = true
+			} else {
+				logging.Infof(c, "Keeping tree open: all failing builds started before manual open at %v",
+					treeStatus.timestamp)
+			}
+		}
 		newStatus = config.Open
 	} else {
-		// There is a failing build.
-		if oldestClosed != nil {
-			// We can close the tree, as at least one builder is able to justify
-			// the closure. (E.g. has started since the tree was manually opened.)
-			logging.Debugf(c, "At least one failing builder; new status is Closed")
-			newStatus = config.Closed
-		} else {
-			// Some builders are failing, but they were already failing before the
-			// last update. Don't do anything, so as not to close the tree after a
-			// sheriff has manually opened it.
-			logging.Debugf(c, "At least one failing builder, but there's a more recent status update; not doing anything")
-			return nil
-		}
+		// At least one failing build justifies tree closure.
+		logging.Debugf(c, "At least one failing builder justifies closure; new status is Closed")
+		newStatus = config.Closed
 	}
 
 	if treeStatus.status == newStatus {
@@ -375,17 +419,48 @@ func updateTree(c context.Context, ts treeStatusClient, treeClosers []*config.Tr
 	var message string
 	var closingBuilderName string
 	if newStatus == config.Open {
-		message = truncateString(fmt.Sprintf("Tree is open (Automatic: %s", randomMessage(c)), maxAutomaticMessageLengthBytes-1) + ")"
+		if openedByRevert {
+			// Special message for revert-triggered opening.
+			message = truncateString(
+				fmt.Sprintf("Tree is open (Automatic: Culprit %s has been reverted at %s)",
+					lastRevertEvent.CulpritReviewURL, lastRevertEvent.RevertReviewURL),
+				maxAutomaticMessageLengthBytes-1) + ")"
+		} else {
+			message = truncateString(fmt.Sprintf("Tree is open (Automatic: %s", randomMessage(c)), maxAutomaticMessageLengthBytes-1) + ")"
+		}
 	} else {
 		message = truncateString(fmt.Sprintf("Tree is closed (Automatic: %s", oldestClosed.Message), maxAutomaticMessageLengthBytes-1) + ")"
 		closingBuilderName = generateClosingBuilderName(c, oldestClosed)
 	}
 
 	if anyEnabled {
-		return ts.postStatus(c, message, treeName, newStatus, closingBuilderName)
+		err := ts.postStatus(c, message, treeName, newStatus, closingBuilderName)
+		return err
 	}
 	logging.Infof(c, "Would update status for %s to %q", treeName, message)
 	return nil
+}
+
+// latestRevertEvent fetches the most recent CulpritRevertEvent for the given tree.
+// Returns nil if no event exists for this tree.
+//
+// The event remains useful as long as RevertLandTime > newestFailingBuildStartTime,
+// which allows it to:
+//  1. Help reopen the tree when all builds pass OR when the revert lands
+//  2. Continue helping after reopening by allowing the system to ignore new failures
+//     from builds that started before the revert (preventing premature re-closure)
+func latestRevertEvent(c context.Context, treeName string) (*config.CulpritRevertEvent, error) {
+	event := &config.CulpritRevertEvent{TreeName: treeName}
+	err := datastore.Get(c, event)
+	if err == datastore.ErrNoSuchEntity {
+		// No event exists for this tree.
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return event, nil
 }
 
 // truncateString truncates a UTF-8 string to the given number of bytes.
