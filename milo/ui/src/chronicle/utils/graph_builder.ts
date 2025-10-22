@@ -237,7 +237,10 @@ function createCheckNode(checkView: CheckView): Node {
   const check = checkView.check!;
   return {
     id: check.identifier!.id!,
-    data: { label: getCheckNodeLabel(check) },
+    data: {
+      label: getCheckNodeLabel(check),
+      view: checkView,
+    },
     style: CHECK_NODE_STYLE,
     ...COMMON_NODE_PROPERTIES,
   };
@@ -247,7 +250,10 @@ function createStageNode(stageView: StageView): Node {
   const stage = stageView.stage!;
   return {
     id: stage.identifier!.id!,
-    data: { label: `Stage: ${stage.identifier!.id}` },
+    data: {
+      label: `Stage: ${stage.identifier!.id}`,
+      view: stageView,
+    },
     style: STAGE_NODE_STYLE,
     ...COMMON_NODE_PROPERTIES,
   };

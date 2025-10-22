@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDebounce } from 'react-use';
 import ReactFlow, {
   Background,
@@ -23,6 +23,7 @@ import ReactFlow, {
   ReactFlowProvider,
   useReactFlow,
   Panel,
+  Node,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -30,6 +31,8 @@ import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 
 import { FakeGraphGenerator } from '../fake_turboci_graph';
 import { TurboCIGraphBuilder } from '../utils/graph_builder';
+
+import { InspectorPanel } from './inspector_panel';
 
 // Fake TurboCI data. To be replaced once TurboCI APIs are available.
 const graphGenerator = new FakeGraphGenerator({
@@ -56,6 +59,9 @@ function Graph() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { fitView } = useReactFlow();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedNodeId, setSelectedNodeId] = useState<string | undefined>(
+    undefined,
+  );
 
   const { layoutedNodes, layoutedEdges } = useMemo(() => {
     // Convert TurboCI Graph to list of nodes and edges that React Flow understands.
@@ -105,27 +111,54 @@ function Graph() {
     [searchQuery],
   );
 
+  // Use useCallback even with no dependencies to prevent React creating a new
+  // function reference on every render.
+  // https://reactflow.dev/learn/advanced-use/performance#memoize-functions
+  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+    setSelectedNodeId(node.id);
+  }, []);
+
+  const onInspectorClose = useCallback(() => {
+    setSelectedNodeId(undefined);
+  }, []);
+
+  const selectedNode = useMemo(() => {
+    return nodes.find((n) => n.id === selectedNodeId);
+  }, [nodes, selectedNodeId]);
+
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      fitView
-    >
-      <Background />
-      <Controls />
-      <MiniMap />
-      <Panel position="top-left">
-        <input
-          type="text"
-          placeholder="Search nodes..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ padding: '8px', width: '200px' }}
+    <div style={{ display: 'flex', height: '100%', width: '100%' }}>
+      <div style={{ flexGrow: 1, height: '100%' }}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onNodeClick={onNodeClick}
+          fitView
+        >
+          <Background />
+          <Controls />
+          <MiniMap />
+          <Panel position="top-left">
+            <input
+              type="text"
+              placeholder="Search nodes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ padding: '8px', width: '200px' }}
+            />
+          </Panel>
+        </ReactFlow>
+      </div>
+      {selectedNodeId && (
+        <InspectorPanel
+          nodeId={selectedNodeId}
+          viewData={selectedNode?.data?.view}
+          onClose={onInspectorClose}
         />
-      </Panel>
-    </ReactFlow>
+      )}
+    </div>
   );
 }
 
