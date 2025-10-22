@@ -81,10 +81,6 @@ service Recorder {
   // optimistic locking). It should be used (and only used by) recorders.
   rpc GetRootInvocation(GetRootInvocationRequest) returns (RootInvocation) {};
 
-  // Deprecated: Use FinalizeWorkUnit on the root work unit instead.
-  // Will be removed soon.
-  rpc FinalizeRootInvocation(FinalizeRootInvocationRequest) returns (RootInvocation) {};
-
   // == Work Units =============================================================
 
   // Creates a new work unit inside a root invocation.
@@ -306,35 +302,6 @@ message UpdateRootInvocationRequest {
   //
   // Required.
   string request_id = 3;
-}
-
-// A request message for the FinalizeRootInvocation RPC.
-//
-// This RPC is idempotent: attempting to finalize an already finalized
-// (or finalizing) root invocation will have no effect.
-message FinalizeRootInvocationRequest {
-  // Name of the root invocation to finalize.
-  string name = 1 [ (google.api.field_behavior) = REQUIRED ];
-
-  // Describes what to do with the root work unit when finalizing the root
-  // invocation.
-  enum FinalizationScope {
-    // The scope is not specified. Do not use.
-    FINALIZATION_SCOPE_UNSPECIFIED = 0;
-
-    // Do not finalize the root work unit.
-    // FinalizeWorkUnit must be called on on the root work unit separately.
-    EXCLUDE_ROOT_WORK_UNIT = 1;
-
-    // Finalize the root work unit in addition to the root invocation.
-    // If the root work unit is already finalized (or finalizing),
-    // no further action is taken on it.
-    INCLUDE_ROOT_WORK_UNIT = 2;
-  }
-
-  // Specifies whether to finalize the root work unit along with the root
-  // invocation. Required.
-  FinalizationScope finalization_scope = 2 [ (google.api.field_behavior) = REQUIRED ];
 }
 
 // == Work Units ===============================================================

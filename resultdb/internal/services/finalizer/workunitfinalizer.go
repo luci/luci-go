@@ -311,20 +311,10 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 			}
 
 			if shouldFinalizeRootInvocation {
-				// TODO(b/442447678): We are planning to always transition root invocation and root work unit
-				// to FINALIZING together. Once we have done that, the root invocation
-				// will be guaranteed to be in the FINALIZING state when its root
-				// work unit becomes FINALIZED.
-				state, err := rootinvocations.ReadFinalizationState(ctx, rootInvID)
-				if err != nil {
+				mutations = append(mutations, rootinvocations.MarkFinalized(rootInvID)...)
+				// Publish a finalized root invocation pubsub transactionally.
+				if err := publishFinalizedRootInvocation(ctx, rootInvID, opts.resultDBHostname); err != nil {
 					return err
-				}
-				if state == pb.RootInvocation_FINALIZING {
-					// Publish a finalized root invocation pubsub transactionally.
-					if err := publishFinalizedRootInvocation(ctx, rootInvID, opts.resultDBHostname); err != nil {
-						return err
-					}
-					mutations = append(mutations, rootinvocations.MarkFinalized(rootInvID)...)
 				}
 			}
 			span.BufferWrite(ctx, mutations...)

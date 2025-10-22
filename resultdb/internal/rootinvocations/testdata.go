@@ -46,7 +46,6 @@ func NewBuilder(id ID) *Builder {
 			LastUpdated:                             time.Date(2025, 4, 26, 1, 2, 3, 4000, time.UTC),
 			FinalizeStartTime:                       spanner.NullTime{Valid: true, Time: time.Date(2025, 4, 26, 1, 2, 3, 4000, time.UTC)},
 			FinalizeTime:                            spanner.NullTime{Valid: true, Time: time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)},
-			Deadline:                                time.Date(2025, 4, 28, 1, 2, 3, 4000, time.UTC),
 			UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: time.Date(2025, 6, 28, 1, 2, 3, 4000, time.UTC)},
 			CreateRequestID:                         "test-request-id",
 			ProducerResource:                        "//builds.example.com/builds/123",
@@ -91,7 +90,6 @@ func (b *Builder) WithMinimalFields() *Builder {
 		LastUpdated:       b.row.LastUpdated,
 		FinalizeStartTime: b.row.FinalizeStartTime,
 		FinalizeTime:      b.row.FinalizeTime,
-		Deadline:          b.row.Deadline,
 		CreateRequestID:   b.row.CreateRequestID,
 		// Prefer to use empty slice rather than nil (even though semantically identical)
 		// as this what we always report in reads.
@@ -146,12 +144,6 @@ func (b *Builder) WithFinalizeStartTime(t time.Time) *Builder {
 // WithFinalizeTime sets the finalize time.
 func (b *Builder) WithFinalizeTime(t time.Time) *Builder {
 	b.row.FinalizeTime = spanner.NullTime{Valid: true, Time: t}
-	return b
-}
-
-// WithDeadline sets the deadline of the root invocation.
-func (b *Builder) WithDeadline(t time.Time) *Builder {
-	b.row.Deadline = t
 	return b
 }
 
@@ -250,7 +242,6 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 		"LastUpdated":           r.LastUpdated,
 		"FinalizeStartTime":     r.FinalizeStartTime,
 		"FinalizeTime":          r.FinalizeTime,
-		"Deadline":              r.Deadline,
 		"UninterestingTestVerdictsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
 		"CreateRequestId":                         r.CreateRequestID,
 		"ProducerResource":                        r.ProducerResource,
@@ -289,7 +280,7 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 		"CreatedBy":                         r.CreatedBy,
 		"FinalizeStartTime":                 r.FinalizeStartTime,
 		"FinalizeTime":                      r.FinalizeTime,
-		"Deadline":                          r.Deadline,
+		"Deadline":                          time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC),
 		"Tags":                              r.Tags,
 		"CreateRequestId":                   r.CreateRequestID,
 		"ProducerResource":                  r.ProducerResource,

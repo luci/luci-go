@@ -101,8 +101,10 @@ func TestDeadlineEnforcer(t *testing.T) {
 		})
 		t.Run(`Expired Root Invocations and Work Units`, func(t *ftt.Test) {
 			var ms []*spanner.Mutation
-			ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootinvocations.NewBuilder("expired").WithDeadline(past).WithFinalizationState(resultpb.RootInvocation_ACTIVE).Build())...)
-			ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootinvocations.NewBuilder("unexpired").WithDeadline(future).WithFinalizationState(resultpb.RootInvocation_ACTIVE).Build())...)
+			ms = append(ms, insert.RootInvocationOnly(rootinvocations.NewBuilder("unexpired").WithFinalizationState(resultpb.RootInvocation_ACTIVE).Build())...)
+			ms = append(ms, insert.WorkUnit(workunits.NewBuilder("unexpired", "root").WithDeadline(future).WithFinalizationState(resultpb.WorkUnit_ACTIVE).Build())...)
+			ms = append(ms, insert.RootInvocationOnly(rootinvocations.NewBuilder("expired").WithFinalizationState(resultpb.RootInvocation_ACTIVE).Build())...)
+			ms = append(ms, insert.WorkUnit(workunits.NewBuilder("expired", "root").WithDeadline(past).WithFinalizationState(resultpb.WorkUnit_ACTIVE).Build())...)
 			testutil.MustApply(ctx, t, ms...)
 
 			const expiredRootInvocationID = rootinvocations.ID("expired")

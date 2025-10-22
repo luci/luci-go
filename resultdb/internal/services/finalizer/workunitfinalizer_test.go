@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/workunits"
@@ -125,62 +124,36 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 					}
 				}
 				t.Run("all root invocation and work units can be finalized", func(t *ftt.Test) {
-					t.Run("root invocation is finalizing", func(t *ftt.Test) {
-						err := sweepWorkUnitsForFinalization(ctx, rootInvID, seq, opts)
-						assert.Loosely(t, err, should.BeNil)
-						// All work units are finalized.
-						verifyWU(wuroot, pb.WorkUnit_FINALIZED, false)
-						verifyWU(wu1, pb.WorkUnit_FINALIZED, false)
-						verifyWU(wu11, pb.WorkUnit_FINALIZED, false)
-						verifyWU(wu12, pb.WorkUnit_FINALIZED, false)
-						verifyWU(wu121, pb.WorkUnit_FINALIZED, false)
-						verifyWU(wu2, pb.WorkUnit_FINALIZED, false)
-						verifyWU(wu22, pb.WorkUnit_FINALIZED, false)
-						// Assert root invocation is finalized.
-						readRootInv, err := rootinvocations.Read(span.Single(ctx), rootInvID)
-						assert.Loosely(t, err, should.BeNil)
-						assert.That(t, readRootInv.FinalizationState, should.Equal(pb.RootInvocation_FINALIZED))
-						assert.Loosely(t, readRootInv.FinalizeTime.Valid, should.BeTrue)
-						// Enqueued root invocation pub/sub notification.
-						assert.Loosely(t, sched.Tasks().Payloads()[0], should.Match(&taskspb.NotifyRootInvocationFinalized{
-							Message: &pb.RootInvocationFinalizedNotification{
-								RootInvocation: &pb.RootInvocationInfo{
-									Name:       rootInvID.Name(),
-									Realm:      rootInv.Realm,
-									CreateTime: timestamppb.New(rootInv.CreateTime),
-								},
-								ResultdbHost: "rdb-host",
+					err := sweepWorkUnitsForFinalization(ctx, rootInvID, seq, opts)
+					assert.Loosely(t, err, should.BeNil)
+					// All work units are finalized.
+					verifyWU(wuroot, pb.WorkUnit_FINALIZED, false)
+					verifyWU(wu1, pb.WorkUnit_FINALIZED, false)
+					verifyWU(wu11, pb.WorkUnit_FINALIZED, false)
+					verifyWU(wu12, pb.WorkUnit_FINALIZED, false)
+					verifyWU(wu121, pb.WorkUnit_FINALIZED, false)
+					verifyWU(wu2, pb.WorkUnit_FINALIZED, false)
+					verifyWU(wu22, pb.WorkUnit_FINALIZED, false)
+					// Assert root invocation is finalized.
+					readRootInv, err := rootinvocations.Read(span.Single(ctx), rootInvID)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, readRootInv.FinalizationState, should.Equal(pb.RootInvocation_FINALIZED))
+					assert.Loosely(t, readRootInv.FinalizeTime.Valid, should.BeTrue)
+					// Enqueued root invocation pub/sub notification.
+					assert.Loosely(t, sched.Tasks().Payloads()[0], should.Match(&taskspb.NotifyRootInvocationFinalized{
+						Message: &pb.RootInvocationFinalizedNotification{
+							RootInvocation: &pb.RootInvocationInfo{
+								Name:       rootInvID.Name(),
+								Realm:      rootInv.Realm,
+								CreateTime: timestamppb.New(rootInv.CreateTime),
 							},
-						}))
-						// Assert root invocation sweep state was reset
-						taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
-						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, taskState.Pending, should.BeFalse)
-					})
-					t.Run("root invocation is active", func(t *ftt.Test) {
-						// update root invocation state to active
-						testutil.MustApply(ctx, t, spanutil.UpdateMap("RootInvocations", map[string]any{
-							"RootInvocationId":  rootInvID,
-							"FinalizationState": pb.RootInvocation_ACTIVE,
-						}))
-
-						err := sweepWorkUnitsForFinalization(ctx, rootInvID, seq, opts)
-						assert.Loosely(t, err, should.BeNil)
-						// All work units are finalized.
-						verifyWU(wuroot, pb.WorkUnit_FINALIZED, false)
-						verifyWU(wu1, pb.WorkUnit_FINALIZED, false)
-						verifyWU(wu11, pb.WorkUnit_FINALIZED, false)
-						verifyWU(wu12, pb.WorkUnit_FINALIZED, false)
-						verifyWU(wu121, pb.WorkUnit_FINALIZED, false)
-						verifyWU(wu2, pb.WorkUnit_FINALIZED, false)
-						verifyWU(wu22, pb.WorkUnit_FINALIZED, false)
-						// Assert root invocation is not finalized.
-						readRootInv, err := rootinvocations.Read(span.Single(ctx), rootInvID)
-						assert.Loosely(t, err, should.BeNil)
-						assert.That(t, readRootInv.FinalizationState, should.Equal(pb.RootInvocation_ACTIVE))
-						// Not task enqueue.
-						assert.Loosely(t, sched.Tasks().Payloads(), should.HaveLength(0))
-					})
+							ResultdbHost: "rdb-host",
+						},
+					}))
+					// Assert root invocation sweep state was reset
+					taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, taskState.Pending, should.BeFalse)
 				})
 
 				t.Run("some work units can't be finalized", func(t *ftt.Test) {

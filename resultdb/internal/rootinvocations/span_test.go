@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -74,7 +73,7 @@ func TestWriteRootInvocation(t *testing.T) {
 			Name:             legacyInvID.Name(),
 			State:            pb.Invocation_State(row.FinalizationState),
 			Realm:            row.Realm,
-			Deadline:         pbutil.MustTimestampProto(row.Deadline),
+			Deadline:         timestamppb.New(time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)),
 			CreateTime:       timestamppb.New(commitTime),
 			CreatedBy:        row.CreatedBy,
 			Tags:             row.Tags,

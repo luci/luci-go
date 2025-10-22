@@ -269,19 +269,6 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					assert.Loosely(t, err, should.ErrLike("root_invocation: realm: bad global realm name"))
 				})
 			})
-			t.Run("deadline", func(t *ftt.Test) {
-				t.Run("empty", func(t *ftt.Test) {
-					// Empty is valid, the deadline will be defaulted.
-					req.RootInvocation.Deadline = nil
-					err := validateCreateRootInvocationRequest(req, cfg)
-					assert.Loosely(t, err, should.BeNil)
-				})
-				t.Run("invalid", func(t *ftt.Test) {
-					req.RootInvocation.Deadline = pbutil.MustTimestampProto(now.Add(-time.Hour))
-					err := validateCreateRootInvocationRequest(req, cfg)
-					assert.Loosely(t, err, should.ErrLike("root_invocation: deadline: must be at least 10 seconds in the future"))
-				})
-			})
 			t.Run("tags", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.RootInvocation.Tags = nil
@@ -424,10 +411,17 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("root_work_unit: realm: must not be set"))
 			})
 			t.Run("deadline", func(t *ftt.Test) {
-				// Must not be set.
-				req.RootWorkUnit.Deadline = pbutil.MustTimestampProto(now.Add(time.Hour))
-				err := validateCreateRootInvocationRequest(req, cfg)
-				assert.Loosely(t, err, should.ErrLike("root_work_unit: deadline: must not be set; always inherited from root invocation"))
+				t.Run("empty", func(t *ftt.Test) {
+					// Empty is valid, the deadline will be defaulted.
+					req.RootWorkUnit.Deadline = nil
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("invalid", func(t *ftt.Test) {
+					req.RootWorkUnit.Deadline = pbutil.MustTimestampProto(now.Add(-time.Hour))
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("root_work_unit: deadline: must be at least 10 seconds in the future"))
+				})
 			})
 			t.Run("module_id", func(t *ftt.Test) {
 				t.Run("nil", func(t *ftt.Test) {
@@ -811,7 +805,6 @@ func TestCreateRootInvocation(t *testing.T) {
 				RootInvocationId:  "u-e2e-success",
 				FinalizationState: pb.RootInvocation_ACTIVE, // FinalizationState is defaulted to ACTIVE.
 				Creator:           "user:someone@example.com",
-				Deadline:          timestamppb.New(start.Add(defaultDeadlineDuration)),
 			})
 			wuID := workunits.ID{
 				RootInvocationID: "u-e2e-success",
@@ -839,7 +832,6 @@ func TestCreateRootInvocation(t *testing.T) {
 				CreatedBy:                               "user:someone@example.com",
 				FinalizeStartTime:                       spanner.NullTime{},
 				FinalizeTime:                            spanner.NullTime{},
-				Deadline:                                start.Add(defaultDeadlineDuration),
 				UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: start.Add(expectedResultExpiration)},
 				CreateRequestID:                         "e2e-request",
 				ProducerResource:                        "//builds.example.com/builds/1",

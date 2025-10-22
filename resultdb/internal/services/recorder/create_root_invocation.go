@@ -144,17 +144,12 @@ func createIdempotentRootInvocation(
 		if finalizationState == pb.RootInvocation_FINALIZATION_STATE_UNSPECIFIED {
 			finalizationState = pb.RootInvocation_ACTIVE
 		}
-		deadline := req.RootInvocation.Deadline.AsTime()
-		if req.RootInvocation.Deadline == nil {
-			deadline = now.Add(defaultDeadlineDuration)
-		}
 
 		rootInvocationRow := &rootinvocations.RootInvocationRow{
 			RootInvocationID:                        rootInvocationID,
 			FinalizationState:                       finalizationState,
 			Realm:                                   req.RootInvocation.Realm,
 			CreatedBy:                               createdBy,
-			Deadline:                                deadline,
 			UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: now.Add(uninterestingTestVerdictsExpirationTime)},
 			CreateRequestID:                         req.RequestId,
 			ProducerResource:                        req.RootInvocation.ProducerResource,
@@ -169,6 +164,10 @@ func createIdempotentRootInvocation(
 		}
 		span.BufferWrite(ctx, rootinvocations.Create(rootInvocationRow)...)
 
+		deadline := req.RootWorkUnit.Deadline.AsTime()
+		if req.RootWorkUnit.Deadline == nil {
+			deadline = now.Add(defaultDeadlineDuration)
+		}
 		// Root work unit and Root invocation are always created in the same transaction,
 		// so the idempotency check on the root invocation is sufficient.
 		wuRow := &workunits.WorkUnitRow{
@@ -182,11 +181,11 @@ func createIdempotentRootInvocation(
 			FinalizationState: rootInvocationStateToWorkUnitState(rootInvocationRow.FinalizationState),
 			Realm:             rootInvocationRow.Realm,
 			CreatedBy:         createdBy,
-			Deadline:          rootInvocationRow.Deadline,
-			CreateRequestID:   req.RequestId,
-			ModuleID:          req.RootWorkUnit.ModuleId,
 			ProducerResource:  rootInvocationRow.ProducerResource,
 			// Fields should be set with value in request.RootWorkUnit.
+			CreateRequestID:    req.RequestId,
+			ModuleID:           req.RootWorkUnit.ModuleId,
+			Deadline:           deadline,
 			Tags:               req.RootWorkUnit.Tags,
 			Properties:         req.RootWorkUnit.Properties,
 			Instructions:       req.RootWorkUnit.Instructions,
@@ -365,15 +364,6 @@ func validateRootInvocationForCreate(inv *pb.RootInvocation) error {
 	// CreateTime, Creator, FinalizeStartTime, FinalizeTime are output only and should be ignored
 	// as per https://google.aip.dev/203.
 
-	// Validate deadline.
-	if inv.Deadline != nil {
-		// Using time.Now() for validation, actual commit time will be used for storage.
-		assumedCreateTime := time.Now().UTC()
-		if err := validateDeadline(inv.Deadline, assumedCreateTime); err != nil {
-			return errors.Fmt("deadline: %w", err)
-		}
-	}
-
 	// Validate producer_resource.
 	if inv.ProducerResource != "" {
 		if err := pbutil.ValidateFullResourceName(inv.ProducerResource); err != nil {
@@ -431,8 +421,13 @@ func validateRootWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServiceC
 	// CreateTime, Creator, FinalizeStartTime, FinalizeTime are output only and should be ignored
 	// as per https://google.aip.dev/203.
 
+	// Validate deadline.
 	if wu.Deadline != nil {
-		return errors.New("deadline: must not be set; always inherited from root invocation")
+		// Using time.Now() for validation, actual commit time will be used for storage.
+		assumedCreateTime := time.Now().UTC()
+		if err := validateDeadline(wu.Deadline, assumedCreateTime); err != nil {
+			return errors.Fmt("deadline: %w", err)
+		}
 	}
 
 	// Parent, ChildWorkUnits and ChildInvocations are output only fields and should be ignored

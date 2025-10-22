@@ -23,7 +23,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -168,13 +167,6 @@ func updateRootInvocationInternal(in *pb.UpdateRootInvocationRequest, originalRo
 				updatedRootInvRow.FinalizationState = pb.RootInvocation_FINALIZING
 			}
 
-		case "deadline":
-			if !originalRootInvRow.Deadline.Equal(in.RootInvocation.Deadline.AsTime()) {
-				deadline := in.RootInvocation.Deadline
-				rootInvocationValues["Deadline"] = deadline
-				legacyInvocationValues["Deadline"] = deadline
-				updatedRootInvRow.Deadline = deadline.AsTime()
-			}
 		case "sources":
 			// Are we setting the field to a value other than its current value?
 			if !proto.Equal(originalRootInvRow.Sources, in.RootInvocation.Sources) {
@@ -288,13 +280,6 @@ func validateUpdateRootInvocationRequest(ctx context.Context, req *pb.UpdateRoot
 			// Setting to "ACTIVE" is a no-op.
 			if req.RootInvocation.FinalizationState != pb.RootInvocation_FINALIZING && req.RootInvocation.FinalizationState != pb.RootInvocation_ACTIVE {
 				return errors.New("root_invocation: finalization_state: must be FINALIZING or ACTIVE")
-			}
-
-		case "deadline":
-			// Use clock.Now(ctx).UTC() for validation; the actual commit time will be used for storage.
-			assumedCreateTime := clock.Now(ctx).UTC()
-			if err := validateDeadline(req.RootInvocation.Deadline, assumedCreateTime); err != nil {
-				return errors.Fmt("root_invocation: deadline: %w", err)
 			}
 
 		case "sources":

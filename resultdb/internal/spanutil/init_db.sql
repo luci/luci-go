@@ -81,7 +81,7 @@ CREATE TABLE RootInvocations (
   FinalizeTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
 
   -- When to force root invocation finalization.
-  Deadline TIMESTAMP NOT NULL,
+  Deadline TIMESTAMP NOT NULL DEFAULT(TIMESTAMP_ADD(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)),
 
   -- When to delete passed and skipped test verdicts from this invocation.
   -- When passed and skipped verdicts are removed, this column is set to NULL.

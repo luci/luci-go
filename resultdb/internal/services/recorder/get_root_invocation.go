@@ -17,14 +17,18 @@ package recorder
 import (
 	"context"
 
-	"go.chromium.org/luci/resultdb/internal/rootinvocations"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/workunits"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // GetRootInvocation implements pb.RecorderServer.
 func (s *recorderServer) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
-	if err := verifyRootInvocationPermissions(ctx, in); err != nil {
+	if err := verifyGetRootInvocationPermissions(ctx, in); err != nil {
 		return nil, err
 	}
 
@@ -42,4 +46,27 @@ func (s *recorderServer) GetRootInvocation(ctx context.Context, in *pb.GetRootIn
 	}
 
 	return row.ToProto(), nil
+}
+
+func verifyGetRootInvocationPermissions(ctx context.Context, req *pb.GetRootInvocationRequest) error {
+	name := req.GetName()
+	rootInvocationID, err := rootinvocations.ParseName(name)
+	if err != nil {
+		return appstatus.BadRequest(errors.Fmt("name: %w", err))
+	}
+
+	token, err := extractUpdateToken(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Root invocation expects the update token of the root work unit.
+	rootWorkUnitID := workunits.ID{
+		RootInvocationID: rootInvocationID,
+		WorkUnitID:       workunits.RootWorkUnitID,
+	}
+	if err := validateWorkUnitUpdateToken(ctx, token, rootWorkUnitID); err != nil {
+		return err // PermissionDenied appstatus error.
+	}
+	return nil
 }

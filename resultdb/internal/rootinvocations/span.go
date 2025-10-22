@@ -23,6 +23,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 
@@ -56,9 +57,6 @@ func Create(rootInvocation *RootInvocationRow) []*spanner.Mutation {
 	if rootInvocation.CreatedBy == "" {
 		panic("do not create root invocations with empty creator")
 	}
-	if rootInvocation.Deadline.IsZero() {
-		panic("do not create root invocations with empty deadline")
-	}
 	if !rootInvocation.UninterestingTestVerdictsExpirationTime.Valid {
 		panic("do not create root invocations with empty UninterestingTestVerdictsExpirationTime")
 	}
@@ -89,7 +87,6 @@ type RootInvocationRow struct {
 	LastUpdated                             time.Time
 	FinalizeStartTime                       spanner.NullTime // Output only.
 	FinalizeTime                            spanner.NullTime // Output only.
-	Deadline                                time.Time
 	UninterestingTestVerdictsExpirationTime spanner.NullTime
 	CreateRequestID                         string
 	ProducerResource                        string
@@ -139,7 +136,6 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 		"CreateTime":            spanner.CommitTimestamp,
 		"CreatedBy":             r.CreatedBy,
 		"LastUpdated":           spanner.CommitTimestamp,
-		"Deadline":              r.Deadline,
 		"UninterestingTestVerdictsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
 		"CreateRequestId":                         r.CreateRequestID,
 		"ProducerResource":                        r.ProducerResource,
@@ -171,17 +167,18 @@ func (r *RootInvocationRow) toLegacyInvocationMutation() *spanner.Mutation {
 		"ExpectedTestResultsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
 		"CreateTime":                        spanner.CommitTimestamp,
 		"CreatedBy":                         r.CreatedBy,
-		"Deadline":                          r.Deadline,
-		"Tags":                              r.Tags,
-		"CreateRequestId":                   r.CreateRequestID,
-		"ProducerResource":                  r.ProducerResource,
-		"Properties":                        spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
-		"InheritSources":                    spanner.NullBool{Bool: false, Valid: true}, // A root invocation defines its own sources.
-		"Sources":                           spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
-		"IsSourceSpecFinal":                 r.IsSourcesFinal,
-		"IsExportRoot":                      spanner.NullBool{Bool: true, Valid: true}, // Root invocations are always export roots.
-		"BaselineId":                        r.BaselineID,
-		"Submitted":                         r.Submitted,
+		// set far into the future to avoid bothering the legacy deadline enforcer.
+		"Deadline":          time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC),
+		"Tags":              r.Tags,
+		"CreateRequestId":   r.CreateRequestID,
+		"ProducerResource":  r.ProducerResource,
+		"Properties":        spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
+		"InheritSources":    spanner.NullBool{Bool: false, Valid: true}, // A root invocation defines its own sources.
+		"Sources":           spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
+		"IsSourceSpecFinal": r.IsSourcesFinal,
+		"IsExportRoot":      spanner.NullBool{Bool: true, Valid: true}, // Root invocations are always export roots.
+		"BaselineId":        r.BaselineID,
+		"Submitted":         r.Submitted,
 	}
 
 	if r.FinalizationState == pb.RootInvocation_FINALIZING {
@@ -217,7 +214,6 @@ func (r *RootInvocationRow) ToProto() *pb.RootInvocation {
 		CreateTime:        pbutil.MustTimestampProto(r.CreateTime),
 		Creator:           r.CreatedBy,
 		LastUpdated:       pbutil.MustTimestampProto(r.LastUpdated),
-		Deadline:          pbutil.MustTimestampProto(r.Deadline),
 		ProducerResource:  r.ProducerResource,
 		Sources:           r.Sources,
 		SourcesFinal:      r.IsSourcesFinal,
@@ -248,6 +244,8 @@ func toInvocationState(finalizationState pb.RootInvocation_FinalizationState) pb
 	}
 }
 
+// ToLegacyInvocationProto returns the expected legacy invocation representation.
+// For testing only, this should not be returned over any API surface.
 func (r *RootInvocationRow) ToLegacyInvocationProto() *pb.Invocation {
 	var sourceSpec *pb.SourceSpec
 	if r.Sources != nil {
@@ -259,7 +257,7 @@ func (r *RootInvocationRow) ToLegacyInvocationProto() *pb.Invocation {
 		Realm:                  r.Realm,
 		CreateTime:             pbutil.MustTimestampProto(r.CreateTime),
 		CreatedBy:              r.CreatedBy,
-		Deadline:               pbutil.MustTimestampProto(r.Deadline),
+		Deadline:               timestamppb.New(time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)),
 		ProducerResource:       r.ProducerResource,
 		SourceSpec:             sourceSpec,
 		IsSourceSpecFinal:      r.IsSourcesFinal,

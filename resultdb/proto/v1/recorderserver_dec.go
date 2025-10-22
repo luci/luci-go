@@ -76,23 +76,6 @@ func (s *DecoratedRecorder) GetRootInvocation(ctx context.Context, req *GetRootI
 	return
 }
 
-func (s *DecoratedRecorder) FinalizeRootInvocation(ctx context.Context, req *FinalizeRootInvocationRequest) (rsp *RootInvocation, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "FinalizeRootInvocation", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.FinalizeRootInvocation(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "FinalizeRootInvocation", rsp, err)
-	}
-	return
-}
-
 func (s *DecoratedRecorder) CreateWorkUnit(ctx context.Context, req *CreateWorkUnitRequest) (rsp *WorkUnit, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context

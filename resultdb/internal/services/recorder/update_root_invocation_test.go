@@ -17,7 +17,6 @@ package recorder
 import (
 	"context"
 	"testing"
-	"time"
 
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
@@ -42,7 +41,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/internal/workunits"
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -112,9 +110,9 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 		})
 
 		t.Run("submask in update mask", func(t *ftt.Test) {
-			req.UpdateMask.Paths = []string{"deadline.seconds"}
+			req.UpdateMask.Paths = []string{"sources.gitiles_commit"}
 			err := validateUpdateRootInvocationRequest(ctx, req)
-			assert.Loosely(t, err, should.ErrLike(`update_mask: "deadline" should not have any submask`))
+			assert.Loosely(t, err, should.ErrLike(`update_mask: "sources" should not have any submask`))
 		})
 
 		t.Run("finalization_state", func(t *ftt.Test) {
@@ -136,21 +134,6 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 				req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZED
 				err := validateUpdateRootInvocationRequest(ctx, req)
 				assert.Loosely(t, err, should.ErrLike("root_invocation: finalization_state: must be FINALIZING or ACTIVE"))
-			})
-		})
-
-		t.Run("deadline", func(t *ftt.Test) {
-			req.UpdateMask.Paths = []string{"deadline"}
-			t.Run("valid", func(t *ftt.Test) {
-				req.RootInvocation.Deadline = pbutil.MustTimestampProto(now.Add(time.Hour))
-				err := validateUpdateRootInvocationRequest(ctx, req)
-				assert.Loosely(t, err, should.BeNil)
-			})
-
-			t.Run("invalid past", func(t *ftt.Test) {
-				req.RootInvocation.Deadline = pbutil.MustTimestampProto(now.Add(-time.Hour))
-				err := validateUpdateRootInvocationRequest(ctx, req)
-				assert.Loosely(t, err, should.ErrLike(`root_invocation: deadline: must be at least 10 seconds in the future`))
 			})
 		})
 
@@ -598,16 +581,14 @@ func TestUpdateRootInvocation(t *testing.T) {
 				})
 			})
 
-			t.Run("deadline, properties, tags, baseline_id", func(t *ftt.Test) {
-				newDeadline := pbutil.MustTimestampProto(now.Add(3 * time.Hour))
+			t.Run("properties, tags, baseline_id", func(t *ftt.Test) {
 				newProperties := testutil.TestStrictProperties()
 				newTags := []*pb.StringPair{{Key: "newkey", Value: "newvalue"}}
 				newBaselineID := "try:new-baseline"
 
-				req.UpdateMask.Paths = []string{"deadline", "properties", "tags", "baseline_id"}
+				req.UpdateMask.Paths = []string{"properties", "tags", "baseline_id"}
 				req.RootInvocation = &pb.RootInvocation{
 					Name:       rootInvID.Name(),
-					Deadline:   newDeadline,
 					Properties: newProperties,
 					Tags:       newTags,
 					BaselineId: newBaselineID,
@@ -618,14 +599,12 @@ func TestUpdateRootInvocation(t *testing.T) {
 				expectedRootInv.BaselineId = newBaselineID
 				expectedRootInv.Properties = newProperties
 				expectedRootInv.Tags = newTags
-				expectedRootInv.Deadline = newDeadline
 				assertResponse(ri, expectedRootInv)
 
 				// Validate spanner records are updated.
 				expectedRootInvRow.BaselineID = newBaselineID
 				expectedRootInvRow.Properties = newProperties
 				expectedRootInvRow.Tags = newTags
-				expectedRootInvRow.Deadline = newDeadline.AsTime()
 				assertSpannerRows(expectedRootInvRow)
 			})
 		})

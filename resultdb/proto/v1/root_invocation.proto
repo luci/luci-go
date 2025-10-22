@@ -183,10 +183,6 @@ message RootInvocation {
   google.protobuf.Timestamp finalize_time = 8
       [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
-  // Timestamp when the invocation will be forcefully finalized.
-  // Can be extended with UpdateRootInvocation until finalized.
-  google.protobuf.Timestamp deadline = 9;
-
   // Full name of the resource that produced results in this root invocation.
   // See also https://aip.dev/122#full-resource-names
   // Typical examples:
