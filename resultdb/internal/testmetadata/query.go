@@ -152,6 +152,9 @@ var queryTmpl = template.Must(template.New("").Parse(`
 				AND tm.TestId IN UNNEST(@testIDs)
 			{{end}}
 			{{if .filterPreviousTestID}}
+				-- This is an important hint for the query planner to
+				-- know it can answer the query with the null-filtered index.
+				AND tm.PreviousTestId IS NOT NULL
 				AND tm.PreviousTestId IN UNNEST(@previousTestIDs)
 			{{end}}
 			AND tm.SubRealm IN UNNEST(@subRealms)
