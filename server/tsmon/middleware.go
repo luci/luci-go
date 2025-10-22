@@ -106,10 +106,6 @@ type State struct {
 }
 
 const (
-	// noFlushErrorThreshold defines when we start to complain in error log that
-	// the last successful flush (if ever) was too long ago.
-	noFlushErrorThreshold = 5 * time.Minute
-
 	// flushMaxRetry defines the maximum delay between flush retries.
 	flushMaxRetry = 10 * time.Minute
 
@@ -352,6 +348,9 @@ func (s *State) flushIfNeededImpl(ctx context.Context, state *tsmon.State, setti
 		nextFlush = s.nextFlush
 	}()
 
+	// noFlushErrorThreshold defines when we start to complain in error log that
+	// the last successful flush (if ever) was too long ago.
+	noFlushErrorThreshold := 5 * time.Duration(settings.FlushIntervalSec) * time.Second
 	err = s.ensureTaskNumAndFlush(ctx, state, settings)
 	if err != nil {
 		if err == ErrNoTaskNumber {
