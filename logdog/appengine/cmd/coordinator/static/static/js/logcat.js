@@ -23,6 +23,7 @@
  * @typedef {Object} ParsedLine
  * @property {boolean} isLogcat
  * @property {string|undefined} originalLine - defined when isLogcat = false
+ * @property {number|undefined} associatedLine - defined when isLogcat = false
  * @property {string|undefined} date - defined when isLogcat = true
  * @property {string|undefined} time - defined when isLogcat = true
  * @property {number|undefined} pid - defined when isLogcat = true
@@ -67,8 +68,6 @@ const dropdownHeaderSettings = document.getElementById(
 const dropdownListSettings = document.getElementById('dropdown-list-settings');
 const hideDateTimeCheckbox = document.getElementById('hide-date-time-checkbox');
 const wrapTextCheckbox = document.getElementById('wrap-text-checkbox');
-const displayNonLogcatCheckbox = document.getElementById(
-  'display-non-logcat-checkbox');
 const alwaysShowActivityManagerCheckbox = document.getElementById(
   'always-show-activity-manager-checkbox');
 const toggleDarkModeCheckbox = document.getElementById(
@@ -389,9 +388,17 @@ function processCurrentFileLines(currentFileLines) {
   allTags = new Set();
   pidToProcessName = new Map();
 
-  for (const line of currentFileLines) {
+  let previousLogcatLineNumber = -1;
+
+  for (const [lineNumber, line] of currentFileLines.entries()) {
     const parsedLine = parseOneLine(line);
+    if (parsedLine.isLogcat) {
+      previousLogcatLineNumber = lineNumber;
+    } else {
+      parsedLine.associatedLine = previousLogcatLineNumber;
+    }
     currentFileParsedLines.push(parsedLine);
+
     if (!parsedLine.isLogcat) {
       continue;
     }
@@ -895,12 +902,24 @@ function updateTextDisplayArea(restoreScrollPosition = true) {
   // Find out the line numbers that will be displayed based on the options
   // selected by the user.
   const displayedLineNumbers = [];
-  const displayNonLogcatLines = displayNonLogcatCheckbox.checked;
   const alwaysShowActivityManager = alwaysShowActivityManagerCheckbox.checked;
 
   for (const [i, parsedLine] of currentFileParsedLines.entries()) {
     if (!parsedLine.isLogcat) {
-      if (displayNonLogcatLines) {
+      if (parsedLine.originalLine === '--------- beginning of kernel' ||
+        parsedLine.originalLine === '--------- beginning of main' ||
+        parsedLine.originalLine === '--------- beginning of system') {
+        displayedLineNumbers.push(i);
+        continue;
+      }
+      if (parsedLine.associatedLine === -1) {
+        displayedLineNumbers.push(i);
+        continue;
+      }
+      const associatedLine = currentFileParsedLines[parsedLine.associatedLine];
+      if (selectedPids.has(associatedLine.pid) &&
+        selectedTags.has(associatedLine.tag) &&
+        selectedPriorities.has(associatedLine.priority)) {
         displayedLineNumbers.push(i);
       }
       continue;
