@@ -39,6 +39,7 @@ import { DurationLegend } from './duration_legend';
 import { FilterBox } from './filter_box';
 import { GraphConfig } from './graph_config';
 import { useFollowRenames } from './hooks';
+import { NextTestIdBanner } from './next_test_id_banner';
 import { PreviousTestIdBanner } from './previous_test_id_banner';
 import { StatusGraph } from './status_graph';
 import { TestIdLabel } from './test_id_label';
@@ -158,6 +159,7 @@ export const TestHistoryPage = observer(() => {
         <TestPropertiesEntry projectOrRealm={projectOrRealm} testId={testId} />
       </div>
       <LinearProgress value={100} variant="determinate" />
+      <NextTestIdBanner project={project} testId={testId} />
       <PreviousTestIdBanner project={project} testId={testId} />
       <FilterBox
         css={{ width: 'calc(100% - 10px)', margin: '5px' }}

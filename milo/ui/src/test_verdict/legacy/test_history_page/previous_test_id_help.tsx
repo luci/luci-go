@@ -15,7 +15,7 @@
 import { HelpOutline } from '@mui/icons-material';
 import { IconButton, Popover, Typography } from '@mui/material';
 import Link from '@mui/material/Link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link as RouterLink } from 'react-router';
 
 import { getTestHistoryURLWithSearchParam } from '@/common/tools/url_utils';
@@ -35,11 +35,19 @@ export function PreviousTestIDHelp({
   );
 
   const [searchParams, _] = useSyncedSearchParams();
-  const previousTestIdHistoryURL = getTestHistoryURLWithSearchParam(
-    project,
-    previousTestId,
-    searchParams.get('q') || '',
-  );
+
+  const queryParam = searchParams.get('q') || '';
+  const previousTestIdHistoryURL = useMemo(() => {
+    return getTestHistoryURLWithSearchParam(
+      project,
+      previousTestId,
+      queryParam,
+      // Redirect. Set this to avoid the page for the old test ID auto-redirecting back
+      // to the page for the new test ID.
+      true,
+    );
+  }, [project, previousTestId, queryParam]);
+
   return (
     <>
       <IconButton

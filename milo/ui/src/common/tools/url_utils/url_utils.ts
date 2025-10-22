@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Build, BuilderID } from '@/common/services/buildbucket';
-import { urlSetSearchQueryParam } from '@/generic_libs/tools/utils';
 import {
   TestIdentifier,
   Variant,
@@ -116,12 +115,20 @@ export function getTestHistoryURLWithSearchParam(
   project: string,
   testId: string,
   queryParam: string,
+  redirected?: boolean,
 ) {
-  return urlSetSearchQueryParam(
-    getTestHistoryURLPath(project, testId),
-    'q',
-    queryParam,
-  );
+  let result = getTestHistoryURLPath(project, testId);
+  const params = [];
+  if (queryParam) {
+    params.push(['q', queryParam]);
+  }
+  if (redirected) {
+    params.push(['redirected', 'true']);
+  }
+  if (params.length > 0) {
+    result += `?${new URLSearchParams(params).toString()}`;
+  }
+  return result;
 }
 
 export const NOT_FOUND_URL = '/ui/not-found';
