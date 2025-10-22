@@ -13,7 +13,7 @@ queue:
   target: default
 
 # /internal/tasks/t/pubsub-go/<task_id:[0-9a-f]+>
-- name: pubsub-v2
+- name: pubsub-go
   bucket_size: 100
   rate: 500/s
   target: default

@@ -63,14 +63,14 @@ func Register(disp *tq.Dispatcher) *Tasks {
 			ID:        "pubsub-go",
 			Kind:      tq.Transactional,
 			Prototype: (*notificationspb.PubSubNotifyTask)(nil),
-			Queue:     "pubsub-go", // to replace "pubsub" taskqueue in Py.
+			Queue:     "pubsub-go",
 		}),
 
 		BuildbucketNotify: disp.RegisterTaskClass(tq.TaskClass{
 			ID:        "buildbucket-notify-go",
 			Kind:      tq.Transactional,
 			Prototype: (*notificationspb.BuildbucketNotifyTask)(nil),
-			Queue:     "buildbucket-notify-go", // to replace "buildbucket-notify" taskqueue in Py.
+			Queue:     "buildbucket-notify-go",
 		}),
 
 		EnqueueRBE: disp.RegisterTaskClass(tq.TaskClass{
@@ -91,14 +91,14 @@ func Register(disp *tq.Dispatcher) *Tasks {
 			ID:        "cancel-children-tasks-go",
 			Kind:      tq.Transactional,
 			Prototype: (*taskspb.CancelChildrenTask)(nil),
-			Queue:     "cancel-children-tasks-go", // to replace "cancel-children-tasks" taskqueue in Py.
+			Queue:     "cancel-children-tasks-go",
 		}),
 
 		BatchCancel: disp.RegisterTaskClass(tq.TaskClass{
 			ID:        "cancel-tasks-go",
 			Kind:      tq.NonTransactional,
 			Prototype: (*taskspb.BatchCancelTask)(nil),
-			Queue:     "cancel-tasks-go", // to replace "cancel-tasks" taskqueue in Py.
+			Queue:     "cancel-tasks-go",
 		}),
 
 		FinalizeTask: disp.RegisterTaskClass(tq.TaskClass{
