@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -49,6 +50,9 @@ func TestDeadlineEnforcer(t *testing.T) {
 		ctx, sched := tq.TestingContext(ctx, nil)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		store := tsmon.Store(ctx)
+
+		// Always use a stable time to prevent flakiness.
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
 		past := clock.Now(ctx).Add(-10 * time.Minute)
 		future := clock.Now(ctx).Add(10 * time.Minute)

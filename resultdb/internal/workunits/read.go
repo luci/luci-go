@@ -26,6 +26,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
@@ -892,13 +893,14 @@ func ReadDeadlineExpired(ctx context.Context, opts ReadDeadlineExpiredOptions) (
 		FROM WorkUnits@{FORCE_INDEX=WorkUnitsByActiveDeadline, spanner_emulator.disable_query_null_filtered_index_check=true}
 		WHERE RootInvocationShardId >= @startKey
 		  AND RootInvocationShardId < @endKey
-			AND ActiveDeadline < CURRENT_TIMESTAMP()
+			AND ActiveDeadline <= @now
 		ORDER BY RootInvocationShardId, WorkUnitId
 		LIMIT @limit
 	`)
 	st.Params["startKey"] = startKey
 	st.Params["endKey"] = endKey
 	st.Params["limit"] = opts.Limit
+	st.Params["now"] = clock.Now(ctx)
 
 	var results []DeadlineExpiredEntry
 	err = spanutil.Query(ctx, st, func(row *spanner.Row) error {

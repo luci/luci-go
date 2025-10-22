@@ -147,7 +147,7 @@ func enforce(ctx context.Context, shardIndex, limit int) (int, error) {
 	// Finalize the batch of work units.
 	// Stores whether expiredWUs[i] was ultimately finalized.
 	var finalized []bool
-	commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		// Reset on each transaction attempt to avoid state from
 		// previous aborted R/W transactions leaking out.
 		finalized = make([]bool, len(expiredWUs))
@@ -198,7 +198,7 @@ func enforce(ctx context.Context, shardIndex, limit int) (int, error) {
 	for i, wu := range expiredWUs {
 		if finalized[i] {
 			overdueWorkUnitsFinalized.Add(ctx, 1, wu.Realm)
-			timeWorkUnitsOverdue.Add(ctx, float64(commitTime.Sub(wu.ActiveDeadline).Milliseconds()), wu.Realm)
+			timeWorkUnitsOverdue.Add(ctx, float64(clock.Now(ctx).Sub(wu.ActiveDeadline).Milliseconds()), wu.Realm)
 		}
 	}
 	return len(expiredWUs), err
@@ -240,11 +240,12 @@ func enforceLegacy(ctx context.Context, shard, limit int) (int, error) {
 		SELECT InvocationId, ActiveDeadline, Realm
 		FROM Invocations@{FORCE_INDEX=InvocationsByActiveDeadline, spanner_emulator.disable_query_null_filtered_index_check=true}
 		WHERE ShardId = @shardId
-			AND ActiveDeadline <= CURRENT_TIMESTAMP()
+			AND ActiveDeadline <= @now
 			AND InvocationID NOT LIKE '%:workunit:%'
 			AND InvocationID NOT LIKE '%:root:%'
 		LIMIT @limit
 	`)
+	st.Params["now"] = clock.Now(ctx)
 	st.Params["shardId"] = shard
 	st.Params["limit"] = limit
 	rowCount := 0
