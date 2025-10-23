@@ -14,9 +14,13 @@
 
 import CloseIcon from '@mui/icons-material/Close';
 import { Box, Divider, IconButton, Paper, Typography } from '@mui/material';
+import { ReactElement } from 'react';
 
 import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
+
+import { CheckDetails } from './check_details';
+import { StageDetails } from './stage_details';
 
 export interface InspectorPanelProps {
   nodeId: string;
@@ -40,11 +44,15 @@ export function InspectorPanel({
   onClose,
 }: InspectorPanelProps) {
   let title = '';
+  let detailsComponent: ReactElement | undefined = undefined;
+
   if (viewData) {
     if (isCheckView(viewData)) {
-      title = `Check ${nodeId} Details`;
+      title = 'Check Details';
+      detailsComponent = <CheckDetails view={viewData} />;
     } else if (isStageView(viewData)) {
-      title = `Stage ${nodeId} Details`;
+      title = 'Stage Details';
+      detailsComponent = <StageDetails view={viewData} />;
     }
   }
 
@@ -77,12 +85,11 @@ export function InspectorPanel({
       </Box>
       <Divider />
       <Box sx={{ p: 2, overflowY: 'auto', flexGrow: 1 }}>
-        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-          ID
-        </Typography>
-        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-          {nodeId}
-        </Typography>
+        {detailsComponent || (
+          <Typography variant="body2" color="text.secondary">
+            No information available for {nodeId}
+          </Typography>
+        )}
       </Box>
     </Paper>
   );

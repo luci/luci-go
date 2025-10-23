@@ -518,7 +518,7 @@ export class FakeGraphGenerator {
 
     this.checkViews.push({
       check: check,
-      optionData: [data.optionDatum, ...data.resultView.data],
+      optionData: [data.optionDatum],
       edits: edits,
       results: [data.resultView],
     });
@@ -599,6 +599,9 @@ export class FakeGraphGenerator {
         goalState: assignmentGoalState,
       })),
       continuationGroup: [],
+      args: this.createValueFromObj(TYPE_URL_GENERIC_DATA, {
+        args: faker.hacker.phrase(),
+      }),
     };
 
     this.stageViews.push({

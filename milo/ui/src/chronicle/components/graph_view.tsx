@@ -32,7 +32,7 @@ import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 import { FakeGraphGenerator } from '../fake_turboci_graph';
 import { TurboCIGraphBuilder } from '../utils/graph_builder';
 
-import { InspectorPanel } from './inspector_panel';
+import { InspectorPanel } from './inspector_panel/inspector_panel';
 
 // Fake TurboCI data. To be replaced once TurboCI APIs are available.
 const graphGenerator = new FakeGraphGenerator({
