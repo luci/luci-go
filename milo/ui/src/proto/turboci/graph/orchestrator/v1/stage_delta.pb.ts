@@ -6,7 +6,7 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { ExecutionPolicy } from "./execution_policy.pb";
+import { StageExecutionPolicy } from "./stage_execution_policy.pb";
 import { StageState, stageStateFromJSON, stageStateToJSON } from "./stage_state.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
@@ -24,9 +24,9 @@ export interface StageDelta {
    * possible for a single write to affect multiple policies.
    *
    * Like Stage.execution_policies, this will be sorted and unique on
-   * ExecutionPolicy.source.
+   * StageExecutionPolicy.source.
    */
-  readonly executionPolicies: readonly ExecutionPolicy[];
+  readonly executionPolicies: readonly StageExecutionPolicy[];
 }
 
 function createBaseStageDelta(): StageDelta {
@@ -39,7 +39,7 @@ export const StageDelta: MessageFns<StageDelta> = {
       writer.uint32(8).int32(message.state);
     }
     for (const v of message.executionPolicies) {
-      ExecutionPolicy.encode(v!, writer.uint32(18).fork()).join();
+      StageExecutionPolicy.encode(v!, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -64,7 +64,7 @@ export const StageDelta: MessageFns<StageDelta> = {
             break;
           }
 
-          message.executionPolicies.push(ExecutionPolicy.decode(reader, reader.uint32()));
+          message.executionPolicies.push(StageExecutionPolicy.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -80,7 +80,7 @@ export const StageDelta: MessageFns<StageDelta> = {
     return {
       state: isSet(object.state) ? stageStateFromJSON(object.state) : undefined,
       executionPolicies: globalThis.Array.isArray(object?.executionPolicies)
-        ? object.executionPolicies.map((e: any) => ExecutionPolicy.fromJSON(e))
+        ? object.executionPolicies.map((e: any) => StageExecutionPolicy.fromJSON(e))
         : [],
     };
   },
@@ -91,7 +91,7 @@ export const StageDelta: MessageFns<StageDelta> = {
       obj.state = stageStateToJSON(message.state);
     }
     if (message.executionPolicies?.length) {
-      obj.executionPolicies = message.executionPolicies.map((e) => ExecutionPolicy.toJSON(e));
+      obj.executionPolicies = message.executionPolicies.map((e) => StageExecutionPolicy.toJSON(e));
     }
     return obj;
   },
@@ -102,7 +102,7 @@ export const StageDelta: MessageFns<StageDelta> = {
   fromPartial(object: DeepPartial<StageDelta>): StageDelta {
     const message = createBaseStageDelta() as any;
     message.state = object.state ?? undefined;
-    message.executionPolicies = object.executionPolicies?.map((e) => ExecutionPolicy.fromPartial(e)) || [];
+    message.executionPolicies = object.executionPolicies?.map((e) => StageExecutionPolicy.fromPartial(e)) || [];
     return message;
   },
 };

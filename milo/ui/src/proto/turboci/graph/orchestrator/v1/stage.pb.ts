@@ -8,11 +8,12 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Check, Stage as Stage1 } from "../../ids/v1/identifier.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
+import { Dependencies } from "./dependencies.pb";
 import { Edge } from "./edge.pb";
-import { EdgeGroup } from "./edge_group.pb";
-import { ExecutionPolicy } from "./execution_policy.pb";
 import { Revision } from "./revision.pb";
+import { StageAttemptExecutionPolicy } from "./stage_attempt_execution_policy.pb";
 import { StageAttemptState, stageAttemptStateFromJSON, stageAttemptStateToJSON } from "./stage_attempt_state.pb";
+import { StageExecutionPolicy } from "./stage_execution_policy.pb";
 import { StageState, stageStateFromJSON, stageStateToJSON } from "./stage_state.pb";
 import { Value } from "./value.pb";
 
@@ -92,10 +93,16 @@ export interface Stage {
     | StageState
     | undefined;
   /**
+   * Dependencies on other objects in the graph.
+   *
    * Stages are allowed to depend on other Checks and Stages, and will not be
-   * sent to an Executor until these dependencies are resolved.
+   * sent to an Executor until dependencies is resolved.
+   *
+   * Once the Stage is ATTEMPTING, this field is immutable.
    */
-  readonly dependencies: readonly EdgeGroup[];
+  readonly dependencies?:
+    | Dependencies
+    | undefined;
   /** Execution policy for this Stage. */
   readonly executionPolicy?:
     | Stage_ExecutionPolicyState
@@ -133,10 +140,6 @@ export interface Stage {
  * `requested` is set by the stage creator. This is validated and augmented by
  * the Executor to become the `validated` policy.
  *
- * It is expected that a requested ExecutionPolicy which is over-broad will be
- * rejected by the Executor (rather than silently capped), but this is not
- * enforced by TurboCI.
- *
  * In the future, this may also include a `dynamic` policy which could allow
  * additional restrictions to be added after the Stage is created.
  */
@@ -148,11 +151,11 @@ export interface Stage_ExecutionPolicyState {
    * This will be validated by the Executor prior to the Stage being committed
    * to the graph.
    *
-   * If omitted, the Executor will provide a full ExecutionPolicy according to
+   * If omitted, the Executor will provide a full StageExecutionPolicy according to
    * its own logic/configuration.
    */
   readonly requested?:
-    | ExecutionPolicy
+    | StageExecutionPolicy
     | undefined;
   /**
    * Actual execution policy is the policy validated and returned by the
@@ -161,7 +164,7 @@ export interface Stage_ExecutionPolicyState {
    * This is the policy that TurboCI will use to drive Attempts for this
    * Stage.
    */
-  readonly validated?: ExecutionPolicy | undefined;
+  readonly validated?: StageExecutionPolicy | undefined;
 }
 
 /**
@@ -232,6 +235,17 @@ export interface Stage_Attempt {
   readonly details: readonly Value[];
   /** Append-only Executor-specefic progress messages. */
   readonly progress: readonly Stage_Attempt_Progress[];
+  /**
+   * Actual execution policy for this StageAttempt.
+   *
+   * When the orchestrator sends this attempt to the executor to run, the
+   * executor will reevaluate the previous validated attempt execution
+   * template in stage execution policy and make adjustments when necessary.
+   * The validated execution policy is sent to the Orchestrator as part of
+   * CurrentStageWrite when the executor advances the StageAttempt state
+   * PENDING -> (SCHEDULED|RUNNING).
+   */
+  readonly executionPolicy?: StageAttemptExecutionPolicy | undefined;
 }
 
 /**
@@ -286,7 +300,7 @@ export interface Stage_Assignment {
    * goal state, then the Orchestrator will stop monitoring Assignments for
    * this Check at this goal state.
    *
-   * Manual advancement can dangerous if done when other Stages are still
+   * Manual advancement can be dangerous if done when other Stages are still
    * operating on the Check at the earlier state (for example, if one Stage
    * moves a Check to PLANNED while another Stage is still trying to write to
    * the Check options, the writing Stage will fail to write out the options).
@@ -302,7 +316,7 @@ function createBaseStage(): Stage {
     args: undefined,
     version: undefined,
     state: undefined,
-    dependencies: [],
+    dependencies: undefined,
     executionPolicy: undefined,
     attempts: [],
     assignments: [],
@@ -330,8 +344,8 @@ export const Stage: MessageFns<Stage> = {
     if (message.state !== undefined) {
       writer.uint32(48).int32(message.state);
     }
-    for (const v of message.dependencies) {
-      EdgeGroup.encode(v!, writer.uint32(58).fork()).join();
+    if (message.dependencies !== undefined) {
+      Dependencies.encode(message.dependencies, writer.uint32(58).fork()).join();
     }
     if (message.executionPolicy !== undefined) {
       Stage_ExecutionPolicyState.encode(message.executionPolicy, writer.uint32(66).fork()).join();
@@ -408,7 +422,7 @@ export const Stage: MessageFns<Stage> = {
             break;
           }
 
-          message.dependencies.push(EdgeGroup.decode(reader, reader.uint32()));
+          message.dependencies = Dependencies.decode(reader, reader.uint32());
           continue;
         }
         case 8: {
@@ -460,9 +474,7 @@ export const Stage: MessageFns<Stage> = {
       args: isSet(object.args) ? Value.fromJSON(object.args) : undefined,
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       state: isSet(object.state) ? stageStateFromJSON(object.state) : undefined,
-      dependencies: globalThis.Array.isArray(object?.dependencies)
-        ? object.dependencies.map((e: any) => EdgeGroup.fromJSON(e))
-        : [],
+      dependencies: isSet(object.dependencies) ? Dependencies.fromJSON(object.dependencies) : undefined,
       executionPolicy: isSet(object.executionPolicy)
         ? Stage_ExecutionPolicyState.fromJSON(object.executionPolicy)
         : undefined,
@@ -498,8 +510,8 @@ export const Stage: MessageFns<Stage> = {
     if (message.state !== undefined) {
       obj.state = stageStateToJSON(message.state);
     }
-    if (message.dependencies?.length) {
-      obj.dependencies = message.dependencies.map((e) => EdgeGroup.toJSON(e));
+    if (message.dependencies !== undefined) {
+      obj.dependencies = Dependencies.toJSON(message.dependencies);
     }
     if (message.executionPolicy !== undefined) {
       obj.executionPolicy = Stage_ExecutionPolicyState.toJSON(message.executionPolicy);
@@ -533,7 +545,9 @@ export const Stage: MessageFns<Stage> = {
       ? Revision.fromPartial(object.version)
       : undefined;
     message.state = object.state ?? undefined;
-    message.dependencies = object.dependencies?.map((e) => EdgeGroup.fromPartial(e)) || [];
+    message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
+      ? Dependencies.fromPartial(object.dependencies)
+      : undefined;
     message.executionPolicy = (object.executionPolicy !== undefined && object.executionPolicy !== null)
       ? Stage_ExecutionPolicyState.fromPartial(object.executionPolicy)
       : undefined;
@@ -551,10 +565,10 @@ function createBaseStage_ExecutionPolicyState(): Stage_ExecutionPolicyState {
 export const Stage_ExecutionPolicyState: MessageFns<Stage_ExecutionPolicyState> = {
   encode(message: Stage_ExecutionPolicyState, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.requested !== undefined) {
-      ExecutionPolicy.encode(message.requested, writer.uint32(10).fork()).join();
+      StageExecutionPolicy.encode(message.requested, writer.uint32(10).fork()).join();
     }
     if (message.validated !== undefined) {
-      ExecutionPolicy.encode(message.validated, writer.uint32(18).fork()).join();
+      StageExecutionPolicy.encode(message.validated, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -571,7 +585,7 @@ export const Stage_ExecutionPolicyState: MessageFns<Stage_ExecutionPolicyState> 
             break;
           }
 
-          message.requested = ExecutionPolicy.decode(reader, reader.uint32());
+          message.requested = StageExecutionPolicy.decode(reader, reader.uint32());
           continue;
         }
         case 2: {
@@ -579,7 +593,7 @@ export const Stage_ExecutionPolicyState: MessageFns<Stage_ExecutionPolicyState> 
             break;
           }
 
-          message.validated = ExecutionPolicy.decode(reader, reader.uint32());
+          message.validated = StageExecutionPolicy.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -593,18 +607,18 @@ export const Stage_ExecutionPolicyState: MessageFns<Stage_ExecutionPolicyState> 
 
   fromJSON(object: any): Stage_ExecutionPolicyState {
     return {
-      requested: isSet(object.requested) ? ExecutionPolicy.fromJSON(object.requested) : undefined,
-      validated: isSet(object.validated) ? ExecutionPolicy.fromJSON(object.validated) : undefined,
+      requested: isSet(object.requested) ? StageExecutionPolicy.fromJSON(object.requested) : undefined,
+      validated: isSet(object.validated) ? StageExecutionPolicy.fromJSON(object.validated) : undefined,
     };
   },
 
   toJSON(message: Stage_ExecutionPolicyState): unknown {
     const obj: any = {};
     if (message.requested !== undefined) {
-      obj.requested = ExecutionPolicy.toJSON(message.requested);
+      obj.requested = StageExecutionPolicy.toJSON(message.requested);
     }
     if (message.validated !== undefined) {
-      obj.validated = ExecutionPolicy.toJSON(message.validated);
+      obj.validated = StageExecutionPolicy.toJSON(message.validated);
     }
     return obj;
   },
@@ -615,17 +629,24 @@ export const Stage_ExecutionPolicyState: MessageFns<Stage_ExecutionPolicyState> 
   fromPartial(object: DeepPartial<Stage_ExecutionPolicyState>): Stage_ExecutionPolicyState {
     const message = createBaseStage_ExecutionPolicyState() as any;
     message.requested = (object.requested !== undefined && object.requested !== null)
-      ? ExecutionPolicy.fromPartial(object.requested)
+      ? StageExecutionPolicy.fromPartial(object.requested)
       : undefined;
     message.validated = (object.validated !== undefined && object.validated !== null)
-      ? ExecutionPolicy.fromPartial(object.validated)
+      ? StageExecutionPolicy.fromPartial(object.validated)
       : undefined;
     return message;
   },
 };
 
 function createBaseStage_Attempt(): Stage_Attempt {
-  return { state: undefined, version: undefined, processUid: undefined, details: [], progress: [] };
+  return {
+    state: undefined,
+    version: undefined,
+    processUid: undefined,
+    details: [],
+    progress: [],
+    executionPolicy: undefined,
+  };
 }
 
 export const Stage_Attempt: MessageFns<Stage_Attempt> = {
@@ -644,6 +665,9 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
     }
     for (const v of message.progress) {
       Stage_Attempt_Progress.encode(v!, writer.uint32(42).fork()).join();
+    }
+    if (message.executionPolicy !== undefined) {
+      StageAttemptExecutionPolicy.encode(message.executionPolicy, writer.uint32(50).fork()).join();
     }
     return writer;
   },
@@ -695,6 +719,14 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
           message.progress.push(Stage_Attempt_Progress.decode(reader, reader.uint32()));
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.executionPolicy = StageAttemptExecutionPolicy.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -713,6 +745,9 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
       progress: globalThis.Array.isArray(object?.progress)
         ? object.progress.map((e: any) => Stage_Attempt_Progress.fromJSON(e))
         : [],
+      executionPolicy: isSet(object.executionPolicy)
+        ? StageAttemptExecutionPolicy.fromJSON(object.executionPolicy)
+        : undefined,
     };
   },
 
@@ -733,6 +768,9 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
     if (message.progress?.length) {
       obj.progress = message.progress.map((e) => Stage_Attempt_Progress.toJSON(e));
     }
+    if (message.executionPolicy !== undefined) {
+      obj.executionPolicy = StageAttemptExecutionPolicy.toJSON(message.executionPolicy);
+    }
     return obj;
   },
 
@@ -748,6 +786,9 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
     message.processUid = object.processUid ?? undefined;
     message.details = object.details?.map((e) => Value.fromPartial(e)) || [];
     message.progress = object.progress?.map((e) => Stage_Attempt_Progress.fromPartial(e)) || [];
+    message.executionPolicy = (object.executionPolicy !== undefined && object.executionPolicy !== null)
+      ? StageAttemptExecutionPolicy.fromPartial(object.executionPolicy)
+      : undefined;
     return message;
   },
 };

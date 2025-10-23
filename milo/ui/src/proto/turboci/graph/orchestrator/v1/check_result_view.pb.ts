@@ -6,25 +6,45 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { CheckResult } from "../../ids/v1/identifier.pb";
 import { Datum } from "./datum.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
 /** A view of the data for a single Check.Result. */
 export interface CheckResultView {
-  /** The current data for each data type in this Result. */
-  readonly data: readonly Datum[];
+  /** Which CheckResult this belongs to. */
+  readonly identifier?:
+    | CheckResult
+    | undefined;
+  /**
+   * Data for this result.
+   *
+   * Indexed by type_url.
+   *
+   * NOTE: If we add an additional distinguisher other than type_url, it will
+   * need to also be rendered in this string key. Probably <tag>:<type_url>.
+   */
+  readonly data: { [key: string]: Datum };
+}
+
+export interface CheckResultView_DataEntry {
+  readonly key: string;
+  readonly value: Datum | undefined;
 }
 
 function createBaseCheckResultView(): CheckResultView {
-  return { data: [] };
+  return { identifier: undefined, data: {} };
 }
 
 export const CheckResultView: MessageFns<CheckResultView> = {
   encode(message: CheckResultView, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.data) {
-      Datum.encode(v!, writer.uint32(10).fork()).join();
+    if (message.identifier !== undefined) {
+      CheckResult.encode(message.identifier, writer.uint32(10).fork()).join();
     }
+    Object.entries(message.data).forEach(([key, value]) => {
+      CheckResultView_DataEntry.encode({ key: key as any, value }, writer.uint32(18).fork()).join();
+    });
     return writer;
   },
 
@@ -40,7 +60,18 @@ export const CheckResultView: MessageFns<CheckResultView> = {
             break;
           }
 
-          message.data.push(Datum.decode(reader, reader.uint32()));
+          message.identifier = CheckResult.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          const entry2 = CheckResultView_DataEntry.decode(reader, reader.uint32());
+          if (entry2.value !== undefined) {
+            message.data[entry2.key] = entry2.value;
+          }
           continue;
         }
       }
@@ -53,13 +84,30 @@ export const CheckResultView: MessageFns<CheckResultView> = {
   },
 
   fromJSON(object: any): CheckResultView {
-    return { data: globalThis.Array.isArray(object?.data) ? object.data.map((e: any) => Datum.fromJSON(e)) : [] };
+    return {
+      identifier: isSet(object.identifier) ? CheckResult.fromJSON(object.identifier) : undefined,
+      data: isObject(object.data)
+        ? Object.entries(object.data).reduce<{ [key: string]: Datum }>((acc, [key, value]) => {
+          acc[key] = Datum.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
+    };
   },
 
   toJSON(message: CheckResultView): unknown {
     const obj: any = {};
-    if (message.data?.length) {
-      obj.data = message.data.map((e) => Datum.toJSON(e));
+    if (message.identifier !== undefined) {
+      obj.identifier = CheckResult.toJSON(message.identifier);
+    }
+    if (message.data) {
+      const entries = Object.entries(message.data);
+      if (entries.length > 0) {
+        obj.data = {};
+        entries.forEach(([k, v]) => {
+          obj.data[k] = Datum.toJSON(v);
+        });
+      }
     }
     return obj;
   },
@@ -69,7 +117,91 @@ export const CheckResultView: MessageFns<CheckResultView> = {
   },
   fromPartial(object: DeepPartial<CheckResultView>): CheckResultView {
     const message = createBaseCheckResultView() as any;
-    message.data = object.data?.map((e) => Datum.fromPartial(e)) || [];
+    message.identifier = (object.identifier !== undefined && object.identifier !== null)
+      ? CheckResult.fromPartial(object.identifier)
+      : undefined;
+    message.data = Object.entries(object.data ?? {}).reduce<{ [key: string]: Datum }>((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = Datum.fromPartial(value);
+      }
+      return acc;
+    }, {});
+    return message;
+  },
+};
+
+function createBaseCheckResultView_DataEntry(): CheckResultView_DataEntry {
+  return { key: "", value: undefined };
+}
+
+export const CheckResultView_DataEntry: MessageFns<CheckResultView_DataEntry> = {
+  encode(message: CheckResultView_DataEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      Datum.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CheckResultView_DataEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCheckResultView_DataEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = Datum.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CheckResultView_DataEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? Datum.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: CheckResultView_DataEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = Datum.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CheckResultView_DataEntry>): CheckResultView_DataEntry {
+    return CheckResultView_DataEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CheckResultView_DataEntry>): CheckResultView_DataEntry {
+    const message = createBaseCheckResultView_DataEntry() as any;
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null) ? Datum.fromPartial(object.value) : undefined;
     return message;
   },
 };
@@ -81,6 +213,14 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+function isObject(value: any): boolean {
+  return typeof value === "object" && value !== null;
+}
+
+function isSet(value: any): boolean {
+  return value !== null && value !== undefined;
+}
 
 export interface MessageFns<T> {
   encode(message: T, writer?: BinaryWriter): BinaryWriter;

@@ -274,7 +274,11 @@ export interface QueryVariantsResponse_VariantInfo {
 export interface QueryTestsRequest {
   /** Required. The LUCI project to query the tests from. */
   readonly project: string;
-  /** Required. Only tests that contain the substring will be returned. */
+  /**
+   * Required. The search string.
+   * Only tests that contain the substring in the test_id or test_metadata.name
+   * will be returned.
+   */
   readonly testIdSubstring: string;
   /**
    * Optional. The project-scoped realm to query the variants from.

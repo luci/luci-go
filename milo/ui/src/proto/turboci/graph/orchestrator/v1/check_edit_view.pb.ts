@@ -28,12 +28,22 @@ export interface CheckEditView {
   /**
    * Data for the Edit's check.options which are visible and of a type
    * which was requested.
+   *
+   * Indexed by type_url.
+   *
+   * NOTE: If we add an additional distinguisher other than type_url, it will
+   * need to also be rendered in this string key. Probably <tag>:<type_url>.
    */
-  readonly optionData: readonly Datum[];
+  readonly optionData: { [key: string]: Datum };
+}
+
+export interface CheckEditView_OptionDataEntry {
+  readonly key: string;
+  readonly value: Datum | undefined;
 }
 
 function createBaseCheckEditView(): CheckEditView {
-  return { edit: undefined, optionData: [] };
+  return { edit: undefined, optionData: {} };
 }
 
 export const CheckEditView: MessageFns<CheckEditView> = {
@@ -41,9 +51,9 @@ export const CheckEditView: MessageFns<CheckEditView> = {
     if (message.edit !== undefined) {
       Edit.encode(message.edit, writer.uint32(10).fork()).join();
     }
-    for (const v of message.optionData) {
-      Datum.encode(v!, writer.uint32(18).fork()).join();
-    }
+    Object.entries(message.optionData).forEach(([key, value]) => {
+      CheckEditView_OptionDataEntry.encode({ key: key as any, value }, writer.uint32(18).fork()).join();
+    });
     return writer;
   },
 
@@ -67,7 +77,10 @@ export const CheckEditView: MessageFns<CheckEditView> = {
             break;
           }
 
-          message.optionData.push(Datum.decode(reader, reader.uint32()));
+          const entry2 = CheckEditView_OptionDataEntry.decode(reader, reader.uint32());
+          if (entry2.value !== undefined) {
+            message.optionData[entry2.key] = entry2.value;
+          }
           continue;
         }
       }
@@ -82,9 +95,12 @@ export const CheckEditView: MessageFns<CheckEditView> = {
   fromJSON(object: any): CheckEditView {
     return {
       edit: isSet(object.edit) ? Edit.fromJSON(object.edit) : undefined,
-      optionData: globalThis.Array.isArray(object?.optionData)
-        ? object.optionData.map((e: any) => Datum.fromJSON(e))
-        : [],
+      optionData: isObject(object.optionData)
+        ? Object.entries(object.optionData).reduce<{ [key: string]: Datum }>((acc, [key, value]) => {
+          acc[key] = Datum.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
     };
   },
 
@@ -93,8 +109,14 @@ export const CheckEditView: MessageFns<CheckEditView> = {
     if (message.edit !== undefined) {
       obj.edit = Edit.toJSON(message.edit);
     }
-    if (message.optionData?.length) {
-      obj.optionData = message.optionData.map((e) => Datum.toJSON(e));
+    if (message.optionData) {
+      const entries = Object.entries(message.optionData);
+      if (entries.length > 0) {
+        obj.optionData = {};
+        entries.forEach(([k, v]) => {
+          obj.optionData[k] = Datum.toJSON(v);
+        });
+      }
     }
     return obj;
   },
@@ -105,7 +127,91 @@ export const CheckEditView: MessageFns<CheckEditView> = {
   fromPartial(object: DeepPartial<CheckEditView>): CheckEditView {
     const message = createBaseCheckEditView() as any;
     message.edit = (object.edit !== undefined && object.edit !== null) ? Edit.fromPartial(object.edit) : undefined;
-    message.optionData = object.optionData?.map((e) => Datum.fromPartial(e)) || [];
+    message.optionData = Object.entries(object.optionData ?? {}).reduce<{ [key: string]: Datum }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = Datum.fromPartial(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    return message;
+  },
+};
+
+function createBaseCheckEditView_OptionDataEntry(): CheckEditView_OptionDataEntry {
+  return { key: "", value: undefined };
+}
+
+export const CheckEditView_OptionDataEntry: MessageFns<CheckEditView_OptionDataEntry> = {
+  encode(message: CheckEditView_OptionDataEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      Datum.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CheckEditView_OptionDataEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCheckEditView_OptionDataEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = Datum.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CheckEditView_OptionDataEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? Datum.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: CheckEditView_OptionDataEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = Datum.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CheckEditView_OptionDataEntry>): CheckEditView_OptionDataEntry {
+    return CheckEditView_OptionDataEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CheckEditView_OptionDataEntry>): CheckEditView_OptionDataEntry {
+    const message = createBaseCheckEditView_OptionDataEntry() as any;
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null) ? Datum.fromPartial(object.value) : undefined;
     return message;
   },
 };
@@ -117,6 +223,10 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+function isObject(value: any): boolean {
+  return typeof value === "object" && value !== null;
+}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

@@ -11,12 +11,11 @@ import { Check, Identifier, Stage } from "../../ids/v1/identifier.pb";
 import { CheckKind, checkKindFromJSON, checkKindToJSON } from "./check_kind.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
 import { Edge } from "./edge.pb";
-import { EdgeGroup } from "./edge_group.pb";
-import { Edit_Reason } from "./edit.pb";
-import { ExecutionPolicy } from "./execution_policy.pb";
 import { Revision } from "./revision.pb";
 import { Stage_Assignment } from "./stage.pb";
+import { StageAttemptExecutionPolicy } from "./stage_attempt_execution_policy.pb";
 import { StageAttemptState, stageAttemptStateFromJSON, stageAttemptStateToJSON } from "./stage_attempt_state.pb";
+import { StageExecutionPolicy } from "./stage_execution_policy.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
@@ -54,7 +53,7 @@ export interface WriteNodesRequest {
    * a client only wants to display one Reason, it should be the first in this
    * list which they have access to.
    */
-  readonly reasons: readonly Edit_Reason[];
+  readonly reasons: readonly WriteNodesRequest_Reason[];
   /**
    * Set if the caller wants to make this write transactional with a subset of
    * the graph at a particular snapshot.
@@ -116,6 +115,57 @@ export interface WriteNodesRequest_RealmValue {
 }
 
 /**
+ * An in-line representation of Dependencies.Group.
+ *
+ * The Orchestrator will deduplicate edges into Dependencies.edges in the
+ * Check or Stage.
+ *
+ * Otherwise this has the same meaning as Dependencies.Group.
+ */
+export interface WriteNodesRequest_DependencyGroup {
+  /** Singular edges in this group. */
+  readonly edges: readonly Edge[];
+  /** Sub-groups in this group. */
+  readonly groups: readonly WriteNodesRequest_DependencyGroup[];
+  /**
+   * Number of edges and/or groups which need to be satisfied for this
+   * DependencyGroup to be satisfied.
+   *
+   * See `Dependencies.Group.threshold`.
+   */
+  readonly threshold?: number | undefined;
+}
+
+/** Reason is the write-request analogue of Edit.Reason. */
+export interface WriteNodesRequest_Reason {
+  /**
+   * The security realm for this reason.
+   *
+   * If omitted, this will be the same as the parent node's realm.
+   */
+  readonly realm?:
+    | string
+    | undefined;
+  /**
+   * A 'low effort' reason for this edit.
+   *
+   * This is 'low effort' because it's preferable for the writer to provide
+   * detailed machine-readable data in the `details` field below.
+   */
+  readonly reason?:
+    | string
+    | undefined;
+  /**
+   * Machine-readable reason(s) for this edit.
+   *
+   * This is repeated to allow for standardized reason message types in
+   * conjunction with workflow-specific details as part of the same write
+   * record.
+   */
+  readonly details: readonly Any[];
+}
+
+/**
  * TransactionDetails encapsulates the information necessary to make this
  * write safe by describing the snapshot of the graph which the writer
  * observed. TurboCI Orchestrator will transactionally ensure that these nodes
@@ -169,10 +219,13 @@ export interface WriteNodesRequest_TransactionDetails {
    * didn't find it, so I'm doing a write based on that information. If X DOES
    * exist at the time of the write, I want to abort and try again.").
    *
-   * NOTE: If you are writing what you THINK is a new node, the safe thing to
-   * do is to query for that node before doing the write (to confirm it
-   * doesn't exist) and then also include that node ID in this list (to
-   * confirm it didn't start existing before your write).
+   * NOTE: If you are writing what you THINK are all new nodes, but haven't
+   * done a query to verify this, just providing `txn` with `nodes_observed`
+   * and `snapshot_version` left unset is sufficient to guard against the
+   * nodes already being written. However, if you get
+   * a TransactionConflictFailure because the nodes already exist, when you
+   * recover make sure to do the query before you try the write again! You may
+   * be conflicting with a previous incarnation of your own process!
    */
   readonly nodesObserved: readonly Identifier[];
   /**
@@ -181,6 +234,10 @@ export interface WriteNodesRequest_TransactionDetails {
    * If multiple queries were made in this transaction, this revision MUST be
    * the first revision observed. Providing version.require to QueryNodes will
    * help enforce this.
+   *
+   * If `snapshot_version` is unset, it is treated as a 0 value (which means
+   * that all `nodes_observed` plus all nodes being written in this request
+   * must not already exist).
    */
   readonly snapshotVersion?: Revision | undefined;
 }
@@ -198,7 +255,7 @@ export interface WriteNodesRequest_CheckWrite {
    * permission in the check's realm (or in the realm of the option/result
    * data).
    */
-  readonly check?:
+  readonly identifier?:
     | Check
     | undefined;
   /**
@@ -231,18 +288,14 @@ export interface WriteNodesRequest_CheckWrite {
    */
   readonly options: readonly WriteNodesRequest_RealmValue[];
   /**
-   * Dependencies for this Check.
+   * Dependency predicate for this Check.
    *
-   * If set, fully overwrites the dependencies field in the target Check.
-   *
-   * Empty groups will be pruned from this. You can remove all dependencies by
-   * providing a single, empty, EdgeGroup.
-   *
-   * If this Write transitions the Check to PLANNED and also provides
-   * dependencies, these must match identically to the already-written
-   * dependencies.
+   * If set, used to populate the dependencies.edges and
+   * dependencies.predicate fields in the target Check.
    */
-  readonly dependencies: readonly EdgeGroup[];
+  readonly dependencies?:
+    | WriteNodesRequest_DependencyGroup
+    | undefined;
   /**
    * Write data to a Result for this Check.
    *
@@ -296,7 +349,7 @@ export interface WriteNodesRequest_StageWrite {
    * or the caller must have the additional "turboci.workplans.writeExternal"
    * permission in the stage's realm.
    */
-  readonly stage?:
+  readonly identifier?:
     | Stage
     | undefined;
   /**
@@ -333,24 +386,29 @@ export interface WriteNodesRequest_StageWrite {
     | string
     | undefined;
   /**
-   * Dependencies for this Stage.
+   * Dependency predicate for this Stage.
+   *
+   * If set, used to populate the dependencies.edges and
+   * dependencies.predicate fields in the target Check.
    *
    * If the Stage already exists, this will only result in an error if it
    * doesn't match the existing dependencies identically.
    */
-  readonly dependencies: readonly EdgeGroup[];
+  readonly dependencies?:
+    | WriteNodesRequest_DependencyGroup
+    | undefined;
   /**
    * The requested retry policy of the Stage.
    *
    * If the Stage already exists, this will only result in an error if this
    * requested policy doesn't match doesn't match the existing requested policy.
    *
-   * If this write creates the stage and the requested_execution_policy is
-   * omitted, the stage will get the default ExecutionPolicy from the
+   * If this write creates the stage and the requested_stage_execution_policy is
+   * omitted, the stage will get the default StageExecutionPolicy from the
    * Executor.
    */
-  readonly requestedExecutionPolicy?:
-    | ExecutionPolicy
+  readonly requestedStageExecutionPolicy?:
+    | StageExecutionPolicy
     | undefined;
   /**
    * The Check assignments of the Stage.
@@ -387,6 +445,10 @@ export interface WriteNodesRequest_CurrentStageWrite {
    * transitions (since all other transitions are handled by the Orchestrator
    * itself):
    *
+   *   * PENDING -> SCHEDULED
+   *   * PENDING -> RUNNING
+   *   * PENDING -> COMPLETE
+   *   * PENDING -> INCOMPLETE
    *   * SCHEDULED -> RUNNING
    *   * SCHEDULED -> COMPLETE
    *   * SCHEDULED -> INCOMPLETE
@@ -408,6 +470,13 @@ export interface WriteNodesRequest_CurrentStageWrite {
    * same target? Or replace the condition in the existing Edge?
    */
   readonly ensureInContinuationGroup: readonly Edge[];
+  /**
+   * The modified execution policy for this StageAttempt.
+   *
+   * This field can only be set by the stage executor when advancing the
+   * stage attempt state PENDING -> (SCHEDULED|RUNNING).
+   */
+  readonly attemptExecutionPolicy?: StageAttemptExecutionPolicy | undefined;
 }
 
 function createBaseWriteNodesRequest(): WriteNodesRequest {
@@ -420,7 +489,7 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
       writer.uint32(10).string(message.stageAttemptToken);
     }
     for (const v of message.reasons) {
-      Edit_Reason.encode(v!, writer.uint32(18).fork()).join();
+      WriteNodesRequest_Reason.encode(v!, writer.uint32(18).fork()).join();
     }
     if (message.txn !== undefined) {
       WriteNodesRequest_TransactionDetails.encode(message.txn, writer.uint32(26).fork()).join();
@@ -457,7 +526,7 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
             break;
           }
 
-          message.reasons.push(Edit_Reason.decode(reader, reader.uint32()));
+          message.reasons.push(WriteNodesRequest_Reason.decode(reader, reader.uint32()));
           continue;
         }
         case 3: {
@@ -504,7 +573,9 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
   fromJSON(object: any): WriteNodesRequest {
     return {
       stageAttemptToken: isSet(object.stageAttemptToken) ? globalThis.String(object.stageAttemptToken) : undefined,
-      reasons: globalThis.Array.isArray(object?.reasons) ? object.reasons.map((e: any) => Edit_Reason.fromJSON(e)) : [],
+      reasons: globalThis.Array.isArray(object?.reasons)
+        ? object.reasons.map((e: any) => WriteNodesRequest_Reason.fromJSON(e))
+        : [],
       txn: isSet(object.txn) ? WriteNodesRequest_TransactionDetails.fromJSON(object.txn) : undefined,
       checks: globalThis.Array.isArray(object?.checks)
         ? object.checks.map((e: any) => WriteNodesRequest_CheckWrite.fromJSON(e))
@@ -524,7 +595,7 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
       obj.stageAttemptToken = message.stageAttemptToken;
     }
     if (message.reasons?.length) {
-      obj.reasons = message.reasons.map((e) => Edit_Reason.toJSON(e));
+      obj.reasons = message.reasons.map((e) => WriteNodesRequest_Reason.toJSON(e));
     }
     if (message.txn !== undefined) {
       obj.txn = WriteNodesRequest_TransactionDetails.toJSON(message.txn);
@@ -547,7 +618,7 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
   fromPartial(object: DeepPartial<WriteNodesRequest>): WriteNodesRequest {
     const message = createBaseWriteNodesRequest() as any;
     message.stageAttemptToken = object.stageAttemptToken ?? undefined;
-    message.reasons = object.reasons?.map((e) => Edit_Reason.fromPartial(e)) || [];
+    message.reasons = object.reasons?.map((e) => WriteNodesRequest_Reason.fromPartial(e)) || [];
     message.txn = (object.txn !== undefined && object.txn !== null)
       ? WriteNodesRequest_TransactionDetails.fromPartial(object.txn)
       : undefined;
@@ -636,6 +707,192 @@ export const WriteNodesRequest_RealmValue: MessageFns<WriteNodesRequest_RealmVal
   },
 };
 
+function createBaseWriteNodesRequest_DependencyGroup(): WriteNodesRequest_DependencyGroup {
+  return { edges: [], groups: [], threshold: undefined };
+}
+
+export const WriteNodesRequest_DependencyGroup: MessageFns<WriteNodesRequest_DependencyGroup> = {
+  encode(message: WriteNodesRequest_DependencyGroup, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.edges) {
+      Edge.encode(v!, writer.uint32(10).fork()).join();
+    }
+    for (const v of message.groups) {
+      WriteNodesRequest_DependencyGroup.encode(v!, writer.uint32(18).fork()).join();
+    }
+    if (message.threshold !== undefined) {
+      writer.uint32(24).int32(message.threshold);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): WriteNodesRequest_DependencyGroup {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseWriteNodesRequest_DependencyGroup() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.edges.push(Edge.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.groups.push(WriteNodesRequest_DependencyGroup.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.threshold = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): WriteNodesRequest_DependencyGroup {
+    return {
+      edges: globalThis.Array.isArray(object?.edges) ? object.edges.map((e: any) => Edge.fromJSON(e)) : [],
+      groups: globalThis.Array.isArray(object?.groups)
+        ? object.groups.map((e: any) => WriteNodesRequest_DependencyGroup.fromJSON(e))
+        : [],
+      threshold: isSet(object.threshold) ? globalThis.Number(object.threshold) : undefined,
+    };
+  },
+
+  toJSON(message: WriteNodesRequest_DependencyGroup): unknown {
+    const obj: any = {};
+    if (message.edges?.length) {
+      obj.edges = message.edges.map((e) => Edge.toJSON(e));
+    }
+    if (message.groups?.length) {
+      obj.groups = message.groups.map((e) => WriteNodesRequest_DependencyGroup.toJSON(e));
+    }
+    if (message.threshold !== undefined) {
+      obj.threshold = Math.round(message.threshold);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<WriteNodesRequest_DependencyGroup>): WriteNodesRequest_DependencyGroup {
+    return WriteNodesRequest_DependencyGroup.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<WriteNodesRequest_DependencyGroup>): WriteNodesRequest_DependencyGroup {
+    const message = createBaseWriteNodesRequest_DependencyGroup() as any;
+    message.edges = object.edges?.map((e) => Edge.fromPartial(e)) || [];
+    message.groups = object.groups?.map((e) => WriteNodesRequest_DependencyGroup.fromPartial(e)) || [];
+    message.threshold = object.threshold ?? undefined;
+    return message;
+  },
+};
+
+function createBaseWriteNodesRequest_Reason(): WriteNodesRequest_Reason {
+  return { realm: undefined, reason: undefined, details: [] };
+}
+
+export const WriteNodesRequest_Reason: MessageFns<WriteNodesRequest_Reason> = {
+  encode(message: WriteNodesRequest_Reason, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.realm !== undefined) {
+      writer.uint32(10).string(message.realm);
+    }
+    if (message.reason !== undefined) {
+      writer.uint32(18).string(message.reason);
+    }
+    for (const v of message.details) {
+      Any.encode(v!, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): WriteNodesRequest_Reason {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseWriteNodesRequest_Reason() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.realm = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.reason = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.details.push(Any.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): WriteNodesRequest_Reason {
+    return {
+      realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
+      reason: isSet(object.reason) ? globalThis.String(object.reason) : undefined,
+      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => Any.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: WriteNodesRequest_Reason): unknown {
+    const obj: any = {};
+    if (message.realm !== undefined) {
+      obj.realm = message.realm;
+    }
+    if (message.reason !== undefined) {
+      obj.reason = message.reason;
+    }
+    if (message.details?.length) {
+      obj.details = message.details.map((e) => Any.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<WriteNodesRequest_Reason>): WriteNodesRequest_Reason {
+    return WriteNodesRequest_Reason.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<WriteNodesRequest_Reason>): WriteNodesRequest_Reason {
+    const message = createBaseWriteNodesRequest_Reason() as any;
+    message.realm = object.realm ?? undefined;
+    message.reason = object.reason ?? undefined;
+    message.details = object.details?.map((e) => Any.fromPartial(e)) || [];
+    return message;
+  },
+};
+
 function createBaseWriteNodesRequest_TransactionDetails(): WriteNodesRequest_TransactionDetails {
   return { nodesObserved: [], snapshotVersion: undefined };
 }
@@ -718,11 +975,11 @@ export const WriteNodesRequest_TransactionDetails: MessageFns<WriteNodesRequest_
 
 function createBaseWriteNodesRequest_CheckWrite(): WriteNodesRequest_CheckWrite {
   return {
-    check: undefined,
+    identifier: undefined,
     realm: undefined,
     kind: undefined,
     options: [],
-    dependencies: [],
+    dependencies: undefined,
     results: [],
     finalizeResults: undefined,
     state: undefined,
@@ -731,8 +988,8 @@ function createBaseWriteNodesRequest_CheckWrite(): WriteNodesRequest_CheckWrite 
 
 export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWrite> = {
   encode(message: WriteNodesRequest_CheckWrite, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.check !== undefined) {
-      Check.encode(message.check, writer.uint32(10).fork()).join();
+    if (message.identifier !== undefined) {
+      Check.encode(message.identifier, writer.uint32(10).fork()).join();
     }
     if (message.realm !== undefined) {
       writer.uint32(18).string(message.realm);
@@ -743,8 +1000,8 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
     for (const v of message.options) {
       WriteNodesRequest_RealmValue.encode(v!, writer.uint32(34).fork()).join();
     }
-    for (const v of message.dependencies) {
-      EdgeGroup.encode(v!, writer.uint32(42).fork()).join();
+    if (message.dependencies !== undefined) {
+      WriteNodesRequest_DependencyGroup.encode(message.dependencies, writer.uint32(42).fork()).join();
     }
     for (const v of message.results) {
       WriteNodesRequest_RealmValue.encode(v!, writer.uint32(50).fork()).join();
@@ -770,7 +1027,7 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
             break;
           }
 
-          message.check = Check.decode(reader, reader.uint32());
+          message.identifier = Check.decode(reader, reader.uint32());
           continue;
         }
         case 2: {
@@ -802,7 +1059,7 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
             break;
           }
 
-          message.dependencies.push(EdgeGroup.decode(reader, reader.uint32()));
+          message.dependencies = WriteNodesRequest_DependencyGroup.decode(reader, reader.uint32());
           continue;
         }
         case 6: {
@@ -840,15 +1097,15 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
 
   fromJSON(object: any): WriteNodesRequest_CheckWrite {
     return {
-      check: isSet(object.check) ? Check.fromJSON(object.check) : undefined,
+      identifier: isSet(object.identifier) ? Check.fromJSON(object.identifier) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       kind: isSet(object.kind) ? checkKindFromJSON(object.kind) : undefined,
       options: globalThis.Array.isArray(object?.options)
         ? object.options.map((e: any) => WriteNodesRequest_RealmValue.fromJSON(e))
         : [],
-      dependencies: globalThis.Array.isArray(object?.dependencies)
-        ? object.dependencies.map((e: any) => EdgeGroup.fromJSON(e))
-        : [],
+      dependencies: isSet(object.dependencies)
+        ? WriteNodesRequest_DependencyGroup.fromJSON(object.dependencies)
+        : undefined,
       results: globalThis.Array.isArray(object?.results)
         ? object.results.map((e: any) => WriteNodesRequest_RealmValue.fromJSON(e))
         : [],
@@ -859,8 +1116,8 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
 
   toJSON(message: WriteNodesRequest_CheckWrite): unknown {
     const obj: any = {};
-    if (message.check !== undefined) {
-      obj.check = Check.toJSON(message.check);
+    if (message.identifier !== undefined) {
+      obj.identifier = Check.toJSON(message.identifier);
     }
     if (message.realm !== undefined) {
       obj.realm = message.realm;
@@ -871,8 +1128,8 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
     if (message.options?.length) {
       obj.options = message.options.map((e) => WriteNodesRequest_RealmValue.toJSON(e));
     }
-    if (message.dependencies?.length) {
-      obj.dependencies = message.dependencies.map((e) => EdgeGroup.toJSON(e));
+    if (message.dependencies !== undefined) {
+      obj.dependencies = WriteNodesRequest_DependencyGroup.toJSON(message.dependencies);
     }
     if (message.results?.length) {
       obj.results = message.results.map((e) => WriteNodesRequest_RealmValue.toJSON(e));
@@ -891,11 +1148,15 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
   },
   fromPartial(object: DeepPartial<WriteNodesRequest_CheckWrite>): WriteNodesRequest_CheckWrite {
     const message = createBaseWriteNodesRequest_CheckWrite() as any;
-    message.check = (object.check !== undefined && object.check !== null) ? Check.fromPartial(object.check) : undefined;
+    message.identifier = (object.identifier !== undefined && object.identifier !== null)
+      ? Check.fromPartial(object.identifier)
+      : undefined;
     message.realm = object.realm ?? undefined;
     message.kind = object.kind ?? undefined;
     message.options = object.options?.map((e) => WriteNodesRequest_RealmValue.fromPartial(e)) || [];
-    message.dependencies = object.dependencies?.map((e) => EdgeGroup.fromPartial(e)) || [];
+    message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
+      ? WriteNodesRequest_DependencyGroup.fromPartial(object.dependencies)
+      : undefined;
     message.results = object.results?.map((e) => WriteNodesRequest_RealmValue.fromPartial(e)) || [];
     message.finalizeResults = object.finalizeResults ?? undefined;
     message.state = object.state ?? undefined;
@@ -905,11 +1166,11 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
 
 function createBaseWriteNodesRequest_StageWrite(): WriteNodesRequest_StageWrite {
   return {
-    stage: undefined,
+    identifier: undefined,
     args: undefined,
     realm: undefined,
-    dependencies: [],
-    requestedExecutionPolicy: undefined,
+    dependencies: undefined,
+    requestedStageExecutionPolicy: undefined,
     assignments: [],
     cancelled: undefined,
   };
@@ -917,8 +1178,8 @@ function createBaseWriteNodesRequest_StageWrite(): WriteNodesRequest_StageWrite 
 
 export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWrite> = {
   encode(message: WriteNodesRequest_StageWrite, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.stage !== undefined) {
-      Stage.encode(message.stage, writer.uint32(10).fork()).join();
+    if (message.identifier !== undefined) {
+      Stage.encode(message.identifier, writer.uint32(10).fork()).join();
     }
     if (message.args !== undefined) {
       Any.encode(message.args, writer.uint32(18).fork()).join();
@@ -926,11 +1187,11 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
     if (message.realm !== undefined) {
       writer.uint32(26).string(message.realm);
     }
-    for (const v of message.dependencies) {
-      EdgeGroup.encode(v!, writer.uint32(34).fork()).join();
+    if (message.dependencies !== undefined) {
+      WriteNodesRequest_DependencyGroup.encode(message.dependencies, writer.uint32(34).fork()).join();
     }
-    if (message.requestedExecutionPolicy !== undefined) {
-      ExecutionPolicy.encode(message.requestedExecutionPolicy, writer.uint32(42).fork()).join();
+    if (message.requestedStageExecutionPolicy !== undefined) {
+      StageExecutionPolicy.encode(message.requestedStageExecutionPolicy, writer.uint32(42).fork()).join();
     }
     for (const v of message.assignments) {
       Stage_Assignment.encode(v!, writer.uint32(50).fork()).join();
@@ -953,7 +1214,7 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
             break;
           }
 
-          message.stage = Stage.decode(reader, reader.uint32());
+          message.identifier = Stage.decode(reader, reader.uint32());
           continue;
         }
         case 2: {
@@ -977,7 +1238,7 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
             break;
           }
 
-          message.dependencies.push(EdgeGroup.decode(reader, reader.uint32()));
+          message.dependencies = WriteNodesRequest_DependencyGroup.decode(reader, reader.uint32());
           continue;
         }
         case 5: {
@@ -985,7 +1246,7 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
             break;
           }
 
-          message.requestedExecutionPolicy = ExecutionPolicy.decode(reader, reader.uint32());
+          message.requestedStageExecutionPolicy = StageExecutionPolicy.decode(reader, reader.uint32());
           continue;
         }
         case 6: {
@@ -1015,14 +1276,14 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
 
   fromJSON(object: any): WriteNodesRequest_StageWrite {
     return {
-      stage: isSet(object.stage) ? Stage.fromJSON(object.stage) : undefined,
+      identifier: isSet(object.identifier) ? Stage.fromJSON(object.identifier) : undefined,
       args: isSet(object.args) ? Any.fromJSON(object.args) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
-      dependencies: globalThis.Array.isArray(object?.dependencies)
-        ? object.dependencies.map((e: any) => EdgeGroup.fromJSON(e))
-        : [],
-      requestedExecutionPolicy: isSet(object.requestedExecutionPolicy)
-        ? ExecutionPolicy.fromJSON(object.requestedExecutionPolicy)
+      dependencies: isSet(object.dependencies)
+        ? WriteNodesRequest_DependencyGroup.fromJSON(object.dependencies)
+        : undefined,
+      requestedStageExecutionPolicy: isSet(object.requestedStageExecutionPolicy)
+        ? StageExecutionPolicy.fromJSON(object.requestedStageExecutionPolicy)
         : undefined,
       assignments: globalThis.Array.isArray(object?.assignments)
         ? object.assignments.map((e: any) => Stage_Assignment.fromJSON(e))
@@ -1033,8 +1294,8 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
 
   toJSON(message: WriteNodesRequest_StageWrite): unknown {
     const obj: any = {};
-    if (message.stage !== undefined) {
-      obj.stage = Stage.toJSON(message.stage);
+    if (message.identifier !== undefined) {
+      obj.identifier = Stage.toJSON(message.identifier);
     }
     if (message.args !== undefined) {
       obj.args = Any.toJSON(message.args);
@@ -1042,11 +1303,11 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
     if (message.realm !== undefined) {
       obj.realm = message.realm;
     }
-    if (message.dependencies?.length) {
-      obj.dependencies = message.dependencies.map((e) => EdgeGroup.toJSON(e));
+    if (message.dependencies !== undefined) {
+      obj.dependencies = WriteNodesRequest_DependencyGroup.toJSON(message.dependencies);
     }
-    if (message.requestedExecutionPolicy !== undefined) {
-      obj.requestedExecutionPolicy = ExecutionPolicy.toJSON(message.requestedExecutionPolicy);
+    if (message.requestedStageExecutionPolicy !== undefined) {
+      obj.requestedStageExecutionPolicy = StageExecutionPolicy.toJSON(message.requestedStageExecutionPolicy);
     }
     if (message.assignments?.length) {
       obj.assignments = message.assignments.map((e) => Stage_Assignment.toJSON(e));
@@ -1062,13 +1323,17 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
   },
   fromPartial(object: DeepPartial<WriteNodesRequest_StageWrite>): WriteNodesRequest_StageWrite {
     const message = createBaseWriteNodesRequest_StageWrite() as any;
-    message.stage = (object.stage !== undefined && object.stage !== null) ? Stage.fromPartial(object.stage) : undefined;
+    message.identifier = (object.identifier !== undefined && object.identifier !== null)
+      ? Stage.fromPartial(object.identifier)
+      : undefined;
     message.args = (object.args !== undefined && object.args !== null) ? Any.fromPartial(object.args) : undefined;
     message.realm = object.realm ?? undefined;
-    message.dependencies = object.dependencies?.map((e) => EdgeGroup.fromPartial(e)) || [];
-    message.requestedExecutionPolicy =
-      (object.requestedExecutionPolicy !== undefined && object.requestedExecutionPolicy !== null)
-        ? ExecutionPolicy.fromPartial(object.requestedExecutionPolicy)
+    message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
+      ? WriteNodesRequest_DependencyGroup.fromPartial(object.dependencies)
+      : undefined;
+    message.requestedStageExecutionPolicy =
+      (object.requestedStageExecutionPolicy !== undefined && object.requestedStageExecutionPolicy !== null)
+        ? StageExecutionPolicy.fromPartial(object.requestedStageExecutionPolicy)
         : undefined;
     message.assignments = object.assignments?.map((e) => Stage_Assignment.fromPartial(e)) || [];
     message.cancelled = object.cancelled ?? undefined;
@@ -1077,7 +1342,7 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
 };
 
 function createBaseWriteNodesRequest_CurrentStageWrite(): WriteNodesRequest_CurrentStageWrite {
-  return { state: undefined, ensureInContinuationGroup: [] };
+  return { state: undefined, ensureInContinuationGroup: [], attemptExecutionPolicy: undefined };
 }
 
 export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_CurrentStageWrite> = {
@@ -1087,6 +1352,9 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
     }
     for (const v of message.ensureInContinuationGroup) {
       Edge.encode(v!, writer.uint32(26).fork()).join();
+    }
+    if (message.attemptExecutionPolicy !== undefined) {
+      StageAttemptExecutionPolicy.encode(message.attemptExecutionPolicy, writer.uint32(34).fork()).join();
     }
     return writer;
   },
@@ -1114,6 +1382,14 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
           message.ensureInContinuationGroup.push(Edge.decode(reader, reader.uint32()));
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.attemptExecutionPolicy = StageAttemptExecutionPolicy.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1129,6 +1405,9 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
       ensureInContinuationGroup: globalThis.Array.isArray(object?.ensureInContinuationGroup)
         ? object.ensureInContinuationGroup.map((e: any) => Edge.fromJSON(e))
         : [],
+      attemptExecutionPolicy: isSet(object.attemptExecutionPolicy)
+        ? StageAttemptExecutionPolicy.fromJSON(object.attemptExecutionPolicy)
+        : undefined,
     };
   },
 
@@ -1140,6 +1419,9 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
     if (message.ensureInContinuationGroup?.length) {
       obj.ensureInContinuationGroup = message.ensureInContinuationGroup.map((e) => Edge.toJSON(e));
     }
+    if (message.attemptExecutionPolicy !== undefined) {
+      obj.attemptExecutionPolicy = StageAttemptExecutionPolicy.toJSON(message.attemptExecutionPolicy);
+    }
     return obj;
   },
 
@@ -1150,6 +1432,10 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
     const message = createBaseWriteNodesRequest_CurrentStageWrite() as any;
     message.state = object.state ?? undefined;
     message.ensureInContinuationGroup = object.ensureInContinuationGroup?.map((e) => Edge.fromPartial(e)) || [];
+    message.attemptExecutionPolicy =
+      (object.attemptExecutionPolicy !== undefined && object.attemptExecutionPolicy !== null)
+        ? StageAttemptExecutionPolicy.fromPartial(object.attemptExecutionPolicy)
+        : undefined;
     return message;
   },
 };

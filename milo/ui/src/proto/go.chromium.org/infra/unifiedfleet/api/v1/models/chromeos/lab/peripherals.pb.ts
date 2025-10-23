@@ -414,12 +414,22 @@ export function camerabox_LightToJSON(object: Camerabox_Light): string {
 }
 
 /**
+ * BesBoard is a BES board for Bluetooth testing.
+ * It is a board connected to a RaspberryPi that allow LE audio testing.
+ */
+export interface BesBoard {
+  readonly serialPort: string;
+  readonly btAddress: string;
+}
+
+/**
  * RaspberryPi models hardware without an assumption of how
  * it will be used, e.g. Bluetooth peers, audio testing, etc.
  */
 export interface RaspberryPi {
   readonly hostname: string;
   readonly state: PeripheralState;
+  readonly besBoards: readonly BesBoard[];
 }
 
 /**
@@ -1667,8 +1677,84 @@ export const Camerabox: MessageFns<Camerabox> = {
   },
 };
 
+function createBaseBesBoard(): BesBoard {
+  return { serialPort: "", btAddress: "" };
+}
+
+export const BesBoard: MessageFns<BesBoard> = {
+  encode(message: BesBoard, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.serialPort !== "") {
+      writer.uint32(10).string(message.serialPort);
+    }
+    if (message.btAddress !== "") {
+      writer.uint32(18).string(message.btAddress);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BesBoard {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBesBoard() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.serialPort = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.btAddress = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BesBoard {
+    return {
+      serialPort: isSet(object.serialPort) ? globalThis.String(object.serialPort) : "",
+      btAddress: isSet(object.btAddress) ? globalThis.String(object.btAddress) : "",
+    };
+  },
+
+  toJSON(message: BesBoard): unknown {
+    const obj: any = {};
+    if (message.serialPort !== "") {
+      obj.serialPort = message.serialPort;
+    }
+    if (message.btAddress !== "") {
+      obj.btAddress = message.btAddress;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BesBoard>): BesBoard {
+    return BesBoard.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BesBoard>): BesBoard {
+    const message = createBaseBesBoard() as any;
+    message.serialPort = object.serialPort ?? "";
+    message.btAddress = object.btAddress ?? "";
+    return message;
+  },
+};
+
 function createBaseRaspberryPi(): RaspberryPi {
-  return { hostname: "", state: 0 };
+  return { hostname: "", state: 0, besBoards: [] };
 }
 
 export const RaspberryPi: MessageFns<RaspberryPi> = {
@@ -1678,6 +1764,9 @@ export const RaspberryPi: MessageFns<RaspberryPi> = {
     }
     if (message.state !== 0) {
       writer.uint32(16).int32(message.state);
+    }
+    for (const v of message.besBoards) {
+      BesBoard.encode(v!, writer.uint32(26).fork()).join();
     }
     return writer;
   },
@@ -1705,6 +1794,14 @@ export const RaspberryPi: MessageFns<RaspberryPi> = {
           message.state = reader.int32() as any;
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.besBoards.push(BesBoard.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1718,6 +1815,9 @@ export const RaspberryPi: MessageFns<RaspberryPi> = {
     return {
       hostname: isSet(object.hostname) ? globalThis.String(object.hostname) : "",
       state: isSet(object.state) ? peripheralStateFromJSON(object.state) : 0,
+      besBoards: globalThis.Array.isArray(object?.besBoards)
+        ? object.besBoards.map((e: any) => BesBoard.fromJSON(e))
+        : [],
     };
   },
 
@@ -1729,6 +1829,9 @@ export const RaspberryPi: MessageFns<RaspberryPi> = {
     if (message.state !== 0) {
       obj.state = peripheralStateToJSON(message.state);
     }
+    if (message.besBoards?.length) {
+      obj.besBoards = message.besBoards.map((e) => BesBoard.toJSON(e));
+    }
     return obj;
   },
 
@@ -1739,6 +1842,7 @@ export const RaspberryPi: MessageFns<RaspberryPi> = {
     const message = createBaseRaspberryPi() as any;
     message.hostname = object.hostname ?? "";
     message.state = object.state ?? 0;
+    message.besBoards = object.besBoards?.map((e) => BesBoard.fromPartial(e)) || [];
     return message;
   },
 };

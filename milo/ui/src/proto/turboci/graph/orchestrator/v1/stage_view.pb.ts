@@ -21,9 +21,9 @@ export interface StageView {
     | Stage
     | undefined;
   /**
-   * StageEdits for this Stage which are being read.
+   * StageEdits for this Stage.
    *
-   * Some StageEdits may be omitted if the user did not request them.
+   * Sorted by `edit.version`.
    */
   readonly edits: readonly StageEditView[];
 }

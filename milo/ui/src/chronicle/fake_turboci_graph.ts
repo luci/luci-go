@@ -62,15 +62,12 @@ import { CheckState } from '../proto/turboci/graph/orchestrator/v1/check_state.p
 import { CheckView } from '../proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { Datum } from '../proto/turboci/graph/orchestrator/v1/datum.pb';
 import {
-  Edge,
-  Edge_Resolution,
-} from '../proto/turboci/graph/orchestrator/v1/edge.pb';
-import { EdgeGroup } from '../proto/turboci/graph/orchestrator/v1/edge_group.pb';
+  Dependencies,
+  Dependencies_Group,
+  Dependencies_ResolutionEvent,
+} from '../proto/turboci/graph/orchestrator/v1/dependencies.pb';
+import { Edge } from '../proto/turboci/graph/orchestrator/v1/edge.pb';
 import { Edit } from '../proto/turboci/graph/orchestrator/v1/edit.pb';
-import {
-  ExecutionPolicy,
-  ExecutionPolicy_StageTimeoutMode,
-} from '../proto/turboci/graph/orchestrator/v1/execution_policy.pb';
 import { GraphView } from '../proto/turboci/graph/orchestrator/v1/graph_view.pb';
 import { Revision } from '../proto/turboci/graph/orchestrator/v1/revision.pb';
 import {
@@ -81,6 +78,10 @@ import {
 import { StageAttemptState } from '../proto/turboci/graph/orchestrator/v1/stage_attempt_state.pb';
 import { StageDelta } from '../proto/turboci/graph/orchestrator/v1/stage_delta.pb';
 import { StageEditView } from '../proto/turboci/graph/orchestrator/v1/stage_edit_view.pb';
+import {
+  StageExecutionPolicy,
+  StageExecutionPolicy_StageTimeoutMode,
+} from '../proto/turboci/graph/orchestrator/v1/stage_execution_policy.pb';
 import { StageState } from '../proto/turboci/graph/orchestrator/v1/stage_state.pb';
 import { StageView } from '../proto/turboci/graph/orchestrator/v1/stage_view.pb';
 import { Value } from '../proto/turboci/graph/orchestrator/v1/value.pb';
@@ -179,9 +180,9 @@ export class FakeGraphGenerator {
   // Simulated time to ensure Revisions allow logical ordering (createdAt < finalizedAt)
   private currentSimulatedTimeMs = Date.UTC(2024, 0, 1, 12, 0, 0);
 
-  // Accumulators for generated views
-  private checkViews: CheckView[] = [];
-  private stageViews: StageView[] = [];
+  // Accumulators for generated views where the key is the identifier.id
+  private checkViews: Record<string, CheckView> = {};
+  private stageViews: Record<string, StageView> = {};
 
   constructor(private config: GraphGenerationConfig) {
     // Initialize faker seed for reproducible graphs based on workplan ID
@@ -202,8 +203,8 @@ export class FakeGraphGenerator {
    * Generates the complete GraphView based on the configuration.
    */
   public generate(): GraphView {
-    this.checkViews = [];
-    this.stageViews = [];
+    this.checkViews = {};
+    this.stageViews = {};
     // Reset time for each generation to maintain reproducibility based on seed
     this.currentSimulatedTimeMs = Date.UTC(2024, 0, 1, 12, 0, 0);
 
@@ -239,6 +240,7 @@ export class FakeGraphGenerator {
     this.createPlanningStage(this.testPlanningStageId, testCheckIds);
 
     return {
+      identifier: this.workPlanId,
       version: this.nextRevision(),
       checks: this.checkViews,
       stages: this.stageViews,
@@ -395,10 +397,10 @@ export class FakeGraphGenerator {
 
     const edits: CheckEditView[] = [];
     const actor: Actor = {
-      stageAttempt: { stage: executingStageId, attemptsIdx: 1 },
+      stageAttempt: { stage: executingStageId },
     };
     const planningActor: Actor = {
-      stageAttempt: { stage: planningStageId, attemptsIdx: 1 },
+      stageAttempt: { stage: planningStageId },
     };
 
     // Timestamps for lifecycle
@@ -406,7 +408,11 @@ export class FakeGraphGenerator {
     const plannedRev = this.nextRevision();
     const finalRev = this.nextRevision();
 
-    const deps = this.buildEdgesFromIdentifiers(dependencies);
+    const deps = this.buildDependencies(dependencies, finalRev);
+    const emptyDeps: Dependencies = {
+      edges: [],
+      resolutionEvents: {},
+    };
 
     // 1. Creation Edit (PLANNING)
     edits.push({
@@ -425,7 +431,7 @@ export class FakeGraphGenerator {
         },
         this.getOrchestratorActor(),
       ),
-      optionData: [data.optionDatum],
+      optionData: { [data.optionsRef.typeUrl!]: data.optionDatum },
     });
 
     // 2. Planned (by planning stage)
@@ -445,7 +451,7 @@ export class FakeGraphGenerator {
         },
         planningActor,
       ),
-      optionData: [data.optionDatum],
+      optionData: { [data.optionsRef.typeUrl!]: data.optionDatum },
     });
 
     // 3. Waiting Edit (simulated orchestration steps)
@@ -460,12 +466,12 @@ export class FakeGraphGenerator {
             state: CheckState.CHECK_STATE_WAITING,
             result: [],
             options: [],
-            dependencies: [],
+            dependencies: emptyDeps,
           },
         },
         this.getOrchestratorActor(),
       ),
-      optionData: [],
+      optionData: {},
     });
 
     // Construct finalized result ref based on generated data and time
@@ -488,7 +494,7 @@ export class FakeGraphGenerator {
           check: {
             state: CheckState.CHECK_STATE_FINAL,
             options: [],
-            dependencies: [],
+            dependencies: emptyDeps,
             result: [
               {
                 identifier: finalizedResultRef.identifier,
@@ -516,12 +522,13 @@ export class FakeGraphGenerator {
       state: CheckState.CHECK_STATE_FINAL,
     };
 
-    this.checkViews.push({
+    if (!checkId.id) throw new Error('Check ID required');
+    this.checkViews[checkId.id] = {
       check: check,
-      optionData: [data.optionDatum],
+      optionData: { [data.optionsRef.typeUrl!]: data.optionDatum },
       edits: edits,
-      results: [data.resultView],
-    });
+      results: { [data.resultView.identifier!.idx!]: data.resultView },
+    };
   }
 
   private generateStageView(
@@ -590,7 +597,7 @@ export class FakeGraphGenerator {
       realm: realm,
       createTs: createRev,
       version: finalRev,
-      dependencies: this.buildEdgesFromIdentifiers(dependencies),
+      dependencies: this.buildDependencies(dependencies, finalRev),
       executionPolicy: this.createExecutionPolicyState(),
       state: StageState.STAGE_STATE_FINAL,
       attempts: attempts,
@@ -604,10 +611,10 @@ export class FakeGraphGenerator {
       }),
     };
 
-    this.stageViews.push({
+    this.stageViews[idStr] = {
       stage: stage,
       edits: edits,
-    });
+    };
   }
 
   // ==========================================
@@ -812,7 +819,7 @@ export class FakeGraphGenerator {
   ): CheckData {
     const checkResult: Check_Result = {
       identifier: resId,
-      owner: { stageAttempt: { stage: stageId, attemptsIdx: 1 } },
+      owner: { stageAttempt: { stage: stageId } },
       data: [
         {
           identifier: datumId,
@@ -828,7 +835,10 @@ export class FakeGraphGenerator {
       },
       optionDatum: optDatum,
       resultRef: checkResult,
-      resultView: { data: [resDatum] },
+      resultView: {
+        identifier: resId,
+        data: { [this.getTypeUrlFromDatum(resDatum)]: resDatum },
+      },
     };
   }
 
@@ -856,39 +866,34 @@ export class FakeGraphGenerator {
     return { workPlan: this.workPlanId, id: id };
   }
 
-  private buildEdgesFromIdentifiers(dependencies: Identifier[]): EdgeGroup[] {
-    if (!dependencies || dependencies.length === 0) {
-      return [];
+  private buildDependencies(
+    targets: Identifier[],
+    resolvedAt: Revision,
+  ): Dependencies {
+    if (!targets || targets.length === 0) {
+      return { edges: [], resolutionEvents: {} };
     }
 
-    // Create a simple AND group of all dependencies, all resolved.
-    const edges: Edge[] = dependencies.map((target) =>
-      this.createResolvedEdge(target),
-    );
-
-    return [
-      {
-        edges: edges,
-        groups: [],
-        threshold: undefined, // Implies AND all edges
-        resolution: this.createResolution(), // Group is resolved
-      },
-    ];
-  }
-
-  private createResolvedEdge(target: Identifier): Edge {
-    return {
-      target: target,
-      resolution: this.createResolution(),
+    const edges: Edge[] = targets.map((t) => ({ target: t }));
+    const predicate: Dependencies_Group = {
+      edges: edges.map((_, idx) => idx),
+      groups: [],
     };
-  }
 
-  private createResolution(): Edge_Resolution {
-    const targetV = this.nextRevision();
+    const resolutionEvents: { [key: number]: Dependencies_ResolutionEvent } =
+      {};
+    edges.forEach((_, idx) => {
+      resolutionEvents[idx] = {
+        version: resolvedAt,
+        satisfied: true,
+      };
+    });
+
     return {
-      satisfied: true,
-      targetVersion: targetV,
-      at: targetV,
+      edges,
+      predicate,
+      resolutionEvents,
+      resolved: predicate,
     };
   }
 
@@ -935,15 +940,12 @@ export class FakeGraphGenerator {
     };
   }
 
-  private createExecutionPolicy(): ExecutionPolicy {
+  private createExecutionPolicy(): StageExecutionPolicy {
     return {
-      // Standard hardcoded timeouts
-      attemptHeartbeat: { running: this.createDuration(60) },
-      attemptTimeout: { running: this.createDuration(3600) },
       retry: { maxRetries: 3 },
       stageTimeout: this.createDuration(7200),
       stageTimeoutMode:
-        ExecutionPolicy_StageTimeoutMode.STAGE_TIMEOUT_MODE_FINISH_CURRENT_ATTEMPT,
+        StageExecutionPolicy_StageTimeoutMode.STAGE_TIMEOUT_MODE_FINISH_CURRENT_ATTEMPT,
     };
   }
 

@@ -8,7 +8,7 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { CheckOption, CheckResult, CheckResultDatum } from "../../ids/v1/identifier.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
-import { EdgeGroup } from "./edge_group.pb";
+import { Dependencies } from "./dependencies.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
@@ -25,12 +25,14 @@ export interface CheckDelta {
   /**
    * Dependencies written as part of this edit.
    *
-   * Contains the FULL dependencies data (e.g. if the edit 'added' a new
-   * dependency to one of these EdgeGroups, or added a new EdgeGroup, etc., you
-   * would see the entire set of EdgeGroups here, not just the added/changed
-   * one(s)).
+   * The fields within reflect what was changed in this edit:
+   *   * `edges`, `to_unblock` and `resolved` are included in-whole, and mean
+   *     that this edit modified those fields.
+   *   * `resolution_events` reflects just new events resolved in this edit.
    */
-  readonly dependencies: readonly EdgeGroup[];
+  readonly dependencies?:
+    | Dependencies
+    | undefined;
   /** Options written as part of this edit. */
   readonly options: readonly CheckOption[];
   /**
@@ -69,7 +71,7 @@ export interface CheckDelta_Result {
 }
 
 function createBaseCheckDelta(): CheckDelta {
-  return { state: undefined, dependencies: [], options: [], result: [] };
+  return { state: undefined, dependencies: undefined, options: [], result: [] };
 }
 
 export const CheckDelta: MessageFns<CheckDelta> = {
@@ -77,8 +79,8 @@ export const CheckDelta: MessageFns<CheckDelta> = {
     if (message.state !== undefined) {
       writer.uint32(8).int32(message.state);
     }
-    for (const v of message.dependencies) {
-      EdgeGroup.encode(v!, writer.uint32(18).fork()).join();
+    if (message.dependencies !== undefined) {
+      Dependencies.encode(message.dependencies, writer.uint32(18).fork()).join();
     }
     for (const v of message.options) {
       CheckOption.encode(v!, writer.uint32(26).fork()).join();
@@ -109,7 +111,7 @@ export const CheckDelta: MessageFns<CheckDelta> = {
             break;
           }
 
-          message.dependencies.push(EdgeGroup.decode(reader, reader.uint32()));
+          message.dependencies = Dependencies.decode(reader, reader.uint32());
           continue;
         }
         case 3: {
@@ -140,9 +142,7 @@ export const CheckDelta: MessageFns<CheckDelta> = {
   fromJSON(object: any): CheckDelta {
     return {
       state: isSet(object.state) ? checkStateFromJSON(object.state) : undefined,
-      dependencies: globalThis.Array.isArray(object?.dependencies)
-        ? object.dependencies.map((e: any) => EdgeGroup.fromJSON(e))
-        : [],
+      dependencies: isSet(object.dependencies) ? Dependencies.fromJSON(object.dependencies) : undefined,
       options: globalThis.Array.isArray(object?.options) ? object.options.map((e: any) => CheckOption.fromJSON(e)) : [],
       result: globalThis.Array.isArray(object?.result)
         ? object.result.map((e: any) => CheckDelta_Result.fromJSON(e))
@@ -155,8 +155,8 @@ export const CheckDelta: MessageFns<CheckDelta> = {
     if (message.state !== undefined) {
       obj.state = checkStateToJSON(message.state);
     }
-    if (message.dependencies?.length) {
-      obj.dependencies = message.dependencies.map((e) => EdgeGroup.toJSON(e));
+    if (message.dependencies !== undefined) {
+      obj.dependencies = Dependencies.toJSON(message.dependencies);
     }
     if (message.options?.length) {
       obj.options = message.options.map((e) => CheckOption.toJSON(e));
@@ -173,7 +173,9 @@ export const CheckDelta: MessageFns<CheckDelta> = {
   fromPartial(object: DeepPartial<CheckDelta>): CheckDelta {
     const message = createBaseCheckDelta() as any;
     message.state = object.state ?? undefined;
-    message.dependencies = object.dependencies?.map((e) => EdgeGroup.fromPartial(e)) || [];
+    message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
+      ? Dependencies.fromPartial(object.dependencies)
+      : undefined;
     message.options = object.options?.map((e) => CheckOption.fromPartial(e)) || [];
     message.result = object.result?.map((e) => CheckDelta_Result.fromPartial(e)) || [];
     return message;

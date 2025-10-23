@@ -6,24 +6,41 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { Identifier } from "../../ids/v1/identifier.pb";
 import { GraphView } from "./graph_view.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
 /** Response message for TurboCIGraphService.QueryNodes. */
 export interface QueryNodesResponse {
-  /** The graph view of the nodes matching the query. */
-  readonly graph?: GraphView | undefined;
+  /**
+   * The graph view of the nodes matching the query.
+   *
+   * Indexed by WorkPlan id.
+   *
+   * The `version` field of each GraphView will always be identical.
+   */
+  readonly graph: { [key: string]: GraphView };
+  /** A list of explicitly-selected nodes which were not found in the graph. */
+  readonly absent: readonly Identifier[];
+}
+
+export interface QueryNodesResponse_GraphEntry {
+  readonly key: string;
+  readonly value: GraphView | undefined;
 }
 
 function createBaseQueryNodesResponse(): QueryNodesResponse {
-  return { graph: undefined };
+  return { graph: {}, absent: [] };
 }
 
 export const QueryNodesResponse: MessageFns<QueryNodesResponse> = {
   encode(message: QueryNodesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.graph !== undefined) {
-      GraphView.encode(message.graph, writer.uint32(10).fork()).join();
+    Object.entries(message.graph).forEach(([key, value]) => {
+      QueryNodesResponse_GraphEntry.encode({ key: key as any, value }, writer.uint32(10).fork()).join();
+    });
+    for (const v of message.absent) {
+      Identifier.encode(v!, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -40,7 +57,18 @@ export const QueryNodesResponse: MessageFns<QueryNodesResponse> = {
             break;
           }
 
-          message.graph = GraphView.decode(reader, reader.uint32());
+          const entry1 = QueryNodesResponse_GraphEntry.decode(reader, reader.uint32());
+          if (entry1.value !== undefined) {
+            message.graph[entry1.key] = entry1.value;
+          }
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.absent.push(Identifier.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -53,13 +81,30 @@ export const QueryNodesResponse: MessageFns<QueryNodesResponse> = {
   },
 
   fromJSON(object: any): QueryNodesResponse {
-    return { graph: isSet(object.graph) ? GraphView.fromJSON(object.graph) : undefined };
+    return {
+      graph: isObject(object.graph)
+        ? Object.entries(object.graph).reduce<{ [key: string]: GraphView }>((acc, [key, value]) => {
+          acc[key] = GraphView.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
+      absent: globalThis.Array.isArray(object?.absent) ? object.absent.map((e: any) => Identifier.fromJSON(e)) : [],
+    };
   },
 
   toJSON(message: QueryNodesResponse): unknown {
     const obj: any = {};
-    if (message.graph !== undefined) {
-      obj.graph = GraphView.toJSON(message.graph);
+    if (message.graph) {
+      const entries = Object.entries(message.graph);
+      if (entries.length > 0) {
+        obj.graph = {};
+        entries.forEach(([k, v]) => {
+          obj.graph[k] = GraphView.toJSON(v);
+        });
+      }
+    }
+    if (message.absent?.length) {
+      obj.absent = message.absent.map((e) => Identifier.toJSON(e));
     }
     return obj;
   },
@@ -69,8 +114,90 @@ export const QueryNodesResponse: MessageFns<QueryNodesResponse> = {
   },
   fromPartial(object: DeepPartial<QueryNodesResponse>): QueryNodesResponse {
     const message = createBaseQueryNodesResponse() as any;
-    message.graph = (object.graph !== undefined && object.graph !== null)
-      ? GraphView.fromPartial(object.graph)
+    message.graph = Object.entries(object.graph ?? {}).reduce<{ [key: string]: GraphView }>((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = GraphView.fromPartial(value);
+      }
+      return acc;
+    }, {});
+    message.absent = object.absent?.map((e) => Identifier.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseQueryNodesResponse_GraphEntry(): QueryNodesResponse_GraphEntry {
+  return { key: "", value: undefined };
+}
+
+export const QueryNodesResponse_GraphEntry: MessageFns<QueryNodesResponse_GraphEntry> = {
+  encode(message: QueryNodesResponse_GraphEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      GraphView.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryNodesResponse_GraphEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryNodesResponse_GraphEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = GraphView.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryNodesResponse_GraphEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? GraphView.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: QueryNodesResponse_GraphEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = GraphView.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QueryNodesResponse_GraphEntry>): QueryNodesResponse_GraphEntry {
+    return QueryNodesResponse_GraphEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QueryNodesResponse_GraphEntry>): QueryNodesResponse_GraphEntry {
+    const message = createBaseQueryNodesResponse_GraphEntry() as any;
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null)
+      ? GraphView.fromPartial(object.value)
       : undefined;
     return message;
   },
@@ -83,6 +210,10 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+function isObject(value: any): boolean {
+  return typeof value === "object" && value !== null;
+}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

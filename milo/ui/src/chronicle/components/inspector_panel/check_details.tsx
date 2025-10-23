@@ -50,16 +50,13 @@ export function CheckDetails({ view }: CheckDetailsProps) {
       {check.options.length > 0 && (
         <>
           <Typography variant="subtitle2">Options</Typography>
-          {view.optionData.map((datum, idx) => {
-            // TODO - We should be able to get the typeUrl directly from the view
-            // in the updated protos.
-            return (
-              <GenericJsonDetails
-                key={`check-option-${idx}`}
-                json={datum.value?.valueJson}
-              />
-            );
-          })}
+          {Object.entries(view.optionData).map(([typeUrl, datum]) => (
+            <GenericJsonDetails
+              key={`check-option-${typeUrl}`}
+              typeUrl={typeUrl}
+              json={datum.value?.valueJson}
+            />
+          ))}
         </>
       )}
 
@@ -68,15 +65,14 @@ export function CheckDetails({ view }: CheckDetailsProps) {
       {check.results.length > 0 && (
         <>
           <Typography variant="subtitle2">Results</Typography>
-          {view.results.map((resultView) => {
-            // TODO - We should be able to get the typeUrl directly from the view
-            // in the updated protos.
-            if (resultView.data.length === 0) {
-              return null;
-            }
-            return resultView.data.map((datum, idx) => (
+          {Object.entries(view.results).map(([resIdx, resultView]) => {
+            const dataEntries = Object.entries(resultView.data);
+            if (dataEntries.length === 0) return null;
+
+            return dataEntries.map(([typeUrl, datum]) => (
               <GenericJsonDetails
-                key={`check-result-${idx}`}
+                key={`result-${resIdx}-${typeUrl}`}
+                typeUrl={typeUrl}
                 json={datum.value?.valueJson}
               />
             ));

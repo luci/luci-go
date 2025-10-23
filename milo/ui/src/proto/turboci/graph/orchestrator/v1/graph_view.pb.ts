@@ -6,6 +6,7 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { WorkPlan } from "../../ids/v1/identifier.pb";
 import { CheckView } from "./check_view.pb";
 import { Revision } from "./revision.pb";
 import { StageView } from "./stage_view.pb";
@@ -42,24 +43,41 @@ export interface GraphView {
   readonly version?:
     | Revision
     | undefined;
+  /** The WorkPlan to which all nodes in this GraphView belong. */
+  readonly identifier?:
+    | WorkPlan
+    | undefined;
   /**
-   * Checks in the graph.
+   * Checks in the graph, addressed by `check.identifier.id`.
    *
    * Checks may be omitted if the user does not have permission to view them,
    * or if the user did not request them.
    */
-  readonly checks: readonly CheckView[];
+  readonly checks: { [key: string]: CheckView };
   /**
-   * Stages in the graph.
+   * Stages in the graph, addressed by `stage.identifier.id`.
+   *
+   * Note that for the same reason ids.v1.Stage.id contains the 'S' or 'N'
+   * prefix, that prefix appears in the key here as well.
    *
    * Stages may be omitted if the user does not have permission to view them,
    * or if the user did not request them.
    */
-  readonly stages: readonly StageView[];
+  readonly stages: { [key: string]: StageView };
+}
+
+export interface GraphView_ChecksEntry {
+  readonly key: string;
+  readonly value: CheckView | undefined;
+}
+
+export interface GraphView_StagesEntry {
+  readonly key: string;
+  readonly value: StageView | undefined;
 }
 
 function createBaseGraphView(): GraphView {
-  return { version: undefined, checks: [], stages: [] };
+  return { version: undefined, identifier: undefined, checks: {}, stages: {} };
 }
 
 export const GraphView: MessageFns<GraphView> = {
@@ -67,12 +85,15 @@ export const GraphView: MessageFns<GraphView> = {
     if (message.version !== undefined) {
       Revision.encode(message.version, writer.uint32(10).fork()).join();
     }
-    for (const v of message.checks) {
-      CheckView.encode(v!, writer.uint32(18).fork()).join();
+    if (message.identifier !== undefined) {
+      WorkPlan.encode(message.identifier, writer.uint32(18).fork()).join();
     }
-    for (const v of message.stages) {
-      StageView.encode(v!, writer.uint32(26).fork()).join();
-    }
+    Object.entries(message.checks).forEach(([key, value]) => {
+      GraphView_ChecksEntry.encode({ key: key as any, value }, writer.uint32(26).fork()).join();
+    });
+    Object.entries(message.stages).forEach(([key, value]) => {
+      GraphView_StagesEntry.encode({ key: key as any, value }, writer.uint32(34).fork()).join();
+    });
     return writer;
   },
 
@@ -96,7 +117,7 @@ export const GraphView: MessageFns<GraphView> = {
             break;
           }
 
-          message.checks.push(CheckView.decode(reader, reader.uint32()));
+          message.identifier = WorkPlan.decode(reader, reader.uint32());
           continue;
         }
         case 3: {
@@ -104,7 +125,21 @@ export const GraphView: MessageFns<GraphView> = {
             break;
           }
 
-          message.stages.push(StageView.decode(reader, reader.uint32()));
+          const entry3 = GraphView_ChecksEntry.decode(reader, reader.uint32());
+          if (entry3.value !== undefined) {
+            message.checks[entry3.key] = entry3.value;
+          }
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          const entry4 = GraphView_StagesEntry.decode(reader, reader.uint32());
+          if (entry4.value !== undefined) {
+            message.stages[entry4.key] = entry4.value;
+          }
           continue;
         }
       }
@@ -119,8 +154,19 @@ export const GraphView: MessageFns<GraphView> = {
   fromJSON(object: any): GraphView {
     return {
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
-      checks: globalThis.Array.isArray(object?.checks) ? object.checks.map((e: any) => CheckView.fromJSON(e)) : [],
-      stages: globalThis.Array.isArray(object?.stages) ? object.stages.map((e: any) => StageView.fromJSON(e)) : [],
+      identifier: isSet(object.identifier) ? WorkPlan.fromJSON(object.identifier) : undefined,
+      checks: isObject(object.checks)
+        ? Object.entries(object.checks).reduce<{ [key: string]: CheckView }>((acc, [key, value]) => {
+          acc[key] = CheckView.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
+      stages: isObject(object.stages)
+        ? Object.entries(object.stages).reduce<{ [key: string]: StageView }>((acc, [key, value]) => {
+          acc[key] = StageView.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
     };
   },
 
@@ -129,11 +175,26 @@ export const GraphView: MessageFns<GraphView> = {
     if (message.version !== undefined) {
       obj.version = Revision.toJSON(message.version);
     }
-    if (message.checks?.length) {
-      obj.checks = message.checks.map((e) => CheckView.toJSON(e));
+    if (message.identifier !== undefined) {
+      obj.identifier = WorkPlan.toJSON(message.identifier);
     }
-    if (message.stages?.length) {
-      obj.stages = message.stages.map((e) => StageView.toJSON(e));
+    if (message.checks) {
+      const entries = Object.entries(message.checks);
+      if (entries.length > 0) {
+        obj.checks = {};
+        entries.forEach(([k, v]) => {
+          obj.checks[k] = CheckView.toJSON(v);
+        });
+      }
+    }
+    if (message.stages) {
+      const entries = Object.entries(message.stages);
+      if (entries.length > 0) {
+        obj.stages = {};
+        entries.forEach(([k, v]) => {
+          obj.stages[k] = StageView.toJSON(v);
+        });
+      }
     }
     return obj;
   },
@@ -146,8 +207,177 @@ export const GraphView: MessageFns<GraphView> = {
     message.version = (object.version !== undefined && object.version !== null)
       ? Revision.fromPartial(object.version)
       : undefined;
-    message.checks = object.checks?.map((e) => CheckView.fromPartial(e)) || [];
-    message.stages = object.stages?.map((e) => StageView.fromPartial(e)) || [];
+    message.identifier = (object.identifier !== undefined && object.identifier !== null)
+      ? WorkPlan.fromPartial(object.identifier)
+      : undefined;
+    message.checks = Object.entries(object.checks ?? {}).reduce<{ [key: string]: CheckView }>((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = CheckView.fromPartial(value);
+      }
+      return acc;
+    }, {});
+    message.stages = Object.entries(object.stages ?? {}).reduce<{ [key: string]: StageView }>((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = StageView.fromPartial(value);
+      }
+      return acc;
+    }, {});
+    return message;
+  },
+};
+
+function createBaseGraphView_ChecksEntry(): GraphView_ChecksEntry {
+  return { key: "", value: undefined };
+}
+
+export const GraphView_ChecksEntry: MessageFns<GraphView_ChecksEntry> = {
+  encode(message: GraphView_ChecksEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      CheckView.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GraphView_ChecksEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGraphView_ChecksEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = CheckView.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GraphView_ChecksEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? CheckView.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: GraphView_ChecksEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = CheckView.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GraphView_ChecksEntry>): GraphView_ChecksEntry {
+    return GraphView_ChecksEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GraphView_ChecksEntry>): GraphView_ChecksEntry {
+    const message = createBaseGraphView_ChecksEntry() as any;
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null)
+      ? CheckView.fromPartial(object.value)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseGraphView_StagesEntry(): GraphView_StagesEntry {
+  return { key: "", value: undefined };
+}
+
+export const GraphView_StagesEntry: MessageFns<GraphView_StagesEntry> = {
+  encode(message: GraphView_StagesEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      StageView.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GraphView_StagesEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGraphView_StagesEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = StageView.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GraphView_StagesEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? StageView.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: GraphView_StagesEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = StageView.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GraphView_StagesEntry>): GraphView_StagesEntry {
+    return GraphView_StagesEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GraphView_StagesEntry>): GraphView_StagesEntry {
+    const message = createBaseGraphView_StagesEntry() as any;
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null)
+      ? StageView.fromPartial(object.value)
+      : undefined;
     return message;
   },
 };
@@ -159,6 +389,10 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+function isObject(value: any): boolean {
+  return typeof value === "object" && value !== null;
+}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

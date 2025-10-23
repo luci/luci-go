@@ -10,7 +10,7 @@ import { Check as Check1, CheckOption, CheckResult, CheckResultDatum } from "../
 import { Actor } from "./actor.pb";
 import { CheckKind, checkKindFromJSON, checkKindToJSON } from "./check_kind.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
-import { EdgeGroup } from "./edge_group.pb";
+import { Dependencies } from "./dependencies.pb";
 import { Revision } from "./revision.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
@@ -93,15 +93,13 @@ export interface Check {
   /**
    * Dependencies on other objects in the graph.
    *
-   * All of these dependencies must be satisfied for this Check to be unblocked
-   * and advance from the PLANNED to WAITING state.
+   * Checks may only depend on other Checks.
    *
-   * If the dependencies are unsatisfiable, then the Check will be immediately
-   * moved to FINAL state and a single Result will be added with type `TBD`.
-   *
-   * Currently Checks may only depend on other Checks in the same workflow.
+   * Once the Check is WAITING, this field is immutable.
    */
-  readonly dependencies: readonly EdgeGroup[];
+  readonly dependencies?:
+    | Dependencies
+    | undefined;
   /**
    * Options form the bulk of 'how to answer this Check'.
    *
@@ -226,7 +224,7 @@ function createBaseCheck(): Check {
     realm: undefined,
     version: undefined,
     state: undefined,
-    dependencies: [],
+    dependencies: undefined,
     options: [],
     results: [],
   };
@@ -249,8 +247,8 @@ export const Check: MessageFns<Check> = {
     if (message.state !== undefined) {
       writer.uint32(40).int32(message.state);
     }
-    for (const v of message.dependencies) {
-      EdgeGroup.encode(v!, writer.uint32(50).fork()).join();
+    if (message.dependencies !== undefined) {
+      Dependencies.encode(message.dependencies, writer.uint32(50).fork()).join();
     }
     for (const v of message.options) {
       Check_OptionRef.encode(v!, writer.uint32(58).fork()).join();
@@ -313,7 +311,7 @@ export const Check: MessageFns<Check> = {
             break;
           }
 
-          message.dependencies.push(EdgeGroup.decode(reader, reader.uint32()));
+          message.dependencies = Dependencies.decode(reader, reader.uint32());
           continue;
         }
         case 7: {
@@ -348,9 +346,7 @@ export const Check: MessageFns<Check> = {
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       state: isSet(object.state) ? checkStateFromJSON(object.state) : undefined,
-      dependencies: globalThis.Array.isArray(object?.dependencies)
-        ? object.dependencies.map((e: any) => EdgeGroup.fromJSON(e))
-        : [],
+      dependencies: isSet(object.dependencies) ? Dependencies.fromJSON(object.dependencies) : undefined,
       options: globalThis.Array.isArray(object?.options)
         ? object.options.map((e: any) => Check_OptionRef.fromJSON(e))
         : [],
@@ -377,8 +373,8 @@ export const Check: MessageFns<Check> = {
     if (message.state !== undefined) {
       obj.state = checkStateToJSON(message.state);
     }
-    if (message.dependencies?.length) {
-      obj.dependencies = message.dependencies.map((e) => EdgeGroup.toJSON(e));
+    if (message.dependencies !== undefined) {
+      obj.dependencies = Dependencies.toJSON(message.dependencies);
     }
     if (message.options?.length) {
       obj.options = message.options.map((e) => Check_OptionRef.toJSON(e));
@@ -403,7 +399,9 @@ export const Check: MessageFns<Check> = {
       ? Revision.fromPartial(object.version)
       : undefined;
     message.state = object.state ?? undefined;
-    message.dependencies = object.dependencies?.map((e) => EdgeGroup.fromPartial(e)) || [];
+    message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
+      ? Dependencies.fromPartial(object.dependencies)
+      : undefined;
     message.options = object.options?.map((e) => Check_OptionRef.fromPartial(e)) || [];
     message.results = object.results?.map((e) => Check_Result.fromPartial(e)) || [];
     return message;

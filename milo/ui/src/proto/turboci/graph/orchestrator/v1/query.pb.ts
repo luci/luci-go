@@ -8,9 +8,61 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Identifier, WorkPlan } from "../../ids/v1/identifier.pb";
 import { CheckKind, checkKindFromJSON, checkKindToJSON } from "./check_kind.pb";
+import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
 import { RevisionRange } from "./revision_range.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
+
+/**
+ * When expanding a query selection set with Query.Expand.Dependencies or
+ * Query.Expand.Dependants, how should we actually expand that set?
+ */
+export enum QueryExpandDepsMode {
+  /**
+   * QUERY_EXPAND_DEPS_MODE_UNKNOWN - Unknown query expansion mode.
+   *
+   * Defaults to 'REQUESTED'.
+   */
+  QUERY_EXPAND_DEPS_MODE_UNKNOWN = 0,
+  /** QUERY_EXPAND_DEPS_MODE_EDGES - Expand to deps which are listed in dependencies.edges. */
+  QUERY_EXPAND_DEPS_MODE_EDGES = 1,
+  /**
+   * QUERY_EXPAND_DEPS_MODE_RESOLVED - Expand to deps which are listed (transitively) in dependencies.resolved.
+   *
+   * Note that this will be the empty set for nodes which are not already past
+   * the PLANNED state.
+   */
+  QUERY_EXPAND_DEPS_MODE_RESOLVED = 2,
+}
+
+export function queryExpandDepsModeFromJSON(object: any): QueryExpandDepsMode {
+  switch (object) {
+    case 0:
+    case "QUERY_EXPAND_DEPS_MODE_UNKNOWN":
+      return QueryExpandDepsMode.QUERY_EXPAND_DEPS_MODE_UNKNOWN;
+    case 1:
+    case "QUERY_EXPAND_DEPS_MODE_EDGES":
+      return QueryExpandDepsMode.QUERY_EXPAND_DEPS_MODE_EDGES;
+    case 2:
+    case "QUERY_EXPAND_DEPS_MODE_RESOLVED":
+      return QueryExpandDepsMode.QUERY_EXPAND_DEPS_MODE_RESOLVED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum QueryExpandDepsMode");
+  }
+}
+
+export function queryExpandDepsModeToJSON(object: QueryExpandDepsMode): string {
+  switch (object) {
+    case QueryExpandDepsMode.QUERY_EXPAND_DEPS_MODE_UNKNOWN:
+      return "QUERY_EXPAND_DEPS_MODE_UNKNOWN";
+    case QueryExpandDepsMode.QUERY_EXPAND_DEPS_MODE_EDGES:
+      return "QUERY_EXPAND_DEPS_MODE_EDGES";
+    case QueryExpandDepsMode.QUERY_EXPAND_DEPS_MODE_RESOLVED:
+      return "QUERY_EXPAND_DEPS_MODE_RESOLVED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum QueryExpandDepsMode");
+  }
+}
 
 /**
  * Query describes a simple graph query.
@@ -95,10 +147,20 @@ export interface Query_Select_CheckPattern {
     | undefined;
   /**
    * Find Checks with *any* of these options. Note that you still must set
-   * follow.check_options.type_urls to actually get the CheckOptions in the
-   * result set.
+   * type_urls and collect.data.check.options to actually get the
+   * Check Option data in the result set.
    */
   readonly withOptionTypes: readonly string[];
+  /** Find Checks in this state. */
+  readonly state?:
+    | CheckState
+    | undefined;
+  /**
+   * Find Checks with *any* of these result data types. Note that you still
+   * must set type_urls and collect.data.check.result_data to actually get the
+   * Check Result data in the result set.
+   */
+  readonly withResultDataTypes: readonly string[];
 }
 
 /** Select one or more Stages which match this pattern. */
@@ -110,87 +172,85 @@ export interface Query_Select_StagePattern {
  * the graph from those nodes.
  */
 export interface Query_Expand {
-  /** Instructs the query to follow dependencies of the selected node(s). */
-  readonly dependencies?: Query_Expand_Dependencies | undefined;
+  /**
+   * For each selected Check or Stage, include its immediate dependencies.
+   *
+   * So given:
+   *   A -> {B, C}
+   *
+   * (B, C) are dependencies of A.
+   */
+  readonly dependencies?:
+    | Query_Expand_Dependencies
+    | undefined;
+  /**
+   * For each selected Check or Stage, include any Checks/Stages which depend
+   * on it.
+   *
+   * So given:
+   *   A -> {B, C}
+   *
+   * A is a dependant of B.
+   */
+  readonly dependants?: Query_Expand_Dependants | undefined;
 }
 
-/** How to follow Check.dependencies and Stage.dependencies. */
+/** How to expand the dependencies for a Check or Stage. */
 export interface Query_Expand_Dependencies {
   /**
-   * Follow this many dependents (so for some node X, follow to other
-   * nodes which depend-on X up to this distance away).
+   * How to expand dependencies.
    *
-   * 0 means "do not follow dependents".
-   *
-   * Must be >= 0.
+   * Defaults to QUERY_EXPAND_DEPS_MODE_REQUESTED.
    */
-  readonly dependentsDepth?:
-    | number
-    | undefined;
+  readonly mode?: QueryExpandDepsMode | undefined;
+}
+
+/** How to expand the dependants for a Check or Stage. */
+export interface Query_Expand_Dependants {
   /**
-   * Follow this many dependencies (so for some node, follow it's
-   * `dependencies` fields up to this distance away).
+   * How to expand dependants.
    *
-   * 0 means "do not follow dependencies".
-   *
-   * Must be >= 0.
+   * Defaults to QUERY_EXPAND_DEPS_MODE_REQUESTED.
    */
-  readonly dependenciesDepth?:
-    | number
-    | undefined;
-  /** Includes only resolved edges during traversal. */
-  readonly onlyResolved?: boolean | undefined;
+  readonly mode?: QueryExpandDepsMode | undefined;
 }
 
 /** Collect retrieves data from the expanded node set. */
 export interface Query_Collect {
-  /** Collect options/results/progress data. */
-  readonly data?:
-    | Query_Collect_Data
-    | undefined;
-  /** Collect edit records. */
-  readonly edits?: Query_Collect_Edits | undefined;
-}
-
-/**
- * Data describes what options/results/progress data we want to retrieve
- * from the selected checks/stages.
- */
-export interface Query_Collect_Data {
   /** Describes what data the caller wants to see for Checks. */
   readonly check?:
-    | Query_Collect_Data_Check
+    | Query_Collect_Check
     | undefined;
   /** Describes what data the caller wants to see for Stages. */
-  readonly stage?: Query_Collect_Data_Stage | undefined;
+  readonly stage?: Query_Collect_Stage | undefined;
 }
 
 /** Describes what data the caller wants to see for Checks. */
-export interface Query_Collect_Data_Check {
+export interface Query_Collect_Check {
   /** Include CheckOptions filtered by `type_urls` for any selected Checks. */
   readonly options?:
     | boolean
     | undefined;
   /** Include Result data filtered by `type_urls` for any selected Checks. */
-  readonly resultData?: boolean | undefined;
+  readonly resultData?:
+    | boolean
+    | undefined;
+  /**
+   * Include edits only within this range of Revisions.
+   *
+   * An empty RevisionRange (e.g. {0, 0}) means `all edits`.
+   */
+  readonly edits?: RevisionRange | undefined;
 }
 
 /** Describes what data the caller wants to see for Stages. */
-export interface Query_Collect_Data_Stage {
-}
-
-/** Edits describes which edit records we want want to collect. */
-export interface Query_Collect_Edits {
-  /** Include edits only within this range of Revisions. */
-  readonly range?:
-    | RevisionRange
-    | undefined;
-  /** Include Check Edits for any selected Checks in this range. */
-  readonly check?:
-    | boolean
-    | undefined;
-  /** Include Stage Edits for any selected Stages in this range. */
-  readonly stage?: boolean | undefined;
+export interface Query_Collect_Stage {
+  /**
+   * Include edits only within this range of Revisions.
+   *
+   * An empty RevisionRange (e.g. {0, 0}) means `all edits`.
+   */
+  readonly edits?: RevisionRange | undefined;
 }
 
 function createBaseQuery(): Query {
@@ -484,7 +544,7 @@ export const Query_Select_WorkPlanConstraint: MessageFns<Query_Select_WorkPlanCo
 };
 
 function createBaseQuery_Select_CheckPattern(): Query_Select_CheckPattern {
-  return { kind: undefined, idRegex: undefined, withOptionTypes: [] };
+  return { kind: undefined, idRegex: undefined, withOptionTypes: [], state: undefined, withResultDataTypes: [] };
 }
 
 export const Query_Select_CheckPattern: MessageFns<Query_Select_CheckPattern> = {
@@ -497,6 +557,12 @@ export const Query_Select_CheckPattern: MessageFns<Query_Select_CheckPattern> = 
     }
     for (const v of message.withOptionTypes) {
       writer.uint32(26).string(v!);
+    }
+    if (message.state !== undefined) {
+      writer.uint32(32).int32(message.state);
+    }
+    for (const v of message.withResultDataTypes) {
+      writer.uint32(42).string(v!);
     }
     return writer;
   },
@@ -532,6 +598,22 @@ export const Query_Select_CheckPattern: MessageFns<Query_Select_CheckPattern> = 
           message.withOptionTypes.push(reader.string());
           continue;
         }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.state = reader.int32() as any;
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.withResultDataTypes.push(reader.string());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -548,6 +630,10 @@ export const Query_Select_CheckPattern: MessageFns<Query_Select_CheckPattern> = 
       withOptionTypes: globalThis.Array.isArray(object?.withOptionTypes)
         ? object.withOptionTypes.map((e: any) => globalThis.String(e))
         : [],
+      state: isSet(object.state) ? checkStateFromJSON(object.state) : undefined,
+      withResultDataTypes: globalThis.Array.isArray(object?.withResultDataTypes)
+        ? object.withResultDataTypes.map((e: any) => globalThis.String(e))
+        : [],
     };
   },
 
@@ -562,6 +648,12 @@ export const Query_Select_CheckPattern: MessageFns<Query_Select_CheckPattern> = 
     if (message.withOptionTypes?.length) {
       obj.withOptionTypes = message.withOptionTypes;
     }
+    if (message.state !== undefined) {
+      obj.state = checkStateToJSON(message.state);
+    }
+    if (message.withResultDataTypes?.length) {
+      obj.withResultDataTypes = message.withResultDataTypes;
+    }
     return obj;
   },
 
@@ -573,6 +665,8 @@ export const Query_Select_CheckPattern: MessageFns<Query_Select_CheckPattern> = 
     message.kind = object.kind ?? undefined;
     message.idRegex = object.idRegex ?? undefined;
     message.withOptionTypes = object.withOptionTypes?.map((e) => e) || [];
+    message.state = object.state ?? undefined;
+    message.withResultDataTypes = object.withResultDataTypes?.map((e) => e) || [];
     return message;
   },
 };
@@ -621,13 +715,16 @@ export const Query_Select_StagePattern: MessageFns<Query_Select_StagePattern> = 
 };
 
 function createBaseQuery_Expand(): Query_Expand {
-  return { dependencies: undefined };
+  return { dependencies: undefined, dependants: undefined };
 }
 
 export const Query_Expand: MessageFns<Query_Expand> = {
   encode(message: Query_Expand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.dependencies !== undefined) {
       Query_Expand_Dependencies.encode(message.dependencies, writer.uint32(10).fork()).join();
+    }
+    if (message.dependants !== undefined) {
+      Query_Expand_Dependants.encode(message.dependants, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -647,6 +744,14 @@ export const Query_Expand: MessageFns<Query_Expand> = {
           message.dependencies = Query_Expand_Dependencies.decode(reader, reader.uint32());
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.dependants = Query_Expand_Dependants.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -659,6 +764,7 @@ export const Query_Expand: MessageFns<Query_Expand> = {
   fromJSON(object: any): Query_Expand {
     return {
       dependencies: isSet(object.dependencies) ? Query_Expand_Dependencies.fromJSON(object.dependencies) : undefined,
+      dependants: isSet(object.dependants) ? Query_Expand_Dependants.fromJSON(object.dependants) : undefined,
     };
   },
 
@@ -666,6 +772,9 @@ export const Query_Expand: MessageFns<Query_Expand> = {
     const obj: any = {};
     if (message.dependencies !== undefined) {
       obj.dependencies = Query_Expand_Dependencies.toJSON(message.dependencies);
+    }
+    if (message.dependants !== undefined) {
+      obj.dependants = Query_Expand_Dependants.toJSON(message.dependants);
     }
     return obj;
   },
@@ -678,24 +787,21 @@ export const Query_Expand: MessageFns<Query_Expand> = {
     message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
       ? Query_Expand_Dependencies.fromPartial(object.dependencies)
       : undefined;
+    message.dependants = (object.dependants !== undefined && object.dependants !== null)
+      ? Query_Expand_Dependants.fromPartial(object.dependants)
+      : undefined;
     return message;
   },
 };
 
 function createBaseQuery_Expand_Dependencies(): Query_Expand_Dependencies {
-  return { dependentsDepth: undefined, dependenciesDepth: undefined, onlyResolved: undefined };
+  return { mode: undefined };
 }
 
 export const Query_Expand_Dependencies: MessageFns<Query_Expand_Dependencies> = {
   encode(message: Query_Expand_Dependencies, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.dependentsDepth !== undefined) {
-      writer.uint32(8).int32(message.dependentsDepth);
-    }
-    if (message.dependenciesDepth !== undefined) {
-      writer.uint32(16).int32(message.dependenciesDepth);
-    }
-    if (message.onlyResolved !== undefined) {
-      writer.uint32(24).bool(message.onlyResolved);
+    if (message.mode !== undefined) {
+      writer.uint32(8).int32(message.mode);
     }
     return writer;
   },
@@ -712,23 +818,7 @@ export const Query_Expand_Dependencies: MessageFns<Query_Expand_Dependencies> = 
             break;
           }
 
-          message.dependentsDepth = reader.int32();
-          continue;
-        }
-        case 2: {
-          if (tag !== 16) {
-            break;
-          }
-
-          message.dependenciesDepth = reader.int32();
-          continue;
-        }
-        case 3: {
-          if (tag !== 24) {
-            break;
-          }
-
-          message.onlyResolved = reader.bool();
+          message.mode = reader.int32() as any;
           continue;
         }
       }
@@ -741,23 +831,13 @@ export const Query_Expand_Dependencies: MessageFns<Query_Expand_Dependencies> = 
   },
 
   fromJSON(object: any): Query_Expand_Dependencies {
-    return {
-      dependentsDepth: isSet(object.dependentsDepth) ? globalThis.Number(object.dependentsDepth) : undefined,
-      dependenciesDepth: isSet(object.dependenciesDepth) ? globalThis.Number(object.dependenciesDepth) : undefined,
-      onlyResolved: isSet(object.onlyResolved) ? globalThis.Boolean(object.onlyResolved) : undefined,
-    };
+    return { mode: isSet(object.mode) ? queryExpandDepsModeFromJSON(object.mode) : undefined };
   },
 
   toJSON(message: Query_Expand_Dependencies): unknown {
     const obj: any = {};
-    if (message.dependentsDepth !== undefined) {
-      obj.dependentsDepth = Math.round(message.dependentsDepth);
-    }
-    if (message.dependenciesDepth !== undefined) {
-      obj.dependenciesDepth = Math.round(message.dependenciesDepth);
-    }
-    if (message.onlyResolved !== undefined) {
-      obj.onlyResolved = message.onlyResolved;
+    if (message.mode !== undefined) {
+      obj.mode = queryExpandDepsModeToJSON(message.mode);
     }
     return obj;
   },
@@ -767,24 +847,80 @@ export const Query_Expand_Dependencies: MessageFns<Query_Expand_Dependencies> = 
   },
   fromPartial(object: DeepPartial<Query_Expand_Dependencies>): Query_Expand_Dependencies {
     const message = createBaseQuery_Expand_Dependencies() as any;
-    message.dependentsDepth = object.dependentsDepth ?? undefined;
-    message.dependenciesDepth = object.dependenciesDepth ?? undefined;
-    message.onlyResolved = object.onlyResolved ?? undefined;
+    message.mode = object.mode ?? undefined;
+    return message;
+  },
+};
+
+function createBaseQuery_Expand_Dependants(): Query_Expand_Dependants {
+  return { mode: undefined };
+}
+
+export const Query_Expand_Dependants: MessageFns<Query_Expand_Dependants> = {
+  encode(message: Query_Expand_Dependants, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.mode !== undefined) {
+      writer.uint32(8).int32(message.mode);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Query_Expand_Dependants {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQuery_Expand_Dependants() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.mode = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Query_Expand_Dependants {
+    return { mode: isSet(object.mode) ? queryExpandDepsModeFromJSON(object.mode) : undefined };
+  },
+
+  toJSON(message: Query_Expand_Dependants): unknown {
+    const obj: any = {};
+    if (message.mode !== undefined) {
+      obj.mode = queryExpandDepsModeToJSON(message.mode);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Query_Expand_Dependants>): Query_Expand_Dependants {
+    return Query_Expand_Dependants.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Query_Expand_Dependants>): Query_Expand_Dependants {
+    const message = createBaseQuery_Expand_Dependants() as any;
+    message.mode = object.mode ?? undefined;
     return message;
   },
 };
 
 function createBaseQuery_Collect(): Query_Collect {
-  return { data: undefined, edits: undefined };
+  return { check: undefined, stage: undefined };
 }
 
 export const Query_Collect: MessageFns<Query_Collect> = {
   encode(message: Query_Collect, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.data !== undefined) {
-      Query_Collect_Data.encode(message.data, writer.uint32(10).fork()).join();
+    if (message.check !== undefined) {
+      Query_Collect_Check.encode(message.check, writer.uint32(10).fork()).join();
     }
-    if (message.edits !== undefined) {
-      Query_Collect_Edits.encode(message.edits, writer.uint32(18).fork()).join();
+    if (message.stage !== undefined) {
+      Query_Collect_Stage.encode(message.stage, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -801,7 +937,7 @@ export const Query_Collect: MessageFns<Query_Collect> = {
             break;
           }
 
-          message.data = Query_Collect_Data.decode(reader, reader.uint32());
+          message.check = Query_Collect_Check.decode(reader, reader.uint32());
           continue;
         }
         case 2: {
@@ -809,7 +945,7 @@ export const Query_Collect: MessageFns<Query_Collect> = {
             break;
           }
 
-          message.edits = Query_Collect_Edits.decode(reader, reader.uint32());
+          message.stage = Query_Collect_Stage.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -823,18 +959,18 @@ export const Query_Collect: MessageFns<Query_Collect> = {
 
   fromJSON(object: any): Query_Collect {
     return {
-      data: isSet(object.data) ? Query_Collect_Data.fromJSON(object.data) : undefined,
-      edits: isSet(object.edits) ? Query_Collect_Edits.fromJSON(object.edits) : undefined,
+      check: isSet(object.check) ? Query_Collect_Check.fromJSON(object.check) : undefined,
+      stage: isSet(object.stage) ? Query_Collect_Stage.fromJSON(object.stage) : undefined,
     };
   },
 
   toJSON(message: Query_Collect): unknown {
     const obj: any = {};
-    if (message.data !== undefined) {
-      obj.data = Query_Collect_Data.toJSON(message.data);
+    if (message.check !== undefined) {
+      obj.check = Query_Collect_Check.toJSON(message.check);
     }
-    if (message.edits !== undefined) {
-      obj.edits = Query_Collect_Edits.toJSON(message.edits);
+    if (message.stage !== undefined) {
+      obj.stage = Query_Collect_Stage.toJSON(message.stage);
     }
     return obj;
   },
@@ -844,115 +980,38 @@ export const Query_Collect: MessageFns<Query_Collect> = {
   },
   fromPartial(object: DeepPartial<Query_Collect>): Query_Collect {
     const message = createBaseQuery_Collect() as any;
-    message.data = (object.data !== undefined && object.data !== null)
-      ? Query_Collect_Data.fromPartial(object.data)
-      : undefined;
-    message.edits = (object.edits !== undefined && object.edits !== null)
-      ? Query_Collect_Edits.fromPartial(object.edits)
-      : undefined;
-    return message;
-  },
-};
-
-function createBaseQuery_Collect_Data(): Query_Collect_Data {
-  return { check: undefined, stage: undefined };
-}
-
-export const Query_Collect_Data: MessageFns<Query_Collect_Data> = {
-  encode(message: Query_Collect_Data, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.check !== undefined) {
-      Query_Collect_Data_Check.encode(message.check, writer.uint32(18).fork()).join();
-    }
-    if (message.stage !== undefined) {
-      Query_Collect_Data_Stage.encode(message.stage, writer.uint32(26).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): Query_Collect_Data {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuery_Collect_Data() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.check = Query_Collect_Data_Check.decode(reader, reader.uint32());
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.stage = Query_Collect_Data_Stage.decode(reader, reader.uint32());
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): Query_Collect_Data {
-    return {
-      check: isSet(object.check) ? Query_Collect_Data_Check.fromJSON(object.check) : undefined,
-      stage: isSet(object.stage) ? Query_Collect_Data_Stage.fromJSON(object.stage) : undefined,
-    };
-  },
-
-  toJSON(message: Query_Collect_Data): unknown {
-    const obj: any = {};
-    if (message.check !== undefined) {
-      obj.check = Query_Collect_Data_Check.toJSON(message.check);
-    }
-    if (message.stage !== undefined) {
-      obj.stage = Query_Collect_Data_Stage.toJSON(message.stage);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<Query_Collect_Data>): Query_Collect_Data {
-    return Query_Collect_Data.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<Query_Collect_Data>): Query_Collect_Data {
-    const message = createBaseQuery_Collect_Data() as any;
     message.check = (object.check !== undefined && object.check !== null)
-      ? Query_Collect_Data_Check.fromPartial(object.check)
+      ? Query_Collect_Check.fromPartial(object.check)
       : undefined;
     message.stage = (object.stage !== undefined && object.stage !== null)
-      ? Query_Collect_Data_Stage.fromPartial(object.stage)
+      ? Query_Collect_Stage.fromPartial(object.stage)
       : undefined;
     return message;
   },
 };
 
-function createBaseQuery_Collect_Data_Check(): Query_Collect_Data_Check {
-  return { options: undefined, resultData: undefined };
+function createBaseQuery_Collect_Check(): Query_Collect_Check {
+  return { options: undefined, resultData: undefined, edits: undefined };
 }
 
-export const Query_Collect_Data_Check: MessageFns<Query_Collect_Data_Check> = {
-  encode(message: Query_Collect_Data_Check, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const Query_Collect_Check: MessageFns<Query_Collect_Check> = {
+  encode(message: Query_Collect_Check, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.options !== undefined) {
       writer.uint32(8).bool(message.options);
     }
     if (message.resultData !== undefined) {
       writer.uint32(16).bool(message.resultData);
     }
+    if (message.edits !== undefined) {
+      RevisionRange.encode(message.edits, writer.uint32(26).fork()).join();
+    }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): Query_Collect_Data_Check {
+  decode(input: BinaryReader | Uint8Array, length?: number): Query_Collect_Check {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuery_Collect_Data_Check() as any;
+    const message = createBaseQuery_Collect_Check() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -972,6 +1031,14 @@ export const Query_Collect_Data_Check: MessageFns<Query_Collect_Data_Check> = {
           message.resultData = reader.bool();
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.edits = RevisionRange.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -981,14 +1048,15 @@ export const Query_Collect_Data_Check: MessageFns<Query_Collect_Data_Check> = {
     return message;
   },
 
-  fromJSON(object: any): Query_Collect_Data_Check {
+  fromJSON(object: any): Query_Collect_Check {
     return {
       options: isSet(object.options) ? globalThis.Boolean(object.options) : undefined,
       resultData: isSet(object.resultData) ? globalThis.Boolean(object.resultData) : undefined,
+      edits: isSet(object.edits) ? RevisionRange.fromJSON(object.edits) : undefined,
     };
   },
 
-  toJSON(message: Query_Collect_Data_Check): unknown {
+  toJSON(message: Query_Collect_Check): unknown {
     const obj: any = {};
     if (message.options !== undefined) {
       obj.options = message.options;
@@ -996,85 +1064,42 @@ export const Query_Collect_Data_Check: MessageFns<Query_Collect_Data_Check> = {
     if (message.resultData !== undefined) {
       obj.resultData = message.resultData;
     }
+    if (message.edits !== undefined) {
+      obj.edits = RevisionRange.toJSON(message.edits);
+    }
     return obj;
   },
 
-  create(base?: DeepPartial<Query_Collect_Data_Check>): Query_Collect_Data_Check {
-    return Query_Collect_Data_Check.fromPartial(base ?? {});
+  create(base?: DeepPartial<Query_Collect_Check>): Query_Collect_Check {
+    return Query_Collect_Check.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<Query_Collect_Data_Check>): Query_Collect_Data_Check {
-    const message = createBaseQuery_Collect_Data_Check() as any;
+  fromPartial(object: DeepPartial<Query_Collect_Check>): Query_Collect_Check {
+    const message = createBaseQuery_Collect_Check() as any;
     message.options = object.options ?? undefined;
     message.resultData = object.resultData ?? undefined;
+    message.edits = (object.edits !== undefined && object.edits !== null)
+      ? RevisionRange.fromPartial(object.edits)
+      : undefined;
     return message;
   },
 };
 
-function createBaseQuery_Collect_Data_Stage(): Query_Collect_Data_Stage {
-  return {};
+function createBaseQuery_Collect_Stage(): Query_Collect_Stage {
+  return { edits: undefined };
 }
 
-export const Query_Collect_Data_Stage: MessageFns<Query_Collect_Data_Stage> = {
-  encode(_: Query_Collect_Data_Stage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): Query_Collect_Data_Stage {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuery_Collect_Data_Stage() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(_: any): Query_Collect_Data_Stage {
-    return {};
-  },
-
-  toJSON(_: Query_Collect_Data_Stage): unknown {
-    const obj: any = {};
-    return obj;
-  },
-
-  create(base?: DeepPartial<Query_Collect_Data_Stage>): Query_Collect_Data_Stage {
-    return Query_Collect_Data_Stage.fromPartial(base ?? {});
-  },
-  fromPartial(_: DeepPartial<Query_Collect_Data_Stage>): Query_Collect_Data_Stage {
-    const message = createBaseQuery_Collect_Data_Stage() as any;
-    return message;
-  },
-};
-
-function createBaseQuery_Collect_Edits(): Query_Collect_Edits {
-  return { range: undefined, check: undefined, stage: undefined };
-}
-
-export const Query_Collect_Edits: MessageFns<Query_Collect_Edits> = {
-  encode(message: Query_Collect_Edits, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.range !== undefined) {
-      RevisionRange.encode(message.range, writer.uint32(10).fork()).join();
-    }
-    if (message.check !== undefined) {
-      writer.uint32(16).bool(message.check);
-    }
-    if (message.stage !== undefined) {
-      writer.uint32(24).bool(message.stage);
+export const Query_Collect_Stage: MessageFns<Query_Collect_Stage> = {
+  encode(message: Query_Collect_Stage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.edits !== undefined) {
+      RevisionRange.encode(message.edits, writer.uint32(10).fork()).join();
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): Query_Collect_Edits {
+  decode(input: BinaryReader | Uint8Array, length?: number): Query_Collect_Stage {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuery_Collect_Edits() as any;
+    const message = createBaseQuery_Collect_Stage() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -1083,23 +1108,7 @@ export const Query_Collect_Edits: MessageFns<Query_Collect_Edits> = {
             break;
           }
 
-          message.range = RevisionRange.decode(reader, reader.uint32());
-          continue;
-        }
-        case 2: {
-          if (tag !== 16) {
-            break;
-          }
-
-          message.check = reader.bool();
-          continue;
-        }
-        case 3: {
-          if (tag !== 24) {
-            break;
-          }
-
-          message.stage = reader.bool();
+          message.edits = RevisionRange.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -1111,38 +1120,26 @@ export const Query_Collect_Edits: MessageFns<Query_Collect_Edits> = {
     return message;
   },
 
-  fromJSON(object: any): Query_Collect_Edits {
-    return {
-      range: isSet(object.range) ? RevisionRange.fromJSON(object.range) : undefined,
-      check: isSet(object.check) ? globalThis.Boolean(object.check) : undefined,
-      stage: isSet(object.stage) ? globalThis.Boolean(object.stage) : undefined,
-    };
+  fromJSON(object: any): Query_Collect_Stage {
+    return { edits: isSet(object.edits) ? RevisionRange.fromJSON(object.edits) : undefined };
   },
 
-  toJSON(message: Query_Collect_Edits): unknown {
+  toJSON(message: Query_Collect_Stage): unknown {
     const obj: any = {};
-    if (message.range !== undefined) {
-      obj.range = RevisionRange.toJSON(message.range);
-    }
-    if (message.check !== undefined) {
-      obj.check = message.check;
-    }
-    if (message.stage !== undefined) {
-      obj.stage = message.stage;
+    if (message.edits !== undefined) {
+      obj.edits = RevisionRange.toJSON(message.edits);
     }
     return obj;
   },
 
-  create(base?: DeepPartial<Query_Collect_Edits>): Query_Collect_Edits {
-    return Query_Collect_Edits.fromPartial(base ?? {});
+  create(base?: DeepPartial<Query_Collect_Stage>): Query_Collect_Stage {
+    return Query_Collect_Stage.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<Query_Collect_Edits>): Query_Collect_Edits {
-    const message = createBaseQuery_Collect_Edits() as any;
-    message.range = (object.range !== undefined && object.range !== null)
-      ? RevisionRange.fromPartial(object.range)
+  fromPartial(object: DeepPartial<Query_Collect_Stage>): Query_Collect_Stage {
+    const message = createBaseQuery_Collect_Stage() as any;
+    message.edits = (object.edits !== undefined && object.edits !== null)
+      ? RevisionRange.fromPartial(object.edits)
       : undefined;
-    message.check = object.check ?? undefined;
-    message.stage = object.stage ?? undefined;
     return message;
   },
 };

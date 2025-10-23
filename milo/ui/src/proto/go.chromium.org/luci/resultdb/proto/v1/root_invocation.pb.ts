@@ -14,7 +14,7 @@ export const protobufPackage = "luci.resultdb.v1";
 
 /**
  * A top-level container of test results.
- * Next ID: 18.
+ * Next ID: 20.
  */
 export interface RootInvocation {
   /**
@@ -32,24 +32,24 @@ export interface RootInvocation {
    */
   readonly rootInvocationId: string;
   /**
-   * Current finalization state of the root invocation.
-   *
-   * At creation time, this can be set to ACTIVE or FINALIZING (if all fields
-   * are known at creation time). When updating or via the FinalizeRootInvocation
-   * RPC, the state can also be updated from ACTIVE to FINALIZING.
-   *
-   * In all other cases, this field should be treated as output only. ResultDB
-   * will automatically transition the invocation to FINALIZING when the provided
-   * `deadline` expires (if the invocation is not already in FINALIZING state).
-   * FINALIZING invocations will transition onward to FINALIZED when all included
-   * work units are FINALIZED.
+   * Current finalization state of the root invocation. This is an output only
+   * field and is based on the finalization state of the root work unit.
    */
   readonly finalizationState: RootInvocation_FinalizationState;
   /**
-   * Do not use this field, it exists only so that field masks for the old "state"
-   * field can still parse. It will be repurposed soon. Use `finalization_state` instead.
+   * The overall state of the root invocation. This is an output only
+   * field and is based on the state of the root work unit.
+   *
+   * See also: https://google.aip.dev/216.
    */
   readonly state: RootInvocation_State;
+  /**
+   * A summary of the final state of the root invocation, to be displayed on the UI.
+   * MUST be escaped prior to rendering on the UI.
+   *
+   * This is an output only field and based on the summary of the root work unit.
+   */
+  readonly summaryMarkdown: string;
   /**
    * The realm of the root invocation. This controls the ACLs that apply to the
    * root invocation and its contents.
@@ -105,13 +105,6 @@ export interface RootInvocation {
     | string
     | undefined;
   /**
-   * Timestamp when the invocation will be forcefully finalized.
-   * Can be extended with UpdateRootInvocation until finalized.
-   */
-  readonly deadline:
-    | string
-    | undefined;
-  /**
    * Full name of the resource that produced results in this root invocation.
    * See also https://aip.dev/122#full-resource-names
    * Typical examples:
@@ -126,24 +119,12 @@ export interface RootInvocation {
    * The code sources which were tested by this root invocation.
    * This is used to index test results for test history, and for
    * related analyses (e.g. culprit analysis / changepoint analyses).
+   *
+   * Required.
    */
   readonly sources:
     | Sources
     | undefined;
-  /**
-   * Whether the code sources specified by sources are final (immutable).
-   *
-   * To facilitate rapid export of invocations inheriting sources from this
-   * root invocation, this property should be set to true as soon as possible
-   * after the root invocation's sources are fixed. In most cases, clients
-   * will want to set this property to true at the same time as they set
-   * sources.
-   *
-   * This field is client owned. Consistent with https://google.aip.dev/129,
-   * it will not be forced to true when the invocation starts to finalize, even
-   * if its effective value will always be true at that point.
-   */
-  readonly sourcesFinal: boolean;
   /**
    * Root invocation-level string key-value pairs.
    * A key can be repeated.
@@ -190,6 +171,27 @@ export interface RootInvocation {
    */
   readonly baselineId: string;
   /**
+   * Controls the operation of streaming exports.
+   *
+   * Various clients (e.g. changepoint analysis, presubmit flake suppression
+   * systems) rely on having timely access to test result data for their
+   * performance and request uploaders set this field to `METADATA_FINAL`
+   * as soon as practicable.
+   *
+   * Before METADATA_FINAL can be set, the following metadata fields on the
+   * root invocation must have been populated with their final values:
+   * - `sources`
+   * TODO(nqmtuan): Add other fields here.
+   *
+   * This field is client owned. Consistent with https://google.aip.dev/129,
+   * it will not be forced to METADATA_FINAL when the root invocation starts
+   * to finalize (but exports will start anyway at this point, if they
+   * were not started earlier).
+   *
+   * Required.
+   */
+  readonly streamingExportState: RootInvocation_StreamingExportState;
+  /**
    * This checksum is computed by the server based on the value of other
    * fields, and may be sent on update requests to ensure the client
    * has an up-to-date value before proceeding.
@@ -206,16 +208,17 @@ export enum RootInvocation_FinalizationState {
   ACTIVE = 1,
   /**
    * FINALIZING - The root invocation is in the process of moving to the FINALIZED state.
-   * This will happen automatically soon after all of its directly or
-   * indirectly included invocations become inactive.
+   * This will happen automatically as soon as the root work unit
+   * becomes FINALIZING.
    *
-   * In this state, the root invocation record itself is immutable, but its
-   * contained work units may still be mutable.
+   * In this state, the root invocation and root work unit records are immutable,
+   * but its contained work units may still be mutable.
    */
   FINALIZING = 2,
   /**
-   * FINALIZED - The invocation is immutable and no longer accepts new results
-   * directly or indirectly.
+   * FINALIZED - The root invocation is immutable and no longer accepts new results
+   * directly or indirectly. This will happen automatically as soon as the
+   * root work unit becomes FINALIZED.
    */
   FINALIZED = 3,
 }
@@ -254,9 +257,47 @@ export function rootInvocation_FinalizationStateToJSON(object: RootInvocation_Fi
   }
 }
 
+/** The execution state of the root invocation. */
 export enum RootInvocation_State {
-  /** STATE_UNSPECIFIED - The default value. This value is used if the state is omitted. */
+  /** STATE_UNSPECIFIED - The default value. This value is unused. */
   STATE_UNSPECIFIED = 0,
+  /** PENDING - The root invocation has not yet started running. */
+  PENDING = 1,
+  /** RUNNING - The root invocation is currently running. */
+  RUNNING = 2,
+  /**
+   * SUCCEEDED - The root invocation completed successfully.
+   *
+   * This status means results are complete and correct, i.e.:
+   * - all tests to be run (or skipped) were identified.
+   * - test results were successfully uploaded to ResultDB
+   *   for each such test.
+   *
+   * This status generally does not say anything about the test content;
+   * tests could have FAILED, some could have even failed to
+   * produce a result (EXECUTION_ERRORED).
+   */
+  SUCCEEDED = 3,
+  /**
+   * FAILED - The root invocation encountered an error, which was not resolved
+   * by retry.
+   *
+   * This status means the results may be incomplete.
+   */
+  FAILED = 4,
+  /**
+   * CANCELLED - The root invocation never started or may be incomplete, because
+   * an external factor requested its cancellation (e.g. presubmit
+   * run was no longer needed).
+   */
+  CANCELLED = 5,
+  /**
+   * SKIPPED - The root invocation determined no tests need to be run.
+   * For example, the build dependency graph indicates the CL did
+   * not modify the module to be tested.
+   * This status usually indicates no test results were uploaded.
+   */
+  SKIPPED = 6,
 }
 
 export function rootInvocation_StateFromJSON(object: any): RootInvocation_State {
@@ -264,6 +305,24 @@ export function rootInvocation_StateFromJSON(object: any): RootInvocation_State 
     case 0:
     case "STATE_UNSPECIFIED":
       return RootInvocation_State.STATE_UNSPECIFIED;
+    case 1:
+    case "PENDING":
+      return RootInvocation_State.PENDING;
+    case 2:
+    case "RUNNING":
+      return RootInvocation_State.RUNNING;
+    case 3:
+    case "SUCCEEDED":
+      return RootInvocation_State.SUCCEEDED;
+    case 4:
+    case "FAILED":
+      return RootInvocation_State.FAILED;
+    case 5:
+    case "CANCELLED":
+      return RootInvocation_State.CANCELLED;
+    case 6:
+    case "SKIPPED":
+      return RootInvocation_State.SKIPPED;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum RootInvocation_State");
   }
@@ -273,8 +332,80 @@ export function rootInvocation_StateToJSON(object: RootInvocation_State): string
   switch (object) {
     case RootInvocation_State.STATE_UNSPECIFIED:
       return "STATE_UNSPECIFIED";
+    case RootInvocation_State.PENDING:
+      return "PENDING";
+    case RootInvocation_State.RUNNING:
+      return "RUNNING";
+    case RootInvocation_State.SUCCEEDED:
+      return "SUCCEEDED";
+    case RootInvocation_State.FAILED:
+      return "FAILED";
+    case RootInvocation_State.CANCELLED:
+      return "CANCELLED";
+    case RootInvocation_State.SKIPPED:
+      return "SKIPPED";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum RootInvocation_State");
+  }
+}
+
+/**
+ * StreamingExportState controls the operation of streaming (low-latency)
+ * exports from the root invocation. Streaming exports are designed to
+ * commence while the root invocation is still running.
+ */
+export enum RootInvocation_StreamingExportState {
+  /** STREAMING_EXPORT_STATE_UNSPECIFIED - The default value. Do not use this value. */
+  STREAMING_EXPORT_STATE_UNSPECIFIED = 0,
+  /**
+   * WAIT_FOR_METADATA - The metadata fields on the root invocation have not yet been set (or
+   * are not yet set to their final values). The streaming exports can
+   * not start yet.
+   *
+   * While this option is set, test result exports to downstream clients
+   * will be delayed. Please set this value to METADATA_FINAL as soon as
+   * practicable.
+   *
+   * See documentation on `streaming_export_state` for a definition of
+   * the metadata fields.
+   */
+  WAIT_FOR_METADATA = 1,
+  /**
+   * METADATA_FINAL - The metadata fields on the root invocation have been set and can be made
+   * immutable. Streaming exports can commence.
+   *
+   * See documentation on `streaming_export_state` for a definition of
+   * the metadata fields.
+   */
+  METADATA_FINAL = 2,
+}
+
+export function rootInvocation_StreamingExportStateFromJSON(object: any): RootInvocation_StreamingExportState {
+  switch (object) {
+    case 0:
+    case "STREAMING_EXPORT_STATE_UNSPECIFIED":
+      return RootInvocation_StreamingExportState.STREAMING_EXPORT_STATE_UNSPECIFIED;
+    case 1:
+    case "WAIT_FOR_METADATA":
+      return RootInvocation_StreamingExportState.WAIT_FOR_METADATA;
+    case 2:
+    case "METADATA_FINAL":
+      return RootInvocation_StreamingExportState.METADATA_FINAL;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum RootInvocation_StreamingExportState");
+  }
+}
+
+export function rootInvocation_StreamingExportStateToJSON(object: RootInvocation_StreamingExportState): string {
+  switch (object) {
+    case RootInvocation_StreamingExportState.STREAMING_EXPORT_STATE_UNSPECIFIED:
+      return "STREAMING_EXPORT_STATE_UNSPECIFIED";
+    case RootInvocation_StreamingExportState.WAIT_FOR_METADATA:
+      return "WAIT_FOR_METADATA";
+    case RootInvocation_StreamingExportState.METADATA_FINAL:
+      return "METADATA_FINAL";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum RootInvocation_StreamingExportState");
   }
 }
 
@@ -290,19 +421,19 @@ function createBaseRootInvocation(): RootInvocation {
     rootInvocationId: "",
     finalizationState: 0,
     state: 0,
+    summaryMarkdown: "",
     realm: "",
     createTime: undefined,
     creator: "",
     lastUpdated: undefined,
     finalizeStartTime: undefined,
     finalizeTime: undefined,
-    deadline: undefined,
     producerResource: "",
     sources: undefined,
-    sourcesFinal: false,
     tags: [],
     properties: undefined,
     baselineId: "",
+    streamingExportState: 0,
     etag: "",
   };
 }
@@ -320,6 +451,9 @@ export const RootInvocation: MessageFns<RootInvocation> = {
     }
     if (message.state !== 0) {
       writer.uint32(136).int32(message.state);
+    }
+    if (message.summaryMarkdown !== "") {
+      writer.uint32(146).string(message.summaryMarkdown);
     }
     if (message.realm !== "") {
       writer.uint32(34).string(message.realm);
@@ -339,17 +473,11 @@ export const RootInvocation: MessageFns<RootInvocation> = {
     if (message.finalizeTime !== undefined) {
       Timestamp.encode(toTimestamp(message.finalizeTime), writer.uint32(66).fork()).join();
     }
-    if (message.deadline !== undefined) {
-      Timestamp.encode(toTimestamp(message.deadline), writer.uint32(74).fork()).join();
-    }
     if (message.producerResource !== "") {
       writer.uint32(82).string(message.producerResource);
     }
     if (message.sources !== undefined) {
       Sources.encode(message.sources, writer.uint32(90).fork()).join();
-    }
-    if (message.sourcesFinal !== false) {
-      writer.uint32(96).bool(message.sourcesFinal);
     }
     for (const v of message.tags) {
       StringPair.encode(v!, writer.uint32(106).fork()).join();
@@ -359,6 +487,9 @@ export const RootInvocation: MessageFns<RootInvocation> = {
     }
     if (message.baselineId !== "") {
       writer.uint32(122).string(message.baselineId);
+    }
+    if (message.streamingExportState !== 0) {
+      writer.uint32(152).int32(message.streamingExportState);
     }
     if (message.etag !== "") {
       writer.uint32(130).string(message.etag);
@@ -403,6 +534,14 @@ export const RootInvocation: MessageFns<RootInvocation> = {
           }
 
           message.state = reader.int32() as any;
+          continue;
+        }
+        case 18: {
+          if (tag !== 146) {
+            break;
+          }
+
+          message.summaryMarkdown = reader.string();
           continue;
         }
         case 4: {
@@ -453,14 +592,6 @@ export const RootInvocation: MessageFns<RootInvocation> = {
           message.finalizeTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
           continue;
         }
-        case 9: {
-          if (tag !== 74) {
-            break;
-          }
-
-          message.deadline = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
-          continue;
-        }
         case 10: {
           if (tag !== 82) {
             break;
@@ -475,14 +606,6 @@ export const RootInvocation: MessageFns<RootInvocation> = {
           }
 
           message.sources = Sources.decode(reader, reader.uint32());
-          continue;
-        }
-        case 12: {
-          if (tag !== 96) {
-            break;
-          }
-
-          message.sourcesFinal = reader.bool();
           continue;
         }
         case 13: {
@@ -507,6 +630,14 @@ export const RootInvocation: MessageFns<RootInvocation> = {
           }
 
           message.baselineId = reader.string();
+          continue;
+        }
+        case 19: {
+          if (tag !== 152) {
+            break;
+          }
+
+          message.streamingExportState = reader.int32() as any;
           continue;
         }
         case 16: {
@@ -534,19 +665,21 @@ export const RootInvocation: MessageFns<RootInvocation> = {
         ? rootInvocation_FinalizationStateFromJSON(object.finalizationState)
         : 0,
       state: isSet(object.state) ? rootInvocation_StateFromJSON(object.state) : 0,
+      summaryMarkdown: isSet(object.summaryMarkdown) ? globalThis.String(object.summaryMarkdown) : "",
       realm: isSet(object.realm) ? globalThis.String(object.realm) : "",
       createTime: isSet(object.createTime) ? globalThis.String(object.createTime) : undefined,
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
       lastUpdated: isSet(object.lastUpdated) ? globalThis.String(object.lastUpdated) : undefined,
       finalizeStartTime: isSet(object.finalizeStartTime) ? globalThis.String(object.finalizeStartTime) : undefined,
       finalizeTime: isSet(object.finalizeTime) ? globalThis.String(object.finalizeTime) : undefined,
-      deadline: isSet(object.deadline) ? globalThis.String(object.deadline) : undefined,
       producerResource: isSet(object.producerResource) ? globalThis.String(object.producerResource) : "",
       sources: isSet(object.sources) ? Sources.fromJSON(object.sources) : undefined,
-      sourcesFinal: isSet(object.sourcesFinal) ? globalThis.Boolean(object.sourcesFinal) : false,
       tags: globalThis.Array.isArray(object?.tags) ? object.tags.map((e: any) => StringPair.fromJSON(e)) : [],
       properties: isObject(object.properties) ? object.properties : undefined,
       baselineId: isSet(object.baselineId) ? globalThis.String(object.baselineId) : "",
+      streamingExportState: isSet(object.streamingExportState)
+        ? rootInvocation_StreamingExportStateFromJSON(object.streamingExportState)
+        : 0,
       etag: isSet(object.etag) ? globalThis.String(object.etag) : "",
     };
   },
@@ -564,6 +697,9 @@ export const RootInvocation: MessageFns<RootInvocation> = {
     }
     if (message.state !== 0) {
       obj.state = rootInvocation_StateToJSON(message.state);
+    }
+    if (message.summaryMarkdown !== "") {
+      obj.summaryMarkdown = message.summaryMarkdown;
     }
     if (message.realm !== "") {
       obj.realm = message.realm;
@@ -583,17 +719,11 @@ export const RootInvocation: MessageFns<RootInvocation> = {
     if (message.finalizeTime !== undefined) {
       obj.finalizeTime = message.finalizeTime;
     }
-    if (message.deadline !== undefined) {
-      obj.deadline = message.deadline;
-    }
     if (message.producerResource !== "") {
       obj.producerResource = message.producerResource;
     }
     if (message.sources !== undefined) {
       obj.sources = Sources.toJSON(message.sources);
-    }
-    if (message.sourcesFinal !== false) {
-      obj.sourcesFinal = message.sourcesFinal;
     }
     if (message.tags?.length) {
       obj.tags = message.tags.map((e) => StringPair.toJSON(e));
@@ -603,6 +733,9 @@ export const RootInvocation: MessageFns<RootInvocation> = {
     }
     if (message.baselineId !== "") {
       obj.baselineId = message.baselineId;
+    }
+    if (message.streamingExportState !== 0) {
+      obj.streamingExportState = rootInvocation_StreamingExportStateToJSON(message.streamingExportState);
     }
     if (message.etag !== "") {
       obj.etag = message.etag;
@@ -619,21 +752,21 @@ export const RootInvocation: MessageFns<RootInvocation> = {
     message.rootInvocationId = object.rootInvocationId ?? "";
     message.finalizationState = object.finalizationState ?? 0;
     message.state = object.state ?? 0;
+    message.summaryMarkdown = object.summaryMarkdown ?? "";
     message.realm = object.realm ?? "";
     message.createTime = object.createTime ?? undefined;
     message.creator = object.creator ?? "";
     message.lastUpdated = object.lastUpdated ?? undefined;
     message.finalizeStartTime = object.finalizeStartTime ?? undefined;
     message.finalizeTime = object.finalizeTime ?? undefined;
-    message.deadline = object.deadline ?? undefined;
     message.producerResource = object.producerResource ?? "";
     message.sources = (object.sources !== undefined && object.sources !== null)
       ? Sources.fromPartial(object.sources)
       : undefined;
-    message.sourcesFinal = object.sourcesFinal ?? false;
     message.tags = object.tags?.map((e) => StringPair.fromPartial(e)) || [];
     message.properties = object.properties ?? undefined;
     message.baselineId = object.baselineId ?? "";
+    message.streamingExportState = object.streamingExportState ?? 0;
     message.etag = object.etag ?? "";
     return message;
   },

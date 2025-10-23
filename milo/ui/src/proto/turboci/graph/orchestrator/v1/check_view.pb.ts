@@ -25,27 +25,39 @@ export interface CheckView {
   /**
    * Data for the Check's options which are visible and of a type which was
    * requested.
-   */
-  readonly optionData: readonly Datum[];
-  /**
-   * CheckEdits for this Check which are being read.
    *
-   * Some CheckEdits may be omitted if the user did not request them.
+   * Indexed by type_url.
+   *
+   * NOTE: If we add an additional distinguisher other than type_url, it will
+   * need to also be rendered in this string key. Probably <tag>:<type_url>.
+   */
+  readonly optionData: { [key: string]: Datum };
+  /**
+   * CheckEdits for this Check.
+   *
+   * Sorted by `edit.version`.
    */
   readonly edits: readonly CheckEditView[];
   /**
-   * Result data for this Check which is being read.
+   * Result data for this Check.
    *
-   * Matches 1:1 with Check.results.
-   *
-   * Some CheckResultViews may be empty if the user did not request those data
-   * types or didn't have permission to see them.
+   * Indexed by `identifier.idx`.
    */
-  readonly results: readonly CheckResultView[];
+  readonly results: { [key: number]: CheckResultView };
+}
+
+export interface CheckView_OptionDataEntry {
+  readonly key: string;
+  readonly value: Datum | undefined;
+}
+
+export interface CheckView_ResultsEntry {
+  readonly key: number;
+  readonly value: CheckResultView | undefined;
 }
 
 function createBaseCheckView(): CheckView {
-  return { check: undefined, optionData: [], edits: [], results: [] };
+  return { check: undefined, optionData: {}, edits: [], results: {} };
 }
 
 export const CheckView: MessageFns<CheckView> = {
@@ -53,15 +65,15 @@ export const CheckView: MessageFns<CheckView> = {
     if (message.check !== undefined) {
       Check.encode(message.check, writer.uint32(10).fork()).join();
     }
-    for (const v of message.optionData) {
-      Datum.encode(v!, writer.uint32(18).fork()).join();
-    }
+    Object.entries(message.optionData).forEach(([key, value]) => {
+      CheckView_OptionDataEntry.encode({ key: key as any, value }, writer.uint32(18).fork()).join();
+    });
     for (const v of message.edits) {
       CheckEditView.encode(v!, writer.uint32(26).fork()).join();
     }
-    for (const v of message.results) {
-      CheckResultView.encode(v!, writer.uint32(34).fork()).join();
-    }
+    Object.entries(message.results).forEach(([key, value]) => {
+      CheckView_ResultsEntry.encode({ key: key as any, value }, writer.uint32(34).fork()).join();
+    });
     return writer;
   },
 
@@ -85,7 +97,10 @@ export const CheckView: MessageFns<CheckView> = {
             break;
           }
 
-          message.optionData.push(Datum.decode(reader, reader.uint32()));
+          const entry2 = CheckView_OptionDataEntry.decode(reader, reader.uint32());
+          if (entry2.value !== undefined) {
+            message.optionData[entry2.key] = entry2.value;
+          }
           continue;
         }
         case 3: {
@@ -101,7 +116,10 @@ export const CheckView: MessageFns<CheckView> = {
             break;
           }
 
-          message.results.push(CheckResultView.decode(reader, reader.uint32()));
+          const entry4 = CheckView_ResultsEntry.decode(reader, reader.uint32());
+          if (entry4.value !== undefined) {
+            message.results[entry4.key] = entry4.value;
+          }
           continue;
         }
       }
@@ -116,13 +134,19 @@ export const CheckView: MessageFns<CheckView> = {
   fromJSON(object: any): CheckView {
     return {
       check: isSet(object.check) ? Check.fromJSON(object.check) : undefined,
-      optionData: globalThis.Array.isArray(object?.optionData)
-        ? object.optionData.map((e: any) => Datum.fromJSON(e))
-        : [],
+      optionData: isObject(object.optionData)
+        ? Object.entries(object.optionData).reduce<{ [key: string]: Datum }>((acc, [key, value]) => {
+          acc[key] = Datum.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
       edits: globalThis.Array.isArray(object?.edits) ? object.edits.map((e: any) => CheckEditView.fromJSON(e)) : [],
-      results: globalThis.Array.isArray(object?.results)
-        ? object.results.map((e: any) => CheckResultView.fromJSON(e))
-        : [],
+      results: isObject(object.results)
+        ? Object.entries(object.results).reduce<{ [key: number]: CheckResultView }>((acc, [key, value]) => {
+          acc[globalThis.Number(key)] = CheckResultView.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
     };
   },
 
@@ -131,14 +155,26 @@ export const CheckView: MessageFns<CheckView> = {
     if (message.check !== undefined) {
       obj.check = Check.toJSON(message.check);
     }
-    if (message.optionData?.length) {
-      obj.optionData = message.optionData.map((e) => Datum.toJSON(e));
+    if (message.optionData) {
+      const entries = Object.entries(message.optionData);
+      if (entries.length > 0) {
+        obj.optionData = {};
+        entries.forEach(([k, v]) => {
+          obj.optionData[k] = Datum.toJSON(v);
+        });
+      }
     }
     if (message.edits?.length) {
       obj.edits = message.edits.map((e) => CheckEditView.toJSON(e));
     }
-    if (message.results?.length) {
-      obj.results = message.results.map((e) => CheckResultView.toJSON(e));
+    if (message.results) {
+      const entries = Object.entries(message.results);
+      if (entries.length > 0) {
+        obj.results = {};
+        entries.forEach(([k, v]) => {
+          obj.results[k] = CheckResultView.toJSON(v);
+        });
+      }
     }
     return obj;
   },
@@ -149,9 +185,179 @@ export const CheckView: MessageFns<CheckView> = {
   fromPartial(object: DeepPartial<CheckView>): CheckView {
     const message = createBaseCheckView() as any;
     message.check = (object.check !== undefined && object.check !== null) ? Check.fromPartial(object.check) : undefined;
-    message.optionData = object.optionData?.map((e) => Datum.fromPartial(e)) || [];
+    message.optionData = Object.entries(object.optionData ?? {}).reduce<{ [key: string]: Datum }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = Datum.fromPartial(value);
+        }
+        return acc;
+      },
+      {},
+    );
     message.edits = object.edits?.map((e) => CheckEditView.fromPartial(e)) || [];
-    message.results = object.results?.map((e) => CheckResultView.fromPartial(e)) || [];
+    message.results = Object.entries(object.results ?? {}).reduce<{ [key: number]: CheckResultView }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[globalThis.Number(key)] = CheckResultView.fromPartial(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    return message;
+  },
+};
+
+function createBaseCheckView_OptionDataEntry(): CheckView_OptionDataEntry {
+  return { key: "", value: undefined };
+}
+
+export const CheckView_OptionDataEntry: MessageFns<CheckView_OptionDataEntry> = {
+  encode(message: CheckView_OptionDataEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      Datum.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CheckView_OptionDataEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCheckView_OptionDataEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = Datum.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CheckView_OptionDataEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? Datum.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: CheckView_OptionDataEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = Datum.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CheckView_OptionDataEntry>): CheckView_OptionDataEntry {
+    return CheckView_OptionDataEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CheckView_OptionDataEntry>): CheckView_OptionDataEntry {
+    const message = createBaseCheckView_OptionDataEntry() as any;
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null) ? Datum.fromPartial(object.value) : undefined;
+    return message;
+  },
+};
+
+function createBaseCheckView_ResultsEntry(): CheckView_ResultsEntry {
+  return { key: 0, value: undefined };
+}
+
+export const CheckView_ResultsEntry: MessageFns<CheckView_ResultsEntry> = {
+  encode(message: CheckView_ResultsEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== 0) {
+      writer.uint32(8).int32(message.key);
+    }
+    if (message.value !== undefined) {
+      CheckResultView.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CheckView_ResultsEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCheckView_ResultsEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.key = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = CheckResultView.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CheckView_ResultsEntry {
+    return {
+      key: isSet(object.key) ? globalThis.Number(object.key) : 0,
+      value: isSet(object.value) ? CheckResultView.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: CheckView_ResultsEntry): unknown {
+    const obj: any = {};
+    if (message.key !== 0) {
+      obj.key = Math.round(message.key);
+    }
+    if (message.value !== undefined) {
+      obj.value = CheckResultView.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CheckView_ResultsEntry>): CheckView_ResultsEntry {
+    return CheckView_ResultsEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CheckView_ResultsEntry>): CheckView_ResultsEntry {
+    const message = createBaseCheckView_ResultsEntry() as any;
+    message.key = object.key ?? 0;
+    message.value = (object.value !== undefined && object.value !== null)
+      ? CheckResultView.fromPartial(object.value)
+      : undefined;
     return message;
   },
 };
@@ -163,6 +369,10 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+function isObject(value: any): boolean {
+  return typeof value === "object" && value !== null;
+}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

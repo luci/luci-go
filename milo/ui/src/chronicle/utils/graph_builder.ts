@@ -20,7 +20,7 @@ import 'reactflow/dist/style.css';
 import { Check } from '../../proto/turboci/graph/orchestrator/v1/check.pb';
 import { CheckKind } from '../../proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { CheckView } from '../../proto/turboci/graph/orchestrator/v1/check_view.pb';
-import { EdgeGroup } from '../../proto/turboci/graph/orchestrator/v1/edge_group.pb';
+import { Dependencies } from '../../proto/turboci/graph/orchestrator/v1/dependencies.pb';
 import { GraphView as TurboCIGraphView } from '../../proto/turboci/graph/orchestrator/v1/graph_view.pb';
 import { StageView } from '../../proto/turboci/graph/orchestrator/v1/stage_view.pb';
 
@@ -290,33 +290,15 @@ export class TurboCIGraphBuilder {
 
   private createBaseNodes() {
     // Create nodes for each stage
-    this.graphView.stages.forEach((stageView) => {
-      if (
-        !stageView ||
-        !stageView.stage ||
-        !stageView.stage.identifier ||
-        !stageView.stage.identifier.id
-      ) {
-        throw new Error(`Invalid StageView: ${JSON.stringify(stageView)}`);
-      }
-
+    Object.entries(this.graphView.stages).forEach(([stageId, stageView]) => {
       this.nodes.push(createStageNode(stageView));
-      this.allNodeIds.add(stageView.stage.identifier.id);
+      this.allNodeIds.add(stageId);
     });
 
     // Create nodes for each check
-    this.graphView.checks.forEach((checkView) => {
-      if (
-        !checkView ||
-        !checkView.check ||
-        !checkView.check.identifier ||
-        !checkView.check.identifier.id
-      ) {
-        throw new Error(`Invalid CheckView: ${JSON.stringify(checkView)}`);
-      }
-
+    Object.entries(this.graphView.checks).forEach(([checkId, checkView]) => {
       this.nodes.push(createCheckNode(checkView));
-      this.allNodeIds.add(checkView.check.identifier.id);
+      this.allNodeIds.add(checkId);
     });
   }
 
@@ -324,9 +306,8 @@ export class TurboCIGraphBuilder {
     // key: checkId, value: stageIds assigned to check
     const checkAssignments = new Map<string, Set<string>>();
 
-    this.graphView.stages.forEach((sv) => {
-      if (!sv.stage?.identifier?.id) return;
-      const stageId = sv.stage.identifier.id;
+    Object.entries(this.graphView.stages).forEach(([stageId, sv]) => {
+      if (!sv.stage) return;
 
       // Ignore stages that are assigned multiple different checks.
       // TODO - Wire up edges to these stages
@@ -362,47 +343,41 @@ export class TurboCIGraphBuilder {
 
   private addDependencyEdges(
     sourceNodeId: string,
-    depGroups: readonly EdgeGroup[],
+    deps: Dependencies | undefined,
   ) {
-    depGroups.forEach((group) => {
-      group.edges.forEach((edge) => {
-        const targetId = edge.target?.check?.id || edge.target?.stage?.id;
+    if (!deps) return;
 
-        // Only create edge if target exists in graph
-        if (targetId && this.allNodeIds.has(targetId)) {
-          // Do not create visual edges between nodes in the same group
-          const sourceGroup = this.nodeToGroupIdMap.get(sourceNodeId);
-          const targetGroup = this.nodeToGroupIdMap.get(targetId);
+    deps.edges.forEach((edge) => {
+      const targetId = edge.target?.check?.id || edge.target?.stage?.id;
 
-          if (sourceGroup && targetGroup && sourceGroup === targetGroup) {
-            return;
-          }
+      // Only create edge if target exists in graph
+      if (targetId && this.allNodeIds.has(targetId)) {
+        // Do not create visual edges between nodes in the same group
+        const sourceGroup = this.nodeToGroupIdMap.get(sourceNodeId);
+        const targetGroup = this.nodeToGroupIdMap.get(targetId);
 
-          // Edge goes from Dependency (target) -> Dependent (source)
-          this.edges.push({
-            id: `dep-${targetId}-${sourceNodeId}`,
-            source: targetId,
-            target: sourceNodeId,
-            zIndex: 1,
-            ...DEPENDENCY_EDGE_STYLE,
-          });
+        if (sourceGroup && targetGroup && sourceGroup === targetGroup) {
+          return;
         }
-      });
+
+        // Edge goes from Dependency (target) -> Dependent (source)
+        this.edges.push({
+          id: `dep-${targetId}-${sourceNodeId}`,
+          source: targetId,
+          target: sourceNodeId,
+          zIndex: 1,
+          ...DEPENDENCY_EDGE_STYLE,
+        });
+      }
     });
   }
 
   private createEdges() {
-    this.graphView.stages.forEach((sv) =>
-      this.addDependencyEdges(
-        sv.stage!.identifier!.id!,
-        sv.stage!.dependencies,
-      ),
+    Object.entries(this.graphView.stages).forEach(([stageId, sv]) =>
+      this.addDependencyEdges(stageId, sv.stage!.dependencies),
     );
-    this.graphView.checks.forEach((cv) =>
-      this.addDependencyEdges(
-        cv.check!.identifier!.id!,
-        cv.check!.dependencies,
-      ),
+    Object.entries(this.graphView.checks).forEach(([checkId, cv]) =>
+      this.addDependencyEdges(checkId, cv.check!.dependencies),
     );
   }
 

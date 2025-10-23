@@ -6,8 +6,8 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { ExecutionPolicy } from "../../orchestrator/v1/execution_policy.pb";
 import { Stage } from "../../orchestrator/v1/stage.pb";
+import { StageExecutionPolicy } from "../../orchestrator/v1/stage_execution_policy.pb";
 
 export const protobufPackage = "turboci.graph.executor.v1";
 
@@ -20,7 +20,7 @@ export interface ValidateStageRequest {
 /** Response to a stage validation request. */
 export interface ValidateStageResponse {
   /** Validated execution policy for the stage. */
-  readonly executionPolicy?: ExecutionPolicy | undefined;
+  readonly stageExecutionPolicy?: StageExecutionPolicy | undefined;
 }
 
 function createBaseValidateStageRequest(): ValidateStageRequest {
@@ -82,13 +82,13 @@ export const ValidateStageRequest: MessageFns<ValidateStageRequest> = {
 };
 
 function createBaseValidateStageResponse(): ValidateStageResponse {
-  return { executionPolicy: undefined };
+  return { stageExecutionPolicy: undefined };
 }
 
 export const ValidateStageResponse: MessageFns<ValidateStageResponse> = {
   encode(message: ValidateStageResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.executionPolicy !== undefined) {
-      ExecutionPolicy.encode(message.executionPolicy, writer.uint32(10).fork()).join();
+    if (message.stageExecutionPolicy !== undefined) {
+      StageExecutionPolicy.encode(message.stageExecutionPolicy, writer.uint32(10).fork()).join();
     }
     return writer;
   },
@@ -105,7 +105,7 @@ export const ValidateStageResponse: MessageFns<ValidateStageResponse> = {
             break;
           }
 
-          message.executionPolicy = ExecutionPolicy.decode(reader, reader.uint32());
+          message.stageExecutionPolicy = StageExecutionPolicy.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -119,14 +119,16 @@ export const ValidateStageResponse: MessageFns<ValidateStageResponse> = {
 
   fromJSON(object: any): ValidateStageResponse {
     return {
-      executionPolicy: isSet(object.executionPolicy) ? ExecutionPolicy.fromJSON(object.executionPolicy) : undefined,
+      stageExecutionPolicy: isSet(object.stageExecutionPolicy)
+        ? StageExecutionPolicy.fromJSON(object.stageExecutionPolicy)
+        : undefined,
     };
   },
 
   toJSON(message: ValidateStageResponse): unknown {
     const obj: any = {};
-    if (message.executionPolicy !== undefined) {
-      obj.executionPolicy = ExecutionPolicy.toJSON(message.executionPolicy);
+    if (message.stageExecutionPolicy !== undefined) {
+      obj.stageExecutionPolicy = StageExecutionPolicy.toJSON(message.stageExecutionPolicy);
     }
     return obj;
   },
@@ -136,8 +138,8 @@ export const ValidateStageResponse: MessageFns<ValidateStageResponse> = {
   },
   fromPartial(object: DeepPartial<ValidateStageResponse>): ValidateStageResponse {
     const message = createBaseValidateStageResponse() as any;
-    message.executionPolicy = (object.executionPolicy !== undefined && object.executionPolicy !== null)
-      ? ExecutionPolicy.fromPartial(object.executionPolicy)
+    message.stageExecutionPolicy = (object.stageExecutionPolicy !== undefined && object.stageExecutionPolicy !== null)
+      ? StageExecutionPolicy.fromPartial(object.stageExecutionPolicy)
       : undefined;
     return message;
   },

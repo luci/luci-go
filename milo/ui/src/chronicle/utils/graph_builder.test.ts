@@ -21,7 +21,7 @@ import {
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { CheckKind } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
-import { EdgeGroup } from '@/proto/turboci/graph/orchestrator/v1/edge_group.pb';
+import { Dependencies } from '@/proto/turboci/graph/orchestrator/v1/dependencies.pb';
 import { GraphView as TurboCIGraphView } from '@/proto/turboci/graph/orchestrator/v1/graph_view.pb';
 import { Stage_Assignment } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
@@ -52,12 +52,10 @@ function createCheckView(
   // Dependencies are general Identifiers (can point to Check or Stage)
   dependencies: Identifier[] = [],
 ): CheckView {
-  // simplify: create one edge group per dependency
-  const edgeGroups: EdgeGroup[] = dependencies.map((dep) => ({
-    edges: [{ target: dep }],
-    groups: [],
-    // other fields like threshold/resolution can be undefined for these tests
-  }));
+  const deps: Dependencies = {
+    edges: dependencies.map((t) => ({ target: t })),
+    resolutionEvents: {},
+  };
 
   const checkId: CheckId = { workPlan: WORKPLAN, id };
 
@@ -65,14 +63,14 @@ function createCheckView(
     check: {
       identifier: checkId,
       kind: kind,
-      dependencies: edgeGroups,
+      dependencies: deps,
       options: [],
       results: [],
       // other fields like realm/version/state can be undefined
     } as Check,
     edits: [],
-    results: [],
-    optionData: [],
+    results: {},
+    optionData: {},
   };
 }
 
@@ -84,10 +82,10 @@ function createStageView(
   // Dependencies are general Identifiers.
   dependencies: Identifier[] = [],
 ): StageView {
-  const edgeGroups: EdgeGroup[] = dependencies.map((dep) => ({
-    edges: [{ target: dep }],
-    groups: [],
-  }));
+  const deps: Dependencies = {
+    edges: dependencies.map((t) => ({ target: t })),
+    resolutionEvents: {},
+  };
 
   const assignments: Stage_Assignment[] = assignedToCheckIds.map(
     (checkIdStr) => ({
@@ -100,7 +98,7 @@ function createStageView(
   return {
     stage: {
       identifier: stageId,
-      dependencies: edgeGroups,
+      dependencies: deps,
       assignments: assignments,
       attempts: [],
       continuationGroup: [],
@@ -113,8 +111,8 @@ function createStageView(
 describe('TurboCIGraphBuilder', () => {
   it('should return empty arrays for an empty graph', () => {
     const graph: TurboCIGraphView = {
-      checks: [],
-      stages: [],
+      checks: {},
+      stages: {},
     };
     const builder = new TurboCIGraphBuilder(graph);
     const { nodes, edges } = builder.build();
@@ -126,14 +124,16 @@ describe('TurboCIGraphBuilder', () => {
   describe('Node Creation and Labeling', () => {
     it('should create nodes with correct labels based on CheckKind', () => {
       const graph: TurboCIGraphView = {
-        checks: [
-          createCheckView('C1', CheckKind.CHECK_KIND_SOURCE),
-          createCheckView('C2', CheckKind.CHECK_KIND_BUILD),
-          createCheckView('C3', CheckKind.CHECK_KIND_TEST),
-          createCheckView('C4', CheckKind.CHECK_KIND_ANALYSIS),
-          createCheckView('C5', CheckKind.CHECK_KIND_UNKNOWN),
-        ],
-        stages: [createStageView('S1')],
+        checks: {
+          C1: createCheckView('C1', CheckKind.CHECK_KIND_SOURCE),
+          C2: createCheckView('C2', CheckKind.CHECK_KIND_BUILD),
+          C3: createCheckView('C3', CheckKind.CHECK_KIND_TEST),
+          C4: createCheckView('C4', CheckKind.CHECK_KIND_ANALYSIS),
+          C5: createCheckView('C5', CheckKind.CHECK_KIND_UNKNOWN),
+        },
+        stages: {
+          S1: createStageView('S1'),
+        },
       };
 
       const { nodes } = new TurboCIGraphBuilder(graph).build();
@@ -156,8 +156,8 @@ describe('TurboCIGraphBuilder', () => {
 
     it('should create standalone nodes', () => {
       const graph: TurboCIGraphView = {
-        checks: [createCheckView('C_Node')],
-        stages: [createStageView('S_Node')],
+        checks: { C_Node: createCheckView('C_Node') },
+        stages: { S_Node: createStageView('S_Node') },
       };
 
       const { nodes } = new TurboCIGraphBuilder(graph).build();
@@ -177,8 +177,8 @@ describe('TurboCIGraphBuilder', () => {
       const c1Ident = createCheckIdentifier('C1');
       // S1 depends on C1
       const graph: TurboCIGraphView = {
-        checks: [createCheckView('C1')],
-        stages: [createStageView('S1', [], [c1Ident])],
+        checks: { C1: createCheckView('C1') },
+        stages: { S1: createStageView('S1', [], [c1Ident]) },
       };
 
       const { edges, nodes } = new TurboCIGraphBuilder(graph).build();
@@ -194,8 +194,11 @@ describe('TurboCIGraphBuilder', () => {
       const s1Ident = createStageIdentifier('S1');
       // S2 depends on S1
       const graph: TurboCIGraphView = {
-        checks: [],
-        stages: [createStageView('S1'), createStageView('S2', [], [s1Ident])],
+        checks: {},
+        stages: {
+          S1: createStageView('S1'),
+          S2: createStageView('S2', [], [s1Ident]),
+        },
       };
 
       const { edges } = new TurboCIGraphBuilder(graph).build();
@@ -208,10 +211,10 @@ describe('TurboCIGraphBuilder', () => {
     it('should not create edges if the target identifier does not exist in the graph', () => {
       const ghostIdent = createCheckIdentifier('Ghost');
       const graph: TurboCIGraphView = {
-        checks: [
-          createCheckView('C1', CheckKind.CHECK_KIND_BUILD, [ghostIdent]),
-        ],
-        stages: [],
+        checks: {
+          C1: createCheckView('C1', CheckKind.CHECK_KIND_BUILD, [ghostIdent]),
+        },
+        stages: {},
       };
 
       const { nodes, edges } = new TurboCIGraphBuilder(graph).build();
@@ -225,8 +228,8 @@ describe('TurboCIGraphBuilder', () => {
       const c1Ident = createCheckIdentifier('C1');
       // S1 assigned to C1, and also declares a dependency on C1.
       const graph: TurboCIGraphView = {
-        checks: [createCheckView('C1')],
-        stages: [createStageView('S1', ['C1'], [c1Ident])],
+        checks: { C1: createCheckView('C1') },
+        stages: { S1: createStageView('S1', ['C1'], [c1Ident]) },
       };
 
       const { nodes, edges } = new TurboCIGraphBuilder(graph).build();
@@ -252,11 +255,11 @@ describe('TurboCIGraphBuilder', () => {
       // Builder sorts stage IDs.
       // Expected Visual Stack (Top down): Stage_A -> Stage_Z -> C1
       const graph: TurboCIGraphView = {
-        checks: [createCheckView('C1')],
-        stages: [
-          createStageView('Stage_Z', ['C1']),
-          createStageView('Stage_A', ['C1']),
-        ],
+        checks: { C1: createCheckView('C1') },
+        stages: {
+          Stage_Z: createStageView('Stage_Z', ['C1']),
+          Stage_A: createStageView('Stage_A', ['C1']),
+        },
       };
 
       const { nodes } = new TurboCIGraphBuilder(graph).build();
@@ -276,12 +279,12 @@ describe('TurboCIGraphBuilder', () => {
 
     it('should handle a stack of 3+ stages correctly (Top, Middle, Bottom styles)', () => {
       const graph: TurboCIGraphView = {
-        checks: [createCheckView('C1')],
-        stages: [
-          createStageView('S_B', ['C1']), // Will be Middle
-          createStageView('S_C', ['C1']), // Will be Bottom
-          createStageView('S_A', ['C1']), // Will be Top
-        ],
+        checks: { C1: createCheckView('C1') },
+        stages: {
+          S_B: createStageView('S_B', ['C1']), // Will be Middle
+          S_C: createStageView('S_C', ['C1']), // Will be Bottom
+          S_A: createStageView('S_A', ['C1']), // Will be Top
+        },
       };
 
       const { nodes } = new TurboCIGraphBuilder(graph).build();
@@ -298,8 +301,11 @@ describe('TurboCIGraphBuilder', () => {
     it('should treat stages assigned to multiple checks as standalone', () => {
       // Builder logic filters out stages with assignments.length !== 1 from groups.
       const graph: TurboCIGraphView = {
-        checks: [createCheckView('C1'), createCheckView('C2')],
-        stages: [createStageView('S_Multi', ['C1', 'C2'])],
+        checks: {
+          C1: createCheckView('C1'),
+          C2: createCheckView('C2'),
+        },
+        stages: { S_Multi: createStageView('S_Multi', ['C1', 'C2']) },
       };
 
       const { nodes } = new TurboCIGraphBuilder(graph).build();
@@ -312,8 +318,8 @@ describe('TurboCIGraphBuilder', () => {
 
     it('should treat stages assigned to zero checks as standalone', () => {
       const graph: TurboCIGraphView = {
-        checks: [],
-        stages: [createStageView('S_None', [])],
+        checks: {},
+        stages: { S_None: createStageView('S_None', []) },
       };
 
       const { nodes } = new TurboCIGraphBuilder(graph).build();
@@ -329,11 +335,14 @@ describe('TurboCIGraphBuilder', () => {
       // Group 2: [S2 assigned to C2]
       // Dependency: C2 depends on C1.
       const graph: TurboCIGraphView = {
-        checks: [
-          createCheckView('C1'),
-          createCheckView('C2', CheckKind.CHECK_KIND_TEST, [c1Ident]),
-        ],
-        stages: [createStageView('S1', ['C1']), createStageView('S2', ['C2'])],
+        checks: {
+          C1: createCheckView('C1'),
+          C2: createCheckView('C2', CheckKind.CHECK_KIND_TEST, [c1Ident]),
+        },
+        stages: {
+          S1: createStageView('S1', ['C1']),
+          S2: createStageView('S2', ['C2']),
+        },
       };
 
       const { edges, nodes } = new TurboCIGraphBuilder(graph).build();
@@ -352,11 +361,14 @@ describe('TurboCIGraphBuilder', () => {
       // Group 2: [S2 -> C2]
       // Dependency: S2 depends on S1.
       const graph: TurboCIGraphView = {
-        checks: [createCheckView('C1'), createCheckView('C2')],
-        stages: [
-          createStageView('S1', ['C1']),
-          createStageView('S2', ['C2'], [s1Ident]),
-        ],
+        checks: {
+          C1: createCheckView('C1'),
+          C2: createCheckView('C2'),
+        },
+        stages: {
+          S1: createStageView('S1', ['C1']),
+          S2: createStageView('S2', ['C2'], [s1Ident]),
+        },
       };
 
       const { edges } = new TurboCIGraphBuilder(graph).build();
@@ -372,8 +384,13 @@ describe('TurboCIGraphBuilder', () => {
       // Group: [S1 assigned to C1]
       // Dependency: S1 depends on C_Standalone
       const graph: TurboCIGraphView = {
-        checks: [createCheckView('C_Standalone'), createCheckView('C1')],
-        stages: [createStageView('S1', ['C1'], [cStandaloneIdent])],
+        checks: {
+          C_Standalone: createCheckView('C_Standalone'),
+          C1: createCheckView('C1'),
+        },
+        stages: {
+          S1: createStageView('S1', ['C1'], [cStandaloneIdent]),
+        },
       };
 
       const { edges, nodes } = new TurboCIGraphBuilder(graph).build();
@@ -388,43 +405,6 @@ describe('TurboCIGraphBuilder', () => {
       expect(edges).toHaveLength(1);
       expect(edges[0].source).toBe('C_Standalone');
       expect(edges[0].target).toBe('S1');
-    });
-  });
-
-  describe('Error Handling', () => {
-    it('should throw if a stage lacks an identifier', () => {
-      const graph = {
-        checks: [],
-        stages: [{ stage: {} }], // Invalid StageView: missing identifier
-      } as unknown as TurboCIGraphView;
-
-      expect(() => new TurboCIGraphBuilder(graph).build()).toThrow(
-        /Invalid StageView/,
-      );
-    });
-
-    it('should throw if a check lacks an identifier', () => {
-      const graph = {
-        checks: [{ check: { kind: CheckKind.CHECK_KIND_BUILD } }], // Missing Identifier
-        stages: [],
-      } as unknown as TurboCIGraphView;
-
-      expect(() => new TurboCIGraphBuilder(graph).build()).toThrow(
-        /Invalid CheckView/,
-      );
-    });
-
-    it('should throw if identifier.id is missing', () => {
-      const graph = {
-        checks: [
-          { check: { identifier: { workPlan: WORKPLAN } } }, // Missing ID string
-        ],
-        stages: [],
-      } as unknown as TurboCIGraphView;
-
-      expect(() => new TurboCIGraphBuilder(graph).build()).toThrow(
-        /Invalid CheckView/,
-      );
     });
   });
 });

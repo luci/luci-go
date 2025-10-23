@@ -17,7 +17,7 @@ export const protobufPackage = "luci.resultdb.v1";
  * A process step that contributes results to a root invocation.
  * Work units contain test results, artifacts and exonerations. Work units may
  * also contain other work units and (legacy) invocations.
- * Next ID: 23.
+ * Next ID: 25.
  */
 export interface WorkUnit {
   /**
@@ -36,24 +36,47 @@ export interface WorkUnit {
    */
   readonly workUnitId: string;
   /**
-   * Current finalization state of the work unit.
+   * The type of work unit. This captures the process the work unit is
+   * performing and the infrastructure that is creating it.
    *
-   * At creation time, this can be set to ACTIVE or FINALIZING (if all fields
-   * are known at creation time). When updating or via the FinalizeWorkUnit
-   * RPC, the state can also be updated from ACTIVE to FINALIZING.
+   * Each infrastructure layer should reserve its own prefix (e.g. TF_, TFC_...)
+   * and document it below to avoid generating conflicts. Reach out to ResultDB
+   * owners if you'd like help updating this comment.
    *
-   * In all other cases, this field should be treated as output only. ResultDB
-   * will automatically transition the work unit to FINALIZING when the provided
-   * `deadline` expires (if the work unit is not already in FINALIZING state).
-   * FINALIZING work units will transition onward to FINALIZED when all included
-   * work units are FINALIZED.
+   * Known values:
+   * - Android Test Production: ATP_INVOCATION
+   * - Tradefed: TF_MODULE, TF_TEST_RUN
+   * - Tradefed Cluster: TFC_COMMAND, TFC_COMMAND_TASK
+   * - Bazel: G3_BLAZE_INVOCATION, G3_TEST_TARGET, G3_ACTION, G3_MODULE
+   * - Buildbucket: BUILDBUCKET_BUILD
+   * - ResultSink: RDB_STREAM
+   *
+   * Regex: ^[A-Z0-9]+(_[A-Z0-9]+)+$. Limited to 50 characters in length.
+   * Required.
    */
-  readonly finalizationState: WorkUnit_FinalizationState;
+  readonly kind: string;
   /**
-   * Do not use this field, it exists only so that field masks for the old "state"
-   * field can still parse. It will be repurposed soon. Use `finalization_state` instead.
+   * The overall state of the work unit, including any child work units.
+   * See also: https://google.aip.dev/216.
+   *
+   * An accompanying human-readable description should be uploaded for FAILED,
+   * CANCELLED and SKIPPED states to `summary_markdown`.
    */
   readonly state: WorkUnit_State;
+  /**
+   * A summary of the final state of the work unit, to be displayed on the UI.
+   * MUST be escaped prior to rendering on the UI.
+   *
+   * The size of the summary must be equal to or smaller than 4096 bytes in
+   * UTF-8.
+   */
+  readonly summaryMarkdown: string;
+  /**
+   * Current finalization state of the work unit.
+   *
+   * Output only.
+   */
+  readonly finalizationState: WorkUnit_FinalizationState;
   /**
    * The realm of the work unit. This controls the ACLs that apply to the
    * work unit and its contents.
@@ -162,6 +185,27 @@ export interface WorkUnit {
     | ModuleIdentifier
     | undefined;
   /**
+   * The identifier of the module-shard this work unit is running.
+   *
+   * This is used when computing module aggregations. Module aggregations
+   * consider only top-level module work units; a top-level module work unit is
+   * any work unit that sets module_id AND has no ancestor (parent, grandparent
+   * etc.) that sets a module_id (whether it is the same module or not).
+   *
+   * A module is only considered to succeed only if there is at least one SUCCEEDED
+   * or SKIPPED top-level module work unit for each shard key seen.
+   * (Or if no sharding key is reported, there is at least one SUCCEEDED or SKIPPED
+   * top-level module work unit for the module.)
+   *
+   * If sharding is not used, leave blank. Shard keys must be coordinated within
+   * a root invocation-module so that the same shard key refers to the same shard,
+   * wherever it is used.
+   * This field is only used when set on a top-level module work unit.
+   *
+   * Regex: ^[a-z0-9_\-]+$. Limited to 50 characters in length.
+   */
+  readonly moduleShardKey: string;
+  /**
    * Full name of the resource that produced results in this work unit.
    * See also https://aip.dev/122#full-resource-names
    * Typical examples:
@@ -265,16 +309,138 @@ export interface WorkUnit {
   readonly etag: string;
 }
 
+/** The execution state of the work unit. */
+export enum WorkUnit_State {
+  /** STATE_UNSPECIFIED - The default value. This value is unused. */
+  STATE_UNSPECIFIED = 0,
+  /** PENDING - The work unit has not yet started running. */
+  PENDING = 1,
+  /** RUNNING - The work unit is currently running. */
+  RUNNING = 2,
+  /**
+   * SUCCEEDED - The work unit, including its child work units, completed
+   * successfully. If any child work units failed, they were
+   * retried, and those retries succeeded.
+   *
+   * This status means results are complete and correct, i.e.:
+   * - all tests to be run (or skipped) were identified.
+   * - test results were successfully uploaded to ResultDB
+   *   for each such test.
+   *
+   * This status generally does not say anything about the test content;
+   * tests could have FAILED, some could have even failed to
+   * produce a result (EXECUTION_ERRORED).
+   *
+   * If any test results were reported with a status of PRECLUDED (i.e.
+   * had their execution blocked by a higher-level error), do not use
+   * this status. Instead report the status ERRORED, and indicate what
+   * higher-level error precluded the execution of those tests (e.g.
+   * loss of system under test).
+   */
+  SUCCEEDED = 3,
+  /**
+   * FAILED - The work unit, or one of its child work units, encountered an error.
+   * Moreover, that error was not resolved by retry within the work unit.
+   *
+   * This status means the results may be incomplete, e.g. because of an
+   * issue:
+   * - identifying the tests to be run (and skipped), or
+   * - running those tests, or
+   * - uploading the work unit, or any of its test results or artifacts,
+   *   to ResultDB.
+   *
+   * Common causes are timeout, crash of the device under test and tool failure.
+   * It can also indicate the bot running the work unit was shut down
+   * unexpectedly.
+   *
+   * If you report any test results with a status of `PRECLUDED`, you
+   * MUST use this status and indicate what higher-level error
+   * precluded their execution (e.g. timeout or loss of system
+   * under test) in the summary_markdown field.
+   *
+   * If this work unit is forcefully finalized because the `deadline`
+   * expired, it will be automatically transitioned to this state as
+   * there is an implied failure to upload results to ResultDB.
+   */
+  FAILED = 4,
+  /**
+   * CANCELLED - The work unit never started or may be incomplete, because
+   * an external factor requested its cancellation (e.g. presubmit
+   * run was no longer needed).
+   */
+  CANCELLED = 5,
+  /**
+   * SKIPPED - The work unit determined no tests need to be run.
+   * For example, the build dependency graph indicates the CL did
+   * not modify the module to be tested.
+   * This status usually indicates no test results were uploaded.
+   */
+  SKIPPED = 6,
+}
+
+export function workUnit_StateFromJSON(object: any): WorkUnit_State {
+  switch (object) {
+    case 0:
+    case "STATE_UNSPECIFIED":
+      return WorkUnit_State.STATE_UNSPECIFIED;
+    case 1:
+    case "PENDING":
+      return WorkUnit_State.PENDING;
+    case 2:
+    case "RUNNING":
+      return WorkUnit_State.RUNNING;
+    case 3:
+    case "SUCCEEDED":
+      return WorkUnit_State.SUCCEEDED;
+    case 4:
+    case "FAILED":
+      return WorkUnit_State.FAILED;
+    case 5:
+    case "CANCELLED":
+      return WorkUnit_State.CANCELLED;
+    case 6:
+    case "SKIPPED":
+      return WorkUnit_State.SKIPPED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum WorkUnit_State");
+  }
+}
+
+export function workUnit_StateToJSON(object: WorkUnit_State): string {
+  switch (object) {
+    case WorkUnit_State.STATE_UNSPECIFIED:
+      return "STATE_UNSPECIFIED";
+    case WorkUnit_State.PENDING:
+      return "PENDING";
+    case WorkUnit_State.RUNNING:
+      return "RUNNING";
+    case WorkUnit_State.SUCCEEDED:
+      return "SUCCEEDED";
+    case WorkUnit_State.FAILED:
+      return "FAILED";
+    case WorkUnit_State.CANCELLED:
+      return "CANCELLED";
+    case WorkUnit_State.SKIPPED:
+      return "SKIPPED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum WorkUnit_State");
+  }
+}
+
 /** Indicates whether the work unit, and its children, are immutable. */
 export enum WorkUnit_FinalizationState {
-  /** FINALIZATION_STATE_UNSPECIFIED - The default value. This value is used if the finalization state is omitted. */
+  /** FINALIZATION_STATE_UNSPECIFIED - The default value. This value is unused. */
   FINALIZATION_STATE_UNSPECIFIED = 0,
-  /** ACTIVE - The work unit is mutable. */
+  /**
+   * ACTIVE - The work unit is mutable.
+   * The work unit will be int his state when `state` is in a non-final
+   * state.
+   */
   ACTIVE = 1,
   /**
    * FINALIZING - The work unit is in the process of moving to the FINALIZED state.
-   * This will happen automatically soon after all of its directly or
-   * indirectly included work units become inactive.
+   * This will happen automatically when `state` transitions to one
+   * of the final states.
    *
    * In this state, the work unit itself is immutable, but its
    * contained work units may still be mutable. When the work unit
@@ -286,6 +452,10 @@ export enum WorkUnit_FinalizationState {
   /**
    * FINALIZED - The work unit is immutable and no longer accepts new results
    * directly or indirectly.
+   *
+   * This will happen automatically soon after the work unit enters
+   * FINALIZING state, and all of its directly or indirectly included
+   * work units become inactive.
    */
   FINALIZED = 3,
 }
@@ -321,30 +491,6 @@ export function workUnit_FinalizationStateToJSON(object: WorkUnit_FinalizationSt
       return "FINALIZED";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum WorkUnit_FinalizationState");
-  }
-}
-
-export enum WorkUnit_State {
-  /** STATE_UNSPECIFIED - The default value. This value is used if the state is omitted. */
-  STATE_UNSPECIFIED = 0,
-}
-
-export function workUnit_StateFromJSON(object: any): WorkUnit_State {
-  switch (object) {
-    case 0:
-    case "STATE_UNSPECIFIED":
-      return WorkUnit_State.STATE_UNSPECIFIED;
-    default:
-      throw new globalThis.Error("Unrecognized enum value " + object + " for enum WorkUnit_State");
-  }
-}
-
-export function workUnit_StateToJSON(object: WorkUnit_State): string {
-  switch (object) {
-    case WorkUnit_State.STATE_UNSPECIFIED:
-      return "STATE_UNSPECIFIED";
-    default:
-      throw new globalThis.Error("Unrecognized enum value " + object + " for enum WorkUnit_State");
   }
 }
 
@@ -404,8 +550,10 @@ function createBaseWorkUnit(): WorkUnit {
   return {
     name: "",
     workUnitId: "",
-    finalizationState: 0,
+    kind: "",
     state: 0,
+    summaryMarkdown: "",
+    finalizationState: 0,
     realm: "",
     createTime: undefined,
     creator: "",
@@ -417,6 +565,7 @@ function createBaseWorkUnit(): WorkUnit {
     childWorkUnits: [],
     childInvocations: [],
     moduleId: undefined,
+    moduleShardKey: "",
     producerResource: "",
     tags: [],
     properties: undefined,
@@ -435,11 +584,17 @@ export const WorkUnit: MessageFns<WorkUnit> = {
     if (message.workUnitId !== "") {
       writer.uint32(18).string(message.workUnitId);
     }
-    if (message.finalizationState !== 0) {
-      writer.uint32(24).int32(message.finalizationState);
+    if (message.kind !== "") {
+      writer.uint32(202).string(message.kind);
     }
     if (message.state !== 0) {
       writer.uint32(176).int32(message.state);
+    }
+    if (message.summaryMarkdown !== "") {
+      writer.uint32(186).string(message.summaryMarkdown);
+    }
+    if (message.finalizationState !== 0) {
+      writer.uint32(24).int32(message.finalizationState);
     }
     if (message.realm !== "") {
       writer.uint32(34).string(message.realm);
@@ -473,6 +628,9 @@ export const WorkUnit: MessageFns<WorkUnit> = {
     }
     if (message.moduleId !== undefined) {
       ModuleIdentifier.encode(message.moduleId, writer.uint32(154).fork()).join();
+    }
+    if (message.moduleShardKey !== "") {
+      writer.uint32(194).string(message.moduleShardKey);
     }
     if (message.producerResource !== "") {
       writer.uint32(106).string(message.producerResource);
@@ -523,12 +681,12 @@ export const WorkUnit: MessageFns<WorkUnit> = {
           message.workUnitId = reader.string();
           continue;
         }
-        case 3: {
-          if (tag !== 24) {
+        case 25: {
+          if (tag !== 202) {
             break;
           }
 
-          message.finalizationState = reader.int32() as any;
+          message.kind = reader.string();
           continue;
         }
         case 22: {
@@ -537,6 +695,22 @@ export const WorkUnit: MessageFns<WorkUnit> = {
           }
 
           message.state = reader.int32() as any;
+          continue;
+        }
+        case 23: {
+          if (tag !== 186) {
+            break;
+          }
+
+          message.summaryMarkdown = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.finalizationState = reader.int32() as any;
           continue;
         }
         case 4: {
@@ -627,6 +801,14 @@ export const WorkUnit: MessageFns<WorkUnit> = {
           message.moduleId = ModuleIdentifier.decode(reader, reader.uint32());
           continue;
         }
+        case 24: {
+          if (tag !== 194) {
+            break;
+          }
+
+          message.moduleShardKey = reader.string();
+          continue;
+        }
         case 13: {
           if (tag !== 106) {
             break;
@@ -699,10 +881,12 @@ export const WorkUnit: MessageFns<WorkUnit> = {
     return {
       name: isSet(object.name) ? globalThis.String(object.name) : "",
       workUnitId: isSet(object.workUnitId) ? globalThis.String(object.workUnitId) : "",
+      kind: isSet(object.kind) ? globalThis.String(object.kind) : "",
+      state: isSet(object.state) ? workUnit_StateFromJSON(object.state) : 0,
+      summaryMarkdown: isSet(object.summaryMarkdown) ? globalThis.String(object.summaryMarkdown) : "",
       finalizationState: isSet(object.finalizationState)
         ? workUnit_FinalizationStateFromJSON(object.finalizationState)
         : 0,
-      state: isSet(object.state) ? workUnit_StateFromJSON(object.state) : 0,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : "",
       createTime: isSet(object.createTime) ? globalThis.String(object.createTime) : undefined,
       creator: isSet(object.creator) ? globalThis.String(object.creator) : "",
@@ -718,6 +902,7 @@ export const WorkUnit: MessageFns<WorkUnit> = {
         ? object.childInvocations.map((e: any) => globalThis.String(e))
         : [],
       moduleId: isSet(object.moduleId) ? ModuleIdentifier.fromJSON(object.moduleId) : undefined,
+      moduleShardKey: isSet(object.moduleShardKey) ? globalThis.String(object.moduleShardKey) : "",
       producerResource: isSet(object.producerResource) ? globalThis.String(object.producerResource) : "",
       tags: globalThis.Array.isArray(object?.tags) ? object.tags.map((e: any) => StringPair.fromJSON(e)) : [],
       properties: isObject(object.properties) ? object.properties : undefined,
@@ -743,11 +928,17 @@ export const WorkUnit: MessageFns<WorkUnit> = {
     if (message.workUnitId !== "") {
       obj.workUnitId = message.workUnitId;
     }
-    if (message.finalizationState !== 0) {
-      obj.finalizationState = workUnit_FinalizationStateToJSON(message.finalizationState);
+    if (message.kind !== "") {
+      obj.kind = message.kind;
     }
     if (message.state !== 0) {
       obj.state = workUnit_StateToJSON(message.state);
+    }
+    if (message.summaryMarkdown !== "") {
+      obj.summaryMarkdown = message.summaryMarkdown;
+    }
+    if (message.finalizationState !== 0) {
+      obj.finalizationState = workUnit_FinalizationStateToJSON(message.finalizationState);
     }
     if (message.realm !== "") {
       obj.realm = message.realm;
@@ -781,6 +972,9 @@ export const WorkUnit: MessageFns<WorkUnit> = {
     }
     if (message.moduleId !== undefined) {
       obj.moduleId = ModuleIdentifier.toJSON(message.moduleId);
+    }
+    if (message.moduleShardKey !== "") {
+      obj.moduleShardKey = message.moduleShardKey;
     }
     if (message.producerResource !== "") {
       obj.producerResource = message.producerResource;
@@ -819,8 +1013,10 @@ export const WorkUnit: MessageFns<WorkUnit> = {
     const message = createBaseWorkUnit() as any;
     message.name = object.name ?? "";
     message.workUnitId = object.workUnitId ?? "";
-    message.finalizationState = object.finalizationState ?? 0;
+    message.kind = object.kind ?? "";
     message.state = object.state ?? 0;
+    message.summaryMarkdown = object.summaryMarkdown ?? "";
+    message.finalizationState = object.finalizationState ?? 0;
     message.realm = object.realm ?? "";
     message.createTime = object.createTime ?? undefined;
     message.creator = object.creator ?? "";
@@ -834,6 +1030,7 @@ export const WorkUnit: MessageFns<WorkUnit> = {
     message.moduleId = (object.moduleId !== undefined && object.moduleId !== null)
       ? ModuleIdentifier.fromPartial(object.moduleId)
       : undefined;
+    message.moduleShardKey = object.moduleShardKey ?? "";
     message.producerResource = object.producerResource ?? "";
     message.tags = object.tags?.map((e) => StringPair.fromPartial(e)) || [];
     message.properties = object.properties ?? undefined;

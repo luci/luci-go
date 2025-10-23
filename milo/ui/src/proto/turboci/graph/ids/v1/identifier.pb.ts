@@ -177,7 +177,7 @@ export interface CheckResultDatum {
  * Serialized as "<check>:E<version>".
  *
  * E.g.
- * "L<check.work_plan.id>:C<check.id>:ET<version.ts.seconds>/<version.ts.nanos>"
+ * "L<check.work_plan.id>:C<check.id>:V<version.seconds>/<version.nanos>"
  */
 export interface CheckEdit {
   /** The check that this edit belongs to. */
@@ -191,10 +191,10 @@ export interface CheckEdit {
 /**
  * Identifies a CheckEditOption within a WorkPlan.
  *
- * Serialized as "<check_edit>:D<idx>".
+ * Serialized as "<check_edit>:O<idx>".
  *
  * E.g.
- * "L<check_edit.check.work_plan.id>:C<check_edit.check.id>:ET<check_edit.version.ts.seconds>/<check_edit.version.ts.nanos>:D<idx>"
+ * "L<check_edit.check.work_plan.id>:C<check_edit.check.id>:V<check_edit.version.seconds>/<check_edit.version.nanos>:D<idx>"
  *
  * This is separate from `CheckEdit` because it may reside in a different
  * realm than the CheckEdit itself.
@@ -205,12 +205,11 @@ export interface CheckEditOption {
     | CheckEdit
     | undefined;
   /**
-   * The 1-based index of this datum within the Edit.check.delta.options
-   * list.
+   * The 1-based index of this datum within the check.options list.
    *
    * This is 1-based to distinguish it from 0/unset (which is invalid).
    */
-  readonly checkDeltaOptionsIdx?: number | undefined;
+  readonly idx?: number | undefined;
 }
 
 /**
@@ -287,7 +286,7 @@ export interface StageAttempt {
    *
    * This is 1-based to distinguish it from 0/unset (which is invalid).
    */
-  readonly attemptsIdx?: number | undefined;
+  readonly idx?: number | undefined;
 }
 
 /**
@@ -296,7 +295,7 @@ export interface StageAttempt {
  * Serialized as "<stage>:E<version>".
  *
  * E.g.
- * "<stage.work_plan.id>:<stage.id>:ET<version.ts.seconds>/<version.ts.nanos>"
+ * "<stage.work_plan.id>:<stage.id>:V<version.seconds>/<version.nanos>"
  */
 export interface StageEdit {
   /** The stage that this edit belongs to. */
@@ -981,7 +980,7 @@ export const CheckEdit: MessageFns<CheckEdit> = {
 };
 
 function createBaseCheckEditOption(): CheckEditOption {
-  return { checkEdit: undefined, checkDeltaOptionsIdx: undefined };
+  return { checkEdit: undefined, idx: undefined };
 }
 
 export const CheckEditOption: MessageFns<CheckEditOption> = {
@@ -989,8 +988,8 @@ export const CheckEditOption: MessageFns<CheckEditOption> = {
     if (message.checkEdit !== undefined) {
       CheckEdit.encode(message.checkEdit, writer.uint32(10).fork()).join();
     }
-    if (message.checkDeltaOptionsIdx !== undefined) {
-      writer.uint32(16).int32(message.checkDeltaOptionsIdx);
+    if (message.idx !== undefined) {
+      writer.uint32(16).int32(message.idx);
     }
     return writer;
   },
@@ -1015,7 +1014,7 @@ export const CheckEditOption: MessageFns<CheckEditOption> = {
             break;
           }
 
-          message.checkDeltaOptionsIdx = reader.int32();
+          message.idx = reader.int32();
           continue;
         }
       }
@@ -1030,9 +1029,7 @@ export const CheckEditOption: MessageFns<CheckEditOption> = {
   fromJSON(object: any): CheckEditOption {
     return {
       checkEdit: isSet(object.checkEdit) ? CheckEdit.fromJSON(object.checkEdit) : undefined,
-      checkDeltaOptionsIdx: isSet(object.checkDeltaOptionsIdx)
-        ? globalThis.Number(object.checkDeltaOptionsIdx)
-        : undefined,
+      idx: isSet(object.idx) ? globalThis.Number(object.idx) : undefined,
     };
   },
 
@@ -1041,8 +1038,8 @@ export const CheckEditOption: MessageFns<CheckEditOption> = {
     if (message.checkEdit !== undefined) {
       obj.checkEdit = CheckEdit.toJSON(message.checkEdit);
     }
-    if (message.checkDeltaOptionsIdx !== undefined) {
-      obj.checkDeltaOptionsIdx = Math.round(message.checkDeltaOptionsIdx);
+    if (message.idx !== undefined) {
+      obj.idx = Math.round(message.idx);
     }
     return obj;
   },
@@ -1055,7 +1052,7 @@ export const CheckEditOption: MessageFns<CheckEditOption> = {
     message.checkEdit = (object.checkEdit !== undefined && object.checkEdit !== null)
       ? CheckEdit.fromPartial(object.checkEdit)
       : undefined;
-    message.checkDeltaOptionsIdx = object.checkDeltaOptionsIdx ?? undefined;
+    message.idx = object.idx ?? undefined;
     return message;
   },
 };
@@ -1139,7 +1136,7 @@ export const Stage: MessageFns<Stage> = {
 };
 
 function createBaseStageAttempt(): StageAttempt {
-  return { stage: undefined, attemptsIdx: undefined };
+  return { stage: undefined, idx: undefined };
 }
 
 export const StageAttempt: MessageFns<StageAttempt> = {
@@ -1147,8 +1144,8 @@ export const StageAttempt: MessageFns<StageAttempt> = {
     if (message.stage !== undefined) {
       Stage.encode(message.stage, writer.uint32(10).fork()).join();
     }
-    if (message.attemptsIdx !== undefined) {
-      writer.uint32(16).int32(message.attemptsIdx);
+    if (message.idx !== undefined) {
+      writer.uint32(16).int32(message.idx);
     }
     return writer;
   },
@@ -1173,7 +1170,7 @@ export const StageAttempt: MessageFns<StageAttempt> = {
             break;
           }
 
-          message.attemptsIdx = reader.int32();
+          message.idx = reader.int32();
           continue;
         }
       }
@@ -1188,7 +1185,7 @@ export const StageAttempt: MessageFns<StageAttempt> = {
   fromJSON(object: any): StageAttempt {
     return {
       stage: isSet(object.stage) ? Stage.fromJSON(object.stage) : undefined,
-      attemptsIdx: isSet(object.attemptsIdx) ? globalThis.Number(object.attemptsIdx) : undefined,
+      idx: isSet(object.idx) ? globalThis.Number(object.idx) : undefined,
     };
   },
 
@@ -1197,8 +1194,8 @@ export const StageAttempt: MessageFns<StageAttempt> = {
     if (message.stage !== undefined) {
       obj.stage = Stage.toJSON(message.stage);
     }
-    if (message.attemptsIdx !== undefined) {
-      obj.attemptsIdx = Math.round(message.attemptsIdx);
+    if (message.idx !== undefined) {
+      obj.idx = Math.round(message.idx);
     }
     return obj;
   },
@@ -1209,7 +1206,7 @@ export const StageAttempt: MessageFns<StageAttempt> = {
   fromPartial(object: DeepPartial<StageAttempt>): StageAttempt {
     const message = createBaseStageAttempt() as any;
     message.stage = (object.stage !== undefined && object.stage !== null) ? Stage.fromPartial(object.stage) : undefined;
-    message.attemptsIdx = object.attemptsIdx ?? undefined;
+    message.idx = object.idx ?? undefined;
     return message;
   },
 };
