@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
+	mailer_pb "go.chromium.org/luci/mailer/api/mailer"
 	luciserver "go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/cron"
@@ -95,6 +96,7 @@ func main() {
 		})
 		pb.RegisterAlertsServer(srv, rpc.NewAlertsServer())
 		pb.RegisterAlertGroupsServer(srv, rpc.NewAlertGroupsServer())
+		mailer_pb.RegisterMailerServer(srv, rpc.NewMailerServer())
 
 		// Redirect the frontend to rpcexplorer.
 		srv.Routes.GET("/", nil, func(ctx *router.Context) {
