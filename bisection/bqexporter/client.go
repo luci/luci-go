@@ -141,3 +141,58 @@ func (client *Client) ReadTestFailureAnalysisRows(ctx context.Context) ([]*TestF
 	}
 	return rows, nil
 }
+
+func (client *Client) EnsureCompileAnalysisSchema(ctx context.Context) error {
+	table := client.bqClient.Dataset(bqutil.InternalDatasetID).Table(compileFailureAnalysesTableName)
+	if err := schemaApplyer.EnsureTable(ctx, table, compileAnalysesTableMetadata); err != nil {
+		return errors.Fmt("ensuring compile_analyses table: %w", err)
+	}
+	return nil
+}
+
+// InsertCompileAnalysisRows inserts the given rows in BigQuery.
+func (client *Client) InsertCompileAnalysisRows(ctx context.Context, rows []*bqpb.CompileAnalysisRow) error {
+	if err := client.EnsureCompileAnalysisSchema(ctx); err != nil {
+		return errors.Fmt("ensure schema: %w", err)
+	}
+	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", client.projectID, bqutil.InternalDatasetID, compileFailureAnalysesTableName)
+	writer := bq.NewWriter(client.mwClient, tableName, compileAnalysisTableSchemaDescriptor)
+	payload := make([]proto.Message, len(rows))
+	for i, r := range rows {
+		payload[i] = r
+	}
+	// We use pending stream instead of default stream here because
+	// default stream does not offer exactly-once insert.
+	return writer.AppendRowsWithPendingStream(ctx, payload)
+}
+
+// ReadCompileFailureAnalysisRows returns the Compile Failure analysis rows
+// in compile_failure_analyses table that has created_time within the past 14 days.
+func (client *Client) ReadCompileFailureAnalysisRows(ctx context.Context) ([]*CompileFailureAnalysisRow, error) {
+	queryStm := fmt.Sprintf(`
+		SELECT DISTINCT
+			analysis_id as AnalysisID
+		FROM compile_failure_analyses
+		WHERE create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL %d DAY)
+ 	`, daysToLookBack)
+	q := client.bqClient.Query(queryStm)
+	q.DefaultDatasetID = bqutil.InternalDatasetID
+	q.DefaultProjectID = info.AppID(ctx)
+	it, err := q.Read(ctx)
+	if err != nil {
+		return nil, errors.Fmt("querying compile failure analyses: %w", err)
+	}
+	rows := []*CompileFailureAnalysisRow{}
+	for {
+		row := &CompileFailureAnalysisRow{}
+		err := it.Next(row)
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, errors.Fmt("obtain next compile failure analysis row: %w", err)
+		}
+		rows = append(rows, row)
+	}
+	return rows, nil
+}

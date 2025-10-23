@@ -33,6 +33,9 @@ import (
 // The table containing test analyses.
 const testFailureAnalysesTableName = "test_failure_analyses"
 
+// The table containing compile analyses.
+const compileFailureAnalysesTableName = "compile_failure_analyses"
+
 const partitionExpirationTime = 540 * 24 * time.Hour // 540 days (~1.5 years).
 
 // schemaApplyer ensures BQ schema matches the row proto definitions.
@@ -40,11 +43,15 @@ var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(5))
 
 const rowMessage = "luci.bisection.proto.bq.TestAnalysisRow"
 
+const compileRowMessage = "luci.bisection.proto.bq.CompileAnalysisRow"
+
 var tableMetadata *bigquery.TableMetadata
+var compileAnalysesTableMetadata *bigquery.TableMetadata
 
 // tableSchemaDescriptor is a self-contained DescriptorProto for describing
 // row protocol buffers sent to the BigQuery Write API.
 var tableSchemaDescriptor *descriptorpb.DescriptorProto
+var compileAnalysisTableSchemaDescriptor *descriptorpb.DescriptorProto
 
 func init() {
 	var err error
@@ -63,6 +70,21 @@ func init() {
 			Field:      "created_time",
 		},
 		// Relax ensures no fields are marked "required".
+		Schema: schema.Relax(),
+	}
+
+	if schema, err = generateCompileRowSchema(); err != nil {
+		panic(err)
+	}
+	if compileAnalysisTableSchemaDescriptor, err = generateCompileRowSchemaDescriptor(); err != nil {
+		panic(err)
+	}
+	compileAnalysesTableMetadata = &bigquery.TableMetadata{
+		TimePartitioning: &bigquery.TimePartitioning{
+			Type:       bigquery.DayPartitioningType,
+			Expiration: partitionExpirationTime,
+			Field:      "create_time",
+		},
 		Schema: schema.Relax(),
 	}
 }
@@ -93,6 +115,30 @@ func generateRowSchema() (schema bigquery.Schema, err error) {
 
 func generateRowSchemaDescriptor() (*desc.DescriptorProto, error) {
 	m := &bqpb.TestAnalysisRow{}
+	descriptorProto, err := adapt.NormalizeDescriptor(m.ProtoReflect().Descriptor())
+	if err != nil {
+		return nil, err
+	}
+	return descriptorProto, nil
+}
+
+func generateCompileRowSchema() (schema bigquery.Schema, err error) {
+	fd, _ := descriptor.MessageDescriptorProto(&bqpb.CompileAnalysisRow{})
+	// We also need to get FileDescriptorProto for the nested messages.
+	fdc, _ := descriptor.MessageDescriptorProto(&pb.Culprit{})
+	fdbid, _ := descriptor.MessageDescriptorProto(&bbpb.BuilderID{})
+	fdbf, _ := descriptor.MessageDescriptorProto(&pb.BuildFailure{})
+	fdnsr, _ := descriptor.MessageDescriptorProto(&pb.NthSectionAnalysisResult{})
+	fdgar, _ := descriptor.MessageDescriptorProto(&pb.GenAiAnalysisResult{})
+	// The Culprit message has nested fields, so we need their descriptors as well.
+	fdgc, _ := descriptor.MessageDescriptorProto(&bbpb.GitilesCommit{})
+	fdsvd, _ := descriptor.MessageDescriptorProto(&pb.SuspectVerificationDetails{})
+	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdc, fdbid, fdbf, fdnsr, fdgar, fdgc, fdsvd}}
+	return bq.GenerateSchema(fdset, compileRowMessage)
+}
+
+func generateCompileRowSchemaDescriptor() (*desc.DescriptorProto, error) {
+	m := &bqpb.CompileAnalysisRow{}
 	descriptorProto, err := adapt.NormalizeDescriptor(m.ProtoReflect().Descriptor())
 	if err != nil {
 		return nil, err

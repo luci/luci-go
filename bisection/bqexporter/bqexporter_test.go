@@ -134,6 +134,65 @@ func TestFetchTestAnalyses(t *testing.T) {
 	})
 }
 
+func TestFetchCompileAnalyses(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+	testutil.UpdateIndices(ctx)
+	cl := testclock.New(testclock.TestTimeUTC)
+	baseTime := time.Unix(3600*24*30, 0).UTC()
+	cl.Set(baseTime)
+	ctx = clock.Set(ctx, cl)
+
+	ftt.Run("fetch compile analyses", t, func(t *ftt.Test) {
+		// Not ended, should be skipped.
+		_, _, cfa1 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1001, "chromium", 1001)
+		cfa1.RunStatus = bisectionpb.AnalysisRunStatus_STARTED
+		cfa1.CreateTime = clock.Now(ctx).Add(-time.Hour)
+
+		// Ended, but from a long time ago. Should be skipped.
+		_, _, cfa2 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1002, "chromium", 1002)
+		cfa2.RunStatus = bisectionpb.AnalysisRunStatus_ENDED
+		cfa2.CreateTime = clock.Now(ctx).Add(-15 * 24 * time.Hour)
+
+		// Ended, not found.
+		_, _, cfa3 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1003, "chromium", 1003)
+		cfa3.RunStatus = bisectionpb.AnalysisRunStatus_ENDED
+		cfa3.Status = bisectionpb.AnalysisStatus_NOTFOUND
+		cfa3.CreateTime = clock.Now(ctx).Add(-time.Hour)
+
+		// Ended, found, but action not taken, ended recently, should be skipped.
+		_, _, cfa4 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1004, "chromium", 1004)
+		cfa4.RunStatus = bisectionpb.AnalysisRunStatus_ENDED
+		cfa4.Status = bisectionpb.AnalysisStatus_FOUND
+		cfa4.CreateTime = clock.Now(ctx).Add(-time.Hour)
+		cfa4.EndTime = clock.Now(ctx).Add(-time.Minute)
+		createCompileSuspect(ctx, t, cfa4, false)
+
+		// Ended, found, actions taken.
+		_, _, cfa5 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1005, "chromium", 1005)
+		cfa5.RunStatus = bisectionpb.AnalysisRunStatus_ENDED
+		cfa5.Status = bisectionpb.AnalysisStatus_FOUND
+		cfa5.CreateTime = clock.Now(ctx).Add(-2 * time.Hour)
+		createCompileSuspect(ctx, t, cfa5, true)
+
+		// Ended, found, but action not taken, ended long time ago.
+		_, _, cfa6 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1006, "chromium", 1006)
+		cfa6.RunStatus = bisectionpb.AnalysisRunStatus_ENDED
+		cfa6.Status = bisectionpb.AnalysisStatus_FOUND
+		cfa6.CreateTime = clock.Now(ctx).Add(-26 * time.Hour)
+		cfa6.EndTime = clock.Now(ctx).Add(-25 * time.Hour)
+		createCompileSuspect(ctx, t, cfa6, false)
+		assert.Loosely(t, datastore.Put(ctx, []*model.CompileFailureAnalysis{cfa1, cfa2, cfa3, cfa4, cfa5, cfa6}), should.BeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+		cfas, err := fetchCompileAnalyses(ctx)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(cfas), should.Equal(3))
+		assert.Loosely(t, cfas[0].Id, should.Equal(int64(1003)))
+		assert.Loosely(t, cfas[1].Id, should.Equal(int64(1005)))
+		assert.Loosely(t, cfas[2].Id, should.Equal(int64(1006)))
+	})
+}
+
 func createSuspect(ctx context.Context, t testing.TB, tfa *model.TestFailureAnalysis, hasTakenAction bool) {
 	suspect := &model.Suspect{
 		Id: tfa.ID,
@@ -146,9 +205,22 @@ func createSuspect(ctx context.Context, t testing.TB, tfa *model.TestFailureAnal
 	tfa.VerifiedCulpritKey = datastore.KeyForObj(ctx, suspect)
 }
 
+func createCompileSuspect(ctx context.Context, t testing.TB, cfa *model.CompileFailureAnalysis, hasTakenAction bool) {
+	suspect := &model.Suspect{
+		Id: cfa.Id,
+		ActionDetails: model.ActionDetails{
+			HasTakenActions: hasTakenAction,
+		},
+	}
+	assert.Loosely(t, datastore.Put(ctx, suspect), should.BeNil, truth.LineContext())
+	datastore.GetTestable(ctx).CatchupIndexes()
+	cfa.VerifiedCulprits = []*datastore.Key{datastore.KeyForObj(ctx, suspect)}
+}
+
 // Fake client.
 type fakeExportClient struct {
-	rows []*bqpb.TestAnalysisRow
+	rows        []*bqpb.TestAnalysisRow
+	compileRows []*bqpb.CompileAnalysisRow
 }
 
 func (cl *fakeExportClient) EnsureSchema(ctx context.Context) error {
@@ -162,6 +234,29 @@ func (cl *fakeExportClient) Insert(ctx context.Context, rows []*bqpb.TestAnalysi
 
 func (cl *fakeExportClient) ReadTestFailureAnalysisRows(ctx context.Context) ([]*TestFailureAnalysisRow, error) {
 	return []*TestFailureAnalysisRow{
+		{
+			AnalysisID: 1001,
+		},
+		{
+			AnalysisID: 1003,
+		},
+		{
+			AnalysisID: 1005,
+		},
+	}, nil
+}
+
+func (cl *fakeExportClient) EnsureCompileAnalysisSchema(ctx context.Context) error {
+	return nil
+}
+
+func (cl *fakeExportClient) InsertCompileAnalysisRows(ctx context.Context, rows []*bqpb.CompileAnalysisRow) error {
+	cl.compileRows = append(cl.compileRows, rows...)
+	return nil
+}
+
+func (cl *fakeExportClient) ReadCompileFailureAnalysisRows(ctx context.Context) ([]*CompileFailureAnalysisRow, error) {
+	return []*CompileFailureAnalysisRow{
 		{
 			AnalysisID: 1001,
 		},
