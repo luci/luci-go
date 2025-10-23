@@ -36,7 +36,7 @@ func IsBuildStep(step *bbpb.Step) bool {
 	}
 	// For backward-compatibility, we check for legacy step names.
 	// TODO(crbug.com/1353978): remove this.
-	if step.Name == "compile" || step.Name == "generate_build_files" {
+	if step.GetName() == "compile" || step.GetName() == "generate_build_files" {
 		return true
 	}
 	return false
