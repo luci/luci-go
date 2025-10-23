@@ -237,7 +237,6 @@ body {
   /* Adjust padding for checkbox and label */
   padding: 8px 16px;
   cursor: pointer;
-  display: flex;
   align-items: center;
   font-size: 14px;
   color: var(--dropdown-item-text-color);

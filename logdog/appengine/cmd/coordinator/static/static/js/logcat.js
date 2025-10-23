@@ -72,6 +72,9 @@ const alwaysShowActivityManagerCheckbox = document.getElementById(
   'always-show-activity-manager-checkbox');
 const toggleDarkModeCheckbox = document.getElementById(
   'toggle-dark-mode-checkbox');
+const switchToRawModeButton = document.getElementById('switch-to-raw-mode');
+const switchToLiteModeButton = document.getElementById('switch-to-lite-mode');
+const switchToFullModeButton = document.getElementById('switch-to-full-mode');
 const helpButton = document.getElementById('help-button');
 const helpDialog = document.getElementById('help-dialog');
 const helpDialogOkButton = document.getElementById('help-dialog-ok-button');
@@ -175,6 +178,9 @@ prefersDarkScheme.addEventListener('change', (event) => {
 });
 
 // Global variables:
+
+/** @type {string} */
+let canonicalUrl = "";
 
 /** @type {Array<ParsedLine>} */
 let currentFileParsedLines = [];
@@ -304,10 +310,12 @@ if (urlIdx !== -1) {
     fetchLogcat(`/logs${url}?format=raw`, packageName);
     history.replaceState({}, '',
       `/logs${url}?format=logcat&package=${packageName}`);
+    canonicalUrl = `/logs${url}`;
   } else {
     const url = queryString.substring(urlIdx + 4);
     fetchLogcat(`/logs${url}?format=raw`);
     history.replaceState({}, '', `/logs${url}?format=logcat`);
+    canonicalUrl = `/logs${url}`;
   }
 } else {
   setUpElements([]);
@@ -315,6 +323,18 @@ if (urlIdx !== -1) {
     + 'your logcat';
 }
 
+/**
+ * Hide the three switch to raw/lite/full mode buttons.
+ */
+function hideSwitchToModeButtons() {
+  switchToRawModeButton.classList.add('hidden-element');
+  switchToLiteModeButton.classList.add('hidden-element');
+  switchToFullModeButton.classList.add('hidden-element');
+}
+
+if (canonicalUrl === '') {
+  hideSwitchToModeButtons();
+}
 
 /**
  * This function is called when the user clicks on the file upload button.
@@ -327,6 +347,7 @@ function handleFileUpload(event) {
     reader.onload = function(e) {
       setUpElements(e.target.result.split('\n'));
       updateTextDisplayArea(false);
+      hideSwitchToModeButtons();
     };
     reader.onerror = function(e) {
       setUpElements([]);
@@ -360,6 +381,7 @@ function handlePasteLogcatButtonClick(event) {
     textDisplayArea.contentEditable = 'false';
     setUpElements(textDisplayArea.innerText.split('\n'));
     updateTextDisplayArea(false);
+    hideSwitchToModeButtons();
   }
 }
 
@@ -794,6 +816,23 @@ function updateDisplayAllPrioritySelection() {
 function handleSettingsOptionClick(event) {
   const listItem = event.target.closest('li');
   if (!listItem) return;
+  const listItemId = listItem.id;
+
+  if (listItemId === 'switch-to-raw-mode') {
+    const redirectedUrl = canonicalUrl + '?format=raw';
+    window.location.href = redirectedUrl;
+    return;
+
+  } else if (listItemId === 'switch-to-lite-mode') {
+    const redirectedUrl = canonicalUrl + '?format=lite';
+    window.location.href = redirectedUrl;
+    return;
+
+  } else if (listItemId === 'switch-to-full-mode') {
+    const redirectedUrl = canonicalUrl + '?format=full';
+    window.location.href = redirectedUrl;
+    return;
+  }
 
   const checkbox = listItem.querySelector('input[type="checkbox"]');
   const id = checkbox.id;
