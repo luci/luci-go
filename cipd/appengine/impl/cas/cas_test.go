@@ -111,8 +111,8 @@ func TestGetObjectURL(t *testing.T) {
 	impl := storageImpl{
 		settings: &settings.Settings{StorageGSPath: "/bucket/path"},
 		getGS:    func(context.Context) gs.GoogleStorage { return &testutil.NoopGoogleStorage{} },
-		getSignedURL: func(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, uint64, error) {
-			return "http//signed.example.com" + gsPath + "?f=" + filename, 123, signErr
+		getSignedURL: func(ctx context.Context, signer signerFactory, gs gs.GoogleStorage, params *signedURLParams) (string, uint64, error) {
+			return "http//signed.example.com" + params.GsPath + "?f=" + params.Filename, 123, signErr
 		},
 	}
 

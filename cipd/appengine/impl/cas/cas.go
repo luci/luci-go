@@ -111,7 +111,7 @@ type storageImpl struct {
 
 	// Mocking points for tests. See Internal() for real implementations.
 	getGS        func(ctx context.Context) gs.GoogleStorage
-	getSignedURL func(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, uint64, error)
+	getSignedURL func(ctx context.Context, signer signerFactory, gs gs.GoogleStorage, params *signedURLParams) (string, uint64, error)
 	submitLog    func(ctx context.Context, entry *caspb.VerificationLogEntry)
 }
 
@@ -172,7 +172,10 @@ func (s *storageImpl) GetObjectURL(ctx context.Context, r *caspb.GetObjectURLReq
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'download_filename' field, contains one of %q", "\"\r\n")
 	}
 
-	url, _, err := s.getSignedURL(ctx, s.settings.ObjectPath(r.Object), r.DownloadFilename, defaultSigner, s.getGS(ctx))
+	url, _, err := s.getSignedURL(ctx, defaultSigner, s.getGS(ctx), &signedURLParams{
+		GsPath:   s.settings.ObjectPath(r.Object),
+		Filename: r.DownloadFilename,
+	})
 	if err != nil {
 		return nil, errors.Fmt("failed to get signed URL: %w", err)
 	}
