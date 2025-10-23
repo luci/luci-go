@@ -21,26 +21,31 @@ import CentralizedProgress from '@/clusters/components/centralized_progress/cent
 import CodeSnippet from '@/fleet/components/code_snippet/code_snippet';
 import { DEFAULT_CODE_MIRROR_CONFIG } from '@/fleet/constants/component_config';
 import { useUfsClient } from '@/fleet/hooks/prpc_clients';
+import { extractDutLabel } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
+import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { GetMachineLSERequest } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.pb';
 
-export const InventoryData = ({ hostname }: { hostname: string }) => {
+export const InventoryData = ({ device }: { device: Device }) => {
   const editorOptions = useRef<EditorConfiguration>(DEFAULT_CODE_MIRROR_CONFIG);
+  const ufsNamespace = extractDutLabel('ufs_namespace', device);
 
-  const ufsClient = useUfsClient();
+  const ufsClient = useUfsClient(ufsNamespace || 'os');
   const machineLse = useQuery({
     ...ufsClient.GetMachineLSE.query(
       GetMachineLSERequest.fromPartial({
         // Prefix defined in
         // https://source.chromium.org/chromium/infra/infra_superproject/+/main:infra/go/src/infra/unifiedfleet/app/util/input.go;l=39
-        name: `machineLSEs/${hostname}`,
+        name: `machineLSEs/${device.id}`,
       }),
     ),
     refetchInterval: 60000,
   });
 
-  const command = `shivas get dut -json ${hostname}`;
+  const command = `shivas get dut -json ${
+    ufsNamespace ? `-namespace ${ufsNamespace} ` : ''
+  }${device.id}`;
 
   let responseDisplay = <></>;
 

@@ -26,12 +26,12 @@ export function useFleetConsoleClient() {
   });
 }
 
-export function useUfsClient() {
+export function useUfsClient(namespace = 'os') {
   return usePrpcServiceClient({
     host: SETTINGS.ufs.host,
     insecure: SETTINGS.fleetConsole.host.startsWith('localhost'), // use http for local development
     ClientImpl: FleetClientImpl,
     // Namespace is needed to call UFS.
-    additionalHeaders: { namespace: 'os' },
+    additionalHeaders: { namespace: namespace },
   });
 }

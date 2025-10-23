@@ -14,21 +14,53 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { InventoryData } from './inventory_data';
 
 describe('<InventoryData />', () => {
-  it('renders CLI command', async () => {
+  const mockDeviceOs = {
+    id: 'test-host-name',
+    deviceSpec: {
+      labels: {},
+    },
+  } as Partial<Device> as Device;
+
+  const mockDeviceOsPartner = {
+    id: 'test-host-name-partner',
+    deviceSpec: {
+      labels: {
+        ufs_namespace: {
+          values: ['os-partner'],
+        },
+      },
+    },
+  } as Partial<Device> as Device;
+
+  it('renders CLI command for default namespace', async () => {
     render(
       <FakeContextProvider>
-        dfdf
-        <InventoryData hostname="test-host-name" />
+        <InventoryData device={mockDeviceOs} />
       </FakeContextProvider>,
     );
 
     expect(
       screen.getByText('$ shivas get dut -json test-host-name'),
+    ).toBeVisible();
+  });
+
+  it('renders CLI command for os-partner namespace', async () => {
+    render(
+      <FakeContextProvider>
+        <InventoryData device={mockDeviceOsPartner} />
+      </FakeContextProvider>,
+    );
+
+    expect(
+      screen.getByText(
+        '$ shivas get dut -json -namespace os-partner test-host-name-partner',
+      ),
     ).toBeVisible();
   });
 });

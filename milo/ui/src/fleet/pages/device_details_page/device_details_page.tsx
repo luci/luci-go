@@ -271,7 +271,7 @@ export const DeviceDetailsPage = () => {
               )}
             </TabPanel>
             <TabPanel value={TabValue.INVENTORY_DATA}>
-              <InventoryData hostname={id} />
+              <InventoryData device={device} />
             </TabPanel>
             <TabPanel value={TabValue.DIMENSIONS}>
               <DeviceDimensions device={device} />

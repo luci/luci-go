@@ -17,9 +17,15 @@ import { render, screen } from '@testing-library/react';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { DeviceDetailsPage } from './device_details_page';
+import { useDeviceData } from './use_device_data';
+
+jest.mock('./use_device_data');
+
+const mockUseDeviceData = useDeviceData as jest.Mock;
 
 describe('<DeviceDetailsPage />', () => {
   it('renders loading by default', async () => {
+    mockUseDeviceData.mockReturnValue({ isLoading: true });
     render(
       <FakeContextProvider>
         <DeviceDetailsPage />
