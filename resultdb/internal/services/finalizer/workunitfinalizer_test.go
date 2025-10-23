@@ -17,7 +17,6 @@ import (
 	"testing"
 
 	"cloud.google.com/go/spanner"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
@@ -142,12 +141,8 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 					// Enqueued root invocation pub/sub notification.
 					assert.Loosely(t, sched.Tasks().Payloads()[0], should.Match(&taskspb.NotifyRootInvocationFinalized{
 						Message: &pb.RootInvocationFinalizedNotification{
-							RootInvocation: &pb.RootInvocationInfo{
-								Name:       rootInvID.Name(),
-								Realm:      rootInv.Realm,
-								CreateTime: timestamppb.New(rootInv.CreateTime),
-							},
-							ResultdbHost: "rdb-host",
+							RootInvocation: rootInv.ToProto(),
+							ResultdbHost:   "rdb-host",
 						},
 					}))
 					// Assert root invocation sweep state was reset

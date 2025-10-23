@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -74,11 +75,14 @@ func TestNotifyRootInvocationFinalized(t *testing.T) {
 		ctx, tq := tq.TestingContext(ctx, nil)
 
 		t.Run("Enqueues a pub/sub notification", func(t *ftt.Test) {
+			properties := rootInvProperties()
 			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 				msg := &pb.RootInvocationFinalizedNotification{
-					RootInvocation: &pb.RootInvocationInfo{
-						Name:  "rootInvocations/x",
-						Realm: "myproject:myrealm",
+					RootInvocation: &pb.RootInvocation{
+						Name:       "rootInvocations/x",
+						Realm:      "myproject:myrealm",
+						State:      pb.RootInvocation_SUCCEEDED,
+						Properties: properties,
 					},
 				}
 				NotifyRootInvocationFinalized(ctx, msg)
@@ -91,17 +95,38 @@ func TestNotifyRootInvocationFinalized(t *testing.T) {
 			task := tasks[0]
 
 			attrs := task.Message.GetAttributes()
-			assert.Loosely(t, attrs, should.ContainKey("luci_project"))
-			assert.Loosely(t, attrs["luci_project"], should.Equal("myproject"))
+			assert.Loosely(t, attrs, should.ContainKey(luciProjectFilter))
+			assert.Loosely(t, attrs[luciProjectFilter], should.Equal("myproject"))
+			assert.Loosely(t, attrs, should.ContainKey(stateFilter))
+			assert.Loosely(t, attrs[stateFilter], should.Equal(pb.RootInvocation_SUCCEEDED.String()))
+			assert.Loosely(t, attrs, should.ContainKey(androidRunnerFilter))
+			assert.Loosely(t, attrs[androidRunnerFilter], should.Equal("Bazel"))
+			assert.Loosely(t, attrs, should.ContainKey(androidBranchFilter))
+			assert.Loosely(t, attrs[androidBranchFilter], should.Equal("main"))
+			assert.Loosely(t, attrs, should.ContainKey(androidTargetFilter))
+			assert.Loosely(t, attrs[androidTargetFilter], should.Equal("brya-trunk_staging-userdebug_coverage"))
 
 			var msg pb.RootInvocationFinalizedNotification
 			assert.Loosely(t, protojson.Unmarshal(task.Message.GetData(), &msg), should.BeNil)
 			assert.Loosely(t, &msg, should.Match(&pb.RootInvocationFinalizedNotification{
-				RootInvocation: &pb.RootInvocationInfo{
-					Name:  "rootInvocations/x",
-					Realm: "myproject:myrealm",
+				RootInvocation: &pb.RootInvocation{
+					Name:       "rootInvocations/x",
+					Realm:      "myproject:myrealm",
+					State:      pb.RootInvocation_SUCCEEDED,
+					Properties: properties,
 				},
 			}))
 		})
 	})
+}
+
+func rootInvProperties() *structpb.Struct {
+	properties := make(map[string]*structpb.Value)
+	properties["@type"] = structpb.NewStringValue("type.googleapis.com/google.protobuf.Struct")
+	properties["runner"] = structpb.NewStringValue("Bazel")
+	properties["primary_build"] = structpb.NewStructValue(&structpb.Struct{Fields: map[string]*structpb.Value{
+		"branch":       structpb.NewStringValue("main"),
+		"build_target": structpb.NewStringValue("brya-trunk_staging-userdebug_coverage"),
+	}})
+	return &structpb.Struct{Fields: properties}
 }

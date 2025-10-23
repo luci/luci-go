@@ -332,7 +332,7 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 func publishFinalizedRootInvocation(ctx context.Context, rootInvID rootinvocations.ID, rdbHostName string) error {
 	// Enqueue a notification to pub/sub listeners that the root invocation
 	// has been finalized.
-	inv, err := rootinvocations.ReadFinalizedNotificationInfo(ctx, rootInvID)
+	row, err := rootinvocations.Read(ctx, rootInvID)
 	if err != nil {
 		return errors.Fmt("failed to read finalized root notification info: %w", err)
 	}
@@ -340,12 +340,8 @@ func publishFinalizedRootInvocation(ctx context.Context, rootInvID rootinvocatio
 	// Note that this submits the notification transactionally,
 	// i.e. conditionally on this transaction committing.
 	notification := &pb.RootInvocationFinalizedNotification{
-		RootInvocation: &pb.RootInvocationInfo{
-			Name:       rootInvID.Name(),
-			Realm:      inv.Realm,
-			CreateTime: inv.CreateTime,
-		},
-		ResultdbHost: rdbHostName,
+		RootInvocation: row.ToProto(),
+		ResultdbHost:   rdbHostName,
 	}
 	tasks.NotifyRootInvocationFinalized(ctx, notification)
 	return nil

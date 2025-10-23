@@ -35,6 +35,13 @@ const (
 	v1NotifyFinalizedTaskClass           = "v1-publish-invocation-finalized"
 	v1NotifyFinalizedTopic               = "v1.invocation_finalized"
 	v1NotifyRootInvocationFinalizedTopic = "v1.root_invocation_finalized"
+
+	// Pubsub message attributes
+	androidBranchFilter = "android_branch"
+	androidRunnerFilter = "android_runner"
+	androidTargetFilter = "android_target"
+	luciProjectFilter   = "luci_project"
+	stateFilter         = "state"
 )
 
 // NotifyFinalizedPublisher describes how to publish to cloud pub/sub
@@ -95,17 +102,45 @@ var NotifyRootInvocationFinalizedPublisher = tq.RegisterTaskClass(tq.TaskClass{
 		if err := realms.ValidateRealmName(rootInvocation.Realm, realms.GlobalScope); err != nil {
 			return nil, err
 		}
-		project, _ := realms.Split(rootInvocation.Realm)
-		attrs := map[string]string{
-			"luci_project": project,
-		}
 
 		return &tq.CustomPayload{
-			Meta: attrs,
+			Meta: attributes(rootInvocation),
 			Body: blob,
 		}, nil
 	},
 })
+
+// attributes return the message attributes for subscribers to filter messages.
+func attributes(rootInvocation *pb.RootInvocation) map[string]string {
+	attrs := make(map[string]string)
+
+	// Mandatory filters.
+	project, _ := realms.Split(rootInvocation.Realm)
+	attrs[luciProjectFilter] = project
+	attrs[stateFilter] = rootInvocation.State.String()
+
+	// TODO: b/447228104 - Replace the properties fields with new first-class
+	// fields added to the root invocation proto
+	//
+	// Optional filters which are populated only when the info is available.
+	// - Android filters
+	properties := rootInvocation.GetProperties()
+	if properties != nil {
+		if runner := properties.GetFields()["runner"]; runner != nil {
+			attrs[androidRunnerFilter] = runner.GetStringValue()
+		}
+		if primaryBuild := properties.GetFields()["primary_build"]; primaryBuild != nil {
+			if branch := primaryBuild.GetStructValue().GetFields()["branch"]; branch != nil {
+				attrs[androidBranchFilter] = branch.GetStringValue()
+			}
+
+			if target := primaryBuild.GetStructValue().GetFields()["build_target"]; target != nil {
+				attrs[androidTargetFilter] = target.GetStringValue()
+			}
+		}
+	}
+	return attrs
+}
 
 // NotifyInvocationFinalized transactionally enqueues a task to publish that the
 // given invocation has been finalized.

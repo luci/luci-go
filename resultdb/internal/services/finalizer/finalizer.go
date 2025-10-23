@@ -110,7 +110,6 @@ func InitServer(srv *server.Server, opts Options) {
 // If the invocation is too early to finalize, logs the reason and returns nil.
 // Idempotent.
 func tryFinalizeInvocation(ctx context.Context, invID invocations.ID, opts Options) error {
-
 	if invID.IsRootInvocation() || invID.IsWorkUnit() {
 		return tq.Fatal.Apply(errors.Fmt("root invocation and work unit shouldn't use legacy finalizer"))
 	}
