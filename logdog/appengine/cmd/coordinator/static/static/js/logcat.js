@@ -203,8 +203,8 @@ let displaySingleNamedProcess = [];
 /** @type {Array<FilterOption>} */
 let displaySingleUnnamedProcess = [];
 
-/** @type {string|undefined} */
-let defaultFilteredProcess = undefined;
+/** @type {Array<string>|undefined} */
+let defaultFilteredProcesses = undefined;
 
 /** @type {Set<number>} */
 let allPids = new Set();
@@ -275,11 +275,11 @@ function toggleDropdown(dropdownList) {
 /**
  * Get the logcat from the specified URL via the Fetch API.
  * @param {string} url The URL from which to fetch the logcat.
- * @param {string} packageName The name of the process that
+ * @param {Array<string>} packages The list of process names that
  * we want to be filtered by default.
  */
-async function fetchLogcat(url, packageName) {
-  defaultFilteredProcess = packageName;
+async function fetchLogcat(url, packages) {
+  defaultFilteredProcesses = packages;
   try {
     const response = await fetch(url);
     if (response.ok) {
@@ -296,7 +296,7 @@ async function fetchLogcat(url, packageName) {
     textDisplayArea.textContent = `Encountered an error when `
       + `fetching the logcat: ${error}`;
   } finally {
-    defaultFilteredProcess = undefined;
+    defaultFilteredProcesses = undefined;
   }
 }
 
@@ -306,10 +306,10 @@ if (urlIdx !== -1) {
   const packageIdx = queryString.indexOf('package=');
   if (packageIdx !== -1) {
     const url = queryString.substring(urlIdx + 4, packageIdx - 1);
-    const packageName = queryString.substring(packageIdx + 8);
-    fetchLogcat(`/logs${url}?format=raw`, packageName);
+    const packages = queryString.substring(packageIdx + 8);
+    fetchLogcat(`/logs${url}?format=raw`, packages.split(','));
     history.replaceState({}, '',
-      `/logs${url}?format=logcat&package=${packageName}`);
+      `/logs${url}?format=logcat&package=${packages}`);
     canonicalUrl = `/logs${url}`;
   } else {
     const url = queryString.substring(urlIdx + 4);
@@ -525,7 +525,7 @@ function setUpProcessDropdownList() {
 
   // Automatically select 'Display All Processes' and consequently all other
   // options in the dropdown when the user uploads a new file.
-  if (defaultFilteredProcess === undefined) {
+  if (defaultFilteredProcesses === undefined) {
     displayAllProcesses.li.classList.add('selected');
     displayAllProcesses.checkbox.checked = true;
     displayNamedProcesses.li.classList.add('selected');
@@ -571,10 +571,18 @@ function createProcessListItem(pid, processName) {
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
 
-  if (defaultFilteredProcess === undefined || (processName !== undefined
-    && processName === defaultFilteredProcess)) {
+  if (defaultFilteredProcesses === undefined) {
     listItem.classList.add('selected');
     checkbox.checked = true;
+  } else if (processName !== undefined) {
+    for (const defaultFilteredProcess of defaultFilteredProcesses) {
+      if (processName === defaultFilteredProcess ||
+        processName.startsWith(defaultFilteredProcess + ':')) {
+        listItem.classList.add('selected');
+        checkbox.checked = true;
+        break;
+      }
+    }
   }
 
   const label = document.createElement('label');
