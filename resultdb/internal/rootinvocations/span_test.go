@@ -85,7 +85,7 @@ func TestWriteRootInvocation(t *testing.T) {
 				Sources: row.Sources,
 				Inherit: false,
 			},
-			IsSourceSpecFinal:      row.IsSourcesFinal,
+			IsSourceSpecFinal:      row.StreamingExportState == pb.RootInvocation_METADATA_FINAL,
 			TestResultVariantUnion: &pb.Variant{},
 		}
 
@@ -115,14 +115,12 @@ func TestWriteRootInvocation(t *testing.T) {
 			var realm string
 			var createTime time.Time
 			var sourcesCmp spanutil.Compressed
-			var sourcesFinal bool
 			err := spanutil.ReadRow(ctx, "RootInvocationShards", shardID.Key(), map[string]any{
 				"ShardIndex":       &shardIndex,
 				"RootInvocationId": &rootInvID,
 				"Realm":            &realm,
 				"CreateTime":       &createTime,
 				"Sources":          &sourcesCmp,
-				"IsSourcesFinal":   &sourcesFinal,
 			})
 			assert.Loosely(t, err, should.BeNil)
 
@@ -136,7 +134,6 @@ func TestWriteRootInvocation(t *testing.T) {
 			assert.That(t, realm, should.Equal(row.Realm))
 			assert.That(t, createTime, should.Match(commitTime))
 			assert.That(t, sources, should.Match(row.Sources))
-			assert.That(t, sourcesFinal, should.Equal(row.IsSourcesFinal))
 		}
 	})
 }

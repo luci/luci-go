@@ -1031,7 +1031,7 @@ type Sources struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The base version of code sources checked out. Mandatory.
+	// The base version of code sources checked out.
 	//
 	// Types that are assignable to BaseSources:
 	//

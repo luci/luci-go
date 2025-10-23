@@ -144,6 +144,10 @@ func createIdempotentRootInvocation(
 		if finalizationState == pb.RootInvocation_FINALIZATION_STATE_UNSPECIFIED {
 			finalizationState = pb.RootInvocation_ACTIVE
 		}
+		streamingExportState := req.RootInvocation.StreamingExportState
+		if streamingExportState == pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED {
+			streamingExportState = pb.RootInvocation_WAIT_FOR_METADATA
+		}
 
 		rootInvocationRow := &rootinvocations.RootInvocationRow{
 			RootInvocationID:                        rootInvocationID,
@@ -156,8 +160,8 @@ func createIdempotentRootInvocation(
 			Tags:                                    req.RootInvocation.Tags,
 			Properties:                              req.RootInvocation.Properties,
 			Sources:                                 req.RootInvocation.Sources,
-			IsSourcesFinal:                          req.RootInvocation.SourcesFinal,
 			BaselineID:                              req.RootInvocation.BaselineId,
+			StreamingExportState:                    streamingExportState,
 			Submitted:                               false, // Submitted is set in separate MarkInvocationSubmitted call.
 			FinalizerPending:                        false,
 			FinalizerSequence:                       0,
@@ -394,6 +398,14 @@ func validateRootInvocationForCreate(inv *pb.RootInvocation) error {
 	if inv.BaselineId != "" {
 		if err := pbutil.ValidateBaselineID(inv.BaselineId); err != nil {
 			return errors.Fmt("baseline_id: %w", err)
+		}
+	}
+
+	// TODO(meiring): Make this a required field.
+	if inv.StreamingExportState != pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED {
+		// Validate streaming_export_state.
+		if err := pbutil.ValidateStreamingExportState(inv.StreamingExportState); err != nil {
+			return errors.Fmt("streaming_export_state: %w", err)
 		}
 	}
 

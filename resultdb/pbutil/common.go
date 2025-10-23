@@ -626,6 +626,18 @@ func ValidateSources(sources *pb.Sources) error {
 	return nil
 }
 
+// ValidateStreamingExportState validates the streaming export state is a valid
+// value.
+func ValidateStreamingExportState(state pb.RootInvocation_StreamingExportState) error {
+	if state == pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED {
+		return errors.New("unspecified")
+	}
+	if _, ok := pb.RootInvocation_State_name[int32(state)]; !ok {
+		return errors.Fmt("unknown state %v", state)
+	}
+	return nil
+}
+
 // ValidateFullResourceName validates that the given resource name satisfies requirements
 // of AIP-122 Full Resource Names (https://google.aip.dev/122#full-resource-names).
 func ValidateFullResourceName(name string) error {

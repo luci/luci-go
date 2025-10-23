@@ -391,6 +391,23 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					assert.Loosely(t, err, should.ErrLike("root_invocation: baseline_id: does not match"))
 				})
 			})
+			t.Run("streaming_export_state", func(t *ftt.Test) {
+				t.Run("unspecified", func(t *ftt.Test) {
+					req.RootInvocation.StreamingExportState = pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("valid", func(t *ftt.Test) {
+					req.RootInvocation.StreamingExportState = pb.RootInvocation_WAIT_FOR_METADATA
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("invalid", func(t *ftt.Test) {
+					req.RootInvocation.StreamingExportState = pb.RootInvocation_StreamingExportState(10)
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("root_invocation: streaming_export_state: unknown state 10"))
+				})
+			})
 		})
 		t.Run("root_work_unit", func(t *ftt.Test) {
 			t.Run("unspecified", func(t *ftt.Test) {
@@ -668,9 +685,11 @@ func TestCreateRootInvocation(t *testing.T) {
 
 		req := &pb.CreateRootInvocationRequest{
 			RootInvocationId: "root-inv-id",
-			RootInvocation:   &pb.RootInvocation{Realm: "testproject:testrealm"},
-			RootWorkUnit:     &pb.WorkUnit{},
-			RequestId:        "request-id",
+			RootInvocation: &pb.RootInvocation{
+				Realm: "testproject:testrealm",
+			},
+			RootWorkUnit: &pb.WorkUnit{},
+			RequestId:    "request-id",
 		}
 
 		t.Run("invalid request", func(t *ftt.Test) {
@@ -777,13 +796,13 @@ func TestCreateRootInvocation(t *testing.T) {
 				RootInvocationId: "u-e2e-success",
 				RequestId:        "e2e-request",
 				RootInvocation: &pb.RootInvocation{
-					Realm:            "testproject:testrealm",
-					ProducerResource: "//builds.example.com/builds/1",
-					Sources:          sources,
-					SourcesFinal:     true,
-					Tags:             invTags,
-					Properties:       invProperties,
-					BaselineId:       "testrealm:test-builder",
+					Realm:                "testproject:testrealm",
+					ProducerResource:     "//builds.example.com/builds/1",
+					Sources:              sources,
+					Tags:                 invTags,
+					Properties:           invProperties,
+					BaselineId:           "testrealm:test-builder",
+					StreamingExportState: pb.RootInvocation_METADATA_FINAL,
 				},
 				RootWorkUnit: &pb.WorkUnit{
 					ModuleId: &pb.ModuleIdentifier{
@@ -838,8 +857,8 @@ func TestCreateRootInvocation(t *testing.T) {
 				Tags:                                    invTags,
 				Properties:                              invProperties,
 				Sources:                                 sources,
-				IsSourcesFinal:                          true,
 				BaselineID:                              "testrealm:test-builder",
+				StreamingExportState:                    pb.RootInvocation_METADATA_FINAL,
 				Submitted:                               false,
 				FinalizerPending:                        false,
 				FinalizerSequence:                       0,

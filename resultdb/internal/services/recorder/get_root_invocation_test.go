@@ -64,22 +64,22 @@ func TestGetRootInvocation(t *testing.T) {
 			testutil.MustApply(ctx, t, insert.RootInvocationOnly(testData)...)
 
 			expectedRootInvocation := &pb.RootInvocation{
-				Name:              "rootInvocations/root-inv-id",
-				RootInvocationId:  "root-inv-id",
-				Realm:             realm,
-				FinalizationState: pb.RootInvocation_FINALIZED,
-				CreateTime:        pbutil.MustTimestampProto(testData.CreateTime),
-				Creator:           testData.CreatedBy,
-				LastUpdated:       pbutil.MustTimestampProto(testData.LastUpdated),
-				FinalizeTime:      pbutil.MustTimestampProto(testData.FinalizeTime.Time),
-				FinalizeStartTime: pbutil.MustTimestampProto(testData.FinalizeStartTime.Time),
-				ProducerResource:  testData.ProducerResource,
-				Sources:           testData.Sources,
-				SourcesFinal:      testData.IsSourcesFinal,
-				Tags:              testData.Tags,
-				Properties:        testData.Properties,
-				BaselineId:        testData.BaselineID,
-				Etag:              `W/"2025-04-26T01:02:03.000004Z"`,
+				Name:                 "rootInvocations/root-inv-id",
+				RootInvocationId:     "root-inv-id",
+				Realm:                realm,
+				FinalizationState:    pb.RootInvocation_FINALIZED,
+				CreateTime:           pbutil.MustTimestampProto(testData.CreateTime),
+				Creator:              testData.CreatedBy,
+				LastUpdated:          pbutil.MustTimestampProto(testData.LastUpdated),
+				FinalizeTime:         pbutil.MustTimestampProto(testData.FinalizeTime.Time),
+				FinalizeStartTime:    pbutil.MustTimestampProto(testData.FinalizeStartTime.Time),
+				ProducerResource:     testData.ProducerResource,
+				Sources:              testData.Sources,
+				Tags:                 testData.Tags,
+				Properties:           testData.Properties,
+				BaselineId:           testData.BaselineID,
+				StreamingExportState: testData.StreamingExportState,
+				Etag:                 `W/"2025-04-26T01:02:03.000004Z"`,
 			}
 
 			rsp, err := recorder.GetRootInvocation(ctx, req)

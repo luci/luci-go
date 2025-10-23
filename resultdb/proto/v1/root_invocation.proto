@@ -26,7 +26,7 @@ option java_package = "com.google.luci.resultdb.v1";
 option java_multiple_files = true;
 
 // A top-level container of test results.
-// Next ID: 18.
+// Next ID: 20.
 message RootInvocation {
   // The resource name of this root invocation.
   // Format: `rootInvocations/{ROOT_INVOCATION_ID}`
@@ -124,7 +124,15 @@ message RootInvocation {
   // field and is based on the state of the root work unit.
   //
   // See also: https://google.aip.dev/216.
-  State state = 17  [
+  State state = 17 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
+  // A summary of the final state of the root invocation, to be displayed on the UI.
+  // MUST be escaped prior to rendering on the UI.
+  //
+  // This is an output only field and based on the summary of the root work unit.
+  string summary_markdown = 18 [
     (google.api.field_behavior) = OUTPUT_ONLY
   ];
 
@@ -196,20 +204,9 @@ message RootInvocation {
   // The code sources which were tested by this root invocation.
   // This is used to index test results for test history, and for
   // related analyses (e.g. culprit analysis / changepoint analyses).
+  //
+  // Required.
   Sources sources = 11;
-
-  // Whether the code sources specified by sources are final (immutable).
-  //
-  // To facilitate rapid export of invocations inheriting sources from this
-  // root invocation, this property should be set to true as soon as possible
-  // after the root invocation's sources are fixed. In most cases, clients
-  // will want to set this property to true at the same time as they set
-  // sources.
-  //
-  // This field is client owned. Consistent with https://google.aip.dev/129,
-  // it will not be forced to true when the invocation starts to finalize, even
-  // if its effective value will always be true at that point.
-  bool sources_final = 12;
 
   // Root invocation-level string key-value pairs.
   // A key can be repeated.
@@ -250,6 +247,53 @@ message RootInvocation {
   // tests run in the invocation. Those tests can then be e.g. subject to additional
   // presubmit checks, such as to validate they are not flaky.
   string baseline_id = 15;
+
+  // StreamingExportState controls the operation of streaming (low-latency)
+  // exports from the root invocation. Streaming exports are designed to
+  // commence while the root invocation is still running.
+  enum StreamingExportState {
+    // The default value. Do not use this value.
+    STREAMING_EXPORT_STATE_UNSPECIFIED = 0;
+
+    // The metadata fields on the root invocation have not yet been set (or
+    // are not yet set to their final values). The streaming exports can
+    // not start yet.
+    //
+    // While this option is set, test result exports to downstream clients
+    // will be delayed. Please set this value to METADATA_FINAL as soon as
+    // practicable.
+    //
+    // See documentation on `streaming_export_state` for a definition of
+    // the metadata fields.
+    WAIT_FOR_METADATA = 1;
+
+    // The metadata fields on the root invocation have been set and can be made
+    // immutable. Streaming exports can commence.
+    //
+    // See documentation on `streaming_export_state` for a definition of
+    // the metadata fields.
+    METADATA_FINAL = 2;
+  }
+
+  // Controls the operation of streaming exports.
+  //
+  // Various clients (e.g. changepoint analysis, presubmit flake suppression
+  // systems) rely on having timely access to test result data for their
+  // performance and request uploaders set this field to `METADATA_FINAL`
+  // as soon as practicable.
+  //
+  // Before METADATA_FINAL can be set, the following metadata fields on the
+  // root invocation must have been populated with their final values:
+  // - `sources`
+  // TODO(nqmtuan): Add other fields here.
+  //
+  // This field is client owned. Consistent with https://google.aip.dev/129,
+  // it will not be forced to METADATA_FINAL when the root invocation starts
+  // to finalize (but exports will start anyway at this point, if they
+  // were not started earlier).
+  //
+  // Required.
+  StreamingExportState streaming_export_state = 19;
 
   // This checksum is computed by the server based on the value of other
   // fields, and may be sent on update requests to ensure the client

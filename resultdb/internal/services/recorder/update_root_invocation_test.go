@@ -156,13 +156,6 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 			})
 		})
 
-		t.Run("sources_final", func(t *ftt.Test) {
-			req.UpdateMask.Paths = []string{"sources_final"}
-			req.RootInvocation.SourcesFinal = true
-			err := validateUpdateRootInvocationRequest(ctx, req)
-			assert.Loosely(t, err, should.BeNil)
-		})
-
 		t.Run("tags", func(t *ftt.Test) {
 			req.UpdateMask.Paths = []string{"tags"}
 			t.Run("valid", func(t *ftt.Test) {
@@ -214,6 +207,20 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("root_invocation: baseline_id: does not match"))
 			})
 		})
+
+		t.Run("streaming_export_state", func(t *ftt.Test) {
+			req.UpdateMask.Paths = []string{"streaming_export_state"}
+			t.Run("valid", func(t *ftt.Test) {
+				req.RootInvocation.StreamingExportState = pb.RootInvocation_WAIT_FOR_METADATA
+				err := validateUpdateRootInvocationRequest(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+			})
+			t.Run("invalid", func(t *ftt.Test) {
+				req.RootInvocation.StreamingExportState = pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED
+				err := validateUpdateRootInvocationRequest(ctx, req)
+				assert.Loosely(t, err, should.ErrLike("root_invocation: streaming_export_state: unspecified"))
+			})
+		})
 	})
 }
 
@@ -243,7 +250,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 		// Insert root invocation.
 		expectedRootInvRow := rootinvocations.NewBuilder(rootInvID).
 			WithFinalizationState(pb.RootInvocation_ACTIVE).
-			WithIsSourcesFinal(false).
+			WithStreamingExportState(pb.RootInvocation_WAIT_FOR_METADATA).
 			Build()
 		testutil.MustApply(ctx, t, insert.RootInvocationOnly(expectedRootInvRow)...)
 		expectedRootInv := expectedRootInvRow.ToProto()
@@ -427,18 +434,15 @@ func TestUpdateRootInvocation(t *testing.T) {
 				for shardID := range rootInvID.AllShardIDs() {
 					var compressedSources spanutil.Compressed
 					var shardRealm string
-					var shardIsSourcesFinal bool
 					err := spanutil.ReadRow(span.Single(ctx), "RootInvocationShards", shardID.Key(), map[string]any{
-						"Realm":          &shardRealm,
-						"Sources":        &compressedSources,
-						"IsSourcesFinal": &shardIsSourcesFinal,
+						"Realm":   &shardRealm,
+						"Sources": &compressedSources,
 					})
 					assert.Loosely(t, err, should.BeNil)
 					shardSources := &pb.Sources{}
 					assert.Loosely(t, proto.Unmarshal(compressedSources, shardSources), should.BeNil)
 					assert.Loosely(t, shardRealm, should.Equal(expectedRowCopy.Realm), truth.LineContext())
 					assert.Loosely(t, shardSources, should.Match(expectedRowCopy.Sources), truth.LineContext())
-					assert.Loosely(t, shardIsSourcesFinal, should.Equal(expectedRowCopy.IsSourcesFinal), truth.LineContext())
 				}
 
 				// Validate legacy Invocations table.
@@ -493,10 +497,10 @@ func TestUpdateRootInvocation(t *testing.T) {
 				assertSpannerRows(expectedRootInvRow)
 			})
 
-			t.Run("sources and sources_final", func(t *ftt.Test) {
+			t.Run("metadata and streaming_export_state", func(t *ftt.Test) {
 				newSources := testutil.TestSourcesWithChangelistNumbers(123456)
 
-				t.Run("source not finalized", func(t *ftt.Test) {
+				t.Run("metadata not finalized", func(t *ftt.Test) {
 					t.Run("update sources", func(t *ftt.Test) {
 						req.UpdateMask.Paths = []string{"sources"}
 						req.RootInvocation.Sources = newSources
@@ -511,10 +515,10 @@ func TestUpdateRootInvocation(t *testing.T) {
 						assertSpannerRows(expectedRootInvRow)
 					})
 
-					t.Run("to non-finalized sources", func(t *ftt.Test) {
+					t.Run("to non-finalized metadata", func(t *ftt.Test) {
 						// Should be no-op.
-						req.UpdateMask.Paths = []string{"sources_final"}
-						req.RootInvocation.SourcesFinal = false
+						req.UpdateMask.Paths = []string{"streaming_export_state"}
+						req.RootInvocation.StreamingExportState = pb.RootInvocation_WAIT_FOR_METADATA
 
 						ri, err := recorder.UpdateRootInvocation(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
@@ -522,32 +526,32 @@ func TestUpdateRootInvocation(t *testing.T) {
 					})
 
 					t.Run("to finalized sources", func(t *ftt.Test) {
-						req.UpdateMask.Paths = []string{"sources_final"}
-						req.RootInvocation.SourcesFinal = true
+						req.UpdateMask.Paths = []string{"streaming_export_state"}
+						req.RootInvocation.StreamingExportState = pb.RootInvocation_METADATA_FINAL
 
 						ri, err := recorder.UpdateRootInvocation(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
-						expectedRootInv.SourcesFinal = true
+						expectedRootInv.StreamingExportState = pb.RootInvocation_METADATA_FINAL
 						assertResponse(ri, expectedRootInv)
 
 						// Validate spanner records are updated.
-						expectedRootInvRow.IsSourcesFinal = true
+						expectedRootInvRow.StreamingExportState = pb.RootInvocation_METADATA_FINAL
 						assertSpannerRows(expectedRootInvRow)
 					})
 				})
 
-				t.Run("source finalized", func(t *ftt.Test) {
-					// Update sources_final to true.
-					req.UpdateMask.Paths = []string{"sources_final"}
-					req.RootInvocation.SourcesFinal = true
+				t.Run("metadata finalized", func(t *ftt.Test) {
+					// Update sources_streaming_export_state to METADATA_FINAL.
+					req.UpdateMask.Paths = []string{"streaming_export_state"}
+					req.RootInvocation.StreamingExportState = pb.RootInvocation_METADATA_FINAL
 					ri, err := recorder.UpdateRootInvocation(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
 
 					expectedRootInv.Etag = ri.Etag
 					expectedRootInv.LastUpdated = ri.LastUpdated
-					expectedRootInv.SourcesFinal = true
+					expectedRootInv.StreamingExportState = pb.RootInvocation_METADATA_FINAL
 					expectedRootInvRow.LastUpdated = ri.LastUpdated.AsTime()
-					expectedRootInvRow.IsSourcesFinal = true
+					expectedRootInvRow.StreamingExportState = pb.RootInvocation_METADATA_FINAL
 					// Use a new request id to avoid the repeated request being deduplicated.
 					req.RequestId = "new-request-id"
 
@@ -557,26 +561,26 @@ func TestUpdateRootInvocation(t *testing.T) {
 
 						_, err := recorder.UpdateRootInvocation(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike("root_invocation: sources: cannot modify already finalized sources"))
+						assert.Loosely(t, err, should.ErrLike("root_invocation: sources: cannot modify already finalized sources (streaming_export_state set to METADATA_FINAL)"))
 					})
 
-					t.Run("to finalized sources", func(t *ftt.Test) {
+					t.Run("to finalized metadata", func(t *ftt.Test) {
 						// Should be no-op.
-						req.UpdateMask.Paths = []string{"sources_final"}
-						req.RootInvocation.SourcesFinal = true
+						req.UpdateMask.Paths = []string{"streaming_export_state"}
+						req.RootInvocation.StreamingExportState = pb.RootInvocation_METADATA_FINAL
 
 						ri, err := recorder.UpdateRootInvocation(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
 						assertNoOp(ri, expectedRootInvRow, expectedRootInv)
 					})
 
-					t.Run("to non-finalized sources", func(t *ftt.Test) {
-						req.UpdateMask.Paths = []string{"sources_final"}
-						req.RootInvocation.SourcesFinal = false
+					t.Run("to non-finalized metadata", func(t *ftt.Test) {
+						req.UpdateMask.Paths = []string{"streaming_export_state"}
+						req.RootInvocation.StreamingExportState = pb.RootInvocation_WAIT_FOR_METADATA
 
 						_, err := recorder.UpdateRootInvocation(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike("root_invocation: sources_final: cannot un-finalize already finalized sources"))
+						assert.Loosely(t, err, should.ErrLike("root_invocation: streaming_export_state: transitioning from METADATA_FINAL to WAIT_FOR_METADATA is not allowed"))
 					})
 				})
 			})

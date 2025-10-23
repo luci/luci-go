@@ -170,9 +170,9 @@ func updateRootInvocationInternal(in *pb.UpdateRootInvocationRequest, originalRo
 		case "sources":
 			// Are we setting the field to a value other than its current value?
 			if !proto.Equal(originalRootInvRow.Sources, in.RootInvocation.Sources) {
-				// We can't set the field to a value other than its current value, if IsSourcesFinal already set to true.
-				if originalRootInvRow.IsSourcesFinal {
-					return nil, nil, appstatus.BadRequest(errors.New("root_invocation: sources: cannot modify already finalized sources"))
+				// We can't set the field to a value other than its current value, if the metadata has been marked final.
+				if originalRootInvRow.StreamingExportState == pb.RootInvocation_METADATA_FINAL {
+					return nil, nil, appstatus.BadRequest(errors.New("root_invocation: sources: cannot modify already finalized sources (streaming_export_state set to METADATA_FINAL)"))
 				}
 				compressedSources := spanutil.Compressed(pbutil.MustMarshal(in.RootInvocation.Sources))
 				rootInvocationValues["Sources"] = compressedSources
@@ -181,15 +181,14 @@ func updateRootInvocationInternal(in *pb.UpdateRootInvocationRequest, originalRo
 				updatedRootInvRow.Sources = in.RootInvocation.Sources
 			}
 
-		case "sources_final":
-			if originalRootInvRow.IsSourcesFinal != in.RootInvocation.SourcesFinal {
-				if !in.RootInvocation.SourcesFinal {
-					return nil, nil, appstatus.BadRequest(errors.New("root_invocation: sources_final: cannot un-finalize already finalized sources"))
+		case "streaming_export_state":
+			if originalRootInvRow.StreamingExportState != in.RootInvocation.StreamingExportState {
+				if originalRootInvRow.StreamingExportState == pb.RootInvocation_METADATA_FINAL {
+					return nil, nil, appstatus.BadRequest(errors.Fmt("root_invocation: streaming_export_state: transitioning from %v to %v is not allowed", originalRootInvRow.StreamingExportState, in.RootInvocation.StreamingExportState))
 				}
-				rootInvocationValues["IsSourcesFinal"] = true
+				rootInvocationValues["StreamingExportState"] = in.RootInvocation.StreamingExportState
 				legacyInvocationValues["IsSourceSpecFinal"] = spanner.NullBool{Valid: true, Bool: true}
-				shardRootInvocationValues["IsSourcesFinal"] = true
-				updatedRootInvRow.IsSourcesFinal = true
+				updatedRootInvRow.StreamingExportState = in.RootInvocation.StreamingExportState
 			}
 
 		case "tags":
@@ -287,10 +286,13 @@ func validateUpdateRootInvocationRequest(ctx context.Context, req *pb.UpdateRoot
 				return errors.Fmt("root_invocation: sources: %w", err)
 			}
 
-		case "sources_final":
-			// Either true or false is OK for this first pass validation.
-			// However, later we must validate that if the field is true,
-			// it is not being set to false.
+		case "streaming_export_state":
+			if err := pbutil.ValidateStreamingExportState(req.RootInvocation.StreamingExportState); err != nil {
+				return errors.Fmt("root_invocation: streaming_export_state: %w", err)
+			}
+			// Any value is OK for this first pass validation.
+			// However, later we must validate that if we are already in METADATA_FINAL state,
+			// we do not transition to WAIT_FOR_METADATA.
 
 		case "tags":
 			if err := pbutil.ValidateRootInvocationTags(req.RootInvocation.Tags); err != nil {

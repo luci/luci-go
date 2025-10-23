@@ -93,8 +93,8 @@ type RootInvocationRow struct {
 	Tags                                    []*pb.StringPair
 	Properties                              *structpb.Struct
 	Sources                                 *pb.Sources
-	IsSourcesFinal                          bool
 	BaselineID                              string
+	StreamingExportState                    pb.RootInvocation_StreamingExportState
 	Submitted                               bool
 	FinalizerPending                        bool
 	FinalizerSequence                       int64
@@ -142,7 +142,7 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 		"Tags":                                    r.Tags,
 		"Properties":                              spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
 		"Sources":                                 spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
-		"IsSourcesFinal":                          r.IsSourcesFinal,
+		"StreamingExportState":                    r.StreamingExportState,
 		"BaselineId":                              r.BaselineID,
 		"Submitted":                               r.Submitted,
 		"FinalizerPending":                        r.FinalizerPending,
@@ -175,7 +175,7 @@ func (r *RootInvocationRow) toLegacyInvocationMutation() *spanner.Mutation {
 		"Properties":        spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
 		"InheritSources":    spanner.NullBool{Bool: false, Valid: true}, // A root invocation defines its own sources.
 		"Sources":           spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
-		"IsSourceSpecFinal": r.IsSourcesFinal,
+		"IsSourceSpecFinal": r.StreamingExportState == pb.RootInvocation_METADATA_FINAL,
 		"IsExportRoot":      spanner.NullBool{Bool: true, Valid: true}, // Root invocations are always export roots.
 		"BaselineId":        r.BaselineID,
 		"Submitted":         r.Submitted,
@@ -198,7 +198,6 @@ func (r *RootInvocationRow) toShardsMutations() []*spanner.Mutation {
 			"Realm":                 r.Realm,
 			"CreateTime":            spanner.CommitTimestamp,
 			"Sources":               spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
-			"IsSourcesFinal":        r.IsSourcesFinal,
 		}
 		mutations[i] = spanutil.InsertMap("RootInvocationShards", row)
 	}
@@ -207,20 +206,20 @@ func (r *RootInvocationRow) toShardsMutations() []*spanner.Mutation {
 
 func (r *RootInvocationRow) ToProto() *pb.RootInvocation {
 	result := &pb.RootInvocation{
-		Name:              r.RootInvocationID.Name(),
-		RootInvocationId:  string(r.RootInvocationID),
-		FinalizationState: r.FinalizationState,
-		Realm:             r.Realm,
-		CreateTime:        pbutil.MustTimestampProto(r.CreateTime),
-		Creator:           r.CreatedBy,
-		LastUpdated:       pbutil.MustTimestampProto(r.LastUpdated),
-		ProducerResource:  r.ProducerResource,
-		Sources:           r.Sources,
-		SourcesFinal:      r.IsSourcesFinal,
-		Tags:              r.Tags,
-		Properties:        r.Properties,
-		BaselineId:        r.BaselineID,
-		Etag:              Etag(r),
+		Name:                 r.RootInvocationID.Name(),
+		RootInvocationId:     string(r.RootInvocationID),
+		FinalizationState:    r.FinalizationState,
+		Realm:                r.Realm,
+		CreateTime:           pbutil.MustTimestampProto(r.CreateTime),
+		Creator:              r.CreatedBy,
+		LastUpdated:          pbutil.MustTimestampProto(r.LastUpdated),
+		ProducerResource:     r.ProducerResource,
+		Sources:              r.Sources,
+		Tags:                 r.Tags,
+		Properties:           r.Properties,
+		BaselineId:           r.BaselineID,
+		Etag:                 Etag(r),
+		StreamingExportState: r.StreamingExportState,
 	}
 	if r.FinalizeStartTime.Valid {
 		result.FinalizeStartTime = pbutil.MustTimestampProto(r.FinalizeStartTime.Time)
@@ -260,7 +259,7 @@ func (r *RootInvocationRow) ToLegacyInvocationProto() *pb.Invocation {
 		Deadline:               timestamppb.New(time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)),
 		ProducerResource:       r.ProducerResource,
 		SourceSpec:             sourceSpec,
-		IsSourceSpecFinal:      r.IsSourcesFinal,
+		IsSourceSpecFinal:      r.StreamingExportState == pb.RootInvocation_METADATA_FINAL,
 		Tags:                   r.Tags,
 		IsExportRoot:           true,
 		Properties:             r.Properties,

@@ -419,7 +419,7 @@ message SubmittedAndroidBuild {
 
 // Specifies the source code that was tested.
 message Sources {
-  // The base version of code sources checked out. Mandatory.
+  // The base version of code sources checked out.
   oneof base_sources {
     // The base version of code sources checked out.
     GitilesCommit gitiles_commit = 1;

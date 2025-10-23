@@ -107,10 +107,8 @@ CREATE TABLE RootInvocations (
   -- root invocation.
   Sources BYTES(MAX),
 
-  -- Whether the root invocation's source information (denoted by 'Sources') is immutable.
-  -- Setting this early is desirable as it enables test result exports from work units
-  -- to commence.
-  IsSourcesFinal BOOL NOT NULL,
+  -- To be removed.
+  IsSourcesFinal BOOL NOT NULL DEFAULT(FALSE),
 
   -- The test baseline that this root invocation should contribute to.
   --
@@ -151,6 +149,11 @@ CREATE TABLE RootInvocations (
   -- scheduled. This is incremented each time a new finalizer task is
   -- scheduled, and is used to detect and discard stale tasks.
   FinalizerSequence INT64 NOT NULL,
+
+  -- The state of streaming exports. This can be:
+  -- - WAIT_FOR_METADATA (1) - metadata is not yet final
+  -- - METADATA_FINAL (2) - metadata is final and exports can commence
+  StreamingExportState INT64 NOT NULL DEFAULT(1),
 ) PRIMARY KEY (RootInvocationId),
   -- Apply 1.5 year TTL to root invocations. The deletion policy applied here will
   -- apply to interleaved child tables. Leave 30 days for Spanner to actually
@@ -237,12 +240,8 @@ CREATE TABLE RootInvocationShards (
   -- See RootInvocations.Sources for more information.
   Sources BYTES(MAX),
 
-  -- Replica of the root invocation field, to avoid hotspotting the root invocation
-  -- in operations that don't need the whole root invocation, such as low-latency
-  -- exports.
-  --
-  -- See RootInvocations.IsSourcesFinal for more information.
-  IsSourcesFinal BOOL NOT NULL,
+  -- To be removed.
+  IsSourcesFinal BOOL NOT NULL DEFAULT(FALSE),
 ) PRIMARY KEY (RootInvocationShardId),
   -- Apply 1.5 year TTL to root invocations. The deletion policy applied here will
   -- apply to interleaved child tables. Leave 30 days for Spanner to actually
@@ -979,7 +978,7 @@ CREATE TABLE TestMetadata (
   -- The value of TestMetadata.previous_test_id, represented as a first-class
   -- Spanner field. Permits finding tests based on their previous test ID.
   -- NULL if the corresponding `previous_test_id` proto field is unset.
-   PreviousTestId STRING(MAX),
+  PreviousTestId STRING(MAX),
 ) PRIMARY KEY (Project, TestId, RefHash, SubRealm),
   ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 90 DAY));
 

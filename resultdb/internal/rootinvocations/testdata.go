@@ -66,11 +66,11 @@ func NewBuilder(id ID) *Builder {
 					},
 				},
 			},
-			IsSourcesFinal:    true,
-			BaselineID:        "baseline",
-			Submitted:         true,
-			FinalizerPending:  false,
-			FinalizerSequence: 0,
+			StreamingExportState: pb.RootInvocation_METADATA_FINAL,
+			BaselineID:           "baseline",
+			Submitted:            true,
+			FinalizerPending:     false,
+			FinalizerSequence:    0,
 		},
 	}
 }
@@ -183,9 +183,9 @@ func (b *Builder) WithSources(s *pb.Sources) *Builder {
 	return b
 }
 
-// WithIsSourcesFinal sets whether sources are final.
-func (b *Builder) WithIsSourcesFinal(isFinal bool) *Builder {
-	b.row.IsSourcesFinal = isFinal
+// WithStreamingExportState sets the streaming export state.
+func (b *Builder) WithStreamingExportState(state pb.RootInvocation_StreamingExportState) *Builder {
+	b.row.StreamingExportState = state
 	return b
 }
 
@@ -248,8 +248,8 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 		"Tags":                                    r.Tags,
 		"Properties":                              spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
 		"Sources":                                 spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
-		"IsSourcesFinal":                          r.IsSourcesFinal,
 		"BaselineId":                              r.BaselineID,
+		"StreamingExportState":                    r.StreamingExportState,
 		"Submitted":                               r.Submitted,
 		"FinalizerPending":                        r.FinalizerPending,
 		"FinalizerSequence":                       r.FinalizerSequence,
@@ -263,7 +263,6 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 			"Realm":                 r.Realm,
 			"CreateTime":            r.CreateTime,
 			"Sources":               spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
-			"IsSourcesFinal":        r.IsSourcesFinal,
 		}))
 	}
 
@@ -287,7 +286,7 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 		"Properties":                        spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
 		"InheritSources":                    spanner.NullBool{Bool: false, Valid: true}, // A root invocation defines its own sources.
 		"Sources":                           spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
-		"IsSourceSpecFinal":                 r.IsSourcesFinal,
+		"IsSourceSpecFinal":                 r.StreamingExportState == pb.RootInvocation_METADATA_FINAL,
 		"IsExportRoot":                      spanner.NullBool{Bool: true, Valid: true}, // Root invocations are always export roots.
 		"BaselineId":                        r.BaselineID,
 		"Submitted":                         r.Submitted,
