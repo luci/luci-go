@@ -18,6 +18,10 @@ package lucinotify
 import (
 	"context"
 	"net/http"
+	"time"
+
+	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
@@ -70,6 +74,12 @@ func (c *Client) CheckTreeCloser(ctx context.Context, req *lnpb.CheckTreeCloserR
 	return c.Client.CheckTreeCloser(ctx, req)
 }
 
+// NotifyCulpritRevert notifies LUCI Notify that a culprit revert has landed,
+// which should be considered when determining whether to automatically reopen the tree.
+func (c *Client) NotifyCulpritRevert(ctx context.Context, req *lnpb.NotifyCulpritRevertRequest) (*emptypb.Empty, error) {
+	return c.Client.NotifyCulpritRevert(ctx, req)
+}
+
 // CheckTreeCloser returns true if a builder (with failed step) is a tree closer.
 func CheckTreeCloser(c context.Context, project string, bucket string, builder string, step string) (bool, error) {
 	req := &lnpb.CheckTreeCloserRequest{
@@ -89,4 +99,28 @@ func CheckTreeCloser(c context.Context, project string, bucket string, builder s
 	}
 
 	return res.IsTreeCloser, nil
+}
+
+// NotifyRevertLanded notifies LUCI Notify that an automated revert has landed.
+// This allows the tree status update cron to consider reopening the tree if
+// the revert landed after all currently-failing builds started.
+func NotifyRevertLanded(ctx context.Context, treeName string, revertLandTime time.Time, culpritReviewURL string, revertReviewURL string) error {
+	req := &lnpb.NotifyCulpritRevertRequest{
+		TreeName:         treeName,
+		RevertLandTime:   timestamppb.New(revertLandTime),
+		CulpritReviewUrl: culpritReviewURL,
+		RevertReviewUrl:  revertReviewURL,
+	}
+
+	cl, err := NewClient(ctx, luciNotifyHost)
+	if err != nil {
+		return errors.Fmt("couldn't create LUCI Notify client: %w", err)
+	}
+
+	_, err = cl.NotifyCulpritRevert(ctx, req)
+	if err != nil {
+		return errors.Fmt("notify culprit revert for tree %s: %w", treeName, err)
+	}
+
+	return nil
 }
