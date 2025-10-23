@@ -252,11 +252,31 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 			if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden && hasReason(apiErr, "accessDenied") {
 				err = tq.Fatal.Apply(err)
 			}
-			return err
+			if err != nil {
+				return fmt.Errorf("export rows (%d rows with estimated total size of %d bytes): %w", len(rows), estimatedSizeOfRows(rows), err)
+			}
+			return nil
 		})
 	}
-
 	return eg.Wait()
+}
+
+// estimatedSizeOfRows returns the estimated size, in bytes, of the given BigQuery
+// export rows, when encoded in JSON format.
+func estimatedSizeOfRows(rows []bigqueryRow) int {
+	var estimatedSize int
+	for _, row := range rows {
+		estimatedSize += estimatedSizeOfRow(row.content)
+	}
+	return estimatedSize
+}
+
+// estimatedSizeOfRow returns the estimated size in bytes of the given BigQuery
+// export row, when encoded in JSON format.
+func estimatedSizeOfRow(content proto.Message) int {
+	// Include 500 bytes fixed cost per row for JSON overheads like string
+	// field names.
+	return 500 + proto.Size(content)
 }
 
 // insertRowsWithRetries inserts rows into BigQuery.

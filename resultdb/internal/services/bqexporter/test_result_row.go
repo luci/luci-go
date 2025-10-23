@@ -23,7 +23,6 @@ import (
 	"github.com/golang/protobuf/descriptor"
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/bq"
@@ -203,11 +202,7 @@ func (b *bqExporter) queryTestResults(
 		}.toRow()
 		rows = append(rows, row)
 
-		// Calculate the size of the row if it was encoded in binary format. In actuality,
-		// the row will be sent in JSON as we are still using the legacy BigQuery Write API,
-		// so it will be a bit larger. For this reason, MaxBatchSizeApprox is typically set
-		// conservatively.
-		batchSize += proto.Size(row.content)
+		batchSize += estimatedSizeOfRow(row.content)
 		rowCount++
 		if len(rows) >= b.MaxBatchRowCount || batchSize >= b.MaxBatchSizeApprox {
 			select {
