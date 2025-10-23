@@ -65,14 +65,14 @@ func TestGetReader(t *testing.T) {
 
 	impl := storageImpl{
 		settings: &settings.Settings{StorageGSPath: "/bucket/path"},
-		getGS:    func(context.Context) gs.GoogleStorage { return gsMock },
+		getGS:    func(context.Context, string) gs.GoogleStorage { return gsMock },
 	}
 
 	ftt.Run("OK", t, func(t *ftt.Test) {
 		r, err := impl.GetReader(ctx, &caspb.ObjectRef{
 			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: sha256,
-		})
+		}, "")
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, r, should.NotBeNilInterface)
 
@@ -87,7 +87,7 @@ func TestGetReader(t *testing.T) {
 		_, err := impl.GetReader(ctx, &caspb.ObjectRef{
 			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: "zzz",
-		})
+		}, "")
 		assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 		assert.Loosely(t, err, should.ErrLike("bad ref"))
 	})
@@ -96,7 +96,7 @@ func TestGetReader(t *testing.T) {
 		_, err := impl.GetReader(ctx, &caspb.ObjectRef{
 			HashAlgo:  caspb.HashAlgo_SHA256,
 			HexDigest: strings.Repeat("b", 64),
-		})
+		}, "")
 		assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
 		assert.Loosely(t, err, should.ErrLike("can't read the object"))
 	})
@@ -110,7 +110,7 @@ func TestGetObjectURL(t *testing.T) {
 	var signErr error
 	impl := storageImpl{
 		settings: &settings.Settings{StorageGSPath: "/bucket/path"},
-		getGS:    func(context.Context) gs.GoogleStorage { return &testutil.NoopGoogleStorage{} },
+		getGS:    func(context.Context, string) gs.GoogleStorage { return &testutil.NoopGoogleStorage{} },
 		getSignedURL: func(ctx context.Context, signer signerFactory, gs gs.GoogleStorage, params *signedURLParams) (string, uint64, error) {
 			return "http//signed.example.com" + params.GsPath + "?f=" + params.Filename, 123, signErr
 		},
@@ -397,7 +397,7 @@ func storageMocks() (context.Context, *mockedGS, *tqtesting.Scheduler, *verifica
 			StorageGSPath: "/bucket/store",
 			TempGSPath:    "/bucket/tmp_path",
 		},
-		getGS:     func(context.Context) gs.GoogleStorage { return gsMock },
+		getGS:     func(context.Context, string) gs.GoogleStorage { return gsMock },
 		submitLog: logs.submitLog,
 	}
 	impl.registerTasks()

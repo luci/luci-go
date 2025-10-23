@@ -46,11 +46,14 @@ const (
 //
 // Field types must be compatible with BigQuery Storage Write API, see
 // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+//
+// Next ID: 17.
 type VerificationLogEntry struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	OperationId        int64                  `protobuf:"varint,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`                       // matches UploadOperation.ID
 	InitiatedBy        string                 `protobuf:"bytes,2,opt,name=initiated_by,json=initiatedBy,proto3" json:"initiated_by,omitempty"`                        // e.g. "user:someone@example.com"
 	TempGsPath         string                 `protobuf:"bytes,3,opt,name=temp_gs_path,json=tempGsPath,proto3" json:"temp_gs_path,omitempty"`                         // the GS object in the staging area being verified
+	UserProject        string                 `protobuf:"bytes,16,opt,name=user_project,json=userProject,proto3" json:"user_project,omitempty"`                       // the cloud project used for billing, if custom
 	ExpectedInstanceId string                 `protobuf:"bytes,4,opt,name=expected_instance_id,json=expectedInstanceId,proto3" json:"expected_instance_id,omitempty"` // may be empty if not known
 	VerifiedInstanceId string                 `protobuf:"bytes,5,opt,name=verified_instance_id,json=verifiedInstanceId,proto3" json:"verified_instance_id,omitempty"` // always populated on success
 	Submitted          int64                  `protobuf:"varint,6,opt,name=submitted,proto3" json:"submitted,omitempty"`                                              // microseconds since epoch
@@ -114,6 +117,13 @@ func (x *VerificationLogEntry) GetInitiatedBy() string {
 func (x *VerificationLogEntry) GetTempGsPath() string {
 	if x != nil {
 		return x.TempGsPath
+	}
+	return ""
+}
+
+func (x *VerificationLogEntry) GetUserProject() string {
+	if x != nil {
+		return x.UserProject
 	}
 	return ""
 }
@@ -206,12 +216,13 @@ var File_go_chromium_org_luci_cipd_api_cipd_v1_verification_log_proto protorefle
 
 const file_go_chromium_org_luci_cipd_api_cipd_v1_verification_log_proto_rawDesc = "" +
 	"\n" +
-	"<go.chromium.org/luci/cipd/api/cipd/v1/verification_log.proto\x12\x04cipd\x1a/go.chromium.org/luci/common/bq/pb/options.proto\"\xc8\x04\n" +
+	"<go.chromium.org/luci/cipd/api/cipd/v1/verification_log.proto\x12\x04cipd\x1a/go.chromium.org/luci/common/bq/pb/options.proto\"\xeb\x04\n" +
 	"\x14VerificationLogEntry\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\x03R\voperationId\x12!\n" +
 	"\finitiated_by\x18\x02 \x01(\tR\vinitiatedBy\x12 \n" +
 	"\ftemp_gs_path\x18\x03 \x01(\tR\n" +
-	"tempGsPath\x120\n" +
+	"tempGsPath\x12!\n" +
+	"\fuser_project\x18\x10 \x01(\tR\vuserProject\x120\n" +
 	"\x14expected_instance_id\x18\x04 \x01(\tR\x12expectedInstanceId\x120\n" +
 	"\x14verified_instance_id\x18\x05 \x01(\tR\x12verifiedInstanceId\x12-\n" +
 	"\tsubmitted\x18\x06 \x01(\x03B\x0f\xe2\xbc$\v\n" +

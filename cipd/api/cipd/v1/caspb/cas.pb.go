@@ -207,8 +207,10 @@ type GetObjectURLRequest struct {
 	// that includes the given filename. It makes browsers save the file under the
 	// given name.
 	DownloadFilename string `protobuf:"bytes,2,opt,name=download_filename,json=downloadFilename,proto3" json:"download_filename,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// If present, use this Cloud Project for billing the GCS usage.
+	UserProject   string `protobuf:"bytes,3,opt,name=user_project,json=userProject,proto3" json:"user_project,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetObjectURLRequest) Reset() {
@@ -251,6 +253,13 @@ func (x *GetObjectURLRequest) GetObject() *ObjectRef {
 func (x *GetObjectURLRequest) GetDownloadFilename() string {
 	if x != nil {
 		return x.DownloadFilename
+	}
+	return ""
+}
+
+func (x *GetObjectURLRequest) GetUserProject() string {
+	if x != nil {
+		return x.UserProject
 	}
 	return ""
 }
@@ -327,7 +336,9 @@ type BeginUploadRequest struct {
 	//
 	// If both 'object' and 'hash_algo' are present, 'object.hash_algo' MUST match
 	// 'hash_algo'.
-	HashAlgo      HashAlgo `protobuf:"varint,2,opt,name=hash_algo,json=hashAlgo,proto3,enum=cipd.HashAlgo" json:"hash_algo,omitempty"`
+	HashAlgo HashAlgo `protobuf:"varint,2,opt,name=hash_algo,json=hashAlgo,proto3,enum=cipd.HashAlgo" json:"hash_algo,omitempty"`
+	// If present, use this Cloud Project for billing the GCS usage.
+	UserProject   string `protobuf:"bytes,3,opt,name=user_project,json=userProject,proto3" json:"user_project,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -374,6 +385,13 @@ func (x *BeginUploadRequest) GetHashAlgo() HashAlgo {
 		return x.HashAlgo
 	}
 	return HashAlgo_HASH_ALGO_UNSPECIFIED
+}
+
+func (x *BeginUploadRequest) GetUserProject() string {
+	if x != nil {
+		return x.UserProject
+	}
+	return ""
 }
 
 type FinishUploadRequest struct {
@@ -581,16 +599,18 @@ const file_go_chromium_org_luci_cipd_api_cipd_v1_cas_proto_rawDesc = "" +
 	"\tObjectRef\x12+\n" +
 	"\thash_algo\x18\x01 \x01(\x0e2\x0e.cipd.HashAlgoR\bhashAlgo\x12\x1d\n" +
 	"\n" +
-	"hex_digest\x18\x02 \x01(\tR\thexDigest\"k\n" +
+	"hex_digest\x18\x02 \x01(\tR\thexDigest\"\x8e\x01\n" +
 	"\x13GetObjectURLRequest\x12'\n" +
 	"\x06object\x18\x01 \x01(\v2\x0f.cipd.ObjectRefR\x06object\x12+\n" +
-	"\x11download_filename\x18\x02 \x01(\tR\x10downloadFilename\"*\n" +
+	"\x11download_filename\x18\x02 \x01(\tR\x10downloadFilename\x12!\n" +
+	"\fuser_project\x18\x03 \x01(\tR\vuserProject\"*\n" +
 	"\tObjectURL\x12\x1d\n" +
 	"\n" +
-	"signed_url\x18\x01 \x01(\tR\tsignedUrl\"j\n" +
+	"signed_url\x18\x01 \x01(\tR\tsignedUrl\"\x8d\x01\n" +
 	"\x12BeginUploadRequest\x12'\n" +
 	"\x06object\x18\x01 \x01(\v2\x0f.cipd.ObjectRefR\x06object\x12+\n" +
-	"\thash_algo\x18\x02 \x01(\x0e2\x0e.cipd.HashAlgoR\bhashAlgo\"u\n" +
+	"\thash_algo\x18\x02 \x01(\x0e2\x0e.cipd.HashAlgoR\bhashAlgo\x12!\n" +
+	"\fuser_project\x18\x03 \x01(\tR\vuserProject\"u\n" +
 	"\x13FinishUploadRequest\x12.\n" +
 	"\x13upload_operation_id\x18\x01 \x01(\tR\x11uploadOperationId\x12.\n" +
 	"\n" +

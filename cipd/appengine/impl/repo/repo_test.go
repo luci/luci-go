@@ -1162,7 +1162,7 @@ func TestProcessors(t *testing.T) {
 			storeInstance([]string{"proc1", "proc2"})
 
 			// Setup the package.
-			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef) (gs.Reader, error) {
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef, userProject string) (gs.Reader, error) {
 				assert.Loosely(t, inst.Instance, should.Match(ref))
 				return testutil.NewMockGSReader(testZip), nil
 			}
@@ -1203,7 +1203,7 @@ func TestProcessors(t *testing.T) {
 			})
 			storeInstance([]string{"proc"})
 
-			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef) (gs.Reader, error) {
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef, userProject string) (gs.Reader, error) {
 				return testutil.NewMockGSReader([]byte("im not a zip")), nil
 			}
 
@@ -1225,7 +1225,7 @@ func TestProcessors(t *testing.T) {
 			})
 			storeInstance([]string{"good-proc", "bad-proc"})
 
-			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef) (gs.Reader, error) {
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef, userProject string) (gs.Reader, error) {
 				return testutil.NewMockGSReader(testZip), nil
 			}
 
@@ -1246,7 +1246,7 @@ func TestProcessors(t *testing.T) {
 			})
 			storeInstance([]string{"proc"})
 
-			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef) (gs.Reader, error) {
+			cas.GetReaderImpl = func(_ context.Context, ref *caspb.ObjectRef, userProject string) (gs.Reader, error) {
 				return testutil.NewMockGSReader(testZip), nil
 			}
 

@@ -28,7 +28,7 @@ type MockCAS struct {
 
 	Err error // an error to return or nil to pass through to the callback
 
-	GetReaderImpl    func(context.Context, *caspb.ObjectRef) (gs.Reader, error)
+	GetReaderImpl    func(context.Context, *caspb.ObjectRef, string) (gs.Reader, error)
 	GetObjectURLImpl func(context.Context, *caspb.GetObjectURLRequest) (*caspb.ObjectURL, error)
 	BeginUploadImpl  func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error)
 	FinishUploadImpl func(context.Context, *caspb.FinishUploadRequest) (*caspb.UploadOperation, error)
@@ -36,14 +36,14 @@ type MockCAS struct {
 }
 
 // GetReader implements the corresponding method of cas.StorageServer interface.
-func (m *MockCAS) GetReader(ctx context.Context, ref *caspb.ObjectRef) (gs.Reader, error) {
+func (m *MockCAS) GetReader(ctx context.Context, ref *caspb.ObjectRef, userProject string) (gs.Reader, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
 	if m.GetReaderImpl == nil {
 		panic("must not be called")
 	}
-	return m.GetReaderImpl(ctx, ref)
+	return m.GetReaderImpl(ctx, ref, userProject)
 }
 
 // GetObjectURL implements the corresponding RPC method, see the proto doc.

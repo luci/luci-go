@@ -41,11 +41,12 @@ func instancePage(c *router.Context, pkg, ver string) error {
 		return status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
-	svc := state(c.Request.Context()).services
+	ctx := c.Request.Context()
+	svc := state(ctx).services
 
 	// Resolve the version first (even if is already IID). This also checks ACLs
 	// and verifies the instance exists.
-	inst, err := svc.PublicRepo.ResolveVersion(c.Request.Context(), &repopb.ResolveVersionRequest{
+	inst, err := svc.PublicRepo.ResolveVersion(ctx, &repopb.ResolveVersionRequest{
 		Package: pkg,
 		Version: ver,
 	})
@@ -60,7 +61,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 	var url *caspb.ObjectURL
 	err = parallel.FanOutIn(func(tasks chan<- func() error) {
 		tasks <- func() (err error) {
-			desc, err = svc.PublicRepo.DescribeInstance(c.Request.Context(), &repopb.DescribeInstanceRequest{
+			desc, err = svc.PublicRepo.DescribeInstance(ctx, &repopb.DescribeInstanceRequest{
 				Package:            inst.Package,
 				Instance:           inst.Instance,
 				DescribeRefs:       true,
@@ -70,7 +71,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 			return
 		}
 		tasks <- func() (err error) {
-			md, err = svc.PublicRepo.ListMetadata(c.Request.Context(), &repopb.ListMetadataRequest{
+			md, err = svc.PublicRepo.ListMetadata(ctx, &repopb.ListMetadataRequest{
 				Package:  inst.Package,
 				Instance: inst.Instance,
 			})
@@ -84,9 +85,14 @@ func instancePage(c *router.Context, pkg, ver string) error {
 			} else {
 				name = chunks[0]
 			}
-			url, err = svc.InternalCAS.GetObjectURL(c.Request.Context(), &caspb.GetObjectURLRequest{
+			var userProject string
+			if userProject, err = svc.PublicRepo.StorageUserProject(ctx, inst.Package); err != nil {
+				return
+			}
+			url, err = svc.InternalCAS.GetObjectURL(ctx, &caspb.GetObjectURLRequest{
 				Object:           inst.Instance,
 				DownloadFilename: name + ".zip",
+				UserProject:      userProject,
 			})
 			return
 		}
@@ -95,8 +101,8 @@ func instancePage(c *router.Context, pkg, ver string) error {
 		return status.Errorf(codes.Internal, "%s", err)
 	}
 
-	now := clock.Now(c.Request.Context())
-	templates.MustRender(c.Request.Context(), c.Writer, "pages/instance.html", map[string]any{
+	now := clock.Now(ctx)
+	templates.MustRender(ctx, c.Writer, "pages/instance.html", map[string]any{
 		"Package":     pkg,
 		"Version":     ver,
 		"InstanceID":  common.ObjectRefToInstanceID(inst.Instance),

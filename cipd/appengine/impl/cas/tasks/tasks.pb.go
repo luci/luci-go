@@ -87,6 +87,7 @@ type CleanupUpload struct {
 	UploadOperationId int64                  `protobuf:"varint,1,opt,name=upload_operation_id,json=uploadOperationId,proto3" json:"upload_operation_id,omitempty"` // unwrapped integer ID of Operation entity
 	UploadUrl         string                 `protobuf:"bytes,2,opt,name=upload_url,json=uploadUrl,proto3" json:"upload_url,omitempty"`                            // URL of the upload session to cancel
 	PathToCleanup     string                 `protobuf:"bytes,3,opt,name=path_to_cleanup,json=pathToCleanup,proto3" json:"path_to_cleanup,omitempty"`              // gs file to delete
+	UserProject       string                 `protobuf:"bytes,4,opt,name=user_project,json=userProject,proto3" json:"user_project,omitempty"`                      // Cloud Project to use for GCS billing
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -142,18 +143,26 @@ func (x *CleanupUpload) GetPathToCleanup() string {
 	return ""
 }
 
+func (x *CleanupUpload) GetUserProject() string {
+	if x != nil {
+		return x.UserProject
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_cipd_appengine_impl_cas_tasks_tasks_proto protoreflect.FileDescriptor
 
 const file_go_chromium_org_luci_cipd_appengine_impl_cas_tasks_tasks_proto_rawDesc = "" +
 	"\n" +
 	">go.chromium.org/luci/cipd/appengine/impl/cas/tasks/tasks.proto\x12\x05tasks\">\n" +
 	"\fVerifyUpload\x12.\n" +
-	"\x13upload_operation_id\x18\x01 \x01(\x03R\x11uploadOperationId\"\x86\x01\n" +
+	"\x13upload_operation_id\x18\x01 \x01(\x03R\x11uploadOperationId\"\xa9\x01\n" +
 	"\rCleanupUpload\x12.\n" +
 	"\x13upload_operation_id\x18\x01 \x01(\x03R\x11uploadOperationId\x12\x1d\n" +
 	"\n" +
 	"upload_url\x18\x02 \x01(\tR\tuploadUrl\x12&\n" +
-	"\x0fpath_to_cleanup\x18\x03 \x01(\tR\rpathToCleanupB4Z2go.chromium.org/luci/cipd/appengine/impl/cas/tasksb\x06proto3"
+	"\x0fpath_to_cleanup\x18\x03 \x01(\tR\rpathToCleanup\x12!\n" +
+	"\fuser_project\x18\x04 \x01(\tR\vuserProjectB4Z2go.chromium.org/luci/cipd/appengine/impl/cas/tasksb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_cipd_appengine_impl_cas_tasks_tasks_proto_rawDescOnce sync.Once

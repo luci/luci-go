@@ -45,6 +45,8 @@ type signedURLParams struct {
 	GsPath string
 	// Filename to place into Content-Disposition header when fetching the URL.
 	Filename string
+	// UserProject is a GCP project to bill download bandwidth to.
+	UserProject string
 }
 
 // cacheKey is the key representing the cache entry matching signedURLParams.
@@ -53,8 +55,9 @@ type signedURLParams struct {
 // (used only as a map lookup key).
 func (s *signedURLParams) cacheKey() string {
 	return url.Values{
-		"path":     {s.GsPath},
-		"filename": {s.Filename},
+		"path":        {s.GsPath},
+		"filename":    {s.Filename},
+		"userproject": {s.UserProject},
 	}.Encode()
 }
 
@@ -120,6 +123,9 @@ func getSignedURL(ctx context.Context, signer signerFactory, gsstore gs.GoogleSt
 				panic("bad filename for Content-Disposition header")
 			}
 			queryParams.Set("response-content-disposition", fmt.Sprintf(`attachment; filename="%s"`, params.Filename))
+		}
+		if params.UserProject != "" {
+			queryParams.Set("userProject", params.UserProject)
 		}
 
 		// An implementation of SignBytes.

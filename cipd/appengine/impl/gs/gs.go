@@ -122,7 +122,8 @@ type Reader interface {
 
 // impl is actual implementation of GoogleStorage using real API.
 type impl struct {
-	ctx context.Context
+	ctx         context.Context
+	userProject string
 
 	testingTransport http.RoundTripper // used in tests to mock the transport
 	testingBasePath  string            // used in tests to mock Google Storage URL
@@ -141,8 +142,10 @@ type impl struct {
 // outlive it. Each individual method still accepts a context though, which
 // can be a derivative of the root context (for example to provide custom
 // per-method deadline or logging fields).
-func Get(ctx context.Context) GoogleStorage {
-	return &impl{ctx: ctx}
+//
+// All Google Storage operations will be billed to the given project.
+func Get(ctx context.Context, userProject string) GoogleStorage {
+	return &impl{ctx: ctx, userProject: userProject}
 }
 
 func (gs *impl) init() error {
@@ -173,17 +176,20 @@ func (gs *impl) init() error {
 }
 
 func (gs *impl) Size(ctx context.Context, path string) (size uint64, exists bool, err error) {
-	logging.Infof(ctx, "gs: Size(path=%q)", path)
+	logging.Infof(ctx, "gs: Size(path=%q, userProject=%q)", path, gs.userProject)
 	if err := gs.init(); err != nil {
 		return 0, false, err
 	}
 
 	var obj *storage.Object
 	call := gs.srv.Objects.Get(SplitPath(path)).Context(ctx)
+	if gs.userProject != "" {
+		call.UserProject(gs.userProject)
+	}
 	switch err := withRetry(ctx, func() error { obj, err = call.Do(); return err }); {
 	case err == nil:
 		return obj.Size, true, nil
-	case StatusCode(err) == http.StatusNotFound:
+	case gs.isNotFound(err):
 		return 0, false, nil
 	default:
 		return 0, false, err
@@ -198,7 +204,7 @@ func (gs *impl) Exists(ctx context.Context, path string) (exists bool, err error
 }
 
 func (gs *impl) Copy(ctx context.Context, dst string, dstGen int64, src string, srcGen int64) error {
-	logging.Infof(ctx, "gs: Copy(dst=%q, dstGen=%d, src=%q, srcGen=%d)", dst, dstGen, src, srcGen)
+	logging.Infof(ctx, "gs: Copy(dst=%q, dstGen=%d, src=%q, srcGen=%d, userProject=%q)", dst, dstGen, src, srcGen, gs.userProject)
 	if err := gs.init(); err != nil {
 		return err
 	}
@@ -213,18 +219,24 @@ func (gs *impl) Copy(ctx context.Context, dst string, dstGen int64, src string, 
 	if dstGen >= 0 {
 		call.IfGenerationMatch(dstGen)
 	}
+	if gs.userProject != "" {
+		call.UserProject(gs.userProject)
+	}
 	return withRetry(ctx, func() error { _, err := call.Do(); return err })
 }
 
 func (gs *impl) Delete(ctx context.Context, path string) error {
-	logging.Infof(ctx, "gs: Delete(path=%q)", path)
+	logging.Infof(ctx, "gs: Delete(path=%q, userProject=%q)", path, gs.userProject)
 	if err := gs.init(); err != nil {
 		return err
 	}
 
 	call := gs.srv.Objects.Delete(SplitPath(path)).Context(ctx)
+	if gs.userProject != "" {
+		call.UserProject(gs.userProject)
+	}
 	err := withRetry(ctx, func() error { return call.Do() })
-	if err == nil || StatusCode(err) == http.StatusNotFound {
+	if err == nil || gs.isNotFound(err) {
 		return nil
 	}
 	return err
@@ -244,9 +256,9 @@ func (gs *impl) Publish(ctx context.Context, dst, src string, srcGen int64) erro
 		return nil
 	}
 
-	// StatusNotFound means 'src' is missing. This can happen if we attempted to
-	// publish before, failed midway and retrying now. If so, 'dst' should exist
-	// already.
+	// isNotFound(err) == true means 'src' is missing. This can happen if we
+	// attempted to publish before, failed midway and retrying now. If so, 'dst'
+	// should exist already.
 	//
 	// StatusPreconditionFailed means either 'src' has changed (its generation no
 	// longer matches srcGen generation), or 'dst' already exists (its generation
@@ -255,14 +267,14 @@ func (gs *impl) Publish(ctx context.Context, dst, src string, srcGen int64) erro
 	// We want to check for 'dst' presence to figure out what to do next.
 	//
 	// Any other code is unexpected error.
-	if code != http.StatusNotFound && code != http.StatusPreconditionFailed {
+	if !gs.isNotFound(err) && code != http.StatusPreconditionFailed {
 		return errors.Fmt("failed to copy the object: %w", err)
 	}
 
 	switch _, exists, dstErr := gs.Size(ctx, dst); {
 	case dstErr != nil:
 		return errors.Fmt("failed to check the destination object presence: %w", dstErr)
-	case !exists && code == http.StatusNotFound:
+	case !exists && gs.isNotFound(err):
 		// Both 'src' and 'dst' are missing. It means we are not retrying a failed
 		// move (it would have left either 'src' or 'dst' or both present), and
 		// 'src' is genuinely missing.
@@ -276,7 +288,7 @@ func (gs *impl) Publish(ctx context.Context, dst, src string, srcGen int64) erro
 }
 
 func (gs *impl) StartUpload(ctx context.Context, path string) (uploadURL string, err error) {
-	logging.Infof(ctx, "gs: StartUpload(path=%q)", path)
+	logging.Infof(ctx, "gs: StartUpload(path=%q, userProject=%q)", path, gs.userProject)
 	if err := gs.init(); err != nil {
 		return "", err
 	}
@@ -290,15 +302,19 @@ func (gs *impl) StartUpload(ctx context.Context, path string) (uploadURL string,
 	//   https://cloud.google.com/storage/docs/json_api/v1/objects/insert
 	//   https://cloud.google.com/storage/docs/json_api/v1/how-tos/resumable-upload
 	bucket, name := SplitPath(path)
+	query := url.Values{
+		"alt":        {"json"},
+		"name":       {name},
+		"uploadType": {"resumable"},
+	}
+	if gs.userProject != "" {
+		query["userProject"] = []string{gs.userProject}
+	}
 	u := &url.URL{
-		Scheme: "https",
-		Host:   "www.googleapis.com",
-		Path:   "/upload/storage/v1/b/{bucket}/o",
-		RawQuery: (url.Values{
-			"alt":        {"json"},
-			"name":       {name},
-			"uploadType": {"resumable"},
-		}).Encode(),
+		Scheme:   "https",
+		Host:     "www.googleapis.com",
+		Path:     "/upload/storage/v1/b/{bucket}/o",
+		RawQuery: query.Encode(),
 	}
 	googleapi.Expand(u, map[string]string{"bucket": bucket})
 
@@ -363,7 +379,7 @@ func (gs *impl) CancelUpload(ctx context.Context, uploadURL string) error {
 // a specific generation (if 'gen' is positive) or at the current live
 // generation (if 'gen' is zero or negative).
 func (gs *impl) Reader(ctx context.Context, path string, gen, minSpeed int64) (Reader, error) {
-	logging.Infof(ctx, "gs: Reader(path=%q, gen=%d)", path, gen)
+	logging.Infof(ctx, "gs: Reader(path=%q, gen=%d, userProject=%q)", path, gen, gs.userProject)
 	if err := gs.init(); err != nil {
 		return nil, err
 	}
@@ -373,6 +389,9 @@ func (gs *impl) Reader(ctx context.Context, path string, gen, minSpeed int64) (R
 	call := gs.srv.Objects.Get(SplitPath(path)).Context(ctx)
 	if gen > 0 {
 		call.Generation(gen)
+	}
+	if gs.userProject != "" {
+		call.UserProject(gs.userProject)
 	}
 	var obj *storage.Object
 	err := withRetry(ctx, func() (err error) { obj, err = call.Do(); return })
@@ -391,6 +410,21 @@ func (gs *impl) Reader(ctx context.Context, path string, gen, minSpeed int64) (R
 		gen:      obj.Generation,
 		minSpeed: minSpeed,
 	}, nil
+}
+
+// isNotFound recognizes if the error means the GCS object is not found.
+//
+// It is normally reported by HTTP 404 errors, but when using custom
+// userProject, it is HTTP 403 error for some reason (that says "no permission
+// or the object doesn't exist", so technically it is correct).
+//
+// We assume CIPD GCS buckets are configured correctly (there are NO 403 errors
+// that indicate ACL issues).
+func (gs *impl) isNotFound(err error) bool {
+	// TODO: Fix to differentiate between "403 because object not found"
+	// and "403 because can't bill the user project".
+	code := StatusCode(err)
+	return code == http.StatusNotFound || (gs.userProject != "" && code == http.StatusForbidden)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -437,8 +471,8 @@ func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 	}
 	attemptTimeout := timeoutForSize(r.minSpeed, toRead)
 
-	logging.Debugf(r.ctx, "gs: ReadAt(path=%q, offset=%d, length=%d, gen=%d) - attemptTimeout=%s",
-		r.path, off, toRead, r.gen, attemptTimeout)
+	logging.Debugf(r.ctx, "gs: ReadAt(path=%q, offset=%d, length=%d, gen=%d, userProject=%q) - attemptTimeout=%s",
+		r.path, off, toRead, r.gen, r.gs.userProject, attemptTimeout)
 	if err := r.gs.init(); err != nil {
 		return 0, err
 	}
@@ -458,16 +492,18 @@ func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 		ctx := r.ctx
 		if attemptTimeout > 0 {
 			var cancel func()
-			ctx, cancel = context.WithTimeoutCause(
-				ctx, attemptTimeout, transient.Tag.Apply(errors.New("gs: ReadAt too slow")))
+			ctx, cancel = context.WithTimeoutCause(ctx, attemptTimeout, transient.Tag.Apply(errors.New("gs: ReadAt too slow")))
 			defer cancel()
 		}
 
 		// 'Download' is magic. Unlike regular call.Do(), it will append alt=media
 		// to the request string, thus asking GS to return the object body instead
 		// of its metadata.
-		call := r.gs.srv.Objects.Get(SplitPath(r.path)).Context(ctx).Generation(r.gen)
+		call := r.gs.srv.Objects.Get(SplitPath(r.path)).Generation(r.gen).Context(ctx)
 		call.Header().Set("Range", fmt.Sprintf("bytes=%d-%d", off, off+toRead-1))
+		if r.gs.userProject != "" {
+			call.UserProject(r.gs.userProject)
+		}
 		resp, err := call.Download()
 		if err != nil {
 			// if this RPC timed out at the beginning due to our timeout, catch it and

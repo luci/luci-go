@@ -118,12 +118,33 @@ func TestImpl(t *testing.T) {
 			testingBasePath:  srv.URL,
 		}
 
+		withProject := func(proj string) *impl {
+			return &impl{
+				ctx:              ctx,
+				userProject:      proj,
+				testingTransport: http.DefaultTransport,
+				testingBasePath:  srv.URL,
+			}
+		}
+
 		c.Run("Size - exists", func(c *ftt.Test) {
 			expect(call{
 				Method: "GET",
 				Path:   "/b/bucket/o/a/b/c",
 			})
 			s, yes, err := gs.Size(ctx, "/bucket/a/b/c")
+			assert.Loosely(c, err, should.BeNil)
+			assert.That(c, s, should.Equal[uint64](123))
+			assert.Loosely(c, yes, should.BeTrue)
+		})
+
+		c.Run("Size - user project", func(c *ftt.Test) {
+			expect(call{
+				Method: "GET",
+				Path:   "/b/bucket/o/a/b/c",
+				Query:  url.Values{"userProject": {"proj"}},
+			})
+			s, yes, err := withProject("proj").Size(ctx, "/bucket/a/b/c")
 			assert.Loosely(c, err, should.BeNil)
 			assert.That(c, s, should.Equal[uint64](123))
 			assert.Loosely(c, yes, should.BeTrue)
@@ -161,6 +182,15 @@ func TestImpl(t *testing.T) {
 			assert.Loosely(c, gs.Copy(ctx, "/dst_bucket/dst_obj", -1, "/src_bucket/src_obj", -1), should.BeNil)
 		})
 
+		c.Run("Copy, user project", func(c *ftt.Test) {
+			expect(call{
+				Method: "POST",
+				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
+				Query:  url.Values{"userProject": {"proj"}},
+			})
+			assert.Loosely(c, withProject("proj").Copy(ctx, "/dst_bucket/dst_obj", -1, "/src_bucket/src_obj", -1), should.BeNil)
+		})
+
 		c.Run("Copy conditional", func(c *ftt.Test) {
 			expect(call{
 				Method: "POST",
@@ -191,6 +221,15 @@ func TestImpl(t *testing.T) {
 			assert.Loosely(c, gs.Delete(ctx, "/bucket/a/b/c"), should.BeNil)
 		})
 
+		c.Run("Delete present, user project", func(c *ftt.Test) {
+			expect(call{
+				Method: "DELETE",
+				Path:   "/b/bucket/o/a/b/c",
+				Query:  url.Values{"userProject": {"proj"}},
+			})
+			assert.Loosely(c, withProject("proj").Delete(ctx, "/bucket/a/b/c"), should.BeNil)
+		})
+
 		c.Run("Delete missing", func(c *ftt.Test) {
 			expect(call{
 				Method: "DELETE",
@@ -219,6 +258,19 @@ func TestImpl(t *testing.T) {
 				},
 			})
 			assert.Loosely(c, gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", 1), should.BeNil)
+		})
+
+		c.Run("Publish success, user project", func(c *ftt.Test) {
+			expect(call{
+				Method: "POST",
+				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
+				Query: url.Values{
+					"ifGenerationMatch":       {"0"},
+					"ifSourceGenerationMatch": {"1"},
+					"userProject":             {"proj"},
+				},
+			})
+			assert.Loosely(c, withProject("proj").Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", 1), should.BeNil)
 		})
 
 		c.Run("Publish bad precondition on srcGen", func(c *ftt.Test) {
@@ -338,6 +390,22 @@ func TestImpl(t *testing.T) {
 			assert.Loosely(c, url, should.Equal("http://upload-session.example.com/a/b/c"))
 		})
 
+		c.Run("StartUpload success, user project", func(c *ftt.Test) {
+			expect(call{
+				Method: "POST",
+				Path:   "/upload/storage/v1/b/bucket/o",
+				Query: url.Values{
+					"name":        {"a/b/c"},
+					"uploadType":  {"resumable"},
+					"userProject": {"proj"},
+				},
+				Location: "http://upload-session.example.com/a/b/c",
+			})
+			url, err := withProject("proj").StartUpload(ctx, "/bucket/a/b/c")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, url, should.Equal("http://upload-session.example.com/a/b/c"))
+		})
+
 		c.Run("StartUpload error", func(c *ftt.Test) {
 			expect(call{
 				Method: "POST",
@@ -445,6 +513,23 @@ func TestImpl(t *testing.T) {
 			assert.Loosely(c, err, should.BeNil)
 			assert.Loosely(c, r, should.NotBeNil)
 			assert.Loosely(c, r.Generation(), should.Equal(123))
+			assert.Loosely(c, r.Size(), should.Equal(1000))
+		})
+
+		c.Run("Reader with user project", func(c *ftt.Test) {
+			expect(call{
+				Method: "GET",
+				Path:   "/b/bucket/o/a/b/c",
+				Query: url.Values{
+					"userProject": {"proj"},
+				},
+				Response: map[string]string{
+					"size": "1000",
+				},
+			})
+			r, err := withProject("proj").Reader(ctx, "/bucket/a/b/c", 0, 0)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, r, should.NotBeNil)
 			assert.Loosely(c, r.Size(), should.Equal(1000))
 		})
 

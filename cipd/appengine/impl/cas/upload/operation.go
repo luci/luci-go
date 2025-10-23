@@ -40,6 +40,8 @@ type Operation struct {
 	TempGSPath string `gae:",noindex"` // the GS path to where the client uploads
 	UploadURL  string `gae:",noindex"` // resumable upload URL
 
+	UserProject string // if present, the Cloud Project to bill GCS operations to
+
 	HashAlgo  caspb.HashAlgo // the algo to use to verify the uploaded content
 	HexDigest string         // the expected content digest or "" if not known
 
@@ -94,8 +96,7 @@ func (op *Operation) Advance(ctx context.Context, cb func(context.Context, *Oper
 		return datastore.Put(ctx, fresh)
 	}, nil)
 	if err != nil {
-		return nil,
-			transient.Tag.Apply(errors.Fmt("failed to update the upload operation: %w", err))
+		return nil, transient.Tag.Apply(errors.Fmt("failed to update the upload operation: %w", err))
 	}
 	return fresh, nil
 }

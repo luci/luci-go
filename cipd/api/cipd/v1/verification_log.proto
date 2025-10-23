@@ -30,10 +30,14 @@ import "go.chromium.org/luci/common/bq/pb/options.proto";
 //
 // Field types must be compatible with BigQuery Storage Write API, see
 // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+//
+// Next ID: 17.
 message VerificationLogEntry {
   int64 operation_id = 1;  // matches UploadOperation.ID
   string initiated_by = 2; // e.g. "user:someone@example.com"
   string temp_gs_path = 3; // the GS object in the staging area being verified
+
+  string user_project = 16; // the cloud project used for billing, if custom
 
   string expected_instance_id = 4; // may be empty if not known
   string verified_instance_id = 5; // always populated on success

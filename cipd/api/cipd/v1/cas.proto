@@ -120,6 +120,9 @@ message GetObjectURLRequest {
   // that includes the given filename. It makes browsers save the file under the
   // given name.
   string download_filename = 2;
+
+  // If present, use this Cloud Project for billing the GCS usage.
+  string user_project = 3;
 }
 
 
@@ -171,6 +174,9 @@ message BeginUploadRequest {
   // If both 'object' and 'hash_algo' are present, 'object.hash_algo' MUST match
   // 'hash_algo'.
   HashAlgo hash_algo = 2;
+
+  // If present, use this Cloud Project for billing the GCS usage.
+  string user_project = 3;
 }
 
 

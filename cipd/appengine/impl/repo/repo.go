@@ -83,6 +83,12 @@ type Server interface {
 	//
 	// Assumes 'base' middleware chain does OAuth2 authentication already.
 	InstallHandlers(r *router.Router, base router.MiddlewareChain)
+
+	// StorageUserProject returns a Cloud Project to bill GCS operations related
+	// to the given package to or "" to use default.
+	//
+	// Returns grpc-tagged errors returned to the caller as is.
+	StorageUserProject(ctx context.Context, pkg string) (string, error)
 }
 
 // repoImpl implements repopb.RepositoryServer.
@@ -139,9 +145,9 @@ func (impl *repoImpl) registerProcessor(p processing.Processor) {
 }
 
 // packageReader opens a package instance for reading.
-func (impl *repoImpl) packageReader(ctx context.Context, ref *caspb.ObjectRef) (*processing.PackageReader, error) {
+func (impl *repoImpl) packageReader(ctx context.Context, ref *caspb.ObjectRef, userProject string) (*processing.PackageReader, error) {
 	// Get slow Google Storage based ReaderAt.
-	rawReader, err := impl.cas.GetReader(ctx, ref)
+	rawReader, err := impl.cas.GetReader(ctx, ref, userProject)
 	switch code := status.Code(err); {
 	case code == codes.NotFound:
 		return nil, errors.Fmt("package instance is not in the storage: %w", err)
@@ -644,8 +650,13 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 	// if such object is already in the storage. This is expected (it means the
 	// client has uploaded the object already and we should just register the
 	// instance right away).
+	userProject, err := impl.StorageUserProject(ctx, r.Package)
+	if err != nil {
+		return nil, err
+	}
 	uploadOp, err := impl.cas.BeginUpload(ctx, &caspb.BeginUploadRequest{
-		Object: r.Instance,
+		Object:      r.Instance,
+		UserProject: userProject,
 	})
 	switch code := status.Code(err); {
 	case code == codes.AlreadyExists:
@@ -746,7 +757,11 @@ func (impl *repoImpl) runProcessorsTask(ctx context.Context, t *tasks.RunProcess
 	}
 
 	// Open the package for reading.
-	pkg, err := impl.packageReader(ctx, t.Instance.Instance)
+	userProject, err := impl.StorageUserProject(ctx, t.Instance.Package)
+	if err != nil {
+		return err
+	}
+	pkg, err := impl.packageReader(ctx, t.Instance.Instance, userProject)
 	switch {
 	case transient.Tag.In(err):
 		return err // retry the whole thing
@@ -1472,8 +1487,13 @@ func (impl *repoImpl) GetInstanceURL(ctx context.Context, r *repopb.GetInstanceU
 	}
 
 	// Ask CAS generate an URL for us. Note that CAS does caching internally.
+	userProject, err := impl.StorageUserProject(ctx, r.Package)
+	if err != nil {
+		return nil, err
+	}
 	return impl.cas.GetObjectURL(ctx, &caspb.GetObjectURLRequest{
-		Object: r.Instance,
+		Object:      r.Instance,
+		UserProject: userProject,
 	})
 }
 
@@ -1609,14 +1629,12 @@ func (impl *repoImpl) DescribeClient(ctx context.Context, r *repopb.DescribeClie
 	}
 	ref, err := proc.ToObjectRef()
 	if err != nil {
-		return nil, grpcutil.InternalTag.Apply(errors.
-
-			// refAliases (and SHA1 in particular, as hash supported by oldest code) is
-			// required to allow older clients to self-update to a newer client. See the
-			// doc for DescribeClientResponse proto message.
-			Fmt("malformed or unrecognized ref in the client extractor results: %w", err))
+		return nil, grpcutil.InternalTag.Apply(errors.Fmt("malformed or unrecognized ref in the client extractor results: %w", err))
 	}
 
+	// refAliases (and SHA1 in particular, as hash supported by oldest code) is
+	// required to allow older clients to self-update to a newer client. See the
+	// doc for DescribeClientResponse proto message.
 	refAliases := proc.ObjectRefAliases()
 	sha1 := ""
 	for _, ref := range refAliases {
@@ -1626,15 +1644,18 @@ func (impl *repoImpl) DescribeClient(ctx context.Context, r *repopb.DescribeClie
 		}
 	}
 	if sha1 == "" {
-		return nil, grpcutil.InternalTag.Apply(errors.
-
-			// Grab the signed URL of the client binary.
-			New("malformed client extraction results, missing SHA1 digest"))
+		return nil, grpcutil.InternalTag.Apply(errors.New("malformed client extraction results, missing SHA1 digest"))
 	}
 
+	// Grab the signed URL of the client binary.
+	userProject, err := impl.StorageUserProject(ctx, r.Package)
+	if err != nil {
+		return nil, err
+	}
 	signedURL, err := impl.cas.GetObjectURL(ctx, &caspb.GetObjectURLRequest{
 		Object:           ref,
 		DownloadFilename: processing.GetClientBinaryName(r.Package), // e.g. 'cipd.exe'
+		UserProject:      userProject,
 	})
 	if err != nil {
 		return nil, grpcutil.InternalTag.Apply(errors.Fmt("failed to get signed URL to the client binary: %w", err))
@@ -1985,9 +2006,14 @@ func (impl *repoImpl) handleClientBootstrap(ctx *router.Context) error {
 	}
 
 	// Ask CAS for a signed URL to the client binary and redirect there.
+	userProject, err := impl.StorageUserProject(c, pkg)
+	if err != nil {
+		return err
+	}
 	url, err := impl.cas.GetObjectURL(c, &caspb.GetObjectURLRequest{
 		Object:           ref,
 		DownloadFilename: processing.GetClientBinaryName(pkg), // e.g. 'cipd.exe'
+		UserProject:      userProject,
 	})
 	if err == nil {
 		http.Redirect(w, r, url.SignedUrl, http.StatusFound)
@@ -2041,9 +2067,14 @@ func (impl *repoImpl) handlePackageDownload(ctx *router.Context) error {
 	}
 
 	// Ask CAS for a signed URL to the package and redirect there.
+	userProject, err := impl.StorageUserProject(c, pkg)
+	if err != nil {
+		return err
+	}
 	url, err := impl.cas.GetObjectURL(c, &caspb.GetObjectURLRequest{
 		Object:           inst.Instance,
 		DownloadFilename: name + ".zip",
+		UserProject:      userProject,
 	})
 	if err == nil {
 		http.Redirect(w, r, url.SignedUrl, http.StatusFound)
@@ -2108,9 +2139,14 @@ func (impl *repoImpl) handleBootstrapDownload(ctx *router.Context) error {
 	w.Header().Set(cipdDigestHeader, fmt.Sprintf("%s:%s", bf.File.HashAlgo, bf.File.HexDigest))
 
 	// Ask CAS for a signed URL to the extracted file and redirect there.
+	userProject, err := impl.StorageUserProject(c, bf.Package)
+	if err != nil {
+		return err
+	}
 	url, err := impl.cas.GetObjectURL(c, &caspb.GetObjectURLRequest{
 		Object:           bf.File,
 		DownloadFilename: bf.Name,
+		UserProject:      userProject,
 	})
 	if err == nil {
 		http.Redirect(w, r, url.SignedUrl, http.StatusFound)
@@ -2214,16 +2250,16 @@ func (impl *repoImpl) handleLegacyInstance(ctx *router.Context) error {
 	c, r, w := ctx.Request.Context(), ctx.Request, ctx.Writer
 
 	iid := r.FormValue("instance_id")
-	if err := common.ValidateInstanceID(iid, common.KnownHash); err != nil {
-		return grpcutil.InvalidArgumentTag.Apply(errors.
+	pkg := r.FormValue("package_name")
 
-			// This checks the request format, ACLs, verifies the instance exists and
-			// returns info about it.
-			Fmt("bad instance_id: %w", err))
+	// This checks the request format, ACLs, verifies the instance exists and
+	// returns info about it.
+	if err := common.ValidateInstanceID(iid, common.KnownHash); err != nil {
+		return grpcutil.InvalidArgumentTag.Apply(errors.Fmt("bad instance_id: %w", err))
 	}
 
 	inst, err := impl.DescribeInstance(c, &repopb.DescribeInstanceRequest{
-		Package:  r.FormValue("package_name"),
+		Package:  pkg,
 		Instance: common.InstanceIDToObjectRef(iid),
 	})
 
@@ -2232,8 +2268,13 @@ func (impl *repoImpl) handleLegacyInstance(ctx *router.Context) error {
 		// Here we know the instance exists and the caller has access to it, so just
 		// ask the CAS for an URL directly instead of using impl.GetInstanceURL,
 		// which will needlessly recheck ACLs and instance presence.
+		var userProject string
+		if userProject, err = impl.StorageUserProject(c, pkg); err != nil {
+			return err
+		}
 		signedURL, err = impl.cas.GetObjectURL(c, &caspb.GetObjectURLRequest{
-			Object: inst.Instance.Instance,
+			Object:      inst.Instance.Instance,
+			UserProject: userProject,
 		})
 	}
 
@@ -2288,4 +2329,12 @@ func (impl *repoImpl) handleLegacyResolve(ctx *router.Context) error {
 	default:
 		return err // the legacy client recognizes other codes just fine
 	}
+}
+
+// StorageUserProject returns a Cloud Project to bill GCS operations related
+// to the given package to or "" to use default.
+//
+// Returns grpc-tagged errors returned to the caller as is.
+func (impl *repoImpl) StorageUserProject(ctx context.Context, pkg string) (string, error) {
+	return "", nil
 }
