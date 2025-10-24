@@ -80,7 +80,7 @@ var Tag = errtag.Make("gRPC Code", codes.Unknown)
 
 // Shortcuts for assigning tags with codes known at compile time.
 //
-// Instead of Tag.SetValue(err, codes.InvalidArgument), you can do
+// Instead of Tag.ApplyValue(err, codes.InvalidArgument), you can do
 // codes.InvalidArgumentTag.Apply(err).
 var (
 	CanceledTag           = Tag.WithDefault(codes.Canceled)
@@ -179,8 +179,13 @@ func IsTransientCode(code codes.Code) bool {
 // internal details (including stack trace) for errors with Internal or Unknown
 // codes.
 //
-// If err is already gRPC error (or nil), it is silently passed through, even
-// if it is Internal. There's nothing interesting to log in this case.
+// If the error is not tagged by [Tag] and it is already a gRPC error (per
+// status.FromError), it is silently passed through, even if it is Internal.
+// There's nothing interesting (like a stack trace or tags) to log in this case.
+//
+// If the error is tagged by [Tag] or it is not recognized as a gRPC error, it is
+// logged (in a structured form), and then stringified and converted into a leaf
+// status.Error(...). Note this breaks error wrapping chain.
 //
 // Intended to be used in defer section of gRPC handlers like so:
 //
@@ -216,8 +221,15 @@ func GRPCifyAndLogErr(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
 	}
-	if _, yep := status.FromError(err); yep {
-		return err
+	// Use status.FromError only if there's no explicit code tag. Otherwise gRPC
+	// will use the inner wrapped gRPC error with potentially incorrect code
+	// (because gRPC library totally ignores any tags we attach). When tagging
+	// an error with a status tag, the assumption is that the status in the tag
+	// overrides any existing status that the error has.
+	if _, ok := Tag.Value(err); !ok {
+		if _, ok := status.FromError(err); ok {
+			return err
+		}
 	}
 	code := Code(err)
 	if code == codes.Internal || code == codes.Unknown {
