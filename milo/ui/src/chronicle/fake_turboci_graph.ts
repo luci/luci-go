@@ -296,8 +296,13 @@ export class FakeGraphGenerator {
       stageId,
       data,
     );
-    this.generateStageView(stageId, realm, [], success, [checkId]);
-
+    this.generateStageView(
+      stageId,
+      realm,
+      [{ check: sourceCheckId }],
+      success,
+      [checkId],
+    );
     return checkId;
   }
 
@@ -322,7 +327,13 @@ export class FakeGraphGenerator {
         `S_${idStr}` + (numStages > 1 ? `-${i}` : ''),
       );
       stageIds.push(stageId);
-      this.generateStageView(stageId, realm, [], success, [checkId]);
+      this.generateStageView(
+        stageId,
+        realm,
+        [{ check: buildCheckId }],
+        success,
+        [checkId],
+      );
     }
 
     // If we created multiple stages, we still need one to be the actual editor to FINAL state
@@ -408,7 +419,7 @@ export class FakeGraphGenerator {
     const plannedRev = this.nextRevision();
     const finalRev = this.nextRevision();
 
-    const deps = this.buildDependencies(dependencies, finalRev);
+    const deps = buildDependencies(dependencies, finalRev);
     const emptyDeps: Dependencies = {
       edges: [],
       resolutionEvents: {},
@@ -597,7 +608,7 @@ export class FakeGraphGenerator {
       realm: realm,
       createTs: createRev,
       version: finalRev,
-      dependencies: this.buildDependencies(dependencies, finalRev),
+      dependencies: buildDependencies(dependencies, finalRev),
       executionPolicy: this.createExecutionPolicyState(),
       state: StageState.STAGE_STATE_FINAL,
       attempts: attempts,
@@ -892,37 +903,6 @@ export class FakeGraphGenerator {
     return { workPlan: this.workPlanId, id: id };
   }
 
-  private buildDependencies(
-    targets: Identifier[],
-    resolvedAt: Revision,
-  ): Dependencies {
-    if (!targets || targets.length === 0) {
-      return { edges: [], resolutionEvents: {} };
-    }
-
-    const edges: Edge[] = targets.map((t) => ({ target: t }));
-    const predicate: Dependencies_Group = {
-      edges: edges.map((_, idx) => idx),
-      groups: [],
-    };
-
-    const resolutionEvents: { [key: number]: Dependencies_ResolutionEvent } =
-      {};
-    edges.forEach((_, idx) => {
-      resolutionEvents[idx] = {
-        version: resolvedAt,
-        satisfied: true,
-      };
-    });
-
-    return {
-      edges,
-      predicate,
-      resolutionEvents,
-      resolved: predicate,
-    };
-  }
-
   // ==========================================
   // Complex Sub-Object Generators
   // ==========================================
@@ -1063,4 +1043,34 @@ export class FakeGraphGenerator {
       valueJson: JSON.stringify(jsonPayload),
     };
   }
+}
+
+function buildDependencies(
+  targets: Identifier[],
+  resolvedAt: Revision,
+): Dependencies {
+  if (!targets || targets.length === 0) {
+    return { edges: [], resolutionEvents: {} };
+  }
+
+  const edges: Edge[] = targets.map((t) => ({ target: t }));
+  const predicate: Dependencies_Group = {
+    edges: edges.map((_, idx) => idx),
+    groups: [],
+  };
+
+  const resolutionEvents: { [key: number]: Dependencies_ResolutionEvent } = {};
+  edges.forEach((_, idx) => {
+    resolutionEvents[idx] = {
+      version: resolvedAt,
+      satisfied: true,
+    };
+  });
+
+  return {
+    edges,
+    predicate,
+    resolutionEvents,
+    resolved: predicate,
+  };
 }
