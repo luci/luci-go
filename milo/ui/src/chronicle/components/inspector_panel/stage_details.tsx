@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Divider, Chip, Typography } from '@mui/material';
+import { Box, Chip, Divider, Typography } from '@mui/material';
 
 import { stageStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb';
 import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
 
+import { AnyDetails } from './any_details';
 import { DetailRow } from './detail_row';
-import { GenericJsonDetails } from './generic_json_details';
 
 export interface StageDetailsProps {
   view: StageView;
@@ -59,7 +59,7 @@ export function StageDetails({ view }: StageDetailsProps) {
         <>
           <Divider />
           <Typography variant="subtitle2">Args</Typography>
-          <GenericJsonDetails json={stage.args.valueJson} />
+          <AnyDetails json={stage.args.valueJson} />
         </>
       )}
     </Box>

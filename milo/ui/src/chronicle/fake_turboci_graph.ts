@@ -748,7 +748,31 @@ export class FakeGraphGenerator {
           : `Build ${buildId} for ${targetName} failed.`,
       },
       viewUrl: `https://android-build.googleplex.com/builds/submitted/${buildId}/${targetName}/latest`,
-      gcsArtifacts: {},
+      gcsArtifacts: {
+        [faker.system.commonFileType()]: {
+          rootDirectoryUri: faker.system.directoryPath(),
+          filesByCategory: {
+            [faker.system.commonFileExt()]: {
+              files: faker.helpers.multiple(faker.system.filePath, {
+                count: 5,
+              }),
+            },
+          },
+        },
+      },
+      androidBuildArtifacts: {
+        buildId: buildId,
+        target: targetName,
+        buildAttempt: 'latest',
+      },
+      casManifest: {
+        manifest: {
+          [faker.system.commonFileName()]: faker.git.commitSha(),
+        },
+        casInstance: 'projects/android-build-farm/instances/default_instance',
+        casService: 'remotebuildexecution.googleapis.com:443',
+        clientVersion: '1.0',
+      },
     };
 
     const resultDatum = this.createDatum(

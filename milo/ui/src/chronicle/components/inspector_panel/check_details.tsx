@@ -18,8 +18,8 @@ import { checkKindToJSON } from '@/proto/turboci/graph/orchestrator/v1/check_kin
 import { checkStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/check_state.pb';
 import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
 
+import { AnyDetails } from './any_details';
 import { DetailRow } from './detail_row';
-import { GenericJsonDetails } from './generic_json_details';
 
 export interface CheckDetailsProps {
   view: CheckView;
@@ -51,7 +51,7 @@ export function CheckDetails({ view }: CheckDetailsProps) {
         <>
           <Typography variant="subtitle2">Options</Typography>
           {Object.entries(view.optionData).map(([typeUrl, datum]) => (
-            <GenericJsonDetails
+            <AnyDetails
               key={`check-option-${typeUrl}`}
               typeUrl={typeUrl}
               json={datum.value?.valueJson}
@@ -70,7 +70,7 @@ export function CheckDetails({ view }: CheckDetailsProps) {
             if (dataEntries.length === 0) return null;
 
             return dataEntries.map(([typeUrl, datum]) => (
-              <GenericJsonDetails
+              <AnyDetails
                 key={`result-${resIdx}-${typeUrl}`}
                 typeUrl={typeUrl}
                 json={datum.value?.valueJson}
