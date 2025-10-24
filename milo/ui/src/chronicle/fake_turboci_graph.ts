@@ -768,6 +768,8 @@ export class FakeGraphGenerator {
       casManifest: {
         manifest: {
           [faker.system.commonFileName()]: faker.git.commitSha(),
+          [faker.system.commonFileName()]: faker.git.commitSha(),
+          [faker.system.commonFileName()]: faker.git.commitSha(),
         },
         casInstance: 'projects/android-build-farm/instances/default_instance',
         casService: 'remotebuildexecution.googleapis.com:443',

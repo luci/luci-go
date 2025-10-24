@@ -81,12 +81,15 @@ export function BuildCheckResultDetails({ data }: { data: BuildCheckResult }) {
         <Box sx={{ p: 1, border: '1px solid #eee', borderRadius: 1, mt: 0.5 }}>
           <Typography variant="caption">CAS Manifest</Typography>
           <Box sx={{ pl: 1 }}>
-            <DetailRow
-              label="Manifest"
-              value={Object.entries(data.casManifest.manifest)
-                .map(([key, value]) => `${key}: ${value}`)
-                .join('\n')}
-            />
+            <Typography variant="caption" color="text.secondary">
+              Manifest
+            </Typography>
+            {Object.entries(data.casManifest.manifest).map(([key, value]) => (
+              <Typography
+                key={key}
+                variant="body2"
+              >{`${key}: ${value}}`}</Typography>
+            ))}
             <DetailRow
               label="CAS Instance"
               value={data.casManifest.casInstance}
