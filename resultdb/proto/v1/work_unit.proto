@@ -83,7 +83,10 @@ message WorkUnit {
     RUNNING = 2;
 
     // Final states. When transitioned to one of these states, the
-    // the work unit will also become immutable.
+    // the work unit will also start to finalize (become immutable).
+
+    // Can be used as a bitmask to identify final states.
+    FINAL_STATE_MASK = 4;
 
     // The work unit, including its child work units, completed
     // successfully. If any child work units failed, they were
@@ -103,7 +106,13 @@ message WorkUnit {
     // this status. Instead report the status ERRORED, and indicate what
     // higher-level error precluded the execution of those tests (e.g.
     // loss of system under test).
-    SUCCEEDED = 3;
+    SUCCEEDED = 12; // 8 | FINAL_STATE_MASK
+
+    // The work unit determined no tests need to be run.
+    // For example, the build dependency graph indicates the CL did
+    // not modify the module to be tested.
+    // This status usually indicates no test results were uploaded.
+    SKIPPED = 20; // 16 | FINAL_STATE_MASK
 
     // The work unit, or one of its child work units, encountered an error.
     // Moreover, that error was not resolved by retry within the work unit.
@@ -127,18 +136,12 @@ message WorkUnit {
     // If this work unit is forcefully finalized because the `deadline`
     // expired, it will be automatically transitioned to this state as
     // there is an implied failure to upload results to ResultDB.
-    FAILED = 4;
+    FAILED = 36; // 32 | FINAL_STATE_MASK
 
     // The work unit never started or may be incomplete, because
     // an external factor requested its cancellation (e.g. presubmit
     // run was no longer needed).
-    CANCELLED = 5;
-
-    // The work unit determined no tests need to be run.
-    // For example, the build dependency graph indicates the CL did
-    // not modify the module to be tested.
-    // This status usually indicates no test results were uploaded.
-    SKIPPED = 6;
+    CANCELLED = 68; // 64 | FINAL_STATE_MASK
   }
 
   // The overall state of the work unit, including any child work units.

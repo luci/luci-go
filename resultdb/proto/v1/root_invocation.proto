@@ -88,7 +88,10 @@ message RootInvocation {
     RUNNING = 2;
 
     // Final states. When transitioned to one of these states, the
-    // the root invocation will also become immutable.
+    // the root invocation will also start to finalize (become immutable).
+
+    // Can be used as a bitmask to identify final states.
+    FINAL_STATE_MASK = 4;
 
     // The root invocation completed successfully.
     //
@@ -100,24 +103,24 @@ message RootInvocation {
     // This status generally does not say anything about the test content;
     // tests could have FAILED, some could have even failed to
     // produce a result (EXECUTION_ERRORED).
-    SUCCEEDED = 3;
-
-    // The root invocation encountered an error, which was not resolved
-    // by retry.
-    //
-    // This status means the results may be incomplete.
-    FAILED = 4;
-
-    // The root invocation never started or may be incomplete, because
-    // an external factor requested its cancellation (e.g. presubmit
-    // run was no longer needed).
-    CANCELLED = 5;
+    SUCCEEDED = 12; // 8 | FINAL_STATE_MASK
 
     // The root invocation determined no tests need to be run.
     // For example, the build dependency graph indicates the CL did
     // not modify the module to be tested.
     // This status usually indicates no test results were uploaded.
-    SKIPPED = 6;
+    SKIPPED = 20; // 16 | FINAL_STATE_MASK
+
+    // The root invocation encountered an error, which was not resolved
+    // by retry.
+    //
+    // This status means the results may be incomplete.
+    FAILED = 36; // 32 | FINAL_STATE_MASK
+
+    // The root invocation never started or may be incomplete, because
+    // an external factor requested its cancellation (e.g. presubmit
+    // run was no longer needed).
+    CANCELLED = 68; // 64 | FINAL_STATE_MASK
   }
 
   // The overall state of the root invocation. This is an output only
