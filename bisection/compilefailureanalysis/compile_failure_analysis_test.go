@@ -67,7 +67,8 @@ func TestAnalyzeFailure(t *testing.T) {
 		},
 		Steps: []*bbpb.Step{
 			{
-				Name: "compile",
+				Name:   "compile",
+				Status: bbpb.Status_FAILURE,
 				Logs: []*bbpb.Log{
 					{
 						Name:    "json.output[ninja_info]",

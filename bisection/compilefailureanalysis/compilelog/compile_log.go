@@ -46,7 +46,7 @@ func GetCompileLogs(c context.Context, bbid int64) (*model.CompileLogs, error) {
 	ninjaUrl := ""
 	stdoutUrl := ""
 	for _, step := range build.Steps {
-		if util.IsBuildStep(step) {
+		if util.IsBuildStep(step) && step.Status == buildbucketpb.Status_FAILURE {
 			for _, log := range step.Logs {
 				if log.Name == "json.output[failure_summary]" || log.Name == "raw_io.output_text[failure_summary]" {
 					failureSummaryUrl = log.ViewUrl

@@ -49,7 +49,20 @@ func TestGetCompileLogs(t *testing.T) {
 	res := &bbpb.Build{
 		Steps: []*bbpb.Step{
 			{
-				Name: "compile",
+				// This step should be skipped because it's successful
+				Name:   "generate_build_files",
+				Status: bbpb.Status_SUCCESS,
+				Logs: []*bbpb.Log{
+					{
+						Name:    "stdout",
+						ViewUrl: "https://logs.chromium.org/logs/generate_stdout",
+					},
+				},
+			},
+			{
+				// This step should be processed because it failed
+				Name:   "compile",
+				Status: bbpb.Status_FAILURE,
 				Logs: []*bbpb.Log{
 					{
 						Name:    "json.output[failure_summary]",
