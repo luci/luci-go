@@ -25,6 +25,7 @@ import (
 	"cloud.google.com/go/datastore"
 	"google.golang.org/api/iterator"
 	pb "google.golang.org/genproto/googleapis/datastore/v1"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
 
@@ -86,9 +87,14 @@ func (bds *boundDatastore) RunInTransaction(fn func(context.Context) error, opts
 		}
 	}
 
+	var innerErr error
 	_, err := bds.client.RunInTransaction(bds, func(tx *datastore.Transaction) error {
-		return fn(withDatastoreTransaction(bds, tx, opts))
+		innerErr = fn(withDatastoreTransaction(bds, tx, opts))
+		return innerErr
 	}, txOpts...)
+	if err == innerErr {
+		return innerErr
+	}
 	return normalizeError(err)
 }
 
@@ -232,7 +238,7 @@ func (bds *boundDatastore) PutMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds
 		if len(incompleteKeys) > 0 {
 			completeKeys, err := bds.client.AllocateIDs(bds, incompleteKeys)
 			if err != nil {
-				return err
+				return normalizeError(err)
 			}
 			cursor := 0
 			for i, k := range keys {
@@ -748,6 +754,8 @@ func datastoreTransaction(c context.Context) *transactionWrapper {
 
 func normalizeError(err error) error {
 	switch err {
+	case nil:
+		return nil
 	case datastore.ErrNoSuchEntity:
 		return ds.ErrNoSuchEntity
 	case datastore.ErrConcurrentTransaction:
@@ -755,6 +763,12 @@ func normalizeError(err error) error {
 	case datastore.ErrInvalidKey:
 		return ds.ErrInvalidKey
 	default:
+		// Do not leak internal Cloud Datastore gRPC status. If we notice it,
+		// stringify the error to get rid of it. Otherwise it may incorrectly bubble
+		// up to the very top.
+		if _, ok := status.FromError(err); ok {
+			return fmt.Errorf("datastore: %s", err)
+		}
 		return err
 	}
 }

@@ -25,6 +25,8 @@ import (
 
 	"cloud.google.com/go/datastore"
 	"github.com/google/go-cmp/cmp"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
@@ -608,6 +610,14 @@ func TestDatastore(t *testing.T) {
 						return ds.Get(c, pmap)
 					}, nil)
 					assert.Loosely(t, err, should.Equal(ds.ErrNoSuchEntity))
+				})
+
+				t.Run(`Can return gRPC errors from txn callback.`, func(t *ftt.Test) {
+					testError := status.Errorf(codes.Aborted, "boom")
+					err := ds.RunInTransaction(c, func(c context.Context) error {
+						return testError
+					}, nil)
+					assert.Loosely(t, err, should.Equal(testError))
 				})
 			})
 		})
