@@ -60,9 +60,8 @@ export function InspectorPanel({
     <Paper
       elevation={1}
       sx={{
-        width: '400px',
+        width: '100%',
         height: '100%',
-        borderLeft: '1px solid #e0e0e0',
         display: 'flex',
         flexDirection: 'column',
       }}

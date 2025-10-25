@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Box } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useDebounce } from 'react-use';
 import ReactFlow, {
   Background,
@@ -22,7 +24,7 @@ import ReactFlow, {
   useEdgesState,
   ReactFlowProvider,
   useReactFlow,
-  Panel,
+  Panel as ReactFlowPanel,
   Node,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -127,8 +129,11 @@ function Graph() {
   }, [nodes, selectedNodeId]);
 
   return (
-    <div style={{ display: 'flex', height: '100%', width: '100%' }}>
-      <div style={{ flexGrow: 1, height: '100%' }}>
+    <PanelGroup
+      direction="horizontal"
+      style={{ height: '100%', width: '100%' }}
+    >
+      <Panel minSize={50}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -140,7 +145,7 @@ function Graph() {
           <Background />
           <Controls />
           <MiniMap />
-          <Panel position="top-left">
+          <ReactFlowPanel position="top-left">
             <input
               type="text"
               placeholder="Search nodes..."
@@ -148,17 +153,37 @@ function Graph() {
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ padding: '8px', width: '200px' }}
             />
-          </Panel>
+          </ReactFlowPanel>
         </ReactFlow>
-      </div>
+      </Panel>
       {selectedNodeId && (
-        <InspectorPanel
-          nodeId={selectedNodeId}
-          viewData={selectedNode?.data?.view}
-          onClose={onInspectorClose}
-        />
+        <>
+          <PanelResizeHandle>
+            <Box
+              sx={{
+                width: '8px',
+                height: '100%',
+                cursor: 'col-resize',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: 'action.hover',
+                '&:hover': { bgcolor: 'action.selected' },
+              }}
+            >
+              <Box sx={{ width: '2px', height: '24px', bgcolor: 'divider' }} />
+            </Box>
+          </PanelResizeHandle>
+          <Panel defaultSize={30} minSize={20}>
+            <InspectorPanel
+              nodeId={selectedNodeId}
+              viewData={selectedNode?.data?.view}
+              onClose={onInspectorClose}
+            />
+          </Panel>
+        </>
       )}
-    </div>
+    </PanelGroup>
   );
 }
 
