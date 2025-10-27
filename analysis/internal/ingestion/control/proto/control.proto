@@ -20,6 +20,7 @@ import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/root_invocation.proto";
 
 option go_package = "go.chromium.org/luci/analysis/internal/ingestion/control/proto;controlpb";
 
@@ -46,7 +47,8 @@ message BuildResult {
   // The builder this build was a part of.
   string builder = 5;
 
-  // The ending status of the build. E.g. Canceled, Success, Failure, Infra failure.
+  // The ending status of the build. E.g. Canceled, Success, Failure, Infra
+  // failure.
   luci.analysis.v1.BuildStatus status = 6;
 
   // The version of code (excluding any unsubmitted changelists) that was
@@ -113,4 +115,14 @@ message InvocationResult {
   string invocation_id = 2;
   // The time the invocation was created.
   google.protobuf.Timestamp creation_time = 3;
+}
+
+// RootInvocationResult represents the result from the root invocation
+// finalization pub/sub that should be passed to the result ingestion task.
+// Next id: 3
+message RootInvocationResult {
+  // The ResultDB host which contains this ResultDB root invocation.
+  string resultdb_host = 1;
+  // The root invocation.
+  luci.resultdb.v1.RootInvocation root_invocation = 2;
 }
