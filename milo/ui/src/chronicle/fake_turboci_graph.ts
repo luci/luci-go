@@ -31,14 +31,23 @@ import {
 } from '../proto/turboci/data/build/v1/build_check_options.pb';
 import { BuildCheckResult } from '../proto/turboci/data/build/v1/build_check_results.pb';
 import {
+  AccountInfo,
+  ChangeMessageInfo,
+  FileInfo_Status,
   GerritChangeInfo,
   GerritChangeInfo_Status,
+  LabelInfo,
+  RevisionInfo,
+  RevisionInfo_Kind,
 } from '../proto/turboci/data/gerrit/v1/gerrit_change_info.pb';
 import {
   GobSourceCheckOptions,
   GobSourceCheckOptions_GerritChange,
+  GobSourceCheckOptions_PinnedRepoMounts,
+  GobSourceCheckOptions_PinnedRepoMounts_GitCommit,
 } from '../proto/turboci/data/gerrit/v1/gob_source_check_options.pb';
 import { GobSourceCheckResults } from '../proto/turboci/data/gerrit/v1/gob_source_check_results.pb';
+import { PiperSourceCheckOptions } from '../proto/turboci/data/piper/v1/piper_source_check_options.pb';
 import {
   Identifier,
   WorkPlan,
@@ -91,6 +100,8 @@ const TYPE_URL_GOB_SOURCE_OPTIONS =
   'type.googleapis.com/turboci.data.gerrit.v1.GobSourceCheckOptions';
 const TYPE_URL_GOB_SOURCE_RESULTS =
   'type.googleapis.com/turboci.data.gerrit.v1.GobSourceCheckResults';
+const TYPE_URL_PIPER_SOURCE_OPTIONS =
+  'type.googleapis.com/turboci.data.piper.v1.PiperSourceCheckOptions';
 const TYPE_URL_BUILD_OPTIONS =
   'type.googleapis.com/turboci.data.build.v1.BuildCheckOptions';
 const TYPE_URL_BUILD_RESULTS =
@@ -112,6 +123,16 @@ const FAKE_GERRIT_PROJECTS = [
   'platform/vendor/google/camera',
 ];
 const FAKE_GIT_BRANCHES = ['main', 'androidx-main', 'android14-tests-release'];
+const FAKE_MOUNT_PATHS = [
+  'src',
+  'src/third_party/skia',
+  'src/v8',
+  'frameworks/base',
+  'packages/apps/Settings',
+  'system/core',
+  'manifest',
+  'build/make',
+];
 const FAKE_ANDROID_BRANCHES = [
   'git-main',
   'git_25Q1-release',
@@ -167,8 +188,8 @@ export interface GraphGenerationConfig {
 interface CheckData {
   optionsRef: Check_OptionRef;
   optionDatum: Datum;
-  resultRef: Check_Result;
-  resultView: CheckResultView;
+  resultRef?: Check_Result;
+  resultView?: CheckResultView;
 }
 
 export class FakeGraphGenerator {
@@ -213,7 +234,7 @@ export class FakeGraphGenerator {
     const testCheckIds: CheckId[] = [];
 
     // 1. Generate Source Node (1 Check, 1 Stage)
-    const sourceId = this.createSourcePair();
+    const sourceId = this.createGobSourcePair();
     sourceCheckIds.push(sourceId);
 
     // 2. Generate Build Nodes, dependent on Source
@@ -234,7 +255,10 @@ export class FakeGraphGenerator {
       }
     }
 
-    // 4. Create Planning Stages per check type.
+    // 4. Generate an orphaned Piper Source node for testing purposes only.
+    this.createPiperSource();
+
+    // 5. Create Planning Stages per check type.
     this.createPlanningStage(this.sourcePlanningStageId, sourceCheckIds);
     this.createPlanningStage(this.buildPlanningStageId, buildCheckIds);
     this.createPlanningStage(this.testPlanningStageId, testCheckIds);
@@ -251,14 +275,14 @@ export class FakeGraphGenerator {
   // Procedural Generation Orchestration
   // ==========================================
 
-  private createSourcePair(): CheckId {
-    const idStr = 'Source';
+  private createGobSourcePair(): CheckId {
+    const idStr = 'Source_Gob';
     const checkId = this.createCheckId(`C_${idStr}`);
     const stageId = this.createStageId(`S_${idStr}`);
     const realm = `${idStr}-realm`;
 
     // Generate Data
-    const data = this.generateSourceCheckData(checkId, realm, stageId);
+    const data = this.generateGobSourceCheckData(checkId, realm, stageId);
 
     // Generate Views (simulating lifecycle)
     this.generateCheckView(
@@ -271,6 +295,26 @@ export class FakeGraphGenerator {
     );
     // Source stages always succeed in this simulation
     this.generateStageView(stageId, realm, [], true, [checkId]);
+
+    return checkId;
+  }
+
+  private createPiperSource(): CheckId {
+    const idStr = 'Source_Piper';
+    const checkId = this.createCheckId(`C_${idStr}`);
+    const stageId = this.createStageId(`S_${idStr}`);
+    const realm = `${idStr}-realm`;
+
+    const data = this.generatePiperSourceCheckData(checkId, realm);
+
+    this.generateCheckView(
+      checkId,
+      CheckKind.CHECK_KIND_SOURCE,
+      realm,
+      [],
+      stageId,
+      data,
+    );
 
     return checkId;
   }
@@ -486,40 +530,48 @@ export class FakeGraphGenerator {
     });
 
     // Construct finalized result ref based on generated data and time
-    const finalizedResultRef: Check_Result = {
-      identifier: data.resultRef.identifier,
-      owner: data.resultRef.owner,
-      data: data.resultRef.data,
-      createdAt: finalRev,
-      finalizedAt: finalRev,
-    };
+    const results: Check_Result[] = [];
+    const resultsViewData: Record<number, CheckResultView> = {};
 
-    // 4. Final Edit by executing stage (Results Posted)
-    edits.push({
-      edit: this.createEdit(
-        { check: checkId },
-        realm,
-        finalRev,
-        'Results posted and finalized',
-        {
-          check: {
-            state: CheckState.CHECK_STATE_FINAL,
-            options: [],
-            dependencies: emptyDeps,
-            result: [
-              {
-                identifier: finalizedResultRef.identifier,
-                created: true,
-                finalized: true,
-                data: finalizedResultRef.data.map((d) => d.identifier!),
-              },
-            ],
+    if (data.resultRef && data.resultView) {
+      const finalizedResultRef: Check_Result = {
+        identifier: data.resultRef.identifier,
+        owner: data.resultRef.owner,
+        data: data.resultRef.data,
+        createdAt: finalRev,
+        finalizedAt: finalRev,
+      };
+
+      results.push(finalizedResultRef);
+      resultsViewData[data.resultView.identifier!.idx!] = data.resultView;
+
+      // 4. Final Edit by executing stage (Results Posted)
+      edits.push({
+        edit: this.createEdit(
+          { check: checkId },
+          realm,
+          finalRev,
+          'Results posted and finalized',
+          {
+            check: {
+              state: CheckState.CHECK_STATE_FINAL,
+              options: [],
+              dependencies: emptyDeps,
+              result: [
+                {
+                  identifier: finalizedResultRef.identifier,
+                  created: true,
+                  finalized: true,
+                  data: finalizedResultRef.data.map((d) => d.identifier!),
+                },
+              ],
+            },
           },
-        },
-        actor,
-      ),
-      optionData: data.resultView.data,
-    });
+          actor,
+        ),
+        optionData: data.resultView.data,
+      });
+    }
 
     // Construct Final Check Object (immutable components + final state)
     const check: Check = {
@@ -529,7 +581,7 @@ export class FakeGraphGenerator {
       version: finalRev,
       dependencies: deps,
       options: [data.optionsRef],
-      results: [finalizedResultRef],
+      results: results,
       state: CheckState.CHECK_STATE_FINAL,
     };
 
@@ -538,7 +590,7 @@ export class FakeGraphGenerator {
       check: check,
       optionData: { [data.optionsRef.typeUrl!]: data.optionDatum },
       edits: edits,
-      results: { [data.resultView.identifier!.idx!]: data.resultView },
+      results: resultsViewData,
     };
   }
 
@@ -632,61 +684,233 @@ export class FakeGraphGenerator {
   // Check Data Generators (Options & Results)
   // ==========================================
 
-  private generateSourceCheckData(
+  private generateFakeGitCommit(): GobSourceCheckOptions_PinnedRepoMounts_GitCommit {
+    return {
+      host: faker.helpers.arrayElement(FAKE_GERRIT_HOSTS),
+      project: faker.helpers.arrayElement(FAKE_GERRIT_PROJECTS),
+      id: faker.git.commitSha(),
+      ref: `refs/heads/${faker.helpers.arrayElement(FAKE_GIT_BRANCHES)}`,
+    };
+  }
+
+  private generateFakeAccount(): AccountInfo {
+    const email = faker.internet.email();
+    return {
+      accountId: faker.number.int({ min: 1000, max: 99999 }).toString(),
+      name: faker.person.fullName(),
+      email: email,
+      username: email.split('@')[0],
+      secondaryEmails: [],
+      tags: [],
+    };
+  }
+
+  private generateFakeLabels(): { [key: string]: LabelInfo } {
+    const labels: { [key: string]: LabelInfo } = {};
+    // Code-Review
+    labels['Code-Review'] = {
+      all: [
+        {
+          user: this.generateFakeAccount(),
+          value: 2,
+          date: faker.date.recent().toISOString(),
+        },
+        {
+          user: this.generateFakeAccount(),
+          value: 1,
+          date: faker.date.recent().toISOString(),
+        },
+      ],
+      values: {
+        '-2': 'Do not submit',
+        '-1': "I would prefer that you didn't submit this",
+        ' 0': 'No score',
+        '+1': 'Looks good to me, but someone else must approve',
+        '+2': 'Looks good to me, approved',
+      },
+      defaultValue: 0,
+    };
+    // Verified
+    labels['Verified'] = {
+      all: [
+        {
+          user: this.generateFakeAccount(),
+          value: 1,
+          date: faker.date.recent().toISOString(),
+        },
+      ],
+      values: {
+        '-1': 'Fails',
+        ' 0': 'No score',
+        '+1': 'Verified',
+      },
+      defaultValue: 0,
+    };
+    return labels;
+  }
+
+  private generateFakeMessages(
+    startPatchset: number,
+    endPatchset: number,
+  ): ChangeMessageInfo[] {
+    const messages: ChangeMessageInfo[] = [];
+    let currentPatchset = startPatchset;
+    const numMessages = faker.number.int({ min: 3, max: 8 });
+
+    for (let i = 0; i < numMessages; i++) {
+      // Simulate patchsets advancing occasionally
+      if (
+        i > 0 &&
+        currentPatchset < endPatchset &&
+        faker.datatype.boolean(0.3)
+      ) {
+        currentPatchset++;
+        messages.push({
+          id: faker.string.uuid(),
+          author: this.generateFakeAccount(),
+          date: faker.date.recent().toISOString(),
+          message: `Uploaded patch set ${currentPatchset}.`,
+          patchset: currentPatchset,
+          accountsInMessage: [],
+        });
+      }
+
+      messages.push({
+        id: faker.string.uuid(),
+        author: this.generateFakeAccount(),
+        date: faker.date.recent().toISOString(),
+        message: faker.lorem.sentences(faker.number.int({ min: 1, max: 3 })),
+        patchset: currentPatchset,
+        accountsInMessage: [],
+      });
+    }
+    return messages;
+  }
+
+  private generateFakeRevisions(endPatchset: number): {
+    [key: string]: RevisionInfo;
+  } {
+    const revisions: { [key: string]: RevisionInfo } = {};
+    // Just generate the latest one for now to save space, maybe one previous.
+    const startPatchset = Math.max(1, endPatchset - 1);
+
+    for (let i = startPatchset; i <= endPatchset; i++) {
+      const commitSha = faker.git.commitSha();
+      revisions[commitSha] = {
+        kind: RevisionInfo_Kind.KIND_REWORK,
+        patchset: i,
+        created: faker.date.past().toISOString(),
+        uploader: this.generateFakeAccount(),
+        ref: `refs/changes/12/123412/${i}`,
+        commit: {
+          commitId: commitSha,
+          subject: faker.git.commitMessage(),
+          message: faker.lorem.paragraph(),
+          author: this.generateFakeAccount(),
+          committer: this.generateFakeAccount(),
+          parents: [{ commitId: faker.git.commitSha(), parents: [] }],
+        },
+        files: {
+          [faker.system.filePath()]: {
+            status: FileInfo_Status.STATUS_MODIFIED,
+            linesInserted: faker.number.int({ min: 1, max: 100 }),
+            linesDeleted: faker.number.int({ min: 0, max: 50 }),
+          },
+          [faker.system.filePath()]: {
+            status: FileInfo_Status.STATUS_ADDED,
+            linesInserted: faker.number.int({ min: 10, max: 200 }),
+          },
+        },
+      };
+    }
+
+    return revisions;
+  }
+
+  private generateGobSourceCheckData(
     checkId: CheckId,
     realm: string,
     stageId: StageId,
   ): CheckData {
-    const host = faker.helpers.arrayElement(FAKE_GERRIT_HOSTS);
-    const project = faker.helpers.arrayElement(FAKE_GERRIT_PROJECTS);
-
     const gerritChangesInput: GobSourceCheckOptions_GerritChange[] = [];
     const gerritChangesOutput: GerritChangeInfo[] = [];
 
     for (let i = 0; i < this.config.numSourceChanges; i++) {
+      const host = faker.helpers.arrayElement(FAKE_GERRIT_HOSTS);
+      const project = faker.helpers.arrayElement(FAKE_GERRIT_PROJECTS);
       const changeNum = faker.number
         .int({ min: 100000, max: 999999 })
         .toString();
-      const ps = faker.number.int({ min: 1, max: 10 });
+      const ps = faker.number.int({ min: 2, max: 10 });
+
+      const mountsToApply = faker.helpers.arrayElements(FAKE_MOUNT_PATHS, {
+        min: 1,
+        max: 3,
+      });
 
       const inputCl: GobSourceCheckOptions_GerritChange = {
         hostname: host,
         changeNumber: changeNum,
         patchset: ps,
-        mountsToApply: [], // Apply to all
+        mountsToApply: mountsToApply,
       };
       gerritChangesInput.push(inputCl);
 
       // Expanded GerritChangeInfo
-      const ownerEmail = faker.internet.email();
+      const owner = this.generateFakeAccount();
       const outputCl: GerritChangeInfo = {
         host: host,
         project: project,
         branch: faker.helpers.arrayElement(FAKE_GIT_BRANCHES),
         changeNumber: changeNum,
+        changeId: `I${faker.string.hexadecimal({ length: 40, prefix: '' }).toLowerCase()}`,
         patchset: ps,
         status: GerritChangeInfo_Status.STATUS_NEW,
-        creationTime: faker.date.recent().toISOString(),
-        owner: {
-          email: ownerEmail,
-          name: faker.person.fullName(),
-          username: ownerEmail.split('@')[0],
-          secondaryEmails: [],
-          tags: [],
+        creationTime: faker.date.past().toISOString(),
+        lastModificationTime: faker.date.recent().toISOString(),
+        owner: owner,
+        topic: faker.datatype.boolean() ? faker.hacker.noun() : undefined,
+        labels: this.generateFakeLabels(),
+        reviewers: {
+          REVIEWER: {
+            accounts: [this.generateFakeAccount(), this.generateFakeAccount()],
+          },
+          CC: {
+            accounts: [this.generateFakeAccount()],
+          },
         },
-        // Other fields omitted for brevity in fake data
-        revisions: {},
-        reviewers: {},
-        labels: {},
-        messages: [],
+        revisions: this.generateFakeRevisions(ps),
+        messages: this.generateFakeMessages(Math.max(1, ps - 2), ps),
       };
       gerritChangesOutput.push(outputCl);
     }
 
     // --- Options ---
     const optId: CheckOptionId = { check: checkId, idx: 1 };
+
+    // Randomly decide whether to pin via project commit or manifest commit
+    const useManifest = faker.datatype.boolean();
+
+    const basePinnedRepos: GobSourceCheckOptions_PinnedRepoMounts = {
+      projectCommit: useManifest ? undefined : this.generateFakeGitCommit(),
+      manifestCommit: useManifest
+        ? {
+            commit: this.generateFakeGitCommit(),
+            path: `manifest/${faker.system.commonFileName('xml')}`,
+          }
+        : undefined,
+      mountOverrides: faker.helpers.multiple(
+        () => ({
+          mount: faker.helpers.arrayElement(FAKE_MOUNT_PATHS),
+          override: this.generateFakeGitCommit(),
+        }),
+        { count: { min: 0, max: 3 } },
+      ),
+    };
+
     const sourceOptions: GobSourceCheckOptions = {
       gerritChanges: gerritChangesInput,
+      basePinnedRepos: basePinnedRepos,
     };
 
     const optionDatum = this.createDatum(
@@ -719,6 +943,41 @@ export class FakeGraphGenerator {
       resultDatum,
       stageId,
     );
+  }
+
+  private generatePiperSourceCheckData(
+    checkId: CheckId,
+    realm: string,
+  ): CheckData {
+    const optId: CheckOptionId = { check: checkId, idx: 1 };
+
+    const piperOptions: PiperSourceCheckOptions = {
+      clNumber: faker.number.int({ min: 600000000, max: 700000000 }).toString(),
+      files: faker.helpers.multiple(
+        () => `//depot/google3/${faker.system.filePath()}`,
+        { count: { min: 1, max: 5 } },
+      ),
+      targets: faker.helpers.multiple(
+        () => `//depot/google3/${faker.lorem.word()}:${faker.lorem.word()}`,
+        { count: { min: 0, max: 3 } },
+      ),
+    };
+
+    const optionDatum = this.createDatum(
+      { checkOption: optId },
+      realm,
+      TYPE_URL_PIPER_SOURCE_OPTIONS,
+      piperOptions,
+    );
+
+    // No results for piper check in this fake generator, just options.
+    return {
+      optionsRef: {
+        identifier: optId,
+        typeUrl: TYPE_URL_PIPER_SOURCE_OPTIONS,
+      },
+      optionDatum: optionDatum,
+    };
   }
 
   private generateBuildCheckData(

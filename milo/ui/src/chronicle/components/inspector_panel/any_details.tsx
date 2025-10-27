@@ -20,6 +20,11 @@ import {
   BuildCheckResultDetails,
 } from './build_details';
 import { GenericJsonDetails } from './generic_json_details';
+import {
+  GobSourceCheckOptionsDetails,
+  GobSourceCheckResultsDetails,
+} from './gob_details';
+import { PiperSourceCheckOptionsDetails } from './piper_details';
 
 // Define a generic renderer type that accepts unknown data.
 // Data must be unknown in order to support multiple different protos.
@@ -32,6 +37,12 @@ const KNOWN_TYPE_RENDERERS: Record<string, GenericRenderer> = {
     BuildCheckOptionsDetails as unknown as GenericRenderer,
   'type.googleapis.com/turboci.data.build.v1.BuildCheckResult':
     BuildCheckResultDetails as unknown as GenericRenderer,
+  'type.googleapis.com/turboci.data.gerrit.v1.GobSourceCheckOptions':
+    GobSourceCheckOptionsDetails as unknown as GenericRenderer,
+  'type.googleapis.com/turboci.data.gerrit.v1.GobSourceCheckResults':
+    GobSourceCheckResultsDetails as unknown as GenericRenderer,
+  'type.googleapis.com/turboci.data.piper.v1.PiperSourceCheckOptions':
+    PiperSourceCheckOptionsDetails as unknown as GenericRenderer,
 };
 
 export interface AnyDetailsProps {
