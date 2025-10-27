@@ -50,6 +50,10 @@ func AnalyzeFailure(
 	genaiClient llm.Client,
 ) (*model.CompileFailureAnalysis, error) {
 	logging.Infof(c, "AnalyzeFailure firstFailed = %d", firstFailedBuildID)
+	firstFailedBuild, e := buildbucket.GetBuild(c, firstFailedBuildID, nil)
+	if e != nil {
+		return nil, fmt.Errorf("error getting build %d: %w", firstFailedBuildID, e)
+	}
 	regressionRange, e := findRegressionRange(c, firstFailedBuildID, lastPassedBuildID)
 	if e != nil {
 		return nil, e
@@ -95,11 +99,17 @@ func AnalyzeFailure(
 	c = loggingutil.SetAnalysisID(c, analysis.Id)
 
 	// Check if the analysis is for tree closer, if yes, set the flag.
-	err := setTreeCloser(c, analysis)
+	stepName, err := buildbucket.GetFailedStepName(firstFailedBuild)
 	if err != nil {
-		// Non-critical, just continue
-		err := errors.Fmt("failed to check tree closer: %w", err)
-		logging.Errorf(c, err.Error())
+		// Just log the error and continue
+		logging.Errorf(c, "could not get failed step for build %d: %v", firstFailedBuildID, err)
+	} else if stepName != "" {
+		err = setTreeCloser(c, analysis, stepName)
+		if err != nil {
+			// Non-critical, just continue
+			err := errors.Fmt("failed to check tree closer: %w", err)
+			logging.Errorf(c, err.Error())
+		}
 	}
 
 	// LLM analysis
@@ -162,7 +172,7 @@ func verifyGenAIResult(c context.Context, genaiAnalysis *model.CompileGenAIAnaly
 	return nil
 }
 
-// findRegressionRange takes in the first failed and last passed buildID
+// findRegressionRange takes in the first failed build and last passed buildID
 // and returns the regression range based on GitilesCommit.
 func findRegressionRange(
 	c context.Context,
@@ -173,14 +183,13 @@ func findRegressionRange(
 	if err != nil {
 		return nil, fmt.Errorf("error getting build %d: %w", firstFailedBuildID, err)
 	}
-
 	lastPassedBuild, err := buildbucket.GetBuild(c, lastPassedBuildID, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error getting build %d: %w", lastPassedBuildID, err)
 	}
 
 	if firstFailedBuild.GetInput().GetGitilesCommit() == nil || lastPassedBuild.GetInput().GetGitilesCommit() == nil {
-		return nil, fmt.Errorf("couldn't get gitiles commit for builds (%d, %d)", lastPassedBuildID, firstFailedBuildID)
+		return nil, fmt.Errorf("couldn't get gitiles commit for builds (%d, %d)", lastPassedBuildID, firstFailedBuild.Id)
 	}
 
 	return &pb.RegressionRange{
@@ -190,7 +199,7 @@ func findRegressionRange(
 }
 
 // setTreeCloser checks and updates the analysis if it is for a treecloser failure.
-func setTreeCloser(c context.Context, cfa *model.CompileFailureAnalysis) error {
+func setTreeCloser(c context.Context, cfa *model.CompileFailureAnalysis, stepName string) error {
 	fb, err := datastoreutil.GetBuild(c, cfa.CompileFailure.Parent().IntID())
 	if err != nil {
 		return errors.Fmt("getBuild: %w", err)
@@ -199,9 +208,7 @@ func setTreeCloser(c context.Context, cfa *model.CompileFailureAnalysis) error {
 		return fmt.Errorf("couldn't find build for analysis %d", cfa.Id)
 	}
 
-	// TODO (nqmtuan): Pass in step name when we support arbitrary
-	// step name which may not be "compile"
-	isTreeCloser, err := lucinotify.CheckTreeCloser(c, fb.Project, fb.Bucket, fb.Builder, "compile")
+	isTreeCloser, err := lucinotify.CheckTreeCloser(c, fb.Project, fb.Bucket, fb.Builder, stepName)
 	if err != nil {
 		return err
 	}

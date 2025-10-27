@@ -17,6 +17,7 @@ package compilefailureanalysis
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -103,10 +104,16 @@ func TestAnalyzeFailure(t *testing.T) {
 	// Mock luci notify
 	lnmock := lucinotify.NewMockedClient(c, ctl)
 	c = lnmock.Ctx
+	treeCloserReq := &lnpb.CheckTreeCloserRequest{
+		Project: "chromium",
+		Bucket:  "ci",
+		Builder: "android",
+		Step:    "compile",
+	}
 	resp := &lnpb.CheckTreeCloserResponse{
 		IsTreeCloser: true,
 	}
-	lnmock.Client.EXPECT().CheckTreeCloser(gomock.Any(), gomock.Any(), gomock.Any()).Return(resp, nil).Times(1)
+	lnmock.Client.EXPECT().CheckTreeCloser(gomock.Any(), treeCloserReq).Return(resp, nil).Times(1)
 
 	// Mock LLM client
 	mockLLMClient := llm.NewMockClient(ctl)
@@ -132,6 +139,7 @@ func TestAnalyzeFailure(t *testing.T) {
 		BuildFailureType: pb.BuildFailureType_COMPILE,
 	}
 	assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
+	datastore.GetTestable(c).CatchupIndexes()
 
 	cf := testutil.CreateCompileFailure(c, t, fb)
 
@@ -162,6 +170,121 @@ func TestAnalyzeFailure(t *testing.T) {
 	assert.Loosely(t, len(nthsection_analyses), should.Equal(1))
 }
 
+func TestAnalyzeFailure_CustomStepName(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+	testutil.UpdateIndices(c)
+	cl := testclock.New(testclock.TestTimeUTC)
+	c = clock.Set(c, cl)
+
+	// Setup mock for buildbucket
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mc := buildbucket.NewMockedClient(c, ctl)
+	c = mc.Ctx
+	c = gitiles.MockedGitilesClientContext(c, map[string]string{})
+	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+		func(ctx context.Context, req *bbpb.GetBuildRequest, opts ...interface{}) (*bbpb.Build, error) {
+			if req.Id == 124 {
+				return &bbpb.Build{
+					Input: &bbpb.Build_Input{
+						GitilesCommit: &bbpb.GitilesCommit{
+							Host:    "host",
+							Project: "proj",
+							Id:      "id",
+							Ref:     "ref",
+						},
+					},
+					Steps: []*bbpb.Step{
+						{
+							Name:   "compile",
+							Status: bbpb.Status_FAILURE,
+							Logs: []*bbpb.Log{
+								{
+									Name:    "json.output[ninja_info]",
+									ViewUrl: "https://logs.chromium.org/logs/ninja_log",
+								},
+								{
+									Name:    "stdout",
+									ViewUrl: "https://logs.chromium.org/logs/stdout_log",
+								},
+							},
+						},
+					},
+				}, nil
+			}
+			// For last passed build
+			return &bbpb.Build{
+				Input: &bbpb.Build_Input{
+					GitilesCommit: &bbpb.GitilesCommit{},
+				},
+			}, nil
+		}).AnyTimes()
+
+	// Mock logdog
+	ninjaLogJson := map[string]any{
+		"failures": []map[string]any{
+			{
+				"output_nodes": []string{
+					"obj/net/net_unittests__library/ssl_server_socket_unittest.o",
+				},
+			},
+		},
+	}
+	ninjaLogStr, _ := json.Marshal(ninjaLogJson)
+	c = logdog.MockClientContext(c, map[string]string{
+		"https://logs.chromium.org/logs/ninja_log":  string(ninjaLogStr),
+		"https://logs.chromium.org/logs/stdout_log": "stdout_log",
+	})
+
+	// Mock luci notify
+	lnmock := lucinotify.NewMockedClient(c, ctl)
+	c = lnmock.Ctx
+	treeCloserReq := &lnpb.CheckTreeCloserRequest{
+		Project: "chromium",
+		Bucket:  "ci",
+		Builder: "linux",
+		Step:    "compile",
+	}
+	resp := &lnpb.CheckTreeCloserResponse{
+		IsTreeCloser: true,
+	}
+	lnmock.Client.EXPECT().CheckTreeCloser(gomock.Any(), treeCloserReq).Return(resp, nil).Times(1)
+
+	// Mock LLM client
+	mockLLMClient := llm.NewMockClient(ctl)
+
+	// Set up the config
+	projectCfg := config.CreatePlaceholderProjectConfig()
+	projectCfg.CompileAnalysisConfig.CulpritVerificationEnabled = false
+	cfg := map[string]*configpb.ProjectConfig{"chromium": projectCfg}
+	assert.Loosely(t, config.SetTestProjectConfig(c, cfg), should.BeNil)
+
+	fb := &model.LuciFailedBuild{
+		Id: 88128398584904,
+		LuciBuild: model.LuciBuild{
+			BuildId:     88128398584904,
+			Project:     "chromium",
+			Bucket:      "ci",
+			Builder:     "linux",
+			BuildNumber: 124,
+			StartTime:   cl.Now(),
+			EndTime:     cl.Now(),
+			CreateTime:  cl.Now(),
+		},
+		BuildFailureType: pb.BuildFailureType_COMPILE,
+	}
+	assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
+	datastore.GetTestable(c).CatchupIndexes()
+
+	cf := testutil.CreateCompileFailure(c, t, fb)
+
+	cfa, err := AnalyzeFailure(c, cf, 124, 457, mockLLMClient)
+	assert.Loosely(t, err, should.BeNil)
+	datastore.GetTestable(c).CatchupIndexes()
+	assert.Loosely(t, cfa.IsTreeCloser, should.BeTrue)
+}
+
 func TestFindRegressionRange(t *testing.T) {
 	t.Parallel()
 	// Setup mock for buildbucket
@@ -174,7 +297,7 @@ func TestFindRegressionRange(t *testing.T) {
 		c = mc.Ctx
 		res := &bbpb.Build{}
 		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
-		_, e := findRegressionRange(c, 8001, 8000)
+		_, e := findRegressionRange(c, 12345, 8000)
 		assert.Loosely(t, e, should.NotBeNil)
 	})
 
@@ -204,10 +327,18 @@ func TestFindRegressionRange(t *testing.T) {
 		}
 
 		// It is hard to match the exact GetBuildRequest. We use Times() to simulate different response.
-		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res1, nil).Times(1)
-		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res2, nil).Times(1)
+		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+			func(c context.Context, req *bbpb.GetBuildRequest, opts ...interface{}) (*bbpb.Build, error) {
+				if req.Id == 12345 {
+					return res1, nil
+				}
+				if req.Id == 8000 {
+					return res2, nil
+				}
+				return nil, fmt.Errorf("unmocked build id %d", req.Id)
+			}).AnyTimes()
 
-		rr, e := findRegressionRange(c, 8001, 8000)
+		rr, e := findRegressionRange(c, 12345, 8000)
 		assert.Loosely(t, e, should.BeNil)
 
 		assert.Loosely(t, rr.FirstFailed, should.Match(&bbpb.GitilesCommit{
@@ -225,4 +356,3 @@ func TestFindRegressionRange(t *testing.T) {
 		}))
 	})
 }
-

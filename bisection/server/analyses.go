@@ -111,8 +111,9 @@ func (server *AnalysesServer) QueryAnalysis(c context.Context, req *pb.QueryAnal
 	if err := validateQueryAnalysisRequest(req); err != nil {
 		return nil, err
 	}
-	if req.BuildFailure.FailedStepName != "compile" {
-		return nil, status.Errorf(codes.Unimplemented, "only compile failures are supported")
+	// Include "generate_build_files" failures as well.
+	if req.BuildFailure.FailedStepName != "compile" && req.BuildFailure.FailedStepName != "generate_build_files" {
+		return nil, status.Errorf(codes.Unimplemented, "compile and generate_build_files failures are supported")
 	}
 	bbid := req.BuildFailure.GetBbid()
 	c = loggingutil.SetQueryBBID(c, bbid)
@@ -527,9 +528,9 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 
 			if suspect != nil {
 				pbSuspect := &pb.GenAiSuspect{
-					Commit:      &suspect.GitilesCommit,
-					ReviewUrl:   suspect.ReviewUrl,
-					ReviewTitle: suspect.ReviewTitle,
+					Commit:        &suspect.GitilesCommit,
+					ReviewUrl:     suspect.ReviewUrl,
+					ReviewTitle:   suspect.ReviewTitle,
 					Justification: suspect.Justification,
 				}
 				verificationDetails, err := constructSuspectVerificationDetails(c, suspect)

@@ -171,3 +171,14 @@ func GetBuildTaskDimension(ctx context.Context, bbid int64) (*pb.Dimensions, err
 
 	return util.ToDimensionsPB(util.GetTaskDimensions(build)), nil
 }
+
+// GetFailedStepName returns the name of the first failed step in a build.
+// If there are no failed steps, it returns an empty string.
+func GetFailedStepName(build *bbpb.Build) (string, error) {
+	for _, step := range build.Steps {
+		if step.Status == bbpb.Status_FAILURE || step.Status == bbpb.Status_INFRA_FAILURE || step.Status == bbpb.Status_CANCELED {
+			return step.Name, nil
+		}
+	}
+	return "", nil
+}

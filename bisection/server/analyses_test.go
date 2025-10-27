@@ -516,6 +516,41 @@ func TestQueryAnalysis(t *testing.T) {
 		assert.Loosely(t, genaiResult.Suspect.VerificationDetails.Status, should.Equal(string(model.SuspectVerificationStatus_Unverified)))
 	})
 
+	ftt.Run("Analysis found for generate_build_files", t, func(t *ftt.Test) {
+		// Prepares datastore
+		failedBuild := &model.LuciFailedBuild{
+			Id:               124,
+			BuildFailureType: pb.BuildFailureType_COMPILE,
+		}
+		assert.Loosely(t, datastore.Put(c, failedBuild), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		compileFailure := &model.CompileFailure{
+			Id:    124,
+			Build: datastore.KeyForObj(c, failedBuild),
+		}
+		assert.Loosely(t, datastore.Put(c, compileFailure), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		compileFailureAnalysis := &model.CompileFailureAnalysis{
+			CompileFailure:     datastore.KeyForObj(c, compileFailure),
+			FirstFailedBuildId: 124,
+		}
+		assert.Loosely(t, datastore.Put(c, compileFailureAnalysis), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		req := &pb.QueryAnalysisRequest{
+			BuildFailure: &pb.BuildFailure{
+				FailedStepName: "generate_build_files",
+				Bbid:           124,
+			},
+		}
+
+		res, err := server.QueryAnalysis(c, req)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(res.Analyses), should.Equal(1))
+	})
+
 	ftt.Run("Analysis found for a similar failure", t, func(t *ftt.Test) {
 		// Prepares datastore
 		basedFailedBuild := &model.LuciFailedBuild{
