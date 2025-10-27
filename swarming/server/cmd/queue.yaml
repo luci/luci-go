@@ -47,6 +47,11 @@ queue:
   rate: 10/s
   target: exporter
 
+# /internal/tasks/t/cleanup-old-tasks/.*
+- name: delete-tasks
+  max_concurrent_requests: 100
+  rate: 10/s
+
 ## TQ sweep
 - name: tq-sweep
   rate: 500/s

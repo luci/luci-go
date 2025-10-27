@@ -42,7 +42,7 @@ const (
 	// How long to scan old tasks in the cron job before giving up.
 	//
 	// Should be lower than the cron frequency.
-	maxCronRunTime = 5 * time.Minute
+	maxCronRunTime = 9 * time.Minute
 
 	// Upper bound on randomized delay for deletion tasks.
 	//
