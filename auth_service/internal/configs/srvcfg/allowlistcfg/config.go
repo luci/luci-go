@@ -16,9 +16,11 @@ package allowlistcfg
 
 import (
 	"context"
+	"errors"
 
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgcache"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
 )
@@ -28,43 +30,27 @@ var cachedAllowlistCfg = cfgcache.Register(&cfgcache.Entry{
 	Type: (*configspb.IPAllowlistConfig)(nil),
 })
 
-// Get returns the config stored in context.
-func Get(ctx context.Context) (*configspb.IPAllowlistConfig, error) {
-	cfg, err := cachedAllowlistCfg.Get(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	return cfg.(*configspb.IPAllowlistConfig), nil
-}
-
-// GetMetadata returns the config's metadata stored in context.
-func GetMetadata(ctx context.Context) (*config.Meta, error) {
+// Get returns the config stored in the datastore or a default empty one.
+func Get(ctx context.Context) (*configspb.IPAllowlistConfig, *config.Meta, error) {
 	meta := &config.Meta{}
-	_, err := cachedAllowlistCfg.Get(ctx, meta)
+	cfg, err := cachedAllowlistCfg.Fetch(ctx, meta)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, datastore.ErrNoSuchEntity) {
+			return &configspb.IPAllowlistConfig{}, &config.Meta{}, nil
+		}
+		return nil, nil, err
 	}
-	return meta, nil
+	return cfg.(*configspb.IPAllowlistConfig), meta, nil
 }
 
-// SetConfig installs the cfg into the context ctx.
-func SetConfig(ctx context.Context, cfg *configspb.IPAllowlistConfig) error {
-	return cachedAllowlistCfg.Set(ctx, cfg, &config.Meta{})
-}
-
-// SetConfigWithMetadata installs the cfg with the given metadata into the context ctx.
-func SetConfigWithMetadata(ctx context.Context, cfg *configspb.IPAllowlistConfig, meta *config.Meta) error {
+// SetInTest replaces the config for tests.
+func SetInTest(ctx context.Context, cfg *configspb.IPAllowlistConfig, meta *config.Meta) error {
 	return cachedAllowlistCfg.Set(ctx, cfg, meta)
 }
 
 // Update fetches the config and puts it into the datastore.
-//
-// It is then used by all requests that go through Middleware.
 func Update(ctx context.Context) (*config.Meta, error) {
 	meta := &config.Meta{}
 	_, err := cachedAllowlistCfg.Update(ctx, meta)
-	if err != nil {
-		return nil, err
-	}
-	return meta, nil
+	return meta, err
 }

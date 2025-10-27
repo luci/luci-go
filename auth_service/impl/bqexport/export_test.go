@@ -37,11 +37,6 @@ func TestBQExportSettings(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Run respects settings.cfg", t, func(t *ftt.Test) {
-		t.Run("error for no settings.cfg", func(t *ftt.Test) {
-			ctx := memory.Use(context.Background())
-			assert.Loosely(t, Run(ctx), should.NotBeNil)
-		})
-
 		t.Run("disabled if not set in settings.cfg", func(t *ftt.Test) {
 			ctx := memory.Use(context.Background())
 			ctx = memlogger.Use(logging.SetLevel(ctx, logging.Info))
@@ -49,7 +44,7 @@ func TestBQExportSettings(t *testing.T) {
 
 			// Set up empty settings config.
 			cfg := &configspb.SettingsCfg{}
-			assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
+			assert.Loosely(t, settingscfg.SetInTest(ctx, cfg, nil), should.BeNil)
 			assert.Loosely(t, Run(ctx), should.BeNil)
 			ml := logger.(*memlogger.MemLogger)
 			assert.Loosely(t, ml,

@@ -70,28 +70,19 @@ func TestConfigContext(t *testing.T) {
 		},
 	}
 
-	ftt.Run("Getting without setting fails", t, func(t *ftt.Test) {
-		_, err := Get(ctx)
-		assert.Loosely(t, err, should.NotBeNil)
-
-		_, _, err = GetWithMetadata(ctx)
-		assert.Loosely(t, err, should.NotBeNil)
-	})
-
-	ftt.Run("Testing basic config operations", t, func(t *ftt.Test) {
-		assert.Loosely(t, SetConfig(ctx, permissionsCfg), should.BeNil)
-		cfgFromGet, err := Get(ctx)
+	ftt.Run("Getting without setting returns default", t, func(t *ftt.Test) {
+		cfg, _, err := Get(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, cfgFromGet, should.Match(permissionsCfg))
+		assert.Loosely(t, cfg, should.Match(&configspb.PermissionsConfig{}))
 	})
 
-	ftt.Run("Testing config operations with metadata", t, func(t *ftt.Test) {
+	ftt.Run("Testing config operations", t, func(t *ftt.Test) {
 		metadata := &config.Meta{
 			Path:     "permissions.cfg",
 			Revision: "123abc",
 		}
-		assert.Loosely(t, SetConfigWithMetadata(ctx, permissionsCfg, metadata), should.BeNil)
-		cfgFromGet, metadataFromGet, err := GetWithMetadata(ctx)
+		assert.Loosely(t, SetInTest(ctx, permissionsCfg, metadata), should.BeNil)
+		cfgFromGet, metadataFromGet, err := Get(ctx)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, cfgFromGet, should.Match(permissionsCfg))
 		assert.Loosely(t, metadataFromGet, should.Match(metadata))

@@ -38,15 +38,10 @@ func TestGetPath(t *testing.T) {
 	ftt.Run("GetPath works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
-		t.Run("error for no settings.cfg", func(t *ftt.Test) {
-			_, err := GetPath(ctx)
-			assert.Loosely(t, err, should.NotBeNil)
-		})
-
 		t.Run("empty if not set in settings.cfg", func(t *ftt.Test) {
 			// Set up settings config.
 			cfg := &configspb.SettingsCfg{}
-			assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
+			assert.Loosely(t, settingscfg.SetInTest(ctx, cfg, nil), should.BeNil)
 
 			gsPath, err := GetPath(ctx)
 			assert.Loosely(t, err, should.BeNil)
@@ -58,7 +53,7 @@ func TestGetPath(t *testing.T) {
 			cfg := &configspb.SettingsCfg{
 				AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db//",
 			}
-			assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
+			assert.Loosely(t, settingscfg.SetInTest(ctx, cfg, nil), should.BeNil)
 
 			gsPath, err := GetPath(ctx)
 			assert.Loosely(t, err, should.BeNil)
@@ -96,7 +91,7 @@ func TestUploadAuthDB(t *testing.T) {
 
 		t.Run("exits early if not configured", func(t *ftt.Test) {
 			// Set up settings config with no GS path.
-			assert.Loosely(t, settingscfg.SetConfig(ctx, &configspb.SettingsCfg{}), should.BeNil)
+			assert.Loosely(t, settingscfg.SetInTest(ctx, &configspb.SettingsCfg{}, nil), should.BeNil)
 			// There should be no client calls.
 			assert.Loosely(t, UploadAuthDB(ctx, signedAuthDB, rev, readers), should.BeNil)
 		})
@@ -106,7 +101,7 @@ func TestUploadAuthDB(t *testing.T) {
 			cfg := &configspb.SettingsCfg{
 				AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
 			}
-			assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
+			assert.Loosely(t, settingscfg.SetInTest(ctx, cfg, nil), should.BeNil)
 
 			// Define expected client calls.
 			expectedACLs := []storage.ACLRule{
@@ -146,7 +141,7 @@ func TestUpdateReaders(t *testing.T) {
 		readers := stringset.NewFromSlice("someone@example.com", "a@b.com")
 		t.Run("exits early if not configured", func(t *ftt.Test) {
 			// Set up settings config with no GS path.
-			assert.Loosely(t, settingscfg.SetConfig(ctx, &configspb.SettingsCfg{}), should.BeNil)
+			assert.Loosely(t, settingscfg.SetInTest(ctx, &configspb.SettingsCfg{}, nil), should.BeNil)
 			// There should be no client calls.
 			assert.Loosely(t, UpdateReaders(ctx, readers), should.BeNil)
 		})
@@ -156,7 +151,7 @@ func TestUpdateReaders(t *testing.T) {
 			cfg := &configspb.SettingsCfg{
 				AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
 			}
-			assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
+			assert.Loosely(t, settingscfg.SetInTest(ctx, cfg, nil), should.BeNil)
 
 			// Define expected client calls.
 			dbUpdate := mockClient.Client.EXPECT().UpdateReadACL(gomock.Any(),

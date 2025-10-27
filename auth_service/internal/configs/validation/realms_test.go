@@ -130,7 +130,7 @@ func TestProjectRealmsCfgValidation(t *testing.T) {
 
 	ftt.Run("Project realms config validation", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
-		assert.Loosely(t, permissionscfg.SetConfigWithMetadata(
+		assert.Loosely(t, permissionscfg.SetInTest(
 			ctx, testsupport.PermissionsCfg(), testsupport.PermissionsCfgMeta(),
 		), should.BeNil)
 
@@ -163,7 +163,7 @@ func TestServiceRealmsCfgValidation(t *testing.T) {
 
 	ftt.Run("Service realms config validation", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
-		assert.Loosely(t, permissionscfg.SetConfigWithMetadata(
+		assert.Loosely(t, permissionscfg.SetInTest(
 			ctx, testsupport.PermissionsCfg(), testsupport.PermissionsCfgMeta(),
 		), should.BeNil)
 

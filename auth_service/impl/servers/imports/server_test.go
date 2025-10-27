@@ -109,7 +109,7 @@ func TestIngestTarball(t *testing.T) {
 		})
 
 		t.Run("with importer configuration", func(t *ftt.Test) {
-			assert.Loosely(t, importscfg.SetConfig(ctx, testConfig), should.BeNil)
+			assert.Loosely(t, importscfg.SetInTest(ctx, testConfig, nil), should.BeNil)
 
 			t.Run("not authorized", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{

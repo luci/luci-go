@@ -84,7 +84,7 @@ func validateRealmsCfg(ctx *validation.Context, path string, content []byte, all
 		return nil
 	}
 
-	permsCfg, permsMeta, err := permissionscfg.GetWithMetadata(ctx.Context)
+	permsCfg, permsMeta, err := permissionscfg.Get(ctx.Context)
 	if err != nil {
 		ctx.Error(errors.Fmt("error getting permissions.cfg: %w", err))
 		return nil

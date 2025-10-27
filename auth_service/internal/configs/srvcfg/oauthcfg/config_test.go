@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/impl/memory"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
@@ -39,15 +40,22 @@ func TestConfigContext(t *testing.T) {
 		TokenServerUrl: "https://test-token-server.example.com",
 	}
 
-	ftt.Run("Getting without setting fails", t, func(t *ftt.Test) {
-		_, err := Get(ctx)
-		assert.Loosely(t, err, should.NotBeNil)
+	ftt.Run("Getting without setting returns default", t, func(t *ftt.Test) {
+		cfg, _, err := Get(ctx)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cfg, should.Match(&configspb.OAuthConfig{}))
 	})
 
-	ftt.Run("Testing basic Config operations", t, func(t *ftt.Test) {
-		assert.Loosely(t, SetConfig(ctx, oauthCfg), should.BeNil)
-		cfgFromGet, err := Get(ctx)
+	ftt.Run("Testing config operations", t, func(t *ftt.Test) {
+		metadata := &config.Meta{
+			Path:     "oauth.cfg",
+			Revision: "123abc",
+			ViewURL:  "https://example.com/config/revision/123abc",
+		}
+		assert.Loosely(t, SetInTest(ctx, oauthCfg, metadata), should.BeNil)
+		gotCfg, metadataFromGet, err := Get(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, cfgFromGet, should.Match(oauthCfg))
+		assert.Loosely(t, gotCfg, should.Match(oauthCfg))
+		assert.Loosely(t, metadataFromGet, should.Match(metadata))
 	})
 }

@@ -63,7 +63,7 @@ func TestCheckAccess(t *testing.T) {
 
 		// Set up settings config.
 		cfg := &configspb.SettingsCfg{}
-		assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
+		assert.Loosely(t, settingscfg.SetInTest(ctx, cfg, nil), should.BeNil)
 
 		// Set up an authorized user.
 		assert.Loosely(t, model.AuthorizeReader(ctx, "someone@example.com"), should.BeNil)
@@ -160,7 +160,7 @@ func TestAuthorize(t *testing.T) {
 		cfg := &configspb.SettingsCfg{
 			AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
 		}
-		assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
+		assert.Loosely(t, settingscfg.SetInTest(ctx, cfg, nil), should.BeNil)
 
 		t.Run("user must use email-based auth", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -291,7 +291,7 @@ func TestDeauthorize(t *testing.T) {
 		cfg := &configspb.SettingsCfg{
 			AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
 		}
-		assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
+		assert.Loosely(t, settingscfg.SetInTest(ctx, cfg, nil), should.BeNil)
 
 		t.Run("user must use email-based auth", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{

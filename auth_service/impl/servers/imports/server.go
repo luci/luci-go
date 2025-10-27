@@ -18,7 +18,6 @@ package imports
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -59,22 +58,16 @@ func HandleTarballIngestHandler(ctx *router.Context) error {
 	}
 
 	// Check if the caller is authorized to upload this tarball.
-	// This is done here for two reasons:
-	// * we can exit early and skip the call to model.IngestTarball for
-	//   unauthorized uploaders; and
-	// * to avoid making assumptions about the caller's authorization when
-	//   processing errors returned by model.IngestTarball.
-	authorized, err := importscfg.IsAuthorizedUploader(c, email, tarballName)
-	if err != nil || !authorized {
-		if err != nil {
-			logging.Errorf(c, "error checking uploader authorization: %s", err)
-		}
-
-		err = fmt.Errorf("%w: %q", model.ErrUnauthorizedUploader, email)
-		return status.Error(codes.PermissionDenied, err.Error())
+	importerCfg, _, err := importscfg.Get(c)
+	if err != nil {
+		logging.Errorf(c, "Transient error loading imports.cfg: %s", err)
+		return status.Error(codes.Internal, "transient error checking uploader authorization")
+	}
+	if !importscfg.IsAuthorizedUploader(importerCfg, email, tarballName) {
+		return status.Errorf(codes.PermissionDenied, "unauthorized tarball uploader: %s", email)
 	}
 
-	groups, revision, err := model.IngestTarball(c, tarballName, r.Body)
+	groups, revision, err := model.IngestTarball(c, importerCfg, tarballName, r.Body)
 	if err != nil {
 		switch {
 		case errors.Is(err, model.ErrInvalidTarball):
@@ -83,9 +76,8 @@ func HandleTarballIngestHandler(ctx *router.Context) error {
 		default:
 			// Log the actual error then only return a generic permission error,
 			// to avoid leaking information about the importer config.
-			logging.Errorf(c, "%w", err)
-			err = model.ErrUnauthorizedUploader
-			return status.Error(codes.PermissionDenied, err.Error())
+			logging.Errorf(c, "Returning PermissionDenied: %s", err)
+			return status.Error(codes.PermissionDenied, "unauthorized tarball uploader")
 		}
 	}
 

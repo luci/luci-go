@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
-	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/importscfg"
 )
 
 const (
@@ -45,14 +44,10 @@ const (
 var (
 	// ErrConcurrentAuthDBUpdate signifies the AuthDB was modified in a concurrent transaction.
 	ErrConcurrentAuthDBUpdate = errors.New("AuthDB changed between transactions")
-	// ErrImporterNotConfigured is returned if there is no importer config.
-	ErrImporterNotConfigured = errors.New("no importer config")
 	// ErrInvalidTarball is returned if the tarball data is invalid.
 	ErrInvalidTarball = errors.New("invalid tarball data")
 	// ErrInvalidTarballName is returned if the tarball name is invalid.
 	ErrInvalidTarballName = errors.New("invalid tarball name")
-	// ErrUnauthorizedUploader is returned if the caller is not authorized to upload a given tarball.
-	ErrUnauthorizedUploader = errors.New("unauthorized tarball uploader")
 )
 
 // Imports groups from some external tar.gz bundle or plain text list.
@@ -92,42 +87,25 @@ var (
 type GroupBundle = map[string][]identity.Identity
 
 // IngestTarball handles upload of tarball's specified in 'tarball_upload' config entries.
-// expected to be called in an auth context of the upload PUT request.
+// expected to be called in an auth context of the upload PUT request after
+// authorizing the uploader.
 //
 // returns
 //
 //	[]string - list of modified groups
 //	int64 - authDBRevision
 //	error
-//		ErrImporterNotConfigured if no importer config
-//		ErrUnauthorizedUploader if caller is not an authorized uploader
 //		ErrInvalidTarballName if tarball name is empty
 //		ErrInvalidTarballName if entry not found in tarball upload config
 //		ErrInvalidTarball if bad tarball structure
 //		error from importing the tarball, if one occurs
-func IngestTarball(ctx context.Context, name string, content io.Reader) ([]string, int64, error) {
-	// Check if the caller is authorized to upload this tarball.
-	caller := auth.CurrentIdentity(ctx)
-	email := caller.Email()
-	authorized, err := importscfg.IsAuthorizedUploader(ctx, email, name)
-	if err != nil {
-		return nil, 0, ErrImporterNotConfigured
-	}
-	if !authorized {
-		return nil, 0, fmt.Errorf("%w: %q", ErrUnauthorizedUploader, email)
-	}
-
+func IngestTarball(ctx context.Context, importsConfig *configspb.GroupImporterConfig, name string, content io.Reader) ([]string, int64, error) {
 	if name == "" {
 		// This should be impossible in practice, because importer config
 		// validation mandates the tarball name being set. Thus, there would be
 		// no such entry in the config and the caller should not have been
 		// considered an authorized uploader.
 		return nil, 0, fmt.Errorf("%w: empty", ErrInvalidTarballName)
-	}
-
-	importsConfig, err := importscfg.Get(ctx)
-	if err != nil {
-		return nil, 0, ErrImporterNotConfigured
 	}
 
 	// Make sure the tarball_upload entry is specified in the config.
@@ -141,8 +119,7 @@ func IngestTarball(ctx context.Context, name string, content io.Reader) ([]strin
 	if entry == nil {
 		// This should be impossible to reach because of the early authorized
 		// uploader check.
-		return nil, 0, fmt.Errorf("%w: not supported in importer config",
-			ErrInvalidTarballName)
+		return nil, 0, fmt.Errorf("%w: not supported in importer config", ErrInvalidTarballName)
 	}
 
 	bundles, err := loadTarball(ctx, content, entry.GetDomain(), entry.GetSystems(), entry.GetGroups())
@@ -155,7 +132,7 @@ func IngestTarball(ctx context.Context, name string, content io.Reader) ([]strin
 	// * all members are valid identities; and
 	// * the caller is a valid identity, who is authorized to do this upload.
 	// Do the import.
-	return importBundles(ctx, bundles, caller, nil)
+	return importBundles(ctx, bundles, auth.CurrentIdentity(ctx), nil)
 }
 
 // loadTarball unzips tarball with groups and deserializes them.

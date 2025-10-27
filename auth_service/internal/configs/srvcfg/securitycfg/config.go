@@ -16,9 +16,11 @@ package securitycfg
 
 import (
 	"context"
+	"errors"
 
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgcache"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
@@ -27,28 +29,27 @@ var cachedSecurityCfg = cfgcache.Register(&cfgcache.Entry{
 	Type: (*protocol.SecurityConfig)(nil),
 })
 
-// Get returns the config stored in context.
-func Get(ctx context.Context) (*protocol.SecurityConfig, error) {
-	cfg, err := cachedSecurityCfg.Get(ctx, nil)
+// Get returns the config stored in the datastore or a default empty one.
+func Get(ctx context.Context) (*protocol.SecurityConfig, *config.Meta, error) {
+	meta := &config.Meta{}
+	cfg, err := cachedSecurityCfg.Fetch(ctx, meta)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, datastore.ErrNoSuchEntity) {
+			return &protocol.SecurityConfig{}, &config.Meta{}, nil
+		}
+		return nil, nil, err
 	}
-	return cfg.(*protocol.SecurityConfig), nil
+	return cfg.(*protocol.SecurityConfig), meta, nil
 }
 
-// SetConfig installs the cfg into the context ctx.
-func SetConfig(ctx context.Context, cfg *protocol.SecurityConfig) error {
-	return cachedSecurityCfg.Set(ctx, cfg, &config.Meta{})
+// SetInTest replaces the config for tests.
+func SetInTest(ctx context.Context, cfg *protocol.SecurityConfig, meta *config.Meta) error {
+	return cachedSecurityCfg.Set(ctx, cfg, meta)
 }
 
 // Update fetches the config and puts it into the datastore.
-//
-// It is then used by all requests that go through Middleware.
 func Update(ctx context.Context) (*config.Meta, error) {
 	meta := &config.Meta{}
 	_, err := cachedSecurityCfg.Update(ctx, meta)
-	if err != nil {
-		return nil, err
-	}
-	return meta, nil
+	return meta, err
 }

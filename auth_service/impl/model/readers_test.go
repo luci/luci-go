@@ -120,7 +120,7 @@ func TestAuthorizeReader(t *testing.T) {
 		cfg := &configspb.SettingsCfg{
 			AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
 		}
-		assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
+		assert.Loosely(t, settingscfg.SetInTest(ctx, cfg, nil), should.BeNil)
 
 		t.Run("disallows long emails", func(t *ftt.Test) {
 			testEmail := strings.Repeat("a", MaxReaderEmailLength-12) + "@example.com"
@@ -192,7 +192,7 @@ func TestDeauthorizeReader(t *testing.T) {
 		cfg := &configspb.SettingsCfg{
 			AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
 		}
-		assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
+		assert.Loosely(t, settingscfg.SetInTest(ctx, cfg, nil), should.BeNil)
 
 		// Add an authorized user.
 		assert.Loosely(t, datastore.Put(ctx, testReader(ctx, "someone@example.com")),
@@ -240,7 +240,7 @@ func TestRevokeStaleReaderAccess(t *testing.T) {
 		cfg := &configspb.SettingsCfg{
 			AuthDbGsPath: "chrome-infra-auth-test.appspot.com/auth-db",
 		}
-		assert.Loosely(t, settingscfg.SetConfig(ctx, cfg), should.BeNil)
+		assert.Loosely(t, settingscfg.SetInTest(ctx, cfg, nil), should.BeNil)
 
 		// Add existing readers.
 		err := datastore.Put(ctx,

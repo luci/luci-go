@@ -50,7 +50,7 @@ func CronHandler(ctx context.Context) error {
 // Run exports the authorization data from the latest AuthDB snapshot to BQ.
 func Run(ctx context.Context) error {
 	// Ensure BQ export has been enabled before continuing.
-	cfg, err := settingscfg.Get(ctx)
+	cfg, _, err := settingscfg.Get(ctx)
 	if err != nil {
 		return errors.Fmt("error getting settings.cfg: %w", err)
 	}
@@ -149,7 +149,7 @@ type LatestConfigs struct {
 }
 
 func getLatestConfigs(ctx context.Context) (*LatestConfigs, error) {
-	permsCfg, permsMeta, err := permissionscfg.GetWithMetadata(ctx)
+	permsCfg, permsMeta, err := permissionscfg.Get(ctx)
 	if err != nil {
 		return nil, errors.Fmt("failed to get permissions.cfg: %w", err)
 	}

@@ -40,7 +40,6 @@ import (
 	"go.chromium.org/luci/auth_service/api/configspb"
 	customerrors "go.chromium.org/luci/auth_service/impl/errors"
 	"go.chromium.org/luci/auth_service/impl/info"
-	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/importscfg"
 	"go.chromium.org/luci/auth_service/testsupport"
 )
 
@@ -173,59 +172,43 @@ func TestIngestTarball(t *testing.T) {
 			"not-tst/group-a":    []byte("a\nb"),
 		})
 
-		t.Run("not configured", func(t *ftt.Test) {
-			_, _, err := IngestTarball(ctx, "test_groups.tar.gz", nil)
-			assert.Loosely(t, err, should.ErrLike(ErrImporterNotConfigured))
+		t.Run("invalid tarball name", func(t *ftt.Test) {
+			_, _, err := IngestTarball(ctx, testConfig, "", nil)
+			assert.Loosely(t, err, should.ErrLike(ErrInvalidTarballName))
 		})
 
-		t.Run("with importer configuration set", func(t *ftt.Test) {
-			// Set up imports config for the test cases below.
-			assert.Loosely(t, importscfg.SetConfig(ctx, testConfig), should.BeNil)
+		t.Run("unknown tarball", func(t *ftt.Test) {
+			_, _, err := IngestTarball(ctx, testConfig, "zzz", nil)
+			assert.Loosely(t, err, should.ErrLike(ErrInvalidTarballName))
+		})
 
-			t.Run("invalid tarball name", func(t *ftt.Test) {
-				_, _, err := IngestTarball(ctx, "", nil)
-				assert.Loosely(t, err, should.ErrLike(ErrUnauthorizedUploader))
+		t.Run("invalid tarball data", func(t *ftt.Test) {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:test-push-cron@system.example.com",
 			})
-			t.Run("unknown tarball", func(t *ftt.Test) {
-				_, _, err := IngestTarball(ctx, "zzz", nil)
-				assert.Loosely(t, err, should.ErrLike(ErrUnauthorizedUploader))
-			})
-			t.Run("unauthorized", func(t *ftt.Test) {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: "user:someone@example.com",
-				})
-				_, _, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(bundle))
-				assert.Loosely(t, err, should.ErrLike(ErrUnauthorizedUploader))
-				assert.Loosely(t, err, should.ErrLike(`"someone@example.com"`))
-			})
-			t.Run("invalid tarball data", func(t *ftt.Test) {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: "user:test-push-cron@system.example.com",
-				})
-				_, _, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(nil))
-				assert.Loosely(t, err, should.ErrLike(ErrInvalidTarball))
-				assert.Loosely(t, err, should.ErrLike("EOF"))
+			_, _, err := IngestTarball(ctx, testConfig, "test_groups.tar.gz", bytes.NewReader(nil))
+			assert.Loosely(t, err, should.ErrLike(ErrInvalidTarball))
+			assert.Loosely(t, err, should.ErrLike("EOF"))
+		})
+
+		t.Run("actually imports groups", func(t *ftt.Test) {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:test-push-cron@system.example.com",
 			})
 
-			t.Run("actually imports groups", func(t *ftt.Test) {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: "user:test-push-cron@system.example.com",
-				})
+			g := makeAuthGroup(ctx, "administrators")
+			g.AuthVersionedEntityMixin = testAuthVersionedEntityMixin()
+			assert.Loosely(t, datastore.Put(ctx, g), should.BeNil)
 
-				g := makeAuthGroup(ctx, "administrators")
-				g.AuthVersionedEntityMixin = testAuthVersionedEntityMixin()
-				assert.Loosely(t, datastore.Put(ctx, g), should.BeNil)
-
-				updatedGroups, revision, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(bundle))
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, revision, should.Equal(1))
-				assert.Loosely(t, updatedGroups, should.Match([]string{
-					"tst/group-a",
-					"tst/group-b",
-					"tst/group-c",
-				}))
-				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
-			})
+			updatedGroups, revision, err := IngestTarball(ctx, testConfig, "test_groups.tar.gz", bytes.NewReader(bundle))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, revision, should.Equal(1))
+			assert.Loosely(t, updatedGroups, should.Match([]string{
+				"tst/group-a",
+				"tst/group-b",
+				"tst/group-c",
+			}))
+			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 		})
 	})
 }

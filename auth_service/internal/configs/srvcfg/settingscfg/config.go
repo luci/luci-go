@@ -16,9 +16,11 @@ package settingscfg
 
 import (
 	"context"
+	"errors"
 
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgcache"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
 )
@@ -28,28 +30,27 @@ var cachedSettingsCfg = cfgcache.Register(&cfgcache.Entry{
 	Type: (*configspb.SettingsCfg)(nil),
 })
 
-// Get returns the config stored in context.
-func Get(ctx context.Context) (*configspb.SettingsCfg, error) {
-	cfg, err := cachedSettingsCfg.Get(ctx, nil)
+// Get returns the config stored in the datastore or a default empty one.
+func Get(ctx context.Context) (*configspb.SettingsCfg, *config.Meta, error) {
+	meta := &config.Meta{}
+	cfg, err := cachedSettingsCfg.Fetch(ctx, meta)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, datastore.ErrNoSuchEntity) {
+			return &configspb.SettingsCfg{}, &config.Meta{}, nil
+		}
+		return nil, nil, err
 	}
-	return cfg.(*configspb.SettingsCfg), nil
+	return cfg.(*configspb.SettingsCfg), meta, nil
 }
 
-// SetConfig installs the config into the context.
-func SetConfig(ctx context.Context, cfg *configspb.SettingsCfg) error {
-	return cachedSettingsCfg.Set(ctx, cfg, &config.Meta{})
+// SetInTest replaces the config for tests.
+func SetInTest(ctx context.Context, cfg *configspb.SettingsCfg, meta *config.Meta) error {
+	return cachedSettingsCfg.Set(ctx, cfg, meta)
 }
 
 // Update fetches the config and puts it into the datastore.
-//
-// It is then used by all requests that go through Middleware.
 func Update(ctx context.Context) (*config.Meta, error) {
 	meta := &config.Meta{}
 	_, err := cachedSettingsCfg.Update(ctx, meta)
-	if err != nil {
-		return nil, err
-	}
-	return meta, nil
+	return meta, err
 }

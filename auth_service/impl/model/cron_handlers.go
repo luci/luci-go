@@ -162,12 +162,10 @@ func ServiceConfigCronHandler(ctx context.Context) error {
 	return nil
 }
 
-type configRefresher func(ctx context.Context) (*config.Meta, error)
-
 // refreshServiceConfigs updates the cached service configs to be the latest
 // from LUCI Config.
 func refreshServiceConfigs(ctx context.Context) error {
-	configRefreshers := []configRefresher{
+	configRefreshers := []func(ctx context.Context) (*config.Meta, error){
 		allowlistcfg.Update,
 		importscfg.Update,
 		oauthcfg.Update,
@@ -181,24 +179,20 @@ func refreshServiceConfigs(ctx context.Context) error {
 			if _, err := refresher(childCtx); err != nil {
 				// Log the error, so details aren't lost if there are multiple
 				// errors.
-				logging.Errorf(childCtx, err.Error())
+				logging.Errorf(childCtx, "%s", err.Error())
 				return err
 			}
-
 			return nil
 		})
 	}
-	if err := eg.Wait(); err != nil {
-		return err
-	}
 
-	return nil
+	return eg.Wait()
 }
 
 // applyAllowlistUpdate applies the current ip_allowlist.cfg to all
 // AuthIPAllowlist entities.
 func applyAllowlistUpdate(ctx context.Context, historicalComment string) error {
-	cfg, err := allowlistcfg.Get(ctx)
+	cfg, _, err := allowlistcfg.Get(ctx)
 	if err != nil {
 		return err
 	}
@@ -218,11 +212,11 @@ func applyAllowlistUpdate(ctx context.Context, historicalComment string) error {
 // applyGlobalConfigUpdate applies the current oauth.cfg and security.cfg
 // to the AuthGlobalConfig entity.
 func applyGlobalConfigUpdate(ctx context.Context, historicalComment string) error {
-	oauthConfig, err := oauthcfg.Get(ctx)
+	oauthConfig, _, err := oauthcfg.Get(ctx)
 	if err != nil {
 		return err
 	}
-	securityConfig, err := securitycfg.Get(ctx)
+	securityConfig, _, err := securitycfg.Get(ctx)
 	if err != nil {
 		return err
 	}
@@ -240,10 +234,10 @@ func RealmsConfigCronHandler(ctx context.Context) error {
 	historicalComment := "Updated from update-realms cron"
 
 	// permissions.cfg handling.
-	if err := permissionscfg.Update(ctx); err != nil {
+	if _, err := permissionscfg.Update(ctx); err != nil {
 		return err
 	}
-	permsCfg, permsMeta, err := permissionscfg.GetWithMetadata(ctx)
+	permsCfg, permsMeta, err := permissionscfg.Get(ctx)
 	if err != nil {
 		return err
 	}

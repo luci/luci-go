@@ -52,7 +52,7 @@ func constructReadACLs(readers stringset.Set) []storage.ACLRule {
 
 // GetPath returns the sanitized Google Storage path from settings.cfg.
 func GetPath(ctx context.Context) (string, error) {
-	cfg, err := settingscfg.Get(ctx)
+	cfg, _, err := settingscfg.Get(ctx)
 	if err != nil {
 		return "", errors.Fmt("error getting settings.cfg: %w", err)
 	}

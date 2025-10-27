@@ -120,10 +120,6 @@ func TestAllowlistsServer(t *testing.T) {
 				CreatedBy:                "user:test-user-3",
 			}), should.BeNil)
 
-		_, err := srv.ListAllowlists(ctx, &emptypb.Empty{})
-		assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
-		assert.Loosely(t, err, should.ErrLike("failed to get config metadata"))
-
 		// Set up the allowlist config and its metadata.
 		testConfig := &configspb.IPAllowlistConfig{}
 		testConfigMetadata := &config.Meta{
@@ -131,7 +127,7 @@ func TestAllowlistsServer(t *testing.T) {
 			Revision: "123abc",
 			ViewURL:  "https://example.com/config/revision/123abc",
 		}
-		assert.Loosely(t, allowlistcfg.SetConfigWithMetadata(ctx, testConfig, testConfigMetadata), should.BeNil)
+		assert.Loosely(t, allowlistcfg.SetInTest(ctx, testConfig, testConfigMetadata), should.BeNil)
 
 		// Expected response, build with pb.
 		expectedAllowlists := &rpcpb.ListAllowlistsResponse{

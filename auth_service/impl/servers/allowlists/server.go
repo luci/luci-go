@@ -48,7 +48,9 @@ func (*Server) ListAllowlists(ctx context.Context, _ *emptypb.Empty) (*rpcpb.Lis
 		allowlistList[idx] = entity.ToProto()
 	}
 
-	metadata, err := allowlistcfg.GetMetadata(ctx)
+	// Note: this can be a more recent revision than what we are actually
+	// returning.
+	_, metadata, err := allowlistcfg.Get(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to get config metadata: %s", err)
 	}

@@ -16,9 +16,11 @@ package oauthcfg
 
 import (
 	"context"
+	"errors"
 
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgcache"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
 )
@@ -28,28 +30,27 @@ var cachedOAuthCfg = cfgcache.Register(&cfgcache.Entry{
 	Type: (*configspb.OAuthConfig)(nil),
 })
 
-// Get returns the config stored in context.
-func Get(ctx context.Context) (*configspb.OAuthConfig, error) {
-	cfg, err := cachedOAuthCfg.Get(ctx, nil)
+// Get returns the config stored in the datastore or a default empty one.
+func Get(ctx context.Context) (*configspb.OAuthConfig, *config.Meta, error) {
+	meta := &config.Meta{}
+	cfg, err := cachedOAuthCfg.Fetch(ctx, meta)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, datastore.ErrNoSuchEntity) {
+			return &configspb.OAuthConfig{}, &config.Meta{}, nil
+		}
+		return nil, nil, err
 	}
-	return cfg.(*configspb.OAuthConfig), nil
+	return cfg.(*configspb.OAuthConfig), meta, nil
 }
 
-// SetConfig installs the cfg into the context ctx.
-func SetConfig(ctx context.Context, cfg *configspb.OAuthConfig) error {
-	return cachedOAuthCfg.Set(ctx, cfg, &config.Meta{})
+// SetInTest replaces the config for tests.
+func SetInTest(ctx context.Context, cfg *configspb.OAuthConfig, meta *config.Meta) error {
+	return cachedOAuthCfg.Set(ctx, cfg, meta)
 }
 
 // Update fetches the config and puts it into the datastore.
-//
-// It is then used by all requests that go through Middleware.
 func Update(ctx context.Context) (*config.Meta, error) {
 	meta := &config.Meta{}
 	_, err := cachedOAuthCfg.Update(ctx, meta)
-	if err != nil {
-		return nil, err
-	}
-	return meta, nil
+	return meta, err
 }

@@ -48,30 +48,22 @@ func TestConfigContext(t *testing.T) {
 		},
 	}
 
-	ftt.Run("Getting without setting fails", t, func(t *ftt.Test) {
-		_, err := Get(ctx)
-		assert.Loosely(t, err, should.NotBeNil)
-
-		_, err = GetMetadata(ctx)
-		assert.Loosely(t, err, should.NotBeNil)
-	})
-
-	ftt.Run("Testing basic Config operations", t, func(t *ftt.Test) {
-		assert.Loosely(t, SetConfig(ctx, allowlistCfg), should.BeNil)
-		cfgFromGet, err := Get(ctx)
+	ftt.Run("Getting without setting returns default", t, func(t *ftt.Test) {
+		cfg, _, err := Get(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, cfgFromGet, should.Match(allowlistCfg))
+		assert.Loosely(t, cfg, should.Match(&configspb.IPAllowlistConfig{}))
 	})
 
-	ftt.Run("Testing config operations with metadata", t, func(t *ftt.Test) {
+	ftt.Run("Testing config operations", t, func(t *ftt.Test) {
 		metadata := &config.Meta{
 			Path:     "ip_allowlist.cfg",
 			Revision: "123abc",
 			ViewURL:  "https://example.com/config/revision/123abc",
 		}
-		assert.Loosely(t, SetConfigWithMetadata(ctx, allowlistCfg, metadata), should.BeNil)
-		metadataFromGet, err := GetMetadata(ctx)
+		assert.Loosely(t, SetInTest(ctx, allowlistCfg, metadata), should.BeNil)
+		gotCfg, metadataFromGet, err := Get(ctx)
 		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, gotCfg, should.Match(allowlistCfg))
 		assert.Loosely(t, metadataFromGet, should.Match(metadata))
 	})
 }
