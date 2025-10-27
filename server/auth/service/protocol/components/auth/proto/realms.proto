@@ -263,9 +263,20 @@ message Binding {
 }
 
 
-// RealmData is semi-arbitrary non-ACL data extracted from the realms.cfg
-// project config and attached to a realm.
+// RealmData is semi-arbitrary non-ACL data extracted from configs (the
+// realms.cfg project config and global service configs) and attached to
+// a realm.
 message RealmData {
   // Used only during Realms migration to gradually roll out the enforcement.
   repeated string enforce_in_service = 1;
+
+  // An email of Cloud Service account that LUCI uses to make calls as, if any.
+  //
+  // Set only on the "@root" realm.
+  string project_scoped_account = 2;
+
+  // A Cloud Project ID number to bill calls to, if any.
+  //
+  // Set only on the "@root" realm.
+  uint64 billing_cloud_project_id = 3;
 }

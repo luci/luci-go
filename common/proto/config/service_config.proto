@@ -87,6 +87,18 @@ message IdentityConfig {
   string staging_service_account_email = 2;
 }
 
+// BillingConfig allows to specify a Cloud Project to bill Cloud API calls to.
+message BillingConfig {
+  // A Cloud Project ID number to bill calls to.
+  //
+  // The project-scoped service accounts (see IdentityConfig) must have
+  // "Service usage consumer" IAM role in this project.
+  //
+  // Additionally this role should be granted to the group
+  // chrome-ops-security-luci-project-billing@twosync-src.google.com
+  uint64 billing_cloud_project_id = 1;
+}
+
 // Location is the source repo location where the configuration stores.
 // Currently, it only supports Gitiles repos.
 // TODO(crbug.com/1446839): replace Project.gitiles_location field later.
@@ -124,6 +136,16 @@ message Project {
   //
   // Note that the same Team may be indicated for multiple different Projects.
   string owned_by = 5;
+
+  // BillingConfig allows to specify a Cloud Project to bill Cloud API calls to.
+  //
+  // Various LUCI services call Cloud APIs on behalf of user LUCI projects. By
+  // default all these calls are billed to the LUCI backend itself, which makes
+  // it hard to understand costs of individual LUCI projects. A billing config
+  // can be used to tell LUCI to start billing calls it makes in a context of
+  // a LUCI project to an associated Cloud project. See BillingConfig for
+  // additional details.
+  BillingConfig billing_config = 6;
 }
 
 // Represents a group of humans who are responsible for one or more LUCI
