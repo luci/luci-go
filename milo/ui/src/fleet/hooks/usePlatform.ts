@@ -12,19 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import _ from 'lodash';
-import {
-  generatePath,
-  useParams,
-  useLocation,
-  useNavigate,
-} from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 
 import {
   Platform,
   platformFromJSON,
-  platformToJSON,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+
+import { generateDeviceListURL, platformToURL } from '../constants/paths';
 
 export type PlatformDetails = {
   setPlatform: (p: Platform) => void;
@@ -49,7 +44,6 @@ export const platformRenderString = (p?: Platform) => {
 
 export function usePlatform(): PlatformDetails {
   const { platform } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
 
   // Assume any page which has a platform route param is in the platform scope.
@@ -58,11 +52,7 @@ export function usePlatform(): PlatformDetails {
   const setPlatform = (newPlatform: Platform) => {
     if (!inPlatformScope) throw Error('Platform not available in this page');
 
-    const newPath = generatePath(
-      location.pathname.replace(platform, ':platform'), // replaces the first occurrence
-      { platform: platformToJSON(newPlatform).toLowerCase() },
-    );
-    navigate(newPath);
+    navigate(generateDeviceListURL(platformToURL(newPlatform)));
   };
 
   return {

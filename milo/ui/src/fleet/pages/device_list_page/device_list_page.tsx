@@ -258,6 +258,7 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
         }}
       >
         <DeviceTable
+          key={platform}
           devices={devices}
           columnIds={columns}
           nextPageToken={nextPageToken}
