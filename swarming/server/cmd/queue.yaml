@@ -49,7 +49,7 @@ queue:
 
 # /internal/tasks/t/cleanup-old-tasks/.*
 - name: delete-tasks
-  max_concurrent_requests: 100
+  max_concurrent_requests: 400
   rate: 10/s
 
 ## TQ sweep
