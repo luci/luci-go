@@ -71,8 +71,8 @@ export const GenericSingleRerun = {
       commit: assertNonNullable(rerun.commit),
       index: rerun.index,
       // Test analysis rpc doesn't return the rerun type because all rerun are
-      // "Nthsection" type.
-      type: 'Nthsection',
+      // "NthSection" type.
+      type: 'NthSection',
     };
   },
 };
