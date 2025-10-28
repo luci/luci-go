@@ -523,20 +523,6 @@ function setUpProcessDropdownList() {
   displaySingleUnnamedProcess.forEach(filterOption => filterOption.li.remove());
   displaySingleUnnamedProcess = [];
 
-  // Automatically select 'Display All Processes' and consequently all other
-  // options in the dropdown when the user uploads a new file.
-  if (defaultFilteredProcesses === undefined) {
-    displayAllProcesses.li.classList.add('selected');
-    displayAllProcesses.checkbox.checked = true;
-    displayNamedProcesses.li.classList.add('selected');
-    displayNamedProcesses.checkbox.checked = true;
-  } else {
-    displayAllProcesses.li.classList.remove('selected');
-    displayAllProcesses.checkbox.checked = false;
-    displayNamedProcesses.li.classList.remove('selected');
-    displayNamedProcesses.checkbox.checked = false;
-  }
-
   const sortedPid = Array.from(allPids).sort((a, b) => a - b);
 
   // Named processes appear before the processes with no name.
@@ -551,6 +537,9 @@ function setUpProcessDropdownList() {
       createProcessListItem(pid);
     }
   }
+
+  updateDisplayNamedProcessSelection();
+  updateDisplayAllProcessSelection();
 }
 
 /**
