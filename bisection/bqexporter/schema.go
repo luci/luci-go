@@ -83,7 +83,7 @@ func init() {
 		TimePartitioning: &bigquery.TimePartitioning{
 			Type:       bigquery.DayPartitioningType,
 			Expiration: partitionExpirationTime,
-			Field:      "create_time",
+			Field:      "created_time",
 		},
 		Schema: schema.Relax(),
 	}
