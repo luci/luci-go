@@ -18,6 +18,7 @@ import (
 	"context"
 	"testing"
 
+	configpb "go.chromium.org/luci/common/proto/config"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -51,10 +52,10 @@ func TestRealmsExpansion(t *testing.T) {
 		}
 	}
 
-	projs := testsupport.Projects()
+	projs := testsupport.Projects(nil)
 
 	ftt.Run("ExpandRealms works", t, func(t *ftt.Test) {
-		ctx := context.Background()
+		ctx := memory.Use(context.Background())
 
 		t.Run("completely empty", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
@@ -833,6 +834,83 @@ func TestRealmsExpansion(t *testing.T) {
 			}
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, actualRealms, should.Match(expectedRealms))
+		})
+
+		t.Run("project data in @root realm", func(t *ftt.Test) {
+			permDB := testsupport.PermissionsDB(false)
+			projs := testsupport.Projects([]*configpb.Project{
+				{
+					Id: "p",
+					IdentityConfig: &configpb.IdentityConfig{
+						ServiceAccountEmail: "p-acc",
+					},
+					BillingConfig: &configpb.BillingConfig{
+						BillingCloudProjectId: 123,
+					},
+				},
+			})
+
+			t.Run("implicit @root realm", func(t *ftt.Test) {
+				actualRealms, err := ExpandRealms(ctx, permDB, projs, "p", &realmsconf.RealmsCfg{
+					Realms: []*realmsconf.Realm{
+						{
+							Name: "r1",
+						},
+					},
+				})
+
+				expectedRealms := &protocol.Realms{
+					Realms: []*protocol.Realm{
+						{
+							Name: "p:@root",
+							Data: &protocol.RealmData{
+								ProjectScopedAccount:  "p-acc",
+								BillingCloudProjectId: 123,
+							},
+						},
+						{
+							Name: "p:r1",
+						},
+					},
+				}
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actualRealms, should.Match(expectedRealms))
+			})
+
+			t.Run("explicit @root realm", func(t *ftt.Test) {
+				actualRealms, err := ExpandRealms(ctx, permDB, projs, "p", &realmsconf.RealmsCfg{
+					Realms: []*realmsconf.Realm{
+						{
+							Name:             "@root",
+							EnforceInService: []string{"a"},
+						},
+						{
+							Name: "r1",
+						},
+					},
+				})
+
+				expectedRealms := &protocol.Realms{
+					Realms: []*protocol.Realm{
+						{
+							Name: "p:@root",
+							Data: &protocol.RealmData{
+								EnforceInService:      []string{"a"},
+								ProjectScopedAccount:  "p-acc",
+								BillingCloudProjectId: 123,
+							},
+						},
+						{
+							Name: "p:r1",
+							Data: &protocol.RealmData{
+								EnforceInService: []string{"a"},
+							},
+						},
+					},
+				}
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actualRealms, should.Match(expectedRealms))
+			})
 		})
 	})
 }

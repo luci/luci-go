@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/importscfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/oauthcfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/permissionscfg"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/projectscfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/securitycfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/settingscfg"
 	"go.chromium.org/luci/auth_service/internal/configs/validation"
@@ -246,10 +247,19 @@ func RealmsConfigCronHandler(ctx context.Context) error {
 		return err
 	}
 
+	// projects.cfg handling.
+	if _, err := projectscfg.Update(ctx); err != nil {
+		return err
+	}
+	projectsCfg, projectsMeta, err := projectscfg.Get(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Collect service-level configs used to expand realms.
 	svcCfg := &serviceConfigs{
 		perms: permissions.NewPermissionsDB(permsCfg, permsMeta),
-		projs: &projects.Projects{}, // TODO: use something real
+		projs: projects.New(projectsCfg, projectsMeta),
 	}
 
 	// realms.cfg handling.

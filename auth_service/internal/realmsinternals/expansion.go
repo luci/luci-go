@@ -31,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/auth_service/constants"
 	"go.chromium.org/luci/auth_service/internal/permissions"
+	"go.chromium.org/luci/auth_service/internal/projects"
 )
 
 var (
@@ -390,6 +391,8 @@ type RealmsExpander struct {
 	rolesExpander *RolesExpander
 	// condsSet will handle the expansion for conditions in realms.
 	condsSet *ConditionsSet
+	// projectCfg is a extracted from projects.cfg service config.
+	projectCfg *projects.ProjectConfig
 	// realms is a mapping from realm name -> *realmsconf.Realm.
 	realms map[string]*realmsconf.Realm
 	// data is a mapping from realm name -> *protocol.RealmData.
@@ -478,7 +481,14 @@ func (rlme *RealmsExpander) realmData(name string, extends []*protocol.RealmData
 			}
 			extends = append(extends, data)
 		}
-		rlme.data[name] = deriveRealmData(rlm, extends)
+		data := deriveRealmData(rlm, extends)
+		if name == realms.RootRealm && !rlme.projectCfg.IsEmpty() {
+			if data == nil {
+				data = &protocol.RealmData{}
+			}
+			populateRootRealmData(data, rlme.projectCfg)
+		}
+		rlme.data[name] = data
 	}
 	return rlme.data[name], nil
 }
@@ -495,4 +505,10 @@ func deriveRealmData(realm *realmsconf.Realm, extends []*protocol.RealmData) *pr
 	return &protocol.RealmData{
 		EnforceInService: enforceInService.ToSortedSlice(),
 	}
+}
+
+// populateRootRealmData updates RealmData of the root realm based on a config.
+func populateRootRealmData(d *protocol.RealmData, cfg *projects.ProjectConfig) {
+	d.ProjectScopedAccount = cfg.ProjectScopedAccount
+	d.BillingCloudProjectId = cfg.BillingCloudProjectID
 }

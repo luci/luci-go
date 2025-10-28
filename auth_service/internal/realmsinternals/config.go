@@ -58,8 +58,8 @@ type realmsMap struct {
 //
 // The returned protocol.Realms contains realms and permissions of a single
 // project only. Permissions not mentioned in the project's realms are omitted.
-// All protocol.Permission messages have names only (no metadata). api_version field
-// is omitted.
+// All protocol.Permission messages have names only (no metadata). api_version
+// field is omitted.
 //
 // All such protocol.Realms messages across all projects (plus a list of all
 // defined permissions with all their metadata) are later merged together into
@@ -70,6 +70,9 @@ func ExpandRealms(ctx context.Context, db *permissions.PermissionsDB, projs *pro
 	// they do not have implicit root bindings (since they are not associated
 	// with any "project:<X>" identity used in implicit root bindings).
 	internal := projectID == realms.InternalProject
+
+	// Set on the staging instance of LUCI.
+	isDev := validation.GetRealmsCfgPath(ctx) == validation.RealmsDevCfgPath
 
 	// The server code could have changed since the config passed the validation
 	// and realmsCfg may not be valid anymore. Verify it still is. The code
@@ -137,6 +140,7 @@ func ExpandRealms(ctx context.Context, db *permissions.PermissionsDB, projs *pro
 	realmsExpander := &RealmsExpander{
 		rolesExpander: rolesExpander,
 		condsSet:      condsSet,
+		projectCfg:    projs.ProjectConfig(ctx, projectID, isDev),
 		realms:        realmsMap,
 		data:          map[string]*protocol.RealmData{},
 	}
@@ -297,9 +301,9 @@ type normalizedStruct struct {
 // the principalPerms only the permissions and conditions are filled.
 //
 // Conditions are specified as indexes in ConditionSet, we use them as they are,
-// since by consruction of ConditionsSet all conditions are in use and we don't
-// need any extra filtering (and consequently index remapping to skip gaps) as we
-// do for permissions.
+// since by construction of ConditionsSet all conditions are in use and we don't
+// need any extra filtering (and consequently index remapping to skip gaps) as
+// we do for permissions.
 //
 // permsToPrincipal is a map mapping {Conds, Perms} -> principals.
 // indexMapping defines how to remap permission indexes (old -> new).

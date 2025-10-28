@@ -126,7 +126,7 @@ func TestUpdateRealms(t *testing.T) {
 
 		svcCfgs := &serviceConfigs{
 			perms: testsupport.PermissionsDB(false),
-			projs: testsupport.Projects(),
+			projs: testsupport.Projects(nil),
 		}
 
 		t.Run("works", func(t *ftt.Test) {
@@ -362,7 +362,7 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 
 		svcCfgs := &serviceConfigs{
 			perms: testsupport.PermissionsDB(false),
-			projs: testsupport.Projects(),
+			projs: testsupport.Projects(nil),
 		}
 
 		configBody, _ := prototext.Marshal(&realmsconf.RealmsCfg{

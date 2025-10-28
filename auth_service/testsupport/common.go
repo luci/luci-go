@@ -22,6 +22,7 @@ import (
 	"context"
 	"fmt"
 
+	configpb "go.chromium.org/luci/common/proto/config"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/server/auth"
@@ -194,6 +195,9 @@ func PermissionsDB(implicitRootBindings bool) *permissions.PermissionsDB {
 }
 
 // Projects creates projects.Projects for tests.
-func Projects() *projects.Projects {
-	return &projects.Projects{Rev: "projects.cfg:rev"}
+func Projects(cfgs []*configpb.Project) *projects.Projects {
+	return projects.New(
+		&configpb.ProjectsCfg{Projects: cfgs},
+		&config.Meta{Revision: "projects.cfg:rev"},
+	)
 }
