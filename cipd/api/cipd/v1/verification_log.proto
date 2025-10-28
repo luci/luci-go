@@ -31,7 +31,7 @@ import "go.chromium.org/luci/common/bq/pb/options.proto";
 // Field types must be compatible with BigQuery Storage Write API, see
 // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
 //
-// Next ID: 17.
+// Next ID: 19.
 message VerificationLogEntry {
   int64 operation_id = 1;  // matches UploadOperation.ID
   string initiated_by = 2; // e.g. "user:someone@example.com"
@@ -53,6 +53,8 @@ message VerificationLogEntry {
   int64 file_size = 12;          // total file size in bytes
   int64 verification_speed = 13; // file_size / duration, in bytes per second
 
-  string outcome = 14; // see cas.UploadStatus enum
-  string error = 15;   // error message, if any
+  string outcome = 14;       // see cas.UploadStatus enum
+  string error = 15;         // error message, if any
+  bool transient_error = 17; // true if the verification will be retried
+  bool existed = 18;         // true if the file was already present in the CAS store
 }

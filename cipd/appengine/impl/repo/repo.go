@@ -145,6 +145,12 @@ func (impl *repoImpl) registerProcessor(p processing.Processor) {
 }
 
 // packageReader opens a package instance for reading.
+//
+// Returns a fatal error only if there's no such file in the storage or it is
+// not a valid CIPD package file. All other errors are tagged as transient.
+// In particular permission errors are tagged as transient too, to keep
+// retrying runProcessorsTask(...) TQ task in case there's some transient
+// misconfiguration.
 func (impl *repoImpl) packageReader(ctx context.Context, ref *caspb.ObjectRef, userProject string) (*processing.PackageReader, error) {
 	// Get slow Google Storage based ReaderAt.
 	rawReader, err := impl.cas.GetReader(ctx, ref, userProject)
@@ -669,7 +675,7 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 			UploadOp: uploadOp,
 		}, nil
 	default:
-		return nil, errors.Fmt("failed to initiate an upload op (code %s): %w", code, err)
+		return nil, err
 	}
 
 	// Warn about registering deprecated SHA1 packages. Eventually this will be
@@ -1658,7 +1664,7 @@ func (impl *repoImpl) DescribeClient(ctx context.Context, r *repopb.DescribeClie
 		UserProject:      userProject,
 	})
 	if err != nil {
-		return nil, grpcutil.InternalTag.Apply(errors.Fmt("failed to get signed URL to the client binary: %w", err))
+		return nil, errors.Fmt("failed to get signed URL to the client binary: %w", err)
 	}
 
 	return &repopb.DescribeClientResponse{

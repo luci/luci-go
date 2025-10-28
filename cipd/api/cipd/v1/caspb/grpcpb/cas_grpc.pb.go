@@ -58,7 +58,11 @@ const (
 type StorageClient interface {
 	// Produces a signed URL that can be used to fetch an object.
 	//
-	// Returns NOT_FOUND status code if there's no such object.
+	// Returns:
+	//
+	//	NOT_FOUND if there's no such object.
+	//	PERMISSION_DENIED if the caller has no access to CAS.
+	//	PERMISSION_DENIED if the CAS backend can't use the billing account.
 	GetObjectURL(ctx context.Context, in *GetObjectURLRequest, opts ...grpc.CallOption) (*ObjectURL, error)
 	// Initiates an upload operation.
 	//
@@ -81,6 +85,11 @@ type StorageClient interface {
 	// An UploadOperation returned by this method contains tokens that grant
 	// direct upload access to whoever possesses them, so it should be treated as
 	// a secret. See UploadOperation for more info.
+	//
+	// Returns:
+	//
+	//	PERMISSION_DENIED if the caller has no access to CAS.
+	//	PERMISSION_DENIED if the CAS backend can't use the billing account.
 	BeginUpload(ctx context.Context, in *BeginUploadRequest, opts ...grpc.CallOption) (*UploadOperation, error)
 	// Finishes the pending upload operation, returning its new status.
 	//
@@ -92,11 +101,13 @@ type StorageClient interface {
 	// it if they want to wait for the server to verify the hash of the uploaded
 	// object.
 	//
-	// Returns NOT_FOUND if the provided upload operation doesn't exist.
-	//
 	// Errors related to the uploaded file body are communicated through 'status'
 	// field of the upload operation, since they are not directly related to this
 	// RPC call, but rather to the upload operation itself.
+	//
+	// Returns:
+	//
+	//	NOT_FOUND if the provided upload operation doesn't exist.
 	FinishUpload(ctx context.Context, in *FinishUploadRequest, opts ...grpc.CallOption) (*UploadOperation, error)
 	// CancelUpload aborts the pending upload operation.
 	//
@@ -179,7 +190,11 @@ func (c *storageClient) CancelUpload(ctx context.Context, in *CancelUploadReques
 type StorageServer interface {
 	// Produces a signed URL that can be used to fetch an object.
 	//
-	// Returns NOT_FOUND status code if there's no such object.
+	// Returns:
+	//
+	//	NOT_FOUND if there's no such object.
+	//	PERMISSION_DENIED if the caller has no access to CAS.
+	//	PERMISSION_DENIED if the CAS backend can't use the billing account.
 	GetObjectURL(context.Context, *GetObjectURLRequest) (*ObjectURL, error)
 	// Initiates an upload operation.
 	//
@@ -202,6 +217,11 @@ type StorageServer interface {
 	// An UploadOperation returned by this method contains tokens that grant
 	// direct upload access to whoever possesses them, so it should be treated as
 	// a secret. See UploadOperation for more info.
+	//
+	// Returns:
+	//
+	//	PERMISSION_DENIED if the caller has no access to CAS.
+	//	PERMISSION_DENIED if the CAS backend can't use the billing account.
 	BeginUpload(context.Context, *BeginUploadRequest) (*UploadOperation, error)
 	// Finishes the pending upload operation, returning its new status.
 	//
@@ -213,11 +233,13 @@ type StorageServer interface {
 	// it if they want to wait for the server to verify the hash of the uploaded
 	// object.
 	//
-	// Returns NOT_FOUND if the provided upload operation doesn't exist.
-	//
 	// Errors related to the uploaded file body are communicated through 'status'
 	// field of the upload operation, since they are not directly related to this
 	// RPC call, but rather to the upload operation itself.
+	//
+	// Returns:
+	//
+	//	NOT_FOUND if the provided upload operation doesn't exist.
 	FinishUpload(context.Context, *FinishUploadRequest) (*UploadOperation, error)
 	// CancelUpload aborts the pending upload operation.
 	//

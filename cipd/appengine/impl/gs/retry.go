@@ -17,6 +17,7 @@ package gs
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"google.golang.org/api/googleapi"
@@ -26,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 )
 
 // StatusCodeTag holds an http status code.
@@ -55,17 +57,28 @@ var retryPolicy = retry.ExponentialBackoff{
 	Multiplier: 2,
 }
 
+// Snippets of HTTP 403 or HTTP 400 error messages indicating there's something
+// wrong with billing to a user project.
+var billingErrs = []string{
+	`does not have serviceusage.services.use access`,
+	`billing account for the owning project is disabled`,
+	`project specified in the request is invalid`,
+}
+
 // withRetry executes a Google Storage API call, retrying on transient errors.
 //
-// If request reached GS, but the service replied with an error, the
+// If a request reached GS, but the service replied with an error, the
 // corresponding HTTP status code can be extracted from the error via
 // StatusCode(err). The error is also tagged as transient based on the code:
 // response with HTTP statuses >=500 and 429 are considered transient errors.
 //
 // If the request never reached GS, StatusCode(err) would return 0 and the error
 // will be tagged as transient.
+//
+// Additionally attaches gRPC status tag matching the semantic meaning of the
+// error.
 func withRetry(ctx context.Context, call func() error) error {
-	return retry.Retry(ctx, transient.Only(func() retry.Iterator {
+	err := retry.Retry(ctx, transient.Only(func() retry.Iterator {
 		it := retryPolicy
 		return &it
 	}), func() error {
@@ -73,25 +86,66 @@ func withRetry(ctx context.Context, call func() error) error {
 		if err == nil {
 			return nil
 		}
-		apiErr, _ := err.(*googleapi.Error)
-		if apiErr == nil {
-			// RestartUploadError errors are fatal and should be passed unannotated.
-			if _, ok := err.(*RestartUploadError); ok {
-				return err
-			}
+
+		// RestartUploadError errors are fatal and should be passed unannotated.
+		var restartErr *RestartUploadError
+		if errors.As(err, &restartErr) {
+			return err
+		}
+
+		// Any other error that is not googleapi.Error means we failed to call GCS.
+		var apiErr *googleapi.Error
+		if !errors.As(err, &apiErr) {
 			return transient.Tag.Apply(errors.Fmt("failed to call GS: %w", err))
 		}
+
 		logging.Infof(ctx, "GS replied with HTTP code %d", apiErr.Code)
 		logging.Debugf(ctx, "full response body:\n%s", apiErr.Body)
-		err = errors.Fmt("GS replied with HTTP code %d: %w", apiErr.Code, err)
+
+		// Note we purposefully don't wrap apiErr (i.e. we use %s instead of %w),
+		// because, despite using HTTP API, apiErr secretly has GRPCStatus() inside
+		// and this particular status error is getting erroneously picked up by
+		// status.FromError(...).
+		err = errors.Fmt("GS replied with HTTP code %d: %s", apiErr.Code, apiErr.Message)
 		err = StatusCodeTag.ApplyValue(err, apiErr.Code)
+
 		// Retry only on 429 and 5xx responses, according to
 		// https://cloud.google.com/storage/docs/exponential-backoff.
 		if apiErr.Code == 429 || apiErr.Code >= 500 {
-			err = transient.Tag.Apply(err)
+			return transient.Tag.Apply(err)
 		}
+
 		return err
 	}, func(err error, d time.Duration) {
 		logging.WithError(err).Errorf(ctx, "Transient error when accessing GS. Retrying in %s...", d)
 	})
+
+	if err == nil {
+		return nil
+	}
+	if transient.Tag.In(err) {
+		return grpcutil.InternalTag.Apply(err)
+	}
+
+	// Pick a gRPC status tag. This eventually bubbles up to RPC clients.
+	switch StatusCode(err) {
+	case 0:
+		return err // not an googleapi.Error, pass it through
+	case http.StatusNotFound:
+		return grpcutil.NotFoundTag.Apply(err)
+	case http.StatusForbidden, http.StatusBadRequest:
+		msg := err.Error()
+		for _, snippet := range billingErrs {
+			if strings.Contains(msg, snippet) {
+				return grpcutil.PermissionDeniedTag.Apply(
+					errors.Fmt("check billing project configuration: %w", err),
+				)
+			}
+		}
+		// All other 403 and 400 errors are unexpected.
+		return grpcutil.InternalTag.Apply(err)
+	default:
+		// Any other error means something unexpected happened.
+		return grpcutil.InternalTag.Apply(err)
+	}
 }

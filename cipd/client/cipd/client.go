@@ -54,6 +54,7 @@ import (
 	"runtime"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -133,7 +134,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.7.9"
+	UserAgent = "cipd 2.7.10"
 )
 
 func init() {
@@ -2377,9 +2378,15 @@ func (c *clientImpl) rpcErr(err error, specialCodes map[codes.Code]cipderr.Code)
 		tag = special
 	}
 
-	if tag == cipderr.Auth && c.LoginInstructions != "" {
+	if tag == cipderr.Auth && c.LoginInstructions != "" && !isBackendProblem(status) {
 		return tag.Apply(errors.Fmt("%s, %s", status.Message(), c.LoginInstructions))
 	}
 
 	return tag.Apply(errors.New(status.Message()))
+}
+
+// isBackendProblem is true if the client can't solve the problem.
+func isBackendProblem(s *status.Status) bool {
+	// TODO: Use structured error details.
+	return s.Code() == codes.PermissionDenied && strings.Contains(s.Message(), "check billing project configuration")
 }

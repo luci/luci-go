@@ -16,6 +16,7 @@ package cas
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -98,6 +99,7 @@ func TestGetSignedURL(t *testing.T) {
 				GsPath: "/bucket/path",
 			})
 			assert.Loosely(t, err, should.ErrLike("doesn't exist"))
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
 			assert.Loosely(t, gs.calls, should.Equal(1))
 
 			// 31 sec later the cache expires and new check is made.
@@ -107,6 +109,48 @@ func TestGetSignedURL(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.ErrLike("doesn't exist"))
 			assert.Loosely(t, gs.calls, should.Equal(2))
+		})
+
+		t.Run("Permission errors are cached", func(t *ftt.Test) {
+			gs := &mockedSignerGS{err: grpcutil.PermissionDeniedTag.Apply(fmt.Errorf("boom"))}
+			_, _, err := getSignedURL(ctx, signer, gs, &signedURLParams{
+				GsPath: "/bucket/path",
+			})
+			assert.Loosely(t, err, should.ErrLike("boom"))
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, gs.calls, should.Equal(1))
+
+			// 30 sec later same check is reused.
+			cl.Add(30 * time.Second)
+			_, _, err = getSignedURL(ctx, signer, gs, &signedURLParams{
+				GsPath: "/bucket/path",
+			})
+			assert.Loosely(t, err, should.ErrLike("boom"))
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, gs.calls, should.Equal(1))
+
+			// 31 sec later the cache expires and new check is made.
+			cl.Add(31 * time.Second)
+			_, _, err = getSignedURL(ctx, signer, gs, &signedURLParams{
+				GsPath: "/bucket/path",
+			})
+			assert.Loosely(t, err, should.ErrLike("boom"))
+			assert.Loosely(t, gs.calls, should.Equal(2))
+		})
+
+		t.Run("Internal errors are not cached", func(t *ftt.Test) {
+			gs := &mockedSignerGS{err: context.DeadlineExceeded}
+			_, _, err := getSignedURL(ctx, signer, gs, &signedURLParams{
+				GsPath: "/bucket/path",
+			})
+			assert.Loosely(t, errors.Is(err, context.DeadlineExceeded), should.BeTrue)
+			assert.Loosely(t, gs.calls, should.Equal(1))
+
+			_, _, err = getSignedURL(ctx, signer, gs, &signedURLParams{
+				GsPath: "/bucket/path",
+			})
+			assert.Loosely(t, errors.Is(err, context.DeadlineExceeded), should.BeTrue)
+			assert.Loosely(t, gs.calls, should.Equal(2)) // made a call
 		})
 
 		t.Run("Signing error", func(t *ftt.Test) {
@@ -132,11 +176,12 @@ func TestGetSignedURL(t *testing.T) {
 type mockedSignerGS struct {
 	testutil.NoopGoogleStorage
 
+	err    error
 	exists bool
 	calls  int
 }
 
 func (m *mockedSignerGS) Size(ctx context.Context, path string) (size uint64, exists bool, err error) {
 	m.calls++
-	return 123, m.exists, nil
+	return 123, m.exists, m.err
 }

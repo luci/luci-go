@@ -19,12 +19,12 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"net/http"
 	"strings"
 
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
@@ -148,11 +148,7 @@ func (s *storageImpl) GetReader(ctx context.Context, ref *caspb.ObjectRef, userP
 
 	r, err = s.getGS(ctx, userProject).Reader(ctx, s.settings.ObjectPath(ref), 0, minimumSpeedLimit)
 	if err != nil {
-		err = errors.Fmt("can't read the object: %w", err)
-		if gs.StatusCode(err) == http.StatusNotFound {
-			err = grpcutil.NotFoundTag.Apply(err)
-		}
-		return nil, err
+		return nil, errors.Fmt("can't read the object: %w", err)
 	}
 	return r, nil
 }
@@ -178,7 +174,7 @@ func (s *storageImpl) GetObjectURL(ctx context.Context, r *caspb.GetObjectURLReq
 		UserProject: r.UserProject,
 	})
 	if err != nil {
-		return nil, errors.Fmt("failed to get signed URL: %w", err)
+		return nil, err
 	}
 	return &caspb.ObjectURL{SignedUrl: url}, nil
 }
@@ -215,7 +211,7 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *caspb.BeginUploadReque
 	if r.Object != nil {
 		switch yes, err := gs.Exists(ctx, s.settings.ObjectPath(r.Object)); {
 		case err != nil:
-			return nil, grpcutil.InternalTag.Apply(errors.Fmt("failed to check the object's presence: %w", err))
+			return nil, errors.Fmt("failed to check the object's presence: %w", err)
 		case yes:
 			return nil, status.Errorf(codes.AlreadyExists, "the object is already in the store")
 		}
@@ -247,7 +243,7 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *caspb.BeginUploadReque
 	// not big deal if we loose it (e.g. due to a crash before returning).
 	uploadURL, err := gs.StartUpload(ctx, tempGSPath)
 	if err != nil {
-		return nil, grpcutil.InternalTag.Apply(errors.Fmt("failed to start resumable upload: %w", err))
+		return nil, errors.Fmt("failed to start resumable upload: %w", err)
 	}
 
 	// Save the operation. It is accessed in FinishUpload.
@@ -433,30 +429,6 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 
 	gs := s.getGS(ctx, op.UserProject)
 
-	// If the destination file exists already, we are done. This may happen on
-	// a task retry or if the file was uploaded concurrently by someone else.
-	// Otherwise we still need to verify the temp file, and then move it into
-	// the final location.
-	if op.HexDigest != "" {
-		exists, err := gs.Exists(ctx, s.settings.ObjectPath(&caspb.ObjectRef{
-			HashAlgo:  op.HashAlgo,
-			HexDigest: op.HexDigest,
-		}))
-		switch {
-		case err != nil:
-			return transient.Tag.Apply(errors.Fmt("failed to check the presence of the destination file: %w", err))
-		case exists:
-			if err := s.maybeDelete(ctx, gs, op.TempGSPath); err != nil {
-				return err
-			}
-			_, err = op.Advance(ctx, func(_ context.Context, op *upload.Operation) error {
-				op.Status = caspb.UploadStatus_PUBLISHED
-				return nil
-			})
-			return err
-		}
-	}
-
 	verifiedHexDigest := "" // set after the successful hash verification below
 
 	// Log some details about the verification operation.
@@ -478,17 +450,23 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 		})
 	}
 
-	submitLog := func(outcome caspb.UploadStatus, error string) {
+	submitLog := func(outcome caspb.UploadStatus, error string, transient bool) {
 		logEntry.Outcome = outcome.String()
 		logEntry.Error = error
+		logEntry.TransientError = transient
 		logEntry.Finished = clock.Now(ctx).UnixNano() / 1000
 
-		verificationTimeSec := float64(logEntry.Finished-logEntry.Started) / 1e6
-		if verificationTimeSec < 0.001 {
-			verificationTimeSec = 0.001
+		if !logEntry.Existed {
+			verificationTimeSec := float64(logEntry.Finished-logEntry.Started) / 1e6
+			if verificationTimeSec < 0.001 {
+				verificationTimeSec = 0.001
+			}
+			logEntry.VerificationSpeed = int64(float64(logEntry.FileSize) / verificationTimeSec)
 		}
-		logEntry.VerificationSpeed = int64(float64(logEntry.FileSize) / verificationTimeSec)
 
+		if logText, err := (prototext.MarshalOptions{Indent: "\t"}).Marshal(logEntry); err == nil {
+			logging.Infof(ctx, "Verification log entry:\n%s", logText)
+		}
 		if s.submitLog != nil {
 			s.submitLog(ctx, logEntry)
 		}
@@ -496,13 +474,29 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 
 	defer func() {
 		if err != nil {
+			// Prefer the context error if the context has expired. Most importantly,
+			// never confuse context errors for fatal verification errors.
+			if cerr := ctx.Err(); cerr != nil {
+				err = transient.Tag.Apply(cerr)
+			}
 			logging.Errorf(ctx, "Verification error: %s", err)
+		}
+
+		// Report the verified hash to the log if managed to calculate it. This
+		// should usually match logEntry.ExpectedInstanceId. Note that `err` can
+		// still be non-nil in case we failed to publish the file after calculating
+		// its hash.
+		if verifiedHexDigest != "" {
+			logEntry.VerifiedInstanceId = common.ObjectRefToInstanceID(&caspb.ObjectRef{
+				HashAlgo:  op.HashAlgo,
+				HexDigest: verifiedHexDigest,
+			})
 		}
 
 		// On transient errors don't touch the temp file or the operation, we need
 		// them for retries.
 		if transient.Tag.In(err) {
-			submitLog(caspb.UploadStatus_ERRORED, fmt.Sprintf("Transient error: %s", err))
+			submitLog(caspb.UploadStatus_ERRORED, fmt.Sprintf("Transient error: %s", err), true)
 			return
 		}
 
@@ -521,11 +515,11 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 		})
 		if opErr != nil {
 			err = opErr // override the error returned by the task
-			submitLog(caspb.UploadStatus_ERRORED, fmt.Sprintf("Error updating UploadOperation: %s", err))
+			submitLog(caspb.UploadStatus_ERRORED, fmt.Sprintf("Error updating UploadOperation: %s", err), true)
 			return
 		}
 
-		submitLog(advancedOp.Status, advancedOp.Error)
+		submitLog(advancedOp.Status, advancedOp.Error, false)
 
 		// Best effort deletion of the temporary file. We do it here, after updating
 		// the operation, to avoid retrying the expensive verification procedure
@@ -533,10 +527,30 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 		// directory doesn't hurt (it is marked with operation ID and timestamp,
 		// so we can always clean it up offline).
 		if delErr := gs.Delete(ctx, op.TempGSPath); delErr != nil {
-			logging.WithError(delErr).Errorf(ctx,
-				"Failed to remove temporary Google Storage file, it is dead garbage now: %s", op.TempGSPath)
+			logging.Errorf(ctx, "Failed to remove temporary Google Storage file %q, it is dead garbage now: %s", op.TempGSPath, delErr)
 		}
 	}()
+
+	// If the destination file exists already, we are done. This may happen on
+	// a task retry or if the file was uploaded concurrently by someone else.
+	// Otherwise we still need to verify the temp file, and then move it into
+	// the final location.
+	if op.HexDigest != "" {
+		fileSize, exists, err := gs.Size(ctx, s.settings.ObjectPath(&caspb.ObjectRef{
+			HashAlgo:  op.HashAlgo,
+			HexDigest: op.HexDigest,
+		}))
+		switch {
+		case err != nil:
+			return errors.Fmt("failed to check the presence of the destination file: %w", err)
+		case exists:
+			// The defer will close the upload operation as successful.
+			verifiedHexDigest = op.HexDigest
+			logEntry.Existed = true
+			logEntry.FileSize = int64(fileSize)
+			return nil
+		}
+	}
 
 	hash, err := common.NewHash(op.HashAlgo)
 	if err != nil {
@@ -564,12 +578,6 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 		return errors.Fmt("failed to read Google Storage file: %w", err)
 	}
 	verifiedHexDigest = hex.EncodeToString(hash.Sum(nil))
-
-	// This should usually match logEntry.ExpectedInstanceId.
-	logEntry.VerifiedInstanceId = common.ObjectRefToInstanceID(&caspb.ObjectRef{
-		HashAlgo:  op.HashAlgo,
-		HexDigest: verifiedHexDigest,
-	})
 
 	// If we know the expected hash, verify it matches what we have calculated.
 	if op.HexDigest != "" && op.HexDigest != verifiedHexDigest {
@@ -604,14 +612,14 @@ func (s *storageImpl) cleanupUploadTask(ctx context.Context, task *tasks.Cleanup
 		if transient.Tag.In(err) {
 			return errors.Fmt("transient error when canceling the resumable upload: %w", err)
 		}
-		logging.WithError(err).Errorf(ctx, "Failed to cancel resumable upload")
+		logging.Errorf(ctx, "Failed to cancel resumable upload: %s", err)
 	}
 
 	if err := gs.Delete(ctx, task.PathToCleanup); err != nil {
 		if transient.Tag.In(err) {
 			return errors.Fmt("transient error when deleting the temp file: %w", err)
 		}
-		logging.WithError(err).Errorf(ctx, "Failed to delete the temp file")
+		logging.Errorf(ctx, "Failed to delete the temp file: %s", err)
 	}
 
 	return nil
@@ -633,9 +641,9 @@ func (s *storageImpl) cleanupUploadTask(ctx context.Context, task *tasks.Cleanup
 func (s *storageImpl) maybeDelete(ctx context.Context, gs gs.GoogleStorage, path string) error {
 	switch err := gs.Delete(ctx, path); {
 	case transient.Tag.In(err):
-		return grpcutil.InternalTag.Apply(errors.Fmt("transient error when removing temporary Google Storage file: %w", err))
+		return errors.Fmt("transient error when removing temporary Google Storage file: %w", err)
 	case err != nil:
-		logging.WithError(err).Errorf(ctx, "Failed to remove temporary Google Storage file, it is dead garbage now: %s", path)
+		logging.Errorf(ctx, "Failed to remove temporary Google Storage file %q, it is dead garbage now: %s", path, err)
 	}
 	return nil
 }

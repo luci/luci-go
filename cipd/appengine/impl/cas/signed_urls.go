@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -35,6 +36,7 @@ const (
 	minSignedURLExpiration = 30 * time.Minute
 	maxSignedURLExpiration = 2 * time.Hour
 	absenceExpiration      = time.Minute
+	errorExpiration        = time.Minute
 )
 
 // signedURLParams describe what signed URL we want to get.
@@ -67,20 +69,24 @@ type gsObjInfo struct {
 	Size uint64 `json:"size,omitempty"`
 	// URL is the signed URL that can be used to fetch the object.
 	URL string `json:"url,omitempty"`
+	// ErrorCode is gRPC status code of a fatal signing error.
+	ErrorCode codes.Code `json:"error_code,omitempty"`
+	// ErrorMessage is gRPC status message of a fatal signing error.
+	ErrorMessage string `json:"error_message,omitempty"`
 }
 
-// Exists returns whether this info refers to a file which exists.
-func (i *gsObjInfo) Exists() bool {
-	if i == nil {
-		return false
+// Error returns a gRPC-tagged error in that this struct represent an error.
+func (i *gsObjInfo) Error() error {
+	if i == nil || i.ErrorCode == 0 {
+		return nil
 	}
-	return i.URL != ""
+	return grpcutil.Tag.ApplyValue(errors.Fmt("%s", i.ErrorMessage), i.ErrorCode)
 }
 
 // signedURLParams.cacheKey() => gsObjInfo{...}.
 var signedURLsCache = layered.RegisterCache(layered.Parameters[*gsObjInfo]{
 	ProcessCacheCapacity: 65536,
-	GlobalNamespace:      "signed_gs_urls_v3",
+	GlobalNamespace:      "signed_gs_urls_v4",
 	Marshal: func(item *gsObjInfo) ([]byte, error) {
 		return json.Marshal(item)
 	},
@@ -109,9 +115,25 @@ func getSignedURL(ctx context.Context, signer signerFactory, gsstore gs.GoogleSt
 		info := &gsObjInfo{}
 		switch size, yes, err := gsstore.Size(ctx, params.GsPath); {
 		case err != nil:
-			return nil, 0, errors.Fmt("failed to check GS file presence: %w", err)
+			// Cache PermissionDenied errors to avoid a stampede in case of
+			// a misconfiguration. Pass all other (assumed transient) errors through
+			// to trigger an immediate retry.
+			err = errors.Fmt("failed to check GS file presence: %w", err)
+			code := grpcutil.Code(err)
+			if code != codes.PermissionDenied {
+				return nil, 0, err
+			}
+			info.ErrorCode = code
+			info.ErrorMessage = err.Error()
+			return info, errorExpiration, nil
+
 		case !yes:
+			// Cache object absence as well to avoid a stampede in case it is gone for
+			// some reason.
+			info.ErrorCode = codes.NotFound
+			info.ErrorMessage = fmt.Sprintf("object %q doesn't exist", params.GsPath)
 			return info, absenceExpiration, nil
+
 		default:
 			info.Size = size
 		}
@@ -131,7 +153,7 @@ func getSignedURL(ctx context.Context, signer signerFactory, gsstore gs.GoogleSt
 		// An implementation of SignBytes.
 		sig, err := signer(ctx)
 		if err != nil {
-			return nil, 0, errors.Fmt("can't create the signer: %w", err)
+			return nil, 0, grpcutil.InternalTag.Apply(errors.Fmt("can't create the signer: %w", err))
 		}
 
 		bucket, object := gs.SplitPath(params.GsPath)
@@ -149,7 +171,7 @@ func getSignedURL(ctx context.Context, signer signerFactory, gsstore gs.GoogleSt
 			Expires: time.Now().Add(maxSignedURLExpiration),
 		})
 		if err != nil {
-			return nil, 0, err
+			return nil, 0, grpcutil.InternalTag.Apply(err)
 		}
 
 		// 'url' here is valid for maxSignedURLExpiration. By caching it for
@@ -159,12 +181,12 @@ func getSignedURL(ctx context.Context, signer signerFactory, gsstore gs.GoogleSt
 		return info, maxSignedURLExpiration - minSignedURLExpiration, nil
 	})
 
-	if err != nil {
-		return "", 0, grpcutil.InternalTag.Apply(errors.Fmt("failed to sign URL: %w", err))
+	// Use a cached error if it is present.
+	if err == nil {
+		err = info.Error()
 	}
-
-	if !info.Exists() {
-		return "", 0, grpcutil.NotFoundTag.Apply(errors.Fmt("object %q doesn't exist", params.GsPath))
+	if err != nil {
+		return "", 0, errors.Fmt("failed to sign URL: %w", err)
 	}
 
 	return info.URL, info.Size, nil

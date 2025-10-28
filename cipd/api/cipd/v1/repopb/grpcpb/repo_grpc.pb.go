@@ -245,6 +245,9 @@ type RepositoryClient interface {
 	//
 	// Callers must have roles WRITER or OWNER for the package prefix. Returns
 	// PERMISSION_DENIED otherwise.
+	//
+	// Also returns PERMISSION_DENIED if the prefix is configured to bill GCS
+	// usage to a user project, but the CIPD backend has no permission to do so.
 	RegisterInstance(ctx context.Context, in *Instance, opts ...grpc.CallOption) (*RegisterInstanceResponse, error)
 	// Lists instances of a package, most recent first.
 	//
@@ -422,6 +425,7 @@ type RepositoryClient interface {
 	// Returns:
 	//
 	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	PERMISSION_DENIED if the CIPD backend can't use prefix's billing account.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if there's no such instance.
 	GetInstanceURL(ctx context.Context, in *GetInstanceURLRequest, opts ...grpc.CallOption) (*caspb.ObjectURL, error)
@@ -451,6 +455,7 @@ type RepositoryClient interface {
 	//	FAILED_PRECONDITION if the instance is still being processed.
 	//	ABORTED if the instance has some failed processors associated with it,
 	//	    such instance is effectively broken and should not be used.
+	//	PERMISSION_DENIED if the CIPD backend can't use prefix's billing account.
 	DescribeClient(ctx context.Context, in *DescribeClientRequest, opts ...grpc.CallOption) (*DescribeClientResponse, error)
 	// Returns information about binaries extracted from bootstrap packages under
 	// some prefix.
@@ -924,6 +929,9 @@ type RepositoryServer interface {
 	//
 	// Callers must have roles WRITER or OWNER for the package prefix. Returns
 	// PERMISSION_DENIED otherwise.
+	//
+	// Also returns PERMISSION_DENIED if the prefix is configured to bill GCS
+	// usage to a user project, but the CIPD backend has no permission to do so.
 	RegisterInstance(context.Context, *Instance) (*RegisterInstanceResponse, error)
 	// Lists instances of a package, most recent first.
 	//
@@ -1101,6 +1109,7 @@ type RepositoryServer interface {
 	// Returns:
 	//
 	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	PERMISSION_DENIED if the CIPD backend can't use prefix's billing account.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if there's no such instance.
 	GetInstanceURL(context.Context, *GetInstanceURLRequest) (*caspb.ObjectURL, error)
@@ -1130,6 +1139,7 @@ type RepositoryServer interface {
 	//	FAILED_PRECONDITION if the instance is still being processed.
 	//	ABORTED if the instance has some failed processors associated with it,
 	//	    such instance is effectively broken and should not be used.
+	//	PERMISSION_DENIED if the CIPD backend can't use prefix's billing account.
 	DescribeClient(context.Context, *DescribeClientRequest) (*DescribeClientResponse, error)
 	// Returns information about binaries extracted from bootstrap packages under
 	// some prefix.

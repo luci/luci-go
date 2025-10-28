@@ -26,10 +26,12 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/storage/v1"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -44,8 +46,14 @@ import (
 // if necessary.
 //
 // Errors returned by GoogleStorage are annotated with transient tag (when
-// appropriate) and with HTTP status codes of corresponding Google Storage API
-// replies (if available). Use StatusCode(err) to extract them.
+// appropriate) and with a gRPC status tag matching the overall error condition:
+//   - Internal for transient or unexpected errors.
+//   - NotFound if the accessed GCS object doesn't exist.
+//   - PermissionDenied if the service can't use the billing account.
+//
+// Errors are also tagged with the original HTTP status codes, but their
+// semantics is complicated and the callers should generally not be checking
+// them.
 //
 // Retries on transient errors internally a bunch of times. Logs all calls to
 // the info log.
@@ -156,9 +164,7 @@ func (gs *impl) init() error {
 		if tr == nil {
 			tr, err = auth.GetRPCTransport(gs.ctx, auth.AsSelf, auth.WithScopes(storage.CloudPlatformScope))
 			if err != nil {
-				gs.err =
-					transient.Tag.Apply(errors.Fmt("failed to get authenticating transport: %w", err))
-
+				gs.err = transient.Tag.Apply(errors.Fmt("failed to get authenticating transport: %w", err))
 				return
 			}
 		}
@@ -189,7 +195,7 @@ func (gs *impl) Size(ctx context.Context, path string) (size uint64, exists bool
 	switch err := withRetry(ctx, func() error { obj, err = call.Do(); return err }); {
 	case err == nil:
 		return obj.Size, true, nil
-	case gs.isNotFound(err):
+	case grpcutil.Code(err) == codes.NotFound:
 		return 0, false, nil
 	default:
 		return 0, false, err
@@ -236,7 +242,7 @@ func (gs *impl) Delete(ctx context.Context, path string) error {
 		call.UserProject(gs.userProject)
 	}
 	err := withRetry(ctx, func() error { return call.Do() })
-	if err == nil || gs.isNotFound(err) {
+	if err == nil || grpcutil.Code(err) == codes.NotFound {
 		return nil
 	}
 	return err
@@ -247,39 +253,39 @@ func (gs *impl) Publish(ctx context.Context, dst, src string, srcGen int64) erro
 	if err == nil {
 		return nil
 	}
-	code := StatusCode(err)
 
 	// srcGen < 0 means we check only precondition on 'dst', so if the copy
 	// failed, we already know why: 'dst' already exists (which means the publish
 	// operation is successful overall). Other error conditions handled below.
-	if code == http.StatusPreconditionFailed && srcGen < 0 {
+	preconditionFailed := StatusCode(err) == http.StatusPreconditionFailed
+	if preconditionFailed && srcGen < 0 {
 		return nil
 	}
 
-	// isNotFound(err) == true means 'src' is missing. This can happen if we
-	// attempted to publish before, failed midway and retrying now. If so, 'dst'
-	// should exist already.
+	// codes.NotFound means 'src' is missing. This can happen if we attempted to
+	// publish before, failed midway and retrying now. If so, 'dst' should exist
+	// already.
 	//
-	// StatusPreconditionFailed means either 'src' has changed (its generation no
-	// longer matches srcGen generation), or 'dst' already exists (its generation
-	// is no longer 0).
+	// preconditionFailed means either 'src' has changed (its generation no longer
+	// matches srcGen generation), or 'dst' already exists (its generation is no
+	// longer 0).
 	//
 	// We want to check for 'dst' presence to figure out what to do next.
 	//
 	// Any other code is unexpected error.
-	if !gs.isNotFound(err) && code != http.StatusPreconditionFailed {
+	if grpcutil.Code(err) != codes.NotFound && !preconditionFailed {
 		return errors.Fmt("failed to copy the object: %w", err)
 	}
 
 	switch _, exists, dstErr := gs.Size(ctx, dst); {
 	case dstErr != nil:
 		return errors.Fmt("failed to check the destination object presence: %w", dstErr)
-	case !exists && gs.isNotFound(err):
+	case !exists && grpcutil.Code(err) == codes.NotFound:
 		// Both 'src' and 'dst' are missing. It means we are not retrying a failed
 		// move (it would have left either 'src' or 'dst' or both present), and
 		// 'src' is genuinely missing.
 		return errors.Fmt("the source object is missing: %w", err)
-	case !exists && code == http.StatusPreconditionFailed:
+	case !exists && preconditionFailed:
 		// 'dst' is still missing. It means we failed 'srcGen' precondition.
 		return errors.Fmt("the source object has unexpected generation number: %w", err)
 	}
@@ -410,21 +416,6 @@ func (gs *impl) Reader(ctx context.Context, path string, gen, minSpeed int64) (R
 		gen:      obj.Generation,
 		minSpeed: minSpeed,
 	}, nil
-}
-
-// isNotFound recognizes if the error means the GCS object is not found.
-//
-// It is normally reported by HTTP 404 errors, but when using custom
-// userProject, it is HTTP 403 error for some reason (that says "no permission
-// or the object doesn't exist", so technically it is correct).
-//
-// We assume CIPD GCS buckets are configured correctly (there are NO 403 errors
-// that indicate ACL issues).
-func (gs *impl) isNotFound(err error) bool {
-	// TODO: Fix to differentiate between "403 because object not found"
-	// and "403 because can't bill the user project".
-	code := StatusCode(err)
-	return code == http.StatusNotFound || (gs.userProject != "" && code == http.StatusForbidden)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

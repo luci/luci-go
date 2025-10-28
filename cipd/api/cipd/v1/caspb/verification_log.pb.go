@@ -47,7 +47,7 @@ const (
 // Field types must be compatible with BigQuery Storage Write API, see
 // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
 //
-// Next ID: 17.
+// Next ID: 19.
 type VerificationLogEntry struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	OperationId        int64                  `protobuf:"varint,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`                       // matches UploadOperation.ID
@@ -66,6 +66,8 @@ type VerificationLogEntry struct {
 	VerificationSpeed  int64                  `protobuf:"varint,13,opt,name=verification_speed,json=verificationSpeed,proto3" json:"verification_speed,omitempty"`    // file_size / duration, in bytes per second
 	Outcome            string                 `protobuf:"bytes,14,opt,name=outcome,proto3" json:"outcome,omitempty"`                                                  // see cas.UploadStatus enum
 	Error              string                 `protobuf:"bytes,15,opt,name=error,proto3" json:"error,omitempty"`                                                      // error message, if any
+	TransientError     bool                   `protobuf:"varint,17,opt,name=transient_error,json=transientError,proto3" json:"transient_error,omitempty"`             // true if the verification will be retried
+	Existed            bool                   `protobuf:"varint,18,opt,name=existed,proto3" json:"existed,omitempty"`                                                 // true if the file was already present in the CAS store
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -212,11 +214,25 @@ func (x *VerificationLogEntry) GetError() string {
 	return ""
 }
 
+func (x *VerificationLogEntry) GetTransientError() bool {
+	if x != nil {
+		return x.TransientError
+	}
+	return false
+}
+
+func (x *VerificationLogEntry) GetExisted() bool {
+	if x != nil {
+		return x.Existed
+	}
+	return false
+}
+
 var File_go_chromium_org_luci_cipd_api_cipd_v1_verification_log_proto protoreflect.FileDescriptor
 
 const file_go_chromium_org_luci_cipd_api_cipd_v1_verification_log_proto_rawDesc = "" +
 	"\n" +
-	"<go.chromium.org/luci/cipd/api/cipd/v1/verification_log.proto\x12\x04cipd\x1a/go.chromium.org/luci/common/bq/pb/options.proto\"\xeb\x04\n" +
+	"<go.chromium.org/luci/cipd/api/cipd/v1/verification_log.proto\x12\x04cipd\x1a/go.chromium.org/luci/common/bq/pb/options.proto\"\xae\x05\n" +
 	"\x14VerificationLogEntry\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\x03R\voperationId\x12!\n" +
 	"\finitiated_by\x18\x02 \x01(\tR\vinitiatedBy\x12 \n" +
@@ -239,7 +255,9 @@ const file_go_chromium_org_luci_cipd_api_cipd_v1_verification_log_proto_rawDesc 
 	"\tfile_size\x18\f \x01(\x03R\bfileSize\x12-\n" +
 	"\x12verification_speed\x18\r \x01(\x03R\x11verificationSpeed\x12\x18\n" +
 	"\aoutcome\x18\x0e \x01(\tR\aoutcome\x12\x14\n" +
-	"\x05error\x18\x0f \x01(\tR\x05errorB-Z+go.chromium.org/luci/cipd/api/cipd/v1/caspbb\x06proto3"
+	"\x05error\x18\x0f \x01(\tR\x05error\x12'\n" +
+	"\x0ftransient_error\x18\x11 \x01(\bR\x0etransientError\x12\x18\n" +
+	"\aexisted\x18\x12 \x01(\bR\aexistedB-Z+go.chromium.org/luci/cipd/api/cipd/v1/caspbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_cipd_api_cipd_v1_verification_log_proto_rawDescOnce sync.Once

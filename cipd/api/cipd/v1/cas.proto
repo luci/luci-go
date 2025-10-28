@@ -32,7 +32,10 @@ option go_package = "go.chromium.org/luci/cipd/api/cipd/v1/caspb";
 service Storage {
   // Produces a signed URL that can be used to fetch an object.
   //
-  // Returns NOT_FOUND status code if there's no such object.
+  // Returns:
+  //   NOT_FOUND if there's no such object.
+  //   PERMISSION_DENIED if the caller has no access to CAS.
+  //   PERMISSION_DENIED if the CAS backend can't use the billing account.
   rpc GetObjectURL(GetObjectURLRequest) returns (ObjectURL);
 
   // Initiates an upload operation.
@@ -56,6 +59,10 @@ service Storage {
   // An UploadOperation returned by this method contains tokens that grant
   // direct upload access to whoever possesses them, so it should be treated as
   // a secret. See UploadOperation for more info.
+  //
+  // Returns:
+  //   PERMISSION_DENIED if the caller has no access to CAS.
+  //   PERMISSION_DENIED if the CAS backend can't use the billing account.
   rpc BeginUpload(BeginUploadRequest) returns (UploadOperation);
 
   // Finishes the pending upload operation, returning its new status.
@@ -68,11 +75,12 @@ service Storage {
   // it if they want to wait for the server to verify the hash of the uploaded
   // object.
   //
-  // Returns NOT_FOUND if the provided upload operation doesn't exist.
-  //
   // Errors related to the uploaded file body are communicated through 'status'
   // field of the upload operation, since they are not directly related to this
   // RPC call, but rather to the upload operation itself.
+  //
+  // Returns:
+  //   NOT_FOUND if the provided upload operation doesn't exist.
   rpc FinishUpload(FinishUploadRequest) returns (UploadOperation);
 
   // CancelUpload aborts the pending upload operation.

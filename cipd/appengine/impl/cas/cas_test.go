@@ -16,8 +16,8 @@ package cas
 
 import (
 	"context"
+	"fmt"
 	"io"
-	"net/http"
 	"strings"
 	"sync"
 	"testing"
@@ -182,9 +182,10 @@ func TestGetObjectURL(t *testing.T) {
 type mockedGS struct {
 	testutil.NoopGoogleStorage
 
-	exists bool
-	files  map[string]string
+	everythingExists bool
+	files            map[string]string
 
+	accessErr   error
 	publishErr  error
 	publisCalls []publishCall
 
@@ -200,8 +201,19 @@ type publishCall struct {
 	srcGen int64
 }
 
+func (m *mockedGS) Size(ctx context.Context, path string) (size uint64, exists bool, err error) {
+	if m.accessErr != nil {
+		return 0, false, m.accessErr
+	}
+	if body, ok := m.files[path]; ok {
+		return uint64(len(body)), true, nil
+	}
+	return 0, m.everythingExists, nil
+}
+
 func (m *mockedGS) Exists(ctx context.Context, path string) (bool, error) {
-	return m.exists, nil
+	_, exists, err := m.Size(ctx, path)
+	return exists, err
 }
 
 func (m *mockedGS) StartUpload(ctx context.Context, path string) (string, error) {
@@ -214,10 +226,16 @@ func (m *mockedGS) CancelUpload(ctx context.Context, uploadURL string) error {
 }
 
 func (m *mockedGS) Reader(ctx context.Context, path string, gen, minSpeed int64) (gs.Reader, error) {
+	if m.accessErr != nil {
+		return nil, m.accessErr
+	}
 	if body, ok := m.files[path]; ok {
 		return mockedGSReader{Reader: strings.NewReader(body)}, nil
 	}
-	return nil, gs.StatusCodeTag.WithDefault(http.StatusNotFound).Apply(errors.Fmt("file %q is missing", path))
+	if m.everythingExists {
+		return mockedGSReader{Reader: strings.NewReader("")}, nil
+	}
+	return nil, grpcutil.NotFoundTag.Apply(errors.Fmt("file %q is missing", path))
 }
 
 func (m *mockedGS) Publish(ctx context.Context, dst, src string, srcGen int64) error {
@@ -314,7 +332,7 @@ func TestBeginUpload(t *testing.T) {
 		})
 
 		t.Run("Object already exists", func(t *ftt.Test) {
-			gsMock.exists = true
+			gsMock.everythingExists = true
 			_, err := impl.BeginUpload(ctx, &caspb.BeginUploadRequest{
 				Object: &caspb.ObjectRef{
 					HashAlgo:  caspb.HashAlgo_SHA256,
@@ -615,6 +633,7 @@ func TestFinishUpload(t *testing.T) {
 					VerificationSpeed:  5000, // this is fake, our time is frozen
 					Outcome:            "ERRORED",
 					Error:              "Transient error: failed to publish the verified file: blarg",
+					TransientError:     true,
 				}))
 			})
 
@@ -766,7 +785,7 @@ func TestFinishUpload(t *testing.T) {
 			})
 
 			t.Run("Published file already exists", func(t *ftt.Test) {
-				gsMock.exists = true
+				gsMock.everythingExists = true
 
 				// Execute the pending verification task.
 				assert.Loosely(t, impl.verifyUploadTask(ctx, tqTasks[0].Payload.(*tasks.VerifyUpload)), should.BeNil)
@@ -791,8 +810,85 @@ func TestFinishUpload(t *testing.T) {
 					},
 				}))
 
-				// No log entries since there were no verification.
-				assert.Loosely(t, verificationLogs.last(), should.BeNil)
+				// The log entry indicates the verification was skipped.
+				assert.Loosely(t, verificationLogs.last(), should.Resemble(&caspb.VerificationLogEntry{
+					OperationId:        1,
+					TraceId:            testutil.TestRequestID.String(),
+					InitiatedBy:        string(testutil.TestUser),
+					TempGsPath:         "/bucket/tmp_path/1454472306_1",
+					ExpectedInstanceId: "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC",
+					VerifiedInstanceId: "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC",
+					Submitted:          testutil.TestTime.UnixNano() / 1000,
+					Started:            testutil.TestTime.UnixNano() / 1000,
+					Finished:           testutil.TestTime.UnixNano() / 1000,
+					Outcome:            "PUBLISHED",
+					Existed:            true,
+				}))
+			})
+
+			t.Run("Transient error checking existing published file", func(t *ftt.Test) {
+				gsMock.accessErr = transient.Tag.Apply(fmt.Errorf("boom"))
+
+				// Execute the pending verification task.
+				err := impl.verifyUploadTask(ctx, tqTasks[0].Payload.(*tasks.VerifyUpload))
+				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
+
+				// Didn't delete anything.
+				assert.Loosely(t, len(gsMock.deleteCalls), should.BeZero)
+
+				// Left the operation in VERIFYING state.
+				op, err = impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
+					UploadOperationId: op.OperationId,
+				})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, op.Status, should.Equal(caspb.UploadStatus_VERIFYING))
+
+				// Recorded the transient error.
+				assert.Loosely(t, verificationLogs.last(), should.Resemble(&caspb.VerificationLogEntry{
+					OperationId:        1,
+					TraceId:            testutil.TestRequestID.String(),
+					InitiatedBy:        string(testutil.TestUser),
+					TempGsPath:         "/bucket/tmp_path/1454472306_1",
+					ExpectedInstanceId: "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC",
+					Submitted:          testutil.TestTime.UnixNano() / 1000,
+					Started:            testutil.TestTime.UnixNano() / 1000,
+					Finished:           testutil.TestTime.UnixNano() / 1000,
+					Outcome:            "ERRORED",
+					Error:              "Transient error: failed to check the presence of the destination file: boom",
+					TransientError:     true,
+				}))
+			})
+
+			t.Run("Fatal error checking existing published file", func(t *ftt.Test) {
+				gsMock.accessErr = fmt.Errorf("boom")
+
+				// Execute the pending verification task.
+				err := impl.verifyUploadTask(ctx, tqTasks[0].Payload.(*tasks.VerifyUpload))
+				assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
+
+				// Deleted the temp file.
+				assert.Loosely(t, gsMock.deleteCalls, should.Resemble([]string{"/bucket/tmp_path/1454472306_1"}))
+
+				// The operation is failed.
+				op, err = impl.FinishUpload(ctx, &caspb.FinishUploadRequest{
+					UploadOperationId: op.OperationId,
+				})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, op.Status, should.Equal(caspb.UploadStatus_ERRORED))
+
+				// Recorded the error.
+				assert.Loosely(t, verificationLogs.last(), should.Resemble(&caspb.VerificationLogEntry{
+					OperationId:        1,
+					TraceId:            testutil.TestRequestID.String(),
+					InitiatedBy:        string(testutil.TestUser),
+					TempGsPath:         "/bucket/tmp_path/1454472306_1",
+					ExpectedInstanceId: "WZRHGrsBESr8wYFZ9sx0tPURuZgG2lmzyvWpwXPKz8UC",
+					Submitted:          testutil.TestTime.UnixNano() / 1000,
+					Started:            testutil.TestTime.UnixNano() / 1000,
+					Finished:           testutil.TestTime.UnixNano() / 1000,
+					Outcome:            "ERRORED",
+					Error:              "Verification failed: failed to check the presence of the destination file: boom",
+				}))
 			})
 		})
 

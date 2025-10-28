@@ -210,6 +210,9 @@ service Repository {
   //
   // Callers must have roles WRITER or OWNER for the package prefix. Returns
   // PERMISSION_DENIED otherwise.
+  //
+  // Also returns PERMISSION_DENIED if the prefix is configured to bill GCS
+  // usage to a user project, but the CIPD backend has no permission to do so.
   rpc RegisterInstance(Instance) returns (RegisterInstanceResponse);
 
   // Lists instances of a package, most recent first.
@@ -389,6 +392,7 @@ service Repository {
   //
   // Returns:
   //   PERMISSION_DENIED if the caller is not a READER for the prefix.
+  //   PERMISSION_DENIED if the CIPD backend can't use prefix's billing account.
   //   INVALID_ARGUMENT if the request is malformed.
   //   NOT_FOUND if there's no such instance.
   rpc GetInstanceURL(GetInstanceURLRequest) returns (ObjectURL);
@@ -418,6 +422,7 @@ service Repository {
   //   FAILED_PRECONDITION if the instance is still being processed.
   //   ABORTED if the instance has some failed processors associated with it,
   //       such instance is effectively broken and should not be used.
+  //   PERMISSION_DENIED if the CIPD backend can't use prefix's billing account.
   rpc DescribeClient(DescribeClientRequest) returns (DescribeClientResponse);
 
   // Returns information about binaries extracted from bootstrap packages under
