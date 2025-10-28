@@ -67,13 +67,9 @@ func updateWorkUnits(ctx context.Context, requests []*pb.UpdateWorkUnitRequest, 
 	updatedBy := string(auth.CurrentIdentity(ctx))
 
 	updatedRows = make([]*workunits.WorkUnitRow, len(requests))
-	updatedWUs := make([]bool, len(requests))
-	shouldFinalizeWUs := make([]bool, len(requests))
 	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		// Reset variables in case the transaction gets retried.
 		updatedRows = make([]*workunits.WorkUnitRow, len(requests))
-		updatedWUs = make([]bool, len(requests))
-		shouldFinalizeWUs = make([]bool, len(requests))
 
 		// ReadBatch returns an error if any of the work units are not found.
 		originalWUs, err := workunits.ReadBatch(ctx, wuIDs, workunits.AllFields)
@@ -132,14 +128,13 @@ func updateWorkUnits(ctx context.Context, requests []*pb.UpdateWorkUnitRequest, 
 			updated := len(updateMutations) > 0
 			if updated {
 				ms = append(ms, updateMutations...)
-				// Trigger finalization task, when the work unit is updated to finalizing.
-				if updatedWURow.FinalizationState == pb.WorkUnit_FINALIZING {
+				// Trigger finalization task, when the work unit is updated to a final state.
+				if pbutil.IsFinalWorkUnitState(updatedWURow.State) {
 					hasWorkUnitFinalizing = true
-					shouldFinalizeWUs[i] = true
 				}
 			}
 			updatedRows[i] = updatedWURow
-			updatedWUs[i] = updated
+
 			// Insert into WorkUnitUpdateRequests table.
 			ms = append(ms, workunits.CreateWorkUnitUpdateRequest(wuIDs[i], updatedBy, requestID))
 		}
@@ -155,11 +150,12 @@ func updateWorkUnits(ctx context.Context, requests []*pb.UpdateWorkUnitRequest, 
 	if err != nil {
 		return nil, err
 	}
-	for i, wu := range updatedRows {
-		if updatedWUs[i] {
+	for _, wu := range updatedRows {
+		// Update all spanner.CommitTimestamp placeholders with the actual commit timestamp.
+		if wu.LastUpdated == spanner.CommitTimestamp {
 			wu.LastUpdated = commitTimestamp
 		}
-		if shouldFinalizeWUs[i] {
+		if wu.FinalizeStartTime == (spanner.NullTime{Valid: true, Time: spanner.CommitTimestamp}) {
 			wu.FinalizeStartTime = spanner.NullTime{Valid: true, Time: commitTimestamp}
 		}
 	}

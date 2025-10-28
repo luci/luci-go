@@ -21,6 +21,8 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestRootInvocationID(t *testing.T) {
@@ -119,6 +121,18 @@ func TestRootInvocationName(t *testing.T) {
 		})
 		t.Run("Invalid", func(t *ftt.Test) {
 			assert.Loosely(t, ValidateRootInvocationName("invocations/a"), should.ErrLike("does not match"))
+		})
+	})
+
+	ftt.Run(`ValidateStreamingExportState`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateStreamingExportState(pb.RootInvocation_WAIT_FOR_METADATA), should.BeNil)
+		})
+		t.Run(`Unspecified`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateStreamingExportState(pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED), should.ErrLike("unspecified"))
+		})
+		t.Run(`Invalid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateStreamingExportState(pb.RootInvocation_StreamingExportState(999)), should.ErrLike("unknown state 999"))
 		})
 	})
 }

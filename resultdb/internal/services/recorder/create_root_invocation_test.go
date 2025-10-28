@@ -234,29 +234,6 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 				err := validateCreateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_invocation: unspecified"))
 			})
-			t.Run("finalization_state", func(t *ftt.Test) {
-				t.Run("empty", func(t *ftt.Test) {
-					// If it is unset, we will populate a default value.
-					req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZATION_STATE_UNSPECIFIED
-					err := validateCreateRootInvocationRequest(req, cfg)
-					assert.Loosely(t, err, should.BeNil)
-				})
-				t.Run("active", func(t *ftt.Test) {
-					req.RootInvocation.FinalizationState = pb.RootInvocation_ACTIVE
-					err := validateCreateRootInvocationRequest(req, cfg)
-					assert.Loosely(t, err, should.BeNil)
-				})
-				t.Run("finalizing", func(t *ftt.Test) {
-					req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZING
-					err := validateCreateRootInvocationRequest(req, cfg)
-					assert.Loosely(t, err, should.BeNil)
-				})
-				t.Run("invalid", func(t *ftt.Test) {
-					req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZED
-					err := validateCreateRootInvocationRequest(req, cfg)
-					assert.Loosely(t, err, should.ErrLike("root_invocation: finalization_state: cannot be created in the state FINALIZED"))
-				})
-			})
 			t.Run("realm", func(t *ftt.Test) {
 				t.Run("unspecified", func(t *ftt.Test) {
 					req.RootInvocation.Realm = ""
@@ -415,11 +392,50 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 				err := validateCreateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_work_unit: unspecified"))
 			})
-			t.Run("finalization_state", func(t *ftt.Test) {
-				// Must not be set.
-				req.RootWorkUnit.FinalizationState = pb.WorkUnit_ACTIVE
-				err := validateCreateRootInvocationRequest(req, cfg)
-				assert.Loosely(t, err, should.ErrLike("root_work_unit: finalization_state: must not be set; always inherited from root invocation"))
+			t.Run("state", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
+					// If it is unset, we will populate a default value.
+					req.RootWorkUnit.State = pb.WorkUnit_STATE_UNSPECIFIED
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("valid", func(t *ftt.Test) {
+					req.RootWorkUnit.State = pb.WorkUnit_PENDING
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("invalid (mask)", func(t *ftt.Test) {
+					req.RootWorkUnit.State = pb.WorkUnit_FINAL_STATE_MASK
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("root_work_unit: state: FINAL_STATE_MASK is not a valid state"))
+				})
+				t.Run("invalid (final)", func(t *ftt.Test) {
+					req.RootWorkUnit.State = pb.WorkUnit_SUCCEEDED
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("root_work_unit: state: work unit may not be created in a final state (got SUCCEEDED)"))
+				})
+				t.Run("invalid (out of range)", func(t *ftt.Test) {
+					req.RootWorkUnit.State = pb.WorkUnit_State(999)
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("root_work_unit: state: unknown state 999"))
+				})
+			})
+			t.Run("summary_markdown", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
+					req.RootWorkUnit.SummaryMarkdown = ""
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("valid", func(t *ftt.Test) {
+					req.RootWorkUnit.SummaryMarkdown = "The task failed because of..."
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("invalid", func(t *ftt.Test) {
+					req.RootWorkUnit.SummaryMarkdown = "\xFF"
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("root_work_unit: summary_markdown: not valid UTF-8"))
+				})
 			})
 			t.Run("realm", func(t *ftt.Test) {
 				// Must not be set.
@@ -810,6 +826,8 @@ func TestCreateRootInvocation(t *testing.T) {
 						ModuleScheme:  "gtest",
 						ModuleVariant: pbutil.Variant("k", "v"),
 					},
+					State:              pb.WorkUnit_RUNNING,
+					SummaryMarkdown:    "Running FooBar...",
 					Tags:               workUnitTags,
 					Properties:         wuProperties,
 					ExtendedProperties: extendedProperties,
@@ -820,10 +838,14 @@ func TestCreateRootInvocation(t *testing.T) {
 			// Expected Response.
 			expectedInv := proto.Clone(req.RootInvocation).(*pb.RootInvocation)
 			proto.Merge(expectedInv, &pb.RootInvocation{ // Merge defaulted and output-only fields.
-				Name:              "rootInvocations/u-e2e-success",
-				RootInvocationId:  "u-e2e-success",
-				FinalizationState: pb.RootInvocation_ACTIVE, // FinalizationState is defaulted to ACTIVE.
-				Creator:           "user:someone@example.com",
+				Name:             "rootInvocations/u-e2e-success",
+				RootInvocationId: "u-e2e-success",
+				// Copied from root work unit.
+				State:             pb.RootInvocation_RUNNING,
+				SummaryMarkdown:   "Running FooBar...",
+				FinalizationState: pb.RootInvocation_ACTIVE,
+
+				Creator: "user:someone@example.com",
 			})
 			wuID := workunits.ID{
 				RootInvocationID: "u-e2e-success",
@@ -847,6 +869,8 @@ func TestCreateRootInvocation(t *testing.T) {
 			expectInvRow := &rootinvocations.RootInvocationRow{
 				RootInvocationID:                        rootInvocationID,
 				FinalizationState:                       pb.RootInvocation_ACTIVE,
+				State:                                   pb.RootInvocation_RUNNING,
+				SummaryMarkdown:                         "Running FooBar...",
 				Realm:                                   "testproject:testrealm",
 				CreatedBy:                               "user:someone@example.com",
 				FinalizeStartTime:                       spanner.NullTime{},
@@ -868,6 +892,8 @@ func TestCreateRootInvocation(t *testing.T) {
 				ID:                wuID,
 				ParentWorkUnitID:  spanner.NullString{Valid: false},
 				FinalizationState: pb.WorkUnit_ACTIVE,
+				State:             pb.WorkUnit_RUNNING,
+				SummaryMarkdown:   "Running FooBar...",
 				Realm:             "testproject:testrealm",
 				CreatedBy:         "user:someone@example.com",
 				FinalizeStartTime: spanner.NullTime{},
@@ -887,7 +913,7 @@ func TestCreateRootInvocation(t *testing.T) {
 				ExtendedProperties: extendedProperties,
 			}
 
-			t.Run("active root invocation", func(t *ftt.Test) {
+			t.Run("baseline", func(t *ftt.Test) {
 				var headers metadata.MD
 				res, err := recorder.CreateRootInvocation(ctx, req, grpc.Header(&headers))
 				assert.Loosely(t, err, should.BeNil)
@@ -934,27 +960,25 @@ func TestCreateRootInvocation(t *testing.T) {
 				assert.That(t, includedIDs.Has(wuID.LegacyInvocationID()), should.BeTrue)
 			})
 
-			t.Run("finalizing root invocation", func(t *ftt.Test) {
-				req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZING
+			t.Run("state not specified", func(t *ftt.Test) {
+				req.RootWorkUnit.State = pb.WorkUnit_STATE_UNSPECIFIED
 
 				var headers metadata.MD
 				res, err := recorder.CreateRootInvocation(ctx, req, grpc.Header(&headers))
 				assert.Loosely(t, err, should.BeNil)
 				commitTime := res.RootInvocation.CreateTime.AsTime()
 				proto.Merge(expectedInv, &pb.RootInvocation{
-					FinalizationState: pb.RootInvocation_FINALIZING,
-					CreateTime:        timestamppb.New(commitTime),
-					LastUpdated:       timestamppb.New(commitTime),
-					FinalizeStartTime: timestamppb.New(commitTime),
-					Etag:              fmt.Sprintf(`W/"%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
+					State:       pb.RootInvocation_PENDING,
+					CreateTime:  timestamppb.New(commitTime),
+					LastUpdated: timestamppb.New(commitTime),
+					Etag:        fmt.Sprintf(`W/"%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
 				})
 				assert.That(t, res.RootInvocation, should.Match(expectedInv))
 				proto.Merge(expectedWU, &pb.WorkUnit{
-					FinalizationState: pb.WorkUnit_FINALIZING,
-					CreateTime:        timestamppb.New(commitTime),
-					LastUpdated:       timestamppb.New(commitTime),
-					FinalizeStartTime: timestamppb.New(commitTime),
-					Etag:              fmt.Sprintf(`W/"+f/%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
+					State:       pb.WorkUnit_PENDING,
+					CreateTime:  timestamppb.New(commitTime),
+					LastUpdated: timestamppb.New(commitTime),
+					Etag:        fmt.Sprintf(`W/"+f/%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
 				})
 				assert.That(t, res.RootWorkUnit, should.Match(expectedWU))
 
@@ -969,24 +993,18 @@ func TestCreateRootInvocation(t *testing.T) {
 				row, err := rootinvocations.Read(ctx, rootInvocationID)
 				assert.Loosely(t, err, should.BeNil)
 				expectInvRow.SecondaryIndexShardID = row.SecondaryIndexShardID
-				expectInvRow.FinalizationState = pb.RootInvocation_FINALIZING
+				expectInvRow.State = pb.RootInvocation_PENDING
 				expectInvRow.CreateTime = commitTime
 				expectInvRow.LastUpdated = commitTime
-				expectInvRow.FinalizeStartTime = spanner.NullTime{Time: commitTime, Valid: true}
 				assert.That(t, row, should.Match(expectInvRow))
-				// Check finalize start time is set.
-				assert.That(t, row.FinalizeStartTime.Valid, should.BeTrue)
 
 				wuRow, err := workunits.Read(ctx, wuID, workunits.AllFields)
 				assert.Loosely(t, err, should.BeNil)
 				expectWURow.SecondaryIndexShardID = wuRow.SecondaryIndexShardID
-				expectWURow.FinalizationState = pb.WorkUnit_FINALIZING
+				expectWURow.State = pb.WorkUnit_PENDING
 				expectWURow.CreateTime = commitTime
 				expectWURow.LastUpdated = commitTime
-				expectWURow.FinalizeStartTime = spanner.NullTime{Time: commitTime, Valid: true}
 				assert.That(t, wuRow, should.Match(expectWURow))
-				// Check finalize start time is set.
-				assert.That(t, wuRow.FinalizeStartTime.Valid, should.BeTrue)
 
 				// Check inclusion is added to IncludedInvocations.
 				includedIDs, err := invocations.ReadIncluded(ctx, rootInvocationID.LegacyInvocationID())

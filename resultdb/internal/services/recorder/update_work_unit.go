@@ -28,11 +28,9 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
-	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -69,35 +67,43 @@ func updateWorkUnitInternal(in *pb.UpdateWorkUnitRequest, curWorkUnitRow *workun
 		return nil, nil, errors.Fmt("requests[%d]: update_mask: %w", ordinal, err)
 	}
 	wuID := workunits.MustParseName(in.WorkUnit.Name)
-	values := map[string]any{
-		"RootInvocationShardId": wuID.RootInvocationShardID(),
-		"WorkUnitId":            wuID.WorkUnitID,
-	}
+	mb := workunits.NewMutationBuilder(wuID)
 
-	legacyInvocationValues := map[string]any{
-		"InvocationId": wuID.LegacyInvocationID(),
-	}
 	for path, submask := range updateMask.Children() {
 		switch path {
 		// The cases in this switch statement must be synchronized with a
 		// similar switch statement in validateUpdateWorkUnitRequest.
 
-		// TODO(meiring): Remove "state" here once clients have updated to the new field name.
-		case "finalization_state", "state":
-			if in.WorkUnit.FinalizationState == pb.WorkUnit_FINALIZING {
-				values["FinalizationState"] = pb.WorkUnit_FINALIZING
-				values["FinalizeStartTime"] = spanner.CommitTimestamp
-				values["FinalizerCandidateTime"] = spanner.CommitTimestamp
-				legacyInvocationValues["State"] = pb.Invocation_FINALIZING
-				legacyInvocationValues["FinalizeStartTime"] = spanner.CommitTimestamp
-				updatedRow.FinalizationState = pb.WorkUnit_FINALIZING
+		case "state":
+			if curWorkUnitRow.State != in.WorkUnit.State {
+				// Given we have not failed validation earlier, we know the
+				// work unit finalization state is ACTIVE (and therefore the work unit is
+				// not yet in a terminal state). We therefore only need to deal with
+				// validating transitions starting in a non-terminal state.
+				if curWorkUnitRow.State == pb.WorkUnit_RUNNING && in.WorkUnit.State == pb.WorkUnit_PENDING {
+					// Cannot transition from RUNNING -> PENDING.
+					return nil, nil, appstatus.BadRequest(errors.Fmt("requests[%d]: work_unit: state: cannot transition from %s to %s", ordinal, curWorkUnitRow.State, in.WorkUnit.State))
+				}
+
+				mb.UpdateState(in.WorkUnit.State)
+				updatedRow.State = in.WorkUnit.State
+				if pbutil.IsFinalWorkUnitState(in.WorkUnit.State) {
+					updatedRow.FinalizationState = pb.WorkUnit_FINALIZING
+					// Use spanner.CommitTimestamp as a placeholder for now, the caller will deal with
+					// updating this to the actual start time.
+					updatedRow.FinalizeStartTime = spanner.NullTime{Valid: true, Time: spanner.CommitTimestamp}
+				}
+			}
+		case "summary_markdown":
+			if in.WorkUnit.SummaryMarkdown != curWorkUnitRow.SummaryMarkdown {
+				mb.UpdateSummaryMarkdown(in.WorkUnit.SummaryMarkdown)
+				updatedRow.SummaryMarkdown = in.WorkUnit.SummaryMarkdown
 			}
 		case "deadline":
 			if !curWorkUnitRow.Deadline.Equal(in.WorkUnit.Deadline.AsTime()) {
-				deadline := in.WorkUnit.Deadline
-				values["Deadline"] = deadline
-				legacyInvocationValues["Deadline"] = deadline
-				updatedRow.Deadline = deadline.AsTime()
+				deadline := in.WorkUnit.Deadline.AsTime()
+				mb.UpdateDeadline(deadline)
+				updatedRow.Deadline = deadline
 			}
 		case "module_id":
 			curModuleID := curWorkUnitRow.ModuleID
@@ -107,15 +113,7 @@ func updateWorkUnitInternal(in *pb.UpdateWorkUnitRequest, curWorkUnitRow *workun
 				}
 				// curModuleID is nil. And the specified in.WorkUnit.ModuleId is not equal to it.
 				// Therefore, we must be setting the module to something substantive.
-				values["ModuleName"] = in.WorkUnit.ModuleId.ModuleName
-				values["ModuleScheme"] = in.WorkUnit.ModuleId.ModuleScheme
-				values["ModuleVariant"] = in.WorkUnit.ModuleId.ModuleVariant
-				values["ModuleVariantHash"] = pbutil.VariantHash(in.WorkUnit.ModuleId.ModuleVariant)
-
-				legacyInvocationValues["ModuleName"] = in.WorkUnit.ModuleId.ModuleName
-				legacyInvocationValues["ModuleScheme"] = in.WorkUnit.ModuleId.ModuleScheme
-				legacyInvocationValues["ModuleVariant"] = in.WorkUnit.ModuleId.ModuleVariant
-				legacyInvocationValues["ModuleVariantHash"] = pbutil.VariantHash(in.WorkUnit.ModuleId.ModuleVariant)
+				mb.UpdateModuleID(in.WorkUnit.ModuleId)
 
 				// Populate output-only fields in the response.
 				updatedRow.ModuleID = in.WorkUnit.ModuleId
@@ -124,15 +122,13 @@ func updateWorkUnitInternal(in *pb.UpdateWorkUnitRequest, curWorkUnitRow *workun
 
 		case "properties":
 			if !proto.Equal(curWorkUnitRow.Properties, in.WorkUnit.Properties) {
-				values["Properties"] = spanutil.Compressed(pbutil.MustMarshal(in.WorkUnit.Properties))
-				legacyInvocationValues["Properties"] = spanutil.Compressed(pbutil.MustMarshal(in.WorkUnit.Properties))
+				mb.UpdateProperties(in.WorkUnit.Properties)
 				updatedRow.Properties = in.WorkUnit.Properties
 			}
 
 		case "tags":
 			if !pbutil.StringPairsEqual(curWorkUnitRow.Tags, in.WorkUnit.Tags) {
-				values["Tags"] = in.WorkUnit.Tags
-				legacyInvocationValues["Tags"] = in.WorkUnit.Tags
+				mb.UpdateTags(in.WorkUnit.Tags)
 				updatedRow.Tags = in.WorkUnit.Tags
 			}
 
@@ -145,34 +141,28 @@ func updateWorkUnitInternal(in *pb.UpdateWorkUnitRequest, curWorkUnitRow *workun
 					// One more validation to ensure the size is within the limit.
 					return nil, nil, appstatus.BadRequest(errors.Fmt("requests[%d]: work_unit: extended_properties: %w", ordinal, err))
 				}
-				internalExtendedProperties := &invocationspb.ExtendedProperties{
-					ExtendedProperties: updatedExtendedProperties,
-				}
-				values["ExtendedProperties"] = spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties))
-				legacyInvocationValues["ExtendedProperties"] = spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties))
+				mb.UpdateExtendedProperties(updatedExtendedProperties)
 				updatedRow.ExtendedProperties = updatedExtendedProperties
 			}
 		case "instructions":
 			ins := instructionutil.RemoveInstructionsName(in.WorkUnit.Instructions)
 			curIns := instructionutil.RemoveInstructionsName(curWorkUnitRow.Instructions)
 			if !proto.Equal(curIns, ins) {
-				values["Instructions"] = spanutil.Compressed(pbutil.MustMarshal(ins))
-				legacyInvocationValues["Instructions"] = spanutil.Compressed(pbutil.MustMarshal(ins))
+				mb.UpdateInstructions(in.WorkUnit.Instructions)
 				updatedRow.Instructions = instructionutil.InstructionsWithNames(in.WorkUnit.Instructions, wuID.Name())
 			}
 		default:
 			panic("impossible")
 		}
 	}
-	// The `values` map is initialized with the 2 primary key columns of a WorkUnit.
-	// There is no update if no other columns are added.
-	updated := len(values) > 2
+	ms := mb.Build()
+	updated := len(ms) > 0
 	if updated {
-		values["LastUpdated"] = spanner.CommitTimestamp
-		updateMutations = append(updateMutations, spanutil.UpdateMap("WorkUnits", values))
-		updateMutations = append(updateMutations, spanutil.UpdateMap("Invocations", legacyInvocationValues))
+		// Use spanner.CommitTimestamp as a placeholder for now, the caller
+		// will update this to the actual commit timestamp.
+		updatedRow.LastUpdated = spanner.CommitTimestamp
 	}
-	return updateMutations, updatedRow, nil
+	return ms, updatedRow, nil
 }
 
 func validateUpdateWorkUnitRequest(ctx context.Context, req *pb.UpdateWorkUnitRequest, cfg *config.CompiledServiceConfig, requireRequestID bool) error {
@@ -209,13 +199,20 @@ func validateUpdateWorkUnitRequest(ctx context.Context, req *pb.UpdateWorkUnitRe
 		// The cases in this switch statement must be synchronized with a
 		// similar switch statement in UpdateWorkUnit implementation.
 
-		// TODO(meiring): Remove "state" here once clients have updated to the new field name.
-		case "finalization_state", "state":
-			// If "finalization_state" is set, we only allow "FINALIZING" or "ACTIVE" state.
-			// Setting to "FINALIZING" will trigger the finalization process.
-			// Setting to "ACTIVE" is a no-op.
-			if req.WorkUnit.FinalizationState != pb.WorkUnit_FINALIZING && req.WorkUnit.FinalizationState != pb.WorkUnit_ACTIVE {
-				return errors.New("work_unit: finalization_state: must be FINALIZING or ACTIVE")
+		case "state":
+			// This checks the state is valid by itself. Later on, we will check the
+			// transition is valid.
+			if err := pbutil.ValidateWorkUnitState(req.WorkUnit.State); err != nil {
+				return errors.Fmt("work_unit: state: %w", err)
+			}
+
+		case "summary_markdown":
+			// In FinalizeWorkUnit, we could be permissive about length and truncate it server-side
+			// as it is a AIP-136 custom method. However, as this is a standard AIP-134 Update method,
+			// we follow the rule what you put is what you get.
+			const enforceLength = true
+			if err := pbutil.ValidateSummaryMarkdown(req.WorkUnit.SummaryMarkdown, enforceLength); err != nil {
+				return errors.Fmt("work_unit: summary_markdown: %w", err)
 			}
 
 		case "deadline":

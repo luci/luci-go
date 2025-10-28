@@ -168,25 +168,6 @@ func TestFinalizationMethods(t *testing.T) {
 		// Insert rows in the parent RootInvocationShards table.
 		testutil.MustApply(ctx, t, ms...)
 
-		t.Run(`MarkFinalizing`, func(t *ftt.Test) {
-			ct, err := span.Apply(ctx, MarkFinalizing(id))
-			assert.Loosely(t, err, should.BeNil)
-
-			expectedWU := workUnit.Clone()
-			expectedWU.FinalizationState = pb.WorkUnit_FINALIZING
-			expectedWU.LastUpdated = ct.In(time.UTC)
-			expectedWU.FinalizeStartTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
-			expectedWU.FinalizerCandidateTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
-
-			wu, err := Read(span.Single(ctx), id, AllFields)
-			assert.Loosely(t, err, should.BeNil)
-			assert.That(t, wu, should.Match(expectedWU))
-
-			// Check the legacy invocation state is also updated.
-			state, err := invocations.ReadState(span.Single(ctx), id.LegacyInvocationID())
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, state, should.Equal(pb.Invocation_FINALIZING))
-		})
 		t.Run(`MarkFinalized`, func(t *ftt.Test) {
 			ct, err := span.Apply(ctx, MarkFinalized(id))
 			assert.Loosely(t, err, should.BeNil)
@@ -204,6 +185,86 @@ func TestFinalizationMethods(t *testing.T) {
 			state, err := invocations.ReadState(span.Single(ctx), id.LegacyInvocationID())
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, state, should.Equal(pb.Invocation_FINALIZED))
+		})
+	})
+}
+
+func TestMutationBuilder(t *testing.T) {
+	ftt.Run("With mutation builder", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+
+		rootInvID := rootinvocations.ID("root-inv-id")
+		// Create a root invocation and root work unit.
+		var ms []*spanner.Mutation
+		rootInv := rootinvocations.NewBuilder(rootInvID).WithState(pb.RootInvocation_RUNNING).WithFinalizationState(pb.RootInvocation_ACTIVE).Build()
+		ms = append(ms, rootinvocations.InsertForTesting(rootInv)...)
+
+		// Create a work unit.
+		id := ID{
+			RootInvocationID: rootInvID,
+			WorkUnitID:       "root",
+		}
+		workUnit := NewBuilder(rootInvID, "root").WithState(pb.WorkUnit_RUNNING).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
+		ms = append(ms, InsertForTesting(workUnit)...)
+		testutil.MustApply(ctx, t, ms...)
+
+		b := NewMutationBuilder(id)
+
+		t.Run("UpdateState", func(t *ftt.Test) {
+			b.UpdateState(pb.WorkUnit_FAILED)
+			ct, err := span.Apply(ctx, b.Build())
+			assert.Loosely(t, err, should.BeNil)
+
+			// Check the work unit.
+			readWU, err := Read(span.Single(ctx), id, AllFields)
+			assert.Loosely(t, err, should.BeNil)
+			expectedWU := workUnit.Clone()
+			expectedWU.State = pb.WorkUnit_FAILED
+			expectedWU.FinalizationState = pb.WorkUnit_FINALIZING
+			expectedWU.LastUpdated = ct.In(time.UTC)
+			expectedWU.FinalizeStartTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
+			expectedWU.FinalizerCandidateTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
+			assert.That(t, readWU, should.Match(expectedWU))
+
+			// Check the root invocation, as we updated the root work unit.
+			readRootInv, err := rootinvocations.Read(span.Single(ctx), rootInvID)
+			assert.Loosely(t, err, should.BeNil)
+			expectedRootInv := rootInv.Clone()
+			expectedRootInv.State = pb.RootInvocation_FAILED
+			expectedRootInv.FinalizationState = pb.RootInvocation_FINALIZING
+			expectedRootInv.LastUpdated = ct.In(time.UTC)
+			expectedRootInv.FinalizeStartTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
+			assert.That(t, readRootInv, should.Match(expectedRootInv))
+
+			// Check the legacy invocation.
+			readLegacyInv, err := invocations.Read(span.Single(ctx), id.LegacyInvocationID(), invocations.AllFields)
+			assert.Loosely(t, err, should.BeNil)
+			expectedLegacyInv := workUnit.ToLegacyInvocationProto()
+			expectedLegacyInv.State = pb.Invocation_FINALIZING
+			expectedLegacyInv.FinalizeStartTime = timestamppb.New(ct)
+			assert.That(t, readLegacyInv, should.Match(expectedLegacyInv))
+		})
+		t.Run("UpdateSummaryMarkdown", func(t *ftt.Test) {
+			b := NewMutationBuilder(id)
+			b.UpdateSummaryMarkdown("new summary")
+			ct, err := span.Apply(ctx, b.Build())
+			assert.Loosely(t, err, should.BeNil)
+
+			// Check the work unit.
+			readWU, err := Read(span.Single(ctx), id, AllFields)
+			assert.Loosely(t, err, should.BeNil)
+			expectedWU := workUnit.Clone()
+			expectedWU.SummaryMarkdown = "new summary"
+			expectedWU.LastUpdated = ct.In(time.UTC)
+			assert.That(t, readWU, should.Match(expectedWU))
+
+			// Check the root invocation.
+			readRootInv, err := rootinvocations.Read(span.Single(ctx), rootInvID)
+			assert.Loosely(t, err, should.BeNil)
+			expectedRootInv := rootInv.Clone()
+			expectedRootInv.SummaryMarkdown = "new summary"
+			expectedRootInv.LastUpdated = ct.In(time.UTC)
+			assert.That(t, readRootInv, should.Match(expectedRootInv))
 		})
 	})
 }

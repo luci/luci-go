@@ -16,7 +16,6 @@ package recorder
 
 import (
 	"context"
-	"maps"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -30,7 +29,6 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -49,12 +47,10 @@ func (s *recorderServer) UpdateRootInvocation(ctx context.Context, in *pb.Update
 
 	updatedBy := string(auth.CurrentIdentity(ctx))
 	var updatedRootInvRow *rootinvocations.RootInvocationRow
-	shouldFinalizeRootInvocation := false
 	updated := false
 	ct, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		// Reset variables in case the transaction gets retried.
 		updatedRootInvRow = nil
-		shouldFinalizeRootInvocation = false
 		updated = false
 
 		// Read the current root invocation.
@@ -104,14 +100,7 @@ func (s *recorderServer) UpdateRootInvocation(ctx context.Context, in *pb.Update
 			return err // BadRequest error, internal error.
 		}
 		updated = len(updateMutations) > 0
-		if updated {
-			// Trigger finalization task, when the root invocation is updated to finalizing.
-			if updatedRootInvRow.FinalizationState == pb.RootInvocation_FINALIZING {
-				// No finalizer task schedule, the work unit finalizer will handle the finalization of root invocation.
-				// The ability to finalize a root invocation in UpdateRootInvocation RPC will be deprecating soon.
-				shouldFinalizeRootInvocation = true
-			}
-		}
+
 		// Insert into RootInvocationUpdateRequests table.
 		updateMutations = append(updateMutations, rootinvocations.CreateRootInvocationUpdateRequest(rootInvID, updatedBy, in.RequestId))
 		span.BufferWrite(ctx, updateMutations...)
@@ -125,10 +114,6 @@ func (s *recorderServer) UpdateRootInvocation(ctx context.Context, in *pb.Update
 	if updated {
 		updatedRootInvRow.LastUpdated = ct
 	}
-	if shouldFinalizeRootInvocation {
-		updatedRootInvRow.FinalizeStartTime = spanner.NullTime{Valid: true, Time: ct}
-	}
-
 	return updatedRootInvRow.ToProto(), nil
 }
 
@@ -140,32 +125,12 @@ func updateRootInvocationInternal(in *pb.UpdateRootInvocationRequest, originalRo
 		return nil, nil, errors.Fmt("update_mask: %w", err)
 	}
 	rootInvID := rootinvocations.MustParseName(in.RootInvocation.Name)
-	// Update map for the RootInvocations table.
-	rootInvocationValues := map[string]any{
-		"RootInvocationId": rootInvID,
-	}
-	// Update map for the legacy Invocations table.
-	legacyInvocationValues := map[string]any{
-		"InvocationId": rootInvID.LegacyInvocationID(),
-	}
-	// Update map for RootInvocationShards table.
-	shardRootInvocationValues := map[string]any{}
+	mb := rootinvocations.NewMutationBuilder(rootInvID)
 
 	for path := range updateMask.Children() {
 		switch path {
 		// The cases in this switch statement must be synchronized with a
 		// similar switch statement in validateUpdateRootInvocationRequest.
-
-		// TODO(meiring): Remove "state" here once clients have updated to the new field name.
-		case "finalization_state", "state":
-			// In the case of ACTIVE it should be a No-op.
-			if in.RootInvocation.FinalizationState == pb.RootInvocation_FINALIZING {
-				rootInvocationValues["FinalizationState"] = pb.RootInvocation_FINALIZING
-				rootInvocationValues["FinalizeStartTime"] = spanner.CommitTimestamp
-				legacyInvocationValues["State"] = pb.Invocation_FINALIZING
-				legacyInvocationValues["FinalizeStartTime"] = spanner.CommitTimestamp
-				updatedRootInvRow.FinalizationState = pb.RootInvocation_FINALIZING
-			}
 
 		case "sources":
 			// Are we setting the field to a value other than its current value?
@@ -174,10 +139,7 @@ func updateRootInvocationInternal(in *pb.UpdateRootInvocationRequest, originalRo
 				if originalRootInvRow.StreamingExportState == pb.RootInvocation_METADATA_FINAL {
 					return nil, nil, appstatus.BadRequest(errors.New("root_invocation: sources: cannot modify already finalized sources (streaming_export_state set to METADATA_FINAL)"))
 				}
-				compressedSources := spanutil.Compressed(pbutil.MustMarshal(in.RootInvocation.Sources))
-				rootInvocationValues["Sources"] = compressedSources
-				legacyInvocationValues["Sources"] = compressedSources
-				shardRootInvocationValues["Sources"] = compressedSources
+				mb.UpdateSources(in.RootInvocation.Sources)
 				updatedRootInvRow.Sources = in.RootInvocation.Sources
 			}
 
@@ -186,30 +148,25 @@ func updateRootInvocationInternal(in *pb.UpdateRootInvocationRequest, originalRo
 				if originalRootInvRow.StreamingExportState == pb.RootInvocation_METADATA_FINAL {
 					return nil, nil, appstatus.BadRequest(errors.Fmt("root_invocation: streaming_export_state: transitioning from %v to %v is not allowed", originalRootInvRow.StreamingExportState, in.RootInvocation.StreamingExportState))
 				}
-				rootInvocationValues["StreamingExportState"] = in.RootInvocation.StreamingExportState
-				legacyInvocationValues["IsSourceSpecFinal"] = spanner.NullBool{Valid: true, Bool: true}
+				mb.UpdateStreamingExportState(in.RootInvocation.StreamingExportState)
 				updatedRootInvRow.StreamingExportState = in.RootInvocation.StreamingExportState
 			}
 
 		case "tags":
 			if !pbutil.StringPairsEqual(originalRootInvRow.Tags, in.RootInvocation.Tags) {
 				tags := in.RootInvocation.Tags
-				rootInvocationValues["Tags"] = tags
-				legacyInvocationValues["Tags"] = tags
+				mb.UpdateTags(tags)
 				updatedRootInvRow.Tags = tags
 			}
 		case "properties":
 			if !proto.Equal(originalRootInvRow.Properties, in.RootInvocation.Properties) {
-				compressedProps := spanutil.Compressed(pbutil.MustMarshal(in.RootInvocation.Properties))
-				rootInvocationValues["Properties"] = compressedProps
-				legacyInvocationValues["Properties"] = compressedProps
+				mb.UpdateProperties(in.RootInvocation.Properties)
 				updatedRootInvRow.Properties = in.RootInvocation.Properties
 			}
 		case "baseline_id":
 			if originalRootInvRow.BaselineID != in.RootInvocation.BaselineId {
 				baselineID := in.RootInvocation.BaselineId
-				rootInvocationValues["BaselineId"] = baselineID
-				legacyInvocationValues["BaselineId"] = baselineID
+				mb.UpdateBaselineID(baselineID)
 				updatedRootInvRow.BaselineID = baselineID
 			}
 		default:
@@ -217,25 +174,7 @@ func updateRootInvocationInternal(in *pb.UpdateRootInvocationRequest, originalRo
 			panic("impossible")
 		}
 	}
-	// The `rootInvocationValues` map is initialized with the primary key.
-	// There is no update if no other columns are added.
-	updated := len(rootInvocationValues) > 1
-	if updated {
-		rootInvocationValues["LastUpdated"] = spanner.CommitTimestamp
-		updateMutations = append(updateMutations, spanutil.UpdateMap("RootInvocations", rootInvocationValues))
-		updateMutations = append(updateMutations, spanutil.UpdateMap("Invocations", legacyInvocationValues))
-		// Check if any update is needed to the RootInvocationShards table.
-		if len(shardRootInvocationValues) > 0 {
-			// Update all records for this root invocation in RootInvocationShards table.
-			for shardID := range rootInvID.AllShardIDs() {
-				shardUpdate := make(map[string]any, len(shardRootInvocationValues)+1)
-				maps.Copy(shardUpdate, shardRootInvocationValues)
-				shardUpdate["RootInvocationShardId"] = shardID
-				updateMutations = append(updateMutations, spanutil.UpdateMap("RootInvocationShards", shardUpdate))
-			}
-		}
-	}
-	return updateMutations, updatedRootInvRow, nil
+	return mb.Build(), updatedRootInvRow, nil
 }
 
 // validateUpdateRootInvocationRequest validates an UpdateRootInvocationRequest.
@@ -271,15 +210,6 @@ func validateUpdateRootInvocationRequest(ctx context.Context, req *pb.UpdateRoot
 		switch path {
 		// The cases in this switch statement must be synchronized with a
 		// similar switch statement in the UpdateRootInvocation implementation.
-
-		// TODO(meiring): Remove "state" here once clients have updated to the new field name.
-		case "finalization_state", "state":
-			// If "finalization_state" is set, we only allow "FINALIZING" or "ACTIVE" state.
-			// Setting to "FINALIZING" will trigger the finalization process.
-			// Setting to "ACTIVE" is a no-op.
-			if req.RootInvocation.FinalizationState != pb.RootInvocation_FINALIZING && req.RootInvocation.FinalizationState != pb.RootInvocation_ACTIVE {
-				return errors.New("root_invocation: finalization_state: must be FINALIZING or ACTIVE")
-			}
 
 		case "sources":
 			if err := pbutil.ValidateSources(req.RootInvocation.Sources); err != nil {

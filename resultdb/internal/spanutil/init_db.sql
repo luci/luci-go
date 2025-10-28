@@ -45,14 +45,20 @@ CREATE TABLE RootInvocations (
   -- Root invocation execution state. One of:
   -- - Pending (1)
   -- - Running (2)
-  -- - Succeeded (3)
-  -- - Failed (4)
-  -- - Cancelled (5)
-  -- - Skipped (6)
+  -- - Succeeded (12)
+  -- - Skipped (20)
+  -- - Failed (36)
+  -- - Cancelled (68)
   --
   -- This will always match the root work unit's state,
   -- but it is replicated here for convenience.
   State INT64 NOT NULL,
+
+  -- A summary of the final state of the root invocation, to be displayed on the UI.
+  --
+  -- This will always match the root work unit summary markdown,
+  -- but it is replicated here for convenience.
+  SummaryMarkdown STRING(MAX) NOT NULL DEFAULT(""),
 
   -- Security realm this root invocation belongs to.
   -- Used to enforce ACLs.
@@ -293,6 +299,9 @@ CREATE TABLE WorkUnits (
   -- - Cancelled (5)
   -- - Skipped (6)
   State INT64 NOT NULL,
+
+  -- A summary of the final state of the work unit, to be displayed on the UI.
+  SummaryMarkdown STRING(MAX) NOT NULL DEFAULT(""),
 
   -- Security realm this work unit (including its test results, exonerations and
   -- artifacts) belongs to. Used to enforce ACLs.

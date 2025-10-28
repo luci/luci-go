@@ -626,18 +626,6 @@ func ValidateSources(sources *pb.Sources) error {
 	return nil
 }
 
-// ValidateStreamingExportState validates the streaming export state is a valid
-// value.
-func ValidateStreamingExportState(state pb.RootInvocation_StreamingExportState) error {
-	if state == pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED {
-		return errors.New("unspecified")
-	}
-	if _, ok := pb.RootInvocation_State_name[int32(state)]; !ok {
-		return errors.Fmt("unknown state %v", state)
-	}
-	return nil
-}
-
 // ValidateFullResourceName validates that the given resource name satisfies requirements
 // of AIP-122 Full Resource Names (https://google.aip.dev/122#full-resource-names).
 func ValidateFullResourceName(name string) error {
@@ -673,4 +661,25 @@ func ValidateFullResourceName(name string) error {
 	}
 
 	return nil
+}
+
+// TruncateString truncates a UTF-8 string to the given number of bytes.
+// If the string is truncated, ellipsis ("...") are added.
+// Truncation is aware of UTF-8 runes and will only truncate whole runes.
+// length must be at least 3 (to leave space for ellipsis, if needed).
+func TruncateString(s string, length int) string {
+	if len(s) <= length {
+		return s
+	}
+	// The index (in bytes) at which to begin truncating the string.
+	lastIndex := 0
+	// Find the point where we must truncate from. We only want to
+	// start truncation at the start/end of a rune, not in the middle.
+	// See https://blog.golang.org/strings.
+	for i := range s {
+		if i <= (length - 3) {
+			lastIndex = i
+		}
+	}
+	return s[:lastIndex] + "..."
 }

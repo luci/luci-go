@@ -255,7 +255,7 @@ func TestReadFunctions(t *testing.T) {
 			})
 		})
 
-		t.Run("ReadState", func(t *ftt.Test) {
+		t.Run("ReadFinalizationState", func(t *ftt.Test) {
 			t.Run("happy path", func(t *ftt.Test) {
 				state, err := ReadFinalizationState(span.Single(ctx), id)
 				assert.Loosely(t, err, should.BeNil)
@@ -384,7 +384,7 @@ func TestReadFunctions(t *testing.T) {
 			})
 		})
 
-		t.Run("ReadStates", func(t *ftt.Test) {
+		t.Run("ReadFinalizationStates", func(t *ftt.Test) {
 			// Insert an additional work unit in the existing root invocation.
 			wu2 := NewBuilder(rootInvID, "work-unit-id2").WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
 			ms := InsertForTesting(wu2)

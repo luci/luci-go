@@ -22,7 +22,6 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -32,7 +31,6 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
@@ -140,18 +138,26 @@ func createIdempotentRootInvocation(
 			return nil
 		}
 		// Root invocation doesn't exist, create it.
-		finalizationState := req.RootInvocation.FinalizationState
-		if finalizationState == pb.RootInvocation_FINALIZATION_STATE_UNSPECIFIED {
-			finalizationState = pb.RootInvocation_ACTIVE
+
+		state := req.RootWorkUnit.State
+		if state == pb.WorkUnit_STATE_UNSPECIFIED {
+			// TODO: b/447225325 - Remove this defaulting once the field is mandatory.
+			state = pb.WorkUnit_PENDING
 		}
+
 		streamingExportState := req.RootInvocation.StreamingExportState
 		if streamingExportState == pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED {
+			// TODO: b/447225325 - Remove this defaulting once the field is mandatory.
 			streamingExportState = pb.RootInvocation_WAIT_FOR_METADATA
 		}
 
 		rootInvocationRow := &rootinvocations.RootInvocationRow{
-			RootInvocationID:                        rootInvocationID,
-			FinalizationState:                       finalizationState,
+			RootInvocationID: rootInvocationID,
+			// Should match root work unit.
+			FinalizationState: pb.RootInvocation_ACTIVE,
+			State:             pbutil.WorkUnitToRootInvocationState(state),
+			SummaryMarkdown:   req.RootWorkUnit.SummaryMarkdown,
+
 			Realm:                                   req.RootInvocation.Realm,
 			CreatedBy:                               createdBy,
 			UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: now.Add(uninterestingTestVerdictsExpirationTime)},
@@ -180,9 +186,10 @@ func createIdempotentRootInvocation(
 				WorkUnitID:       workunits.RootWorkUnitID,
 			},
 			// Root work unit has parent work unit set to null.
-			ParentWorkUnitID: spanner.NullString{Valid: false},
-			// Fields should be the same as root invocation.
-			FinalizationState: rootInvocationStateToWorkUnitState(rootInvocationRow.FinalizationState),
+			ParentWorkUnitID:  spanner.NullString{Valid: false},
+			FinalizationState: pb.WorkUnit_ACTIVE,
+			State:             state,
+			SummaryMarkdown:   req.RootWorkUnit.SummaryMarkdown,
 			Realm:             rootInvocationRow.Realm,
 			CreatedBy:         createdBy,
 			ProducerResource:  rootInvocationRow.ProducerResource,
@@ -232,19 +239,6 @@ func deduplicateCreateRootInvocations(ctx context.Context, id rootinvocations.ID
 	// Could happen if someone sent two different calls with the same request ID, eg. retry.
 	// This call should be deduplicated.
 	return true, nil
-}
-
-func rootInvocationStateToWorkUnitState(state pb.RootInvocation_FinalizationState) pb.WorkUnit_FinalizationState {
-	switch state {
-	case pb.RootInvocation_ACTIVE:
-		return pb.WorkUnit_ACTIVE
-	case pb.RootInvocation_FINALIZING:
-		return pb.WorkUnit_FINALIZING
-	case pb.RootInvocation_FINALIZED:
-		return pb.WorkUnit_FINALIZED
-	default:
-		return pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED
-	}
 }
 
 func verifyCreateRootInvocationPermissions(ctx context.Context, req *pb.CreateRootInvocationRequest) error {
@@ -347,16 +341,8 @@ func validateRootInvocationForCreate(inv *pb.RootInvocation) error {
 	}
 	// This method attempts to validate fields in the order that they are specified in the proto.
 
-	// Name and RootInvocationId is output only and should be ignored
+	// Name, RootInvocationId, FinalizationState, State and SummaryMarkdown are output only and should be ignored
 	// as per https://google.aip.dev/203.
-
-	// Validate state.
-	switch inv.FinalizationState {
-	case pb.RootInvocation_FINALIZATION_STATE_UNSPECIFIED, pb.RootInvocation_ACTIVE, pb.RootInvocation_FINALIZING:
-		// Allowed states for creation.
-	default:
-		return errors.Fmt("finalization_state: cannot be created in the state %s", inv.FinalizationState)
-	}
 
 	if inv.Realm == "" {
 		return errors.New("realm: unspecified")
@@ -401,7 +387,7 @@ func validateRootInvocationForCreate(inv *pb.RootInvocation) error {
 		}
 	}
 
-	// TODO(meiring): Make this a required field.
+	// TODO: b/447225325 - Make this field mandatory.
 	if inv.StreamingExportState != pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED {
 		// Validate streaming_export_state.
 		if err := pbutil.ValidateStreamingExportState(inv.StreamingExportState); err != nil {
@@ -418,54 +404,14 @@ func validateRootWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServiceC
 	if wu == nil {
 		return errors.New("unspecified")
 	}
-	// This method attempts to validate fields in the order that they are specified in the proto.
 
-	// Name and WorkUnitId is output only and should be ignored
-	// as per https://google.aip.dev/203.
-
-	if wu.FinalizationState != pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED {
-		return errors.New("finalization_state: must not be set; always inherited from root invocation")
-	}
 	if wu.Realm != "" {
 		return errors.New("realm: must not be set; always inherited from root invocation")
 	}
-
-	// CreateTime, Creator, FinalizeStartTime, FinalizeTime are output only and should be ignored
-	// as per https://google.aip.dev/203.
-
-	// Validate deadline.
-	if wu.Deadline != nil {
-		// Using time.Now() for validation, actual commit time will be used for storage.
-		assumedCreateTime := time.Now().UTC()
-		if err := validateDeadline(wu.Deadline, assumedCreateTime); err != nil {
-			return errors.Fmt("deadline: %w", err)
-		}
-	}
-
-	// Parent, ChildWorkUnits and ChildInvocations are output only fields and should be ignored
-	// as per https://google.aip.dev/203.
 
 	if wu.ProducerResource != "" {
 		return errors.New("producer_resource: must not be set; always inherited from root invocation")
 	}
 
 	return validateWorkUnitForCreate(wu, cfg)
-}
-
-// validateDeadline validates a deadline for a root invocation or work unit.
-// Returns a non-nil error if deadline is invalid.
-func validateDeadline(deadline *timestamppb.Timestamp, createTime time.Time) error {
-	internal.AssertUTC(createTime)
-	if err := deadline.CheckValid(); err != nil {
-		return err
-	}
-
-	d := deadline.AsTime()
-	if d.Sub(createTime) < 10*time.Second {
-		return errors.New("must be at least 10 seconds in the future")
-	}
-	if d.Sub(createTime) > maxDeadlineDuration {
-		return errors.Fmt("must be before %dh in the future", int(maxDeadlineDuration.Hours()))
-	}
-	return nil
 }

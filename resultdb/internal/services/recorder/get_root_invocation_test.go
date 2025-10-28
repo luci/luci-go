@@ -68,6 +68,8 @@ func TestGetRootInvocation(t *testing.T) {
 				RootInvocationId:     "root-inv-id",
 				Realm:                realm,
 				FinalizationState:    pb.RootInvocation_FINALIZED,
+				State:                pb.RootInvocation_FAILED,
+				SummaryMarkdown:      "The FooBar returned false when it was expected to return true.",
 				CreateTime:           pbutil.MustTimestampProto(testData.CreateTime),
 				Creator:              testData.CreatedBy,
 				LastUpdated:          pbutil.MustTimestampProto(testData.LastUpdated),

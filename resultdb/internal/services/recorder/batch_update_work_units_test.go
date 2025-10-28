@@ -89,11 +89,13 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 		wuRow1Expected := workunits.
 			NewBuilder(wuID1.RootInvocationID, wuID1.WorkUnitID).
 			WithFinalizationState(pb.WorkUnit_ACTIVE).
+			WithState(pb.WorkUnit_RUNNING).
 			WithModuleID(nil).
 			Build()
 		wuRow2Expected := workunits.
 			NewBuilder(wuID2.RootInvocationID, wuID2.WorkUnitID).
 			WithFinalizationState(pb.WorkUnit_ACTIVE).
+			WithState(pb.WorkUnit_PENDING).
 			WithTags([]*pb.StringPair{{Key: "k2", Value: "v2"}}).
 			WithModuleID(nil).
 			Build()
@@ -112,17 +114,17 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 			Requests: []*pb.UpdateWorkUnitRequest{
 				{
 					WorkUnit: &pb.WorkUnit{
-						Name:              wuID1.Name(),
-						FinalizationState: pb.WorkUnit_ACTIVE,
+						Name:  wuID1.Name(),
+						State: pb.WorkUnit_RUNNING,
 					},
-					UpdateMask: &field_mask.FieldMask{Paths: []string{"finalization_state"}},
+					UpdateMask: &field_mask.FieldMask{Paths: []string{"state"}},
 				},
 				{
 					WorkUnit: &pb.WorkUnit{
-						Name:              wuID2.Name(),
-						FinalizationState: pb.WorkUnit_ACTIVE,
+						Name:  wuID2.Name(),
+						State: pb.WorkUnit_PENDING,
 					},
-					UpdateMask: &field_mask.FieldMask{Paths: []string{"finalization_state"}},
+					UpdateMask: &field_mask.FieldMask{Paths: []string{"state"}},
 				},
 			},
 			RequestId: "test-request-id",
@@ -147,25 +149,25 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 						assert.Loosely(t, err, should.ErrLike("bad request: requests[1]: work_unit: unspecified"))
 					})
 
-					t.Run("invalid name", func(t *ftt.Test) {
-						req.Requests[0].WorkUnit.Name = "invalid"
+					t.Run("name", func(t *ftt.Test) {
+						t.Run("invalid", func(t *ftt.Test) {
+							req.Requests[0].WorkUnit.Name = "invalid"
 
-						_, err := recorder.BatchUpdateWorkUnits(ctx, req)
-						assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike("bad request: requests[0]: work_unit: name: does not match pattern"))
+							_, err := recorder.BatchUpdateWorkUnits(ctx, req)
+							assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike("bad request: requests[0]: work_unit: name: does not match pattern"))
+						})
 					})
-
-					t.Run("invalid finalization_state", func(t *ftt.Test) {
+					t.Run("other invalid", func(t *ftt.Test) {
 						// validateUpdateWorkUnitRequest has its own exhaustive test cases,
-						// simply check that it is called for each sub-request.
-						req.Requests[1].WorkUnit.FinalizationState = pb.WorkUnit_FINALIZED
-						req.Requests[1].UpdateMask.Paths = []string{"finalization_state"}
+						// simply check that it is called.
+						req.Requests[1].WorkUnit.State = pb.WorkUnit_FINAL_STATE_MASK
+						req.Requests[1].UpdateMask.Paths = []string{"state"}
 
 						_, err := recorder.BatchUpdateWorkUnits(ctx, req)
 						assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike("bad request: requests[1]: work_unit: finalization_state: must be FINALIZING or ACTIVE"))
+						assert.Loosely(t, err, should.ErrLike("bad request: requests[1]: work_unit: state: FINAL_STATE_MASK is not a valid state"))
 					})
-
 					t.Run("request_id", func(t *ftt.Test) {
 						t.Run("empty", func(t *ftt.Test) {
 							req.RequestId = ""
@@ -293,8 +295,8 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 		t.Run("work unit not active", func(t *ftt.Test) {
 			// Finalize the second work unit.
 			finalizeReq := &pb.UpdateWorkUnitRequest{
-				WorkUnit:   &pb.WorkUnit{Name: wuID2.Name(), FinalizationState: pb.WorkUnit_FINALIZING},
-				UpdateMask: &field_mask.FieldMask{Paths: []string{"finalization_state"}},
+				WorkUnit:   &pb.WorkUnit{Name: wuID2.Name(), State: pb.WorkUnit_SUCCEEDED},
+				UpdateMask: &field_mask.FieldMask{Paths: []string{"state"}},
 			}
 			req.Requests[1] = finalizeReq
 			_, err = recorder.BatchUpdateWorkUnits(ctx, req)
@@ -387,20 +389,25 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 				assertNoOp(res.WorkUnits[1], wuRow2Expected, wu2Expected)
 			})
 
-			t.Run("update one, no-op for another", func(t *ftt.Test) {
-				t.Run("finalization_state", func(t *ftt.Test) {
-					req.Requests[1].UpdateMask.Paths = []string{"finalization_state"}
-					req.Requests[1].WorkUnit.FinalizationState = pb.WorkUnit_FINALIZING
+			t.Run("update one work unit, no-op for another", func(t *ftt.Test) {
+				t.Run("state, summary_markdown", func(t *ftt.Test) {
+					req.Requests[1].UpdateMask.Paths = []string{"state", "summary_markdown"}
+					req.Requests[1].WorkUnit.State = pb.WorkUnit_FAILED
+					req.Requests[1].WorkUnit.SummaryMarkdown = "The task failed because of..."
 
 					res, err := recorder.BatchUpdateWorkUnits(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, res.WorkUnits, should.HaveLength(2))
 
 					wu2Expected.FinalizationState = pb.WorkUnit_FINALIZING
+					wu2Expected.State = pb.WorkUnit_FAILED
+					wu2Expected.SummaryMarkdown = "The task failed because of..."
 					assertResponse(res.WorkUnits[1], wu2Expected)
 
 					// Validate work unit table.
 					wuRow2Expected.FinalizationState = pb.WorkUnit_FINALIZING
+					wuRow2Expected.State = pb.WorkUnit_FAILED
+					wuRow2Expected.SummaryMarkdown = "The task failed because of..."
 					assertSpannerRows(wuRow2Expected)
 
 					// Enqueued the finalization task.

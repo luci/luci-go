@@ -40,6 +40,8 @@ func NewBuilder(id ID) *Builder {
 			RootInvocationID:                        id,
 			SecondaryIndexShardID:                   id.shardID(secondaryIndexShardCount),
 			FinalizationState:                       pb.RootInvocation_FINALIZED,
+			State:                                   pb.RootInvocation_FAILED,
+			SummaryMarkdown:                         "The FooBar returned false when it was expected to return true.",
 			Realm:                                   "testproject:testrealm",
 			CreateTime:                              time.Date(2025, 4, 25, 1, 2, 3, 4000, time.UTC),
 			CreatedBy:                               "user:test@example.com",
@@ -108,6 +110,18 @@ func (b *Builder) WithRootInvocationID(id ID) *Builder {
 // WithFinalizationState sets the finalization state of the root invocation.
 func (b *Builder) WithFinalizationState(state pb.RootInvocation_FinalizationState) *Builder {
 	b.row.FinalizationState = state
+	return b
+}
+
+// WithState sets the state of the root invocation.
+func (b *Builder) WithState(state pb.RootInvocation_State) *Builder {
+	b.row.State = state
+	return b
+}
+
+// WithSummaryMarkdown sets the summary markdown of the root invocation.
+func (b *Builder) WithSummaryMarkdown(s string) *Builder {
+	b.row.SummaryMarkdown = s
 	return b
 }
 
@@ -235,7 +249,8 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 		"RootInvocationId":      r.RootInvocationID,
 		"SecondaryIndexShardId": r.SecondaryIndexShardID,
 		"FinalizationState":     r.FinalizationState,
-		"State":                 pb.RootInvocation_STATE_UNSPECIFIED,
+		"State":                 r.State,
+		"SummaryMarkdown":       r.SummaryMarkdown,
 		"Realm":                 r.Realm,
 		"CreateTime":            r.CreateTime,
 		"CreatedBy":             r.CreatedBy,

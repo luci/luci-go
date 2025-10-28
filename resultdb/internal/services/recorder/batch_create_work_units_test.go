@@ -288,10 +288,10 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 					t.Run("other invalid", func(t *ftt.Test) {
 						// validateCreateWorkUnitRequest has its own exhaustive test cases,
 						// simply check that it is called.
-						req.Requests[1].WorkUnit.FinalizationState = pb.WorkUnit_FINALIZED
+						req.Requests[1].WorkUnit.State = pb.WorkUnit_FINAL_STATE_MASK
 						_, err := recorder.BatchCreateWorkUnits(ctx, req)
 						assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike("requests[1]: work_unit: finalization_state: cannot be created in the state FINALIZED"))
+						assert.Loosely(t, err, should.ErrLike("requests[1]: work_unit: state: FINAL_STATE_MASK is not a valid state"))
 					})
 				})
 			})
@@ -590,8 +590,9 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			// Populare Requests[0] with all fields and Requests[1] and [2] with minimal fields
 			// to maximise test coverage.
 			req.Requests[0].WorkUnit = &pb.WorkUnit{
-				Realm:             "testproject:testrealm",
-				FinalizationState: pb.WorkUnit_FINALIZING,
+				Realm:           "testproject:testrealm",
+				State:           pb.WorkUnit_RUNNING,
+				SummaryMarkdown: "Running FooBar...",
 				ModuleId: &pb.ModuleIdentifier{
 					ModuleName:    "mymodule",
 					ModuleScheme:  "gtest",
@@ -607,12 +608,13 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			// Expected work units in the response.
 			expectedWU1 := proto.Clone(req.Requests[0].WorkUnit).(*pb.WorkUnit)
 			proto.Merge(expectedWU1, &pb.WorkUnit{
-				Name:           workUnitID1.Name(),
-				Parent:         parentWorkUnitID.Name(),
-				WorkUnitId:     workUnitID1.WorkUnitID,
-				Creator:        "user:someone@example.com",
-				Deadline:       timestamppb.New(start.Add(defaultDeadlineDuration)),
-				ChildWorkUnits: []string{workUnitID11.Name()},
+				Name:              workUnitID1.Name(),
+				Parent:            parentWorkUnitID.Name(),
+				WorkUnitId:        workUnitID1.WorkUnitID,
+				FinalizationState: pb.WorkUnit_ACTIVE, // Default state is ACTIVE.
+				Creator:           "user:someone@example.com",
+				Deadline:          timestamppb.New(start.Add(defaultDeadlineDuration)),
+				ChildWorkUnits:    []string{workUnitID11.Name()},
 			})
 			expectedWU1.Instructions = instructionutil.InstructionsWithNames(instructions, workUnitID1.Name())
 			pbutil.PopulateModuleIdentifierHashes(expectedWU1.ModuleId)
@@ -623,6 +625,7 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 				Parent:            workUnitID1.Name(),
 				WorkUnitId:        workUnitID11.WorkUnitID,
 				FinalizationState: pb.WorkUnit_ACTIVE, // Default state is ACTIVE.
+				State:             pb.WorkUnit_PENDING,
 				Creator:           "user:someone@example.com",
 				Deadline:          timestamppb.New(start.Add(defaultDeadlineDuration)),
 			})
@@ -633,6 +636,7 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 				Parent:            parentWorkUnitID.Name(),
 				WorkUnitId:        workUnitID2.WorkUnitID,
 				FinalizationState: pb.WorkUnit_ACTIVE, // Default state is ACTIVE.
+				State:             pb.WorkUnit_PENDING,
 				Creator:           "user:someone@example.com",
 				Deadline:          timestamppb.New(start.Add(defaultDeadlineDuration)),
 			})
@@ -640,7 +644,9 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			expectWURow1 := &workunits.WorkUnitRow{
 				ID:                workUnitID1,
 				ParentWorkUnitID:  spanner.NullString{Valid: true, StringVal: parentWorkUnitID.WorkUnitID},
-				FinalizationState: pb.WorkUnit_FINALIZING,
+				FinalizationState: pb.WorkUnit_ACTIVE,
+				State:             pb.WorkUnit_RUNNING,
+				SummaryMarkdown:   "Running FooBar...",
 				Realm:             "testproject:testrealm",
 				CreatedBy:         "user:someone@example.com",
 				FinalizeStartTime: spanner.NullTime{},
@@ -665,6 +671,7 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 				ID:                workUnitID11,
 				ParentWorkUnitID:  spanner.NullString{Valid: true, StringVal: workUnitID1.WorkUnitID},
 				FinalizationState: pb.WorkUnit_ACTIVE,
+				State:             pb.WorkUnit_PENDING,
 				Realm:             "testproject:testrealm",
 				CreatedBy:         "user:someone@example.com",
 				FinalizeStartTime: spanner.NullTime{},
@@ -677,6 +684,7 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 				ID:                workUnitID2,
 				ParentWorkUnitID:  spanner.NullString{Valid: true, StringVal: parentWorkUnitID.WorkUnitID},
 				FinalizationState: pb.WorkUnit_ACTIVE,
+				State:             pb.WorkUnit_PENDING,
 				Realm:             "testproject:testrealm",
 				CreatedBy:         "user:someone@example.com",
 				FinalizeStartTime: spanner.NullTime{},
@@ -696,7 +704,6 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			createTime := res.WorkUnits[0].CreateTime.AsTime()
 			expectedWU1.CreateTime = timestamppb.New(createTime)
 			expectedWU1.LastUpdated = timestamppb.New(createTime)
-			expectedWU1.FinalizeStartTime = timestamppb.New(createTime)
 			expectedWU1.Etag = fmt.Sprintf(`W/"+f/%s"`, createTime.UTC().Format(time.RFC3339Nano))
 			expectedWU11.CreateTime = timestamppb.New(createTime)
 			expectedWU11.LastUpdated = timestamppb.New(createTime)
@@ -714,7 +721,6 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 					},
 				},
 			))
-			assert.Loosely(t, res.WorkUnits[0].FinalizeStartTime, should.NotBeNil)
 
 			// Check the database.
 			readCtx, cancel := span.ReadOnlyTransaction(ctx)
@@ -724,7 +730,6 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			expectWURow1.SecondaryIndexShardID = row.SecondaryIndexShardID
 			expectWURow1.CreateTime = createTime
 			expectWURow1.LastUpdated = createTime
-			expectWURow1.FinalizeStartTime = spanner.NullTime{Time: createTime, Valid: true}
 			assert.That(t, row, should.Match(expectWURow1))
 
 			row, err = workunits.Read(readCtx, workUnitID2, workunits.AllFields)

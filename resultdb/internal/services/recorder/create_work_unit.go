@@ -22,14 +22,15 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tokens"
 
+	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -111,30 +112,6 @@ func workUnitUpdateTokenState(id workunits.ID) string {
 	}
 }
 
-// mutateWorkUnit provides a transactional wrapper for modifying a work unit.
-// It ensures that any modifications happen only if the work unit is ACTIVE.
-//
-// It executes the provided function `f` within a read-write transaction after
-// performing these checks.
-//
-// On success, it returns the Spanner commit timestamp.
-func mutateWorkUnit(ctx context.Context, id workunits.ID, f func(context.Context) error) (time.Time, error) {
-	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-		state, err := workunits.ReadFinalizationState(ctx, id)
-		if err != nil {
-			return err
-		}
-		if state != pb.WorkUnit_ACTIVE {
-			return appstatus.Errorf(codes.FailedPrecondition, "work unit %q is not active", id.Name())
-		}
-		return f(ctx)
-	})
-	if err != nil {
-		return time.Time{}, err
-	}
-	return commitTimestamp, nil
-}
-
 // validateCreateWorkUnitRequest validates the given create work unit request.
 // requireRequestID should be set to true for all single work unit creation requests.
 // It should only be false for batch work unit creations where the request ID is set
@@ -155,18 +132,6 @@ func validateNonRootWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServi
 	if wu == nil {
 		return errors.New("unspecified")
 	}
-	// This method attempts to validate fields in the order that they are specified in the proto.
-
-	// Name and WorkUnitId is output only and should be ignored
-	// as per https://google.aip.dev/203.
-
-	// Validate state.
-	switch wu.FinalizationState {
-	case pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED, pb.WorkUnit_ACTIVE, pb.WorkUnit_FINALIZING:
-		// Allowed states for creation.
-	default:
-		return errors.Fmt("finalization_state: cannot be created in the state %s", wu.FinalizationState)
-	}
 
 	// Validate realm.
 	if wu.Realm == "" {
@@ -174,6 +139,39 @@ func validateNonRootWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServi
 	}
 	if err := realms.ValidateRealmName(wu.Realm, realms.GlobalScope); err != nil {
 		return errors.Fmt("realm: %w", err)
+	}
+
+	if wu.ProducerResource != "" {
+		if err := pbutil.ValidateFullResourceName(wu.ProducerResource); err != nil {
+			return errors.Fmt("producer_resource: %w", err)
+		}
+	}
+	return validateWorkUnitForCreate(wu, cfg)
+}
+
+// validateWorkUnitForCreate implements common work unit validation between
+// root and non-root work unit creations.
+func validateWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServiceConfig) error {
+	// This method attempts to validate fields in the order that they are specified in the proto.
+
+	// Name, WorkUnitId and FinalizationState are output only and should be ignored
+	// as per https://google.aip.dev/203.
+
+	// TODO: b/447225325 - Make this a mandatory field.
+	if wu.State != pb.WorkUnit_STATE_UNSPECIFIED {
+		if err := pbutil.ValidateWorkUnitState(wu.State); err != nil {
+			return errors.Fmt("state: %w", err)
+		}
+		// We do not support creating work units in a final state from the get-go.
+		// This could be supported if the use case exists. It would require adding a task
+		// for the finalizer at time of such a creation.
+		if pbutil.IsFinalWorkUnitState(wu.State) {
+			return errors.Fmt("state: work unit may not be created in a final state (got %s)", wu.State)
+		}
+	}
+	const enforceLength = true
+	if err := pbutil.ValidateSummaryMarkdown(wu.SummaryMarkdown, enforceLength); err != nil {
+		return errors.Fmt("summary_markdown: %s", err)
 	}
 
 	// CreateTime, Creator, FinalizeStartTime, FinalizeTime are output only and should be ignored
@@ -191,17 +189,6 @@ func validateNonRootWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServi
 	// Parent, ChildWorkUnits and ChildInvocations are output only fields and should be ignored
 	// as per https://google.aip.dev/203.
 
-	if wu.ProducerResource != "" {
-		if err := pbutil.ValidateFullResourceName(wu.ProducerResource); err != nil {
-			return errors.Fmt("producer_resource: %w", err)
-		}
-	}
-	return validateWorkUnitForCreate(wu, cfg)
-}
-
-// validateWorkUnitForCreate implements common work unit validation between
-// root and non-root work unit creations.
-func validateWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServiceConfig) error {
 	if wu.ModuleId != nil {
 		if err := pbutil.ValidateModuleIdentifierForStorage(wu.ModuleId); err != nil {
 			return errors.Fmt("module_id: %w", err)
@@ -227,6 +214,28 @@ func validateWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServiceConfi
 		if err := pbutil.ValidateInstructions(wu.Instructions); err != nil {
 			return errors.Fmt("instructions: %w", err)
 		}
+	}
+
+	// Parent, ChildWorkUnits and ChildInvocations are output only fields and should be ignored
+	// as per https://google.aip.dev/203.
+
+	return nil
+}
+
+// validateDeadline validates a deadline for a root invocation or work unit.
+// Returns a non-nil error if deadline is invalid.
+func validateDeadline(deadline *timestamppb.Timestamp, createTime time.Time) error {
+	internal.AssertUTC(createTime)
+	if err := deadline.CheckValid(); err != nil {
+		return err
+	}
+
+	d := deadline.AsTime()
+	if d.Sub(createTime) < 10*time.Second {
+		return errors.New("must be at least 10 seconds in the future")
+	}
+	if d.Sub(createTime) > maxDeadlineDuration {
+		return errors.Fmt("must be before %dh in the future", int(maxDeadlineDuration.Hours()))
 	}
 	return nil
 }

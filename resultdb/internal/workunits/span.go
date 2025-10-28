@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -89,8 +90,10 @@ func (w *WorkUnitRow) Normalize() {
 type WorkUnitRow struct {
 	ID                     ID
 	ParentWorkUnitID       spanner.NullString
-	SecondaryIndexShardID  int64 // Output only.
-	FinalizationState      pb.WorkUnit_FinalizationState
+	SecondaryIndexShardID  int64                         // Output only.
+	FinalizationState      pb.WorkUnit_FinalizationState // Output only.
+	State                  pb.WorkUnit_State
+	SummaryMarkdown        string
 	Realm                  string
 	CreateTime             time.Time // Output only.
 	CreatedBy              string
@@ -152,7 +155,8 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 		"ParentWorkUnitId":      w.ParentWorkUnitID,
 		"SecondaryIndexShardId": w.ID.shardID(secondaryIndexShardCount),
 		"FinalizationState":     w.FinalizationState,
-		"State":                 pb.WorkUnit_STATE_UNSPECIFIED,
+		"State":                 w.State,
+		"SummaryMarkdown":       w.SummaryMarkdown,
 		"Realm":                 w.Realm,
 		"CreateTime":            spanner.CommitTimestamp,
 		"CreatedBy":             w.CreatedBy,
@@ -320,24 +324,6 @@ func (w *WorkUnitRow) toLegacyInclusionMutation() *spanner.Mutation {
 	})
 }
 
-// MarkFinalizing creates mutations to mark the given work unit as finalizing,
-// and sets the FinalizerCandidateTime to mark it as a candidate for the work unit finalizer.
-// The caller MUST check the work unit is currently in ACTIVE state, or this
-// may incorrectly overwrite the FinalizeStartTime.
-func MarkFinalizing(id ID) []*spanner.Mutation {
-	ms := make([]*spanner.Mutation, 0, 2)
-	ms = append(ms, spanutil.UpdateMap("WorkUnits", map[string]any{
-		"RootInvocationShardId":  id.RootInvocationShardID(),
-		"WorkUnitId":             id.WorkUnitID,
-		"FinalizationState":      pb.WorkUnit_FINALIZING,
-		"LastUpdated":            spanner.CommitTimestamp,
-		"FinalizeStartTime":      spanner.CommitTimestamp,
-		"FinalizerCandidateTime": spanner.CommitTimestamp,
-	}))
-	ms = append(ms, invocations.MarkFinalizing(id.LegacyInvocationID()))
-	return ms
-}
-
 // MarkFinalized creates mutations to mark the given work unit as finalized.
 // The caller MUST check the work unit is currently in FINALIZING state, or this
 // may incorrectly overwrite the FinalizeTime.
@@ -404,4 +390,127 @@ func ResetFinalizerCandidateTime(candidates []FinalizerCandidate) spanner.Statem
 		"candidates": candidateParam,
 	}
 	return st
+}
+
+// MutationBuilder is a helper to construct mutations to update a work unit.
+type MutationBuilder struct {
+	id                     ID
+	values                 map[string]any
+	legacyInvocationValues map[string]any
+	// A mutation builder used to replicate certain work unit fields to the
+	// the root invocation. Only set if this work unit is the root work unit.
+	rootInvocation *rootinvocations.MutationBuilder
+}
+
+// NewMutationBuilder creates a new MutationBuilder for the given work unit.
+func NewMutationBuilder(id ID) *MutationBuilder {
+	b := &MutationBuilder{
+		id: id,
+		values: map[string]any{
+			"RootInvocationShardId": id.RootInvocationShardID(),
+			"WorkUnitId":            id.WorkUnitID,
+		},
+		legacyInvocationValues: map[string]any{
+			"InvocationId": id.LegacyInvocationID(),
+		},
+	}
+	if id.WorkUnitID == RootWorkUnitID {
+		b.rootInvocation = rootinvocations.NewMutationBuilder(id.RootInvocationID)
+	}
+	return b
+}
+
+// Build returns the mutations to update the work unit.
+func (b *MutationBuilder) Build() []*spanner.Mutation {
+	var mutations []*spanner.Mutation
+	// The `values` map is initialized with the 2 primary key columns of a WorkUnit.
+	// There is no update if no other columns are added.
+	if len(b.values) > 2 {
+		b.values["LastUpdated"] = spanner.CommitTimestamp
+		mutations = append(mutations, spanutil.UpdateMap("WorkUnits", b.values))
+		mutations = append(mutations, spanutil.UpdateMap("Invocations", b.legacyInvocationValues))
+
+		if b.rootInvocation != nil {
+			mutations = append(mutations, b.rootInvocation.Build()...)
+		}
+	}
+	return mutations
+}
+
+// UpdateState updates the state of the work unit.
+// If the new state is a terminal state, the work unit is transitioned to a FINALIZING finalization state.
+// The caller MUST check the root invocation is currently in ACTIVE finalization state, or this
+// may incorrectly overwrite the FinalizeStartTime.
+func (b *MutationBuilder) UpdateState(state pb.WorkUnit_State) {
+	b.values["State"] = state
+
+	if pbutil.IsFinalWorkUnitState(state) {
+		// We are transitioning to a terminal state. Begin finalizing
+		// the work unit.
+		b.values["FinalizationState"] = pb.WorkUnit_FINALIZING
+		b.values["FinalizeStartTime"] = spanner.CommitTimestamp
+		b.values["FinalizerCandidateTime"] = spanner.CommitTimestamp
+		b.legacyInvocationValues["State"] = pb.Invocation_FINALIZING
+		b.legacyInvocationValues["FinalizeStartTime"] = spanner.CommitTimestamp
+	}
+	if b.rootInvocation != nil {
+		// The state of the root work unit is replicated to the root invocation.
+		b.rootInvocation.UpdateState(pbutil.WorkUnitToRootInvocationState(state))
+	}
+}
+
+// UpdateSummaryMarkdown updates the summary markdown of the work unit.
+func (b *MutationBuilder) UpdateSummaryMarkdown(summaryMarkdown string) {
+	b.values["SummaryMarkdown"] = summaryMarkdown
+	if b.rootInvocation != nil {
+		// The summary markdown of the root work unit is replicated to the root invocation.
+		b.rootInvocation.UpdateSummaryMarkdown(summaryMarkdown)
+	}
+}
+
+// UpdateDeadline updates the deadline of the work unit.
+func (b *MutationBuilder) UpdateDeadline(deadline time.Time) {
+	b.values["Deadline"] = deadline
+	b.legacyInvocationValues["Deadline"] = deadline
+}
+
+// UpdateModuleID updates the module ID of the work unit.
+func (b *MutationBuilder) UpdateModuleID(moduleID *pb.ModuleIdentifier) {
+	b.values["ModuleName"] = moduleID.ModuleName
+	b.values["ModuleScheme"] = moduleID.ModuleScheme
+	b.values["ModuleVariant"] = moduleID.ModuleVariant
+	b.values["ModuleVariantHash"] = pbutil.VariantHash(moduleID.ModuleVariant)
+
+	b.legacyInvocationValues["ModuleName"] = moduleID.ModuleName
+	b.legacyInvocationValues["ModuleScheme"] = moduleID.ModuleScheme
+	b.legacyInvocationValues["ModuleVariant"] = moduleID.ModuleVariant
+	b.legacyInvocationValues["ModuleVariantHash"] = pbutil.VariantHash(moduleID.ModuleVariant)
+}
+
+// UpdateProperties updates the properties of the work unit.
+func (b *MutationBuilder) UpdateProperties(properties *structpb.Struct) {
+	b.values["Properties"] = spanutil.Compressed(pbutil.MustMarshal(properties))
+	b.legacyInvocationValues["Properties"] = spanutil.Compressed(pbutil.MustMarshal(properties))
+}
+
+// UpdateTags updates the tags of the work unit.
+func (b *MutationBuilder) UpdateTags(tags []*pb.StringPair) {
+	b.values["Tags"] = tags
+	b.legacyInvocationValues["Tags"] = tags
+}
+
+// UpdateExtendedProperties updates the extended properties of the work unit.
+func (b *MutationBuilder) UpdateExtendedProperties(extendedProperties map[string]*structpb.Struct) {
+	internalExtendedProperties := &invocationspb.ExtendedProperties{
+		ExtendedProperties: extendedProperties,
+	}
+	b.values["ExtendedProperties"] = spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties))
+	b.legacyInvocationValues["ExtendedProperties"] = spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties))
+}
+
+// UpdateInstructions updates the instructions of the work unit.
+func (b *MutationBuilder) UpdateInstructions(instructions *pb.Instructions) {
+	ins := instructionutil.RemoveInstructionsName(instructions)
+	b.values["Instructions"] = spanutil.Compressed(pbutil.MustMarshal(ins))
+	b.legacyInvocationValues["Instructions"] = spanutil.Compressed(pbutil.MustMarshal(ins))
 }

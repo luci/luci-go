@@ -192,24 +192,6 @@ func TestFinalizationMethods(t *testing.T) {
 		rootInvocation := NewBuilder(rootInvocationID).WithFinalizationState(pb.RootInvocation_ACTIVE).Build()
 		testutil.MustApply(ctx, t, InsertForTesting(rootInvocation)...)
 
-		t.Run(`MarkFinalizing`, func(t *ftt.Test) {
-			ct, err := span.Apply(ctx, MarkFinalizing(rootInvocationID))
-			assert.Loosely(t, err, should.BeNil)
-
-			expected := rootInvocation.Clone()
-			expected.FinalizationState = pb.RootInvocation_FINALIZING
-			expected.LastUpdated = ct.In(time.UTC)
-			expected.FinalizeStartTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
-
-			ri, err := Read(span.Single(ctx), rootInvocationID)
-			assert.Loosely(t, err, should.BeNil)
-			assert.That(t, ri, should.Match(expected))
-
-			// Check the legacy invocation state is also updated.
-			state, err := invocations.ReadState(span.Single(ctx), rootInvocationID.LegacyInvocationID())
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, state, should.Equal(pb.Invocation_FINALIZING))
-		})
 		t.Run(`MarkFinalized`, func(t *ftt.Test) {
 			ct, err := span.Apply(ctx, MarkFinalized(rootInvocationID))
 			assert.Loosely(t, err, should.BeNil)
@@ -227,6 +209,57 @@ func TestFinalizationMethods(t *testing.T) {
 			state, err := invocations.ReadState(span.Single(ctx), rootInvocationID.LegacyInvocationID())
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, state, should.Equal(pb.Invocation_FINALIZED))
+		})
+	})
+}
+
+func TestMutationBuilder(t *testing.T) {
+	ftt.Run("With mutation builder", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+
+		id := ID("root-inv-id")
+		rootInv := NewBuilder(id).WithState(pb.RootInvocation_RUNNING).WithFinalizationState(pb.RootInvocation_ACTIVE).Build()
+		testutil.MustApply(ctx, t, InsertForTesting(rootInv)...)
+
+		b := NewMutationBuilder(id)
+
+		t.Run("UpdateState", func(t *ftt.Test) {
+			b.UpdateState(pb.RootInvocation_FAILED)
+			ct, err := span.Apply(ctx, b.Build())
+			assert.Loosely(t, err, should.BeNil)
+
+			// Check the root invocation.
+			readRootInv, err := Read(span.Single(ctx), id)
+			assert.Loosely(t, err, should.BeNil)
+			expectedRootInv := rootInv.Clone()
+			expectedRootInv.State = pb.RootInvocation_FAILED
+			expectedRootInv.FinalizationState = pb.RootInvocation_FINALIZING
+			expectedRootInv.LastUpdated = ct.In(time.UTC)
+			expectedRootInv.FinalizeStartTime = spanner.NullTime{Time: ct.In(time.UTC), Valid: true}
+			assert.That(t, readRootInv, should.Match(expectedRootInv))
+
+			// Check the legacy invocation.
+			readLegacyInv, err := invocations.Read(span.Single(ctx), id.LegacyInvocationID(), invocations.AllFields)
+			assert.Loosely(t, err, should.BeNil)
+			expectedLegacyInv := rootInv.ToLegacyInvocationProto()
+			expectedLegacyInv.State = pb.Invocation_FINALIZING
+			expectedLegacyInv.FinalizeStartTime = timestamppb.New(ct)
+			expectedLegacyInv.CreateTime = timestamppb.New(rootInv.CreateTime)
+			assert.That(t, readLegacyInv, should.Match(expectedLegacyInv))
+		})
+		t.Run("UpdateSummaryMarkdown", func(t *ftt.Test) {
+			b := NewMutationBuilder(id)
+			b.UpdateSummaryMarkdown("new summary")
+			ct, err := span.Apply(ctx, b.Build())
+			assert.Loosely(t, err, should.BeNil)
+
+			// Check the root invocation.
+			readRootInv, err := Read(span.Single(ctx), id)
+			assert.Loosely(t, err, should.BeNil)
+			expectedRootInv := rootInv.Clone()
+			expectedRootInv.SummaryMarkdown = "new summary"
+			expectedRootInv.LastUpdated = ct.In(time.UTC)
+			assert.That(t, readRootInv, should.Match(expectedRootInv))
 		})
 	})
 }

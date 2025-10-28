@@ -131,15 +131,19 @@ func TestDeadlineEnforcer(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, taskState, should.Match(rootinvocations.FinalizerTaskState{Pending: true, Sequence: 1}))
 
-			invState, err := rootinvocations.ReadFinalizationState(span.Single(ctx), expiredRootInvocationID)
-			assert.That(t, invState, should.Equal(resultpb.RootInvocation_FINALIZING))
+			inv, err := rootinvocations.Read(span.Single(ctx), expiredRootInvocationID)
+			assert.That(t, inv.FinalizationState, should.Equal(resultpb.RootInvocation_FINALIZING))
+			assert.That(t, inv.State, should.Equal(resultpb.RootInvocation_FAILED))
+			assert.That(t, inv.SummaryMarkdown, should.Equal(DeadlineEnforcedMessage))
 
-			invState, err = rootinvocations.ReadFinalizationState(span.Single(ctx), unexpiredRootInvocationID)
-			assert.That(t, invState, should.Equal(resultpb.RootInvocation_ACTIVE))
+			inv, err = rootinvocations.Read(span.Single(ctx), unexpiredRootInvocationID)
+			assert.That(t, inv.FinalizationState, should.Equal(resultpb.RootInvocation_ACTIVE))
 
 			readWU, err := workunits.Read(span.Single(ctx), expiredWorkUnitID, workunits.AllFields)
 			assert.That(t, readWU.FinalizationState, should.Match(resultpb.WorkUnit_FINALIZING))
 			assert.That(t, readWU.FinalizerCandidateTime.Valid, should.BeTrue)
+			assert.That(t, readWU.State, should.Match(resultpb.WorkUnit_FAILED))
+			assert.That(t, readWU.SummaryMarkdown, should.Match(DeadlineEnforcedMessage))
 
 			readWU, err = workunits.Read(span.Single(ctx), unexpiredWorkUnitID, workunits.AllFields)
 			assert.That(t, readWU.FinalizationState, should.Match(resultpb.WorkUnit_ACTIVE))
@@ -148,6 +152,8 @@ func TestDeadlineEnforcer(t *testing.T) {
 			readWU, err = workunits.Read(span.Single(ctx), expiredChildWorkUnit.ID, workunits.AllFields)
 			assert.That(t, readWU.FinalizationState, should.Match(resultpb.WorkUnit_FINALIZING))
 			assert.That(t, readWU.FinalizerCandidateTime.Valid, should.BeTrue)
+			assert.That(t, readWU.State, should.Match(resultpb.WorkUnit_FAILED))
+			assert.That(t, readWU.SummaryMarkdown, should.Match(DeadlineEnforcedMessage))
 
 			assert.Loosely(t, store.Get(ctx, overdueWorkUnitsFinalized, []any{insert.TestRealm}), should.Equal(2))
 			d := store.Get(ctx, timeWorkUnitsOverdue, []any{insert.TestRealm}).(*distribution.Distribution)

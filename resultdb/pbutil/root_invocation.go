@@ -17,7 +17,10 @@ package pbutil
 import (
 	"fmt"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
+
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 const (
@@ -83,4 +86,46 @@ func TryParseRootInvocationName(name string) (id string, ok bool) {
 // Does not validate id; use ValidateInvocationID to do so.
 func RootInvocationName(id string) string {
 	return "rootInvocations/" + id
+}
+
+// ValidateStreamingExportState validates the streaming export state is a valid
+// value.
+func ValidateStreamingExportState(state pb.RootInvocation_StreamingExportState) error {
+	if state == pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED {
+		return errors.New("unspecified")
+	}
+	if _, ok := pb.RootInvocation_State_name[int32(state)]; !ok {
+		return errors.Fmt("unknown state %v", state)
+	}
+	return nil
+}
+
+// IsFinalRootInvocationState returns if the given root invocation state is a final state.
+func IsFinalRootInvocationState(state pb.RootInvocation_State) bool {
+	return state&pb.RootInvocation_FINAL_STATE_MASK != 0
+}
+
+// WorkUnitToRootInvocationState converts a work unit state to a root invocation state.
+func WorkUnitToRootInvocationState(state pb.WorkUnit_State) pb.RootInvocation_State {
+	switch state {
+	case pb.WorkUnit_PENDING:
+		return pb.RootInvocation_PENDING
+	case pb.WorkUnit_RUNNING:
+		return pb.RootInvocation_RUNNING
+	case pb.WorkUnit_SUCCEEDED:
+		return pb.RootInvocation_SUCCEEDED
+	case pb.WorkUnit_SKIPPED:
+		return pb.RootInvocation_SKIPPED
+	case pb.WorkUnit_FAILED:
+		return pb.RootInvocation_FAILED
+	case pb.WorkUnit_CANCELLED:
+		return pb.RootInvocation_CANCELLED
+	case pb.WorkUnit_FINAL_STATE_MASK:
+		// This state should not be passed to this function
+		// as it is not an actual state.
+		panic(fmt.Sprintf("not an actual work unit state %s", state))
+	default:
+		// All other states are not supported.
+		panic(fmt.Sprintf("unknown work unit state %s", state))
+	}
 }

@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
@@ -37,66 +36,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
-
-func TestVerifyFinalizeWorkUnitPermissions(t *testing.T) {
-	t.Parallel()
-
-	ftt.Run("VerifyFinalizeWorkUnitPermissions", t, func(t *ftt.Test) {
-		ctx := testutil.TestingContext()
-		id := workunits.ID{
-			RootInvocationID: "root-inv-id",
-			WorkUnitID:       "work-unit-id",
-		}
-		token, err := generateWorkUnitUpdateToken(ctx, id)
-		assert.Loosely(t, err, should.BeNil)
-
-		req := &pb.FinalizeWorkUnitRequest{
-			Name: id.Name(),
-		}
-
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
-
-		t.Run("valid", func(t *ftt.Test) {
-			err := verifyFinalizeWorkUnitPermissions(ctx, req)
-			assert.Loosely(t, err, should.BeNil)
-		})
-
-		t.Run("empty name", func(t *ftt.Test) {
-			req.Name = ""
-			err := verifyFinalizeWorkUnitPermissions(ctx, req)
-			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
-			assert.Loosely(t, err, should.ErrLike("name: unspecified"))
-		})
-
-		t.Run("invalid name", func(t *ftt.Test) {
-			req.Name = "invalid name"
-			err := verifyFinalizeWorkUnitPermissions(ctx, req)
-			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
-			assert.Loosely(t, err, should.ErrLike("name: does not match"))
-		})
-
-		t.Run("invalid token", func(t *ftt.Test) {
-			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid"))
-			err := verifyFinalizeWorkUnitPermissions(ctx, req)
-			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("invalid update token"))
-		})
-
-		t.Run("missing token", func(t *ftt.Test) {
-			ctx = metadata.NewIncomingContext(ctx, metadata.MD{})
-			err := verifyFinalizeWorkUnitPermissions(ctx, req)
-			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.Unauthenticated))
-			assert.Loosely(t, err, should.ErrLike("missing update-token metadata value"))
-		})
-
-		t.Run("too many tokens", func(t *ftt.Test) {
-			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token, pb.UpdateTokenMetadataKey, token))
-			err := verifyFinalizeWorkUnitPermissions(ctx, req)
-			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
-			assert.Loosely(t, err, should.ErrLike("expected exactly one update-token metadata value, got 2"))
-		})
-	})
-}
 
 func TestFinalizeWorkUnit(t *testing.T) {
 	ftt.Run("FinalizeWorkUnit", t, func(t *ftt.Test) {

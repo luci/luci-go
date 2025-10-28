@@ -16,18 +16,21 @@ package pbutil
 
 import (
 	"fmt"
+	"unicode/utf8"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 const (
-	workUnitIDPattern   = `[a-z][a-z0-9_\-.]*(?::[a-z][a-z0-9_\-.]*)?`
-	workUnitIDMaxLength = 100
+	workUnitIDPattern        = `[a-z][a-z0-9_\-.]*(?::[a-z][a-z0-9_\-.]*)?`
+	workUnitIDMaxLength      = 100
+	summaryMarkdownMaxLength = 4096 // bytes
 )
 
 var workUnitIDRe = regexpf("^%s$", workUnitIDPattern)
@@ -126,4 +129,43 @@ func ExtendedPropertiesEqual(a, b map[string]*structpb.Struct) bool {
 		}
 	}
 	return true
+}
+
+// ValidateSummaryMarkdown validates a work unit's summary markdown.
+// enforceLength controls whether length limits are to be enforced.
+// If they are not enforced on the API surface, TruncateSummaryMarkdown
+// should be used.
+func ValidateSummaryMarkdown(summaryMarkdown string, enforceLength bool) error {
+	if enforceLength && len(summaryMarkdown) > summaryMarkdownMaxLength {
+		return fmt.Errorf("must be at most %v bytes long (was %v bytes)", summaryMarkdownMaxLength, len(summaryMarkdown))
+	}
+	if !utf8.ValidString(summaryMarkdown) {
+		return errors.New("not valid UTF-8")
+	}
+	return nil
+}
+
+// TruncateSummaryMarkdown truncates the summary markdown to
+// fit within its legal limit.
+func TruncateSummaryMarkdown(summaryMarkdown string) string {
+	return TruncateString(summaryMarkdown, summaryMarkdownMaxLength)
+}
+
+// ValidateWorkUnitState validates the work unit state is a valid value.
+func ValidateWorkUnitState(state pb.WorkUnit_State) error {
+	if state == pb.WorkUnit_STATE_UNSPECIFIED {
+		return errors.New("unspecified")
+	}
+	if _, ok := pb.WorkUnit_State_name[int32(state)]; !ok {
+		return errors.Fmt("unknown state %v", state)
+	}
+	if state == pb.WorkUnit_FINAL_STATE_MASK {
+		return errors.New("FINAL_STATE_MASK is not a valid state")
+	}
+	return nil
+}
+
+// IsFinalWorkUnitState returns if the given work unit state is a final state.
+func IsFinalWorkUnitState(state pb.WorkUnit_State) bool {
+	return state&pb.WorkUnit_FINAL_STATE_MASK != 0
 }

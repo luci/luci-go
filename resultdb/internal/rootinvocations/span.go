@@ -17,6 +17,7 @@ package rootinvocations
 
 import (
 	"fmt"
+	"maps"
 	"regexp"
 	"time"
 
@@ -81,6 +82,8 @@ type RootInvocationRow struct {
 	RootInvocationID                        ID
 	SecondaryIndexShardID                   int64 // Output only.
 	FinalizationState                       pb.RootInvocation_FinalizationState
+	State                                   pb.RootInvocation_State
+	SummaryMarkdown                         string
 	Realm                                   string
 	CreateTime                              time.Time // Output only.
 	CreatedBy                               string    // Output only.
@@ -131,7 +134,8 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 		"RootInvocationId":      r.RootInvocationID,
 		"SecondaryIndexShardId": r.RootInvocationID.shardID(secondaryIndexShardCount),
 		"FinalizationState":     r.FinalizationState,
-		"State":                 pb.RootInvocation_STATE_UNSPECIFIED,
+		"State":                 r.State,
+		"SummaryMarkdown":       r.SummaryMarkdown,
 		"Realm":                 r.Realm,
 		"CreateTime":            spanner.CommitTimestamp,
 		"CreatedBy":             r.CreatedBy,
@@ -209,6 +213,8 @@ func (r *RootInvocationRow) ToProto() *pb.RootInvocation {
 		Name:                 r.RootInvocationID.Name(),
 		RootInvocationId:     string(r.RootInvocationID),
 		FinalizationState:    r.FinalizationState,
+		State:                r.State,
+		SummaryMarkdown:      r.SummaryMarkdown,
 		Realm:                r.Realm,
 		CreateTime:           pbutil.MustTimestampProto(r.CreateTime),
 		Creator:              r.CreatedBy,
@@ -303,21 +309,6 @@ func IsEtagMatch(r *RootInvocationRow, etag string) (bool, error) {
 	return lastUpdated == r.LastUpdated.UTC().Format(time.RFC3339Nano), nil
 }
 
-// MarkFinalizing creates mutations to mark the given root invocation as finalizing.
-// The caller MUST check the root invocation is currently in ACTIVE state, or this
-// may incorrectly overwrite the FinalizeStartTime.
-func MarkFinalizing(id ID) []*spanner.Mutation {
-	ms := make([]*spanner.Mutation, 0, 2)
-	ms = append(ms, spanutil.UpdateMap("RootInvocations", map[string]any{
-		"RootInvocationId":  id,
-		"FinalizationState": pb.RootInvocation_FINALIZING,
-		"LastUpdated":       spanner.CommitTimestamp,
-		"FinalizeStartTime": spanner.CommitTimestamp,
-	}))
-	ms = append(ms, invocations.MarkFinalizing(id.LegacyInvocationID()))
-	return ms
-}
-
 // MarkFinalized creates a mutation to mark the given root invocation as finalized.
 // The caller MUST check the root invocation is currently in FINALIZING state, or this
 // may incorrectly overwrite the FinalizeTime.
@@ -362,4 +353,107 @@ func ResetFinalizerPending(id ID) *spanner.Mutation {
 		"RootInvocationId": id,
 		"FinalizerPending": false,
 	})
+}
+
+// MutationBuilder is a helper to construct mutations to update a root invocation.
+type MutationBuilder struct {
+	id ID
+	// values represents a partially-constructed mutation for the root invocation.
+	values map[string]any
+	// legacyInvocationValues represents a partially-constructed mtuation for the
+	// legacy invocation that corresponds to the root invocation.
+	legacyInvocationValues map[string]any
+	// shardValues represents a partially-constructed mutation for the
+	// root invocation shards.
+	shardValues map[string]any
+}
+
+// NewMutationBuilder creates a new MutationBuilder for the given root invocation.
+func NewMutationBuilder(id ID) *MutationBuilder {
+	return &MutationBuilder{
+		id: id,
+		values: map[string]any{
+			"RootInvocationId": id,
+		},
+		legacyInvocationValues: map[string]any{
+			"InvocationId": id.LegacyInvocationID(),
+		},
+		shardValues: map[string]any{},
+	}
+}
+
+// Build returns the mutations to update the root invocation.
+func (b *MutationBuilder) Build() []*spanner.Mutation {
+	var mutations []*spanner.Mutation
+	// The `values` map is initialized with the primary key.
+	// There is no update if no other columns are added.
+	if len(b.values) > 1 {
+		b.values["LastUpdated"] = spanner.CommitTimestamp
+		mutations = append(mutations, spanutil.UpdateMap("RootInvocations", b.values))
+		mutations = append(mutations, spanutil.UpdateMap("Invocations", b.legacyInvocationValues))
+
+		// Check if any update is needed to the RootInvocationShards table.
+		if len(b.shardValues) > 0 {
+			// Update all records for this root invocation in RootInvocationShards table.
+			for shardID := range b.id.AllShardIDs() {
+				shardUpdate := make(map[string]any, len(b.shardValues)+1)
+				maps.Copy(shardUpdate, b.shardValues)
+				shardUpdate["RootInvocationShardId"] = shardID
+				mutations = append(mutations, spanutil.UpdateMap("RootInvocationShards", shardUpdate))
+			}
+		}
+	}
+	return mutations
+}
+
+// UpdateState updates the state of the root invocation.
+// If the new state is a terminal state, the root invocation is transitioned to a FINALIZING finalization state.
+// The caller MUST check the root invocation is currently in ACTIVE finalization state, or this
+// may incorrectly overwrite the FinalizeStartTime.
+func (b *MutationBuilder) UpdateState(state pb.RootInvocation_State) {
+	b.values["State"] = state
+	if pbutil.IsFinalRootInvocationState(state) {
+		b.values["FinalizationState"] = pb.RootInvocation_FINALIZING
+		b.values["FinalizeStartTime"] = spanner.CommitTimestamp
+		b.legacyInvocationValues["State"] = pb.Invocation_FINALIZING
+		b.legacyInvocationValues["FinalizeStartTime"] = spanner.CommitTimestamp
+	}
+}
+
+// UpdateSummaryMarkdown updates the summary markdown of the root invocation.
+func (b *MutationBuilder) UpdateSummaryMarkdown(summaryMarkdown string) {
+	b.values["SummaryMarkdown"] = summaryMarkdown
+}
+
+// UpdateSources updates the sources of the root invocation.
+func (b *MutationBuilder) UpdateSources(sources *pb.Sources) {
+	compressedSources := spanutil.Compressed(pbutil.MustMarshal(sources))
+	b.values["Sources"] = compressedSources
+	b.legacyInvocationValues["Sources"] = compressedSources
+	b.shardValues["Sources"] = compressedSources
+}
+
+// UpdateStreamingExportState updates the streaming export state of the root invocation.
+func (b *MutationBuilder) UpdateStreamingExportState(state pb.RootInvocation_StreamingExportState) {
+	b.values["StreamingExportState"] = state
+	b.legacyInvocationValues["IsSourceSpecFinal"] = spanner.NullBool{Valid: true, Bool: true}
+}
+
+// UpdateTags updates the tags of the root invocation.
+func (b *MutationBuilder) UpdateTags(tags []*pb.StringPair) {
+	b.values["Tags"] = tags
+	b.legacyInvocationValues["Tags"] = tags
+}
+
+// UpdateProperties updates the properties of the root invocation.
+func (b *MutationBuilder) UpdateProperties(properties *structpb.Struct) {
+	compressedProps := spanutil.Compressed(pbutil.MustMarshal(properties))
+	b.values["Properties"] = compressedProps
+	b.legacyInvocationValues["Properties"] = compressedProps
+}
+
+// UpdateBaselineID updates the baseline ID of the root invocation.
+func (b *MutationBuilder) UpdateBaselineID(baselineID string) {
+	b.values["BaselineId"] = baselineID
+	b.legacyInvocationValues["BaselineId"] = baselineID
 }

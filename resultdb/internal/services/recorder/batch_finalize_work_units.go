@@ -37,6 +37,9 @@ func (s *recorderServer) BatchFinalizeWorkUnits(ctx context.Context, in *pb.Batc
 	if err := verifyBatchFinalizeWorkUnitsPermissions(ctx, in); err != nil {
 		return nil, err
 	}
+	if err := validateBatchFinalizeWorkUnitsRequest(in); err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
 
 	wuIDs := mustParseWorkUnitIDsFromFinalizeRequests(in.Requests)
 
@@ -51,7 +54,7 @@ func (s *recorderServer) BatchFinalizeWorkUnits(ctx context.Context, in *pb.Batc
 		}
 
 		hasWorkUnitFinalizing := false
-		for _, wuRow := range wuRows {
+		for i, wuRow := range wuRows {
 			if wuRow.FinalizationState != pb.WorkUnit_ACTIVE {
 				// Finalization already started. Do not start finalization
 				// again as doing so would overwrite the existing FinalizeStartTime
@@ -61,9 +64,33 @@ func (s *recorderServer) BatchFinalizeWorkUnits(ctx context.Context, in *pb.Batc
 			}
 
 			// Finalize as requested.
-			hasWorkUnitFinalizing = true
-			span.BufferWrite(ctx, workunits.MarkFinalizing(wuRow.ID)...)
+			req := in.Requests[i]
+			state := req.State
+			summaryMarkdown := req.SummaryMarkdown
+			if state == pb.WorkUnit_STATE_UNSPECIFIED {
+				// We need to transition to some final state to start the process
+				// of finalizing the work unit.
+				// TODO(meiring): Remove this behaviour once state field becomes mandatory.
+				state = pb.WorkUnit_FAILED
+				summaryMarkdown = "Client did not report a final state in its FinalizeWorkUnit request."
+			}
+
+			mb := workunits.NewMutationBuilder(wuRow.ID)
+			// As the state is a terminal state, this will also transition the
+			// work unit to FINALIZING.
+			mb.UpdateState(state)
+			mb.UpdateSummaryMarkdown(pbutil.TruncateSummaryMarkdown(summaryMarkdown))
+			span.BufferWrite(ctx, mb.Build()...)
+
+			wuRow.State = state
+			wuRow.SummaryMarkdown = summaryMarkdown
 			wuRow.FinalizationState = pb.WorkUnit_FINALIZING
+			// Set a placeholder timestamps, after the transaction commits we can
+			// replace `spanner.CommitTimestamp` with the actual timestamp.
+			wuRow.FinalizeStartTime = spanner.NullTime{Valid: true, Time: spanner.CommitTimestamp}
+			wuRow.LastUpdated = spanner.CommitTimestamp
+
+			hasWorkUnitFinalizing = true
 		}
 		if hasWorkUnitFinalizing {
 			// Transactionally schedule a work unit finalization task if any work unit transitions to finalizing state.
@@ -79,7 +106,8 @@ func (s *recorderServer) BatchFinalizeWorkUnits(ctx context.Context, in *pb.Batc
 
 	// Populate FinalizeStartTime for newly finalized work units.
 	for _, wuRow := range wuRows {
-		if !wuRow.FinalizeStartTime.Valid {
+		// Check for the placeholder timestamp.
+		if wuRow.LastUpdated == spanner.CommitTimestamp {
 			// We set the work unit to finalizing.
 			wuRow.LastUpdated = commitTimestamp
 			wuRow.FinalizeStartTime = spanner.NullTime{Valid: true, Time: commitTimestamp}
@@ -142,6 +170,38 @@ func verifyBatchFinalizeWorkUnitsPermissions(ctx context.Context, req *pb.BatchF
 	}
 	if err := validateWorkUnitUpdateTokenForState(ctx, token, state); err != nil {
 		return err // PermissionDenied appstatus error.
+	}
+	return nil
+}
+
+func validateBatchFinalizeWorkUnitsRequest(req *pb.BatchFinalizeWorkUnitsRequest) error {
+	for i, r := range req.Requests {
+		if err := validateFinalizeWorkUnitRequest(r); err != nil {
+			return errors.Fmt("requests[%d]: %w", i, err)
+		}
+	}
+	return nil
+}
+
+func validateFinalizeWorkUnitRequest(req *pb.FinalizeWorkUnitRequest) error {
+	// TODO(meiring): Make this a required field.
+	if req.State != pb.WorkUnit_STATE_UNSPECIFIED {
+		if err := pbutil.ValidateWorkUnitState(req.State); err != nil {
+			return errors.Fmt("state: %w", err)
+		}
+		if !pbutil.IsFinalWorkUnitState(req.State) {
+			return errors.New("state: must be a terminal state")
+		}
+	}
+
+	// We do not enforce length limits via the FinalizeWorkUnit RPC.
+	// While clients should truncate on their side to avoid request size errors
+	// (especially on BatchFinalize RPCs), we handle truncation silently here as
+	// a fallback. It is foreseeable that clients have implementation bugs
+	// and we'd rather have the error to show users than reject it outright.
+	const enforceLength = false
+	if err := pbutil.ValidateSummaryMarkdown(req.SummaryMarkdown, enforceLength); err != nil {
+		return errors.Fmt("summary_markdown: %w", err)
 	}
 	return nil
 }

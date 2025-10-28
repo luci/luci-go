@@ -476,6 +476,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			w.SecondaryIndexShardId,
 			w.FinalizationState,
 			w.State,
+			w.SummaryMarkdown,
 			w.Realm,
 			w.CreateTime,
 			w.CreatedBy,
@@ -529,7 +530,6 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 		var (
 			rootInvocationShardID string
 			workUnitID            string
-			legacyState           pb.WorkUnit_FinalizationState
 			properties            spanutil.Compressed
 			instructions          spanutil.Compressed
 			extendedProperties    spanutil.Compressed
@@ -546,7 +546,8 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			&wu.ParentWorkUnitID,
 			&wu.SecondaryIndexShardID,
 			&wu.FinalizationState,
-			&legacyState,
+			&wu.State,
+			&wu.SummaryMarkdown,
 			&wu.Realm,
 			&wu.CreateTime,
 			&wu.CreatedBy,
@@ -575,10 +576,6 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			return errors.Fmt("read spanner row for work unit: %w", err)
 		}
 		wu.ID = IDFromRowID(rootInvocationShardID, workUnitID)
-
-		if wu.FinalizationState == 0 {
-			wu.FinalizationState = legacyState
-		}
 
 		if moduleName.Valid != moduleScheme.Valid {
 			panic("invariant violated: moduleName.Valid == moduleScheme.Valid, is there data corruption?")

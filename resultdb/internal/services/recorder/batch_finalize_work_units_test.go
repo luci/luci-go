@@ -186,13 +186,48 @@ func TestBatchFinalizeWorkUnits(t *testing.T) {
 		}
 		ctx = auth.WithState(ctx, authState)
 
+		// Insert a root invocation and the work unit.
+		rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:testrealm").Build()
+		wu1 := workunits.NewBuilder(rootInvID, wuID1.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
+		wu2 := workunits.NewBuilder(rootInvID, wuID2.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
+
+		testutil.MustApply(ctx, t, insert.RootInvocationWithRootWorkUnit(rootInv)...)
+		testutil.MustApply(ctx, t, insert.WorkUnit(wu1)...)
+		testutil.MustApply(ctx, t, insert.WorkUnit(wu2)...)
+
 		t.Run("invalid request", func(t *ftt.Test) {
-			// Do not need to test all cases, the tests for VerifyBatchFinalizeWorkUnitsPermissions
-			// verifies that. We simply want to check that method is called.
-			req.Requests[0].Name = "invalid name"
-			_, err := recorder.BatchFinalizeWorkUnits(ctx, req)
-			assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-			assert.That(t, err, should.ErrLike("name: does not match"))
+			t.Run("name", func(t *ftt.Test) {
+				// Do not need to test all cases, e.g. name repeated multiple times, the tests
+				// for VerifyBatchFinalizeWorkUnitsPermissions verifies that. We simply want to
+				// check that method is called.
+				req.Requests[0].Name = "invalid name"
+				_, err := recorder.BatchFinalizeWorkUnits(ctx, req)
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike("requests[0]: name: does not match"))
+			})
+			t.Run("state", func(t *ftt.Test) {
+				t.Run("not a terminal state", func(t *ftt.Test) {
+					req.Requests[0].State = pb.WorkUnit_PENDING
+					_, err := recorder.BatchFinalizeWorkUnits(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.That(t, err, should.ErrLike("requests[0]: state: must be a terminal state"))
+				})
+				t.Run("invalid state", func(t *ftt.Test) {
+					req.Requests[0].State = pb.WorkUnit_State(999)
+					_, err := recorder.BatchFinalizeWorkUnits(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.That(t, err, should.ErrLike("requests[0]: state: unknown state 999"))
+				})
+			})
+			t.Run("summary markdown", func(t *ftt.Test) {
+				t.Run("invalid UTF-8", func(t *ftt.Test) {
+					// Not valid UTF-8.
+					req.Requests[0].SummaryMarkdown = "\xFF"
+					_, err := recorder.BatchFinalizeWorkUnits(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.That(t, err, should.ErrLike("summary_markdown: not valid UTF-8"))
+				})
+			})
 		})
 
 		t.Run("permission denied", func(t *ftt.Test) {
@@ -208,21 +243,22 @@ func TestBatchFinalizeWorkUnits(t *testing.T) {
 			// This would normally only happen if a row was manually deleted from
 			// the underlying table as the work unit update token could not have
 			// been minted otherwise.
+			testutil.MustApply(ctx, t, spanner.Delete("WorkUnits", wu1.ID.Key()))
+
 			_, err := recorder.BatchFinalizeWorkUnits(ctx, req)
 			assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
 			assert.That(t, err, should.ErrLike(`"rootInvocations/root-inv-id/workUnits/work-unit-id:child1" not found`))
 		})
 
+		t.Run("succeeds when state is unspecified", func(t *ftt.Test) {
+			// We want to deprecate this usage but we need to confirm it is supported
+			// until clients are migrated.
+			req.Requests[0].State = pb.WorkUnit_STATE_UNSPECIFIED
+			_, err := recorder.BatchFinalizeWorkUnits(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+		})
+
 		t.Run("success", func(t *ftt.Test) {
-			// Insert a root invocation and the work unit.
-			rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:testrealm").Build()
-			wu1 := workunits.NewBuilder(rootInvID, wuID1.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
-			wu2 := workunits.NewBuilder(rootInvID, wuID2.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
-
-			testutil.MustApply(ctx, t, insert.RootInvocationWithRootWorkUnit(rootInv)...)
-			testutil.MustApply(ctx, t, insert.WorkUnit(wu1)...)
-			testutil.MustApply(ctx, t, insert.WorkUnit(wu2)...)
-
 			resp, err := recorder.BatchFinalizeWorkUnits(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp.WorkUnits[0].FinalizationState, should.Equal(pb.WorkUnit_FINALIZING))

@@ -159,25 +159,61 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 			})
 		})
 
-		t.Run("finalization_state", func(t *ftt.Test) {
-			req.UpdateMask.Paths = []string{"finalization_state"}
+		t.Run("state", func(t *ftt.Test) {
+			t.Run("valid", func(t *ftt.Test) {
+				req.UpdateMask.Paths = []string{"state"}
+				states := []pb.WorkUnit_State{pb.WorkUnit_PENDING, pb.WorkUnit_RUNNING, pb.WorkUnit_FAILED, pb.WorkUnit_CANCELLED, pb.WorkUnit_SKIPPED, pb.WorkUnit_SUCCEEDED}
+				for _, state := range states {
+					req.WorkUnit.State = state
+					err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+					assert.Loosely(t, err, should.BeNil)
+				}
+			})
+			t.Run("unspecified", func(t *ftt.Test) {
+				req.WorkUnit.State = pb.WorkUnit_STATE_UNSPECIFIED
+				req.UpdateMask.Paths = []string{"state"}
 
-			t.Run("valid FINALIZING", func(t *ftt.Test) {
-				req.WorkUnit.FinalizationState = pb.WorkUnit_FINALIZING
+				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				assert.Loosely(t, err, should.ErrLike("work_unit: state: unspecified"))
+			})
+			t.Run("invalid", func(t *ftt.Test) {
+				req.WorkUnit.State = pb.WorkUnit_FINAL_STATE_MASK
+				req.UpdateMask.Paths = []string{"state"}
+
+				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				assert.Loosely(t, err, should.ErrLike("work_unit: state: FINAL_STATE_MASK is not a valid state"))
+			})
+		})
+
+		t.Run("summary_markdown", func(t *ftt.Test) {
+			t.Run("valid empty", func(t *ftt.Test) {
+				req.WorkUnit.SummaryMarkdown = ""
+				req.UpdateMask.Paths = []string{"summary_markdown"}
+
 				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
 				assert.Loosely(t, err, should.BeNil)
 			})
+			t.Run("valid non-empty", func(t *ftt.Test) {
+				req.WorkUnit.SummaryMarkdown = "The task failed because of..."
+				req.UpdateMask.Paths = []string{"summary_markdown"}
 
-			t.Run("valid ACTIVE", func(t *ftt.Test) {
-				req.WorkUnit.FinalizationState = pb.WorkUnit_ACTIVE
 				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
 				assert.Loosely(t, err, should.BeNil)
 			})
+			t.Run("invalid", func(t *ftt.Test) {
+				// Not valid UTF-8.
+				req.WorkUnit.SummaryMarkdown = "\xFF"
+				req.UpdateMask.Paths = []string{"summary_markdown"}
 
-			t.Run("invalid FINALIZED", func(t *ftt.Test) {
-				req.WorkUnit.FinalizationState = pb.WorkUnit_FINALIZED
 				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
-				assert.Loosely(t, err, should.ErrLike("work_unit: finalization_state: must be FINALIZING or ACTIVE"))
+				assert.Loosely(t, err, should.ErrLike("work_unit: summary_markdown: not valid UTF-8"))
+			})
+			t.Run("too long", func(t *ftt.Test) {
+				req.WorkUnit.SummaryMarkdown = strings.Repeat("a", 4097)
+				req.UpdateMask.Paths = []string{"summary_markdown"}
+
+				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				assert.Loosely(t, err, should.ErrLike("work_unit: summary_markdown: must be at most 4096 bytes long (was 4097 bytes)"))
 			})
 		})
 
@@ -364,6 +400,7 @@ func TestUpdateWorkUnit(t *testing.T) {
 		expectedWURow := workunits.
 			NewBuilder(wuID.RootInvocationID, wuID.WorkUnitID).
 			WithModuleID(nil).
+			WithState(pb.WorkUnit_RUNNING).
 			WithFinalizationState(pb.WorkUnit_ACTIVE).
 			Build()
 
@@ -376,10 +413,10 @@ func TestUpdateWorkUnit(t *testing.T) {
 
 		req := &pb.UpdateWorkUnitRequest{
 			WorkUnit: &pb.WorkUnit{
-				Name:              wuID.Name(),
-				FinalizationState: pb.WorkUnit_ACTIVE,
+				Name:  wuID.Name(),
+				State: pb.WorkUnit_RUNNING,
 			},
-			UpdateMask: &field_mask.FieldMask{Paths: []string{"finalization_state"}},
+			UpdateMask: &field_mask.FieldMask{Paths: []string{"state"}},
 			RequestId:  "test-request-id",
 		}
 
@@ -401,10 +438,10 @@ func TestUpdateWorkUnit(t *testing.T) {
 			t.Run("other invalid", func(t *ftt.Test) {
 				// validateUpdateWorkUnitRequest has its own exhaustive test cases,
 				// simply check that it is called.
-				req.WorkUnit.FinalizationState = pb.WorkUnit_FINALIZED
+				req.WorkUnit.State = pb.WorkUnit_FINAL_STATE_MASK
 				_, err := recorder.UpdateWorkUnit(ctx, req)
 				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-				assert.Loosely(t, err, should.ErrLike("bad request: work_unit: finalization_state: must be FINALIZING or ACTIVE"))
+				assert.Loosely(t, err, should.ErrLike("bad request: work_unit: state: FINAL_STATE_MASK is not a valid state"))
 			})
 		})
 
@@ -480,8 +517,8 @@ func TestUpdateWorkUnit(t *testing.T) {
 
 		t.Run("work unit not active", func(t *ftt.Test) {
 			// Finalize work unit first.
-			req.UpdateMask.Paths = []string{"finalization_state"}
-			req.WorkUnit.FinalizationState = pb.WorkUnit_FINALIZING
+			req.UpdateMask.Paths = []string{"state"}
+			req.WorkUnit.State = pb.WorkUnit_SUCCEEDED
 
 			_, err := recorder.UpdateWorkUnit(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
@@ -571,40 +608,21 @@ func TestUpdateWorkUnit(t *testing.T) {
 				assertNoOp(wu, expectedWURow, expectedWU)
 			})
 
-			t.Run("finalization_state", func(t *ftt.Test) {
-				req.UpdateMask.Paths = []string{"finalization_state"}
-				req.WorkUnit.FinalizationState = pb.WorkUnit_FINALIZING
+			t.Run("state, summary_markdown", func(t *ftt.Test) {
+				req.UpdateMask.Paths = []string{"state", "summary_markdown"}
+				req.WorkUnit.State = pb.WorkUnit_FAILED
+				req.WorkUnit.SummaryMarkdown = "The task failed because of..."
 
 				wu, err := recorder.UpdateWorkUnit(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
+				expectedWU.State = pb.WorkUnit_FAILED
+				expectedWU.SummaryMarkdown = "The task failed because of..."
 				expectedWU.FinalizationState = pb.WorkUnit_FINALIZING
 				assertResponse(wu, expectedWU)
 
 				// Validate work unit table.
-				expectedWURow.FinalizationState = pb.WorkUnit_FINALIZING
-				assertSpannerRows(expectedWURow)
-
-				// Enqueued the finalization task.
-				expectedTasks := []protoreflect.ProtoMessage{
-					&taskspb.SweepWorkUnitsForFinalization{RootInvocationId: string(rootInvID), SequenceNumber: 1},
-				}
-				assert.Loosely(t, sched.Tasks().Payloads(), should.Match(expectedTasks))
-				// Finalizer task state updated on root invocation.
-				taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, taskState, should.Match(rootinvocations.FinalizerTaskState{Pending: true, Sequence: 1}))
-			})
-
-			t.Run("finalization_state (legacy field mask)", func(t *ftt.Test) {
-				req.UpdateMask.Paths = []string{"state"}
-				req.WorkUnit.FinalizationState = pb.WorkUnit_FINALIZING
-
-				wu, err := recorder.UpdateWorkUnit(ctx, req)
-				assert.Loosely(t, err, should.BeNil)
-				expectedWU.FinalizationState = pb.WorkUnit_FINALIZING
-				assertResponse(wu, expectedWU)
-
-				// Validate work unit table.
+				expectedWURow.State = pb.WorkUnit_FAILED
+				expectedWURow.SummaryMarkdown = "The task failed because of..."
 				expectedWURow.FinalizationState = pb.WorkUnit_FINALIZING
 				assertSpannerRows(expectedWURow)
 

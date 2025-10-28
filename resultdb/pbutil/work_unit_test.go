@@ -23,6 +23,8 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestWorkUnitID(t *testing.T) {
@@ -158,6 +160,68 @@ func TestExtendedPropertiesEqual(t *testing.T) {
 		})
 		t.Run("different values", func(t *ftt.Test) {
 			assert.Loosely(t, ExtendedPropertiesEqual(mapA, mapC), should.BeFalse)
+		})
+	})
+}
+
+func TestValidateWorkUnitState(t *testing.T) {
+	ftt.Run(`ValidateWorkUnitState`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateWorkUnitState(pb.WorkUnit_RUNNING), should.BeNil)
+			assert.Loosely(t, ValidateWorkUnitState(pb.WorkUnit_SUCCEEDED), should.BeNil)
+		})
+		t.Run(`Unspecified`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateWorkUnitState(pb.WorkUnit_STATE_UNSPECIFIED), should.ErrLike("unspecified"))
+		})
+		t.Run(`Invalid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateWorkUnitState(pb.WorkUnit_FINAL_STATE_MASK), should.ErrLike("FINAL_STATE_MASK is not a valid state"))
+			assert.Loosely(t, ValidateWorkUnitState(pb.WorkUnit_State(999)), should.ErrLike("unknown state 999"))
+		})
+	})
+}
+
+func TestValidateSummaryMarkdown(t *testing.T) {
+	ftt.Run(`ValidateSummaryMarkdown`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateSummaryMarkdown("hello world", true), should.BeNil)
+			assert.Loosely(t, ValidateSummaryMarkdown(strings.Repeat("a", summaryMarkdownMaxLength), true), should.BeNil)
+			assert.Loosely(t, ValidateSummaryMarkdown(strings.Repeat("a", summaryMarkdownMaxLength+1), false), should.BeNil)
+		})
+		t.Run(`Too long`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateSummaryMarkdown(strings.Repeat("a", summaryMarkdownMaxLength+1), true), should.ErrLike("must be at most 4096 bytes long"))
+			assert.Loosely(t, ValidateSummaryMarkdown(strings.Repeat("a", summaryMarkdownMaxLength+1), false), should.BeNil)
+		})
+		t.Run(`Invalid UTF-8`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateSummaryMarkdown("\xff", true), should.ErrLike("not valid UTF-8"))
+		})
+	})
+}
+
+func TestTruncateSummaryMarkdown(t *testing.T) {
+	t.Parallel()
+	ftt.Run(`TruncateSummaryMarkdown`, t, func(t *ftt.Test) {
+		t.Run(`No truncation needed`, func(t *ftt.Test) {
+			inputs := []string{
+				"hello world",
+				strings.Repeat("a", summaryMarkdownMaxLength),
+				// € is 0xE2 0x82 0xAC in UTF-8 (3 bytes).
+				// 1365 * 3 + 1 = 4096.
+				strings.Repeat("€", 1365) + "a",
+			}
+			for _, input := range inputs {
+				assert.Loosely(t, TruncateSummaryMarkdown(input), should.Equal(input))
+			}
+		})
+		t.Run(`Truncation needed`, func(t *ftt.Test) {
+			assert.Loosely(t, TruncateSummaryMarkdown(strings.Repeat("a", summaryMarkdownMaxLength+1)),
+				should.Equal(strings.Repeat("a", summaryMarkdownMaxLength-3)+"..."))
+
+			// Test with multi-byte characters
+			// € is 0xE2 0x82 0xAC in UTF-8 (3 bytes).
+			// 1365 * 3 = 4095.
+			// With two "aa"s it becomes 4097, thus requiring truncation.
+			assert.Loosely(t, TruncateSummaryMarkdown(strings.Repeat("€", 1365)+"aa"),
+				should.Equal(strings.Repeat("€", 1364)+"..."))
 		})
 	})
 }

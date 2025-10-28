@@ -80,27 +80,44 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 				err := validateCreateWorkUnitRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("work_unit: unspecified"))
 			})
-			t.Run("finalization_state", func(t *ftt.Test) {
-				t.Run("empty", func(t *ftt.Test) {
-					// If it is unset, we will populate a default value.
-					req.WorkUnit.FinalizationState = pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED
+			t.Run("realm", func(t *ftt.Test) {
+				t.Run("unspecified", func(t *ftt.Test) {
+					req.WorkUnit.Realm = ""
 					err := validateCreateWorkUnitRequest(req, cfg)
-					assert.Loosely(t, err, should.BeNil)
-				})
-				t.Run("active", func(t *ftt.Test) {
-					req.WorkUnit.FinalizationState = pb.WorkUnit_ACTIVE
-					err := validateCreateWorkUnitRequest(req, cfg)
-					assert.Loosely(t, err, should.BeNil)
-				})
-				t.Run("finalizing", func(t *ftt.Test) {
-					req.WorkUnit.FinalizationState = pb.WorkUnit_FINALIZING
-					err := validateCreateWorkUnitRequest(req, cfg)
-					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, err, should.ErrLike("work_unit: realm: unspecified"))
 				})
 				t.Run("invalid", func(t *ftt.Test) {
-					req.WorkUnit.FinalizationState = pb.WorkUnit_FINALIZED
+					req.WorkUnit.Realm = "invalid:"
 					err := validateCreateWorkUnitRequest(req, cfg)
-					assert.Loosely(t, err, should.ErrLike("work_unit: finalization_state: cannot be created in the state FINALIZED"))
+					assert.Loosely(t, err, should.ErrLike("work_unit: realm: bad global realm name"))
+				})
+			})
+			t.Run("state", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
+					// If it is unset, we will populate a default value.
+					req.WorkUnit.State = pb.WorkUnit_STATE_UNSPECIFIED
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("valid", func(t *ftt.Test) {
+					req.WorkUnit.State = pb.WorkUnit_RUNNING
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("invalid (mask)", func(t *ftt.Test) {
+					req.WorkUnit.State = pb.WorkUnit_FINAL_STATE_MASK
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("work_unit: state: FINAL_STATE_MASK is not a valid state"))
+				})
+				t.Run("invalid (final)", func(t *ftt.Test) {
+					req.WorkUnit.State = pb.WorkUnit_SUCCEEDED
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("work_unit: state: work unit may not be created in a final state (got SUCCEEDED)"))
+				})
+				t.Run("invalid (out of range)", func(t *ftt.Test) {
+					req.WorkUnit.State = pb.WorkUnit_State(999)
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("work_unit: state: unknown state 999"))
 				})
 			})
 			t.Run("deadline", func(t *ftt.Test) {
@@ -419,8 +436,11 @@ func TestCreateWorkUnit(t *testing.T) {
 		req := &pb.CreateWorkUnitRequest{
 			Parent:     parentWorkUnitID.Name(),
 			WorkUnitId: workUnitID.WorkUnitID,
-			WorkUnit:   &pb.WorkUnit{Realm: "testproject:testrealm"},
-			RequestId:  "test-request-id",
+			WorkUnit: &pb.WorkUnit{
+				Realm: "testproject:testrealm",
+				State: pb.WorkUnit_RUNNING,
+			},
+			RequestId: "test-request-id",
 		}
 
 		t.Run("request validation", func(t *ftt.Test) {
@@ -462,10 +482,10 @@ func TestCreateWorkUnit(t *testing.T) {
 				t.Run("other invalid", func(t *ftt.Test) {
 					// validateCreateWorkUnitRequest has its own exhaustive test cases,
 					// simply check that it is called.
-					req.WorkUnit.FinalizationState = pb.WorkUnit_FINALIZED
+					req.WorkUnit.State = pb.WorkUnit_FINAL_STATE_MASK
 					_, err := recorder.CreateWorkUnit(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("bad request: work_unit: finalization_state: cannot be created in the state FINALIZED"))
+					assert.Loosely(t, err, should.ErrLike("bad request: work_unit: state: FINAL_STATE_MASK is not a valid state"))
 				})
 			})
 			t.Run("work_unit_id", func(t *ftt.Test) {
@@ -750,6 +770,7 @@ func TestCreateWorkUnit(t *testing.T) {
 			}
 			req.WorkUnit = &pb.WorkUnit{
 				Realm: "testproject:testrealm",
+				State: pb.WorkUnit_RUNNING,
 				ModuleId: &pb.ModuleIdentifier{
 					ModuleName:    "mymodule",
 					ModuleScheme:  "gtest",
@@ -778,6 +799,7 @@ func TestCreateWorkUnit(t *testing.T) {
 				ID:                workUnitID,
 				ParentWorkUnitID:  spanner.NullString{Valid: true, StringVal: parentWorkUnitID.WorkUnitID},
 				FinalizationState: pb.WorkUnit_ACTIVE,
+				State:             pb.WorkUnit_RUNNING,
 				Realm:             "testproject:testrealm",
 				CreatedBy:         "user:someone@example.com",
 				FinalizeStartTime: spanner.NullTime{},
@@ -819,7 +841,7 @@ func TestCreateWorkUnit(t *testing.T) {
 				TestResultVariantUnion: pbutil.Variant("k", "v"), // From ModuleId.ModuleVariant.
 			}
 
-			t.Run("active work unit", func(t *ftt.Test) {
+			t.Run("baseline", func(t *ftt.Test) {
 				var headers metadata.MD
 				res, err := recorder.CreateWorkUnit(ctx, req, grpc.Header(&headers))
 				assert.Loosely(t, err, should.BeNil)
@@ -861,8 +883,8 @@ func TestCreateWorkUnit(t *testing.T) {
 				assert.That(t, includedIDs.Has(workUnitID.LegacyInvocationID()), should.BeTrue)
 			})
 
-			t.Run("finalizing work unit", func(t *ftt.Test) {
-				req.WorkUnit.FinalizationState = pb.WorkUnit_FINALIZING
+			t.Run("with state not specified", func(t *ftt.Test) {
+				req.WorkUnit.State = pb.WorkUnit_STATE_UNSPECIFIED
 				var headers metadata.MD
 				res, err := recorder.CreateWorkUnit(ctx, req, grpc.Header(&headers))
 				assert.Loosely(t, err, should.BeNil)
@@ -870,11 +892,10 @@ func TestCreateWorkUnit(t *testing.T) {
 				// Merge server-populated fields for comparison.
 				commitTime := res.CreateTime.AsTime()
 				proto.Merge(expectedWU, &pb.WorkUnit{
-					FinalizationState: pb.WorkUnit_FINALIZING,
-					CreateTime:        timestamppb.New(commitTime),
-					LastUpdated:       timestamppb.New(commitTime),
-					FinalizeStartTime: timestamppb.New(commitTime),
-					Etag:              fmt.Sprintf(`W/"+f/%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
+					State:       pb.WorkUnit_PENDING,
+					CreateTime:  timestamppb.New(commitTime),
+					LastUpdated: timestamppb.New(commitTime),
+					Etag:        fmt.Sprintf(`W/"+f/%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
 				})
 				assert.That(t, res, should.Match(expectedWU))
 
@@ -889,27 +910,10 @@ func TestCreateWorkUnit(t *testing.T) {
 				row, err := workunits.Read(readCtx, workUnitID, workunits.AllFields)
 				assert.Loosely(t, err, should.BeNil)
 				expectWURow.SecondaryIndexShardID = row.SecondaryIndexShardID
-				expectWURow.FinalizationState = pb.WorkUnit_FINALIZING
+				expectWURow.State = pb.WorkUnit_PENDING
 				expectWURow.CreateTime = commitTime
-				expectWURow.FinalizeStartTime = spanner.NullTime{Time: commitTime, Valid: true}
 				expectWURow.LastUpdated = commitTime
 				assert.That(t, row, should.Match(expectWURow))
-				// Check finalize start time is set.
-				assert.That(t, row.FinalizeStartTime.Valid, should.BeTrue)
-
-				// Check the legacy invocation is inserted.
-				legacyInv, err := invocations.Read(readCtx, workUnitID.LegacyInvocationID(), invocations.AllFields)
-				expectedLegacyInv.CreateTime = timestamppb.New(commitTime)
-				expectedLegacyInv.State = pb.Invocation_FINALIZING
-				expectedLegacyInv.FinalizeStartTime = legacyInv.FinalizeStartTime
-				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, legacyInv, should.Match(expectedLegacyInv))
-
-				// Check inclusion is added to IncludedInvocations.
-				includedIDs, err := invocations.ReadIncluded(readCtx, parentWorkUnitID.LegacyInvocationID())
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, includedIDs, should.HaveLength(1))
-				assert.That(t, includedIDs.Has(workUnitID.LegacyInvocationID()), should.BeTrue)
 			})
 		})
 	})

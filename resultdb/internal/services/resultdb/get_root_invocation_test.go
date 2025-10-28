@@ -67,6 +67,8 @@ func TestGetRootInvocation(t *testing.T) {
 				RootInvocationId:     "root-inv-id",
 				Realm:                realm,
 				FinalizationState:    pb.RootInvocation_FINALIZED,
+				State:                testData.State,
+				SummaryMarkdown:      testData.SummaryMarkdown,
 				CreateTime:           pbutil.MustTimestampProto(testData.CreateTime),
 				Creator:              testData.CreatedBy,
 				LastUpdated:          pbutil.MustTimestampProto(testData.LastUpdated),

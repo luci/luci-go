@@ -51,6 +51,8 @@ func NewBuilder(rootInvocationID rootinvocations.ID, workUnitID string) *Builder
 			SecondaryIndexShardID: id.shardID(secondaryIndexShardCount),
 			ParentWorkUnitID:      parentID,
 			FinalizationState:     pb.WorkUnit_FINALIZED,
+			State:                 pb.WorkUnit_FAILED,
+			SummaryMarkdown:       "The FooBar returned false when it was expected to return true.",
 			Realm:                 "testproject:testrealm",
 			CreateTime:            time.Date(2025, 4, 25, 1, 2, 3, 4000, time.UTC),
 			CreatedBy:             "user:test@example.com",
@@ -102,6 +104,7 @@ func (b *Builder) WithMinimalFields() *Builder {
 		// Means the finalized time and start time will be cleared in Build() unless state is
 		// subsequently overridden.
 		FinalizationState: pb.WorkUnit_ACTIVE,
+		State:             pb.WorkUnit_RUNNING,
 		Realm:             b.row.Realm,
 		CreateTime:        b.row.CreateTime,
 		CreatedBy:         b.row.CreatedBy,
@@ -130,9 +133,21 @@ func (b *Builder) WithParentWorkUnitID(parentID string) *Builder {
 	return b
 }
 
-// WithState sets the finalization state of the work unit.
+// WithFinalizationState sets the finalization state of the work unit.
 func (b *Builder) WithFinalizationState(state pb.WorkUnit_FinalizationState) *Builder {
 	b.row.FinalizationState = state
+	return b
+}
+
+// WithState sets the state of the work unit.
+func (b *Builder) WithState(state pb.WorkUnit_State) *Builder {
+	b.row.State = state
+	return b
+}
+
+// WithSummaryMarkdown sets the summary markdown of the work unit.
+func (b *Builder) WithSummaryMarkdown(s string) *Builder {
+	b.row.SummaryMarkdown = s
 	return b
 }
 
@@ -258,7 +273,8 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		"ParentWorkUnitId":       w.ParentWorkUnitID,
 		"SecondaryIndexShardId":  w.SecondaryIndexShardID,
 		"FinalizationState":      w.FinalizationState,
-		"State":                  pb.WorkUnit_STATE_UNSPECIFIED,
+		"State":                  w.State,
+		"SummaryMarkdown":        w.SummaryMarkdown,
 		"Realm":                  w.Realm,
 		"CreateTime":             w.CreateTime,
 		"CreatedBy":              w.CreatedBy,

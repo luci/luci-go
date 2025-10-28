@@ -17,81 +17,19 @@ package recorder
 import (
 	"context"
 
-	"cloud.google.com/go/spanner"
-
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/span"
-
-	"go.chromium.org/luci/resultdb/internal/masking"
-	"go.chromium.org/luci/resultdb/internal/permissions"
-	"go.chromium.org/luci/resultdb/internal/rootinvocations"
-	"go.chromium.org/luci/resultdb/internal/tasks"
-	"go.chromium.org/luci/resultdb/internal/workunits"
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // FinalizeWorkUnit implements pb.RecorderServer.
 func (s *recorderServer) FinalizeWorkUnit(ctx context.Context, in *pb.FinalizeWorkUnitRequest) (*pb.WorkUnit, error) {
-	if err := verifyFinalizeWorkUnitPermissions(ctx, in); err != nil {
-		return nil, err
+	// Piggy back off BatchFinalizeWorkUnits.
+	req := &pb.BatchFinalizeWorkUnitsRequest{
+		Requests: []*pb.FinalizeWorkUnitRequest{in},
 	}
-
-	wuID := workunits.MustParseName(in.Name)
-
-	var wuRow *workunits.WorkUnitRow
-	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-		var err error
-		wuRow, err = workunits.Read(ctx, wuID, workunits.ExcludeExtendedProperties)
-		if err != nil {
-			return err
-		}
-
-		if wuRow.FinalizationState != pb.WorkUnit_ACTIVE {
-			// Finalization already started. Do not start finalization
-			// again as doing so would overwrite the existing FinalizeStartTime
-			// and create an unnecessary task.
-			// This RPC should be idempotent so do not return an error.
-			return nil
-		}
-
-		// Finalize as requested.
-		span.BufferWrite(ctx, workunits.MarkFinalizing(wuID)...)
-		wuRow.FinalizationState = pb.WorkUnit_FINALIZING
-
-		// Transactionally schedule a work unit finalization task.
-		if err := tasks.ScheduleWorkUnitsFinalization(ctx, wuID.RootInvocationID); err != nil {
-			return err
-		}
-		return nil
-	})
+	rsp, err := s.BatchFinalizeWorkUnits(ctx, req)
 	if err != nil {
-		return nil, err
+		// Remove any references to "requests[0]: ", this is a single create RPC not a batch RPC.
+		return nil, removeRequestNumberFromAppStatusError(err)
 	}
-	if !wuRow.FinalizeStartTime.Valid {
-		// We set the work unit to finalizing.
-		wuRow.LastUpdated = commitTimestamp
-		wuRow.FinalizeStartTime = spanner.NullTime{Valid: true, Time: commitTimestamp}
-	}
-
-	result := masking.WorkUnit(wuRow, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC)
-	return result, nil
-}
-
-func verifyFinalizeWorkUnitPermissions(ctx context.Context, req *pb.FinalizeWorkUnitRequest) error {
-	rootInvocationID, workUnitID, err := pbutil.ParseWorkUnitName(req.Name)
-	if err != nil {
-		return appstatus.BadRequest(errors.Fmt("name: %w", err))
-	}
-
-	token, err := extractUpdateToken(ctx)
-	if err != nil {
-		return err
-	}
-	wuID := workunits.ID{RootInvocationID: rootinvocations.ID(rootInvocationID), WorkUnitID: workUnitID}
-	if err := validateWorkUnitUpdateToken(ctx, token, wuID); err != nil {
-		return err // PermissionDenied appstatus error.
-	}
-	return nil
+	return rsp.WorkUnits[0], nil
 }

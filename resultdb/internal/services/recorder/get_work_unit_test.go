@@ -82,6 +82,8 @@ func TestGetWorkUnit(t *testing.T) {
 				Name:              rootWorkUnitID.Name(),
 				WorkUnitId:        rootWorkUnitID.WorkUnitID,
 				FinalizationState: rootWu.FinalizationState,
+				State:             rootWu.State,
+				SummaryMarkdown:   rootWu.SummaryMarkdown,
 				Realm:             rootWu.Realm,
 				CreateTime:        pbutil.MustTimestampProto(rootWu.CreateTime),
 				Creator:           rootWu.CreatedBy,

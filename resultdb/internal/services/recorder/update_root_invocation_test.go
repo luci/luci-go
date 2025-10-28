@@ -115,28 +115,6 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike(`update_mask: "sources" should not have any submask`))
 		})
 
-		t.Run("finalization_state", func(t *ftt.Test) {
-			req.UpdateMask.Paths = []string{"finalization_state"}
-
-			t.Run("valid FINALIZING", func(t *ftt.Test) {
-				req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZING
-				err := validateUpdateRootInvocationRequest(ctx, req)
-				assert.Loosely(t, err, should.BeNil)
-			})
-
-			t.Run("valid ACTIVE", func(t *ftt.Test) {
-				req.RootInvocation.FinalizationState = pb.RootInvocation_ACTIVE
-				err := validateUpdateRootInvocationRequest(ctx, req)
-				assert.Loosely(t, err, should.BeNil)
-			})
-
-			t.Run("invalid FINALIZED", func(t *ftt.Test) {
-				req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZED
-				err := validateUpdateRootInvocationRequest(ctx, req)
-				assert.Loosely(t, err, should.ErrLike("root_invocation: finalization_state: must be FINALIZING or ACTIVE"))
-			})
-		})
-
 		t.Run("sources", func(t *ftt.Test) {
 			req.UpdateMask.Paths = []string{"sources"}
 			t.Run("valid", func(t *ftt.Test) {
@@ -242,8 +220,8 @@ func TestUpdateRootInvocation(t *testing.T) {
 
 		// A simple valid request.
 		req := &pb.UpdateRootInvocationRequest{
-			RootInvocation: &pb.RootInvocation{Name: rootInvID.Name(), FinalizationState: pb.RootInvocation_FINALIZING},
-			UpdateMask:     &field_mask.FieldMask{Paths: []string{"finalization_state"}},
+			RootInvocation: &pb.RootInvocation{Name: rootInvID.Name(), StreamingExportState: pb.RootInvocation_METADATA_FINAL},
+			UpdateMask:     &field_mask.FieldMask{Paths: []string{"streaming_export_state"}},
 			RequestId:      "test-request-id",
 		}
 
@@ -279,10 +257,11 @@ func TestUpdateRootInvocation(t *testing.T) {
 			// validateUpdateRootInvocationRequest has its own exhaustive test cases,
 			// simply check that it is called.
 			t.Run("other invalid", func(t *ftt.Test) {
-				req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZED
+				req.RootInvocation.StreamingExportState = pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED
+				req.UpdateMask.Paths = []string{"streaming_export_state"}
 				_, err := recorder.UpdateRootInvocation(ctx, req)
 				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-				assert.Loosely(t, err, should.ErrLike("bad request: root_invocation: finalization_state: must be FINALIZING or ACTIVE"))
+				assert.Loosely(t, err, should.ErrLike("bad request: root_invocation: streaming_export_state: unspecified"))
 			})
 		})
 
@@ -354,10 +333,9 @@ func TestUpdateRootInvocation(t *testing.T) {
 		})
 
 		t.Run("root invocation not active", func(t *ftt.Test) {
-			req.UpdateMask.Paths = []string{"finalization_state"}
-			req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZING
-			_, err := recorder.UpdateRootInvocation(ctx, req)
-			assert.Loosely(t, err, should.BeNil)
+			mb := rootinvocations.NewMutationBuilder(rootInvID)
+			mb.UpdateState(pb.RootInvocation_SUCCEEDED)
+			testutil.MustApply(ctx, t, mb.Build()...)
 
 			// Use a new request id to avoid the repeated request being deduplicated.
 			req.RequestId = "new-request-id"
@@ -468,34 +446,6 @@ func TestUpdateRootInvocation(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, exist, should.BeTrue)
 			}
-
-			t.Run("finalization_state", func(t *ftt.Test) {
-				req.UpdateMask.Paths = []string{"finalization_state"}
-				req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZING
-
-				ri, err := recorder.UpdateRootInvocation(ctx, req)
-				assert.Loosely(t, err, should.BeNil)
-				expectedRootInv.FinalizationState = pb.RootInvocation_FINALIZING
-				assertResponse(ri, expectedRootInv)
-
-				// Validate spanner records are updated.
-				expectedRootInvRow.FinalizationState = pb.RootInvocation_FINALIZING
-				assertSpannerRows(expectedRootInvRow)
-			})
-
-			t.Run("finalization_state (legacy field mask)", func(t *ftt.Test) {
-				req.UpdateMask.Paths = []string{"state"}
-				req.RootInvocation.FinalizationState = pb.RootInvocation_FINALIZING
-
-				ri, err := recorder.UpdateRootInvocation(ctx, req)
-				assert.Loosely(t, err, should.BeNil)
-				expectedRootInv.FinalizationState = pb.RootInvocation_FINALIZING
-				assertResponse(ri, expectedRootInv)
-
-				// Validate spanner records are updated.
-				expectedRootInvRow.FinalizationState = pb.RootInvocation_FINALIZING
-				assertSpannerRows(expectedRootInvRow)
-			})
 
 			t.Run("metadata and streaming_export_state", func(t *ftt.Test) {
 				newSources := testutil.TestSourcesWithChangelistNumbers(123456)

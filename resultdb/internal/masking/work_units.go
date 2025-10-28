@@ -31,6 +31,11 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// limitedSummaryLength is the length to which the work unit's summary
+// will be truncated for a TestResult when the caller only has
+// limited access to the work unit.
+const limitedSummaryLength = 140
+
 // WorkUnit constructs a *pb.WorkUnit from the given fields, applying masking
 // appropriate to the access level and selected view.
 func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, view pb.WorkUnitView) *pb.WorkUnit {
@@ -43,6 +48,7 @@ func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, v
 		Name:              row.ID.Name(),
 		WorkUnitId:        row.ID.WorkUnitID,
 		FinalizationState: row.FinalizationState,
+		State:             row.State,
 		Realm:             row.Realm,
 		CreateTime:        pbutil.MustTimestampProto(row.CreateTime),
 		Creator:           row.CreatedBy,
@@ -66,6 +72,7 @@ func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, v
 		result.Properties = row.Properties
 		result.Instructions = row.Instructions
 		result.ModuleId = row.ModuleID
+		result.SummaryMarkdown = row.SummaryMarkdown
 		result.IsMasked = false
 
 		if view == pb.WorkUnitView_WORK_UNIT_VIEW_FULL {
@@ -78,6 +85,8 @@ func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, v
 			moduleID.ModuleVariant = nil
 			result.ModuleId = moduleID
 		}
+		// Include a truncated version of the summary.
+		result.SummaryMarkdown = pbutil.TruncateString(row.SummaryMarkdown, limitedSummaryLength)
 	}
 
 	if row.ID.WorkUnitID == "root" {

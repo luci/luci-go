@@ -15,6 +15,7 @@
 package resultdb
 
 import (
+	"strings"
 	"testing"
 
 	"google.golang.org/grpc/codes"
@@ -51,7 +52,7 @@ func TestGetWorkUnit(t *testing.T) {
 
 		// Insert a root invocation and a work unit.
 		rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm(rootRealm).Build()
-		rootWu := workunits.NewBuilder(rootInvID, "root").WithRealm(wuRealm).Build()
+		rootWu := workunits.NewBuilder(rootInvID, "root").WithRealm(wuRealm).WithSummaryMarkdown(strings.Repeat("a", 200)).Build()
 		testutil.MustApply(ctx, t, insert.RootInvocationOnly(rootInv)...)
 		testutil.MustApply(ctx, t, insert.WorkUnit(rootWu)...)
 
@@ -87,6 +88,8 @@ func TestGetWorkUnit(t *testing.T) {
 				Name:              rootWorkUnitID.Name(),
 				WorkUnitId:        rootWorkUnitID.WorkUnitID,
 				FinalizationState: rootWu.FinalizationState,
+				State:             rootWu.State,
+				SummaryMarkdown:   rootWu.SummaryMarkdown,
 				Realm:             rootWu.Realm,
 				CreateTime:        pbutil.MustTimestampProto(rootWu.CreateTime),
 				Creator:           rootWu.CreatedBy,
@@ -152,6 +155,7 @@ func TestGetWorkUnit(t *testing.T) {
 				}
 				expectedRsp.Etag = `W/"+l/2025-04-26T01:02:03.000004Z"`
 
+				expectedRsp.SummaryMarkdown = strings.Repeat("a", 137) + "..."
 				expectedRsp.ModuleId.ModuleVariant = nil
 				expectedRsp.Tags = nil
 				expectedRsp.Properties = nil

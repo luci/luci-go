@@ -83,6 +83,8 @@ var (
 	)
 )
 
+const DeadlineEnforcedMessage = "The task failed to report its state to ResultDB before the reporting deadline expired. To avoid this error, the task scheduler should clean up after tasks using the FinalizeWorkUnit and FinalizeWorkUnitDescendants RPCs."
+
 // Options are for configuring the deadline enforcer.
 type Options struct {
 	// ForceCronInterval forces minimum interval in cron jobs.
@@ -173,14 +175,15 @@ func enforce(ctx context.Context, shardIndex, limit int) (int, error) {
 
 			wu := expiredWUs[i]
 
-			// This also updates the legacy invocation.
-			span.BufferWrite(ctx, workunits.MarkFinalizing(wu.ID)...)
+			// Transition the work unit to a FAILED state. This also transitions
+			// it to FINALIZING finalizaton state.
+			mb := workunits.NewMutationBuilder(wu.ID)
+			mb.UpdateState(pb.WorkUnit_FAILED)
+			mb.UpdateSummaryMarkdown(DeadlineEnforcedMessage)
+			span.BufferWrite(ctx, mb.Build()...)
+
 			finalized[i] = true
 
-			if wu.ID.WorkUnitID == workunits.RootWorkUnitID {
-				// Finalizing the root invocation if it is root work unit.
-				span.BufferWrite(ctx, rootinvocations.MarkFinalizing(wu.ID.RootInvocationID)...)
-			}
 			if _, ok := rootInvocationsScheduled[wu.ID.RootInvocationID]; !ok {
 				// Transactionally schedule a work unit finalization task for each
 				// impacted root invocation.
