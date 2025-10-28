@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
@@ -3999,4 +4000,26 @@ func TestVSA(t *testing.T) {
 			})
 		})
 	})
+}
+
+func TestLookupBillingProject(t *testing.T) {
+	t.Parallel()
+
+	db := authtest.NewFakeDB(
+		authtest.MockBillingCloudProjectID("present", 123),
+		authtest.MockRealmData("empty:@root", &protocol.RealmData{}),
+	)
+	ctx := db.Use(context.Background())
+
+	id, err := lookupBillingProject(ctx, "present", "a/b/c")
+	assert.NoErr(t, err)
+	assert.That(t, id, should.Equal("123"))
+
+	id, err = lookupBillingProject(ctx, "empty", "a/b/c")
+	assert.NoErr(t, err)
+	assert.That(t, id, should.Equal(""))
+
+	id, err = lookupBillingProject(ctx, "unknown", "a/b/c")
+	assert.NoErr(t, err)
+	assert.That(t, id, should.Equal(""))
 }

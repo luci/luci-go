@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
 // State is stored in the context when handling an incoming request. It
@@ -256,6 +257,22 @@ func QueryRealms(ctx context.Context, perm realms.Permission, project string, at
 	return nil, ErrNotConfigured
 }
 
+// GetRealmData returns data attached to a realm.
+//
+// Falls back to the "@root" realm if `realm` doesn't exist. Returns nil if
+// the root realm doesn't exist either, which means that either project
+// doesn't exist or it has no realms.cfg file.
+//
+// Returns an error only if the check itself failed due to a misconfiguration
+// or transient issues. This should usually result in an Internal error.
+func GetRealmData(ctx context.Context, realm string) (*protocol.RealmData, error) {
+	s := GetState(ctx)
+	if s == nil {
+		return nil, ErrNotConfigured
+	}
+	return s.DB().GetRealmData(ctx, realm)
+}
+
 // ShouldEnforceRealmACL is true if the service should enforce the realm's ACLs.
 //
 // Based on `enforce_in_service` realm data. Exists temporarily during the
@@ -263,12 +280,7 @@ func QueryRealms(ctx context.Context, perm realms.Permission, project string, at
 //
 // TODO(crbug.com/1051724): Remove when no longer used.
 func ShouldEnforceRealmACL(ctx context.Context, realm string) (bool, error) {
-	s := GetState(ctx)
-	if s == nil {
-		return false, ErrNotConfigured
-	}
-
-	data, err := s.DB().GetRealmData(ctx, realm)
+	data, err := GetRealmData(ctx, realm)
 	switch {
 	case err != nil:
 		return false, errors.Fmt("failed to load realm data: %w", err)

@@ -84,6 +84,22 @@ func TestState(t *testing.T) {
 		assert.Loosely(t, url, should.Equal("https://example.com/auth_service"))
 	})
 
+	ftt.Run("GetRealmData", t, func(t *ftt.Test) {
+		ctx := injectTestDB(context.Background(), &fakeDB{
+			realmData: map[string]*protocol.RealmData{
+				"proj:@root": {BillingCloudProjectId: 123},
+			},
+		})
+
+		got, err := GetRealmData(ctx, "proj:@root")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, got, should.Match(&protocol.RealmData{BillingCloudProjectId: 123}))
+
+		got, err = GetRealmData(ctx, "missing:@root")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, got, should.BeNil)
+	})
+
 	ftt.Run("ShouldEnforceRealmACL", t, func(t *ftt.Test) {
 		ctx := ModifyConfig(context.Background(), func(cfg Config) Config {
 			cfg.Signer = signingtest.NewSigner(&signing.ServiceInfo{

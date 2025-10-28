@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
 
@@ -67,22 +68,30 @@ const PrefixesViewers = "cipd-prefixes-viewers"
 // It checks ACLs.
 func Public(internalCAS cas.StorageServer, pcfg *prefixcfg.Config, d *tq.Dispatcher, c vsa.Client) Server {
 	impl := &repoImpl{
-		tq:              d,
-		meta:            metadata.GetStorage(),
-		cas:             internalCAS,
-		vsa:             c,
-		lookupPrefixCfg: pcfg.Lookup,
-
-		// This mapping is not implemented yet. Just log when we hit it.
-		lookupBillingProject: func(ctx context.Context, luciProject, prefix string) (string, error) {
-			logging.Infof(ctx, "Would be billing to LUCI project %q", luciProject)
-			return "", nil
-		},
+		tq:                   d,
+		meta:                 metadata.GetStorage(),
+		cas:                  internalCAS,
+		vsa:                  c,
+		lookupPrefixCfg:      pcfg.Lookup,
+		lookupBillingProject: lookupBillingProject,
 	}
 	impl.registerTasks()
 	impl.registerProcessor(&processing.ClientExtractor{CAS: internalCAS})
 	impl.registerProcessor(&processing.BootstrapPackageExtractor{CAS: internalCAS})
 	return impl
+}
+
+// lookupBillingProject returns a GCP project associated with a LUCI project.
+func lookupBillingProject(ctx context.Context, luciProject, prefix string) (string, error) {
+	data, err := auth.GetRealmData(ctx, realms.Join(luciProject, realms.RootRealm))
+	if err != nil {
+		return "", err
+	}
+	projectID := data.GetBillingCloudProjectId()
+	if projectID == 0 {
+		return "", nil
+	}
+	return fmt.Sprintf("%d", projectID), nil
 }
 
 // Server is repopb.RepositoryServer that can also expose some non-pRPC routes.
