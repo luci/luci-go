@@ -68,7 +68,12 @@ func main() {
 			http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)
 		})
 		srv.Routes.GET("/v/", nil, func(c *router.Context) {
-			path := "/logs/" + c.Request.URL.Query().Get("s")
+			queryParams := c.Request.URL.Query()
+			path := "/logs/" + queryParams.Get("s")
+			queryParams.Del("s")
+			if len(queryParams) > 0 {
+				path += "?" + queryParams.Encode()
+			}
 			http.Redirect(c.Writer, c.Request, path, http.StatusFound)
 		})
 		return nil
