@@ -39,3 +39,49 @@ message BootstrapConfig {
   // The package prefix of matching packages e.g. "infra/tools/my-tool".
   string prefix = 1;
 }
+
+
+// A schema for the prefixes.cfg config file.
+//
+// It defines prefix-level metadata maintained centrally in the service config.
+message PrefixesConfigFile {
+  // A list of per-prefix entries.
+  //
+  // Duplicates by `path` are not allowed.
+  repeated Prefix prefix = 1;
+}
+
+
+// A metadata to apply to a prefix (and all packages under it).
+//
+// Prefixes can be nested. A child prefix inherits values of fields from its
+// parent. Details of this inheritance depend on the field and each field
+// documents it separately.
+message Prefix {
+  // The prefix path (e.g. "infra/tools") or "/" to indicate the root.
+  string path = 1;
+
+  // ID of the customer LUCI project that nominally owns the prefix.
+  //
+  // Currently used to lookup what Cloud project to bill GCS calls to.
+  //
+  // If not set, gets inherited from the parent. If none of the ancestors set
+  // this, GCS calls are billed to CIPD's own project.
+  string owning_luci_project = 2;
+
+  // Controls billing of GCS calls to a customer project.
+  //
+  // If not set, gets inherited from the parent. If none of the ancestors set
+  // this, the default is to bill 100% of GCS calls to the Cloud project
+  // associated with `owning_luci_project`, if any.
+  message Billing {
+    // Disables billing to a customer LUCI project.
+    bool disable_user_project_billing = 1;
+
+    // A percent of requests to bill to the LUCI project's billing account.
+    //
+    // Range [1, 100]. Values outside this range are an error. Unset means 100%.
+    int32 percent_of_calls_to_bill = 2;
+  }
+  Billing billing = 3;
+}

@@ -16,9 +16,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"sync"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
@@ -28,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/cipd/appengine/impl"
 	"go.chromium.org/luci/cipd/appengine/impl/bootstrap"
+	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
 
 	// Using transactional datastore TQ tasks.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
@@ -43,8 +47,27 @@ func main() {
 			_, _ = ctx.Writer.Write([]byte("OK"))
 		})
 
-		// Periodically refresh the global service config in the datastore.
-		cron.RegisterHandler("import-config", bootstrap.ImportConfig)
+		// Periodically refresh the global service configs in the datastore.
+		cron.RegisterHandler("import-config", func(ctx context.Context) error {
+			importers := []func(context.Context) error{
+				bootstrap.ImportConfig,
+				prefixcfg.ImportConfig,
+			}
+			merr := make(errors.MultiError, len(importers))
+			var wg sync.WaitGroup
+			wg.Add(len(importers))
+			for idx, importer := range importers {
+				go func() {
+					defer wg.Done()
+					merr[idx] = importer(ctx)
+				}()
+			}
+			wg.Wait()
+			if merr.First() != nil {
+				return merr.AsError()
+			}
+			return nil
+		})
 
 		// PubSub push handler processing messages produced by events.go.
 		oidcMW := router.NewMiddlewareChain(

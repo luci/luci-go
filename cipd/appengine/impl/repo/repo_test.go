@@ -47,6 +47,7 @@ import (
 
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
+	configpb "go.chromium.org/luci/cipd/api/config/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
@@ -2569,8 +2570,20 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 			},
 		})
 
+		var prefixCfgPb configpb.Prefix
+
 		cas := testutil.MockCAS{}
-		impl := repoImpl{meta: &meta, cas: &cas, vsa: vsa.NewClient()}
+		impl := repoImpl{
+			meta: &meta,
+			cas:  &cas,
+			vsa:  vsa.NewClient(),
+			lookupPrefixCfg: func(pkg string) *configpb.Prefix {
+				return &prefixCfgPb
+			},
+			lookupBillingProject: func(ctx context.Context, luciProject, prefix string) (string, error) {
+				return "gcs-" + luciProject, nil
+			},
+		}
 
 		inst := &model.Instance{
 			InstanceID:   strings.Repeat("1", 40),
@@ -2582,8 +2595,19 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 		cas.GetObjectURLImpl = func(_ context.Context, r *caspb.GetObjectURLRequest) (*caspb.ObjectURL, error) {
 			assert.Loosely(t, r.Object.HashAlgo, should.Equal(caspb.HashAlgo_SHA1))
 			assert.Loosely(t, r.Object.HexDigest, should.Equal(inst.InstanceID))
+			values := make(url.Values)
+			if r.DownloadFilename != "" {
+				values.Add("d", r.DownloadFilename)
+			}
+			if r.UserProject != "" {
+				values.Add("p", r.UserProject)
+			}
+			signed := fmt.Sprintf("http://example.com/%s", r.Object.HexDigest)
+			if len(values) > 0 {
+				signed += "?" + values.Encode()
+			}
 			return &caspb.ObjectURL{
-				SignedUrl: fmt.Sprintf("http://example.com/%s?d=%s", r.Object.HexDigest, r.DownloadFilename),
+				SignedUrl: signed,
 			}, nil
 		}
 
@@ -2595,7 +2619,19 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 				})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, resp, should.Match(&caspb.ObjectURL{
-					SignedUrl: "http://example.com/1111111111111111111111111111111111111111?d=",
+					SignedUrl: "http://example.com/1111111111111111111111111111111111111111",
+				}))
+			})
+
+			t.Run("Happy path with user project", func(t *ftt.Test) {
+				prefixCfgPb.OwningLuciProject = "luci-proj"
+				resp, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
+					Package:  inst.Package.StringID(),
+					Instance: inst.Proto().Instance,
+				})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Match(&caspb.ObjectURL{
+					SignedUrl: "http://example.com/1111111111111111111111111111111111111111?p=gcs-luci-proj",
 				}))
 			})
 

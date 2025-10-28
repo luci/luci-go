@@ -31,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
@@ -46,9 +47,11 @@ import (
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	repogrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/repopb/grpcpb"
+	configpb "go.chromium.org/luci/cipd/api/config/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
+	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/vsa"
@@ -62,12 +65,19 @@ const PrefixesViewers = "cipd-prefixes-viewers"
 // Public returns publicly exposed implementation of cipd.Repository service.
 //
 // It checks ACLs.
-func Public(internalCAS cas.StorageServer, d *tq.Dispatcher, c vsa.Client) Server {
+func Public(internalCAS cas.StorageServer, pcfg *prefixcfg.Config, d *tq.Dispatcher, c vsa.Client) Server {
 	impl := &repoImpl{
-		tq:   d,
-		meta: metadata.GetStorage(),
-		cas:  internalCAS,
-		vsa:  c,
+		tq:              d,
+		meta:            metadata.GetStorage(),
+		cas:             internalCAS,
+		vsa:             c,
+		lookupPrefixCfg: pcfg.Lookup,
+
+		// This mapping is not implemented yet. Just log when we hit it.
+		lookupBillingProject: func(ctx context.Context, luciProject, prefix string) (string, error) {
+			logging.Infof(ctx, "Would be billing to LUCI project %q", luciProject)
+			return "", nil
+		},
 	}
 	impl.registerTasks()
 	impl.registerProcessor(&processing.ClientExtractor{CAS: internalCAS})
@@ -100,6 +110,11 @@ type repoImpl struct {
 	meta metadata.Storage  // storage for package prefix metadata
 	cas  cas.StorageServer // non-ACLed storage for instance package files
 	vsa  vsa.Client
+
+	// Looks up the service-side config that applies to this package.
+	lookupPrefixCfg func(pkg string) *configpb.Prefix
+	// Mapping `(LUCI project, prefix) => custom billing project for GCS`.
+	lookupBillingProject func(ctx context.Context, luciProject, pkg string) (string, error)
 
 	procs    []processing.Processor          // in order of registerProcessor calls
 	procsMap map[string]processing.Processor // ID => processing.Processor
@@ -2342,5 +2357,23 @@ func (impl *repoImpl) handleLegacyResolve(ctx *router.Context) error {
 //
 // Returns grpc-tagged errors returned to the caller as is.
 func (impl *repoImpl) StorageUserProject(ctx context.Context, pkg string) (string, error) {
-	return "", nil
+	if impl.lookupPrefixCfg == nil {
+		return "", nil
+	}
+	cfg := impl.lookupPrefixCfg(pkg)
+	if cfg.OwningLuciProject == "" || cfg.Billing.GetDisableUserProjectBilling() {
+		return "", nil
+	}
+
+	percent := cfg.Billing.GetPercentOfCallsToBill()
+	useBilling := percent == 0 || percent >= 100 || mathrand.Int31n(ctx, 100) < percent
+	if !useBilling {
+		return "", nil
+	}
+
+	gcsProject, err := impl.lookupBillingProject(ctx, cfg.OwningLuciProject, pkg)
+	if err != nil {
+		return "", status.Errorf(codes.Internal, "failed to lookup the billing project: %s", err)
+	}
+	return gcsProject, nil
 }

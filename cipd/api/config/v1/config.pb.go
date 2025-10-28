@@ -135,6 +135,189 @@ func (x *BootstrapConfig) GetPrefix() string {
 	return ""
 }
 
+// A schema for the prefixes.cfg config file.
+//
+// It defines prefix-level metadata maintained centrally in the service config.
+type PrefixesConfigFile struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// A list of per-prefix entries.
+	//
+	// Duplicates by `path` are not allowed.
+	Prefix        []*Prefix `protobuf:"bytes,1,rep,name=prefix,proto3" json:"prefix,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PrefixesConfigFile) Reset() {
+	*x = PrefixesConfigFile{}
+	mi := &file_go_chromium_org_luci_cipd_api_config_v1_config_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PrefixesConfigFile) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PrefixesConfigFile) ProtoMessage() {}
+
+func (x *PrefixesConfigFile) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cipd_api_config_v1_config_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PrefixesConfigFile.ProtoReflect.Descriptor instead.
+func (*PrefixesConfigFile) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cipd_api_config_v1_config_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *PrefixesConfigFile) GetPrefix() []*Prefix {
+	if x != nil {
+		return x.Prefix
+	}
+	return nil
+}
+
+// A metadata to apply to a prefix (and all packages under it).
+//
+// Prefixes can be nested. A child prefix inherits values of fields from its
+// parent. Details of this inheritance depend on the field and each field
+// documents it separately.
+type Prefix struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The prefix path (e.g. "infra/tools") or "/" to indicate the root.
+	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// ID of the customer LUCI project that nominally owns the prefix.
+	//
+	// Currently used to lookup what Cloud project to bill GCS calls to.
+	//
+	// If not set, gets inherited from the parent. If none of the ancestors set
+	// this, GCS calls are billed to CIPD's own project.
+	OwningLuciProject string          `protobuf:"bytes,2,opt,name=owning_luci_project,json=owningLuciProject,proto3" json:"owning_luci_project,omitempty"`
+	Billing           *Prefix_Billing `protobuf:"bytes,3,opt,name=billing,proto3" json:"billing,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *Prefix) Reset() {
+	*x = Prefix{}
+	mi := &file_go_chromium_org_luci_cipd_api_config_v1_config_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Prefix) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Prefix) ProtoMessage() {}
+
+func (x *Prefix) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cipd_api_config_v1_config_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Prefix.ProtoReflect.Descriptor instead.
+func (*Prefix) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cipd_api_config_v1_config_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Prefix) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *Prefix) GetOwningLuciProject() string {
+	if x != nil {
+		return x.OwningLuciProject
+	}
+	return ""
+}
+
+func (x *Prefix) GetBilling() *Prefix_Billing {
+	if x != nil {
+		return x.Billing
+	}
+	return nil
+}
+
+// Controls billing of GCS calls to a customer project.
+//
+// If not set, gets inherited from the parent. If none of the ancestors set
+// this, the default is to bill 100% of GCS calls to the Cloud project
+// associated with `owning_luci_project`, if any.
+type Prefix_Billing struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Disables billing to a customer LUCI project.
+	DisableUserProjectBilling bool `protobuf:"varint,1,opt,name=disable_user_project_billing,json=disableUserProjectBilling,proto3" json:"disable_user_project_billing,omitempty"`
+	// A percent of requests to bill to the LUCI project's billing account.
+	//
+	// Range [1, 100]. Values outside this range are an error. Unset means 100%.
+	PercentOfCallsToBill int32 `protobuf:"varint,2,opt,name=percent_of_calls_to_bill,json=percentOfCallsToBill,proto3" json:"percent_of_calls_to_bill,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *Prefix_Billing) Reset() {
+	*x = Prefix_Billing{}
+	mi := &file_go_chromium_org_luci_cipd_api_config_v1_config_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Prefix_Billing) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Prefix_Billing) ProtoMessage() {}
+
+func (x *Prefix_Billing) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cipd_api_config_v1_config_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Prefix_Billing.ProtoReflect.Descriptor instead.
+func (*Prefix_Billing) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cipd_api_config_v1_config_proto_rawDescGZIP(), []int{3, 0}
+}
+
+func (x *Prefix_Billing) GetDisableUserProjectBilling() bool {
+	if x != nil {
+		return x.DisableUserProjectBilling
+	}
+	return false
+}
+
+func (x *Prefix_Billing) GetPercentOfCallsToBill() int32 {
+	if x != nil {
+		return x.PercentOfCallsToBill
+	}
+	return 0
+}
+
 var File_go_chromium_org_luci_cipd_api_config_v1_config_proto protoreflect.FileDescriptor
 
 const file_go_chromium_org_luci_cipd_api_config_v1_config_proto_rawDesc = "" +
@@ -143,7 +326,16 @@ const file_go_chromium_org_luci_cipd_api_config_v1_config_proto_rawDesc = "" +
 	"\x13BootstrapConfigFile\x12G\n" +
 	"\x10bootstrap_config\x18\x01 \x03(\v2\x1c.cipd.config.BootstrapConfigR\x0fbootstrapConfig\")\n" +
 	"\x0fBootstrapConfig\x12\x16\n" +
-	"\x06prefix\x18\x01 \x01(\tR\x06prefixB-Z+go.chromium.org/luci/cipd/api/config/v1;apib\x06proto3"
+	"\x06prefix\x18\x01 \x01(\tR\x06prefix\"A\n" +
+	"\x12PrefixesConfigFile\x12+\n" +
+	"\x06prefix\x18\x01 \x03(\v2\x13.cipd.config.PrefixR\x06prefix\"\x88\x02\n" +
+	"\x06Prefix\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
+	"\x13owning_luci_project\x18\x02 \x01(\tR\x11owningLuciProject\x125\n" +
+	"\abilling\x18\x03 \x01(\v2\x1b.cipd.config.Prefix.BillingR\abilling\x1a\x82\x01\n" +
+	"\aBilling\x12?\n" +
+	"\x1cdisable_user_project_billing\x18\x01 \x01(\bR\x19disableUserProjectBilling\x126\n" +
+	"\x18percent_of_calls_to_bill\x18\x02 \x01(\x05R\x14percentOfCallsToBillB-Z+go.chromium.org/luci/cipd/api/config/v1;apib\x06proto3"
 
 var (
 	file_go_chromium_org_luci_cipd_api_config_v1_config_proto_rawDescOnce sync.Once
@@ -157,18 +349,23 @@ func file_go_chromium_org_luci_cipd_api_config_v1_config_proto_rawDescGZIP() []b
 	return file_go_chromium_org_luci_cipd_api_config_v1_config_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_cipd_api_config_v1_config_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_go_chromium_org_luci_cipd_api_config_v1_config_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_go_chromium_org_luci_cipd_api_config_v1_config_proto_goTypes = []any{
 	(*BootstrapConfigFile)(nil), // 0: cipd.config.BootstrapConfigFile
 	(*BootstrapConfig)(nil),     // 1: cipd.config.BootstrapConfig
+	(*PrefixesConfigFile)(nil),  // 2: cipd.config.PrefixesConfigFile
+	(*Prefix)(nil),              // 3: cipd.config.Prefix
+	(*Prefix_Billing)(nil),      // 4: cipd.config.Prefix.Billing
 }
 var file_go_chromium_org_luci_cipd_api_config_v1_config_proto_depIdxs = []int32{
 	1, // 0: cipd.config.BootstrapConfigFile.bootstrap_config:type_name -> cipd.config.BootstrapConfig
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	3, // 1: cipd.config.PrefixesConfigFile.prefix:type_name -> cipd.config.Prefix
+	4, // 2: cipd.config.Prefix.billing:type_name -> cipd.config.Prefix.Billing
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cipd_api_config_v1_config_proto_init() }
@@ -182,7 +379,7 @@ func file_go_chromium_org_luci_cipd_api_config_v1_config_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_cipd_api_config_v1_config_proto_rawDesc), len(file_go_chromium_org_luci_cipd_api_config_v1_config_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

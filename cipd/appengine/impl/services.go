@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/admin"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
+	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
 	"go.chromium.org/luci/cipd/appengine/impl/repo"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
 	"go.chromium.org/luci/cipd/appengine/impl/vsa"
@@ -98,11 +99,17 @@ func Main(extra []module.Module, cb func(srv *server.Server, svc *Services) erro
 		}
 		srv.Context = ev.RegisterSink(srv.Context, &tq.Default, srv.Options.Prod)
 
+		pcfg, err := prefixcfg.NewConfig(srv.Context)
+		if err != nil {
+			return nil
+		}
+		srv.RunInBackground("cipd.prefixcfg", pcfg.RefreshPeriodically)
+
 		internalCAS := cas.Internal(&tq.Default, &bqlog.Default, s, &srv.Options)
 		return cb(srv, &Services{
 			InternalCAS: internalCAS,
 			PublicCAS:   cas.Public(internalCAS),
-			PublicRepo:  repo.Public(internalCAS, &tq.Default, b),
+			PublicRepo:  repo.Public(internalCAS, pcfg, &tq.Default, b),
 			AdminAPI:    admin.AdminAPI(&dsmapper.Default),
 			EventLogger: ev,
 		})
