@@ -18,9 +18,17 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 
 import { getIndexedDBWrapper } from './indexed_db_wrapper';
 
+// Right now, these defaults are set to aggressively cache data because this
+// caching is used for GetDeviceDimensions, which updates infrequently.
+// In the future, as we add more kinds of data to be cached by useQuery,
+// we may want to configure different settings for different queries.
+// See http://b/450496125 for context
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { staleTime: Infinity, gcTime: Infinity }, // Keep gcTime Infinity
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: Infinity,
+    },
   },
 });
 
