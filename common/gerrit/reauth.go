@@ -114,11 +114,13 @@ func (c *ReAuthChecker) Check(ctx context.Context, attrs *creds.Attrs) (*ReAuthC
 	}
 	r, err := c.cache.GetForProject(ctx, host, project)
 	if err == nil {
+		logging.Debugf(ctx, "Returning ReAuth check result for host %q from cache", host)
 		return r, nil
 	}
 	if !errors.Is(err, ErrResultMissing) {
 		return nil, errors.Fmt("check Gerrit ReAuth: %w", err)
 	}
+	logging.Debugf(ctx, "ReAuth check result for host %q not in cache", host)
 	r, err = checkProjectReAuth(ctx, c.client, host, project)
 	if err != nil {
 		return nil, errors.Fmt("check Gerrit ReAuth: %w", err)
