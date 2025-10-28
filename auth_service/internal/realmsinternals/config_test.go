@@ -51,12 +51,14 @@ func TestRealmsExpansion(t *testing.T) {
 		}
 	}
 
+	projs := testsupport.Projects()
+
 	ftt.Run("ExpandRealms works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		t.Run("completely empty", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
-			actualRealms, err := ExpandRealms(ctx, permDB, "p", nil)
+			actualRealms, err := ExpandRealms(ctx, permDB, projs, "p", nil)
 
 			expectedRealms := &protocol.Realms{
 				Realms: []*protocol.Realm{
@@ -71,7 +73,7 @@ func TestRealmsExpansion(t *testing.T) {
 
 		t.Run("invalid project config", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
-			_, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
+			_, err := ExpandRealms(ctx, permDB, projs, "p", &realmsconf.RealmsCfg{
 				CustomRoles: []*realmsconf.CustomRole{
 					{Name: "role/notPrefixedCorrectly"},
 				},
@@ -81,7 +83,7 @@ func TestRealmsExpansion(t *testing.T) {
 
 		t.Run("empty realm", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
-			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
+			actualRealms, err := ExpandRealms(ctx, permDB, projs, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
 					{
 						Name: "r2",
@@ -111,7 +113,7 @@ func TestRealmsExpansion(t *testing.T) {
 
 		t.Run("simple bindings", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
-			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
+			actualRealms, err := ExpandRealms(ctx, permDB, projs, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
 					{
 						Name: "r",
@@ -159,7 +161,7 @@ func TestRealmsExpansion(t *testing.T) {
 
 		t.Run("simple bindings with conditions", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
-			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
+			actualRealms, err := ExpandRealms(ctx, permDB, projs, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
 					{
 						Name: "r",
@@ -245,7 +247,7 @@ func TestRealmsExpansion(t *testing.T) {
 
 		t.Run("custom root", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
-			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
+			actualRealms, err := ExpandRealms(ctx, permDB, projs, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
 					{
 						Name: "@root",
@@ -304,7 +306,7 @@ func TestRealmsExpansion(t *testing.T) {
 
 		t.Run("realm inheritance", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
-			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
+			actualRealms, err := ExpandRealms(ctx, permDB, projs, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
 					{
 						Name: "@root",
@@ -385,7 +387,7 @@ func TestRealmsExpansion(t *testing.T) {
 
 		t.Run("realm inheritance with conditions", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
-			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
+			actualRealms, err := ExpandRealms(ctx, permDB, projs, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
 					{
 						Name: "@root",
@@ -499,7 +501,7 @@ func TestRealmsExpansion(t *testing.T) {
 
 		t.Run("custom roles", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
-			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
+			actualRealms, err := ExpandRealms(ctx, permDB, projs, "p", &realmsconf.RealmsCfg{
 				CustomRoles: []*realmsconf.CustomRole{
 					{
 						Name:        "customRole/r1",
@@ -564,7 +566,7 @@ func TestRealmsExpansion(t *testing.T) {
 
 		t.Run("implicit root bindings with no root", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(true)
-			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
+			actualRealms, err := ExpandRealms(ctx, permDB, projs, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
 					{
 						Name: "r",
@@ -633,7 +635,7 @@ func TestRealmsExpansion(t *testing.T) {
 
 		t.Run("implicit root bindings with root", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(true)
-			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
+			actualRealms, err := ExpandRealms(ctx, permDB, projs, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
 					{
 						Name: "@root",
@@ -732,7 +734,7 @@ func TestRealmsExpansion(t *testing.T) {
 
 		t.Run("implicit root bindings in internal", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(true)
-			actualRealms, err := ExpandRealms(ctx, permDB, "@internal", &realmsconf.RealmsCfg{
+			actualRealms, err := ExpandRealms(ctx, permDB, projs, "@internal", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
 					{
 						Name: "r",
@@ -770,7 +772,7 @@ func TestRealmsExpansion(t *testing.T) {
 
 		t.Run("enforce in service", func(t *ftt.Test) {
 			permDB := testsupport.PermissionsDB(false)
-			actualRealms, err := ExpandRealms(ctx, permDB, "p", &realmsconf.RealmsCfg{
+			actualRealms, err := ExpandRealms(ctx, permDB, projs, "p", &realmsconf.RealmsCfg{
 				Realms: []*realmsconf.Realm{
 					{
 						Name:             "@root",

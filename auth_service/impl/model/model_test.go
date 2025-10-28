@@ -1625,7 +1625,11 @@ func TestAuthRealmsConfig(t *testing.T) {
 	})
 
 	ftt.Run("Testing updateAuthProjectRealms", t, func(t *ftt.Test) {
-		permissionsRev := "permissions.cfg:abc"
+		svcRev := ServiceCfgRev{
+			PermsRev:    "permissions.cfg:abc",
+			ProjectsRev: "projects.cfg:def",
+		}
+
 		proj1Realms := &protocol.Realms{
 			Permissions: makeTestPermissions("luci.dev.p2", "luci.dev.z", "luci.dev.p1"),
 			Realms: []*protocol.Realm{
@@ -1647,7 +1651,10 @@ func TestAuthRealmsConfig(t *testing.T) {
 					ProjectID:    "proj1",
 					ConfigRev:    "a1b2c3",
 					ConfigDigest: "test config digest",
-					PermsRev:     "ignored-perms.cfg:321",
+					ServiceCfgRev: ServiceCfgRev{
+						PermsRev:    "ignored-perms.cfg:321",
+						ProjectsRev: "ignored-projects.cfg:456",
+					},
 				},
 				Realms: proj1Realms,
 			},
@@ -1659,7 +1666,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 			ctx, ts := getCtx()
 
 			// Check updating realms for a new project works.
-			err := updateAuthProjectRealms(ctx, expandedRealms, permissionsRev, "Go pRPC API")
+			err := updateAuthProjectRealms(ctx, expandedRealms, svcRev, "Go pRPC API")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ts.Tasks(), should.HaveLength(2))
 			// Check the newly added project realms are as expected.
@@ -1675,7 +1682,8 @@ func TestAuthRealmsConfig(t *testing.T) {
 				ID:           "meta",
 				Parent:       projectRealmsKey(ctx, "proj1"),
 				ConfigRev:    "a1b2c3",
-				PermsRev:     permissionsRev,
+				PermsRev:     svcRev.PermsRev,
+				ProjectsRev:  svcRev.ProjectsRev,
 				ConfigDigest: "test config digest",
 				ModifiedTS:   testCreatedTS,
 			}))
@@ -1689,7 +1697,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, originalAuthProjectRealms, originalAuthProjectRealmsMeta), should.BeNil)
 
 			// Check updating realms for an existing project works.
-			err = updateAuthProjectRealms(ctx, expandedRealms, permissionsRev, "Go pRPC API")
+			err = updateAuthProjectRealms(ctx, expandedRealms, svcRev, "Go pRPC API")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ts.Tasks(), should.HaveLength(2))
 			// Check the newly added project realms are as expected.
@@ -1705,7 +1713,8 @@ func TestAuthRealmsConfig(t *testing.T) {
 				ID:           "meta",
 				Parent:       projectRealmsKey(ctx, "proj1"),
 				ConfigRev:    expandedRealms[0].CfgRev.ConfigRev,
-				PermsRev:     permissionsRev,
+				PermsRev:     svcRev.PermsRev,
+				ProjectsRev:  svcRev.ProjectsRev,
 				ConfigDigest: expandedRealms[0].CfgRev.ConfigDigest,
 				ModifiedTS:   testCreatedTS,
 			}))

@@ -57,7 +57,8 @@ func TestGetStoredRealmsCfgRevs(t *testing.T) {
 				Kind:         "AuthProjectRealmsMeta",
 				ID:           "meta",
 				Parent:       projectRealmsKey(ctx, "test"),
-				PermsRev:     "123",
+				PermsRev:     "perms:123",
+				ProjectsRev:  "proj:456",
 				ConfigRev:    "1234",
 				ConfigDigest: "test-digest",
 				ModifiedTS:   testModifiedTS,
@@ -69,8 +70,11 @@ func TestGetStoredRealmsCfgRevs(t *testing.T) {
 				{
 					ProjectID:    "test",
 					ConfigRev:    "1234",
-					PermsRev:     "123",
 					ConfigDigest: "test-digest",
+					ServiceCfgRev: ServiceCfgRev{
+						PermsRev:    "perms:123",
+						ProjectsRev: "proj:456",
+					},
 				},
 			}))
 		})
@@ -88,12 +92,13 @@ func TestUpdateRealms(t *testing.T) {
 				AuthDBRev:     int64(authDBRev),
 				AuthDBPrevRev: int64(authDBRev - 1),
 			},
-			Kind:      "AuthProjectRealms",
-			ID:        fmt.Sprintf("test-project-%s", projectName),
-			Parent:    RootKey(ctx),
-			Realms:    expectedRealmsBody,
-			ConfigRev: testsupport.TestRevision,
-			PermsRev:  "permissions.cfg:123",
+			Kind:        "AuthProjectRealms",
+			ID:          fmt.Sprintf("test-project-%s", projectName),
+			Parent:      RootKey(ctx),
+			Realms:      expectedRealmsBody,
+			ConfigRev:   testsupport.TestRevision,
+			PermsRev:    "permissions.cfg:123",
+			ProjectsRev: "projects.cfg:rev",
 		}
 	}
 
@@ -106,6 +111,7 @@ func TestUpdateRealms(t *testing.T) {
 			ConfigDigest: testsupport.TestContentHash,
 			ModifiedTS:   testCreatedTS,
 			PermsRev:     "permissions.cfg:123",
+			ProjectsRev:  "projects.cfg:rev",
 		}
 	}
 
@@ -117,6 +123,11 @@ func TestUpdateRealms(t *testing.T) {
 		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
 		ctx = info.SetImageVersion(ctx, "test-version")
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
+
+		svcCfgs := &serviceConfigs{
+			perms: testsupport.PermissionsDB(false),
+			projs: testsupport.Projects(),
+		}
 
 		t.Run("works", func(t *ftt.Test) {
 			t.Run("simple config 1 entry", func(t *ftt.Test) {
@@ -136,7 +147,7 @@ func TestUpdateRealms(t *testing.T) {
 						ConfigBody:   configBody,
 					},
 				}
-				err := updateRealms(ctx, testsupport.PermissionsDB(false), revs, "latest config")
+				err := updateRealms(ctx, svcCfgs, revs, "latest config")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 
@@ -178,7 +189,7 @@ func TestUpdateRealms(t *testing.T) {
 						ConfigBody:   cfgBody,
 					},
 				}
-				assert.Loosely(t, updateRealms(ctx, testsupport.PermissionsDB(false), revs, "latest config"), should.BeNil)
+				assert.Loosely(t, updateRealms(ctx, svcCfgs, revs, "latest config"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 
 				expectedRealmsBody, err := ToStorableRealms(&protocol.Realms{
@@ -220,7 +231,7 @@ func TestUpdateRealms(t *testing.T) {
 						ConfigBody:   cfgBody,
 					},
 				}
-				assert.Loosely(t, updateRealms(ctx, testsupport.PermissionsDB(false), revs, "latest config"), should.BeNil)
+				assert.Loosely(t, updateRealms(ctx, svcCfgs, revs, "latest config"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 
 				expectedRealmsBody, err = ToStorableRealms(&protocol.Realms{
@@ -284,7 +295,7 @@ func TestUpdateRealms(t *testing.T) {
 						ConfigBody:   cfgBody2,
 					},
 				}
-				assert.Loosely(t, updateRealms(ctx, testsupport.PermissionsDB(false), revs, "latest config"), should.BeNil)
+				assert.Loosely(t, updateRealms(ctx, svcCfgs, revs, "latest config"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 
 				expectedRealmsBodyA, err := ToStorableRealms(&protocol.Realms{
@@ -349,7 +360,11 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 		ctx = info.SetImageVersion(ctx, "test-version")
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
-		permsDB := testsupport.PermissionsDB(false)
+		svcCfgs := &serviceConfigs{
+			perms: testsupport.PermissionsDB(false),
+			projs: testsupport.Projects(),
+		}
+
 		configBody, _ := prototext.Marshal(&realmsconf.RealmsCfg{
 			Realms: []*realmsconf.Realm{
 				{
@@ -368,7 +383,6 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 				ConfigRev:    testsupport.TestRevision,
 				ConfigDigest: testsupport.TestContentHash,
 				ConfigBody:   configBody,
-				PermsRev:     "",
 			}
 		}
 
@@ -381,7 +395,10 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 				ConfigRev:    testsupport.TestRevision,
 				ConfigDigest: testsupport.TestContentHash,
 				ConfigBody:   []byte{},
-				PermsRev:     permsDB.Rev,
+				ServiceCfgRev: ServiceCfgRev{
+					PermsRev:    svcCfgs.perms.Rev,
+					ProjectsRev: svcCfgs.projs.Rev,
+				},
 			}
 		}
 
@@ -425,7 +442,7 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 			assert.Loosely(t, putProjectRealms(ctx, "test-project-a"), should.BeNil)
 			assert.Loosely(t, putProjectRealms(ctx, "@internal"), should.BeNil)
 
-			jobs, err := processRealmsConfigChanges(ctx, permsDB, latest, stored, "Updated from update-realms cron job")
+			jobs, err := processRealmsConfigChanges(ctx, svcCfgs, latest, stored, "Updated from update-realms cron job")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, jobs, should.BeEmpty)
 
@@ -451,7 +468,7 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 			}
 			assert.Loosely(t, putProjectRealms(ctx, "@internal"), should.BeNil)
 
-			jobs, err := processRealmsConfigChanges(ctx, permsDB, latest, stored, "Updated from update-realms cron job")
+			jobs, err := processRealmsConfigChanges(ctx, svcCfgs, latest, stored, "Updated from update-realms cron job")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, jobs, should.HaveLength(1))
 
@@ -481,7 +498,7 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 			assert.Loosely(t, putProjectRealms(ctx, "test-project-a"), should.BeNil)
 			assert.Loosely(t, putProjectRealms(ctx, "@internal"), should.BeNil)
 
-			jobs, err := processRealmsConfigChanges(ctx, permsDB, latest, stored, "Updated from update-realms cron job")
+			jobs, err := processRealmsConfigChanges(ctx, svcCfgs, latest, stored, "Updated from update-realms cron job")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, jobs, should.HaveLength(1))
 
@@ -512,7 +529,7 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 			assert.Loosely(t, putProjectRealmsMeta(ctx, "test-project-a"), should.BeNil)
 			assert.Loosely(t, putProjectRealmsMeta(ctx, "@internal"), should.BeNil)
 
-			jobs, err := processRealmsConfigChanges(ctx, permsDB, latest, stored, "Updated from update-realms cron job")
+			jobs, err := processRealmsConfigChanges(ctx, svcCfgs, latest, stored, "Updated from update-realms cron job")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, jobs, should.HaveLength(1))
 
@@ -541,7 +558,7 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 			// Set up lingering realms metadata.
 			assert.Loosely(t, putProjectRealmsMeta(ctx, "test-project-a"), should.BeNil)
 
-			jobs, err := processRealmsConfigChanges(ctx, permsDB, latest, stored, "Updated from update-realms cron job")
+			jobs, err := processRealmsConfigChanges(ctx, svcCfgs, latest, stored, "Updated from update-realms cron job")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, jobs, should.HaveLength(1))
 
@@ -566,11 +583,41 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 				makeStoredCfgRev("test-project-a"),
 				makeStoredCfgRev("@internal"),
 			}
-			stored[1].PermsRev = "permissions.cfg:old"
+			stored[1].ServiceCfgRev.PermsRev = "permissions.cfg:old"
 			assert.Loosely(t, putProjectRealms(ctx, "test-project-a"), should.BeNil)
 			assert.Loosely(t, putProjectRealms(ctx, "@internal"), should.BeNil)
 
-			jobs, err := processRealmsConfigChanges(ctx, permsDB, latest, stored, "Updated from update-realms cron job")
+			jobs, err := processRealmsConfigChanges(ctx, svcCfgs, latest, stored, "Updated from update-realms cron job")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, jobs, should.HaveLength(1))
+
+			assert.Loosely(t, runJobs(jobs), should.BeTrue)
+			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
+
+			actualRealms, err := GetAllAuthProjectRealms(ctx)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRealms, should.HaveLength(2))
+			actualRealmsMeta, err := GetAllAuthProjectRealmsMeta(ctx)
+			assert.Loosely(t, err, should.BeNil)
+			// Only one project had its realms updated, so only one would have
+			// its metadata created as part of the update.
+			assert.Loosely(t, actualRealmsMeta, should.HaveLength(1))
+		})
+
+		t.Run("update if there is a new revision of projects.cfg", func(t *ftt.Test) {
+			latest := []*RealmsCfgRev{
+				makeFetchedCfgRev("@internal"),
+				makeFetchedCfgRev("test-project-a"),
+			}
+			stored := []*RealmsCfgRev{
+				makeStoredCfgRev("test-project-a"),
+				makeStoredCfgRev("@internal"),
+			}
+			stored[1].ServiceCfgRev.ProjectsRev = "projects.cfg:old"
+			assert.Loosely(t, putProjectRealms(ctx, "test-project-a"), should.BeNil)
+			assert.Loosely(t, putProjectRealms(ctx, "@internal"), should.BeNil)
+
+			jobs, err := processRealmsConfigChanges(ctx, svcCfgs, latest, stored, "Updated from update-realms cron job")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, jobs, should.HaveLength(1))
 
@@ -595,11 +642,11 @@ func TestProcessRealmsConfigChanges(t *testing.T) {
 				projectID := fmt.Sprintf("test-project-%d", i)
 				latest[i] = makeFetchedCfgRev(projectID)
 				stored[i] = makeStoredCfgRev(projectID)
-				stored[i].PermsRev = "permissions.cfg:old"
+				stored[i].ServiceCfgRev.PermsRev = "permissions.cfg:old"
 				assert.Loosely(t, putProjectRealms(ctx, projectID), should.BeNil)
 			}
 
-			jobs, err := processRealmsConfigChanges(ctx, permsDB, latest, stored, "Updated from update-realms cron job")
+			jobs, err := processRealmsConfigChanges(ctx, svcCfgs, latest, stored, "Updated from update-realms cron job")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, jobs, should.HaveLength(maxReevaluationRevisions))
 

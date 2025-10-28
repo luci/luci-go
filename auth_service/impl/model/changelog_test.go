@@ -151,25 +151,34 @@ func testAuthRealmsGlobalsChange(ctx context.Context, t testing.TB, authDBRev in
 
 func testAuthProjectRealmsChange(ctx context.Context, t testing.TB, authDBRev int64) *AuthDBChange {
 	change := &AuthDBChange{
-		Kind:         "AuthDBChange",
-		Parent:       ChangeLogRevisionKey(ctx, authDBRev),
-		Class:        []string{"AuthDBChange", "AuthProjectRealmsChange"},
-		ChangeType:   10200,
-		Comment:      "comment",
-		ConfigRevOld: "",
-		ConfigRevNew: "",
-		PermsRevOld:  "auth_service_ver:100-00abc",
-		PermsRevNew:  "auth_service_ver:123-45abc",
-		Target:       "AuthProjectRealms$repo",
-		When:         time.Date(2019, time.January, 11, 1, 0, 0, 0, time.UTC),
-		Who:          "user:test@example.com",
-		AppVersion:   "123-45abc",
+		Kind:           "AuthDBChange",
+		Parent:         ChangeLogRevisionKey(ctx, authDBRev),
+		Class:          []string{"AuthDBChange", "AuthProjectRealmsChange"},
+		ChangeType:     10200,
+		Comment:        "comment",
+		ConfigRevOld:   "",
+		ConfigRevNew:   "",
+		PermsRevOld:    "auth_service_ver:100-00abc",
+		PermsRevNew:    "auth_service_ver:123-45abc",
+		ProjectsRevOld: "projects.cfg:old",
+		ProjectsRevNew: "projects.cfg:new",
+		Target:         "AuthProjectRealms$repo",
+		When:           time.Date(2019, time.January, 11, 1, 0, 0, 0, time.UTC),
+		Who:            "user:test@example.com",
+		AppVersion:     "123-45abc",
 	}
 
 	var err error
 	change.ID, err = ChangeID(ctx, change)
 	assert.Loosely(t, err, should.BeNil)
 	return change
+}
+
+func svcRev(permsRev, projsRev string) ServiceCfgRev {
+	return ServiceCfgRev{
+		PermsRev:    permsRev,
+		ProjectsRev: projsRev,
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -829,7 +838,7 @@ func TestGenerateChanges(t *testing.T) {
 					Realms: proj1Realms,
 				},
 			}
-			err := updateAuthProjectRealms(ctx, expandedRealms, "permissions.cfg:abc", "Go pRPC API")
+			err := updateAuthProjectRealms(ctx, expandedRealms, svcRev("perms:abc", "proj:def"), "Go pRPC API")
 			assert.Loosely(t, err, should.BeNil)
 
 			t.Run("project realms created", func(t *ftt.Test) {
@@ -843,15 +852,16 @@ func TestGenerateChanges(t *testing.T) {
 					},
 				}
 
-				err := updateAuthProjectRealms(ctx, expandedRealms, "permissions.cfg:abc", "Go pRPC API")
+				err := updateAuthProjectRealms(ctx, expandedRealms, svcRev("perms:abc", "proj:def"), "Go pRPC API")
 				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2)
 				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "project realms created", 2, actualChanges, []*AuthDBChange{{
-					ChangeType:   ChangeProjectRealmsCreated,
-					ConfigRevNew: "1",
-					PermsRevNew:  "permissions.cfg:abc",
+					ChangeType:     ChangeProjectRealmsCreated,
+					ConfigRevNew:   "1",
+					PermsRevNew:    "perms:abc",
+					ProjectsRevNew: "proj:def",
 				}})
 			})
 
@@ -862,9 +872,10 @@ func TestGenerateChanges(t *testing.T) {
 				actualChanges, err := generateChanges(ctx, 2)
 				assert.Loosely(t, err, should.BeNil)
 				validateChanges(ctx, "project realms removed", 2, actualChanges, []*AuthDBChange{{
-					ChangeType:   ChangeProjectRealmsRemoved,
-					ConfigRevOld: "10001",
-					PermsRevOld:  "permissions.cfg:abc",
+					ChangeType:     ChangeProjectRealmsRemoved,
+					ConfigRevOld:   "10001",
+					PermsRevOld:    "perms:abc",
+					ProjectsRevOld: "proj:def",
 				}})
 			})
 
@@ -880,7 +891,7 @@ func TestGenerateChanges(t *testing.T) {
 						Realms: proj1Realms,
 					},
 				}
-				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", "Go pRPC API")
+				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, svcRev("perms:abc", "proj:def"), "Go pRPC API")
 				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2)
@@ -899,7 +910,7 @@ func TestGenerateChanges(t *testing.T) {
 						Realms: nil,
 					},
 				}
-				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", "Go pRPC API")
+				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, svcRev("perms:abc", "proj:def"), "Go pRPC API")
 				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2)
@@ -922,7 +933,7 @@ func TestGenerateChanges(t *testing.T) {
 						Realms: nil,
 					},
 				}
-				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", "Go pRPC API")
+				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, svcRev("perms:abc", "proj:def"), "Go pRPC API")
 				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2)
@@ -960,7 +971,7 @@ func TestGenerateChanges(t *testing.T) {
 						Realms: updatedProj1Realms,
 					},
 				}
-				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:def", "Go pRPC API")
+				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, svcRev("perms:new", "proj:new"), "Go pRPC API")
 				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2)
@@ -972,9 +983,11 @@ func TestGenerateChanges(t *testing.T) {
 						ConfigRevNew: "10002",
 					},
 					{
-						ChangeType:  ChangeProjectRealmsReevaluated,
-						PermsRevOld: "permissions.cfg:abc",
-						PermsRevNew: "permissions.cfg:def",
+						ChangeType:     ChangeProjectRealmsReevaluated,
+						PermsRevOld:    "perms:abc",
+						PermsRevNew:    "perms:new",
+						ProjectsRevOld: "proj:def",
+						ProjectsRevNew: "proj:new",
 					},
 				})
 			})

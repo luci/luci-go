@@ -31,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/internal/permissions"
+	"go.chromium.org/luci/auth_service/internal/projects"
 )
 
 // BuildTargz builds a tar bundle.
@@ -190,4 +191,9 @@ func PermissionsDB(implicitRootBindings bool) *permissions.PermissionsDB {
 		}
 	}
 	return db
+}
+
+// Projects creates projects.Projects for tests.
+func Projects() *projects.Projects {
+	return &projects.Projects{Rev: "projects.cfg:rev"}
 }

@@ -54,6 +54,8 @@ message ListChangeLogsResponse {
 }
 
 // AuthDBChange refers to a change log entry.
+//
+// Next ID: 35.
 message AuthDBChange {
   // Fields common across all change types.
   string change_type = 1;
@@ -99,6 +101,8 @@ message AuthDBChange {
   string config_rev_new = 29;
   string perms_rev_old = 30;
   string perms_rev_new = 31;
+  string projects_rev_old = 33;
+  string projects_rev_new = 34;
 
   // Number of member emails redacted, if any.
   int32 num_redacted = 32;

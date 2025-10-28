@@ -232,10 +232,12 @@ type AuthDBChange struct {
 	PermissionsRemoved []string `gae:"permissions_removed" json:"permissions_removed"`
 
 	// Fields specific to AuthProjectRealmsChange.
-	ConfigRevOld string `gae:"config_rev_old,noindex"`
-	ConfigRevNew string `gae:"config_rev_new,noindex"`
-	PermsRevOld  string `gae:"perms_rev_old,noindex"`
-	PermsRevNew  string `gae:"perms_rev_new,noindex"`
+	ConfigRevOld   string `gae:"config_rev_old,noindex"`
+	ConfigRevNew   string `gae:"config_rev_new,noindex"`
+	PermsRevOld    string `gae:"perms_rev_old,noindex"`
+	PermsRevNew    string `gae:"perms_rev_new,noindex"`
+	ProjectsRevOld string `gae:"projects_rev_old,noindex"`
+	ProjectsRevNew string `gae:"projects_rev_new,noindex"`
 }
 
 // ChangeLogRootKey returns the root key of an entity group with change log.
@@ -371,6 +373,8 @@ func (change *AuthDBChange) ToProto(ctx context.Context) (*rpcpb.AuthDBChange, e
 		ConfigRevNew:             change.ConfigRevNew,
 		PermsRevOld:              change.PermsRevOld,
 		PermsRevNew:              change.PermsRevNew,
+		ProjectsRevOld:           change.ProjectsRevOld,
+		ProjectsRevNew:           change.ProjectsRevNew,
 	}
 
 	// The privacy filter is only relevant for group membership changes.
@@ -832,20 +836,23 @@ func diffRealmsGlobals(ctx context.Context, target string, old, new datastore.Pr
 func diffProjectRealms(ctx context.Context, target string, old, new datastore.PropertyMap) ([]*AuthDBChange, error) {
 	class := "AuthProjectRealmsChange"
 	const (
-		Realms    = "realms"
-		ConfigRev = "config_rev"
-		PermsRev  = "perms_rev"
+		Realms      = "realms"
+		ConfigRev   = "config_rev"
+		PermsRev    = "perms_rev"
+		ProjectsRev = "projects_rev"
 	)
 
 	newConfigRev := getStringProp(new, ConfigRev)
 	newPermsRev := getStringProp(new, PermsRev)
+	newProjectsRev := getStringProp(new, ProjectsRev)
 
 	if getBoolProp(new, "auth_db_deleted") {
 		change := setTargetTypeFields(
 			ctx, ChangeProjectRealmsRemoved, target, class,
 			&AuthDBChange{
-				ConfigRevOld: newConfigRev,
-				PermsRevOld:  newPermsRev,
+				ConfigRevOld:   newConfigRev,
+				PermsRevOld:    newPermsRev,
+				ProjectsRevOld: newProjectsRev,
 			})
 		return []*AuthDBChange{change}, nil
 	}
@@ -854,8 +861,9 @@ func diffProjectRealms(ctx context.Context, target string, old, new datastore.Pr
 		change := setTargetTypeFields(
 			ctx, ChangeProjectRealmsCreated, target, class,
 			&AuthDBChange{
-				ConfigRevNew: newConfigRev,
-				PermsRevNew:  newPermsRev,
+				ConfigRevNew:   newConfigRev,
+				PermsRevNew:    newPermsRev,
+				ProjectsRevNew: newProjectsRev,
 			})
 		return []*AuthDBChange{change}, nil
 	}
@@ -873,9 +881,11 @@ func diffProjectRealms(ctx context.Context, target string, old, new datastore.Pr
 	changes := []*AuthDBChange{}
 	oldConfigRev := getStringProp(old, ConfigRev)
 	oldPermsRev := getStringProp(old, PermsRev)
+	oldProjectsRev := getStringProp(old, ProjectsRev)
 	configChanged := oldConfigRev != newConfigRev
 	permsChanged := oldPermsRev != newPermsRev
-	identicalRevisions := !configChanged && !permsChanged
+	projectsChanged := oldProjectsRev != newProjectsRev
+	identicalRevisions := !configChanged && !permsChanged && !projectsChanged
 	if configChanged || identicalRevisions {
 		changes = append(changes, setTargetTypeFields(
 			ctx, ChangeProjectRealmsChanged, target, class,
@@ -884,12 +894,14 @@ func diffProjectRealms(ctx context.Context, target string, old, new datastore.Pr
 				ConfigRevNew: newConfigRev,
 			}))
 	}
-	if permsChanged {
+	if permsChanged || projectsChanged {
 		changes = append(changes, setTargetTypeFields(
 			ctx, ChangeProjectRealmsReevaluated, target, class,
 			&AuthDBChange{
-				PermsRevOld: oldPermsRev,
-				PermsRevNew: newPermsRev,
+				PermsRevOld:    oldPermsRev,
+				PermsRevNew:    newPermsRev,
+				ProjectsRevOld: oldProjectsRev,
+				ProjectsRevNew: newProjectsRev,
 			}))
 	}
 

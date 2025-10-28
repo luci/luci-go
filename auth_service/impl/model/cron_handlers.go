@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/settingscfg"
 	"go.chromium.org/luci/auth_service/internal/configs/validation"
 	"go.chromium.org/luci/auth_service/internal/permissions"
+	"go.chromium.org/luci/auth_service/internal/projects"
 	"go.chromium.org/luci/auth_service/internal/pubsub"
 	"go.chromium.org/luci/auth_service/internal/realmsinternals"
 )
@@ -245,8 +246,11 @@ func RealmsConfigCronHandler(ctx context.Context) error {
 		return err
 	}
 
-	// Make the PermissionsDB for realms expansion.
-	permsDB := permissions.NewPermissionsDB(permsCfg, permsMeta)
+	// Collect service-level configs used to expand realms.
+	svcCfg := &serviceConfigs{
+		perms: permissions.NewPermissionsDB(permsCfg, permsMeta),
+		projs: &projects.Projects{}, // TODO: use something real
+	}
 
 	// realms.cfg handling.
 	latestRealms, err := getLatestRealmsCfgRev(ctx)
@@ -260,7 +264,7 @@ func RealmsConfigCronHandler(ctx context.Context) error {
 		return err
 	}
 
-	jobs, err := processRealmsConfigChanges(ctx, permsDB, latestRealms, storedRealms, historicalComment)
+	jobs, err := processRealmsConfigChanges(ctx, svcCfg, latestRealms, storedRealms, historicalComment)
 	if err != nil {
 		return err
 	}
@@ -271,12 +275,26 @@ func RealmsConfigCronHandler(ctx context.Context) error {
 	return nil
 }
 
+// serviceConfigs represent all service-level configs that are used to expand
+// project-level realms.cfg.
+type serviceConfigs struct {
+	perms *permissions.PermissionsDB
+	projs *projects.Projects
+}
+
+func (s *serviceConfigs) rev() ServiceCfgRev {
+	return ServiceCfgRev{
+		PermsRev:    s.perms.Rev,
+		ProjectsRev: s.projs.Rev,
+	}
+}
+
 // processRealmsConfigChanges returns a slice of parameterless callbacks to
 // update the AuthDB based on detected realms.cfg and permissions
 // changes.
 //
 // Args:
-//   - permissionsDB: the current permissions and roles;
+//   - svcCfg: the current service configs, e.g. permissions and roles;
 //   - latest: RealmsCfgRev's for the realms configs fetched from
 //     LUCI Config;
 //   - stored: RealmsCfgRev's for the last processed realms configs;
@@ -285,10 +303,7 @@ func RealmsConfigCronHandler(ctx context.Context) error {
 //
 // Returns:
 //   - jobs: parameterless callbacks to update the AuthDB.
-func processRealmsConfigChanges(
-	ctx context.Context, permissionsDB *permissions.PermissionsDB,
-	latest []*RealmsCfgRev, stored []*RealmsCfgRev,
-	historicalComment string) ([]func() error, error) {
+func processRealmsConfigChanges(ctx context.Context, svcCfg *serviceConfigs, latest, stored []*RealmsCfgRev, historicalComment string) ([]func() error, error) {
 	toMap := func(revisions []*RealmsCfgRev) (map[string]*RealmsCfgRev, error) {
 		result := make(map[string]*RealmsCfgRev, len(revisions))
 		for _, cfgRev := range revisions {
@@ -313,7 +328,7 @@ func processRealmsConfigChanges(
 	var jobs []func() error
 
 	// For the realms configs that should be reevaluated, because they
-	// were generated with a previous revision of permissions.
+	// were generated with a previous revision of service-level configs.
 	toReevaluate := []*RealmsCfgRev{}
 
 	// Detect changes to realms configs. Going through the latest
@@ -330,9 +345,9 @@ func processRealmsConfigChanges(
 			revs := []*RealmsCfgRev{latestCfgRev}
 			comment := fmt.Sprintf("%s - using realms config rev %s", historicalComment, latestCfgRev.ConfigRev)
 			jobs = append(jobs, func() error {
-				return updateRealms(ctx, permissionsDB, revs, comment)
+				return updateRealms(ctx, svcCfg, revs, comment)
 			})
-		} else if storedCfgRev.PermsRev != permissionsDB.Rev {
+		} else if storedCfgRev.ServiceCfgRev != svcCfg.rev() {
 			// This config needs to be reevaluated.
 			toReevaluate = append(toReevaluate, latestCfgRev)
 		}
@@ -367,10 +382,9 @@ func processRealmsConfigChanges(
 			j = reevaluations
 		}
 		revs := toReevaluate[i:j]
-		comment := fmt.Sprintf("%s - generating realms with permissions rev %s",
-			historicalComment, permissionsDB.Rev)
+		comment := fmt.Sprintf("%s - generating realms with %s", historicalComment, svcCfg.rev())
 		jobs = append(jobs, func() error {
-			return updateRealms(ctx, permissionsDB, revs, comment)
+			return updateRealms(ctx, svcCfg, revs, comment)
 		})
 	}
 
@@ -404,7 +418,10 @@ func getStoredRealmsCfgRevs(ctx context.Context) ([]*RealmsCfgRev, error) {
 			ProjectID:    projID,
 			ConfigRev:    meta.ConfigRev,
 			ConfigDigest: meta.ConfigDigest,
-			PermsRev:     meta.PermsRev,
+			ServiceCfgRev: ServiceCfgRev{
+				PermsRev:    meta.PermsRev,
+				ProjectsRev: meta.ProjectsRev,
+			},
 		}
 	}
 	return storedRevs, nil
@@ -437,7 +454,7 @@ func getLatestRealmsCfgRev(ctx context.Context) ([]*RealmsCfgRev, error) {
 // - failed to unmarshal to a proto;
 // - failed to expand realms; or
 // - failed to update datastore with realms changes.
-func updateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*RealmsCfgRev, historicalComment string) error {
+func updateRealms(ctx context.Context, svcCfg *serviceConfigs, revs []*RealmsCfgRev, historicalComment string) error {
 	expanded := []*ExpandedRealms{}
 	for _, r := range revs {
 		logging.Infof(ctx, "expanding realms of project \"%s\"...", r.ProjectID)
@@ -447,7 +464,7 @@ func updateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*Re
 		if err := prototext.Unmarshal(r.ConfigBody, parsed); err != nil {
 			return errors.Fmt("couldn't unmarshal config body: %w", err)
 		}
-		expandedRev, err := realmsinternals.ExpandRealms(ctx, db, r.ProjectID, parsed)
+		expandedRev, err := realmsinternals.ExpandRealms(ctx, svcCfg.perms, svcCfg.projs, r.ProjectID, parsed)
 		if err != nil {
 			return errors.Fmt("failed to process realms of \"%s\": %w", r.ProjectID, err)
 		}
@@ -465,7 +482,7 @@ func updateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*Re
 	}
 
 	logging.Infof(ctx, "entering transaction")
-	if err := updateAuthProjectRealms(ctx, expanded, db.Rev, historicalComment); err != nil {
+	if err := updateAuthProjectRealms(ctx, expanded, svcCfg.rev(), historicalComment); err != nil {
 		return err
 	}
 	logging.Infof(ctx, "transaction landed")

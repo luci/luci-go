@@ -272,6 +272,9 @@ type AuthProjectRealms struct {
 
 	// PermsRev is the revision of permissions DB used to expand roles.
 	PermsRev string `gae:"perms_rev,noindex"`
+
+	// ProjectsRev is the revision of projects.cfg used to populate realm data.
+	ProjectsRev string `gae:"projects_rev,noindex"`
 }
 
 // AuthProjectRealmsMeta is the metadata of some AuthProjectRealms entity.
@@ -294,6 +297,9 @@ type AuthProjectRealmsMeta struct {
 
 	// PermsRev is the revision of permissions.cfg used to expand roles.
 	PermsRev string `gae:"perms_rev,noindex"`
+
+	// ProjectsRev is the revision of projects.cfg used to populate realm data.
+	ProjectsRev string `gae:"projects_rev,noindex"`
 
 	// ConfigDigest is a SHA256 digest of the raw config body.
 	ConfigDigest string `gae:"config_digest,noindex"`
@@ -1697,8 +1703,8 @@ func deleteAuthProjectRealmsMeta(ctx context.Context, project string) error {
 }
 
 // RealmsCfgRev is information about fetched or previously processed realms.cfg.
-// Comes either from LUCI Config (then `ConfigBody` is set, but `PermsRev`
-// isn't) or from the datastore (then `PermsRev` is set, but `ConfigBody`
+// Comes either from LUCI Config (then `ConfigBody` is set, but `ServiceCfgRev`
+// isn't) or from the datastore (then `ServiceCfgRev` is set, but `ConfigBody`
 // isn't). All other fields are always set.
 type RealmsCfgRev struct {
 	ProjectID    string
@@ -1706,8 +1712,25 @@ type RealmsCfgRev struct {
 	ConfigDigest string
 
 	// These two are mutually exclusive.
-	ConfigBody []byte
-	PermsRev   string
+	ConfigBody    []byte
+	ServiceCfgRev ServiceCfgRev
+}
+
+// ServiceCfgRev is a set of revisions of service-level configs that affect
+// how we evaluate all project-level realms.cfg.
+//
+// If any of them change, we need to reevaluate realms expansion in all
+// projects.
+type ServiceCfgRev struct {
+	// PermsRev is a revision of permissions.cfg used to expand realms.cfg.
+	PermsRev string
+	// ProjectsRev is a revision of projects.cfg used to expand realms.cfg.
+	ProjectsRev string
+}
+
+// String returns a representation used in logs.
+func (r ServiceCfgRev) String() string {
+	return fmt.Sprintf("permissions.cfg rev %s, projects.cfg rev %s", r.PermsRev, r.ProjectsRev)
 }
 
 // ExpandedRealms contains the expanded realms and information about the expanded
@@ -1729,7 +1752,7 @@ type ExpandedRealms struct {
 //		Failed to create new AuthProjectRealm entity
 //		Failed to update AuthProjectRealm entity
 //		Failed to put AuthProjectRealmsMeta entity
-func updateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, permsRev string, historicalComment string) error {
+func updateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, svcCfgRev ServiceCfgRev, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		metas := []*AuthProjectRealmsMeta{}
 		existing := []*AuthProjectRealms{}
@@ -1757,7 +1780,8 @@ func updateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, per
 				newRealm := makeAuthProjectRealms(ctx, r.CfgRev.ProjectID)
 				newRealm.Realms = realms
 				newRealm.ConfigRev = r.CfgRev.ConfigRev
-				newRealm.PermsRev = permsRev
+				newRealm.PermsRev = svcCfgRev.PermsRev
+				newRealm.ProjectsRev = svcCfgRev.ProjectsRev
 				if err := commitEntity(newRealm, now, serviceIdentity, false); err != nil {
 					return errors.Fmt("failed to create new AuthProjectRealm %s: %w", r.CfgRev.ProjectID, err)
 				}
@@ -1765,7 +1789,8 @@ func updateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, per
 				// update
 				existing[idx].Realms = realms
 				existing[idx].ConfigRev = r.CfgRev.ConfigRev
-				existing[idx].PermsRev = permsRev
+				existing[idx].PermsRev = svcCfgRev.PermsRev
+				existing[idx].ProjectsRev = svcCfgRev.ProjectsRev
 				if err := commitEntity(existing[idx], now, serviceIdentity, false); err != nil {
 					return errors.Fmt("failed to update AuthProjectRealm %s: %w", r.CfgRev.ProjectID, err)
 				}
@@ -1775,7 +1800,8 @@ func updateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, per
 
 			currentMeta := makeAuthProjectRealmsMeta(ctx, r.CfgRev.ProjectID)
 			currentMeta.ConfigRev = r.CfgRev.ConfigRev
-			currentMeta.PermsRev = permsRev
+			currentMeta.PermsRev = svcCfgRev.PermsRev
+			currentMeta.ProjectsRev = svcCfgRev.ProjectsRev
 			currentMeta.ConfigDigest = r.CfgRev.ConfigDigest
 			currentMeta.ModifiedTS = now
 			metas = append(metas, currentMeta)

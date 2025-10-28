@@ -39,6 +39,7 @@ import (
 
 	"go.chromium.org/luci/auth_service/internal/configs/validation"
 	"go.chromium.org/luci/auth_service/internal/permissions"
+	"go.chromium.org/luci/auth_service/internal/projects"
 )
 
 const (
@@ -63,7 +64,7 @@ type realmsMap struct {
 // All such protocol.Realms messages across all projects (plus a list of all
 // defined permissions with all their metadata) are later merged together into
 // a final universal protocol.Realms by merge() in the replication phase.
-func ExpandRealms(ctx context.Context, db *permissions.PermissionsDB, projectID string, realmsCfg *realmsconf.RealmsCfg) (*protocol.Realms, error) {
+func ExpandRealms(ctx context.Context, db *permissions.PermissionsDB, projs *projects.Projects, projectID string, realmsCfg *realmsconf.RealmsCfg) (*protocol.Realms, error) {
 	// internal is True when expanding internal realms (defined in a service
 	// config file). Such realms can use internal roles and permissions and
 	// they do not have implicit root bindings (since they are not associated
