@@ -88,7 +88,7 @@ const (
 	ExitOK             = 0
 	ExitError          = 1 // Generic error
 	ExitLoginRequired  = 2
-	ExitReauthRequired = 3
+	ExitReAuthRequired = 3
 )
 
 func init() {
@@ -348,7 +348,7 @@ func handleGet(ctx context.Context, opts auth.Options) {
 			} else {
 				fmt.Fprintf(os.Stderr, "Error: %v\n\n", err)
 				fmt.Fprint(os.Stderr, reAuthRequiredMsg)
-				os.Exit(ExitReauthRequired)
+				os.Exit(ExitReAuthRequired)
 			}
 		}
 		// Fall through if ReAuth is not needed
