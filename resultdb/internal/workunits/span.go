@@ -474,19 +474,6 @@ func (b *MutationBuilder) UpdateDeadline(deadline time.Time) {
 	b.legacyInvocationValues["Deadline"] = deadline
 }
 
-// UpdateModuleID updates the module ID of the work unit.
-func (b *MutationBuilder) UpdateModuleID(moduleID *pb.ModuleIdentifier) {
-	b.values["ModuleName"] = moduleID.ModuleName
-	b.values["ModuleScheme"] = moduleID.ModuleScheme
-	b.values["ModuleVariant"] = moduleID.ModuleVariant
-	b.values["ModuleVariantHash"] = pbutil.VariantHash(moduleID.ModuleVariant)
-
-	b.legacyInvocationValues["ModuleName"] = moduleID.ModuleName
-	b.legacyInvocationValues["ModuleScheme"] = moduleID.ModuleScheme
-	b.legacyInvocationValues["ModuleVariant"] = moduleID.ModuleVariant
-	b.legacyInvocationValues["ModuleVariantHash"] = pbutil.VariantHash(moduleID.ModuleVariant)
-}
-
 // UpdateProperties updates the properties of the work unit.
 func (b *MutationBuilder) UpdateProperties(properties *structpb.Struct) {
 	b.values["Properties"] = spanutil.Compressed(pbutil.MustMarshal(properties))

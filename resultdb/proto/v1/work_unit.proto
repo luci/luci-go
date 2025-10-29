@@ -67,7 +67,9 @@ message WorkUnit {
   //
   // Regex: ^[A-Z0-9]+(_[A-Z0-9]+)+$. Limited to 50 characters in length.
   // Required.
-  string kind = 25;
+  string kind = 25 [
+    (google.api.field_behavior) = IMMUTABLE
+  ];
 
   // The execution state of the work unit.
   enum State {
@@ -289,19 +291,21 @@ message WorkUnit {
 
   // The module this work unit is reporting results for.
   //
-  // This must be set before any test results or test result artifacts can be
-  // uploaded to this work unit. Test results and test result artifacts uploaded
-  // to this work unit will need to match this module. Work unit-level artifacts
-  // (not associated with a test result) are exempt, as are test results and
-  // artifacts for test results using legacy (non-structured) test IDs.
+  // This field must be set if this work unit will (directly) contain any test
+  // results or test result artifacts, as test results and test result
+  // artifacts uploaded to this work unit will need to match this module. Work
+  // unit-level artifacts (not associated with a test result) are exempt, as
+  // are test results and artifacts for test results using legacy
+  // (non-structured) test IDs.
   //
   // If results from multiple modules need to be reported, create a child
   // work unit for each module. This field may be left unset if this work unit
   // only has child work units and will not be uploading test results itself.
   //
-  // Once this field is set to a non-empty value, it becomes invariant and may
-  // not be changed.
-  ModuleIdentifier module_id = 19;
+  // This field is immutable, it can only be set at work unit creation time.
+  ModuleIdentifier module_id = 19 [
+    (google.api.field_behavior) = IMMUTABLE
+  ];
 
   // The identifier of the module-shard this work unit is running.
   //

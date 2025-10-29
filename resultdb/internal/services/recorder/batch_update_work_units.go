@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/tasks"
@@ -40,11 +39,7 @@ func (s *recorderServer) BatchUpdateWorkUnits(ctx context.Context, in *pb.BatchU
 	if err := verifyBatchUpdateWorkUnitsPermissions(ctx, in); err != nil {
 		return nil, err
 	}
-	cfg, err := config.Service(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err := validateBatchUpdateWorkUnitsRequest(ctx, in, cfg); err != nil {
+	if err := validateBatchUpdateWorkUnitsRequest(ctx, in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 	updatedRows, err := updateWorkUnits(ctx, in.Requests, in.RequestId)
@@ -191,7 +186,7 @@ func deduplicateUpdateWorkUnits(ctx context.Context, ids []workunits.ID, updated
 	return true, nil
 }
 
-func validateBatchUpdateWorkUnitsRequest(ctx context.Context, in *pb.BatchUpdateWorkUnitsRequest, cfg *config.CompiledServiceConfig) error {
+func validateBatchUpdateWorkUnitsRequest(ctx context.Context, in *pb.BatchUpdateWorkUnitsRequest) error {
 	if in.RequestId == "" {
 		// Request ID is required to ensure requests are treated idempotently
 		// in case of inevitable retries.
@@ -203,7 +198,7 @@ func validateBatchUpdateWorkUnitsRequest(ctx context.Context, in *pb.BatchUpdate
 	wuIdx := make(map[workunits.ID]int, len(in.Requests))
 	for i, r := range in.Requests {
 		requireRequestID := false
-		if err := validateUpdateWorkUnitRequest(ctx, r, cfg, requireRequestID); err != nil {
+		if err := validateUpdateWorkUnitRequest(ctx, r, requireRequestID); err != nil {
 			return errors.Fmt("requests[%d]: %w", i, err)
 		}
 		if r.RequestId != "" && r.RequestId != in.RequestId {

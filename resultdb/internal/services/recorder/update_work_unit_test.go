@@ -34,15 +34,12 @@ import (
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
@@ -66,9 +63,6 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 		now := testclock.TestRecentTimeUTC
 		ctx, _ = testclock.UseTime(ctx, now)
 
-		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
-		assert.NoErr(t, err)
-
 		// A valid base request.
 		req := &pb.UpdateWorkUnitRequest{
 			WorkUnit: &pb.WorkUnit{
@@ -83,32 +77,32 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 				// Empty is valid.
 				req.WorkUnit.Etag = ""
 
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
 			t.Run("invalid", func(t *ftt.Test) {
 				req.WorkUnit.Etag = "invalid"
 
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.That(t, err, should.ErrLike(`work_unit: etag: malformated etag`))
 			})
 		})
 		t.Run("empty update mask", func(t *ftt.Test) {
 			req.UpdateMask.Paths = []string{}
-			err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+			err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 			assert.Loosely(t, err, should.ErrLike("update_mask: paths is empty"))
 		})
 
 		t.Run("non-exist update mask path", func(t *ftt.Test) {
 			req.UpdateMask.Paths = []string{"not_exist"}
-			err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+			err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 			assert.Loosely(t, err, should.ErrLike(`update_mask: field "not_exist" does not exist in message WorkUnit`))
 		})
 
 		t.Run("unsupported update mask path", func(t *ftt.Test) {
 			req.UpdateMask.Paths = []string{"name"}
-			err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+			err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 			assert.Loosely(t, err, should.ErrLike(`update_mask: unsupported path "name"`))
 		})
 
@@ -117,18 +111,18 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 				req.RequestId = ""
 				t.Run("required", func(t *ftt.Test) {
 					requireRequestID = true
-					err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+					err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 					assert.Loosely(t, err, should.ErrLike("request_id: unspecified"))
 				})
 				t.Run("not required", func(t *ftt.Test) {
 					requireRequestID = false
-					err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+					err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 					assert.Loosely(t, err, should.BeNil)
 				})
 			})
 			t.Run("invalid", func(t *ftt.Test) {
 				req.RequestId = "😃"
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike("request_id: does not match"))
 			})
 		})
@@ -136,25 +130,25 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 		t.Run("submask in update mask", func(t *ftt.Test) {
 			t.Run("unsupported", func(t *ftt.Test) {
 				req.UpdateMask.Paths = []string{"deadline.seconds"}
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike(`update_mask: "deadline" should not have any submask`))
 			})
 
 			t.Run("supported for extended_properties", func(t *ftt.Test) {
 				req.UpdateMask.Paths = []string{"extended_properties.some_key"}
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
 			t.Run("invalid key for extended_properties", func(t *ftt.Test) {
 				req.UpdateMask.Paths = []string{"extended_properties.invalid_key_"}
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike(`update_mask: extended_properties: key "invalid_key_": does not match`))
 			})
 
 			t.Run("too deep for extended_properties", func(t *ftt.Test) {
 				req.UpdateMask.Paths = []string{"extended_properties.some_key.fields"}
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike(`update_mask: extended_properties["some_key"] should not have any submask`))
 			})
 		})
@@ -165,7 +159,7 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 				states := []pb.WorkUnit_State{pb.WorkUnit_PENDING, pb.WorkUnit_RUNNING, pb.WorkUnit_FAILED, pb.WorkUnit_CANCELLED, pb.WorkUnit_SKIPPED, pb.WorkUnit_SUCCEEDED}
 				for _, state := range states {
 					req.WorkUnit.State = state
-					err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+					err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 					assert.Loosely(t, err, should.BeNil)
 				}
 			})
@@ -173,14 +167,14 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 				req.WorkUnit.State = pb.WorkUnit_STATE_UNSPECIFIED
 				req.UpdateMask.Paths = []string{"state"}
 
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike("work_unit: state: unspecified"))
 			})
 			t.Run("invalid", func(t *ftt.Test) {
 				req.WorkUnit.State = pb.WorkUnit_FINAL_STATE_MASK
 				req.UpdateMask.Paths = []string{"state"}
 
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike("work_unit: state: FINAL_STATE_MASK is not a valid state"))
 			})
 		})
@@ -190,14 +184,14 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 				req.WorkUnit.SummaryMarkdown = ""
 				req.UpdateMask.Paths = []string{"summary_markdown"}
 
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run("valid non-empty", func(t *ftt.Test) {
 				req.WorkUnit.SummaryMarkdown = "The task failed because of..."
 				req.UpdateMask.Paths = []string{"summary_markdown"}
 
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run("invalid", func(t *ftt.Test) {
@@ -205,14 +199,14 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 				req.WorkUnit.SummaryMarkdown = "\xFF"
 				req.UpdateMask.Paths = []string{"summary_markdown"}
 
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike("work_unit: summary_markdown: not valid UTF-8"))
 			})
 			t.Run("too long", func(t *ftt.Test) {
 				req.WorkUnit.SummaryMarkdown = strings.Repeat("a", 4097)
 				req.UpdateMask.Paths = []string{"summary_markdown"}
 
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike("work_unit: summary_markdown: must be at most 4096 bytes long (was 4097 bytes)"))
 			})
 		})
@@ -221,60 +215,20 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 			req.UpdateMask.Paths = []string{"deadline"}
 			t.Run("valid", func(t *ftt.Test) {
 				req.WorkUnit.Deadline = pbutil.MustTimestampProto(now.Add(time.Hour))
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
 			t.Run("invalid empty", func(t *ftt.Test) {
 				req.WorkUnit.Deadline = nil
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike(`invalid nil Timestamp`))
 			})
 
 			t.Run("invalid past", func(t *ftt.Test) {
 				req.WorkUnit.Deadline = pbutil.MustTimestampProto(now.Add(-time.Hour))
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike(`work_unit: deadline: must be at least 10 seconds in the future`))
-			})
-		})
-
-		t.Run("module_id", func(t *ftt.Test) {
-			req.UpdateMask.Paths = []string{"module_id"}
-
-			t.Run("set for the first time", func(t *ftt.Test) {
-				req.WorkUnit.ModuleId = nil
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
-				assert.Loosely(t, err, should.BeNil)
-			})
-
-			t.Run("valid", func(t *ftt.Test) {
-				req.WorkUnit.ModuleId = &pb.ModuleIdentifier{
-					ModuleName:    "module",
-					ModuleScheme:  "gtest",
-					ModuleVariant: pbutil.Variant("k", "v"),
-				}
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
-				assert.Loosely(t, err, should.BeNil)
-			})
-
-			t.Run("structurally invalid", func(t *ftt.Test) {
-				req.WorkUnit.ModuleId = &pb.ModuleIdentifier{
-					ModuleName:        "mymodule",
-					ModuleScheme:      "gtest",
-					ModuleVariantHash: "aaaaaaaaaaaaaaaa", // Variant hash only is not allowed for storage.
-				}
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
-				assert.Loosely(t, err, should.ErrLike("work_unit: module_id: module_variant: unspecified"))
-			})
-
-			t.Run("invalid against config", func(t *ftt.Test) {
-				req.WorkUnit.ModuleId = &pb.ModuleIdentifier{
-					ModuleName:    "mymodule",
-					ModuleScheme:  "unknown", // Not defined in placeholder config.
-					ModuleVariant: pbutil.Variant("k", "v"),
-				}
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
-				assert.Loosely(t, err, should.ErrLike(`work_unit: module_id: module_scheme: scheme "unknown" is not a known scheme`))
 			})
 		})
 
@@ -283,13 +237,13 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 
 			t.Run("valid", func(t *ftt.Test) {
 				req.WorkUnit.Tags = []*pb.StringPair{{Key: "k", Value: "v"}}
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
 			t.Run("invalid", func(t *ftt.Test) {
 				req.WorkUnit.Tags = []*pb.StringPair{{Key: "k", Value: "a\n"}}
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike(`work_unit: tags: "k":"a\n": value: non-printable rune '\n' at byte index 1`))
 			})
 		})
@@ -304,7 +258,7 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 						"key_1": structpb.NewStringValue("value_1"),
 					},
 				}
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
@@ -312,7 +266,7 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 				req.WorkUnit.Properties = &structpb.Struct{Fields: map[string]*structpb.Value{
 					"key": structpb.NewStringValue("1"),
 				}}
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike(`work_unit: properties: must have a field "@type"`))
 			})
 		})
@@ -322,7 +276,7 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 
 			t.Run("valid", func(t *ftt.Test) {
 				req.WorkUnit.ExtendedProperties = testutil.TestInvocationExtendedProperties()
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
@@ -332,7 +286,7 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 						"a": structpb.NewStringValue("1"),
 					}},
 				}
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike(`work_unit: extended_properties: ["key"]: must have a field "@type"`))
 			})
 		})
@@ -350,7 +304,7 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 						},
 					},
 				}
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
@@ -361,7 +315,7 @@ func TestValidateUpdateWorkUnitRequest(t *testing.T) {
 						{Id: "dup-id", Type: pb.InstructionType_STEP_INSTRUCTION, DescriptiveName: "des_name"},
 					},
 				}
-				err := validateUpdateWorkUnitRequest(ctx, req, cfg, requireRequestID)
+				err := validateUpdateWorkUnitRequest(ctx, req, requireRequestID)
 				assert.Loosely(t, err, should.ErrLike(`work_unit: instructions: instructions[1]: id: "dup-id" is re-used at index 0`))
 			})
 		})
@@ -375,10 +329,6 @@ func TestUpdateWorkUnit(t *testing.T) {
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.Identity(user),
 		})
-		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
-		ctx = memory.Use(ctx)                    // For config datastore cache.
-		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
-		assert.NoErr(t, err)
 		ctx, sched := tq.TestingContext(ctx, nil)
 		now := testclock.TestRecentTimeUTC
 		ctx, _ = testclock.UseTime(ctx, now)
@@ -399,7 +349,6 @@ func TestUpdateWorkUnit(t *testing.T) {
 		// Insert root invocation and work unit into spanner.
 		expectedWURow := workunits.
 			NewBuilder(wuID.RootInvocationID, wuID.WorkUnitID).
-			WithModuleID(nil).
 			WithState(pb.WorkUnit_RUNNING).
 			WithFinalizationState(pb.WorkUnit_ACTIVE).
 			Build()
@@ -635,67 +584,6 @@ func TestUpdateWorkUnit(t *testing.T) {
 				taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, taskState, should.Match(rootinvocations.FinalizerTaskState{Pending: true, Sequence: 1}))
-			})
-
-			t.Run("module_id", func(t *ftt.Test) {
-				req.UpdateMask.Paths = []string{"module_id"}
-				newModuleID := &pb.ModuleIdentifier{
-					ModuleName:    "module",
-					ModuleScheme:  "gtest",
-					ModuleVariant: pbutil.Variant("k", "v"),
-				}
-				req.WorkUnit.ModuleId = newModuleID
-
-				t.Run("set for the first time", func(t *ftt.Test) {
-					wu, err := recorder.UpdateWorkUnit(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					expectedWU.ModuleId = newModuleID
-					pbutil.PopulateModuleIdentifierHashes(expectedWU.ModuleId)
-					assertResponse(wu, expectedWU)
-
-					// Validate work unit table.
-					expectedWURow.ModuleID = newModuleID
-					assertSpannerRows(expectedWURow)
-				})
-				t.Run("updating an already set module", func(t *ftt.Test) {
-					// Set a module ID first.
-					wu, err := recorder.UpdateWorkUnit(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, wu.ModuleId.ModuleName, should.Equal("module"))
-
-					expectedWU.ModuleId = newModuleID
-					expectedWU.LastUpdated = wu.LastUpdated
-					expectedWU.Etag = wu.Etag
-					expectedWURow.ModuleID = newModuleID
-					expectedWURow.LastUpdated = wu.LastUpdated.AsTime()
-
-					// Use a new request id to avoid request been deduplicated.
-					req.RequestId = "new-request-id"
-					t.Run("to nil", func(t *ftt.Test) {
-						req.WorkUnit.ModuleId = nil
-
-						_, err = recorder.UpdateWorkUnit(ctx, req)
-						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike(`bad request: work_unit: module_id: cannot modify module_id once set (do you need to create a child work unit?); got nil, was non-nil`))
-					})
-					t.Run("to another value", func(t *ftt.Test) {
-						req.WorkUnit.ModuleId = &pb.ModuleIdentifier{
-							ModuleName:    "new_module",
-							ModuleScheme:  "gtest",
-							ModuleVariant: pbutil.Variant("k", "v"),
-						}
-
-						_, err = recorder.UpdateWorkUnit(ctx, req)
-						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike(`bad request: work_unit: module_id: cannot modify module_id once set`))
-					})
-					t.Run("to the same value", func(t *ftt.Test) {
-						// This is allowed, as it is a no-op.
-						respWU, err := recorder.UpdateWorkUnit(ctx, req)
-						assert.Loosely(t, err, should.BeNil)
-						assertNoOp(respWU, expectedWURow, expectedWU)
-					})
-				})
 			})
 
 			t.Run("extended_properties", func(t *ftt.Test) {

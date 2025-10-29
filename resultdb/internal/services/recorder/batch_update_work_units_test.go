@@ -34,15 +34,12 @@ import (
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
@@ -65,10 +62,6 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.Identity(user),
 		})
-		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
-		ctx = memory.Use(ctx)                    // For config datastore cache.
-		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
-		assert.NoErr(t, err)
 		ctx, sched := tq.TestingContext(ctx, nil)
 		now := testclock.TestRecentTimeUTC
 		ctx, _ = testclock.UseTime(ctx, now)
@@ -90,14 +83,12 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 			NewBuilder(wuID1.RootInvocationID, wuID1.WorkUnitID).
 			WithFinalizationState(pb.WorkUnit_ACTIVE).
 			WithState(pb.WorkUnit_RUNNING).
-			WithModuleID(nil).
 			Build()
 		wuRow2Expected := workunits.
 			NewBuilder(wuID2.RootInvocationID, wuID2.WorkUnitID).
 			WithFinalizationState(pb.WorkUnit_ACTIVE).
 			WithState(pb.WorkUnit_PENDING).
 			WithTags([]*pb.StringPair{{Key: "k2", Value: "v2"}}).
-			WithModuleID(nil).
 			Build()
 
 		var ms []*spanner.Mutation
@@ -422,66 +413,6 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 
 					// Work unit 1 is no-op.
 					assertNoOp(res.WorkUnits[0], wuRow1Expected, wu1Expected)
-				})
-
-				t.Run("module_id", func(t *ftt.Test) {
-					newModuleID := &pb.ModuleIdentifier{
-						ModuleName:    "module",
-						ModuleScheme:  "gtest",
-						ModuleVariant: pbutil.Variant("k", "v"),
-					}
-					req.Requests[1].UpdateMask.Paths = []string{"module_id"}
-					req.Requests[1].WorkUnit.ModuleId = newModuleID
-
-					t.Run("set for the first time", func(t *ftt.Test) {
-						res, err := recorder.BatchUpdateWorkUnits(ctx, req)
-						assert.Loosely(t, err, should.BeNil)
-						wu2Expected.ModuleId = newModuleID
-						pbutil.PopulateModuleIdentifierHashes(wu2Expected.ModuleId)
-						assertResponse(res.WorkUnits[1], wu2Expected)
-
-						// Validate work unit table.
-						wuRow2Expected.ModuleID = newModuleID
-						assertSpannerRows(wuRow2Expected)
-
-						// Work unit 1 is no-op.
-						assertNoOp(res.WorkUnits[0], wuRow1Expected, wu1Expected)
-					})
-					t.Run("updating an already set module", func(t *ftt.Test) {
-						// Set a module ID first.
-						resp, err := recorder.BatchUpdateWorkUnits(ctx, req)
-						assert.Loosely(t, err, should.BeNil)
-						wu2Expected.ModuleId = newModuleID
-						wu2Expected.LastUpdated = resp.WorkUnits[1].LastUpdated
-						wu2Expected.Etag = resp.WorkUnits[1].Etag
-						wuRow2Expected.ModuleID = newModuleID
-						wuRow2Expected.LastUpdated = resp.WorkUnits[1].LastUpdated.AsTime()
-						// Reset the request id to another value, so that the second call is not deduplicated.
-						req.RequestId = "new-request-id"
-						t.Run("to nil", func(t *ftt.Test) {
-							req.Requests[1].WorkUnit.ModuleId = nil
-							_, err = recorder.BatchUpdateWorkUnits(ctx, req)
-							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-							assert.That(t, err, should.ErrLike(`requests[1]: work_unit: module_id: cannot modify module_id once set (do you need to create a child work unit?); got nil, was non-nil`))
-						})
-						t.Run("to another value", func(t *ftt.Test) {
-							req.Requests[1].WorkUnit.ModuleId = &pb.ModuleIdentifier{
-								ModuleName:    "new_module",
-								ModuleScheme:  "gtest",
-								ModuleVariant: pbutil.Variant("k", "v"),
-							}
-							_, err = recorder.BatchUpdateWorkUnits(ctx, req)
-							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-							assert.That(t, err, should.ErrLike(`requests[1]: work_unit: module_id: cannot modify module_id once set`))
-						})
-						t.Run("to the same value", func(t *ftt.Test) {
-							// This is allowed, as it is a no-op.
-							res, err := recorder.BatchUpdateWorkUnits(ctx, req)
-							assert.Loosely(t, err, should.BeNil)
-							assertNoOp(res.WorkUnits[0], wuRow1Expected, wu1Expected)
-							assertNoOp(res.WorkUnits[1], wuRow2Expected, wu2Expected)
-						})
-					})
 				})
 
 				t.Run("extended_properties", func(t *ftt.Test) {

@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/grpc/appstatus"
 
-	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
@@ -41,11 +40,8 @@ func (s *recorderServer) UpdateWorkUnit(ctx context.Context, in *pb.UpdateWorkUn
 	if err := verifyUpdateWorkUnitPermissions(ctx, in); err != nil {
 		return nil, err
 	}
-	cfg, err := config.Service(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err := validateUpdateWorkUnitRequest(ctx, in, cfg, true); err != nil {
+	const requireRequestID = true
+	if err := validateUpdateWorkUnitRequest(ctx, in, requireRequestID); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 	// Piggy back on updateWorkUnits.
@@ -105,33 +101,16 @@ func updateWorkUnitInternal(in *pb.UpdateWorkUnitRequest, curWorkUnitRow *workun
 				mb.UpdateDeadline(deadline)
 				updatedRow.Deadline = deadline
 			}
-		case "module_id":
-			curModuleID := curWorkUnitRow.ModuleID
-			if diff := diffModuleIdentifier(in.WorkUnit.ModuleId, curModuleID); diff != "" {
-				if curModuleID != nil {
-					return nil, nil, appstatus.BadRequest(errors.Fmt("requests[%d]: work_unit: module_id: cannot modify module_id once set (do you need to create a child work unit?); %s", ordinal, diff))
-				}
-				// curModuleID is nil. And the specified in.WorkUnit.ModuleId is not equal to it.
-				// Therefore, we must be setting the module to something substantive.
-				mb.UpdateModuleID(in.WorkUnit.ModuleId)
-
-				// Populate output-only fields in the response.
-				updatedRow.ModuleID = in.WorkUnit.ModuleId
-				pbutil.PopulateModuleIdentifierHashes(updatedRow.ModuleID)
-			}
-
 		case "properties":
 			if !proto.Equal(curWorkUnitRow.Properties, in.WorkUnit.Properties) {
 				mb.UpdateProperties(in.WorkUnit.Properties)
 				updatedRow.Properties = in.WorkUnit.Properties
 			}
-
 		case "tags":
 			if !pbutil.StringPairsEqual(curWorkUnitRow.Tags, in.WorkUnit.Tags) {
 				mb.UpdateTags(in.WorkUnit.Tags)
 				updatedRow.Tags = in.WorkUnit.Tags
 			}
-
 		case "extended_properties":
 			extendedProperties := in.WorkUnit.ExtendedProperties
 			curExtendedProperties := curWorkUnitRow.ExtendedProperties
@@ -165,7 +144,7 @@ func updateWorkUnitInternal(in *pb.UpdateWorkUnitRequest, curWorkUnitRow *workun
 	return ms, updatedRow, nil
 }
 
-func validateUpdateWorkUnitRequest(ctx context.Context, req *pb.UpdateWorkUnitRequest, cfg *config.CompiledServiceConfig, requireRequestID bool) error {
+func validateUpdateWorkUnitRequest(ctx context.Context, req *pb.UpdateWorkUnitRequest, requireRequestID bool) error {
 	if req.WorkUnit == nil {
 		return errors.Fmt("work_unit: unspecified")
 	}
@@ -205,7 +184,6 @@ func validateUpdateWorkUnitRequest(ctx context.Context, req *pb.UpdateWorkUnitRe
 			if err := pbutil.ValidateWorkUnitState(req.WorkUnit.State); err != nil {
 				return errors.Fmt("work_unit: state: %w", err)
 			}
-
 		case "summary_markdown":
 			// In FinalizeWorkUnit, we could be permissive about length and truncate it server-side
 			// as it is a AIP-136 custom method. However, as this is a standard AIP-134 Update method,
@@ -214,46 +192,28 @@ func validateUpdateWorkUnitRequest(ctx context.Context, req *pb.UpdateWorkUnitRe
 			if err := pbutil.ValidateSummaryMarkdown(req.WorkUnit.SummaryMarkdown, enforceLength); err != nil {
 				return errors.Fmt("work_unit: summary_markdown: %w", err)
 			}
-
 		case "deadline":
 			// Using clock.Now(ctx).UTC() for validation, actual commit time will be used for storage.
 			assumedCreateTime := clock.Now(ctx).UTC()
 			if err := validateDeadline(req.WorkUnit.Deadline, assumedCreateTime); err != nil {
 				return errors.Fmt("work_unit: deadline: %w", err)
 			}
-
-		case "module_id":
-			// Ensure this is a valid module_id. Later we must validate that if module_id is already set,
-			// it can't be updated to a different value.
-			if req.WorkUnit.ModuleId != nil {
-				if err := pbutil.ValidateModuleIdentifierForStorage(req.WorkUnit.ModuleId); err != nil {
-					return errors.Fmt("work_unit: module_id: %w", err)
-				}
-				if err := validateModuleIdentifierAgainstConfig(req.WorkUnit.ModuleId, cfg); err != nil {
-					return errors.Fmt("work_unit: module_id: %w", err)
-				}
-			}
-
 		case "tags":
 			if err := pbutil.ValidateWorkUnitTags(req.WorkUnit.Tags); err != nil {
 				return errors.Fmt("work_unit: tags: %w", err)
 			}
-
 		case "properties":
 			if err := pbutil.ValidateWorkUnitProperties(req.WorkUnit.Properties); err != nil {
 				return errors.Fmt("work_unit: properties: %w", err)
 			}
-
 		case "extended_properties":
 			if err := pbutil.ValidateInvocationExtendedProperties(req.WorkUnit.ExtendedProperties); err != nil {
 				return errors.Fmt("work_unit: extended_properties: %w", err)
 			}
-
 		case "instructions":
 			if err := pbutil.ValidateInstructions(req.WorkUnit.Instructions); err != nil {
 				return errors.Fmt("work_unit: instructions: %w", err)
 			}
-
 		default:
 			return errors.Fmt("update_mask: unsupported path %q", path)
 		}
