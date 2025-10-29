@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
@@ -104,6 +105,9 @@ func createWorkUnitsIdempotent(
 		parentIDs = append(parentIDs, parentID)
 		ids = append(ids, createdID)
 	}
+
+	logging.Infof(ctx, "%s", prepareWorkUnitCreationLogMessage(parentIDs, ids))
+
 	dedup := false
 	_, err = mutateWorkUnitsForCreate(ctx, parentIDs, ids, func(ctx context.Context) error {
 		var err error
@@ -526,6 +530,32 @@ func deduplicateCreateWorkUnits(ctx context.Context, ids []workunits.ID, request
 	}
 	// All id exist, deduplicate this call.
 	return true, nil
+}
+
+// prepareWorkUnitCreationLogMessage prepares a log message describing the work units being created.
+func prepareWorkUnitCreationLogMessage(parentIDs []workunits.ID, ids []workunits.ID) string {
+	var message strings.Builder
+	message.WriteString("Creating work unit ")
+	for i := range ids {
+		if i >= 3 {
+			// Don't log more than 3 examples.
+			message.WriteString(fmt.Sprintf(" (and %d more)", len(ids)-3))
+			break
+		}
+		if i > 0 {
+			isLastItem := i == 2 || (i == len(ids)-1)
+			if isLastItem {
+				message.WriteString(" and ")
+			} else {
+				message.WriteString(", ")
+			}
+		}
+		message.WriteString(fmt.Sprintf("%q", ids[i].WorkUnitID))
+		message.WriteString(" in ")
+		message.WriteString(fmt.Sprintf("%q", parentIDs[i].WorkUnitID))
+	}
+	message.WriteString(fmt.Sprintf(" (root invocation: %q)", parentIDs[0].RootInvocationID))
+	return message.String()
 }
 
 // validateSameUpdateTokenState validates all work units share the same update token state.

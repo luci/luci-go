@@ -767,3 +767,38 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 		})
 	})
 }
+
+func TestPrepareWorkUnitCreationLogMessage(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("prepareWorkUnitCreationLogMessage", t, func(t *ftt.Test) {
+		parentIDs := []workunits.ID{
+			{RootInvocationID: "root-inv-1", WorkUnitID: "parent-wu-1"},
+			{RootInvocationID: "root-inv-1", WorkUnitID: "parent-wu-1"},
+			{RootInvocationID: "root-inv-1", WorkUnitID: "parent-wu-2"},
+			{RootInvocationID: "root-inv-1", WorkUnitID: "parent-wu-2"},
+		}
+		ids := []workunits.ID{
+			{RootInvocationID: "root-inv-1", WorkUnitID: "child-wu-1"},
+			{RootInvocationID: "root-inv-1", WorkUnitID: "child-wu-2"},
+			{RootInvocationID: "root-inv-1", WorkUnitID: "child-wu-3"},
+			{RootInvocationID: "root-inv-1", WorkUnitID: "child-wu-4"},
+		}
+		t.Run("single work unit", func(t *ftt.Test) {
+			msg := prepareWorkUnitCreationLogMessage(parentIDs[:1], ids[:1])
+			assert.Loosely(t, msg, should.Equal(`Creating work unit "child-wu-1" in "parent-wu-1" (root invocation: "root-inv-1")`))
+		})
+		t.Run("two work units", func(t *ftt.Test) {
+			msg := prepareWorkUnitCreationLogMessage(parentIDs[:2], ids[:2])
+			assert.Loosely(t, msg, should.Equal(`Creating work unit "child-wu-1" in "parent-wu-1" and "child-wu-2" in "parent-wu-1" (root invocation: "root-inv-1")`))
+		})
+		t.Run("three work units", func(t *ftt.Test) {
+			msg := prepareWorkUnitCreationLogMessage(parentIDs[:3], ids[:3])
+			assert.Loosely(t, msg, should.Equal(`Creating work unit "child-wu-1" in "parent-wu-1", "child-wu-2" in "parent-wu-1" and "child-wu-3" in "parent-wu-2" (root invocation: "root-inv-1")`))
+		})
+		t.Run("more than three work units", func(t *ftt.Test) {
+			msg := prepareWorkUnitCreationLogMessage(parentIDs, ids)
+			assert.Loosely(t, msg, should.Equal(`Creating work unit "child-wu-1" in "parent-wu-1", "child-wu-2" in "parent-wu-1" and "child-wu-3" in "parent-wu-2" (and 1 more) (root invocation: "root-inv-1")`))
+		})
+	})
+}
