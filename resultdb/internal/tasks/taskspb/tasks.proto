@@ -33,8 +33,8 @@ message SweepWorkUnitsForFinalization {
   string root_invocation_id = 1;
 
   // The sequence number of the current task. It is compared with the latest
-  // task sequence number scheduled for the root invocation. If they don't match,
-  // the task is stale and should be skipped to avoid task overruns.
+  // task sequence number scheduled for the root invocation. If they don't
+  // match, the task is stale and should be skipped to avoid task overruns.
   int64 sequence_number = 2;
 }
 
@@ -46,6 +46,11 @@ message NotifyInvocationFinalized {
 message NotifyRootInvocationFinalized {
   // The message to publish to Cloud Pub/Sub.
   luci.resultdb.v1.RootInvocationFinalizedNotification message = 1;
+}
+
+message PublishTestResults {
+  // The message to publish to Cloud Pub/Sub.
+  luci.resultdb.v1.TestResultsNotification message = 1;
 }
 
 message ExportInvocationTestResultsToBQ {

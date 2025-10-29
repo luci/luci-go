@@ -19,6 +19,7 @@ package luci.resultdb.v1;
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/root_invocation.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 option java_package = "com.google.luci.resultdb.v1";
@@ -130,4 +131,41 @@ message InvocationReadyForExportNotification {
     // deduplicate to the same testing task as they compile to
     // byte-for-byte-identical testing artifacts.
     luci.resultdb.v1.Sources sources = 5;
+}
+
+// A message to publish batches of test results from one or more work units
+// within the same root invocation.
+//
+// The message is sent over the `v1.test_results` Cloud Pub/Sub topic in
+// JSON-serialized form. The size limit of the message is 10MB.
+//
+// Next id: 5
+message TestResultsNotification {
+    // A message representing the batch of test results grouped by work unit.
+    // Next id: 3
+    message TestResultsByWorkUnit {
+        // The name of the work unit that the test results belong to.
+        // Format: rootInvocations/{Root_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}.
+        string work_unit_name = 1;
+
+        // A batch of test results in the same parent work units.
+        repeated luci.resultdb.v1.TestResult test_results = 2;
+    }
+
+    // A list of batches of test results grouped by work unit in the same root
+    // invocation.
+    repeated TestResultsByWorkUnit test_results_by_work_unit = 1;
+
+    // The hostname of the luci.resultdb.v1.ResultDB service which can be used
+    // to query more information about the test results notified in this
+    // message.
+    string resultdb_host = 2;
+
+    // The code sources tested, if known. This field is sourced from the root
+    // invocation.
+    luci.resultdb.v1.Sources sources = 3;
+
+    // A deduplication key identifying this batch of test results within the
+    // same root invocation.
+    string deduplication_key = 4;
 }
