@@ -40,40 +40,30 @@ var (
 
 	// ErrNotConfigured is returned by Authenticate and other functions if the
 	// context wasn't previously initialized via 'Initialize'.
-	ErrNotConfigured = grpcutil.InternalTag.Apply(
+	ErrNotConfigured = grpcutil.InternalTag.Apply(errors.New("auth: the library is not properly configured"))
 
-		// ErrBadClientID is returned by Authenticate if caller is using an OAuth2
-		// client ID not in the list of allowed IDs. More info is in the log.
-		errors.New("auth: the library is not properly configured"))
+	// ErrBadClientID is returned by Authenticate if caller is using an OAuth2
+	// client ID not in the list of allowed IDs. More info is in the log.
+	ErrBadClientID = grpcutil.PermissionDeniedTag.Apply(errors.New("auth: OAuth client_id is not in the allowlist"))
 
-	ErrBadClientID = grpcutil.PermissionDeniedTag.Apply(
+	// ErrBadAudience is returned by Authenticate if token's audience is unknown.
+	ErrBadAudience = grpcutil.PermissionDeniedTag.Apply(errors.New("auth: bad token audience"))
 
-		// ErrBadAudience is returned by Authenticate if token's audience is unknown.
-		errors.New("auth: OAuth client_id is not in the allowlist"))
+	// ErrBadRemoteAddr is returned by Authenticate if request's remote_addr can't
+	// be parsed.
+	ErrBadRemoteAddr = grpcutil.InternalTag.Apply(errors.New("auth: bad remote addr"))
 
-	ErrBadAudience = grpcutil.PermissionDeniedTag.Apply(
+	// ErrForbiddenIP is returned when an account is restricted by an IP allowlist
+	// and request's remote_addr is not in it.
+	ErrForbiddenIP = grpcutil.PermissionDeniedTag.Apply(errors.New("auth: IP is not in the allowlist"))
 
-		// ErrBadRemoteAddr is returned by Authenticate if request's remote_addr can't
-		// be parsed.
-		errors.New("auth: bad token audience"))
-
-	ErrBadRemoteAddr = grpcutil.InternalTag.Apply(
-
-		// ErrForbiddenIP is returned when an account is restricted by an IP allowlist
-		// and request's remote_addr is not in it.
-		errors.New("auth: bad remote addr"))
-
-	ErrForbiddenIP = grpcutil.PermissionDeniedTag.Apply(
-
-		// ErrProjectHeaderForbidden is returned by Authenticate if an unknown caller
-		// tries to use X-Luci-Project header. Only a preapproved set of callers are
-		// allowed to use this header, see InternalServicesGroup.
-		errors.New("auth: IP is not in the allowlist"))
-
+	// ErrProjectHeaderForbidden is returned by Authenticate if an unknown caller
+	// tries to use X-Luci-Project header. Only a preapproved set of callers are
+	// allowed to use this header, see InternalServicesGroup.
 	ErrProjectHeaderForbidden = grpcutil.PermissionDeniedTag.Apply(
-
-		// Other errors.
 		errors.New("auth: the caller is not allowed to use X-Luci-Project"))
+
+	// Other errors.
 
 	// ErrNoUsersAPI is returned by LoginURL and LogoutURL if none of
 	// the authentication methods support UsersAPI.
@@ -86,6 +76,10 @@ var (
 	// ErrNoStateEndpoint is returned by StateEndpointURL if the state endpoint is
 	// not exposed.
 	ErrNoStateEndpoint = errors.New("auth: the state endpoint is not available")
+
+	// ErrIncorrectImpersonation is returned wrapped by WithUncheckedImpersonation
+	// when it is used incorrectly.
+	ErrIncorrectImpersonation = errors.New("incorrect usage of WithUncheckedImpersonation")
 )
 
 const (
