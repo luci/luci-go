@@ -186,6 +186,27 @@ func MockBillingCloudProjectID(project string, billingProjectID uint64) MockedDa
 	}
 }
 
+// MockProjectScopedAccount modifies ProjectScopedAccount in the root realm.
+func MockProjectScopedAccount(project string, projectScopedAccount string) MockedDatum {
+	if err := realms.ValidateProjectName(project); err != nil {
+		panic(err)
+	}
+	realm := realms.Join(project, realms.RootRealm)
+	return MockedDatum{
+		apply: func(db *FakeDB) {
+			if db.realmData == nil {
+				db.realmData = make(map[string]*protocol.RealmData, 1)
+			}
+			data := db.realmData[realm]
+			if data == nil {
+				data = &protocol.RealmData{}
+				db.realmData[realm] = data
+			}
+			data.ProjectScopedAccount = projectScopedAccount
+		},
+	}
+}
+
 // MockIPAllowlist modifies db to make IsAllowedIP(ip, allowlist) == true.
 //
 // Panics if `ip` is not a valid IP address.
