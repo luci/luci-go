@@ -30,7 +30,6 @@ export const useDeviceDimensions = ({ platform }: { platform: Platform }) => {
     identity,
     'deviceDimensions',
     Platform[platform],
-    'persist-local-storage',
   ];
 
   const devicesQuery = useQuery({
@@ -40,8 +39,9 @@ export const useDeviceDimensions = ({ platform }: { platform: Platform }) => {
         platform,
       }),
     ).queryFn,
-    // By default staleTime is zero,
-    // so it updates the cache data every time.
+    // GetDeviceDimensions updates infrequently and is somewhat
+    // expensive to call, so it's okay to refresh less often.
+    staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: Infinity,
   });
 

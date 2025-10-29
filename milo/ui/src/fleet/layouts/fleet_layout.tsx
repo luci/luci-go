@@ -30,7 +30,7 @@ import {
   Sticky,
 } from '@/generic_libs/components/queued_sticky';
 
-import { LocalStoragePersistClientProvider } from '../context';
+import { IndexedDBPersistClientProvider } from '../context';
 import { theme } from '../theme/theme';
 
 import { Header } from './header';
@@ -56,7 +56,7 @@ export const FleetLayout = () => {
   Settings.defaultLocale = 'en';
 
   return (
-    <LocalStoragePersistClientProvider>
+    <IndexedDBPersistClientProvider>
       <NotificationsProvider>
         <ThemeProvider theme={theme}>
           <ScrollingBase>
@@ -105,6 +105,6 @@ export const FleetLayout = () => {
           </ScrollingBase>
         </ThemeProvider>
       </NotificationsProvider>
-    </LocalStoragePersistClientProvider>
+    </IndexedDBPersistClientProvider>
   );
 };
