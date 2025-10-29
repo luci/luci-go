@@ -120,7 +120,7 @@ const loginRequiredMsg = `not running with a service account and not logged in
 
 If you are running this in a development environment, you can log in by running:
 
-git credential-luci login
+git-credential-luci login
 
 ` + "\u200b\n"
 
@@ -134,7 +134,7 @@ const reAuthRequiredMsg = `ReAuth is required
 
 If you are running this in a development environment, you can fix this by running:
 
-git credential-luci reauth
+git-credential-luci reauth
 
 ` + "\u200b\n"
 
@@ -231,7 +231,7 @@ func main() {
 			ra := auth.NewReAuthenticator(a)
 			if err := ra.RenewRAPT(ctx); err != nil {
 				fmt.Fprintf(os.Stderr, "\nWarning: Login successful, but ReAuth failed: %v\n", err)
-				fmt.Fprintf(os.Stderr, "If you're asked for ReAuth later, run `git credential-luci reauth` to retry.\n")
+				fmt.Fprintf(os.Stderr, "If you're asked for ReAuth later, run `git-credential-luci reauth` to retry.\n")
 				fmt.Fprintf(os.Stderr, "For context, see: https://chromium.googlesource.com/chromium/src.git/+/HEAD/docs/gerrit_reauth.md\n")
 				os.Exit(ExitOK)
 			}
