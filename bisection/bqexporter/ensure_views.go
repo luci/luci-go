@@ -39,6 +39,12 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 			Labels:    map[string]string{bq.MetadataVersionKey: "1"},
 		}
 	},
+	"compile_failure_analyses": func(luciProject string) *bigquery.TableMetadata {
+		return &bigquery.TableMetadata{
+			ViewQuery: `SELECT * FROM internal.compile_failure_analyses WHERE project = "` + luciProject + `"`,
+			Labels:    map[string]string{bq.MetadataVersionKey: "1"},
+		}
+	},
 }
 
 func EnsureViews(ctx context.Context) error {
