@@ -15,6 +15,7 @@
 import { QueryKey, useQuery } from '@tanstack/react-query';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
+import { PERSIST_INDEXED_DB } from '@/fleet/constants/caching_keys';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import {
   GetDeviceDimensionsRequest,
@@ -30,6 +31,7 @@ export const useDeviceDimensions = ({ platform }: { platform: Platform }) => {
     identity,
     'deviceDimensions',
     Platform[platform],
+    PERSIST_INDEXED_DB,
   ];
 
   const devicesQuery = useQuery({

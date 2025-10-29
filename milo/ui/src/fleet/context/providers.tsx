@@ -16,16 +16,13 @@ import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persi
 import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 
+import { PERSIST_INDEXED_DB } from '../constants/caching_keys';
+
 import { getIndexedDBWrapper } from './indexed_db_wrapper';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 0,
-      gcTime: 0, // Disable caching by default by making gcTime 0.
-    },
-  },
-});
+// Use recommended defaults of staleTime: 0, gcTime: 5 mins, per
+// https://tanstack.com/query/v5/docs/framework/react/guides/important-defaults
+const queryClient = new QueryClient();
 
 const idbPersister = createAsyncStoragePersister({
   storage: getIndexedDBWrapper(),
@@ -43,7 +40,10 @@ export function IndexedDBPersistClientProvider({
         persister: idbPersister,
         dehydrateOptions: {
           shouldDehydrateQuery: (query) => {
-            return query.state.status === 'success';
+            return (
+              query.queryKey.includes(PERSIST_INDEXED_DB) &&
+              query.state.status === 'success'
+            );
           },
         },
       }}
