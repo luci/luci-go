@@ -350,7 +350,7 @@ func (c *DiskResultCache) GetForProject(ctx context.Context, host, project strin
 	return nil, ErrResultMissing
 }
 
-func determineCacheResultExpiry(ctx context.Context, r *ReAuthCheckResult) time.Time {
+func calculateExpiryForResult(ctx context.Context, r *ReAuthCheckResult) time.Time {
 	lifetime := resultCacheLifetimeDefault
 	maxJitter := resultCacheLifetimeDefaultJitter
 
@@ -374,7 +374,7 @@ func (c *DiskResultCache) Put(ctx context.Context, r *ReAuthCheckResult) error {
 	cr := &cachedResult{
 		ReAuthCheckResult: *r,
 		Timestamp:         now,
-		Expiry:            determineCacheResultExpiry(ctx, r),
+		Expiry:            calculateExpiryForResult(ctx, r),
 	}
 	// This value is meaningless when cached since RAPTs have very
 	// short lifetimes.
