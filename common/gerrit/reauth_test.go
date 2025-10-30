@@ -16,6 +16,8 @@ package gerrit
 
 import (
 	"context"
+	"encoding/json"
+	"os"
 	"testing"
 	"time"
 
@@ -158,33 +160,6 @@ func TestDiskResultCache_expiry_RAPTNotNeeded(t *testing.T) {
 	assert.That(t, err, should.Equal(ErrResultMissing))
 }
 
-// Tests that the cache invalidates when the persisted expiry is larger than what we currently
-// permits (e.g. in the cases where we reduce the maximum permitted lifetime).
-func TestDiskResultCache_expiry_expireOldCacheWhenReducingLifetime(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
-	testTimestamp := time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC)
-	tc := testclock.New(testTimestamp)
-	ctx = clock.Set(ctx, tc)
-
-	c := NewDiskResultCache(ctx, t.TempDir())
-
-	maxPermittedLifetime := resultCacheLifetimeRAPTNotNeeded + resultCacheLifetimeRAPTNotNeededJitter
-	rc := cachedResult{
-		ReAuthCheckResult: ReAuthCheckResult{Host: "host", Project: "project", NeedsRAPT: false},
-		Timestamp:         testTimestamp,
-		Expiry:            testTimestamp.Add(4 * maxPermittedLifetime),
-	}
-
-	// Cache should be valid initially.
-	assert.That(t, c.expired(ctx, &rc), should.BeFalse)
-
-	// Cache should now be invalid even if the persisted expiry is still in the future.
-	tc.Add(2 * maxPermittedLifetime)
-	assert.That(t, rc.Expiry.After(clock.Now(ctx)), should.BeTrue)
-	assert.That(t, c.expired(ctx, &rc), should.BeTrue)
-}
-
 func TestNormalizeGerritHost(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
@@ -218,50 +193,78 @@ func TestIsSupportedURLHost(t *testing.T) {
 	}
 }
 
-func TestGetEffectiveExpiry(t *testing.T) {
+func TestDiskResultCache_VersionMismatch(t *testing.T) {
 	t.Parallel()
+	ctx := context.Background()
+	tc := testclock.New(time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC))
+	ctx = clock.Set(ctx, tc)
+
+	c := NewDiskResultCache(ctx, t.TempDir())
+
+	// Create a cache with an old version.
 	testTimestamp := time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC)
-	maxLifetimeRAPTNotNeeded := resultCacheLifetimeRAPTNotNeeded + resultCacheLifetimeRAPTNotNeededJitter
-	maxLifetimeDefault := resultCacheLifetimeDefault + resultCacheLifetimeDefaultJitter
+	oldStore := newResultStore()
+	oldStore.Version = resultStoreCurrentVersion - 1
+	oldStore.Entries = append(oldStore.Entries, &cachedResult{
+		ReAuthCheckResult: ReAuthCheckResult{
+			Host:         "host",
+			Project:      "project",
+			NeedsRAPT:    true,
+			HasValidRAPT: false,
+		},
+		Timestamp: testTimestamp,
+		Expiry:    testTimestamp.Add(1 * time.Hour),
+	})
+	err := c.write(ctx, oldStore)
+	assert.NoErr(t, err)
 
-	testCases := []struct {
-		name           string
-		cr             cachedResult
-		expectedExpiry time.Time
-	}{
-		{
-			name: "NeedsRAPT=false, expiry outside max lifetime",
-			cr: cachedResult{
-				ReAuthCheckResult: ReAuthCheckResult{NeedsRAPT: false},
-				Timestamp:         testTimestamp,
-				Expiry:            testTimestamp.Add(4 * maxLifetimeRAPTNotNeeded),
-			},
-			expectedExpiry: testTimestamp.Add(maxLifetimeRAPTNotNeeded),
-		},
-		{
-			name: "NeedsRAPT=true, expiry outside max lifetime",
-			cr: cachedResult{
-				ReAuthCheckResult: ReAuthCheckResult{NeedsRAPT: true},
-				Timestamp:         testTimestamp,
-				Expiry:            testTimestamp.Add(4 * maxLifetimeDefault),
-			},
-			expectedExpiry: testTimestamp.Add(maxLifetimeDefault),
-		},
-		{
-			name: "Expiry within max permitted lifetime",
-			cr: cachedResult{
-				ReAuthCheckResult: ReAuthCheckResult{NeedsRAPT: false},
-				Timestamp:         testTimestamp,
-				Expiry:            testTimestamp.Add(maxLifetimeRAPTNotNeeded / 2),
-			},
-			expectedExpiry: testTimestamp.Add(maxLifetimeRAPTNotNeeded / 2),
-		},
-	}
+	// The persisted entry isn't expired.
+	assert.That(t, c.expired(ctx, oldStore.Entries[0]), should.BeFalse)
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			assert.That(t, tc.cr.getEffectiveExpiry(), should.Resemble(tc.expectedExpiry))
-		})
-	}
+	// The cache should be empty due to version mismatch.
+	_, err = c.GetForProject(ctx, "host", "project")
+	assert.That(t, err, should.Equal(ErrResultMissing))
+
+	// A new entry should be successfully added.
+	r := &ReAuthCheckResult{Host: "host", Project: "project", NeedsRAPT: true}
+	err = c.Put(ctx, r)
+	assert.NoErr(t, err)
+
+	// The new entry should be retrievable.
+	got, err := c.GetForProject(ctx, "host", "project")
+	assert.NoErr(t, err)
+	assert.That(t, got, should.Match(r))
+
+	// The store's version should be set to the current one.
+	s, err := c.read(ctx)
+	assert.NoErr(t, err)
+	assert.That(t, s.Version, should.Equal(resultStoreCurrentVersion))
+}
+
+func TestDiskResultCache_PersistedFileHasNoVersion(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	tc := testclock.New(time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC))
+	ctx = clock.Set(ctx, tc)
+
+	c := NewDiskResultCache(ctx, t.TempDir())
+
+	// Hard-code a JSON without version in the cache file.
+	oldCacheContent := `{"entries":[{"host":"host","project":"project","needsRapt":false,"timestamp":"2000-01-02T03:04:05.600Z","expiry":"2001-01-02T03:04:05.600Z"}]}`
+	assert.NoErr(t, os.WriteFile(c.cacheFile(), []byte(oldCacheContent), 0644))
+
+	// Check the hardcoded string can be parsed correctly.
+	var oldStore resultStore
+	assert.NoErr(t, json.Unmarshal([]byte(oldCacheContent), &oldStore))
+	assert.Loosely(t, oldStore.Entries, should.HaveLength(1))
+
+	// Check we reads back an empty cache.
+	s, err := c.read(ctx)
+	assert.NoErr(t, err)
+	assert.Loosely(t, s.Entries, should.BeEmpty)
+	assert.That(t, s.Version, should.Equal(resultStoreCurrentVersion))
+
+	// The cache isn't used.
+	_, err = c.GetForProject(ctx, "host", "project")
+	assert.That(t, err, should.Equal(ErrResultMissing))
 }

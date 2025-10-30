@@ -223,41 +223,24 @@ type DiskResultCache struct {
 	lock sync.Mutex
 }
 
+// Version number for resultStore. Increase this number by one to invalidate existing cache.
+const resultStoreCurrentVersion = 1
+
 type resultStore struct {
+	Version int `json:"version"`
+
 	Entries []*cachedResult `json:"entries"`
+}
+
+func newResultStore() *resultStore {
+	return &resultStore{Version: resultStoreCurrentVersion}
 }
 
 // cachedResult embeds CheckResult and adds a timestamp.
 type cachedResult struct {
 	ReAuthCheckResult
 	Timestamp time.Time `json:"timestamp"`
-
-	// WARNING: Don't use this for checking if this cachedResult is valid, use
-	// getEffectiveExpiry() instead.
-	Expiry time.Time `json:"expiry"`
-}
-
-// TODO(https://crbug.com/456337899): Replace this with a proper fix.
-//
-// Returns the effective expiry for this cachedResult. Handles the situation
-// where we reduce the max permitted cache lifetime and roll out a new
-// version.
-//
-// This function returns the earliest of:
-//   - What's currently permitted (configured by lifetime constants below)
-//   - `r.Expiry`
-func (r *cachedResult) getEffectiveExpiry() time.Time {
-	maxLifetime := resultCacheLifetimeDefault + resultCacheLifetimeDefaultJitter
-	if !r.NeedsRAPT {
-		maxLifetime = resultCacheLifetimeRAPTNotNeeded + resultCacheLifetimeRAPTNotNeededJitter
-	}
-
-	maxExpiry := r.Timestamp.Add(maxLifetime)
-	if maxExpiry.Before(r.Expiry) {
-		return maxExpiry
-	}
-
-	return r.Expiry
+	Expiry    time.Time `json:"expiry"`
 }
 
 const (
@@ -300,27 +283,33 @@ func (c *DiskResultCache) createCacheTemp() (*os.File, error) {
 
 func (*DiskResultCache) expired(ctx context.Context, r *cachedResult) bool {
 	now := clock.Now(ctx)
-	return now.After(r.getEffectiveExpiry())
+	return now.After(r.Expiry)
 }
 
 func (c *DiskResultCache) read(ctx context.Context) (*resultStore, error) {
-	var s resultStore
 	f, err := oscompat.OpenSharedDelete(c.cacheFile())
 	if os.IsNotExist(err) {
 		// File doesn't exist, start with an empty cache.
-		return &s, nil
+		return newResultStore(), nil
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close() //nolint: errcheck
 
-	d := json.NewDecoder(f)
-	if err := d.Decode(&s); err != nil {
+	var s resultStore
+	if err := json.NewDecoder(f).Decode(&s); err != nil {
 		// Treat corrupt file as empty for transparent recovery.
 		logging.Warningf(ctx, "DiskResultCache: Error decoding file: %s", err)
-		return &s, nil
+		return newResultStore(), nil
 	}
+
+	if s.Version != resultStoreCurrentVersion {
+		// Program version mismatches what's persisted on disk, return an empty
+		// store and start from scratch.
+		return newResultStore(), nil
+	}
+
 	processed := make([]*cachedResult, 0, len(s.Entries))
 	for _, r := range s.Entries {
 		if !c.expired(ctx, r) {
