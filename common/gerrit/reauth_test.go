@@ -158,6 +158,33 @@ func TestDiskResultCache_expiry_RAPTNotNeeded(t *testing.T) {
 	assert.That(t, err, should.Equal(ErrResultMissing))
 }
 
+// Tests that the cache invalidates when the persisted expiry is larger than what we currently
+// permits (e.g. in the cases where we reduce the maximum permitted lifetime).
+func TestDiskResultCache_expiry_expireOldCacheWhenReducingLifetime(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	testTimestamp := time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC)
+	tc := testclock.New(testTimestamp)
+	ctx = clock.Set(ctx, tc)
+
+	c := NewDiskResultCache(ctx, t.TempDir())
+
+	maxPermittedLifetime := resultCacheLifetimeRAPTNotNeeded + resultCacheLifetimeRAPTNotNeededJitter
+	rc := cachedResult{
+		ReAuthCheckResult: ReAuthCheckResult{Host: "host", Project: "project", NeedsRAPT: false},
+		Timestamp:         testTimestamp,
+		Expiry:            testTimestamp.Add(4 * maxPermittedLifetime),
+	}
+
+	// Cache should be valid initially.
+	assert.That(t, c.expired(ctx, &rc), should.BeFalse)
+
+	// Cache should now be invalid even if the persisted expiry is still in the future.
+	tc.Add(2 * maxPermittedLifetime)
+	assert.That(t, rc.Expiry.After(clock.Now(ctx)), should.BeTrue)
+	assert.That(t, c.expired(ctx, &rc), should.BeTrue)
+}
+
 func TestNormalizeGerritHost(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
@@ -188,5 +215,53 @@ func TestIsSupportedURLHost(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		assert.That(t, isSupportedHost(tc.host), should.Equal(tc.expected))
+	}
+}
+
+func TestGetEffectiveExpiry(t *testing.T) {
+	t.Parallel()
+	testTimestamp := time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC)
+	maxLifetimeRAPTNotNeeded := resultCacheLifetimeRAPTNotNeeded + resultCacheLifetimeRAPTNotNeededJitter
+	maxLifetimeDefault := resultCacheLifetimeDefault + resultCacheLifetimeDefaultJitter
+
+	testCases := []struct {
+		name           string
+		cr             cachedResult
+		expectedExpiry time.Time
+	}{
+		{
+			name: "NeedsRAPT=false, expiry outside max lifetime",
+			cr: cachedResult{
+				ReAuthCheckResult: ReAuthCheckResult{NeedsRAPT: false},
+				Timestamp:         testTimestamp,
+				Expiry:            testTimestamp.Add(4 * maxLifetimeRAPTNotNeeded),
+			},
+			expectedExpiry: testTimestamp.Add(maxLifetimeRAPTNotNeeded),
+		},
+		{
+			name: "NeedsRAPT=true, expiry outside max lifetime",
+			cr: cachedResult{
+				ReAuthCheckResult: ReAuthCheckResult{NeedsRAPT: true},
+				Timestamp:         testTimestamp,
+				Expiry:            testTimestamp.Add(4 * maxLifetimeDefault),
+			},
+			expectedExpiry: testTimestamp.Add(maxLifetimeDefault),
+		},
+		{
+			name: "Expiry within max permitted lifetime",
+			cr: cachedResult{
+				ReAuthCheckResult: ReAuthCheckResult{NeedsRAPT: false},
+				Timestamp:         testTimestamp,
+				Expiry:            testTimestamp.Add(maxLifetimeRAPTNotNeeded / 2),
+			},
+			expectedExpiry: testTimestamp.Add(maxLifetimeRAPTNotNeeded / 2),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			assert.That(t, tc.cr.getEffectiveExpiry(), should.Resemble(tc.expectedExpiry))
+		})
 	}
 }

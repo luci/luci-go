@@ -231,7 +231,33 @@ type resultStore struct {
 type cachedResult struct {
 	ReAuthCheckResult
 	Timestamp time.Time `json:"timestamp"`
-	Expiry    time.Time `json:"expiry"`
+
+	// WARNING: Don't use this for checking if this cachedResult is valid, use
+	// getEffectiveExpiry() instead.
+	Expiry time.Time `json:"expiry"`
+}
+
+// TODO(https://crbug.com/456337899): Replace this with a proper fix.
+//
+// Returns the effective expiry for this cachedResult. Handles the situation
+// where we reduce the max permitted cache lifetime and roll out a new
+// version.
+//
+// This function returns the earliest of:
+//   - What's currently permitted (configured by lifetime constants below)
+//   - `r.Expiry`
+func (r *cachedResult) getEffectiveExpiry() time.Time {
+	maxLifetime := resultCacheLifetimeDefault + resultCacheLifetimeDefaultJitter
+	if !r.NeedsRAPT {
+		maxLifetime = resultCacheLifetimeRAPTNotNeeded + resultCacheLifetimeRAPTNotNeededJitter
+	}
+
+	maxExpiry := r.Timestamp.Add(maxLifetime)
+	if maxExpiry.Before(r.Expiry) {
+		return maxExpiry
+	}
+
+	return r.Expiry
 }
 
 const (
@@ -274,7 +300,7 @@ func (c *DiskResultCache) createCacheTemp() (*os.File, error) {
 
 func (*DiskResultCache) expired(ctx context.Context, r *cachedResult) bool {
 	now := clock.Now(ctx)
-	return now.After(r.Expiry)
+	return now.After(r.getEffectiveExpiry())
 }
 
 func (c *DiskResultCache) read(ctx context.Context) (*resultStore, error) {
