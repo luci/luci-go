@@ -104,12 +104,16 @@ func AnalyzeFailure(
 		// Just log the error and continue
 		logging.Errorf(c, "could not get failed step for build %d: %v", firstFailedBuildID, err)
 	} else if stepName != "" {
+		logging.Infof(c, "checking tree closer status for build %d with failed step: %s", firstFailedBuildID, stepName)
 		err = setTreeCloser(c, analysis, stepName)
 		if err != nil {
 			// Non-critical, just continue
 			err := errors.Fmt("failed to check tree closer: %w", err)
 			logging.Errorf(c, err.Error())
 		}
+	} else {
+		// Log when stepName is empty - this indicates no failed step was found
+		logging.Warningf(c, "no failed step found for build %d, skipping tree closer check", firstFailedBuildID)
 	}
 
 	// LLM analysis
@@ -208,10 +212,13 @@ func setTreeCloser(c context.Context, cfa *model.CompileFailureAnalysis, stepNam
 		return fmt.Errorf("couldn't find build for analysis %d", cfa.Id)
 	}
 
+	logging.Infof(c, "calling CheckTreeCloser for project=%s, bucket=%s, builder=%s, step=%s",
+		fb.Project, fb.Bucket, fb.Builder, stepName)
 	isTreeCloser, err := lucinotify.CheckTreeCloser(c, fb.Project, fb.Bucket, fb.Builder, stepName)
 	if err != nil {
 		return err
 	}
+	logging.Infof(c, "CheckTreeCloser result: isTreeCloser=%v for step=%s", isTreeCloser, stepName)
 
 	return datastore.RunInTransaction(c, func(c context.Context) error {
 		e := datastore.Get(c, cfa)
