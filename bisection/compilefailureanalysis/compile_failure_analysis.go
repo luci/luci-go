@@ -21,6 +21,9 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -50,7 +53,11 @@ func AnalyzeFailure(
 	genaiClient llm.Client,
 ) (*model.CompileFailureAnalysis, error) {
 	logging.Infof(c, "AnalyzeFailure firstFailed = %d", firstFailedBuildID)
-	firstFailedBuild, e := buildbucket.GetBuild(c, firstFailedBuildID, nil)
+	firstFailedBuild, e := buildbucket.GetBuild(c, firstFailedBuildID, &bbpb.BuildMask{
+		Fields: &fieldmaskpb.FieldMask{
+			Paths: []string{"id", "builder", "input", "status", "steps"},
+		},
+	})
 	if e != nil {
 		return nil, fmt.Errorf("error getting build %d: %w", firstFailedBuildID, e)
 	}

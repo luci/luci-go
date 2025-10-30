@@ -17,6 +17,7 @@ package buildbucket
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -174,7 +175,14 @@ func GetBuildTaskDimension(ctx context.Context, bbid int64) (*pb.Dimensions, err
 
 // GetFailedStepName returns the name of the first failed step in a build.
 // If there are no failed steps, it returns an empty string.
+// Returns an error if the build.Steps field was not populated (i.e., steps were not requested in the field mask).
 func GetFailedStepName(build *bbpb.Build) (string, error) {
+	// Check if steps were actually fetched. If Steps is nil, it means the field
+	// was not requested in the field mask when fetching the build.
+	if build.Steps == nil {
+		return "", fmt.Errorf("build.Steps field not populated - ensure 'steps' is included in the field mask when fetching the build")
+	}
+
 	for _, step := range build.Steps {
 		if step.Status == bbpb.Status_FAILURE || step.Status == bbpb.Status_INFRA_FAILURE || step.Status == bbpb.Status_CANCELED {
 			return step.Name, nil
