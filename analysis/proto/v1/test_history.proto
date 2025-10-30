@@ -21,6 +21,7 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 import "go.chromium.org/luci/analysis/proto/v1/predicate.proto";
+import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
 import "go.chromium.org/luci/analysis/proto/v1/test_verdict.proto";
 
 option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
@@ -49,8 +50,18 @@ service TestHistory {
   // Finds test IDs that contain the given substring in a given project that
   // were recorded in the past 90 days.
   rpc QueryTests(QueryTestsRequest) returns (QueryTestsResponse) {};
-}
 
+  // Queries for recent passing results of a specific test variant, contextually
+  // close to a given failing result.
+  // It utilizes LUCI Analysis's historical data
+  // (chronological and source-position based) to efficiently find root
+  // invocations containing passes suitable for log comparison.
+  //
+  // The response contains root invocation IDs that are typically passed to
+  // ResultDB to perform log comparison.
+  rpc QueryRecentPasses(QueryRecentPassesRequest)
+      returns (QueryRecentPassesResponse) {};
+}
 // A request message for `TestHistory.Query` RPC.
 message QueryTestHistoryRequest {
   // Required. The LUCI Project of the test results.
@@ -326,4 +337,40 @@ message QueryTestsResponse {
   // If this field is omitted, there were no subsequent pages at the time of
   // request.
   string next_page_token = 2;
+}
+// A request message for the `QueryRecentPasses` RPC.
+message QueryRecentPassesRequest {
+  // Required. The LUCI Project of the failing test result.
+  string project = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The test ID of the failing test.
+  string test_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The variant hash of the failing test.
+  // Passing results must match this variant to ensure logs are comparable.
+  string variant_hash = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The source position attached to the failing result.
+  luci.analysis.v1.Sources sources = 5;
+
+  // Optional. The maximum number of passing results to return.
+  // The default is 5, the maximum is 25.
+  int32 limit = 6;
+}
+
+// A response message for `LogAssociation.QueryRecentPasses`.
+message QueryRecentPassesResponse {
+  // Identifying information for a passing test result.
+  message PassingResult {
+    // The name of the test result.  This is in ResultDB test result name format
+    // and so is suitable for passing directly to ResultDB.
+    string name = 1;
+  }
+
+  // A list of recent passing results for the specified
+  // test variant, source position proximity.
+  //
+  // May be empty if no recent passing results could be found, e.g. if the test
+  // has been failing for more than 14 days, or has never passed.
+  repeated PassingResult passing_results = 1;
 }

@@ -693,7 +693,7 @@ func validateQueryChangepointAIAnalysisRequest(req *pb.QueryChangepointAIAnalysi
 	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
 		return errors.Fmt("test_id: %w", err)
 	}
-	if err := ValidateVariantHash(req.VariantHash); err != nil {
+	if err := pbutil.ValidateVariantHash(req.VariantHash); err != nil {
 		return errors.Fmt("variant_hash: %w", err)
 	}
 	if err := ValidateRefHash(req.RefHash); err != nil {

@@ -90,3 +90,20 @@ func (s *DecoratedTestHistory) QueryTests(ctx context.Context, req *QueryTestsRe
 	}
 	return
 }
+
+func (s *DecoratedTestHistory) QueryRecentPasses(ctx context.Context, req *QueryRecentPassesRequest) (rsp *QueryRecentPassesResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryRecentPasses", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryRecentPasses(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryRecentPasses", rsp, err)
+	}
+	return
+}

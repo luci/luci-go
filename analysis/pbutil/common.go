@@ -313,3 +313,10 @@ func ValidateSourceRef(ref *pb.SourceRef) error {
 	}
 	return nil
 }
+
+func ValidateVariantHash(variantHash string) error {
+	if !variantHashRe.MatchString(variantHash) {
+		return errors.Fmt("variant hash %s must match %s", variantHash, variantHashRe)
+	}
+	return nil
+}

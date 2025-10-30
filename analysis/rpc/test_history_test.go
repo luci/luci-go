@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -27,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
-	resultpb "go.chromium.org/luci/resultdb/proto/v1"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -36,9 +37,26 @@ import (
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/testrealms"
 	"go.chromium.org/luci/analysis/internal/testresults"
+	"go.chromium.org/luci/analysis/internal/testresults/lowlatency"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+)
+
+var (
+	gitilesRef = &pb.SourceRef{
+		System: &pb.SourceRef_Gitiles{
+			Gitiles: &pb.GitilesRef{Host: "my-g-host", Project: "my-g-proj", Ref: "refs/heads/main"},
+		},
+	}
+	gitilesRefHash = pbutil.SourceRefHash(gitilesRef)
+
+	androidRef = &pb.SourceRef{
+		System: &pb.SourceRef_AndroidBuild{
+			AndroidBuild: &pb.AndroidBuildBranch{DataRealm: "prod", Branch: "git_main"},
+		},
+	}
+	androidRefHash = pbutil.SourceRefHash(androidRef)
 )
 
 func TestTestHistoryServer(t *testing.T) {
@@ -79,7 +97,9 @@ func TestTestHistoryServer(t *testing.T) {
 		var4 := pbutil.Variant("key1", "val1", "key2", "val2")
 		var5 := pbutil.Variant("key1", "val3", "key2", "val2")
 
+		// Set up test data in separate transactions to avoid interfering with each other.
 		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+			// Data for Query and QueryStats.
 			insertTVR := func(testID, subRealm string, variant *pb.Variant) {
 				span.BufferWrite(ctx, (&testresults.TestVariantRealm{
 					Project:     "project",
@@ -153,9 +173,12 @@ func TestTestHistoryServer(t *testing.T) {
 
 			insertTV(referenceTime.Add(-4*day), "test_id", var4, "inv2", false, false, "other-realm")
 			insertTV(referenceTime.Add(-5*day), "test_id", var5, "inv3", false, false, "forbidden-realm")
-
 			return nil
 		})
+		assert.Loosely(t, err, should.BeNil)
+
+		// Data for QueryRecentPasses.
+		err = createPassingResultsTestData(ctx, t)
 		assert.Loosely(t, err, should.BeNil)
 
 		searchClient := &testrealms.FakeClient{}
@@ -163,13 +186,13 @@ func TestTestHistoryServer(t *testing.T) {
 
 		// Install a fake ResultDB test metadata client in the context.
 		fakeRDBClient := &resultdb.FakeClient{
-			TestMetadata: []*resultpb.TestMetadataDetail{
+			TestMetadata: []*rdbpb.TestMetadataDetail{
 				{
 					Project: "project",
 					TestId:  "test_id",
-					SourceRef: &resultpb.SourceRef{
-						System: &resultpb.SourceRef_Gitiles{
-							Gitiles: &resultpb.GitilesRef{
+					SourceRef: &rdbpb.SourceRef{
+						System: &rdbpb.SourceRef_Gitiles{
+							Gitiles: &rdbpb.GitilesRef{
 								Host: "chromium.googlesource.com",
 								Ref:  "refs/heads/other",
 							},
@@ -179,15 +202,15 @@ func TestTestHistoryServer(t *testing.T) {
 				{
 					Project: "project",
 					TestId:  "test_id",
-					SourceRef: &resultpb.SourceRef{
-						System: &resultpb.SourceRef_Gitiles{
-							Gitiles: &resultpb.GitilesRef{
+					SourceRef: &rdbpb.SourceRef{
+						System: &rdbpb.SourceRef_Gitiles{
+							Gitiles: &rdbpb.GitilesRef{
 								Host: "chromium.googlesource.com",
 								Ref:  "refs/heads/main",
 							},
 						},
 					},
-					TestMetadata: &resultpb.TestMetadata{
+					TestMetadata: &rdbpb.TestMetadata{
 						PreviousTestId: "previous_test_id",
 					},
 				},
@@ -913,6 +936,102 @@ func TestTestHistoryServer(t *testing.T) {
 				}))
 			})
 		})
+		t.Run("QueryRecentPasses", func(t *ftt.Test) {
+			baseReq := &pb.QueryRecentPassesRequest{
+				Project:     "project",
+				TestId:      "ninja://test/id",
+				VariantHash: "e5aa3a34a834a74f",
+				Sources: &pb.Sources{
+					BaseSources: &pb.Sources_GitilesCommit{
+						GitilesCommit: &pb.GitilesCommit{
+							Host:     "my-g-host",
+							Project:  "my-g-proj",
+							Ref:      "refs/heads/main",
+							Position: 105,
+						},
+					},
+				},
+				Limit: 5,
+			}
+
+			t.Run("invalid requests are rejected", func(t *ftt.Test) {
+				req := proto.Clone(baseReq).(*pb.QueryRecentPassesRequest)
+				req.Project = ""
+				_, err := server.QueryRecentPasses(ctx, req)
+				assert.Loosely(t, err, should.ErrLike("project: unspecified"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+
+				req = proto.Clone(baseReq).(*pb.QueryRecentPassesRequest)
+				req.TestId = "\xff" // Invalid UTF-8.
+				_, err = server.QueryRecentPasses(ctx, req)
+				assert.Loosely(t, err, should.ErrLike("test_id: not a valid utf8 string"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+
+				req = proto.Clone(baseReq).(*pb.QueryRecentPassesRequest)
+				req.VariantHash = "invalid"
+				_, err = server.QueryRecentPasses(ctx, req)
+				assert.Loosely(t, err, should.ErrLike("variant_hash: variant hash invalid must match"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+
+				req = proto.Clone(baseReq).(*pb.QueryRecentPassesRequest)
+				req.Limit = -1
+				_, err = server.QueryRecentPasses(ctx, req)
+				assert.Loosely(t, err, should.ErrLike("limit: must be non-negative"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			})
+
+			t.Run("unauthorised requests are rejected", func(t *ftt.Test) {
+				// No permission at all.
+				unauthCtx := auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:someone@example.com",
+				})
+				_, err := server.QueryRecentPasses(unauthCtx, baseReq)
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permissions [resultdb.testResults.list] in any realm in project "project"`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			})
+
+			t.Run("e2e - source position only (gitiles)", func(t *ftt.Test) {
+				req := proto.Clone(baseReq).(*pb.QueryRecentPassesRequest)
+				req.Limit = 2 // Set limit to prevent fallback.
+				res, err := server.QueryRecentPasses(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				// inv-3 has position 102, inv-2 has position 101. Both are <= 105.
+				// inv-4 (pos 106) is excluded.
+				// inv-1 (time 1) is excluded because failureTime(1000) - 14d is > 1.
+				assert.Loosely(t, res.PassingResults, should.HaveLength(2))
+				assert.That(t, res.PassingResults[0].Name, should.Equal("invocations/inv-3/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
+				assert.That(t, res.PassingResults[1].Name, should.Equal("invocations/inv-2/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
+			})
+
+			t.Run("e2e - source position only (android)", func(t *ftt.Test) {
+				req := proto.Clone(baseReq).(*pb.QueryRecentPassesRequest)
+				req.Limit = 2 // Set limit to prevent fallback.
+				req.Sources = &pb.Sources{
+					BaseSources: &pb.Sources_SubmittedAndroidBuild{
+						SubmittedAndroidBuild: &pb.SubmittedAndroidBuild{
+							DataRealm: "prod",
+							Branch:    "git_main",
+							BuildId:   2002,
+						},
+					},
+				}
+				res, err := server.QueryRecentPasses(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.PassingResults, should.HaveLength(2))
+				assert.That(t, res.PassingResults[0].Name, should.Equal("invocations/inv-android-2/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
+				assert.That(t, res.PassingResults[1].Name, should.Equal("invocations/inv-android-1/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
+			})
+
+			t.Run("e2e - limit is respected", func(t *ftt.Test) {
+				req := proto.Clone(baseReq).(*pb.QueryRecentPassesRequest)
+				req.Limit = 2
+				res, err := server.QueryRecentPasses(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.PassingResults, should.HaveLength(2))
+				assert.That(t, res.PassingResults[0].Name, should.Equal("invocations/inv-3/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
+				assert.That(t, res.PassingResults[1].Name, should.Equal("invocations/inv-2/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
+			})
+		})
 	})
 }
 
@@ -1162,4 +1281,35 @@ func TestValidateQueryTestsRequest(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("negative"))
 		})
 	})
+}
+
+func createPassingResultsTestData(ctx context.Context, t *ftt.Test) error {
+	// Common values.
+	project := "project"
+	testID := "ninja://test/id"
+	variantHash := "e5aa3a34a834a74f"
+	baseBuilder := lowlatency.NewTestResult().
+		WithProject(project).
+		WithTestID(testID).
+		WithVariantHash(variantHash).
+		WithIsUnexpected(false)
+
+	results := []*lowlatency.TestResult{
+		// Gitiles passes
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 101}).WithInvocationID("inv-2").WithStatus(pb.TestResultStatus_PASS).Build(),
+		baseBuilder.WithSubRealm("other-realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 102}).WithInvocationID("inv-3").WithStatus(pb.TestResultStatus_PASS).Build(),
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 106}).WithInvocationID("inv-4").WithStatus(pb.TestResultStatus_PASS).Build(),
+		// A fail to ensure we filter by status.
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 103}).WithInvocationID("inv-fail").WithStatus(pb.TestResultStatus_FAIL).Build(),
+		// A pass in an unauthorized realm.
+		baseBuilder.WithSubRealm("forbidden-realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 104}).WithInvocationID("inv-unauth").WithStatus(pb.TestResultStatus_PASS).Build(),
+		// An old pass that should be filtered by time.
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 100}).WithInvocationID("inv-1").WithStatus(pb.TestResultStatus_PASS).Build(),
+
+		// Android passes
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: androidRefHash, Position: 2001}).WithInvocationID("inv-android-1").WithStatus(pb.TestResultStatus_PASS).Build(),
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: androidRefHash, Position: 2002}).WithInvocationID("inv-android-2").WithStatus(pb.TestResultStatus_PASS).Build(),
+	}
+
+	return lowlatency.SetForTesting(ctx, t, results)
 }

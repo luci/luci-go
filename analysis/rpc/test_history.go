@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
@@ -378,5 +379,118 @@ func validateTestIDPart(testIDPart string) error {
 			return fmt.Errorf("non-printable rune %+q at byte index %d", rune, i)
 		}
 	}
+	return nil
+}
+
+const (
+	// defaultQueryRecentPassesLimit is the default number of passing results to return.
+	defaultQueryRecentPassesLimit = 5
+	// maxQueryRecentPassesLimit is the maximum number of passing results to return.
+	maxQueryRecentPassesLimit = 25
+)
+
+// QueryRecentPasses queries for recent passing results of a specific test variant.
+func (s *testHistoryServer) QueryRecentPasses(ctx context.Context, req *pb.QueryRecentPassesRequest) (*pb.QueryRecentPassesResponse, error) {
+	if err := validateQueryRecentPassesRequest(req); err != nil {
+		return nil, invalidArgumentError(err)
+	}
+
+	subRealms, err := perms.QuerySubRealmsNonEmpty(ctx, req.Project, "" /* query all realms*/, nil, rdbperms.PermListTestResults)
+	if err != nil {
+		return nil, err
+	}
+	if len(subRealms) == 0 {
+		return nil, appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %s in any realm in project %q", rdbperms.PermListTestResults, req.Project)
+	}
+
+	limit := int(req.Limit)
+	if limit == 0 {
+		limit = defaultQueryRecentPassesLimit
+	} else if limit > maxQueryRecentPassesLimit {
+		limit = maxQueryRecentPassesLimit
+	}
+
+	spanCtx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
+	// Strategy A: Source Position Lookup
+	srcRef := pbutil.SourceRefFromSources(req.Sources)
+	srcRefHash := pbutil.SourceRefHash(srcRef)
+	maxPosition := pbutil.SourcePosition(req.Sources)
+
+	opts := testresults.ReadPassingRootInvocationsBySourceOptions{
+		Project:           req.Project,
+		SubRealms:         subRealms,
+		TestID:            req.TestId,
+		VariantHash:       req.VariantHash,
+		SourceRefHash:     srcRefHash,
+		MaxSourcePosition: maxPosition,
+		Limit:             limit,
+	}
+
+	ids, err := testresults.ReadPassingResultsBySource(spanCtx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("reading passing invocations by source: %w", err)
+	}
+	logging.Debugf(ctx, "Found %d passing invocations via source position in %d realms", len(ids), len(subRealms))
+
+	results := make([]*pb.QueryRecentPassesResponse_PassingResult, 0, len(ids))
+	for _, id := range ids {
+		results = append(results, &pb.QueryRecentPassesResponse_PassingResult{
+			Name: id,
+		})
+	}
+
+	return &pb.QueryRecentPassesResponse{
+		PassingResults: results,
+	}, nil
+}
+
+func validateQueryRecentPassesRequest(req *pb.QueryRecentPassesRequest) error {
+	if err := pbutil.ValidateProject(req.Project); err != nil {
+		return errors.Fmt("project: %w", err)
+	}
+	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
+		return errors.Fmt("test_id: %w", err)
+	}
+	if err := pbutil.ValidateVariantHash(req.VariantHash); err != nil {
+		return errors.Fmt("variant_hash: %w", err)
+	}
+	if req.Limit < 0 {
+		return errors.New("limit: must be non-negative")
+	}
+
+	// Verify sources ourselves as pbutil.ValidateSources is more restrictive than what we actually need for this RPC.
+	if req.Sources == nil {
+		return errors.New("sources: required")
+	}
+	switch src := req.Sources.GetBaseSources().(type) {
+	case *pb.Sources_GitilesCommit:
+		if src.GitilesCommit.GetHost() == "" {
+			return errors.New("sources.gitiles_commit: host is required")
+		}
+		if src.GitilesCommit.GetProject() == "" {
+			return errors.New("sources.gitiles_commit: project is required")
+		}
+		if src.GitilesCommit.GetRef() == "" {
+			return errors.New("sources.gitiles_commit: ref is required")
+		}
+	case *pb.Sources_SubmittedAndroidBuild:
+		if src.SubmittedAndroidBuild.GetDataRealm() == "" {
+			return errors.New("sources.submitted_android_build: data_realm is required")
+		}
+		if src.SubmittedAndroidBuild.GetBranch() == "" {
+			return errors.New("sources.submitted_android_build: branch is required")
+		}
+		if src.SubmittedAndroidBuild.GetBuildId() == 0 {
+			return errors.New("sources.submitted_android_build: build_id is required and must not be 0")
+		}
+	case nil:
+		return errors.New("sources: base_sources is required")
+	default:
+		// This case should not be reached if the proto is well-defined.
+		return errors.New("sources: unknown base_sources type")
+	}
+
 	return nil
 }

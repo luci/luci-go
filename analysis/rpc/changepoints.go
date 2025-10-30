@@ -417,7 +417,7 @@ func validateGroupKey(key *pb.QueryChangepointsInGroupRequest_ChangepointIdentif
 	if err := rdbpbutil.ValidateTestID(key.TestId); err != nil {
 		return errors.Fmt("test_id: %w", err)
 	}
-	if err := ValidateVariantHash(key.VariantHash); err != nil {
+	if err := pbutil.ValidateVariantHash(key.VariantHash); err != nil {
 		return errors.Fmt("variant_hash: %w", err)
 	}
 	if err := ValidateRefHash(key.RefHash); err != nil {
@@ -458,13 +458,6 @@ func validateChangepointPredicateLegacy(predicate *pb.ChangepointPredicateLegacy
 		if changeRange.UpperBound <= changeRange.LowerBound {
 			return errors.New("unexpected_verdict_rate_change_range_range: upper_bound must greater or equal to lower_bound")
 		}
-	}
-	return nil
-}
-
-func ValidateVariantHash(variantHash string) error {
-	if !variantHashRe.MatchString(variantHash) {
-		return errors.Fmt("variant hash %s must match %s", variantHash, variantHashRe)
 	}
 	return nil
 }
