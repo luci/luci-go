@@ -58,7 +58,7 @@ CREATE TABLE RootInvocations (
   --
   -- This will always match the root work unit summary markdown,
   -- but it is replicated here for convenience.
-  SummaryMarkdown STRING(MAX) NOT NULL DEFAULT(""),
+  SummaryMarkdown STRING(MAX) NOT NULL,
 
   -- Security realm this root invocation belongs to.
   -- Used to enforce ACLs.
@@ -86,9 +86,6 @@ CREATE TABLE RootInvocations (
   -- included invocations became immutable.
   FinalizeTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
 
-  -- When to force root invocation finalization.
-  Deadline TIMESTAMP NOT NULL DEFAULT(TIMESTAMP_ADD(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)),
-
   -- When to delete passed and skipped test verdicts from this invocation.
   -- When passed and skipped verdicts are removed, this column is set to NULL.
   UninterestingTestVerdictsExpirationTime TIMESTAMP,
@@ -112,9 +109,6 @@ CREATE TABLE RootInvocations (
   -- A serialized luci.resultdb.v1.Sources message describing the source information for the
   -- root invocation.
   Sources BYTES(MAX),
-
-  -- To be removed.
-  IsSourcesFinal BOOL NOT NULL DEFAULT(FALSE),
 
   -- The test baseline that this root invocation should contribute to.
   --
@@ -159,7 +153,7 @@ CREATE TABLE RootInvocations (
   -- The state of streaming exports. This can be:
   -- - WAIT_FOR_METADATA (1) - metadata is not yet final
   -- - METADATA_FINAL (2) - metadata is final and exports can commence
-  StreamingExportState INT64 NOT NULL DEFAULT(1),
+  StreamingExportState INT64 NOT NULL,
 ) PRIMARY KEY (RootInvocationId),
   -- Apply 1.5 year TTL to root invocations. The deletion policy applied here will
   -- apply to interleaved child tables. Leave 30 days for Spanner to actually
@@ -245,9 +239,6 @@ CREATE TABLE RootInvocationShards (
   --
   -- See RootInvocations.Sources for more information.
   Sources BYTES(MAX),
-
-  -- To be removed.
-  IsSourcesFinal BOOL NOT NULL DEFAULT(FALSE),
 ) PRIMARY KEY (RootInvocationShardId),
   -- Apply 1.5 year TTL to root invocations. The deletion policy applied here will
   -- apply to interleaved child tables. Leave 30 days for Spanner to actually
@@ -294,14 +285,14 @@ CREATE TABLE WorkUnits (
   -- Work unit execution state. One of:
   -- - Pending (1)
   -- - Running (2)
-  -- - Succeeded (3)
-  -- - Failed (4)
-  -- - Cancelled (5)
-  -- - Skipped (6)
+  -- - Succeeded (12)
+  -- - Skipped (20)
+  -- - Failed (36)
+  -- - Cancelled (68)
   State INT64 NOT NULL,
 
   -- A summary of the final state of the work unit, to be displayed on the UI.
-  SummaryMarkdown STRING(MAX) NOT NULL DEFAULT(""),
+  SummaryMarkdown STRING(MAX) NOT NULL,
 
   -- Security realm this work unit (including its test results, exonerations and
   -- artifacts) belongs to. Used to enforce ACLs.
