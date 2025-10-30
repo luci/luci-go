@@ -173,7 +173,7 @@ func (client *Client) ReadCompileFailureAnalysisRows(ctx context.Context) ([]*Co
 		SELECT DISTINCT
 			analysis_id as AnalysisID
 		FROM compile_failure_analyses
-		WHERE create_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL %d DAY)
+		WHERE created_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL %d DAY)
  	`, daysToLookBack)
 	q := client.bqClient.Query(queryStm)
 	q.DefaultDatasetID = bqutil.InternalDatasetID
