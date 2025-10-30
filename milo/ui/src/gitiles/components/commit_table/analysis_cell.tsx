@@ -37,17 +37,29 @@ export function AnalysisContentCell({ suspect, bbid }: AnalysisCellProps) {
   if (!suspect?.verificationDetails || !bbid) {
     return <TableCell />;
   }
-  const verfiedText =
-    suspect.verificationDetails!.status === 'Confirmed Culprit'
-      ? 'Culprit'
-      : 'Suspect';
+
+  let verificationStatus = 'Suspect';
+  let verificationStatusText = `Verification status: ${suspect.verificationDetails!.status}`;
+
+  if (suspect.verificationDetails!.status === 'Confirmed Culprit') {
+    verificationStatus = 'Culprit';
+    verificationStatusText = '';
+  }
+
   return (
     // TODO(445562638): Add Justification as a tooltip
     <HtmlTooltip
       title={
         <div>
-          Identified as {verfiedText} by {suspect.type}. <br /> Click for full
-          analysis
+          Identified as {verificationStatus.toLowerCase()} by {suspect.type}
+          <br />
+          <br />
+          {verificationStatusText && (
+            <div>
+              {verificationStatusText} <br /> <br />
+            </div>
+          )}
+          Click for full analysis.
         </div>
       }
     >
@@ -56,7 +68,7 @@ export function AnalysisContentCell({ suspect, bbid }: AnalysisCellProps) {
           component={RouterLink}
           to={`/ui/bisection/compile-analysis/b/${bbid}`}
         >
-          {verfiedText}
+          {verificationStatus}
         </Link>
       </TableCell>
     </HtmlTooltip>

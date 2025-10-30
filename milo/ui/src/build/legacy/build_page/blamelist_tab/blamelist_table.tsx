@@ -101,30 +101,27 @@ export function BlamelistTable({
     useLocalStorage<boolean>(BLAMELIST_TABLE_DEFAULT_EXPANDED_KEY);
 
   let commitCount = 0;
-  const verificationStates = [
-    'Confirmed Culprit',
-    'Verification Scheduled',
-    'Under Verification',
-  ];
-
   let suspect: GenericSuspect | undefined;
-  // GenAI suspect is generally identified and verified well before the
-  // nthsection so we use that unless verfication vindicates it.
+  // Show GenAI culprit if it is confirmed
   if (
-    verificationStates.includes(
-      analysis?.genAiResult?.suspect?.verificationDetails?.status || '',
-    )
+    analysis?.genAiResult?.suspect?.verificationDetails?.status ===
+    'Confirmed Culprit'
   ) {
     suspect = analysis?.genAiResult?.suspect
       ? GenericSuspect.fromGenAi(analysis?.genAiResult?.suspect)
       : undefined;
   } else if (
-    verificationStates.includes(
-      analysis?.nthSectionResult?.suspect?.verificationDetails?.status || '',
-    )
+    // otherwise show Nth Section culprit if it is confirmed
+    analysis?.nthSectionResult?.suspect?.verificationDetails?.status ===
+    'Confirmed Culprit'
   ) {
     suspect = analysis?.nthSectionResult?.suspect
       ? GenericSuspect.fromNthSection(analysis?.nthSectionResult?.suspect)
+      : undefined;
+  } else {
+    // otherwise show gen AI suspect.
+    suspect = analysis?.genAiResult?.suspect
+      ? GenericSuspect.fromGenAi(analysis?.genAiResult?.suspect)
       : undefined;
   }
   return (
