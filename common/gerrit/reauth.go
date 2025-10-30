@@ -234,7 +234,28 @@ type cachedResult struct {
 	Expiry    time.Time `json:"expiry"`
 }
 
-const resultCacheLifetime = time.Hour * 24 * 30
+const (
+	// The default lifetime and jitter for a cache result.
+	// Maximum is 6.5 days (slightly shorter than a working week).
+	resultCacheLifetimeDefault       = 6 * 24 * time.Hour
+	resultCacheLifetimeDefaultJitter = 12 * time.Hour
+
+	// The lifetime and jitter for a "RAPT not needed" cache result.
+	//
+	// We cache such results for much shorter time, so that in case of a
+	// contributor becomes a new committer, we don't stick with the "RAPT not
+	// needed" code path for too long.
+	//
+	// For example, if someone newly becomes a committer, they will be subject
+	// to ReAuth requirements on CL uploads. We need to tell the rest of
+	// authentication code that ReAuth is required (namely git-credential-luci
+	// and depot_tools), so they can print messages correctly.
+	//
+	// Maximum is 20 hours (slightly shorter than a working day, allowing some
+	// working hour fluctuations).
+	resultCacheLifetimeRAPTNotNeeded       = 16 * time.Hour
+	resultCacheLifetimeRAPTNotNeededJitter = 4 * time.Hour
+)
 
 func NewDiskResultCache(ctx context.Context, dir string) *DiskResultCache {
 	c := &DiskResultCache{
@@ -329,6 +350,19 @@ func (c *DiskResultCache) GetForProject(ctx context.Context, host, project strin
 	return nil, ErrResultMissing
 }
 
+func determineCacheResultExpiry(ctx context.Context, r *ReAuthCheckResult) time.Time {
+	lifetime := resultCacheLifetimeDefault
+	maxJitter := resultCacheLifetimeDefaultJitter
+
+	if !r.NeedsRAPT {
+		lifetime = resultCacheLifetimeRAPTNotNeeded
+		maxJitter = resultCacheLifetimeRAPTNotNeededJitter
+	}
+
+	jitter := time.Duration(mathrand.Float64(ctx) * float64(maxJitter))
+	return clock.Now(ctx).Add(lifetime + jitter)
+}
+
 func (c *DiskResultCache) Put(ctx context.Context, r *ReAuthCheckResult) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -340,7 +374,7 @@ func (c *DiskResultCache) Put(ctx context.Context, r *ReAuthCheckResult) error {
 	cr := &cachedResult{
 		ReAuthCheckResult: *r,
 		Timestamp:         now,
-		Expiry:            now.Add(resultCacheLifetime).Add(time.Duration(mathrand.Float64(ctx) * float64(7*24*time.Hour))),
+		Expiry:            determineCacheResultExpiry(ctx, r),
 	}
 	// This value is meaningless when cached since RAPTs have very
 	// short lifetimes.

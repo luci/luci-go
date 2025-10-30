@@ -104,27 +104,57 @@ func TestDiskResultCache_Clear(t *testing.T) {
 	assert.ErrIsLike(t, err, ErrResultMissing)
 }
 
-func TestDiskResultCache_expiry(t *testing.T) {
+func TestDiskResultCache_expiry_Default(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	tc := testclock.New(time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC))
 	ctx = clock.Set(ctx, tc)
 
 	c := NewDiskResultCache(ctx, t.TempDir())
-	r1 := &ReAuthCheckResult{Host: "host1", Project: "project1", NeedsRAPT: true}
-	err := c.Put(ctx, r1)
+	r := &ReAuthCheckResult{Host: "host", Project: "project", NeedsRAPT: true}
+	err := c.Put(ctx, r)
 	assert.NoErr(t, err)
 
 	// Result should be present initially.
-	got, err := c.GetForProject(ctx, "host1", "project1")
+	got, err := c.GetForProject(ctx, "host", "project")
 	assert.NoErr(t, err)
-	assert.That(t, got, should.Match(r1))
+	assert.That(t, got, should.Match(r))
 
-	// Advance time past expiry.
-	tc.Add(2 * resultCacheLifetime)
+	// Advance time past the shorter expiry, it should still be there.
+	tc.Add(2 * resultCacheLifetimeRAPTNotNeeded)
+	got, err = c.GetForProject(ctx, "host", "project")
+	assert.NoErr(t, err)
+	assert.That(t, got, should.Match(r))
+
+	// Advance time past the longer expiry.
+	tc.Add(2 * resultCacheLifetimeDefault)
 
 	// Result should be gone now.
-	_, err = c.GetForProject(ctx, "host1", "project1")
+	_, err = c.GetForProject(ctx, "host", "project")
+	assert.That(t, err, should.Equal(ErrResultMissing))
+}
+
+func TestDiskResultCache_expiry_RAPTNotNeeded(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	tc := testclock.New(time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC))
+	ctx = clock.Set(ctx, tc)
+
+	c := NewDiskResultCache(ctx, t.TempDir())
+	r := &ReAuthCheckResult{Host: "host", Project: "project", NeedsRAPT: false}
+	err := c.Put(ctx, r)
+	assert.NoErr(t, err)
+
+	// Result should be present initially.
+	got, err := c.GetForProject(ctx, "host", "project")
+	assert.NoErr(t, err)
+	assert.That(t, got, should.Match(r))
+
+	// Advance time past expiry.
+	tc.Add(2 * resultCacheLifetimeRAPTNotNeeded)
+
+	// Result should be gone now.
+	_, err = c.GetForProject(ctx, "host", "project")
 	assert.That(t, err, should.Equal(ErrResultMissing))
 }
 
