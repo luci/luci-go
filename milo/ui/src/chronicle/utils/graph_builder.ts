@@ -61,6 +61,15 @@ const DEPENDENCY_EDGE_STYLE: Partial<Edge> = {
   style: { strokeWidth: 1.5, stroke: '#B0BEC5' },
 };
 
+const ASSIGNMENT_EDGE_STYLE: Partial<Edge> = {
+  markerEnd: {
+    type: MarkerType.ArrowClosed,
+    color: '#B0BEC5',
+  },
+  style: { strokeWidth: 1, stroke: '#abd3e7ff', strokeDasharray: '5 3' },
+  zIndex: 0,
+};
+
 const GRAPH_CONFIG = {
   nodeWidth: 240,
   nodeHeight: 32,
@@ -210,6 +219,11 @@ interface DagreAssignmentGroupData {
   groupInfo: CheckAssignmentGroup;
 }
 
+export interface GraphBuilderOptions {
+  /** Whether to draw assignment edges for stages assigned to multiple checks. */
+  showAssignmentEdges?: boolean;
+}
+
 // Helper to generate full border string for a given color
 function createCssBorder(color: string) {
   return `${BORDER_STYLE} ${color}`;
@@ -274,14 +288,17 @@ export class TurboCIGraphBuilder {
 
   constructor(private readonly graphView: TurboCIGraphView) {}
 
-  public build(): { nodes: Node[]; edges: Edge[] } {
+  public build(options: GraphBuilderOptions = {}): {
+    nodes: Node[];
+    edges: Edge[];
+  } {
     this.nodes = [];
     this.edges = [];
     this.assignmentGroups = [];
     this.nodeToGroupIdMap.clear();
 
     this.createBaseNodes();
-    this.identifyAssignmentGroups();
+    this.identifyAssignmentGroups(options);
     this.createEdges();
     this.applyDagreLayout();
 
@@ -302,17 +319,24 @@ export class TurboCIGraphBuilder {
     });
   }
 
-  private identifyAssignmentGroups() {
+  private identifyAssignmentGroups(options: GraphBuilderOptions) {
     // key: checkId, value: stageIds assigned to check
     const checkAssignments = new Map<string, Set<string>>();
 
     Object.entries(this.graphView.stages).forEach(([stageId, sv]) => {
       if (!sv.stage) return;
 
-      // Ignore stages that are assigned multiple different checks.
-      // TODO - Wire up edges to these stages
-      const stageAssignedChecks = sv.stage.assignments.map((a) => a.target?.id);
-      if (stageAssignedChecks.length !== 1) return;
+      // Don't group stages that are assigned multiple different checks.
+      // Instead, just create edges for them.
+      const stageAssignedChecks = sv.stage.assignments
+        .map((a) => a.target?.id)
+        .filter((a) => a !== undefined);
+      if (stageAssignedChecks.length !== 1) {
+        if (options.showAssignmentEdges) {
+          this.addAssignmentEdges(stageId, stageAssignedChecks);
+        }
+        return;
+      }
 
       sv.stage.assignments.forEach((assignment) => {
         if (assignment.target?.id) {
@@ -338,6 +362,28 @@ export class TurboCIGraphBuilder {
           this.nodeToGroupIdMap.set(sId, checkId),
         );
       }
+    });
+  }
+
+  /**
+   * Normally assignments between a stage and a singular check are displayed
+   * as a stacked group. But for stages with multiple assigned checks, we create
+   * an edge.
+   */
+  private addAssignmentEdges(sourceNodeId: string, assignments: string[]) {
+    assignments.forEach((assignment) => {
+      if (!this.allNodeIds.has(assignment)) return;
+
+      this.edges.push({
+        id: `assignment-${sourceNodeId}-${assignment}`,
+        source: sourceNodeId,
+        target: assignment,
+        zIndex: 1,
+        // We don't want assignment edges to affect the Dagre layout
+        // so mark the edge accordingly.
+        data: { isAssignment: true },
+        ...ASSIGNMENT_EDGE_STYLE,
+      });
     });
   }
 
@@ -437,6 +483,9 @@ export class TurboCIGraphBuilder {
 
     // 3. Add edges to Dagre (mapping original node IDs to group IDs if necessary)
     this.edges.forEach((edge) => {
+      // Skip assignment edges during layout calculation so they don't affect node positioning.
+      if (edge.data?.isAssignment) return;
+
       const dagreSource = nodesByGroupId.get(edge.source);
       const dagreTarget = nodesByGroupId.get(edge.target);
 

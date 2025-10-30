@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box } from '@mui/material';
+import {
+  Box,
+  Checkbox,
+  FormControlLabel,
+  Paper,
+  Typography,
+} from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useDebounce } from 'react-use';
@@ -61,15 +67,18 @@ function Graph() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { fitView } = useReactFlow();
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAssignmentEdges, setShowAssignmentEdges] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | undefined>(
     undefined,
   );
 
   const { layoutedNodes, layoutedEdges } = useMemo(() => {
     // Convert TurboCI Graph to list of nodes and edges that React Flow understands.
-    const { nodes, edges } = new TurboCIGraphBuilder(turboCiGraph).build();
+    const { nodes, edges } = new TurboCIGraphBuilder(turboCiGraph).build({
+      showAssignmentEdges,
+    });
     return { layoutedNodes: nodes, layoutedEdges: edges };
-  }, []);
+  }, [showAssignmentEdges]);
 
   useEffect(() => {
     setNodes(layoutedNodes);
@@ -146,13 +155,35 @@ function Graph() {
           <Controls />
           <MiniMap />
           <ReactFlowPanel position="top-left">
-            <input
-              type="text"
-              placeholder="Search nodes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ padding: '8px', width: '200px' }}
-            />
+            <Paper
+              elevation={2}
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
+                p: 1,
+                borderRadius: 1,
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Search nodes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ padding: '8px', width: '200px' }}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={showAssignmentEdges}
+                    onChange={(e) => setShowAssignmentEdges(e.target.checked)}
+                  />
+                }
+                label={
+                  <Typography variant="body2">Show Assignment Edges</Typography>
+                }
+              />
+            </Paper>
           </ReactFlowPanel>
         </ReactFlow>
       </Panel>

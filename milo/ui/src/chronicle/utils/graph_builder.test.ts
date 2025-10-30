@@ -298,7 +298,7 @@ describe('TurboCIGraphBuilder', () => {
       expect(middleNode.position.y).toBeLessThan(bottom.position.y);
     });
 
-    it('should treat stages assigned to multiple checks as standalone', () => {
+    it('should treat stages assigned to multiple checks as standalone but create edges for them', () => {
       // Builder logic filters out stages with assignments.length !== 1 from groups.
       const graph: TurboCIGraphView = {
         checks: {
@@ -308,12 +308,42 @@ describe('TurboCIGraphBuilder', () => {
         stages: { S_Multi: createStageView('S_Multi', ['C1', 'C2']) },
       };
 
-      const { nodes } = new TurboCIGraphBuilder(graph).build();
+      const { nodes, edges } = new TurboCIGraphBuilder(graph).build({
+        showAssignmentEdges: true,
+      });
       const sMulti = nodes.find((n) => n.id === 'S_Multi')!;
       const c1 = nodes.find((n) => n.id === 'C1')!;
 
       expect(sMulti.data.isGrouped).toBeFalsy();
       expect(c1.data.isGrouped).toBeFalsy();
+
+      expect(edges).toHaveLength(2);
+      expect(edges[0].id).toBe('assignment-S_Multi-C1');
+      expect(edges[0].data.isAssignment).toBeTruthy();
+      expect(edges[1].id).toBe('assignment-S_Multi-C2');
+      expect(edges[1].data.isAssignment).toBeTruthy();
+    });
+
+    it('does not draw assignment edges when showAssignmentEdges is false', () => {
+      // Builder logic filters out stages with assignments.length !== 1 from groups.
+      const graph: TurboCIGraphView = {
+        checks: {
+          C1: createCheckView('C1'),
+          C2: createCheckView('C2'),
+        },
+        stages: { S_Multi: createStageView('S_Multi', ['C1', 'C2']) },
+      };
+
+      const { nodes, edges } = new TurboCIGraphBuilder(graph).build({
+        showAssignmentEdges: false,
+      });
+      const sMulti = nodes.find((n) => n.id === 'S_Multi')!;
+      const c1 = nodes.find((n) => n.id === 'C1')!;
+
+      expect(sMulti.data.isGrouped).toBeFalsy();
+      expect(c1.data.isGrouped).toBeFalsy();
+
+      expect(edges).toHaveLength(0);
     });
 
     it('should treat stages assigned to zero checks as standalone', () => {
