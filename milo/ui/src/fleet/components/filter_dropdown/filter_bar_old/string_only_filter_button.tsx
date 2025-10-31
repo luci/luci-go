@@ -130,7 +130,6 @@ const OptionComponent = ({
       variant="selectedMenu"
       sx={{
         maxHeight: 400,
-        width: 300,
       }}
     >
       <OptionsMenuOld
