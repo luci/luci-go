@@ -493,6 +493,42 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					assert.Loosely(t, err, should.ErrLike(`root_work_unit: module_id: module_scheme: scheme "cooltest" is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme`))
 				})
 			})
+			t.Run("module_shard_key", func(t *ftt.Test) {
+				t.Run("with module ID", func(t *ftt.Test) {
+					req.RootWorkUnit.ModuleId = &pb.ModuleIdentifier{
+						ModuleName:    "mymodule",
+						ModuleScheme:  "gtest", // This is in the service config we use for testing.
+						ModuleVariant: pbutil.Variant("k", "v"),
+					}
+					t.Run("empty", func(t *ftt.Test) {
+						req.RootWorkUnit.ModuleShardKey = ""
+						err := validateCreateRootInvocationRequest(req, cfg)
+						assert.Loosely(t, err, should.BeNil)
+					})
+					t.Run("valid", func(t *ftt.Test) {
+						req.RootWorkUnit.ModuleShardKey = "abcdef01234567890"
+						err := validateCreateRootInvocationRequest(req, cfg)
+						assert.Loosely(t, err, should.BeNil)
+					})
+					t.Run("invalid", func(t *ftt.Test) {
+						req.RootWorkUnit.ModuleShardKey = "\x00"
+						err := validateCreateRootInvocationRequest(req, cfg)
+						assert.Loosely(t, err, should.ErrLike(`work_unit: module_shard_key: does not match pattern`))
+					})
+				})
+				t.Run("without module ID", func(t *ftt.Test) {
+					t.Run("empty", func(t *ftt.Test) {
+						req.RootWorkUnit.ModuleShardKey = ""
+						err := validateCreateRootInvocationRequest(req, cfg)
+						assert.Loosely(t, err, should.BeNil)
+					})
+					t.Run("set", func(t *ftt.Test) {
+						req.RootWorkUnit.ModuleShardKey = "abcdef"
+						err := validateCreateRootInvocationRequest(req, cfg)
+						assert.Loosely(t, err, should.ErrLike(`work_unit: module_shard_key: must not be set unless module_id is specified`))
+					})
+				})
+			})
 			t.Run("producer resource", func(t *ftt.Test) {
 				// Must not be set.
 				req.RootWorkUnit.ProducerResource = "//chromium-swarm.appspot.com/tasks/deadbeef"
@@ -826,6 +862,7 @@ func TestCreateRootInvocation(t *testing.T) {
 						ModuleScheme:  "gtest",
 						ModuleVariant: pbutil.Variant("k", "v"),
 					},
+					ModuleShardKey:     "shard_key",
 					State:              pb.WorkUnit_RUNNING,
 					SummaryMarkdown:    "Running FooBar...",
 					Tags:               workUnitTags,
@@ -906,6 +943,7 @@ func TestCreateRootInvocation(t *testing.T) {
 					ModuleVariant:     pbutil.Variant("k", "v"),
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k", "v")),
 				},
+				ModuleShardKey:     "shard_key",
 				ProducerResource:   "//builds.example.com/builds/1",
 				Tags:               pbutil.StringPairs("wu_key", "wu_value"),
 				Properties:         wuProperties,

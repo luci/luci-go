@@ -197,6 +197,15 @@ func validateWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServiceConfi
 			return errors.Fmt("module_id: %w", err)
 		}
 	}
+	if wu.ModuleShardKey != "" {
+		if wu.ModuleId == nil {
+			return errors.New("module_shard_key: must not be set unless module_id is specified")
+		}
+		if err := pbutil.ValidateModuleShardKey(wu.ModuleShardKey); err != nil {
+			return errors.Fmt("module_shard_key: %w", err)
+		}
+	}
+
 	if err := pbutil.ValidateWorkUnitTags(wu.Tags); err != nil {
 		return errors.Fmt("tags: %w", err)
 	}

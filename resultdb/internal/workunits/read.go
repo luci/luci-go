@@ -485,10 +485,11 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			w.FinalizeTime,
 			w.FinalizerCandidateTime,
 			w.Deadline,
+			w.CreateRequestId,
 			w.ModuleName,
 			w.ModuleScheme,
 			w.ModuleVariant,
-			w.CreateRequestId,
+			w.ModuleShardKey,
 			w.ProducerResource,
 			w.Tags,
 			w.Properties,
@@ -538,6 +539,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			moduleName            spanner.NullString
 			moduleScheme          spanner.NullString
 			moduleVariant         *pb.Variant
+			moduleShardKey        spanner.NullString
 		)
 
 		dest := []any{
@@ -556,10 +558,11 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			&wu.FinalizeTime,
 			&wu.FinalizerCandidateTime,
 			&wu.Deadline,
+			&wu.CreateRequestID,
 			&moduleName,
 			&moduleScheme,
 			&moduleVariant,
-			&wu.CreateRequestID,
+			&moduleShardKey,
 			&wu.ProducerResource,
 			&wu.Tags,
 			&properties,
@@ -587,6 +590,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 				ModuleVariant: moduleVariant,
 			}
 			pbutil.PopulateModuleIdentifierHashes(wu.ModuleID)
+			wu.ModuleShardKey = moduleShardKey.StringVal
 		}
 
 		if len(properties) > 0 {

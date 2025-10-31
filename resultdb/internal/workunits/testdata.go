@@ -67,6 +67,7 @@ func NewBuilder(rootInvocationID rootinvocations.ID, workUnitID string) *Builder
 				ModuleVariant:     pbutil.Variant("v", "d"),
 				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("v", "d")),
 			},
+			ModuleShardKey:   "shard_key",
 			ProducerResource: "//builds.example.com/builds/123",
 			Tags:             pbutil.StringPairs("k1", "v1"),
 			Properties: &structpb.Struct{
@@ -295,6 +296,7 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		row["ModuleScheme"] = w.ModuleID.ModuleScheme
 		row["ModuleVariant"] = w.ModuleID.ModuleVariant
 		row["ModuleVariantHash"] = pbutil.VariantHash(w.ModuleID.ModuleVariant)
+		row["ModuleShardKey"] = w.ModuleShardKey
 	}
 	workUnitMutation := spanutil.InsertMap("WorkUnits", row)
 

@@ -170,6 +170,42 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 					assert.Loosely(t, err, should.ErrLike(`work_unit: module_id: module_scheme: scheme "cooltest" is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme`))
 				})
 			})
+			t.Run("module_shard_key", func(t *ftt.Test) {
+				t.Run("with module ID", func(t *ftt.Test) {
+					req.WorkUnit.ModuleId = &pb.ModuleIdentifier{
+						ModuleName:    "mymodule",
+						ModuleScheme:  "gtest", // This is in the service config we use for testing.
+						ModuleVariant: pbutil.Variant("k", "v"),
+					}
+					t.Run("empty", func(t *ftt.Test) {
+						req.WorkUnit.ModuleShardKey = ""
+						err := validateCreateWorkUnitRequest(req, cfg)
+						assert.Loosely(t, err, should.BeNil)
+					})
+					t.Run("valid", func(t *ftt.Test) {
+						req.WorkUnit.ModuleShardKey = "abcdef01234567890"
+						err := validateCreateWorkUnitRequest(req, cfg)
+						assert.Loosely(t, err, should.BeNil)
+					})
+					t.Run("invalid", func(t *ftt.Test) {
+						req.WorkUnit.ModuleShardKey = "\x00"
+						err := validateCreateWorkUnitRequest(req, cfg)
+						assert.Loosely(t, err, should.ErrLike(`work_unit: module_shard_key: does not match pattern`))
+					})
+				})
+				t.Run("without module ID", func(t *ftt.Test) {
+					t.Run("empty", func(t *ftt.Test) {
+						req.WorkUnit.ModuleShardKey = ""
+						err := validateCreateWorkUnitRequest(req, cfg)
+						assert.Loosely(t, err, should.BeNil)
+					})
+					t.Run("set", func(t *ftt.Test) {
+						req.WorkUnit.ModuleShardKey = "abcdef"
+						err := validateCreateWorkUnitRequest(req, cfg)
+						assert.Loosely(t, err, should.ErrLike(`work_unit: module_shard_key: must not be set unless module_id is specified`))
+					})
+				})
+			})
 			t.Run("producer_resource", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.WorkUnit.ProducerResource = ""
@@ -776,6 +812,7 @@ func TestCreateWorkUnit(t *testing.T) {
 					ModuleScheme:  "gtest",
 					ModuleVariant: pbutil.Variant("k", "v"),
 				},
+				ModuleShardKey:     "shard_key",
 				ProducerResource:   "//producer.example.com/builds/123",
 				Tags:               pbutil.StringPairs("e2e_key", "e2e_value"),
 				Properties:         wuProperties,
@@ -812,6 +849,7 @@ func TestCreateWorkUnit(t *testing.T) {
 					ModuleVariant:     pbutil.Variant("k", "v"),
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k", "v")),
 				},
+				ModuleShardKey:     "shard_key",
 				ProducerResource:   "//producer.example.com/builds/123",
 				Tags:               pbutil.StringPairs("e2e_key", "e2e_value"),
 				Properties:         wuProperties,

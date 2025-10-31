@@ -99,6 +99,7 @@ func TestGetWorkUnit(t *testing.T) {
 					ModuleVariant:     rootWu.ModuleID.ModuleVariant,
 					ModuleVariantHash: rootWu.ModuleID.ModuleVariantHash,
 				},
+				ModuleShardKey:   rootWu.ModuleShardKey,
 				ProducerResource: rootWu.ProducerResource,
 				Tags:             rootWu.Tags,
 				Properties:       rootWu.Properties,

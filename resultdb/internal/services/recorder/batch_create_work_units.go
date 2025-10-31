@@ -143,6 +143,7 @@ func createWorkUnitsIdempotent(
 				Deadline:           deadline,
 				CreateRequestID:    in.RequestId,
 				ModuleID:           wu.ModuleId,
+				ModuleShardKey:     wu.ModuleShardKey,
 				ProducerResource:   wu.ProducerResource,
 				Tags:               wu.Tags,
 				Properties:         wu.Properties,

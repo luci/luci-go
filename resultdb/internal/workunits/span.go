@@ -104,6 +104,7 @@ type WorkUnitRow struct {
 	Deadline               time.Time
 	CreateRequestID        string
 	ModuleID               *pb.ModuleIdentifier
+	ModuleShardKey         string
 	ProducerResource       string
 	Tags                   []*pb.StringPair
 	Properties             *structpb.Struct
@@ -173,6 +174,7 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 		row["ModuleScheme"] = w.ModuleID.ModuleScheme
 		row["ModuleVariant"] = w.ModuleID.ModuleVariant
 		row["ModuleVariantHash"] = pbutil.VariantHash(w.ModuleID.ModuleVariant)
+		row["ModuleShardKey"] = w.ModuleShardKey
 	}
 	// Wrap into luci.resultdb.internal.invocations.ExtendedProperties so that
 	// it can be serialized as a single value to spanner.

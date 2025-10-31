@@ -196,6 +196,7 @@ func createIdempotentRootInvocation(
 			// Fields should be set with value in request.RootWorkUnit.
 			CreateRequestID:    req.RequestId,
 			ModuleID:           req.RootWorkUnit.ModuleId,
+			ModuleShardKey:     req.RootWorkUnit.ModuleShardKey,
 			Deadline:           deadline,
 			Tags:               req.RootWorkUnit.Tags,
 			Properties:         req.RootWorkUnit.Properties,

@@ -225,3 +225,30 @@ func TestTruncateSummaryMarkdown(t *testing.T) {
 		})
 	})
 }
+
+func TestValidateModuleShardKey(t *testing.T) {
+	t.Parallel()
+	ftt.Run(`ValidateModuleShardKey`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateModuleShardKey("a"), should.BeNil)
+			assert.Loosely(t, ValidateModuleShardKey("a-z_0-9"), should.BeNil)
+			assert.Loosely(t, ValidateModuleShardKey("01234567890abcdef"), should.BeNil)
+			assert.Loosely(t, ValidateModuleShardKey(strings.Repeat("a", moduleShardKeyMaxLength)), should.BeNil)
+		})
+		t.Run(`Invalid`, func(t *ftt.Test) {
+			t.Run(`Empty`, func(t *ftt.Test) {
+				assert.Loosely(t, ValidateModuleShardKey(""), should.ErrLike("unspecified"))
+			})
+			t.Run(`Wrong alphabet`, func(t *ftt.Test) {
+				// Uppercase
+				assert.Loosely(t, ValidateModuleShardKey("A"), should.ErrLike("does not match"))
+				// Other symbols than _ and -.
+				assert.Loosely(t, ValidateModuleShardKey("a.b"), should.ErrLike("does not match"))
+				assert.Loosely(t, ValidateModuleShardKey("a b"), should.ErrLike("does not match"))
+			})
+			t.Run(`Too long`, func(t *ftt.Test) {
+				assert.Loosely(t, ValidateModuleShardKey(strings.Repeat("a", moduleShardKeyMaxLength+1)), should.ErrLike("must be at most 50 bytes long"))
+			})
+		})
+	})
+}

@@ -16,6 +16,7 @@ package pbutil
 
 import (
 	"fmt"
+	"regexp"
 	"unicode/utf8"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
@@ -31,10 +32,12 @@ const (
 	workUnitIDPattern        = `[a-z][a-z0-9_\-.]*(?::[a-z][a-z0-9_\-.]*)?`
 	workUnitIDMaxLength      = 100
 	summaryMarkdownMaxLength = 4096 // bytes
+	moduleShardKeyMaxLength  = 50   // bytes
 )
 
 var workUnitIDRe = regexpf("^%s$", workUnitIDPattern)
 var workUnitNameRe = regexpf("^rootInvocations/(%s)/workUnits/(%s)$", rootInvocationIDPattern, workUnitIDPattern)
+var moduleShardKeyRe = regexp.MustCompile("^[a-z0-9_\\-]+$")
 
 // ValidateWorkUnitID returns a non-nil error if the given work unit ID is invalid.
 func ValidateWorkUnitID(id string) error {
@@ -154,7 +157,7 @@ func TruncateSummaryMarkdown(summaryMarkdown string) string {
 // ValidateWorkUnitState validates the work unit state is a valid value.
 func ValidateWorkUnitState(state pb.WorkUnit_State) error {
 	if state == pb.WorkUnit_STATE_UNSPECIFIED {
-		return errors.New("unspecified")
+		return validate.Unspecified()
 	}
 	if _, ok := pb.WorkUnit_State_name[int32(state)]; !ok {
 		return errors.Fmt("unknown state %v", state)
@@ -168,4 +171,13 @@ func ValidateWorkUnitState(state pb.WorkUnit_State) error {
 // IsFinalWorkUnitState returns if the given work unit state is a final state.
 func IsFinalWorkUnitState(state pb.WorkUnit_State) bool {
 	return state&pb.WorkUnit_FINAL_STATE_MASK != 0
+}
+
+// ValidateModuleShardKey returns an error if moduleShardKey is not a valid
+// module shard key.
+func ValidateModuleShardKey(moduleShardKey string) error {
+	if len(moduleShardKey) > moduleShardKeyMaxLength {
+		return fmt.Errorf("must be at most %v bytes long (was %v bytes)", moduleShardKeyMaxLength, len(moduleShardKey))
+	}
+	return validate.SpecifiedWithRe(moduleShardKeyRe, moduleShardKey)
 }

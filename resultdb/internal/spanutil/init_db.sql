@@ -343,7 +343,8 @@ CREATE TABLE WorkUnits (
 
   -- Module name.
   --
-  -- Invariant: If any one of the Module* fields are set, they must all be set.
+  -- Invariant: If any one of the Module* fields are set, they must all be set
+  -- to a valid non-null value.
   ModuleName STRING(MAX),
 
   -- The module scheme.
@@ -361,6 +362,12 @@ CREATE TABLE WorkUnits (
   -- where concatenated_key_value_pairs is the result of concatenating
   -- variant pairs formatted as "<key>:<value>\n" in ascending key order.
   ModuleVariantHash STRING(16),
+
+  -- Identifies the shard of the module that this work unit is running.
+  -- Used in module aggregation: each shard must have a top-level passing
+  -- work unit for the module to be considered passing. "Top-level" means
+  -- that none of the work unit's ancestors have set a module_id.
+  ModuleShardKey STRING(MAX),
 
   -- Value of CreateWorkUnitRequest.request_id.
   -- Used to dedup work unit creation requests.

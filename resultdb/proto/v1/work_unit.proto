@@ -325,7 +325,9 @@ message WorkUnit {
   // This field is only used when set on a top-level module work unit.
   //
   // Regex: ^[a-z0-9_\-]+$. Limited to 50 characters in length.
-  string module_shard_key = 24;
+  string module_shard_key = 24 [
+    (google.api.field_behavior) = IMMUTABLE
+  ];
 
   // Full name of the resource that produced results in this work unit.
   // See also https://aip.dev/122#full-resource-names
