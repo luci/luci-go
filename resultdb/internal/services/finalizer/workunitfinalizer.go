@@ -16,7 +16,9 @@ package finalizer
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"go.opentelemetry.io/otel/attribute"
@@ -297,6 +299,8 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 			if err != nil {
 				return err
 			}
+
+			var finalizedWUIDs []workunits.ID
 			shouldFinalizeRootInvocation := false
 			// Finalize work units only for work units that are still in the FINALIZING state.
 			for i, id := range finalizeReadyIDs {
@@ -304,9 +308,17 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 					continue
 				}
 				mutations = append(mutations, workunits.MarkFinalized(id)...)
+				finalizedWUIDs = append(finalizedWUIDs, id)
 				if id.WorkUnitID == workunits.RootWorkUnitID {
-					// Finalize the root invocation when transition root work unit to finalized.
 					shouldFinalizeRootInvocation = true
+				}
+			}
+
+			// Enqueue tasks to publish test results for the finalized work
+			// units.
+			if len(finalizedWUIDs) > 0 {
+				if err := publishTestResultNotifications(ctx, rootInvID, finalizedWUIDs, opts.resultDBHostname); err != nil {
+					return errors.Fmt("publish test result notifications: %w", err)
 				}
 			}
 
@@ -314,9 +326,10 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 				mutations = append(mutations, rootinvocations.MarkFinalized(rootInvID)...)
 				// Publish a finalized root invocation pubsub transactionally.
 				if err := publishFinalizedRootInvocation(ctx, rootInvID, opts.resultDBHostname); err != nil {
-					return err
+					return errors.Fmt("publish finalized root invocation: %w", err)
 				}
 			}
+
 			span.BufferWrite(ctx, mutations...)
 			return nil
 		})
@@ -328,7 +341,6 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 }
 
 // publishFinalizedRootInvocation publishes a pub/sub message for a finalized
-// root invocation.
 func publishFinalizedRootInvocation(ctx context.Context, rootInvID rootinvocations.ID, rdbHostName string) error {
 	// Enqueue a notification to pub/sub listeners that the root invocation
 	// has been finalized.
@@ -344,6 +356,63 @@ func publishFinalizedRootInvocation(ctx context.Context, rootInvID rootinvocatio
 		ResultdbHost:   rdbHostName,
 	}
 	tasks.NotifyRootInvocationFinalized(ctx, notification)
+	return nil
+}
+
+// publishTestResultNotifications enqueues tasks to publish test result
+// notifications to Pub/Sub for the given work units, provided the root
+// invocation is ready for export.
+func publishTestResultNotifications(ctx context.Context, rootInvID rootinvocations.ID, finalizedWUIDs []workunits.ID, rdbHostName string) error {
+	// 1. Read Root Invocation to check its state and get sources.
+	rootInv, err := rootinvocations.Read(ctx, rootInvID)
+	if err != nil {
+		return errors.Fmt("failed to read root invocation %s: %w", rootInvID.Name(), err)
+	}
+
+	// 2. Check StreamingExportState: Only publish if metadata is final.
+	if rootInv.StreamingExportState != pb.RootInvocation_METADATA_FINAL {
+		return nil
+	}
+
+	// 3. Construct the message attributes.
+	attrs := make(map[string]string)
+	if rootInv.Properties != nil {
+		if primaryBuild, ok := rootInv.Properties.Fields["primary_build"]; ok {
+			if buildStruct := primaryBuild.GetStructValue(); buildStruct != nil {
+				if branchVal, ok := buildStruct.Fields["branch"]; ok {
+					attrs["branch"] = branchVal.GetStringValue()
+				}
+			}
+		}
+	}
+
+	// 4. Iterate through each finalized work unit and enqueue notification
+	// tasks.
+	testResultsByWorkUnit := make([]*pb.TestResultsNotification_TestResultsByWorkUnit, 0, len(finalizedWUIDs))
+	wuIDs := make([]string, 0, len(finalizedWUIDs))
+	for _, wuID := range finalizedWUIDs {
+		// TODO(b/372537579): Implement test result querying for the work unit.
+		// This will likely involve pagination to handle large numbers of test
+		// results.
+		testResults := []*pb.TestResult{} // Placeholder
+
+		// TODO(b/372537579): Implement proper batching based on message size
+		// to stay within Pub/Sub limits. For now, one notification per work
+		// unit.
+		testResultsByWorkUnit = append(testResultsByWorkUnit, &pb.TestResultsNotification_TestResultsByWorkUnit{
+			WorkUnitName: wuID.Name(),
+			TestResults:  testResults,
+		})
+		wuIDs = append(wuIDs, wuID.Name())
+	}
+	dedupKey := fmt.Sprintf("%s-%s", wuIDs, time.Now().UTC().Format(time.RFC3339))
+	notification := &pb.TestResultsNotification{
+		TestResultsByWorkUnit: testResultsByWorkUnit,
+		ResultdbHost:          rdbHostName,
+		Sources:               rootInv.Sources,
+		DeduplicationKey:      fmt.Sprintf("%x", sha256.Sum256([]byte(dedupKey))),
+	}
+	tasks.NotifyTestResults(ctx, notification, attrs)
 	return nil
 }
 

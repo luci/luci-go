@@ -48,9 +48,16 @@ message NotifyRootInvocationFinalized {
   luci.resultdb.v1.RootInvocationFinalizedNotification message = 1;
 }
 
+
+// PublishTestResults defines a task to publish a batch of test results to
+// the Cloud Pub/Sub.
+// Next id: 3
 message PublishTestResults {
   // The message to publish to Cloud Pub/Sub.
   luci.resultdb.v1.TestResultsNotification message = 1;
+
+  // The attributes to set on the Pub/Sub message.
+  map<string, string> attributes = 2;
 }
 
 message ExportInvocationTestResultsToBQ {

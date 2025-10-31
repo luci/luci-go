@@ -35,6 +35,7 @@ const (
 	v1NotifyFinalizedTaskClass           = "v1-publish-invocation-finalized"
 	v1NotifyFinalizedTopic               = "v1.invocation_finalized"
 	v1NotifyRootInvocationFinalizedTopic = "v1.root_invocation_finalized"
+	V1NotifyTestResultsTopic             = "v1.test_results"
 
 	// Pubsub message attributes
 	androidBranchFilter = "android_branch"
@@ -110,6 +111,35 @@ var NotifyRootInvocationFinalizedPublisher = tq.RegisterTaskClass(tq.TaskClass{
 	},
 })
 
+// NotifyTestResultsPublisher describes how to publish to cloud pub/sub
+// notifications for test results.
+var NotifyTestResultsPublisher = tq.RegisterTaskClass(tq.TaskClass{
+	ID:        "notify-test-results",
+	Topic:     V1NotifyTestResultsTopic,
+	Prototype: &taskspb.PublishTestResults{},
+	Kind:      tq.Transactional,
+	Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
+		// Custom serialisation handler needed to control
+		// how the message is sent, as the backend is
+		// Cloud Pub/Sub and not Cloud Tasks.
+		t := m.(*taskspb.PublishTestResults)
+		notification := t.GetMessage()
+		blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(notification)
+		if err != nil {
+			return nil, err
+		}
+
+		// Prepare attributes, which are can be used by subscribers to filter
+		// the messages they receive.
+		attrs := t.GetAttributes()
+
+		return &tq.CustomPayload{
+			Meta: attrs,
+			Body: blob,
+		}, nil
+	},
+})
+
 // attributes return the message attributes for subscribers to filter messages.
 func attributes(rootInvocation *pb.RootInvocation) map[string]string {
 	attrs := make(map[string]string)
@@ -155,5 +185,12 @@ func NotifyInvocationFinalized(ctx context.Context, message *pb.InvocationFinali
 func NotifyRootInvocationFinalized(ctx context.Context, message *pb.RootInvocationFinalizedNotification) {
 	tq.MustAddTask(ctx, &tq.Task{
 		Payload: &taskspb.NotifyRootInvocationFinalized{Message: message},
+	})
+}
+
+// NotifyTestResults transactionally enqueues a task to publish test results.
+func NotifyTestResults(ctx context.Context, message *pb.TestResultsNotification, attrs map[string]string) {
+	tq.MustAddTask(ctx, &tq.Task{
+		Payload: &taskspb.PublishTestResults{Message: message, Attributes: attrs},
 	})
 }
