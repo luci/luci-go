@@ -77,7 +77,7 @@ func testAuthDBIPAllowlistChange(ctx context.Context, t testing.TB, authDBRev in
 		Target:         "AuthIPWhitelist$a",
 		AuthDBRev:      authDBRev,
 		When:           time.Date(2021, time.December, 12, 1, 0, 0, 0, time.UTC),
-		Who:            "user:test@example.com",
+		Who:            "user:admin@example.com",
 		AppVersion:     "123-45abc",
 	}
 
@@ -119,7 +119,7 @@ func testAuthDBConfigChange(ctx context.Context, t testing.TB, authDBRev int64) 
 		OauthClientSecret: "aBcD",
 		Target:            "AuthGlobalConfig$test",
 		When:              time.Date(2019, time.December, 11, 1, 0, 0, 0, time.UTC),
-		Who:               "user:test@example.com",
+		Who:               "user:admin@example.com",
 		AppVersion:        "123-45abc",
 	}
 
@@ -204,7 +204,10 @@ func TestGetAllAuthDBChange(t *testing.T) {
 		), should.BeNil)
 
 		t.Run("Sort by key", func(t *ftt.Test) {
-			changes, pageToken, err := GetAllAuthDBChange(ctx, "", 0, 5, "")
+			req := &rpcpb.ListChangeLogsRequest{
+				PageSize: 5,
+			}
+			changes, pageToken, err := GetAllAuthDBChange(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, pageToken, should.NotBeEmpty)
 			assert.Loosely(t, changes, should.Match([]*AuthDBChange{
@@ -215,7 +218,8 @@ func TestGetAllAuthDBChange(t *testing.T) {
 				testAuthDBIPAllowlistChange(ctx, t, 1120),
 			}))
 
-			changes, _, err = GetAllAuthDBChange(ctx, "", 0, 5, pageToken)
+			req.PageToken = pageToken
+			changes, _, err = GetAllAuthDBChange(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, changes, should.Match([]*AuthDBChange{
 				testAuthDBGroupChange(ctx, t, "AuthGroup$groupB", ChangeGroupMembersAdded, 1120),
@@ -225,23 +229,59 @@ func TestGetAllAuthDBChange(t *testing.T) {
 				testAuthDBGroupChange(ctx, t, "AuthGroup$groupC", ChangeGroupOwnersChanged, 1110),
 			}))
 		})
-		t.Run("Filter by target", func(t *ftt.Test) {
-			changes, _, err := GetAllAuthDBChange(ctx, "AuthGroup$groupB", 0, 10, "")
+		t.Run("Filter by Target", func(t *ftt.Test) {
+			req := &rpcpb.ListChangeLogsRequest{
+				Target:   "AuthGroup$groupB",
+				PageSize: 10,
+			}
+			changes, _, err := GetAllAuthDBChange(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, changes, should.Match([]*AuthDBChange{
 				testAuthDBGroupChange(ctx, t, "AuthGroup$groupB", ChangeGroupMembersAdded, 1136),
 				testAuthDBGroupChange(ctx, t, "AuthGroup$groupB", ChangeGroupMembersAdded, 1120),
 			}))
 		})
-		t.Run("Filter by authDBRev", func(t *ftt.Test) {
-			changes, _, err := GetAllAuthDBChange(ctx, "", 1136, 10, "")
+		t.Run("Filter by AuthDBRev", func(t *ftt.Test) {
+			req := &rpcpb.ListChangeLogsRequest{
+				AuthDbRev: 1136,
+				PageSize:  10,
+			}
+			changes, _, err := GetAllAuthDBChange(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, changes, should.Match([]*AuthDBChange{
 				testAuthDBGroupChange(ctx, t, "AuthGroup$groupB", ChangeGroupMembersAdded, 1136),
 			}))
 		})
+		t.Run("Filter by Modifier", func(t *ftt.Test) {
+			req := &rpcpb.ListChangeLogsRequest{
+				Modifier: "user:admin@example.com",
+				PageSize: 10,
+			}
+			changes, _, err := GetAllAuthDBChange(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, changes, should.Match([]*AuthDBChange{
+				testAuthDBIPAllowlistChange(ctx, t, 1120),
+				testAuthDBConfigChange(ctx, t, 1115),
+			}))
+		})
+		t.Run("Filter by Modifier and Target", func(t *ftt.Test) {
+			req := &rpcpb.ListChangeLogsRequest{
+				Target:   "AuthGlobalConfig$test",
+				Modifier: "user:admin@example.com",
+				PageSize: 10,
+			}
+			changes, _, err := GetAllAuthDBChange(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, changes, should.Match([]*AuthDBChange{
+				testAuthDBConfigChange(ctx, t, 1115),
+			}))
+		})
 		t.Run("Return error when target is invalid", func(t *ftt.Test) {
-			_, _, err := GetAllAuthDBChange(ctx, "groupname", 0, 10, "")
+			req := &rpcpb.ListChangeLogsRequest{
+				Target:   "groupname",
+				PageSize: 10,
+			}
+			_, _, err := GetAllAuthDBChange(ctx, req)
 			assert.Loosely(t, err, should.ErrLike("Invalid change log target \"groupname\""))
 		})
 	})
@@ -1140,7 +1180,7 @@ func TestAuthDBChangeProtoConversion(t *testing.T) {
 			Description: "description",
 			Target:      "AuthIPWhitelist$a",
 			AuthDbRev:   1001,
-			Who:         "user:test@example.com",
+			Who:         "user:admin@example.com",
 			When:        timestamppb.New(time.Date(2021, time.December, 12, 1, 0, 0, 0, time.UTC)),
 			AppVersion:  "123-45abc",
 		}))

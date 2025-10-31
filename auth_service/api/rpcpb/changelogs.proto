@@ -28,12 +28,17 @@ service ChangeLogs {
 
 // ListChangeLogsRequest is a request to get a list of change logs, which can
 // be filtered by auth_db_rev and/or target.
+//
+// Next ID: 6.
 message ListChangeLogsRequest {
   // AuthDB revision that the change log was made.
   int64 auth_db_rev = 1;
 
   // Entity that was changed in the change log.
   string target = 2;
+
+  // The principal who made the change to the entity, e.g. user:a@example.com.
+  string modifier = 5;
 
   // The value of next_page_token received in a ListChangeLogsResponse. Used
   // to get the next page of change logs. If empty, gets the first page.

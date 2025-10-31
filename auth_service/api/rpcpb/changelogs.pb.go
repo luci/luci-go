@@ -38,12 +38,16 @@ const (
 
 // ListChangeLogsRequest is a request to get a list of change logs, which can
 // be filtered by auth_db_rev and/or target.
+//
+// Next ID: 6.
 type ListChangeLogsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// AuthDB revision that the change log was made.
 	AuthDbRev int64 `protobuf:"varint,1,opt,name=auth_db_rev,json=authDbRev,proto3" json:"auth_db_rev,omitempty"`
 	// Entity that was changed in the change log.
 	Target string `protobuf:"bytes,2,opt,name=target,proto3" json:"target,omitempty"`
+	// The principal who made the change to the entity, e.g. user:a@example.com.
+	Modifier string `protobuf:"bytes,5,opt,name=modifier,proto3" json:"modifier,omitempty"`
 	// The value of next_page_token received in a ListChangeLogsResponse. Used
 	// to get the next page of change logs. If empty, gets the first page.
 	PageToken string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
@@ -93,6 +97,13 @@ func (x *ListChangeLogsRequest) GetAuthDbRev() int64 {
 func (x *ListChangeLogsRequest) GetTarget() string {
 	if x != nil {
 		return x.Target
+	}
+	return ""
+}
+
+func (x *ListChangeLogsRequest) GetModifier() string {
+	if x != nil {
+		return x.Modifier
 	}
 	return ""
 }
@@ -490,10 +501,11 @@ var File_go_chromium_org_luci_auth_service_api_rpcpb_changelogs_proto protorefle
 
 const file_go_chromium_org_luci_auth_service_api_rpcpb_changelogs_proto_rawDesc = "" +
 	"\n" +
-	"<go.chromium.org/luci/auth_service/api/rpcpb/changelogs.proto\x12\fauth.service\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8b\x01\n" +
+	"<go.chromium.org/luci/auth_service/api/rpcpb/changelogs.proto\x12\fauth.service\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa7\x01\n" +
 	"\x15ListChangeLogsRequest\x12\x1e\n" +
 	"\vauth_db_rev\x18\x01 \x01(\x03R\tauthDbRev\x12\x16\n" +
-	"\x06target\x18\x02 \x01(\tR\x06target\x12\x1d\n" +
+	"\x06target\x18\x02 \x01(\tR\x06target\x12\x1a\n" +
+	"\bmodifier\x18\x05 \x01(\tR\bmodifier\x12\x1d\n" +
 	"\n" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"v\n" +

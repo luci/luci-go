@@ -35,7 +35,7 @@ type Server struct {
 
 // ListChangeLogs implements the corresponding RPC method.
 func (*Server) ListChangeLogs(ctx context.Context, req *rpcpb.ListChangeLogsRequest) (*rpcpb.ListChangeLogsResponse, error) {
-	changes, nextPageToken, err := model.GetAllAuthDBChange(ctx, req.GetTarget(), req.GetAuthDbRev(), req.GetPageSize(), req.GetPageToken())
+	changes, nextPageToken, err := model.GetAllAuthDBChange(ctx, req)
 	if err != nil {
 		switch {
 		case errors.Is(err, model.ErrInvalidTarget):

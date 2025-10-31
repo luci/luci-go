@@ -285,26 +285,32 @@ func (*targetError) Unwrap() error {
 	return ErrInvalidTarget
 }
 
-// GetAllAuthDBChange returns all the AuthDBChange entities with given target
-// and authDBRev. If target is an empty string/authDBRev equals to 0, no
-// target/authDBRev is specified.
+// GetAllAuthDBChange returns all the AuthDBChange entities matching the
+// request, based on req's given Target, Modifier and AuthDBRev. If:
+// * Target is an empty string;
+// * Modifier is an empty string; or
+// * AuthDBRev equals 0
+// then no Target, Modifier or AuthDBRev is specified, respectively.
 //
 // Returns an annotated error.
-func GetAllAuthDBChange(ctx context.Context, target string, authDBRev int64, pageSize int32, pageToken string) (changes []*AuthDBChange, nextPageToken string, err error) {
-	ancestor := constructLogRevisionKey(ctx, authDBRev)
+func GetAllAuthDBChange(ctx context.Context, req *rpcpb.ListChangeLogsRequest) (changes []*AuthDBChange, nextPageToken string, err error) {
+	ancestor := constructLogRevisionKey(ctx, req.AuthDbRev)
 	logging.Infof(ctx, "Ancestor: %v", ancestor)
 
 	query := datastore.NewQuery("AuthDBChange").Ancestor(ancestor).Order("-__key__")
-	if target != "" {
-		if !targetRegexp.MatchString(target) {
-			return nil, "", &targetError{target: target}
+	if req.Target != "" {
+		if !targetRegexp.MatchString(req.Target) {
+			return nil, "", &targetError{target: req.Target}
 		}
-		query = query.Eq("target", target)
+		query = query.Eq("target", req.Target)
+	}
+	if req.Modifier != "" {
+		query = query.Eq("who", req.Modifier)
 	}
 
 	var cursor datastore.Cursor
-	if pageToken != "" {
-		cursor, err = datastore.DecodeCursor(ctx, pageToken)
+	if req.PageToken != "" {
+		cursor, err = datastore.DecodeCursor(ctx, req.PageToken)
 		if err != nil {
 			return nil, "", pagination.ErrInvalidPageToken
 		}
@@ -316,7 +322,7 @@ func GetAllAuthDBChange(ctx context.Context, target string, authDBRev int64, pag
 	var nextCur datastore.Cursor
 	err = datastore.Run(ctx, query, func(change *AuthDBChange, cb datastore.CursorCB) error {
 		changes = append(changes, change)
-		if len(changes) >= int(pageSize) {
+		if len(changes) >= int(req.PageSize) {
 			if nextCur, err = cb(); err != nil {
 				return err
 			}
