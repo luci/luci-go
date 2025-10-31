@@ -21,11 +21,14 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/descriptor"
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
@@ -46,10 +49,16 @@ var textArtifactRowSchema bigquery.Schema
 const (
 	artifactRowMessage = "luci.resultdb.bq.TextArtifactRowLegacy"
 
-	// Row size limit is 5MB according to
+	// Request size limit is 10MB according to
 	// https://cloud.google.com/bigquery/quotas#streaming_inserts
-	// Split artifact content into 4MB shards if it's too large.
-	contentShardSize = 4e6
+	//
+	// If files contain non-printable characters, the JSON encoding
+	// can be up to 6x larger (as each invalid unicode byte is turned
+	// into the unicode replacement character which is encoded as
+	// "\ufffd").
+	//
+	// Split artifact content into 1MB shards if it's too large.
+	contentShardSize = 1e6
 
 	// Number of workers to download artifact content.
 	artifactWorkers = 10
@@ -91,13 +100,47 @@ func (i textArtifactRowInput) toRow() bigqueryRow {
 		ResultId:      resultID,
 		ArtifactId:    artifactID,
 		ShardId:       i.shardID,
-		Content:       i.content,
 		PartitionTime: i.exported.CreateTime,
 	}
+
+	// Include 500 bytes fixed cost per row for JSON overheads like string
+	// field names. Use a more precise estimation method for the content
+	// as it is a significant part of the row size and the JSON-enoded
+	// size can be up to 6x the original size for some character sequences.
+	size := 500 + proto.Size(rowContent) + estimateJSONSize(i.content)
+	rowContent.Content = i.content
+
 	return bigqueryRow{
 		content: rowContent,
 		id:      []byte(fmt.Sprintf("%s/%d", i.a.Name, i.shardID)),
+		size:    size,
 	}
+}
+
+// estimateJSONSize estimates the size of string in JSON encoding.
+func estimateJSONSize(content string) int {
+	// This estimation function relies upon golang/go/src/encoding/json/encode.go's
+	// appendString method.
+	// Assume leading and trailing double quotes (").
+	estimate := 2
+	for _, r := range content {
+		if r == '\\' {
+			estimate += 2 // Encoded as "\\".
+		} else if r >= ' ' && r <= '~' { // Standard ASCII printables.
+			estimate += 1 // Encoded as itself.
+		} else if r < ' ' { // Range below 0x20
+			// Some of these are \n, \r, etc. which need only two bytes.
+			// The rest are encoded as \u00xx. Here we assume all take six
+			// bytes to be conservative.
+			estimate += 6
+		} else if r == unicode.ReplacementChar || r == '\u2028' || r == '\u2029' {
+			estimate += 6 // Encoded as "\uxxxx" by Go JSON serializer.
+		} else {
+			// Other unicode is included verbatim.
+			estimate += utf8.RuneLen(r)
+		}
+	}
+	return estimate
 }
 
 func (b *bqExporter) downloadArtifactContent(ctx context.Context, a *artifact, rowC chan bigqueryRow) error {
@@ -227,9 +270,7 @@ func (b *bqExporter) artifactRowInputToBatch(ctx context.Context, rowC chan bigq
 	rows := make([]bigqueryRow, 0, b.MaxBatchRowCount)
 	batchSize := 0 // Estimated size of rows in bytes.
 	for row := range rowC {
-		rowSize := estimatedSizeOfRow(row.content)
-
-		if len(rows)+1 >= b.MaxBatchRowCount || batchSize+rowSize >= b.MaxBatchSizeApprox {
+		if len(rows)+1 >= b.MaxBatchRowCount || batchSize+row.size >= b.MaxBatchSizeApprox {
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
@@ -239,7 +280,7 @@ func (b *bqExporter) artifactRowInputToBatch(ctx context.Context, rowC chan bigq
 			batchSize = 0
 		}
 		rows = append(rows, row)
-		batchSize += rowSize
+		batchSize += row.size
 	}
 	if len(rows) > 0 {
 		select {

@@ -234,6 +234,8 @@ type bigqueryRow struct {
 	content proto.Message
 	// The deduplication identifier for the row.
 	id []byte
+	// The estimated JSON-encoded size of this message, in bytes.
+	size int
 }
 
 func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC chan []bigqueryRow, errorLogger func(ctx context.Context, err bigquery.PutMultiError, rows []*bq.Row)) error {
@@ -266,17 +268,9 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 func estimatedSizeOfRows(rows []bigqueryRow) int {
 	var estimatedSize int
 	for _, row := range rows {
-		estimatedSize += estimatedSizeOfRow(row.content)
+		estimatedSize += row.size
 	}
 	return estimatedSize
-}
-
-// estimatedSizeOfRow returns the estimated size in bytes of the given BigQuery
-// export row, when encoded in JSON format.
-func estimatedSizeOfRow(content proto.Message) int {
-	// Include 500 bytes fixed cost per row for JSON overheads like string
-	// field names.
-	return 500 + proto.Size(content)
 }
 
 // insertRowsWithRetries inserts rows into BigQuery.

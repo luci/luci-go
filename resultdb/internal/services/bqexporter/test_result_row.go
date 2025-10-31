@@ -23,6 +23,7 @@ import (
 	"github.com/golang/protobuf/descriptor"
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/bq"
@@ -125,6 +126,11 @@ func (i testResultRowInput) toRow() bigqueryRow {
 	return bigqueryRow{
 		content: ret,
 		id:      []byte(tr.Name),
+		// Include 500 bytes fixed cost per row for JSON overheads like string
+		// field names. This estimate is not precise - in particular, some strings
+		// can encode up to 6x their original length in JSON format. If we
+		// encounter request size limits we might have to use a more precise estimation.
+		size: 500 + proto.Size(ret),
 	}
 }
 
@@ -202,7 +208,7 @@ func (b *bqExporter) queryTestResults(
 		}.toRow()
 		rows = append(rows, row)
 
-		batchSize += estimatedSizeOfRow(row.content)
+		batchSize += row.size
 		rowCount++
 		if len(rows) >= b.MaxBatchRowCount || batchSize >= b.MaxBatchSizeApprox {
 			select {

@@ -248,7 +248,7 @@ func TestExportToBigQuery(t *testing.T) {
 			putLimiter: rate.NewLimiter(100, 1),
 			batchSem:   semaphore.NewWeighted(100),
 			rbecasClient: &artifactcontenttest.FakeByteStreamClient{
-				ExtraResponseData: bytes.Repeat([]byte("short\ncontentspart2\n"), 200000),
+				ExtraResponseData: bytes.Repeat([]byte("short\ncontentspart2\n"), 50_000), // ~1.1 MB
 			},
 			maxTokenSize: 10,
 		}
@@ -260,6 +260,8 @@ func TestExportToBigQuery(t *testing.T) {
 
 			i.mu.Lock()
 			defer i.mu.Unlock()
+			// This reflects 4 text artifacts, each split over two rows
+			// (due to the size of the RBE-CAS response) exceeding 1 MiB.
 			assert.Loosely(t, len(i.insertedMessages), should.Equal(8))
 		})
 

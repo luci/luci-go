@@ -56,3 +56,48 @@ func TestGenerateArtifactBQRow(t *testing.T) {
 		assert.Loosely(t, row.id, should.Match([]byte(fmt.Sprintf("%s/%d", input.a.Name, input.shardID))))
 	})
 }
+
+func TestEstimateJSONSize(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("EstimateJSONSize", t, func(t *ftt.Test) {
+		testCases := []struct {
+			name     string
+			content  string
+			expected int
+		}{
+			{
+				name:     "empty string",
+				content:  "",
+				expected: 2, // ""
+			},
+			{
+				name:     "simple string",
+				content:  "hello world",
+				expected: 13, // "hello world"
+			},
+			{
+				name:     "backslashes",
+				content:  `\\`,
+				expected: 6, // "\\\\"
+			},
+			{
+				name:     "invalid unicode",
+				content:  "\xFF\xFF\xFF\xFF",
+				expected: 26, // "\ufffd\ufffd\ufffd\ufffd"
+			},
+			{
+				name:     "lower control characters",
+				content:  "\x01\x02\n\t",
+				expected: 26, // We assume 6 bytes per control character, plus two for the opening and closing quotes.
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *ftt.Test) {
+				actual := estimateJSONSize(tc.content)
+				assert.Loosely(t, actual, should.Equal(tc.expected))
+			})
+		}
+	})
+}
