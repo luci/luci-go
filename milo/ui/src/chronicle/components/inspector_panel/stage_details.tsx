@@ -33,6 +33,11 @@ export function StageDetails({ view }: StageDetailsProps) {
     .filter((id): id is string => !!id)
     .sort();
 
+  const dependencyIds = (stage.dependencies?.edges || [])
+    .map((edge) => edge.target?.check?.id || edge.target?.stage?.id)
+    .filter((id): id is string => !!id)
+    .sort();
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -45,6 +50,15 @@ export function StageDetails({ view }: StageDetailsProps) {
         <DetailRow label="Created" value={stage.createTs?.ts} />
         <DetailRow label="Last Updated" value={stage.version?.ts} />
       </Box>
+
+      {dependencyIds.length > 0 && (
+        <DetailRow
+          label="Dependencies"
+          value={dependencyIds.map((id) => (
+            <Chip key={id} label={id} size="small" />
+          ))}
+        />
+      )}
 
       {assignmentIds.length > 0 && (
         <DetailRow

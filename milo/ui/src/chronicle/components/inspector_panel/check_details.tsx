@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Divider, Typography } from '@mui/material';
+import { Box, Chip, Divider, Typography } from '@mui/material';
 
 import { checkKindToJSON } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { checkStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/check_state.pb';
@@ -29,6 +29,11 @@ export function CheckDetails({ view }: CheckDetailsProps) {
   const check = view.check;
   if (!check) return null;
 
+  const dependencyIds = (check.dependencies?.edges || [])
+    .map((edge) => edge.target?.check?.id || edge.target?.stage?.id)
+    .filter((id): id is string => !!id)
+    .sort();
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -44,6 +49,15 @@ export function CheckDetails({ view }: CheckDetailsProps) {
         <DetailRow label="Realm" value={check.realm} />
         <DetailRow label="Last Updated" value={check.version?.ts} />
       </Box>
+
+      {dependencyIds.length > 0 && (
+        <DetailRow
+          label="Dependencies"
+          value={dependencyIds.map((id) => (
+            <Chip key={id} label={id} size="small" />
+          ))}
+        />
+      )}
 
       {check.options.length > 0 && <Divider />}
 

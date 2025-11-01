@@ -242,8 +242,20 @@ export class FakeGraphGenerator {
       buildCheckIds.push(this.createBuildPair(i, sourceId));
     }
 
+    // Select some builds to be "common" dependencies.
+    // Roughly 20% of builds are "common".
+    const numCommonBuilds = Math.max(
+      1,
+      Math.floor(this.config.numBuilds * 0.2),
+    );
+    const commonBuildIds = faker.helpers.arrayElements(
+      buildCheckIds,
+      numCommonBuilds,
+    );
+
     // 3. Generate Test Nodes, dependent on Builds
     for (let i = 0; i < buildCheckIds.length; i++) {
+      const primaryBuildId = buildCheckIds[i];
       // Vary number of tests per build slightly
       const numTests = faker.number.int({
         min: Math.max(1, this.config.avgTestsPerBuild - 2),
@@ -251,7 +263,28 @@ export class FakeGraphGenerator {
       });
 
       for (let j = 0; j < numTests; j++) {
-        testCheckIds.push(this.createTestPair(i, j, buildCheckIds[i]));
+        // Primary dependency
+        const deps: Identifier[] = [{ check: primaryBuildId }];
+        const depIds = new Set<string>([primaryBuildId.id!]);
+
+        // 30% chance of having extra dependencies
+        if (faker.datatype.boolean(0.3)) {
+          // Decide how many extra dependencies (1 or 2)
+          const numExtra = faker.number.int({ min: 1, max: 2 });
+
+          for (let k = 0; k < numExtra; k++) {
+            let extraBuild: CheckId;
+            if (commonBuildIds.length > 0) {
+              extraBuild = faker.helpers.arrayElement(commonBuildIds);
+              if (!depIds.has(extraBuild.id!)) {
+                deps.push({ check: extraBuild });
+                depIds.add(extraBuild.id!);
+              }
+            }
+          }
+        }
+
+        testCheckIds.push(this.createTestPair(`Build_${i}_Test_${j}`, deps));
       }
     }
 
@@ -351,11 +384,9 @@ export class FakeGraphGenerator {
   }
 
   private createTestPair(
-    buildIndex: number,
-    testIndex: number,
-    buildCheckId: CheckId,
+    idStr: string,
+    buildDependencies: Identifier[],
   ): CheckId {
-    const idStr = `Build_${buildIndex}_Test_${testIndex}`;
     const checkId = this.createCheckId(`C_${idStr}`);
     const realm = `${idStr}-realm`;
 
@@ -371,13 +402,9 @@ export class FakeGraphGenerator {
         `S_${idStr}` + (numStages > 1 ? `-${i}` : ''),
       );
       stageIds.push(stageId);
-      this.generateStageView(
-        stageId,
-        realm,
-        [{ check: buildCheckId }],
-        success,
-        [checkId],
-      );
+      this.generateStageView(stageId, realm, buildDependencies, success, [
+        checkId,
+      ]);
     }
 
     // If we created multiple stages, we still need one to be the actual editor to FINAL state
@@ -396,7 +423,7 @@ export class FakeGraphGenerator {
       checkId,
       CheckKind.CHECK_KIND_TEST,
       realm,
-      [{ check: buildCheckId }],
+      buildDependencies,
       finalizingStageId,
       data,
     );
