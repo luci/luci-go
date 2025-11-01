@@ -22,7 +22,8 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useDebounce } from 'react-use';
-import ReactFlow, {
+import {
+  ReactFlow,
   Background,
   Controls,
   MiniMap,
@@ -54,7 +55,7 @@ const turboCiGraph = graphGenerator.generate();
 // We must explicit set all top/right/bottom/left border properties here instead
 // of just setting "border" because React does not work well when mixing shorthand
 // and non-shorthand CSS properties.
-const matchingNodeStyle = {
+const HIGHLIGHTED_NODE_STYLE = {
   borderTop: '2px solid #007bff',
   borderRight: '2px solid #007bff',
   borderBottom: '2px solid #007bff',
@@ -62,12 +63,19 @@ const matchingNodeStyle = {
   boxShadow: '0 0 10px #007bff',
 };
 
+const HIGHLIGHTED_EDGE_STYLE = {
+  stroke: '#007bff',
+  strokeWidth: 3,
+};
+
 function Graph() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { fitView } = useReactFlow();
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [showAssignmentEdges, setShowAssignmentEdges] = useState(false);
+  const [autoFitSelection, setAutoFitSelection] = useState(true);
   const [selectedNodeId, setSelectedNodeId] = useState<string | undefined>(
     undefined,
   );
@@ -80,47 +88,99 @@ function Graph() {
     return { layoutedNodes: nodes, layoutedEdges: edges };
   }, [showAssignmentEdges]);
 
-  useEffect(() => {
-    setNodes(layoutedNodes);
-    setEdges(layoutedEdges);
-  }, [layoutedNodes, layoutedEdges]);
-
   useDebounce(
     () => {
-      const matchedNodeIds: string[] = [];
-      const searchFilteredNodes = layoutedNodes.map((node) => {
-        const nodeMatch =
-          searchQuery &&
-          node.data.label
-            ?.toLocaleLowerCase()
-            .includes(searchQuery.toLocaleLowerCase());
-
-        if (nodeMatch) {
-          matchedNodeIds.push(node.id);
-          return {
-            ...node,
-            style: {
-              ...node.style,
-              ...matchingNodeStyle,
-            },
-          };
-        } else {
-          return node;
-        }
-      });
-
-      if (matchedNodeIds.length > 0) {
-        fitView({
-          nodes: matchedNodeIds.map((id) => ({ id })),
-          duration: 500,
-        });
-      }
-
-      setNodes(searchFilteredNodes);
+      setDebouncedSearchQuery(searchQuery);
     },
     300,
     [searchQuery],
   );
+
+  // Unified effect for handling graph highlighting (both search and selection).
+  // Selection takes precedence over search.
+  useEffect(() => {
+    let nextNodes = layoutedNodes;
+    let nextEdges = layoutedEdges;
+    let nodesToFit: string[] = [];
+
+    if (selectedNodeId) {
+      const relatedNodeIds = new Set<string>([selectedNodeId]);
+      const relatedEdgeIds = new Set<string>();
+
+      // Find immediate neighbors and connecting edges
+      layoutedEdges.forEach((edge) => {
+        if (edge.source === selectedNodeId) {
+          relatedNodeIds.add(edge.target);
+          relatedEdgeIds.add(edge.id);
+        } else if (edge.target === selectedNodeId) {
+          relatedNodeIds.add(edge.source);
+          relatedEdgeIds.add(edge.id);
+        }
+      });
+
+      // Highlight nodes
+      nextNodes = nextNodes.map((node) => {
+        if (relatedNodeIds.has(node.id)) {
+          return {
+            ...node,
+            style: { ...node.style, ...HIGHLIGHTED_NODE_STYLE },
+          };
+        }
+        return node;
+      });
+
+      // Highlight edges
+      nextEdges = nextEdges.map((edge) => {
+        if (relatedEdgeIds.has(edge.id)) {
+          return {
+            ...edge,
+            style: { ...edge.style, ...HIGHLIGHTED_EDGE_STYLE },
+            zIndex: 10, // Bring highlighted edges to front
+          };
+        }
+        return edge;
+      });
+
+      // Only autofit on selection if the option is enabled
+      if (autoFitSelection) {
+        nodesToFit = Array.from(relatedNodeIds);
+      }
+    } else if (debouncedSearchQuery) {
+      nextNodes = nextNodes.map((node) => {
+        const nodeMatch = node.data.label
+          ?.toLocaleLowerCase()
+          .includes(debouncedSearchQuery.toLocaleLowerCase());
+
+        if (nodeMatch) {
+          nodesToFit.push(node.id);
+          return {
+            ...node,
+            style: { ...node.style, ...HIGHLIGHTED_NODE_STYLE },
+          };
+        }
+        return node;
+      });
+    }
+
+    setNodes(nextNodes);
+    setEdges(nextEdges);
+
+    if (nodesToFit.length > 0) {
+      fitView({
+        nodes: nodesToFit.map((id) => ({ id })),
+        duration: 500,
+      });
+    }
+  }, [
+    layoutedNodes,
+    layoutedEdges,
+    selectedNodeId,
+    debouncedSearchQuery,
+    setNodes,
+    setEdges,
+    fitView,
+    autoFitSelection,
+  ]);
 
   // Use useCallback even with no dependencies to prevent React creating a new
   // function reference on every render.
@@ -130,6 +190,10 @@ function Graph() {
   }, []);
 
   const onInspectorClose = useCallback(() => {
+    setSelectedNodeId(undefined);
+  }, []);
+
+  const onPaneClick = useCallback(() => {
     setSelectedNodeId(undefined);
   }, []);
 
@@ -149,6 +213,7 @@ function Graph() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onNodeClick={onNodeClick}
+          onPaneClick={onPaneClick}
           fitView
         >
           <Background />
@@ -160,7 +225,7 @@ function Graph() {
               sx={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 1,
+                gap: 0,
                 p: 1,
                 borderRadius: 1,
               }}
@@ -169,8 +234,18 @@ function Graph() {
                 type="text"
                 placeholder="Search nodes..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ padding: '8px', width: '200px' }}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  // Clear selected node when searching
+                  if (e.target.value) {
+                    setSelectedNodeId(undefined);
+                  }
+                }}
+                style={{
+                  padding: '8px',
+                  width: '200px',
+                  marginBottom: '8px',
+                }}
               />
               <FormControlLabel
                 control={
@@ -181,6 +256,17 @@ function Graph() {
                 }
                 label={
                   <Typography variant="body2">Show Assignment Edges</Typography>
+                }
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={autoFitSelection}
+                    onChange={(e) => setAutoFitSelection(e.target.checked)}
+                  />
+                }
+                label={
+                  <Typography variant="body2">Fit View on Selection</Typography>
                 }
               />
             </Paper>
