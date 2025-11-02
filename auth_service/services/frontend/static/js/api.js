@@ -178,10 +178,13 @@ var api = (function () {
   };
 
   // Get all changeLogs.
-  exports.changeLogs = function (target, revision, pageSize, pageToken) {
+  exports.changeLogs = function (target, modifier, revision, pageSize, pageToken) {
     var q = {};
     if (target) {
       q.target = target;
+    }
+    if (modifier) {
+      q.modifier = modifier;
     }
     if (revision) {
       q.authDbRev = revision;

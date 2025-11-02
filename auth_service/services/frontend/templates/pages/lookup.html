@@ -41,8 +41,8 @@
   <div class="row">
     <div class="col">
       <hr class="my-0" />
-      <h3 class="text-center my-3">
-        <a id="principal-header"></a>
+      <h3 id="principal-header" class="text-center my-3">
+        <a id="principal-link"></a>
       </h3>
       <hr class="my-0" />
     </div>
@@ -75,6 +75,13 @@
   <div>
     <a></a>
   </div>
+</template>
+
+<template id="change-log-icon-template">
+  <a id="change-log-link" class="ms-1" data-bs-toggle="tooltip" data-bs-container="body" data-bs-placement="top"
+    title="Changes">
+    <i class="bi bi-calendar3" style="font-size: 16px; color: #333"></i>
+  </a>
 </template>
 
 {{end}}

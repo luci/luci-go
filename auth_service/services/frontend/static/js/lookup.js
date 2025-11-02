@@ -151,16 +151,9 @@ const interpretLookupResults = (subgraph) => {
   directIncluders = common.sortGroupsByName(directIncluders);
   indirectIncluders = common.sortGroupsByName(indirectIncluders);
 
-  // If looking up a group, there should be a link to the main group page.
-  let groupHref = '';
-  if (principal.kind == 'GROUP') {
-    groupHref = common.getGroupPageURL(principal.name);
-  }
-
   return {
-    'principalName': common.stripPrefix('user', principal.name),
-    'principalIsGroup': principal.kind == 'GROUP',
-    'groupHref': groupHref,
+    'principalName': principal.name,
+    'principalKind': principal.kind,
     'includers': includers,  // will be used to construct popovers
     'directIncluders': directIncluders,
     'indirectIncluders': indirectIncluders,
@@ -224,6 +217,8 @@ class SearchResults extends common.HidableElement {
 
     // Popovers for details of indirect results.
     this.popovers = [];
+    // Tooltip for change link.
+    this.tooltip = null;
   }
 
   clearResults() {
@@ -233,6 +228,12 @@ class SearchResults extends common.HidableElement {
       p.dispose();
     })
     this.popovers = [];
+
+    // Dispose of tooltip for link to changes.
+    if (this.tooltip) {
+      this.tooltip.dispose();
+    }
+    this.tooltip = null;
 
     // Empty the DOM element.
     this.element.innerHTML = '';
@@ -246,14 +247,38 @@ class SearchResults extends common.HidableElement {
     const template = document.querySelector('#all-results-template');
     // Clone and grab elements to modify.
     const clone = template.content.cloneNode(true);
-    const header = clone.querySelector('#principal-header');
+    const headerLink = clone.querySelector('#principal-link');
     const directSection = clone.querySelector('#direct-groups');
     const indirectSection = clone.querySelector('#indirect-groups');
 
-    // Set the principal header (i.e. what was searched).
-    header.textContent = summary.principalName;
-    if (summary.principalIsGroup) {
-      header.setAttribute('href', summary.groupHref);
+    // Set the principal value (i.e. what was searched).
+    const principalValue = common.stripPrefix('user', summary.principalName);
+    headerLink.textContent = principalValue;
+
+    // Set links.
+    let changeLinkTarget = null;
+    if (summary.principalKind == 'GROUP') {
+      // There should be a link to the main group page.
+      headerLink.setAttribute('href', common.getGroupPageURL(summary.principalName));
+      // There should be a link to changes of the group.
+      changeLinkTarget = common.getChangeLogTargetURL('AuthGroup',principalValue);
+    } else if (summary.principalKind == 'IDENTITY') {
+      // There should be a link to changes made by the identity.
+      changeLinkTarget = common.getChangeLogModifierURL(principalValue);
+    }
+    if (changeLinkTarget) {
+      // Create an icon that links to changes (either the group history, or
+      // changes to groups made by the identity).
+      const iconTemplate = document.querySelector('#change-log-icon-template');
+      const iconClone = iconTemplate.content.cloneNode(true);
+      const changeLink = iconClone.querySelector('#change-log-link');
+      changeLink.setAttribute('href', changeLinkTarget);
+
+      const header = clone.querySelector('#principal-header');
+      header.appendChild(changeLink);
+
+      // Enable tooltip for the change log link.
+      this.tooltip = new bootstrap.Tooltip(changeLink);
     }
 
     // Set the direct group inclusions.

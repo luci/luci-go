@@ -169,7 +169,7 @@ class ChangeLogModal {
 
 ////////////////////////////////////////////////////////////////////////////////
 class ChangeLogContent extends common.HidableElement {
-  constructor(element, target, revision, changeLogModal, loadingBox, errorBox) {
+  constructor(element, target, modifier, revision, changeLogModal, loadingBox, errorBox) {
     super(element, false);
 
     // Templates to clone when constructing elements.
@@ -193,6 +193,8 @@ class ChangeLogContent extends common.HidableElement {
 
     // If set, limits change log queries to given target.
     this.target = target;
+    // If set, limits change log queries to those made by given principal.
+    this.modifier = modifier;
     // If set, limits change log queries to specific revision only.
     this.revision = revision;
     // Page size.
@@ -221,12 +223,10 @@ class ChangeLogContent extends common.HidableElement {
   }
 
   #setAlertVisibility(show) {
-    console.log('alert visibility called with', show);
     this.emptyAlert.style.display = show ? 'block' : 'none';
   }
 
   #setTableVisibility(show) {
-    console.log('table visibility called with', show);
     this.table.style.display = show ? 'table' : 'none';
   }
 
@@ -307,7 +307,7 @@ class ChangeLogContent extends common.HidableElement {
     if (this.target) {
       t = parseTarget(this.target);
     } else {
-      t = { title: 'Global Log' };
+      t = { title: 'Global log' };
     }
 
     if (t.targetURL) {
@@ -315,6 +315,9 @@ class ChangeLogContent extends common.HidableElement {
       targetURL.textContent = t.title;
     } else {
       title.textContent = t.title;
+      if (this.modifier) {
+        title.textContent += ` of changes by ${this.modifier}`;
+      }
     }
 
     if (this.revision) {
@@ -334,7 +337,11 @@ class ChangeLogContent extends common.HidableElement {
   // Once the fetch promise is settled, onSettled is called.
   refetchChangeLogs({ pageToken, onSuccess = (response) => { }, onSettled = () => { } }) {
     this.lockUI();
-    return api.changeLogs(this.target, this.revision, this.pageSize, pageToken)
+    let modifier = null;
+    if (this.modifier) {
+      modifier = common.addPrefix('user', this.modifier);
+    }
+    return api.changeLogs(this.target, modifier, this.revision, this.pageSize, pageToken)
       .then((response) => {
         // Normalize the response as empty values may not be set.
         const normalized = {
@@ -439,8 +446,9 @@ window.onload = () => {
   const loadingBox = new common.LoadingBox('#loading-box-placeholder');
   const errorBox = new common.ErrorBox('#api-error-placeholder');
 
-  // Parse the URL for the target and AuthDB revision parameters.
+  // Parse the URL for the target, modifier and AuthDB revision parameters.
   const target = common.getQueryParameter('target');
+  const modifier = common.getQueryParameter('modifier');
   let authDbRev = common.getQueryParameter('auth_db_rev');
   if (authDbRev) {
     authDbRev = parseInt(authDbRev);
@@ -457,6 +465,6 @@ window.onload = () => {
   }
 
   const changeLogContent = new ChangeLogContent(
-    '#change-log-content', target, authDbRev, changeLogModal, loadingBox, errorBox);
+    '#change-log-content', target, modifier, authDbRev, changeLogModal, loadingBox, errorBox);
   changeLogContent.initialize();
 }

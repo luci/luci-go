@@ -163,9 +163,14 @@ var common = (function () {
     return '/auth/change_log?target=' + encodeURIComponent(kind + '$' + name);
   };
 
+  // Returns URL to a change log page for a given modifier.
+  exports.getChangeLogModifierURL = (modifier) => {
+    return '/auth/change_log?modifier=' + encodeURIComponent(modifier);
+  };
+
   // Returns URL to a change log page for a given revision.
   exports.getChangeLogRevisionURL = (rev) => {
-    return '/auth/change_log?auth_db_rev=' + encodeURIComponent('' + rev);
+    return '/auth/change_log?auth_db_rev=' + encodeURIComponent(`${rev}`);
   };
 
   // Returns URL to the group page for a given group.

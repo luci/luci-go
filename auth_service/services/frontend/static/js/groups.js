@@ -849,7 +849,6 @@ class EditGroupForm extends GroupForm {
       deleteBtn.addEventListener('click', () => {
         let result = confirm(`Are you sure you want to delete ${group.name}?`)
         if (result) {
-          console.log(`attempting to delete ${group.name}...`);
           this.onDelete(group);
         }
       });
