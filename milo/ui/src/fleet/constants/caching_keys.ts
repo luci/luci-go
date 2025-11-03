@@ -21,4 +21,4 @@
 // the extra benefits might be worth the increased code complexity and risk.
 export const PERSIST_INDEXED_DB = 'persist-to-indexeddb';
 
-export const DEFAULT_IDB_STORE_NAME = 'FLEET_CONSOLE_DB';
+export const DEFAULT_IDB_STORE_NAME = 'FLEET_CONSOLE_STORE';
