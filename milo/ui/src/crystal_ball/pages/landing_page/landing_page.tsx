@@ -15,16 +15,52 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
+import { TimeSeriesChart } from '@/crystal_ball/components/time_series_chart/time_series_chart';
+
+enum SamplePerformanceMetricsDataKeys {
+  X_AXIS = 'time',
+  Y_AXIS = 'samplePerformanceMetric',
+}
+
+type SamplePerformanceMetricDataPoint = {
+  [K in SamplePerformanceMetricsDataKeys]: number;
+};
+
 /**
  * A simple landing page component.
  */
 export function LandingPage() {
+  // TODO: b/453052787 - Replace with call to crystalballperf.googleapis.com
+  const sampleChartData: SamplePerformanceMetricDataPoint[] = [
+    {
+      time: new Date('2025-10-30T01:00:00Z').getTime(),
+      samplePerformanceMetric: 50,
+    },
+    {
+      time: new Date('2025-10-30T02:00:00Z').getTime(),
+      samplePerformanceMetric: 65,
+    },
+  ];
+
   return (
     <Box sx={{ padding: 2 }}>
       <Typography variant="body1">
         This is the landing page for Crystal Ball Peformance Metrics
         Visualizations.
       </Typography>
+      <TimeSeriesChart
+        data={sampleChartData}
+        lines={[
+          {
+            dataKey: SamplePerformanceMetricsDataKeys.Y_AXIS,
+            stroke: '#1976d2',
+            name: 'Sample Performance Metric',
+          },
+        ]}
+        chartTitle="Sample Time Series Chart"
+        xAxisDataKey={SamplePerformanceMetricsDataKeys.X_AXIS}
+        yAxisLabel="Sample Metric Units"
+      />
     </Box>
   );
 }
