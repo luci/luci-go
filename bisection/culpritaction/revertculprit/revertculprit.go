@@ -436,8 +436,7 @@ func TakeCulpritAction(ctx context.Context, culpritModel *model.Suspect) error {
 
 	// Attempt to notify LUCI Notify about the revert if the culprit is a tree closer
 	// Construct the revert URL from the gerrit change info
-	revertURL := fmt.Sprintf("https://%s-review.googlesource.com/c/%s/+/%d",
-		revert.Project, revert.Project, revert.Number)
+	revertURL := util.ConstructGerritCodeReviewURL(ctx, gerritClient, revert)
 	err = notifyRevertLanded(ctx, treeName, culpritModel, revertURL)
 	if err != nil {
 		// Non-critical error - log but don't fail the entire revert flow
