@@ -24,18 +24,18 @@ func (r *RepoCache) isAncestor(ctx context.Context, a, b string) (bool, error) {
 	return r.gitTest(ctx, "--no-lazy-fetch", "merge-base", "--is-ancestor", a, b)
 }
 
-func (r *RepoCache) Order(ctx context.Context, ref string, commits []string) ([]string, error) {
+func (r *RepoCache) PickMostRecent(ctx context.Context, ref string, commits []string) (string, error) {
 	ctx = r.prepDebugContext(ctx)
 
 	if err := r.prefetchMultiple(ctx, commits, "--filter=blob:none", "--depth=1"); err != nil {
-		return nil, err
+		return "", err
 	}
 
 	parsed := make([]*Commit, 0, len(commits))
 	for _, commit := range commits {
 		cmt, err := r.batchProc.catFileCommit(ctx, commit)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		parsed = append(parsed, cmt)
 	}
@@ -48,7 +48,7 @@ func (r *RepoCache) Order(ctx context.Context, ref string, commits []string) ([]
 		// skip commits which are already ancestors of ref
 		anc, err := r.isAncestor(ctx, cmt.ID, ref)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		if anc {
 			continue
@@ -57,7 +57,7 @@ func (r *RepoCache) Order(ctx context.Context, ref string, commits []string) ([]
 			"--shallow-since", cmt.OldestTime().Add(-time.Hour).Format(time.RFC3339),
 			"origin", ref)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 	}
 
@@ -79,5 +79,5 @@ func (r *RepoCache) Order(ctx context.Context, ref string, commits []string) ([]
 	for i, cmt := range parsed {
 		ret[i] = cmt.ID
 	}
-	return ret, nil
+	return ret[len(ret)-1], nil
 }

@@ -47,19 +47,19 @@ func must[T any](value T, err error) T {
 }
 
 var (
-	cacheRoot    = flag.String("cache-root", "", "(required) Path to cache root.")
-	remoteUrl    = flag.String("remote", "", "(required) URL of git remote.")
-	ref          = flag.String("ref", "", "(required) Ref in the git remote (e.g. refs/heads/XXX).")
-	commit       = flag.String("commit", "", "(required) The commit to extract from.")
-	pkgRoot      = flag.String("pkg-root", "", "(required) The root directory of the lucicfg package.")
-	entrypoint   = flag.String("tree", "", "(required) Path to star-file entrypoint.")
-	output       = flag.String("output", "", "(required) Path to the output. Output must be empty or not exist.")
-	verbose      = flag.Bool("verbose", false, "(optional) turn on verbose logs.")
-	orderCommits stringlistflag.Flag
+	cacheRoot  = flag.String("cache-root", "", "(required) Path to cache root.")
+	remoteUrl  = flag.String("remote", "", "(required) URL of git remote.")
+	ref        = flag.String("ref", "", "(required) Ref in the git remote (e.g. refs/heads/XXX).")
+	commit     = flag.String("commit", "", "(required) The commit to extract from.")
+	pkgRoot    = flag.String("pkg-root", "", "(required) The root directory of the lucicfg package.")
+	entrypoint = flag.String("tree", "", "(required) Path to star-file entrypoint.")
+	output     = flag.String("output", "", "(required) Path to the output. Output must be empty or not exist.")
+	verbose    = flag.Bool("verbose", false, "(optional) turn on verbose logs.")
+	pickNewest stringlistflag.Flag
 )
 
 func init() {
-	flag.Var(&orderCommits, "order", "additional commits to order w.r.t. commit")
+	flag.Var(&pickNewest, "pick-newest", "additional commits to pick the newest from, in addition to commit")
 }
 
 func cast[T syntax.Node](n syntax.Node) (ret T) {
@@ -192,11 +192,9 @@ func main() {
 	cache := must(gitsource.New(must(filepath.Abs(*cacheRoot)), *verbose))
 	repo := must(cache.ForRepo(ctx, *remoteUrl))
 
-	if len(orderCommits) > 0 {
-		ordered := must(repo.Order(ctx, *ref, orderCommits))
-		for _, commit := range ordered {
-			fmt.Println(commit)
-		}
+	if len(pickNewest) > 0 {
+		newest := must(repo.PickMostRecent(ctx, *ref, pickNewest))
+		fmt.Println(newest)
 		return
 	}
 

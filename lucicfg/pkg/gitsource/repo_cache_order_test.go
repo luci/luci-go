@@ -41,12 +41,9 @@ func TestOrder(t *testing.T) {
 	}
 
 	// give it all the commits in alphanumeric order
-	ordered, err := repo.Order(context.Background(), "refs/heads/main",
+	mostRecent, err := repo.PickMostRecent(context.Background(), "refs/heads/main",
 		slices.Sorted(slices.Values(commitsActualOrder)))
 	assert.NoErr(t, err)
 
-	// reverse order - repo.Order returns in oldest-to-newest, and git log is in
-	// newest-to-oldest
-	slices.Reverse(ordered)
-	assert.That(t, ordered, should.Match(commitsActualOrder))
+	assert.That(t, mostRecent, should.Equal(commitsActualOrder[0]))
 }

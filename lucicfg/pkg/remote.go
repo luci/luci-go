@@ -214,11 +214,7 @@ func (r *remoteRepoImpl) PickMostRecent(ctx context.Context, vers []string) (str
 
 	defer r.acquireFetchConcurrencySlot(ctx)()
 
-	ordered, err := r.repoCache.Order(ctx, r.repoKey.Ref, vers)
-	if err != nil {
-		return "", err
-	}
-	return ordered[len(ordered)-1], nil
+	return r.repoCache.PickMostRecent(ctx, r.repoKey.Ref, vers)
 }
 
 // RepoKey implements Repo.
