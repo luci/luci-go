@@ -26,8 +26,8 @@ import (
 	"go.chromium.org/luci/starlark/interpreter"
 
 	"go.chromium.org/luci/lucicfg/fileset"
-	"go.chromium.org/luci/lucicfg/pkg/gitsource"
 	"go.chromium.org/luci/lucicfg/pkg/source"
+	"go.chromium.org/luci/lucicfg/pkg/source/gitsource"
 )
 
 // RemoteRepoManager implements RepoManager that knows how to work with remote

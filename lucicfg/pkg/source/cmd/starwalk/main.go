@@ -36,8 +36,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 
-	"go.chromium.org/luci/lucicfg/pkg/gitsource"
 	"go.chromium.org/luci/lucicfg/pkg/source"
+	"go.chromium.org/luci/lucicfg/pkg/source/gitsource"
 )
 
 func must[T any](value T, err error) T {
