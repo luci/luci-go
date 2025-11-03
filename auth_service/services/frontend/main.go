@@ -54,7 +54,6 @@ import (
 	"go.chromium.org/luci/auth_service/impl/servers/imports"
 	"go.chromium.org/luci/auth_service/impl/servers/internals"
 	"go.chromium.org/luci/auth_service/impl/servers/oauth"
-	"go.chromium.org/luci/auth_service/impl/servers/replicas"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/settingscfg"
 	"go.chromium.org/luci/auth_service/services/frontend/subscription"
 
@@ -131,7 +130,6 @@ func main() {
 		rpcpb.RegisterAllowlistsServer(srv, &allowlists.Server{})
 		rpcpb.RegisterAuthDBServer(srv, authdbServer)
 		rpcpb.RegisterChangeLogsServer(srv, &changelogs.Server{})
-		rpcpb.RegisterReplicasServer(srv, &replicas.Server{})
 
 		// Register pPRC servers.
 		srv.ConfigurePRPC(func(s *prpc.Server) {
@@ -157,7 +155,6 @@ func main() {
 		srv.Routes.GET("/auth/change_log", uiMW, servePage("pages/change_log.html"))
 		srv.Routes.GET("/auth/ip_allowlists", uiMW, servePage("pages/ip_allowlists.html"))
 		srv.Routes.GET("/auth/lookup", uiMW, servePage("pages/lookup.html"))
-		srv.Routes.GET("/auth/services", uiMW, servePage("pages/services.html"))
 
 		// Helper to create middleware chains requiring the caller to be
 		// authenticated and a member in any of the given groups.

@@ -17,7 +17,6 @@ package model
 import (
 	"context"
 	"crypto/sha512"
-	"encoding/base64"
 	"fmt"
 	"time"
 
@@ -26,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/service/protocol"
@@ -209,58 +207,4 @@ func uploadToGS(ctx context.Context, replicationState *AuthReplicationState, aut
 		ModifiedTs: replicationState.ModifiedTS.UnixMicro(),
 	}
 	return gs.UploadAuthDB(ctx, signedAuthDB, authDBRevision, readers)
-}
-
-func updateReplicas(ctx context.Context, authDBRev int64, authDBBlob, sig []byte, keyName string) error {
-	// Get last known replica states.
-	staleReplicas, err := GetAllStaleReplicas(ctx, authDBRev)
-	if err != nil {
-		logging.Errorf(ctx, "error getting all stale AuthReplicaStates: %s", err)
-		return err
-	}
-
-	if len(staleReplicas) == 0 {
-		logging.Infof(ctx, "all replicas are up-to-date")
-		return nil
-	}
-	logging.Debugf(ctx, "%d stale replicas need to be updated", len(staleReplicas))
-
-	// Push the AuthDB to all replicas in parallel.
-	encodedSig := base64.StdEncoding.EncodeToString(sig)
-	err = parallel.FanOutIn(func(workC chan<- func() error) {
-		for _, staleReplica := range staleReplicas {
-			replicaState := staleReplica
-			workC <- func() error {
-				return ReplicateToReplica(ctx, replicaState, authDBRev,
-					authDBBlob, keyName, encodedSig)
-			}
-		}
-	})
-
-	// parallel.FanOutIn returns nil if there were no errors at all,
-	// or an errors.MultiError.
-	if err != nil {
-		// At least one replica push update returned an error. Check if at
-		// least one replica returned a non-fatal (so retriable) error.
-		shouldRetry := false
-		var merr errors.MultiError
-		if errors.As(err, &merr) {
-			for _, e := range merr {
-				if e != nil && !errors.Is(e, FatalReplicaUpdateError) {
-					shouldRetry = true
-					break
-				}
-			}
-		}
-		if shouldRetry {
-			// Annotate the error with the transient tag.
-			err =
-				transient.Tag.Apply(errors.Fmt("replica push update needs to be retried: %w", err))
-
-			logging.Errorf(ctx, "returning transient error to retry replication: %s", err)
-		}
-		return err
-	}
-
-	return nil
 }
