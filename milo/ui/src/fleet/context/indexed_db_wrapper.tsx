@@ -12,50 +12,73 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const DB_NAME = 'FLEET_CONSOLE_DB';
-const DEFAULT_STORE_NAME = 'FLEET_CONSOLE_STORE';
-const VERSION = 1;
+import {
+  PersistedClient,
+  Persister,
+} from '@tanstack/react-query-persist-client';
+import { clear, createStore, get, keys, set } from 'idb-keyval';
 
-function openDB(storeName = DEFAULT_STORE_NAME) {
-  return new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, VERSION);
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    request.onupgradeneeded = () => {
-      request.result.createObjectStore(storeName);
-    };
-  });
+import { DEFAULT_IDB_STORE_NAME } from '../constants/caching_keys';
+
+/**
+ * This persister stores metadata separately from the queries themselves.
+ * This allows for more efficient garbage collection and restoration,
+ * addressing performance concerns with large caches.
+ */
+const CLIENT_METADATA_KEY = 'CLIENT_METADATA';
+
+/**
+ * Creates an Indexed DB persister
+ *
+ * This persister stores each query key in its own IDB store key to minimize
+ * issues with data merging while also allowing for performant storage and
+ * retrieval. (ie: we don't need to load data for queries that are not in use.)
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API
+ * @see https://tanstack.com/query/v4/docs/framework/react/plugins/persistQueryClient#building-a-persister
+ */
+export function createIDBPersister() {
+  const customStore = createStore(DEFAULT_IDB_STORE_NAME, 'queries');
+  return {
+    persistClient: async (client: PersistedClient) => {
+      const metadata: Omit<PersistedClient, 'clientState'> = {
+        buster: client.buster,
+        timestamp: client.timestamp,
+      };
+      await set(CLIENT_METADATA_KEY, metadata, customStore);
+
+      const newQueryHashes = new Set<string>();
+      for (const query of client.clientState.queries) {
+        newQueryHashes.add(query.queryHash);
+        await set(query.queryHash, query, customStore);
+      }
+    },
+    restoreClient: async (): Promise<PersistedClient | undefined> => {
+      const metadata = await get<Omit<PersistedClient, 'clientState'>>(
+        CLIENT_METADATA_KEY,
+        customStore,
+      );
+
+      if (!metadata) {
+        return undefined;
+      }
+
+      const allKeys = await keys(customStore);
+      const queryKeys = allKeys.filter((key) => key !== CLIENT_METADATA_KEY);
+      const queries = (
+        await Promise.all(queryKeys.map((key) => get(key, customStore)))
+      ).filter(Boolean);
+
+      return {
+        ...metadata,
+        clientState: {
+          mutations: [],
+          queries,
+        },
+      };
+    },
+    removeClient: async () => {
+      await clear(customStore);
+    },
+  } satisfies Persister;
 }
-
-export const getIndexedDBWrapper = (storeName = DEFAULT_STORE_NAME) => ({
-  getItem: async (key: string): Promise<string | null> => {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(storeName, 'readonly');
-      const store = transaction.objectStore(storeName);
-      const request = store.get(key);
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => reject(request.error);
-    });
-  },
-  setItem: async (key: string, value: string): Promise<void> => {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(storeName, 'readwrite');
-      const store = transaction.objectStore(storeName);
-      const request = store.put(value, key);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  },
-  removeItem: async (key: string): Promise<void> => {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(storeName, 'readwrite');
-      const store = transaction.objectStore(storeName);
-      const request = store.delete(key);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  },
-});

@@ -12,21 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 
 import { PERSIST_INDEXED_DB } from '../constants/caching_keys';
 
-import { getIndexedDBWrapper } from './indexed_db_wrapper';
+import { createIDBPersister } from './indexed_db_wrapper';
 
 // Use recommended defaults of staleTime: 0, gcTime: 5 mins, per
 // https://tanstack.com/query/v5/docs/framework/react/guides/important-defaults
 const queryClient = new QueryClient();
 
-const idbPersister = createAsyncStoragePersister({
-  storage: getIndexedDBWrapper(),
-});
+const idbPersister = createIDBPersister();
 
 export function IndexedDBPersistClientProvider({
   children,
