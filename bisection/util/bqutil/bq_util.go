@@ -23,6 +23,7 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
 
 	"go.chromium.org/luci/bisection/model"
@@ -48,7 +49,7 @@ func CompileFailureAnalysisToBqRow(ctx context.Context, cfa *model.CompileFailur
 		return nil, errors.Fmt("getBuild: %w", err)
 	}
 	if fb == nil {
-		return nil, errors.Fmt("couldn't find build for analysis %d", cfa.Id)
+		return nil, errors.Fmt("couldn't find build for analysis %d", cfa.CompileFailure.Parent().IntID())
 	}
 
 	result := &bqpb.CompileAnalysisRow{
@@ -70,18 +71,20 @@ func CompileFailureAnalysisToBqRow(ctx context.Context, cfa *model.CompileFailur
 	// TODO(jiameil): Add nthsection result to the result.
 	culpritKeys := cfa.VerifiedCulprits
 	if len(culpritKeys) == 0 {
-		return result, nil
-	}
-
-	pbCulprits := make([]*pb.Culprit, 0, len(culpritKeys))
-	for _, key := range culpritKeys {
-		culprit, err := datastoreutil.GetSuspect(ctx, key.IntID(), key.Parent())
-		if err != nil {
-			return nil, errors.Annotate(err, "get suspect for key %s", key.String()).Err()
+		logging.Errorf(ctx, "no verified culprits for analysis %d: %v", cfa.Id, err)
+	} else {
+		pbCulprits := make([]*pb.Culprit, 0, len(culpritKeys))
+		for _, key := range culpritKeys {
+			culprit, err := datastoreutil.GetSuspect(ctx, key.IntID(), key.Parent())
+			if err != nil {
+				// Log the error and continue, so that one bad culprit doesn't fail the whole process
+				logging.Errorf(ctx, "could not get suspect for key %s: %v", key.String(), err)
+				continue
+			}
+			pbCulprits = append(pbCulprits, protoutil.SuspectToCulpritPb(culprit))
 		}
-		pbCulprits = append(pbCulprits, protoutil.SuspectToCulpritPb(culprit))
+		result.Culprits = pbCulprits
 	}
-	result.Culprits = pbCulprits
 
 	ga, err := datastoreutil.GetGenAIAnalysis(ctx, cfa)
 	if err != nil {
