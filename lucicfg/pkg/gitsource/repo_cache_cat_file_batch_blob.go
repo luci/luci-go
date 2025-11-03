@@ -15,11 +15,8 @@
 package gitsource
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-
-	"go.chromium.org/luci/common/logging"
 )
 
 func (b *batchProc) catFileBlob(ctx context.Context, commit, path string) ([]byte, error) {
@@ -31,30 +28,4 @@ func (b *batchProc) catFileBlob(ctx context.Context, commit, path string) ([]byt
 		return nil, fmt.Errorf("not a blob: %s", kind)
 	}
 	return data, nil
-}
-
-// ReadSingleFile will read a single blob `commit:path`.
-//
-// Note that `path` is relative to the commit root.
-//
-// This IS a cached operation, however it may be as slow as fetching many files
-// via [RepoCache.Fetcher]'s prefetch function.
-func (r *RepoCache) ReadSingleFile(ctx context.Context, commit, path string) ([]byte, error) {
-	ctx = r.prepDebugContext(ctx)
-
-	// notably, this does NOT have --no-lazy-fetch.
-	output, err := r.gitCombinedOutput(ctx, "cat-file", "blob", fmt.Sprintf("%s:%s", commit, path))
-	if err == nil {
-		return output, nil
-	}
-	if r.debugLogs {
-		logging.Debugf(ctx, "failed git call output:\n%s", output)
-	}
-	switch {
-	case bytes.Contains(output, []byte("not our ref")):
-		return nil, ErrMissingCommit
-	case bytes.Contains(output, []byte("does not exist")):
-		return nil, ErrMissingObject
-	}
-	return nil, err
 }

@@ -16,6 +16,7 @@ package pkg
 
 import (
 	"context"
+	"path"
 	"strings"
 	"sync"
 
@@ -139,7 +140,16 @@ func (r *remoteRepoImpl) acquireFetchConcurrencySlot(ctx context.Context) (done 
 // Fetch implements Repo.
 func (r *remoteRepoImpl) Fetch(ctx context.Context, rev string, repoPath string) ([]byte, error) {
 	defer r.acquireFetchConcurrencySlot(ctx)()
-	dat, err := r.repoCache.ReadSingleFile(ctx, rev, repoPath)
+
+	basePath := path.Base(repoPath)
+	fetcher, err := r.repoCache.Fetcher(ctx, r.repoKey.Ref, rev, path.Dir(repoPath), func(kind gitsource.ObjectKind, pkgRelPath string) bool {
+		return pkgRelPath == basePath
+	})
+	if err != nil {
+		return nil, errors.WrapIf(err, "making fetcher for %q of %s/%s", rev, r.repoKey, repoPath)
+	}
+
+	dat, err := fetcher.Read(ctx, basePath)
 	return dat, errors.WrapIf(err, "fetching %q of %s/%s", rev, r.repoKey, repoPath)
 }
 
