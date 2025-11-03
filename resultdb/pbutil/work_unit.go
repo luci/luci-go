@@ -31,6 +31,7 @@ import (
 const (
 	workUnitIDPattern        = `[a-z][a-z0-9_\-.]*(?::[a-z][a-z0-9_\-.]*)?`
 	workUnitIDMaxLength      = 100
+	workUnitKindLength       = 50
 	summaryMarkdownMaxLength = 4096 // bytes
 	moduleShardKeyMaxLength  = 50   // bytes
 )
@@ -38,6 +39,7 @@ const (
 var workUnitIDRe = regexpf("^%s$", workUnitIDPattern)
 var workUnitNameRe = regexpf("^rootInvocations/(%s)/workUnits/(%s)$", rootInvocationIDPattern, workUnitIDPattern)
 var moduleShardKeyRe = regexp.MustCompile("^[a-z0-9_\\-]+$")
+var workUnitKindRe = regexp.MustCompile("^[A-Z0-9]+(_[A-Z0-9]+)+$")
 
 // ValidateWorkUnitID returns a non-nil error if the given work unit ID is invalid.
 func ValidateWorkUnitID(id string) error {
@@ -180,4 +182,18 @@ func ValidateModuleShardKey(moduleShardKey string) error {
 		return fmt.Errorf("must be at most %v bytes long (was %v bytes)", moduleShardKeyMaxLength, len(moduleShardKey))
 	}
 	return validate.SpecifiedWithRe(moduleShardKeyRe, moduleShardKey)
+}
+
+// ValidateWorkUnitKind validates a work unit kind.
+func ValidateWorkUnitKind(kind string) error {
+	if kind == "" {
+		return validate.Unspecified()
+	}
+	if len(kind) > workUnitKindLength {
+		return fmt.Errorf("must be at most %v bytes long (was %v bytes)", workUnitKindLength, len(kind))
+	}
+	if !workUnitKindRe.MatchString(kind) {
+		return fmt.Errorf("must match %q", workUnitKindRe.String())
+	}
+	return nil
 }

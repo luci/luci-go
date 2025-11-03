@@ -196,10 +196,14 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 		req := &pb.CreateRootInvocationRequest{
 			RootInvocationId: "u-my-root-id",
 			RootInvocation: &pb.RootInvocation{
-				Realm: "project:realm",
+				Realm:                "project:realm",
+				StreamingExportState: pb.RootInvocation_WAIT_FOR_METADATA,
 			},
-			RootWorkUnit: &pb.WorkUnit{},
-			RequestId:    "request-id",
+			RootWorkUnit: &pb.WorkUnit{
+				Kind:  "EXAMPLE_INVOCATION",
+				State: pb.WorkUnit_PENDING,
+			},
+			RequestId: "request-id",
 		}
 
 		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
@@ -372,7 +376,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 				t.Run("unspecified", func(t *ftt.Test) {
 					req.RootInvocation.StreamingExportState = pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED
 					err := validateCreateRootInvocationRequest(req, cfg)
-					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, err, should.ErrLike("root_invocation: streaming_export_state: unspecified"))
 				})
 				t.Run("valid", func(t *ftt.Test) {
 					req.RootInvocation.StreamingExportState = pb.RootInvocation_WAIT_FOR_METADATA
@@ -392,12 +396,28 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 				err := validateCreateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_work_unit: unspecified"))
 			})
-			t.Run("state", func(t *ftt.Test) {
+			t.Run("kind", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
-					// If it is unset, we will populate a default value.
-					req.RootWorkUnit.State = pb.WorkUnit_STATE_UNSPECIFIED
+					req.RootWorkUnit.Kind = ""
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("root_work_unit: kind: unspecified"))
+				})
+				t.Run("valid", func(t *ftt.Test) {
+					req.RootWorkUnit.Kind = "ATP_INVOCATION"
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("invalid", func(t *ftt.Test) {
+					req.RootWorkUnit.Kind = "invalid_kind"
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("root_work_unit: kind: must match"))
+				})
+			})
+			t.Run("state", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
+					req.RootWorkUnit.State = pb.WorkUnit_STATE_UNSPECIFIED
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("root_work_unit: state: unspecified"))
 				})
 				t.Run("valid", func(t *ftt.Test) {
 					req.RootWorkUnit.State = pb.WorkUnit_PENDING
@@ -435,6 +455,11 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					req.RootWorkUnit.SummaryMarkdown = "\xFF"
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_work_unit: summary_markdown: not valid UTF-8"))
+				})
+				t.Run("too long", func(t *ftt.Test) {
+					req.RootWorkUnit.SummaryMarkdown = strings.Repeat("a", 4097)
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("root_work_unit: summary_markdown: must be at most 4096 bytes long (was 4097 bytes)"))
 				})
 			})
 			t.Run("realm", func(t *ftt.Test) {
@@ -738,10 +763,14 @@ func TestCreateRootInvocation(t *testing.T) {
 		req := &pb.CreateRootInvocationRequest{
 			RootInvocationId: "root-inv-id",
 			RootInvocation: &pb.RootInvocation{
-				Realm: "testproject:testrealm",
+				Realm:                "testproject:testrealm",
+				StreamingExportState: pb.RootInvocation_METADATA_FINAL,
 			},
-			RootWorkUnit: &pb.WorkUnit{},
-			RequestId:    "request-id",
+			RootWorkUnit: &pb.WorkUnit{
+				Kind:  "EXAMPLE_INVOCATION",
+				State: pb.WorkUnit_RUNNING,
+			},
+			RequestId: "request-id",
 		}
 
 		t.Run("invalid request", func(t *ftt.Test) {
@@ -857,14 +886,15 @@ func TestCreateRootInvocation(t *testing.T) {
 					StreamingExportState: pb.RootInvocation_METADATA_FINAL,
 				},
 				RootWorkUnit: &pb.WorkUnit{
+					Kind:            "EXAMPLE_INVOCATION",
+					State:           pb.WorkUnit_RUNNING,
+					SummaryMarkdown: "Running FooBar...",
 					ModuleId: &pb.ModuleIdentifier{
 						ModuleName:    "mymodule",
 						ModuleScheme:  "gtest",
 						ModuleVariant: pbutil.Variant("k", "v"),
 					},
 					ModuleShardKey:     "shard_key",
-					State:              pb.WorkUnit_RUNNING,
-					SummaryMarkdown:    "Running FooBar...",
 					Tags:               workUnitTags,
 					Properties:         wuProperties,
 					ExtendedProperties: extendedProperties,
@@ -928,8 +958,9 @@ func TestCreateRootInvocation(t *testing.T) {
 			expectWURow := &workunits.WorkUnitRow{
 				ID:                wuID,
 				ParentWorkUnitID:  spanner.NullString{Valid: false},
-				FinalizationState: pb.WorkUnit_ACTIVE,
+				Kind:              "EXAMPLE_INVOCATION",
 				State:             pb.WorkUnit_RUNNING,
+				FinalizationState: pb.WorkUnit_ACTIVE,
 				SummaryMarkdown:   "Running FooBar...",
 				Realm:             "testproject:testrealm",
 				CreatedBy:         "user:someone@example.com",
@@ -951,105 +982,50 @@ func TestCreateRootInvocation(t *testing.T) {
 				ExtendedProperties: extendedProperties,
 			}
 
-			t.Run("baseline", func(t *ftt.Test) {
-				var headers metadata.MD
-				res, err := recorder.CreateRootInvocation(ctx, req, grpc.Header(&headers))
-				assert.Loosely(t, err, should.BeNil)
-				commitTime := res.RootInvocation.CreateTime.AsTime()
-				proto.Merge(expectedInv, &pb.RootInvocation{
-					CreateTime:  timestamppb.New(commitTime),
-					LastUpdated: timestamppb.New(commitTime),
-					Etag:        fmt.Sprintf(`W/"%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
-				})
-				assert.That(t, res.RootInvocation, should.Match(expectedInv))
-				proto.Merge(expectedWU, &pb.WorkUnit{
-					CreateTime:  timestamppb.New(commitTime),
-					LastUpdated: timestamppb.New(commitTime),
-					Etag:        fmt.Sprintf(`W/"+f/%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
-				})
-				assert.That(t, res.RootWorkUnit, should.Match(expectedWU))
-
-				// Check the update token in headers.
-				token := headers.Get(pb.UpdateTokenMetadataKey)
-				assert.Loosely(t, token, should.HaveLength(1))
-				assert.Loosely(t, token[0], should.NotBeEmpty)
-
-				// Check the database.
-				ctx, cancel := span.ReadOnlyTransaction(ctx)
-				defer cancel()
-				row, err := rootinvocations.Read(ctx, rootInvocationID)
-				assert.Loosely(t, err, should.BeNil)
-				expectInvRow.SecondaryIndexShardID = row.SecondaryIndexShardID
-				expectInvRow.CreateTime = commitTime
-				expectInvRow.LastUpdated = commitTime
-				assert.That(t, row, should.Match(expectInvRow))
-
-				wuRow, err := workunits.Read(ctx, wuID, workunits.AllFields)
-				assert.Loosely(t, err, should.BeNil)
-				expectWURow.SecondaryIndexShardID = wuRow.SecondaryIndexShardID
-				expectWURow.CreateTime = commitTime
-				expectWURow.LastUpdated = commitTime
-				assert.That(t, wuRow, should.Match(expectWURow))
-
-				// Check inclusion is added to IncludedInvocations.
-				includedIDs, err := invocations.ReadIncluded(ctx, rootInvocationID.LegacyInvocationID())
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, includedIDs, should.HaveLength(1))
-				assert.That(t, includedIDs.Has(wuID.LegacyInvocationID()), should.BeTrue)
+			var headers metadata.MD
+			res, err := recorder.CreateRootInvocation(ctx, req, grpc.Header(&headers))
+			assert.Loosely(t, err, should.BeNil)
+			commitTime := res.RootInvocation.CreateTime.AsTime()
+			proto.Merge(expectedInv, &pb.RootInvocation{
+				CreateTime:  timestamppb.New(commitTime),
+				LastUpdated: timestamppb.New(commitTime),
+				Etag:        fmt.Sprintf(`W/"%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
 			})
-
-			t.Run("state not specified", func(t *ftt.Test) {
-				req.RootWorkUnit.State = pb.WorkUnit_STATE_UNSPECIFIED
-
-				var headers metadata.MD
-				res, err := recorder.CreateRootInvocation(ctx, req, grpc.Header(&headers))
-				assert.Loosely(t, err, should.BeNil)
-				commitTime := res.RootInvocation.CreateTime.AsTime()
-				proto.Merge(expectedInv, &pb.RootInvocation{
-					State:       pb.RootInvocation_PENDING,
-					CreateTime:  timestamppb.New(commitTime),
-					LastUpdated: timestamppb.New(commitTime),
-					Etag:        fmt.Sprintf(`W/"%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
-				})
-				assert.That(t, res.RootInvocation, should.Match(expectedInv))
-				proto.Merge(expectedWU, &pb.WorkUnit{
-					State:       pb.WorkUnit_PENDING,
-					CreateTime:  timestamppb.New(commitTime),
-					LastUpdated: timestamppb.New(commitTime),
-					Etag:        fmt.Sprintf(`W/"+f/%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
-				})
-				assert.That(t, res.RootWorkUnit, should.Match(expectedWU))
-
-				// Check the update token in headers.
-				token := headers.Get(pb.UpdateTokenMetadataKey)
-				assert.Loosely(t, token, should.HaveLength(1))
-				assert.Loosely(t, token[0], should.NotBeEmpty)
-
-				// Check the database.
-				ctx, cancel := span.ReadOnlyTransaction(ctx)
-				defer cancel()
-				row, err := rootinvocations.Read(ctx, rootInvocationID)
-				assert.Loosely(t, err, should.BeNil)
-				expectInvRow.SecondaryIndexShardID = row.SecondaryIndexShardID
-				expectInvRow.State = pb.RootInvocation_PENDING
-				expectInvRow.CreateTime = commitTime
-				expectInvRow.LastUpdated = commitTime
-				assert.That(t, row, should.Match(expectInvRow))
-
-				wuRow, err := workunits.Read(ctx, wuID, workunits.AllFields)
-				assert.Loosely(t, err, should.BeNil)
-				expectWURow.SecondaryIndexShardID = wuRow.SecondaryIndexShardID
-				expectWURow.State = pb.WorkUnit_PENDING
-				expectWURow.CreateTime = commitTime
-				expectWURow.LastUpdated = commitTime
-				assert.That(t, wuRow, should.Match(expectWURow))
-
-				// Check inclusion is added to IncludedInvocations.
-				includedIDs, err := invocations.ReadIncluded(ctx, rootInvocationID.LegacyInvocationID())
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, includedIDs, should.HaveLength(1))
-				assert.That(t, includedIDs.Has(wuID.LegacyInvocationID()), should.BeTrue)
+			assert.That(t, res.RootInvocation, should.Match(expectedInv))
+			proto.Merge(expectedWU, &pb.WorkUnit{
+				CreateTime:  timestamppb.New(commitTime),
+				LastUpdated: timestamppb.New(commitTime),
+				Etag:        fmt.Sprintf(`W/"+f/%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
 			})
+			assert.That(t, res.RootWorkUnit, should.Match(expectedWU))
+
+			// Check the update token in headers.
+			token := headers.Get(pb.UpdateTokenMetadataKey)
+			assert.Loosely(t, token, should.HaveLength(1))
+			assert.Loosely(t, token[0], should.NotBeEmpty)
+
+			// Check the database.
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			row, err := rootinvocations.Read(ctx, rootInvocationID)
+			assert.Loosely(t, err, should.BeNil)
+			expectInvRow.SecondaryIndexShardID = row.SecondaryIndexShardID
+			expectInvRow.CreateTime = commitTime
+			expectInvRow.LastUpdated = commitTime
+			assert.That(t, row, should.Match(expectInvRow))
+
+			wuRow, err := workunits.Read(ctx, wuID, workunits.AllFields)
+			assert.Loosely(t, err, should.BeNil)
+			expectWURow.SecondaryIndexShardID = wuRow.SecondaryIndexShardID
+			expectWURow.CreateTime = commitTime
+			expectWURow.LastUpdated = commitTime
+			assert.That(t, wuRow, should.Match(expectWURow))
+
+			// Check inclusion is added to IncludedInvocations.
+			includedIDs, err := invocations.ReadIncluded(ctx, rootInvocationID.LegacyInvocationID())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, includedIDs, should.HaveLength(1))
+			assert.That(t, includedIDs.Has(wuID.LegacyInvocationID()), should.BeTrue)
 		})
 	})
 }

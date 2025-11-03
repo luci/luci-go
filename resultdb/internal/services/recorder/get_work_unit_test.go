@@ -81,8 +81,9 @@ func TestGetWorkUnit(t *testing.T) {
 			expectedRsp := &pb.WorkUnit{
 				Name:              rootWorkUnitID.Name(),
 				WorkUnitId:        rootWorkUnitID.WorkUnitID,
-				FinalizationState: rootWu.FinalizationState,
+				Kind:              rootWu.Kind,
 				State:             rootWu.State,
+				FinalizationState: rootWu.FinalizationState,
 				SummaryMarkdown:   rootWu.SummaryMarkdown,
 				Realm:             rootWu.Realm,
 				CreateTime:        pbutil.MustTimestampProto(rootWu.CreateTime),

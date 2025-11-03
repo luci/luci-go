@@ -157,18 +157,22 @@ func validateWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServiceConfi
 	// Name, WorkUnitId and FinalizationState are output only and should be ignored
 	// as per https://google.aip.dev/203.
 
-	// TODO: b/447225325 - Make this a mandatory field.
-	if wu.State != pb.WorkUnit_STATE_UNSPECIFIED {
-		if err := pbutil.ValidateWorkUnitState(wu.State); err != nil {
-			return errors.Fmt("state: %w", err)
-		}
-		// We do not support creating work units in a final state from the get-go.
-		// This could be supported if the use case exists. It would require adding a task
-		// for the finalizer at time of such a creation.
-		if pbutil.IsFinalWorkUnitState(wu.State) {
-			return errors.Fmt("state: work unit may not be created in a final state (got %s)", wu.State)
-		}
+	// Kind is a required field.
+	if err := pbutil.ValidateWorkUnitKind(wu.Kind); err != nil {
+		return errors.Fmt("kind: %w", err)
 	}
+
+	// State is a required field.
+	if err := pbutil.ValidateWorkUnitState(wu.State); err != nil {
+		return errors.Fmt("state: %w", err)
+	}
+	// We do not support creating work units immediately in a final state.
+	// This could be supported if the use case exists. It would require adding a task
+	// for the finalizer at time of such a creation.
+	if pbutil.IsFinalWorkUnitState(wu.State) {
+		return errors.Fmt("state: work unit may not be created in a final state (got %s)", wu.State)
+	}
+
 	const enforceLength = true
 	if err := pbutil.ValidateSummaryMarkdown(wu.SummaryMarkdown, enforceLength); err != nil {
 		return errors.Fmt("summary_markdown: %s", err)

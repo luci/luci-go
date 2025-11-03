@@ -83,8 +83,9 @@ func TestBatchGetWorkUnits(t *testing.T) {
 			expectedWu1 := &pb.WorkUnit{
 				Name:              wu1.ID.Name(),
 				WorkUnitId:        wu1.ID.WorkUnitID,
-				FinalizationState: wu1.FinalizationState,
+				Kind:              wu1.Kind,
 				State:             wu1.State,
+				FinalizationState: wu1.FinalizationState,
 				SummaryMarkdown:   wu1.SummaryMarkdown,
 				Realm:             wu1.Realm,
 				CreateTime:        pbutil.MustTimestampProto(wu1.CreateTime),
@@ -119,8 +120,9 @@ func TestBatchGetWorkUnits(t *testing.T) {
 			expectedWu2 := &pb.WorkUnit{
 				Name:              wu2.ID.Name(),
 				WorkUnitId:        wu2.ID.WorkUnitID,
-				FinalizationState: wu2.FinalizationState,
+				Kind:              wu2.Kind,
 				State:             wu2.State,
+				FinalizationState: wu2.FinalizationState,
 				SummaryMarkdown:   wu2.SummaryMarkdown,
 				Realm:             wu2.Realm,
 				CreateTime:        pbutil.MustTimestampProto(wu2.CreateTime),

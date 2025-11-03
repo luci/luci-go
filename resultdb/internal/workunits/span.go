@@ -90,10 +90,11 @@ func (w *WorkUnitRow) Normalize() {
 type WorkUnitRow struct {
 	ID                     ID
 	ParentWorkUnitID       spanner.NullString
-	SecondaryIndexShardID  int64                         // Output only.
-	FinalizationState      pb.WorkUnit_FinalizationState // Output only.
+	SecondaryIndexShardID  int64 // Output only.
+	Kind                   string
 	State                  pb.WorkUnit_State
 	SummaryMarkdown        string
+	FinalizationState      pb.WorkUnit_FinalizationState // Output only.
 	Realm                  string
 	CreateTime             time.Time // Output only.
 	CreatedBy              string
@@ -155,9 +156,10 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 		"WorkUnitId":            w.ID.WorkUnitID,
 		"ParentWorkUnitId":      w.ParentWorkUnitID,
 		"SecondaryIndexShardId": w.ID.shardID(secondaryIndexShardCount),
-		"FinalizationState":     w.FinalizationState,
+		"Kind":                  w.Kind,
 		"State":                 w.State,
 		"SummaryMarkdown":       w.SummaryMarkdown,
+		"FinalizationState":     w.FinalizationState,
 		"Realm":                 w.Realm,
 		"CreateTime":            spanner.CommitTimestamp,
 		"CreatedBy":             w.CreatedBy,

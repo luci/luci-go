@@ -282,6 +282,9 @@ CREATE TABLE WorkUnits (
   --   included work units (and invocations) are immutable.
   FinalizationState INT64 NOT NULL,
 
+  -- The work unit kind. E.g. "TF_MODULE".
+  Kind STRING(MAX) NOT NULL DEFAULT(""),
+
   -- Work unit execution state. One of:
   -- - Pending (1)
   -- - Running (2)

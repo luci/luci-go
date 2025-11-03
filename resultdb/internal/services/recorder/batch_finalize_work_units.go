@@ -67,13 +67,6 @@ func (s *recorderServer) BatchFinalizeWorkUnits(ctx context.Context, in *pb.Batc
 			req := in.Requests[i]
 			state := req.State
 			summaryMarkdown := req.SummaryMarkdown
-			if state == pb.WorkUnit_STATE_UNSPECIFIED {
-				// We need to transition to some final state to start the process
-				// of finalizing the work unit.
-				// TODO(meiring): Remove this behaviour once state field becomes mandatory.
-				state = pb.WorkUnit_FAILED
-				summaryMarkdown = "Client did not report a final state in its FinalizeWorkUnit request."
-			}
 
 			mb := workunits.NewMutationBuilder(wuRow.ID)
 			// As the state is a terminal state, this will also transition the
@@ -184,14 +177,12 @@ func validateBatchFinalizeWorkUnitsRequest(req *pb.BatchFinalizeWorkUnitsRequest
 }
 
 func validateFinalizeWorkUnitRequest(req *pb.FinalizeWorkUnitRequest) error {
-	// TODO(meiring): Make this a required field.
-	if req.State != pb.WorkUnit_STATE_UNSPECIFIED {
-		if err := pbutil.ValidateWorkUnitState(req.State); err != nil {
-			return errors.Fmt("state: %w", err)
-		}
-		if !pbutil.IsFinalWorkUnitState(req.State) {
-			return errors.New("state: must be a terminal state")
-		}
+	// State is a required field.
+	if err := pbutil.ValidateWorkUnitState(req.State); err != nil {
+		return errors.Fmt("state: %w", err)
+	}
+	if !pbutil.IsFinalWorkUnitState(req.State) {
+		return errors.New("state: must be a terminal state")
 	}
 
 	// We do not enforce length limits via the FinalizeWorkUnit RPC.

@@ -139,23 +139,11 @@ func createIdempotentRootInvocation(
 		}
 		// Root invocation doesn't exist, create it.
 
-		state := req.RootWorkUnit.State
-		if state == pb.WorkUnit_STATE_UNSPECIFIED {
-			// TODO: b/447225325 - Remove this defaulting once the field is mandatory.
-			state = pb.WorkUnit_PENDING
-		}
-
-		streamingExportState := req.RootInvocation.StreamingExportState
-		if streamingExportState == pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED {
-			// TODO: b/447225325 - Remove this defaulting once the field is mandatory.
-			streamingExportState = pb.RootInvocation_WAIT_FOR_METADATA
-		}
-
 		rootInvocationRow := &rootinvocations.RootInvocationRow{
 			RootInvocationID: rootInvocationID,
 			// Should match root work unit.
 			FinalizationState: pb.RootInvocation_ACTIVE,
-			State:             pbutil.WorkUnitToRootInvocationState(state),
+			State:             pbutil.WorkUnitToRootInvocationState(req.RootWorkUnit.State),
 			SummaryMarkdown:   req.RootWorkUnit.SummaryMarkdown,
 
 			Realm:                                   req.RootInvocation.Realm,
@@ -167,7 +155,7 @@ func createIdempotentRootInvocation(
 			Properties:                              req.RootInvocation.Properties,
 			Sources:                                 req.RootInvocation.Sources,
 			BaselineID:                              req.RootInvocation.BaselineId,
-			StreamingExportState:                    streamingExportState,
+			StreamingExportState:                    req.RootInvocation.StreamingExportState,
 			Submitted:                               false, // Submitted is set in separate MarkInvocationSubmitted call.
 			FinalizerPending:                        false,
 			FinalizerSequence:                       0,
@@ -187,8 +175,9 @@ func createIdempotentRootInvocation(
 			},
 			// Root work unit has parent work unit set to null.
 			ParentWorkUnitID:  spanner.NullString{Valid: false},
+			Kind:              req.RootWorkUnit.Kind,
+			State:             req.RootWorkUnit.State,
 			FinalizationState: pb.WorkUnit_ACTIVE,
-			State:             state,
 			SummaryMarkdown:   req.RootWorkUnit.SummaryMarkdown,
 			Realm:             rootInvocationRow.Realm,
 			CreatedBy:         createdBy,
@@ -388,12 +377,9 @@ func validateRootInvocationForCreate(inv *pb.RootInvocation) error {
 		}
 	}
 
-	// TODO: b/447225325 - Make this field mandatory.
-	if inv.StreamingExportState != pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED {
-		// Validate streaming_export_state.
-		if err := pbutil.ValidateStreamingExportState(inv.StreamingExportState); err != nil {
-			return errors.Fmt("streaming_export_state: %w", err)
-		}
+	// Validate streaming_export_state. This is a required field.
+	if err := pbutil.ValidateStreamingExportState(inv.StreamingExportState); err != nil {
+		return errors.Fmt("streaming_export_state: %w", err)
 	}
 
 	return nil

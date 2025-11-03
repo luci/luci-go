@@ -61,7 +61,9 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 			Parent:     "rootInvocations/u-my-root-id/workUnits/root",
 			WorkUnitId: "u-my-work-unit-id",
 			WorkUnit: &pb.WorkUnit{
+				Kind:  "EXAMPLE_MODULE",
 				Realm: "project:realm",
+				State: pb.WorkUnit_RUNNING,
 			},
 			RequestId: "request-id",
 		}
@@ -92,12 +94,28 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 					assert.Loosely(t, err, should.ErrLike("work_unit: realm: bad global realm name"))
 				})
 			})
-			t.Run("state", func(t *ftt.Test) {
+			t.Run("kind", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
-					// If it is unset, we will populate a default value.
-					req.WorkUnit.State = pb.WorkUnit_STATE_UNSPECIFIED
+					req.WorkUnit.Kind = ""
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("work_unit: kind: unspecified"))
+				})
+				t.Run("valid", func(t *ftt.Test) {
+					req.WorkUnit.Kind = "ATP_INVOCATION"
 					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("invalid", func(t *ftt.Test) {
+					req.WorkUnit.Kind = "invalid_kind"
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("work_unit: kind: must match"))
+				})
+			})
+			t.Run("state", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
+					req.WorkUnit.State = pb.WorkUnit_STATE_UNSPECIFIED
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike(`work_unit: state: unspecified`))
 				})
 				t.Run("valid", func(t *ftt.Test) {
 					req.WorkUnit.State = pb.WorkUnit_RUNNING
@@ -118,6 +136,28 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 					req.WorkUnit.State = pb.WorkUnit_State(999)
 					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("work_unit: state: unknown state 999"))
+				})
+			})
+			t.Run("summary_markdown", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
+					req.WorkUnit.SummaryMarkdown = ""
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("valid", func(t *ftt.Test) {
+					req.WorkUnit.SummaryMarkdown = "The task failed because of..."
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("invalid", func(t *ftt.Test) {
+					req.WorkUnit.SummaryMarkdown = "\xFF"
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("work_unit: summary_markdown: not valid UTF-8"))
+				})
+				t.Run("too long", func(t *ftt.Test) {
+					req.WorkUnit.SummaryMarkdown = strings.Repeat("a", 4097)
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("work_unit: summary_markdown: must be at most 4096 bytes long (was 4097 bytes)"))
 				})
 			})
 			t.Run("deadline", func(t *ftt.Test) {
@@ -473,8 +513,9 @@ func TestCreateWorkUnit(t *testing.T) {
 			Parent:     parentWorkUnitID.Name(),
 			WorkUnitId: workUnitID.WorkUnitID,
 			WorkUnit: &pb.WorkUnit{
-				Realm: "testproject:testrealm",
+				Kind:  "EXAMPLE_MODULE",
 				State: pb.WorkUnit_RUNNING,
+				Realm: "testproject:testrealm",
 			},
 			RequestId: "test-request-id",
 		}
@@ -805,6 +846,7 @@ func TestCreateWorkUnit(t *testing.T) {
 				},
 			}
 			req.WorkUnit = &pb.WorkUnit{
+				Kind:  "EXAMPLE_MODULE",
 				Realm: "testproject:testrealm",
 				State: pb.WorkUnit_RUNNING,
 				ModuleId: &pb.ModuleIdentifier{
@@ -835,8 +877,9 @@ func TestCreateWorkUnit(t *testing.T) {
 			expectWURow := &workunits.WorkUnitRow{
 				ID:                workUnitID,
 				ParentWorkUnitID:  spanner.NullString{Valid: true, StringVal: parentWorkUnitID.WorkUnitID},
-				FinalizationState: pb.WorkUnit_ACTIVE,
+				Kind:              "EXAMPLE_MODULE",
 				State:             pb.WorkUnit_RUNNING,
+				FinalizationState: pb.WorkUnit_ACTIVE,
 				Realm:             "testproject:testrealm",
 				CreatedBy:         "user:someone@example.com",
 				FinalizeStartTime: spanner.NullTime{},
@@ -879,80 +922,45 @@ func TestCreateWorkUnit(t *testing.T) {
 				TestResultVariantUnion: pbutil.Variant("k", "v"), // From ModuleId.ModuleVariant.
 			}
 
-			t.Run("baseline", func(t *ftt.Test) {
-				var headers metadata.MD
-				res, err := recorder.CreateWorkUnit(ctx, req, grpc.Header(&headers))
-				assert.Loosely(t, err, should.BeNil)
+			var headers metadata.MD
+			res, err := recorder.CreateWorkUnit(ctx, req, grpc.Header(&headers))
+			assert.Loosely(t, err, should.BeNil)
 
-				// Merge server-populated fields for comparison.
-				commitTime := res.CreateTime.AsTime()
-				proto.Merge(expectedWU, &pb.WorkUnit{
-					CreateTime:  timestamppb.New(commitTime),
-					LastUpdated: timestamppb.New(commitTime),
-					Etag:        fmt.Sprintf(`W/"+f/%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
-				})
-				assert.That(t, res, should.Match(expectedWU))
-
-				// Check for the new update token in headers.
-				token := headers.Get(pb.UpdateTokenMetadataKey)
-				assert.Loosely(t, token, should.HaveLength(1))
-				assert.Loosely(t, token[0], should.NotBeEmpty)
-
-				// Check the database.
-				readCtx, cancel := span.ReadOnlyTransaction(ctx)
-				defer cancel()
-				row, err := workunits.Read(readCtx, workUnitID, workunits.AllFields)
-				assert.Loosely(t, err, should.BeNil)
-				expectWURow.SecondaryIndexShardID = row.SecondaryIndexShardID
-				expectWURow.CreateTime = commitTime
-				expectWURow.LastUpdated = commitTime
-				assert.That(t, row, should.Match(expectWURow))
-
-				// Check the legacy invocation is inserted.
-				legacyInv, err := invocations.Read(readCtx, workUnitID.LegacyInvocationID(), invocations.AllFields)
-				expectedLegacyInv.CreateTime = timestamppb.New(commitTime)
-				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, legacyInv, should.Match(expectedLegacyInv))
-
-				// Check inclusion is added to IncludedInvocations.
-				includedIDs, err := invocations.ReadIncluded(readCtx, parentWorkUnitID.LegacyInvocationID())
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, includedIDs, should.HaveLength(1))
-				assert.That(t, includedIDs.Has(workUnitID.LegacyInvocationID()), should.BeTrue)
+			// Merge server-populated fields for comparison.
+			commitTime := res.CreateTime.AsTime()
+			proto.Merge(expectedWU, &pb.WorkUnit{
+				CreateTime:  timestamppb.New(commitTime),
+				LastUpdated: timestamppb.New(commitTime),
+				Etag:        fmt.Sprintf(`W/"+f/%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
 			})
+			assert.That(t, res, should.Match(expectedWU))
 
-			t.Run("with state not specified", func(t *ftt.Test) {
-				req.WorkUnit.State = pb.WorkUnit_STATE_UNSPECIFIED
-				var headers metadata.MD
-				res, err := recorder.CreateWorkUnit(ctx, req, grpc.Header(&headers))
-				assert.Loosely(t, err, should.BeNil)
+			// Check for the new update token in headers.
+			token := headers.Get(pb.UpdateTokenMetadataKey)
+			assert.Loosely(t, token, should.HaveLength(1))
+			assert.Loosely(t, token[0], should.NotBeEmpty)
 
-				// Merge server-populated fields for comparison.
-				commitTime := res.CreateTime.AsTime()
-				proto.Merge(expectedWU, &pb.WorkUnit{
-					State:       pb.WorkUnit_PENDING,
-					CreateTime:  timestamppb.New(commitTime),
-					LastUpdated: timestamppb.New(commitTime),
-					Etag:        fmt.Sprintf(`W/"+f/%s"`, commitTime.UTC().Format(time.RFC3339Nano)),
-				})
-				assert.That(t, res, should.Match(expectedWU))
+			// Check the database.
+			readCtx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			row, err := workunits.Read(readCtx, workUnitID, workunits.AllFields)
+			assert.Loosely(t, err, should.BeNil)
+			expectWURow.SecondaryIndexShardID = row.SecondaryIndexShardID
+			expectWURow.CreateTime = commitTime
+			expectWURow.LastUpdated = commitTime
+			assert.That(t, row, should.Match(expectWURow))
 
-				// Check for the new update token in headers.
-				token := headers.Get(pb.UpdateTokenMetadataKey)
-				assert.Loosely(t, token, should.HaveLength(1))
-				assert.Loosely(t, token[0], should.NotBeEmpty)
+			// Check the legacy invocation is inserted.
+			legacyInv, err := invocations.Read(readCtx, workUnitID.LegacyInvocationID(), invocations.AllFields)
+			expectedLegacyInv.CreateTime = timestamppb.New(commitTime)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, legacyInv, should.Match(expectedLegacyInv))
 
-				// Check the database.
-				readCtx, cancel := span.ReadOnlyTransaction(ctx)
-				defer cancel()
-				row, err := workunits.Read(readCtx, workUnitID, workunits.AllFields)
-				assert.Loosely(t, err, should.BeNil)
-				expectWURow.SecondaryIndexShardID = row.SecondaryIndexShardID
-				expectWURow.State = pb.WorkUnit_PENDING
-				expectWURow.CreateTime = commitTime
-				expectWURow.LastUpdated = commitTime
-				assert.That(t, row, should.Match(expectWURow))
-			})
+			// Check inclusion is added to IncludedInvocations.
+			includedIDs, err := invocations.ReadIncluded(readCtx, parentWorkUnitID.LegacyInvocationID())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, includedIDs, should.HaveLength(1))
+			assert.That(t, includedIDs.Has(workUnitID.LegacyInvocationID()), should.BeTrue)
 		})
 	})
 }

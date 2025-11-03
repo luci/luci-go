@@ -47,8 +47,9 @@ func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, v
 		// Include metadata-only fields by default.
 		Name:              row.ID.Name(),
 		WorkUnitId:        row.ID.WorkUnitID,
-		FinalizationState: row.FinalizationState,
+		Kind:              row.Kind,
 		State:             row.State,
+		FinalizationState: row.FinalizationState,
 		Realm:             row.Realm,
 		CreateTime:        pbutil.MustTimestampProto(row.CreateTime),
 		Creator:           row.CreatedBy,
@@ -69,25 +70,25 @@ func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, v
 	}
 
 	if accessLevel == permissions.FullAccess {
+		result.SummaryMarkdown = row.SummaryMarkdown
 		result.Tags = row.Tags
 		result.Properties = row.Properties
 		result.Instructions = row.Instructions
 		result.ModuleId = row.ModuleID
-		result.SummaryMarkdown = row.SummaryMarkdown
 		result.IsMasked = false
 
 		if view == pb.WorkUnitView_WORK_UNIT_VIEW_FULL {
 			result.ExtendedProperties = row.ExtendedProperties
 		}
 	} else {
+		// Include a truncated version of the summary.
+		result.SummaryMarkdown = pbutil.TruncateString(row.SummaryMarkdown, limitedSummaryLength)
 		// Include a masked version of the module identifier.
 		if row.ModuleID != nil {
 			moduleID := proto.Clone(row.ModuleID).(*pb.ModuleIdentifier)
 			moduleID.ModuleVariant = nil
 			result.ModuleId = moduleID
 		}
-		// Include a truncated version of the summary.
-		result.SummaryMarkdown = pbutil.TruncateString(row.SummaryMarkdown, limitedSummaryLength)
 	}
 
 	if row.ID.WorkUnitID == "root" {

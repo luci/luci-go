@@ -127,18 +127,30 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 				{
 					Parent:     parentWorkUnitID.Name(),
 					WorkUnitId: workUnitID1.WorkUnitID,
-					WorkUnit:   &pb.WorkUnit{Realm: "testproject:testrealm"},
-					RequestId:  "test-request-id",
+					WorkUnit: &pb.WorkUnit{
+						Kind:  "EXAMPLE_MODULE",
+						State: pb.WorkUnit_PENDING,
+						Realm: "testproject:testrealm",
+					},
+					RequestId: "test-request-id",
 				},
 				{
 					Parent:     workUnitID1.Name(),
 					WorkUnitId: workUnitID11.WorkUnitID,
-					WorkUnit:   &pb.WorkUnit{Realm: "testproject:testrealm"},
+					WorkUnit: &pb.WorkUnit{
+						Kind:  "EXAMPLE_MODULE",
+						State: pb.WorkUnit_PENDING,
+						Realm: "testproject:testrealm",
+					},
 				},
 				{
 					Parent:     parentWorkUnitID.Name(),
 					WorkUnitId: workUnitID2.WorkUnitID,
-					WorkUnit:   &pb.WorkUnit{Realm: "testproject:testrealm"},
+					WorkUnit: &pb.WorkUnit{
+						Kind:  "EXAMPLE_MODULE",
+						State: pb.WorkUnit_PENDING,
+						Realm: "testproject:testrealm",
+					},
 				},
 			},
 		}
@@ -590,8 +602,9 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			// Populare Requests[0] with all fields and Requests[1] and [2] with minimal fields
 			// to maximise test coverage.
 			req.Requests[0].WorkUnit = &pb.WorkUnit{
-				Realm:           "testproject:testrealm",
+				Kind:            "EXAMPLE_MODULE",
 				State:           pb.WorkUnit_RUNNING,
+				Realm:           "testproject:testrealm",
 				SummaryMarkdown: "Running FooBar...",
 				ModuleId: &pb.ModuleIdentifier{
 					ModuleName:    "mymodule",
@@ -645,8 +658,9 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			expectWURow1 := &workunits.WorkUnitRow{
 				ID:                workUnitID1,
 				ParentWorkUnitID:  spanner.NullString{Valid: true, StringVal: parentWorkUnitID.WorkUnitID},
-				FinalizationState: pb.WorkUnit_ACTIVE,
+				Kind:              "EXAMPLE_MODULE",
 				State:             pb.WorkUnit_RUNNING,
+				FinalizationState: pb.WorkUnit_ACTIVE,
 				SummaryMarkdown:   "Running FooBar...",
 				Realm:             "testproject:testrealm",
 				CreatedBy:         "user:someone@example.com",
@@ -672,8 +686,9 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			expectWURow11 := &workunits.WorkUnitRow{
 				ID:                workUnitID11,
 				ParentWorkUnitID:  spanner.NullString{Valid: true, StringVal: workUnitID1.WorkUnitID},
-				FinalizationState: pb.WorkUnit_ACTIVE,
+				Kind:              "EXAMPLE_MODULE",
 				State:             pb.WorkUnit_PENDING,
+				FinalizationState: pb.WorkUnit_ACTIVE,
 				Realm:             "testproject:testrealm",
 				CreatedBy:         "user:someone@example.com",
 				FinalizeStartTime: spanner.NullTime{},
@@ -685,8 +700,9 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			expectWURow2 := &workunits.WorkUnitRow{
 				ID:                workUnitID2,
 				ParentWorkUnitID:  spanner.NullString{Valid: true, StringVal: parentWorkUnitID.WorkUnitID},
-				FinalizationState: pb.WorkUnit_ACTIVE,
+				Kind:              "EXAMPLE_MODULE",
 				State:             pb.WorkUnit_PENDING,
+				FinalizationState: pb.WorkUnit_ACTIVE,
 				Realm:             "testproject:testrealm",
 				CreatedBy:         "user:someone@example.com",
 				FinalizeStartTime: spanner.NullTime{},

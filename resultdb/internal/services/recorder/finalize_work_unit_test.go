@@ -53,7 +53,11 @@ func TestFinalizeWorkUnit(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 
-		req := &pb.FinalizeWorkUnitRequest{Name: wuID.Name()}
+		req := &pb.FinalizeWorkUnitRequest{
+			Name:            wuID.Name(),
+			State:           pb.WorkUnit_SUCCEEDED,
+			SummaryMarkdown: "The test run ran 152 tests.",
+		}
 
 		t.Run("invalid request", func(t *ftt.Test) {
 			// Do not need to test all cases, the tests for VerifyFinalizeWorkUnitPermissions

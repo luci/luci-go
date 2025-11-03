@@ -252,3 +252,26 @@ func TestValidateModuleShardKey(t *testing.T) {
 		})
 	})
 }
+
+func TestValidateWorkUnitKind(t *testing.T) {
+	ftt.Run(`ValidateWorkUnitKind`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateWorkUnitKind("ATP_INVOCATION"), should.BeNil)
+			assert.Loosely(t, ValidateWorkUnitKind("TFC_COMMAND"), should.BeNil)
+			assert.Loosely(t, ValidateWorkUnitKind("TFC_COMMAND_TASK"), should.BeNil)
+			assert.Loosely(t, ValidateWorkUnitKind("TF_MODULE"), should.BeNil)
+			assert.Loosely(t, ValidateWorkUnitKind("G3_BLAZE_INVOCATION"), should.BeNil)
+		})
+		t.Run(`Unspecified`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateWorkUnitKind(""), should.ErrLike("unspecified"))
+		})
+		t.Run(`Invalid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateWorkUnitKind("atp_invocation"), should.ErrLike("must match"))
+			assert.Loosely(t, ValidateWorkUnitKind("TFC_"), should.ErrLike("must match"))
+			assert.Loosely(t, ValidateWorkUnitKind("TFC"), should.ErrLike("must match"))
+		})
+		t.Run(`Too long`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateWorkUnitKind(strings.Repeat("A", workUnitKindLength+1)), should.ErrLike("must be at most 50 bytes long"))
+		})
+	})
+}

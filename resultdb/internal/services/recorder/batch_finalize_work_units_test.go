@@ -175,8 +175,15 @@ func TestBatchFinalizeWorkUnits(t *testing.T) {
 
 		req := &pb.BatchFinalizeWorkUnitsRequest{
 			Requests: []*pb.FinalizeWorkUnitRequest{
-				{Name: wuID1.Name()},
-				{Name: wuID2.Name()},
+				{
+					Name:  wuID1.Name(),
+					State: pb.WorkUnit_SUCCEEDED,
+				},
+				{
+					Name:            wuID2.Name(),
+					State:           pb.WorkUnit_FAILED,
+					SummaryMarkdown: "The test run failed because ...",
+				},
 			},
 		}
 
@@ -206,6 +213,12 @@ func TestBatchFinalizeWorkUnits(t *testing.T) {
 				assert.That(t, err, should.ErrLike("requests[0]: name: does not match"))
 			})
 			t.Run("state", func(t *ftt.Test) {
+				t.Run("unspecified", func(t *ftt.Test) {
+					req.Requests[0].State = pb.WorkUnit_STATE_UNSPECIFIED
+					_, err := recorder.BatchFinalizeWorkUnits(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.That(t, err, should.ErrLike("requests[0]: state: unspecified"))
+				})
 				t.Run("not a terminal state", func(t *ftt.Test) {
 					req.Requests[0].State = pb.WorkUnit_PENDING
 					_, err := recorder.BatchFinalizeWorkUnits(ctx, req)
@@ -248,14 +261,6 @@ func TestBatchFinalizeWorkUnits(t *testing.T) {
 			_, err := recorder.BatchFinalizeWorkUnits(ctx, req)
 			assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
 			assert.That(t, err, should.ErrLike(`"rootInvocations/root-inv-id/workUnits/work-unit-id:child1" not found`))
-		})
-
-		t.Run("succeeds when state is unspecified", func(t *ftt.Test) {
-			// We want to deprecate this usage but we need to confirm it is supported
-			// until clients are migrated.
-			req.Requests[0].State = pb.WorkUnit_STATE_UNSPECIFIED
-			_, err := recorder.BatchFinalizeWorkUnits(ctx, req)
-			assert.Loosely(t, err, should.BeNil)
 		})
 
 		t.Run("success", func(t *ftt.Test) {

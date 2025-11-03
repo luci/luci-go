@@ -121,11 +121,6 @@ func createWorkUnitsIdempotent(
 		}
 		for i, r := range in.Requests {
 			wu := r.WorkUnit
-			state := wu.State
-			if state == pb.WorkUnit_STATE_UNSPECIFIED {
-				// TODO: b/447225325 - Remove this defaulting once the field is mandatory.
-				state = pb.WorkUnit_PENDING
-			}
 
 			deadline := wu.Deadline.AsTime()
 			if wu.Deadline == nil {
@@ -135,8 +130,9 @@ func createWorkUnitsIdempotent(
 			wuRow := &workunits.WorkUnitRow{
 				ID:                 ids[i],
 				ParentWorkUnitID:   spanner.NullString{Valid: true, StringVal: parentIDs[i].WorkUnitID},
+				Kind:               wu.Kind,
+				State:              wu.State,
 				FinalizationState:  pb.WorkUnit_ACTIVE,
-				State:              state,
 				SummaryMarkdown:    wu.SummaryMarkdown,
 				Realm:              wu.Realm,
 				CreatedBy:          createdBy,
