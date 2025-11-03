@@ -117,24 +117,20 @@ var NotifyTestResultsPublisher = tq.RegisterTaskClass(tq.TaskClass{
 	ID:        "notify-test-results",
 	Topic:     V1NotifyTestResultsTopic,
 	Prototype: &taskspb.PublishTestResults{},
-	Kind:      tq.Transactional,
+	Kind:      tq.NonTransactional,
 	Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
-		// Custom serialisation handler needed to control
-		// how the message is sent, as the backend is
-		// Cloud Pub/Sub and not Cloud Tasks.
+		// Custom serialisation handler needed to control how the message is
+		// sent, as the backend is Cloud Pub/Sub and not Cloud Tasks.
 		t := m.(*taskspb.PublishTestResults)
 		notification := t.GetMessage()
 		blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(notification)
 		if err != nil {
 			return nil, err
 		}
-
-		// Prepare attributes, which are can be used by subscribers to filter
-		// the messages they receive.
-		attrs := t.GetAttributes()
-
 		return &tq.CustomPayload{
-			Meta: attrs,
+			// Attributes can be used by subscribers to filter the messages they
+			// receive.
+			Meta: t.GetAttributes(),
 			Body: blob,
 		}, nil
 	},

@@ -16,7 +16,6 @@ package finalizer
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"time"
 
@@ -26,9 +25,11 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -317,9 +318,17 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 			// Enqueue tasks to publish test results for the finalized work
 			// units.
 			if len(finalizedWUIDs) > 0 {
-				if err := publishTestResultNotifications(ctx, rootInvID, finalizedWUIDs, opts.resultDBHostname); err != nil {
-					return errors.Fmt("publish test result notifications: %w", err)
+				wuIDs := make([]string, len(finalizedWUIDs))
+				for i, wuID := range finalizedWUIDs {
+					wuIDs[i] = wuID.WorkUnitID
 				}
+				tq.MustAddTask(ctx, &tq.Task{
+					Payload: &taskspb.PublishTestResultsTask{
+						RootInvocationId: string(rootInvID),
+						WorkUnitIds:      wuIDs,
+					},
+					Title: fmt.Sprintf("%s-%d", rootInvID.Name(), time.Now().UnixNano()),
+				})
 			}
 
 			if shouldFinalizeRootInvocation {
@@ -356,63 +365,6 @@ func publishFinalizedRootInvocation(ctx context.Context, rootInvID rootinvocatio
 		ResultdbHost:   rdbHostName,
 	}
 	tasks.NotifyRootInvocationFinalized(ctx, notification)
-	return nil
-}
-
-// publishTestResultNotifications enqueues tasks to publish test result
-// notifications to Pub/Sub for the given work units, provided the root
-// invocation is ready for export.
-func publishTestResultNotifications(ctx context.Context, rootInvID rootinvocations.ID, finalizedWUIDs []workunits.ID, rdbHostName string) error {
-	// 1. Read Root Invocation to check its state and get sources.
-	rootInv, err := rootinvocations.Read(ctx, rootInvID)
-	if err != nil {
-		return errors.Fmt("failed to read root invocation %s: %w", rootInvID.Name(), err)
-	}
-
-	// 2. Check StreamingExportState: Only publish if metadata is final.
-	if rootInv.StreamingExportState != pb.RootInvocation_METADATA_FINAL {
-		return nil
-	}
-
-	// 3. Construct the message attributes.
-	attrs := make(map[string]string)
-	if rootInv.Properties != nil {
-		if primaryBuild, ok := rootInv.Properties.Fields["primary_build"]; ok {
-			if buildStruct := primaryBuild.GetStructValue(); buildStruct != nil {
-				if branchVal, ok := buildStruct.Fields["branch"]; ok {
-					attrs["branch"] = branchVal.GetStringValue()
-				}
-			}
-		}
-	}
-
-	// 4. Iterate through each finalized work unit and enqueue notification
-	// tasks.
-	testResultsByWorkUnit := make([]*pb.TestResultsNotification_TestResultsByWorkUnit, 0, len(finalizedWUIDs))
-	wuIDs := make([]string, 0, len(finalizedWUIDs))
-	for _, wuID := range finalizedWUIDs {
-		// TODO(b/372537579): Implement test result querying for the work unit.
-		// This will likely involve pagination to handle large numbers of test
-		// results.
-		testResults := []*pb.TestResult{} // Placeholder
-
-		// TODO(b/372537579): Implement proper batching based on message size
-		// to stay within Pub/Sub limits. For now, one notification per work
-		// unit.
-		testResultsByWorkUnit = append(testResultsByWorkUnit, &pb.TestResultsNotification_TestResultsByWorkUnit{
-			WorkUnitName: wuID.Name(),
-			TestResults:  testResults,
-		})
-		wuIDs = append(wuIDs, wuID.Name())
-	}
-	dedupKey := fmt.Sprintf("%s-%s", wuIDs, time.Now().UTC().Format(time.RFC3339))
-	notification := &pb.TestResultsNotification{
-		TestResultsByWorkUnit: testResultsByWorkUnit,
-		ResultdbHost:          rdbHostName,
-		Sources:               rootInv.Sources,
-		DeduplicationKey:      fmt.Sprintf("%x", sha256.Sum256([]byte(dedupKey))),
-	}
-	tasks.NotifyTestResults(ctx, notification, attrs)
 	return nil
 }
 

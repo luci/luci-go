@@ -62,6 +62,9 @@ func InitServer(srv *server.Server, opts Options) {
 		taskOpts := sweepWorkUnitsForFinalizationOptions{resultDBHostname: opts.ResultDBHostname}
 		return sweepWorkUnitsForFinalization(ctx, rootinvocations.ID(task.RootInvocationId), task.SequenceNumber, taskOpts)
 	})
+	tasks.TestResultsPublisher.AttachHandler(func(ctx context.Context, msg proto.Message) error {
+		return handlePublishTestResultsTask(ctx, msg, opts.ResultDBHostname)
+	})
 }
 
 // Invocation finalization is asynchronous. First, an invocation transitions

@@ -60,6 +60,14 @@ message PublishTestResults {
   map<string, string> attributes = 2;
 }
 
+// PublishTestResultsTask defines a task to query and publish test results for
+// a set of work units.
+// Next id: 3
+message PublishTestResultsTask {
+  string root_invocation_id = 1;
+  repeated string work_unit_ids = 2;
+}
+
 message ExportInvocationTestResultsToBQ {
   string invocation_id = 1;
   luci.resultdb.v1.BigQueryExport bq_export = 2;
