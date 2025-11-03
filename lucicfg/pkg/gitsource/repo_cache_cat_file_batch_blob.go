@@ -17,6 +17,8 @@ package gitsource
 import (
 	"context"
 	"fmt"
+
+	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 
 func (b *batchProc) catFileBlob(ctx context.Context, commit, path string) ([]byte, error) {
@@ -24,7 +26,7 @@ func (b *batchProc) catFileBlob(ctx context.Context, commit, path string) ([]byt
 	if err != nil {
 		return nil, err
 	}
-	if kind != BlobKind {
+	if kind != source.BlobKind {
 		return nil, fmt.Errorf("not a blob: %s", kind)
 	}
 	return data, nil

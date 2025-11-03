@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 
 	"go.chromium.org/luci/lucicfg/pkg/gitsource"
+	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 
 func must[T any](value T, err error) T {
@@ -200,11 +201,11 @@ func main() {
 
 	patterns := []string{".json", ".cfg", ".template", ".star"}
 
-	fetcher := must(repo.Fetcher(ctx, *ref, *commit, *pkgRoot, func(kind gitsource.ObjectKind, pkgRelPath string) (prefetch bool) {
-		if kind == gitsource.TreeKind && strings.HasSuffix(pkgRelPath, "/generated") || pkgRelPath == "generated" {
+	fetcher := must(repo.Fetcher(ctx, *ref, *commit, *pkgRoot, func(kind source.ObjectKind, pkgRelPath string) (prefetch bool) {
+		if kind == source.TreeKind && strings.HasSuffix(pkgRelPath, "/generated") || pkgRelPath == "generated" {
 			return false
 		}
-		if kind != gitsource.BlobKind {
+		if kind != source.BlobKind {
 			return true // walk all other trees
 		}
 		for _, suffix := range patterns {

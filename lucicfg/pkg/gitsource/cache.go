@@ -18,7 +18,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io"
 	"maps"
@@ -28,9 +27,10 @@ import (
 	"sync"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 
-// Cache maintains all state related to an on-disk cache for one or more
+// cache maintains all state related to an on-disk cache for one or more
 // RepoCache's.
 //
 // This is safe to use from multiple goroutines or processes.
@@ -43,11 +43,11 @@ import (
 //
 // We expect to have multiple, unrelated, remotes, so we need to keep it
 // separated.
-type Cache struct {
+type cache struct {
 	cacheRoot string
 	debugLogs bool
 
-	repos   map[string]*RepoCache
+	repos   map[string]*repoCache
 	reposMu sync.RWMutex
 }
 
@@ -61,20 +61,20 @@ type Cache struct {
 // prodigious debugging logs via luci logging.Debugf and directly to
 // stderr for internal git commands. Otherwise, the Cache and related
 // objects won't log at all.
-func New(cacheRoot string, debugLogs bool) (*Cache, error) {
+func New(cacheRoot string, debugLogs bool) (source.Cache, error) {
 	if !filepath.IsAbs(cacheRoot) {
 		return nil, fmt.Errorf("cacheRoot is not absolute: %q", cacheRoot)
 	}
 	if cleaned := filepath.Clean(cacheRoot); cacheRoot != cleaned {
 		return nil, fmt.Errorf("cacheRoot is not clean: %q (cleaned=%q)", cacheRoot, cleaned)
 	}
-	return &Cache{
+	return &cache{
 		cacheRoot: cacheRoot,
 		debugLogs: debugLogs,
 	}, os.MkdirAll(cacheRoot, 0777)
 }
 
-func (c *Cache) prepDebugContext(ctx context.Context) context.Context {
+func (c *cache) prepDebugContext(ctx context.Context) context.Context {
 	if c.debugLogs {
 		return ctx
 	}
@@ -92,12 +92,8 @@ func (c *Cache) prepDebugContext(ctx context.Context) context.Context {
 //
 // Calling ForRepo multiple times with the same `url` will return an identical
 // *RepoCache.
-func (c *Cache) ForRepo(ctx context.Context, url string) (*RepoCache, error) {
+func (c *cache) ForRepo(ctx context.Context, url string) (source.RepoCache, error) {
 	ctx = c.prepDebugContext(ctx)
-
-	if c.cacheRoot == "" {
-		return nil, errors.New("gitsource.Cache must be constructed with gitsource.New")
-	}
 
 	c.reposMu.RLock()
 	cur := c.repos[url]
@@ -145,15 +141,15 @@ func (c *Cache) ForRepo(ctx context.Context, url string) (*RepoCache, error) {
 	}
 
 	if c.repos == nil {
-		c.repos = make(map[string]*RepoCache)
+		c.repos = make(map[string]*repoCache)
 	}
 	c.repos[url] = ret
 	return ret, nil
 }
 
 // Shutdown terminates long-running processes which may be associated with this
-// Cache.
-func (c *Cache) Shutdown() {
+// cache.
+func (c *cache) Shutdown() {
 	c.reposMu.RLock()
 	caches := slices.Collect(maps.Values(c.repos))
 	c.reposMu.RUnlock()

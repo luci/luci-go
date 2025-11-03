@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 
 func TestPrefetchMultiple(t *testing.T) {
@@ -43,7 +44,7 @@ func TestPrefetchMultiple(t *testing.T) {
 	// make sure that we don't already have these objects in our cache repo
 	for _, obj := range objects {
 		_, _, err := repo.batchProc.catFile(context.Background(), obj)
-		assert.ErrIsLike(t, err, ErrMissingObject)
+		assert.ErrIsLike(t, err, source.ErrMissingObject)
 	}
 
 	// prefetch them all

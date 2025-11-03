@@ -29,12 +29,13 @@ import (
 	"syscall"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 
 type treeEntry struct {
 	name string
 	mode int64
-	kind ObjectKind
+	kind source.ObjectKind
 	hash string
 }
 type tree []treeEntry
@@ -44,7 +45,7 @@ func (b *batchProc) catFileTree(ctx context.Context, commit, path string) (tree,
 	if err != nil {
 		return nil, err
 	}
-	if kind != TreeKind {
+	if kind != source.TreeKind {
 		return nil, fmt.Errorf("not a tree: %s", kind)
 	}
 
@@ -79,17 +80,17 @@ func (b *batchProc) catFileTree(ctx context.Context, commit, path string) (tree,
 			return nil, fmt.Errorf("could not parse mode: %q: %w", modeStr, err)
 		}
 
-		kind := UnknownKind
+		kind := source.UnknownKind
 		switch mode {
 		case syscall.S_IFDIR:
-			kind = TreeKind
+			kind = source.TreeKind
 		case syscall.S_IFLNK:
-			kind = SymlinkKind
+			kind = source.SymlinkKind
 		case syscall.S_IFDIR + syscall.S_IFLNK:
-			kind = GitLinkKind
+			kind = source.GitLinkKind
 		case syscall.S_IFREG + 0o644, syscall.S_IFREG + 0o755:
 			// don't need to distinguish +x, original mode is also returned.
-			kind = BlobKind
+			kind = source.BlobKind
 		}
 
 		ret = append(ret, treeEntry{nameStr, mode, kind, hex.EncodeToString(hash)})
@@ -114,7 +115,7 @@ func (b *batchProc) catFileTreeWalk(ctx context.Context, commit, repoRelPath str
 		if _, has := skipIdxs[i]; has {
 			continue
 		}
-		if entry.kind == TreeKind {
+		if entry.kind == source.TreeKind {
 			if strings.Contains(entry.name, "/") {
 				return fmt.Errorf("catFileTreeWalk: %s:%s: entry %q contains /", commit, repoRelPath, entry.name)
 			}

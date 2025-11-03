@@ -172,6 +172,9 @@ type Repo interface {
 	// PickMostRecent returns the most recent version from the given list.
 	PickMostRecent(ctx context.Context, vers []string) (string, error)
 	// Fetch fetches a single file at some revision.
+	//
+	// This should only be used sparingly as it may be expensive relative to
+	// Loader.
 	Fetch(ctx context.Context, rev, path string) ([]byte, error)
 	// Loader fetches package files and returns a loader with them.
 	Loader(ctx context.Context, rev, pkgDir, pkgName string, resources *fileset.Set) (interpreter.Loader, error)

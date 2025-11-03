@@ -31,16 +31,17 @@ func mkRepoRaw(t testing.TB) string {
 	return ret
 }
 
-func mkRepo(t *testing.T, prefetch ...string) *RepoCache {
+func mkRepo(t *testing.T, prefetch ...string) *repoCache {
 	t.Helper()
 
 	cache, err := New(t.TempDir(), testing.Verbose())
 	assert.NoErr(t, err, truth.LineContext())
+	t.Cleanup(cache.Shutdown)
 
-	ret, err := cache.ForRepo(context.Background(), mkRepoRaw(t))
+	retIface, err := cache.ForRepo(context.Background(), mkRepoRaw(t))
 	assert.NoErr(t, err, truth.LineContext())
+	ret := retIface.(*repoCache)
 
-	t.Cleanup(ret.Shutdown)
 	assert.NoErr(t, ret.prefetchMultiple(context.Background(), prefetch), truth.LineContext())
 
 	return ret

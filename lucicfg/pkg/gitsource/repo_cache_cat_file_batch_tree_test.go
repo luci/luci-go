@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 
 func init() {
@@ -41,12 +42,12 @@ func TestCatFileTree(t *testing.T) {
 	got, err := r.batchProc.catFileTree(context.Background(), commit, "")
 	assert.NoErr(t, err)
 	assert.That(t, got, should.Match(tree{
-		{"collision1", 0o100644, BlobKind, "6371c00ed96239f955ecdb11c96fcd578eff821d"},
-		{"collision2", 0o100644, BlobKind, "637172bb3ec0d2d76c7e5b2b5f21b9e5bf3aae96"},
-		{"infra", 0o160000, GitLinkKind, "4585ca362480300618eec126795cb0572a0adda8"},
-		{"similardirs", 0o40000, TreeKind, "55fa4e4b59d7d03fc048bce7d64176d889a6e49b"},
-		{"subdir", 0o40000, TreeKind, "af90ae6e2e62fde20aeefdec4c045682f00ef551"},
-		{"unrelated_file", 0o100644, BlobKind, "366cd2cbff6025c2ace384a7e43a5b81f29ebc75"},
+		{"collision1", 0o100644, source.BlobKind, "6371c00ed96239f955ecdb11c96fcd578eff821d"},
+		{"collision2", 0o100644, source.BlobKind, "637172bb3ec0d2d76c7e5b2b5f21b9e5bf3aae96"},
+		{"infra", 0o160000, source.GitLinkKind, "4585ca362480300618eec126795cb0572a0adda8"},
+		{"similardirs", 0o40000, source.TreeKind, "55fa4e4b59d7d03fc048bce7d64176d889a6e49b"},
+		{"subdir", 0o40000, source.TreeKind, "af90ae6e2e62fde20aeefdec4c045682f00ef551"},
+		{"unrelated_file", 0o100644, source.BlobKind, "366cd2cbff6025c2ace384a7e43a5b81f29ebc75"},
 	}))
 }
 
@@ -68,18 +69,18 @@ func TestCatFileTreeWalk(t *testing.T) {
 	})
 	assert.NoErr(t, err)
 	assert.That(t, wholeTree, should.Match(tree{
-		{"collision1", 0o100644, BlobKind, "6371c00ed96239f955ecdb11c96fcd578eff821d"},
-		{"collision2", 0o100644, BlobKind, "637172bb3ec0d2d76c7e5b2b5f21b9e5bf3aae96"},
-		{"subdir", 0o40000, TreeKind, "af90ae6e2e62fde20aeefdec4c045682f00ef551"},
-		{"unrelated_file", 0o100644, BlobKind, "366cd2cbff6025c2ace384a7e43a5b81f29ebc75"},
-		{"subdir/PACKAGE.star", 0o100644, BlobKind, "fa70b1cd267f69a7a6ea237364ae3b71907b5005"},
-		{"subdir/UNREFERENCED_DATA", 0o100644, BlobKind, "0a2bb89ae387fbbfe5e2eecf5a1c49f45e30e5dc"},
-		{"subdir/builders.json", 0o100644, BlobKind, "9acec8c9a4931845dea5669205e319498c787844"},
-		{"subdir/generated", 0o40000, TreeKind, "5dac1d6b9095a126188f69b2527625b00addbcea"},
-		{"subdir/main.star", 0o100755, BlobKind, "37f1199eb96be259092fb9906d4d412ea7357f2d"},
-		{"subdir/generated/cr-buildbucket.cfg", 0o100644, BlobKind, "05531497834273d365cc3f1c318069ed0e222b9d"},
-		{"subdir/generated/project.cfg", 0o100644, BlobKind, "3573c9a2ac92f0f96a5e53fa29c10e5fd09c983b"},
-		{"subdir/generated/realms.cfg", 0o100644, BlobKind, "b423929a035c9209e85661588be48f304585b0bb"},
+		{"collision1", 0o100644, source.BlobKind, "6371c00ed96239f955ecdb11c96fcd578eff821d"},
+		{"collision2", 0o100644, source.BlobKind, "637172bb3ec0d2d76c7e5b2b5f21b9e5bf3aae96"},
+		{"subdir", 0o40000, source.TreeKind, "af90ae6e2e62fde20aeefdec4c045682f00ef551"},
+		{"unrelated_file", 0o100644, source.BlobKind, "366cd2cbff6025c2ace384a7e43a5b81f29ebc75"},
+		{"subdir/PACKAGE.star", 0o100644, source.BlobKind, "fa70b1cd267f69a7a6ea237364ae3b71907b5005"},
+		{"subdir/UNREFERENCED_DATA", 0o100644, source.BlobKind, "0a2bb89ae387fbbfe5e2eecf5a1c49f45e30e5dc"},
+		{"subdir/builders.json", 0o100644, source.BlobKind, "9acec8c9a4931845dea5669205e319498c787844"},
+		{"subdir/generated", 0o40000, source.TreeKind, "5dac1d6b9095a126188f69b2527625b00addbcea"},
+		{"subdir/main.star", 0o100755, source.BlobKind, "37f1199eb96be259092fb9906d4d412ea7357f2d"},
+		{"subdir/generated/cr-buildbucket.cfg", 0o100644, source.BlobKind, "05531497834273d365cc3f1c318069ed0e222b9d"},
+		{"subdir/generated/project.cfg", 0o100644, source.BlobKind, "3573c9a2ac92f0f96a5e53fa29c10e5fd09c983b"},
+		{"subdir/generated/realms.cfg", 0o100644, source.BlobKind, "b423929a035c9209e85661588be48f304585b0bb"},
 	}))
 }
 
@@ -105,15 +106,15 @@ func TestCatFileTreeWalkSkipTree(t *testing.T) {
 	})
 	assert.NoErr(t, err)
 	assert.That(t, wholeTree, should.Match(tree{
-		{"collision1", 0o100644, BlobKind, "6371c00ed96239f955ecdb11c96fcd578eff821d"},
-		{"collision2", 0o100644, BlobKind, "637172bb3ec0d2d76c7e5b2b5f21b9e5bf3aae96"},
-		{"subdir", 0o40000, TreeKind, "af90ae6e2e62fde20aeefdec4c045682f00ef551"},
-		{"unrelated_file", 0o100644, BlobKind, "366cd2cbff6025c2ace384a7e43a5b81f29ebc75"},
-		{"subdir/PACKAGE.star", 0o100644, BlobKind, "fa70b1cd267f69a7a6ea237364ae3b71907b5005"},
-		{"subdir/UNREFERENCED_DATA", 0o100644, BlobKind, "0a2bb89ae387fbbfe5e2eecf5a1c49f45e30e5dc"},
-		{"subdir/builders.json", 0o100644, BlobKind, "9acec8c9a4931845dea5669205e319498c787844"},
-		{"subdir/generated", 0o40000, TreeKind, "5dac1d6b9095a126188f69b2527625b00addbcea"},
-		{"subdir/main.star", 0o100755, BlobKind, "37f1199eb96be259092fb9906d4d412ea7357f2d"},
+		{"collision1", 0o100644, source.BlobKind, "6371c00ed96239f955ecdb11c96fcd578eff821d"},
+		{"collision2", 0o100644, source.BlobKind, "637172bb3ec0d2d76c7e5b2b5f21b9e5bf3aae96"},
+		{"subdir", 0o40000, source.TreeKind, "af90ae6e2e62fde20aeefdec4c045682f00ef551"},
+		{"unrelated_file", 0o100644, source.BlobKind, "366cd2cbff6025c2ace384a7e43a5b81f29ebc75"},
+		{"subdir/PACKAGE.star", 0o100644, source.BlobKind, "fa70b1cd267f69a7a6ea237364ae3b71907b5005"},
+		{"subdir/UNREFERENCED_DATA", 0o100644, source.BlobKind, "0a2bb89ae387fbbfe5e2eecf5a1c49f45e30e5dc"},
+		{"subdir/builders.json", 0o100644, source.BlobKind, "9acec8c9a4931845dea5669205e319498c787844"},
+		{"subdir/generated", 0o40000, source.TreeKind, "5dac1d6b9095a126188f69b2527625b00addbcea"},
+		{"subdir/main.star", 0o100755, source.BlobKind, "37f1199eb96be259092fb9906d4d412ea7357f2d"},
 	}))
 }
 
@@ -138,9 +139,9 @@ func TestCatFileTreeWalkSameTree(t *testing.T) {
 
 	// note that `a` and `b` have the same tree hash deb57a1a256b3fb1e0725fbf42fee8d047f72293
 	assert.That(t, wholeTree, should.Match(tree{
-		{"similardirs/a", 0o40000, TreeKind, "deb57a1a256b3fb1e0725fbf42fee8d047f72293"},
-		{"similardirs/b", 0o40000, TreeKind, "deb57a1a256b3fb1e0725fbf42fee8d047f72293"},
-		{"similardirs/a/foo.json", 0o100644, BlobKind, "35e752b3afcf6391fdbd17f25285d9963f349b50"},
-		{"similardirs/b/foo.json", 0o100644, BlobKind, "35e752b3afcf6391fdbd17f25285d9963f349b50"},
+		{"similardirs/a", 0o40000, source.TreeKind, "deb57a1a256b3fb1e0725fbf42fee8d047f72293"},
+		{"similardirs/b", 0o40000, source.TreeKind, "deb57a1a256b3fb1e0725fbf42fee8d047f72293"},
+		{"similardirs/a/foo.json", 0o100644, source.BlobKind, "35e752b3afcf6391fdbd17f25285d9963f349b50"},
+		{"similardirs/b/foo.json", 0o100644, source.BlobKind, "35e752b3afcf6391fdbd17f25285d9963f349b50"},
 	}))
 }

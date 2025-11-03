@@ -71,13 +71,17 @@ func TestCacheForRepo(t *testing.T) {
 	t.Run("ok", func(t *testing.T) {
 		sharedCacheDir := t.TempDir()
 
-		cache, err := New(sharedCacheDir, testing.Verbose())
+		cacheIface, err := New(sharedCacheDir, testing.Verbose())
 		assert.NoErr(t, err)
+
+		cache := cacheIface.(*cache)
 
 		ctx := context.Background()
 
-		repo, err := cache.ForRepo(ctx, tempRepo)
+		repoIface, err := cache.ForRepo(ctx, tempRepo)
 		assert.NoErr(t, err)
+
+		repo := repoIface.(*repoCache)
 
 		files, err := os.ReadDir(cache.cacheRoot)
 		assert.NoErr(t, err)
@@ -86,8 +90,9 @@ func TestCacheForRepo(t *testing.T) {
 		check.That(t, files[0].Name(), should.Equal(filepath.Base(repo.repoRoot)))
 
 		t.Run("identical second lookup", func(t *testing.T) {
-			repo2, err := cache.ForRepo(ctx, tempRepo)
+			repo2Iface, err := cache.ForRepo(ctx, tempRepo)
 			assert.NoErr(t, err)
+			repo2 := repo2Iface.(*repoCache)
 			assert.That(t, repo, should.Equal(repo2)) // should be identical
 		})
 
@@ -95,15 +100,11 @@ func TestCacheForRepo(t *testing.T) {
 			cache2, err := New(sharedCacheDir, testing.Verbose())
 			assert.NoErr(t, err)
 
-			repo2, err := cache2.ForRepo(ctx, tempRepo)
+			repo2Iface, err := cache2.ForRepo(ctx, tempRepo)
 			assert.NoErr(t, err)
+			repo2 := repo2Iface.(*repoCache)
 
 			assert.That(t, repo2.repoRoot, should.Equal(repo.repoRoot))
 		})
-	})
-
-	t.Run("bad cache", func(t *testing.T) {
-		_, err := (&Cache{}).ForRepo(context.Background(), "does not matter")
-		assert.ErrIsLike(t, err, "must be constructed")
 	})
 }

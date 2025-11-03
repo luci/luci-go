@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/lucicfg/fileset"
 	"go.chromium.org/luci/lucicfg/pkg/gitsource"
+	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 
 // RemoteRepoManager implements RepoManager that knows how to work with remote
@@ -38,7 +39,7 @@ type RemoteRepoManager struct {
 
 	m     sync.Mutex
 	err   error
-	cache *gitsource.Cache
+	cache source.Cache
 	repos map[RepoKey]*remoteRepoImpl
 	sem   *semaphore.Weighted
 }
@@ -123,7 +124,7 @@ func (r *RemoteRepoManager) initLocked() error {
 // remoteRepoImpl implements Repo.
 type remoteRepoImpl struct {
 	repoKey   RepoKey
-	repoCache *gitsource.RepoCache
+	repoCache source.RepoCache
 	sem       *semaphore.Weighted
 }
 
@@ -142,7 +143,7 @@ func (r *remoteRepoImpl) Fetch(ctx context.Context, rev string, repoPath string)
 	defer r.acquireFetchConcurrencySlot(ctx)()
 
 	basePath := path.Base(repoPath)
-	fetcher, err := r.repoCache.Fetcher(ctx, r.repoKey.Ref, rev, path.Dir(repoPath), func(kind gitsource.ObjectKind, pkgRelPath string) bool {
+	fetcher, err := r.repoCache.Fetcher(ctx, r.repoKey.Ref, rev, path.Dir(repoPath), func(kind source.ObjectKind, pkgRelPath string) bool {
 		return pkgRelPath == basePath
 	})
 	if err != nil {
@@ -162,8 +163,8 @@ func (r *remoteRepoImpl) IsOverride() bool {
 func (r *remoteRepoImpl) Loader(ctx context.Context, rev string, pkgDir string, pkgName string, resources *fileset.Set) (interpreter.Loader, error) {
 	defer r.acquireFetchConcurrencySlot(ctx)()
 
-	fetcher, err := r.repoCache.Fetcher(ctx, r.repoKey.Ref, rev, pkgDir, func(kind gitsource.ObjectKind, pkgRelPath string) bool {
-		if kind == gitsource.TreeKind {
+	fetcher, err := r.repoCache.Fetcher(ctx, r.repoKey.Ref, rev, pkgDir, func(kind source.ObjectKind, pkgRelPath string) bool {
+		if kind == source.TreeKind {
 			return true
 		}
 		if strings.HasSuffix(pkgRelPath, ".star") {
@@ -177,7 +178,7 @@ func (r *remoteRepoImpl) Loader(ctx context.Context, rev string, pkgDir string, 
 	})
 
 	switch {
-	case errors.Is(err, gitsource.ErrMissingObject):
+	case errors.Is(err, source.ErrMissingObject):
 		return nil, errors.Fmt("%s doesn't not contain %q", r.repoKey, rev)
 	case err != nil:
 		return nil, errors.Fmt("prefetching %q of %s/%s: %w", rev, r.repoKey, pkgDir, err)
@@ -190,7 +191,7 @@ func (r *remoteRepoImpl) Loader(ctx context.Context, rev string, pkgDir string, 
 			// Note: these are assumed to be local ops at this point and they do not
 			// require acquireFetchConcurrencySlot.
 			switch r, err := fetcher.Read(ctx, path); {
-			case errors.Is(err, gitsource.ErrObjectNotPrefetched):
+			case errors.Is(err, source.ErrObjectNotPrefetched):
 				return nil, interpreter.ErrNoModule
 			case err != nil:
 				return nil, err

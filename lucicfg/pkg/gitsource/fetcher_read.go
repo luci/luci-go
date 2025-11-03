@@ -16,28 +16,23 @@ package gitsource
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"path"
-)
 
-var (
-	ErrMissingCommit       = errors.New("commit is missing")
-	ErrMissingObject       = errors.New("object is missing")
-	ErrObjectNotPrefetched = errors.New("object was not prefeched")
+	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 
 // Read returns the bytes of the blob indicated by pkgRelPath.
 //
-// Returns ErrObjectNotPrefetched if the object wasn't prefetched.
-func (g *GitFetcher) Read(ctx context.Context, pkgRelPath string) ([]byte, error) {
+// Returns source.ErrObjectNotPrefetched if the object wasn't prefetched.
+func (g *gitFetcher) Read(ctx context.Context, pkgRelPath string) ([]byte, error) {
 	ctx = g.r.prepDebugContext(ctx)
 
 	if cleaned := path.Clean(pkgRelPath); pkgRelPath != cleaned {
 		return nil, fmt.Errorf("pkgRelPath is not clean: %q (cleaned=%q)", pkgRelPath, cleaned)
 	}
 	if !g.allowedBlobPaths.Has(pkgRelPath) {
-		return nil, fmt.Errorf("GitFetcher.Read: %q: %w", pkgRelPath, ErrObjectNotPrefetched)
+		return nil, fmt.Errorf("GitFetcher.Read: %q: %w", pkgRelPath, source.ErrObjectNotPrefetched)
 	}
 
 	data, err := g.r.batchProc.catFileBlob(ctx, g.commit, path.Join(g.pkgRoot, pkgRelPath))

@@ -26,9 +26,9 @@ import (
 func TestCommitParse(t *testing.T) {
 	ctx := context.Background()
 
-	run := func(message []string, expect Commit) func(t *testing.T) {
+	run := func(message []string, expect commitObj) func(t *testing.T) {
 		return func(t *testing.T) {
-			actual := Commit{}
+			actual := commitObj{}
 			assert.NoErr(t, actual.parse(ctx, message))
 			assert.That(t, actual, should.Match(expect))
 		}
@@ -52,7 +52,7 @@ func TestCommitParse(t *testing.T) {
 		"Reviewed-by: Ace Codegal <ace@example.com>",
 		"Reviewed-by: Binny Truli <binny@example.org>",
 		"Cr-Commit-Position: refs/heads/main@{#123456}",
-	}, Commit{
+	}, commitObj{
 		Tree: "87e5668936da787a6ff47774f61aa7053e9f5144",
 		Parents: []string{
 			"02d24d062e5e98992724f0c70780ebbf48c8b963",

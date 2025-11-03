@@ -32,8 +32,8 @@ import (
 
 	"go.chromium.org/luci/lucicfg/internal"
 	"go.chromium.org/luci/lucicfg/internal/ui"
-	"go.chromium.org/luci/lucicfg/pkg/gitsource"
 	"go.chromium.org/luci/lucicfg/pkg/mvs"
+	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 
 // DepContext points to a "current" package when traversing dependencies.
@@ -576,9 +576,9 @@ func errorForActivity(err error, path string) string {
 	switch {
 	case errors.Is(err, context.Canceled):
 		return "canceled"
-	case errors.Is(err, gitsource.ErrMissingCommit):
+	case errors.Is(err, source.ErrMissingCommit):
 		return "no such commit"
-	case errors.Is(err, gitsource.ErrMissingObject):
+	case errors.Is(err, source.ErrMissingObject):
 		return fmt.Sprintf("%s: no such file in the commit or no such commit", path)
 	}
 
@@ -593,7 +593,7 @@ func errorForActivity(err error, path string) string {
 	// present in activities UI (like the repo and commit being worked on). Full
 	// errors are displayed in the log at the end of the failed run. Activities UI
 	// shows only the root cause.
-	var gitErr *gitsource.GitError
+	var gitErr *source.GitError
 	if errors.As(err, &gitErr) {
 		return fmt.Sprintf("git: %s", gitErr.Err)
 	}

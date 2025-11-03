@@ -37,7 +37,7 @@ func isObjID(objName []byte) bool {
 // fetched locally.
 //
 // If they are already locally present, this is a fast noop.
-func (r *RepoCache) prefetchMultiple(ctx context.Context, objectNames []string, extraFlags ...string) error {
+func (r *repoCache) prefetchMultiple(ctx context.Context, objectNames []string, extraFlags ...string) error {
 	if len(objectNames) == 0 {
 		return nil
 	}

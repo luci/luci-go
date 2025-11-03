@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gitsource
+package source
 
 //go:generate stringer -type=ObjectKind
 type ObjectKind int
@@ -40,7 +40,8 @@ var kindMap = map[string]ObjectKind{
 	"notdir":   NotDirSymlinkKind,
 }
 
-func parseKind(data string) ObjectKind {
+// ParseKind parses a string to an ObjectKind.
+func ParseKind(data string) ObjectKind {
 	// 0 val is unknownKind, so missing strings will be unknownKind
 	return kindMap[data]
 }

@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/exec"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 
 type batchProc struct {
@@ -60,7 +61,7 @@ func (b *batchProc) shutdownLocked() {
 	b.stdout = nil
 }
 
-func parseCatFileResponse(stdout *bufio.Reader) (kind ObjectKind, data []byte, err error) {
+func parseCatFileResponse(stdout *bufio.Reader) (kind source.ObjectKind, data []byte, err error) {
 	// first, pull through to the next NULL - this is our status line
 	statusBytes, err := stdout.ReadBytes(0)
 	if err != nil {
@@ -72,7 +73,7 @@ func parseCatFileResponse(stdout *bufio.Reader) (kind ObjectKind, data []byte, e
 	// next, check the end of the status line. This will tell us if we are in an
 	// error condition of some kind.
 	if strings.HasSuffix(status, " missing") {
-		err = ErrMissingObject
+		err = source.ErrMissingObject
 		return
 	}
 	if strings.HasSuffix(status, " ambiguous") {
@@ -111,7 +112,7 @@ func parseCatFileResponse(stdout *bufio.Reader) (kind ObjectKind, data []byte, e
 		err = fmt.Errorf("non-NULL followed object data?")
 		return
 	}
-	kind = parseKind(tokens[len(tokens)-2])
+	kind = source.ParseKind(tokens[len(tokens)-2])
 	return
 }
 
@@ -140,8 +141,8 @@ func (b *batchProc) ensureCatFileBatchProcLocked(ctx context.Context) error {
 	return nil
 }
 
-func (b *batchProc) catFile(ctx context.Context, request string) (kind ObjectKind, data []byte, err error) {
-	kind, data, err = func() (kind ObjectKind, data []byte, err error) {
+func (b *batchProc) catFile(ctx context.Context, request string) (kind source.ObjectKind, data []byte, err error) {
+	kind, data, err = func() (kind source.ObjectKind, data []byte, err error) {
 		b.mu.Lock()
 		defer b.mu.Unlock()
 
@@ -235,18 +236,18 @@ func (b *batchProc) catFile(ctx context.Context, request string) (kind ObjectKin
 		return
 	}()
 	if err != nil {
-		return UnknownKind, nil, err
+		return source.UnknownKind, nil, err
 	}
 
 	// Handle error cases:
 	switch kind {
-	case SymlinkKind:
+	case source.SymlinkKind:
 		err = fmt.Errorf("symlink points out of repo: %q", string(data))
-	case DanglingSymlinkKind:
+	case source.DanglingSymlinkKind:
 		err = fmt.Errorf("symlink (transitively?) points to a missing file: %q", string(data))
-	case LoopingSymlinkKind:
+	case source.LoopingSymlinkKind:
 		err = fmt.Errorf("symlink (transitively?) points to itself (or has >40 hops): %q", string(data))
-	case NotDirSymlinkKind:
+	case source.NotDirSymlinkKind:
 		err = fmt.Errorf("symlink (transitively?) uses file as directory: %q", string(data))
 	}
 	return

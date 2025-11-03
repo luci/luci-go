@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 
 func TestReadNoPrefetch(t *testing.T) {
@@ -40,10 +41,10 @@ func TestFetcherNoCommit(t *testing.T) {
 	repo := mkRepo(t)
 
 	_, err := repo.Fetcher(
-		context.Background(), "refs/heads/main", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", "subdir", func(kind ObjectKind, pkgRelPath string) bool {
+		context.Background(), "refs/heads/main", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", "subdir", func(kind source.ObjectKind, pkgRelPath string) bool {
 			return true
 		})
-	assert.ErrIsLike(t, err, ErrMissingObject)
+	assert.ErrIsLike(t, err, source.ErrMissingObject)
 }
 
 func TestFetcherNoSubdir(t *testing.T) {
@@ -52,10 +53,10 @@ func TestFetcherNoSubdir(t *testing.T) {
 	repo := mkRepo(t)
 
 	_, err := repo.Fetcher(
-		context.Background(), "refs/heads/main", "e0d8ad8ebb113bc1eb10be628cd57e3a7684df4f", "I DO NOT EXIST", func(kind ObjectKind, pkgRelPath string) bool {
+		context.Background(), "refs/heads/main", "e0d8ad8ebb113bc1eb10be628cd57e3a7684df4f", "I DO NOT EXIST", func(kind source.ObjectKind, pkgRelPath string) bool {
 			return true
 		})
-	assert.ErrIsLike(t, err, ErrMissingObject)
+	assert.ErrIsLike(t, err, source.ErrMissingObject)
 }
 
 func TestReadPrefetch(t *testing.T) {
@@ -65,9 +66,9 @@ func TestReadPrefetch(t *testing.T) {
 
 	sawNames := stringset.New(10)
 	fetcher, err := repo.Fetcher(
-		context.Background(), "refs/heads/main", "e0d8ad8ebb113bc1eb10be628cd57e3a7684df4f", "subdir", func(kind ObjectKind, pkgRelPath string) bool {
+		context.Background(), "refs/heads/main", "e0d8ad8ebb113bc1eb10be628cd57e3a7684df4f", "subdir", func(kind source.ObjectKind, pkgRelPath string) bool {
 			sawNames.Add(pkgRelPath)
-			return kind != BlobKind || strings.HasSuffix(pkgRelPath, ".star")
+			return kind != source.BlobKind || strings.HasSuffix(pkgRelPath, ".star")
 		})
 	assert.NoErr(t, err)
 
@@ -97,8 +98,8 @@ func TestReadPrefetchMissingBlob(t *testing.T) {
 	repo := mkRepo(t)
 
 	fetcher, err := repo.Fetcher(
-		context.Background(), "refs/heads/main", "e0d8ad8ebb113bc1eb10be628cd57e3a7684df4f", "subdir", func(kind ObjectKind, pkgRelPath string) bool {
-			return kind != BlobKind || strings.HasSuffix(pkgRelPath, ".star")
+		context.Background(), "refs/heads/main", "e0d8ad8ebb113bc1eb10be628cd57e3a7684df4f", "subdir", func(kind source.ObjectKind, pkgRelPath string) bool {
+			return kind != source.BlobKind || strings.HasSuffix(pkgRelPath, ".star")
 		})
 	assert.NoErr(t, err)
 
@@ -107,7 +108,7 @@ func TestReadPrefetchMissingBlob(t *testing.T) {
 	assert.NoErr(t, err)
 
 	_, err = fetcher.Read(context.Background(), "Does Not Exist")
-	assert.ErrIsLike(t, err, ErrObjectNotPrefetched)
+	assert.ErrIsLike(t, err, source.ErrObjectNotPrefetched)
 }
 
 func TestReadPrefetchMissingCommit(t *testing.T) {
@@ -116,8 +117,8 @@ func TestReadPrefetchMissingCommit(t *testing.T) {
 	repo := mkRepo(t)
 
 	_, err := repo.Fetcher(
-		context.Background(), "refs/heads/main", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", "subdir", func(kind ObjectKind, pkgRelPath string) bool {
-			return kind != BlobKind || strings.HasSuffix(pkgRelPath, ".star")
+		context.Background(), "refs/heads/main", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", "subdir", func(kind source.ObjectKind, pkgRelPath string) bool {
+			return kind != source.BlobKind || strings.HasSuffix(pkgRelPath, ".star")
 		})
-	assert.ErrIsLike(t, err, ErrMissingObject)
+	assert.ErrIsLike(t, err, source.ErrMissingObject)
 }

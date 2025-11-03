@@ -25,9 +25,10 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/exec"
+	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 
-type Commit struct {
+type commitObj struct {
 	ID            string
 	Tree          string
 	Parents       []string
@@ -39,7 +40,7 @@ type Commit struct {
 	Trailers      map[string][]string
 }
 
-func (c *Commit) OldestTime() time.Time {
+func (c *commitObj) OldestTime() time.Time {
 	if c.CommitterTime.Before(c.AuthorTime) {
 		return c.CommitterTime
 	}
@@ -72,10 +73,10 @@ func parseUserTime(value string) (user string, ts time.Time) {
 	return
 }
 
-type parserFn func(ctx context.Context, c *Commit, lines []string) ([]string, error)
+type parserFn func(ctx context.Context, c *commitObj, lines []string) ([]string, error)
 
 var parsers = []parserFn{
-	func(ctx context.Context, c *Commit, lines []string) ([]string, error) {
+	func(ctx context.Context, c *commitObj, lines []string) ([]string, error) {
 		treeVal, ok := strings.CutPrefix(lines[0], "tree ")
 		if !ok {
 			return nil, fmt.Errorf("expected tree")
@@ -83,7 +84,7 @@ var parsers = []parserFn{
 		c.Tree = treeVal
 		return lines[1:], nil
 	},
-	func(ctx context.Context, c *Commit, lines []string) ([]string, error) {
+	func(ctx context.Context, c *commitObj, lines []string) ([]string, error) {
 		for len(lines) > 0 {
 			parentVal, ok := strings.CutPrefix(lines[0], "parent ")
 			if !ok {
@@ -94,7 +95,7 @@ var parsers = []parserFn{
 		}
 		return lines, nil
 	},
-	func(ctx context.Context, c *Commit, lines []string) ([]string, error) {
+	func(ctx context.Context, c *commitObj, lines []string) ([]string, error) {
 		authorVal, ok := strings.CutPrefix(lines[0], "author ")
 		if !ok {
 			return nil, fmt.Errorf("expected author")
@@ -102,7 +103,7 @@ var parsers = []parserFn{
 		c.Author, c.AuthorTime = parseUserTime(authorVal)
 		return lines[1:], nil
 	},
-	func(ctx context.Context, c *Commit, lines []string) ([]string, error) {
+	func(ctx context.Context, c *commitObj, lines []string) ([]string, error) {
 		committerVal, ok := strings.CutPrefix(lines[0], "committer ")
 		if !ok {
 			return nil, fmt.Errorf("expected committer")
@@ -110,13 +111,13 @@ var parsers = []parserFn{
 		c.Committer, c.CommitterTime = parseUserTime(committerVal)
 		return lines[1:], nil
 	},
-	func(ctx context.Context, c *Commit, lines []string) ([]string, error) {
+	func(ctx context.Context, c *commitObj, lines []string) ([]string, error) {
 		if lines[0] != "" {
 			return nil, fmt.Errorf("expected empty line")
 		}
 		return lines[1:], nil
 	},
-	func(ctx context.Context, c *Commit, lines []string) ([]string, error) {
+	func(ctx context.Context, c *commitObj, lines []string) ([]string, error) {
 		lastBlockIdx := -1
 		for i, line := range slices.Backward(lines) {
 			if strings.TrimSpace(line) == "" {
@@ -158,7 +159,7 @@ var parsers = []parserFn{
 	},
 }
 
-func (c *Commit) parse(ctx context.Context, lines []string) (err error) {
+func (c *commitObj) parse(ctx context.Context, lines []string) (err error) {
 	if lastIdx := len(lines) - 1; lines[lastIdx] == "" {
 		lines = lines[:lastIdx]
 	}
@@ -172,16 +173,16 @@ func (c *Commit) parse(ctx context.Context, lines []string) (err error) {
 	return nil
 }
 
-func (b *batchProc) catFileCommit(ctx context.Context, commit string) (ret *Commit, err error) {
+func (b *batchProc) catFileCommit(ctx context.Context, commit string) (ret *commitObj, err error) {
 	kind, data, err := b.catFile(ctx, commit)
 	if err != nil {
 		return
 	}
-	if kind != CommitKind {
-		err = fmt.Errorf("catFileCommit(%q): expected %s got %s", commit, CommitKind, kind)
+	if kind != source.CommitKind {
+		err = fmt.Errorf("catFileCommit(%q): expected %s got %s", commit, source.CommitKind, kind)
 		return
 	}
-	ret = &Commit{}
+	ret = &commitObj{}
 	ret.ID = commit
 	err = ret.parse(ctx, strings.Split(string(data), "\n"))
 	return

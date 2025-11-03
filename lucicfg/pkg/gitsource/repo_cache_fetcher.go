@@ -25,31 +25,10 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/lucicfg/internal/ui"
+	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 
-// Fetcher returns a new GitFetcher pinned to the given ref, commit, and
-// pkgRoot in this repo.
-//
-// `ref` must be in the form `refs/*`, and must contain `commit`. If a ref is
-// provided which does not contain `commit`, this returns ErrMissingObject.
-//
-// `commit` must be a full git commit id as hex.
-//
-// `pkgRoot` is the subdirectory within this commit that arguments to Read are
-// relative to. If this is "", it means that the pkgRelPath's are relative to
-// the root of the commit.
-//
-// `prefetch` MUST be provided, it will be called once for each entry in the git
-// tree corresponding to `commit` which is contained within `pkgRoot`. If this
-// returns `true`, then the indicated object will be added to a list of prefetch
-// objects and fetched before this function returns. If this returns `false` for
-// a TreeKind entry, traversing that entire subtree will be skipped.
-//
-// The returned GitFetcher will ONLY be allowed to read data prefetched by the
-// `prefetch` function.
-//
-// Returns ErrMissingObject if `commit` or `commit:pkgRoot` are unknown.
-func (r *RepoCache) Fetcher(ctx context.Context, ref, commit, pkgRoot string, prefetch func(kind ObjectKind, pkgRelPath string) bool) (*GitFetcher, error) {
+func (r *repoCache) Fetcher(ctx context.Context, ref, commit, pkgRoot string, prefetch func(kind source.ObjectKind, pkgRelPath string) bool) (source.Fetcher, error) {
 	ctx = r.prepDebugContext(ctx)
 
 	if r.repoRoot == "" {
@@ -62,7 +41,7 @@ func (r *RepoCache) Fetcher(ctx context.Context, ref, commit, pkgRoot string, pr
 	// test if $commit *and its trees* is in our repo
 	_, err := r.batchProc.catFileTree(ctx, commit, "")
 	if err != nil {
-		if !errors.Is(err, ErrMissingObject) {
+		if !errors.Is(err, source.ErrMissingObject) {
 			return nil, err
 		}
 		// Fetch it
@@ -72,7 +51,7 @@ func (r *RepoCache) Fetcher(ctx context.Context, ref, commit, pkgRoot string, pr
 			// If the remote doesn't understand what we want to fetch, return
 			// ErrMissingObject immediately.
 			if bytes.Contains(output, []byte("not our ref")) {
-				err = ErrMissingObject
+				err = source.ErrMissingObject
 			}
 			return nil, err
 		}
@@ -90,7 +69,7 @@ func (r *RepoCache) Fetcher(ctx context.Context, ref, commit, pkgRoot string, pr
 		pkgRoot = ""
 	}
 
-	ret := &GitFetcher{
+	ret := &gitFetcher{
 		r:       r,
 		ref:     ref,
 		commit:  commit,
@@ -113,7 +92,7 @@ func (r *RepoCache) Fetcher(ctx context.Context, ref, commit, pkgRoot string, pr
 			pkgRelPath := entryPath[trimOffset:]
 			ok := prefetch(entry.kind, pkgRelPath)
 			switch entry.kind {
-			case BlobKind:
+			case source.BlobKind:
 				if ok {
 					if r.debugLogs {
 						logging.Debugf(ctx, "prefetching %s - %s", entryPath, entry.hash)
@@ -121,7 +100,7 @@ func (r *RepoCache) Fetcher(ctx context.Context, ref, commit, pkgRoot string, pr
 					ret.allowedBlobPaths.Add(pkgRelPath)
 					hashes = append(hashes, entry.hash)
 				}
-			case TreeKind:
+			case source.TreeKind:
 				if !ok {
 					if skips == nil {
 						skips = make(map[int]struct{})
@@ -145,8 +124,8 @@ func (r *RepoCache) Fetcher(ctx context.Context, ref, commit, pkgRoot string, pr
 	return ret, nil
 }
 
-type GitFetcher struct {
-	r                *RepoCache
+type gitFetcher struct {
+	r                *repoCache
 	ref              string
 	commit           string
 	pkgRoot          string

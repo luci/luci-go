@@ -20,18 +20,18 @@ import (
 	"time"
 )
 
-func (r *RepoCache) isAncestor(ctx context.Context, a, b string) (bool, error) {
+func (r *repoCache) isAncestor(ctx context.Context, a, b string) (bool, error) {
 	return r.gitTest(ctx, "--no-lazy-fetch", "merge-base", "--is-ancestor", a, b)
 }
 
-func (r *RepoCache) PickMostRecent(ctx context.Context, ref string, commits []string) (string, error) {
+func (r *repoCache) PickMostRecent(ctx context.Context, ref string, commits []string) (string, error) {
 	ctx = r.prepDebugContext(ctx)
 
 	if err := r.prefetchMultiple(ctx, commits, "--filter=blob:none", "--depth=1"); err != nil {
 		return "", err
 	}
 
-	parsed := make([]*Commit, 0, len(commits))
+	parsed := make([]*commitObj, 0, len(commits))
 	for _, commit := range commits {
 		cmt, err := r.batchProc.catFileCommit(ctx, commit)
 		if err != nil {
@@ -40,7 +40,7 @@ func (r *RepoCache) PickMostRecent(ctx context.Context, ref string, commits []st
 		parsed = append(parsed, cmt)
 	}
 
-	slices.SortFunc(parsed, func(a, b *Commit) int {
+	slices.SortFunc(parsed, func(a, b *commitObj) int {
 		return a.OldestTime().Compare(b.OldestTime())
 	})
 
@@ -62,7 +62,7 @@ func (r *RepoCache) PickMostRecent(ctx context.Context, ref string, commits []st
 	}
 
 	// sort by ancestry, then by commit time, then by author time
-	slices.SortFunc(parsed, func(a, b *Commit) int {
+	slices.SortFunc(parsed, func(a, b *commitObj) int {
 		if a == b {
 			return 0
 		}

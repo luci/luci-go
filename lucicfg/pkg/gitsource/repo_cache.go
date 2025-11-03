@@ -15,7 +15,6 @@
 package gitsource
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
@@ -27,10 +26,11 @@ import (
 
 	"go.chromium.org/luci/common/exec"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 
-type RepoCache struct {
-	// path/to/<Cache.repoRoot>/<sha256(remoteUrl)>
+type repoCache struct {
+	// path/to/<cache.repoRoot>/<sha256(remoteUrl)>
 	repoRoot string
 
 	debugLogs bool
@@ -39,37 +39,17 @@ type RepoCache struct {
 	batchProc batchProc
 }
 
-// GitError indicate a failed git execution (often with unknown root cause).
-type GitError struct {
-	Err     error  // the wrapped error from the exec.Command or context.Context
-	CmdLine string // the command line with failed call
-	Output  []byte // the capture output if it was captured (either stdout or combined)
-}
-
-// Error implements error interface.
-func (e *GitError) Error() string {
-	if trimmed := bytes.TrimSpace(e.Output); len(trimmed) > 0 {
-		return fmt.Sprintf("running %s: %s:\n%s", e.CmdLine, e.Err, trimmed)
-	}
-	return fmt.Sprintf("running %s: %s", e.CmdLine, e.Err)
-}
-
-// Unwrap allows to traverse this error.
-func (e *GitError) Unwrap() error {
-	return e.Err
-}
-
 // Shutdown terminates long-running processes which may be associated with this
 // RepoCache.
 //
 // It is safe to use RepoCache after calling Shutdown (but these long-running
 // processes may be brought back up again)
-func (r *RepoCache) Shutdown() {
+func (r *repoCache) Shutdown() {
 	r.batchProc.shutdown()
 }
 
-func newRepoCache(repoRoot string, debugLogs bool) (*RepoCache, error) {
-	ret := &RepoCache{repoRoot: repoRoot, debugLogs: debugLogs}
+func newRepoCache(repoRoot string, debugLogs bool) (*repoCache, error) {
+	ret := &repoCache{repoRoot: repoRoot, debugLogs: debugLogs}
 
 	if err := os.MkdirAll(ret.repoRoot, 0777); err != nil {
 		return nil, fmt.Errorf("making root dir: %w", err)
@@ -80,14 +60,14 @@ func newRepoCache(repoRoot string, debugLogs bool) (*RepoCache, error) {
 }
 
 // prepDebugContext increases the logging level to Info if debugLogs is false.
-func (r *RepoCache) prepDebugContext(ctx context.Context) context.Context {
+func (r *repoCache) prepDebugContext(ctx context.Context) context.Context {
 	if r.debugLogs {
 		return ctx
 	}
 	return logging.SetLevel(ctx, logging.Info)
 }
 
-func (r *RepoCache) mkGitCmd(ctx context.Context, args []string) *exec.Cmd {
+func (r *repoCache) mkGitCmd(ctx context.Context, args []string) *exec.Cmd {
 	fullArgs := append([]string{"--git-dir"}, r.repoRoot)
 	fullArgs = append(fullArgs, args...)
 	ret := exec.CommandContext(ctx, "git", fullArgs...)
@@ -99,7 +79,7 @@ func (r *RepoCache) mkGitCmd(ctx context.Context, args []string) *exec.Cmd {
 	return ret
 }
 
-func (r *RepoCache) fixCmdErr(ctx context.Context, cmd *exec.Cmd, err error, out []byte) error {
+func (r *repoCache) fixCmdErr(ctx context.Context, cmd *exec.Cmd, err error, out []byte) error {
 	if err == nil {
 		return nil
 	}
@@ -108,7 +88,7 @@ func (r *RepoCache) fixCmdErr(ctx context.Context, cmd *exec.Cmd, err error, out
 	if ctx.Err() != nil {
 		err = ctx.Err()
 	}
-	return &GitError{
+	return &source.GitError{
 		Err:     err,
 		CmdLine: cmd.String(),
 		Output:  out,
@@ -116,13 +96,13 @@ func (r *RepoCache) fixCmdErr(ctx context.Context, cmd *exec.Cmd, err error, out
 }
 
 // git runs the command, returning an error unless the command succeeded.
-func (r *RepoCache) git(ctx context.Context, args ...string) error {
+func (r *repoCache) git(ctx context.Context, args ...string) error {
 	cmd := r.mkGitCmd(ctx, args)
 	return r.fixCmdErr(ctx, cmd, cmd.Run(), nil)
 }
 
 // gitOutput returns the stdout from this git command
-func (r *RepoCache) gitOutput(ctx context.Context, args ...string) ([]byte, error) {
+func (r *repoCache) gitOutput(ctx context.Context, args ...string) ([]byte, error) {
 	cmd := r.mkGitCmd(ctx, args)
 	cmd.Stdout = nil
 	out, err := cmd.Output()
@@ -130,7 +110,7 @@ func (r *RepoCache) gitOutput(ctx context.Context, args ...string) ([]byte, erro
 }
 
 // gitCombinedOutput returns the stdout from this git command
-func (r *RepoCache) gitCombinedOutput(ctx context.Context, args ...string) ([]byte, error) {
+func (r *repoCache) gitCombinedOutput(ctx context.Context, args ...string) ([]byte, error) {
 	cmd := r.mkGitCmd(ctx, args)
 	cmd.Stdout = nil
 	cmd.Stderr = nil
@@ -143,7 +123,7 @@ func (r *RepoCache) gitCombinedOutput(ctx context.Context, args ...string) ([]by
 //   - (true, nil) if the command succeeded
 //   - (false, nil) if the command ran but returned a non-zero exit code.
 //   - (false, err) if the command failed to run or ran abnormally.
-func (r *RepoCache) gitTest(ctx context.Context, args ...string) (bool, error) {
+func (r *repoCache) gitTest(ctx context.Context, args ...string) (bool, error) {
 	cmd := r.mkGitCmd(ctx, args)
 	err := cmd.Run()
 	if err == nil {
@@ -157,7 +137,7 @@ func (r *RepoCache) gitTest(ctx context.Context, args ...string) (bool, error) {
 	return false, r.fixCmdErr(ctx, cmd, err, nil)
 }
 
-func (r *RepoCache) setConfigBlock(ctx context.Context, cb configBlock) error {
+func (r *repoCache) setConfigBlock(ctx context.Context, cb configBlock) error {
 	versionKey := fmt.Sprintf("%s.gitsourceVersion", cb.section)
 	versionStr := cb.hash()
 

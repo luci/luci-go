@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/check"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 
 var catFileBreakAfterOne = execmock.Register(func(none execmock.None) (_ execmock.None, code int, err error) {
@@ -63,10 +64,10 @@ func TestCatFileBatchLazy(t *testing.T) {
 			context.Background(), "73bd1be998e9effd633fd2fc4428f8081b231fb6:subdir/PACKAGE.star")
 		assert.NoErr(t, err)
 
-		check.That(t, kind.String(), should.Equal("BlobKind"))                 // for coverage
-		check.That(t, ObjectKind(-1).String(), should.Equal("ObjectKind(-1)")) // for coverage
+		check.That(t, kind.String(), should.Equal("BlobKind"))                        // for coverage
+		check.That(t, source.ObjectKind(-1).String(), should.Equal("ObjectKind(-1)")) // for coverage
 
-		check.That(t, kind, should.Equal(BlobKind))
+		check.That(t, kind, should.Equal(source.BlobKind))
 		check.Loosely(t, dat, should.HaveLength(123))
 	})
 
@@ -93,11 +94,11 @@ func TestCatFileBatchLazy(t *testing.T) {
 		// there are two actual objects whose hashes start with `6371`
 		kind, _, err := repo.batchProc.catFile(context.Background(), objs[0])
 		assert.NoErr(t, err)
-		assert.That(t, kind, should.Equal(BlobKind))
+		assert.That(t, kind, should.Equal(source.BlobKind))
 
 		kind, _, err = repo.batchProc.catFile(context.Background(), objs[1])
 		assert.NoErr(t, err)
-		assert.That(t, kind, should.Equal(BlobKind))
+		assert.That(t, kind, should.Equal(source.BlobKind))
 
 		_, _, err = repo.batchProc.catFile(
 			context.Background(), "6371")
@@ -114,7 +115,7 @@ func TestCatFileBatchLazy(t *testing.T) {
 		// can get blob we know about
 		kind, dat, err := repo.batchProc.catFile(context.Background(), obj)
 		assert.NoErr(t, err)
-		check.That(t, kind, should.Equal(BlobKind))
+		check.That(t, kind, should.Equal(source.BlobKind))
 		check.Loosely(t, dat, should.HaveLength(79))
 
 		// but we immediately fail to pull another blob which exists, but we
@@ -147,7 +148,7 @@ func TestCatFileBatchLazy(t *testing.T) {
 		// a new subprocess.
 		kind, dat, err := repo.batchProc.catFile(context.Background(), target)
 		assert.NoErr(t, err)
-		assert.That(t, kind, should.Equal(BlobKind))
+		assert.That(t, kind, should.Equal(source.BlobKind))
 		assert.Loosely(t, dat, should.HaveLength(123))
 	})
 
@@ -164,7 +165,7 @@ func TestCatFileBatchLazy(t *testing.T) {
 		kind, dat, err := repo.batchProc.catFile(
 			ctx, "73bd1be998e9effd633fd2fc4428f8081b231fb6:subdir/PACKAGE.star")
 		assert.NoErr(t, err)
-		assert.That(t, kind, should.Equal(BlobKind))
+		assert.That(t, kind, should.Equal(source.BlobKind))
 		assert.Loosely(t, dat, should.HaveLength(123))
 		assert.Loosely(t, repo.batchProc.cmd, should.NotBeNil)
 
