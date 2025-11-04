@@ -37,6 +37,10 @@ export const chronicleRoutes: RouteObject[] = [
         lazy: () => import('./components/graph_view'),
       },
       {
+        path: 'tree',
+        lazy: () => import('./components/tree_view/tree_view'),
+      },
+      {
         path: 'ledger',
         lazy: () => import('./components/ledger_view'),
       },

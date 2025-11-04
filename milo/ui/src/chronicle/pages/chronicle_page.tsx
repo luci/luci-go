@@ -20,6 +20,7 @@ export function ChroniclePage() {
       <AppRoutedTab label="Summary" value="summary" to="summary" />
       <AppRoutedTab label="Timeline" value="timeline" to="timeline" />
       <AppRoutedTab label="Stages & Checks Graph" value="graph" to="graph" />
+      <AppRoutedTab label="Tree" value="tree" to="tree" />
       <AppRoutedTab label="Ledger" value="ledger" to="ledger" />
     </AppRoutedTabs>
   );
