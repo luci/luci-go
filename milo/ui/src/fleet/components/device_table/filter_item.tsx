@@ -31,7 +31,7 @@ import {
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { useDeviceDimensions } from '../../pages/device_list_page/use_device_dimensions';
+import { useDeviceDimensions } from '../../pages/device_list_page/common/use_device_dimensions';
 import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';
 import { OptionsMenuOld } from '../filter_dropdown/options_menu_old';
 import {

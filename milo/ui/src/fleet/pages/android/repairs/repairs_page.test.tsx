@@ -17,7 +17,6 @@ import { act, render, screen } from '@testing-library/react';
 
 import * as PrpcClients from '@/fleet/hooks/prpc_clients';
 import { createMockUseFleetConsoleClient } from '@/fleet/testing_tools/mocks/fleet_console_client';
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { RepairListPage } from './repairs_page';
@@ -37,7 +36,7 @@ describe('RepairListPage', () => {
     render(
       <QueryClientProvider client={queryClient}>
         <FakeContextProvider>
-          <RepairListPage platform={Platform.ANDROID} />
+          <RepairListPage />
         </FakeContextProvider>
       </QueryClientProvider>,
     );

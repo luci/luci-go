@@ -42,9 +42,9 @@ describe('PlatformSelector', () => {
 
   it('does not render the platform selector button on other pages', () => {
     render(
-      <MemoryRouter initialEntries={['/other']}>
+      <MemoryRouter initialEntries={['/randompage']}>
         <Routes>
-          <Route path="/other" element={<PlatformSelector />} />
+          <Route path="/test/:platform" element={<PlatformSelector />} />
         </Routes>
       </MemoryRouter>,
     );

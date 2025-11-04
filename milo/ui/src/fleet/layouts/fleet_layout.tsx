@@ -26,8 +26,8 @@ import { PrivacyFooter } from '@/common/layouts/privacy_footer';
 import { VersionBanner } from '@/common/layouts/version_banner';
 import {
   QueuedStickyScrollingBase,
-  StickyOffset,
   Sticky,
+  StickyOffset,
 } from '@/generic_libs/components/queued_sticky';
 
 import { IndexedDBPersistClientProvider } from '../context';

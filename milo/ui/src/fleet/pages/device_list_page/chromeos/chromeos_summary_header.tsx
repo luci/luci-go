@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,27 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { type CSSObject } from '@emotion/react';
+import { type CSSObject } from '@emotion/styled';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
 import { Alert, Typography } from '@mui/material';
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
+import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
+import { addNewFilterToParams } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { LeaseStateInfo } from '@/fleet/components/lease_state_info/lease_state_info';
+import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { colors } from '@/fleet/theme/colors';
 import { SelectedOptions } from '@/fleet/types';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import {
-  CountDevicesResponse,
-  Platform,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
-
-import { stringifyFilters } from '../../components/filter_dropdown/parser/parser';
-import { addNewFilterToParams } from '../../components/filter_dropdown/search_param_utils';
-import { SingleMetric } from '../../components/summary_header/single_metric';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 const HAS_RIGHT_SIBLING_STYLES: CSSObject = {
   borderRight: `1px solid ${colors.grey[300]}`,
@@ -57,19 +53,32 @@ const LABSTATION_FILTERS: SelectedOptions = {
   ],
 };
 
-interface MainMetricsProps {
-  countQuery: UseQueryResult<CountDevicesResponse, unknown>;
-  labstationsQuery: UseQueryResult<CountDevicesResponse, unknown>;
+export interface ChromeOSSummaryHeaderProps {
+  selectedOptions: SelectedOptions;
 }
 
 /**
  * MainMetrics is the presentational component for the main metrics section.
  * It is responsible for displaying the metrics, but not for fetching the data.
  */
-export function ChromeOSMainMetrics({
-  countQuery,
-  labstationsQuery,
-}: MainMetricsProps) {
+export function ChromeOSSummaryHeader({
+  selectedOptions,
+}: ChromeOSSummaryHeaderProps) {
+  const client = useFleetConsoleClient();
+
+  const countQuery = useQuery(
+    client.CountDevices.query({
+      filter: stringifyFilters(selectedOptions),
+      platform: Platform.CHROMEOS,
+    }),
+  );
+
+  const labstationsQuery = useQuery({
+    ...client.CountDevices.query({
+      filter: stringifyFilters({ ...selectedOptions, ...LABSTATION_FILTERS }),
+      platform: Platform.CHROMEOS,
+    }),
+  });
   const [searchParams, _] = useSyncedSearchParams();
 
   const getFilterQueryString = (filters: Record<string, string[]>): string => {
@@ -264,158 +273,5 @@ export function ChromeOSMainMetrics({
       <Typography variant="h4">Main metrics</Typography>
       <div css={{ marginTop: 24 }}>{getContent()}</div>
     </MetricsContainer>
-  );
-}
-
-export function AndroidMainMetrics({
-  countQuery,
-}: {
-  countQuery: UseQueryResult<CountDevicesResponse, unknown>;
-}) {
-  const [searchParams, _] = useSyncedSearchParams();
-
-  const getFilterQueryString = (filters: Record<string, string[]>): string => {
-    let newSearchParams = new URLSearchParams(searchParams);
-    for (const [name, values] of Object.entries(filters)) {
-      newSearchParams = addNewFilterToParams(newSearchParams, name, values);
-    }
-    return '?' + newSearchParams.toString();
-  };
-
-  const getContent = () => {
-    if (countQuery.isError) {
-      return (
-        <Alert severity="error">
-          {getErrorMessage(countQuery.error, 'get the main metrics')}
-        </Alert>
-      );
-    }
-
-    return (
-      <div
-        css={{
-          display: 'flex',
-          maxWidth: 1400,
-        }}
-      >
-        <div css={{ flexGrow: 2 }}>
-          <Typography variant="subhead1">Device state</Typography>
-          <div css={METRIC_CONTAINER_STYLES}>
-            <SingleMetric
-              name="Total"
-              value={countQuery.data?.androidCount?.totalDevices}
-              loading={countQuery.isPending}
-            />
-            <SingleMetric
-              name="Ready"
-              value={countQuery.data?.androidCount?.idleDevices}
-              total={countQuery.data?.androidCount?.totalDevices}
-              loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['IDLE'],
-              })}
-            />
-            <SingleMetric
-              name="Busy"
-              value={countQuery.data?.androidCount?.busyDevices}
-              total={countQuery.data?.androidCount?.totalDevices}
-              loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['BUSY'],
-              })}
-            />
-            <SingleMetric
-              name="Prepping"
-              value={countQuery.data?.androidCount?.preppingDevices}
-              total={countQuery.data?.androidCount?.totalDevices}
-              loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['PREPPING'],
-              })}
-            />
-            <SingleMetric
-              name="Missing"
-              value={countQuery.data?.androidCount?.missingDevices}
-              total={countQuery.data?.androidCount?.totalDevices}
-              loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['MISSING'],
-              })}
-              Icon={
-                <WarningIcon
-                  sx={{ color: colors.yellow[900], marginTop: '-2px' }}
-                />
-              }
-            />
-            <SingleMetric
-              name="Dying"
-              value={countQuery.data?.androidCount?.dyingDevices}
-              total={countQuery.data?.androidCount?.totalDevices}
-              loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['DYING'],
-              })}
-              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <MetricsContainer>
-      <Typography variant="h4">Main metrics</Typography>
-      <div css={{ marginTop: 24 }}>{getContent()}</div>
-    </MetricsContainer>
-  );
-}
-
-/**
- * MainMetricsContainer is the container component for the main metrics section.
- * It is responsible for fetching the data and passing it to the presentational
- * component.
- */
-export function MainMetricsContainer({
-  selectedOptions,
-  platform,
-}: {
-  selectedOptions: SelectedOptions;
-  platform: Platform;
-}) {
-  const client = useFleetConsoleClient();
-
-  const countQuery = useQuery(
-    client.CountDevices.query({
-      filter: stringifyFilters(selectedOptions),
-      platform: platform,
-    }),
-  );
-
-  const labstationsQuery = useQuery({
-    ...client.CountDevices.query({
-      filter: stringifyFilters({ ...selectedOptions, ...LABSTATION_FILTERS }),
-      platform: platform,
-    }),
-    enabled: platform === Platform.CHROMEOS,
-  });
-
-  switch (platform) {
-    case Platform.ANDROID:
-      return <AndroidMainMetrics countQuery={countQuery} />;
-    case Platform.CHROMEOS:
-      return (
-        <ChromeOSMainMetrics
-          countQuery={countQuery}
-          labstationsQuery={labstationsQuery}
-        />
-      );
-  }
-
-  return (
-    <ChromeOSMainMetrics
-      countQuery={countQuery}
-      labstationsQuery={labstationsQuery}
-    />
   );
 }
