@@ -528,10 +528,11 @@ func SendEmail(c context.Context, task proto.Message) error {
 		body = string(buf)
 	}
 
-	return mailer.Send(c, &mailer.Mail{
+	_, err := mailer.Send(c, &mailer.Mail{
 		To:       emailTask.Recipients,
 		Subject:  emailTask.Subject,
 		HTMLBody: body,
 		ReplyTo:  emailTask.Recipients[0],
 	})
+	return err
 }

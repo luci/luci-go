@@ -189,7 +189,7 @@ func main() {
 
 		// Example of sending emails.
 		srv.Routes.GET("/send-mail", nil, func(c *router.Context) {
-			err := mailer.Send(c.Request.Context(), &mailer.Mail{
+			_, err := mailer.Send(c.Request.Context(), &mailer.Mail{
 				To:       []string{"someone@example.com"},
 				Subject:  "Hi",
 				TextBody: "How are you doing?",

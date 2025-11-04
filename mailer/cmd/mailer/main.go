@@ -17,11 +17,11 @@ package main
 
 import (
 	"context"
-	"encoding/hex"
 	"flag"
 	"fmt"
 	"net/smtp"
 	"net/textproto"
+	"strings"
 	"time"
 
 	"github.com/jordan-wright/email"
@@ -30,7 +30,6 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
@@ -38,6 +37,7 @@ import (
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/limiter"
+	shared_mailer "go.chromium.org/luci/server/mailer"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
 
@@ -255,6 +255,12 @@ func (s *mailerServer) enqueueMail(ctx context.Context, req *mailer.SendMailRequ
 	msg.Subject = req.Subject
 	msg.Text = []byte(req.TextBody)
 	msg.HTML = []byte(req.HtmlBody)
+	if req.InReplyTo != "" {
+		msg.Headers.Set("In-Reply-To", req.InReplyTo)
+	}
+	if len(req.References) > 0 {
+		msg.Headers.Set("References", strings.Join(req.References, "\n"))
+	}
 
 	// Generate a message ID and convert it into an RFC 2822 compliant form.
 	//
@@ -263,8 +269,8 @@ func (s *mailerServer) enqueueMail(ctx context.Context, req *mailer.SendMailRequ
 	// package (and consequently all Go packages based on it), doesn't expose this
 	// ID in its API (it totally ignores the text status attached to "250 Ok"
 	// response).
-	msgID := generateMessageID(ctx)
-	msg.Headers.Set("Message-Id", fmt.Sprintf("<%s@luci.api.cr.dev>", msgID))
+	msgID := shared_mailer.GenerateMessageID(ctx)
+	msg.Headers.Set("Message-Id", msgID)
 
 	send := s.send
 	if send == nil {
@@ -283,15 +289,6 @@ func (s *mailerServer) enqueueMail(ctx context.Context, req *mailer.SendMailRequ
 	default:
 		return "", status.Errorf(codes.Internal, "transient SMTP error: %s", err)
 	}
-}
-
-// generateMessageID produces a new unique message identifier.
-func generateMessageID(ctx context.Context) string {
-	var blob [20]byte
-	if _, err := mathrand.Read(ctx, blob[:]); err != nil {
-		panic(err)
-	}
-	return hex.EncodeToString(blob[:])
 }
 
 // isFatalSMTP recognizes fatal SMTP errors.

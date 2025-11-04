@@ -23,6 +23,10 @@ package mailer
 
 import (
 	"context"
+	"encoding/hex"
+	"fmt"
+
+	"go.chromium.org/luci/common/data/rand/mathrand"
 )
 
 var mailerCtxKey = "go.chromium.org/luci/server/mailer.Mailer"
@@ -64,13 +68,25 @@ type Mail struct {
 	//
 	// Can be used together with TextBody to send a multipart email.
 	HTMLBody string
+
+	// InReplyTo is the ID of the message which this message replies to.
+	InReplyTo string
+
+	// References contains the IDs of all messages in the thread.
+	References []string
+}
+
+// Header represents a header to send with an email message.
+type Header struct {
+	Key   string
+	Value string
 }
 
 // Mailer lives in the context and knows how to send Messages.
 //
 // Must tag transient errors with transient.Tag. All other errors are assumed
 // to be fatal.
-type Mailer func(ctx context.Context, msg *Mail) error
+type Mailer func(ctx context.Context, msg *Mail) (string, error)
 
 // Use replaces the mailer in the context.
 //
@@ -83,10 +99,19 @@ func Use(ctx context.Context, m Mailer) context.Context {
 //
 // Panics if the context doesn't have a mailer. Transient errors are tagged with
 // transient.Tag. All other errors are fatal and should not be retried.
-func Send(ctx context.Context, msg *Mail) error {
+func Send(ctx context.Context, msg *Mail) (string, error) {
 	m, _ := ctx.Value(&mailerCtxKey).(Mailer)
 	if m == nil {
 		panic("no mailer in the context")
 	}
 	return m(ctx, msg)
+}
+
+// GenerateMessageID produces a new unique message identifier.
+func GenerateMessageID(ctx context.Context) string {
+	var blob [20]byte
+	if _, err := mathrand.Read(ctx, blob[:]); err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("<%s@luci.api.cr.dev>", hex.EncodeToString(blob[:]))
 }

@@ -125,9 +125,9 @@ func (m *mailerModule) Initialize(ctx context.Context, host module.Host, opts mo
 			service = "gae"
 		} else {
 			logging.Warningf(ctx, "Mailer service is not configured, emails will be dropped")
-			return Use(ctx, func(ctx context.Context, msg *Mail) error {
+			return Use(ctx, func(ctx context.Context, msg *Mail) (string, error) {
 				logging.Errorf(ctx, "No mailer configured: dropping message to %q with subject %q", msg.To, msg.Subject)
-				return nil
+				return "", nil
 			}), nil
 		}
 	}
@@ -189,32 +189,34 @@ func (m *mailerModule) initRPCMailer(ctx context.Context, host string, insecure 
 		},
 	})
 
-	return func(ctx context.Context, msg *Mail) error {
+	return func(ctx context.Context, msg *Mail) (string, error) {
 		requestID, err := uuid.NewRandom()
 		if err != nil {
-			return transient.Tag.Apply(errors.Fmt("failed to generate request ID: %w", err))
+			return "", transient.Tag.Apply(errors.Fmt("failed to generate request ID: %w", err))
 		}
 		resp, err := mailerClient.SendMail(ctx, &mailer.SendMailRequest{
-			RequestId: requestID.String(),
-			Sender:    m.sender(msg),
-			ReplyTo:   msg.ReplyTo,
-			To:        msg.To,
-			Cc:        msg.Cc,
-			Bcc:       msg.Bcc,
-			Subject:   msg.Subject,
-			TextBody:  msg.TextBody,
-			HtmlBody:  msg.HTMLBody,
+			RequestId:  requestID.String(),
+			Sender:     m.sender(msg),
+			ReplyTo:    msg.ReplyTo,
+			To:         msg.To,
+			Cc:         msg.Cc,
+			Bcc:        msg.Bcc,
+			Subject:    msg.Subject,
+			TextBody:   msg.TextBody,
+			HtmlBody:   msg.HTMLBody,
+			InReplyTo:  msg.InReplyTo,
+			References: msg.References,
 		})
 		if err != nil {
-			return grpcutil.WrapIfTransient(err)
+			return "", grpcutil.WrapIfTransient(err)
 		}
 		logging.Infof(ctx, "Email enqueued as %q", resp.MessageId)
-		return nil
+		return resp.MessageId, nil
 	}, nil
 }
 
-func (m *mailerModule) initGAEMailer(ctx context.Context) (Mailer, error) {
-	return func(ctx context.Context, msg *Mail) error {
+func (m *mailerModule) initGAEMailer(_ context.Context) (Mailer, error) {
+	return func(ctx context.Context, msg *Mail) (string, error) {
 		req := &gaemailpb.MailMessage{
 			Sender:  proto.String(m.sender(msg)),
 			To:      msg.To,
@@ -231,15 +233,42 @@ func (m *mailerModule) initGAEMailer(ctx context.Context) (Mailer, error) {
 		if msg.HTMLBody != "" {
 			req.HtmlBody = &msg.HTMLBody
 		}
+		// TODO(borenet): I think this will get rejected by the AppEngine API,
+		// since "Message-Id" isn't in HEADER_WHITELIST:
+		// https://github.com/GoogleCloudPlatform/appengine-python-standard/blob/main/src/google/appengine/api/mail.py#L189
+		//
+		// msgIDHeader := "Message-Id"
+		// msgID := GenerateMessageID(ctx)
+		// req.Header = []*gaemailpb.MailHeader{
+		// 	{
+		// 		Name:  &msgIDHeader,
+		// 		Value: &msgID,
+		// 	},
+		// }
+		if msg.InReplyTo != "" {
+			key := "In-Reply-To"
+			req.Header = append(req.Header, &gaemailpb.MailHeader{
+				Name:  &key,
+				Value: &msg.InReplyTo,
+			})
+		}
+		if len(msg.References) > 0 {
+			key := "References"
+			value := strings.Join(msg.References, "\n")
+			req.Header = append(req.Header, &gaemailpb.MailHeader{
+				Name:  &key,
+				Value: &value,
+			})
+		}
 
 		res := &gaebasepb.VoidProto{}
 		if err := gae.Call(ctx, "mail", "Send", req, res); err != nil {
 			// TODO(vadimsh): In theory we can extract internal GAE Mail error codes
 			// here and decide if an error is transient or not. For now assume they
 			// all are.
-			return transient.Tag.Apply(err)
+			return "", transient.Tag.Apply(err)
 		}
 		logging.Infof(ctx, "Email enqueued")
-		return nil
+		return "", nil
 	}, nil
 }

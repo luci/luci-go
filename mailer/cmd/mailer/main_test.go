@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"net/textproto"
 	"testing"
@@ -50,10 +49,11 @@ func TestMailer(t *testing.T) {
 		Subject:   "Subject",
 		TextBody:  "Text body",
 		HtmlBody:  "HTML body",
+		InReplyTo: "<some-other-msg>",
 	}
 
 	// Depends on rand.NewSource(...) seed below.
-	expectedMessageID := "f1405ced8b9968baf9109259515bf7025a291b00"
+	expectedMessageID := "<f1405ced8b9968baf9109259515bf7025a291b00@luci.api.cr.dev>"
 
 	expectedEmail := email.NewEmail()
 	expectedEmail.From = testReq.Sender
@@ -64,7 +64,8 @@ func TestMailer(t *testing.T) {
 	expectedEmail.Subject = testReq.Subject
 	expectedEmail.Text = []byte(testReq.TextBody)
 	expectedEmail.HTML = []byte(testReq.HtmlBody)
-	expectedEmail.Headers.Set("Message-Id", fmt.Sprintf("<%s@luci.api.cr.dev>", expectedMessageID))
+	expectedEmail.Headers.Set("Message-Id", expectedMessageID)
+	expectedEmail.Headers.Set("In-Reply-To", "<some-other-msg>")
 
 	ftt.Run("With mailer", t, func(t *ftt.Test) {
 		var sendErr error

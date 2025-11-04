@@ -48,17 +48,22 @@ func (s *mailerServer) SendMail(ctx context.Context, req *mailer_pb.SendMailRequ
 	}
 
 	// Send the message.
-	if err := mailer.Send(ctx, &mailer.Mail{
-		Sender:   req.Sender,
-		ReplyTo:  req.ReplyTo,
-		To:       req.To,
-		Cc:       req.Cc,
-		Bcc:      req.Bcc,
-		Subject:  req.Subject,
-		TextBody: req.TextBody,
-		HTMLBody: req.HtmlBody,
-	}); err != nil {
+	messageID, err := mailer.Send(ctx, &mailer.Mail{
+		Sender:     req.Sender,
+		ReplyTo:    req.ReplyTo,
+		To:         req.To,
+		Cc:         req.Cc,
+		Bcc:        req.Bcc,
+		Subject:    req.Subject,
+		TextBody:   req.TextBody,
+		HTMLBody:   req.HtmlBody,
+		InReplyTo:  req.InReplyTo,
+		References: req.References,
+	})
+	if err != nil {
 		return nil, err
 	}
-	return &mailer_pb.SendMailResponse{}, nil
+	return &mailer_pb.SendMailResponse{
+		MessageId: messageID,
+	}, nil
 }

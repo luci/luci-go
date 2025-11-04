@@ -80,6 +80,12 @@ message SendMailRequest {
 
   // HtmlBody contains an HTML body of the email message.
   string html_body = 9;
+
+  // InReplyTo is the ID of the message which this message replies to.
+  string in_reply_to = 10;
+
+  // References contains the IDs of all messages in the thread.
+  repeated string references = 11;
 }
 
 
