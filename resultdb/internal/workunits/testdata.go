@@ -68,9 +68,10 @@ func NewBuilder(rootInvocationID rootinvocations.ID, workUnitID string) *Builder
 				ModuleVariant:     pbutil.Variant("v", "d"),
 				ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("v", "d")),
 			},
-			ModuleShardKey:   "shard_key",
-			ProducerResource: "//builds.example.com/builds/123",
-			Tags:             pbutil.StringPairs("k1", "v1"),
+			ModuleShardKey:          "shard_key",
+			ModuleInheritanceStatus: ModuleInheritanceStatusRoot,
+			ProducerResource:        "//builds.example.com/builds/123",
+			Tags:                    pbutil.StringPairs("k1", "v1"),
 			Properties: &structpb.Struct{
 				Fields: map[string]*structpb.Value{
 					"key": structpb.NewStringValue("value"),
@@ -107,15 +108,16 @@ func (b *Builder) WithMinimalFields() *Builder {
 		State:                 pb.WorkUnit_RUNNING,
 		// Means the finalized time and start time will be cleared in Build() unless FinalizationState is
 		// subsequently overridden.
-		FinalizationState: pb.WorkUnit_ACTIVE,
-		Realm:             b.row.Realm,
-		CreateTime:        b.row.CreateTime,
-		CreatedBy:         b.row.CreatedBy,
-		LastUpdated:       b.row.LastUpdated,
-		FinalizeStartTime: b.row.FinalizeStartTime,
-		FinalizeTime:      b.row.FinalizeTime,
-		Deadline:          b.row.Deadline,
-		CreateRequestID:   b.row.CreateRequestID,
+		FinalizationState:       pb.WorkUnit_ACTIVE,
+		Realm:                   b.row.Realm,
+		CreateTime:              b.row.CreateTime,
+		CreatedBy:               b.row.CreatedBy,
+		LastUpdated:             b.row.LastUpdated,
+		FinalizeStartTime:       b.row.FinalizeStartTime,
+		FinalizeTime:            b.row.FinalizeTime,
+		Deadline:                b.row.Deadline,
+		CreateRequestID:         b.row.CreateRequestID,
+		ModuleInheritanceStatus: ModuleInheritanceStatusNoModuleSet,
 		// Prefer to use empty slice rather than nil (even though semantically identical)
 		// as this what we always report in reads.
 		Tags: []*pb.StringPair{},
@@ -207,6 +209,18 @@ func (b *Builder) WithModuleID(id *pb.ModuleIdentifier) *Builder {
 	return b
 }
 
+// WithModuleShardKey sets the module shard key.
+func (b *Builder) WithModuleShardKey(key string) *Builder {
+	b.row.ModuleShardKey = key
+	return b
+}
+
+// WithModuleInheritanceStatus sets the module inheritance status.
+func (b *Builder) WithModuleInheritanceStatus(status ModuleInheritanceStatus) *Builder {
+	b.row.ModuleInheritanceStatus = status
+	return b
+}
+
 // WithCreateRequestID sets the create request ID.
 func (b *Builder) WithCreateRequestID(id string) *Builder {
 	b.row.CreateRequestID = id
@@ -271,28 +285,29 @@ func (b *Builder) Build() *WorkUnitRow {
 // legacy invocation record for testing purposes.
 func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 	row := map[string]any{
-		"RootInvocationShardId":  w.ID.RootInvocationShardID(),
-		"WorkUnitId":             w.ID.WorkUnitID,
-		"ParentWorkUnitId":       w.ParentWorkUnitID,
-		"SecondaryIndexShardId":  w.SecondaryIndexShardID,
-		"Kind":                   w.Kind,
-		"State":                  w.State,
-		"SummaryMarkdown":        w.SummaryMarkdown,
-		"FinalizationState":      w.FinalizationState,
-		"Realm":                  w.Realm,
-		"CreateTime":             w.CreateTime,
-		"CreatedBy":              w.CreatedBy,
-		"LastUpdated":            w.LastUpdated,
-		"FinalizeStartTime":      w.FinalizeStartTime,
-		"FinalizeTime":           w.FinalizeTime,
-		"FinalizerCandidateTime": w.FinalizerCandidateTime,
-		"Deadline":               w.Deadline,
-		"CreateRequestId":        w.CreateRequestID,
-		"ProducerResource":       w.ProducerResource,
-		"Tags":                   w.Tags,
-		"Properties":             spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
-		"Instructions":           spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
-		"ExtendedProperties":     spanutil.Compressed(pbutil.MustMarshal(&invocationspb.ExtendedProperties{ExtendedProperties: w.ExtendedProperties})),
+		"RootInvocationShardId":   w.ID.RootInvocationShardID(),
+		"WorkUnitId":              w.ID.WorkUnitID,
+		"ParentWorkUnitId":        w.ParentWorkUnitID,
+		"SecondaryIndexShardId":   w.SecondaryIndexShardID,
+		"Kind":                    w.Kind,
+		"State":                   w.State,
+		"SummaryMarkdown":         w.SummaryMarkdown,
+		"FinalizationState":       w.FinalizationState,
+		"Realm":                   w.Realm,
+		"CreateTime":              w.CreateTime,
+		"CreatedBy":               w.CreatedBy,
+		"LastUpdated":             w.LastUpdated,
+		"FinalizeStartTime":       w.FinalizeStartTime,
+		"FinalizeTime":            w.FinalizeTime,
+		"FinalizerCandidateTime":  w.FinalizerCandidateTime,
+		"Deadline":                w.Deadline,
+		"CreateRequestId":         w.CreateRequestID,
+		"ModuleInheritanceStatus": w.ModuleInheritanceStatus,
+		"ProducerResource":        w.ProducerResource,
+		"Tags":                    w.Tags,
+		"Properties":              spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
+		"Instructions":            spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
+		"ExtendedProperties":      spanutil.Compressed(pbutil.MustMarshal(&invocationspb.ExtendedProperties{ExtendedProperties: w.ExtendedProperties})),
 	}
 	if w.ModuleID != nil {
 		row["ModuleName"] = w.ModuleID.ModuleName

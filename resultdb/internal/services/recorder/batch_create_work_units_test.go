@@ -96,16 +96,16 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 		}
 		workUnitID11 := workunits.ID{
 			RootInvocationID: rootInvID,
-			WorkUnitID:       "wu-new-11",
+			WorkUnitID:       "wu-parent:wu-new-11",
 		}
-		workUnitID2 := workunits.ID{
+		workUnitID111 := workunits.ID{
 			RootInvocationID: rootInvID,
-			WorkUnitID:       "wu-new-2",
+			WorkUnitID:       "wu-new-111",
 		}
 
 		// Insert a root invocation and the parent work unit.
 		rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:testrealm").Build()
-		parentWu := workunits.NewBuilder(rootInvID, parentWorkUnitID.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
+		parentWu := workunits.NewBuilder(rootInvID, parentWorkUnitID.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).WithModuleID(nil).Build()
 		parentPrefixedWu := workunits.NewBuilder(rootInvID, prefixedParentWorkUnitID.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
 		testutil.MustApply(ctx, t, insert.RootInvocationWithRootWorkUnit(rootInv)...)
 		testutil.MustApply(ctx, t, insert.WorkUnit(parentWu)...)
@@ -144,10 +144,10 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 					},
 				},
 				{
-					Parent:     parentWorkUnitID.Name(),
-					WorkUnitId: workUnitID2.WorkUnitID,
+					Parent:     workUnitID11.Name(),
+					WorkUnitId: workUnitID111.WorkUnitID,
 					WorkUnit: &pb.WorkUnit{
-						Kind:  "EXAMPLE_MODULE",
+						Kind:  "EXAMPLE_TEST_RUN",
 						State: pb.WorkUnit_PENDING,
 						Realm: "testproject:testrealm",
 					},
@@ -193,10 +193,10 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 						assert.Loosely(t, err, should.ErrLike("requests[1]: parent: does not match pattern"))
 					})
 					t.Run("parent in different root invocation", func(t *ftt.Test) {
-						req.Requests[1].Parent = "rootInvocations/another-root/workUnits/root"
+						req.Requests[2].Parent = "rootInvocations/another-root/workUnits/root"
 						_, err := recorder.BatchCreateWorkUnits(ctx, req)
 						assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike("requests[1]: parent: all requests must be for the same root invocation"))
+						assert.Loosely(t, err, should.ErrLike("requests[2]: parent: all requests must be for the same root invocation"))
 					})
 					t.Run("parent cycle", func(t *ftt.Test) {
 						t.Run("cycle of length 1", func(t *ftt.Test) {
@@ -207,72 +207,72 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 							assert.Loosely(t, err, should.ErrLike("requests[0]: parent: cannot refer to the work unit created in requests[0]"))
 						})
 						t.Run("cycle of length 2", func(t *ftt.Test) {
-							// Requests[1] -> Requests[2] -> Requests[1]
-							req.Requests[1].Parent = workUnitID2.Name()
-							req.Requests[2].Parent = workUnitID11.Name()
+							// Requests[0] -> Requests[1] -> Requests[0]
+							req.Requests[0].Parent = workUnitID11.Name()
+							req.Requests[1].Parent = workUnitID1.Name()
 							_, err := recorder.BatchCreateWorkUnits(ctx, req)
 							assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-							assert.Loosely(t, err, should.ErrLike("requests[1]: parent: cannot refer to work unit created in the later request requests[2], please order requests to match expected creation order"))
+							assert.Loosely(t, err, should.ErrLike("requests[0]: parent: cannot refer to work unit created in the later request requests[1], please order requests to match expected creation order"))
 						})
 					})
 				})
 				t.Run("work unit id", func(t *ftt.Test) {
 					t.Run("empty", func(t *ftt.Test) {
-						req.Requests[1].WorkUnitId = ""
+						req.Requests[2].WorkUnitId = ""
 						_, err := recorder.BatchCreateWorkUnits(ctx, req)
 						assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike(`requests[1]: work_unit_id: unspecified`))
+						assert.Loosely(t, err, should.ErrLike(`requests[2]: work_unit_id: unspecified`))
 					})
 					t.Run("invalid", func(t *ftt.Test) {
-						req.Requests[1].WorkUnitId = "\x00"
+						req.Requests[2].WorkUnitId = "\x00"
 						_, err := recorder.BatchCreateWorkUnits(ctx, req)
 						assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike(`requests[1]: work_unit_id: does not match pattern`))
+						assert.Loosely(t, err, should.ErrLike(`requests[2]: work_unit_id: does not match pattern`))
 					})
 					t.Run("duplicated work unit id", func(t *ftt.Test) {
-						req.Requests[1].WorkUnitId = req.Requests[0].WorkUnitId
+						req.Requests[2].WorkUnitId = req.Requests[0].WorkUnitId
 						_, err := recorder.BatchCreateWorkUnits(ctx, req)
 						assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike(`requests[1]: work_unit_id: duplicates work unit id "wu-parent:wu-new-1" from requests[0]`))
+						assert.Loosely(t, err, should.ErrLike(`requests[2]: work_unit_id: duplicates work unit id "wu-parent:wu-new-1" from requests[0]`))
 					})
 					t.Run("reserved", func(t *ftt.Test) {
-						req.Requests[1].WorkUnitId = "build-1234567890"
+						req.Requests[2].WorkUnitId = "build-1234567890"
 						_, err := recorder.BatchCreateWorkUnits(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
 					})
 					t.Run("not prefixed", func(t *ftt.Test) {
-						req.Requests[1].WorkUnitId = "u-my-work-unit-id"
+						req.Requests[2].WorkUnitId = "u-my-work-unit-id"
 						_, err := recorder.BatchCreateWorkUnits(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
 					})
 					t.Run("prefixed, in parent is not prefixed", func(t *ftt.Test) {
 						t.Run("valid", func(t *ftt.Test) {
-							req.Requests[1].WorkUnitId = "wu-parent:child"
-							req.Requests[1].Parent = parentWorkUnitID.Name()
+							req.Requests[2].WorkUnitId = "wu-parent:child"
+							req.Requests[2].Parent = parentWorkUnitID.Name()
 							_, err := recorder.BatchCreateWorkUnits(ctx, req)
 							assert.Loosely(t, err, should.BeNil)
 						})
 						t.Run("invalid", func(t *ftt.Test) {
-							req.Requests[1].WorkUnitId = "otherworkunit:child"
-							req.Requests[1].Parent = parentWorkUnitID.Name()
+							req.Requests[2].WorkUnitId = "otherworkunit:child"
+							req.Requests[2].Parent = parentWorkUnitID.Name()
 							_, err := recorder.BatchCreateWorkUnits(ctx, req)
 							assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-							assert.Loosely(t, err, should.ErrLike(`requests[1]: work_unit_id: work unit ID prefix "otherworkunit" must match parent work unit ID "wu-parent"`))
+							assert.Loosely(t, err, should.ErrLike(`requests[2]: work_unit_id: work unit ID prefix "otherworkunit" must match parent work unit ID "wu-parent"`))
 						})
 					})
 					t.Run("prefixed, in parent that is prefixed", func(t *ftt.Test) {
 						t.Run("valid", func(t *ftt.Test) {
-							req.Requests[1].WorkUnitId = "wu-parent:child"
-							req.Requests[1].Parent = prefixedParentWorkUnitID.Name()
+							req.Requests[2].WorkUnitId = "wu-parent:child"
+							req.Requests[2].Parent = prefixedParentWorkUnitID.Name()
 							_, err := recorder.BatchCreateWorkUnits(ctx, req)
 							assert.Loosely(t, err, should.BeNil)
 						})
 						t.Run("invalid", func(t *ftt.Test) {
-							req.Requests[1].WorkUnitId = "otherworkunit:child"
-							req.Requests[1].Parent = prefixedParentWorkUnitID.Name()
+							req.Requests[2].WorkUnitId = "otherworkunit:child"
+							req.Requests[2].Parent = prefixedParentWorkUnitID.Name()
 							_, err := recorder.BatchCreateWorkUnits(ctx, req)
 							assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-							assert.Loosely(t, err, should.ErrLike(`requests[1]: work_unit_id: work unit ID prefix "otherworkunit" must match parent work unit ID prefix "wu-parent"`))
+							assert.Loosely(t, err, should.ErrLike(`requests[2]: work_unit_id: work unit ID prefix "otherworkunit" must match parent work unit ID prefix "wu-parent"`))
 						})
 					})
 				})
@@ -345,10 +345,10 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 						assert.Loosely(t, err, should.BeNil)
 					})
 					t.Run("requests requiring different update tokens", func(t *ftt.Test) {
-						req.Requests[1].Parent = "rootInvocations/root-inv-id/workUnits/other-work-unit"
+						req.Requests[2].Parent = "rootInvocations/root-inv-id/workUnits/other-work-unit"
 						_, err := recorder.BatchCreateWorkUnits(ctx, req)
 						assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike(`requests[1]: parent "rootInvocations/root-inv-id/workUnits/other-work-unit" requires a different update token to requests[0]'s "parent" "rootInvocations/root-inv-id/workUnits/wu-parent", but this RPC only accepts one update token`))
+						assert.Loosely(t, err, should.ErrLike(`requests[2]: parent "rootInvocations/root-inv-id/workUnits/other-work-unit" requires a different update token to requests[0]'s "parent" "rootInvocations/root-inv-id/workUnits/wu-parent", but this RPC only accepts one update token`))
 					})
 				})
 				t.Run("with inclusion token", func(t *ftt.Test) {
@@ -385,6 +385,7 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			})
 			t.Run("cross-realm creation", func(t *ftt.Test) {
 				req.Requests[1].WorkUnit.Realm = "testproject:otherrealm"
+				req.Requests[2].WorkUnit.Realm = "testproject:otherrealm"
 
 				t.Run("with update token", func(t *ftt.Test) {
 					// Provide the permission required.
@@ -452,12 +453,12 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			})
 			t.Run("reserved id", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateWorkUnitWithReservedID)
-				req.Requests[1].WorkUnitId = "build-8765432100"
+				req.Requests[2].WorkUnitId = "build-8765432100"
 
 				t.Run("disallowed without realm permission", func(t *ftt.Test) {
 					_, err := recorder.BatchCreateWorkUnits(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-					assert.Loosely(t, err, should.ErrLike(`requests[1]: work_unit_id: only work units created by trusted systems may have id not starting with "u-"`))
+					assert.Loosely(t, err, should.ErrLike(`requests[2]: work_unit_id: only work units created by trusted systems may have id not starting with "u-"`))
 				})
 				t.Run("allowed with realm permission", func(t *ftt.Test) {
 					authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
@@ -551,17 +552,17 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 
 				_, err := recorder.BatchCreateWorkUnits(ctx, req)
 				assert.That(t, err, grpccode.ShouldBe(codes.AlreadyExists))
-				assert.That(t, err, should.ErrLike("\"rootInvocations/root-inv-id/workUnits/wu-new-11\" already exists with different requestID or creator"))
+				assert.That(t, err, should.ErrLike("\"rootInvocations/root-inv-id/workUnits/wu-parent:wu-new-11\" already exists with different requestID or creator"))
 			})
 			t.Run("partial exist with the same request id", func(t *ftt.Test) {
 				// Create all work units to be created, but with a different request ID.
-				wu := workunits.NewBuilder(rootInvID, workUnitID2.WorkUnitID).WithCreateRequestID("test-request-id").WithCreatedBy("user:someone@example.com").Build()
+				wu := workunits.NewBuilder(rootInvID, workUnitID111.WorkUnitID).WithCreateRequestID("test-request-id").WithCreatedBy("user:someone@example.com").Build()
 				testutil.MustApply(ctx, t, insert.WorkUnit(wu)...)
 
 				_, err := recorder.BatchCreateWorkUnits(ctx, req)
 				assert.That(t, err, grpccode.ShouldBe(codes.AlreadyExists))
 				// The error message depends on which row is read first, so we just check for the general error string.
-				assert.That(t, err, should.ErrLike("some work units already exist (eg. \"rootInvocations/root-inv-id/workUnits/wu-new-2\")"))
+				assert.That(t, err, should.ErrLike("some work units already exist (eg. \"rootInvocations/root-inv-id/workUnits/wu-new-111\")"))
 			})
 		})
 
@@ -577,9 +578,76 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			// Check the database has the expected number of entries.
 			readCtx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
-			rows, err := workunits.ReadBatch(readCtx, []workunits.ID{workUnitID1, workUnitID11, workUnitID2}, workunits.AllFields)
+			rows, err := workunits.ReadBatch(readCtx, []workunits.ID{workUnitID1, workUnitID11, workUnitID111}, workunits.AllFields)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, rows, should.HaveLength(3))
+		})
+
+		t.Run("requests attempts to prevent inheritance of module_ fields", func(t *ftt.Test) {
+			t.Run("inherence chain starts from a stored work unit", func(t *ftt.Test) {
+				testutil.MustApply(ctx, t, spanutil.UpdateMap("WorkUnits", map[string]any{
+					"RootInvocationShardId": parentWorkUnitID.RootInvocationShardID(),
+					"WorkUnitId":            parentWorkUnitID.WorkUnitID,
+					"ModuleName":            "mymodule",
+					"ModuleScheme":          "gtest",
+					"ModuleVariant":         pbutil.Variant("k", "v"),
+					"ModuleShardKey":        "shard_key",
+				}))
+
+				t.Run("request overrides module_id", func(t *ftt.Test) {
+					req.Requests[2].WorkUnit.ModuleId = &pb.ModuleIdentifier{
+						ModuleName:    "other_module",
+						ModuleScheme:  "junit",
+						ModuleVariant: pbutil.Variant("k", "v"),
+					}
+					req.Requests[2].WorkUnit.ModuleShardKey = "shard_key"
+
+					_, err := recorder.BatchCreateWorkUnits(ctx, req)
+					assert.Loosely(t, err, should.ErrLike(`requests[2]: work_unit: module_id: must match module_id inherited from parent work unit with module set; got module name "other_module", was "mymodule"`))
+				})
+				t.Run("request overrides module_shard_key", func(t *ftt.Test) {
+					req.Requests[2].WorkUnit.ModuleId = &pb.ModuleIdentifier{
+						ModuleName:    "mymodule",
+						ModuleScheme:  "gtest",
+						ModuleVariant: pbutil.Variant("k", "v"),
+					}
+					req.Requests[2].WorkUnit.ModuleShardKey = ""
+
+					_, err := recorder.BatchCreateWorkUnits(ctx, req)
+					assert.Loosely(t, err, should.ErrLike(`requests[2]: work_unit: module_shard_key: must match module_shard_key inherited from parent work unit with module set; got "", was "shard_key"`))
+				})
+			})
+			t.Run("inheritance chain starts in a work unit created in the same request", func(t *ftt.Test) {
+				req.Requests[0].WorkUnit.ModuleId = &pb.ModuleIdentifier{
+					ModuleName:    "mymodule",
+					ModuleScheme:  "gtest",
+					ModuleVariant: pbutil.Variant("k", "v"),
+				}
+				req.Requests[0].WorkUnit.ModuleShardKey = "shard_key"
+
+				t.Run("request overrides module_id", func(t *ftt.Test) {
+					req.Requests[2].WorkUnit.ModuleId = &pb.ModuleIdentifier{
+						ModuleName:    "other_module",
+						ModuleScheme:  "junit",
+						ModuleVariant: pbutil.Variant("k", "v"),
+					}
+					req.Requests[2].WorkUnit.ModuleShardKey = "shard_key"
+
+					_, err := recorder.BatchCreateWorkUnits(ctx, req)
+					assert.Loosely(t, err, should.ErrLike(`requests[2]: work_unit: module_id: must match module_id inherited from parent work unit with module set; got module name "other_module", was "mymodule"`))
+				})
+				t.Run("request overrides module_shard_key", func(t *ftt.Test) {
+					req.Requests[2].WorkUnit.ModuleId = &pb.ModuleIdentifier{
+						ModuleName:    "mymodule",
+						ModuleScheme:  "gtest",
+						ModuleVariant: pbutil.Variant("k", "v"),
+					}
+					req.Requests[2].WorkUnit.ModuleShardKey = ""
+
+					_, err := recorder.BatchCreateWorkUnits(ctx, req)
+					assert.Loosely(t, err, should.ErrLike(`requests[2]: work_unit: module_shard_key: must match module_shard_key inherited from parent work unit with module set; got "", was "shard_key"`))
+				})
+			})
 		})
 
 		t.Run("end to end success", func(t *ftt.Test) {
@@ -642,17 +710,22 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 				State:             pb.WorkUnit_PENDING,
 				Creator:           "user:someone@example.com",
 				Deadline:          timestamppb.New(start.Add(defaultDeadlineDuration)),
+				ModuleId:          expectedWU1.ModuleId,       // Inherited.
+				ModuleShardKey:    expectedWU1.ModuleShardKey, // Inherited.
+				ChildWorkUnits:    []string{workUnitID111.Name()},
 			})
 
-			expectedWU2 := proto.Clone(req.Requests[2].WorkUnit).(*pb.WorkUnit)
-			proto.Merge(expectedWU2, &pb.WorkUnit{
-				Name:              workUnitID2.Name(),
-				Parent:            parentWorkUnitID.Name(),
-				WorkUnitId:        workUnitID2.WorkUnitID,
+			expectedWU111 := proto.Clone(req.Requests[2].WorkUnit).(*pb.WorkUnit)
+			proto.Merge(expectedWU111, &pb.WorkUnit{
+				Name:              workUnitID111.Name(),
+				Parent:            workUnitID11.Name(),
+				WorkUnitId:        workUnitID111.WorkUnitID,
 				FinalizationState: pb.WorkUnit_ACTIVE, // Default state is ACTIVE.
 				State:             pb.WorkUnit_PENDING,
 				Creator:           "user:someone@example.com",
 				Deadline:          timestamppb.New(start.Add(defaultDeadlineDuration)),
+				ModuleId:          expectedWU1.ModuleId,       // Inherited.
+				ModuleShardKey:    expectedWU1.ModuleShardKey, // Inherited.
 			})
 
 			expectWURow1 := &workunits.WorkUnitRow{
@@ -674,47 +747,55 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 					ModuleVariant:     pbutil.Variant("k", "v"),
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k", "v")),
 				},
-				ModuleShardKey:     "shard_key",
-				ProducerResource:   "//producer.example.com/builds/123",
-				Tags:               pbutil.StringPairs("e2e_key", "e2e_value"),
-				Properties:         wuProperties,
-				Instructions:       instructionutil.InstructionsWithNames(instructions, workUnitID1.Name()),
-				ExtendedProperties: extendedProperties,
-				ChildWorkUnits:     []workunits.ID{workUnitID11},
+				ModuleShardKey:          "shard_key",
+				ModuleInheritanceStatus: workunits.ModuleInheritanceStatusRoot,
+				ProducerResource:        "//producer.example.com/builds/123",
+				Tags:                    pbutil.StringPairs("e2e_key", "e2e_value"),
+				Properties:              wuProperties,
+				Instructions:            instructionutil.InstructionsWithNames(instructions, workUnitID1.Name()),
+				ExtendedProperties:      extendedProperties,
+				ChildWorkUnits:          []workunits.ID{workUnitID11},
 			}
 
 			expectWURow11 := &workunits.WorkUnitRow{
-				ID:                workUnitID11,
-				ParentWorkUnitID:  spanner.NullString{Valid: true, StringVal: workUnitID1.WorkUnitID},
-				Kind:              "EXAMPLE_MODULE",
-				State:             pb.WorkUnit_PENDING,
-				FinalizationState: pb.WorkUnit_ACTIVE,
-				Realm:             "testproject:testrealm",
-				CreatedBy:         "user:someone@example.com",
-				FinalizeStartTime: spanner.NullTime{},
-				FinalizeTime:      spanner.NullTime{},
-				Deadline:          start.Add(defaultDeadlineDuration),
-				CreateRequestID:   "test-request-id",
+				ID:                      workUnitID11,
+				ParentWorkUnitID:        spanner.NullString{Valid: true, StringVal: workUnitID1.WorkUnitID},
+				Kind:                    "EXAMPLE_MODULE",
+				State:                   pb.WorkUnit_PENDING,
+				FinalizationState:       pb.WorkUnit_ACTIVE,
+				Realm:                   "testproject:testrealm",
+				CreatedBy:               "user:someone@example.com",
+				FinalizeStartTime:       spanner.NullTime{},
+				FinalizeTime:            spanner.NullTime{},
+				Deadline:                start.Add(defaultDeadlineDuration),
+				CreateRequestID:         "test-request-id",
+				ModuleID:                expectWURow1.ModuleID,       // Inherited.
+				ModuleShardKey:          expectWURow1.ModuleShardKey, // Inherited.
+				ModuleInheritanceStatus: workunits.ModuleInheritanceStatusInherited,
+				ChildWorkUnits:          []workunits.ID{workUnitID111},
 			}
 
-			expectWURow2 := &workunits.WorkUnitRow{
-				ID:                workUnitID2,
-				ParentWorkUnitID:  spanner.NullString{Valid: true, StringVal: parentWorkUnitID.WorkUnitID},
-				Kind:              "EXAMPLE_MODULE",
-				State:             pb.WorkUnit_PENDING,
-				FinalizationState: pb.WorkUnit_ACTIVE,
-				Realm:             "testproject:testrealm",
-				CreatedBy:         "user:someone@example.com",
-				FinalizeStartTime: spanner.NullTime{},
-				FinalizeTime:      spanner.NullTime{},
-				Deadline:          start.Add(defaultDeadlineDuration),
-				CreateRequestID:   "test-request-id",
+			expectWURow111 := &workunits.WorkUnitRow{
+				ID:                      workUnitID111,
+				ParentWorkUnitID:        spanner.NullString{Valid: true, StringVal: workUnitID11.WorkUnitID},
+				Kind:                    "EXAMPLE_TEST_RUN",
+				State:                   pb.WorkUnit_PENDING,
+				FinalizationState:       pb.WorkUnit_ACTIVE,
+				Realm:                   "testproject:testrealm",
+				CreatedBy:               "user:someone@example.com",
+				FinalizeStartTime:       spanner.NullTime{},
+				FinalizeTime:            spanner.NullTime{},
+				Deadline:                start.Add(defaultDeadlineDuration),
+				CreateRequestID:         "test-request-id",
+				ModuleID:                expectWURow1.ModuleID,       // Inherited.
+				ModuleShardKey:          expectWURow1.ModuleShardKey, // Inherited.
+				ModuleInheritanceStatus: workunits.ModuleInheritanceStatusInherited,
 			}
 
 			// Expected update token
 			workUnitID11ExpectedUpdateToken, err := generateWorkUnitUpdateToken(ctx, workUnitID11)
 			assert.Loosely(t, err, should.BeNil)
-			workUnitID2ExpectedUpdateToken, err := generateWorkUnitUpdateToken(ctx, workUnitID2)
+			workUnitID111ExpectedUpdateToken, err := generateWorkUnitUpdateToken(ctx, workUnitID111)
 			assert.Loosely(t, err, should.BeNil)
 
 			res, err := recorder.BatchCreateWorkUnits(ctx, req)
@@ -726,16 +807,16 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			expectedWU11.CreateTime = timestamppb.New(createTime)
 			expectedWU11.LastUpdated = timestamppb.New(createTime)
 			expectedWU11.Etag = fmt.Sprintf(`W/"+f/%s"`, createTime.UTC().Format(time.RFC3339Nano))
-			expectedWU2.CreateTime = timestamppb.New(createTime)
-			expectedWU2.LastUpdated = timestamppb.New(createTime)
-			expectedWU2.Etag = fmt.Sprintf(`W/"+f/%s"`, createTime.UTC().Format(time.RFC3339Nano))
+			expectedWU111.CreateTime = timestamppb.New(createTime)
+			expectedWU111.LastUpdated = timestamppb.New(createTime)
+			expectedWU111.Etag = fmt.Sprintf(`W/"+f/%s"`, createTime.UTC().Format(time.RFC3339Nano))
 			assert.That(t, res, should.Match(
 				&pb.BatchCreateWorkUnitsResponse{
-					WorkUnits: []*pb.WorkUnit{expectedWU1, expectedWU11, expectedWU2},
+					WorkUnits: []*pb.WorkUnit{expectedWU1, expectedWU11, expectedWU111},
 					UpdateTokens: []string{
 						parentUpdateToken,
 						workUnitID11ExpectedUpdateToken,
-						workUnitID2ExpectedUpdateToken,
+						workUnitID111ExpectedUpdateToken,
 					},
 				},
 			))
@@ -750,14 +831,6 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			expectWURow1.LastUpdated = createTime
 			assert.That(t, row, should.Match(expectWURow1))
 
-			row, err = workunits.Read(readCtx, workUnitID2, workunits.AllFields)
-			assert.Loosely(t, err, should.BeNil)
-			expectWURow2.SecondaryIndexShardID = row.SecondaryIndexShardID
-			expectWURow2.CreateTime = createTime
-			expectWURow2.LastUpdated = createTime
-			expectWURow2.Tags = []*pb.StringPair{}
-			assert.That(t, row, should.Match(expectWURow2))
-
 			row, err = workunits.Read(readCtx, workUnitID11, workunits.AllFields)
 			assert.Loosely(t, err, should.BeNil)
 			expectWURow11.SecondaryIndexShardID = row.SecondaryIndexShardID
@@ -766,22 +839,34 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 			expectWURow11.Tags = []*pb.StringPair{}
 			assert.That(t, row, should.Match(expectWURow11))
 
+			row, err = workunits.Read(readCtx, workUnitID111, workunits.AllFields)
+			assert.Loosely(t, err, should.BeNil)
+			expectWURow111.SecondaryIndexShardID = row.SecondaryIndexShardID
+			expectWURow111.CreateTime = createTime
+			expectWURow111.LastUpdated = createTime
+			expectWURow111.Tags = []*pb.StringPair{}
+			assert.That(t, row, should.Match(expectWURow111))
+
 			// Check the legacy invocation is inserted.
-			legacyInvs, err := invocations.ReadBatch(readCtx, invocations.NewIDSet(workUnitID1.LegacyInvocationID(), workUnitID11.LegacyInvocationID(), workUnitID2.LegacyInvocationID()), invocations.AllFields)
+			legacyInvs, err := invocations.ReadBatch(readCtx, invocations.NewIDSet(workUnitID1.LegacyInvocationID(), workUnitID11.LegacyInvocationID(), workUnitID111.LegacyInvocationID()), invocations.AllFields)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, legacyInvs, should.HaveLength(3))
 
 			// Check inclusion is added to IncludedInvocations.
 			includedIDs, err := invocations.ReadIncluded(readCtx, parentWorkUnitID.LegacyInvocationID())
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, includedIDs, should.HaveLength(2))
+			assert.Loosely(t, includedIDs, should.HaveLength(1))
 			assert.That(t, includedIDs.Has(workUnitID1.LegacyInvocationID()), should.BeTrue)
-			assert.That(t, includedIDs.Has(workUnitID2.LegacyInvocationID()), should.BeTrue)
 
 			includedIDs, err = invocations.ReadIncluded(readCtx, workUnitID1.LegacyInvocationID())
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, includedIDs, should.HaveLength(1))
 			assert.That(t, includedIDs.Has(workUnitID11.LegacyInvocationID()), should.BeTrue)
+
+			includedIDs, err = invocations.ReadIncluded(readCtx, workUnitID11.LegacyInvocationID())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, includedIDs, should.HaveLength(1))
+			assert.That(t, includedIDs.Has(workUnitID111.LegacyInvocationID()), should.BeTrue)
 		})
 	})
 }

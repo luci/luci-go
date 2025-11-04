@@ -372,6 +372,18 @@ CREATE TABLE WorkUnits (
   -- that none of the work unit's ancestors have set a module_id.
   ModuleShardKey STRING(MAX),
 
+  -- Stores the manner in which the module has been set on the work unit.
+  -- (1): The work unit and its ancestors have no module set.
+  --      The work unit is neither inheriting a module nor the
+  --      source of inheritance for its children.
+  -- (2): The work unit's ancestors have no module set, but this work
+  --      unit sets a module. The work unit is the source of module
+  --      inheritance for its children. As a top-level work unit for a
+  --      module, the state of this work unit will be used when
+  --      aggregating a state for the module as a whole.
+  -- (3): The work unit's is inheriting a module from its parent.
+  ModuleInheritanceStatus INT64 NOT NULL DEFAULT(0),
+
   -- Value of CreateWorkUnitRequest.request_id.
   -- Used to dedup work unit creation requests.
   CreateRequestId STRING(MAX) NOT NULL,

@@ -283,25 +283,27 @@ func ReadRequestIDsAndCreatedBys(ctx context.Context, ids []ID) (results []*Requ
 	return rowsForIDsOptional(resultMap, ids)
 }
 
-// TestResultInfo contains fields about the work unit that are useful to RPCs
-// populating test results into the work unit.
-type TestResultInfo struct {
+// SummaryInfo contains fields about the work unit that are useful to
+// CreateTestResults and CreateWorkUnits RPCs.
+type SummaryInfo struct {
 	FinalizationState pb.WorkUnit_FinalizationState
 	// The realm of the work unit.
 	Realm string
 	// The module associated with the work unit.
 	ModuleID *pb.ModuleIdentifier
+	// The module shard key of the work unit.
+	ModuleShardKey string
 }
 
-// ReadTestResultInfos reads the content info of the given work units.
+// ReadSummaryInfos reads the selected summary information of the given work units.
 // If any of the work units are not found, returns a NotFound appstatus error.
 // Duplicate IDs are allowed.
-func ReadTestResultInfos(ctx context.Context, ids []ID) (results map[ID]TestResultInfo, err error) {
-	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadTestResultInfos")
+func ReadSummaryInfos(ctx context.Context, ids []ID) (results map[ID]SummaryInfo, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadSummaryInfos")
 	defer func() { tracing.End(ts, err) }()
 
 	var b spanutil.Buffer
-	parseRow := func(r *spanner.Row) (ID, TestResultInfo, error) {
+	parseRow := func(r *spanner.Row) (ID, SummaryInfo, error) {
 		var rootInvocationShardID string
 		var workUnitID string
 		var finalizationState pb.WorkUnit_FinalizationState
@@ -309,10 +311,11 @@ func ReadTestResultInfos(ctx context.Context, ids []ID) (results map[ID]TestResu
 		var moduleName spanner.NullString
 		var moduleScheme spanner.NullString
 		var moduleVariant *pb.Variant
+		var moduleShardKey spanner.NullString
 
-		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &finalizationState, &realm, &moduleName, &moduleScheme, &moduleVariant)
+		err := b.FromSpanner(r, &rootInvocationShardID, &workUnitID, &finalizationState, &realm, &moduleName, &moduleScheme, &moduleVariant, &moduleShardKey)
 		if err != nil {
-			return ID{}, TestResultInfo{}, err
+			return ID{}, SummaryInfo{}, err
 		}
 
 		var moduleID *pb.ModuleIdentifier
@@ -328,15 +331,16 @@ func ReadTestResultInfos(ctx context.Context, ids []ID) (results map[ID]TestResu
 			pbutil.PopulateModuleIdentifierHashes(moduleID)
 		}
 
-		result := TestResultInfo{
+		result := SummaryInfo{
 			FinalizationState: finalizationState,
 			Realm:             realm,
 			ModuleID:          moduleID,
+			ModuleShardKey:    moduleShardKey.StringVal,
 		}
 		return IDFromRowID(rootInvocationShardID, workUnitID), result, nil
 	}
 
-	columns := []string{"FinalizationState", "Realm", "ModuleName", "ModuleScheme", "ModuleVariant"}
+	columns := []string{"FinalizationState", "Realm", "ModuleName", "ModuleScheme", "ModuleVariant", "ModuleShardKey"}
 	resultMap, err := readRows(ctx, ids, columns, parseRow)
 	if err != nil {
 		return nil, err
@@ -491,6 +495,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			w.ModuleScheme,
 			w.ModuleVariant,
 			w.ModuleShardKey,
+			w.ModuleInheritanceStatus,
 			w.ProducerResource,
 			w.Tags,
 			w.Properties,
@@ -565,6 +570,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			&moduleScheme,
 			&moduleVariant,
 			&moduleShardKey,
+			&wu.ModuleInheritanceStatus,
 			&wu.ProducerResource,
 			&wu.Tags,
 			&properties,

@@ -497,7 +497,7 @@ func TestCreateWorkUnit(t *testing.T) {
 			WorkUnitID:       "wu-new",
 		}
 		rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:testrealm").Build()
-		parentWu := workunits.NewBuilder(rootInvID, parentWorkUnitID.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
+		parentWu := workunits.NewBuilder(rootInvID, parentWorkUnitID.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).WithModuleID(nil).Build()
 		parentPrefixedWu := workunits.NewBuilder(rootInvID, prefixedParentWorkUnitID.WorkUnitID).WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
 		testutil.MustApply(ctx, t, insert.RootInvocationWithRootWorkUnit(rootInv)...)
 		testutil.MustApply(ctx, t, insert.WorkUnit(parentWu)...)
@@ -892,12 +892,13 @@ func TestCreateWorkUnit(t *testing.T) {
 					ModuleVariant:     pbutil.Variant("k", "v"),
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k", "v")),
 				},
-				ModuleShardKey:     "shard_key",
-				ProducerResource:   "//producer.example.com/builds/123",
-				Tags:               pbutil.StringPairs("e2e_key", "e2e_value"),
-				Properties:         wuProperties,
-				Instructions:       instructionutil.InstructionsWithNames(instructions, workUnitID.Name()),
-				ExtendedProperties: extendedProperties,
+				ModuleShardKey:          "shard_key",
+				ModuleInheritanceStatus: workunits.ModuleInheritanceStatusRoot,
+				ProducerResource:        "//producer.example.com/builds/123",
+				Tags:                    pbutil.StringPairs("e2e_key", "e2e_value"),
+				Properties:              wuProperties,
+				Instructions:            instructionutil.InstructionsWithNames(instructions, workUnitID.Name()),
+				ExtendedProperties:      extendedProperties,
 			}
 
 			expectedLegacyInv := &pb.Invocation{

@@ -511,7 +511,7 @@ func findNewArtifacts(ctx context.Context, arts []*artifactCreationRequest) ([]*
 	return newArts, nil
 }
 
-func checkInvocationOrWorkUnitState(ctx context.Context, arts []*artifactCreationRequest) (workUnitsInfo map[workunits.ID]workunits.TestResultInfo, invInfo *invocations.TestResultInfo, err error) {
+func checkInvocationOrWorkUnitState(ctx context.Context, arts []*artifactCreationRequest) (workUnitsInfo map[workunits.ID]workunits.SummaryInfo, invInfo *invocations.TestResultInfo, err error) {
 	workUnitIDs := workunits.NewIDSet()
 	for _, a := range arts {
 		if a.workUnitID != (workunits.ID{}) {
@@ -519,7 +519,7 @@ func checkInvocationOrWorkUnitState(ctx context.Context, arts []*artifactCreatio
 		}
 	}
 	if len(workUnitIDs) > 0 {
-		parentInfos, err := workunits.ReadTestResultInfos(ctx, workUnitIDs.SortedByRowID())
+		parentInfos, err := workunits.ReadSummaryInfos(ctx, workUnitIDs.SortedByRowID())
 		if err != nil {
 			return nil, nil, err // NotFound or internal error.
 		}
@@ -545,7 +545,7 @@ func checkInvocationOrWorkUnitState(ctx context.Context, arts []*artifactCreatio
 	return workUnitsInfo, invInfo, nil
 }
 
-func validateBatchCreateArtifactsRequestForSystemState(ctx context.Context, workUnitsInfo map[workunits.ID]workunits.TestResultInfo, invInfo *invocations.TestResultInfo, arts []*artifactCreationRequest) error {
+func validateBatchCreateArtifactsRequestForSystemState(ctx context.Context, workUnitsInfo map[workunits.ID]workunits.SummaryInfo, invInfo *invocations.TestResultInfo, arts []*artifactCreationRequest) error {
 	allowedBucketsByProject := make(map[string]map[string]bool)
 	allowedRBEInstancesByProject := make(map[string]map[string]bool)
 	user := auth.CurrentUser(ctx).Identity
@@ -633,7 +633,7 @@ func createArtifactStates(ctx context.Context, arts []*artifactCreationRequest) 
 	defer func() { tracing.End(ts, err) }()
 
 	var insertsByRealm map[string]int
-	var wuInfos map[workunits.ID]workunits.TestResultInfo
+	var wuInfos map[workunits.ID]workunits.SummaryInfo
 	var invInfo *invocations.TestResultInfo
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
@@ -923,7 +923,7 @@ func (s *recorderServer) BatchCreateArtifacts(ctx context.Context, in *pb.BatchC
 		// Worst case, if this fails, we have a few orphaned artifacts in RBE-CAS.
 
 		var artsToCreate []*artifactCreationRequest
-		var wuInfos map[workunits.ID]workunits.TestResultInfo
+		var wuInfos map[workunits.ID]workunits.SummaryInfo
 		var invInfo *invocations.TestResultInfo
 		func() {
 			ctx, cancel := span.ReadOnlyTransaction(ctx)

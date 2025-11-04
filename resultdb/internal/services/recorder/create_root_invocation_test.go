@@ -974,12 +974,13 @@ func TestCreateRootInvocation(t *testing.T) {
 					ModuleVariant:     pbutil.Variant("k", "v"),
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("k", "v")),
 				},
-				ModuleShardKey:     "shard_key",
-				ProducerResource:   "//builds.example.com/builds/1",
-				Tags:               pbutil.StringPairs("wu_key", "wu_value"),
-				Properties:         wuProperties,
-				Instructions:       instructionutil.InstructionsWithNames(instructions, wuID.Name()),
-				ExtendedProperties: extendedProperties,
+				ModuleShardKey:          "shard_key",
+				ModuleInheritanceStatus: workunits.ModuleInheritanceStatusRoot,
+				ProducerResource:        "//builds.example.com/builds/1",
+				Tags:                    pbutil.StringPairs("wu_key", "wu_value"),
+				Properties:              wuProperties,
+				Instructions:            instructionutil.InstructionsWithNames(instructions, wuID.Name()),
+				ExtendedProperties:      extendedProperties,
 			}
 
 			var headers metadata.MD

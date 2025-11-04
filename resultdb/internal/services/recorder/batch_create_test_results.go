@@ -305,7 +305,7 @@ func batchCreateResultsInWorkUnits(ctx context.Context, in *pb.BatchCreateTestRe
 		insertsByRealm = make(map[string]int)
 
 		parentsSlice := parents.SortedByRowID()
-		parentInfos, err := workunits.ReadTestResultInfos(ctx, parentsSlice)
+		parentInfos, err := workunits.ReadSummaryInfos(ctx, parentsSlice)
 		if err != nil {
 			// NotFound appstatus error or internal error.
 			return err

@@ -88,31 +88,32 @@ func (w *WorkUnitRow) Normalize() {
 // WorkUnitRow is the logical representation of the schema of the WorkUnits Spanner table.
 // The values for the output only fields are ignored during writing.
 type WorkUnitRow struct {
-	ID                     ID
-	ParentWorkUnitID       spanner.NullString
-	SecondaryIndexShardID  int64 // Output only.
-	Kind                   string
-	State                  pb.WorkUnit_State
-	SummaryMarkdown        string
-	FinalizationState      pb.WorkUnit_FinalizationState // Output only.
-	Realm                  string
-	CreateTime             time.Time // Output only.
-	CreatedBy              string
-	LastUpdated            time.Time        // Output only
-	FinalizeStartTime      spanner.NullTime // Output only.
-	FinalizeTime           spanner.NullTime // Output only.
-	FinalizerCandidateTime spanner.NullTime // Output only.
-	Deadline               time.Time
-	CreateRequestID        string
-	ModuleID               *pb.ModuleIdentifier
-	ModuleShardKey         string
-	ProducerResource       string
-	Tags                   []*pb.StringPair
-	Properties             *structpb.Struct
-	Instructions           *pb.Instructions
-	ExtendedProperties     map[string]*structpb.Struct
-	ChildWorkUnits         []ID             // Output only.
-	ChildInvocations       []invocations.ID // Output only.
+	ID                      ID
+	ParentWorkUnitID        spanner.NullString
+	SecondaryIndexShardID   int64 // Output only.
+	Kind                    string
+	State                   pb.WorkUnit_State
+	SummaryMarkdown         string
+	FinalizationState       pb.WorkUnit_FinalizationState // Output only.
+	Realm                   string
+	CreateTime              time.Time // Output only.
+	CreatedBy               string
+	LastUpdated             time.Time        // Output only
+	FinalizeStartTime       spanner.NullTime // Output only.
+	FinalizeTime            spanner.NullTime // Output only.
+	FinalizerCandidateTime  spanner.NullTime // Output only.
+	Deadline                time.Time
+	CreateRequestID         string
+	ModuleID                *pb.ModuleIdentifier
+	ModuleShardKey          string
+	ModuleInheritanceStatus ModuleInheritanceStatus
+	ProducerResource        string
+	Tags                    []*pb.StringPair
+	Properties              *structpb.Struct
+	Instructions            *pb.Instructions
+	ExtendedProperties      map[string]*structpb.Struct
+	ChildWorkUnits          []ID             // Output only.
+	ChildInvocations        []invocations.ID // Output only.
 }
 
 // Clone makes a deep copy of the row.
@@ -152,24 +153,25 @@ func (w *WorkUnitRow) Clone() *WorkUnitRow {
 
 func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 	row := map[string]interface{}{
-		"RootInvocationShardId": w.ID.RootInvocationShardID(),
-		"WorkUnitId":            w.ID.WorkUnitID,
-		"ParentWorkUnitId":      w.ParentWorkUnitID,
-		"SecondaryIndexShardId": w.ID.shardID(secondaryIndexShardCount),
-		"Kind":                  w.Kind,
-		"State":                 w.State,
-		"SummaryMarkdown":       w.SummaryMarkdown,
-		"FinalizationState":     w.FinalizationState,
-		"Realm":                 w.Realm,
-		"CreateTime":            spanner.CommitTimestamp,
-		"CreatedBy":             w.CreatedBy,
-		"LastUpdated":           spanner.CommitTimestamp,
-		"Deadline":              w.Deadline,
-		"CreateRequestId":       w.CreateRequestID,
-		"ProducerResource":      w.ProducerResource,
-		"Tags":                  w.Tags,
-		"Properties":            spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
-		"Instructions":          spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
+		"RootInvocationShardId":   w.ID.RootInvocationShardID(),
+		"WorkUnitId":              w.ID.WorkUnitID,
+		"ParentWorkUnitId":        w.ParentWorkUnitID,
+		"SecondaryIndexShardId":   w.ID.shardID(secondaryIndexShardCount),
+		"Kind":                    w.Kind,
+		"State":                   w.State,
+		"SummaryMarkdown":         w.SummaryMarkdown,
+		"FinalizationState":       w.FinalizationState,
+		"Realm":                   w.Realm,
+		"CreateTime":              spanner.CommitTimestamp,
+		"CreatedBy":               w.CreatedBy,
+		"LastUpdated":             spanner.CommitTimestamp,
+		"Deadline":                w.Deadline,
+		"CreateRequestId":         w.CreateRequestID,
+		"ModuleInheritanceStatus": w.ModuleInheritanceStatus,
+		"ProducerResource":        w.ProducerResource,
+		"Tags":                    w.Tags,
+		"Properties":              spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
+		"Instructions":            spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
 	}
 	if w.ModuleID != nil {
 		row["ModuleName"] = w.ModuleID.ModuleName

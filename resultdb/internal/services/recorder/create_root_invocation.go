@@ -166,6 +166,12 @@ func createIdempotentRootInvocation(
 		if req.RootWorkUnit.Deadline == nil {
 			deadline = now.Add(defaultDeadlineDuration)
 		}
+
+		moduleInheritanceStatus := workunits.ModuleInheritanceStatusNoModuleSet
+		if req.RootWorkUnit.ModuleId != nil {
+			moduleInheritanceStatus = workunits.ModuleInheritanceStatusRoot
+		}
+
 		// Root work unit and Root invocation are always created in the same transaction,
 		// so the idempotency check on the root invocation is sufficient.
 		wuRow := &workunits.WorkUnitRow{
@@ -183,14 +189,15 @@ func createIdempotentRootInvocation(
 			CreatedBy:         createdBy,
 			ProducerResource:  rootInvocationRow.ProducerResource,
 			// Fields should be set with value in request.RootWorkUnit.
-			CreateRequestID:    req.RequestId,
-			ModuleID:           req.RootWorkUnit.ModuleId,
-			ModuleShardKey:     req.RootWorkUnit.ModuleShardKey,
-			Deadline:           deadline,
-			Tags:               req.RootWorkUnit.Tags,
-			Properties:         req.RootWorkUnit.Properties,
-			Instructions:       req.RootWorkUnit.Instructions,
-			ExtendedProperties: req.RootWorkUnit.ExtendedProperties,
+			CreateRequestID:         req.RequestId,
+			ModuleID:                req.RootWorkUnit.ModuleId,
+			ModuleShardKey:          req.RootWorkUnit.ModuleShardKey,
+			ModuleInheritanceStatus: moduleInheritanceStatus,
+			Deadline:                deadline,
+			Tags:                    req.RootWorkUnit.Tags,
+			Properties:              req.RootWorkUnit.Properties,
+			Instructions:            req.RootWorkUnit.Instructions,
+			ExtendedProperties:      req.RootWorkUnit.ExtendedProperties,
 		}
 		legacyCreateOpts := workunits.LegacyCreateOptions{
 			ExpectedTestResultsExpirationTime: now.Add(uninterestingTestVerdictsExpirationTime),

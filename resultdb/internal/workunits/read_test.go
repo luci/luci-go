@@ -554,13 +554,16 @@ func TestReadFunctions(t *testing.T) {
 						ModuleName:    "module_name",
 						ModuleScheme:  "module_scheme",
 						ModuleVariant: pbutil.Variant("k", "v"),
-					}).Build()
+					}).
+					WithModuleShardKey("shard_key").
+					Build()
 				wu1ID := ID{RootInvocationID: rootInvID, WorkUnitID: "content-1"}
 
 				wu2 := NewBuilder(rootInvID, "content-2").
 					WithFinalizationState(pb.WorkUnit_ACTIVE).
 					WithRealm("testproject:realm-b").
 					WithModuleID(nil).
+					WithModuleShardKey("").
 					Build()
 				wu2ID := ID{RootInvocationID: rootInvID, WorkUnitID: "content-2"}
 
@@ -569,10 +572,10 @@ func TestReadFunctions(t *testing.T) {
 				testutil.MustApply(ctx, t, ms...)
 
 				ids := []ID{wu1ID, wu2ID, wu1ID} // with duplicate
-				results, err := ReadTestResultInfos(span.Single(ctx), ids)
+				results, err := ReadSummaryInfos(span.Single(ctx), ids)
 				assert.Loosely(t, err, should.BeNil)
 
-				assert.That(t, results, should.Match(map[ID]TestResultInfo{
+				assert.That(t, results, should.Match(map[ID]SummaryInfo{
 					wu1ID: {
 						FinalizationState: pb.WorkUnit_FINALIZED,
 						Realm:             "testproject:realm-a",
@@ -582,6 +585,7 @@ func TestReadFunctions(t *testing.T) {
 							ModuleVariant:     pbutil.Variant("k", "v"),
 							ModuleVariantHash: "b1618cc2bf370a7c",
 						},
+						ModuleShardKey: "shard_key",
 					},
 					wu2ID: {
 						FinalizationState: pb.WorkUnit_ACTIVE,
@@ -595,13 +599,13 @@ func TestReadFunctions(t *testing.T) {
 					id,
 					{RootInvocationID: rootInvID, WorkUnitID: "non-existent-id"},
 				}
-				_, err := ReadTestResultInfos(span.Single(ctx), ids)
+				_, err := ReadSummaryInfos(span.Single(ctx), ids)
 				assert.That(t, appstatus.Code(err), should.Equal(codes.NotFound))
 				assert.That(t, err, should.ErrLike(`"rootInvocations/root-inv-id/workUnits/non-existent-id" not found`))
 			})
 
 			t.Run("empty request", func(t *ftt.Test) {
-				results, err := ReadTestResultInfos(span.Single(ctx), []ID{})
+				results, err := ReadSummaryInfos(span.Single(ctx), []ID{})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, results, should.HaveLength(0))
 			})

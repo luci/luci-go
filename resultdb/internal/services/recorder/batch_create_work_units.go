@@ -109,8 +109,13 @@ func createWorkUnitsIdempotent(
 	logging.Infof(ctx, "%s", prepareWorkUnitCreationLogMessage(parentIDs, ids))
 
 	dedup := false
-	_, err = mutateWorkUnitsForCreate(ctx, parentIDs, ids, func(ctx context.Context) error {
-		var err error
+
+	parentsToCheckSet := workunits.NewIDSet(parentIDs...)
+	// Only check parents that are not being created in this batch.
+	parentsToCheckSet.RemoveAll(workunits.NewIDSet(ids...))
+	parentsToCheck := parentsToCheckSet.SortedByRowID()
+
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		dedup, err = deduplicateCreateWorkUnits(ctx, ids, in.RequestId, createdBy)
 		if err != nil {
 			return err
@@ -119,8 +124,72 @@ func createWorkUnitsIdempotent(
 			// This call should be deduplicated, do not write to database.
 			return nil
 		}
+
+		// Validate all work units are active.
+		workUnitInfo, err := workunits.ReadSummaryInfos(ctx, parentsToCheck)
+		if err != nil {
+			return err
+		}
+		for _, parentID := range parentsToCheck {
+			wu := workUnitInfo[parentID]
+			if wu.FinalizationState != pb.WorkUnit_ACTIVE {
+				return appstatus.Errorf(codes.FailedPrecondition, "parent %q is not active", parentID.Name())
+			}
+		}
+
 		for i, r := range in.Requests {
 			wu := r.WorkUnit
+			parentWorkUnitInfo, ok := workUnitInfo[parentIDs[i]]
+			if !ok {
+				return errors.New("logic error: could not find details for parent work unit")
+			}
+
+			var moduleID *pb.ModuleIdentifier
+			var moduleShardKey string
+			var moduleInheritanceStatus workunits.ModuleInheritanceStatus
+			if parentWorkUnitInfo.ModuleID != nil {
+				// If the parent work unit has a module set, this work unit must
+				// inherit it.
+
+				// If the module_ fields are also set on the request, check they
+				// are 100% identical to what is being inherited.
+				// N.B. ModuleShardKey may only be set of ModuleId is set.
+				if wu.ModuleId != nil {
+					if diff := diffModuleIdentifier(wu.ModuleId, parentWorkUnitInfo.ModuleID); diff != "" {
+						return appstatus.Errorf(codes.FailedPrecondition, "requests[%d]: work_unit: module_id: must match module_id inherited from parent work unit with module set; %s", i, diff)
+					}
+					if wu.ModuleShardKey != parentWorkUnitInfo.ModuleShardKey {
+						return appstatus.Errorf(codes.FailedPrecondition, "requests[%d]: work_unit: module_shard_key: must match module_shard_key inherited from parent work unit with module set; got %q, was %q", i, wu.ModuleShardKey, parentWorkUnitInfo.ModuleShardKey)
+					}
+				}
+				// Inherit from the parent.
+				moduleID = parentWorkUnitInfo.ModuleID
+				moduleShardKey = parentWorkUnitInfo.ModuleShardKey
+				moduleInheritanceStatus = workunits.ModuleInheritanceStatusInherited
+			} else if wu.ModuleId != nil {
+				// No value is inherited from the parent, but a module is set on the request.
+				moduleID = wu.ModuleId
+				moduleShardKey = wu.ModuleShardKey
+				moduleInheritanceStatus = workunits.ModuleInheritanceStatusRoot
+			} else {
+				// No module on the parent or in the request.
+				moduleInheritanceStatus = workunits.ModuleInheritanceStatusNoModuleSet
+			}
+
+			// Populate information about this work unit just created into the map so that
+			// child work units (in later request items) can use information about this work
+			// unit. The request ordering is such that children are guaranteed to ordered
+			// after their parents.
+			workUnitInfo[ids[i]] = workunits.SummaryInfo{
+				ModuleID:       moduleID,
+				ModuleShardKey: moduleShardKey,
+			}
+
+			state := wu.State
+			if state == pb.WorkUnit_STATE_UNSPECIFIED {
+				// TODO: b/447225325 - Remove this defaulting once the field is mandatory.
+				state = pb.WorkUnit_PENDING
+			}
 
 			deadline := wu.Deadline.AsTime()
 			if wu.Deadline == nil {
@@ -128,23 +197,24 @@ func createWorkUnitsIdempotent(
 			}
 
 			wuRow := &workunits.WorkUnitRow{
-				ID:                 ids[i],
-				ParentWorkUnitID:   spanner.NullString{Valid: true, StringVal: parentIDs[i].WorkUnitID},
-				Kind:               wu.Kind,
-				State:              wu.State,
-				FinalizationState:  pb.WorkUnit_ACTIVE,
-				SummaryMarkdown:    wu.SummaryMarkdown,
-				Realm:              wu.Realm,
-				CreatedBy:          createdBy,
-				Deadline:           deadline,
-				CreateRequestID:    in.RequestId,
-				ModuleID:           wu.ModuleId,
-				ModuleShardKey:     wu.ModuleShardKey,
-				ProducerResource:   wu.ProducerResource,
-				Tags:               wu.Tags,
-				Properties:         wu.Properties,
-				Instructions:       wu.Instructions,
-				ExtendedProperties: wu.ExtendedProperties,
+				ID:                      ids[i],
+				ParentWorkUnitID:        spanner.NullString{Valid: true, StringVal: parentIDs[i].WorkUnitID},
+				Kind:                    wu.Kind,
+				State:                   wu.State,
+				FinalizationState:       pb.WorkUnit_ACTIVE,
+				SummaryMarkdown:         wu.SummaryMarkdown,
+				Realm:                   wu.Realm,
+				CreatedBy:               createdBy,
+				Deadline:                deadline,
+				CreateRequestID:         in.RequestId,
+				ModuleID:                moduleID,
+				ModuleShardKey:          moduleShardKey,
+				ModuleInheritanceStatus: moduleInheritanceStatus,
+				ProducerResource:        wu.ProducerResource,
+				Tags:                    wu.Tags,
+				Properties:              wu.Properties,
+				Instructions:            wu.Instructions,
+				ExtendedProperties:      wu.ExtendedProperties,
 			}
 			legacyCreateOpts := workunits.LegacyCreateOptions{
 				ExpectedTestResultsExpirationTime: now.Add(uninterestingTestVerdictsExpirationTime),
@@ -457,41 +527,6 @@ func validateBatchCreateWorkUnitsRequest(req *pb.BatchCreateWorkUnitsRequest, cf
 		}
 	}
 	return nil
-}
-
-// mutateWorkUnitsForCreate provides a transactional wrapper for creating work units.
-//
-// It ensures that modifications happen only if the parent work unit is ACTIVE.
-// For parents created in the same batch request, the state check is skipped as they
-// don't exist in the database yet.
-//
-// Both the parentIDs and newIDs slices must be corresponding the BatchCreateWorkUnits.requests
-// (i.e. parentIDs[i] and  newIDs[i] are the parent ID and work unit ID in BatchCreateWorkUnits.requests[i])
-//
-// On success, it returns the Spanner commit timestamp.
-func mutateWorkUnitsForCreate(ctx context.Context, parentIDs []workunits.ID, newIDs []workunits.ID, f func(context.Context) error) (time.Time, error) {
-	newIDSet := workunits.NewIDSet(newIDs...)
-	parentsToCheckSet := workunits.NewIDSet(parentIDs...)
-	// Only check parents that are not being created in this batch.
-	parentsToCheckSet.RemoveAll(newIDSet)
-	parentsToCheck := parentsToCheckSet.SortedByRowID()
-
-	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-		states, err := workunits.ReadFinalizationStates(ctx, parentsToCheck)
-		if err != nil {
-			return err
-		}
-		for i, st := range states {
-			if st != pb.WorkUnit_ACTIVE {
-				return appstatus.Errorf(codes.FailedPrecondition, "parent %q is not active", parentsToCheck[i].Name())
-			}
-		}
-		return f(ctx)
-	})
-	if err != nil {
-		return time.Time{}, err
-	}
-	return commitTimestamp, nil
 }
 
 func deduplicateCreateWorkUnits(ctx context.Context, ids []workunits.ID, requestID, createdBy string) (shouldDedup bool, err error) {
