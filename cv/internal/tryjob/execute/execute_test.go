@@ -341,6 +341,33 @@ func TestPrepExecutionPlan(t *testing.T) {
 						},
 					}))
 				})
+
+				t.Run("Only update if run ends", func(t *ftt.Test) {
+					// Quota allows retrying transient failure.
+					tj := ensureTryjob(t, ctx, tjID, def, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)
+					r := &run.Run{
+						Mode:   run.FullRun,
+						Status: run.Status_CANCELLED,
+					}
+					_, plan, err := executor.prepExecutionPlan(ctx, execState, r, []int64{tjID}, false)
+					assert.NoErr(t, err)
+					assert.That(t, plan.isEmpty(), should.BeTrue)
+					assert.That(t, execState.Executions[0].Attempts, should.Match([]*tryjob.ExecutionState_Execution_Attempt{
+						makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY),
+					}))
+					assert.That(t, executor.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
+						{
+							Time: timestamppb.New(ct.Clock.Now().UTC()),
+							Kind: &tryjob.ExecutionLogEntry_TryjobsEnded_{
+								TryjobsEnded: &tryjob.ExecutionLogEntry_TryjobsEnded{
+									Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
+										makeLogTryjobSnapshot(def, tj, false),
+									},
+								},
+							},
+						},
+					}))
+				})
 			})
 
 			t.Run("Multiple Tryjobs", func(t *ftt.Test) {

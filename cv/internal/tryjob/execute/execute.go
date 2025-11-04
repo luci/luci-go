@@ -17,6 +17,7 @@ package execute
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -170,28 +171,29 @@ const noLongerRequiredInConfig = "Tryjob is no longer required in Project Config
 // prepExecutionPlan updates the states and computes a plan in order to
 // fulfill the Requirement.
 func (e *Executor) prepExecutionPlan(ctx context.Context, execState *tryjob.ExecutionState, r *run.Run, tryjobsUpdated []int64, reqmtChanged bool) (*tryjob.ExecutionState, *plan, error) {
+	hasTryjobsUpdated := len(tryjobsUpdated) > 0
+
 	switch hasTryjobsUpdated := len(tryjobsUpdated) > 0; {
 	case hasTryjobsUpdated && reqmtChanged:
-		panic(fmt.Errorf("the Executor can't handle updates to Requirement and Tryjobs at the same time"))
-	case hasTryjobsUpdated && hasExecutionStateEnded(execState):
-		logging.Debugf(ctx, "received update for tryjobs %v", tryjobsUpdated)
-		// execution has ended. Only updating the tryjob information in the
-		// execution state.
-		execState, err := e.updateTryjobs(ctx, tryjobsUpdated, execState)
-		if err != nil {
-			return nil, nil, err
-		}
-		return execState, nil, nil
-	case hasTryjobsUpdated:
+		panic(errors.New("the Executor can't handle updates to Requirement and Tryjobs at the same time"))
+	case !hasTryjobsUpdated && !reqmtChanged:
+		panic(errors.New("the Executor was called without any update on either Tryjobs or Requirement"))
+	}
+
+	if hasTryjobsUpdated {
 		logging.Debugf(ctx, "received update for tryjobs %v", tryjobsUpdated)
 		return e.handleUpdatedTryjobs(ctx, tryjobsUpdated, execState, r)
-	case reqmtChanged && hasExecutionStateEnded(execState):
-		logging.Infof(ctx, "Received requirement changes but the Executor has ended")
+	}
+
+	// Requirement changed
+	switch {
+	case reqmtChanged && (hasExecutionStateEnded(execState) || run.IsEnded(r.Status)):
+		logging.Infof(ctx, "Received requirement changes but the Executor or Run has already ended")
 		return execState, nil, nil
 	case reqmtChanged && r.Tryjobs.GetRequirementVersion() <= execState.GetRequirementVersion():
 		logging.Errorf(ctx, "Tryjob Executor is executing a Requirement that is either later than or equal to the requested Requirement version. current: %d, got: %d ", r.Tryjobs.GetRequirementVersion(), execState.GetRequirementVersion())
 		return execState, nil, nil
-	case reqmtChanged:
+	default:
 		curReqmt, targetReqmt := execState.GetRequirement(), r.Tryjobs.GetRequirement()
 		if curReqmt != nil {
 			// Only log when existing Requirement is present. In another words,
@@ -199,8 +201,6 @@ func (e *Executor) prepExecutionPlan(ctx context.Context, execState *tryjob.Exec
 			e.logRequirementChanged(ctx)
 		}
 		return handleRequirementChange(curReqmt, targetReqmt, execState)
-	default:
-		panic(fmt.Errorf("the Executor was called without any update on either Tryjobs or Requirement"))
 	}
 }
 
@@ -240,6 +240,15 @@ func (e *Executor) updateTryjobs(ctx context.Context, tryjobs []int64, execState
 // critical Tryjobs have ended successfully.
 // Returns a non-empty plan if any Tryjob should be retried.
 func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, execState *tryjob.ExecutionState, r *run.Run) (*tryjob.ExecutionState, *plan, error) {
+	if hasExecutionStateEnded(execState) || run.IsEnded(r.Status) {
+		// execution or run has already ended. Only updating the tryjob information
+		// in the execution state.
+		execState, err := e.updateTryjobs(ctx, tryjobs, execState)
+		if err != nil {
+			return nil, nil, err
+		}
+		return execState, nil, err
+	}
 	tryjobByID, err := tryjob.LoadTryjobsMapByIDs(ctx, common.MakeTryjobIDs(tryjobs...))
 	if err != nil {
 		return nil, nil, err
@@ -558,11 +567,8 @@ func convertToAttempt(tj *tryjob.Tryjob, id common.RunID) *tryjob.ExecutionState
 		Status:     tj.Status,
 		Result:     tj.Result,
 	}
-	for _, runID := range tj.ReusedBy {
-		if runID == id {
-			ret.Reused = true
-			break
-		}
+	if slices.Contains(tj.ReusedBy, id) {
+		ret.Reused = true
 	}
 	return ret
 }
