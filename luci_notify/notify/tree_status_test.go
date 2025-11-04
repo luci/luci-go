@@ -63,7 +63,7 @@ func (ts *fakeTreeStatusClient) postStatus(c context.Context, message string, tr
 	defer ts.mu.Unlock()
 
 	var messageStatus config.TreeCloserStatus
-	if strings.Contains(message, "close") {
+	if strings.Contains(message, "Tree is closed") {
 		messageStatus = config.Closed
 	} else {
 		messageStatus = config.Open

@@ -24,7 +24,6 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
@@ -422,11 +421,11 @@ func updateTree(c context.Context, ts treeStatusClient, treeClosers []*config.Tr
 		if openedByRevert {
 			// Special message for revert-triggered opening.
 			message = truncateString(
-				fmt.Sprintf("Tree is open (Automatic: Culprit %s has been reverted at %s)",
+				fmt.Sprintf("Tree is open (Automatic: Culprit %s has been reverted at %s",
 					lastRevertEvent.CulpritReviewURL, lastRevertEvent.RevertReviewURL),
 				maxAutomaticMessageLengthBytes-1) + ")"
 		} else {
-			message = truncateString(fmt.Sprintf("Tree is open (Automatic: %s", randomMessage(c)), maxAutomaticMessageLengthBytes-1) + ")"
+			message = "Tree is open (Automatic: All tree-closer builders are passing)"
 		}
 	} else {
 		message = truncateString(fmt.Sprintf("Tree is closed (Automatic: %s", oldestClosed.Message), maxAutomaticMessageLengthBytes-1) + ")"
@@ -506,141 +505,4 @@ func generateClosingBuilderName(c context.Context, treeCloser *config.TreeCloser
 	}
 	project := tcProject(treeCloser)
 	return fmt.Sprintf("projects/%s/buckets/%s/builders/%s", project, m[1], m[2])
-}
-
-// Want more messages? CLs welcome!
-var messages = []string{
-	"('o')",
-	"(｡>﹏<｡)",
-	"☃",
-	"☀ Tree is open ☀",
-	"٩◔̯◔۶",
-	"☺",
-	"(´・ω・`)",
-	"(｀・ω・´)",
-	"(΄◞ิ౪◟ิ‵ )",
-	"(╹◡╹)",
-	"♩‿♩",
-	"(/･ω･)/",
-	" ʅ(◔౪◔ ) ʃ",
-	"ᕙ(`▿´)ᕗ",
-	"ヽ(^o^)丿",
-	"\\(･ω･)/",
-	"＼(^o^)／",
-	"ｷﾀ━━━━(ﾟ∀ﾟ)━━━━ｯ!!",
-	"ヽ(^。^)ノ",
-	"(ﾟдﾟ)",
-	"ヽ(´ω`*人*´ω`)ノ",
-	" ﾟ+｡:.ﾟヽ(*´∀`)ﾉﾟ.:｡+ﾟ",
-	"(゜ー゜＊）ネッ！",
-	" ♪d(´▽｀)b♪オールオッケィ♪",
-	"(ﾉ≧∀≦)ﾉ・‥…",
-	"☆（ゝω・）vｷｬﾋﾟ",
-	"ლ(╹◡╹ლ)",
-	"ƪ(•̃͡ε•̃͡)∫ʃ",
-	"(•_•)",
-	"( ་ ⍸ ་ )",
-	"(☉౪ ⊙)",
-	"˙ ͜ʟ˙",
-	"( ఠൠఠ )",
-	"☆.｡.:*･ﾟ☆.｡.:*･ﾟ☆祝☆ﾟ･*:.｡.☆ﾟ･*:.｡.☆",
-	"༼ꉺɷꉺ༽",
-	"◉_◉",
-	"ϵ( ‘Θ’ )϶",
-	"ヾ(⌐■_■)ノ♪",
-	"(◡‿◡✿)",
-	"★.:ﾟ+｡☆ (●´v｀○)bｫﾒﾃﾞﾄd(○´v｀●)☆.:ﾟ+｡★",
-	"(☆.☆)",
-	"ｵﾒﾃﾞﾄｰ♪c(*ﾟｰ^)ﾉ*･'ﾟ☆｡.:*:･'☆'･:*:.",
-	"☆.。.:*・°☆.。.:*・°☆",
-	"ʕ •ᴥ•ʔ",
-	"☼.☼",
-	"⊂(・(ェ)・)⊃",
-	"(ﾉ≧∇≦)ﾉ ﾐ ┸━┸",
-	"¯\\_(ツ)_/¯",
-	"UwU",
-	"Paç fat!",
-	"Sretno",
-	"Hodně štěstí!",
-	"Held og lykke!",
-	"Veel geluk!",
-	"Edu!",
-	"lykkyä tykö",
-	"Viel Glück!",
-	"Καλή τύχη!",
-	"Sok szerencsét kivánok!",
-	"Gangi þér vel!",
-	"Go n-éirí an t-ádh leat!",
-	"Buona fortuna!",
-	"Laimīgs gadījums!",
-	"Sėkmės!",
-	"Vill Gléck!",
-	"Со среќа!",
-	"Powodzenia!",
-	"Boa sorte!",
-	"Noroc!",
-	"Срећно",
-	"Veľa šťastia!",
-	"Lycka till!",
-	"Bona sort!",
-	"Zorte on!",
-	"Góða eydnu",
-	"¡Boa fortuna!",
-	"Bona fortuna!",
-	"Xewqat sbieħ",
-	"Aigh vie!",
-	"Pob lwc!",
-	" موفق باشيد",
-	"İyi şanslar!",
-	"Bonŝancon!",
-	"祝你好运！",
-	"祝你好運！",
-	"頑張って！",
-	"សំណាងល្អ ",
-	"행운을 빌어요",
-	"शुभ कामना ",
-	"โชคดี!",
-	"Chúc may mắn!",
-	"بالتوفيق!",
-	"Sterkte!",
-	"Ke o lakaletsa mohlohonolo",
-	"Uve nemhanza yakanaka",
-	"Kila la kheri!",
-	"Amathamsanqa",
-	"Ngikufisela iwela!",
-	"Bonne chance!",
-	"¡Buena suerte!",
-	"Good luck!",
-	"Semoga Beruntung!",
-	"Selamat Maju Jaya!",
-	"Ia manuia",
-	"Suwertehin ka sana",
-	"Հաջողությո'ւն",
-	"Іске сәт",
-	"Амжилт хүсье",
-	"удачі!",
-	"Da legst di nieda!",
-	"Gell, da schaugst?",
-	"Ois Guade",
-	"शुभ कामना!",
-	"நல் வாழ்த்துக்கள் ",
-	"అంతా శుభం కలగాలి! ",
-	":')",
-	":'D",
-	"`,;)",
-	"Tree is open (^O^)",
-	"Thượng lộ bình an",
-	"Tree is open now (ง '̀͜ '́ )ง",
-	"ヽ(^o^)ノ",
-	"Ahoy all is good!",
-	"All's right with the world!",
-	"Aloha",
-}
-
-func randomMessage(c context.Context) string {
-	message := messages[mathrand.Intn(c, len(messages))]
-	if message[len(message)-1] == ')' {
-		return message + " "
-	}
-	return message
 }
