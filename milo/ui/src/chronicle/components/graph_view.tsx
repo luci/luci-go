@@ -215,10 +215,12 @@ function Graph() {
           onNodeClick={onNodeClick}
           onPaneClick={onPaneClick}
           fitView
+          panOnScroll
+          minZoom={0.1}
         >
           <Background />
           <Controls />
-          <MiniMap />
+          <MiniMap pannable zoomable />
           <ReactFlowPanel position="top-left">
             <Paper
               elevation={2}
