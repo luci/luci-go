@@ -33,13 +33,16 @@ import {
   getFilters,
 } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
-import { CHROMEOS_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
-import { CHROMEOS_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
+import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
+import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
+import { getFeatureFlag } from '@/fleet/config/features';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { useDevices } from '@/fleet/hooks/use_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
+import { MainMetricsContainer } from '@/fleet/pages/device_list_page/main_metrics';
 import { SelectedOptions } from '@/fleet/types';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
@@ -51,19 +54,14 @@ import {
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { AutorepairJobsAlert } from '../common/autorepair_jobs_alert';
-import {
-  dimensionsToFilterOptions,
-  filterOptionsPlaceholder,
-} from '../common/helpers';
-import { useDeviceDimensions } from '../common/use_device_dimensions';
-
-import { ChromeOSSummaryHeader } from './chromeos_summary_header';
+import { AutorepairJobsAlert } from './autorepair_jobs_alert';
+import { dimensionsToFilterOptions, filterOptionsPlaceholder } from './helpers';
+import { useDeviceDimensions } from './use_device_dimensions';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
 
-export const ChromeOsDevicesPage = () => {
+export const DeviceListPage = ({ platform }: { platform: Platform }) => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [orderByParam] = useOrderByParam();
   const pagerCtx = usePagerContext({
@@ -90,7 +88,7 @@ export const ChromeOsDevicesPage = () => {
     : stringifyFilters(selectedOptions.filters);
 
   const client = useFleetConsoleClient();
-  const dimensionsQuery = useDeviceDimensions({ platform: Platform.CHROMEOS });
+  const dimensionsQuery = useDeviceDimensions({ platform });
 
   // TODO: b/419764393, b/420287987 - In local storage REACT_QUERY_OFFLINE_CACHE can contain empty data object which causes app to crash.
   const isDimensionsQueryProperlyLoaded =
@@ -102,7 +100,7 @@ export const ChromeOsDevicesPage = () => {
     ...client.CountDevices.query(
       CountDevicesRequest.fromPartial({
         filter: stringifiedSelectedOptions,
-        platform: Platform.CHROMEOS,
+        platform: platform,
       }),
     ),
   });
@@ -112,7 +110,7 @@ export const ChromeOsDevicesPage = () => {
     pageToken: getPageToken(pagerCtx, searchParams),
     orderBy: orderByParam,
     filter: stringifiedSelectedOptions,
-    platform: Platform.CHROMEOS,
+    platform: platform,
   });
 
   const devicesQuery = useDevices(request);
@@ -146,7 +144,7 @@ export const ChromeOsDevicesPage = () => {
     const missingParamsColoumns = getWrongColumnsFromParams(
       searchParams,
       columns,
-      CHROMEOS_DEFAULT_COLUMNS,
+      DEFAULT_DEVICE_COLUMNS[platform],
     );
     if (missingParamsColoumns.length === 0) return;
     addWarning(
@@ -166,6 +164,7 @@ export const ChromeOsDevicesPage = () => {
     dimensionsQuery.isPending,
     searchParams,
     setSearchParams,
+    platform,
   ]);
 
   useEffect(() => {
@@ -204,7 +203,10 @@ export const ChromeOsDevicesPage = () => {
     setSearchParams(filtersUpdater({}));
   }, [addWarning, selectedOptions.error, setSearchParams]);
 
-  const currentTasks = useCurrentTasks(devices);
+  const currentTasks = useCurrentTasks(devices, {
+    enabled:
+      platform === Platform.CHROMEOS || platform === Platform.UNSPECIFIED,
+  });
 
   return (
     <div
@@ -213,7 +215,10 @@ export const ChromeOsDevicesPage = () => {
       }}
     >
       <WarningNotifications warnings={warnings} />
-      <ChromeOSSummaryHeader selectedOptions={selectedOptions.filters || {}} />
+      <MainMetricsContainer
+        selectedOptions={selectedOptions.filters || {}}
+        platform={platform}
+      />
       <AutorepairJobsAlert />
       <div
         css={{
@@ -237,10 +242,7 @@ export const ChromeOsDevicesPage = () => {
           <DeviceListFilterBar
             filterOptions={
               isDimensionsQueryProperlyLoaded
-                ? dimensionsToFilterOptions(
-                    dimensionsQuery.data,
-                    Platform.CHROMEOS,
-                  )
+                ? dimensionsToFilterOptions(dimensionsQuery.data, platform)
                 : filterOptionsPlaceholder(selectedOptions.filters)
             }
             selectedOptions={selectedOptions.filters}
@@ -256,8 +258,7 @@ export const ChromeOsDevicesPage = () => {
         }}
       >
         <DeviceTable
-          defaultColumnIds={CHROMEOS_DEFAULT_COLUMNS}
-          localStorageKey={CHROMEOS_DEVICES_LOCAL_STORAGE_KEY}
+          key={platform}
           devices={devices}
           columnIds={columns}
           nextPageToken={nextPageToken}
@@ -274,6 +275,7 @@ export const ChromeOsDevicesPage = () => {
           isLoadingColumns={dimensionsQuery.isPending}
           totalRowCount={countQuery?.data?.total}
           currentTaskMap={currentTasks.map}
+          platform={platform}
         />
       </div>
     </div>
@@ -281,6 +283,12 @@ export const ChromeOsDevicesPage = () => {
 };
 
 export function Component() {
+  const { platform } = usePlatform();
+
+  const supportedPlatforms = getFeatureFlag('AndroidListDevices')
+    ? [Platform.CHROMEOS, Platform.ANDROID]
+    : [Platform.CHROMEOS];
+
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
       <FleetHelmet pageTitle="Device List" />
@@ -290,7 +298,11 @@ export function Component() {
         key="fleet-device-list-page"
       >
         <LoggedInBoundary>
-          <ChromeOsDevicesPage />
+          {platform !== undefined && supportedPlatforms.includes(platform) ? (
+            <DeviceListPage platform={platform} />
+          ) : (
+            <PlatformNotAvailable availablePlatforms={supportedPlatforms} />
+          )}
         </LoggedInBoundary>
       </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>

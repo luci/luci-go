@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export const ANDROID_DEVICES_LOCAL_STORAGE_KEY =
-  'fleet-console-android-devices-columns';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-export const CHROMEOS_DEVICES_LOCAL_STORAGE_KEY =
-  'fleet-console-devices-columns';
+export const DEVICES_COLUMNS_LOCAL_STORAGE_KEY: Record<Platform, string> = {
+  [Platform.UNSPECIFIED]: 'fleet-console-devices-columns',
+  [Platform.CHROMEOS]: 'fleet-console-devices-columns',
+  [Platform.ANDROID]: 'fleet-console-android-devices-columns',
+  [Platform.CHROMIUM]: 'fleet-console-chromium-devices-columns',
+};
 
 export const RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY =
   'fleet-console-rri-columns';

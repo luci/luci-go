@@ -12,5 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from './admin_tasks_page';
-export default Component;
+export * from './admin_tasks_page';

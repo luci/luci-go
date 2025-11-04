@@ -27,8 +27,9 @@ import {
   PagerContext,
 } from '@/common/components/params_pager';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
+import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
+import { DEVICES_COLUMNS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
-import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { extractDutId } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { InvalidPageTokenAlert } from '@/fleet/utils/invalid-page-token-alert';
@@ -130,8 +131,6 @@ const getOrderByFromSortModel = (sortModel: GridSortModel): string => {
 interface DeviceTableProps {
   devices: readonly Device[];
   columnIds: string[];
-  defaultColumnIds: string[];
-  localStorageKey: string;
   nextPageToken: string;
   pagerCtx: PagerContext;
   isError: boolean;
@@ -140,13 +139,12 @@ interface DeviceTableProps {
   isLoadingColumns: boolean;
   totalRowCount?: number;
   currentTaskMap: Map<string, string>;
+  platform: Platform;
 }
 
 export function DeviceTable({
   devices,
   columnIds,
-  defaultColumnIds,
-  localStorageKey,
   nextPageToken,
   pagerCtx,
   isError,
@@ -155,8 +153,8 @@ export function DeviceTable({
   isLoadingColumns,
   totalRowCount,
   currentTaskMap,
+  platform,
 }: DeviceTableProps) {
-  const { platform } = usePlatform();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
   const [, setOrderByParam] = useOrderByParam();
@@ -185,8 +183,8 @@ export function DeviceTable({
   } = useColumnManagement({
     allColumns: getColumns(columnIds, platform),
     highlightedColumnIds: getFilteredColumnIds(),
-    defaultColumns: defaultColumnIds,
-    localStorageKey: localStorageKey,
+    defaultColumns: DEFAULT_DEVICE_COLUMNS[platform],
+    localStorageKey: DEVICES_COLUMNS_LOCAL_STORAGE_KEY[platform],
     platform: platform,
   });
 

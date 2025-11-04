@@ -34,6 +34,7 @@ import {
   DeviceState,
   DeviceType,
   ExportDevicesToCSVRequest,
+  Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -187,8 +188,7 @@ function TestComponent({
       isLoadingColumns={false}
       totalRowCount={withKnownTotalRowCount ? totalRowCount : undefined}
       currentTaskMap={new Map<string, string>()}
-      defaultColumnIds={DEFAULT_COLUMNS}
-      localStorageKey={'testLocalStorageKey'}
+      platform={Platform.CHROMEOS}
     />
   );
 }
@@ -288,10 +288,7 @@ describe('<DeviceTable />', () => {
 
   it('should start with default columns when no specified columns in the url', async () => {
     render(
-      <FakeContextProvider
-        mountedPath="/test/:platform"
-        routerOptions={{ initialEntries: ['/test/android'] }}
-      >
+      <FakeContextProvider>
         <TestComponent />
       </FakeContextProvider>,
     );
@@ -306,8 +303,7 @@ describe('<DeviceTable />', () => {
   it('should start with columns specified in the url', async () => {
     render(
       <FakeContextProvider
-        mountedPath="/test/:platform"
-        routerOptions={{ initialEntries: ['/test/android?c=id&c=dut_id'] }}
+        routerOptions={{ initialEntries: ['?c=id&c=dut_id'] }}
       >
         <TestComponent />
       </FakeContextProvider>,
@@ -322,10 +318,7 @@ describe('<DeviceTable />', () => {
 
   it('should reflect page size change properly', async () => {
     render(
-      <FakeContextProvider
-        mountedPath="/test/:platform"
-        routerOptions={{ initialEntries: ['/test/android'] }}
-      >
+      <FakeContextProvider>
         <TestComponent />
       </FakeContextProvider>,
     );
@@ -349,10 +342,7 @@ describe('<DeviceTable />', () => {
 
   it('should navigate between pages properly', async () => {
     render(
-      <FakeContextProvider
-        mountedPath="/test/:platform"
-        routerOptions={{ initialEntries: ['/test/android'] }}
-      >
+      <FakeContextProvider>
         <TestComponent />
       </FakeContextProvider>,
     );
@@ -393,10 +383,7 @@ describe('<DeviceTable />', () => {
 
   it('should preserve the current pagination state and honor new page size for the subsequent pages if the page size changes', async () => {
     render(
-      <FakeContextProvider
-        mountedPath="/test/:platform"
-        routerOptions={{ initialEntries: ['/test/android'] }}
-      >
+      <FakeContextProvider>
         <TestComponent />
       </FakeContextProvider>,
     );
@@ -445,10 +432,7 @@ describe('<DeviceTable />', () => {
 
   it('should show total row count in pagination when it is provided', async () => {
     render(
-      <FakeContextProvider
-        mountedPath="/test/:platform"
-        routerOptions={{ initialEntries: ['/test/android'] }}
-      >
+      <FakeContextProvider>
         <TestComponent withKnownTotalRowCount={true} />
       </FakeContextProvider>,
     );
@@ -461,10 +445,7 @@ describe('<DeviceTable />', () => {
 
   it('should have export csv buttons properly set up', async () => {
     render(
-      <FakeContextProvider
-        mountedPath="/test/:platform"
-        routerOptions={{ initialEntries: ['/test/chromeos'] }}
-      >
+      <FakeContextProvider>
         <TestComponent />
       </FakeContextProvider>,
     );
@@ -520,10 +501,7 @@ describe('<DeviceTable />', () => {
   it('should enable export selected csv if any row is selected and export only visible columns', async () => {
     render(
       <FakeContextProvider
-        mountedPath="/test/:platform"
-        routerOptions={{
-          initialEntries: ['/test/chromeos?c=id&c=dut_id'],
-        }}
+        routerOptions={{ initialEntries: ['?c=id&c=dut_id'] }}
       >
         <TestComponent />
       </FakeContextProvider>,

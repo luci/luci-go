@@ -12,5 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from './repairs_page';
-export default Component;
+export * from './repairs_page';

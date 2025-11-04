@@ -14,24 +14,26 @@
 
 import type { RouteObject } from 'react-router';
 
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
-
 import { obtainAuthState } from '../common/api/auth_state';
 import { trackedRedirect } from '../generic_libs/tools/react_router_utils/route_utils';
 
 import {
+  DEVICES_SUBROUTE,
   FLEET_CONSOLE_BASE_URL,
+  PLATFORM_SUBROUTE,
+  REPAIRS_SUBROUTE,
+  REQUESTS_SUBROUTE,
   generateDeviceDetailsURL,
   generateDeviceListURL,
   generateRepairsURL,
-  REQUESTS_SUBROUTE,
 } from './constants/paths';
-import { generateRoutes } from './routing/platform_routes';
+import { initiateSurvey } from './utils/survey';
 
 // IMPORTANT:
 // When adding new routes, ensure that the path param does not contain PII.
 // If you need PII in the path param, document it and scrub the URL param from
 // GA4 tracking. See http://go/ooga-config#scrub-urls.
+
 // The return type of a dynamic import.
 type LazyModule = Promise<{ readonly [s: string]: unknown }>;
 
@@ -55,10 +57,6 @@ export const loadRouteForGooglersOnly = (
     }
     return onFail();
   };
-};
-
-export type DevicesListHandle = {
-  platform: Platform;
 };
 
 export const fleetRoutes: RouteObject[] = [
@@ -91,8 +89,45 @@ export const fleetRoutes: RouteObject[] = [
         lazy: () => import('@/fleet/layouts/fleet_labs_layout'),
         children: [
           {
-            path: 'p/:platform',
-            children: generateRoutes(),
+            path: PLATFORM_SUBROUTE,
+            children: [
+              {
+                index: true,
+                // If someone goes to /p/chromeos/, default to the device list.
+                loader: ({ params: { platform } }) =>
+                  trackedRedirect({
+                    contentGroup: 'fleet',
+                    from: `${FLEET_CONSOLE_BASE_URL}/p/${platform}`,
+                    to: generateDeviceListURL(platform || 'chromeos'),
+                  }),
+              },
+              {
+                path: DEVICES_SUBROUTE,
+                loader: async () => {
+                  // Fire-and-forget. Don't block the page load.
+                  initiateSurvey(SETTINGS.fleetConsole.hats);
+                  return null;
+                },
+                children: [
+                  {
+                    index: true,
+                    lazy: () => import('@/fleet/pages/device_list_page'),
+                  },
+                  {
+                    path: ':id',
+                    lazy: () => import('@/fleet/pages/device_details_page'),
+                  },
+                ],
+              },
+              {
+                path: REPAIRS_SUBROUTE,
+                lazy: () => import('@/fleet/pages/repairs'),
+              },
+              {
+                path: 'admin-tasks',
+                lazy: () => import('@/fleet/pages/admin_tasks_page'),
+              },
+            ],
           },
           {
             path: REQUESTS_SUBROUTE,

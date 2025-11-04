@@ -29,7 +29,6 @@ import { colors } from '@/fleet/theme/colors';
 
 import { FEEDBACK_BUGANIZER_BUG_ID } from '../constants/feedback';
 import { generateDeviceListURL, CHROMEOS_PLATFORM } from '../constants/paths';
-import { useIsInPlatformScope } from '../hooks/usePlatform';
 
 import { SettingsMenu } from './settings_menu';
 
@@ -41,7 +40,6 @@ export const Header = ({
   setSidebarOpen: (open: boolean) => void;
 }) => {
   const authState = useAuthState();
-  const isInPlatformScope = useIsInPlatformScope();
 
   return (
     <header
@@ -95,7 +93,7 @@ export const Header = ({
         <Typography variant="h5" sx={{ color: colors.grey[700] }}>
           Fleet Console
         </Typography>
-        {isInPlatformScope && <PlatformSelector />}
+        <PlatformSelector />
       </div>
 
       <div

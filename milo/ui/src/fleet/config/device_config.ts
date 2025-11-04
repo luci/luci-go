@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+
 import { stringifyFilters } from '../components/filter_dropdown/parser/parser';
 
-export const CHROMEOS_DEFAULT_COLUMNS = [
+const CHROMEOS_DEFAULT_COLUMNS = [
   'id',
   'dut_id',
   'state',
@@ -29,16 +31,27 @@ export const CHROMEOS_DEFAULT_COLUMNS = [
   'label-servo_usb_state',
 ];
 
-export const ANDROID_DEFAULT_COLUMNS = [
-  'id',
-  'host_group',
-  'state',
-  'build',
-  'model',
-  'pool',
-  'type',
-  'version',
-];
+// this is loosely defining default columns based on b/391621656
+// Swarming labels are dynamic, but for specific views, such as FLOPS'
+// ChromeOS device view, commonly used labels are known. The code will
+// ignore these columns if they don't match any existing entries.
+export const DEFAULT_DEVICE_COLUMNS: Record<Platform, string[]> = {
+  [Platform.UNSPECIFIED]: CHROMEOS_DEFAULT_COLUMNS,
+  [Platform.CHROMEOS]: CHROMEOS_DEFAULT_COLUMNS,
+  // TODO(vaghinak):This list should be adjusted when the
+  // Android ListDevices is implemented.
+  [Platform.ANDROID]: [
+    'id',
+    'host_group',
+    'state',
+    'build',
+    'model',
+    'pool',
+    'type',
+    'version',
+  ],
+  [Platform.CHROMIUM]: [],
+};
 
 // Define a list of device filters commonly used by FLOPS to show in the
 // filter options for the device.

@@ -49,6 +49,10 @@ export function PlatformSelector() {
     handleClose();
   };
 
+  if (!platform.inPlatformScope) {
+    return null;
+  }
+
   return (
     <>
       <Tooltip title="Switch platform">

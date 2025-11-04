@@ -37,7 +37,7 @@ export const labelValuesToString = (labels: readonly string[]): string => {
     .join(DIMENSION_SEPARATOR);
 };
 
-type DimensionOverride = Record<
+type Dimension = Record<
   string, // unique id used for sorting and filtering
   {
     displayName?: string;
@@ -56,7 +56,7 @@ const renderCurrentTaskCell = renderCellWithLink((task_id) =>
  * which essentially defined how the UI renders non-label fields from the
  * `ListDevices` response.
  */
-export const BASE_DIMENSIONS: DimensionOverride = {
+export const BASE_DIMENSIONS: Dimension = {
   id: {
     displayName: 'ID',
     getValue: (device: Device) => device.id,
@@ -102,7 +102,7 @@ export const BASE_DIMENSIONS: DimensionOverride = {
  * Customized ChromeOS config for applying custom overrides for different
  * dimensions. Used, for example, to add doc links to specific table cells.
  */
-export const CROS_DIMENSION_OVERRIDES: DimensionOverride = {
+export const CROS_DIMENSION_OVERRIDES: Dimension = {
   dut_state: {
     getValue: (device) =>
       device.deviceSpec?.labels['dut_state']?.values?.[0]?.toUpperCase() ?? '',
@@ -139,31 +139,29 @@ export const CROS_DIMENSION_OVERRIDES: DimensionOverride = {
   },
 };
 
-export const ANDROID_DIMENSION_OVERRIDES: DimensionOverride = {
-  id: {
-    renderCell: (props) => {
-      const row = props.row;
-      if (!(row.host_name && row.host_ip && row.id)) return undefined;
-
-      return renderCellWithLink((_, { row }) => {
-        return `https://mobileharness-fe.corp.google.com/devicedetailview/${row.host_name}/${row.host_ip}/${row.id}`;
-      })(props);
-    },
-  },
-};
-
 /**
  * Constant with all of the different configured overrides for columns. The
  * UI has default logic to handle all label data, but will apply special logic
  * in the case of certain commonly used labels (ie: labels containing
  * links to docs)
  */
-export const COLUMN_OVERRIDES: Record<Platform, DimensionOverride> = {
+export const COLUMN_OVERRIDES: Record<Platform, Dimension> = {
   [Platform.UNSPECIFIED]: {},
   [Platform.CHROMEOS]: {
     ...BASE_DIMENSIONS,
     ...CROS_DIMENSION_OVERRIDES,
   },
-  [Platform.ANDROID]: ANDROID_DIMENSION_OVERRIDES,
+  [Platform.ANDROID]: {
+    id: {
+      renderCell: (props) => {
+        const row = props.row;
+        if (!(row.host_name && row.host_ip && row.id)) return undefined;
+
+        return renderCellWithLink((_, { row }) => {
+          return `https://mobileharness-fe.corp.google.com/devicedetailview/${row.host_name}/${row.host_ip}/${row.id}`;
+        })(props);
+      },
+    },
+  },
   [Platform.CHROMIUM]: {},
 };
