@@ -14,6 +14,7 @@
 
 import './analyses_table.css';
 
+import { GrpcError } from '@chopsui/prpc-client';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
@@ -27,8 +28,13 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import { useQuery } from '@tanstack/react-query';
 
-import { useAnalysesClient } from '@/common/hooks/prpc_clients';
+import {
+  useAnalysesClient,
+  useBuildsClient,
+} from '@/common/hooks/prpc_clients';
 import { QueryAnalysisRequest } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { Status as BuildStatus } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { AnalysisTableRow } from './table_row';
 
@@ -37,33 +43,76 @@ export interface SearchAnalysisTableProps {
 }
 
 export function SearchAnalysisTable({ bbid }: SearchAnalysisTableProps) {
-  const client = useAnalysesClient();
+  const buildsClient = useBuildsClient();
   const {
-    isPending,
+    data: build,
+    isPending: isBuildPending,
+    isError: isBuildError,
+    error: buildError,
+  } = useQuery({
+    ...buildsClient.GetBuild.query(
+      GetBuildRequest.fromPartial({
+        id: bbid,
+        mask: {
+          fields: ['id', 'steps'],
+        },
+      }),
+    ),
+    staleTime: 5000,
+    enabled: true,
+  });
+
+  const failedStepName = build?.steps.find(
+    (s) => s.status === BuildStatus.FAILURE,
+  )?.name;
+
+  const isAnalysisQueryEnabled = !!(bbid && failedStepName);
+
+  const analysesClient = useAnalysesClient();
+  const {
+    isPending: isAnalysisPending,
     isError,
     isSuccess,
     data: response,
     error,
   } = useQuery({
-    ...client.QueryAnalysis.query(
+    ...analysesClient.QueryAnalysis.query(
       QueryAnalysisRequest.fromPartial({
         buildFailure: {
-          // This query is disabled when bbid is an empty string.
           bbid,
-          // TODO: update this once other failure types are analyzed
-          failedStepName: 'compile',
+          failedStepName: failedStepName,
         },
       }),
     ),
-    // only use the query if a Buildbucket ID has been provided
-    enabled: !!bbid,
+    // only use the query if a Buildbucket ID has been provided and a failed
+    // step has been found
+    enabled: isAnalysisQueryEnabled,
   });
 
-  if (isPending) {
+  if (isBuildPending || (isAnalysisQueryEnabled && isAnalysisPending)) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />
       </Box>
+    );
+  }
+
+  if (isBuildError) {
+    if (buildError instanceof GrpcError && buildError.code === 5) {
+      // 5 = NOT_FOUND
+      return (
+        <div className="section" data-testid="search-analysis-table">
+          <Alert severity="warning">Build {bbid} not found</Alert>
+        </div>
+      );
+    }
+    return (
+      <div className="section" data-testid="search-analysis-table">
+        <Alert severity="error">
+          <AlertTitle>Error fetching build {bbid}</AlertTitle>
+          <Box sx={{ padding: '1rem' }}>{`${buildError}`}</Box>
+        </Alert>
+      </div>
     );
   }
 

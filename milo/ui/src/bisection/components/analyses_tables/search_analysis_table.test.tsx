@@ -18,14 +18,42 @@ import fetchMock from 'fetch-mock-jest';
 import {
   mockErrorQueryingAnalysis,
   mockQueryAnalysis,
+  mockGetBuild,
+  mockNoBuild,
+  mockErrorQueryingBuild,
 } from '@/bisection/testing_tools/mocks/analysis_mock';
 import { createMockAnalysis } from '@/bisection/testing_tools/mocks/analysis_mock';
 import { Analysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
+import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { SearchAnalysisTable } from './search_analysis_table';
 
+jest.mock('@/common/hooks/prpc_clients', () => {
+  return {
+    ...jest.requireActual('@/common/hooks/prpc_clients'),
+    useBuildsClient: jest.fn(),
+  };
+});
+
 describe('<SearchAnalysisTable />', () => {
+  beforeEach(() => {
+    const { useBuildsClient } = jest.requireMock('@/common/hooks/prpc_clients');
+    useBuildsClient.mockReturnValue({
+      GetBuild: {
+        query: (req: GetBuildRequest) => {
+          const { queryKey, queryFn } = jest
+            .requireActual('@/common/hooks/prpc_clients')
+            .useBuildsClient()
+            .GetBuild.query(req);
+          return { queryKey, queryFn };
+        },
+      },
+    });
+  });
+
   afterEach(() => {
     fetchMock.mockClear();
     fetchMock.reset();
@@ -33,6 +61,16 @@ describe('<SearchAnalysisTable />', () => {
 
   test('if the matching analysis is displayed', async () => {
     const mockAnalyses: Analysis[] = [createMockAnalysis('123')];
+    const mockBuild: Build = Build.fromPartial({
+      id: '123',
+      steps: [
+        {
+          name: 'some-step',
+          status: Status.FAILURE,
+        },
+      ],
+    });
+    mockGetBuild('123', mockBuild);
     mockQueryAnalysis(mockAnalyses);
 
     render(
@@ -53,6 +91,16 @@ describe('<SearchAnalysisTable />', () => {
 
   test('if a related analysis is displayed', async () => {
     const mockAnalyses: Analysis[] = [createMockAnalysis('123')];
+    const mockBuild: Build = Build.fromPartial({
+      id: '124',
+      steps: [
+        {
+          name: 'some-step',
+          status: Status.FAILURE,
+        },
+      ],
+    });
+    mockGetBuild('124', mockBuild);
     mockQueryAnalysis(mockAnalyses);
 
     render(
@@ -76,6 +124,16 @@ describe('<SearchAnalysisTable />', () => {
 
   test('if an appropriate message is displayed for no analysis', async () => {
     const mockAnalyses: Analysis[] = [];
+    const mockBuild: Build = Build.fromPartial({
+      id: '123',
+      steps: [
+        {
+          name: 'some-step',
+          status: Status.FAILURE,
+        },
+      ],
+    });
+    mockGetBuild('123', mockBuild);
     mockQueryAnalysis(mockAnalyses);
 
     render(
@@ -93,6 +151,16 @@ describe('<SearchAnalysisTable />', () => {
   });
 
   test('if an appropriate message is displayed for an error', async () => {
+    const mockBuild: Build = Build.fromPartial({
+      id: '123',
+      steps: [
+        {
+          name: 'some-step',
+          status: Status.FAILURE,
+        },
+      ],
+    });
+    mockGetBuild('123', mockBuild);
     mockErrorQueryingAnalysis();
 
     render(
@@ -104,6 +172,36 @@ describe('<SearchAnalysisTable />', () => {
     await screen.findByTestId('search-analysis-table');
 
     expect(screen.getByText('Issue searching by build')).toBeInTheDocument();
+    expect(screen.queryByText('Buildbucket ID')).not.toBeInTheDocument();
+  });
+
+  test('if an appropriate message is displayed for a missing build', async () => {
+    mockNoBuild();
+
+    render(
+      <FakeContextProvider>
+        <SearchAnalysisTable bbid="123" />
+      </FakeContextProvider>,
+    );
+
+    await screen.findByTestId('search-analysis-table');
+
+    expect(screen.getByText('Build 123 not found')).toBeInTheDocument();
+    expect(screen.queryByText('Buildbucket ID')).not.toBeInTheDocument();
+  });
+
+  test('if an appropriate message is displayed for an error querying a build', async () => {
+    mockErrorQueryingBuild();
+
+    render(
+      <FakeContextProvider>
+        <SearchAnalysisTable bbid="123" />
+      </FakeContextProvider>,
+    );
+
+    await screen.findByTestId('search-analysis-table');
+
+    expect(screen.getByText('Error fetching build 123')).toBeInTheDocument();
     expect(screen.queryByText('Buildbucket ID')).not.toBeInTheDocument();
   });
 });

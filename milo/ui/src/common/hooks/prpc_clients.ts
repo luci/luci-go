@@ -17,6 +17,7 @@ import { TestHistoryClientImpl } from '@/proto/go.chromium.org/luci/analysis/pro
 import { TestVariantBranchesClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { TestVariantsClientImpl } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 import { AnalysesClientImpl } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { BuildsClientImpl } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { MiloInternalClientImpl } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 import { ResultDBClientImpl } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TreesClientImpl } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/trees.pb';
@@ -92,5 +93,12 @@ export function useAnalysesClient() {
   return usePrpcServiceClient({
     host: SETTINGS.luciBisection.host,
     ClientImpl: AnalysesClientImpl,
+  });
+}
+
+export function useBuildsClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.buildbucket.host,
+    ClientImpl: BuildsClientImpl,
   });
 }

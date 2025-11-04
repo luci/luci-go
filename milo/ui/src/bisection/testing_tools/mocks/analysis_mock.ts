@@ -21,6 +21,7 @@ import {
   QueryAnalysisResponse,
 } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { AnalysisStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
+import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 
 export function createMockAnalysis(id: string) {
   return Analysis.fromPartial({
@@ -103,5 +104,58 @@ export function mockErrorQueryingAnalysis() {
         'X-Prpc-Grpc-Code': '2',
       },
     },
+    { overwriteRoutes: true },
+  );
+}
+
+export function mockGetBuild(bbid: string, build: Build) {
+  fetchMock.post(
+    'https://' +
+      SETTINGS.buildbucket.host +
+      '/prpc/buildbucket.v2.Builds/GetBuild',
+    (_, opts) => {
+      if (opts.body && JSON.parse(opts.body as string).id === bbid) {
+        return {
+          headers: {
+            'X-Prpc-Grpc-Code': '0',
+          },
+          body: ")]}'\n" + JSON.stringify(Build.toJSON(build)),
+        };
+      }
+      return {
+        headers: {
+          'X-Prpc-Grpc-Code': '5' /* NOT_FOUND */,
+        },
+      };
+    },
+    { overwriteRoutes: true },
+  );
+}
+
+export function mockErrorQueryingBuild() {
+  fetchMock.post(
+    'https://' +
+      SETTINGS.buildbucket.host +
+      '/prpc/buildbucket.v2.Builds/GetBuild',
+    {
+      headers: {
+        'X-Prpc-Grpc-Code': '2',
+      },
+    },
+    { overwriteRoutes: true },
+  );
+}
+
+export function mockNoBuild() {
+  fetchMock.post(
+    'https://' +
+      SETTINGS.buildbucket.host +
+      '/prpc/buildbucket.v2.Builds/GetBuild',
+    {
+      headers: {
+        'X-Prpc-Grpc-Code': '5' /* NOT_FOUND */,
+      },
+    },
+    { overwriteRoutes: true },
   );
 }
