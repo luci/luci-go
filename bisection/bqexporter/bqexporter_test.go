@@ -182,15 +182,55 @@ func TestFetchCompileAnalyses(t *testing.T) {
 		cfa6.CreateTime = clock.Now(ctx).Add(-26 * time.Hour)
 		cfa6.EndTime = clock.Now(ctx).Add(-25 * time.Hour)
 		createCompileSuspect(ctx, t, cfa6, false)
-		assert.Loosely(t, datastore.Put(ctx, []*model.CompileFailureAnalysis{cfa1, cfa2, cfa3, cfa4, cfa5, cfa6}), should.BeNil)
+
+		// Ended, found, mixed culprits, actions taken for suspect.
+		_, _, cfa7 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1007, "chromium", 1007)
+		cfa7.RunStatus = bisectionpb.AnalysisRunStatus_ENDED
+		cfa7.Status = bisectionpb.AnalysisStatus_FOUND
+		cfa7.CreateTime = clock.Now(ctx).Add(-3 * time.Hour)
+		createMixedCompileCulprits(ctx, t, cfa7, true)
+
+		// Ended, found, mixed culprits, actions not taken for suspect, ended recently. Should be skipped.
+		_, _, cfa8 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1008, "chromium", 1008)
+		cfa8.RunStatus = bisectionpb.AnalysisRunStatus_ENDED
+		cfa8.Status = bisectionpb.AnalysisStatus_FOUND
+		cfa8.CreateTime = clock.Now(ctx).Add(-2 * time.Hour)
+		cfa8.EndTime = clock.Now(ctx).Add(-time.Minute)
+		createMixedCompileCulprits(ctx, t, cfa8, false)
+
+		assert.Loosely(t, datastore.Put(ctx, []*model.CompileFailureAnalysis{cfa1, cfa2, cfa3, cfa4, cfa5, cfa6, cfa7, cfa8}), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		cfas, err := fetchCompileAnalyses(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, len(cfas), should.Equal(3))
+		assert.Loosely(t, len(cfas), should.Equal(4))
 		assert.Loosely(t, cfas[0].Id, should.Equal(int64(1003)))
 		assert.Loosely(t, cfas[1].Id, should.Equal(int64(1005)))
-		assert.Loosely(t, cfas[2].Id, should.Equal(int64(1006)))
+		assert.Loosely(t, cfas[2].Id, should.Equal(int64(1007)))
+		assert.Loosely(t, cfas[3].Id, should.Equal(int64(1006)))
 	})
+}
+
+type HeuristicResult struct {
+	Id int64 `gae:"$id"`
+}
+
+func createMixedCompileCulprits(ctx context.Context, t testing.TB, cfa *model.CompileFailureAnalysis, hasTakenAction bool) {
+	suspect := &model.Suspect{
+		Id: cfa.Id,
+		ActionDetails: model.ActionDetails{
+			HasTakenActions: hasTakenAction,
+		},
+	}
+	assert.Loosely(t, datastore.Put(ctx, suspect), should.BeNil, truth.LineContext())
+	heuristic := &HeuristicResult{
+		Id: cfa.Id + 1000,
+	}
+	assert.Loosely(t, datastore.Put(ctx, heuristic), should.BeNil, truth.LineContext())
+	datastore.GetTestable(ctx).CatchupIndexes()
+	cfa.VerifiedCulprits = []*datastore.Key{
+		datastore.KeyForObj(ctx, suspect),
+		datastore.KeyForObj(ctx, heuristic),
+	}
 }
 
 func createSuspect(ctx context.Context, t testing.TB, tfa *model.TestFailureAnalysis, hasTakenAction bool) {

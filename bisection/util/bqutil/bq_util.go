@@ -75,6 +75,9 @@ func CompileFailureAnalysisToBqRow(ctx context.Context, cfa *model.CompileFailur
 	} else {
 		pbCulprits := make([]*pb.Culprit, 0, len(culpritKeys))
 		for _, key := range culpritKeys {
+			if key.Kind() != "Suspect" {
+				continue
+			}
 			culprit, err := datastoreutil.GetSuspect(ctx, key.IntID(), key.Parent())
 			if err != nil {
 				// Log the error and continue, so that one bad culprit doesn't fail the whole process

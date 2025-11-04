@@ -301,21 +301,19 @@ func fetchCompileAnalyses(ctx context.Context) ([]*model.CompileFailureAnalysis,
 			logging.Warningf(ctx, "Analysis %d has status FOUND but no verified culprit", cfa.Id)
 			continue
 		}
-		suspects := make([]*model.Suspect, len(cfa.VerifiedCulprits))
-		for i, verifiedCulpritKey := range cfa.VerifiedCulprits {
-			suspects[i] = &model.Suspect{
+		allActionsTaken := true
+		for _, verifiedCulpritKey := range cfa.VerifiedCulprits {
+			// verifiedCulpritKey is a key datastore key, we only check when it is a suspect.
+			if verifiedCulpritKey.Kind() != "Suspect" {
+				continue
+			}
+			suspect := &model.Suspect{
 				Id: verifiedCulpritKey.IntID(),
 			}
-		}
-		if err := datastore.Get(ctx, suspects); err != nil {
-			// datastore.Get may return a MultiError here. If any of the gets failed,
-			// we should abort. We can just check the top-level error.
-			return nil, errors.Fmt("get suspects for analysis %d: %w", cfa.Id, err)
-		}
-
-		allActionsTaken := true
-		for _, s := range suspects {
-			if !s.HasTakenActions {
+			if err := datastore.Get(ctx, suspect); err != nil {
+				return nil, errors.Fmt("get suspect %d for analysis %d: %w", suspect.Id, cfa.Id, err)
+			}
+			if !suspect.HasTakenActions {
 				allActionsTaken = false
 				break
 			}
