@@ -19,10 +19,10 @@ import (
 	"testing"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -30,14 +30,13 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	executorpb "go.chromium.org/turboci/proto/go/graph/executor/v1"
+	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 const trustedBackend identity.Identity = "user:trusted@example.com"
-
-func init() {
-	testAllowFakeTestStage = true
-}
 
 func TestTurboCIInterceptor(t *testing.T) {
 	t.Parallel()
@@ -47,15 +46,17 @@ func TestTurboCIInterceptor(t *testing.T) {
 			Identity: trustedBackend,
 		})
 
-		stage := fakeTestStage("enduser@example.com", "some-project")
+		stage := fakeTestStage("some-project")
 
 		for _, req := range []proto.Message{
 			executorpb.RunStageRequest_builder{Stage: stage}.Build(),
 			executorpb.ValidateStageRequest_builder{Stage: stage}.Build(),
 			executorpb.CancelStageRequest_builder{Stage: stage}.Build(),
 		} {
-			callInterceptor(ctx, t, req, func(ctx context.Context) {
+			callInterceptor(ctx, t, "enduser@example.com", req, func(ctx context.Context) {
 				assert.That(t, auth.CurrentIdentity(ctx).Email(), should.Equal("enduser@example.com"))
+				assert.That(t, TurboCICall(ctx).Stage.GetIdentifier().GetId(), should.Equal("S4567"))
+				assert.That(t, TurboCICall(ctx).ScheduleBuild.Builder.Bucket, should.Equal("bucket"))
 			})
 		}
 	})
@@ -69,10 +70,10 @@ func TestTurboCIInterceptor(t *testing.T) {
 		})
 
 		req := executorpb.RunStageRequest_builder{
-			Stage: fakeTestStage("some-project-scoped@example.com", "some-project"),
+			Stage: fakeTestStage("some-project"),
 		}.Build()
 
-		callInterceptor(ctx, t, req, func(ctx context.Context) {
+		callInterceptor(ctx, t, "some-project-scoped@example.com", req, func(ctx context.Context) {
 			assert.That(t, string(auth.CurrentIdentity(ctx)), should.Equal("project:some-project"))
 		})
 	})
@@ -87,10 +88,10 @@ func TestTurboCIInterceptor(t *testing.T) {
 		})
 
 		req := executorpb.RunStageRequest_builder{
-			Stage: fakeTestStage("another-project-scoped@example.com", "some-project"),
+			Stage: fakeTestStage("some-project"),
 		}.Build()
 
-		callInterceptor(ctx, t, req, func(ctx context.Context) {
+		callInterceptor(ctx, t, "another-project-scoped@example.com", req, func(ctx context.Context) {
 			assert.That(t, string(auth.CurrentIdentity(ctx)), should.Equal("user:another-project-scoped@example.com"))
 		})
 	})
@@ -101,28 +102,63 @@ func TestTurboCIInterceptor(t *testing.T) {
 		})
 
 		req := executorpb.RunStageRequest_builder{
-			Stage: fakeTestStage("enduser@example.com", "some-project"),
+			Stage: fakeTestStage("some-project"),
 		}.Build()
 
-		assert.That(t, callInterceptor(ctx, t, req, nil), should.ErrLike("is not allowed to call TurboCI Stage Executor API"))
+		assert.That(t, callInterceptor(ctx, t, "enduser@example.com", req, nil),
+			should.ErrLike("is not allowed to call TurboCI Stage Executor API"),
+		)
+	})
+
+	t.Run("Missing metadata", func(t *testing.T) {
+		ctx := auth.WithState(t.Context(), &authtest.FakeState{
+			Identity: trustedBackend,
+		})
+		assert.That(t, callInterceptor(ctx, t, "", &emptypb.Empty{}, nil),
+			should.ErrLike("missing \"x-turboci-end-user\" metadata"),
+		)
 	})
 
 	t.Run("Unexpected request type", func(t *testing.T) {
 		ctx := auth.WithState(t.Context(), &authtest.FakeState{
 			Identity: trustedBackend,
 		})
+		assert.That(t, callInterceptor(ctx, t, "enduser@example.com", &emptypb.Empty{}, nil),
+			should.ErrLike("no `stage` field in the request"),
+		)
+	})
 
-		req := &emptypb.Empty{}
+	t.Run("Wrong stage args type", func(t *testing.T) {
+		ctx := auth.WithState(t.Context(), &authtest.FakeState{
+			Identity: trustedBackend,
+		})
 
-		assert.That(t, callInterceptor(ctx, t, req, nil), should.ErrLike("no `stage` field in the request"))
+		value, err := anypb.New(&pb.CancelBuildRequest{})
+		assert.NoErr(t, err)
+
+		req := executorpb.RunStageRequest_builder{
+			Stage: orchestratorpb.Stage_builder{
+				Args: orchestratorpb.Value_builder{
+					Value: value,
+				}.Build(),
+			}.Build(),
+		}.Build()
+
+		assert.That(t, callInterceptor(ctx, t, "enduser@example.com", req, nil),
+			should.ErrLike("unexpected `stage.args.value` kind"),
+		)
 	})
 }
 
-func callInterceptor(ctx context.Context, t *testing.T, req proto.Message, handler func(context.Context)) error {
+func callInterceptor(ctx context.Context, t *testing.T, endUserMD string, req proto.Message, handler func(context.Context)) error {
 	t.Helper()
 
 	expectFail := handler == nil
 	called := false
+
+	if endUserMD != "" {
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(endUserMetadataKey, endUserMD))
+	}
 
 	interceptor := TurboCIInterceptor(context.Background(), trustedBackend.Email())
 	_, err := interceptor(ctx, req, &grpc.UnaryServerInfo{}, func(ctx context.Context, req any) (any, error) {
@@ -148,21 +184,26 @@ func callInterceptor(ctx context.Context, t *testing.T, req proto.Message, handl
 	return err
 }
 
-func fakeTestStage(submitter, project string) *orchestratorpb.Stage {
-	strct, err := structpb.NewValue(map[string]any{
-		"submitter": submitter,
-		"project":   project,
+func fakeTestStage(project string) *orchestratorpb.Stage {
+	value, err := anypb.New(&pb.ScheduleBuildRequest{
+		Builder: &pb.BuilderID{
+			Project: project,
+			Bucket:  "bucket",
+			Builder: "builder",
+		},
 	})
 	if err != nil {
 		panic(err)
 	}
-	testArgs, err := anypb.New(strct)
-	if err != nil {
-		panic(err)
-	}
 	return orchestratorpb.Stage_builder{
+		Identifier: idspb.Stage_builder{
+			WorkPlan: idspb.WorkPlan_builder{
+				Id: proto.String("L12345"),
+			}.Build(),
+			Id: proto.String("S4567"),
+		}.Build(),
 		Args: orchestratorpb.Value_builder{
-			Value: testArgs,
+			Value: value,
 		}.Build(),
 	}.Build()
 }

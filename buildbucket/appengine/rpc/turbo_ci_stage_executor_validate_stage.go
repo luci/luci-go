@@ -25,5 +25,6 @@ import (
 
 // ValidateStage implements executorgrpcpb.TurboCIStageExecutorServer.
 func (*TurboCIStageExecutor) ValidateStage(ctx context.Context, req *executorpb.ValidateStageRequest) (*executorpb.ValidateStageResponse, error) {
+	TurboCICall(ctx).LogDetails(ctx)
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }

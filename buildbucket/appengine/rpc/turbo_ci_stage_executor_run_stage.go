@@ -25,5 +25,6 @@ import (
 
 // RunStage implements executorgrpcpb.TurboCIStageExecutorServer.
 func (*TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.RunStageRequest) (*executorpb.RunStageResponse, error) {
+	TurboCICall(ctx).LogDetails(ctx)
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
