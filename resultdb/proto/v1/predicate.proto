@@ -144,3 +144,12 @@ message TestMetadataPredicate {
   // May not be used in conjunction with test_ids.
   repeated string previous_test_ids = 2;
 }
+
+// Represents a function WorkUnit -> bool.
+message WorkUnitPredicate {
+  // If set, filters to ancestors of the specified work unit.
+  //
+  // When specified, the result will be a list of work units ordered
+  // from closest parent to furthest parent.
+  string ancestors_of = 1;
+}

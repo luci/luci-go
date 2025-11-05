@@ -52,6 +52,9 @@ service ResultDB {
   // Retrieves a list of work units.
   rpc BatchGetWorkUnits(BatchGetWorkUnitsRequest) returns (BatchGetWorkUnitsResponse) {};
 
+  // Retrieves a list of work units based on a predicate.
+  rpc QueryWorkUnits(QueryWorkUnitsRequest) returns (QueryWorkUnitsResponse) {};
+
   // == Invocations ============================================================
   // Retrieves an invocation.
   rpc GetInvocation(GetInvocationRequest) returns (Invocation) {};

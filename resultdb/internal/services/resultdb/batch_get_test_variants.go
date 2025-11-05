@@ -17,10 +17,11 @@ package resultdb
 import (
 	"context"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"

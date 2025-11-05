@@ -21,6 +21,7 @@ import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/instruction.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/predicate.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 option java_package = "com.google.luci.resultdb.v1";
@@ -477,5 +478,27 @@ message BatchGetWorkUnitsRequest {
 message BatchGetWorkUnitsResponse {
   // The work units requested. These will appear in the same order as
   // names in the request, i.e. work_units[i] corresponds to names[i].
+  repeated WorkUnit work_units = 1;
+}
+
+// A request message for the QueryWorkUnits RPC.
+message QueryWorkUnitsRequest {
+  // Resource name of the root invocation to query.
+  // Format: rootInvocations/{ROOT_INVOCATION_ID}
+  string parent = 1 [ (google.api.field_behavior) = REQUIRED ];
+
+  // The predicate to filter the workunits to be returned.
+  WorkUnitPredicate predicate = 2;
+
+  // The view to apply to returned work units. Using the view BASIC is
+  // strongly recommended as response size limits could be easily exceeded
+  // if FULL is used (as each work unit's extended properties may be up to
+  // ~2MB). Defaults to BASIC.
+  WorkUnitView view = 3;
+}
+
+// A response message for the QueryWorkUnits RPC.
+message QueryWorkUnitsResponse {
+  // The workunits matching the query.
   repeated WorkUnit work_units = 1;
 }

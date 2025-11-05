@@ -74,6 +74,23 @@ func (s *DecoratedResultDB) BatchGetWorkUnits(ctx context.Context, req *BatchGet
 	return
 }
 
+func (s *DecoratedResultDB) QueryWorkUnits(ctx context.Context, req *QueryWorkUnitsRequest) (rsp *QueryWorkUnitsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryWorkUnits", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryWorkUnits(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryWorkUnits", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedResultDB) GetInvocation(ctx context.Context, req *GetInvocationRequest) (rsp *Invocation, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context

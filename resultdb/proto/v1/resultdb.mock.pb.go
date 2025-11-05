@@ -704,6 +704,26 @@ func (mr *MockResultDBClientMockRecorder) QueryTestVerdicts(ctx, in interface{},
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestVerdicts", reflect.TypeOf((*MockResultDBClient)(nil).QueryTestVerdicts), varargs...)
 }
 
+// QueryWorkUnits mocks base method.
+func (m *MockResultDBClient) QueryWorkUnits(ctx context.Context, in *QueryWorkUnitsRequest, opts ...grpc.CallOption) (*QueryWorkUnitsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "QueryWorkUnits", varargs...)
+	ret0, _ := ret[0].(*QueryWorkUnitsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryWorkUnits indicates an expected call of QueryWorkUnits.
+func (mr *MockResultDBClientMockRecorder) QueryWorkUnits(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryWorkUnits", reflect.TypeOf((*MockResultDBClient)(nil).QueryWorkUnits), varargs...)
+}
+
 // MockResultDBServer is a mock of ResultDBServer interface.
 type MockResultDBServer struct {
 	ctrl     *gomock.Controller
@@ -1175,4 +1195,19 @@ func (m *MockResultDBServer) QueryTestVerdicts(arg0 context.Context, arg1 *Query
 func (mr *MockResultDBServerMockRecorder) QueryTestVerdicts(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestVerdicts", reflect.TypeOf((*MockResultDBServer)(nil).QueryTestVerdicts), arg0, arg1)
+}
+
+// QueryWorkUnits mocks base method.
+func (m *MockResultDBServer) QueryWorkUnits(arg0 context.Context, arg1 *QueryWorkUnitsRequest) (*QueryWorkUnitsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryWorkUnits", arg0, arg1)
+	ret0, _ := ret[0].(*QueryWorkUnitsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryWorkUnits indicates an expected call of QueryWorkUnits.
+func (mr *MockResultDBServerMockRecorder) QueryWorkUnits(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryWorkUnits", reflect.TypeOf((*MockResultDBServer)(nil).QueryWorkUnits), arg0, arg1)
 }

@@ -489,6 +489,58 @@ func (x *TestMetadataPredicate) GetPreviousTestIds() []string {
 	return nil
 }
 
+// Represents a function WorkUnit -> bool.
+type WorkUnitPredicate struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// If set, filters to ancestors of the specified work unit.
+	//
+	// When specified, the result will be a list of work units ordered
+	// from closest parent to furthest parent.
+	AncestorsOf string `protobuf:"bytes,1,opt,name=ancestors_of,json=ancestorsOf,proto3" json:"ancestors_of,omitempty"`
+}
+
+func (x *WorkUnitPredicate) Reset() {
+	*x = WorkUnitPredicate{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *WorkUnitPredicate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkUnitPredicate) ProtoMessage() {}
+
+func (x *WorkUnitPredicate) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkUnitPredicate.ProtoReflect.Descriptor instead.
+func (*WorkUnitPredicate) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *WorkUnitPredicate) GetAncestorsOf() string {
+	if x != nil {
+		return x.AncestorsOf
+	}
+	return ""
+}
+
 // A set of Invocation's outgoing edge types.
 type ArtifactPredicate_EdgeTypeSet struct {
 	state         protoimpl.MessageState
@@ -504,7 +556,7 @@ type ArtifactPredicate_EdgeTypeSet struct {
 func (x *ArtifactPredicate_EdgeTypeSet) Reset() {
 	*x = ArtifactPredicate_EdgeTypeSet{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes[5]
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -517,7 +569,7 @@ func (x *ArtifactPredicate_EdgeTypeSet) String() string {
 func (*ArtifactPredicate_EdgeTypeSet) ProtoMessage() {}
 
 func (x *ArtifactPredicate_EdgeTypeSet) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -630,13 +682,16 @@ var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_rawDesc = []byte
 	0x69, 0x64, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x07, 0x74, 0x65, 0x73, 0x74, 0x49,
 	0x64, 0x73, 0x12, 0x2a, 0x0a, 0x11, 0x70, 0x72, 0x65, 0x76, 0x69, 0x6f, 0x75, 0x73, 0x5f, 0x74,
 	0x65, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0f, 0x70,
-	0x72, 0x65, 0x76, 0x69, 0x6f, 0x75, 0x73, 0x54, 0x65, 0x73, 0x74, 0x49, 0x64, 0x73, 0x42, 0x50,
-	0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x6c, 0x75, 0x63,
-	0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x50, 0x01, 0x5a,
-	0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67,
-	0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x70, 0x62,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x65, 0x76, 0x69, 0x6f, 0x75, 0x73, 0x54, 0x65, 0x73, 0x74, 0x49, 0x64, 0x73, 0x22, 0x36,
+	0x0a, 0x11, 0x57, 0x6f, 0x72, 0x6b, 0x55, 0x6e, 0x69, 0x74, 0x50, 0x72, 0x65, 0x64, 0x69, 0x63,
+	0x61, 0x74, 0x65, 0x12, 0x21, 0x0a, 0x0c, 0x61, 0x6e, 0x63, 0x65, 0x73, 0x74, 0x6f, 0x72, 0x73,
+	0x5f, 0x6f, 0x66, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x61, 0x6e, 0x63, 0x65, 0x73,
+	0x74, 0x6f, 0x72, 0x73, 0x4f, 0x66, 0x42, 0x50, 0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x6f,
+	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
+	0x64, 0x62, 0x2e, 0x76, 0x31, 0x50, 0x01, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f,
+	0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65,
+	0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b,
+	0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -652,7 +707,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_rawDescGZIP() [
 }
 
 var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_goTypes = []interface{}{
 	(TestResultPredicate_Expectancy)(0),   // 0: luci.resultdb.v1.TestResultPredicate.Expectancy
 	(*TestResultPredicate)(nil),           // 1: luci.resultdb.v1.TestResultPredicate
@@ -660,16 +715,17 @@ var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_goTypes = []inte
 	(*VariantPredicate)(nil),              // 3: luci.resultdb.v1.VariantPredicate
 	(*ArtifactPredicate)(nil),             // 4: luci.resultdb.v1.ArtifactPredicate
 	(*TestMetadataPredicate)(nil),         // 5: luci.resultdb.v1.TestMetadataPredicate
-	(*ArtifactPredicate_EdgeTypeSet)(nil), // 6: luci.resultdb.v1.ArtifactPredicate.EdgeTypeSet
-	(*Variant)(nil),                       // 7: luci.resultdb.v1.Variant
+	(*WorkUnitPredicate)(nil),             // 6: luci.resultdb.v1.WorkUnitPredicate
+	(*ArtifactPredicate_EdgeTypeSet)(nil), // 7: luci.resultdb.v1.ArtifactPredicate.EdgeTypeSet
+	(*Variant)(nil),                       // 8: luci.resultdb.v1.Variant
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_depIdxs = []int32{
 	3, // 0: luci.resultdb.v1.TestResultPredicate.variant:type_name -> luci.resultdb.v1.VariantPredicate
 	0, // 1: luci.resultdb.v1.TestResultPredicate.expectancy:type_name -> luci.resultdb.v1.TestResultPredicate.Expectancy
 	3, // 2: luci.resultdb.v1.TestExonerationPredicate.variant:type_name -> luci.resultdb.v1.VariantPredicate
-	7, // 3: luci.resultdb.v1.VariantPredicate.equals:type_name -> luci.resultdb.v1.Variant
-	7, // 4: luci.resultdb.v1.VariantPredicate.contains:type_name -> luci.resultdb.v1.Variant
-	6, // 5: luci.resultdb.v1.ArtifactPredicate.follow_edges:type_name -> luci.resultdb.v1.ArtifactPredicate.EdgeTypeSet
+	8, // 3: luci.resultdb.v1.VariantPredicate.equals:type_name -> luci.resultdb.v1.Variant
+	8, // 4: luci.resultdb.v1.VariantPredicate.contains:type_name -> luci.resultdb.v1.Variant
+	7, // 5: luci.resultdb.v1.ArtifactPredicate.follow_edges:type_name -> luci.resultdb.v1.ArtifactPredicate.EdgeTypeSet
 	1, // 6: luci.resultdb.v1.ArtifactPredicate.test_result_predicate:type_name -> luci.resultdb.v1.TestResultPredicate
 	7, // [7:7] is the sub-list for method output_type
 	7, // [7:7] is the sub-list for method input_type
@@ -746,6 +802,18 @@ func file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*WorkUnitPredicate); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ArtifactPredicate_EdgeTypeSet); i {
 			case 0:
 				return &v.state
@@ -768,7 +836,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
