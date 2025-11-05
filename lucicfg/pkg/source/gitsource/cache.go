@@ -16,10 +16,7 @@ package gitsource
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
-	"io"
 	"maps"
 	"os"
 	"path/filepath"
@@ -53,9 +50,9 @@ type cache struct {
 
 // New initializes a new cache in the path `cacheRoot`.
 //
-// `cacheRoot` should be a possibly empty (possibly missing) directory. If the
-// directory exists, the Cache will write a new subdirectory for each ForRepo
-// call with a unique url.
+// `cacheRoot` should be a possibly empty (possibly missing) directory.
+// The Cache will write a new subdirectory for each ForRepo call with a unique
+// url.
 //
 // If `debugLogs` is true, the Cache and related objects will produce fairly
 // prodigious debugging logs via luci logging.Debugf and directly to
@@ -108,9 +105,7 @@ func (c *cache) ForRepo(ctx context.Context, url string) (source.RepoCache, erro
 		return cur, nil
 	}
 
-	h := sha256.New()
-	io.WriteString(h, url)
-	id := base64.RawURLEncoding.EncodeToString(h.Sum(nil))
+	id := source.HashString(url)
 
 	ret, err := newRepoCache(filepath.Join(c.cacheRoot, id), c.debugLogs)
 	if err != nil {
@@ -149,7 +144,7 @@ func (c *cache) ForRepo(ctx context.Context, url string) (source.RepoCache, erro
 
 // Shutdown terminates long-running processes which may be associated with this
 // cache.
-func (c *cache) Shutdown() {
+func (c *cache) Shutdown(ctx context.Context) {
 	c.reposMu.RLock()
 	caches := slices.Collect(maps.Values(c.repos))
 	c.reposMu.RUnlock()

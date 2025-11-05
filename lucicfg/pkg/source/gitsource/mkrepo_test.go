@@ -36,7 +36,7 @@ func mkRepo(t *testing.T, prefetch ...string) *repoCache {
 
 	cache, err := New(t.TempDir(), testing.Verbose())
 	assert.NoErr(t, err, truth.LineContext())
-	t.Cleanup(cache.Shutdown)
+	t.Cleanup(func() { cache.Shutdown(context.Background()) })
 
 	retIface, err := cache.ForRepo(context.Background(), mkRepoRaw(t))
 	assert.NoErr(t, err, truth.LineContext())

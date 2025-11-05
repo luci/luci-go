@@ -104,8 +104,13 @@ func (gr *generateRun) Run(a subcommands.Application, args []string, env subcomm
 }
 
 func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResult, error) {
+	authOpts, err := gr.AuthOptions()
+	if err != nil {
+		return nil, err
+	}
+
 	meta := gr.DefaultMeta()
-	gen, err := base.GenerateConfigs(ctx, inputFile, &meta, &gr.Meta, gr.Vars, gr.RepoOverrides, gr.RepoOptions)
+	gen, err := base.GenerateConfigs(ctx, inputFile, &meta, &gr.Meta, gr.Vars, gr.RepoOverrides, gr.RepoOptions, authOpts)
 	if err != nil {
 		return nil, err
 	}

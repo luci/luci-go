@@ -203,9 +203,14 @@ const luciConfigRetryPolicy = `{
 	}]
 }`
 
+// Returns parsed auth.Options.
+func (c *Subcommand) AuthOptions() (auth.Options, error) {
+	return c.authFlags.Options()
+}
+
 // ConfigService returns a gRPC connection to the LUCI Config service.
 func (c *Subcommand) ConfigService(ctx context.Context, host string) (*grpc.ClientConn, error) {
-	authOpts, err := c.authFlags.Options()
+	authOpts, err := c.AuthOptions()
 	if err != nil {
 		return nil, err
 	}

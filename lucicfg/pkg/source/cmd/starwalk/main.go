@@ -31,12 +31,17 @@ import (
 
 	"go.starlark.net/syntax"
 
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 
 	"go.chromium.org/luci/lucicfg/pkg/source"
+	"go.chromium.org/luci/lucicfg/pkg/source/gitilessource"
 	"go.chromium.org/luci/lucicfg/pkg/source/gitsource"
 )
 
@@ -53,14 +58,22 @@ var (
 	ref        = flag.String("ref", "", "(required) Ref in the git remote (e.g. refs/heads/XXX).")
 	commit     = flag.String("commit", "", "(required) The commit to extract from.")
 	pkgRoot    = flag.String("pkg-root", "", "(required) The root directory of the lucicfg package.")
-	entrypoint = flag.String("tree", "", "(required) Path to star-file entrypoint.")
+	entrypoint = flag.String("entrypoint", "", "(required) Path to star-file entrypoint.")
 	output     = flag.String("output", "", "(required) Path to the output. Output must be empty or not exist.")
+	dumpOne    = flag.String("dump-one", "", "(optional) just get all files @ tree, then dump this one.")
 	verbose    = flag.Bool("verbose", false, "(optional) turn on verbose logs.")
 	pickNewest stringlistflag.Flag
+	authFlags  authcli.Flags
 )
 
 func init() {
 	flag.Var(&pickNewest, "pick-newest", "additional commits to pick the newest from, in addition to commit")
+	authOpts := chromeinfra.DefaultAuthOptions()
+	authOpts.Scopes = []string{
+		auth.OAuthScopeEmail,
+		gitiles.OAuthScope,
+	}
+	authFlags.Register(flag.CommandLine, authOpts)
 }
 
 func cast[T syntax.Node](n syntax.Node) (ret T) {
@@ -190,12 +203,26 @@ func main() {
 	ctx = gologger.StdConfig.Use(ctx)
 	ctx = logging.SetLevel(ctx, logging.Debug)
 
-	cache := must(gitsource.New(must(filepath.Abs(*cacheRoot)), *verbose))
+	cacheRootAbs := must(filepath.Abs(*cacheRoot))
+
+	cache := must(gitilessource.New(
+		filepath.Join(cacheRootAbs, "gitiles"), must(authFlags.Options()),
+		must(gitsource.New(filepath.Join(cacheRootAbs, "git"), *verbose))))
+
 	repo := must(cache.ForRepo(ctx, *remoteUrl))
 
 	if len(pickNewest) > 0 {
 		newest := must(repo.PickMostRecent(ctx, *ref, pickNewest))
 		fmt.Println(newest)
+		return
+	}
+
+	if *dumpOne != "" {
+		fetcher := must(repo.Fetcher(ctx, *ref, *commit, *pkgRoot, func(kind source.ObjectKind, pkgRelPath string) bool {
+			return true
+		}))
+		dumped := must(fetcher.Read(ctx, *dumpOne))
+		must(os.Stdout.Write(dumped))
 		return
 	}
 

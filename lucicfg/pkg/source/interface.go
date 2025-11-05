@@ -37,7 +37,7 @@ type Cache interface {
 	ForRepo(ctx context.Context, url string) (RepoCache, error)
 
 	// Releases any process resources associated with this Cache.
-	Shutdown()
+	Shutdown(context.Context)
 }
 
 // RepoCache caches interactions with a single remote repo.

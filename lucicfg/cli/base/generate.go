@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"slices"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/lucicfg"
@@ -54,7 +55,7 @@ type Generated struct {
 // 'repoOverrides' are a collection of k=v pairs passed via CLI flags as
 // `-repo-overrides k=v`. They are used to setup local overrides of remote
 // dependencies
-func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg.Meta, vars map[string]string, repoOverrides map[string]string, repoOpts pkg.RemoteRepoManagerOptions) (*Generated, error) {
+func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg.Meta, vars map[string]string, repoOverrides map[string]string, repoOpts pkg.RemoteRepoManagerOptions, authOpts auth.Options) (*Generated, error) {
 	abs, err := filepath.Abs(inputFile)
 	if err != nil {
 		return nil, err
@@ -115,11 +116,13 @@ You may also optionally set +x flag on it, but this is not required.
 
 	// Knows how to fetch remote git repositories that contain dependencies.
 	remote := &pkg.RemoteRepoManager{
-		DiskCache:    lucicfg.OpenCache(ctx),
-		DiskCacheDir: "remote",
-		Options:      repoOpts,
+		DiskCache:           lucicfg.OpenCache(ctx),
+		DiskCacheDirGit:     "remote_git",
+		DiskCacheDirGitiles: "remote_gitiles",
+		Options:             repoOpts,
+		AuthOpts:            authOpts,
 	}
-	defer remote.Shutdown()
+	defer remote.Shutdown(ctx)
 
 	// Load the main package with dependencies from disk.
 	entry, lockfile, err := pkg.EntryOnDisk(ctx, abs, remote, overrides)

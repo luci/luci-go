@@ -22,20 +22,25 @@ import (
 
 	"golang.org/x/sync/semaphore"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/starlark/interpreter"
 
 	"go.chromium.org/luci/lucicfg/fileset"
 	"go.chromium.org/luci/lucicfg/pkg/source"
+	"go.chromium.org/luci/lucicfg/pkg/source/gitilessource"
 	"go.chromium.org/luci/lucicfg/pkg/source/gitsource"
 )
 
 // RemoteRepoManager implements RepoManager that knows how to work with remote
 // git repositories using a local disk cache.
 type RemoteRepoManager struct {
-	DiskCache    DiskCache                // usually implemented by lucicfg.Cache
-	DiskCacheDir string                   // a root directory inside of DiskCache to use
-	Options      RemoteRepoManagerOptions // git related tweaks
+	DiskCache           DiskCache                // usually implemented by lucicfg.Cache
+	DiskCacheDirGit     string                   // a root directory inside of DiskCache to use
+	DiskCacheDirGitiles string                   // a root directory inside of DiskCache to use
+	Options             RemoteRepoManagerOptions // git related tweaks
+	// Auth options; Should include user.email and gitiles oauth scopes.
+	AuthOpts auth.Options
 
 	m     sync.Mutex
 	err   error
@@ -60,11 +65,11 @@ type DiskCache interface {
 }
 
 // Shutdown terminates any lingering git subprocesses.
-func (r *RemoteRepoManager) Shutdown() {
+func (r *RemoteRepoManager) Shutdown(ctx context.Context) {
 	r.m.Lock()
 	defer r.m.Unlock()
 	if r.cache != nil {
-		r.cache.Shutdown()
+		r.cache.Shutdown(ctx)
 	}
 }
 
@@ -102,11 +107,19 @@ func (r *RemoteRepoManager) Repo(ctx context.Context, repoKey RepoKey) (Repo, er
 func (r *RemoteRepoManager) initLocked() error {
 	if r.err == nil && r.cache == nil {
 		r.err = func() error {
-			dir, err := r.DiskCache.Subdir(r.DiskCacheDir)
+			gitDir, err := r.DiskCache.Subdir(r.DiskCacheDirGit)
 			if err != nil {
 				return err
 			}
-			cache, err := gitsource.New(dir, r.Options.GitDebug)
+			gsource, err := gitsource.New(gitDir, r.Options.GitDebug)
+			if err != nil {
+				return err
+			}
+			gitilesDir, err := r.DiskCache.Subdir(r.DiskCacheDirGitiles)
+			if err != nil {
+				return err
+			}
+			cache, err := gitilessource.New(gitilesDir, r.AuthOpts, gsource)
 			if err != nil {
 				return err
 			}

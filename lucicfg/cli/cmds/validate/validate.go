@@ -166,6 +166,11 @@ func (vr *validateRun) validateExisting(ctx context.Context, dir string) (*valid
 // is on disk (failing the validation if there's a difference), and then sends
 // the output to LUCI Config service for validation.
 func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*validateResult, error) {
+	authOpts, err := vr.AuthOptions()
+	if err != nil {
+		return nil, err
+	}
+
 	// -config-set flag must not be used in this mode, config sets are defined
 	// on Starlark level.
 	if vr.configSet != "" {
@@ -173,7 +178,7 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 	}
 
 	meta := vr.DefaultMeta()
-	gen, err := base.GenerateConfigs(ctx, path, &meta, &vr.Meta, vr.Vars, vr.RepoOverrides, vr.RepoOptions)
+	gen, err := base.GenerateConfigs(ctx, path, &meta, &vr.Meta, vr.Vars, vr.RepoOverrides, vr.RepoOptions, authOpts)
 	if err != nil {
 		return nil, err
 	}

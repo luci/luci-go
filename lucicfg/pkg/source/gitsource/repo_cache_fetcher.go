@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"path"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -37,9 +36,13 @@ func (r *repoCache) Fetcher(ctx context.Context, ref, commit, pkgRoot string, pr
 	if prefetch == nil {
 		return nil, errors.New("gitsource.RepoCache.Fetcher: prefetch function is required (was nil)")
 	}
+	pkgRoot, err := source.NormalizePkgRoot(pkgRoot)
+	if err != nil {
+		return nil, err
+	}
 
 	// test if $commit *and its trees* is in our repo
-	_, err := r.batchProc.catFileTree(ctx, commit, "")
+	_, err = r.batchProc.catFileTree(ctx, commit, "")
 	if err != nil {
 		if !errors.Is(err, source.ErrMissingObject) {
 			return nil, err
@@ -55,18 +58,6 @@ func (r *repoCache) Fetcher(ctx context.Context, ref, commit, pkgRoot string, pr
 			}
 			return nil, err
 		}
-	}
-
-	if pkgRoot != "" {
-		if cleaned := path.Clean(pkgRoot); cleaned != pkgRoot {
-			return nil, fmt.Errorf("pkgRoot is not clean: %q (cleaned: %q)", pkgRoot, cleaned)
-		}
-	}
-
-	// pkgRoot does not end with a "/" unless it is literally "/"
-	// pkgRoot of "." is a bad way to spell ""
-	if pkgRoot == "." || pkgRoot == "/" {
-		pkgRoot = ""
 	}
 
 	ret := &gitFetcher{
