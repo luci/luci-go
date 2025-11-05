@@ -191,15 +191,16 @@ service ResultDB {
   // Currently supports artifacts with content types: [text/plain,]
   rpc ListArtifactLines(ListArtifactLinesRequest) returns (ListArtifactLinesResponse) {};
 
-  // Retrieves the line ranges in the given failure that do not usually appear
-  // in logs from passes.
+  // Retrieves the line and byte ranges in a log artifact from a failing test
+  // result that do not appear in the same artifact from recent passing results.
+  //
+  // This RPC allows clients to either get the content of these lines directly
+  // or use the returned byte ranges to fetch only the relevant portions of
+  // the artifact.
   //
   // Lines are normalized before comparison to remove numbers, dates, tmp file
   // paths, etc.
-  //
-  // Due to missed normalizations, sampling error or other reasons, this may
-  // not eliminate all lines that appear in passes.
-  rpc QueryArtifactFailureOnlyLines(QueryArtifactFailureOnlyLinesRequest) returns (QueryArtifactFailureOnlyLinesResponse) {};
+  rpc CompareArtifactLines(CompareArtifactLinesRequest) returns (CompareArtifactLinesResponse) {};
 
   // == Log Search =============================================================
 
@@ -551,56 +552,77 @@ message ListArtifactLinesResponse {
   // The log lines in the artifact.
   repeated ArtifactLine lines = 1;
 }
+// A request for the CompareArtifactLines RPC.
+message CompareArtifactLinesRequest {
+  // An enumeration of the different representations of the response.
+  enum View {
+    // The server will default to the RANGES_ONLY view.
+    VIEW_UNSPECIFIED = 0;
 
-// A request for the QueryArtifactFailureOnlyLines RPC.
-message QueryArtifactFailureOnlyLinesRequest {
-  // Retrieve log lines for this artifact.
-  // Invocation level artifacts are not yet supported.
+    // Includes only the line and byte ranges, without the line content.
+    // This is the most efficient view if you only need the locations
+    // of the failure-only lines.
+    RANGES_ONLY = 1;
+
+    // Includes the full content of the failure-only lines in addition to
+    // the line and byte ranges.
+    RANGES_WITH_CONTENT = 2;
+  }
+
+  // Required. The name of the artifact from a failing test result to be analyzed.
   // Format:
-  // - For test-result-level artifacts:
-  //   "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
-  string parent = 1;
+  // "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
+  string name = 1 [ (google.api.field_behavior) = REQUIRED ];
 
-  // If set to true, the content of the log lines will be returned in the
-  // response.  If left missing or false, only the line range indexes will
-  // be returned.
-  bool include_content = 2;
+  // Required. A list of names of passing test results to compare against.
+  // These should be for the same test_id and variant_hash as the failing result.
+  // The names are in the ResultDB test result name format, as returned by
+  // the TestHistory.QueryRecentPasses RPC.
+  repeated string passing_results = 2 [ (google.api.field_behavior) = REQUIRED ];
 
-  // The maximum number of line ranges to return.
-  //
+  // Optional. The view to control which fields are returned in the response.
+  View view = 3;
+
+  // Optional. The maximum number of failure-only ranges to return.
   // The service may return fewer than this value.
-  // If unspecified, at most 1000 line ranges will be returned.
+  // If unspecified, at most 1000 ranges will be returned.
   // The maximum value is 10,000; values above 10,000 will be coerced to 10,000.
   int32 page_size = 4;
 
-  // A page token, received from a previous `QueryArtifactFailureOnlyLines` call.
+  // Optional. A page token, received from a previous `CompareArtifactLines` call.
   // Provide this to retrieve the subsequent page.
-  //
-  // When paginating, all other parameters provided to `QueryArtifactFailureOnlyLines` MUST
+  // When paginating, all other parameters provided to `CompareArtifactLines` MUST
   // match the call that provided the page token.
   string page_token = 5;
 }
 
-// A response for the QueryArtifactFailureOnlyLines RPC.
-message QueryArtifactFailureOnlyLinesResponse {
-  // A representation of a range of lines in an artifact, where lines are
-  // represented by their index.  The first line is line 0.
-  message LineRange {
-    // The line index of the start of the line range.  The start is inclusive,
-    // i.e. the start line is included in the range.
-    int32 start = 1;
-    // The line index of the end of the line range.  The end is exclusive, i.e.
-    // the end line is not included in the range.
-    int32 end = 2;
+// A response for the CompareArtifactLines RPC.
+message CompareArtifactLinesResponse {
+  // Represents a contiguous range of lines and bytes in an artifact that
+  // are unique to the failing log.
+  message FailureOnlyRange {
+    // The zero-based index of the first line in this range, inclusive.
+    int32 start_line = 1;
+
+    // The zero-based index of the line after the last line in this
+    // range, exclusive.
+    int32 end_line = 2;
+
+    // The zero-based byte offset of the start of this range, inclusive.
+    int64 start_byte = 3;
+
+    // The zero-based byte offset of the end of this range, exclusive.
+    int64 end_byte = 4;
+
     // The content of the lines in the range.
-    // Only included if include_content in the request is set to true.
-    repeated string lines = 3;
+    // Only populated if the request's `view` was set to RANGES_WITH_CONTENT.
+    repeated string lines = 5;
   }
 
-  // Line ranges [start, end) in the requested artifact that do not typically
-  // appear versions of the artifact from passing test results.
-  // Line ranges are returned in sorted ascending order.
-  repeated LineRange failure_only_line_ranges = 1;
+  // Contiguous ranges in the requested artifact that do not appear in the
+  // corresponding artifacts from the provided passing test results.
+  // The ranges are sorted in ascending order by their starting position.
+  repeated FailureOnlyRange failure_only_ranges = 1;
 
   // A token, which can be sent as `page_token` to retrieve the next page.
   // If this field is omitted, there were no subsequent pages at the time of

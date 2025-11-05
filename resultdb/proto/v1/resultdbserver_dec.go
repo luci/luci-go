@@ -448,19 +448,19 @@ func (s *DecoratedResultDB) ListArtifactLines(ctx context.Context, req *ListArti
 	return
 }
 
-func (s *DecoratedResultDB) QueryArtifactFailureOnlyLines(ctx context.Context, req *QueryArtifactFailureOnlyLinesRequest) (rsp *QueryArtifactFailureOnlyLinesResponse, err error) {
+func (s *DecoratedResultDB) CompareArtifactLines(ctx context.Context, req *CompareArtifactLinesRequest) (rsp *CompareArtifactLinesResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "QueryArtifactFailureOnlyLines", req)
+		newCtx, err = s.Prelude(ctx, "CompareArtifactLines", req)
 		if err == nil {
 			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.QueryArtifactFailureOnlyLines(ctx, req)
+		rsp, err = s.Service.CompareArtifactLines(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(ctx, "QueryArtifactFailureOnlyLines", rsp, err)
+		err = s.Postlude(ctx, "CompareArtifactLines", rsp, err)
 	}
 	return
 }
