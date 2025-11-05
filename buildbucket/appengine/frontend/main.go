@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/gae/filter/dscache"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
@@ -48,6 +49,8 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 	tsmonsrv "go.chromium.org/luci/server/tsmon"
+	executorgrpcpb "go.chromium.org/turboci/proto/go/graph/executor/v1/grpcpb"
+	"go.chromium.org/turboci/proto/go/utils/turbocidesc"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildcron"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildercron"
@@ -59,7 +62,6 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/rpc"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
 	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
-	executorgrpcpb "go.chromium.org/turboci/proto/go/graph/executor/v1/grpcpb"
 
 	// Store auth sessions in the datastore.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
@@ -240,6 +242,14 @@ func main() {
 		grpcpb.RegisterBuildsServer(srv, &rpc.Builds{})
 		grpcpb.RegisterBuildersServer(srv, &rpc.Builders{})
 		executorgrpcpb.RegisterTurboCIStageExecutorServer(srv, &rpc.TurboCIStageExecutor{})
+
+		// Expose Turbo CI Executor service in the RPC Explorer. Turbo CI protos are
+		// compiled with more standard protoc tooling and they need to be registered
+		// in the discovery explicitly.
+		discovery.RegisterDescriptorSetCompressed(
+			[]string{executorgrpcpb.TurboCIStageExecutor_ServiceDesc.ServiceName},
+			turbocidesc.CompressedFileDescriptorSet(),
+		)
 
 		cron.RegisterHandler("delete_builds", buildcron.DeleteOldBuilds)
 		cron.RegisterHandler("expire_builds", buildcron.TimeoutExpiredBuilds)
