@@ -520,7 +520,17 @@ func TestCompileFailureAnalysisToBqRow(t *testing.T) {
 			Status:    pb.AnalysisStatus_SUSPECTFOUND,
 			StartTime: timestamppb.New(genaiStartTime),
 			EndTime:   timestamppb.New(genaiEndTime),
-			Suspect:   nil,
+			Suspect: &pb.GenAiSuspect{
+				Commit: &buildbucketpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Id:      "genai_commit_id",
+					Ref:     "refs/heads/main",
+				},
+				ReviewUrl:   "genai_review_url",
+				ReviewTitle: "genai_review_title",
+				Verified:    false,
+			},
 		}
 
 		datastore.GetTestable(ctx).CatchupIndexes()

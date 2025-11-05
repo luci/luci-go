@@ -631,3 +631,55 @@ func TestRegressionRange(t *testing.T) {
 		}))
 	})
 }
+
+func TestCompileGenAIAnalysisToPb(t *testing.T) {
+	t.Parallel()
+	ftt.Run("TestCompileGenAIAnalysisToPb", t, func(t *ftt.Test) {
+		t.Run("Nil analysis", func(t *ftt.Test) {
+			result := CompileGenAIAnalysisToPb(nil, nil)
+			assert.Loosely(t, result, should.BeNil)
+		})
+
+		t.Run("Analysis ended with suspect", func(t *ftt.Test) {
+			ga := &model.CompileGenAIAnalysis{
+				Status:    pb.AnalysisStatus_FOUND,
+				RunStatus: pb.AnalysisRunStatus_ENDED,
+				StartTime: time.Unix(100, 0).UTC(),
+				EndTime:   time.Unix(120, 0).UTC(),
+			}
+			suspect := &model.Suspect{
+				ReviewTitle: "review_title",
+			}
+			result := CompileGenAIAnalysisToPb(ga, suspect)
+			assert.Loosely(t, result, should.Match(
+				&pb.GenAiAnalysisResult{
+					Status:    pb.AnalysisStatus_FOUND,
+					StartTime: timestamppb.New(time.Unix(100, 0).UTC()),
+					EndTime:   timestamppb.New(time.Unix(120, 0).UTC()),
+					Suspect: &pb.GenAiSuspect{
+						ReviewTitle: "review_title",
+						Commit:      &buildbucketpb.GitilesCommit{},
+						Verified:    false,
+					},
+				},
+			))
+		})
+
+		t.Run("Analysis ended without suspect", func(t *ftt.Test) {
+			ga := &model.CompileGenAIAnalysis{
+				Status:    pb.AnalysisStatus_FOUND,
+				RunStatus: pb.AnalysisRunStatus_ENDED,
+				StartTime: time.Unix(100, 0).UTC(),
+				EndTime:   time.Unix(120, 0).UTC(),
+			}
+			result := CompileGenAIAnalysisToPb(ga, nil)
+			assert.Loosely(t, result, should.Match(
+				&pb.GenAiAnalysisResult{
+					Status:    pb.AnalysisStatus_FOUND,
+					StartTime: timestamppb.New(time.Unix(100, 0).UTC()),
+					EndTime:   timestamppb.New(time.Unix(120, 0).UTC()),
+				},
+			))
+		})
+	})
+}

@@ -307,11 +307,9 @@ func fetchCompileAnalyses(ctx context.Context) ([]*model.CompileFailureAnalysis,
 			if verifiedCulpritKey.Kind() != "Suspect" {
 				continue
 			}
-			suspect := &model.Suspect{
-				Id: verifiedCulpritKey.IntID(),
-			}
-			if err := datastore.Get(ctx, suspect); err != nil {
-				return nil, errors.Fmt("get suspect %d for analysis %d: %w", suspect.Id, cfa.Id, err)
+			suspect, err := datastoreutil.GetSuspect(ctx, verifiedCulpritKey.IntID(), verifiedCulpritKey.Parent())
+			if err != nil {
+				return nil, errors.Fmt("could not get suspect %s for analysis %d: %w", verifiedCulpritKey.String(), cfa.Id, err)
 			}
 			if !suspect.HasTakenActions {
 				allActionsTaken = false

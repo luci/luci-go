@@ -264,7 +264,7 @@ func CulpritToPb(ctx context.Context, culprit *model.Suspect, nsa *model.TestNth
 			Project:  culprit.GitilesCommit.Project,
 			Ref:      culprit.GitilesCommit.Ref,
 			Id:       culprit.GitilesCommit.Id,
-			Position: culprit.GitilesCommit.Position,
+			Position: uint32(culprit.GitilesCommit.Position),
 		}
 	}
 
@@ -515,7 +515,7 @@ func SuspectToCulpritPb(s *model.Suspect) *pb.Culprit {
 			Project:  s.GitilesCommit.Project,
 			Ref:      s.GitilesCommit.Ref,
 			Id:       s.GitilesCommit.Id,
-			Position: s.GitilesCommit.Position,
+			Position: uint32(s.GitilesCommit.Position),
 		},
 		ReviewUrl:     s.ReviewUrl,
 		ReviewTitle:   s.ReviewTitle,
@@ -523,13 +523,34 @@ func SuspectToCulpritPb(s *model.Suspect) *pb.Culprit {
 	}
 }
 
-func CompileGenAIAnalysisToPb(ga *model.CompileGenAIAnalysis) *pb.GenAiAnalysisResult {
+func SuspectToGenAiSuspectPb(s *model.Suspect) *pb.GenAiSuspect {
+	if s == nil {
+		return nil
+	}
+	return &pb.GenAiSuspect{
+		Commit: &buildbucketpb.GitilesCommit{
+			Host:     s.GitilesCommit.Host,
+			Project:  s.GitilesCommit.Project,
+			Ref:      s.GitilesCommit.Ref,
+			Id:       s.GitilesCommit.Id,
+			Position: uint32(s.GitilesCommit.Position),
+		},
+		ReviewUrl:   s.ReviewUrl,
+		ReviewTitle: s.ReviewTitle,
+		Verified:    s.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit,
+	}
+}
+
+func CompileGenAIAnalysisToPb(ga *model.CompileGenAIAnalysis, genaiSuspect *model.Suspect) *pb.GenAiAnalysisResult {
 	if ga == nil {
 		return nil
 	}
 	res := &pb.GenAiAnalysisResult{
 		Status:    ga.Status,
 		StartTime: timestamppb.New(ga.StartTime),
+	}
+	if genaiSuspect != nil {
+		res.Suspect = SuspectToGenAiSuspectPb(genaiSuspect)
 	}
 	if ga.HasEnded() {
 		res.EndTime = timestamppb.New(ga.EndTime)

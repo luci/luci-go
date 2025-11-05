@@ -133,7 +133,8 @@ func generateCompileRowSchema() (schema bigquery.Schema, err error) {
 	// The Culprit message has nested fields, so we need their descriptors as well.
 	fdgc, _ := descriptor.MessageDescriptorProto(&bbpb.GitilesCommit{})
 	fdsvd, _ := descriptor.MessageDescriptorProto(&pb.SuspectVerificationDetails{})
-	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdc, fdbid, fdbf, fdnsr, fdgar, fdgc, fdsvd}}
+	fdca, _ := descriptor.MessageDescriptorProto(&pb.CulpritAction{})
+	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdc, fdbid, fdbf, fdnsr, fdgar, fdgc, fdsvd, fdca}}
 	return bq.GenerateSchema(fdset, compileRowMessage)
 }
 

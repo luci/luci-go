@@ -94,7 +94,15 @@ func CompileFailureAnalysisToBqRow(ctx context.Context, cfa *model.CompileFailur
 		return nil, errors.Annotate(err, "get genai result for analysis %d", cfa.Id).Err()
 	}
 	if ga != nil {
-		result.GenaiResult = protoutil.CompileGenAIAnalysisToPb(ga)
+		var genaiSuspect *model.Suspect
+		genaiSuspect, err := datastoreutil.GetSuspectsForGenAIAnalysis(ctx, ga)
+		if err != nil {
+			logging.Errorf(ctx, "could not get suspect for genai analysis %d: %v", ga.Id, err)
+		}
+		result.GenaiResult = protoutil.CompileGenAIAnalysisToPb(ga, genaiSuspect)
+		if genaiSuspect == nil {
+			logging.Infof(ctx, "No GenAI suspect for analysis %d", cfa.Id)
+		}
 	}
 
 	return result, nil
