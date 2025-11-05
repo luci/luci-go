@@ -198,7 +198,6 @@ export function VirtualTreeTable({
                 hover
                 sx={{
                   '&:last-child td, &:last-child th': { border: 0 },
-
                   display: 'flex',
                   alignItems: 'center',
                   boxSizing: 'border-box',
@@ -208,7 +207,7 @@ export function VirtualTreeTable({
                   const cellContent = row[column.id];
                   return (
                     <TableCell
-                      key={`${row.id}-${column.id}`}
+                      key={`${row.id}-${column.id}-col`}
                       align={column.align || 'left'}
                       sx={{
                         ...theme.typography.body2,

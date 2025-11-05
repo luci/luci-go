@@ -200,7 +200,7 @@ export function TreeTable({
                 const cellContent = row[column.id];
                 return (
                   <TableCell
-                    key={`${row.id}-${column.id}`}
+                    key={`${row.id}-${column.id}-col`}
                     align={column.align || 'left'}
                     sx={bodyCellSx}
                   >

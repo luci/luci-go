@@ -588,10 +588,10 @@ describe('DrawerTreeUtils', () => {
 
       expect(idsToExpand).toEqual([
         '0-module1',
-        '1-vhash1',
-        '2-coarse1',
-        '3-fine1',
-        '4-case2',
+        '0-module1/1-vhash1',
+        '0-module1/1-vhash1/2-coarse1',
+        '0-module1/1-vhash1/2-coarse1/3-fine1',
+        '0-module1/1-vhash1/2-coarse1/3-fine1/4-case2',
       ]);
     });
 
@@ -635,10 +635,10 @@ describe('DrawerTreeUtils', () => {
 
       expect(idsToExpand).toEqual([
         '0-module1',
-        '1-vhash1',
-        '2-coarse1',
-        '3-fine1',
-        '4-case1',
+        '0-module1/1-vhash1',
+        '0-module1/1-vhash1/2-coarse1',
+        '0-module1/1-vhash1/2-coarse1/3-fine1',
+        '0-module1/1-vhash1/2-coarse1/3-fine1/4-case1',
       ]);
     });
 

@@ -223,6 +223,7 @@ export function structuredTreeLevelData(
 export function buildStructuredTree(
   level: StructuredTreeLevel,
   variants: TestVariant[],
+  parentId?: string,
 ): TestNavigationTreeNode[] {
   if (!variants || variants.length === 0 || level > StructuredTreeLevel.Case) {
     return [];
@@ -239,16 +240,25 @@ export function buildStructuredTree(
   const nodes: TestNavigationTreeNode[] = [];
   if (level < StructuredTreeLevel.Case) {
     groups.forEach((groupVariants, data) => {
-      const children = buildStructuredTree(level + 1, groupVariants);
-      if (children.length > 0) {
-        if (data === '') {
-          // This level was skipped for this group of variants.
-          // Instead of creating a node with an empty label,
-          // just add its children to the current list of nodes.
+      if (data === '') {
+        const children = buildStructuredTree(
+          level + 1,
+          groupVariants,
+          parentId,
+        );
+        if (children.length > 0) {
           nodes.push(...children);
-        } else {
+        }
+      } else {
+        const nodeId = parentId
+          ? `${parentId}/${level}-${data}`
+          : `${level}-${data}`;
+
+        const children = buildStructuredTree(level + 1, groupVariants, nodeId);
+
+        if (children.length > 0) {
           nodes.push({
-            id: `${level}-${data}`,
+            id: nodeId,
             label: data,
             level: level,
             children: children,
@@ -291,8 +301,12 @@ export function buildStructuredTree(
     });
   } else {
     groups.forEach((variants, data) => {
+      const nodeId = parentId
+        ? `${parentId}/${level}-${data}`
+        : `${level}-${data}`;
+
       nodes.push({
-        id: `${level}-${data}`,
+        id: nodeId,
         label: data,
         level: level,
         totalTests: 1,
