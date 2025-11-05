@@ -243,8 +243,6 @@ func (c *Cache[T]) Parameters() Parameters[T] {
 	return c.params
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 // formatVersionByte indicates what serialization format is used, it is stored
 // as a first byte of the serialized data.
 //

@@ -47,7 +47,7 @@ func mkGraph(adj map[string][]string) *Graph {
 func names(g *Graph, ns NodeSet) []string {
 	nm := make([]string, 0, len(ns))
 	g.Visit(ns, func(n *Node) error {
-		nm = append(nm, n.Name)
+		nm = append(nm, n.AuthGroup.Name)
 		return nil
 	})
 	sort.Strings(nm)
@@ -56,7 +56,7 @@ func names(g *Graph, ns NodeSet) []string {
 
 func descendants(g *Graph, node string) []string {
 	for _, n := range g.Nodes {
-		if n.Name == node {
+		if n.AuthGroup.Name == node {
 			return names(g, g.Descendants(n.Index))
 		}
 	}
@@ -65,7 +65,7 @@ func descendants(g *Graph, node string) []string {
 
 func ancestors(g *Graph, node string) []string {
 	for _, n := range g.Nodes {
-		if n.Name == node {
+		if n.AuthGroup.Name == node {
 			return names(g, g.Ancestors(n.Index))
 		}
 	}

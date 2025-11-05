@@ -170,7 +170,7 @@ func (b *Builder) internSet(s []string) map[string]struct{} {
 	return out
 }
 
-/// Factories of concrete types of elementary conditions.
+// Factories of concrete types of elementary conditions.
 
 func (b *Builder) attributeRestriction(cond *protocol.Condition_AttributeRestriction) elementary {
 	if len(cond.Values) == 0 {

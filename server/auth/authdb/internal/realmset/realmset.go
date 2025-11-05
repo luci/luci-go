@@ -260,7 +260,7 @@ func Build(r *protocol.Realms, qg *graph.QueryableGraph, registered map[realms.P
 					ps.add(groups, idents)
 				} else {
 					realmsToBe[key] = newPrincipalSet(groups, idents)
-					counts[key.realmAndPerm] += 1
+					counts[key.realmAndPerm]++
 				}
 			}
 		}

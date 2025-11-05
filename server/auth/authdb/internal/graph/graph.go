@@ -133,7 +133,7 @@ func (nsd NodeSetDedupper) Dedup(ns NodeSet) SortedNodeSet {
 
 // Node is a node in a group graph.
 type Node struct {
-	*protocol.AuthGroup // the original group proto
+	AuthGroup *protocol.AuthGroup // the original group proto
 
 	Nested  []NodeIndex // directly nested groups
 	Parents []NodeIndex // direct parent (nesting) groups
@@ -274,9 +274,9 @@ func (g *Graph) buildGlobsMap() (map[NodeIndex]globset.GlobSet, error) {
 		// Visit all descendants (all subgroups) of 'idx' to collect all globs
 		// there.
 		err := g.Visit(g.Descendants(idx), func(n *Node) error {
-			for _, glob := range n.Globs {
+			for _, glob := range n.AuthGroup.Globs {
 				if err := builder.Add(identity.Glob(glob)); err != nil {
-					return errors.Fmt("bad glob %q in group %q: %w", glob, n.Name, err)
+					return errors.Fmt("bad glob %q in group %q: %w", glob, n.AuthGroup.Name, err)
 				}
 			}
 			return nil
@@ -287,7 +287,7 @@ func (g *Graph) buildGlobsMap() (map[NodeIndex]globset.GlobSet, error) {
 
 		switch globSet, err := builder.Build(); {
 		case err != nil:
-			return nil, errors.Fmt("bad glob pattern when traversing %q: %w", g.Nodes[idx].Name, err)
+			return nil, errors.Fmt("bad glob pattern when traversing %q: %w", g.Nodes[idx].AuthGroup.Name, err)
 		case globSet != nil:
 			globs[idx] = globSet
 		}
@@ -304,11 +304,11 @@ func (g *Graph) buildGlobsMap() (map[NodeIndex]globset.GlobSet, error) {
 func (g *Graph) buildMembershipsMap() map[identity.NormalizedIdentity]SortedNodeSet {
 	sets := make(map[identity.NormalizedIdentity]NodeSet) // normalized identity => groups it belongs to
 	for idx, node := range g.Nodes {
-		if len(node.Members) == 0 {
+		if len(node.AuthGroup.Members) == 0 {
 			continue
 		}
 		ancestors := g.Ancestors(NodeIndex(idx))
-		for _, m := range node.Members {
+		for _, m := range node.AuthGroup.Members {
 			ident := identity.Identity(m).AsNormalized()
 			nodeSet := sets[ident]
 			if nodeSet == nil {

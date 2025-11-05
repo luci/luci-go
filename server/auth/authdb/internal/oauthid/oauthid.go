@@ -19,7 +19,8 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 )
 
-// Well-known OAuth client_id of https://apis-explorer.appspot.com/.
+// GoogleAPIExplorerClientID is the well-known OAuth client_id of
+// https://apis-explorer.appspot.com/.
 const GoogleAPIExplorerClientID = "292824132082.apps.googleusercontent.com"
 
 // Allowlist is OAuth client ID allowlist.

@@ -19,8 +19,8 @@ import (
 	"io"
 	"net"
 
-	"github.com/golang/protobuf/proto"
 	"go.opentelemetry.io/otel/attribute"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
@@ -79,7 +79,7 @@ func SnapshotDBFromTextProto(r io.Reader) (*SnapshotDB, error) {
 		return nil, errors.Fmt("failed to read the file: %w", err)
 	}
 	msg := &protocol.AuthDB{}
-	if err := proto.UnmarshalText(string(blob), msg); err != nil {
+	if err := prototext.Unmarshal(blob, msg); err != nil {
 		return nil, errors.Fmt("not a valid AuthDB text proto file: %w", err)
 	}
 	db, err := NewSnapshotDB(msg, "", 0, true)
