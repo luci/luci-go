@@ -24,7 +24,7 @@ import {
   Divider,
   ListItemButton,
 } from '@mui/material';
-import React from 'react';
+import React, { RefObject } from 'react';
 
 import { getStatusStyle } from '@/common/styles/status_styles';
 import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
@@ -40,6 +40,7 @@ interface ExpandableListItemProps {
   isSelected?: boolean;
   onClick?: () => void;
   level?: number;
+  itemRef?: RefObject<HTMLDivElement | null>;
 }
 
 export const ExpandableListItem: React.FC<ExpandableListItemProps> = ({
@@ -52,6 +53,7 @@ export const ExpandableListItem: React.FC<ExpandableListItemProps> = ({
   isSelected,
   onClick,
   level = 0,
+  itemRef,
 }) => {
   const paddingLeft = level * 10 + 1;
 
@@ -61,7 +63,7 @@ export const ExpandableListItem: React.FC<ExpandableListItemProps> = ({
     : undefined;
 
   return (
-    <Box sx={{ pt: 0 }}>
+    <Box sx={{ pt: 0 }} ref={itemRef}>
       <ListItemButton
         selected={isSelected}
         onClick={onClick}

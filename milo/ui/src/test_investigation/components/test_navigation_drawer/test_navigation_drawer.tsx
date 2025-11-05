@@ -14,18 +14,21 @@
 
 import MenuIcon from '@mui/icons-material/Menu';
 import { Drawer, IconButton, Paper, Tooltip, useTheme } from '@mui/material';
-import { useState } from 'react';
 
-import { TestDrawerProvider } from './context'; // Import from the context directory
 import { DrawerContent } from './drawer_content';
 
 const DRAWER_WIDTH_OPEN = 600;
 
-export function TestNavigationDrawer() {
-  const theme = useTheme();
-  const [isOpen, setIsOpen] = useState(false);
+export interface TestNavigationDrawerProps {
+  isOpen: boolean;
+  onToggleDrawer: () => void;
+}
 
-  const handleToggleDrawer = () => setIsOpen(!isOpen);
+export function TestNavigationDrawer({
+  isOpen,
+  onToggleDrawer,
+}: TestNavigationDrawerProps) {
+  const theme = useTheme();
 
   return (
     <>
@@ -56,7 +59,7 @@ export function TestNavigationDrawer() {
             sx={{
               color: 'var(--blue-600, #1A73E8)',
             }}
-            onClick={handleToggleDrawer}
+            onClick={onToggleDrawer}
             size="small"
           >
             <MenuIcon fontSize="small" />
@@ -68,7 +71,7 @@ export function TestNavigationDrawer() {
         variant="temporary"
         anchor="left"
         open={isOpen}
-        onClose={handleToggleDrawer}
+        onClose={onToggleDrawer}
         sx={{
           width: DRAWER_WIDTH_OPEN,
           flexShrink: 0,
@@ -82,9 +85,7 @@ export function TestNavigationDrawer() {
         }}
         ModalProps={{ keepMounted: true }}
       >
-        <TestDrawerProvider>
-          <DrawerContent />
-        </TestDrawerProvider>
+        <DrawerContent />
       </Drawer>
     </>
   );

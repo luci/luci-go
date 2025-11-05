@@ -29,8 +29,67 @@ import { normalizeDrawerFailureReason } from './test_variant_utils';
 
 export interface HierarchyBuildResult {
   tree: TestNavigationTreeNode[];
-  // TODO: IDs of nodes leading to the currently selected test variant.
   idsToExpand: string[];
+}
+
+/**
+ * Recursively searches a node tree for a test variant matching the testId and variantHash.
+ * Returns an array of node IDs representing the path to the found node, or an empty array if not found.
+ */
+function findNodePath(
+  nodes: TestNavigationTreeNode[],
+  testId: string,
+  variantHash: string,
+): string[] {
+  for (const node of nodes) {
+    // Check if this node is the leaf node we are looking for.
+    if (
+      node.testVariant &&
+      node.testVariant.testId === testId &&
+      node.testVariant.variantHash === variantHash
+    ) {
+      return [node.id];
+    }
+
+    // If it's a branch, search its children.
+    if (node.children) {
+      const path = findNodePath(node.children, testId, variantHash);
+      // If a path was found in the children, prepend this node's ID and return.
+      if (path.length > 0) {
+        return [node.id, ...path];
+      }
+    }
+  }
+  // No path found in this branch.
+  return [];
+}
+
+/**
+ * Builds the test variant hierarchy tree and identifies the node path to
+ * the specified testId and variantHash.
+ */
+export function buildHierarchyTreeAndFindExpandedIds(
+  testVariants: readonly TestVariant[],
+  testId?: string,
+  variantHash?: string,
+): HierarchyBuildResult {
+  // First, build the complete tree.
+  const buildResult = buildHierarchyTree(testVariants);
+
+  // If a specific test is provided, find the path to it.
+  if (testId && variantHash) {
+    const idsToExpand = findNodePath(buildResult.tree, testId, variantHash);
+    return {
+      tree: buildResult.tree,
+      idsToExpand: idsToExpand,
+    };
+  }
+
+  // Otherwise, return the tree with no nodes expanded.
+  return {
+    tree: buildResult.tree,
+    idsToExpand: [],
+  };
 }
 
 // Helper to map TestResult_Status (from a result's statusV2 field) to a SemanticStatusType.
@@ -104,6 +163,7 @@ export function buildHierarchyTree(
 ): HierarchyBuildResult {
   const result: HierarchyBuildResult = {
     tree: [],
+    // This is purposefully empty.
     idsToExpand: [],
   };
   if (!testVariants || testVariants.length === 0) {

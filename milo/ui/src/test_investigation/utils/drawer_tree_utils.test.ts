@@ -24,6 +24,7 @@ import { TestNavigationTreeNode } from '../components/test_navigation_drawer/typ
 import {
   buildFailureReasonTree,
   buildFlatTree,
+  buildHierarchyTreeAndFindExpandedIds,
   buildStructuredTree,
   compressSingleChildNodes,
   getSemanticStatusFromResultV2,
@@ -533,6 +534,154 @@ describe('DrawerTreeUtils', () => {
       expect(group2).toBeDefined();
       expect(group2!.nodes).toHaveLength(1); // test2
       expect(group2!.totalTests).toBe(1);
+    });
+  });
+
+  describe('buildHierarchyTreeAndFindExpandedIds', () => {
+    const structuredVariant1: TestVariant = {
+      testId: 'test.structured.case1',
+      variantHash: 'hash1',
+      testIdStructured: {
+        moduleName: 'module1',
+        moduleScheme: 'go',
+        moduleVariantHash: 'vhash1',
+        coarseName: 'coarse1',
+        fineName: 'fine1',
+        caseName: 'case1',
+      },
+    } as TestVariant;
+
+    const structuredVariant2: TestVariant = {
+      testId: 'test.structured.case2',
+      variantHash: 'hash2',
+      testIdStructured: {
+        moduleName: 'module1',
+        moduleScheme: 'go',
+        moduleVariantHash: 'vhash1',
+        coarseName: 'coarse1',
+        fineName: 'fine1',
+        caseName: 'case2',
+      },
+    } as TestVariant;
+
+    const flatVariant1: TestVariant = {
+      testId: 'a/b/c',
+      variantHash: 'hashA',
+    } as TestVariant;
+    const flatVariant2: TestVariant = {
+      testId: 'a/b/d',
+      variantHash: 'hashB',
+    } as TestVariant;
+
+    const compressedVariant: TestVariant = {
+      testId: 'long/path/to/single/file',
+      variantHash: 'hashComp',
+    } as TestVariant;
+
+    it('should return the correct path for a structured variant', () => {
+      const variants = [structuredVariant1, structuredVariant2];
+      const { idsToExpand } = buildHierarchyTreeAndFindExpandedIds(
+        variants,
+        'test.structured.case2',
+        'hash2',
+      );
+
+      expect(idsToExpand).toEqual([
+        '0-module1',
+        '1-vhash1',
+        '2-coarse1',
+        '3-fine1',
+        '4-case2',
+      ]);
+    });
+
+    it('should return the correct path for a flat variant', () => {
+      const variants = [flatVariant1, flatVariant2];
+      const { idsToExpand } = buildHierarchyTreeAndFindExpandedIds(
+        variants,
+        'a/b/d',
+        'hashB',
+      );
+
+      expect(idsToExpand).toEqual(['a/-a/b/', 'a/b/d']);
+    });
+
+    it('should return the correct path for a compressed flat variant', () => {
+      const variants = [compressedVariant];
+      const { idsToExpand } = buildHierarchyTreeAndFindExpandedIds(
+        variants,
+        'long/path/to/single/file',
+        'hashComp',
+      );
+
+      expect(idsToExpand).toEqual([
+        'long/-long/path/-long/path/to/-long/path/to/single/',
+        'long/path/to/single/file',
+      ]);
+    });
+
+    it('should return the correct path from a mixed list (structured)', () => {
+      const variants = [
+        structuredVariant1,
+        structuredVariant2,
+        flatVariant1,
+        flatVariant2,
+      ];
+      const { idsToExpand } = buildHierarchyTreeAndFindExpandedIds(
+        variants,
+        'test.structured.case1',
+        'hash1',
+      );
+
+      expect(idsToExpand).toEqual([
+        '0-module1',
+        '1-vhash1',
+        '2-coarse1',
+        '3-fine1',
+        '4-case1',
+      ]);
+    });
+
+    it('should return the correct path from a mixed list (flat)', () => {
+      const variants = [
+        structuredVariant1,
+        structuredVariant2,
+        flatVariant1,
+        flatVariant2,
+      ];
+      const { idsToExpand } = buildHierarchyTreeAndFindExpandedIds(
+        variants,
+        'a/b/c',
+        'hashA',
+      );
+
+      expect(idsToExpand).toEqual(['a/-a/b/', 'a/b/c']);
+    });
+
+    it('should return an empty array if no test ID is provided', () => {
+      const variants = [structuredVariant1, flatVariant1];
+      const { idsToExpand } = buildHierarchyTreeAndFindExpandedIds(variants);
+      expect(idsToExpand).toEqual([]);
+    });
+
+    it('should return an empty array if the test ID is not found', () => {
+      const variants = [structuredVariant1, flatVariant1];
+      const { idsToExpand } = buildHierarchyTreeAndFindExpandedIds(
+        variants,
+        'non/existent/id',
+        'hashNotFound',
+      );
+      expect(idsToExpand).toEqual([]);
+    });
+
+    it('should return an empty array if the variant hash is not found', () => {
+      const variants = [structuredVariant1, flatVariant1];
+      const { idsToExpand } = buildHierarchyTreeAndFindExpandedIds(
+        variants,
+        'a/b/c',
+        'wrongHash',
+      );
+      expect(idsToExpand).toEqual([]);
     });
   });
 });

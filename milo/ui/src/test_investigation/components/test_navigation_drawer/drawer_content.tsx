@@ -20,7 +20,7 @@ import {
   ToggleButtonGroup,
   ToggleButton,
 } from '@mui/material';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 import {
   TestVerdict_Status,
@@ -37,12 +37,36 @@ export function DrawerContent() {
     isLoading: isLoadingTestVariants,
     hierarchyTree: hierarchyTreeData,
     failureReasonTree: failureReasonTreeData,
+    selectedItemRef,
+    isDrawerOpen,
   } = useTestDrawer();
 
   const [selectedTab, setSelectedTab] = useState(0);
   const [openGroups, setOpenGroups] = useState<{ [groupId: string]: boolean }>(
     {},
   );
+
+  // This effect handles scrolling the selected item into view
+  useEffect(() => {
+    // Only scroll when:
+    // 1. The drawer is fully open and visible.
+    // 2. Loading is finished.
+    // 3. The ref has been attached to the selected item.
+    if (isDrawerOpen && !isLoadingTestVariants && selectedItemRef?.current) {
+      // We use a short timeout to allow MUI's <Collapse> components
+      // to finish their 'auto' transition *after* the expandedNodes
+      // state has been updated and the item is rendered.
+      const timer = setTimeout(() => {
+        selectedItemRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 150);
+
+      return () => clearTimeout(timer);
+    }
+    return;
+  }, [isDrawerOpen, isLoadingTestVariants, selectedItemRef]);
 
   const handleTabChange = useCallback(
     (_event: React.SyntheticEvent, newValue: number | null) => {
@@ -167,7 +191,9 @@ export function DrawerContent() {
                     key={group.id}
                     isExpanded={!!openGroups[group.id]}
                     label={group.label}
-                    onClick={() => toggleGroup(group.id)}
+                    onClick={() => {
+                      toggleGroup(group.id);
+                    }}
                     totalTests={group.totalTests}
                     status={getStatusTotalsForGroup(group).status}
                     secondaryText={getStatusTotalsForGroup(group).secondaryText}

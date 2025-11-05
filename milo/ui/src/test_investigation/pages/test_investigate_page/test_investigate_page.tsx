@@ -1,3 +1,17 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import {
   Box,
@@ -5,9 +19,9 @@ import {
   ThemeProvider,
   Typography,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { startCase } from 'lodash-es';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
@@ -42,10 +56,11 @@ import { ArtifactsSection } from '@/test_investigation/components/artifacts/arti
 import { RedirectBackBanner } from '@/test_investigation/components/redirect_back_banner';
 import { TestInfo } from '@/test_investigation/components/test_info';
 import { TestNavigationDrawer } from '@/test_investigation/components/test_navigation_drawer';
+import { TestDrawerProvider } from '@/test_investigation/components/test_navigation_drawer/context';
 import {
   InvocationProvider,
   TestVariantProvider,
-} from '@/test_investigation/context/provider';
+} from '@/test_investigation/context';
 import { isPresubmitRun } from '@/test_investigation/utils/test_info_utils';
 import { getProjectFromRealm } from '@/test_investigation/utils/test_variant_utils';
 
@@ -68,6 +83,12 @@ export function TestInvestigatePage() {
 
   const authState = useAuthState();
   const resultDbClient = useResultDbClient();
+
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const handleToggleDrawer = () => {
+    setIsDrawerOpen((prev) => !prev);
+  };
 
   // Destructure all params needed for both legacy and root invocations.
   const {
@@ -99,6 +120,7 @@ export function TestInvestigatePage() {
     ),
     staleTime: 5 * 60 * 1000,
     enabled: isLegacyInvocation,
+    placeholderData: keepPreviousData,
   });
 
   // Fetch Root Invocation (only if NOT in legacy mode)
@@ -110,6 +132,7 @@ export function TestInvestigatePage() {
     ),
     staleTime: 5 * 60 * 1000,
     enabled: !isLegacyInvocation,
+    placeholderData: keepPreviousData,
   });
 
   const invocation = isLegacyInvocation ? legacyInvocation : rootInvocation;
@@ -175,6 +198,7 @@ export function TestInvestigatePage() {
     },
     // Only enable the query once the request is fully formed.
     enabled: !!request,
+    placeholderData: keepPreviousData,
   });
 
   const project = useMemo(
@@ -322,7 +346,12 @@ export function TestInvestigatePage() {
               <ArtifactsSection />
             </Box>
           </Box>
-          <TestNavigationDrawer />
+          <TestDrawerProvider isDrawerOpen={isDrawerOpen}>
+            <TestNavigationDrawer
+              isOpen={isDrawerOpen}
+              onToggleDrawer={handleToggleDrawer}
+            />
+          </TestDrawerProvider>
         </ThemeProvider>
       </TestVariantProvider>
     </InvocationProvider>

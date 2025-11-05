@@ -35,10 +35,15 @@ export function DrawerTreeItem({ node }: DrawerTreeItemProps) {
     currentTestId,
     currentVariantHash,
     onSelectTestVariant,
+    selectedItemRef,
   } = useTestDrawer();
 
   const isExpanded = expandedNodes.has(node.id);
   const hasChildren = node.children && node.children.length > 0;
+
+  const isSelected =
+    currentTestId === node.testVariant?.testId &&
+    currentVariantHash === node.testVariant?.variantHash;
 
   const handleItemClick = () => {
     if (hasChildren) {
@@ -100,11 +105,9 @@ export function DrawerTreeItem({ node }: DrawerTreeItemProps) {
       secondaryText={getSecondaryText()}
       totalTests={node.totalTests}
       onClick={handleItemClick}
-      isSelected={
-        currentTestId === node.testVariant?.testId &&
-        currentVariantHash === node.testVariant?.variantHash
-      }
+      isSelected={isSelected}
       level={node.level}
+      itemRef={isSelected ? selectedItemRef : undefined}
     >
       {hasChildren && (
         <List component="div" disablePadding dense>

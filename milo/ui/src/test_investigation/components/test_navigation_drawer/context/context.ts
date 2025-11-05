@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, RefObject } from 'react';
 
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
@@ -29,6 +29,12 @@ export interface TestDrawerContextValue {
   // Expanded node state must be in context so recursive children can call it
   expandedNodes: Set<string>;
   toggleNodeExpansion: (nodeId: string) => void;
+
+  // Ref to the DOM element of the currently selected list item
+  selectedItemRef: RefObject<HTMLDivElement | null>;
+
+  // Add the drawer's open state
+  isDrawerOpen: boolean;
 }
 
 export const TestDrawerContext = createContext<TestDrawerContextValue | null>(

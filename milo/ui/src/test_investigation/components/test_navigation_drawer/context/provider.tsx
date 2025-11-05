@@ -19,6 +19,7 @@ import {
   useMemo,
   useState,
   PropsWithChildren,
+  useRef,
 } from 'react';
 import { useNavigate } from 'react-router';
 
@@ -39,7 +40,7 @@ import {
 } from '@/test_investigation/context/context';
 // This import path is now corrected
 import {
-  buildHierarchyTree,
+  buildHierarchyTreeAndFindExpandedIds,
   buildFailureReasonTree,
   HierarchyBuildResult,
 } from '@/test_investigation/utils/drawer_tree_utils';
@@ -62,7 +63,14 @@ const orderBy = 'status_v2_effective';
 const resultLimit = 100;
 const pageSize = 1000;
 
-export function TestDrawerProvider({ children }: PropsWithChildren) {
+export interface TestDrawerProviderProps extends PropsWithChildren {
+  isDrawerOpen: boolean;
+}
+
+export function TestDrawerProvider({
+  children,
+  isDrawerOpen,
+}: TestDrawerProviderProps) {
   const navigate = useNavigate();
 
   const invocation = useInvocation();
@@ -71,6 +79,10 @@ export function TestDrawerProvider({ children }: PropsWithChildren) {
   const resultDbClient = useResultDbClient();
   const isLegacyInvocation = useIsLegacyInvocation();
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+
+  // Create the ref for the selected item
+  const selectedItemRef = useRef<HTMLDivElement | null>(null);
+
   const query = useMemo(() => {
     if (isLegacyInvocation) {
       return resultDbClient.QueryTestVariants.query(
@@ -109,8 +121,16 @@ export function TestDrawerProvider({ children }: PropsWithChildren) {
 
   const { tree: hierarchyTreeData, idsToExpand: hierarchyIdsToExpand } =
     useMemo((): HierarchyBuildResult => {
-      return buildHierarchyTree(testVariants);
-    }, [testVariants]);
+      return buildHierarchyTreeAndFindExpandedIds(
+        testVariants,
+        currentTestVariant.testId,
+        currentTestVariant.variantHash,
+      );
+    }, [
+      testVariants,
+      currentTestVariant.testId,
+      currentTestVariant.variantHash,
+    ]);
 
   const failureReasonTreeData = useMemo(
     () => buildFailureReasonTree(testVariants),
@@ -167,6 +187,8 @@ export function TestDrawerProvider({ children }: PropsWithChildren) {
       onSelectTestVariant: handleDrawerTestSelection,
       expandedNodes,
       toggleNodeExpansion,
+      selectedItemRef,
+      isDrawerOpen,
     }),
     [
       isLoadingTestVariants,
@@ -177,6 +199,8 @@ export function TestDrawerProvider({ children }: PropsWithChildren) {
       handleDrawerTestSelection,
       expandedNodes,
       toggleNodeExpansion,
+      selectedItemRef,
+      isDrawerOpen,
     ],
   );
 
