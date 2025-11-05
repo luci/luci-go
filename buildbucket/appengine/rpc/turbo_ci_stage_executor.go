@@ -21,10 +21,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	executorgrpcpb "go.chromium.org/turboci/proto/go/graph/executor/v1/grpcpb"
@@ -86,21 +86,21 @@ func TurboCIInterceptor(ctx context.Context, turboCIStagesServiceAccount string)
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		user := auth.CurrentIdentity(ctx)
 		if user != expected {
-			return nil, status.Errorf(codes.PermissionDenied, "%q is not allowed to call TurboCI Stage Executor API", user)
+			return nil, appstatus.Errorf(codes.PermissionDenied, "%q is not allowed to call TurboCI Stage Executor API", user)
 		}
 
 		// Grab the user that is submitting the stage from gRPC metadata. It is
 		// placed there based on the user credentials by the trusted backend.
 		endUserMD := metadata.ValueFromIncomingContext(ctx, endUserMetadataKey)
 		if len(endUserMD) == 0 {
-			return nil, status.Errorf(codes.PermissionDenied, "missing %q metadata", endUserMetadataKey)
+			return nil, appstatus.Errorf(codes.PermissionDenied, "missing %q metadata", endUserMetadataKey)
 		}
 		if len(endUserMD) > 1 {
-			return nil, status.Errorf(codes.PermissionDenied, "ambiguous %q metadata", endUserMetadataKey)
+			return nil, appstatus.Errorf(codes.PermissionDenied, "ambiguous %q metadata", endUserMetadataKey)
 		}
 		endUser, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, endUserMD[0]))
 		if err != nil {
-			return nil, status.Errorf(codes.PermissionDenied, "unrecognized %q metadata email format: %s", endUserMetadataKey, err)
+			return nil, appstatus.Errorf(codes.PermissionDenied, "unrecognized %q metadata email format: %s", endUserMetadataKey, err)
 		}
 
 		// This among other things verifies we've got ScheduleBuildRequest in
@@ -109,13 +109,13 @@ func TurboCIInterceptor(ctx context.Context, turboCIStagesServiceAccount string)
 		// handler.
 		call, err := extractTurboCICallInfo(req)
 		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
+			return nil, appstatus.Errorf(codes.InvalidArgument, "bad request: %s", err)
 		}
 		ctx = context.WithValue(ctx, &turboCICallKey, call)
 
 		// Extract the LUCI project the builder belongs to.
 		if err := protoutil.ValidateBuilderID(call.ScheduleBuild.Builder); err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "bad builder ID: %s", err)
+			return nil, appstatus.Errorf(codes.InvalidArgument, "bad builder ID: %s", err)
 		}
 		project := call.ScheduleBuild.Builder.Project
 
@@ -139,12 +139,12 @@ func TurboCIInterceptor(ctx context.Context, turboCIStagesServiceAccount string)
 		data, err := auth.GetRealmData(ctx, realms.Join(project, realms.RootRealm))
 		if err != nil {
 			logging.Errorf(ctx, "Error looking up realm data for %q: %s", project, err)
-			return nil, status.Errorf(codes.Internal, "error looking up realm data")
+			return nil, appstatus.Errorf(codes.Internal, "error looking up realm data")
 		}
 		if data.GetProjectScopedAccount() == endUser.Email() {
 			endUser, err = identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.Project, project))
 			if err != nil {
-				return nil, status.Errorf(codes.InvalidArgument, "unrecognized LUCI project name format: %s", err)
+				return nil, appstatus.Errorf(codes.InvalidArgument, "unrecognized LUCI project name format: %s", err)
 			}
 		}
 
@@ -152,7 +152,7 @@ func TurboCIInterceptor(ctx context.Context, turboCIStagesServiceAccount string)
 		ctx, err = auth.WithUncheckedImpersonation(ctx, endUser)
 		if err != nil {
 			logging.Errorf(ctx, "Failed to impersonate %q: %s", endUser, err)
-			return nil, status.Errorf(codes.Internal, "failed to impersonate the end user")
+			return nil, appstatus.Errorf(codes.Internal, "failed to impersonate the end user")
 		}
 		return handler(ctx, req)
 	}
