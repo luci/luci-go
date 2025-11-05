@@ -138,38 +138,13 @@ git-credential-luci reauth
 
 ` + "\u200b\n"
 
-// reAuthTroubleshootMsg is the message to print when ReAuth failed. This
-// message will change as we roll out ReAuth enforcement.
-const reAuthTroubleshootMsg = `To bypass ReAuth for now, set LUCI_BYPASS_REAUTH environment variable in your
-terminal:
+const bypassReAuthWarning = `WARNING: You are bypassing ReAuth for a Gerrit repo that requires it.
 
-    On Linux / Mac: export LUCI_BYPASS_REAUTH=1
-    On Windows (CMD): set LUCI_BYPASS_REAUTH=1
+Your CL may fail Review-Enforcement without additional reviews.
 
-Then re-run the failed command.
+Remove the LUCI_BYPASS_REAUTH environment variable to stop bypassing.
 
-We *STRONGLY ENCOURAGE* you to set up and get familiar with ReAuth.
-
-We will soon enforce ReAuth requirements, please do so at your first
-convenience to avoid disruptions.
-
-See https://chromium.googlesource.com/chromium/src.git/+/HEAD/docs/gerrit_reauth.md
-`
-
-const bypassReAuthWarning = `!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-You are bypassing ReAuth for a Gerrit repo that will enforce ReAuth
-soon.
-
-You can stop bypassing by removing the LUCI_BYPASS_REAUTH environment
-variable.
-
-If you haven't setup ReAuth, see the following link for instructions:
-https://chromium.googlesource.com/chromium/src.git/+/HEAD/docs/gerrit_reauth.md
-
-If you are bypassing ReAuth due to an issue and have not already filed
-a bug, please do so at:
-https://issues.chromium.org/issues/new?component=1456702&template=2176581
-------------------------------------------------------------------------
+For more info see https://chromium.googlesource.com/chromium/src.git/+/HEAD/docs/gerrit_reauth.md
 `
 
 func main() {
@@ -259,7 +234,7 @@ func main() {
 			}
 
 			fmt.Fprintf(os.Stderr, "ReAuth failed: %v\n", err)
-			fmt.Fprintf(os.Stderr, "\n"+reAuthTroubleshootMsg)
+			fmt.Fprintf(os.Stderr, "\nSee instructions at https://chromium.googlesource.com/chromium/src.git/+/HEAD/docs/gerrit_reauth.md\n")
 			os.Exit(ExitError)
 		}
 		fmt.Fprintf(os.Stderr, "ReAuth successful!\n")
