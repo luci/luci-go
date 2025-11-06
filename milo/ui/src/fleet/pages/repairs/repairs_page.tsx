@@ -50,6 +50,11 @@ import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
+import { getFeatureFlag } from '@/fleet/config/features';
+import {
+  ANDROID_PLATFORM,
+  generateDeviceListURL,
+} from '@/fleet/constants/paths';
 import {
   ORDER_BY_PARAM_KEY,
   OrderByDirection,
@@ -61,7 +66,10 @@ import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { colors } from '@/fleet/theme/colors';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { getErrorMessage } from '@/fleet/utils/errors';
-import { parseOrderByParam } from '@/fleet/utils/search_param';
+import {
+  getFilterQueryString,
+  parseOrderByParam,
+} from '@/fleet/utils/search_param';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -655,6 +663,7 @@ function Metrics({
   platform: Platform;
 }) {
   const client = useFleetConsoleClient();
+  const [searchParams, _] = useSyncedSearchParams();
   const countQuery = useQuery({
     ...client.CountRepairMetrics.query({
       platform: platform,
@@ -701,6 +710,15 @@ function Metrics({
               name="Total Hosts"
               value={countQuery.data?.totalHosts}
               loading={countQuery.isPending}
+              filterUrl={
+                getFeatureFlag('AndroidListDevices')
+                  ? generateDeviceListURL(ANDROID_PLATFORM) +
+                    getFilterQueryString(
+                      { fc_machine_type: ['host'] },
+                      searchParams,
+                    )
+                  : undefined
+              }
             />
             <SingleMetric
               name="Distinct Hosts Offline"
@@ -708,6 +726,24 @@ function Metrics({
               total={countQuery.data?.totalHosts}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isPending}
+              filterUrl={
+                getFeatureFlag('AndroidListDevices')
+                  ? generateDeviceListURL(ANDROID_PLATFORM) +
+                    getFilterQueryString(
+                      {
+                        fc_machine_type: ['host'],
+                        state: [
+                          'DYING',
+                          'FAILED',
+                          'INSTALL_ERROR',
+                          'LAMEDUCK',
+                          'MISSING',
+                        ],
+                      },
+                      searchParams,
+                    )
+                  : undefined
+              }
             />
             {/* needed to left align content while keeping the correct right spacing*/}
             <div />
@@ -737,6 +773,15 @@ function Metrics({
               name="Total"
               value={countQuery.data?.totalDevices}
               loading={countQuery.isPending}
+              filterUrl={
+                getFeatureFlag('AndroidListDevices')
+                  ? generateDeviceListURL(ANDROID_PLATFORM) +
+                    getFilterQueryString(
+                      { fc_machine_type: ['device'] },
+                      searchParams,
+                    )
+                  : undefined
+              }
             />
             <SingleMetric
               name="Distinct Devices Offline"
@@ -744,6 +789,24 @@ function Metrics({
               total={countQuery.data?.totalDevices}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isPending}
+              filterUrl={
+                getFeatureFlag('AndroidListDevices')
+                  ? generateDeviceListURL(ANDROID_PLATFORM) +
+                    getFilterQueryString(
+                      {
+                        fc_machine_type: ['device'],
+                        state: [
+                          'DYING',
+                          'FAILED',
+                          'INSTALL_ERROR',
+                          'LAMEDUCK',
+                          'MISSING',
+                        ],
+                      },
+                      searchParams,
+                    )
+                  : undefined
+              }
             />
             {/* needed to left align content while keeping the correct right spacing*/}
             <div />
