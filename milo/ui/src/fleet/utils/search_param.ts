@@ -14,6 +14,7 @@
 
 import { GridColumnVisibilityModel } from '@mui/x-data-grid';
 
+import { addNewFilterToParams } from '../components/filter_dropdown/search_param_utils';
 import { OrderBy, OrderByDirection } from '../hooks/order_by';
 
 /**
@@ -62,4 +63,15 @@ export function parseOrderByParam(orderByParam: string): OrderBy | null {
         ? OrderByDirection.DESC
         : OrderByDirection.ASC,
   };
+}
+
+export function getFilterQueryString(
+  filters: Record<string, string[]>,
+  searchParams: URLSearchParams,
+): string {
+  let newSearchParams = new URLSearchParams(searchParams);
+  for (const [name, values] of Object.entries(filters)) {
+    newSearchParams = addNewFilterToParams(newSearchParams, name, values);
+  }
+  return '?' + newSearchParams.toString();
 }

@@ -24,6 +24,7 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { colors } from '@/fleet/theme/colors';
 import { SelectedOptions } from '@/fleet/types';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import { getFilterQueryString } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   CountDevicesResponse,
@@ -31,7 +32,6 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { stringifyFilters } from '../../components/filter_dropdown/parser/parser';
-import { addNewFilterToParams } from '../../components/filter_dropdown/search_param_utils';
 import { SingleMetric } from '../../components/summary_header/single_metric';
 
 const HAS_RIGHT_SIBLING_STYLES: CSSObject = {
@@ -71,14 +71,6 @@ export function ChromeOSMainMetrics({
   labstationsQuery,
 }: MainMetricsProps) {
   const [searchParams, _] = useSyncedSearchParams();
-
-  const getFilterQueryString = (filters: Record<string, string[]>): string => {
-    let newSearchParams = new URLSearchParams(searchParams);
-    for (const [name, values] of Object.entries(filters)) {
-      newSearchParams = addNewFilterToParams(newSearchParams, name, values);
-    }
-    return '?' + newSearchParams.toString();
-  };
 
   const getContent = () => {
     if (countQuery.isError || labstationsQuery.isError) {
@@ -130,18 +122,24 @@ export function ChromeOSMainMetrics({
               value={countQuery.data?.taskState?.busy}
               total={countQuery.data?.total}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['DEVICE_STATE_LEASED'],
-              })}
+              filterUrl={getFilterQueryString(
+                {
+                  state: ['DEVICE_STATE_LEASED'],
+                },
+                searchParams,
+              )}
             />
             <SingleMetric
               name="Available"
               value={countQuery.data?.taskState?.idle}
               total={countQuery.data?.total}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['DEVICE_STATE_AVAILABLE'],
-              })}
+              filterUrl={getFilterQueryString(
+                {
+                  state: ['DEVICE_STATE_AVAILABLE'],
+                },
+                searchParams,
+              )}
             />
           </div>
         </div>
@@ -153,27 +151,36 @@ export function ChromeOSMainMetrics({
               value={countQuery.data?.deviceState?.ready}
               total={countQuery.data?.total}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                'labels."dut_state"': ['ready'], // TODO: Hotfix for b/449956551, needs further investigation on quote handling
-              })}
+              filterUrl={getFilterQueryString(
+                {
+                  'labels."dut_state"': ['ready'], // TODO: Hotfix for b/449956551, needs further investigation on quote handling
+                },
+                searchParams,
+              )}
             />
             <SingleMetric
               name="Need repair"
               value={countQuery.data?.deviceState?.needRepair}
               total={countQuery.data?.total}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                'labels."dut_state"': ['needs_repair'],
-              })}
+              filterUrl={getFilterQueryString(
+                {
+                  'labels."dut_state"': ['needs_repair'],
+                },
+                searchParams,
+              )}
             />
             <SingleMetric
               name="Repair failed"
               value={countQuery.data?.deviceState?.repairFailed}
               total={countQuery.data?.total}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                'labels."dut_state"': ['repair_failed'],
-              })}
+              filterUrl={getFilterQueryString(
+                {
+                  'labels."dut_state"': ['repair_failed'],
+                },
+                searchParams,
+              )}
             />
             <SingleMetric
               name="Needs deploy"
@@ -185,9 +192,12 @@ export function ChromeOSMainMetrics({
                 />
               }
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                'labels."dut_state"': ['needs_deploy'],
-              })}
+              filterUrl={getFilterQueryString(
+                {
+                  'labels."dut_state"': ['needs_deploy'],
+                },
+                searchParams,
+              )}
             />
             <SingleMetric
               name="Needs replacement"
@@ -199,9 +209,12 @@ export function ChromeOSMainMetrics({
                 />
               }
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                'labels."dut_state"': ['needs_replacement'],
-              })}
+              filterUrl={getFilterQueryString(
+                {
+                  'labels."dut_state"': ['needs_replacement'],
+                },
+                searchParams,
+              )}
             />
             <SingleMetric
               name="Need manual repair"
@@ -209,9 +222,12 @@ export function ChromeOSMainMetrics({
               total={countQuery.data?.total}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                'labels."dut_state"': ['needs_manual_repair'],
-              })}
+              filterUrl={getFilterQueryString(
+                {
+                  'labels."dut_state"': ['needs_manual_repair'],
+                },
+                searchParams,
+              )}
             />
           </div>
         </div>
@@ -223,20 +239,26 @@ export function ChromeOSMainMetrics({
               value={labstationsQuery.data?.deviceState?.ready}
               total={countQuery.data?.total}
               loading={labstationsQuery.isPending}
-              filterUrl={getFilterQueryString({
-                'labels."dut_state"': ['ready'],
-                ...LABSTATION_FILTERS,
-              })}
+              filterUrl={getFilterQueryString(
+                {
+                  'labels."dut_state"': ['ready'],
+                  ...LABSTATION_FILTERS,
+                },
+                searchParams,
+              )}
             />
             <SingleMetric
               name="Repair failed"
               value={labstationsQuery.data?.deviceState?.repairFailed}
               total={countQuery.data?.total}
               loading={labstationsQuery.isPending}
-              filterUrl={getFilterQueryString({
-                'labels."dut_state"': ['repair_failed'],
-                ...LABSTATION_FILTERS,
-              })}
+              filterUrl={getFilterQueryString(
+                {
+                  'labels."dut_state"': ['repair_failed'],
+                  ...LABSTATION_FILTERS,
+                },
+                searchParams,
+              )}
             />
             <SingleMetric
               name="Needs deploy"
@@ -248,10 +270,13 @@ export function ChromeOSMainMetrics({
                 />
               }
               loading={labstationsQuery.isPending}
-              filterUrl={getFilterQueryString({
-                'labels."dut_state"': ['needs_deploy'],
-                ...LABSTATION_FILTERS,
-              })}
+              filterUrl={getFilterQueryString(
+                {
+                  'labels."dut_state"': ['needs_deploy'],
+                  ...LABSTATION_FILTERS,
+                },
+                searchParams,
+              )}
             />
           </div>
         </div>
@@ -273,14 +298,6 @@ export function AndroidMainMetrics({
   countQuery: UseQueryResult<CountDevicesResponse, unknown>;
 }) {
   const [searchParams, _] = useSyncedSearchParams();
-
-  const getFilterQueryString = (filters: Record<string, string[]>): string => {
-    let newSearchParams = new URLSearchParams(searchParams);
-    for (const [name, values] of Object.entries(filters)) {
-      newSearchParams = addNewFilterToParams(newSearchParams, name, values);
-    }
-    return '?' + newSearchParams.toString();
-  };
 
   const getContent = () => {
     if (countQuery.isError) {
@@ -311,36 +328,48 @@ export function AndroidMainMetrics({
               value={countQuery.data?.androidCount?.idleDevices}
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['IDLE'],
-              })}
+              filterUrl={getFilterQueryString(
+                {
+                  state: ['IDLE'],
+                },
+                searchParams,
+              )}
             />
             <SingleMetric
               name="Busy"
               value={countQuery.data?.androidCount?.busyDevices}
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['BUSY'],
-              })}
+              filterUrl={getFilterQueryString(
+                {
+                  state: ['BUSY'],
+                },
+                searchParams,
+              )}
             />
             <SingleMetric
               name="Prepping"
               value={countQuery.data?.androidCount?.preppingDevices}
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['PREPPING'],
-              })}
+              filterUrl={getFilterQueryString(
+                {
+                  state: ['PREPPING'],
+                },
+                searchParams,
+              )}
             />
             <SingleMetric
               name="Missing"
               value={countQuery.data?.androidCount?.missingDevices}
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['MISSING'],
-              })}
+              filterUrl={getFilterQueryString(
+                {
+                  state: ['MISSING'],
+                },
+                searchParams,
+              )}
               Icon={
                 <WarningIcon
                   sx={{ color: colors.yellow[900], marginTop: '-2px' }}
@@ -352,9 +381,12 @@ export function AndroidMainMetrics({
               value={countQuery.data?.androidCount?.dyingDevices}
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['DYING'],
-              })}
+              filterUrl={getFilterQueryString(
+                {
+                  state: ['DYING'],
+                },
+                searchParams,
+              )}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
             />
           </div>
