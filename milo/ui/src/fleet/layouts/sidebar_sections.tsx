@@ -18,6 +18,7 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
 import LanIcon from '@mui/icons-material/Lan';
 import TopicIcon from '@mui/icons-material/Topic';
+import WarningIcon from '@mui/icons-material/Warning';
 import React from 'react';
 
 import {
@@ -108,6 +109,12 @@ function generateOtherToolsSection(): SidebarSection {
         label: 'FLOPS Docs',
         url: 'http://go/flops-docs',
         icon: <TopicIcon />,
+        external: true,
+      },
+      {
+        label: 'Incidents (IRM)',
+        url: 'http://go/fleet-irm',
+        icon: <WarningIcon />,
         external: true,
       },
     ],
