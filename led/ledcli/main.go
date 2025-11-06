@@ -35,7 +35,7 @@ import (
 )
 
 // userAgent is the HTTP user agent string for led.
-var userAgent = "led 1.0.0"
+var userAgent = "led 1.1.0"
 
 func init() {
 	ver, err := version.GetStartupVersion()
@@ -74,7 +74,7 @@ func Main(ks job.KitchenSupport) {
 	}
 
 	authOpts := chromeinfra.DefaultAuthOptions()
-	authOpts.Scopes = scopes.GerritScopeSet()
+	authOpts.Scopes = scopes.BuildbucketScopeSet()
 	defaults := cmdBaseOptions{
 		authOpts:       authOpts,
 		kitchenSupport: ks,

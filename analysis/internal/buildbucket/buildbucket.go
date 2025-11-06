@@ -21,9 +21,11 @@ import (
 
 	"google.golang.org/grpc"
 
+	"go.chromium.org/luci/auth/scopes"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/analysis/internal/scopedauth"
 )
@@ -46,7 +48,7 @@ func newBuildsClient(ctx context.Context, host, project string) (GetBuildsClient
 		return mockClient, nil
 	}
 
-	t, err := scopedauth.GetRPCTransport(ctx, project)
+	t, err := scopedauth.GetRPCTransport(ctx, project, auth.WithScopes(scopes.BuildbucketScopeSet()...))
 	if err != nil {
 		return nil, err
 	}

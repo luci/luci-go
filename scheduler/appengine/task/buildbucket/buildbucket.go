@@ -33,6 +33,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/auth/scopes"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/api/gitiles"
@@ -46,6 +47,7 @@ import (
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
@@ -436,7 +438,8 @@ func (m TaskManager) withBuildbucket(c context.Context, ctl task.Controller, cb 
 
 	prpcClient := &prpc.Client{Options: prpc.DefaultOptions()}
 	var err error
-	if prpcClient.C, err = ctl.GetClient(c); err != nil {
+	prpcClient.C, err = ctl.GetClient(c, auth.WithScopes(scopes.BuildbucketScopeSet()...))
+	if err != nil {
 		return err
 	}
 

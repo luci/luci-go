@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/auth/scopes"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -267,7 +268,10 @@ func extractOrFetchBuild(c context.Context, buildsV2Msg *buildbucketpb.BuildsV2P
 func fetchBuildLargeFields(c context.Context, buildsV2Msg *buildbucketpb.BuildsV2PubSub) error {
 	host := buildsV2Msg.Build.Infra.GetBuildbucket().GetHostname()
 	project := buildsV2Msg.Build.Builder.Project
-	client, err := BuildsClient(c, host, auth.AsProject, auth.WithProject(project))
+	client, err := BuildsClient(c, host, auth.AsProject,
+		auth.WithProject(project),
+		auth.WithScopes(scopes.BuildbucketScopeSet()...),
+	)
 	if err != nil {
 		return errors.Fmt("create buildbucket client: %w", err)
 	}
@@ -520,7 +524,10 @@ func syncBuildsImpl(c context.Context) error {
 								continue
 							}
 
-							client, err := BuildsClient(c, host, auth.AsProject, auth.WithProject(bs.ProjectID))
+							client, err := BuildsClient(c, host, auth.AsProject,
+								auth.WithProject(bs.ProjectID),
+								auth.WithScopes(scopes.BuildbucketScopeSet()...),
+							)
 							if err != nil {
 								return err
 							}

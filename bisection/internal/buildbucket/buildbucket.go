@@ -22,6 +22,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
+	"go.chromium.org/luci/auth/scopes"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/logging"
@@ -44,7 +45,7 @@ func newBuildsClient(ctx context.Context, host string) (bbgrpcpb.BuildsClient, e
 		return mockClient, nil
 	}
 
-	t, err := auth.GetRPCTransport(ctx, auth.AsSelf)
+	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(scopes.BuildbucketScopeSet()...))
 	if err != nil {
 		return nil, err
 	}

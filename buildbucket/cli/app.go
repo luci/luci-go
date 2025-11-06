@@ -36,10 +36,7 @@ type Params struct {
 // application creates the application and configures its subcommands.
 // Ignores p.Auth.Scopes.
 func application(p Params) *cli.Application {
-	p.Auth.Scopes = []string{
-		scopes.Email,
-		scopes.Gerrit,
-	}
+	p.Auth.Scopes = scopes.BuildbucketScopeSet()
 
 	return &cli.Application{
 		Name:  "bb",

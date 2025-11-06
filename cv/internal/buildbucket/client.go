@@ -20,6 +20,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	"go.chromium.org/luci/auth/scopes"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/grpc/prpc"
@@ -54,7 +55,10 @@ func NewClientFactory() ClientFactory {
 type prpcClientFactory struct{}
 
 func (prpcClientFactory) MakeClient(ctx context.Context, host, luciProject string) (Client, error) {
-	rt, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(luciProject))
+	rt, err := auth.GetRPCTransport(ctx, auth.AsProject,
+		auth.WithProject(luciProject),
+		auth.WithScopes(scopes.BuildbucketScopeSet()...),
+	)
 	if err != nil {
 		return nil, err
 	}

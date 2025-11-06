@@ -21,6 +21,7 @@
 package scopes
 
 const (
+	AndroidBuild  = "https://www.googleapis.com/auth/androidbuild.internal"
 	CloudPlatform = "https://www.googleapis.com/auth/cloud-platform"
 	Email         = "https://www.googleapis.com/auth/userinfo.email"
 	Firebase      = "https://www.googleapis.com/auth/firebase"
@@ -48,6 +49,7 @@ func DefaultScopeSet() []string {
 // interact with (including LUCI and GCP APIs).
 func ContextScopeSet() []string {
 	return []string{
+		AndroidBuild,
 		CloudPlatform,
 		Email,
 		Firebase,
@@ -77,6 +79,18 @@ func CloudScopeSet() []string {
 // Gerrit will suddenly ask users to consent to access their Cloud data.
 func GerritScopeSet() []string {
 	return []string{
+		Email,
+		Gerrit,
+	}
+}
+
+// BuildbucketScopeSet is the set of scopes needed to call Buildbucket APIs.
+//
+// These tokens are also accepted by majority of other LUCI services (as long
+// the OAuth client is allow-listed as part of LUCI).
+func BuildbucketScopeSet() []string {
+	return []string{
+		AndroidBuild,
 		Email,
 		Gerrit,
 	}
