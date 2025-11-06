@@ -707,8 +707,8 @@ github.com/bazelbuild/buildtools v0.0.0-20221004120235-7186f635531b h1:jhiMzJ+8u
 github.com/bazelbuild/buildtools v0.0.0-20221004120235-7186f635531b/go.mod h1:689QdV3hBP7Vo9dJMmzhoYIyo/9iMhEmHkJcnaPRCbo=
 github.com/bazelbuild/remote-apis v0.0.0-20240926071355-6777112ef7de h1:PDqlk0P5XldzQr3muwfBsu88Aayjv1gSRGyQqsI7uGA=
 github.com/bazelbuild/remote-apis v0.0.0-20240926071355-6777112ef7de/go.mod h1:/xo1pn3QkEL2JXrLeK30jvjVR/zXM9H8EqcWb/l5/A0=
-github.com/bazelbuild/remote-apis-sdks v0.0.0-20240910213405-f4821a2a072c h1:lWn51Gn612ILvpV/cPEUBiHCCgJw6RNiXhqhQ86X8eM=
-github.com/bazelbuild/remote-apis-sdks v0.0.0-20240910213405-f4821a2a072c/go.mod h1:SkKj81cDNRVeJ9Ba34FGlnlz9QmpLJ1d2AOushpY5L4=
+github.com/bazelbuild/remote-apis-sdks v0.0.0-20251007172043-4cdfee7bdc2d h1:lmMwi/PmnVzpfdmaD1e8ErNhtCZjeMtMMfWBkX2hgis=
+github.com/bazelbuild/remote-apis-sdks v0.0.0-20251007172043-4cdfee7bdc2d/go.mod h1:sMJ2QK7QssHpNpvbTBmneBJvc+fBHoi26eVoxNwiqIE=
 github.com/bmatcuk/doublestar v1.3.4 h1:gPypJ5xD31uhX6Tf54sDPUOBXTqKH4c9aPY66CyQrS0=
 github.com/bmatcuk/doublestar v1.3.4/go.mod h1:wiQtGV+rzVYxB7WIlirSN++5HPtPlXEo9MEoZQC/PmE=
 github.com/boombuler/barcode v1.0.0/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=

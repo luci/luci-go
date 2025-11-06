@@ -94,17 +94,17 @@ func DefaultConfig() cas.ClientConfig {
 
 	// The default 1 min timeout seems slow for some kinds of uploads, see also
 	// Options().
-	cfg.ByteStreamWrite.Timeout = 2 * time.Minute
+	cfg.ByteStreamWrite.Timeout = 5 * time.Minute
 
 	// Do not read file less than 10MiB twice.
 	cfg.SmallFileThreshold = 10 * 1024 * 1024
 
 	// BUG(crbug.com/349853790) - encountered timeouts when uploading,
 	// so speculatively adjusting this.
-	cfg.BatchUpdateBlobs.Timeout = time.Minute * 2
+	cfg.BatchUpdateBlobs.Timeout = 5 * time.Minute
 
 	// On some builders with low network bandwidth, increase the number of retries and delay time.
-	cfg.RetryPolicy = retry.ExponentialBackoff(225*time.Millisecond, 60*time.Second, retry.Attempts(12))
+	cfg.RetryPolicy = retry.ExponentialBackoff(225*time.Millisecond, 30*time.Second, retry.Attempts(50))
 
 	return cfg
 }
@@ -194,13 +194,13 @@ func Options() []client.Opt {
 
 	// BUG(crbug.com/349853790) - encountered timeouts when uploading,
 	// so speculatively adjusting this.
-	rpcTimeouts["BatchUpdateBlobs"] = time.Minute * 2
+	rpcTimeouts["BatchUpdateBlobs"] = 5 * time.Minute
 
 	// Extend the timeout for write operations beyond the default, as writes can
 	// sometimes be quite slow. This timeout only applies to writing a single
 	// file chunk, so there isn't a risk of setting a timeout that's to low for
 	// large files.
-	rpcTimeouts["Write"] = 2 * time.Minute
+	rpcTimeouts["Write"] = 5 * time.Minute
 
 	// There's suspicion GetCapabilities sometimes takes longer than default
 	// 5 sec because it is the first call ever (and it needs to open the

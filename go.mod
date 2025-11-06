@@ -42,7 +42,7 @@ require (
 	github.com/armon/go-radix v1.0.0
 	github.com/bazelbuild/buildtools v0.0.0-20221004120235-7186f635531b
 	github.com/bazelbuild/remote-apis v0.0.0-20240926071355-6777112ef7de
-	github.com/bazelbuild/remote-apis-sdks v0.0.0-20240910213405-f4821a2a072c
+	github.com/bazelbuild/remote-apis-sdks v0.0.0-20251007172043-4cdfee7bdc2d
 	github.com/bmatcuk/doublestar v1.3.4
 	github.com/danjacques/gofslock v0.0.0-20240212154529-d899e02bfe22
 	github.com/dgraph-io/badger/v3 v3.2103.2
