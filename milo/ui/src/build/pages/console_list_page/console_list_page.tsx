@@ -15,7 +15,6 @@
 import { LinearProgress } from '@mui/material';
 import { InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
 import { Fragment, useEffect } from 'react';
-import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
 import { OutputQueryConsoleSnapshotsResponse } from '@/build/types';
@@ -64,9 +63,7 @@ export function ConsoleListPage() {
 
   return (
     <>
-      <Helmet>
-        <title>{project} | Builder Groups</title>
-      </Helmet>
+      <title>{`${project} | Builder Groups`}</title>
       <ProjectIdBar project={project} />
       <LinearProgress
         value={100}

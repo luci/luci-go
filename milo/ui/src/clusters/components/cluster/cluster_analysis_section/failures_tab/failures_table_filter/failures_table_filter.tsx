@@ -29,7 +29,7 @@ import {
 import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
 interface Props {
-  metrics: ProjectMetric[];
+  metrics: readonly ProjectMetric[];
   metricFilter: ProjectMetric | undefined;
   onMetricFilterChanged: (event: SelectChangeEvent) => void;
   impactFilter: ImpactFilter;

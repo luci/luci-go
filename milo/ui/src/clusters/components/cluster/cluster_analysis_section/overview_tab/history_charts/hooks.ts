@@ -94,7 +94,7 @@ export function useHistoryTimeRangeParam(
 }
 
 export function useSelectedMetricsParam(
-  metrics: ProjectMetric[],
+  metrics: readonly ProjectMetric[],
 ): [
   ProjectMetric[],
   (selectedMetrics: ProjectMetric[], replace?: boolean) => void,

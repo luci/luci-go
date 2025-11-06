@@ -28,7 +28,6 @@ import Tab from '@mui/material/Tab';
 import TextField from '@mui/material/TextField';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useState } from 'react';
-import { Helmet } from 'react-helmet';
 
 import { LookupResults } from '@/authdb/components/lookup_results';
 import { PermissionsResults } from '@/authdb/components/permissions_results';
@@ -202,9 +201,7 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="authdb-lookup">
-      <Helmet>
-        <title>Lookup user</title>
-      </Helmet>
+      <title>Lookup user</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

@@ -17,7 +17,6 @@ import { LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
-import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -193,9 +192,7 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="test-history">
-      <Helmet>
-        <title>Test history</title>
-      </Helmet>
+      <title>Test history</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

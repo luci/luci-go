@@ -22,7 +22,6 @@ import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import { useMutation } from '@tanstack/react-query';
 import { ChangeEvent, useContext, useEffect, useState } from 'react';
-import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router';
 
 import BugPicker from '@/clusters/components/bug_picker/bug_picker';
@@ -202,9 +201,7 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="new-rule">
-      <Helmet>
-        <title>New Rule</title>
-      </Helmet>
+      <title>New Rule</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

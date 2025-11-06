@@ -15,7 +15,6 @@
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
-import { Helmet } from 'react-helmet';
 import { Link, useParams } from 'react-router';
 
 import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
@@ -73,9 +72,7 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="rules">
-      <Helmet>
-        <title>Rules</title>
-      </Helmet>
+      <title>Rules</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

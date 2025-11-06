@@ -22,7 +22,6 @@ import {
   Typography,
 } from '@mui/material';
 import { forwardRef } from 'react';
-import { Helmet } from 'react-helmet';
 import {
   Link as RouterLink,
   LinkProps as RouterLinkProps,
@@ -96,9 +95,7 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="monitoring">
-      <Helmet>
-        <title>Monitoring</title>
-      </Helmet>
+      <title>Monitoring</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

@@ -16,7 +16,6 @@ import { GrpcError } from '@chopsui/prpc-client';
 import styled from '@emotion/styled';
 import { Alert, AlertTitle, Grid, LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
 import { useBuildersClient } from '@/build/hooks/prpc_clients';
@@ -96,9 +95,7 @@ export function BuilderPage() {
 
   return (
     <>
-      <Helmet>
-        <title>{builderId.builder} | Builders</title>
-      </Helmet>
+      <title>{`${builderId.builder} | Builders`}</title>
       <BuilderIdBar
         builderId={builderId}
         healthStatus={data?.metadata?.health}

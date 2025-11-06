@@ -168,7 +168,7 @@ const ClustersTableRow = ({
 interface ClusterRowMetricsProps {
   cluster: ClusterSummary;
   metric: ProjectMetric;
-  metrics: ProjectMetric[];
+  metrics: readonly ProjectMetric[];
   isBreakdownSuccess: boolean | undefined;
   isBreakdownLoading: boolean | undefined;
 }

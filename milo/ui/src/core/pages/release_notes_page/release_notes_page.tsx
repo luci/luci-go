@@ -14,7 +14,6 @@
 
 import { Typography, styled } from '@mui/material';
 import { useEffect, useMemo } from 'react';
-import { Helmet } from 'react-helmet';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
@@ -77,9 +76,7 @@ export function ReleaseNotesPage() {
 export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="release-notes">
-      <Helmet>
-        <title>{"What's new"}</title>
-      </Helmet>
+      <title>{"What's new"}</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

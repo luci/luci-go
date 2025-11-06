@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Helmet } from 'react-helmet';
-
 import bassFavicon from '@/common/assets/favicons/bass-32.png';
 
 interface FleetHelmetProps {
@@ -25,9 +23,11 @@ interface FleetHelmetProps {
  */
 export function FleetHelmet({ pageTitle }: FleetHelmetProps) {
   return (
-    <Helmet>
-      <title>{pageTitle}</title>
+    <>
+      <title>
+        {pageTitle ? `${pageTitle} | Fleet Console` : 'Fleet Console'}
+      </title>
       <link rel="icon" href={bassFavicon} />
-    </Helmet>
+    </>
   );
 }

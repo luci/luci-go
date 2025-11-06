@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
 import { ParsedTestVariantBranchName } from '@/analysis/types';
@@ -72,9 +71,7 @@ export function Component() {
       contentGroup="regression-details"
       searchParamKeys={['tvb', 'nsp', 'sh', 'cp']}
     >
-      <Helmet>
-        <title>Regression details</title>
-      </Helmet>
+      <title>Regression details</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

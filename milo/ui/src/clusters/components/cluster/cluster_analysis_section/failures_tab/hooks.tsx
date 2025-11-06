@@ -50,7 +50,7 @@ export function useSelectedVariantGroupsParam(): [
 }
 
 export function useFilterToMetricParam(
-  metrics: ProjectMetric[],
+  metrics: readonly ProjectMetric[],
 ): [
   ProjectMetric | undefined,
   (filterToMetric: ProjectMetric | undefined, replace?: boolean) => void,

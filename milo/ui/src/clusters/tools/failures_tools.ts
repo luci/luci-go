@@ -35,7 +35,7 @@ import { unionVariant } from './variant_tools';
  * @return {VariantGroup[]} A list of distinct variants.
  */
 export const countDistictVariantValues = (
-  failures: DistinctClusterFailure[],
+  failures: readonly DistinctClusterFailure[],
 ): VariantGroup[] => {
   if (!failures) {
     return [];
@@ -68,7 +68,7 @@ export const countDistictVariantValues = (
 // grouper is a function that returns a list of keys, one corresponding to each level of the grouping tree.
 // impactFilter controls how metric counts are aggregated from failures into parent groups (see treeCounts and rejected... functions).
 export const groupFailures = (
-  failures: DistinctClusterFailure[],
+  failures: readonly DistinctClusterFailure[],
   grouper: (f: DistinctClusterFailure) => GroupKey[],
 ): FailureGroup[] => {
   const topGroups: FailureGroup[] = [];
@@ -390,7 +390,7 @@ export const sortFailureGroups = (
  * @return {FailureGroup[]} The list of failures grouped by the variants.
  */
 export const groupAndCountFailures = (
-  failures: DistinctClusterFailure[],
+  failures: readonly DistinctClusterFailure[],
   variantGroups: VariantGroup[],
 ): FailureGroup[] => {
   if (failures) {

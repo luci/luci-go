@@ -86,7 +86,7 @@ export function useIntervalParam(
 }
 
 export function useOrderByParam(
-  metrics: ProjectMetric[],
+  metrics: readonly ProjectMetric[],
 ): [OrderBy | undefined, (orderBy: OrderBy, replace?: boolean) => void] {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const orderByParam = searchParams.get('orderBy') || '';
@@ -133,7 +133,7 @@ export function useOrderByParam(
 }
 
 export function useSelectedMetricsParam(
-  metrics: ProjectMetric[],
+  metrics: readonly ProjectMetric[],
 ): [
   ProjectMetric[],
   (selectedMetrics: ProjectMetric[], replace?: boolean) => void,

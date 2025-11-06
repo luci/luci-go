@@ -34,7 +34,7 @@ const MenuProps = {
 };
 
 interface Props {
-  metrics: ProjectMetric[];
+  metrics: readonly ProjectMetric[];
   selectedMetrics: MetricId[];
   handleSelectedMetricsChanged: (selectedMetricsIds: MetricId[]) => void;
   labelId?: string;

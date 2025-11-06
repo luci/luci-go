@@ -23,7 +23,7 @@ import {
 
 const useFetchMetrics = (
   project: string,
-): UseQueryResult<ProjectMetric[], Error> => {
+): UseQueryResult<readonly ProjectMetric[], Error> => {
   const metricsService = useMetricsService();
   return useQuery({
     queryKey: ['metrics', project],

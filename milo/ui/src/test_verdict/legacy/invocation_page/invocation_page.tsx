@@ -15,7 +15,6 @@
 import { LinearProgress } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
-import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -55,9 +54,7 @@ export const InvocationPage = observer(() => {
 
   return (
     <InvLitEnvProvider>
-      <Helmet>
-        <title>inv: {invId}</title>
-      </Helmet>
+      <title>{`inv: ${invId}`}</title>
       <div
         css={{
           backgroundColor: 'var(--block-background-color)',

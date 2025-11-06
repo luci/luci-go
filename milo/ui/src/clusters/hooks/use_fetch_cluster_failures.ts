@@ -27,7 +27,7 @@ const useFetchClusterFailures = (
   algorithm: string,
   id: string,
   filterToMetric: ProjectMetric | undefined,
-): UseQueryResult<DistinctClusterFailure[], Error> => {
+): UseQueryResult<readonly DistinctClusterFailure[], Error> => {
   const service = useClustersService();
 
   return useQuery({

@@ -14,7 +14,6 @@
 
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
-import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
 import ClustersTable from '@/clusters/components/clusters_table/clusters_table';
@@ -63,9 +62,7 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="clusters">
-      <Helmet>
-        <title>Clusters</title>
-      </Helmet>
+      <title>Clusters</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

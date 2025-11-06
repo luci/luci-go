@@ -103,6 +103,7 @@ describe('<BaseLayout />', () => {
         handle: {
           layout: () => <div data-testid="test-layout"> Custom Layout </div>,
         },
+        loaderData: [],
       },
     ]);
 
@@ -127,6 +128,7 @@ describe('<BaseLayout />', () => {
         handle: {
           layout: () => <div data-testid="layoutl1"> Custom Layout </div>,
         },
+        loaderData: [],
       },
       {
         id: '',
@@ -136,6 +138,7 @@ describe('<BaseLayout />', () => {
         handle: {
           layout: () => <div data-testid="layoutl2"> Custom Layout </div>,
         },
+        loaderData: [],
       },
       {
         id: '',
@@ -145,6 +148,7 @@ describe('<BaseLayout />', () => {
         handle: {
           layout: () => <div data-testid="layoutl3"> Custom Layout </div>,
         },
+        loaderData: [],
       },
     ]);
 

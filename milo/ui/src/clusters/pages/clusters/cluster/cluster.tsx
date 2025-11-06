@@ -14,7 +14,6 @@
 
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
-import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
 import ClusterAnalysisSection from '@/clusters/components/cluster/cluster_analysis_section/cluster_analysis_section';
@@ -43,11 +42,7 @@ export const ClusterPage = () => {
       clusterAlgorithm={algorithm}
       clusterId={id}
     >
-      <Helmet>
-        <title>
-          Cluster | {algorithm} - {id}
-        </title>
-      </Helmet>
+      <title>{`Cluster | ${algorithm} - ${id}`}</title>
       <Container className="mt-1" maxWidth={false}>
         <Grid sx={{ mt: 1 }} container spacing={2}>
           <Grid size={12}>

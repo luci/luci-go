@@ -74,7 +74,7 @@ const FailuresTab = ({ value }: Props) => {
 };
 
 interface TableProps {
-  metrics: ProjectMetric[];
+  metrics: readonly ProjectMetric[];
 }
 
 const FailuresTable = ({ metrics }: TableProps) => {

@@ -15,7 +15,6 @@
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
 import LinearProgress from '@mui/material/LinearProgress';
-import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
 import ClusterAnalysisSection from '@/clusters/components/cluster/cluster_analysis_section/cluster_analysis_section';
@@ -46,9 +45,7 @@ export const RulePage = () => {
 
   return (
     <Container className="mt-1" maxWidth={false}>
-      <Helmet>
-        <title>Rule | {id}</title>
-      </Helmet>
+      <title>{`Rule | ${id}`}</title>
       <Grid sx={{ mt: 1 }} container spacing={2}>
         {isPending && <LinearProgress />}
         {error && <LoadErrorAlert entityName="rule" error={error} />}

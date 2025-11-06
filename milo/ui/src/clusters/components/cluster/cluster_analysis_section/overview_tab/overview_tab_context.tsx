@@ -17,7 +17,7 @@ import { createContext, useMemo } from 'react';
 import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
 interface OverviewTabData {
-  metrics: ProjectMetric[];
+  metrics: readonly ProjectMetric[];
 }
 
 export const OverviewTabContextData = createContext<OverviewTabData>({
@@ -25,7 +25,7 @@ export const OverviewTabContextData = createContext<OverviewTabData>({
 });
 
 interface Props {
-  metrics?: ProjectMetric[];
+  metrics?: readonly ProjectMetric[];
   children: React.ReactNode;
 }
 

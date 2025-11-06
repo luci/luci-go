@@ -17,7 +17,7 @@ import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/me
 import { ClusterTableContextData } from './clusters_table_context';
 
 interface Props {
-  metrics: ProjectMetric[] | undefined;
+  metrics: readonly ProjectMetric[] | undefined;
   children: React.ReactNode;
 }
 

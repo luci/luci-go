@@ -50,6 +50,7 @@ export const PENDING_RESULT: Omit<
   isSuccess: false,
   status: 'pending',
   fetchStatus: 'idle',
+  isEnabled: true,
 });
 
 export interface UseVirtualizedQueryOption<

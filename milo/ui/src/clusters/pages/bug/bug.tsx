@@ -21,7 +21,6 @@ import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router';
 
 import MultiRulesFound from '@/clusters/components/bugs/multi_rules_found/multi_rules_found';
@@ -86,9 +85,7 @@ export const BugPage = () => {
 
   return (
     <Container>
-      <Helmet>
-        <title>Bug | {id}</title>
-      </Helmet>
+      <title>{`Bug | ${id}`}</title>
       <Paper
         elevation={3}
         sx={{

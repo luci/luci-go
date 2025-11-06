@@ -19,10 +19,12 @@ import {
   ListItemText,
   Menu,
   MenuItem,
+  Snackbar,
+  Alert,
+  AlertColor,
 } from '@mui/material';
 import { useGridApiContext, GridSaveAltIcon } from '@mui/x-data-grid';
-import { useNotifications } from '@toolpad/core/useNotifications';
-import { useState } from 'react';
+import { useState, SyntheticEvent } from 'react';
 
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { exportAs } from '@/fleet/utils/export';
@@ -42,6 +44,7 @@ type CSVExportMenuItemProps = {
   idsToExport?: string[];
   onExportComplete?: () => void;
   fileName: string;
+  showNotification: (message: string, severity: AlertColor) => void;
 };
 
 export function CSVExportMenuItem({
@@ -50,9 +53,8 @@ export function CSVExportMenuItem({
   idsToExport,
   onExportComplete,
   fileName,
+  showNotification,
 }: CSVExportMenuItemProps) {
-  const notifications = useNotifications();
-
   const { isFetching, refetch } = useExportData(columnsToExport, idsToExport);
 
   return (
@@ -62,12 +64,9 @@ export function CSVExportMenuItem({
         const result = await refetch();
 
         if (result.isError) {
-          notifications.show(
+          showNotification(
             `An error occurred during CSV export: ${getErrorMessage(result.error, 'csv export')}`,
-            {
-              severity: 'error',
-              autoHideDuration: 3000,
-            },
+            'error',
           );
         } else {
           const csvData = result.data?.csvData;
@@ -103,6 +102,12 @@ export function CSVExportMenuItem({
   );
 }
 
+interface NotificationState {
+  open: boolean;
+  message: string;
+  severity: AlertColor;
+}
+
 export function ExportButton({ selectedRowIds }: ExportButtonProps) {
   const gridApi = useGridApiContext();
   const columnsToExport = gridApi.current
@@ -117,6 +122,26 @@ export function ExportButton({ selectedRowIds }: ExportButtonProps) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const [notification, setNotification] = useState<NotificationState>({
+    open: false,
+    message: '',
+    severity: 'info',
+  });
+
+  const showNotification = (message: string, severity: AlertColor) => {
+    setNotification({ open: true, message, severity });
+  };
+
+  const handleNotificationClose = (
+    _: SyntheticEvent | Event,
+    reason?: string,
+  ) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setNotification((prev) => ({ ...prev, open: false }));
   };
 
   return (
@@ -134,6 +159,7 @@ export function ExportButton({ selectedRowIds }: ExportButtonProps) {
           columnsToExport={columnsToExport}
           onExportComplete={handleClose}
           fileName={FILE_NAME}
+          showNotification={showNotification}
         />
         <CSVExportMenuItem
           displayText={
@@ -150,8 +176,24 @@ export function ExportButton({ selectedRowIds }: ExportButtonProps) {
           }
           onExportComplete={handleClose}
           fileName={FILE_NAME}
+          showNotification={showNotification}
         />
       </Menu>
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={3000}
+        onClose={handleNotificationClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Alert
+          onClose={handleNotificationClose}
+          severity={notification.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 }

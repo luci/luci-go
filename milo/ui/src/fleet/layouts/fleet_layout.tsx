@@ -13,9 +13,7 @@
 // limitations under the License.
 
 import { Box, ThemeProvider, styled } from '@mui/material';
-import { NotificationsProvider } from '@toolpad/core/useNotifications';
 import { Settings } from 'luxon';
-import { Helmet } from 'react-helmet';
 import { Outlet } from 'react-router';
 import { useLocalStorage } from 'react-use';
 
@@ -57,54 +55,44 @@ export const FleetLayout = () => {
 
   return (
     <IndexedDBPersistClientProvider>
-      <NotificationsProvider>
-        <ThemeProvider theme={theme}>
-          <ScrollingBase>
-            <Helmet
-              titleTemplate="%s | Fleet Console"
-              defaultTitle="Fleet Console"
-            >
-              <link rel="icon" href={bassFavicon} />
-            </Helmet>
-            <Box
-              sx={{
-                gridArea: 'banner',
-                zIndex: (theme) => theme.zIndex.appBar,
-              }}
-            >
-              <VersionBanner />
-            </Box>
-            <Sticky
-              top
-              sx={{
-                gridArea: 'header',
-                zIndex: (theme) => theme.zIndex.appBar,
-              }}
-            >
-              <Header
-                sidebarOpen={sidebarOpen}
-                setSidebarOpen={setSidebarOpen}
-              />
-            </Sticky>
-            <Sticky
-              left
-              sx={{
-                gridArea: 'sidebar',
-                zIndex: (theme) => theme.zIndex.drawer,
-              }}
-            >
-              <Sidebar open={sidebarOpen} />
-            </Sticky>
-            <Sticky top sx={{ gridArea: 'footer' }}>
-              <PrivacyFooter />
-            </Sticky>
-            <StickyOffset component="main" sx={{ gridArea: 'main' }}>
-              <Outlet />
-            </StickyOffset>
-            <CookieConsentBar />
-          </ScrollingBase>
-        </ThemeProvider>
-      </NotificationsProvider>
+      <ThemeProvider theme={theme}>
+        <ScrollingBase>
+          <link rel="icon" href={bassFavicon} />
+          <Box
+            sx={{
+              gridArea: 'banner',
+              zIndex: (theme) => theme.zIndex.appBar,
+            }}
+          >
+            <VersionBanner />
+          </Box>
+          <Sticky
+            top
+            sx={{
+              gridArea: 'header',
+              zIndex: (theme) => theme.zIndex.appBar,
+            }}
+          >
+            <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+          </Sticky>
+          <Sticky
+            left
+            sx={{
+              gridArea: 'sidebar',
+              zIndex: (theme) => theme.zIndex.drawer,
+            }}
+          >
+            <Sidebar open={sidebarOpen} />
+          </Sticky>
+          <Sticky top sx={{ gridArea: 'footer' }}>
+            <PrivacyFooter />
+          </Sticky>
+          <StickyOffset component="main" sx={{ gridArea: 'main' }}>
+            <Outlet />
+          </StickyOffset>
+          <CookieConsentBar />
+        </ScrollingBase>
+      </ThemeProvider>
     </IndexedDBPersistClientProvider>
   );
 };

@@ -22,7 +22,6 @@ import {
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { startCase } from 'lodash-es';
 import { useEffect, useMemo, useState } from 'react';
-import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
@@ -313,14 +312,12 @@ export function TestInvestigatePage() {
       project={project}
       isLegacyInvocation={isLegacyInvocation}
     >
-      <Helmet>
-        {/** TODO: Add favicon */}
-        <title>
-          {displayStatusString} -{' '}
-          {testVariant.testMetadata?.name || testVariant.testId} - Test
-          Investigation
-        </title>
-      </Helmet>
+      {/** TODO: Add favicon */}
+      <title>
+        {`${displayStatusString} - ${' '}
+        ${testVariant.testMetadata?.name || testVariant.testId} - Test
+        Investigation`}
+      </title>
       <TestVariantProvider
         testVariant={testVariant}
         displayStatusString={displayStatusString}

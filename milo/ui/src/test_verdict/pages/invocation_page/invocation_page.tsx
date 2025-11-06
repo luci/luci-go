@@ -14,7 +14,6 @@
 
 import { LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -50,9 +49,7 @@ export function InvocationPage() {
 
   return (
     <>
-      <Helmet>
-        <title>inv: {invId}</title>
-      </Helmet>
+      <title>{`inv: ${invId}`}</title>
       <InvocationIdBar invName={invName} />
       <LinearProgress
         value={100}

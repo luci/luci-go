@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import Box from '@mui/material/Box';
-import { Helmet } from 'react-helmet';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useDeclarePageId } from '@/common/components/page_meta';
@@ -62,9 +61,7 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="builder-search">
-      <Helmet>
-        <title>Builder search</title>
-      </Helmet>
+      <title>Builder search</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

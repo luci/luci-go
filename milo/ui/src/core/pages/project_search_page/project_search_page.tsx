@@ -14,7 +14,6 @@
 
 import { Alert, Link, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
-import { Helmet } from 'react-helmet';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
@@ -104,9 +103,7 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="project-search">
-      <Helmet>
-        <title>Projects</title>
-      </Helmet>
+      <title>Projects</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

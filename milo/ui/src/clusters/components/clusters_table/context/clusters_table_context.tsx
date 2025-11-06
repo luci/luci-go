@@ -17,7 +17,7 @@ import { createContext } from 'react';
 import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
 interface ClusterTableData {
-  metrics: ProjectMetric[];
+  metrics: readonly ProjectMetric[];
 }
 
 export const ClusterTableContextData = createContext<ClusterTableData>({

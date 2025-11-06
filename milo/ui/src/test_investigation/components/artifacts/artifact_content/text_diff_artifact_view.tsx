@@ -15,7 +15,6 @@
 import { Box, CircularProgress, Typography } from '@mui/material';
 import * as Diff2Html from 'diff2html';
 import { useMemo } from 'react';
-import { Helmet } from 'react-helmet';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
@@ -83,13 +82,11 @@ export function TextDiffArtifactView({ artifact }: TextDiffArtifactViewProps) {
 
   return (
     <>
-      <Helmet>
-        <link
-          rel="stylesheet"
-          type="text/css"
-          href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
-        />
-      </Helmet>
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
+        precedence="default"
+      />
       <Box sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
         <SanitizedHtml html={diffHtml} />
       </Box>

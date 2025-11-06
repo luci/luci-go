@@ -193,12 +193,6 @@ function TestComponent({
   );
 }
 
-jest.mock('@toolpad/core/useNotifications', () => ({
-  useNotifications: () => ({
-    show: jest.fn(),
-  }),
-}));
-
 const mockFleetConsoleClient = {
   ExportDevicesToCSV: {
     query: jest.fn().mockReturnValue({

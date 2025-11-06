@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -40,9 +39,7 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="recent-regressions">
-      <Helmet>
-        <title>Recent regressions</title>
-      </Helmet>
+      <title>Recent regressions</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

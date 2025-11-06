@@ -16,7 +16,6 @@ import { LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useMemo } from 'react';
-import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useParams } from 'react-router';
 
 import {
@@ -265,10 +264,8 @@ export const BuildPage = observer(() => {
     <BuildContextProvider build={build}>
       <InvocationProvider value={store.buildPage.invocation}>
         <BuildLitEnvProvider>
-          <Helmet>
-            <title>{documentTitle}</title>
-            <link rel="icon" href={faviconUrl} />
-          </Helmet>
+          <title>{documentTitle}</title>
+          <link rel="icon" href={faviconUrl} />
           <ChangeConfigDialog
             open={showConfigDialog}
             onClose={() => setShowConfigDialog(false)}

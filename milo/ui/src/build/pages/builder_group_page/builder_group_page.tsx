@@ -15,7 +15,6 @@
 import { LinearProgress } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
-import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
 import { FilterableBuilderTable } from '@/build/components/filterable_builder_table';
@@ -68,11 +67,9 @@ export function BuilderGroupPage() {
 
   return (
     <>
-      <Helmet>
-        <title>
-          {project} | {group} | Builders
-        </title>
-      </Helmet>
+      <title>
+        {project} | {group} | Builders
+      </title>
       <BuilderGroupIdBar project={project} group={group} />
       <LinearProgress
         value={100}

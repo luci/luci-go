@@ -14,7 +14,6 @@
 
 import { Box, CircularProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { Helmet } from 'react-helmet';
 import { useLocation, useParams } from 'react-router';
 
 import {
@@ -131,9 +130,7 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="blamelist">
-      <Helmet>
-        <title>Blamelist</title>
-      </Helmet>
+      <title>Blamelist</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle
         // error this way

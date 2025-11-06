@@ -14,7 +14,6 @@
 
 import { Alert, CircularProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -150,9 +149,7 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="tree-status-list">
-      <Helmet>
-        <title>Tree status</title>
-      </Helmet>
+      <title>Tree status</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

@@ -69,6 +69,7 @@ describe('<MainMetrics />', () => {
       errorUpdateCount: 0,
       isPaused: false,
       promise: Promise.resolve(data),
+      isEnabled: true,
     });
 
     render(

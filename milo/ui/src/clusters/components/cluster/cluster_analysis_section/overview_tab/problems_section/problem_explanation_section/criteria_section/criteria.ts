@@ -29,7 +29,7 @@ export interface Criterium {
 
 export const criteriaForPolicy = (
   policy: BugManagementPolicy,
-  metricDefinitions: ProjectMetric[],
+  metricDefinitions: readonly ProjectMetric[],
   metricValues: { [key: string]: Cluster_TimewiseCounts } | undefined,
   activationCriteria: boolean,
 ): Criterium[] => {

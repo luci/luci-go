@@ -20,7 +20,6 @@ import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid2';
 import Paper from '@mui/material/Paper';
 import { createRef, useEffect } from 'react';
-import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router';
 
 import { GroupDetails } from '@/authdb/components/group_details';
@@ -124,9 +123,7 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="authdb-group">
-      <Helmet>
-        <title>Groups</title>
-      </Helmet>
+      <title>Groups</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

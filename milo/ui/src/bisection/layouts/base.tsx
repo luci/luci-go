@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Helmet } from 'react-helmet';
 import { Outlet, useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -38,9 +37,7 @@ export function Component() {
 
   return (
     <ContentGroup group="bisection">
-      <Helmet>
-        <title>Bisection</title>
-      </Helmet>
+      <title>Bisection</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.
