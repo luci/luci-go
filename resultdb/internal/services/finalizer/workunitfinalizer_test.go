@@ -320,6 +320,7 @@ func TestFindWorkUnitsReadyForFinalization(t *testing.T) {
 					assert.Loosely(t, ineligible, should.HaveLength(0))
 				})
 			})
+
 			t.Run("finalizing candidate parent", func(t *ftt.Test) {
 				parent := parentBuilder.WithFinalizationState(pb.WorkUnit_FINALIZING).WithFinalizerCandidateTime(spanner.CommitTimestamp).Build()
 				parentCT := testutil.MustApply(ctx, t, workunits.InsertForTesting(parent)...)
@@ -375,6 +376,27 @@ func TestFindWorkUnitsReadyForFinalization(t *testing.T) {
 					}))
 				})
 			})
+
+			t.Run("finalized parent", func(t *ftt.Test) {
+				parent := parentBuilder.WithFinalizationState(pb.WorkUnit_FINALIZED).Build()
+				testutil.MustApply(ctx, t, workunits.InsertForTesting(parent)...)
+				t.Run("has finalizing candidate child", func(t *ftt.Test) {
+					child := childBuilder.WithFinalizationState(pb.WorkUnit_FINALIZING).WithFinalizerCandidateTime(spanner.CommitTimestamp).Build()
+					testutil.MustApply(ctx, t, workunits.InsertForTesting(child)...)
+
+					ineligible, toFinalize, moreToRead, err := findWorkUnitsReadyForFinalization(ctx, rootInvID, opts)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, moreToRead, should.BeFalse)
+					assert.Loosely(t, toFinalize, should.Match([]workUnitWithParent{
+						{ID: child.ID, Parent: parent.ID},
+					}))
+					assert.Loosely(t, ineligible, should.HaveLength(0))
+
+					// There is need to test when parent has finalizing (no finalizerCandidateTime), finalized child
+					// because previous test cases already confirmed that these work unit won't be picked as candidate.s
+				})
+			})
+
 			t.Run("active parent", func(t *ftt.Test) {
 				parent := parentBuilder.WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
 				testutil.MustApply(ctx, t, workunits.InsertForTesting(parent)...)

@@ -69,7 +69,8 @@ type sweepWorkUnitsForFinalizationOptions struct {
 //
 // The follow invariants always holds:
 // 1. Never enter a state that a finalizing work unit has empty finalizerCandidateTime, and all children are finalized.
-// 2. Only transition a work unit to finalized when it has no active/finalizing children.
+// 2. Only transition a work unit to finalized if and only if it is in FINALIZING state
+// and it does not include, directly or indirectly, an active work unit.
 func sweepWorkUnitsForFinalization(ctx context.Context, rootInvID rootinvocations.ID, seq int64, opts sweepWorkUnitsForFinalizationOptions) (err error) {
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/finalizer.sweepWorkUnitsForFinalization")
 	defer func() { tracing.End(ts, err) }()
@@ -167,7 +168,7 @@ type findWorkUnitsReadyForFinalizationOptions struct {
 // It returns:
 //   - ineligibleCandidates: A list of the initial candidates that were not ready for finalization in this batch. The size of this list is at most 10K.
 //   - workUnitsToFinalize: A list of work units that are ready to be finalized, including those identified by walking up the hierarchy.
-//     The list is ordered so that parents always appear after their children, and the size of this list is at most 10K.
+//     The size of this list is at most 10K.
 //   - moreToRead: A boolean indicating if there might be more work units to process.
 func findWorkUnitsReadyForFinalization(ctx context.Context, rootInvID rootinvocations.ID, opts findWorkUnitsReadyForFinalizationOptions) (ineligibleCandidates []workunits.FinalizerCandidate, workUnitsToFinalize []workUnitWithParent, moreToRead bool, err error) {
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/finalizer.findWorkUnitsReadyForFinalization")
@@ -261,10 +262,6 @@ type applyFinalizationUpdatesOptions struct {
 }
 
 // applyFinalizationUpdates commits the finalization state for a given list of work units.
-//
-// The function relies on the caller to provide `workUnitsToFinalize` sorted with
-// children appearing before parents. This ordering guarantees that a parent is only
-// processed after its dependent children are finalized.
 func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID, workUnitsToFinalize []workUnitWithParent, opts applyFinalizationUpdatesOptions) (err error) {
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/finalizer.applyFinalizationUpdates",
 		attribute.Int("count", len(workUnitsToFinalize)))
