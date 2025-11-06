@@ -16,7 +16,6 @@ import ConstructionIcon from '@mui/icons-material/Construction';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import DevicesIcon from '@mui/icons-material/Devices';
 import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
-import EmojiNatureIcon from '@mui/icons-material/EmojiNature';
 import LanIcon from '@mui/icons-material/Lan';
 import TopicIcon from '@mui/icons-material/Topic';
 import React from 'react';
@@ -42,16 +41,15 @@ export interface SidebarSection {
 
 export function generateSidebarSections(): SidebarSection[] {
   return [
-    generateFleetConsoleSection(),
-    generateChromeOSSection(),
-    generateChromeSection(),
-    generateFleetManagementSection(),
+    generateLabHealthSection(),
+    generateResourceRequestsSection(),
+    generateOtherToolsSection(),
   ];
 }
 
-function generateFleetConsoleSection(): SidebarSection {
+function generateLabHealthSection(): SidebarSection {
   return {
-    title: 'Fleet Console',
+    title: 'Lab Health',
     pages: [
       {
         label: 'Metrics',
@@ -68,35 +66,34 @@ function generateFleetConsoleSection(): SidebarSection {
         url: generateRepairsURL(ANDROID_PLATFORM),
         icon: <ConstructionIcon />,
       },
+    ],
+  };
+}
+
+function generateResourceRequestsSection(): SidebarSection {
+  return {
+    title: 'Resource Requests',
+    pages: [
       {
-        label: 'Resource Requests',
+        label: 'Requester Insights',
         url: '/ui/fleet/labs/requests',
         icon: <DevicesOtherIcon />,
       },
-    ],
-  };
-}
-
-function generateChromeOSSection(): SidebarSection {
-  return {
-    title: 'ChromeOS',
-    pages: [
       {
-        label: 'Swarming',
-        url: 'https://chromeos-swarming.appspot.com/botlist',
-        icon: <EmojiNatureIcon />,
-        external: true,
+        label: 'Planner Insights',
+        url: '/ui/fleet/labs/planners',
+        icon: <DashboardIcon />,
       },
     ],
   };
 }
 
-function generateChromeSection(): SidebarSection {
+function generateOtherToolsSection(): SidebarSection {
   return {
-    title: 'Chrome',
+    title: 'Other Tools',
     pages: [
       {
-        label: 'Fleet dashboard',
+        label: 'Chrome Repairs',
         url: 'http://go/chrome-fleet-dashboard',
         icon: <DashboardIcon />,
         external: true,
@@ -107,14 +104,6 @@ function generateChromeSection(): SidebarSection {
         icon: <LanIcon />,
         external: true,
       },
-    ],
-  };
-}
-
-function generateFleetManagementSection(): SidebarSection {
-  return {
-    title: 'Fleet Management',
-    pages: [
       {
         label: 'FLOPS Docs',
         url: 'http://go/flops-docs',
