@@ -16,6 +16,13 @@ package pubsub
 
 import "go.chromium.org/luci/server"
 
+type Options struct {
+	// Hostname of the luci.resultdb.v1.ResultDB service which can be
+	// queried to fetch the details of invocations being exported.
+	// E.g. "results.api.cr.dev".
+	ResultDBHostname string
+}
+
 // InitServer initializes a exportnotifier server.
 func InitServer(srv *server.Server) error {
 	// TODO(b/457279545): Move tasks.TestResultsPublisher from the finalizer.go

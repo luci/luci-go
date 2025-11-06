@@ -15,6 +15,8 @@
 package main
 
 import (
+	"flag"
+
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal"
@@ -22,6 +24,14 @@ import (
 )
 
 func main() {
+	opts := pubsub.Options{}
+	flag.StringVar(
+		&opts.ResultDBHostname,
+		"resultdb-host",
+		"",
+		"The hostname of the luci.resultdb.v1.ResultDB service instance, e.g results.api.cr.dev",
+	)
+
 	internal.Main(func(srv *server.Server) error {
 		return pubsub.InitServer(srv)
 	})
