@@ -29,7 +29,7 @@ import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
 
-import { FakeGraphGenerator } from '../../fake_turboci_graph';
+import { FakeGraphGenerator, WorkflowType } from '../../fake_turboci_graph';
 import { InspectorPanel } from '../inspector_panel/inspector_panel';
 
 import {
@@ -44,9 +44,7 @@ import { useTree } from './use_tree';
 // Fake graph. Will need to be replaced with a real one eventually.
 const graphGenerator = new FakeGraphGenerator({
   workPlanIdStr: 'test-plan',
-  numBuilds: 30,
-  avgTestsPerBuild: 3,
-  numSourceChanges: 3,
+  workflowType: WorkflowType.ANDROID,
 });
 const turboCiGraph = graphGenerator.generate();
 

@@ -15,8 +15,12 @@
 import {
   Box,
   Checkbox,
+  FormControl,
   FormControlLabel,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -38,19 +42,10 @@ import 'reactflow/dist/style.css';
 
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 
-import { FakeGraphGenerator } from '../fake_turboci_graph';
+import { FakeGraphGenerator, WorkflowType } from '../fake_turboci_graph';
 import { TurboCIGraphBuilder } from '../utils/graph_builder';
 
 import { InspectorPanel } from './inspector_panel/inspector_panel';
-
-// Fake TurboCI data. To be replaced once TurboCI APIs are available.
-const graphGenerator = new FakeGraphGenerator({
-  workPlanIdStr: 'test-plan',
-  numBuilds: 30,
-  avgTestsPerBuild: 3,
-  numSourceChanges: 3,
-});
-const turboCiGraph = graphGenerator.generate();
 
 // We must explicit set all top/right/bottom/left border properties here instead
 // of just setting "border" because React does not work well when mixing shorthand
@@ -79,6 +74,17 @@ function Graph() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | undefined>(
     undefined,
   );
+  const [workflowType, setWorkflowType] = useState<WorkflowType>(
+    WorkflowType.ANDROID,
+  );
+
+  const turboCiGraph = useMemo(() => {
+    const generator = new FakeGraphGenerator({
+      workPlanIdStr: 'test-plan',
+      workflowType: workflowType,
+    });
+    return generator.generate();
+  }, [workflowType]);
 
   const { layoutedNodes, layoutedEdges } = useMemo(() => {
     // Convert TurboCI Graph to list of nodes and edges that React Flow understands.
@@ -86,7 +92,7 @@ function Graph() {
       showAssignmentEdges,
     });
     return { layoutedNodes: nodes, layoutedEdges: edges };
-  }, [showAssignmentEdges]);
+  }, [turboCiGraph, showAssignmentEdges]);
 
   useDebounce(
     () => {
@@ -249,6 +255,26 @@ function Graph() {
                   marginBottom: '8px',
                 }}
               />
+              <FormControl fullWidth size="small" sx={{ mt: 2 }}>
+                <InputLabel id="workflow-type-select-label">
+                  Workflow Type
+                </InputLabel>
+                <Select
+                  labelId="workflow-type-select-label"
+                  id="workflow-type-select"
+                  value={workflowType}
+                  label="Workflow Type"
+                  onChange={(e) =>
+                    setWorkflowType(e.target.value as WorkflowType)
+                  }
+                >
+                  <MenuItem value={WorkflowType.ANDROID}>Android</MenuItem>
+                  <MenuItem value={WorkflowType.BROWSER}>Browser</MenuItem>
+                  <MenuItem value={WorkflowType.BROWSER_FUTURE}>
+                    Browser Future
+                  </MenuItem>
+                </Select>
+              </FormControl>
               <FormControlLabel
                 control={
                   <Checkbox

@@ -47,7 +47,6 @@ import {
   GobSourceCheckOptions_PinnedRepoMounts_GitCommit,
 } from '../proto/turboci/data/gerrit/v1/gob_source_check_options.pb';
 import { GobSourceCheckResults } from '../proto/turboci/data/gerrit/v1/gob_source_check_results.pb';
-import { PiperSourceCheckOptions } from '../proto/turboci/data/piper/v1/piper_source_check_options.pb';
 import {
   Identifier,
   WorkPlan,
@@ -100,8 +99,6 @@ const TYPE_URL_GOB_SOURCE_OPTIONS =
   'type.googleapis.com/turboci.data.gerrit.v1.GobSourceCheckOptions';
 const TYPE_URL_GOB_SOURCE_RESULTS =
   'type.googleapis.com/turboci.data.gerrit.v1.GobSourceCheckResults';
-const TYPE_URL_PIPER_SOURCE_OPTIONS =
-  'type.googleapis.com/turboci.data.piper.v1.PiperSourceCheckOptions';
 const TYPE_URL_BUILD_OPTIONS =
   'type.googleapis.com/turboci.data.build.v1.BuildCheckOptions';
 const TYPE_URL_BUILD_RESULTS =
@@ -172,17 +169,18 @@ const FAKE_TEST_NAMES = [
   'v2/android-gki/test_mapping_kernel_presubmit',
 ];
 
+export enum WorkflowType {
+  ANDROID = 'ANDROID',
+  BROWSER = 'BROWSER',
+  BROWSER_FUTURE = 'BROWSER_FUTURE',
+}
+
 /**
  * Configuration for the FakeGraphGenerator.
  */
 export interface GraphGenerationConfig {
   workPlanIdStr: string;
-  /** Number of Gerrit changes to include in the source check. */
-  numSourceChanges: number;
-  /** Number of distinct build targets to simulate. */
-  numBuilds: number;
-  /** Average number of tests dependent on each build. */
-  avgTestsPerBuild: number;
+  workflowType: WorkflowType;
 }
 
 interface CheckData {
@@ -205,6 +203,11 @@ export class FakeGraphGenerator {
   private checkViews: Record<string, CheckView> = {};
   private stageViews: Record<string, StageView> = {};
 
+  // Accumulators for planning stage assignments
+  private sourceCheckIds: CheckId[] = [];
+  private buildCheckIds: CheckId[] = [];
+  private testCheckIds: CheckId[] = [];
+
   constructor(private config: GraphGenerationConfig) {
     // Initialize faker seed for reproducible graphs based on workplan ID
     let seed = 0;
@@ -224,77 +227,24 @@ export class FakeGraphGenerator {
    * Generates the complete GraphView based on the configuration.
    */
   public generate(): GraphView {
-    this.checkViews = {};
-    this.stageViews = {};
-    // Reset time for each generation to maintain reproducibility based on seed
-    this.currentSimulatedTimeMs = Date.UTC(2024, 0, 1, 12, 0, 0);
+    this.resetState();
 
-    const sourceCheckIds: CheckId[] = [];
-    const buildCheckIds: CheckId[] = [];
-    const testCheckIds: CheckId[] = [];
-
-    // 1. Generate Source Node (1 Check, 1 Stage)
-    const sourceId = this.createGobSourcePair();
-    sourceCheckIds.push(sourceId);
-
-    // 2. Generate Build Nodes, dependent on Source
-    for (let i = 0; i < this.config.numBuilds; i++) {
-      buildCheckIds.push(this.createBuildPair(i, sourceId));
+    switch (this.config.workflowType) {
+      case WorkflowType.ANDROID:
+        this.generateAndroid();
+        break;
+      case WorkflowType.BROWSER:
+        this.generateBrowser();
+        break;
+      case WorkflowType.BROWSER_FUTURE:
+        this.generateBrowserFuture();
+        break;
+      default:
+        // Fallback to Android
+        this.generateAndroid();
     }
 
-    // Select some builds to be "common" dependencies.
-    // Roughly 20% of builds are "common".
-    const numCommonBuilds = Math.max(
-      1,
-      Math.floor(this.config.numBuilds * 0.2),
-    );
-    const commonBuildIds = faker.helpers.arrayElements(
-      buildCheckIds,
-      numCommonBuilds,
-    );
-
-    // 3. Generate Test Nodes, dependent on Builds
-    for (let i = 0; i < buildCheckIds.length; i++) {
-      const primaryBuildId = buildCheckIds[i];
-      // Vary number of tests per build slightly
-      const numTests = faker.number.int({
-        min: Math.max(1, this.config.avgTestsPerBuild - 2),
-        max: this.config.avgTestsPerBuild + 2,
-      });
-
-      for (let j = 0; j < numTests; j++) {
-        // Primary dependency
-        const deps: Identifier[] = [{ check: primaryBuildId }];
-        const depIds = new Set<string>([primaryBuildId.id!]);
-
-        // 30% chance of having extra dependencies
-        if (faker.datatype.boolean(0.3)) {
-          // Decide how many extra dependencies (1 or 2)
-          const numExtra = faker.number.int({ min: 1, max: 2 });
-
-          for (let k = 0; k < numExtra; k++) {
-            let extraBuild: CheckId;
-            if (commonBuildIds.length > 0) {
-              extraBuild = faker.helpers.arrayElement(commonBuildIds);
-              if (!depIds.has(extraBuild.id!)) {
-                deps.push({ check: extraBuild });
-                depIds.add(extraBuild.id!);
-              }
-            }
-          }
-        }
-
-        testCheckIds.push(this.createTestPair(`Build_${i}_Test_${j}`, deps));
-      }
-    }
-
-    // 4. Generate an orphaned Piper Source node for testing purposes only.
-    this.createPiperSource();
-
-    // 5. Create Planning Stages per check type.
-    this.createPlanningStage(this.sourcePlanningStageId, sourceCheckIds);
-    this.createPlanningStage(this.buildPlanningStageId, buildCheckIds);
-    this.createPlanningStage(this.testPlanningStageId, testCheckIds);
+    this.finalizeGraph();
 
     return {
       identifier: this.workPlanId,
@@ -302,6 +252,142 @@ export class FakeGraphGenerator {
       checks: this.checkViews,
       stages: this.stageViews,
     };
+  }
+
+  private resetState() {
+    this.checkViews = {};
+    this.stageViews = {};
+    this.sourceCheckIds = [];
+    this.buildCheckIds = [];
+    this.testCheckIds = [];
+    this.currentSimulatedTimeMs = Date.UTC(2024, 0, 1, 12, 0, 0);
+  }
+
+  private finalizeGraph() {
+    this.createPlanningStage(this.sourcePlanningStageId, this.sourceCheckIds);
+    this.createPlanningStage(this.buildPlanningStageId, this.buildCheckIds);
+    this.createPlanningStage(this.testPlanningStageId, this.testCheckIds);
+  }
+
+  // ==========================================
+  // Specific Workflow Generators
+  // ==========================================
+
+  private generateAndroid() {
+    // 1. Source
+    const sourceId = this.createGobSourcePair();
+    this.sourceCheckIds.push(sourceId);
+
+    // 2. Common test_suites build (LKGB & TOT)
+    const commonLkgb = this.createBuildPair('test_suites_LKGB', [
+      { check: sourceId },
+    ]);
+    const commonTot = this.createBuildPair('test_suites_TOT', [
+      { check: sourceId },
+    ]);
+    this.buildCheckIds.push(commonLkgb, commonTot);
+
+    // 3. Builds & Tests
+    const numBuilds = 10;
+    const testsPerBuild = 5;
+
+    for (let i = 0; i < numBuilds; i++) {
+      const lkgb = this.createBuildPair(`Build_${i}_LKGB`, [
+        { check: sourceId },
+      ]);
+      const tot = this.createBuildPair(`Build_${i}_TOT`, [{ check: sourceId }]);
+      this.buildCheckIds.push(lkgb, tot);
+
+      for (let j = 0; j < testsPerBuild; j++) {
+        // Each test node depends on BOTH the LKGB and TOT
+        this.testCheckIds.push(
+          this.createTestPair(`D${i}_T${j}`, [
+            { check: commonLkgb },
+            { check: commonTot },
+            { check: lkgb },
+            { check: tot },
+          ]),
+        );
+      }
+    }
+  }
+
+  private generateBrowser() {
+    const sourceId = this.createGobSourcePair();
+    this.sourceCheckIds.push(sourceId);
+
+    this.generateBrowserPlatformSequence('try/linux-rel', sourceId);
+  }
+
+  private generateBrowserFuture() {
+    const sourceId = this.createGobSourcePair();
+    this.sourceCheckIds.push(sourceId);
+
+    const targetSelectionStageId = this.createStage('S_Target_Selection', [
+      { check: sourceId },
+    ]);
+
+    // Multiple Platforms
+    const platforms = ['try/linux-rel', 'try/mac-rel', 'try/win-rel'];
+    for (const platform of platforms) {
+      this.generateBrowserPlatformSequence(platform, sourceId, {
+        stage: targetSelectionStageId,
+      });
+    }
+  }
+
+  private generateBrowserPlatformSequence(
+    platformName: string,
+    sourceId: CheckId,
+    dependency?: Identifier,
+  ) {
+    const numTests = faker.number.int({ min: 10, max: 15 });
+    const startDeps: Identifier[] = [{ check: sourceId }];
+    if (dependency) {
+      startDeps.push(dependency);
+    }
+
+    // Phase 1: Build w/ Patch -> Tests
+    const b1 = this.createBuildPair(`${platformName}_Build_Patch`, startDeps);
+    this.buildCheckIds.push(b1);
+    const t1s: CheckId[] = [];
+    for (let i = 0; i < numTests; i++) {
+      t1s.push(
+        this.createTestPair(`${platformName}_Test_Patch_${i}`, [{ check: b1 }]),
+      );
+    }
+    this.testCheckIds.push(...t1s);
+
+    // Phase 2: Retry Build w/ Patch -> Tests
+    const b2Deps = t1s.map((t) => ({ check: t }));
+    const b2 = this.createBuildPair(
+      `${platformName}_Build_Patch_Retry`,
+      b2Deps,
+    );
+    this.buildCheckIds.push(b2);
+    const t2s: CheckId[] = [];
+    for (let i = 0; i < numTests; i++) {
+      t2s.push(
+        this.createTestPair(`${platformName}_Test_Patch_Retry_${i}`, [
+          { check: b2 },
+        ]),
+      );
+    }
+    this.testCheckIds.push(...t2s);
+
+    // Phase 3: Build w/o Patch -> Tests
+    const b3Deps = t2s.map((t) => ({ check: t }));
+    const b3 = this.createBuildPair(`${platformName}_Build_NoPatch`, b3Deps);
+    this.buildCheckIds.push(b3);
+    const t3s: CheckId[] = [];
+    for (let i = 0; i < numTests; i++) {
+      t3s.push(
+        this.createTestPair(`${platformName}_Test_NoPatch_${i}`, [
+          { check: b3 },
+        ]),
+      );
+    }
+    this.testCheckIds.push(...t3s);
   }
 
   // ==========================================
@@ -315,7 +401,7 @@ export class FakeGraphGenerator {
     const realm = `${idStr}-realm`;
 
     // Generate Data
-    const data = this.generateGobSourceCheckData(checkId, realm, stageId);
+    const data = this.generateGobSourceCheckData(checkId, realm, stageId, 3);
 
     // Generate Views (simulating lifecycle)
     this.generateCheckView(
@@ -332,28 +418,7 @@ export class FakeGraphGenerator {
     return checkId;
   }
 
-  private createPiperSource(): CheckId {
-    const idStr = 'Source_Piper';
-    const checkId = this.createCheckId(`C_${idStr}`);
-    const stageId = this.createStageId(`S_${idStr}`);
-    const realm = `${idStr}-realm`;
-
-    const data = this.generatePiperSourceCheckData(checkId, realm);
-
-    this.generateCheckView(
-      checkId,
-      CheckKind.CHECK_KIND_SOURCE,
-      realm,
-      [],
-      stageId,
-      data,
-    );
-
-    return checkId;
-  }
-
-  private createBuildPair(index: number, sourceCheckId: CheckId): CheckId {
-    const idStr = `Build_${index}`;
+  private createBuildPair(idStr: string, dependencies: Identifier[]): CheckId {
     const checkId = this.createCheckId(`C_${idStr}`);
     const stageId = this.createStageId(`S_${idStr}`);
     const realm = `${idStr}-realm`;
@@ -369,24 +434,15 @@ export class FakeGraphGenerator {
       checkId,
       CheckKind.CHECK_KIND_BUILD,
       realm,
-      [{ check: sourceCheckId }],
+      dependencies,
       stageId,
       data,
     );
-    this.generateStageView(
-      stageId,
-      realm,
-      [{ check: sourceCheckId }],
-      success,
-      [checkId],
-    );
+    this.generateStageView(stageId, realm, dependencies, success, [checkId]);
     return checkId;
   }
 
-  private createTestPair(
-    idStr: string,
-    buildDependencies: Identifier[],
-  ): CheckId {
+  private createTestPair(idStr: string, dependencies: Identifier[]): CheckId {
     const checkId = this.createCheckId(`C_${idStr}`);
     const realm = `${idStr}-realm`;
 
@@ -402,9 +458,7 @@ export class FakeGraphGenerator {
         `S_${idStr}` + (numStages > 1 ? `-${i}` : ''),
       );
       stageIds.push(stageId);
-      this.generateStageView(stageId, realm, buildDependencies, success, [
-        checkId,
-      ]);
+      this.generateStageView(stageId, realm, dependencies, success, [checkId]);
     }
 
     // If we created multiple stages, we still need one to be the actual editor to FINAL state
@@ -423,12 +477,20 @@ export class FakeGraphGenerator {
       checkId,
       CheckKind.CHECK_KIND_TEST,
       realm,
-      buildDependencies,
+      dependencies,
       finalizingStageId,
       data,
     );
 
     return checkId;
+  }
+
+  private createStage(idStr: string, dependencies: Identifier[]): StageId {
+    const stageId = this.createStageId(idStr);
+    const realm = `${idStr}-realm`;
+
+    this.generateStageView(stageId, realm, dependencies, true, []);
+    return stageId;
   }
 
   private createPlanningStage(
@@ -858,11 +920,12 @@ export class FakeGraphGenerator {
     checkId: CheckId,
     realm: string,
     stageId: StageId,
+    numChanges: number,
   ): CheckData {
     const gerritChangesInput: GobSourceCheckOptions_GerritChange[] = [];
     const gerritChangesOutput: GerritChangeInfo[] = [];
 
-    for (let i = 0; i < this.config.numSourceChanges; i++) {
+    for (let i = 0; i < numChanges; i++) {
       const host = faker.helpers.arrayElement(FAKE_GERRIT_HOSTS);
       const project = faker.helpers.arrayElement(FAKE_GERRIT_PROJECTS);
       const changeNum = faker.number
@@ -970,41 +1033,6 @@ export class FakeGraphGenerator {
       resultDatum,
       stageId,
     );
-  }
-
-  private generatePiperSourceCheckData(
-    checkId: CheckId,
-    realm: string,
-  ): CheckData {
-    const optId: CheckOptionId = { check: checkId, idx: 1 };
-
-    const piperOptions: PiperSourceCheckOptions = {
-      clNumber: faker.number.int({ min: 600000000, max: 700000000 }).toString(),
-      files: faker.helpers.multiple(
-        () => `//depot/google3/${faker.system.filePath()}`,
-        { count: { min: 1, max: 5 } },
-      ),
-      targets: faker.helpers.multiple(
-        () => `//depot/google3/${faker.lorem.word()}:${faker.lorem.word()}`,
-        { count: { min: 0, max: 3 } },
-      ),
-    };
-
-    const optionDatum = this.createDatum(
-      { checkOption: optId },
-      realm,
-      TYPE_URL_PIPER_SOURCE_OPTIONS,
-      piperOptions,
-    );
-
-    // No results for piper check in this fake generator, just options.
-    return {
-      optionsRef: {
-        identifier: optId,
-        typeUrl: TYPE_URL_PIPER_SOURCE_OPTIONS,
-      },
-      optionDatum: optionDatum,
-    };
   }
 
   private generateBuildCheckData(
