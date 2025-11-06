@@ -67,7 +67,7 @@ func (c *commonFlags) Parse(args []string) error {
 func (c *commonFlags) createAuthTokenSource(ctx context.Context) (oauth2.TokenSource, error) {
 	a := auth.NewAuthenticator(ctx, auth.SilentLogin, c.parsedAuthOpts)
 	if err := a.CheckLoginRequired(); err != nil {
-		return nil, errors.Fmt("please login with `luci-auth login`: %w", err)
+		return nil, errors.Fmt("please login with\n$ %s", c.parsedAuthOpts.LoginCommandHint())
 	}
 	return a.TokenSource()
 }

@@ -47,7 +47,7 @@ import (
 // Scopes returns the set of OAuth scopes required for this Output.
 func Scopes() []string {
 	// E-mail scope needed for Coordinator authentication.
-	scopes := []string{scopes.Email}
+	scopes := scopes.DefaultScopeSet()
 	// Publisher scope needed to publish to Pub/Sub transport.
 	scopes = append(scopes, ps.PublisherScopes...)
 

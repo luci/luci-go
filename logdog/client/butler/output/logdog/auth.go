@@ -83,7 +83,7 @@ func RealmsAwareAuth(ctx context.Context) (Auth, error) {
 		project: project,
 		realm:   realm,
 		rpc: auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
-			Scopes:    []string{scopes.Email},
+			Scopes:    scopes.DefaultScopeSet(),
 			MonitorAs: "logdog/rpc",
 		}),
 		pubSub: sysAuth,

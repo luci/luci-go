@@ -29,7 +29,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -76,12 +75,13 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	ts, err := auth.NewAuthenticator(ctx, auth.SilentLogin, chromeinfra.SetDefaultAuthOptions(auth.Options{
+	opts := chromeinfra.SetDefaultAuthOptions(auth.Options{
 		Scopes: scopes.CloudScopeSet(),
-	})).TokenSource()
+	})
+	ts, err := auth.NewAuthenticator(ctx, auth.SilentLogin, opts).TokenSource()
 	switch {
 	case err == auth.ErrLoginRequired:
-		return errors.Fmt("Need to login. Run `luci-auth login -scopes \"%s\"`", strings.Join(scopes.CloudScopeSet(), " "))
+		return errors.Fmt("Need to login:\n$ %s", opts.LoginCommandHint())
 	case err != nil:
 		return errors.Fmt("failed to get token source: %w", err)
 	}

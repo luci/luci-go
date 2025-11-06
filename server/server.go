@@ -2490,13 +2490,9 @@ func (s *Server) initAuthStart() error {
 		// ErrLoginRequired may happen only when running the server locally using
 		// developer's credentials. Let them know how the problem can be fixed.
 		if !s.Options.Prod && err == clientauth.ErrLoginRequired {
-			scopes := fmt.Sprintf("-scopes %q", strings.Join(opts.Scopes, " "))
-			if opts.ActAsServiceAccount != "" && opts.ActViaLUCIRealm == "" {
-				scopes = "-scopes-iam"
-			}
 			logging.Errorf(s.Context, "Looks like you run the server locally and it doesn't have credentials for some OAuth scopes")
 			logging.Errorf(s.Context, "Run the following command to set them up: ")
-			logging.Errorf(s.Context, "  $ luci-auth login %s", scopes)
+			logging.Errorf(s.Context, "  $ %s", opts.LoginCommandHint())
 		}
 		return errors.Fmt("failed to initialize the token source: %w", err)
 	}

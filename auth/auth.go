@@ -34,6 +34,7 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"slices"
@@ -307,7 +308,7 @@ type Options struct {
 	//
 	// Ignored when using ID tokens.
 	//
-	// Default: [scopes.Email].
+	// Default: scopes.DefaultScopeSet().
 	Scopes []string
 
 	// Audience is the audience to put into ID tokens.
@@ -336,9 +337,9 @@ type Options struct {
 	//
 	// If `ActViaLUCIRealm` is not set, the "acting" API is Google Cloud IAM.
 	// The Actor credentials will internally be used to generate access tokens
-	// with IAM scope. These tokens will then be used to call generateAccessToken
-	// Cloud IAM RPC to obtain the final tokens that belong to the service account
-	//  `ActAsServiceAccount`. This requires the Actor to have
+	// with cloud-platform scope. These tokens will then be used to call
+	// generateAccessToken Cloud IAM RPC to obtain the final tokens that belong to
+	// the service account `ActAsServiceAccount`. This requires the Actor to have
 	// "iam.serviceAccounts.getAccessToken" Cloud IAM permission, which is usually
 	//  granted via "Service Account Token Creator" IAM role.
 	//
@@ -555,7 +556,7 @@ type Options struct {
 func (opts *Options) PopulateDefaults() {
 	// Set the default scope, sort and dedup scopes.
 	if len(opts.Scopes) == 0 {
-		opts.Scopes = []string{scopes.Email} // also implies "openid"
+		opts.Scopes = scopes.DefaultScopeSet()
 	}
 	opts.Scopes = normalizeScopes(opts.Scopes)
 
@@ -581,6 +582,54 @@ func (opts *Options) PopulateDefaults() {
 			panic(errors.Fmt("failed to get abs path to token cache dir: %w", err))
 		}
 	}
+}
+
+// LoginCommandHint is a helper that formats "luci-auth login ..." command line
+// needed to establish a token needed by the options.
+//
+// Intended to be used in error messages in response to ErrLoginRequired in
+// tools that rely on "luci-auth login" (i.e. they don't have their own login
+// subcommand).
+//
+// May be incorrect in case some more exotic fields of Options are tweaked
+// (in particular when using custom OAuth client ID). Use at your own risk.
+//
+// Do not parse this back.
+func (opts *Options) LoginCommandHint() string {
+	var scopesToAsk []string
+	switch {
+	case opts.ActAsServiceAccount != "" && opts.ActViaLUCIRealm != "":
+		// When acting via LUCI, the default `luci-auth login` is sufficient to
+		// get necessary tokens, since we need only userinfo.email scope.
+		scopesToAsk = scopes.DefaultScopeSet()
+	case opts.ActAsServiceAccount != "":
+		// When acting via IAM need a cloud-scoped token.
+		scopesToAsk = scopes.CloudScopeSet()
+	default:
+		// When not acting, need all requested scopes.
+		scopesToAsk = opts.Scopes
+	}
+
+	sameScopeSets := func(a, b []string) bool {
+		return slices.Equal(
+			slices.Sorted(slices.Values(a)),
+			slices.Sorted(slices.Values(b)),
+		)
+	}
+
+	cmd := []string{"luci-auth", "login"}
+	switch {
+	case sameScopeSets(scopesToAsk, scopes.CloudScopeSet()):
+		cmd = append(cmd, "-scopes-cloud")
+	case sameScopeSets(scopesToAsk, scopes.ContextScopeSet()):
+		cmd = append(cmd, "-scopes-context")
+	case sameScopeSets(scopesToAsk, scopes.GerritScopeSet()):
+		cmd = append(cmd, "-scopes-gerrit")
+	case !sameScopeSets(scopesToAsk, scopes.DefaultScopeSet()):
+		cmd = append(cmd, "-scopes", fmt.Sprintf("%q", strings.Join(scopesToAsk, " ")))
+	}
+
+	return strings.Join(cmd, " ")
 }
 
 // SelectBestMethod returns a most appropriate authentication method for the
@@ -666,9 +715,9 @@ type Authenticator struct {
 	// cache or can be generated on the fly.
 	//
 	// In actor mode, the base token has scopes necessary for the corresponding
-	// acting API to work (e.g. IAM scope when using Cloud's generateAccessToken).
-	// The base token is also always using whatever auth method was specified by
-	// Options.Method.
+	// acting API to work (e.g. cloud-platform scope when using Cloud's
+	// generateAccessToken). The base token is also always using whatever auth
+	// method was specified by Options.Method.
 	//
 	// In non-actor mode, baseToken coincides with authToken: both point to the
 	// exact same struct.
@@ -1249,10 +1298,10 @@ func (a *Authenticator) ensureInitialized() error {
 			}
 		}
 	case actingModeIAM:
-		tokenScopes = []string{scopes.IAM}
+		tokenScopes = scopes.CloudScopeSet()
 		useIDTokens = false // IAM uses OAuth tokens
 	case actingModeLUCI:
-		tokenScopes = []string{scopes.Email}
+		tokenScopes = scopes.DefaultScopeSet()
 		useIDTokens = false // LUCI currently uses OAuth tokens
 	default:
 		panic("impossible")

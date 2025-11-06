@@ -24,9 +24,7 @@ import (
 
 var (
 	// Scopes is the set of scopes needed for the Coordinator user endpoints.
-	Scopes = []string{
-		scopes.Email,
-	}
+	Scopes = scopes.DefaultScopeSet()
 )
 
 // Client wraps a Logs client with user-friendly methods.

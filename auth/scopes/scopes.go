@@ -20,20 +20,32 @@
 // different tools reduces the total number of logins required.
 package scopes
 
-// TODO: Get rid of IAM in favor of CloudScopeSet().
-
 const (
 	CloudPlatform = "https://www.googleapis.com/auth/cloud-platform"
 	Email         = "https://www.googleapis.com/auth/userinfo.email"
 	Firebase      = "https://www.googleapis.com/auth/firebase"
 	Gerrit        = "https://www.googleapis.com/auth/gerritcodereview"
-	IAM           = "https://www.googleapis.com/auth/iam"
 	ReAuth        = "https://www.googleapis.com/auth/accounts.reauth"
 	BCIDVerify    = "https://www.googleapis.com/auth/bcid_verify"
 )
 
+// DefaultScopeSet is the set of scopes that `luci-auth login` uses by default.
+//
+// Tokens with these scopes are accepted by majority of LUCI services (as long
+// the OAuth client is allow-listed as part of LUCI). Note that some LUCI
+// services may require more scopes (in case they internally call some other
+// services that need more scopes).
+func DefaultScopeSet() []string {
+	return []string{
+		Email,
+	}
+}
+
 // ContextScopeSet returns a set of scopes of tokens returned by local LUCI auth
 // service in a context of a LUCI build or equivalent `luci-auth context`.
+//
+// Tokens with these scopes are accepted by majority of APIs LUCI builds ever
+// interact with (including LUCI and GCP APIs).
 func ContextScopeSet() []string {
 	return []string{
 		CloudPlatform,
@@ -43,8 +55,10 @@ func ContextScopeSet() []string {
 	}
 }
 
-// CloudScopeSet returns a list of scopes to use in tools that talk exclusively
-// to GCP.
+// CloudScopeSet returns a list of scopes to use in tools that talk to GCP.
+//
+// These tokens are also accepted by majority of LUCI services (as long
+// the OAuth client is allow-listed as part of LUCI).
 func CloudScopeSet() []string {
 	return []string{
 		CloudPlatform,
@@ -52,8 +66,11 @@ func CloudScopeSet() []string {
 	}
 }
 
-// GerritScopeSet returns a list of scopes to use in tools that talk exclusively
-// to Gerrit.
+// GerritScopeSet returns a list of scopes to use in tools that talk to Gerrit
+// or Gitiles.
+//
+// These tokens are also accepted by majority of LUCI services (as long
+// the OAuth client is allow-listed as part of LUCI).
 //
 // Note: This can be the same as CloudScopeSet(), since cloud-platform scope
 // coverts Gerrit API usage. The only concern  is that tools that interact with

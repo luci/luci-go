@@ -148,8 +148,9 @@ type Flags struct {
 
 	hasScopeFlags bool   // true if registered -scopes (and related) flags
 	scopes        string // value of -scopes
-	scopesIAM     bool   // value of -scopes-iam
+	scopesCloud   bool   // value of -scopes-cloud
 	scopesContext bool   // value of -scopes-context
+	scopesGerrit  bool   // value of -scopes-gerrit
 
 	hasIDTokenFlags bool   // true if registered -use-id-token flag
 	useIDToken      bool   // value of -use-id-token
@@ -166,7 +167,7 @@ type Flags struct {
 func (fl *Flags) Register(f *flag.FlagSet, defaults auth.Options) {
 	fl.defaults = defaults
 	if len(fl.defaults.Scopes) == 0 {
-		fl.defaults.Scopes = append([]string(nil), scopesDefault...)
+		fl.defaults.Scopes = scopes.DefaultScopeSet()
 	}
 	f.StringVar(&fl.serviceAccountJSON, "service-account-json", fl.defaults.ServiceAccountJSONPath,
 		fmt.Sprintf("Path to JSON file with service account credentials to use. Or specify %q to use GCE's default service account.", auth.GCEServiceAccount))
@@ -177,10 +178,14 @@ func (fl *Flags) registerScopesFlags(f *flag.FlagSet) {
 	fl.hasScopeFlags = true
 	f.StringVar(&fl.scopes, "scopes", strings.Join(fl.defaults.Scopes, " "),
 		"Space-separated list of OAuth 2.0 scopes to use.")
-	f.BoolVar(&fl.scopesIAM, "scopes-iam", false,
-		"When set, use scopes needed to impersonate accounts via Cloud IAM. Overrides -scopes when present.")
+	f.BoolVar(&fl.scopesCloud, "scopes-cloud", false,
+		"When set, use scopes needed to call Google Cloud APIs. Overrides -scopes when present.")
+	f.BoolVar(&fl.scopesCloud, "scopes-iam", false,
+		"Alias for -scopes-cloud, for backward compatibility.")
 	f.BoolVar(&fl.scopesContext, "scopes-context", false,
 		"When set, use scopes needed to run `context` subcommand. Overrides -scopes when present.")
+	f.BoolVar(&fl.scopesGerrit, "scopes-gerrit", false,
+		"When set, use scopes needed to call Gerrit and Gitiles APIs. Overrides -scopes when present.")
 }
 
 // RegisterIDTokenFlags adds flags related to ID tokens.
@@ -214,18 +219,26 @@ func (fl *Flags) Options() (auth.Options, error) {
 	opts.ServiceAccountJSONPath = fl.serviceAccountJSON
 
 	if fl.hasScopeFlags {
-		if fl.scopesIAM && fl.scopesContext {
-			return auth.Options{}, fmt.Errorf("-scopes-iam and -scopes-context can't be used together")
+		sets := 0
+		if fl.scopesCloud {
+			sets++
+			opts.Scopes = scopes.CloudScopeSet()
 		}
-		switch {
-		case fl.scopesIAM:
-			opts.Scopes = append([]string(nil), scopesIAM...)
-		case fl.scopesContext:
-			opts.Scopes = append([]string(nil), scopes.ContextScopeSet()...)
-		default:
+		if fl.scopesContext {
+			sets++
+			opts.Scopes = scopes.ContextScopeSet()
+		}
+		if fl.scopesGerrit {
+			sets++
+			opts.Scopes = scopes.GerritScopeSet()
+		}
+		if sets > 1 {
+			return auth.Options{}, fmt.Errorf("got multiple conflicting -scopes-* flag, at most one is allowed")
+		}
+		if sets == 0 {
 			opts.Scopes = strings.Split(fl.scopes, " ")
+			sort.Strings(opts.Scopes)
 		}
-		sort.Strings(opts.Scopes)
 	}
 
 	if fl.hasIDTokenFlags {
@@ -267,12 +280,6 @@ const (
 	ExitCodeBadLogin
 )
 
-// List of scopes requested by `luci-auth login` by default.
-var scopesDefault = []string{scopes.Email}
-
-// List of scopes needed to impersonate accounts via Cloud IAM.
-var scopesIAM = []string{scopes.IAM}
-
 type commandRunBase struct {
 	subcommands.CommandRunBase
 	flags   Flags
@@ -306,52 +313,10 @@ func (c *commandRunBase) registerBaseFlags(params CommandParams) {
 }
 
 // askToLogin emits to stderr an instruction to login.
-func (c *commandRunBase) askToLogin(opts auth.Options, forContext bool) {
-	var loginFlags []string
-
-	if forContext {
-		switch {
-		case opts.ActAsServiceAccount != "" && opts.ActViaLUCIRealm != "":
-			// When acting via LUCI the default `luci-auth login` is sufficient to
-			// get necessary tokens, since we need only userinfo.email scope.
-		case opts.ActAsServiceAccount != "":
-			// When acting via IAM need an IAM-scoped token.
-			loginFlags = []string{"-scopes-iam"}
-		default:
-			// When not acting, need all scopes used by `luci-auth context`.
-			loginFlags = []string{"-scopes-context"}
-		}
-	} else {
-		// Ask for custom scopes only if they were actually requested. Use our
-		// neat aliases when possible.
-		switch {
-		case isSameScopes(opts.Scopes, scopesIAM):
-			loginFlags = []string{"-scopes-iam"}
-		case isSameScopes(opts.Scopes, scopes.ContextScopeSet()):
-			loginFlags = []string{"-scopes-context"}
-		case !isSameScopes(opts.Scopes, c.flags.defaults.Scopes):
-			loginFlags = []string{"-scopes", fmt.Sprintf("%q", strings.Join(opts.Scopes, " "))}
-		}
-	}
-
+func (c *commandRunBase) askToLogin(opts auth.Options) {
 	fmt.Fprintf(os.Stderr, "Not logged in.\n\nLogin by running:\n")
-	fmt.Fprintf(os.Stderr, "   $ luci-auth login")
-	if len(loginFlags) != 0 {
-		fmt.Fprintf(os.Stderr, " %s", strings.Join(loginFlags, " "))
-	}
+	fmt.Fprintf(os.Stderr, "   $ %s", opts.LoginCommandHint())
 	fmt.Fprintf(os.Stderr, "\n")
-}
-
-func isSameScopes(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -637,7 +602,7 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 	token, err := authenticator.GetAccessToken(c.lifetime)
 	if err != nil {
 		if err == auth.ErrLoginRequired {
-			c.askToLogin(opts, false)
+			c.askToLogin(opts)
 		} else {
 			fmt.Fprintln(os.Stderr, err)
 		}
@@ -787,7 +752,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 	if err = authenticator.CheckLoginRequired(); err != nil {
 		if err == auth.ErrLoginRequired {
-			c.askToLogin(opts, true)
+			c.askToLogin(opts)
 		} else {
 			fmt.Fprintln(os.Stderr, err)
 		}

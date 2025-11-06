@@ -75,7 +75,7 @@ func mainImpl(c context.Context, defaultAuthOpts auth.Options, args []string) in
 		Level: log.Warning,
 	}
 
-	defaultAuthOpts.Scopes = append([]string{scopes.Email}, gs.ReadOnlyScopes...)
+	defaultAuthOpts.Scopes = append(scopes.DefaultScopeSet(), gs.ReadOnlyScopes...)
 	var authFlags authcli.Flags
 
 	a := application{

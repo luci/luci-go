@@ -514,7 +514,7 @@ func (o *rpcMocks) apply(opts *rpcOptions) {
 	opts.rpcMocks = o
 }
 
-var defaultOAuthScopes = []string{scopes.Email}
+var defaultOAuthScopes = scopes.DefaultScopeSet()
 
 // headersGetter returns a main Authorization token and optional additional
 // headers.
@@ -785,7 +785,7 @@ func asUserHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) (*o
 	}
 
 	// Use our own OAuth token too, since the delegation token is bound to us.
-	oauthTok, err := cfg.AccessTokenProvider(ctx, []string{scopes.Email})
+	oauthTok, err := cfg.AccessTokenProvider(ctx, scopes.DefaultScopeSet())
 	if err != nil {
 		return nil, nil, errors.Fmt("failed to get own access token: %w", err)
 	}

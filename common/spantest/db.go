@@ -185,7 +185,7 @@ func prodClientOptions(ctx context.Context) ([]option.ClientOption, error) {
 	})
 	ts, err := auth.NewAuthenticator(ctx, auth.SilentLogin, opts).TokenSource()
 	if errors.Is(err, auth.ErrLoginRequired) {
-		return nil, errors.Fmt("please login with `luci-auth login -scopes %q`: %w", strings.Join(opts.Scopes, " "), err)
+		return nil, errors.Fmt("please login with:\n$ %s", opts.LoginCommandHint())
 	}
 	return []option.ClientOption{
 		option.WithTokenSource(ts),
