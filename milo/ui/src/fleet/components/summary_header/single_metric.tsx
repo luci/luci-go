@@ -103,6 +103,14 @@ export function SingleMetric({
           css={{
             padding: 0,
           }}
+          onAuxClick={() => {
+            if (handleClick) {
+              handleClick();
+            }
+            if (filterUrl) {
+              window.open(filterUrl, '_blank');
+            }
+          }}
           onClick={() => {
             if (handleClick) {
               handleClick();
