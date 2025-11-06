@@ -48,9 +48,9 @@ export function filtersUpdater(newFilters: SelectedOptions) {
 
 /**
  * Takes an existing URLSearchParams and appends a new filter query to it.
- * @param params Existing URL params which may include parameters other than filters
- * @param filterName The name of the filter we're adding
- * @param filterValue The values of the filter we're adding
+ * @param params Existing URL params which may include parameters other than filters.
+ * @param filterName The name of the filter we're adding.
+ * @param filterValue The values of the filter we're adding.
  * @returns A new URLSearchParams object with the new filters added.
  */
 export function addNewFilterToParams(

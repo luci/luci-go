@@ -846,6 +846,10 @@ function Metrics({
               total={countQuery.data?.totalRepairGroup}
               Icon={getPriorityIcon(RepairMetric_Priority.BREACHED)}
               loading={countQuery.isPending}
+              filterUrl={getFilterQueryString(
+                { priority: ['BREACHED'] },
+                searchParams,
+              )}
             />
             <SingleMetric
               name="Watch"
@@ -853,6 +857,10 @@ function Metrics({
               total={countQuery.data?.totalRepairGroup}
               Icon={getPriorityIcon(RepairMetric_Priority.WATCH)}
               loading={countQuery.isPending}
+              filterUrl={getFilterQueryString(
+                { priority: ['WATCH'] },
+                searchParams,
+              )}
             />
             <SingleMetric
               name="Nice"
@@ -860,6 +868,10 @@ function Metrics({
               total={countQuery.data?.totalRepairGroup}
               Icon={getPriorityIcon(RepairMetric_Priority.NICE)}
               loading={countQuery.isPending}
+              filterUrl={getFilterQueryString(
+                { priority: ['NICE'] },
+                searchParams,
+              )}
             />
           </div>
         </div>
