@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcmon"
@@ -61,7 +62,7 @@ var retryPolicy = fmt.Sprintf(`{
 func Dial(ctx context.Context, count int) ([]grpc.ClientConnInterface, error) {
 	creds, err := auth.GetPerRPCCredentials(ctx,
 		auth.AsSelf,
-		auth.WithScopes(auth.CloudOAuthScopes...),
+		auth.WithScopes(scopes.CloudScopeSet()...),
 	)
 	if err != nil {
 		return nil, errors.Fmt("failed to get credentials: %w", err)

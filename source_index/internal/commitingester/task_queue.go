@@ -21,7 +21,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
@@ -113,7 +113,7 @@ func processCommitIngestionTask(ctx context.Context, task *taskspb.IngestCommits
 
 	logging.Infof(ctx, "received commit ingestion task with page token: %q", task.PageToken)
 
-	client, err := gitilesutil.NewClient(ctx, task.Host, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+	client, err := gitilesutil.NewClient(ctx, task.Host, auth.AsSelf, auth.WithScopes(scopes.GerritScopeSet()...))
 	if err != nil {
 		return errors.Fmt("initialize a Gitiles client: %w", err)
 	}

@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/proto/sidecar"
 	"go.chromium.org/luci/common/retry/transient"
@@ -114,7 +115,7 @@ func main() {
 				},
 				// Fallback method to support Google OAuth2 access tokens. Slow.
 				&auth.GoogleOAuth2Method{
-					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+					Scopes: []string{scopes.Email},
 				},
 			},
 		},

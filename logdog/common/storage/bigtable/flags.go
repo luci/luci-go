@@ -21,6 +21,7 @@ import (
 	"cloud.google.com/go/bigtable"
 	"google.golang.org/api/option"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
 )
@@ -77,7 +78,7 @@ func (f *Flags) Validate() error {
 
 // StorageFromFlags instantiates the *bigtable.Storage given parsed flags.
 func StorageFromFlags(ctx context.Context, f *Flags) (*Storage, error) {
-	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, errors.Fmt("failed to get the token source: %w", err)
 	}

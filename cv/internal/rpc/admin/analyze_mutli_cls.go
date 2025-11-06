@@ -23,6 +23,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/retry/transient"
@@ -73,7 +74,7 @@ var multiCLAnalysisMapperFactory = func(_ context.Context, j *dsmapper.Job, _ in
 			return nil
 		}
 
-		transport, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+		transport, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 		if err != nil {
 			return errors.Fmt("failed to create Google Storage RPC transport: %w", err)
 		}

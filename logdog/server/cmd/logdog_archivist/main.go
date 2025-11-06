@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
@@ -260,7 +261,7 @@ func runForever(ctx context.Context, ar *archivist.Archivist, flags *CommandLine
 func googleStorageClient(ctx context.Context, luciProject string) (gs.Client, error) {
 	// TODO(vadimsh): Switch to AsProject + WithProject(project) once
 	// we are ready to roll out project scoped service accounts in Logdog.
-	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, errors.Fmt("failed to get the authenticating transport: %w", err)
 	}
@@ -275,7 +276,7 @@ func googleStorageClient(ctx context.Context, luciProject string) (gs.Client, er
 func cloudLoggingClient(ctx context.Context, luciProject, cloudProject string, onError func(err error)) (archivist.CLClient, error) {
 	cred, err := auth.GetPerRPCCredentials(
 		ctx, auth.AsProject,
-		auth.WithScopes(auth.CloudOAuthScopes...),
+		auth.WithScopes(scopes.CloudScopeSet()...),
 		auth.WithProject(luciProject),
 	)
 	if err != nil {

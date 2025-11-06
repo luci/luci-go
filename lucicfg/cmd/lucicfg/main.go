@@ -25,8 +25,7 @@ package main
 import (
 	"os"
 
-	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/common/api/gerrit"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 
 	"go.chromium.org/luci/lucicfg/cli"
@@ -35,10 +34,7 @@ import (
 
 func main() {
 	authOpts := chromeinfra.DefaultAuthOptions()
-	authOpts.Scopes = []string{
-		auth.OAuthScopeEmail,
-		gerrit.OAuthScope,
-	}
+	authOpts.Scopes = scopes.GerritScopeSet()
 	params := base.Parameters{
 		AuthOptions:       authOpts,
 		ConfigServiceHost: chromeinfra.ConfigServiceHost,

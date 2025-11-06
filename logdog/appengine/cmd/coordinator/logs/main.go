@@ -20,6 +20,7 @@ import (
 	"os"
 	"time"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
@@ -91,7 +92,7 @@ func main() {
 			auth.Authenticate(
 				srv.CookieAuth,
 				&auth.GoogleOAuth2Method{
-					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+					Scopes: []string{scopes.Email},
 				},
 			),
 		}

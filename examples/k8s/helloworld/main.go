@@ -26,6 +26,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/examples/k8s/helloworld/apipb"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -74,7 +75,7 @@ func main() {
 		// Authentication example.
 		mw := router.NewMiddlewareChain(auth.Authenticate(
 			&auth.GoogleOAuth2Method{
-				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+				Scopes: []string{scopes.Email},
 			},
 			&gerritauth.Method,
 		))

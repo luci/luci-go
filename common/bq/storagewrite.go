@@ -27,6 +27,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/grpc/grpcmon"
@@ -58,7 +59,7 @@ func NewWriterClient(ctx context.Context, gcpProject string) (*managedwriter.Cli
 	// This will ensure a shared connection pool is used for all writes,
 	// as recommended by:
 	// https://cloud.google.com/bigquery/docs/write-api-best-practices#limit_the_number_of_concurrent_connections
-	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, errors.Fmt("failed to initialize credentials: %w", err)
 	}

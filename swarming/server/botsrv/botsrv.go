@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -148,7 +149,7 @@ func New(ctx context.Context, cfg *cfg.Provider, r *router.Router, bots KnownBot
 				&machine.MachineTokenAuthMethod{},
 				// This checks "Authorization" header if present.
 				&auth.GoogleOAuth2Method{
-					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+					Scopes: []string{scopes.Email},
 				},
 			),
 		},

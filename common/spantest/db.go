@@ -30,6 +30,7 @@ import (
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
@@ -180,10 +181,7 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 
 func prodClientOptions(ctx context.Context) ([]option.ClientOption, error) {
 	opts := chromeinfra.SetDefaultAuthOptions(auth.Options{
-		Scopes: []string{
-			"https://www.googleapis.com/auth/cloud-platform",
-			"https://www.googleapis.com/auth/userinfo.email",
-		},
+		Scopes: scopes.CloudScopeSet(),
 	})
 	ts, err := auth.NewAuthenticator(ctx, auth.SilentLogin, opts).TokenSource()
 	if errors.Is(err, auth.ErrLoginRequired) {

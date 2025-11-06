@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/authctx"
+	"go.chromium.org/luci/auth/scopes"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -121,12 +122,7 @@ var DefaultExeAuth = func(id string, knownGerritHosts []string) *authctx.Context
 	return &authctx.Context{
 		ID: id,
 		Options: chromeinfra.SetDefaultAuthOptions(auth.Options{
-			Scopes: []string{
-				"https://www.googleapis.com/auth/cloud-platform",
-				"https://www.googleapis.com/auth/userinfo.email",
-				"https://www.googleapis.com/auth/gerritcodereview",
-				"https://www.googleapis.com/auth/firebase",
-			},
+			Scopes: scopes.ContextScopeSet(),
 		}),
 		EnableGitAuth:      true,
 		EnableGCEEmulation: true,

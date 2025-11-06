@@ -17,7 +17,7 @@ package commitingester
 import (
 	"context"
 
-	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -90,7 +90,7 @@ func scanHostForTasks(
 	hostCfg config.HostConfig,
 	taskC chan<- *taskspb.IngestCommits,
 ) error {
-	client, err := gitilesutil.NewClient(ctx, hostCfg.Host(), auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+	client, err := gitilesutil.NewClient(ctx, hostCfg.Host(), auth.AsSelf, auth.WithScopes(scopes.GerritScopeSet()...))
 	if err != nil {
 		return errors.Fmt("initialize a Gitiles client: %w", err)
 	}

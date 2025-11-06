@@ -28,6 +28,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/server/auth/authdb"
@@ -35,13 +36,6 @@ import (
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 )
-
-// oauthScopes is OAuth scopes required for using AuthService API (including
-// PubSub part).
-var oauthScopes = []string{
-	"https://www.googleapis.com/auth/userinfo.email",
-	"https://www.googleapis.com/auth/pubsub",
-}
 
 // Notification represents a notification about AuthDB change. Must be acked
 // once processed.
@@ -115,7 +109,7 @@ func (s *AuthService) oauthScopes() []string {
 	if s.OAuthScopes != nil {
 		return s.OAuthScopes
 	}
-	return oauthScopes
+	return scopes.CloudScopeSet()
 }
 
 // RequestAccess asks Auth Service to grant the caller (us) access to the AuthDB

@@ -22,6 +22,7 @@ import (
 	"cloud.google.com/go/pubsub"
 	"google.golang.org/api/option"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -127,7 +128,7 @@ func processMessage(ctx context.Context, coll *collector.Collector, msg *pubsub.
 
 // pubSubClient returns an authenticated Google PubSub client instance.
 func pubSubClient(ctx context.Context, cloudProject string) (*pubsub.Client, error) {
-	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, errors.Fmt("failed to get the token source: %w", err)
 	}

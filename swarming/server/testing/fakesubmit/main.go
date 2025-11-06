@@ -31,6 +31,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -62,10 +63,7 @@ func main() {
 
 func run(ctx context.Context) error {
 	creds, err := auth.NewAuthenticator(ctx, auth.SilentLogin, chromeinfra.SetDefaultAuthOptions(auth.Options{
-		Scopes: []string{
-			"https://www.googleapis.com/auth/cloud-platform",
-			"https://www.googleapis.com/auth/userinfo.email",
-		},
+		Scopes: scopes.CloudScopeSet(),
 	})).PerRPCCredentials()
 	if err != nil {
 		return err

@@ -26,8 +26,8 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -82,9 +82,9 @@ func TestGetRPCTransport(t *testing.T) {
 			_, err = transp.RoundTrip(makeReq("https://example.com"))
 			assert.Loosely(t, err, should.BeNil)
 
-			assert.Loosely(t, mock.calls[0], should.Resemble([]string{"https://www.googleapis.com/auth/userinfo.email"}))
+			assert.Loosely(t, mock.calls[0], should.Resemble([]string{scopes.Email}))
 			assert.Loosely(t, mock.reqs[0].Header, should.Resemble(http.Header{
-				"Authorization": {"Bearer as-self-token:https://www.googleapis.com/auth/userinfo.email"},
+				"Authorization": {"Bearer as-self-token:" + scopes.Email},
 			}))
 		})
 
@@ -157,9 +157,9 @@ func TestGetRPCTransport(t *testing.T) {
 			_, err = transp.RoundTrip(makeReq("https://example.com/some-path/sd"))
 			assert.Loosely(t, err, should.BeNil)
 
-			assert.Loosely(t, mock.calls[0], should.Resemble([]string{"https://www.googleapis.com/auth/userinfo.email"}))
+			assert.Loosely(t, mock.calls[0], should.Resemble([]string{scopes.Email}))
 			assert.Loosely(t, mock.reqs[0].Header, should.Resemble(http.Header{
-				"Authorization":         {"Bearer as-self-token:https://www.googleapis.com/auth/userinfo.email"},
+				"Authorization":         {"Bearer as-self-token:" + scopes.Email},
 				"X-Delegation-Token-V1": {"deleg_tok"},
 			}))
 		})
@@ -198,7 +198,7 @@ func TestGetRPCTransport(t *testing.T) {
 					db: &fakeDB{internalService: "example.com"},
 				}))
 				assert.Loosely(t, mock.reqs[0].Header, should.Resemble(http.Header{
-					"Authorization":  {"Bearer as-self-token:https://www.googleapis.com/auth/userinfo.email"},
+					"Authorization":  {"Bearer as-self-token:" + scopes.Email},
 					"X-Luci-Project": {"infra"},
 				}))
 			})
@@ -234,9 +234,9 @@ func TestGetRPCTransport(t *testing.T) {
 			_, err = transp.RoundTrip(makeReq("https://example.com"))
 			assert.Loosely(t, err, should.BeNil)
 
-			assert.Loosely(t, mock.calls[0], should.Resemble([]string{"https://www.googleapis.com/auth/userinfo.email"}))
+			assert.Loosely(t, mock.calls[0], should.Resemble([]string{scopes.Email}))
 			assert.Loosely(t, mock.reqs[0].Header, should.Resemble(http.Header{
-				"Authorization":         {"Bearer as-self-token:https://www.googleapis.com/auth/userinfo.email"},
+				"Authorization":         {"Bearer as-self-token:" + scopes.Email},
 				"X-Delegation-Token-V1": {"deleg_tok"},
 			}))
 		})
@@ -324,7 +324,7 @@ func TestGetRPCTransport(t *testing.T) {
 				MintAccessTokenForServiceAccount: func(ic context.Context, p MintAccessTokenParams) (*Token, error) {
 					assert.Loosely(t, p, should.Resemble(MintAccessTokenParams{
 						ServiceAccount: "abc@example.com",
-						Scopes:         []string{auth.OAuthScopeEmail},
+						Scopes:         []string{scopes.Email},
 						MinTTL:         2 * time.Minute,
 					}))
 					return &Token{
@@ -495,7 +495,7 @@ func TestTokenSource(t *testing.T) {
 			tok, err := ts.Token()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, tok, should.Resemble(&oauth2.Token{
-				AccessToken: "as-self-token:https://www.googleapis.com/auth/userinfo.email",
+				AccessToken: "as-self-token:" + scopes.Email,
 				TokenType:   "Bearer",
 			}))
 		})

@@ -20,6 +20,7 @@ import (
 
 	gcst "cloud.google.com/go/storage"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
@@ -85,7 +86,7 @@ func NewGlobalServices(ctx context.Context, bt *bigtable.Flags) (*GlobalServices
 		gsClientFactory: func(ctx context.Context, project string) (client gs.Client, e error) {
 			// TODO(vadimsh): Switch to AsProject + WithProject(project) once
 			// we are ready to roll out project scoped service accounts in Logdog.
-			transport, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+			transport, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 			if err != nil {
 				return nil, errors.Fmt("failed to create Google Storage RPC transport: %w", err)
 			}

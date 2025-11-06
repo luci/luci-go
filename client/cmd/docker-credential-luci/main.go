@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
@@ -50,10 +51,7 @@ func main() {
 	ctx := gologger.StdConfig.Use(context.Background())
 
 	opts := chromeinfra.DefaultAuthOptions()
-	opts.Scopes = []string{
-		auth.OAuthScopeEmail,
-		"https://www.googleapis.com/auth/cloud-platform",
-	}
+	opts.Scopes = scopes.CloudScopeSet()
 	auth := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 
 	// We only use the command and ignore the payload in stdin. Still need to

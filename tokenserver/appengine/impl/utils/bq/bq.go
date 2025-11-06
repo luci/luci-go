@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -92,7 +93,7 @@ type Inserter struct {
 
 // NewInserter constructs an instance of Inserter.
 func NewInserter(ctx context.Context, projectID string) (*Inserter, error) {
-	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, err
 	}

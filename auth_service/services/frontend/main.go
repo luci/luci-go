@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -99,7 +100,7 @@ func main() {
 			},
 			// Backward compatibility for the RPC Explorer and old clients.
 			&auth.GoogleOAuth2Method{
-				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+				Scopes: []string{scopes.Email},
 			},
 			// Cookie auth is used by the Web UI. When this method is used, we also
 			// check the XSRF token to be really sure it is the Web UI that called
@@ -168,7 +169,7 @@ func main() {
 					},
 					// Backward compatibility for the RPC Explorer and old clients.
 					&auth.GoogleOAuth2Method{
-						Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+						Scopes: []string{scopes.Email},
 					},
 				),
 				authorizeAPIAccess(groups),

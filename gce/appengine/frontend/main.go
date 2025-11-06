@@ -24,6 +24,7 @@ import (
 
 	gaeserver "go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	"go.chromium.org/luci/auth/scopes"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/config/server/cfgmodule"
@@ -51,7 +52,7 @@ func main() {
 		UnaryServerInterceptor: grpcutil.ChainUnaryServerInterceptors(
 			grpcmon.UnaryServerInterceptor,
 			auth.AuthenticatingInterceptor([]auth.Method{
-				&gaeserver.OAuth2Method{Scopes: []string{gaeserver.EmailScope}},
+				&gaeserver.OAuth2Method{Scopes: []string{scopes.Email}},
 			}).Unary(),
 		),
 		// TODO(crbug/1082369): Remove this workaround once non-standard field masks

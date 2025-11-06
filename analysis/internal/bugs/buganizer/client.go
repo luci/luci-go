@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/oauth"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 	issuetrackerclient "go.chromium.org/luci/third_party/google.golang.org/google/devtools/issuetracker/v1"
@@ -73,7 +74,7 @@ func NewRPCClient(ctx context.Context) (*RPCClient, error) {
 	}
 
 	perRPCCreds, err := oauth.NewApplicationDefault(context.Background(),
-		"https://www.googleapis.com/auth/cloud-platform",
+		scopes.CloudPlatform,
 		buganizerEndpointOAuthScope.(string),
 	)
 	if err != nil {

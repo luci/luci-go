@@ -28,6 +28,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/auth/scopes"
 	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/server/cfgmodule"
@@ -292,7 +293,7 @@ func main() {
 		// Some legacy API endpoints that are still in use as of Aug 2025.
 		legacyApiMW := router.MiddlewareChain{
 			auth.Authenticate(&auth.GoogleOAuth2Method{
-				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+				Scopes: []string{scopes.Email},
 			}),
 			rpcs.LegacyMiddleware(cfg),
 		}

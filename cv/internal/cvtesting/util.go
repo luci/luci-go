@@ -34,6 +34,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
@@ -317,7 +318,7 @@ func (t *Test) installDSReal(ctx context.Context, testingT testing.TB) (context.
 	}
 
 	at := auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
-		Scopes: serverauth.CloudOAuthScopes,
+		Scopes: scopes.CloudScopeSet(),
 	})
 	ts, err := at.TokenSource()
 	if err != nil {

@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"time"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -43,7 +44,7 @@ func gitilesHistory(ctx context.Context, luciProject, gerritHost, gerritProject,
 
 	opts := []auth.RPCOption{
 		auth.WithProject(luciProject),
-		auth.WithScopes(gitiles.OAuthScope),
+		auth.WithScopes(scopes.GerritScopeSet()...),
 	}
 	transport, err := auth.GetRPCTransport(ctx, auth.AsProject, opts...)
 	if err != nil {

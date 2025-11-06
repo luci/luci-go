@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcmon"
 
@@ -118,7 +119,7 @@ func (m *bqlogModule) Initialize(ctx context.Context, host module.Host, opts mod
 	var writer BigQueryWriter
 	if m.opts.Dataset != "" {
 		// Create the production writer that writes to the BQ for real.
-		creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+		creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 		if err != nil {
 			return nil, errors.Fmt("failed to initialize credentials: %w", err)
 		}

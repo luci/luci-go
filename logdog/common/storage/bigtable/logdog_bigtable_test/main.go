@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
@@ -97,7 +98,7 @@ func mainImpl(c context.Context, defaultAuthOpts auth.Options, args []string) in
 		Level: log.Warning,
 	}
 
-	defaultAuthOpts.Scopes = append([]string{auth.OAuthScopeEmail}, bigtable.StorageScopes...)
+	defaultAuthOpts.Scopes = append([]string{scopes.Email}, bigtable.StorageScopes...)
 	var authFlags authcli.Flags
 
 	app := application{

@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -54,7 +55,7 @@ func TestRpcUtils(t *testing.T) {
 		t.Run("empty project", func(t *ftt.Test) {
 			req := &minter.MintProjectTokenRequest{
 				LuciProject:         "",
-				OauthScope:          []string{"https://www.googleapis.com/auth/cloud-platform"},
+				OauthScope:          []string{scopes.CloudPlatform},
 				MinValidityDuration: 1800,
 			}
 			err := performValidation(ctx, req)
@@ -64,7 +65,7 @@ func TestRpcUtils(t *testing.T) {
 		t.Run("negative validity", func(t *ftt.Test) {
 			req := &minter.MintProjectTokenRequest{
 				LuciProject:         "foo-project",
-				OauthScope:          []string{"https://www.googleapis.com/auth/cloud-platform"},
+				OauthScope:          []string{scopes.CloudPlatform},
 				MinValidityDuration: -1800,
 			}
 			err := performValidation(ctx, req)
@@ -74,7 +75,7 @@ func TestRpcUtils(t *testing.T) {
 		t.Run("normalize validity", func(t *ftt.Test) {
 			req := &minter.MintProjectTokenRequest{
 				LuciProject:         "foo-project",
-				OauthScope:          []string{"https://www.googleapis.com/auth/cloud-platform"},
+				OauthScope:          []string{scopes.CloudPlatform},
 				MinValidityDuration: 0,
 			}
 			err := performValidation(ctx, req)
@@ -85,7 +86,7 @@ func TestRpcUtils(t *testing.T) {
 		t.Run("malformed tags", func(t *ftt.Test) {
 			req := &minter.MintProjectTokenRequest{
 				LuciProject:         "foo-project",
-				OauthScope:          []string{"https://www.googleapis.com/auth/cloud-platform"},
+				OauthScope:          []string{scopes.CloudPlatform},
 				MinValidityDuration: 0,
 				AuditTags:           []string{"malformed"},
 			}
@@ -107,7 +108,7 @@ func TestRpcUtils(t *testing.T) {
 		t.Run("returns nil for valid request", func(t *ftt.Test) {
 			req := &minter.MintProjectTokenRequest{
 				LuciProject:         "test-project",
-				OauthScope:          []string{"https://www.googleapis.com/auth/cloud-platform"},
+				OauthScope:          []string{scopes.CloudPlatform},
 				MinValidityDuration: 3600,
 			}
 			err := performValidation(ctx, req)

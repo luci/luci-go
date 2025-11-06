@@ -21,6 +21,7 @@ import (
 
 	gaeserver "go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
@@ -50,7 +51,7 @@ func main() {
 		UnaryServerInterceptor: grpcutil.ChainUnaryServerInterceptors(
 			grpcmon.UnaryServerInterceptor,
 			auth.AuthenticatingInterceptor([]auth.Method{
-				&gaeserver.OAuth2Method{Scopes: []string{gaeserver.EmailScope}},
+				&gaeserver.OAuth2Method{Scopes: []string{scopes.Email}},
 			}).Unary(),
 		),
 	}

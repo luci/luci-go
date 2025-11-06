@@ -30,6 +30,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -42,7 +43,7 @@ import (
 
 // RBEConn creates a gRPC connection to RBE authenticated as self.
 func RBEConn(ctx context.Context) (*grpc.ClientConn, error) {
-	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +54,7 @@ func RBEConn(ctx context.Context) (*grpc.ClientConn, error) {
 // RBEConnWithProject creates a gRPC connection to RBE authenticated by a
 // project scoped account.
 func RBEConnWithProject(ctx context.Context, project string) (*grpc.ClientConn, error) {
-	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsProject, auth.WithProject(project), auth.WithScopes(auth.CloudOAuthScopes...))
+	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsProject, auth.WithProject(project), auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, err
 	}

@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/auth/integration/gcemeta"
 	"go.chromium.org/luci/auth/integration/localauth"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -199,11 +200,8 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 			Generator: &FakeRPCTokenGenerator{
 				Email: "server@servertest.example.com",
 			},
-			Email: "server@servertest.example.com",
-			Scopes: []string{
-				"https://www.googleapis.com/auth/cloud-platform",
-				"https://www.googleapis.com/auth/userinfo.email",
-			},
+			Email:            "server@servertest.example.com",
+			Scopes:           scopes.CloudScopeSet(),
 			MinTokenLifetime: 15 * time.Minute,
 		}
 		metaHost, err := metaSrv.Start(ctx)

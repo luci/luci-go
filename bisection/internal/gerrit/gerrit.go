@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"time"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -57,7 +58,7 @@ func newGerritClient(ctx context.Context, host string) (gerritpb.GerritClient, e
 		return mockClient, nil
 	}
 
-	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(gerrit.OAuthScope))
+	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(scopes.GerritScopeSet()...))
 	if err != nil {
 		return nil, err
 	}

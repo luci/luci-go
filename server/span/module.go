@@ -25,6 +25,7 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcmon"
 
@@ -126,7 +127,7 @@ func (m *spannerModule) Initialize(ctx context.Context, host module.Host, opts m
 	}
 
 	// Credentials with Cloud scope.
-	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, errors.Fmt("failed to get PerRPCCredentials: %w", err)
 	}

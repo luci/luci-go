@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"time"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
@@ -132,7 +133,7 @@ func main() {
 		srv.SetRPCAuthMethods([]auth.Method{
 			// The default method used by majority of clients.
 			&auth.GoogleOAuth2Method{
-				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+				Scopes: []string{scopes.Email},
 			},
 			// For authenticating calls from Gerrit plugins.
 			&gerritauth.Method,

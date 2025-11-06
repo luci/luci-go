@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -376,7 +377,7 @@ func (m TaskManager) getGitilesClient(c context.Context, ctl task.ControllerRead
 		return r, nil
 	}
 
-	httpClient, err := ctl.GetClient(c, auth.WithScopes(gitiles.OAuthScope))
+	httpClient, err := ctl.GetClient(c, auth.WithScopes(scopes.GerritScopeSet()...))
 	if err != nil {
 		return nil, err
 	}

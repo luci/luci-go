@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"time"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
@@ -54,7 +55,7 @@ func (f *coordinatorFlags) validate() error {
 
 // coordinator instantiates the coordinator client.
 func coordinator(ctx context.Context, f *coordinatorFlags) (*bundleServicesClient.Client, error) {
-	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, errors.Fmt("failed to get the token source: %w", err)
 	}

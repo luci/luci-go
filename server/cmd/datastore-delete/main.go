@@ -38,6 +38,7 @@ import (
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -80,17 +81,12 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	scopes := []string{
-		"https://www.googleapis.com/auth/cloud-platform",
-		"https://www.googleapis.com/auth/userinfo.email",
-	}
-
 	ts, err := auth.NewAuthenticator(ctx, auth.SilentLogin, chromeinfra.SetDefaultAuthOptions(auth.Options{
-		Scopes: scopes,
+		Scopes: scopes.CloudScopeSet(),
 	})).TokenSource()
 	switch {
 	case err == auth.ErrLoginRequired:
-		return errors.Fmt("Need to login. Run `luci-auth login -scopes \"%s\"`", strings.Join(scopes, " "))
+		return errors.Fmt("Need to login. Run `luci-auth login -scopes \"%s\"`", strings.Join(scopes.CloudScopeSet(), " "))
 	case err != nil:
 		return errors.Fmt("failed to get token source: %w", err)
 	}

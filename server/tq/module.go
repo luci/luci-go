@@ -19,6 +19,7 @@ import (
 	"flag"
 	"strings"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/logging"
@@ -342,7 +343,7 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 	var submitter Submitter
 	if opts.Prod {
 		// When running for real use real services.
-		creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+		creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 		if err != nil {
 			return nil, errors.Fmt("failed to get PerRPCCredentials: %w", err)
 		}

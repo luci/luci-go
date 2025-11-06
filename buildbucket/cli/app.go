@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
-	"go.chromium.org/luci/common/api/gerrit"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/flag/fixflagpos"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -37,8 +37,8 @@ type Params struct {
 // Ignores p.Auth.Scopes.
 func application(p Params) *cli.Application {
 	p.Auth.Scopes = []string{
-		auth.OAuthScopeEmail,
-		gerrit.OAuthScope,
+		scopes.Email,
+		scopes.Gerrit,
 	}
 
 	return &cli.Application{

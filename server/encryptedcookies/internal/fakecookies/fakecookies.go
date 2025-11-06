@@ -31,6 +31,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -361,7 +362,7 @@ func (m *AuthMethod) serverUserInfo(ctx context.Context) (*auth.User, error) {
 	}
 
 	// See the comment in serverSelfSession.AccessToken regarding scopes.
-	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, err
 	}
@@ -417,13 +418,13 @@ type serverSelfSession struct{}
 
 func (serverSelfSession) AccessToken(ctx context.Context) (*oauth2.Token, error) {
 	// Strictly speaking we need only userinfo.email scope, but its refresh token
-	// might not be present locally. But a token with CloudOAuthScopes (which
-	// includes the userinfo.email scope) is guaranteed to be present, since
-	// the server checks for it when it starts.
+	// might not be present locally. But a token with scopes.CloudScopeSet()
+	// (which includes the userinfo.email scope) is guaranteed to be present,
+	// since the server checks for it when it starts.
 	ts, err := auth.GetTokenSource(
 		ctx,
 		auth.AsSelf,
-		auth.WithScopes(auth.CloudOAuthScopes...),
+		auth.WithScopes(scopes.CloudScopeSet()...),
 	)
 	if err != nil {
 		return nil, err

@@ -21,6 +21,7 @@ import (
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/option"
 
+	"go.chromium.org/luci/auth/scopes"
 	lucibq "go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/server/auth"
 )
@@ -45,7 +46,7 @@ func (b *bqClientImpl) Insert(ctx context.Context, dataset string, table string,
 
 // NewBqClient creates a new BqClient.
 func NewBqClient(ctx context.Context, cloudProject string) (BqClient, error) {
-	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, err
 	}

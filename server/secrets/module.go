@@ -22,6 +22,7 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/grpc/grpcmon"
@@ -127,7 +128,7 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 		m.opts.RootSecret = "devsecret-text://phony-root-secret-do-not-depend-on"
 	}
 
-	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, errors.Fmt("failed to initialize the token source: %w", err)
 	}

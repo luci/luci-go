@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -38,9 +39,7 @@ import (
 
 // List of OAuth scopes to use for token sent to CRL endpoint if config doesn't
 // specify 'oauth_scopes' field.
-var crlFetchDefaultScopes = []string{
-	"https://www.googleapis.com/auth/userinfo.email",
-}
+var crlFetchDefaultScopes = []string{scopes.Email}
 
 // FetchCRLRPC implements CertificateAuthorities.FetchCRL RPC method.
 type FetchCRLRPC struct {

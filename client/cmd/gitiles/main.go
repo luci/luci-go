@@ -21,8 +21,8 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/client/versioncli"
-	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
@@ -31,7 +31,7 @@ import (
 const version = "0.1"
 
 func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
-	defaultAuthOpts.Scopes = []string{auth.OAuthScopeEmail, gitiles.OAuthScope}
+	defaultAuthOpts.Scopes = scopes.GerritScopeSet()
 	return &subcommands.DefaultApplication{
 		Name:  "gitiles",
 		Title: "gitiles client",

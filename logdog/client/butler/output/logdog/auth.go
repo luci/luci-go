@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/lucictx"
 )
@@ -69,10 +70,7 @@ func RealmsAwareAuth(ctx context.Context) (Auth, error) {
 		return nil, errors.Fmt("could not switch to 'system' account in LUCI_CONTEXT: %w", err)
 	}
 	sysAuth := auth.NewAuthenticator(sysCtx, auth.SilentLogin, auth.Options{
-		Scopes: []string{
-			auth.OAuthScopeEmail,
-			"https://www.googleapis.com/auth/cloud-platform",
-		},
+		Scopes:    scopes.CloudScopeSet(),
 		MonitorAs: "logdog/system",
 	})
 
@@ -85,7 +83,7 @@ func RealmsAwareAuth(ctx context.Context) (Auth, error) {
 		project: project,
 		realm:   realm,
 		rpc: auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
-			Scopes:    []string{auth.OAuthScopeEmail},
+			Scopes:    []string{scopes.Email},
 			MonitorAs: "logdog/rpc",
 		}),
 		pubSub: sysAuth,

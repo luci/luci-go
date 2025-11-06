@@ -26,6 +26,8 @@ import (
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/urlfetch"
+
+	"go.chromium.org/luci/auth/scopes"
 )
 
 var devAccountCache struct {
@@ -59,7 +61,7 @@ func developerAccount(gaeCtx context.Context) (string, error) {
 // email.
 func fetchDevAccount(gaeCtx context.Context) (string, error) {
 	// Grab the developer's token from devserver.
-	tok, _, err := appengine.AccessToken(gaeCtx, "https://www.googleapis.com/auth/userinfo.email")
+	tok, _, err := appengine.AccessToken(gaeCtx, scopes.Email)
 	if err != nil {
 		return "", err
 	}

@@ -68,6 +68,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/text"
@@ -95,10 +96,7 @@ import (
 var userError = errtag.Make("user error", true)
 
 var authOpts = chromeinfra.SetDefaultAuthOptions(auth.Options{
-	Scopes: []string{
-		"https://www.googleapis.com/auth/cloud-platform",
-		"https://www.googleapis.com/auth/userinfo.email",
-	},
+	Scopes: scopes.CloudScopeSet(),
 })
 
 type flagState string

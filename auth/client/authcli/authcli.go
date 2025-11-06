@@ -101,6 +101,7 @@ import (
 	"go.chromium.org/luci/auth/authctx"
 	"go.chromium.org/luci/auth/credhelperpb"
 	"go.chromium.org/luci/auth/internal"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/logging"
@@ -220,7 +221,7 @@ func (fl *Flags) Options() (auth.Options, error) {
 		case fl.scopesIAM:
 			opts.Scopes = append([]string(nil), scopesIAM...)
 		case fl.scopesContext:
-			opts.Scopes = append([]string(nil), scopesContext...)
+			opts.Scopes = append([]string(nil), scopes.ContextScopeSet()...)
 		default:
 			opts.Scopes = strings.Split(fl.scopes, " ")
 		}
@@ -267,23 +268,10 @@ const (
 )
 
 // List of scopes requested by `luci-auth login` by default.
-var scopesDefault = []string{
-	auth.OAuthScopeEmail,
-}
+var scopesDefault = []string{scopes.Email}
 
 // List of scopes needed to impersonate accounts via Cloud IAM.
-var scopesIAM = []string{
-	auth.OAuthScopeIAM,
-}
-
-// List of scopes needed to run `luci-auth context`. It correlates with a list
-// of requested features in authctx.Context{...} construction in contextRun.
-var scopesContext = []string{
-	"https://www.googleapis.com/auth/cloud-platform",
-	"https://www.googleapis.com/auth/firebase",
-	"https://www.googleapis.com/auth/gerritcodereview",
-	"https://www.googleapis.com/auth/userinfo.email",
-}
+var scopesIAM = []string{scopes.IAM}
 
 type commandRunBase struct {
 	subcommands.CommandRunBase
@@ -339,7 +327,7 @@ func (c *commandRunBase) askToLogin(opts auth.Options, forContext bool) {
 		switch {
 		case isSameScopes(opts.Scopes, scopesIAM):
 			loginFlags = []string{"-scopes-iam"}
-		case isSameScopes(opts.Scopes, scopesContext):
+		case isSameScopes(opts.Scopes, scopes.ContextScopeSet()):
 			loginFlags = []string{"-scopes-context"}
 		case !isSameScopes(opts.Scopes, c.flags.defaults.Scopes):
 			loginFlags = []string{"-scopes", fmt.Sprintf("%q", strings.Join(opts.Scopes, " "))}
@@ -721,7 +709,7 @@ func SubcommandContext(opts auth.Options, name string) *subcommands.Command {
 // SubcommandContextWithParams returns subcommand.Command that can be used to
 // setup new LUCI authentication context for a process tree.
 func SubcommandContextWithParams(params CommandParams) *subcommands.Command {
-	params.AuthOptions.Scopes = append([]string(nil), scopesContext...)
+	params.AuthOptions.Scopes = scopes.ContextScopeSet()
 	return &subcommands.Command{
 		Advanced:  params.Advanced,
 		UsageLine: fmt.Sprintf("%s [flags] [--] <bin> [args]", params.Name),
@@ -808,7 +796,7 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 
 	// Now that there exists a cached token for requested options, we can launch
 	// an auth context with all bells and whistles. If you enable or disable
-	// a feature here, make sure to adjust scopesContext as well.
+	// a feature here, make sure to adjust scopes.ContextScopeSet() as well.
 	authCtx := authctx.Context{
 		ID:                  "luci-auth",
 		Options:             opts,

@@ -48,6 +48,7 @@ import (
 
 	"go.chromium.org/luci/auth/credhelperpb"
 	"go.chromium.org/luci/auth/internal"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -93,13 +94,6 @@ var (
 	// false (i.e. the caller wants access tokens), but the authentication method
 	// doesn't actually support access tokens.
 	ErrNoAccessToken = errors.New("access tokens are not supported in this configuration")
-)
-
-// Some known Google API OAuth scopes.
-const (
-	OAuthScopeEmail  = "https://www.googleapis.com/auth/userinfo.email"
-	OAuthScopeIAM    = "https://www.googleapis.com/auth/iam"
-	OAuthScopeReAuth = "https://www.googleapis.com/auth/accounts.reauth"
 )
 
 const (
@@ -302,7 +296,7 @@ type Options struct {
 	// When setting to true, make sure to specify a correct Audience if the
 	// default one is not appropriate.
 	//
-	// When using UserCredentialsMethod implicitly appends OAuthScopeEmail to the
+	// When using UserCredentialsMethod implicitly appends userinfo.email to the
 	// list of OAuth scopes, since this scope is needed to get ID tokens in this
 	// mode.
 	//
@@ -313,7 +307,7 @@ type Options struct {
 	//
 	// Ignored when using ID tokens.
 	//
-	// Default: [OAuthScopeEmail].
+	// Default: [scopes.Email].
 	Scopes []string
 
 	// Audience is the audience to put into ID tokens.
@@ -342,17 +336,17 @@ type Options struct {
 	//
 	// If `ActViaLUCIRealm` is not set, the "acting" API is Google Cloud IAM.
 	// The Actor credentials will internally be used to generate access tokens
-	// with IAM scope (see `OAuthScopeIAM`). These tokens will then be used to
-	// call `generateAccessToken` Cloud IAM RPC to obtain the final tokens that
-	// belong to the service account `ActAsServiceAccount`. This requires the
-	// Actor to have "iam.serviceAccounts.getAccessToken" Cloud IAM permission,
-	// which is usually granted via "Service Account Token Creator" IAM role.
+	// with IAM scope. These tokens will then be used to call generateAccessToken
+	// Cloud IAM RPC to obtain the final tokens that belong to the service account
+	//  `ActAsServiceAccount`. This requires the Actor to have
+	// "iam.serviceAccounts.getAccessToken" Cloud IAM permission, which is usually
+	//  granted via "Service Account Token Creator" IAM role.
 	//
 	// If `ActViaLUCIRealm` is set, the "acting" API is the LUCI Token Server.
 	// The Actor credentials will internally be used to generate access tokens
-	// with just email scope (see `OAuthScopeEmail`). These tokens will then be
-	// used to call `MintServiceAccountToken` RPC. This requires the following
-	// LUCI permissions in the realm specified by `ActViaLUCIRealm`:
+	// with just email scope. These tokens will then be used to call
+	// `MintServiceAccountToken` RPC. This requires the following LUCI permissions
+	// in the realm specified by `ActViaLUCIRealm`:
 	//  1. The Actor needs "luci.serviceAccounts.mintToken" permission.
 	//  2. The target service account needs "luci.serviceAccounts.existInRealm"
 	//     permission.
@@ -561,7 +555,7 @@ type Options struct {
 func (opts *Options) PopulateDefaults() {
 	// Set the default scope, sort and dedup scopes.
 	if len(opts.Scopes) == 0 {
-		opts.Scopes = []string{OAuthScopeEmail} // also implies "openid"
+		opts.Scopes = []string{scopes.Email} // also implies "openid"
 	}
 	opts.Scopes = normalizeScopes(opts.Scopes)
 
@@ -1242,29 +1236,29 @@ func (a *Authenticator) ensureInitialized() error {
 	// the API used to generate target auth tokens. In non-actor mode, the base
 	// token is also the target auth token, so scope it to whatever scopes were
 	// requested via Options.
-	var scopes []string
+	var tokenScopes []string
 	var useIDTokens bool
 	switch a.actingMode() {
 	case actingModeNone:
-		scopes = a.opts.Scopes
+		tokenScopes = a.opts.Scopes
 		useIDTokens = a.opts.UseIDTokens
 		// To get ID tokens when using end-user credentials we need userinfo scope.
 		if useIDTokens && a.opts.Method == UserCredentialsMethod {
-			if !slices.Contains(scopes, OAuthScopeEmail) {
-				scopes = normalizeScopes(append(scopes, OAuthScopeEmail))
+			if !slices.Contains(tokenScopes, scopes.Email) {
+				tokenScopes = normalizeScopes(append(tokenScopes, scopes.Email))
 			}
 		}
 	case actingModeIAM:
-		scopes = []string{OAuthScopeIAM}
+		tokenScopes = []string{scopes.IAM}
 		useIDTokens = false // IAM uses OAuth tokens
 	case actingModeLUCI:
-		scopes = []string{OAuthScopeEmail}
+		tokenScopes = []string{scopes.Email}
 		useIDTokens = false // LUCI currently uses OAuth tokens
 	default:
 		panic("impossible")
 	}
 	a.baseToken = &tokenWithProvider{}
-	a.baseToken.provider, a.err = makeBaseTokenProvider(a.ctx, a.opts, scopes, useIDTokens)
+	a.baseToken.provider, a.err = makeBaseTokenProvider(a.ctx, a.opts, tokenScopes, useIDTokens)
 	if a.err != nil {
 		return a.err // note: this can be ErrInsufficientAccess
 	}

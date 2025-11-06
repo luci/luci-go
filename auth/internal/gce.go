@@ -28,6 +28,7 @@ import (
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/oauth2"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -91,7 +92,7 @@ func retryParams() retry.Iterator {
 }
 
 // attemptInit attempts to initialize GCE token provider.
-func attemptInit(ctx context.Context, account string, attachScopes bool, scopes []string, audience string) (TokenProvider, error) {
+func attemptInit(ctx context.Context, account string, attachScopes bool, tokenScopes []string, audience string) (TokenProvider, error) {
 	// This mutex is used to avoid hitting GKE metadata server concurrently if
 	// we have a stampede of goroutines. It doesn't actually protect any shared
 	// state in the current process.
@@ -137,8 +138,8 @@ func attemptInit(ctx context.Context, account string, attachScopes bool, scopes 
 			return nil, transient.Tag.Apply(err)
 		}
 		availableSet := stringset.NewFromSlice(availableScopes...)
-		if !availableSet.Has("https://www.googleapis.com/auth/cloud-platform") {
-			for _, requested := range scopes {
+		if !availableSet.Has(scopes.CloudPlatform) {
+			for _, requested := range tokenScopes {
 				if !availableSet.Has(requested) {
 					logging.Warningf(ctx, "GCE service account %q doesn't have required scope %q (all scopes: %q)", account, requested, availableScopes)
 					return nil, ErrInsufficientAccess
@@ -150,12 +151,12 @@ func attemptInit(ctx context.Context, account string, attachScopes bool, scopes 
 	return &gceTokenProvider{
 		account:      account,
 		email:        email,
-		scopes:       scopes,
+		scopes:       tokenScopes,
 		audience:     audience,
 		attachScopes: attachScopes,
 		cacheKey: CacheKey{
 			Key:    fmt.Sprintf("gce/%s", account),
-			Scopes: scopes,
+			Scopes: tokenScopes,
 		},
 	}, nil
 }

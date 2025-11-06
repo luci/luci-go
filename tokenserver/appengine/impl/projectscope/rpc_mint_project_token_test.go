@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -91,7 +92,7 @@ func TestMintProjectToken(t *testing.T) {
 			t.Run("empty project", func(t *ftt.Test) {
 				req := &minter.MintProjectTokenRequest{
 					LuciProject:         "",
-					OauthScope:          []string{"https://www.googleapis.com/auth/cloud-platform"},
+					OauthScope:          []string{scopes.CloudPlatform},
 					MinValidityDuration: 1800,
 				}
 				_, err := rpc.MintProjectToken(ctx, req)
@@ -112,7 +113,7 @@ func TestMintProjectToken(t *testing.T) {
 			t.Run("returns nil for valid request", func(t *ftt.Test) {
 				req := &minter.MintProjectTokenRequest{
 					LuciProject:         "test-project",
-					OauthScope:          []string{"https://www.googleapis.com/auth/cloud-platform"},
+					OauthScope:          []string{scopes.CloudPlatform},
 					MinValidityDuration: 3600,
 				}
 				_, err := rpc.MintProjectToken(ctx, req)
@@ -126,7 +127,7 @@ func TestMintProjectToken(t *testing.T) {
 
 			req := &minter.MintProjectTokenRequest{
 				LuciProject: "service-project",
-				OauthScope:  []string{"https://www.googleapis.com/auth/cloud-platform"},
+				OauthScope:  []string{scopes.CloudPlatform},
 			}
 			resp, err := rpc.MintProjectToken(ctx, req)
 			assert.Loosely(t, err, should.BeNil)

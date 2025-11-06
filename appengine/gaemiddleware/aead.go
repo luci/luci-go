@@ -33,6 +33,7 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/appengine"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -128,7 +129,7 @@ func (s *aeadCachedState) refresh(ctx context.Context) error {
 }
 
 func fetchSecret(ctx context.Context, project, secret string) ([]byte, error) {
-	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, errors.Fmt("failed to get OAuth2 token source: %w", err)
 	}

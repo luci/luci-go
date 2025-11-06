@@ -15,7 +15,7 @@
 package coordinator
 
 import (
-	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/grpc/prpc"
 
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
@@ -25,7 +25,7 @@ import (
 var (
 	// Scopes is the set of scopes needed for the Coordinator user endpoints.
 	Scopes = []string{
-		auth.OAuthScopeEmail,
+		scopes.Email,
 	}
 )
 

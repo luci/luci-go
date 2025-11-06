@@ -29,6 +29,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -89,7 +90,7 @@ func Register(
 	exportToPubSub stringset.Set,
 	pubSubTopicPrefix string,
 ) error {
-	ts, err := auth.GetTokenSource(srv.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	ts, err := auth.GetTokenSource(srv.Context, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return errors.Fmt("failed to create TokenSource: %w", err)
 	}

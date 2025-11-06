@@ -31,6 +31,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/bqlog"
@@ -152,8 +153,8 @@ func (c *client) Init(ctx context.Context) error {
 
 	if c.client == nil {
 		tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(
-			"https://www.googleapis.com/auth/cloud-platform",
-			"https://www.googleapis.com/auth/bcid_verify",
+			scopes.CloudPlatform,
+			scopes.BCIDVerify,
 		))
 		if err != nil {
 			return fmt.Errorf("failed to get authenticating transport: %w", err)

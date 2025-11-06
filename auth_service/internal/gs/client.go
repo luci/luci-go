@@ -24,6 +24,7 @@ import (
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/option"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -63,7 +64,7 @@ type gsClient struct {
 // NewGSClient creates a new production Google Storage client; i.e. this
 // client is actually Google Storage, not a mock.
 func NewGSClient(ctx context.Context) (*gsClient, error) {
-	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, errors.Fmt("aborting - failed setting up authenticated requests to Google Storage: %w", err)
 	}

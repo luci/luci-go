@@ -23,6 +23,7 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/auth/scopes"
 	lucibq "go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -55,7 +56,7 @@ type Client interface {
 // The specified cloud project should be the one, in the scope of which this
 // code is running, e.g. "luci-change-verifier-dev".
 func NewProdClient(ctx context.Context, cloudProject string) (*prodClient, error) {
-	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, err
 	}

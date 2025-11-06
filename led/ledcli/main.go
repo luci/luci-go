@@ -22,11 +22,10 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/client/versioncli"
-	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/cli"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -75,10 +74,7 @@ func Main(ks job.KitchenSupport) {
 	}
 
 	authOpts := chromeinfra.DefaultAuthOptions()
-	authOpts.Scopes = []string{
-		auth.OAuthScopeEmail,
-		gerrit.OAuthScope,
-	}
+	authOpts.Scopes = scopes.GerritScopeSet()
 	defaults := cmdBaseOptions{
 		authOpts:       authOpts,
 		kitchenSupport: ks,

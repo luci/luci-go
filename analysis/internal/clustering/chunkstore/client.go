@@ -27,6 +27,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server/auth"
@@ -50,7 +51,7 @@ type Client struct {
 // GCS bucket as the backing store.
 func NewClient(ctx context.Context, bucket string) (*Client, error) {
 	// Credentials with Cloud scope.
-	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, errors.Fmt("failed to get PerRPCCredentials: %w", err)
 	}

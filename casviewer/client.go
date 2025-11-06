@@ -21,6 +21,7 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -122,7 +123,7 @@ func clientCache(c context.Context) (*ClientCache, error) {
 // newClient connects to the instance of remote execution service, and returns
 // a client.
 func newClient(ctx context.Context, instance string) (*client.Client, error) {
-	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, errors.Fmt("failed to get credentials: %w", err)
 	}

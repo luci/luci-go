@@ -24,6 +24,7 @@ import (
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/option"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/server/auth"
@@ -53,7 +54,7 @@ func NewStorageClient(ctx context.Context, luciProject string) (Client, error) {
 		return testClient, nil
 	}
 	requiredScopes := []string{storage.ScopeReadOnly}
-	requiredScopes = append(requiredScopes, auth.CloudOAuthScopes...)
+	requiredScopes = append(requiredScopes, scopes.CloudScopeSet()...)
 	t, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(luciProject), auth.WithScopes(requiredScopes...))
 	if err != nil {
 		return nil, err

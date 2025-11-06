@@ -30,6 +30,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth/scopes"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/strpair"
@@ -75,7 +76,7 @@ type PubSubNotification struct {
 
 // NewPubSubNotifier initializes a PubSubNotifier.
 func NewPubSubNotifier(ctx context.Context, cloudProj string) (*PubSubNotifier, error) {
-	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, errors.Fmt("failed to get AsSelf credentails: %w", err)
 	}

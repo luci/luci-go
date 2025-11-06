@@ -44,6 +44,7 @@ import (
 	clientauth "go.chromium.org/luci/auth"
 	clientauthtest "go.chromium.org/luci/auth/integration/authtest"
 	"go.chromium.org/luci/auth/integration/localauth"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -339,7 +340,7 @@ func TestServer(t *testing.T) {
 			assert.Loosely(t, call("A B"), should.Equal("fake_token_1")) // reused the cached token
 
 			// 0-th token is generated during startup in initAuth() to test creds.
-			assert.Loosely(t, srv.tokens.TokenScopes("fake_token_0"), should.Match(auth.CloudOAuthScopes))
+			assert.Loosely(t, srv.tokens.TokenScopes("fake_token_0"), should.Match(scopes.CloudScopeSet()))
 			// Tokens generated via calls above.
 			assert.Loosely(t, srv.tokens.TokenScopes("fake_token_1"), should.Match([]string{"A", "B"}))
 			assert.Loosely(t, srv.tokens.TokenScopes("fake_token_2"), should.Match([]string{"B", "C"}))

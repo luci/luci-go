@@ -27,6 +27,7 @@ import (
 	"google.golang.org/api/option"
 
 	luciauth "go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/iam"
@@ -47,7 +48,7 @@ func GetSelfSignedJWTTransport(ctx context.Context, aud string) (http.RoundTripp
 	}
 	serviceAccount := info.ServiceAccountName
 	return luciauth.NewModifyingTransport(srvhttp.DefaultTransport(ctx), func(req *http.Request) error {
-		ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+		ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 		if err != nil {
 			return fmt.Errorf("failed to get OAuth2 token source: %w", err)
 		}
@@ -60,7 +61,7 @@ func GetSelfSignedJWTTransport(ctx context.Context, aud string) (http.RoundTripp
 		now := clock.Now(ctx).UTC()
 		cs := &iam.ClaimSet{
 			Iss:   serviceAccount,
-			Scope: strings.Join(auth.CloudOAuthScopes, " "),
+			Scope: strings.Join(scopes.CloudScopeSet(), " "),
 			Aud:   aud,
 			Exp:   now.Add(2 * time.Minute).Unix(),
 			Iat:   now.Unix(),

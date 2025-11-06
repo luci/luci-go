@@ -21,6 +21,7 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/api/googleapi"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/common/retry/transient"
 )
@@ -54,7 +55,7 @@ func (defaultActorTokensProvider) GenerateIDToken(ctx context.Context, serviceAc
 
 func withCredentialsClient(ctx context.Context, cb func(client *iam.CredentialsClient) error) error {
 	// Need an authenticating transport to talk to IAM.
-	asSelf, err := GetRPCTransport(ctx, AsSelf, WithScopes(CloudOAuthScopes...))
+	asSelf, err := GetRPCTransport(ctx, AsSelf, WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return err
 	}

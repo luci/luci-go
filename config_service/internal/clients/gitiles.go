@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/http"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/api/gitiles"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
@@ -36,9 +37,9 @@ func NewGitilesClient(ctx context.Context, host, luciProject string) (gitilespb.
 	var t http.RoundTripper
 	var err error
 	if luciProject != "" {
-		t, err = auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(luciProject), auth.WithScopes(gitiles.OAuthScope))
+		t, err = auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(luciProject), auth.WithScopes(scopes.GerritScopeSet()...))
 	} else {
-		t, err = auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+		t, err = auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(scopes.GerritScopeSet()...))
 	}
 	if err != nil {
 		return nil, err

@@ -27,6 +27,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	ps "go.chromium.org/luci/common/gcloud/pubsub"
@@ -46,7 +47,7 @@ import (
 // Scopes returns the set of OAuth scopes required for this Output.
 func Scopes() []string {
 	// E-mail scope needed for Coordinator authentication.
-	scopes := []string{auth.OAuthScopeEmail}
+	scopes := []string{scopes.Email}
 	// Publisher scope needed to publish to Pub/Sub transport.
 	scopes = append(scopes, ps.PublisherScopes...)
 

@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -194,7 +195,7 @@ func main() {
 			// they need to know when to use OAuth2 vs OpenID. See additional details:
 			// https://pkg.go.dev/go.chromium.org/luci/server/auth#GoogleOAuth2Method
 			&auth.GoogleOAuth2Method{
-				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+				Scopes: []string{scopes.Email},
 			},
 
 			// For authenticating calls from Gerrit plugins.

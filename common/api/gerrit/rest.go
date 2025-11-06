@@ -38,10 +38,6 @@ import (
 )
 
 const (
-	// OAuthScope is the OAuth 2.0 scope that must be included when acquiring an
-	// access token for Gerrit RPCs.
-	OAuthScope = "https://www.googleapis.com/auth/gerritcodereview"
-
 	// contentTypeJSON is the http header content-type value for json encoded
 	// objects in the body.
 	contentTypeJSON = "application/json; charset=UTF-8"

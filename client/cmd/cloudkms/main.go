@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -33,7 +34,7 @@ import (
 const version = "0.1"
 
 func getApplication(defaultAuthOpts auth.Options) *cli.Application {
-	defaultAuthOpts.Scopes = []string{auth.OAuthScopeEmail, "https://www.googleapis.com/auth/cloud-platform"}
+	defaultAuthOpts.Scopes = scopes.CloudScopeSet()
 	return &cli.Application{
 		Name:  "cloudkms",
 		Title: "Client for interfacing with Google Cloud Key Management Service",

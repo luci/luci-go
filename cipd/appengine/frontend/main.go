@@ -19,6 +19,7 @@ package main
 import (
 	"net/http"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/encryptedcookies"
@@ -52,7 +53,7 @@ func main() {
 		// fetch packages and self-update.
 		svc.PublicRepo.InstallHandlers(srv.Routes, router.NewMiddlewareChain(
 			auth.Authenticate(&auth.GoogleOAuth2Method{
-				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+				Scopes: []string{scopes.Email},
 			}),
 		))
 

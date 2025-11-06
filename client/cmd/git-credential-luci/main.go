@@ -70,7 +70,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
-	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gerrit"
 	"go.chromium.org/luci/common/git/creds"
@@ -93,7 +93,11 @@ const (
 
 func init() {
 	defaults := chromeinfra.DefaultAuthOptions()
-	defaults.Scopes = []string{gitiles.OAuthScope, auth.OAuthScopeEmail, auth.OAuthScopeReAuth}
+	defaults.Scopes = []string{
+		scopes.Email,
+		scopes.Gerrit,
+		scopes.ReAuth,
+	}
 	// NOTE: This OAuth client is used exclusively for Git/Gerrit authentication with this helper.
 	// Do NOT try to use this client for any other purpose.
 	// If you do, expect us to proactively break your use case.

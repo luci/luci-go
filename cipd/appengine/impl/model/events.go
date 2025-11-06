@@ -32,6 +32,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
@@ -245,7 +246,7 @@ type BigQueryEventLogger struct {
 
 // NewBigQueryEventLogger constructs a logger that writes to the given project.
 func NewBigQueryEventLogger(ctx context.Context, projectID string) (*BigQueryEventLogger, error) {
-	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, err
 	}

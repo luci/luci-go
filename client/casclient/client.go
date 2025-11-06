@@ -31,6 +31,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -117,10 +118,11 @@ func perRPCCreds(ctx context.Context, instance string, opts auth.Options, readOn
 		role = "cas-read-write"
 	}
 
-	// Construct auth.Options.
+	// Impersonate a service account via the LUCI Token Server to be able to rely
+	// on LUCI realm ACLs for control of who can touch the CAS.
 	opts.ActAsServiceAccount = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", role, project)
 	opts.ActViaLUCIRealm = fmt.Sprintf("@internal:%s/%s", project, role)
-	opts.Scopes = []string{"https://www.googleapis.com/auth/cloud-platform"}
+	opts.Scopes = scopes.CloudScopeSet()
 
 	if strings.HasSuffix(project, "-dev") || strings.HasSuffix(project, "-staging") {
 		// use dev token server for dev/staging projects.

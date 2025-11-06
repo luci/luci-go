@@ -24,6 +24,7 @@ import (
 	"golang.org/x/oauth2"
 
 	luciauth "go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
@@ -84,7 +85,7 @@ func (f *prodFactory) token(ctx context.Context, gerritHost, luciProject string)
 	req := auth.ProjectTokenParams{
 		MinTTL:      2 * time.Minute,
 		LuciProject: luciProject,
-		OAuthScopes: []string{gerrit.OAuthScope},
+		OAuthScopes: scopes.GerritScopeSet(),
 	}
 	mintToken := auth.MintProjectToken
 	if f.mockMintProjectToken != nil {

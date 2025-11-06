@@ -22,7 +22,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
-	"go.chromium.org/luci/common/api/gerrit"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/flag/fixflagpos"
@@ -33,10 +33,7 @@ type Params struct {
 }
 
 func application(p Params) *cli.Application {
-	p.Auth.Scopes = []string{
-		auth.OAuthScopeEmail,
-		gerrit.OAuthScope,
-	}
+	p.Auth.Scopes = scopes.GerritScopeSet()
 	return &cli.Application{
 		Name:  "luci-cv",
 		Title: "LUCI CV Command line utilities",

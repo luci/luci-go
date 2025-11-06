@@ -31,9 +31,8 @@ import (
 
 	"go.starlark.net/syntax"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
-	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/logging"
@@ -69,10 +68,7 @@ var (
 func init() {
 	flag.Var(&pickNewest, "pick-newest", "additional commits to pick the newest from, in addition to commit")
 	authOpts := chromeinfra.DefaultAuthOptions()
-	authOpts.Scopes = []string{
-		auth.OAuthScopeEmail,
-		gitiles.OAuthScope,
-	}
+	authOpts.Scopes = scopes.GerritScopeSet()
 	authFlags.Register(flag.CommandLine, authOpts)
 }
 

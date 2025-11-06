@@ -29,6 +29,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -89,7 +90,7 @@ func main() {
 			},
 			// Backward compatibility for RPC Explorer and old clients.
 			&auth.GoogleOAuth2Method{
-				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+				Scopes: []string{scopes.Email},
 			},
 		})
 

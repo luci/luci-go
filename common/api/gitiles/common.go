@@ -23,10 +23,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// OAuthScope is the OAuth 2.0 scope that must be included when acquiring an
-// access token for Gitiles RPCs.
-const OAuthScope = "https://www.googleapis.com/auth/gerritcodereview"
-
 var hostnameRe = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])*.googlesource.com$`)
 
 // ValidateRepoHost validates gitiles host.

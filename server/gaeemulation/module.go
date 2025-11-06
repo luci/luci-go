@@ -47,6 +47,7 @@ import (
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/appengine/gaesecrets"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/filter/dscache"
@@ -191,7 +192,7 @@ func (m *gaeModule) initDSClient(ctx context.Context, host module.Host, cloudPro
 	// Enable auth only when using the real datastore.
 	var clientOpts []option.ClientOption
 	if addr := os.Getenv("DATASTORE_EMULATOR_HOST"); addr == "" {
-		ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+		ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 		if err != nil {
 			return nil, errors.Fmt("failed to initialize the token source: %w", err)
 		}

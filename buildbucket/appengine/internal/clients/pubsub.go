@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server/auth"
@@ -54,9 +55,9 @@ func NewPubsubClient(ctx context.Context, cloudProject, luciProject string) (*pu
 	var creds credentials.PerRPCCredentials
 	var err error
 	if luciProject == "" {
-		creds, err = auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+		creds, err = auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	} else {
-		creds, err = auth.GetPerRPCCredentials(ctx, auth.AsProject, auth.WithProject(luciProject), auth.WithScopes(auth.CloudOAuthScopes...))
+		creds, err = auth.GetPerRPCCredentials(ctx, auth.AsProject, auth.WithProject(luciProject), auth.WithScopes(scopes.CloudScopeSet()...))
 	}
 	if err != nil {
 		return nil, err

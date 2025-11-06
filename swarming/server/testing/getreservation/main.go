@@ -26,6 +26,7 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -53,10 +54,7 @@ func run(ctx context.Context, args []string) error {
 	reservationName := args[0]
 
 	creds, err := auth.NewAuthenticator(ctx, auth.SilentLogin, chromeinfra.SetDefaultAuthOptions(auth.Options{
-		Scopes: []string{
-			"https://www.googleapis.com/auth/cloud-platform",
-			"https://www.googleapis.com/auth/userinfo.email",
-		},
+		Scopes: scopes.CloudScopeSet(),
 	})).PerRPCCredentials()
 	if err != nil {
 		return err

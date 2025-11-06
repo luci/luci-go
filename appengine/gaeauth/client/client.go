@@ -27,7 +27,7 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
@@ -40,7 +40,7 @@ import (
 // GetAccessToken returns an OAuth access token representing app's service
 // account.
 //
-// If scopes is empty, uses auth.OAuthScopeEmail scope.
+// If scopes is empty, uses scopes.Email scope.
 //
 // Implements a caching layer on top of GAE's GetAccessToken RPC. May return
 // transient errors.
@@ -108,21 +108,21 @@ const (
 	expirationRandomization = 3 * time.Minute
 )
 
-func normalizeScopes(scopes []string) (normalized []string, cacheKey string) {
-	if len(scopes) == 0 {
-		scopes = []string{auth.OAuthScopeEmail}
+func normalizeScopes(tokenScopes []string) (normalized []string, cacheKey string) {
+	if len(tokenScopes) == 0 {
+		tokenScopes = []string{scopes.Email}
 	} else {
-		set := stringset.New(len(scopes))
-		for _, s := range scopes {
+		set := stringset.New(len(tokenScopes))
+		for _, s := range tokenScopes {
 			if strings.ContainsRune(s, '\n') {
 				panic(fmt.Errorf("invalid scope %q", s))
 			}
 			set.Add(s)
 		}
-		scopes = set.ToSlice()
-		sort.Strings(scopes)
+		tokenScopes = set.ToSlice()
+		sort.Strings(tokenScopes)
 	}
-	return scopes, strings.Join(scopes, "\n")
+	return tokenScopes, strings.Join(tokenScopes, "\n")
 }
 
 func closeToExpRandomized(ctx context.Context, exp time.Time) bool {

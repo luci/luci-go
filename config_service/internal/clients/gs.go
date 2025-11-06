@@ -26,6 +26,7 @@ import (
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
@@ -61,7 +62,7 @@ type prodClient struct {
 
 // NewGsProdClient create a prodClient.
 func NewGsProdClient(ctx context.Context) (GsClient, error) {
-	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get OAuth2 token source: %w", err)
 	}

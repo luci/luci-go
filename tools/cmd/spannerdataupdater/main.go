@@ -42,6 +42,7 @@ import (
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -87,10 +88,7 @@ func run(ctx context.Context) error {
 
 	// Create an Authenticator and use it for Spanner operations.
 	authOpts := chromeinfra.DefaultAuthOptions()
-	authOpts.Scopes = []string{
-		"https://www.googleapis.com/auth/cloud-platform",
-		"https://www.googleapis.com/auth/userinfo.email",
-	}
+	authOpts.Scopes = scopes.CloudScopeSet()
 	authenticator := auth.NewAuthenticator(ctx, auth.InteractiveLogin, authOpts)
 
 	authTS, err := authenticator.TokenSource()

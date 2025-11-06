@@ -32,10 +32,6 @@ import (
 
 var errBadAuthHeader = errors.New("oauth: bad Authorization header")
 
-// EmailScope is a scope used to identifies user's email. Present in most tokens
-// by default. Can be used as a base scope for authentication.
-const EmailScope = "https://www.googleapis.com/auth/userinfo.email"
-
 // OAuth2Method implements auth.Method on top of GAE OAuth2 API. It doesn't
 // implement auth.UsersAPI.
 //

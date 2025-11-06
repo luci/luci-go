@@ -216,6 +216,7 @@ import (
 
 	clientauth "go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
@@ -2429,11 +2430,11 @@ func (s *Server) initAuthStart() error {
 		opts.SecretsDir = s.Options.TokenCacheDir
 	}
 
-	// Use CloudOAuthScopes by default when using UserCredentialsMethod auth mode.
-	// This is ignored when running in the cloud (the server uses the ambient
-	// credentials provided by the environment).
+	// Use scopes.CloudScopeSet() by default when using UserCredentialsMethod
+	// auth mode. This is ignored when running in the cloud (the server uses the
+	// ambient credentials provided by the environment).
 	if len(opts.Scopes) == 0 {
-		opts.Scopes = auth.CloudOAuthScopes
+		opts.Scopes = scopes.CloudScopeSet()
 	}
 
 	// Annotate the context used for logging from the token generator.
@@ -2522,7 +2523,7 @@ func (s *Server) initAuthFinish() error {
 	// construct a token source used by server's own guts to call Cloud APIs,
 	// such us Cloud Trace and Cloud Error Reporting (and others).
 	var err error
-	s.cloudTS, err = auth.GetTokenSource(s.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	s.cloudTS, err = auth.GetTokenSource(s.Context, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
 	if err != nil {
 		return errors.Fmt("failed to initialize the cloud token source: %w", err)
 	}
@@ -2562,7 +2563,7 @@ func (s *Server) initAuthFinish() error {
 	}
 	// Backward compatibility for the RPC Explorer and old clients.
 	s.rpcAuthMethods = append(s.rpcAuthMethods, &auth.GoogleOAuth2Method{
-		Scopes: []string{clientauth.OAuthScopeEmail},
+		Scopes: []string{scopes.Email},
 	})
 
 	return nil
@@ -2660,7 +2661,7 @@ func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error
 			StorageDumpPath:    s.Options.AuthDBDump[len("gs://"):],
 			AuthServiceURL:     "https://" + s.Options.AuthServiceHost,
 			AuthServiceAccount: s.Options.AuthDBSigner,
-			OAuthScopes:        auth.CloudOAuthScopes,
+			OAuthScopes:        scopes.CloudScopeSet(),
 		}
 		curSnap, _ := cur.(*authdb.SnapshotDB)
 		snap, err := fetcher.FetchAuthDB(c, curSnap)
