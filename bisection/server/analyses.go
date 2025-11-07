@@ -42,7 +42,9 @@ import (
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 
 	"go.chromium.org/luci/bisection/analysis"
+	"go.chromium.org/luci/bisection/compilefailureanalysis/llm"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
+	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/internal/tracing"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -75,6 +77,8 @@ type AnalysesServer struct {
 	ACL func(context.Context, string, proto.Message) (context.Context, error)
 	// Hostname of the LUCI Analysis pRPC service, e.g. analysis.api.luci.app
 	LUCIAnalysisHost string
+	// CloudProject is the GCP project ID for this instance (e.g., "luci-bisection-dev")
+	CloudProject string
 }
 
 // GetAnalysis returns the analysis given the analysis id
@@ -147,8 +151,71 @@ func (server *AnalysesServer) TriggerAnalysis(c context.Context, req *pb.Trigger
 	if err != nil {
 		return nil, err
 	}
-	// TODO(nqmtuan): Implement this
-	return nil, nil
+
+	// Validate the request
+	if err := validateTriggerAnalysisRequest(req); err != nil {
+		return nil, err
+	}
+
+	bbid := req.BuildFailure.GetBbid()
+	c = loggingutil.SetQueryBBID(c, bbid)
+	logging.Infof(c, "TriggerAnalysis for build %d", bbid)
+
+	// Create GenAI client for the analysis
+	genaiClient, err := llm.NewClient(c, server.CloudProject)
+	if err != nil {
+		logging.Warningf(c, "Failed to create GenAI client: %v, will proceed without GenAI analysis", err)
+		genaiClient = nil
+	}
+
+	// Trigger the analysis using the existing AnalyzeBuild function
+	// This function will:
+	// 1. Validate the build has compile failures
+	// 2. Find the regression range (last passed and first failed builds)
+	// 3. Create the CompileFailure model
+	// 4. Call AnalyzeFailure to create the analysis and run GenAI and nth-section analysis
+	analysisCreated, err := compilefailuredetection.AnalyzeBuild(c, genaiClient, bbid)
+	if err != nil {
+		logging.Errorf(c, "Failed to trigger analysis for build %d: %s", bbid, err)
+		return nil, status.Errorf(codes.Internal, "failed to trigger analysis for build %d: %s", bbid, err)
+	}
+
+	if !analysisCreated {
+		// Analysis was not triggered because build doesn't meet criteria
+		// or other reasons (e.g., couldn't find regression range)
+		return nil, status.Errorf(codes.InvalidArgument, "build %d does not meet criteria for analysis or analysis could not be created", bbid)
+	}
+
+	// Query for the newly created analysis
+	newAnalysis, err := datastoreutil.GetAnalysisForBuild(c, bbid)
+	if err != nil {
+		logging.Errorf(c, "Could not query analysis for build %d after triggering: %s", bbid, err)
+		return nil, status.Errorf(codes.Internal, "failed to get analysis for build %d: %s", bbid, err)
+	}
+
+	if newAnalysis == nil {
+		return nil, status.Errorf(codes.Internal, "analysis was triggered but not found for build %d", bbid)
+	}
+
+	c = loggingutil.SetAnalysisID(c, newAnalysis.Id)
+	logging.Infof(c, "Created new analysis %d for build %d", newAnalysis.Id, bbid)
+
+	// Update the analysis with bug info if provided
+	if len(req.BugInfo) > 0 {
+		// TODO(nqmtuan): Update bug info when UpdateAnalysis is implemented
+		logging.Infof(c, "Bug info provided but UpdateAnalysis not yet implemented")
+	}
+
+	analysispb, err := GetAnalysisResult(c, newAnalysis)
+	if err != nil {
+		logging.Errorf(c, "Could not get analysis data for build %d: %s", bbid, err)
+		return nil, status.Errorf(codes.Internal, "failed to get analysis data: %s", err)
+	}
+
+	return &pb.TriggerAnalysisResponse{
+		Result:        analysispb,
+		IsNewAnalysis: true,
+	}, nil
 }
 
 // UpdateAnalysis updates the information of an analysis.
@@ -774,6 +841,21 @@ func validateQueryAnalysisRequest(req *pb.QueryAnalysisRequest) error {
 	}
 	if req.BuildFailure.GetBbid() == 0 {
 		return status.Errorf(codes.InvalidArgument, "BuildFailure bbid must not be empty")
+	}
+	return nil
+}
+
+// validateTriggerAnalysisRequest checks if the request is valid.
+func validateTriggerAnalysisRequest(req *pb.TriggerAnalysisRequest) error {
+	if req.BuildFailure == nil {
+		return status.Errorf(codes.InvalidArgument, "BuildFailure must not be empty")
+	}
+	if req.BuildFailure.GetBbid() == 0 {
+		return status.Errorf(codes.InvalidArgument, "BuildFailure bbid must not be empty")
+	}
+	// Only "generate_build_files" and "compile" failures are allowed.
+	if req.BuildFailure.FailedStepName != "compile" && req.BuildFailure.FailedStepName != "generate_build_files" {
+		return status.Errorf(codes.InvalidArgument, "only compile and generate_build_files failures are supported")
 	}
 	return nil
 }

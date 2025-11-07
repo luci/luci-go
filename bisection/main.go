@@ -131,6 +131,7 @@ func main() {
 		// Installs gRPC service.
 		pb.RegisterAnalysesServer(srv, &server.AnalysesServer{
 			LUCIAnalysisHost: luciAnalysisHost,
+			CloudProject:     srv.Options.CloudProject,
 			ACL:              checkAPIAccess,
 		})
 

@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -36,6 +37,7 @@ import (
 	"go.chromium.org/luci/server/secrets"
 
 	"go.chromium.org/luci/bisection/analysis"
+	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
@@ -1147,4 +1149,157 @@ func makeFakeTestVariantBranch(i int, segments []*analysispb.Segment) *analysisp
 		RefHash:     refHash,
 		Segments:    segments,
 	}
+}
+
+func TestTriggerAnalysis(t *testing.T) {
+	t.Parallel()
+	server := &AnalysesServer{
+		ACL:          mockCheckAccessAnalyses,
+		CloudProject: "test-project",
+	}
+
+	ftt.Run("Validation Errors", t, func(t *ftt.Test) {
+		c := memory.Use(context.Background())
+
+		t.Run("No BuildFailure Info", func(t *ftt.Test) {
+			req := &pb.TriggerAnalysisRequest{}
+			_, err := server.TriggerAnalysis(c, req)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, status.Convert(err).Message(), should.ContainSubstring("BuildFailure must not be empty"))
+		})
+
+		t.Run("No bbid", func(t *ftt.Test) {
+			req := &pb.TriggerAnalysisRequest{
+				BuildFailure: &pb.BuildFailure{},
+			}
+			_, err := server.TriggerAnalysis(c, req)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, status.Convert(err).Message(), should.ContainSubstring("bbid must not be empty"))
+		})
+
+		t.Run("Unsupported step", func(t *ftt.Test) {
+			req := &pb.TriggerAnalysisRequest{
+				BuildFailure: &pb.BuildFailure{
+					FailedStepName: "some_unsupported_step",
+					Bbid:           123,
+				},
+			}
+			_, err := server.TriggerAnalysis(c, req)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, status.Convert(err).Message(), should.ContainSubstring("only compile and generate_build_files failures are supported"))
+		})
+	})
+
+	ftt.Run("Build Does Not Meet Criteria", t, func(t *ftt.Test) {
+		c := memory.Use(context.Background())
+		testutil.UpdateIndices(c)
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(c, ctl)
+		c = mc.Ctx
+
+		t.Run("Build not found", func(t *ftt.Test) {
+			// Mock GetBuild to return not found error
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(nil, status.Errorf(codes.NotFound, "build not found")).Times(1)
+
+			req := &pb.TriggerAnalysisRequest{
+				BuildFailure: &pb.BuildFailure{
+					FailedStepName: "compile",
+					Bbid:           123,
+				},
+			}
+			_, err := server.TriggerAnalysis(c, req)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.Internal))
+		})
+
+		t.Run("Build without compile failure", func(t *ftt.Test) {
+			// Mock GetBuild to return a build without compile failure
+			build := &buildbucketpb.Build{
+				Id:     123,
+				Status: buildbucketpb.Status_SUCCESS,
+				Steps: []*buildbucketpb.Step{
+					{
+						Name:   "compile",
+						Status: buildbucketpb.Status_SUCCESS,
+					},
+				},
+			}
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(build, nil).Times(1)
+
+			req := &pb.TriggerAnalysisRequest{
+				BuildFailure: &pb.BuildFailure{
+					FailedStepName: "compile",
+					Bbid:           123,
+				},
+			}
+			_, err := server.TriggerAnalysis(c, req)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, status.Convert(err).Message(), should.ContainSubstring("does not meet criteria"))
+		})
+
+		t.Run("Cannot find regression range", func(t *ftt.Test) {
+			// Mock GetBuild to return a failed build
+			build := &buildbucketpb.Build{
+				Id:     124,
+				Status: buildbucketpb.Status_FAILURE,
+				Steps: []*buildbucketpb.Step{
+					{
+						Name:   "compile",
+						Status: buildbucketpb.Status_FAILURE,
+					},
+				},
+				Input: &buildbucketpb.Build_Input{
+					GitilesCommit: &buildbucketpb.GitilesCommit{
+						Host:    "chromium.googlesource.com",
+						Project: "chromium/src",
+						Id:      "failed_commit",
+						Ref:     "refs/heads/main",
+					},
+				},
+			}
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(build, nil).Times(1)
+
+			// Mock SearchBuilds to return no passed builds (cannot find regression range)
+			searchRes := &buildbucketpb.SearchBuildsResponse{
+				Builds: []*buildbucketpb.Build{},
+			}
+			mc.Client.EXPECT().SearchBuilds(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(searchRes, nil).Times(1)
+
+			req := &pb.TriggerAnalysisRequest{
+				BuildFailure: &pb.BuildFailure{
+					FailedStepName: "compile",
+					Bbid:           124,
+				},
+			}
+			_, err := server.TriggerAnalysis(c, req)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
+		})
+	})
+
+	ftt.Run("Empty step name is not allowed", t, func(t *ftt.Test) {
+		c := memory.Use(context.Background())
+
+		req := &pb.TriggerAnalysisRequest{
+			BuildFailure: &pb.BuildFailure{
+				FailedStepName: "", // Empty step name should not be allowed
+				Bbid:           123,
+			},
+		}
+
+		// This should return a validation error
+		_, err := server.TriggerAnalysis(c, req)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
+		assert.Loosely(t, status.Convert(err).Message(), should.ContainSubstring("only compile and generate_build_files failures are supported"))
+	})
 }
