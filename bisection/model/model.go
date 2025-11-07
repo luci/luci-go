@@ -456,6 +456,21 @@ type TestFailureAnalysis struct {
 	SheriffRotations []string `gae:"sheriff_rotations"`
 }
 
+// TestGenAIAnalysis is GenAI analysis for test failures.
+type TestGenAIAnalysis struct {
+	ID int64 `gae:"$id"`
+	// Key to the parent TestFailureAnalysis.
+	ParentAnalysisKey *datastore.Key `gae:"parent_analysis_key"`
+	// Time when the analysis starts to run.
+	StartTime time.Time `gae:"start_time"`
+	// Time when the analysis ends, or canceled.
+	EndTime time.Time `gae:"end_time"`
+	// Status of the analysis.
+	Status pb.AnalysisStatus `gae:"status"`
+	// Run status of the analysis.
+	RunStatus pb.AnalysisRunStatus `gae:"run_status"`
+}
+
 // TestNthSectionAnalysis is nth-section analysis for test failures.
 type TestNthSectionAnalysis struct {
 	ID int64 `gae:"$id"`
@@ -577,6 +592,10 @@ func (rerun *TestSingleRerun) HasStarted() bool {
 
 func (nsa *TestNthSectionAnalysis) HasEnded() bool {
 	return nsa.RunStatus == pb.AnalysisRunStatus_ENDED || nsa.RunStatus == pb.AnalysisRunStatus_CANCELED
+}
+
+func (ga *TestGenAIAnalysis) HasEnded() bool {
+	return ga.RunStatus == pb.AnalysisRunStatus_ENDED || ga.RunStatus == pb.AnalysisRunStatus_CANCELED
 }
 
 // TestFailureBundle contains TestFailure models that will be bisected together.
