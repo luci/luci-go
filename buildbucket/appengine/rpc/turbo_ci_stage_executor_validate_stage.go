@@ -17,14 +17,11 @@ package rpc
 import (
 	"context"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	executorpb "go.chromium.org/turboci/proto/go/graph/executor/v1"
 )
 
 // ValidateStage implements executorgrpcpb.TurboCIStageExecutorServer.
 func (*TurboCIStageExecutor) ValidateStage(ctx context.Context, req *executorpb.ValidateStageRequest) (*executorpb.ValidateStageResponse, error) {
 	TurboCICall(ctx).LogDetails(ctx)
-	return nil, status.Error(codes.Unimplemented, "not implemented")
+	return &executorpb.ValidateStageResponse{}, nil
 }

@@ -18,13 +18,13 @@ import (
 	"context"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/grpc/appstatus"
 	executorpb "go.chromium.org/turboci/proto/go/graph/executor/v1"
 )
 
 // CancelStage implements executorgrpcpb.TurboCIStageExecutorServer.
 func (*TurboCIStageExecutor) CancelStage(ctx context.Context, req *executorpb.CancelStageRequest) (*executorpb.CancelStageResponse, error) {
 	TurboCICall(ctx).LogDetails(ctx)
-	return nil, status.Error(codes.Unimplemented, "not implemented")
+	return nil, appstatus.Error(codes.Unimplemented, "not implemented")
 }

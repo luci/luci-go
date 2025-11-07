@@ -17,14 +17,11 @@ package rpc
 import (
 	"context"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	executorpb "go.chromium.org/turboci/proto/go/graph/executor/v1"
 )
 
 // RunStage implements executorgrpcpb.TurboCIStageExecutorServer.
 func (*TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.RunStageRequest) (*executorpb.RunStageResponse, error) {
 	TurboCICall(ctx).LogDetails(ctx)
-	return nil, status.Error(codes.Unimplemented, "not implemented")
+	return &executorpb.RunStageResponse{}, nil
 }
