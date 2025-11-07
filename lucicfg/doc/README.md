@@ -812,6 +812,26 @@ Note that [lucicfg.emit(...)](#lucicfg.emit) cannot be used to override generate
 
 
 
+### lucicfg.main_package {#lucicfg.main-package}
+
+```python
+lucicfg.main_package()
+```
+
+
+
+Returns details of the main package being executed.
+
+
+
+#### Returns  {#lucicfg.main-package-returns}
+
+A struct with the following attributes:
+* repo_path: Path to the package root relative to the root of the
+  repository containing the package.
+
+
+
 ### lucicfg.current_module {#lucicfg.current-module}
 
 ```python

@@ -249,6 +249,16 @@ def _emit(*, dest = None, data = None):
 
     _generator(impl = _emit_data)
 
+def _main_package():
+    """Returns details of the main package being executed.
+
+    Returns:
+      A struct with the following attributes:
+      * repo_path: Path to the package root relative to the root of the
+        repository containing the package.
+    """
+    return struct(repo_path = __native__.main_pkg_path)
+
 def _current_module():
     """Returns the location of a module being currently executed.
 
@@ -453,6 +463,7 @@ lucicfg = struct(
     enable_experiment = _enable_experiment,
     generator = _generator,
     emit = _emit,
+    main_package = _main_package,
     current_module = _current_module,
     var = _var,
     rule = _rule,
