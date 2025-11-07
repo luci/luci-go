@@ -1921,6 +1921,8 @@ func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.S
 
 // ScheduleBuild handles a request to schedule a build. Implements pb.BuildsServer.
 func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.Build, error) {
+	checkTurboCIOAuthScope(ctx)
+
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
 		return nil, errors.Fmt("error fetching service config: %w", err)

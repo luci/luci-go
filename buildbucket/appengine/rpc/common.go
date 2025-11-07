@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -342,4 +344,21 @@ func validateToken(ctx context.Context, bID int64, purpose pb.TokenBody_Purpose)
 		return nil, errBadTokenAuth
 	}
 	return tok, nil
+}
+
+// checkTurboCIOAuthScope logs a warning if the call doesn't have an OAuth
+// scope necessary to call Turbo CI APIs.
+func checkTurboCIOAuthScope(ctx context.Context) {
+	if auth.CurrentIdentity(ctx).Kind() == identity.Project {
+		logging.Infof(ctx, "turbo-ci: acting as project: %s", auth.CurrentIdentity(ctx))
+		return
+	}
+	switch info := auth.GetGoogleOAuth2Info(ctx); {
+	case info == nil:
+		logging.Warningf(ctx, "turbo-ci: no OAuth token: %s", auth.CurrentIdentity(ctx))
+	case !slices.Contains(info.Scopes, scopes.AndroidBuild):
+		logging.Warningf(ctx, "turbo-ci: no OAuth scope: %s", auth.CurrentIdentity(ctx))
+	default:
+		logging.Infof(ctx, "turbo-ci: good OAuth token: %s", auth.CurrentIdentity(ctx))
+	}
 }

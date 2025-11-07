@@ -87,6 +87,10 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 		return nil, appstatus.BadRequest(errors.Fmt("the maximum allowed write request count in Batch is %d.", writeReqsSizeLimit))
 	}
 
+	if len(schBatchReq) > 0 {
+		checkTurboCIOAuthScope(ctx)
+	}
+
 	// ID used to log this Batch operation in the pRPC request log (see common.go).
 	// Used as the parent request log ID when logging individual operations here.
 	parent := trace.SpanContextFromContext(ctx).TraceID().String()
