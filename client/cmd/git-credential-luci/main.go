@@ -104,6 +104,7 @@ func init() {
 	defaults.ClientID = "608762726021-o18nheno8qn3tquf7tcmmec7urudmoba.apps.googleusercontent.com"
 	defaults.ClientSecret = "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"
 	flags.Register(flag.CommandLine, defaults)
+	flags.RegisterSecretsDirFlags(flag.CommandLine)
 	flag.DurationVar(
 		&lifetime, "lifetime", time.Minute,
 		"Minimum token lifetime. If existing token expired and refresh token or service account is not present, returns nothing.",

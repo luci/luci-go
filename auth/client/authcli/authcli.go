@@ -139,6 +139,13 @@ type CommandParams struct {
 	// UseADCFlags specifies whether to register flags related to Application
 	// Default Credentials.
 	UseADCFlags bool
+
+	// UseSecretsDirFlags specifies whether to register a flag for
+	// the secrets dir.
+	//
+	// Only use this if you have a strong case for users setting a
+	// different secrets dir.
+	UseSecretsDirFlags bool
 }
 
 // Flags defines command line flags related to authentication.
@@ -161,6 +168,9 @@ type Flags struct {
 
 	hasADCFlags bool                 // true if registered -application-default-credentials
 	adcPolicy   auth.GoogleADCPolicy // value of -application-default-credentials
+
+	hasSecretsDirFlags bool   // true if registered -secrets-dir
+	secretsDir         string // value of -secrets-dir
 }
 
 // Register adds auth related flags to a FlagSet.
@@ -211,6 +221,16 @@ func (fl *Flags) RegisterADCFlags(f *flag.FlagSet) {
 		fmt.Sprintf("When to use Application Default Credentials instead of LUCI user authentication: %q, %q or %q.",
 			auth.GoogleADCAlways, auth.GoogleADCNever, auth.GoogleADCAllow),
 	)
+}
+
+// RegisterSecretsDirFlags adds a flag for specifying the secrets directory.
+//
+// Only use this if you have a strong case for users setting a
+// different secrets dir.
+func (fl *Flags) RegisterSecretsDirFlags(f *flag.FlagSet) {
+	fl.hasSecretsDirFlags = true
+	f.StringVar(&fl.secretsDir, "secrets-dir", fl.defaults.SecretsDir,
+		"Path to directory with secrets for LUCI-specific auth methods. (Do not try to use this directory directly; the format is not stable.)")
 }
 
 // Options returns auth.Options populated based on parsed command line flags.
@@ -268,6 +288,10 @@ func (fl *Flags) Options() (auth.Options, error) {
 		opts.GoogleADCPolicy = fl.adcPolicy
 	}
 
+	if fl.hasSecretsDirFlags {
+		opts.SecretsDir = fl.secretsDir
+	}
+
 	return opts, nil
 }
 
@@ -309,6 +333,9 @@ func (c *commandRunBase) registerBaseFlags(params CommandParams) {
 	}
 	if c.params.UseADCFlags {
 		c.flags.RegisterADCFlags(&c.Flags)
+	}
+	if c.params.UseSecretsDirFlags {
+		c.flags.RegisterSecretsDirFlags(&c.Flags)
 	}
 }
 
