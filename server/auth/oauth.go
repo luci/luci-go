@@ -43,22 +43,40 @@ import (
 var (
 	// ErrBadOAuthToken is returned by GoogleOAuth2Method if the access token it
 	// checks either totally invalid, expired or has a wrong list of scopes.
-	ErrBadOAuthToken = grpcutil.UnauthenticatedTag.Apply(
+	ErrBadOAuthToken = grpcutil.UnauthenticatedTag.Apply(errors.New("oauth: bad access token"))
 
-		// ErrBadAuthorizationHeader is returned by GoogleOAuth2Method if it doesn't
-		// recognize the format of Authorization header.
-		errors.New("oauth: bad access token"))
-
-	ErrBadAuthorizationHeader = grpcutil.UnauthenticatedTag.Apply(
-
-		// tokenValidationOutcome is returned by validateAccessToken and cached in
-		// oauthValidationCache.
-		//
-		// It either contains an info extracted from the token or an error message if
-		// the token is invalid.
-		errors.New("oauth: bad Authorization header"))
+	// ErrBadAuthorizationHeader is returned by GoogleOAuth2Method if it doesn't
+	// recognize the format of Authorization header.
+	ErrBadAuthorizationHeader = grpcutil.UnauthenticatedTag.Apply(errors.New("oauth: bad Authorization header"))
 )
 
+// GoogleOAuth2Info is information extracted from Google OAuth2 access token.
+//
+// Available in case the request was authenticated using GoogleOAuth2Method. Use
+// GetGoogleOAuth2Info(ctx) to grab GoogleOAuth2Info from within a request
+// handler.
+type GoogleOAuth2Info struct {
+	// Scopes is a sorted list of OAuth scopes the token has.
+	//
+	// This is a superset of scopes that GoogleOAuth2Method checks. It can contain
+	// extra scopes if the client chose to include them when obtaining the token.
+	//
+	// Do not modify.
+	Scopes []string
+}
+
+// GetGoogleOAuth2Info returns information extracted from Google OAuth2 access
+// token or nil if the request was not authenticated based on an access token.
+func GetGoogleOAuth2Info(ctx context.Context) *GoogleOAuth2Info {
+	info, _ := CurrentUser(ctx).Extra.(*GoogleOAuth2Info)
+	return info
+}
+
+// tokenValidationOutcome is returned by validateAccessToken and cached in
+// oauthValidationCache.
+//
+// It either contains an info extracted from the token or an error message if
+// the token is invalid.
 type tokenValidationOutcome struct {
 	Email    string   `json:"email,omitempty"`
 	ClientID string   `json:"client_id,omitempty"`
@@ -195,6 +213,9 @@ func (m *GoogleOAuth2Method) Authenticate(ctx context.Context, r RequestMetadata
 		Identity: identity.Identity("user:" + outcome.Email),
 		Email:    outcome.Email,
 		ClientID: outcome.ClientID,
+		Extra: &GoogleOAuth2Info{
+			Scopes: outcome.Scopes,
+		},
 	}, nil, nil
 }
 
@@ -244,12 +265,10 @@ func validateAccessToken(ctx context.Context, accessToken, tokenInfoEndpoint str
 		if err == googleoauth.ErrBadToken {
 			return &tokenValidationOutcome{Error: err.Error()}, 0, nil
 		}
-		return nil, 0, transient.Tag.Apply(errors.
-
-			// Verify the token contains all necessary fields.
-			Fmt("oauth: transient error when validating the token: %w", err))
+		return nil, 0, transient.Tag.Apply(errors.Fmt("oauth: transient error when validating the token: %w", err))
 	}
 
+	// Verify the token contains all necessary fields.
 	errorMsg := ""
 	switch {
 	case tokenInfo.Email == "":

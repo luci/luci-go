@@ -65,6 +65,9 @@ func TestGoogleOAuth2Method(t *testing.T) {
 			Identity: "user:abc@example.com",
 			Email:    "abc@example.com",
 			ClientID: "client_id",
+			Extra: &GoogleOAuth2Info{
+				Scopes: []string{testScope, "other", "stuff"},
+			},
 		}
 
 		checks := 0
@@ -115,6 +118,9 @@ func TestGoogleOAuth2Method(t *testing.T) {
 			assert.Loosely(c, u, should.Resemble(&User{
 				Identity: "user:something@example.gserviceaccount.com",
 				Email:    "something@example.gserviceaccount.com",
+				Extra: &GoogleOAuth2Info{
+					Scopes: []string{testScope, "other", "stuff"},
+				},
 			}))
 		})
 
