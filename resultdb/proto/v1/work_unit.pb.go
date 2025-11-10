@@ -442,6 +442,7 @@ type WorkUnit struct {
 	// The metadata fields for a WorkUnit are:
 	// * name
 	// * work_unit_id
+	// * kind
 	// * finalization_state
 	// * state
 	// * summary_markdown (truncated to the first 140 bytes)

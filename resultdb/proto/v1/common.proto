@@ -420,8 +420,15 @@ message SubmittedAndroidBuild {
 // Specifies the source code that was tested.
 message Sources {
   // The base version of code sources checked out.
+  // This is used for various purposes, including test history, changepoint
+  // analysis and comparative log analysis.
+  //
+  // In local testing scenarios where the base checkout is unknown, this
+  // may be left blank. If it is not specified, the aforementioned features
+  // will not work for this result.
   oneof base_sources {
-    // The base version of code sources checked out.
+    // A commit from a gitiles repository. Commits are numbered using
+    // goto.google.com/git-numberer.
     GitilesCommit gitiles_commit = 1;
 
     // The submitted Android Build ID that describes the base code sources tested.
@@ -446,6 +453,9 @@ message Sources {
   //
   // Cherry-picking a changelist on top of the base checkout is not considered
   // making the sources dirty as it is reported separately in `changelists` above.
+  //
+  // In case no `base_sources` are reported, e.g. when running tests locally where
+  // the sources are unknown, this must always be true.
   bool is_dirty = 3;
 }
 
@@ -535,4 +545,88 @@ enum WorkUnitView {
 
   // Include all fields, including extended_properties.
   WORK_UNIT_VIEW_FULL = 2;
+}
+
+// Represents the process definition of a root invocation.
+message RootInvocationDefinition {
+  // The system name that namespaces the process definition name.
+  // Please use kebab-case as per https://google.aip.dev/126#alternatives.
+  //
+  // For example, "atp", "bazel" or "buildbucket".
+  //
+  // Limit of 64 bytes of UTF-8.
+  // Required.
+  string system = 1;
+
+  // The name used to identify the set of tests being executed.
+  //
+  // For example, "v2/adb-team/adb/adb_integration".
+  //
+  // Limit 256 bytes of UTF-8.
+  // Required.
+  string name = 2;
+
+  // A key-value map of properties the scheduler uses to differentiate between
+  // configurations with the same name. For example 'cluster_id' and
+  // 'run_target' for ATP.
+  //
+  // Each key may only appear once. As this is treated as a map, the sort order
+  // of this collection is not guaranteed.
+  //
+  // The total size of properties in this collection as measured by proto.Size()
+  // is limited to 1 KiB.
+  repeated StringPair properties = 3;
+
+  // Base64-encoded hash of the properties.
+  //
+  // In the Recorder APIs, this field is OUTPUT_ONLY and will be
+  // automatically computed from the provided properties (do not set it yourself).
+  // In the context of ResultDB Query RPCs accepting this type as a request filter,
+  // this field may be specified as an alternative to properties collection.
+  string properties_hash = 4;
+}
+
+// Represents a set of artifacts produced from source code.
+message BuildDescriptor {
+  oneof definition {
+    AndroidBuildDescriptor android_build = 1;
+    // In future, other build definitions, can be defined here,
+    // such as those based on buildbucket builds or GCS folders.
+  }
+}
+
+// Represents a build from Android Build (go/ab).
+//
+// Except for submitted builds, this will be different from the
+// Source's SubmittedAndroidBuild.
+//
+// For pending builds ("P" builds):
+// - specify the pending build here
+// - specify the pending build's reference build in sources.submitted_android_build,
+//   and the pending build's included changelists in sources.changelists.
+//
+// For local ("L") and external ("E") builds:
+// - specify the local/external build here
+// - if you have a reference build, specify it in sources.submitted_android_build,
+//   otherwise leave it blank.
+message AndroidBuildDescriptor {
+  // The Android Build API data realm.
+  // This is usually `prod`.
+  // Required.
+  string data_realm = 1;
+
+  // The branch. For example, `git_main`.
+  // Limited to 255 bytes.
+  // Required.
+  string branch = 2;
+
+  // The build target. For example, `cf_x86_phone-userdebug`.
+  // Limited to 255 bytes.
+  // Required.
+  string build_target = 3;
+
+  // The build identifier, such as "12345678", "P81983588" or "L17635075".
+  // Limited to 32 bytes.
+  // Required.
+  string build_id = 4;
 }

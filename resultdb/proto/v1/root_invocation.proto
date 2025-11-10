@@ -26,7 +26,7 @@ option java_package = "com.google.luci.resultdb.v1";
 option java_multiple_files = true;
 
 // A top-level container of test results.
-// Next ID: 20.
+// Next ID: 25.
 message RootInvocation {
   // The resource name of this root invocation.
   // Format: `rootInvocations/{ROOT_INVOCATION_ID}`
@@ -168,7 +168,7 @@ message RootInvocation {
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  // When the work unit was last updated.
+  // When the root invocation was last updated.
   // Output only.
   google.protobuf.Timestamp last_updated = 20 [
     (google.api.field_behavior) = OUTPUT_ONLY
@@ -194,6 +194,8 @@ message RootInvocation {
   google.protobuf.Timestamp finalize_time = 8
       [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
+  // == General ================================================================
+
   // Full name of the resource that produced results in this root invocation.
   // See also https://aip.dev/122#full-resource-names
   // Typical examples:
@@ -204,12 +206,26 @@ message RootInvocation {
   // normalization form C.
   string producer_resource = 10 [ (google.api.field_behavior) = IMMUTABLE ];
 
+  // The process definition of the root invocation. Root invocations with the same
+  // definition share the same root invocation history.
+  //
+  // Setting this field is recommended but can be elided in case of local and
+  // other emphemeral test runs which are not suitable to be plotted into a history.
+  RootInvocationDefinition definition = 21 [ (google.api.field_behavior) = IMMUTABLE ];
+
   // The code sources which were tested by this root invocation.
   // This is used to index test results for test history, and for
   // related analyses (e.g. culprit analysis / changepoint analyses).
   //
   // Required.
   Sources sources = 11;
+
+  // The primary build which was tested by this root invocation.
+  BuildDescriptor primary_build = 23;
+
+  // Extra builds which were tested by this root invocation.
+  // Limit of 10 extra builds.
+  repeated BuildDescriptor extra_builds = 24;
 
   // Root invocation-level string key-value pairs.
   // A key can be repeated.
@@ -287,8 +303,10 @@ message RootInvocation {
   //
   // Before METADATA_FINAL can be set, the following metadata fields on the
   // root invocation must have been populated with their final values:
+  // - `definition`
   // - `sources`
-  // TODO(nqmtuan): Add other fields here.
+  // - `primary_build`
+  // - `extra_builds`
   //
   // This field is client owned. Consistent with https://google.aip.dev/129,
   // it will not be forced to METADATA_FINAL when the root invocation starts
@@ -307,7 +325,7 @@ message RootInvocation {
 
 // The following request message appears below as GetRootInvocation is
 // implemented by both the ResultDB and Recorder service. They are
-// implemented by both services for client ergonomics and to seperate
+// implemented by both services for client ergonomics and to separate
 // the recorder and reader-side failure domains. In the recorder service,
 // the Get methods facilitate atomic updates using etags for optimistic
 // concurrency control.

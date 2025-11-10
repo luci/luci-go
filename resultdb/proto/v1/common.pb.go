@@ -1032,6 +1032,12 @@ type Sources struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The base version of code sources checked out.
+	// This is used for various purposes, including test history, changepoint
+	// analysis and comparative log analysis.
+	//
+	// In local testing scenarios where the base checkout is unknown, this
+	// may be left blank. If it is not specified, the aforementioned features
+	// will not work for this result.
 	//
 	// Types that are assignable to BaseSources:
 	//
@@ -1050,6 +1056,9 @@ type Sources struct {
 	//
 	// Cherry-picking a changelist on top of the base checkout is not considered
 	// making the sources dirty as it is reported separately in `changelists` above.
+	//
+	// In case no `base_sources` are reported, e.g. when running tests locally where
+	// the sources are unknown, this must always be true.
 	IsDirty bool `protobuf:"varint,3,opt,name=is_dirty,json=isDirty,proto3" json:"is_dirty,omitempty"`
 }
 
@@ -1125,7 +1134,8 @@ type isSources_BaseSources interface {
 }
 
 type Sources_GitilesCommit struct {
-	// The base version of code sources checked out.
+	// A commit from a gitiles repository. Commits are numbered using
+	// goto.google.com/git-numberer.
 	GitilesCommit *GitilesCommit `protobuf:"bytes,1,opt,name=gitiles_commit,json=gitilesCommit,proto3,oneof"`
 }
 
@@ -1436,6 +1446,271 @@ func (x *AndroidBuildBranch) GetBranch() string {
 	return ""
 }
 
+// Represents the process definition of a root invocation.
+type RootInvocationDefinition struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The system name that namespaces the process definition name.
+	// Please use kebab-case as per https://google.aip.dev/126#alternatives.
+	//
+	// For example, "atp", "bazel" or "buildbucket".
+	//
+	// Limit of 64 bytes of UTF-8.
+	// Required.
+	System string `protobuf:"bytes,1,opt,name=system,proto3" json:"system,omitempty"`
+	// The name used to identify the set of tests being executed.
+	//
+	// For example, "v2/adb-team/adb/adb_integration".
+	//
+	// Limit 256 bytes of UTF-8.
+	// Required.
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// A key-value map of properties the scheduler uses to differentiate between
+	// configurations with the same name. For example 'cluster_id' and
+	// 'run_target' for ATP.
+	//
+	// Each key may only appear once. As this is treated as a map, the sort order
+	// of this collection is not guaranteed.
+	//
+	// The total size of properties in this collection as measured by proto.Size()
+	// is limited to 1 KiB.
+	Properties []*StringPair `protobuf:"bytes,3,rep,name=properties,proto3" json:"properties,omitempty"`
+	// Base64-encoded hash of the properties.
+	//
+	// In the Recorder APIs, this field is OUTPUT_ONLY and will be
+	// automatically computed from the provided properties (do not set it yourself).
+	// In the context of ResultDB Query RPCs accepting this type as a request filter,
+	// this field may be specified as an alternative to properties collection.
+	PropertiesHash string `protobuf:"bytes,4,opt,name=properties_hash,json=propertiesHash,proto3" json:"properties_hash,omitempty"`
+}
+
+func (x *RootInvocationDefinition) Reset() {
+	*x = RootInvocationDefinition{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[13]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RootInvocationDefinition) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RootInvocationDefinition) ProtoMessage() {}
+
+func (x *RootInvocationDefinition) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[13]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RootInvocationDefinition.ProtoReflect.Descriptor instead.
+func (*RootInvocationDefinition) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *RootInvocationDefinition) GetSystem() string {
+	if x != nil {
+		return x.System
+	}
+	return ""
+}
+
+func (x *RootInvocationDefinition) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *RootInvocationDefinition) GetProperties() []*StringPair {
+	if x != nil {
+		return x.Properties
+	}
+	return nil
+}
+
+func (x *RootInvocationDefinition) GetPropertiesHash() string {
+	if x != nil {
+		return x.PropertiesHash
+	}
+	return ""
+}
+
+// Represents a set of artifacts produced from source code.
+type BuildDescriptor struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Types that are assignable to Definition:
+	//
+	//	*BuildDescriptor_AndroidBuild
+	Definition isBuildDescriptor_Definition `protobuf_oneof:"definition"`
+}
+
+func (x *BuildDescriptor) Reset() {
+	*x = BuildDescriptor{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BuildDescriptor) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuildDescriptor) ProtoMessage() {}
+
+func (x *BuildDescriptor) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuildDescriptor.ProtoReflect.Descriptor instead.
+func (*BuildDescriptor) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescGZIP(), []int{14}
+}
+
+func (m *BuildDescriptor) GetDefinition() isBuildDescriptor_Definition {
+	if m != nil {
+		return m.Definition
+	}
+	return nil
+}
+
+func (x *BuildDescriptor) GetAndroidBuild() *AndroidBuildDescriptor {
+	if x, ok := x.GetDefinition().(*BuildDescriptor_AndroidBuild); ok {
+		return x.AndroidBuild
+	}
+	return nil
+}
+
+type isBuildDescriptor_Definition interface {
+	isBuildDescriptor_Definition()
+}
+
+type BuildDescriptor_AndroidBuild struct {
+	AndroidBuild *AndroidBuildDescriptor `protobuf:"bytes,1,opt,name=android_build,json=androidBuild,proto3,oneof"`
+}
+
+func (*BuildDescriptor_AndroidBuild) isBuildDescriptor_Definition() {}
+
+// Represents a build from Android Build (go/ab).
+//
+// Except for submitted builds, this will be different from the
+// Source's SubmittedAndroidBuild.
+//
+// For pending builds ("P" builds):
+//   - specify the pending build here
+//   - specify the pending build's reference build in sources.submitted_android_build,
+//     and the pending build's included changelists in sources.changelists.
+//
+// For local ("L") and external ("E") builds:
+//   - specify the local/external build here
+//   - if you have a reference build, specify it in sources.submitted_android_build,
+//     otherwise leave it blank.
+type AndroidBuildDescriptor struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The Android Build API data realm.
+	// This is usually `prod`.
+	// Required.
+	DataRealm string `protobuf:"bytes,1,opt,name=data_realm,json=dataRealm,proto3" json:"data_realm,omitempty"`
+	// The branch. For example, `git_main`.
+	// Limited to 255 bytes.
+	// Required.
+	Branch string `protobuf:"bytes,2,opt,name=branch,proto3" json:"branch,omitempty"`
+	// The build target. For example, `cf_x86_phone-userdebug`.
+	// Limited to 255 bytes.
+	// Required.
+	BuildTarget string `protobuf:"bytes,3,opt,name=build_target,json=buildTarget,proto3" json:"build_target,omitempty"`
+	// The build identifier, such as "12345678", "P81983588" or "L17635075".
+	// Limited to 32 bytes.
+	// Required.
+	BuildId string `protobuf:"bytes,4,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
+}
+
+func (x *AndroidBuildDescriptor) Reset() {
+	*x = AndroidBuildDescriptor{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *AndroidBuildDescriptor) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AndroidBuildDescriptor) ProtoMessage() {}
+
+func (x *AndroidBuildDescriptor) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AndroidBuildDescriptor.ProtoReflect.Descriptor instead.
+func (*AndroidBuildDescriptor) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *AndroidBuildDescriptor) GetDataRealm() string {
+	if x != nil {
+		return x.DataRealm
+	}
+	return ""
+}
+
+func (x *AndroidBuildDescriptor) GetBranch() string {
+	if x != nil {
+		return x.Branch
+	}
+	return ""
+}
+
+func (x *AndroidBuildDescriptor) GetBuildTarget() string {
+	if x != nil {
+		return x.BuildTarget
+	}
+	return ""
+}
+
+func (x *AndroidBuildDescriptor) GetBuildId() string {
+	if x != nil {
+		return x.BuildId
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_resultdb_proto_v1_common_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDesc = []byte{
@@ -1561,26 +1836,53 @@ var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDesc = []byte{
 	0x68, 0x12, 0x1d, 0x0a, 0x0a, 0x64, 0x61, 0x74, 0x61, 0x5f, 0x72, 0x65, 0x61, 0x6c, 0x6d, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x64, 0x61, 0x74, 0x61, 0x52, 0x65, 0x61, 0x6c, 0x6d,
 	0x12, 0x16, 0x0a, 0x06, 0x62, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x06, 0x62, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x2a, 0x71, 0x0a, 0x10, 0x41, 0x67, 0x67, 0x72,
-	0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x12, 0x21, 0x0a, 0x1d,
-	0x41, 0x47, 0x47, 0x52, 0x45, 0x47, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x4c, 0x45, 0x56, 0x45,
-	0x4c, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12,
-	0x0e, 0x0a, 0x0a, 0x49, 0x4e, 0x56, 0x4f, 0x43, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x10, 0x01, 0x12,
-	0x0a, 0x0a, 0x06, 0x4d, 0x4f, 0x44, 0x55, 0x4c, 0x45, 0x10, 0x02, 0x12, 0x0a, 0x0a, 0x06, 0x43,
-	0x4f, 0x41, 0x52, 0x53, 0x45, 0x10, 0x03, 0x12, 0x08, 0x0a, 0x04, 0x46, 0x49, 0x4e, 0x45, 0x10,
-	0x04, 0x12, 0x08, 0x0a, 0x04, 0x43, 0x41, 0x53, 0x45, 0x10, 0x05, 0x2a, 0x61, 0x0a, 0x0c, 0x57,
-	0x6f, 0x72, 0x6b, 0x55, 0x6e, 0x69, 0x74, 0x56, 0x69, 0x65, 0x77, 0x12, 0x1e, 0x0a, 0x1a, 0x57,
-	0x4f, 0x52, 0x4b, 0x5f, 0x55, 0x4e, 0x49, 0x54, 0x5f, 0x56, 0x49, 0x45, 0x57, 0x5f, 0x55, 0x4e,
-	0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x18, 0x0a, 0x14, 0x57,
-	0x4f, 0x52, 0x4b, 0x5f, 0x55, 0x4e, 0x49, 0x54, 0x5f, 0x56, 0x49, 0x45, 0x57, 0x5f, 0x42, 0x41,
-	0x53, 0x49, 0x43, 0x10, 0x01, 0x12, 0x17, 0x0a, 0x13, 0x57, 0x4f, 0x52, 0x4b, 0x5f, 0x55, 0x4e,
-	0x49, 0x54, 0x5f, 0x56, 0x49, 0x45, 0x57, 0x5f, 0x46, 0x55, 0x4c, 0x4c, 0x10, 0x02, 0x42, 0x50,
-	0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x6c, 0x75, 0x63,
-	0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x50, 0x01, 0x5a,
-	0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67,
-	0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x70, 0x62,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x52, 0x06, 0x62, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x22, 0xad, 0x01, 0x0a, 0x18, 0x52, 0x6f, 0x6f,
+	0x74, 0x49, 0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x65, 0x66, 0x69, 0x6e,
+	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x12, 0x12, 0x0a,
+	0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d,
+	0x65, 0x12, 0x3c, 0x0a, 0x0a, 0x70, 0x72, 0x6f, 0x70, 0x65, 0x72, 0x74, 0x69, 0x65, 0x73, 0x18,
+	0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73,
+	0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x50,
+	0x61, 0x69, 0x72, 0x52, 0x0a, 0x70, 0x72, 0x6f, 0x70, 0x65, 0x72, 0x74, 0x69, 0x65, 0x73, 0x12,
+	0x27, 0x0a, 0x0f, 0x70, 0x72, 0x6f, 0x70, 0x65, 0x72, 0x74, 0x69, 0x65, 0x73, 0x5f, 0x68, 0x61,
+	0x73, 0x68, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x70, 0x72, 0x6f, 0x70, 0x65, 0x72,
+	0x74, 0x69, 0x65, 0x73, 0x48, 0x61, 0x73, 0x68, 0x22, 0x70, 0x0a, 0x0f, 0x42, 0x75, 0x69, 0x6c,
+	0x64, 0x44, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x6f, 0x72, 0x12, 0x4f, 0x0a, 0x0d, 0x61,
+	0x6e, 0x64, 0x72, 0x6f, 0x69, 0x64, 0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x28, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
+	0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x6e, 0x64, 0x72, 0x6f, 0x69, 0x64, 0x42, 0x75, 0x69,
+	0x6c, 0x64, 0x44, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x6f, 0x72, 0x48, 0x00, 0x52, 0x0c,
+	0x61, 0x6e, 0x64, 0x72, 0x6f, 0x69, 0x64, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x42, 0x0c, 0x0a, 0x0a,
+	0x64, 0x65, 0x66, 0x69, 0x6e, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x8d, 0x01, 0x0a, 0x16, 0x41,
+	0x6e, 0x64, 0x72, 0x6f, 0x69, 0x64, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x44, 0x65, 0x73, 0x63, 0x72,
+	0x69, 0x70, 0x74, 0x6f, 0x72, 0x12, 0x1d, 0x0a, 0x0a, 0x64, 0x61, 0x74, 0x61, 0x5f, 0x72, 0x65,
+	0x61, 0x6c, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x64, 0x61, 0x74, 0x61, 0x52,
+	0x65, 0x61, 0x6c, 0x6d, 0x12, 0x16, 0x0a, 0x06, 0x62, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x62, 0x72, 0x61, 0x6e, 0x63, 0x68, 0x12, 0x21, 0x0a, 0x0c,
+	0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x0b, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x12,
+	0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x2a, 0x71, 0x0a, 0x10, 0x41, 0x67,
+	0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x12, 0x21,
+	0x0a, 0x1d, 0x41, 0x47, 0x47, 0x52, 0x45, 0x47, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x4c, 0x45,
+	0x56, 0x45, 0x4c, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10,
+	0x00, 0x12, 0x0e, 0x0a, 0x0a, 0x49, 0x4e, 0x56, 0x4f, 0x43, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x10,
+	0x01, 0x12, 0x0a, 0x0a, 0x06, 0x4d, 0x4f, 0x44, 0x55, 0x4c, 0x45, 0x10, 0x02, 0x12, 0x0a, 0x0a,
+	0x06, 0x43, 0x4f, 0x41, 0x52, 0x53, 0x45, 0x10, 0x03, 0x12, 0x08, 0x0a, 0x04, 0x46, 0x49, 0x4e,
+	0x45, 0x10, 0x04, 0x12, 0x08, 0x0a, 0x04, 0x43, 0x41, 0x53, 0x45, 0x10, 0x05, 0x2a, 0x61, 0x0a,
+	0x0c, 0x57, 0x6f, 0x72, 0x6b, 0x55, 0x6e, 0x69, 0x74, 0x56, 0x69, 0x65, 0x77, 0x12, 0x1e, 0x0a,
+	0x1a, 0x57, 0x4f, 0x52, 0x4b, 0x5f, 0x55, 0x4e, 0x49, 0x54, 0x5f, 0x56, 0x49, 0x45, 0x57, 0x5f,
+	0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x18, 0x0a,
+	0x14, 0x57, 0x4f, 0x52, 0x4b, 0x5f, 0x55, 0x4e, 0x49, 0x54, 0x5f, 0x56, 0x49, 0x45, 0x57, 0x5f,
+	0x42, 0x41, 0x53, 0x49, 0x43, 0x10, 0x01, 0x12, 0x17, 0x0a, 0x13, 0x57, 0x4f, 0x52, 0x4b, 0x5f,
+	0x55, 0x4e, 0x49, 0x54, 0x5f, 0x56, 0x49, 0x45, 0x57, 0x5f, 0x46, 0x55, 0x4c, 0x4c, 0x10, 0x02,
+	0x42, 0x50, 0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x6c,
+	0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x50,
+	0x01, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f,
+	0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62,
+	0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
+	0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1596,27 +1898,30 @@ func file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescGZIP() []by
 }
 
 var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_goTypes = []interface{}{
-	(AggregationLevel)(0),         // 0: luci.resultdb.v1.AggregationLevel
-	(WorkUnitView)(0),             // 1: luci.resultdb.v1.WorkUnitView
-	(*Variant)(nil),               // 2: luci.resultdb.v1.Variant
-	(*StringPair)(nil),            // 3: luci.resultdb.v1.StringPair
-	(*TestIdentifier)(nil),        // 4: luci.resultdb.v1.TestIdentifier
-	(*TestIdentifierPrefix)(nil),  // 5: luci.resultdb.v1.TestIdentifierPrefix
-	(*ModuleIdentifier)(nil),      // 6: luci.resultdb.v1.ModuleIdentifier
-	(*GitilesCommit)(nil),         // 7: luci.resultdb.v1.GitilesCommit
-	(*GerritChange)(nil),          // 8: luci.resultdb.v1.GerritChange
-	(*SubmittedAndroidBuild)(nil), // 9: luci.resultdb.v1.SubmittedAndroidBuild
-	(*Sources)(nil),               // 10: luci.resultdb.v1.Sources
-	(*CommitPosition)(nil),        // 11: luci.resultdb.v1.CommitPosition
-	(*SourceRef)(nil),             // 12: luci.resultdb.v1.SourceRef
-	(*GitilesRef)(nil),            // 13: luci.resultdb.v1.GitilesRef
-	(*AndroidBuildBranch)(nil),    // 14: luci.resultdb.v1.AndroidBuildBranch
-	nil,                           // 15: luci.resultdb.v1.Variant.DefEntry
+	(AggregationLevel)(0),            // 0: luci.resultdb.v1.AggregationLevel
+	(WorkUnitView)(0),                // 1: luci.resultdb.v1.WorkUnitView
+	(*Variant)(nil),                  // 2: luci.resultdb.v1.Variant
+	(*StringPair)(nil),               // 3: luci.resultdb.v1.StringPair
+	(*TestIdentifier)(nil),           // 4: luci.resultdb.v1.TestIdentifier
+	(*TestIdentifierPrefix)(nil),     // 5: luci.resultdb.v1.TestIdentifierPrefix
+	(*ModuleIdentifier)(nil),         // 6: luci.resultdb.v1.ModuleIdentifier
+	(*GitilesCommit)(nil),            // 7: luci.resultdb.v1.GitilesCommit
+	(*GerritChange)(nil),             // 8: luci.resultdb.v1.GerritChange
+	(*SubmittedAndroidBuild)(nil),    // 9: luci.resultdb.v1.SubmittedAndroidBuild
+	(*Sources)(nil),                  // 10: luci.resultdb.v1.Sources
+	(*CommitPosition)(nil),           // 11: luci.resultdb.v1.CommitPosition
+	(*SourceRef)(nil),                // 12: luci.resultdb.v1.SourceRef
+	(*GitilesRef)(nil),               // 13: luci.resultdb.v1.GitilesRef
+	(*AndroidBuildBranch)(nil),       // 14: luci.resultdb.v1.AndroidBuildBranch
+	(*RootInvocationDefinition)(nil), // 15: luci.resultdb.v1.RootInvocationDefinition
+	(*BuildDescriptor)(nil),          // 16: luci.resultdb.v1.BuildDescriptor
+	(*AndroidBuildDescriptor)(nil),   // 17: luci.resultdb.v1.AndroidBuildDescriptor
+	nil,                              // 18: luci.resultdb.v1.Variant.DefEntry
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_depIdxs = []int32{
-	15, // 0: luci.resultdb.v1.Variant.def:type_name -> luci.resultdb.v1.Variant.DefEntry
+	18, // 0: luci.resultdb.v1.Variant.def:type_name -> luci.resultdb.v1.Variant.DefEntry
 	2,  // 1: luci.resultdb.v1.TestIdentifier.module_variant:type_name -> luci.resultdb.v1.Variant
 	0,  // 2: luci.resultdb.v1.TestIdentifierPrefix.level:type_name -> luci.resultdb.v1.AggregationLevel
 	4,  // 3: luci.resultdb.v1.TestIdentifierPrefix.id:type_name -> luci.resultdb.v1.TestIdentifier
@@ -1626,11 +1931,13 @@ var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_depIdxs = []int32{
 	8,  // 7: luci.resultdb.v1.Sources.changelists:type_name -> luci.resultdb.v1.GerritChange
 	13, // 8: luci.resultdb.v1.SourceRef.gitiles:type_name -> luci.resultdb.v1.GitilesRef
 	14, // 9: luci.resultdb.v1.SourceRef.android_build:type_name -> luci.resultdb.v1.AndroidBuildBranch
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	3,  // 10: luci.resultdb.v1.RootInvocationDefinition.properties:type_name -> luci.resultdb.v1.StringPair
+	17, // 11: luci.resultdb.v1.BuildDescriptor.android_build:type_name -> luci.resultdb.v1.AndroidBuildDescriptor
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_resultdb_proto_v1_common_proto_init() }
@@ -1795,6 +2102,42 @@ func file_go_chromium_org_luci_resultdb_proto_v1_common_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RootInvocationDefinition); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BuildDescriptor); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*AndroidBuildDescriptor); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[8].OneofWrappers = []interface{}{
 		(*Sources_GitilesCommit)(nil),
@@ -1804,13 +2147,16 @@ func file_go_chromium_org_luci_resultdb_proto_v1_common_proto_init() {
 		(*SourceRef_Gitiles)(nil),
 		(*SourceRef_AndroidBuild)(nil),
 	}
+	file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[14].OneofWrappers = []interface{}{
+		(*BuildDescriptor_AndroidBuild)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   14,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
