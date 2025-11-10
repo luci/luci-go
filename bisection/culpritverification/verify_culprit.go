@@ -278,7 +278,7 @@ func getSuspectPriority(c context.Context, suspect *model.Suspect) (int32, error
 	// TODO (nqmtuan): Support priority for nth-section case
 	// For now let's return the baseline for culprit verification
 	// We can add offset later
-	confidence := getConfidenceLevel(suspect.Score)
+	confidence := getConfidenceLevel(c, suspect.Score)
 	var pri int32 = 0
 	switch confidence {
 	case pb.SuspectConfidenceLevel_HIGH:
@@ -385,12 +385,15 @@ func isSameFile(fullFilePath string, fileInLog string) bool {
 
 // getConfidenceLevel returns a description of how likely a suspect to be the
 // real culprit.
-func getConfidenceLevel(score int) pb.SuspectConfidenceLevel {
+// Score range is 0-10, where 10 is highest confidence.
+func getConfidenceLevel(c context.Context, score int) pb.SuspectConfidenceLevel {
+	if score < 0 || score > 10 {
+		logging.Warningf(c, "Score %d is out of expected range [0, 10]", score)
+	}
 	switch {
-	// score >= 10 means at least the suspect touched a file in the failure log
-	case score >= 10:
+	case score >= 7:
 		return pb.SuspectConfidenceLevel_HIGH
-	case score >= 5:
+	case score >= 3:
 		return pb.SuspectConfidenceLevel_MEDIUM
 	default:
 		return pb.SuspectConfidenceLevel_LOW

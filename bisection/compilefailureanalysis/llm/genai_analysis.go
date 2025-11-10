@@ -136,7 +136,7 @@ func Analyze(c context.Context, client Client, cfa *model.CompileFailureAnalysis
 		ReviewUrl:      reviewUrl,
 		ReviewTitle:    reviewTitle,
 		Justification:  justification,
-		Score:          30, // Default HighConfidence for PriorityCulpritVerification
+		Score:          10, // HighConfidence for PriorityCulpritVerification (0-10 scale)
 		GitilesCommit: buildbucketpb.GitilesCommit{
 			Host:    regressionRange.LastPassed.Host,
 			Project: regressionRange.LastPassed.Project,
