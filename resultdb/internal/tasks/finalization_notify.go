@@ -123,7 +123,7 @@ var NotifyTestResultsPublisher = tq.RegisterTaskClass(tq.TaskClass{
 		// sent, as the backend is Cloud Pub/Sub and not Cloud Tasks.
 		t := m.(*taskspb.PublishTestResults)
 		notification := t.GetMessage()
-		blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(notification)
+		blob, err := proto.Marshal(notification)
 		if err != nil {
 			return nil, err
 		}

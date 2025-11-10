@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -129,4 +130,33 @@ func rootInvProperties() *structpb.Struct {
 		"build_target": structpb.NewStringValue("brya-trunk_staging-userdebug_coverage"),
 	}})
 	return &structpb.Struct{Fields: properties}
+}
+
+func TestNotifyTestResults(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("With fake task queue scheduler", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+		ctx, tq := tq.TestingContext(ctx, nil)
+
+		t.Run("Enqueues a pub/sub notification", func(t *ftt.Test) {
+			msg := &pb.TestResultsNotification{
+				ResultdbHost: "test-host",
+			}
+			attrs := map[string]string{"branch": "main"}
+			NotifyTestResults(ctx, msg, attrs)
+
+			tasks := tq.Tasks()
+			assert.Loosely(t, tasks, should.HaveLength(1))
+			task := tasks[0]
+
+			assert.Loosely(t, task.Message.GetAttributes(), should.Match(map[string]string{"branch": "main"}))
+
+			var nMsg pb.TestResultsNotification
+			assert.Loosely(t, proto.Unmarshal(task.Message.GetData(), &nMsg), should.BeNil)
+			assert.Loosely(t, &nMsg, should.Match(&pb.TestResultsNotification{
+				ResultdbHost: "test-host",
+			}))
+		})
+	})
 }

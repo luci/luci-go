@@ -14,8 +14,11 @@
 package finalizer
 
 import (
+	"sort"
 	"testing"
 
+	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -27,20 +30,58 @@ import (
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/internal/workunits"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestHandlePublishTestResultsTask(t *testing.T) {
 	ftt.Run("HandlePublishTestResultsTask", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
-		ctx, sched := tq.TestingContext(ctx, nil)
 		rootInvID := rootinvocations.ID("test-root-inv")
-		rdbHost := "rdb-host"
+		rdbHost := "staging.results.api.cr.dev"
 
 		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
 		wuID2 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu2"}
 
+		// Insert legacy Invocations based on work unit IDs.
+		testutil.MustApply(ctx, t, insert.Invocation(wuID1.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, t, insert.Invocation(wuID2.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
+
+		// Insert TestResults.
+		trs1 := insert.MakeTestResults(wuID1.LegacyInvocationID(), "testA", nil, pb.TestResult_PASSED)
+		trs2 := insert.MakeTestResults(wuID2.LegacyInvocationID(), "testB", nil, pb.TestResult_FAILED)
+		testutil.MustApply(ctx, t, insert.TestResultMessages(t, trs1)...)
+		testutil.MustApply(ctx, t, insert.TestResultMessages(t, trs2)...)
+
+		// Expected TestResults in notification (names are
+		// reconstructed).
+		expectedTRs1 := make([]*pb.TestResult, len(trs1))
+		for i, tr := range trs1 {
+			expectedTRs1[i] = proto.Clone(tr).(*pb.TestResult)
+			expectedTRs1[i].Name = pbutil.TestResultName(string(rootInvID), wuID1.WorkUnitID, tr.TestId, tr.ResultId)
+
+			// Add default empty variant if it's nil.
+			if expectedTRs1[i].Variant == nil {
+				expectedTRs1[i].Variant = &pb.Variant{}
+			}
+			if expectedTRs1[i].TestIdStructured != nil && expectedTRs1[i].TestIdStructured.ModuleVariant == nil {
+				expectedTRs1[i].TestIdStructured.ModuleVariant = &pb.Variant{}
+			}
+		}
+		expectedTRs2 := make([]*pb.TestResult, len(trs2))
+		for i, tr := range trs2 {
+			expectedTRs2[i] = proto.Clone(tr).(*pb.TestResult)
+			expectedTRs2[i].Name = pbutil.TestResultName(string(rootInvID), wuID2.WorkUnitID, tr.TestId, tr.ResultId)
+			// Add default empty variant if it's nil.
+			if expectedTRs2[i].Variant == nil {
+				expectedTRs2[i].Variant = &pb.Variant{}
+			}
+			if expectedTRs2[i].TestIdStructured != nil && expectedTRs2[i].TestIdStructured.ModuleVariant == nil {
+				expectedTRs2[i].TestIdStructured.ModuleVariant = &pb.Variant{}
+			}
+		}
 		gitilesSources := &pb.Sources{
 			BaseSources: &pb.Sources_GitilesCommit{
 				GitilesCommit: &pb.GitilesCommit{
@@ -78,8 +119,10 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 				rootInvBuilder: rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithSources(nil).WithProperties(nil),
 				finalizedWUIDs: []string{wuID1.WorkUnitID},
 				expectedNotification: &pb.TestResultsNotification{
-					ResultdbHost:          rdbHost,
-					TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{{WorkUnitName: wuID1.Name()}},
+					ResultdbHost: rdbHost,
+					TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
+						{WorkUnitName: wuID1.Name(), TestResults: expectedTRs1},
+					},
 				},
 			},
 			{
@@ -88,9 +131,11 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 				finalizedWUIDs:     []string{wuID1.WorkUnitID},
 				expectedAttributes: map[string]string{"branch": "git_main"},
 				expectedNotification: &pb.TestResultsNotification{
-					ResultdbHost:          rdbHost,
-					TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{{WorkUnitName: wuID1.Name()}},
-					Sources:               gitilesSources,
+					ResultdbHost: rdbHost,
+					TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
+						{WorkUnitName: wuID1.Name(), TestResults: expectedTRs1},
+					},
+					Sources: gitilesSources,
 				},
 			},
 			{
@@ -101,8 +146,8 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 				expectedNotification: &pb.TestResultsNotification{
 					ResultdbHost: rdbHost,
 					TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
-						{WorkUnitName: wuID1.Name()},
-						{WorkUnitName: wuID2.Name()},
+						{WorkUnitName: wuID1.Name(), TestResults: expectedTRs1},
+						{WorkUnitName: wuID2.Name(), TestResults: expectedTRs2},
 					},
 					Sources: gitilesSources,
 				},
@@ -111,9 +156,15 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *ftt.Test) {
+				ctx, sched := tq.TestingContext(ctx, nil)
+
+				// Insert the root invocation for this test case.
+				muts := rootinvocations.InsertForTesting(tc.rootInvBuilder.Build())
+				testutil.MustApply(ctx, t, muts...)
+				defer testutil.MustApply(ctx, t, spanner.Delete("RootInvocations", rootInvID.Key()))
+
 				// Reset tasks.
 				sched.Tasks()
-				testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(tc.rootInvBuilder.Build())...)
 
 				task := &taskspb.PublishTestResultsTask{
 					RootInvocationId: string(rootInvID),
@@ -130,16 +181,27 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 					}
 				}
 
-				for _, task := range tasks {
-					attrs := task.Message.GetAttributes()
-					delete(attrs, "X-Luci-Tq-Reminder-Id") // Ignore TQ internal attribute
-					assert.Loosely(t, attrs, should.Match(tc.expectedAttributes))
-
-					payload := task.Payload.(*taskspb.PublishTestResults)
-					// Clear DeduplicationKey as it contains timestamp.                                                              │
-					payload.Message.DeduplicationKey = ""
-					assert.Loosely(t, payload.Message, should.Match(tc.expectedNotification))
+				if tc.expectedNotification == nil {
+					assert.Loosely(t, tasks, should.HaveLength(0))
+					return
 				}
+				assert.Loosely(t, tasks, should.HaveLength(1))
+				notifyTask := tasks[0]
+
+				// Ignore TQ internal attribute.
+				attrs := notifyTask.Message.GetAttributes()
+				delete(attrs, "X-Luci-Tq-Reminder-Id")
+				assert.Loosely(t, attrs, should.Match(tc.expectedAttributes))
+
+				// Clear DeduplicationKey as it contains timestamp.
+				payload := notifyTask.Payload.(*taskspb.PublishTestResults)
+				payload.Message.DeduplicationKey = ""
+
+				// Sort TestResultsByWorkUnit to make the test deterministic.
+				sort.Slice(payload.Message.TestResultsByWorkUnit, func(i, j int) bool {
+					return payload.Message.TestResultsByWorkUnit[i].WorkUnitName < payload.Message.TestResultsByWorkUnit[j].WorkUnitName
+				})
+				assert.Loosely(t, payload.Message, should.Match(tc.expectedNotification))
 			})
 		}
 	})
