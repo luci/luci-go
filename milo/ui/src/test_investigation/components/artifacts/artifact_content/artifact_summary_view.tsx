@@ -85,6 +85,26 @@ export function ArtifactSummaryView({
 
   return (
     <>
+      <Box
+        sx={{
+          pl: 1,
+          pr: 1,
+          pb: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+        }}
+      >
+        {compactDuration && (
+          <Chip label={compactDuration} color="primary"></Chip>
+        )}
+        {isLegacyInvocation && (
+          <LegacyInvocationLinks
+            currentResult={currentResult}
+            selectedAttemptIndex={selectedAttemptIndex}
+          />
+        )}
+      </Box>
       {currentResult.failureReason && (
         <CollapsibleArtifactSummarySection
           title="Failure Reason"
@@ -123,26 +143,6 @@ export function ArtifactSummaryView({
               No primary error message uploaded.
             </Typography>
           )}
-          <Box
-            sx={{
-              pl: 1,
-              pr: 1,
-              pb: 1,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-            }}
-          >
-            {compactDuration && (
-              <Chip label={compactDuration} color="primary"></Chip>
-            )}
-            {isLegacyInvocation && (
-              <LegacyInvocationLinks
-                currentResult={currentResult}
-                selectedAttemptIndex={selectedAttemptIndex}
-              />
-            )}
-          </Box>
         </CollapsibleArtifactSummarySection>
       )}
       {hasStackTraces && (
