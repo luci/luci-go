@@ -26,39 +26,27 @@ import {
 } from '@mui/material';
 import { ChangeEvent } from 'react';
 
-interface ArtifactFiltersDropdownProps {
-  availableArtifactTypes: readonly string[];
-  artifactTypes: string[];
-  setArtifactTypes: (value: string[]) => void;
-  crashTypes: string[];
-  setCrashTypes: (value: string[]) => void;
-  showCriticalCrashes: boolean;
-  setShowCriticalCrashes: (value: boolean) => void;
-  hideAutomationFiles: boolean;
-  setHideAutomationFiles: (value: boolean) => void;
-  hideEmptyFolders: boolean;
-  setHideEmptyFolders: (value: boolean) => void;
-  showOnlyFoldersWithError: boolean;
-  setShowOnlyFoldersWithError: (value: boolean) => void;
-  onClearFilters: () => void;
-}
+import { useArtifactFilters } from './context';
 
-export function ArtifactFiltersDropdown({
-  availableArtifactTypes,
-  artifactTypes,
-  setArtifactTypes,
-  crashTypes,
-  setCrashTypes,
-  showCriticalCrashes,
-  setShowCriticalCrashes,
-  hideAutomationFiles,
-  setHideAutomationFiles,
-  hideEmptyFolders,
-  setHideEmptyFolders,
-  showOnlyFoldersWithError,
-  setShowOnlyFoldersWithError,
-  onClearFilters,
-}: ArtifactFiltersDropdownProps) {
+export function ArtifactFiltersDropdown() {
+  const {
+    availableArtifactTypes,
+    artifactTypes,
+    setArtifactTypes,
+    crashTypes,
+    setCrashTypes,
+    showCriticalCrashes,
+    setShowCriticalCrashes,
+    hideAutomationFiles,
+    setHideAutomationFiles,
+    hideEmptyFolders,
+    setHideEmptyFolders,
+    showOnlyFoldersWithError,
+    setShowOnlyFoldersWithError,
+    onClearFilters,
+    setIsFilterPanelOpen,
+  } = useArtifactFilters();
+
   return (
     <Paper
       elevation={3}
@@ -76,9 +64,18 @@ export function ArtifactFiltersDropdown({
           <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
             Filter artifacts
           </Typography>
-          <Button onClick={onClearFilters} size="small">
-            Clear
-          </Button>
+          <Box>
+            <Button onClick={onClearFilters} size="small">
+              Clear
+            </Button>
+            <Button
+              onClick={() => setIsFilterPanelOpen(false)}
+              size="small"
+              sx={{ ml: 1 }}
+            >
+              Close
+            </Button>
+          </Box>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

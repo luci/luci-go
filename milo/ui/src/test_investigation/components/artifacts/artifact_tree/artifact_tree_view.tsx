@@ -24,7 +24,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import {
   TreeData,
@@ -36,220 +36,36 @@ import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifac
 
 import { ClusteringControls } from '../clustering_controls';
 import { useArtifactsContext } from '../context';
-import { ArtifactTreeNodeData, SelectedArtifactSource } from '../types';
+import { ArtifactTreeNodeData } from '../types';
 
 import { ArtifactFiltersDropdown } from './artifact_filters_dropdown';
 import { ArtifactTreeNode } from './artifact_tree_node';
-import { getArtifactType } from './artifact_utils';
+import { ArtifactFilterProvider, useArtifactFilters } from './context/';
 
-function addArtifactsToTree(
-  artifacts: readonly Artifact[],
-  root: ArtifactTreeNodeData,
-  idCounter: number,
-  source: SelectedArtifactSource,
-) {
-  for (const artifact of artifacts) {
-    const path = artifact.artifactId;
-    const parts = path.split('/');
-    let currentNode = root;
-
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      if (part) {
-        let childNode: ArtifactTreeNodeData | undefined =
-          currentNode.children.find((c) => c.name === part);
-
-        if (!childNode) {
-          childNode = { id: `${idCounter++}`, name: part, children: [] };
-          currentNode.children.push(childNode);
-        }
-        currentNode = childNode as ArtifactTreeNodeData;
-      }
-    }
-    currentNode.viewingSupported = artifact.hasLines;
-    currentNode.size = Number(artifact.sizeBytes);
-    currentNode.url = getRawArtifactURLPath(artifact.name);
-    currentNode.artifact = artifact;
-    currentNode.source = source;
-    currentNode.id = artifact.artifactId;
-  }
-  return idCounter;
-}
-
-function buildArtifactsTree(
-  resultArtifacts: readonly Artifact[],
-  invocationArtifacts: readonly Artifact[],
-): ArtifactTreeNodeData[] {
-  const result: ArtifactTreeNodeData[] = [];
-
-  result.push({
-    id: 'summary_node',
-    name: 'Summary',
-    isSummary: true,
-    children: [],
-  });
-  let lastInsertedId = 0;
-
-  if (resultArtifacts.length > 0) {
-    const resultArtifactsRoot: ArtifactTreeNodeData = {
-      id: `${++lastInsertedId}`,
-      name: 'Result artifacts',
-      children: [],
-    };
-    lastInsertedId = addArtifactsToTree(
-      resultArtifacts,
-      resultArtifactsRoot,
-      ++lastInsertedId,
-      'result',
-    );
-
-    result.push(resultArtifactsRoot);
-  }
-
-  if (invocationArtifacts.length > 0) {
-    const invocationArtifactsRoot: ArtifactTreeNodeData = {
-      id: `${++lastInsertedId}`,
-      name: 'Invocation artifacts',
-      children: [],
-    };
-    addArtifactsToTree(
-      invocationArtifacts,
-      invocationArtifactsRoot,
-      ++lastInsertedId,
-      'invocation',
-    );
-    result.push(invocationArtifactsRoot);
-  }
-  return result;
-}
-
-interface ArtifactTreeViewProps {
-  resultArtifacts: readonly Artifact[];
-  invArtifacts: readonly Artifact[];
+interface ArtifactTreeViewInternalProps {
   artifactsLoading: boolean;
   selectedArtifact?: ArtifactTreeNodeData | null;
   updateSelectedArtifact: (artifact: ArtifactTreeNodeData | null) => void;
 }
 
-export function ArtifactTreeView({
-  resultArtifacts,
-  invArtifacts,
+function ArtifactTreeViewInternal({
   artifactsLoading,
   selectedArtifact: selectedArtifactNode,
   updateSelectedArtifact,
-}: ArtifactTreeViewProps) {
+}: ArtifactTreeViewInternalProps) {
   const { clusteredFailures, hasRenderableResults } = useArtifactsContext();
+  const {
+    searchTerm,
+    setSearchTerm,
+    debouncedSearchTerm,
+    finalArtifactsTree,
+    isFilterPanelOpen,
+    setIsFilterPanelOpen,
+  } = useArtifactFilters();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const filterContainerRef = useRef<HTMLDivElement>(null);
 
-  const [artifactTypes, setArtifactTypes] = useState<string[]>([]);
-  const [crashTypes, setCrashTypes] = useState<string[]>([]);
-  const [showCriticalCrashes, setShowCriticalCrashes] = useState(false);
-  const [hideAutomationFiles, setHideAutomationFiles] = useState(false);
-  const [hideEmptyFolders, setHideEmptyFolders] = useState(false);
-  const [showOnlyFoldersWithError, setShowOnlyFoldersWithError] =
-    useState(false);
-
-  const handleClearFilters = () => {
-    setArtifactTypes([]);
-    setCrashTypes([]);
-    setShowCriticalCrashes(false);
-    setHideAutomationFiles(false);
-    setHideEmptyFolders(false);
-    setShowOnlyFoldersWithError(false);
-  };
-
   const noFailuresToClusterMessage = 'No failures to cluster.';
-
-  useEffect(() => {
-    const timerId = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300);
-
-    return () => {
-      clearTimeout(timerId);
-    };
-  }, [searchTerm]);
-
-  const availableArtifactTypes = useMemo(() => {
-    const allArtifacts = [...resultArtifacts, ...invArtifacts];
-    const types = new Set<string>();
-    for (const artifact of allArtifacts) {
-      const type = getArtifactType(artifact.artifactId);
-      if (type !== 'file') {
-        types.add(type);
-      }
-    }
-    return Array.from(types).sort();
-  }, [resultArtifacts, invArtifacts]);
-
-  const filterArtifactList = useCallback(
-    (artifacts: readonly Artifact[]) => {
-      let filtered = artifacts;
-
-      if (debouncedSearchTerm) {
-        filtered = filtered.filter((artifact) =>
-          artifact.artifactId
-            .toLowerCase()
-            .includes(debouncedSearchTerm.toLocaleLowerCase()),
-        );
-      }
-
-      if (artifactTypes.length > 0) {
-        const selectedTypes = new Set(artifactTypes);
-        filtered = filtered.filter((artifact) =>
-          selectedTypes.has(getArtifactType(artifact.artifactId)),
-        );
-      }
-
-      return filtered;
-    },
-    [debouncedSearchTerm, artifactTypes],
-  );
-
-  const filteredResultArtifacts = useMemo(
-    () => filterArtifactList(resultArtifacts),
-    [resultArtifacts, filterArtifactList],
-  );
-  const filteredInvArtifacts = useMemo(
-    () => filterArtifactList(invArtifacts),
-    [invArtifacts, filterArtifactList],
-  );
-
-  const initialArtifactsTree = useMemo(() => {
-    return buildArtifactsTree(filteredResultArtifacts, filteredInvArtifacts);
-  }, [filteredResultArtifacts, filteredInvArtifacts]);
-
-  const finalArtifactsTree = useMemo(() => {
-    if (!hideEmptyFolders) {
-      return initialArtifactsTree;
-    }
-
-    function pruneEmptyFolders(
-      nodes: ArtifactTreeNodeData[],
-    ): ArtifactTreeNodeData[] {
-      const prunedNodes: ArtifactTreeNodeData[] = [];
-      for (const node of nodes) {
-        const isLeaf = !!node.artifact || node.isSummary;
-        if (isLeaf) {
-          prunedNodes.push(node);
-          continue;
-        }
-
-        const prunedChildren = pruneEmptyFolders(node.children);
-
-        if (prunedChildren.length > 0) {
-          prunedNodes.push({ ...node, children: prunedChildren });
-        }
-      }
-      return prunedNodes;
-    }
-
-    return pruneEmptyFolders(initialArtifactsTree);
-  }, [initialArtifactsTree, hideEmptyFolders]);
 
   useEffect(() => {
     if (debouncedSearchTerm) return;
@@ -262,7 +78,7 @@ export function ArtifactTreeView({
     }
 
     const findFirstLeafRecursive = (
-      nodes: ArtifactTreeNodeData[],
+      nodes: readonly ArtifactTreeNodeData[],
     ): ArtifactTreeNodeData | null => {
       for (const node of nodes) {
         if (!node.children || node.children.length === 0) {
@@ -396,22 +212,7 @@ export function ArtifactTreeView({
                   zIndex: (theme) => theme.zIndex.tooltip,
                 }}
               >
-                <ArtifactFiltersDropdown
-                  availableArtifactTypes={availableArtifactTypes}
-                  artifactTypes={artifactTypes}
-                  setArtifactTypes={setArtifactTypes}
-                  crashTypes={crashTypes}
-                  setCrashTypes={setCrashTypes}
-                  showCriticalCrashes={showCriticalCrashes}
-                  setShowCriticalCrashes={setShowCriticalCrashes}
-                  hideAutomationFiles={hideAutomationFiles}
-                  setHideAutomationFiles={setHideAutomationFiles}
-                  hideEmptyFolders={hideEmptyFolders}
-                  setHideEmptyFolders={setHideEmptyFolders}
-                  showOnlyFoldersWithError={showOnlyFoldersWithError}
-                  setShowOnlyFoldersWithError={setShowOnlyFoldersWithError}
-                  onClearFilters={handleClearFilters}
-                />
+                <ArtifactFiltersDropdown />
               </Box>
             )}
           </Box>
@@ -454,5 +255,34 @@ export function ArtifactTreeView({
         />
       </Box>
     </Box>
+  );
+}
+
+interface ArtifactTreeViewProps {
+  resultArtifacts: readonly Artifact[];
+  invArtifacts: readonly Artifact[];
+  artifactsLoading: boolean;
+  selectedArtifact?: ArtifactTreeNodeData | null;
+  updateSelectedArtifact: (artifact: ArtifactTreeNodeData | null) => void;
+}
+
+export function ArtifactTreeView({
+  resultArtifacts,
+  invArtifacts,
+  artifactsLoading,
+  selectedArtifact,
+  updateSelectedArtifact,
+}: ArtifactTreeViewProps) {
+  return (
+    <ArtifactFilterProvider
+      resultArtifacts={resultArtifacts}
+      invArtifacts={invArtifacts}
+    >
+      <ArtifactTreeViewInternal
+        artifactsLoading={artifactsLoading}
+        selectedArtifact={selectedArtifact}
+        updateSelectedArtifact={updateSelectedArtifact}
+      />
+    </ArtifactFilterProvider>
   );
 }

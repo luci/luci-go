@@ -152,6 +152,8 @@ function ArtifactsSectionContent() {
         <PanelGroup
           direction="horizontal"
           style={{ height: '100%', minHeight: '600px' }}
+          // This will make the panel size stored in local storage.
+          autoSaveId="artifacts-panel-group-size"
         >
           <Panel defaultSize={30} minSize={20}>
             <Box

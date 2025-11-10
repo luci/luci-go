@@ -137,7 +137,9 @@ export function ArtifactTreeNode({
   const theme = useTheme();
   const isFolder = !row.isLeafNode;
   const backgroundColor = getNodeBackground(context, theme);
-  const artifactType = isFolder ? null : getArtifactType(row.name);
+  const artifactType = isFolder
+    ? null
+    : row.data.artifact?.artifactType || getArtifactType(row.name);
 
   const totalPaddingLeft =
     row.level * LEVEL_INDENTATION_SIZE + CONTENT_INTERNAL_OFFSET_LEFT;
