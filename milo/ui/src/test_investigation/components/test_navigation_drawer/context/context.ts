@@ -25,15 +25,9 @@ export interface TestDrawerContextValue {
   currentTestId: string;
   currentVariantHash: string;
   onSelectTestVariant: (tv: TestVariant) => void;
-
-  // Expanded node state must be in context so recursive children can call it
   expandedNodes: Set<string>;
   toggleNodeExpansion: (nodeId: string) => void;
-
-  // Ref to the DOM element of the currently selected list item
   selectedItemRef: RefObject<HTMLDivElement | null>;
-
-  // Add the drawer's open state
   isDrawerOpen: boolean;
 }
 

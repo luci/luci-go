@@ -38,7 +38,6 @@ import {
   useIsLegacyInvocation,
   useRawInvocationId,
 } from '@/test_investigation/context/context';
-// This import path is now corrected
 import {
   buildHierarchyTreeAndFindExpandedIds,
   buildFailureReasonTree,
@@ -80,7 +79,6 @@ export function TestDrawerProvider({
   const isLegacyInvocation = useIsLegacyInvocation();
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
-  // Create the ref for the selected item
   const selectedItemRef = useRef<HTMLDivElement | null>(null);
 
   const query = useMemo(() => {
@@ -104,12 +102,12 @@ export function TestDrawerProvider({
         orderBy,
       }),
     );
-  }, [invocation.name, isLegacyInvocation, resultDbClient.QueryTestVariants]);
+  }, [invocation, isLegacyInvocation, resultDbClient.QueryTestVariants]);
 
   const { data: testVariantsResponse, isPending: isLoadingTestVariants } =
     useQuery<QueryTestVariantsResponse | null, Error, readonly TestVariant[]>({
       ...query,
-      enabled: !!invocation.name,
+      enabled: !!invocation && !!query,
       staleTime: 5 * 60 * 1000,
       select: (data) => data?.testVariants || [],
     });
@@ -123,14 +121,9 @@ export function TestDrawerProvider({
     useMemo((): HierarchyBuildResult => {
       return buildHierarchyTreeAndFindExpandedIds(
         testVariants,
-        currentTestVariant.testId,
-        currentTestVariant.variantHash,
+        currentTestVariant,
       );
-    }, [
-      testVariants,
-      currentTestVariant.testId,
-      currentTestVariant.variantHash,
-    ]);
+    }, [testVariants, currentTestVariant]);
 
   const failureReasonTreeData = useMemo(
     () => buildFailureReasonTree(testVariants),
@@ -182,8 +175,8 @@ export function TestDrawerProvider({
       isLoading: isLoadingTestVariants,
       hierarchyTree: hierarchyTreeData,
       failureReasonTree: failureReasonTreeData,
-      currentTestId: currentTestVariant.testId,
-      currentVariantHash: currentTestVariant.variantHash,
+      currentTestId: currentTestVariant?.testId || '',
+      currentVariantHash: currentTestVariant?.variantHash || '',
       onSelectTestVariant: handleDrawerTestSelection,
       expandedNodes,
       toggleNodeExpansion,
@@ -194,8 +187,8 @@ export function TestDrawerProvider({
       isLoadingTestVariants,
       hierarchyTreeData,
       failureReasonTreeData,
-      currentTestVariant.testId,
-      currentTestVariant.variantHash,
+      currentTestVariant?.testId,
+      currentTestVariant?.variantHash,
       handleDrawerTestSelection,
       expandedNodes,
       toggleNodeExpansion,

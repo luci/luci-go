@@ -582,16 +582,15 @@ describe('DrawerTreeUtils', () => {
       const variants = [structuredVariant1, structuredVariant2];
       const { idsToExpand } = buildHierarchyTreeAndFindExpandedIds(
         variants,
-        'test.structured.case2',
-        'hash2',
+        structuredVariant2,
       );
 
       expect(idsToExpand).toEqual([
         '0-module1',
-        '0-module1/1-vhash1',
-        '0-module1/1-vhash1/2-coarse1',
-        '0-module1/1-vhash1/2-coarse1/3-fine1',
-        '0-module1/1-vhash1/2-coarse1/3-fine1/4-case2',
+        '1-vhash1',
+        '2-coarse1',
+        '3-fine1',
+        '4-case2',
       ]);
     });
 
@@ -599,8 +598,7 @@ describe('DrawerTreeUtils', () => {
       const variants = [flatVariant1, flatVariant2];
       const { idsToExpand } = buildHierarchyTreeAndFindExpandedIds(
         variants,
-        'a/b/d',
-        'hashB',
+        flatVariant2,
       );
 
       expect(idsToExpand).toEqual(['a/-a/b/', 'a/b/d']);
@@ -610,8 +608,7 @@ describe('DrawerTreeUtils', () => {
       const variants = [compressedVariant];
       const { idsToExpand } = buildHierarchyTreeAndFindExpandedIds(
         variants,
-        'long/path/to/single/file',
-        'hashComp',
+        compressedVariant,
       );
 
       expect(idsToExpand).toEqual([
@@ -629,16 +626,15 @@ describe('DrawerTreeUtils', () => {
       ];
       const { idsToExpand } = buildHierarchyTreeAndFindExpandedIds(
         variants,
-        'test.structured.case1',
-        'hash1',
+        structuredVariant1,
       );
 
       expect(idsToExpand).toEqual([
         '0-module1',
-        '0-module1/1-vhash1',
-        '0-module1/1-vhash1/2-coarse1',
-        '0-module1/1-vhash1/2-coarse1/3-fine1',
-        '0-module1/1-vhash1/2-coarse1/3-fine1/4-case1',
+        '1-vhash1',
+        '2-coarse1',
+        '3-fine1',
+        '4-case1',
       ]);
     });
 
@@ -651,8 +647,7 @@ describe('DrawerTreeUtils', () => {
       ];
       const { idsToExpand } = buildHierarchyTreeAndFindExpandedIds(
         variants,
-        'a/b/c',
-        'hashA',
+        flatVariant1,
       );
 
       expect(idsToExpand).toEqual(['a/-a/b/', 'a/b/c']);
@@ -664,24 +659,32 @@ describe('DrawerTreeUtils', () => {
       expect(idsToExpand).toEqual([]);
     });
 
-    it('should return an empty array if the test ID is not found', () => {
+    it('should inject and find missing flat variants', () => {
       const variants = [structuredVariant1, flatVariant1];
+      const missingVariant = {
+        testId: 'non/existent/id',
+        variantHash: 'hashNotFound',
+      } as TestVariant;
       const { idsToExpand } = buildHierarchyTreeAndFindExpandedIds(
         variants,
-        'non/existent/id',
-        'hashNotFound',
+        missingVariant,
       );
-      expect(idsToExpand).toEqual([]);
+      // 'non' and 'existent' get compressed into one node
+      expect(idsToExpand).toEqual(['non/-non/existent/', 'non/existent/id']);
     });
 
-    it('should return an empty array if the variant hash is not found', () => {
+    it('should inject and find missing variants even if hash is different', () => {
       const variants = [structuredVariant1, flatVariant1];
+      const wrongHashVariant = {
+        testId: 'a/b/c',
+        variantHash: 'wrongHash',
+      } as TestVariant;
       const { idsToExpand } = buildHierarchyTreeAndFindExpandedIds(
         variants,
-        'a/b/c',
-        'wrongHash',
+        wrongHashVariant,
       );
-      expect(idsToExpand).toEqual([]);
+      // it will be injected alongside the existing 'a/b/c'
+      expect(idsToExpand).toEqual(['a/-a/b/', 'a/b/c']);
     });
   });
 });

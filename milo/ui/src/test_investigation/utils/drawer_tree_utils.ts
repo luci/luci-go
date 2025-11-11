@@ -65,27 +65,43 @@ function findNodePath(
 }
 
 /**
- * Builds the test variant hierarchy tree and identifies the node path to
- * the specified testId and variantHash.
+ * Builds the test variant hierarchy tree.
+ * If a currently selected test variant is provided, it ensures that variant
+ * is included in the tree (injecting it if missing from the base list)
+ * and calculates the IDs of the nodes that need to be expanded to reach it.
  */
 export function buildHierarchyTreeAndFindExpandedIds(
   testVariants: readonly TestVariant[],
-  testId?: string,
-  variantHash?: string,
+  selectedTestVariant?: TestVariant | null,
 ): HierarchyBuildResult {
-  // First, build the complete tree.
-  const buildResult = buildHierarchyTree(testVariants);
+  let variantsToBuild = testVariants;
 
-  // If a specific test is provided, find the path to it.
-  if (testId && variantHash) {
-    const idsToExpand = findNodePath(buildResult.tree, testId, variantHash);
+  if (selectedTestVariant) {
+    const isPresent = testVariants.some(
+      (tv) =>
+        tv.testId === selectedTestVariant.testId &&
+        tv.variantHash === selectedTestVariant.variantHash,
+    );
+
+    if (!isPresent) {
+      variantsToBuild = [...testVariants, selectedTestVariant];
+    }
+  }
+
+  const buildResult = buildHierarchyTree(variantsToBuild);
+
+  if (selectedTestVariant) {
+    const idsToExpand = findNodePath(
+      buildResult.tree,
+      selectedTestVariant.testId,
+      selectedTestVariant.variantHash,
+    );
     return {
       tree: buildResult.tree,
       idsToExpand: idsToExpand,
     };
   }
 
-  // Otherwise, return the tree with no nodes expanded.
   return {
     tree: buildResult.tree,
     idsToExpand: [],
@@ -163,7 +179,6 @@ export function buildHierarchyTree(
 ): HierarchyBuildResult {
   const result: HierarchyBuildResult = {
     tree: [],
-    // This is purposefully empty.
     idsToExpand: [],
   };
   if (!testVariants || testVariants.length === 0) {
@@ -223,7 +238,6 @@ export function structuredTreeLevelData(
 export function buildStructuredTree(
   level: StructuredTreeLevel,
   variants: TestVariant[],
-  parentId?: string,
 ): TestNavigationTreeNode[] {
   if (!variants || variants.length === 0 || level > StructuredTreeLevel.Case) {
     return [];
@@ -240,25 +254,16 @@ export function buildStructuredTree(
   const nodes: TestNavigationTreeNode[] = [];
   if (level < StructuredTreeLevel.Case) {
     groups.forEach((groupVariants, data) => {
-      if (data === '') {
-        const children = buildStructuredTree(
-          level + 1,
-          groupVariants,
-          parentId,
-        );
-        if (children.length > 0) {
+      const children = buildStructuredTree(level + 1, groupVariants);
+      if (children.length > 0) {
+        if (data === '') {
+          // This level was skipped for this group of variants.
+          // Instead of creating a node with an empty label,
+          // just add its children to the current list of nodes.
           nodes.push(...children);
-        }
-      } else {
-        const nodeId = parentId
-          ? `${parentId}/${level}-${data}`
-          : `${level}-${data}`;
-
-        const children = buildStructuredTree(level + 1, groupVariants, nodeId);
-
-        if (children.length > 0) {
+        } else {
           nodes.push({
-            id: nodeId,
+            id: `${level}-${data}`,
             label: data,
             level: level,
             children: children,
@@ -301,12 +306,8 @@ export function buildStructuredTree(
     });
   } else {
     groups.forEach((variants, data) => {
-      const nodeId = parentId
-        ? `${parentId}/${level}-${data}`
-        : `${level}-${data}`;
-
       nodes.push({
-        id: nodeId,
+        id: `${level}-${data}`,
         label: data,
         level: level,
         totalTests: 1,

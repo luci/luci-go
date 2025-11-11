@@ -38,7 +38,7 @@ interface ExpandableListItemProps {
   secondaryText?: string;
   totalTests: number;
   isSelected?: boolean;
-  onClick?: () => void;
+  onClick?: (event: React.MouseEvent) => void;
   level?: number;
   itemRef?: RefObject<HTMLDivElement | null>;
 }
@@ -69,12 +69,12 @@ export const ExpandableListItem: React.FC<ExpandableListItemProps> = ({
         onClick={onClick}
         dense
         sx={{
-          pl: children ? `${paddingLeft}px` : `${paddingLeft + 3}px`,
+          pl: `${paddingLeft}px`,
           py: 1.2,
           cursor: children ? 'pointer' : onClick ? 'pointer' : 'default',
         }}
       >
-        {children && (
+        {children ? (
           <>
             {isExpanded ? (
               <IconButton size="small">
@@ -86,6 +86,11 @@ export const ExpandableListItem: React.FC<ExpandableListItemProps> = ({
               </IconButton>
             )}
           </>
+        ) : (
+          <Box
+            sx={{ width: 34, height: 34, flexShrink: 0 }}
+            aria-hidden="true"
+          />
         )}
         <ListItemText
           primary={
@@ -97,7 +102,7 @@ export const ExpandableListItem: React.FC<ExpandableListItemProps> = ({
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 fontStyle: label ? 'normal' : 'italic',
-                marginLeft: children ? '8px' : undefined,
+                marginLeft: '8px',
               }}
             >
               {label || 'Unknown'}
@@ -131,7 +136,7 @@ export const ExpandableListItem: React.FC<ExpandableListItemProps> = ({
                   </Box>
                 }
                 sx={{
-                  ml: children ? '8px' : undefined,
+                  ml: '8px',
                   backgroundColor: style?.backgroundColor || 'warning',
                   height: children ? '40px' : '24px',
                   borderRadius: '4px',
