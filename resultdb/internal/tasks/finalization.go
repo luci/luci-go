@@ -58,14 +58,14 @@ var FinalizeWorkUnitsTask = tq.RegisterTaskClass(tq.TaskClass{
 
 // TestResultsPublisher describes how to route tasks to publish test results.
 //
-// The handler is implemented in internal/services/finalizer.
+// The handler is implemented in internal/services/pubsub.
 var TestResultsPublisher = tq.RegisterTaskClass(tq.TaskClass{
 	ID:        "publish-test-results",
 	Prototype: &taskspb.PublishTestResultsTask{},
 	// Ensures the finalized work unit IDs are enqueued transactionally.
 	Kind:          tq.Transactional,
 	Queue:         "testresultspublisher",
-	RoutingPrefix: "/internal/tasks/finalizer", // for routing to "finalizer" service
+	RoutingPrefix: "/internal/tasks/pubsub", // for routing to "pubsub" service
 })
 
 // StartInvocationFinalization enqueues a TryFinalizeInvocation task.

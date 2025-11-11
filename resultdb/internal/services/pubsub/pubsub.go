@@ -14,7 +14,13 @@
 
 package pubsub
 
-import "go.chromium.org/luci/server"
+import (
+	"context"
+
+	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/server"
+	"google.golang.org/protobuf/proto"
+)
 
 type Options struct {
 	// Hostname of the luci.resultdb.v1.ResultDB service which can be
@@ -24,7 +30,8 @@ type Options struct {
 }
 
 // InitServer initializes a exportnotifier server.
-func InitServer(srv *server.Server) error {
-	// TODO(b/457279545): Move tasks.TestResultsPublisher from the finalizer.go
-	return nil
+func InitServer(srv *server.Server, opts Options) {
+	tasks.TestResultsPublisher.AttachHandler(func(ctx context.Context, msg proto.Message) error {
+		return handlePublishTestResultsTask(ctx, msg, opts.ResultDBHostname)
+	})
 }
