@@ -101,12 +101,11 @@ func handlePublishTestResultsTask(ctx context.Context, msg proto.Message, result
 func collectTestResultsForWorkUnits(ctx context.Context, rootInvID rootinvocations.ID, workUnitIDs []string) (map[string][]*pb.TestResult, error) {
 	testResultsByWorkUnit := make(map[string][]*pb.TestResult)
 	legacyInvIDs := invocations.NewIDSet()
-	workUnitIDMap := make(map[invocations.ID]string) // Map legacy inv ID to work unit ID
 
 	for _, wuID := range workUnitIDs {
-		legacyInvID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: wuID}.LegacyInvocationID()
+		wu := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: wuID}
+		legacyInvID := wu.LegacyInvocationID()
 		legacyInvIDs.Add(legacyInvID)
-		workUnitIDMap[legacyInvID] = wuID
 		testResultsByWorkUnit[pbutil.WorkUnitName(string(rootInvID), wuID)] = []*pb.TestResult{}
 	}
 
@@ -117,16 +116,12 @@ func collectTestResultsForWorkUnits(ctx context.Context, rootInvID rootinvocatio
 	}
 
 	err := q.Run(span.Single(ctx), func(tr *pb.TestResult) error {
-		// TODO(b/454120970): Update testresults.Query to return the correct
-		// test results name format
-		// The test result name from the query will be in the legacy format.
-		legacyInvID, testID, resultID := testresults.MustParseLegacyName(tr.Name)
-		wuID := workUnitIDMap[legacyInvID]
-
-		// Reconstruct the name in the new format.
-		tr.Name = pbutil.TestResultName(string(rootInvID), wuID, testID, resultID)
-
-		wuName := pbutil.WorkUnitName(string(rootInvID), wuID)
+		// Name is now in the new format, extract work unit ID from it.
+		parts, err := pbutil.ParseTestResultName(tr.Name)
+		if err != nil {
+			return errors.Fmt("failed to parse the test result name %q: %w", tr.Name, err)
+		}
+		wuName := pbutil.WorkUnitName(parts.RootInvocationID, parts.WorkUnitID)
 		testResultsByWorkUnit[wuName] = append(testResultsByWorkUnit[wuName], tr)
 		return nil
 	})

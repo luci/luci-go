@@ -17,9 +17,11 @@ package pubsub
 import (
 	"context"
 
-	"go.chromium.org/luci/resultdb/internal/tasks"
-	"go.chromium.org/luci/server"
 	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/server"
+
+	"go.chromium.org/luci/resultdb/internal/tasks"
 )
 
 type Options struct {

@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tracing"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -258,7 +259,13 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 
 		// Generate test result name now in case tr.TestId and tr.ResultId become
 		// empty after q.Mask.Trim(tr).
-		trName := pbutil.LegacyTestResultName(string(invID), tr.TestId, tr.ResultId)
+		var trName string
+		if invID.IsWorkUnit() {
+			wuID := workunits.MustParseLegacyInvocationID(invID)
+			trName = pbutil.TestResultName(string(wuID.RootInvocationID), wuID.WorkUnitID, tr.TestId, tr.ResultId)
+		} else {
+			trName = pbutil.LegacyTestResultName(string(invID), tr.TestId, tr.ResultId)
+		}
 		tvID, err := pbutil.ParseStructuredTestIdentifierForOutput(tr.TestId, tr.Variant)
 		if err != nil {
 			return nil, errors.Fmt("populate structured test identifier for %s: %w", trName, err)
