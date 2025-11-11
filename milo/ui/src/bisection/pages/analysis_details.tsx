@@ -36,13 +36,18 @@ import {
   GenericSuspect,
 } from '@/bisection/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { useAnalysesClient } from '@/common/hooks/prpc_clients';
+import {
+  useAnalysesClient,
+  useBuildsClient,
+} from '@/common/hooks/prpc_clients';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import {
   Analysis,
   BuildFailureType,
   QueryAnalysisRequest,
 } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
+import { Status as BuildStatus } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 export interface TabPanelProps {
   readonly name: string;
@@ -93,14 +98,29 @@ export function AnalysisDetailsPage() {
     setCurrentTab(newTab);
   };
 
+  const buildsClient = useBuildsClient();
+  const { data: build } = useQuery({
+    ...buildsClient.GetBuild.query(
+      GetBuildRequest.fromPartial({
+        id: bbid,
+        mask: {
+          fields: ['id', 'steps'],
+        },
+      }),
+    ),
+  });
+
+  const failedStepName = build?.steps.find(
+    (s) => s.status === BuildStatus.FAILURE,
+  )?.name;
+
   const client = useAnalysesClient();
   const { isPending, isError, data, error } = useQuery(
     client.QueryAnalysis.query(
       QueryAnalysisRequest.fromPartial({
         buildFailure: {
           bbid: bbid,
-          // TODO: update this once other failure types are analyzed
-          failedStepName: 'compile',
+          failedStepName: failedStepName,
         },
       }),
     ),
