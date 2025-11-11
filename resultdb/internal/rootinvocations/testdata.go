@@ -50,7 +50,6 @@ func NewBuilder(id ID) *Builder {
 			FinalizeTime:                            spanner.NullTime{Valid: true, Time: time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)},
 			UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: time.Date(2025, 6, 28, 1, 2, 3, 4000, time.UTC)},
 			CreateRequestID:                         "test-request-id",
-			ProducerResource:                        "//builds.example.com/builds/123",
 			Tags:                                    pbutil.StringPairs("k1", "v1"),
 			Properties: &structpb.Struct{
 				Fields: map[string]*structpb.Value{
@@ -173,12 +172,6 @@ func (b *Builder) WithCreateRequestID(id string) *Builder {
 	return b
 }
 
-// WithProducerResource sets the producer resource.
-func (b *Builder) WithProducerResource(res string) *Builder {
-	b.row.ProducerResource = res
-	return b
-}
-
 // WithTags sets the tags.
 func (b *Builder) WithTags(tags []*pb.StringPair) *Builder {
 	b.row.Tags = tags
@@ -259,7 +252,6 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 		"FinalizeTime":          r.FinalizeTime,
 		"UninterestingTestVerdictsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
 		"CreateRequestId":                         r.CreateRequestID,
-		"ProducerResource":                        r.ProducerResource,
 		"Tags":                                    r.Tags,
 		"Properties":                              spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
 		"Sources":                                 spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
@@ -297,7 +289,6 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 		"Deadline":                          time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC),
 		"Tags":                              r.Tags,
 		"CreateRequestId":                   r.CreateRequestID,
-		"ProducerResource":                  r.ProducerResource,
 		"Properties":                        spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
 		"InheritSources":                    spanner.NullBool{Bool: false, Valid: true}, // A root invocation defines its own sources.
 		"Sources":                           spanutil.Compressed(pbutil.MustMarshal(r.Sources)),

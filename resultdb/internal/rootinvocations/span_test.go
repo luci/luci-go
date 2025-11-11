@@ -70,17 +70,16 @@ func TestWriteRootInvocation(t *testing.T) {
 
 		// The legacy invocation should be a reflection of the root invocation.
 		expectedLegacyInv := &pb.Invocation{
-			Name:             legacyInvID.Name(),
-			State:            pb.Invocation_State(row.FinalizationState),
-			Realm:            row.Realm,
-			Deadline:         timestamppb.New(time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)),
-			CreateTime:       timestamppb.New(commitTime),
-			CreatedBy:        row.CreatedBy,
-			Tags:             row.Tags,
-			ProducerResource: row.ProducerResource,
-			Properties:       row.Properties,
-			IsExportRoot:     true,
-			BaselineId:       row.BaselineID,
+			Name:         legacyInvID.Name(),
+			State:        pb.Invocation_State(row.FinalizationState),
+			Realm:        row.Realm,
+			Deadline:     timestamppb.New(time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)),
+			CreateTime:   timestamppb.New(commitTime),
+			CreatedBy:    row.CreatedBy,
+			Tags:         row.Tags,
+			Properties:   row.Properties,
+			IsExportRoot: true,
+			BaselineId:   row.BaselineID,
 			SourceSpec: &pb.SourceSpec{
 				Sources: row.Sources,
 				Inherit: false,

@@ -94,9 +94,6 @@ CREATE TABLE RootInvocations (
   -- Used to dedup root invocation creation requests.
   CreateRequestId STRING(MAX) NOT NULL,
 
-  -- Value of RootInvocation.producer_resource. See its documentation.
-  ProducerResource STRING(MAX) NOT NULL,
-
   -- List of colon-separated key-value tags.
   -- Corresponds to RootInvocation.tags in root_invocation.proto.
   Tags ARRAY<STRING(MAX)> NOT NULL,
@@ -387,9 +384,6 @@ CREATE TABLE WorkUnits (
   -- Value of CreateWorkUnitRequest.request_id.
   -- Used to dedup work unit creation requests.
   CreateRequestId STRING(MAX) NOT NULL,
-
-  -- Value of Invocation.producer_resource. See its documentation.
-  ProducerResource STRING(MAX) NOT NULL,
 
   -- List of colon-separated key-value tags.
   -- Corresponds to Invocation.tags in invocation.proto.

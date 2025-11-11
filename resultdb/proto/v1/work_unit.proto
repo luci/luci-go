@@ -337,14 +337,7 @@ message WorkUnit {
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  // Full name of the resource that produced results in this work unit.
-  // See also https://aip.dev/122#full-resource-names
-  // Typical examples:
-  // - Swarming task: "//chromium-swarm.appspot.com/tasks/deadbeef"
-  // - Buildbucket build: "//cr-buildbucket.appspot.com/builds/1234567890".
-  //
-  // Setting this field requires resultdb.workUnits.setProducerResource permission.
-  string producer_resource = 13 [ (google.api.field_behavior) = IMMUTABLE ];
+  reserved 13; // producer_resource
 
   // Work unit-level string key-value pairs.
   // A key can be repeated.

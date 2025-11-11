@@ -196,15 +196,7 @@ message RootInvocation {
 
   // == General ================================================================
 
-  // Full name of the resource that produced results in this root invocation.
-  // See also https://aip.dev/122#full-resource-names
-  // Typical examples:
-  // - Swarming task: "//chromium-swarm.appspot.com/tasks/deadbeef"
-  // - Buildbucket build: "//cr-buildbucket.appspot.com/builds/1234567890".
-  //
-  // Total length limited to 2000 bytes. Resource names must be in Unicode
-  // normalization form C.
-  string producer_resource = 10 [ (google.api.field_behavior) = IMMUTABLE ];
+  reserved 10; // producer_resource
 
   // The process definition of the root invocation. Root invocations with the same
   // definition share the same root invocation history.

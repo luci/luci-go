@@ -145,29 +145,6 @@ func TestVerifyCreateRootInvocationPermissions(t *testing.T) {
 			})
 		})
 
-		t.Run("producer resource", func(t *ftt.Test) {
-			request.RootInvocation.ProducerResource = "//builds.example.com/builds/1"
-			t.Run("disallowed", func(t *ftt.Test) {
-				err := verifyCreateRootInvocationPermissions(ctx, request)
-				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike(`only root invocations created by trusted system may have a populated producer_resource field`))
-			})
-
-			t.Run("allowed with realm permission", func(t *ftt.Test) {
-				authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
-					Realm: "project:@root", Permission: permSetRootInvocationProducerResource,
-				})
-				err := verifyCreateRootInvocationPermissions(ctx, request)
-				assert.Loosely(t, err, should.BeNil)
-			})
-
-			t.Run("allowed with trusted group", func(t *ftt.Test) {
-				authState.IdentityGroups = []string{trustedCreatorGroup}
-				err := verifyCreateRootInvocationPermissions(ctx, request)
-				assert.Loosely(t, err, should.BeNil)
-			})
-		})
-
 		t.Run("baseline", func(t *ftt.Test) {
 			request.RootInvocation.BaselineId = "try:linux-rel"
 
@@ -274,23 +251,6 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					req.RootInvocation.Tags = tags
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: tags: got 16575 bytes; exceeds the maximum size of 16384 bytes"))
-				})
-			})
-			t.Run("producer_resource", func(t *ftt.Test) {
-				t.Run("empty", func(t *ftt.Test) {
-					req.RootInvocation.ProducerResource = ""
-					err := validateCreateRootInvocationRequest(req, cfg)
-					assert.Loosely(t, err, should.BeNil)
-				})
-				t.Run("valid", func(t *ftt.Test) {
-					req.RootInvocation.ProducerResource = "//cr-buildbucket.appspot.com/builds/1234567890"
-					err := validateCreateRootInvocationRequest(req, cfg)
-					assert.Loosely(t, err, should.BeNil)
-				})
-				t.Run("invalid", func(t *ftt.Test) {
-					req.RootInvocation.ProducerResource = "invalid"
-					err := validateCreateRootInvocationRequest(req, cfg)
-					assert.Loosely(t, err, should.ErrLike("root_invocation: producer_resource: resource name \"invalid\" does not start with '//'"))
 				})
 			})
 			t.Run("sources", func(t *ftt.Test) {
@@ -553,12 +513,6 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 						assert.Loosely(t, err, should.ErrLike(`work_unit: module_shard_key: must not be set unless module_id is specified`))
 					})
 				})
-			})
-			t.Run("producer resource", func(t *ftt.Test) {
-				// Must not be set.
-				req.RootWorkUnit.ProducerResource = "//chromium-swarm.appspot.com/tasks/deadbeef"
-				err := validateCreateRootInvocationRequest(req, cfg)
-				assert.Loosely(t, err, should.ErrLike("root_work_unit: producer_resource: must not be set; always inherited from root invocation"))
 			})
 			t.Run("tags", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
@@ -878,7 +832,6 @@ func TestCreateRootInvocation(t *testing.T) {
 				RequestId:        "e2e-request",
 				RootInvocation: &pb.RootInvocation{
 					Realm:                "testproject:testrealm",
-					ProducerResource:     "//builds.example.com/builds/1",
 					Sources:              sources,
 					Tags:                 invTags,
 					Properties:           invProperties,
@@ -927,7 +880,6 @@ func TestCreateRootInvocation(t *testing.T) {
 				Realm:             "testproject:testrealm",
 				Creator:           "user:someone@example.com",
 				Deadline:          timestamppb.New(start.Add(defaultDeadlineDuration)),
-				ProducerResource:  "//builds.example.com/builds/1",
 			})
 			expectedWU.Instructions = instructionutil.InstructionsWithNames(instructions, wuID.Name())
 			pbutil.PopulateModuleIdentifierHashes(expectedWU.ModuleId)
@@ -944,7 +896,6 @@ func TestCreateRootInvocation(t *testing.T) {
 				FinalizeTime:                            spanner.NullTime{},
 				UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: start.Add(expectedResultExpiration)},
 				CreateRequestID:                         "e2e-request",
-				ProducerResource:                        "//builds.example.com/builds/1",
 				Tags:                                    invTags,
 				Properties:                              invProperties,
 				Sources:                                 sources,
@@ -976,7 +927,6 @@ func TestCreateRootInvocation(t *testing.T) {
 				},
 				ModuleShardKey:          "shard_key",
 				ModuleInheritanceStatus: workunits.ModuleInheritanceStatusRoot,
-				ProducerResource:        "//builds.example.com/builds/1",
 				Tags:                    pbutil.StringPairs("wu_key", "wu_value"),
 				Properties:              wuProperties,
 				Instructions:            instructionutil.InstructionsWithNames(instructions, wuID.Name()),

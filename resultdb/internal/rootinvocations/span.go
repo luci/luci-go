@@ -92,7 +92,6 @@ type RootInvocationRow struct {
 	FinalizeTime                            spanner.NullTime // Output only.
 	UninterestingTestVerdictsExpirationTime spanner.NullTime
 	CreateRequestID                         string
-	ProducerResource                        string
 	Tags                                    []*pb.StringPair
 	Properties                              *structpb.Struct
 	Sources                                 *pb.Sources
@@ -142,7 +141,6 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 		"LastUpdated":           spanner.CommitTimestamp,
 		"UninterestingTestVerdictsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
 		"CreateRequestId":                         r.CreateRequestID,
-		"ProducerResource":                        r.ProducerResource,
 		"Tags":                                    r.Tags,
 		"Properties":                              spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
 		"Sources":                                 spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
@@ -175,7 +173,6 @@ func (r *RootInvocationRow) toLegacyInvocationMutation() *spanner.Mutation {
 		"Deadline":          time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC),
 		"Tags":              r.Tags,
 		"CreateRequestId":   r.CreateRequestID,
-		"ProducerResource":  r.ProducerResource,
 		"Properties":        spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
 		"InheritSources":    spanner.NullBool{Bool: false, Valid: true}, // A root invocation defines its own sources.
 		"Sources":           spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
@@ -219,7 +216,6 @@ func (r *RootInvocationRow) ToProto() *pb.RootInvocation {
 		CreateTime:           pbutil.MustTimestampProto(r.CreateTime),
 		Creator:              r.CreatedBy,
 		LastUpdated:          pbutil.MustTimestampProto(r.LastUpdated),
-		ProducerResource:     r.ProducerResource,
 		Sources:              r.Sources,
 		Tags:                 r.Tags,
 		Properties:           r.Properties,
@@ -263,7 +259,6 @@ func (r *RootInvocationRow) ToLegacyInvocationProto() *pb.Invocation {
 		CreateTime:             pbutil.MustTimestampProto(r.CreateTime),
 		CreatedBy:              r.CreatedBy,
 		Deadline:               timestamppb.New(time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)),
-		ProducerResource:       r.ProducerResource,
 		SourceSpec:             sourceSpec,
 		IsSourceSpecFinal:      r.StreamingExportState == pb.RootInvocation_METADATA_FINAL,
 		Tags:                   r.Tags,

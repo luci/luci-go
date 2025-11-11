@@ -107,7 +107,6 @@ type WorkUnitRow struct {
 	ModuleID                *pb.ModuleIdentifier
 	ModuleShardKey          string
 	ModuleInheritanceStatus ModuleInheritanceStatus
-	ProducerResource        string
 	Tags                    []*pb.StringPair
 	Properties              *structpb.Struct
 	Instructions            *pb.Instructions
@@ -168,7 +167,6 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 		"Deadline":                w.Deadline,
 		"CreateRequestId":         w.CreateRequestID,
 		"ModuleInheritanceStatus": w.ModuleInheritanceStatus,
-		"ProducerResource":        w.ProducerResource,
 		"Tags":                    w.Tags,
 		"Properties":              spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
 		"Instructions":            spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
@@ -237,7 +235,6 @@ func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *span
 		"Deadline":                          w.Deadline,
 		"Tags":                              w.Tags,
 		"CreateRequestId":                   w.CreateRequestID,
-		"ProducerResource":                  w.ProducerResource,
 		"Properties":                        spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
 		// Work unit always inherits source from root invocation.
 		"InheritSources":    spanner.NullBool{Valid: true, Bool: true},
@@ -295,7 +292,6 @@ func (w *WorkUnitRow) ToLegacyInvocationProto() *pb.Invocation {
 		Properties:             w.Properties,
 		SourceSpec:             &pb.SourceSpec{Inherit: true},
 		IsSourceSpecFinal:      true,
-		ProducerResource:       w.ProducerResource,
 		Instructions:           instructionutil.InstructionsWithNames(w.Instructions, w.ID.LegacyInvocationID().Name()),
 		ExtendedProperties:     w.ExtendedProperties,
 		TestResultVariantUnion: &pb.Variant{},

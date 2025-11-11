@@ -70,7 +70,6 @@ func NewBuilder(rootInvocationID rootinvocations.ID, workUnitID string) *Builder
 			},
 			ModuleShardKey:          "shard_key",
 			ModuleInheritanceStatus: ModuleInheritanceStatusRoot,
-			ProducerResource:        "//builds.example.com/builds/123",
 			Tags:                    pbutil.StringPairs("k1", "v1"),
 			Properties: &structpb.Struct{
 				Fields: map[string]*structpb.Value{
@@ -227,12 +226,6 @@ func (b *Builder) WithCreateRequestID(id string) *Builder {
 	return b
 }
 
-// WithProducerResource sets the producer resource.
-func (b *Builder) WithProducerResource(res string) *Builder {
-	b.row.ProducerResource = res
-	return b
-}
-
 // WithTags sets the tags.
 func (b *Builder) WithTags(tags []*pb.StringPair) *Builder {
 	b.row.Tags = tags
@@ -303,7 +296,6 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		"Deadline":                w.Deadline,
 		"CreateRequestId":         w.CreateRequestID,
 		"ModuleInheritanceStatus": w.ModuleInheritanceStatus,
-		"ProducerResource":        w.ProducerResource,
 		"Tags":                    w.Tags,
 		"Properties":              spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
 		"Instructions":            spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
@@ -344,7 +336,6 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		"Deadline":                          w.Deadline,
 		"Tags":                              w.Tags,
 		"CreateRequestId":                   w.CreateRequestID,
-		"ProducerResource":                  w.ProducerResource,
 		"Properties":                        spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
 		"InheritSources":                    spanner.NullBool{Valid: true, Bool: true}, // work unit always inherits source from root invocation.
 		"IsSourceSpecFinal":                 true,

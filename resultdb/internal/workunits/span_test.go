@@ -103,7 +103,6 @@ func TestWriteWorkUnit(t *testing.T) {
 			CreatedBy:              row.CreatedBy,
 			ModuleId:               row.ModuleID,
 			Tags:                   row.Tags,
-			ProducerResource:       row.ProducerResource,
 			Properties:             row.Properties,
 			SourceSpec:             &pb.SourceSpec{Inherit: true},
 			IsSourceSpecFinal:      true,

@@ -150,7 +150,6 @@ func createIdempotentRootInvocation(
 			CreatedBy:                               createdBy,
 			UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: now.Add(uninterestingTestVerdictsExpirationTime)},
 			CreateRequestID:                         req.RequestId,
-			ProducerResource:                        req.RootInvocation.ProducerResource,
 			Tags:                                    req.RootInvocation.Tags,
 			Properties:                              req.RootInvocation.Properties,
 			Sources:                                 req.RootInvocation.Sources,
@@ -187,7 +186,6 @@ func createIdempotentRootInvocation(
 			SummaryMarkdown:   req.RootWorkUnit.SummaryMarkdown,
 			Realm:             rootInvocationRow.Realm,
 			CreatedBy:         createdBy,
-			ProducerResource:  rootInvocationRow.ProducerResource,
 			// Fields should be set with value in request.RootWorkUnit.
 			CreateRequestID:         req.RequestId,
 			ModuleID:                req.RootWorkUnit.ModuleId,
@@ -281,17 +279,18 @@ func verifyCreateRootInvocationPermissions(ctx context.Context, req *pb.CreateRo
 
 	// if the producer resource is set,
 	// resultdb.rootInvocations.setProducerResource permission is required.
-	if inv.ProducerResource != "" {
-		project, _ := realms.Split(realm)
-		rootRealm := realms.Join(project, realms.RootRealm)
-		allowed, err := checkPermissionOrGroupMember(ctx, rootRealm, permSetRootInvocationProducerResource, trustedCreatorGroup)
-		if err != nil {
-			return err
-		}
-		if !allowed {
-			return appstatus.Errorf(codes.PermissionDenied, `only root invocations created by trusted system may have a populated producer_resource field`)
-		}
-	}
+	// TODO(meiring): Restore when new ProducerResource field is added.
+	// if inv.ProducerResource != "" {
+	// 	project, _ := realms.Split(realm)
+	// 	rootRealm := realms.Join(project, realms.RootRealm)
+	// 	allowed, err := checkPermissionOrGroupMember(ctx, rootRealm, permSetRootInvocationProducerResource, trustedCreatorGroup)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	if !allowed {
+	// 		return appstatus.Errorf(codes.PermissionDenied, `only root invocations created by trusted system may have a populated producer_resource field`)
+	// 	}
+	// }
 
 	// if a baseline is set,
 	// resultdb.baselines.put permission is required in the ":@project" realm
@@ -351,13 +350,6 @@ func validateRootInvocationForCreate(inv *pb.RootInvocation) error {
 	// CreateTime, Creator, FinalizeStartTime, FinalizeTime are output only and should be ignored
 	// as per https://google.aip.dev/203.
 
-	// Validate producer_resource.
-	if inv.ProducerResource != "" {
-		if err := pbutil.ValidateFullResourceName(inv.ProducerResource); err != nil {
-			return errors.Fmt("producer_resource: %w", err)
-		}
-	}
-
 	// Validate sources.
 	if inv.Sources != nil {
 		if err := pbutil.ValidateSources(inv.Sources); err != nil {
@@ -401,10 +393,6 @@ func validateRootWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServiceC
 
 	if wu.Realm != "" {
 		return errors.New("realm: must not be set; always inherited from root invocation")
-	}
-
-	if wu.ProducerResource != "" {
-		return errors.New("producer_resource: must not be set; always inherited from root invocation")
 	}
 
 	return validateWorkUnitForCreate(wu, cfg)

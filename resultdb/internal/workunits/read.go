@@ -496,7 +496,6 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			w.ModuleVariant,
 			w.ModuleShardKey,
 			w.ModuleInheritanceStatus,
-			w.ProducerResource,
 			w.Tags,
 			w.Properties,
 			w.Instructions,` + extraCols + `
@@ -571,7 +570,6 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			&moduleVariant,
 			&moduleShardKey,
 			&wu.ModuleInheritanceStatus,
-			&wu.ProducerResource,
 			&wu.Tags,
 			&properties,
 			&instructions,

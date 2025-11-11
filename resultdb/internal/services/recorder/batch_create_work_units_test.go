@@ -473,27 +473,6 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 				})
 			})
-			t.Run("producer resource", func(t *ftt.Test) {
-				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permSetWorkUnitProducerResource)
-				req.Requests[1].WorkUnit.ProducerResource = "//builds.example.com/builds/1"
-				t.Run("disallowed without permission", func(t *ftt.Test) {
-					_, err := recorder.BatchCreateWorkUnits(ctx, req)
-					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-					assert.Loosely(t, err, should.ErrLike(`requests[1]: work_unit: producer_resource: only work units created by trusted system may have a populated producer_resource field`))
-				})
-				t.Run("allowed with realm permission", func(t *ftt.Test) {
-					authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
-						Realm: "testproject:@root", Permission: permSetWorkUnitProducerResource,
-					})
-					_, err := recorder.BatchCreateWorkUnits(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-				})
-				t.Run("allowed with trusted group", func(t *ftt.Test) {
-					authState.IdentityGroups = []string{trustedCreatorGroup}
-					_, err := recorder.BatchCreateWorkUnits(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-				})
-			})
 			t.Run("inclusion or update token is validated", func(t *ftt.Test) {
 				t.Run("invalid update token", func(t *ftt.Test) {
 					ctx := metadata.NewOutgoingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid-token"))
@@ -680,7 +659,6 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 					ModuleVariant: pbutil.Variant("k", "v"),
 				},
 				ModuleShardKey:     "shard_key",
-				ProducerResource:   "//producer.example.com/builds/123",
 				Tags:               pbutil.StringPairs("e2e_key", "e2e_value"),
 				Properties:         wuProperties,
 				ExtendedProperties: extendedProperties,
@@ -749,7 +727,6 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 				},
 				ModuleShardKey:          "shard_key",
 				ModuleInheritanceStatus: workunits.ModuleInheritanceStatusRoot,
-				ProducerResource:        "//producer.example.com/builds/123",
 				Tags:                    pbutil.StringPairs("e2e_key", "e2e_value"),
 				Properties:              wuProperties,
 				Instructions:            instructionutil.InstructionsWithNames(instructions, workUnitID1.Name()),
