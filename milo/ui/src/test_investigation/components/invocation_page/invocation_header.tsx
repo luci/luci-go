@@ -25,7 +25,10 @@ import {
 import { PageTitle } from '@/common/components/page_title';
 import { Timestamp } from '@/common/components/timestamp';
 import { Sources } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
-import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
+import {
+  AnyInvocation,
+  getDisplayInvocationId,
+} from '@/test_investigation/utils/invocation_utils';
 import {
   formatAllCLs,
   getBuildId,
@@ -39,9 +42,7 @@ interface InvocationHeaderProps {
 }
 
 export function InvocationHeader({ invocation }: InvocationHeaderProps) {
-  const displayInvocationId = invocation.name.substring(
-    invocation.name.indexOf('/') + 1,
-  );
+  const displayInvocationId = getDisplayInvocationId(invocation);
   const buildbucketId = getBuildId(invocation);
 
   const commitInfo = getCommitInfoFromInvocation(invocation);

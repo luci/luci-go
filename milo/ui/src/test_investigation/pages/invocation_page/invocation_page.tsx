@@ -52,6 +52,7 @@ import { RedirectBackBanner } from '@/test_investigation/components/redirect_bac
 import { TestNavigationTreeNode } from '@/test_investigation/components/test_navigation_drawer/types';
 import { InvocationProvider } from '@/test_investigation/context/provider';
 import { buildHierarchyTree } from '@/test_investigation/utils/drawer_tree_utils';
+import { getDisplayInvocationId } from '@/test_investigation/utils/invocation_utils';
 import { getProjectFromRealm } from '@/test_investigation/utils/test_variant_utils';
 
 /**
@@ -335,6 +336,7 @@ export function InvocationPage() {
       isLegacyInvocation={isLegacyInvocation}
     >
       <ThemeProvider theme={gm3PageTheme}>
+        <title>{`Invocation: ${getDisplayInvocationId(invocation)}`}</title>
         <RedirectBackBanner
           invocation={invocation}
           parsedTestId={parsedTestId}

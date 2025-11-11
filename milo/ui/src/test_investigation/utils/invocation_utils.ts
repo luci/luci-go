@@ -60,3 +60,10 @@ export function isRootInvocationData(
 ): inv is RootInvocation {
   return !!inv && isRootInvocation(inv);
 }
+
+/**
+ * Generate the display invocation id.
+ */
+export function getDisplayInvocationId(invocation: AnyInvocation) {
+  return invocation.name.substring(invocation.name.indexOf('/') + 1);
+}
