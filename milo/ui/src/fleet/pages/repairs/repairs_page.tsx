@@ -784,6 +784,30 @@ function Metrics({
               }
             />
             <SingleMetric
+              name="Distinct Devices Online"
+              value={
+                countQuery.data?.totalDevices
+                  ? countQuery.data?.totalDevices -
+                    (countQuery.data?.offlineDevices || 0)
+                  : undefined
+              }
+              total={countQuery.data?.totalDevices}
+              Icon={<DoneIcon sx={{ color: colors.green[600] }} />}
+              loading={countQuery.isPending}
+              filterUrl={
+                getFeatureFlag('AndroidListDevices')
+                  ? generateDeviceListURL(ANDROID_PLATFORM) +
+                    getFilterQueryString(
+                      {
+                        fc_machine_type: ['device'],
+                        state: ['BUSY', 'IDLE', 'INIT'],
+                      },
+                      searchParams,
+                    )
+                  : undefined
+              }
+            />
+            <SingleMetric
               name="Distinct Devices Offline"
               value={countQuery.data?.offlineDevices}
               total={countQuery.data?.totalDevices}
