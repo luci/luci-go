@@ -38,7 +38,7 @@ const connPoolSize = 4
 var retryPolicy = fmt.Sprintf(`{
   "methodConfig": [{
     "name": [
-      {"service": "%s"},
+      {"service": "%s"}
     ],
     "waitForReady": true,
     "retryPolicy": {
