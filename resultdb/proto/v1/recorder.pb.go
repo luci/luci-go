@@ -941,6 +941,9 @@ type FinalizeWorkUnitRequest struct {
 	State WorkUnit_State `protobuf:"varint,2,opt,name=state,proto3,enum=luci.resultdb.v1.WorkUnit_State" json:"state,omitempty"`
 	// A summary of the final state of the work unit, to be displayed on the UI.
 	//
+	// E.g. if the work unit failed, the reason/stack trace describing why
+	// it failed. Can be elided if the work unit succeeded.
+	//
 	// The size of the summary must be equal to or smaller than 4096 bytes in
 	// UTF-8.
 	SummaryMarkdown string `protobuf:"bytes,3,opt,name=summary_markdown,json=summaryMarkdown,proto3" json:"summary_markdown,omitempty"`

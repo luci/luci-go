@@ -272,6 +272,11 @@ type WorkUnit struct {
 	// A summary of the final state of the work unit, to be displayed on the UI.
 	// MUST be escaped prior to rendering on the UI.
 	//
+	// E.g. if the work unit failed, the reason/stack trace describing why
+	// it failed.
+	//
+	// Can be elided if the work unit succeeded.
+	//
 	// The size of the summary must be equal to or smaller than 4096 bytes in
 	// UTF-8.
 	SummaryMarkdown string `protobuf:"bytes,23,opt,name=summary_markdown,json=summaryMarkdown,proto3" json:"summary_markdown,omitempty"`
