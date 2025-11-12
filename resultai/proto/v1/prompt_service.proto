@@ -25,10 +25,10 @@ service Prompt {
 
 // The request message containing the prompt ID and its parameters.
 message ExecutePromptRequest {
-  // Unique resource name of theprompt template
+  // Unique resource name of the prompt template
   // Format: promptTemplates/{prompt_template}
   string name = 1;
-  // Prompt parameters to fill the prompt template
+  // Prompt parameters to gather data and fill the prompt template
   map<string, string> prompt_params = 2;
 }
 
