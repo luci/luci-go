@@ -16,8 +16,11 @@ package pbutil
 
 import (
 	"encoding/hex"
+	"fmt"
 	"strings"
 	"testing"
+
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -166,6 +169,245 @@ func TestValidate(t *testing.T) {
 			t.Run(`Invalid`, func(t *ftt.Test) {
 				change.Patchset = -1
 				assert.Loosely(t, ValidateGerritChange(change), should.ErrLike(`patchset: cannot be negative`))
+			})
+		})
+	})
+	ftt.Run(`ValidateExtraBuildDescriptors`, t, func(t *ftt.Test) {
+		builds := []*pb.BuildDescriptor{
+			{
+				Definition: &pb.BuildDescriptor_AndroidBuild{
+					AndroidBuild: &pb.AndroidBuildDescriptor{
+						DataRealm:   "prod",
+						Branch:      "git_main",
+						BuildTarget: "aosp_arm64-userdebug",
+						BuildId:     "L1234567890",
+					},
+				},
+			},
+			{
+				Definition: &pb.BuildDescriptor_AndroidBuild{
+					AndroidBuild: &pb.AndroidBuildDescriptor{
+						DataRealm:   "test",
+						Branch:      "git_main",
+						BuildTarget: "aosp_arm64-userdebug",
+						BuildId:     "E1234567890",
+					},
+				},
+			},
+		}
+		t.Run(`Valid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateExtraBuildDescriptors(builds), should.BeNil)
+		})
+		t.Run(`Invalid`, func(t *ftt.Test) {
+			builds[0] = &pb.BuildDescriptor{
+				Definition: &pb.BuildDescriptor_AndroidBuild{
+					AndroidBuild: &pb.AndroidBuildDescriptor{
+						DataRealm:   "invalid",
+						Branch:      "git_main",
+						BuildTarget: "aosp_arm64-userdebug",
+						BuildId:     "L1234567890",
+					},
+				},
+			}
+			assert.Loosely(t, ValidateExtraBuildDescriptors(builds), should.ErrLike(`[0]: android_build: data_realm: unknown data realm "invalid"`))
+		})
+		t.Run(`Too large`, func(t *ftt.Test) {
+			builds = make([]*pb.BuildDescriptor, 11)
+			for i := 0; i < 11; i++ {
+				builds[i] = &pb.BuildDescriptor{
+					Definition: &pb.BuildDescriptor_AndroidBuild{
+						AndroidBuild: &pb.AndroidBuildDescriptor{
+							DataRealm:   "prod",
+							Branch:      "git_main",
+							BuildTarget: "aosp_arm64-userdebug",
+							BuildId:     fmt.Sprintf("L%d", i),
+						},
+					},
+				}
+			}
+			assert.Loosely(t, ValidateExtraBuildDescriptors(builds), should.ErrLike(`exceeds maximum of 10 extra builds`))
+		})
+	})
+	ftt.Run(`ValidateBuildDescriptorsUniquenessAndOrder`, t, func(t *ftt.Test) {
+		builds := []*pb.BuildDescriptor{
+			{
+				Definition: &pb.BuildDescriptor_AndroidBuild{
+					AndroidBuild: &pb.AndroidBuildDescriptor{
+						DataRealm:   "prod",
+						Branch:      "git_main",
+						BuildTarget: "aosp_arm64-userdebug",
+						BuildId:     "L1234567890",
+					},
+				},
+			},
+			{
+				Definition: &pb.BuildDescriptor_AndroidBuild{
+					AndroidBuild: &pb.AndroidBuildDescriptor{
+						DataRealm:   "test",
+						Branch:      "git_main",
+						BuildTarget: "aosp_arm64-userdebug",
+						BuildId:     "E1234567890",
+					},
+				},
+			},
+		}
+		primaryBuild := &pb.BuildDescriptor{
+			Definition: &pb.BuildDescriptor_AndroidBuild{
+				AndroidBuild: &pb.AndroidBuildDescriptor{
+					DataRealm:   "prod",
+					Branch:      "git_main",
+					BuildTarget: "aosp_arm64-userdebug",
+					BuildId:     "P1234567890",
+				},
+			},
+		}
+		t.Run(`Valid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateBuildDescriptorsUniquenessAndOrder(builds, primaryBuild), should.BeNil)
+		})
+		t.Run(`Nil primary build, no extra builds`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateBuildDescriptorsUniquenessAndOrder(nil, nil), should.BeNil)
+		})
+		t.Run(`Nil primary build, with extra builds`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateBuildDescriptorsUniquenessAndOrder(builds, nil), should.ErrLike(`may not be specified unless primary build is set`))
+		})
+		t.Run(`Duplicates of primary build`, func(t *ftt.Test) {
+			primaryBuild = proto.Clone(builds[1]).(*pb.BuildDescriptor)
+			assert.Loosely(t, ValidateBuildDescriptorsUniquenessAndOrder(builds, primaryBuild), should.ErrLike(`[1]: duplicate of primary_build`))
+		})
+		t.Run(`Duplicate within extra builds`, func(t *ftt.Test) {
+			builds[1] = builds[0]
+			assert.Loosely(t, ValidateBuildDescriptorsUniquenessAndOrder(builds, primaryBuild), should.ErrLike(`[1]: duplicate of extra_builds[0]`))
+		})
+	})
+	ftt.Run(`ValidateBuildDescriptor`, t, func(t *ftt.Test) {
+		build := &pb.BuildDescriptor{
+			Definition: &pb.BuildDescriptor_AndroidBuild{
+				AndroidBuild: &pb.AndroidBuildDescriptor{
+					DataRealm:   "prod",
+					Branch:      "git_main",
+					BuildTarget: "aosp_arm64-userdebug",
+					BuildId:     "L1234567890",
+				},
+			},
+		}
+		t.Run(`Valid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateBuildDescriptor(build), should.BeNil)
+		})
+		t.Run(`Nil`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateBuildDescriptor(nil), should.ErrLike(`unspecified`))
+		})
+		t.Run(`Definition`, func(t *ftt.Test) {
+			t.Run(`Missing`, func(t *ftt.Test) {
+				build.Definition = nil
+				assert.Loosely(t, ValidateBuildDescriptor(build), should.ErrLike(`definition: unspecified`))
+			})
+			t.Run(`AndroidBuild`, func(t *ftt.Test) {
+				ab := &pb.AndroidBuildDescriptor{
+					DataRealm:   "test",
+					Branch:      "git_main",
+					BuildTarget: "aosp_arm64-userdebug",
+					BuildId:     "E1234567890",
+				}
+				build.Definition = &pb.BuildDescriptor_AndroidBuild{
+					AndroidBuild: ab,
+				}
+				t.Run(`Valid`, func(t *ftt.Test) {
+					assert.Loosely(t, ValidateBuildDescriptor(build), should.BeNil)
+				})
+				t.Run(`Invalid`, func(t *ftt.Test) {
+					ab.DataRealm = "invalid"
+					assert.Loosely(t, ValidateBuildDescriptor(build), should.ErrLike(`android_build: data_realm: unknown data realm "invalid"`))
+				})
+			})
+		})
+	})
+	ftt.Run(`ValidateAndroidBuildDescriptor`, t, func(t *ftt.Test) {
+		build := &pb.AndroidBuildDescriptor{
+			DataRealm:   "prod",
+			Branch:      "git_main",
+			BuildTarget: "aosp_arm64-userdebug",
+			BuildId:     "P1234567890",
+		}
+		t.Run(`Valid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.BeNil)
+		})
+		t.Run(`Nil`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateAndroidBuildDescriptor(nil), should.ErrLike(`unspecified`))
+		})
+		t.Run(`Data Realm`, func(t *ftt.Test) {
+			t.Run(`Missing`, func(t *ftt.Test) {
+				build.DataRealm = ""
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`data_realm: unspecified`))
+			})
+			t.Run(`Invalid`, func(t *ftt.Test) {
+				build.DataRealm = "invalid"
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`data_realm: unknown data realm "invalid"`))
+			})
+		})
+		t.Run(`Branch`, func(t *ftt.Test) {
+			t.Run(`Missing`, func(t *ftt.Test) {
+				build.Branch = ""
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`branch: unspecified`))
+			})
+			t.Run(`Too long`, func(t *ftt.Test) {
+				build.Branch = strings.Repeat("a", MaxAndroidBranchLength+1)
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`branch: longer than 255 bytes`))
+			})
+			t.Run(`Non-Printable`, func(t *ftt.Test) {
+				build.Branch = "abc\u0000def"
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`branch: non-printable rune`))
+			})
+			t.Run(`Not in Unicode Normal Form C`, func(t *ftt.Test) {
+				build.Branch = "e\u0301" // Normal Form C would be \u00e9 (é).
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`branch: not in unicode normalized form C`))
+			})
+			t.Run(`Not valid UTF-8`, func(t *ftt.Test) {
+				build.Branch = "\xbd"
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`branch: not a valid utf8 string`))
+			})
+			t.Run(`Error rune`, func(t *ftt.Test) {
+				build.Branch = "aa\ufffd"
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`branch: unicode replacement character (U+FFFD) at byte index 2`))
+			})
+		})
+		t.Run(`Build Target`, func(t *ftt.Test) {
+			t.Run(`Missing`, func(t *ftt.Test) {
+				build.BuildTarget = ""
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`build_target: unspecified`))
+			})
+			t.Run(`Too long`, func(t *ftt.Test) {
+				build.BuildTarget = strings.Repeat("a", MaxAndroidBuildTargetLength+1)
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`build_target: longer than 255 bytes`))
+			})
+			t.Run(`Non-Printable`, func(t *ftt.Test) {
+				build.BuildTarget = "abc\u0000def"
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`build_target: non-printable rune`))
+			})
+			t.Run(`Not in Unicode Normal Form C`, func(t *ftt.Test) {
+				build.BuildTarget = "e\u0301" // Normal Form C would be \u00e9 (é).
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`build_target: not in unicode normalized form C`))
+			})
+			t.Run(`Not valid UTF-8`, func(t *ftt.Test) {
+				build.BuildTarget = "\xbd"
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`build_target: not a valid utf8 string`))
+			})
+			t.Run(`Error rune`, func(t *ftt.Test) {
+				build.BuildTarget = "aa\ufffd"
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`build_target: unicode replacement character (U+FFFD) at byte index 2`))
+			})
+		})
+		t.Run(`Build ID`, func(t *ftt.Test) {
+			t.Run(`Missing`, func(t *ftt.Test) {
+				build.BuildId = ""
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`build_id: unspecified`))
+			})
+			t.Run(`Too long`, func(t *ftt.Test) {
+				build.BuildId = strings.Repeat("1", MaxAndroidBuildLength+1)
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`build_id: must be at most 32 bytes`))
+			})
+			t.Run(`Invalid format`, func(t *ftt.Test) {
+				build.BuildId = "abc"
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`build_id: does not match`))
 			})
 		})
 	})

@@ -203,7 +203,7 @@ message RootInvocation {
   //
   // Setting this field is recommended but can be elided in case of local and
   // other emphemeral test runs which are not suitable to be plotted into a history.
-  RootInvocationDefinition definition = 21 [ (google.api.field_behavior) = IMMUTABLE ];
+  RootInvocationDefinition definition = 21;
 
   // The code sources which were tested by this root invocation.
   // This is used to index test results for test history, and for

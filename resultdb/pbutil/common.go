@@ -66,10 +66,20 @@ const MaxDependencyStepTagValSize = 1024
 
 const MaxInstructionNameSize = 100
 
-// The maximum length allowed for Android Branch names.
-// Note: The upstream technically does not enforce a limit but we
-// enforce a reasonable limit here so that we have a number we can design with.
-const MaxAndroidBranchLength = 255
+const (
+	// The maximum length allowed for Android Branch names.
+	// Note: The upstream technically does not enforce a limit but we
+	// enforce a reasonable limit here so that we have a number we can design with.
+	MaxAndroidBranchLength = 255 // bytes
+
+	// The maximum length allowed for Android Build Target names.
+	// Note: The upstream technically does not enforce a limit but we
+	// enforce a reasonable limit here so that we have a number we can design with.
+	MaxAndroidBuildTargetLength = 255 // bytes
+
+	// The maximum length allowed for Android Build IDs.
+	MaxAndroidBuildLength = 32 // bytes
+)
 
 // The maximum size the requests collection in a batch request, in bytes.
 const MaxBatchRequestSize = 10 * 1024 * 1024 // 10 MiB
@@ -95,6 +105,11 @@ const propertyTypeNamePattern = `[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+
 var propertyTypeNameRe = regexpf("^%s$", propertyTypeNamePattern)
 
 var sha1Regex = regexp.MustCompile(`^[a-f0-9]{40}$`)
+
+// androidBuildIDRe defines valid Android build identifiers.
+// P indicates a Pending build, E an external build, L a local build. If no
+// prefix is present, it indicates a submitted build.
+var androidBuildIDRe = regexp.MustCompile(`^[ELP]?[1-9][0-9]*$`)
 
 func regexpf(patternFormat string, subpatterns ...any) *regexp.Regexp {
 	return regexp.MustCompile(fmt.Sprintf(patternFormat, subpatterns...))
@@ -339,10 +354,8 @@ func ValidateSubmittedAndroidBuild(buildID *pb.SubmittedAndroidBuild) error {
 	if buildID.DataRealm == "" {
 		return errors.New("data_realm: unspecified")
 	}
-	// For now support prod only. If/when we start accepting data from
-	// non-production systems in any of our environments we can update this
-	// to accommodate.
-	if buildID.DataRealm != "prod" {
+	// Support a few common data realm values from go/data-realm.
+	if buildID.DataRealm != "prod" && buildID.DataRealm != "test" {
 		return errors.Fmt("data_realm: unknown data realm %q", buildID.DataRealm)
 	}
 	if buildID.Branch == "" {
@@ -360,6 +373,119 @@ func ValidateSubmittedAndroidBuild(buildID *pb.SubmittedAndroidBuild) error {
 	}
 	if buildID.BuildId < 0 {
 		return errors.New("build_id: cannot be negative")
+	}
+	return nil
+}
+
+// ValidateExtraBuildDescriptors validates a list of extra build descriptors.
+// This performs basic structural validation only, call ValidateBuildDescriptorsUniquenessAndOrder
+// to validate uniqueness is maintained and to ensure extra_builds is only set of primary_build is set.
+func ValidateExtraBuildDescriptors(builds []*pb.BuildDescriptor) error {
+	if len(builds) > 10 {
+		return errors.New("exceeds maximum of 10 extra builds")
+	}
+
+	for i, build := range builds {
+		if err := ValidateBuildDescriptor(build); err != nil {
+			return errors.Fmt("[%v]: %w", i, err)
+		}
+	}
+	return nil
+}
+
+// ValidateBuildDescriptorsUniquenessAndOrder performs extended validation on the extra builds, validating:
+// - the build descriptors do not duplicate each other or the primary build
+// - the extra builds field is only set of primary build is first set.
+func ValidateBuildDescriptorsUniquenessAndOrder(builds []*pb.BuildDescriptor, primaryBuild *pb.BuildDescriptor) error {
+	if primaryBuild == nil {
+		if len(builds) > 0 {
+			return errors.New("may not be specified unless primary build is set")
+		}
+		return nil
+	}
+	// Use -1 to denote the primary build.
+	const primaryBuildIndex = -1
+
+	seenKeys := make(map[string]int)
+	seenKeys[keyOfBuildDescriptor(primaryBuild)] = primaryBuildIndex
+
+	for i, build := range builds {
+		key := keyOfBuildDescriptor(build)
+		if idx, ok := seenKeys[key]; ok {
+			if idx == primaryBuildIndex {
+				return errors.Fmt("[%v]: duplicate of primary_build", i)
+			} else {
+				return errors.Fmt("[%v]: duplicate of extra_builds[%d]", i, idx)
+			}
+		}
+		seenKeys[key] = i
+	}
+	return nil
+}
+
+func keyOfBuildDescriptor(build *pb.BuildDescriptor) string {
+	switch def := build.Definition.(type) {
+	case *pb.BuildDescriptor_AndroidBuild:
+		return keyOfAndroidBuildDescriptor(def.AndroidBuild)
+	default:
+		// Should never be hit as ValidateBuildDescriptor should have
+		// been called before this method is called.
+		panic("definition: unspecified")
+	}
+}
+
+func keyOfAndroidBuildDescriptor(build *pb.AndroidBuildDescriptor) string {
+	return fmt.Sprintf("androidbuild/%q/%q/%q/%q", build.DataRealm, build.Branch, build.BuildTarget, build.BuildId)
+}
+
+// ValidateBuildDescriptor validates a BuildDescriptor.
+func ValidateBuildDescriptor(build *pb.BuildDescriptor) error {
+	if build == nil {
+		return validate.Unspecified()
+	}
+	switch def := build.Definition.(type) {
+	case *pb.BuildDescriptor_AndroidBuild:
+		if err := ValidateAndroidBuildDescriptor(def.AndroidBuild); err != nil {
+			return errors.Fmt("android_build: %w", err)
+		}
+	default:
+		return errors.New("definition: unspecified")
+	}
+	return nil
+}
+
+// ValidateAndroidBuildDescriptor validates an AndroidBuildDescriptor.
+func ValidateAndroidBuildDescriptor(build *pb.AndroidBuildDescriptor) error {
+	if build == nil {
+		return validate.Unspecified()
+	}
+	if build.DataRealm == "" {
+		return errors.New("data_realm: unspecified")
+	}
+	// Support a few common data realm values from go/data-realm.
+	if build.DataRealm != "prod" && build.DataRealm != "test" {
+		return errors.Fmt("data_realm: unknown data realm %q", build.DataRealm)
+	}
+
+	if build.Branch == "" {
+		return errors.New("branch: unspecified")
+	}
+	// The upstream does not enforce restrictions on the branch name, so
+	// we are fairly liberal in the alphabet and length we allow here.
+	// We do impose some limits here to allow us to make some assumptions when
+	// implementing UIs and RPCs, such as the branch will consist only of printables
+	// and is not kilobytes in size.
+	if err := ValidateUTF8PrintableStrict(build.Branch, MaxAndroidBranchLength); err != nil {
+		return errors.Fmt("branch: %w", err)
+	}
+	if build.BuildTarget == "" {
+		return errors.New("build_target: unspecified")
+	}
+	if err := ValidateUTF8PrintableStrict(build.BuildTarget, MaxAndroidBuildTargetLength); err != nil {
+		return errors.Fmt("build_target: %w", err)
+	}
+	if err := validate.MatchReWithLength(androidBuildIDRe, 1, MaxAndroidBuildLength, build.BuildId); err != nil {
+		return errors.Fmt("build_id: %w", err)
 	}
 	return nil
 }

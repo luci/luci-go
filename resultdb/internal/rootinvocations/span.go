@@ -92,9 +92,12 @@ type RootInvocationRow struct {
 	FinalizeTime                            spanner.NullTime // Output only.
 	UninterestingTestVerdictsExpirationTime spanner.NullTime
 	CreateRequestID                         string
+	Definition                              *pb.RootInvocationDefinition
+	Sources                                 *pb.Sources
+	PrimaryBuild                            *pb.BuildDescriptor
+	ExtraBuilds                             []*pb.BuildDescriptor
 	Tags                                    []*pb.StringPair
 	Properties                              *structpb.Struct
-	Sources                                 *pb.Sources
 	BaselineID                              string
 	StreamingExportState                    pb.RootInvocation_StreamingExportState
 	Submitted                               bool
@@ -141,14 +144,21 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 		"LastUpdated":           spanner.CommitTimestamp,
 		"UninterestingTestVerdictsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
 		"CreateRequestId":                         r.CreateRequestID,
+		"Sources":                                 spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
+		"PrimaryBuild":                            spanutil.Compressed(pbutil.MustMarshal(r.PrimaryBuild)),
+		"ExtraBuilds":                             serializeExtraBuilds(r.ExtraBuilds),
 		"Tags":                                    r.Tags,
 		"Properties":                              spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
-		"Sources":                                 spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
 		"StreamingExportState":                    r.StreamingExportState,
 		"BaselineId":                              r.BaselineID,
 		"Submitted":                               r.Submitted,
 		"FinalizerPending":                        r.FinalizerPending,
 		"FinalizerSequence":                       r.FinalizerSequence,
+	}
+	if r.Definition != nil {
+		row["DefinitionSystem"] = r.Definition.System
+		row["DefinitionName"] = r.Definition.Name
+		row["DefinitionProperties"] = r.Definition.Properties
 	}
 
 	if r.FinalizationState == pb.RootInvocation_FINALIZING {
@@ -156,6 +166,45 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 		row["FinalizeStartTime"] = spanner.CommitTimestamp
 	}
 	return spanutil.InsertMap("RootInvocations", row)
+}
+
+// serializeExtraBuilds serializes a slice of `*pb.BuildDescriptor`s into
+// a slice of compressed bytes.
+func serializeExtraBuilds(extraBuilds []*pb.BuildDescriptor) [][]byte {
+	if len(extraBuilds) == 0 {
+		// Write an empty slice instead of nil to avoid writing NULL to the database.
+		return make([][]byte, 0)
+	}
+
+	result := make([][]byte, len(extraBuilds))
+	for i, b := range extraBuilds {
+		result[i] = spanutil.Compress(pbutil.MustMarshal(b))
+	}
+	return result
+}
+
+// deserializeExtraBuilds deserializes a slice of compressed bytes into a slice of
+// `*pb.BuildDescriptor`s.
+func deserializeExtraBuilds(extraBuildsBytes [][]byte) ([]*pb.BuildDescriptor, error) {
+	if len(extraBuildsBytes) == 0 {
+		return nil, nil
+	}
+
+	result := make([]*pb.BuildDescriptor, 0, len(extraBuildsBytes))
+	var decompressBuf []byte
+	for i, b := range extraBuildsBytes {
+		build := &pb.BuildDescriptor{}
+		var err error
+		decompressBuf, err = spanutil.Decompress(b, decompressBuf)
+		if err != nil {
+			return nil, errors.Fmt("decompress build descriptor: extra_builds[%v]: %w", i, err)
+		}
+		if err := proto.Unmarshal(decompressBuf, build); err != nil {
+			return nil, errors.Fmt("unmarshal build descriptor: extra_builds[%v]: %w", i, err)
+		}
+		result = append(result, build)
+	}
+	return result, nil
 }
 
 func (r *RootInvocationRow) toLegacyInvocationMutation() *spanner.Mutation {
@@ -216,7 +265,10 @@ func (r *RootInvocationRow) ToProto() *pb.RootInvocation {
 		CreateTime:           pbutil.MustTimestampProto(r.CreateTime),
 		Creator:              r.CreatedBy,
 		LastUpdated:          pbutil.MustTimestampProto(r.LastUpdated),
+		Definition:           r.Definition,
 		Sources:              r.Sources,
+		PrimaryBuild:         r.PrimaryBuild,
+		ExtraBuilds:          r.ExtraBuilds,
 		Tags:                 r.Tags,
 		Properties:           r.Properties,
 		BaselineId:           r.BaselineID,

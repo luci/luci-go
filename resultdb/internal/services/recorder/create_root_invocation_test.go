@@ -253,6 +253,31 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					assert.Loosely(t, err, should.ErrLike("root_invocation: tags: got 16575 bytes; exceeds the maximum size of 16384 bytes"))
 				})
 			})
+			t.Run("definition", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
+					req.RootInvocation.Definition = nil
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("valid", func(t *ftt.Test) {
+					req.RootInvocation.Definition = &pb.RootInvocationDefinition{
+						System:     "buildbucket",
+						Name:       "project/bucket/builder",
+						Properties: pbutil.DefinitionProperties("key", "value"),
+					}
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("invalid", func(t *ftt.Test) {
+					req.RootInvocation.Definition = &pb.RootInvocationDefinition{
+						System:     "buildbucket",
+						Name:       "project/bucket/builder",
+						Properties: nil, // must be at least &pb.RootInvocationDefinition_Properties{}.
+					}
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike(`root_invocation: definition: properties: unspecified`))
+				})
+			})
 			t.Run("sources", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.RootInvocation.Sources = nil
@@ -282,6 +307,96 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					}
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: sources: gitiles_commit: host: unspecified"))
+				})
+			})
+			t.Run("primary_build", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
+					req.RootInvocation.PrimaryBuild = nil
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("valid", func(t *ftt.Test) {
+					req.RootInvocation.PrimaryBuild = &pb.BuildDescriptor{
+						Definition: &pb.BuildDescriptor_AndroidBuild{
+							AndroidBuild: &pb.AndroidBuildDescriptor{
+								DataRealm:   "prod",
+								Branch:      "git_main",
+								BuildTarget: "some-target",
+								BuildId:     "P1234567890",
+							},
+						},
+					}
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("invalid", func(t *ftt.Test) {
+					req.RootInvocation.PrimaryBuild = &pb.BuildDescriptor{
+						Definition: &pb.BuildDescriptor_AndroidBuild{
+							AndroidBuild: &pb.AndroidBuildDescriptor{
+								DataRealm: "prod",
+								Branch:    "git_main",
+								BuildId:   "P1234567890",
+							},
+						},
+					}
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("root_invocation: primary_build: android_build: build_target: unspecified"))
+				})
+			})
+			t.Run("extra_builds", func(t *ftt.Test) {
+				// Must set a primary build before extra builds may be set.
+				req.RootInvocation.PrimaryBuild = &pb.BuildDescriptor{
+					Definition: &pb.BuildDescriptor_AndroidBuild{
+						AndroidBuild: &pb.AndroidBuildDescriptor{
+							DataRealm:   "prod",
+							Branch:      "git_main",
+							BuildTarget: "some-target",
+							BuildId:     "P1234567890",
+						},
+					},
+				}
+				t.Run("empty", func(t *ftt.Test) {
+					req.RootInvocation.ExtraBuilds = nil
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("valid", func(t *ftt.Test) {
+					req.RootInvocation.ExtraBuilds = []*pb.BuildDescriptor{
+						{
+							Definition: &pb.BuildDescriptor_AndroidBuild{
+								AndroidBuild: &pb.AndroidBuildDescriptor{
+									DataRealm:   "prod",
+									Branch:      "git_main",
+									BuildTarget: "some-other-target",
+									BuildId:     "P987654321",
+								},
+							},
+						},
+					}
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("invalid", func(t *ftt.Test) {
+					req.RootInvocation.ExtraBuilds = []*pb.BuildDescriptor{
+						{
+							Definition: &pb.BuildDescriptor_AndroidBuild{
+								AndroidBuild: &pb.AndroidBuildDescriptor{
+									DataRealm: "prod",
+									Branch:    "git_main",
+									BuildId:   "P987654321",
+								},
+							},
+						},
+					}
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("root_invocation: extra_builds: [0]: android_build: build_target: unspecified"))
+				})
+				t.Run("duplicate primary build", func(t *ftt.Test) {
+					req.RootInvocation.ExtraBuilds = []*pb.BuildDescriptor{
+						proto.Clone(req.RootInvocation.PrimaryBuild).(*pb.BuildDescriptor),
+					}
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("root_invocation: extra_builds: [0]: duplicate of primary_build"))
 				})
 			})
 			t.Run("properties", func(t *ftt.Test) {
@@ -816,6 +931,11 @@ func TestCreateRootInvocation(t *testing.T) {
 			instructions := testutil.TestInstructions()
 			workUnitTags := pbutil.StringPairs("wu_key", "wu_value")
 			invTags := pbutil.StringPairs("tag_key", "tag_value")
+			definition := &pb.RootInvocationDefinition{
+				System:     "buildbucket",
+				Name:       "project/bucket/builder",
+				Properties: pbutil.DefinitionProperties("def_key", "def_value"),
+			}
 			sources := &pb.Sources{
 				BaseSources: &pb.Sources_GitilesCommit{
 					GitilesCommit: &pb.GitilesCommit{
@@ -827,12 +947,48 @@ func TestCreateRootInvocation(t *testing.T) {
 					},
 				},
 			}
+			primaryBuild := &pb.BuildDescriptor{
+				Definition: &pb.BuildDescriptor_AndroidBuild{
+					AndroidBuild: &pb.AndroidBuildDescriptor{
+						DataRealm:   "prod",
+						Branch:      "git_main",
+						BuildTarget: "some-target",
+						BuildId:     "P1234567890",
+					},
+				},
+			}
+			extraBuilds := []*pb.BuildDescriptor{
+				{
+					Definition: &pb.BuildDescriptor_AndroidBuild{
+						AndroidBuild: &pb.AndroidBuildDescriptor{
+							DataRealm:   "prod",
+							Branch:      "git_main",
+							BuildTarget: "some-other-target",
+							BuildId:     "P987654321",
+						},
+					},
+				},
+				{
+					Definition: &pb.BuildDescriptor_AndroidBuild{
+						AndroidBuild: &pb.AndroidBuildDescriptor{
+							DataRealm:   "prod",
+							Branch:      "git_main",
+							BuildTarget: "another-other-target",
+							BuildId:     "1234567890",
+						},
+					},
+				},
+			}
+
 			req := &pb.CreateRootInvocationRequest{
 				RootInvocationId: "u-e2e-success",
 				RequestId:        "e2e-request",
 				RootInvocation: &pb.RootInvocation{
 					Realm:                "testproject:testrealm",
+					Definition:           definition,
 					Sources:              sources,
+					PrimaryBuild:         primaryBuild,
+					ExtraBuilds:          extraBuilds,
 					Tags:                 invTags,
 					Properties:           invProperties,
 					BaselineId:           "testrealm:test-builder",
@@ -867,6 +1023,8 @@ func TestCreateRootInvocation(t *testing.T) {
 
 				Creator: "user:someone@example.com",
 			})
+			pbutil.PopulateDefinitionHashes(expectedInv.Definition)
+
 			wuID := workunits.ID{
 				RootInvocationID: "u-e2e-success",
 				WorkUnitID:       "root",
@@ -896,15 +1054,19 @@ func TestCreateRootInvocation(t *testing.T) {
 				FinalizeTime:                            spanner.NullTime{},
 				UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: start.Add(expectedResultExpiration)},
 				CreateRequestID:                         "e2e-request",
+				Definition:                              proto.Clone(definition).(*pb.RootInvocationDefinition),
+				Sources:                                 sources,
+				PrimaryBuild:                            primaryBuild,
+				ExtraBuilds:                             extraBuilds,
 				Tags:                                    invTags,
 				Properties:                              invProperties,
-				Sources:                                 sources,
 				BaselineID:                              "testrealm:test-builder",
 				StreamingExportState:                    pb.RootInvocation_METADATA_FINAL,
 				Submitted:                               false,
 				FinalizerPending:                        false,
 				FinalizerSequence:                       0,
 			}
+			pbutil.PopulateDefinitionHashes(expectInvRow.Definition)
 
 			expectWURow := &workunits.WorkUnitRow{
 				ID:                wuID,

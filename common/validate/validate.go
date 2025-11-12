@@ -99,7 +99,7 @@ func MatchReWithLength(re *regexp.Regexp, minLen, maxLen int, value string) erro
 		return errors.Fmt("must be at least %d bytes", minLen)
 	}
 	if len(value) > maxLen {
-		return errors.Fmt("must be at most %d bytes", minLen)
+		return errors.Fmt("must be at most %d bytes", maxLen)
 	}
 
 	if value == "" {

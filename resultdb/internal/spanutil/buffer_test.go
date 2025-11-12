@@ -94,6 +94,32 @@ func TestTypeConversion(t *testing.T) {
 		})
 	})
 
+	ftt.Run(`*pb.RootInvocationDefinition_Properties`, t, func(t *ftt.Test) {
+		t.Run(`Works`, func(t *ftt.Test) {
+			test(
+				&pb.RootInvocationDefinition_Properties{
+					Def: map[string]string{
+						"a": "1",
+						"b": "2",
+					},
+				},
+				[]string{"a:1", "b:2"},
+			)
+		})
+		t.Run(`Empty`, func(t *ftt.Test) {
+			test(
+				&pb.RootInvocationDefinition_Properties{},
+				[]string{},
+			)
+		})
+		t.Run(`Nil`, func(t *ftt.Test) {
+			// Nil does not roundtrip as its stored representation is the same
+			// as the empty variant.
+			actualSPValue := ToSpanner((*pb.RootInvocationDefinition_Properties)(nil))
+			assert.Loosely(t, actualSPValue, should.Match([]string{}))
+		})
+	})
+
 	ftt.Run(`[]*pb.StringPair`, t, func(t *ftt.Test) {
 		test(
 			pbutil.StringPairs("a", "1", "b", "2"),

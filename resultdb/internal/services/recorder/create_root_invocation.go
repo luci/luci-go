@@ -150,9 +150,12 @@ func createIdempotentRootInvocation(
 			CreatedBy:                               createdBy,
 			UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: now.Add(uninterestingTestVerdictsExpirationTime)},
 			CreateRequestID:                         req.RequestId,
+			Definition:                              req.RootInvocation.Definition,
+			Sources:                                 req.RootInvocation.Sources,
+			PrimaryBuild:                            req.RootInvocation.PrimaryBuild,
+			ExtraBuilds:                             req.RootInvocation.ExtraBuilds,
 			Tags:                                    req.RootInvocation.Tags,
 			Properties:                              req.RootInvocation.Properties,
-			Sources:                                 req.RootInvocation.Sources,
 			BaselineID:                              req.RootInvocation.BaselineId,
 			StreamingExportState:                    req.RootInvocation.StreamingExportState,
 			Submitted:                               false, // Submitted is set in separate MarkInvocationSubmitted call.
@@ -350,11 +353,33 @@ func validateRootInvocationForCreate(inv *pb.RootInvocation) error {
 	// CreateTime, Creator, FinalizeStartTime, FinalizeTime are output only and should be ignored
 	// as per https://google.aip.dev/203.
 
+	// Validate definition.
+	if inv.Definition != nil {
+		if err := pbutil.ValidateDefinitionForStorage(inv.Definition); err != nil {
+			return errors.Fmt("definition: %w", err)
+		}
+	}
+
 	// Validate sources.
 	if inv.Sources != nil {
 		if err := pbutil.ValidateSources(inv.Sources); err != nil {
 			return errors.Fmt("sources: %w", err)
 		}
+	}
+
+	// Validate primary build.
+	if inv.PrimaryBuild != nil {
+		if err := pbutil.ValidateBuildDescriptor(inv.PrimaryBuild); err != nil {
+			return errors.Fmt("primary_build: %w", err)
+		}
+	}
+
+	// Validate extra builds, including validating they don't duplicate the primary build.
+	if err := pbutil.ValidateExtraBuildDescriptors(inv.ExtraBuilds); err != nil {
+		return errors.Fmt("extra_builds: %w", err)
+	}
+	if err := pbutil.ValidateBuildDescriptorsUniquenessAndOrder(inv.ExtraBuilds, inv.PrimaryBuild); err != nil {
+		return errors.Fmt("extra_builds: %w", err)
 	}
 
 	// Validate tags.

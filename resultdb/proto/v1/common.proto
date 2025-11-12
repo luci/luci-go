@@ -566,23 +566,34 @@ message RootInvocationDefinition {
   // Required.
   string name = 2;
 
+  // Represents a key-value map of properties that differentiate
+  // definitions with the same name and system.
+  message Properties {
+    // The key-value pairs. May be left empty.
+    //
+    // Keys must satisfy regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$ and have a max length of 64 bytes.
+    // Values must be valid UTF-8, in Unicode Normalization Form C, printable characters only, and have a
+    // max length of 256 bytes.
+    //
+    // The total size of properties in this collection as measured by proto.Size()
+    // is limited to 1 KiB.
+    map<string, string> def = 1;
+  }
+
   // A key-value map of properties the scheduler uses to differentiate between
-  // configurations with the same name. For example 'cluster_id' and
+  // definitions with the same name and system. For example 'cluster_id' and
   // 'run_target' for ATP.
   //
-  // Each key may only appear once. As this is treated as a map, the sort order
-  // of this collection is not guaranteed.
-  //
-  // The total size of properties in this collection as measured by proto.Size()
-  // is limited to 1 KiB.
-  repeated StringPair properties = 3;
+  // In the Recorder APIs, this field is required (although the contained `def`
+  // may be left empty).
+  Properties properties = 3;
 
   // Base64-encoded hash of the properties.
   //
   // In the Recorder APIs, this field is OUTPUT_ONLY and will be
   // automatically computed from the provided properties (do not set it yourself).
   // In the context of ResultDB Query RPCs accepting this type as a request filter,
-  // this field may be specified as an alternative to properties collection.
+  // this field may be specified as an alternative to setting properties.
   string properties_hash = 4;
 }
 

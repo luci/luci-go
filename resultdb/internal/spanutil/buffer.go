@@ -118,6 +118,8 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 		spanPtr = &b.Int64
 	case **pb.Variant:
 		spanPtr = &b.StringSlice
+	case **pb.RootInvocationDefinition_Properties:
+		spanPtr = &b.StringSlice
 	case *[]*pb.StringPair:
 		spanPtr = &b.StringSlice
 	case *[]*pb.BigQueryExport:
@@ -176,7 +178,13 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 	case **pb.Variant:
 		if *goPtr, err = pbutil.VariantFromStrings(b.StringSlice); err != nil {
 			// If it was written to Spanner, it should have been validated.
-			panic(err)
+			return fmt.Errorf("read variant: %w", err)
+		}
+
+	case **pb.RootInvocationDefinition_Properties:
+		if *goPtr, err = pbutil.DefinitionPropertiesFromStrings(b.StringSlice); err != nil {
+			// If it was written to Spanner, it should have been validated.
+			return fmt.Errorf("read root invocation definition properties: %w", err)
 		}
 
 	case *[]*pb.StringPair:
@@ -184,7 +192,7 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 		for i, p := range b.StringSlice {
 			if (*goPtr)[i], err = pbutil.StringPairFromString(p); err != nil {
 				// If it was written to Spanner, it should have been validated.
-				panic(err)
+				return fmt.Errorf("read string pairs: %w", err)
 			}
 		}
 
@@ -194,7 +202,7 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 			(*goPtr)[i] = &pb.BigQueryExport{}
 			if err := proto.Unmarshal(p, (*goPtr)[i]); err != nil {
 				// If it was written to Spanner, it should have been validated.
-				panic(err)
+				return fmt.Errorf("read bigquery exports: %w", err)
 			}
 		}
 
@@ -259,6 +267,9 @@ func ToSpanner(v any) any {
 
 	case *pb.Variant:
 		return pbutil.VariantToStrings(v)
+
+	case *pb.RootInvocationDefinition_Properties:
+		return pbutil.RootInvocationDefinitionPropertiesToStrings(v)
 
 	case []*pb.StringPair:
 		return pbutil.StringPairsToStrings(v...)

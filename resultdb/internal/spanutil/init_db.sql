@@ -94,6 +94,36 @@ CREATE TABLE RootInvocations (
   -- Used to dedup root invocation creation requests.
   CreateRequestId STRING(MAX) NOT NULL,
 
+  -- Start definition.
+  -- The following fields represent the luci.resultdb.v1.RootInvocationDefinition
+  -- that stores the process definition of the root invocation. These fields will
+  -- either all be set or all be unset.
+
+  -- The system name that namespaces the process definition name.
+  DefinitionSystem STRING(MAX),
+
+  -- The name used to identify the set of tests being executed.
+  DefinitionName STRING(MAX),
+
+  -- A key-value map of properties used to differentiate between configurations
+  -- with the same name. Each key-value pair corresponds to one entry in the array,
+  -- in the form "key:value".
+  DefinitionProperties ARRAY<STRING(MAX)>,
+
+  -- End definition.
+
+  -- A serialized luci.resultdb.v1.Sources message describing the source information for the
+  -- root invocation.
+  Sources BYTES(MAX),
+
+  -- A serialized then compressed luci.resultdb.v1.BuildDescriptor that stores
+  -- the primary build tested by this root invocation.
+  PrimaryBuild BYTES(MAX),
+
+  -- A list of serialized then compressed luci.resultdb.v1.BuildDescriptors that
+  -- store the secondary build(s) tested by this root invocation.
+  ExtraBuilds ARRAY<BYTES(MAX)> NOT NULL DEFAULT([]),
+
   -- List of colon-separated key-value tags.
   -- Corresponds to RootInvocation.tags in root_invocation.proto.
   Tags ARRAY<STRING(MAX)> NOT NULL,
@@ -102,10 +132,6 @@ CREATE TABLE RootInvocations (
   -- domain-specific properties of the root invocation.
   -- See spanutil.Compressed type for details of compression.
   Properties BYTES(MAX),
-
-  -- A serialized luci.resultdb.v1.Sources message describing the source information for the
-  -- root invocation.
-  Sources BYTES(MAX),
 
   -- The test baseline that this root invocation should contribute to.
   --

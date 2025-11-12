@@ -17,6 +17,7 @@ package testutil
 import (
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -73,6 +74,33 @@ func TestSourcesWithChangelistNumbers(changelistNumbers ...int) *pb.Sources {
 		})
 	}
 	return result
+}
+
+func TestDefinition() *pb.RootInvocationDefinition {
+	result := &pb.RootInvocationDefinition{
+		System: "atp",
+		Name:   "v2/my-config",
+		Properties: &pb.RootInvocationDefinition_Properties{
+			Def: map[string]string{
+				"some_key": "some_value",
+			},
+		},
+	}
+	pbutil.PopulateDefinitionHashes(result)
+	return result
+}
+
+func TestBuild(buildID string) *pb.BuildDescriptor {
+	return &pb.BuildDescriptor{
+		Definition: &pb.BuildDescriptor_AndroidBuild{
+			AndroidBuild: &pb.AndroidBuildDescriptor{
+				DataRealm:   "prod",
+				Branch:      "git_main",
+				BuildTarget: "aosp_arm64-userdebug",
+				BuildId:     buildID,
+			},
+		},
+	}
 }
 
 func TestInvocationExtendedProperties() map[string]*structpb.Struct {

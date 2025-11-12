@@ -184,9 +184,14 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 		"FinalizeTime",
 		"UninterestingTestVerdictsExpirationTime",
 		"CreateRequestId",
+		"DefinitionSystem",
+		"DefinitionName",
+		"DefinitionProperties",
+		"Sources",
+		"PrimaryBuild",
+		"ExtraBuilds",
 		"Tags",
 		"Properties",
-		"Sources",
 		"BaselineId",
 		"StreamingExportState",
 		"Submitted",
@@ -197,8 +202,13 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 	return span.Read(ctx, "RootInvocations", ids.Keys(), cols).Do(func(row *spanner.Row) error {
 		inv := &RootInvocationRow{}
 		var (
-			properties spanutil.Compressed
-			sources    spanutil.Compressed
+			definitionSystem     spanner.NullString
+			definitionName       spanner.NullString
+			definitionProperties *pb.RootInvocationDefinition_Properties
+			sources              spanutil.Compressed
+			primaryBuild         spanutil.Compressed
+			extraBuilds          [][]byte // slice of individually serialized + compressed protos
+			properties           spanutil.Compressed
 		)
 
 		dest := []any{
@@ -215,9 +225,14 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 			&inv.FinalizeTime,
 			&inv.UninterestingTestVerdictsExpirationTime,
 			&inv.CreateRequestID,
+			&definitionSystem,
+			&definitionName,
+			&definitionProperties,
+			&sources,
+			&primaryBuild,
+			&extraBuilds,
 			&inv.Tags,
 			&properties,
-			&sources,
 			&inv.BaselineID,
 			&inv.StreamingExportState,
 			&inv.Submitted,
@@ -229,16 +244,44 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 			return err
 		}
 
-		if len(properties) > 0 {
-			inv.Properties = &structpb.Struct{}
-			if err := proto.Unmarshal(properties, inv.Properties); err != nil {
-				return err
+		if definitionName.Valid != definitionSystem.Valid {
+			return errors.Fmt("inconsistent nullness for DefinitionSystem and DefinitionName; is there data corruption?")
+		}
+		if len(definitionProperties.GetDef()) > 0 && !definitionName.Valid {
+			return errors.Fmt("definition properties is set while DefinitionName is NULL; is there data corruption?")
+		}
+		if definitionSystem.Valid {
+			inv.Definition = &pb.RootInvocationDefinition{
+				System:     definitionSystem.StringVal,
+				Name:       definitionName.StringVal,
+				Properties: definitionProperties,
 			}
+			pbutil.PopulateDefinitionHashes(inv.Definition)
 		}
 
 		if len(sources) > 0 {
 			inv.Sources = &pb.Sources{}
 			if err := proto.Unmarshal(sources, inv.Sources); err != nil {
+				return errors.Fmt("unmarshal sources: %w", err)
+			}
+		}
+
+		if len(primaryBuild) > 0 {
+			inv.PrimaryBuild = &pb.BuildDescriptor{}
+			if err := proto.Unmarshal(primaryBuild, inv.PrimaryBuild); err != nil {
+				return errors.Fmt("unmarshal primary build: %w", err)
+			}
+		}
+
+		var err error
+		inv.ExtraBuilds, err = deserializeExtraBuilds(extraBuilds)
+		if err != nil {
+			return errors.Fmt("unmarshal extra builds: %w", err)
+		}
+
+		if len(properties) > 0 {
+			inv.Properties = &structpb.Struct{}
+			if err := proto.Unmarshal(properties, inv.Properties); err != nil {
 				return err
 			}
 		}
