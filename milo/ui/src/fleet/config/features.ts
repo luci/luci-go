@@ -49,3 +49,10 @@ hydrateLocalStorage();
 export const getFeatureFlag = (feature: keyof FeaturesSchema) => {
   return getFromLocalStorage(feature) ?? getFromFiles(feature);
 };
+
+export const getEnabledFeatureFlags = () => {
+  const features = isProdEnvironment() ? featuresProd : featuresDev;
+  return Object.keys(features).filter((feature) =>
+    getFeatureFlag(feature as keyof FeaturesSchema),
+  );
+};

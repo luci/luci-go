@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { getEnabledFeatureFlags } from '@/fleet/config/features';
+
 export type GenFeedbackUrlArgs =
   | {
       errMsg?: string;
@@ -31,20 +33,25 @@ export function genFeedbackUrl({
 }: GenFeedbackUrlArgs = {}) {
   const feedbackComment =
     customComment ||
-    `# Basic Info\n\n` +
-      `Version: ${UI_VERSION}\n\n` +
-      `From Link: ${self.location.href}\n\n` +
-      (errMsg ? `Error Message:\n  ${errMsg}\n\n` : '') +
-      (stacktrace ? `Stacktrace:\n  ${stacktrace}\n\n` : '') +
-      // TODO: Ideally, we should not require users to record the network calls
-      // themselves. We can add OTEL integration and include a trace ID here.
+    `# Problem Description\n\n` +
+      'Please enter a description of the problem.\n\n' +
+      '# Steps to Reproduce\n\n' +
+      'Please provide steps to reproduce the problem.\n\n' +
+      '1. \n\n' +
+      '2. \n\n' +
+      '3. \n\n' +
       '# Network Calls\n\n' +
       `It would be very helpful if you can take a screenshot of your ` +
       `[network tab](https://developer.chrome.com/docs/devtools/network).\n` +
       `**Note that you should open your network tab before you load the page.**\n` +
       `Only network calls occurred after you open the network tab are recorded.\n\n` +
-      '# Problem Description\n\n' +
-      'Please enter a description of the problem, with steps to reproduce if applicable.\n';
+      '# Autopopulated Info\n\n' +
+      `- **Version**: ${UI_VERSION}\n` +
+      `- **From Link**: ${self.location.href}\n` +
+      `- **User Agent**: ${navigator.userAgent}\n` +
+      `- **Enabled Feature Flags**: ${getEnabledFeatureFlags().join(', ') || 'None'}\n\n` +
+      (errMsg ? `- **Error Message**:\n  ${errMsg}\n\n` : '') +
+      (stacktrace ? `- **Stacktrace**:\n  ${stacktrace}\n\n` : '');
 
   const searchParams = new URLSearchParams({
     // Public Trackers > Chromium Public Trackers > Chromium > Infra > LUCI > UserInterface
