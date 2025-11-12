@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	executorgrpcpb "go.chromium.org/turboci/proto/go/graph/executor/v1/grpcpb"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+	orchestratorgrpcpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1/grpcpb"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -68,6 +69,9 @@ func TurboCICall(ctx context.Context) *TurboCICallInfo {
 // TurboCIStageExecutor implements executorgrpcpb.TurboCIStageExecutorServer.
 type TurboCIStageExecutor struct {
 	executorgrpcpb.UnimplementedTurboCIStageExecutorServer
+
+	// Orchestrator is the connection to the TurboCI Orchestrator to use.
+	Orchestrator orchestratorgrpcpb.TurboCIOrchestratorClient
 }
 
 // TurboCIInterceptor is used for all TurboCI Stage Executor unary RPCs.

@@ -60,6 +60,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/internalcontext"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/internal/redirect"
+	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
 	"go.chromium.org/luci/buildbucket/appengine/rpc"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
 	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
@@ -103,6 +104,11 @@ func main() {
 		secrets.NewModuleFromFlags(),
 	}
 
+	turboCIAPIEndpoint := flag.String(
+		"turbo-ci-api-endpoint",
+		"",
+		"Domain name of the Turbo CI Orchestrator API to call.",
+	)
 	turboCIStagesServiceAccount := flag.String(
 		"turbo-ci-stages-service-account",
 		"",
@@ -240,9 +246,14 @@ func main() {
 			}),
 		)
 
-		grpcpb.RegisterBuildsServer(srv, &rpc.Builds{})
+		orchestrator, err := turboci.Dial(srv.Context, *turboCIAPIEndpoint)
+		if err != nil {
+			return err
+		}
+
+		grpcpb.RegisterBuildsServer(srv, &rpc.Builds{Orchestrator: orchestrator})
 		grpcpb.RegisterBuildersServer(srv, &rpc.Builders{})
-		executorgrpcpb.RegisterTurboCIStageExecutorServer(srv, &rpc.TurboCIStageExecutor{})
+		executorgrpcpb.RegisterTurboCIStageExecutorServer(srv, &rpc.TurboCIStageExecutor{Orchestrator: orchestrator})
 
 		// Expose Turbo CI Executor service in the RPC Explorer. Turbo CI protos are
 		// compiled with more standard protoc tooling and they need to be registered

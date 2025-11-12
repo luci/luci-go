@@ -16,9 +16,13 @@ package rpc
 
 import (
 	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
+	orchestratorgrpcpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1/grpcpb"
 )
 
 // Builds implements BuildsServer.
 type Builds struct {
 	grpcpb.UnimplementedBuildsServer
+
+	// Orchestrator is the connection to the TurboCI Orchestrator to use.
+	Orchestrator orchestratorgrpcpb.TurboCIOrchestratorClient
 }
