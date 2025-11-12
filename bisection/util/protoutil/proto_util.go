@@ -520,6 +520,9 @@ func SuspectToCulpritPb(s *model.Suspect) *pb.Culprit {
 		ReviewUrl:     s.ReviewUrl,
 		ReviewTitle:   s.ReviewTitle,
 		CulpritAction: CulpritActionsForSuspect(s),
+		VerificationDetails: &pb.SuspectVerificationDetails{
+			Status: verificationStatusToPb(s.VerificationStatus).String(),
+		},
 	}
 }
 

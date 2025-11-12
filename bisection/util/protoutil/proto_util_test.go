@@ -683,3 +683,79 @@ func TestCompileGenAIAnalysisToPb(t *testing.T) {
 		})
 	})
 }
+
+func TestSuspectToCulpritPb(t *testing.T) {
+	t.Parallel()
+	ftt.Run("TestSuspectToCulpritPb", t, func(t *ftt.Test) {
+		t.Run("Nil suspect", func(t *ftt.Test) {
+			result := SuspectToCulpritPb(nil)
+			assert.Loosely(t, result, should.BeNil)
+		})
+
+		t.Run("Basic suspect", func(t *ftt.Test) {
+			suspect := &model.Suspect{
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:     "host",
+					Project:  "project",
+					Ref:      "ref",
+					Id:       "id",
+					Position: 123,
+				},
+				ReviewUrl:          "review_url",
+				ReviewTitle:        "review_title",
+				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+			}
+			result := SuspectToCulpritPb(suspect)
+			assert.Loosely(t, result, should.Match(&pb.Culprit{
+				Commit: &buildbucketpb.GitilesCommit{
+					Host:     "host",
+					Project:  "project",
+					Ref:      "ref",
+					Id:       "id",
+					Position: 123,
+				},
+				ReviewUrl:   "review_url",
+				ReviewTitle: "review_title",
+				CulpritAction: []*pb.CulpritAction{
+					{
+						ActionType: pb.CulpritActionType_NO_ACTION,
+					},
+				},
+				VerificationDetails: &pb.SuspectVerificationDetails{
+					Status: pb.SuspectVerificationStatus_CONFIRMED_CULPRIT.String(),
+				},
+			}))
+		})
+
+		t.Run("Suspect with revert created", func(t *ftt.Test) {
+			revertCreateTime := time.Unix(100, 0).UTC()
+			suspect := &model.Suspect{
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host: "host",
+				},
+				VerificationStatus: model.SuspectVerificationStatus_Vindicated,
+				ActionDetails: model.ActionDetails{
+					IsRevertCreated:  true,
+					RevertURL:        "revert_url",
+					RevertCreateTime: revertCreateTime,
+				},
+			}
+			result := SuspectToCulpritPb(suspect)
+			assert.Loosely(t, result, should.Match(&pb.Culprit{
+				Commit: &buildbucketpb.GitilesCommit{
+					Host: "host",
+				},
+				CulpritAction: []*pb.CulpritAction{
+					{
+						ActionType:  pb.CulpritActionType_REVERT_CL_CREATED,
+						RevertClUrl: "revert_url",
+						ActionTime:  timestamppb.New(revertCreateTime),
+					},
+				},
+				VerificationDetails: &pb.SuspectVerificationDetails{
+					Status: pb.SuspectVerificationStatus_VINDICATED.String(),
+				},
+			}))
+		})
+	})
+}

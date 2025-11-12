@@ -552,6 +552,9 @@ func TestCompileFailureAnalysisToBqRow(t *testing.T) {
 					ActionType: pb.CulpritActionType_NO_ACTION,
 				},
 			},
+			VerificationDetails: &pb.SuspectVerificationDetails{
+				Status: pb.SuspectVerificationStatus_CONFIRMED_CULPRIT.String(),
+			},
 		}
 
 		expectedRow := &bqpb.CompileAnalysisRow{
