@@ -91,7 +91,9 @@ func CompileFailureAnalysisToBqRow(ctx context.Context, cfa *model.CompileFailur
 
 	ga, err := datastoreutil.GetGenAIAnalysis(ctx, cfa)
 	if err != nil {
-		return nil, errors.Annotate(err, "get genai result for analysis %d", cfa.Id).Err()
+		// If we can't get the genai analysis, log the error and continue.
+		logging.Errorf(ctx, "could not get genai analysis for analysis %d: %v", cfa.Id, err)
+		return result, nil
 	}
 	if ga != nil {
 		var genaiSuspect *model.Suspect

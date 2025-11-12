@@ -269,8 +269,7 @@ func fetchTestAnalyses(ctx context.Context) ([]*model.TestFailureAnalysis, error
 // fetchCompileAnalyses returns the compile analyses that:
 // - Created within 14 days
 // - Has ended
-// - If it found a culprit, then either the actions have been taken,
-// or the it has ended more than 1 day ago.
+// - Created more than 24 hours ago.
 func fetchCompileAnalyses(ctx context.Context) ([]*model.CompileFailureAnalysis, error) {
 	// Query all analyses within 14 days.
 	cutoffTime := clock.Now(ctx).Add(-time.Hour * 24 * daysToLookBack)
@@ -280,56 +279,20 @@ func fetchCompileAnalyses(ctx context.Context) ([]*model.CompileFailureAnalysis,
 	if err != nil {
 		return nil, errors.Fmt("get compile analyses: %w", err)
 	}
-
 	// Check that the analyses ended and actions were taken.
 	results := []*model.CompileFailureAnalysis{}
+	oneDayAgo := clock.Now(ctx).Add(-time.Hour * 24)
 	for _, cfa := range analyses {
 		// Ignore all analyses that have not ended.
 		if cfa.RunStatus != pb.AnalysisRunStatus_ENDED {
 			continue
 		}
-		// If the analyses did not find any culprit, then we don't
-		// need to check for culprit actions.
-		if cfa.Status != pb.AnalysisStatus_FOUND {
-			results = append(results, cfa)
+		// We only add new analyses to the table 24 hours after they are created
+		// because we assume that 24hrs is long enough for the data to be considered 'final'
+		if cfa.CreateTime.After(oneDayAgo) {
 			continue
 		}
-
-		// For analyses that found culprits, we need to check that actions have been
-		// taken.
-		if len(cfa.VerifiedCulprits) == 0 {
-			logging.Warningf(ctx, "Analysis %d has status FOUND but no verified culprit", cfa.Id)
-			continue
-		}
-		allActionsTaken := true
-		for _, verifiedCulpritKey := range cfa.VerifiedCulprits {
-			// verifiedCulpritKey is a key datastore key, we only check when it is a suspect.
-			if verifiedCulpritKey.Kind() != "Suspect" {
-				continue
-			}
-			suspect, err := datastoreutil.GetSuspect(ctx, verifiedCulpritKey.IntID(), verifiedCulpritKey.Parent())
-			if err != nil {
-				return nil, errors.Fmt("could not get suspect %s for analysis %d: %w", verifiedCulpritKey.String(), cfa.Id, err)
-			}
-			if !suspect.HasTakenActions {
-				allActionsTaken = false
-				break
-			}
-		}
-
-		// Make an exception: If an analysis ended more than 1 day ago, and
-		// allActionsTaken is still set to false, most likely something was stuck
-		// that prevent the filed from being set. In this case, we want to
-		// export the analysis anyway, since there will be no changes to it.
-		oneDayAgo := clock.Now(ctx).Add(-time.Hour * 24)
-		if !allActionsTaken && cfa.EndTime.Before(oneDayAgo) {
-			// Logging for visibility.
-			logging.Warningf(ctx, "Analysis %d has ended more than a day ago, but actions are not taken", cfa.Id)
-		}
-
-		if allActionsTaken || cfa.EndTime.Before(oneDayAgo) {
-			results = append(results, cfa)
-		}
+		results = append(results, cfa)
 	}
 	return results, nil
 }

@@ -90,7 +90,8 @@ func TestExportCompile(t *testing.T) {
 			_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, int64(1000+i), "chromium", int64(1000+i))
 			cfa.RunStatus = bisectionpb.AnalysisRunStatus_ENDED
 			cfa.Status = bisectionpb.AnalysisStatus_NOTFOUND
-			cfa.CreateTime = clock.Now(ctx).Add(time.Hour * time.Duration(-i))
+			// Make sure the analyses are created more than 24 hours ago.
+			cfa.CreateTime = clock.Now(ctx).Add(time.Hour * time.Duration(-24-i))
 			assert.Loosely(t, datastore.Put(ctx, cfa), should.BeNil)
 		}
 		datastore.GetTestable(ctx).CatchupIndexes()
@@ -189,28 +190,26 @@ func TestFetchCompileAnalyses(t *testing.T) {
 		// Not ended, should be skipped.
 		_, _, cfa1 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1001, "chromium", 1001)
 		cfa1.RunStatus = bisectionpb.AnalysisRunStatus_STARTED
-		cfa1.CreateTime = clock.Now(ctx).Add(-time.Hour)
+		cfa1.CreateTime = clock.Now(ctx).Add(-25 * time.Hour)
 
 		// Ended, but from a long time ago. Should be skipped.
 		_, _, cfa2 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1002, "chromium", 1002)
 		cfa2.RunStatus = bisectionpb.AnalysisRunStatus_ENDED
 		cfa2.CreateTime = clock.Now(ctx).Add(-15 * 24 * time.Hour)
 
-		// Ended, not found.
+		// Ended, not found, but created recently. Should be skipped.
 		_, _, cfa3 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1003, "chromium", 1003)
 		cfa3.RunStatus = bisectionpb.AnalysisRunStatus_ENDED
 		cfa3.Status = bisectionpb.AnalysisStatus_NOTFOUND
 		cfa3.CreateTime = clock.Now(ctx).Add(-time.Hour)
 
-		// Ended, found, but action not taken, ended recently, should be skipped.
+		// Ended, not found, created > 24 hours ago.
 		_, _, cfa4 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1004, "chromium", 1004)
 		cfa4.RunStatus = bisectionpb.AnalysisRunStatus_ENDED
-		cfa4.Status = bisectionpb.AnalysisStatus_FOUND
-		cfa4.CreateTime = clock.Now(ctx).Add(-time.Hour)
-		cfa4.EndTime = clock.Now(ctx).Add(-time.Minute)
-		createCompileSuspect(ctx, t, cfa4, false)
+		cfa4.Status = bisectionpb.AnalysisStatus_NOTFOUND
+		cfa4.CreateTime = clock.Now(ctx).Add(-25 * time.Hour)
 
-		// Ended, found, actions taken.
+		// Ended, found, actions taken, created recently. Should be skipped.
 		_, _, cfa5 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1005, "chromium", 1005)
 		cfa5.RunStatus = bisectionpb.AnalysisRunStatus_ENDED
 		cfa5.Status = bisectionpb.AnalysisStatus_FOUND
@@ -225,51 +224,7 @@ func TestFetchCompileAnalyses(t *testing.T) {
 		cfa6.EndTime = clock.Now(ctx).Add(-25 * time.Hour)
 		createCompileSuspect(ctx, t, cfa6, false)
 
-		// Ended, found, mixed culprits, actions taken for suspect.
-		_, _, cfa7 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1007, "chromium", 1007)
-		cfa7.RunStatus = bisectionpb.AnalysisRunStatus_ENDED
-		cfa7.Status = bisectionpb.AnalysisStatus_FOUND
-		cfa7.CreateTime = clock.Now(ctx).Add(-3 * time.Hour)
-		createMixedCompileCulprits(ctx, t, cfa7, true)
-
-		// Ended, found, mixed culprits, actions not taken for suspect, ended recently. Should be skipped.
-		_, _, cfa8 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1008, "chromium", 1008)
-		cfa8.RunStatus = bisectionpb.AnalysisRunStatus_ENDED
-		cfa8.Status = bisectionpb.AnalysisStatus_FOUND
-		cfa8.CreateTime = clock.Now(ctx).Add(-2 * time.Hour)
-		cfa8.EndTime = clock.Now(ctx).Add(-time.Minute)
-		createMixedCompileCulprits(ctx, t, cfa8, false)
-
-		// Ended, found, with parent analysis, actions taken.
-		_, _, cfa9 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1009, "chromium", 1009)
-		cfa9.RunStatus = bisectionpb.AnalysisRunStatus_ENDED
-		cfa9.Status = bisectionpb.AnalysisStatus_FOUND
-		cfa9.CreateTime = clock.Now(ctx).Add(-2 * time.Hour)
-		// Create parent analysis for suspect
-		genAIAnalysis := &model.CompileGenAIAnalysis{
-			Id:             1,
-			ParentAnalysis: datastore.KeyForObj(ctx, cfa9),
-		}
-		assert.Loosely(t, datastore.Put(ctx, genAIAnalysis), should.BeNil)
-		suspectWithParent := &model.Suspect{
-			Id:             1,
-			ParentAnalysis: datastore.KeyForObj(ctx, genAIAnalysis),
-			ActionDetails: model.ActionDetails{
-				HasTakenActions: true,
-			},
-		}
-		assert.Loosely(t, datastore.Put(ctx, suspectWithParent), should.BeNil)
-		cfa9.VerifiedCulprits = []*datastore.Key{datastore.KeyForObj(ctx, suspectWithParent)}
-
-		// Ended, found, mixed culprits, actions not taken for suspect, ended long time ago. Should be exported.
-		_, _, cfa10 := testutil.CreateCompileFailureAnalysisAnalysisChain(ctx, t, 1010, "chromium", 1010)
-		cfa10.RunStatus = bisectionpb.AnalysisRunStatus_ENDED
-		cfa10.Status = bisectionpb.AnalysisStatus_FOUND
-		cfa10.CreateTime = clock.Now(ctx).Add(-27 * time.Hour)
-		cfa10.EndTime = clock.Now(ctx).Add(-26 * time.Hour)
-		createMixedCompileCulprits(ctx, t, cfa10, false)
-
-		assert.Loosely(t, datastore.Put(ctx, []*model.CompileFailureAnalysis{cfa1, cfa2, cfa3, cfa4, cfa5, cfa6, cfa7, cfa8, cfa9, cfa10}), should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, []*model.CompileFailureAnalysis{cfa1, cfa2, cfa3, cfa4, cfa5, cfa6}), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		cfas, err := fetchCompileAnalyses(ctx)
 		assert.Loosely(t, err, should.BeNil)
@@ -280,7 +235,7 @@ func TestFetchCompileAnalyses(t *testing.T) {
 		for i, cfa := range cfas {
 			actualIDs[i] = cfa.Id
 		}
-		expectedIDs := []int64{1003, 1005, 1006, 1007, 1009, 1010}
+		expectedIDs := []int64{1004, 1006}
 		sort.Slice(actualIDs, func(i, j int) bool { return actualIDs[i] < actualIDs[j] })
 		sort.Slice(expectedIDs, func(i, j int) bool { return expectedIDs[i] < expectedIDs[j] })
 		assert.Loosely(t, actualIDs, should.Resemble(expectedIDs))
