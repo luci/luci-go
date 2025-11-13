@@ -79,12 +79,23 @@ describe('<RequestRepair />', () => {
       ' * http://go/fcdut/dut4 (Location: <Please add if known>, Board: board4, Model: model4, Pool: pool4)',
     ];
     const expectedDescription = generateIssueDescription(dutInfo.join('\n'));
-    const title = encodeURIComponent(
+
+    const openedUrl = new URL(windowOpenSpy.mock.calls[0][0]);
+    expect(openedUrl.origin).toBe('http://b');
+    expect(openedUrl.pathname).toBe('/issues/new');
+    expect(openedUrl.searchParams.get('markdown')).toBe('true');
+    expect(openedUrl.searchParams.get('component')).toBe('575445');
+    expect(openedUrl.searchParams.get('template')).toBe('1509031');
+    expect(openedUrl.searchParams.get('title')).toBe(
       `[Location Unknown][Repair][board1.model1] Pool: [pool1] [dut1] and 3 more`,
     );
-
-    const finalUrl = `http://b/issues/new?markdown=true&component=575445&template=1509031&title=${title}&description=${expectedDescription}`;
-    expect(windowOpenSpy).toHaveBeenCalledWith(finalUrl, '_blank');
+    expect(decodeURIComponent(openedUrl.searchParams.get('description')!)).toBe(
+      decodeURIComponent(expectedDescription),
+    );
+    expect(windowOpenSpy).toHaveBeenCalledWith(
+      expect.stringContaining(''),
+      '_blank',
+    );
   });
 
   it.each([

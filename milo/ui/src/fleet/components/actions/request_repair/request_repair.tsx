@@ -25,6 +25,7 @@ const TITLE_LOCATION_PLACEHOLDER = 'Location Unknown';
 const DESCRIPTION_LOCATION_PLACEHOLDER = '<Please add if known>';
 const REPAIR_COMPONENT_ID = '575445';
 const REPAIR_TEMPLATE_ID = '1509031';
+const TRACKING_HOTLIST_ID = '7555487';
 const LOCATION_MAP: { [key: string]: string[] } = {
   EM25: ['chromeos8'],
   '946': ['chromeos15', 'chromeos7', 'chromeos5', 'chromeos3'],
@@ -103,7 +104,7 @@ export const RequestRepair: React.FC<RequestRepairProps> = ({
     const dutInfo = generateDutInfo(selectedDuts);
     const description = generateIssueDescription(dutInfo);
     const title = encodeURIComponent(generateIssueTitle(selectedDuts));
-    const url = `http://b/issues/new?markdown=true&component=${REPAIR_COMPONENT_ID}&template=${REPAIR_TEMPLATE_ID}&title=${title}&description=${description}`;
+    const url = `http://b/issues/new?markdown=true&component=${REPAIR_COMPONENT_ID}&template=${REPAIR_TEMPLATE_ID}&title=${title}&description=${description}&hotlistIds=${TRACKING_HOTLIST_ID}`;
     window.open(url, '_blank');
   };
   return (
