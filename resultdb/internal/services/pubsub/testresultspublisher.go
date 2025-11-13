@@ -19,7 +19,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"strings"
-	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -37,10 +36,16 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+const (
+	// maxPubSubMessageSize is the maximum size of a Pub/Sub message. We use 9MB
+	// as a safe limit to leave room for overhead, as the official limit is
+	// 10MB (https://docs.cloud.google.com/pubsub/quotas#resource_limits).
+	maxPubSubMessageSize = 9 * 1024 * 1024
+)
+
 // handlePublishTestResultsTask handles the task to publish test results for a
-// set of work units.
+
 func handlePublishTestResultsTask(ctx context.Context, msg proto.Message, resultDBHostname string) error {
-	// TODO(b/454120970): Remove the hostname check to enable by default
 	if !strings.HasPrefix(resultDBHostname, "staging.") {
 		return nil
 	}
@@ -80,24 +85,129 @@ func handlePublishTestResultsTask(ctx context.Context, msg proto.Message, result
 	}
 	testResultsNotification := testResultsNotification(testResultsByWorkUnit)
 
-	// TODO(b/372537579): Implement proper batching based on message size to
-	// stay within Pub/Sub limits. For now, one notification for all work units.
-	dedupKey := fmt.Sprintf("%s-%s", task.WorkUnitIds, time.Now().UTC().Format(time.RFC3339))
-	notification := &pb.TestResultsNotification{
-		TestResultsByWorkUnit: testResultsNotification,
-		ResultdbHost:          resultDBHostname,
-		Sources:               rootInv.Sources,
-		DeduplicationKey:      fmt.Sprintf("%x", sha256.Sum256([]byte(dedupKey))),
+	// 5. Enqueue batched notifications.
+	err = enqueueBatchedNotifications(ctx, testResultsNotification, resultDBHostname, rootInv.Sources, attrs, maxPubSubMessageSize)
+	if err != nil {
+		logging.Errorf(ctx, "Failed to enqueue batched notifications: %s", err)
+		return err
+	}
+	return nil
+}
+
+// enqueueBatchedNotifications takes the test results grouped by work unit and
+// enqueues them into TQ, respecting Pub/Sub message size limits.
+func enqueueBatchedNotifications(ctx context.Context, testResultsNotification []*pb.TestResultsNotification_TestResultsByWorkUnit, resultDBHostname string, sources *pb.Sources, attrs map[string]string, maxSize int) error {
+	var currentBatch []*pb.TestResultsNotification_TestResultsByWorkUnit
+	currentSize := 0
+
+	sendBatch := func() {
+		if len(currentBatch) == 0 {
+			return
+		}
+
+		// Create a stable representation of the work units in this batch.
+		notification := &pb.TestResultsNotification{
+			TestResultsByWorkUnit: currentBatch,
+			ResultdbHost:          resultDBHostname,
+			Sources:               sources,
+			DeduplicationKey:      generateDeduplicationKey(currentBatch),
+		}
+		tasks.NotifyTestResults(ctx, notification, attrs)
+		currentBatch = nil
+		currentSize = 0
 	}
 
-	// Enqueue the task to publish the notification.
-	tasks.NotifyTestResults(ctx, notification, attrs)
+	for _, wuResult := range testResultsNotification {
+		if len(wuResult.TestResults) == 0 {
+			continue
+		}
+		wuSize := proto.Size(wuResult)
+
+		if wuSize <= maxSize {
+			// Work unit fits, check if it fits in the current batch.
+			if len(currentBatch) > 0 && currentSize+wuSize > maxSize {
+				sendBatch()
+			}
+			currentBatch = append(currentBatch, wuResult)
+			currentSize += wuSize
+		} else {
+			// This single work unit is too large, send existing batch first.
+			sendBatch()
+
+			// Split this large work unit into multiple batches.
+			err := splitAndEnqueueWorkUnitResults(ctx, wuResult, resultDBHostname, sources, attrs, maxSize, sendBatch)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	// Send any remaining batch.
+	sendBatch()
+	return nil
+}
+
+// splitAndEnqueueWorkUnitResults handles a single work unit whose test results
+// exceed the maxSize, splitting them into multiple smaller notification tasks.
+func splitAndEnqueueWorkUnitResults(ctx context.Context, wuResult *pb.TestResultsNotification_TestResultsByWorkUnit, resultDBHostname string, sources *pb.Sources, attrs map[string]string, maxSize int, sendBatch func()) error {
+	var trBatch []*pb.TestResult
+	baseWUSize := proto.Size(&pb.TestResultsNotification_TestResultsByWorkUnit{WorkUnitName: wuResult.WorkUnitName})
+	trCurrentSize := baseWUSize
+
+	for _, tr := range wuResult.TestResults {
+		trSize := proto.Size(tr)
+		if trSize+baseWUSize > maxSize {
+			return errors.Fmt("Single test result for %s (TestID: %s, ResultID: %s) exceeds Pub/Sub size limit: %d bytes", wuResult.WorkUnitName, tr.TestId, tr.ResultId, trSize)
+		}
+
+		if trCurrentSize+trSize > maxSize {
+			// Current trBatch is full, send it.
+			if len(trBatch) > 0 {
+				// We need to call the outer sendBatch, so we wrap and enqueue.
+				wuResults := []*pb.TestResultsNotification_TestResultsByWorkUnit{
+					{
+						WorkUnitName: wuResult.WorkUnitName,
+						TestResults:  trBatch,
+					},
+				}
+				notification := &pb.TestResultsNotification{
+					TestResultsByWorkUnit: wuResults,
+					ResultdbHost:          resultDBHostname,
+					Sources:               sources,
+					DeduplicationKey:      generateDeduplicationKey(wuResults),
+				}
+				tasks.NotifyTestResults(ctx, notification, attrs)
+			}
+			// Start a new trBatch with the current test result.
+			trBatch = []*pb.TestResult{tr}
+			trCurrentSize = baseWUSize + trSize
+		} else {
+			// Add to the current trBatch.
+			trBatch = append(trBatch, tr)
+			trCurrentSize += trSize
+		}
+	}
+	// Send the last trBatch for this work unit.
+	if len(trBatch) > 0 {
+		wuResults := []*pb.TestResultsNotification_TestResultsByWorkUnit{
+			{
+				WorkUnitName: wuResult.WorkUnitName,
+				TestResults:  trBatch,
+			},
+		}
+		notification := &pb.TestResultsNotification{
+			TestResultsByWorkUnit: wuResults,
+			ResultdbHost:          resultDBHostname,
+			Sources:               sources,
+			DeduplicationKey:      generateDeduplicationKey(wuResults),
+		}
+		tasks.NotifyTestResults(ctx, notification, attrs)
+	}
 	return nil
 }
 
 // collectTestResultsForWorkUnits queries and collects all test results for the
 // given work units. It returns a map of work unit names to their corresponding
-// test results.
+// test results, sorted by TestId and ResultId.
 func collectTestResultsForWorkUnits(ctx context.Context, rootInvID rootinvocations.ID, workUnitIDs []string) (map[string][]*pb.TestResult, error) {
 	testResultsByWorkUnit := make(map[string][]*pb.TestResult)
 	legacyInvIDs := invocations.NewIDSet()
@@ -125,9 +235,11 @@ func collectTestResultsForWorkUnits(ctx context.Context, rootInvID rootinvocatio
 		testResultsByWorkUnit[wuName] = append(testResultsByWorkUnit[wuName], tr)
 		return nil
 	})
+
 	if err != nil {
 		return nil, errors.Fmt("failed to query test results for the root invocation %q and work units: %s: %w", string(rootInvID), workUnitIDs, err)
 	}
+
 	return testResultsByWorkUnit, nil
 }
 
@@ -141,4 +253,28 @@ func testResultsNotification(testResultsByWorkUnit map[string][]*pb.TestResult) 
 		})
 	}
 	return testResultsNotification
+}
+
+// generateDeduplicationKey creates a unique key for task deduplication.
+// The key is based on the sorted work unit names and the first test result
+// of the first work unit in the batch.
+func generateDeduplicationKey(wuResults []*pb.TestResultsNotification_TestResultsByWorkUnit) string {
+	if len(wuResults) == 0 {
+		return ""
+	}
+
+	// Use the first test result of the first work unit to make the key unique
+	// to this specific batch of results.
+	firstWU := wuResults[0]
+	var firstTRKey string
+	if len(firstWU.TestResults) > 0 {
+		// Test results are already sorted by TestId and ResultId.
+		firstTR := firstWU.TestResults[0]
+		firstTRKey = fmt.Sprintf("%s-%s", firstTR.TestId, firstTR.ResultId)
+	} else {
+		firstTRKey = "no_test_results"
+	}
+
+	keyContent := fmt.Sprintf("%s-%s", firstWU.WorkUnitName, firstTRKey)
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(keyContent)))
 }

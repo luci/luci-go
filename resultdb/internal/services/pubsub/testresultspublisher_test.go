@@ -15,10 +15,11 @@ package pubsub
 
 import (
 	"sort"
+	"strings"
 	"testing"
 
-	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -27,14 +28,64 @@ import (
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
+	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+// sizeLimitedTestResult returns a TestResultRow builder with a SummaryHtml
+// field padded to approximately the targetSizeInBytes.
+func sizeLimitedTestResult(invID string, testID string, resultID string, targetSizeInBytes int) *testresults.Builder {
+	b := testresults.NewBuilder(invocations.ID(invID), testID, resultID).WithMinimalFields().WithDuration(&durationpb.Duration{Seconds: 0})
+	tr := b.Build().ToProto()
+
+	// Adjust padding size to account for the base size of the proto.
+	baseSize := proto.Size(tr)
+	paddingSize := targetSizeInBytes - baseSize
+	if paddingSize < 0 {
+		paddingSize = 0
+	}
+	summaryHTML := strings.Repeat("a", paddingSize)
+	b.WithSummaryHTML(summaryHTML)
+
+	// Recalculate size to be sure.
+	finalSize := proto.Size(b.Build().ToProto())
+	if finalSize > targetSizeInBytes {
+		// If we overshot, trim the summary. This is not perfect but good enough for testing.
+		diff := finalSize - targetSizeInBytes
+		if len(summaryHTML) > diff {
+			b.WithSummaryHTML(summaryHTML[:len(summaryHTML)-diff])
+		}
+	}
+	return b
+}
+
+func createExpectedTR(tr *pb.TestResult, rootInvID string, wuID string) *pb.TestResult {
+	expectedTR := proto.Clone(tr).(*pb.TestResult)
+	expectedTR.Name = pbutil.TestResultName(rootInvID, wuID, tr.TestId, tr.ResultId)
+	if expectedTR.Variant == nil {
+		expectedTR.Variant = &pb.Variant{}
+	}
+	if expectedTR.TestIdStructured != nil && expectedTR.TestIdStructured.ModuleVariant == nil {
+		expectedTR.TestIdStructured.ModuleVariant = &pb.Variant{}
+	}
+	if expectedTR.Duration == nil {
+		expectedTR.Duration = &durationpb.Duration{Seconds: 0}
+	}
+	if expectedTR.VariantHash == "" {
+		expectedTR.VariantHash = pbutil.VariantHash(expectedTR.Variant)
+	}
+	if expectedTR.TestIdStructured == nil {
+		expectedTR.TestIdStructured, _ = pbutil.ParseStructuredTestIdentifierForOutput(expectedTR.TestId, expectedTR.Variant)
+	}
+	return expectedTR
+}
 
 func TestHandlePublishTestResultsTask(t *testing.T) {
 	ftt.Run("HandlePublishTestResultsTask", t, func(t *ftt.Test) {
@@ -59,28 +110,11 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 		// reconstructed).
 		expectedTRs1 := make([]*pb.TestResult, len(trs1))
 		for i, tr := range trs1 {
-			expectedTRs1[i] = proto.Clone(tr).(*pb.TestResult)
-			expectedTRs1[i].Name = pbutil.TestResultName(string(rootInvID), wuID1.WorkUnitID, tr.TestId, tr.ResultId)
-
-			// Add default empty variant if it's nil.
-			if expectedTRs1[i].Variant == nil {
-				expectedTRs1[i].Variant = &pb.Variant{}
-			}
-			if expectedTRs1[i].TestIdStructured != nil && expectedTRs1[i].TestIdStructured.ModuleVariant == nil {
-				expectedTRs1[i].TestIdStructured.ModuleVariant = &pb.Variant{}
-			}
+			expectedTRs1[i] = createExpectedTR(tr, string(rootInvID), wuID1.WorkUnitID)
 		}
 		expectedTRs2 := make([]*pb.TestResult, len(trs2))
 		for i, tr := range trs2 {
-			expectedTRs2[i] = proto.Clone(tr).(*pb.TestResult)
-			expectedTRs2[i].Name = pbutil.TestResultName(string(rootInvID), wuID2.WorkUnitID, tr.TestId, tr.ResultId)
-			// Add default empty variant if it's nil.
-			if expectedTRs2[i].Variant == nil {
-				expectedTRs2[i].Variant = &pb.Variant{}
-			}
-			if expectedTRs2[i].TestIdStructured != nil && expectedTRs2[i].TestIdStructured.ModuleVariant == nil {
-				expectedTRs2[i].TestIdStructured.ModuleVariant = &pb.Variant{}
-			}
+			expectedTRs2[i] = createExpectedTR(tr, string(rootInvID), wuID2.WorkUnitID)
 		}
 		gitilesSources := &pb.Sources{
 			BaseSources: &pb.Sources_GitilesCommit{
@@ -156,12 +190,22 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *ftt.Test) {
+				ctx := testutil.SpannerTestContext(t)
 				ctx, sched := tq.TestingContext(ctx, nil)
+				t.Logf("Running test case: %s", tc.name)
 
 				// Insert the root invocation for this test case.
 				muts := rootinvocations.InsertForTesting(tc.rootInvBuilder.Build())
 				testutil.MustApply(ctx, t, muts...)
-				defer testutil.MustApply(ctx, t, spanner.Delete("RootInvocations", rootInvID.Key()))
+				t.Logf("Inserted root invocation: %s", tc.rootInvBuilder.Build().RootInvocationID)
+
+				// Insert legacy Invocations based on work unit IDs.
+				testutil.MustApply(ctx, t, insert.Invocation(wuID1.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
+				testutil.MustApply(ctx, t, insert.Invocation(wuID2.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
+
+				// Insert TestResults.
+				testutil.MustApply(ctx, t, insert.TestResultMessages(t, trs1)...)
+				testutil.MustApply(ctx, t, insert.TestResultMessages(t, trs2)...)
 
 				// Reset tasks.
 				sched.Tasks()
@@ -171,6 +215,10 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 					WorkUnitIds:      tc.finalizedWUIDs,
 				}
 				err := handlePublishTestResultsTask(ctx, task, rdbHost)
+				if tc.name == "StreamingExportState not METADATA_FINAL" {
+					assert.Loosely(t, err, should.BeNil)
+					return
+				}
 				assert.Loosely(t, err, should.BeNil)
 
 				allTasks := sched.Tasks()
@@ -193,16 +241,158 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 				delete(attrs, "X-Luci-Tq-Reminder-Id")
 				assert.Loosely(t, attrs, should.Match(tc.expectedAttributes))
 
-				// Clear DeduplicationKey as it contains timestamp.
 				payload := notifyTask.Payload.(*taskspb.PublishTestResults)
-				payload.Message.DeduplicationKey = ""
 
 				// Sort TestResultsByWorkUnit to make the test deterministic.
 				sort.Slice(payload.Message.TestResultsByWorkUnit, func(i, j int) bool {
 					return payload.Message.TestResultsByWorkUnit[i].WorkUnitName < payload.Message.TestResultsByWorkUnit[j].WorkUnitName
 				})
+
+				// Calculate the expected deduplication key separately.
+				expectedDeduplicationKey := generateDeduplicationKey(payload.Message.TestResultsByWorkUnit)
+				assert.Loosely(t, payload.Message.DeduplicationKey, should.Equal(expectedDeduplicationKey))
+
+				// Clear the key for the rest of the proto comparison.
+				payload.Message.DeduplicationKey = ""
 				assert.Loosely(t, payload.Message, should.Match(tc.expectedNotification))
 			})
 		}
+	})
+}
+
+func TestHandlePublishTestResultsTask_Batching(t *testing.T) {
+	ftt.Run("HandlePublishTestResultsTask_Batching", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+		rootInvID := rootinvocations.ID("test-root-inv-batch")
+		rdbHost := "staging.results.api.cr.dev"
+
+		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
+		wuID2 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu2"}
+
+		testutil.MustApply(ctx, t, insert.Invocation(wuID1.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, t, insert.Invocation(wuID2.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
+
+		// Set a small size for testing batching.
+		const testMaxSize = 1000 // 1KB
+
+		// WU1 has two results, each ~600 bytes. These should be in separate batches.
+		tr1 := sizeLimitedTestResult(string(wuID1.LegacyInvocationID()), "testA", "res1", 600)
+		tr2 := sizeLimitedTestResult(string(wuID1.LegacyInvocationID()), "testA", "res2", 600)
+
+		// WU2 has two results, ~300 bytes each. These should be in the same batch.
+		tr3 := sizeLimitedTestResult(string(wuID2.LegacyInvocationID()), "testB", "res1", 300)
+		tr4 := sizeLimitedTestResult(string(wuID2.LegacyInvocationID()), "testB", "res2", 300)
+
+		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr1.Build()))
+		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr2.Build()))
+		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr3.Build()))
+		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr4.Build()))
+
+		gitilesSources := &pb.Sources{
+			BaseSources: &pb.Sources_GitilesCommit{
+				GitilesCommit: &pb.GitilesCommit{
+					Host:       "test.googlesource.com",
+					Project:    "test/project",
+					Ref:        "refs/heads/main",
+					CommitHash: "abcdef",
+				},
+			},
+		}
+		rootInvBuilder := rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithSources(gitilesSources)
+		testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInvBuilder.Build())...)
+		ctx, sched := tq.TestingContext(ctx, nil)
+		task := &taskspb.PublishTestResultsTask{
+			RootInvocationId: string(rootInvID),
+			WorkUnitIds:      []string{wuID1.WorkUnitID, wuID2.WorkUnitID},
+		}
+
+		err := handlePublishTestResultsTask(ctx, task, rdbHost)
+		assert.Loosely(t, err, should.BeNil)
+
+		allTasks := sched.Tasks()
+		var actualMessages []*taskspb.PublishTestResults
+
+		for _, task := range allTasks {
+			if task.Class == "notify-test-results" {
+				payload := task.Payload.(*taskspb.PublishTestResults)
+
+				// Calculate the expected deduplication key separately.
+				expectedDeduplicationKey := generateDeduplicationKey(payload.Message.TestResultsByWorkUnit)
+				assert.Loosely(t, payload.Message.DeduplicationKey, should.Equal(expectedDeduplicationKey))
+
+				// Clear the key for the rest of the proto comparison.
+				payload.Message.DeduplicationKey = ""
+				actualMessages = append(actualMessages, payload)
+			}
+		}
+
+		// Prepare expected results for comparison
+		expectedTR1 := createExpectedTR(tr1.Build().ToProto(), string(rootInvID), wuID1.WorkUnitID)
+		expectedTR2 := createExpectedTR(tr2.Build().ToProto(), string(rootInvID), wuID1.WorkUnitID)
+		expectedTR3 := createExpectedTR(tr3.Build().ToProto(), string(rootInvID), wuID2.WorkUnitID)
+		expectedTR4 := createExpectedTR(tr4.Build().ToProto(), string(rootInvID), wuID2.WorkUnitID)
+
+		// Expected messages based on size and batching logic.
+		expectedMessages := []*taskspb.PublishTestResults{
+			{
+				Message: &pb.TestResultsNotification{
+					ResultdbHost: rdbHost,
+					Sources:      gitilesSources,
+					TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
+						{WorkUnitName: wuID1.Name(), TestResults: []*pb.TestResult{expectedTR1, expectedTR2}},
+						{WorkUnitName: wuID2.Name(), TestResults: []*pb.TestResult{expectedTR3, expectedTR4}},
+					},
+				},
+			},
+		}
+
+		// Loosely compare the contents without checking the order of messages.
+		for _, msg := range actualMessages {
+			for _, tr := range msg.Message.TestResultsByWorkUnit {
+				assert.Loosely(t, tr, should.MatchIn(expectedMessages[0].Message.TestResultsByWorkUnit))
+			}
+		}
+	})
+}
+func TestHandlePublishTestResultsTask_SingleResultTooLarge(t *testing.T) {
+	ftt.Run("HandlePublishTestResultsTask_SingleResultTooLarge", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+		rootInvID := rootinvocations.ID("test-root-inv-large")
+		rdbHost := "staging.results.api.cr.dev"
+		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
+
+		testutil.MustApply(ctx, t, insert.Invocation(wuID1.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
+
+		// This test result is larger than the max size.
+		tr1 := sizeLimitedTestResult(string(wuID1.LegacyInvocationID()), "testC", "res1", 1200)
+		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr1.Build()))
+
+		gitilesSources := &pb.Sources{
+			BaseSources: &pb.Sources_GitilesCommit{
+				GitilesCommit: &pb.GitilesCommit{
+					Host:       "test.googlesource.com",
+					Project:    "test/project",
+					Ref:        "refs/heads/main",
+					CommitHash: "abcdef",
+				},
+			},
+		}
+
+		rootInvBuilder := rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithSources(gitilesSources)
+		testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInvBuilder.Build())...)
+		ctx, sched := tq.TestingContext(ctx, nil)
+
+		// Set a small size for testing batching.
+		const testMaxSize = 1000 // 1KB
+
+		err := enqueueBatchedNotifications(ctx, testResultsNotification(map[string][]*pb.TestResult{
+			wuID1.Name(): {tr1.Build().ToProto()},
+		}), rdbHost, gitilesSources, nil, testMaxSize)
+
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, strings.Contains(err.Error(), "exceeds Pub/Sub size limit"), should.BeTrue)
+
+		// No tasks should be enqueued.
+		assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
 	})
 }
