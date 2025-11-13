@@ -127,26 +127,72 @@ func updateRootInvocationInternal(in *pb.UpdateRootInvocationRequest, originalRo
 	rootInvID := rootinvocations.MustParseName(in.RootInvocation.Name)
 	mb := rootinvocations.NewMutationBuilder(rootInvID)
 
+	revalidateBuildUniquenessAndOrder := true
+
 	for path := range updateMask.Children() {
 		switch path {
 		// The cases in this switch statement must be synchronized with a
 		// similar switch statement in validateUpdateRootInvocationRequest.
+
+		case "definition":
+			if !pbutil.DefinitionsEqual(originalRootInvRow.Definition, in.RootInvocation.Definition) {
+				// We can't set the field to a value other than its current value, if the metadata has been marked final.
+				if originalRootInvRow.StreamingExportState == pb.RootInvocation_METADATA_FINAL {
+					return nil, nil, appstatus.Errorf(codes.FailedPrecondition, "root_invocation: definition: cannot modify already finalized definition (streaming_export_state set to METADATA_FINAL)")
+				}
+
+				mb.UpdateDefinition(in.RootInvocation.Definition)
+				definition := proto.Clone(in.RootInvocation.Definition).(*pb.RootInvocationDefinition)
+				if definition != nil {
+					pbutil.PopulateDefinitionHashes(definition)
+				}
+				updatedRootInvRow.Definition = definition
+			}
 
 		case "sources":
 			// Are we setting the field to a value other than its current value?
 			if !proto.Equal(originalRootInvRow.Sources, in.RootInvocation.Sources) {
 				// We can't set the field to a value other than its current value, if the metadata has been marked final.
 				if originalRootInvRow.StreamingExportState == pb.RootInvocation_METADATA_FINAL {
-					return nil, nil, appstatus.BadRequest(errors.New("root_invocation: sources: cannot modify already finalized sources (streaming_export_state set to METADATA_FINAL)"))
+					return nil, nil, appstatus.Errorf(codes.FailedPrecondition, "root_invocation: sources: cannot modify already finalized sources (streaming_export_state set to METADATA_FINAL)")
 				}
 				mb.UpdateSources(in.RootInvocation.Sources)
 				updatedRootInvRow.Sources = in.RootInvocation.Sources
 			}
 
+		case "primary_build":
+			// Are we setting the field to a value other than its current value?
+			if !proto.Equal(originalRootInvRow.PrimaryBuild, in.RootInvocation.PrimaryBuild) {
+				// We can't set the field to a value other than its current value, if the metadata has been marked final.
+				if originalRootInvRow.StreamingExportState == pb.RootInvocation_METADATA_FINAL {
+					return nil, nil, appstatus.Errorf(codes.FailedPrecondition, "root_invocation: primary_build: cannot modify already finalized primary_build (streaming_export_state set to METADATA_FINAL)")
+				}
+				// Force re-validation of the final PrimaryBuild + ExtraBuilds field combination to
+				// make sure there are no duplicates and fields are set in the correct order.
+				// For now, prepare the update as if it will be OK.
+				revalidateBuildUniquenessAndOrder = true
+				mb.UpdatePrimaryBuild(in.RootInvocation.PrimaryBuild)
+				updatedRootInvRow.PrimaryBuild = in.RootInvocation.PrimaryBuild
+			}
+
+		case "extra_builds":
+			if !extraBuildsEqual(originalRootInvRow.ExtraBuilds, in.RootInvocation.ExtraBuilds) {
+				// We can't set the field to a value other than its current value, if the metadata has been marked final.
+				if originalRootInvRow.StreamingExportState == pb.RootInvocation_METADATA_FINAL {
+					return nil, nil, appstatus.Errorf(codes.FailedPrecondition, "root_invocation: extra_builds: cannot modify already finalized extra_builds (streaming_export_state set to METADATA_FINAL)")
+				}
+				// Force re-validation of the final PrimaryBuild + ExtraBuilds field combination to
+				// make sure there are no duplicates and fields are set in the correct order.
+				// For now, prepare the update as if it will be OK.
+				revalidateBuildUniquenessAndOrder = true
+				mb.UpdateExtraBuilds(in.RootInvocation.ExtraBuilds)
+				updatedRootInvRow.ExtraBuilds = in.RootInvocation.ExtraBuilds
+			}
+
 		case "streaming_export_state":
 			if originalRootInvRow.StreamingExportState != in.RootInvocation.StreamingExportState {
 				if originalRootInvRow.StreamingExportState == pb.RootInvocation_METADATA_FINAL {
-					return nil, nil, appstatus.BadRequest(errors.Fmt("root_invocation: streaming_export_state: transitioning from %v to %v is not allowed", originalRootInvRow.StreamingExportState, in.RootInvocation.StreamingExportState))
+					return nil, nil, appstatus.Errorf(codes.FailedPrecondition, "root_invocation: streaming_export_state: transitioning from %v to %v is not allowed", originalRootInvRow.StreamingExportState, in.RootInvocation.StreamingExportState)
 				}
 				mb.UpdateStreamingExportState(in.RootInvocation.StreamingExportState)
 				updatedRootInvRow.StreamingExportState = in.RootInvocation.StreamingExportState
@@ -174,7 +220,27 @@ func updateRootInvocationInternal(in *pb.UpdateRootInvocationRequest, originalRo
 			panic("impossible")
 		}
 	}
+
+	if revalidateBuildUniquenessAndOrder {
+		// Validate the final values of ExtraBuilds and PrimaryBuild will work together.
+		if err := pbutil.ValidateBuildDescriptorsUniquenessAndOrder(updatedRootInvRow.ExtraBuilds, updatedRootInvRow.PrimaryBuild); err != nil {
+			return nil, nil, appstatus.Errorf(codes.FailedPrecondition, "root invocation would be in inconsistent state after update: extra_builds: %s", err)
+		}
+	}
 	return mb.Build(), updatedRootInvRow, nil
+}
+
+func extraBuildsEqual(a, b []*pb.BuildDescriptor) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	// Length are equal. Compare each element.
+	for i := range a {
+		if !proto.Equal(a[i], b[i]) {
+			return false
+		}
+	}
+	return true
 }
 
 // validateUpdateRootInvocationRequest validates an UpdateRootInvocationRequest.
@@ -210,11 +276,30 @@ func validateUpdateRootInvocationRequest(ctx context.Context, req *pb.UpdateRoot
 		switch path {
 		// The cases in this switch statement must be synchronized with a
 		// similar switch statement in the UpdateRootInvocation implementation.
+		case "definition":
+			if req.RootInvocation.Definition != nil {
+				if err := pbutil.ValidateDefinitionForStorage(req.RootInvocation.Definition); err != nil {
+					return errors.Fmt("root_invocation: definition: %w", err)
+				}
+			}
 
 		case "sources":
 			if err := pbutil.ValidateSources(req.RootInvocation.Sources); err != nil {
 				return errors.Fmt("root_invocation: sources: %w", err)
 			}
+
+		case "primary_build":
+			if req.RootInvocation.PrimaryBuild != nil {
+				if err := pbutil.ValidateBuildDescriptor(req.RootInvocation.PrimaryBuild); err != nil {
+					return errors.Fmt("root_invocation: primary_build: %w", err)
+				}
+			}
+
+		case "extra_builds":
+			if err := pbutil.ValidateExtraBuildDescriptors(req.RootInvocation.ExtraBuilds); err != nil {
+				return errors.Fmt("extra_builds: %w", err)
+			}
+			// Later, we need to validate the extra builds do not duplicate the existing or updated primary build.
 
 		case "streaming_export_state":
 			if err := pbutil.ValidateStreamingExportState(req.RootInvocation.StreamingExportState); err != nil {

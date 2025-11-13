@@ -472,12 +472,39 @@ func (b *MutationBuilder) UpdateSummaryMarkdown(summaryMarkdown string) {
 	b.values["SummaryMarkdown"] = summaryMarkdown
 }
 
+// UpdateDefinition updates the definition of the root invocation.
+func (b *MutationBuilder) UpdateDefinition(definition *pb.RootInvocationDefinition) {
+	if definition != nil {
+		b.values["DefinitionSystem"] = definition.System
+		b.values["DefinitionName"] = definition.Name
+		b.values["DefinitionProperties"] = definition.Properties
+	} else {
+		b.values["DefinitionSystem"] = spanner.NullString{}
+		b.values["DefinitionName"] = spanner.NullString{}
+		b.values["DefinitionProperties"] = ([]string)(nil)
+	}
+}
+
 // UpdateSources updates the sources of the root invocation.
 func (b *MutationBuilder) UpdateSources(sources *pb.Sources) {
 	compressedSources := spanutil.Compressed(pbutil.MustMarshal(sources))
 	b.values["Sources"] = compressedSources
 	b.legacyInvocationValues["Sources"] = compressedSources
 	b.shardValues["Sources"] = compressedSources
+}
+
+// UpdatePrimaryBuild updates the primary build of the root invocation.
+func (b *MutationBuilder) UpdatePrimaryBuild(primaryBuild *pb.BuildDescriptor) {
+	b.values["PrimaryBuild"] = spanutil.Compressed(pbutil.MustMarshal(primaryBuild))
+}
+
+// UpdateExtraBuilds updates the extra builds of the root invocation.
+func (b *MutationBuilder) UpdateExtraBuilds(extraBuilds []*pb.BuildDescriptor) {
+	if extraBuilds == nil {
+		// Set an empty slice instead of nil to ensure the value written is NOT NULL.
+		extraBuilds = make([]*pb.BuildDescriptor, 0)
+	}
+	b.values["ExtraBuilds"] = serializeExtraBuilds(extraBuilds)
 }
 
 // UpdateStreamingExportState updates the streaming export state of the root invocation.

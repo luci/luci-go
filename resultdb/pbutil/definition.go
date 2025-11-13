@@ -176,3 +176,22 @@ func DefinitionPropertiesHash(props *pb.RootInvocationDefinition_Properties) str
 func PopulateDefinitionHashes(d *pb.RootInvocationDefinition) {
 	d.PropertiesHash = DefinitionPropertiesHash(d.Properties)
 }
+
+// DefinitionsEqual returns whether two definition messages are semantically equivalent.
+// This comparison differs from proto.Equal in that the normally output-only PropertiesHash
+// field is ignored.
+func DefinitionsEqual(a, b *pb.RootInvocationDefinition) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	if a.System != b.System {
+		return false
+	}
+	if a.Name != b.Name {
+		return false
+	}
+	if !proto.Equal(a.Properties, b.Properties) {
+		return false
+	}
+	return true
+}

@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/internal/workunits"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -115,6 +116,30 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike(`update_mask: "sources" should not have any submask`))
 		})
 
+		t.Run("definition", func(t *ftt.Test) {
+			t.Run("valid", func(t *ftt.Test) {
+				req.UpdateMask.Paths = []string{"definition"}
+				req.RootInvocation.Definition = &pb.RootInvocationDefinition{
+					System:     "buildbucket",
+					Name:       "project/bucket/builder",
+					Properties: pbutil.DefinitionProperties("key", "value"),
+				}
+				err := validateUpdateRootInvocationRequest(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+			})
+
+			t.Run("invalid", func(t *ftt.Test) {
+				req.UpdateMask.Paths = []string{"definition"}
+				req.RootInvocation.Definition = &pb.RootInvocationDefinition{
+					System:     "", // Omitted.
+					Name:       "project/bucket/builder",
+					Properties: pbutil.DefinitionProperties("key", "value"),
+				}
+				err := validateUpdateRootInvocationRequest(ctx, req)
+				assert.Loosely(t, err, should.ErrLike("root_invocation: definition: system: unspecified"))
+			})
+		})
+
 		t.Run("sources", func(t *ftt.Test) {
 			req.UpdateMask.Paths = []string{"sources"}
 			t.Run("valid", func(t *ftt.Test) {
@@ -131,6 +156,76 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 				}
 				err := validateUpdateRootInvocationRequest(ctx, req)
 				assert.Loosely(t, err, should.ErrLike("root_invocation: sources: gitiles_commit: host: does not match"))
+			})
+		})
+
+		t.Run("primary_build", func(t *ftt.Test) {
+			req.UpdateMask.Paths = []string{"primary_build"}
+			t.Run("valid", func(t *ftt.Test) {
+				req.RootInvocation.PrimaryBuild = &pb.BuildDescriptor{
+					Definition: &pb.BuildDescriptor_AndroidBuild{
+						AndroidBuild: &pb.AndroidBuildDescriptor{
+							DataRealm:   "prod",
+							Branch:      "git_main",
+							BuildTarget: "aosp_arm64-userdebug",
+							BuildId:     "L1234567890",
+						},
+					},
+				}
+				err := validateUpdateRootInvocationRequest(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+			})
+
+			t.Run("invalid", func(t *ftt.Test) {
+				req.RootInvocation.PrimaryBuild = &pb.BuildDescriptor{
+					Definition: &pb.BuildDescriptor_AndroidBuild{
+						AndroidBuild: &pb.AndroidBuildDescriptor{
+							DataRealm:   "prod",
+							Branch:      "git_main",
+							BuildTarget: "aosp_arm64-userdebug",
+							BuildId:     "", // Omitted.
+						},
+					},
+				}
+				err := validateUpdateRootInvocationRequest(ctx, req)
+				assert.Loosely(t, err, should.ErrLike("root_invocation: primary_build: android_build: build_id: unspecified"))
+			})
+		})
+
+		t.Run("extra_builds", func(t *ftt.Test) {
+			req.UpdateMask.Paths = []string{"extra_builds"}
+			t.Run("valid", func(t *ftt.Test) {
+				req.RootInvocation.ExtraBuilds = []*pb.BuildDescriptor{
+					{
+						Definition: &pb.BuildDescriptor_AndroidBuild{
+							AndroidBuild: &pb.AndroidBuildDescriptor{
+								DataRealm:   "prod",
+								Branch:      "git_main",
+								BuildTarget: "aosp_arm64-userdebug",
+								BuildId:     "L1234567890",
+							},
+						},
+					},
+				}
+				err := validateUpdateRootInvocationRequest(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+			})
+
+			t.Run("invalid", func(t *ftt.Test) {
+				req.RootInvocation.ExtraBuilds = []*pb.BuildDescriptor{
+					{
+						Definition: &pb.BuildDescriptor_AndroidBuild{
+							AndroidBuild: &pb.AndroidBuildDescriptor{
+								DataRealm:   "prod",
+								Branch:      "git_main",
+								BuildTarget: "aosp_arm64-userdebug",
+								BuildId:     "INVALID",
+							},
+						},
+					},
+				}
+				err := validateUpdateRootInvocationRequest(ctx, req)
+				assert.Loosely(t, err, should.ErrLike("extra_builds: [0]: android_build: build_id: does not match pattern"))
 			})
 		})
 
@@ -451,6 +546,40 @@ func TestUpdateRootInvocation(t *testing.T) {
 				newSources := testutil.TestSourcesWithChangelistNumbers(123456)
 
 				t.Run("metadata not finalized", func(t *ftt.Test) {
+					t.Run("update definition", func(t *ftt.Test) {
+						t.Run("to non-nil", func(t *ftt.Test) {
+							newDefinition := testutil.TestDefinition()
+							newDefinition.PropertiesHash = ""
+							req.UpdateMask.Paths = []string{"definition"}
+							req.RootInvocation.Definition = newDefinition
+
+							expectedDefinition := testutil.TestDefinition()
+							pbutil.PopulateDefinitionHashes(expectedDefinition)
+
+							ri, err := recorder.UpdateRootInvocation(ctx, req)
+							assert.Loosely(t, err, should.BeNil)
+							expectedRootInv.Definition = expectedDefinition
+							assertResponse(ri, expectedRootInv)
+
+							// Validate spanner records are updated.
+							expectedRootInvRow.Definition = expectedDefinition
+							assertSpannerRows(expectedRootInvRow)
+						})
+						t.Run("to nil", func(t *ftt.Test) {
+							req.UpdateMask.Paths = []string{"definition"}
+							req.RootInvocation.Definition = nil
+
+							ri, err := recorder.UpdateRootInvocation(ctx, req)
+							assert.Loosely(t, err, should.BeNil)
+							expectedRootInv.Definition = nil
+							assertResponse(ri, expectedRootInv)
+
+							// Validate spanner records are updated.
+							expectedRootInvRow.Definition = nil
+							assertSpannerRows(expectedRootInvRow)
+						})
+					})
+
 					t.Run("update sources", func(t *ftt.Test) {
 						req.UpdateMask.Paths = []string{"sources"}
 						req.RootInvocation.Sources = newSources
@@ -465,6 +594,77 @@ func TestUpdateRootInvocation(t *testing.T) {
 						assertSpannerRows(expectedRootInvRow)
 					})
 
+					t.Run("update primary_build", func(t *ftt.Test) {
+						t.Run("to non-nil", func(t *ftt.Test) {
+							newPrimaryBuild := testutil.TestBuild("123")
+							req.UpdateMask.Paths = []string{"primary_build"}
+							req.RootInvocation.PrimaryBuild = newPrimaryBuild
+
+							ri, err := recorder.UpdateRootInvocation(ctx, req)
+							assert.Loosely(t, err, should.BeNil)
+							expectedRootInv.PrimaryBuild = newPrimaryBuild
+							assertResponse(ri, expectedRootInv)
+
+							// Validate spanner records are updated.
+							expectedRootInvRow.PrimaryBuild = newPrimaryBuild
+							assertSpannerRows(expectedRootInvRow)
+						})
+						t.Run("to nil", func(t *ftt.Test) {
+							// Clear extra_builds at the same time to avoid errors from primary_build
+							// being unset and extra_builds being set.
+							req.UpdateMask.Paths = []string{"primary_build", "extra_builds"}
+							req.RootInvocation.PrimaryBuild = nil
+							req.RootInvocation.ExtraBuilds = nil
+
+							ri, err := recorder.UpdateRootInvocation(ctx, req)
+							assert.Loosely(t, err, should.BeNil)
+							expectedRootInv.PrimaryBuild = nil
+							expectedRootInv.ExtraBuilds = nil
+							assertResponse(ri, expectedRootInv)
+
+							// Validate spanner records are updated.
+							expectedRootInvRow.PrimaryBuild = nil
+							expectedRootInvRow.ExtraBuilds = nil
+							assertSpannerRows(expectedRootInvRow)
+						})
+					})
+
+					t.Run("update extra_builds", func(t *ftt.Test) {
+						newExtraBuilds := []*pb.BuildDescriptor{testutil.TestBuild("456")}
+						req.UpdateMask.Paths = []string{"extra_builds"}
+						req.RootInvocation.ExtraBuilds = newExtraBuilds
+
+						ri, err := recorder.UpdateRootInvocation(ctx, req)
+						assert.Loosely(t, err, should.BeNil)
+						expectedRootInv.ExtraBuilds = newExtraBuilds
+						assertResponse(ri, expectedRootInv)
+
+						// Validate spanner records are updated.
+						expectedRootInvRow.ExtraBuilds = newExtraBuilds
+						assertSpannerRows(expectedRootInvRow)
+					})
+
+					t.Run("inconsistent build updates", func(t *ftt.Test) {
+						t.Run("extra builds set but primary build not set", func(t *ftt.Test) {
+							// Here the extra_builds field is already set on th root invocation but the user is clearing the primary_build field.
+							req.UpdateMask.Paths = []string{"primary_build"}
+							req.RootInvocation.PrimaryBuild = nil
+
+							_, err := recorder.UpdateRootInvocation(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+							assert.Loosely(t, err, should.ErrLike("root invocation would be in inconsistent state after update: extra_builds: may not be specified unless primary build is set"))
+						})
+						t.Run("duplicates between primary_build and extra_builds", func(t *ftt.Test) {
+							req.UpdateMask.Paths = []string{"primary_build", "extra_builds"}
+							req.RootInvocation.PrimaryBuild = testutil.TestBuild("123")
+							req.RootInvocation.ExtraBuilds = []*pb.BuildDescriptor{testutil.TestBuild("123")}
+
+							_, err := recorder.UpdateRootInvocation(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+							assert.Loosely(t, err, should.ErrLike("root invocation would be in inconsistent state after update: extra_builds: [0]: duplicate of primary_build"))
+						})
+					})
+
 					t.Run("to non-finalized metadata", func(t *ftt.Test) {
 						// Should be no-op.
 						req.UpdateMask.Paths = []string{"streaming_export_state"}
@@ -475,7 +675,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 						assertNoOp(ri, expectedRootInvRow, expectedRootInv)
 					})
 
-					t.Run("to finalized sources", func(t *ftt.Test) {
+					t.Run("to finalized metadata", func(t *ftt.Test) {
 						req.UpdateMask.Paths = []string{"streaming_export_state"}
 						req.RootInvocation.StreamingExportState = pb.RootInvocation_METADATA_FINAL
 
@@ -505,13 +705,63 @@ func TestUpdateRootInvocation(t *testing.T) {
 					// Use a new request id to avoid the repeated request being deduplicated.
 					req.RequestId = "new-request-id"
 
+					t.Run("fail to update definition", func(t *ftt.Test) {
+						t.Run("to non-nil", func(t *ftt.Test) {
+							newDefinition := testutil.TestDefinition()
+							req.UpdateMask.Paths = []string{"definition"}
+							req.RootInvocation.Definition = newDefinition
+
+							_, err := recorder.UpdateRootInvocation(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+							assert.Loosely(t, err, should.ErrLike("root_invocation: definition: cannot modify already finalized definition (streaming_export_state set to METADATA_FINAL)"))
+						})
+						t.Run("to nil", func(t *ftt.Test) {
+							req.UpdateMask.Paths = []string{"definition"}
+							req.RootInvocation.Definition = nil
+
+							_, err := recorder.UpdateRootInvocation(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+							assert.Loosely(t, err, should.ErrLike("root_invocation: definition: cannot modify already finalized definition (streaming_export_state set to METADATA_FINAL)"))
+						})
+					})
+
 					t.Run("fail to update sources", func(t *ftt.Test) {
 						req.UpdateMask.Paths = []string{"sources"}
 						req.RootInvocation.Sources = newSources
 
 						_, err := recorder.UpdateRootInvocation(ctx, req)
-						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 						assert.Loosely(t, err, should.ErrLike("root_invocation: sources: cannot modify already finalized sources (streaming_export_state set to METADATA_FINAL)"))
+					})
+
+					t.Run("fail to update primary_build", func(t *ftt.Test) {
+						t.Run("to non-nil", func(t *ftt.Test) {
+							newPrimaryBuild := testutil.TestBuild("123")
+							req.UpdateMask.Paths = []string{"primary_build"}
+							req.RootInvocation.PrimaryBuild = newPrimaryBuild
+
+							_, err := recorder.UpdateRootInvocation(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+							assert.Loosely(t, err, should.ErrLike("root_invocation: primary_build: cannot modify already finalized primary_build (streaming_export_state set to METADATA_FINAL)"))
+						})
+						t.Run("to nil", func(t *ftt.Test) {
+							req.UpdateMask.Paths = []string{"primary_build"}
+							req.RootInvocation.PrimaryBuild = nil
+
+							_, err := recorder.UpdateRootInvocation(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+							assert.Loosely(t, err, should.ErrLike("root_invocation: primary_build: cannot modify already finalized primary_build (streaming_export_state set to METADATA_FINAL)"))
+						})
+					})
+
+					t.Run("fail to update extra_builds", func(t *ftt.Test) {
+						newExtraBuilds := []*pb.BuildDescriptor{testutil.TestBuild("456")}
+						req.UpdateMask.Paths = []string{"extra_builds"}
+						req.RootInvocation.ExtraBuilds = newExtraBuilds
+
+						_, err := recorder.UpdateRootInvocation(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+						assert.Loosely(t, err, should.ErrLike("root_invocation: extra_builds: cannot modify already finalized extra_builds (streaming_export_state set to METADATA_FINAL)"))
 					})
 
 					t.Run("to finalized metadata", func(t *ftt.Test) {
@@ -529,7 +779,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 						req.RootInvocation.StreamingExportState = pb.RootInvocation_WAIT_FOR_METADATA
 
 						_, err := recorder.UpdateRootInvocation(ctx, req)
-						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 						assert.Loosely(t, err, should.ErrLike("root_invocation: streaming_export_state: transitioning from METADATA_FINAL to WAIT_FOR_METADATA is not allowed"))
 					})
 				})
