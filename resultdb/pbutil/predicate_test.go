@@ -114,3 +114,24 @@ func TestValidateTestResultPredicate(t *testing.T) {
 		})
 	})
 }
+
+func TestValidateWorkUnitPredicate(t *testing.T) {
+	t.Parallel()
+	ftt.Run(`ValidateWorkUnitPredicate`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
+			p := &pb.WorkUnitPredicate{
+				AncestorsOf: "rootIinvocations/a/workUnits/b",
+			}
+			assert.Loosely(t, ValidateWorkUnitPredicate(p), should.BeNil)
+		})
+
+		t.Run(`Nil`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateWorkUnitPredicate(nil), should.ErrLike("unspecified"))
+		})
+
+		t.Run(`AncestorsOf unspecified`, func(t *ftt.Test) {
+			p := &pb.WorkUnitPredicate{}
+			assert.Loosely(t, ValidateWorkUnitPredicate(p), should.ErrLike("ancestors_of: unspecified"))
+		})
+	})
+}

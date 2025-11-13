@@ -116,3 +116,15 @@ func ValidateTestMetadataPredicate(p *pb.TestMetadataPredicate) error {
 	}
 	return nil
 }
+
+// ValidateWorkUnitPredicate returns a non-nil error if p is determined to be
+// invalid.
+func ValidateWorkUnitPredicate(p *pb.WorkUnitPredicate) error {
+	if p == nil {
+		return errors.New("unspecified")
+	}
+	if p.AncestorsOf == "" {
+		return errors.New("ancestors_of: unspecified")
+	}
+	return nil
+}
