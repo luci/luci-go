@@ -521,7 +521,12 @@ type ReportTaskStageRequest struct {
 	// reported pid.
 	//
 	// (Required) when reported a task start.
-	Pid           int64 `protobuf:"varint,4,opt,name=pid,proto3" json:"pid,omitempty"`
+	Pid int64 `protobuf:"varint,4,opt,name=pid,proto3" json:"pid,omitempty"`
+	// Further information on where and how the report was initiated, this
+	// field is optional and it not being present has no impact on task stage
+	// reporting. If the `ClientInfo` message does not have a suitable
+	// kind, don't populate this field.
+	ClientInfo    *ClientInfo `protobuf:"bytes,5,opt,name=client_info,json=clientInfo,proto3" json:"client_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -584,6 +589,81 @@ func (x *ReportTaskStageRequest) GetPid() int64 {
 	return 0
 }
 
+func (x *ReportTaskStageRequest) GetClientInfo() *ClientInfo {
+	if x != nil {
+		return x.ClientInfo
+	}
+	return nil
+}
+
+// ClientInfo provides more details about the client the report was initiated
+// from.
+type ClientInfo struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Kind:
+	//
+	//	*ClientInfo_Swarming_
+	Kind          isClientInfo_Kind `protobuf_oneof:"kind"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClientInfo) Reset() {
+	*x = ClientInfo{}
+	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClientInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClientInfo) ProtoMessage() {}
+
+func (x *ClientInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClientInfo.ProtoReflect.Descriptor instead.
+func (*ClientInfo) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ClientInfo) GetKind() isClientInfo_Kind {
+	if x != nil {
+		return x.Kind
+	}
+	return nil
+}
+
+func (x *ClientInfo) GetSwarming() *ClientInfo_Swarming {
+	if x != nil {
+		if x, ok := x.Kind.(*ClientInfo_Swarming_); ok {
+			return x.Swarming
+		}
+	}
+	return nil
+}
+
+type isClientInfo_Kind interface {
+	isClientInfo_Kind()
+}
+
+type ClientInfo_Swarming_ struct {
+	Swarming *ClientInfo_Swarming `protobuf:"bytes,1,opt,name=swarming,proto3,oneof"`
+}
+
+func (*ClientInfo_Swarming_) isClientInfo_Kind() {}
+
 type ReportArtifactDigestRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// SHA256 digest of artifact.
@@ -602,7 +682,7 @@ type ReportArtifactDigestRequest struct {
 
 func (x *ReportArtifactDigestRequest) Reset() {
 	*x = ReportArtifactDigestRequest{}
-	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -614,7 +694,7 @@ func (x *ReportArtifactDigestRequest) String() string {
 func (*ReportArtifactDigestRequest) ProtoMessage() {}
 
 func (x *ReportArtifactDigestRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -627,7 +707,7 @@ func (x *ReportArtifactDigestRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportArtifactDigestRequest.ProtoReflect.Descriptor instead.
 func (*ReportArtifactDigestRequest) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_rawDescGZIP(), []int{5}
+	return file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ReportArtifactDigestRequest) GetDigest() string {
@@ -661,7 +741,7 @@ type ReportCipdRequest struct {
 
 func (x *ReportCipdRequest) Reset() {
 	*x = ReportCipdRequest{}
-	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -673,7 +753,7 @@ func (x *ReportCipdRequest) String() string {
 func (*ReportCipdRequest) ProtoMessage() {}
 
 func (x *ReportCipdRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -686,7 +766,7 @@ func (x *ReportCipdRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportCipdRequest.ProtoReflect.Descriptor instead.
 func (*ReportCipdRequest) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_rawDescGZIP(), []int{6}
+	return file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ReportCipdRequest) GetCipdReport() *CipdReport {
@@ -706,7 +786,7 @@ type ReportGitRequest struct {
 
 func (x *ReportGitRequest) Reset() {
 	*x = ReportGitRequest{}
-	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -718,7 +798,7 @@ func (x *ReportGitRequest) String() string {
 func (*ReportGitRequest) ProtoMessage() {}
 
 func (x *ReportGitRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -731,7 +811,7 @@ func (x *ReportGitRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportGitRequest.ProtoReflect.Descriptor instead.
 func (*ReportGitRequest) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_rawDescGZIP(), []int{7}
+	return file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ReportGitRequest) GetGitReport() *GitReport {
@@ -751,7 +831,7 @@ type ReportGcsRequest struct {
 
 func (x *ReportGcsRequest) Reset() {
 	*x = ReportGcsRequest{}
-	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[8]
+	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -763,7 +843,7 @@ func (x *ReportGcsRequest) String() string {
 func (*ReportGcsRequest) ProtoMessage() {}
 
 func (x *ReportGcsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[8]
+	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -776,7 +856,7 @@ func (x *ReportGcsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportGcsRequest.ProtoReflect.Descriptor instead.
 func (*ReportGcsRequest) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_rawDescGZIP(), []int{8}
+	return file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ReportGcsRequest) GetGcsReport() *GcsReport {
@@ -808,7 +888,7 @@ type ReportPIDRequest struct {
 
 func (x *ReportPIDRequest) Reset() {
 	*x = ReportPIDRequest{}
-	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[9]
+	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -820,7 +900,7 @@ func (x *ReportPIDRequest) String() string {
 func (*ReportPIDRequest) ProtoMessage() {}
 
 func (x *ReportPIDRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[9]
+	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -833,7 +913,7 @@ func (x *ReportPIDRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportPIDRequest.ProtoReflect.Descriptor instead.
 func (*ReportPIDRequest) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_rawDescGZIP(), []int{9}
+	return file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ReportPIDRequest) GetPid() int64 {
@@ -867,7 +947,7 @@ type Artifact_CIPD struct {
 
 func (x *Artifact_CIPD) Reset() {
 	*x = Artifact_CIPD{}
-	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[10]
+	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -879,7 +959,7 @@ func (x *Artifact_CIPD) String() string {
 func (*Artifact_CIPD) ProtoMessage() {}
 
 func (x *Artifact_CIPD) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[10]
+	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -912,6 +992,70 @@ func (x *Artifact_CIPD) GetInstanceId() string {
 func (x *Artifact_CIPD) GetHost() string {
 	if x != nil {
 		return x.Host
+	}
+	return ""
+}
+
+// Swarming is a Swarming task on buildbucket.
+type ClientInfo_Swarming struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The Swarming task ID.
+	TaskId string `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
+	// The Swarming bot ID.
+	BotId string `protobuf:"bytes,2,opt,name=bot_id,json=botId,proto3" json:"bot_id,omitempty"`
+	// The Swarming server host name eg: 'chromium-swarm.appspot.com'
+	Server        string `protobuf:"bytes,3,opt,name=server,proto3" json:"server,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ClientInfo_Swarming) Reset() {
+	*x = ClientInfo_Swarming{}
+	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ClientInfo_Swarming) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ClientInfo_Swarming) ProtoMessage() {}
+
+func (x *ClientInfo_Swarming) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ClientInfo_Swarming.ProtoReflect.Descriptor instead.
+func (*ClientInfo_Swarming) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_rawDescGZIP(), []int{5, 0}
+}
+
+func (x *ClientInfo_Swarming) GetTaskId() string {
+	if x != nil {
+		return x.TaskId
+	}
+	return ""
+}
+
+func (x *ClientInfo_Swarming) GetBotId() string {
+	if x != nil {
+		return x.BotId
+	}
+	return ""
+}
+
+func (x *ClientInfo_Swarming) GetServer() string {
+	if x != nil {
+		return x.Server
 	}
 	return ""
 }
@@ -950,13 +1094,23 @@ const file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_rawDesc
 	"\x04repo\x18\x02 \x01(\tR\x04repo\x12\x16\n" +
 	"\x06commit\x18\x03 \x01(\tR\x06commit\x12\x12\n" +
 	"\x04refs\x18\x04 \x01(\tR\x04refs\x125\n" +
-	"\bevent_ts\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\aeventTs\"\xbc\x01\n" +
+	"\bevent_ts\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\aeventTs\"\xff\x01\n" +
 	"\x16ReportTaskStageRequest\x12>\n" +
 	"\n" +
 	"task_stage\x18\x01 \x01(\x0e2\x1f.provenance.snooperpb.TaskStageR\ttaskStage\x128\n" +
 	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x16\n" +
 	"\x06recipe\x18\x03 \x01(\tR\x06recipe\x12\x10\n" +
-	"\x03pid\x18\x04 \x01(\x03R\x03pid\"\x96\x01\n" +
+	"\x03pid\x18\x04 \x01(\x03R\x03pid\x12A\n" +
+	"\vclient_info\x18\x05 \x01(\v2 .provenance.snooperpb.ClientInfoR\n" +
+	"clientInfo\"\xb1\x01\n" +
+	"\n" +
+	"ClientInfo\x12G\n" +
+	"\bswarming\x18\x01 \x01(\v2).provenance.snooperpb.ClientInfo.SwarmingH\x00R\bswarming\x1aR\n" +
+	"\bSwarming\x12\x17\n" +
+	"\atask_id\x18\x01 \x01(\tR\x06taskId\x12\x15\n" +
+	"\x06bot_id\x18\x02 \x01(\tR\x05botId\x12\x16\n" +
+	"\x06server\x18\x03 \x01(\tR\x06serverB\x06\n" +
+	"\x04kind\"\x96\x01\n" +
 	"\x1bReportArtifactDigestRequest\x12\x16\n" +
 	"\x06digest\x18\x01 \x01(\tR\x06digest\x12:\n" +
 	"\bartifact\x18\x02 \x01(\v2\x1e.provenance.snooperpb.ArtifactR\bartifact\x12#\n" +
@@ -1006,7 +1160,7 @@ func file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_rawDescG
 }
 
 var file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_goTypes = []any{
 	(TaskStage)(0),                      // 0: provenance.snooperpb.TaskStage
 	(*Artifact)(nil),                    // 1: provenance.snooperpb.Artifact
@@ -1014,47 +1168,51 @@ var file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_goTypes =
 	(*GcsReport)(nil),                   // 3: provenance.snooperpb.GcsReport
 	(*GitReport)(nil),                   // 4: provenance.snooperpb.GitReport
 	(*ReportTaskStageRequest)(nil),      // 5: provenance.snooperpb.ReportTaskStageRequest
-	(*ReportArtifactDigestRequest)(nil), // 6: provenance.snooperpb.ReportArtifactDigestRequest
-	(*ReportCipdRequest)(nil),           // 7: provenance.snooperpb.ReportCipdRequest
-	(*ReportGitRequest)(nil),            // 8: provenance.snooperpb.ReportGitRequest
-	(*ReportGcsRequest)(nil),            // 9: provenance.snooperpb.ReportGcsRequest
-	(*ReportPIDRequest)(nil),            // 10: provenance.snooperpb.ReportPIDRequest
-	(*Artifact_CIPD)(nil),               // 11: provenance.snooperpb.Artifact.CIPD
-	(*repopb.Tag)(nil),                  // 12: cipd.Tag
-	(*repopb.Ref)(nil),                  // 13: cipd.Ref
-	(*timestamppb.Timestamp)(nil),       // 14: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),               // 15: google.protobuf.Empty
+	(*ClientInfo)(nil),                  // 6: provenance.snooperpb.ClientInfo
+	(*ReportArtifactDigestRequest)(nil), // 7: provenance.snooperpb.ReportArtifactDigestRequest
+	(*ReportCipdRequest)(nil),           // 8: provenance.snooperpb.ReportCipdRequest
+	(*ReportGitRequest)(nil),            // 9: provenance.snooperpb.ReportGitRequest
+	(*ReportGcsRequest)(nil),            // 10: provenance.snooperpb.ReportGcsRequest
+	(*ReportPIDRequest)(nil),            // 11: provenance.snooperpb.ReportPIDRequest
+	(*Artifact_CIPD)(nil),               // 12: provenance.snooperpb.Artifact.CIPD
+	(*ClientInfo_Swarming)(nil),         // 13: provenance.snooperpb.ClientInfo.Swarming
+	(*repopb.Tag)(nil),                  // 14: cipd.Tag
+	(*repopb.Ref)(nil),                  // 15: cipd.Ref
+	(*timestamppb.Timestamp)(nil),       // 16: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),               // 17: google.protobuf.Empty
 }
 var file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_depIdxs = []int32{
-	11, // 0: provenance.snooperpb.Artifact.cipd:type_name -> provenance.snooperpb.Artifact.CIPD
-	12, // 1: provenance.snooperpb.CipdReport.tags:type_name -> cipd.Tag
-	13, // 2: provenance.snooperpb.CipdReport.refs:type_name -> cipd.Ref
-	14, // 3: provenance.snooperpb.CipdReport.event_ts:type_name -> google.protobuf.Timestamp
-	14, // 4: provenance.snooperpb.GcsReport.event_ts:type_name -> google.protobuf.Timestamp
-	14, // 5: provenance.snooperpb.GitReport.event_ts:type_name -> google.protobuf.Timestamp
+	12, // 0: provenance.snooperpb.Artifact.cipd:type_name -> provenance.snooperpb.Artifact.CIPD
+	14, // 1: provenance.snooperpb.CipdReport.tags:type_name -> cipd.Tag
+	15, // 2: provenance.snooperpb.CipdReport.refs:type_name -> cipd.Ref
+	16, // 3: provenance.snooperpb.CipdReport.event_ts:type_name -> google.protobuf.Timestamp
+	16, // 4: provenance.snooperpb.GcsReport.event_ts:type_name -> google.protobuf.Timestamp
+	16, // 5: provenance.snooperpb.GitReport.event_ts:type_name -> google.protobuf.Timestamp
 	0,  // 6: provenance.snooperpb.ReportTaskStageRequest.task_stage:type_name -> provenance.snooperpb.TaskStage
-	14, // 7: provenance.snooperpb.ReportTaskStageRequest.timestamp:type_name -> google.protobuf.Timestamp
-	1,  // 8: provenance.snooperpb.ReportArtifactDigestRequest.artifact:type_name -> provenance.snooperpb.Artifact
-	2,  // 9: provenance.snooperpb.ReportCipdRequest.cipd_report:type_name -> provenance.snooperpb.CipdReport
-	4,  // 10: provenance.snooperpb.ReportGitRequest.git_report:type_name -> provenance.snooperpb.GitReport
-	3,  // 11: provenance.snooperpb.ReportGcsRequest.gcs_report:type_name -> provenance.snooperpb.GcsReport
-	7,  // 12: provenance.snooperpb.SelfReport.ReportCipd:input_type -> provenance.snooperpb.ReportCipdRequest
-	8,  // 13: provenance.snooperpb.SelfReport.ReportGit:input_type -> provenance.snooperpb.ReportGitRequest
-	9,  // 14: provenance.snooperpb.SelfReport.ReportGcs:input_type -> provenance.snooperpb.ReportGcsRequest
-	5,  // 15: provenance.snooperpb.SelfReport.ReportTaskStage:input_type -> provenance.snooperpb.ReportTaskStageRequest
-	10, // 16: provenance.snooperpb.SelfReport.ReportPID:input_type -> provenance.snooperpb.ReportPIDRequest
-	6,  // 17: provenance.snooperpb.SelfReport.ReportArtifactDigest:input_type -> provenance.snooperpb.ReportArtifactDigestRequest
-	15, // 18: provenance.snooperpb.SelfReport.ReportCipd:output_type -> google.protobuf.Empty
-	15, // 19: provenance.snooperpb.SelfReport.ReportGit:output_type -> google.protobuf.Empty
-	15, // 20: provenance.snooperpb.SelfReport.ReportGcs:output_type -> google.protobuf.Empty
-	15, // 21: provenance.snooperpb.SelfReport.ReportTaskStage:output_type -> google.protobuf.Empty
-	15, // 22: provenance.snooperpb.SelfReport.ReportPID:output_type -> google.protobuf.Empty
-	15, // 23: provenance.snooperpb.SelfReport.ReportArtifactDigest:output_type -> google.protobuf.Empty
-	18, // [18:24] is the sub-list for method output_type
-	12, // [12:18] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	16, // 7: provenance.snooperpb.ReportTaskStageRequest.timestamp:type_name -> google.protobuf.Timestamp
+	6,  // 8: provenance.snooperpb.ReportTaskStageRequest.client_info:type_name -> provenance.snooperpb.ClientInfo
+	13, // 9: provenance.snooperpb.ClientInfo.swarming:type_name -> provenance.snooperpb.ClientInfo.Swarming
+	1,  // 10: provenance.snooperpb.ReportArtifactDigestRequest.artifact:type_name -> provenance.snooperpb.Artifact
+	2,  // 11: provenance.snooperpb.ReportCipdRequest.cipd_report:type_name -> provenance.snooperpb.CipdReport
+	4,  // 12: provenance.snooperpb.ReportGitRequest.git_report:type_name -> provenance.snooperpb.GitReport
+	3,  // 13: provenance.snooperpb.ReportGcsRequest.gcs_report:type_name -> provenance.snooperpb.GcsReport
+	8,  // 14: provenance.snooperpb.SelfReport.ReportCipd:input_type -> provenance.snooperpb.ReportCipdRequest
+	9,  // 15: provenance.snooperpb.SelfReport.ReportGit:input_type -> provenance.snooperpb.ReportGitRequest
+	10, // 16: provenance.snooperpb.SelfReport.ReportGcs:input_type -> provenance.snooperpb.ReportGcsRequest
+	5,  // 17: provenance.snooperpb.SelfReport.ReportTaskStage:input_type -> provenance.snooperpb.ReportTaskStageRequest
+	11, // 18: provenance.snooperpb.SelfReport.ReportPID:input_type -> provenance.snooperpb.ReportPIDRequest
+	7,  // 19: provenance.snooperpb.SelfReport.ReportArtifactDigest:input_type -> provenance.snooperpb.ReportArtifactDigestRequest
+	17, // 20: provenance.snooperpb.SelfReport.ReportCipd:output_type -> google.protobuf.Empty
+	17, // 21: provenance.snooperpb.SelfReport.ReportGit:output_type -> google.protobuf.Empty
+	17, // 22: provenance.snooperpb.SelfReport.ReportGcs:output_type -> google.protobuf.Empty
+	17, // 23: provenance.snooperpb.SelfReport.ReportTaskStage:output_type -> google.protobuf.Empty
+	17, // 24: provenance.snooperpb.SelfReport.ReportPID:output_type -> google.protobuf.Empty
+	17, // 25: provenance.snooperpb.SelfReport.ReportArtifactDigest:output_type -> google.protobuf.Empty
+	20, // [20:26] is the sub-list for method output_type
+	14, // [14:20] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_init() }
@@ -1066,13 +1224,16 @@ func file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_init() {
 		(*Artifact_Gcs)(nil),
 		(*Artifact_Cipd)(nil),
 	}
+	file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_msgTypes[5].OneofWrappers = []any{
+		(*ClientInfo_Swarming_)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_rawDesc), len(file_go_chromium_org_luci_provenance_api_snooperpb_v1_report_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   11,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

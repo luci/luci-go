@@ -214,6 +214,30 @@ message ReportTaskStageRequest {
     //
     // (Required) when reported a task start.
     int64 pid = 4;
+
+    // Further information on where and how the report was initiated, this
+    // field is optional and it not being present has no impact on task stage
+    // reporting. If the `ClientInfo` message does not have a suitable
+    // kind, don't populate this field.
+    ClientInfo client_info = 5;
+}
+
+// ClientInfo provides more details about the client the report was initiated
+// from.
+message ClientInfo {
+    // Swarming is a Swarming task on buildbucket.
+    message Swarming {
+        // The Swarming task ID.
+        string task_id = 1;
+        // The Swarming bot ID.
+        string bot_id = 2;
+        // The Swarming server host name eg: 'chromium-swarm.appspot.com'
+        string server = 3;
+    }
+
+    oneof kind {
+        Swarming swarming = 1;
+    }
 }
 
 message ReportArtifactDigestRequest {
@@ -262,3 +286,4 @@ message ReportPIDRequest {
     // This can be used to define an allowlist of reporters for this action.
     string reporter = 2;
 }
+
