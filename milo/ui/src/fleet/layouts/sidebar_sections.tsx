@@ -21,11 +21,12 @@ import TopicIcon from '@mui/icons-material/Topic';
 import WarningIcon from '@mui/icons-material/Warning';
 import React from 'react';
 
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+
 import {
   generateDeviceListURL,
-  CHROMEOS_PLATFORM,
   generateRepairsURL,
-  ANDROID_PLATFORM,
+  platformToURL,
 } from '../constants/paths';
 
 export interface SidebarPage {
@@ -40,15 +41,15 @@ export interface SidebarSection {
   readonly pages: SidebarPage[];
 }
 
-export function generateSidebarSections(): SidebarSection[] {
+export function generateSidebarSections(platform?: Platform): SidebarSection[] {
   return [
-    generateLabHealthSection(),
+    generateLabHealthSection(platform),
     generateResourceRequestsSection(),
     generateOtherToolsSection(),
   ];
 }
 
-function generateLabHealthSection(): SidebarSection {
+function generateLabHealthSection(platform?: Platform): SidebarSection {
   return {
     title: 'Lab Health',
     pages: [
@@ -59,12 +60,14 @@ function generateLabHealthSection(): SidebarSection {
       },
       {
         label: 'Devices',
-        url: generateDeviceListURL(CHROMEOS_PLATFORM),
+        url: generateDeviceListURL(
+          platformToURL(platform || Platform.CHROMEOS),
+        ),
         icon: <DevicesIcon />,
       },
       {
         label: 'Repairs',
-        url: generateRepairsURL(ANDROID_PLATFORM),
+        url: generateRepairsURL(platformToURL(platform || Platform.ANDROID)),
         icon: <ConstructionIcon />,
       },
     ],

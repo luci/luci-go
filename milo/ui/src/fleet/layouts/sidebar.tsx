@@ -29,6 +29,8 @@ import { Link, useLocation } from 'react-router';
 
 import { colors } from '@/fleet/theme/colors';
 
+import { usePlatform } from '../hooks/usePlatform';
+
 import { DRAWER_WIDTH } from './constants';
 import { generateSidebarSections } from './sidebar_sections';
 
@@ -49,9 +51,10 @@ const Drawer = styled(MuiDrawer)(({ theme, open }) => ({
 
 export const Sidebar = ({ open }: { open: boolean }) => {
   const location = useLocation();
+  const { platform } = usePlatform();
   const sidebarSections = useMemo(() => {
-    return generateSidebarSections();
-  }, []);
+    return generateSidebarSections(platform);
+  }, [platform]);
 
   return (
     <Drawer
