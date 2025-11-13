@@ -210,6 +210,7 @@ func createWorkUnitsIdempotent(
 				ModuleID:                moduleID,
 				ModuleShardKey:          moduleShardKey,
 				ModuleInheritanceStatus: moduleInheritanceStatus,
+				ProducerResource:        wu.ProducerResource,
 				Tags:                    wu.Tags,
 				Properties:              wu.Properties,
 				Instructions:            wu.Instructions,
@@ -490,18 +491,17 @@ func verifyWorkUnitPermissions(ctx context.Context, req *pb.CreateWorkUnitReques
 
 	// if the producer resource is set,
 	// resultdb.workUnits.setProducerResource permission is required.
-	// TODO(meiring): Restore when new ProducerResource field added.
-	// if wu.ProducerResource != "" {
-	// 	project, _ := realms.Split(realm)
-	// 	rootRealm := realms.Join(project, realms.RootRealm)
-	// 	allowed, err := checkPermissionOrGroupMember(ctx, rootRealm, permSetWorkUnitProducerResource, trustedCreatorGroup)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	if !allowed {
-	// 		return errors.Fmt(`work_unit: producer_resource: only work units created by trusted system may have a populated producer_resource field`)
-	// 	}
-	// }
+	if wu.ProducerResource != nil {
+		project, _ := realms.Split(realm)
+		rootRealm := realms.Join(project, realms.RootRealm)
+		allowed, err := checkPermissionOrGroupMember(ctx, rootRealm, permSetWorkUnitProducerResource, trustedCreatorGroup)
+		if err != nil {
+			return err
+		}
+		if !allowed {
+			return errors.Fmt(`work_unit: producer_resource: only work units created by trusted system may have a populated producer_resource field`)
+		}
+	}
 	return nil
 }
 

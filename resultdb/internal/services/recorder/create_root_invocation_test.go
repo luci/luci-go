@@ -145,6 +145,33 @@ func TestVerifyCreateRootInvocationPermissions(t *testing.T) {
 			})
 		})
 
+		t.Run("producer resource", func(t *ftt.Test) {
+			request.RootInvocation.ProducerResource = &pb.ProducerResource{
+				System:    "buildbucket",
+				DataRealm: "prod",
+				Name:      "builds/1",
+			}
+			t.Run("disallowed", func(t *ftt.Test) {
+				err := verifyCreateRootInvocationPermissions(ctx, request)
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`only root invocations created by trusted system may have a populated producer_resource field`))
+			})
+
+			t.Run("allowed with realm permission", func(t *ftt.Test) {
+				authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+					Realm: "project:@root", Permission: permSetRootInvocationProducerResource,
+				})
+				err := verifyCreateRootInvocationPermissions(ctx, request)
+				assert.Loosely(t, err, should.BeNil)
+			})
+
+			t.Run("allowed with trusted group", func(t *ftt.Test) {
+				authState.IdentityGroups = []string{trustedCreatorGroup}
+				err := verifyCreateRootInvocationPermissions(ctx, request)
+				assert.Loosely(t, err, should.BeNil)
+			})
+		})
+
 		t.Run("baseline", func(t *ftt.Test) {
 			request.RootInvocation.BaselineId = "try:linux-rel"
 
@@ -251,6 +278,31 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					req.RootInvocation.Tags = tags
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: tags: got 16575 bytes; exceeds the maximum size of 16384 bytes"))
+				})
+			})
+			t.Run("producer_resource", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
+					req.RootInvocation.ProducerResource = nil
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("valid", func(t *ftt.Test) {
+					req.RootInvocation.ProducerResource = &pb.ProducerResource{
+						System:    "buildbucket",
+						DataRealm: "prod",
+						Name:      "builds/123",
+					}
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("invalid", func(t *ftt.Test) {
+					req.RootInvocation.ProducerResource = &pb.ProducerResource{
+						System:    "INVALID",
+						DataRealm: "prod",
+						Name:      "builds/123",
+					}
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("root_invocation: producer_resource: system: does not match pattern"))
 				})
 			})
 			t.Run("definition", func(t *ftt.Test) {
@@ -629,6 +681,16 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					})
 				})
 			})
+			t.Run("producer resource", func(t *ftt.Test) {
+				// Must not be set.
+				req.RootWorkUnit.ProducerResource = &pb.ProducerResource{
+					System:    "buildbucket",
+					DataRealm: "prod",
+					Name:      "builds/123",
+				}
+				err := validateCreateRootInvocationRequest(req, cfg)
+				assert.Loosely(t, err, should.ErrLike("root_work_unit: producer_resource: must not be set; always inherited from root invocation"))
+			})
 			t.Run("tags", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.RootWorkUnit.Tags = nil
@@ -984,7 +1046,12 @@ func TestCreateRootInvocation(t *testing.T) {
 				RootInvocationId: "u-e2e-success",
 				RequestId:        "e2e-request",
 				RootInvocation: &pb.RootInvocation{
-					Realm:                "testproject:testrealm",
+					Realm: "testproject:testrealm",
+					ProducerResource: &pb.ProducerResource{
+						System:    "buildbucket",
+						DataRealm: "prod",
+						Name:      "builds/1",
+					},
 					Definition:           definition,
 					Sources:              sources,
 					PrimaryBuild:         primaryBuild,
@@ -1038,6 +1105,11 @@ func TestCreateRootInvocation(t *testing.T) {
 				Realm:             "testproject:testrealm",
 				Creator:           "user:someone@example.com",
 				Deadline:          timestamppb.New(start.Add(defaultDeadlineDuration)),
+				ProducerResource: &pb.ProducerResource{
+					System:    "buildbucket",
+					DataRealm: "prod",
+					Name:      "builds/1",
+				},
 			})
 			expectedWU.Instructions = instructionutil.InstructionsWithNames(instructions, wuID.Name())
 			pbutil.PopulateModuleIdentifierHashes(expectedWU.ModuleId)
@@ -1054,17 +1126,22 @@ func TestCreateRootInvocation(t *testing.T) {
 				FinalizeTime:                            spanner.NullTime{},
 				UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: start.Add(expectedResultExpiration)},
 				CreateRequestID:                         "e2e-request",
-				Definition:                              proto.Clone(definition).(*pb.RootInvocationDefinition),
-				Sources:                                 sources,
-				PrimaryBuild:                            primaryBuild,
-				ExtraBuilds:                             extraBuilds,
-				Tags:                                    invTags,
-				Properties:                              invProperties,
-				BaselineID:                              "testrealm:test-builder",
-				StreamingExportState:                    pb.RootInvocation_METADATA_FINAL,
-				Submitted:                               false,
-				FinalizerPending:                        false,
-				FinalizerSequence:                       0,
+				ProducerResource: &pb.ProducerResource{
+					System:    "buildbucket",
+					DataRealm: "prod",
+					Name:      "builds/1",
+				},
+				Definition:           proto.Clone(definition).(*pb.RootInvocationDefinition),
+				Sources:              sources,
+				PrimaryBuild:         primaryBuild,
+				ExtraBuilds:          extraBuilds,
+				Tags:                 invTags,
+				Properties:           invProperties,
+				BaselineID:           "testrealm:test-builder",
+				StreamingExportState: pb.RootInvocation_METADATA_FINAL,
+				Submitted:            false,
+				FinalizerPending:     false,
+				FinalizerSequence:    0,
 			}
 			pbutil.PopulateDefinitionHashes(expectInvRow.Definition)
 
@@ -1089,10 +1166,15 @@ func TestCreateRootInvocation(t *testing.T) {
 				},
 				ModuleShardKey:          "shard_key",
 				ModuleInheritanceStatus: workunits.ModuleInheritanceStatusRoot,
-				Tags:                    pbutil.StringPairs("wu_key", "wu_value"),
-				Properties:              wuProperties,
-				Instructions:            instructionutil.InstructionsWithNames(instructions, wuID.Name()),
-				ExtendedProperties:      extendedProperties,
+				ProducerResource: &pb.ProducerResource{
+					System:    "buildbucket",
+					DataRealm: "prod",
+					Name:      "builds/1",
+				},
+				Tags:               pbutil.StringPairs("wu_key", "wu_value"),
+				Properties:         wuProperties,
+				Instructions:       instructionutil.InstructionsWithNames(instructions, wuID.Name()),
+				ExtendedProperties: extendedProperties,
 			}
 
 			var headers metadata.MD

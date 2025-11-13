@@ -74,6 +74,7 @@ func TestGetRootInvocation(t *testing.T) {
 				LastUpdated:          pbutil.MustTimestampProto(testData.LastUpdated),
 				FinalizeTime:         pbutil.MustTimestampProto(testData.FinalizeTime.Time),
 				FinalizeStartTime:    pbutil.MustTimestampProto(testData.FinalizeStartTime.Time),
+				ProducerResource:     testData.ProducerResource,
 				Definition:           testData.Definition,
 				Sources:              testData.Sources,
 				PrimaryBuild:         testData.PrimaryBuild,

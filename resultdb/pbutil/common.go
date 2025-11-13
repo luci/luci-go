@@ -111,6 +111,22 @@ var sha1Regex = regexp.MustCompile(`^[a-f0-9]{40}$`)
 // prefix is present, it indicates a submitted build.
 var androidBuildIDRe = regexp.MustCompile(`^[ELP]?[1-9][0-9]*$`)
 
+var (
+	// Validates enum values are specified in kebab-case as recommended by
+	// https://google.aip.dev/126#alternatives.
+	producerResourceSystemRE = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
+	// Limit to a sensible alphabet. This will allow swarming deployment names like
+	// "chromium-swarm-dev" as well as known data realms like "prod", "test", "qual".
+	producerDataRealmRE = regexp.MustCompile(`^([a-z0-9\-_]+)*$`)
+)
+
+const (
+	// maxProducerResourceNameLength is the maximum length of a producer resource name.
+	maxProducerResourceNameLength      = 1000 // bytes
+	maxProducerResourceDataRealmLength = 100  // bytes
+	maxProducerResourceSystemLength    = 50   // bytes
+)
+
 func regexpf(patternFormat string, subpatterns ...any) *regexp.Regexp {
 	return regexp.MustCompile(fmt.Sprintf(patternFormat, subpatterns...))
 }
@@ -786,6 +802,30 @@ func ValidateFullResourceName(name string) error {
 		return fmt.Errorf("resource name %q is not in Unicode Normal Form C", name)
 	}
 
+	return nil
+}
+
+// ValidateProducerResource validates a producer resource reference.
+func ValidateProducerResource(pr *pb.ProducerResource) error {
+	if pr == nil {
+		return errors.New("unspecified")
+	}
+	if err := validate.MatchReWithLength(producerResourceSystemRE, 1, maxProducerResourceSystemLength, pr.System); err != nil {
+		return errors.Fmt("system: %w", err)
+	}
+	if err := validate.MatchReWithLength(producerDataRealmRE, 1, maxProducerResourceDataRealmLength, pr.DataRealm); err != nil {
+		return errors.Fmt("data_realm: %w", err)
+	}
+	if pr.Name == "" {
+		return errors.New("name: unspecified")
+	}
+	if len(pr.Name) > maxProducerResourceNameLength {
+		return errors.Fmt("name: exceeds %d bytes", maxProducerResourceNameLength)
+	}
+	// AIP-122 requires that resource names be in Unicode Normalization Form C.
+	if !norm.NFC.IsNormalString(pr.Name) {
+		return fmt.Errorf("name: resource name %q is not in Unicode Normal Form C", pr.Name)
+	}
 	return nil
 }
 

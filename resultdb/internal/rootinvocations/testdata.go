@@ -50,6 +50,11 @@ func NewBuilder(id ID) *Builder {
 			FinalizeTime:                            spanner.NullTime{Valid: true, Time: time.Date(2025, 4, 27, 1, 2, 3, 4000, time.UTC)},
 			UninterestingTestVerdictsExpirationTime: spanner.NullTime{Valid: true, Time: time.Date(2025, 6, 28, 1, 2, 3, 4000, time.UTC)},
 			CreateRequestID:                         "test-request-id",
+			ProducerResource: &pb.ProducerResource{
+				System:    "buildbucket",
+				DataRealm: "prod",
+				Name:      "builds/123",
+			},
 			Definition: &pb.RootInvocationDefinition{
 				System:     "buildbucket",
 				Name:       "project/bucket/builder",
@@ -199,6 +204,12 @@ func (b *Builder) WithCreateRequestID(id string) *Builder {
 	return b
 }
 
+// WithProducerResource sets the producer resource.
+func (b *Builder) WithProducerResource(res *pb.ProducerResource) *Builder {
+	b.row.ProducerResource = res
+	return b
+}
+
 // WithDefinition sets the definition of the root invocation.
 func (b *Builder) WithDefinition(d *pb.RootInvocationDefinition) *Builder {
 	b.row.Definition = d
@@ -300,6 +311,7 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 		"FinalizeTime":          r.FinalizeTime,
 		"UninterestingTestVerdictsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
 		"CreateRequestId":                         r.CreateRequestID,
+		"ProducerResource":                        spanutil.Compressed(pbutil.MustMarshal(r.ProducerResource)),
 		"Sources":                                 spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
 		"PrimaryBuild":                            spanutil.Compressed(pbutil.MustMarshal(r.PrimaryBuild)),
 		"ExtraBuilds":                             serializeExtraBuilds(r.ExtraBuilds),

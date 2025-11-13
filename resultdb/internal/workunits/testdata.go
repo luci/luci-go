@@ -70,7 +70,12 @@ func NewBuilder(rootInvocationID rootinvocations.ID, workUnitID string) *Builder
 			},
 			ModuleShardKey:          "shard_key",
 			ModuleInheritanceStatus: ModuleInheritanceStatusRoot,
-			Tags:                    pbutil.StringPairs("k1", "v1"),
+			ProducerResource: &pb.ProducerResource{
+				System:    "buildbucket",
+				DataRealm: "prod",
+				Name:      "builds/123",
+			},
+			Tags: pbutil.StringPairs("k1", "v1"),
 			Properties: &structpb.Struct{
 				Fields: map[string]*structpb.Value{
 					"key": structpb.NewStringValue("value"),
@@ -226,6 +231,12 @@ func (b *Builder) WithCreateRequestID(id string) *Builder {
 	return b
 }
 
+// WithProducerResource sets the producer resource.
+func (b *Builder) WithProducerResource(res *pb.ProducerResource) *Builder {
+	b.row.ProducerResource = res
+	return b
+}
+
 // WithTags sets the tags.
 func (b *Builder) WithTags(tags []*pb.StringPair) *Builder {
 	b.row.Tags = tags
@@ -296,6 +307,7 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		"Deadline":                w.Deadline,
 		"CreateRequestId":         w.CreateRequestID,
 		"ModuleInheritanceStatus": w.ModuleInheritanceStatus,
+		"ProducerResource":        spanutil.Compressed(pbutil.MustMarshal(w.ProducerResource)),
 		"Tags":                    w.Tags,
 		"Properties":              spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
 		"Instructions":            spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),

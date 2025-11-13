@@ -94,6 +94,10 @@ CREATE TABLE RootInvocations (
   -- Used to dedup root invocation creation requests.
   CreateRequestId STRING(MAX) NOT NULL,
 
+  -- A serialized then compressed luci.resultdb.v1.ProducerResource.
+  -- See spanutil.Compressed type for details of compression.
+  ProducerResource BYTES(MAX),
+
   -- Start definition.
   -- The following fields represent the luci.resultdb.v1.RootInvocationDefinition
   -- that stores the process definition of the root invocation. These fields will
@@ -410,6 +414,10 @@ CREATE TABLE WorkUnits (
   -- Value of CreateWorkUnitRequest.request_id.
   -- Used to dedup work unit creation requests.
   CreateRequestId STRING(MAX) NOT NULL,
+
+  -- A serialized then compressed luci.resultdb.v1.ProducerResource.
+  -- See spanutil.Compressed type for details of compression.
+  ProducerResource BYTES(MAX),
 
   -- List of colon-separated key-value tags.
   -- Corresponds to Invocation.tags in invocation.proto.

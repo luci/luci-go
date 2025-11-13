@@ -141,6 +141,11 @@ func validateNonRootWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServi
 		return errors.Fmt("realm: %w", err)
 	}
 
+	if wu.ProducerResource != nil {
+		if err := pbutil.ValidateProducerResource(wu.ProducerResource); err != nil {
+			return errors.Fmt("producer_resource: %w", err)
+		}
+	}
 	return validateWorkUnitForCreate(wu, cfg)
 }
 

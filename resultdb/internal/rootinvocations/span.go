@@ -92,6 +92,7 @@ type RootInvocationRow struct {
 	FinalizeTime                            spanner.NullTime // Output only.
 	UninterestingTestVerdictsExpirationTime spanner.NullTime
 	CreateRequestID                         string
+	ProducerResource                        *pb.ProducerResource
 	Definition                              *pb.RootInvocationDefinition
 	Sources                                 *pb.Sources
 	PrimaryBuild                            *pb.BuildDescriptor
@@ -144,6 +145,7 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 		"LastUpdated":           spanner.CommitTimestamp,
 		"UninterestingTestVerdictsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
 		"CreateRequestId":                         r.CreateRequestID,
+		"ProducerResource":                        spanutil.Compressed(pbutil.MustMarshal(r.ProducerResource)),
 		"Sources":                                 spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
 		"PrimaryBuild":                            spanutil.Compressed(pbutil.MustMarshal(r.PrimaryBuild)),
 		"ExtraBuilds":                             serializeExtraBuilds(r.ExtraBuilds),
@@ -265,6 +267,7 @@ func (r *RootInvocationRow) ToProto() *pb.RootInvocation {
 		CreateTime:           pbutil.MustTimestampProto(r.CreateTime),
 		Creator:              r.CreatedBy,
 		LastUpdated:          pbutil.MustTimestampProto(r.LastUpdated),
+		ProducerResource:     r.ProducerResource,
 		Definition:           r.Definition,
 		Sources:              r.Sources,
 		PrimaryBuild:         r.PrimaryBuild,

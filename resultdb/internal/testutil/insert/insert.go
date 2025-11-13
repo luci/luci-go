@@ -547,6 +547,7 @@ func RootInvocationWithRootWorkUnit(row *rootinvocations.RootInvocationRow) []*s
 		WithCreateTime(row.CreateTime).
 		WithCreatedBy(row.CreatedBy).
 		WithDeadline(row.CreateTime.Add(7 * 24 * time.Hour)).
+		WithProducerResource(row.ProducerResource).
 		WithFinalizationState(finalizationState).
 		Build()
 

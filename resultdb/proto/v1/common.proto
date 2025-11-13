@@ -641,3 +641,61 @@ message AndroidBuildDescriptor {
   // Required.
   string build_id = 4;
 }
+
+// ProducerResource represents the identity of the resource that produced a
+// root invocation or work unit, e.g. an ATP test run or swarming task.
+//
+// This structure is a deviation from https://google.aip.dev/122#full-resource-names
+// owing to:
+// - the desire to capture the deployment of a system we are talking about (both
+//   test and production deployments could talk to the same instance of ResultDB)
+// - the lack of good API service names for many services (https://google.aip.dev/9#api-service-name)
+//   which was leading to API endpoints being substited contrary to AIP-122.
+//   While endpoints makes it possible to distinguish dev and prod, it makes it
+//   harder for downstream systems to understand the type of producer resource
+//   (and to e.g. filter to only ATP runs). API endpoints are also unstable
+//   and subject to change.
+// Rather than invent a new set of API service names, we use a short name that
+// cannot be confused with an endpoint. While use of DNS names is superior solution
+// in large systems to deconflict naming, we operate a relatively smaller scale
+// so believe a short name is workable.
+message ProducerResource {
+  // The name of the system that is producing the resource.
+  //
+  // For LUCI, this should be "buildbucket" or "swarming".
+  // For Android, it is the scheduler like "atp", "ants-relay", "atest" or "bazel".
+  //
+  // Values should use kebab-case as per https://google.aip.dev/126#alternatives.
+  //
+  // Total length limited to 50 bytes. Required.
+  string system = 1;
+
+  // The data realm of the producing resource.
+  //
+  // This is used to identify the location of the producing resource, i.e. whether it is
+  // in the production data set, or a test data set, or another data set, for linking
+  // purposes.
+  //
+  // For Google3, prefer to use a value from go/data-realm in lower-case (e.g. "prod").
+  // For buildbucket, use the value "prod" for production and "test" for development.
+  // For swarming, use the swarming instance name (e.g. "chromeos-swarming" or "chromium-swarm-dev").
+  //
+  // Total length limited to 100 bytes. Required.
+  string data_realm = 2;
+
+  // The AIP-122 resource name of the producer resource.
+  //
+  // See: https://google.aip.dev/122
+  //
+  // The format is typically defined by the producing system. If the producing
+  // system does not follow AIP-122, an AIP-122-like format is invented for it.
+  //
+  // Examples:
+  // - atp: `runs/{RUN_ID}`
+  // - swarming: `tasks/deadbeef`
+  // - buildbucket: 'builds/1234567890`
+  //
+  // Total length limited to 1000 bytes. Resource names must be in Unicode
+  // normalization form C. Required.
+  string name = 3;
+}

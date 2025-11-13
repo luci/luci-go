@@ -107,6 +107,7 @@ type WorkUnitRow struct {
 	ModuleID                *pb.ModuleIdentifier
 	ModuleShardKey          string
 	ModuleInheritanceStatus ModuleInheritanceStatus
+	ProducerResource        *pb.ProducerResource
 	Tags                    []*pb.StringPair
 	Properties              *structpb.Struct
 	Instructions            *pb.Instructions
@@ -167,6 +168,7 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 		"Deadline":                w.Deadline,
 		"CreateRequestId":         w.CreateRequestID,
 		"ModuleInheritanceStatus": w.ModuleInheritanceStatus,
+		"ProducerResource":        spanutil.Compressed(pbutil.MustMarshal(w.ProducerResource)),
 		"Tags":                    w.Tags,
 		"Properties":              spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
 		"Instructions":            spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),

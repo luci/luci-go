@@ -56,6 +56,7 @@ func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, v
 		LastUpdated:       pbutil.MustTimestampProto(row.LastUpdated),
 		Deadline:          pbutil.MustTimestampProto(row.Deadline),
 		ModuleShardKey:    row.ModuleShardKey,
+		ProducerResource:  row.ProducerResource,
 		IsMasked:          true,
 		Etag:              WorkUnitETag(row, accessLevel, view),
 	}

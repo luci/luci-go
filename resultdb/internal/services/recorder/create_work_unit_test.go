@@ -246,6 +246,31 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 					})
 				})
 			})
+			t.Run("producer_resource", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
+					req.WorkUnit.ProducerResource = nil
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("valid", func(t *ftt.Test) {
+					req.WorkUnit.ProducerResource = &pb.ProducerResource{
+						System:    "buildbucket",
+						DataRealm: "prod",
+						Name:      "builds/123",
+					}
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("invalid", func(t *ftt.Test) {
+					req.WorkUnit.ProducerResource = &pb.ProducerResource{
+						System:    "INVALID",
+						DataRealm: "prod",
+						Name:      "builds/123",
+					}
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike("work_unit: producer_resource: system: does not match pattern"))
+				})
+			})
 			t.Run("tags", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.WorkUnit.Tags = nil
@@ -729,6 +754,31 @@ func TestCreateWorkUnit(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 				})
 			})
+			t.Run("producer resource", func(t *ftt.Test) {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permSetWorkUnitProducerResource)
+				req.WorkUnit.ProducerResource = &pb.ProducerResource{
+					System:    "buildbucket",
+					DataRealm: "prod",
+					Name:      "builds/1",
+				}
+				t.Run("disallowed without permission", func(t *ftt.Test) {
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.Loosely(t, err, should.ErrLike(`desc = work_unit: producer_resource: only work units created by trusted system may have a populated producer_resource field`))
+				})
+				t.Run("allowed with realm permission", func(t *ftt.Test) {
+					authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+						Realm: "testproject:@root", Permission: permSetWorkUnitProducerResource,
+					})
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("allowed with trusted group", func(t *ftt.Test) {
+					authState.IdentityGroups = []string{trustedCreatorGroup}
+					_, err := recorder.CreateWorkUnit(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+				})
+			})
 			t.Run("inclusion or update token is validated", func(t *ftt.Test) {
 				t.Run("invalid update token", func(t *ftt.Test) {
 					ctx := metadata.NewOutgoingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "invalid-token"))
@@ -816,7 +866,12 @@ func TestCreateWorkUnit(t *testing.T) {
 					ModuleScheme:  "gtest",
 					ModuleVariant: pbutil.Variant("k", "v"),
 				},
-				ModuleShardKey:     "shard_key",
+				ModuleShardKey: "shard_key",
+				ProducerResource: &pb.ProducerResource{
+					System:    "buildbucket",
+					DataRealm: "prod",
+					Name:      "builds/123",
+				},
 				Tags:               pbutil.StringPairs("e2e_key", "e2e_value"),
 				Properties:         wuProperties,
 				ExtendedProperties: extendedProperties,
@@ -855,10 +910,15 @@ func TestCreateWorkUnit(t *testing.T) {
 				},
 				ModuleShardKey:          "shard_key",
 				ModuleInheritanceStatus: workunits.ModuleInheritanceStatusRoot,
-				Tags:                    pbutil.StringPairs("e2e_key", "e2e_value"),
-				Properties:              wuProperties,
-				Instructions:            instructionutil.InstructionsWithNames(instructions, workUnitID.Name()),
-				ExtendedProperties:      extendedProperties,
+				ProducerResource: &pb.ProducerResource{
+					System:    "buildbucket",
+					DataRealm: "prod",
+					Name:      "builds/123",
+				},
+				Tags:               pbutil.StringPairs("e2e_key", "e2e_value"),
+				Properties:         wuProperties,
+				Instructions:       instructionutil.InstructionsWithNames(instructions, workUnitID.Name()),
+				ExtendedProperties: extendedProperties,
 			}
 
 			expectedLegacyInv := &pb.Invocation{

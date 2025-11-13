@@ -100,12 +100,13 @@ func TestGetWorkUnit(t *testing.T) {
 					ModuleVariant:     rootWu.ModuleID.ModuleVariant,
 					ModuleVariantHash: rootWu.ModuleID.ModuleVariantHash,
 				},
-				ModuleShardKey: rootWu.ModuleShardKey,
-				Tags:           rootWu.Tags,
-				Properties:     rootWu.Properties,
-				Instructions:   rootWu.Instructions,
-				IsMasked:       false,
-				Etag:           `W/"/2025-04-26T01:02:03.000004Z"`,
+				ModuleShardKey:   rootWu.ModuleShardKey,
+				ProducerResource: rootWu.ProducerResource,
+				Tags:             rootWu.Tags,
+				Properties:       rootWu.Properties,
+				Instructions:     rootWu.Instructions,
+				IsMasked:         false,
+				Etag:             `W/"/2025-04-26T01:02:03.000004Z"`,
 			}
 
 			t.Run("default view", func(t *ftt.Test) {

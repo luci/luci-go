@@ -184,6 +184,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 		"FinalizeTime",
 		"UninterestingTestVerdictsExpirationTime",
 		"CreateRequestId",
+		"ProducerResource",
 		"DefinitionSystem",
 		"DefinitionName",
 		"DefinitionProperties",
@@ -202,6 +203,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 	return span.Read(ctx, "RootInvocations", ids.Keys(), cols).Do(func(row *spanner.Row) error {
 		inv := &RootInvocationRow{}
 		var (
+			producerResource     spanutil.Compressed
 			definitionSystem     spanner.NullString
 			definitionName       spanner.NullString
 			definitionProperties *pb.RootInvocationDefinition_Properties
@@ -225,6 +227,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 			&inv.FinalizeTime,
 			&inv.UninterestingTestVerdictsExpirationTime,
 			&inv.CreateRequestID,
+			&producerResource,
 			&definitionSystem,
 			&definitionName,
 			&definitionProperties,
@@ -244,6 +247,13 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 			return err
 		}
 
+		if len(producerResource) > 0 {
+			inv.ProducerResource = &pb.ProducerResource{}
+			if err := proto.Unmarshal(producerResource, inv.ProducerResource); err != nil {
+				return err
+			}
+		}
+
 		if definitionName.Valid != definitionSystem.Valid {
 			return errors.Fmt("inconsistent nullness for DefinitionSystem and DefinitionName; is there data corruption?")
 		}
@@ -257,6 +267,13 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 				Properties: definitionProperties,
 			}
 			pbutil.PopulateDefinitionHashes(inv.Definition)
+		}
+
+		if len(properties) > 0 {
+			inv.Properties = &structpb.Struct{}
+			if err := proto.Unmarshal(properties, inv.Properties); err != nil {
+				return err
+			}
 		}
 
 		if len(sources) > 0 {

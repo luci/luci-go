@@ -496,6 +496,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			w.ModuleVariant,
 			w.ModuleShardKey,
 			w.ModuleInheritanceStatus,
+			w.ProducerResource,
 			w.Tags,
 			w.Properties,
 			w.Instructions,` + extraCols + `
@@ -536,6 +537,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 		var (
 			rootInvocationShardID string
 			workUnitID            string
+			producerResource      spanutil.Compressed
 			properties            spanutil.Compressed
 			instructions          spanutil.Compressed
 			extendedProperties    spanutil.Compressed
@@ -570,6 +572,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			&moduleVariant,
 			&moduleShardKey,
 			&wu.ModuleInheritanceStatus,
+			&producerResource,
 			&wu.Tags,
 			&properties,
 			&instructions,
@@ -599,17 +602,24 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 			wu.ModuleShardKey = moduleShardKey.StringVal
 		}
 
+		if len(producerResource) > 0 {
+			wu.ProducerResource = &pb.ProducerResource{}
+			if err := proto.Unmarshal(producerResource, wu.ProducerResource); err != nil {
+				return errors.Fmt("unmarshal producer resource for work unit %q: %w", wu.ID.Name(), err)
+			}
+		}
+
 		if len(properties) > 0 {
 			wu.Properties = &structpb.Struct{}
 			if err := proto.Unmarshal(properties, wu.Properties); err != nil {
-				return errors.Fmt("unmarshal properties for work unit %s: %w", wu.ID.Name(), err)
+				return errors.Fmt("unmarshal properties for work unit %q: %w", wu.ID.Name(), err)
 			}
 		}
 
 		if len(instructions) > 0 {
 			wu.Instructions = &pb.Instructions{}
 			if err := proto.Unmarshal(instructions, wu.Instructions); err != nil {
-				return errors.Fmt("unmarshal instructions for work unit %s: %w", wu.ID.Name(), err)
+				return errors.Fmt("unmarshal instructions for work unit %q: %w", wu.ID.Name(), err)
 			}
 			// Populate output-only fields.
 			wu.Instructions = instructionutil.InstructionsWithNames(wu.Instructions, wu.ID.Name())
@@ -618,7 +628,7 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 		if len(extendedProperties) > 0 {
 			internalExtendedProperties := &invocationspb.ExtendedProperties{}
 			if err := proto.Unmarshal(extendedProperties, internalExtendedProperties); err != nil {
-				return errors.Fmt("unmarshal extended properties for work unit %s: %w", wu.ID.Name(), err)
+				return errors.Fmt("unmarshal extended properties for work unit %q: %w", wu.ID.Name(), err)
 			}
 			wu.ExtendedProperties = internalExtendedProperties.ExtendedProperties
 		}

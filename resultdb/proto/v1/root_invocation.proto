@@ -26,7 +26,7 @@ option java_package = "com.google.luci.resultdb.v1";
 option java_multiple_files = true;
 
 // A top-level container of test results.
-// Next ID: 25.
+// Next ID: 26.
 message RootInvocation {
   // The resource name of this root invocation.
   // Format: `rootInvocations/{ROOT_INVOCATION_ID}`
@@ -196,7 +196,11 @@ message RootInvocation {
 
   // == General ================================================================
 
-  reserved 10; // producer_resource
+  // The resource that produced results in this root invocation.
+  ProducerResource producer_resource = 25 [
+    (google.api.field_behavior) = IMMUTABLE,
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
 
   // The process definition of the root invocation. Root invocations with the same
   // definition share the same root invocation history.

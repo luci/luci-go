@@ -30,7 +30,7 @@ option java_multiple_files = true;
 // A process step that contributes results to a root invocation.
 // Work units contain test results, artifacts and exonerations. Work units may
 // also contain other work units and (legacy) invocations.
-// Next ID: 25.
+// Next ID: 27.
 message WorkUnit {
   // The resource name of this work unit.
   // Format: `rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}`
@@ -342,7 +342,10 @@ message WorkUnit {
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  reserved 13; // producer_resource
+  // The resource that produced results in this work unit.
+  //
+  // Setting this field requires resultdb.workUnits.setProducerResource permission.
+  ProducerResource producer_resource = 26 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Work unit-level string key-value pairs.
   // A key can be repeated.
