@@ -261,6 +261,10 @@ func validateTestVariantPosition(tv *pb.QueryTestVariantStabilityRequest_TestVar
 	if err := pbutil.ValidateSources(tv.Sources); err != nil {
 		return errors.Fmt("sources: %w", err)
 	}
+	if tv.Sources.BaseSources == nil {
+		// This field is required for this RPC.
+		return errors.New("sources: base_sources: unspecified")
+	}
 
 	sourceRefHash := hex.EncodeToString(pbutil.SourceRefHash(pbutil.SourceRefFromSources(tv.Sources)))
 

@@ -99,6 +99,9 @@ func TestExportClusetering(t *testing.T) {
 					},
 					IsDirty: false,
 				},
+				"sources2": {
+					IsDirty: true,
+				},
 			},
 			Payload: payload,
 		}

@@ -45,6 +45,10 @@ func QueryStatsForClustering(ctx context.Context, tvs []*rdbpb.TestVariant, proj
 			continue
 		}
 		src := sourcesMap[tv.SourcesId]
+		if src.BaseSources == nil {
+			// There is no SourceRef for this result.
+			continue
+		}
 		readIndexToResultIndex[len(keys)] = i
 		keys = append(keys, testvariantbranch.Key{
 			Project:     project,

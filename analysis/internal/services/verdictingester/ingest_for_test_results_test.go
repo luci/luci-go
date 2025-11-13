@@ -98,6 +98,9 @@ func TestExportTestResults(t *testing.T) {
 					},
 					IsDirty: false,
 				},
+				"sources2": {
+					IsDirty: true,
+				},
 			},
 			Payload: payload,
 		}
@@ -161,7 +164,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			})
 	}
 
-	rdbSources := testresults.Sources{
+	rdbSources1 := testresults.Sources{
 		RefHash: pbutil.SourceRefHash(&pb.SourceRef{
 			System: &pb.SourceRef_Gitiles{
 				Gitiles: &pb.GitilesRef{
@@ -182,6 +185,10 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 		},
 	}
 
+	rdbSources2 := testresults.Sources{
+		IsDirty: true,
+	}
+
 	expectedTRs := []*testresults.TestResult{
 		trBuilder.WithTestID(":module!junit:package:class#test_consistent_failure").
 			WithVariantHash("hash").
@@ -193,7 +200,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithRunDuration(3*time.Second+1*time.Microsecond).
 			WithExonerationReasons(pb.ExonerationReason_OCCURS_ON_OTHER_CLS, pb.ExonerationReason_NOT_CRITICAL, pb.ExonerationReason_OCCURS_ON_MAINLINE).
 			WithIsFromBisection(false).
-			WithSources(rdbSources).
+			WithSources(rdbSources1).
 			Build(),
 		trBuilder.WithTestID(":module!junit:package:class#test_expected").
 			WithVariantHash("hash").
@@ -205,6 +212,7 @@ func verifyTestResults(ctx context.Context, t testing.TB, expectedPartitionTime 
 			WithRunDuration(5 * time.Second).
 			WithoutExoneration().
 			WithIsFromBisection(false).
+			WithSources(rdbSources2).
 			Build(),
 		trBuilder.WithTestID(":module!junit:package:class#test_filtering_event").
 			WithVariantHash("hash").

@@ -276,6 +276,9 @@ func TestIngestTestVerdicts(t *testing.T) {
 					},
 					IsDirty: false,
 				},
+				"sources2": {
+					IsDirty: true,
+				},
 			}
 			t.Run(`First task`, func(t *ftt.Test) {
 				setupGetInvocationMock()

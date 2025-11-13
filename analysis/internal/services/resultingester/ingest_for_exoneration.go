@@ -50,8 +50,8 @@ func (IngestForExoneration) Ingest(ctx context.Context, input Inputs) (err error
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.IngestForExoneration.Ingest")
 	defer func() { tracing.End(s, err) }()
 
-	if input.Sources == nil {
-		// Test results without sources are not ingested into this process.
+	if input.Sources == nil || input.Sources.BaseSources == nil {
+		// Test results without base sources are not ingested into this process.
 		return nil
 	}
 	err = recordTestResults(ctx, input)
@@ -102,9 +102,9 @@ func recordTestResults(ctx context.Context, input Inputs) error {
 
 func toTestResultSources(srcs *analysispb.Sources) (testresults.Sources, error) {
 	var result testresults.Sources
-
 	result.RefHash = pbutil.SourceRefHash(pbutil.SourceRefFromSources(srcs))
 	result.Position = pbutil.SourcePosition(srcs)
+
 	for _, cl := range srcs.Changelists {
 		err := testresults.ValidateGerritHostname(cl.Host)
 		if err != nil {

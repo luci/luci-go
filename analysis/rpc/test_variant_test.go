@@ -437,6 +437,12 @@ func TestValidateQueryTestVariantStabilityRequest(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike(`test_variants[1]: sources: unspecified`))
 		})
 
+		t.Run("no base sources", func(t *ftt.Test) {
+			req.TestVariants[1].Sources.BaseSources = nil
+			err := validateQueryTestVariantStabilityRequest(req)
+			assert.Loosely(t, err, should.ErrLike(`test_variants[1]: sources: base_sources: unspecified`))
+		})
+
 		t.Run("invalid sources", func(t *ftt.Test) {
 			// This checks at least one case of invalid input is detected, sufficient to verify
 			// sources validation is invoked.

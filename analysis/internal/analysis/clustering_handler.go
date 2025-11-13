@@ -211,8 +211,10 @@ func entryFromUpdate(project, chunkID string, cluster clustering.ClusterID, fail
 	if failure.Sources != nil {
 		entry.Sources = failure.Sources
 		ref := pbutil.SourceRefFromSources(failure.Sources)
-		entry.SourceRef = ref
-		entry.SourceRefHash = hex.EncodeToString(pbutil.SourceRefHash(ref))
+		if ref != nil {
+			entry.SourceRef = ref
+			entry.SourceRefHash = hex.EncodeToString(pbutil.SourceRefHash(ref))
+		}
 	}
 
 	if failure.PresubmitRun != nil {

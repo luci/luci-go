@@ -151,6 +151,9 @@ func TestExportTestVerdicts(t *testing.T) {
 					},
 					IsDirty: false,
 				},
+				"sources2": {
+					IsDirty: true,
+				},
 			},
 			Payload: payload,
 		}
@@ -405,7 +408,10 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			},
 			BuildbucketBuild:  buildbucketBuild,
 			ChangeVerifierRun: cvRun,
-			InsertTime:        timestamppb.New(testclock.TestRecentTimeLocal),
+			Sources: &pb.Sources{
+				IsDirty: true,
+			},
+			InsertTime: timestamppb.New(testclock.TestRecentTimeLocal),
 		},
 		{
 			Project: "project",

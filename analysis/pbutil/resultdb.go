@@ -222,8 +222,7 @@ func SourcesFromResultDB(s *rdbpb.Sources) *pb.Sources {
 	result := &pb.Sources{
 		IsDirty: s.IsDirty,
 	}
-	// This method may deal with unvalidated source objects, so it is possible
-	// BaseSources is nil.
+	// BaseSources may be nil if IsDirty is true.
 	if s.BaseSources != nil {
 		switch sys := s.BaseSources.(type) {
 		case *rdbpb.Sources_GitilesCommit:
@@ -351,10 +350,16 @@ func SourceRefToResultDB(v *pb.SourceRef) *rdbpb.SourceRef {
 	return result
 }
 
-// SourceRefFromSources extracts a SourceRef from given sources.
+// SourceRefFromSources extracts a SourceRef from given the sources's
+// base sources.
+//
+// If there are no base sources, this method returns nil.
 //
 // panics if the sources object is not valid.
 func SourceRefFromSources(sources *pb.Sources) *pb.SourceRef {
+	if sources.BaseSources == nil {
+		return nil
+	}
 	switch base := sources.BaseSources.(type) {
 	case *pb.Sources_GitilesCommit:
 		gc := base.GitilesCommit

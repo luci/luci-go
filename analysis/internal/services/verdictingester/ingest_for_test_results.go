@@ -114,8 +114,10 @@ func toTestResultSources(sourcesByID map[string]*pb.Sources) (map[string]testres
 	for id, srcs := range sourcesByID {
 		var sources testresults.Sources
 
-		sources.RefHash = pbutil.SourceRefHash(pbutil.SourceRefFromSources(srcs))
-		sources.Position = pbutil.SourcePosition(srcs)
+		if srcs.BaseSources != nil {
+			sources.RefHash = pbutil.SourceRefHash(pbutil.SourceRefFromSources(srcs))
+			sources.Position = pbutil.SourcePosition(srcs)
+		}
 
 		for _, cl := range srcs.Changelists {
 			err := testresults.ValidateGerritHostname(cl.Host)

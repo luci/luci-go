@@ -89,6 +89,17 @@ func TestUpdateTestMetadata(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 		})
 
+		t.Run(`Invocation has dirty sources`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation(testInvocationID, pb.Invocation_FINALIZED, map[string]any{
+				"Sources": spanutil.Compressed(pbutil.MustMarshal(&pb.Sources{
+					IsDirty: true,
+				})),
+			}))
+
+			err := updateTestMetadata(ctx, testInvocationID)
+			assert.Loosely(t, err, should.BeNil)
+		})
+
 		t.Run(`Invocation has sources inherited`, func(t *ftt.Test) {
 			testutil.MustApply(ctx, t, insert.Invocation(testInvocationID, pb.Invocation_FINALIZED, map[string]any{
 				"InheritSources": true,

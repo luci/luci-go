@@ -115,7 +115,7 @@ func TestIngestForExoneration(t *testing.T) {
 			},
 		}
 
-		t.Run(`With sources`, func(t *ftt.Test) {
+		t.Run(`With full sources`, func(t *ftt.Test) {
 			// Base case should already have sources set.
 			assert.Loosely(t, inputs.Sources, should.NotBeNil)
 
@@ -126,6 +126,22 @@ func TestIngestForExoneration(t *testing.T) {
 			results, err := lowlatency.ReadAllForTesting(span.Single(ctx))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, results, should.Match(expectedResults))
+		})
+		t.Run(`With limited sources`, func(t *ftt.Test) {
+			inputs.Sources = &analysispb.Sources{
+				IsDirty: true,
+			}
+
+			// Base case should already have sources set.
+			assert.Loosely(t, inputs.Sources, should.NotBeNil)
+
+			ingester := IngestForExoneration{}
+			err := ingester.Ingest(ctx, inputs)
+			assert.Loosely(t, err, should.BeNil)
+
+			results, err := lowlatency.ReadAllForTesting(span.Single(ctx))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, results, should.HaveLength(0))
 		})
 		t.Run(`Without sources`, func(t *ftt.Test) {
 			inputs.Sources = nil

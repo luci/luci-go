@@ -113,7 +113,9 @@ func prepareExportRow(tv *rdbpb.TestVariant, opts ExportOptions, insertTime time
 	if tv.SourcesId != "" {
 		sources = opts.SourcesByID[tv.SourcesId]
 		sourceRef = pbutil.SourceRefFromSources(sources)
-		sourceRefHash = hex.EncodeToString(pbutil.SourceRefHash(sourceRef))
+		if sourceRef != nil {
+			sourceRefHash = hex.EncodeToString(pbutil.SourceRefHash(sourceRef))
+		}
 	}
 
 	var cvRun *bqpb.TestVerdictRow_ChangeVerifierRun

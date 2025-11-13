@@ -196,12 +196,15 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 	t.Parallel()
 	now := testclock.TestRecentTimeUTC
 	ftt.Run("ValidateCreateRootInvocationRequest", t, func(t *ftt.Test) {
-		// Construct a valid request.
+		// Construct a minimal valid request.
 		req := &pb.CreateRootInvocationRequest{
 			RootInvocationId: "u-my-root-id",
 			RootInvocation: &pb.RootInvocation{
 				Realm:                "project:realm",
 				StreamingExportState: pb.RootInvocation_WAIT_FOR_METADATA,
+				Sources: &pb.Sources{
+					IsDirty: true,
+				},
 			},
 			RootWorkUnit: &pb.WorkUnit{
 				Kind:  "EXAMPLE_INVOCATION",
@@ -334,7 +337,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.RootInvocation.Sources = nil
 					err := validateCreateRootInvocationRequest(req, cfg)
-					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, err, should.ErrLike(`root_invocation: sources: unspecified`))
 				})
 				t.Run("valid", func(t *ftt.Test) {
 					req.RootInvocation.Sources = &pb.Sources{
@@ -896,6 +899,17 @@ func TestCreateRootInvocation(t *testing.T) {
 			RootInvocation: &pb.RootInvocation{
 				Realm:                "testproject:testrealm",
 				StreamingExportState: pb.RootInvocation_METADATA_FINAL,
+				Sources: &pb.Sources{
+					BaseSources: &pb.Sources_GitilesCommit{
+						GitilesCommit: &pb.GitilesCommit{
+							Host:       "chromium.googlesource.com",
+							Project:    "chromium/src",
+							Ref:        "refs/heads/main",
+							CommitHash: "1234567890abcdef1234567890abcdef12345678",
+							Position:   12345,
+						},
+					},
+				},
 			},
 			RootWorkUnit: &pb.WorkUnit{
 				Kind:  "EXAMPLE_INVOCATION",

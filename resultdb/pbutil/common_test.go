@@ -638,9 +638,17 @@ func TestValidate(t *testing.T) {
 			assert.Loosely(t, ValidateSources(nil), should.ErrLike(`unspecified`))
 		})
 		t.Run(`Base sources`, func(t *ftt.Test) {
-			t.Run(`Missing`, func(t *ftt.Test) {
+			t.Run(`Missing and IsDirty is false`, func(t *ftt.Test) {
 				sources.BaseSources = nil
-				assert.Loosely(t, ValidateSources(sources), should.ErrLike(`base_sources: unspecified`))
+				sources.IsDirty = false
+				assert.Loosely(t, ValidateSources(sources), should.ErrLike(`base_sources: unspecified; if you really have no sources (e.g. due to running tests locally) and are OK with the loss of test history for these results, set is_dirty to true`))
+			})
+			t.Run(`Missing and IsDirty is true`, func(t *ftt.Test) {
+				// This is valid. It represents testing on sources which could not be precisely determined,
+				// such as can occur with a local checkout.
+				sources.BaseSources = nil
+				sources.IsDirty = true
+				assert.Loosely(t, ValidateSources(sources), should.BeNil)
 			})
 			t.Run(`Gitiles commit`, func(t *ftt.Test) {
 				gc := &pb.GitilesCommit{

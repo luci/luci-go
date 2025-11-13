@@ -146,6 +146,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 						},
 					},
 				},
+				SourcesId: "sources2",
 			},
 			{
 				TestId:         ":module!junit:package:class#test_filtering_event",
@@ -391,6 +392,9 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 					},
 				},
 				IsDirty: false,
+			},
+			"sources2": {
+				IsDirty: true,
 			},
 		},
 	}

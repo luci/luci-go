@@ -683,6 +683,9 @@ func SourceRefFromSources(srcs *pb.Sources) *pb.SourceRef {
 //
 // This method should only be called on validated sources.
 func SourcePosition(srcs *pb.Sources) int64 {
+	if srcs.BaseSources == nil {
+		panic("nil base sources")
+	}
 	switch base := srcs.BaseSources.(type) {
 	case *pb.Sources_GitilesCommit:
 		return base.GitilesCommit.Position
@@ -697,6 +700,9 @@ func SourcePosition(srcs *pb.Sources) int64 {
 //
 // This method should only be called on validated sources.
 func SourceRefHash(sr *pb.SourceRef) []byte {
+	if sr == nil {
+		panic("nil source ref")
+	}
 	var result [32]byte
 	switch sr.System.(type) {
 	case *pb.SourceRef_Gitiles:
@@ -740,7 +746,9 @@ func ValidateSources(sources *pb.Sources) error {
 			return errors.Fmt("submitted_android_build: %w", err)
 		}
 	default:
-		return errors.Fmt("base_sources: unspecified")
+		if !sources.IsDirty {
+			return errors.Fmt("base_sources: unspecified; if you really have no sources (e.g. due to running tests locally) and are OK with the loss of test history for these results, set is_dirty to true")
+		}
 	}
 
 	if len(sources.Changelists) > 10 {

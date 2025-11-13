@@ -91,7 +91,9 @@ func prepareExportRows(verdicts []*rdbpb.RunTestVerdict, opts Options, insertTim
 	var sourceRefHash string
 	if sources != nil {
 		sourceRef = pbutil.SourceRefFromSources(sources)
-		sourceRefHash = hex.EncodeToString(pbutil.SourceRefHash(sourceRef))
+		if sourceRef != nil {
+			sourceRefHash = hex.EncodeToString(pbutil.SourceRefHash(sourceRef))
+		}
 	}
 
 	parent, err := parent(opts.Parent)

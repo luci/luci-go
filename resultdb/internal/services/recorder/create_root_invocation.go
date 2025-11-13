@@ -369,10 +369,8 @@ func validateRootInvocationForCreate(inv *pb.RootInvocation) error {
 	}
 
 	// Validate sources.
-	if inv.Sources != nil {
-		if err := pbutil.ValidateSources(inv.Sources); err != nil {
-			return errors.Fmt("sources: %w", err)
-		}
+	if err := pbutil.ValidateSources(inv.Sources); err != nil {
+		return errors.Fmt("sources: %w", err)
 	}
 
 	// Validate primary build.
