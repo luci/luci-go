@@ -104,7 +104,7 @@ const BugInfo = ({ rule }: Props) => {
             </IconButton>
           </Grid>
           <GridLabel xs={4} lg={3} text="Update bug">
-            <HelpTooltip text={bugUpdatesHelpText} />
+            <HelpTooltip content={bugUpdatesHelpText} />
           </GridLabel>
           <Grid
             container
@@ -129,7 +129,7 @@ const BugInfo = ({ rule }: Props) => {
           rule.isManagingBug && (
             <Grid container justifyContent="flex-end" size={12}>
               <GridLabel xs={4} lg={3} text="Update bug priority">
-                <HelpTooltip text={bugPriorityUpdateHelpText} />
+                <HelpTooltip content={bugPriorityUpdateHelpText} />
               </GridLabel>
               <Grid
                 container

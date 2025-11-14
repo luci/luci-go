@@ -65,7 +65,7 @@ export const ProblemExplanationSection = ({ problem }: Props) => {
         sx={{ fontWeight: 'bold' }}
       >
         Problem description
-        <HelpTooltip text={problemDescriptionTooltipText} />
+        <HelpTooltip content={problemDescriptionTooltipText} />
       </Typography>
       <Typography component="div" gutterBottom>
         {/* Explanation field is always set on policies. This is enforced by config validation. */}
@@ -77,7 +77,7 @@ export const ProblemExplanationSection = ({ problem }: Props) => {
         sx={{ fontWeight: 'bold' }}
       >
         How to resolve
-        <HelpTooltip text={actionDescriptionTooltipText} />
+        <HelpTooltip content={actionDescriptionTooltipText} />
       </Typography>
       <Typography component="div" gutterBottom>
         {/* Explanation field is always set on policies. This is enforced by config validation. */}
@@ -91,7 +91,7 @@ export const ProblemExplanationSection = ({ problem }: Props) => {
             sx={{ fontWeight: 'bold' }}
           >
             Resolution Criteria
-            <HelpTooltip text={resolutionCriteriaTooltipText} />
+            <HelpTooltip content={resolutionCriteriaTooltipText} />
           </Typography>
           <Typography component="div" gutterBottom>
             <CriteriaSection
@@ -105,7 +105,7 @@ export const ProblemExplanationSection = ({ problem }: Props) => {
             sx={{ fontWeight: 'bold' }}
           >
             Active since
-            <HelpTooltip text={activeSinceTooltipText} />
+            <HelpTooltip content={activeSinceTooltipText} />
           </Typography>
           <Typography gutterBottom>
             <RelativeTimestamp
@@ -125,7 +125,7 @@ export const ProblemExplanationSection = ({ problem }: Props) => {
             sx={{ fontWeight: 'bold' }}
           >
             Re-activation Criteria
-            <HelpTooltip text={reactivationCriteriaTooltipText} />
+            <HelpTooltip content={reactivationCriteriaTooltipText} />
           </Typography>
           <Typography component="div" gutterBottom>
             <CriteriaSection
@@ -139,7 +139,7 @@ export const ProblemExplanationSection = ({ problem }: Props) => {
             sx={{ fontWeight: 'bold' }}
           >
             Resolved since
-            <HelpTooltip text={resolvedSinceTooltipText} />
+            <HelpTooltip content={resolvedSinceTooltipText} />
           </Typography>
           <Typography gutterBottom>
             <RelativeTimestamp
@@ -157,7 +157,7 @@ export const ProblemExplanationSection = ({ problem }: Props) => {
         sx={{ fontWeight: 'bold' }}
       >
         Policy owner(s)
-        <HelpTooltip text={policyOwnersTooltipText} />
+        <HelpTooltip content={policyOwnersTooltipText} />
       </Typography>
       <Typography>{problem.policy.owners.join(', ')}</Typography>
     </>

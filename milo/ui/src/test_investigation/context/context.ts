@@ -15,6 +15,7 @@
 import { createContext, useContext } from 'react';
 
 import { OutputTestVerdict } from '@/common/types/verdict';
+import { QueryRecentPassesResponse } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 
 export interface InvocationContextValue {
@@ -35,6 +36,14 @@ export interface TestVariantContextValue {
 export const TestVariantContext = createContext<TestVariantContextValue | null>(
   null,
 );
+
+export interface RecentPassesContextValue {
+  passingResults: QueryRecentPassesResponse['passingResults'] | undefined;
+  error: Error | null;
+}
+
+export const RecentPassesContext =
+  createContext<RecentPassesContextValue | null>(null);
 
 export function useInvocation() {
   const ctx = useContext(InvocationContext);
@@ -88,4 +97,14 @@ export function useDisplayStatusString() {
     );
   }
   return ctx.displayStatusString;
+}
+
+export function useRecentPasses() {
+  const ctx = useContext(RecentPassesContext);
+  if (!ctx) {
+    throw new Error(
+      'useRecentPasses must be used within a RecentPassesProvider',
+    );
+  }
+  return ctx;
 }

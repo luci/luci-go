@@ -18,4 +18,8 @@ export type {
 } from './context';
 
 export { useTestVariant, useInvocation, useProject } from './context';
-export { TestVariantProvider, InvocationProvider } from './provider';
+export {
+  TestVariantProvider,
+  InvocationProvider,
+  RecentPassesProvider,
+} from './provider';

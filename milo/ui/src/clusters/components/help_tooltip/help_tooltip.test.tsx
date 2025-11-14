@@ -20,7 +20,7 @@ import HelpTooltip from './help_tooltip';
 
 describe('Test HelpTooltip component', () => {
   it('given a title, should display it', async () => {
-    render(<HelpTooltip text="I can help you" />);
+    render(<HelpTooltip content="I can help you" />);
 
     await screen.findByRole('button');
     const button = screen.getByRole('button');

@@ -31,7 +31,7 @@ import {
 } from '@/test_investigation/utils/invocation_utils';
 import {
   formatAllCLs,
-  getBuildId,
+  getBuildBucketBuildId,
   getCommitGitilesUrlFromInvocation,
   getCommitInfoFromInvocation,
   getSourcesFromInvocation,
@@ -43,7 +43,7 @@ interface InvocationHeaderProps {
 
 export function InvocationHeader({ invocation }: InvocationHeaderProps) {
   const displayInvocationId = getDisplayInvocationId(invocation);
-  const buildbucketId = getBuildId(invocation);
+  const buildbucketId = getBuildBucketBuildId(invocation);
 
   const commitInfo = getCommitInfoFromInvocation(invocation);
   const commitLink = getCommitGitilesUrlFromInvocation(invocation);

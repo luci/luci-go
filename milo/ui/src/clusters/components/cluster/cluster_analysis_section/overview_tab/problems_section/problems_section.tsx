@@ -66,7 +66,7 @@ export const ProblemsSection = () => {
     <Box>
       <PanelHeading>
         Problems
-        <HelpTooltip text={problemsTooltipText} />
+        <HelpTooltip content={problemsTooltipText} />
       </PanelHeading>
       {configError && (
         <LoadErrorAlert entityName="project config" error={configError} />

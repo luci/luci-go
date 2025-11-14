@@ -31,7 +31,6 @@ export function TextDiffArtifactView({ artifact }: TextDiffArtifactViewProps) {
     error,
   } = useFetchArtifactContentQuery({
     artifact,
-    artifactContentQueryEnabled: !!artifact.fetchUrl,
   });
 
   const diffHtml = useMemo(() => {

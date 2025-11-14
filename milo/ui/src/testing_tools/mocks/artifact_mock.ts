@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,5 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './artifact_content_view';
-export * from '../artifact_summary/artifact_summary_view';
+import fetchMock from 'fetch-mock-jest';
+
+/**
+ * Mocks a successful fetch request for artifact content.
+ * @param content The decoded string content to return.
+ */
+export function mockFetchArtifactContent(url: string, content: string) {
+  fetchMock.getOnce(url, {
+    status: 200,
+    body: content,
+    headers: { 'Content-Type': 'text/plain' },
+  });
+}

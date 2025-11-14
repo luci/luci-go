@@ -15,14 +15,15 @@
 import HelpOutline from '@mui/icons-material/HelpOutline';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
+import { ReactNode } from 'react';
 
 interface Props {
-  text: string;
+  content: ReactNode;
 }
 
-const HelpTooltip = ({ text }: Props) => {
+const HelpTooltip = ({ content }: Props) => {
   return (
-    <Tooltip arrow title={text}>
+    <Tooltip arrow title={content}>
       <IconButton
         aria-label="What is this?"
         sx={{

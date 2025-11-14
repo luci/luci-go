@@ -19,24 +19,17 @@ import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifac
 import { FetchedArtifactContent } from '../components/artifacts/types';
 
 interface Props {
-  artifactContentQueryEnabled: boolean;
-  isSummary?: boolean;
   artifact?: Artifact;
 }
 
-export function useFetchArtifactContentQuery({
-  artifactContentQueryEnabled,
-  isSummary,
-  artifact,
-}: Props) {
+export function useFetchArtifactContentQuery({ artifact }: Props) {
   return useQuery<FetchedArtifactContent, Error>({
     queryKey: [
       'artifactContentForSection',
       artifact?.name || 'no-artifact-selected',
-      artifactContentQueryEnabled,
     ],
     queryFn: async () => {
-      if (!artifact || !artifact.fetchUrl || isSummary) {
+      if (!artifact || !artifact.fetchUrl) {
         return {
           data: null,
           isText: false,
@@ -81,8 +74,8 @@ export function useFetchArtifactContentQuery({
         };
       }
     },
-    enabled: artifactContentQueryEnabled,
-    staleTime: 5 * 60 * 1000,
+    enabled: !!(artifact && artifact.fetchUrl),
+    staleTime: Infinity,
     refetchOnWindowFocus: false,
   });
 }

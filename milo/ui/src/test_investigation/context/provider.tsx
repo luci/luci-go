@@ -15,9 +15,14 @@
 import React from 'react';
 
 import { OutputTestVerdict } from '@/common/types/verdict';
+import { QueryRecentPassesResponse } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 
-import { InvocationContext, TestVariantContext } from './context';
+import {
+  InvocationContext,
+  RecentPassesContext,
+  TestVariantContext,
+} from './context';
 
 interface Props {
   children: React.ReactNode;
@@ -72,5 +77,28 @@ export function TestVariantProvider({
     >
       {children}
     </TestVariantContext.Provider>
+  );
+}
+
+interface RecentPassesProviderProps extends Props {
+  passingResults: QueryRecentPassesResponse['passingResults'] | undefined;
+  error: Error | null;
+  children: React.ReactNode;
+}
+
+export function RecentPassesProvider({
+  passingResults,
+  error,
+  children,
+}: RecentPassesProviderProps) {
+  return (
+    <RecentPassesContext.Provider
+      value={{
+        passingResults,
+        error,
+      }}
+    >
+      {children}
+    </RecentPassesContext.Provider>
   );
 }

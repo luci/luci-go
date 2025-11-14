@@ -48,7 +48,7 @@ const RulesPage = () => {
         <Grid size={8}>
           <PageHeading>
             Rules in project {project}
-            <HelpTooltip text={rulesDescription}></HelpTooltip>
+            <HelpTooltip content={rulesDescription}></HelpTooltip>
           </PageHeading>
         </Grid>
         <Grid sx={{ textAlign: 'right' }} size={4}>

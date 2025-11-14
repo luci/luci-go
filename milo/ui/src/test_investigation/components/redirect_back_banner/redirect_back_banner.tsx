@@ -27,7 +27,7 @@ import { NEW_TEST_INVESTIGATION_PAGE_FLAG } from '@/test_investigation/pages/fea
 import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 import {
   isPresubmitRun,
-  getBuildId,
+  getBuildBucketBuildId,
 } from '@/test_investigation/utils/test_info_utils';
 
 export interface RedirectBackBannerProps extends AlertProps {
@@ -50,7 +50,10 @@ export function RedirectBackBanner({
   const { trackEvent } = useGoogleAnalytics();
   const project = useProject();
 
-  const buildId = useMemo(() => getBuildId(invocation), [invocation]);
+  const buildId = useMemo(
+    () => getBuildBucketBuildId(invocation),
+    [invocation],
+  );
 
   const legacyUrl = useMemo(() => {
     if (!buildId) {

@@ -51,7 +51,7 @@ const RuleDefinition = ({ definition, onEditClicked }: Props) => {
       <Box sx={{ display: 'inline-block' }} paddingTop={1}>
         <>You do not have permission to view the rule definition.</>
       </Box>
-      <HelpTooltip text={definitionUnavailableTooltipText} />
+      <HelpTooltip content={definitionUnavailableTooltipText} />
     </>
   );
 };

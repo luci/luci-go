@@ -224,11 +224,8 @@ export function constructFileBugUrl(
   }
   const title = `Failure in ${testDisplayName} on ${builderName || 'unknown builder'}`;
   let buildUiLink = `[Build resource: ${invocation.producerResource || 'N/A'}]`;
-  if (
-    invocation.producerResource &&
-    invocation.producerResource.includes('cr-buildbucket')
-  ) {
-    const bbBuildId = invocation.producerResource.split('/').pop();
+  const bbBuildId = getBuildBucketBuildId(invocation);
+  if (bbBuildId) {
     buildUiLink = bbBuildId
       ? `https://ci.chromium.org/b/${bbBuildId}`
       : buildUiLink;
@@ -283,11 +280,11 @@ export function isPresubmitRun(invocation: AnyInvocation | null): boolean {
 }
 
 /**
- * Extracts a build ID from an invocation.
+ * Extracts a BuildBucket build ID from an invocation.
  * It robustly checks the producerResource (which exists on both legacy
  * and root invocations) and falls back to the legacy name format.
  */
-export function getBuildId(
+export function getBuildBucketBuildId(
   invocation: AnyInvocation | null,
 ): string | undefined {
   if (!invocation) {
@@ -297,7 +294,13 @@ export function getBuildId(
   const resource = invocation.producerResource;
 
   if (resource) {
-    const match = resource.match(/\/builds\/(\d+)$/);
+    let name = '';
+    if (typeof resource !== 'string') {
+      name = resource.name;
+    } else {
+      name = resource;
+    }
+    const match = name.match(/\/builds\/(\d+)$/);
     if (match) {
       return match[1];
     }

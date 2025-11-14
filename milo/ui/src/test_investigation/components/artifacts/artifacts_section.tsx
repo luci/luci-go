@@ -22,7 +22,6 @@ import { parseTestResultName } from '@/common/tools/test_result_utils/index';
 import { ListArtifactsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { useTestVariant } from '@/test_investigation/context';
 import { useIsLegacyInvocation } from '@/test_investigation/context/context';
-import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries';
 
 import { ArtifactContentView, ArtifactSummaryView } from './artifact_content';
 import { ArtifactTreeView } from './artifact_tree';
@@ -99,20 +98,6 @@ function ArtifactsSectionContent() {
     loadMoreInvocationScopeArtifacts,
     invocationScopeArtifactsHasNextPage,
   ]);
-
-  const artifactContentQueryEnabled =
-    !!selectedArtifactNode?.artifact?.fetchUrl &&
-    !selectedArtifactNode.isSummary;
-
-  const { data: artifactContentData, isPending: rawIsLoadingArtifactContent } =
-    useFetchArtifactContentQuery({
-      artifactContentQueryEnabled,
-      isSummary: selectedArtifactNode?.isSummary,
-      artifact: selectedArtifactNode?.artifact,
-    });
-
-  const isLoadingArtifactContent =
-    artifactContentQueryEnabled && rawIsLoadingArtifactContent;
 
   const textDiffArtifact = useMemo(() => {
     return (testResultArtifactsData || []).find(
@@ -207,15 +192,7 @@ function ArtifactsSectionContent() {
                   />
                 ) : selectedArtifactNode.artifact ? (
                   <ArtifactContentView
-                    selectedArtifactForDisplay={selectedArtifactNode}
-                    currentResult={currentResult}
-                    artifactContentData={artifactContentData}
-                    isLoadingArtifactContent={isLoadingArtifactContent}
-                    invocationHasArtifacts={
-                      (invocationScopeArtifactsData &&
-                        invocationScopeArtifactsData.length > 0) ||
-                      false
-                    }
+                    artifact={selectedArtifactNode.artifact}
                   />
                 ) : (
                   <Typography color="text.secondary">

@@ -81,7 +81,7 @@ const RuleInfo = ({ project, rule }: Props) => {
         <PanelHeading>Rule Details</PanelHeading>
         <Grid container rowGap={1}>
           <GridLabel text="Rule definition">
-            <HelpTooltip text={definitionTooltipText} />
+            <HelpTooltip content={definitionTooltipText} />
           </GridLabel>
           <Grid alignItems="center" size={10}>
             <RuleDefinition
@@ -90,7 +90,7 @@ const RuleInfo = ({ project, rule }: Props) => {
             />
           </Grid>
           <GridLabel text="Source cluster">
-            <HelpTooltip text={sourceClusterTooltipText} />
+            <HelpTooltip content={sourceClusterTooltipText} />
           </GridLabel>
           <Grid alignItems="center" size={10}>
             <Box sx={{ display: 'inline-block' }} paddingTop={1}>
@@ -108,7 +108,7 @@ const RuleInfo = ({ project, rule }: Props) => {
             </Box>
           </Grid>
           <GridLabel text="Archived">
-            <HelpTooltip text={archivedTooltipText} />
+            <HelpTooltip content={archivedTooltipText} />
           </GridLabel>
           <Grid alignItems="center" columnGap={1} size={10}>
             <Box

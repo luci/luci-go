@@ -35,7 +35,10 @@ import {
   VERDICT_STATUS_OVERRIDE_DISPLAY_MAP,
 } from '@/common/constants/verdict';
 import { UiPage } from '@/common/constants/view';
-import { useResultDbClient } from '@/common/hooks/prpc_clients';
+import {
+  useResultDbClient,
+  useTestHistoryClient,
+} from '@/common/hooks/prpc_clients';
 import { gm3PageTheme } from '@/common/themes/gm3_theme';
 import { OutputTestVerdict } from '@/common/types/verdict';
 import { requestSurvey } from '@/fleet/utils/survey';
@@ -44,10 +47,14 @@ import {
   useGoogleAnalytics,
 } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { TestIdentifier } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
+import { QueryRecentPassesRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 import {
-  GetInvocationRequest,
+  TestIdentifier,
+  Sources,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
+import {
   BatchGetTestVariantsRequest,
+  GetInvocationRequest,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { GetRootInvocationRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/root_invocation.pb';
 import { TestVerdict_StatusOverride } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
@@ -58,6 +65,7 @@ import { TestNavigationDrawer } from '@/test_investigation/components/test_navig
 import { TestDrawerProvider } from '@/test_investigation/components/test_navigation_drawer/context';
 import {
   InvocationProvider,
+  RecentPassesProvider,
   TestVariantProvider,
 } from '@/test_investigation/context';
 import { isPresubmitRun } from '@/test_investigation/utils/test_info_utils';
@@ -82,6 +90,7 @@ export function TestInvestigatePage() {
 
   const authState = useAuthState();
   const resultDbClient = useResultDbClient();
+  const testHistoryClient = useTestHistoryClient();
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -186,26 +195,45 @@ export function TestInvestigatePage() {
     fine,
   ]);
 
-  const { data: testVariant, isPending: isLoadingTestVariant } = useQuery({
+  const { data: testVariantData, isPending: isLoadingTestVariant } = useQuery({
     ...resultDbClient.BatchGetTestVariants.query(request),
     staleTime: Infinity,
-    select: (data): OutputTestVerdict | null => {
+    select: (
+      data,
+    ): { testVariant: OutputTestVerdict; sources?: Sources } | null => {
       if (!data?.testVariants?.length) {
         return null;
       }
-      return data.testVariants[0] as OutputTestVerdict;
+      const tv = data.testVariants[0] as OutputTestVerdict;
+      const sources = tv.sourcesId ? data.sources[tv.sourcesId] : undefined;
+      return { testVariant: tv, sources };
     },
-    // Only enable the query once the request is fully formed.
     enabled: !!request,
     placeholderData: keepPreviousData,
   });
+
+  const testVariant = testVariantData?.testVariant;
+  const sources = testVariantData?.sources;
 
   const project = useMemo(
     () => getProjectFromRealm(invocation?.realm),
     [invocation?.realm],
   );
 
-  // Prepare the display string, e.g., "Failed" instead of "UNEXPECTED"
+  const { data: recentPasses, error: recentPassesError } = useQuery({
+    ...testHistoryClient.QueryRecentPasses.query(
+      QueryRecentPassesRequest.fromPartial({
+        project: project,
+        testId: testVariant?.testId,
+        variantHash: rawVariantHash,
+        sources: sources,
+      }),
+    ),
+    staleTime: 5 * 60 * 1000,
+    enabled:
+      !!project && !!testVariant?.testId && !!rawVariantHash && !!sources,
+  });
+
   const displayStatusString = useMemo(() => {
     if (testVariant) {
       const statusString =
@@ -322,34 +350,39 @@ export function TestInvestigatePage() {
         testVariant={testVariant}
         displayStatusString={displayStatusString}
       >
-        <ThemeProvider theme={gm3PageTheme}>
-          <RedirectBackBanner
-            invocation={invocation}
-            testVariant={testVariant}
-          />
-          <Box component="main" sx={{ height: '100%' }}>
-            <Box
-              sx={{
-                padding: { xs: 1, sm: 2 },
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 3,
-                maxWidth: `calc(100vw - 16px)`,
-                boxSizing: 'border-box',
-                height: '100%',
-              }}
-            >
-              <TestInfo />
-              <ArtifactsSection />
-            </Box>
-          </Box>
-          <TestDrawerProvider isDrawerOpen={isDrawerOpen}>
-            <TestNavigationDrawer
-              isOpen={isDrawerOpen}
-              onToggleDrawer={handleToggleDrawer}
+        <RecentPassesProvider
+          passingResults={recentPasses?.passingResults}
+          error={recentPassesError}
+        >
+          <ThemeProvider theme={gm3PageTheme}>
+            <RedirectBackBanner
+              invocation={invocation}
+              testVariant={testVariant}
             />
-          </TestDrawerProvider>
-        </ThemeProvider>
+            <Box component="main" sx={{ height: '100%' }}>
+              <Box
+                sx={{
+                  padding: { xs: 1, sm: 2 },
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 3,
+                  maxWidth: `calc(100vw - 16px)`,
+                  boxSizing: 'border-box',
+                  height: '100%',
+                }}
+              >
+                <TestInfo />
+                <ArtifactsSection />
+              </Box>
+            </Box>
+            <TestDrawerProvider isDrawerOpen={isDrawerOpen}>
+              <TestNavigationDrawer
+                isOpen={isDrawerOpen}
+                onToggleDrawer={handleToggleDrawer}
+              />
+            </TestDrawerProvider>
+          </ThemeProvider>
+        </RecentPassesProvider>
       </TestVariantProvider>
     </InvocationProvider>
   );

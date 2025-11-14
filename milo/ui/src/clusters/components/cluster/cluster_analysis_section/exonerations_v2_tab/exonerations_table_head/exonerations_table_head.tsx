@@ -81,7 +81,7 @@ const ExonerationsTableHead = ({
             onClick={() => toggleSort('beingExonerated')}
           >
             Is Being Exonerated{' '}
-            <HelpTooltip text="Whether the test variant is currently being exonerated (ignored) by presubmit." />
+            <HelpTooltip content="Whether the test variant is currently being exonerated (ignored) by presubmit." />
           </TableSortLabel>
         </TableCell>
         <TableCell

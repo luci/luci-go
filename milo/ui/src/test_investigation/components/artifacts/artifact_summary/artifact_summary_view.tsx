@@ -30,10 +30,11 @@ import {
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { useIsLegacyInvocation } from '@/test_investigation/context/context';
 
+import { TextDiffArtifactView } from '../artifact_content/text_diff_artifact_view';
+
 import { CollapsibleArtifactSummarySection } from './collapsible_artifact_summary_section';
 import { LegacyInvocationLinks } from './legacy_invocation_links';
 import { PropertiesSection } from './properties_section';
-import { TextDiffArtifactView } from './text_diff_artifact_view';
 
 interface ArtifactSummaryViewProps {
   currentResult: TestResult;

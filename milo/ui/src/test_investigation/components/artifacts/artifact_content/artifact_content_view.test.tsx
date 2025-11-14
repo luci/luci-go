@@ -13,42 +13,45 @@
 // limitations under the License.
 
 import { render, screen, waitFor } from '@testing-library/react';
+import fetchMock from 'fetch-mock-jest';
 
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
+import { RecentPassesProvider } from '@/test_investigation/context';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import { mockFetchArtifactContent } from '@/testing_tools/mocks/artifact_mock';
 
 import { ArtifactContentView } from './artifact_content_view';
 
 describe('<ArtifactContentView />', () => {
+  afterEach(() => {
+    fetchMock.mockClear();
+    fetchMock.reset();
+  });
+
   it('given an artifact, then should display the contents', async () => {
+    const MOCK_ARTIFACT_URL =
+      'http://mock.results.api.luci.app/artifact-content/test';
+    const MOCK_ARTIFACT_CONTENT = 'test data';
+
+    mockFetchArtifactContent(MOCK_ARTIFACT_URL, MOCK_ARTIFACT_CONTENT);
+
     render(
       <FakeContextProvider>
-        <ArtifactContentView
-          isLoadingArtifactContent={false}
-          invocationHasArtifacts={false}
-          selectedArtifactForDisplay={{
-            id: 'test',
-            name: 'test',
-            children: [],
-            artifact: Artifact.fromPartial({
+        <RecentPassesProvider passingResults={[]} error={null}>
+          <ArtifactContentView
+            artifact={Artifact.fromPartial({
               artifactId: 'test',
               name: 'test',
               contentType: 'text/plain',
               sizeBytes: '1024',
-              fetchUrl: 'test',
-            }),
-          }}
-          artifactContentData={{
-            data: 'test data',
-            contentType: 'text/plain',
-            isText: true,
-            error: null,
-          }}
-        />
+              fetchUrl: MOCK_ARTIFACT_URL,
+            })}
+          />
+        </RecentPassesProvider>
       </FakeContextProvider>,
     );
     await waitFor(() =>
-      expect(screen.getByText('test data')).toBeInTheDocument(),
+      expect(screen.getByText(MOCK_ARTIFACT_CONTENT)).toBeInTheDocument(),
     );
   });
 });

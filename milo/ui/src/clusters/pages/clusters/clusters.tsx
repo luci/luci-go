@@ -48,7 +48,7 @@ export const ClustersPage = () => {
         <Grid size={8}>
           <PageHeading>
             Clusters in project {project}
-            <HelpTooltip text={clustersDescription} />
+            <HelpTooltip content={clustersDescription} />
           </PageHeading>
         </Grid>
       </Grid>
