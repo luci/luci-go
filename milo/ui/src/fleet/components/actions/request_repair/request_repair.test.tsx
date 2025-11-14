@@ -14,6 +14,8 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 
+import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
+
 import { DutToRepair } from '../shared/types';
 
 import { RequestRepair, generateIssueDescription } from './request_repair';
@@ -65,7 +67,11 @@ describe('<RequestRepair />', () => {
       },
     ];
 
-    render(<RequestRepair selectedDuts={selectedDuts} />);
+    render(
+      <FakeAuthStateProvider>
+        <RequestRepair selectedDuts={selectedDuts} />
+      </FakeAuthStateProvider>,
+    );
     const button = screen.getByTestId('file-repair-bug-button');
     expect(button).toBeInTheDocument();
 
@@ -104,7 +110,11 @@ describe('<RequestRepair />', () => {
       duts: [] as DutToRepair[],
     },
   ])('should not render the button if $case', ({ duts }) => {
-    render(<RequestRepair selectedDuts={duts} />);
+    render(
+      <FakeAuthStateProvider>
+        <RequestRepair selectedDuts={duts} />
+      </FakeAuthStateProvider>,
+    );
     const button = screen.queryByTestId('file-repair-bug-button');
     expect(button).not.toBeInTheDocument();
   });

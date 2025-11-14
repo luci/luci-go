@@ -28,6 +28,7 @@ import { useState, SyntheticEvent } from 'react';
 
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { exportAs } from '@/fleet/utils/export';
+import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { Column } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { useExportData } from './use_export_data';
@@ -55,12 +56,17 @@ export function CSVExportMenuItem({
   fileName,
   showNotification,
 }: CSVExportMenuItemProps) {
+  const { trackEvent } = useGoogleAnalytics();
   const { isFetching, refetch } = useExportData(columnsToExport, idsToExport);
 
   return (
     <MenuItem
       disabled={isFetching}
       onClick={async () => {
+        trackEvent('export_csv', {
+          componentName: 'export_csv_button',
+          selectedDuts: idsToExport?.length,
+        });
         const result = await refetch();
 
         if (result.isError) {

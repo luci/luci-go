@@ -15,6 +15,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent, { UserEvent } from '@testing-library/user-event';
 
+import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
+
 import CodeSnippet from './code_snippet';
 
 async function pause(delay: number) {
@@ -29,13 +31,21 @@ describe('<CodeSnippet />', () => {
   });
 
   it('renders text to copy', async () => {
-    render(<CodeSnippet copyText="Lorem ipsum" />);
+    render(
+      <FakeAuthStateProvider>
+        <CodeSnippet copyText="Lorem ipsum" />
+      </FakeAuthStateProvider>,
+    );
 
     expect(screen.getByText('Lorem ipsum')).toBeVisible();
   });
 
   it('clicking on the copy icon makes text available in clipboard', async () => {
-    render(<CodeSnippet copyText="Lorem ipsum" />);
+    render(
+      <FakeAuthStateProvider>
+        <CodeSnippet copyText="Lorem ipsum" />
+      </FakeAuthStateProvider>,
+    );
 
     const copyBtn = screen.getByRole('button', { name: 'Copy to clipboard' });
     expect(copyBtn).toBeInTheDocument();
@@ -47,7 +57,11 @@ describe('<CodeSnippet />', () => {
   });
 
   it('display one text, use other to be copied, check if copy text is available in clipboard', async () => {
-    render(<CodeSnippet copyText="Lorem ipsum" displayText="Dolor sit amet" />);
+    render(
+      <FakeAuthStateProvider>
+        <CodeSnippet copyText="Lorem ipsum" displayText="Dolor sit amet" />
+      </FakeAuthStateProvider>,
+    );
 
     expect(screen.queryByText('Lorem ipsum')).not.toBeInTheDocument();
     expect(screen.queryByText('Dolor sit amet')).toBeVisible();

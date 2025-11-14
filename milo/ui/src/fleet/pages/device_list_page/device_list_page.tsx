@@ -46,7 +46,10 @@ import { MainMetricsContainer } from '@/fleet/pages/device_list_page/main_metric
 import { SelectedOptions } from '@/fleet/types';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
-import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
+import {
+  TrackLeafRoutePageView,
+  useGoogleAnalytics,
+} from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   CountDevicesRequest,
@@ -62,6 +65,7 @@ const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
 
 export const DeviceListPage = ({ platform }: { platform: Platform }) => {
+  const { trackEvent } = useGoogleAnalytics();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [orderByParam] = useOrderByParam();
   const pagerCtx = usePagerContext({
@@ -75,6 +79,9 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
   );
 
   const onSelectedOptionsChange = (newSelectedOptions: SelectedOptions) => {
+    trackEvent('filter_changed', {
+      componentName: 'device_list_filter',
+    });
     setSearchParams(filtersUpdater(newSelectedOptions));
 
     // Clear out all the page tokens when the filter changes.

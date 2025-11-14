@@ -14,6 +14,8 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
+
 import AutorepairDialog, { AutorepairDialogProps } from './autorepair_dialog';
 
 describe('<AutorepairDialog />', () => {
@@ -54,10 +56,12 @@ describe('<AutorepairDialog />', () => {
 
   it('renders confirmation', async () => {
     render(
-      <AutorepairDialog
-        {...sharedTestProps}
-        sessionInfo={{ dutNames: ['test-dut'] }}
-      />,
+      <FakeAuthStateProvider>
+        <AutorepairDialog
+          {...sharedTestProps}
+          sessionInfo={{ dutNames: ['test-dut'] }}
+        />
+      </FakeAuthStateProvider>,
     );
 
     const guidance = screen.getByText(
@@ -76,10 +80,12 @@ describe('<AutorepairDialog />', () => {
 
   it('renders shivas command', async () => {
     render(
-      <AutorepairDialog
-        {...sharedTestProps}
-        sessionInfo={{ dutNames: ['test-dut', 'dut1', 'dut2', 'dut3'] }}
-      />,
+      <FakeAuthStateProvider>
+        <AutorepairDialog
+          {...sharedTestProps}
+          sessionInfo={{ dutNames: ['test-dut', 'dut1', 'dut2', 'dut3'] }}
+        />
+      </FakeAuthStateProvider>,
     );
 
     const shivas = screen.getByText('$ shivas repair test-dut dut1 dut2 dut3');
@@ -89,21 +95,25 @@ describe('<AutorepairDialog />', () => {
 
   it('renders loading spinner', async () => {
     render(
-      <AutorepairDialog
-        {...sharedTestProps}
-        loading={true}
-        sessionInfo={{ dutNames: ['test-dut'] }}
-      />,
+      <FakeAuthStateProvider>
+        <AutorepairDialog
+          {...sharedTestProps}
+          loading={true}
+          sessionInfo={{ dutNames: ['test-dut'] }}
+        />
+      </FakeAuthStateProvider>,
     );
     expect(screen.getByRole('progressbar')).toBeVisible();
   });
 
   it('confirms on click', async () => {
     render(
-      <AutorepairDialog
-        {...sharedTestProps}
-        sessionInfo={{ dutNames: ['test-dut'] }}
-      />,
+      <FakeAuthStateProvider>
+        <AutorepairDialog
+          {...sharedTestProps}
+          sessionInfo={{ dutNames: ['test-dut'] }}
+        />
+      </FakeAuthStateProvider>,
     );
 
     const confirm = screen.getByRole('button', { name: 'Confirm' });
@@ -115,18 +125,20 @@ describe('<AutorepairDialog />', () => {
 
   it('renders completion step', async () => {
     render(
-      <AutorepairDialog
-        {...sharedTestProps}
-        sessionInfo={{
-          results: [
-            {
-              unitName: 'test-dut',
-              taskUrl: '/p/proj/builders/buck/builder/b1337',
-            },
-          ],
-          sessionId: 'fake-session-info',
-        }}
-      />,
+      <FakeAuthStateProvider>
+        <AutorepairDialog
+          {...sharedTestProps}
+          sessionInfo={{
+            results: [
+              {
+                unitName: 'test-dut',
+                taskUrl: '/p/proj/builders/buck/builder/b1337',
+              },
+            ],
+            sessionId: 'fake-session-info',
+          }}
+        />
+      </FakeAuthStateProvider>,
     );
 
     const text = screen.getByText(
@@ -150,21 +162,23 @@ describe('<AutorepairDialog />', () => {
 
   it('displays error for failed autorepair', async () => {
     render(
-      <AutorepairDialog
-        {...sharedTestProps}
-        sessionInfo={{
-          results: [
-            {
-              unitName: 'test-dut-1',
-              taskUrl: '/p/proj/builders/buck/builder/b1337',
-            },
-            {
-              unitName: 'test-dut-2',
-              errorMessage: 'it broke',
-            },
-          ],
-        }}
-      />,
+      <FakeAuthStateProvider>
+        <AutorepairDialog
+          {...sharedTestProps}
+          sessionInfo={{
+            results: [
+              {
+                unitName: 'test-dut-1',
+                taskUrl: '/p/proj/builders/buck/builder/b1337',
+              },
+              {
+                unitName: 'test-dut-2',
+                errorMessage: 'it broke',
+              },
+            ],
+          }}
+        />
+      </FakeAuthStateProvider>,
     );
 
     expect(screen.getByRole('link', { name: 'View in Milo' })).toBeVisible();

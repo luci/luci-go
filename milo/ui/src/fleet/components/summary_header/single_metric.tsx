@@ -17,6 +17,7 @@ import { ReactElement } from 'react';
 import { useNavigate } from 'react-router';
 
 import { theme } from '@/fleet/theme/theme';
+import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 
 type SingleMetricProps = {
   name: string;
@@ -37,6 +38,7 @@ export function SingleMetric({
   handleClick,
   loading,
 }: SingleMetricProps) {
+  const { trackEvent } = useGoogleAnalytics();
   const navigate = useNavigate();
   const percentage = total && typeof value !== 'undefined' ? value / total : -1;
 
@@ -104,6 +106,9 @@ export function SingleMetric({
             padding: 0,
           }}
           onAuxClick={() => {
+            trackEvent('main_metric_clicked', {
+              componentName: name,
+            });
             if (handleClick) {
               handleClick();
             }
@@ -112,6 +117,9 @@ export function SingleMetric({
             }
           }}
           onClick={() => {
+            trackEvent('main_metric_clicked', {
+              componentName: name,
+            });
             if (handleClick) {
               handleClick();
             }

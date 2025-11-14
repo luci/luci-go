@@ -16,16 +16,29 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { Button, Paper, Tooltip } from '@mui/material';
 import { Box } from '@mui/system';
 
+import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+
 interface CodeSnippetProps {
   copyText: string;
   displayText?: string;
+  /**
+   * A unique string for the kind of content being copied. Used for Analytics
+   * event tracking.
+   */
+  copyKind?: string;
 }
 
 export default function CodeSnippet({
   copyText,
   displayText,
+  copyKind,
 }: CodeSnippetProps) {
+  const { trackEvent } = useGoogleAnalytics();
   const handleCopy = async () => {
+    trackEvent('copy_code', {
+      componentName: 'copy_button',
+      copyKind,
+    });
     await navigator.clipboard.writeText(copyText);
   };
 

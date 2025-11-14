@@ -56,6 +56,16 @@ export interface EventPayload {
    * e.g. the name of the link that was clicked or the button that was pressed.
    */
   componentName?: string;
+
+  /**
+   * The number of DUTs selected for an action.
+   */
+  selectedDuts?: number;
+
+  /**
+   * The kind of content being copied.
+   */
+  copyKind?: string;
 }
 
 /**
@@ -90,7 +100,7 @@ export function useGoogleAnalytics() {
       }
 
       const eventParams: {
-        [key: string]: string | boolean | undefined;
+        [key: string]: string | boolean | number | undefined;
       } = {
         ...payload,
         category: contentGroup,

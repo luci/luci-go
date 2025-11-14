@@ -108,7 +108,11 @@ export function SshTip({ hostname, dutId }: SshTipProps) {
           </p>
 
           <p>To SSH:</p>
-          <CodeSnippet displayText={'$ ' + command} copyText={command} />
+          <CodeSnippet
+            displayText={'$ ' + command}
+            copyText={command}
+            copyKind="ssh"
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)} variant="contained">

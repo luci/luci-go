@@ -15,6 +15,8 @@ import { FeedbackOutlined } from '@mui/icons-material';
 import { Button } from '@mui/material';
 import React from 'react';
 
+import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+
 import { DutToRepair } from '../shared/types';
 
 interface RequestRepairProps {
@@ -94,6 +96,7 @@ const generateDutInfo = (selectedDuts: DutToRepair[]): string =>
 export const RequestRepair: React.FC<RequestRepairProps> = ({
   selectedDuts,
 }) => {
+  const { trackEvent } = useGoogleAnalytics();
   const showButton = selectedDuts?.length > 0;
 
   if (!showButton) {
@@ -101,6 +104,10 @@ export const RequestRepair: React.FC<RequestRepairProps> = ({
   }
 
   const fileDutRepairRequest = () => {
+    trackEvent('request_repair', {
+      componentName: 'request_repair_button',
+      selectedDuts: selectedDuts.length,
+    });
     const dutInfo = generateDutInfo(selectedDuts);
     const description = generateIssueDescription(dutInfo);
     const title = encodeURIComponent(generateIssueTitle(selectedDuts));

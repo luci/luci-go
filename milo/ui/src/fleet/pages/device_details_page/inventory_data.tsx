@@ -87,7 +87,11 @@ export const InventoryData = ({ device }: { device: Device }) => {
           </a>{' '}
           command:{' '}
         </span>
-        <CodeSnippet displayText={'$ ' + command} copyText={command} />
+        <CodeSnippet
+          displayText={'$ ' + command}
+          copyText={command}
+          copyKind="get_dut"
+        />
       </div>
       {responseDisplay}
     </Box>

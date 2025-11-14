@@ -18,6 +18,7 @@ import { act } from 'react';
 import { useBot } from '@/fleet/hooks/swarming_hooks';
 import { BotInfo } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 import { useBotsClient } from '@/swarming/hooks/prpc_clients';
+import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
 
 import { SshTip } from './ssh_tip';
 
@@ -36,7 +37,11 @@ describe('<SshTip />', () => {
     useBotMock.mockReturnValue({
       info: undefined,
     });
-    render(<SshTip hostname="test-device" dutId="test-dut" />);
+    render(
+      <FakeAuthStateProvider>
+        <SshTip hostname="test-device" dutId="test-dut" />
+      </FakeAuthStateProvider>,
+    );
 
     // Open the dialog.
     await act(() => {
@@ -56,7 +61,11 @@ describe('<SshTip />', () => {
         ],
       } as Partial<BotInfo>,
     });
-    render(<SshTip hostname="satlab-device" dutId="satlab-dut" />);
+    render(
+      <FakeAuthStateProvider>
+        <SshTip hostname="satlab-device" dutId="satlab-dut" />
+      </FakeAuthStateProvider>,
+    );
 
     // Open the dialog.
     await act(() => {
@@ -77,7 +86,11 @@ describe('<SshTip />', () => {
         dimensions: [{ key: 'ufs_zone', value: ['ZONE_SATLAB'] }],
       } as Partial<BotInfo>,
     });
-    render(<SshTip hostname="satlab-device" dutId="satlab-dut" />);
+    render(
+      <FakeAuthStateProvider>
+        <SshTip hostname="satlab-device" dutId="satlab-dut" />
+      </FakeAuthStateProvider>,
+    );
 
     // Open the dialog.
     await act(() => {
@@ -98,7 +111,11 @@ describe('<SshTip />', () => {
     useBotMock.mockReturnValue({
       info: undefined,
     });
-    render(<SshTip hostname="satlab-device" dutId="satlab-dut" />);
+    render(
+      <FakeAuthStateProvider>
+        <SshTip hostname="satlab-device" dutId="satlab-dut" />
+      </FakeAuthStateProvider>,
+    );
 
     // Open the dialog.
     await act(() => {
