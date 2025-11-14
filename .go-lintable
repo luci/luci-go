@@ -73,4 +73,5 @@ paths =
     teams
     tokenserver
     tree_status
+    turboci
     vpython
