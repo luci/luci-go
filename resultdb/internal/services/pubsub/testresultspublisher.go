@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"sort"
 	"strings"
 
 	"google.golang.org/protobuf/proto"
@@ -252,6 +253,14 @@ func testResultsNotification(testResultsByWorkUnit map[string][]*pb.TestResult) 
 			TestResults:  trs,
 		})
 	}
+
+	// Sort the work units by name to ensure a deterministic order when
+	// generating the deduplication key. The generateDeduplicationKey function
+	// relies on the order of work units and test results to produce a stable
+	// key.
+	sort.Slice(testResultsNotification, func(i, j int) bool {
+		return testResultsNotification[i].WorkUnitName < testResultsNotification[j].WorkUnitName
+	})
 	return testResultsNotification
 }
 

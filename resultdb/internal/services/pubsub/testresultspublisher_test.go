@@ -14,7 +14,6 @@
 package pubsub
 
 import (
-	"sort"
 	"strings"
 	"testing"
 
@@ -22,7 +21,6 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq"
@@ -88,7 +86,7 @@ func createExpectedTR(tr *pb.TestResult, rootInvID string, wuID string) *pb.Test
 }
 
 func TestHandlePublishTestResultsTask(t *testing.T) {
-	ftt.Run("HandlePublishTestResultsTask", t, func(t *ftt.Test) {
+	t.Run("HandlePublishTestResultsTask", func(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		rootInvID := rootinvocations.ID("test-root-inv")
 		rdbHost := "staging.results.api.cr.dev"
@@ -189,7 +187,7 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 		}
 
 		for _, tc := range testCases {
-			t.Run(tc.name, func(t *ftt.Test) {
+			t.Run(tc.name, func(t *testing.T) {
 				ctx := testutil.SpannerTestContext(t)
 				ctx, sched := tq.TestingContext(ctx, nil)
 				t.Logf("Running test case: %s", tc.name)
@@ -243,17 +241,8 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 
 				payload := notifyTask.Payload.(*taskspb.PublishTestResults)
 
-				// Sort TestResultsByWorkUnit to make the test deterministic.
-				sort.Slice(payload.Message.TestResultsByWorkUnit, func(i, j int) bool {
-					return payload.Message.TestResultsByWorkUnit[i].WorkUnitName < payload.Message.TestResultsByWorkUnit[j].WorkUnitName
-				})
-
 				// Calculate the expected deduplication key separately.
-				expectedDeduplicationKey := generateDeduplicationKey(payload.Message.TestResultsByWorkUnit)
-				assert.Loosely(t, payload.Message.DeduplicationKey, should.Equal(expectedDeduplicationKey))
-
-				// Clear the key for the rest of the proto comparison.
-				payload.Message.DeduplicationKey = ""
+				tc.expectedNotification.DeduplicationKey = generateDeduplicationKey(payload.Message.TestResultsByWorkUnit)
 				assert.Loosely(t, payload.Message, should.Match(tc.expectedNotification))
 			})
 		}
@@ -261,7 +250,7 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 }
 
 func TestHandlePublishTestResultsTask_Batching(t *testing.T) {
-	ftt.Run("HandlePublishTestResultsTask_Batching", t, func(t *ftt.Test) {
+	t.Run("HandlePublishTestResultsTask_Batching", func(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		rootInvID := rootinvocations.ID("test-root-inv-batch")
 		rdbHost := "staging.results.api.cr.dev"
@@ -317,11 +306,7 @@ func TestHandlePublishTestResultsTask_Batching(t *testing.T) {
 				payload := task.Payload.(*taskspb.PublishTestResults)
 
 				// Calculate the expected deduplication key separately.
-				expectedDeduplicationKey := generateDeduplicationKey(payload.Message.TestResultsByWorkUnit)
-				assert.Loosely(t, payload.Message.DeduplicationKey, should.Equal(expectedDeduplicationKey))
-
-				// Clear the key for the rest of the proto comparison.
-				payload.Message.DeduplicationKey = ""
+				payload.Message.DeduplicationKey = generateDeduplicationKey(payload.Message.TestResultsByWorkUnit)
 				actualMessages = append(actualMessages, payload)
 			}
 		}
@@ -355,7 +340,7 @@ func TestHandlePublishTestResultsTask_Batching(t *testing.T) {
 	})
 }
 func TestHandlePublishTestResultsTask_SingleResultTooLarge(t *testing.T) {
-	ftt.Run("HandlePublishTestResultsTask_SingleResultTooLarge", t, func(t *ftt.Test) {
+	t.Run("HandlePublishTestResultsTask_SingleResultTooLarge", func(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		rootInvID := rootinvocations.ID("test-root-inv-large")
 		rdbHost := "staging.results.api.cr.dev"
@@ -394,5 +379,69 @@ func TestHandlePublishTestResultsTask_SingleResultTooLarge(t *testing.T) {
 
 		// No tasks should be enqueued.
 		assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
+	})
+}
+
+func TestGenerateDeduplicationKey(t *testing.T) {
+	t.Run("GenerateDeduplicationKey", func(t *testing.T) {
+		tr1 := &pb.TestResult{TestId: "testA", ResultId: "res1"}
+		tr2 := &pb.TestResult{TestId: "testA", ResultId: "res2"}
+		tr3 := &pb.TestResult{TestId: "testB", ResultId: "res1"}
+
+		testCases := []struct {
+			name     string
+			input    []*pb.TestResultsNotification_TestResultsByWorkUnit
+			expected string
+		}{
+			{
+				name:     "Empty input",
+				input:    []*pb.TestResultsNotification_TestResultsByWorkUnit{},
+				expected: "",
+			},
+			{
+				name: "Single work unit, single test result",
+				input: []*pb.TestResultsNotification_TestResultsByWorkUnit{
+					{WorkUnitName: "wu1", TestResults: []*pb.TestResult{tr1}},
+				},
+				expected: "6148ca2bce03ca7754194e4a4ccd225e8aad492fccb1ea83dda239eae2cc2307",
+			},
+			{
+				name: "Single work unit, multiple test results",
+				input: []*pb.TestResultsNotification_TestResultsByWorkUnit{
+					{WorkUnitName: "wu1", TestResults: []*pb.TestResult{tr1, tr2}},
+				},
+				expected: "6148ca2bce03ca7754194e4a4ccd225e8aad492fccb1ea83dda239eae2cc2307",
+			},
+			{
+				name: "Single work unit, multiple test results - different order",
+				input: []*pb.TestResultsNotification_TestResultsByWorkUnit{
+					{WorkUnitName: "wu1", TestResults: []*pb.TestResult{tr2, tr1}},
+				},
+				expected: "dbc1036e16886afa80f0f0e6f4444d37d1490021738dce44803d2220b34a55ee",
+			},
+			{
+				name: "Multiple work units",
+				input: []*pb.TestResultsNotification_TestResultsByWorkUnit{
+					{WorkUnitName: "wu1", TestResults: []*pb.TestResult{tr1, tr2}},
+					{WorkUnitName: "wu2", TestResults: []*pb.TestResult{tr3}},
+				},
+				expected: "6148ca2bce03ca7754194e4a4ccd225e8aad492fccb1ea83dda239eae2cc2307",
+			},
+			{
+				name: "Multiple work units - different order",
+				input: []*pb.TestResultsNotification_TestResultsByWorkUnit{
+					{WorkUnitName: "wu2", TestResults: []*pb.TestResult{tr3}},
+					{WorkUnitName: "wu1", TestResults: []*pb.TestResult{tr1, tr2}},
+				},
+				expected: "624dd4c0b534a66e61ea7843f009de302c73ccb3da15ae95b514a9bc06c10970",
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				actual := generateDeduplicationKey(tc.input)
+				assert.Loosely(t, actual, should.Equal(tc.expected))
+			})
+		}
 	})
 }
