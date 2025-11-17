@@ -17,7 +17,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { usePlatform } from './usePlatform';
+import { useIsInPlatformScope, usePlatform } from './usePlatform';
 
 describe('usePlatform', () => {
   it('returns the correct platform when the platform is valid', () => {
@@ -30,7 +30,6 @@ describe('usePlatform', () => {
     );
     const { result } = renderHook(() => usePlatform(), { wrapper });
     expect(result.current.platform).toBe(Platform.ANDROID);
-    expect(result.current.inPlatformScope).toBe(true);
   });
 
   it('returns undefined when the platform is not in the URL', () => {
@@ -41,9 +40,8 @@ describe('usePlatform', () => {
         </Routes>
       </MemoryRouter>
     );
-    const { result } = renderHook(() => usePlatform(), { wrapper });
-    expect(result.current.platform).toBe(undefined);
-    expect(result.current.inPlatformScope).toBe(false);
+    const { result } = renderHook(() => useIsInPlatformScope(), { wrapper });
+    expect(result.current).toBe(false);
   });
 
   it('returns undefined when the platform is invalid', () => {
@@ -54,9 +52,8 @@ describe('usePlatform', () => {
         </Routes>
       </MemoryRouter>
     );
-    const { result } = renderHook(() => usePlatform(), { wrapper });
-    expect(result.current.platform).toBe(undefined);
-    expect(result.current.inPlatformScope).toBe(true);
+    const { result } = renderHook(() => useIsInPlatformScope(), { wrapper });
+    expect(result.current).toBe(false);
   });
 
   it('inPlatformScope is false when the platform is not in the URL', () => {
@@ -67,7 +64,7 @@ describe('usePlatform', () => {
         </Routes>
       </MemoryRouter>
     );
-    const { result } = renderHook(() => usePlatform(), { wrapper });
-    expect(result.current.inPlatformScope).toBe(false);
+    const { result } = renderHook(() => useIsInPlatformScope(), { wrapper });
+    expect(result.current).toBe(false);
   });
 });

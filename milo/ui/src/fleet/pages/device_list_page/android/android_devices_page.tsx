@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import {
 } from '@/common/components/params_pager';
 import { DeviceTable } from '@/fleet/components/device_table';
 import { DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_ft_selector';
-import { useCurrentTasks } from '@/fleet/components/device_table/use_current_tasks';
 import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import {
   filtersUpdater,
@@ -34,15 +33,14 @@ import {
 } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
-import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
+import { ANDROID_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
 import { getFeatureFlag } from '@/fleet/config/features';
+import { ANDROID_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { useDevices } from '@/fleet/hooks/use_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import { MainMetricsContainer } from '@/fleet/pages/device_list_page/main_metrics';
 import { SelectedOptions } from '@/fleet/types';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
@@ -57,14 +55,21 @@ import {
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { AutorepairJobsAlert } from './autorepair_jobs_alert';
-import { dimensionsToFilterOptions, filterOptionsPlaceholder } from './helpers';
-import { useDeviceDimensions } from './use_device_dimensions';
+import { AutorepairJobsAlert } from '../common/autorepair_jobs_alert';
+import {
+  dimensionsToFilterOptions,
+  filterOptionsPlaceholder,
+} from '../common/helpers';
+import { useDeviceDimensions } from '../common/use_device_dimensions';
+
+import { AndroidSummaryHeader } from './android_summary_header';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
 
-export const DeviceListPage = ({ platform }: { platform: Platform }) => {
+const platform = Platform.ANDROID;
+
+export const AndroidDevicesPage = () => {
   const { trackEvent } = useGoogleAnalytics();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [orderByParam] = useOrderByParam();
@@ -82,6 +87,7 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
     trackEvent('filter_changed', {
       componentName: 'device_list_filter',
     });
+
     setSearchParams(filtersUpdater(newSelectedOptions));
 
     // Clear out all the page tokens when the filter changes.
@@ -126,9 +132,9 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
   const columns = useMemo(() => {
     if (isDimensionsQueryProperlyLoaded)
       return _.uniq(
-        Object.keys(dimensionsQuery.data.baseDimensions)
-          .concat(Object.keys(dimensionsQuery.data.labels))
-          .concat('current_task'),
+        Object.keys(dimensionsQuery.data.baseDimensions).concat(
+          Object.keys(dimensionsQuery.data.labels),
+        ),
       );
     if (devicesQuery.data)
       return _.uniq(
@@ -151,7 +157,7 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
     const missingParamsColoumns = getWrongColumnsFromParams(
       searchParams,
       columns,
-      DEFAULT_DEVICE_COLUMNS[platform],
+      ANDROID_DEFAULT_COLUMNS,
     );
     if (missingParamsColoumns.length === 0) return;
     addWarning(
@@ -171,7 +177,6 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
     dimensionsQuery.isPending,
     searchParams,
     setSearchParams,
-    platform,
   ]);
 
   useEffect(() => {
@@ -210,11 +215,6 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
     setSearchParams(filtersUpdater({}));
   }, [addWarning, selectedOptions.error, setSearchParams]);
 
-  const currentTasks = useCurrentTasks(devices, {
-    enabled:
-      platform === Platform.CHROMEOS || platform === Platform.UNSPECIFIED,
-  });
-
   return (
     <div
       css={{
@@ -222,10 +222,7 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
       }}
     >
       <WarningNotifications warnings={warnings} />
-      <MainMetricsContainer
-        selectedOptions={selectedOptions.filters || {}}
-        platform={platform}
-      />
+      <AndroidSummaryHeader selectedOptions={selectedOptions.filters || {}} />
       <AutorepairJobsAlert />
       <div
         css={{
@@ -265,24 +262,18 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
         }}
       >
         <DeviceTable
-          key={platform}
+          defaultColumnIds={ANDROID_DEFAULT_COLUMNS}
+          localStorageKey={ANDROID_DEVICES_LOCAL_STORAGE_KEY}
           devices={devices}
           columnIds={columns}
           nextPageToken={nextPageToken}
           pagerCtx={pagerCtx}
-          isError={
-            devicesQuery.isError ||
-            dimensionsQuery.isError ||
-            currentTasks.isError
-          }
-          error={
-            devicesQuery.error || dimensionsQuery.error || currentTasks.error
-          }
+          isError={devicesQuery.isError || dimensionsQuery.isError}
+          error={devicesQuery.error || dimensionsQuery.error}
           isLoading={devicesQuery.isPending || devicesQuery.isPlaceholderData}
           isLoadingColumns={dimensionsQuery.isPending}
           totalRowCount={countQuery?.data?.total}
-          currentTaskMap={currentTasks.map}
-          platform={platform}
+          currentTaskMap={new Map<string, string>()} // if we want to make device table generic then this needs to be removed
         />
       </div>
     </div>
@@ -290,11 +281,7 @@ export const DeviceListPage = ({ platform }: { platform: Platform }) => {
 };
 
 export function Component() {
-  const { platform } = usePlatform();
-
-  const supportedPlatforms = getFeatureFlag('AndroidListDevices')
-    ? [Platform.CHROMEOS, Platform.ANDROID]
-    : [Platform.CHROMEOS];
+  const isSupported = getFeatureFlag('AndroidListDevices');
 
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
@@ -305,10 +292,10 @@ export function Component() {
         key="fleet-device-list-page"
       >
         <LoggedInBoundary>
-          {platform !== undefined && supportedPlatforms.includes(platform) ? (
-            <DeviceListPage platform={platform} />
+          {isSupported ? (
+            <AndroidDevicesPage />
           ) : (
-            <PlatformNotAvailable availablePlatforms={supportedPlatforms} />
+            <PlatformNotAvailable availablePlatforms={[Platform.CHROMEOS]} />
           )}
         </LoggedInBoundary>
       </RecoverableErrorBoundary>

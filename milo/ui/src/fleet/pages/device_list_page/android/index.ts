@@ -12,21 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
-
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
-import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-import { DeviceListPage } from './device_list_page';
-
-describe('<DeviceListPage />', () => {
-  it('should render', async () => {
-    render(
-      <FakeContextProvider>
-        <DeviceListPage platform={Platform.CHROMEOS} />
-      </FakeContextProvider>,
-    );
-
-    expect(screen.getByText('Main metrics')).toBeVisible();
-  });
-});
+import { Component } from './android_devices_page';
+export default Component;

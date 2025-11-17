@@ -12,5 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Component } from './admin_tasks_page';
-export default Component;
+import { render, screen } from '@testing-library/react';
+
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
+import { ChromeOsDevicesPage } from './chromeos_devices_page';
+
+describe('<ChromeOsDevicesPage />', () => {
+  it('should render', async () => {
+    render(
+      <FakeContextProvider
+        mountedPath="/test/:platform"
+        routerOptions={{
+          initialEntries: ['/test/chromeos'],
+        }}
+      >
+        <ChromeOsDevicesPage />
+      </FakeContextProvider>,
+    );
+
+    expect(screen.getByText('Main metrics')).toBeVisible();
+  });
+});

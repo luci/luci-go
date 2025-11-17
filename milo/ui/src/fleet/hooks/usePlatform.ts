@@ -14,17 +14,13 @@
 
 import { useNavigate, useParams } from 'react-router';
 
-import {
-  Platform,
-  platformFromJSON,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { generateDeviceListURL, platformToURL } from '../constants/paths';
+import { generateAnotherPlatformCorrespondingURL } from '../constants/paths';
 
 export type PlatformDetails = {
   setPlatform: (p: Platform) => void;
-  platform?: Platform;
-  inPlatformScope: boolean;
+  platform: Platform;
 };
 
 export const platformRenderString = (p?: Platform) => {
@@ -43,30 +39,46 @@ export const platformRenderString = (p?: Platform) => {
 };
 
 export function usePlatform(): PlatformDetails {
-  const { platform } = useParams();
+  const platform = useCurrentPlatform();
   const navigate = useNavigate();
 
   // Assume any page which has a platform route param is in the platform scope.
-  const inPlatformScope = !!platform;
+  if (platform === undefined) {
+    throw Error('Platform not available in this page');
+  }
 
   const setPlatform = (newPlatform: Platform) => {
-    if (!inPlatformScope) throw Error('Platform not available in this page');
-
-    navigate(generateDeviceListURL(platformToURL(newPlatform)));
+    navigate(generateAnotherPlatformCorrespondingURL(platform, newPlatform));
   };
 
   return {
-    platform: getPlatformEnum(platform),
+    platform: platform,
     setPlatform,
-    inPlatformScope,
   };
 }
 
-const getPlatformEnum = (platform: string | undefined) => {
-  if (!platform) return undefined;
-  try {
-    return platformFromJSON(platform.toUpperCase());
-  } catch (_) {
+export function useCurrentPlatform() {
+  const { platform } = useParams();
+  if (platform === undefined) {
     return undefined;
   }
-};
+
+  switch (platform) {
+    case 'android':
+      return Platform.ANDROID;
+    case 'chromeos':
+      return Platform.CHROMEOS;
+    case 'chromium':
+      return Platform.CHROMIUM;
+    case 'unspecified':
+      return Platform.UNSPECIFIED;
+    default:
+      return Platform.UNSPECIFIED;
+  }
+}
+
+export function useIsInPlatformScope() {
+  const platform = useCurrentPlatform();
+
+  return platform !== undefined && platform !== Platform.UNSPECIFIED;
+}
