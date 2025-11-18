@@ -205,6 +205,11 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 				Sources: &pb.Sources{
 					IsDirty: true,
 				},
+				ProducerResource: &pb.ProducerResource{
+					System:    "buildbucket",
+					DataRealm: "prod",
+					Name:      "builds/123",
+				},
 			},
 			RootWorkUnit: &pb.WorkUnit{
 				Kind:  "EXAMPLE_INVOCATION",
@@ -287,7 +292,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 				t.Run("empty", func(t *ftt.Test) {
 					req.RootInvocation.ProducerResource = nil
 					err := validateCreateRootInvocationRequest(req, cfg)
-					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, err, should.ErrLike("root_invocation: producer_resource: unspecified"))
 				})
 				t.Run("valid", func(t *ftt.Test) {
 					req.RootInvocation.ProducerResource = &pb.ProducerResource{
@@ -909,6 +914,11 @@ func TestCreateRootInvocation(t *testing.T) {
 							Position:   12345,
 						},
 					},
+				},
+				ProducerResource: &pb.ProducerResource{
+					System:    "buildbucket",
+					DataRealm: "prod",
+					Name:      "builds/123",
 				},
 			},
 			RootWorkUnit: &pb.WorkUnit{

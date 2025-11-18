@@ -324,6 +324,7 @@ type RootInvocation struct {
 	// Output only.
 	FinalizeTime *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=finalize_time,json=finalizeTime,proto3" json:"finalize_time,omitempty"`
 	// The resource that produced results in this root invocation.
+	// Required.
 	ProducerResource *ProducerResource `protobuf:"bytes,25,opt,name=producer_resource,json=producerResource,proto3" json:"producer_resource,omitempty"`
 	// The process definition of the root invocation. Root invocations with the same
 	// definition share the same root invocation history.

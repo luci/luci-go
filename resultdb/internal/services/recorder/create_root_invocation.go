@@ -355,10 +355,8 @@ func validateRootInvocationForCreate(inv *pb.RootInvocation) error {
 	// as per https://google.aip.dev/203.
 
 	// Validate producer_resource.
-	if inv.ProducerResource != nil {
-		if err := pbutil.ValidateProducerResource(inv.ProducerResource); err != nil {
-			return errors.Fmt("producer_resource: %w", err)
-		}
+	if err := pbutil.ValidateProducerResource(inv.ProducerResource); err != nil {
+		return errors.Fmt("producer_resource: %w", err)
 	}
 
 	// Validate definition.

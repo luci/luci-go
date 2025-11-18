@@ -197,6 +197,7 @@ message RootInvocation {
   // == General ================================================================
 
   // The resource that produced results in this root invocation.
+  // Required.
   ProducerResource producer_resource = 25 [
     (google.api.field_behavior) = IMMUTABLE,
     (google.api.field_behavior) = OUTPUT_ONLY
