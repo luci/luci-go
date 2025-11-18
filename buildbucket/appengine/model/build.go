@@ -399,6 +399,16 @@ func (b *Build) ToProto(ctx context.Context, m *BuildMask, redact func(*pb.Build
 	return build, nil
 }
 
+// ToDryRunProto returns the *pb.Build representation of this build when
+// creating it in DryRun mode: such builds don't have an ID and they (nor
+// any of their details) are stored in the datastore.
+func (b *Build) ToDryRunProto(ctx context.Context, m *BuildMask) (*pb.Build, error) {
+	// TODO: This ignores `m` to be compatible with historical ScheduleBuild
+	// implementation that ignored the mask here, see
+	// https: //chromium.googlesource.com/infra/luci/luci-go/+/66e2decbc/buildbucket/appengine/rpc/schedule_build.go#1959
+	return b.Proto, nil
+}
+
 // ToSimpleBuildProto returns the *pb.Build without loading steps, infra,
 // input/output properties. Unlike ToProto, does not support redaction of fields.
 func (b *Build) ToSimpleBuildProto(ctx context.Context) *pb.Build {

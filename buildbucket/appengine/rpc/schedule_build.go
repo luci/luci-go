@@ -19,8 +19,10 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/url"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -1636,11 +1638,14 @@ func getParentInfo(pBld *model.Build, pInfra *model.BuildInfra) (ancestors []int
 // For the requests with `ShadowInput`, the build should be scheduled in the
 // shadow bucket of the requested bucket. So we need to get the shadow buckets
 // for validation.
+//
+// This is called before the request is fully validated. It skips fetching
+// shadow buckets of requests that appear to be malformed.
 func getShadowBuckets(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (map[string]string, error) {
 	bcksWithShadow := stringset.New(0)
 	var buckets []*model.Bucket
 	for _, req := range reqs {
-		if req.GetShadowInput() == nil {
+		if req.GetShadowInput() == nil || protoutil.ValidateBuilderID(req.GetBuilder()) != nil {
 			continue
 		}
 		k := protoutil.FormatBucketID(req.Builder.Project, req.Builder.Bucket)
@@ -1696,20 +1701,15 @@ func builderCustomMetrics(ctx context.Context, globalCfg *pb.SettingsCfg, cfg *p
 	return cms
 }
 
-// scheduleBuilds handles requests to schedule builds. Requests must be validated and authorized.
-// The length of returned builds always equal to len(reqs).
-// A single returned error means a global error which applies to every request.
-// Otherwise, it would be a MultiError where len(MultiError) equals to len(reqs).
+// scheduleBuilds handles requests to schedule builds.
+//
+// Requests must be validated and authorized already. The length of returned
+// builds always equal to len(reqs). A single returned error means a global
+// error which applies to every request. Otherwise, it would be a MultiError
+// where len(MultiError) equals to len(reqs).
 func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, pMap *parentsMap, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
 	if len(reqs) == 0 {
 		return []*model.Build{}, nil
-	}
-
-	dryRun := reqs[0].DryRun
-	for _, req := range reqs {
-		if req.DryRun != dryRun {
-			return nil, appstatus.BadRequest(errors.New("all requests must have the same dry_run value"))
-		}
 	}
 
 	merr := make(errors.MultiError, len(reqs))
@@ -1764,8 +1764,8 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, pMap *parent
 				blds[i] = nil
 				continue
 			}
-			// Schedule a build with shadow info.
-			build = scheduleShadowBuild(ctx, reqs[origI], ancestors, shadowMap[bucket], globalCfg, cfg)
+			// Prepare a build with shadow info.
+			build = synthesizeShadowBuild(ctx, reqs[origI], ancestors, shadowMap[bucket], globalCfg, cfg)
 			if pBld != nil {
 				if pInfra == nil {
 					entities, err := common.GetBuildEntities(ctx, pBld.ID, model.BuildInfraKind)
@@ -1824,7 +1824,9 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, pMap *parent
 			continue
 		}
 	}
-	if dryRun {
+
+	// Either all requests are DryRun or none of them, see Builds.scheduleBuilds.
+	if reqs[0].DryRun {
 		if merr.First() == nil {
 			return blds, nil
 		}
@@ -1876,6 +1878,9 @@ func normalizeSchedule(req *pb.ScheduleBuildRequest) {
 
 // validateScheduleBuild validates and authorizes the given request, returning
 // a normalized version of the request and field mask.
+//
+// In particular replaces TemplateBuildId with the body of the corresponding
+// build.
 func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.Set, req *pb.ScheduleBuildRequest, pMap *parentsMap, shadowBuckets map[string]string) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
 	pBld, err := pMap.parentBuildForRequest(req)
 	if err != nil {
@@ -1938,7 +1943,6 @@ func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) 
 		return nil, err
 	}
 
-	// get shadow buckets.
 	shadowBuckets, err := getShadowBuckets(ctx, []*pb.ScheduleBuildRequest{req})
 	if err != nil {
 		return nil, errors.Fmt("error in getting shadow buckets: %w", err)
@@ -1967,52 +1971,57 @@ func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) 
 }
 
 // scheduleBuilds handles requests to schedule builds.
-// The length of returned builds and errors (if any) always equal to the len(reqs).
-// The returned error type is always MultiError.
+//
+// The length of returned builds and errors always equal to the len(reqs).
 func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs []*pb.ScheduleBuildRequest) ([]*pb.Build, errors.MultiError) {
+	if len(reqs) == 0 {
+		return nil, nil
+	}
+
 	// The ith error is the error associated with the ith request.
 	merr := make(errors.MultiError, len(reqs))
 	// The ith mask is the field mask derived from the ith request.
 	masks := make([]*model.BuildMask, len(reqs))
-	wellKnownExperiments := protoutil.WellKnownExperiments(globalCfg)
 
-	errorInBatch := func(err error, attach func(error) error) errors.MultiError {
+	// Puts the given error into all nil slots of `merr` and returns it.
+	errorInBatch := func(err error) ([]*pb.Build, errors.MultiError) {
 		for i, e := range merr {
 			if e == nil {
-				merr[i] = attach(err)
+				merr[i] = err
 			}
 		}
-		return merr
+		return slices.Repeat([]*pb.Build{nil}, len(reqs)), merr
 	}
 
-	// Validate parents.
-	pIDs := make([]int64, 0, len(reqs))
+	// Currently mixing dry run and non-dry run builds is not supported.
+	dryRun := reqs[0].DryRun
+	for _, req := range reqs {
+		if req.DryRun != dryRun {
+			return errorInBatch(appstatus.BadRequest(errors.New("all requests must have the same dry_run value")))
+		}
+	}
+
+	// Validate parents and fetch parent builds.
 	pIDSet := make(map[int64]struct{})
 	for _, req := range reqs {
-		if req.ParentBuildId == 0 {
-			continue
-		}
-		if _, ok := pIDSet[req.ParentBuildId]; !ok {
+		if req.ParentBuildId != 0 {
 			pIDSet[req.ParentBuildId] = struct{}{}
-			pIDs = append(pIDs, req.ParentBuildId)
 		}
 	}
-	pMap, err := validateParents(ctx, pIDs)
+	pMap, err := validateParents(ctx, slices.Collect(maps.Keys(pIDSet)))
 	if err != nil {
-		return nil, errorInBatch(err, func(err error) error {
-			return errors.Fmt("error in schedule batch: %w", err)
-		})
+		return errorInBatch(err)
 	}
 
-	// get shadow buckets.
+	// Get map "bucket ID => its shadow bucket" for builds that use shadow inputs.
 	shadowBuckets, err := getShadowBuckets(ctx, reqs)
 	if err != nil {
-		return nil, errorInBatch(err, func(err error) error {
-			return appstatus.BadRequest(errors.Fmt("error in schedule batch: %w", err))
-		})
+		return errorInBatch(err)
 	}
 
-	// Validate requests.
+	// Validate requests (including ACLs), expand TemplateBuildId. This can fetch
+	// builds, so do it in parallel.
+	wellKnownExperiments := protoutil.WellKnownExperiments(globalCfg)
 	_ = parallel.WorkPool(min(64, len(reqs)), func(work chan<- func() error) {
 		for i, req := range reqs {
 			work <- func() error {
@@ -2022,23 +2031,23 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 		}
 	})
 
+	// Try to schedule all still valid requests.
 	validReqs, idxMapValidReqs := getValidReqs(reqs, merr)
-	// Non-MultiError error should apply to every item and fail all requests.
 	blds, err := scheduleBuilds(ctx, globalCfg, pMap, validReqs...)
 	if err != nil {
 		if me, ok := err.(errors.MultiError); ok {
+			// Merge per-build errors into the overall multi-map.
 			merr = mergeErrs(merr, me, "", func(i int) int { return idxMapValidReqs[i] })
 		} else {
-			return nil, errorInBatch(err, func(err error) error {
-				if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
-					return err
-				} else {
-					return appstatus.Errorf(codes.Internal, "error in schedule batch: %s", err)
-				}
-			})
+			// Non-MultiError error should apply to every item and fail all requests.
+			if _, isAppStatusErr := appstatus.Get(err); !isAppStatusErr {
+				err = appstatus.Errorf(codes.Internal, "unexpected error scheduling builds: %s", err)
+			}
+			return errorInBatch(err)
 		}
 	}
 
+	// Assemble the scheduled builds from parts written into the datastore.
 	ret := make([]*pb.Build, len(blds))
 	_ = parallel.WorkPool(min(64, len(blds)), func(work chan<- func() error) {
 		for i, bld := range blds {
@@ -2047,18 +2056,22 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 			}
 			origI := idxMapValidReqs[i]
 			work <- func() error {
-				// Note: We don't redact the Build response here because we expect any user with
-				// BuildsAdd permission should also have BuildsGet.
-				// TODO(crbug/1042991): Don't re-read freshly written entities (see ToProto).
-				ret[i], merr[origI] = bld.ToProto(ctx, masks[origI], nil)
+				// Note: We don't redact the Build response here because we expect any
+				// user with BuildsAdd permission should also have BuildsGet.
+				//
+				// TODO(crbug/1042991): Don't re-read freshly written entities
+				// (see ToProto).
+				if dryRun {
+					ret[i], merr[origI] = bld.ToDryRunProto(ctx, masks[origI])
+				} else {
+					ret[i], merr[origI] = bld.ToProto(ctx, masks[origI], nil)
+				}
 				return nil
 			}
 		}
 	})
 
-	if merr.First() == nil {
-		return ret, nil
-	}
+	// Put builds from `ret` into places matching the original `reqs` list.
 	origRet := make([]*pb.Build, len(reqs))
 	for i, origI := range idxMapValidReqs {
 		if merr[origI] == nil {
@@ -2072,14 +2085,19 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 func mergeErrs(origErrs, errs errors.MultiError, reason string, idxMapper func(int) int) errors.MultiError {
 	for i, err := range errs {
 		if err != nil {
-			origErrs[idxMapper(i)] = errors.Fmt(reason+": %w", err)
+			if reason != "" {
+				origErrs[idxMapper(i)] = errors.Fmt("%s: %w", reason, err)
+			} else {
+				origErrs[idxMapper(i)] = err
+			}
 		}
 	}
 	return origErrs
 }
 
-// getValidReqs returns a list of valid ScheduleBuildRequest where its corresponding error is nil,
-// as well as an index map where idxMap[returnedIndex] == originalIndex.
+// getValidReqs returns a list of valid ScheduleBuildRequest where its
+// corresponding error is nil, as well as an index map where
+// idxMap[returnedIndex] == originalIndex.
 func getValidReqs(reqs []*pb.ScheduleBuildRequest, errs errors.MultiError) ([]*pb.ScheduleBuildRequest, []int) {
 	if len(reqs) != len(errs) {
 		panic("The length of reqs and the length of errs must be the same.")

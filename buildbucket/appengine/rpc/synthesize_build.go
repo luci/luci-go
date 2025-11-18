@@ -84,12 +84,12 @@ func synthesizeBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest) (*pb.
 	case err != nil:
 		return nil, errors.Fmt("failed to get builder config: %w", err)
 	default:
-		bld := scheduleShadowBuild(ctx, schReq, nil, bktCfg.Proto.Shadow, globalCfg, bldrCfg.Config)
+		bld := synthesizeShadowBuild(ctx, schReq, nil, bktCfg.Proto.Shadow, globalCfg, bldrCfg.Config)
 		return bld, nil
 	}
 }
 
-func scheduleShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest, ancestors []int64, shadowBucket string, globalCfg *pb.SettingsCfg, cfg *pb.BuilderConfig) *pb.Build {
+func synthesizeShadowBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest, ancestors []int64, shadowBucket string, globalCfg *pb.SettingsCfg, cfg *pb.BuilderConfig) *pb.Build {
 	origBucket := schReq.Builder.Bucket
 
 	cfgCopy := cfg

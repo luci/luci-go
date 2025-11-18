@@ -524,44 +524,6 @@ func TestScheduleBuild(t *testing.T) {
 			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 			testutil.PutBucket(ctx, "project", "bucket", nil)
 
-			t.Run("mixed", func(t *ftt.Test) {
-				reqs := []*pb.ScheduleBuildRequest{
-					{
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
-					},
-					{
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
-						DryRun: true,
-					},
-					{
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
-						DryRun: false,
-					},
-				}
-
-				blds, err := scheduleBuilds(ctx, globalCfg, nil, reqs...)
-				_, ok := err.(errors.MultiError)
-				assert.Loosely(t, ok, should.BeFalse)
-				assert.Loosely(t, err, should.ErrLike("all requests must have the same dry_run value"))
-				assert.Loosely(t, blds, should.BeNil)
-				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
-
-				// dry-run should not increase the build creation counter metric.
-				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, fv("")), should.BeNil)
-			})
-
 			t.Run("one", func(t *ftt.Test) {
 				req := &pb.ScheduleBuildRequest{
 					Builder: &pb.BuilderID{
@@ -6491,6 +6453,43 @@ func TestScheduleBuild(t *testing.T) {
 			},
 		}), should.BeNil)
 
+		t.Run("mixed", func(t *ftt.Test) {
+			reqs := []*pb.ScheduleBuildRequest{
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+				},
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					DryRun: true,
+				},
+				{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					DryRun: false,
+				},
+			}
+
+			rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
+			assert.Loosely(t, merr, should.HaveLength(3))
+			assert.Loosely(t, rsp, should.HaveLength(3))
+			for i := range 3 {
+				assert.Loosely(t, rsp[i], should.BeNil)
+				assert.Loosely(t, merr[i], should.ErrLike("all requests must have the same dry_run value"))
+			}
+			assert.Loosely(t, sch.Tasks(), should.BeEmpty)
+		})
+
 		t.Run("one", func(t *ftt.Test) {
 			reqs := []*pb.ScheduleBuildRequest{
 				{
@@ -6505,7 +6504,8 @@ func TestScheduleBuild(t *testing.T) {
 			}
 
 			rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
-			assert.Loosely(t, merr, should.BeEmpty)
+			assert.Loosely(t, merr.First(), should.BeNil)
+			assert.Loosely(t, merr, should.HaveLength(1))
 			assert.Loosely(t, rsp, should.HaveLength(1))
 			assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 				Builder: &pb.BuilderID{
@@ -6546,7 +6546,8 @@ func TestScheduleBuild(t *testing.T) {
 			}
 
 			rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
-			assert.Loosely(t, merr, should.BeEmpty)
+			assert.Loosely(t, merr.First(), should.BeNil)
+			assert.Loosely(t, merr, should.HaveLength(1))
 			assert.Loosely(t, rsp, should.HaveLength(1))
 			assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 				Builder: &pb.BuilderID{
@@ -6653,7 +6654,8 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
-			assert.Loosely(t, merr, should.BeEmpty)
+			assert.Loosely(t, merr.First(), should.BeNil)
+			assert.Loosely(t, merr, should.HaveLength(1))
 			assert.Loosely(t, rsp, should.HaveLength(1))
 			assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 				Builder: &pb.BuilderID{
@@ -7080,7 +7082,8 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
-				assert.Loosely(t, merr, should.BeEmpty)
+				assert.Loosely(t, merr.First(), should.BeNil)
+				assert.Loosely(t, merr, should.HaveLength(3))
 				assert.Loosely(t, rsp, should.HaveLength(3))
 				assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 					Builder: &pb.BuilderID{
