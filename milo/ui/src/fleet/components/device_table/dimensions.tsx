@@ -44,6 +44,7 @@ type DimensionOverride = Record<
     sortable?: boolean;
     getValue?: (device: Device) => string;
     renderCell?: (props: GridRenderCellParams) => React.JSX.Element | undefined;
+    orderByField?: string;
   }
 >;
 
@@ -64,27 +65,33 @@ export const BASE_DIMENSIONS: DimensionOverride = {
       (value) => generateChromeOsDeviceDetailsURL(value),
       false,
     ),
+    orderByField: 'id',
   },
   // TODO(b/400711755): Rename this to Asset Tag
   dut_id: {
     displayName: 'Dut ID',
     getValue: (device: Device) => device.dutId,
+    orderByField: 'dut_id',
   },
   type: {
     displayName: 'Type',
     getValue: (device: Device) => DeviceType[device.type],
+    orderByField: 'type',
   },
   state: {
     displayName: 'Lease state',
     getValue: getDeviceStateString,
+    orderByField: 'state',
   },
   host: {
     displayName: 'Address',
     getValue: (device: Device) => device.address?.host || '',
+    orderByField: 'host',
   },
   port: {
     displayName: 'Port',
     getValue: (device: Device) => String(device.address?.port) || '',
+    orderByField: 'port',
   },
   current_task: {
     displayName: 'Current Task',
@@ -143,12 +150,32 @@ export const ANDROID_DIMENSION_OVERRIDES: DimensionOverride = {
   id: {
     renderCell: (props) => {
       const row = props.row;
-      if (!(row.host_name && row.host_ip && row.id)) return undefined;
+      if (!(row.hostname && row.host_ip && row.id)) return undefined;
 
       return renderCellWithLink((_, { row }) => {
-        return `https://mobileharness-fe.corp.google.com/devicedetailview/${row.host_name}/${row.host_ip}/${row.id}`;
+        return `https://mobileharness-fe.corp.google.com/devicedetailview/${row.hostname}/${row.host_ip}/${row.id}`;
       })(props);
     },
+  },
+  host_group: {
+    displayName: 'host_group',
+    orderByField: 'host_group',
+  },
+  state: {
+    displayName: 'state',
+    orderByField: 'state',
+  },
+  hostname: {
+    displayName: 'hostname',
+    orderByField: 'hostname',
+  },
+  run_target: {
+    displayName: 'run_target',
+    orderByField: 'run_target',
+  },
+  lab_name: {
+    displayName: 'lab_name',
+    orderByField: 'lab_name',
   },
 };
 

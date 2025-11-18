@@ -32,6 +32,7 @@ import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { extractDutId } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { InvalidPageTokenAlert } from '@/fleet/utils/invalid-page-token-alert';
+import { parseOrderByParam } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   Device,
@@ -100,7 +101,6 @@ const getRow = (
     case Platform.ANDROID:
       return (device) =>
         Object.fromEntries([
-          ['id', device.id],
           ...Object.entries(device.deviceSpec?.labels ?? {}).map(
             ([label, { values }]) =>
               [
@@ -109,22 +109,38 @@ const getRow = (
                   labelValuesToString(values),
               ] as const,
           ),
+          ['id', device.id],
         ]);
     case Platform.CHROMIUM:
       return (_device) => ({}); // TODO;
   }
 };
 
-const getOrderByFromSortModel = (sortModel: GridSortModel): string => {
+const getOrderByFromSortModel = (
+  sortModel: GridSortModel,
+  platform: Platform,
+): string => {
   if (sortModel.length !== 1) {
     return '';
   }
 
   const sortItem = sortModel[0];
-  const sortKey = BASE_DIMENSIONS[sortItem.field]
-    ? sortItem.field
-    : `labels.${sortItem.field}`;
+  const sortKey =
+    COLUMN_OVERRIDES[platform][sortItem.field]?.orderByField ??
+    `labels.${sortItem.field}`;
   return sortItem.sort === 'desc' ? `${sortKey} desc` : sortKey;
+};
+
+const getSortModelFromOrderBy = (orderByValue: string): GridSortModel => {
+  const orderBy = parseOrderByParam(orderByValue);
+  return orderBy
+    ? [
+        {
+          field: orderBy.field.replace(/labels\."?(.*?)"?$/, '$1'),
+          sort: orderBy.direction,
+        },
+      ]
+    : [];
 };
 
 interface DeviceTableProps {
@@ -158,8 +174,7 @@ export function DeviceTable({
 }: DeviceTableProps) {
   const { platform } = usePlatform();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
-  const [sortModel, setSortModel] = useState<GridSortModel>([]);
-  const [, setOrderByParam] = useOrderByParam();
+  const [orderByParam, setOrderByParam] = useOrderByParam();
   const [rowSelectionModel, setRowSelectionModel] =
     useState<GridRowSelectionModel>([]);
   const [showCopySuccess, setShowCopySuccess] = useState(false);
@@ -197,8 +212,7 @@ export function DeviceTable({
 
   const onSortModelChange = (newSortModel: GridSortModel) => {
     // Update order by param and clear pagination token when the sort model changes.
-    setSortModel(newSortModel);
-    setOrderByParam(getOrderByFromSortModel(newSortModel));
+    setOrderByParam(getOrderByFromSortModel(newSortModel, platform));
     setSearchParams(emptyPageTokenUpdater(pagerCtx));
   };
 
@@ -248,7 +262,7 @@ export function DeviceTable({
           setRowSelectionModel(newRowSelectionModel);
         }}
         rowSelectionModel={rowSelectionModel}
-        sortModel={sortModel}
+        sortModel={getSortModelFromOrderBy(orderByParam)}
         onSortModelChange={onSortModelChange}
         rowCount={UNKNOWN_ROW_COUNT}
         sortingMode="server"
