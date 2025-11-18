@@ -30,12 +30,13 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
-	"go.chromium.org/luci/bisection/compilefailureanalysis/llm"
+	"go.chromium.org/luci/bisection/compilefailureanalysis/genai"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/lucinotify"
+	"go.chromium.org/luci/bisection/llm"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
@@ -125,7 +126,7 @@ func AnalyzeFailure(
 
 	// LLM analysis
 	// TODO: b/440598819 calling LUCI ResultAI server prod/dev endpoints
-	genaiAnalysisResult, err := llm.Analyze(c, genaiClient, analysis, regressionRange, compileLogs)
+	genaiAnalysisResult, err := genai.Analyze(c, genaiClient, analysis, regressionRange, compileLogs)
 	if err != nil {
 		logging.Errorf(c, "LLM analysis failed: %v", err)
 	} else {

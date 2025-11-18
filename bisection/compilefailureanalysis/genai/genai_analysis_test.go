@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package llm
+package genai
 
 import (
 	"context"
@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/bisection/internal/gitiles"
+	"go.chromium.org/luci/bisection/llm"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
@@ -150,7 +151,7 @@ func TestGenAiAnalysis(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockClient := NewMockClient(ctrl)
+	mockClient := llm.NewMockClient(ctrl)
 	// Mock the GenAI response to return commit ID and justification
 	mockResponse := "Commit ID: abc123def456\nJustification: Fix undefined function in test.cc"
 	mockClient.EXPECT().GenerateContent(gomock.Any(), gomock.Any()).Return(mockResponse, nil)

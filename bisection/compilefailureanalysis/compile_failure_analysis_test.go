@@ -32,12 +32,12 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	lnpb "go.chromium.org/luci/luci_notify/api/service/v1"
 
-	"go.chromium.org/luci/bisection/compilefailureanalysis/llm"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/internal/logdog"
 	"go.chromium.org/luci/bisection/internal/lucinotify"
+	"go.chromium.org/luci/bisection/llm"
 	"go.chromium.org/luci/bisection/model"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"

@@ -42,10 +42,10 @@ import (
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 
 	"go.chromium.org/luci/bisection/analysis"
-	"go.chromium.org/luci/bisection/compilefailureanalysis/llm"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/internal/tracing"
+	"go.chromium.org/luci/bisection/llm"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util"

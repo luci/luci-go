@@ -34,8 +34,8 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis"
-	"go.chromium.org/luci/bisection/compilefailureanalysis/llm"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
+	"go.chromium.org/luci/bisection/llm"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"

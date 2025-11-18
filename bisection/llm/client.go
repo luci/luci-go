@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package genai provides LLM-powered analysis for compile failure bisection.
+// Package llm provides a shared GenAI/LLM client for bisection analysis.
 package llm
 
 import (

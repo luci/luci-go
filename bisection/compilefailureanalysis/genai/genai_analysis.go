@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package genai provides LLM-powered analysis for compile failure bisection.
-package llm
+package genai
 
 import (
 	"context"
@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
+	"go.chromium.org/luci/bisection/llm"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/changelogutil"
@@ -46,7 +47,7 @@ Justification: <justification>`
 )
 
 // Analyze performs LLM-powered analysis to identify the culprit CL
-func Analyze(c context.Context, client Client, cfa *model.CompileFailureAnalysis, regressionRange *pb.RegressionRange, compileLogs *model.CompileLogs) (*model.CompileGenAIAnalysis, error) {
+func Analyze(c context.Context, client llm.Client, cfa *model.CompileFailureAnalysis, regressionRange *pb.RegressionRange, compileLogs *model.CompileLogs) (*model.CompileGenAIAnalysis, error) {
 	logging.Infof(c, "Starting GenAI analysis for compile failure")
 
 	// Create the GenAI analysis record
