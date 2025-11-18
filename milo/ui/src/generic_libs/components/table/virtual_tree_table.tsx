@@ -33,6 +33,7 @@ interface TreeTableProps {
   // Intended for filter bar or similar.
   headerChildren: React.ReactNode;
   placeholder: string;
+  height?: string | number;
 }
 
 const getVisibleRows = (
@@ -69,6 +70,7 @@ export function VirtualTreeTable({
   onExpandedRowIdsChange,
   headerChildren,
   placeholder,
+  height = '600px',
 }: TreeTableProps) {
   const theme = useTheme();
   const scrollElementRef = useRef(null);
@@ -131,7 +133,7 @@ export function VirtualTreeTable({
       component={Paper}
       ref={scrollElementRef}
       sx={{
-        height: '600px',
+        height: height,
         overflowY: 'auto',
         borderRadius: '8px',
         border: `1px solid ${theme.palette.divider}`,

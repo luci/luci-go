@@ -78,6 +78,16 @@ describe('DrawerTreeUtils', () => {
   });
 
   describe('buildStructuredTree', () => {
+    // Constants used for building expected unique IDs
+    const ROOT_ID = 'S-';
+    const ENCODED_MODULE_NAME = encodeURIComponent(
+      'infra/luci/luci-go > //:go_tests',
+    );
+    const ENCODED_VARIANT_HASH = encodeURIComponent('e3b0c44298fc1c14');
+    const ENCODED_FINE_NAME = encodeURIComponent(
+      'go.chromium.org/luci/resultdb/internal/services/resultdb',
+    );
+
     it('should handle missing hierarchy levels gracefully', () => {
       const variants: TestVariant[] = [
         {
@@ -130,16 +140,27 @@ describe('DrawerTreeUtils', () => {
         },
       ] as TestVariant[];
 
-      const tree = buildStructuredTree(StructuredTreeLevel.Module, variants);
+      const tree = buildStructuredTree(
+        StructuredTreeLevel.Module,
+        variants,
+        ROOT_ID,
+      );
+
+      // Expected IDs trace the hierarchy path, skipping level 2 (Coarse)
+      const ID_MODULE = `${ROOT_ID}0-${ENCODED_MODULE_NAME}-`;
+      const ID_VARIANT = `${ID_MODULE}1-${ENCODED_VARIANT_HASH}-`;
+      const ID_FINE = `${ID_VARIANT}3-${ENCODED_FINE_NAME}-`;
 
       expect(tree).toHaveLength(1);
       const moduleNode = tree[0];
+      expect(moduleNode.id).toBe(ID_MODULE);
       expect(moduleNode.label).toBe('infra/luci/luci-go > //:go_tests');
       expect(moduleNode.totalTests).toBe(4);
       expect(moduleNode.failedTests).toBe(2);
 
       expect(moduleNode.children).toHaveLength(1);
       const variantNode = moduleNode.children![0];
+      expect(variantNode.id).toBe(ID_VARIANT);
       expect(variantNode.label).toBe('e3b0c44298fc1c14');
       expect(variantNode.totalTests).toBe(4);
       expect(variantNode.failedTests).toBe(2);
@@ -147,6 +168,7 @@ describe('DrawerTreeUtils', () => {
       // Coarse level is skipped, so the next level should be fine level.
       expect(variantNode.children).toHaveLength(1);
       const fineNode = variantNode.children![0];
+      expect(fineNode.id).toBe(ID_FINE);
       expect(fineNode.label).toBe(
         'go.chromium.org/luci/resultdb/internal/services/resultdb',
       );
@@ -158,20 +180,29 @@ describe('DrawerTreeUtils', () => {
         a.label.localeCompare(b.label),
       );
 
+      // Leaf node IDs: FINE_ID + level + caseName
+      expect(caseNodes[0].id).toBe(`${ID_FINE}4-*fixture`);
       expect(caseNodes[0].label).toBe('*fixture');
       expect(caseNodes[0].totalTests).toBe(1);
       expect(caseNodes[0].failedTests).toBe(0);
 
+      expect(caseNodes[1].id).toBe(`${ID_FINE}4-TestBatchGetTestVariants`);
       expect(caseNodes[1].label).toBe('TestBatchGetTestVariants');
       expect(caseNodes[1].totalTests).toBe(1);
       expect(caseNodes[1].failedTests).toBe(1);
 
+      expect(caseNodes[2].id).toBe(
+        `${ID_FINE}4-TestBatchGetTestVariants%2FBatchGetTestVariants`,
+      );
       expect(caseNodes[2].label).toBe(
         'TestBatchGetTestVariants/BatchGetTestVariants',
       );
       expect(caseNodes[2].totalTests).toBe(1);
       expect(caseNodes[2].failedTests).toBe(1);
 
+      expect(caseNodes[3].id).toBe(
+        `${ID_FINE}4-TestValidListArtifactLinesRequest`,
+      );
       expect(caseNodes[3].label).toBe('TestValidListArtifactLinesRequest');
       expect(caseNodes[3].totalTests).toBe(1);
       expect(caseNodes[3].failedTests).toBe(0);
@@ -205,31 +236,46 @@ describe('DrawerTreeUtils', () => {
         },
       ] as TestVariant[];
 
-      const tree = buildStructuredTree(StructuredTreeLevel.Module, variants);
+      const tree = buildStructuredTree(
+        StructuredTreeLevel.Module,
+        variants,
+        ROOT_ID,
+      );
+
+      const ID_MODULE = `${ROOT_ID}0-module1-`;
+      const ID_VARIANT = `${ID_MODULE}1-hash1-`;
+      const ID_COARSE = `${ID_VARIANT}2-coarse1-`;
+      const ID_FINE = `${ID_COARSE}3-fine1-`;
 
       expect(tree).toHaveLength(1); // module1
       const moduleNode = tree[0];
+      expect(moduleNode.id).toBe(ID_MODULE);
       expect(moduleNode.label).toBe('module1');
       expect(moduleNode.totalTests).toBe(2);
       expect(moduleNode.failedTests).toBe(1);
 
       expect(moduleNode.children).toHaveLength(1); // hash1
       const variantNode = moduleNode.children![0];
+      expect(variantNode.id).toBe(ID_VARIANT);
       expect(variantNode.label).toBe('hash1');
 
       expect(variantNode.children).toHaveLength(1); // coarse1
       const coarseNode = variantNode.children![0];
+      expect(coarseNode.id).toBe(ID_COARSE);
       expect(coarseNode.label).toBe('coarse1');
 
       expect(coarseNode.children).toHaveLength(1); // fine1
       const fineNode = coarseNode.children![0];
+      expect(fineNode.id).toBe(ID_FINE);
       expect(fineNode.label).toBe('fine1');
 
       expect(fineNode.children).toHaveLength(2); // case1, case2
       const case1 = fineNode.children![0];
+      expect(case1.id).toBe(`${ID_FINE}4-case1`);
       expect(case1.label).toBe('case1');
       expect(case1.failedTests).toBe(1);
       const case2 = fineNode.children![1];
+      expect(case2.id).toBe(`${ID_FINE}4-case2`);
       expect(case2.label).toBe('case2');
       expect(case2.failedTests).toBe(0);
     });
@@ -265,7 +311,7 @@ describe('DrawerTreeUtils', () => {
   });
 
   describe('compressSingleChildNodes', () => {
-    it('should compress nodes with a single child', () => {
+    it('should compress nodes with a single child and update ID', () => {
       const tree: TestNavigationTreeNode[] = [
         {
           id: 'a',
@@ -282,7 +328,7 @@ describe('DrawerTreeUtils', () => {
           isStructured: true,
           children: [
             {
-              id: 'b',
+              id: 'a-b', // The unique path ID of the child
               label: 'b',
               level: 1,
               totalTests: 1,
@@ -296,7 +342,7 @@ describe('DrawerTreeUtils', () => {
               isStructured: true,
               children: [
                 {
-                  id: 'c',
+                  id: 'a-b-c', // The unique path ID of the leaf
                   label: 'c',
                   level: 2,
                   totalTests: 1,
@@ -317,9 +363,13 @@ describe('DrawerTreeUtils', () => {
       ];
       const compressed = compressSingleChildNodes(tree);
       expect(compressed).toHaveLength(1);
+      // The parent node 'a' and child 'b' are merged.
       expect(compressed[0].label).toBe('ab');
+      // The ID of the merged node is the CHILD's ID path.
+      expect(compressed[0].id).toBe('a-b');
       expect(compressed[0].children).toHaveLength(1);
       expect(compressed[0].children?.[0].label).toBe('c');
+      expect(compressed[0].children?.[0].id).toBe('a-b-c');
       expect(compressed[0].children?.[0].testVariant).toBeDefined();
     });
 
@@ -341,7 +391,7 @@ describe('DrawerTreeUtils', () => {
 
           children: [
             {
-              id: 'b',
+              id: 'a-b',
               label: 'b',
               level: 1,
               totalTests: 1,
@@ -356,7 +406,7 @@ describe('DrawerTreeUtils', () => {
               isStructured: true,
             },
             {
-              id: 'c',
+              id: 'a-c',
               label: 'c',
               level: 1,
               totalTests: 1,
@@ -374,7 +424,7 @@ describe('DrawerTreeUtils', () => {
         },
       ];
       const compressed = compressSingleChildNodes(tree);
-      expect(compressed).toEqual(tree); // No change
+      expect(compressed).toEqual(tree);
     });
 
     it('should not compress nodes with multiple children and different test variants', () => {
@@ -394,7 +444,7 @@ describe('DrawerTreeUtils', () => {
           isStructured: true,
           children: [
             {
-              id: 'b',
+              id: 'a-b',
               label: 'b',
               level: 1,
               totalTests: 1,
@@ -409,7 +459,7 @@ describe('DrawerTreeUtils', () => {
               isStructured: true,
             },
             {
-              id: 'c',
+              id: 'a-c',
               label: 'c',
               level: 1,
               totalTests: 1,
@@ -427,12 +477,17 @@ describe('DrawerTreeUtils', () => {
         },
       ];
       const compressed = compressSingleChildNodes(tree);
-      expect(compressed).toEqual(tree); // No change
+      expect(compressed).toEqual(tree);
     });
   });
 
   describe('buildFlatTree', () => {
-    it('should build a tree from flat test IDs', () => {
+    // Constants for building expected unique IDs
+    const ROOT_ID = 'F-';
+    const ID_A = `${ROOT_ID}a/`;
+    const ID_B = `${ID_A}b/`;
+
+    it('should build a tree from flat test IDs with unique path IDs', () => {
       const variants: TestVariant[] = [
         { testId: 'a/b/c', statusV2: TestVerdict_Status.FAILED },
         { testId: 'a/b/d', statusV2: TestVerdict_Status.PASSED },
@@ -443,30 +498,36 @@ describe('DrawerTreeUtils', () => {
 
       expect(tree).toHaveLength(1);
       const nodeA = tree[0];
+      expect(nodeA.id).toBe(ID_A);
       expect(nodeA.label).toBe('a/');
       expect(nodeA.totalTests).toBe(3);
       expect(nodeA.failedTests).toBe(2);
       expect(nodeA.children).toHaveLength(2);
 
       const nodeB = nodeA.children![0];
+      expect(nodeB.id).toBe(ID_B);
       expect(nodeB.label).toBe('b/');
       expect(nodeB.totalTests).toBe(2);
       expect(nodeB.failedTests).toBe(1);
       expect(nodeB.children).toHaveLength(2);
 
+      // Leaves
       const nodeC = nodeB.children![0];
+      expect(nodeC.id).toBe(`${ID_B}c`);
       expect(nodeC.label).toBe('c');
       expect(nodeC.totalTests).toBe(1);
       expect(nodeC.failedTests).toBe(1);
       expect(nodeC.children).toBeUndefined();
 
       const nodeD = nodeB.children![1];
+      expect(nodeD.id).toBe(`${ID_B}d`);
       expect(nodeD.label).toBe('d');
       expect(nodeD.totalTests).toBe(1);
       expect(nodeD.failedTests).toBe(0);
       expect(nodeD.children).toBeUndefined();
 
       const nodeE = nodeA.children![1];
+      expect(nodeE.id).toBe(`${ID_A}e`);
       expect(nodeE.label).toBe('e');
       expect(nodeE.totalTests).toBe(1);
       expect(nodeE.failedTests).toBe(1);
@@ -538,6 +599,24 @@ describe('DrawerTreeUtils', () => {
   });
 
   describe('buildHierarchyTreeAndFindExpandedIds', () => {
+    // Structured ID Constants
+    const S_ROOT = 'S-';
+    const S_MODULE = `${S_ROOT}0-module1-`;
+    const S_VARIANT = `${S_MODULE}1-vhash1-`;
+    const S_COARSE = `${S_VARIANT}2-coarse1-`;
+    const S_FINE = `${S_COARSE}3-fine1-`;
+
+    // Flat ID Constants
+    const F_ROOT = 'F-';
+    const F_A = `${F_ROOT}a/`;
+    const F_A_B = `${F_A}b/`;
+
+    // Compressed Flat ID Constants
+    const F_LONG = `${F_ROOT}long/`;
+    const F_LONG_PATH = `${F_LONG}path/`;
+    const F_LONG_PATH_TO = `${F_LONG_PATH}to/`;
+    const F_LONG_PATH_TO_SINGLE = `${F_LONG_PATH_TO}single/`;
+
     const structuredVariant1: TestVariant = {
       testId: 'test.structured.case1',
       variantHash: 'hash1',
@@ -585,12 +664,13 @@ describe('DrawerTreeUtils', () => {
         structuredVariant2,
       );
 
+      // IDs trace the full hierarchical path
       expect(idsToExpand).toEqual([
-        '0-module1',
-        '1-vhash1',
-        '2-coarse1',
-        '3-fine1',
-        '4-case2',
+        S_MODULE,
+        S_VARIANT,
+        S_COARSE,
+        S_FINE,
+        `${S_FINE}4-case2`,
       ]);
     });
 
@@ -601,7 +681,9 @@ describe('DrawerTreeUtils', () => {
         flatVariant2,
       );
 
-      expect(idsToExpand).toEqual(['a/-a/b/', 'a/b/d']);
+      // IDs trace the path via segments, excluding the top-level ancestor (F_A),
+      // as per observed runtime behavior of findNodePath.
+      expect(idsToExpand).toEqual([F_A_B, `${F_A_B}d`]);
     });
 
     it('should return the correct path for a compressed flat variant', () => {
@@ -611,10 +693,10 @@ describe('DrawerTreeUtils', () => {
         compressedVariant,
       );
 
-      expect(idsToExpand).toEqual([
-        'long/-long/path/-long/path/to/-long/path/to/single/',
-        'long/path/to/single/file',
-      ]);
+      // The compressed node ID is the full path up to the last compressed segment
+      const compressedNodeId = `${F_LONG_PATH_TO_SINGLE}file`;
+
+      expect(idsToExpand).toEqual([F_LONG_PATH_TO_SINGLE, compressedNodeId]);
     });
 
     it('should return the correct path from a mixed list (structured)', () => {
@@ -630,11 +712,11 @@ describe('DrawerTreeUtils', () => {
       );
 
       expect(idsToExpand).toEqual([
-        '0-module1',
-        '1-vhash1',
-        '2-coarse1',
-        '3-fine1',
-        '4-case1',
+        S_MODULE,
+        S_VARIANT,
+        S_COARSE,
+        S_FINE,
+        `${S_FINE}4-case1`,
       ]);
     });
 
@@ -650,7 +732,8 @@ describe('DrawerTreeUtils', () => {
         flatVariant1,
       );
 
-      expect(idsToExpand).toEqual(['a/-a/b/', 'a/b/c']);
+      // IDs trace the path via segments, excluding the top-level ancestor (F_A).
+      expect(idsToExpand).toEqual([F_A_B, `${F_A_B}c`]);
     });
 
     it('should return an empty array if no test ID is provided', () => {
@@ -669,8 +752,13 @@ describe('DrawerTreeUtils', () => {
         variants,
         missingVariant,
       );
-      // 'non' and 'existent' get compressed into one node
-      expect(idsToExpand).toEqual(['non/-non/existent/', 'non/existent/id']);
+
+      // 'non' and 'existent' paths get compressed into one node's ID
+      const F_NON = `${F_ROOT}non/`;
+      const F_NON_EXISTENT = `${F_NON}existent/`;
+      const COMPRESSED_ID = F_NON_EXISTENT;
+
+      expect(idsToExpand).toEqual([COMPRESSED_ID, `${F_NON_EXISTENT}id`]);
     });
 
     it('should inject and find missing variants even if hash is different', () => {
@@ -683,8 +771,8 @@ describe('DrawerTreeUtils', () => {
         variants,
         wrongHashVariant,
       );
-      // it will be injected alongside the existing 'a/b/c'
-      expect(idsToExpand).toEqual(['a/-a/b/', 'a/b/c']);
+      // IDs trace the path via segments, excluding the top-level ancestor (F_A).
+      expect(idsToExpand).toEqual([F_A_B, `${F_A_B}c`]);
     });
   });
 });

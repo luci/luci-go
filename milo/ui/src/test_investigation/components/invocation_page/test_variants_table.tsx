@@ -249,6 +249,7 @@ export function TestVariantsTable({
             ? 'No tests match the applied filters. Please remove the filters to see any available tests.'
             : 'All tests in the invocation passed.'
         }
+        height="75vh"
       />
     </Box>
   );

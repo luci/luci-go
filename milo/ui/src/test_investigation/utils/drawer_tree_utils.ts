@@ -56,7 +56,8 @@ function findNodePath(
       const path = findNodePath(node.children, testId, variantHash);
       // If a path was found in the children, prepend this node's ID and return.
       if (path.length > 0) {
-        return [node.id, ...path];
+        const fullPath = [node.id, ...path];
+        return fullPath;
       }
     }
   }
@@ -194,6 +195,7 @@ export function buildHierarchyTree(
   result.tree = buildStructuredTree(
     StructuredTreeLevel.Module,
     structuredVariants,
+    'S-', // Initial unique prefix for structured tree IDs
   );
   // 2. For the remaining test variants, build up a hierarchy based on longest common prefixes and common separator characters.
   const flatVariants = testVariants.filter(
@@ -235,9 +237,15 @@ export function structuredTreeLevelData(
   }
 }
 
+/**
+ * Recursively builds the structured test tree.
+ * The `parentId` parameter is used to ensure globally unique IDs by prefixing
+ * the ID of the current node with the full path ID of its parent.
+ */
 export function buildStructuredTree(
   level: StructuredTreeLevel,
   variants: TestVariant[],
+  parentId: string,
 ): TestNavigationTreeNode[] {
   if (!variants || variants.length === 0 || level > StructuredTreeLevel.Case) {
     return [];
@@ -254,16 +262,25 @@ export function buildStructuredTree(
   const nodes: TestNavigationTreeNode[] = [];
   if (level < StructuredTreeLevel.Case) {
     groups.forEach((groupVariants, data) => {
-      const children = buildStructuredTree(level + 1, groupVariants);
+      // Determine the prefix for children based on whether this level is skipped
+      const nextParentId =
+        data === ''
+          ? parentId // If skipped, children inherit the current node's parent ID
+          : `${parentId}${level}-${encodeURIComponent(data)}-`; // If not skipped, create new, unique ID
+
+      const children = buildStructuredTree(
+        level + 1,
+        groupVariants,
+        nextParentId,
+      );
+
       if (children.length > 0) {
         if (data === '') {
-          // This level was skipped for this group of variants.
-          // Instead of creating a node with an empty label,
-          // just add its children to the current list of nodes.
+          // This level was skipped. Just add its children to the current list.
           nodes.push(...children);
         } else {
           nodes.push({
-            id: `${level}-${data}`,
+            id: nextParentId,
             label: data,
             level: level,
             children: children,
@@ -306,8 +323,9 @@ export function buildStructuredTree(
     });
   } else {
     groups.forEach((variants, data) => {
+      // Leaf node ID uses the parentId and the leaf data
       nodes.push({
-        id: `${level}-${data}`,
+        id: `${parentId}${level}-${encodeURIComponent(data)}`,
         label: data,
         level: level,
         totalTests: 1,
@@ -342,12 +360,18 @@ export function buildFlatTree(
       value: tv,
     };
   });
-  return buildFlatTreeFromEntries(0, entries);
+  // Pass a unique prefix to the flat tree builder
+  return buildFlatTreeFromEntries(0, entries, 'F-');
 }
 
+/**
+ * Recursively builds the flat test tree based on path segments.
+ * The `parentId` is the unique prefix representing the path built so far.
+ */
 export function buildFlatTreeFromEntries(
   level: number,
   entries: FlatTreeEntry[],
+  parentId: string,
 ): TestNavigationTreeNode[] {
   if (!entries || entries.length === 0) {
     return [];
@@ -359,7 +383,8 @@ export function buildFlatTreeFromEntries(
     const component = entry.path[level] || '';
     if (entry.path.length - 1 === level) {
       leaves.push({
-        id: entry.path.slice(0, level + 1).join(''),
+        // Leaf ID: Use the unique path built so far, plus the final segment
+        id: `${parentId}${component}`,
         label: component,
         level: level,
         totalTests: 1,
@@ -386,10 +411,21 @@ export function buildFlatTreeFromEntries(
 
   const nodes: TestNavigationTreeNode[] = [];
   groups.forEach((groupEntries, component) => {
-    const children = buildFlatTreeFromEntries(level + 1, groupEntries);
+    // The next ID prefix must only add the NEW segment (component)
+    // to the existing unique parentId to prevent double-prefixing.
+    const newPathSegment = component;
+    const nextParentId = `${parentId}${newPathSegment}`;
+
+    // Recursive call uses the calculated unique ID as the new prefix
+    const children = buildFlatTreeFromEntries(
+      level + 1,
+      groupEntries,
+      nextParentId,
+    );
+
     if (children.length > 0) {
       nodes.push({
-        id: groupEntries[0].path.slice(0, level + 1).join(''),
+        id: nextParentId, // Use the unique ID path
         label: component,
         level: level,
         totalTests: children.reduce((sum, child) => sum + child.totalTests, 0),
@@ -464,7 +500,8 @@ export function compressSingleChildNodes(
         const child = parent.children[0];
         return {
           ...parent,
-          id: `${parent.id}-${child.id}`,
+          // Use the child's ID, as it contains the full, unique path of the combined node.
+          id: child.id,
           label: `${parent.label}${child.label}`,
           children: child.children,
           testVariant: child.testVariant,
