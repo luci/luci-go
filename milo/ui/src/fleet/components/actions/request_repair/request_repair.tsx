@@ -106,7 +106,7 @@ export const RequestRepair: React.FC<RequestRepairProps> = ({
   const fileDutRepairRequest = () => {
     trackEvent('request_repair', {
       componentName: 'request_repair_button',
-      selectedDuts: selectedDuts.length,
+      dutCount: selectedDuts.length,
     });
     const dutInfo = generateDutInfo(selectedDuts);
     const description = generateIssueDescription(dutInfo);

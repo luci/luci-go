@@ -45,10 +45,6 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
 
   // First, give users a modal to confirm if they want autorepair or not.
   const initializeAutorepair = () => {
-    trackEvent('run_autorepair', {
-      componentName: 'run_autorepair_button',
-      selectedDuts: selectedDuts.length,
-    });
     setSessionInfo({
       dutNames: dutNames,
     });
@@ -58,6 +54,10 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
   };
 
   const runAutorepair = async () => {
+    trackEvent('run_autorepair', {
+      componentName: 'run_autorepair_button',
+      dutCount: selectedDuts.length,
+    });
     setLoading(true);
     const flags = [];
     if (deepRepair) {
@@ -111,9 +111,11 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
         handleClose={handleClose}
         handleOk={runAutorepair}
         deepRepair={deepRepair}
-        handleDeepRepairChange={(checked) => setDeepRepair(checked)}
+        handleDeepRepairChange={(checked: boolean) => setDeepRepair(checked)}
         latestRepair={latestRepair}
-        handleLatestRepairChange={(checked) => setLatestRepair(checked)}
+        handleLatestRepairChange={(checked: boolean) =>
+          setLatestRepair(checked)
+        }
         loading={loading}
       />
     </>

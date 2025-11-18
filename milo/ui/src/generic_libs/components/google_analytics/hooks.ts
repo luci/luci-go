@@ -60,7 +60,7 @@ export interface EventPayload {
   /**
    * The number of DUTs selected for an action.
    */
-  selectedDuts?: number;
+  dutCount?: number;
 
   /**
    * The kind of content being copied.

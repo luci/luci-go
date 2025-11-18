@@ -65,7 +65,7 @@ export function CSVExportMenuItem({
       onClick={async () => {
         trackEvent('export_csv', {
           componentName: 'export_csv_button',
-          selectedDuts: idsToExport?.length,
+          dutCount: idsToExport?.length,
         });
         const result = await refetch();
 
