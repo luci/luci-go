@@ -6406,6 +6406,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			},
 		}
+		assert.NoErr(t, config.SetTestSettingsCfg(ctx, globalCfg))
 
 		testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
 			Name:     "bucket",
@@ -6480,7 +6481,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
+			rsp, merr := srv.scheduleBuilds(ctx, reqs)
 			assert.Loosely(t, merr, should.HaveLength(3))
 			assert.Loosely(t, rsp, should.HaveLength(3))
 			for i := range 3 {
@@ -6503,7 +6504,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
+			rsp, merr := srv.scheduleBuilds(ctx, reqs)
 			assert.Loosely(t, merr.First(), should.BeNil)
 			assert.Loosely(t, merr, should.HaveLength(1))
 			assert.Loosely(t, rsp, should.HaveLength(1))
@@ -6545,7 +6546,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
+			rsp, merr := srv.scheduleBuilds(ctx, reqs)
 			assert.Loosely(t, merr.First(), should.BeNil)
 			assert.Loosely(t, merr, should.HaveLength(1))
 			assert.Loosely(t, rsp, should.HaveLength(1))
@@ -6606,6 +6607,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			}
+			assert.NoErr(t, config.SetTestSettingsCfg(ctx, globalCfg))
 			ctx, _ = metrics.WithCustomMetrics(ctx, globalCfg)
 			cm1 := &pb.CustomMetricDefinition{
 				Name:       "chrome/infra/custom/builds/created",
@@ -6653,7 +6655,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			}
-			rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
+			rsp, merr := srv.scheduleBuilds(ctx, reqs)
 			assert.Loosely(t, merr.First(), should.BeNil)
 			assert.Loosely(t, merr, should.HaveLength(1))
 			assert.Loosely(t, rsp, should.HaveLength(1))
@@ -6726,7 +6728,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				rsp, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
+				rsp, err := srv.scheduleBuilds(ctx, reqs)
 				assert.Loosely(t, err, should.NotBeNil)
 				assert.Loosely(t, err[0], should.BeNil)
 				assert.Loosely(t, err[1], should.ErrLike(`requested resource not found or "user:caller@example.com" does not have permission to view it`))
@@ -6793,7 +6795,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				rsp, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
+				rsp, err := srv.scheduleBuilds(ctx, reqs)
 				assert.Loosely(t, err, should.NotBeNil)
 				assert.Loosely(t, err[0], should.BeNil)
 				assert.Loosely(t, err[1], should.ErrLike(`builder not found: "miss_builder_cfg"`))
@@ -6899,7 +6901,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				rsp, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
+				rsp, err := srv.scheduleBuilds(ctx, reqs)
 				assert.Loosely(t, err, should.NotBeNil)
 				assert.Loosely(t, err[0], should.BeNil)
 				assert.Loosely(t, err[1], should.ErrLike("failed to create the invocation for build id: 9021868963221610321: rpc error: code = Internal desc = internal error"))
@@ -7010,7 +7012,7 @@ func TestScheduleBuild(t *testing.T) {
 							authtest.MockPermission(userID, "project:parent_bucket", bbperms.BuildersGet),
 						),
 					})
-					_, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
+					_, merr := srv.scheduleBuilds(ctx, reqs)
 					assert.Loosely(t, merr, should.NotBeNil)
 					assert.Loosely(t, merr[0], grpccode.ShouldBe(codes.PermissionDenied))
 					assert.Loosely(t, merr[1], grpccode.ShouldBe(codes.PermissionDenied))
@@ -7028,7 +7030,7 @@ func TestScheduleBuild(t *testing.T) {
 							authtest.MockPermission(userID, "project:parent_bucket", bbperms.BuildsIncludeChild),
 						),
 					})
-					_, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
+					_, merr := srv.scheduleBuilds(ctx, reqs)
 					assert.Loosely(t, merr, should.NotBeNil)
 					assert.Loosely(t, merr[0], should.BeNil)
 					assert.Loosely(t, merr[1], grpccode.ShouldBe(codes.PermissionDenied))
@@ -7045,7 +7047,7 @@ func TestScheduleBuild(t *testing.T) {
 							authtest.MockPermission(userID, "project:parent_bucket", bbperms.BuildsIncludeChild),
 						),
 					})
-					_, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
+					_, merr := srv.scheduleBuilds(ctx, reqs)
 					assert.Loosely(t, merr.First(), should.BeNil)
 				})
 			})
@@ -7081,7 +7083,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				rsp, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
+				rsp, merr := srv.scheduleBuilds(ctx, reqs)
 				assert.Loosely(t, merr.First(), should.BeNil)
 				assert.Loosely(t, merr, should.HaveLength(3))
 				assert.Loosely(t, rsp, should.HaveLength(3))
@@ -7206,7 +7208,7 @@ func TestScheduleBuild(t *testing.T) {
 						ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
 					},
 				}
-				_, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
+				_, err := srv.scheduleBuilds(ctx, reqs)
 				assert.Loosely(t, err, should.ErrLike(`does not have permission "buildbucket.builds.add"`))
 			})
 
@@ -7245,7 +7247,7 @@ func TestScheduleBuild(t *testing.T) {
 						ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
 					},
 				}
-				blds, err := srv.scheduleBuilds(ctx, globalCfg, reqs)
+				blds, err := srv.scheduleBuilds(ctx, reqs)
 				assert.Loosely(t, err, should.NotBeNil)
 				assert.Loosely(t, err, should.ErrLike("scheduling a shadow build in the original bucket is not allowed"))
 				assert.Loosely(t, len(blds), should.Equal(3))

@@ -1924,59 +1924,23 @@ func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.S
 	return req, m, nil
 }
 
-// ScheduleBuild handles a request to schedule a build. Implements pb.BuildsServer.
-func (*Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.Build, error) {
-	checkTurboCIOAuthScope(ctx)
-
-	globalCfg, err := config.GetSettingsCfg(ctx)
-	if err != nil {
-		return nil, errors.Fmt("error fetching service config: %w", err)
-	}
-	wellKnownExperiments := protoutil.WellKnownExperiments(globalCfg)
-
-	var pIDs []int64
-	if req.ParentBuildId > 0 {
-		pIDs = append(pIDs, req.ParentBuildId)
-	}
-	pMap, err := validateParents(ctx, pIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	shadowBuckets, err := getShadowBuckets(ctx, []*pb.ScheduleBuildRequest{req})
-	if err != nil {
-		return nil, errors.Fmt("error in getting shadow buckets: %w", err)
-	}
-
-	req, m, err := validateScheduleBuild(ctx, wellKnownExperiments, req, pMap, shadowBuckets)
-	if err != nil {
-		return nil, err
-	}
-
-	blds, err := scheduleBuilds(ctx, globalCfg, pMap, req)
-	if err != nil {
-		if merr, ok := err.(errors.MultiError); ok {
-			return nil, merr.First()
-		}
-		return nil, err
-	}
-	if req.DryRun {
-		// Dry run build is not saved in datastore, return the proto right away.
-		return blds[0].Proto, nil
-	}
-
-	// No need to redact the response here, because we're effectively just sending
-	// the caller's inputs back to them.
-	return blds[0].ToProto(ctx, m, nil)
+// ScheduleBuild handles a request to schedule a build.
+//
+// Implements pb.BuildsServer.
+func (b *Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.Build, error) {
+	builds, merr := b.scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+	return builds[0], merr[0]
 }
 
-// scheduleBuilds handles requests to schedule builds.
+// scheduleBuilds handles requests to schedule a batch of builds.
 //
 // The length of returned builds and errors always equal to the len(reqs).
-func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs []*pb.ScheduleBuildRequest) ([]*pb.Build, errors.MultiError) {
+func (b *Builds) scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest) ([]*pb.Build, errors.MultiError) {
 	if len(reqs) == 0 {
 		return nil, nil
 	}
+
+	checkTurboCIOAuthScope(ctx)
 
 	// The ith error is the error associated with the ith request.
 	merr := make(errors.MultiError, len(reqs))
@@ -2017,6 +1981,12 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 	shadowBuckets, err := getShadowBuckets(ctx, reqs)
 	if err != nil {
 		return errorInBatch(err)
+	}
+
+	// Need the config to lookup experiments.
+	globalCfg, err := config.GetSettingsCfg(ctx)
+	if err != nil {
+		return errorInBatch(errors.Fmt("error fetching service config: %w", err))
 	}
 
 	// Validate requests (including ACLs), expand TemplateBuildId. This can fetch
