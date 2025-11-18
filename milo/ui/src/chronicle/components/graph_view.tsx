@@ -40,6 +40,7 @@ import {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
+import { useQueryNodes } from '@/common/hooks/grpc_query/turbo_ci/turbo_ci';
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 
 import { FakeGraphGenerator, WorkflowType } from '../fake_turboci_graph';
@@ -74,9 +75,27 @@ function Graph() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | undefined>(
     undefined,
   );
+
   const [workflowType, setWorkflowType] = useState<WorkflowType>(
     WorkflowType.ANDROID,
   );
+
+  // Example usage query nodes hook. Unused currently.
+  useQueryNodes({
+    query: [
+      {
+        select: {
+          workplan: {
+            inWorkplans: [{ id: 'fake_work_plan_id' }],
+          },
+          nodes: [],
+          checkPatterns: [],
+          stagePatterns: [],
+        },
+        typeUrls: [],
+      },
+    ],
+  });
 
   const turboCiGraph = useMemo(() => {
     const generator = new FakeGraphGenerator({
