@@ -359,36 +359,19 @@ export class FakeGraphGenerator {
     }
     this.testCheckIds.push(...t1s);
 
-    // Phase 2: Retry Build w/ Patch -> Tests
+    // Phase 2: Build w/o Patch -> Tests
     const b2Deps = t1s.map((t) => ({ check: t }));
-    const b2 = this.createBuildPair(
-      `${platformName}_Build_Patch_Retry`,
-      b2Deps,
-    );
+    const b2 = this.createBuildPair(`${platformName}_Build_NoPatch`, b2Deps);
     this.buildCheckIds.push(b2);
     const t2s: CheckId[] = [];
     for (let i = 0; i < numTests; i++) {
       t2s.push(
-        this.createTestPair(`${platformName}_Test_Patch_Retry_${i}`, [
+        this.createTestPair(`${platformName}_Test_NoPatch_${i}`, [
           { check: b2 },
         ]),
       );
     }
     this.testCheckIds.push(...t2s);
-
-    // Phase 3: Build w/o Patch -> Tests
-    const b3Deps = t2s.map((t) => ({ check: t }));
-    const b3 = this.createBuildPair(`${platformName}_Build_NoPatch`, b3Deps);
-    this.buildCheckIds.push(b3);
-    const t3s: CheckId[] = [];
-    for (let i = 0; i < numTests; i++) {
-      t3s.push(
-        this.createTestPair(`${platformName}_Test_NoPatch_${i}`, [
-          { check: b3 },
-        ]),
-      );
-    }
-    this.testCheckIds.push(...t3s);
   }
 
   // ==========================================
