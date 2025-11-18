@@ -13,6 +13,14 @@
 # limitations under the License.
 
 FROM gcr.io/distroless/static:latest
+
+# Their output will appear in the GCB logs.
+RUN echo "--- Listing /workspace ---" && ls -lA /workspace
+RUN echo "--- Listing / ---" && ls -lA /
+RUN echo "--- Listing current directory (expected /) ---" && ls -lA .
+# === End Debugging Steps ===
+
 WORKDIR /app
-COPY ./resultai ./  # Copies the binary built by the go_binary step
+COPY ./resultai ./
+# Copies the binary built by the go_binary step
 ENTRYPOINT ["./resultai"]
