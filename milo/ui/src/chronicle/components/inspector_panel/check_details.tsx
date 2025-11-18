@@ -30,7 +30,7 @@ export function CheckDetails({ view }: CheckDetailsProps) {
   if (!check) return null;
 
   const dependencyIds = (check.dependencies?.edges || [])
-    .map((edge) => edge.target?.check?.id || edge.target?.stage?.id)
+    .map((edge) => edge.check?.identifier?.id || edge.stage?.identifier?.id)
     .filter((id): id is string => !!id)
     .sort();
 

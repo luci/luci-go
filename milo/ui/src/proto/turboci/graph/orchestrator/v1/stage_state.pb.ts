@@ -44,9 +44,12 @@ export enum StageState {
   STAGE_STATE_ATTEMPTING = 20,
   /**
    * STAGE_STATE_AWAITING_GROUP - The Stage has concluded it's attempts to execute (e.g. the final attempt
-   * succeeded or the Stage ran out of retries/time), but during its run one or
-   * more StageAttempts emitted additional Stages which it added to
-   * Stage.continuation_group, and one or more of those are not yet FINAL.
+   * succeeded or the Stage ran out of retries/time), but has declared that more
+   * work is still ongoing, which needs to be resolved for the Stage to be
+   * considered FINAL (encoded in `Stage.continuation_group`).
+   *
+   * Once the Stage's continuation_group is resolved, the Stage will advance to
+   * FINAL.
    */
   STAGE_STATE_AWAITING_GROUP = 30,
   /**

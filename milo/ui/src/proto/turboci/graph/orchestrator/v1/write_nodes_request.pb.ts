@@ -6,7 +6,6 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { Any } from "../../../../google/protobuf/any.pb";
 import { Check, Identifier, Stage } from "../../ids/v1/identifier.pb";
 import { CheckKind, checkKindFromJSON, checkKindToJSON } from "./check_kind.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
@@ -16,6 +15,7 @@ import { Stage_Assignment } from "./stage.pb";
 import { StageAttemptExecutionPolicy } from "./stage_attempt_execution_policy.pb";
 import { StageAttemptState, stageAttemptStateFromJSON, stageAttemptStateToJSON } from "./stage_attempt_state.pb";
 import { StageExecutionPolicy } from "./stage_execution_policy.pb";
+import { Value } from "./value.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
@@ -94,8 +94,9 @@ export interface WriteNodesRequest {
 }
 
 /**
- * RealmValue describes a standard Any which resides in a given security
- * realm.
+ * RealmValue describes a Value which resides in a given security realm.
+ *
+ * This is used to write objects which appear in the graph as Datum messages.
  */
 export interface WriteNodesRequest_RealmValue {
   /**
@@ -111,7 +112,7 @@ export interface WriteNodesRequest_RealmValue {
     | string
     | undefined;
   /** The value to set. */
-  readonly value?: Any | undefined;
+  readonly value?: Value | undefined;
 }
 
 /**
@@ -125,7 +126,11 @@ export interface WriteNodesRequest_RealmValue {
 export interface WriteNodesRequest_DependencyGroup {
   /** Singular edges in this group. */
   readonly edges: readonly Edge[];
-  /** Sub-groups in this group. */
+  /**
+   * Sub-groups in this group.
+   *
+   * May not contain empty groups.
+   */
   readonly groups: readonly WriteNodesRequest_DependencyGroup[];
   /**
    * Number of edges and/or groups which need to be satisfied for this
@@ -134,6 +139,20 @@ export interface WriteNodesRequest_DependencyGroup {
    * See `Dependencies.Group.threshold`.
    */
   readonly threshold?: number | undefined;
+}
+
+/** A single Stage.Attempt.Progress write message. */
+export interface WriteNodesRequest_StageAttemptProgress {
+  /**
+   * Low-effort/human-readable progress information.
+   *
+   * Better than nothing, but not good for machines to parse.
+   */
+  readonly msg?:
+    | string
+    | undefined;
+  /** Machine-readable details for this progress item. */
+  readonly details: readonly Value[];
 }
 
 /** Reason is the write-request analogue of Edit.Reason. */
@@ -162,7 +181,7 @@ export interface WriteNodesRequest_Reason {
    * conjunction with workflow-specific details as part of the same write
    * record.
    */
-  readonly details: readonly Any[];
+  readonly details: readonly Value[];
 }
 
 /**
@@ -292,6 +311,8 @@ export interface WriteNodesRequest_CheckWrite {
    *
    * If set, used to populate the dependencies.edges and
    * dependencies.predicate fields in the target Check.
+   *
+   * To clear dependencies, set this to an empty DependencyGroup.
    */
   readonly dependencies?:
     | WriteNodesRequest_DependencyGroup
@@ -348,6 +369,9 @@ export interface WriteNodesRequest_StageWrite {
    * Otherwise, the Stage must belong to the stage_attempt_token's WorkPlan,
    * or the caller must have the additional "turboci.workplans.writeExternal"
    * permission in the stage's realm.
+   *
+   * The `is_worknode` field should also be omitted - it will be filled in by
+   * the server according to the type of `args`.
    */
   readonly identifier?:
     | Stage
@@ -369,7 +393,7 @@ export interface WriteNodesRequest_StageWrite {
    * feels a bit wishy-washy.
    */
   readonly args?:
-    | Any
+    | Value
     | undefined;
   /**
    * Realm to assign to this Stage.
@@ -393,6 +417,19 @@ export interface WriteNodesRequest_StageWrite {
    *
    * If the Stage already exists, this will only result in an error if it
    * doesn't match the existing dependencies identically.
+   *
+   * NOTE: Currently Stages in this group must only point to Stages created by
+   * the Stage performing this write. In theory, this should help prevent
+   * excessive coupling between different, unrelated, stage implementations.
+   *
+   * If arbitrary stage dependencies are allowed, it could cause errors when
+   * an upstream stage changes it's implementation and no longer produces the
+   * stages the downstream one expects. Instead, the upstream stage should
+   * create a Check which can remain stable across the implementation
+   * versions, and the downstream stages should depend on that.
+   *
+   * However, if the current writer is the one creating the stages, then there
+   * is no implementation risk.
    */
   readonly dependencies?:
     | WriteNodesRequest_DependencyGroup
@@ -460,23 +497,53 @@ export interface WriteNodesRequest_CurrentStageWrite {
     | StageAttemptState
     | undefined;
   /**
-   * Ensure all provided edges are included in `Stage.continuation_group`.
+   * Sets the StageAttempt.process_uid field.
    *
-   * Edges are deduplicated with `Stage.continuation_group` if they have the
-   * same `target`.
+   * MUST be supplied when transitioning a StageAttempt to RUNNING.
    *
-   * TBD: When edges have conditions, will want to coalesce the conditions
-   * with `and` instead? Or just reject multiple conditional Edges with the
-   * same target? Or replace the condition in the existing Edge?
+   * If the field is already populated in the StageAttempt, this value must
+   * match - otherwise the write is rejected with an error detail of
+   * StageAttemptClaimedFailure.
+   *
+   * Refer to Stage.Attempt.process_uid.
    */
-  readonly ensureInContinuationGroup: readonly Edge[];
+  readonly processUid?:
+    | string
+    | undefined;
   /**
-   * The modified execution policy for this StageAttempt.
+   * Continuation Group predicate for this Stage.
+   *
+   * If set, used to populate the continuation_group.edges and
+   * continuation_group.predicate fields in this Stage.
+   *
+   * Edges here must only point to Stages which were created_by this Stage.
+   */
+  readonly continuationGroup?:
+    | WriteNodesRequest_DependencyGroup
+    | undefined;
+  /**
+   * The modified execution policy for this Stage Attempt.
    *
    * This field can only be set by the stage executor when advancing the
    * stage attempt state PENDING -> (SCHEDULED|RUNNING).
    */
-  readonly attemptExecutionPolicy?: StageAttemptExecutionPolicy | undefined;
+  readonly attemptExecutionPolicy?:
+    | StageAttemptExecutionPolicy
+    | undefined;
+  /**
+   * Adds details to the Stage Attempt.details field.
+   *
+   * If a data type here is already present in the database, the data here
+   * must exactly equal the existing data; Otherwise the write is rejected.
+   */
+  readonly details: readonly Value[];
+  /**
+   * Progress messages to add to the current StageAttempt.
+   *
+   * It is a good idea to do these progress updates transactionally, otherwise
+   * it's possible to double-append them.
+   */
+  readonly progress: readonly WriteNodesRequest_StageAttemptProgress[];
 }
 
 function createBaseWriteNodesRequest(): WriteNodesRequest {
@@ -641,7 +708,7 @@ export const WriteNodesRequest_RealmValue: MessageFns<WriteNodesRequest_RealmVal
       writer.uint32(10).string(message.realm);
     }
     if (message.value !== undefined) {
-      Any.encode(message.value, writer.uint32(18).fork()).join();
+      Value.encode(message.value, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -666,7 +733,7 @@ export const WriteNodesRequest_RealmValue: MessageFns<WriteNodesRequest_RealmVal
             break;
           }
 
-          message.value = Any.decode(reader, reader.uint32());
+          message.value = Value.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -681,7 +748,7 @@ export const WriteNodesRequest_RealmValue: MessageFns<WriteNodesRequest_RealmVal
   fromJSON(object: any): WriteNodesRequest_RealmValue {
     return {
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
-      value: isSet(object.value) ? Any.fromJSON(object.value) : undefined,
+      value: isSet(object.value) ? Value.fromJSON(object.value) : undefined,
     };
   },
 
@@ -691,7 +758,7 @@ export const WriteNodesRequest_RealmValue: MessageFns<WriteNodesRequest_RealmVal
       obj.realm = message.realm;
     }
     if (message.value !== undefined) {
-      obj.value = Any.toJSON(message.value);
+      obj.value = Value.toJSON(message.value);
     }
     return obj;
   },
@@ -702,7 +769,7 @@ export const WriteNodesRequest_RealmValue: MessageFns<WriteNodesRequest_RealmVal
   fromPartial(object: DeepPartial<WriteNodesRequest_RealmValue>): WriteNodesRequest_RealmValue {
     const message = createBaseWriteNodesRequest_RealmValue() as any;
     message.realm = object.realm ?? undefined;
-    message.value = (object.value !== undefined && object.value !== null) ? Any.fromPartial(object.value) : undefined;
+    message.value = (object.value !== undefined && object.value !== null) ? Value.fromPartial(object.value) : undefined;
     return message;
   },
 };
@@ -801,6 +868,82 @@ export const WriteNodesRequest_DependencyGroup: MessageFns<WriteNodesRequest_Dep
   },
 };
 
+function createBaseWriteNodesRequest_StageAttemptProgress(): WriteNodesRequest_StageAttemptProgress {
+  return { msg: undefined, details: [] };
+}
+
+export const WriteNodesRequest_StageAttemptProgress: MessageFns<WriteNodesRequest_StageAttemptProgress> = {
+  encode(message: WriteNodesRequest_StageAttemptProgress, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.msg !== undefined) {
+      writer.uint32(10).string(message.msg);
+    }
+    for (const v of message.details) {
+      Value.encode(v!, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): WriteNodesRequest_StageAttemptProgress {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseWriteNodesRequest_StageAttemptProgress() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.msg = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.details.push(Value.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): WriteNodesRequest_StageAttemptProgress {
+    return {
+      msg: isSet(object.msg) ? globalThis.String(object.msg) : undefined,
+      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => Value.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: WriteNodesRequest_StageAttemptProgress): unknown {
+    const obj: any = {};
+    if (message.msg !== undefined) {
+      obj.msg = message.msg;
+    }
+    if (message.details?.length) {
+      obj.details = message.details.map((e) => Value.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<WriteNodesRequest_StageAttemptProgress>): WriteNodesRequest_StageAttemptProgress {
+    return WriteNodesRequest_StageAttemptProgress.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<WriteNodesRequest_StageAttemptProgress>): WriteNodesRequest_StageAttemptProgress {
+    const message = createBaseWriteNodesRequest_StageAttemptProgress() as any;
+    message.msg = object.msg ?? undefined;
+    message.details = object.details?.map((e) => Value.fromPartial(e)) || [];
+    return message;
+  },
+};
+
 function createBaseWriteNodesRequest_Reason(): WriteNodesRequest_Reason {
   return { realm: undefined, reason: undefined, details: [] };
 }
@@ -814,7 +957,7 @@ export const WriteNodesRequest_Reason: MessageFns<WriteNodesRequest_Reason> = {
       writer.uint32(18).string(message.reason);
     }
     for (const v of message.details) {
-      Any.encode(v!, writer.uint32(26).fork()).join();
+      Value.encode(v!, writer.uint32(26).fork()).join();
     }
     return writer;
   },
@@ -847,7 +990,7 @@ export const WriteNodesRequest_Reason: MessageFns<WriteNodesRequest_Reason> = {
             break;
           }
 
-          message.details.push(Any.decode(reader, reader.uint32()));
+          message.details.push(Value.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -863,7 +1006,7 @@ export const WriteNodesRequest_Reason: MessageFns<WriteNodesRequest_Reason> = {
     return {
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       reason: isSet(object.reason) ? globalThis.String(object.reason) : undefined,
-      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => Any.fromJSON(e)) : [],
+      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => Value.fromJSON(e)) : [],
     };
   },
 
@@ -876,7 +1019,7 @@ export const WriteNodesRequest_Reason: MessageFns<WriteNodesRequest_Reason> = {
       obj.reason = message.reason;
     }
     if (message.details?.length) {
-      obj.details = message.details.map((e) => Any.toJSON(e));
+      obj.details = message.details.map((e) => Value.toJSON(e));
     }
     return obj;
   },
@@ -888,7 +1031,7 @@ export const WriteNodesRequest_Reason: MessageFns<WriteNodesRequest_Reason> = {
     const message = createBaseWriteNodesRequest_Reason() as any;
     message.realm = object.realm ?? undefined;
     message.reason = object.reason ?? undefined;
-    message.details = object.details?.map((e) => Any.fromPartial(e)) || [];
+    message.details = object.details?.map((e) => Value.fromPartial(e)) || [];
     return message;
   },
 };
@@ -1182,7 +1325,7 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
       Stage.encode(message.identifier, writer.uint32(10).fork()).join();
     }
     if (message.args !== undefined) {
-      Any.encode(message.args, writer.uint32(18).fork()).join();
+      Value.encode(message.args, writer.uint32(18).fork()).join();
     }
     if (message.realm !== undefined) {
       writer.uint32(26).string(message.realm);
@@ -1222,7 +1365,7 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
             break;
           }
 
-          message.args = Any.decode(reader, reader.uint32());
+          message.args = Value.decode(reader, reader.uint32());
           continue;
         }
         case 3: {
@@ -1277,7 +1420,7 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
   fromJSON(object: any): WriteNodesRequest_StageWrite {
     return {
       identifier: isSet(object.identifier) ? Stage.fromJSON(object.identifier) : undefined,
-      args: isSet(object.args) ? Any.fromJSON(object.args) : undefined,
+      args: isSet(object.args) ? Value.fromJSON(object.args) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       dependencies: isSet(object.dependencies)
         ? WriteNodesRequest_DependencyGroup.fromJSON(object.dependencies)
@@ -1298,7 +1441,7 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
       obj.identifier = Stage.toJSON(message.identifier);
     }
     if (message.args !== undefined) {
-      obj.args = Any.toJSON(message.args);
+      obj.args = Value.toJSON(message.args);
     }
     if (message.realm !== undefined) {
       obj.realm = message.realm;
@@ -1326,7 +1469,7 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
     message.identifier = (object.identifier !== undefined && object.identifier !== null)
       ? Stage.fromPartial(object.identifier)
       : undefined;
-    message.args = (object.args !== undefined && object.args !== null) ? Any.fromPartial(object.args) : undefined;
+    message.args = (object.args !== undefined && object.args !== null) ? Value.fromPartial(object.args) : undefined;
     message.realm = object.realm ?? undefined;
     message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
       ? WriteNodesRequest_DependencyGroup.fromPartial(object.dependencies)
@@ -1342,7 +1485,14 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
 };
 
 function createBaseWriteNodesRequest_CurrentStageWrite(): WriteNodesRequest_CurrentStageWrite {
-  return { state: undefined, ensureInContinuationGroup: [], attemptExecutionPolicy: undefined };
+  return {
+    state: undefined,
+    processUid: undefined,
+    continuationGroup: undefined,
+    attemptExecutionPolicy: undefined,
+    details: [],
+    progress: [],
+  };
 }
 
 export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_CurrentStageWrite> = {
@@ -1350,11 +1500,20 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
     if (message.state !== undefined) {
       writer.uint32(8).int32(message.state);
     }
-    for (const v of message.ensureInContinuationGroup) {
-      Edge.encode(v!, writer.uint32(26).fork()).join();
+    if (message.processUid !== undefined) {
+      writer.uint32(18).string(message.processUid);
+    }
+    if (message.continuationGroup !== undefined) {
+      WriteNodesRequest_DependencyGroup.encode(message.continuationGroup, writer.uint32(26).fork()).join();
     }
     if (message.attemptExecutionPolicy !== undefined) {
       StageAttemptExecutionPolicy.encode(message.attemptExecutionPolicy, writer.uint32(34).fork()).join();
+    }
+    for (const v of message.details) {
+      Value.encode(v!, writer.uint32(42).fork()).join();
+    }
+    for (const v of message.progress) {
+      WriteNodesRequest_StageAttemptProgress.encode(v!, writer.uint32(50).fork()).join();
     }
     return writer;
   },
@@ -1374,12 +1533,20 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
           message.state = reader.int32() as any;
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.processUid = reader.string();
+          continue;
+        }
         case 3: {
           if (tag !== 26) {
             break;
           }
 
-          message.ensureInContinuationGroup.push(Edge.decode(reader, reader.uint32()));
+          message.continuationGroup = WriteNodesRequest_DependencyGroup.decode(reader, reader.uint32());
           continue;
         }
         case 4: {
@@ -1388,6 +1555,22 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
           }
 
           message.attemptExecutionPolicy = StageAttemptExecutionPolicy.decode(reader, reader.uint32());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.details.push(Value.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.progress.push(WriteNodesRequest_StageAttemptProgress.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -1402,12 +1585,17 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
   fromJSON(object: any): WriteNodesRequest_CurrentStageWrite {
     return {
       state: isSet(object.state) ? stageAttemptStateFromJSON(object.state) : undefined,
-      ensureInContinuationGroup: globalThis.Array.isArray(object?.ensureInContinuationGroup)
-        ? object.ensureInContinuationGroup.map((e: any) => Edge.fromJSON(e))
-        : [],
+      processUid: isSet(object.processUid) ? globalThis.String(object.processUid) : undefined,
+      continuationGroup: isSet(object.continuationGroup)
+        ? WriteNodesRequest_DependencyGroup.fromJSON(object.continuationGroup)
+        : undefined,
       attemptExecutionPolicy: isSet(object.attemptExecutionPolicy)
         ? StageAttemptExecutionPolicy.fromJSON(object.attemptExecutionPolicy)
         : undefined,
+      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => Value.fromJSON(e)) : [],
+      progress: globalThis.Array.isArray(object?.progress)
+        ? object.progress.map((e: any) => WriteNodesRequest_StageAttemptProgress.fromJSON(e))
+        : [],
     };
   },
 
@@ -1416,11 +1604,20 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
     if (message.state !== undefined) {
       obj.state = stageAttemptStateToJSON(message.state);
     }
-    if (message.ensureInContinuationGroup?.length) {
-      obj.ensureInContinuationGroup = message.ensureInContinuationGroup.map((e) => Edge.toJSON(e));
+    if (message.processUid !== undefined) {
+      obj.processUid = message.processUid;
+    }
+    if (message.continuationGroup !== undefined) {
+      obj.continuationGroup = WriteNodesRequest_DependencyGroup.toJSON(message.continuationGroup);
     }
     if (message.attemptExecutionPolicy !== undefined) {
       obj.attemptExecutionPolicy = StageAttemptExecutionPolicy.toJSON(message.attemptExecutionPolicy);
+    }
+    if (message.details?.length) {
+      obj.details = message.details.map((e) => Value.toJSON(e));
+    }
+    if (message.progress?.length) {
+      obj.progress = message.progress.map((e) => WriteNodesRequest_StageAttemptProgress.toJSON(e));
     }
     return obj;
   },
@@ -1431,11 +1628,16 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
   fromPartial(object: DeepPartial<WriteNodesRequest_CurrentStageWrite>): WriteNodesRequest_CurrentStageWrite {
     const message = createBaseWriteNodesRequest_CurrentStageWrite() as any;
     message.state = object.state ?? undefined;
-    message.ensureInContinuationGroup = object.ensureInContinuationGroup?.map((e) => Edge.fromPartial(e)) || [];
+    message.processUid = object.processUid ?? undefined;
+    message.continuationGroup = (object.continuationGroup !== undefined && object.continuationGroup !== null)
+      ? WriteNodesRequest_DependencyGroup.fromPartial(object.continuationGroup)
+      : undefined;
     message.attemptExecutionPolicy =
       (object.attemptExecutionPolicy !== undefined && object.attemptExecutionPolicy !== null)
         ? StageAttemptExecutionPolicy.fromPartial(object.attemptExecutionPolicy)
         : undefined;
+    message.details = object.details?.map((e) => Value.fromPartial(e)) || [];
+    message.progress = object.progress?.map((e) => WriteNodesRequest_StageAttemptProgress.fromPartial(e)) || [];
     return message;
   },
 };

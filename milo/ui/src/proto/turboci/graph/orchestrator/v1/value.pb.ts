@@ -26,6 +26,14 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  *
  * When writing this type to the server, only `value` is allowed to be
  * populated.
+ *
+ * In the future, this may also be given:
+ *   * additional disambiguators in addition to value.type_url. This would allow
+ *   multiple Values holding the same type_url in the same field (e.g. TypeX
+ *   "public" and TypeX "private").
+ *   * Workflow-provided, Orchestrator-visible index values to allow these
+ *   Values to be selectable in queries, without the Orchestrator having to have
+ *   up-to-date descriptors for the contained type in `value`.
  */
 export interface Value {
   /** The actual value. */

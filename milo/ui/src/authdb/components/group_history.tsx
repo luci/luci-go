@@ -193,6 +193,7 @@ export function GroupHistory({ name }: GroupHistoryProps) {
       pageSize: pageSize,
       authDbRev: '0',
       pageToken: pageToken,
+      modifier: '',
     }),
     refetchOnWindowFocus: false,
   });

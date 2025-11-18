@@ -52,6 +52,8 @@ export function createMockGroupHistory(name: string) {
         tokenServerUrlOld: '',
         when: '2024-08-15T23:45:29.794195Z',
         who: 'user:user1@email.com',
+        projectsRevNew: '',
+        projectsRevOld: '',
       },
       {
         appVersion: '0',
@@ -86,6 +88,8 @@ export function createMockGroupHistory(name: string) {
         tokenServerUrlOld: '',
         when: '2023-08-15T23:45:29.794195Z',
         who: 'user:user2@email.com',
+        projectsRevNew: '',
+        projectsRevOld: '',
       },
       {
         appVersion: '0',
@@ -120,6 +124,8 @@ export function createMockGroupHistory(name: string) {
         tokenServerUrlOld: '',
         when: '2023-07-15T23:45:29.794195Z',
         who: 'user:user3@email.com',
+        projectsRevNew: '',
+        projectsRevOld: '',
       },
     ],
     nextPageToken: '',
@@ -163,6 +169,8 @@ export function createMockFilteredGroupHistory(name: string) {
         tokenServerUrlOld: '',
         when: '2024-08-15T23:45:29.794195Z',
         who: 'user:user1@email.com',
+        projectsRevNew: '',
+        projectsRevOld: '',
       },
       {
         appVersion: '0',
@@ -197,6 +205,8 @@ export function createMockFilteredGroupHistory(name: string) {
         tokenServerUrlOld: '',
         when: '2023-08-15T23:45:29.794195Z',
         who: 'user:user2@email.com',
+        projectsRevNew: '',
+        projectsRevOld: '',
       },
       {
         appVersion: '0',
@@ -231,6 +241,8 @@ export function createMockFilteredGroupHistory(name: string) {
         tokenServerUrlOld: '',
         when: '2023-07-15T23:45:29.794195Z',
         who: 'user:user3@email.com',
+        projectsRevNew: '',
+        projectsRevOld: '',
       },
     ],
     nextPageToken: '',

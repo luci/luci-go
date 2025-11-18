@@ -394,7 +394,8 @@ export class TurboCIGraphBuilder {
     if (!deps) return;
 
     deps.edges.forEach((edge) => {
-      const targetId = edge.target?.check?.id || edge.target?.stage?.id;
+      const targetId =
+        edge?.check?.identifier?.id || edge?.stage?.identifier?.id;
 
       // Only create edge if target exists in graph
       if (targetId && this.allNodeIds.has(targetId)) {

@@ -13,12 +13,16 @@ export const protobufPackage = "auth.service";
 /**
  * ListChangeLogsRequest is a request to get a list of change logs, which can
  * be filtered by auth_db_rev and/or target.
+ *
+ * Next ID: 6.
  */
 export interface ListChangeLogsRequest {
   /** AuthDB revision that the change log was made. */
   readonly authDbRev: string;
   /** Entity that was changed in the change log. */
   readonly target: string;
+  /** The principal who made the change to the entity, e.g. user:a@example.com. */
+  readonly modifier: string;
   /**
    * The value of next_page_token received in a ListChangeLogsResponse. Used
    * to get the next page of change logs. If empty, gets the first page.
@@ -39,7 +43,11 @@ export interface ListChangeLogsResponse {
   readonly nextPageToken: string;
 }
 
-/** AuthDBChange refers to a change log entry. */
+/**
+ * AuthDBChange refers to a change log entry.
+ *
+ * Next ID: 35.
+ */
 export interface AuthDBChange {
   /** Fields common across all change types. */
   readonly changeType: string;
@@ -79,12 +87,14 @@ export interface AuthDBChange {
   readonly configRevNew: string;
   readonly permsRevOld: string;
   readonly permsRevNew: string;
+  readonly projectsRevOld: string;
+  readonly projectsRevNew: string;
   /** Number of member emails redacted, if any. */
   readonly numRedacted: number;
 }
 
 function createBaseListChangeLogsRequest(): ListChangeLogsRequest {
-  return { authDbRev: "0", target: "", pageToken: "", pageSize: 0 };
+  return { authDbRev: "0", target: "", modifier: "", pageToken: "", pageSize: 0 };
 }
 
 export const ListChangeLogsRequest: MessageFns<ListChangeLogsRequest> = {
@@ -94,6 +104,9 @@ export const ListChangeLogsRequest: MessageFns<ListChangeLogsRequest> = {
     }
     if (message.target !== "") {
       writer.uint32(18).string(message.target);
+    }
+    if (message.modifier !== "") {
+      writer.uint32(42).string(message.modifier);
     }
     if (message.pageToken !== "") {
       writer.uint32(26).string(message.pageToken);
@@ -127,6 +140,14 @@ export const ListChangeLogsRequest: MessageFns<ListChangeLogsRequest> = {
           message.target = reader.string();
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.modifier = reader.string();
+          continue;
+        }
         case 3: {
           if (tag !== 26) {
             break;
@@ -156,6 +177,7 @@ export const ListChangeLogsRequest: MessageFns<ListChangeLogsRequest> = {
     return {
       authDbRev: isSet(object.authDbRev) ? globalThis.String(object.authDbRev) : "0",
       target: isSet(object.target) ? globalThis.String(object.target) : "",
+      modifier: isSet(object.modifier) ? globalThis.String(object.modifier) : "",
       pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
       pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
     };
@@ -168,6 +190,9 @@ export const ListChangeLogsRequest: MessageFns<ListChangeLogsRequest> = {
     }
     if (message.target !== "") {
       obj.target = message.target;
+    }
+    if (message.modifier !== "") {
+      obj.modifier = message.modifier;
     }
     if (message.pageToken !== "") {
       obj.pageToken = message.pageToken;
@@ -185,6 +210,7 @@ export const ListChangeLogsRequest: MessageFns<ListChangeLogsRequest> = {
     const message = createBaseListChangeLogsRequest() as any;
     message.authDbRev = object.authDbRev ?? "0";
     message.target = object.target ?? "";
+    message.modifier = object.modifier ?? "";
     message.pageToken = object.pageToken ?? "";
     message.pageSize = object.pageSize ?? 0;
     return message;
@@ -302,6 +328,8 @@ function createBaseAuthDBChange(): AuthDBChange {
     configRevNew: "",
     permsRevOld: "",
     permsRevNew: "",
+    projectsRevOld: "",
+    projectsRevNew: "",
     numRedacted: 0,
   };
 }
@@ -400,6 +428,12 @@ export const AuthDBChange: MessageFns<AuthDBChange> = {
     }
     if (message.permsRevNew !== "") {
       writer.uint32(250).string(message.permsRevNew);
+    }
+    if (message.projectsRevOld !== "") {
+      writer.uint32(266).string(message.projectsRevOld);
+    }
+    if (message.projectsRevNew !== "") {
+      writer.uint32(274).string(message.projectsRevNew);
     }
     if (message.numRedacted !== 0) {
       writer.uint32(256).int32(message.numRedacted);
@@ -662,6 +696,22 @@ export const AuthDBChange: MessageFns<AuthDBChange> = {
           message.permsRevNew = reader.string();
           continue;
         }
+        case 33: {
+          if (tag !== 266) {
+            break;
+          }
+
+          message.projectsRevOld = reader.string();
+          continue;
+        }
+        case 34: {
+          if (tag !== 274) {
+            break;
+          }
+
+          message.projectsRevNew = reader.string();
+          continue;
+        }
         case 32: {
           if (tag !== 256) {
             break;
@@ -720,6 +770,8 @@ export const AuthDBChange: MessageFns<AuthDBChange> = {
       configRevNew: isSet(object.configRevNew) ? globalThis.String(object.configRevNew) : "",
       permsRevOld: isSet(object.permsRevOld) ? globalThis.String(object.permsRevOld) : "",
       permsRevNew: isSet(object.permsRevNew) ? globalThis.String(object.permsRevNew) : "",
+      projectsRevOld: isSet(object.projectsRevOld) ? globalThis.String(object.projectsRevOld) : "",
+      projectsRevNew: isSet(object.projectsRevNew) ? globalThis.String(object.projectsRevNew) : "",
       numRedacted: isSet(object.numRedacted) ? globalThis.Number(object.numRedacted) : 0,
     };
   },
@@ -819,6 +871,12 @@ export const AuthDBChange: MessageFns<AuthDBChange> = {
     if (message.permsRevNew !== "") {
       obj.permsRevNew = message.permsRevNew;
     }
+    if (message.projectsRevOld !== "") {
+      obj.projectsRevOld = message.projectsRevOld;
+    }
+    if (message.projectsRevNew !== "") {
+      obj.projectsRevNew = message.projectsRevNew;
+    }
     if (message.numRedacted !== 0) {
       obj.numRedacted = Math.round(message.numRedacted);
     }
@@ -861,6 +919,8 @@ export const AuthDBChange: MessageFns<AuthDBChange> = {
     message.configRevNew = object.configRevNew ?? "";
     message.permsRevOld = object.permsRevOld ?? "";
     message.permsRevNew = object.permsRevNew ?? "";
+    message.projectsRevOld = object.projectsRevOld ?? "";
+    message.projectsRevNew = object.projectsRevNew ?? "";
     message.numRedacted = object.numRedacted ?? 0;
     return message;
   },

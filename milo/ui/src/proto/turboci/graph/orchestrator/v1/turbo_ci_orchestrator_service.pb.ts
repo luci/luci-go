@@ -5,6 +5,8 @@
 // source: turboci/graph/orchestrator/v1/turbo_ci_orchestrator_service.proto
 
 /* eslint-disable */
+import { CreateWorkPlanRequest } from "./create_workplan_request.pb";
+import { CreateWorkPlanResponse } from "./create_workplan_response.pb";
 import { QueryNodesRequest } from "./query_nodes_request.pb";
 import { QueryNodesResponse } from "./query_nodes_response.pb";
 import { WriteNodesRequest } from "./write_nodes_request.pb";
@@ -17,6 +19,13 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  * Orchestrator.
  */
 export interface TurboCIOrchestrator {
+  /**
+   * CreateWorkPlan creates a new WorkPlan.
+   *
+   * Currently can only create empty work plans that can later be populated via
+   * WriteNodes call.
+   */
+  CreateWorkPlan(request: CreateWorkPlanRequest): Promise<CreateWorkPlanResponse>;
   /**
    * WriteNodes transactionally writes or updates multiple nodes within a
    * WorkPlan.
@@ -42,9 +51,16 @@ export class TurboCIOrchestratorClientImpl implements TurboCIOrchestrator {
   constructor(rpc: Rpc, opts?: { service?: string }) {
     this.service = opts?.service || TurboCIOrchestratorServiceName;
     this.rpc = rpc;
+    this.CreateWorkPlan = this.CreateWorkPlan.bind(this);
     this.WriteNodes = this.WriteNodes.bind(this);
     this.QueryNodes = this.QueryNodes.bind(this);
   }
+  CreateWorkPlan(request: CreateWorkPlanRequest): Promise<CreateWorkPlanResponse> {
+    const data = CreateWorkPlanRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "CreateWorkPlan", data);
+    return promise.then((data) => CreateWorkPlanResponse.fromJSON(data));
+  }
+
   WriteNodes(request: WriteNodesRequest): Promise<WriteNodesResponse> {
     const data = WriteNodesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "WriteNodes", data);

@@ -6,9 +6,59 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { Identifier } from "../../ids/v1/identifier.pb";
+import { Check, Stage } from "../../ids/v1/identifier.pb";
+import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
+import { StageState, stageStateFromJSON, stageStateToJSON } from "./stage_state.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
+
+/**
+ * A determiniation of the resolution of an Edge.
+ *
+ * An Edge is resolved when it gets to `on_state`. Its expression is evaluated,
+ * and the resolution will be either true (RESOLUTION_SATISFIED) or
+ * false (RESOLUTION_UNSATISFIED).
+ */
+export enum Resolution {
+  /**
+   * RESOLUTION_UNKNOWN - There is not yet enough data in the target of the Edge to determine if it
+   * is satisfied or not.
+   */
+  RESOLUTION_UNKNOWN = 0,
+  /** RESOLUTION_SATISFIED - The target of the Edge satisfied its condition. */
+  RESOLUTION_SATISFIED = 1,
+  /** RESOLUTION_UNSATISFIED - The target of the Edge did not satisfy its condition. */
+  RESOLUTION_UNSATISFIED = 2,
+}
+
+export function resolutionFromJSON(object: any): Resolution {
+  switch (object) {
+    case 0:
+    case "RESOLUTION_UNKNOWN":
+      return Resolution.RESOLUTION_UNKNOWN;
+    case 1:
+    case "RESOLUTION_SATISFIED":
+      return Resolution.RESOLUTION_SATISFIED;
+    case 2:
+    case "RESOLUTION_UNSATISFIED":
+      return Resolution.RESOLUTION_UNSATISFIED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Resolution");
+  }
+}
+
+export function resolutionToJSON(object: Resolution): string {
+  switch (object) {
+    case Resolution.RESOLUTION_UNKNOWN:
+      return "RESOLUTION_UNKNOWN";
+    case Resolution.RESOLUTION_SATISFIED:
+      return "RESOLUTION_SATISFIED";
+    case Resolution.RESOLUTION_UNSATISFIED:
+      return "RESOLUTION_UNSATISFIED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Resolution");
+  }
+}
 
 /**
  * Edge is a singular pointer to some node with an Identifier.
@@ -17,22 +67,113 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  * be lifted in the future.
  */
 export interface Edge {
+  /** This Edge points to a Check. */
+  readonly check?:
+    | Edge_Check
+    | undefined;
+  /** This Edge points to a Stage. */
+  readonly stage?: Edge_Stage | undefined;
+}
+
+/** An edge pointing to a Check. */
+export interface Edge_Check {
+  /** The Check that this edge points to. */
+  readonly identifier?:
+    | Check
+    | undefined;
   /**
-   * Target indicates the node that this Edge points to.
+   * The optional condition.
    *
-   * Currently only Checks and Stages are supported.
+   * If omitted, defaults to:
+   *
+   *   * on_state: FINAL
+   *   * expression: "true"
+   *
+   * This means 'the edge is satisfied as soon as the check is FINAL'.
    */
-  readonly target?: Identifier | undefined;
+  readonly condition?: Edge_Check_Condition | undefined;
+}
+
+/** The condition under which this Edge is satisfied. */
+export interface Edge_Check_Condition {
+  /**
+   * Resolve the expression as soon as the target reaches this state.
+   *
+   * Defaults to CHECK_STATE_FINAL.
+   */
+  readonly onState?:
+    | CheckState
+    | undefined;
+  /**
+   * A boolean CEL expression to evaluate on the target node when it reaches
+   * `on_state`.
+   *
+   * NOTE: Currently only "true" is supported.
+   *
+   * This expression may only consider data in the target which is immutable
+   * for `on_state`. TBD: Link to reference of how to write these
+   * expressions.
+   *
+   * Defaults to "true".
+   */
+  readonly expression?: string | undefined;
+}
+
+/** An edge pointing to a Stage. */
+export interface Edge_Stage {
+  /** The Stage that this edge points to. */
+  readonly identifier?:
+    | Stage
+    | undefined;
+  /**
+   * The optional condition.
+   *
+   * If omitted, defaults to:
+   *
+   *   * on_state: STAGE_STATE_FINAL
+   *   * expression: "true"
+   *
+   * This means 'the edge is satisfied as soon as the stage is FINAL'.
+   */
+  readonly condition?: Edge_Stage_Condition | undefined;
+}
+
+/** The condition under which this Edge is satisfied. */
+export interface Edge_Stage_Condition {
+  /**
+   * Resolve the expression as soon as the target reaches this state.
+   *
+   * Defaults to STAGE_STATE_FINAL.
+   */
+  readonly onState?:
+    | StageState
+    | undefined;
+  /**
+   * A boolean CEL expression to evaluate on the target node when it reaches
+   * `on_state`.
+   *
+   * NOTE: Currently only "true" is supported.
+   *
+   * This expression may only consider data in the target which is immutable
+   * for `on_state`. TBD: Link to reference of how to write these
+   * expressions.
+   *
+   * Defaults to "true".
+   */
+  readonly expression?: string | undefined;
 }
 
 function createBaseEdge(): Edge {
-  return { target: undefined };
+  return { check: undefined, stage: undefined };
 }
 
 export const Edge: MessageFns<Edge> = {
   encode(message: Edge, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.target !== undefined) {
-      Identifier.encode(message.target, writer.uint32(10).fork()).join();
+    if (message.check !== undefined) {
+      Edge_Check.encode(message.check, writer.uint32(10).fork()).join();
+    }
+    if (message.stage !== undefined) {
+      Edge_Stage.encode(message.stage, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -49,7 +190,15 @@ export const Edge: MessageFns<Edge> = {
             break;
           }
 
-          message.target = Identifier.decode(reader, reader.uint32());
+          message.check = Edge_Check.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.stage = Edge_Stage.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -62,13 +211,19 @@ export const Edge: MessageFns<Edge> = {
   },
 
   fromJSON(object: any): Edge {
-    return { target: isSet(object.target) ? Identifier.fromJSON(object.target) : undefined };
+    return {
+      check: isSet(object.check) ? Edge_Check.fromJSON(object.check) : undefined,
+      stage: isSet(object.stage) ? Edge_Stage.fromJSON(object.stage) : undefined,
+    };
   },
 
   toJSON(message: Edge): unknown {
     const obj: any = {};
-    if (message.target !== undefined) {
-      obj.target = Identifier.toJSON(message.target);
+    if (message.check !== undefined) {
+      obj.check = Edge_Check.toJSON(message.check);
+    }
+    if (message.stage !== undefined) {
+      obj.stage = Edge_Stage.toJSON(message.stage);
     }
     return obj;
   },
@@ -78,9 +233,324 @@ export const Edge: MessageFns<Edge> = {
   },
   fromPartial(object: DeepPartial<Edge>): Edge {
     const message = createBaseEdge() as any;
-    message.target = (object.target !== undefined && object.target !== null)
-      ? Identifier.fromPartial(object.target)
+    message.check = (object.check !== undefined && object.check !== null)
+      ? Edge_Check.fromPartial(object.check)
       : undefined;
+    message.stage = (object.stage !== undefined && object.stage !== null)
+      ? Edge_Stage.fromPartial(object.stage)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseEdge_Check(): Edge_Check {
+  return { identifier: undefined, condition: undefined };
+}
+
+export const Edge_Check: MessageFns<Edge_Check> = {
+  encode(message: Edge_Check, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.identifier !== undefined) {
+      Check.encode(message.identifier, writer.uint32(10).fork()).join();
+    }
+    if (message.condition !== undefined) {
+      Edge_Check_Condition.encode(message.condition, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Edge_Check {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEdge_Check() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.identifier = Check.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.condition = Edge_Check_Condition.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Edge_Check {
+    return {
+      identifier: isSet(object.identifier) ? Check.fromJSON(object.identifier) : undefined,
+      condition: isSet(object.condition) ? Edge_Check_Condition.fromJSON(object.condition) : undefined,
+    };
+  },
+
+  toJSON(message: Edge_Check): unknown {
+    const obj: any = {};
+    if (message.identifier !== undefined) {
+      obj.identifier = Check.toJSON(message.identifier);
+    }
+    if (message.condition !== undefined) {
+      obj.condition = Edge_Check_Condition.toJSON(message.condition);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Edge_Check>): Edge_Check {
+    return Edge_Check.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Edge_Check>): Edge_Check {
+    const message = createBaseEdge_Check() as any;
+    message.identifier = (object.identifier !== undefined && object.identifier !== null)
+      ? Check.fromPartial(object.identifier)
+      : undefined;
+    message.condition = (object.condition !== undefined && object.condition !== null)
+      ? Edge_Check_Condition.fromPartial(object.condition)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseEdge_Check_Condition(): Edge_Check_Condition {
+  return { onState: undefined, expression: undefined };
+}
+
+export const Edge_Check_Condition: MessageFns<Edge_Check_Condition> = {
+  encode(message: Edge_Check_Condition, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.onState !== undefined) {
+      writer.uint32(8).int32(message.onState);
+    }
+    if (message.expression !== undefined) {
+      writer.uint32(18).string(message.expression);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Edge_Check_Condition {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEdge_Check_Condition() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.onState = reader.int32() as any;
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.expression = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Edge_Check_Condition {
+    return {
+      onState: isSet(object.onState) ? checkStateFromJSON(object.onState) : undefined,
+      expression: isSet(object.expression) ? globalThis.String(object.expression) : undefined,
+    };
+  },
+
+  toJSON(message: Edge_Check_Condition): unknown {
+    const obj: any = {};
+    if (message.onState !== undefined) {
+      obj.onState = checkStateToJSON(message.onState);
+    }
+    if (message.expression !== undefined) {
+      obj.expression = message.expression;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Edge_Check_Condition>): Edge_Check_Condition {
+    return Edge_Check_Condition.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Edge_Check_Condition>): Edge_Check_Condition {
+    const message = createBaseEdge_Check_Condition() as any;
+    message.onState = object.onState ?? undefined;
+    message.expression = object.expression ?? undefined;
+    return message;
+  },
+};
+
+function createBaseEdge_Stage(): Edge_Stage {
+  return { identifier: undefined, condition: undefined };
+}
+
+export const Edge_Stage: MessageFns<Edge_Stage> = {
+  encode(message: Edge_Stage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.identifier !== undefined) {
+      Stage.encode(message.identifier, writer.uint32(10).fork()).join();
+    }
+    if (message.condition !== undefined) {
+      Edge_Stage_Condition.encode(message.condition, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Edge_Stage {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEdge_Stage() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.identifier = Stage.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.condition = Edge_Stage_Condition.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Edge_Stage {
+    return {
+      identifier: isSet(object.identifier) ? Stage.fromJSON(object.identifier) : undefined,
+      condition: isSet(object.condition) ? Edge_Stage_Condition.fromJSON(object.condition) : undefined,
+    };
+  },
+
+  toJSON(message: Edge_Stage): unknown {
+    const obj: any = {};
+    if (message.identifier !== undefined) {
+      obj.identifier = Stage.toJSON(message.identifier);
+    }
+    if (message.condition !== undefined) {
+      obj.condition = Edge_Stage_Condition.toJSON(message.condition);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Edge_Stage>): Edge_Stage {
+    return Edge_Stage.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Edge_Stage>): Edge_Stage {
+    const message = createBaseEdge_Stage() as any;
+    message.identifier = (object.identifier !== undefined && object.identifier !== null)
+      ? Stage.fromPartial(object.identifier)
+      : undefined;
+    message.condition = (object.condition !== undefined && object.condition !== null)
+      ? Edge_Stage_Condition.fromPartial(object.condition)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseEdge_Stage_Condition(): Edge_Stage_Condition {
+  return { onState: undefined, expression: undefined };
+}
+
+export const Edge_Stage_Condition: MessageFns<Edge_Stage_Condition> = {
+  encode(message: Edge_Stage_Condition, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.onState !== undefined) {
+      writer.uint32(8).int32(message.onState);
+    }
+    if (message.expression !== undefined) {
+      writer.uint32(18).string(message.expression);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Edge_Stage_Condition {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEdge_Stage_Condition() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.onState = reader.int32() as any;
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.expression = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Edge_Stage_Condition {
+    return {
+      onState: isSet(object.onState) ? stageStateFromJSON(object.onState) : undefined,
+      expression: isSet(object.expression) ? globalThis.String(object.expression) : undefined,
+    };
+  },
+
+  toJSON(message: Edge_Stage_Condition): unknown {
+    const obj: any = {};
+    if (message.onState !== undefined) {
+      obj.onState = stageStateToJSON(message.onState);
+    }
+    if (message.expression !== undefined) {
+      obj.expression = message.expression;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Edge_Stage_Condition>): Edge_Stage_Condition {
+    return Edge_Stage_Condition.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Edge_Stage_Condition>): Edge_Stage_Condition {
+    const message = createBaseEdge_Stage_Condition() as any;
+    message.onState = object.onState ?? undefined;
+    message.expression = object.expression ?? undefined;
     return message;
   },
 };

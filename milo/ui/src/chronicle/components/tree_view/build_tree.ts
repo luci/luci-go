@@ -122,7 +122,7 @@ export function buildVisualGraph(
         .filter((id): id is string => !!id) || [];
     if (assignedCheckIds.length > 0) {
       sv.stage?.dependencies?.edges?.forEach((edge) => {
-        const dependencyCheckId = edge.target?.check?.id;
+        const dependencyCheckId = edge?.check?.identifier?.id;
         if (dependencyCheckId) {
           getNode(dependencyCheckId, 'CHECK');
           assignedCheckIds.forEach((assignedCheckId) => {

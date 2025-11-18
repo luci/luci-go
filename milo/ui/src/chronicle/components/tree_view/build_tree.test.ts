@@ -26,6 +26,7 @@ const checkView = (check: Partial<Check>): CheckView => ({
     state: 40, // COMPLETE
     options: [],
     results: [],
+    stateHistory: [],
     ...check,
   },
   optionData: {},
@@ -43,7 +44,7 @@ const stageView = (stage: Partial<Stage>): StageView => ({
       edges: [] as Edge[],
       resolutionEvents: {},
     },
-    continuationGroup: [] as Edge[],
+    stateHistory: [],
     ...stage,
   },
   edits: [],
@@ -101,7 +102,7 @@ describe('BuildVisualGraph', () => {
         identifier: { id: 'stage1' },
         assignments: [{ target: { id: 'check2' } }],
         dependencies: {
-          edges: [{ target: { check: { id: 'check1' } } }],
+          edges: [{ check: { identifier: { id: 'check1' } } }],
           resolutionEvents: {},
         },
       }),
@@ -141,7 +142,7 @@ describe('BuildVisualGraph', () => {
           { target: { id: 'e2e-b-check' } },
         ],
         dependencies: {
-          edges: [{ target: { check: { id: 'build-check' } } }],
+          edges: [{ check: { identifier: { id: 'build-check' } } }],
           resolutionEvents: {},
         },
       }),

@@ -82,6 +82,7 @@ import {
   Stage,
   Stage_Attempt,
   Stage_ExecutionPolicyState,
+  Stage_StateHistoryEntry,
 } from '../proto/turboci/graph/orchestrator/v1/stage.pb';
 import { StageAttemptState } from '../proto/turboci/graph/orchestrator/v1/stage_attempt_state.pb';
 import { StageDelta } from '../proto/turboci/graph/orchestrator/v1/stage_delta.pb';
@@ -672,6 +673,7 @@ export class FakeGraphGenerator {
       options: [data.optionsRef],
       results: results,
       state: CheckState.CHECK_STATE_FINAL,
+      stateHistory: [],
     };
 
     if (!checkId.id) throw new Error('Check ID required');
@@ -747,7 +749,6 @@ export class FakeGraphGenerator {
     const stage: Stage = {
       identifier: stageId,
       realm: realm,
-      createTs: createRev,
       version: finalRev,
       dependencies: buildDependencies(dependencies, finalRev),
       executionPolicy: this.createExecutionPolicyState(),
@@ -757,10 +758,14 @@ export class FakeGraphGenerator {
         target: assignment,
         goalState: assignmentGoalState,
       })),
-      continuationGroup: [],
       args: this.createValueFromObj(TYPE_URL_GENERIC_DATA, {
         args: faker.hacker.phrase(),
       }),
+      stateHistory: [
+        { state: StageState.STAGE_STATE_PLANNED, version: createRev },
+        { state: StageState.STAGE_STATE_ATTEMPTING, version: attemptRev },
+        { state: StageState.STAGE_STATE_FINAL, version: finalRev },
+      ] as Stage_StateHistoryEntry[],
     };
 
     this.stageViews[idStr] = {
@@ -1247,6 +1252,7 @@ export class FakeGraphGenerator {
         { msg: 'Running', version: startRev, details: [] },
         { msg: msg, version: endRev, details: [] },
       ],
+      stateHistory: [],
     };
 
     return [attempt];
@@ -1367,7 +1373,15 @@ function buildDependencies(
     return { edges: [], resolutionEvents: {} };
   }
 
-  const edges: Edge[] = targets.map((t) => ({ target: t }));
+  const edges: Edge[] = targets.map((t) => {
+    if (t.check) {
+      return { check: { identifier: t.check } };
+    }
+    if (t.stage) {
+      return { stage: { identifier: t.stage } };
+    }
+    throw new Error(`Invalid dependency target: ${JSON.stringify(t)}`);
+  });
   const predicate: Dependencies_Group = {
     edges: edges.map((_, idx) => idx),
     groups: [],
@@ -1377,7 +1391,6 @@ function buildDependencies(
   edges.forEach((_, idx) => {
     resolutionEvents[idx] = {
       version: resolvedAt,
-      satisfied: true,
     };
   });
 
@@ -1385,6 +1398,5 @@ function buildDependencies(
     edges,
     predicate,
     resolutionEvents,
-    resolved: predicate,
   };
 }

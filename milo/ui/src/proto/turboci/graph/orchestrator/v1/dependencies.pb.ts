@@ -6,42 +6,39 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { Edge } from "./edge.pb";
+import { Edge, Resolution, resolutionFromJSON, resolutionToJSON } from "./edge.pb";
 import { Revision } from "./revision.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
 /**
- * Dependencies represents a group of edges needed to unblock a containing node
- * (a Check or a Stage), as well as timestamps and satisfaction of those edges,
- * and finally the group of edges which resolved the Dependencies and unblocked
- * the containing node.
+ * Dependencies represents a group of edges (the predicate) needed to unblock
+ * a containing node (a Check or a Stage), as well as timestamps and
+ * satisfaction of those edges, and finally an overall assessment of the
+ * resolution of the predicate.
  *
  * During PLANNING, the `edges` and `predicate` fields are mutable. These
- * contains all dependency targets and any criteria for them, plus the boolean
- * logic of which subset of these edges are necessary to unblock the node.
- * The orchestrator will convert WriteNodesRequest.DependencyGroup into `edges`
- * and `predicate` for the client.
+ * contain all dependency targets and any criteria for them, plus the boolean
+ * logic of which subset of these edges are necessary to unblock the node. The
+ * orchestrator will convert WriteNodesRequest.DependencyGroup into `edges` and
+ * `predicate` for the client.
  *
  * As soon as the containing node is PLANNED, the orchestrator will begin
- * tracking resolution of the edges. As they resolved, these are recorded to the
- * the `resolution_events` field.
+ * tracking resolution of the edges. As they are resolved, these 'resolution
+ * events' are recorded to the the `resolution_events` field.
  *
- * Finally, once enough resolution_events are present such that the `predicate`
- * Group can be resolved, the orchestrator will advance the containing node to
- * the next state (i.e. CHECK_STATE_WAITING or STAGE_STATE_ATTEMPTING), and will
- * populate `resolved` with only the groups/edges which actually participated in
- * unblocked the containing node (this may be a subset of the propagated
- * events). At this point, no more events will be added to `resolution_events`
- * and this Dependencies message will be fully immutable.
+ * Finally, once enough resolution events are present such that the `predicate`
+ * Group can be resolved, the orchestrator will set the `resolution` field.
  */
 export interface Dependencies {
   /**
    * The set of all edges from the containing node to other nodes in the graph.
    *
-   * These are unique by `target` and criteria.
+   * These are unique by `target` and `condition` (expressions will be lightly
+   * normalized for e.g. whitespace, comments, but this will not attempt to do
+   * any 'smart' deduplication of semantically equivalent expressions).
    *
-   * See `predicate` and `resolved` which refer to these.
+   * See `predicate` and `satisfied` which refer to these.
    */
   readonly edges: readonly Edge[];
   /**
@@ -50,17 +47,8 @@ export interface Dependencies {
    * The Group is a compact expression of a logical rule of which edges must be
    * satisfied before the node can be unblocked.
    *
-   * Once this Group is satisfied, the node will be unblocked and move from
-   * PLANNED to CHECK_STATE_WAITING or STAGE_STATE_ATTEMPTING, depending on the
-   * containing node type.
-   *
-   * If the Group is unsatisfiable, then the Check will be immediately moved to
-   * the FINAL state and a single Result will be added with type `TBD`.
-   *
    * Once the containing node is CHECK_STATE_WAITING/STAGE_STATE_ATTEMPTING,
    * this field is immutable.
-   *
-   * Empty Groups (including the top level one here) are normalized to unset.
    */
   readonly predicate?:
     | Dependencies_Group
@@ -69,33 +57,68 @@ export interface Dependencies {
    * While containing node is in the PLANNED state, this will accumulate all
    * incoming resolution events.
    *
-   * The key is an index into the Dependencies.edges table.
+   * The key is an index into the Dependencies.edges list.
    *
    * When the containing node enters PLANNED for the first time, there may be
    * several events which show up here immediately (i.e. the targets of these
-   * Edges were already in a satisfying state).
+   * Edges were already resolved when the node entered PLANNED).
    *
-   * This will include a superset of edges in `resolved`.
+   * This field is append-only; once an Edge has a ResolutionEvent, that
+   * resolution will never change.
    */
   readonly resolutionEvents: { [key: number]: Dependencies_ResolutionEvent };
   /**
-   * The actual group of resolved dependencies which unblocked the containing
-   * node.
+   * When the orchestrator recognizes that the events in `resolution_events` can
+   * resolve the `predicate` Group, it will set this field to either
+   * RESOLUTION_SATISFIED or RESOLUTION_UNSATISFIED.
    *
-   * When the orchestrator recognizes that the events in `resolution_events`
-   * satisfies the dependencies in `predicate`, it will advance the containing
-   * node to the next state (i.e. CHECK_STATE_WAITING, STAGE_STATE_ATTEMPTING),
-   * and will populate this field with just the groups and edges which
-   * ultimately caused the containing node to be unblocked.
+   * If this is RESOLUTION_SATISFIED, the containing node will move to the
+   * CHECK_STATE_WAITING or STAGE_STATE_ATTEMPTING state, depending on the
+   * containing node type.
    *
-   * Once written, this is immutable.
+   * If this is RESOLUTION_UNSATISFIED, then the containing node will be
+   * immediately moved to its FINAL state. For Checks, a single Result will be
+   * added with type `TBD`.
+   *
+   * Once set, this is immutable.
+   *
+   * The subset of `predicate` which caused these Dependencies to be satisfied
+   * can be recovered like:
+   *
+   *     satisfied_edges = {
+   *       idx
+   *       for idx, event in deps.resolution_events.items()
+   *       if event.resolution == RESOLUTION_SATISFIED
+   *     }
+   *     def visit(group: Dependencies.Group) -> Dependencies.Group|None:
+   *       edges = [idx for idx in group.edges if idx in satisfied_edges]
+   *       groups = [
+   *         visited for subgroup in group.groups
+   *         if (visited := visit(subgroup))
+   *       ]
+   *       threshold = group.threshold or (len(group.edges) + len(group.groups))
+   *       if len(edges) + len(groups) < threshold:
+   *         return None
+   *       return Dependencies.Group(
+   *         edges=edges, groups=groups,
+   *         threshold=group.threshold
+   *       )
+   *     predicate_subset = visit(deps.predicate)
+   *
+   * This is the same set of dependencies which would be returned by
+   * a Query.Expand with mode=QUERY_EXPAND_DEPS_MODE_SATISFIED.
    */
-  readonly resolved?: Dependencies_Group | undefined;
+  readonly resolution?: Resolution | undefined;
 }
 
 /**
  * A group of dependencies, containing edges and/or other groups, plus
  * a minimum threshold to meet to consider this Group satisfied.
+ *
+ * A Group forms a boolean logic expression of edge satisfiability (e.g. `(A
+ * && B) || C`). In the basic case with `threshold` unset, a Group is an `AND`
+ * of all contained edges/groups. With threshold == 1, a Group is an `OR` of
+ * all contained edges/groups.
  */
 export interface Dependencies_Group {
   /**
@@ -104,7 +127,11 @@ export interface Dependencies_Group {
    * Kept sorted; values are indexes into `Dependencies.edges`.
    */
   readonly edges: readonly number[];
-  /** Sub-groups in this group. */
+  /**
+   * Sub-groups in this group.
+   *
+   * May not contain empty groups.
+   */
   readonly groups: readonly Dependencies_Group[];
   /**
    * If unset, all `edges` and `groups` must be satisfied for this Group to
@@ -116,8 +143,8 @@ export interface Dependencies_Group {
    * Setting threshold to `1` effectively means 'the first satisfied entry in
    * edges or groups satisfies this group' (effectively making this an OR).
    *
-   * A value greater than one could be useful if you want to depend on the first
-   * N of multiple possible edges.
+   * A value greater than `1` could be useful if you want to depend on the
+   * first N of multiple possible edges.
    *
    * For example, if this Group is
    *
@@ -143,12 +170,15 @@ export interface Dependencies_Group {
    *     threshold = 1,
    *   }
    *
-   * NOTE: It is possible for a Group in `Dependencies.resolved` to contain
+   * NOTE: It is possible for a Group in `Dependencies.satisfied` to contain
    * more edges/groups than `threshold` if all of those Edges were satisfied
    * at the time the Dependencies were resolved.
    *
-   * A zero threshold will be normalized to `unset`.
-   * A negative threshold is an error.
+   * A threshold less than zero is an error.
+   * A threshold greater than `len(edges) + len(groups)` is an error.
+   *
+   * A threshold equal to zero or a threshold equal to `len(edges)
+   * + len(groups)` will be normalized to `unset`.
    */
   readonly threshold?: number | undefined;
 }
@@ -174,10 +204,9 @@ export interface Dependencies_ResolutionEvent {
   /**
    * Was the criteria for this edge satisfied or not?
    *
-   * By default, Edges without explicit criteria (i.e. just 'is target
-   * FINAL?') will always see this as true.
+   * Will never be `UNKNOWN`.
    */
-  readonly satisfied?: boolean | undefined;
+  readonly resolution?: Resolution | undefined;
 }
 
 export interface Dependencies_ResolutionEventsEntry {
@@ -186,7 +215,7 @@ export interface Dependencies_ResolutionEventsEntry {
 }
 
 function createBaseDependencies(): Dependencies {
-  return { edges: [], predicate: undefined, resolutionEvents: {}, resolved: undefined };
+  return { edges: [], predicate: undefined, resolutionEvents: {}, resolution: undefined };
 }
 
 export const Dependencies: MessageFns<Dependencies> = {
@@ -200,8 +229,8 @@ export const Dependencies: MessageFns<Dependencies> = {
     Object.entries(message.resolutionEvents).forEach(([key, value]) => {
       Dependencies_ResolutionEventsEntry.encode({ key: key as any, value }, writer.uint32(26).fork()).join();
     });
-    if (message.resolved !== undefined) {
-      Dependencies_Group.encode(message.resolved, writer.uint32(34).fork()).join();
+    if (message.resolution !== undefined) {
+      writer.uint32(32).int32(message.resolution);
     }
     return writer;
   },
@@ -241,11 +270,11 @@ export const Dependencies: MessageFns<Dependencies> = {
           continue;
         }
         case 4: {
-          if (tag !== 34) {
+          if (tag !== 32) {
             break;
           }
 
-          message.resolved = Dependencies_Group.decode(reader, reader.uint32());
+          message.resolution = reader.int32() as any;
           continue;
         }
       }
@@ -270,7 +299,7 @@ export const Dependencies: MessageFns<Dependencies> = {
           {},
         )
         : {},
-      resolved: isSet(object.resolved) ? Dependencies_Group.fromJSON(object.resolved) : undefined,
+      resolution: isSet(object.resolution) ? resolutionFromJSON(object.resolution) : undefined,
     };
   },
 
@@ -291,8 +320,8 @@ export const Dependencies: MessageFns<Dependencies> = {
         });
       }
     }
-    if (message.resolved !== undefined) {
-      obj.resolved = Dependencies_Group.toJSON(message.resolved);
+    if (message.resolution !== undefined) {
+      obj.resolution = resolutionToJSON(message.resolution);
     }
     return obj;
   },
@@ -314,9 +343,7 @@ export const Dependencies: MessageFns<Dependencies> = {
       }
       return acc;
     }, {});
-    message.resolved = (object.resolved !== undefined && object.resolved !== null)
-      ? Dependencies_Group.fromPartial(object.resolved)
-      : undefined;
+    message.resolution = object.resolution ?? undefined;
     return message;
   },
 };
@@ -428,7 +455,7 @@ export const Dependencies_Group: MessageFns<Dependencies_Group> = {
 };
 
 function createBaseDependencies_ResolutionEvent(): Dependencies_ResolutionEvent {
-  return { version: undefined, satisfied: undefined };
+  return { version: undefined, resolution: undefined };
 }
 
 export const Dependencies_ResolutionEvent: MessageFns<Dependencies_ResolutionEvent> = {
@@ -436,8 +463,8 @@ export const Dependencies_ResolutionEvent: MessageFns<Dependencies_ResolutionEve
     if (message.version !== undefined) {
       Revision.encode(message.version, writer.uint32(10).fork()).join();
     }
-    if (message.satisfied !== undefined) {
-      writer.uint32(16).bool(message.satisfied);
+    if (message.resolution !== undefined) {
+      writer.uint32(16).int32(message.resolution);
     }
     return writer;
   },
@@ -462,7 +489,7 @@ export const Dependencies_ResolutionEvent: MessageFns<Dependencies_ResolutionEve
             break;
           }
 
-          message.satisfied = reader.bool();
+          message.resolution = reader.int32() as any;
           continue;
         }
       }
@@ -477,7 +504,7 @@ export const Dependencies_ResolutionEvent: MessageFns<Dependencies_ResolutionEve
   fromJSON(object: any): Dependencies_ResolutionEvent {
     return {
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
-      satisfied: isSet(object.satisfied) ? globalThis.Boolean(object.satisfied) : undefined,
+      resolution: isSet(object.resolution) ? resolutionFromJSON(object.resolution) : undefined,
     };
   },
 
@@ -486,8 +513,8 @@ export const Dependencies_ResolutionEvent: MessageFns<Dependencies_ResolutionEve
     if (message.version !== undefined) {
       obj.version = Revision.toJSON(message.version);
     }
-    if (message.satisfied !== undefined) {
-      obj.satisfied = message.satisfied;
+    if (message.resolution !== undefined) {
+      obj.resolution = resolutionToJSON(message.resolution);
     }
     return obj;
   },
@@ -500,7 +527,7 @@ export const Dependencies_ResolutionEvent: MessageFns<Dependencies_ResolutionEve
     message.version = (object.version !== undefined && object.version !== null)
       ? Revision.fromPartial(object.version)
       : undefined;
-    message.satisfied = object.satisfied ?? undefined;
+    message.resolution = object.resolution ?? undefined;
     return message;
   },
 };

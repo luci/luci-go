@@ -27,12 +27,14 @@ export enum QueryExpandDepsMode {
   /** QUERY_EXPAND_DEPS_MODE_EDGES - Expand to deps which are listed in dependencies.edges. */
   QUERY_EXPAND_DEPS_MODE_EDGES = 1,
   /**
-   * QUERY_EXPAND_DEPS_MODE_RESOLVED - Expand to deps which are listed (transitively) in dependencies.resolved.
+   * QUERY_EXPAND_DEPS_MODE_SATISFIED - Expand to edges which were the ones that caused dependencies.resolved to be
+   * RESOLUTION_SATISFIED.
    *
    * Note that this will be the empty set for nodes which are not already past
-   * the PLANNED state.
+   * the PLANNED state, and for nodes which have RESOLUTION_UNSATISFIED
+   * dependencies.
    */
-  QUERY_EXPAND_DEPS_MODE_RESOLVED = 2,
+  QUERY_EXPAND_DEPS_MODE_SATISFIED = 2,
 }
 
 export function queryExpandDepsModeFromJSON(object: any): QueryExpandDepsMode {
@@ -44,8 +46,8 @@ export function queryExpandDepsModeFromJSON(object: any): QueryExpandDepsMode {
     case "QUERY_EXPAND_DEPS_MODE_EDGES":
       return QueryExpandDepsMode.QUERY_EXPAND_DEPS_MODE_EDGES;
     case 2:
-    case "QUERY_EXPAND_DEPS_MODE_RESOLVED":
-      return QueryExpandDepsMode.QUERY_EXPAND_DEPS_MODE_RESOLVED;
+    case "QUERY_EXPAND_DEPS_MODE_SATISFIED":
+      return QueryExpandDepsMode.QUERY_EXPAND_DEPS_MODE_SATISFIED;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum QueryExpandDepsMode");
   }
@@ -57,8 +59,8 @@ export function queryExpandDepsModeToJSON(object: QueryExpandDepsMode): string {
       return "QUERY_EXPAND_DEPS_MODE_UNKNOWN";
     case QueryExpandDepsMode.QUERY_EXPAND_DEPS_MODE_EDGES:
       return "QUERY_EXPAND_DEPS_MODE_EDGES";
-    case QueryExpandDepsMode.QUERY_EXPAND_DEPS_MODE_RESOLVED:
-      return "QUERY_EXPAND_DEPS_MODE_RESOLVED";
+    case QueryExpandDepsMode.QUERY_EXPAND_DEPS_MODE_SATISFIED:
+      return "QUERY_EXPAND_DEPS_MODE_SATISFIED";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum QueryExpandDepsMode");
   }
@@ -93,6 +95,9 @@ export interface Query {
    * URLs, but this requires an extra permission. Extra permission is needed
    * to encourage clients to be explicit about what they want to reduce
    * bandwidth, coupling and increase auditability.
+   *
+   * TBD: Allow limited wildcards to include everything under some package
+   * namespace.
    */
   readonly typeUrls: readonly string[];
   /** Select an arbitrary set of nodes. */
@@ -190,9 +195,9 @@ export interface Query_Expand {
    * So given:
    *   A -> {B, C}
    *
-   * A is a dependant of B.
+   * A is a dependent of B.
    */
-  readonly dependants?: Query_Expand_Dependants | undefined;
+  readonly dependents?: Query_Expand_Dependents | undefined;
 }
 
 /** How to expand the dependencies for a Check or Stage. */
@@ -200,17 +205,17 @@ export interface Query_Expand_Dependencies {
   /**
    * How to expand dependencies.
    *
-   * Defaults to QUERY_EXPAND_DEPS_MODE_REQUESTED.
+   * Defaults to QUERY_EXPAND_DEPS_MODE_EDGES.
    */
   readonly mode?: QueryExpandDepsMode | undefined;
 }
 
-/** How to expand the dependants for a Check or Stage. */
-export interface Query_Expand_Dependants {
+/** How to expand the dependents for a Check or Stage. */
+export interface Query_Expand_Dependents {
   /**
-   * How to expand dependants.
+   * How to expand dependents.
    *
-   * Defaults to QUERY_EXPAND_DEPS_MODE_REQUESTED.
+   * Defaults to QUERY_EXPAND_DEPS_MODE_EDGES.
    */
   readonly mode?: QueryExpandDepsMode | undefined;
 }
@@ -715,7 +720,7 @@ export const Query_Select_StagePattern: MessageFns<Query_Select_StagePattern> = 
 };
 
 function createBaseQuery_Expand(): Query_Expand {
-  return { dependencies: undefined, dependants: undefined };
+  return { dependencies: undefined, dependents: undefined };
 }
 
 export const Query_Expand: MessageFns<Query_Expand> = {
@@ -723,8 +728,8 @@ export const Query_Expand: MessageFns<Query_Expand> = {
     if (message.dependencies !== undefined) {
       Query_Expand_Dependencies.encode(message.dependencies, writer.uint32(10).fork()).join();
     }
-    if (message.dependants !== undefined) {
-      Query_Expand_Dependants.encode(message.dependants, writer.uint32(18).fork()).join();
+    if (message.dependents !== undefined) {
+      Query_Expand_Dependents.encode(message.dependents, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -749,7 +754,7 @@ export const Query_Expand: MessageFns<Query_Expand> = {
             break;
           }
 
-          message.dependants = Query_Expand_Dependants.decode(reader, reader.uint32());
+          message.dependents = Query_Expand_Dependents.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -764,7 +769,7 @@ export const Query_Expand: MessageFns<Query_Expand> = {
   fromJSON(object: any): Query_Expand {
     return {
       dependencies: isSet(object.dependencies) ? Query_Expand_Dependencies.fromJSON(object.dependencies) : undefined,
-      dependants: isSet(object.dependants) ? Query_Expand_Dependants.fromJSON(object.dependants) : undefined,
+      dependents: isSet(object.dependents) ? Query_Expand_Dependents.fromJSON(object.dependents) : undefined,
     };
   },
 
@@ -773,8 +778,8 @@ export const Query_Expand: MessageFns<Query_Expand> = {
     if (message.dependencies !== undefined) {
       obj.dependencies = Query_Expand_Dependencies.toJSON(message.dependencies);
     }
-    if (message.dependants !== undefined) {
-      obj.dependants = Query_Expand_Dependants.toJSON(message.dependants);
+    if (message.dependents !== undefined) {
+      obj.dependents = Query_Expand_Dependents.toJSON(message.dependents);
     }
     return obj;
   },
@@ -787,8 +792,8 @@ export const Query_Expand: MessageFns<Query_Expand> = {
     message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
       ? Query_Expand_Dependencies.fromPartial(object.dependencies)
       : undefined;
-    message.dependants = (object.dependants !== undefined && object.dependants !== null)
-      ? Query_Expand_Dependants.fromPartial(object.dependants)
+    message.dependents = (object.dependents !== undefined && object.dependents !== null)
+      ? Query_Expand_Dependents.fromPartial(object.dependents)
       : undefined;
     return message;
   },
@@ -852,22 +857,22 @@ export const Query_Expand_Dependencies: MessageFns<Query_Expand_Dependencies> = 
   },
 };
 
-function createBaseQuery_Expand_Dependants(): Query_Expand_Dependants {
+function createBaseQuery_Expand_Dependents(): Query_Expand_Dependents {
   return { mode: undefined };
 }
 
-export const Query_Expand_Dependants: MessageFns<Query_Expand_Dependants> = {
-  encode(message: Query_Expand_Dependants, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const Query_Expand_Dependents: MessageFns<Query_Expand_Dependents> = {
+  encode(message: Query_Expand_Dependents, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.mode !== undefined) {
       writer.uint32(8).int32(message.mode);
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): Query_Expand_Dependants {
+  decode(input: BinaryReader | Uint8Array, length?: number): Query_Expand_Dependents {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuery_Expand_Dependants() as any;
+    const message = createBaseQuery_Expand_Dependents() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -888,11 +893,11 @@ export const Query_Expand_Dependants: MessageFns<Query_Expand_Dependants> = {
     return message;
   },
 
-  fromJSON(object: any): Query_Expand_Dependants {
+  fromJSON(object: any): Query_Expand_Dependents {
     return { mode: isSet(object.mode) ? queryExpandDepsModeFromJSON(object.mode) : undefined };
   },
 
-  toJSON(message: Query_Expand_Dependants): unknown {
+  toJSON(message: Query_Expand_Dependents): unknown {
     const obj: any = {};
     if (message.mode !== undefined) {
       obj.mode = queryExpandDepsModeToJSON(message.mode);
@@ -900,11 +905,11 @@ export const Query_Expand_Dependants: MessageFns<Query_Expand_Dependants> = {
     return obj;
   },
 
-  create(base?: DeepPartial<Query_Expand_Dependants>): Query_Expand_Dependants {
-    return Query_Expand_Dependants.fromPartial(base ?? {});
+  create(base?: DeepPartial<Query_Expand_Dependents>): Query_Expand_Dependents {
+    return Query_Expand_Dependents.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<Query_Expand_Dependants>): Query_Expand_Dependants {
-    const message = createBaseQuery_Expand_Dependants() as any;
+  fromPartial(object: DeepPartial<Query_Expand_Dependents>): Query_Expand_Dependents {
+    const message = createBaseQuery_Expand_Dependents() as any;
     message.mode = object.mode ?? undefined;
     return message;
   },

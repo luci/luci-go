@@ -14,7 +14,6 @@
 
 import {
   Check as CheckId,
-  Identifier,
   Stage as StageId,
   WorkPlan,
 } from '@/proto/turboci/graph/ids/v1/identifier.pb';
@@ -32,28 +31,27 @@ import { TurboCIGraphBuilder } from './graph_builder';
 const WORKPLAN: WorkPlan = { id: 'test-plan' };
 
 /** Creates a general Identifier pointing to a Check. */
-function createCheckIdentifier(id: string): Identifier {
-  return {
-    check: { workPlan: WORKPLAN, id },
-  };
+function createCheckIdentifier(id: string): CheckId {
+  return { workPlan: WORKPLAN, id };
 }
 
 /** Creates a general Identifier pointing to a Stage. */
-function createStageIdentifier(id: string): Identifier {
-  return {
-    stage: { workPlan: WORKPLAN, id },
-  };
+function createStageIdentifier(id: string): StageId {
+  return { workPlan: WORKPLAN, id };
 }
 
 /** Creates a partial CheckView for testing. */
 function createCheckView(
   id: string,
   kind: CheckKind = CheckKind.CHECK_KIND_BUILD,
-  // Dependencies are general Identifiers (can point to Check or Stage)
-  dependencies: Identifier[] = [],
+  checkDependencies: CheckId[] = [],
+  stageDependencies: StageId[] = [],
 ): CheckView {
   const deps: Dependencies = {
-    edges: dependencies.map((t) => ({ target: t })),
+    edges: [
+      ...checkDependencies.map((c) => ({ check: { identifier: c } })),
+      ...stageDependencies.map((s) => ({ stage: { identifier: s } })),
+    ],
     resolutionEvents: {},
   };
 
@@ -66,6 +64,7 @@ function createCheckView(
       dependencies: deps,
       options: [],
       results: [],
+      stateHistory: [],
       // other fields like realm/version/state can be undefined
     } as Check,
     edits: [],
@@ -79,11 +78,14 @@ function createStageView(
   id: string,
   // IDs of checks this stage is assigned to.
   assignedToCheckIds: string[] = [],
-  // Dependencies are general Identifiers.
-  dependencies: Identifier[] = [],
+  checkDependencies: CheckId[] = [],
+  stageDependencies: StageId[] = [],
 ): StageView {
   const deps: Dependencies = {
-    edges: dependencies.map((t) => ({ target: t })),
+    edges: [
+      ...checkDependencies.map((c) => ({ check: { identifier: c } })),
+      ...stageDependencies.map((s) => ({ stage: { identifier: s } })),
+    ],
     resolutionEvents: {},
   };
 
@@ -101,7 +103,7 @@ function createStageView(
       dependencies: deps,
       assignments: assignments,
       attempts: [],
-      continuationGroup: [],
+      stateHistory: [],
       // other fields can be undefined
     } as Stage,
     edits: [],
@@ -349,7 +351,7 @@ describe('TurboCIGraphBuilder', () => {
     it('should treat stages assigned to zero checks as standalone', () => {
       const graph: TurboCIGraphView = {
         checks: {},
-        stages: { S_None: createStageView('S_None', []) },
+        stages: { S_None: createStageView('S_None') },
       };
 
       const { nodes } = new TurboCIGraphBuilder(graph).build();
@@ -397,7 +399,7 @@ describe('TurboCIGraphBuilder', () => {
         },
         stages: {
           S1: createStageView('S1', ['C1']),
-          S2: createStageView('S2', ['C2'], [s1Ident]),
+          S2: createStageView('S2', ['C2'], [], [s1Ident]),
         },
       };
 

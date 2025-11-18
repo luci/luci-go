@@ -14,7 +14,10 @@
 
 import { Box, Chip, Divider, Typography } from '@mui/material';
 
-import { stageStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb';
+import {
+  StageState,
+  stageStateToJSON,
+} from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb';
 import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
 
 import { AnyDetails } from './any_details';
@@ -34,9 +37,13 @@ export function StageDetails({ view }: StageDetailsProps) {
     .sort();
 
   const dependencyIds = (stage.dependencies?.edges || [])
-    .map((edge) => edge.target?.check?.id || edge.target?.stage?.id)
+    .map((edge) => edge.check?.identifier?.id || edge.stage?.identifier?.id)
     .filter((id): id is string => !!id)
     .sort();
+
+  const createTs = stage.stateHistory.find(
+    (s) => s.state === StageState.STAGE_STATE_PLANNED,
+  )?.version;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -47,7 +54,7 @@ export function StageDetails({ view }: StageDetailsProps) {
           value={stage.state ? stageStateToJSON(stage.state) : 'UNKNOWN'}
         />
         <DetailRow label="Realm" value={stage.realm} />
-        <DetailRow label="Created" value={stage.createTs?.ts} />
+        <DetailRow label="Created" value={createTs?.ts} />
         <DetailRow label="Last Updated" value={stage.version?.ts} />
       </Box>
 

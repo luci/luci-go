@@ -53,6 +53,10 @@ export interface Check {
   readonly identifier?:
     | Check1
     | undefined;
+  /** Actor which created the Check. */
+  readonly createdBy?:
+    | Actor
+    | undefined;
   /**
    * The coarse-grained kind of this Check.
    *
@@ -90,6 +94,11 @@ export interface Check {
   readonly state?:
     | CheckState
     | undefined;
+  /**
+   * Append-only list of StateHistoryEntry to record the database revision
+   * (commit timestamp) when each time this Check's state changes.
+   */
+  readonly stateHistory: readonly Check_StateHistoryEntry[];
   /**
    * Dependencies on other objects in the graph.
    *
@@ -142,6 +151,19 @@ export interface Check {
    * each write to each Result datum.
    */
   readonly results: readonly Check_Result[];
+}
+
+/**
+ * StateHistoryEntry records the database revision (commit timestamp) when
+ * each time this Check's state changes.
+ */
+export interface Check_StateHistoryEntry {
+  /** The changed state. */
+  readonly state?:
+    | CheckState
+    | undefined;
+  /** The revision when the state change happens. */
+  readonly version?: Revision | undefined;
 }
 
 /** OptionRef is a reference to a CheckOption. */
@@ -220,10 +242,12 @@ export interface Check_Result_ResultDatumRef {
 function createBaseCheck(): Check {
   return {
     identifier: undefined,
+    createdBy: undefined,
     kind: undefined,
     realm: undefined,
     version: undefined,
     state: undefined,
+    stateHistory: [],
     dependencies: undefined,
     options: [],
     results: [],
@@ -235,26 +259,32 @@ export const Check: MessageFns<Check> = {
     if (message.identifier !== undefined) {
       Check1.encode(message.identifier, writer.uint32(10).fork()).join();
     }
+    if (message.createdBy !== undefined) {
+      Actor.encode(message.createdBy, writer.uint32(18).fork()).join();
+    }
     if (message.kind !== undefined) {
-      writer.uint32(16).int32(message.kind);
+      writer.uint32(24).int32(message.kind);
     }
     if (message.realm !== undefined) {
-      writer.uint32(26).string(message.realm);
+      writer.uint32(34).string(message.realm);
     }
     if (message.version !== undefined) {
-      Revision.encode(message.version, writer.uint32(34).fork()).join();
+      Revision.encode(message.version, writer.uint32(42).fork()).join();
     }
     if (message.state !== undefined) {
-      writer.uint32(40).int32(message.state);
+      writer.uint32(48).int32(message.state);
+    }
+    for (const v of message.stateHistory) {
+      Check_StateHistoryEntry.encode(v!, writer.uint32(58).fork()).join();
     }
     if (message.dependencies !== undefined) {
-      Dependencies.encode(message.dependencies, writer.uint32(50).fork()).join();
+      Dependencies.encode(message.dependencies, writer.uint32(66).fork()).join();
     }
     for (const v of message.options) {
-      Check_OptionRef.encode(v!, writer.uint32(58).fork()).join();
+      Check_OptionRef.encode(v!, writer.uint32(74).fork()).join();
     }
     for (const v of message.results) {
-      Check_Result.encode(v!, writer.uint32(66).fork()).join();
+      Check_Result.encode(v!, writer.uint32(82).fork()).join();
     }
     return writer;
   },
@@ -275,19 +305,19 @@ export const Check: MessageFns<Check> = {
           continue;
         }
         case 2: {
-          if (tag !== 16) {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.createdBy = Actor.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
             break;
           }
 
           message.kind = reader.int32() as any;
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.realm = reader.string();
           continue;
         }
         case 4: {
@@ -295,23 +325,23 @@ export const Check: MessageFns<Check> = {
             break;
           }
 
-          message.version = Revision.decode(reader, reader.uint32());
+          message.realm = reader.string();
           continue;
         }
         case 5: {
-          if (tag !== 40) {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.version = Revision.decode(reader, reader.uint32());
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
             break;
           }
 
           message.state = reader.int32() as any;
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
-            break;
-          }
-
-          message.dependencies = Dependencies.decode(reader, reader.uint32());
           continue;
         }
         case 7: {
@@ -319,11 +349,27 @@ export const Check: MessageFns<Check> = {
             break;
           }
 
-          message.options.push(Check_OptionRef.decode(reader, reader.uint32()));
+          message.stateHistory.push(Check_StateHistoryEntry.decode(reader, reader.uint32()));
           continue;
         }
         case 8: {
           if (tag !== 66) {
+            break;
+          }
+
+          message.dependencies = Dependencies.decode(reader, reader.uint32());
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.options.push(Check_OptionRef.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
             break;
           }
 
@@ -342,10 +388,14 @@ export const Check: MessageFns<Check> = {
   fromJSON(object: any): Check {
     return {
       identifier: isSet(object.identifier) ? Check1.fromJSON(object.identifier) : undefined,
+      createdBy: isSet(object.createdBy) ? Actor.fromJSON(object.createdBy) : undefined,
       kind: isSet(object.kind) ? checkKindFromJSON(object.kind) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       state: isSet(object.state) ? checkStateFromJSON(object.state) : undefined,
+      stateHistory: globalThis.Array.isArray(object?.stateHistory)
+        ? object.stateHistory.map((e: any) => Check_StateHistoryEntry.fromJSON(e))
+        : [],
       dependencies: isSet(object.dependencies) ? Dependencies.fromJSON(object.dependencies) : undefined,
       options: globalThis.Array.isArray(object?.options)
         ? object.options.map((e: any) => Check_OptionRef.fromJSON(e))
@@ -361,6 +411,9 @@ export const Check: MessageFns<Check> = {
     if (message.identifier !== undefined) {
       obj.identifier = Check1.toJSON(message.identifier);
     }
+    if (message.createdBy !== undefined) {
+      obj.createdBy = Actor.toJSON(message.createdBy);
+    }
     if (message.kind !== undefined) {
       obj.kind = checkKindToJSON(message.kind);
     }
@@ -372,6 +425,9 @@ export const Check: MessageFns<Check> = {
     }
     if (message.state !== undefined) {
       obj.state = checkStateToJSON(message.state);
+    }
+    if (message.stateHistory?.length) {
+      obj.stateHistory = message.stateHistory.map((e) => Check_StateHistoryEntry.toJSON(e));
     }
     if (message.dependencies !== undefined) {
       obj.dependencies = Dependencies.toJSON(message.dependencies);
@@ -393,17 +449,99 @@ export const Check: MessageFns<Check> = {
     message.identifier = (object.identifier !== undefined && object.identifier !== null)
       ? Check1.fromPartial(object.identifier)
       : undefined;
+    message.createdBy = (object.createdBy !== undefined && object.createdBy !== null)
+      ? Actor.fromPartial(object.createdBy)
+      : undefined;
     message.kind = object.kind ?? undefined;
     message.realm = object.realm ?? undefined;
     message.version = (object.version !== undefined && object.version !== null)
       ? Revision.fromPartial(object.version)
       : undefined;
     message.state = object.state ?? undefined;
+    message.stateHistory = object.stateHistory?.map((e) => Check_StateHistoryEntry.fromPartial(e)) || [];
     message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
       ? Dependencies.fromPartial(object.dependencies)
       : undefined;
     message.options = object.options?.map((e) => Check_OptionRef.fromPartial(e)) || [];
     message.results = object.results?.map((e) => Check_Result.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseCheck_StateHistoryEntry(): Check_StateHistoryEntry {
+  return { state: undefined, version: undefined };
+}
+
+export const Check_StateHistoryEntry: MessageFns<Check_StateHistoryEntry> = {
+  encode(message: Check_StateHistoryEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.state !== undefined) {
+      writer.uint32(8).int32(message.state);
+    }
+    if (message.version !== undefined) {
+      Revision.encode(message.version, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Check_StateHistoryEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCheck_StateHistoryEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.state = reader.int32() as any;
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.version = Revision.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Check_StateHistoryEntry {
+    return {
+      state: isSet(object.state) ? checkStateFromJSON(object.state) : undefined,
+      version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
+    };
+  },
+
+  toJSON(message: Check_StateHistoryEntry): unknown {
+    const obj: any = {};
+    if (message.state !== undefined) {
+      obj.state = checkStateToJSON(message.state);
+    }
+    if (message.version !== undefined) {
+      obj.version = Revision.toJSON(message.version);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Check_StateHistoryEntry>): Check_StateHistoryEntry {
+    return Check_StateHistoryEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Check_StateHistoryEntry>): Check_StateHistoryEntry {
+    const message = createBaseCheck_StateHistoryEntry() as any;
+    message.state = object.state ?? undefined;
+    message.version = (object.version !== undefined && object.version !== null)
+      ? Revision.fromPartial(object.version)
+      : undefined;
     return message;
   },
 };
