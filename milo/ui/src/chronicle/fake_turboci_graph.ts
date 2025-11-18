@@ -699,7 +699,12 @@ export class FakeGraphGenerator {
     // Timestamps
     const createRev = this.nextRevision();
     const attemptRev = this.nextRevision();
-    const finalRev = this.nextRevision();
+    // Simulate execution time (5 to 30 minutes)
+    const executionMs = faker.number.int({
+      min: 5 * 60 * 1000,
+      max: 30 * 60 * 1000,
+    });
+    const finalRev = this.nextRevision(executionMs);
 
     // 1. Creation Edit (PLANNED)
     edits.push({
@@ -1316,8 +1321,8 @@ export class FakeGraphGenerator {
   // ==========================================
 
   /** Advances internal timer and returns a new Revision string */
-  private nextRevision(): Revision {
-    this.currentSimulatedTimeMs += 1000; // Advance 1 second per call
+  private nextRevision(incrementMs: number = 1000): Revision {
+    this.currentSimulatedTimeMs += incrementMs; // Advance by incrementMs (default 1s)
     // Format: T<seconds>/<nanos> or ISO string depending on impl.
     // Using ISO for standard readability.
     return { ts: new Date(this.currentSimulatedTimeMs).toISOString() };
