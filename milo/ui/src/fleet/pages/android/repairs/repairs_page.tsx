@@ -365,6 +365,9 @@ const COLUMNS = {
     header: 'Explore in Arsenal',
     enableSorting: false,
     size: 15,
+    muiTableBodyCellProps: {
+      align: 'center',
+    },
     Cell: (x) => {
       x.cell.getValue();
       // Double encodeURIComponent because omnilab is weird i guess
@@ -398,6 +401,42 @@ const COLUMNS = {
           );
 
       const to = `https://omnilab.corp.google.com/recovery?${params.toString()}`;
+
+      return (
+        <Link
+          css={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100%',
+          }}
+          to={to}
+          target="_blank"
+        >
+          <OpenInNewIcon />
+        </Link>
+      );
+    },
+  },
+  'static-explore_devices': {
+    accessorKey: 'static-explore_devices',
+    header: 'Explore devices',
+    enableSorting: false,
+    size: 15,
+    muiTableBodyCellProps: {
+      align: 'center',
+    },
+    Cell: (x) => {
+      const filters = {
+        lab_name: [x.row.original.lab_name],
+        host_group: [x.row.original.host_group],
+        run_target: [x.row.original.run_target],
+      };
+
+      const params = new URLSearchParams();
+      params.set(ORDER_BY_PARAM_KEY, `state ${OrderByDirection.DESC}`);
+
+      const to = `${generateDeviceListURL(ANDROID_PLATFORM)}${getFilterQueryString(filters, params)}`;
 
       return (
         <Link
@@ -508,13 +547,21 @@ export const RepairListPage = () => {
     [pagerCtx, searchParams],
   );
 
+  const columns = useMemo(() => {
+    const allColumns = Object.values(COLUMNS);
+    if (getFeatureFlag('AndroidListDevices')) {
+      return allColumns;
+    }
+    return allColumns.filter((c) => c.accessorKey !== 'static-explore_devices');
+  }, []);
+
   const table = useFCDataTable({
     positionToolbarAlertBanner: 'none',
     enableRowSelection: true,
     renderTopToolbarCustomActions: ({ table }) => (
       <FCDataTableCopy table={table} />
     ),
-    columns: Object.values(COLUMNS),
+    columns: columns,
     data: repairMetricsList.data?.repairMetrics.map(getRow) ?? [],
     getRowId: (row) => row.lab_name + row.host_group + row.run_target,
     state: {
