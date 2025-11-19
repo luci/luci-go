@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"fmt"
 	"math"
-	"mime"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -32,6 +31,81 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// SupportedContentTypes is a set of known Content-Types that are safe to process
+// as logs, even if they aren't explicitly text/*.
+var SupportedContentTypes = map[string]bool{
+	"application/octet-stream": true,
+}
+
+// ExcludedLogExtensions is a list of file extensions that typically
+// represent non-textual content (e.g., images, videos, archives)
+// and should be excluded from log line processing, regardless of Content-Type.
+var ExcludedLogExtensions = map[string]bool{
+	".png":   true,
+	".jpg":   true,
+	".jpeg":  true,
+	".gif":   true,
+	".bmp":   true,
+	".tiff":  true,
+	".webp":  true,
+	".mp4":   true,
+	".webm":  true,
+	".avi":   true,
+	".zip":   true,
+	".rar":   true,
+	".7z":    true,
+	".exe":   true,
+	".dll":   true,
+	".so":    true, // Shared object/library
+	".o":     true, // Object file
+	".class": true,
+	".pdf":   true,
+}
+
+// isSupportedContentType checks if the Content-Type is explicitly text/* or one
+// of the allowlisted application types. If the Content-Type is missing (""),
+// it returns true, allowing the artifact to be checked by extension later.
+func isSupportedContentType(contentType string) bool {
+	// If the content type is not available then
+	// we allow other checks to validate if the file is supported.
+	if contentType == "" {
+		return true
+	}
+	_, ok := SupportedContentTypes[contentType]
+	return strings.HasPrefix(contentType, "text") || ok
+}
+
+// isExcludedByExtension checks if the file path has an extension
+// that explicitly belongs to a known non-text/non-log file type.
+func isExcludedByExtension(filePath string) bool {
+	ext := strings.ToLower(filepath.Ext(filePath))
+	if ext == "" {
+		return false // If no extension, assume it *could* be a log file
+	}
+	_, ok := ExcludedLogExtensions[ext]
+	return ok
+}
+
+// IsLogSupportedArtifact determines if an artifact can be processed as a log.
+// It prioritizes checking the Content-Type. If the Content-Type is generic or
+// missing, it falls back to checking the file extension against a known
+// exclusion list of non-text formats.
+func IsLogSupportedArtifact(artifactID string, contentType string) bool {
+	// 1. Content-Type Inclusion Check:
+	// If the Content-Type is set and explicitly supported (text/*, etc.)
+	// OR if the Content-Type is missing/generic ("")
+	isSupported := isSupportedContentType(contentType)
+
+	// 2. Extension Exclusion Check:
+	// If the Content-Type check passed (or was indeterminate), we then ensure the file
+	// extension does *not* belong to a known binary/non-log format.
+	if isSupported {
+		return !isExcludedByExtension(artifactID)
+	}
+
+	return false
+}
+
 // ToLogLines retrieves and processes an artifact and returns
 // its content as a set of log lines.
 // It executes best effort extraction of the timestamp and the severity
@@ -41,9 +115,7 @@ import (
 // The max specified the maximum number of results to return,
 // if the max <= 0 it will return all lines.
 func ToLogLines(artifactID string, contentType string, content []byte, year, maxLines, maxBytes int) ([]*pb.ArtifactLine, error) {
-	isSupported := IsLogSupportedArtifact(artifactID, contentType)
-
-	if !isSupported {
+	if !IsLogSupportedArtifact(artifactID, contentType) {
 		return nil, errors.Fmt("unsupported file type with artifact id: %s and content type: %s", artifactID, contentType)
 	}
 
@@ -82,35 +154,6 @@ func ToLogLines(artifactID string, contentType string, content []byte, year, max
 		return nil, errors.New(fmt.Sprintf("first file line content exceeds maximum size limit: %d bytes", maxBytes))
 	}
 	return ret, nil
-}
-
-var SupportedContentTypes = map[string]bool{
-	"application/octet-stream": true,
-	"application/x-gzip":       true,
-}
-
-func IsLogSupportedArtifact(artifactID string, contentType string) bool {
-	return isSupportedContentType(contentType) && !isNonTextFile(artifactID)
-}
-
-func isSupportedContentType(contentType string) bool {
-	// If the content type is not available then
-	// we allow other checks to validate if the file is supported.
-	if contentType == "" {
-		return true
-	}
-	_, ok := SupportedContentTypes[contentType]
-	return strings.HasPrefix(contentType, "text") || ok
-}
-
-func isNonTextFile(filePath string) bool {
-	ext := filepath.Ext(filePath)
-	mimeType := mime.TypeByExtension(ext)
-	if ext != "" {
-		return mimeType != "" && !strings.HasPrefix(mimeType, "text/")
-	} else {
-		return false
-	}
 }
 
 type logTimestamp struct {
@@ -364,7 +407,7 @@ func extractSeverity(logLine string) pb.ArtifactLine_Severity {
 	for _, severity := range severities {
 		for _, regex := range severity.Regexes {
 			if regex.MatchString(logLine) {
-				switch severity.Name { // More readable
+				switch severity.Name {
 				case "FATAL":
 					return pb.ArtifactLine_FATAL
 				case "ERROR":

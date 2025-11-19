@@ -52,6 +52,59 @@ func TestSupportedArtifacts(t *testing.T) {
 			isSupported := IsLogSupportedArtifact("log.jpg", "")
 			assert.Loosely(t, isSupported, should.BeFalse)
 		})
+
+		t.Run(`given a file with generic metadata, should use exclusion list to determine support`, func(t *ftt.Test) {
+			testCases := []struct {
+				name        string
+				artifactID  string
+				contentType string
+				want        bool
+			}{
+				// 1. The primary fix: file with generic extension and missing Content-Type should pass.
+				{
+					name:        "Succeeds_LogWithMissingContentType",
+					artifactID:  "some_test/log.out",
+					contentType: "",
+					want:        true,
+				},
+				// 2. Standard log file with whitelisted Content-Type.
+				{
+					name:        "Succeeds_ExplicitTextFile",
+					artifactID:  "report.txt",
+					contentType: "text/plain",
+					want:        true,
+				},
+				// 3. Explicit binary file should fail via exclusion list.
+				{
+					name:        "Fails_KnownImageExtension",
+					artifactID:  "failure_screenshot.png",
+					contentType: "",
+					want:        false,
+				},
+				// 4. File with excluded extension, even with generic content type.
+				{
+					name:        "Fails_KnownExecutableExtension",
+					artifactID:  "tool.exe",
+					contentType: "application/octet-stream",
+					want:        false,
+				},
+				// 5. Test exclusion of Gzip/Archive types now that support is removed from the map.
+				{
+					name:        "Fails_GzipArchiveLog",
+					artifactID:  "logs.tgz",
+					contentType: "application/x-gzip",
+					want:        false,
+				},
+			}
+
+			for _, tt := range testCases {
+				t.Run(tt.name, func(t *ftt.Test) {
+					if got := IsLogSupportedArtifact(tt.artifactID, tt.contentType); got != tt.want {
+						t.Errorf("IsLogSupportedArtifact(%q, %q) = %v, want %v", tt.artifactID, tt.contentType, got, tt.want)
+					}
+				})
+			}
+		})
 	})
 }
 
@@ -364,7 +417,7 @@ func TestToLogLines(t *testing.T) {
 2024-05-06T05:58:57.491037Z VERBOSE1 test[9617:9617]: [file.cc(845)] log line 2
 2024-05-06T05:58:57.577095Z WARNING test[9617:9617]: [file.cc(89)] log line 3.
 2024-05-06T05:58:57.577324Z INFO test[9617:9617]: [file.cc(140)] log line 4 {
-	log line no timestamp
+  log line no timestamp
 }`
 
 	ftt.Run(`ToLogLines`, t, func(t *ftt.Test) {
@@ -381,7 +434,7 @@ func TestToLogLines(t *testing.T) {
 			verifyArtifactLine(t, lines[2], "2024-05-06T05:58:57.577095Z", pb.ArtifactLine_WARNING)
 			assert.Loosely(t, lines[3].Content, should.Match([]byte("2024-05-06T05:58:57.577324Z INFO test[9617:9617]: [file.cc(140)] log line 4 {")))
 			verifyArtifactLine(t, lines[3], "2024-05-06T05:58:57.577324Z", pb.ArtifactLine_INFO)
-			assert.Loosely(t, lines[4].Content, should.Match([]byte("	log line no timestamp")))
+			assert.Loosely(t, lines[4].Content, should.Match([]byte("  log line no timestamp")))
 			verifyArtifactLine(t, lines[4], "", pb.ArtifactLine_SEVERITY_UNSPECIFIED)
 		})
 
