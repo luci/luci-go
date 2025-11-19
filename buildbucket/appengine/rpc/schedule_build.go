@@ -1497,14 +1497,12 @@ func scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest) ([]*pb
 	op.PrefetchBuilders(ctx)
 
 	// Prepare *model.Build entities, but do not store them yet.
-	buildsCount := 0
 	for _, req := range op.Pending() {
 		build, err := prepareNewBuild(ctx, op, req)
 		if err != nil {
 			op.Fail(req, err)
 		} else {
 			op.SetBuild(req, build)
-			buildsCount++
 		}
 	}
 
@@ -1515,47 +1513,31 @@ func scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest) ([]*pb
 
 	// TODO: Detect Turbo CI builds and launch them in a different way.
 
-	// Let buildCreator store entities and submit necessary TQ tasks.
-	bc := &buildCreator{
-		blds:           make([]*model.Build, 0, buildsCount),
-		idxMapBldToReq: make([]int, 0, buildsCount),
-		resultdbOpts:   make([]resultdb.CreateOptions, 0, buildsCount),
-		reqIDs:         make([]string, 0, buildsCount),
-		bldrsMCB:       buildersWithMCB(op.Builders),
-		merr:           make(errors.MultiError, 0, buildsCount),
-	}
-	for i, req := range op.Reqs {
-		if op.Errs[i] != nil {
-			continue
-		}
-		build := op.Builds[i]
-		bc.blds = append(bc.blds, build)
-		bc.idxMapBldToReq = append(bc.idxMapBldToReq, len(bc.idxMapBldToReq))
-		bc.resultdbOpts = append(bc.resultdbOpts, resultdb.CreateOptions{
-			// Build is an export root in ResultDB if it has no parent, or if
-			// explicitly requested.
-			IsExportRoot: len(build.AncestorIds) == 0 || req.GetResultdb().GetIsExportRootOverride(),
+	// Let createBuilds store entities and submit necessary TQ tasks.
+	var buildsToCreate []*buildToCreate
+	for _, req := range op.Pending() {
+		build := op.BuildForRequest(req)
+		buildsToCreate = append(buildsToCreate, &buildToCreate{
+			build:     build,
+			requestID: req.RequestId,
+			resultDB: resultdb.CreateOptions{
+				// Build is an export root in ResultDB if it has no parent, or if
+				// explicitly requested.
+				IsExportRoot: len(build.AncestorIds) == 0 || req.GetResultdb().GetIsExportRootOverride(),
+			},
 		})
-		bc.reqIDs = append(bc.reqIDs, req.RequestId)
-		bc.merr = append(bc.merr, nil)
 	}
 
 	// Note: createBuilds updates *model.Build entities in-place, i.e. once it
 	// finishes running, `op.Builds` will have updated entities with the generated
 	// build ID inside.
-	_, err = bc.createBuilds(ctx)
-	createErr := func(idx int) error {
-		if me, ok := err.(errors.MultiError); ok {
-			return me[idx]
-		} else {
-			return err
-		}
-	}
+	merr := createBuilds(ctx, buildsToCreate, buildersWithMCB(op.Builders))
 	for idx, req := range op.Pending() {
-		if err := createErr(idx); err != nil {
-			op.Fail(req, err)
+		if merr[idx] != nil {
+			op.Fail(req, merr[idx])
 		}
 	}
+
 	return op.Finalize(ctx)
 }
 

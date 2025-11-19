@@ -556,76 +556,82 @@ func validateCreateBuildRequest(ctx context.Context, wellKnownExperiments string
 	return m, nil
 }
 
-type buildCreator struct {
-	// Valid builds to be saved in datastore. The len(blds) <= len(reqIDs)
-	blds []*model.Build
-	// idxMapBldToReq is an index map of index of blds -> index of reqIDs.
-	idxMapBldToReq []int
-	// Contains ResultDB creation options for each build.
-	resultdbOpts []resultdb.CreateOptions
-	// RequestIDs of each request.
-	reqIDs []string
-	// Set of builders with max_concurrent_builds enabled.
-	bldrsMCB stringset.Set
-	// errors when creating the builds.
-	merr errors.MultiError
+// buildToCreate specifies a build to store and launch along with some related
+// parameters.
+type buildToCreate struct {
+	// A valid build to be save in datastore and updated in-place.
+	build *model.Build
+	// The request ID for deduplication, if any.
+	requestID string
+	// ResultDB options for this build.
+	resultDB resultdb.CreateOptions
 }
 
-// createBuilds saves the builds to datastore and triggers swarming task creation
-// tasks for each saved build.
-// A single returned error means a top-level error.
-// Otherwise, it would be a MultiError where len(MultiError) equals to len(bc.reqIDs).
-func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error) {
-	if len(bc.blds) != len(bc.resultdbOpts) {
-		return nil, errors.New("len(blds) must match len(resultdbOpts)")
-	}
-
+// createBuilds saves the builds to datastore and triggers TQ tasks needed to
+// actually start running these builds.
+//
+// Builds of builders that are in the given `bldrsMCB` set will be launched
+// via a mechanism that enforces `max_concurrent_builds` limit.
+//
+// Updates successfully created builds in-place. Always returns exactly
+// len(builds) errors.
+func createBuilds(ctx context.Context, builds []*buildToCreate, bldrsMCB stringset.Set) errors.MultiError {
 	now := clock.Now(ctx).UTC()
 	user := auth.CurrentIdentity(ctx)
 	appID := info.AppID(ctx) // e.g. cr-buildbucket
-	ids := buildid.NewBuildIDs(ctx, now, len(bc.blds))
-	nums := make([]*model.Build, 0, len(bc.blds))
+	ids := buildid.NewBuildIDs(ctx, now, len(builds))
+	nums := make([]*model.Build, 0, len(builds))
 	var idxMapNums []int
 
-	for i := range bc.blds {
-		if bc.blds[i] == nil {
-			continue
-		}
-		bc.blds[i].ID = ids[i]
-		bc.blds[i].CreatedBy = user
-		bc.blds[i].CreateTime = now
+	for i, b := range builds {
+		b.build.ID = ids[i]
+		b.build.CreatedBy = user
+		b.build.CreateTime = now
 
 		// Set proto field values which can only be determined at creation-time.
-		bc.blds[i].Proto.CreatedBy = string(user)
-		bc.blds[i].Proto.CreateTime = timestamppb.New(now)
-		bc.blds[i].Proto.Id = ids[i]
-		if bc.blds[i].Proto.Infra.Buildbucket.Hostname == "" {
-			bc.blds[i].Proto.Infra.Buildbucket.Hostname = fmt.Sprintf("%s.appspot.com", appID)
+		b.build.Proto.CreatedBy = string(user)
+		b.build.Proto.CreateTime = timestamppb.New(now)
+		b.build.Proto.Id = ids[i]
+		if b.build.Proto.Infra.Buildbucket.Hostname == "" {
+			b.build.Proto.Infra.Buildbucket.Hostname = fmt.Sprintf("%s.appspot.com", appID)
 		}
-		bc.blds[i].Proto.Infra.Logdog.Prefix = fmt.Sprintf("buildbucket/%s/%d", appID, bc.blds[i].Proto.Id)
-		protoutil.SetStatus(now, bc.blds[i].Proto, pb.Status_SCHEDULED)
+		b.build.Proto.Infra.Logdog.Prefix = fmt.Sprintf("buildbucket/%s/%d", appID, b.build.Proto.Id)
+		protoutil.SetStatus(now, b.build.Proto, pb.Status_SCHEDULED)
 
-		if bc.blds[i].Proto.GetInfra().GetBuildbucket().GetBuildNumber() {
-			idxMapNums = append(idxMapNums, bc.idxMapBldToReq[i])
-			nums = append(nums, bc.blds[i])
+		if b.build.Proto.GetInfra().GetBuildbucket().GetBuildNumber() {
+			idxMapNums = append(idxMapNums, i)
+			nums = append(nums, b.build)
 		}
 	}
 
+	// Attempt to generate build numbers for builds that requested them.
+	merr := make(errors.MultiError, len(builds))
 	if err := generateBuildNumbers(ctx, nums); err != nil {
-		me := err.(errors.MultiError)
-		bc.merr = mergeErrs(bc.merr, me, "error generating build numbers", func(idx int) int { return idxMapNums[idx] })
+		merr = mergeErrs(merr, err.(errors.MultiError), "error generating build numbers", func(idx int) int { return idxMapNums[idx] })
 	}
 
-	validBlds, filteredRDBOpts, idxMapValidBlds := getValidBlds(bc.blds, bc.resultdbOpts, bc.merr, bc.idxMapBldToReq)
+	// Get still pending builds along with their indexes in `builds`.
+	pendingBuilds := make([]*model.Build, 0, len(builds))
+	filteredRDBOpts := make([]resultdb.CreateOptions, 0, len(builds))
+	idxMapPending := make([]int, 0, len(builds))
+	for idx, build := range builds {
+		if merr[idx] != nil {
+			continue
+		}
+		pendingBuilds = append(pendingBuilds, build.build)
+		filteredRDBOpts = append(filteredRDBOpts, build.resultDB)
+		idxMapPending = append(idxMapPending, idx)
+	}
 
 	err := parallel.FanOutIn(func(work chan<- func() error) {
-		work <- func() error { return model.UpdateBuilderStat(ctx, validBlds, now) }
-		work <- func() error { return resultdb.CreateInvocations(ctx, validBlds, filteredRDBOpts) }
-		work <- func() error { return search.UpdateTagIndex(ctx, validBlds) }
+		work <- func() error { return model.UpdateBuilderStat(ctx, pendingBuilds, now) }
+		work <- func() error { return resultdb.CreateInvocations(ctx, pendingBuilds, filteredRDBOpts) }
+		work <- func() error { return search.UpdateTagIndex(ctx, pendingBuilds) }
 		work <- func() error {
 			// Evaluate the builds for custom builder metrics.
-			// The builds have not been saved in datastore, so nothing to load as build details.
-			for _, bld := range validBlds {
+			// The builds have not been saved in datastore, so nothing to load as
+			// build details.
+			for _, bld := range pendingBuilds {
 				if err := model.EvaluateBuildForCustomBuilderMetrics(ctx, bld, bld.Proto, false); err != nil {
 					logging.Errorf(ctx, "failed to evaluate build for custom builder metrics: %s", err)
 				}
@@ -637,25 +643,38 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 		errs := err.(errors.MultiError)
 		for _, e := range errs {
 			if me, ok := e.(errors.MultiError); ok {
-				bc.merr = mergeErrs(bc.merr, me, "", func(idx int) int { return idxMapValidBlds[idx] })
+				merr = mergeErrs(merr, me, "", func(idx int) int { return idxMapPending[idx] })
 			} else {
-				return nil, e // top-level error
+				// Fatal global error. Update all pending builds with this error.
+				for i, cur := range merr {
+					if cur == nil {
+						merr[i] = e
+					}
+				}
+				return merr
 			}
 		}
 	}
 
-	// This parallel work isn't combined with the above parallel work to ensure build entities and Swarming (or Backend)
-	// task creation tasks are only created if everything else has succeeded (since everything can't be done
-	// in one transaction).
-	_ = parallel.WorkPool(min(64, len(validBlds)), func(work chan<- func() error) {
-		for i, b := range validBlds {
-			origI := idxMapValidBlds[i]
-			if bc.merr[origI] != nil {
-				validBlds[i] = nil
-				continue
-			}
+	// Get still pending builds along with their indexes in `builds`.
+	pendingBuilds = pendingBuilds[:0]
+	idxMapPending = idxMapPending[:0]
+	for idx, build := range builds {
+		if merr[idx] != nil {
+			continue
+		}
+		pendingBuilds = append(pendingBuilds, build.build)
+		idxMapPending = append(idxMapPending, idx)
+	}
 
-			reqID := bc.reqIDs[origI]
+	// This parallel work isn't combined with the above parallel work to ensure
+	// build entities and Swarming (or Backend) task creation tasks are only
+	// created if everything else has succeeded (since everything can't be done
+	// in one transaction).
+	_ = parallel.WorkPool(min(64, len(pendingBuilds)), func(work chan<- func() error) {
+		for i, b := range pendingBuilds {
+			reqID := builds[idxMapPending[i]].requestID
+
 			work <- func() error {
 				bldrID := b.Proto.Builder
 				bs := &model.BuildStatus{
@@ -721,7 +740,7 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 					}
 
 					switch {
-					case bc.bldrsMCB.Has(protoutil.FormatBuilderID(bldrID)):
+					case bldrsMCB.Has(protoutil.FormatBuilderID(bldrID)):
 						// max_concurrent_builds feature is enabled for this builder.
 						if err := tasks.CreatePushPendingBuildTask(ctx, &taskdefs.PushPendingBuildTask{
 							BuildId:   b.ID,
@@ -759,58 +778,23 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 
 				// Record any error happened in the above transaction.
 				if err != nil {
-					validBlds[i] = nil
-					bc.merr[origI] = err
-					return nil
+					merr[idxMapPending[i]] = err
+				} else {
+					metrics.BuildCreated(ctx, b)
 				}
-				metrics.BuildCreated(ctx, b)
 				return nil
 			}
 		}
 	})
 
-	if bc.merr.First() == nil {
-		return validBlds, nil
-	}
-	// Map back to final results to make sure len(resBlds) always equal to len(reqs).
-	resBlds := make([]*model.Build, len(bc.reqIDs))
-	for i, bld := range validBlds {
-		origI := idxMapValidBlds[i]
-		if bc.merr[origI] == nil {
-			resBlds[origI] = bld
-		}
-	}
-	return resBlds, bc.merr
-}
-
-// getValidBlds returns a list of valid builds where its corresponding error is nil,
-// their ResultDB creation options, as well as an index map where
-// idxMap[returnedIndex] == idxMapBldToReq[originalIndex].
-func getValidBlds(blds []*model.Build, resultDBOpts []resultdb.CreateOptions, origErrs errors.MultiError, idxMapBldToReq []int) ([]*model.Build, []resultdb.CreateOptions, []int) {
-	if len(blds) != len(idxMapBldToReq) {
-		panic("The length of blds and the length of idxMapBldToReq must be the same.")
-	}
-	if len(blds) != len(resultDBOpts) {
-		panic("The length of blds and the length of resultDBOpts must be the same.")
-	}
-	var validBlds []*model.Build
-	var idxMap []int
-	var filteredOpts []resultdb.CreateOptions
-	for i, bld := range blds {
-		origI := idxMapBldToReq[i]
-		if origErrs[origI] == nil {
-			idxMap = append(idxMap, origI)
-			validBlds = append(validBlds, bld)
-			filteredOpts = append(filteredOpts, resultDBOpts[i])
-		}
-	}
-	return validBlds, filteredOpts, idxMap
+	return merr
 }
 
 // generateBuildNumbers mutates the given builds, setting build numbers and
 // build address tags.
 //
-// It would return a MultiError (if any) where len(MultiError) equals to len(reqs).
+// It would return a MultiError (if any) where len(MultiError) equals to
+// len(reqs).
 func generateBuildNumbers(ctx context.Context, builds []*model.Build) error {
 	merr := make(errors.MultiError, len(builds))
 	seq := make(map[string][]*model.Build)
@@ -894,17 +878,16 @@ func (*Builds) CreateBuild(ctx context.Context, req *pb.CreateBuildRequest) (*pb
 	sort.Strings(tags)
 	bld.Tags = tags
 
-	bc := &buildCreator{
-		blds:           []*model.Build{bld},
-		resultdbOpts:   []resultdb.CreateOptions{resultdbOpts},
-		idxMapBldToReq: []int{0},
-		reqIDs:         []string{req.RequestId},
-		merr:           make(errors.MultiError, 1),
-	}
-	blds, err := bc.createBuilds(ctx)
-	if err != nil {
-		return nil, errors.Fmt("error creating build: %w", err)
+	merr := createBuilds(ctx, []*buildToCreate{
+		{
+			build:     bld,
+			resultDB:  resultdbOpts,
+			requestID: req.RequestId,
+		},
+	}, nil)
+	if merr[0] != nil {
+		return nil, errors.Fmt("error creating build: %w", merr[0])
 	}
 
-	return blds[0].ToProto(ctx, m, nil)
+	return bld.ToProto(ctx, m, nil)
 }

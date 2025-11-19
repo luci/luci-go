@@ -187,6 +187,15 @@ func (op *scheduleBuildOp) SetBuild(req *pb.ScheduleBuildRequest, build *model.B
 	op.Builds[idx] = build
 }
 
+// BuildForRequest returns a build associated with a pending request.
+func (op *scheduleBuildOp) BuildForRequest(req *pb.ScheduleBuildRequest) *model.Build {
+	idx := op.reqIdx(req)
+	if op.Errs[idx] != nil {
+		panic(fmt.Sprintf("request #%d was already marked as failed", idx))
+	}
+	return op.Builds[idx]
+}
+
 // PrefetchBuilders fetches builder configs of all still pending requests.
 //
 // Fetched configs are placed into Builders map. Assumes bucket configs have
