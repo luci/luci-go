@@ -780,13 +780,7 @@ function Metrics({ filters }: { filters: string }) {
                     getFilterQueryString(
                       {
                         fc_machine_type: ['host'],
-                        state: [
-                          'DYING',
-                          'FAILED',
-                          'INSTALL_ERROR',
-                          'LAMEDUCK',
-                          'MISSING',
-                        ],
+                        state: ['LAB_MISSING'],
                       },
                       searchParams,
                     )
