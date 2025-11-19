@@ -19,7 +19,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"maps"
 	"net/url"
 	"regexp"
 	"slices"
@@ -27,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -40,7 +40,6 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/caching"
@@ -385,108 +384,25 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 	return ret, nil
 }
 
-// fetchBuilderConfigs returns the Builder configs referenced by the given
-// requests in a map of Bucket ID -> Builder name -> *pb.BuilderConfig,
-// a map of buckets to their shadow buckets and a map of Bucket ID -> *pb.Bucket.
+// buildersWithMCB collects statically configured builders with
+// `max_concurrent_builds` feature enabled.
 //
-// A single returned error means a global error which applies to every request.
-// Otherwise, it would be a MultiError where len(MultiError) equals to len(builderIDs).
-func fetchBuilderConfigs(ctx context.Context, builderIDs []*pb.BuilderID) (map[string]map[string]*pb.BuilderConfig, map[string]*pb.Bucket, map[string]string, error) {
-	merr := make(errors.MultiError, len(builderIDs))
-	var bcks []*model.Bucket
-
-	// bckCfgs and bldrCfgs use a double-pointer because GetIgnoreMissing will
-	// indirectly overwrite the pointer in the model struct when loading from the
-	// datastore (so, populating Proto and Config fields and using those values
-	// won't help).
-	bckCfgs := map[string]**pb.Bucket{} // Bucket ID -> **pb.Bucket
-	var bldrs []*model.Builder
-	bldrCfgs := map[string]map[string]**pb.BuilderConfig{} // Bucket ID -> Builder name -> **pb.BuilderConfig
-	idxMap := map[string]map[string][]int{}                // Bucket ID -> Builder name -> a list of index
-	for i, bldr := range builderIDs {
-		bucket := protoutil.FormatBucketID(bldr.Project, bldr.Bucket)
-		if _, ok := bldrCfgs[bucket]; !ok {
-			bldrCfgs[bucket] = make(map[string]**pb.BuilderConfig)
-			idxMap[bucket] = map[string][]int{}
-		}
-		if _, ok := bldrCfgs[bucket][bldr.Builder]; ok {
-			idxMap[bucket][bldr.Builder] = append(idxMap[bucket][bldr.Builder], i)
-			continue
-		}
-		if _, ok := bckCfgs[bucket]; !ok {
-			b := &model.Bucket{
-				Parent: model.ProjectKey(ctx, bldr.Project),
-				ID:     bldr.Bucket,
-			}
-			bckCfgs[bucket] = &b.Proto
-			bcks = append(bcks, b)
-		}
-		b := &model.Builder{
-			Parent: model.BucketKey(ctx, bldr.Project, bldr.Bucket),
-			ID:     bldr.Builder,
-		}
-		bldrCfgs[bucket][bldr.Builder] = &b.Config
-		bldrs = append(bldrs, b)
-		idxMap[bucket][bldr.Builder] = append(idxMap[bucket][bldr.Builder], i)
-	}
-
-	// Note; this will fill in bckCfgs and bldrCfgs.
-	if err := model.GetIgnoreMissing(ctx, bcks, bldrs); err != nil {
-		return nil, nil, nil, errors.Fmt("failed to fetch entities: %w", err)
-	}
-
-	dynamicBuckets := map[string]*pb.Bucket{}
-	shadowMap := make(map[string]string)
-	// Check buckets to see if they support dynamically scheduling builds for builders which are not pre-defined.
-	for _, b := range bcks {
-		bucket := protoutil.FormatBucketID(b.Parent.StringID(), b.ID)
-		if b.Proto.GetName() == "" {
-			for _, bldrIdx := range idxMap[bucket] {
-				for idx := range bldrIdx {
-					merr[idx] = appstatus.Errorf(codes.NotFound, "bucket not found: %q", b.ID)
-				}
-			}
-		} else {
-			shadowMap[bucket] = b.Proto.GetShadow()
+// Note: this totally ignores shadow buckets, since `cfg` here contains
+// builder configs before shadow bucket adjustments. As a result builds in
+// shadow buckets will not be subjected to `max_concurrent_builds` limit.
+//
+// This also excludes dynamic builders: they won't have `max_concurrent_builds`
+// limit either, even if their template config says they should
+// (PushPendingBuildTask and other related machinery expects *model.Builder
+// entities to exist, it doesn't work with dynamic builders).
+func buildersWithMCB(cfg map[string]*pb.BuilderConfig) stringset.Set {
+	ids := stringset.New(0)
+	for builderID, builderCfg := range cfg {
+		if builderCfg.GetMaxConcurrentBuilds() > 0 {
+			ids.Add(builderID)
 		}
 	}
-	for _, b := range bldrs {
-		// Since b.Config isn't a pointer type it will always be non-nil. However, since name is validated
-		// as required, it can be used as a proxy for determining whether the builder config was found or
-		// not. If it's unspecified, the builder wasn't found. Builds for builders which aren't pre-configured
-		// can only be scheduled in buckets which support dynamic builders.
-		if b.Config.GetName() == "" {
-			bucket := protoutil.FormatBucketID(b.Parent.Parent().StringID(), b.Parent.StringID())
-			// TODO(crbug/1042991): Check if bucket is explicitly configured for dynamic builders.
-			// Currently buckets do not require pre-defined builders iff they have no Swarming config.
-			if (*bckCfgs[bucket]).GetSwarming() == nil {
-				delete(bldrCfgs[bucket], b.ID)
-				if (*bckCfgs[bucket]).GetDynamicBuilderTemplate() != nil {
-					dynamicBuckets[bucket] = *bckCfgs[bucket]
-				}
-				continue
-			}
-			for _, idx := range idxMap[bucket][b.ID] {
-				merr[idx] = appstatus.Errorf(codes.NotFound, "builder not found: %q", b.ID)
-			}
-		}
-	}
-
-	// deref all the pointers.
-	ret := make(map[string]map[string]*pb.BuilderConfig, len(bldrCfgs))
-	for bucket, builders := range bldrCfgs {
-		m := make(map[string]*pb.BuilderConfig, len(builders))
-		for builderName, builder := range builders {
-			m[builderName] = *builder
-		}
-		ret[bucket] = m
-	}
-
-	// doesn't contain any errors.
-	if merr.First() == nil {
-		return ret, dynamicBuckets, shadowMap, nil
-	}
-	return ret, dynamicBuckets, shadowMap, merr.AsError()
+	return ids
 }
 
 // builderMatches returns whether or not the given builder matches the given
@@ -1417,48 +1333,6 @@ func setExperimentsFromProto(build *model.Build) {
 	build.Experimental = build.Proto.Input.Experimental
 }
 
-// getShadowBuckets gets the shadow buckets.
-//
-// For the requests with `ShadowInput`, the build should be scheduled in the
-// shadow bucket of the requested bucket. So we need to get the shadow buckets
-// for validation.
-//
-// This is called before the request is fully validated. It skips fetching
-// shadow buckets of requests that appear to be malformed.
-func getShadowBuckets(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (map[string]string, error) {
-	bcksWithShadow := stringset.New(0)
-	var buckets []*model.Bucket
-	for _, req := range reqs {
-		if req.GetShadowInput() == nil || protoutil.ValidateBuilderID(req.GetBuilder()) != nil {
-			continue
-		}
-		k := protoutil.FormatBucketID(req.Builder.Project, req.Builder.Bucket)
-		if bcksWithShadow.Add(k) {
-			buckets = append(buckets, &model.Bucket{
-				Parent: model.ProjectKey(ctx, req.Builder.Project),
-				ID:     req.Builder.Bucket,
-			})
-		}
-	}
-	if len(bcksWithShadow) == 0 {
-		return nil, nil
-	}
-
-	if err := model.GetIgnoreMissing(ctx, buckets); err != nil {
-		return nil, errors.Fmt("failed to fetch bucket entities: %w", err)
-	}
-
-	shadows := make(map[string]string)
-	for _, b := range buckets {
-		if b == nil {
-			continue
-		}
-		k := protoutil.FormatBucketID(b.Parent.StringID(), b.ID)
-		shadows[k] = b.Proto.GetShadow()
-	}
-	return shadows, nil
-}
-
 func builderCustomMetrics(ctx context.Context, globalCfg *pb.SettingsCfg, cfg *pb.BuilderConfig) []model.CustomMetric {
 	if len(cfg.GetCustomMetricDefinitions()) == 0 {
 		return nil
@@ -1483,153 +1357,6 @@ func builderCustomMetrics(ctx context.Context, globalCfg *pb.SettingsCfg, cfg *p
 		})
 	}
 	return cms
-}
-
-// scheduleBuilds handles requests to schedule builds.
-//
-// Requests must be validated and authorized already. The length of returned
-// builds always equal to len(reqs). A single returned error means a global
-// error which applies to every request. Otherwise, it would be a MultiError
-// where len(MultiError) equals to len(reqs).
-func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, pMap *parentsMap, reqs ...*pb.ScheduleBuildRequest) ([]*model.Build, error) {
-	if len(reqs) == 0 {
-		return []*model.Build{}, nil
-	}
-
-	merr := make(errors.MultiError, len(reqs))
-	// Bucket -> Builder -> *pb.BuilderConfig.
-	bldrIDs := make([]*pb.BuilderID, 0, len(reqs))
-	for _, req := range reqs {
-		bldrIDs = append(bldrIDs, req.Builder)
-	}
-	cfgs, dynamicBuckets, shadowMap, err := fetchBuilderConfigs(ctx, bldrIDs)
-	if me, ok := err.(errors.MultiError); ok {
-		merr = mergeErrs(merr, me, "error fetching builders", func(i int) int { return i })
-	} else if err != nil {
-		return nil, err
-	}
-
-	validReq, idxMapBlds := getValidReqs(reqs, merr)
-	blds := make([]*model.Build, len(validReq))
-	resultdbOpts := make([]resultdb.CreateOptions, len(validReq))
-	bldrsMCB := stringset.New(0)
-
-	var pInfra *model.BuildInfra
-	for i := range blds {
-		origI := idxMapBlds[i]
-		pBld, err := pMap.parentBuildForRequest(reqs[origI])
-		if err != nil {
-			merr[origI] = errors.New("error getting the parent")
-			blds[i] = nil
-			continue
-		}
-		// Any error here would have been caught by pMap.parentBuildForRequest
-		ancestors, _ := pMap.ancestorsForRequest(reqs[origI])
-		pRunID, _ := pMap.parentRunIDForRequest(reqs[origI])
-
-		bucket := fmt.Sprintf("%s/%s", validReq[i].Builder.Project, validReq[i].Builder.Bucket)
-		cfg := cfgs[bucket][validReq[i].Builder.Builder]
-		inDynamicBucket := false
-		if bkt, ok := dynamicBuckets[bucket]; ok {
-			inDynamicBucket = true
-			cfg = bkt.GetDynamicBuilderTemplate().GetTemplate()
-		}
-
-		var build *pb.Build
-		if reqs[origI].ShadowInput != nil {
-			// Schedule a build with shadow info.
-			if shadowMap[bucket] == "" || shadowMap[bucket] == validReq[i].Builder.Bucket {
-				// Scheduling a shadow build in the original bucket is prohibited.
-				// In theory this part of code should not be reached, since validateScheduleBuild
-				// has checked.
-				// But still check here just in case a builder config happened to be
-				// updated between validateScheduleBuild and here.
-				merr[origI] = errors.New("scheduling a shadow build in the original bucket is not allowed")
-				blds[i] = nil
-				continue
-			}
-			// Prepare a build with shadow info.
-			build = synthesizeShadowBuild(ctx, reqs[origI], ancestors, shadowMap[bucket], globalCfg, cfg)
-			if pBld != nil {
-				if pInfra == nil {
-					entities, err := common.GetBuildEntities(ctx, pBld.ID, model.BuildInfraKind)
-					if err != nil {
-						merr[origI] = errors.Fmt("failed to get BuildInfra for build %d", pBld.ID)
-						blds[i] = nil
-						continue
-					}
-					pInfra = entities[0].(*model.BuildInfra)
-				}
-				// Inherit agent input and agent source from the parent build.
-				if reqs[origI].ShadowInput.InheritFromParent {
-					build.Infra.Buildbucket.Agent.Input = pInfra.Proto.Buildbucket.Agent.Input
-					build.Infra.Buildbucket.Agent.Source = pInfra.Proto.Buildbucket.Agent.Source
-					build.Exe = pBld.Proto.Exe
-					if len(build.Infra.Buildbucket.Agent.Input.Data) > 0 {
-						setCipdPackagesCache(build)
-					}
-				}
-			}
-		} else {
-			// TODO(crbug.com/1042991): Parallelize build creation from requests if necessary.
-			build = buildFromScheduleRequest(ctx, reqs[origI], ancestors, pRunID, cfg, globalCfg)
-		}
-
-		blds[i] = &model.Build{
-			Proto: build,
-		}
-		// max_concurrent_builds is enabled for this builder.
-		if cfg.GetMaxConcurrentBuilds() > 0 {
-			bldrsMCB.Add(protoutil.FormatBuilderID(blds[i].Proto.Builder))
-		}
-		resultdbOpts[i] = resultdb.CreateOptions{
-			// Build is an export root in ResultDB if it has no parent, or if
-			// explicitly requested.
-			IsExportRoot: pBld == nil || validReq[i].GetResultdb().GetIsExportRootOverride(),
-		}
-
-		setExperimentsFromProto(blds[i])
-		blds[i].IsLuci = cfg != nil || inDynamicBucket
-		blds[i].PubSubCallback.Topic = validReq[i].GetNotify().GetPubsubTopic()
-		blds[i].PubSubCallback.UserData = validReq[i].GetNotify().GetUserData()
-		// Tags are stored in the outer struct (see model/build.go).
-		tags := protoutil.StringPairMap(blds[i].Proto.Tags).Format()
-		tags = stringset.NewFromSlice(tags...).ToSlice() // Deduplicate tags.
-		sort.Strings(tags)
-		blds[i].Tags = tags
-		blds[i].CustomMetrics = builderCustomMetrics(ctx, globalCfg, cfg)
-
-		exp := make(map[int64]struct{})
-		for _, d := range blds[i].Proto.Infra.GetSwarming().GetTaskDimensions() {
-			exp[d.Expiration.GetSeconds()] = struct{}{}
-		}
-		if len(exp) > 6 {
-			merr[origI] = appstatus.BadRequest(errors.Fmt("build %d contains more than 6 unique expirations", i))
-			continue
-		}
-	}
-
-	// Either all requests are DryRun or none of them, see Builds.scheduleBuilds.
-	if reqs[0].DryRun {
-		if merr.First() == nil {
-			return blds, nil
-		}
-		return blds, merr
-	}
-
-	reqIDs := make([]string, 0, len(reqs))
-	for _, req := range reqs {
-		reqIDs = append(reqIDs, req.RequestId)
-	}
-	bc := &buildCreator{
-		blds:           blds,
-		resultdbOpts:   resultdbOpts,
-		idxMapBldToReq: idxMapBlds,
-		reqIDs:         reqIDs,
-		merr:           merr,
-		bldrsMCB:       bldrsMCB,
-	}
-	return bc.createBuilds(ctx)
 }
 
 // normalizeSchedule converts deprecated fields to non-deprecated ones.
@@ -1661,16 +1388,16 @@ func normalizeSchedule(req *pb.ScheduleBuildRequest) {
 }
 
 // validateScheduleBuild validates and authorizes the given request, returning
-// a normalized version of the request and field mask.
+// a normalized version of the request and the field mask extracted from it.
 //
 // In particular replaces TemplateBuildId with the body of the corresponding
-// build.
-func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.Set, req *pb.ScheduleBuildRequest, pMap *parentsMap, shadowBuckets map[string]string) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
-	pBld, err := pMap.parentBuildForRequest(req)
+// build (prefetching its bucket if necessary).
+func validateScheduleBuild(ctx context.Context, op *scheduleBuildOp, req *pb.ScheduleBuildRequest) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
+	pBld, err := op.Parents.parentBuildForRequest(req)
 	if err != nil {
 		return nil, nil, err
 	}
-	if err = validateSchedule(ctx, req, wellKnownExperiments, pBld); err != nil {
+	if err = validateSchedule(ctx, req, op.WellKnownExperiments, pBld); err != nil {
 		return nil, nil, appstatus.BadRequest(err)
 	}
 	normalizeSchedule(req)
@@ -1684,10 +1411,16 @@ func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.S
 		return nil, nil, err
 	}
 
+	// This is needed in case `template_build_id` was used. The bucket the builder
+	// is in might not have been fetched yet.
+	bucketID := protoutil.FormatBucketID(req.Builder.Project, req.Builder.Bucket)
+	if err := op.Buckets.Prefetch(ctx, bucketID); err != nil {
+		return nil, nil, appstatus.Errorf(codes.Internal, "failed to fetch bucket config: %s", err)
+	}
+
 	bkt := req.Builder.Bucket
 	if req.GetShadowInput() != nil {
-		k := protoutil.FormatBucketID(req.Builder.Project, req.Builder.Bucket)
-		shadow := shadowBuckets[k]
+		shadow := op.Buckets.ShadowBucket(bucketID)
 		if shadow == "" || shadow == req.Builder.Bucket {
 			return nil, nil, appstatus.BadRequest(errors.New("scheduling a shadow build in the original bucket is not allowed"))
 		}
@@ -1712,127 +1445,191 @@ func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.S
 //
 // Implements pb.BuildsServer.
 func (b *Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.Build, error) {
-	builds, merr := b.scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+	builds, merr := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
 	return builds[0], merr[0]
+}
+
+// totalBatchFailure constructs a MultiError that has `err` in all positions.
+func totalBatchFailure(err error, count int) ([]*pb.Build, errors.MultiError) {
+	return slices.Repeat([]*pb.Build{nil}, count),
+		errors.NewMultiError(slices.Repeat([]error{err}, count)...)
 }
 
 // scheduleBuilds handles requests to schedule a batch of builds.
 //
+// It does full request processing, including validation, authorization and
+// trimming of the result based on the build mask in requests.
+//
 // The length of returned builds and errors always equal to the len(reqs).
-func (b *Builds) scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest) ([]*pb.Build, errors.MultiError) {
+func scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest) ([]*pb.Build, errors.MultiError) {
 	if len(reqs) == 0 {
 		return nil, nil
 	}
 
 	checkTurboCIOAuthScope(ctx)
 
-	// The ith error is the error associated with the ith request.
-	merr := make(errors.MultiError, len(reqs))
-	// The ith mask is the field mask derived from the ith request.
-	masks := make([]*model.BuildMask, len(reqs))
-
-	// Puts the given error into all nil slots of `merr` and returns it.
-	errorInBatch := func(err error) ([]*pb.Build, errors.MultiError) {
-		for i, e := range merr {
-			if e == nil {
-				merr[i] = err
-			}
-		}
-		return slices.Repeat([]*pb.Build{nil}, len(reqs)), merr
-	}
-
-	// Currently mixing dry run and non-dry run builds is not supported.
-	dryRun := reqs[0].DryRun
-	for _, req := range reqs {
-		if req.DryRun != dryRun {
-			return errorInBatch(appstatus.BadRequest(errors.New("all requests must have the same dry_run value")))
-		}
-	}
-
-	// Validate parents and fetch parent builds.
-	pIDSet := make(map[int64]struct{})
-	for _, req := range reqs {
-		if req.ParentBuildId != 0 {
-			pIDSet[req.ParentBuildId] = struct{}{}
-		}
-	}
-	pMap, err := validateParents(ctx, slices.Collect(maps.Keys(pIDSet)))
+	// Prepare by fetching configs and parent builds.
+	op, err := newScheduleBuildOp(ctx, reqs)
 	if err != nil {
-		return errorInBatch(err)
-	}
-
-	// Get map "bucket ID => its shadow bucket" for builds that use shadow inputs.
-	shadowBuckets, err := getShadowBuckets(ctx, reqs)
-	if err != nil {
-		return errorInBatch(err)
-	}
-
-	// Need the config to lookup experiments.
-	globalCfg, err := config.GetSettingsCfg(ctx)
-	if err != nil {
-		return errorInBatch(errors.Fmt("error fetching service config: %w", err))
+		return totalBatchFailure(err, len(reqs))
 	}
 
 	// Validate requests (including ACLs), expand TemplateBuildId. This can fetch
 	// builds, so do it in parallel.
-	wellKnownExperiments := protoutil.WellKnownExperiments(globalCfg)
-	_ = parallel.WorkPool(min(64, len(reqs)), func(work chan<- func() error) {
-		for i, req := range reqs {
-			work <- func() error {
-				reqs[i], masks[i], merr[i] = validateScheduleBuild(ctx, wellKnownExperiments, req, pMap, shadowBuckets)
-				return nil
+	eg, _ := errgroup.WithContext(ctx)
+	eg.SetLimit(64)
+	for i, req := range op.Reqs {
+		eg.Go(func() error {
+			updatedReq, mask, err := validateScheduleBuild(ctx, op, req)
+			if err != nil {
+				op.Errs[i] = err
+			} else {
+				op.Reqs[i], op.Masks[i] = updatedReq, mask
 			}
-		}
-	})
+			return nil
+		})
+	}
+	eg.Wait()
+	op.UpdateReqMap()
 
-	// Try to schedule all still valid requests.
-	validReqs, idxMapValidReqs := getValidReqs(reqs, merr)
-	blds, err := scheduleBuilds(ctx, globalCfg, pMap, validReqs...)
-	if err != nil {
-		if me, ok := err.(errors.MultiError); ok {
-			// Merge per-build errors into the overall multi-map.
-			merr = mergeErrs(merr, me, "", func(i int) int { return idxMapValidReqs[i] })
+	// Now that we have expanded TemplateBuildId and know all involved builders,
+	// we can fetch their configs. This updates op.Errs in place on errors.
+	op.PrefetchBuilders(ctx)
+
+	// Prepare *model.Build entities, but do not store them yet.
+	buildsCount := 0
+	for _, req := range op.Pending() {
+		build, err := prepareNewBuild(ctx, op, req)
+		if err != nil {
+			op.Fail(req, err)
 		} else {
-			// Non-MultiError error should apply to every item and fail all requests.
-			if _, isAppStatusErr := appstatus.Get(err); !isAppStatusErr {
-				err = appstatus.Errorf(codes.Internal, "unexpected error scheduling builds: %s", err)
-			}
-			return errorInBatch(err)
+			op.SetBuild(req, build)
+			buildsCount++
 		}
 	}
 
-	// Assemble the scheduled builds from parts written into the datastore.
-	ret := make([]*pb.Build, len(blds))
-	_ = parallel.WorkPool(min(64, len(blds)), func(work chan<- func() error) {
-		for i, bld := range blds {
-			if bld == nil {
-				continue
-			}
-			origI := idxMapValidReqs[i]
-			work <- func() error {
-				// Note: We don't redact the Build response here because we expect any
-				// user with BuildsAdd permission should also have BuildsGet.
-				//
-				// TODO(crbug/1042991): Don't re-read freshly written entities
-				// (see ToProto).
-				if dryRun {
-					ret[i], merr[origI] = bld.ToDryRunProto(ctx, masks[origI])
-				} else {
-					ret[i], merr[origI] = bld.ToProto(ctx, masks[origI], nil)
-				}
-				return nil
-			}
-		}
-	})
+	// If this was a dry run, we are done.
+	if op.DryRun {
+		return op.Finalize(ctx)
+	}
 
-	// Put builds from `ret` into places matching the original `reqs` list.
-	origRet := make([]*pb.Build, len(reqs))
-	for i, origI := range idxMapValidReqs {
-		if merr[origI] == nil {
-			origRet[origI] = ret[i]
+	// TODO: Detect Turbo CI builds and launch them in a different way.
+
+	// Let buildCreator store entities and submit necessary TQ tasks.
+	bc := &buildCreator{
+		blds:           make([]*model.Build, 0, buildsCount),
+		idxMapBldToReq: make([]int, 0, buildsCount),
+		resultdbOpts:   make([]resultdb.CreateOptions, 0, buildsCount),
+		reqIDs:         make([]string, 0, buildsCount),
+		bldrsMCB:       buildersWithMCB(op.Builders),
+		merr:           make(errors.MultiError, 0, buildsCount),
+	}
+	for i, req := range op.Reqs {
+		if op.Errs[i] != nil {
+			continue
+		}
+		build := op.Builds[i]
+		bc.blds = append(bc.blds, build)
+		bc.idxMapBldToReq = append(bc.idxMapBldToReq, len(bc.idxMapBldToReq))
+		bc.resultdbOpts = append(bc.resultdbOpts, resultdb.CreateOptions{
+			// Build is an export root in ResultDB if it has no parent, or if
+			// explicitly requested.
+			IsExportRoot: len(build.AncestorIds) == 0 || req.GetResultdb().GetIsExportRootOverride(),
+		})
+		bc.reqIDs = append(bc.reqIDs, req.RequestId)
+		bc.merr = append(bc.merr, nil)
+	}
+
+	// Note: createBuilds updates *model.Build entities in-place, i.e. once it
+	// finishes running, `op.Builds` will have updated entities with the generated
+	// build ID inside.
+	_, err = bc.createBuilds(ctx)
+	createErr := func(idx int) error {
+		if me, ok := err.(errors.MultiError); ok {
+			return me[idx]
+		} else {
+			return err
 		}
 	}
-	return origRet, merr
+	for idx, req := range op.Pending() {
+		if err := createErr(idx); err != nil {
+			op.Fail(req, err)
+		}
+	}
+	return op.Finalize(ctx)
+}
+
+// prepareNewBuild initializes *model.Build, but doesn't store it yet.
+//
+// Recognizes dynamic builders and applies shadow bucket adjustments if
+// necessary.
+func prepareNewBuild(ctx context.Context, op *scheduleBuildOp, req *pb.ScheduleBuildRequest) (*model.Build, error) {
+	pBld, err := op.Parents.parentBuildForRequest(req)
+	if err != nil {
+		return nil, errors.Fmt("error getting the parent build: %w", err)
+	}
+
+	// Any error here would have been caught by op.Parents.parentBuildForRequest.
+	ancestors, _ := op.Parents.ancestorsForRequest(req)
+	pRunID, _ := op.Parents.parentRunIDForRequest(req)
+	pInfra, _ := op.Parents.parentInfraForRequest(req)
+
+	// Get the bucket config to check if it is a dynamic bucket.
+	bucket := protoutil.FormatBucketID(req.Builder.Project, req.Builder.Bucket)
+	bucketCfg := op.Buckets.Bucket(bucket)
+	dynamicBucket := bucketCfg.GetSwarming() == nil && bucketCfg.GetDynamicBuilderTemplate() != nil
+
+	// Get the builder config (perhaps a dynamic one).
+	var cfg *pb.BuilderConfig
+	if dynamicBucket {
+		cfg = bucketCfg.GetDynamicBuilderTemplate().GetTemplate()
+	} else {
+		cfg = op.Builders[protoutil.FormatBuilderID(req.Builder)]
+	}
+	if cfg == nil {
+		return nil, appstatus.Errorf(codes.Internal, "builder %q is unexpectedly missing its config", protoutil.FormatBuilderID(req.Builder))
+	}
+
+	// Prepare the build proto.
+	var buildPb *pb.Build
+	if req.ShadowInput != nil {
+		// Prepare a build with shadow info.
+		buildPb = synthesizeShadowBuild(ctx, req, ancestors, op.Buckets.ShadowBucket(bucket), op.GlobalCfg, cfg)
+		if pBld != nil && req.ShadowInput.InheritFromParent {
+			// Inherit agent input and agent source from the parent build.
+			buildPb.Infra.Buildbucket.Agent.Input = pInfra.Proto.Buildbucket.Agent.Input
+			buildPb.Infra.Buildbucket.Agent.Source = pInfra.Proto.Buildbucket.Agent.Source
+			buildPb.Exe = pBld.Proto.Exe
+			if len(buildPb.Infra.Buildbucket.Agent.Input.Data) > 0 {
+				setCipdPackagesCache(buildPb)
+			}
+		}
+	} else {
+		buildPb = buildFromScheduleRequest(ctx, req, ancestors, pRunID, cfg, op.GlobalCfg)
+	}
+
+	// Wrap the proto into an entity.
+	build := &model.Build{
+		Proto:  buildPb,
+		IsLuci: true,
+		Tags:   stringset.NewFromSlice(protoutil.StringPairMap(buildPb.Tags).Format()...).ToSortedSlice(),
+		PubSubCallback: model.PubSubCallback{
+			Topic:    req.GetNotify().GetPubsubTopic(),
+			UserData: req.GetNotify().GetUserData(),
+		},
+		CustomMetrics: builderCustomMetrics(ctx, op.GlobalCfg, cfg),
+	}
+	setExperimentsFromProto(build)
+
+	// Verify we do not exceed Swarming task slices limit.
+	exp := make(map[int64]struct{})
+	for _, d := range build.Proto.Infra.GetSwarming().GetTaskDimensions() {
+		exp[d.Expiration.GetSeconds()] = struct{}{}
+	}
+	if len(exp) > 6 {
+		return nil, appstatus.BadRequest(errors.Fmt("build contains more than 6 unique expirations"))
+	}
+	return build, nil
 }
 
 // mergeErrs merges errs into origErrs according to the idxMapper.
@@ -1847,24 +1644,6 @@ func mergeErrs(origErrs, errs errors.MultiError, reason string, idxMapper func(i
 		}
 	}
 	return origErrs
-}
-
-// getValidReqs returns a list of valid ScheduleBuildRequest where its
-// corresponding error is nil, as well as an index map where
-// idxMap[returnedIndex] == originalIndex.
-func getValidReqs(reqs []*pb.ScheduleBuildRequest, errs errors.MultiError) ([]*pb.ScheduleBuildRequest, []int) {
-	if len(reqs) != len(errs) {
-		panic("The length of reqs and the length of errs must be the same.")
-	}
-	var validReqs []*pb.ScheduleBuildRequest
-	var idxMap []int
-	for i, req := range reqs {
-		if errs[i] == nil {
-			idxMap = append(idxMap, i)
-			validReqs = append(validReqs, req)
-		}
-	}
-	return validReqs, idxMap
 }
 
 func extractCipdVersion(p *pb.SwarmingSettings_Package, b *pb.Build) string {

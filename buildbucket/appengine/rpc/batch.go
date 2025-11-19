@@ -89,7 +89,7 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 			c <- func() (err error) {
 				ctx, span := tracer.Start(ctx, "Batch.ScheduleBuild")
 				// Batch schedule requests. It allows partial success.
-				ret, merr := b.scheduleBuilds(ctx, schBatchReq)
+				ret, merr := scheduleBuilds(ctx, schBatchReq)
 				defer func() { endSpan(span, err) }()
 				for i := range schBatchReq {
 					if reqErr := merr[i]; reqErr != nil {

@@ -22,6 +22,8 @@ import (
 
 	"go.chromium.org/luci/grpc/appstatus"
 	executorpb "go.chromium.org/turboci/proto/go/graph/executor/v1"
+
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // ValidateStage implements executorgrpcpb.TurboCIStageExecutorServer.
@@ -53,6 +55,10 @@ func validateStage(ctx context.Context) error {
 	}
 
 	// TODO: b/449231057 - support parent validation.
-	_, _, err := validateScheduleBuild(ctx, nil, req, nil, nil)
+	op, err := newScheduleBuildOp(ctx, []*pb.ScheduleBuildRequest{req})
+	if err != nil {
+		return err
+	}
+	_, _, err = validateScheduleBuild(ctx, op, req)
 	return err
 }

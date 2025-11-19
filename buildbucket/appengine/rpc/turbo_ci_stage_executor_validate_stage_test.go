@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -36,6 +37,7 @@ func TestValidateStage(t *testing.T) {
 
 	ftt.Run("validateStage", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
+		assert.NoErr(t, config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{}))
 
 		t.Run("no call info", func(t *ftt.Test) {
 			assert.That(t, validateStage(ctx), should.ErrLike("missing call info"))

@@ -146,8 +146,11 @@ func (op *scheduleBuildOp) reqIdx(req *pb.ScheduleBuildRequest) int {
 func (op *scheduleBuildOp) UpdateReqMap() {
 	op.reqMap = make(map[*pb.ScheduleBuildRequest]int, len(op.Reqs))
 	for idx, req := range op.Reqs {
+		if req == nil {
+			panic("scheduleBuildOp is given nil *ScheduleBuildRequest")
+		}
 		if _, exists := op.reqMap[req]; exists {
-			panic("scheduleBuildOp is given identical *ScheduleBuildRequest")
+			panic(fmt.Sprintf("scheduleBuildOp is given identical *ScheduleBuildRequest: %p", req))
 		}
 		op.reqMap[req] = idx
 	}

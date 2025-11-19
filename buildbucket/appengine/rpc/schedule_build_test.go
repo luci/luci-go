@@ -16,6 +16,8 @@ package rpc
 
 import (
 	"context"
+	"crypto/sha256"
+	"fmt"
 	"math/rand"
 	"sort"
 	"strconv"
@@ -27,6 +29,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	grpcStatus "google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -36,7 +39,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	luciCmProto "go.chromium.org/luci/common/proto"
@@ -127,138 +129,6 @@ func TestScheduleBuild(t *testing.T) {
 			assert.Loosely(t, builderMatches("", p), should.BeFalse)
 			assert.Loosely(t, builderMatches("project/bucket/builder", p), should.BeFalse)
 			assert.Loosely(t, builderMatches("project/bucket/other", p), should.BeTrue)
-		})
-	})
-
-	ftt.Run("fetchBuilderConfigs", t, func(t *ftt.Test) {
-		ctx := metrics.WithServiceInfo(memory.Use(context.Background()), "svc", "job", "ins")
-		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
-		datastore.GetTestable(ctx).AutoIndex(true)
-		datastore.GetTestable(ctx).Consistent(true)
-
-		testutil.PutBuilder(ctx, "project", "bucket 1", "builder 1", "")
-		testutil.PutBuilder(ctx, "project", "bucket 1", "builder 2", "")
-		testutil.PutBucket(ctx, "project", "bucket 1", &pb.Bucket{
-			Swarming: &pb.Swarming{},
-			Shadow:   "bucket 2",
-		})
-		testutil.PutBucket(ctx, "project", "bucket 2", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
-
-		t.Run("bucket not found", func(t *ftt.Test) {
-			bldrIDs := []*pb.BuilderID{
-				{
-					Project: "project",
-					Bucket:  "bucket 3",
-					Builder: "builder 1",
-				},
-			}
-			bldrs, _, _, err := fetchBuilderConfigs(ctx, bldrIDs)
-			assert.Loosely(t, len(err.(errors.MultiError)), should.Equal(len(bldrIDs)))
-			assert.Loosely(t, err, should.ErrLike("bucket not found"))
-			assert.Loosely(t, bldrs["project/bucket 3"]["builder 1"], should.BeNil)
-		})
-
-		t.Run("builder not found", func(t *ftt.Test) {
-			bldrIDs := []*pb.BuilderID{
-				{
-					Project: "project",
-					Bucket:  "bucket 1",
-					Builder: "builder 3",
-				},
-			}
-			bldrs, _, _, err := fetchBuilderConfigs(ctx, bldrIDs)
-			assert.Loosely(t, len(err.(errors.MultiError)), should.Equal(len(bldrIDs)))
-			assert.Loosely(t, err, should.ErrLike("builder not found"))
-			assert.Loosely(t, bldrs["project/bucket 3"]["builder 1"], should.BeNil)
-		})
-
-		t.Run("one found and the other not found", func(t *ftt.Test) {
-			bldrIDs := []*pb.BuilderID{
-				{
-					Project: "project",
-					Bucket:  "bucket 1",
-					Builder: "builder 1",
-				},
-				{
-					Project: "project",
-					Bucket:  "bucket 1",
-					Builder: "builder 100",
-				},
-			}
-			bldrs, _, shadowMap, err := fetchBuilderConfigs(ctx, bldrIDs)
-			assert.Loosely(t, err.(errors.MultiError)[1], should.ErrLike("builder not found"))
-			assert.Loosely(t, bldrs["project/bucket 3"]["builder 1"], should.BeNil)
-			assert.Loosely(t, bldrs["project/bucket 1"]["builder 1"], should.Resemble(&pb.BuilderConfig{
-				Name:         "builder 1",
-				SwarmingHost: "host",
-			}))
-			assert.Loosely(t, shadowMap, should.Resemble(map[string]string{"project/bucket 1": "bucket 2"}))
-		})
-
-		t.Run("dynamic", func(t *ftt.Test) {
-			bldrIDs := []*pb.BuilderID{
-				{
-					Project: "project",
-					Bucket:  "bucket 2",
-					Builder: "builder 1",
-				},
-			}
-			bldrs, dynamicBuckets, shadowMap, err := fetchBuilderConfigs(ctx, bldrIDs)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bldrs["project/bucket 2"]["builder 1"], should.BeNil)
-			assert.Loosely(t, len(dynamicBuckets), should.Equal(1))
-			assert.Loosely(t, dynamicBuckets["project/bucket 2"], should.Resemble(&pb.Bucket{
-				Name:                   "bucket 2",
-				DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{},
-			}))
-			assert.Loosely(t, shadowMap, should.Resemble(map[string]string{"project/bucket 2": ""}))
-		})
-
-		t.Run("one", func(t *ftt.Test) {
-			bldrIDs := []*pb.BuilderID{
-				{
-					Project: "project",
-					Bucket:  "bucket 1",
-					Builder: "builder 1",
-				},
-			}
-			bldrs, _, _, err := fetchBuilderConfigs(ctx, bldrIDs)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bldrs["project/bucket 1"]["builder 1"], should.Resemble(&pb.BuilderConfig{
-				Name:         "builder 1",
-				SwarmingHost: "host",
-			}))
-		})
-
-		t.Run("many", func(t *ftt.Test) {
-			bldrIDs := []*pb.BuilderID{
-				{
-					Project: "project",
-					Bucket:  "bucket 1",
-					Builder: "builder 1",
-				},
-				{
-					Project: "project",
-					Bucket:  "bucket 1",
-					Builder: "builder 2",
-				},
-				{
-					Project: "project",
-					Bucket:  "bucket 2",
-					Builder: "builder 1",
-				},
-			}
-			bldrs, _, _, err := fetchBuilderConfigs(ctx, bldrIDs)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bldrs["project/bucket 1"]["builder 1"], should.Resemble(&pb.BuilderConfig{
-				Name:         "builder 1",
-				SwarmingHost: "host",
-			}))
-			assert.Loosely(t, bldrs["project/bucket 1"]["builder 2"], should.Resemble(&pb.BuilderConfig{
-				Name:         "builder 2",
-				SwarmingHost: "host",
-			}))
-			assert.Loosely(t, bldrs["project/bucket 2"]["builder 1"], should.BeNil)
 		})
 	})
 
@@ -371,1667 +241,6 @@ func TestScheduleBuild(t *testing.T) {
 						"build_address:luci.project.bucket/builder1/2",
 					},
 				},
-			}))
-		})
-	})
-
-	ftt.Run("scheduleBuilds", t, func(t *ftt.Test) {
-		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
-		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
-		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
-		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
-		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
-		ctx, sch := tq.TestingContext(ctx, nil)
-		datastore.GetTestable(ctx).AutoIndex(true)
-		datastore.GetTestable(ctx).Consistent(true)
-		ctx, _ = tsmon.WithDummyInMemory(ctx)
-		ctx = installTestSecret(ctx)
-
-		store := tsmon.Store(ctx)
-		globalCfg := &pb.SettingsCfg{
-			Resultdb: &pb.ResultDBSettings{
-				Hostname: "rdbHost",
-			},
-			Swarming: &pb.SwarmingSettings{
-				BbagentPackage: &pb.SwarmingSettings_Package{
-					PackageName: "bbagent",
-					Version:     "bbagent-version",
-				},
-				KitchenPackage: &pb.SwarmingSettings_Package{
-					PackageName: "kitchen",
-					Version:     "kitchen-version",
-				},
-			},
-		}
-
-		// stripProtos strips the Proto field from each of the given *model.Builds,
-		// returning a slice whose ith index is the stripped *pb.Build value.
-		// Needed because model.Build.Proto can only be compared with ShouldResembleProto
-		// while model.Build can only be compared with ShouldResemble.
-		stripProtos := func(builds []*model.Build) []*pb.Build {
-			ret := make([]*pb.Build, len(builds))
-			for i, b := range builds {
-				if b == nil {
-					ret[i] = nil
-				} else {
-					ret[i] = b.Proto
-					b.Proto = nil
-				}
-			}
-			return ret
-		}
-
-		t.Run("builder not found", func(t *ftt.Test) {
-			t.Run("error", func(t *ftt.Test) {
-				req := &pb.ScheduleBuildRequest{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-				}
-
-				blds, err := scheduleBuilds(ctx, globalCfg, nil, req)
-				assert.Loosely(t, err, should.HaveLength(1))
-				assert.Loosely(t, err.(errors.MultiError), should.ErrLike("error fetching builders"))
-				assert.Loosely(t, blds, should.HaveLength(1))
-				assert.Loosely(t, blds[0], should.BeNil)
-				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
-				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, fv("")), should.BeNil)
-			})
-
-			t.Run("dynamic", func(t *ftt.Test) {
-				testutil.PutBucket(ctx, "project", "bucket", nil)
-				req := &pb.ScheduleBuildRequest{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					DryRun: true,
-				}
-
-				blds, err := scheduleBuilds(ctx, globalCfg, nil, req)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
-					{
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
-						Exe: &pb.Executable{
-							Cmd: []string{"recipes"},
-						},
-						ExecutionTimeout: &durationpb.Duration{
-							Seconds: 10800,
-						},
-						GracePeriod: &durationpb.Duration{
-							Seconds: 30,
-						},
-						Infra: &pb.BuildInfra{
-							Bbagent: &pb.BuildInfra_BBAgent{
-								CacheDir:    "cache",
-								PayloadPath: "kitchen-checkout",
-							},
-							Buildbucket: &pb.BuildInfra_Buildbucket{
-								Hostname: "app.appspot.com",
-								Agent: &pb.BuildInfra_Buildbucket_Agent{
-									Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
-									Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-										"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
-									},
-								},
-							},
-							Logdog: &pb.BuildInfra_LogDog{
-								Project: "project",
-							},
-							Resultdb: &pb.BuildInfra_ResultDB{
-								Hostname: "rdbHost",
-							},
-							Swarming: &pb.BuildInfra_Swarming{
-								Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-									{
-										Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-										Path: "builder",
-										WaitForWarmCache: &durationpb.Duration{
-											Seconds: 240,
-										},
-									},
-								},
-								Priority: 30,
-							},
-						},
-						Input: &pb.Build_Input{
-							Properties: &structpb.Struct{},
-						},
-						SchedulingTimeout: &durationpb.Duration{
-							Seconds: 21600,
-						},
-						Tags: []*pb.StringPair{
-							{
-								Key:   "builder",
-								Value: "builder",
-							},
-						},
-					},
-				}))
-				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
-			})
-		})
-
-		t.Run("dry run", func(t *ftt.Test) {
-			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
-			testutil.PutBucket(ctx, "project", "bucket", nil)
-
-			t.Run("one", func(t *ftt.Test) {
-				req := &pb.ScheduleBuildRequest{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					DryRun: true,
-				}
-
-				blds, err := scheduleBuilds(ctx, globalCfg, nil, req)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
-					{
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
-						Exe: &pb.Executable{
-							Cmd: []string{"recipes"},
-						},
-						ExecutionTimeout: &durationpb.Duration{
-							Seconds: 10800,
-						},
-						GracePeriod: &durationpb.Duration{
-							Seconds: 30,
-						},
-						Infra: &pb.BuildInfra{
-							Bbagent: &pb.BuildInfra_BBAgent{
-								CacheDir:    "cache",
-								PayloadPath: "kitchen-checkout",
-							},
-							Buildbucket: &pb.BuildInfra_Buildbucket{
-								Hostname: "app.appspot.com",
-								Agent: &pb.BuildInfra_Buildbucket_Agent{
-									Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
-									Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-										"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
-									},
-								},
-							},
-							Logdog: &pb.BuildInfra_LogDog{
-								Project: "project",
-							},
-							Resultdb: &pb.BuildInfra_ResultDB{
-								Hostname: "rdbHost",
-							},
-							Swarming: &pb.BuildInfra_Swarming{
-								Hostname: "host",
-								Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-									{
-										Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-										Path: "builder",
-										WaitForWarmCache: &durationpb.Duration{
-											Seconds: 240,
-										},
-									},
-								},
-								Priority: 30,
-							},
-						},
-						Input: &pb.Build_Input{
-							Properties: &structpb.Struct{},
-						},
-						SchedulingTimeout: &durationpb.Duration{
-							Seconds: 21600,
-						},
-						Tags: []*pb.StringPair{
-							{
-								Key:   "builder",
-								Value: "builder",
-							},
-						},
-					},
-				}))
-				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
-			})
-		})
-
-		t.Run("zero", func(t *ftt.Test) {
-			blds, err := scheduleBuilds(ctx, nil, nil)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, blds, should.BeEmpty)
-			assert.Loosely(t, sch.Tasks(), should.BeEmpty)
-		})
-
-		t.Run("one", func(t *ftt.Test) {
-			req := &pb.ScheduleBuildRequest{
-				Builder: &pb.BuilderID{
-					Project: "project",
-					Bucket:  "bucket",
-					Builder: "builder",
-				},
-				Notify: &pb.NotificationConfig{
-					PubsubTopic: "topic",
-					UserData:    []byte("data"),
-				},
-				Tags: []*pb.StringPair{
-					{
-						Key:   "buildset",
-						Value: "buildset",
-					},
-					{
-						Key:   "user_agent",
-						Value: "gerrit",
-					},
-				},
-			}
-			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
-			testutil.PutBucket(ctx, "project", "bucket", nil)
-
-			blds, err := scheduleBuilds(ctx, globalCfg, nil, req)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, fv("gerrit")), should.Equal(1))
-			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					CreatedBy:  "anonymous:anonymous",
-					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					Exe: &pb.Executable{
-						Cmd: []string{"recipes"},
-					},
-					ExecutionTimeout: &durationpb.Duration{
-						Seconds: 10800,
-					},
-					GracePeriod: &durationpb.Duration{
-						Seconds: 30,
-					},
-					Id: 9021868963221667745,
-					Infra: &pb.BuildInfra{
-						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
-							PayloadPath: "kitchen-checkout",
-						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "app.appspot.com",
-							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
-								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
-								},
-							},
-						},
-						Logdog: &pb.BuildInfra_LogDog{
-							Prefix:  "buildbucket/app/9021868963221667745",
-							Project: "project",
-						},
-						Resultdb: &pb.BuildInfra_ResultDB{
-							Hostname: "rdbHost",
-						},
-						Swarming: &pb.BuildInfra_Swarming{
-							Hostname: "host",
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-								{
-									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-									Path: "builder",
-									WaitForWarmCache: &durationpb.Duration{
-										Seconds: 240,
-									},
-								},
-							},
-							Priority: 30,
-						},
-					},
-					Input: &pb.Build_Input{
-						Properties: &structpb.Struct{},
-					},
-					SchedulingTimeout: &durationpb.Duration{
-						Seconds: 21600,
-					},
-					Status: pb.Status_SCHEDULED,
-					Tags: []*pb.StringPair{
-						{
-							Key:   "builder",
-							Value: "builder",
-						},
-						{
-							Key:   "buildset",
-							Value: "buildset",
-						},
-						{
-							Key:   "user_agent",
-							Value: "gerrit",
-						},
-					},
-				},
-			}))
-			assert.Loosely(t, blds, should.Resemble([]*model.Build{
-				{
-					ID:                9021868963221667745,
-					BucketID:          "project/bucket",
-					BuilderID:         "project/bucket/builder",
-					CreatedBy:         "anonymous:anonymous",
-					CreateTime:        testclock.TestRecentTimeUTC,
-					StatusChangedTime: testclock.TestRecentTimeUTC,
-					Experiments:       nil,
-					Incomplete:        true,
-					IsLuci:            true,
-					Status:            pb.Status_SCHEDULED,
-					Tags: []string{
-						"builder:builder",
-						"buildset:buildset",
-						"user_agent:gerrit",
-					},
-					Project: "project",
-					PubSubCallback: model.PubSubCallback{
-						Topic:    "topic",
-						UserData: []byte("data"),
-					},
-					LegacyProperties: model.LegacyProperties{
-						Status: model.Scheduled,
-					},
-				},
-			}))
-			tasks := sch.Tasks()
-			assert.Loosely(t, tasks, should.HaveLength(3))
-			sortTasksByClassName(tasks)
-			assert.Loosely(t, tasks.Payloads()[0], should.Resemble(&taskdefs.CreateSwarmingBuildTask{
-				BuildId: 9021868963221667745,
-			}))
-			// for topic in build.PubSubCallback.topic field.
-			assert.Loosely(t, tasks.Payloads()[1], should.Resemble(&taskdefs.NotifyPubSubGo{
-				BuildId: 9021868963221667745,
-				Topic: &pb.BuildbucketCfg_Topic{
-					Name: "topic",
-				},
-				Callback: true,
-			}))
-			// for `bulids_v2` topic
-			assert.Loosely(t, tasks.Payloads()[2], should.Resemble(&taskdefs.NotifyPubSubGoProxy{
-				BuildId: 9021868963221667745,
-				Project: "project",
-			}))
-
-			assert.Loosely(t, datastore.Get(ctx, blds), should.BeNil)
-
-			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, ind, should.Resemble([]*model.TagIndexEntry{
-				{
-					BuildID:     9021868963221667745,
-					BucketID:    "project/bucket",
-					CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
-				},
-			}))
-		})
-
-		t.Run("many", func(t *ftt.Test) {
-			reqs := []*pb.ScheduleBuildRequest{
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "static bucket",
-						Builder: "static builder",
-					},
-					Critical:  pb.Trinary_UNSET,
-					Retriable: pb.Trinary_UNSET,
-				},
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "static bucket",
-						Builder: "static builder",
-					},
-					Critical:  pb.Trinary_YES,
-					Retriable: pb.Trinary_YES,
-				},
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "dynamic bucket",
-						Builder: "dynamic builder",
-					},
-					Critical:  pb.Trinary_NO,
-					Retriable: pb.Trinary_NO,
-				},
-			}
-			testutil.PutBuilder(ctx, "project", "static bucket", "static builder", "")
-			testutil.PutBucket(ctx, "project", "static bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
-			testutil.PutBucket(ctx, "project", "dynamic bucket", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{Template: &pb.BuilderConfig{SwarmingHost: "host"}}})
-
-			blds, err := scheduleBuilds(ctx, globalCfg, nil, reqs...)
-			assert.Loosely(t, err, should.BeNil)
-
-			fvs := []any{"luci.project.static bucket", "static builder", ""}
-			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, fvs), should.Equal(2))
-			fvs = []any{"luci.project.dynamic bucket", "dynamic builder", ""}
-			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, fvs), should.Equal(1))
-
-			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "static bucket",
-						Builder: "static builder",
-					},
-					CreatedBy:  "anonymous:anonymous",
-					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					Exe: &pb.Executable{
-						Cmd: []string{"recipes"},
-					},
-					ExecutionTimeout: &durationpb.Duration{
-						Seconds: 10800,
-					},
-					GracePeriod: &durationpb.Duration{
-						Seconds: 30,
-					},
-					Id: 9021868963221610337,
-					Infra: &pb.BuildInfra{
-						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
-							PayloadPath: "kitchen-checkout",
-						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "app.appspot.com",
-							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
-								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
-								},
-							},
-						},
-						Logdog: &pb.BuildInfra_LogDog{
-							Prefix:  "buildbucket/app/9021868963221610337",
-							Project: "project",
-						},
-						Resultdb: &pb.BuildInfra_ResultDB{
-							Hostname: "rdbHost",
-						},
-						Swarming: &pb.BuildInfra_Swarming{
-							Hostname: "host",
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-								{
-									Name: "builder_943d53aa636f1497a9367662af111471018b08dcd116ae5405ff9fab3b2d5682_v2",
-									Path: "builder",
-									WaitForWarmCache: &durationpb.Duration{
-										Seconds: 240,
-									},
-								},
-							},
-							Priority: 30,
-						},
-					},
-					Input: &pb.Build_Input{
-						Properties: &structpb.Struct{},
-					},
-					SchedulingTimeout: &durationpb.Duration{
-						Seconds: 21600,
-					},
-					Status: pb.Status_SCHEDULED,
-					Tags: []*pb.StringPair{
-						{
-							Key:   "builder",
-							Value: "static builder",
-						},
-					},
-				},
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "static bucket",
-						Builder: "static builder",
-					},
-					CreatedBy:  "anonymous:anonymous",
-					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					Exe: &pb.Executable{
-						Cmd: []string{"recipes"},
-					},
-					Critical:  pb.Trinary_YES,
-					Retriable: pb.Trinary_YES,
-					ExecutionTimeout: &durationpb.Duration{
-						Seconds: 10800,
-					},
-					GracePeriod: &durationpb.Duration{
-						Seconds: 30,
-					},
-					Id: 9021868963221610321,
-					Infra: &pb.BuildInfra{
-						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
-							PayloadPath: "kitchen-checkout",
-						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "app.appspot.com",
-							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
-								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
-								},
-							},
-						},
-						Logdog: &pb.BuildInfra_LogDog{
-							Prefix:  "buildbucket/app/9021868963221610321",
-							Project: "project",
-						},
-						Resultdb: &pb.BuildInfra_ResultDB{
-							Hostname: "rdbHost",
-						},
-						Swarming: &pb.BuildInfra_Swarming{
-							Hostname: "host",
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-								{
-									Name: "builder_943d53aa636f1497a9367662af111471018b08dcd116ae5405ff9fab3b2d5682_v2",
-									Path: "builder",
-									WaitForWarmCache: &durationpb.Duration{
-										Seconds: 240,
-									},
-								},
-							},
-							Priority: 30,
-						},
-					},
-					Input: &pb.Build_Input{
-						Properties: &structpb.Struct{},
-					},
-					SchedulingTimeout: &durationpb.Duration{
-						Seconds: 21600,
-					},
-					Status: pb.Status_SCHEDULED,
-					Tags: []*pb.StringPair{
-						{
-							Key:   "builder",
-							Value: "static builder",
-						},
-					},
-				},
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "dynamic bucket",
-						Builder: "dynamic builder",
-					},
-					CreatedBy:  "anonymous:anonymous",
-					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					Exe: &pb.Executable{
-						Cmd: []string{"recipes"},
-					},
-					Critical:  pb.Trinary_NO,
-					Retriable: pb.Trinary_NO,
-					ExecutionTimeout: &durationpb.Duration{
-						Seconds: 10800,
-					},
-					GracePeriod: &durationpb.Duration{
-						Seconds: 30,
-					},
-					Id: 9021868963221610305,
-					Infra: &pb.BuildInfra{
-						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
-							PayloadPath: "kitchen-checkout",
-						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "app.appspot.com",
-							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
-								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
-								},
-							},
-						},
-						Logdog: &pb.BuildInfra_LogDog{
-							Prefix:  "buildbucket/app/9021868963221610305",
-							Project: "project",
-						},
-						Resultdb: &pb.BuildInfra_ResultDB{
-							Hostname: "rdbHost",
-						},
-						Swarming: &pb.BuildInfra_Swarming{
-							Hostname: "host",
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-								{
-									Name: "builder_e229fa0169afaeb5fa8340560ffb3c5fe529169e0207f7378bd115cd74977bd2_v2",
-									Path: "builder",
-									WaitForWarmCache: &durationpb.Duration{
-										Seconds: 240,
-									},
-								},
-							},
-							Priority: 30,
-						},
-					},
-					Input: &pb.Build_Input{
-						Properties: &structpb.Struct{},
-					},
-					SchedulingTimeout: &durationpb.Duration{
-						Seconds: 21600,
-					},
-					Status: pb.Status_SCHEDULED,
-					Tags: []*pb.StringPair{
-						{
-							Key:   "builder",
-							Value: "dynamic builder",
-						},
-					},
-				},
-			}))
-
-			assert.Loosely(t, blds, should.Resemble([]*model.Build{
-				{
-					ID:                9021868963221610337,
-					BucketID:          "project/static bucket",
-					BuilderID:         "project/static bucket/static builder",
-					CreatedBy:         "anonymous:anonymous",
-					CreateTime:        testclock.TestRecentTimeUTC,
-					StatusChangedTime: testclock.TestRecentTimeUTC,
-					Incomplete:        true,
-					IsLuci:            true,
-					Status:            pb.Status_SCHEDULED,
-					Tags: []string{
-						"builder:static builder",
-					},
-					Project: "project",
-					LegacyProperties: model.LegacyProperties{
-						Status: model.Scheduled,
-					},
-				},
-				{
-					ID:                9021868963221610321,
-					BucketID:          "project/static bucket",
-					BuilderID:         "project/static bucket/static builder",
-					CreatedBy:         "anonymous:anonymous",
-					CreateTime:        testclock.TestRecentTimeUTC,
-					StatusChangedTime: testclock.TestRecentTimeUTC,
-					Incomplete:        true,
-					IsLuci:            true,
-					Status:            pb.Status_SCHEDULED,
-					Tags: []string{
-						"builder:static builder",
-					},
-					Project: "project",
-					LegacyProperties: model.LegacyProperties{
-						Status: model.Scheduled,
-					},
-				},
-				{
-					ID:                9021868963221610305,
-					BucketID:          "project/dynamic bucket",
-					BuilderID:         "project/dynamic bucket/dynamic builder",
-					CreatedBy:         "anonymous:anonymous",
-					CreateTime:        testclock.TestRecentTimeUTC,
-					StatusChangedTime: testclock.TestRecentTimeUTC,
-					Incomplete:        true,
-					IsLuci:            true,
-					Status:            pb.Status_SCHEDULED,
-					Tags: []string{
-						"builder:dynamic builder",
-					},
-					Project: "project",
-					LegacyProperties: model.LegacyProperties{
-						Status: model.Scheduled,
-					},
-				},
-			}))
-
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(6))
-			assert.Loosely(t, datastore.Get(ctx, blds), should.BeNil)
-		})
-
-		t.Run("one success and one failure", func(t *ftt.Test) {
-			reqs := []*pb.ScheduleBuildRequest{
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					Notify: &pb.NotificationConfig{
-						PubsubTopic: "topic",
-						UserData:    []byte("data"),
-					},
-					Tags: []*pb.StringPair{
-						{
-							Key:   "buildset",
-							Value: "buildset",
-						},
-						{
-							Key:   "user_agent",
-							Value: "gerrit",
-						},
-					},
-				},
-				{
-					RequestId: "dupReqIdWithoutBuildAssociated",
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					Notify: &pb.NotificationConfig{
-						PubsubTopic: "topic",
-						UserData:    []byte("data"),
-					},
-					Tags: []*pb.StringPair{
-						{
-							Key:   "buildset",
-							Value: "buildset",
-						},
-						{
-							Key:   "user_agent",
-							Value: "gerrit",
-						},
-					},
-				},
-			}
-			r := model.NewRequestID(ctx, 0, time.Time{}, "dupReqIdWithoutBuildAssociated")
-			assert.Loosely(t, datastore.Put(ctx,
-				r,
-				&model.Builder{
-					Parent: model.BucketKey(ctx, "project", "bucket"),
-					ID:     "builder",
-					Config: &pb.BuilderConfig{
-						Name:         "builder",
-						SwarmingHost: "host",
-					},
-				}), should.BeNil)
-			testutil.PutBucket(ctx, "project", "bucket", nil)
-
-			blds, err := scheduleBuilds(ctx, globalCfg, nil, reqs...)
-			assert.Loosely(t, err.(errors.MultiError), should.HaveLength(2))
-			assert.Loosely(t, err.(errors.MultiError)[1], should.ErrLike("failed to fetch deduplicated build"))
-			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, fv("gerrit")), should.Equal(1))
-			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					CreatedBy:  "anonymous:anonymous",
-					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					Exe: &pb.Executable{
-						Cmd: []string{"recipes"},
-					},
-					ExecutionTimeout: &durationpb.Duration{
-						Seconds: 10800,
-					},
-					GracePeriod: &durationpb.Duration{
-						Seconds: 30,
-					},
-					Id: 9021868963222163313,
-					Infra: &pb.BuildInfra{
-						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
-							PayloadPath: "kitchen-checkout",
-						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "app.appspot.com",
-							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
-								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
-								},
-							},
-						},
-						Logdog: &pb.BuildInfra_LogDog{
-							Prefix:  "buildbucket/app/9021868963222163313",
-							Project: "project",
-						},
-						Resultdb: &pb.BuildInfra_ResultDB{
-							Hostname: "rdbHost",
-						},
-						Swarming: &pb.BuildInfra_Swarming{
-							Hostname: "host",
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-								{
-									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-									Path: "builder",
-									WaitForWarmCache: &durationpb.Duration{
-										Seconds: 240,
-									},
-								},
-							},
-							Priority: 30,
-						},
-					},
-					Input: &pb.Build_Input{
-						Properties: &structpb.Struct{},
-					},
-					SchedulingTimeout: &durationpb.Duration{
-						Seconds: 21600,
-					},
-					Status: pb.Status_SCHEDULED,
-					Tags: []*pb.StringPair{
-						{
-							Key:   "builder",
-							Value: "builder",
-						},
-						{
-							Key:   "buildset",
-							Value: "buildset",
-						},
-						{
-							Key:   "user_agent",
-							Value: "gerrit",
-						},
-					},
-				},
-				nil,
-			}))
-			assert.Loosely(t, blds, should.Resemble([]*model.Build{
-				{
-					ID:                9021868963222163313,
-					BucketID:          "project/bucket",
-					BuilderID:         "project/bucket/builder",
-					CreatedBy:         "anonymous:anonymous",
-					CreateTime:        testclock.TestRecentTimeUTC,
-					StatusChangedTime: testclock.TestRecentTimeUTC,
-					Incomplete:        true,
-					IsLuci:            true,
-					Status:            pb.Status_SCHEDULED,
-					Tags: []string{
-						"builder:builder",
-						"buildset:buildset",
-						"user_agent:gerrit",
-					},
-					Project: "project",
-					PubSubCallback: model.PubSubCallback{
-						Topic:    "topic",
-						UserData: []byte("data"),
-					},
-					LegacyProperties: model.LegacyProperties{
-						Status: model.Scheduled,
-					},
-				},
-				nil,
-			}))
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
-			assert.Loosely(t, datastore.Get(ctx, blds[0]), should.BeNil)
-
-			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
-			assert.Loosely(t, err, should.BeNil)
-			// TagIndexEntry for the 2nd req should exist but its build entity shouldn't.
-			// Because an error was thrown in the build creation transaction which is after the TagIndex update.
-			assert.Loosely(t, ind, should.Resemble([]*model.TagIndexEntry{
-				{
-					BuildID:     9021868963222163313,
-					BucketID:    "project/bucket",
-					CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
-				},
-				{
-					BuildID:     9021868963222163297,
-					BucketID:    "project/bucket",
-					CreatedTime: datastore.RoundTime(testclock.TestRecentTimeUTC),
-				},
-			}))
-			assert.Loosely(t, datastore.Get(ctx, &model.Build{ID: 9021868963222163297}), should.ErrLike("no such entity"))
-		})
-
-		t.Run("one with parent", func(t *ftt.Test) {
-			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
-			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
-			testutil.PutBucket(ctx, "project", "bucket", nil)
-
-			pBld := &model.Build{
-				ID: 1,
-				Proto: &pb.Build{
-					Id: 1,
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					Status:      pb.Status_STARTED,
-					AncestorIds: []int64{2, 3},
-				},
-			}
-
-			req := &pb.ScheduleBuildRequest{
-				Builder: &pb.BuilderID{
-					Project: "project",
-					Bucket:  "bucket",
-					Builder: "builder",
-				},
-				Notify: &pb.NotificationConfig{
-					PubsubTopic: "topic",
-					UserData:    []byte("data"),
-				},
-				Tags: []*pb.StringPair{
-					{
-						Key:   "buildset",
-						Value: "buildset",
-					},
-					{
-						Key:   "buildset",
-						Value: "buildset",
-					},
-					{
-						Key:   "user_agent",
-						Value: "gerrit",
-					},
-				},
-				CanOutliveParent: pb.Trinary_NO,
-				ParentBuildId:    1,
-			}
-
-			pMap := &parentsMap{
-				fromRequests: map[int64]*parent{
-					1: {
-						bld:       pBld,
-						ancestors: []int64{2, 3, 1},
-						pRunID:    "544239051",
-					},
-				},
-			}
-			blds, err := scheduleBuilds(ctx, globalCfg, pMap, req)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, fv("gerrit")), should.Equal(1))
-			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					CreatedBy:  "anonymous:anonymous",
-					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					Exe: &pb.Executable{
-						Cmd: []string{"recipes"},
-					},
-					ExecutionTimeout: &durationpb.Duration{
-						Seconds: 10800,
-					},
-					GracePeriod: &durationpb.Duration{
-						Seconds: 30,
-					},
-					Id: 9021868963221667745,
-					Infra: &pb.BuildInfra{
-						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
-							PayloadPath: "kitchen-checkout",
-						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "app.appspot.com",
-							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{},
-								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
-								},
-							},
-						},
-						Logdog: &pb.BuildInfra_LogDog{
-							Prefix:  "buildbucket/app/9021868963221667745",
-							Project: "project",
-						},
-						Resultdb: &pb.BuildInfra_ResultDB{
-							Hostname: "rdbHost",
-						},
-						Swarming: &pb.BuildInfra_Swarming{
-							Hostname: "host",
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-								{
-									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-									Path: "builder",
-									WaitForWarmCache: &durationpb.Duration{
-										Seconds: 240,
-									},
-								},
-							},
-							Priority: 30,
-						},
-					},
-					Input: &pb.Build_Input{
-						Properties: &structpb.Struct{},
-					},
-					SchedulingTimeout: &durationpb.Duration{
-						Seconds: 21600,
-					},
-					Status: pb.Status_SCHEDULED,
-					Tags: []*pb.StringPair{
-						{
-							Key:   "builder",
-							Value: "builder",
-						},
-						{
-							Key:   "buildset",
-							Value: "buildset",
-						},
-						{
-							Key:   "buildset",
-							Value: "buildset",
-						},
-						{
-							Key:   "parent_task_id",
-							Value: "544239051",
-						},
-						{
-							Key:   "user_agent",
-							Value: "gerrit",
-						},
-					},
-					CanOutliveParent: false,
-					AncestorIds:      []int64{2, 3, 1},
-				},
-			}))
-			assert.Loosely(t, blds, should.Resemble([]*model.Build{
-				{
-					ID:                9021868963221667745,
-					BucketID:          "project/bucket",
-					BuilderID:         "project/bucket/builder",
-					CreatedBy:         "anonymous:anonymous",
-					CreateTime:        testclock.TestRecentTimeUTC,
-					StatusChangedTime: testclock.TestRecentTimeUTC,
-					Experiments:       nil,
-					Incomplete:        true,
-					IsLuci:            true,
-					Status:            pb.Status_SCHEDULED,
-					Tags: []string{
-						"builder:builder",
-						"buildset:buildset",
-						"parent_task_id:544239051",
-						"user_agent:gerrit",
-					},
-					Project: "project",
-					PubSubCallback: model.PubSubCallback{
-						Topic:    "topic",
-						UserData: []byte("data"),
-					},
-					LegacyProperties: model.LegacyProperties{
-						Status: model.Scheduled,
-					},
-					AncestorIds: []int64{2, 3, 1},
-					ParentID:    1,
-				},
-			}))
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
-			assert.Loosely(t, datastore.Get(ctx, blds), should.BeNil)
-		})
-
-		t.Run("one shadow inherit parent, one shadow not inherit, one original, and one with no shadow bucket", func(t *ftt.Test) {
-			globalCfg = &pb.SettingsCfg{
-				Resultdb: &pb.ResultDBSettings{
-					Hostname: "rdbHost",
-				},
-				Swarming: &pb.SwarmingSettings{
-					UserPackages: []*pb.SwarmingSettings_Package{
-						{
-							PackageName: "include",
-							Version:     "version",
-						},
-					},
-				},
-			}
-			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}, Shadow: "bucket.shadow"})
-			testutil.PutBucket(ctx, "project", "bucket.shadow", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
-			assert.Loosely(t, datastore.Put(ctx, &model.Builder{
-				Parent: model.BucketKey(ctx, "project", "bucket"),
-				ID:     "builder",
-				Config: &pb.BuilderConfig{
-					Name:           "builder",
-					ServiceAccount: "sa@chops-service-accounts.iam.gserviceaccount.com",
-					SwarmingHost:   "swarming.appspot.com",
-					Dimensions:     []string{"pool:pool1"},
-					Properties:     `{"a":"b","b":"b"}`,
-					ShadowBuilderAdjustments: &pb.BuilderConfig_ShadowBuilderAdjustments{
-						ServiceAccount: "shadow@chops-service-accounts.iam.gserviceaccount.com",
-						Pool:           "pool2",
-						Properties:     `{"a":"b2","c":"c"}`,
-						Dimensions: []string{
-							"pool:pool2",
-						},
-					},
-					Exe: &pb.Executable{
-						CipdPackage: "package",
-						CipdVersion: "version",
-					},
-				},
-			}), should.BeNil)
-
-			tk, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_BUILD)
-			ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
-			assert.Loosely(t, err, should.BeNil)
-			// This is the parent led build of the newly requested led build.
-			pBld := &model.Build{
-				Proto: &pb.Build{
-					Id: 1,
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket.shadow",
-						Builder: "builder",
-					},
-					Status: pb.Status_STARTED,
-					Exe: &pb.Executable{
-						Cmd: []string{"recipes"},
-					},
-				},
-				UpdateToken: tk,
-			}
-			assert.Loosely(t, datastore.Put(ctx, pBld), should.BeNil)
-			assert.Loosely(t, datastore.Put(ctx, &model.BuildInfra{
-				Build: datastore.MakeKey(ctx, "Build", 1),
-				Proto: &pb.BuildInfra{
-					Buildbucket: &pb.BuildInfra_Buildbucket{
-						Agent: &pb.BuildInfra_Buildbucket_Agent{
-							Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-								Data: map[string]*pb.InputDataRef{
-									"cipd_bin_packages": {
-										DataType: &pb.InputDataRef_Cipd{
-											Cipd: &pb.InputDataRef_CIPD{
-												Server: "cipd server",
-												Specs: []*pb.InputDataRef_CIPD_PkgSpec{
-													{Package: "include", Version: "canary-version"},
-													{Package: "include_experiment", Version: "version"},
-												},
-											},
-										},
-										OnPath: []string{"cipd_bin_packages", "cipd_bin_packages/bin"},
-									},
-									"kitchen-checkout": {
-										DataType: &pb.InputDataRef_Cas{
-											Cas: &pb.InputDataRef_CAS{
-												CasInstance: "projects/project/instances/instance",
-												Digest: &pb.InputDataRef_CAS_Digest{
-													Hash:      "hash",
-													SizeBytes: 1,
-												},
-											},
-										},
-									},
-								},
-							},
-							Source: &pb.BuildInfra_Buildbucket_Agent_Source{
-								DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
-									Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
-										Package: "infra/tools/luci/bbagent/${platform}",
-										Version: "canary-version",
-										Server:  "cipd server",
-									},
-								},
-							},
-							Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-								"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
-							},
-						},
-					},
-				},
-			}), should.BeNil)
-			reqs := []*pb.ScheduleBuildRequest{
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{
-						InheritFromParent: true,
-					},
-				},
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
-				},
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-				},
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket.shadow",
-						Builder: "builder",
-					},
-					ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
-				},
-			}
-			pMap := &parentsMap{
-				fromToken: &parent{
-					bld:       pBld,
-					ancestors: []int64{1},
-				},
-			}
-			blds, err := scheduleBuilds(ctx, globalCfg, pMap, reqs...)
-			assert.Loosely(t, err, should.NotBeNil)
-			assert.Loosely(t, err, should.ErrLike("scheduling a shadow build in the original bucket is not allowed"))
-			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket.shadow",
-						Builder: "builder",
-					},
-					CreatedBy:  "anonymous:anonymous",
-					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					Exe: &pb.Executable{
-						Cmd: []string{"recipes"},
-					},
-					ExecutionTimeout: &durationpb.Duration{
-						Seconds: 10800,
-					},
-					GracePeriod: &durationpb.Duration{
-						Seconds: 30,
-					},
-					Id: 9021868963222105921,
-					Infra: &pb.BuildInfra{
-						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
-							PayloadPath: "kitchen-checkout",
-						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "app.appspot.com",
-							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								// Inherited from its parent.
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-									Data: map[string]*pb.InputDataRef{
-										"cipd_bin_packages": {
-											DataType: &pb.InputDataRef_Cipd{
-												Cipd: &pb.InputDataRef_CIPD{
-													Server: "cipd server",
-													Specs: []*pb.InputDataRef_CIPD_PkgSpec{
-														{Package: "include", Version: "canary-version"},
-														{Package: "include_experiment", Version: "version"},
-													},
-												},
-											},
-											OnPath: []string{"cipd_bin_packages", "cipd_bin_packages/bin"},
-										},
-										"kitchen-checkout": {
-											DataType: &pb.InputDataRef_Cas{
-												Cas: &pb.InputDataRef_CAS{
-													CasInstance: "projects/project/instances/instance",
-													Digest: &pb.InputDataRef_CAS_Digest{
-														Hash:      "hash",
-														SizeBytes: 1,
-													},
-												},
-											},
-										},
-									},
-								},
-								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
-								},
-								Source: &pb.BuildInfra_Buildbucket_Agent_Source{
-									DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
-										Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
-											Package: "infra/tools/luci/bbagent/${platform}",
-											Version: "canary-version",
-											Server:  "cipd server",
-										},
-									},
-								},
-								CipdPackagesCache: &pb.CacheEntry{
-									Name: "cipd_cache_60bbd3834a15dabe356b6b277007f73bc1b4bdb8dff69da7db09d155463f8f75",
-									Path: "cipd_cache",
-								},
-							},
-						},
-						Logdog: &pb.BuildInfra_LogDog{
-							Prefix:  "buildbucket/app/9021868963222105921",
-							Project: "project",
-						},
-						Resultdb: &pb.BuildInfra_ResultDB{
-							Hostname: "rdbHost",
-						},
-						Swarming: &pb.BuildInfra_Swarming{
-							Hostname: "swarming.appspot.com",
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-								{
-									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-									Path: "builder",
-									WaitForWarmCache: &durationpb.Duration{
-										Seconds: 240,
-									},
-								},
-							},
-							Priority:           30,
-							TaskServiceAccount: "shadow@chops-service-accounts.iam.gserviceaccount.com",
-							TaskDimensions: []*pb.RequestedDimension{
-								{
-									Key:   "pool",
-									Value: "pool2",
-								},
-							},
-						},
-						Led: &pb.BuildInfra_Led{
-							ShadowedBucket: "bucket",
-						},
-					},
-					Input: &pb.Build_Input{
-						Properties: &structpb.Struct{
-							Fields: map[string]*structpb.Value{
-								"$recipe_engine/led": {
-									Kind: &structpb.Value_StructValue{
-										StructValue: &structpb.Struct{
-											Fields: map[string]*structpb.Value{
-												"shadowed_bucket": {
-													Kind: &structpb.Value_StringValue{
-														StringValue: "bucket",
-													},
-												},
-											},
-										},
-									},
-								},
-								"a": {
-									Kind: &structpb.Value_StringValue{
-										StringValue: "b2",
-									},
-								},
-								"b": {
-									Kind: &structpb.Value_StringValue{
-										StringValue: "b",
-									},
-								},
-								"c": {
-									Kind: &structpb.Value_StringValue{
-										StringValue: "c",
-									},
-								},
-							},
-						},
-					},
-					SchedulingTimeout: &durationpb.Duration{
-						Seconds: 21600,
-					},
-					Status: pb.Status_SCHEDULED,
-					Tags: []*pb.StringPair{
-						{
-							Key:   "builder",
-							Value: "builder",
-						},
-					},
-					AncestorIds:      []int64{1},
-					CanOutliveParent: true,
-				},
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket.shadow",
-						Builder: "builder",
-					},
-					CreatedBy:  "anonymous:anonymous",
-					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					Exe: &pb.Executable{
-						Cmd:         []string{"recipes"},
-						CipdPackage: "package",
-						CipdVersion: "version",
-					},
-					ExecutionTimeout: &durationpb.Duration{
-						Seconds: 10800,
-					},
-					GracePeriod: &durationpb.Duration{
-						Seconds: 30,
-					},
-					Id: 9021868963222105905,
-					Infra: &pb.BuildInfra{
-						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
-							PayloadPath: "kitchen-checkout",
-						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "app.appspot.com",
-							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								// Inherited from its parent.
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-									Data: map[string]*pb.InputDataRef{
-										"cipd_bin_packages": {
-											DataType: &pb.InputDataRef_Cipd{
-												Cipd: &pb.InputDataRef_CIPD{
-													Specs: []*pb.InputDataRef_CIPD_PkgSpec{
-														{Package: "include", Version: "version"},
-													},
-												},
-											},
-											OnPath: []string{"cipd_bin_packages", "cipd_bin_packages/bin"},
-										},
-										"kitchen-checkout": {
-											DataType: &pb.InputDataRef_Cipd{
-												Cipd: &pb.InputDataRef_CIPD{
-													Specs: []*pb.InputDataRef_CIPD_PkgSpec{
-														{Package: "package", Version: "version"},
-													},
-												},
-											},
-										},
-									},
-								},
-								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
-								},
-								CipdPackagesCache: &pb.CacheEntry{
-									Name: "cipd_cache_60bbd3834a15dabe356b6b277007f73bc1b4bdb8dff69da7db09d155463f8f75",
-									Path: "cipd_cache",
-								},
-							},
-							ExperimentReasons: map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
-								bb.ExperimentBBAgent: pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG,
-							},
-						},
-						Logdog: &pb.BuildInfra_LogDog{
-							Prefix:  "buildbucket/app/9021868963222105905",
-							Project: "project",
-						},
-						Resultdb: &pb.BuildInfra_ResultDB{
-							Hostname: "rdbHost",
-						},
-						Swarming: &pb.BuildInfra_Swarming{
-							Hostname: "swarming.appspot.com",
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-								{
-									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-									Path: "builder",
-									WaitForWarmCache: &durationpb.Duration{
-										Seconds: 240,
-									},
-								},
-							},
-							Priority:           30,
-							TaskServiceAccount: "shadow@chops-service-accounts.iam.gserviceaccount.com",
-							TaskDimensions: []*pb.RequestedDimension{
-								{
-									Key:   "pool",
-									Value: "pool2",
-								},
-							},
-						},
-						Led: &pb.BuildInfra_Led{
-							ShadowedBucket: "bucket",
-						},
-					},
-					Input: &pb.Build_Input{
-						Properties: &structpb.Struct{
-							Fields: map[string]*structpb.Value{
-								"$recipe_engine/led": {
-									Kind: &structpb.Value_StructValue{
-										StructValue: &structpb.Struct{
-											Fields: map[string]*structpb.Value{
-												"shadowed_bucket": {
-													Kind: &structpb.Value_StringValue{
-														StringValue: "bucket",
-													},
-												},
-											},
-										},
-									},
-								},
-								"a": {
-									Kind: &structpb.Value_StringValue{
-										StringValue: "b2",
-									},
-								},
-								"b": {
-									Kind: &structpb.Value_StringValue{
-										StringValue: "b",
-									},
-								},
-								"c": {
-									Kind: &structpb.Value_StringValue{
-										StringValue: "c",
-									},
-								},
-							},
-						},
-					},
-					SchedulingTimeout: &durationpb.Duration{
-						Seconds: 21600,
-					},
-					Status: pb.Status_SCHEDULED,
-					Tags: []*pb.StringPair{
-						{
-							Key:   "builder",
-							Value: "builder",
-						},
-					},
-					AncestorIds:      []int64{1},
-					CanOutliveParent: true,
-				},
-				{
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					CreatedBy:  "anonymous:anonymous",
-					CreateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					UpdateTime: timestamppb.New(testclock.TestRecentTimeUTC),
-					Exe: &pb.Executable{
-						Cmd:         []string{"recipes"},
-						CipdPackage: "package",
-						CipdVersion: "version",
-					},
-					ExecutionTimeout: &durationpb.Duration{
-						Seconds: 10800,
-					},
-					GracePeriod: &durationpb.Duration{
-						Seconds: 30,
-					},
-					Id: 9021868963222105889,
-					Infra: &pb.BuildInfra{
-						Bbagent: &pb.BuildInfra_BBAgent{
-							CacheDir:    "cache",
-							PayloadPath: "kitchen-checkout",
-						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "app.appspot.com",
-							Agent: &pb.BuildInfra_Buildbucket_Agent{
-								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-									Data: map[string]*pb.InputDataRef{
-										"cipd_bin_packages": {
-											DataType: &pb.InputDataRef_Cipd{
-												Cipd: &pb.InputDataRef_CIPD{
-													Specs: []*pb.InputDataRef_CIPD_PkgSpec{
-														{Package: "include", Version: "version"},
-													},
-												},
-											},
-											OnPath: []string{"cipd_bin_packages", "cipd_bin_packages/bin"},
-										},
-										"kitchen-checkout": {
-											DataType: &pb.InputDataRef_Cipd{
-												Cipd: &pb.InputDataRef_CIPD{
-													Specs: []*pb.InputDataRef_CIPD_PkgSpec{
-														{Package: "package", Version: "version"},
-													},
-												},
-											},
-										},
-									},
-								},
-								Purposes: map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
-									"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
-								},
-								CipdPackagesCache: &pb.CacheEntry{
-									Name: "cipd_cache_e73238f71b7e4eb5683fe0f1cae1b765816537b83ca1cd7e5b82e66543c26834",
-									Path: "cipd_cache",
-								},
-							},
-							ExperimentReasons: map[string]pb.BuildInfra_Buildbucket_ExperimentReason{
-								bb.ExperimentBBAgent: pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_BUILDER_CONFIG,
-							},
-						},
-						Logdog: &pb.BuildInfra_LogDog{
-							Prefix:  "buildbucket/app/9021868963222105889",
-							Project: "project",
-						},
-						Resultdb: &pb.BuildInfra_ResultDB{
-							Hostname: "rdbHost",
-						},
-						Swarming: &pb.BuildInfra_Swarming{
-							Hostname: "swarming.appspot.com",
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-								{
-									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-									Path: "builder",
-									WaitForWarmCache: &durationpb.Duration{
-										Seconds: 240,
-									},
-								},
-							},
-							Priority:           30,
-							TaskServiceAccount: "sa@chops-service-accounts.iam.gserviceaccount.com",
-							TaskDimensions: []*pb.RequestedDimension{
-								{
-									Key:   "pool",
-									Value: "pool1",
-								},
-							},
-						},
-					},
-					Input: &pb.Build_Input{
-						Properties: &structpb.Struct{
-							Fields: map[string]*structpb.Value{
-								"a": {
-									Kind: &structpb.Value_StringValue{
-										StringValue: "b",
-									},
-								},
-								"b": {
-									Kind: &structpb.Value_StringValue{
-										StringValue: "b",
-									},
-								},
-							},
-						},
-					},
-					SchedulingTimeout: &durationpb.Duration{
-						Seconds: 21600,
-					},
-					Status: pb.Status_SCHEDULED,
-					Tags: []*pb.StringPair{
-						{
-							Key:   "builder",
-							Value: "builder",
-						},
-					},
-					AncestorIds:      []int64{1},
-					CanOutliveParent: true,
-				},
-				nil,
 			}))
 		})
 	})
@@ -5761,8 +3970,7 @@ func TestScheduleBuild(t *testing.T) {
 		})
 	})
 
-	ftt.Run("ScheduleBuild", t, func(t *ftt.Test) {
-		srv := &Builds{}
+	ftt.Run("scheduleBuilds, one build", t, func(t *ftt.Test) {
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		ctx, _ = metrics.WithCustomMetrics(ctx, &pb.SettingsCfg{})
@@ -5807,9 +4015,9 @@ func TestScheduleBuild(t *testing.T) {
 						Builder: "builder",
 					},
 				}
-				rsp, err := srv.ScheduleBuild(ctx, req)
-				assert.Loosely(t, err, should.ErrLike("not found"))
-				assert.Loosely(t, rsp, should.BeNil)
+				rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+				assert.Loosely(t, err[0], should.ErrLike("not found"))
+				assert.Loosely(t, rsp[0], should.BeNil)
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			})
 
@@ -5831,9 +4039,9 @@ func TestScheduleBuild(t *testing.T) {
 						Builder: "builder",
 					},
 				}
-				rsp, err := srv.ScheduleBuild(ctx, req)
-				assert.Loosely(t, err, should.ErrLike("not found"))
-				assert.Loosely(t, rsp, should.BeNil)
+				rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+				assert.Loosely(t, err[0], should.ErrLike("not found"))
+				assert.Loosely(t, rsp[0], should.BeNil)
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			})
 
@@ -5855,8 +4063,8 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 
-					_, err := srv.ScheduleBuild(ctx, req)
-					assert.Loosely(t, err, should.ErrLike("failed to create build with missing backend info and swarming host"))
+					_, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+					assert.Loosely(t, err[0], should.ErrLike(`builder "project/bucket/builder" is unexpectedly missing its config`))
 					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
@@ -5881,9 +4089,9 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 
-					rsp, err := srv.ScheduleBuild(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
+					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+					assert.Loosely(t, err[0], should.BeNil)
+					assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -5954,9 +4162,9 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				t.Run("not found", func(t *ftt.Test) {
-					rsp, err := srv.ScheduleBuild(ctx, req)
-					assert.Loosely(t, err, should.ErrLike("error fetching builders"))
-					assert.Loosely(t, rsp, should.BeNil)
+					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+					assert.Loosely(t, err[0], should.ErrLike("builder not found: \"builder\""))
+					assert.Loosely(t, rsp[0], should.BeNil)
 					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
@@ -5974,9 +4182,9 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}), should.BeNil)
 
-					rsp, err := srv.ScheduleBuild(ctx, req)
-					assert.Loosely(t, err, should.ErrLike("build already exists"))
-					assert.Loosely(t, rsp, should.BeNil)
+					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+					assert.Loosely(t, err[0], should.ErrLike("build already exists"))
+					assert.Loosely(t, rsp[0], should.BeNil)
 					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
@@ -6001,9 +4209,9 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					}
-					rsp, err := srv.ScheduleBuild(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
+					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+					assert.Loosely(t, err[0], should.BeNil)
+					assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -6064,9 +4272,9 @@ func TestScheduleBuild(t *testing.T) {
 					}), should.BeNil)
 
 					req.DryRun = true
-					rsp, err := srv.ScheduleBuild(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
+					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+					assert.Loosely(t, err[0], should.BeNil)
+					assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -6141,9 +4349,9 @@ func TestScheduleBuild(t *testing.T) {
 						}), should.BeNil)
 
 						t.Run("not found", func(t *ftt.Test) {
-							rsp, err := srv.ScheduleBuild(ctx, req)
-							assert.Loosely(t, err, should.ErrLike("no such entity"))
-							assert.Loosely(t, rsp, should.BeNil)
+							rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+							assert.Loosely(t, err[0], should.ErrLike("no such entity"))
+							assert.Loosely(t, rsp[0], should.BeNil)
 							assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 						})
 
@@ -6160,9 +4368,9 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							}), should.BeNil)
 
-							rsp, err := srv.ScheduleBuild(ctx, req)
-							assert.Loosely(t, err, should.BeNil)
-							assert.Loosely(t, rsp, should.Resemble(&pb.Build{
+							rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+							assert.Loosely(t, err[0], should.BeNil)
+							assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 								Builder: &pb.BuilderID{
 									Project: "project",
 									Bucket:  "bucket",
@@ -6176,9 +4384,9 @@ func TestScheduleBuild(t *testing.T) {
 					})
 
 					t.Run("ok", func(t *ftt.Test) {
-						rsp, err := srv.ScheduleBuild(ctx, req)
-						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, rsp, should.Resemble(&pb.Build{
+						rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+						assert.Loosely(t, err[0], should.BeNil)
+						assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 							Builder: &pb.BuilderID{
 								Project: "project",
 								Bucket:  "bucket",
@@ -6224,9 +4432,9 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						}
-						rsp, err := srv.ScheduleBuild(ctx, req)
-						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, rsp.BuilderInfo.Description, should.Equal("test builder description"))
+						rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+						assert.Loosely(t, err[0], should.BeNil)
+						assert.Loosely(t, rsp[0].BuilderInfo.Description, should.Equal("test builder description"))
 					})
 				})
 			})
@@ -6237,9 +4445,9 @@ func TestScheduleBuild(t *testing.T) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1000,
 				}
-				rsp, err := srv.ScheduleBuild(ctx, req)
-				assert.Loosely(t, err, should.ErrLike("not found"))
-				assert.Loosely(t, rsp, should.BeNil)
+				rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+				assert.Loosely(t, err[0], should.ErrLike("not found"))
+				assert.Loosely(t, rsp[0], should.BeNil)
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			})
 
@@ -6258,9 +4466,9 @@ func TestScheduleBuild(t *testing.T) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 				}
-				rsp, err := srv.ScheduleBuild(ctx, req)
-				assert.Loosely(t, err, should.ErrLike("not found"))
-				assert.Loosely(t, rsp, should.BeNil)
+				rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+				assert.Loosely(t, err[0], should.ErrLike("not found"))
+				assert.Loosely(t, rsp[0], should.BeNil)
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			})
 
@@ -6301,9 +4509,9 @@ func TestScheduleBuild(t *testing.T) {
 					TemplateBuildId: 1000,
 				}
 
-				rsp, err := srv.ScheduleBuild(ctx, req)
-				assert.Loosely(t, err, should.ErrLike("build 1000 is not retriable"))
-				assert.Loosely(t, rsp, should.BeNil)
+				rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+				assert.Loosely(t, err[0], should.ErrLike("build 1000 is not retriable"))
+				assert.Loosely(t, rsp[0], should.BeNil)
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			})
 
@@ -6335,9 +4543,9 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				t.Run("not found", func(t *ftt.Test) {
-					rsp, err := srv.ScheduleBuild(ctx, req)
-					assert.Loosely(t, err, should.ErrLike("error fetching builders"))
-					assert.Loosely(t, rsp, should.BeNil)
+					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+					assert.Loosely(t, err[0], should.ErrLike("builder not found: \"builder\""))
+					assert.Loosely(t, rsp[0], should.BeNil)
 					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
 
@@ -6351,9 +4559,9 @@ func TestScheduleBuild(t *testing.T) {
 							SwarmingHost: "host",
 						},
 					}), should.BeNil)
-					rsp, err := srv.ScheduleBuild(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, rsp, should.Resemble(&pb.Build{
+					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+					assert.Loosely(t, err[0], should.BeNil)
+					assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
@@ -6373,8 +4581,7 @@ func TestScheduleBuild(t *testing.T) {
 		})
 	})
 
-	ftt.Run("scheduleBuilds", t, func(t *ftt.Test) {
-		srv := &Builds{}
+	ftt.Run("scheduleBuilds, many builds", t, func(t *ftt.Test) {
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
@@ -6481,7 +4688,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			rsp, merr := srv.scheduleBuilds(ctx, reqs)
+			rsp, merr := scheduleBuilds(ctx, reqs)
 			assert.Loosely(t, merr, should.HaveLength(3))
 			assert.Loosely(t, rsp, should.HaveLength(3))
 			for i := range 3 {
@@ -6504,7 +4711,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			rsp, merr := srv.scheduleBuilds(ctx, reqs)
+			rsp, merr := scheduleBuilds(ctx, reqs)
 			assert.Loosely(t, merr.First(), should.BeNil)
 			assert.Loosely(t, merr, should.HaveLength(1))
 			assert.Loosely(t, rsp, should.HaveLength(1))
@@ -6546,7 +4753,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			rsp, merr := srv.scheduleBuilds(ctx, reqs)
+			rsp, merr := scheduleBuilds(ctx, reqs)
 			assert.Loosely(t, merr.First(), should.BeNil)
 			assert.Loosely(t, merr, should.HaveLength(1))
 			assert.Loosely(t, rsp, should.HaveLength(1))
@@ -6655,7 +4862,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			}
-			rsp, merr := srv.scheduleBuilds(ctx, reqs)
+			rsp, merr := scheduleBuilds(ctx, reqs)
 			assert.Loosely(t, merr.First(), should.BeNil)
 			assert.Loosely(t, merr, should.HaveLength(1))
 			assert.Loosely(t, rsp, should.HaveLength(1))
@@ -6728,7 +4935,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				rsp, err := srv.scheduleBuilds(ctx, reqs)
+				rsp, err := scheduleBuilds(ctx, reqs)
 				assert.Loosely(t, err, should.NotBeNil)
 				assert.Loosely(t, err[0], should.BeNil)
 				assert.Loosely(t, err[1], should.ErrLike(`requested resource not found or "user:caller@example.com" does not have permission to view it`))
@@ -6795,7 +5002,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				rsp, err := srv.scheduleBuilds(ctx, reqs)
+				rsp, err := scheduleBuilds(ctx, reqs)
 				assert.Loosely(t, err, should.NotBeNil)
 				assert.Loosely(t, err[0], should.BeNil)
 				assert.Loosely(t, err[1], should.ErrLike(`builder not found: "miss_builder_cfg"`))
@@ -6901,7 +5108,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				rsp, err := srv.scheduleBuilds(ctx, reqs)
+				rsp, err := scheduleBuilds(ctx, reqs)
 				assert.Loosely(t, err, should.NotBeNil)
 				assert.Loosely(t, err[0], should.BeNil)
 				assert.Loosely(t, err[1], should.ErrLike("failed to create the invocation for build id: 9021868963221610321: rpc error: code = Internal desc = internal error"))
@@ -7012,7 +5219,7 @@ func TestScheduleBuild(t *testing.T) {
 							authtest.MockPermission(userID, "project:parent_bucket", bbperms.BuildersGet),
 						),
 					})
-					_, merr := srv.scheduleBuilds(ctx, reqs)
+					_, merr := scheduleBuilds(ctx, reqs)
 					assert.Loosely(t, merr, should.NotBeNil)
 					assert.Loosely(t, merr[0], grpccode.ShouldBe(codes.PermissionDenied))
 					assert.Loosely(t, merr[1], grpccode.ShouldBe(codes.PermissionDenied))
@@ -7030,7 +5237,7 @@ func TestScheduleBuild(t *testing.T) {
 							authtest.MockPermission(userID, "project:parent_bucket", bbperms.BuildsIncludeChild),
 						),
 					})
-					_, merr := srv.scheduleBuilds(ctx, reqs)
+					_, merr := scheduleBuilds(ctx, reqs)
 					assert.Loosely(t, merr, should.NotBeNil)
 					assert.Loosely(t, merr[0], should.BeNil)
 					assert.Loosely(t, merr[1], grpccode.ShouldBe(codes.PermissionDenied))
@@ -7047,7 +5254,7 @@ func TestScheduleBuild(t *testing.T) {
 							authtest.MockPermission(userID, "project:parent_bucket", bbperms.BuildsIncludeChild),
 						),
 					})
-					_, merr := srv.scheduleBuilds(ctx, reqs)
+					_, merr := scheduleBuilds(ctx, reqs)
 					assert.Loosely(t, merr.First(), should.BeNil)
 				})
 			})
@@ -7083,7 +5290,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				rsp, merr := srv.scheduleBuilds(ctx, reqs)
+				rsp, merr := scheduleBuilds(ctx, reqs)
 				assert.Loosely(t, merr.First(), should.BeNil)
 				assert.Loosely(t, merr, should.HaveLength(3))
 				assert.Loosely(t, rsp, should.HaveLength(3))
@@ -7189,6 +5396,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			}), should.BeNil)
+
 			t.Run("no permission", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: userID,
@@ -7208,8 +5416,89 @@ func TestScheduleBuild(t *testing.T) {
 						ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
 					},
 				}
-				_, err := srv.scheduleBuilds(ctx, reqs)
+				_, err := scheduleBuilds(ctx, reqs)
 				assert.Loosely(t, err, should.ErrLike(`does not have permission "buildbucket.builds.add"`))
+			})
+
+			t.Run("inherit from parent", func(t *ftt.Test) {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: userID,
+					FakeDB: authtest.NewFakeDB(
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsIncludeChild),
+						authtest.MockPermission(userID, "project:bucket.shadow", bbperms.BuildsGet),
+						authtest.MockPermission(userID, "project:bucket.shadow", bbperms.BuildsAdd),
+						authtest.MockPermission(userID, "project:bucket.shadow", bbperms.BuildsAddAsChild),
+					),
+				})
+
+				parentBuild := &model.Build{
+					ID: 1234,
+					Proto: &pb.Build{
+						Id: 1234,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Exe: &pb.Executable{
+							CipdPackage: "some/package",
+						},
+						Status: pb.Status_STARTED,
+					},
+				}
+				parentBuildInfra := &model.BuildInfra{
+					Build: datastore.KeyForObj(ctx, parentBuild),
+					Proto: &pb.BuildInfra{
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Agent: &pb.BuildInfra_Buildbucket_Agent{
+								Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+									Data: map[string]*pb.InputDataRef{
+										"some-key": {},
+									},
+								},
+								Source: &pb.BuildInfra_Buildbucket_Agent_Source{
+									DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+										Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+											Package: "infra/tools/luci/bbagent/${platform}",
+											Version: "canary-version",
+											Server:  "cipd server",
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+				assert.Loosely(t, datastore.Put(ctx, parentBuild, parentBuildInfra), should.BeNil)
+
+				blds, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{
+					{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{
+							InheritFromParent: true,
+						},
+						ParentBuildId: 1234,
+						Mask:          &pb.BuildMask{AllFields: true},
+					},
+				})
+				assert.Loosely(t, err[0], should.BeNil)
+
+				expectedAgent := proto.Clone(parentBuildInfra.Proto.Buildbucket.Agent).(*pb.BuildInfra_Buildbucket_Agent)
+				expectedAgent.Purposes = map[string]pb.BuildInfra_Buildbucket_Agent_Purpose{
+					"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+				}
+				expectedAgent.CipdPackagesCache = &pb.CacheEntry{
+					Name: fmt.Sprintf("cipd_cache_%x", sha256.Sum256([]byte("shadow@chops-service-accounts.iam.gserviceaccount.com"))),
+					Path: "cipd_cache",
+				}
+				assert.That(t, blds[0].Infra.Buildbucket.Agent, should.Match(expectedAgent))
+				assert.That(t, blds[0].Exe, should.Match(parentBuild.Proto.Exe))
 			})
 
 			t.Run("one shadow, one original, and one with no shadow bucket", func(t *ftt.Test) {
@@ -7247,9 +5536,10 @@ func TestScheduleBuild(t *testing.T) {
 						ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
 					},
 				}
-				blds, err := srv.scheduleBuilds(ctx, reqs)
-				assert.Loosely(t, err, should.NotBeNil)
-				assert.Loosely(t, err, should.ErrLike("scheduling a shadow build in the original bucket is not allowed"))
+				blds, err := scheduleBuilds(ctx, reqs)
+				assert.Loosely(t, err[0], should.BeNil)
+				assert.Loosely(t, err[1], should.BeNil)
+				assert.Loosely(t, err[2], should.ErrLike("scheduling a shadow build in the original bucket is not allowed"))
 				assert.Loosely(t, len(blds), should.Equal(3))
 				assert.Loosely(t, blds[2], should.BeNil)
 			})
@@ -7627,12 +5917,15 @@ func TestScheduleBuild(t *testing.T) {
 							CanOutliveParent: pb.Trinary_NO,
 							ParentBuildId:    1,
 						}
-						pMap := &parentsMap{
-							fromRequests: map[int64]*parent{
-								1: {bld: pBld},
+						op := &scheduleBuildOp{
+							Reqs: []*pb.ScheduleBuildRequest{req},
+							Parents: &parentsMap{
+								fromRequests: map[int64]*parent{
+									1: {bld: pBld},
+								},
 							},
 						}
-						_, _, err := validateScheduleBuild(ctx, nil, req, pMap, nil)
+						_, _, err := validateScheduleBuild(ctx, op, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 					})
 
