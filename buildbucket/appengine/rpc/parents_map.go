@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -140,34 +141,19 @@ func populateParentFields(p *parent, pBld *model.Build, pInfra *model.BuildInfra
 		p.err = appstatus.BadRequest(errors.Fmt("%d has ended, cannot add child to it", pBld.ID))
 		return
 	}
+
 	p.bld = pBld
 	p.infra = pInfra
-	p.ancestors, p.pRunID = getParentInfo(pBld, pInfra)
-}
+	p.ancestors = append(slices.Clone(pBld.AncestorIds), pBld.ID)
 
-// getParentInfo extracts info to put into `parent`.
-func getParentInfo(pBld *model.Build, pInfra *model.BuildInfra) (ancestors []int64, pRunID string) {
-	switch {
-	case pBld == nil:
-		ancestors = make([]int64, 0)
-	case len(pBld.AncestorIds) > 0:
-		ancestors = append(pBld.AncestorIds, pBld.ID)
-	default:
-		ancestors = append(ancestors, pBld.ID)
-	}
-
-	if pBld != nil && pInfra != nil {
-		pTaskID := pInfra.Proto.GetBackend().GetTask().GetId()
-		pTarget := pTaskID.GetTarget()
-		if !strings.HasPrefix(pTarget, "swarming://") {
-			return
-		}
-		pRunID = pTaskID.GetId()
-		if pRunID != "" {
-			pRunID = pRunID[:len(pRunID)-1] + "1"
+	pTaskID := pInfra.Proto.GetBackend().GetTask().GetId()
+	pTarget := pTaskID.GetTarget()
+	if strings.HasPrefix(pTarget, "swarming://") {
+		p.pRunID = pTaskID.GetId()
+		if p.pRunID != "" {
+			p.pRunID = p.pRunID[:len(p.pRunID)-1] + "1"
 		}
 	}
-	return
 }
 
 // validateParentViaToken validates the parent build referenced by the BUILD
