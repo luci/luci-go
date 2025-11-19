@@ -153,7 +153,11 @@ export const ANDROID_DIMENSION_OVERRIDES: DimensionOverride = {
       if (!(row.hostname && row.host_ip && row.id)) return undefined;
 
       return renderCellWithLink((_, { row }) => {
-        return `https://mobileharness-fe.corp.google.com/devicedetailview/${row.hostname}/${row.host_ip}/${row.id}`;
+        if (row.fc_machine_type === 'device') {
+          return `https://mobileharness-fe.corp.google.com/devicedetailview/${row.hostname}/${row.host_ip}/${row.id}`;
+        } else {
+          return `https://mobileharness-fe.corp.google.com/labdetailview/${row.hostname}/${row.host_ip}`;
+        }
       })(props);
     },
   },
