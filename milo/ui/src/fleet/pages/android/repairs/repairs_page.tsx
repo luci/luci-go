@@ -38,9 +38,9 @@ import {
   prevPageTokenUpdater,
   usePagerContext,
 } from '@/common/components/params_pager';
+import { DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_ft_selector';
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
-import { FilterBarOld } from '@/fleet/components/filter_dropdown/filter_bar_old';
 import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import {
   filtersUpdater,
@@ -72,11 +72,27 @@ import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
+  GetRepairMetricsDimensionsResponse,
   Platform,
   RepairMetric,
   RepairMetric_Priority,
   repairMetric_PriorityToJSON,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+
+const dimensionsToFilterOptions = (
+  dimensionData: GetRepairMetricsDimensionsResponse,
+): OptionCategory[] => {
+  return Object.entries(dimensionData.dimensions).map(([key, value]) => {
+    return {
+      label: _.startCase(key),
+      value: key,
+      options: (value as { values: string[] }).values.map((v) => ({
+        label: v,
+        value: v,
+      })),
+    };
+  });
+};
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
@@ -534,8 +550,8 @@ export const RepairListPage = () => {
   const sorting = (searchParams.get(ORDER_BY_PARAM_KEY) ?? '')
     .split(', ')
     .map(parseOrderByParam)
-    .filter((orderBy) => orderBy !== null)
-    .map((orderBy) => ({
+    .filter((orderBy) => !!orderBy)
+    .map((orderBy: { field: string; direction: OrderByDirection }) => ({
       id: COLUMNS[orderBy.field as keyof typeof COLUMNS].accessorKey,
       desc: orderBy.direction === OrderByDirection.DESC,
     }));
@@ -600,9 +616,12 @@ export const RepairListPage = () => {
           .join(', '),
       );
 
-      setSearchParams((prev) => emptyPageTokenUpdater(pagerCtx)(prev), {
-        replace: true,
-      });
+      setSearchParams(
+        (prev: URLSearchParams) => emptyPageTokenUpdater(pagerCtx)(prev),
+        {
+          replace: true,
+        },
+      );
     },
 
     // Pagination
@@ -622,7 +641,7 @@ export const RepairListPage = () => {
       const isPrevPage = newPagination.pageIndex < currentPage;
       const isNextPage = newPagination.pageIndex > currentPage;
 
-      setSearchParams((prev) => {
+      setSearchParams((prev: URLSearchParams) => {
         let next = pageSizeUpdater(pagerCtx, newPagination.pageSize)(prev);
         if (isPrevPage) {
           next = prevPageTokenUpdater(pagerCtx)(next);
@@ -664,19 +683,12 @@ export const RepairListPage = () => {
             color="error"
           />
         ) : (
-          <FilterBarOld
-            filterOptions={Object.entries(
-              repairMetricsFilterValues.data?.dimensions ?? {},
-            ).map(
-              ([key, val]): OptionCategory => ({
-                label: _.startCase(key),
-                value: key,
-                options: val.values.map((v) => ({
-                  label: v,
-                  value: v,
-                })),
-              }),
-            )}
+          <DeviceListFilterBar
+            filterOptions={
+              repairMetricsFilterValues.data
+                ? dimensionsToFilterOptions(repairMetricsFilterValues.data)
+                : []
+            }
             selectedOptions={selectedOptions.filters}
             onSelectedOptionsChange={onSelectedOptionsChange}
             isLoading={
