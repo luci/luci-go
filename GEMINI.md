@@ -185,36 +185,32 @@ When modifying the API surface, the following style guide applies:
 
 ## 4. Build and Test
 
-### Environment setup
-
-When running any other commands in this section, environment variables must
-be setup by running the following command (note the dot space script syntax):
-
-```
-. ./setup_env.sh
-```
-
 ### Build
 
 The project is built using the standard Go toolchain.
+
+As builds of the entire repository can take some time, it is best to only
+build the directory you need, e.g. if working on ResultDB:
+
+`go build go.chromium.org/luci/resultdb/...`
 
 ### Protocol buffers bindings
 
 After changing protos, regenerate proto buffer go bindings by running
 `go generate` against the directory, for example:
 
-`. ./setup_env.sh && go generate go.chromium.org/luci/resultdb/proto/v1`
+`go generate go.chromium.org/luci/resultdb/proto/v1`
 
 ### Test
 
-Tests are run using the `go test` command. Tests in many LUCI services rely
-on other components, such as Spanner Emulator available in `gcloud`.
+Tests are run using the `go test` command. As most tests are integration
+tests, you must set the `INTEGRATION_TESTS=1` environment variable to run them.
 
-To run these tests, you must pass the `INTEGRATION_TESTS` flag. For example:
-`. ./setup_env.sh && INTEGRATION_TESTS=1 go test go.chromium.org/luci/analysis/...`
+For example, to run all tests under resultdb/, run the following command:
+`INTEGRATION_TESTS=1 go test go.chromium.org/luci/resultdb/...`
 
-For ResultDB, you should pass both `SPANNER_EMULATOR=1` and `INTEGRATION_TESTS=1`:
-`. ./setup_env.sh && INTEGRATION_TESTS=1 SPANNER_EMULATOR=1 go test go.chromium.org/luci/resultdb/...`
+Running all tests in `go.chromium.org/luci/...` takes a long time, so it is best
+to run only the directory you need.
 
 ## 5. Contribution and Code Review
 
@@ -229,5 +225,5 @@ Git commit messages follow a format like:
 A longer description appears here.
 
 BUG=b:{BUG_NUMBER}
-TEST=INTEGRATION_TESTS=1 SPANNER_EMULATOR=1 go test go.chromium.org/luci/resultdb/...
+TEST=INTEGRATION_TESTS=1 go test go.chromium.org/luci/resultdb/...
 ```

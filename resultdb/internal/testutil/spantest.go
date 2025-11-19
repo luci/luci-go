@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/span"
 
@@ -55,20 +54,11 @@ const (
 	// This could be mitigated by using different Redis databases in different
 	// test binaries, but the default limit is only 16.
 	RedisTestEnvVar = "INTEGRATION_TESTS_REDIS"
-
-	// EmulatorEnvVar is the name of the environment variable which controls
-	// whether to run spanner tests using Cloud Spanner Emulator.
-	// The value must be "1" to use emulator.
-	EmulatorEnvVar = "SPANNER_EMULATOR"
 )
 
 // runIntegrationTests returns true if integration tests should run.
 func runIntegrationTests() bool {
 	return os.Getenv(IntegrationTestEnvVar) == "1"
-}
-
-func runIntegrationTestsWithEmulator() bool {
-	return runIntegrationTests() && os.Getenv(EmulatorEnvVar) == "1"
 }
 
 // ConnectToRedis returns true if tests should connect to Redis.
@@ -159,23 +149,17 @@ func spannerTestMain(m *testing.M) (exitCode int, err error) {
 	var emu *emulator.Emulator
 	var dbCfg spantest.TempDBConfig
 
-	if runIntegrationTestsWithEmulator() {
-		logging.Infof(ctx, "Launching Cloud Spanner emulator")
-
-		if emu, err = emulator.Start(ctx); err != nil {
-			return 0, err
-		}
-		defer emu.Stop()
-
-		dbCfg.EmulatedInstance, err = spantest.NewEmulatedInstance(ctx, emu)
-		if err != nil {
-			return 0, err
-		}
-		logging.Infof(ctx, "Started Cloud Spanner emulator and created temporary instance %s", dbCfg.EmulatedInstance.Name)
-	} else {
-		// Use a **real** testing instance.
-		dbCfg.CloudInstance = chromeinfra.TestSpannerInstance
+	logging.Infof(ctx, "Launching Cloud Spanner emulator")
+	if emu, err = emulator.Start(ctx); err != nil {
+		return 0, err
 	}
+	defer emu.Stop()
+
+	dbCfg.EmulatedInstance, err = spantest.NewEmulatedInstance(ctx, emu)
+	if err != nil {
+		return 0, err
+	}
+	logging.Infof(ctx, "Started Cloud Spanner emulator and created temporary instance %s", dbCfg.EmulatedInstance.Name)
 
 	// Find init_db.sql
 	if dbCfg.InitScriptPath, err = findInitScript(); err != nil {
