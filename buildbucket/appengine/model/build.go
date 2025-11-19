@@ -212,6 +212,13 @@ type Build struct {
 	CustomBuilderCountMetrics               []string `gae:"custom_builder_count_metrics"`
 	CustomBuilderMaxAgeMetrics              []string `gae:"custom_builder_max_age_metrics"`
 	CustomBuilderConsecutiveFailuresMetrics []string `gae:"custom_builder_consecutive_failures_metrics"`
+
+	// TurboCI related fields.
+
+	// For Turbo CI builds, `ids.v1.StageAttempt` serialized as a Turbo CI ID.
+	StageAttemptID string `gae:"stage_attempt_id"`
+	// A token that can be used to write to the Turbo CI work plan as this stage.
+	StageAttemptToken string `gae:"stage_attempt_token,noindex"`
 }
 
 // Realm returns this build's auth realm, or an empty string if not opted into the
