@@ -44,7 +44,8 @@ type parentsMap struct {
 }
 
 type parent struct {
-	bld *model.Build
+	bld   *model.Build
+	infra *model.BuildInfra
 	// ancestors including self.
 	ancestors []int64
 	pRunID    string
@@ -115,6 +116,19 @@ func (ps *parentsMap) parentRunIDForRequest(req *pb.ScheduleBuildRequest) (strin
 	}
 }
 
+// parentInfraForRequest returns a parent BuildInfra for the given request.
+func (ps *parentsMap) parentInfraForRequest(req *pb.ScheduleBuildRequest) (*model.BuildInfra, error) {
+	p := ps.parentForRequest(req)
+	switch {
+	case p == nil:
+		return nil, nil
+	case p.err != nil:
+		return nil, p.err
+	default:
+		return p.infra, nil
+	}
+}
+
 // populateParentFields fills in `p` based on fetch entities.
 //
 // Updates it to erroneous if the build has finished already.
@@ -127,6 +141,7 @@ func populateParentFields(p *parent, pBld *model.Build, pInfra *model.BuildInfra
 		return
 	}
 	p.bld = pBld
+	p.infra = pInfra
 	p.ancestors, p.pRunID = getParentInfo(pBld, pInfra)
 }
 
