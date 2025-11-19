@@ -133,3 +133,87 @@ func TestScheduleBuildOp(t *testing.T) {
 	assert.That(t, errs[2], should.ErrLike("was left unprocessed"))
 	assert.Loosely(t, out[2], should.BeNil)
 }
+
+func TestPrefetchBuilders(t *testing.T) {
+	t.Parallel()
+
+	ctx := memory.Use(t.Context())
+
+	assert.NoErr(t, config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{}))
+
+	bucketEntity := func(proj, buck string, dynamic bool) *model.Bucket {
+		var swarming *pb.Swarming
+		if !dynamic {
+			swarming = &pb.Swarming{}
+		}
+		return &model.Bucket{
+			Parent: model.ProjectKey(ctx, proj),
+			ID:     buck,
+			Proto:  &pb.Bucket{Swarming: swarming},
+		}
+	}
+
+	builderEntity := func(proj, buck, builder string) *model.Builder {
+		return &model.Builder{
+			Parent: model.BucketKey(ctx, proj, buck),
+			ID:     builder,
+			Config: &pb.BuilderConfig{Name: builder},
+		}
+	}
+
+	scheduleReq := func(proj, buck, builder string) *pb.ScheduleBuildRequest {
+		return &pb.ScheduleBuildRequest{
+			Builder: &pb.BuilderID{
+				Project: proj,
+				Bucket:  buck,
+				Builder: builder,
+			},
+			DryRun: true,
+		}
+	}
+
+	assert.NoErr(t, datastore.Put(ctx,
+		bucketEntity("proj", "static", false),
+		bucketEntity("proj", "dynamic", true),
+		builderEntity("proj", "static", "builder1"),
+		builderEntity("proj", "static", "builder2"),
+	))
+
+	op, err := newScheduleBuildOp(ctx, []*pb.ScheduleBuildRequest{
+		scheduleReq("proj", "", ""), // broken request
+		scheduleReq("proj", "static", "builder1"),
+		scheduleReq("proj", "static", "builder1"), // multiple requests for the same static builder
+		scheduleReq("proj", "static", "builder2"),
+		scheduleReq("proj", "dynamic", "builder1"),
+		scheduleReq("proj", "dynamic", "builder1"), // multiple requests for the same dynamic builder
+		scheduleReq("proj", "dynamic", "builder2"),
+		scheduleReq("proj", "static", "missing"),   // missing static builder
+		scheduleReq("proj", "missing", "builder1"), // missing bucket
+	})
+	assert.NoErr(t, err)
+
+	op.PrefetchBuilders(ctx)
+
+	assert.That(t, op.Builders, should.Match(map[string]*pb.BuilderConfig{
+		"proj/static/builder1": {Name: "builder1"},
+		"proj/static/builder2": {Name: "builder2"},
+	}))
+
+	errs := make([]string, len(op.Errs))
+	for i, err := range op.Errs {
+		if err != nil {
+			errs[i] = err.Error()
+		}
+	}
+	assert.That(t, errs, should.Match([]string{
+		"bucket is required",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		`rpc error: code = NotFound desc = builder not found: "missing"`,
+		`rpc error: code = NotFound desc = bucket not found: "proj/missing"`,
+	}))
+}

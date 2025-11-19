@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
@@ -61,6 +62,9 @@ type scheduleBuildOp struct {
 	GlobalCfg *pb.SettingsCfg
 	// WellKnownExperiments are known 'global' experiments from the GlobalCfg.
 	WellKnownExperiments stringset.Set
+
+	// Builders are builder configs prefetched by PrefetchBuilders.
+	Builders map[string]*pb.BuilderConfig
 
 	// reqMap maps *pb.ScheduleBuildRequest to its index in Reqs.
 	reqMap map[*pb.ScheduleBuildRequest]int
@@ -178,6 +182,104 @@ func (op *scheduleBuildOp) SetBuild(req *pb.ScheduleBuildRequest, build *model.B
 		panic(fmt.Sprintf("request #%d was already marked as failed", idx))
 	}
 	op.Builds[idx] = build
+}
+
+// PrefetchBuilders fetches builder configs of all still pending requests.
+//
+// Fetched configs are placed into Builders map. Assumes bucket configs have
+// been prefetched already.
+//
+// Errors are put into Errs, e.g. requests that point to non-existing builders
+// are marked as failed with "no such builder" error. If the prefetch operation
+// fails as a whole, then all pending requests are marked as failed with an
+// internal appstatus error.
+func (op *scheduleBuildOp) PrefetchBuilders(ctx context.Context) {
+	type builderEntry struct {
+		cfg *pb.BuilderConfig
+		err error
+	}
+	builderByID := map[string]*builderEntry{}
+	var buildersToFetch []*model.Builder
+
+	for _, req := range op.Pending() {
+		if err := protoutil.ValidateRequiredBuilderID(req.GetBuilder()); err != nil {
+			op.Fail(req, appstatus.BadRequest(err))
+			continue
+		}
+
+		// Check if we already processed this builder.
+		builderID := protoutil.FormatBuilderID(req.Builder)
+		if _, ok := builderByID[builderID]; ok {
+			continue
+		}
+
+		// Check if the bucket exists.
+		bucketID := protoutil.FormatBucketID(req.Builder.Project, req.Builder.Bucket)
+		bucket := op.Buckets.Bucket(bucketID)
+		if bucket == nil {
+			builderByID[builderID] = &builderEntry{
+				err: appstatus.Errorf(codes.NotFound, "bucket not found: %q", bucketID),
+			}
+			continue
+		}
+
+		// Check if this is a bucket with regular (not dynamic) builders. This is
+		// indicated by presence of Swarming field. Regular builders must exist
+		// in the datastore and we'll fetch them. Builders in dynamic buckets do not
+		// physically exist in the datastore, but still are considered valid. We'll
+		// just silently skip fetching them.
+		builderByID[builderID] = &builderEntry{}
+		if bucket.Swarming != nil {
+			buildersToFetch = append(buildersToFetch, &model.Builder{
+				Parent: model.BucketKey(ctx, req.Builder.Project, req.Builder.Bucket),
+				ID:     req.Builder.Builder,
+			})
+		}
+	}
+
+	// Fetch all builders at once, fill in builderByID with the results.
+	err := datastore.Get(ctx, buildersToFetch)
+	builderErr := func(idx int) error {
+		if merr, ok := err.(errors.MultiError); ok {
+			return merr[idx]
+		} else {
+			return err
+		}
+	}
+	for idx, builder := range buildersToFetch {
+		entry := builderByID[protoutil.ToBuilderIDString(
+			builder.Parent.Parent().StringID(), // project
+			builder.Parent.StringID(),          // bucket
+			builder.ID,                         // builder
+		)]
+		switch err := builderErr(idx); {
+		case err == nil && builder.Config != nil:
+			entry.cfg = builder.Config
+		case err == nil && builder.Config == nil:
+			entry.err = appstatus.Errorf(codes.Internal, "failed to fetch builder %q config: no proto config", builder.ID)
+		case errors.Is(err, datastore.ErrNoSuchEntity):
+			entry.err = appstatus.Errorf(codes.NotFound, "builder not found: %q", builder.ID)
+		default:
+			entry.err = appstatus.Errorf(codes.Internal, "failed to fetch builder %q config: %s", builder.ID, err)
+		}
+	}
+
+	// Resolve requests that failed due to builder fetch errors.
+	for _, req := range op.Pending() {
+		builderID := protoutil.FormatBuilderID(req.Builder)
+		if err := builderByID[builderID].err; err != nil {
+			op.Fail(req, err)
+		}
+	}
+
+	// Collect fetched non-dynamic builders into the final Builders map.
+	builders := map[string]*pb.BuilderConfig{}
+	for builderID, entry := range builderByID {
+		if entry.cfg != nil {
+			builders[builderID] = entry.cfg
+		}
+	}
+	op.Builders = builders
 }
 
 // Finalize converts build entities to protos, applying the mask.
