@@ -116,6 +116,23 @@ const getRow = (
   }
 };
 
+const getRowId = (platform: Platform) => {
+  type DeviceRowModel = GridRowModel & {
+    id: string;
+  };
+  switch (platform) {
+    case Platform.ANDROID:
+      type AndroidRowModel = DeviceRowModel & {
+        fc_machine_type: string;
+      };
+      return (row: AndroidRowModel) => row.id + (row.fc_machine_type ?? '');
+    case Platform.CHROMEOS:
+    case Platform.CHROMIUM:
+    case Platform.UNSPECIFIED:
+      return (row: DeviceRowModel) => row.id;
+  }
+};
+
 const getOrderByFromSortModel = (
   sortModel: GridSortModel,
   platform: Platform,
@@ -276,6 +293,7 @@ export function DeviceTable({
         onColumnVisibilityModelChange={onColumnVisibilityModelChange}
         rows={rows}
         columns={columns}
+        getRowId={getRowId(platform)}
         loading={isLoading}
         onClipboardCopy={() => setShowCopySuccess(true)}
       />
