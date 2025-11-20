@@ -78,9 +78,12 @@ type scheduleBuildOp struct {
 //
 // It doesn't yet validate requests themselves.
 //
+// If parent is not nil, it will be used as parent of all requests in the batch
+// regardless of parent_build_id or the build token.
+//
 // An error here means the entire batch has failed. It is always an appstatus
 // error.
-func newScheduleBuildOp(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (*scheduleBuildOp, error) {
+func newScheduleBuildOp(ctx context.Context, reqs []*pb.ScheduleBuildRequest, parent *model.Build) (*scheduleBuildOp, error) {
 	if len(reqs) == 0 {
 		return nil, appstatus.BadRequest(errors.New("at least one ScheduleBuildRequest is required"))
 	}
@@ -99,7 +102,7 @@ func newScheduleBuildOp(ctx context.Context, reqs []*pb.ScheduleBuildRequest) (*
 			pIDSet[req.ParentBuildId] = struct{}{}
 		}
 	}
-	parents, err := validateParents(ctx, slices.Collect(maps.Keys(pIDSet)))
+	parents, err := validateParents(ctx, slices.Collect(maps.Keys(pIDSet)), parent)
 	if err != nil {
 		return nil, err
 	}

@@ -37,11 +37,14 @@ import (
 
 // parentsMap holds parent builds references by a batch of ScheduleBuildRequest.
 //
-// Either `fromRequests` or `fromToken` are present, but not both at the same
-// time.
+// Only one of the fields is allowed to be set.
 type parentsMap struct {
+	// Parents that are extracted from a batch of ScheduleBuildRequests.
 	fromRequests map[int64]*parent
-	fromToken    *parent
+	// A single parent that is extracted from the BUILD token.
+	fromToken *parent
+	// A single parent that is provided as a parameter.
+	fromParam *parent
 }
 
 type parent struct {
@@ -60,7 +63,8 @@ type parent struct {
 //   - will panic if missing parentsMap or missing parent from the map.
 //
 // If the request doesn't specify ParentBuildId, tries to get the parent from
-// BUILD token. And missing parentsMap is allowed.
+// either the directly set parent or BUILD token. And missing parentsMap is
+// allowed.
 func (ps *parentsMap) parentForRequest(req *pb.ScheduleBuildRequest) *parent {
 	if ps == nil {
 		if req.GetParentBuildId() != 0 {
@@ -68,6 +72,11 @@ func (ps *parentsMap) parentForRequest(req *pb.ScheduleBuildRequest) *parent {
 		}
 		return nil
 	}
+
+	if ps.fromParam != nil {
+		return ps.fromParam
+	}
+
 	if req.GetParentBuildId() != 0 {
 		p, ok := ps.fromRequests[req.ParentBuildId]
 		if !ok {
@@ -193,13 +202,26 @@ func validateParentViaToken(ctx context.Context) *parent {
 	return p
 }
 
-// validateParents validates the given set of parent build(s), as extracted from
-// a batch of ScheduleBuildRequests, as well as the build referenced by
-// the BUILD token in the context.
+// validateParents validates the given set of parent build(s), as directly
+// provided, or extracted from a batch of ScheduleBuildRequests, or as the build
+// referenced by the BUILD token in the context.
+//
+// If the parent build is directly provided, token and pIDs are ignored.
 //
 // Verifies that if a token is present, then ScheduleBuildRequests do not
 // explicitly set parent builds (i.e. `pIDs` is empty).
-func validateParents(ctx context.Context, pIDs []int64) (*parentsMap, error) {
+func validateParents(ctx context.Context, pIDs []int64, pBld *model.Build) (*parentsMap, error) {
+	if pBld != nil {
+		pInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, pBld)}
+		if err := datastore.Get(ctx, pInfra); err != nil {
+			logging.Errorf(ctx, "failed to fetch parent build infra %d, %s", pBld.ID, err)
+			return nil, appstatus.Errorf(codes.Internal, "failed to fetch parent build infra %d", pBld.ID)
+		}
+		p := &parent{}
+		populateParentFields(p, pBld, pInfra)
+		return &parentsMap{fromParam: p}, nil
+	}
+
 	p := validateParentViaToken(ctx)
 	switch {
 	case p.err != nil:

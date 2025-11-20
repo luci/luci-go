@@ -1499,9 +1499,7 @@ func scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest, params
 	}
 
 	// Prepare by fetching configs and parent builds.
-	//
-	// TODO: Pass params.OverrideParent inside.
-	op, err := newScheduleBuildOp(ctx, reqs)
+	op, err := newScheduleBuildOp(ctx, reqs, params.OverrideParent)
 	if err != nil {
 		return totalBatchFailure(err, len(reqs))
 	}

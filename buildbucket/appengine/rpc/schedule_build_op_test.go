@@ -94,7 +94,7 @@ func TestScheduleBuildOp(t *testing.T) {
 		scheduleReq("proj1", "bucket1", "builder", 0),
 		scheduleReq("proj1", "bucket1", "builder", parentBuildID),
 		scheduleReq("proj1", "bucket2", "builder", 0),
-	})
+	}, nil)
 	assert.NoErr(t, err)
 
 	assert.Loosely(t, op.Reqs, should.HaveLength(3))
@@ -189,7 +189,7 @@ func TestPrefetchBuilders(t *testing.T) {
 		scheduleReq("proj", "dynamic", "builder2"),
 		scheduleReq("proj", "static", "missing"),   // missing static builder
 		scheduleReq("proj", "missing", "builder1"), // missing bucket
-	})
+	}, nil)
 	assert.NoErr(t, err)
 
 	op.PrefetchBuilders(ctx)

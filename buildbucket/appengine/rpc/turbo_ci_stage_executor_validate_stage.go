@@ -18,10 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"google.golang.org/grpc/codes"
-
 	"go.chromium.org/luci/grpc/appstatus"
 	executorpb "go.chromium.org/turboci/proto/go/graph/executor/v1"
+	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -30,35 +29,33 @@ import (
 func (*TurboCIStageExecutor) ValidateStage(ctx context.Context, req *executorpb.ValidateStageRequest) (*executorpb.ValidateStageResponse, error) {
 	TurboCICall(ctx).LogDetails(ctx)
 
-	if err := validateStage(ctx); err != nil {
+	if err := validateStage(ctx, req.GetStage()); err != nil {
 		return nil, err
 	}
 	return &executorpb.ValidateStageResponse{}, nil
 }
 
-func validateStage(ctx context.Context) error {
-	callInfo := TurboCICall(ctx)
-	if callInfo == nil {
-		return appstatus.Error(codes.Internal, "missing call info")
-	}
-
-	req := callInfo.ScheduleBuild
+func validateStage(ctx context.Context, stage *orchestratorpb.Stage) error {
+	req := TurboCICall(ctx).ScheduleBuild
 	if req.GetTemplateBuildId() != 0 {
 		return appstatus.BadRequest(fmt.Errorf("Buildbucket stage with template_build_id is not supported"))
 	}
 	if req.GetParentBuildId() != 0 {
 		return appstatus.BadRequest(fmt.Errorf("Buildbucket stage with parent_build_id is not supported"))
 	}
-	// TODO: b/449231057 - support led usage in the future.
-	if req.GetShadowInput() != nil {
-		return appstatus.BadRequest(fmt.Errorf("Buildbucket stage with shadow_input is not supported"))
-	}
+	// Set DryRun to true so the request is only being validated.
+	req.DryRun = true
 
-	// TODO: b/449231057 - support parent validation.
-	op, err := newScheduleBuildOp(ctx, []*pb.ScheduleBuildRequest{req})
+	pBld, err := getParentViaStage(ctx, stage)
 	if err != nil {
 		return err
 	}
-	_, _, err = validateScheduleBuild(ctx, op, req)
-	return err
+
+	_, merr := scheduleBuilds(
+		ctx,
+		[]*pb.ScheduleBuildRequest{req},
+		&scheduleBuildsParams{
+			OverrideParent: pBld,
+		})
+	return merr[0]
 }

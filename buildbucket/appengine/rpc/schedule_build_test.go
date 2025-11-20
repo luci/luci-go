@@ -5883,7 +5883,7 @@ func TestScheduleBuild(t *testing.T) {
 						assert.Loosely(t, datastore.Put(ctx, pBld), should.BeNil)
 						assert.Loosely(t, datastore.Put(ctx, pBld), should.BeNil)
 						ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
-						ps, err := validateParents(ctx, nil)
+						ps, err := validateParents(ctx, nil, nil)
 						assert.Loosely(t, err, should.ErrLike("1 has ended, cannot add child to it"))
 						assert.Loosely(t, ps, should.BeNil)
 					})
@@ -5892,14 +5892,14 @@ func TestScheduleBuild(t *testing.T) {
 						pBld.Proto.Status = pb.Status_STARTED
 						assert.Loosely(t, datastore.Put(ctx, pBld), should.BeNil)
 						ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
-						pMap, err := validateParents(ctx, nil)
+						pMap, err := validateParents(ctx, nil, nil)
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, pMap.fromToken.bld.Proto.Id, should.Equal(1))
 					})
 
 					t.Run("both token and id are provided", func(t *ftt.Test) {
 						ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(bb.BuildbucketTokenHeader, tk))
-						_, err := validateParents(ctx, []int64{1})
+						_, err := validateParents(ctx, []int64{1}, nil)
 						assert.Loosely(t, err, should.ErrLike("parent buildbucket token and parent_build_id are mutually exclusive"))
 					})
 				})
@@ -5948,7 +5948,7 @@ func TestScheduleBuild(t *testing.T) {
 								authtest.MockPermission(userID, "project:bucket", bbperms.BuildsIncludeChild),
 							),
 						})
-						pMap, err := validateParents(ctx, []int64{333, 444})
+						pMap, err := validateParents(ctx, []int64{333, 444}, nil)
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, pMap.fromRequests[333].err, grpccode.ShouldBe(codes.NotFound))
 						assert.Loosely(t, pMap.fromRequests[444].err, grpccode.ShouldBe(codes.NotFound))
@@ -5962,7 +5962,7 @@ func TestScheduleBuild(t *testing.T) {
 								authtest.MockPermission(userID, "project:bucket", bbperms.BuildsIncludeChild),
 							),
 						})
-						pMap, err := validateParents(ctx, []int64{1})
+						pMap, err := validateParents(ctx, []int64{1}, nil)
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, pMap.fromRequests[1].bld.Proto.Id, should.Equal(1))
 					})

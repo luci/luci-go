@@ -22,33 +22,39 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/turboci/id"
+	"google.golang.org/protobuf/types/known/anypb"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
+	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
 func TestValidateStage(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("validateStage", t, func(t *ftt.Test) {
-		ctx := memory.Use(context.Background())
-		assert.NoErr(t, config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{}))
+		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
 
-		t.Run("no call info", func(t *ftt.Test) {
-			assert.That(t, validateStage(ctx), should.ErrLike("missing call info"))
-		})
+		assert.NoErr(t, config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{}))
 
 		t.Run("with template_build_id", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				TemplateBuildId: 1,
 			}
 			ctx := context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
-			assert.That(t, validateStage(ctx), should.ErrLike("Buildbucket stage with template_build_id is not supported"))
+			assert.That(t, validateStage(ctx, nil), should.ErrLike("Buildbucket stage with template_build_id is not supported"))
 		})
 
 		t.Run("with parent_build_id", func(t *ftt.Test) {
@@ -56,15 +62,7 @@ func TestValidateStage(t *testing.T) {
 				ParentBuildId: 1,
 			}
 			ctx := context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
-			assert.That(t, validateStage(ctx), should.ErrLike("Buildbucket stage with parent_build_id is not supported"))
-		})
-
-		t.Run("with shadow_input", func(t *ftt.Test) {
-			req := &pb.ScheduleBuildRequest{
-				ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
-			}
-			ctx := context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
-			assert.That(t, validateStage(ctx), should.ErrLike("Buildbucket stage with shadow_input is not supported"))
+			assert.That(t, validateStage(ctx, nil), should.ErrLike("Buildbucket stage with parent_build_id is not supported"))
 		})
 
 		t.Run("invalid schedule build request", func(t *ftt.Test) {
@@ -80,7 +78,7 @@ func TestValidateStage(t *testing.T) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:test@example.com",
 			})
-			assert.That(t, validateStage(ctx), should.ErrLike("request_id cannot contain '/'"))
+			assert.That(t, validateStage(ctx, nil), should.ErrLike("request_id cannot contain '/'"))
 		})
 
 		t.Run("no permission", func(t *ftt.Test) {
@@ -100,12 +98,14 @@ func TestValidateStage(t *testing.T) {
 				},
 			}
 			ctx = context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
-
-			assert.That(t, validateStage(ctx), should.ErrLike(`requested resource not found or "user:another-caller@example.com" does not have permission to view it`))
+			assert.That(t, validateStage(ctx, nil), should.ErrLike(`requested resource not found or "user:another-caller@example.com" does not have permission to view it`))
 		})
 
 		t.Run("valid", func(t *ftt.Test) {
-			testutil.PutBucket(ctx, "project", "bucket", nil)
+			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+				Swarming: &pb.Swarming{},
+			})
+			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 			userID := identity.Identity("user:caller@example.com")
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,
@@ -122,8 +122,112 @@ func TestValidateStage(t *testing.T) {
 				},
 			}
 			ctx = context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
+			stg, err := makeStage(req, nil)
+			assert.NoErr(t, err)
+			assert.NoErr(t, validateStage(ctx, stg))
+		})
 
-			assert.NoErr(t, validateStage(ctx))
+		t.Run("with_parent", func(t *ftt.Test) {
+			pStageAttemptIDStr := "L123456789:Sstage-id:A1"
+			pStageAttemptID, err := id.FromString(pStageAttemptIDStr)
+			assert.NoErr(t, err)
+
+			pBld := &model.Build{
+				ID:             87654321,
+				StageAttemptID: pStageAttemptIDStr,
+				Proto: &pb.Build{
+					Id: 87654321,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "parent-builder",
+					},
+					Status: pb.Status_STARTED,
+				},
+			}
+			pInfra := &model.BuildInfra{
+				Build: datastore.KeyForObj(ctx, pBld),
+				Proto: &pb.BuildInfra{},
+			}
+
+			req := &pb.ScheduleBuildRequest{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+			}
+			stg, err := makeStage(req, pStageAttemptID.GetStageAttempt())
+			assert.Loosely(t, err, should.BeNil)
+			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+				Swarming: &pb.Swarming{},
+			})
+			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+
+			t.Run("parent not found", func(t *ftt.Test) {
+				ctx := context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
+				assert.That(t, validateStage(ctx, stg), should.ErrLike(`expect 1 build by stage_attempt_id "L123456789:Sstage-id:A1", but got 0`))
+			})
+
+			t.Run("multiple builds with the same stage attempt ID", func(t *ftt.Test) {
+				another := &model.Build{
+					ID:             98765432,
+					StageAttemptID: pStageAttemptIDStr,
+					Proto: &pb.Build{
+						Id: 98765432,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "parent-builder",
+						},
+						Status: pb.Status_STARTED,
+					},
+				}
+				assert.NoErr(t, datastore.Put(ctx, pBld, another))
+				ctx := context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
+				assert.That(t, validateStage(ctx, stg), should.ErrLike(`expect 1 build by stage_attempt_id "L123456789:Sstage-id:A1", but got 2`))
+			})
+
+			t.Run("parent ended", func(t *ftt.Test) {
+				pBld.Proto.Status = pb.Status_SUCCESS
+				assert.NoErr(t, datastore.Put(ctx, pBld, pInfra))
+				ctx := context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
+				assert.That(t, validateStage(ctx, stg), should.ErrLike("has ended, cannot add child to it"))
+			})
+
+			t.Run("valid parent", func(t *ftt.Test) {
+				pBld.Proto.Status = pb.Status_STARTED
+				assert.NoErr(t, datastore.Put(ctx, pBld, pInfra))
+				userID := identity.Identity("user:caller@example.com")
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: userID,
+					FakeDB: authtest.NewFakeDB(
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+					),
+				})
+				ctx = context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
+				assert.NoErr(t, validateStage(ctx, stg))
+			})
 		})
 	})
+}
+
+func makeStage(req *pb.ScheduleBuildRequest, pStageAttempt *idspb.StageAttempt) (*orchestratorpb.Stage, error) {
+	value, err := anypb.New(req)
+	if err != nil {
+		return nil, err
+	}
+	stgBldr := orchestratorpb.Stage_builder{
+		Args: orchestratorpb.Value_builder{
+			Value: value,
+		}.Build(),
+	}
+
+	if pStageAttempt != nil {
+		stgBldr.CreatedBy = orchestratorpb.Actor_builder{
+			StageAttempt: pStageAttempt,
+		}.Build()
+	}
+
+	return stgBldr.Build(), nil
 }
