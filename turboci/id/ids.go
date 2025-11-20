@@ -253,6 +253,20 @@ const (
 	StageNotWorknode
 )
 
+func (m WorknodeMode) Apply(id *idspb.Stage) {
+	if id == nil {
+		return
+	}
+	switch m {
+	case StageIsWorknode:
+		id.SetIsWorknode(true)
+	case StageNotWorknode:
+		id.SetIsWorknode(false)
+	default:
+		id.ClearIsWorknode()
+	}
+}
+
 // StageErr returns a Stage identifier suitable for use with WriteNodes without
 // a WorkPlan.
 //
@@ -262,12 +276,7 @@ func StageErr(mode WorknodeMode, stageID string) (*idspb.Stage, error) {
 		return nil, fmt.Errorf("id.Stage: %w", err)
 	}
 	ret := idspb.Stage_builder{Id: &stageID}.Build()
-	switch mode {
-	case StageIsWorknode:
-		ret.SetIsWorknode(true)
-	case StageNotWorknode:
-		ret.SetIsWorknode(false)
-	}
+	mode.Apply(ret)
 	return ret, nil
 }
 
