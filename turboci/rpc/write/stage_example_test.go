@@ -15,9 +15,13 @@
 package write_test
 
 import (
+	"time"
+
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/turboci/rpc/write"
+	"go.chromium.org/luci/turboci/rpc/write/attempt"
+	"go.chromium.org/luci/turboci/rpc/write/stage"
 )
 
 func ExampleNewStage() {
@@ -25,6 +29,9 @@ func ExampleNewStage() {
 		write.NewStage(
 			"some-stage",
 			structpb.NewBoolValue(true),
+			stage.AttemptExecutionPolicy(
+				attempt.HeartbeatRunning(10*time.Second),
+			),
 		),
 	)
 	// Output:
@@ -39,6 +46,13 @@ func ExampleNewStage() {
 	//         "value": {
 	//           "@type": "type.googleapis.com/google.protobuf.Value",
 	//           "value": true
+	//         }
+	//       },
+	//       "requestedStageExecutionPolicy": {
+	//         "attemptExecutionPolicyTemplate": {
+	//           "attemptHeartbeat": {
+	//             "running": "10s"
+	//           }
 	//         }
 	//       }
 	//     }

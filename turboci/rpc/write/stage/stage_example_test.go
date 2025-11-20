@@ -15,13 +15,19 @@
 package stage_test
 
 import (
+	"testing"
 	"time"
 
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/turboci/rpc/write"
+	"go.chromium.org/luci/turboci/rpc/write/attempt"
 	"go.chromium.org/luci/turboci/rpc/write/stage"
 )
+
+func TestExample(t *testing.T) {
+	t.Skip("examples are not run as tests")
+}
 
 func ExampleNewStage() {
 	args, err := structpb.NewStruct(map[string]any{
@@ -38,6 +44,10 @@ func ExampleNewStage() {
 			stage.Realm("project/realm"),
 			stage.ShouldPlan("check-to-plan"),
 			stage.Timeout(time.Hour, stage.TimeoutModeUnknown),
+			stage.AttemptExecutionPolicy(
+				attempt.HeartbeatRunning(10*time.Second),
+				attempt.HeartbeatScheduled(60*time.Second),
+			),
 		),
 	)
 	// Output:
@@ -59,7 +69,13 @@ func ExampleNewStage() {
 	//       "realm": "project/realm",
 	//       "requestedStageExecutionPolicy": {
 	//         "stageTimeout": "3600s",
-	//         "stageTimeoutMode": "STAGE_TIMEOUT_MODE_UNKNOWN"
+	//         "stageTimeoutMode": "STAGE_TIMEOUT_MODE_UNKNOWN",
+	//         "attemptExecutionPolicyTemplate": {
+	//           "attemptHeartbeat": {
+	//             "scheduled": "60s",
+	//             "running": "10s"
+	//           }
+	//         }
 	//       },
 	//       "assignments": [
 	//         {

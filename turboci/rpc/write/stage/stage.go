@@ -26,6 +26,7 @@ import (
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
 	"go.chromium.org/luci/turboci/id"
+	"go.chromium.org/luci/turboci/rpc/write/attempt"
 	"go.chromium.org/luci/turboci/rpc/write/check"
 )
 
@@ -142,4 +143,18 @@ func Timeout(dur time.Duration, mode TimeoutMode) *Diff {
 			StageTimeoutMode: mode.Enum(),
 		}.Build(),
 	})
+}
+
+// AttemptExecutionPolicy sets the requested attempt policy template for this
+// Stage.
+//
+// The Executor for the Stage has ultimate authority for the policy on
+// a per-Attempt basis, but it can take this template into account.
+func AttemptExecutionPolicy(diffs ...*attempt.PolicyDiff) *Diff {
+	pol, err := delta.Collect(diffs...)
+	return template.New(builder{
+		RequestedStageExecutionPolicy: orchestratorpb.StageExecutionPolicy_builder{
+			AttemptExecutionPolicyTemplate: pol,
+		}.Build(),
+	}, err)
 }
