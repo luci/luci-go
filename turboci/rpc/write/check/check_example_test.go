@@ -301,3 +301,35 @@ func ExampleFinal() {
 	//   ]
 	// }
 }
+
+func ExampleDeps() {
+	printCollected(
+		write.NewCheck(
+			"check-id",
+			check.KindTest,
+			check.Deps(check.Edge("dep-check")),
+		),
+	)
+	// Output:
+	// {
+	//   "checks": [
+	//     {
+	//       "identifier": {
+	//         "id": "check-id"
+	//       },
+	//       "kind": "CHECK_KIND_TEST",
+	//       "dependencies": {
+	//         "edges": [
+	//           {
+	//             "check": {
+	//               "identifier": {
+	//                 "id": "dep-check"
+	//               }
+	//             }
+	//           }
+	//         ]
+	//       }
+	//     }
+	//   ]
+	// }
+}

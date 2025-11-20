@@ -32,6 +32,9 @@ func ExampleNewStage() {
 			stage.AttemptExecutionPolicy(
 				attempt.HeartbeatRunning(10*time.Second),
 			),
+			stage.Deps(
+				stage.Edge("some-other-stage"),
+			),
 		),
 	)
 	// Output:
@@ -47,6 +50,18 @@ func ExampleNewStage() {
 	//           "@type": "type.googleapis.com/google.protobuf.Value",
 	//           "value": true
 	//         }
+	//       },
+	//       "dependencies": {
+	//         "edges": [
+	//           {
+	//             "stage": {
+	//               "identifier": {
+	//                 "isWorknode": false,
+	//                 "id": "some-other-stage"
+	//               }
+	//             }
+	//           }
+	//         ]
 	//       },
 	//       "requestedStageExecutionPolicy": {
 	//         "attemptExecutionPolicyTemplate": {

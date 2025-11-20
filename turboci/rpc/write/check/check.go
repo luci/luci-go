@@ -24,6 +24,7 @@ import (
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
 	"go.chromium.org/luci/turboci/data"
+	"go.chromium.org/luci/turboci/rpc/write/dep"
 )
 
 type (
@@ -171,4 +172,17 @@ func Final() *Diff {
 		State:           StateFinal.Enum(),
 		FinalizeResults: proto.Bool(true),
 	})
+}
+
+// Deps returns a Diff which sets the Dependencies of the CheckWrite.
+//
+// Only valid while the check is PLANNING.
+func Deps(diffs ...*dep.Diff) *Diff {
+	dg, err := delta.Collect(diffs...)
+	if err != nil {
+		err = fmt.Errorf("check.Deps: %w", err)
+	}
+	return template.New(builder{
+		Dependencies: dg,
+	}, err)
 }

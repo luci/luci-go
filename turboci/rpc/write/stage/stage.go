@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write/attempt"
 	"go.chromium.org/luci/turboci/rpc/write/check"
+	"go.chromium.org/luci/turboci/rpc/write/dep"
 )
 
 type (
@@ -74,6 +75,17 @@ func IsWorknode(value bool) *Diff {
 			IsWorknode: &value,
 		}.Build(),
 	})
+}
+
+// Deps returns a Diff which sets the Dependencies of the StageWrite.
+func Deps(diffs ...*dep.Diff) *Diff {
+	dg, err := delta.Collect(diffs...)
+	if err != nil {
+		err = fmt.Errorf("stage.Deps: %w", err)
+	}
+	return template.New(builder{
+		Dependencies: dg,
+	}, err)
 }
 
 type assignment = orchestratorpb.Stage_Assignment

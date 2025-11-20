@@ -15,19 +15,15 @@
 package stage_test
 
 import (
-	"testing"
 	"time"
 
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/turboci/rpc/write"
 	"go.chromium.org/luci/turboci/rpc/write/attempt"
+	"go.chromium.org/luci/turboci/rpc/write/check"
 	"go.chromium.org/luci/turboci/rpc/write/stage"
 )
-
-func TestExample(t *testing.T) {
-	t.Skip("examples are not run as tests")
-}
 
 func ExampleNewStage() {
 	args, err := structpb.NewStruct(map[string]any{
@@ -42,6 +38,10 @@ func ExampleNewStage() {
 			"stage-id",
 			args,
 			stage.Realm("project/realm"),
+			stage.Deps(
+				check.Edge("check-dep"),
+				stage.Edge("stage-dep"),
+			),
 			stage.ShouldPlan("check-to-plan"),
 			stage.Timeout(time.Hour, stage.TimeoutModeUnknown),
 			stage.AttemptExecutionPolicy(
@@ -67,6 +67,25 @@ func ExampleNewStage() {
 	//         }
 	//       },
 	//       "realm": "project/realm",
+	//       "dependencies": {
+	//         "edges": [
+	//           {
+	//             "check": {
+	//               "identifier": {
+	//                 "id": "check-dep"
+	//               }
+	//             }
+	//           },
+	//           {
+	//             "stage": {
+	//               "identifier": {
+	//                 "isWorknode": false,
+	//                 "id": "stage-dep"
+	//               }
+	//             }
+	//           }
+	//         ]
+	//       },
 	//       "requestedStageExecutionPolicy": {
 	//         "stageTimeout": "3600s",
 	//         "stageTimeoutMode": "STAGE_TIMEOUT_MODE_UNKNOWN",
