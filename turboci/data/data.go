@@ -21,6 +21,7 @@
 package data
 
 import (
+	"errors"
 	"fmt"
 
 	"google.golang.org/protobuf/proto"
@@ -97,6 +98,22 @@ func ValueErr(msg proto.Message) (*orchestratorpb.Value, error) {
 		return nil, err
 	}
 	return orchestratorpb.Value_builder{Value: val}.Build(), nil
+}
+
+// ValuesErr wraps proto.Messages into `*orchestratorpb.Value`s, returning any
+// error encountered during marshaling.
+func ValuesErr(msgs ...proto.Message) ([]*orchestratorpb.Value, error) {
+	var errs []error
+	ret := make([]*orchestratorpb.Value, len(msgs))
+	for i, msg := range msgs {
+		val, err := ValueErr(msg)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("msgs[%d]: %w", i, err))
+		} else {
+			ret[i] = val
+		}
+	}
+	return ret, errors.Join(errs...)
 }
 
 // Value wraps a proto.Message into a `*orchestratorpb.Value`, panicking on any

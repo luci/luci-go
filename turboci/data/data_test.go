@@ -17,6 +17,7 @@ package data
 import (
 	"testing"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -130,4 +131,35 @@ func TestGetResults(t *testing.T) {
 			"bye": []any{"party", "droids"},
 		})),
 	}))
+}
+
+func TestValuesErr(t *testing.T) {
+	t.Parallel()
+
+	st1, err := structpb.NewStruct(map[string]any{
+		"a": 1,
+		"b": "two",
+	})
+	assert.NoErr(t, err)
+
+	lv1, err := structpb.NewList([]any{
+		"c", "d",
+	})
+	assert.NoErr(t, err)
+
+	bv1 := structpb.NewBoolValue(true)
+
+	msgs := []proto.Message{st1, lv1, bv1}
+	vals, err := ValuesErr(msgs...)
+	assert.NoErr(t, err)
+	assert.Loosely(t, vals, should.HaveLength(3))
+
+	extractedSt1 := ExtractValue[*structpb.Struct](vals[0])
+	assert.That(t, extractedSt1, should.Match(st1))
+
+	extractedSt2 := ExtractValue[*structpb.ListValue](vals[1])
+	assert.That(t, extractedSt2, should.Match(lv1))
+
+	extractedLv1 := ExtractValue[*structpb.Value](vals[2])
+	assert.That(t, extractedLv1, should.Match(bv1))
 }
