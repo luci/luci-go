@@ -143,7 +143,7 @@ describe('use_android_perf_api', () => {
         rows: [
           {
             test: 'TestA',
-            buildCreateTime: { seconds: 1731872375, nanos: 0 },
+            buildCreateTime: '2025-10-30T01:00:00Z',
             buildBranch: 'main',
             buildTarget: 'target1',
             metricKey: 'metric1',

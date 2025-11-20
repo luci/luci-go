@@ -27,10 +27,12 @@ import {
   WrapperQueryOptions,
 } from '@/common/types/query_wrapper_options';
 
+export const MAXIMUM_PAGE_SIZE = 1000;
+
 /**
  * google.protobuf.Timestamp
  */
-interface Timestamp {
+export interface Timestamp {
   /**
    * Represents seconds of UTC time since Unix epoch.
    */
@@ -158,7 +160,7 @@ export interface MeasurementRow {
   /**
    * Build create time of the measurement.
    */
-  buildCreateTime?: Timestamp;
+  buildCreateTime?: string;
 
   /**
    * Build branch of the measurement.

@@ -12,13 +12,58 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { UseQueryResult } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
+
+import * as useAndroidPerfApi from '@/crystal_ball/hooks/use_android_perf_api';
 
 import { LandingPage } from './landing_page';
 
+// Mock the hook
+const mockUseSearchMeasurements = jest.spyOn(
+  useAndroidPerfApi,
+  'useSearchMeasurements',
+);
+
+// Mock DateTimePicker as it's used in the child form
+jest.mock('@mui/x-date-pickers/DateTimePicker', () => ({
+  DateTimePicker: jest.fn(({ label, value, onChange, disabled }) => (
+    <input
+      type="text"
+      aria-label={label}
+      value={value ? value.toISO() : ''}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+    />
+  )),
+}));
+
+const renderWithProvider = (ui: React.ReactElement) => {
+  return render(
+    <LocalizationProvider dateAdapter={AdapterLuxon}>
+      {ui}
+    </LocalizationProvider>,
+  );
+};
+
 describe('<LandingPage />', () => {
   it('should render the landing page', () => {
-    render(<LandingPage />);
-    expect(screen.getByText(/Crystal Ball/)).toBeInTheDocument();
+    mockUseSearchMeasurements.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: false,
+      error: null,
+      isSuccess: false,
+      isFetching: false,
+    } as UseQueryResult<useAndroidPerfApi.SearchMeasurementsResponse, Error>);
+
+    renderWithProvider(<LandingPage />);
+    expect(
+      screen.getByText(/Crystal Ball Performance Metrics/i),
+    ).toBeInTheDocument();
+    // Check that the form is rendered by looking for one of its labels
+    expect(screen.getByLabelText('Test Name Filter')).toBeInTheDocument();
   });
 });
