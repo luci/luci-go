@@ -1031,7 +1031,6 @@ message CreateArtifactRequest {
   string parent = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // Artifact to upload.
-  // The length of the artifact contents MUST be <= 512KiB.
   // artifact.artifact_id MUST be set.
   // artifact.name will be ignored.
   Artifact artifact = 2 [ (google.api.field_behavior) = REQUIRED ];

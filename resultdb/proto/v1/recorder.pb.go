@@ -2329,7 +2329,6 @@ type CreateArtifactRequest struct {
 	// result_id MUST be left blank on the Artifact).
 	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
 	// Artifact to upload.
-	// The length of the artifact contents MUST be <= 512KiB.
 	// artifact.artifact_id MUST be set.
 	// artifact.name will be ignored.
 	Artifact *Artifact `protobuf:"bytes,2,opt,name=artifact,proto3" json:"artifact,omitempty"`
