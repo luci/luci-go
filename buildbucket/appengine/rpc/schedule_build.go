@@ -49,7 +49,6 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
-	"go.chromium.org/luci/buildbucket/appengine/internal/resultdb"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -1511,32 +1510,24 @@ func scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest) ([]*pb
 		return op.Finalize(ctx)
 	}
 
-	// TODO: Detect Turbo CI builds and launch them in a different way.
-
-	// Let createBuilds store entities and submit necessary TQ tasks.
-	var buildsToCreate []*buildToCreate
-	for _, req := range op.Pending() {
-		build := op.BuildForRequest(req)
-		buildsToCreate = append(buildsToCreate, &buildToCreate{
-			build:     build,
-			requestID: req.RequestId,
-			resultDB: resultdb.CreateOptions{
-				// Build is an export root in ResultDB if it has no parent, or if
-				// explicitly requested.
-				IsExportRoot: len(build.AncestorIds) == 0 || req.GetResultdb().GetIsExportRootOverride(),
-			},
+	// Categorize builds by the strategy we want to launch them with and execute
+	// all launches in parallel. This updates *model.Build entities in place on
+	// success or fills in op.Fail error on errors.
+	bldrsMCB := buildersWithMCB(op.Builders)
+	eg, _ = errgroup.WithContext(ctx)
+	eg.SetLimit(64)
+	for _, batch := range splitByLaunchStrategy(op) {
+		eg.Go(func() error {
+			merr := batch.launch(ctx, bldrsMCB)
+			for idx, req := range batch.reqs {
+				if merr[idx] != nil {
+					op.Fail(req, merr[idx])
+				}
+			}
+			return nil
 		})
 	}
-
-	// Note: createBuilds updates *model.Build entities in-place, i.e. once it
-	// finishes running, `op.Builds` will have updated entities with the generated
-	// build ID inside.
-	merr := createBuilds(ctx, buildsToCreate, buildersWithMCB(op.Builders))
-	for idx, req := range op.Pending() {
-		if merr[idx] != nil {
-			op.Fail(req, merr[idx])
-		}
-	}
+	eg.Wait()
 
 	return op.Finalize(ctx)
 }

@@ -60,6 +60,7 @@ const (
 	ExperimentNonProduction       = "luci.non_production"
 	ExperimentParentTracking      = "luci.buildbucket.parent_tracking"
 	ExperimentWaitForCapacity     = "luci.buildbucket.wait_for_capacity_in_slices"
+	ExperimentRunInTurboCI        = "luci.buildbucket.run_in_turboci"
 )
 
 var (
