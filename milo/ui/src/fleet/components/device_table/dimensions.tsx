@@ -181,6 +181,10 @@ export const ANDROID_DIMENSION_OVERRIDES: DimensionOverride = {
     displayName: 'lab_name',
     orderByField: 'lab_name',
   },
+  fc_machine_type: {
+    displayName: 'FC Machine Type',
+    orderByField: 'fc_machine_type',
+  },
 };
 
 /**
