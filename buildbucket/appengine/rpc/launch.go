@@ -19,19 +19,14 @@ import (
 	"maps"
 	"slices"
 
-	"google.golang.org/grpc/codes"
-
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/appstatus"
 	orchestratorgrpcpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1/grpcpb"
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/resultdb"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 // batchToLaunchKind specifies a strategy of how to launch batches of builds.
@@ -242,22 +237,4 @@ func launchNative(ctx context.Context, reqs []*pb.ScheduleBuildRequest, builds [
 		})
 	}
 	return createBuilds(ctx, buildsToCreate, bldrsMCB)
-}
-
-// launchTurboCIRoot launches a root build via a new Turbo CI workplan.
-//
-// Updates `build` in-place. Returns appstatus errors.
-func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build *model.Build, orch orchestratorgrpcpb.TurboCIOrchestratorClient) error {
-	logging.Infof(ctx, "TurboCI: launching new workplan with %s", protoutil.FormatBuilderID(req.Builder))
-	return appstatus.Errorf(codes.Unimplemented, "Turbo CI builds are not implemented yet")
-}
-
-// launchTurboCIChildren launches child builds by adding them to an existing
-// workplan.
-//
-// Updates `builds` in-place, returns exactly len(builds) appstatus errors.
-func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.ScheduleBuildRequest, builds []*model.Build, orch orchestratorgrpcpb.TurboCIOrchestratorClient) errors.MultiError {
-	return slices.Repeat(errors.MultiError{
-		appstatus.Errorf(codes.Unimplemented, "Turbo CI child builds are not implemented yet"),
-	}, len(reqs))
 }
