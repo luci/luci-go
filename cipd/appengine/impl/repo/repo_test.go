@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -48,9 +49,10 @@ import (
 
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
-	configpb "go.chromium.org/luci/cipd/api/config/v1"
+	api "go.chromium.org/luci/cipd/api/config/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
+	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
@@ -65,12 +67,25 @@ import (
 ////////////////////////////////////////////////////////////////////////////////
 // Prefix metadata RPC methods + related helpers including ACL checks.
 
+// newMockImpl will create an mock repoImpl with default value for most fields.
+func newMockImpl(meta *testutil.MetadataStore, cas *testutil.MockCAS) *repoImpl {
+	return &repoImpl{
+		tq:   &tq.Dispatcher{},
+		meta: meta,
+		cas:  cas,
+		vsa:  vsa.NewClient(),
+		lookupPrefixCfg: func(pkg string) *prefixcfg.Entry {
+			return &prefixcfg.Entry{PrefixConfig: &api.Prefix{}}
+		},
+	}
+}
+
 func TestMetadataFetching(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		_, _, as := testutil.TestingContext(
-			authtest.MockMembership("user:prefixes-viewer@example.com", PrefixesViewers),
+			authtest.MockMembership("user:prefixes-viewer@google.com", PrefixesViewers),
 		)
 
 		meta := testutil.MetadataStore{}
@@ -80,7 +95,7 @@ func TestMetadataFetching(t *testing.T) {
 			Acls: []*repopb.PrefixMetadata_ACL{
 				{
 					Role:       repopb.Role_OWNER,
-					Principals: []string{"user:admin@example.com"},
+					Principals: []string{"user:admin@google.com"},
 				},
 			},
 		})
@@ -88,17 +103,17 @@ func TestMetadataFetching(t *testing.T) {
 			Acls: []*repopb.PrefixMetadata_ACL{
 				{
 					Role:       repopb.Role_OWNER,
-					Principals: []string{"user:top-owner@example.com"},
+					Principals: []string{"user:top-owner@google.com"},
 				},
 			},
 		})
 
 		// The metadata to be fetched.
 		leafMeta := meta.Populate("a/b/c/d", &repopb.PrefixMetadata{
-			UpdateUser: "user:someone@example.com",
+			UpdateUser: "user:someone@google.com",
 		})
 
-		impl := repoImpl{meta: &meta}
+		impl := newMockImpl(&meta, nil)
 
 		callGet := func(prefix string, user identity.Identity) (*repopb.PrefixMetadata, error) {
 			return impl.GetPrefixMetadata(as(user.Email()), &repopb.PrefixRequest{Prefix: prefix})
@@ -113,79 +128,79 @@ func TestMetadataFetching(t *testing.T) {
 		}
 
 		t.Run("GetPrefixMetadata happy path", func(t *ftt.Test) {
-			resp, err := callGet("a/b/c/d", "user:top-owner@example.com")
+			resp, err := callGet("a/b/c/d", "user:top-owner@google.com")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.Match(leafMeta))
 		})
 
 		t.Run("GetPrefixMetadata happy path via global group", func(t *ftt.Test) {
-			resp, err := callGet("a/b/c/d", "user:prefixes-viewer@example.com")
+			resp, err := callGet("a/b/c/d", "user:prefixes-viewer@google.com")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.Match(leafMeta))
 		})
 
 		t.Run("GetInheritedPrefixMetadata happy path", func(t *ftt.Test) {
-			resp, err := callGetInherited("a/b/c/d", "user:top-owner@example.com")
+			resp, err := callGetInherited("a/b/c/d", "user:top-owner@google.com")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.Match([]*repopb.PrefixMetadata{rootMeta, topMeta, leafMeta}))
 		})
 
 		t.Run("GetInheritedPrefixMetadata happy path via global group", func(t *ftt.Test) {
-			resp, err := callGetInherited("a/b/c/d", "user:prefixes-viewer@example.com")
+			resp, err := callGetInherited("a/b/c/d", "user:prefixes-viewer@google.com")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.Match([]*repopb.PrefixMetadata{rootMeta, topMeta, leafMeta}))
 		})
 
 		t.Run("GetPrefixMetadata bad prefix", func(t *ftt.Test) {
-			resp, err := callGet("a//", "user:top-owner@example.com")
+			resp, err := callGet("a//", "user:top-owner@google.com")
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, resp, should.BeNil)
 		})
 
 		t.Run("GetInheritedPrefixMetadata bad prefix", func(t *ftt.Test) {
-			resp, err := callGetInherited("a//", "user:top-owner@example.com")
+			resp, err := callGetInherited("a//", "user:top-owner@google.com")
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, resp, should.BeNil)
 		})
 
 		t.Run("GetPrefixMetadata no metadata, caller has access", func(t *ftt.Test) {
-			resp, err := callGet("a/b", "user:top-owner@example.com")
+			resp, err := callGet("a/b", "user:top-owner@google.com")
 			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
 			assert.Loosely(t, resp, should.BeNil)
 		})
 
 		t.Run("GetInheritedPrefixMetadata no metadata, caller has access", func(t *ftt.Test) {
-			resp, err := callGetInherited("a/b", "user:top-owner@example.com")
+			resp, err := callGetInherited("a/b", "user:top-owner@google.com")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.Match([]*repopb.PrefixMetadata{rootMeta, topMeta}))
 		})
 
 		t.Run("GetPrefixMetadata no metadata, caller has no access", func(t *ftt.Test) {
-			resp, err := callGet("a/b", "user:someone-else@example.com")
+			resp, err := callGet("a/b", "user:someone-else@google.com")
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, resp, should.BeNil)
 			// Existing metadata that the caller has no access to produces same error,
 			// so unauthorized callers can't easily distinguish between the two.
-			resp, err = callGet("a/b/c/d", "user:someone-else@example.com")
+			resp, err = callGet("a/b/c/d", "user:someone-else@google.com")
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, resp, should.BeNil)
 			// Same for completely unknown prefix.
-			resp, err = callGet("zzz", "user:someone-else@example.com")
+			resp, err = callGet("zzz", "user:someone-else@google.com")
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, resp, should.BeNil)
 		})
 
 		t.Run("GetInheritedPrefixMetadata no metadata, caller has no access", func(t *ftt.Test) {
-			resp, err := callGetInherited("a/b", "user:someone-else@example.com")
+			resp, err := callGetInherited("a/b", "user:someone-else@google.com")
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, resp, should.BeNil)
 			// Existing metadata that the caller has no access to produces same error,
 			// so unauthorized callers can't easily distinguish between the two.
-			resp, err = callGetInherited("a/b/c/d", "user:someone-else@example.com")
+			resp, err = callGetInherited("a/b/c/d", "user:someone-else@google.com")
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, resp, should.BeNil)
 			// Same for completely unknown prefix.
-			resp, err = callGetInherited("zzz", "user:someone-else@example.com")
+			resp, err = callGetInherited("zzz", "user:someone-else@google.com")
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, resp, should.BeNil)
 		})
@@ -205,7 +220,7 @@ func TestMetadataUpdating(t *testing.T) {
 			Acls: []*repopb.PrefixMetadata_ACL{
 				{
 					Role:       repopb.Role_OWNER,
-					Principals: []string{"user:admin@example.com"},
+					Principals: []string{"user:admin@google.com"},
 				},
 			},
 		})
@@ -213,12 +228,12 @@ func TestMetadataUpdating(t *testing.T) {
 			Acls: []*repopb.PrefixMetadata_ACL{
 				{
 					Role:       repopb.Role_OWNER,
-					Principals: []string{"user:top-owner@example.com"},
+					Principals: []string{"user:top-owner@google.com"},
 				},
 			},
 		})
 
-		impl := repoImpl{meta: &meta}
+		impl := newMockImpl(&meta, nil)
 
 		callUpdate := func(user identity.Identity, m *repopb.PrefixMetadata) (md *repopb.PrefixMetadata, err error) {
 			err = datastore.RunInTransaction(as(user.Email()), func(ctx context.Context) (err error) {
@@ -230,10 +245,10 @@ func TestMetadataUpdating(t *testing.T) {
 
 		t.Run("Happy path", func(t *ftt.Test) {
 			// Create new metadata entry.
-			meta, err := callUpdate("user:top-owner@example.com", &repopb.PrefixMetadata{
+			meta, err := callUpdate("user:top-owner@google.com", &repopb.PrefixMetadata{
 				Prefix:     "a/b/",
 				UpdateTime: timestamppb.New(time.Unix(10000, 0)), // should be overwritten
-				UpdateUser: "user:zzz@example.com",               // should be overwritten
+				UpdateUser: "user:zzz@google.com",                // should be overwritten
 				Acls: []*repopb.PrefixMetadata_ACL{
 					{Role: repopb.Role_READER, Principals: []string{"user:reader@example.com"}},
 				},
@@ -242,9 +257,9 @@ func TestMetadataUpdating(t *testing.T) {
 
 			expected := &repopb.PrefixMetadata{
 				Prefix:      "a/b",
-				Fingerprint: "WZllwc6m8f9C_rfwnspaPIiyPD0",
+				Fingerprint: "NKnSLux04lkv5WDj-g_Pq5O0FfA",
 				UpdateTime:  timestamppb.New(testutil.TestTime),
-				UpdateUser:  "user:top-owner@example.com",
+				UpdateUser:  "user:top-owner@google.com",
 				Acls: []*repopb.PrefixMetadata_ACL{
 					{Role: repopb.Role_READER, Principals: []string{"user:reader@example.com"}},
 				},
@@ -255,13 +270,13 @@ func TestMetadataUpdating(t *testing.T) {
 			tc.Add(time.Hour)
 			updated := proto.Clone(expected).(*repopb.PrefixMetadata)
 			updated.Acls = nil
-			meta, err = callUpdate("user:top-owner@example.com", updated)
+			meta, err = callUpdate("user:top-owner@google.com", updated)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, meta, should.Match(&repopb.PrefixMetadata{
 				Prefix:      "a/b",
-				Fingerprint: "oQ2uuVbjV79prXxl4jyJkOpff90",
+				Fingerprint: "kjA5UjtMyaRQ6VCWbbAaFs0BGvA",
 				UpdateTime:  timestamppb.New(testutil.TestTime.Add(time.Hour)),
-				UpdateUser:  "user:top-owner@example.com",
+				UpdateUser:  "user:top-owner@google.com",
 			}))
 
 			// Have these in the event log as well.
@@ -272,7 +287,7 @@ func TestMetadataUpdating(t *testing.T) {
 				{
 					Kind:    repopb.EventKind_PREFIX_ACL_CHANGED,
 					Package: "a/b",
-					Who:     "user:top-owner@example.com",
+					Who:     "user:top-owner@google.com",
 					When:    timestamppb.New(testutil.TestTime.Add(time.Hour)),
 					RevokedRole: []*repopb.PrefixMetadata_ACL{
 						{Role: repopb.Role_READER, Principals: []string{"user:reader@example.com"}},
@@ -281,7 +296,7 @@ func TestMetadataUpdating(t *testing.T) {
 				{
 					Kind:    repopb.EventKind_PREFIX_ACL_CHANGED,
 					Package: "a/b",
-					Who:     "user:top-owner@example.com",
+					Who:     "user:top-owner@google.com",
 					When:    timestamppb.New(testutil.TestTime),
 					GrantedRole: []*repopb.PrefixMetadata_ACL{
 						{Role: repopb.Role_READER, Principals: []string{"user:reader@example.com"}},
@@ -291,13 +306,13 @@ func TestMetadataUpdating(t *testing.T) {
 		})
 
 		t.Run("Validation works", func(t *ftt.Test) {
-			meta, err := callUpdate("user:top-owner@example.com", &repopb.PrefixMetadata{
+			meta, err := callUpdate("user:top-owner@google.com", &repopb.PrefixMetadata{
 				Prefix: "a/b//",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, meta, should.BeNil)
 
-			meta, err = callUpdate("user:top-owner@example.com", &repopb.PrefixMetadata{
+			meta, err = callUpdate("user:top-owner@google.com", &repopb.PrefixMetadata{
 				Prefix: "a/b",
 				Acls: []*repopb.PrefixMetadata_ACL{
 					{Role: repopb.Role_READER, Principals: []string{"huh?"}},
@@ -308,14 +323,14 @@ func TestMetadataUpdating(t *testing.T) {
 		})
 
 		t.Run("ACLs work", func(t *ftt.Test) {
-			meta, err := callUpdate("user:unknown@example.com", &repopb.PrefixMetadata{
+			meta, err := callUpdate("user:unknown@google.com", &repopb.PrefixMetadata{
 				Prefix: "a/b",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, meta, should.BeNil)
 
 			// Same as completely unknown prefix.
-			meta, err = callUpdate("user:unknown@example.com", &repopb.PrefixMetadata{
+			meta, err = callUpdate("user:unknown@google.com", &repopb.PrefixMetadata{
 				Prefix: "zzz",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
@@ -324,44 +339,44 @@ func TestMetadataUpdating(t *testing.T) {
 
 		t.Run("Deleted concurrently", func(t *ftt.Test) {
 			m := meta.Populate("a/b", &repopb.PrefixMetadata{
-				UpdateUser: "user:someone@example.com",
+				UpdateUser: "user:someone@google.com",
 			})
 			meta.Purge("a/b")
 
 			// If the caller is a prefix owner, they see NotFound.
-			meta, err := callUpdate("user:top-owner@example.com", m)
+			meta, err := callUpdate("user:top-owner@google.com", m)
 			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
 			assert.Loosely(t, meta, should.BeNil)
 
 			// Other callers just see regular PermissionDenined.
-			meta, err = callUpdate("user:unknown@example.com", m)
+			meta, err = callUpdate("user:unknown@google.com", m)
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, meta, should.BeNil)
 		})
 
 		t.Run("Creating existing", func(t *ftt.Test) {
 			m := meta.Populate("a/b", &repopb.PrefixMetadata{
-				UpdateUser: "user:someone@example.com",
+				UpdateUser: "user:someone@google.com",
 			})
 
 			m.Fingerprint = "" // indicates the caller is expecting to create a new one
-			meta, err := callUpdate("user:top-owner@example.com", m)
+			meta, err := callUpdate("user:top-owner@google.com", m)
 			assert.Loosely(t, status.Code(err), should.Equal(codes.AlreadyExists))
 			assert.Loosely(t, meta, should.BeNil)
 		})
 
 		t.Run("Changed midway", func(t *ftt.Test) {
 			m := meta.Populate("a/b", &repopb.PrefixMetadata{
-				UpdateUser: "user:someone@example.com",
+				UpdateUser: "user:someone@google.com",
 			})
 
 			// Someone comes and updates it.
-			updated, err := callUpdate("user:top-owner@example.com", m)
+			updated, err := callUpdate("user:top-owner@google.com", m)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, updated.Fingerprint, should.NotEqual(m.Fingerprint))
 
 			// Trying to do it again fails, 'm' is stale now.
-			_, err = callUpdate("user:top-owner@example.com", m)
+			_, err = callUpdate("user:top-owner@google.com", m)
 			assert.Loosely(t, status.Code(err), should.Equal(codes.FailedPrecondition))
 		})
 	})
@@ -379,7 +394,7 @@ func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 			Acls: []*repopb.PrefixMetadata_ACL{
 				{
 					Role:       repopb.Role_OWNER,
-					Principals: []string{"user:admin@example.com"},
+					Principals: []string{"user:admin@google.com"},
 				},
 			},
 		})
@@ -387,15 +402,15 @@ func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 			Acls: []*repopb.PrefixMetadata_ACL{
 				{
 					Role:       repopb.Role_WRITER,
-					Principals: []string{"user:writer@example.com"},
+					Principals: []string{"user:writer@google.com"},
 				},
 			},
 		})
 
-		impl := repoImpl{meta: &meta}
+		impl := newMockImpl(&meta, nil)
 
 		call := func(prefix string, user identity.Identity, callerIsPrefixViewer bool) (*repopb.RolesInPrefixResponse, error) {
-			caller := identity.Identity("user:roles-caller@example.com")
+			caller := identity.Identity("user:roles-caller@google.com")
 			mocks := []authtest.MockedDatum{}
 			if callerIsPrefixViewer {
 				mocks = append(mocks, authtest.MockMembership(caller, PrefixesViewers))
@@ -407,7 +422,7 @@ func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 		}
 
 		t.Run("Happy path", func(t *ftt.Test) {
-			resp, err := call("a/b/c/d", "user:writer@example.com", true)
+			resp, err := call("a/b/c/d", "user:writer@google.com", true)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.Match(&repopb.RolesInPrefixResponse{
 				Roles: []*repopb.RolesInPrefixResponse_RoleInPrefix{
@@ -424,7 +439,7 @@ func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 		})
 
 		t.Run("Admin", func(t *ftt.Test) {
-			resp, err := call("a/b/c/d", "user:admin@example.com", true)
+			resp, err := call("a/b/c/d", "user:admin@google.com", true)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.Match(&repopb.RolesInPrefixResponse{
 				Roles: []*repopb.RolesInPrefixResponse_RoleInPrefix{
@@ -436,13 +451,13 @@ func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 		})
 
 		t.Run("Bad prefix", func(t *ftt.Test) {
-			_, err := call("///", "user:writer@example.com", true)
+			_, err := call("///", "user:writer@google.com", true)
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("bad 'prefix'"))
 		})
 
 		t.Run("Not prefix viewer", func(t *ftt.Test) {
-			_, err := call("a/b/c/d", "user:writer@example.com", false)
+			_, err := call("a/b/c/d", "user:writer@google.com", false)
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 		})
 
@@ -470,7 +485,7 @@ func TestGetRolesInPrefix(t *testing.T) {
 			Acls: []*repopb.PrefixMetadata_ACL{
 				{
 					Role:       repopb.Role_OWNER,
-					Principals: []string{"user:admin@example.com"},
+					Principals: []string{"user:admin@google.com"},
 				},
 			},
 		})
@@ -478,12 +493,12 @@ func TestGetRolesInPrefix(t *testing.T) {
 			Acls: []*repopb.PrefixMetadata_ACL{
 				{
 					Role:       repopb.Role_WRITER,
-					Principals: []string{"user:writer@example.com"},
+					Principals: []string{"user:writer@google.com"},
 				},
 			},
 		})
 
-		impl := repoImpl{meta: &meta}
+		impl := newMockImpl(&meta, nil)
 
 		call := func(prefix string, user identity.Identity) (*repopb.RolesInPrefixResponse, error) {
 			return impl.GetRolesInPrefix(auth.WithState(rootCtx, &authtest.FakeState{
@@ -493,7 +508,7 @@ func TestGetRolesInPrefix(t *testing.T) {
 		}
 
 		t.Run("Happy path", func(t *ftt.Test) {
-			resp, err := call("a/b/c/d", "user:writer@example.com")
+			resp, err := call("a/b/c/d", "user:writer@google.com")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.Match(&repopb.RolesInPrefixResponse{
 				Roles: []*repopb.RolesInPrefixResponse_RoleInPrefix{
@@ -510,7 +525,7 @@ func TestGetRolesInPrefix(t *testing.T) {
 		})
 
 		t.Run("Admin", func(t *ftt.Test) {
-			resp, err := call("a/b/c/d", "user:admin@example.com")
+			resp, err := call("a/b/c/d", "user:admin@google.com")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.Match(&repopb.RolesInPrefixResponse{
 				Roles: []*repopb.RolesInPrefixResponse_RoleInPrefix{
@@ -522,7 +537,7 @@ func TestGetRolesInPrefix(t *testing.T) {
 		})
 
 		t.Run("Bad prefix", func(t *ftt.Test) {
-			_, err := call("///", "user:writer@example.com")
+			_, err := call("///", "user:writer@google.com")
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("bad 'prefix'"))
 		})
@@ -544,7 +559,7 @@ func TestListPrefix(t *testing.T) {
 			Acls: []*repopb.PrefixMetadata_ACL{
 				{
 					Role:       repopb.Role_OWNER,
-					Principals: []string{"user:admin@example.com"},
+					Principals: []string{"user:admin@google.com"},
 				},
 			},
 		})
@@ -573,7 +588,7 @@ func TestListPrefix(t *testing.T) {
 			},
 		})
 
-		impl := repoImpl{meta: &meta}
+		impl := newMockImpl(&meta, nil)
 
 		call := func(prefix string, recursive, hidden bool, user identity.Identity) (*repopb.ListPrefixResponse, error) {
 			return impl.ListPrefix(as(user.Email()), &repopb.ListPrefixRequest{
@@ -624,7 +639,7 @@ func TestListPrefix(t *testing.T) {
 
 		t.Run("Full listing", func(t *ftt.Test) {
 			t.Run("Root recursive (including hidden)", func(t *ftt.Test) {
-				resp, err := call("", true, true, "user:admin@example.com")
+				resp, err := call("", true, true, "user:admin@google.com")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, resp.Packages, should.Match([]string{
 					"1", "1/a", "1/a/b", "1/a/b/c", "1/a/c", "1/b", "1/c", "1/d/a",
@@ -637,7 +652,7 @@ func TestListPrefix(t *testing.T) {
 			})
 
 			t.Run("Root recursive (visible only)", func(t *ftt.Test) {
-				resp, err := call("", true, false, "user:admin@example.com")
+				resp, err := call("", true, false, "user:admin@google.com")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, resp.Packages, should.Match([]string{
 					"1", "1/a", "1/a/b", "1/a/b/c", "1/b", "2/a/b/c", "3", "6/a/b",
@@ -648,21 +663,21 @@ func TestListPrefix(t *testing.T) {
 			})
 
 			t.Run("Root non-recursive (including hidden)", func(t *ftt.Test) {
-				resp, err := call("", false, true, "user:admin@example.com")
+				resp, err := call("", false, true, "user:admin@google.com")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, resp.Packages, should.Match([]string{"1", "3", "4", "6"}))
 				assert.Loosely(t, resp.Prefixes, should.Match([]string{"1", "2", "5", "6", "7"}))
 			})
 
 			t.Run("Root non-recursive (visible only)", func(t *ftt.Test) {
-				resp, err := call("", false, false, "user:admin@example.com")
+				resp, err := call("", false, false, "user:admin@google.com")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, resp.Packages, should.Match([]string{"1", "3"}))
 				assert.Loosely(t, resp.Prefixes, should.Match([]string{"1", "2", "6"}))
 			})
 
 			t.Run("Non-root recursive (including hidden)", func(t *ftt.Test) {
-				resp, err := call("1", true, true, "user:admin@example.com")
+				resp, err := call("1", true, true, "user:admin@google.com")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, resp.Packages, should.Match([]string{
 					"1/a", "1/a/b", "1/a/b/c", "1/a/c", "1/b", "1/c", "1/d/a",
@@ -671,7 +686,7 @@ func TestListPrefix(t *testing.T) {
 			})
 
 			t.Run("Non-root recursive (visible only)", func(t *ftt.Test) {
-				resp, err := call("1", true, false, "user:admin@example.com")
+				resp, err := call("1", true, false, "user:admin@google.com")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, resp.Packages, should.Match([]string{
 					"1/a", "1/a/b", "1/a/b/c", "1/b",
@@ -737,7 +752,7 @@ func TestListPrefix(t *testing.T) {
 		})
 
 		t.Run("The package is not listed when listing its name directly", func(t *ftt.Test) {
-			resp, err := call("3", true, true, "user:admin@example.com")
+			resp, err := call("3", true, true, "user:admin@google.com")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp.Packages, should.HaveLength(0))
 			assert.Loosely(t, resp.Prefixes, should.HaveLength(0))
@@ -753,14 +768,14 @@ func TestHideUnhidePackage(t *testing.T) {
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
-		ctx = as("owner@example.com")
+		ctx = as("owner@google.com")
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("a", &repopb.PrefixMetadata{
 			Acls: []*repopb.PrefixMetadata_ACL{
 				{
 					Role:       repopb.Role_OWNER,
-					Principals: []string{"user:owner@example.com"},
+					Principals: []string{"user:owner@google.com"},
 				},
 			},
 		})
@@ -773,7 +788,7 @@ func TestHideUnhidePackage(t *testing.T) {
 			return p
 		}
 
-		impl := repoImpl{meta: &meta}
+		impl := newMockImpl(&meta, nil)
 
 		t.Run("Hides and unhides", func(t *ftt.Test) {
 			_, err := impl.HidePackage(ctx, &repopb.PackageRequest{Package: "a/b"})
@@ -824,7 +839,7 @@ func TestDeletePackage(t *testing.T) {
 			Acls: []*repopb.PrefixMetadata_ACL{
 				{
 					Role:       repopb.Role_OWNER,
-					Principals: []string{"user:root@example.com"},
+					Principals: []string{"user:root@google.com"},
 				},
 			},
 		})
@@ -832,7 +847,7 @@ func TestDeletePackage(t *testing.T) {
 			Acls: []*repopb.PrefixMetadata_ACL{
 				{
 					Role:       repopb.Role_OWNER,
-					Principals: []string{"user:non-root-owner@example.com"},
+					Principals: []string{"user:non-root-owner@google.com"},
 				},
 			},
 		})
@@ -840,10 +855,10 @@ func TestDeletePackage(t *testing.T) {
 		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/b"}), should.BeNil)
 		assert.Loosely(t, model.CheckPackageExists(ctx, "a/b"), should.BeNil)
 
-		impl := repoImpl{meta: &meta}
+		impl := newMockImpl(&meta, nil)
 
 		t.Run("Works", func(t *ftt.Test) {
-			_, err := impl.DeletePackage(as("root@example.com"), &repopb.PackageRequest{
+			_, err := impl.DeletePackage(as("root@google.com"), &repopb.PackageRequest{
 				Package: "a/b",
 			})
 			assert.Loosely(t, err, should.BeNil)
@@ -851,7 +866,7 @@ func TestDeletePackage(t *testing.T) {
 			// Gone now.
 			assert.Loosely(t, model.CheckPackageExists(ctx, "a/b"), should.NotBeNil)
 
-			_, err = impl.DeletePackage(as("root@example.com"), &repopb.PackageRequest{
+			_, err = impl.DeletePackage(as("root@google.com"), &repopb.PackageRequest{
 				Package: "a/b",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
@@ -859,7 +874,7 @@ func TestDeletePackage(t *testing.T) {
 		})
 
 		t.Run("Only reader or above can see", func(t *ftt.Test) {
-			_, err := impl.DeletePackage(as("someone@example.com"), &repopb.PackageRequest{
+			_, err := impl.DeletePackage(as("someone@google.com"), &repopb.PackageRequest{
 				Package: "a/b",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
@@ -867,7 +882,7 @@ func TestDeletePackage(t *testing.T) {
 		})
 
 		t.Run("Only root owner can delete", func(t *ftt.Test) {
-			_, err := impl.DeletePackage(as("non-root-owner@example.com"), &repopb.PackageRequest{
+			_, err := impl.DeletePackage(as("non-root-owner@google.com"), &repopb.PackageRequest{
 				Package: "a/b",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
@@ -890,33 +905,38 @@ func TestRegisterInstance(t *testing.T) {
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
-		ctx = as("owner@example.com")
-
-		cas := testutil.MockCAS{}
+		ctx = as("owner@google.com")
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("a", &repopb.PrefixMetadata{
 			Acls: []*repopb.PrefixMetadata_ACL{
 				{
 					Role:       repopb.Role_OWNER,
-					Principals: []string{"user:owner@example.com"},
+					Principals: []string{"user:owner@google.com"},
 				},
 				{
 					Role:       repopb.Role_READER,
-					Principals: []string{"user:reader@example.com"},
+					Principals: []string{"user:reader@google.com"},
+				},
+				{
+					Role:       repopb.Role_OWNER,
+					Principals: []string{"user:owner@example.com"},
 				},
 			},
 		})
 
-		dispatcher := &tq.Dispatcher{}
-		ctx, sched := tq.TestingContext(ctx, dispatcher)
+		cas := testutil.MockCAS{}
 
-		impl := repoImpl{
-			tq:   dispatcher,
-			meta: &meta,
-			cas:  &cas,
-		}
+		impl := newMockImpl(&meta, &cas)
 		impl.registerTasks()
+		impl.lookupPrefixCfg = func(pkg string) *prefixcfg.Entry {
+			return &prefixcfg.Entry{
+				PrefixConfig:           &api.Prefix{},
+				AllowWritersFromRegexp: []*regexp.Regexp{regexp.MustCompile(`^.*@google.com$`)},
+			}
+		}
+
+		ctx, sched := tq.TestingContext(ctx, impl.tq)
 
 		digest := strings.Repeat("a", 40)
 		inst := &repopb.Instance{
@@ -971,7 +991,7 @@ func TestRegisterInstance(t *testing.T) {
 			fullInstProto := &repopb.Instance{
 				Package:      inst.Package,
 				Instance:     inst.Instance,
-				RegisteredBy: "user:owner@example.com",
+				RegisteredBy: "user:owner@google.com",
 				RegisteredTs: timestamppb.New(testutil.TestTime),
 			}
 			resp, err = impl.RegisterInstance(ctx, inst)
@@ -994,7 +1014,7 @@ func TestRegisterInstance(t *testing.T) {
 
 		t.Run("Already registered", func(t *ftt.Test) {
 			instance := (&model.Instance{
-				RegisteredBy: "user:someone@example.com",
+				RegisteredBy: "user:someone@google.com",
 			}).FromProto(ctx, inst)
 			_, _, err := model.RegisterInstance(ctx, instance, nil)
 			assert.Loosely(t, err, should.BeNil)
@@ -1006,7 +1026,7 @@ func TestRegisterInstance(t *testing.T) {
 				Instance: &repopb.Instance{
 					Package:      inst.Package,
 					Instance:     inst.Instance,
-					RegisteredBy: "user:someone@example.com",
+					RegisteredBy: "user:someone@google.com",
 				},
 			}))
 		})
@@ -1037,13 +1057,19 @@ func TestRegisterInstance(t *testing.T) {
 				Instance: inst.Instance,
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike(`prefix "some/other/root" doesn't exist or "user:owner@example.com" is not allowed to see it`))
+			assert.Loosely(t, err, should.ErrLike(`prefix "some/other/root" doesn't exist or "user:owner@google.com" is not allowed to see it`))
 		})
 
-		t.Run("No owner access", func(t *ftt.Test) {
-			_, err := impl.RegisterInstance(as("reader@example.com"), inst)
+		t.Run("No owner access - acl", func(t *ftt.Test) {
+			_, err := impl.RegisterInstance(as("reader@google.com"), inst)
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike(`"user:reader@example.com" has no required WRITER role in prefix "a/b"`))
+			assert.Loosely(t, err, should.ErrLike(`"user:reader@google.com" has no required WRITER role in prefix "a/b" because: acl`))
+		})
+
+		t.Run("No owner access - config", func(t *ftt.Test) {
+			_, err := impl.RegisterInstance(as("owner@example.com"), inst)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike(`"user:owner@example.com" has no required WRITER role in prefix "a/b" because: policy`))
 		})
 	})
 }
@@ -1060,7 +1086,7 @@ func TestProcessors(t *testing.T) {
 		ctx, _, _ := testutil.TestingContext()
 
 		cas := testutil.MockCAS{}
-		impl := repoImpl{cas: &cas}
+		impl := newMockImpl(nil, &cas)
 
 		inst := &repopb.Instance{
 			Package: "a/b/c",
@@ -1329,7 +1355,7 @@ func TestListInstances(t *testing.T) {
 			}
 		}
 
-		impl := repoImpl{meta: &meta}
+		impl := newMockImpl(&meta, nil)
 
 		t.Run("Bad package name", func(t *ftt.Test) {
 			_, err := impl.ListInstances(ctx, &repopb.ListInstancesRequest{
@@ -1471,7 +1497,7 @@ func TestSearchInstances(t *testing.T) {
 			expectedIIDs[9-i] = iid(i) // sorted by creation time, most recent first
 		}
 
-		impl := repoImpl{meta: &meta}
+		impl := newMockImpl(&meta, nil)
 
 		t.Run("Bad package name", func(t *ftt.Test) {
 			_, err := impl.SearchInstances(ctx, &repopb.SearchInstancesRequest{
@@ -1583,14 +1609,14 @@ func TestRefs(t *testing.T) {
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
-		ctx = as("writer@example.com")
+		ctx = as("writer@google.com")
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("a", &repopb.PrefixMetadata{
 			Acls: []*repopb.PrefixMetadata_ACL{
 				{
 					Role:       repopb.Role_WRITER,
-					Principals: []string{"user:writer@example.com"},
+					Principals: []string{"user:writer@google.com"},
 				},
 			},
 		})
@@ -1609,7 +1635,7 @@ func TestRefs(t *testing.T) {
 		digest := strings.Repeat("a", 40)
 		putInst("a/b/c", digest, nil, nil)
 
-		impl := repoImpl{meta: &meta}
+		impl := newMockImpl(&meta, nil)
 
 		t.Run("CreateRef/ListRefs/DeleteRef happy path", func(t *ftt.Test) {
 			_, err := impl.CreateRef(ctx, &repopb.Ref{
@@ -1633,7 +1659,7 @@ func TestRefs(t *testing.T) {
 						HashAlgo:  caspb.HashAlgo_SHA1,
 						HexDigest: digest,
 					},
-					ModifiedBy: "user:writer@example.com",
+					ModifiedBy: "user:writer@google.com",
 					ModifiedTs: timestamppb.New(testutil.TestTime),
 				},
 			}))
@@ -1837,11 +1863,11 @@ func TestTags(t *testing.T) {
 				},
 				{
 					Role:       repopb.Role_WRITER,
-					Principals: []string{"user:writer@example.com"},
+					Principals: []string{"user:writer@google.com"},
 				},
 				{
 					Role:       repopb.Role_OWNER,
-					Principals: []string{"user:owner@example.com"},
+					Principals: []string{"user:owner@google.com"},
 				},
 			},
 		})
@@ -1885,10 +1911,10 @@ func TestTags(t *testing.T) {
 			HexDigest: digest,
 		}
 
-		impl := repoImpl{meta: &meta}
+		impl := newMockImpl(&meta, nil)
 
 		t.Run("AttachTags/DetachTags happy path", func(t *ftt.Test) {
-			_, err := impl.AttachTags(as("writer@example.com"), &repopb.AttachTagsRequest{
+			_, err := impl.AttachTags(as("writer@google.com"), &repopb.AttachTagsRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
 				Tags:     tags("a:0", "a:1"),
@@ -1896,11 +1922,11 @@ func TestTags(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			// Attached both.
-			assert.Loosely(t, getTag(inst, "a:0").RegisteredBy, should.Equal("user:writer@example.com"))
-			assert.Loosely(t, getTag(inst, "a:1").RegisteredBy, should.Equal("user:writer@example.com"))
+			assert.Loosely(t, getTag(inst, "a:0").RegisteredBy, should.Equal("user:writer@google.com"))
+			assert.Loosely(t, getTag(inst, "a:1").RegisteredBy, should.Equal("user:writer@google.com"))
 
 			// Detaching requires OWNER.
-			_, err = impl.DetachTags(as("owner@example.com"), &repopb.DetachTagsRequest{
+			_, err = impl.DetachTags(as("owner@google.com"), &repopb.DetachTagsRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
 				Tags:     tags("a:0", "a:1", "a:missing"),
@@ -1914,7 +1940,7 @@ func TestTags(t *testing.T) {
 
 		t.Run("Bad package", func(t *ftt.Test) {
 			t.Run("AttachTags", func(t *ftt.Test) {
-				_, err := impl.AttachTags(as("owner@example.com"), &repopb.AttachTagsRequest{
+				_, err := impl.AttachTags(as("owner@google.com"), &repopb.AttachTagsRequest{
 					Package:  "a/b///",
 					Instance: objRef,
 					Tags:     tags("a:0"),
@@ -1923,7 +1949,7 @@ func TestTags(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 			})
 			t.Run("DetachTags", func(t *ftt.Test) {
-				_, err := impl.DetachTags(as("owner@example.com"), &repopb.DetachTagsRequest{
+				_, err := impl.DetachTags(as("owner@google.com"), &repopb.DetachTagsRequest{
 					Package:  "a/b///",
 					Instance: objRef,
 					Tags:     tags("a:0"),
@@ -1935,7 +1961,7 @@ func TestTags(t *testing.T) {
 
 		t.Run("Bad ObjectRef", func(t *ftt.Test) {
 			t.Run("AttachTags", func(t *ftt.Test) {
-				_, err := impl.AttachTags(as("owner@example.com"), &repopb.AttachTagsRequest{
+				_, err := impl.AttachTags(as("owner@google.com"), &repopb.AttachTagsRequest{
 					Package: "a/b/c",
 					Tags:    tags("a:0"),
 				})
@@ -1943,7 +1969,7 @@ func TestTags(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("bad 'instance'"))
 			})
 			t.Run("DetachTags", func(t *ftt.Test) {
-				_, err := impl.DetachTags(as("owner@example.com"), &repopb.DetachTagsRequest{
+				_, err := impl.DetachTags(as("owner@google.com"), &repopb.DetachTagsRequest{
 					Package: "a/b/c",
 					Tags:    tags("a:0"),
 				})
@@ -1954,7 +1980,7 @@ func TestTags(t *testing.T) {
 
 		t.Run("Empty tag list", func(t *ftt.Test) {
 			t.Run("AttachTags", func(t *ftt.Test) {
-				_, err := impl.AttachTags(as("owner@example.com"), &repopb.AttachTagsRequest{
+				_, err := impl.AttachTags(as("owner@google.com"), &repopb.AttachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
@@ -1962,7 +1988,7 @@ func TestTags(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("cannot be empty"))
 			})
 			t.Run("DetachTags", func(t *ftt.Test) {
-				_, err := impl.DetachTags(as("owner@example.com"), &repopb.DetachTagsRequest{
+				_, err := impl.DetachTags(as("owner@google.com"), &repopb.DetachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
@@ -1973,7 +1999,7 @@ func TestTags(t *testing.T) {
 
 		t.Run("Bad tag", func(t *ftt.Test) {
 			t.Run("AttachTags", func(t *ftt.Test) {
-				_, err := impl.AttachTags(as("owner@example.com"), &repopb.AttachTagsRequest{
+				_, err := impl.AttachTags(as("owner@google.com"), &repopb.AttachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Tags:     []*repopb.Tag{{Key: ":"}},
@@ -1982,7 +2008,7 @@ func TestTags(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike(`invalid tag key`))
 			})
 			t.Run("DetachTags", func(t *ftt.Test) {
-				_, err := impl.DetachTags(as("owner@example.com"), &repopb.DetachTagsRequest{
+				_, err := impl.DetachTags(as("owner@google.com"), &repopb.DetachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Tags:     []*repopb.Tag{{Key: ":"}},
@@ -2003,7 +2029,7 @@ func TestTags(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("has no required WRITER role"))
 			})
 			t.Run("DetachTags", func(t *ftt.Test) {
-				_, err := impl.DetachTags(as("writer@example.com"), &repopb.DetachTagsRequest{
+				_, err := impl.DetachTags(as("writer@google.com"), &repopb.DetachTagsRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Tags:     tags("good:tag"),
@@ -2015,7 +2041,7 @@ func TestTags(t *testing.T) {
 
 		t.Run("Missing package", func(t *ftt.Test) {
 			t.Run("AttachTags", func(t *ftt.Test) {
-				_, err := impl.AttachTags(as("owner@example.com"), &repopb.AttachTagsRequest{
+				_, err := impl.AttachTags(as("owner@google.com"), &repopb.AttachTagsRequest{
 					Package:  "a/b/zzz",
 					Instance: objRef,
 					Tags:     tags("a:0"),
@@ -2024,7 +2050,7 @@ func TestTags(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
 			t.Run("DetachTags", func(t *ftt.Test) {
-				_, err := impl.DetachTags(as("owner@example.com"), &repopb.DetachTagsRequest{
+				_, err := impl.DetachTags(as("owner@google.com"), &repopb.DetachTagsRequest{
 					Package:  "a/b/zzz",
 					Instance: objRef,
 					Tags:     tags("a:0"),
@@ -2040,7 +2066,7 @@ func TestTags(t *testing.T) {
 				HexDigest: strings.Repeat("b", 40),
 			}
 			t.Run("AttachTags", func(t *ftt.Test) {
-				_, err := impl.AttachTags(as("owner@example.com"), &repopb.AttachTagsRequest{
+				_, err := impl.AttachTags(as("owner@google.com"), &repopb.AttachTagsRequest{
 					Package:  "a/b/c",
 					Instance: missingRef,
 					Tags:     tags("a:0"),
@@ -2050,7 +2076,7 @@ func TestTags(t *testing.T) {
 			})
 			t.Run("DetachTags", func(t *ftt.Test) {
 				// DetachTags doesn't care.
-				_, err := impl.DetachTags(as("owner@example.com"), &repopb.DetachTagsRequest{
+				_, err := impl.DetachTags(as("owner@google.com"), &repopb.DetachTagsRequest{
 					Package:  "a/b/c",
 					Instance: missingRef,
 					Tags:     tags("a:0"),
@@ -2080,11 +2106,11 @@ func TestInstanceMetadata(t *testing.T) {
 				},
 				{
 					Role:       repopb.Role_WRITER,
-					Principals: []string{"user:writer@example.com"},
+					Principals: []string{"user:writer@google.com"},
 				},
 				{
 					Role:       repopb.Role_OWNER,
-					Principals: []string{"user:owner@example.com"},
+					Principals: []string{"user:owner@google.com"},
 				},
 			},
 		})
@@ -2132,10 +2158,10 @@ func TestInstanceMetadata(t *testing.T) {
 			HexDigest: digest,
 		}
 
-		impl := repoImpl{meta: &meta}
+		impl := newMockImpl(&meta, nil)
 
 		t.Run("AttachMetadata/DetachMetadata/ListMetadata happy path", func(t *ftt.Test) {
-			_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
+			_, err := impl.AttachMetadata(as("writer@google.com"), &repopb.AttachMetadataRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
 				Metadata: md("k0:0", "k1:1"),
@@ -2143,8 +2169,8 @@ func TestInstanceMetadata(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			// Attached both.
-			assert.Loosely(t, getMD(inst, "k0:0").AttachedBy, should.Equal("user:writer@example.com"))
-			assert.Loosely(t, getMD(inst, "k1:1").AttachedBy, should.Equal("user:writer@example.com"))
+			assert.Loosely(t, getMD(inst, "k0:0").AttachedBy, should.Equal("user:writer@google.com"))
+			assert.Loosely(t, getMD(inst, "k1:1").AttachedBy, should.Equal("user:writer@google.com"))
 
 			// Can retrieve it all.
 			resp, err := impl.ListMetadata(as("reader@example.com"), &repopb.ListMetadataRequest{
@@ -2165,7 +2191,7 @@ func TestInstanceMetadata(t *testing.T) {
 
 			// Detaching requires OWNER. Detach one by giving a KV pair, and another
 			// via its fingerprint.
-			_, err = impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
+			_, err = impl.DetachMetadata(as("owner@google.com"), &repopb.DetachMetadataRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
 				Metadata: []*repopb.InstanceMetadata{
@@ -2187,7 +2213,7 @@ func TestInstanceMetadata(t *testing.T) {
 
 		t.Run("Bad package", func(t *ftt.Test) {
 			t.Run("AttachMetadata", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(as("writer@google.com"), &repopb.AttachMetadataRequest{
 					Package:  "a/b//",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
@@ -2196,7 +2222,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
-				_, err := impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
+				_, err := impl.DetachMetadata(as("owner@google.com"), &repopb.DetachMetadataRequest{
 					Package:  "a/b//",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
@@ -2216,7 +2242,7 @@ func TestInstanceMetadata(t *testing.T) {
 
 		t.Run("Bad ObjectRef", func(t *ftt.Test) {
 			t.Run("AttachMetadata", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(as("writer@google.com"), &repopb.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Metadata: md("k:0", "k:1"),
 				})
@@ -2224,7 +2250,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("bad 'instance'"))
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
-				_, err := impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
+				_, err := impl.DetachMetadata(as("owner@google.com"), &repopb.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Metadata: md("k:0", "k:1"),
 				})
@@ -2242,7 +2268,7 @@ func TestInstanceMetadata(t *testing.T) {
 
 		t.Run("Empty metadata list", func(t *ftt.Test) {
 			t.Run("AttachMetadata", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(as("writer@google.com"), &repopb.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
@@ -2250,7 +2276,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("cannot be empty"))
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
-				_, err := impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
+				_, err := impl.DetachMetadata(as("owner@google.com"), &repopb.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
@@ -2261,7 +2287,7 @@ func TestInstanceMetadata(t *testing.T) {
 
 		t.Run("Bad metadata key", func(t *ftt.Test) {
 			t.Run("AttachMetadata", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(as("writer@google.com"), &repopb.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("ZZZ:0"),
@@ -2270,7 +2296,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike(`invalid metadata key`))
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
-				_, err := impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
+				_, err := impl.DetachMetadata(as("owner@google.com"), &repopb.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("ZZZ:0"),
@@ -2291,7 +2317,7 @@ func TestInstanceMetadata(t *testing.T) {
 
 		t.Run("Bad metadata value", func(t *ftt.Test) {
 			t.Run("AttachMetadata", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(as("writer@google.com"), &repopb.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("k:" + strings.Repeat("z", 512*1024+1)),
@@ -2300,7 +2326,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike(`metadata with key "k": the metadata value is too long`))
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
-				_, err := impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
+				_, err := impl.DetachMetadata(as("owner@google.com"), &repopb.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("k:" + strings.Repeat("z", 512*1024+1)),
@@ -2313,7 +2339,7 @@ func TestInstanceMetadata(t *testing.T) {
 		t.Run("Bad metadata content type in AttachMetadata", func(t *ftt.Test) {
 			m := md("k:0")
 			m[0].ContentType = "zzz zzz"
-			_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
+			_, err := impl.AttachMetadata(as("writer@google.com"), &repopb.AttachMetadataRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
 				Metadata: m,
@@ -2323,7 +2349,7 @@ func TestInstanceMetadata(t *testing.T) {
 		})
 
 		t.Run("Bad fingerprint in DetachMetadata", func(t *ftt.Test) {
-			_, err := impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
+			_, err := impl.DetachMetadata(as("owner@google.com"), &repopb.DetachMetadataRequest{
 				Package:  "a/b/c",
 				Instance: objRef,
 				Metadata: []*repopb.InstanceMetadata{
@@ -2345,7 +2371,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("has no required WRITER role"))
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
-				_, err := impl.DetachMetadata(as("writer@example.com"), &repopb.DetachMetadataRequest{
+				_, err := impl.DetachMetadata(as("writer@google.com"), &repopb.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
@@ -2354,7 +2380,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("has no required OWNER role"))
 			})
 			t.Run("ListMetadata", func(t *ftt.Test) {
-				_, err := impl.ListMetadata(as("unknown@example.com"), &repopb.ListMetadataRequest{
+				_, err := impl.ListMetadata(as("unknown@google.com"), &repopb.ListMetadataRequest{
 					Package:  "a/b/c",
 					Instance: objRef,
 				})
@@ -2365,7 +2391,7 @@ func TestInstanceMetadata(t *testing.T) {
 
 		t.Run("Missing package", func(t *ftt.Test) {
 			t.Run("AttachMetadata", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(as("writer@google.com"), &repopb.AttachMetadataRequest{
 					Package:  "a/b/c/missing",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
@@ -2374,7 +2400,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("no such package"))
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
-				_, err := impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
+				_, err := impl.DetachMetadata(as("owner@google.com"), &repopb.DetachMetadataRequest{
 					Package:  "a/b/c/missing",
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
@@ -2398,7 +2424,7 @@ func TestInstanceMetadata(t *testing.T) {
 				HexDigest: strings.Repeat("b", 40),
 			}
 			t.Run("AttachMetadata", func(t *ftt.Test) {
-				_, err := impl.AttachMetadata(as("writer@example.com"), &repopb.AttachMetadataRequest{
+				_, err := impl.AttachMetadata(as("writer@google.com"), &repopb.AttachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: missingRef,
 					Metadata: md("k:0", "k:1"),
@@ -2407,7 +2433,7 @@ func TestInstanceMetadata(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("no such instance"))
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
-				_, err := impl.DetachMetadata(as("owner@example.com"), &repopb.DetachMetadataRequest{
+				_, err := impl.DetachMetadata(as("owner@google.com"), &repopb.DetachMetadataRequest{
 					Package:  "a/b/c",
 					Instance: missingRef,
 					Metadata: md("k:0", "k:1"),
@@ -2446,18 +2472,18 @@ func TestResolveVersion(t *testing.T) {
 				},
 			},
 		})
-		impl := repoImpl{meta: &meta}
+		impl := newMockImpl(&meta, nil)
 
 		pkg := &model.Package{Name: "a/pkg"}
 		inst1 := &model.Instance{
 			InstanceID:   strings.Repeat("1", 40),
 			Package:      model.PackageKey(ctx, "a/pkg"),
-			RegisteredBy: "user:1@example.com",
+			RegisteredBy: "user:1@google.com",
 		}
 		inst2 := &model.Instance{
 			InstanceID:   strings.Repeat("2", 40),
 			Package:      model.PackageKey(ctx, "a/pkg"),
-			RegisteredBy: "user:2@example.com",
+			RegisteredBy: "user:2@google.com",
 		}
 
 		assert.Loosely(t, datastore.Put(ctx, pkg, inst1, inst2), should.BeNil)
@@ -2571,25 +2597,21 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 			},
 		})
 
-		var prefixCfgPb configpb.Prefix
+		prefixCfgPb := prefixcfg.Entry{PrefixConfig: &api.Prefix{}}
 
 		cas := testutil.MockCAS{}
-		impl := repoImpl{
-			meta: &meta,
-			cas:  &cas,
-			vsa:  vsa.NewClient(),
-			lookupPrefixCfg: func(pkg string) *configpb.Prefix {
-				return &prefixCfgPb
-			},
-			lookupBillingProject: func(ctx context.Context, luciProject, prefix string) (string, error) {
-				return "gcs-" + luciProject, nil
-			},
+		impl := newMockImpl(&meta, &cas)
+		impl.lookupPrefixCfg = func(pkg string) *prefixcfg.Entry {
+			return &prefixCfgPb
+		}
+		impl.lookupBillingProject = func(ctx context.Context, luciProject, prefix string) (string, error) {
+			return "gcs-" + luciProject, nil
 		}
 
 		inst := &model.Instance{
 			InstanceID:   strings.Repeat("1", 40),
 			Package:      model.PackageKey(ctx, "a/pkg"),
-			RegisteredBy: "user:1@example.com",
+			RegisteredBy: "user:1@google.com",
 		}
 		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), should.BeNil)
 
@@ -2625,7 +2647,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 			})
 
 			t.Run("Happy path with user project", func(t *ftt.Test) {
-				prefixCfgPb.OwningLuciProject = "luci-proj"
+				prefixCfgPb.PrefixConfig.OwningLuciProject = "luci-proj"
 				resp, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  inst.Package.StringID(),
 					Instance: inst.Proto().Instance,
@@ -2764,12 +2786,12 @@ func TestDescribeInstance(t *testing.T) {
 			},
 		})
 
-		impl := repoImpl{meta: &meta}
+		impl := newMockImpl(&meta, nil)
 
 		inst := &model.Instance{
 			InstanceID:   strings.Repeat("1", 40),
 			Package:      model.PackageKey(ctx, "a/pkg"),
-			RegisteredBy: "user:1@example.com",
+			RegisteredBy: "user:1@google.com",
 		}
 		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), should.BeNil)
 
@@ -2785,15 +2807,15 @@ func TestDescribeInstance(t *testing.T) {
 		})
 
 		t.Run("Happy path, full info", func(t *ftt.Test) {
-			model.AttachTags(as("tag@example.com"), inst, []*repopb.Tag{
+			model.AttachTags(as("tag@google.com"), inst, []*repopb.Tag{
 				{Key: "a", Value: "0"},
 				{Key: "a", Value: "1"},
 			})
 
-			model.SetRef(as("ref@example.com"), "ref_a", inst)
-			model.SetRef(as("ref@example.com"), "ref_b", inst)
+			model.SetRef(as("ref@google.com"), "ref_a", inst)
+			model.SetRef(as("ref@google.com"), "ref_b", inst)
 
-			model.AttachMetadata(as("metadata@example.com"), inst, []*repopb.InstanceMetadata{
+			model.AttachMetadata(as("metadata@google.com"), inst, []*repopb.InstanceMetadata{
 				{
 					Key:         "foo",
 					Value:       []byte("bar"),
@@ -2829,13 +2851,13 @@ func TestDescribeInstance(t *testing.T) {
 					{
 						Key:        "a",
 						Value:      "0",
-						AttachedBy: "user:tag@example.com",
+						AttachedBy: "user:tag@google.com",
 						AttachedTs: timestamppb.New(testutil.TestTime),
 					},
 					{
 						Key:        "a",
 						Value:      "1",
-						AttachedBy: "user:tag@example.com",
+						AttachedBy: "user:tag@google.com",
 						AttachedTs: timestamppb.New(testutil.TestTime),
 					},
 				},
@@ -2844,14 +2866,14 @@ func TestDescribeInstance(t *testing.T) {
 						Name:       "ref_a",
 						Package:    "a/pkg",
 						Instance:   inst.Proto().Instance,
-						ModifiedBy: "user:ref@example.com",
+						ModifiedBy: "user:ref@google.com",
 						ModifiedTs: timestamppb.New(testutil.TestTime),
 					},
 					{
 						Name:       "ref_b",
 						Package:    "a/pkg",
 						Instance:   inst.Proto().Instance,
-						ModifiedBy: "user:ref@example.com",
+						ModifiedBy: "user:ref@google.com",
 						ModifiedTs: timestamppb.New(testutil.TestTime),
 					},
 				},
@@ -2869,7 +2891,7 @@ func TestDescribeInstance(t *testing.T) {
 						Value:       []byte("baz"),
 						ContentType: "text/plain",
 						Fingerprint: "aec8a983ee3429852adfcfecacad886d",
-						AttachedBy:  "user:metadata@example.com",
+						AttachedBy:  "user:metadata@google.com",
 						AttachedTs:  timestamppb.New(testutil.TestTime),
 					},
 					{
@@ -2877,7 +2899,7 @@ func TestDescribeInstance(t *testing.T) {
 						Value:       []byte("bar"),
 						ContentType: "image/png",
 						Fingerprint: "a765a8beaa9d561d4c5cbed29d8f4e30",
-						AttachedBy:  "user:metadata@example.com",
+						AttachedBy:  "user:metadata@google.com",
 						AttachedTs:  timestamppb.New(testutil.TestTime),
 					},
 				},
@@ -2954,7 +2976,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 			},
 		})
 
-		impl := repoImpl{meta: &meta}
+		impl := newMockImpl(&meta, nil)
 
 		putInst := func(pkg, extracted string) {
 			inst := &model.Instance{
@@ -2963,7 +2985,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 					HexDigest: strings.Repeat("1", 64),
 				}),
 				Package:      model.PackageKey(ctx, pkg),
-				RegisteredBy: "user:1@example.com",
+				RegisteredBy: "user:1@google.com",
 			}
 			if extracted != "" {
 				r := &model.ProcessingResult{
@@ -3172,7 +3194,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 			})
 
 			t.Run("Not a reader", func(t *ftt.Test) {
-				_, err := impl.DescribeBootstrapBundle(as("someone@example.com"), &repopb.DescribeBootstrapBundleRequest{
+				_, err := impl.DescribeBootstrapBundle(as("someone@google.com"), &repopb.DescribeBootstrapBundleRequest{
 					Prefix:  "a/pkg",
 					Version: "latest",
 				})
@@ -3210,7 +3232,7 @@ func TestClientBootstrap(t *testing.T) {
 			},
 		}
 
-		impl := repoImpl{meta: &meta, cas: &cas}
+		impl := newMockImpl(&meta, &cas)
 
 		goodPlat := "linux-amd64"
 		goodDigest := strings.Repeat("f", 64)
@@ -3302,7 +3324,7 @@ func TestClientBootstrap(t *testing.T) {
 			})
 
 			t.Run("No access", func(t *ftt.Test) {
-				ctx = as("someone@example.com")
+				ctx = as("someone@google.com")
 				rr := call(goodPlat, goodIID)
 				assert.Loosely(t, rr.Code, should.Equal(http.StatusForbidden))
 				assert.Loosely(t, rr.Body.String(), should.ContainSubstring("is not allowed to see it"))
@@ -3402,7 +3424,7 @@ func TestClientBootstrap(t *testing.T) {
 			})
 
 			t.Run("No access", func(t *ftt.Test) {
-				ctx = as("someone@example.com")
+				ctx = as("someone@google.com")
 				_, err := call(goodPkg, goodDigest)
 				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 				assert.Loosely(t, err, should.ErrLike("not allowed to see it"))
@@ -3495,7 +3517,7 @@ func TestClientBootstrap(t *testing.T) {
 			})
 
 			t.Run("No access", func(t *ftt.Test) {
-				ctx = as("someone@example.com")
+				ctx = as("someone@google.com")
 				code, body := call(goodPkg, goodIID, "text")
 				assert.Loosely(t, code, should.Equal(http.StatusForbidden))
 				assert.Loosely(t, body, should.ContainSubstring("not allowed to see it"))
@@ -3552,12 +3574,12 @@ func TestLegacyHandlers(t *testing.T) {
 				}, nil
 			},
 		}
-		impl := repoImpl{meta: &meta, cas: &cas}
+		impl := newMockImpl(&meta, &cas)
 
 		inst1 := &model.Instance{
 			InstanceID:   strings.Repeat("a", 40),
 			Package:      model.PackageKey(ctx, "a/b"),
-			RegisteredBy: "user:reg@example.com",
+			RegisteredBy: "user:reg@google.com",
 			RegisteredTs: testutil.TestTime,
 		}
 		inst2 := &model.Instance{
@@ -3602,7 +3624,7 @@ func TestLegacyHandlers(t *testing.T) {
   "instance": {
     "package_name": "a/b",
     "instance_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "registered_by": "user:reg@example.com",
+    "registered_by": "user:reg@google.com",
     "registered_ts": "1454472306000000"
   },
   "status": "SUCCESS"
@@ -3777,36 +3799,36 @@ func TestVSA(t *testing.T) {
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext()
-		ctx = as("owner@example.com")
+		ctx = as("owner@google.com")
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("a", &repopb.PrefixMetadata{
 			Acls: []*repopb.PrefixMetadata_ACL{
 				{
 					Role:       repopb.Role_OWNER,
-					Principals: []string{"user:owner@example.com"},
+					Principals: []string{"user:owner@google.com"},
 				},
 			},
 		})
 
-		dispatcher := &tq.Dispatcher{}
-		ctx, sched := tq.TestingContext(ctx, dispatcher)
+		mvsa := &MockVSA{VSA: func() string { return "vsa content" }, status: vsa.CacheStatusUnknown}
+		cas := testutil.MockCAS{}
+
+		impl := newMockImpl(&meta, &cas)
+		impl.vsa = mvsa
+		impl.registerTasks()
+
+		ctx, sched := tq.TestingContext(ctx, impl.tq)
 		runTasks := func() {
 			for _, t := range sched.Tasks() {
 				sched.Executor.Execute(ctx, t, func(retry bool) {})
 			}
 		}
 
-		cas := testutil.MockCAS{}
-		mvsa := &MockVSA{VSA: func() string { return "vsa content" }, status: vsa.CacheStatusUnknown}
-
-		impl := repoImpl{tq: dispatcher, meta: &meta, cas: &cas, vsa: mvsa}
-		impl.registerTasks()
-
 		inst := &model.Instance{
 			InstanceID:   strings.Repeat("1", 40),
 			Package:      model.PackageKey(ctx, "a/pkg"),
-			RegisteredBy: "user:1@example.com",
+			RegisteredBy: "user:1@google.com",
 		}
 
 		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), should.BeNil)

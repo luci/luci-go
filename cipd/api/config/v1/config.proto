@@ -18,7 +18,6 @@ package cipd.config;
 
 option go_package = "go.chromium.org/luci/cipd/api/config/v1;api";
 
-
 // A schema for the bootstrap.cfg config file.
 //
 // It defines a list of packages that contain executables that should be
@@ -27,7 +26,6 @@ message BootstrapConfigFile {
   // A list of all known bootstrap packages, will be scanned in order.
   repeated BootstrapConfig bootstrap_config = 1;
 }
-
 
 // BootstrapConfig defines a set of bootstrap packages under a single prefix.
 //
@@ -40,7 +38,6 @@ message BootstrapConfig {
   string prefix = 1;
 }
 
-
 // A schema for the prefixes.cfg config file.
 //
 // It defines prefix-level metadata maintained centrally in the service config.
@@ -50,7 +47,6 @@ message PrefixesConfigFile {
   // Duplicates by `path` are not allowed.
   repeated Prefix prefix = 1;
 }
-
 
 // A metadata to apply to a prefix (and all packages under it).
 //
@@ -84,4 +80,9 @@ message Prefix {
     int32 percent_of_calls_to_bill = 2;
   }
   Billing billing = 3;
+
+  // Regexp for users allowed to have writer role or beyond. This policy is
+  // independent from ACLs and can't be overridden.
+  // If empty, all writers are allowed.
+  repeated string allow_writers_from_regexp = 4;
 }

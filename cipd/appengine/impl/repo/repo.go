@@ -48,7 +48,6 @@ import (
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	repogrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/repopb/grpcpb"
-	configpb "go.chromium.org/luci/cipd/api/config/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
@@ -121,7 +120,7 @@ type repoImpl struct {
 	vsa  vsa.Client
 
 	// Looks up the service-side config that applies to this package.
-	lookupPrefixCfg func(pkg string) *configpb.Prefix
+	lookupPrefixCfg func(pkg string) *prefixcfg.Entry
 	// Mapping `(LUCI project, prefix) => custom billing project for GCS`.
 	lookupBillingProject func(ctx context.Context, luciProject, pkg string) (string, error)
 
@@ -359,8 +358,9 @@ func (impl *repoImpl) getRolesInPrefixImpl(ctx context.Context, ident identity.I
 			return nil, err
 		}
 	}
+	cfg := impl.lookupPrefixCfg(r.Prefix)
 
-	roles, err := rolesInPrefix(ctx, ident, metas)
+	roles, err := rolesInPrefix(ctx, ident, cfg, metas)
 	if err != nil {
 		return nil, err
 	}
@@ -390,26 +390,30 @@ func (impl *repoImpl) checkRole(ctx context.Context, prefix string, role repopb.
 	if err != nil {
 		return nil, err
 	}
+	cfg := impl.lookupPrefixCfg(prefix)
 
-	switch yes, err := hasRole(ctx, metas, role); {
+	var reason string
+	switch yes, policy, err := hasRole(ctx, cfg, metas, role); {
 	case err != nil:
 		return nil, err
 	case yes:
 		return metas, nil
 	case role == repopb.Role_READER: // was checking for a reader, and caller is not
 		return nil, noAccessErr(ctx, prefix)
+	default:
+		reason = string(policy)
 	}
 
 	// We end up here if role is something other than READER, and the caller
 	// doesn't have it. Maybe caller IS a reader, then we can give more concrete
 	// error message.
-	switch yes, err := hasRole(ctx, metas, repopb.Role_READER); {
+	switch yes, _, err := hasRole(ctx, cfg, metas, repopb.Role_READER); {
 	case err != nil:
 		return nil, err
 	case yes:
 		return nil, status.Errorf(
-			codes.PermissionDenied, "%q has no required %s role in prefix %q",
-			auth.CurrentIdentity(ctx), role, prefix)
+			codes.PermissionDenied, "%q has no required %s role in prefix %q because: %s",
+			auth.CurrentIdentity(ctx), role, prefix, reason)
 	default:
 		return nil, noAccessErr(ctx, prefix)
 	}
@@ -451,7 +455,8 @@ func (impl *repoImpl) ListPrefix(ctx context.Context, r *repopb.ListPrefixReques
 	// see some deeper prefix, thus we need to enumerate the metadata subtree.
 	var visibleRoots []string // sorted list of prefixes visible to the caller
 	err = impl.meta.VisitMetadata(ctx, r.Prefix, func(pfx string, md []*repopb.PrefixMetadata) (cont bool, err error) {
-		switch visible, err := hasRole(ctx, md, repopb.Role_READER); {
+		cfg := impl.lookupPrefixCfg(pfx)
+		switch visible, _, err := hasRole(ctx, cfg, md, repopb.Role_READER); {
 		case err != nil:
 			return false, err
 		case visible:
@@ -2366,21 +2371,18 @@ func (impl *repoImpl) handleLegacyResolve(ctx *router.Context) error {
 //
 // Returns grpc-tagged errors returned to the caller as is.
 func (impl *repoImpl) StorageUserProject(ctx context.Context, pkg string) (string, error) {
-	if impl.lookupPrefixCfg == nil {
-		return "", nil
-	}
-	cfg := impl.lookupPrefixCfg(pkg)
-	if cfg.OwningLuciProject == "" || cfg.Billing.GetDisableUserProjectBilling() {
+	prefix := impl.lookupPrefixCfg(pkg).PrefixConfig
+	if prefix.OwningLuciProject == "" || prefix.Billing.GetDisableUserProjectBilling() {
 		return "", nil
 	}
 
-	percent := cfg.Billing.GetPercentOfCallsToBill()
+	percent := prefix.Billing.GetPercentOfCallsToBill()
 	useBilling := percent == 0 || percent >= 100 || mathrand.Int31n(ctx, 100) < percent
 	if !useBilling {
 		return "", nil
 	}
 
-	gcsProject, err := impl.lookupBillingProject(ctx, cfg.OwningLuciProject, pkg)
+	gcsProject, err := impl.lookupBillingProject(ctx, prefix.OwningLuciProject, pkg)
 	if err != nil {
 		return "", status.Errorf(codes.Internal, "failed to lookup the billing project: %s", err)
 	}

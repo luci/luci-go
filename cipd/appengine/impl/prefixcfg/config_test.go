@@ -16,10 +16,13 @@ package prefixcfg
 
 import (
 	"context"
+	"regexp"
 	"testing"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/protobuf/encoding/prototext"
 
+	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -32,26 +35,44 @@ import (
 	configpb "go.chromium.org/luci/cipd/api/config/v1"
 )
 
+func TestMain(m *testing.M) {
+	registry.RegisterCmpOption(cmpopts.IgnoreUnexported(regexp.Regexp{}))
+}
+
 func TestTransform(t *testing.T) {
 	t.Parallel()
 
 	type query struct {
 		path string
-		want *configpb.Prefix
+		want *Entry
 	}
 
-	pfx := func(path, proj string, billPercent int) *configpb.Prefix {
+	pfx := func(path, proj string, billPercent int, allowedWriters []string) *configpb.Prefix {
 		var billing *configpb.Prefix_Billing
 		if billPercent != 0 {
 			billing = &configpb.Prefix_Billing{
 				PercentOfCallsToBill: int32(billPercent),
 			}
 		}
+
 		return &configpb.Prefix{
-			Path:              path,
-			OwningLuciProject: proj,
-			Billing:           billing,
+			Path:                   path,
+			OwningLuciProject:      proj,
+			Billing:                billing,
+			AllowWritersFromRegexp: allowedWriters,
 		}
+	}
+
+	ent := func(path, proj string, billPercent int, allowedWriters []string) *Entry {
+		p := pfx(path, proj, billPercent, allowedWriters)
+		ret := &Entry{
+			PrefixConfig: p,
+		}
+		for _, raw := range p.AllowWritersFromRegexp {
+			ret.AllowWritersFromRegexp = append(ret.AllowWritersFromRegexp, regexp.MustCompile(raw))
+		}
+
+		return ret
 	}
 
 	cases := []struct {
@@ -62,54 +83,55 @@ func TestTransform(t *testing.T) {
 		{
 			name: "empty",
 			queries: []query{
-				{"", &configpb.Prefix{}},
-				{"a", &configpb.Prefix{}},
-				{"a/b", &configpb.Prefix{}},
-				{"a/b/", &configpb.Prefix{}},
+				{"", &Entry{PrefixConfig: &configpb.Prefix{}}},
+				{"a", &Entry{PrefixConfig: &configpb.Prefix{}}},
+				{"a/b", &Entry{PrefixConfig: &configpb.Prefix{}}},
+				{"a/b/", &Entry{PrefixConfig: &configpb.Prefix{}}},
 			},
 		},
 
 		{
 			name: "explicit_root",
 			cfg: []*configpb.Prefix{
-				pfx("a/b", "ab", 0),
-				pfx("", "root", 0),
+				pfx("a/b", "ab", 0, nil),
+				pfx("", "root", 0, nil),
 			},
 			queries: []query{
-				{"", pfx("", "root", 0)},
-				{"a", pfx("", "root", 0)},
-				{"a/b", pfx("a/b/", "ab", 0)},
-				{"a/b/c", pfx("a/b/", "ab", 0)},
-				{"a/d", pfx("", "root", 0)},
-				{"a/bc", pfx("", "root", 0)},
+				{"", ent("", "root", 0, nil)},
+				{"a", ent("", "root", 0, nil)},
+				{"a/b", ent("a/b/", "ab", 0, nil)},
+				{"a/b/c", ent("a/b/", "ab", 0, nil)},
+				{"a/d", ent("", "root", 0, nil)},
+				{"a/bc", ent("", "root", 0, nil)},
 			},
 		},
 
 		{
 			name: "inheritance",
 			cfg: []*configpb.Prefix{
-				pfx("a/b/replace/deep/deeper", "y", 0),
-				pfx("a/b/replace", "x", 2),
-				pfx("a/b/inherit", "", 0),
-				pfx("a", "a", 1),
+				pfx("a/b/replace/deep/deeper", "y", 0, []string{"re4"}),
+				pfx("a/b/replace", "x", 2, []string{"re3"}),
+				pfx("a/b/inherit", "", 0, nil),
+				pfx("a", "a", 1, []string{"re1", "re2"}),
 			},
 			queries: []query{
-				{"", pfx("", "", 0)},
-				{"a", pfx("a/", "a", 1)},
-				{"a/b", pfx("a/", "a", 1)},
-				{"a/b/c", pfx("a/", "a", 1)},
-				{"a/b/inherit", pfx("a/b/inherit/", "a", 1)},
-				{"a/b/inherit/deeper", pfx("a/b/inherit/", "a", 1)},
-				{"a/b/replace", pfx("a/b/replace/", "x", 2)},
-				{"a/b/replace/deep", pfx("a/b/replace/", "x", 2)},
-				{"a/b/replace/deep/deeper", pfx("a/b/replace/deep/deeper/", "y", 2)},
+				{"", ent("", "", 0, nil)},
+				{"a", ent("a/", "a", 1, []string{"re1", "re2"})},
+				{"a/b", ent("a/", "a", 1, []string{"re1", "re2"})},
+				{"a/b/c", ent("a/", "a", 1, []string{"re1", "re2"})},
+				{"a/b/inherit", ent("a/b/inherit/", "a", 1, []string{"re1", "re2"})},
+				{"a/b/inherit/deeper", ent("a/b/inherit/", "a", 1, []string{"re1", "re2"})},
+				{"a/b/replace", ent("a/b/replace/", "x", 2, []string{"re3", "re1", "re2"})},
+				{"a/b/replace/deep", ent("a/b/replace/", "x", 2, []string{"re3", "re1", "re2"})},
+				{"a/b/replace/deep/deeper", ent("a/b/replace/deep/deeper/", "y", 2, []string{"re4", "re3", "re1", "re2"})},
 			},
 		},
 	}
 
 	for _, cs := range cases {
 		t.Run(cs.name, func(t *testing.T) {
-			qr := transform(&configpb.PrefixesConfigFile{Prefix: cs.cfg}, "")
+			qr, err := transform(&configpb.PrefixesConfigFile{Prefix: cs.cfg}, "")
+			assert.NoErr(t, err)
 			for _, q := range cs.queries {
 				got := qr.lookup(q.path)
 				assert.That(t, got, should.Match(q.want), truth.Explain("path %q", q.path))

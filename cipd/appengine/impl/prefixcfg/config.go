@@ -18,6 +18,7 @@ import (
 	"cmp"
 	"context"
 	"math/rand"
+	"regexp"
 	"slices"
 	"strings"
 	"sync/atomic"
@@ -70,11 +71,16 @@ type queryable struct {
 	tree *radix.Tree // "<prefix>/" -> resolved *configpb.Prefix
 }
 
-func (qr *queryable) lookup(path string) *configpb.Prefix {
+type Entry struct {
+	PrefixConfig           *configpb.Prefix
+	AllowWritersFromRegexp []*regexp.Regexp
+}
+
+func (qr *queryable) lookup(path string) *Entry {
 	// Per construction in `transform` we always have a root (as ""). The lookup
 	// will always return something.
 	_, cfg, _ := qr.tree.LongestPrefix(normPath(path))
-	return cfg.(*configpb.Prefix)
+	return cfg.(*Entry)
 }
 
 // NewConfig loads the initial copy of the config from the datastore.
@@ -84,7 +90,11 @@ func NewConfig(ctx context.Context) (*Config, error) {
 		return nil, err
 	}
 	cfg := &Config{}
-	cfg.cur.Store(transform(raw, rev))
+	transformed, err := transform(raw, rev)
+	if err != nil {
+		return nil, errors.Fmt("transforming initial config: %w", err)
+	}
+	cfg.cur.Store(transformed)
 	return cfg, nil
 }
 
@@ -92,7 +102,7 @@ func NewConfig(ctx context.Context) (*Config, error) {
 //
 // It is a fast local operation and it can't fail. If the prefix doesn't have
 // a config, returns a default one.
-func (c *Config) Lookup(path string) *configpb.Prefix {
+func (c *Config) Lookup(path string) *Entry {
 	return c.queryable().lookup(path)
 }
 
@@ -129,7 +139,11 @@ func (c *Config) refresh(ctx context.Context) error {
 		return nil
 	}
 	logging.Infof(ctx, "Picking up config update: %q => %q", cur.rev, rev)
-	c.cur.Store(transform(fetched, rev))
+	transformed, err := transform(fetched, rev)
+	if err != nil {
+		return errors.Fmt("transforming fetched config: %w", err)
+	}
+	c.cur.Store(transformed)
 	return nil
 }
 
@@ -164,12 +178,17 @@ func validate(c *validation.Context, cfg *configpb.PrefixesConfigFile) {
 				c.Errorf("billing.percent_of_calls_to_bill should be within range [0, 100], got %d", billing.PercentOfCallsToBill)
 			}
 		}
+		for _, re := range entry.AllowWritersFromRegexp {
+			if _, err := regexp.Compile(re); err != nil {
+				c.Errorf("invalid regexp for allowed writer: %s: %s", re, err)
+			}
+		}
 		c.Exit()
 	}
 }
 
 // transform takes a validated config and transforms it into a queryable form.
-func transform(cfg *configpb.PrefixesConfigFile, rev string) *queryable {
+func transform(cfg *configpb.PrefixesConfigFile, rev string) (*queryable, error) {
 	// We are going to mutate entries.
 	entries := proto.Clone(cfg).(*configpb.PrefixesConfigFile).Prefix
 
@@ -194,13 +213,25 @@ func transform(cfg *configpb.PrefixesConfigFile, rev string) *queryable {
 		return cmp.Compare(len(a.Path), len(b.Path))
 	})
 	tree := radix.New()
-	for _, entry := range entries {
-		if _, ancestor, ok := tree.LongestPrefix(entry.Path); ok {
-			inheritFromAncestor(entry, ancestor.(*configpb.Prefix))
+	for _, prefix := range entries {
+		entry := &Entry{
+			PrefixConfig: prefix,
 		}
-		tree.Insert(entry.Path, entry)
+		for _, re := range prefix.AllowWritersFromRegexp {
+			compiled, err := regexp.Compile(re)
+			if err != nil {
+				return nil, errors.Fmt("failed to compile validated regexp: %w", err)
+			}
+			entry.AllowWritersFromRegexp = append(entry.AllowWritersFromRegexp, compiled)
+		}
+
+		if _, ancestor, ok := tree.LongestPrefix(prefix.Path); ok {
+			inheritFromAncestor(entry, ancestor.(*Entry))
+		}
+
+		tree.Insert(prefix.Path, entry)
 	}
-	return &queryable{rev: rev, tree: tree}
+	return &queryable{rev: rev, tree: tree}, nil
 }
 
 // normPath normalizes the prefix path for radix tree lookups.
@@ -213,11 +244,15 @@ func normPath(p string) string {
 }
 
 // inheritFromAncestor mutates `entry` by picking values from its parent config.
-func inheritFromAncestor(entry, ancestor *configpb.Prefix) {
-	if entry.OwningLuciProject == "" {
-		entry.OwningLuciProject = ancestor.OwningLuciProject
+func inheritFromAncestor(entry, ancestor *Entry) {
+	prefix := entry.PrefixConfig
+	if prefix.OwningLuciProject == "" {
+		prefix.OwningLuciProject = ancestor.PrefixConfig.OwningLuciProject
 	}
-	if entry.Billing == nil {
-		entry.Billing = ancestor.Billing
+	if prefix.Billing == nil {
+		prefix.Billing = ancestor.PrefixConfig.Billing
 	}
+
+	prefix.AllowWritersFromRegexp = append(prefix.AllowWritersFromRegexp, ancestor.PrefixConfig.AllowWritersFromRegexp...)
+	entry.AllowWritersFromRegexp = append(entry.AllowWritersFromRegexp, ancestor.AllowWritersFromRegexp...)
 }

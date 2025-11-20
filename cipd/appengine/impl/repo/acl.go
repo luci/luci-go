@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
+	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
 )
 
 // impliedRoles defines what roles are "inherited" by other roles, e.g.
@@ -61,18 +62,53 @@ func roleSet(roles ...repopb.Role) map[repopb.Role]struct{} {
 	return m
 }
 
+// isRoleAllowed checks whether the current caller is allowed to have the
+// given role. This policy is independent from ACLs and will override any
+// other policies.
+func isRoleAllowed(ident identity.Identity, cfg *prefixcfg.Entry, role repopb.Role) bool {
+	if role == repopb.Role_READER {
+		return true
+	}
+
+	if len(cfg.AllowWritersFromRegexp) == 0 {
+		return true
+	}
+
+	for _, re := range cfg.AllowWritersFromRegexp {
+		if re.MatchString(ident.Email()) {
+			return true
+		}
+	}
+
+	return false
+}
+
+type rolePolicy string
+
+const (
+	rolePolicyConfig rolePolicy = "policy"
+	rolePolicyACL    rolePolicy = "acl"
+)
+
 // hasRole checks whether the current caller has the given role in any of the
 // supplied PrefixMetadata objects.
 //
 // It understands the role inheritance defined by impliedRoles map.
 //
+// 'cfg' is the is the prefix config of the leaf prefix being checked.
+//
 // 'metas' is metadata for some prefix and all parent prefixes. It is expected
 // to be ordered by the prefix length (shortest first). Ordering is not really
 // used now, but it may change in the future.
 //
-// Returns only transient errors.
-func hasRole(ctx context.Context, metas []*repopb.PrefixMetadata, role repopb.Role) (bool, error) {
-	caller := string(auth.CurrentIdentity(ctx)) // e.g. "user:abc@example.com"
+// Returns the result and the policy source. Result only contains transient errors.
+func hasRole(ctx context.Context, cfg *prefixcfg.Entry, metas []*repopb.PrefixMetadata, role repopb.Role) (bool, rolePolicy, error) {
+	ident := auth.CurrentIdentity(ctx)
+	if !isRoleAllowed(ident, cfg, role) {
+		return false, rolePolicyConfig, nil
+	}
+
+	caller := string(ident) // e.g. "user:abc@example.com"
 
 	// E.g. if 'role' is READER, 'roles' will be {READER, WRITER, OWNER}.
 	roles := impliedRolesRev[role]
@@ -93,7 +129,7 @@ func hasRole(ctx context.Context, metas []*repopb.PrefixMetadata, role repopb.Ro
 			}
 			for _, p := range acl.Principals {
 				if p == caller {
-					return true, nil // the caller was specified in ACLs explicitly
+					return true, rolePolicyACL, nil // the caller was specified in ACLs explicitly
 				}
 				// Is this a reference to a group?
 				if s := strings.SplitN(p, ":", 2); len(s) == 2 && s[0] == "group" {
@@ -105,9 +141,9 @@ func hasRole(ctx context.Context, metas []*repopb.PrefixMetadata, role repopb.Ro
 
 	yes, err := auth.IsMember(ctx, groups.ToSlice()...)
 	if err != nil {
-		return false, errors.Fmt("failed to check group memberships when checking ACLs for role %s: %w", role, err)
+		return false, "", errors.Fmt("failed to check group memberships when checking ACLs for role %s: %w", role, err)
 	}
-	return yes, nil
+	return yes, rolePolicyACL, nil
 }
 
 // rolesInPrefix returns a union of roles `ident` has in given supplied
@@ -116,7 +152,7 @@ func hasRole(ctx context.Context, metas []*repopb.PrefixMetadata, role repopb.Ro
 // It understands the role inheritance defined by impliedRoles map.
 //
 // Returns only transient errors.
-func rolesInPrefix(ctx context.Context, ident identity.Identity, metas []*repopb.PrefixMetadata) ([]repopb.Role, error) {
+func rolesInPrefix(ctx context.Context, ident identity.Identity, cfg *prefixcfg.Entry, metas []*repopb.PrefixMetadata) ([]repopb.Role, error) {
 	roles := roleSet()
 	for _, meta := range metas {
 		for _, acl := range meta.Acls {
@@ -129,7 +165,9 @@ func rolesInPrefix(ctx context.Context, ident identity.Identity, metas []*repopb
 			case yes:
 				// Add acl.Role and all roles implied by it to 'roles' set.
 				for _, r := range impliedRoles[acl.Role] {
-					roles[r] = struct{}{}
+					if isRoleAllowed(ident, cfg, r) {
+						roles[r] = struct{}{}
+					}
 				}
 			}
 		}

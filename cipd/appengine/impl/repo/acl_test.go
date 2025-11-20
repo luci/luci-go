@@ -17,6 +17,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
@@ -27,6 +28,8 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
+	configpb "go.chromium.org/luci/cipd/api/config/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
 )
 
 func TestRoles(t *testing.T) {
@@ -34,15 +37,18 @@ func TestRoles(t *testing.T) {
 
 	ftt.Run("Works", t, func(t *ftt.Test) {
 		fakeDB := authtest.NewFakeDB(
-			authtest.MockMembership("user:admin@example.com", "admins"),
+			authtest.MockMembership("user:admin@google.com", "admins"),
+
+			authtest.MockMembership("user:top-owner@google.com", "top-owners"),
+			authtest.MockMembership("user:top-writer@google.com", "top-writers"),
+			authtest.MockMembership("user:top-reader@example.com", "top-readers"),
+
+			authtest.MockMembership("user:inner-owner@google.com", "inner-owners"),
+			authtest.MockMembership("user:inner-writer@google.com", "inner-writers"),
+			authtest.MockMembership("user:inner-reader@example.com", "inner-readers"),
 
 			authtest.MockMembership("user:top-owner@example.com", "top-owners"),
 			authtest.MockMembership("user:top-writer@example.com", "top-writers"),
-			authtest.MockMembership("user:top-reader@example.com", "top-readers"),
-
-			authtest.MockMembership("user:inner-owner@example.com", "inner-owners"),
-			authtest.MockMembership("user:inner-writer@example.com", "inner-writers"),
-			authtest.MockMembership("user:inner-reader@example.com", "inner-readers"),
 		)
 
 		metas := []*repopb.PrefixMetadata{}
@@ -50,7 +56,7 @@ func TestRoles(t *testing.T) {
 			repopb.Role_OWNER: {"group:admins"},
 		})
 		metas = addPrefixACLs(metas, "top", map[repopb.Role][]string{
-			repopb.Role_OWNER:  {"user:direct-owner@example.com", "group:top-owners"},
+			repopb.Role_OWNER:  {"user:direct-owner@google.com", "group:top-owners"},
 			repopb.Role_WRITER: {"group:top-writers"},
 			repopb.Role_READER: {"group:top-readers"},
 		})
@@ -69,19 +75,22 @@ func TestRoles(t *testing.T) {
 			user          identity.Identity
 			expectedRoles []repopb.Role
 		}{
-			{"user:admin@example.com", allRoles},
-			{"user:direct-owner@example.com", allRoles},
-			{"user:top-owner@example.com", allRoles},
-			{"user:inner-owner@example.com", allRoles},
+			{"user:admin@google.com", allRoles},
+			{"user:direct-owner@google.com", allRoles},
+			{"user:top-owner@google.com", allRoles},
+			{"user:inner-owner@google.com", allRoles},
 
-			{"user:top-writer@example.com", writerRoles},
-			{"user:inner-writer@example.com", writerRoles},
+			{"user:top-writer@google.com", writerRoles},
+			{"user:inner-writer@google.com", writerRoles},
 
 			{"user:top-reader@example.com", readerRoles},
 			{"user:inner-reader@example.com", readerRoles},
 
-			{"user:someone-else@example.com", noRoles},
+			{"user:someone-else@google.com", noRoles},
 			{"anonymous:anonymous", noRoles},
+
+			{"user:top-owner@example.com", readerRoles},
+			{"user:top-writer@example.com", readerRoles},
 		}
 
 		for _, tc := range expectedRoles {
@@ -91,11 +100,24 @@ func TestRoles(t *testing.T) {
 					FakeDB:   fakeDB,
 				})
 
+				cfg := &prefixcfg.Entry{
+					PrefixConfig: &configpb.Prefix{
+						Path: "/",
+						AllowWritersFromRegexp: []string{
+							".*@google\\.com",
+							".*@.*\\.gserviceaccount\\.com",
+						},
+					},
+				}
+				for _, raw := range cfg.PrefixConfig.AllowWritersFromRegexp {
+					cfg.AllowWritersFromRegexp = append(cfg.AllowWritersFromRegexp, regexp.MustCompile(raw))
+				}
+
 				// Get the roles by checking explicitly each one via hasRole.
 				t.Run("hasRole works", func(t *ftt.Test) {
 					haveRoles := []repopb.Role{}
 					for _, r := range allRoles {
-						yes, err := hasRole(ctx, metas, r)
+						yes, _, err := hasRole(ctx, cfg, metas, r)
 						assert.Loosely(t, err, should.BeNil)
 						if yes {
 							haveRoles = append(haveRoles, r)
@@ -106,7 +128,7 @@ func TestRoles(t *testing.T) {
 
 				// Get the same set of roles through rolesInPrefix.
 				t.Run("rolesInPrefix", func(t *ftt.Test) {
-					haveRoles, err := rolesInPrefix(ctx, tc.user, metas)
+					haveRoles, err := rolesInPrefix(ctx, tc.user, cfg, metas)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, haveRoles, should.Match(tc.expectedRoles))
 				})
