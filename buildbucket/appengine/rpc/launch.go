@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
+	orchestratorgrpcpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1/grpcpb"
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/resultdb"
@@ -67,17 +68,17 @@ type batchToLaunch struct {
 //
 // Updates *model.Build in-place on success. Returns exactly len(b.reqs) number
 // of errors.
-func (b *batchToLaunch) launch(ctx context.Context, bldrsMCB stringset.Set) errors.MultiError {
+func (b *batchToLaunch) launch(ctx context.Context, bldrsMCB stringset.Set, orch orchestratorgrpcpb.TurboCIOrchestratorClient) errors.MultiError {
 	switch b.kind {
 	case batchKindNative:
 		return launchNative(ctx, b.reqs, b.builds, bldrsMCB)
 
 	case batchKindTurboCIRoot:
-		err := launchTurboCIRoot(ctx, b.reqs[0], b.builds[0])
+		err := launchTurboCIRoot(ctx, b.reqs[0], b.builds[0], orch)
 		return errors.MultiError{err}
 
 	case batchKindTurboCIChildren:
-		return launchTurboCIChildren(ctx, b.parent, b.reqs, b.builds)
+		return launchTurboCIChildren(ctx, b.parent, b.reqs, b.builds, orch)
 
 	default:
 		panic("impossible")
@@ -214,6 +215,16 @@ func hasTurboCIExperiment(b *model.Build) bool {
 	return slices.Contains(b.Proto.GetInput().GetExperiments(), buildbucket.ExperimentRunInTurboCI)
 }
 
+// nativeBatchToLaunch unconditionally puts all builds into a native batch.
+func nativeBatchToLaunch(op *scheduleBuildOp) *batchToLaunch {
+	batch := &batchToLaunch{kind: batchKindNative}
+	for _, req := range op.Pending() {
+		batch.reqs = append(batch.reqs, req)
+		batch.builds = append(batch.builds, op.BuildForRequest(req))
+	}
+	return batch
+}
+
 // launchNative launches a batch of builds via native Buildbucket queues.
 //
 // Updates `builds` in-place, returns exactly len(builds) appstatus errors.
@@ -236,7 +247,7 @@ func launchNative(ctx context.Context, reqs []*pb.ScheduleBuildRequest, builds [
 // launchTurboCIRoot launches a root build via a new Turbo CI workplan.
 //
 // Updates `build` in-place. Returns appstatus errors.
-func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build *model.Build) error {
+func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build *model.Build, orch orchestratorgrpcpb.TurboCIOrchestratorClient) error {
 	logging.Infof(ctx, "TurboCI: launching new workplan with %s", protoutil.FormatBuilderID(req.Builder))
 	return appstatus.Errorf(codes.Unimplemented, "Turbo CI builds are not implemented yet")
 }
@@ -245,7 +256,7 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 // workplan.
 //
 // Updates `builds` in-place, returns exactly len(builds) appstatus errors.
-func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.ScheduleBuildRequest, builds []*model.Build) errors.MultiError {
+func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.ScheduleBuildRequest, builds []*model.Build, orch orchestratorgrpcpb.TurboCIOrchestratorClient) errors.MultiError {
 	return slices.Repeat(errors.MultiError{
 		appstatus.Errorf(codes.Unimplemented, "Turbo CI child builds are not implemented yet"),
 	}, len(reqs))

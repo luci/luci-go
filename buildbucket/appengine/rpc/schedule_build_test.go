@@ -4015,7 +4015,7 @@ func TestScheduleBuild(t *testing.T) {
 						Builder: "builder",
 					},
 				}
-				rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+				rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 				assert.Loosely(t, err[0], should.ErrLike("not found"))
 				assert.Loosely(t, rsp[0], should.BeNil)
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
@@ -4039,7 +4039,7 @@ func TestScheduleBuild(t *testing.T) {
 						Builder: "builder",
 					},
 				}
-				rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+				rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 				assert.Loosely(t, err[0], should.ErrLike("not found"))
 				assert.Loosely(t, rsp[0], should.BeNil)
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
@@ -4063,7 +4063,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 
-					_, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+					_, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 					assert.Loosely(t, err[0], should.ErrLike(`builder "project/bucket/builder" is unexpectedly missing its config`))
 					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 				})
@@ -4089,7 +4089,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}
 
-					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 					assert.Loosely(t, err[0], should.BeNil)
 					assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 						Builder: &pb.BuilderID{
@@ -4162,7 +4162,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				t.Run("not found", func(t *ftt.Test) {
-					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 					assert.Loosely(t, err[0], should.ErrLike("builder not found: \"builder\""))
 					assert.Loosely(t, rsp[0], should.BeNil)
 					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
@@ -4182,7 +4182,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}), should.BeNil)
 
-					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 					assert.Loosely(t, err[0], should.ErrLike("build already exists"))
 					assert.Loosely(t, rsp[0], should.BeNil)
 					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
@@ -4209,7 +4209,7 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 					}
-					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 					assert.Loosely(t, err[0], should.BeNil)
 					assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 						Builder: &pb.BuilderID{
@@ -4272,7 +4272,7 @@ func TestScheduleBuild(t *testing.T) {
 					}), should.BeNil)
 
 					req.DryRun = true
-					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 					assert.Loosely(t, err[0], should.BeNil)
 					assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 						Builder: &pb.BuilderID{
@@ -4349,7 +4349,7 @@ func TestScheduleBuild(t *testing.T) {
 						}), should.BeNil)
 
 						t.Run("not found", func(t *ftt.Test) {
-							rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+							rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 							assert.Loosely(t, err[0], should.ErrLike("no such entity"))
 							assert.Loosely(t, rsp[0], should.BeNil)
 							assert.Loosely(t, sch.Tasks(), should.BeEmpty)
@@ -4368,7 +4368,7 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							}), should.BeNil)
 
-							rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+							rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 							assert.Loosely(t, err[0], should.BeNil)
 							assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 								Builder: &pb.BuilderID{
@@ -4384,7 +4384,7 @@ func TestScheduleBuild(t *testing.T) {
 					})
 
 					t.Run("ok", func(t *ftt.Test) {
-						rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+						rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 						assert.Loosely(t, err[0], should.BeNil)
 						assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 							Builder: &pb.BuilderID{
@@ -4432,7 +4432,7 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						}
-						rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+						rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 						assert.Loosely(t, err[0], should.BeNil)
 						assert.Loosely(t, rsp[0].BuilderInfo.Description, should.Equal("test builder description"))
 					})
@@ -4445,7 +4445,7 @@ func TestScheduleBuild(t *testing.T) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1000,
 				}
-				rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+				rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 				assert.Loosely(t, err[0], should.ErrLike("not found"))
 				assert.Loosely(t, rsp[0], should.BeNil)
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
@@ -4466,7 +4466,7 @@ func TestScheduleBuild(t *testing.T) {
 				req := &pb.ScheduleBuildRequest{
 					TemplateBuildId: 1,
 				}
-				rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+				rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 				assert.Loosely(t, err[0], should.ErrLike("not found"))
 				assert.Loosely(t, rsp[0], should.BeNil)
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
@@ -4509,7 +4509,7 @@ func TestScheduleBuild(t *testing.T) {
 					TemplateBuildId: 1000,
 				}
 
-				rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+				rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 				assert.Loosely(t, err[0], should.ErrLike("build 1000 is not retriable"))
 				assert.Loosely(t, rsp[0], should.BeNil)
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
@@ -4543,7 +4543,7 @@ func TestScheduleBuild(t *testing.T) {
 				}
 
 				t.Run("not found", func(t *ftt.Test) {
-					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 					assert.Loosely(t, err[0], should.ErrLike("builder not found: \"builder\""))
 					assert.Loosely(t, rsp[0], should.BeNil)
 					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
@@ -4559,7 +4559,7 @@ func TestScheduleBuild(t *testing.T) {
 							SwarmingHost: "host",
 						},
 					}), should.BeNil)
-					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req})
+					rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
 					assert.Loosely(t, err[0], should.BeNil)
 					assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 						Builder: &pb.BuilderID{
@@ -4688,7 +4688,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			rsp, merr := scheduleBuilds(ctx, reqs)
+			rsp, merr := scheduleBuilds(ctx, reqs, nil)
 			assert.Loosely(t, merr, should.HaveLength(3))
 			assert.Loosely(t, rsp, should.HaveLength(3))
 			for i := range 3 {
@@ -4711,7 +4711,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			rsp, merr := scheduleBuilds(ctx, reqs)
+			rsp, merr := scheduleBuilds(ctx, reqs, nil)
 			assert.Loosely(t, merr.First(), should.BeNil)
 			assert.Loosely(t, merr, should.HaveLength(1))
 			assert.Loosely(t, rsp, should.HaveLength(1))
@@ -4753,7 +4753,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			rsp, merr := scheduleBuilds(ctx, reqs)
+			rsp, merr := scheduleBuilds(ctx, reqs, nil)
 			assert.Loosely(t, merr.First(), should.BeNil)
 			assert.Loosely(t, merr, should.HaveLength(1))
 			assert.Loosely(t, rsp, should.HaveLength(1))
@@ -4862,7 +4862,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			}
-			rsp, merr := scheduleBuilds(ctx, reqs)
+			rsp, merr := scheduleBuilds(ctx, reqs, nil)
 			assert.Loosely(t, merr.First(), should.BeNil)
 			assert.Loosely(t, merr, should.HaveLength(1))
 			assert.Loosely(t, rsp, should.HaveLength(1))
@@ -4935,7 +4935,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				rsp, err := scheduleBuilds(ctx, reqs)
+				rsp, err := scheduleBuilds(ctx, reqs, nil)
 				assert.Loosely(t, err, should.NotBeNil)
 				assert.Loosely(t, err[0], should.BeNil)
 				assert.Loosely(t, err[1], should.ErrLike(`requested resource not found or "user:caller@example.com" does not have permission to view it`))
@@ -5002,7 +5002,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				rsp, err := scheduleBuilds(ctx, reqs)
+				rsp, err := scheduleBuilds(ctx, reqs, nil)
 				assert.Loosely(t, err, should.NotBeNil)
 				assert.Loosely(t, err[0], should.BeNil)
 				assert.Loosely(t, err[1], should.ErrLike(`builder not found: "miss_builder_cfg"`))
@@ -5108,7 +5108,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				rsp, err := scheduleBuilds(ctx, reqs)
+				rsp, err := scheduleBuilds(ctx, reqs, nil)
 				assert.Loosely(t, err, should.NotBeNil)
 				assert.Loosely(t, err[0], should.BeNil)
 				assert.Loosely(t, err[1], should.ErrLike("failed to create the invocation for build id: 9021868963221610321: rpc error: code = Internal desc = internal error"))
@@ -5219,7 +5219,7 @@ func TestScheduleBuild(t *testing.T) {
 							authtest.MockPermission(userID, "project:parent_bucket", bbperms.BuildersGet),
 						),
 					})
-					_, merr := scheduleBuilds(ctx, reqs)
+					_, merr := scheduleBuilds(ctx, reqs, nil)
 					assert.Loosely(t, merr, should.NotBeNil)
 					assert.Loosely(t, merr[0], grpccode.ShouldBe(codes.PermissionDenied))
 					assert.Loosely(t, merr[1], grpccode.ShouldBe(codes.PermissionDenied))
@@ -5237,7 +5237,7 @@ func TestScheduleBuild(t *testing.T) {
 							authtest.MockPermission(userID, "project:parent_bucket", bbperms.BuildsIncludeChild),
 						),
 					})
-					_, merr := scheduleBuilds(ctx, reqs)
+					_, merr := scheduleBuilds(ctx, reqs, nil)
 					assert.Loosely(t, merr, should.NotBeNil)
 					assert.Loosely(t, merr[0], should.BeNil)
 					assert.Loosely(t, merr[1], grpccode.ShouldBe(codes.PermissionDenied))
@@ -5254,7 +5254,7 @@ func TestScheduleBuild(t *testing.T) {
 							authtest.MockPermission(userID, "project:parent_bucket", bbperms.BuildsIncludeChild),
 						),
 					})
-					_, merr := scheduleBuilds(ctx, reqs)
+					_, merr := scheduleBuilds(ctx, reqs, nil)
 					assert.Loosely(t, merr.First(), should.BeNil)
 				})
 			})
@@ -5290,7 +5290,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				rsp, merr := scheduleBuilds(ctx, reqs)
+				rsp, merr := scheduleBuilds(ctx, reqs, nil)
 				assert.Loosely(t, merr.First(), should.BeNil)
 				assert.Loosely(t, merr, should.HaveLength(3))
 				assert.Loosely(t, rsp, should.HaveLength(3))
@@ -5416,7 +5416,7 @@ func TestScheduleBuild(t *testing.T) {
 						ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
 					},
 				}
-				_, err := scheduleBuilds(ctx, reqs)
+				_, err := scheduleBuilds(ctx, reqs, nil)
 				assert.Loosely(t, err, should.ErrLike(`does not have permission "buildbucket.builds.add"`))
 			})
 
@@ -5486,7 +5486,7 @@ func TestScheduleBuild(t *testing.T) {
 						ParentBuildId: 1234,
 						Mask:          &pb.BuildMask{AllFields: true},
 					},
-				})
+				}, nil)
 				assert.Loosely(t, err[0], should.BeNil)
 
 				expectedAgent := proto.Clone(parentBuildInfra.Proto.Buildbucket.Agent).(*pb.BuildInfra_Buildbucket_Agent)
@@ -5536,7 +5536,7 @@ func TestScheduleBuild(t *testing.T) {
 						ShadowInput: &pb.ScheduleBuildRequest_ShadowInput{},
 					},
 				}
-				blds, err := scheduleBuilds(ctx, reqs)
+				blds, err := scheduleBuilds(ctx, reqs, nil)
 				assert.Loosely(t, err[0], should.BeNil)
 				assert.Loosely(t, err[1], should.BeNil)
 				assert.Loosely(t, err[2], should.ErrLike("scheduling a shadow build in the original bucket is not allowed"))
