@@ -40,23 +40,19 @@ import {
   useTestHistoryClient,
 } from '@/common/hooks/prpc_clients';
 import { gm3PageTheme } from '@/common/themes/gm3_theme';
+import { logging } from '@/common/tools/logging';
 import { OutputTestVerdict } from '@/common/types/verdict';
 import { requestSurvey } from '@/fleet/utils/survey';
 import {
   TrackLeafRoutePageView,
   useGoogleAnalytics,
 } from '@/generic_libs/components/google_analytics';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { QueryRecentPassesRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 import {
   TestIdentifier,
   Sources,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
-import {
-  BatchGetTestVariantsRequest,
-  GetInvocationRequest,
-} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { GetRootInvocationRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/root_invocation.pb';
+import { BatchGetTestVariantsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestVerdict_StatusOverride } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { ArtifactsSection } from '@/test_investigation/components/artifacts/artifacts_section';
 import { RedirectBackBanner } from '@/test_investigation/components/redirect_back_banner';
@@ -68,6 +64,7 @@ import {
   RecentPassesProvider,
   TestVariantProvider,
 } from '@/test_investigation/context';
+import { useInvocationQuery } from '@/test_investigation/hooks/queries';
 import { isPresubmitRun } from '@/test_investigation/utils/test_info_utils';
 import { getProjectFromRealm } from '@/test_investigation/utils/test_variant_utils';
 
@@ -85,8 +82,6 @@ type TestInvestigateParams = {
 
 export function TestInvestigatePage() {
   const params = useParams<TestInvestigateParams>();
-  const [searchParams] = useSyncedSearchParams();
-  const isLegacyInvocation = searchParams.get('invMode') === 'legacy';
 
   const authState = useAuthState();
   const resultDbClient = useResultDbClient();
@@ -120,41 +115,21 @@ export function TestInvestigatePage() {
   }
 
   // Fetch Legacy Invocation (only if in legacy mode)
-  const { data: legacyInvocation, isPending: isLoadingLegacyInv } = useQuery({
-    ...resultDbClient.GetInvocation.query(
-      GetInvocationRequest.fromPartial({
-        name: `invocations/${rawInvocationId}`,
-      }),
-    ),
-    staleTime: 5 * 60 * 1000,
-    enabled: isLegacyInvocation,
-    placeholderData: keepPreviousData,
-  });
+  const {
+    invocation: invocationData,
+    isLoading: isLoadingInvocation,
+    errors: invocationErrors,
+  } = useInvocationQuery(rawInvocationId);
 
-  // Fetch Root Invocation (only if NOT in legacy mode)
-  const { data: rootInvocation, isPending: isLoadingRootInv } = useQuery({
-    ...resultDbClient.GetRootInvocation.query(
-      GetRootInvocationRequest.fromPartial({
-        name: `rootInvocations/${rawInvocationId}`,
-      }),
-    ),
-    staleTime: 5 * 60 * 1000,
-    enabled: !isLegacyInvocation,
-    placeholderData: keepPreviousData,
-  });
-
-  const invocation = isLegacyInvocation ? legacyInvocation : rootInvocation;
-  const isLoadingInvocation = isLegacyInvocation
-    ? isLoadingLegacyInv
-    : isLoadingRootInv;
+  const invocation = invocationData?.data;
+  const isLegacyInvocation = invocationData?.isLegacyInvocation ?? false;
 
   const invocationNameForTestVariants = isLegacyInvocation
     ? `invocations/${rawInvocationId}`
     : `rootInvocations/${rawInvocationId}`;
 
   const request = useMemo(() => {
-    if (isLegacyInvocation) {
-      // For legacy invocations, query by testId and variantHash.
+    if (module === 'legacy') {
       return BatchGetTestVariantsRequest.fromPartial({
         invocation: invocationNameForTestVariants,
         testVariants: [
@@ -166,7 +141,6 @@ export function TestInvestigatePage() {
         resultLimit: 100,
       });
     } else {
-      // For root invocations, query by the structured test identifier.
       return BatchGetTestVariantsRequest.fromPartial({
         parent: invocationNameForTestVariants,
         testVariants: [
@@ -185,7 +159,6 @@ export function TestInvestigatePage() {
       });
     }
   }, [
-    isLegacyInvocation,
     invocationNameForTestVariants,
     decodedTestId,
     rawVariantHash,
@@ -208,7 +181,7 @@ export function TestInvestigatePage() {
       const sources = tv.sourcesId ? data.sources[tv.sourcesId] : undefined;
       return { testVariant: tv, sources };
     },
-    enabled: !!request,
+    enabled: !!request && !!invocation,
     placeholderData: keepPreviousData,
   });
 
@@ -290,6 +263,18 @@ export function TestInvestigatePage() {
   }
 
   if (!invocation) {
+    const errorMessages = invocationErrors
+      .map((e) => (e instanceof Error ? e.message : String(e)))
+      .join('; ');
+
+    invocationErrors.forEach((e) => {
+      logging.error(e);
+    });
+
+    if (invocationErrors.length > 0) {
+      throw new Error(`Failed to load invocation: ${errorMessages}`);
+    }
+
     return (
       <Box
         sx={{

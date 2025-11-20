@@ -383,8 +383,8 @@ export function buildFlatTreeFromEntries(
     const component = entry.path[level] || '';
     if (entry.path.length - 1 === level) {
       leaves.push({
-        // Leaf ID: Use the unique path built so far, plus the final segment
-        id: `${parentId}${component}`,
+        // The ID of the leaf node now includes the variant hash to ensure uniqueness
+        id: `${parentId}${component}/${entry.value.variantHash}`,
         label: component,
         level: level,
         totalTests: 1,
@@ -411,10 +411,8 @@ export function buildFlatTreeFromEntries(
 
   const nodes: TestNavigationTreeNode[] = [];
   groups.forEach((groupEntries, component) => {
-    // The next ID prefix must only add the NEW segment (component)
-    // to the existing unique parentId to prevent double-prefixing.
-    const newPathSegment = component;
-    const nextParentId = `${parentId}${newPathSegment}`;
+    // Branch node ID includes the component to establish the path segment.
+    const nextParentId = `${parentId}${component}`;
 
     // Recursive call uses the calculated unique ID as the new prefix
     const children = buildFlatTreeFromEntries(

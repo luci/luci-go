@@ -19,7 +19,7 @@ import {
   ThemeProvider,
   Typography,
 } from '@mui/material';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
@@ -31,6 +31,7 @@ import {
   SemanticStatusType,
 } from '@/common/styles/status_styles';
 import { gm3PageTheme } from '@/common/themes/gm3_theme';
+import { logging } from '@/common/tools/logging';
 import {
   generateTestInvestigateUrl,
   generateTestInvestigateUrlForLegacyInvocations,
@@ -38,11 +39,7 @@ import {
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Invocation_State } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
-import {
-  GetInvocationRequest,
-  QueryTestVariantsRequest,
-} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { GetRootInvocationRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/root_invocation.pb';
+import { QueryTestVariantsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import {
   InvocationCounts,
   InvocationHeader,
@@ -51,6 +48,7 @@ import {
 import { RedirectBackBanner } from '@/test_investigation/components/redirect_back_banner';
 import { TestNavigationTreeNode } from '@/test_investigation/components/test_navigation_drawer/types';
 import { InvocationProvider } from '@/test_investigation/context/provider';
+import { useInvocationQuery } from '@/test_investigation/hooks/queries';
 import { buildHierarchyTree } from '@/test_investigation/utils/drawer_tree_utils';
 import { getDisplayInvocationId } from '@/test_investigation/utils/invocation_utils';
 import { getProjectFromRealm } from '@/test_investigation/utils/test_variant_utils';
@@ -93,11 +91,18 @@ export function InvocationPage() {
   const hasPerformedInitialRedirect = useRef(false);
   const resultDbClient = useResultDbClient();
 
-  const isLegacyInvocation = searchParams.get('invMode') === 'legacy';
-
   if (!invocationId) {
     throw new Error('Invalid URL: Missing invocationId');
   }
+
+  const {
+    invocation: invocationData,
+    isLoading: isLoadingInvocation,
+    errors: invocationErrors,
+  } = useInvocationQuery(invocationId);
+
+  const invocation = invocationData?.data;
+  const isLegacyInvocation = invocationData?.isLegacyInvocation ?? false;
 
   const { parsedTestId, parsedVariantDef } = useMemo(() => {
     const parsedTestId = searchParams.get('testId');
@@ -126,33 +131,6 @@ export function InvocationPage() {
     }
     return new Set(['failed', 'execution_errored']);
   });
-
-  const { data: legacyInvocation, isPending: isLoadingLegacyInv } = useQuery({
-    ...resultDbClient.GetInvocation.query(
-      GetInvocationRequest.fromPartial({
-        name: `invocations/${invocationId}`,
-      }),
-    ),
-    retry: false,
-    staleTime: 5 * 60 * 1000,
-    enabled: isLegacyInvocation,
-  });
-
-  const { data: rootInvocation, isPending: isLoadingRootInv } = useQuery({
-    ...resultDbClient.GetRootInvocation.query(
-      GetRootInvocationRequest.fromPartial({
-        name: `rootInvocations/${invocationId}`,
-      }),
-    ),
-    retry: false,
-    staleTime: 5 * 60 * 1000,
-    enabled: !isLegacyInvocation,
-  });
-
-  const invocation = isLegacyInvocation ? legacyInvocation : rootInvocation;
-  const isLoadingInvocation = isLegacyInvocation
-    ? isLoadingLegacyInv
-    : isLoadingRootInv;
 
   const queryRequest = useMemo(() => {
     const filterParts: string[] = [];
@@ -186,9 +164,13 @@ export function InvocationPage() {
     const pageSize = 10000;
     const resultLimit = 10;
 
+    const parentOrInvocation = isLegacyInvocation
+      ? `invocations/${invocationId}`
+      : `rootInvocations/${invocationId}`;
+
     if (isLegacyInvocation) {
       return QueryTestVariantsRequest.fromPartial({
-        invocations: [`invocations/${invocationId}`],
+        invocations: [parentOrInvocation],
         pageSize,
         resultLimit,
         readMask,
@@ -196,7 +178,7 @@ export function InvocationPage() {
       });
     } else {
       return QueryTestVariantsRequest.fromPartial({
-        parent: `rootInvocations/${invocationId}`,
+        parent: parentOrInvocation,
         pageSize,
         resultLimit,
         readMask,
@@ -209,13 +191,14 @@ export function InvocationPage() {
     data: testVariantsResponse,
     isFetching: isFetchingTestVariants,
     isSuccess,
-    error,
-    isError,
+    error: testVariantsError,
+    isError: isTestVariantsError,
     isPending,
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
+    enabled: !!invocation,
     ...resultDbClient.QueryTestVariants.queryPaged(queryRequest),
     staleTime:
       invocation?.state === Invocation_State.FINALIZED
@@ -324,8 +307,28 @@ export function InvocationPage() {
     );
   }
 
-  if (isError || !invocation) {
-    throw error;
+  // Handle all errors based on the loading status
+
+  // 1. If invocation failed to load: log all invocation errors and throw a combined error.
+  if (!invocation) {
+    const errorMessages = invocationErrors
+      .map((e) => (e instanceof Error ? e.message : String(e)))
+      .join('; ');
+
+    invocationErrors.forEach((e) => {
+      logging.error(e);
+    });
+
+    if (invocationErrors.length > 0) {
+      throw new Error(`Failed to load invocation: ${errorMessages}`);
+    }
+    throw new Error(`Invocation data not found for ID: ${invocationId}`);
+  }
+
+  // 2. If Test Variants query failed (and invocation succeeded): log the error and re-throw.
+  if (isTestVariantsError) {
+    logging.error(testVariantsError);
+    throw testVariantsError;
   }
 
   return (

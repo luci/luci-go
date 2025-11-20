@@ -78,7 +78,7 @@ describe('generateTestInvestigateUrlForLegacyInvocations', () => {
       'abc',
     );
     expect(url).toBe(
-      '/ui/test-investigate/invocations/inv-123/modules/legacy/schemes/legacy/variants/abc/cases/test.name.basic?invMode=legacy',
+      '/ui/test-investigate/invocations/inv-123/modules/legacy/schemes/legacy/variants/abc/cases/test.name.basic',
     );
   });
 
@@ -90,7 +90,7 @@ describe('generateTestInvestigateUrlForLegacyInvocations', () => {
     );
     expect(url).toBe(
       '/ui/test-investigate/invocations/inv-456/modules' +
-        '/legacy/schemes/legacy/variants/def/cases/test.suite%2Ftest.name%2Fwith%2Fslashes?invMode=legacy',
+        '/legacy/schemes/legacy/variants/def/cases/test.suite%2Ftest.name%2Fwith%2Fslashes',
     );
   });
 
@@ -102,7 +102,7 @@ describe('generateTestInvestigateUrlForLegacyInvocations', () => {
     );
     expect(url).toBe(
       '/ui/test-investigate/invocations/inv-789/modules' +
-        '/legacy/schemes/legacy/variants/ghi/cases/Test%3A%20My%20Test!?invMode=legacy',
+        '/legacy/schemes/legacy/variants/ghi/cases/Test%3A%20My%20Test!',
     );
   });
 });
@@ -181,7 +181,7 @@ describe('generateTestInvestigateUrl (from TestIdentifier)', () => {
     const url = generateTestInvestigateUrl('inv-legacy', legacyTestId);
     expect(url).toBe(
       '/ui/test-investigate/invocations/inv-legacy/modules' +
-        '/legacy/schemes/legacy/variants/legacy-hash/cases/this%2Fis%2Fa%2Flegacy%2Fid?invMode=legacy',
+        '/legacy/schemes/legacy/variants/legacy-hash/cases/this%2Fis%2Fa%2Flegacy%2Fid',
     );
   });
 });
@@ -191,7 +191,7 @@ describe('generateTestInvestigateUrlFromOld', () => {
     const oldUrl =
       '/ui/test-investigate/invocations/inv123/tests/test.name.basic/variants/abc';
     const newUrl =
-      '/ui/test-investigate/invocations/inv123/modules/legacy/schemes/legacy/variants/abc/cases/test.name.basic?invMode=legacy';
+      '/ui/test-investigate/invocations/inv123/modules/legacy/schemes/legacy/variants/abc/cases/test.name.basic';
     expect(generateTestInvestigateUrlFromOld(oldUrl)).toBe(newUrl);
   });
 
@@ -199,7 +199,7 @@ describe('generateTestInvestigateUrlFromOld', () => {
     const oldUrl =
       '/ui/test-investigate/invocations/inv-xyz/tests/test.suite%2Ftest.name/variants/def';
     const newUrl =
-      '/ui/test-investigate/invocations/inv-xyz/modules/legacy/schemes/legacy/variants/def/cases/test.suite%2Ftest.name?invMode=legacy';
+      '/ui/test-investigate/invocations/inv-xyz/modules/legacy/schemes/legacy/variants/def/cases/test.suite%2Ftest.name';
     expect(generateTestInvestigateUrlFromOld(oldUrl)).toBe(newUrl);
   });
 
@@ -207,7 +207,7 @@ describe('generateTestInvestigateUrlFromOld', () => {
     const oldUrl =
       '/ui/test-investigate/invocations/inv123/tests/test.name/variants/abc?foo=bar&baz=qux';
     const newUrl =
-      '/ui/test-investigate/invocations/inv123/modules/legacy/schemes/legacy/variants/abc/cases/test.name?invMode=legacy&foo=bar&baz=qux';
+      '/ui/test-investigate/invocations/inv123/modules/legacy/schemes/legacy/variants/abc/cases/test.name&foo=bar&baz=qux';
     expect(generateTestInvestigateUrlFromOld(oldUrl)).toBe(newUrl);
   });
 

@@ -489,9 +489,21 @@ describe('DrawerTreeUtils', () => {
 
     it('should build a tree from flat test IDs with unique path IDs', () => {
       const variants: TestVariant[] = [
-        { testId: 'a/b/c', statusV2: TestVerdict_Status.FAILED },
-        { testId: 'a/b/d', statusV2: TestVerdict_Status.PASSED },
-        { testId: 'a/e', statusV2: TestVerdict_Status.FAILED },
+        {
+          testId: 'a/b/c',
+          statusV2: TestVerdict_Status.FAILED,
+          variantHash: 'hashC',
+        },
+        {
+          testId: 'a/b/d',
+          statusV2: TestVerdict_Status.PASSED,
+          variantHash: 'hashD',
+        },
+        {
+          testId: 'a/e',
+          statusV2: TestVerdict_Status.FAILED,
+          variantHash: 'hashE',
+        },
       ] as TestVariant[];
 
       const tree = buildFlatTree(variants);
@@ -513,21 +525,24 @@ describe('DrawerTreeUtils', () => {
 
       // Leaves
       const nodeC = nodeB.children![0];
-      expect(nodeC.id).toBe(`${ID_B}c`);
+      // EXPECTATION CHANGE: now includes variantHash
+      expect(nodeC.id).toBe(`${ID_B}c/hashC`);
       expect(nodeC.label).toBe('c');
       expect(nodeC.totalTests).toBe(1);
       expect(nodeC.failedTests).toBe(1);
       expect(nodeC.children).toBeUndefined();
 
       const nodeD = nodeB.children![1];
-      expect(nodeD.id).toBe(`${ID_B}d`);
+      // EXPECTATION CHANGE: now includes variantHash
+      expect(nodeD.id).toBe(`${ID_B}d/hashD`);
       expect(nodeD.label).toBe('d');
       expect(nodeD.totalTests).toBe(1);
       expect(nodeD.failedTests).toBe(0);
       expect(nodeD.children).toBeUndefined();
 
       const nodeE = nodeA.children![1];
-      expect(nodeE.id).toBe(`${ID_A}e`);
+      // EXPECTATION CHANGE: now includes variantHash
+      expect(nodeE.id).toBe(`${ID_A}e/hashE`);
       expect(nodeE.label).toBe('e');
       expect(nodeE.totalTests).toBe(1);
       expect(nodeE.failedTests).toBe(1);
@@ -681,9 +696,8 @@ describe('DrawerTreeUtils', () => {
         flatVariant2,
       );
 
-      // IDs trace the path via segments, excluding the top-level ancestor (F_A),
-      // as per observed runtime behavior of findNodePath.
-      expect(idsToExpand).toEqual([F_A_B, `${F_A_B}d`]);
+      // EXPECTATION CHANGE: Leaf node ID includes variant hash
+      expect(idsToExpand).toEqual([F_A_B, `${F_A_B}d/hashB`]);
     });
 
     it('should return the correct path for a compressed flat variant', () => {
@@ -694,9 +708,12 @@ describe('DrawerTreeUtils', () => {
       );
 
       // The compressed node ID is the full path up to the last compressed segment
-      const compressedNodeId = `${F_LONG_PATH_TO_SINGLE}file`;
+      // EXPECTATION CHANGE: Leaf node ID includes variant hash
+      const leafId = `${F_LONG_PATH_TO_SINGLE}file/hashComp`;
 
-      expect(idsToExpand).toEqual([F_LONG_PATH_TO_SINGLE, compressedNodeId]);
+      // The expanded path should be the compressed ID and the leaf ID
+      // NOTE: The compressed ID, F_LONG_PATH_TO_SINGLE, is still correct as it's a branch ID.
+      expect(idsToExpand).toEqual([F_LONG_PATH_TO_SINGLE, leafId]);
     });
 
     it('should return the correct path from a mixed list (structured)', () => {
@@ -732,8 +749,8 @@ describe('DrawerTreeUtils', () => {
         flatVariant1,
       );
 
-      // IDs trace the path via segments, excluding the top-level ancestor (F_A).
-      expect(idsToExpand).toEqual([F_A_B, `${F_A_B}c`]);
+      // EXPECTATION CHANGE: Leaf node ID includes variant hash
+      expect(idsToExpand).toEqual([F_A_B, `${F_A_B}c/hashA`]);
     });
 
     it('should return an empty array if no test ID is provided', () => {
@@ -754,11 +771,15 @@ describe('DrawerTreeUtils', () => {
       );
 
       // 'non' and 'existent' paths get compressed into one node's ID
+      const F_ROOT = 'F-';
       const F_NON = `${F_ROOT}non/`;
       const F_NON_EXISTENT = `${F_NON}existent/`;
-      const COMPRESSED_ID = F_NON_EXISTENT;
+      const COMPRESSED_ID = F_NON_EXISTENT; // Branch ID
 
-      expect(idsToExpand).toEqual([COMPRESSED_ID, `${F_NON_EXISTENT}id`]);
+      // EXPECTATION CHANGE: Leaf node ID includes variant hash
+      const leafId = `${F_NON_EXISTENT}id/hashNotFound`;
+
+      expect(idsToExpand).toEqual([COMPRESSED_ID, leafId]);
     });
 
     it('should inject and find missing variants even if hash is different', () => {
@@ -771,8 +792,9 @@ describe('DrawerTreeUtils', () => {
         variants,
         wrongHashVariant,
       );
-      // IDs trace the path via segments, excluding the top-level ancestor (F_A).
-      expect(idsToExpand).toEqual([F_A_B, `${F_A_B}c`]);
+      // The path found should match the ID of the injected (missing) variant which uses the wrongHash.
+      // EXPECTATION CHANGE: Leaf node ID includes variant hash
+      expect(idsToExpand).toEqual([F_A_B, `${F_A_B}c/wrongHash`]);
     });
   });
 });

@@ -48,7 +48,7 @@ export function TestInfoBreadcrumbs({
           <Link
             target="_blank"
             href={`/ui/test-investigate/invocations/${invID}${
-              isLegacyInvocation ? '?invMode=legacy' : ''
+              isLegacyInvocation ? '' : ''
             }`}
           >
             {invID}

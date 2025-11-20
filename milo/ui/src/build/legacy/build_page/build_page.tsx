@@ -243,7 +243,7 @@ export const BuildPage = observer(() => {
       return;
     }
 
-    const newPath = `/ui/test-investigate/invocations/build-${build.id}?invMode=legacy`;
+    const newPath = `/ui/test-investigate/invocations/build-${build.id}`;
     navigate(newPath, { replace: true });
   }, [
     forceLegacyView,

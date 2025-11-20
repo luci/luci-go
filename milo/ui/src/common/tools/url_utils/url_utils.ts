@@ -240,7 +240,7 @@ export function generateTestInvestigateUrlFromOld(oldUrl: string): string {
   const existingQuery = queryHashPart.match(/^\?([^#]+)/);
   const existingHash = queryHashPart.match(/#(.*)$/);
 
-  let finalUrl = `${newPath}?invMode=legacy`;
+  let finalUrl = `${newPath}`;
 
   if (existingQuery) {
     finalUrl += `&${existingQuery[1]}`; // Append existing queries
@@ -265,7 +265,7 @@ export function generateTestInvestigateUrlForLegacyInvocations(
   const encodedTestId = encodeURIComponent(testId);
   return (
     `/ui/test-investigate/invocations/${invocationId}/` +
-    `modules/legacy/schemes/legacy/variants/${variantHash}/cases/${encodedTestId}?invMode=legacy`
+    `modules/legacy/schemes/legacy/variants/${variantHash}/cases/${encodedTestId}`
   );
 }
 
@@ -304,6 +304,6 @@ export function generateTestInvestigateUrl(
   // Append the required case, which must be encoded
   path += `/cases/${encodeURIComponent(testId.caseName)}`;
 
-  // This is the non-legacy URL, so no ?invMode=legacy is added.
+  // This is the non-legacy URL, so no  is added.
   return path;
 }
