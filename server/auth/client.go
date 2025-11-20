@@ -243,6 +243,18 @@ func WithProject(project string) RPCOption {
 	})
 }
 
+// WithProjectNoFallback is like WithProject, but disables fallback on the
+// service global account in case the project doesn't have a project scoped
+// account associated with it.
+//
+// See AsProject for more info.
+func WithProjectNoFallback(project string) RPCOption {
+	return rpcOption(func(opts *rpcOptions) {
+		opts.project = project
+		opts.noFallback = true
+	})
+}
+
 // WithServiceAccount option must be used with AsActor authority kind to specify
 // what service account to act as.
 func WithServiceAccount(email string) RPCOption {
@@ -529,6 +541,7 @@ type audGenerator func(r *http.Request) (string, error)
 type rpcOptions struct {
 	kind             RPCAuthorityKind
 	project          string       // for AsProject
+	noFallback       bool         // for AsProject
 	idToken          bool         // for AsSelf, AsProject, AsActor and AsSessionUser
 	idTokenAud       string       // for AsSelf, AsProject and AsActor
 	idTokenAudGen    audGenerator // non-nil iff idTokenAud is a pattern
@@ -876,10 +889,12 @@ func asProjectHeaders(ctx context.Context, opts *rpcOptions, req *http.Request) 
 		return nil, nil, errors.Fmt("failed to mint AsProject access token: %w", err)
 	}
 
-	// TODO(fmatenaar): This is only during migration and needs to be removed
-	// eventually.
 	if tok == nil {
-		logging.Infof(ctx, "Project %s not found, fallback to service identity", opts.project)
+		if opts.noFallback {
+			logging.Errorf(ctx, "Project %q doesn't have a project-scoped account, but it is required", opts.project)
+			return nil, nil, errors.Fmt("project %q doesn't have a project-scoped account, can't act as this project", opts.project)
+		}
+		logging.Infof(ctx, "Project %q doesn't have a project-scoped account, fallback to the service identity", opts.project)
 		return asSelfOAuthHeaders(ctx, opts, req)
 	}
 
