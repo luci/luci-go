@@ -22,6 +22,8 @@ import (
 
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/turboci/id"
+	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
@@ -73,12 +75,12 @@ func must[T any](val T, err error) T {
 }
 
 func TestGetOption(t *testing.T) {
-	cv := orchestratorpb.CheckView_builder{
-		OptionData: map[string]*orchestratorpb.Datum{
-			URL[*structpb.ListValue](): orchestratorpb.Datum_builder{
+	c := orchestratorpb.Check_builder{
+		Options: []*orchestratorpb.Datum{
+			orchestratorpb.Datum_builder{
 				Value: Value(must(structpb.NewList([]any{1, 2, 3}))),
 			}.Build(),
-			URL[*structpb.Struct](): orchestratorpb.Datum_builder{
+			orchestratorpb.Datum_builder{
 				Value: Value(must(structpb.NewStruct(map[string]any{
 					"hello": []any{"nerds", "and", "ppls"},
 				}))),
@@ -86,43 +88,54 @@ func TestGetOption(t *testing.T) {
 		},
 	}.Build()
 
-	extracted := GetOption[*structpb.Struct](cv)
+	extracted := GetOption[*structpb.Struct](c)
 	assert.That(t, extracted, should.Match(must(structpb.NewStruct(map[string]any{
 		"hello": []any{"nerds", "and", "ppls"},
 	}))))
 }
 
+func mkDatum(msg proto.Message) *orchestratorpb.Datum {
+	return orchestratorpb.Datum_builder{
+		Value: Value(msg),
+	}.Build()
+}
+
+func rsltID(i int) *idspb.CheckResult {
+	ret, err := id.CheckResultErr("whatever", i)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 func TestGetResults(t *testing.T) {
-	cv := orchestratorpb.CheckView_builder{
-		Results: map[int32]*orchestratorpb.CheckResultView{
-			1: orchestratorpb.CheckResultView_builder{
-				Data: map[string]*orchestratorpb.Datum{
-					URL[*structpb.ListValue](): orchestratorpb.Datum_builder{
-						Value: Value(must(structpb.NewList([]any{1, 2, 3}))),
-					}.Build(),
-					URL[*structpb.Struct](): orchestratorpb.Datum_builder{
-						Value: Value(must(structpb.NewStruct(map[string]any{
-							"hello": []any{"nerds", "and", "ppls"},
-						}))),
-					}.Build(),
+	c := orchestratorpb.Check_builder{
+		Results: []*orchestratorpb.Check_Result{
+			orchestratorpb.Check_Result_builder{
+				Identifier: rsltID(1),
+				Data: []*orchestratorpb.Datum{
+					mkDatum(must(structpb.NewList([]any{1, 2, 3}))),
+					mkDatum(must(structpb.NewStruct(map[string]any{
+						"hello": []any{"nerds", "and", "ppls"},
+					}))),
 				},
 			}.Build(),
-			3: orchestratorpb.CheckResultView_builder{
-				Data: map[string]*orchestratorpb.Datum{
-					URL[*structpb.ListValue](): orchestratorpb.Datum_builder{
-						Value: Value(must(structpb.NewList([]any{1, 2, 3}))),
-					}.Build(),
-					URL[*structpb.Struct](): orchestratorpb.Datum_builder{
-						Value: Value(must(structpb.NewStruct(map[string]any{
-							"bye": []any{"party", "droids"},
-						}))),
-					}.Build(),
+			orchestratorpb.Check_Result_builder{
+				Identifier: rsltID(2),
+			}.Build(),
+			orchestratorpb.Check_Result_builder{
+				Identifier: rsltID(3),
+				Data: []*orchestratorpb.Datum{
+					mkDatum(must(structpb.NewList([]any{1, 2, 3}))),
+					mkDatum(must(structpb.NewStruct(map[string]any{
+						"bye": []any{"party", "droids"},
+					}))),
 				},
 			}.Build(),
 		},
 	}.Build()
 
-	results := GetResults[*structpb.Struct](cv)
+	results := GetResults[*structpb.Struct](c)
 	assert.That(t, results, should.Match(map[int32]*structpb.Struct{
 		1: must(structpb.NewStruct(map[string]any{
 			"hello": []any{"nerds", "and", "ppls"},

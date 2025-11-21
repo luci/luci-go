@@ -45,6 +45,23 @@ func URLMsg(msg proto.Message) string {
 	return fmt.Sprintf("%s%s", typePrefix, msg.ProtoReflect().Descriptor().FullName())
 }
 
+// FromMultiple retrieves the value of the first Datum whose type matches T.
+//
+// If T is not in the data, returns nil.
+//
+// Panics if the data is present but fails to unmarshal. This is considered
+// an invariant violation, as the data should have been marshaled from the same
+// type.
+func FromMultiple[T proto.Message](data ...*orchestratorpb.Datum) (ret T) {
+	typeUrl := URL[T]()
+	for _, datum := range data {
+		if datum.GetValue().GetValue().GetTypeUrl() == typeUrl {
+			return ExtractValue[T](datum.GetValue())
+		}
+	}
+	return
+}
+
 // GetOption retrieves an option of the given type from a CheckView.
 //
 // If T is not in the CheckView, returns the zero value for T (e.g. nil for
@@ -53,38 +70,29 @@ func URLMsg(msg proto.Message) string {
 // Panics if the data is present but fails to unmarshal. This is considered
 // an invariant violation, as the data should have been marshaled from the same
 // type.
-func GetOption[T proto.Message](cv *orchestratorpb.CheckView) T {
-	typeUrl := URL[T]()
-	dat := cv.GetOptionData()[typeUrl]
-	if dat == nil {
-		var ret T
-		return ret
-	}
-	return ExtractValue[T](dat.GetValue())
+func GetOption[T proto.Message](c *orchestratorpb.Check) (ret T) {
+	return FromMultiple[T](c.GetOptions()...)
 }
 
-// GetResults retrieves all result data of the given type from a CheckView.
+// GetResults retrieves all result data of the given type from a Check.
 //
-// Returns a mapping of CheckResult.idx -> T.
+// Returns a mapping of CheckResult.identifier.result.idx -> T.
 //
 // Panics if the data is present but fails to unmarshal. This is considered an
 // invariant violation, as the data must have been marshaled from the same type.
 func GetResults[T interface {
 	comparable
 	proto.Message
-}](cv *orchestratorpb.CheckView) map[int32]T {
-	typeUrl := URL[T]()
-
-	ret := make(map[int32]T, len(cv.GetResults()))
+}](c *orchestratorpb.Check) map[int32]T {
+	ret := make(map[int32]T, len(c.GetResults()))
 
 	var zero T
 
-	for idx, result := range cv.GetResults() {
-		dat := ExtractValue[T](result.GetData()[typeUrl].GetValue())
-		if dat == zero {
-			continue
+	for _, result := range c.GetResults() {
+		dat := FromMultiple[T](result.GetData()...)
+		if dat != zero {
+			ret[result.GetIdentifier().GetIdx()] = dat
 		}
-		ret[idx] = dat
 	}
 
 	return ret

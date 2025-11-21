@@ -19,11 +19,14 @@ import (
 	"maps"
 	"slices"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
 	"go.chromium.org/luci/turboci/data"
+	"go.chromium.org/luci/turboci/id"
 )
 
 func ExampleURL() {
@@ -67,42 +70,48 @@ func ExampleExtractValue() {
 	// world
 }
 
-func exampleCheckView() *orchestratorpb.CheckView {
-	return orchestratorpb.CheckView_builder{
-		OptionData: map[string]*orchestratorpb.Datum{
-			data.URL[*structpb.ListValue](): orchestratorpb.Datum_builder{
-				Value: data.Value(must(structpb.NewList([]any{1, 2, 3}))),
-			}.Build(),
-			data.URL[*structpb.Struct](): orchestratorpb.Datum_builder{
-				Value: data.Value(must(structpb.NewStruct(map[string]any{
-					"hello": []any{"nerds", "and", "ppls"},
-					"extra": 100,
-				}))),
-			}.Build(),
+func exampleCheck() *orchestratorpb.Check {
+	mkDatum := func(msg proto.Message) *orchestratorpb.Datum {
+		return orchestratorpb.Datum_builder{
+			Value: data.Value(msg),
+		}.Build()
+	}
+	rsltID := func(i int) *idspb.CheckResult {
+		ret, err := id.CheckResultErr("whatever", i)
+		if err != nil {
+			panic(err)
+		}
+		return ret
+	}
+
+	return orchestratorpb.Check_builder{
+		Options: []*orchestratorpb.Datum{
+			mkDatum(must(structpb.NewList([]any{1, 2, 3}))),
+			mkDatum(must(structpb.NewStruct(map[string]any{
+				"hello": []any{"nerds", "and", "ppls"},
+				"extra": 100,
+			}))),
 		},
-		Results: map[int32]*orchestratorpb.CheckResultView{
-			1: orchestratorpb.CheckResultView_builder{
-				Data: map[string]*orchestratorpb.Datum{
-					data.URL[*structpb.ListValue](): orchestratorpb.Datum_builder{
-						Value: data.Value(must(structpb.NewList([]any{1, 2, 3}))),
-					}.Build(),
-					data.URL[*structpb.Struct](): orchestratorpb.Datum_builder{
-						Value: data.Value(must(structpb.NewStruct(map[string]any{
-							"hello": []any{"nerds", "and", "ppls"},
-						}))),
-					}.Build(),
+		Results: []*orchestratorpb.Check_Result{
+			orchestratorpb.Check_Result_builder{
+				Identifier: rsltID(1),
+				Data: []*orchestratorpb.Datum{
+					mkDatum(must(structpb.NewList([]any{1, 2, 3}))),
+					mkDatum(must(structpb.NewStruct(map[string]any{
+						"hello": []any{"nerds", "and", "ppls"},
+					}))),
 				},
 			}.Build(),
-			3: orchestratorpb.CheckResultView_builder{
-				Data: map[string]*orchestratorpb.Datum{
-					data.URL[*structpb.ListValue](): orchestratorpb.Datum_builder{
-						Value: data.Value(must(structpb.NewList([]any{4, 5, 6}))),
-					}.Build(),
-					data.URL[*structpb.Struct](): orchestratorpb.Datum_builder{
-						Value: data.Value(must(structpb.NewStruct(map[string]any{
-							"bye": []any{"party", "droids"},
-						}))),
-					}.Build(),
+			orchestratorpb.Check_Result_builder{
+				Identifier: rsltID(2),
+			}.Build(),
+			orchestratorpb.Check_Result_builder{
+				Identifier: rsltID(3),
+				Data: []*orchestratorpb.Datum{
+					mkDatum(must(structpb.NewList([]any{4, 5, 6}))),
+					mkDatum(must(structpb.NewStruct(map[string]any{
+						"bye": []any{"party", "droids"},
+					}))),
 				},
 			}.Build(),
 		},
@@ -110,8 +119,7 @@ func exampleCheckView() *orchestratorpb.CheckView {
 }
 
 func ExampleGetOption() {
-	cv := exampleCheckView()
-	opt := data.GetOption[*structpb.Struct](cv).AsMap()
+	opt := data.GetOption[*structpb.Struct](exampleCheck()).AsMap()
 	for _, key := range slices.Sorted(maps.Keys(opt)) {
 		fmt.Println(key, opt[key])
 	}
@@ -121,8 +129,7 @@ func ExampleGetOption() {
 }
 
 func ExampleGetResults() {
-	cv := exampleCheckView()
-	results := data.GetResults[*structpb.ListValue](cv)
+	results := data.GetResults[*structpb.ListValue](exampleCheck())
 	for _, idx := range slices.Sorted(maps.Keys(results)) {
 		for _, element := range results[idx].AsSlice() {
 			fmt.Printf("result %d: %v\n", idx, element)
