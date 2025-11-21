@@ -90,7 +90,7 @@ func ExampleNewStage() {
 	//         "stageTimeout": "3600s",
 	//         "stageTimeoutMode": "STAGE_TIMEOUT_MODE_UNKNOWN",
 	//         "attemptExecutionPolicyTemplate": {
-	//           "attemptHeartbeat": {
+	//           "heartbeat": {
 	//             "scheduled": "60s",
 	//             "running": "10s"
 	//           }

@@ -34,8 +34,8 @@ type (
 )
 
 var template = delta.MakeTemplate[builder](map[string]delta.ApplyMode{
-	"attempt_heartbeat": delta.ModeMerge,
-	"timeout":           delta.ModeMerge,
+	"heartbeat": delta.ModeMerge,
+	"timeout":   delta.ModeMerge,
 })
 
 // HeartbeatScheduled returns a Diff which sets the `heartbeat.scheduled` of the
@@ -43,7 +43,7 @@ var template = delta.MakeTemplate[builder](map[string]delta.ApplyMode{
 func HeartbeatScheduled(dur time.Duration) *PolicyDiff {
 	durPB, err := maybeDuration("Scheduled", dur)
 	return template.New(builder{
-		AttemptHeartbeat: orchestratorpb.StageAttemptExecutionPolicy_Heartbeat_builder{
+		Heartbeat: orchestratorpb.StageAttemptExecutionPolicy_Heartbeat_builder{
 			Scheduled: durPB,
 		}.Build(),
 	}, err)
@@ -54,7 +54,7 @@ func HeartbeatScheduled(dur time.Duration) *PolicyDiff {
 func HeartbeatRunning(dur time.Duration) *PolicyDiff {
 	durPB, err := maybeDuration("Running", dur)
 	return template.New(builder{
-		AttemptHeartbeat: orchestratorpb.StageAttemptExecutionPolicy_Heartbeat_builder{
+		Heartbeat: orchestratorpb.StageAttemptExecutionPolicy_Heartbeat_builder{
 			Running: durPB,
 		}.Build(),
 	}, err)
@@ -65,7 +65,7 @@ func HeartbeatRunning(dur time.Duration) *PolicyDiff {
 func HeartbeatTearingDown(dur time.Duration) *PolicyDiff {
 	durPB, err := maybeDuration("TearingDown", dur)
 	return template.New(builder{
-		AttemptHeartbeat: orchestratorpb.StageAttemptExecutionPolicy_Heartbeat_builder{
+		Heartbeat: orchestratorpb.StageAttemptExecutionPolicy_Heartbeat_builder{
 			TearingDown: durPB,
 		}.Build(),
 	}, err)

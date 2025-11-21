@@ -239,7 +239,7 @@ func Example_full_request() {
 	//           "maxRetries": 3
 	//         },
 	//         "attemptExecutionPolicyTemplate": {
-	//           "attemptHeartbeat": {
+	//           "heartbeat": {
 	//             "running": "300s"
 	//           },
 	//           "timeout": {
@@ -467,7 +467,7 @@ func Example_full_request_builder() {
 						MaxRetries: proto.Int32(3),
 					}.Build(),
 					AttemptExecutionPolicyTemplate: orchestratorpb.StageAttemptExecutionPolicy_builder{
-						AttemptHeartbeat: orchestratorpb.StageAttemptExecutionPolicy_Heartbeat_builder{
+						Heartbeat: orchestratorpb.StageAttemptExecutionPolicy_Heartbeat_builder{
 							Running: durationpb.New(5 * time.Minute),
 						}.Build(),
 						Timeout: orchestratorpb.StageAttemptExecutionPolicy_Timeout_builder{
@@ -652,7 +652,7 @@ func Example_full_request_builder() {
 	//           "maxRetries": 3
 	//         },
 	//         "attemptExecutionPolicyTemplate": {
-	//           "attemptHeartbeat": {
+	//           "heartbeat": {
 	//             "running": "300s"
 	//           },
 	//           "timeout": {

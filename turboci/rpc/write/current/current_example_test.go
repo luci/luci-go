@@ -155,7 +155,7 @@ func ExampleAttemptExecutionPolicy() {
 	// {
 	//   "currentStage": {
 	//     "attemptExecutionPolicy": {
-	//       "attemptHeartbeat": {
+	//       "heartbeat": {
 	//         "running": "10s"
 	//       },
 	//       "timeout": {

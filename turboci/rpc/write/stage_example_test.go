@@ -65,7 +65,7 @@ func ExampleNewStage() {
 	//       },
 	//       "requestedStageExecutionPolicy": {
 	//         "attemptExecutionPolicyTemplate": {
-	//           "attemptHeartbeat": {
+	//           "heartbeat": {
 	//             "running": "10s"
 	//           }
 	//         }
