@@ -62,10 +62,16 @@ message PublishTestResults {
 
 // PublishTestResultsTask defines a task to query and publish test results for
 // a set of work units.
-// Next id: 3
+// Next id: 5
 message PublishTestResultsTask {
   string root_invocation_id = 1;
   repeated string work_unit_ids = 2;
+
+  // The page token for paginating through test results of the current work unit.
+  string page_token = 3;
+
+  // The index of the work unit in work_unit_ids being processed.
+  int32 current_work_unit_index = 4;
 }
 
 message ExportInvocationTestResultsToBQ {

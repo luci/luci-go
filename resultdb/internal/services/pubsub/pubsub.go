@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 )
 
 type Options struct {
@@ -34,6 +35,11 @@ type Options struct {
 // InitServer initializes a exportnotifier server.
 func InitServer(srv *server.Server, opts Options) {
 	tasks.TestResultsPublisher.AttachHandler(func(ctx context.Context, msg proto.Message) error {
-		return handlePublishTestResultsTask(ctx, msg, opts.ResultDBHostname)
+		p := &testResultsPublisher{
+			resultDBHostname: opts.ResultDBHostname,
+			pageSize:         defaultPageSize,
+			task:             msg.(*taskspb.PublishTestResultsTask),
+		}
+		return p.handleTestResultsPublisher(ctx)
 	})
 }

@@ -324,8 +324,19 @@ func (q *Query) Fetch(ctx context.Context) (trs []*pb.TestResult, nextPageToken 
 	// need to return the next page token.
 	if len(trs) == q.PageSize {
 		last := trs[q.PageSize-1]
-		invID, testID, resultID := MustParseLegacyName(last.Name)
-		nextPageToken = pagination.Token(string(invID), testID, resultID)
+		var invIDStr string
+		var testID, resultID string
+		if pbutil.IsLegacyTestResultName(last.Name) {
+			var invID invocations.ID
+			invID, testID, resultID = MustParseLegacyName(last.Name)
+			invIDStr = string(invID)
+		} else {
+			wuID, tID, rID := MustParseName(last.Name)
+			invIDStr = string(wuID.LegacyInvocationID())
+			testID = tID
+			resultID = rID
+		}
+		nextPageToken = pagination.Token(invIDStr, testID, resultID)
 	}
 	return
 }
