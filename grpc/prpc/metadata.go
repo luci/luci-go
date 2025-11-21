@@ -16,6 +16,7 @@ package prpc
 
 import (
 	"encoding/base64"
+	"iter"
 	"net/http"
 	"strings"
 
@@ -94,7 +95,7 @@ func headerIntoMeta(key string, values []string, md metadata.MD) error {
 		md[key] = append(md[key], values...)
 		return nil
 	}
-	for _, v := range values {
+	for v := range iterHeaderValues(values) {
 		decoded, err := base64.StdEncoding.DecodeString(v)
 		if err != nil {
 			return err
@@ -121,4 +122,30 @@ func headersIntoMetadata(h http.Header) (md metadata.MD, err error) {
 		}
 	}
 	return
+}
+
+// iterHeaderValues iterates over all values of the header taking into account
+// they may be joined by ",".
+//
+// See https://www.rfc-editor.org/rfc/rfc7230#section-3.2.2.
+func iterHeaderValues(values []string) iter.Seq[string] {
+	return func(yield func(string) bool) {
+		for _, v := range values {
+			// Note: do not use strings.Split to avoid unnecessary slice allocations.
+			for {
+				if comma := strings.IndexByte(v, ','); comma != -1 {
+					var chunk string
+					chunk, v = v[:comma], v[comma+1:]
+					if !yield(chunk) {
+						return
+					}
+				} else {
+					if !yield(v) {
+						return
+					}
+					break
+				}
+			}
+		}
+	}
 }

@@ -16,6 +16,7 @@ package prpc
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -83,6 +84,12 @@ func sayHello(t testing.TB) http.HandlerFunc {
 			w.Header().Set("Content-Length", "999999999999")
 		}
 		w.Header().Set("X-Lower-Case-Header", "CamelCaseValueStays")
+		w.Header().Add("X-Data-Bin", base64.StdEncoding.EncodeToString([]byte("123")))
+		w.Header().Add("X-Data-Bin", strings.Join([]string{
+			base64.StdEncoding.EncodeToString([]byte("456")),
+			base64.StdEncoding.EncodeToString([]byte("789")),
+		}, ","))
+		w.Header().Add("X-Empty-Bin", base64.StdEncoding.EncodeToString(nil))
 
 		res := testpb.HelloReply{Message: "Hello " + req.Name}
 		if r.URL.Path == "/python/prpc/prpc.Greeter/SayHello" {
@@ -232,6 +239,8 @@ func TestClient(t *testing.T) {
 				assert.Loosely(c, err, should.BeNil)
 				assert.Loosely(c, res.Message, should.Equal("Hello John"))
 				assert.Loosely(c, hd["x-lower-case-header"], should.Match([]string{"CamelCaseValueStays"}))
+				assert.Loosely(c, hd["x-data-bin"], should.Match([]string{"123", "456", "789"}))
+				assert.Loosely(c, hd["x-empty-bin"], should.Match([]string{""}))
 
 				shouldHaveMessagesLike(c, log, expectedCallLogEntry(client))
 			})
@@ -276,13 +285,17 @@ func TestClient(t *testing.T) {
 					"key", "value 1",
 					"key", "value 2",
 					"data-bin", string([]byte{0, 1, 2, 3}),
+					"data-bin", string([]byte{5, 6, 7, 8}),
 				))
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
 				assert.Loosely(t, err, should.BeNil)
 
 				assert.Loosely(t, receivedHeader["Key"], should.Match([]string{"value 1", "value 2"}))
-				assert.Loosely(t, receivedHeader["Data-Bin"], should.Match([]string{"AAECAw=="}))
+				assert.Loosely(t, receivedHeader["Data-Bin"], should.Match([]string{
+					"AAECAw==",
+					"BQYHCA==",
+				}))
 				assert.Loosely(t, receivedHeader["User-Agent"], should.Match([]string{"prpc-test"}))
 			})
 

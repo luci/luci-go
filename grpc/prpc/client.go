@@ -800,9 +800,9 @@ func recognizeHTMLErr(htmlText string) string {
 //
 // Returns gRPC errors.
 func parseStatusDetails(values []string, respCodec protoCodec) ([]*anypb.Any, error) {
-	ret := make([]*anypb.Any, len(values))
+	ret := make([]*anypb.Any, 0, len(values))
 	var buf []byte
-	for i, v := range values {
+	for v := range iterHeaderValues(values) {
 		sz := base64.StdEncoding.DecodedLen(len(v))
 		if cap(buf) < sz {
 			buf = make([]byte, sz)
@@ -817,7 +817,7 @@ func parseStatusDetails(values []string, respCodec protoCodec) ([]*anypb.Any, er
 		if err := respCodec.Decode(buf[:n], msg); err != nil {
 			return nil, status.Errorf(codes.Internal, "prpc: failed to unmarshal the status details header: %s", err)
 		}
-		ret[i] = msg
+		ret = append(ret, msg)
 	}
 
 	return ret, nil

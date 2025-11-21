@@ -266,6 +266,22 @@ func endToEndTest(t *testing.T, responseFormat prpc.Format) {
 			assert.Loosely(t, details, should.Match([]any{detail}))
 		})
 
+		t.Run(`Can round-trip plural status details`, func(t *ftt.Test) {
+			detail1 := &errdetails.DebugInfo{Detail: "x"}
+			detail2 := &errdetails.DebugInfo{Detail: "y"}
+
+			s := status.New(codes.AlreadyExists, "already exists")
+			s, err := s.WithDetails(detail1)
+			assert.Loosely(t, err, should.BeNil)
+			s, err = s.WithDetails(detail2)
+			assert.Loosely(t, err, should.BeNil)
+			svc.err = s.Err()
+
+			_, err = client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"})
+			details := status.Convert(err).Details()
+			assert.Loosely(t, details, should.Match([]any{detail1, detail2}))
+		})
+
 		t.Run(`Can handle non-trivial metadata`, func(t *ftt.Test) {
 			md := metadata.New(nil)
 			md.Append("MultiVAL-KEY", "val 1", "val 2")

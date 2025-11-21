@@ -17,6 +17,7 @@ package prpc
 import (
 	"encoding/base64"
 	"net/http"
+	"slices"
 	"testing"
 
 	"google.golang.org/grpc/metadata"
@@ -104,4 +105,49 @@ func TestBinaryHeader(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("using reserved metadata key"))
 		})
 	})
+}
+
+func TestIterHeaderValues(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name  string
+		input []string
+		want  []string
+	}{
+		{
+			name: "empty 1",
+		},
+		{
+			name:  "empty 2",
+			input: []string{""},
+			want:  []string{""},
+		},
+		{
+			name:  "simple",
+			input: []string{"abc", "def"},
+			want:  []string{"abc", "def"},
+		},
+		{
+			name:  "split",
+			input: []string{"123,456,789", "abc"},
+			want:  []string{"123", "456", "789", "abc"},
+		},
+		{
+			name:  "empty terms 1",
+			input: []string{"123,,"},
+			want:  []string{"123", "", ""},
+		},
+		{
+			name:  "empty terms 2",
+			input: []string{"123,,456"},
+			want:  []string{"123", "", "456"},
+		},
+	}
+
+	for _, cs := range cases {
+		t.Run(cs.name, func(t *testing.T) {
+			assert.That(t, slices.Collect(iterHeaderValues(cs.input)), should.Match(cs.want))
+		})
+	}
 }

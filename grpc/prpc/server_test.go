@@ -17,12 +17,14 @@ package prpc
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"testing"
 
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -45,6 +47,7 @@ type greeterService struct {
 	testpb.UnimplementedGreeterServer
 
 	headerMD   metadata.MD
+	incomingMD metadata.MD
 	errDetails *errdetails.DebugInfo
 }
 
@@ -67,6 +70,7 @@ func (s *greeterService) SayHello(ctx context.Context, req *testpb.HelloRequest)
 		SetHeader(ctx, s.headerMD)
 	}
 
+	s.incomingMD, _ = metadata.FromIncomingContext(ctx)
 	return &testpb.HelloReply{
 		Message:    "Hello " + req.Name,
 		MethodName: method,
@@ -174,6 +178,19 @@ func TestServer(t *testing.T) {
 					"X-Content-Type-Options":    {"nosniff"},
 					"X-Prpc-Grpc-Code":          {strCode(codes.Unknown)},
 					"X-Prpc-Status-Details-Bin": {"Cih0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuRGVidWdJbmZvEgMSAXg="},
+				}))
+			})
+
+			t.Run("Incoming metadata", func(t *ftt.Test) {
+				req.Header.Add("X-Data-Bin", base64.StdEncoding.EncodeToString([]byte("123")))
+				req.Header.Add("X-Data-Bin", strings.Join([]string{
+					base64.StdEncoding.EncodeToString([]byte("456")),
+					base64.StdEncoding.EncodeToString([]byte("789")),
+				}, ","))
+				r.ServeHTTP(res, req)
+				assert.Loosely(t, res.Code, should.Equal(http.StatusOK))
+				assert.That(t, greeterSvc.incomingMD, should.Match(metadata.MD{
+					"x-data-bin": {"123", "456", "789"},
 				}))
 			})
 
