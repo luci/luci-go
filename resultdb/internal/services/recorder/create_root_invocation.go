@@ -58,6 +58,13 @@ const (
 	defaultDeadlineDuration = 2 * 24 * time.Hour // 2 days
 )
 
+var (
+	// The producer systems which are validated. Setting these are restricted to
+	// clients with resultdb.rootinvocations.setProducerResource permission.
+	// If we need to update this often, it might make sense to move into config.
+	validatedProducerSystems = []string{"atp", "bazel", "buildbucket", "swarming"}
+)
+
 // CreateRootInvocation implements pb.RecorderServer.
 func (s *recorderServer) CreateRootInvocation(ctx context.Context, in *pb.CreateRootInvocationRequest) (*pb.CreateRootInvocationResponse, error) {
 	// As per https://google.aip.dev/211, check authorisation before
@@ -282,9 +289,9 @@ func verifyCreateRootInvocationPermissions(ctx context.Context, req *pb.CreateRo
 		}
 	}
 
-	// if the producer resource is set,
+	// if the producer resource is set to a validated system,
 	// resultdb.rootInvocations.setProducerResource permission is required.
-	if inv.ProducerResource != nil {
+	if inv.ProducerResource != nil && isValidatedProducerSystem(inv.ProducerResource.System) {
 		project, _ := realms.Split(realm)
 		rootRealm := realms.Join(project, realms.RootRealm)
 		allowed, err := checkPermissionOrGroupMember(ctx, rootRealm, permSetRootInvocationProducerResource, trustedCreatorGroup)
@@ -292,7 +299,7 @@ func verifyCreateRootInvocationPermissions(ctx context.Context, req *pb.CreateRo
 			return err
 		}
 		if !allowed {
-			return appstatus.Errorf(codes.PermissionDenied, `only root invocations created by trusted system may have a populated producer_resource field`)
+			return appstatus.Errorf(codes.PermissionDenied, `only root invocations created by trusted system may set the producer_resource field to %q`, inv.ProducerResource.System)
 		}
 	}
 
@@ -310,6 +317,17 @@ func verifyCreateRootInvocationPermissions(ctx context.Context, req *pb.CreateRo
 	}
 
 	return nil
+}
+
+// isValidatedProducerSystem returns whether a producer system requires the
+// caller to have resultdb.rootInvocations.setProducerResource permission.
+func isValidatedProducerSystem(system string) bool {
+	for _, s := range validatedProducerSystems {
+		if s == system {
+			return true
+		}
+	}
+	return false
 }
 
 func validateCreateRootInvocationRequest(req *pb.CreateRootInvocationRequest, cfg *config.CompiledServiceConfig) error {

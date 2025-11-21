@@ -154,7 +154,7 @@ func TestVerifyCreateRootInvocationPermissions(t *testing.T) {
 			t.Run("disallowed", func(t *ftt.Test) {
 				err := verifyCreateRootInvocationPermissions(ctx, request)
 				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike(`only root invocations created by trusted system may have a populated producer_resource field`))
+				assert.Loosely(t, err, should.ErrLike(`only root invocations created by trusted system may set the producer_resource field to "buildbucket"`))
 			})
 
 			t.Run("allowed with realm permission", func(t *ftt.Test) {
@@ -167,6 +167,12 @@ func TestVerifyCreateRootInvocationPermissions(t *testing.T) {
 
 			t.Run("allowed with trusted group", func(t *ftt.Test) {
 				authState.IdentityGroups = []string{trustedCreatorGroup}
+				err := verifyCreateRootInvocationPermissions(ctx, request)
+				assert.Loosely(t, err, should.BeNil)
+			})
+
+			t.Run("allowed with non-validated system", func(t *ftt.Test) {
+				request.RootInvocation.ProducerResource.System = "little-known-system"
 				err := verifyCreateRootInvocationPermissions(ctx, request)
 				assert.Loosely(t, err, should.BeNil)
 			})

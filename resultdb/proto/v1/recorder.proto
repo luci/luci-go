@@ -236,8 +236,9 @@ service Recorder {
 // The following permissions may also be required depending on the request:
 // - if an ID not starting with "u-" is specified,
 //   resultdb.rootInvocations.createWithReservedID permission is required
-// - if the producer resource is set,
-//   resultdb.rootInvocations.setProducerResource permission is required
+// - if the producer resource is set to a well-known value like "atp" or
+//   "buildbucket", resultdb.rootInvocations.setProducerResource permission
+//   is required
 // - if a baseline is set,
 //   resultdb.baselines.put permission is required in the ":@project" realm
 //   of the LUCI project the root invocation is being created in.
