@@ -522,6 +522,199 @@ CREATE TABLE RootInvocationUpdateRequests(
   -- RPC retry will fail as it will not be authorizable.
   ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 9 DAY));
 
+-- Stores test results in a root invocation.
+CREATE TABLE TestResultsV2 (
+  -- The root invocation-shard this test result is created in.
+  --
+  -- Test results are stored sharded to avoid root invocations with many
+  -- contributing work units having upload throughput bottlenecked to
+  -- the write throughput of one Spanner server.
+  -- Sharding is also used to improve the performance of computing
+  -- test aggregations for invocations with millions of results.
+  --
+  -- The assignment of test results to shards is guaranteed to place all
+  -- results and exonerations for the same test in the same shard. However,
+  -- it does *not* ensure the shard will be the same as the shard of the
+  -- work unit. Refer to the implementation for details.
+  RootInvocationShardId STRING(MAX) NOT NULL,
+
+  -- Module name.
+  ModuleName STRING(MAX) NOT NULL,
+
+  -- The module scheme.
+  -- Must match one of the schemes in the ResultDB service configuration (see
+  -- go/resultdb-schemes).
+  ModuleScheme STRING(MAX) NOT NULL,
+
+  -- Module variant hash.
+  -- A hash of the key:variant pairs in the module variant.
+  -- Computed as hex(sha256(<concatenated_key_value_pairs>)[:8]),
+  -- where concatenated_key_value_pairs is the result of concatenating
+  -- variant pairs formatted as "<key>:<value>\n" in ascending key order.
+  ModuleVariantHash STRING(16) NOT NULL,
+
+  -- Intermediate hierarchy - coarse name.
+  --
+  -- A scheme dependent value used to organise the test into a coarse group of related tests,
+  -- such as a package or directory.
+  CoarseName STRING(MAX) NOT NULL,
+
+  -- Intermediate hierarchy - fine name.
+  --
+  -- A finer grouping within the above coarse grouping (if any), e.g. class or file.
+  -- If the scheme does not define a fine grouping, this may be blank.
+  FineName STRING(MAX) NOT NULL,
+
+  -- The identifier of test case within the above fine grouping.
+  --
+  -- For example "testBadArgument" or "CloseParentWindow".
+  --
+  -- This is the finest granularity component of the test identifier, and typically
+  -- refers to sub-file granularity unless no such granularity exists.
+  CaseName STRING(MAX) NOT NULL,
+
+  -- The identifier of the work unit in which this result was uploaded.
+  WorkUnitId STRING(MAX) NOT NULL,
+
+  -- A suffix for the primary key to allow multiple test results for the same
+  -- test ID in a given work unit.
+  ResultId STRING(MAX) NOT NULL,
+
+  -- key:value pairs in the module variant.
+  -- See also ModuleIdentifier.module_variant in common.proto.
+  ModuleVariant ARRAY<STRING(MAX)> NOT NULL,
+
+  -- The timestamp this test result row was created.
+  CreateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+
+  -- Security realm this test result belongs to. This is currently always the same
+  -- as the realm of the work unit. Used to enforce access control.
+  Realm STRING(64) NOT NULL,
+
+  -- Test status V2, see `status_v2` in test_result.proto.
+  StatusV2 INT64 NOT NULL,
+
+  -- Compressed summary of the test result for humans, in HTML.
+  -- See span.Compressed type for details of compression.
+  SummaryHTML BYTES(MAX),
+
+  -- When the test execution started.
+  StartTime TIMESTAMP,
+
+  -- How long the test execution took, in nanoseconds.
+  RunDurationNanos INT64,
+
+  -- Tags associated with the test result, for example GTest-specific test
+  -- status.
+  Tags ARRAY<STRING(MAX)>,
+
+  -- Compressed metadata for the test case.
+  -- For example original test name, test location, etc.
+  -- See TestResult.test_metadata for details.
+  -- See span.Compressed type for details of compression.
+  TestMetadata BYTES(MAX),
+
+  -- Compressed information on how the test failed.
+  -- For example error messages, stack traces, etc.
+  -- See `failure_reason` in test_results.proto for details.
+  -- See span.Compressed type for details of compression.
+  FailureReason BYTES(MAX),
+
+  -- A serialized then compressed google.protobuf.Struct that stores structured,
+  -- domain-specific properties of the test result.
+  -- See spanutil.Compressed type for details of compression.
+  Properties BYTES(MAX),
+
+  -- Reasoning behind a test skip, in machine-readable form.
+  -- Deprecated in favour of SkippedReason.
+  SkipReason INT64,
+
+  -- Compressed information about why a test was skipped.
+  -- See `skipped_reason` in test_results.proto for details.
+  -- See span.Compressed type for details of compression.
+  SkippedReason BYTES(MAX),
+
+  -- Compressed test framework-specific data elements.
+  -- See `framework_extensions` in test_results.proto for details.
+  -- See spanutil.Compressed type for details of compression.
+  FrameworkExtensions BYTES(MAX),
+) PRIMARY KEY (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, CoarseName, FineName, CaseName, WorkUnitId, ResultId),
+  INTERLEAVE IN PARENT RootInvocationShards ON DELETE CASCADE;
+
+-- Stores test exonerations in a root invocation.
+CREATE TABLE TestExonerationsV2 (
+  -- The root invocation-shard this test exoneration is created in.
+  --
+  -- The assignment of test exonerations to shards is guaranteed to place all
+  -- results and exonerations for the same test in the same shard. However,
+  -- it does *not* ensure the shard will be the same as the shard of the
+  -- work unit. Refer to the implementation for details.
+  RootInvocationShardId STRING(MAX) NOT NULL,
+
+  -- Module name.
+  ModuleName STRING(MAX) NOT NULL,
+
+  -- The module scheme.
+  -- Must match one of the schemes in the ResultDB service configuration (see
+  -- go/resultdb-schemes).
+  ModuleScheme STRING(MAX) NOT NULL,
+
+  -- Module variant hash.
+  -- A hash of the key:variant pairs in the module variant.
+  -- Computed as hex(sha256(<concatenated_key_value_pairs>)[:8]),
+  -- where concatenated_key_value_pairs is the result of concatenating
+  -- variant pairs formatted as "<key>:<value>\n" in ascending key order.
+  ModuleVariantHash STRING(16) NOT NULL,
+
+  -- Intermediate hierarchy - coarse name.
+  --
+  -- A scheme dependent value used to organise the test into a coarse group of related tests,
+  -- such as a package or directory.
+  CoarseName STRING(MAX) NOT NULL,
+
+  -- Intermediate hierarchy - fine name.
+  --
+  -- A finer grouping within the above coarse grouping (if any), e.g. class or file.
+  -- If the scheme does not define a fine grouping, this may be blank.
+  FineName STRING(MAX) NOT NULL,
+
+  -- The identifier of test case within the above fine grouping.
+  --
+  -- For example "testBadArgument" or "CloseParentWindow".
+  --
+  -- This is the finest granularity component of the test identifier, and typically
+  -- refers to sub-file granularity unless no such granularity exists.
+  CaseName STRING(MAX) NOT NULL,
+
+  -- The identifier of the work unit in which this exoneration was uploaded.
+  WorkUnitId STRING(MAX) NOT NULL,
+
+  -- A suffix for the primary key to allow multiple test exonerations for the same
+  -- test ID in a given work unit.
+  ExonerationId STRING(MAX) NOT NULL,
+
+  -- key:value pairs in the module variant.
+  -- See also ModuleIdentifier.module_variant in common.proto.
+  ModuleVariant ARRAY<STRING(MAX)> NOT NULL,
+
+  -- The timestamp this test exoneration row was created.
+  CreateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+
+  -- Security realm this test exoneration belongs to. This is currently always the same
+  -- as the realm of the work unit. Used to enforce access control.
+  Realm STRING(64) NOT NULL,
+
+  -- Compressed explanation of the exoneration for humans, in HTML.
+  -- See span.Compressed type for details of compression.
+  ExplanationHTML BYTES(MAX),
+
+  -- The reason the test variant was exonerated.
+  -- See resultdb.v1.ExonerationReason.
+  Reason INT64 NOT NULL,
+) PRIMARY KEY (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, CoarseName, FineName, CaseName, WorkUnitId, ExonerationId),
+  INTERLEAVE IN PARENT RootInvocationShards ON DELETE CASCADE;
+
+
 -- Stores the invocations.
 -- Invocations are a legacy concept, representing a container of test results.
 -- This is the root table for much of the other legacy data and tables, which define
