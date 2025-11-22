@@ -62,6 +62,20 @@ func Submit(ctx context.Context, s Submitter, payload *reminder.Payload, path Tx
 	ctx, cancel := context.WithTimeout(ctx, time.Second*20)
 	defer cancel()
 
+	// These are quick retries in addition to more slow retries through the
+	// sweeper. Do only few of them and without any waiting in-between.
+	retries := 0
+	for {
+		err := submitAttempt(ctx, s, payload, path)
+		if err == nil || !transient.Tag.In(err) || retries >= 3 {
+			return err
+		}
+		retries++
+	}
+}
+
+// submitAttempt makes one attempt at submitting the task.
+func submitAttempt(ctx context.Context, s Submitter, payload *reminder.Payload, path TxnPath) error {
 	start := clock.Now(ctx)
 	err := s.Submit(ctx, payload)
 	code := status.Code(err)

@@ -160,7 +160,7 @@ func TestDistributed(t *testing.T) {
 				err := dist.ExecSweepTask(ctx, sweepTask(0, 256, 0))
 				assert.Loosely(t, err, should.NotBeNil)
 				assert.Loosely(t, enqueued, should.BeEmpty)
-				assert.Loosely(t, sub.req, should.HaveLength(100))           // tried
+				assert.Loosely(t, sub.req, should.HaveLength(400))           // tried, with retries
 				assert.Loosely(t, db.AllReminders(), should.HaveLength(100)) // but failed and kept reminders
 			})
 		})
