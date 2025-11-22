@@ -89,5 +89,5 @@ func CancelStage(stageID string, isWorknode bool, workplanID ...string) *Diff {
 	sw.SetIdentifier(sid)
 	return template.New(builder{
 		Stages: []*orchestratorpb.WriteNodesRequest_StageWrite{sw},
-	})
+	}, errs...)
 }
