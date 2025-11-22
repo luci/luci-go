@@ -253,7 +253,7 @@ const (
 	StageNotWorknode
 )
 
-func (m WorknodeMode) Apply(id *idspb.Stage) {
+func (m WorknodeMode) apply(id *idspb.Stage) {
 	if id == nil {
 		return
 	}
@@ -276,7 +276,7 @@ func StageErr(mode WorknodeMode, stageID string) (*idspb.Stage, error) {
 		return nil, fmt.Errorf("id.Stage: %w", err)
 	}
 	ret := idspb.Stage_builder{Id: &stageID}.Build()
-	mode.Apply(ret)
+	mode.apply(ret)
 	return ret, nil
 }
 

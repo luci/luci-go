@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package attempt has types and functions for building writable messages
+// for a TurboCI Stage Attempt, notably [StageAttemptExecutionPolicy].
+//
+// Used in conjunction with [go.chromium.org/luci/turboci].
+//
+// [StageAttemptExecutionPolicy]: https://chromium.googlesource.com/infra/turboci/proto/+/refs/heads/main/turboci/graph/orchestrator/v1/stage_attempt_execution_policy.proto#14
 package attempt
 
 import (
@@ -81,7 +87,7 @@ func maybeDuration(name string, dur time.Duration) (*durationpb.Duration, error)
 	return durationpb.New(dur), nil
 }
 
-// HeartbeatTearingDown returns a Diff which sets the
+// TimeoutPendingThrottled returns a Diff which sets the
 // `timeout.pending_throttled` of the StageAttemptExecutionPolicy.
 func TimeoutPendingThrottled(dur time.Duration) *PolicyDiff {
 	durPB, err := maybeDuration("PendingThrottled", dur)
@@ -92,7 +98,7 @@ func TimeoutPendingThrottled(dur time.Duration) *PolicyDiff {
 	}, err)
 }
 
-// HeartbeatScheduled returns a Diff which sets the `timeout.scheduled` of the
+// TimeoutScheduled returns a Diff which sets the `timeout.scheduled` of the
 // StageAttemptExecutionPolicy.
 func TimeoutScheduled(dur time.Duration) *PolicyDiff {
 	durPB, err := maybeDuration("Scheduled", dur)
@@ -103,7 +109,7 @@ func TimeoutScheduled(dur time.Duration) *PolicyDiff {
 	}, err)
 }
 
-// HeartbeatRunning returns a Diff which sets the `timeout.scheduled` of the
+// TimeoutRunning returns a Diff which sets the `timeout.scheduled` of the
 // StageAttemptExecutionPolicy.
 func TimeoutRunning(dur time.Duration) *PolicyDiff {
 	durPB, err := maybeDuration("Running", dur)
@@ -114,7 +120,7 @@ func TimeoutRunning(dur time.Duration) *PolicyDiff {
 	}, err)
 }
 
-// HeartbeatTearingDown returns a Diff which sets the `timeout.scheduled` of the
+// TimeoutTearingDown returns a Diff which sets the `timeout.scheduled` of the
 // StageAttemptExecutionPolicy.
 func TimeoutTearingDown(dur time.Duration) *PolicyDiff {
 	durPB, err := maybeDuration("TearingDown", dur)

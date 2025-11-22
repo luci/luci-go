@@ -150,7 +150,7 @@ func Combine[T proto.Message](diffs ...*Diff[T]) *Diff[T] {
 		}
 		if !sameTemplate(tmpl, diff.applyMode) {
 			return &Diff[T]{
-				err: errors.New("cannot delta.Combine diffs from a different templates."),
+				err: errors.New("cannot delta.Combine diffs from different templates"),
 			}
 		}
 		if tmpl == nil && diff.applyMode != nil {

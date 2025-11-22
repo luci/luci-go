@@ -33,7 +33,7 @@ func Reason(reason string, details ...proto.Message) *Diff {
 	return ReasonRealm("", reason, details...)
 }
 
-// Reason returns a Diff which adds a new Reason to this write within
+// ReasonRealm returns a Diff which adds a new Reason to this write within
 // a specific realm.
 //
 // Every WriteNodesRequest requires at least one Reason.

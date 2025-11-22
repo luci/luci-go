@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package check has types and functions for building writable messages
+// for a TurboCI Check, notably [WriteNodesRequest.CheckWrite].
+//
+// Used in conjunction with [go.chromium.org/luci/turboci].
+//
+// [WriteNodesRequest.CheckWrite]: https://chromium.googlesource.com/infra/turboci/proto/+/refs/heads/main/turboci/graph/orchestrator/v1/write_nodes_request.proto#214
 package check
 
 import (
@@ -133,7 +139,7 @@ func FinalResults(data ...proto.Message) *Diff {
 	return FinalRealmResults("", data...)
 }
 
-// FinalResults returns a Diff to mark the Results (with explicit realm) as
+// FinalRealmResults returns a Diff to mark the Results (with explicit realm) as
 // final (from the current stage attempt).
 //
 // As a convenience, you may also write zero or more result data.

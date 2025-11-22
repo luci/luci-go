@@ -55,7 +55,7 @@ func TargetInWorkplan(workplanID string) *TargetDiff {
 	})
 }
 
-// IsWorknode marks this Stage as being of type `WorkNode`.
+// TargetIsWorknode marks this Stage as being of type `WorkNode`.
 //
 // Normally this is assumed false by [Edge], but this is provided as a way to
 // override this determination.

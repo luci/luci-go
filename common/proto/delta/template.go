@@ -29,7 +29,7 @@ type Template[B interface{ Build() T }, T proto.Message] struct {
 	RawTemplate[T]
 }
 
-// Template returns a new Template[B, T], can be used like:
+// MakeTemplate returns a new Template[B, T], can be used like:
 //
 //	var template = delta.NewTemplate[MyMessage_builder](map[string]ApplyMode{
 //	  "field": delta.ModeAppend,
@@ -50,7 +50,7 @@ type RawTemplate[T proto.Message] struct {
 	applyMode []ApplyMode
 }
 
-// Template returns a new RawTemplate[T], can be used like:
+// MakeRawTemplate returns a new RawTemplate[T], can be used like:
 //
 //	var template = delta.NewTemplate[*MyMessage](map[string]ApplyMode{
 //	  "field": delta.ModeAppend,

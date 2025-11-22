@@ -29,10 +29,10 @@ import (
 type ApplyMode byte
 
 const (
-	// MergeDefault is:
-	//   * MergeAppend for list fields
-	//   * MergeUpdate for map fields
-	//   * MergeSet for all other field types
+	// ModeDefault is:
+	//   * ModeAppend for list fields
+	//   * ModeUpdate for map fields
+	//   * ModeSet for all other field types
 	ModeDefault ApplyMode = iota
 
 	// ModeSet will replace the field in the target message.

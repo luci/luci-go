@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package current has types and functions for building writable messages
+// for a TurboCI Stage, notably [WriteNodesRequest.CurrentStageWrite].
+//
+// Used in conjunction with [go.chromium.org/luci/turboci].
+//
+// [WriteNodesRequest.CurrentStageWrite]: https://chromium.googlesource.com/infra/turboci/proto/+/refs/heads/main/turboci/graph/orchestrator/v1/write_nodes_request.proto#398
 package current
 
 import (

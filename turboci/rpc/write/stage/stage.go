@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package stage has types and functions for building writable messages
+// for a TurboCI Stage, notably [WriteNodesRequest.StageWrite].
+//
+// Used in conjunction with [go.chromium.org/luci/turboci].
+//
+// [WriteNodesRequest.StageWrite]: https://chromium.googlesource.com/infra/turboci/proto/+/refs/heads/main/turboci/graph/orchestrator/v1/write_nodes_request.proto#214
 package stage
 
 import (
@@ -45,6 +51,10 @@ var template = delta.MakeTemplate[builder](map[string]delta.ApplyMode{
 	"requested_stage_execution_policy": delta.ModeMerge,
 })
 
+// Realm is used to set the realm for a Stage.
+//
+// If this is used for an existing Stage, it must exactly match the
+// realm of the existing Stage.
 func Realm(realm string) *Diff {
 	return template.New(builder{
 		Realm: &realm,
@@ -120,7 +130,7 @@ func ShouldPlan(checks ...string) *Diff {
 	}, errs...)
 }
 
-// ShouldPlan returns a Diff which adds an [Assignment] to this Stage.
+// ShouldFinalize returns a Diff which adds an [Assignment] to this Stage.
 //
 // All the checks indicated here by id will be assigned to this Stage with
 // a `goal_state` of CHECK_STATE_FINAL.

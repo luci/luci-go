@@ -53,9 +53,9 @@ func URLMsg(msg proto.Message) string {
 // an invariant violation, as the data should have been marshaled from the same
 // type.
 func FromMultiple[T proto.Message](data ...*orchestratorpb.Datum) (ret T) {
-	typeUrl := URL[T]()
+	typeURL := URL[T]()
 	for _, datum := range data {
-		if datum.GetValue().GetValue().GetTypeUrl() == typeUrl {
+		if datum.GetValue().GetValue().GetTypeUrl() == typeURL {
 			return ExtractValue[T](datum.GetValue())
 		}
 	}
