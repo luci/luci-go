@@ -47,7 +47,7 @@ type (
 //   - [go.chromium.org/luci/turboci/rpc/write/stage.Edge]
 var Template = delta.MakeTemplate[Builder](nil)
 
-// Group returns an Diff for a WriteNodesRequest.DependencyGroup which adds
+// Group returns a Diff for a WriteNodesRequest.DependencyGroup which adds
 // a new Group to the DependencyGroup which contains all `diffs`.
 //
 // See also:
@@ -63,7 +63,7 @@ func Group(diffs ...*Diff) *Diff {
 	}, err)
 }
 
-// Threshold returns an Diff for a WriteNodesRequest.DependencyGroup which sets
+// Threshold returns a Diff for a WriteNodesRequest.DependencyGroup which sets
 // the threshold.
 //
 // See [Group].

@@ -30,7 +30,7 @@ import (
 
 // NewStage returns a Diff which adds a new Stage to the write.
 //
-// If not changed via an diff, the Stage will:
+// If not changed via a diff, the Stage will:
 //   - inherit the current Stage's realm
 //   - be inserted into the current Stage's workplan
 //   - have the Stage's `is_worknode` automatically inferred from the type of

@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/turboci/rpc/write/current"
 )
 
-// Current returns an Diff which sets the CurrentStage field for this write.
+// Current returns a Diff which sets the CurrentStage field for this write.
 //
 // Note that Current covers many aspects of the current attempt as well as the
 // current stage.
