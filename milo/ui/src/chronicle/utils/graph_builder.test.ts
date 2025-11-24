@@ -439,4 +439,125 @@ describe('TurboCIGraphBuilder', () => {
       expect(edges[0].target).toBe('S1');
     });
   });
+
+  describe('Node Collapsing', () => {
+    it('should assign parentHash to nodes with identical dependencies', () => {
+      const b1Ident = createCheckIdentifier('B1');
+      const graph: TurboCIGraphView = {
+        checks: {
+          B1: createCheckView('B1', CheckKind.CHECK_KIND_BUILD),
+          T1: createCheckView('T1', CheckKind.CHECK_KIND_TEST, [b1Ident]),
+          T2: createCheckView('T2', CheckKind.CHECK_KIND_TEST, [b1Ident]),
+        },
+        stages: {},
+      };
+
+      const { nodes } = new TurboCIGraphBuilder(graph).build();
+
+      const t1 = nodes.find((n) => n.id === 'T1')!;
+      const t2 = nodes.find((n) => n.id === 'T2')!;
+
+      expect(t1.data.parentHash).toBeDefined();
+      expect(t2.data.parentHash).toBeDefined();
+      expect(t1.data.parentHash).toBe(t2.data.parentHash);
+    });
+
+    it('should leave parentHash undefined for unique dependency sets', () => {
+      const b1Ident = createCheckIdentifier('B1');
+      const b2Ident = createCheckIdentifier('B2');
+
+      const graph: TurboCIGraphView = {
+        checks: {
+          B1: createCheckView('B1'),
+          B2: createCheckView('B2'),
+          T1: createCheckView('T1', CheckKind.CHECK_KIND_TEST, [b1Ident]),
+          T2: createCheckView('T2', CheckKind.CHECK_KIND_TEST, [b2Ident]),
+        },
+        stages: {},
+      };
+
+      const { nodes } = new TurboCIGraphBuilder(graph).build();
+      const t1 = nodes.find((n) => n.id === 'T1')!;
+      const t2 = nodes.find((n) => n.id === 'T2')!;
+
+      expect(t1.data.parentHash).toBeUndefined();
+      expect(t2.data.parentHash).toBeUndefined();
+    });
+
+    it('should collapse nodes when their hash is in collapsedParentHashes', () => {
+      const b1Ident = createCheckIdentifier('B1');
+      const graph: TurboCIGraphView = {
+        checks: {
+          B1: createCheckView('B1'),
+          T1: createCheckView('T1', CheckKind.CHECK_KIND_TEST, [b1Ident]),
+          T2: createCheckView('T2', CheckKind.CHECK_KIND_TEST, [b1Ident]),
+        },
+        stages: {},
+      };
+
+      // First build to get the hash
+      const builder1 = new TurboCIGraphBuilder(graph);
+      const res1 = builder1.build();
+      const hash = res1.nodes.find((n) => n.id === 'T1')!.data.parentHash;
+
+      expect(hash).toBeDefined();
+
+      // Second build with collapse enabled
+      const builder2 = new TurboCIGraphBuilder(graph);
+      const { nodes, edges } = builder2.build({
+        collapsedParentHashes: new Set([hash]),
+      });
+
+      // T1 and T2 should be gone
+      expect(nodes.find((n) => n.id === 'T1')).toBeUndefined();
+      expect(nodes.find((n) => n.id === 'T2')).toBeUndefined();
+
+      // Group node should exist
+      const groupNodeId = `collapsed-group-${hash}`;
+      const groupNode = nodes.find((n) => n.id === groupNodeId);
+      expect(groupNode).toBeDefined();
+      expect(groupNode?.data.isCollapsed).toBe(true);
+
+      // Edge should point B1 -> Group
+      const edge = edges.find(
+        (e) => e.source === 'B1' && e.target === groupNodeId,
+      );
+      expect(edge).toBeDefined();
+    });
+
+    it('should redirect edges from collapsed nodes', () => {
+      // S1 depends on T1. T1 is collapsed with T2.
+      // S1 should depend on the Group Node.
+
+      const b1Ident = createCheckIdentifier('B1');
+      const t1Ident = createCheckIdentifier('T1');
+
+      const graph: TurboCIGraphView = {
+        checks: {
+          B1: createCheckView('B1'),
+          T1: createCheckView('T1', CheckKind.CHECK_KIND_TEST, [b1Ident]),
+          T2: createCheckView('T2', CheckKind.CHECK_KIND_TEST, [b1Ident]),
+        },
+        stages: {
+          S_Downstream: createStageView('S_Downstream', [], [t1Ident]),
+        },
+      };
+
+      // Get hash
+      const hash = new TurboCIGraphBuilder(graph)
+        .build()
+        .nodes.find((n) => n.id === 'T1')!.data.parentHash;
+      const groupNodeId = `collapsed-group-${hash}`;
+
+      const { edges } = new TurboCIGraphBuilder(graph).build({
+        collapsedParentHashes: new Set([hash]),
+      });
+
+      // Expect edge Group -> S_Downstream
+      const edge = edges.find(
+        (e) => e.source === groupNodeId && e.target === 'S_Downstream',
+      );
+      expect(edge).toBeDefined();
+    });
+  });
 });

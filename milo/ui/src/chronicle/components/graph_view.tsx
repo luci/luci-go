@@ -46,6 +46,7 @@ import { WorkflowType } from '../fake_turboci_graph';
 import { TurboCIGraphBuilder } from '../utils/graph_builder';
 
 import { ChronicleContext } from './chronicle_context';
+import { ContextMenu, ContextMenuState } from './context_menu';
 import { InspectorPanel } from './inspector_panel/inspector_panel';
 
 // We must explicit set all top/right/bottom/left border properties here instead
@@ -76,6 +77,12 @@ function Graph() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | undefined>(
     undefined,
   );
+  const [collapsedParentHashes, setCollapsedParentHashes] = useState<
+    Set<number>
+  >(new Set());
+  const [contextMenuState, setContextMenuState] = useState<
+    ContextMenuState | undefined
+  >(undefined);
 
   const { layoutedNodes, layoutedEdges } = useMemo(() => {
     if (!graph) return { layoutedNodes: [], layoutedEdges: [] };
@@ -83,9 +90,10 @@ function Graph() {
     // Convert TurboCI Graph to list of nodes and edges that React Flow understands.
     const { nodes, edges } = new TurboCIGraphBuilder(graph).build({
       showAssignmentEdges,
+      collapsedParentHashes,
     });
     return { layoutedNodes: nodes, layoutedEdges: edges };
-  }, [graph, showAssignmentEdges]);
+  }, [graph, showAssignmentEdges, collapsedParentHashes]);
 
   useDebounce(
     () => {
@@ -186,14 +194,52 @@ function Graph() {
   // https://reactflow.dev/learn/advanced-use/performance#memoize-functions
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
     setSelectedNodeId(node.id);
+    setContextMenuState(undefined);
+  }, []);
+
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      event.preventDefault();
+      if (node.data.parentHash) {
+        setContextMenuState({
+          mouseX: event.clientX - 2,
+          mouseY: event.clientY - 4,
+          node,
+        });
+      } else {
+        setContextMenuState(undefined);
+      }
+    },
+    [],
+  );
+
+  const onPaneClick = useCallback(() => {
+    setSelectedNodeId(undefined);
+    setContextMenuState(undefined);
   }, []);
 
   const onInspectorClose = useCallback(() => {
     setSelectedNodeId(undefined);
   }, []);
 
-  const onPaneClick = useCallback(() => {
-    setSelectedNodeId(undefined);
+  const handleContextMenuClose = useCallback(() => {
+    setContextMenuState(undefined);
+  }, []);
+
+  const handleCollapseSimilar = useCallback((parentHash: number) => {
+    setCollapsedParentHashes((prev) => {
+      const next = new Set(prev);
+      next.add(parentHash);
+      return next;
+    });
+  }, []);
+
+  const handleExpandGroup = useCallback((parentHash: number) => {
+    setCollapsedParentHashes((prev) => {
+      const next = new Set(prev);
+      next.delete(parentHash);
+      return next;
+    });
   }, []);
 
   const selectedNode = useMemo(() => {
@@ -212,6 +258,7 @@ function Graph() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onNodeClick={onNodeClick}
+          onNodeContextMenu={onNodeContextMenu}
           onPaneClick={onPaneClick}
           fitView
           panOnScroll
@@ -293,6 +340,12 @@ function Graph() {
             </Paper>
           </ReactFlowPanel>
         </ReactFlow>
+        <ContextMenu
+          contextMenuState={contextMenuState}
+          onClose={handleContextMenuClose}
+          onCollapseSimilar={handleCollapseSimilar}
+          onExpandGroup={handleExpandGroup}
+        />
       </Panel>
       {selectedNodeId && (
         <>

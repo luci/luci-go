@@ -106,6 +106,11 @@ const COLORS = {
     border: '#81c784',
     text: '#1b5e20',
   },
+  group: {
+    bg: '#EFEBE9',
+    border: '#8D6E63',
+    text: '#3E2723',
+  },
 };
 
 const NODE_STYLES = {
@@ -198,6 +203,19 @@ const NODE_STYLES = {
     borderRadius: '0',
     fontWeight: 'bold',
   },
+  // Style for a collapsed group of similar nodes
+  collapsedGroup: {
+    ...BASE_NODE_STYLE,
+    background: COLORS.group.bg,
+    color: COLORS.group.text,
+    borderTop: createCssBorder(COLORS.group.border),
+    borderRight: createCssBorder(COLORS.group.border),
+    borderBottom: createCssBorder(COLORS.group.border),
+    borderLeft: createCssBorder(COLORS.group.border),
+    borderRadius: '4px',
+    fontWeight: 'bold',
+    justifyContent: 'center',
+  },
 };
 
 // Effective height for stacking (height - 1px border overlap)
@@ -222,6 +240,11 @@ interface DagreAssignmentGroupData {
 export interface GraphBuilderOptions {
   /** Whether to draw assignment edges for stages assigned to multiple checks. */
   showAssignmentEdges?: boolean;
+  /**
+   * Set of parent hashes that should be collapsed into a single node.
+   * Nodes with the same dependencies/parents will have the same hash and will be collapsed together.
+   */
+  collapsedParentHashes?: Set<number>;
 }
 
 // Helper to generate full border string for a given color
@@ -247,13 +270,24 @@ function getCheckNodeLabel(check: Check): string {
   }
 }
 
-function createCheckNode(checkView: CheckView): Node {
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash;
+  }
+  return hash;
+}
+
+function createCheckNode(checkView: CheckView, parentHash?: number): Node {
   const check = checkView.check!;
   return {
     id: check.identifier!.id!,
     data: {
       label: getCheckNodeLabel(check),
       view: checkView,
+      parentHash,
     },
     style: CHECK_NODE_STYLE,
     ...COMMON_NODE_PROPERTIES,
@@ -273,6 +307,23 @@ function createStageNode(stageView: StageView): Node {
   };
 }
 
+function createCollapsedGroupNode(
+  id: string,
+  label: string,
+  parentHash: number,
+): Node {
+  return {
+    id,
+    data: {
+      label,
+      isCollapsed: true,
+      parentHash,
+    },
+    style: NODE_STYLES.collapsedGroup,
+    ...COMMON_NODE_PROPERTIES,
+  };
+}
+
 /**
  * Builds the React Flow graph from the TurboCI GraphView.
  * Groups stages to their assigned checks and positions them together.
@@ -284,6 +335,9 @@ export class TurboCIGraphBuilder {
   // Maps a Node ID (Stage or Check) to the ID of the group it belongs to.
   // We use the check ID as the ID of the group.
   private nodeToGroupIdMap: Map<string, string> = new Map();
+  // Maps a Node ID (Stage or Check) to the ID of the synthetic collapsed group
+  // node it belongs to.
+  private nodeToCollapsedIdMap: Map<string, string> = new Map();
   private allNodeIds: Set<string> = new Set();
 
   constructor(private readonly graphView: TurboCIGraphView) {}
@@ -296,8 +350,10 @@ export class TurboCIGraphBuilder {
     this.edges = [];
     this.assignmentGroups = [];
     this.nodeToGroupIdMap.clear();
+    this.nodeToCollapsedIdMap.clear();
+    this.allNodeIds.clear();
 
-    this.createBaseNodes();
+    this.createBaseNodes(options.collapsedParentHashes || new Set());
     this.identifyAssignmentGroups(options);
     this.createEdges();
     this.applyDagreLayout();
@@ -305,17 +361,82 @@ export class TurboCIGraphBuilder {
     return { nodes: this.nodes, edges: this.edges };
   }
 
-  private createBaseNodes() {
-    // Create nodes for each stage
-    Object.entries(this.graphView.stages).forEach(([stageId, stageView]) => {
-      this.nodes.push(createStageNode(stageView));
-      this.allNodeIds.add(stageId);
+  private createBaseNodes(collapsedParentHashes: Set<number>) {
+    // 1. Place checks into groups by hashing their parent dependencies.
+    const hashToGroup = new Map<number, string[]>();
+    const nodeToHash = new Map<string, number>();
+
+    Object.entries(this.graphView.checks).forEach(([checkId, checkView]) => {
+      const deps = checkView.check?.dependencies?.edges || [];
+      // Create a unique signature based on sorted parent IDs
+      const parentIds = deps
+        .map((e) => e.check?.identifier?.id || e.stage?.identifier?.id)
+        .filter((id) => !!id)
+        .sort();
+
+      if (parentIds.length === 0) return;
+
+      const hash = hashString(parentIds.join('|'));
+      if (!hashToGroup.has(hash)) {
+        hashToGroup.set(hash, []);
+      }
+      hashToGroup.get(hash)!.push(checkId);
+      nodeToHash.set(checkId, hash);
     });
 
-    // Create nodes for each check
+    // 2. Process groupings to decide what to collapse
+    hashToGroup.forEach((checkIds, hash) => {
+      // We only form a collapsible group if there is more than one item.
+      if (checkIds.length <= 1) {
+        return;
+      }
+
+      // If this hash is in the collapsed set, create a single group node
+      if (collapsedParentHashes.has(hash)) {
+        const collapsedId = `collapsed-group-${hash}`;
+
+        // Map all constituents to this group ID so edges can be redirected
+        checkIds.forEach((id) => {
+          this.nodeToCollapsedIdMap.set(id, collapsedId);
+        });
+
+        // Add the synthetic node to the graph
+        this.nodes.push(
+          createCollapsedGroupNode(
+            collapsedId,
+            `Collapsed (${checkIds.length} items)`,
+            hash,
+          ),
+        );
+        this.allNodeIds.add(collapsedId);
+      }
+    });
+
+    // 3. Create all Check nodes (skipping those that were collapsed)
     Object.entries(this.graphView.checks).forEach(([checkId, checkView]) => {
-      this.nodes.push(createCheckNode(checkView));
+      if (this.nodeToCollapsedIdMap.has(checkId)) {
+        return;
+      }
+
+      // Include the parent hash when creating the check to support collapsing
+      // it (and its sibling nodes). However we only support this if it has > 1
+      // siblings in its group, otherwise just use undefined to indicate that
+      // it's not collapsible.
+      const hash = nodeToHash.get(checkId);
+      const groupSize = hash ? hashToGroup.get(hash)?.length || 0 : 0;
+      const parentHash = groupSize > 1 ? hash : undefined;
+      this.nodes.push(createCheckNode(checkView, parentHash));
       this.allNodeIds.add(checkId);
+    });
+
+    // 4. Create all Stage nodes
+    Object.entries(this.graphView.stages).forEach(([stageId, stageView]) => {
+      // If this stage is assigned to a check that is collapsed, we should
+      // skip creating the stage node as well.
+      if (!this.isAssignedToCollapsedGroup(stageView)) {
+        this.nodes.push(createStageNode(stageView));
+        this.allNodeIds.add(stageId);
+      }
     });
   }
 
@@ -338,15 +459,16 @@ export class TurboCIGraphBuilder {
         return;
       }
 
-      sv.stage.assignments.forEach((assignment) => {
-        if (assignment.target?.id) {
-          const checkId = assignment.target.id;
-          if (!checkAssignments.has(checkId)) {
-            checkAssignments.set(checkId, new Set());
-          }
-          checkAssignments.get(checkId)!.add(stageId);
-        }
-      });
+      // At this point we know there is only a singular check assigned to this stage.
+      const checkId = stageAssignedChecks[0];
+      // If the check is collapsed, we skip creating assignment groups for it,
+      // because the Stage node wasn't created anyway.
+      if (this.nodeToCollapsedIdMap.has(checkId)) return;
+
+      if (!checkAssignments.has(checkId)) {
+        checkAssignments.set(checkId, new Set());
+      }
+      checkAssignments.get(checkId)!.add(stageId);
     });
 
     // Create assignment groups
@@ -371,7 +493,9 @@ export class TurboCIGraphBuilder {
    * an edge.
    */
   private addAssignmentEdges(sourceNodeId: string, assignments: string[]) {
+    // Filter out assignments to collapsed nodes to prevent edges pointing to nowhere.
     assignments.forEach((assignment) => {
+      if (this.nodeToCollapsedIdMap.has(assignment)) return;
       if (!this.allNodeIds.has(assignment)) return;
 
       this.edges.push({
@@ -393,25 +517,41 @@ export class TurboCIGraphBuilder {
   ) {
     if (!deps) return;
 
+    // Remap source to collapsed group if applicable
+    let actualSourceId = sourceNodeId;
+    if (this.nodeToCollapsedIdMap.has(sourceNodeId)) {
+      actualSourceId = this.nodeToCollapsedIdMap.get(sourceNodeId)!;
+    }
+
     deps.edges.forEach((edge) => {
-      const targetId =
-        edge?.check?.identifier?.id || edge?.stage?.identifier?.id;
+      let targetId = edge?.check?.identifier?.id || edge?.stage?.identifier?.id;
+
+      if (!targetId) return;
+
+      // Remap target to collapsed group if applicable
+      if (this.nodeToCollapsedIdMap.has(targetId)) {
+        targetId = this.nodeToCollapsedIdMap.get(targetId)!;
+      }
 
       // Only create edge if target exists in graph
-      if (targetId && this.allNodeIds.has(targetId)) {
+      if (this.allNodeIds.has(targetId)) {
         // Do not create visual edges between nodes in the same group
-        const sourceGroup = this.nodeToGroupIdMap.get(sourceNodeId);
+        const sourceGroup = this.nodeToGroupIdMap.get(actualSourceId);
         const targetGroup = this.nodeToGroupIdMap.get(targetId);
 
         if (sourceGroup && targetGroup && sourceGroup === targetGroup) {
           return;
         }
 
+        const edgeId = `dep-${targetId}-${actualSourceId}`;
+        // Check if we already added this edge (deduplication for collapsed nodes)
+        if (this.edges.some((e) => e.id === edgeId)) return;
+
         // Edge goes from Dependency (target) -> Dependent (source)
         this.edges.push({
-          id: `dep-${targetId}-${sourceNodeId}`,
+          id: edgeId,
           source: targetId,
-          target: sourceNodeId,
+          target: actualSourceId,
           zIndex: 1,
           ...DEPENDENCY_EDGE_STYLE,
         });
@@ -420,9 +560,14 @@ export class TurboCIGraphBuilder {
   }
 
   private createEdges() {
-    Object.entries(this.graphView.stages).forEach(([stageId, sv]) =>
-      this.addDependencyEdges(stageId, sv.stage!.dependencies),
-    );
+    Object.entries(this.graphView.stages).forEach(([stageId, sv]) => {
+      // Don't process edges for stages that were hidden because they
+      // were assigned to a collapsed check.
+      if (this.isAssignedToCollapsedGroup(sv)) return;
+
+      this.addDependencyEdges(stageId, sv.stage!.dependencies);
+    });
+
     Object.entries(this.graphView.checks).forEach(([checkId, cv]) =>
       this.addDependencyEdges(checkId, cv.check!.dependencies),
     );
@@ -527,6 +672,12 @@ export class TurboCIGraphBuilder {
   private layoutStandaloneNode(node: Node, x: number, y: number) {
     node.data = { ...node.data, isGrouped: false };
     node.position = { x, y };
+
+    // Don't overwrite style if already styled as collapsed group.
+    if (node.data.isCollapsed) {
+      return;
+    }
+
     // Assuming ID conventions from FakeGraphGenerator: S_* are stages.
     // TODO - Make stage/check detection more robust
     node.style = node.id.startsWith('S')
@@ -575,5 +726,14 @@ export class TurboCIGraphBuilder {
     } else {
       return NODE_STYLES.stageGroupedMiddle;
     }
+  }
+
+  private isAssignedToCollapsedGroup(stageView: StageView): boolean {
+    const assignedCheckIds =
+      stageView.stage?.assignments
+        ?.map((a) => a.target?.id)
+        .filter((id): id is string => !!id) || [];
+
+    return assignedCheckIds.some((cid) => this.nodeToCollapsedIdMap.has(cid));
   }
 }
