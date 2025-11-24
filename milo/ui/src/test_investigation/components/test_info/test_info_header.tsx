@@ -29,6 +29,7 @@ import {
 } from '@/test_investigation/context';
 import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 import {
+  getBuildDetailsUrl,
   getCommitGitilesUrlFromInvocation,
   getCommitInfoFromInvocation,
   getFullMethodName,
@@ -64,6 +65,16 @@ export function TestInfoHeader() {
   // TODO(b/445559255): update copied text when module page is available.
   const fullMethodName = getFullMethodName(testVariant);
 
+  const primaryBuildId = invocation.properties?.primaryBuild?.buildId;
+  const primaryBuildTarget = invocation.properties?.primaryBuild?.buildTarget;
+  let extraBuildId;
+  let extraBuildTarget;
+  const extraBuildCount = invocation.properties?.extraBuilds.length;
+  if (extraBuildCount > 0) {
+    extraBuildId = invocation.properties?.extraBuilds[0].buildId;
+    extraBuildTarget = invocation.properties?.extraBuilds[0].buildTarget;
+  }
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, pl: 3 }}>
       <TestInfoBreadcrumbs
@@ -96,6 +107,40 @@ export function TestInfoHeader() {
             </Link>
           </SummaryLineItem>
         )}
+        {primaryBuildId && primaryBuildTarget && (
+          <SummaryLineItem label="Build">
+            <Link
+              href={getBuildDetailsUrl(primaryBuildId, primaryBuildTarget)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {primaryBuildId}
+            </Link>
+          </SummaryLineItem>
+        )}
+        {extraBuildId &&
+          extraBuildTarget &&
+          (extraBuildCount === 1 ? (
+            <SummaryLineItem label="Extra build">
+              <Link
+                href={getBuildDetailsUrl(extraBuildId, extraBuildTarget)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {extraBuildId}
+              </Link>
+            </SummaryLineItem>
+          ) : (
+            <Typography variant="body2" component="span" color="text.secondary">
+              <Link
+                href={getBuildDetailsUrl(extraBuildId, extraBuildTarget)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {`${extraBuildCount} extra builds`}
+              </Link>
+            </Typography>
+          ))}
       </PageSummaryLine>
     </Box>
   );

@@ -417,3 +417,10 @@ export function getAndroidTestHubUrl(inputParams: AndroidTestHubQueryParams) {
 
   return `${ANDROID_BUILD_CORP_HOST}/builds/tests/search?${params.toString()}`;
 }
+
+export function getBuildDetailsUrl(buildId: string, target: string) {
+  return (
+    `${ANDROID_BUILD_CORP_HOST}` +
+    `/builds/build-details/${encodeURIComponent(buildId)}/targets/${encodeURIComponent(target)}`
+  );
+}
