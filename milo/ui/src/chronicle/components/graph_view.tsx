@@ -23,7 +23,7 @@ import {
   Select,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useDebounce } from 'react-use';
 import {
@@ -40,12 +40,12 @@ import {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-import { useQueryNodes } from '@/common/hooks/grpc_query/turbo_ci/turbo_ci';
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 
-import { FakeGraphGenerator, WorkflowType } from '../fake_turboci_graph';
+import { WorkflowType } from '../fake_turboci_graph';
 import { TurboCIGraphBuilder } from '../utils/graph_builder';
 
+import { ChronicleContext } from './chronicle_context';
 import { InspectorPanel } from './inspector_panel/inspector_panel';
 
 // We must explicit set all top/right/bottom/left border properties here instead
@@ -65,6 +65,7 @@ const HIGHLIGHTED_EDGE_STYLE = {
 };
 
 function Graph() {
+  const { graph, workflowType, setWorkflowType } = useContext(ChronicleContext);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { fitView } = useReactFlow();
@@ -76,42 +77,15 @@ function Graph() {
     undefined,
   );
 
-  const [workflowType, setWorkflowType] = useState<WorkflowType>(
-    WorkflowType.ANDROID,
-  );
-
-  // Example usage query nodes hook. Unused currently.
-  useQueryNodes({
-    query: [
-      {
-        select: {
-          workplan: {
-            inWorkplans: [{ id: 'fake_work_plan_id' }],
-          },
-          nodes: [],
-          checkPatterns: [],
-          stagePatterns: [],
-        },
-        typeUrls: [],
-      },
-    ],
-  });
-
-  const turboCiGraph = useMemo(() => {
-    const generator = new FakeGraphGenerator({
-      workPlanIdStr: 'test-plan',
-      workflowType: workflowType,
-    });
-    return generator.generate();
-  }, [workflowType]);
-
   const { layoutedNodes, layoutedEdges } = useMemo(() => {
+    if (!graph) return { layoutedNodes: [], layoutedEdges: [] };
+
     // Convert TurboCI Graph to list of nodes and edges that React Flow understands.
-    const { nodes, edges } = new TurboCIGraphBuilder(turboCiGraph).build({
+    const { nodes, edges } = new TurboCIGraphBuilder(graph).build({
       showAssignmentEdges,
     });
     return { layoutedNodes: nodes, layoutedEdges: edges };
-  }, [turboCiGraph, showAssignmentEdges]);
+  }, [graph, showAssignmentEdges]);
 
   useDebounce(
     () => {

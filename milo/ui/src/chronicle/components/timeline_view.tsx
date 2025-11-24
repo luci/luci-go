@@ -14,7 +14,7 @@
 
 import { Box } from '@mui/material';
 import { DateTime } from 'luxon';
-import { useMemo } from 'react';
+import { useMemo, useContext } from 'react';
 
 import {
   Body,
@@ -28,7 +28,7 @@ import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 import { StageState } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb';
 import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
 
-import { FakeGraphGenerator, WorkflowType } from '../fake_turboci_graph';
+import { ChronicleContext } from './chronicle_context';
 
 const ROW_HEIGHT = 30;
 const BAR_HEIGHT = 24;
@@ -37,12 +37,6 @@ const BAR_STYLE = {
   fill: 'var(--success-bg-color)',
   stroke: 'var(--success-color)',
 };
-
-const graphGenerator = new FakeGraphGenerator({
-  workPlanIdStr: 'test-plan',
-  workflowType: WorkflowType.ANDROID,
-});
-const turboCiGraph = graphGenerator.generate();
 
 interface TimelineItem {
   id: string;
@@ -55,8 +49,17 @@ interface TimelineItem {
 function TimelineView() {
   useDeclareTabId('timeline');
 
+  const { graph } = useContext(ChronicleContext);
+
   const { items, timelineStart, timelineEnd } = useMemo(() => {
-    const stages = Object.values(turboCiGraph.stages);
+    if (!graph)
+      return {
+        items: [],
+        timelineStart: DateTime.now(),
+        timelineEnd: DateTime.now(),
+      };
+
+    const stages = Object.values(graph.stages);
     let minMs = Infinity;
     let maxMs = -Infinity;
 
@@ -106,7 +109,7 @@ function TimelineView() {
       timelineStart: DateTime.fromMillis(minMs),
       timelineEnd: DateTime.fromMillis(maxMs),
     };
-  }, []);
+  }, [graph]);
 
   return (
     <Box sx={{ p: 2 }}>

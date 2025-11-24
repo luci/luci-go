@@ -18,6 +18,7 @@ import { redirectToChildPath } from '@/generic_libs/tools/react_router_utils';
 
 export const chronicleRoutes: RouteObject[] = [
   {
+    path: ':workplanId',
     lazy: () => import('./pages/chronicle_page'),
     children: [
       {

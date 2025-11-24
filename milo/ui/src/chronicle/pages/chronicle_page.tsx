@@ -14,15 +14,19 @@
 
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 
+import { ChronicleContextProvider } from '../components/chronicle_context';
+
 export function ChroniclePage() {
   return (
-    <AppRoutedTabs>
-      <AppRoutedTab label="Summary" value="summary" to="summary" />
-      <AppRoutedTab label="Timeline" value="timeline" to="timeline" />
-      <AppRoutedTab label="Stages & Checks Graph" value="graph" to="graph" />
-      <AppRoutedTab label="Tree" value="tree" to="tree" />
-      <AppRoutedTab label="Ledger" value="ledger" to="ledger" />
-    </AppRoutedTabs>
+    <ChronicleContextProvider>
+      <AppRoutedTabs>
+        <AppRoutedTab label="Summary" value="summary" to="summary" />
+        <AppRoutedTab label="Timeline" value="timeline" to="timeline" />
+        <AppRoutedTab label="Stages & Checks Graph" value="graph" to="graph" />
+        <AppRoutedTab label="Tree" value="tree" to="tree" />
+        <AppRoutedTab label="Ledger" value="ledger" to="ledger" />
+      </AppRoutedTabs>
+    </ChronicleContextProvider>
   );
 }
 

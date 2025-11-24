@@ -23,13 +23,20 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import SearchIcon from '@mui/icons-material/Search';
 import { Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { memo, useCallback, useMemo, useRef, KeyboardEvent } from 'react';
+import {
+  memo,
+  useCallback,
+  useMemo,
+  useRef,
+  KeyboardEvent,
+  useContext,
+} from 'react';
 
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
 
-import { FakeGraphGenerator, WorkflowType } from '../../fake_turboci_graph';
+import { ChronicleContext } from '../chronicle_context';
 import { InspectorPanel } from '../inspector_panel/inspector_panel';
 
 import {
@@ -40,13 +47,6 @@ import {
   subtreeSize,
 } from './build_tree';
 import { useTree } from './use_tree';
-
-// Fake graph. Will need to be replaced with a real one eventually.
-const graphGenerator = new FakeGraphGenerator({
-  workPlanIdStr: 'test-plan',
-  workflowType: WorkflowType.ANDROID,
-});
-const turboCiGraph = graphGenerator.generate();
 
 const Icons = {
   // Grey for UI elements.
@@ -326,11 +326,15 @@ const StyledInput = styled('input', {
 function Tree() {
   useDeclareTabId('tree');
 
+  const { graph: turboCiGraph } = useContext(ChronicleContext);
+
   const graph = useMemo(() => {
+    if (!turboCiGraph) return { nodes: {}, roots: [] };
+
     const stages = Object.values(turboCiGraph.stages) as StageView[];
     const checks = Object.values(turboCiGraph.checks) as CheckView[];
     return buildVisualGraph(stages, checks);
-  }, []);
+  }, [turboCiGraph]);
 
   const {
     visibleItems,
