@@ -1543,6 +1543,27 @@ func (s *Server) RegisterUnifiedServerInterceptors(intr ...grpcutil.UnifiedServe
 	}
 }
 
+// RegisterGRPCServerOptions registers grpc.ServerOption's to be used when creating
+// the gRPC server.
+//
+// This method is for options that are not interceptors.
+// To add interceptors, use RegisterUnaryServerInterceptors or
+// RegisterStreamServerInterceptors.
+//
+// Must be called before Serve (panics otherwise).
+func (s *Server) RegisterGRPCServerOptions(opts ...grpc.ServerOption) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.started {
+		s.Fatal(errors.New("the server has already been started"))
+	}
+	if s.grpcPort == nil {
+		s.Fatal(errors.New("can't set grpc server options when grpc port is disabled"))
+		return
+	}
+	s.grpcPort.addServerOptions(opts...)
+}
+
 // ConfigurePRPC allows tweaking pRPC-specific server configuration.
 //
 // Use it only for changing pRPC-specific options (usually ones that are related

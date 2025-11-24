@@ -68,6 +68,10 @@ func InitServer(srv *server.Server, opt Options) error {
 	pb.RegisterRecorderServer(srv, NewRecorderServer(opt, repb.NewContentAddressableStorageClient(conn)))
 
 	srv.RegisterUnaryServerInterceptors(spanutil.SpannerDefaultsInterceptor(sppb.RequestOptions_PRIORITY_HIGH))
+	// The Recorder service accepts RPC messages up to 10 MiB.
+	// We set the gRPC server's max receive message size to 11 MiB to accommodate this, with a 1 MiB buffer for overhead.
+	srv.RegisterGRPCServerOptions(grpc.MaxRecvMsgSize(11 * 1024 * 1024))
+
 	return installArtifactCreationHandler(srv, &opt, conn)
 }
 
