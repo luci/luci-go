@@ -76,7 +76,7 @@ export function useInvocationQuery(
       }),
     ),
     staleTime: 5 * 60 * 1000,
-    enabled: enabled && isRootError,
+    enabled: enabled && isRootError && !rootInvocation,
     placeholderData: keepPreviousData,
     retry: false,
   });

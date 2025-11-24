@@ -17,8 +17,8 @@ import { Breadcrumbs, Typography } from '@mui/material';
 import Link from '@mui/material/Link';
 
 import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { TestIdentifier } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
+import { useIsLegacyInvocation } from '@/test_investigation/context';
 
 interface TestInfoBreadcrumbsProps {
   invocation: string;
@@ -33,9 +33,7 @@ export function TestInfoBreadcrumbs({
   const fineName = testIdStructured?.fineName || undefined;
   const module = testIdStructured?.moduleName || undefined;
   const invID = invocation.split('/')[1] || '';
-  const [searchParams] = useSyncedSearchParams();
-
-  const isLegacyInvocation = searchParams.get('invMode') === 'legacy';
+  const isLegacyInvocation = useIsLegacyInvocation();
 
   return (
     <Breadcrumbs

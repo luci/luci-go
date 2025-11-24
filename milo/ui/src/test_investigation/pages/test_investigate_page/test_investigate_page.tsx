@@ -243,6 +243,12 @@ export function TestInvestigatePage() {
     }
   }, [authState]);
 
+  useEffect(() => {
+    if (invocationErrors.length > 0) {
+      invocationErrors.forEach((e) => logging.error(e));
+    }
+  }, [invocationErrors]);
+
   if (isLoadingInvocation || isLoadingTestVariant) {
     return (
       <Box
@@ -266,10 +272,6 @@ export function TestInvestigatePage() {
     const errorMessages = invocationErrors
       .map((e) => (e instanceof Error ? e.message : String(e)))
       .join('; ');
-
-    invocationErrors.forEach((e) => {
-      logging.error(e);
-    });
 
     if (invocationErrors.length > 0) {
       throw new Error(`Failed to load invocation: ${errorMessages}`);

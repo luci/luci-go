@@ -17,7 +17,15 @@ export type {
   TestVariantContextValue,
 } from './context';
 
-export { useTestVariant, useInvocation, useProject } from './context';
+export {
+  useTestVariant,
+  useInvocation,
+  useProject,
+  useIsLegacyInvocation,
+  useDisplayStatusString,
+  useRecentPasses,
+  useRawInvocationId,
+} from './context';
 export {
   TestVariantProvider,
   InvocationProvider,

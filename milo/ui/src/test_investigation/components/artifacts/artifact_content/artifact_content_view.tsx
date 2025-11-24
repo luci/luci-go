@@ -30,7 +30,7 @@ import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { CompareArtifactLinesRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { useRecentPasses } from '@/test_investigation/context/context';
+import { useRecentPasses } from '@/test_investigation/context';
 import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries';
 
 import { LogComparisonView } from './log_comparison_view';

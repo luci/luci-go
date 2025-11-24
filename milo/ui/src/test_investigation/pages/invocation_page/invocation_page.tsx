@@ -198,12 +198,12 @@ export function InvocationPage() {
     fetchNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    enabled: !!invocation,
     ...resultDbClient.QueryTestVariants.queryPaged(queryRequest),
     staleTime:
       invocation?.state === Invocation_State.FINALIZED
         ? Infinity
         : 5 * 60 * 1000,
+    enabled: !!invocation,
   });
 
   const isLoadingTestVariantsPage = isPending || isFetchingNextPage;
@@ -243,28 +243,20 @@ export function InvocationPage() {
 
       const variantToRedirect = finalFilteredVariants[0];
       let newPath: string;
-
-      if (isLegacyInvocation) {
+      if (
+        variantToRedirect.testIdStructured &&
+        variantToRedirect.testIdStructured.moduleName !== 'legacy'
+      ) {
+        newPath = generateTestInvestigateUrl(
+          invocationId,
+          variantToRedirect.testIdStructured,
+        );
+      } else {
         newPath = generateTestInvestigateUrlForLegacyInvocations(
           invocationId,
           variantToRedirect.testId,
           variantToRedirect.variantHash,
         );
-      } else {
-        // We are on a RootInvocation, generate the new structured URL.
-        if (variantToRedirect.testIdStructured) {
-          newPath = generateTestInvestigateUrl(
-            invocationId,
-            variantToRedirect.testIdStructured,
-          );
-        } else {
-          // Fallback to legacy structure just in case
-          newPath = generateTestInvestigateUrlForLegacyInvocations(
-            invocationId,
-            variantToRedirect.testId,
-            variantToRedirect.variantHash,
-          );
-        }
       }
       navigate(newPath, { replace: true });
     }
@@ -290,6 +282,12 @@ export function InvocationPage() {
     isFetchingTestVariants && !hasPerformedInitialRedirect.current;
   const isRedirecting = isUniqueResult && !hasPerformedInitialRedirect.current;
 
+  useEffect(() => {
+    if (invocationErrors.length > 0) {
+      invocationErrors.forEach((e) => logging.error(e));
+    }
+  }, [invocationErrors]);
+
   if (isLoadingInvocation || showInitialLoader || isRedirecting) {
     return (
       <Box
@@ -314,10 +312,6 @@ export function InvocationPage() {
     const errorMessages = invocationErrors
       .map((e) => (e instanceof Error ? e.message : String(e)))
       .join('; ');
-
-    invocationErrors.forEach((e) => {
-      logging.error(e);
-    });
 
     if (invocationErrors.length > 0) {
       throw new Error(`Failed to load invocation: ${errorMessages}`);

@@ -28,7 +28,7 @@ import {
   failureReason_KindToJSON,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/failure_reason.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { useIsLegacyInvocation } from '@/test_investigation/context/context';
+import { useIsLegacyInvocation } from '@/test_investigation/context';
 
 import { TextDiffArtifactView } from '../artifact_content/text_diff_artifact_view';
 

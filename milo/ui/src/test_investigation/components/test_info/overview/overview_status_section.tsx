@@ -37,7 +37,7 @@ import { AnalysisStatus as BisectionAnalysisStatus } from '@/proto/go.chromium.o
 import { TestVerdict_StatusOverride } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { useProject, useTestVariant } from '@/test_investigation/context';
 import { useInvocation } from '@/test_investigation/context';
-import { useDisplayStatusString } from '@/test_investigation/context/context';
+import { useDisplayStatusString } from '@/test_investigation/context';
 import { isPresubmitRun } from '@/test_investigation/utils/test_info_utils';
 
 import {

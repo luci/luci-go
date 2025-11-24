@@ -37,7 +37,7 @@ import { useInvocation, useTestVariant } from '@/test_investigation/context';
 import {
   useIsLegacyInvocation,
   useRawInvocationId,
-} from '@/test_investigation/context/context';
+} from '@/test_investigation/context';
 import {
   buildHierarchyTreeAndFindExpandedIds,
   buildFailureReasonTree,

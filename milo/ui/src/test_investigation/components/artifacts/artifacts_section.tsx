@@ -21,7 +21,7 @@ import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { parseTestResultName } from '@/common/tools/test_result_utils/index';
 import { ListArtifactsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { useTestVariant } from '@/test_investigation/context';
-import { useIsLegacyInvocation } from '@/test_investigation/context/context';
+import { useIsLegacyInvocation } from '@/test_investigation/context';
 
 import { ArtifactContentView, ArtifactSummaryView } from './artifact_content';
 import { ArtifactTreeView } from './artifact_tree';
