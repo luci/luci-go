@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { DateTime } from 'luxon';
 
@@ -21,6 +19,7 @@ import {
   MAXIMUM_PAGE_SIZE,
   SearchMeasurementsRequest,
 } from '@/crystal_ball/hooks/use_android_perf_api';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { SearchMeasurementsForm } from './search_measurements_form';
 
@@ -46,11 +45,7 @@ jest.mock('@mui/x-date-pickers/DateTimePicker', () => ({
 }));
 
 const renderWithProvider = (ui: React.ReactElement) => {
-  return render(
-    <LocalizationProvider dateAdapter={AdapterLuxon}>
-      {ui}
-    </LocalizationProvider>,
-  );
+  return render(<FakeContextProvider>{ui}</FakeContextProvider>);
 };
 
 // Stable empty object for initialRequest

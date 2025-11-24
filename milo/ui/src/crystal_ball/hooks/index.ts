@@ -13,3 +13,4 @@
 // limitations under the License.
 
 export * from './use_android_perf_api';
+export * from './use_search_query_sync';

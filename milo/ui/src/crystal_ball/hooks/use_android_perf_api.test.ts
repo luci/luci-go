@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 
 import * as gapiQueryHooks from '@/common/hooks/gapi_query/gapi_query';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import {
   API_BASE_URL,
@@ -36,27 +36,6 @@ const mockedUseGapiQuery = gapiQueryHooks.useGapiQuery as jest.Mock;
 const mockedUseInfiniteGapiQuery =
   gapiQueryHooks.useInfiniteGapiQuery as jest.Mock;
 
-// Helper to wrap hooks with QueryClientProvider
-const createWrapper = () => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        // Disable retries for testing
-        retry: false,
-      },
-    },
-  });
-
-  // Define a named component for the wrapper
-  function TestQueryProvider({ children }: { children: React.ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-  }
-
-  return TestQueryProvider;
-};
-
 describe('use_android_perf_api', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -66,7 +45,7 @@ describe('use_android_perf_api', () => {
     it('should call useGapiQuery with correct arguments', () => {
       mockedUseGapiQuery.mockReturnValue({ data: {}, isLoading: false });
 
-      renderHook(() => useTestConnection(), { wrapper: createWrapper() });
+      renderHook(() => useTestConnection(), { wrapper: FakeContextProvider });
 
       expect(mockedUseGapiQuery).toHaveBeenCalledTimes(1);
       expect(mockedUseGapiQuery).toHaveBeenCalledWith(
@@ -84,7 +63,7 @@ describe('use_android_perf_api', () => {
       const options = { enabled: false };
 
       renderHook(() => useTestConnection(options), {
-        wrapper: createWrapper(),
+        wrapper: FakeContextProvider,
       });
 
       expect(mockedUseGapiQuery).toHaveBeenCalledWith(
@@ -107,7 +86,7 @@ describe('use_android_perf_api', () => {
       });
 
       renderHook(() => useSearchMeasurements(request), {
-        wrapper: createWrapper(),
+        wrapper: FakeContextProvider,
       });
 
       expect(mockedUseGapiQuery).toHaveBeenCalledTimes(1);
@@ -129,7 +108,7 @@ describe('use_android_perf_api', () => {
       const options = { staleTime: 10000 };
 
       renderHook(() => useSearchMeasurements(request, options), {
-        wrapper: createWrapper(),
+        wrapper: FakeContextProvider,
       });
 
       expect(mockedUseGapiQuery).toHaveBeenCalledWith(
@@ -169,7 +148,7 @@ describe('use_android_perf_api', () => {
       });
 
       const { result } = renderHook(() => useSearchMeasurements(request), {
-        wrapper: createWrapper(),
+        wrapper: FakeContextProvider,
       });
 
       // Wait for the hook to settle
@@ -195,7 +174,7 @@ describe('use_android_perf_api', () => {
       });
 
       renderHook(() => useSearchMeasurementsInfinite(request), {
-        wrapper: createWrapper(),
+        wrapper: FakeContextProvider,
       });
 
       expect(mockedUseInfiniteGapiQuery).toHaveBeenCalledTimes(1);
@@ -218,7 +197,7 @@ describe('use_android_perf_api', () => {
       const options = { gcTime: 50000 };
 
       renderHook(() => useSearchMeasurementsInfinite(request, options), {
-        wrapper: createWrapper(),
+        wrapper: FakeContextProvider,
       });
 
       expect(mockedUseInfiniteGapiQuery).toHaveBeenCalledWith(

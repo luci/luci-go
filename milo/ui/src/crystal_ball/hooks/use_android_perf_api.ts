@@ -57,6 +57,21 @@ interface Struct {
 }
 
 /**
+ * Possible filter names for the SearchMeasurementsRequest.
+ */
+export enum SearchMeasurementsFilter {
+  TEST = 'testNameFilter',
+  BUILD_CREATE_START_TIME = 'buildCreateStartTime',
+  BUILD_CREATE_END_TIME = 'buildCreateEndTime',
+  LAST_N_DAYS = 'lastNDays',
+  BUILD_BRANCH = 'buildBranch',
+  BUILD_TARGET = 'buildTarget',
+  ATP_TEST = 'atpTestNameFilter',
+  METRIC_KEYS = 'metricKeys',
+  EXTRA_COLUMNS = 'extraColumns',
+}
+
+/**
  * Request message for querying CrystalBall measurements.
  * Requests must include at least one filter or the request will be rejected.
  */
@@ -65,48 +80,48 @@ export interface SearchMeasurementsRequest {
    * Filter results to a specified test name.
    * e.g. "ExampleGroup.ExampleSubGroup#ExampleTestName"
    */
-  testNameFilter?: string;
+  [SearchMeasurementsFilter.TEST]?: string;
 
   /**
    * Filter results to build create times greater than this value.
    * If "lastNDays" is provided, this filter will be ignored.
    */
-  buildCreateStartTime?: Timestamp;
+  [SearchMeasurementsFilter.BUILD_CREATE_START_TIME]?: Timestamp;
 
   /**
    * Filter results to build create times less than this value.
    * If "lastNDays" is provided, this filter will be ignored.
    */
-  buildCreateEndTime?: Timestamp;
+  [SearchMeasurementsFilter.BUILD_CREATE_END_TIME]?: Timestamp;
 
   /**
    * Filter results to build create times within the last N days.
    */
-  lastNDays?: number;
+  [SearchMeasurementsFilter.LAST_N_DAYS]?: number;
 
   /**
    * Filter results to a specified build branch.
    * e.g. "example_git_main"
    */
-  buildBranch?: string;
+  [SearchMeasurementsFilter.BUILD_BRANCH]?: string;
 
   /**
    * Filter results to a specified build target.
    * e.g. "example-build-target"
    */
-  buildTarget?: string;
+  [SearchMeasurementsFilter.BUILD_TARGET]?: string;
 
   /**
    * Filter results to a specified ATP test name.
    * e.g. "v2/example-test-group/example-test-name"
    */
-  atpTestNameFilter?: string;
+  [SearchMeasurementsFilter.ATP_TEST]?: string;
 
   /**
    * Filter results to only include the specified metric keys.
    * e.g. ["sample-metric-key-A", "sample-metric-key-B"]
    */
-  metricKeys?: string[];
+  [SearchMeasurementsFilter.METRIC_KEYS]?: string[];
 
   /**
    * Include additional columns in the query to be returned by the response.
@@ -114,7 +129,7 @@ export interface SearchMeasurementsRequest {
    * columns.
    * e.g. ["board", "model"]
    */
-  extraColumns?: string[];
+  [SearchMeasurementsFilter.EXTRA_COLUMNS]?: string[];
 
   /**
    * Optional specifier for the amount of rows to include in the response.

@@ -16,7 +16,7 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import { SearchMeasurementsForm } from '@/crystal_ball/components/search_measurements_form';
 import {
@@ -28,6 +28,7 @@ import {
   SearchMeasurementsRequest,
   MeasurementRow,
 } from '@/crystal_ball/hooks/use_android_perf_api';
+import { useSearchQuerySync } from '@/crystal_ball/hooks/use_search_query_sync';
 
 interface Measurement {
   time: number;
@@ -67,7 +68,7 @@ const transformDataForChart = (
 
     // Set the value for the specific metricKey at this time
     if (metricKeys.includes(row.metricKey)) {
-      dataMap[time][row.metricKey] = row.value / 1000;
+      dataMap[time][row.metricKey] = row.value;
     }
   });
 
@@ -78,8 +79,23 @@ const transformDataForChart = (
  * A simple landing page component.
  */
 export function LandingPage() {
+  const { searchRequestFromUrl, updateSearchQuery } = useSearchQuerySync();
+
   const [searchRequest, setSearchRequest] =
-    useState<SearchMeasurementsRequest | null>(null);
+    useState<SearchMeasurementsRequest | null>(() => {
+      return Object.keys(searchRequestFromUrl).length > 0
+        ? (searchRequestFromUrl as SearchMeasurementsRequest)
+        : null;
+    });
+
+  // Effect to update searchRequest when URL changes
+  useEffect(() => {
+    setSearchRequest(
+      Object.keys(searchRequestFromUrl).length > 0
+        ? (searchRequestFromUrl as SearchMeasurementsRequest)
+        : null,
+    );
+  }, [searchRequestFromUrl]);
 
   const {
     data: searchResponse,
@@ -90,9 +106,12 @@ export function LandingPage() {
     enabled: !!searchRequest,
   });
 
-  const handleSearchSubmit = (request: SearchMeasurementsRequest) => {
-    setSearchRequest(request);
-  };
+  const handleSearchSubmit = useCallback(
+    (request: SearchMeasurementsRequest) => {
+      updateSearchQuery(request);
+    },
+    [updateSearchQuery],
+  );
 
   const requestedMetricKeys = searchRequest?.metricKeys || [];
 
@@ -118,7 +137,7 @@ export function LandingPage() {
       <SearchMeasurementsForm
         onSubmit={handleSearchSubmit}
         isSubmitting={isSearchLoading}
-        initialRequest={searchRequest ?? {}}
+        initialRequest={searchRequestFromUrl}
       />
 
       {isSearchLoading && (
@@ -143,17 +162,20 @@ export function LandingPage() {
         />
       )}
 
-      {!searchRequest && (
+      {!searchRequest && !isSearchLoading && (
         <Typography variant="body1" sx={{ mt: 2 }}>
           Enter search parameters to view performance data.
         </Typography>
       )}
 
-      {searchResponse && chartData.length === 0 && !isSearchLoading && (
-        <Typography variant="body1" sx={{ mt: 2 }}>
-          No data found for the given parameters.
-        </Typography>
-      )}
+      {searchRequest &&
+        !isSearchLoading &&
+        !isSearchError &&
+        chartData.length === 0 && (
+          <Typography variant="body1" sx={{ mt: 2 }}>
+            No data found for the given parameters.
+          </Typography>
+        )}
     </Box>
   );
 }

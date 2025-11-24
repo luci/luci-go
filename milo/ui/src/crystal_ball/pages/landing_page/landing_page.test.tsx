@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { UseQueryResult } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 
 import * as useAndroidPerfApi from '@/crystal_ball/hooks/use_android_perf_api';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { LandingPage } from './landing_page';
 
@@ -40,14 +39,6 @@ jest.mock('@mui/x-date-pickers/DateTimePicker', () => ({
   )),
 }));
 
-const renderWithProvider = (ui: React.ReactElement) => {
-  return render(
-    <LocalizationProvider dateAdapter={AdapterLuxon}>
-      {ui}
-    </LocalizationProvider>,
-  );
-};
-
 describe('<LandingPage />', () => {
   it('should render the landing page', () => {
     mockUseSearchMeasurements.mockReturnValue({
@@ -59,7 +50,11 @@ describe('<LandingPage />', () => {
       isFetching: false,
     } as UseQueryResult<useAndroidPerfApi.SearchMeasurementsResponse, Error>);
 
-    renderWithProvider(<LandingPage />);
+    render(
+      <FakeContextProvider>
+        <LandingPage />
+      </FakeContextProvider>,
+    );
     expect(
       screen.getByText(/Crystal Ball Performance Metrics/i),
     ).toBeInTheDocument();
