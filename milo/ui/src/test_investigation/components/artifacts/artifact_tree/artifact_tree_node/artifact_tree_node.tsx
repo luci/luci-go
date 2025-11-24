@@ -12,19 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import AdbIcon from '@mui/icons-material/Adb';
 import ArticleIcon from '@mui/icons-material/Article';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ImageIcon from '@mui/icons-material/Image';
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import { Box, Typography, IconButton, Chip, Theme } from '@mui/material';
+import {
+  Box,
+  Typography,
+  IconButton,
+  Chip,
+  Theme,
+  Tooltip,
+  Button,
+  Link,
+} from '@mui/material';
 import { deepOrange, yellow, blue } from '@mui/material/colors';
 import { useTheme } from '@mui/material/styles';
 import { ReactNode } from 'react';
 
 import { TreeData } from '@/common/components/log_viewer/virtual_tree/types';
 import { VirtualTreeNodeActions } from '@/common/components/log_viewer/virtual_tree/virtual_tree';
+import { getAndroidBugToolLink } from '@/common/tools/url_utils';
+import { useInvocation } from '@/test_investigation/context';
+import { isAnTSInvocation } from '@/test_investigation/utils/test_info_utils';
 
 import { ArtifactTreeNodeData } from '../../types';
 import { getArtifactType } from '../artifact_utils';
@@ -86,6 +98,7 @@ const getNodeBackground = (
 const LeafFileIcon = ({ fileType }: { fileType: string | null }) => {
   const theme = useTheme();
   let IconComponent = InsertDriveFileOutlinedIcon;
+  let titleAccess: string = 'file-icon';
   if (fileType) {
     switch (fileType) {
       case 'image':
@@ -96,6 +109,7 @@ const LeafFileIcon = ({ fileType }: { fileType: string | null }) => {
       case 'svg':
       case 'heic':
         IconComponent = ImageIcon;
+        titleAccess = 'image-icon';
         break;
       case 'text':
       case 'xml':
@@ -104,6 +118,7 @@ const LeafFileIcon = ({ fileType }: { fileType: string | null }) => {
       case 'md':
       case 'log':
         IconComponent = ArticleIcon;
+        titleAccess = 'article-icon';
         break;
     }
   }
@@ -111,6 +126,7 @@ const LeafFileIcon = ({ fileType }: { fileType: string | null }) => {
     <Box sx={{ display: 'flex', alignItems: 'center', height: '24px' }}>
       <IconComponent
         sx={{ fontSize: '20px', color: theme.palette.action.active }}
+        titleAccess={titleAccess}
       />
     </Box>
   );
@@ -140,6 +156,8 @@ export function ArtifactTreeNode({
   const artifactType = isFolder
     ? null
     : row.data.artifact?.artifactType || getArtifactType(row.name);
+  const invocation = useInvocation();
+  const isAnTS = isAnTSInvocation(invocation.name);
 
   const totalPaddingLeft =
     row.level * LEVEL_INDENTATION_SIZE + CONTENT_INTERNAL_OFFSET_LEFT;
@@ -162,10 +180,6 @@ export function ArtifactTreeNode({
         onUnsupportedLeafClick?.(row.data);
       }
     }
-  };
-
-  const handleDefaultActionClick = (event: React.MouseEvent) => {
-    event.stopPropagation();
   };
 
   return (
@@ -241,7 +255,7 @@ export function ArtifactTreeNode({
           }}
         >
           {isFolder ? (
-            <FolderIcon sx={{ fontSize: '24px' }} />
+            <FolderIcon sx={{ fontSize: '24px' }} titleAccess="folder-icon" />
           ) : (
             <LeafFileIcon fileType={artifactType} />
           )}
@@ -288,20 +302,24 @@ export function ArtifactTreeNode({
         <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
           {renderActions ? (
             renderActions(row)
-          ) : row.isLeafNode ? (
-            <IconButton
-              size="small"
-              aria-label={`Actions for ${row.name}`}
-              onClick={handleDefaultActionClick}
-              sx={{
-                visibility: 'hidden',
-                '.MuiBox-root:hover > .MuiBox-root > &': {
-                  visibility: 'visible',
-                },
-              }}
-            >
-              <MoreHorizIcon sx={{ color: theme.palette.action.active }} />
-            </IconButton>
+          ) : row.isLeafNode && isAnTS && row.data.artifact?.artifactId ? (
+            <Tooltip title="Open in Android Bug Tool">
+              <Button
+                component={Link}
+                size="small"
+                target="_blank"
+                aria-label={`Actions for ${row.name}`}
+                href={getAndroidBugToolLink(
+                  row.data.artifact.artifactId,
+                  invocation.name,
+                )}
+              >
+                <AdbIcon
+                  sx={{ color: theme.palette.action.active }}
+                  titleAccess="adb-icon"
+                />
+              </Button>
+            </Tooltip>
           ) : (
             <Box sx={{ width: '24px', height: '24px' }} />
           )}

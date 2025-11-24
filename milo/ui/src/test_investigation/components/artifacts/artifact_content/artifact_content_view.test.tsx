@@ -16,11 +16,16 @@ import { render, screen, waitFor } from '@testing-library/react';
 import fetchMock from 'fetch-mock-jest';
 
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
+import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { RecentPassesProvider } from '@/test_investigation/context';
+import { InvocationProvider } from '@/test_investigation/context';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 import { mockFetchArtifactContent } from '@/testing_tools/mocks/artifact_mock';
 
 import { ArtifactContentView } from './artifact_content_view';
+
+const MOCK_RAW_INVOCATION_ID = 'inv-id-123';
+const MOCK_PROJECT_ID = 'test-project';
 
 describe('<ArtifactContentView />', () => {
   afterEach(() => {
@@ -32,22 +37,34 @@ describe('<ArtifactContentView />', () => {
     const MOCK_ARTIFACT_URL =
       'http://mock.results.api.luci.app/artifact-content/test';
     const MOCK_ARTIFACT_CONTENT = 'test data';
+    const mockInvocation = Invocation.fromPartial({
+      name: 'invocations/inv-123',
+      realm: `${MOCK_PROJECT_ID}:some-realm`,
+      sourceSpec: { sources: { gitilesCommit: { position: '105' } } },
+    });
 
     mockFetchArtifactContent(MOCK_ARTIFACT_URL, MOCK_ARTIFACT_CONTENT);
 
     render(
       <FakeContextProvider>
-        <RecentPassesProvider passingResults={[]} error={null}>
-          <ArtifactContentView
-            artifact={Artifact.fromPartial({
-              artifactId: 'test',
-              name: 'test',
-              contentType: 'text/plain',
-              sizeBytes: '1024',
-              fetchUrl: MOCK_ARTIFACT_URL,
-            })}
-          />
-        </RecentPassesProvider>
+        <InvocationProvider
+          project="test-project"
+          invocation={mockInvocation}
+          rawInvocationId={MOCK_RAW_INVOCATION_ID}
+          isLegacyInvocation={true}
+        >
+          <RecentPassesProvider passingResults={[]} error={null}>
+            <ArtifactContentView
+              artifact={Artifact.fromPartial({
+                artifactId: 'test',
+                name: 'test',
+                contentType: 'text/plain',
+                sizeBytes: '1024',
+                fetchUrl: MOCK_ARTIFACT_URL,
+              })}
+            />
+          </RecentPassesProvider>
+        </InvocationProvider>
       </FakeContextProvider>,
     );
     await waitFor(() =>

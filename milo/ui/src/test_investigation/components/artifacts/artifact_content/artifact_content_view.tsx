@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import AdbIcon from '@mui/icons-material/Adb';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
   Box,
@@ -27,11 +28,16 @@ import { useState } from 'react';
 import HelpTooltip from '@/clusters/components/help_tooltip/help_tooltip';
 import { ErrorDisplay } from '@/common/components/error_handling/error_display';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
-import { getRawArtifactURLPath } from '@/common/tools/url_utils';
+import {
+  getAndroidBugToolLink,
+  getRawArtifactURLPath,
+} from '@/common/tools/url_utils';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { CompareArtifactLinesRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { useRecentPasses } from '@/test_investigation/context';
+import { useInvocation } from '@/test_investigation/context';
+import { useRecentPasses } from '@/test_investigation/context/context';
 import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries';
+import { isAnTSInvocation } from '@/test_investigation/utils/test_info_utils';
 
 import { LogComparisonView } from './log_comparison_view';
 import { TextBox } from './text_box';
@@ -47,6 +53,8 @@ export function ArtifactContentView({ artifact }: ArtifactContentViewProps) {
   const resultDbClient = useResultDbClient();
   const { passingResults, error: recentPassesError } = useRecentPasses();
   const hasPassingResults = !!passingResults && passingResults.length > 0;
+  const invocation = useInvocation();
+  const isAnTS = isAnTSInvocation(invocation.name);
 
   const { data: artifactContentData, isLoading: isLoadingArtifactContent } =
     useFetchArtifactContentQuery({
@@ -211,6 +219,18 @@ export function ArtifactContentView({ artifact }: ArtifactContentViewProps) {
               endIcon={<OpenInNewIcon />}
             >
               Open Raw
+            </Button>
+          )}
+          {isAnTS && (
+            <Button
+              variant="outlined"
+              size="small"
+              href={getAndroidBugToolLink(artifact.artifactId, invocation.name)}
+              target="_blank"
+              rel="noopener noreferrer"
+              endIcon={<AdbIcon />}
+            >
+              Open in ABT
             </Button>
           )}
         </Box>

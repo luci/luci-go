@@ -19,6 +19,9 @@ import {
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
 
+const ANDROID_BUILD_HOST = 'https://android-build.googleplex.com';
+const BUG_TOOL_HOST = 'https://android-bug-tool.corp.google.com/bug_tool';
+
 export function getBuildURLPathFromBuildData(
   build: Pick<Build, 'builder' | 'number' | 'id'>,
 ): string {
@@ -81,6 +84,41 @@ export function getInvURLPath(invId: string): string {
 
 export function getRawArtifactURLPath(artifactName: string): string {
   return `/raw-artifact/${artifactName}`;
+}
+
+export function getAndroidBugToolLink(
+  artifactName: string,
+  invocationId: string,
+  params?: URLSearchParams,
+): string {
+  if (artifactName === null) return '';
+
+  if (invocationId !== null) {
+    const artifactPath = artifactName ? encodeURIComponent(artifactName) : '';
+
+    // TODO(b/452474085): follow up when we get data from resultDB instead of ANTs.
+    const prefix = 'invocations/ants-i';
+    let antsInvocationId = '';
+    if (invocationId.startsWith(prefix)) {
+      antsInvocationId = 'I' + invocationId.substring(prefix.length);
+    } else {
+      return '';
+    }
+
+    const downloadUrl = `${ANDROID_BUILD_HOST}/builds/${antsInvocationId}/${artifactPath}`;
+    const toolLinkParams = new URLSearchParams();
+    toolLinkParams.append('url', downloadUrl);
+    toolLinkParams.append('source', 'ABDX');
+
+    if (params) {
+      for (const [key, value] of params.entries()) {
+        toolLinkParams.append(key, value);
+      }
+    }
+
+    return `${BUG_TOOL_HOST}?${toolLinkParams.toString()}`;
+  }
+  return '';
 }
 
 export function getImageDiffArtifactURLPath(

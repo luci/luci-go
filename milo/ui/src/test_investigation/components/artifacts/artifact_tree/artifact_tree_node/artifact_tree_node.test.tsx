@@ -20,14 +20,58 @@ import {
   VirtualTreeNodeActions,
 } from '@/common/components/log_viewer';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
+import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
+import { InvocationProvider } from '@/test_investigation/context';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ArtifactTreeNodeData } from '../../types';
 
 import { ArtifactTreeNode } from './artifact_tree_node';
 
+const MOCK_RAW_INVOCATION_ID = 'inv-id-123';
+const MOCK_PROJECT_ID = 'test-project';
+
 describe('<ArtifactTreeNode />', () => {
-  it('given a folder row then should display folder icon', async () => {
+  let mockInvocation: Invocation;
+  let mockTreeContext: VirtualTreeNodeActions<ArtifactTreeNodeData>;
+
+  beforeEach(() => {
+    mockInvocation = Invocation.fromPartial({
+      realm: `${MOCK_PROJECT_ID}:some-realm`,
+      sourceSpec: { sources: { gitilesCommit: { position: '105' } } },
+      name: 'invocations/ants-build-12345',
+    });
+    mockTreeContext = {
+      onNodeToggle: jest.fn(),
+      onNodeSelect: jest.fn(),
+      isSelected: false,
+    };
+  });
+
+  const renderComponent = (
+    fakeTreeData: TreeData<ArtifactTreeNodeData>,
+    fakeInvocation?: Invocation,
+  ) => {
+    const inv = fakeInvocation || mockInvocation;
+    return render(
+      <FakeContextProvider>
+        <InvocationProvider
+          project="test-project"
+          invocation={inv}
+          rawInvocationId={MOCK_RAW_INVOCATION_ID}
+          isLegacyInvocation
+        >
+          <ArtifactTreeNode
+            index={0}
+            row={fakeTreeData}
+            context={mockTreeContext}
+          />
+        </InvocationProvider>
+      </FakeContextProvider>,
+    );
+  };
+
+  it('given a folder row then should display folder icon and name', async () => {
     const fakeTreeData: TreeData<ArtifactTreeNodeData> = {
       id: 'folder1',
       isLeafNode: false,
@@ -38,25 +82,17 @@ describe('<ArtifactTreeNode />', () => {
       children: [],
       parent: undefined,
     };
-    const fakeTreeContext: VirtualTreeNodeActions<ArtifactTreeNodeData> = {
-      onNodeToggle: jest.fn(),
-      onNodeSelect: jest.fn(),
-      isSelected: false,
-    };
-    render(
-      <FakeContextProvider>
-        <ArtifactTreeNode
-          index={0}
-          row={fakeTreeData}
-          context={fakeTreeContext}
-        />
-      </FakeContextProvider>,
-    );
+    renderComponent(fakeTreeData);
 
-    waitFor(() => expect(screen.getByText('Test Folder')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText('Test Folder')).toBeInTheDocument(),
+    );
+    await waitFor(() => {
+      expect(screen.getByTitle('folder-icon')).toBeInTheDocument();
+    });
   });
 
-  it('given a file row then should display file icon', async () => {
+  it('should display android icon for ants invocations', async () => {
     const fakeTreeData: TreeData<ArtifactTreeNodeData> = {
       id: 'file1',
       isLeafNode: true,
@@ -76,23 +112,104 @@ describe('<ArtifactTreeNode />', () => {
       children: [],
       parent: undefined,
     };
-    const fakeTreeContext: VirtualTreeNodeActions<ArtifactTreeNodeData> = {
-      onNodeToggle: jest.fn(),
-      onNodeSelect: jest.fn(),
-      isSelected: false,
+
+    renderComponent(fakeTreeData);
+    await waitFor(() => {
+      expect(screen.getByTitle('adb-icon')).toBeInTheDocument();
+    });
+  });
+
+  it('should not display android icon for non-ants invocations', async () => {
+    const fakeInvocation: Invocation = Invocation.fromPartial({
+      realm: `${MOCK_PROJECT_ID}:some-realm`,
+      sourceSpec: { sources: { gitilesCommit: { position: '105' } } },
+      name: 'invocations/build-12345',
+    });
+
+    const fakeTreeData: TreeData<ArtifactTreeNodeData> = {
+      id: 'file1',
+      isLeafNode: true,
+      level: 0,
+      name: 'Test File.txt',
+      isOpen: false,
+      data: {
+        id: 'file1',
+        name: 'Test File.txt',
+        children: [],
+        artifact: Artifact.fromPartial({
+          name: 'Test File.txt',
+          artifactId: 'file1.txt',
+          contentType: 'text/plain',
+        }),
+      },
+      children: [],
+      parent: undefined,
     };
 
-    render(
-      <FakeContextProvider>
-        <ArtifactTreeNode
-          index={0}
-          row={fakeTreeData}
-          context={fakeTreeContext}
-        />
-      </FakeContextProvider>,
-    );
+    renderComponent(fakeTreeData, fakeInvocation);
+    expect(screen.queryByTitle('adb-icon')).toBeNull();
+  });
 
-    waitFor(() => expect(screen.getByText('file1.txt')).toBeInTheDocument());
+  it('given a file row then should display file icon and artifactId', async () => {
+    const fakeTreeData: TreeData<ArtifactTreeNodeData> = {
+      id: 'file1',
+      isLeafNode: true,
+      level: 0,
+      name: 'Test File.txt',
+      isOpen: false,
+      data: {
+        id: 'file1',
+        name: 'Test File.txt',
+        children: [],
+        artifact: Artifact.fromPartial({
+          name: 'Test File.txt',
+          artifactId: 'file1.txt',
+          contentType: 'text/plain',
+        }),
+      },
+      children: [],
+      parent: undefined,
+    };
+
+    renderComponent(fakeTreeData);
+
+    await waitFor(() => {
+      expect(screen.getByText('Test File.txt')).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.getByTitle('file-icon')).toBeInTheDocument();
+    });
+  });
+
+  it('given an image artifact then should display image icon', async () => {
+    const fakeTreeData: TreeData<ArtifactTreeNodeData> = {
+      id: 'file2',
+      isLeafNode: true,
+      level: 0,
+      name: 'Test File.png',
+      isOpen: false,
+      data: {
+        id: 'file1',
+        name: 'Test File.png',
+        children: [],
+        artifact: Artifact.fromPartial({
+          name: 'Test File.png',
+          artifactId: 'image_diff',
+          contentType: 'image/png',
+        }),
+      },
+      children: [],
+      parent: undefined,
+    };
+
+    renderComponent(fakeTreeData);
+
+    await waitFor(() => {
+      expect(screen.getByText('Test File.png')).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.getByTitle('image-icon')).toBeInTheDocument();
+    });
   });
 
   it('should highlight matching text when highlightText prop is provided', () => {
@@ -125,12 +242,19 @@ describe('<ArtifactTreeNode />', () => {
 
     render(
       <FakeContextProvider>
-        <ArtifactTreeNode
-          index={0}
-          row={fakeTreeData}
-          context={fakeTreeContext}
-          highlightText={highlightTerm}
-        />
+        <InvocationProvider
+          project="test-project"
+          invocation={mockInvocation}
+          rawInvocationId={MOCK_RAW_INVOCATION_ID}
+          isLegacyInvocation
+        >
+          <ArtifactTreeNode
+            index={0}
+            row={fakeTreeData}
+            context={fakeTreeContext}
+            highlightText={highlightTerm}
+          />
+        </InvocationProvider>
       </FakeContextProvider>,
     );
 

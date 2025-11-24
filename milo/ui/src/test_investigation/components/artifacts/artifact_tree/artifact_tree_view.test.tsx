@@ -17,7 +17,9 @@ import userEvent from '@testing-library/user-event';
 import { VirtuosoMockContext } from 'react-virtuoso';
 
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
+import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { InvocationProvider } from '@/test_investigation/context';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ArtifactsProvider } from '../context';
@@ -54,6 +56,13 @@ describe('<ArtifactTreeView />', () => {
   ];
 
   const MOCK_RESULTS: readonly TestResultBundle[] = [];
+  const MOCK_RAW_INVOCATION_ID = 'inv-id-123';
+  const MOCK_PROJECT_ID = 'test-project';
+  const mockInvocation = Invocation.fromPartial({
+    name: 'invocations/inv-123',
+    realm: `${MOCK_PROJECT_ID}:some-realm`,
+    sourceSpec: { sources: { gitilesCommit: { position: '105' } } },
+  });
 
   it('should create a tree and call updateSelectedArtifact when a node is clicked', async () => {
     const user = userEvent.setup();
@@ -64,14 +73,21 @@ describe('<ArtifactTreeView />', () => {
         value={{ viewportHeight: 300, itemHeight: 30 }}
       >
         <FakeContextProvider>
-          <ArtifactsProvider results={MOCK_RESULTS}>
-            <ArtifactTreeView
-              resultArtifacts={resultArtifacts}
-              invArtifacts={invArtifacts}
-              artifactsLoading={false}
-              updateSelectedArtifact={updateSelectedArtifact}
-            />
-          </ArtifactsProvider>
+          <InvocationProvider
+            project="test-project"
+            invocation={mockInvocation}
+            rawInvocationId={MOCK_RAW_INVOCATION_ID}
+            isLegacyInvocation
+          >
+            <ArtifactsProvider results={MOCK_RESULTS}>
+              <ArtifactTreeView
+                resultArtifacts={resultArtifacts}
+                invArtifacts={invArtifacts}
+                artifactsLoading={false}
+                updateSelectedArtifact={updateSelectedArtifact}
+              />
+            </ArtifactsProvider>
+          </InvocationProvider>
         </FakeContextProvider>
       </VirtuosoMockContext.Provider>,
     );
@@ -104,14 +120,21 @@ describe('<ArtifactTreeView />', () => {
         value={{ viewportHeight: 300, itemHeight: 30 }}
       >
         <FakeContextProvider>
-          <ArtifactsProvider results={MOCK_RESULTS}>
-            <ArtifactTreeView
-              resultArtifacts={resultArtifacts}
-              invArtifacts={invArtifacts}
-              artifactsLoading={false}
-              updateSelectedArtifact={updateSelectedArtifact}
-            />
-          </ArtifactsProvider>
+          <InvocationProvider
+            project="test-project"
+            invocation={mockInvocation}
+            rawInvocationId={MOCK_RAW_INVOCATION_ID}
+            isLegacyInvocation
+          >
+            <ArtifactsProvider results={MOCK_RESULTS}>
+              <ArtifactTreeView
+                resultArtifacts={resultArtifacts}
+                invArtifacts={invArtifacts}
+                artifactsLoading={false}
+                updateSelectedArtifact={updateSelectedArtifact}
+              />
+            </ArtifactsProvider>
+          </InvocationProvider>
         </FakeContextProvider>
       </VirtuosoMockContext.Provider>,
     );
