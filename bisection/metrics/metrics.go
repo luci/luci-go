@@ -18,11 +18,13 @@ package metrics
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
@@ -30,6 +32,9 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
+	tspb "go.chromium.org/luci/tree_status/proto/v1"
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -80,6 +85,24 @@ var (
 		// The possible values are "compile", "test".
 		field.String("type"),
 	)
+
+	// Tree Closure Duration Metric
+	treeClosedDuration = metric.NewInt(
+		"bisection/tree/closed_duration",
+		"The current duration in seconds that the tree has been closed.",
+		&types.MetricMetadata{Units: "seconds"},
+		// The LUCI Project.
+		field.String("project"),
+	)
+
+	// Metric to track tree state explicitly
+	treeIsOpen = metric.NewBool(
+		"bisection/tree/is_open",
+		"True if the tree is open, False if closed.",
+		nil,
+		// The LUCI Project.
+		field.String("project"),
+	)
 )
 
 // AnalysisType is used for sending metrics to tsmon
@@ -97,13 +120,15 @@ type rerunKey struct {
 	Platform string
 }
 
+var treeClosedStartTime time.Time // The time when the tree was closed
+
 func init() {
 	// Register metrics as global metrics, which has the effort of
 	// resetting them after every flush.
 	tsmon.RegisterGlobalCallback(func(ctx context.Context) {
 		// Do nothing -- the metrics will be populated by the cron
 		// job itself and does not need to be triggered externally.
-	}, runningAnalysesGauge, runningRerunGauge, rerunAgeMetric)
+	}, runningAnalysesGauge, runningRerunGauge, rerunAgeMetric, treeClosedDuration, treeIsOpen)
 }
 
 // CollectGlobalMetrics is called in a cron job.
@@ -125,6 +150,12 @@ func CollectGlobalMetrics(c context.Context) error {
 	err = collectMetricsForRunningTestReruns(c)
 	if err != nil {
 		err = errors.Fmt("collectMetricsForRunningTestReruns: %w", err)
+		errs = append(errs, err)
+		logging.Errorf(c, err.Error())
+	}
+	err = UpdateTreeMetrics(c)
+	if err != nil {
+		err = errors.Fmt("UpdateTreeMetrics: %w", err)
 		errs = append(errs, err)
 		logging.Errorf(c, err.Error())
 	}
@@ -332,4 +363,72 @@ func collectMetricsForRunningTestReruns(c context.Context) error {
 func rerunAgeInSeconds(c context.Context, rerun *model.SingleRerun) float64 {
 	dur := clock.Now(c).Sub(rerun.CreateTime)
 	return dur.Seconds()
+}
+
+type treeStatus struct {
+	status    string
+	timestamp time.Time
+}
+
+func getTreeStatus(ctx context.Context, client tspb.TreeStatusClient, treeName string) (*treeStatus, error) {
+	request := &tspb.GetStatusRequest{
+		Name: fmt.Sprintf("trees/%s/status/latest", treeName),
+	}
+	response, err := client.GetStatus(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	var status string
+	if response.GeneralState == tspb.GeneralState_OPEN {
+		status = "Open"
+	} else {
+		status = "Closed"
+	}
+	t := response.CreateTime.AsTime()
+	return &treeStatus{
+		status:    status,
+		timestamp: t,
+	}, nil
+}
+
+// UpdateTreeMetrics checks the status of trees and updates tsmon metrics.
+func UpdateTreeMetrics(c context.Context) error {
+	luciTreeStatusHost := "tree-status.appspot.com"
+
+	transport, err := auth.GetRPCTransport(c, auth.AsSelf)
+	if err != nil {
+		return err
+	}
+	rpcOpts := prpc.DefaultOptions()
+	rpcOpts.Insecure = lhttp.IsLocalHost(luciTreeStatusHost)
+	prpcClient := &prpc.Client{
+		C:       &http.Client{Transport: transport},
+		Host:    luciTreeStatusHost,
+		Options: rpcOpts,
+	}
+	client := tspb.NewTreeStatusPRPCClient(prpcClient)
+	return updateTreeMetricsWithClient(c, client)
+}
+
+func updateTreeMetricsWithClient(c context.Context, client tspb.TreeStatusClient) error {
+	projects := []string{"chromium"}
+
+	for _, project := range projects {
+		status, err := getTreeStatus(c, client, project)
+		if err != nil {
+			// Log error and continue with other trees.
+			logging.Errorf(c, "Failed to get tree status for %s: %v", project, err)
+			continue
+		}
+		isOpen := status.status == "Open"
+		treeIsOpen.Set(c, isOpen, project)
+
+		if isOpen {
+			treeClosedDuration.Set(c, 0, project)
+		} else {
+			closedDuration := clock.Now(c).Sub(status.timestamp)
+			treeClosedDuration.Set(c, int64(closedDuration.Seconds()), project)
+		}
+	}
+	return nil
 }

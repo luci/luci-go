@@ -33,6 +33,9 @@ import (
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
+	tspb "go.chromium.org/luci/tree_status/proto/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestCollectGlobalMetrics(t *testing.T) {
@@ -208,4 +211,59 @@ func createRunningAnalysis(c context.Context, t testing.TB, id int64, proj strin
 	assert.Loosely(t, datastore.Put(c, cfa), should.BeNil, truth.LineContext())
 	datastore.GetTestable(c).CatchupIndexes()
 	return cfa
+}
+
+type mockTreeStatusClient struct {
+	getStatusResponse *tspb.Status
+	getStatusErr      error
+}
+
+func (m *mockTreeStatusClient) GetStatus(ctx context.Context, in *tspb.GetStatusRequest, opts ...grpc.CallOption) (*tspb.Status, error) {
+	return m.getStatusResponse, m.getStatusErr
+}
+
+func (m *mockTreeStatusClient) CreateStatus(ctx context.Context, in *tspb.CreateStatusRequest, opts ...grpc.CallOption) (*tspb.Status, error) {
+	return nil, nil
+}
+
+func (m *mockTreeStatusClient) ListStatus(ctx context.Context, in *tspb.ListStatusRequest, opts ...grpc.CallOption) (*tspb.ListStatusResponse, error) {
+	return nil, nil
+}
+
+func TestUpdateTreeMetrics(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+	c, _ = tsmon.WithDummyInMemory(c)
+	datastore.GetTestable(c).Consistent(true)
+
+	ftt.Run("Tree is open", t, func(t *ftt.Test) {
+		client := &mockTreeStatusClient{
+			getStatusResponse: &tspb.Status{
+				GeneralState: tspb.GeneralState_OPEN,
+				CreateTime:   timestamppb.New(time.Unix(1000, 0)),
+			},
+		}
+		err := updateTreeMetricsWithClient(c, client)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, treeIsOpen.Get(c, "chromium"), should.BeTrue)
+		assert.Loosely(t, treeClosedDuration.Get(c, "chromium"), should.Equal(int64(0)))
+	})
+
+	ftt.Run("Tree is closed", t, func(t *ftt.Test) {
+		ctx := c
+		cl := testclock.New(testclock.TestTimeUTC)
+		ctx = clock.Set(ctx, cl)
+		cl.Set(time.Unix(2000, 0))
+
+		client := &mockTreeStatusClient{
+			getStatusResponse: &tspb.Status{
+				GeneralState: tspb.GeneralState_CLOSED,
+				CreateTime:   timestamppb.New(time.Unix(1000, 0)),
+			},
+		}
+		err := updateTreeMetricsWithClient(ctx, client)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, treeIsOpen.Get(ctx, "chromium"), should.BeFalse)
+		assert.Loosely(t, treeClosedDuration.Get(ctx, "chromium"), should.Equal(int64(1000)))
+	})
 }
