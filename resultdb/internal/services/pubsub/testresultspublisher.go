@@ -174,7 +174,6 @@ func (p *testResultsPublisher) collectTestResults(ctx context.Context, rootInvID
 						return collectedResults, &WorkUnitPageToken{workUnitIndex: int32(i), pageToken: currentPageToken}, nil
 					}
 
-					logging.Warningf(ctx, "Single page of results for work unit %q exceeds max size", wuName)
 					var token *WorkUnitPageToken
 					if nextPageToken != "" {
 						token = &WorkUnitPageToken{
@@ -197,8 +196,18 @@ func (p *testResultsPublisher) collectTestResults(ctx context.Context, rootInvID
 					return collectedResults, &WorkUnitPageToken{workUnitIndex: int32(i), pageToken: currentPageToken}, nil
 				}
 
-				collectedResults = append(collectedResults, newWUBlock)
-				currentSize += newBlockSize
+				lastBlockIndex := len(collectedResults) - 1
+				if lastBlockIndex >= 0 && collectedResults[lastBlockIndex].WorkUnitName == wuName {
+					// Merges the current block into the last block if they are from the same work unit.
+					lastBlock := collectedResults[lastBlockIndex]
+					currentSize -= proto.Size(lastBlock)
+					lastBlock.TestResults = append(lastBlock.TestResults, pageTRs...)
+					currentSize += proto.Size(lastBlock)
+				} else {
+					// Appends the current block to the collection if they are from different work units.
+					collectedResults = append(collectedResults, newWUBlock)
+					currentSize += newBlockSize
+				}
 			}
 
 			// Exits the iteration of the current work unit and resets the page

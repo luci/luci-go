@@ -570,11 +570,7 @@ func TestHandlePublishTestResultsTask_Pagination(t *testing.T) {
 			TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
 				{
 					WorkUnitName: wuID1.Name(),
-					TestResults:  []*pb.TestResult{expectedTR1, expectedTR2},
-				},
-				{
-					WorkUnitName: wuID1.Name(),
-					TestResults:  []*pb.TestResult{expectedTR3},
+					TestResults:  []*pb.TestResult{expectedTR1, expectedTR2, expectedTR3},
 				},
 			},
 		}
