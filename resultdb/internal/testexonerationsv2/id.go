@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testresultsv2
+package testexonerationsv2
 
 import (
 	"errors"
@@ -22,9 +22,9 @@ import (
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 )
 
-// ID represents the primary key of TestResultsV2 table.
+// ID represents the fully-qualified identifier of a test exoneration.
 type ID struct {
-	// RootInvocationShardID is the identifier of the root invocation shard the test result
+	// RootInvocationShardID is the identifier of the root invocation shard the test exoneration
 	// was uploaded to. The assignment of the shard is based on the test ID and the
 	// root invocation's test sharding algorithm.
 	RootInvocationShardID rootinvocations.ShardID
@@ -37,8 +37,8 @@ type ID struct {
 	CaseName          string
 	// WorkUnitID is the identifier of the work unit.
 	WorkUnitID string
-	// ResultID is a uniqifier for the result within the test identifier and work unit.
-	ResultID string
+	// ExonerationID is a uniqifier for the exoneration within the test identifier and work unit.
+	ExonerationID string
 }
 
 // Validate returns an error if the ID is invalid.
@@ -61,13 +61,13 @@ func (id ID) Validate() error {
 	if id.WorkUnitID == "" {
 		return errors.New("WorkUnitID is required")
 	}
-	if id.ResultID == "" {
-		return errors.New("ResultID is required")
+	if id.ExonerationID == "" {
+		return errors.New("ExonerationID is required")
 	}
 	return nil
 }
 
-// Key returns the Spanner key.
+// Key returns the spanner primary key of this test exoneration.
 func (id ID) Key() spanner.Key {
 	return spanner.Key{
 		id.RootInvocationShardID.RowID(),
@@ -78,6 +78,6 @@ func (id ID) Key() spanner.Key {
 		id.FineName,
 		id.CaseName,
 		id.WorkUnitID,
-		id.ResultID,
+		id.ExonerationID,
 	}
 }
