@@ -35,7 +35,8 @@ func TestSelfReportClient(t *testing.T) {
 	ftt.Run("testing self reports", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
-		reporter := Report{RClient: &fakeClient{}}
+		c := &fakeClient{}
+		reporter := Report{RClient: c}
 
 		t.Run("cipd admission works", func(t *ftt.Test) {
 			ok, err := reporter.ReportCipdAdmission(ctx, "https://chrome-infra-packages-dev.appspot.com/", "package", "deadbeef")
@@ -62,6 +63,33 @@ func TestSelfReportClient(t *testing.T) {
 			assert.Loosely(t, ok, should.Equal(false))
 			assert.Loosely(t, err, should.ErrLike("a recipe and pid must be provided when task starts"))
 		})
+		t.Run("report stage works with client info", func(t *ftt.Test) {
+			c.taskStageRequests = nil
+			ci := &snooperpb.ClientInfo{
+				Kind: &snooperpb.ClientInfo_Swarming_{
+					Swarming: &snooperpb.ClientInfo_Swarming{
+						TaskId: "1234b56789",
+						BotId:  "test.id",
+						Server: "https://test-swarm.appspot.com",
+					},
+				},
+			}
+
+			r := Report{RClient: c, ClientInfo: ci}
+
+			ok, err := r.ReportStage(ctx, snooperpb.TaskStage_STARTED, "test-recipe", 1)
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(c.taskStageRequests), should.Equal(1))
+			assert.Loosely(t, c.taskStageRequests[0].ClientInfo, should.Match(ci))
+		})
+		t.Run("report stage fails with client info, missing kind", func(t *ftt.Test) {
+			c.taskStageRequests = nil
+			r := Report{RClient: c, ClientInfo: &snooperpb.ClientInfo{}}
+			ok, err := r.ReportStage(ctx, snooperpb.TaskStage_STARTED, "test-recipe", 1)
+			assert.Loosely(t, ok, should.Equal(false))
+			assert.Loosely(t, err, should.ErrLike("a clientInfo message must contain a kind"))
+		})
 		t.Run("report cipd digest works", func(t *ftt.Test) {
 			ok, err := reporter.ReportCipdDigest(ctx, "deadbeef", "package", "iid")
 			assert.Loosely(t, ok, should.Equal(true))
@@ -85,7 +113,9 @@ func TestSelfReportClient(t *testing.T) {
 	})
 }
 
-type fakeClient struct{}
+type fakeClient struct {
+	taskStageRequests []*snooperpb.ReportTaskStageRequest
+}
 
 func (c *fakeClient) ReportCipd(ctx context.Context, in *snooperpb.ReportCipdRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, nil
@@ -100,6 +130,7 @@ func (c *fakeClient) ReportGcs(ctx context.Context, in *snooperpb.ReportGcsReque
 }
 
 func (c *fakeClient) ReportTaskStage(ctx context.Context, in *snooperpb.ReportTaskStageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	c.taskStageRequests = append(c.taskStageRequests, in)
 	return &emptypb.Empty{}, nil
 }
 

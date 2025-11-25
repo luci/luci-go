@@ -41,7 +41,8 @@ var ErrServiceUnavailable = errors.New("local provenance service unavailable")
 // transient. In this application, `ErrServiceUnavailable` is a permanent but
 // acceptable error code.
 type Report struct {
-	RClient snooperpb.SelfReportClient
+	RClient    snooperpb.SelfReportClient
+	ClientInfo *snooperpb.ClientInfo
 }
 
 // ReportCipdAdmission reports a local cipd admission to provenance.
@@ -147,7 +148,7 @@ func (r *Report) ReportGcsDownload(ctx context.Context, uri, digest string) (boo
 // annotated error. This is to indicate, the user should continue normal
 // execution.
 // All other errors are annotated to indicate permanent failures.
-// TODO: Use go struct when a new parameter is added.
+// TODO(dlf): Move recipe to clientInfo message, and make clientInfo required.
 func (r *Report) ReportStage(ctx context.Context, stage snooperpb.TaskStage, recipe string, pid int64) (bool, error) {
 	// Must pass recipe name and pid when reporting task start.
 	if stage == snooperpb.TaskStage_STARTED && (recipe == "" || pid == 0) {
@@ -155,12 +156,21 @@ func (r *Report) ReportStage(ctx context.Context, stage snooperpb.TaskStage, rec
 		return false, fmt.Errorf("a recipe and pid must be provided when task starts")
 	}
 
+	if r.ClientInfo != nil {
+		switch r.ClientInfo.Kind.(type) {
+		case *snooperpb.ClientInfo_Swarming_:
+		default:
+			return false, fmt.Errorf("if supplied a clientInfo message must contain a kind")
+		}
+	}
+
 	req := &snooperpb.ReportTaskStageRequest{
 		TaskStage: stage,
 		Timestamp: timestamppb.New(clock.Now(ctx)),
 		// required when task starts
-		Recipe: recipe,
-		Pid:    pid,
+		Recipe:     recipe,
+		Pid:        pid,
+		ClientInfo: r.ClientInfo,
 	}
 
 	_, err := r.RClient.ReportTaskStage(ctx, req)
