@@ -19,6 +19,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"strings"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/resultdb/internal/checkpoints"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks"
@@ -52,6 +54,13 @@ const (
 	// defaultPageSize is the default number of test results to fetch per page
 	// from Spanner.
 	defaultPageSize = 5000
+
+	// CheckpointProcessID is the process ID for test results publisher
+	// checkpoints.
+	CheckpointProcessID = "test-results-publisher"
+
+	// CheckpointTTL specifies the TTL for checkpoints in Spanner.
+	CheckpointTTL = 7 * 24 * time.Hour
 )
 
 // testResultsPublisher is a helper struct for publishing test results.
@@ -68,10 +77,14 @@ type testResultsPublisher struct {
 
 // WorkUnitPageToken represents the state of pagination across work units.
 type WorkUnitPageToken struct {
+	// workUnitIndex is the index of the current work unit.
 	workUnitIndex int32
-	pageToken     string
+
+	// pageToken is the page token for test results in the current work unit.
+	pageToken string
 }
 
+// handleTestResultsPublisher handles the test results publisher task.
 func (p *testResultsPublisher) handleTestResultsPublisher(ctx context.Context) (err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/pubsub.handleTestResultsPublisher")
 	defer func() { tracing.End(s, err) }()
@@ -98,8 +111,14 @@ func (p *testResultsPublisher) handleTestResultsPublisher(ctx context.Context) (
 		return nil
 	}
 
-	// 3. Constructs the message attributes.
-	attrs := generateAttributes(rootInv)
+	// 3. Checks for existing checkpoint.
+	checkpointKey, exists, err := p.checkCheckpoint(ctx, rootInvID, rootInv.Realm)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
 
 	// 4. Collects test results.
 	collectedResults, nextToken, err := p.collectTestResults(ctx, rootInvID)
@@ -113,19 +132,22 @@ func (p *testResultsPublisher) handleTestResultsPublisher(ctx context.Context) (
 		return errors.Fmt("partition test results: %w", err)
 	}
 
-	// 6. Publishes notifications.
+	// 6. Constructs the message attributes.
+	attrs := generateAttributes(rootInv)
+
+	// 7. Publishes notifications.
+	// We do this before the transaction to ensure that if the transaction fails
+	// and retries, we might send redundant notifications (handled by
+	// deduplication), but we won't lose them if the transaction commits but
+	// publishing fails (which is unlikely but possible if we did it after).
+	// Since NotifyTestResults is non-transactional, it must be called outside a
+	// transaction.
 	if err := p.publishNotifications(ctx, notifications, attrs); err != nil {
 		return errors.Fmt("publish notifications: %w", err)
 	}
 
-	// 7. Schedules continuation task if necessary.
-	if nextToken != nil {
-		if err := p.scheduleContinuation(ctx, rootInvID, nextToken); err != nil {
-			return errors.Fmt("schedule continuation task: %w", err)
-		}
-	}
-
-	return nil
+	// 8. Schedules continuation in a single transaction.
+	return p.commitCheckpointAndContinuation(ctx, rootInvID, checkpointKey, nextToken)
 }
 
 // collectTestResults gathers test results across work units and pages up to a
@@ -327,10 +349,9 @@ func (p *testResultsPublisher) publishNotifications(ctx context.Context, notific
 	return nil
 }
 
-// scheduleContinuation enqueues a new task to continue processing.
-func (p *testResultsPublisher) scheduleContinuation(ctx context.Context, rootInvID rootinvocations.ID, nextToken *WorkUnitPageToken) error {
-	// TODO(b/454120970): Add a checkpoints check for a continuation
-	// task to avoid a potential fork bomb.
+// enqueueContinuationTask enqueues a new task to continue processing.
+// It must be called within a Spanner transaction.
+func (p *testResultsPublisher) enqueueContinuationTask(ctx context.Context, rootInvID rootinvocations.ID, nextToken *WorkUnitPageToken) error {
 	payload := &taskspb.PublishTestResultsTask{
 		RootInvocationId:     p.task.RootInvocationId,
 		WorkUnitIds:          p.task.WorkUnitIds,
@@ -338,19 +359,65 @@ func (p *testResultsPublisher) scheduleContinuation(ctx context.Context, rootInv
 		PageToken:            nextToken.pageToken,
 	}
 	wuID := p.task.WorkUnitIds[nextToken.workUnitIndex]
+	if err := tq.AddTask(ctx, &tq.Task{
+		Title:   fmt.Sprintf("pubsub-tr-rootInvocations/%s/workUnits/%s/pageTokens/%s", rootInvID, wuID, nextToken.pageToken),
+		Payload: payload,
+	}); err != nil {
+		return errors.Fmt("schedule continuation task for page: %w", err)
+	}
+	logging.Infof(ctx, "Scheduled continuation for work unit %q, index %d, next page token %q", wuID, nextToken.workUnitIndex, nextToken.pageToken)
+	return nil
+}
+
+// checkCheckpoint checks if a checkpoint already exists for the current task state.
+func (p *testResultsPublisher) checkCheckpoint(ctx context.Context, rootInvID rootinvocations.ID, realm string) (checkpoints.Key, bool, error) {
+	project, _ := realms.Split(realm)
+	uniquifier := fmt.Sprintf("workUnits/%s/pageTokens/%s", p.task.WorkUnitIds[p.task.CurrentWorkUnitIndex], p.task.PageToken)
+	checkpointKey := checkpoints.Key{
+		Project:    project,
+		ResourceID: string(rootInvID),
+		ProcessID:  CheckpointProcessID,
+		Uniquifier: uniquifier,
+	}
+	exists, err := checkpoints.Exists(span.Single(ctx), checkpointKey)
+	if err != nil {
+		return checkpoints.Key{}, false, errors.Fmt("check checkpoint existence %q: %w", checkpointKey, err)
+	}
+	if exists {
+		logging.Infof(ctx, "Checkpoint already exists for resource ID %q and uniquifier %q, skipping", rootInvID.Name(), uniquifier)
+		return checkpointKey, true, nil
+	}
+	return checkpointKey, false, nil
+}
+
+// commitCheckpointAndContinuation commits the checkpoint and enqueues the
+// continuation task in a single transaction.
+func (p *testResultsPublisher) commitCheckpointAndContinuation(ctx context.Context, rootInvID rootinvocations.ID, checkpointKey checkpoints.Key, nextPageToken *WorkUnitPageToken) error {
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-		if err := tq.AddTask(ctx, &tq.Task{
-			Title:   fmt.Sprintf("pubsub-tr-rootInvocations/%s/workUnits/%s/pageTokens/%s", rootInvID, wuID, nextToken.pageToken),
-			Payload: payload,
-		}); err != nil {
-			return errors.Fmt("schedule continuation task for page: %w", err)
+		// Re-checks checkpoint within transaction.
+		exists, err := checkpoints.Exists(ctx, checkpointKey)
+		if err != nil {
+			return errors.Fmt("check checkpoint existence in transaction: %w", err)
+		}
+		if exists {
+			return nil
+		}
+
+		// Inserts checkpoint.
+		span.BufferWrite(ctx, checkpoints.Insert(ctx, checkpointKey, CheckpointTTL))
+
+		// Schedules continuation task if necessary.
+		if nextPageToken != nil {
+			if err := p.enqueueContinuationTask(ctx, rootInvID, nextPageToken); err != nil {
+				return errors.Fmt("enqueue continuation task: %w", err)
+			}
 		}
 		return nil
 	})
+
 	if err != nil {
-		return errors.Fmt("schedule continuation task in transaction: %w", err)
+		return errors.Fmt("Continuation transaction failed for root invocation %q and next page token %q: %w", rootInvID.Name(), nextPageToken, err)
 	}
-	logging.Infof(ctx, "Scheduled continuation for work unit %q, index %d, next page token %q", wuID, nextToken.workUnitIndex, nextToken.pageToken)
 	return nil
 }
 

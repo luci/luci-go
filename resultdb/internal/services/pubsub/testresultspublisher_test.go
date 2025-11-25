@@ -628,6 +628,50 @@ func TestHandlePublishTestResultsTask_SingleResultTooLarge(t *testing.T) {
 	})
 }
 
+// TestHandlePublishTestResultsTask_Checkpoints tests that checkpoints prevent redundant processing.
+func TestHandlePublishTestResultsTask_Checkpoints(t *testing.T) {
+	t.Run("HandlePublishTestResultsTask_Checkpoints", func(t *testing.T) {
+		ctx := testutil.SpannerTestContext(t)
+		rootInvID := rootinvocations.ID("test-root-inv-checkpoints")
+		rdbHost := "staging.results.api.cr.dev"
+		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
+		testutil.MustApply(ctx, t, insert.Invocation(wuID1.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
+
+		tr1 := testresults.NewBuilder(wuID1.LegacyInvocationID(), "testA", "res1").WithMinimalFields()
+		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr1.Build()))
+
+		rootInvBuilder := rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL)
+		testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInvBuilder.Build())...)
+		ctx, sched := tq.TestingContext(ctx, nil)
+
+		task := &taskspb.PublishTestResultsTask{
+			RootInvocationId:     string(rootInvID),
+			WorkUnitIds:          []string{wuID1.WorkUnitID},
+			CurrentWorkUnitIndex: 0,
+			PageToken:            "",
+		}
+
+		p := &testResultsPublisher{
+			task:             task,
+			resultDBHostname: rdbHost,
+			pageSize:         100,
+		}
+
+		// First run should process and create checkpoint.
+		err := p.handleTestResultsPublisher(ctx)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, sched.Tasks().Filter(func(t *tqtesting.Task) bool { return t.Class == "notify-test-results" }), should.HaveLength(1))
+
+		// Reset scheduler to clear tasks.
+		ctx, sched = tq.TestingContext(ctx, nil)
+
+		// Second run with same task should be skipped by checkpoint.
+		err = p.handleTestResultsPublisher(ctx)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, sched.Tasks().Filter(func(t *tqtesting.Task) bool { return t.Class == "notify-test-results" }), should.HaveLength(0))
+	})
+}
+
 // TestGenerateDeduplicationKey tests the generateDeduplicationKey function.
 func TestGenerateDeduplicationKey(t *testing.T) {
 	t.Run("GenerateDeduplicationKey", func(t *testing.T) {
