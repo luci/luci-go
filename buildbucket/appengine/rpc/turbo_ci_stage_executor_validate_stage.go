@@ -29,33 +29,60 @@ import (
 func (*TurboCIStageExecutor) ValidateStage(ctx context.Context, req *executorpb.ValidateStageRequest) (*executorpb.ValidateStageResponse, error) {
 	TurboCICall(ctx).LogDetails(ctx)
 
-	if err := validateStage(ctx, req.GetStage()); err != nil {
+	updatedPolicy, err := validateStage(ctx, req.GetStage())
+	if err != nil {
 		return nil, err
 	}
-	return &executorpb.ValidateStageResponse{}, nil
+
+	return executorpb.ValidateStageResponse_builder{
+		StageExecutionPolicy: updatedPolicy,
+	}.Build(), nil
 }
 
-func validateStage(ctx context.Context, stage *orchestratorpb.Stage) error {
+func validateStage(ctx context.Context, stage *orchestratorpb.Stage) (*orchestratorpb.StageExecutionPolicy, error) {
 	req := TurboCICall(ctx).ScheduleBuild
 	if req.GetTemplateBuildId() != 0 {
-		return appstatus.BadRequest(fmt.Errorf("Buildbucket stage with template_build_id is not supported"))
+		return nil, appstatus.BadRequest(fmt.Errorf("Buildbucket stage with template_build_id is not supported"))
 	}
 	if req.GetParentBuildId() != 0 {
-		return appstatus.BadRequest(fmt.Errorf("Buildbucket stage with parent_build_id is not supported"))
+		return nil, appstatus.BadRequest(fmt.Errorf("Buildbucket stage with parent_build_id is not supported"))
 	}
+
+	// Stage execution policy
+	// The timeout fields in req must be unset.
+	if req.GetExecutionTimeout() != nil {
+		return nil, appstatus.BadRequest(fmt.Errorf("Buildbucket stage args must unset execution_timeout"))
+	}
+	if req.GetSchedulingTimeout() != nil {
+		return nil, appstatus.BadRequest(fmt.Errorf("Buildbucket stage args must unset scheduling_timeout"))
+	}
+	if req.GetGracePeriod() != nil {
+		return nil, appstatus.BadRequest(fmt.Errorf("Buildbucket stage args must unset grace_period"))
+	}
+
+	// Fill the timeout fields with requested stage execution policy, so it
+	// could be combined with configuration in schedule_build.setTimeouts.
+	reqPolicy := stage.GetExecutionPolicy().GetRequested()
+	fillScheduleBuildRequestWithPolicy(req, reqPolicy.GetAttemptExecutionPolicyTemplate().GetTimeout())
+
 	// Set DryRun to true so the request is only being validated.
 	req.DryRun = true
 
 	pBld, err := getParentViaStage(ctx, stage)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, merr := scheduleBuilds(
+	blds, merr := scheduleBuilds(
 		ctx,
 		[]*pb.ScheduleBuildRequest{req},
 		&scheduleBuildsParams{
 			OverrideParent: pBld,
 		})
-	return merr[0]
+	if merr[0] != nil {
+		return nil, merr[0]
+	}
+
+	updatedPolicy := buildToStageExecutionPolicy(blds[0], reqPolicy)
+	return updatedPolicy, nil
 }
