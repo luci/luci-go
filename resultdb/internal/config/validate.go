@@ -17,7 +17,7 @@ package config
 import (
 	"fmt"
 	"regexp"
-	"strconv"
+	"sort"
 	"strings"
 
 	"google.golang.org/protobuf/proto"
@@ -36,11 +36,20 @@ const (
 	SchemeIDPattern = `[a-z][a-z0-9]{0,19}`
 
 	unspecifiedMessage = "unspecified"
+
+	maxSchemesConfigSize = 100 * 1024 // bytes
+	maxSchemes           = 1000       // schemes
+
+	maxProducerSystemsConfigSize = 100 * 1024 // bytes
+	maxProducerSystems           = 1000       // producer systems
 )
 
 var gcsBucketRE = regexp.MustCompile(`^[a-z0-9_\.\-]{3,222}$`)
 var schemeIDRE = regexp.MustCompile(`^` + SchemeIDPattern + `$`)
 var humanReadableRE = regexp.MustCompile(`^[[:print:]]{1,100}$`)
+
+// templateVarRE matches a template variable, e.g. "${run_id}".
+var templateVarRE = regexp.MustCompile(`\$\{(.*?)\}`)
 
 func validateStringConfig(ctx *validation.Context, name, cfg string, re *regexp.Regexp) {
 	ctx.Enter("%s", name)
@@ -51,27 +60,6 @@ func validateStringConfig(ctx *validation.Context, name, cfg string, re *regexp.
 	}
 	if !re.MatchString(cfg) {
 		ctx.Errorf("invalid %s: %q", name, cfg)
-	}
-}
-
-// Validates according to https://cloud.google.com/storage/docs/objects#naming
-func validateGCSBucketPrefix(ctx *validation.Context, name string, prefix string) {
-	ctx.Enter("%s", name)
-	defer ctx.Exit()
-
-	prefixLen := len(prefix)
-	if prefixLen < 1 || prefixLen > 1024 {
-		ctx.Errorf("prefix: %q should have length between 1 and 1024 bytes", prefix)
-	}
-	if strings.HasPrefix(prefix, ".well-known/acme-challenge/") {
-		ctx.Errorf("prefix: %q is not allowed", prefix)
-	}
-	if prefix == "." || prefix == ".." {
-		ctx.Errorf("prefix: %q is not allowed, use '*' as wildcard to allow full access", prefix)
-	}
-	notAllowedChars, _ := strconv.Unquote(`"\u000a\u000b\u000c\u000d\u0085\u2028\u2029"`)
-	if strings.ContainsAny(prefix, notAllowedChars) {
-		ctx.Errorf("prefix: %q contains carriage return or line feed characters, which is not allowed", prefix)
 	}
 }
 
@@ -126,6 +114,7 @@ func validateServiceConfig(ctx *validation.Context, cfg *configpb.Config) {
 	}
 	validateBQArtifactExportConfig(ctx, cfg.BqArtifactExportConfig)
 	validateSchemes(ctx, cfg.Schemes)
+	validateProducerSystems(ctx, cfg.ProducerSystems)
 }
 
 func validateBQArtifactExportConfig(ctx *validation.Context, cfg *configpb.BqArtifactExportConfig) {
@@ -140,11 +129,11 @@ func validateSchemes(ctx *validation.Context, schemes []*configpb.Scheme) {
 	ctx.Enter("schemes")
 	defer ctx.Exit()
 
-	if proto.Size(&configpb.Config{Schemes: schemes}) > 100_000 {
-		ctx.Errorf("too large; total size of configured schemes must not exceed 100 KB")
+	if proto.Size(&configpb.Config{Schemes: schemes}) > maxSchemesConfigSize {
+		ctx.Errorf("too large; total size of configured schemes must not exceed %d bytes", maxSchemesConfigSize)
 	}
-	if len(schemes) > 1000 {
-		ctx.Errorf("too large; may not exceed 1000 configured schemes")
+	if len(schemes) > maxSchemes {
+		ctx.Errorf("too large; may not exceed %d configured schemes", maxSchemes)
 	}
 
 	seenIDs := map[string]struct{}{}
@@ -226,4 +215,115 @@ func validateValidationRegexp(ctx *validation.Context, pattern string) {
 	if err != nil {
 		ctx.Errorf("could not compile pattern: %s", err)
 	}
+}
+
+// validateProducerSystems validates the producer systems configuration.
+func validateProducerSystems(ctx *validation.Context, systems []*configpb.ProducerSystem) {
+	ctx.Enter("producer_systems")
+	defer ctx.Exit()
+
+	if proto.Size(&configpb.Config{ProducerSystems: systems}) > maxProducerSystemsConfigSize {
+		ctx.Errorf("too large; total size of configured producer systems must not exceed %d bytes", maxProducerSystemsConfigSize)
+	}
+	if len(systems) > maxProducerSystems {
+		ctx.Errorf("too large; may not exceed %d configured producer systems", maxProducerSystems)
+	}
+
+	seenSystems := map[string]struct{}{}
+	for i, system := range systems {
+		validateProducerSystem(ctx, fmt.Sprintf("[%v]", i), system, seenSystems)
+	}
+}
+
+// validateProducerSystem validates the configuration for a producer system.
+func validateProducerSystem(ctx *validation.Context, name string, cfg *configpb.ProducerSystem, seenSystems map[string]struct{}) {
+	ctx.Enter("%s", name)
+	defer ctx.Exit()
+
+	validateProducerSystemName(ctx, cfg.System, seenSystems)
+	validatePattern(ctx, "name_pattern", cfg.NamePattern)
+	validatePattern(ctx, "data_realm_pattern", cfg.DataRealmPattern)
+
+	// Validate URL templates.
+	re, err := regexp.Compile(cfg.NamePattern)
+	if err != nil {
+		// We require the name pattern to be valid. If it is not,
+		// an error will already have been reported.
+		return
+	}
+
+	allowedVars := map[string]struct{}{"data_realm": {}}
+	for _, name := range re.SubexpNames() {
+		if name != "" {
+			allowedVars[name] = struct{}{}
+		}
+	}
+	validateURLTemplate(ctx, "url_template", cfg.UrlTemplate, allowedVars)
+	for realm, template := range cfg.UrlTemplateByDataRealm {
+		validateURLTemplate(ctx, fmt.Sprintf("url_template_by_data_realm[%q]", realm), template, allowedVars)
+	}
+}
+
+// validateProducerSystemName validates the name of a producer system.
+func validateProducerSystemName(ctx *validation.Context, system string, seenSystems map[string]struct{}) {
+	ctx.Enter("system")
+	defer ctx.Exit()
+
+	if err := pbutil.ValidateProducerSystemName(system); err != nil {
+		ctx.Error(err)
+		return
+	}
+	if _, ok := seenSystems[system]; ok {
+		ctx.Errorf("producer system with name %q appears in collection more than once", system)
+	}
+	seenSystems[system] = struct{}{}
+}
+
+// validatePattern validates the pattern is a valid, non-empty RE2 regular expression,
+// and that it starts and ends with ^ and $.
+func validatePattern(ctx *validation.Context, name string, pattern string) {
+	ctx.Enter("%s", name)
+	defer ctx.Exit()
+
+	if pattern == "" {
+		ctx.Errorf("unspecified")
+		return
+	}
+	if !strings.HasPrefix(pattern, "^") || !strings.HasSuffix(pattern, "$") {
+		ctx.Errorf("pattern must start and end with ^ and $")
+		return
+	}
+	if _, err := regexp.Compile(pattern); err != nil {
+		ctx.Errorf("could not compile pattern: %s", err)
+	}
+}
+
+// validateURLTemplate validates the URL template.
+func validateURLTemplate(ctx *validation.Context, name, template string, allowedVars map[string]struct{}) {
+	ctx.Enter("%s", name)
+	defer ctx.Exit()
+
+	if template == "" {
+		return
+	}
+	// This validation is not perfect as it does not handle bad syntax (e.g. "${foo"), but it
+	// does pick up some obvious errors like references to unknown variables.
+	matches := templateVarRE.FindAllStringSubmatch(template, -1)
+	for _, match := range matches {
+		varName := match[1]
+		if _, ok := allowedVars[varName]; !ok {
+			ctx.Errorf("unknown variable %q; allowed variables are %s", varName, allowedVarsList(allowedVars))
+			return
+		}
+	}
+}
+
+// allowedVarsList returns a string representation of the allowed variables.
+func allowedVarsList(allowedVars map[string]struct{}) string {
+	vars := make([]string, 0, len(allowedVars))
+	for v := range allowedVars {
+		vars = append(vars, fmt.Sprintf("%q", v))
+	}
+	sort.Strings(vars)
+	return fmt.Sprintf("[%s]", strings.Join(vars, ", "))
 }

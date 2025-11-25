@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/server/caching"
 
+	"go.chromium.org/luci/resultdb/internal/producersystems"
 	"go.chromium.org/luci/resultdb/internal/schemes"
 	"go.chromium.org/luci/resultdb/pbutil"
 	configpb "go.chromium.org/luci/resultdb/proto/config"
@@ -40,6 +41,8 @@ type CompiledServiceConfig struct {
 	Revision string
 	// The compiled scheme configuration, by scheme ID.
 	Schemes map[string]*schemes.Scheme
+	// The compiled producer system configuration, by producer system name.
+	ProducerSystems map[string]*producersystems.ProducerSystem
 }
 
 // NewCompiledServiceConfig compiles the given raw service config
@@ -55,10 +58,21 @@ func NewCompiledServiceConfig(cfg *configpb.Config, revision string) (*CompiledS
 		}
 		compiledSchemes[scheme.Id] = compiledScheme
 	}
+
+	compiledProducerSystems := make(map[string]*producersystems.ProducerSystem, len(cfg.ProducerSystems))
+	for _, ps := range cfg.ProducerSystems {
+		compiledPS, err := producersystems.NewProducerSystem(ps)
+		if err != nil {
+			return nil, err
+		}
+		compiledProducerSystems[ps.System] = compiledPS
+	}
+
 	return &CompiledServiceConfig{
-		Config:   cfg,
-		Revision: revision,
-		Schemes:  compiledSchemes,
+		Config:          cfg,
+		Revision:        revision,
+		Schemes:         compiledSchemes,
+		ProducerSystems: compiledProducerSystems,
 	}, nil
 }
 

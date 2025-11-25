@@ -172,10 +172,10 @@ func TestServiceConfigValidator(t *testing.T) {
 		})
 		t.Run("Collection too Large", func(t *ftt.Test) {
 			t.Run("By size", func(t *ftt.Test) {
-				cfg.Schemes = make([]*configpb.Scheme, 0, 1001)
-				for i := range 1000 {
-					// Each scheme is >100 bytes, and there are 1000, so
-					// the total size will be over 100 KB.
+				cfg.Schemes = make([]*configpb.Scheme, 0, (maxSchemesConfigSize/100)+1)
+				for i := range (maxSchemesConfigSize / 100) + 1 {
+					// Each scheme is over 100 bytes, so in total it should
+					// exceed the limit.
 					cfg.Schemes = append(cfg.Schemes, &configpb.Scheme{
 						Id:                fmt.Sprintf("scheme%d", i),
 						HumanReadableName: strings.Repeat("A", 100),
@@ -184,11 +184,11 @@ func TestServiceConfigValidator(t *testing.T) {
 						},
 					})
 				}
-				assert.Loosely(t, validate(cfg), should.ErrLike("(schemes): too large; total size of configured schemes must not exceed 100 KB"))
+				assert.Loosely(t, validate(cfg), should.ErrLike("(schemes): too large; total size of configured schemes must not exceed 102400 bytes"))
 			})
 			t.Run("By elements", func(t *ftt.Test) {
-				cfg.Schemes = make([]*configpb.Scheme, 0, 1001)
-				for i := range 1001 {
+				cfg.Schemes = make([]*configpb.Scheme, 0, maxSchemes+1)
+				for i := range maxSchemes + 1 {
 					cfg.Schemes = append(cfg.Schemes, &configpb.Scheme{
 						Id:                fmt.Sprintf("scheme%d", i),
 						HumanReadableName: fmt.Sprintf("Scheme %d", i),
@@ -345,6 +345,123 @@ func TestServiceConfigValidator(t *testing.T) {
 				// routine as the coarse level, and that level is tested above.
 				scheme.Case.HumanReadableName = ""
 				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+` / human_readable_name): unspecified`))
+			})
+		})
+	})
+	ftt.Run("producer systems", t, func(t *ftt.Test) {
+		cfg := CreatePlaceHolderServiceConfig()
+		cfg.ProducerSystems = []*configpb.ProducerSystem{
+			{
+				System:           "buildbucket",
+				NamePattern:      `^builds/(?P<build_id>[0-9]+)$`,
+				DataRealmPattern: `^prod|test$`,
+			},
+		}
+		t.Run("Valid", func(t *ftt.Test) {
+			assert.Loosely(t, validate(cfg), should.BeNil)
+		})
+		t.Run("Collection too Large", func(t *ftt.Test) {
+			t.Run("By size", func(t *ftt.Test) {
+				cfg.ProducerSystems = make([]*configpb.ProducerSystem, 0, (maxProducerSystemsConfigSize/1000)+1)
+				for i := range (maxProducerSystemsConfigSize / 1000) + 1 {
+					// Each system is >1000 bytes, so in total it should
+					// exceed the limit.
+					cfg.ProducerSystems = append(cfg.ProducerSystems, &configpb.ProducerSystem{
+						System:           fmt.Sprintf("system%d", i),
+						NamePattern:      strings.Repeat("A", 1000),
+						DataRealmPattern: `^prod$`,
+					})
+				}
+				assert.Loosely(t, validate(cfg), should.ErrLike("(producer_systems): too large; total size of configured producer systems must not exceed 102400 bytes"))
+			})
+			t.Run("By elements", func(t *ftt.Test) {
+				cfg.ProducerSystems = make([]*configpb.ProducerSystem, 0, maxProducerSystems+1)
+				for i := range maxProducerSystems + 1 {
+					cfg.ProducerSystems = append(cfg.ProducerSystems, &configpb.ProducerSystem{
+						System:           fmt.Sprintf("system%d", i),
+						NamePattern:      `^builds/[0-9]+$`,
+						DataRealmPattern: `^prod$`,
+					})
+				}
+				assert.Loosely(t, validate(cfg), should.ErrLike("(producer_systems): too large; may not exceed 1000 configured producer systems"))
+			})
+		})
+
+		system := cfg.ProducerSystems[0]
+		path := "producer_systems / [0]"
+		t.Run("System", func(t *ftt.Test) {
+			path := path + " / system"
+			t.Run("Empty", func(t *ftt.Test) {
+				system.System = ""
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): unspecified`))
+			})
+			t.Run("Duplicate", func(t *ftt.Test) {
+				cfg.ProducerSystems = append(cfg.ProducerSystems, &configpb.ProducerSystem{
+					System:           "buildbucket",
+					NamePattern:      `^builds/[0-9]+$`,
+					DataRealmPattern: `^prod$`,
+				})
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(producer_systems / [1] / system): producer system with name "buildbucket" appears in collection more than once`))
+			})
+			t.Run("Invalid", func(t *ftt.Test) {
+				system.System = "ATP"
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): does not match pattern`))
+			})
+		})
+		t.Run("Name Pattern", func(t *ftt.Test) {
+			path := path + " / name_pattern"
+			t.Run("Empty", func(t *ftt.Test) {
+				system.NamePattern = ""
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): unspecified`))
+			})
+			t.Run("Invalid", func(t *ftt.Test) {
+				system.NamePattern = "^[$"
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): could not compile pattern: error parsing regexp: missing closing ]: `))
+			})
+			t.Run("Invalid Start/End", func(t *ftt.Test) {
+				system.NamePattern = "blah"
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): pattern must start and end with ^ and $`))
+			})
+		})
+		t.Run("Data Realm Pattern", func(t *ftt.Test) {
+			path := path + " / data_realm_pattern"
+			t.Run("Empty", func(t *ftt.Test) {
+				system.DataRealmPattern = ""
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): unspecified`))
+			})
+			t.Run("Invalid", func(t *ftt.Test) {
+				system.DataRealmPattern = "^[$"
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): could not compile pattern: error parsing regexp: missing closing ]: `))
+			})
+			t.Run("Invalid Start/End", func(t *ftt.Test) {
+				system.DataRealmPattern = "blah"
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): pattern must start and end with ^ and $`))
+			})
+		})
+		t.Run("URL Template", func(t *ftt.Test) {
+			path := path + " / url_template"
+			t.Run("Valid", func(t *ftt.Test) {
+				system.UrlTemplate = "https://example.com/${build_id}/${data_realm}"
+				assert.Loosely(t, validate(cfg), should.BeNil)
+			})
+			t.Run("Invalid variable", func(t *ftt.Test) {
+				system.UrlTemplate = "https://example.com/${foo_bar}"
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): unknown variable "foo_bar"; allowed variables are ["build_id", "data_realm"]`))
+			})
+		})
+		t.Run("URL Template By Data Realm", func(t *ftt.Test) {
+			path := path + ` / url_template_by_data_realm["prod"]`
+			t.Run("Valid", func(t *ftt.Test) {
+				system.UrlTemplateByDataRealm = map[string]string{
+					"prod": "https://example.com/${build_id}",
+				}
+				assert.Loosely(t, validate(cfg), should.BeNil)
+			})
+			t.Run("Invalid variable", func(t *ftt.Test) {
+				system.UrlTemplateByDataRealm = map[string]string{
+					"prod": "https://example.com/${foo_bar}",
+				}
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): unknown variable "foo_bar"; allowed variables are ["build_id", "data_realm"]`))
 			})
 		})
 	})

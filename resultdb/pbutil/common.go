@@ -818,7 +818,7 @@ func ValidateProducerResource(pr *pb.ProducerResource) error {
 	if pr == nil {
 		return errors.New("unspecified")
 	}
-	if err := validate.MatchReWithLength(producerResourceSystemRE, 1, maxProducerResourceSystemLength, pr.System); err != nil {
+	if err := ValidateProducerSystemName(pr.System); err != nil {
 		return errors.Fmt("system: %w", err)
 	}
 	if err := validate.MatchReWithLength(producerDataRealmRE, 1, maxProducerResourceDataRealmLength, pr.DataRealm); err != nil {
@@ -835,6 +835,11 @@ func ValidateProducerResource(pr *pb.ProducerResource) error {
 		return fmt.Errorf("name: resource name %q is not in Unicode Normal Form C", pr.Name)
 	}
 	return nil
+}
+
+// ValidateProducerSystemName validates a producer system name.
+func ValidateProducerSystemName(system string) error {
+	return validate.MatchReWithLength(producerResourceSystemRE, 1, maxProducerResourceSystemLength, system)
 }
 
 // TruncateString truncates a UTF-8 string to the given number of bytes.

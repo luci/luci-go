@@ -74,9 +74,12 @@ func TestVerifyCreateRootInvocationPermissions(t *testing.T) {
 				Realm: "project:realm",
 			},
 		}
+		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
+		assert.Loosely(t, err, should.BeNil)
+
 		t.Run("unspecified root invocation", func(t *ftt.Test) {
 			request.RootInvocation = nil
-			err := verifyCreateRootInvocationPermissions(ctx, request)
+			err := verifyCreateRootInvocationPermissions(ctx, request, cfg)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("root_invocation: unspecified"))
 		})
@@ -85,7 +88,7 @@ func TestVerifyCreateRootInvocationPermissions(t *testing.T) {
 			err := verifyCreateRootInvocationPermissions(ctx, &pb.CreateRootInvocationRequest{
 				RootInvocationId: "u-inv",
 				RootInvocation:   &pb.RootInvocation{},
-			})
+			}, cfg)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("root_invocation: realm: unspecified"))
 		})
@@ -97,25 +100,25 @@ func TestVerifyCreateRootInvocationPermissions(t *testing.T) {
 				RootInvocation: &pb.RootInvocation{
 					Realm: "invalid:",
 				},
-			})
+			}, cfg)
 			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike(`root_invocation: realm: bad global realm name`))
 		})
 
 		t.Run("basic creation", func(t *ftt.Test) {
 			t.Run("allowed", func(t *ftt.Test) {
-				err := verifyCreateRootInvocationPermissions(ctx, request)
+				err := verifyCreateRootInvocationPermissions(ctx, request, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run("create root invocation disallowed", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateRootInvocation)
-				err := verifyCreateRootInvocationPermissions(ctx, request)
+				err := verifyCreateRootInvocationPermissions(ctx, request, cfg)
 				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 				assert.Loosely(t, err, should.ErrLike(`caller does not have permission "resultdb.rootInvocations.create"`))
 			})
 			t.Run("create work unit disallowed", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateWorkUnit)
-				err := verifyCreateRootInvocationPermissions(ctx, request)
+				err := verifyCreateRootInvocationPermissions(ctx, request, cfg)
 				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 				assert.Loosely(t, err, should.ErrLike(`caller does not have permission "resultdb.workUnits.create"`))
 			})
@@ -125,7 +128,7 @@ func TestVerifyCreateRootInvocationPermissions(t *testing.T) {
 			request.RootInvocationId = "build-8765432100"
 
 			t.Run("disallowed", func(t *ftt.Test) {
-				err := verifyCreateRootInvocationPermissions(ctx, request)
+				err := verifyCreateRootInvocationPermissions(ctx, request, cfg)
 				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 				assert.Loosely(t, err, should.ErrLike(`only root invocations created by trusted systems may have id not starting with "u-"`))
 			})
@@ -134,13 +137,13 @@ func TestVerifyCreateRootInvocationPermissions(t *testing.T) {
 				authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
 					Realm: "project:@root", Permission: permCreateRootInvocationWithReservedID,
 				})
-				err := verifyCreateRootInvocationPermissions(ctx, request)
+				err := verifyCreateRootInvocationPermissions(ctx, request, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
 			t.Run("allowed with trusted group", func(t *ftt.Test) {
 				authState.IdentityGroups = []string{trustedCreatorGroup}
-				err := verifyCreateRootInvocationPermissions(ctx, request)
+				err := verifyCreateRootInvocationPermissions(ctx, request, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 		})
@@ -152,28 +155,28 @@ func TestVerifyCreateRootInvocationPermissions(t *testing.T) {
 				Name:      "builds/1",
 			}
 			t.Run("disallowed", func(t *ftt.Test) {
-				err := verifyCreateRootInvocationPermissions(ctx, request)
+				err := verifyCreateRootInvocationPermissions(ctx, request, cfg)
 				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike(`only root invocations created by trusted system may set the producer_resource field to "buildbucket"`))
+				assert.Loosely(t, err, should.ErrLike(`only root invocations created by trusted system may set the producer_resource.system field to "buildbucket"`))
 			})
 
 			t.Run("allowed with realm permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
 					Realm: "project:@root", Permission: permSetRootInvocationProducerResource,
 				})
-				err := verifyCreateRootInvocationPermissions(ctx, request)
+				err := verifyCreateRootInvocationPermissions(ctx, request, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
 			t.Run("allowed with trusted group", func(t *ftt.Test) {
 				authState.IdentityGroups = []string{trustedCreatorGroup}
-				err := verifyCreateRootInvocationPermissions(ctx, request)
+				err := verifyCreateRootInvocationPermissions(ctx, request, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
 			t.Run("allowed with non-validated system", func(t *ftt.Test) {
 				request.RootInvocation.ProducerResource.System = "little-known-system"
-				err := verifyCreateRootInvocationPermissions(ctx, request)
+				err := verifyCreateRootInvocationPermissions(ctx, request, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 		})
@@ -182,7 +185,7 @@ func TestVerifyCreateRootInvocationPermissions(t *testing.T) {
 			request.RootInvocation.BaselineId = "try:linux-rel"
 
 			t.Run("disallowed", func(t *ftt.Test) {
-				err := verifyCreateRootInvocationPermissions(ctx, request)
+				err := verifyCreateRootInvocationPermissions(ctx, request, cfg)
 				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 				assert.Loosely(t, err, should.ErrLike(`caller does not have permission to write to test baseline`))
 			})
@@ -191,7 +194,7 @@ func TestVerifyCreateRootInvocationPermissions(t *testing.T) {
 				authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
 					Realm: "project:@project", Permission: permPutBaseline,
 				})
-				err := verifyCreateRootInvocationPermissions(ctx, request)
+				err := verifyCreateRootInvocationPermissions(ctx, request, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 		})
@@ -309,7 +312,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
-				t.Run("invalid", func(t *ftt.Test) {
+				t.Run("invalid structurally", func(t *ftt.Test) {
 					req.RootInvocation.ProducerResource = &pb.ProducerResource{
 						System:    "INVALID",
 						DataRealm: "prod",
@@ -317,6 +320,15 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					}
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: producer_resource: system: does not match pattern"))
+				})
+				t.Run("invalid with respect to config", func(t *ftt.Test) {
+					req.RootInvocation.ProducerResource = &pb.ProducerResource{
+						System:    "buildbucket",
+						DataRealm: "test",
+						Name:      "runs/123",
+					}
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike(`root_invocation: producer_resource: name: does not match pattern "^builds/[0-9]+$"`))
 				})
 			})
 			t.Run("definition", func(t *ftt.Test) {

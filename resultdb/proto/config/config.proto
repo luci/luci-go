@@ -31,6 +31,15 @@ message Config {
 
   // Test schemes supported by the deployment.
   repeated Scheme schemes = 3;
+
+  // Configures extended validation for the RootInvocation/WorkUnit
+  // ProducerResource field.
+  //
+  // If a system is not specified in this list, it can still be
+  // specified in a ProducerResource message, but:
+  // - it will only be subject to basic validation, and
+  // - a URL to the producing system's UI will not be generated.
+  repeated ProducerSystem producer_systems = 4;
 }
 
 // BqArtifactExportConfig contains the configuration to export
@@ -42,4 +51,51 @@ message BqArtifactExportConfig {
   // This allows us to roll out the change incrementally.
   // This value must be an integer between [0, 100].
   int64 export_percent = 2;
+}
+
+// ProducerSystem configures a producer system in ResultDB. A producer system
+// is a system which may be used in the ProducerResource message on a root
+// invocation or work unit.
+// Next ID: 7
+message ProducerSystem {
+  // The name of the producer system. E.g. "atp" or "buildbucket".
+  string system = 1;
+
+  // An RE2 regular expression matching allowed values of the ProducerResource.name field
+  // for this system.
+  //
+  // Capture groups can be named to allow them to be used as variables in `url_template`
+  // later on.
+  // E.g. "^builds/(?P<build_id>[0-9]+)$" matches "builds/123456789" and captures
+  // "123456789" as the `build_id` variable for use later in `url_template`.
+  string name_pattern = 2;
+
+  // An RE2 regular expression matching allowed values of the ProducerResource.data_realm field
+  // for this system.
+  //
+  // E.g. "prod|test".
+  string data_realm_pattern = 3;
+
+  // If true, only allow the producer system to be used by trusted callers having the
+  // `resultdb.workUnits.setProducerResource` or `resultdb.rootInvocations.setProducerResource`
+  // permission. This can help ensure the integrity of the producer resource references
+  // using this system, but is not suitable if tools running on developer workstations
+  // will need to set this system.
+  //
+  // If false, allows any caller to set this system.
+  bool validate_callers = 4;
+
+  // A template used to generate a URL to a producer resource.
+  //
+  // To use a variable, use the syntax `${variable_name}`.
+  // The defined variables are the named capture groups in `name_pattern`,
+  // and the variable `data_realm`, which is the value of ProducerResource's
+  // `data_realm` field.
+  //
+  // E.g. "https://ci.chromium.org/ui/b/${build_id}".
+  string url_template = 5;
+
+  // As per above, but allows overriding the URL template for specific data realms.
+  // For example, the hostname of the URL may be different for different data realms.
+  map<string, string> url_template_by_data_realm = 6;
 }

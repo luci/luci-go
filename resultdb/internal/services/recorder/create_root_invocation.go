@@ -59,22 +59,15 @@ const (
 	defaultDeadlineDuration = 2 * 24 * time.Hour // 2 days
 )
 
-var (
-	// The producer systems which are validated. Setting these are restricted to
-	// clients with resultdb.rootinvocations.setProducerResource permission.
-	// If we need to update this often, it might make sense to move into config.
-	validatedProducerSystems = []string{"atp", "bazel", "buildbucket", "swarming"}
-)
-
 // CreateRootInvocation implements pb.RecorderServer.
 func (s *recorderServer) CreateRootInvocation(ctx context.Context, in *pb.CreateRootInvocationRequest) (*pb.CreateRootInvocationResponse, error) {
 	// As per https://google.aip.dev/211, check authorisation before
 	// validating the request.
-	if err := verifyCreateRootInvocationPermissions(ctx, in); err != nil {
-		return nil, err
-	}
 	cfg, err := config.Service(ctx)
 	if err != nil {
+		return nil, err
+	}
+	if err := verifyCreateRootInvocationPermissions(ctx, in, cfg); err != nil {
 		return nil, err
 	}
 	if err := validateCreateRootInvocationRequest(in, cfg); err != nil {
@@ -255,7 +248,7 @@ func deduplicateCreateRootInvocations(ctx context.Context, id rootinvocations.ID
 	return true, nil
 }
 
-func verifyCreateRootInvocationPermissions(ctx context.Context, req *pb.CreateRootInvocationRequest) error {
+func verifyCreateRootInvocationPermissions(ctx context.Context, req *pb.CreateRootInvocationRequest, cfg *config.CompiledServiceConfig) error {
 	// Only perform validation that is necessary for performing authorisation checks,
 	// the full set of validation will occur if these checks pass.
 	inv := req.RootInvocation
@@ -282,7 +275,7 @@ func verifyCreateRootInvocationPermissions(ctx context.Context, req *pb.CreateRo
 		return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %q in realm %q`, permCreateWorkUnit, realm)
 	}
 
-	// if an ID not starting with "u-" is specified,
+	// If an ID not starting with "u-" is specified,
 	// resultdb.rootInvocations.createWithReservedID permission is required.
 	if !strings.HasPrefix(req.RootInvocationId, "u-") {
 		project, _ := realms.Split(realm)
@@ -296,9 +289,9 @@ func verifyCreateRootInvocationPermissions(ctx context.Context, req *pb.CreateRo
 		}
 	}
 
-	// if the producer resource is set to a validated system,
-	// resultdb.rootInvocations.setProducerResource permission is required.
-	if inv.ProducerResource != nil && isValidatedProducerSystem(inv.ProducerResource.System) {
+	// If the producer resource is set to a system requiring the caller to be
+	// validated, resultdb.rootInvocations.setProducerResource permission is required.
+	if inv.ProducerResource != nil && validateProducerSystemCaller(inv.ProducerResource.System, cfg) {
 		project, _ := realms.Split(realm)
 		rootRealm := realms.Join(project, realms.RootRealm)
 		allowed, err := checkPermissionOrGroupMember(ctx, rootRealm, permSetRootInvocationProducerResource, trustedCreatorGroup)
@@ -306,11 +299,11 @@ func verifyCreateRootInvocationPermissions(ctx context.Context, req *pb.CreateRo
 			return err
 		}
 		if !allowed {
-			return appstatus.Errorf(codes.PermissionDenied, `only root invocations created by trusted system may set the producer_resource field to %q`, inv.ProducerResource.System)
+			return appstatus.Errorf(codes.PermissionDenied, `only root invocations created by trusted system may set the producer_resource.system field to %q`, inv.ProducerResource.System)
 		}
 	}
 
-	// if a baseline is set,
+	// If a baseline is set,
 	// resultdb.baselines.put permission is required in the ":@project" realm
 	// of the LUCI project the root invocation is being created in.
 	if inv.BaselineId != "" {
@@ -326,13 +319,11 @@ func verifyCreateRootInvocationPermissions(ctx context.Context, req *pb.CreateRo
 	return nil
 }
 
-// isValidatedProducerSystem returns whether a producer system requires the
+// validateProducerSystemCaller returns whether a producer system requires the
 // caller to have resultdb.rootInvocations.setProducerResource permission.
-func isValidatedProducerSystem(system string) bool {
-	for _, s := range validatedProducerSystems {
-		if s == system {
-			return true
-		}
+func validateProducerSystemCaller(system string, cfg *config.CompiledServiceConfig) bool {
+	if ps, ok := cfg.ProducerSystems[system]; ok {
+		return ps.ValidateCallers
 	}
 	return false
 }
@@ -341,7 +332,7 @@ func validateCreateRootInvocationRequest(req *pb.CreateRootInvocationRequest, cf
 	if err := pbutil.ValidateRootInvocationID(req.RootInvocationId); err != nil {
 		return errors.Fmt("root_invocation_id: %w", err)
 	}
-	if err := validateRootInvocationForCreate(req.RootInvocation); err != nil {
+	if err := validateRootInvocationForCreate(req.RootInvocation, cfg); err != nil {
 		return errors.Fmt("root_invocation: %w", err)
 	}
 	if err := validateRootWorkUnitForCreate(req.RootWorkUnit, cfg); err != nil {
@@ -360,7 +351,7 @@ func validateCreateRootInvocationRequest(req *pb.CreateRootInvocationRequest, cf
 
 // validateRootInvocationForCreate validates the fields of a pb.RootInvocation message
 // for a creation request.
-func validateRootInvocationForCreate(inv *pb.RootInvocation) error {
+func validateRootInvocationForCreate(inv *pb.RootInvocation, cfg *config.CompiledServiceConfig) error {
 	if inv == nil {
 		return errors.New("unspecified")
 	}
@@ -382,6 +373,12 @@ func validateRootInvocationForCreate(inv *pb.RootInvocation) error {
 	// Validate producer_resource.
 	if err := pbutil.ValidateProducerResource(inv.ProducerResource); err != nil {
 		return errors.Fmt("producer_resource: %w", err)
+	}
+	if ps, ok := cfg.ProducerSystems[inv.ProducerResource.System]; ok {
+		// If the system is configured, apply additional validation.
+		if err := ps.Validate(inv.ProducerResource); err != nil {
+			return errors.Fmt("producer_resource: %w", err)
+		}
 	}
 
 	// Validate definition.
