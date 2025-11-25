@@ -317,6 +317,19 @@ func StageEditErr(mode WorknodeMode, stageID string, ts time.Time) (*idspb.Stage
 	}.Build(), nil
 }
 
+// WorkplanErr returns a WorkPlan identifier or an error if it is invalid.
+func WorkplanErr(id string) (*idspb.WorkPlan, error) {
+	if err := checkToken("workPlanID", id); err != nil {
+		return nil, fmt.Errorf("id.Workplan: %w", err)
+	}
+	return idspb.WorkPlan_builder{Id: &id}.Build(), nil
+}
+
+// Workplan returns a WorkPlan identifier in a structured form.
+func Workplan(id string) *idspb.WorkPlan {
+	return must(WorkplanErr(id))
+}
+
 // Check returns a Check identifier suitable for use with WriteNodes (which will
 // fill in the WorkPlan id with the WorkPlan id implied by the stage attempt
 // token).

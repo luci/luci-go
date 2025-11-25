@@ -18,9 +18,12 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"math"
 	"slices"
+	"time"
 
 	"github.com/google/uuid"
+	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -29,11 +32,20 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/auth/scopes"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/delta"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/turboci/data"
 	"go.chromium.org/luci/turboci/id"
+	"go.chromium.org/luci/turboci/rpc/write"
+	"go.chromium.org/luci/turboci/rpc/write/stage"
+	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 	orchestratorgrpcpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1/grpcpb"
 
@@ -41,6 +53,9 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
+
+// rootBuildStageID is used as a stage ID of a root build Turbo CI stage.
+const rootBuildStageID = "$init"
 
 // checkTurboCIOAuthScope logs a warning if the call doesn't have an OAuth
 // scope necessary to call Turbo CI APIs.
@@ -89,13 +104,52 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 	}.Build(), grpc.PerRPCCredentials(creds))
 	if err != nil {
 		logging.Errorf(ctx, "turbo-ci: CreateWorkPlan call failed: %s", err)
+		return appstatus.ToError(status.Convert(adjustTurboCIRPCError(err)))
+	}
+	planID := plan.GetIdentifier().GetId()
+	logging.Infof(ctx, "turbo-ci: workplan %s", planID)
+
+	// The client configured to work with the created plan.
+	client := &turboCIClient{
+		orch:   orch,
+		creds:  creds,
+		planID: planID,
+		token:  plan.GetCreatorToken(),
+	}
+
+	// The mask field makes no sense inside Turbo CI stage args.
+	req.Mask = nil
+
+	// Extract timeouts (if any) into Turbo CI stage attempt execution policy,
+	// since we want them to be enforced and visible via Turbo CI, not just
+	// Buildbucket.
+	timeouts := scheduleBuildRequestToPolicyTimeout(req)
+	req.SchedulingTimeout = nil
+	req.ExecutionTimeout = nil
+	req.GracePeriod = nil
+
+	// Submit the build as a stage under a well-known ID. If this is a retry,
+	// then this will silently succeed without creating a duplicate.
+	if err := client.writeStage(ctx, rootBuildStageID, req, build.Realm(), timeouts); err != nil {
+		logging.Errorf(ctx, "turbo-ci: failed to submit the stage: %s", err)
 		return appstatus.ToError(status.Convert(err))
 	}
-	logging.Infof(ctx, "turbo-ci: workplan %s", id.ToString(plan.GetIdentifier()))
 
-	// TODO: Call WriteNodes, then wait for the stage to start running.
+	// Wait until the stage starts running and gets a build ID assigned to it.
+	buildID, err := pollStage(ctx, client, rootBuildStageID)
+	if err != nil {
+		logging.Errorf(ctx, "turbo-ci: giving up: %s", err)
+		return appstatus.ToError(status.Convert(err))
+	}
 
-	return appstatus.Errorf(codes.Unimplemented, "Turbo CI builds are not fully implemented yet")
+	// Update `build` in-place with the state of the build right now.
+	logging.Infof(ctx, "turbo-ci: got build ID %d", buildID)
+	*build = model.Build{ID: buildID}
+	if err := datastore.Get(ctx, build); err != nil {
+		logging.Errorf(ctx, "turbo-ci: failed to get build %d: %s", buildID, err)
+		return appstatus.Errorf(codes.Internal, "failed to get a build associated with the submitted stage: %s", err)
+	}
+	return nil
 }
 
 // launchTurboCIChildren launches child builds by adding them to an existing
@@ -173,4 +227,234 @@ func turboCICreds(ctx context.Context) (credentials.PerRPCCredentials, error) {
 		}
 		return creds, nil
 	}
+}
+
+// pollingSchedule defines how long to sleep between polling attempts.
+func pollingSchedule(ctx context.Context, attempt, errs int) time.Duration {
+	var ms float64
+
+	jitter := func(max float64) float64 { return max * mathrand.Float64(ctx) }
+
+	switch {
+	case errs > 0:
+		// Do exponential backoff on errors.
+		ms = min(5000.0, 5.0*math.Pow(2, float64(errs)))
+		ms *= 1.2 - jitter(0.4)
+	case attempt == 0:
+		// Sleep longer before the first poll attempt, since this is when we expect
+		// the orchestrator to be doing the actual work starting the stage. It is
+		// expected to take at least 200 ms. This may need tuning.
+		ms = 200.0 + jitter(100.0)
+	case attempt < 20:
+		// Poll relatively frequently first several seconds. We expect the stage to
+		// appear any moment now.
+		ms = 100.0 + jitter(100.0)
+	default:
+		// If still unsuccessful after 20 attempts, something is wrong. Slow down.
+		ms = 1000.0 + jitter(250.0)
+	}
+
+	return time.Duration(ms * float64(time.Millisecond))
+}
+
+// pollStage periodically queries the stage until it gets assigned a build ID.
+func pollStage(ctx context.Context, cl *turboCIClient, stageID string) (int64, error) {
+	deadline := clock.Now(ctx).Add(30 * time.Second)
+	ctx, cancel := clock.WithDeadline(ctx, deadline)
+	defer cancel()
+
+	// The last seen transient error.
+	var lastTransientErr error
+
+	// How many query attempts were made (successful or not).
+	attempt := 0
+	// The number of consecutive transient errors.
+	errs := 0
+
+	// giveUpErr is returned when we give up waiting for the stage.
+	giveUpErr := func() error {
+		if lastTransientErr != nil {
+			return lastTransientErr
+		}
+		return status.Errorf(codes.DeadlineExceeded, "giving up waiting for the build after %d query attempts", attempt)
+	}
+
+	// contextErr is returned when the context expires.
+	contextErr := func() error {
+		err := ctx.Err()
+		if errors.Is(err, context.DeadlineExceeded) {
+			return giveUpErr()
+		}
+		return status.FromContextError(ctx.Err()).Err()
+	}
+
+	for {
+		// Figure out how long to sleep before the poll attempt.
+		sleep := pollingSchedule(ctx, attempt, errs)
+
+		// Don't sleep uselessly just to abort due to the overall deadline. Try to
+		// leave at least 150ms for the final attempt. If we don't have enough time
+		// to complete the RPC (per the 150ms estimate), don't even try. The only
+		// exception is if this is the first attempt ever (this can happen if
+		// the RPC request was started with a very tight deadline). In this edge
+		// case giving up without trying at least once is unexpected.
+		wakeUp := min(sleep, clock.Until(ctx, deadline)-150*time.Millisecond)
+		if wakeUp <= 0 {
+			if attempt > 0 {
+				return 0, giveUpErr()
+			}
+			wakeUp = 0
+		}
+		logging.Infof(ctx, "turbo-ci: QueryNodes attempt #%d, sleeping %dms", attempt+1, wakeUp.Milliseconds())
+		clock.Sleep(ctx, wakeUp)
+		if ctx.Err() != nil {
+			return 0, contextErr()
+		}
+
+		// Poll the current state of the stage.
+		attempt++
+		details, err := cl.queryStage(ctx, stageID)
+		if err != nil {
+			if ctx.Err() != nil {
+				return 0, contextErr()
+			}
+			if code := status.Code(err); grpcutil.IsTransientCode(code) || code == codes.DeadlineExceeded {
+				logging.Warningf(ctx, "turbo-ci: %s: transient error querying the stage: %s", cl.planID, err)
+				errs++
+				lastTransientErr = err
+				continue
+			}
+			logging.Errorf(ctx, "turbo-ci: %s: fatal error querying the stage: %s", cl.planID, err)
+			return 0, err
+		}
+
+		errs = 0
+		lastTransientErr = nil
+
+		if details != nil {
+			switch v := details.Result.(type) {
+			case *pb.BuildStageDetails_Id:
+				return v.Id, nil
+			case *pb.BuildStageDetails_Error:
+				return 0, status.FromProto(v.Error).Err()
+			}
+		}
+	}
+}
+
+// turboCIClient is a short-lived TurboCIOrchestratorClient scoped to a
+// particular caller and plan.
+type turboCIClient struct {
+	orch   orchestratorgrpcpb.TurboCIOrchestratorClient
+	creds  credentials.PerRPCCredentials
+	planID string
+	token  string
+}
+
+// adjustTurboCIRPCError converts Unauthenticated error to Internal.
+//
+// As a precaution against Buildbucket clients treating it as a fatal build
+// failure. See also the TODO in turboCICreds.
+func adjustTurboCIRPCError(err error) error {
+	if status.Code(err) == codes.Unauthenticated {
+		return status.Errorf(codes.Internal,
+			"delegated call to the Turbo CI Orchestrator failed with an authentication error, "+
+				"you may need to retry your Buildbucket request with a fresher access token; "+
+				"the original error: %s", status.Convert(err).Message())
+	}
+	return err
+}
+
+// writeStage submits the ScheduleBuildRequest stage under the given ID.
+//
+// This succeeds if the stage was submitted or it already exists.
+func (c *turboCIClient) writeStage(ctx context.Context, stageID string, req *pb.ScheduleBuildRequest, realm string, timeouts *orchestratorpb.StageAttemptExecutionPolicy_Timeout) error {
+	writeReq, _ := delta.Collect(
+		write.NewStage(
+			stageID,
+			req,
+			stage.Realm(realm),
+		),
+	)
+	writeReq.SetToken(c.token)
+	if timeouts != nil {
+		writeReq.GetStages()[0].SetRequestedStageExecutionPolicy(orchestratorpb.StageExecutionPolicy_builder{
+			AttemptExecutionPolicyTemplate: orchestratorpb.StageAttemptExecutionPolicy_builder{
+				Timeout: timeouts,
+			}.Build(),
+		}.Build())
+	}
+	_, err := c.orch.WriteNodes(ctx, writeReq, grpc.PerRPCCredentials(c.creds))
+	return adjustTurboCIRPCError(err)
+}
+
+// queryStage queries the state of a submitted ScheduleBuildRequest stage.
+//
+// Returns (nil, nil) if the stage hasn't started yet. Returns BuildStageDetails
+// if the stage was started (its build ID will be in BuildStageDetails.id) or it
+// failed to start (in that case the error is set in BuildStageDetails.error).
+//
+// Returns an error only if the RPC itself fails.
+func (c *turboCIClient) queryStage(ctx context.Context, stageID string) (*pb.BuildStageDetails, error) {
+	queryReq := orchestratorpb.QueryNodesRequest_builder{
+		Token: proto.String(c.token),
+		TypeInfo: orchestratorpb.QueryNodesRequest_TypeInfo_builder{
+			Wanted: []string{
+				data.URL[*pb.BuildStageDetails](),
+			},
+		}.Build(),
+		Query: []*orchestratorpb.Query{
+			orchestratorpb.Query_builder{
+				Select: orchestratorpb.Query_Select_builder{
+					Nodes: []*idspb.Identifier{
+						id.Wrap(id.Stage(stageID)),
+					},
+				}.Build(),
+			}.Build(),
+		},
+	}.Build()
+
+	resp, err := c.orch.QueryNodes(ctx, queryReq, grpc.PerRPCCredentials(c.creds))
+	if err != nil {
+		return nil, adjustTurboCIRPCError(err)
+	}
+	stage := resp.GetGraph()[c.planID].GetStages()[stageID].GetStage()
+	if stage == nil {
+		return nil, status.Errorf(codes.FailedPrecondition, "the stage is unexpectedly missing")
+	}
+
+	// This in theory should not be possible (because the stage we wrote doesn't
+	// have any dependencies and can be attempted immediately), but check anyway.
+	if len(stage.GetAttempts()) == 0 {
+		logging.Warningf(ctx, "turbo-ci: %s: the stage has no attempts yet", c.planID)
+		return nil, nil
+	}
+
+	// Get the latest attempt. Note that when retrying a transiently failed
+	// attempt, a new attempt is inserted transactionally when failing the
+	// previous attempt. Thus the latest attempt is always either in one of
+	// pending states, or it is execution, or it indicated a fatal error.
+	attempt := stage.GetAttempts()[len(stage.GetAttempts())-1]
+	details := data.FromMultipleValues[*pb.BuildStageDetails](attempt.GetDetails()...)
+	if details != nil {
+		return details, nil
+	}
+
+	// We have no BuildStageDetails: either we are still trying to launch the
+	// stage or it was failed by the orchestrator without ever reaching the
+	// Buildbucket stage executor (since the executor didn't write anything). If
+	// it failed (i.e. the stage is not being attempted anymore), we synthesize
+	// BuildStageDetails right here to indicate that.
+	if stage.GetState() != orchestratorpb.StageState_STAGE_STATE_ATTEMPTING {
+		return &pb.BuildStageDetails{
+			Result: &pb.BuildStageDetails_Error{
+				Error: &statuspb.Status{
+					Code:    int32(codes.Aborted),
+					Message: "the Turbo CI Orchestrator gave up trying to execute the build stage",
+				},
+			},
+		}, nil
+	}
+
+	return nil, nil
 }

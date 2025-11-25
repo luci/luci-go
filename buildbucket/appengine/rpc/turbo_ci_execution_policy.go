@@ -63,6 +63,18 @@ func fillScheduleBuildRequestWithPolicy(req *pb.ScheduleBuildRequest, policyTime
 	req.GracePeriod = policyToBuildTimeout(policyTimeouts.GetTearingDown())
 }
 
+func scheduleBuildRequestToPolicyTimeout(req *pb.ScheduleBuildRequest) *orchestratorpb.StageAttemptExecutionPolicy_Timeout {
+	b := orchestratorpb.StageAttemptExecutionPolicy_Timeout_builder{
+		Scheduled:   buildToPolicyTimeout(req.GetSchedulingTimeout()),
+		Running:     buildToPolicyTimeout(req.GetExecutionTimeout()),
+		TearingDown: buildToPolicyTimeout(req.GetGracePeriod()),
+	}
+	if b.Scheduled == nil && b.Running == nil && b.TearingDown == nil {
+		return nil
+	}
+	return b.Build()
+}
+
 func buildToStageExecutionPolicy(bld *pb.Build, requested *orchestratorpb.StageExecutionPolicy) *orchestratorpb.StageExecutionPolicy {
 	updated := orchestratorpb.StageExecutionPolicy_builder{
 		Retry:                          requested.GetRetry(),

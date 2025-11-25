@@ -62,6 +62,23 @@ func FromMultiple[T proto.Message](data ...*orchestratorpb.Datum) (ret T) {
 	return
 }
 
+// FromMultipleValues retrieves the first Value whose type matches T.
+//
+// If T is not in the values, returns nil.
+//
+// Panics if the data is present but fails to unmarshal. This is considered
+// an invariant violation, as the data should have been marshaled from the same
+// type.
+func FromMultipleValues[T proto.Message](values ...*orchestratorpb.Value) (ret T) {
+	typeURL := URL[T]()
+	for _, val := range values {
+		if val.GetValue().GetTypeUrl() == typeURL {
+			return ExtractValue[T](val)
+		}
+	}
+	return
+}
+
 // GetOption retrieves an option of the given type from a CheckView.
 //
 // If T is not in the CheckView, returns the zero value for T (e.g. nil for

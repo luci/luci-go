@@ -61,13 +61,6 @@ import (
 // the 255 character limit must be seperately applied.)
 var hostnameRE = regexp.MustCompile(`^[a-z0-9][a-z0-9-]+(\.[a-z0-9-]+)*$`)
 
-func min(i, j int) int {
-	if i < j {
-		return i
-	}
-	return j
-}
-
 // validateExpirationDuration validates the given expiration duration.
 func validateExpirationDuration(d *durationpb.Duration) error {
 	switch {
