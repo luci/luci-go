@@ -266,4 +266,63 @@ func TestUpdateTreeMetrics(t *testing.T) {
 		assert.Loosely(t, treeIsOpen.Get(ctx, "chromium"), should.BeFalse)
 		assert.Loosely(t, treeClosedDuration.Get(ctx, "chromium"), should.Equal(int64(1000)))
 	})
+
+	ftt.Run("For GenAI vindicated suspects", t, func(t *ftt.Test) {
+		cl := testclock.New(testclock.TestTimeUTC)
+		c = clock.Set(c, cl)
+		testutil.UpdateIndices(c)
+
+		// Create a CompileGenAIAnalysis that ended within 24 hours
+		cfa1 := createRunningAnalysis(c, t, 123, "chromium", model.PlatformLinux)
+		genaiAnalysis1 := &model.CompileGenAIAnalysis{
+			Id:             1,
+			ParentAnalysis: datastore.KeyForObj(c, cfa1),
+			EndTime:        cl.Now(),
+		}
+		assert.Loosely(t, datastore.Put(c, genaiAnalysis1), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		// Create one vindicated and one confirmed suspect for genaiAnalysis1
+		suspect1 := &model.Suspect{
+			Id:                 1,
+			ParentAnalysis:     datastore.KeyForObj(c, genaiAnalysis1),
+			VerificationStatus: model.SuspectVerificationStatus_Vindicated,
+		}
+		suspect2 := &model.Suspect{
+			Id:                 2,
+			ParentAnalysis:     datastore.KeyForObj(c, genaiAnalysis1),
+			VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+		}
+		assert.Loosely(t, datastore.Put(c, suspect1, suspect2), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		// Create another CompileGenAIAnalysis that ended more than 24 hours ago
+		cfa2 := createRunningAnalysis(c, t, 456, "chromium", model.PlatformLinux)
+		genaiAnalysis2 := &model.CompileGenAIAnalysis{
+			Id:             2,
+			ParentAnalysis: datastore.KeyForObj(c, cfa2),
+			EndTime:        cl.Now().Add(-25 * time.Hour),
+		}
+		assert.Loosely(t, datastore.Put(c, genaiAnalysis2), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+		suspect3 := &model.Suspect{
+			Id:                 3,
+			ParentAnalysis:     datastore.KeyForObj(c, genaiAnalysis2),
+			VerificationStatus: model.SuspectVerificationStatus_Vindicated,
+		}
+		assert.Loosely(t, datastore.Put(c, suspect3), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		err := collectMetricsForGenAIVindication(c)
+		assert.Loosely(t, err, should.BeNil)
+
+		// Check that the metric was set correctly for the recent analysis
+		assert.Loosely(t, genaiVerificationVindicatedCount.Get(c, int64(1)), should.Equal(int64(1)))
+
+		// Check that the metric was not set for the old analysis
+		// There is no direct way to check for non-existence of a metric with a certain field value.
+		// We would have to check all cells for the metric.
+		// For simplicity, we assume if the metric for the old analysis ID is 0, it was not set.
+		assert.Loosely(t, genaiVerificationVindicatedCount.Get(c, int64(2)), should.Equal(int64(0)))
+	})
 }

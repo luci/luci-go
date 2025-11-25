@@ -103,6 +103,14 @@ var (
 		// The LUCI Project.
 		field.String("project"),
 	)
+
+	genaiVerificationVindicatedCount = metric.NewInt(
+		"bisection/genai/vindicated/count",
+		"The number of GenAI suspect vindicated in the last 24 hours.",
+		&types.MetricMetadata{Units: "verifications"},
+		// The GenAI analysis ID.
+		field.Int("genai_analysis_id"),
+	)
 )
 
 // AnalysisType is used for sending metrics to tsmon
@@ -128,7 +136,7 @@ func init() {
 	tsmon.RegisterGlobalCallback(func(ctx context.Context) {
 		// Do nothing -- the metrics will be populated by the cron
 		// job itself and does not need to be triggered externally.
-	}, runningAnalysesGauge, runningRerunGauge, rerunAgeMetric, treeClosedDuration, treeIsOpen)
+	}, runningAnalysesGauge, runningRerunGauge, rerunAgeMetric, treeClosedDuration, treeIsOpen, genaiVerificationVindicatedCount)
 }
 
 // CollectGlobalMetrics is called in a cron job.
@@ -156,6 +164,12 @@ func CollectGlobalMetrics(c context.Context) error {
 	err = UpdateTreeMetrics(c)
 	if err != nil {
 		err = errors.Fmt("UpdateTreeMetrics: %w", err)
+		errs = append(errs, err)
+		logging.Errorf(c, err.Error())
+	}
+	err = collectMetricsForGenAIVindication(c)
+	if err != nil {
+		err = errors.Fmt("collectMetricsForGenAIVindication: %w", err)
 		errs = append(errs, err)
 		logging.Errorf(c, err.Error())
 	}
@@ -355,6 +369,40 @@ func collectMetricsForRunningTestReruns(c context.Context) error {
 
 	for k, dist := range rerunAgeMap {
 		rerunAgeMetric.Set(c, dist, k.Project, k.Status, k.Platform, string(AnalysisTypeTest))
+	}
+
+	return nil
+}
+
+func collectMetricsForGenAIVindication(c context.Context) error {
+	cutoffTime := clock.Now(c).Add(-time.Hour * 24)
+
+	// Query for CompileGenAIAnalysis entities that ended in the last 24 hours.
+	q := datastore.NewQuery("CompileGenAIAnalysis").Gt("end_time", cutoffTime)
+	genaiAnalyses := []*model.CompileGenAIAnalysis{}
+	if err := datastore.GetAll(c, q, &genaiAnalyses); err != nil {
+		return errors.Annotate(err, "getting CompileGenAIAnalysis for genai metrics").Err()
+	}
+
+	for _, genaiAnalysis := range genaiAnalyses {
+		// For each analysis, find its suspects.
+		sq := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, genaiAnalysis))
+		suspects := []*model.Suspect{}
+		if err := datastore.GetAll(c, sq, &suspects); err != nil {
+			logging.Warningf(c, "failed to get suspects for CompileGenAIAnalysis %d: %v", genaiAnalysis.Id, err)
+			continue
+		}
+
+		vindicatedCount := 0
+		for _, suspect := range suspects {
+			if suspect.VerificationStatus == model.SuspectVerificationStatus_Vindicated {
+				vindicatedCount++
+			}
+		}
+
+		if vindicatedCount > 0 {
+			genaiVerificationVindicatedCount.Set(c, int64(vindicatedCount), genaiAnalysis.Id)
+		}
 	}
 
 	return nil
