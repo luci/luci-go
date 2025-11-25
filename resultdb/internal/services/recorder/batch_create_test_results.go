@@ -16,6 +16,7 @@ package recorder
 
 import (
 	"context"
+	"math"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -27,9 +28,12 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/config"
@@ -37,7 +41,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/resultcount"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
-	"go.chromium.org/luci/resultdb/internal/testresults"
+	"go.chromium.org/luci/resultdb/internal/testresultsv2"
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -51,6 +55,50 @@ var (
 		nil,
 		// The LUCI Realm.
 		field.String("realm"))
+
+	// Metrics about batching efficiency.
+
+	createTestResultsBatchSizeInResults = metric.NewCumulativeDistribution(
+		"resultdb/recorder/create_test_results_batch_size_in_results",
+		"The distribution of test results writen in (Batch)CreateTestResults requests.",
+		nil,
+		distribution.GeometricBucketer(math.Pow(10, 0.05), 100), // Handles range 1 to 100,000.
+		// The LUCI Project.
+		field.String("project"))
+
+	createTestResultsBatchSizeInBytes = metric.NewCumulativeDistribution(
+		"resultdb/recorder/create_test_results_batch_size_in_bytes",
+		"The distribution of (Batch)CreateTestResults request sizes.",
+		&types.MetricMetadata{Units: types.Bytes},
+		distribution.DefaultBucketer,
+		// The LUCI Project.
+		field.String("project"))
+
+	// Metrics about write efficiency.
+	// The more shards written to in one request, the more Spanner transaction
+	// participants and the slower the transaction will be. At the same time,
+	// across all writes for a root invocation, we want sharding to be fairly
+	// uniform to avoid uploads bottlenecking on a single spanner node for
+	// very large root invocations.
+
+	createTestResultsShardsWritten = metric.NewCumulativeDistribution(
+		"resultdb/recorder/create_test_results_write_shards",
+		"The distribution of Root Invocation shards written to in BatchCreateTestResults requests, by project and sharding algorithm version.",
+		nil,
+		distribution.FixedWidthBucketer(1, 17), // Handles 0 to 16 shards.
+		// The LUCI Project.
+		field.String("project"),
+		field.String("shardingAlgorithm"))
+
+	createTestResultsWriteDuration = metric.NewCumulativeDistribution(
+		"resultdb/recorder/create_test_results_write_duration",
+		"The distribution of write duration of BatchCreateTestResults requests, by project, sharding algorithm version and shards written.",
+		&types.MetricMetadata{Units: types.Milliseconds},
+		distribution.DefaultBucketer,
+		// The LUCI Project.
+		field.String("project"),
+		field.String("shardingAlgorithm"),
+		field.Int("shardsWritten"))
 )
 
 // BatchCreateTestResults implements pb.RecorderServer.
@@ -255,85 +303,108 @@ func batchCreateResultsInWorkUnits(ctx context.Context, in *pb.BatchCreateTestRe
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/recorder.batchCreateResultsInWorkUnits")
 	defer func() { tracing.End(ts, err) }()
 
-	// The common work unit set at the batch-request level (if any).
-	var commonParentID workunits.ID
-	if in.Parent != "" {
-		commonParentID = workunits.MustParseName(in.Parent)
+	// Read all parent work units referenced in the batch.
+	// We need these:
+	// - To validate test results are created in the same modules as specified on the work unit(s).
+	// - To store the realm of the work unit alongside the test results.
+	// This read is safe to occur outside the main R/W transaction as the realm is immutable,
+	// and the module (which is required by the validation) is immutable once set.
+	parentIDs := extractParentIDs(in)
+	parentInfos, err := workunits.ReadSummaryInfos(span.Single(ctx), parentIDs)
+	if err != nil {
+		// NotFound appstatus error or internal error.
+		return nil, err
+	}
+
+	// Read the test sharding algorithm version from one of the root invocation's shards.
+	// We read from a shard instead of the root invocation directly to avoid hotspotting
+	// the root invocation record.
+	// This read is safe to occur outside the main R/W transaction as the field is immutable.
+	testShardingInformation, err := rootinvocations.ReadTestShardingInformationFromShard(span.Single(ctx), parentIDs[0].RootInvocationShardID())
+	if err != nil {
+		// NotFound appstatus error or internal error.
+		return nil, err
 	}
 
 	ret := &pb.BatchCreateTestResultsResponse{
 		TestResults: make([]*pb.TestResult, len(in.Requests)),
 	}
 	// The test results to insert.
-	testResultInserts := make([]*spanner.Mutation, len(in.Requests))
+	testResultInserts := make([]*spanner.Mutation, 0, 2*len(in.Requests))
 
-	// All work units referenced in the batch.
-	parents := workunits.NewIDSet()
+	// Variables to track various metrics-related properties.
+
+	// Tracks the distinct root invocation shards written to.
+	shardsWritten := make(map[int]struct{})
 
 	// The number of test results inserted per invocation.
 	testResultsPerInvocation := make(map[invocations.ID]int64)
 
-	// The test identifier of each test result.
-	testResultTestIdentifiers := make([]*pb.TestIdentifier, len(in.Requests))
+	// The number of test results inserted by realm.
+	insertsByRealm := make(map[string]int)
 
-	// Prepare the test results we want to write outside the read-update
-	// transaction to minimise the transaction duration.
+	// Validate the test results to be inserted match the work units, and
+	// prepare the mutations to insert them.
 	for i, r := range in.Requests {
-		parentID := commonParentID
-		if parentID == (workunits.ID{}) {
-			// If the work unit is not set on the batch request, it must be set at the child request level.
-			parentID = workunits.MustParseName(r.Parent)
-		}
-
+		parentID := parentIDs[i]
 		legacyInvID := parentID.LegacyInvocationID()
-		tr, mutation, err := insertTestResult(legacyInvID, in.RequestId, r.TestResult)
+		tr, err := normaliseResult(legacyInvID, r.TestResult)
 		if err != nil {
-			return nil, err
+			return nil, errors.Fmt("requests[%d]: normalise result: %w", i, err)
 		}
 		ret.TestResults[i] = tr
-		testResultInserts[i] = mutation
 
-		parents.Add(parentID)
-
-		testResultsPerInvocation[legacyInvID]++
-		testResultTestIdentifiers[i] = extractTestResultTestIdentifier(tr)
-	}
-
-	var insertsByRealm map[string]int
-	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-		// Reset at the start of each transaction as this context may be retried.
-		insertsByRealm = make(map[string]int)
-
-		parentsSlice := parents.SortedByRowID()
-		parentInfos, err := workunits.ReadSummaryInfos(ctx, parentsSlice)
-		if err != nil {
-			// NotFound appstatus error or internal error.
-			return err
+		// Validate the test identifier matches the work unit module.
+		// Once the work unit module is set, it is immutable, so we can safely check
+		// this outside the Read/Write transaction.
+		parentInfo, ok := parentInfos[parentID]
+		if !ok {
+			// If the parent was not read, we should have errored out already above.
+			panic("logic error: parentID not in parentInfos")
+		}
+		const strictValidation = true
+		if err := validateUploadAgainstWorkUnitModule(extractTestResultTestIdentifier(tr), parentInfo.ModuleID, strictValidation); err != nil {
+			return nil, appstatus.Errorf(codes.FailedPrecondition, "requests[%d]: test_result: %s", i, err)
 		}
 
-		// Verify assumptions:
-		// - the parent work unit is active.
-		// - the test results are in the correct module for each work unit.
-		for i, r := range in.Requests {
-			parentID := commonParentID
-			if parentID == (workunits.ID{}) {
-				// If the work unit is not set on the batch request, it must be set at the child request level.
-				parentID = workunits.MustParseName(r.Parent)
+		// Prepare the test result mutations.
+		legacyMutation, err := insertTestResultLegacy(legacyInvID, tr)
+		if err != nil {
+			return nil, errors.Fmt("requests[%d]: insert test result: %w", i, err)
+		}
+		trV2, err := prepareTestResultV2(parentID, ret.TestResults[i], parentInfo.Realm, testShardingInformation.Algorithm)
+		if err != nil {
+			return nil, errors.Fmt("requests[%d]: prepare test result v2: %w", i, err)
+		}
+		mutation := testresultsv2.Create(trV2)
+		testResultInserts = append(testResultInserts, legacyMutation, mutation)
+
+		// Record the distinct shards being written to. This is one of the
+		// figures of merit of a sharding algorithm.
+		shardsWritten[trV2.ID.RootInvocationShardID.ShardIndex] = struct{}{}
+
+		// Count test results per invocation.
+		testResultsPerInvocation[legacyInvID]++
+
+		// Count inserts by realm.
+		// The work unit realm is immutable, so we can safely do this this outside the
+		// Read/Write transaction.
+		insertsByRealm[parentInfo.Realm]++
+	}
+
+	writeStartTime := time.Now()
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		// Verify the parent work units are active.
+		// This is needed in the same Read/Write transaction as the test result inserts to prevent
+		// TOC-TOU bugs where a work unit is finalized between the check and the inserts.
+		finalizationStates, err := workunits.ReadFinalizationStates(ctx, parentIDs)
+		if err != nil {
+			return err
+		}
+		for i, state := range finalizationStates {
+			if state != pb.WorkUnit_ACTIVE {
+				return appstatus.Errorf(codes.FailedPrecondition, "requests[%d]: parent %q is not active", i, parentIDs[i].Name())
 			}
-			parentInfo, ok := parentInfos[parentID]
-			if !ok {
-				// If the parent was not read, we should have errored out already above.
-				panic("logic error: parentID not in parentInfos")
-			}
-			if parentInfo.FinalizationState != pb.WorkUnit_ACTIVE {
-				return appstatus.Errorf(codes.FailedPrecondition, "requests[%d]: parent %q is not active", i, parentID.Name())
-			}
-			const strictValidation = true
-			if err := validateUploadAgainstWorkUnitModule(testResultTestIdentifiers[i], parentInfo.ModuleID, strictValidation); err != nil {
-				return appstatus.Errorf(codes.FailedPrecondition, "requests[%d]: test_result: %s", i, err)
-			}
-			// Count inserts by realm
-			insertsByRealm[parentInfo.Realm]++
 		}
 
 		// Insert the test results.
@@ -356,10 +427,37 @@ func batchCreateResultsInWorkUnits(ctx context.Context, in *pb.BatchCreateTestRe
 		return nil, err
 	}
 
+	// Report metrics.
+	rootInvocationProject, _ := realms.Split(testShardingInformation.Realm)
+	createTestResultsBatchSizeInResults.Add(ctx, float64(len(in.Requests)), rootInvocationProject)
+	createTestResultsBatchSizeInBytes.Add(ctx, float64(proto.Size(in)), rootInvocationProject)
+	createTestResultsShardsWritten.Add(ctx, float64(len(shardsWritten)), rootInvocationProject, string(testShardingInformation.Algorithm))
+	createTestResultsWriteDuration.Add(ctx, float64(time.Since(writeStartTime).Milliseconds()), rootInvocationProject, string(testShardingInformation.Algorithm), len(shardsWritten))
+
 	for realm, count := range insertsByRealm {
 		spanutil.IncRowCount(ctx, count, spanutil.TestResults, spanutil.Inserted, realm)
 	}
 	return ret, nil
+}
+
+func extractParentIDs(in *pb.BatchCreateTestResultsRequest) []workunits.ID {
+	// The common work unit set at the batch-request level (if any).
+	var commonParentID workunits.ID
+	if in.Parent != "" {
+		commonParentID = workunits.MustParseName(in.Parent)
+	}
+
+	// Collect all parent work unit processed in this batch.
+	result := make([]workunits.ID, 0, len(in.Requests))
+	for _, r := range in.Requests {
+		parentID := commonParentID
+		if parentID == (workunits.ID{}) {
+			// If the work unit is not set on the batch request, it must be set at the child request level.
+			parentID = workunits.MustParseName(r.Parent)
+		}
+		result = append(result, parentID)
+	}
+	return result
 }
 
 func batchCreateResultsInInvocation(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (rsp *pb.BatchCreateTestResultsResponse, err error) {
@@ -380,7 +478,11 @@ func batchCreateResultsInInvocation(ctx context.Context, in *pb.BatchCreateTestR
 	// The test identifier of each test result.
 	testResultTestIdentifiers := make([]*pb.TestIdentifier, len(in.Requests))
 	for i, r := range in.Requests {
-		tr, mutation, err := insertTestResult(invID, in.RequestId, r.TestResult)
+		tr, err := normaliseResult(invID, r.TestResult)
+		if err != nil {
+			return nil, err
+		}
+		mutation, err := insertTestResultLegacy(invID, tr)
 		if err != nil {
 			return nil, err
 		}
@@ -465,7 +567,10 @@ func batchCreateResultsInInvocation(ctx context.Context, in *pb.BatchCreateTestR
 	return ret, nil
 }
 
-func insertTestResult(invID invocations.ID, requestID string, body *pb.TestResult) (*pb.TestResult, *spanner.Mutation, error) {
+// normaliseResult normalises a TestResult into its normal proto representation;
+// handling translation of certain legacy fields into the new fields, and populating
+// OUTPUT_ONLY fields.
+func normaliseResult(invID invocations.ID, body *pb.TestResult) (*pb.TestResult, error) {
 	// create a copy of the input message with the OUTPUT_ONLY field(s) to be used in
 	// the response
 	ret := proto.Clone(body).(*pb.TestResult)
@@ -483,24 +588,10 @@ func insertTestResult(invID invocations.ID, requestID string, body *pb.TestResul
 		ret.TestIdStructured, err = pbutil.ParseStructuredTestIdentifierForOutput(ret.TestId, ret.Variant)
 		if err != nil {
 			// This should not happen, the test identifier should already have been validated.
-			return nil, nil, errors.Fmt("parse test identifier: %w", err)
+			return nil, errors.Fmt("parse test identifier: %w", err)
 		}
 	}
 	ret.VariantHash = pbutil.VariantHash(ret.Variant)
-
-	if invID.IsWorkUnit() {
-		wuID := workunits.MustParseLegacyInvocationID(invID)
-		ret.Name = pbutil.TestResultName(string(wuID.RootInvocationID), wuID.WorkUnitID, ret.TestId, ret.ResultId)
-	} else {
-		ret.Name = pbutil.LegacyTestResultName(string(invID), ret.TestId, ret.ResultId)
-	}
-
-	// handle values for nullable columns
-	var runDuration spanner.NullInt64
-	if ret.Duration != nil {
-		runDuration.Int64 = pbutil.MustDuration(ret.Duration).Microseconds()
-		runDuration.Valid = true
-	}
 
 	if ret.StatusV2 != pb.TestResult_STATUS_UNSPECIFIED {
 		// Populate v1 status from v2 status fields.
@@ -522,6 +613,25 @@ func insertTestResult(invID invocations.ID, requestID string, body *pb.TestResul
 			}
 			ret.FrameworkExtensions.WebTest = webTest
 		}
+	}
+
+	ret.FailureReason = NormaliseFailureReason(ret.FailureReason)
+
+	if invID.IsWorkUnit() {
+		wuID := workunits.MustParseLegacyInvocationID(invID)
+		ret.Name = pbutil.TestResultName(string(wuID.RootInvocationID), wuID.WorkUnitID, ret.TestId, ret.ResultId)
+	} else {
+		ret.Name = pbutil.LegacyTestResultName(string(invID), ret.TestId, ret.ResultId)
+	}
+	return ret, nil
+}
+
+func insertTestResultLegacy(invID invocations.ID, ret *pb.TestResult) (*spanner.Mutation, error) {
+	// handle values for nullable columns
+	var runDuration spanner.NullInt64
+	if ret.Duration != nil {
+		runDuration.Int64 = pbutil.MustDuration(ret.Duration).Microseconds()
+		runDuration.Valid = true
 	}
 
 	row := map[string]any{
@@ -547,13 +657,8 @@ func insertTestResult(invID invocations.ID, requestID string, body *pb.TestResul
 		row["TestMetadata"] = spanutil.Compressed(pbutil.MustMarshal(ret.TestMetadata))
 	}
 	if ret.FailureReason != nil {
-		// Normalise the failure reason. This handles legacy uploaders which only set
-		// PrimaryErrorMessage by pushing it into the Errors collection instead.
-		testresults.NormaliseFailureReason(ret.FailureReason)
-		row["FailureReason"] = spanutil.Compressed(pbutil.MustMarshal(ret.FailureReason))
-
-		// Populate output only fields after marshalling, as we don't want to store those.
-		testresults.PopulateFailureReasonOutputOnlyFields(ret.FailureReason)
+		fr := testresultsv2.RemoveOutputOnlyFailureReasonFields(ret.FailureReason)
+		row["FailureReason"] = spanutil.Compressed(pbutil.MustMarshal(fr))
 	}
 	if ret.Properties != nil {
 		row["Properties"] = spanutil.Compressed(pbutil.MustMarshal(ret.Properties))
@@ -565,7 +670,64 @@ func insertTestResult(invID invocations.ID, requestID string, body *pb.TestResul
 		row["FrameworkExtensions"] = spanutil.Compressed(pbutil.MustMarshal(ret.FrameworkExtensions))
 	}
 	mutation := spanner.InsertOrUpdateMap("TestResults", spanutil.ToSpannerMap(row))
-	return ret, mutation, nil
+	return mutation, nil
+}
+
+func prepareTestResultV2(parentID workunits.ID, tr *pb.TestResult, realm string, alg rootinvocations.TestShardingAlgorithmID) (*testresultsv2.TestResultRow, error) {
+	algorithm, err := rootinvocations.ShardingAlgorithmByID(alg)
+	if err != nil {
+		return nil, err
+	}
+	shardID := rootinvocations.ShardID{
+		RootInvocationID: parentID.RootInvocationID,
+		ShardIndex:       algorithm.ShardTestID(parentID.RootInvocationID, tr.TestIdStructured),
+	}
+
+	// Convert proto timestamp to Spanner NullTime.
+	var startTime spanner.NullTime
+	if tr.StartTime != nil {
+		startTime = spanner.NullTime{
+			Time:  tr.StartTime.AsTime(),
+			Valid: true,
+		}
+	}
+
+	// Convert proto duration to Spanner NullInt64 (nanoseconds).
+	var runDurationNanos spanner.NullInt64
+	if tr.Duration != nil {
+		runDurationNanos = spanner.NullInt64{
+			Int64: tr.Duration.AsDuration().Nanoseconds(),
+			Valid: true,
+		}
+	}
+
+	return &testresultsv2.TestResultRow{
+		ID: testresultsv2.ID{
+			RootInvocationShardID: shardID,
+			ModuleName:            tr.TestIdStructured.ModuleName,
+			ModuleScheme:          tr.TestIdStructured.ModuleScheme,
+			ModuleVariantHash:     tr.TestIdStructured.ModuleVariantHash,
+			CoarseName:            tr.TestIdStructured.CoarseName,
+			FineName:              tr.TestIdStructured.FineName,
+			CaseName:              tr.TestIdStructured.CaseName,
+			WorkUnitID:            string(parentID.WorkUnitID),
+			ResultID:              tr.ResultId,
+		},
+		ModuleVariant:       tr.TestIdStructured.ModuleVariant,
+		CreateTime:          spanner.CommitTimestamp, // Will be replaced by commit timestamp.
+		Realm:               realm,
+		StatusV2:            tr.StatusV2,
+		SummaryHTML:         tr.SummaryHtml,
+		StartTime:           startTime,
+		RunDurationNanos:    runDurationNanos,
+		Tags:                tr.Tags,
+		TestMetadata:        tr.TestMetadata,
+		FailureReason:       tr.FailureReason,
+		Properties:          tr.Properties,
+		SkipReason:          tr.SkipReason,
+		SkippedReason:       tr.SkippedReason,
+		FrameworkExtensions: tr.FrameworkExtensions,
+	}, nil
 }
 
 func longestCommonPrefix(str1, str2 string) string {
@@ -643,4 +805,21 @@ func validateUploadAgainstWorkUnitModule(got *pb.TestIdentifier, expectedModuleI
 		}
 	}
 	return nil
+}
+
+// NormaliseFailureReason handles compatibility of legacy failure reason uploads,
+// converting them to a normalised failure reason representation for storage and
+// RPC response.
+func NormaliseFailureReason(fr *pb.FailureReason) *pb.FailureReason {
+	if fr == nil {
+		return nil
+	}
+	result := proto.Clone(fr).(*pb.FailureReason)
+	if len(fr.Errors) == 0 && fr.PrimaryErrorMessage != "" {
+		// Older results: normalise by setting Errors collection from
+		// PrimaryErrorMessage.
+		result.Errors = []*pb.FailureReason_Error{{Message: fr.PrimaryErrorMessage}}
+	}
+	testresultsv2.PopulateFailureReasonOutputOnlyFields(result)
+	return result
 }

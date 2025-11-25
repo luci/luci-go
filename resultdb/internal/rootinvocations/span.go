@@ -104,6 +104,7 @@ type RootInvocationRow struct {
 	Submitted                               bool
 	FinalizerPending                        bool
 	FinalizerSequence                       int64
+	TestShardingAlgorithm                   TestShardingAlgorithmID
 }
 
 // Clone makes a deep copy of the row.
@@ -156,6 +157,7 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 		"Submitted":                               r.Submitted,
 		"FinalizerPending":                        r.FinalizerPending,
 		"FinalizerSequence":                       r.FinalizerSequence,
+		"TestShardingAlgorithm":                   string(r.TestShardingAlgorithm),
 	}
 	if r.Definition != nil {
 		row["DefinitionSystem"] = r.Definition.System
@@ -250,6 +252,7 @@ func (r *RootInvocationRow) toShardsMutations() []*spanner.Mutation {
 			"Realm":                 r.Realm,
 			"CreateTime":            spanner.CommitTimestamp,
 			"Sources":               spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
+			"TestShardingAlgorithm": string(r.TestShardingAlgorithm),
 		}
 		mutations[i] = spanutil.InsertMap("RootInvocationShards", row)
 	}

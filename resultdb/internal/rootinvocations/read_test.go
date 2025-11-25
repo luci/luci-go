@@ -145,6 +145,35 @@ func TestReadFunctions(t *testing.T) {
 			})
 		})
 
+		t.Run("ReadTestShardingInformationFromShard", func(t *ftt.Test) {
+			t.Run("happy path", func(t *ftt.Test) {
+				shardID := ShardID{RootInvocationID: id, ShardIndex: 5}
+				result, err := ReadTestShardingInformationFromShard(span.Single(ctx), shardID)
+				assert.Loosely(t, err, should.BeNil)
+
+				assert.Loosely(t, testData.TestShardingAlgorithm, should.NotBeEmpty)
+				expected := TestShardingInformation{
+					Algorithm: testData.TestShardingAlgorithm,
+					Realm:     "testproject:testrealm",
+				}
+				assert.That(t, result, should.Match(expected))
+			})
+
+			t.Run("not found", func(t *ftt.Test) {
+				shardID := ShardID{RootInvocationID: "non-existent-id", ShardIndex: 0}
+				_, err := ReadTestShardingInformationFromShard(span.Single(ctx), shardID)
+				st, ok := appstatus.Get(err)
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, st.Code(), should.Equal(codes.NotFound))
+				assert.Loosely(t, st.Message(), should.ContainSubstring(`"rootInvocations/non-existent-id" not found`))
+			})
+
+			t.Run("empty ID", func(t *ftt.Test) {
+				_, err := ReadTestShardingInformationFromShard(span.Single(ctx), ShardID{})
+				assert.That(t, err, should.ErrLike("root invocation id is unspecified"))
+			})
+		})
+
 		t.Run("ReadRequestIDAndCreatedBy", func(t *ftt.Test) {
 			t.Run("happy path", func(t *ftt.Test) {
 				requestID, createdBy, err := ReadRequestIDAndCreatedBy(span.Single(ctx), id)

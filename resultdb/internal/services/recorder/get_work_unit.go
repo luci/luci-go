@@ -16,10 +16,10 @@ package recorder
 
 import (
 	"context"
-
 	"fmt"
 
 	"go.chromium.org/luci/grpc/appstatus"
+
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )

@@ -277,7 +277,7 @@ func InsertForTesting(tr *TestResultRow) *spanner.Mutation {
 		"RunDurationNanos":      tr.RunDurationNanos,
 		"Tags":                  tr.Tags,
 		"TestMetadata":          spanutil.Compressed(pbutil.MustMarshal(tr.TestMetadata)),
-		"FailureReason":         spanutil.Compressed(pbutil.MustMarshal(NormaliseFailureReason(tr.FailureReason))),
+		"FailureReason":         spanutil.Compressed(pbutil.MustMarshal(RemoveOutputOnlyFailureReasonFields(tr.FailureReason))),
 		"Properties":            spanutil.Compressed(pbutil.MustMarshal(tr.Properties)),
 		"SkipReason":            int64(tr.SkipReason),
 		"SkippedReason":         spanutil.Compressed(pbutil.MustMarshal(tr.SkippedReason)),

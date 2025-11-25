@@ -15,6 +15,7 @@
 package rootinvocations
 
 import (
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -34,6 +35,11 @@ type Builder struct {
 // NewBuilder returns a new builder for a RootInvocationRow for testing.
 // The builder is initialized with some default values.
 func NewBuilder(id ID) *Builder {
+	shardingAlgorithm, err := AssignTestShardingAlgorithm(id)
+	if err != nil {
+		panic(fmt.Errorf("assigning test sharding algorithm: %w", err))
+	}
+
 	return &Builder{
 		row: RootInvocationRow{
 			// Set all fields by default. This helps optimise test coverage.
@@ -99,11 +105,12 @@ func NewBuilder(id ID) *Builder {
 					"key": structpb.NewStringValue("value"),
 				},
 			},
-			StreamingExportState: pb.RootInvocation_METADATA_FINAL,
-			BaselineID:           "baseline",
-			Submitted:            true,
-			FinalizerPending:     false,
-			FinalizerSequence:    0,
+			StreamingExportState:  pb.RootInvocation_METADATA_FINAL,
+			BaselineID:            "baseline",
+			Submitted:             true,
+			FinalizerPending:      false,
+			FinalizerSequence:     0,
+			TestShardingAlgorithm: shardingAlgorithm,
 		},
 	}
 }
@@ -264,13 +271,21 @@ func (b *Builder) WithSubmitted(submitted bool) *Builder {
 	return b
 }
 
+// WithFinalizerPending sets the finalizer pending status.
 func (b *Builder) WithFinalizerPending(pending bool) *Builder {
 	b.row.FinalizerPending = pending
 	return b
 }
 
+// WithFinalizerSequence sets the finalizer sequence.
 func (b *Builder) WithFinalizerSequence(seq int64) *Builder {
 	b.row.FinalizerSequence = seq
+	return b
+}
+
+// WithTestShardingAlgorithm sets the test sharding algorithm.
+func (b *Builder) WithTestShardingAlgorithm(algorithm TestShardingAlgorithmID) *Builder {
+	b.row.TestShardingAlgorithm = algorithm
 	return b
 }
 
@@ -322,6 +337,7 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 		"Submitted":                               r.Submitted,
 		"FinalizerPending":                        r.FinalizerPending,
 		"FinalizerSequence":                       r.FinalizerSequence,
+		"TestShardingAlgorithm":                   string(r.TestShardingAlgorithm),
 	}
 	if r.Definition != nil {
 		row["DefinitionSystem"] = r.Definition.System
@@ -339,6 +355,7 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 			"Realm":                 r.Realm,
 			"CreateTime":            r.CreateTime,
 			"Sources":               spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
+			"TestShardingAlgorithm": string(r.TestShardingAlgorithm),
 		}))
 	}
 

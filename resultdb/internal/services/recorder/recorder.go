@@ -24,11 +24,12 @@ import (
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/server"
+
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server"
 )
 
 // recorderServer implements pb.RecorderServer.

@@ -43,6 +43,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
+	"go.chromium.org/luci/resultdb/internal/testresultsv2"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/internal/workunits"
@@ -575,16 +576,26 @@ func TestBatchCreateTestResults(t *testing.T) {
 			createTestResults := func(req *pb.BatchCreateTestResultsRequest, expectedTRs []*pb.TestResult) {
 				response, err := recorder.BatchCreateTestResults(ctx, req)
 				assert.Loosely(t, err, should.BeNil, truth.LineContext(1))
+				assert.Loosely(t, response.TestResults, should.Match(expectedTRs), truth.LineContext(1))
 
-				assert.Loosely(t, len(response.TestResults), should.Equal(len(expectedTRs)), truth.LineContext(1))
 				for i := range req.Requests {
-					expectedWireTR := proto.Clone(expectedTRs[i]).(*pb.TestResult)
-					assert.Loosely(t, response.TestResults[i], should.Match(expectedWireTR), truth.LineContext(1))
-
 					// double-check it with the database
 					row, err := testresults.Read(span.Single(ctx), expectedTRs[i].Name)
 					assert.Loosely(t, err, should.BeNil, truth.LineContext(1))
 					assert.Loosely(t, row, should.Match(expectedTRs[i]), truth.LineContext(1))
+				}
+
+				// Verify TestResultsV2
+				v2Rows, err := testresultsv2.ReadAllForTesting(span.Single(ctx))
+				assert.Loosely(t, err, should.BeNil, truth.LineContext(1))
+				assert.Loosely(t, len(v2Rows), should.Equal(len(expectedTRs)), truth.LineContext(1))
+				v2ProtosByName := make(map[string]*pb.TestResult, len(v2Rows))
+				for _, r := range v2Rows {
+					tr := r.ToProto()
+					v2ProtosByName[tr.Name] = tr
+				}
+				for _, tr := range expectedTRs {
+					assert.Loosely(t, v2ProtosByName[tr.Name], should.Match(tr), truth.LineContext(1))
 				}
 			}
 

@@ -165,6 +165,41 @@ func ReadRealmFromShard(ctx context.Context, id ShardID) (realm string, err erro
 	return realm, nil
 }
 
+// TestShardingInformation contains information about how the root invocation shards
+// tests.
+type TestShardingInformation struct {
+	// The test sharding algorithm used by the root invocation.
+	Algorithm TestShardingAlgorithmID
+	// The realm of the root invocation.
+	Realm string
+}
+
+// ReadTestShardingInformationFromShard reads the test sharding information of
+// root invocation via one of its shards. If the root invocation is not found,
+// returns a NotFound appstatus error. Otherwise returns the internal error.
+//
+// This will return identical results to reading from the root invocation but
+// can be used to avoid hotspotting the root invocation record from RPCs with
+// a high QPS.
+func ReadTestShardingInformationFromShard(ctx context.Context, id ShardID) (result TestShardingInformation, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/rootinvocations.ReadTestShardingInformationFromShard")
+	defer func() { tracing.End(ts, err) }()
+
+	var algorithm string
+	var realm string
+	err = readColumnsFromShard(ctx, id, map[string]any{
+		"TestShardingAlgorithm": &algorithm,
+		"Realm":                 &realm,
+	})
+	if err != nil {
+		return TestShardingInformation{}, err
+	}
+	return TestShardingInformation{
+		Algorithm: TestShardingAlgorithmID(algorithm),
+		Realm:     realm,
+	}, nil
+}
+
 // readMulti reads multiple root invocations from Spanner.
 func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) error) error {
 	if len(ids) == 0 {
@@ -198,19 +233,21 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 		"Submitted",
 		"FinalizerPending",
 		"FinalizerSequence",
+		"TestShardingAlgorithm",
 	}
 	var b spanutil.Buffer
 	return span.Read(ctx, "RootInvocations", ids.Keys(), cols).Do(func(row *spanner.Row) error {
 		inv := &RootInvocationRow{}
 		var (
-			producerResource     spanutil.Compressed
-			definitionSystem     spanner.NullString
-			definitionName       spanner.NullString
-			definitionProperties *pb.RootInvocationDefinition_Properties
-			sources              spanutil.Compressed
-			primaryBuild         spanutil.Compressed
-			extraBuilds          [][]byte // slice of individually serialized + compressed protos
-			properties           spanutil.Compressed
+			producerResource      spanutil.Compressed
+			definitionSystem      spanner.NullString
+			definitionName        spanner.NullString
+			definitionProperties  *pb.RootInvocationDefinition_Properties
+			sources               spanutil.Compressed
+			primaryBuild          spanutil.Compressed
+			extraBuilds           [][]byte // slice of individually serialized + compressed protos
+			properties            spanutil.Compressed
+			testShardingAlgorithm string
 		)
 
 		dest := []any{
@@ -241,6 +278,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 			&inv.Submitted,
 			&inv.FinalizerPending,
 			&inv.FinalizerSequence,
+			&testShardingAlgorithm,
 		}
 
 		if err := b.FromSpanner(row, dest...); err != nil {
@@ -302,6 +340,8 @@ func readMulti(ctx context.Context, ids IDSet, f func(inv *RootInvocationRow) er
 				return err
 			}
 		}
+
+		inv.TestShardingAlgorithm = TestShardingAlgorithmID(testShardingAlgorithm)
 
 		return f(inv)
 	})

@@ -17,10 +17,12 @@ package recorder
 import (
 	"context"
 
-	"go.chromium.org/luci/grpc/appstatus"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"go.chromium.org/luci/grpc/appstatus"
+
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // FinalizeWorkUnitDescendants implements pb.RecorderServer.

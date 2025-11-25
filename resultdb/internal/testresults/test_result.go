@@ -214,44 +214,30 @@ func PopulateFailureReason(tr *pb.TestResult, fr spanutil.Compressed) error {
 		return err
 	}
 
-	// TODO: This call can safely be removed from November 2026 onwards
-	// (after all data inserted prior to May 2025 has been deleted).
-	// It is necessary to handle data uploaded prior to May 2025 which
-	// was not always stored in normalised form.
 	NormaliseFailureReason(result)
-
-	// Populate output only fields.
-	PopulateFailureReasonOutputOnlyFields(result)
 
 	tr.FailureReason = result
 	return nil
 }
 
 // NormaliseFailureReason handles compatibility of legacy failure reason uploads,
-// converting them to a normalised failure reason representation for storage.
-// This also depopulates any OUTPUT_ONLY fields.
+// converting them to a normalised failure reason representation, including
+// setting OUTPUT_ONLY fields.
 //
-// This should be called before storing the results or
-// PopulateFailureReasonOutputOnlyFields.
+// This should be called after reading results.
 func NormaliseFailureReason(fr *pb.FailureReason) {
+	// TODO: This if statement can safely be removed from November 2026 onwards
+	// (after all data inserted prior to May 2025 has been deleted).
+	// It is necessary to handle data uploaded prior to May 2025 which
+	// was not always stored in normalised form.
 	if len(fr.Errors) == 0 && fr.PrimaryErrorMessage != "" {
 		// Older results: normalise by set Errors collection from
 		// PrimaryErrorMessage.
 		fr.Errors = []*pb.FailureReason_Error{{Message: fr.PrimaryErrorMessage}}
 	}
-	// TODO(meiring): Uncomment this line once we are confident
-	// we will not roll back the original change. We need to
-	// keep storing PrimaryErrorMessage for a short time lest
-	// we roll back to a version of ResultDB that returns
-	// read failure reasons verbatim (without computing this field).
-	// fr.PrimaryErrorMessage = ""
-}
 
-// PopulateFailureReasonOutputOnlyFields populates output only fields
-// for a normalised test result.
-func PopulateFailureReasonOutputOnlyFields(fr *pb.FailureReason) {
 	if len(fr.Errors) > 0 {
-		// Ppulate PrimaryErrorMessage from Errors collection.
+		// Populate PrimaryErrorMessage from Errors collection.
 		fr.PrimaryErrorMessage = fr.Errors[0].Message
 	} else {
 		fr.PrimaryErrorMessage = ""

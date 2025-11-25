@@ -371,10 +371,12 @@ func readRows[T any](ctx context.Context, ids []ID, columns []string, parseRow f
 		return nil, nil
 	}
 
-	// No need to dedup keys going into Spanner, Cloud Spanner always behaves
-	// as if the key is only specified once.
+	// While it is not necessary to dedup keys passed to span.Read as Cloud Spanner
+	// will do key deduping itself, we do so anyway to reduce the size of the request
+	// to the Spanner backend.
+	dedupedIDs := NewIDSet(ids...).SortedByRowID()
 	var keys []spanner.Key
-	for _, id := range ids {
+	for _, id := range dedupedIDs {
 		keys = append(keys, id.Key())
 	}
 

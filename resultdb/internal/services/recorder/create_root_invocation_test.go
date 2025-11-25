@@ -1235,9 +1235,15 @@ func TestCreateRootInvocation(t *testing.T) {
 			row, err := rootinvocations.Read(ctx, rootInvocationID)
 			assert.Loosely(t, err, should.BeNil)
 			expectInvRow.SecondaryIndexShardID = row.SecondaryIndexShardID
+			expectInvRow.TestShardingAlgorithm = row.TestShardingAlgorithm // Accept the value set by the implementation.
 			expectInvRow.CreateTime = commitTime
 			expectInvRow.LastUpdated = commitTime
 			assert.That(t, row, should.Match(expectInvRow))
+
+			// Check the test sharding algorithm exists.
+			alg, err := rootinvocations.ShardingAlgorithmByID(row.TestShardingAlgorithm)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, alg, should.NotBeNil)
 
 			wuRow, err := workunits.Read(ctx, wuID, workunits.AllFields)
 			assert.Loosely(t, err, should.BeNil)

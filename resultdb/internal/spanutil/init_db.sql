@@ -181,6 +181,9 @@ CREATE TABLE RootInvocations (
   -- - WAIT_FOR_METADATA (1) - metadata is not yet final
   -- - METADATA_FINAL (2) - metadata is final and exports can commence
   StreamingExportState INT64 NOT NULL,
+
+  -- The test sharding algorithm used to shard tests in this root invocation.
+  TestShardingAlgorithm STRING(MAX) NOT NULL DEFAULT("by_case_name"),
 ) PRIMARY KEY (RootInvocationId),
   -- Apply 1.5 year TTL to root invocations. The deletion policy applied here will
   -- apply to interleaved child tables. Leave 30 days for Spanner to actually
@@ -266,6 +269,9 @@ CREATE TABLE RootInvocationShards (
   --
   -- See RootInvocations.Sources for more information.
   Sources BYTES(MAX),
+
+  -- The test sharding algorithm used to shard tests in this root invocation.
+  TestShardingAlgorithm STRING(MAX) NOT NULL DEFAULT("by_case_name"),
 ) PRIMARY KEY (RootInvocationShardId),
   -- Apply 1.5 year TTL to root invocations. The deletion policy applied here will
   -- apply to interleaved child tables. Leave 30 days for Spanner to actually

@@ -16,6 +16,7 @@ package recorder
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -146,6 +147,11 @@ func createIdempotentRootInvocation(
 		}
 		// Root invocation doesn't exist, create it.
 
+		shardingAlgorithm, err := rootinvocations.AssignTestShardingAlgorithm(rootInvocationID)
+		if err != nil {
+			return fmt.Errorf("assigning test sharding algorithm: %w", err)
+		}
+
 		rootInvocationRow := &rootinvocations.RootInvocationRow{
 			RootInvocationID: rootInvocationID,
 			// Should match root work unit.
@@ -169,6 +175,7 @@ func createIdempotentRootInvocation(
 			Submitted:                               false, // Submitted is set in separate MarkInvocationSubmitted call.
 			FinalizerPending:                        false,
 			FinalizerSequence:                       0,
+			TestShardingAlgorithm:                   shardingAlgorithm,
 		}
 		span.BufferWrite(ctx, rootinvocations.Create(rootInvocationRow)...)
 

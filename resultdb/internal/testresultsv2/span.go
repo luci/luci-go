@@ -84,7 +84,7 @@ func Create(tr *TestResultRow) *spanner.Mutation {
 		panic("Realm is required")
 	}
 
-	fr := NormaliseFailureReason(tr.FailureReason)
+	fr := RemoveOutputOnlyFailureReasonFields(tr.FailureReason)
 
 	// Rather than use spanutil.InsertMap, use spanner.Insert with
 	// cols and vals. This is somewhat less readable but previous profiling
@@ -115,26 +115,16 @@ func Create(tr *TestResultRow) *spanner.Mutation {
 		spanutil.Compressed(pbutil.MustMarshal(tr.SkippedReason)).ToSpanner(),
 		spanutil.Compressed(pbutil.MustMarshal(tr.FrameworkExtensions)).ToSpanner(),
 	}
-	return spanner.Insert("TestResultsV2", testResultColumns, vals)
+	return spanner.InsertOrUpdate("TestResultsV2", testResultColumns, vals)
 }
 
-// NormaliseFailureReason handles compatibility of legacy failure reason uploads,
-// converting them to a normalised failure reason representation for storage.
-// This also depopulates any OUTPUT_ONLY fields.
-//
-// This should be called before storing the results or
-// PopulateFailureReasonOutputOnlyFields.
-func NormaliseFailureReason(fr *pb.FailureReason) *pb.FailureReason {
-	if fr.PrimaryErrorMessage == "" {
-		// No normalisation required, save the proto copy operation.
-		return fr
+// RemoveOutputOnlyFailureReasonFields removes any fields from the FailureReason
+// that are OUTPUT_ONLY. This is necessary for storage.
+func RemoveOutputOnlyFailureReasonFields(fr *pb.FailureReason) *pb.FailureReason {
+	if fr == nil {
+		return nil
 	}
 	result := proto.Clone(fr).(*pb.FailureReason)
-	if len(fr.Errors) == 0 && fr.PrimaryErrorMessage != "" {
-		// Older results: normalise by setting Errors collection from
-		// PrimaryErrorMessage.
-		result.Errors = []*pb.FailureReason_Error{{Message: fr.PrimaryErrorMessage}}
-	}
 	// Clear the PrimaryErrorMessage field, it is supposed to be output only.
 	result.PrimaryErrorMessage = ""
 	return result
