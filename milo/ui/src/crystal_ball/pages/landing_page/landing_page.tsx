@@ -18,25 +18,40 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import { useState, useEffect, useCallback } from 'react';
 
-import { SearchMeasurementsForm } from '@/crystal_ball/components/search_measurements_form';
 import {
+  SearchMeasurementsForm,
   TimeSeriesChart,
   TimeSeriesLine,
-} from '@/crystal_ball/components/time_series_chart';
+} from '@/crystal_ball/components';
 import {
   useSearchMeasurements,
-  SearchMeasurementsRequest,
+  useSearchQuerySync,
+} from '@/crystal_ball/hooks';
+import {
   MeasurementRow,
-} from '@/crystal_ball/hooks/use_android_perf_api';
-import { useSearchQuerySync } from '@/crystal_ball/hooks/use_search_query_sync';
+  SearchMeasurementsRequest,
+} from '@/crystal_ball/types';
+import { validateSearchRequest } from '@/crystal_ball/utils';
 
+/**
+ * Represents a single build create time to various metric key value mappings.
+ */
 interface Measurement {
   time: number;
   [valueKey: string]: number | undefined;
 }
 
 /**
- * Helper function to transform API response to chart data.
+ * On a per timestamp and metric key basis, total values based on build ids.
+ */
+interface AggregationData {
+  sum: number;
+  count: number;
+}
+
+/**
+ * Helper function to transform API response to chart data,
+ * aggregating by mean across buildId.
  * @param rows - from the API response.
  * @param metricKeys - from the SearchMeasurementsRequest.
  * @returns a list of measurements to be used by the Time Series chart.
@@ -45,34 +60,62 @@ const transformDataForChart = (
   rows: MeasurementRow[],
   metricKeys: string[],
 ): Measurement[] => {
-  const dataMap: { [time: number]: Measurement } = {};
+  const dataMap: {
+    [time: number]: { [metricKey: string]: AggregationData };
+  } = {};
 
   rows.forEach((row) => {
     if (
       !row.buildCreateTime ||
       row.metricKey === undefined ||
-      row.value === undefined
+      row.value === undefined ||
+      row.buildId === undefined
     ) {
+      return;
+    }
+
+    // Skip rows that don't match the requested metric keys
+    if (!metricKeys.includes(row.metricKey)) {
       return;
     }
 
     const time = new Date(row.buildCreateTime).getTime();
 
     if (!dataMap[time]) {
-      dataMap[time] = { time };
-      // Initialize all requested metric keys to undefined for this time slot
-      metricKeys.forEach((key) => {
-        dataMap[time][key] = undefined;
-      });
+      dataMap[time] = {};
     }
 
-    // Set the value for the specific metricKey at this time
-    if (metricKeys.includes(row.metricKey)) {
-      dataMap[time][row.metricKey] = row.value;
+    if (!dataMap[time][row.metricKey]) {
+      dataMap[time][row.metricKey] = { sum: 0, count: 0 };
     }
+
+    dataMap[time][row.metricKey].sum += row.value;
+    dataMap[time][row.metricKey].count += 1;
   });
 
-  return Object.values(dataMap).sort((a, b) => a.time - b.time);
+  const chartData: Measurement[] = Object.keys(dataMap)
+    .map(Number)
+    .sort((a, b) => a - b)
+    .map((time) => {
+      const measurement: Measurement = { time };
+
+      // Initialize all requested metric keys to undefined for this time slot
+      metricKeys.forEach((key) => {
+        measurement[key] = undefined;
+      });
+
+      // Calculate the mean for each metricKey at this time
+      metricKeys.forEach((key) => {
+        if (dataMap[time][key]) {
+          const agg = dataMap[time][key];
+          measurement[key] = agg.sum / agg.count;
+        }
+      });
+
+      return measurement;
+    });
+
+  return chartData;
 };
 
 /**
@@ -82,19 +125,25 @@ export function LandingPage() {
   const { searchRequestFromUrl, updateSearchQuery } = useSearchQuerySync();
 
   const [searchRequest, setSearchRequest] =
-    useState<SearchMeasurementsRequest | null>(() => {
-      return Object.keys(searchRequestFromUrl).length > 0
-        ? (searchRequestFromUrl as SearchMeasurementsRequest)
-        : null;
-    });
+    useState<SearchMeasurementsRequest | null>(null);
 
-  // Effect to update searchRequest when URL changes
+  const [isInitialValid, setIsInitialValid] = useState(false);
+
   useEffect(() => {
-    setSearchRequest(
-      Object.keys(searchRequestFromUrl).length > 0
-        ? (searchRequestFromUrl as SearchMeasurementsRequest)
-        : null,
-    );
+    const hasInitialRequest = Object.keys(searchRequestFromUrl).length > 0;
+    if (hasInitialRequest) {
+      const errors = validateSearchRequest(searchRequestFromUrl);
+      if (Object.keys(errors).length === 0) {
+        setSearchRequest(searchRequestFromUrl as SearchMeasurementsRequest);
+        setIsInitialValid(true);
+      } else {
+        setSearchRequest(null);
+        setIsInitialValid(false);
+      }
+    } else {
+      setSearchRequest(null);
+      setIsInitialValid(false);
+    }
   }, [searchRequestFromUrl]);
 
   const {
@@ -103,11 +152,13 @@ export function LandingPage() {
     isError: isSearchError,
     error: searchError,
   } = useSearchMeasurements(searchRequest!, {
-    enabled: !!searchRequest,
+    enabled: !!searchRequest && isInitialValid,
   });
 
   const handleSearchSubmit = useCallback(
     (request: SearchMeasurementsRequest) => {
+      setIsInitialValid(true);
+      setSearchRequest(request);
       updateSearchQuery(request);
     },
     [updateSearchQuery],

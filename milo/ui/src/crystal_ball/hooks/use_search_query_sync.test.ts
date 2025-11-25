@@ -14,16 +14,13 @@
 
 import { renderHook, act } from '@testing-library/react';
 
+import { URL_SEARCH_QUERY_PARAM } from '@/crystal_ball/constants';
+import { useSearchQuerySync } from '@/crystal_ball/hooks';
 import {
   SearchMeasurementsFilter,
   SearchMeasurementsRequest,
-} from '@/crystal_ball/hooks/use_android_perf_api';
+} from '@/crystal_ball/types';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-
-import {
-  URL_SEARCH_QUERY_PARAM,
-  useSearchQuerySync,
-} from './use_search_query_sync';
 
 // Mock the useSyncedSearchParams hook
 jest.mock('@/generic_libs/hooks/synced_search_params');

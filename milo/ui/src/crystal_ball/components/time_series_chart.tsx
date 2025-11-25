@@ -108,8 +108,39 @@ interface TimeSeriesChartProps<TDataPoint> {
    * Optional flag for using a ResponsiveContainer, defaults to true.
    */
   useResponsiveContainer?: boolean;
+
+  /**
+   * Optional width for the y-axis to accommodate large numbers.
+   * Adjust this value as needed.
+   */
+  yAxisWidth?: number;
+
+  /**
+   * Optional margin for the left side of the chart.
+   */
+  marginLeft?: number;
 }
 
+/**
+ * Format large numbers for display on the Y-axis.
+ * @param num - any number value to be formatted.
+ * @returns a formatted number display string.
+ */
+function formatLargeNumber(num: number): string {
+  if (num === 0) return '0';
+  if (Math.abs(num) < 1000) return num.toString();
+
+  const units = ['', 'k', 'M', 'B', 'T'];
+  const order = Math.floor(Math.log10(Math.abs(num)) / 3);
+  const name = units[Math.min(order, units.length - 1)];
+  const value = Math.abs(num) / Math.pow(1000, order);
+
+  return `${Math.sign(num) * parseFloat(value.toFixed(1))}${name}`;
+}
+
+/**
+ * Uses recharts to render a time series chart.
+ */
 export function TimeSeriesChart<TDataPoint>({
   data,
   lines,
@@ -117,6 +148,8 @@ export function TimeSeriesChart<TDataPoint>({
   yAxisLabel,
   chartTitle,
   useResponsiveContainer = true,
+  yAxisWidth = 80,
+  marginLeft = 30,
 }: TimeSeriesChartProps<TDataPoint>) {
   let timeSeriesChart = (
     <LineChart
@@ -128,7 +161,7 @@ export function TimeSeriesChart<TDataPoint>({
       margin={{
         top: 5,
         right: 30,
-        left: 20,
+        left: marginLeft,
         bottom: 5,
       }}
     >
@@ -142,9 +175,14 @@ export function TimeSeriesChart<TDataPoint>({
       />
       <YAxis
         label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }}
+        width={yAxisWidth}
+        tickFormatter={formatLargeNumber}
       />
       <Tooltip
         labelFormatter={(unixTime) => new Date(unixTime).toLocaleString()}
+        formatter={(value) =>
+          typeof value === 'number' ? value.toLocaleString() : value
+        }
       />
       <Legend />
       {lines.map((line) => (

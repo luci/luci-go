@@ -12,39 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Button, TextField, Typography, Chip, Stack } from '@mui/material';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Chip,
+  Stack,
+  Alert,
+} from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { DateTime } from 'luxon';
-import { useReducer, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import { useEffect, useReducer, useState } from 'react';
+import { v4 } from 'uuid';
 
+import { MAXIMUM_PAGE_SIZE } from '@/crystal_ball/constants';
+import { SearchMeasurementsRequest } from '@/crystal_ball/types';
 import {
-  MAXIMUM_PAGE_SIZE,
-  SearchMeasurementsRequest,
-  Timestamp,
-} from '@/crystal_ball/hooks/use_android_perf_api';
-
-/**
- * Helper to convert DateTime to Timestamp.
- * @param date - raw value from the DateTimePicker.
- * @returns date in Timestamp proto format.
- */
-const dateToTimestamp = (date: DateTime | null): Timestamp | undefined => {
-  if (!date) return undefined;
-  const seconds = date.toSeconds();
-  const nanos = 0;
-  return { seconds, nanos };
-};
-
-/**
- * Helper to convert Timestamp to DateTime.
- * @param timestamp - raw Timestamp proto value.
- * @returns timestamp value converted to a DateTime value.
- */
-const timestampToDate = (timestamp: Timestamp | undefined): DateTime | null => {
-  if (!timestamp || timestamp.seconds === undefined) return null;
-  return DateTime.fromSeconds(timestamp.seconds).toUTC();
-};
+  ValidationErrors,
+  dateToTimestamp,
+  timestampToDate,
+  validateSearchRequest,
+} from '@/crystal_ball/utils';
 
 /**
  * State structure for the form.
@@ -63,6 +52,9 @@ interface FormState {
   currentExtraColumn: string;
 }
 
+/**
+ * Action identifier.
+ */
 enum Action {
   SET_TEXT_FIELD = 'SET_TEXT_FIELD',
   SET_N_DAYS = 'SET_N_DAYS',
@@ -102,17 +94,33 @@ function formReducer(state: FormState, action: FormAction): FormState {
       return { ...state, [action.field]: action.value };
     case Action.SET_N_DAYS:
       if (!action.value) {
-        return { ...state, lastNDays: undefined };
+        return {
+          ...state,
+          lastNDays: undefined,
+        };
       }
       const numValue = parseInt(action.value, 10);
+      const newLastNDays = isNaN(numValue) ? undefined : Math.max(0, numValue);
       return {
         ...state,
-        lastNDays: isNaN(numValue) ? undefined : numValue, // Store undefined if NaN
+        lastNDays: newLastNDays,
+        buildCreateStartTime:
+          newLastNDays !== undefined ? null : state.buildCreateStartTime,
+        buildCreateEndTime:
+          newLastNDays !== undefined ? null : state.buildCreateEndTime,
       };
     case Action.SET_START_TIME:
-      return { ...state, buildCreateStartTime: action.value };
+      return {
+        ...state,
+        buildCreateStartTime: action.value,
+        lastNDays: undefined,
+      };
     case Action.SET_END_TIME:
-      return { ...state, buildCreateEndTime: action.value };
+      return {
+        ...state,
+        buildCreateEndTime: action.value,
+        lastNDays: undefined,
+      };
     case Action.ADD_METRIC_KEY: {
       const trimmedValue = action.value.trim();
       return trimmedValue && !state.metricKeys.includes(trimmedValue)
@@ -194,6 +202,9 @@ interface SearchMeasurementsFormProps {
   initialRequest?: Partial<SearchMeasurementsRequest>;
 }
 
+/**
+ * Form to fill out a Search Measurements request.
+ */
 export function SearchMeasurementsForm({
   onSubmit,
   isSubmitting,
@@ -204,14 +215,25 @@ export function SearchMeasurementsForm({
     initialRequest,
     initializeState,
   );
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [showErrors, setShowErrors] = useState(false);
 
-  // Effect to reset form when initialRequest changes
   useEffect(() => {
     dispatch({ type: Action.RESET_FORM, payload: initialRequest });
+
+    if (Object.keys(initialRequest).length > 0) {
+      const initialErrors = validateSearchRequest(initialRequest);
+      setErrors(initialErrors);
+      setShowErrors(Object.keys(initialErrors).length > 0);
+    } else {
+      setErrors({});
+      setShowErrors(false);
+    }
   }, [initialRequest]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
+    setShowErrors(true);
     const request: SearchMeasurementsRequest = {
       testNameFilter: state.testNameFilter || undefined,
       buildCreateStartTime: dateToTimestamp(state.buildCreateStartTime),
@@ -220,12 +242,17 @@ export function SearchMeasurementsForm({
       buildBranch: state.buildBranch || undefined,
       buildTarget: state.buildTarget || undefined,
       atpTestNameFilter: state.atpTestNameFilter || undefined,
-      metricKeys: state.metricKeys.length > 0 ? state.metricKeys : undefined,
+      metricKeys: state.metricKeys,
       extraColumns:
         state.extraColumns.length > 0 ? state.extraColumns : undefined,
       pageSize: MAXIMUM_PAGE_SIZE,
     };
-    onSubmit(request);
+    const currentErrors = validateSearchRequest(request);
+    setErrors(currentErrors);
+
+    if (Object.keys(currentErrors).length === 0) {
+      onSubmit(request);
+    }
   };
 
   return (
@@ -233,11 +260,22 @@ export function SearchMeasurementsForm({
       component="form"
       onSubmit={handleSubmit}
       noValidate
-      sx={{ mt: 1, p: 2 }}
+      sx={{ mt: 1, p: 2, border: '1px solid #e0e0e0', borderRadius: '4px' }}
     >
       <Typography variant="h6" gutterBottom>
         Search Measurements
       </Typography>
+
+      {showErrors && errors.metricKeys && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {errors.metricKeys}
+        </Alert>
+      )}
+      {showErrors && errors.timeRange && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {errors.timeRange}
+        </Alert>
+      )}
 
       <TextField
         label="Test Name Filter"
@@ -304,7 +342,7 @@ export function SearchMeasurementsForm({
       />
 
       <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
-        Filter by Last N Days (overrides start/end times):
+        Filter by Last N Days:
       </Typography>
       <TextField
         label="Last N Days"
@@ -319,6 +357,8 @@ export function SearchMeasurementsForm({
         fullWidth
         margin="normal"
         variant="outlined"
+        inputProps={{ min: 1 }}
+        error={showErrors && !!errors.timeRange}
       />
 
       <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
@@ -332,7 +372,13 @@ export function SearchMeasurementsForm({
             dispatch({ type: Action.SET_START_TIME, value: newValue })
           }
           disabled={!!state.lastNDays}
-          slotProps={{ textField: { fullWidth: true, margin: 'normal' } }}
+          slotProps={{
+            textField: {
+              fullWidth: true,
+              margin: 'normal',
+              error: showErrors && !!errors.timeRange,
+            },
+          }}
         />
         <DateTimePicker
           label="Build Create End Time"
@@ -341,14 +387,19 @@ export function SearchMeasurementsForm({
             dispatch({ type: Action.SET_END_TIME, value: newValue })
           }
           disabled={!!state.lastNDays}
-          slotProps={{ textField: { fullWidth: true, margin: 'normal' } }}
+          slotProps={{
+            textField: {
+              fullWidth: true,
+              margin: 'normal',
+              error: showErrors && !!errors.timeRange,
+            },
+          }}
         />
       </Stack>
 
-      {/* Metric Keys Input */}
       <Box sx={{ mt: 2 }}>
         <TextField
-          label="Add Metric Key"
+          label="Add Metric Key *"
           value={state.currentMetricKey}
           onChange={(e) =>
             dispatch({
@@ -368,7 +419,8 @@ export function SearchMeasurementsForm({
           fullWidth
           margin="normal"
           variant="outlined"
-          helperText='Press Enter to add a key (e.g., "sample-metric-key-A")'
+          helperText='Press Enter to add a key (e.g., "sample-metric-key-A"). At least one is required.'
+          error={showErrors && !!errors.metricKeys}
         />
         <Stack
           direction="row"
@@ -379,54 +431,10 @@ export function SearchMeasurementsForm({
         >
           {state.metricKeys.map((key) => (
             <Chip
-              key={uuidv4()}
+              key={v4()}
               label={key}
               onDelete={() =>
                 dispatch({ type: Action.DELETE_METRIC_KEY, value: key })
-              }
-            />
-          ))}
-        </Stack>
-      </Box>
-
-      {/* Extra Columns Input */}
-      <Box sx={{ mt: 2 }}>
-        <TextField
-          label="Add Extra Column"
-          value={state.currentExtraColumn}
-          onChange={(e) =>
-            dispatch({
-              type: Action.SET_CURRENT_EXTRA_COLUMN,
-              value: e.target.value,
-            })
-          }
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              dispatch({
-                type: Action.ADD_EXTRA_COLUMN,
-                value: state.currentExtraColumn,
-              });
-            }
-          }}
-          fullWidth
-          margin="normal"
-          variant="outlined"
-          helperText='Press Enter to add a column (e.g., "board")'
-        />
-        <Stack
-          direction="row"
-          spacing={1}
-          useFlexGap
-          flexWrap="wrap"
-          sx={{ mb: 1 }}
-        >
-          {state.extraColumns.map((col) => (
-            <Chip
-              key={uuidv4()}
-              label={col}
-              onDelete={() =>
-                dispatch({ type: Action.DELETE_EXTRA_COLUMN, value: col })
               }
             />
           ))}

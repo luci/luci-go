@@ -14,17 +14,12 @@
 
 import { useCallback, useMemo } from 'react';
 
+import { URL_SEARCH_QUERY_PARAM } from '@/crystal_ball/constants';
 import {
   SearchMeasurementsFilter,
   SearchMeasurementsRequest,
-} from '@/crystal_ball/hooks/use_android_perf_api';
+} from '@/crystal_ball/types';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-
-/**
- * URL Search Parameter that corresponds to the serialized
- * SearchMeasurementsRequest.
- */
-export const URL_SEARCH_QUERY_PARAM = 'q';
 
 /**
  * Special characters used by the serialized query.

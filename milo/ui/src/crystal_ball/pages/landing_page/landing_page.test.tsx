@@ -16,9 +16,9 @@ import { UseQueryResult } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 
 import * as useAndroidPerfApi from '@/crystal_ball/hooks/use_android_perf_api';
+import { LandingPage } from '@/crystal_ball/pages/landing_page';
+import { SearchMeasurementsResponse } from '@/crystal_ball/types';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-import { LandingPage } from './landing_page';
 
 // Mock the hook
 const mockUseSearchMeasurements = jest.spyOn(
@@ -48,7 +48,7 @@ describe('<LandingPage />', () => {
       error: null,
       isSuccess: false,
       isFetching: false,
-    } as UseQueryResult<useAndroidPerfApi.SearchMeasurementsResponse, Error>);
+    } as UseQueryResult<SearchMeasurementsResponse, Error>);
 
     render(
       <FakeContextProvider>

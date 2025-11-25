@@ -17,7 +17,7 @@ import { render, screen } from '@testing-library/react';
 import {
   TimeSeriesChart,
   TimeSeriesDefaultDataPoint,
-} from './time_series_chart';
+} from '@/crystal_ball/components';
 
 describe('TimeSeriesChart', () => {
   const mockData: TimeSeriesDefaultDataPoint[] = [

@@ -15,17 +15,14 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { DateTime } from 'luxon';
 
-import {
-  MAXIMUM_PAGE_SIZE,
-  SearchMeasurementsRequest,
-} from '@/crystal_ball/hooks/use_android_perf_api';
+import { SearchMeasurementsForm } from '@/crystal_ball/components';
+import { MAXIMUM_PAGE_SIZE } from '@/crystal_ball/constants';
+import { SearchMeasurementsRequest } from '@/crystal_ball/types';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-import { SearchMeasurementsForm } from './search_measurements_form';
 
 // Mock DateTimePicker to just render a text field
 jest.mock('@mui/x-date-pickers/DateTimePicker', () => ({
-  DateTimePicker: jest.fn(({ label, value, onChange, disabled }) => (
+  DateTimePicker: jest.fn(({ label, value, onChange, disabled, slotProps }) => (
     <input
       type="text"
       aria-label={label}
@@ -40,6 +37,7 @@ jest.mock('@mui/x-date-pickers/DateTimePicker', () => ({
       }}
       disabled={disabled}
       data-testid={`${label}-input`}
+      style={slotProps?.textField?.error ? { border: '1px solid red' } : {}}
     />
   )),
 }));
@@ -75,8 +73,7 @@ describe('SearchMeasurementsForm', () => {
       screen.getByLabelText('Build Create Start Time'),
     ).toBeInTheDocument();
     expect(screen.getByLabelText('Build Create End Time')).toBeInTheDocument();
-    expect(screen.getByLabelText('Add Metric Key')).toBeInTheDocument();
-    expect(screen.getByLabelText('Add Extra Column')).toBeInTheDocument();
+    expect(screen.getByLabelText('Add Metric Key *')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Search' })).toBeInTheDocument();
   });
 
@@ -104,7 +101,7 @@ describe('SearchMeasurementsForm', () => {
         initialRequest={emptyInitialRequest}
       />,
     );
-    const metricInput = screen.getByLabelText('Add Metric Key');
+    const metricInput = screen.getByLabelText('Add Metric Key *');
 
     fireEvent.change(metricInput, { target: { value: 'metric1' } });
     fireEvent.keyDown(metricInput, { key: 'Enter', code: 'Enter' });
@@ -128,30 +125,6 @@ describe('SearchMeasurementsForm', () => {
     expect(chip2).toBeInTheDocument();
 
     expect(screen.getByText('metric2')).toBeInTheDocument();
-  });
-
-  it('adds and removes extra column chips', async () => {
-    renderWithProvider(
-      <SearchMeasurementsForm
-        onSubmit={mockOnSubmit}
-        initialRequest={emptyInitialRequest}
-      />,
-    );
-    const columnInput = screen.getByLabelText('Add Extra Column');
-
-    fireEvent.change(columnInput, { target: { value: 'board' } });
-    fireEvent.keyDown(columnInput, { key: 'Enter', code: 'Enter' });
-    const chip1 = await screen.findByText('board');
-    expect(chip1).toBeInTheDocument();
-
-    // Remove board
-    const deleteIcon = screen.getByTestId('CancelIcon');
-    if (deleteIcon) {
-      fireEvent.click(deleteIcon);
-    }
-    await waitFor(() => {
-      expect(screen.queryByText('board')).not.toBeInTheDocument();
-    });
   });
 
   it('disables date pickers when Last N Days is filled', () => {
@@ -198,7 +171,7 @@ describe('SearchMeasurementsForm', () => {
       target: { value: '14' },
     });
 
-    const metricInput = screen.getByLabelText('Add Metric Key');
+    const metricInput = screen.getByLabelText('Add Metric Key *');
     fireEvent.change(metricInput, { target: { value: 'cpu_usage' } });
     fireEvent.keyDown(metricInput, { key: 'Enter', code: 'Enter' });
 
@@ -231,12 +204,15 @@ describe('SearchMeasurementsForm', () => {
 
     const startTimeInput = screen.getByTestId('Build Create Start Time-input');
     const endTimeInput = screen.getByTestId('Build Create End Time-input');
+    const metricInput = screen.getByLabelText('Add Metric Key *');
 
     const startTime = DateTime.fromISO('2025-11-10T00:00:00Z');
     const endTime = DateTime.fromISO('2025-11-15T00:00:00Z');
 
     fireEvent.change(startTimeInput, { target: { value: startTime.toISO() } });
     fireEvent.change(endTimeInput, { target: { value: endTime.toISO() } });
+    fireEvent.change(metricInput, { target: { value: 'memory' } });
+    fireEvent.keyDown(metricInput, { key: 'Enter', code: 'Enter' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
 
@@ -247,6 +223,7 @@ describe('SearchMeasurementsForm', () => {
           buildCreateStartTime: { seconds: startTime.toSeconds(), nanos: 0 },
           buildCreateEndTime: { seconds: endTime.toSeconds(), nanos: 0 },
           lastNDays: undefined,
+          metricKeys: ['memory'],
         }),
       );
     });
@@ -281,5 +258,146 @@ describe('SearchMeasurementsForm', () => {
     );
     expect(screen.getByLabelText('Last N Days')).toHaveValue(5);
     expect(screen.getByText('init_metric')).toBeInTheDocument();
+  });
+
+  describe('Validation', () => {
+    it('does not show errors on initial render with empty request', () => {
+      renderWithProvider(
+        <SearchMeasurementsForm
+          onSubmit={mockOnSubmit}
+          initialRequest={emptyInitialRequest}
+        />,
+      );
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('shows errors on submit if fields are missing', async () => {
+      renderWithProvider(
+        <SearchMeasurementsForm
+          onSubmit={mockOnSubmit}
+          initialRequest={emptyInitialRequest}
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+      expect(
+        await screen.findByText('At least one metric key is required.'),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          'Please specify either "Last N Days" or both a Start and End Time.',
+        ),
+      ).toBeInTheDocument();
+      expect(mockOnSubmit).not.toHaveBeenCalled();
+    });
+
+    it('shows error if only start time is provided', async () => {
+      renderWithProvider(
+        <SearchMeasurementsForm
+          onSubmit={mockOnSubmit}
+          initialRequest={{ metricKeys: ['test'] }}
+        />,
+      );
+
+      const startTimeInput = screen.getByTestId(
+        'Build Create Start Time-input',
+      );
+      fireEvent.change(startTimeInput, {
+        target: { value: DateTime.fromISO('2025-11-10T00:00:00Z').toISO() },
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+      expect(
+        await screen.findByText(
+          'Please specify either "Last N Days" or both a Start and End Time.',
+        ),
+      ).toBeInTheDocument();
+      expect(mockOnSubmit).not.toHaveBeenCalled();
+    });
+
+    it('shows error if start time is after end time', async () => {
+      renderWithProvider(
+        <SearchMeasurementsForm
+          onSubmit={mockOnSubmit}
+          initialRequest={{ metricKeys: ['test'] }}
+        />,
+      );
+
+      const startTimeInput = screen.getByTestId(
+        'Build Create Start Time-input',
+      );
+      const endTimeInput = screen.getByTestId('Build Create End Time-input');
+
+      fireEvent.change(startTimeInput, {
+        target: { value: DateTime.fromISO('2025-11-15T00:00:00Z').toISO() },
+      });
+      fireEvent.change(endTimeInput, {
+        target: { value: DateTime.fromISO('2025-11-10T00:00:00Z').toISO() },
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+      expect(
+        await screen.findByText('Start Time must be before End Time.'),
+      ).toBeInTheDocument();
+      expect(mockOnSubmit).not.toHaveBeenCalled();
+    });
+
+    it('shows errors on load if initialRequest is invalid', () => {
+      const invalidInitialRequest: Partial<SearchMeasurementsRequest> = {
+        lastNDays: 0, // Invalid value
+      };
+      renderWithProvider(
+        <SearchMeasurementsForm
+          onSubmit={mockOnSubmit}
+          initialRequest={invalidInitialRequest}
+        />,
+      );
+
+      expect(
+        screen.getByText('At least one metric key is required.'),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          'Please specify either "Last N Days" or both a Start and End Time.',
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it('does not submit if form is invalid', async () => {
+      renderWithProvider(
+        <SearchMeasurementsForm
+          onSubmit={mockOnSubmit}
+          initialRequest={emptyInitialRequest}
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+      await screen.findByText('At least one metric key is required.');
+      expect(mockOnSubmit).not.toHaveBeenCalled();
+    });
+
+    it('submits if form is valid', async () => {
+      renderWithProvider(
+        <SearchMeasurementsForm
+          onSubmit={mockOnSubmit}
+          initialRequest={emptyInitialRequest}
+        />,
+      );
+
+      fireEvent.change(screen.getByLabelText('Last N Days'), {
+        target: { value: '3' },
+      });
+      const metricInput = screen.getByLabelText('Add Metric Key *');
+      fireEvent.change(metricInput, { target: { value: 'test_metric' } });
+      fireEvent.keyDown(metricInput, { key: 'Enter', code: 'Enter' });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+      await waitFor(() => {
+        expect(mockOnSubmit).toHaveBeenCalledTimes(1);
+      });
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
   });
 });

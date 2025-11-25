@@ -15,16 +15,17 @@
 import { renderHook, waitFor } from '@testing-library/react';
 
 import * as gapiQueryHooks from '@/common/hooks/gapi_query/gapi_query';
-import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
+import { API_BASE_URL } from '@/crystal_ball/constants';
 import {
-  API_BASE_URL,
   useTestConnection,
   useSearchMeasurements,
   useSearchMeasurementsInfinite,
+} from '@/crystal_ball/hooks';
+import {
   SearchMeasurementsRequest,
   SearchMeasurementsResponse,
-} from './use_android_perf_api';
+} from '@/crystal_ball/types';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 // Mock the imported hooks
 jest.mock('@/common/hooks/gapi_query/gapi_query', () => ({
