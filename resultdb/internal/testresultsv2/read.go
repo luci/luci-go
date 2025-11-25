@@ -16,16 +16,20 @@ package testresultsv2
 
 import (
 	"context"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tracing"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -153,5 +157,59 @@ func PopulateFailureReasonOutputOnlyFields(fr *pb.FailureReason) {
 		fr.PrimaryErrorMessage = fr.Errors[0].Message
 	} else {
 		fr.PrimaryErrorMessage = ""
+	}
+}
+
+// ToProto converts the TestResultRow to a TestResult proto.
+// Note that some internal-only fields are lost in this translation (e.g. CreateTime, Realm, Root Invocation Shard).
+func (r *TestResultRow) ToProto() *pb.TestResult {
+	testID := pbutil.EncodeTestID(pbutil.BaseTestIdentifier{
+		ModuleName:   r.ID.ModuleName,
+		ModuleScheme: r.ID.ModuleScheme,
+		CoarseName:   r.ID.CoarseName,
+		FineName:     r.ID.FineName,
+		CaseName:     r.ID.CaseName,
+	})
+
+	var startTime *timestamppb.Timestamp
+	if r.StartTime.Valid {
+		startTime = timestamppb.New(r.StartTime.Time)
+	}
+
+	var duration *durationpb.Duration
+	if r.RunDurationNanos.Valid {
+		duration = durationpb.New(time.Duration(r.RunDurationNanos.Int64))
+	}
+
+	statusV1, expected := pbutil.TestStatusV1FromV2(r.StatusV2, r.FailureReason.GetKind(), r.FrameworkExtensions.GetWebTest())
+
+	return &pb.TestResult{
+		Name: pbutil.TestResultName(string(r.ID.RootInvocationShardID.RootInvocationID), r.ID.WorkUnitID, testID, r.ID.ResultID),
+		TestIdStructured: &pb.TestIdentifier{
+			ModuleName:        r.ID.ModuleName,
+			ModuleScheme:      r.ID.ModuleScheme,
+			ModuleVariant:     r.ModuleVariant,
+			ModuleVariantHash: r.ID.ModuleVariantHash,
+			CoarseName:        r.ID.CoarseName,
+			FineName:          r.ID.FineName,
+			CaseName:          r.ID.CaseName,
+		},
+		TestId:              testID,
+		ResultId:            r.ID.ResultID,
+		Variant:             r.ModuleVariant,
+		Expected:            expected,
+		Status:              statusV1,
+		StatusV2:            r.StatusV2,
+		SummaryHtml:         r.SummaryHTML,
+		StartTime:           startTime,
+		Duration:            duration,
+		Tags:                r.Tags,
+		VariantHash:         r.ID.ModuleVariantHash,
+		TestMetadata:        r.TestMetadata,
+		FailureReason:       r.FailureReason,
+		Properties:          r.Properties,
+		SkipReason:          r.SkipReason,
+		SkippedReason:       r.SkippedReason,
+		FrameworkExtensions: r.FrameworkExtensions,
 	}
 }

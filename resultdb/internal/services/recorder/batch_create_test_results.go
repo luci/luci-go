@@ -504,9 +504,9 @@ func insertTestResult(invID invocations.ID, requestID string, body *pb.TestResul
 
 	if ret.StatusV2 != pb.TestResult_STATUS_UNSPECIFIED {
 		// Populate v1 status from v2 status fields.
-		ret.Status, ret.Expected = statusV1FromV2(ret.StatusV2, ret.FailureReason.GetKind(), ret.FrameworkExtensions.GetWebTest())
+		ret.Status, ret.Expected = pbutil.TestStatusV1FromV2(ret.StatusV2, ret.FailureReason.GetKind(), ret.FrameworkExtensions.GetWebTest())
 	} else {
-		status, failureKind, webTest := statusV2FromV1(ret.Status, ret.Expected)
+		status, failureKind, webTest := pbutil.TestStatusV2FromV1(ret.Status, ret.Expected)
 
 		// Populate v2 status fields from v1 status.
 		ret.StatusV2 = status
@@ -597,124 +597,6 @@ func validateTestIDToScheme(cfg *config.CompiledServiceConfig, testID pbutil.Bas
 		return errors.Fmt("module_scheme: scheme %q is not a known scheme by the ResultDB deployment; see go/resultdb-schemes for instructions how to define a new scheme", testID.ModuleScheme)
 	}
 	return scheme.Validate(testID)
-}
-
-// statusV1FromV2 computes a v1 status (status + expected) from v2 status fields.
-// It is used to populate v1 status for clients uploading the v2 status.
-func statusV1FromV2(status pb.TestResult_Status, kind pb.FailureReason_Kind, webTest *pb.WebTest) (oldStatus pb.TestStatus, expected bool) {
-	if webTest != nil {
-		switch webTest.Status {
-		case pb.WebTest_PASS:
-			oldStatus = pb.TestStatus_PASS
-		case pb.WebTest_FAIL:
-			oldStatus = pb.TestStatus_FAIL
-		case pb.WebTest_TIMEOUT:
-			oldStatus = pb.TestStatus_ABORT
-		case pb.WebTest_CRASH:
-			oldStatus = pb.TestStatus_CRASH
-		case pb.WebTest_SKIP:
-			oldStatus = pb.TestStatus_SKIP
-		default:
-			// Web Test Status is closed to extension so this should never happen.
-			panic(errors.Fmt("unknown web test status: %v", webTest.Status))
-		}
-		expected = webTest.IsExpected
-		return oldStatus, expected
-	}
-	switch status {
-	case pb.TestResult_PASSED:
-		return pb.TestStatus_PASS, true
-	case pb.TestResult_FAILED:
-		// V1 breaks out different kinds of failures into a different
-		// top level status: abort, crash, fail.
-		switch kind {
-		case pb.FailureReason_TIMEOUT:
-			return pb.TestStatus_ABORT, false
-		case pb.FailureReason_CRASH:
-			return pb.TestStatus_CRASH, false
-		default:
-			return pb.TestStatus_FAIL, false
-		}
-	case pb.TestResult_SKIPPED:
-		// Intentional skip.
-		return pb.TestStatus_SKIP, true
-	case pb.TestResult_EXECUTION_ERRORED:
-		// Unintentional skip due to some infra error.
-		return pb.TestStatus_SKIP, false
-	case pb.TestResult_PRECLUDED:
-		// Unintentional skip due to some infra error.
-		return pb.TestStatus_SKIP, false
-	default:
-		// Status v2 is closed to extension so this should never happen.
-		panic(errors.Fmt("unknown status v2: %v", status))
-	}
-}
-
-// statusV2FromV1 computes a v2 status from a v1 status.
-// It is used to populate v2 status for clients uploading the v1 status.
-//
-// Between statusV2FromV1 and statusV1FromV2, we require a V1 status to roundtrip
-// back to the same V1 status.
-func statusV2FromV1(oldStatus pb.TestStatus, expected bool) (status pb.TestResult_Status, kind pb.FailureReason_Kind, webTest *pb.WebTest) {
-	if oldStatus == pb.TestStatus_SKIP {
-		if expected {
-			status = pb.TestResult_SKIPPED
-		} else {
-			status = pb.TestResult_EXECUTION_ERRORED
-		}
-		return status, pb.FailureReason_KIND_UNSPECIFIED, nil
-	}
-	if expected {
-		// Expected (non-skipped) result.
-		if oldStatus != pb.TestStatus_PASS {
-			// Expected failure. This must be from a webtest.
-			switch oldStatus {
-			case pb.TestStatus_ABORT:
-				webTest = &pb.WebTest{
-					Status:     pb.WebTest_TIMEOUT,
-					IsExpected: true,
-				}
-			case pb.TestStatus_CRASH:
-				webTest = &pb.WebTest{
-					Status:     pb.WebTest_CRASH,
-					IsExpected: true,
-				}
-			case pb.TestStatus_FAIL:
-				webTest = &pb.WebTest{
-					Status:     pb.WebTest_FAIL,
-					IsExpected: true,
-				}
-			default:
-				// Status v1 is closed to extension so this should never happen.
-				panic(errors.Fmt("unknown status v1: %v", oldStatus))
-			}
-		}
-		return pb.TestResult_PASSED, pb.FailureReason_KIND_UNSPECIFIED, webTest
-	}
-
-	// Unexpected (non-skipped) result.
-	switch oldStatus {
-	case pb.TestStatus_ABORT:
-		kind = pb.FailureReason_TIMEOUT
-	case pb.TestStatus_CRASH:
-		kind = pb.FailureReason_CRASH
-	case pb.TestStatus_FAIL:
-		kind = pb.FailureReason_ORDINARY
-	case pb.TestStatus_PASS:
-		kind = pb.FailureReason_ORDINARY
-	default:
-		// Status v1 is closed to extension so this should never happen.
-		panic(errors.Fmt("unknown status v1: %v", oldStatus))
-	}
-
-	if oldStatus == pb.TestStatus_PASS {
-		// Unexpected pass. This must be from a webtest.
-		webTest = &pb.WebTest{
-			Status:     pb.WebTest_PASS,
-			IsExpected: false,
-		}
-	}
-	return pb.TestResult_FAILED, kind, webTest
 }
 
 func extractTestResultTestIdentifier(tr *pb.TestResult) *pb.TestIdentifier {

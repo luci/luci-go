@@ -1160,3 +1160,29 @@ func validTestResult(now time.Time) *pb.TestResult {
 		Tags: StringPairs("k1", "v1"),
 	}
 }
+
+func TestStatusV1Roundtrip(t *testing.T) {
+	t.Parallel()
+	ftt.Run(`StatusV1Roundtrip`, t, func(t *ftt.Test) {
+		for _, tc := range []struct {
+			status   pb.TestStatus
+			expected bool
+		}{
+			{pb.TestStatus_PASS, true},
+			{pb.TestStatus_PASS, false},
+			{pb.TestStatus_FAIL, true},
+			{pb.TestStatus_FAIL, false},
+			{pb.TestStatus_ABORT, true},
+			{pb.TestStatus_ABORT, false},
+			{pb.TestStatus_CRASH, false},
+			{pb.TestStatus_CRASH, false},
+			{pb.TestStatus_SKIP, true},
+			{pb.TestStatus_SKIP, false},
+		} {
+			statusV2, kind, webTest := TestStatusV2FromV1(tc.status, tc.expected)
+			status, expected := TestStatusV1FromV2(statusV2, kind, webTest)
+			assert.Loosely(t, status, should.Equal(tc.status))
+			assert.Loosely(t, expected, should.Equal(tc.expected))
+		}
+	})
+}
