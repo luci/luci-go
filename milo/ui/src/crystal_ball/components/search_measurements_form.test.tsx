@@ -12,7 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { DateTime } from 'luxon';
 
 import { SearchMeasurementsForm } from '@/crystal_ball/components';
@@ -94,66 +101,151 @@ describe('SearchMeasurementsForm', () => {
     expect(branchInput).toHaveValue('main');
   });
 
-  it('adds and removes metric key chips', async () => {
-    renderWithProvider(
-      <SearchMeasurementsForm
-        onSubmit={mockOnSubmit}
-        initialRequest={emptyInitialRequest}
-      />,
-    );
-    const metricInput = screen.getByLabelText('Add Metric Key *');
+  describe('Last N Days field', () => {
+    it('disables date pickers when Last N Days is filled', () => {
+      renderWithProvider(
+        <SearchMeasurementsForm
+          onSubmit={mockOnSubmit}
+          initialRequest={emptyInitialRequest}
+        />,
+      );
 
-    fireEvent.change(metricInput, { target: { value: 'metric1' } });
-    fireEvent.keyDown(metricInput, { key: 'Enter', code: 'Enter' });
+      const lastNDaysInput = screen.getByLabelText('Last N Days');
+      const startTimeInput = screen.getByLabelText('Build Create Start Time');
+      const endTimeInput = screen.getByLabelText('Build Create End Time');
 
-    expect(metricInput).toHaveValue('');
-    const chip1 = await screen.findByText('metric1');
-    expect(chip1).toBeInTheDocument();
+      expect(startTimeInput).not.toBeDisabled();
+      expect(endTimeInput).not.toBeDisabled();
 
-    // Remove metric1
-    const deleteIcon = screen.getByTestId('CancelIcon');
-    if (deleteIcon) {
-      fireEvent.click(deleteIcon);
-    }
-    await waitFor(() => {
-      expect(screen.queryByText('metric1')).not.toBeInTheDocument();
+      fireEvent.change(lastNDaysInput, { target: { value: '7' } });
+
+      expect(startTimeInput).toBeDisabled();
+      expect(endTimeInput).toBeDisabled();
+
+      fireEvent.change(lastNDaysInput, { target: { value: '' } });
+
+      expect(startTimeInput).not.toBeDisabled();
+      expect(endTimeInput).not.toBeDisabled();
     });
 
-    fireEvent.change(metricInput, { target: { value: 'metric2' } });
-    fireEvent.keyDown(metricInput, { key: 'Enter', code: 'Enter' });
-    const chip2 = await screen.findByText('metric2');
-    expect(chip2).toBeInTheDocument();
+    it('ignores non-numeric input for Last N Days', () => {
+      renderWithProvider(
+        <SearchMeasurementsForm
+          onSubmit={mockOnSubmit}
+          initialRequest={emptyInitialRequest}
+        />,
+      );
+      const lastNDaysInput = screen.getByLabelText('Last N Days');
+      fireEvent.change(lastNDaysInput, { target: { value: 'abc' } });
+      expect(lastNDaysInput).toHaveValue(null);
+    });
 
-    expect(screen.getByText('metric2')).toBeInTheDocument();
+    it('clamps Last N Days to a minimum of 1 on change', () => {
+      renderWithProvider(
+        <SearchMeasurementsForm
+          onSubmit={mockOnSubmit}
+          initialRequest={emptyInitialRequest}
+        />,
+      );
+      const lastNDaysInput = screen.getByLabelText('Last N Days');
+
+      fireEvent.change(lastNDaysInput, { target: { value: '0' } });
+      expect(lastNDaysInput).toHaveValue(1);
+
+      fireEvent.change(lastNDaysInput, { target: { value: '-5' } });
+      expect(lastNDaysInput).toHaveValue(1);
+    });
+
+    it('blurs Last N Days input on wheel event', () => {
+      renderWithProvider(
+        <SearchMeasurementsForm
+          onSubmit={mockOnSubmit}
+          initialRequest={emptyInitialRequest}
+        />,
+      );
+      const lastNDaysInput = screen.getByLabelText('Last N Days');
+      act(() => {
+        lastNDaysInput.focus();
+      });
+      expect(lastNDaysInput).toHaveFocus();
+
+      fireEvent.wheel(lastNDaysInput);
+      expect(lastNDaysInput).not.toHaveFocus();
+    });
   });
 
-  it('disables date pickers when Last N Days is filled', () => {
-    renderWithProvider(
-      <SearchMeasurementsForm
-        onSubmit={mockOnSubmit}
-        initialRequest={emptyInitialRequest}
-      />,
-    );
+  describe('Metric Keys field', () => {
+    it('adds and removes metric key chips', async () => {
+      renderWithProvider(
+        <SearchMeasurementsForm
+          onSubmit={mockOnSubmit}
+          initialRequest={emptyInitialRequest}
+        />,
+      );
+      const metricInput = screen.getByLabelText('Add Metric Key *');
 
-    const lastNDaysInput = screen.getByLabelText('Last N Days');
-    const startTimeInput = screen.getByLabelText('Build Create Start Time');
-    const endTimeInput = screen.getByLabelText('Build Create End Time');
+      fireEvent.change(metricInput, { target: { value: 'metric1' } });
+      fireEvent.keyDown(metricInput, { key: 'Enter', code: 'Enter' });
 
-    expect(startTimeInput).not.toBeDisabled();
-    expect(endTimeInput).not.toBeDisabled();
+      expect(metricInput).toHaveValue('');
+      const chip1 = await screen.findByText('metric1');
+      expect(chip1).toBeInTheDocument();
 
-    fireEvent.change(lastNDaysInput, { target: { value: '7' } });
+      // Remove metric1
+      const chipElement = chip1.closest('div[class*="MuiChip-root"]');
+      expect(chipElement).toBeInTheDocument();
 
-    expect(startTimeInput).toBeDisabled();
-    expect(endTimeInput).toBeDisabled();
+      if (chipElement instanceof HTMLElement) {
+        const deleteIcon = within(chipElement).getByTestId('CancelIcon');
+        fireEvent.click(deleteIcon);
+      } else {
+        throw new Error('Chip element not found or not an HTMLElement');
+      }
 
-    fireEvent.change(lastNDaysInput, { target: { value: '' } });
+      await waitFor(() => {
+        expect(screen.queryByText('metric1')).not.toBeInTheDocument();
+      });
 
-    expect(startTimeInput).not.toBeDisabled();
-    expect(endTimeInput).not.toBeDisabled();
+      fireEvent.change(metricInput, { target: { value: 'metric2' } });
+      fireEvent.keyDown(metricInput, { key: 'Enter', code: 'Enter' });
+      await screen.findByText('metric2');
+    });
+
+    it('does not add duplicate metric keys', async () => {
+      renderWithProvider(
+        <SearchMeasurementsForm
+          onSubmit={mockOnSubmit}
+          initialRequest={emptyInitialRequest}
+        />,
+      );
+      const metricInput = screen.getByLabelText('Add Metric Key *');
+      fireEvent.change(metricInput, { target: { value: 'metric1' } });
+      fireEvent.keyDown(metricInput, { key: 'Enter' });
+      await screen.findByText('metric1');
+
+      fireEvent.change(metricInput, { target: { value: '  metric1  ' } }); // With spaces
+      fireEvent.keyDown(metricInput, { key: 'Enter' });
+
+      expect(screen.getAllByText('metric1')).toHaveLength(1);
+      expect(metricInput).toHaveValue('');
+    });
+
+    it('does not add empty or whitespace-only metric keys', () => {
+      renderWithProvider(
+        <SearchMeasurementsForm
+          onSubmit={mockOnSubmit}
+          initialRequest={emptyInitialRequest}
+        />,
+      );
+      const metricInput = screen.getByLabelText('Add Metric Key *');
+      fireEvent.change(metricInput, { target: { value: '   ' } });
+      fireEvent.keyDown(metricInput, { key: 'Enter' });
+      expect(screen.queryByRole('chip')).not.toBeInTheDocument();
+      expect(metricInput).toHaveValue('');
+    });
   });
 
-  it('calls onSubmit with correct values', async () => {
+  it('calls onSubmit with correct values using Last N Days', async () => {
     renderWithProvider(
       <SearchMeasurementsForm
         onSubmit={mockOnSubmit}
@@ -188,7 +280,6 @@ describe('SearchMeasurementsForm', () => {
         buildTarget: undefined,
         atpTestNameFilter: undefined,
         metricKeys: ['cpu_usage'],
-        extraColumns: undefined,
         pageSize: MAXIMUM_PAGE_SIZE,
       });
     });
@@ -344,7 +435,7 @@ describe('SearchMeasurementsForm', () => {
       expect(mockOnSubmit).not.toHaveBeenCalled();
     });
 
-    it('shows errors on load if initialRequest is invalid', () => {
+    it('shows errors on load if initialRequest is invalid', async () => {
       const invalidInitialRequest: Partial<SearchMeasurementsRequest> = {
         lastNDays: 0, // Invalid value
       };
@@ -356,13 +447,16 @@ describe('SearchMeasurementsForm', () => {
       );
 
       expect(
-        screen.getByText('At least one metric key is required.'),
+        await screen.findByText('At least one metric key is required.'),
       ).toBeInTheDocument();
       expect(
         screen.getByText(
           'Please specify either "Last N Days" or both a Start and End Time.',
         ),
       ).toBeInTheDocument();
+
+      const lastNDaysInput = screen.getByLabelText('Last N Days');
+      expect(lastNDaysInput).toHaveValue(0);
     });
 
     it('does not submit if form is invalid', async () => {
