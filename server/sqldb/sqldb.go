@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"net/url"
+	"time"
 
 	"go.chromium.org/luci/common/errors"
 
@@ -40,6 +41,7 @@ type ModuleOptions struct {
 	DBPasswordSecret string
 	// DBConnectionURL is the connection string for the DB.
 	DBConnectionURL *url.URL
+	ConnMaxIdleTime int
 }
 
 // schemeMap maps driver names to database URI connection schemes.
@@ -81,6 +83,12 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 			o.DBConnectionURL = connectionURL
 			return nil
 		},
+	)
+	f.IntVar(
+		&o.ConnMaxIdleTime,
+		"sqldb-connection-max-idle-time",
+		o.ConnMaxIdleTime,
+		"The maximum amount of time a connection may be idle in second. Defaults to 0 meaning they never timeout",
 	)
 }
 
@@ -168,6 +176,7 @@ func (m *sqlDBModule) Initialize(ctx context.Context, _ module.Host, _ module.Ho
 	if err != nil {
 		return nil, errors.Fmt("initializing sqldb module: connecting to database: %w", err)
 	}
+	dbConn.SetConnMaxIdleTime(time.Duration(m.opts.ConnMaxIdleTime) * time.Second)
 
 	return UseDB(ctx, dbConn), nil
 }
