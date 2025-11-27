@@ -243,6 +243,7 @@ export function ArtifactFilterProvider({
       finalArtifactsTree,
       isFilterPanelOpen,
       setIsFilterPanelOpen,
+      filterArtifactList,
     }),
     [
       searchTerm,
@@ -256,6 +257,7 @@ export function ArtifactFilterProvider({
       availableArtifactTypes,
       finalArtifactsTree,
       isFilterPanelOpen,
+      filterArtifactList,
     ],
   );
 

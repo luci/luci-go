@@ -17,7 +17,7 @@ import { createContext, useContext } from 'react';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
-import { ClusteredResult } from '../types';
+import { ArtifactTreeNodeData, ClusteredResult } from '../types';
 
 export interface ArtifactsContextType {
   clusteredFailures: ClusteredResult[];
@@ -30,6 +30,8 @@ export interface ArtifactsContextType {
   currentAttemptBundle: TestResultBundle | undefined;
   currentResult: TestResult | undefined;
   hasRenderableResults: boolean;
+  selectedArtifact: ArtifactTreeNodeData | null;
+  setSelectedArtifact: (node: ArtifactTreeNodeData | null) => void;
 }
 
 export const ArtifactsContext = createContext<ArtifactsContextType | null>(

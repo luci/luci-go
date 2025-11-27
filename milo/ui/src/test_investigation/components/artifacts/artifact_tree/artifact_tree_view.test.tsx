@@ -12,22 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { VirtuosoMockContext } from 'react-virtuoso';
 
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
-import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
-import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
-import { InvocationProvider } from '@/test_investigation/context';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { ArtifactsProvider } from '../context';
+import { useArtifactsContext } from '../context';
 
 import { ArtifactTreeView } from './artifact_tree_view';
 
 // Mock window.open for the JSDOM environment
 window.open = jest.fn();
+
+jest.mock('../context', () => ({
+  useArtifactsContext: jest.fn(),
+  ArtifactsProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+}));
+
+jest.mock('@/common/hooks/prpc_clients', () => ({
+  useResultDbClient: jest.fn(),
+}));
+
+jest.mock('@tanstack/react-query', () => ({
+  ...jest.requireActual('@tanstack/react-query'),
+  useInfiniteQuery: jest.fn(),
+}));
+
+jest.mock('@/test_investigation/context', () => ({
+  useIsLegacyInvocation: jest.fn().mockReturnValue(true),
+  useInvocation: jest.fn().mockReturnValue({ name: 'invocations/inv' }),
+}));
 
 describe('<ArtifactTreeView />', () => {
   const resultArtifacts: readonly Artifact[] = [
@@ -55,39 +75,78 @@ describe('<ArtifactTreeView />', () => {
     }),
   ];
 
-  const MOCK_RESULTS: readonly TestResultBundle[] = [];
-  const MOCK_RAW_INVOCATION_ID = 'inv-id-123';
-  const MOCK_PROJECT_ID = 'test-project';
-  const mockInvocation = Invocation.fromPartial({
-    name: 'invocations/inv-123',
-    realm: `${MOCK_PROJECT_ID}:some-realm`,
-    sourceSpec: { sources: { gitilesCommit: { position: '105' } } },
+  beforeEach(() => {
+    (useArtifactsContext as jest.Mock).mockReturnValue({
+      clusteredFailures: [],
+      hasRenderableResults: false,
+      selectedArtifact: null,
+      setSelectedArtifact: jest.fn(),
+      currentResult: { name: 'invocations/inv/tests/test/results/res' },
+    });
+
+    (useResultDbClient as jest.Mock).mockReturnValue({
+      ListArtifacts: {
+        queryPaged: jest.fn().mockImplementation((request) => ({
+          queryKey: ['ListArtifacts', request],
+        })),
+      },
+    });
+
+    // Mock useInfiniteQuery to return artifacts based on the query key or just return both sets combined/sequentially
+    // Since we have two calls, we can mockReturnValueOnce or implementation
+    (useInfiniteQuery as jest.Mock).mockImplementation((_) => {
+      return {
+        data: [],
+        isPending: false,
+        hasNextPage: false,
+        fetchNextPage: jest.fn(),
+      };
+    });
   });
 
   it('should create a tree and call updateSelectedArtifact when a node is clicked', async () => {
+    (useInfiniteQuery as jest.Mock).mockImplementation((options) => {
+      const parent = options?.queryKey?.[1]?.parent;
+      if (parent === 'invocations/inv/tests/test/results/res') {
+        return {
+          data: resultArtifacts,
+          isPending: false,
+          hasNextPage: false,
+          fetchNextPage: jest.fn(),
+        };
+      }
+      if (parent?.startsWith('invocations/')) {
+        return {
+          data: invArtifacts,
+          isPending: false,
+          hasNextPage: false,
+          fetchNextPage: jest.fn(),
+        };
+      }
+      return {
+        data: [],
+        isPending: false,
+        hasNextPage: false,
+        fetchNextPage: jest.fn(),
+      };
+    });
+
     const user = userEvent.setup();
     const updateSelectedArtifact = jest.fn();
+    (useArtifactsContext as jest.Mock).mockReturnValue({
+      clusteredFailures: [],
+      hasRenderableResults: false,
+      selectedArtifact: null,
+      setSelectedArtifact: updateSelectedArtifact,
+      currentResult: { name: 'invocations/inv/tests/test/results/res' },
+    });
 
     render(
       <VirtuosoMockContext.Provider
         value={{ viewportHeight: 300, itemHeight: 30 }}
       >
         <FakeContextProvider>
-          <InvocationProvider
-            project="test-project"
-            invocation={mockInvocation}
-            rawInvocationId={MOCK_RAW_INVOCATION_ID}
-            isLegacyInvocation
-          >
-            <ArtifactsProvider results={MOCK_RESULTS}>
-              <ArtifactTreeView
-                resultArtifacts={resultArtifacts}
-                invArtifacts={invArtifacts}
-                artifactsLoading={false}
-                updateSelectedArtifact={updateSelectedArtifact}
-              />
-            </ArtifactsProvider>
-          </InvocationProvider>
+          <ArtifactTreeView />
         </FakeContextProvider>
       </VirtuosoMockContext.Provider>,
     );
@@ -98,6 +157,10 @@ describe('<ArtifactTreeView />', () => {
     expect(artifactNode).toBeInTheDocument();
 
     // The component should select the summary or first leaf node automatically on render.
+    // Wait for the effect to fire
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
     expect(updateSelectedArtifact).toHaveBeenCalled();
 
     // Click another artifact and confirm the callback is fired with the correct data.
@@ -111,30 +174,49 @@ describe('<ArtifactTreeView />', () => {
   });
 
   it('should filter the artifact tree when a user types in the search box', async () => {
+    (useInfiniteQuery as jest.Mock).mockImplementation((options) => {
+      const parent = options?.queryKey?.[1]?.parent;
+      if (parent === 'invocations/inv/tests/test/results/res') {
+        return {
+          data: resultArtifacts,
+          isPending: false,
+          hasNextPage: false,
+          fetchNextPage: jest.fn(),
+        };
+      }
+      if (parent?.startsWith('invocations/')) {
+        return {
+          data: invArtifacts,
+          isPending: false,
+          hasNextPage: false,
+          fetchNextPage: jest.fn(),
+        };
+      }
+      return {
+        data: [],
+        isPending: false,
+        hasNextPage: false,
+        fetchNextPage: jest.fn(),
+      };
+    });
+
     jest.useFakeTimers();
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
     const updateSelectedArtifact = jest.fn();
+    (useArtifactsContext as jest.Mock).mockReturnValue({
+      clusteredFailures: [],
+      hasRenderableResults: false,
+      selectedArtifact: null,
+      setSelectedArtifact: updateSelectedArtifact,
+      currentResult: { name: 'invocations/inv/tests/test/results/res' },
+    });
 
     render(
       <VirtuosoMockContext.Provider
         value={{ viewportHeight: 300, itemHeight: 30 }}
       >
         <FakeContextProvider>
-          <InvocationProvider
-            project="test-project"
-            invocation={mockInvocation}
-            rawInvocationId={MOCK_RAW_INVOCATION_ID}
-            isLegacyInvocation
-          >
-            <ArtifactsProvider results={MOCK_RESULTS}>
-              <ArtifactTreeView
-                resultArtifacts={resultArtifacts}
-                invArtifacts={invArtifacts}
-                artifactsLoading={false}
-                updateSelectedArtifact={updateSelectedArtifact}
-              />
-            </ArtifactsProvider>
-          </InvocationProvider>
+          <ArtifactTreeView />
         </FakeContextProvider>
       </VirtuosoMockContext.Provider>,
     );

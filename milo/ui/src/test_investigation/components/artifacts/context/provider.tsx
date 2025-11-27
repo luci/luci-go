@@ -29,11 +29,10 @@ import {
 import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 import { normalizeFailureReason } from '@/test_investigation/utils/test_variant_utils';
 
-import { ClusteredResult } from '../types';
+import { ArtifactTreeNodeData, ClusteredResult } from '../types';
 
 import { ArtifactsContext, ArtifactsContextType } from './context';
 
-// Clustering logic moved from ArtifactsSection
 interface ClusterGroupData {
   results: TestResultBundle[];
   originalFailureReason: string;
@@ -57,7 +56,6 @@ function getClusterSortPriority(status: TestResult_Status): number {
       return 5;
     case TestResult_Status.STATUS_UNSPECIFIED:
     default:
-      // Place unspecified or any new/unexpected statuses last.
       return 6;
   }
 }
@@ -112,7 +110,6 @@ function clusterAndSortResults(
         : key),
   }));
 
-  // Sort clusters by statusV2 according to the desired order.
   newClusteredFailures.sort(
     (a, b) =>
       getClusterSortPriority(a.statusV2KeyPart) -
@@ -133,6 +130,8 @@ export function ArtifactsProvider({
 }: ArtifactsProviderProps) {
   const [selectedClusterIndex, setSelectedClusterIndex] = useState<number>(0);
   const [selectedAttemptIndex, setSelectedAttemptIndex] = useState<number>(0);
+  const [selectedArtifact, setSelectedArtifact] =
+    useState<ArtifactTreeNodeData | null>(null);
 
   const clusteredFailures = useMemo(
     () => clusterAndSortResults(results),
@@ -142,6 +141,7 @@ export function ArtifactsProvider({
   useEffect(() => {
     setSelectedClusterIndex(0);
     setSelectedAttemptIndex(0);
+    setSelectedArtifact(null);
   }, [clusteredFailures]);
 
   const currentCluster = useMemo(
@@ -166,7 +166,8 @@ export function ArtifactsProvider({
 
   const handleSetSelectedClusterIndex = (index: number) => {
     setSelectedClusterIndex(index);
-    setSelectedAttemptIndex(0); // Reset attempt index when cluster changes
+    setSelectedAttemptIndex(0);
+    setSelectedArtifact(null);
   };
 
   const hasRenderableResults = results && results.length > 0;
@@ -182,6 +183,8 @@ export function ArtifactsProvider({
     currentAttemptBundle,
     currentResult,
     hasRenderableResults,
+    selectedArtifact,
+    setSelectedArtifact,
   };
 
   return (

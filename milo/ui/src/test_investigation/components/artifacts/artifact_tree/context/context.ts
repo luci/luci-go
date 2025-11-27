@@ -14,6 +14,8 @@
 
 import { createContext, useContext } from 'react';
 
+import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
+
 import { ArtifactTreeNodeData } from '../../types';
 
 export interface ArtifactFiltersContextValue {
@@ -46,6 +48,9 @@ export interface ArtifactFiltersContextValue {
   // UI State
   isFilterPanelOpen: boolean;
   setIsFilterPanelOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
+
+  // Helpers
+  filterArtifactList: (artifacts: readonly Artifact[]) => readonly Artifact[];
 }
 
 export const ArtifactFiltersContext =

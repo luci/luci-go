@@ -12,106 +12,159 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, CircularProgress, Typography } from '@mui/material';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import {
+  Box,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
-import { parseTestResultName } from '@/common/tools/test_result_utils/index';
-import { ListArtifactsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { parseWorkUnitTestResultName } from '@/common/tools/test_result_utils/index';
+import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
+import { GetArtifactRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { useTestVariant } from '@/test_investigation/context';
-import { useIsLegacyInvocation } from '@/test_investigation/context';
 
 import { ArtifactContentView, ArtifactSummaryView } from './artifact_content';
 import { ArtifactTreeView } from './artifact_tree';
+import { WorkUnitArtifactsTreeView } from './artifact_tree/work_unit_artifacts_tree_view';
 import { ArtifactsProvider, useArtifactsContext } from './context';
-import { ArtifactTreeNodeData } from './types';
+
+function ArtifactsExplorer({
+  rootInvocationId,
+  workUnitId,
+  textDiffArtifact,
+}: {
+  rootInvocationId?: string;
+  workUnitId?: string;
+  textDiffArtifact?: Artifact;
+}) {
+  const { currentResult, selectedAttemptIndex, selectedArtifact } =
+    useArtifactsContext();
+  const [viewMode, setViewMode] = useState<'artifacts' | 'workUnits'>(
+    'artifacts',
+  );
+
+  return (
+    <PanelGroup
+      direction="horizontal"
+      style={{ height: '100%', minHeight: '600px' }}
+      // This will make the panel size stored in local storage.
+      autoSaveId="artifacts-panel-group-size"
+    >
+      <Panel defaultSize={30} minSize={20}>
+        <Box
+          sx={{
+            height: '100%',
+            overflowY: 'auto',
+            borderRight: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {rootInvocationId && (
+            <Box
+              sx={{
+                p: 1,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <ToggleButtonGroup
+                value={viewMode}
+                exclusive
+                onChange={(_, newMode) => {
+                  if (newMode) setViewMode(newMode);
+                }}
+                size="small"
+                fullWidth
+              >
+                <ToggleButton value="artifacts">Artifacts</ToggleButton>
+                <ToggleButton value="workUnits">Work Units</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+          )}
+          {viewMode === 'artifacts' ? (
+            <ArtifactTreeView />
+          ) : (
+            <WorkUnitArtifactsTreeView
+              rootInvocationId={rootInvocationId || ''}
+              workUnitId={workUnitId || ''}
+            />
+          )}
+        </Box>
+      </Panel>
+      <PanelResizeHandle>
+        <Box
+          sx={{
+            width: '8px',
+            height: '100%',
+            cursor: 'col-resize',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'action.hover',
+            '&:hover': { bgcolor: 'action.selected' },
+          }}
+        >
+          <Box sx={{ width: '2px', height: '24px', bgcolor: 'divider' }} />
+        </Box>
+      </PanelResizeHandle>
+      <Panel defaultSize={70} minSize={30}>
+        <Box
+          sx={{
+            p: 2,
+            height: '100%',
+            overflowY: 'auto',
+            wordBreak: 'break-all',
+          }}
+        >
+          {selectedArtifact &&
+            (selectedArtifact.isSummary && currentResult ? (
+              <ArtifactSummaryView
+                currentResult={currentResult}
+                textDiffArtifact={textDiffArtifact}
+                selectedAttemptIndex={selectedAttemptIndex}
+              />
+            ) : selectedArtifact.artifact ? (
+              <ArtifactContentView artifact={selectedArtifact.artifact} />
+            ) : (
+              <Typography color="text.secondary">
+                Select an artifact to view.
+              </Typography>
+            ))}
+        </Box>
+      </Panel>
+    </PanelGroup>
+  );
+}
 
 function ArtifactsSectionContent() {
   const resultDbClient = useResultDbClient();
-  const { currentResult, selectedAttemptIndex } = useArtifactsContext();
-  const isLegacyInvocation = useIsLegacyInvocation();
+  const { currentResult } = useArtifactsContext();
 
-  const [selectedArtifactNode, setSelectedArtifactNode] =
-    useState<ArtifactTreeNodeData | null>(null);
+  const parsedWorkUnitName = useMemo(
+    () =>
+      currentResult ? parseWorkUnitTestResultName(currentResult.name) : null,
+    [currentResult],
+  );
+  const rootInvocationId = parsedWorkUnitName?.rootInvocationId;
+  const workUnitId = parsedWorkUnitName?.workUnitId;
 
-  const {
-    data: testResultArtifactsData,
-    isPending: isLoadingTestResultArtifacts,
-    hasNextPage: testResultArtifactsHasNextPage,
-    fetchNextPage: loadMoreTestResultArtifacts,
-  } = useInfiniteQuery({
-    ...resultDbClient.ListArtifacts.queryPaged(
-      ListArtifactsRequest.fromPartial({
-        parent: currentResult?.name,
-        pageSize: 1000,
+  const { data: textDiffArtifact } = useQuery({
+    ...resultDbClient.GetArtifact.query(
+      GetArtifactRequest.fromPartial({
+        name: `${currentResult?.name}/artifacts/text_diff`,
       }),
     ),
     enabled: !!currentResult?.name,
     staleTime: Infinity,
-    refetchInterval: 10 * 60 * 1000,
-    select: (res) => res.pages.flatMap((page) => page.artifacts) || [],
+    retry: false,
   });
-
-  useEffect(() => {
-    if (!isLoadingTestResultArtifacts && testResultArtifactsHasNextPage) {
-      loadMoreTestResultArtifacts();
-    }
-  }, [
-    isLoadingTestResultArtifacts,
-    loadMoreTestResultArtifacts,
-    testResultArtifactsHasNextPage,
-  ]);
-
-  const {
-    data: invocationScopeArtifactsData,
-    isPending: isLoadingInvocationScopeArtifacts,
-    hasNextPage: invocationScopeArtifactsHasNextPage,
-    fetchNextPage: loadMoreInvocationScopeArtifacts,
-  } = useInfiniteQuery({
-    ...resultDbClient.ListArtifacts.queryPaged(
-      ListArtifactsRequest.fromPartial({
-        parent:
-          isLegacyInvocation && currentResult?.name
-            ? 'invocations/' +
-              parseTestResultName(currentResult.name).invocationId
-            : undefined,
-        pageSize: 1000,
-      }),
-    ),
-    enabled: !!currentResult?.name && isLegacyInvocation,
-    staleTime: Infinity,
-    refetchInterval: 10 * 60 * 1000,
-    select: (res) => res.pages.flatMap((page) => page.artifacts) || [],
-  });
-
-  useEffect(() => {
-    if (
-      !isLoadingInvocationScopeArtifacts &&
-      invocationScopeArtifactsHasNextPage
-    ) {
-      loadMoreInvocationScopeArtifacts();
-    }
-  }, [
-    isLoadingInvocationScopeArtifacts,
-    loadMoreInvocationScopeArtifacts,
-    invocationScopeArtifactsHasNextPage,
-  ]);
-
-  const textDiffArtifact = useMemo(() => {
-    return (testResultArtifactsData || []).find(
-      (art) => art.artifactId === 'text_diff',
-    );
-  }, [testResultArtifactsData]);
-
-  const handleArtifactNodeSelect = (node: ArtifactTreeNodeData | null) => {
-    setSelectedArtifactNode(node);
-  };
-
-  const isOverallArtifactListsLoading =
-    isLoadingTestResultArtifacts ||
-    (isLegacyInvocation && isLoadingInvocationScopeArtifacts);
 
   return (
     <Box
@@ -121,102 +174,15 @@ function ArtifactsSectionContent() {
         flexDirection: 'column',
       }}
     >
-      {isOverallArtifactListsLoading ? (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '380px',
-          }}
-        >
-          <CircularProgress />
-          <Typography sx={{ ml: 1 }}>Loading artifact lists...</Typography>
-        </Box>
-      ) : currentResult ? (
-        <PanelGroup
-          direction="horizontal"
-          style={{ height: '100%', minHeight: '600px' }}
-          // This will make the panel size stored in local storage.
-          autoSaveId="artifacts-panel-group-size"
-        >
-          <Panel defaultSize={30} minSize={20}>
-            <Box
-              sx={{
-                height: '100%',
-                overflowY: 'auto',
-                borderRight: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <ArtifactTreeView
-                artifactsLoading={isOverallArtifactListsLoading}
-                invArtifacts={invocationScopeArtifactsData || []}
-                resultArtifacts={testResultArtifactsData || []}
-                selectedArtifact={selectedArtifactNode}
-                updateSelectedArtifact={handleArtifactNodeSelect}
-              />
-            </Box>
-          </Panel>
-          <PanelResizeHandle>
-            <Box
-              sx={{
-                width: '8px',
-                height: '100%',
-                cursor: 'col-resize',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                bgcolor: 'action.hover',
-                '&:hover': { bgcolor: 'action.selected' },
-              }}
-            >
-              <Box sx={{ width: '2px', height: '24px', bgcolor: 'divider' }} />
-            </Box>
-          </PanelResizeHandle>
-          <Panel defaultSize={70} minSize={30}>
-            <Box
-              sx={{
-                p: 2,
-                height: '100%',
-                overflowY: 'auto',
-                wordBreak: 'break-all',
-              }}
-            >
-              {selectedArtifactNode &&
-                (selectedArtifactNode.isSummary && currentResult ? (
-                  <ArtifactSummaryView
-                    currentResult={currentResult}
-                    textDiffArtifact={textDiffArtifact}
-                    selectedAttemptIndex={selectedAttemptIndex}
-                  />
-                ) : selectedArtifactNode.artifact ? (
-                  <ArtifactContentView
-                    artifact={selectedArtifactNode.artifact}
-                  />
-                ) : (
-                  <Typography color="text.secondary">
-                    Select an artifact to view.
-                  </Typography>
-                ))}
-            </Box>
-          </Panel>
-        </PanelGroup>
+      {currentResult ? (
+        <ArtifactsExplorer
+          rootInvocationId={rootInvocationId}
+          workUnitId={workUnitId}
+          textDiffArtifact={textDiffArtifact}
+        />
       ) : (
         <Typography color="text.disabled">
-          {isOverallArtifactListsLoading ? (
-            'Loading...'
-          ) : !currentResult ? (
-            'No test results to display.'
-          ) : (
-            <Box sx={{ pl: 1 }}>
-              <ArtifactSummaryView
-                currentResult={currentResult}
-                textDiffArtifact={textDiffArtifact}
-                selectedAttemptIndex={selectedAttemptIndex}
-              />
-            </Box>
-          )}
+          No test results to display.
         </Typography>
       )}
     </Box>

@@ -69,7 +69,7 @@ export function TestInfoHeader() {
   const primaryBuildTarget = invocation.properties?.primaryBuild?.buildTarget;
   let extraBuildId;
   let extraBuildTarget;
-  const extraBuildCount = invocation.properties?.extraBuilds.length;
+  const extraBuildCount = invocation.properties?.extraBuilds?.length || 0;
   if (extraBuildCount > 0) {
     extraBuildId = invocation.properties?.extraBuilds[0].buildId;
     extraBuildTarget = invocation.properties?.extraBuilds[0].buildTarget;

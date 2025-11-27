@@ -30,3 +30,23 @@ export function parseTestResultName(name: string) {
     resultId,
   };
 }
+
+/**
+ * Parses the test result name and get the individual components, including work unit ID if present.
+ */
+export function parseWorkUnitTestResultName(name: string) {
+  const match = name.match(
+    /^rootinvocations\/(.*?)\/workunits\/(.*?)\/tests\/(.*?)\/results\/(.*?)$/i,
+  );
+  if (!match) {
+    return null;
+  }
+
+  const [, rootInvocationId, workUnitId, testId, resultId] = match;
+  return {
+    rootInvocationId,
+    workUnitId,
+    testId: decodeURIComponent(testId),
+    resultId,
+  };
+}

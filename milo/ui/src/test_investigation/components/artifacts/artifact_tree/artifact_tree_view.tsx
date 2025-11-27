@@ -12,60 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import SearchIcon from '@mui/icons-material/Search';
-import TuneIcon from '@mui/icons-material/Tune';
-import {
-  Box,
-  Chip,
-  ClickAwayListener,
-  IconButton,
-  InputAdornment,
-  LinearProgress,
-  TextField,
-  Typography,
-} from '@mui/material';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { Box, CircularProgress, Typography } from '@mui/material';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import {
   TreeData,
   VirtualTree,
   VirtualTreeNodeActions,
 } from '@/common/components/log_viewer';
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
+import { parseTestResultName } from '@/common/tools/test_result_utils/index';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
-import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
+import { ListArtifactsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { useIsLegacyInvocation } from '@/test_investigation/context';
 
-import { ClusteringControls } from '../clustering_controls';
 import { useArtifactsContext } from '../context';
 import { ArtifactTreeNodeData } from '../types';
 
-import { ArtifactFiltersDropdown } from './artifact_filters_dropdown';
+import { ArtifactsTreeLayout } from './artifact_tree_layout';
 import { ArtifactTreeNode } from './artifact_tree_node';
-import { ArtifactFilterProvider, useArtifactFilters } from './context/';
+import { useArtifactFilters } from './context/context';
+import { ArtifactFilterProvider } from './context/provider';
 
-interface ArtifactTreeViewInternalProps {
-  artifactsLoading: boolean;
-  selectedArtifact?: ArtifactTreeNodeData | null;
-  updateSelectedArtifact: (artifact: ArtifactTreeNodeData | null) => void;
-}
-
-function ArtifactTreeViewInternal({
-  artifactsLoading,
-  selectedArtifact: selectedArtifactNode,
-  updateSelectedArtifact,
-}: ArtifactTreeViewInternalProps) {
-  const { clusteredFailures, hasRenderableResults } = useArtifactsContext();
+function ArtifactTreeViewInternal() {
+  const { debouncedSearchTerm, finalArtifactsTree } = useArtifactFilters();
   const {
-    searchTerm,
-    setSearchTerm,
-    debouncedSearchTerm,
-    finalArtifactsTree,
-    isFilterPanelOpen,
-    setIsFilterPanelOpen,
-  } = useArtifactFilters();
-
-  const filterContainerRef = useRef<HTMLDivElement>(null);
-
-  const noFailuresToClusterMessage = 'No failures to cluster.';
+    selectedArtifact: selectedArtifactNode,
+    setSelectedArtifact: updateSelectedArtifact,
+  } = useArtifactsContext();
 
   useEffect(() => {
     if (debouncedSearchTerm) return;
@@ -120,21 +95,6 @@ function ArtifactTreeViewInternal({
     return undefined;
   }, [selectedArtifactNode]);
 
-  const selectedArtifactLabel = useMemo(() => {
-    if (selectedArtifactNode) {
-      if (selectedArtifactNode.isSummary) {
-        return 'Summary';
-      } else if (selectedArtifactNode.artifact) {
-        return selectedArtifactNode.artifact.artifactId;
-      }
-    }
-    return '';
-  }, [selectedArtifactNode]);
-
-  if (artifactsLoading) {
-    return <LinearProgress />;
-  }
-
   function handleLeafNodeClicked(node: ArtifactTreeNodeData) {
     if (node.artifact || node.isSummary) {
       updateSelectedArtifact(node);
@@ -149,140 +109,127 @@ function ArtifactTreeViewInternal({
   }
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box
-        sx={{ p: 1, pb: 0, display: 'flex', flexDirection: 'column', gap: 2 }}
-      >
-        {clusteredFailures.length > 0 ? (
-          <ClusteringControls />
-        ) : (
-          hasRenderableResults && (
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {noFailuresToClusterMessage}
-            </Typography>
-          )
+    <ArtifactsTreeLayout>
+      <VirtualTree<ArtifactTreeNodeData>
+        root={finalArtifactsTree}
+        isTreeCollapsed={false}
+        scrollToggle
+        itemContent={(
+          index: number,
+          row: TreeData<ArtifactTreeNodeData>,
+          context: VirtualTreeNodeActions<ArtifactTreeNodeData>,
+        ) => (
+          <ArtifactTreeNode
+            index={index}
+            row={row}
+            context={context}
+            onSupportedLeafClick={handleLeafNodeClicked}
+            onUnsupportedLeafClick={handleUnsupportedLeafNodeClicked}
+            highlightText={debouncedSearchTerm}
+          />
         )}
-        <ClickAwayListener onClickAway={() => setIsFilterPanelOpen(false)}>
-          <Box ref={filterContainerRef} sx={{ position: 'relative' }}>
-            <TextField
-              placeholder="Search for artifact"
-              variant="outlined"
-              size="small"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              fullWidth
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setIsFilterPanelOpen((prev) => !prev)}
-                        sx={{
-                          color: isFilterPanelOpen ? 'primary.main' : 'inherit',
-                        }}
-                      >
-                        <TuneIcon />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '50px',
-                  backgroundColor: 'action.hover',
-                  '& fieldset': {
-                    border: 'none',
-                  },
-                },
-              }}
-            />
-            {isFilterPanelOpen && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 'calc(100% + 4px)',
-                  left: 0,
-                  width: '100%',
-                  zIndex: (theme) => theme.zIndex.tooltip,
-                }}
-              >
-                <ArtifactFiltersDropdown />
-              </Box>
-            )}
-          </Box>
-        </ClickAwayListener>
-        {selectedArtifactNode && (
-          <Box>
-            Selected artifact:{' '}
-            <Chip size="small" label={selectedArtifactLabel} sx={{ ml: 1 }} />
-          </Box>
-        )}
-      </Box>
-      <Box
-        sx={{
-          flexGrow: 1,
-          width: '100%',
-          wordBreak: 'break-word',
-          overflowY: 'auto',
-        }}
-      >
-        <VirtualTree<ArtifactTreeNodeData>
-          root={finalArtifactsTree}
-          isTreeCollapsed={false}
-          scrollToggle
-          itemContent={(
-            index: number,
-            row: TreeData<ArtifactTreeNodeData>,
-            context: VirtualTreeNodeActions<ArtifactTreeNodeData>,
-          ) => (
-            <ArtifactTreeNode
-              index={index}
-              row={row}
-              context={context}
-              onSupportedLeafClick={handleLeafNodeClicked}
-              onUnsupportedLeafClick={handleUnsupportedLeafNodeClicked}
-              highlightText={debouncedSearchTerm}
-            />
-          )}
-          selectedNodes={selectedNodes}
-          setActiveSelectionFn={setActiveSelectionFnForSelectedNode}
-        />
-      </Box>
-    </Box>
+        selectedNodes={selectedNodes}
+        setActiveSelectionFn={setActiveSelectionFnForSelectedNode}
+      />
+    </ArtifactsTreeLayout>
   );
 }
 
-interface ArtifactTreeViewProps {
-  resultArtifacts: readonly Artifact[];
-  invArtifacts: readonly Artifact[];
-  artifactsLoading: boolean;
-  selectedArtifact?: ArtifactTreeNodeData | null;
-  updateSelectedArtifact: (artifact: ArtifactTreeNodeData | null) => void;
-}
+export function ArtifactTreeView() {
+  const resultDbClient = useResultDbClient();
+  const { currentResult } = useArtifactsContext();
+  const isLegacyInvocation = useIsLegacyInvocation();
 
-export function ArtifactTreeView({
-  resultArtifacts,
-  invArtifacts,
-  artifactsLoading,
-  selectedArtifact,
-  updateSelectedArtifact,
-}: ArtifactTreeViewProps) {
+  const {
+    data: testResultArtifactsData,
+    isPending: isLoadingTestResultArtifacts,
+    hasNextPage: testResultArtifactsHasNextPage,
+    fetchNextPage: loadMoreTestResultArtifacts,
+  } = useInfiniteQuery({
+    ...resultDbClient.ListArtifacts.queryPaged(
+      ListArtifactsRequest.fromPartial({
+        parent: currentResult?.name,
+        pageSize: 1000,
+      }),
+    ),
+    enabled: !!currentResult?.name,
+    staleTime: Infinity,
+    refetchInterval: 10 * 60 * 1000,
+    select: (res) => res.pages.flatMap((page) => page.artifacts) || [],
+  });
+
+  useEffect(() => {
+    if (!isLoadingTestResultArtifacts && testResultArtifactsHasNextPage) {
+      loadMoreTestResultArtifacts();
+    }
+  }, [
+    isLoadingTestResultArtifacts,
+    loadMoreTestResultArtifacts,
+    testResultArtifactsHasNextPage,
+  ]);
+
+  const {
+    data: invocationScopeArtifactsData,
+    isPending: isLoadingInvocationScopeArtifacts,
+    hasNextPage: invocationScopeArtifactsHasNextPage,
+    fetchNextPage: loadMoreInvocationScopeArtifacts,
+  } = useInfiniteQuery({
+    ...resultDbClient.ListArtifacts.queryPaged(
+      ListArtifactsRequest.fromPartial({
+        parent:
+          isLegacyInvocation && currentResult?.name
+            ? 'invocations/' +
+              parseTestResultName(currentResult.name).invocationId
+            : undefined,
+        pageSize: 1000,
+      }),
+    ),
+    enabled: !!currentResult?.name && isLegacyInvocation,
+    staleTime: Infinity,
+    refetchInterval: 10 * 60 * 1000,
+    select: (res) => res.pages.flatMap((page) => page.artifacts) || [],
+  });
+
+  useEffect(() => {
+    if (
+      !isLoadingInvocationScopeArtifacts &&
+      invocationScopeArtifactsHasNextPage
+    ) {
+      loadMoreInvocationScopeArtifacts();
+    }
+  }, [
+    isLoadingInvocationScopeArtifacts,
+    loadMoreInvocationScopeArtifacts,
+    invocationScopeArtifactsHasNextPage,
+  ]);
+
+  const isOverallArtifactListsLoading =
+    isLoadingTestResultArtifacts ||
+    (isLegacyInvocation && isLoadingInvocationScopeArtifacts);
+
+  if (isOverallArtifactListsLoading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          p: 2,
+        }}
+      >
+        <CircularProgress size={24} />
+        <Typography sx={{ ml: 1 }}>Loading artifact lists...</Typography>
+      </Box>
+    );
+  }
+
   return (
     <ArtifactFilterProvider
-      resultArtifacts={resultArtifacts}
-      invArtifacts={invArtifacts}
+      resultArtifacts={testResultArtifactsData || []}
+      invArtifacts={invocationScopeArtifactsData || []}
     >
-      <ArtifactTreeViewInternal
-        artifactsLoading={artifactsLoading}
-        selectedArtifact={selectedArtifact}
-        updateSelectedArtifact={updateSelectedArtifact}
-      />
+      <ArtifactTreeViewInternal />
     </ArtifactFilterProvider>
   );
 }

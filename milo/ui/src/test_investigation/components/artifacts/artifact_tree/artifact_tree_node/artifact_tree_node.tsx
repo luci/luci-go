@@ -151,7 +151,7 @@ export function ArtifactTreeNode({
   highlightText,
 }: ArtifactTreeNodeProps) {
   const theme = useTheme();
-  const isFolder = !row.isLeafNode;
+  const isFolder = !row.data.artifact && !row.data.isSummary;
   const backgroundColor = getNodeBackground(context, theme);
   const artifactType = isFolder
     ? null
@@ -173,7 +173,7 @@ export function ArtifactTreeNode({
   const handleSelect = () => {
     context.onNodeSelect?.(row);
 
-    if (row.isLeafNode && row.data) {
+    if (!isFolder && row.data) {
       if (row.data.viewingSupported || row.data.isSummary) {
         onSupportedLeafClick?.(row.data);
       } else {
@@ -226,7 +226,7 @@ export function ArtifactTreeNode({
             flexShrink: 0,
           }}
         >
-          {isFolder && (
+          {isFolder && !row.isLeafNode && (
             <IconButton
               size="small"
               onClick={handleToggle}

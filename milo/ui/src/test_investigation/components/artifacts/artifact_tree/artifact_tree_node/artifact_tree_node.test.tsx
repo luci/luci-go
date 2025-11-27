@@ -269,4 +269,33 @@ describe('<ArtifactTreeNode />', () => {
     const parentWrapper = highlightedTextElement.parentElement;
     expect(parentWrapper).toHaveStyle(`background-color: ${yellow[200]}`);
   });
+
+  it('given an empty folder row (leaf but no artifact) then should display folder icon', async () => {
+    const fakeTreeData: TreeData<ArtifactTreeNodeData> = {
+      id: 'emptyFolder',
+      isLeafNode: true,
+      level: 0,
+      name: 'Empty Folder',
+      isOpen: false,
+      data: { id: 'emptyFolder', name: 'Empty Folder', children: [] },
+      children: [],
+      parent: undefined,
+    };
+    const fakeTreeContext: VirtualTreeNodeActions<ArtifactTreeNodeData> = {
+      onNodeToggle: jest.fn(),
+      onNodeSelect: jest.fn(),
+      isSelected: false,
+    };
+    render(
+      <FakeContextProvider>
+        <ArtifactTreeNode
+          index={0}
+          row={fakeTreeData}
+          context={fakeTreeContext}
+        />
+      </FakeContextProvider>,
+    );
+
+    waitFor(() => expect(screen.getByText('Empty Folder')).toBeInTheDocument());
+  });
 });
