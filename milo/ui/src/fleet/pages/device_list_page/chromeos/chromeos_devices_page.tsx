@@ -220,7 +220,10 @@ export const ChromeOsDevicesPage = () => {
       }}
     >
       <WarningNotifications warnings={warnings} />
-      <ChromeOSSummaryHeader selectedOptions={selectedOptions.filters || {}} />
+      <ChromeOSSummaryHeader
+        selectedOptions={selectedOptions.filters || {}}
+        pagerContext={pagerCtx}
+      />
       <AutorepairJobsAlert />
       <div
         css={{

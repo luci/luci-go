@@ -222,7 +222,10 @@ export const AndroidDevicesPage = () => {
       }}
     >
       <WarningNotifications warnings={warnings} />
-      <AndroidSummaryHeader selectedOptions={selectedOptions.filters || {}} />
+      <AndroidSummaryHeader
+        selectedOptions={selectedOptions.filters || {}}
+        pagerContext={pagerCtx}
+      />
       <AutorepairJobsAlert />
       <div
         css={{

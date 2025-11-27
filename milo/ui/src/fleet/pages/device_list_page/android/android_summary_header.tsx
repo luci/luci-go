@@ -18,6 +18,10 @@ import WarningIcon from '@mui/icons-material/Warning';
 import { Alert, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
+import {
+  emptyPageTokenUpdater,
+  PagerContext,
+} from '@/common/components/params_pager';
 import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import { addNewFilterToParams } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
@@ -39,10 +43,12 @@ const METRIC_CONTAINER_STYLES: CSSObject = {
 
 export interface AndroidSummaryHeaderProps {
   selectedOptions: SelectedOptions;
+  pagerContext: PagerContext;
 }
 
 export function AndroidSummaryHeader({
   selectedOptions,
+  pagerContext,
 }: AndroidSummaryHeaderProps) {
   const client = useFleetConsoleClient();
 
@@ -56,6 +62,7 @@ export function AndroidSummaryHeader({
 
   const getFilterQueryString = (filters: Record<string, string[]>): string => {
     let newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams = emptyPageTokenUpdater(pagerContext)(newSearchParams);
     for (const [name, values] of Object.entries(filters)) {
       newSearchParams = addNewFilterToParams(newSearchParams, name, values);
     }

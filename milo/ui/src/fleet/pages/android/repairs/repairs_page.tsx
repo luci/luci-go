@@ -34,6 +34,7 @@ import {
   getPageSize,
   getPageToken,
   nextPageTokenUpdater,
+  PagerContext,
   pageSizeUpdater,
   prevPageTokenUpdater,
   usePagerContext,
@@ -663,7 +664,7 @@ export const RepairListPage = () => {
       }}
     >
       <WarningNotifications warnings={warnings} />
-      <Metrics filters={stringifiedSelectedOptions} />
+      <Metrics filters={stringifiedSelectedOptions} pagerContext={pagerCtx} />
       <div
         css={{
           marginTop: 24,
@@ -710,7 +711,13 @@ export const RepairListPage = () => {
   );
 };
 
-function Metrics({ filters }: { filters: string }) {
+function Metrics({
+  filters,
+  pagerContext,
+}: {
+  filters: string;
+  pagerContext: PagerContext;
+}) {
   const client = useFleetConsoleClient();
   const [searchParams, _] = useSyncedSearchParams();
   const countQuery = useQuery({
@@ -764,6 +771,7 @@ function Metrics({ filters }: { filters: string }) {
                     getFilterQueryString(
                       { fc_machine_type: ['host'] },
                       searchParams,
+                      pagerContext,
                     )
                   : undefined
               }
@@ -783,6 +791,7 @@ function Metrics({ filters }: { filters: string }) {
                         state: ['LAB_MISSING'],
                       },
                       searchParams,
+                      pagerContext,
                     )
                   : undefined
               }
@@ -821,6 +830,7 @@ function Metrics({ filters }: { filters: string }) {
                     getFilterQueryString(
                       { fc_machine_type: ['device'] },
                       searchParams,
+                      pagerContext,
                     )
                   : undefined
               }
@@ -845,6 +855,7 @@ function Metrics({ filters }: { filters: string }) {
                         state: ['BUSY', 'IDLE', 'INIT'],
                       },
                       searchParams,
+                      pagerContext,
                     )
                   : undefined
               }
@@ -870,6 +881,7 @@ function Metrics({ filters }: { filters: string }) {
                         ],
                       },
                       searchParams,
+                      pagerContext,
                     )
                   : undefined
               }

@@ -18,6 +18,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import { Alert, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
+import { PagerContext } from '@/common/components/params_pager';
 import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import { LeaseStateInfo } from '@/fleet/components/lease_state_info/lease_state_info';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
@@ -55,6 +56,7 @@ const LABSTATION_FILTERS: SelectedOptions = {
 
 export interface ChromeOSSummaryHeaderProps {
   selectedOptions: SelectedOptions;
+  pagerContext: PagerContext;
 }
 
 /**
@@ -63,6 +65,7 @@ export interface ChromeOSSummaryHeaderProps {
  */
 export function ChromeOSSummaryHeader({
   selectedOptions,
+  pagerContext,
 }: ChromeOSSummaryHeaderProps) {
   const client = useFleetConsoleClient();
 
@@ -136,6 +139,7 @@ export function ChromeOSSummaryHeader({
                   state: ['DEVICE_STATE_LEASED'],
                 },
                 searchParams,
+                pagerContext,
               )}
             />
             <SingleMetric
@@ -148,6 +152,7 @@ export function ChromeOSSummaryHeader({
                   state: ['DEVICE_STATE_AVAILABLE'],
                 },
                 searchParams,
+                pagerContext,
               )}
             />
           </div>
@@ -165,6 +170,7 @@ export function ChromeOSSummaryHeader({
                   'labels."dut_state"': ['ready'], // TODO: Hotfix for b/449956551, needs further investigation on quote handling
                 },
                 searchParams,
+                pagerContext,
               )}
             />
             <SingleMetric
@@ -177,6 +183,7 @@ export function ChromeOSSummaryHeader({
                   'labels."dut_state"': ['needs_repair'],
                 },
                 searchParams,
+                pagerContext,
               )}
             />
             <SingleMetric
@@ -189,6 +196,7 @@ export function ChromeOSSummaryHeader({
                   'labels."dut_state"': ['repair_failed'],
                 },
                 searchParams,
+                pagerContext,
               )}
             />
             <SingleMetric
@@ -206,6 +214,7 @@ export function ChromeOSSummaryHeader({
                   'labels."dut_state"': ['needs_deploy'],
                 },
                 searchParams,
+                pagerContext,
               )}
             />
             <SingleMetric
@@ -223,6 +232,7 @@ export function ChromeOSSummaryHeader({
                   'labels."dut_state"': ['needs_replacement'],
                 },
                 searchParams,
+                pagerContext,
               )}
             />
             <SingleMetric
@@ -236,6 +246,7 @@ export function ChromeOSSummaryHeader({
                   'labels."dut_state"': ['needs_manual_repair'],
                 },
                 searchParams,
+                pagerContext,
               )}
             />
           </div>
@@ -254,6 +265,7 @@ export function ChromeOSSummaryHeader({
                   ...LABSTATION_FILTERS,
                 },
                 searchParams,
+                pagerContext,
               )}
             />
             <SingleMetric
@@ -267,6 +279,7 @@ export function ChromeOSSummaryHeader({
                   ...LABSTATION_FILTERS,
                 },
                 searchParams,
+                pagerContext,
               )}
             />
             <SingleMetric
@@ -285,6 +298,7 @@ export function ChromeOSSummaryHeader({
                   ...LABSTATION_FILTERS,
                 },
                 searchParams,
+                pagerContext,
               )}
             />
           </div>

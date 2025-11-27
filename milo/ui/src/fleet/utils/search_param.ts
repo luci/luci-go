@@ -14,6 +14,11 @@
 
 import { GridColumnVisibilityModel } from '@mui/x-data-grid';
 
+import {
+  emptyPageTokenUpdater,
+  PagerContext,
+} from '@/common/components/params_pager';
+
 import { addNewFilterToParams } from '../components/filter_dropdown/search_param_utils';
 import { OrderBy, OrderByDirection } from '../hooks/order_by';
 
@@ -68,8 +73,12 @@ export function parseOrderByParam(orderByParam: string): OrderBy | null {
 export function getFilterQueryString(
   filters: Record<string, string[]>,
   searchParams: URLSearchParams,
+  pagerContext?: PagerContext,
 ): string {
   let newSearchParams = new URLSearchParams(searchParams);
+  if (pagerContext) {
+    newSearchParams = emptyPageTokenUpdater(pagerContext)(newSearchParams);
+  }
   for (const [name, values] of Object.entries(filters)) {
     newSearchParams = addNewFilterToParams(newSearchParams, name, values);
   }
