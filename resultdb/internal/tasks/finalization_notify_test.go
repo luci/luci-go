@@ -76,14 +76,23 @@ func TestNotifyRootInvocationFinalized(t *testing.T) {
 		ctx, tq := tq.TestingContext(ctx, nil)
 
 		t.Run("Enqueues a pub/sub notification", func(t *ftt.Test) {
+			primaryBuild := &pb.BuildDescriptor{
+				Definition: &pb.BuildDescriptor_AndroidBuild{
+					AndroidBuild: &pb.AndroidBuildDescriptor{
+						Branch:      "main",
+						BuildTarget: "brya-trunk_staging-userdebug_coverage",
+					},
+				},
+			}
 			properties := rootInvProperties()
 			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 				msg := &pb.RootInvocationFinalizedNotification{
 					RootInvocation: &pb.RootInvocation{
-						Name:       "rootInvocations/x",
-						Realm:      "myproject:myrealm",
-						State:      pb.RootInvocation_SUCCEEDED,
-						Properties: properties,
+						Name:         "rootInvocations/x",
+						Realm:        "myproject:myrealm",
+						State:        pb.RootInvocation_SUCCEEDED,
+						PrimaryBuild: primaryBuild,
+						Properties:   properties,
 					},
 				}
 				NotifyRootInvocationFinalized(ctx, msg)
@@ -100,8 +109,8 @@ func TestNotifyRootInvocationFinalized(t *testing.T) {
 			assert.Loosely(t, attrs[luciProjectFilter], should.Equal("myproject"))
 			assert.Loosely(t, attrs, should.ContainKey(stateFilter))
 			assert.Loosely(t, attrs[stateFilter], should.Equal(pb.RootInvocation_SUCCEEDED.String()))
-			assert.Loosely(t, attrs, should.ContainKey(androidRunnerFilter))
-			assert.Loosely(t, attrs[androidRunnerFilter], should.Equal("Bazel"))
+			assert.Loosely(t, attrs, should.ContainKey(runnerFilter))
+			assert.Loosely(t, attrs[runnerFilter], should.Equal("Bazel"))
 			assert.Loosely(t, attrs, should.ContainKey(androidBranchFilter))
 			assert.Loosely(t, attrs[androidBranchFilter], should.Equal("main"))
 			assert.Loosely(t, attrs, should.ContainKey(androidTargetFilter))
@@ -111,10 +120,11 @@ func TestNotifyRootInvocationFinalized(t *testing.T) {
 			assert.Loosely(t, protojson.Unmarshal(task.Message.GetData(), &msg), should.BeNil)
 			assert.Loosely(t, &msg, should.Match(&pb.RootInvocationFinalizedNotification{
 				RootInvocation: &pb.RootInvocation{
-					Name:       "rootInvocations/x",
-					Realm:      "myproject:myrealm",
-					State:      pb.RootInvocation_SUCCEEDED,
-					Properties: properties,
+					Name:         "rootInvocations/x",
+					Realm:        "myproject:myrealm",
+					State:        pb.RootInvocation_SUCCEEDED,
+					PrimaryBuild: primaryBuild,
+					Properties:   properties,
 				},
 			}))
 		})

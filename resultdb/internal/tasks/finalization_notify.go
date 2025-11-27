@@ -38,10 +38,10 @@ const (
 	V1NotifyTestResultsTopic             = "v1.test_results"
 
 	// Pubsub message attributes
-	androidBranchFilter = "android_branch"
-	androidRunnerFilter = "android_runner"
-	androidTargetFilter = "android_target"
+	androidBranchFilter = "primary_build_android_branch"
+	androidTargetFilter = "primary_build_android_target"
 	luciProjectFilter   = "luci_project"
+	runnerFilter        = "tags_runner"
 	stateFilter         = "state"
 )
 
@@ -145,24 +145,19 @@ func attributes(rootInvocation *pb.RootInvocation) map[string]string {
 	attrs[luciProjectFilter] = project
 	attrs[stateFilter] = rootInvocation.State.String()
 
-	// TODO: b/447228104 - Replace the properties fields with new first-class
-	// fields added to the root invocation proto
-	//
 	// Optional filters which are populated only when the info is available.
 	// - Android filters
+	if rootInvocation.PrimaryBuild != nil {
+		if abd := rootInvocation.PrimaryBuild.GetAndroidBuild(); abd != nil {
+			attrs[androidBranchFilter] = abd.Branch
+			attrs[androidTargetFilter] = abd.BuildTarget
+		}
+	}
+
 	properties := rootInvocation.GetProperties()
 	if properties != nil {
 		if runner := properties.GetFields()["runner"]; runner != nil {
-			attrs[androidRunnerFilter] = runner.GetStringValue()
-		}
-		if primaryBuild := properties.GetFields()["primary_build"]; primaryBuild != nil {
-			if branch := primaryBuild.GetStructValue().GetFields()["branch"]; branch != nil {
-				attrs[androidBranchFilter] = branch.GetStringValue()
-			}
-
-			if target := primaryBuild.GetStructValue().GetFields()["build_target"]; target != nil {
-				attrs[androidTargetFilter] = target.GetStringValue()
-			}
+			attrs[runnerFilter] = runner.GetStringValue()
 		}
 	}
 	return attrs

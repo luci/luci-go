@@ -149,9 +149,14 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 		androidBuildDescriptor := &pb.BuildDescriptor{
 			Definition: &pb.BuildDescriptor_AndroidBuild{
 				AndroidBuild: &pb.AndroidBuildDescriptor{
-					Branch: "git_main",
+					Branch:      "git_main",
+					BuildTarget: "test-target",
 				},
 			},
+		}
+		rootInvDefinition := &pb.RootInvocationDefinition{
+			System: "atp",
+			Name:   "test-definition",
 		}
 
 		testCases := []struct {
@@ -168,9 +173,9 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 			},
 			{
 				name:               "No Sources or PrimaryBuild",
-				rootInvBuilder:     rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithSources(nil).WithPrimaryBuild(nil),
+				rootInvBuilder:     rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithSources(nil).WithPrimaryBuild(nil).WithDefinition(rootInvDefinition),
 				finalizedWUIDs:     []string{wuID1.WorkUnitID},
-				expectedAttributes: map[string]string{luciProjectFilter: "testproject"},
+				expectedAttributes: map[string]string{luciProjectFilter: "testproject", definitionNameFilter: "test-definition"},
 				expectedNotification: &pb.TestResultsNotification{
 					ResultdbHost: rdbHost,
 					TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
@@ -180,9 +185,9 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 			},
 			{
 				name:               "Android Branch from PrimaryBuild",
-				rootInvBuilder:     rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithPrimaryBuild(androidBuildDescriptor).WithSources(gitilesSources),
+				rootInvBuilder:     rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithPrimaryBuild(androidBuildDescriptor).WithSources(gitilesSources).WithDefinition(rootInvDefinition),
 				finalizedWUIDs:     []string{wuID1.WorkUnitID},
-				expectedAttributes: map[string]string{luciProjectFilter: "testproject", androidBranchFilter: "git_main"},
+				expectedAttributes: map[string]string{luciProjectFilter: "testproject", androidBranchFilter: "git_main", androidTargetFilter: "test-target", definitionNameFilter: "test-definition"},
 				expectedNotification: &pb.TestResultsNotification{
 					ResultdbHost: rdbHost,
 					TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
@@ -193,9 +198,9 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 			},
 			{
 				name:               "Multiple Work Units",
-				rootInvBuilder:     rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithPrimaryBuild(androidBuildDescriptor).WithSources(gitilesSources),
+				rootInvBuilder:     rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithPrimaryBuild(androidBuildDescriptor).WithSources(gitilesSources).WithDefinition(rootInvDefinition),
 				finalizedWUIDs:     []string{wuID1.WorkUnitID, wuID2.WorkUnitID},
-				expectedAttributes: map[string]string{luciProjectFilter: "testproject", androidBranchFilter: "git_main"},
+				expectedAttributes: map[string]string{luciProjectFilter: "testproject", androidBranchFilter: "git_main", androidTargetFilter: "test-target", definitionNameFilter: "test-definition"},
 				expectedNotification: &pb.TestResultsNotification{
 					ResultdbHost: rdbHost,
 					TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{

@@ -43,8 +43,10 @@ import (
 
 const (
 	// Pubsub message attributes
-	androidBranchFilter = "android_branch"
-	luciProjectFilter   = "luci_project"
+	androidBranchFilter  = "primary_build_android_branch"
+	androidTargetFilter  = "primary_build_android_target"
+	luciProjectFilter    = "luci_project"
+	definitionNameFilter = "definition_name"
 
 	// maxPubSubMessageSize is the maximum size of a Pub/Sub message. We use 9MB
 	// as a safe limit to leave room for overhead, as the official limit is
@@ -430,7 +432,11 @@ func generateAttributes(rootInv *rootinvocations.RootInvocationRow) map[string]s
 	if rootInv.PrimaryBuild != nil {
 		if abd := rootInv.PrimaryBuild.GetAndroidBuild(); abd != nil {
 			attrs[androidBranchFilter] = abd.Branch
+			attrs[androidTargetFilter] = abd.BuildTarget
 		}
+	}
+	if rootInv.Definition != nil {
+		attrs[definitionNameFilter] = rootInv.Definition.Name
 	}
 	return attrs
 }
