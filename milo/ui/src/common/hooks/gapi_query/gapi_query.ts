@@ -13,9 +13,12 @@
 // limitations under the License.
 
 import {
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
   useInfiniteQuery,
+  useMutation,
   useQuery,
 } from '@tanstack/react-query';
 
@@ -81,3 +84,19 @@ export function useInfiniteGapiQuery<
     },
   });
 }
+
+export const useGapiMutation = <Request, Response>(
+  args: (request: Request) => gapi.client.RequestOptions,
+  mutationOptions?: UseMutationOptions<Response, Error, Request>,
+): UseMutationResult<Response, Error, Request> => {
+  const getAccessToken = useGetAuthToken(TokenType.Access);
+  return useMutation({
+    ...mutationOptions,
+    mutationFn: async (body: Request): Promise<Response> => {
+      const accessToken = await getAccessToken();
+      gapi.client.setToken({ access_token: accessToken });
+      const response = await gapi.client.request(args(body));
+      return JSON.parse(response.body);
+    },
+  });
+};
