@@ -38,10 +38,13 @@ export function CollapsibleList({
 }: CollapsibleListProps) {
   const [expanded, setExpanded] = useState<boolean>(true);
 
-  if (items.length === 0) {
+  const count = items.length + numRedacted;
+  if (count === 0) {
     return (
       <>
-        <Typography variant="h6">{title}</Typography>
+        <Typography variant="h6">
+          {title} ({count})
+        </Typography>
         <Typography
           variant="body2"
           sx={{ fontStyle: 'italic', pl: '20px', pb: '16px', color: 'grey' }}
@@ -61,7 +64,9 @@ export function CollapsibleList({
         style={{ cursor: 'pointer' }}
       >
         <TableCell>
-          <Typography variant="h6">{title}</Typography>
+          <Typography variant="h6">
+            {title} ({count})
+          </Typography>
           <IconButton sx={{ pb: 0, pt: 0 }}>
             {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
           </IconButton>

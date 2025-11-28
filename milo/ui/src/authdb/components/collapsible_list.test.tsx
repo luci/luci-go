@@ -18,10 +18,10 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { CollapsibleList } from './collapsible_list';
 
-describe('<CollapsibleList />', () => {
+describe('CollapsibleList', () => {
   const items = ['group1', 'group2'];
 
-  test('displays items', async () => {
+  test('if given items, displays them', async () => {
     render(
       <FakeContextProvider>
         <CollapsibleList
@@ -33,12 +33,28 @@ describe('<CollapsibleList />', () => {
     );
 
     await screen.findByTestId('collapsible-list');
+    expect(screen.getByText('test-list (2)')).toBeInTheDocument();
     for (const item of items) {
       expect(screen.getByText(item)).toBeInTheDocument();
     }
   });
 
-  test('displays items as links', async () => {
+  test('if given no items, displays "none" message', async () => {
+    render(
+      <FakeContextProvider>
+        <CollapsibleList
+          items={[]}
+          renderAsGroupLinks={false}
+          title="test-list"
+        />
+      </FakeContextProvider>,
+    );
+
+    expect(screen.getByText('test-list (0)')).toBeInTheDocument();
+    expect(screen.getByText('None')).toBeInTheDocument();
+  });
+
+  test('if renderAsGroupLinks is true, displays items as links', async () => {
     render(
       <FakeContextProvider>
         <CollapsibleList
@@ -50,6 +66,7 @@ describe('<CollapsibleList />', () => {
     );
 
     await screen.findByTestId('collapsible-list');
+    expect(screen.getByText('test-list (2)')).toBeInTheDocument();
     for (const item of items) {
       expect(screen.getByText(item)).toBeInTheDocument();
       expect(screen.getByTestId(`${item}-link`)).toHaveAttribute(
@@ -59,7 +76,7 @@ describe('<CollapsibleList />', () => {
     }
   });
 
-  test('redacts items in list', async () => {
+  test('if given numRedacted, redacts items in list', async () => {
     render(
       <FakeContextProvider>
         <CollapsibleList
@@ -72,6 +89,7 @@ describe('<CollapsibleList />', () => {
     );
 
     await screen.findByTestId('collapsible-list');
+    expect(screen.getByText('test-list (7)')).toBeInTheDocument();
     expect(screen.getByText('5 members redacted.')).toBeInTheDocument();
     for (const item of items) {
       expect(screen.getByText(item)).toBeInTheDocument();

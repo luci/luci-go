@@ -36,7 +36,9 @@ describe('<GroupPermissions />', () => {
     await screen.findByTestId('permissions-table');
 
     for (const realmPermission of mockPermissions.realmPermissions) {
-      expect(screen.getByText(realmPermission.name)).toBeInTheDocument();
+      expect(
+        screen.getByText(new RegExp(`^${realmPermission.name} \\(\\d+\\)$`)),
+      ).toBeInTheDocument();
     }
   });
 
