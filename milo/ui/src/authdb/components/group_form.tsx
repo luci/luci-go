@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import { GrpcError } from '@chopsui/prpc-client';
 import DoneIcon from '@mui/icons-material/Done';
 import EditIcon from '@mui/icons-material/Edit';
 import { FormControl } from '@mui/material';
@@ -122,8 +123,8 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
         refetchList(false);
       });
     },
-    onError: () => {
-      setErrorMessage('Error editing group');
+    onError: (error: GrpcError) => {
+      setErrorMessage(`Error editing group - ${error.description}`);
       setIsUpdating(false);
       // Reset all fields to saved values, otherwise an invalid value will be showing.
       membersRef.current?.resetToSavedValues();
@@ -151,8 +152,8 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
       // was just deleted is removed.
       refetchList(true);
     },
-    onError: () => {
-      setErrorMessage('Error deleting group');
+    onError: (error: GrpcError) => {
+      setErrorMessage(`Error deleting group - ${error.description}`);
     },
   });
 

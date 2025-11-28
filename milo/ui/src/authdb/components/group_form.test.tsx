@@ -172,7 +172,9 @@ describe('<GroupForm />', () => {
     act(() => editButton.click());
 
     await screen.findByRole('alert');
-    expect(screen.getByText('Error editing group')).toBeInTheDocument();
+    expect(
+      screen.getByText('Error editing group', { exact: false }),
+    ).toBeInTheDocument();
   });
 
   test('delete button opens confirm dialog', async () => {
@@ -215,7 +217,9 @@ describe('<GroupForm />', () => {
     const deleteConfirmButton = screen.getByTestId('delete-confirm-button');
     act(() => deleteConfirmButton.click());
     await screen.findByRole('alert');
-    expect(screen.getByText('Error deleting group')).toBeInTheDocument();
+    expect(
+      screen.getByText('Error deleting group', { exact: false }),
+    ).toBeInTheDocument();
   });
 
   test('if edit and delete buttons are hidden if caller does not have edit permissions', async () => {

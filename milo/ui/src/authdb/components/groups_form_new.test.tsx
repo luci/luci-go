@@ -229,6 +229,8 @@ describe('<GroupsFormNew />', () => {
     const createButton = screen.getByTestId('create-button');
     act(() => createButton.click());
     await screen.findByRole('alert');
-    expect(screen.getByText('Error creating group')).toBeInTheDocument();
+    expect(
+      screen.getByText('Error creating group', { exact: false }),
+    ).toBeInTheDocument();
   });
 });

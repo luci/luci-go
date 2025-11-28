@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import { GrpcError } from '@chopsui/prpc-client';
 import { FormControl } from '@mui/material';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -102,8 +103,8 @@ export function GroupsFormNew({ onCreate }: GroupsFormNewProps) {
         replace: true,
       });
     },
-    onError: () => {
-      setErrorMessage('Error creating group');
+    onError: (error: GrpcError) => {
+      setErrorMessage(`Error creating group - ${error.description}`);
     },
     onSettled: () => {},
   });
