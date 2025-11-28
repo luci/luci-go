@@ -89,8 +89,8 @@ func TestBatchCreateTestResults(t *testing.T) {
 		// Create some sample work units and a sample invocation.
 		var ms []*spanner.Mutation
 		ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootinvocations.NewBuilder(rootInvID).Build())...)
-		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-1").WithFinalizationState(pb.WorkUnit_ACTIVE).WithModuleID(junitModuleID).Build())...)
-		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-2").WithFinalizationState(pb.WorkUnit_ACTIVE).WithModuleID(legacyModuleID).Build())...)
+		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-1").WithRealm("testproject:child-1-realm").WithFinalizationState(pb.WorkUnit_ACTIVE).WithModuleID(junitModuleID).Build())...)
+		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-2").WithRealm("testproject:child-2-realm").WithFinalizationState(pb.WorkUnit_ACTIVE).WithModuleID(legacyModuleID).Build())...)
 		testutil.MustApply(ctx, t, ms...)
 
 		tvID := &pb.TestIdentifier{
@@ -573,7 +573,9 @@ func TestBatchCreateTestResults(t *testing.T) {
 			}
 			expected[1].StatusV2 = pb.TestResult_PASSED
 
-			createTestResults := func(req *pb.BatchCreateTestResultsRequest, expectedTRs []*pb.TestResult) {
+			expectedRealms := []string{"testproject:child-1-realm", "testproject:child-2-realm"}
+
+			createTestResults := func(req *pb.BatchCreateTestResultsRequest, expectedTRs []*pb.TestResult, expectedRealms []string) {
 				response, err := recorder.BatchCreateTestResults(ctx, req)
 				assert.Loosely(t, err, should.BeNil, truth.LineContext(1))
 				assert.Loosely(t, response.TestResults, should.Match(expectedTRs), truth.LineContext(1))
@@ -589,18 +591,19 @@ func TestBatchCreateTestResults(t *testing.T) {
 				v2Rows, err := testresultsv2.ReadAllForTesting(span.Single(ctx))
 				assert.Loosely(t, err, should.BeNil, truth.LineContext(1))
 				assert.Loosely(t, len(v2Rows), should.Equal(len(expectedTRs)), truth.LineContext(1))
-				v2ProtosByName := make(map[string]*pb.TestResult, len(v2Rows))
+				v2RowsByName := make(map[string]*testresultsv2.TestResultRow, len(v2Rows))
 				for _, r := range v2Rows {
-					tr := r.ToProto()
-					v2ProtosByName[tr.Name] = tr
+					v2RowsByName[r.ToProto().Name] = r
 				}
-				for _, tr := range expectedTRs {
-					assert.Loosely(t, v2ProtosByName[tr.Name], should.Match(tr), truth.LineContext(1))
+				for i, tr := range expectedTRs {
+					row := v2RowsByName[tr.Name]
+					assert.Loosely(t, row.ToProto(), should.Match(tr), truth.LineContext(1))
+					assert.Loosely(t, row.Realm, should.Equal(expectedRealms[i]), truth.LineContext(1))
 				}
 			}
 
 			t.Run("base case", func(t *ftt.Test) {
-				createTestResults(req, expected)
+				createTestResults(req, expected, expectedRealms)
 
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
@@ -621,8 +624,9 @@ func TestBatchCreateTestResults(t *testing.T) {
 				// Drop the second request as it will be invalid for work unit 1.
 				req.Requests = req.Requests[:1]
 				expected = expected[:1]
+				expectedRealms = expectedRealms[:1]
 
-				createTestResults(req, expected)
+				createTestResults(req, expected, expectedRealms)
 			})
 			t.Run("with failure reason", func(t *ftt.Test) {
 				req.Requests[0].TestResult.StatusV2 = pb.TestResult_FAILED
@@ -647,7 +651,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 					},
 					TruncatedErrorsCount: 0,
 				}
-				createTestResults(req, expected)
+				createTestResults(req, expected, expectedRealms)
 			})
 			t.Run("with skipped reason", func(t *ftt.Test) {
 				req.Requests[0].TestResult.StatusV2 = pb.TestResult_SKIPPED
@@ -665,7 +669,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 					ReasonMessage: "An explanatory message.",
 					Trace:         "Some stack trace\nMore stack trace",
 				}
-				createTestResults(req, expected)
+				createTestResults(req, expected, expectedRealms)
 			})
 			t.Run("with framework extensions", func(t *ftt.Test) {
 				req.Requests[0].TestResult.StatusV2 = pb.TestResult_PASSED
@@ -685,7 +689,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 						IsExpected: true,
 					},
 				}
-				createTestResults(req, expected)
+				createTestResults(req, expected, expectedRealms)
 			})
 			t.Run("with legacy-form test result", func(t *ftt.Test) {
 				legacyResult := req.Requests[1]
@@ -700,7 +704,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 						expected[1].StatusV2 = pb.TestResult_FAILED
 						expected[1].FailureReason.Kind = pb.FailureReason_CRASH
 
-						createTestResults(req, expected)
+						createTestResults(req, expected, expectedRealms)
 					})
 					t.Run("unexpected pass", func(t *ftt.Test) {
 						legacyResult.TestResult.Status = pb.TestStatus_PASS
@@ -719,7 +723,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 								IsExpected: false,
 							},
 						}
-						createTestResults(req, expected)
+						createTestResults(req, expected, expectedRealms)
 					})
 					t.Run("expected abort", func(t *ftt.Test) {
 						legacyResult.TestResult.Status = pb.TestStatus_ABORT
@@ -734,7 +738,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 								IsExpected: true,
 							},
 						}
-						createTestResults(req, expected)
+						createTestResults(req, expected, expectedRealms)
 					})
 					t.Run("expected skip", func(t *ftt.Test) {
 						legacyResult.TestResult.Status = pb.TestStatus_SKIP
@@ -743,7 +747,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 						expected[1].Status = pb.TestStatus_SKIP
 						expected[1].Expected = true
 						expected[1].StatusV2 = pb.TestResult_SKIPPED
-						createTestResults(req, expected)
+						createTestResults(req, expected, expectedRealms)
 					})
 					t.Run("unexpected skip", func(t *ftt.Test) {
 						legacyResult.TestResult.Status = pb.TestStatus_SKIP
@@ -752,7 +756,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 						expected[1].Status = pb.TestStatus_SKIP
 						expected[1].Expected = false
 						expected[1].StatusV2 = pb.TestResult_EXECUTION_ERRORED
-						createTestResults(req, expected)
+						createTestResults(req, expected, expectedRealms)
 					})
 				})
 			})

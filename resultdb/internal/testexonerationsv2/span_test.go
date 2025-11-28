@@ -40,7 +40,7 @@ func TestSpan(t *testing.T) {
 				WithRootInvocationShardID(shardID).
 				Build()
 
-			mutations := append(rootInvMutations, expectedRow.Create())
+			mutations := append(rootInvMutations, Create(expectedRow))
 			commitTime, err := span.Apply(ctx, mutations)
 			assert.Loosely(t, err, should.BeNil)
 

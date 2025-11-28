@@ -114,6 +114,11 @@ func (id ShardID) Key(suffix ...any) spanner.Key {
 	return ret
 }
 
+// Before returns true if this ID is before the other ID in Spanner table order.
+func (id ShardID) Before(other ShardID) bool {
+	return id.RowID() < other.RowID()
+}
+
 func splitHashPrefix(s string) (prefix, suffix string) {
 	expectedPrefixLen := hex.EncodedLen(shardIDHashPrefixBytes) + 1 // +1 for separator
 	if len(s) < expectedPrefixLen {

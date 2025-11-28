@@ -34,7 +34,7 @@ type TestExonerationRow struct {
 }
 
 // Create returns a mutation to insert or update a TestExonerationRow.
-func (r *TestExonerationRow) Create() *spanner.Mutation {
+func Create(r *TestExonerationRow) *spanner.Mutation {
 	if err := r.ID.Validate(); err != nil {
 		panic(err)
 	}

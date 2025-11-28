@@ -67,6 +67,35 @@ func (id ID) Validate() error {
 	return nil
 }
 
+// Before returns true if this ID is before the other ID in Spanner table order.
+func (id ID) Before(other ID) bool {
+	if id.RootInvocationShardID != other.RootInvocationShardID {
+		return id.RootInvocationShardID.Before(other.RootInvocationShardID)
+	}
+	if id.ModuleName != other.ModuleName {
+		return id.ModuleName < other.ModuleName
+	}
+	if id.ModuleScheme != other.ModuleScheme {
+		return id.ModuleScheme < other.ModuleScheme
+	}
+	if id.ModuleVariantHash != other.ModuleVariantHash {
+		return id.ModuleVariantHash < other.ModuleVariantHash
+	}
+	if id.CoarseName != other.CoarseName {
+		return id.CoarseName < other.CoarseName
+	}
+	if id.FineName != other.FineName {
+		return id.FineName < other.FineName
+	}
+	if id.CaseName != other.CaseName {
+		return id.CaseName < other.CaseName
+	}
+	if id.WorkUnitID != other.WorkUnitID {
+		return id.WorkUnitID < other.WorkUnitID
+	}
+	return id.ExonerationID < other.ExonerationID
+}
+
 // Key returns the spanner primary key of this test exoneration.
 func (id ID) Key() spanner.Key {
 	return spanner.Key{

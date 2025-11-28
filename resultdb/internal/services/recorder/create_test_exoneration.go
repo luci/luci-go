@@ -122,23 +122,28 @@ func (s *recorderServer) CreateTestExoneration(ctx context.Context, in *pb.Creat
 	return res.TestExonerations[0], nil
 }
 
-// insertTestExoneration creates a test exoneration insertion mutation with the given properties.
-// Either workUnitID or invID should be specified - not both.
-func insertTestExoneration(ctx context.Context, workUnitID workunits.ID, invID invocations.ID, requestID string, ordinal int, body *pb.TestExoneration) (*pb.TestExoneration, *spanner.Mutation) {
+// normalizeTestExoneration converts a TestExoneration provided in a request to its
+// normal proto form, as should be returned in the response. This includes:
+//   - assigning an exoenration ID
+//   - populating the name field
+//   - populating output only fields
+//   - compatibility logic for legacy clients which set TestId and Variant instead of
+//     TestIdStructured
+//
+// Either workUnitID or invID should be specified, not both.
+func normalizeTestExoneration(ctx context.Context, workUnitID workunits.ID, invID invocations.ID, requestID string, ordinal int, body *pb.TestExoneration) *pb.TestExoneration {
 	if workUnitID == (workunits.ID{}) && invID == "" {
 		panic("either work unit ID or invocation ID must be set")
 	}
 
 	// Compute exoneration ID and choose Insert vs InsertOrUpdate.
 	var exonerationIDSuffix string
-	mutFn := spanner.InsertMap
 	if requestID == "" {
 		// Use a random id.
 		exonerationIDSuffix = "r:" + uuid.New().String()
 	} else {
 		// Use a deterministic id.
 		exonerationIDSuffix = "d:" + deterministicExonerationIDSuffix(ctx, requestID, ordinal)
-		mutFn = spanner.InsertOrUpdateMap
 	}
 
 	var testID string
@@ -215,22 +220,22 @@ func insertTestExoneration(ctx context.Context, workUnitID workunits.ID, invID i
 		ExonerationId:    exonerationID,
 		ExplanationHtml:  body.ExplanationHtml,
 		Reason:           body.Reason,
+		IsMasked:         false,
 	}
+	return ret
+}
 
-	destinationInvID := invID
-	if workUnitID != (workunits.ID{}) {
-		destinationInvID = workUnitID.LegacyInvocationID()
-	}
-	mutation := mutFn("TestExonerations", spanutil.ToSpannerMap(map[string]any{
-		"InvocationId":    destinationInvID,
-		"TestId":          ret.TestId,
-		"ExonerationId":   exonerationID,
-		"Variant":         ret.Variant,
-		"VariantHash":     ret.VariantHash,
-		"ExplanationHTML": spanutil.Compressed(ret.ExplanationHtml),
-		"Reason":          ret.Reason,
+// insertTestExoneration creates a test exoneration insertion mutation with the given properties.
+func insertTestExoneration(invID invocations.ID, body *pb.TestExoneration) *spanner.Mutation {
+	return spanner.InsertOrUpdateMap("TestExonerations", spanutil.ToSpannerMap(map[string]any{
+		"InvocationId":    invID,
+		"TestId":          body.TestId,
+		"ExonerationId":   body.ExonerationId,
+		"Variant":         body.Variant,
+		"VariantHash":     body.VariantHash,
+		"ExplanationHTML": spanutil.Compressed(body.ExplanationHtml),
+		"Reason":          body.Reason,
 	}))
-	return ret, mutation
 }
 
 func deterministicExonerationIDSuffix(ctx context.Context, requestID string, ordinal int) string {

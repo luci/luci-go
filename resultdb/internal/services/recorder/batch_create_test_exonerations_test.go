@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/testexonerationsv2"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/internal/workunits"
@@ -68,8 +69,8 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 		// Create some sample work units and a sample invocation.
 		var ms []*spanner.Mutation
 		ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootinvocations.NewBuilder(rootInvID).Build())...)
-		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-1").WithFinalizationState(pb.WorkUnit_ACTIVE).Build())...)
-		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-2").WithFinalizationState(pb.WorkUnit_ACTIVE).Build())...)
+		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-1").WithRealm("testproject:child-1-realm").WithFinalizationState(pb.WorkUnit_ACTIVE).Build())...)
+		ms = append(ms, insert.WorkUnit(workunits.NewBuilder(rootInvID, "work-unit:child-2").WithRealm("testproject:child-2-realm").WithFinalizationState(pb.WorkUnit_ACTIVE).Build())...)
 		testutil.MustApply(ctx, t, ms...)
 
 		req := &pb.BatchCreateTestExonerationsRequest{
@@ -350,11 +351,14 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 			expected[1].VariantHash = pbutil.VariantHash(pbutil.Variant("key", "value"))
 			expected[1].ExonerationId = expectedExonerationID2
 
-			createExonerations := func(req *pb.BatchCreateTestExonerationsRequest, expected []*pb.TestExoneration) {
+			expectedRealms := []string{"testproject:child-1-realm", "testproject:child-2-realm"}
+
+			createExonerations := func(req *pb.BatchCreateTestExonerationsRequest, expected []*pb.TestExoneration, expectedRealms []string) {
 				response, err := recorder.BatchCreateTestExonerations(ctx, req)
 				assert.Loosely(t, err, should.BeNil, truth.LineContext(1))
 
 				assert.Loosely(t, len(response.TestExonerations), should.Equal(len(expected)), truth.LineContext(1))
+				var updatedExpectations []*pb.TestExoneration
 				for i := range req.Requests {
 					actual := response.TestExonerations[i]
 					expected := proto.Clone(expected[i]).(*pb.TestExoneration)
@@ -362,21 +366,32 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 						assert.Loosely(t, actual.ExonerationId, should.NotBeNil, truth.LineContext(1))
 						expected.ExonerationId = actual.ExonerationId // Accept the server-assigned ID.
 					}
-
+					updatedExpectations = append(updatedExpectations, expected)
 					assert.Loosely(t, actual, should.Match(expected))
 
 					// Now check the database.
 					row, err := exonerations.Read(span.Single(ctx), actual.Name)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, row, should.Match(expected))
+					assert.That(t, row, should.Match(expected))
 				}
+
+				// Assert the created exonerations in the v2 table match the expectations.
+				v2Rows, err := testexonerationsv2.ReadAllForTesting(span.Single(ctx))
+				assert.Loosely(t, err, should.BeNil)
+
+				v2Protos := make([]*pb.TestExoneration, 0, len(v2Rows))
+				for i, row := range v2Rows {
+					v2Protos = append(v2Protos, row.ToProto())
+					assert.That(t, row.Realm, should.Equal(expectedRealms[i]))
+				}
+				assert.That(t, v2Protos, should.Match(updatedExpectations), truth.LineContext(1))
 			}
 
 			t.Run("base case (success)", func(t *ftt.Test) {
-				createExonerations(req, expected)
+				createExonerations(req, expected, expectedRealms)
 
 				t.Run("idempotent", func(t *ftt.Test) {
-					createExonerations(req, expected)
+					createExonerations(req, expected, expectedRealms)
 				})
 			})
 			t.Run("with common parent", func(t *ftt.Test) {
@@ -386,8 +401,9 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 
 				// Update the expectations for the second request as it will be created in a different work unit.
 				expected[1].Name = pbutil.TestExonerationName(string(wuID1.RootInvocationID), wuID1.WorkUnitID, "://infra/special_junit_tests!junit:org.chromium.go.luci:BTests#B", expectedExonerationID2)
+				expectedRealms[1] = "testproject:child-1-realm"
 
-				createExonerations(req, expected)
+				createExonerations(req, expected, expectedRealms)
 			})
 		})
 		t.Run("with legacy invocation", func(t *ftt.Test) {

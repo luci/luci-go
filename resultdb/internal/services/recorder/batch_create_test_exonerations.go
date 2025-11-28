@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/testexonerationsv2"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -183,41 +184,21 @@ func (s *recorderServer) BatchCreateTestExonerations(ctx context.Context, in *pb
 		return nil, appstatus.BadRequest(err)
 	}
 
-	// Identify which case we are dealing with:
-	// - One invocation ID for all request items
-	// - One work unit ID for all request items
-	// - A work unit ID per request item
-	var invID invocations.ID
-	var commonWorkUnitID workunits.ID
-	var perRequestWorkUnitID bool
-	if in.Invocation != "" {
-		invID = invocations.MustParseName(in.Invocation)
-	} else if in.Parent != "" {
-		commonWorkUnitID = workunits.MustParseName(in.Parent)
-	} else {
-		perRequestWorkUnitID = true
-	}
-
 	ret := &pb.BatchCreateTestExonerationsResponse{
 		TestExonerations: make([]*pb.TestExoneration, len(in.Requests)),
 	}
-	ms := make([]*spanner.Mutation, len(in.Requests))
-	var workUnitIDs []workunits.ID
-	for i, sub := range in.Requests {
-		var workUnitID workunits.ID
-		if commonWorkUnitID != (workunits.ID{}) {
-			workUnitID = commonWorkUnitID
-		} else if perRequestWorkUnitID {
-			workUnitID = workunits.MustParseName(sub.Parent)
-		}
-		if workUnitID != (workunits.ID{}) {
-			workUnitIDs = append(workUnitIDs, workUnitID)
-		}
-		ret.TestExonerations[i], ms[i] = insertTestExoneration(ctx, workUnitID, invID, in.RequestId, i, sub.TestExoneration)
-	}
-
-	if invID != "" {
+	if in.Invocation != "" {
 		// Legacy request using invocations.
+		invID := invocations.MustParseName(in.Invocation)
+		ms := make([]*spanner.Mutation, 0, len(in.Requests))
+		for i, sub := range in.Requests {
+			te := normalizeTestExoneration(ctx, workunits.ID{}, invID, in.RequestId, i, sub.TestExoneration)
+			ret.TestExonerations[i] = te
+
+			// Insert the legacy test exoneration record.
+			ms = append(ms, insertTestExoneration(invID, te))
+		}
+
 		_, err = mutateInvocation(ctx, invID, func(ctx context.Context) error {
 			span.BufferWrite(ctx, ms...)
 			return nil
@@ -226,16 +207,66 @@ func (s *recorderServer) BatchCreateTestExonerations(ctx context.Context, in *pb
 			return nil, err
 		}
 	} else {
+		var commonWorkUnitID workunits.ID
+		if in.Parent != "" {
+			commonWorkUnitID = workunits.MustParseName(in.Parent)
+		}
+		var parentIDs []workunits.ID
+		for _, sub := range in.Requests {
+			var workUnitID workunits.ID
+			if commonWorkUnitID != (workunits.ID{}) {
+				workUnitID = commonWorkUnitID
+			} else { // Per request ID is set.
+				workUnitID = workunits.MustParseName(sub.Parent)
+			}
+			parentIDs = append(parentIDs, workUnitID)
+		}
+
+		// Read the realms of the work units. This can happen outside the main
+		// Read/Write transaction as they are immutable.
+		realms, err := workunits.ReadRealms(span.Single(ctx), parentIDs)
+		if err != nil {
+			// NotFound appstatus error or internal error.
+			return nil, err
+		}
+
+		// Read the test sharding algorithm version from one of the root invocation's shards.
+		// We read from a shard instead of the root invocation directly to avoid hotspotting
+		// the root invocation record.
+		// This read is safe to occur outside the main R/W transaction as the field is immutable.
+		testShardingInformation, err := rootinvocations.ReadTestShardingInformationFromShard(span.Single(ctx), parentIDs[0].RootInvocationShardID())
+		if err != nil {
+			// NotFound appstatus error or internal error.
+			return nil, err
+		}
+
+		ms := make([]*spanner.Mutation, 0, len(in.Requests)*2)
+		for i, sub := range in.Requests {
+			parentID := parentIDs[i]
+			te := normalizeTestExoneration(ctx, parentID, "", in.RequestId, i, sub.TestExoneration)
+			ret.TestExonerations[i] = te
+
+			// Insert the legacy test exoneration record.
+			ms = append(ms, insertTestExoneration(parentID.LegacyInvocationID(), te))
+
+			// Create it in the v2 table too.
+			teV2, err := prepareTestExonerationV2(parentID, te, realms[parentID], testShardingInformation.Algorithm)
+			if err != nil {
+				return nil, err
+			}
+			ms = append(ms, testexonerationsv2.Create(teV2))
+		}
+
 		// Request using work units.
-		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 			// Ensures all work units are active.
-			states, err := workunits.ReadFinalizationStates(ctx, workUnitIDs)
+			states, err := workunits.ReadFinalizationStates(ctx, parentIDs)
 			if err != nil {
 				return err
 			}
 			for i, st := range states {
 				if st != pb.WorkUnit_ACTIVE {
-					return appstatus.Errorf(codes.FailedPrecondition, "requests[%d]: parent %q is not active", i, workUnitIDs[i].Name())
+					return appstatus.Errorf(codes.FailedPrecondition, "requests[%d]: parent %q is not active", i, parentIDs[i].Name())
 				}
 			}
 
@@ -248,4 +279,34 @@ func (s *recorderServer) BatchCreateTestExonerations(ctx context.Context, in *pb
 	}
 
 	return ret, nil
+}
+
+func prepareTestExonerationV2(parentID workunits.ID, te *pb.TestExoneration, workUnitRealm string, algID rootinvocations.TestShardingAlgorithmID) (*testexonerationsv2.TestExonerationRow, error) {
+	algImpl, err := rootinvocations.ShardingAlgorithmByID(algID)
+	if err != nil {
+		return nil, err
+	}
+	shardIndex := algImpl.ShardTestID(parentID.RootInvocationID, te.TestIdStructured)
+
+	row := &testexonerationsv2.TestExonerationRow{
+		ID: testexonerationsv2.ID{
+			RootInvocationShardID: rootinvocations.ShardID{
+				RootInvocationID: parentID.RootInvocationID,
+				ShardIndex:       shardIndex,
+			},
+			ModuleName:        te.TestIdStructured.ModuleName,
+			ModuleScheme:      te.TestIdStructured.ModuleScheme,
+			ModuleVariantHash: te.TestIdStructured.ModuleVariantHash,
+			CoarseName:        te.TestIdStructured.CoarseName,
+			FineName:          te.TestIdStructured.FineName,
+			CaseName:          te.TestIdStructured.CaseName,
+			WorkUnitID:        parentID.WorkUnitID,
+			ExonerationID:     te.ExonerationId,
+		},
+		ModuleVariant:   te.TestIdStructured.ModuleVariant,
+		Realm:           workUnitRealm,
+		ExplanationHTML: te.ExplanationHtml,
+		Reason:          te.Reason,
+	}
+	return row, nil
 }

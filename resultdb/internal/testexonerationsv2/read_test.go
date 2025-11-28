@@ -36,18 +36,23 @@ func TestRead(t *testing.T) {
 			rootInvMutations := rootinvocations.InsertForTesting(rootInvRow)
 
 			shardID := rootinvocations.ShardID{RootInvocationID: rootInvID, ShardIndex: 0}
-			row := NewBuilder().
+			row1 := NewBuilder().
 				WithRootInvocationShardID(shardID).
+				WithExonerationID("a").
+				Build()
+			row2 := NewBuilder().
+				WithRootInvocationShardID(shardID).
+				WithExonerationID("b").
 				Build()
 
-			mutations := append(rootInvMutations, InsertForTesting(row))
+			mutations := append(rootInvMutations, InsertForTesting(row1), InsertForTesting(row2))
 			_, err := span.Apply(ctx, mutations)
 			assert.Loosely(t, err, should.BeNil)
 
 			rows, err := ReadAllForTesting(span.Single(ctx))
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, rows, should.HaveLength(1))
-			assert.Loosely(t, rows[0], should.Match(row))
+			assert.Loosely(t, rows, should.HaveLength(2))
+			assert.Loosely(t, rows, should.Match([]*TestExonerationRow{row1, row2}))
 		})
 	})
 }

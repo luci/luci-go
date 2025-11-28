@@ -16,6 +16,7 @@ package testexonerationsv2
 
 import (
 	"context"
+	"sort"
 
 	"cloud.google.com/go/spanner"
 
@@ -77,6 +78,10 @@ func ReadAllForTesting(ctx context.Context) ([]*TestExonerationRow, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Sort in ascending table order.
+	sort.Slice(rows, func(i, j int) bool {
+		return rows[i].ID.Before(rows[j].ID)
+	})
 	return rows, nil
 }
 

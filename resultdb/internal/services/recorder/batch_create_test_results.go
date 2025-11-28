@@ -348,7 +348,7 @@ func batchCreateResultsInWorkUnits(ctx context.Context, in *pb.BatchCreateTestRe
 	for i, r := range in.Requests {
 		parentID := parentIDs[i]
 		legacyInvID := parentID.LegacyInvocationID()
-		tr, err := normaliseResult(legacyInvID, r.TestResult)
+		tr, err := normalizeTestResult(legacyInvID, r.TestResult)
 		if err != nil {
 			return nil, errors.Fmt("requests[%d]: normalise result: %w", i, err)
 		}
@@ -478,7 +478,7 @@ func batchCreateResultsInInvocation(ctx context.Context, in *pb.BatchCreateTestR
 	// The test identifier of each test result.
 	testResultTestIdentifiers := make([]*pb.TestIdentifier, len(in.Requests))
 	for i, r := range in.Requests {
-		tr, err := normaliseResult(invID, r.TestResult)
+		tr, err := normalizeTestResult(invID, r.TestResult)
 		if err != nil {
 			return nil, err
 		}
@@ -567,10 +567,10 @@ func batchCreateResultsInInvocation(ctx context.Context, in *pb.BatchCreateTestR
 	return ret, nil
 }
 
-// normaliseResult normalises a TestResult into its normal proto representation;
-// handling translation of certain legacy fields into the new fields, and populating
+// normalizeTestResult normalises a TestResult into its normal proto representation;
+// handling translation of certain legacy fields into new fields, and populating
 // OUTPUT_ONLY fields.
-func normaliseResult(invID invocations.ID, body *pb.TestResult) (*pb.TestResult, error) {
+func normalizeTestResult(invID invocations.ID, body *pb.TestResult) (*pb.TestResult, error) {
 	// create a copy of the input message with the OUTPUT_ONLY field(s) to be used in
 	// the response
 	ret := proto.Clone(body).(*pb.TestResult)
