@@ -21,11 +21,12 @@ import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifac
 import { WorkUnit } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/work_unit.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { useArtifactsContext } from '../context';
+import { useArtifactsContext } from '../../context';
+import { ArtifactFilterProvider } from '../context';
 
 import { WorkUnitArtifactsTreeView } from './work_unit_artifacts_tree_view';
 
-jest.mock('../context', () => ({
+jest.mock('../../context', () => ({
   useArtifactsContext: jest.fn(),
   ArtifactsProvider: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
@@ -97,7 +98,12 @@ describe('<WorkUnitArtifactsTreeView />', () => {
         value={{ viewportHeight: 300, itemHeight: 30 }}
       >
         <FakeContextProvider>
-          <WorkUnitArtifactsTreeView rootInvocationId="inv" workUnitId="wu1" />
+          <ArtifactFilterProvider>
+            <WorkUnitArtifactsTreeView
+              rootInvocationId="inv"
+              workUnitId="wu1"
+            />
+          </ArtifactFilterProvider>
         </FakeContextProvider>
       </VirtuosoMockContext.Provider>,
     );

@@ -258,14 +258,11 @@ describe('<ArtifactTreeNode />', () => {
       </FakeContextProvider>,
     );
 
-    // Assert that the highlighted text is rendered. getByText will find the innermost element.
     const highlightedTextElement = screen.getByText(highlightTerm);
     expect(highlightedTextElement).toBeInTheDocument();
 
-    // Verify the text is inside a <strong> tag.
     expect(highlightedTextElement.tagName).toBe('STRONG');
 
-    // Assert that the PARENT of the <strong> tag has the correct background color.
     const parentWrapper = highlightedTextElement.parentElement;
     expect(parentWrapper).toHaveStyle(`background-color: ${yellow[200]}`);
   });

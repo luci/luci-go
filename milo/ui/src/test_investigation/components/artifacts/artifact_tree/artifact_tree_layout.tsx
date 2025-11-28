@@ -12,134 +12,116 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import SearchIcon from '@mui/icons-material/Search';
-import TuneIcon from '@mui/icons-material/Tune';
+import {
+  AccountTree as AccountTreeIcon,
+  Description as DescriptionIcon,
+  HelpOutline,
+} from '@mui/icons-material';
 import {
   Box,
-  Chip,
-  ClickAwayListener,
-  IconButton,
-  InputAdornment,
-  TextField,
+  Divider,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
   Typography,
 } from '@mui/material';
-import { useMemo, useRef } from 'react';
+import { ReactNode } from 'react';
 
 import { ClusteringControls } from '../clustering_controls';
 import { useArtifactsContext } from '../context';
 
 import { ArtifactFiltersDropdown } from './artifact_filters_dropdown';
-import { useArtifactFilters } from './context/';
+import { useArtifactFilters } from './context/context';
 
-export interface ArtifactsTreeLayoutProps {
-  children: React.ReactNode;
+interface ArtifactsTreeLayoutProps {
+  children: ReactNode;
+  viewMode: 'artifacts' | 'work-units';
+  onViewModeChange: (mode: 'artifacts' | 'work-units') => void;
 }
 
-export function ArtifactsTreeLayout({ children }: ArtifactsTreeLayoutProps) {
-  const { clusteredFailures, hasRenderableResults, selectedArtifact } =
-    useArtifactsContext();
-  const { searchTerm, setSearchTerm, isFilterPanelOpen, setIsFilterPanelOpen } =
-    useArtifactFilters();
+export function ArtifactsTreeLayout({
+  children,
+  viewMode,
+  onViewModeChange,
+}: ArtifactsTreeLayoutProps) {
+  const { clusteredFailures, hasRenderableResults } = useArtifactsContext();
 
-  const filterContainerRef = useRef<HTMLDivElement>(null);
-
-  const noFailuresToClusterMessage = 'No results to cluster.';
-
-  const selectedArtifactLabel = useMemo(() => {
-    if (selectedArtifact) {
-      if (selectedArtifact.isSummary) {
-        return 'Summary';
-      } else if (selectedArtifact.artifact) {
-        return selectedArtifact.artifact.artifactId;
-      }
-    }
-    return '';
-  }, [selectedArtifact]);
+  const { isFilterPanelOpen, setIsFilterPanelOpen } = useArtifactFilters();
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box
-        sx={{ p: 1, pb: 0, display: 'flex', flexDirection: 'column', gap: 2 }}
-      >
-        {clusteredFailures.length > 0 ? (
-          <ClusteringControls />
-        ) : (
-          hasRenderableResults && (
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {noFailuresToClusterMessage}
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        width: '100%',
+        overflow: 'hidden',
+      }}
+    >
+      <Box sx={{ flexShrink: 0, p: 1 }}>
+        {hasRenderableResults && clusteredFailures && (
+          <Box sx={{ mb: 1 }}>
+            <ClusteringControls />
+          </Box>
+        )}
+
+        <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              flexShrink: 0,
+            }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              View Mode
             </Typography>
-          )
-        )}
-        <ClickAwayListener onClickAway={() => setIsFilterPanelOpen(false)}>
-          <Box ref={filterContainerRef} sx={{ position: 'relative' }}>
-            <TextField
-              placeholder="Search for artifact"
-              variant="outlined"
-              size="small"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              fullWidth
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setIsFilterPanelOpen((prev) => !prev)}
-                        sx={{
-                          color: isFilterPanelOpen ? 'primary.main' : 'inherit',
-                        }}
-                      >
-                        <TuneIcon />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '50px',
-                  backgroundColor: 'action.hover',
-                  '& fieldset': {
-                    border: 'none',
-                  },
-                },
-              }}
-            />
-            {isFilterPanelOpen && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 'calc(100% + 4px)',
-                  left: 0,
-                  width: '100%',
-                  zIndex: (theme) => theme.zIndex.tooltip,
-                }}
-              >
-                <ArtifactFiltersDropdown />
-              </Box>
-            )}
+            <Tooltip title="Switch between viewing artifacts as a directory structure or grouped by work units">
+              <HelpOutline
+                sx={{ fontSize: 14, color: 'text.secondary', cursor: 'help' }}
+              />
+            </Tooltip>
           </Box>
-        </ClickAwayListener>
-        {selectedArtifact && (
-          <Box>
-            Selected artifact:{' '}
-            <Chip size="small" label={selectedArtifactLabel} sx={{ ml: 1 }} />
-          </Box>
-        )}
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(_, newMode) => {
+              if (newMode) onViewModeChange(newMode);
+            }}
+            size="small"
+            fullWidth
+            sx={{ flex: 1 }}
+            aria-label="artifact view mode"
+          >
+            <ToggleButton value="artifacts" aria-label="artifacts view">
+              <Tooltip title="View raw artifacts as a directory structure">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <DescriptionIcon fontSize="small" />
+                  Directory
+                </Box>
+              </Tooltip>
+            </ToggleButton>
+            <ToggleButton value="work-units" aria-label="work units view">
+              <Tooltip title="View artifacts grouped by work units">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AccountTreeIcon fontSize="small" />
+                  Work Units
+                </Box>
+              </Tooltip>
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        <ArtifactFiltersDropdown
+          isOpen={isFilterPanelOpen}
+          onToggle={() => setIsFilterPanelOpen((prev) => !prev)}
+        />
       </Box>
-      <Box
-        sx={{
-          flexGrow: 1,
-          width: '100%',
-          wordBreak: 'break-word',
-          overflowY: 'auto',
-        }}
-      >
+
+      <Divider />
+
+      <Box sx={{ flexGrow: 1, overflow: 'hidden', position: 'relative' }}>
         {children}
       </Box>
     </Box>

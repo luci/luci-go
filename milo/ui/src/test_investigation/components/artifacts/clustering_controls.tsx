@@ -34,7 +34,6 @@ function ClusterMenuItemContent({
   cluster,
   index,
 }: ClusterMenuItemContentProps) {
-  // ... component is unchanged
   return (
     <Box
       sx={{

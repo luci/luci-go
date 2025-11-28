@@ -14,7 +14,7 @@
 
 import { CircularProgress, Typography } from '@mui/material';
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import {
   TreeData,
@@ -31,12 +31,11 @@ import {
   WorkUnit,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/work_unit.pb';
 
-import { useArtifactsContext } from '../context';
-import { ArtifactTreeNodeData } from '../types';
-
-import { ArtifactsTreeLayout } from './artifact_tree_layout';
-import { ArtifactTreeNode } from './artifact_tree_node';
-import { ArtifactFilterProvider, useArtifactFilters } from './context';
+import { useArtifactsContext } from '../../context';
+import { ArtifactTreeNodeData } from '../../types';
+import { ArtifactTreeNode } from '../artifact_tree_node';
+import { useArtifactFilters } from '../context/context';
+import { filterArtifacts } from '../util/tree_util';
 
 function buildWorkUnitTree(
   workUnits: readonly WorkUnit[],
@@ -142,18 +141,37 @@ function WorkUnitArtifactsTreeViewInternal({
   workUnits,
   artifactsByWorkUnit,
 }: WorkUnitArtifactsTreeViewInternalProps) {
-  const { debouncedSearchTerm, filterArtifactList } = useArtifactFilters();
+  const { debouncedSearchTerm, artifactTypes, setAvailableArtifactTypes } =
+    useArtifactFilters();
   const { selectedArtifact, setSelectedArtifact: updateSelectedArtifact } =
     useArtifactsContext();
+
+  // Sync available artifact types to context
+  useEffect(() => {
+    const allArtifacts = Object.values(artifactsByWorkUnit).flat();
+    const types = new Set<string>();
+    for (const artifact of allArtifacts) {
+      if (artifact.artifactType) {
+        types.add(artifact.artifactType);
+      }
+    }
+    const sortedTypes = Array.from(types).sort();
+    setAvailableArtifactTypes(sortedTypes);
+
+    return () => {
+      setAvailableArtifactTypes([]);
+    };
+  }, [artifactsByWorkUnit, setAvailableArtifactTypes]);
 
   const treeData = useMemo(() => {
     return buildWorkUnitTree(
       workUnits,
       artifactsByWorkUnit,
-      filterArtifactList,
+      (artifacts) =>
+        filterArtifacts(artifacts, { debouncedSearchTerm, artifactTypes }),
       debouncedSearchTerm,
     );
-  }, [workUnits, artifactsByWorkUnit, filterArtifactList, debouncedSearchTerm]);
+  }, [workUnits, artifactsByWorkUnit, debouncedSearchTerm, artifactTypes]);
 
   const selectedNodes = useMemo(() => {
     return selectedArtifact ? new Set([selectedArtifact.id]) : undefined;
@@ -168,31 +186,29 @@ function WorkUnitArtifactsTreeViewInternal({
   }
 
   return (
-    <ArtifactsTreeLayout>
-      <VirtualTree<ArtifactTreeNodeData>
-        root={treeData}
-        isTreeCollapsed={false}
-        scrollToggle
-        itemContent={(
-          index: number,
-          row: TreeData<ArtifactTreeNodeData>,
-          context: VirtualTreeNodeActions<ArtifactTreeNodeData>,
-        ) => (
-          <ArtifactTreeNode
-            index={index}
-            row={row}
-            context={context}
-            onSupportedLeafClick={(node) => updateSelectedArtifact(node)}
-            onUnsupportedLeafClick={(node) => {
-              open(getRawArtifactURLPath(node.artifact?.name || ''), '_blank');
-            }}
-            highlightText={debouncedSearchTerm}
-          />
-        )}
-        selectedNodes={selectedNodes}
-        setActiveSelectionFn={setActiveSelectionFn}
-      />
-    </ArtifactsTreeLayout>
+    <VirtualTree<ArtifactTreeNodeData>
+      root={treeData}
+      isTreeCollapsed={false}
+      scrollToggle
+      itemContent={(
+        index: number,
+        row: TreeData<ArtifactTreeNodeData>,
+        context: VirtualTreeNodeActions<ArtifactTreeNodeData>,
+      ) => (
+        <ArtifactTreeNode
+          index={index}
+          row={row}
+          context={context}
+          onSupportedLeafClick={(node) => updateSelectedArtifact(node)}
+          onUnsupportedLeafClick={(node) => {
+            open(getRawArtifactURLPath(node.artifact?.name || ''), '_blank');
+          }}
+          highlightText={debouncedSearchTerm}
+        />
+      )}
+      selectedNodes={selectedNodes}
+      setActiveSelectionFn={setActiveSelectionFn}
+    />
   );
 }
 
@@ -244,20 +260,14 @@ export function WorkUnitArtifactsTreeView({
     [workUnitsData],
   );
 
-  const allArtifacts = useMemo(() => {
-    return Object.values(artifactsByWorkUnit).flat();
-  }, [artifactsByWorkUnit]);
-
   if (isLoading) {
     return <CircularProgress />;
   }
 
   return (
-    <ArtifactFilterProvider resultArtifacts={allArtifacts} invArtifacts={[]}>
-      <WorkUnitArtifactsTreeViewInternal
-        workUnits={workUnits}
-        artifactsByWorkUnit={artifactsByWorkUnit}
-      />
-    </ArtifactFilterProvider>
+    <WorkUnitArtifactsTreeViewInternal
+      workUnits={workUnits}
+      artifactsByWorkUnit={artifactsByWorkUnit}
+    />
   );
 }

@@ -12,24 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import SearchIcon from '@mui/icons-material/Search';
+import TuneIcon from '@mui/icons-material/Tune';
 import {
   Box,
   Button,
+  ClickAwayListener,
   FormControl,
   FormControlLabel,
+  IconButton,
+  InputAdornment,
   MenuItem,
   Paper,
   Select,
-  Switch,
-  Typography,
   SelectChangeEvent,
+  Switch,
+  TextField,
+  Typography,
 } from '@mui/material';
-import { ChangeEvent } from 'react';
+import { ChangeEvent, useRef } from 'react';
 
-import { useArtifactFilters } from './context';
+import { useArtifactFilters } from './context/context';
 
-export function ArtifactFiltersDropdown() {
+interface ArtifactFiltersDropdownProps {
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+export function ArtifactFiltersDropdown({
+  isOpen,
+  onToggle,
+}: ArtifactFiltersDropdownProps) {
   const {
+    searchTerm,
+    setSearchTerm,
     availableArtifactTypes,
     artifactTypes,
     setArtifactTypes,
@@ -44,150 +60,201 @@ export function ArtifactFiltersDropdown() {
     showOnlyFoldersWithError,
     setShowOnlyFoldersWithError,
     onClearFilters,
-    setIsFilterPanelOpen,
   } = useArtifactFilters();
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
   return (
-    <Paper
-      elevation={3}
-      sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}
-    >
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mb: 1,
+    <ClickAwayListener onClickAway={() => isOpen && onToggle()}>
+      <Box ref={containerRef} sx={{ position: 'relative' }}>
+        <TextField
+          placeholder="Search for artifact"
+          variant="outlined"
+          size="small"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          fullWidth
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={onToggle}
+                    sx={{
+                      color: isOpen ? 'primary.main' : 'inherit',
+                    }}
+                  >
+                    <TuneIcon />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            },
           }}
-        >
-          <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
-            Filter artifacts
-          </Typography>
-          <Box>
-            <Button onClick={onClearFilters} size="small">
-              Clear
-            </Button>
-            <Button
-              onClick={() => setIsFilterPanelOpen(false)}
-              size="small"
-              sx={{ ml: 1 }}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: '50px',
+              backgroundColor: 'action.hover',
+              '& fieldset': {
+                border: 'none',
+              },
+            },
+          }}
+        />
+        {isOpen && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 'calc(100% + 4px)',
+              left: 0,
+              width: '100%',
+              zIndex: (theme) => theme.zIndex.tooltip,
+            }}
+          >
+            <Paper
+              elevation={3}
+              sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}
             >
-              Close
-            </Button>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 1,
+                  }}
+                >
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
+                    Filter artifacts
+                  </Typography>
+                  <Box>
+                    <Button onClick={onClearFilters} size="small">
+                      Clear
+                    </Button>
+                    <Button onClick={onToggle} size="small" sx={{ ml: 1 }}>
+                      Close
+                    </Button>
+                  </Box>
+                </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography variant="body2" sx={{ minWidth: '100px' }}>
+                    Artifact types
+                  </Typography>
+                  <FormControl fullWidth size="small">
+                    <Select
+                      multiple
+                      value={artifactTypes}
+                      onChange={(e: SelectChangeEvent<string[]>) =>
+                        setArtifactTypes(e.target.value as string[])
+                      }
+                      renderValue={(selected) => selected.join(', ')}
+                      displayEmpty
+                      MenuProps={{ disablePortal: true }}
+                    >
+                      <MenuItem value="" disabled>
+                        <Typography variant="body2" color="text.secondary">
+                          Select types
+                        </Typography>
+                      </MenuItem>
+                      {availableArtifactTypes.map((type) => (
+                        <MenuItem key={type} value={type}>
+                          {type}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography variant="body2" sx={{ minWidth: '100px' }}>
+                    Crash types
+                  </Typography>
+                  <FormControl fullWidth size="small">
+                    <Select
+                      multiple
+                      value={crashTypes}
+                      onChange={(e: SelectChangeEvent<string[]>) =>
+                        setCrashTypes(e.target.value as string[])
+                      }
+                      renderValue={(selected) => selected.join(', ')}
+                      displayEmpty
+                      disabled
+                      MenuProps={{ disablePortal: true }}
+                    >
+                      <MenuItem value="" disabled>
+                        <Typography variant="body2" color="text.secondary">
+                          Select types
+                        </Typography>
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={showCriticalCrashes}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setShowCriticalCrashes(e.target.checked)
+                      }
+                      disabled
+                    />
+                  }
+                  label="Show only critical crashes"
+                  sx={{ ml: 0, justifyContent: 'space-between', mr: 0 }}
+                  labelPlacement="start"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={hideAutomationFiles}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setHideAutomationFiles(e.target.checked)
+                      }
+                      disabled
+                    />
+                  }
+                  label="Hide (##) files for automation"
+                  sx={{ ml: 0, justifyContent: 'space-between', mr: 0 }}
+                  labelPlacement="start"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={hideEmptyFolders}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setHideEmptyFolders(e.target.checked)
+                      }
+                    />
+                  }
+                  label="Hide empty folders"
+                  sx={{ ml: 0, justifyContent: 'space-between', mr: 0 }}
+                  labelPlacement="start"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={showOnlyFoldersWithError}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setShowOnlyFoldersWithError(e.target.checked)
+                      }
+                      disabled
+                    />
+                  }
+                  label="Show only folders with error"
+                  sx={{ ml: 0, justifyContent: 'space-between', mr: 0 }}
+                  labelPlacement="start"
+                />
+              </Box>
+            </Paper>
           </Box>
-        </Box>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography variant="body2" sx={{ minWidth: '100px' }}>
-            Artifact types
-          </Typography>
-          <FormControl fullWidth size="small">
-            <Select
-              multiple
-              value={artifactTypes}
-              onChange={(e: SelectChangeEvent<string[]>) =>
-                setArtifactTypes(e.target.value as string[])
-              }
-              renderValue={(selected) => selected.join(', ')}
-              displayEmpty
-              MenuProps={{ disablePortal: true }}
-            >
-              <MenuItem value="" disabled>
-                <Typography variant="body2" color="text.secondary">
-                  Select types
-                </Typography>
-              </MenuItem>
-              {availableArtifactTypes.map((type) => (
-                <MenuItem key={type} value={type}>
-                  {type}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography variant="body2" sx={{ minWidth: '100px' }}>
-            Crash types
-          </Typography>
-          <FormControl fullWidth size="small">
-            <Select
-              multiple
-              value={crashTypes}
-              onChange={(e: SelectChangeEvent<string[]>) =>
-                setCrashTypes(e.target.value as string[])
-              }
-              renderValue={(selected) => selected.join(', ')}
-              displayEmpty
-              disabled
-              MenuProps={{ disablePortal: true }}
-            >
-              <MenuItem value="" disabled>
-                <Typography variant="body2" color="text.secondary">
-                  Select types
-                </Typography>
-              </MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
-
-        <FormControlLabel
-          control={
-            <Switch
-              checked={showCriticalCrashes}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                setShowCriticalCrashes(e.target.checked)
-              }
-              disabled
-            />
-          }
-          label="Show only critical crashes"
-          sx={{ ml: 0, justifyContent: 'space-between', mr: 0 }}
-          labelPlacement="start"
-        />
-        <FormControlLabel
-          control={
-            <Switch
-              checked={hideAutomationFiles}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                setHideAutomationFiles(e.target.checked)
-              }
-              disabled
-            />
-          }
-          label="Hide (##) files for automation"
-          sx={{ ml: 0, justifyContent: 'space-between', mr: 0 }}
-          labelPlacement="start"
-        />
-        <FormControlLabel
-          control={
-            <Switch
-              checked={hideEmptyFolders}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                setHideEmptyFolders(e.target.checked)
-              }
-            />
-          }
-          label="Hide empty folders"
-          sx={{ ml: 0, justifyContent: 'space-between', mr: 0 }}
-          labelPlacement="start"
-        />
-        <FormControlLabel
-          control={
-            <Switch
-              checked={showOnlyFoldersWithError}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                setShowOnlyFoldersWithError(e.target.checked)
-              }
-              disabled
-            />
-          }
-          label="Show only folders with error"
-          sx={{ ml: 0, justifyContent: 'space-between', mr: 0 }}
-          labelPlacement="start"
-        />
+        )}
       </Box>
-    </Paper>
+    </ClickAwayListener>
   );
 }

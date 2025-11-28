@@ -12,134 +12,133 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  Box,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-} from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
-import { parseWorkUnitTestResultName } from '@/common/tools/test_result_utils/index';
+import { parseWorkUnitTestResultName } from '@/common/tools/test_result_utils';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { GetArtifactRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { useTestVariant } from '@/test_investigation/context';
 
-import { ArtifactContentView, ArtifactSummaryView } from './artifact_content';
-import { ArtifactTreeView } from './artifact_tree';
+import { ArtifactSummaryView } from './artifact_content';
+import { ArtifactContentView } from './artifact_content/artifact_content_view';
+import { ArtifactsTreeLayout } from './artifact_tree/artifact_tree_layout';
+import { ArtifactTreeView } from './artifact_tree/artifact_tree_view';
+import { ArtifactFilterProvider } from './artifact_tree/context/provider';
 import { WorkUnitArtifactsTreeView } from './artifact_tree/work_unit_artifacts_tree_view';
 import { ArtifactsProvider, useArtifactsContext } from './context';
+
+interface ArtifactsExplorerProps {
+  rootInvocationId?: string;
+  workUnitId?: string;
+  textDiffArtifact?: Artifact;
+}
 
 function ArtifactsExplorer({
   rootInvocationId,
   workUnitId,
   textDiffArtifact,
-}: {
-  rootInvocationId?: string;
-  workUnitId?: string;
-  textDiffArtifact?: Artifact;
-}) {
+}: ArtifactsExplorerProps) {
   const { currentResult, selectedAttemptIndex, selectedArtifact } =
     useArtifactsContext();
-  const [viewMode, setViewMode] = useState<'artifacts' | 'workUnits'>(
+  const [viewMode, setViewMode] = useState<'artifacts' | 'work-units'>(
     'artifacts',
   );
 
+  if (!currentResult) {
+    return null;
+  }
+
   return (
-    <PanelGroup
-      direction="horizontal"
-      style={{ height: '100%', minHeight: '600px' }}
-      // This will make the panel size stored in local storage.
-      autoSaveId="artifacts-panel-group-size"
-    >
-      <Panel defaultSize={30} minSize={20}>
-        <Box
-          sx={{
-            height: '100%',
-            overflowY: 'auto',
-            borderRight: '1px solid',
-            borderColor: 'divider',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          {rootInvocationId && (
-            <Box
-              sx={{
-                p: 1,
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <ToggleButtonGroup
-                value={viewMode}
-                exclusive
-                onChange={(_, newMode) => {
-                  if (newMode) setViewMode(newMode);
-                }}
-                size="small"
-                fullWidth
-              >
-                <ToggleButton value="artifacts">Artifacts</ToggleButton>
-                <ToggleButton value="workUnits">Work Units</ToggleButton>
-              </ToggleButtonGroup>
-            </Box>
-          )}
-          {viewMode === 'artifacts' ? (
-            <ArtifactTreeView />
-          ) : (
-            <WorkUnitArtifactsTreeView
-              rootInvocationId={rootInvocationId || ''}
-              workUnitId={workUnitId || ''}
-            />
-          )}
-        </Box>
-      </Panel>
-      <PanelResizeHandle>
-        <Box
-          sx={{
-            width: '8px',
-            height: '100%',
-            cursor: 'col-resize',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: 'action.hover',
-            '&:hover': { bgcolor: 'action.selected' },
-          }}
-        >
-          <Box sx={{ width: '2px', height: '24px', bgcolor: 'divider' }} />
-        </Box>
-      </PanelResizeHandle>
-      <Panel defaultSize={70} minSize={30}>
-        <Box
-          sx={{
-            p: 2,
-            height: '100%',
-            overflowY: 'auto',
-            wordBreak: 'break-all',
-          }}
-        >
-          {selectedArtifact &&
-            (selectedArtifact.isSummary && currentResult ? (
-              <ArtifactSummaryView
-                currentResult={currentResult}
-                textDiffArtifact={textDiffArtifact}
-                selectedAttemptIndex={selectedAttemptIndex}
-              />
-            ) : selectedArtifact.artifact ? (
-              <ArtifactContentView artifact={selectedArtifact.artifact} />
+    <ArtifactFilterProvider>
+      <PanelGroup
+        direction="horizontal"
+        style={{ height: '100%', minHeight: '600px' }}
+        // This will make the panel size stored in local storage.
+        autoSaveId="artifacts-panel-group-size"
+      >
+        <Panel defaultSize={30} minSize={20}>
+          <ArtifactsTreeLayout
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          >
+            {viewMode === 'artifacts' ? (
+              <ArtifactTreeView />
             ) : (
-              <Typography color="text.secondary">
-                Select an artifact to view.
-              </Typography>
-            ))}
-        </Box>
-      </Panel>
-    </PanelGroup>
+              <WorkUnitArtifactsTreeView
+                rootInvocationId={rootInvocationId || ''}
+                workUnitId={workUnitId || ''}
+              />
+            )}
+          </ArtifactsTreeLayout>
+        </Panel>
+        <PanelResizeHandle>
+          <Box
+            sx={{
+              width: '8px',
+              height: '100%',
+              cursor: 'col-resize',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: 'action.hover',
+              '&:hover': { bgcolor: 'action.selected' },
+            }}
+          >
+            <Box sx={{ width: '2px', height: '24px', bgcolor: 'divider' }} />
+          </Box>
+        </PanelResizeHandle>
+        <Panel defaultSize={70} minSize={30}>
+          <Box
+            sx={{
+              p: 2,
+              height: '100%',
+              overflowY: 'auto',
+              wordBreak: 'break-all',
+            }}
+          >
+            {selectedArtifact ? (
+              selectedArtifact.isSummary ? (
+                <ArtifactSummaryView
+                  currentResult={currentResult}
+                  textDiffArtifact={textDiffArtifact}
+                  selectedAttemptIndex={selectedAttemptIndex}
+                />
+              ) : selectedArtifact.artifact ? (
+                <ArtifactContentView artifact={selectedArtifact.artifact} />
+              ) : (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100%',
+                    color: 'text.secondary',
+                  }}
+                >
+                  <Typography>Select an artifact to view.</Typography>
+                </Box>
+              )
+            ) : (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100%',
+                  color: 'text.secondary',
+                }}
+              >
+                <Typography>Select an artifact to view.</Typography>
+              </Box>
+            )}
+          </Box>
+        </Panel>
+      </PanelGroup>
+    </ArtifactFilterProvider>
   );
 }
 

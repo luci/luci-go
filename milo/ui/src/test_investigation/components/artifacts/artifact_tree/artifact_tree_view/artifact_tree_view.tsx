@@ -24,23 +24,176 @@ import {
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { parseTestResultName } from '@/common/tools/test_result_utils/index';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
+import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { ListArtifactsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { useIsLegacyInvocation } from '@/test_investigation/context';
 
-import { useArtifactsContext } from '../context';
-import { ArtifactTreeNodeData } from '../types';
+import { useArtifactsContext } from '../../context';
+import { ArtifactTreeNodeData, SelectedArtifactSource } from '../../types';
+import { ArtifactTreeNode } from '../artifact_tree_node';
+import { useArtifactFilters } from '../context/context';
+import { filterArtifacts } from '../util/tree_util';
 
-import { ArtifactsTreeLayout } from './artifact_tree_layout';
-import { ArtifactTreeNode } from './artifact_tree_node';
-import { useArtifactFilters } from './context/context';
-import { ArtifactFilterProvider } from './context/provider';
+function addArtifactsToTree(
+  artifacts: readonly Artifact[],
+  root: ArtifactTreeNodeData,
+  idCounter: number,
+  source: SelectedArtifactSource,
+) {
+  for (const artifact of artifacts) {
+    const path = artifact.artifactId;
+    const parts = path.split('/');
+    let currentNode = root;
 
-function ArtifactTreeViewInternal() {
-  const { debouncedSearchTerm, finalArtifactsTree } = useArtifactFilters();
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (part) {
+        let childNode: ArtifactTreeNodeData | undefined =
+          currentNode.children.find((c) => c.name === part);
+
+        if (!childNode) {
+          childNode = { id: `${idCounter++}`, name: part, children: [] };
+          currentNode.children.push(childNode);
+        }
+        currentNode = childNode as ArtifactTreeNodeData;
+      }
+    }
+    currentNode.viewingSupported = artifact.hasLines;
+    currentNode.size = Number(artifact.sizeBytes);
+    currentNode.url = getRawArtifactURLPath(artifact.name);
+    currentNode.artifact = artifact;
+    currentNode.source = source;
+    currentNode.id = artifact.artifactId;
+  }
+  return idCounter;
+}
+
+function buildArtifactsTree(
+  resultArtifacts: readonly Artifact[],
+  invocationArtifacts: readonly Artifact[],
+): ArtifactTreeNodeData[] {
+  const result: ArtifactTreeNodeData[] = [];
+
+  result.push({
+    id: 'summary_node',
+    name: 'Summary',
+    isSummary: true,
+    children: [],
+  });
+  let lastInsertedId = 0;
+
+  if (resultArtifacts.length > 0) {
+    const resultArtifactsRoot: ArtifactTreeNodeData = {
+      id: `${++lastInsertedId}`,
+      name: 'Result artifacts',
+      children: [],
+    };
+    lastInsertedId = addArtifactsToTree(
+      resultArtifacts,
+      resultArtifactsRoot,
+      ++lastInsertedId,
+      'result',
+    );
+
+    result.push(resultArtifactsRoot);
+  }
+
+  if (invocationArtifacts.length > 0) {
+    const invocationArtifactsRoot: ArtifactTreeNodeData = {
+      id: `${++lastInsertedId}`,
+      name: 'Invocation artifacts',
+      children: [],
+    };
+    addArtifactsToTree(
+      invocationArtifacts,
+      invocationArtifactsRoot,
+      ++lastInsertedId,
+      'invocation',
+    );
+    result.push(invocationArtifactsRoot);
+  }
+  return result;
+}
+
+interface ArtifactTreeViewInternalProps {
+  resultArtifacts: readonly Artifact[];
+  invArtifacts: readonly Artifact[];
+}
+
+function ArtifactTreeViewInternal({
+  resultArtifacts,
+  invArtifacts,
+}: ArtifactTreeViewInternalProps) {
+  const {
+    debouncedSearchTerm,
+    artifactTypes,
+    hideEmptyFolders,
+    setAvailableArtifactTypes,
+  } = useArtifactFilters();
   const {
     selectedArtifact: selectedArtifactNode,
     setSelectedArtifact: updateSelectedArtifact,
   } = useArtifactsContext();
+
+  // Sync available artifact types to context
+  useEffect(() => {
+    const allArtifacts = [...resultArtifacts, ...invArtifacts];
+    const types = new Set<string>();
+    for (const artifact of allArtifacts) {
+      if (artifact.artifactType) {
+        types.add(artifact.artifactType);
+      }
+    }
+    const sortedTypes = Array.from(types).sort();
+    setAvailableArtifactTypes(sortedTypes);
+
+    return () => {
+      setAvailableArtifactTypes([]);
+    };
+  }, [resultArtifacts, invArtifacts, setAvailableArtifactTypes]);
+
+  const filteredResultArtifacts = useMemo(
+    () =>
+      filterArtifacts(resultArtifacts, { debouncedSearchTerm, artifactTypes }),
+    [resultArtifacts, debouncedSearchTerm, artifactTypes],
+  );
+
+  const filteredInvArtifacts = useMemo(
+    () => filterArtifacts(invArtifacts, { debouncedSearchTerm, artifactTypes }),
+    [invArtifacts, debouncedSearchTerm, artifactTypes],
+  );
+
+  const initialArtifactsTree = useMemo(() => {
+    return buildArtifactsTree(filteredResultArtifacts, filteredInvArtifacts);
+  }, [filteredResultArtifacts, filteredInvArtifacts]);
+
+  const finalArtifactsTree = useMemo(() => {
+    if (!hideEmptyFolders) {
+      return initialArtifactsTree;
+    }
+
+    function pruneEmptyFolders(
+      nodes: ArtifactTreeNodeData[],
+    ): ArtifactTreeNodeData[] {
+      const prunedNodes: ArtifactTreeNodeData[] = [];
+      for (const node of nodes) {
+        const isLeaf = !!node.artifact || node.isSummary;
+        if (isLeaf) {
+          prunedNodes.push(node);
+          continue;
+        }
+
+        const prunedChildren = pruneEmptyFolders(node.children);
+
+        if (prunedChildren.length > 0) {
+          prunedNodes.push({ ...node, children: prunedChildren });
+        }
+      }
+      return prunedNodes;
+    }
+
+    return pruneEmptyFolders(initialArtifactsTree);
+  }, [initialArtifactsTree, hideEmptyFolders]);
 
   useEffect(() => {
     if (debouncedSearchTerm) return;
@@ -109,29 +262,27 @@ function ArtifactTreeViewInternal() {
   }
 
   return (
-    <ArtifactsTreeLayout>
-      <VirtualTree<ArtifactTreeNodeData>
-        root={finalArtifactsTree}
-        isTreeCollapsed={false}
-        scrollToggle
-        itemContent={(
-          index: number,
-          row: TreeData<ArtifactTreeNodeData>,
-          context: VirtualTreeNodeActions<ArtifactTreeNodeData>,
-        ) => (
-          <ArtifactTreeNode
-            index={index}
-            row={row}
-            context={context}
-            onSupportedLeafClick={handleLeafNodeClicked}
-            onUnsupportedLeafClick={handleUnsupportedLeafNodeClicked}
-            highlightText={debouncedSearchTerm}
-          />
-        )}
-        selectedNodes={selectedNodes}
-        setActiveSelectionFn={setActiveSelectionFnForSelectedNode}
-      />
-    </ArtifactsTreeLayout>
+    <VirtualTree<ArtifactTreeNodeData>
+      root={finalArtifactsTree}
+      isTreeCollapsed={false}
+      scrollToggle
+      itemContent={(
+        index: number,
+        row: TreeData<ArtifactTreeNodeData>,
+        context: VirtualTreeNodeActions<ArtifactTreeNodeData>,
+      ) => (
+        <ArtifactTreeNode
+          index={index}
+          row={row}
+          context={context}
+          onSupportedLeafClick={handleLeafNodeClicked}
+          onUnsupportedLeafClick={handleUnsupportedLeafNodeClicked}
+          highlightText={debouncedSearchTerm}
+        />
+      )}
+      selectedNodes={selectedNodes}
+      setActiveSelectionFn={setActiveSelectionFnForSelectedNode}
+    />
   );
 }
 
@@ -225,11 +376,9 @@ export function ArtifactTreeView() {
   }
 
   return (
-    <ArtifactFilterProvider
+    <ArtifactTreeViewInternal
       resultArtifacts={testResultArtifactsData || []}
       invArtifacts={invocationScopeArtifactsData || []}
-    >
-      <ArtifactTreeViewInternal />
-    </ArtifactFilterProvider>
+    />
   );
 }

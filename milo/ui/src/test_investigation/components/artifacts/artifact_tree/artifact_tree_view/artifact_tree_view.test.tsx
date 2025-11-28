@@ -21,14 +21,15 @@ import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { useArtifactsContext } from '../context';
+import { useArtifactsContext } from '../../context';
+import { ArtifactFiltersDropdown } from '../artifact_filters_dropdown';
+import { ArtifactFilterProvider } from '../context';
 
 import { ArtifactTreeView } from './artifact_tree_view';
 
-// Mock window.open for the JSDOM environment
 window.open = jest.fn();
 
-jest.mock('../context', () => ({
+jest.mock('../../context', () => ({
   useArtifactsContext: jest.fn(),
   ArtifactsProvider: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
@@ -59,7 +60,6 @@ describe('<ArtifactTreeView />', () => {
     Artifact.fromPartial({
       artifactId: 'artifact2.png',
       name: 'invocations/inv/artifacts/artifact2.png',
-      // This artifact is not viewable, clicking it will call window.open
     }),
   ];
 
@@ -67,7 +67,7 @@ describe('<ArtifactTreeView />', () => {
     Artifact.fromPartial({
       artifactId: 'invArtifact1.log',
       name: 'invocations/inv/artifacts/invArtifact1.log',
-      hasLines: true, // This artifact is viewable in the app
+      hasLines: true,
     }),
     Artifact.fromPartial({
       artifactId: 'invArtifact2.jpg',
@@ -91,9 +91,6 @@ describe('<ArtifactTreeView />', () => {
         })),
       },
     });
-
-    // Mock useInfiniteQuery to return artifacts based on the query key or just return both sets combined/sequentially
-    // Since we have two calls, we can mockReturnValueOnce or implementation
     (useInfiniteQuery as jest.Mock).mockImplementation((_) => {
       return {
         data: [],
@@ -146,7 +143,9 @@ describe('<ArtifactTreeView />', () => {
         value={{ viewportHeight: 300, itemHeight: 30 }}
       >
         <FakeContextProvider>
-          <ArtifactTreeView />
+          <ArtifactFilterProvider>
+            <ArtifactTreeView />
+          </ArtifactFilterProvider>
         </FakeContextProvider>
       </VirtuosoMockContext.Provider>,
     );
@@ -216,7 +215,10 @@ describe('<ArtifactTreeView />', () => {
         value={{ viewportHeight: 300, itemHeight: 30 }}
       >
         <FakeContextProvider>
-          <ArtifactTreeView />
+          <ArtifactFilterProvider>
+            <ArtifactFiltersDropdown isOpen={true} onToggle={() => {}} />
+            <ArtifactTreeView />
+          </ArtifactFilterProvider>
         </FakeContextProvider>
       </VirtuosoMockContext.Provider>,
     );
@@ -228,7 +230,6 @@ describe('<ArtifactTreeView />', () => {
       jest.runAllTimers();
     });
 
-    // We expect 5 items: Summary + "Result artifacts" + "Invocation artifacts" + the two log files.
     const treeItems = screen.getAllByRole('treeitem');
     expect(treeItems).toHaveLength(5);
 
