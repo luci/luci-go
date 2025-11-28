@@ -28,6 +28,7 @@ import {
   useTestVariant,
 } from '@/test_investigation/context';
 import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
+import { isRootInvocation } from '@/test_investigation/utils/invocation_utils';
 import {
   getBuildDetailsUrl,
   getCommitGitilesUrlFromInvocation,
@@ -65,14 +66,28 @@ export function TestInfoHeader() {
   // TODO(b/445559255): update copied text when module page is available.
   const fullMethodName = getFullMethodName(testVariant);
 
-  const primaryBuildId = invocation.properties?.primaryBuild?.buildId;
-  const primaryBuildTarget = invocation.properties?.primaryBuild?.buildTarget;
+  let primaryBuild;
+  let extraBuilds;
   let extraBuildId;
   let extraBuildTarget;
-  const extraBuildCount = invocation.properties?.extraBuilds?.length || 0;
+
+  if (isRootInvocation(invocation)) {
+    primaryBuild = invocation?.primaryBuild?.androidBuild;
+    extraBuilds = invocation?.extraBuilds;
+  } else {
+    primaryBuild = invocation?.properties?.primaryBuild;
+    extraBuilds = invocation.properties?.extraBuilds;
+  }
+  const primaryBuildId = primaryBuild?.buildId;
+  const primaryBuildTarget = primaryBuild?.buildTarget;
+  const extraBuildCount = extraBuilds.length;
   if (extraBuildCount > 0) {
-    extraBuildId = invocation.properties?.extraBuilds[0].buildId;
-    extraBuildTarget = invocation.properties?.extraBuilds[0].buildTarget;
+    extraBuildId = isRootInvocation(invocation)
+      ? extraBuilds[0].androidBuild?.buildId
+      : extraBuilds[0].buildId;
+    extraBuildTarget = isRootInvocation(invocation)
+      ? extraBuilds[0].androidBuild?.buildTarget
+      : extraBuilds[0].buildTarget;
   }
 
   return (

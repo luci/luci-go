@@ -17,6 +17,7 @@ import { Button, Link, Menu, MenuItem, Typography } from '@mui/material';
 import { useMemo, useState } from 'react';
 
 import { useInvocation, useTestVariant } from '@/test_investigation/context';
+import { isRootInvocation } from '@/test_investigation/utils/invocation_utils';
 import {
   getFullMethodName,
   isAnTSInvocation,
@@ -56,7 +57,12 @@ export function AthButton() {
     forBranchUrl: string;
     forBranchTargetUrl: string;
   } {
-    const primaryBuild = invocation?.properties?.primaryBuild;
+    let primaryBuild;
+    if (isRootInvocation(invocation)) {
+      primaryBuild = invocation?.primaryBuild?.androidBuild;
+    } else {
+      primaryBuild = invocation?.properties?.primaryBuild;
+    }
     const target = primaryBuild?.buildTarget;
     const branch = primaryBuild?.branch;
     const methodName = getFullMethodName(testVariant);
