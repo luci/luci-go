@@ -26,10 +26,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Fragment } from 'react';
 
 import { principalAsRequestProto } from '@/authdb/common/helpers';
+import { CollapsibleList } from '@/authdb/components/collapsible_list';
 import { useAuthServiceAuthDBClient } from '@/authdb/hooks/prpc_clients';
 import { RealmPermissions } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/authdb.pb';
 
-import { CollapsibleList } from './collapsible_list';
 interface PermissionsResultsProps {
   principal: string;
 }
@@ -94,7 +94,6 @@ export function PermissionsResults({ principal }: PermissionsResultsProps) {
                           <Fragment key={realm.name}>
                             <CollapsibleList
                               items={realm.permissions as string[]}
-                              renderAsGroupLinks={false}
                               title={realm.name}
                             />
                           </Fragment>
@@ -112,7 +111,6 @@ export function PermissionsResults({ principal }: PermissionsResultsProps) {
                           <Fragment key={realm.name}>
                             <CollapsibleList
                               items={realm.permissions as string[]}
-                              renderAsGroupLinks={false}
                               title={realm.name}
                               key={realm.name}
                             />

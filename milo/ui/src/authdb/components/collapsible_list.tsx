@@ -12,48 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import IconButton from '@mui/material/IconButton';
+import Icon from '@mui/material/Icon';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
 import { GroupLink } from '@/authdb/components/group_link';
+import { AuthLookupLink } from '@/authdb/components/lookup_link';
 
 interface CollapsibleListProps {
   items: string[];
-  // Determines whether to use GroupLink or not.
-  renderAsGroupLinks: boolean;
   title: string;
+  variant?: 'text' | 'group-link' | 'principal-link';
   numRedacted?: number;
 }
 
 export function CollapsibleList({
   items,
-  renderAsGroupLinks,
   title,
+  variant = 'text',
   numRedacted = 0,
 }: CollapsibleListProps) {
   const [expanded, setExpanded] = useState<boolean>(true);
 
   const count = items.length + numRedacted;
-  if (count === 0) {
-    return (
-      <>
-        <Typography variant="h6">
-          {title} ({count})
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{ fontStyle: 'italic', pl: '20px', pb: '16px', color: 'grey' }}
-        >
-          None
-        </Typography>
-      </>
-    );
-  }
 
   return (
     <>
@@ -64,12 +49,12 @@ export function CollapsibleList({
         style={{ cursor: 'pointer' }}
       >
         <TableCell>
+          <Icon sx={{ pb: 0, pt: 0 }}>
+            {expanded ? <ExpandMoreIcon /> : <ChevronRightIcon />}
+          </Icon>
           <Typography variant="h6">
             {title} ({count})
           </Typography>
-          <IconButton sx={{ pb: 0, pt: 0 }}>
-            {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-          </IconButton>
         </TableCell>
       </TableRow>
       {expanded && (
@@ -77,28 +62,54 @@ export function CollapsibleList({
           <TableRow data-testid="collapsible-list">
             <TableCell sx={{ pt: 0, pb: '16px' }}>
               <ul>
-                {numRedacted > 0 && (
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontStyle: 'italic',
-                      color: 'grey',
-                    }}
-                  >
-                    {numRedacted} members redacted.
-                  </Typography>
+                {count === 0 && (
+                  <li>
+                    <Typography
+                      component="div"
+                      variant="body2"
+                      color="textSecondary"
+                      sx={{
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      None
+                    </Typography>
+                  </li>
                 )}
-                {items.map((item) => {
-                  return (
+                {numRedacted > 0 && (
+                  <li>
+                    <Typography
+                      component="div"
+                      variant="body2"
+                      color="textSecondary"
+                      sx={{
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      {numRedacted} members redacted.
+                    </Typography>
+                  </li>
+                )}
+                {variant === 'group-link' &&
+                  items.map((item) => (
                     <li key={item}>
-                      {renderAsGroupLinks ? (
-                        <GroupLink name={item} />
-                      ) : (
-                        <Typography variant="body2">{item}</Typography>
-                      )}
+                      <GroupLink name={item}></GroupLink>
                     </li>
-                  );
-                })}
+                  ))}
+                {variant === 'principal-link' &&
+                  items.map((item) => (
+                    <li key={item}>
+                      <AuthLookupLink principal={item} />
+                    </li>
+                  ))}
+                {variant === 'text' &&
+                  items.map((item) => (
+                    <li key={item}>
+                      <Typography component="div" variant="body2">
+                        {item}
+                      </Typography>
+                    </li>
+                  ))}
               </ul>
             </TableCell>
           </TableRow>

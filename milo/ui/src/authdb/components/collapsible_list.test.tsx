@@ -24,11 +24,7 @@ describe('CollapsibleList', () => {
   test('if given items, displays them', async () => {
     render(
       <FakeContextProvider>
-        <CollapsibleList
-          items={items}
-          renderAsGroupLinks={false}
-          title="test-list"
-        />
+        <CollapsibleList items={items} title="test-list" />
       </FakeContextProvider>,
     );
 
@@ -42,11 +38,7 @@ describe('CollapsibleList', () => {
   test('if given no items, displays "none" message', async () => {
     render(
       <FakeContextProvider>
-        <CollapsibleList
-          items={[]}
-          renderAsGroupLinks={false}
-          title="test-list"
-        />
+        <CollapsibleList items={[]} title="test-list" />
       </FakeContextProvider>,
     );
 
@@ -54,14 +46,10 @@ describe('CollapsibleList', () => {
     expect(screen.getByText('None')).toBeInTheDocument();
   });
 
-  test('if renderAsGroupLinks is true, displays items as links', async () => {
+  test('if variant is group-link, displays items as group links', async () => {
     render(
       <FakeContextProvider>
-        <CollapsibleList
-          items={items}
-          renderAsGroupLinks={true}
-          title="test-list"
-        />
+        <CollapsibleList items={items} title="test-list" variant="group-link" />
       </FakeContextProvider>,
     );
 
@@ -69,7 +57,7 @@ describe('CollapsibleList', () => {
     expect(screen.getByText('test-list (2)')).toBeInTheDocument();
     for (const item of items) {
       expect(screen.getByText(item)).toBeInTheDocument();
-      expect(screen.getByTestId(`${item}-link`)).toHaveAttribute(
+      expect(screen.getByRole('link', { name: item })).toHaveAttribute(
         'href',
         `/ui/auth/groups/${item}`,
       );
@@ -81,8 +69,8 @@ describe('CollapsibleList', () => {
       <FakeContextProvider>
         <CollapsibleList
           items={items}
-          renderAsGroupLinks={true}
           title="test-list"
+          variant="group-link"
           numRedacted={5}
         />
       </FakeContextProvider>,
@@ -93,6 +81,28 @@ describe('CollapsibleList', () => {
     expect(screen.getByText('5 members redacted.')).toBeInTheDocument();
     for (const item of items) {
       expect(screen.getByText(item)).toBeInTheDocument();
+    }
+  });
+
+  test('if variant is principal-link, displays items as lookup links', async () => {
+    render(
+      <FakeContextProvider>
+        <CollapsibleList
+          items={items}
+          title="test-list"
+          variant="principal-link"
+        />
+      </FakeContextProvider>,
+    );
+
+    await screen.findByTestId('collapsible-list');
+    expect(screen.getByText('test-list (2)')).toBeInTheDocument();
+    for (const item of items) {
+      expect(screen.getByText(item)).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: item })).toHaveAttribute(
+        'href',
+        `/ui/auth/lookup?p=${item}`,
+      );
     }
   });
 });

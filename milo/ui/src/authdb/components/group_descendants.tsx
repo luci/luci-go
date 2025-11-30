@@ -76,19 +76,19 @@ export function GroupDescendants({ name }: GroupDescendantsProps) {
           <TableBody>
             <CollapsibleList
               items={members}
-              renderAsGroupLinks={false}
               title="Members"
+              variant="principal-link"
               numRedacted={response?.numRedacted}
             />
             <CollapsibleList
               items={globs}
-              renderAsGroupLinks={false}
               title="Globs"
+              variant="principal-link"
             />
             <CollapsibleList
               items={nested}
-              renderAsGroupLinks={true}
               title="Nested Groups"
+              variant="group-link"
             />
           </TableBody>
         </Table>

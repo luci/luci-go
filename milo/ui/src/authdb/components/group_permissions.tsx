@@ -24,11 +24,10 @@ import Typography from '@mui/material/Typography';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment } from 'react';
 
+import { CollapsibleList } from '@/authdb/components/collapsible_list';
 import { useAuthServiceAuthDBClient } from '@/authdb/hooks/prpc_clients';
 import { RealmPermissions } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/authdb.pb';
 import { PrincipalKind } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
-
-import { CollapsibleList } from './collapsible_list';
 
 interface GroupPermissionsProps {
   name: string;
@@ -89,7 +88,6 @@ export function GroupPermissions({ name }: GroupPermissionsProps) {
                     <Fragment key={realm.name}>
                       <CollapsibleList
                         items={realm.permissions as string[]}
-                        renderAsGroupLinks={false}
                         title={realm.name}
                       />
                     </Fragment>

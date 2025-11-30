@@ -23,10 +23,9 @@ import TableContainer from '@mui/material/TableContainer';
 import { useQuery } from '@tanstack/react-query';
 
 import { getGroupNames, interpretLookupResults } from '@/authdb/common/helpers';
+import { CollapsibleList } from '@/authdb/components/collapsible_list';
 import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
 import { PrincipalKind } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
-
-import { CollapsibleList } from './collapsible_list';
 
 import './groups.css';
 
@@ -80,13 +79,13 @@ export function GroupLookup({ name }: GroupLookupProps) {
           <TableBody>
             <CollapsibleList
               items={getGroupNames(directIncluders)}
-              renderAsGroupLinks={true}
               title="Directly included by"
+              variant="group-link"
             />
             <CollapsibleList
               items={getGroupNames(indirectIncluders)}
-              renderAsGroupLinks={true}
               title="Indirectly included by"
+              variant="group-link"
             />
           </TableBody>
         </Table>

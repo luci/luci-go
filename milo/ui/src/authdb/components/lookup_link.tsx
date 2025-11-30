@@ -31,7 +31,9 @@ export function AuthLookupLink({ principal }: AuthLookupLinkProps) {
       to={getAuthLookupURLPath(tidied)}
       data-testid={`${principal}-lookup-link`}
     >
-      <Typography variant="body2">{tidied}</Typography>
+      <Typography component="div" variant="body2">
+        {tidied}
+      </Typography>
     </Link>
   );
 }
