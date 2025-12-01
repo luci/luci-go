@@ -27,6 +27,7 @@ import (
 	// Ensure those permissions are registered in memory.
 	_ "go.chromium.org/luci/buildbucket/bbperms"
 	_ "go.chromium.org/luci/resultdb/rdbperms"
+	_ "go.chromium.org/luci/tree_status/perms"
 )
 
 // The maximum number of permissions allowed in the BatchCheckPermissions RPC.

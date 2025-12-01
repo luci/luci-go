@@ -31,9 +31,9 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/tree_status/internal/perms"
 	"go.chromium.org/luci/tree_status/internal/status"
 	"go.chromium.org/luci/tree_status/pbutil"
+	"go.chromium.org/luci/tree_status/perms"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
 	"go.chromium.org/luci/tree_status/rpc/paginator"
 )

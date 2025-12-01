@@ -31,8 +31,8 @@ import (
 	"go.chromium.org/luci/server/secrets/testsecrets"
 
 	"go.chromium.org/luci/tree_status/internal/config"
-	"go.chromium.org/luci/tree_status/internal/perms"
 	"go.chromium.org/luci/tree_status/internal/testutil"
+	"go.chromium.org/luci/tree_status/perms"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
 )
 

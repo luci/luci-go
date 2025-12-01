@@ -24,8 +24,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/tree_status/internal/config"
-	"go.chromium.org/luci/tree_status/internal/perms"
 	"go.chromium.org/luci/tree_status/pbutil"
+	"go.chromium.org/luci/tree_status/perms"
 	configpb "go.chromium.org/luci/tree_status/proto/config"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
 )
