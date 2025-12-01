@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
-
 import { dimensionsToFilterOptions } from './helpers';
 
 describe('dimensionsToFilterOptions', () => {
@@ -23,7 +21,7 @@ describe('dimensionsToFilterOptions', () => {
         baseDimensions: {},
         labels: {},
       },
-      Platform.UNSPECIFIED,
+      {},
     );
 
     expect(options).toEqual([]);
@@ -35,7 +33,7 @@ describe('dimensionsToFilterOptions', () => {
         baseDimensions: { testDim: { values: ['one', 'two'] } },
         labels: { testLabel: { values: ['a', 'b', 'c'] } },
       },
-      Platform.UNSPECIFIED,
+      {},
     );
 
     expect(options).toEqual([

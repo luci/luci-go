@@ -39,7 +39,7 @@ import { ANDROID_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_stora
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { useDevices } from '@/fleet/hooks/use_devices';
+import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { SelectedOptions } from '@/fleet/types';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
@@ -63,6 +63,7 @@ import {
 import { useDeviceDimensions } from '../common/use_device_dimensions';
 
 import { AndroidSummaryHeader } from './android_summary_header';
+import { ANDROID_COLUMN_OVERRIDES, getColumns } from './columns';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
@@ -126,10 +127,10 @@ export const AndroidDevicesPage = () => {
     platform: platform,
   });
 
-  const devicesQuery = useDevices(request);
+  const devicesQuery = useAndroidDevices(request);
 
   const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
-  const columns = useMemo(() => {
+  const columnIds = useMemo(() => {
     if (isDimensionsQueryProperlyLoaded)
       return _.uniq(
         Object.keys(dimensionsQuery.data.baseDimensions).concat(
@@ -139,7 +140,7 @@ export const AndroidDevicesPage = () => {
     if (devicesQuery.data)
       return _.uniq(
         devicesQuery.data.devices.flatMap((d) =>
-          Object.keys(d.deviceSpec?.labels ?? {}),
+          Object.keys(d.omnilabSpec?.labels ?? {}),
         ),
       );
 
@@ -156,7 +157,7 @@ export const AndroidDevicesPage = () => {
 
     const missingParamsColoumns = getWrongColumnsFromParams(
       searchParams,
-      columns,
+      columnIds,
       ANDROID_DEFAULT_COLUMNS,
     );
     if (missingParamsColoumns.length === 0) return;
@@ -173,7 +174,7 @@ export const AndroidDevicesPage = () => {
     setSearchParams(searchParams);
   }, [
     addWarning,
-    columns,
+    columnIds,
     dimensionsQuery.isPending,
     searchParams,
     setSearchParams,
@@ -249,8 +250,14 @@ export const AndroidDevicesPage = () => {
           <DeviceListFilterBar
             filterOptions={
               isDimensionsQueryProperlyLoaded
-                ? dimensionsToFilterOptions(dimensionsQuery.data, platform)
-                : filterOptionsPlaceholder(selectedOptions.filters)
+                ? dimensionsToFilterOptions(
+                    dimensionsQuery.data,
+                    ANDROID_COLUMN_OVERRIDES,
+                  )
+                : filterOptionsPlaceholder(
+                    selectedOptions.filters,
+                    ANDROID_COLUMN_OVERRIDES,
+                  )
             }
             selectedOptions={selectedOptions.filters}
             onSelectedOptionsChange={onSelectedOptionsChange}
@@ -267,8 +274,8 @@ export const AndroidDevicesPage = () => {
         <DeviceTable
           defaultColumnIds={ANDROID_DEFAULT_COLUMNS}
           localStorageKey={ANDROID_DEVICES_LOCAL_STORAGE_KEY}
-          devices={devices}
-          columnIds={columns}
+          rows={devices}
+          availableColumns={getColumns(columnIds)}
           nextPageToken={nextPageToken}
           pagerCtx={pagerCtx}
           isError={devicesQuery.isError || dimensionsQuery.isError}
@@ -276,7 +283,6 @@ export const AndroidDevicesPage = () => {
           isLoading={devicesQuery.isPending || devicesQuery.isPlaceholderData}
           isLoadingColumns={dimensionsQuery.isPending}
           totalRowCount={countQuery?.data?.total}
-          currentTaskMap={new Map<string, string>()} // if we want to make device table generic then this needs to be removed
         />
       </div>
     </div>

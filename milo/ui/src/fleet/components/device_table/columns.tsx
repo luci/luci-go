@@ -14,12 +14,6 @@
 
 import { GridColDef } from '@mui/x-data-grid';
 
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
-
-import { CellWithTooltip } from '../table/cell_with_tooltip';
-
-import { COLUMN_OVERRIDES } from './dimensions';
-
 // This may be used later to add a 'common columns' section.
 // Currently, the columns from this string will appear
 // first and in the same order in the device table.
@@ -66,38 +60,11 @@ const sortingComparator = (
   return a.localeCompare(b); // Sort alphabetically
 };
 
-export const getColumns = (
-  columnIds: string[],
-  platform: Platform,
-): GridColDef[] => {
-  return columnIds.map((id) => ({
-    field: id,
-    headerName: COLUMN_OVERRIDES[platform][id]?.displayName || id,
-    editable: false,
-    minWidth: 70,
-    maxWidth: 700,
-    sortable: COLUMN_OVERRIDES[platform][id]?.sortable ?? true,
-    flex: id === 'id' ? 3 : 1,
-    renderCell: (props) =>
-      COLUMN_OVERRIDES[platform][id]?.renderCell?.(props) || (
-        <CellWithTooltip {...props}></CellWithTooltip>
-      ),
-  }));
-};
-
 export const orderColumns = (
-  platform: Platform,
   columnDefs: GridColDef[],
   visibleColumnIds: string[],
   temporaryColumnIds: string[] = [],
 ): GridColDef[] => {
-  if (columnDefs.length === 0) {
-    // If the columns are still not loaded show the visible ones.
-    return getColumns(visibleColumnIds, platform).sort((a, b) =>
-      sortingComparator(a.field, b.field, [], temporaryColumnIds),
-    );
-  }
-
   return columnDefs.sort((a, b) =>
     sortingComparator(a.field, b.field, visibleColumnIds, temporaryColumnIds),
   );

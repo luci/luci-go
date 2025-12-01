@@ -32,6 +32,7 @@ describe('getRedirectAddress', () => {
         'botlist',
         new URLSearchParams(),
         swarmingClient,
+        [],
       );
       expect(to).toEqual({
         pathname: prefix + 'devices',
@@ -48,6 +49,7 @@ describe('getRedirectAddress', () => {
           ['f', 'label-bluetooth:True'],
         ]),
         swarmingClient,
+        [],
       );
       expect(to).toEqual({
         search:
@@ -68,6 +70,7 @@ describe('getRedirectAddress', () => {
           ['c', 'col4'],
         ]),
         swarmingClient,
+        [],
       );
       expect(to).toEqual({
         search:
@@ -89,6 +92,7 @@ describe('getRedirectAddress', () => {
           ['d', 'asc'],
         ]),
         swarmingClient,
+        [],
       );
       expect(to).toEqual({
         search:
@@ -104,6 +108,7 @@ describe('getRedirectAddress', () => {
           ['d', 'desc'],
         ]),
         swarmingClient,
+        [],
       );
       expect(to).toEqual({
         search:
@@ -117,6 +122,7 @@ describe('getRedirectAddress', () => {
         'botlist',
         new URLSearchParams([['s', 'col1']]),
         swarmingClient,
+        [],
       );
       expect(to).toEqual({
         search:
@@ -132,6 +138,7 @@ describe('getRedirectAddress', () => {
         'bot',
         new URLSearchParams({ id: 'bot-id' }),
         swarmingClient,
+        [],
       );
       expect(to).toEqual({
         pathname: prefix + 'devices/dut_name_value',
@@ -139,7 +146,7 @@ describe('getRedirectAddress', () => {
     });
     test('bot missing id', async () => {
       await expect(() =>
-        getRedirectAddress('bot', new URLSearchParams(), swarmingClient),
+        getRedirectAddress('bot', new URLSearchParams(), swarmingClient, []),
       ).rejects.toThrow('Missing bot id');
     });
   });

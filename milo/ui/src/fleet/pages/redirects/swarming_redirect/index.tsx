@@ -23,7 +23,10 @@ import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { useBotsClient } from '@/swarming/hooks/prpc_clients';
+
+import { useDeviceDimensions } from '../../device_list_page/common/use_device_dimensions';
 
 import { getRedirectAddress } from './get_redirect_address';
 
@@ -31,15 +34,24 @@ export function SwarmingRedirect() {
   const params = useParams();
   const [searchParams] = useSyncedSearchParams();
 
+  const dimensionQuery = useDeviceDimensions({ platform: Platform.CHROMEOS });
+
   const client = useBotsClient(DEVICE_TASKS_SWARMING_HOST);
   const q = useQuery({
     queryKey: [params['*'], searchParams, client],
-    queryFn: () => getRedirectAddress(params['*'], searchParams, client),
+    queryFn: () =>
+      getRedirectAddress(
+        params['*'],
+        searchParams,
+        client,
+        Object.keys(dimensionQuery.data?.baseDimensions || {}),
+      ),
+    enabled: dimensionQuery.isSuccess,
   });
 
   if (q.isPending) return 'Redirecting...';
 
-  if (q.isError)
+  if (q.isError || dimensionQuery.isError)
     return (
       <Alert severity="error">
         <AlertTitle>Error with redirection</AlertTitle>

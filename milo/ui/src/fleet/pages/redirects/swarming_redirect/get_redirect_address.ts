@@ -15,7 +15,6 @@
 import { To } from 'react-router';
 
 import { DecoratedClient } from '@/common/hooks/prpc_query';
-import { BASE_DIMENSIONS } from '@/fleet/components/device_table/dimensions';
 import { getDutName } from '@/fleet/utils/swarming';
 import { BotsClientImpl } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 
@@ -30,12 +29,13 @@ export const getRedirectAddress = async (
   url: string | undefined,
   searchParams: URLSearchParams,
   swarmingClient: DecoratedClient<BotsClientImpl>,
+  baseDimensions: string[],
 ): Promise<To> => {
   switch (url) {
     case 'botlist':
       return {
         pathname: prefix + 'devices',
-        search: botListParseParams(searchParams),
+        search: botListParseParams(searchParams, baseDimensions),
       };
     case 'bot': {
       const bot_id = searchParams.get('id');
@@ -53,16 +53,22 @@ export const getRedirectAddress = async (
   throw Error(`No page mapping found for page ${url}`);
 };
 
-const botListParseParams = (searchParams: URLSearchParams): string => {
+const botListParseParams = (
+  searchParams: URLSearchParams,
+  baseDimensions: string[],
+): string => {
   const out = new URLSearchParams([
-    ...convertFilters(searchParams),
+    ...convertFilters(searchParams, baseDimensions),
     ...convertColumns(searchParams),
-    ...convertOrderBy(searchParams),
+    ...convertOrderBy(searchParams, baseDimensions),
   ]);
   return '?' + out.toString();
 };
 
-const convertFilters = (searchParams: URLSearchParams) => {
+const convertFilters = (
+  searchParams: URLSearchParams,
+  baseDimensions: string[],
+) => {
   const filters = searchParams.getAll('f');
   if (filters.length === 0) return [];
 
@@ -71,7 +77,7 @@ const convertFilters = (searchParams: URLSearchParams) => {
     let [key, val] = f.split(':', 2);
     val = `"${val}"`;
 
-    if (!BASE_DIMENSIONS[key]) key = 'labels.' + key;
+    if (!baseDimensions.includes(key)) key = 'labels.' + key;
 
     if (filterObj[key]) filterObj[key].push(val);
     else filterObj[key] = [val];
@@ -94,13 +100,16 @@ const convertColumns = (searchParams: URLSearchParams) => {
   return columns.map((col) => ['c', col]);
 };
 
-const convertOrderBy = (searchParams: URLSearchParams) => {
+const convertOrderBy = (
+  searchParams: URLSearchParams,
+  baseDimensions: string[],
+) => {
   const sParam = searchParams.get('s');
   const ascDesc = searchParams.get('d');
 
   if (!sParam) return [];
 
-  const by = !BASE_DIMENSIONS[sParam] ? `labels.${sParam}` : sParam;
+  const by = !baseDimensions.includes(sParam) ? `labels.${sParam}` : sParam;
 
   if (ascDesc === 'desc') return [['order_by', `${by} desc`]];
   return [['order_by', by]];

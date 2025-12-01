@@ -114,6 +114,7 @@ const useNavigatedFromLink = () => {
   return navigatedFromLink;
 };
 
+// This page is only used in chrome os
 export const DeviceDetailsPage = () => {
   const { id = '' } = useParams();
   const [deviceIdInputValue, setDeviceIdInputValue] = useState(id);

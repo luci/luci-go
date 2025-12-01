@@ -12,13 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { COLUMN_OVERRIDES } from '@/fleet/components/device_table/dimensions';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
-import {
-  GetDeviceDimensionsResponse,
-  Platform,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 /**
  * Converts a response from GetDeviceDimensions into a list of options
@@ -28,12 +24,12 @@ import {
  */
 export const dimensionsToFilterOptions = (
   response: GetDeviceDimensionsResponse,
-  platform: Platform,
+  labelsOverride: Record<string, { headerName?: string }>, // TODO: should this be columns?
 ): OptionCategory[] => {
   const baseDimensions = Object.entries(response.baseDimensions).map(
     ([key, value]) => {
       return {
-        label: COLUMN_OVERRIDES[platform][key]?.displayName || key,
+        label: labelsOverride[key]?.headerName || key,
         value: key,
         options: [
           { label: BLANK_VALUE, value: BLANK_VALUE },
@@ -54,7 +50,7 @@ export const dimensionsToFilterOptions = (
 
     return [
       {
-        label: COLUMN_OVERRIDES[platform][key]?.displayName || key,
+        label: labelsOverride[key]?.headerName || key,
         value: `labels."${key}"`,
         options: [
           { label: BLANK_VALUE, value: BLANK_VALUE },
@@ -80,20 +76,24 @@ export const dimensionsToFilterOptions = (
  */
 export const filterOptionsPlaceholder = (
   selectedOptions: SelectedOptions,
+  labelsOverride: Record<string, { headerName?: string }>,
 ): OptionCategory[] => {
   return Object.entries(selectedOptions)
-    .map(([key, values]) => filterOptionPlaceholder(key, values))
+    .map(([key, values]) =>
+      filterOptionPlaceholder(key, values, labelsOverride),
+    )
     .sort((a, b) => a.label.localeCompare(b.label)); // Sort alphabetically
 };
 
-export const filterOptionPlaceholder = (
+const filterOptionPlaceholder = (
   key: string,
   values: string[],
+  labelsOverride: Record<string, { headerName?: string }>,
 ): OptionCategory => {
   const value = key;
   key = key.replace(/labels\."?(.*?)"?$/, '$1');
   return {
-    label: COLUMN_OVERRIDES[Platform.CHROMEOS][key]?.displayName || key,
+    label: labelsOverride?.[key]?.headerName || key,
     value: value,
     options: values.map((value) => {
       return { label: value, value: value };

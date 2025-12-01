@@ -14,26 +14,19 @@
 
 import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 
-import {
-  COLUMN_OVERRIDES,
-  labelValuesToString,
-} from '@/fleet/components/device_table/dimensions';
+import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { CellWithTooltip } from '@/fleet/components/table/cell_with_tooltip';
 import { getDeviceStateString } from '@/fleet/utils/devices';
-import {
-  Device,
-  Platform,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+
+import { CHROMEOS_COLUMN_OVERRIDES } from '../device_list_page/chromeos/columns';
 
 interface DeviceDimensionsProps {
   device?: Device;
 }
 
-export const DeviceDimensions = (
-  { device }: DeviceDimensionsProps,
-  platform = Platform.CHROMEOS,
-) => {
+export const DeviceDimensions = ({ device }: DeviceDimensionsProps) => {
   if (device?.deviceSpec === undefined) {
     return <></>;
   }
@@ -57,7 +50,7 @@ export const DeviceDimensions = (
       headerName: 'Value',
       flex: 3,
       renderCell: (props: GridRenderCellParams) =>
-        COLUMN_OVERRIDES[platform][props.id]?.renderCell?.(props) || (
+        CHROMEOS_COLUMN_OVERRIDES[props.id]?.renderCell?.(props) || (
           <CellWithTooltip {...props}></CellWithTooltip>
         ),
     },

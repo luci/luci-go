@@ -27,6 +27,7 @@ import {
   getPrevFullRowCount,
   usePagerContext,
 } from '@/common/components/params_pager';
+import { getColumns } from '@/fleet/pages/device_list_page/chromeos/columns';
 import { mockVirtualizedListDomProperties } from '@/fleet/testing_tools/dom_mocks';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
@@ -39,7 +40,7 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { DeviceTable } from './device_table';
 
-const COLUMNS: string[] = ['id', 'dut_id', 'state', 'type'];
+const COLUMN_IDS: string[] = ['id', 'dut_id', 'state', 'type'];
 
 const DEFAULT_COLUMNS: string[] = ['id', 'dut_id', 'state'];
 
@@ -177,8 +178,8 @@ function TestComponent({
     currentRowCount < totalRowCount ? String(currentRowCount) : '';
   return (
     <DeviceTable
-      devices={currentDevices}
-      columnIds={COLUMNS}
+      rows={currentDevices}
+      availableColumns={getColumns(COLUMN_IDS)}
       nextPageToken={nextPageToken}
       pagerCtx={pagerCtx}
       isError={false}
@@ -186,7 +187,6 @@ function TestComponent({
       isLoading={false}
       isLoadingColumns={false}
       totalRowCount={withKnownTotalRowCount ? totalRowCount : undefined}
-      currentTaskMap={new Map<string, string>()}
       defaultColumnIds={DEFAULT_COLUMNS}
       localStorageKey={'testLocalStorageKey'}
     />

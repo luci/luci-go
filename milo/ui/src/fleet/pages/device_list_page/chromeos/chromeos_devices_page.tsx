@@ -62,6 +62,7 @@ import {
 import { useDeviceDimensions } from '../common/use_device_dimensions';
 
 import { ChromeOSSummaryHeader } from './chromeos_summary_header';
+import { CHROMEOS_COLUMN_OVERRIDES, getColumns } from './columns';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
@@ -125,7 +126,7 @@ export const ChromeOsDevicesPage = () => {
   const devicesQuery = useDevices(request);
 
   const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
-  const columns = useMemo(() => {
+  const columnIds = useMemo(() => {
     if (isDimensionsQueryProperlyLoaded)
       return _.uniq(
         Object.keys(dimensionsQuery.data.baseDimensions)
@@ -152,7 +153,7 @@ export const ChromeOsDevicesPage = () => {
 
     const missingParamsColoumns = getWrongColumnsFromParams(
       searchParams,
-      columns,
+      columnIds,
       CHROMEOS_DEFAULT_COLUMNS,
     );
     if (missingParamsColoumns.length === 0) return;
@@ -169,7 +170,7 @@ export const ChromeOsDevicesPage = () => {
     setSearchParams(searchParams);
   }, [
     addWarning,
-    columns,
+    columnIds,
     dimensionsQuery.isPending,
     searchParams,
     setSearchParams,
@@ -249,9 +250,12 @@ export const ChromeOsDevicesPage = () => {
               isDimensionsQueryProperlyLoaded
                 ? dimensionsToFilterOptions(
                     dimensionsQuery.data,
-                    Platform.CHROMEOS,
+                    CHROMEOS_COLUMN_OVERRIDES,
                   )
-                : filterOptionsPlaceholder(selectedOptions.filters)
+                : filterOptionsPlaceholder(
+                    selectedOptions.filters,
+                    CHROMEOS_COLUMN_OVERRIDES,
+                  )
             }
             selectedOptions={selectedOptions.filters}
             onSelectedOptionsChange={onSelectedOptionsChange}
@@ -268,8 +272,8 @@ export const ChromeOsDevicesPage = () => {
         <DeviceTable
           defaultColumnIds={CHROMEOS_DEFAULT_COLUMNS}
           localStorageKey={CHROMEOS_DEVICES_LOCAL_STORAGE_KEY}
-          devices={devices}
-          columnIds={columns}
+          rows={devices}
+          availableColumns={getColumns(columnIds)}
           nextPageToken={nextPageToken}
           pagerCtx={pagerCtx}
           isError={
@@ -283,7 +287,6 @@ export const ChromeOsDevicesPage = () => {
           isLoading={devicesQuery.isPending || devicesQuery.isPlaceholderData}
           isLoadingColumns={dimensionsQuery.isPending}
           totalRowCount={countQuery?.data?.total}
-          currentTaskMap={currentTasks.map}
         />
       </div>
     </div>

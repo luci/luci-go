@@ -14,11 +14,13 @@
 
 import { Alert } from '@mui/material';
 import {
+  GridColDef,
   GridRowModel,
   GridRowSelectionModel,
   GridSortModel,
+  GridValidRowModel,
 } from '@mui/x-data-grid';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import {
   emptyPageTokenUpdater,
@@ -29,27 +31,17 @@ import {
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { usePlatform } from '@/fleet/hooks/usePlatform';
-import { extractDutId } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { InvalidPageTokenAlert } from '@/fleet/utils/invalid-page-token-alert';
 import { parseOrderByParam } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import {
-  Device,
-  Platform,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { CopySnackbar } from '../actions/copy/copy_snackbar';
 import { useColumnManagement } from '../columns/use_column_management';
 import { getFilters } from '../filter_dropdown/search_param_utils';
 
 import { ColumnMenu, ColumnMenuProps } from './column_menu';
-import { getColumns } from './columns';
-import {
-  BASE_DIMENSIONS,
-  COLUMN_OVERRIDES,
-  labelValuesToString,
-} from './dimensions';
 import { FleetToolbar, FleetToolbarProps } from './fleet_toolbar';
 import { Pagination } from './pagination';
 
@@ -66,54 +58,10 @@ declare module '@mui/x-data-grid' {
 
 const computeSelectedRows = (
   gridSelection: GridRowSelectionModel,
-  rows: GridRowModel[],
+  rows: readonly GridRowModel[],
 ): GridRowModel[] => {
   const selectedSet = new Set(gridSelection);
   return rows.filter((r) => selectedSet.has(r.id));
-};
-
-const getRow = (
-  platform: Platform,
-  currentTaskMap?: Map<string, string>,
-): ((device: Device) => GridRowModel) => {
-  switch (platform) {
-    case Platform.CHROMEOS:
-    case Platform.UNSPECIFIED:
-      return (device) =>
-        Object.fromEntries<string>([
-          ...Object.entries(BASE_DIMENSIONS).map(
-            ([id, dim]) =>
-              [
-                id,
-                dim.getValue?.(device) ?? labelValuesToString([id]),
-              ] as const,
-          ),
-          ...Object.entries(device.deviceSpec?.labels ?? {}).map(
-            ([label, { values }]) =>
-              [
-                label,
-                COLUMN_OVERRIDES[platform][label]?.getValue?.(device) ??
-                  labelValuesToString(values),
-              ] as const,
-          ),
-          ['current_task', currentTaskMap?.get(extractDutId(device)) || ''],
-        ]);
-    case Platform.ANDROID:
-      return (device) =>
-        Object.fromEntries([
-          ...Object.entries(device.deviceSpec?.labels ?? {}).map(
-            ([label, { values }]) =>
-              [
-                label,
-                COLUMN_OVERRIDES[platform][label]?.getValue?.(device) ??
-                  labelValuesToString(values),
-              ] as const,
-          ),
-          ['id', device.id],
-        ]);
-    case Platform.CHROMIUM:
-      return (_device) => ({}); // TODO;
-  }
 };
 
 const getRowId = (platform: Platform) => {
@@ -133,18 +81,21 @@ const getRowId = (platform: Platform) => {
   }
 };
 
-const getOrderByFromSortModel = (
+const getOrderByFromSortModel = <R extends GridValidRowModel>(
   sortModel: GridSortModel,
-  platform: Platform,
+  availableColumns: DeviceTableGridColDef<R>[],
 ): string => {
   if (sortModel.length !== 1) {
     return '';
   }
 
   const sortItem = sortModel[0];
-  const sortKey =
-    COLUMN_OVERRIDES[platform][sortItem.field]?.orderByField ??
-    `labels.${sortItem.field}`;
+
+  const sortKey = availableColumns.find(
+    (c) => c.field === sortItem.field,
+  )?.orderByField;
+  if (sortKey === undefined) throw Error(`Can not sort by ${sortItem.field}`);
+
   return sortItem.sort === 'desc' ? `${sortKey} desc` : sortKey;
 };
 
@@ -160,9 +111,14 @@ const getSortModelFromOrderBy = (orderByValue: string): GridSortModel => {
     : [];
 };
 
-interface DeviceTableProps {
-  devices: readonly Device[];
-  columnIds: string[];
+export type DeviceTableGridColDef<R extends GridValidRowModel> =
+  GridColDef<R> & {
+    orderByField: string;
+  };
+
+interface DeviceTableProps<R extends GridValidRowModel> {
+  rows: readonly R[];
+  availableColumns: DeviceTableGridColDef<R>[];
   defaultColumnIds: string[];
   localStorageKey: string;
   nextPageToken: string;
@@ -172,12 +128,11 @@ interface DeviceTableProps {
   isLoading: boolean;
   isLoadingColumns: boolean;
   totalRowCount?: number;
-  currentTaskMap: Map<string, string>;
 }
 
-export function DeviceTable({
-  devices,
-  columnIds,
+export function DeviceTable<R extends GridValidRowModel>({
+  rows,
+  availableColumns,
   defaultColumnIds,
   localStorageKey,
   nextPageToken,
@@ -187,8 +142,7 @@ export function DeviceTable({
   isLoading,
   isLoadingColumns,
   totalRowCount,
-  currentTaskMap,
-}: DeviceTableProps) {
+}: DeviceTableProps<R>) {
   const { platform } = usePlatform();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [orderByParam, setOrderByParam] = useOrderByParam();
@@ -215,21 +169,16 @@ export function DeviceTable({
     temporaryColumnSx,
     addUserVisibleColumn,
   } = useColumnManagement({
-    allColumns: getColumns(columnIds, platform),
+    allColumns: availableColumns,
     highlightedColumnIds: getFilteredColumnIds(),
     defaultColumns: defaultColumnIds,
     localStorageKey: localStorageKey,
     platform: platform,
   });
 
-  const rows = useMemo(
-    () => devices.map(getRow(platform, currentTaskMap)),
-    [currentTaskMap, devices, platform],
-  );
-
   const onSortModelChange = (newSortModel: GridSortModel) => {
     // Update order by param and clear pagination token when the sort model changes.
-    setOrderByParam(getOrderByFromSortModel(newSortModel, platform));
+    setOrderByParam(getOrderByFromSortModel(newSortModel, availableColumns));
     setSearchParams(emptyPageTokenUpdater(pagerCtx));
   };
 
