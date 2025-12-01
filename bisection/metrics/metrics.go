@@ -441,8 +441,7 @@ func getTreeStatus(ctx context.Context, client tspb.TreeStatusClient, treeName s
 
 // UpdateTreeMetrics checks the status of trees and updates tsmon metrics.
 func UpdateTreeMetrics(c context.Context) error {
-	luciTreeStatusHost := "tree-status.appspot.com"
-
+	luciTreeStatusHost := "luci-tree-status.appspot.com"
 	transport, err := auth.GetRPCTransport(c, auth.AsSelf)
 	if err != nil {
 		return err
