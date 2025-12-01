@@ -108,10 +108,10 @@ func (FinalizeWorkUnitDescendantsRequest_FinalizationScope) EnumDescriptor() ([]
 //
 // The following permissions may also be required depending on the request:
 //   - if an ID not starting with "u-" is specified,
-//     resultdb.rootInvocations.createWithReservedID permission is required
-//   - if the producer resource is set to a well-known value like "atp" or
+//     resultdb.rootInvocations.createWithReservedID permission is required.
+//   - if the producer resource references a restricted system, such as
 //     "buildbucket", resultdb.rootInvocations.setProducerResource permission
-//     is required
+//     is required.
 //   - if a baseline is set,
 //     resultdb.baselines.put permission is required in the ":@project" realm
 //     of the LUCI project the root invocation is being created in.
@@ -362,8 +362,9 @@ func (x *UpdateRootInvocationRequest) GetRequestId() string {
 //     work unit implicitly declassifies the results in the the realm of the
 //     root invocation. This is not necessary if an inclusion token was provided
 //     at point (1.) as this permission was checked when the token was minted.
-//  3. if the producer resource is set,
-//     the resultdb.workUnits.setProducerResource permission
+//  3. if the producer_resource field is set and references a restricted system,
+//     such as "buildbucket", resultdb.workUnits.setProducerResource permission is
+//     required.
 //  4. if a new base work unit ID not starting with "u-" is specified,
 //     the resultdb.workUnits.createWithReservedID permission (see work_unit_id
 //     below).
@@ -1241,7 +1242,7 @@ func (x *BatchFinalizeWorkUnitsResponse) GetWorkUnits() []*WorkUnit {
 //     (resultdb.workunits.create).
 //     - permission to create work units with reserved names
 //     (resultdb.workunits.createWithReservedID).
-//     - permission to set the producer resource field
+//     - permission to create work units with any producer resource
 //     (resultdb.workunits.setProducerResource).
 //  2. The delegatee, which is happy to create work unit in a given realm
 //     and has permission to do so, but wants the delegator to prove it has

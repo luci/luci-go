@@ -261,7 +261,7 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
-				t.Run("invalid", func(t *ftt.Test) {
+				t.Run("invalid structurally", func(t *ftt.Test) {
 					req.WorkUnit.ProducerResource = &pb.ProducerResource{
 						System:    "INVALID",
 						DataRealm: "prod",
@@ -269,6 +269,15 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 					}
 					err := validateCreateWorkUnitRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("work_unit: producer_resource: system: does not match pattern"))
+				})
+				t.Run("invalid with respect to config", func(t *ftt.Test) {
+					req.WorkUnit.ProducerResource = &pb.ProducerResource{
+						System:    "buildbucket",
+						DataRealm: "test",
+						Name:      "runs/123",
+					}
+					err := validateCreateWorkUnitRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike(`work_unit: producer_resource: name: does not match pattern "^builds/[0-9]+$"`))
 				})
 			})
 			t.Run("tags", func(t *ftt.Test) {

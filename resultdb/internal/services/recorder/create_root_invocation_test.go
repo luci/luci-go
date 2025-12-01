@@ -707,7 +707,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					})
 				})
 			})
-			t.Run("producer resource", func(t *ftt.Test) {
+			t.Run("producer_resource", func(t *ftt.Test) {
 				// Must not be set.
 				req.RootWorkUnit.ProducerResource = &pb.ProducerResource{
 					System:    "buildbucket",

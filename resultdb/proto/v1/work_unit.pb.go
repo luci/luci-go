@@ -164,21 +164,22 @@ const (
 	// state.
 	WorkUnit_ACTIVE WorkUnit_FinalizationState = 1
 	// The work unit is in the process of moving to the FINALIZED state.
-	// This will happen automatically when `state` transitions to one
-	// of the final states.
 	//
 	// In this state, the work unit itself is immutable, but its
 	// contained work units may still be mutable. When the work unit
 	// is immutable, the work unit record may not be updated, and
 	// no test results, exonerations or artifacts be created
 	// inside it.
+	//
+	// The work unit automatically enters this state when the work unit
+	// `state` transitions to a final state (SUCCEEDED, SKIPPED, FAILED,
+	// CANCELLED).
 	WorkUnit_FINALIZING WorkUnit_FinalizationState = 2
 	// The work unit is immutable and no longer accepts new results
 	// directly or indirectly.
 	//
-	// This will happen automatically soon after the work unit enters
-	// FINALIZING state, and all of its directly or indirectly included
-	// work units become inactive.
+	// This work unit automatically enters this state shortly after it is
+	// FINALIZING and all included work units become FINALIZED.
 	WorkUnit_FINALIZED WorkUnit_FinalizationState = 3
 )
 
@@ -384,8 +385,6 @@ type WorkUnit struct {
 	// Regex: ^[a-z0-9_\-]+$. Limited to 50 characters in length.
 	ModuleShardKey string `protobuf:"bytes,24,opt,name=module_shard_key,json=moduleShardKey,proto3" json:"module_shard_key,omitempty"`
 	// The resource that produced results in this work unit.
-	//
-	// Setting this field requires resultdb.workUnits.setProducerResource permission.
 	ProducerResource *ProducerResource `protobuf:"bytes,26,opt,name=producer_resource,json=producerResource,proto3" json:"producer_resource,omitempty"`
 	// Work unit-level string key-value pairs.
 	// A key can be repeated.

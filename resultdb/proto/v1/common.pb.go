@@ -1721,11 +1721,6 @@ func (x *AndroidBuildDescriptor) GetBuildId() string {
 //     harder for downstream systems to understand the type of producer resource
 //     (and to e.g. filter to only ATP runs). API endpoints are also unstable
 //     and subject to change.
-//
-// Rather than invent a new set of API service names, we use a short name that
-// cannot be confused with an endpoint. While use of DNS names is superior solution
-// in large systems to deconflict naming, we operate a relatively smaller scale
-// so believe a short name is workable.
 type ProducerResource struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1738,15 +1733,28 @@ type ProducerResource struct {
 	//
 	// Values should use kebab-case as per https://google.aip.dev/126#alternatives.
 	//
+	// Please contact ResultDB owners or update ResultDB config in
+	// https://chrome-internal.googlesource.com/infradata/config/+/refs/heads/main/configs/
+	// when adding a new system to specify:
+	// - the expected data realm and resource name formats, and
+	// - configure how URLs for backlinking should be generated.
+	//
+	// Producer systems can be configured to be "restricted" and not open to all callers.
+	// To use such a system, the caller will need resultdb.workUnits.setProducerResource
+	// or resultdb.rootInvocations.setProducerResource permission (depending on the context).
+	// This helps protect the integrity of backlinks for that system.
+	//
 	// Total length limited to 50 bytes. Required.
 	System string `protobuf:"bytes,1,opt,name=system,proto3" json:"system,omitempty"`
 	// The data realm of the producing resource.
 	//
-	// This is used to identify the location of the producing resource, i.e. whether it is
-	// in the production data set, or a test data set, or another data set, for linking
-	// purposes.
+	// This is used to identify the data store the resource specified at `name` is stored in,
+	// for backlinking purposes. I.E. is it in the production deployments, or is it in one
+	// of the test deployments.
 	//
-	// For Google3, prefer to use a value from go/data-realm in lower-case (e.g. "prod").
+	// For systems with only only a single prod and test instance, the names "prod" and
+	// "test" are preferred.
+	//
 	// For buildbucket, use the value "prod" for production and "test" for development.
 	// For swarming, use the swarming instance name (e.g. "chromeos-swarming" or "chromium-swarm-dev").
 	//
@@ -1760,7 +1768,7 @@ type ProducerResource struct {
 	// system does not follow AIP-122, an AIP-122-like format is invented for it.
 	//
 	// Examples:
-	// - atp: `runs/{RUN_ID}`
+	// - atp: `testRuns/{RUN_ID}`
 	// - swarming: `tasks/deadbeef`
 	// - buildbucket: 'builds/1234567890`
 	//

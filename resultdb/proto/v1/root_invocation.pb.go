@@ -46,15 +46,16 @@ const (
 	// The root invocation is mutable.
 	RootInvocation_ACTIVE RootInvocation_FinalizationState = 1
 	// The root invocation is in the process of moving to the FINALIZED state.
-	// This will happen automatically as soon as the root work unit
-	// becomes FINALIZING.
 	//
 	// In this state, the root invocation and root work unit records are immutable,
 	// but its contained work units may still be mutable.
+	//
+	// The root invocation will automatically enter this state at the same time
+	// as the root work unit enters the FINALIZING state.
 	RootInvocation_FINALIZING RootInvocation_FinalizationState = 2
 	// The root invocation is immutable and no longer accepts new results
-	// directly or indirectly. This will happen automatically as soon as the
-	// root work unit becomes FINALIZED.
+	// directly or indirectly. The root work unit will enter this state at the
+	// same time as the root work unit enters the FINALIZED state.
 	RootInvocation_FINALIZED RootInvocation_FinalizationState = 3
 )
 

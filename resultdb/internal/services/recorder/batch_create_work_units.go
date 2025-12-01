@@ -42,11 +42,11 @@ import (
 
 // BatchCreateWorkUnits implements pb.RecorderServer.
 func (s *recorderServer) BatchCreateWorkUnits(ctx context.Context, in *pb.BatchCreateWorkUnitsRequest) (*pb.BatchCreateWorkUnitsResponse, error) {
-	if err := validateBatchCreateWorkUnitsPermissions(ctx, in); err != nil {
-		return nil, err
-	}
 	cfg, err := config.Service(ctx)
 	if err != nil {
+		return nil, err
+	}
+	if err := validateBatchCreateWorkUnitsPermissions(ctx, in, cfg); err != nil {
 		return nil, err
 	}
 	if err := validateBatchCreateWorkUnitsRequest(in, cfg); err != nil {
@@ -236,7 +236,7 @@ func createWorkUnitsIdempotent(
 	return ids, nil
 }
 
-func validateBatchCreateWorkUnitsPermissions(ctx context.Context, req *pb.BatchCreateWorkUnitsRequest) error {
+func validateBatchCreateWorkUnitsPermissions(ctx context.Context, req *pb.BatchCreateWorkUnitsRequest, cfg *config.CompiledServiceConfig) error {
 	// Only perform minimal validation necessary to verify permissions. Full validation
 	// will be performed in validateBatchCreateWorkUnitsRequest.
 
@@ -342,7 +342,7 @@ func validateBatchCreateWorkUnitsPermissions(ctx context.Context, req *pb.BatchC
 		}
 
 		hasIncludeToken := inclusionToken != ""
-		if err := verifyWorkUnitPermissions(ctx, r, hasIncludeToken, parentRealm); err != nil {
+		if err := verifyWorkUnitPermissions(ctx, r, cfg, hasIncludeToken, parentRealm); err != nil {
 			return appstatus.Errorf(codes.PermissionDenied, "requests[%d]: %s", i, err.Error())
 		}
 	}
@@ -423,7 +423,7 @@ func validateBatchCreateWorkUnitsRequestStructure(req *pb.BatchCreateWorkUnitsRe
 
 // verifyWorkUnitPermissions completes validating that the caller
 // has permission to create the given work unit.
-func verifyWorkUnitPermissions(ctx context.Context, req *pb.CreateWorkUnitRequest, hasInclusionToken bool, parentRealm string) error {
+func verifyWorkUnitPermissions(ctx context.Context, req *pb.CreateWorkUnitRequest, cfg *config.CompiledServiceConfig, hasInclusionToken bool, parentRealm string) error {
 	// Already validated by validateBatchCreateWorkUnitsRequestStructure.
 	wu := req.WorkUnit
 	realm := wu.Realm
@@ -491,7 +491,7 @@ func verifyWorkUnitPermissions(ctx context.Context, req *pb.CreateWorkUnitReques
 
 	// if the producer resource is set,
 	// resultdb.workUnits.setProducerResource permission is required.
-	if wu.ProducerResource != nil {
+	if wu.ProducerResource != nil && validateProducerSystemCaller(wu.ProducerResource.System, cfg) {
 		project, _ := realms.Split(realm)
 		rootRealm := realms.Join(project, realms.RootRealm)
 		allowed, err := checkPermissionOrGroupMember(ctx, rootRealm, permSetWorkUnitProducerResource, trustedCreatorGroup)

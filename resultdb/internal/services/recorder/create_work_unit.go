@@ -145,6 +145,12 @@ func validateNonRootWorkUnitForCreate(wu *pb.WorkUnit, cfg *config.CompiledServi
 		if err := pbutil.ValidateProducerResource(wu.ProducerResource); err != nil {
 			return errors.Fmt("producer_resource: %w", err)
 		}
+		if ps, ok := cfg.ProducerSystems[wu.ProducerResource.System]; ok {
+			// If the system is configured, apply additional validation.
+			if err := ps.Validate(wu.ProducerResource); err != nil {
+				return errors.Fmt("producer_resource: %w", err)
+			}
+		}
 	}
 	return validateWorkUnitForCreate(wu, cfg)
 }

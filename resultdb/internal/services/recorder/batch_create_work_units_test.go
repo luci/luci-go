@@ -497,6 +497,11 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 					_, err := recorder.BatchCreateWorkUnits(ctx, req)
 					assert.Loosely(t, err, should.BeNil)
 				})
+				t.Run("allowed with non-validated system", func(t *ftt.Test) {
+					req.Requests[1].WorkUnit.ProducerResource.System = "little-known-system"
+					_, err := recorder.BatchCreateWorkUnits(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+				})
 			})
 			t.Run("inclusion or update token is validated", func(t *ftt.Test) {
 				t.Run("invalid update token", func(t *ftt.Test) {
