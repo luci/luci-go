@@ -15,10 +15,9 @@
 import List from '@mui/material/List';
 import { render, screen } from '@testing-library/react';
 
+import { GroupsListItem } from '@/authdb/components/groups_list_item';
 import { createMockGroup } from '@/authdb/testing_tools/mocks/group_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-import { GroupsListItem } from './groups_list_item';
 
 describe('<GroupsListItem />', () => {
   test('if groups name & description is displayed', async () => {

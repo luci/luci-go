@@ -14,14 +14,13 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { GroupDescendants } from '@/authdb/components/group_descendants';
 import {
   createMockExpandedGroup,
   mockFetchGetExpandedGroup,
   mockErrorFetchingGetExpandedGroup,
 } from '@/authdb/testing_tools/mocks/group_expanded_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-import { GroupDescendants } from './group_descendants';
 
 describe('<GroupDescendants />', () => {
   test('displays group members', async () => {

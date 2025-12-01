@@ -16,11 +16,9 @@ import List from '@mui/material/List';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { act } from 'react';
 
+import { GroupsFormNew } from '@/authdb/components/groups_form_new';
+import { mockErrorCreateGroup } from '@/authdb/testing_tools/mocks/create_group_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-import { mockErrorCreateGroup } from '../testing_tools/mocks/create_group_mock';
-
-import { GroupsFormNew } from './groups_form_new';
 
 describe('<GroupsFormNew />', () => {
   test('if group name, description textarea is displayed', async () => {

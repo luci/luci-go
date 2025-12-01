@@ -15,13 +15,12 @@
 import List from '@mui/material/List';
 import { render, screen } from '@testing-library/react';
 
+import { GroupDetails } from '@/authdb/components/group_details';
 import {
   createMockGroupIndividual,
   mockFetchGetGroup,
 } from '@/authdb/testing_tools/mocks/group_individual_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-import { GroupDetails } from './group_details';
 
 describe('<GroupDetails />', () => {
   test('displays group name', async () => {

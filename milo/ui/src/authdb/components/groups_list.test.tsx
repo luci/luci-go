@@ -16,14 +16,13 @@ import { render, screen } from '@testing-library/react';
 import fetchMock from 'fetch-mock-jest';
 import { VirtuosoMockContext } from 'react-virtuoso';
 
+import { GroupsList } from '@/authdb/components/groups_list';
 import { createMockGroup } from '@/authdb/testing_tools/mocks/group_mock';
 import {
   mockFetchGroups,
   mockErrorFetchingGroups,
 } from '@/authdb/testing_tools/mocks/groups_list_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-import { GroupsList } from './groups_list';
 
 describe('<GroupsList />', () => {
   afterEach(() => {

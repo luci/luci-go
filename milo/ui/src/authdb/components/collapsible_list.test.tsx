@@ -14,9 +14,8 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { CollapsibleList } from '@/authdb/components/collapsible_list';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-import { CollapsibleList } from './collapsible_list';
 
 describe('CollapsibleList', () => {
   const items = ['group1', 'group2'];

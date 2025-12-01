@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import './groups.css';
+import '@/authdb/components/groups.css';
 
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
@@ -24,9 +24,8 @@ import TableContainer from '@mui/material/TableContainer';
 import { useQuery } from '@tanstack/react-query';
 
 import { stripPrefix } from '@/authdb/common/helpers';
+import { CollapsibleList } from '@/authdb/components/collapsible_list';
 import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
-
-import { CollapsibleList } from './collapsible_list';
 
 interface GroupDescendantsProps {
   name: string;

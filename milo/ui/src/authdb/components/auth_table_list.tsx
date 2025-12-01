@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import '@/authdb/components/groups.css';
+
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -21,8 +23,6 @@ import Typography from '@mui/material/Typography';
 
 import { GroupLink } from '@/authdb/components/group_link';
 import { AuthLookupLink } from '@/authdb/components/lookup_link';
-
-import './groups.css';
 
 interface TableListProps {
   items: string[];

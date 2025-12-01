@@ -17,10 +17,9 @@ import userEvent from '@testing-library/user-event';
 import { act } from 'react';
 
 import { stripPrefix } from '@/authdb/common/helpers';
+import { GroupsFormList } from '@/authdb/components/groups_form_list';
 import { createMockGroupIndividual } from '@/authdb/testing_tools/mocks/group_individual_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-import { GroupsFormList } from './groups_form_list';
 
 describe('<GroupsFormList editable/>', () => {
   const mockGroup = createMockGroupIndividual('123', true, true);

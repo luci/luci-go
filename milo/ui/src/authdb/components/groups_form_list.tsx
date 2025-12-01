@@ -11,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+import '@/authdb/components/groups.css';
+
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -46,8 +49,6 @@ import {
   stripPrefix,
 } from '@/authdb/common/helpers';
 import { GroupLink } from '@/authdb/components/group_link';
-
-import './groups.css';
 
 const expansionThreshold = 10;
 

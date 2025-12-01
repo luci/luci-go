@@ -11,7 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import './groups.css';
+
+import '@/authdb/components/groups.css';
 
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
@@ -26,8 +27,6 @@ import { getGroupNames, interpretLookupResults } from '@/authdb/common/helpers';
 import { CollapsibleList } from '@/authdb/components/collapsible_list';
 import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
 import { PrincipalKind } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
-
-import './groups.css';
 
 interface GroupLookupProps {
   name: string;

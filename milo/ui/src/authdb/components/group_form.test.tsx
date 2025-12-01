@@ -17,21 +17,19 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { act } from 'react';
 
 import { stripPrefix } from '@/authdb/common/helpers';
+import { GroupForm } from '@/authdb/components/group_form';
+import { mockErrorDeleteGroup } from '@/authdb/testing_tools/mocks/delete_group_mock';
 import {
   createMockGroupIndividual,
   mockFetchGetGroup,
   mockErrorFetchingGetGroup,
 } from '@/authdb/testing_tools/mocks/group_individual_mock';
-import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-import { mockErrorDeleteGroup } from '../testing_tools/mocks/delete_group_mock';
 import {
   mockResponseUpdateGroup,
   createMockUpdatedGroup,
   mockErrorUpdateGroup,
-} from '../testing_tools/mocks/update_group_mock';
-
-import { GroupForm } from './group_form';
+} from '@/authdb/testing_tools/mocks/update_group_mock';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 describe('<GroupForm />', () => {
   test('if group name, desciption, owners, members, subgroups are displayed', async () => {
