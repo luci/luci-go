@@ -20,25 +20,20 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useQuery } from '@tanstack/react-query';
 
+import { principalAsRequestProto } from '@/authdb/common/helpers';
 import { PermissionsGrid } from '@/authdb/components/permissions_grid';
 import { useAuthServiceAuthDBClient } from '@/authdb/hooks/prpc_clients';
 import { RealmPermissions } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/authdb.pb';
-import { PrincipalKind } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
-interface GroupPermissionsProps {
-  name: string;
+interface PrincipalPermissionsProps {
+  principal: string;
 }
 
-export function GroupPermissions({ name }: GroupPermissionsProps) {
+export function PrincipalPermissions({ principal }: PrincipalPermissionsProps) {
   const client = useAuthServiceAuthDBClient();
-  const principal = {
-    name: name,
-    kind: PrincipalKind.GROUP,
-  };
-  const request = {
-    principal: principal,
-  };
+  const request = principalAsRequestProto(principal);
   const {
+    fetchStatus,
     isPending,
     isError,
     error,
@@ -46,7 +41,13 @@ export function GroupPermissions({ name }: GroupPermissionsProps) {
   } = useQuery({
     ...client.GetPrincipalPermissions.query(request),
     refetchOnWindowFocus: false,
+    enabled: principal !== '',
   });
+
+  // Leave results empty if query is empty.
+  if (fetchStatus === 'idle' && isPending) {
+    return <></>;
+  }
 
   if (isPending) {
     return (
@@ -60,7 +61,7 @@ export function GroupPermissions({ name }: GroupPermissionsProps) {
     return (
       <div className="section" data-testid="group-permissions-error">
         <Alert severity="error">
-          <AlertTitle>Failed to load group permissions </AlertTitle>
+          <AlertTitle>Failed to load permissions </AlertTitle>
           <Box sx={{ padding: '1rem' }}>{`${error}`}</Box>
         </Alert>
       </div>
@@ -70,5 +71,5 @@ export function GroupPermissions({ name }: GroupPermissionsProps) {
   const realmPermissions =
     (response.realmPermissions as RealmPermissions[]) || [];
 
-  return <PermissionsGrid permissions={realmPermissions} fullWidth />;
+  return <PermissionsGrid permissions={realmPermissions} />;
 }

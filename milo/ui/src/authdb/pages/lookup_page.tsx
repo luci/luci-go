@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import '../components/groups.css';
+import '@/authdb/components/groups.css';
+
 import SearchIcon from '@mui/icons-material/Search';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
@@ -30,7 +31,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useState } from 'react';
 
 import { LookupResults } from '@/authdb/components/lookup_results';
-import { PermissionsResults } from '@/authdb/components/permissions_results';
+import { PrincipalPermissions } from '@/authdb/components/principal_permissions';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useDeclarePageId } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
@@ -186,7 +187,7 @@ export function LookupPage() {
                 role="tabpanel"
                 id="tabpanel-permissions"
               >
-                <PermissionsResults principal={principal || ''} />
+                <PrincipalPermissions principal={principal || ''} />
               </TabPanel>
             </TabContext>
           )}

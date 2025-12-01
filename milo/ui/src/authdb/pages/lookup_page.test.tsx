@@ -15,6 +15,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { act } from 'react';
 
+import { LookupPage } from '@/authdb/pages/lookup_page';
 import {
   createMockPrincipalPermissions,
   mockFetchGetPrincipalPermissions,
@@ -24,8 +25,6 @@ import {
   mockFetchGetSubgraph,
 } from '@/authdb/testing_tools/mocks/group_subgraph_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-import { LookupPage } from './lookup_page';
 
 describe('<LookupPage />', () => {
   test('Pressing search button with valid query displays lookup results', async () => {
@@ -100,7 +99,7 @@ describe('<LookupPage />', () => {
     const permissionsTab = await screen.findByTestId('permissions-tab');
     act(() => permissionsTab.click());
 
-    await screen.findByTestId('permissions-table');
+    await screen.findByTestId('permissions-grid');
     for (const realmPermission of mockPermissions.realmPermissions) {
       for (const permission of realmPermission.permissions) {
         expect(screen.getByText(permission)).toBeInTheDocument();
@@ -128,7 +127,7 @@ describe('<LookupPage />', () => {
     ).toHaveValue('user@example.com');
 
     await screen.findByTestId('permissions-tab');
-    await screen.findByTestId('permissions-table');
+    await screen.findByTestId('permissions-grid');
     for (const realmPermission of mockPermissions.realmPermissions) {
       for (const permission of realmPermission.permissions) {
         expect(screen.getByText(permission)).toBeInTheDocument();

@@ -14,14 +14,13 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { GroupPermissions } from '@/authdb/components/group_permissions';
 import {
   createMockPrincipalPermissions,
   mockFetchGetPrincipalPermissions,
   mockErrorFetchingGetPermissions,
 } from '@/authdb/testing_tools/mocks/group_permissions_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-import { GroupPermissions } from './group_permissions';
 
 describe('<GroupPermissions />', () => {
   test('displays realm names', async () => {
@@ -33,7 +32,7 @@ describe('<GroupPermissions />', () => {
         <GroupPermissions name="123" />
       </FakeContextProvider>,
     );
-    await screen.findByTestId('permissions-table');
+    await screen.findByTestId('permissions-grid');
 
     for (const realmPermission of mockPermissions.realmPermissions) {
       expect(
@@ -51,7 +50,7 @@ describe('<GroupPermissions />', () => {
         <GroupPermissions name="123" />
       </FakeContextProvider>,
     );
-    await screen.findByTestId('permissions-table');
+    await screen.findByTestId('permissions-grid');
 
     for (const realmPermission of mockPermissions.realmPermissions) {
       for (const permission of realmPermission.permissions) {

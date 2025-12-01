@@ -18,7 +18,7 @@ import Icon from '@mui/material/Icon';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { GroupLink } from '@/authdb/components/group_link';
 import { AuthLookupLink } from '@/authdb/components/lookup_link';
@@ -26,6 +26,7 @@ import { AuthLookupLink } from '@/authdb/components/lookup_link';
 interface CollapsibleListProps {
   items: string[];
   title: string;
+  globallyExpanded?: boolean;
   variant?: 'text' | 'group-link' | 'principal-link';
   numRedacted?: number;
 }
@@ -33,10 +34,15 @@ interface CollapsibleListProps {
 export function CollapsibleList({
   items,
   title,
+  globallyExpanded = true,
   variant = 'text',
   numRedacted = 0,
 }: CollapsibleListProps) {
   const [expanded, setExpanded] = useState<boolean>(true);
+
+  useEffect(() => {
+    setExpanded(globallyExpanded);
+  }, [globallyExpanded]);
 
   const count = items.length + numRedacted;
 
