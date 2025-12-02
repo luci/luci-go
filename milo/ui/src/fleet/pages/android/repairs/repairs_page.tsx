@@ -62,6 +62,7 @@ import {
 } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
+import { RunTargetColumnHeader } from '@/fleet/pages/device_list_page/android/run_target_column_header';
 import { colors } from '@/fleet/theme/colors';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { getErrorMessage } from '@/fleet/utils/errors';
@@ -263,6 +264,7 @@ const COLUMNS = {
     accessorKey: 'run_target',
     header: 'Run Target',
     size: 60,
+    Header: () => <RunTargetColumnHeader />,
   },
   minimum_repairs: {
     accessorKey: 'minimum_repairs',

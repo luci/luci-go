@@ -36,17 +36,6 @@ export const useAndroidDevices = (request: ListAndroidDevicesRequest) => {
     queryKey: queryKey,
     queryFn: client.ListAndroidDevices.query(request).queryFn,
     placeholderData: keepPreviousData, // avoid loading while switching page
-    select: (data) => ({
-      ...data,
-      devices: data.devices.map((d) => {
-        const omnilabRunTarget = d.omnilabSpec?.labels['run_target'];
-        if (!omnilabRunTarget) return d;
-
-        delete d.omnilabSpec?.labels['run_target'];
-        d.omnilabSpec.labels['omnilab-run_target'] = omnilabRunTarget;
-        return d;
-      }),
-    }),
   });
 
   return devicesQuery;

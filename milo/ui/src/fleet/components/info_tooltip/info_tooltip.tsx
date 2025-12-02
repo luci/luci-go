@@ -25,7 +25,8 @@ import React, { useRef, useState } from 'react';
 export function InfoTooltip({
   children,
   infoCss = {},
-}: React.PropsWithChildren<{ infoCss?: CSSObject }>) {
+  paperCss = {},
+}: React.PropsWithChildren<{ infoCss?: CSSObject; paperCss?: CSSObject }>) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
   const popoverId = open ? 'info-tooltip-state-popover' : undefined;
@@ -91,13 +92,16 @@ export function InfoTooltip({
           paper: {
             onMouseEnter: handlePopoverOpen,
             onMouseLeave: handlePopoverClose,
-            sx: {
-              pointerEvents: 'auto',
-              p: 2,
-              border: (theme) => `1px solid ${theme.palette.divider}`,
-              boxShadow: 3,
-              maxWidth: 450,
-            },
+            sx: [
+              {
+                pointerEvents: 'auto',
+                p: 2,
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                boxShadow: 3,
+                maxWidth: 450,
+              },
+              paperCss,
+            ],
           },
         }}
       >

@@ -99,16 +99,25 @@ const getOrderByFromSortModel = <R extends GridValidRowModel>(
   return sortItem.sort === 'desc' ? `${sortKey} desc` : sortKey;
 };
 
-const getSortModelFromOrderBy = (orderByValue: string): GridSortModel => {
+const getSortModelFromOrderBy = <R extends GridValidRowModel>(
+  orderByValue: string,
+  availableColumns: DeviceTableGridColDef<R>[],
+): GridSortModel => {
   const orderBy = parseOrderByParam(orderByValue);
-  return orderBy
-    ? [
+  if (!orderBy) return [];
+
+  const sortKey = availableColumns.find(
+    (c) => c.orderByField === orderBy.field,
+  )?.field;
+
+  return sortKey
+    ? [{ field: sortKey, sort: orderBy.direction }]
+    : [
         {
           field: orderBy.field.replace(/labels\."?(.*?)"?$/, '$1'),
           sort: orderBy.direction,
         },
-      ]
-    : [];
+      ];
 };
 
 export type DeviceTableGridColDef<R extends GridValidRowModel> =
@@ -228,7 +237,7 @@ export function DeviceTable<R extends GridValidRowModel>({
           setRowSelectionModel(newRowSelectionModel);
         }}
         rowSelectionModel={rowSelectionModel}
-        sortModel={getSortModelFromOrderBy(orderByParam)}
+        sortModel={getSortModelFromOrderBy(orderByParam, availableColumns)}
         onSortModelChange={onSortModelChange}
         rowCount={UNKNOWN_ROW_COUNT}
         sortingMode="server"

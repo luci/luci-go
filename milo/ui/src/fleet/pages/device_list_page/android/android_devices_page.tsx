@@ -70,6 +70,12 @@ const DEFAULT_PAGE_SIZE = 100;
 
 const platform = Platform.ANDROID;
 
+const EXTRA_COLUMN_IDS = [
+  'label-id',
+  'label-run_target',
+  'label-hostname',
+] satisfies (keyof typeof ANDROID_COLUMN_OVERRIDES)[];
+
 export const AndroidDevicesPage = () => {
   const { trackEvent } = useGoogleAnalytics();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
@@ -132,17 +138,19 @@ export const AndroidDevicesPage = () => {
   const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
   const columnIds = useMemo(() => {
     if (isDimensionsQueryProperlyLoaded)
-      return _.uniq(
-        Object.keys(dimensionsQuery.data.baseDimensions).concat(
+      return _.uniq([
+        ...Object.keys(dimensionsQuery.data.baseDimensions).concat(
           Object.keys(dimensionsQuery.data.labels),
         ),
-      );
+        ...EXTRA_COLUMN_IDS,
+      ]);
     if (devicesQuery.data)
-      return _.uniq(
-        devicesQuery.data.devices.flatMap((d) =>
+      return _.uniq([
+        ...devicesQuery.data.devices.flatMap((d) =>
           Object.keys(d.omnilabSpec?.labels ?? {}),
         ),
-      );
+        ...EXTRA_COLUMN_IDS,
+      ]);
 
     return [];
   }, [

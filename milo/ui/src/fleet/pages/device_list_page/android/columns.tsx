@@ -17,6 +17,8 @@ import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import { AndroidDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+import { RunTargetColumnHeader } from './run_target_column_header';
+
 export const getColumns = (
   columnIds: string[],
 ): DeviceTableGridColDef<AndroidDevice>[] => {
@@ -82,11 +84,40 @@ export const ANDROID_COLUMN_OVERRIDES: Record<
   run_target: {
     valueGetter: (_, device) => device.runTarget,
     orderByField: 'run_target',
+    minWidth: 100,
+    renderHeader: () => <RunTargetColumnHeader />,
   },
   lab_name: {
     orderByField: 'lab_name',
   },
   fc_machine_type: {
     orderByField: 'fc_machine_type',
+  },
+  ['label-run_target']: {
+    orderByField: 'labels.run_target',
+    valueGetter: (_, device) => {
+      const labels = device.omnilabSpec?.labels?.run_target?.values;
+      if (!labels) return undefined;
+
+      return labelValuesToString(labels);
+    },
+  },
+  ['label-id']: {
+    orderByField: 'labels.id',
+    valueGetter: (_, device) => {
+      const labels = device.omnilabSpec?.labels?.id?.values;
+      if (!labels) return undefined;
+
+      return labelValuesToString(labels);
+    },
+  },
+  ['label-hostname']: {
+    orderByField: 'labels.hostname',
+    valueGetter: (_, device) => {
+      const labels = device.omnilabSpec?.labels?.hostname?.values;
+      if (!labels) return undefined;
+
+      return labelValuesToString(labels);
+    },
   },
 };
