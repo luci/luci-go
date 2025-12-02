@@ -471,7 +471,7 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
                     }}
                   >
                     <Button
-                      variant="contained"
+                      variant="outlined"
                       color="error"
                       disableElevation
                       style={{ width: '170px' }}
@@ -532,7 +532,7 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
             onClick={deleteGroup}
             disableElevation
             variant="contained"
-            color="warning"
+            color="error"
             data-testid="delete-confirm-button"
           >
             Delete
