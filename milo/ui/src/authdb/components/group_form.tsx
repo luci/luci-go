@@ -518,7 +518,7 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
         data-testid="delete-confirm-dialog"
       >
         <DialogTitle>
-          {`Are you sure you want to delete this group: ${name}?`}
+          {`Are you sure you want to delete this group: ${name}? This action is irreversible.`}
         </DialogTitle>
         <DialogActions>
           <Button
@@ -532,7 +532,7 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
             onClick={deleteGroup}
             disableElevation
             variant="contained"
-            color="error"
+            color="warning"
             data-testid="delete-confirm-button"
           >
             Delete

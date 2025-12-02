@@ -389,4 +389,34 @@ describe('<GroupForm />', () => {
       `/ui/auth/groups/${mockGroup.owners}`,
     );
   });
+
+  test('if delete button has correct warning message', async () => {
+    const mockGroup = createMockGroupIndividual('123', true, true);
+    mockFetchGetGroup(mockGroup);
+
+    render(
+      <FakeContextProvider
+        mountedPath="/ui/auth/groups/*"
+        routerOptions={{
+          initialEntries: ['/ui/auth/groups/123'],
+        }}
+      >
+        <GroupForm name="123" refetchList={() => {}} />
+      </FakeContextProvider>,
+    );
+
+    await screen.findByTestId('group-form');
+
+    // Click the delete button to open the dialog.
+    fireEvent.click(screen.getByTestId('delete-button'));
+
+    // Check the dialog is open and has the correct title.
+    const dialog = await screen.findByTestId('delete-confirm-dialog');
+    expect(dialog).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Are you sure you want to delete this group: 123? This action is irreversible.',
+      ),
+    ).toBeInTheDocument();
+  });
 });
