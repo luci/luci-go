@@ -54,7 +54,7 @@ export function ArtifactContentView({ artifact }: ArtifactContentViewProps) {
   const { passingResults, error: recentPassesError } = useRecentPasses();
   const hasPassingResults = !!passingResults && passingResults.length > 0;
   const invocation = useInvocation();
-  const isAnTS = isAnTSInvocation(invocation.name);
+  const isAnTS = isAnTSInvocation(invocation);
 
   const { data: artifactContentData, isLoading: isLoadingArtifactContent } =
     useFetchArtifactContentQuery({

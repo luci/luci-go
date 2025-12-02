@@ -43,10 +43,7 @@ export function AthButton() {
     setAnchorEl(null);
   };
 
-  const isAnTS = useMemo(
-    () => isAnTSInvocation(invocation.name),
-    [invocation.name],
-  );
+  const isAnTS = useMemo(() => isAnTSInvocation(invocation), [invocation]);
 
   /**
    * Generate the ATH urls for viewing test method runs across builds with options across targets and branch.

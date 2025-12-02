@@ -370,13 +370,8 @@ export function getTestVariantURL(
   );
 }
 
-export function isAnTSInvocation(invocationName: string) {
-  const prefix = 'invocations/';
-  if (invocationName.startsWith(prefix)) {
-    const invocation = invocationName.substring(prefix.length);
-    return invocation.startsWith('ants-');
-  }
-  return false;
+export function isAnTSInvocation(invocation: AnyInvocation) {
+  return invocation.realm?.startsWith('android:') || false;
 }
 
 /**

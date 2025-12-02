@@ -157,7 +157,7 @@ export function ArtifactTreeNode({
     ? null
     : row.data.artifact?.artifactType || getArtifactType(row.name);
   const invocation = useInvocation();
-  const isAnTS = isAnTSInvocation(invocation.name);
+  const isAnTS = isAnTSInvocation(invocation);
 
   const totalPaddingLeft =
     row.level * LEVEL_INDENTATION_SIZE + CONTENT_INTERNAL_OFFSET_LEFT;

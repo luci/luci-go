@@ -83,10 +83,7 @@ export function RerunButton() {
   const invocation = useInvocation();
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const isAnTS = useMemo(
-    () => isAnTSInvocation(invocation.name),
-    [invocation.name],
-  );
+  const isAnTS = useMemo(() => isAnTSInvocation(invocation), [invocation]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const menuOpen = Boolean(anchorEl);

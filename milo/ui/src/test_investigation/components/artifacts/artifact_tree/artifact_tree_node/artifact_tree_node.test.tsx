@@ -37,7 +37,7 @@ describe('<ArtifactTreeNode />', () => {
 
   beforeEach(() => {
     mockInvocation = Invocation.fromPartial({
-      realm: `${MOCK_PROJECT_ID}:some-realm`,
+      realm: `android:some-realm`,
       sourceSpec: { sources: { gitilesCommit: { position: '105' } } },
       name: 'invocations/ants-build-12345',
     });
@@ -285,14 +285,23 @@ describe('<ArtifactTreeNode />', () => {
     };
     render(
       <FakeContextProvider>
-        <ArtifactTreeNode
-          index={0}
-          row={fakeTreeData}
-          context={fakeTreeContext}
-        />
+        <InvocationProvider
+          project="test-project"
+          invocation={mockInvocation}
+          rawInvocationId={MOCK_RAW_INVOCATION_ID}
+          isLegacyInvocation
+        >
+          <ArtifactTreeNode
+            index={0}
+            row={fakeTreeData}
+            context={fakeTreeContext}
+          />
+        </InvocationProvider>
       </FakeContextProvider>,
     );
 
-    waitFor(() => expect(screen.getByText('Empty Folder')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText('Empty Folder')).toBeInTheDocument(),
+    );
   });
 });

@@ -22,7 +22,7 @@ describe('<OverviewActionsSection />', () => {
 
   beforeEach(() => {
     mockInvocation = Invocation.fromPartial({
-      realm: `${MOCK_PROJECT_ID}:some-realm`,
+      realm: `android:some-realm`,
       sourceSpec: { sources: { gitilesCommit: { position: '105' } } },
       name: 'invocations/ants-build-12345',
     });
@@ -74,6 +74,7 @@ describe('<OverviewActionsSection />', () => {
     const currentInv = Invocation.fromPartial({
       ...mockInvocation,
       name: 'build-12345',
+      realm: `${MOCK_PROJECT_ID}:some-realm`,
     });
 
     renderComponent(currentInv, undefined);
