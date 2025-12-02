@@ -118,7 +118,7 @@ export const TreeStatusListPage = () => {
         </strong>
       </Alert>
       <div style={{ marginTop: '40px', height: '0px' }} />
-      <TreeStatusUpdater tree={treeName} project={project} />
+      <TreeStatusUpdater tree={treeName} />
       <div style={{ marginTop: '40px', height: '0px' }} />
       {status.isPending ? (
         <CircularProgress />
