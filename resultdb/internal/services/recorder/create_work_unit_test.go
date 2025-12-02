@@ -68,7 +68,7 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 			RequestId: "request-id",
 		}
 
-		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
+		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceholderServiceConfig(), "revision")
 		assert.NoErr(t, err)
 
 		t.Run("valid", func(t *ftt.Test) {
@@ -277,7 +277,7 @@ func TestValidateCreateWorkUnitRequest(t *testing.T) {
 						Name:      "runs/123",
 					}
 					err := validateCreateWorkUnitRequest(req, cfg)
-					assert.Loosely(t, err, should.ErrLike(`work_unit: producer_resource: name: does not match pattern "^builds/[0-9]+$"`))
+					assert.Loosely(t, err, should.ErrLike(`work_unit: producer_resource: name: does not match pattern "^builds/(?P<build_id>[0-9]+)$"`))
 				})
 			})
 			t.Run("tags", func(t *ftt.Test) {
@@ -474,7 +474,8 @@ func TestCreateWorkUnit(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
 		ctx = memory.Use(ctx)                    // For config datastore cache.
-		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
+		cfg := config.CreatePlaceholderServiceConfig()
+		err := config.SetServiceConfigForTesting(ctx, cfg)
 		assert.NoErr(t, err)
 
 		authState := &authtest.FakeState{
@@ -897,6 +898,7 @@ func TestCreateWorkUnit(t *testing.T) {
 				Deadline:          timestamppb.New(start.Add(defaultDeadlineDuration)),
 			})
 			expectedWU.Instructions = instructionutil.InstructionsWithNames(instructions, workUnitID.Name())
+			expectedWU.ProducerResource.Url = "https://milo-prod/ui/b/123"
 			pbutil.PopulateModuleIdentifierHashes(expectedWU.ModuleId)
 
 			expectWURow := &workunits.WorkUnitRow{

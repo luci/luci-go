@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
@@ -111,9 +112,14 @@ func (s *recorderServer) BatchFinalizeWorkUnits(ctx context.Context, in *pb.Batc
 	response := &pb.BatchFinalizeWorkUnitsResponse{
 		WorkUnits: make([]*pb.WorkUnit, len(wuRows)),
 	}
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	for i, wuRow := range wuRows {
 		// The user has permission to update, so they have full access to view.
-		response.WorkUnits[i] = masking.WorkUnit(wuRow, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC)
+		response.WorkUnits[i] = masking.WorkUnit(wuRow, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, cfg)
 	}
 
 	return response, nil

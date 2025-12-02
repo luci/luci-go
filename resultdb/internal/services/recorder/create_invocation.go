@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -27,7 +28,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
@@ -338,7 +338,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 	}
 	md := metadata.MD{}
 	md.Set(pb.UpdateTokenMetadataKey, tokens...)
-	prpc.SetHeader(ctx, md)
+	grpc.SetHeader(ctx, md)
 	return invs[0], nil
 }
 

@@ -23,10 +23,13 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -49,6 +52,13 @@ func TestGetWorkUnit(t *testing.T) {
 		}
 
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+
+		// Setup service config.
+		cfg := config.CreatePlaceholderServiceConfig()
+		err := config.SetServiceConfigForTesting(ctx, cfg)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Insert a root invocation and a work unit.
 		rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm(rootRealm).Build()
@@ -106,13 +116,18 @@ func TestGetWorkUnit(t *testing.T) {
 					ModuleVariant:     rootWu.ModuleID.ModuleVariant,
 					ModuleVariantHash: rootWu.ModuleID.ModuleVariantHash,
 				},
-				ModuleShardKey:   rootWu.ModuleShardKey,
-				ProducerResource: rootWu.ProducerResource,
-				Tags:             rootWu.Tags,
-				Properties:       rootWu.Properties,
-				Instructions:     rootWu.Instructions,
-				IsMasked:         false,
-				Etag:             `W/"/2025-04-26T01:02:03.000004Z"`,
+				ModuleShardKey: rootWu.ModuleShardKey,
+				ProducerResource: &pb.ProducerResource{
+					System:    "buildbucket",
+					DataRealm: "prod",
+					Name:      "builds/123",
+					Url:       "https://milo-prod/ui/b/123",
+				},
+				Tags:         rootWu.Tags,
+				Properties:   rootWu.Properties,
+				Instructions: rootWu.Instructions,
+				IsMasked:     false,
+				Etag:         `W/"/2025-04-26T01:02:03.000004Z"`,
 			}
 
 			t.Run("full access", func(t *ftt.Test) {

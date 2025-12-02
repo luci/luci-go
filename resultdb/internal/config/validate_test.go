@@ -124,12 +124,12 @@ func TestServiceConfigValidator(t *testing.T) {
 	})
 
 	ftt.Run("valid config is valid", t, func(t *ftt.Test) {
-		cfg := CreatePlaceHolderServiceConfig()
+		cfg := CreatePlaceholderServiceConfig()
 		assert.Loosely(t, validate(cfg), should.BeNil)
 	})
 
 	ftt.Run("bq artifact export config", t, func(t *ftt.Test) {
-		cfg := CreatePlaceHolderServiceConfig()
+		cfg := CreatePlaceholderServiceConfig()
 		t.Run("is nil", func(t *ftt.Test) {
 			cfg.BqArtifactExportConfig = nil
 			assert.Loosely(t, validate(cfg), should.NotBeNil)
@@ -151,7 +151,7 @@ func TestServiceConfigValidator(t *testing.T) {
 	})
 
 	ftt.Run("schemes", t, func(t *ftt.Test) {
-		cfg := CreatePlaceHolderServiceConfig()
+		cfg := CreatePlaceholderServiceConfig()
 		cfg.Schemes = []*configpb.Scheme{
 			{
 				Id:                "junit",
@@ -349,7 +349,7 @@ func TestServiceConfigValidator(t *testing.T) {
 		})
 	})
 	ftt.Run("producer systems", t, func(t *ftt.Test) {
-		cfg := CreatePlaceHolderServiceConfig()
+		cfg := CreatePlaceholderServiceConfig()
 		cfg.ProducerSystems = []*configpb.ProducerSystem{
 			{
 				System:           "buildbucket",

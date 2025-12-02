@@ -25,6 +25,8 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -38,7 +40,8 @@ const limitedSummaryLength = 140
 
 // WorkUnit constructs a *pb.WorkUnit from the given fields, applying masking
 // appropriate to the access level and selected view.
-func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, view pb.WorkUnitView) *pb.WorkUnit {
+// The producer URL is computed based on the service configuration.
+func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, view pb.WorkUnitView, cfg *config.CompiledServiceConfig) *pb.WorkUnit {
 	if accessLevel == permissions.NoAccess {
 		return nil
 	}
@@ -56,9 +59,13 @@ func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, v
 		LastUpdated:       pbutil.MustTimestampProto(row.LastUpdated),
 		Deadline:          pbutil.MustTimestampProto(row.Deadline),
 		ModuleShardKey:    row.ModuleShardKey,
-		ProducerResource:  row.ProducerResource,
 		IsMasked:          true,
 		Etag:              WorkUnitETag(row, accessLevel, view),
+	}
+	if row.ProducerResource != nil {
+		// Clone to avoid modifying the original row.
+		result.ProducerResource = proto.Clone(row.ProducerResource).(*pb.ProducerResource)
+		result.ProducerResource.Url = producerResourceURL(result.ProducerResource, cfg)
 	}
 	result.ChildWorkUnits = make([]string, 0, len(row.ChildWorkUnits))
 	for _, child := range row.ChildWorkUnits {
@@ -109,6 +116,21 @@ func WorkUnit(row *workunits.WorkUnitRow, accessLevel permissions.AccessLevel, v
 		result.FinalizeTime = pbutil.MustTimestampProto(row.FinalizeTime.Time)
 	}
 	return result
+}
+
+func producerResourceURL(pr *pb.ProducerResource, cfg *config.CompiledServiceConfig) string {
+	if ps, ok := cfg.ProducerSystems[pr.System]; ok {
+		url, err := ps.GenerateURL(pr)
+		if err == nil {
+			return url
+		}
+		// While the ProducerResource was valid at upload time, due to a
+		// configuration change, it might be invalid now. It is better
+		// to degrade gracefully and simply show no URL than fail the request.
+		return ""
+	}
+	// The producer system was not be configured.
+	return ""
 }
 
 // WorkUnitETag returns the HTTP ETag for the given work unit.

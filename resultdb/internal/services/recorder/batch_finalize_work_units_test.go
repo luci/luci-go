@@ -26,13 +26,16 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -156,6 +159,10 @@ func TestVerifyBatchFinalizeWorkUnitsPermissions(t *testing.T) {
 func TestBatchFinalizeWorkUnits(t *testing.T) {
 	ftt.Run("TestBatchFinalizeWorkUnits", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+		cfg := config.CreatePlaceholderServiceConfig()
+		err := config.SetServiceConfigForTesting(ctx, cfg)
 		ctx, sched := tq.TestingContext(ctx, nil)
 		recorder := newTestRecorderServer()
 

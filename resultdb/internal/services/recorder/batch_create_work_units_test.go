@@ -56,7 +56,8 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
 		ctx = memory.Use(ctx)                    // For config datastore cache.
-		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
+		cfg := config.CreatePlaceholderServiceConfig()
+		err := config.SetServiceConfigForTesting(ctx, cfg)
 		assert.NoErr(t, err)
 
 		authState := &authtest.FakeState{
@@ -712,6 +713,7 @@ func TestBatchCreateWorkUnits(t *testing.T) {
 				ChildWorkUnits:    []string{workUnitID11.Name()},
 			})
 			expectedWU1.Instructions = instructionutil.InstructionsWithNames(instructions, workUnitID1.Name())
+			expectedWU1.ProducerResource.Url = "https://milo-prod/ui/b/123"
 			pbutil.PopulateModuleIdentifierHashes(expectedWU1.ModuleId)
 
 			expectedWU11 := proto.Clone(req.Requests[1].WorkUnit).(*pb.WorkUnit)

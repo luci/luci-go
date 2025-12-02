@@ -82,7 +82,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
 		ctx = memory.Use(ctx)                    // For config datastore cache.
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
-		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
+		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceholderServiceConfig())
 		assert.NoErr(t, err)
 
 		// Mock the CAS client.

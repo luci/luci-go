@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
@@ -97,6 +98,11 @@ func (s *resultDBServer) QueryWorkUnits(ctx context.Context, in *pb.QueryWorkUni
 		return nil, err
 	}
 
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// Apply masking based on access levels and the requested view.
 	resWUs := make([]*pb.WorkUnit, 0, len(wus))
 	for i, row := range wus {
@@ -104,7 +110,7 @@ func (s *resultDBServer) QueryWorkUnits(ctx context.Context, in *pb.QueryWorkUni
 		if level == permissions.NoAccess {
 			return nil, errors.New("logic error: user had at least limited access to all work units at start of request but no longer has access")
 		}
-		resWUs = append(resWUs, masking.WorkUnit(row, level, in.View))
+		resWUs = append(resWUs, masking.WorkUnit(row, level, in.View, cfg))
 	}
 
 	return &pb.QueryWorkUnitsResponse{

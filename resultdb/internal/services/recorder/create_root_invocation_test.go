@@ -74,7 +74,7 @@ func TestVerifyCreateRootInvocationPermissions(t *testing.T) {
 				Realm: "project:realm",
 			},
 		}
-		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
+		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceholderServiceConfig(), "revision")
 		assert.Loosely(t, err, should.BeNil)
 
 		t.Run("unspecified root invocation", func(t *ftt.Test) {
@@ -227,7 +227,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 			RequestId: "request-id",
 		}
 
-		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
+		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceholderServiceConfig(), "revision")
 		assert.NoErr(t, err)
 
 		t.Run("valid", func(t *ftt.Test) {
@@ -328,7 +328,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 						Name:      "runs/123",
 					}
 					err := validateCreateRootInvocationRequest(req, cfg)
-					assert.Loosely(t, err, should.ErrLike(`root_invocation: producer_resource: name: does not match pattern "^builds/[0-9]+$"`))
+					assert.Loosely(t, err, should.ErrLike(`root_invocation: producer_resource: name: does not match pattern "^builds/(?P<build_id>[0-9]+)$"`))
 				})
 			})
 			t.Run("definition", func(t *ftt.Test) {
@@ -890,7 +890,7 @@ func TestCreateRootInvocation(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
 		ctx = memory.Use(ctx)                    // For config datastore cache.
-		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
+		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceholderServiceConfig())
 		assert.NoErr(t, err)
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -1154,6 +1154,7 @@ func TestCreateRootInvocation(t *testing.T) {
 				},
 			})
 			expectedWU.Instructions = instructionutil.InstructionsWithNames(instructions, wuID.Name())
+			expectedWU.ProducerResource.Url = "https://milo-prod/ui/b/1"
 			pbutil.PopulateModuleIdentifierHashes(expectedWU.ModuleId)
 
 			rootInvocationID := rootinvocations.ID("u-e2e-success")

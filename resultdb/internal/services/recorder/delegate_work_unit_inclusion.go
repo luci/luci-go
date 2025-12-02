@@ -18,12 +18,12 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
@@ -59,7 +59,7 @@ func (s *recorderServer) DelegateWorkUnitInclusion(ctx context.Context, in *pb.D
 	// Return an empty response with the inclusion-token in a response header.
 	md := metadata.MD{}
 	md.Set(pb.InclusionTokenMetadataKey, token)
-	prpc.SetHeader(ctx, md)
+	grpc.SetHeader(ctx, md)
 	return &pb.DelegateWorkUnitInclusionResponse{}, nil
 }
 

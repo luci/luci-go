@@ -52,6 +52,12 @@ func TestWriteWorkUnit(t *testing.T) {
 		row := NewBuilder("root-inv-id", "work-unit-id").
 			WithFinalizationState(pb.WorkUnit_ACTIVE).
 			WithParentWorkUnitID(parentID.WorkUnitID).
+			WithProducerResource(&pb.ProducerResource{
+				System:    "test-system",
+				DataRealm: "testproject:root",
+				Name:      "testRuns/run1",
+				Url:       "https://example.com/runs/run1",
+			}).
 			Build()
 		parentRow := NewBuilder("root-inv-id", "root").WithFinalizationState(pb.WorkUnit_ACTIVE).Build()
 
@@ -82,6 +88,8 @@ func TestWriteWorkUnit(t *testing.T) {
 		row.CreateTime = commitTime.In(time.UTC)
 		row.LastUpdated = commitTime.In(time.UTC)
 		row.SecondaryIndexShardID = id.shardID(secondaryIndexShardCount)
+		// The URL should not be stored in Spanner.
+		row.ProducerResource.Url = ""
 		assert.Loosely(t, readWorkUnit, should.Match(row))
 
 		// Validate the parent work unit has a child work units entry.

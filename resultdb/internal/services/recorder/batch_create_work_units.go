@@ -69,13 +69,14 @@ func (s *recorderServer) BatchCreateWorkUnits(ctx context.Context, in *pb.BatchC
 	}
 	workUnits := make([]*pb.WorkUnit, len(in.Requests))
 	updateTokens := make([]string, len(in.Requests))
+
 	for i, id := range ids {
 		token, err := generateWorkUnitUpdateToken(ctx, id)
 		if err != nil {
 			return nil, err
 		}
 		updateTokens[i] = token
-		workUnits[i] = masking.WorkUnit(wuRows[i], permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL)
+		workUnits[i] = masking.WorkUnit(wuRows[i], permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL, cfg)
 	}
 	return &pb.BatchCreateWorkUnitsResponse{
 		WorkUnits:    workUnits,

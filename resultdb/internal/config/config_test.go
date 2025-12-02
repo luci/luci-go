@@ -29,7 +29,7 @@ func TestServiceConfig(t *testing.T) {
 	ctx := memory.Use(context.Background())
 
 	ftt.Run("Set and get config", t, func(t *ftt.Test) {
-		cfg := CreatePlaceHolderServiceConfig()
+		cfg := CreatePlaceholderServiceConfig()
 		err := SetServiceConfigForTesting(ctx, cfg)
 		assert.Loosely(t, err, should.BeNil)
 		cfgFromGet, err := GetServiceConfig(ctx)

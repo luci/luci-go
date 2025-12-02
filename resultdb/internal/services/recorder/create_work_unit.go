@@ -20,13 +20,13 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/tokens"
 
@@ -52,7 +52,7 @@ func (s *recorderServer) CreateWorkUnit(ctx context.Context, in *pb.CreateWorkUn
 
 	md := metadata.MD{}
 	md.Set(pb.UpdateTokenMetadataKey, rsp.UpdateTokens[0])
-	prpc.SetHeader(ctx, md)
+	grpc.SetHeader(ctx, md)
 	return rsp.WorkUnits[0], nil
 }
 

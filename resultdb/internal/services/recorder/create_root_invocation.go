@@ -21,13 +21,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
@@ -111,11 +111,11 @@ func (s *recorderServer) CreateRootInvocation(ctx context.Context, in *pb.Create
 	}
 	md := metadata.MD{}
 	md.Set(pb.UpdateTokenMetadataKey, token)
-	prpc.SetHeader(ctx, md)
+	grpc.SetHeader(ctx, md)
 
 	return &pb.CreateRootInvocationResponse{
 		RootInvocation: rootInvocation.ToProto(),
-		RootWorkUnit:   masking.WorkUnit(workUnitRow, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL),
+		RootWorkUnit:   masking.WorkUnit(workUnitRow, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL, cfg),
 	}, nil
 }
 

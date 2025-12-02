@@ -307,7 +307,7 @@ func InsertForTesting(w *WorkUnitRow) []*spanner.Mutation {
 		"Deadline":                w.Deadline,
 		"CreateRequestId":         w.CreateRequestID,
 		"ModuleInheritanceStatus": w.ModuleInheritanceStatus,
-		"ProducerResource":        spanutil.Compressed(pbutil.MustMarshal(w.ProducerResource)),
+		"ProducerResource":        spanutil.Compressed(pbutil.MustMarshal(removeProducerResourceOutputOnlyFields(w.ProducerResource))),
 		"Tags":                    w.Tags,
 		"Properties":              spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
 		"Instructions":            spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),

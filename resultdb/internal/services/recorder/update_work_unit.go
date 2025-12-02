@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
@@ -50,7 +51,12 @@ func (s *recorderServer) UpdateWorkUnit(ctx context.Context, in *pb.UpdateWorkUn
 		// Remove any references to "requests[0]: ", this is a single create RPC not a batch RPC.
 		return nil, removeRequestNumberFromAppStatusError(err)
 	}
-	res := masking.WorkUnit(updatedRows[0], permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL)
+
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return nil, err
+	}
+	res := masking.WorkUnit(updatedRows[0], permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL, cfg)
 	return res, nil
 }
 

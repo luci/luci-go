@@ -55,7 +55,7 @@ func CreatePlaceholderProjectConfig() *configpb.ProjectConfig {
 	}
 }
 
-func CreatePlaceHolderServiceConfig() *configpb.Config {
+func CreatePlaceholderServiceConfig() *configpb.Config {
 	return &configpb.Config{
 		BqArtifactExportConfig: &configpb.BqArtifactExportConfig{
 			Enabled:       true,
@@ -90,9 +90,13 @@ func CreatePlaceHolderServiceConfig() *configpb.Config {
 		ProducerSystems: []*configpb.ProducerSystem{
 			{
 				System:           "buildbucket",
-				NamePattern:      `^builds/[0-9]+$`,
+				NamePattern:      `^builds/(?P<build_id>[0-9]+)$`,
 				DataRealmPattern: `^test|prod$`,
 				ValidateCallers:  true,
+				UrlTemplate:      "https://milo-prod/ui/b/${build_id}",
+				UrlTemplateByDataRealm: map[string]string{
+					"test": "https://milo-test/ui/b/${build_id}",
+				},
 			},
 		},
 	}

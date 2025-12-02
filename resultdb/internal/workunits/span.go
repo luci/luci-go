@@ -107,7 +107,7 @@ type WorkUnitRow struct {
 	ModuleID                *pb.ModuleIdentifier
 	ModuleShardKey          string
 	ModuleInheritanceStatus ModuleInheritanceStatus
-	ProducerResource        *pb.ProducerResource
+	ProducerResource        *pb.ProducerResource // Output-only fields in proto are not saved.
 	Tags                    []*pb.StringPair
 	Properties              *structpb.Struct
 	Instructions            *pb.Instructions
@@ -168,7 +168,7 @@ func (w *WorkUnitRow) toMutation() *spanner.Mutation {
 		"Deadline":                w.Deadline,
 		"CreateRequestId":         w.CreateRequestID,
 		"ModuleInheritanceStatus": w.ModuleInheritanceStatus,
-		"ProducerResource":        spanutil.Compressed(pbutil.MustMarshal(w.ProducerResource)),
+		"ProducerResource":        spanutil.Compressed(pbutil.MustMarshal(removeProducerResourceOutputOnlyFields(w.ProducerResource))),
 		"Tags":                    w.Tags,
 		"Properties":              spanutil.Compressed(pbutil.MustMarshal(w.Properties)),
 		"Instructions":            spanutil.Compressed(pbutil.MustMarshal(instructionutil.RemoveInstructionsName(w.Instructions))),
@@ -266,6 +266,19 @@ func (w *WorkUnitRow) toLegacyInvocationMutation(opts LegacyCreateOptions) *span
 		row["FinalizeStartTime"] = spanner.CommitTimestamp
 	}
 	return spanutil.InsertMap("Invocations", row)
+}
+
+// removeProducerResourceOutputOnlyFields removes output-only fields from a producer resource.
+func removeProducerResourceOutputOnlyFields(pr *pb.ProducerResource) *pb.ProducerResource {
+	if pr == nil {
+		return nil
+	}
+	// The URL field is output only and should not be stored in Spanner.
+	// Rather, it should be computed based on the current service configuration
+	// whenever it is returned.
+	result := proto.Clone(pr).(*pb.ProducerResource)
+	result.Url = ""
+	return result
 }
 
 func toInvocationState(finalizationState pb.WorkUnit_FinalizationState) pb.Invocation_State {

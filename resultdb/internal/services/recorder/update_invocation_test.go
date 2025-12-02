@@ -66,7 +66,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 			UpdateMask: &field_mask.FieldMask{Paths: []string{}},
 		}
 
-		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
+		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceholderServiceConfig(), "revision")
 		assert.NoErr(t, err)
 
 		t.Run(`empty`, func(t *ftt.Test) {
@@ -687,7 +687,7 @@ func TestUpdateInvocation(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
 		ctx = memory.Use(ctx)                    // For config datastore cache.
-		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
+		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceholderServiceConfig())
 		assert.NoErr(t, err)
 
 		ctx, sched := tq.TestingContext(ctx, nil)

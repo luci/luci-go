@@ -48,7 +48,7 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 	now := testclock.TestRecentTimeUTC
 
 	ftt.Run(`TestValidateBatchCreateInvocationsRequest`, t, func(t *ftt.Test) {
-		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceHolderServiceConfig(), "revision")
+		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceholderServiceConfig(), "revision")
 		assert.NoErr(t, err)
 
 		t.Run(`invalid request id - Batch`, func(t *ftt.Test) {
@@ -114,7 +114,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
 		ctx = memory.Use(ctx)                    // For config datastore cache.
-		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
+		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceholderServiceConfig())
 		assert.NoErr(t, err)
 
 		ctx, _ = tq.TestingContext(ctx, nil)

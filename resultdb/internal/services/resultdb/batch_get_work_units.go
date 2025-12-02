@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
@@ -70,9 +71,14 @@ func (s *resultDBServer) BatchGetWorkUnits(ctx context.Context, in *pb.BatchGetW
 		return nil, err
 	}
 
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	protos := make([]*pb.WorkUnit, len(wus))
 	for i, wu := range wus {
-		protos[i] = masking.WorkUnit(wu, accessLevels[i], in.View)
+		protos[i] = masking.WorkUnit(wu, accessLevels[i], in.View, cfg)
 	}
 
 	return &pb.BatchGetWorkUnitsResponse{

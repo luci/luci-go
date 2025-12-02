@@ -24,10 +24,13 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -50,6 +53,13 @@ func TestQueryWorkUnits(t *testing.T) {
 		cWuID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "child"}
 
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+
+		// Setup service config.
+		cfg := config.CreatePlaceholderServiceConfig()
+		err := config.SetServiceConfigForTesting(ctx, cfg)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Insert a root invocation and hierarchy of work units.
 		// Root -> Grandparent -> Parent -> Child

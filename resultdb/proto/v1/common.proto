@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package luci.resultdb.v1;
 
+import "google/api/field_behavior.proto";
+
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 option java_package = "com.google.luci.resultdb.v1";
 option java_multiple_files = true;
@@ -707,4 +709,15 @@ message ProducerResource {
   // Total length limited to 1000 bytes. Resource names must be in Unicode
   // normalization form C. Required.
   string name = 3;
+
+  // The URL at which the producer resource can be viewed.
+  //
+  // Generated from data_realm and name fields using producer system-specific configuration
+  // in the ResultDB service configuration. This field may be blank for producing systems
+  // that do not have a UI.
+  //
+  // Output only.
+  string url = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
 }

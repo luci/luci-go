@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/tasks"
@@ -46,10 +47,15 @@ func (s *recorderServer) BatchUpdateWorkUnits(ctx context.Context, in *pb.BatchU
 	if err != nil {
 		return nil, err
 	}
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	respWUs := make([]*pb.WorkUnit, len(updatedRows))
 	for i, row := range updatedRows {
 		// Use basic field which elides the extended_properties field to limit response size.
-		respWUs[i] = masking.WorkUnit(row, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC)
+		respWUs[i] = masking.WorkUnit(row, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, cfg)
 	}
 	return &pb.BatchUpdateWorkUnitsResponse{WorkUnits: respWUs}, nil
 }

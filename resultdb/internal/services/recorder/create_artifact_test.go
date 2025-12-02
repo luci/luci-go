@@ -182,7 +182,7 @@ func TestCreateArtifact(t *testing.T) {
 		ctx = memory.Use(ctx)                    // For config datastore cache.
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		store := tsmon.Store(ctx)
-		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceHolderServiceConfig())
+		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceholderServiceConfig())
 		assert.NoErr(t, err)
 
 		w := &fakeWriter{}

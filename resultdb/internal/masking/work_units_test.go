@@ -15,6 +15,7 @@
 package masking
 
 import (
+	"regexp"
 	"testing"
 	"time"
 
@@ -22,10 +23,50 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/permissions"
+	"go.chromium.org/luci/resultdb/internal/producersystems"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+func TestProducerResourceURL(t *testing.T) {
+	t.Parallel()
+	ftt.Run("TestProducerResourceURL", t, func(t *ftt.Test) {
+		cfg := &config.CompiledServiceConfig{
+			ProducerSystems: map[string]*producersystems.ProducerSystem{
+				"test-system": {
+					System:           "test-system",
+					NamePattern:      regexp.MustCompile(`^test-run/(?P<name>.+)$`),
+					DataRealmPattern: regexp.MustCompile(`^test-realm$`),
+					URLTemplate:      "http://test-url.com/runs/${name}",
+				},
+			},
+		}
+
+		t.Run("ProducerResource", func(t *ftt.Test) {
+			pr := &resultpb.ProducerResource{
+				System:    "test-system",
+				Name:      "test-run/run-name",
+				DataRealm: "test-realm",
+			}
+
+			t.Run("Producer system with configuration", func(t *ftt.Test) {
+				assert.That(t, producerResourceURL(pr, cfg), should.Equal("http://test-url.com/runs/run-name"))
+			})
+
+			t.Run("Producer system without configuration", func(t *ftt.Test) {
+				pr.System = "unknown-system"
+				assert.That(t, producerResourceURL(pr, cfg), should.Equal(""))
+			})
+
+			t.Run("ProducerResource with non-parsable name", func(t *ftt.Test) {
+				pr.Name = "old-name-format/run-name"
+				assert.That(t, producerResourceURL(pr, cfg), should.Equal(""))
+			})
+		})
+	})
+}
 
 func TestWorkUnitETag(t *testing.T) {
 	t.Parallel()

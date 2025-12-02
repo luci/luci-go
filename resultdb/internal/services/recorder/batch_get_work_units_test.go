@@ -24,8 +24,11 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+	"go.chromium.org/luci/server/caching"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -45,6 +48,13 @@ func TestBatchGetWorkUnits(t *testing.T) {
 		rootInvID := rootinvocations.ID("root-inv-id")
 
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+
+		// Setup service config.
+		cfg := config.CreatePlaceholderServiceConfig()
+		err := config.SetServiceConfigForTesting(ctx, cfg)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Insert a root invocation and work units.
 		rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm(rootRealm).Build()
@@ -109,13 +119,18 @@ func TestBatchGetWorkUnits(t *testing.T) {
 					ModuleVariant:     wu1.ModuleID.ModuleVariant,
 					ModuleVariantHash: wu1.ModuleID.ModuleVariantHash,
 				},
-				ModuleShardKey:   wu1.ModuleShardKey,
-				ProducerResource: wu1.ProducerResource,
-				Tags:             wu1.Tags,
-				Properties:       wu1.Properties,
-				Instructions:     wu1.Instructions,
-				IsMasked:         false,
-				Etag:             `W/"/2025-04-26T01:02:03.000004Z"`,
+				ModuleShardKey: wu1.ModuleShardKey,
+				ProducerResource: &pb.ProducerResource{
+					System:    "buildbucket",
+					DataRealm: "prod",
+					Name:      "builds/123",
+					Url:       "https://milo-prod/ui/b/123",
+				},
+				Tags:         wu1.Tags,
+				Properties:   wu1.Properties,
+				Instructions: wu1.Instructions,
+				IsMasked:     false,
+				Etag:         `W/"/2025-04-26T01:02:03.000004Z"`,
 			}
 			expectedWu2 := &pb.WorkUnit{
 				Name:              wu2.ID.Name(),

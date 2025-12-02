@@ -34,12 +34,15 @@ import (
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/invocationspb"
@@ -58,6 +61,11 @@ import (
 func TestBatchUpdateWorkUnits(t *testing.T) {
 	ftt.Run("TestBatchUpdateWorkUnits", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+		cfg := config.CreatePlaceholderServiceConfig()
+		err := config.SetServiceConfigForTesting(ctx, cfg)
+		assert.Loosely(t, err, should.BeNil)
 		user := "user:someone@example.com"
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.Identity(user),
@@ -97,8 +105,10 @@ func TestBatchUpdateWorkUnits(t *testing.T) {
 		ms = append(ms, insert.WorkUnit(wuRow2Expected)...)
 		testutil.MustApply(ctx, t, ms...)
 
-		wu1Expected := masking.WorkUnit(wuRow1Expected, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC)
-		wu2Expected := masking.WorkUnit(wuRow2Expected, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC)
+		compiledCfg, err := config.NewCompiledServiceConfig(cfg, "revision")
+		assert.NoErr(t, err)
+		wu1Expected := masking.WorkUnit(wuRow1Expected, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, compiledCfg)
+		wu2Expected := masking.WorkUnit(wuRow2Expected, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, compiledCfg)
 
 		// A basic valid no-op request for two work units.
 		req := &pb.BatchUpdateWorkUnitsRequest{
