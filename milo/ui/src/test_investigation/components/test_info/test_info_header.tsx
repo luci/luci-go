@@ -85,8 +85,8 @@ export function TestInfoHeader() {
   const primaryBuildId = primaryBuild?.buildId;
   const primaryBuildTarget = primaryBuild?.buildTarget;
   const primaryBuildBranch = primaryBuild?.branch;
-  const extraBuildCount = extraBuilds.length;
-  if (extraBuildCount > 0) {
+  const extraBuildCount = extraBuilds?.length;
+  if (extraBuildCount && extraBuildCount > 0) {
     extraBuildId = isRootInvocation(invocation)
       ? extraBuilds[0].androidBuild?.buildId
       : extraBuilds[0].buildId;
