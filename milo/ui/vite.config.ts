@@ -74,7 +74,10 @@ export default defineConfig(({ mode }) => {
       stableUiVersionJsLinkPlugin(),
       stableSettingsJsLinkPlugin(),
       overrideMiloHost,
-      localAuthPlugin(),
+      localAuthPlugin({
+        // Only enable if explicitly set to 'true'. undefined or 'false' will result in false.
+        enableAndroidScopes: env['VITE_LOCAL_ENABLE_ANDROID_SCOPES'] === 'true',
+      }),
       devServer(env),
       previewServer(path.join(__dirname, baseOutDir), env),
       react({
