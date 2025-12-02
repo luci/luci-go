@@ -14,6 +14,7 @@
 
 import { Box, Link, Typography } from '@mui/material';
 
+import { HtmlTooltip } from '@/common/components/html_tooltip';
 import {
   PageSummaryLine,
   SummaryLineItem,
@@ -27,8 +28,10 @@ import {
   useProject,
   useTestVariant,
 } from '@/test_investigation/context';
-import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
-import { isRootInvocation } from '@/test_investigation/utils/invocation_utils';
+import {
+  AnyInvocation,
+  isRootInvocation,
+} from '@/test_investigation/utils/invocation_utils';
 import {
   getBuildDetailsUrl,
   getCommitGitilesUrlFromInvocation,
@@ -70,6 +73,7 @@ export function TestInfoHeader() {
   let extraBuilds;
   let extraBuildId;
   let extraBuildTarget;
+  let extraBuildBranch;
 
   if (isRootInvocation(invocation)) {
     primaryBuild = invocation?.primaryBuild?.androidBuild;
@@ -80,6 +84,7 @@ export function TestInfoHeader() {
   }
   const primaryBuildId = primaryBuild?.buildId;
   const primaryBuildTarget = primaryBuild?.buildTarget;
+  const primaryBuildBranch = primaryBuild?.branch;
   const extraBuildCount = extraBuilds.length;
   if (extraBuildCount > 0) {
     extraBuildId = isRootInvocation(invocation)
@@ -88,6 +93,39 @@ export function TestInfoHeader() {
     extraBuildTarget = isRootInvocation(invocation)
       ? extraBuilds[0].androidBuild?.buildTarget
       : extraBuilds[0].buildTarget;
+    extraBuildBranch = isRootInvocation(invocation)
+      ? extraBuilds[0].androidBuild?.branch
+      : extraBuilds[0].branch;
+  }
+  interface BuildInfoTooltipProps {
+    buildId: string;
+    buildBranch: string;
+    buildTarget: string;
+  }
+
+  function BuildInfoTooltip({
+    buildId,
+    buildBranch,
+    buildTarget,
+  }: BuildInfoTooltipProps) {
+    return (
+      <Box sx={{ padding: 1.5 }}>
+        <Box sx={{ display: 'flex' }}>
+          <Typography variant="subtitle2">Build: {buildId}</Typography>
+          <CopyToClipboard textToCopy={buildId} aria-label="Copy build ID" />
+        </Box>
+        <Typography
+          variant="caption"
+          fontStyle="italic"
+          sx={{ display: 'block' }}
+        >
+          {buildBranch}
+        </Typography>
+        <Typography variant="caption" fontStyle="italic">
+          {buildTarget}
+        </Typography>
+      </Box>
+    );
   }
 
   return (
@@ -124,36 +162,60 @@ export function TestInfoHeader() {
         )}
         {primaryBuildId && primaryBuildTarget && (
           <SummaryLineItem label="Build">
-            <Link
-              href={getBuildDetailsUrl(primaryBuildId, primaryBuildTarget)}
-              target="_blank"
-              rel="noopener noreferrer"
+            <HtmlTooltip
+              title={BuildInfoTooltip({
+                buildId: primaryBuildId,
+                buildBranch: primaryBuildBranch,
+                buildTarget: primaryBuildTarget,
+              })}
             >
-              {primaryBuildId}
-            </Link>
+              <Link
+                href={getBuildDetailsUrl(primaryBuildId, primaryBuildTarget)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {primaryBuildId}
+              </Link>
+            </HtmlTooltip>
           </SummaryLineItem>
         )}
         {extraBuildId &&
           extraBuildTarget &&
           (extraBuildCount === 1 ? (
             <SummaryLineItem label="Extra build">
-              <Link
-                href={getBuildDetailsUrl(extraBuildId, extraBuildTarget)}
-                target="_blank"
-                rel="noopener noreferrer"
+              <HtmlTooltip
+                title={BuildInfoTooltip({
+                  buildId: extraBuildId,
+                  buildBranch: extraBuildBranch,
+                  buildTarget: extraBuildTarget,
+                })}
               >
-                {extraBuildId}
-              </Link>
+                <Link
+                  href={getBuildDetailsUrl(extraBuildId, extraBuildTarget)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {extraBuildId}
+                </Link>
+              </HtmlTooltip>
             </SummaryLineItem>
           ) : (
             <Typography variant="body2" component="span" color="text.secondary">
-              <Link
-                href={getBuildDetailsUrl(extraBuildId, extraBuildTarget)}
-                target="_blank"
-                rel="noopener noreferrer"
+              <HtmlTooltip
+                title={BuildInfoTooltip({
+                  buildId: extraBuildId,
+                  buildBranch: extraBuildBranch,
+                  buildTarget: extraBuildTarget,
+                })}
               >
-                {`${extraBuildCount} extra builds`}
-              </Link>
+                <Link
+                  href={getBuildDetailsUrl(extraBuildId, extraBuildTarget)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {`${extraBuildCount} extra builds`}
+                </Link>
+              </HtmlTooltip>
             </Typography>
           ))}
       </PageSummaryLine>
