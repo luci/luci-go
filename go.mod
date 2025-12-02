@@ -77,7 +77,7 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	github.com/yosuke-furukawa/json5 v0.1.1
 	github.com/yuin/gopher-lua v1.1.1
-	go.chromium.org/turboci/proto/go v0.0.0-20251121213450-6b169c88e769
+	go.chromium.org/turboci/proto/go v0.0.0-20251202205910-f8dbf7124226
 	go.opentelemetry.io/contrib/detectors/gcp v1.37.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.62.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.62.0
