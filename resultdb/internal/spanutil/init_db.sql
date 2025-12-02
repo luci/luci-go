@@ -563,13 +563,17 @@ CREATE TABLE TestResultsV2 (
   --
   -- A scheme dependent value used to organise the test into a coarse group of related tests,
   -- such as a package or directory.
-  CoarseName STRING(MAX) NOT NULL,
+  --
+  -- This field is named Tx<field_name> so that the names (ModuleName, ModuleScheme, ModuleVariantHash,
+  -- T1CoarseName, T2FineName, T3CaseName) are sorted lexicographically. This turns out to be important
+  -- for the query planner when using a merge join between the TestResultsV2 and TestExonerationsV2 tables.
+  T1CoarseName STRING(MAX) NOT NULL,
 
   -- Intermediate hierarchy - fine name.
   --
   -- A finer grouping within the above coarse grouping (if any), e.g. class or file.
   -- If the scheme does not define a fine grouping, this may be blank.
-  FineName STRING(MAX) NOT NULL,
+  T2FineName STRING(MAX) NOT NULL,
 
   -- The identifier of test case within the above fine grouping.
   --
@@ -577,7 +581,7 @@ CREATE TABLE TestResultsV2 (
   --
   -- This is the finest granularity component of the test identifier, and typically
   -- refers to sub-file granularity unless no such granularity exists.
-  CaseName STRING(MAX) NOT NULL,
+  T3CaseName STRING(MAX) NOT NULL,
 
   -- The identifier of the work unit in which this result was uploaded.
   WorkUnitId STRING(MAX) NOT NULL,
@@ -644,7 +648,7 @@ CREATE TABLE TestResultsV2 (
   -- See `framework_extensions` in test_results.proto for details.
   -- See spanutil.Compressed type for details of compression.
   FrameworkExtensions BYTES(MAX),
-) PRIMARY KEY (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, CoarseName, FineName, CaseName, WorkUnitId, ResultId),
+) PRIMARY KEY (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName, WorkUnitId, ResultId),
   INTERLEAVE IN PARENT RootInvocationShards ON DELETE CASCADE;
 
 -- Stores test exonerations in a root invocation.
@@ -676,13 +680,17 @@ CREATE TABLE TestExonerationsV2 (
   --
   -- A scheme dependent value used to organise the test into a coarse group of related tests,
   -- such as a package or directory.
-  CoarseName STRING(MAX) NOT NULL,
+  --
+  -- This field is named Tx<field_name> so that the names (ModuleName, ModuleScheme, ModuleVariantHash,
+  -- T1CoarseName, T2FineName, T3CaseName) are sorted lexicographically. This turns out to be important
+  -- for the query planner when using a merge join between the TestResultsV2 and TestExonerationsV2 tables.
+  T1CoarseName STRING(MAX) NOT NULL,
 
   -- Intermediate hierarchy - fine name.
   --
   -- A finer grouping within the above coarse grouping (if any), e.g. class or file.
   -- If the scheme does not define a fine grouping, this may be blank.
-  FineName STRING(MAX) NOT NULL,
+  T2FineName STRING(MAX) NOT NULL,
 
   -- The identifier of test case within the above fine grouping.
   --
@@ -690,7 +698,7 @@ CREATE TABLE TestExonerationsV2 (
   --
   -- This is the finest granularity component of the test identifier, and typically
   -- refers to sub-file granularity unless no such granularity exists.
-  CaseName STRING(MAX) NOT NULL,
+  T3CaseName STRING(MAX) NOT NULL,
 
   -- The identifier of the work unit in which this exoneration was uploaded.
   WorkUnitId STRING(MAX) NOT NULL,
@@ -717,7 +725,7 @@ CREATE TABLE TestExonerationsV2 (
   -- The reason the test variant was exonerated.
   -- See resultdb.v1.ExonerationReason.
   Reason INT64 NOT NULL,
-) PRIMARY KEY (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, CoarseName, FineName, CaseName, WorkUnitId, ExonerationId),
+) PRIMARY KEY (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName, WorkUnitId, ExonerationId),
   INTERLEAVE IN PARENT RootInvocationShards ON DELETE CASCADE;
 
 

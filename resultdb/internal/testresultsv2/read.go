@@ -46,9 +46,9 @@ func ReadAllForTesting(ctx context.Context) (rows []*TestResultRow, err error) {
 			ModuleName,
 			ModuleScheme,
 			ModuleVariantHash,
-			CoarseName,
-			FineName,
-			CaseName,
+			T1CoarseName,
+			T2FineName,
+			T3CaseName,
 			WorkUnitId,
 			ResultId,
 			ModuleVariant,
@@ -66,7 +66,7 @@ func ReadAllForTesting(ctx context.Context) (rows []*TestResultRow, err error) {
 			SkippedReason,
 			FrameworkExtensions
 		FROM TestResultsV2
-		ORDER BY RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, CoarseName, FineName, CaseName, WorkUnitId, ResultId
+		ORDER BY RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName, WorkUnitId, ResultId
 	`)
 
 	var b spanutil.Buffer
