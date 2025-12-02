@@ -27,7 +27,11 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  */
 export interface WriteNodesRequest {
   /**
-   * The token of the Stage Attempt which is performing this write.
+   * The token which constrains this write to a specific Workplan (and possibly
+   * to a Stage Attempt in that Workplan).
+   *
+   * A suitable token is provided to the Executor of a Stage or to the creator
+   * of an empty Workplan.
    *
    * This is in addition to regular RPC authorization.
    *
@@ -35,7 +39,7 @@ export interface WriteNodesRequest {
    * 'turboci.workplans.writeExternal' permission on Workplan(s) in the
    * CheckWrites/StageWrites.
    */
-  readonly stageAttemptToken?:
+  readonly token?:
     | string
     | undefined;
   /**
@@ -77,9 +81,9 @@ export interface WriteNodesRequest {
   /** Write to zero or more Stages. */
   readonly stages: readonly WriteNodesRequest_StageWrite[];
   /**
-   * State for the current Stage as indicated by `stage_attempt_token`.
+   * State for the current Stage as indicated by `token`.
    *
-   * It is invalid to set this without also setting `stage_attempt_token`.
+   * It is invalid to set this without also setting `token`.
    *
    * All WriteNodes calls with a token act as a heartbeat for the current Stage
    * Attempt indicated by the token. If you need to implement the 'simplest
@@ -100,10 +104,10 @@ export interface WriteNodesRequest {
  */
 export interface WriteNodesRequest_RealmValue {
   /**
-   * The realm to assign to this value (if the value is being created).
-   * If it's unset/empty, it will inherit from the realm of the Stage
-   * indicated by stage_attempt_token. If it's unset/empty and there is no
-   * stage_attempt_token, the update will be rejected.
+   * The realm to assign to this value (if the value is being created). If
+   * it's unset/empty, it will inherit from the realm of the object containing
+   * it (so, for Check options or result data, this would be the Check's
+   * realm).
    *
    * If the value is being overwritten and `realm` is provided, it must match
    * the already-written value's realm.
@@ -161,6 +165,10 @@ export interface WriteNodesRequest_Reason {
    * The security realm for this reason.
    *
    * If omitted, this will be the same as the parent node's realm.
+   *
+   * This means that if you write to multiple Checks/Stages in the same
+   * WriteNodes call, this same Reason will be present in multiple Edits
+   * belonging to those different Checks and/or Stages' realms.
    */
   readonly realm?:
     | string
@@ -267,12 +275,11 @@ export interface WriteNodesRequest_CheckWrite {
    * The check to write to.
    *
    * If the WorkPlan is left blank, will be populated with the WorkPlan in
-   * `stage_attempt_token`, if it's provided.
+   * `token`, if it's provided.
    *
-   * Otherwise, the Check must belong to the stage_attempt_token's WorkPlan,
-   * or the caller must have the additional "turboci.workplans.writeExternal"
-   * permission in the check's realm (or in the realm of the option/result
-   * data).
+   * Otherwise, the Check must belong to the token's WorkPlan, or the caller
+   * must have the additional "turboci.workplans.writeExternal" permission in
+   * the check's realm (or in the realm of the option/result data).
    */
   readonly identifier?:
     | Check
@@ -284,9 +291,11 @@ export interface WriteNodesRequest_CheckWrite {
    * existing realm.
    *
    * If absent and this CheckWrite creates the Check, the written Check will
-   * copy its realm from the Stage doing the write (assuming
-   * `stage_attempt_token` is set). If `stage_attempt_token` is unset and this
-   * field is absent, the write will be rejected.
+   * copy its realm from the implied realm of the `token`. For Stage Attempt
+   * tokens, this will be the Stage's realm, and for Creator tokens, this
+   * will be the WorkPlan's realm.
+   *
+   * If `token` is unset and this field is absent, the write will be rejected.
    */
   readonly realm?:
     | string
@@ -321,8 +330,8 @@ export interface WriteNodesRequest_CheckWrite {
    * Write data to a Result for this Check.
    *
    * The Result to write in is keyed on:
-   *   * The Stage Attempt (if stage_attempt_token is provided)
-   *   * The caller's identity (if stage_attempt_token is absent)
+   *   * The Stage Attempt (if `token` is provided)
+   *   * The caller's identity (if `token` is absent)
    *
    * If the given keyed Result does not exist, it will be automatically
    * created. Multiple calls to WriteNodes from this same StageAttempt or
@@ -364,11 +373,11 @@ export interface WriteNodesRequest_StageWrite {
    * The stage to write to.
    *
    * If the WorkPlan is left blank, will be populated with the WorkPlan in
-   * `stage_attempt_token`, if it's provided.
+   * `token`, if it's provided.
    *
-   * Otherwise, the Stage must belong to the stage_attempt_token's WorkPlan,
-   * or the caller must have the additional "turboci.workplans.writeExternal"
-   * permission in the stage's realm.
+   * Otherwise, the Stage must belong to the token's WorkPlan, or the caller
+   * must have the additional "turboci.workplans.writeExternal" permission in
+   * the stage's realm.
    *
    * The `is_worknode` field should also be omitted - it will be filled in by
    * the server according to the type of `args`.
@@ -401,10 +410,11 @@ export interface WriteNodesRequest_StageWrite {
    * If the Stage already exists, this will only result in an error if it
    * doesn't match the existing realm.
    *
-   * If absent, the written Stage will copy its realm from the Stage doing
-   * the write (assuming `stage_attempt_token` is set). If
-   * `stage_attempt_token` is unset and this field is absent, the write will
-   * be rejected.
+   * If absent the written Stage will copy its realm from the implied realm of
+   * the `token`. For Stage Attempt tokens, this will be the Stage's realm,
+   * and for Creator tokens, this will be the WorkPlan's realm.
+   *
+   * If `token` is unset and this field is absent, the write will be rejected.
    */
   readonly realm?:
     | string
@@ -547,13 +557,13 @@ export interface WriteNodesRequest_CurrentStageWrite {
 }
 
 function createBaseWriteNodesRequest(): WriteNodesRequest {
-  return { stageAttemptToken: undefined, reasons: [], txn: undefined, checks: [], stages: [], currentStage: undefined };
+  return { token: undefined, reasons: [], txn: undefined, checks: [], stages: [], currentStage: undefined };
 }
 
 export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
   encode(message: WriteNodesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.stageAttemptToken !== undefined) {
-      writer.uint32(10).string(message.stageAttemptToken);
+    if (message.token !== undefined) {
+      writer.uint32(10).string(message.token);
     }
     for (const v of message.reasons) {
       WriteNodesRequest_Reason.encode(v!, writer.uint32(18).fork()).join();
@@ -585,7 +595,7 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
             break;
           }
 
-          message.stageAttemptToken = reader.string();
+          message.token = reader.string();
           continue;
         }
         case 2: {
@@ -639,7 +649,7 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
 
   fromJSON(object: any): WriteNodesRequest {
     return {
-      stageAttemptToken: isSet(object.stageAttemptToken) ? globalThis.String(object.stageAttemptToken) : undefined,
+      token: isSet(object.token) ? globalThis.String(object.token) : undefined,
       reasons: globalThis.Array.isArray(object?.reasons)
         ? object.reasons.map((e: any) => WriteNodesRequest_Reason.fromJSON(e))
         : [],
@@ -658,8 +668,8 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
 
   toJSON(message: WriteNodesRequest): unknown {
     const obj: any = {};
-    if (message.stageAttemptToken !== undefined) {
-      obj.stageAttemptToken = message.stageAttemptToken;
+    if (message.token !== undefined) {
+      obj.token = message.token;
     }
     if (message.reasons?.length) {
       obj.reasons = message.reasons.map((e) => WriteNodesRequest_Reason.toJSON(e));
@@ -684,7 +694,7 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
   },
   fromPartial(object: DeepPartial<WriteNodesRequest>): WriteNodesRequest {
     const message = createBaseWriteNodesRequest() as any;
-    message.stageAttemptToken = object.stageAttemptToken ?? undefined;
+    message.token = object.token ?? undefined;
     message.reasons = object.reasons?.map((e) => WriteNodesRequest_Reason.fromPartial(e)) || [];
     message.txn = (object.txn !== undefined && object.txn !== null)
       ? WriteNodesRequest_TransactionDetails.fromPartial(object.txn)

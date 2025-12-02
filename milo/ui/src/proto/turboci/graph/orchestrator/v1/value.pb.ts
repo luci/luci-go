@@ -51,11 +51,21 @@ export interface Value {
     | boolean
     | undefined;
   /** A ProtoJSON-serialized version of `value`. */
-  readonly valueJson?: string | undefined;
+  readonly valueJson?:
+    | string
+    | undefined;
+  /**
+   * If true, `value.value` was pruned from this message either due to
+   * permissions (no read access in the realm containing this Value) or due to
+   * a Query filter (not in type_info.wanted).
+   *
+   * `value.type_url`, however will always be present as metadata.
+   */
+  readonly omitted?: boolean | undefined;
 }
 
 function createBaseValue(): Value {
-  return { value: undefined, hasUnknownFields: undefined, valueJson: undefined };
+  return { value: undefined, hasUnknownFields: undefined, valueJson: undefined, omitted: undefined };
 }
 
 export const Value: MessageFns<Value> = {
@@ -68,6 +78,9 @@ export const Value: MessageFns<Value> = {
     }
     if (message.valueJson !== undefined) {
       writer.uint32(26).string(message.valueJson);
+    }
+    if (message.omitted !== undefined) {
+      writer.uint32(32).bool(message.omitted);
     }
     return writer;
   },
@@ -103,6 +116,14 @@ export const Value: MessageFns<Value> = {
           message.valueJson = reader.string();
           continue;
         }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.omitted = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -117,6 +138,7 @@ export const Value: MessageFns<Value> = {
       value: isSet(object.value) ? Any.fromJSON(object.value) : undefined,
       hasUnknownFields: isSet(object.hasUnknownFields) ? globalThis.Boolean(object.hasUnknownFields) : undefined,
       valueJson: isSet(object.valueJson) ? globalThis.String(object.valueJson) : undefined,
+      omitted: isSet(object.omitted) ? globalThis.Boolean(object.omitted) : undefined,
     };
   },
 
@@ -131,6 +153,9 @@ export const Value: MessageFns<Value> = {
     if (message.valueJson !== undefined) {
       obj.valueJson = message.valueJson;
     }
+    if (message.omitted !== undefined) {
+      obj.omitted = message.omitted;
+    }
     return obj;
   },
 
@@ -142,6 +167,7 @@ export const Value: MessageFns<Value> = {
     message.value = (object.value !== undefined && object.value !== null) ? Any.fromPartial(object.value) : undefined;
     message.hasUnknownFields = object.hasUnknownFields ?? undefined;
     message.valueJson = object.valueJson ?? undefined;
+    message.omitted = object.omitted ?? undefined;
     return message;
   },
 };

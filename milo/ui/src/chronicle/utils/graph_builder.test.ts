@@ -68,8 +68,6 @@ function createCheckView(
       // other fields like realm/version/state can be undefined
     } as Check,
     edits: [],
-    results: {},
-    optionData: {},
   };
 }
 

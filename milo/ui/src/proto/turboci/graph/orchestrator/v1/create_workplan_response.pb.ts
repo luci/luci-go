@@ -13,17 +13,29 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
 /** Request message for TurboCIOrchestrator.CreateWorkPlan. */
 export interface CreateWorkPlanResponse {
   /** The created WorkPlan's identifier. */
-  readonly identifier?: WorkPlan | undefined;
+  readonly identifier?:
+    | WorkPlan
+    | undefined;
+  /**
+   * A token suitable for use with WriteNodes and QueryNodes.
+   *
+   * Any writes done with this token are attributed to "WorkplanCreator", rather
+   * than any particular stage.
+   */
+  readonly creatorToken?: string | undefined;
 }
 
 function createBaseCreateWorkPlanResponse(): CreateWorkPlanResponse {
-  return { identifier: undefined };
+  return { identifier: undefined, creatorToken: undefined };
 }
 
 export const CreateWorkPlanResponse: MessageFns<CreateWorkPlanResponse> = {
   encode(message: CreateWorkPlanResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.identifier !== undefined) {
       WorkPlan.encode(message.identifier, writer.uint32(10).fork()).join();
+    }
+    if (message.creatorToken !== undefined) {
+      writer.uint32(18).string(message.creatorToken);
     }
     return writer;
   },
@@ -43,6 +55,14 @@ export const CreateWorkPlanResponse: MessageFns<CreateWorkPlanResponse> = {
           message.identifier = WorkPlan.decode(reader, reader.uint32());
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.creatorToken = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -53,13 +73,19 @@ export const CreateWorkPlanResponse: MessageFns<CreateWorkPlanResponse> = {
   },
 
   fromJSON(object: any): CreateWorkPlanResponse {
-    return { identifier: isSet(object.identifier) ? WorkPlan.fromJSON(object.identifier) : undefined };
+    return {
+      identifier: isSet(object.identifier) ? WorkPlan.fromJSON(object.identifier) : undefined,
+      creatorToken: isSet(object.creatorToken) ? globalThis.String(object.creatorToken) : undefined,
+    };
   },
 
   toJSON(message: CreateWorkPlanResponse): unknown {
     const obj: any = {};
     if (message.identifier !== undefined) {
       obj.identifier = WorkPlan.toJSON(message.identifier);
+    }
+    if (message.creatorToken !== undefined) {
+      obj.creatorToken = message.creatorToken;
     }
     return obj;
   },
@@ -72,6 +98,7 @@ export const CreateWorkPlanResponse: MessageFns<CreateWorkPlanResponse> = {
     message.identifier = (object.identifier !== undefined && object.identifier !== null)
       ? WorkPlan.fromPartial(object.identifier)
       : undefined;
+    message.creatorToken = object.creatorToken ?? undefined;
     return message;
   },
 };

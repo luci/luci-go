@@ -29,9 +29,7 @@ const checkView = (check: Partial<Check>): CheckView => ({
     stateHistory: [],
     ...check,
   },
-  optionData: {},
   edits: [],
-  results: [],
 });
 
 const stageView = (stage: Partial<Stage>): StageView => ({

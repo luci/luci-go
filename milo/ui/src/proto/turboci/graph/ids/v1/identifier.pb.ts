@@ -192,7 +192,7 @@ export interface CheckEdit {
  * Serialized as "<check_edit>:O<idx>".
  *
  * E.g.
- * "L<check_edit.check.work_plan.id>:C<check_edit.check.id>:V<check_edit.version.seconds>/<check_edit.version.nanos>:D<idx>"
+ * "L<check_edit.check.work_plan.id>:C<check_edit.check.id>:V<check_edit.version.seconds>/<check_edit.version.nanos>:O<idx>"
  *
  * This is separate from `CheckEdit` because it may reside in a different
  * realm than the CheckEdit itself.

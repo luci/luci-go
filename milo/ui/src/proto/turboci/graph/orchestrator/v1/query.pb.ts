@@ -85,21 +85,6 @@ export function queryExpandDepsModeToJSON(object: QueryExpandDepsMode): string {
  * See QueryNodesRequest.version for how this Query interacts with transactions.
  */
 export interface Query {
-  /**
-   * Type URLs (for Check Option Datum, Check Result Datum, Stage args,
-   * CheckEdit Option Datum and CheckEdit Result) that the caller wants to see
-   * in the response.  Any child Node whose type URL is not specified here
-   * will be omitted in the response.
-   *
-   * TBD: The special value "*" means that the caller wants to see all type
-   * URLs, but this requires an extra permission. Extra permission is needed
-   * to encourage clients to be explicit about what they want to reduce
-   * bandwidth, coupling and increase auditability.
-   *
-   * TBD: Allow limited wildcards to include everything under some package
-   * namespace.
-   */
-  readonly typeUrls: readonly string[];
   /** Select an arbitrary set of nodes. */
   readonly select?:
     | Query_Select
@@ -259,14 +244,11 @@ export interface Query_Collect_Stage {
 }
 
 function createBaseQuery(): Query {
-  return { typeUrls: [], select: undefined, expand: undefined, collect: undefined };
+  return { select: undefined, expand: undefined, collect: undefined };
 }
 
 export const Query: MessageFns<Query> = {
   encode(message: Query, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.typeUrls) {
-      writer.uint32(10).string(v!);
-    }
     if (message.select !== undefined) {
       Query_Select.encode(message.select, writer.uint32(18).fork()).join();
     }
@@ -286,14 +268,6 @@ export const Query: MessageFns<Query> = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.typeUrls.push(reader.string());
-          continue;
-        }
         case 2: {
           if (tag !== 18) {
             break;
@@ -329,7 +303,6 @@ export const Query: MessageFns<Query> = {
 
   fromJSON(object: any): Query {
     return {
-      typeUrls: globalThis.Array.isArray(object?.typeUrls) ? object.typeUrls.map((e: any) => globalThis.String(e)) : [],
       select: isSet(object.select) ? Query_Select.fromJSON(object.select) : undefined,
       expand: isSet(object.expand) ? Query_Expand.fromJSON(object.expand) : undefined,
       collect: isSet(object.collect) ? Query_Collect.fromJSON(object.collect) : undefined,
@@ -338,9 +311,6 @@ export const Query: MessageFns<Query> = {
 
   toJSON(message: Query): unknown {
     const obj: any = {};
-    if (message.typeUrls?.length) {
-      obj.typeUrls = message.typeUrls;
-    }
     if (message.select !== undefined) {
       obj.select = Query_Select.toJSON(message.select);
     }
@@ -358,7 +328,6 @@ export const Query: MessageFns<Query> = {
   },
   fromPartial(object: DeepPartial<Query>): Query {
     const message = createBaseQuery() as any;
-    message.typeUrls = object.typeUrls?.map((e) => e) || [];
     message.select = (object.select !== undefined && object.select !== null)
       ? Query_Select.fromPartial(object.select)
       : undefined;

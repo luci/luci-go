@@ -6,8 +6,8 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { Edit } from "./edit.pb";
 import { Stage } from "./stage.pb";
-import { StageEditView } from "./stage_edit_view.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
@@ -23,9 +23,9 @@ export interface StageView {
   /**
    * StageEdits for this Stage.
    *
-   * Sorted by `edit.version`.
+   * Sorted by `version`.
    */
-  readonly edits: readonly StageEditView[];
+  readonly edits: readonly Edit[];
 }
 
 function createBaseStageView(): StageView {
@@ -38,7 +38,7 @@ export const StageView: MessageFns<StageView> = {
       Stage.encode(message.stage, writer.uint32(10).fork()).join();
     }
     for (const v of message.edits) {
-      StageEditView.encode(v!, writer.uint32(26).fork()).join();
+      Edit.encode(v!, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -58,12 +58,12 @@ export const StageView: MessageFns<StageView> = {
           message.stage = Stage.decode(reader, reader.uint32());
           continue;
         }
-        case 3: {
-          if (tag !== 26) {
+        case 2: {
+          if (tag !== 18) {
             break;
           }
 
-          message.edits.push(StageEditView.decode(reader, reader.uint32()));
+          message.edits.push(Edit.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -78,7 +78,7 @@ export const StageView: MessageFns<StageView> = {
   fromJSON(object: any): StageView {
     return {
       stage: isSet(object.stage) ? Stage.fromJSON(object.stage) : undefined,
-      edits: globalThis.Array.isArray(object?.edits) ? object.edits.map((e: any) => StageEditView.fromJSON(e)) : [],
+      edits: globalThis.Array.isArray(object?.edits) ? object.edits.map((e: any) => Edit.fromJSON(e)) : [],
     };
   },
 
@@ -88,7 +88,7 @@ export const StageView: MessageFns<StageView> = {
       obj.stage = Stage.toJSON(message.stage);
     }
     if (message.edits?.length) {
-      obj.edits = message.edits.map((e) => StageEditView.toJSON(e));
+      obj.edits = message.edits.map((e) => Edit.toJSON(e));
     }
     return obj;
   },
@@ -99,7 +99,7 @@ export const StageView: MessageFns<StageView> = {
   fromPartial(object: DeepPartial<StageView>): StageView {
     const message = createBaseStageView() as any;
     message.stage = (object.stage !== undefined && object.stage !== null) ? Stage.fromPartial(object.stage) : undefined;
-    message.edits = object.edits?.map((e) => StageEditView.fromPartial(e)) || [];
+    message.edits = object.edits?.map((e) => Edit.fromPartial(e)) || [];
     return message;
   },
 };

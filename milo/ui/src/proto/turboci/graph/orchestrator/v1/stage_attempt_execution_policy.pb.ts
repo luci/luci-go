@@ -15,8 +15,8 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  * may be executed by the Orchestrator.
  */
 export interface StageAttemptExecutionPolicy {
-  /** The heartbeat policies for Attempts of this Stage. */
-  readonly attemptHeartbeat?:
+  /** The heart policies for the StageAttempt. */
+  readonly heartbeat?:
     | StageAttemptExecutionPolicy_Heartbeat
     | undefined;
   /** The timeout policies for the StageAttempt. */
@@ -155,13 +155,13 @@ export interface StageAttemptExecutionPolicy_Timeout {
 }
 
 function createBaseStageAttemptExecutionPolicy(): StageAttemptExecutionPolicy {
-  return { attemptHeartbeat: undefined, timeout: undefined };
+  return { heartbeat: undefined, timeout: undefined };
 }
 
 export const StageAttemptExecutionPolicy: MessageFns<StageAttemptExecutionPolicy> = {
   encode(message: StageAttemptExecutionPolicy, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.attemptHeartbeat !== undefined) {
-      StageAttemptExecutionPolicy_Heartbeat.encode(message.attemptHeartbeat, writer.uint32(10).fork()).join();
+    if (message.heartbeat !== undefined) {
+      StageAttemptExecutionPolicy_Heartbeat.encode(message.heartbeat, writer.uint32(10).fork()).join();
     }
     if (message.timeout !== undefined) {
       StageAttemptExecutionPolicy_Timeout.encode(message.timeout, writer.uint32(18).fork()).join();
@@ -181,7 +181,7 @@ export const StageAttemptExecutionPolicy: MessageFns<StageAttemptExecutionPolicy
             break;
           }
 
-          message.attemptHeartbeat = StageAttemptExecutionPolicy_Heartbeat.decode(reader, reader.uint32());
+          message.heartbeat = StageAttemptExecutionPolicy_Heartbeat.decode(reader, reader.uint32());
           continue;
         }
         case 2: {
@@ -203,17 +203,15 @@ export const StageAttemptExecutionPolicy: MessageFns<StageAttemptExecutionPolicy
 
   fromJSON(object: any): StageAttemptExecutionPolicy {
     return {
-      attemptHeartbeat: isSet(object.attemptHeartbeat)
-        ? StageAttemptExecutionPolicy_Heartbeat.fromJSON(object.attemptHeartbeat)
-        : undefined,
+      heartbeat: isSet(object.heartbeat) ? StageAttemptExecutionPolicy_Heartbeat.fromJSON(object.heartbeat) : undefined,
       timeout: isSet(object.timeout) ? StageAttemptExecutionPolicy_Timeout.fromJSON(object.timeout) : undefined,
     };
   },
 
   toJSON(message: StageAttemptExecutionPolicy): unknown {
     const obj: any = {};
-    if (message.attemptHeartbeat !== undefined) {
-      obj.attemptHeartbeat = StageAttemptExecutionPolicy_Heartbeat.toJSON(message.attemptHeartbeat);
+    if (message.heartbeat !== undefined) {
+      obj.heartbeat = StageAttemptExecutionPolicy_Heartbeat.toJSON(message.heartbeat);
     }
     if (message.timeout !== undefined) {
       obj.timeout = StageAttemptExecutionPolicy_Timeout.toJSON(message.timeout);
@@ -226,8 +224,8 @@ export const StageAttemptExecutionPolicy: MessageFns<StageAttemptExecutionPolicy
   },
   fromPartial(object: DeepPartial<StageAttemptExecutionPolicy>): StageAttemptExecutionPolicy {
     const message = createBaseStageAttemptExecutionPolicy() as any;
-    message.attemptHeartbeat = (object.attemptHeartbeat !== undefined && object.attemptHeartbeat !== null)
-      ? StageAttemptExecutionPolicy_Heartbeat.fromPartial(object.attemptHeartbeat)
+    message.heartbeat = (object.heartbeat !== undefined && object.heartbeat !== null)
+      ? StageAttemptExecutionPolicy_Heartbeat.fromPartial(object.heartbeat)
       : undefined;
     message.timeout = (object.timeout !== undefined && object.timeout !== null)
       ? StageAttemptExecutionPolicy_Timeout.fromPartial(object.timeout)

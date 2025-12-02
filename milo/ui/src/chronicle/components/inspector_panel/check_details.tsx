@@ -64,10 +64,10 @@ export function CheckDetails({ view }: CheckDetailsProps) {
       {check.options.length > 0 && (
         <>
           <Typography variant="subtitle2">Options</Typography>
-          {Object.entries(view.optionData).map(([typeUrl, datum]) => (
+          {check.options.map((datum, index) => (
             <AnyDetails
-              key={`check-option-${typeUrl}`}
-              typeUrl={typeUrl}
+              key={`check-option-${index}`}
+              typeUrl={datum.value?.value?.typeUrl}
               json={datum.value?.valueJson}
             />
           ))}
@@ -79,14 +79,13 @@ export function CheckDetails({ view }: CheckDetailsProps) {
       {check.results.length > 0 && (
         <>
           <Typography variant="subtitle2">Results</Typography>
-          {Object.entries(view.results).map(([resIdx, resultView]) => {
-            const dataEntries = Object.entries(resultView.data);
-            if (dataEntries.length === 0) return null;
+          {check.results.map((result, resIdx) => {
+            if (result.data.length === 0) return null;
 
-            return dataEntries.map(([typeUrl, datum]) => (
+            return result.data.map((datum, dataIdx) => (
               <AnyDetails
-                key={`result-${resIdx}-${typeUrl}`}
-                typeUrl={typeUrl}
+                key={`result-${resIdx}-${dataIdx}`}
+                typeUrl={datum.value?.value?.typeUrl}
                 json={datum.value?.valueJson}
               />
             ));

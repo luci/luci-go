@@ -63,9 +63,9 @@ export function ChronicleContextProvider({
           checkPatterns: [],
           stagePatterns: [],
         },
-        typeUrls: [],
       },
     ],
+    typeInfo: { wanted: ['*'], known: ['*'] },
   });
 
   const queryNodesResponse = result.data;

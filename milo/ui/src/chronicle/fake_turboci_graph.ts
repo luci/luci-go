@@ -59,13 +59,10 @@ import {
 import { Actor } from '../proto/turboci/graph/orchestrator/v1/actor.pb';
 import {
   Check,
-  Check_OptionRef,
   Check_Result,
 } from '../proto/turboci/graph/orchestrator/v1/check.pb';
 import { CheckDelta } from '../proto/turboci/graph/orchestrator/v1/check_delta.pb';
-import { CheckEditView } from '../proto/turboci/graph/orchestrator/v1/check_edit_view.pb';
 import { CheckKind } from '../proto/turboci/graph/orchestrator/v1/check_kind.pb';
-import { CheckResultView } from '../proto/turboci/graph/orchestrator/v1/check_result_view.pb';
 import { CheckState } from '../proto/turboci/graph/orchestrator/v1/check_state.pb';
 import { CheckView } from '../proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { Datum } from '../proto/turboci/graph/orchestrator/v1/datum.pb';
@@ -86,7 +83,6 @@ import {
 } from '../proto/turboci/graph/orchestrator/v1/stage.pb';
 import { StageAttemptState } from '../proto/turboci/graph/orchestrator/v1/stage_attempt_state.pb';
 import { StageDelta } from '../proto/turboci/graph/orchestrator/v1/stage_delta.pb';
-import { StageEditView } from '../proto/turboci/graph/orchestrator/v1/stage_edit_view.pb';
 import {
   StageExecutionPolicy,
   StageExecutionPolicy_StageTimeoutMode,
@@ -185,10 +181,8 @@ export interface GraphGenerationConfig {
 }
 
 interface CheckData {
-  optionsRef: Check_OptionRef;
-  optionDatum: Datum;
+  optionsDatum: Datum;
   resultRef?: Check_Result;
-  resultView?: CheckResultView;
 }
 
 export class FakeGraphGenerator {
@@ -523,7 +517,7 @@ export class FakeGraphGenerator {
         planningStageId = this.sourcePlanningStageId;
     }
 
-    const edits: CheckEditView[] = [];
+    const edits: Edit[] = [];
     const actor: Actor = {
       stageAttempt: { stage: executingStageId },
     };
@@ -543,8 +537,8 @@ export class FakeGraphGenerator {
     };
 
     // 1. Creation Edit (PLANNING)
-    edits.push({
-      edit: this.createEdit(
+    edits.push(
+      this.createEdit(
         { check: checkId },
         realm,
         creationRev,
@@ -552,19 +546,18 @@ export class FakeGraphGenerator {
         {
           check: {
             state: CheckState.CHECK_STATE_PLANNING,
-            options: [data.optionsRef.identifier!],
+            options: [data.optionsDatum],
             dependencies: deps,
             result: [],
           },
         },
         this.getOrchestratorActor(),
       ),
-      optionData: { [data.optionsRef.typeUrl!]: data.optionDatum },
-    });
+    );
 
     // 2. Planned (by planning stage)
-    edits.push({
-      edit: this.createEdit(
+    edits.push(
+      this.createEdit(
         { check: checkId },
         realm,
         plannedRev,
@@ -572,19 +565,18 @@ export class FakeGraphGenerator {
         {
           check: {
             state: CheckState.CHECK_STATE_PLANNED,
-            options: [data.optionsRef.identifier!],
+            options: [data.optionsDatum],
             dependencies: deps,
             result: [],
           },
         },
         planningActor,
       ),
-      optionData: { [data.optionsRef.typeUrl!]: data.optionDatum },
-    });
+    );
 
     // 3. Waiting Edit (simulated orchestration steps)
-    edits.push({
-      edit: this.createEdit(
+    edits.push(
+      this.createEdit(
         { check: checkId },
         realm,
         plannedRev,
@@ -599,14 +591,12 @@ export class FakeGraphGenerator {
         },
         this.getOrchestratorActor(),
       ),
-      optionData: {},
-    });
+    );
 
     // Construct finalized result ref based on generated data and time
     const results: Check_Result[] = [];
-    const resultsViewData: Record<number, CheckResultView> = {};
 
-    if (data.resultRef && data.resultView) {
+    if (data.resultRef) {
       const finalizedResultRef: Check_Result = {
         identifier: data.resultRef.identifier,
         owner: data.resultRef.owner,
@@ -616,11 +606,10 @@ export class FakeGraphGenerator {
       };
 
       results.push(finalizedResultRef);
-      resultsViewData[data.resultView.identifier!.idx!] = data.resultView;
 
       // 4. Final Edit by executing stage (Results Posted)
-      edits.push({
-        edit: this.createEdit(
+      edits.push(
+        this.createEdit(
           { check: checkId },
           realm,
           finalRev,
@@ -635,15 +624,14 @@ export class FakeGraphGenerator {
                   identifier: finalizedResultRef.identifier,
                   created: true,
                   finalized: true,
-                  data: finalizedResultRef.data.map((d) => d.identifier!),
+                  data: finalizedResultRef.data,
                 },
               ],
             },
           },
           actor,
         ),
-        optionData: data.resultView.data,
-      });
+      );
     }
 
     // Construct Final Check Object (immutable components + final state)
@@ -653,7 +641,7 @@ export class FakeGraphGenerator {
       realm: realm,
       version: finalRev,
       dependencies: deps,
-      options: [data.optionsRef],
+      options: [data.optionsDatum],
       results: results,
       state: CheckState.CHECK_STATE_FINAL,
       stateHistory: [],
@@ -662,9 +650,7 @@ export class FakeGraphGenerator {
     if (!checkId.id) throw new Error('Check ID required');
     this.checkViews[checkId.id] = {
       check: check,
-      optionData: { [data.optionsRef.typeUrl!]: data.optionDatum },
       edits: edits,
-      results: resultsViewData,
     };
   }
 
@@ -677,7 +663,7 @@ export class FakeGraphGenerator {
     assignmentGoalState = CheckState.CHECK_STATE_FINAL,
   ): void {
     const idStr = stageId.id!;
-    const edits: StageEditView[] = [];
+    const edits: Edit[] = [];
 
     // Timestamps
     const createRev = this.nextRevision();
@@ -690,15 +676,15 @@ export class FakeGraphGenerator {
     const finalRev = this.nextRevision(executionMs);
 
     // 1. Creation Edit (PLANNED)
-    edits.push({
-      edit: this.createEdit({ stage: stageId }, realm, createRev, 'Creation', {
+    edits.push(
+      this.createEdit({ stage: stageId }, realm, createRev, 'Creation', {
         stage: { state: StageState.STAGE_STATE_PLANNED, executionPolicies: [] },
       }),
-    });
+    );
 
     // 2. Attempting Edit
-    edits.push({
-      edit: this.createEdit(
+    edits.push(
+      this.createEdit(
         { stage: stageId },
         realm,
         attemptRev,
@@ -710,7 +696,7 @@ export class FakeGraphGenerator {
           },
         },
       ),
-    });
+    );
 
     // Generate attempt data based on final time
     const attempts = this.generateStageAttempt(
@@ -721,8 +707,8 @@ export class FakeGraphGenerator {
     );
 
     // 3. Final Edit
-    edits.push({
-      edit: this.createEdit(
+    edits.push(
+      this.createEdit(
         { stage: stageId },
         realm,
         finalRev,
@@ -731,7 +717,7 @@ export class FakeGraphGenerator {
           stage: { state: StageState.STAGE_STATE_FINAL, executionPolicies: [] },
         },
       ),
-    });
+    );
 
     // Construct Final Stage Object
     const stage: Stage = {
@@ -1018,14 +1004,7 @@ export class FakeGraphGenerator {
       sourceResults,
     );
 
-    return this.assembleCheckData(
-      optId,
-      optionDatum,
-      resId,
-      datumId,
-      resultDatum,
-      stageId,
-    );
+    return this.assembleCheckData(optionDatum, resId, resultDatum, stageId);
   }
 
   private generateBuildCheckData(
@@ -1102,14 +1081,7 @@ export class FakeGraphGenerator {
       buildResult,
     );
 
-    return this.assembleCheckData(
-      optId,
-      optionDatum,
-      resId,
-      datumId,
-      resultDatum,
-      stageId,
-    );
+    return this.assembleCheckData(optionDatum, resId, resultDatum, stageId);
   }
 
   private generateGenericCheckData(
@@ -1142,60 +1114,26 @@ export class FakeGraphGenerator {
       },
     );
 
-    return this.assembleCheckData(
-      optId,
-      optionDatum,
-      resId,
-      datumId,
-      resultDatum,
-      stageId,
-    );
+    return this.assembleCheckData(optionDatum, resId, resultDatum, stageId);
   }
 
   // Helper to package options and results into a data interface used for constructing Checks.
   private assembleCheckData(
-    optId: CheckOptionId,
     optDatum: Datum,
     resId: CheckResultId,
-    datumId: CheckResultDatumId,
     resDatum: Datum,
     stageId: StageId,
   ): CheckData {
     const checkResult: Check_Result = {
       identifier: resId,
       owner: { stageAttempt: { stage: stageId } },
-      data: [
-        {
-          identifier: datumId,
-          typeUrl: this.getTypeUrlFromDatum(resDatum),
-        },
-      ],
+      data: [resDatum],
     };
 
     return {
-      optionsRef: {
-        identifier: optId,
-        typeUrl: this.getTypeUrlFromDatum(optDatum),
-      },
-      optionDatum: optDatum,
+      optionsDatum: optDatum,
       resultRef: checkResult,
-      resultView: {
-        identifier: resId,
-        data: { [this.getTypeUrlFromDatum(resDatum)]: resDatum },
-      },
     };
-  }
-
-  private getTypeUrlFromDatum(datum: Datum): string {
-    if (datum.value && datum.value.valueJson) {
-      try {
-        const obj = JSON.parse(datum.value.valueJson);
-        return obj['@type'] || '';
-      } catch {
-        return '';
-      }
-    }
-    return '';
   }
 
   // ==========================================
@@ -1347,6 +1285,7 @@ export class FakeGraphGenerator {
     };
 
     return {
+      value: { typeUrl, value: new Uint8Array() },
       hasUnknownFields: false,
       valueJson: JSON.stringify(jsonPayload),
     };

@@ -6,6 +6,7 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { DisplayMessage } from "../../common/v1/display_message.pb";
 
 export const protobufPackage = "turboci.data.build.v1";
 
@@ -25,7 +26,7 @@ export interface BuildCheckResult {
     | undefined;
   /** A message string detailing the status of the build with information on how to format the text. */
   readonly displayMessage?:
-    | BuildCheckResult_DisplayMessage
+    | DisplayMessage
     | undefined;
   /**
    * Information needed to find artifacts in ab/.
@@ -53,77 +54,6 @@ export interface BuildCheckResult {
    * Useful to show in tools like Chronicle.
    */
   readonly viewUrl?: string | undefined;
-}
-
-/** A message string and a format-type enum to instruct clients how to render the text. */
-export interface BuildCheckResult_DisplayMessage {
-  /** The message string. */
-  readonly message?:
-    | string
-    | undefined;
-  /** How the message string should be formatted. */
-  readonly messageFormat?: BuildCheckResult_DisplayMessage_MessageFormat | undefined;
-}
-
-/** Different types of message formatting. */
-export enum BuildCheckResult_DisplayMessage_MessageFormat {
-  /** MESSAGE_FORMAT_UNKNOWN - Default message format. */
-  MESSAGE_FORMAT_UNKNOWN = 0,
-  /** MESSAGE_FORMAT_PLAIN_TEXT - Plain text - no special formatting. */
-  MESSAGE_FORMAT_PLAIN_TEXT = 1,
-  /** MESSAGE_FORMAT_HTML - HTML markup. */
-  MESSAGE_FORMAT_HTML = 2,
-  /** MESSAGE_FORMAT_MARKDOWN - Markdown formatting. */
-  MESSAGE_FORMAT_MARKDOWN = 3,
-  /** MESSAGE_FORMAT_ANSI - Includes ANSI escape codes for controlling things like text color. */
-  MESSAGE_FORMAT_ANSI = 4,
-}
-
-export function buildCheckResult_DisplayMessage_MessageFormatFromJSON(
-  object: any,
-): BuildCheckResult_DisplayMessage_MessageFormat {
-  switch (object) {
-    case 0:
-    case "MESSAGE_FORMAT_UNKNOWN":
-      return BuildCheckResult_DisplayMessage_MessageFormat.MESSAGE_FORMAT_UNKNOWN;
-    case 1:
-    case "MESSAGE_FORMAT_PLAIN_TEXT":
-      return BuildCheckResult_DisplayMessage_MessageFormat.MESSAGE_FORMAT_PLAIN_TEXT;
-    case 2:
-    case "MESSAGE_FORMAT_HTML":
-      return BuildCheckResult_DisplayMessage_MessageFormat.MESSAGE_FORMAT_HTML;
-    case 3:
-    case "MESSAGE_FORMAT_MARKDOWN":
-      return BuildCheckResult_DisplayMessage_MessageFormat.MESSAGE_FORMAT_MARKDOWN;
-    case 4:
-    case "MESSAGE_FORMAT_ANSI":
-      return BuildCheckResult_DisplayMessage_MessageFormat.MESSAGE_FORMAT_ANSI;
-    default:
-      throw new globalThis.Error(
-        "Unrecognized enum value " + object + " for enum BuildCheckResult_DisplayMessage_MessageFormat",
-      );
-  }
-}
-
-export function buildCheckResult_DisplayMessage_MessageFormatToJSON(
-  object: BuildCheckResult_DisplayMessage_MessageFormat,
-): string {
-  switch (object) {
-    case BuildCheckResult_DisplayMessage_MessageFormat.MESSAGE_FORMAT_UNKNOWN:
-      return "MESSAGE_FORMAT_UNKNOWN";
-    case BuildCheckResult_DisplayMessage_MessageFormat.MESSAGE_FORMAT_PLAIN_TEXT:
-      return "MESSAGE_FORMAT_PLAIN_TEXT";
-    case BuildCheckResult_DisplayMessage_MessageFormat.MESSAGE_FORMAT_HTML:
-      return "MESSAGE_FORMAT_HTML";
-    case BuildCheckResult_DisplayMessage_MessageFormat.MESSAGE_FORMAT_MARKDOWN:
-      return "MESSAGE_FORMAT_MARKDOWN";
-    case BuildCheckResult_DisplayMessage_MessageFormat.MESSAGE_FORMAT_ANSI:
-      return "MESSAGE_FORMAT_ANSI";
-    default:
-      throw new globalThis.Error(
-        "Unrecognized enum value " + object + " for enum BuildCheckResult_DisplayMessage_MessageFormat",
-      );
-  }
 }
 
 /** Build ID, target and attempt which are necessary to query artifacts in ab/ or Android Build API */
@@ -233,7 +163,7 @@ export const BuildCheckResult: MessageFns<BuildCheckResult> = {
       writer.uint32(8).bool(message.success);
     }
     if (message.displayMessage !== undefined) {
-      BuildCheckResult_DisplayMessage.encode(message.displayMessage, writer.uint32(18).fork()).join();
+      DisplayMessage.encode(message.displayMessage, writer.uint32(18).fork()).join();
     }
     if (message.androidBuildArtifacts !== undefined) {
       BuildCheckResult_AndroidBuildArtifacts.encode(message.androidBuildArtifacts, writer.uint32(26).fork()).join();
@@ -270,7 +200,7 @@ export const BuildCheckResult: MessageFns<BuildCheckResult> = {
             break;
           }
 
-          message.displayMessage = BuildCheckResult_DisplayMessage.decode(reader, reader.uint32());
+          message.displayMessage = DisplayMessage.decode(reader, reader.uint32());
           continue;
         }
         case 3: {
@@ -320,9 +250,7 @@ export const BuildCheckResult: MessageFns<BuildCheckResult> = {
   fromJSON(object: any): BuildCheckResult {
     return {
       success: isSet(object.success) ? globalThis.Boolean(object.success) : undefined,
-      displayMessage: isSet(object.displayMessage)
-        ? BuildCheckResult_DisplayMessage.fromJSON(object.displayMessage)
-        : undefined,
+      displayMessage: isSet(object.displayMessage) ? DisplayMessage.fromJSON(object.displayMessage) : undefined,
       androidBuildArtifacts: isSet(object.androidBuildArtifacts)
         ? BuildCheckResult_AndroidBuildArtifacts.fromJSON(object.androidBuildArtifacts)
         : undefined,
@@ -346,7 +274,7 @@ export const BuildCheckResult: MessageFns<BuildCheckResult> = {
       obj.success = message.success;
     }
     if (message.displayMessage !== undefined) {
-      obj.displayMessage = BuildCheckResult_DisplayMessage.toJSON(message.displayMessage);
+      obj.displayMessage = DisplayMessage.toJSON(message.displayMessage);
     }
     if (message.androidBuildArtifacts !== undefined) {
       obj.androidBuildArtifacts = BuildCheckResult_AndroidBuildArtifacts.toJSON(message.androidBuildArtifacts);
@@ -376,7 +304,7 @@ export const BuildCheckResult: MessageFns<BuildCheckResult> = {
     const message = createBaseBuildCheckResult() as any;
     message.success = object.success ?? undefined;
     message.displayMessage = (object.displayMessage !== undefined && object.displayMessage !== null)
-      ? BuildCheckResult_DisplayMessage.fromPartial(object.displayMessage)
+      ? DisplayMessage.fromPartial(object.displayMessage)
       : undefined;
     message.androidBuildArtifacts =
       (object.androidBuildArtifacts !== undefined && object.androidBuildArtifacts !== null)
@@ -394,84 +322,6 @@ export const BuildCheckResult: MessageFns<BuildCheckResult> = {
       return acc;
     }, {});
     message.viewUrl = object.viewUrl ?? undefined;
-    return message;
-  },
-};
-
-function createBaseBuildCheckResult_DisplayMessage(): BuildCheckResult_DisplayMessage {
-  return { message: undefined, messageFormat: undefined };
-}
-
-export const BuildCheckResult_DisplayMessage: MessageFns<BuildCheckResult_DisplayMessage> = {
-  encode(message: BuildCheckResult_DisplayMessage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.message !== undefined) {
-      writer.uint32(10).string(message.message);
-    }
-    if (message.messageFormat !== undefined) {
-      writer.uint32(16).int32(message.messageFormat);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): BuildCheckResult_DisplayMessage {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseBuildCheckResult_DisplayMessage() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.message = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 16) {
-            break;
-          }
-
-          message.messageFormat = reader.int32() as any;
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): BuildCheckResult_DisplayMessage {
-    return {
-      message: isSet(object.message) ? globalThis.String(object.message) : undefined,
-      messageFormat: isSet(object.messageFormat)
-        ? buildCheckResult_DisplayMessage_MessageFormatFromJSON(object.messageFormat)
-        : undefined,
-    };
-  },
-
-  toJSON(message: BuildCheckResult_DisplayMessage): unknown {
-    const obj: any = {};
-    if (message.message !== undefined) {
-      obj.message = message.message;
-    }
-    if (message.messageFormat !== undefined) {
-      obj.messageFormat = buildCheckResult_DisplayMessage_MessageFormatToJSON(message.messageFormat);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<BuildCheckResult_DisplayMessage>): BuildCheckResult_DisplayMessage {
-    return BuildCheckResult_DisplayMessage.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<BuildCheckResult_DisplayMessage>): BuildCheckResult_DisplayMessage {
-    const message = createBaseBuildCheckResult_DisplayMessage() as any;
-    message.message = object.message ?? undefined;
-    message.messageFormat = object.messageFormat ?? undefined;
     return message;
   },
 };

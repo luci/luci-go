@@ -6,10 +6,11 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { Check as Check1, CheckOption, CheckResult, CheckResultDatum } from "../../ids/v1/identifier.pb";
+import { Check as Check1, CheckResult } from "../../ids/v1/identifier.pb";
 import { Actor } from "./actor.pb";
 import { CheckKind, checkKindFromJSON, checkKindToJSON } from "./check_kind.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
+import { Datum } from "./datum.pb";
 import { Dependencies } from "./dependencies.pb";
 import { Revision } from "./revision.pb";
 
@@ -128,13 +129,12 @@ export interface Check {
    * Orchestrator will ensure that the option types here are registered to be
    * valid for this Check's kind.
    *
-   * This field is kept unique by `type_url` and ordered by
-   * identifier.options_idx.
-   *
-   * You can use QueryNodes to get a CheckView which includes this Check and
-   * also CheckOptions.
+   * This field is kept unique by `type_url`, and will reflect the insertion
+   * order of when each type_url was first added. Note that Datum have
+   * a revision value which is independent of the Check's revision value - Stage
+   * Attempts writing option data can do so without altering the Check itself.
    */
-  readonly options: readonly Check_OptionRef[];
+  readonly options: readonly Datum[];
   /**
    * The list of Results this Check has.
    *
@@ -164,16 +164,6 @@ export interface Check_StateHistoryEntry {
     | undefined;
   /** The revision when the state change happens. */
   readonly version?: Revision | undefined;
-}
-
-/** OptionRef is a reference to a CheckOption. */
-export interface Check_OptionRef {
-  /** The Identifier for the CheckOption, which is a Datum. */
-  readonly identifier?:
-    | CheckOption
-    | undefined;
-  /** The type_url of the data contained for this CheckOption. */
-  readonly typeUrl?: string | undefined;
 }
 
 /**
@@ -207,16 +197,19 @@ export interface Check_Result {
    *
    * NOTE: Most data should be stored in ResultDB via turboci.ResultStorage.
    *
-   * This field is kept unique by `type_url` and ordered by
-   * identifier.options_idx.
+   * This field is kept unique by `type_url`, and will reflect the insertion
+   * order of when each type_url was first added. Note that Datum have
+   * a revision value which is independent of the Check's revision value
+   * - Stage Attempts writing result data can do so without altering the
+   * Check itself.
    *
    * Orchestrator will ensure that the option types here are registered to be
-   * valid for this Result's kind.
+   * valid for this Check's kind.
    *
-   * You can use QueryNodes to get a CheckView which includes this Check and
-   * also Result Data.
+   * All data will have an Identifier of kind
+   * IDENTIFIER_KIND_CHECK_RESULT_DATUM.
    */
-  readonly data: readonly Check_Result_ResultDatumRef[];
+  readonly data: readonly Datum[];
   /**
    * The database revsision (commit timestamp) at which this Result is
    * finalized.
@@ -227,16 +220,6 @@ export interface Check_Result {
    *   * The Check advances to the FINAL state.
    */
   readonly finalizedAt?: Revision | undefined;
-}
-
-/** ResultDatumRef is a reference to a CheckResultDatum. */
-export interface Check_Result_ResultDatumRef {
-  /** The Identifier for the CheckResultDatum. */
-  readonly identifier?:
-    | CheckResultDatum
-    | undefined;
-  /** The type_url of the data contained for this CheckResultDatum. */
-  readonly typeUrl?: string | undefined;
 }
 
 function createBaseCheck(): Check {
@@ -281,7 +264,7 @@ export const Check: MessageFns<Check> = {
       Dependencies.encode(message.dependencies, writer.uint32(66).fork()).join();
     }
     for (const v of message.options) {
-      Check_OptionRef.encode(v!, writer.uint32(74).fork()).join();
+      Datum.encode(v!, writer.uint32(74).fork()).join();
     }
     for (const v of message.results) {
       Check_Result.encode(v!, writer.uint32(82).fork()).join();
@@ -365,7 +348,7 @@ export const Check: MessageFns<Check> = {
             break;
           }
 
-          message.options.push(Check_OptionRef.decode(reader, reader.uint32()));
+          message.options.push(Datum.decode(reader, reader.uint32()));
           continue;
         }
         case 10: {
@@ -397,9 +380,7 @@ export const Check: MessageFns<Check> = {
         ? object.stateHistory.map((e: any) => Check_StateHistoryEntry.fromJSON(e))
         : [],
       dependencies: isSet(object.dependencies) ? Dependencies.fromJSON(object.dependencies) : undefined,
-      options: globalThis.Array.isArray(object?.options)
-        ? object.options.map((e: any) => Check_OptionRef.fromJSON(e))
-        : [],
+      options: globalThis.Array.isArray(object?.options) ? object.options.map((e: any) => Datum.fromJSON(e)) : [],
       results: globalThis.Array.isArray(object?.results)
         ? object.results.map((e: any) => Check_Result.fromJSON(e))
         : [],
@@ -433,7 +414,7 @@ export const Check: MessageFns<Check> = {
       obj.dependencies = Dependencies.toJSON(message.dependencies);
     }
     if (message.options?.length) {
-      obj.options = message.options.map((e) => Check_OptionRef.toJSON(e));
+      obj.options = message.options.map((e) => Datum.toJSON(e));
     }
     if (message.results?.length) {
       obj.results = message.results.map((e) => Check_Result.toJSON(e));
@@ -462,7 +443,7 @@ export const Check: MessageFns<Check> = {
     message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
       ? Dependencies.fromPartial(object.dependencies)
       : undefined;
-    message.options = object.options?.map((e) => Check_OptionRef.fromPartial(e)) || [];
+    message.options = object.options?.map((e) => Datum.fromPartial(e)) || [];
     message.results = object.results?.map((e) => Check_Result.fromPartial(e)) || [];
     return message;
   },
@@ -546,84 +527,6 @@ export const Check_StateHistoryEntry: MessageFns<Check_StateHistoryEntry> = {
   },
 };
 
-function createBaseCheck_OptionRef(): Check_OptionRef {
-  return { identifier: undefined, typeUrl: undefined };
-}
-
-export const Check_OptionRef: MessageFns<Check_OptionRef> = {
-  encode(message: Check_OptionRef, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.identifier !== undefined) {
-      CheckOption.encode(message.identifier, writer.uint32(10).fork()).join();
-    }
-    if (message.typeUrl !== undefined) {
-      writer.uint32(18).string(message.typeUrl);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): Check_OptionRef {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseCheck_OptionRef() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.identifier = CheckOption.decode(reader, reader.uint32());
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.typeUrl = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): Check_OptionRef {
-    return {
-      identifier: isSet(object.identifier) ? CheckOption.fromJSON(object.identifier) : undefined,
-      typeUrl: isSet(object.typeUrl) ? globalThis.String(object.typeUrl) : undefined,
-    };
-  },
-
-  toJSON(message: Check_OptionRef): unknown {
-    const obj: any = {};
-    if (message.identifier !== undefined) {
-      obj.identifier = CheckOption.toJSON(message.identifier);
-    }
-    if (message.typeUrl !== undefined) {
-      obj.typeUrl = message.typeUrl;
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<Check_OptionRef>): Check_OptionRef {
-    return Check_OptionRef.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<Check_OptionRef>): Check_OptionRef {
-    const message = createBaseCheck_OptionRef() as any;
-    message.identifier = (object.identifier !== undefined && object.identifier !== null)
-      ? CheckOption.fromPartial(object.identifier)
-      : undefined;
-    message.typeUrl = object.typeUrl ?? undefined;
-    return message;
-  },
-};
-
 function createBaseCheck_Result(): Check_Result {
   return { identifier: undefined, owner: undefined, createdAt: undefined, data: [], finalizedAt: undefined };
 }
@@ -640,7 +543,7 @@ export const Check_Result: MessageFns<Check_Result> = {
       Revision.encode(message.createdAt, writer.uint32(26).fork()).join();
     }
     for (const v of message.data) {
-      Check_Result_ResultDatumRef.encode(v!, writer.uint32(34).fork()).join();
+      Datum.encode(v!, writer.uint32(34).fork()).join();
     }
     if (message.finalizedAt !== undefined) {
       Revision.encode(message.finalizedAt, writer.uint32(42).fork()).join();
@@ -684,7 +587,7 @@ export const Check_Result: MessageFns<Check_Result> = {
             break;
           }
 
-          message.data.push(Check_Result_ResultDatumRef.decode(reader, reader.uint32()));
+          message.data.push(Datum.decode(reader, reader.uint32()));
           continue;
         }
         case 5: {
@@ -709,9 +612,7 @@ export const Check_Result: MessageFns<Check_Result> = {
       identifier: isSet(object.identifier) ? CheckResult.fromJSON(object.identifier) : undefined,
       owner: isSet(object.owner) ? Actor.fromJSON(object.owner) : undefined,
       createdAt: isSet(object.createdAt) ? Revision.fromJSON(object.createdAt) : undefined,
-      data: globalThis.Array.isArray(object?.data)
-        ? object.data.map((e: any) => Check_Result_ResultDatumRef.fromJSON(e))
-        : [],
+      data: globalThis.Array.isArray(object?.data) ? object.data.map((e: any) => Datum.fromJSON(e)) : [],
       finalizedAt: isSet(object.finalizedAt) ? Revision.fromJSON(object.finalizedAt) : undefined,
     };
   },
@@ -728,7 +629,7 @@ export const Check_Result: MessageFns<Check_Result> = {
       obj.createdAt = Revision.toJSON(message.createdAt);
     }
     if (message.data?.length) {
-      obj.data = message.data.map((e) => Check_Result_ResultDatumRef.toJSON(e));
+      obj.data = message.data.map((e) => Datum.toJSON(e));
     }
     if (message.finalizedAt !== undefined) {
       obj.finalizedAt = Revision.toJSON(message.finalizedAt);
@@ -748,88 +649,10 @@ export const Check_Result: MessageFns<Check_Result> = {
     message.createdAt = (object.createdAt !== undefined && object.createdAt !== null)
       ? Revision.fromPartial(object.createdAt)
       : undefined;
-    message.data = object.data?.map((e) => Check_Result_ResultDatumRef.fromPartial(e)) || [];
+    message.data = object.data?.map((e) => Datum.fromPartial(e)) || [];
     message.finalizedAt = (object.finalizedAt !== undefined && object.finalizedAt !== null)
       ? Revision.fromPartial(object.finalizedAt)
       : undefined;
-    return message;
-  },
-};
-
-function createBaseCheck_Result_ResultDatumRef(): Check_Result_ResultDatumRef {
-  return { identifier: undefined, typeUrl: undefined };
-}
-
-export const Check_Result_ResultDatumRef: MessageFns<Check_Result_ResultDatumRef> = {
-  encode(message: Check_Result_ResultDatumRef, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.identifier !== undefined) {
-      CheckResultDatum.encode(message.identifier, writer.uint32(10).fork()).join();
-    }
-    if (message.typeUrl !== undefined) {
-      writer.uint32(18).string(message.typeUrl);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): Check_Result_ResultDatumRef {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseCheck_Result_ResultDatumRef() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.identifier = CheckResultDatum.decode(reader, reader.uint32());
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.typeUrl = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): Check_Result_ResultDatumRef {
-    return {
-      identifier: isSet(object.identifier) ? CheckResultDatum.fromJSON(object.identifier) : undefined,
-      typeUrl: isSet(object.typeUrl) ? globalThis.String(object.typeUrl) : undefined,
-    };
-  },
-
-  toJSON(message: Check_Result_ResultDatumRef): unknown {
-    const obj: any = {};
-    if (message.identifier !== undefined) {
-      obj.identifier = CheckResultDatum.toJSON(message.identifier);
-    }
-    if (message.typeUrl !== undefined) {
-      obj.typeUrl = message.typeUrl;
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<Check_Result_ResultDatumRef>): Check_Result_ResultDatumRef {
-    return Check_Result_ResultDatumRef.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<Check_Result_ResultDatumRef>): Check_Result_ResultDatumRef {
-    const message = createBaseCheck_Result_ResultDatumRef() as any;
-    message.identifier = (object.identifier !== undefined && object.identifier !== null)
-      ? CheckResultDatum.fromPartial(object.identifier)
-      : undefined;
-    message.typeUrl = object.typeUrl ?? undefined;
     return message;
   },
 };

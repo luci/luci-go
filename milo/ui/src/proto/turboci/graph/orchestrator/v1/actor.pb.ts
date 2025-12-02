@@ -21,15 +21,23 @@ export interface Actor {
     | StageAttempt
     | undefined;
   /** The Orchestrator generated this Edit. */
-  readonly orchestrator?: Actor_Orchestrator | undefined;
+  readonly orchestrator?:
+    | Actor_Orchestrator
+    | undefined;
+  /** The Creator of the Workplan generated this Edit. */
+  readonly workplanCreator?: Actor_WorkplanCreator | undefined;
 }
 
 /** Placeholder type for when the Orchestrator itself makes this edit. */
 export interface Actor_Orchestrator {
 }
 
+/** Placeholder type for when the creator of the Workplan makes this edit. */
+export interface Actor_WorkplanCreator {
+}
+
 function createBaseActor(): Actor {
-  return { stageAttempt: undefined, orchestrator: undefined };
+  return { stageAttempt: undefined, orchestrator: undefined, workplanCreator: undefined };
 }
 
 export const Actor: MessageFns<Actor> = {
@@ -39,6 +47,9 @@ export const Actor: MessageFns<Actor> = {
     }
     if (message.orchestrator !== undefined) {
       Actor_Orchestrator.encode(message.orchestrator, writer.uint32(18).fork()).join();
+    }
+    if (message.workplanCreator !== undefined) {
+      Actor_WorkplanCreator.encode(message.workplanCreator, writer.uint32(26).fork()).join();
     }
     return writer;
   },
@@ -66,6 +77,14 @@ export const Actor: MessageFns<Actor> = {
           message.orchestrator = Actor_Orchestrator.decode(reader, reader.uint32());
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.workplanCreator = Actor_WorkplanCreator.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -79,6 +98,9 @@ export const Actor: MessageFns<Actor> = {
     return {
       stageAttempt: isSet(object.stageAttempt) ? StageAttempt.fromJSON(object.stageAttempt) : undefined,
       orchestrator: isSet(object.orchestrator) ? Actor_Orchestrator.fromJSON(object.orchestrator) : undefined,
+      workplanCreator: isSet(object.workplanCreator)
+        ? Actor_WorkplanCreator.fromJSON(object.workplanCreator)
+        : undefined,
     };
   },
 
@@ -89,6 +111,9 @@ export const Actor: MessageFns<Actor> = {
     }
     if (message.orchestrator !== undefined) {
       obj.orchestrator = Actor_Orchestrator.toJSON(message.orchestrator);
+    }
+    if (message.workplanCreator !== undefined) {
+      obj.workplanCreator = Actor_WorkplanCreator.toJSON(message.workplanCreator);
     }
     return obj;
   },
@@ -103,6 +128,9 @@ export const Actor: MessageFns<Actor> = {
       : undefined;
     message.orchestrator = (object.orchestrator !== undefined && object.orchestrator !== null)
       ? Actor_Orchestrator.fromPartial(object.orchestrator)
+      : undefined;
+    message.workplanCreator = (object.workplanCreator !== undefined && object.workplanCreator !== null)
+      ? Actor_WorkplanCreator.fromPartial(object.workplanCreator)
       : undefined;
     return message;
   },
@@ -147,6 +175,49 @@ export const Actor_Orchestrator: MessageFns<Actor_Orchestrator> = {
   },
   fromPartial(_: DeepPartial<Actor_Orchestrator>): Actor_Orchestrator {
     const message = createBaseActor_Orchestrator() as any;
+    return message;
+  },
+};
+
+function createBaseActor_WorkplanCreator(): Actor_WorkplanCreator {
+  return {};
+}
+
+export const Actor_WorkplanCreator: MessageFns<Actor_WorkplanCreator> = {
+  encode(_: Actor_WorkplanCreator, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Actor_WorkplanCreator {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseActor_WorkplanCreator() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): Actor_WorkplanCreator {
+    return {};
+  },
+
+  toJSON(_: Actor_WorkplanCreator): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<Actor_WorkplanCreator>): Actor_WorkplanCreator {
+    return Actor_WorkplanCreator.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<Actor_WorkplanCreator>): Actor_WorkplanCreator {
+    const message = createBaseActor_WorkplanCreator() as any;
     return message;
   },
 };

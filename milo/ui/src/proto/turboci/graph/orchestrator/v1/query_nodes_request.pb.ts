@@ -14,15 +14,29 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
 /** Request message for TurboCIGraphService.QueryNodes. */
 export interface QueryNodesRequest {
   /**
-   * The token of the Stage Attempt which is performing this query.
+   * The token which indicates that the query is coming from within a specific
+   * WorkPlan.
+   *
+   * A suitable token is provided to the Executor of a Stage or to the creator
+   * of an empty Workplan.
    *
    * This is in addition to regular RPC authorization.
    *
    * If missing, this RPC will check that the caller additionally has the
    * 'turboci.workplans.readExternal' on the implied workplans.
    */
-  readonly stageAttemptToken?:
+  readonly token?:
     | string
+    | undefined;
+  /**
+   * A description of the desired Value types this query should return.
+   *
+   * Only Value types listed by `wanted` will have their values in the response.
+   *
+   * Datum objects with unwanted type_urls will be omitted from the response.
+   */
+  readonly typeInfo?:
+    | QueryNodesRequest_TypeInfo
     | undefined;
   /**
    * If omitted, QueryNodes will return the current version of any nodes in the
@@ -36,6 +50,46 @@ export interface QueryNodesRequest {
     | undefined;
   /** One or more Queries to select nodes to return. */
   readonly query: readonly Query[];
+}
+
+/**
+ * TypeInfo lets the orchestrator know which auxiliary type(s) the caller
+ * wants to see in Check Options, Check Results, Stage args, Edits, etc.
+ */
+export interface QueryNodesRequest_TypeInfo {
+  /**
+   * Type URLs that the caller wants to see in the response. Any child Node
+   * whose type URL is not specified here will be omitted in the response.
+   *
+   * TBD: The special value "*" means that the caller wants to see ALL types,
+   * but this requires an extra permission. Extra permission is needed to
+   * encourage clients to be explicit about what they want to reduce
+   * bandwidth, coupling and increase auditability.
+   *
+   * TBD: Allow limited wildcards to include everything under some package
+   * namespace like `turboci.data.*`.
+   */
+  readonly wanted: readonly string[];
+  /**
+   * If specified the orchestrator will encode all Values with this
+   * alternate encoding, excluding types listed in `known`.
+   *
+   * Note that the orchestrator may have an out-of-date version of the
+   * descriptors - if this happens then Value.has_unknown_fields may be set
+   * to `true`.
+   */
+  readonly unknownJsonpb?:
+    | boolean
+    | undefined;
+  /**
+   * Type URLs that the caller has descriptors for. Used with
+   * `unknown_alternate_encoding` to avoid encoding types the caller does
+   * actually have descriptors for.
+   *
+   * TBD: Allow limited wildcards to include everything under some package
+   * namespace like `turboci.data.*`.
+   */
+  readonly known: readonly string[];
 }
 
 /**
@@ -75,19 +129,22 @@ export interface QueryNodesRequest_VersionRestriction {
 }
 
 function createBaseQueryNodesRequest(): QueryNodesRequest {
-  return { stageAttemptToken: undefined, version: undefined, query: [] };
+  return { token: undefined, typeInfo: undefined, version: undefined, query: [] };
 }
 
 export const QueryNodesRequest: MessageFns<QueryNodesRequest> = {
   encode(message: QueryNodesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.stageAttemptToken !== undefined) {
-      writer.uint32(10).string(message.stageAttemptToken);
+    if (message.token !== undefined) {
+      writer.uint32(10).string(message.token);
+    }
+    if (message.typeInfo !== undefined) {
+      QueryNodesRequest_TypeInfo.encode(message.typeInfo, writer.uint32(18).fork()).join();
     }
     if (message.version !== undefined) {
-      QueryNodesRequest_VersionRestriction.encode(message.version, writer.uint32(18).fork()).join();
+      QueryNodesRequest_VersionRestriction.encode(message.version, writer.uint32(26).fork()).join();
     }
     for (const v of message.query) {
-      Query.encode(v!, writer.uint32(26).fork()).join();
+      Query.encode(v!, writer.uint32(34).fork()).join();
     }
     return writer;
   },
@@ -104,7 +161,7 @@ export const QueryNodesRequest: MessageFns<QueryNodesRequest> = {
             break;
           }
 
-          message.stageAttemptToken = reader.string();
+          message.token = reader.string();
           continue;
         }
         case 2: {
@@ -112,11 +169,19 @@ export const QueryNodesRequest: MessageFns<QueryNodesRequest> = {
             break;
           }
 
-          message.version = QueryNodesRequest_VersionRestriction.decode(reader, reader.uint32());
+          message.typeInfo = QueryNodesRequest_TypeInfo.decode(reader, reader.uint32());
           continue;
         }
         case 3: {
           if (tag !== 26) {
+            break;
+          }
+
+          message.version = QueryNodesRequest_VersionRestriction.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
             break;
           }
 
@@ -134,7 +199,8 @@ export const QueryNodesRequest: MessageFns<QueryNodesRequest> = {
 
   fromJSON(object: any): QueryNodesRequest {
     return {
-      stageAttemptToken: isSet(object.stageAttemptToken) ? globalThis.String(object.stageAttemptToken) : undefined,
+      token: isSet(object.token) ? globalThis.String(object.token) : undefined,
+      typeInfo: isSet(object.typeInfo) ? QueryNodesRequest_TypeInfo.fromJSON(object.typeInfo) : undefined,
       version: isSet(object.version) ? QueryNodesRequest_VersionRestriction.fromJSON(object.version) : undefined,
       query: globalThis.Array.isArray(object?.query) ? object.query.map((e: any) => Query.fromJSON(e)) : [],
     };
@@ -142,8 +208,11 @@ export const QueryNodesRequest: MessageFns<QueryNodesRequest> = {
 
   toJSON(message: QueryNodesRequest): unknown {
     const obj: any = {};
-    if (message.stageAttemptToken !== undefined) {
-      obj.stageAttemptToken = message.stageAttemptToken;
+    if (message.token !== undefined) {
+      obj.token = message.token;
+    }
+    if (message.typeInfo !== undefined) {
+      obj.typeInfo = QueryNodesRequest_TypeInfo.toJSON(message.typeInfo);
     }
     if (message.version !== undefined) {
       obj.version = QueryNodesRequest_VersionRestriction.toJSON(message.version);
@@ -159,11 +228,106 @@ export const QueryNodesRequest: MessageFns<QueryNodesRequest> = {
   },
   fromPartial(object: DeepPartial<QueryNodesRequest>): QueryNodesRequest {
     const message = createBaseQueryNodesRequest() as any;
-    message.stageAttemptToken = object.stageAttemptToken ?? undefined;
+    message.token = object.token ?? undefined;
+    message.typeInfo = (object.typeInfo !== undefined && object.typeInfo !== null)
+      ? QueryNodesRequest_TypeInfo.fromPartial(object.typeInfo)
+      : undefined;
     message.version = (object.version !== undefined && object.version !== null)
       ? QueryNodesRequest_VersionRestriction.fromPartial(object.version)
       : undefined;
     message.query = object.query?.map((e) => Query.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseQueryNodesRequest_TypeInfo(): QueryNodesRequest_TypeInfo {
+  return { wanted: [], unknownJsonpb: undefined, known: [] };
+}
+
+export const QueryNodesRequest_TypeInfo: MessageFns<QueryNodesRequest_TypeInfo> = {
+  encode(message: QueryNodesRequest_TypeInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.wanted) {
+      writer.uint32(10).string(v!);
+    }
+    if (message.unknownJsonpb !== undefined) {
+      writer.uint32(16).bool(message.unknownJsonpb);
+    }
+    for (const v of message.known) {
+      writer.uint32(26).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryNodesRequest_TypeInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryNodesRequest_TypeInfo() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.wanted.push(reader.string());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.unknownJsonpb = reader.bool();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.known.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QueryNodesRequest_TypeInfo {
+    return {
+      wanted: globalThis.Array.isArray(object?.wanted) ? object.wanted.map((e: any) => globalThis.String(e)) : [],
+      unknownJsonpb: isSet(object.unknownJsonpb) ? globalThis.Boolean(object.unknownJsonpb) : undefined,
+      known: globalThis.Array.isArray(object?.known) ? object.known.map((e: any) => globalThis.String(e)) : [],
+    };
+  },
+
+  toJSON(message: QueryNodesRequest_TypeInfo): unknown {
+    const obj: any = {};
+    if (message.wanted?.length) {
+      obj.wanted = message.wanted;
+    }
+    if (message.unknownJsonpb !== undefined) {
+      obj.unknownJsonpb = message.unknownJsonpb;
+    }
+    if (message.known?.length) {
+      obj.known = message.known;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QueryNodesRequest_TypeInfo>): QueryNodesRequest_TypeInfo {
+    return QueryNodesRequest_TypeInfo.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QueryNodesRequest_TypeInfo>): QueryNodesRequest_TypeInfo {
+    const message = createBaseQueryNodesRequest_TypeInfo() as any;
+    message.wanted = object.wanted?.map((e) => e) || [];
+    message.unknownJsonpb = object.unknownJsonpb ?? undefined;
+    message.known = object.known?.map((e) => e) || [];
     return message;
   },
 };

@@ -104,7 +104,10 @@ export interface RootInvocation {
   readonly finalizeTime:
     | string
     | undefined;
-  /** The resource that produced results in this root invocation. */
+  /**
+   * The resource that produced results in this root invocation.
+   * Required.
+   */
   readonly producerResource:
     | ProducerResource
     | undefined;

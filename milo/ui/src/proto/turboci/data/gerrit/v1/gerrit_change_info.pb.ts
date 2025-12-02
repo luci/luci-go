@@ -43,8 +43,12 @@ export interface GerritChangeInfo {
   readonly project?:
     | string
     | undefined;
-  /** Which branch. The refs/heads/ prefix is omitted. */
+  /** Which branch (shortname). Matches full_branch, except the refs/* / prefix is omitted. */
   readonly branch?:
+    | string
+    | undefined;
+  /** The full name of the branch. Always starts with refs/. */
+  readonly fullBranch?:
     | string
     | undefined;
   /**
@@ -574,6 +578,7 @@ function createBaseGerritChangeInfo(): GerritChangeInfo {
     host: undefined,
     project: undefined,
     branch: undefined,
+    fullBranch: undefined,
     changeNumber: undefined,
     patchset: undefined,
     status: undefined,
@@ -603,6 +608,9 @@ export const GerritChangeInfo: MessageFns<GerritChangeInfo> = {
     }
     if (message.branch !== undefined) {
       writer.uint32(26).string(message.branch);
+    }
+    if (message.fullBranch !== undefined) {
+      writer.uint32(162).string(message.fullBranch);
     }
     if (message.changeNumber !== undefined) {
       writer.uint32(32).int64(message.changeNumber);
@@ -684,6 +692,14 @@ export const GerritChangeInfo: MessageFns<GerritChangeInfo> = {
           }
 
           message.branch = reader.string();
+          continue;
+        }
+        case 20: {
+          if (tag !== 162) {
+            break;
+          }
+
+          message.fullBranch = reader.string();
           continue;
         }
         case 4: {
@@ -837,6 +853,7 @@ export const GerritChangeInfo: MessageFns<GerritChangeInfo> = {
       host: isSet(object.host) ? globalThis.String(object.host) : undefined,
       project: isSet(object.project) ? globalThis.String(object.project) : undefined,
       branch: isSet(object.branch) ? globalThis.String(object.branch) : undefined,
+      fullBranch: isSet(object.fullBranch) ? globalThis.String(object.fullBranch) : undefined,
       changeNumber: isSet(object.changeNumber) ? globalThis.String(object.changeNumber) : undefined,
       patchset: isSet(object.patchset) ? globalThis.Number(object.patchset) : undefined,
       status: isSet(object.status) ? gerritChangeInfo_StatusFromJSON(object.status) : undefined,
@@ -885,6 +902,9 @@ export const GerritChangeInfo: MessageFns<GerritChangeInfo> = {
     }
     if (message.branch !== undefined) {
       obj.branch = message.branch;
+    }
+    if (message.fullBranch !== undefined) {
+      obj.fullBranch = message.fullBranch;
     }
     if (message.changeNumber !== undefined) {
       obj.changeNumber = message.changeNumber;
@@ -963,6 +983,7 @@ export const GerritChangeInfo: MessageFns<GerritChangeInfo> = {
     message.host = object.host ?? undefined;
     message.project = object.project ?? undefined;
     message.branch = object.branch ?? undefined;
+    message.fullBranch = object.fullBranch ?? undefined;
     message.changeNumber = object.changeNumber ?? undefined;
     message.patchset = object.patchset ?? undefined;
     message.status = object.status ?? undefined;
