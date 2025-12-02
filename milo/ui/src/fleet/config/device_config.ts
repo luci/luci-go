@@ -33,6 +33,8 @@ export const ANDROID_DEFAULT_COLUMNS = [
   'id',
   'host_group',
   'state',
+  'hostname',
+  'run_target',
   'build',
   'model',
   'pool',
