@@ -35,7 +35,6 @@ import { getErrorMessage } from '@/fleet/utils/errors';
 import { InvalidPageTokenAlert } from '@/fleet/utils/invalid-page-token-alert';
 import { parseOrderByParam } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { CopySnackbar } from '../actions/copy/copy_snackbar';
 import { useColumnManagement } from '../columns/use_column_management';
@@ -62,23 +61,6 @@ const computeSelectedRows = (
 ): GridRowModel[] => {
   const selectedSet = new Set(gridSelection);
   return rows.filter((r) => selectedSet.has(r.id));
-};
-
-const getRowId = (platform: Platform) => {
-  type DeviceRowModel = GridRowModel & {
-    id: string;
-  };
-  switch (platform) {
-    case Platform.ANDROID:
-      type AndroidRowModel = DeviceRowModel & {
-        fc_machine_type: string;
-      };
-      return (row: AndroidRowModel) => row.id + (row.fc_machine_type ?? '');
-    case Platform.CHROMEOS:
-    case Platform.CHROMIUM:
-    case Platform.UNSPECIFIED:
-      return (row: DeviceRowModel) => row.id;
-  }
 };
 
 const getOrderByFromSortModel = <R extends GridValidRowModel>(
@@ -137,6 +119,7 @@ interface DeviceTableProps<R extends GridValidRowModel> {
   isLoading: boolean;
   isLoadingColumns: boolean;
   totalRowCount?: number;
+  getRowId?: (row: R) => string;
 }
 
 export function DeviceTable<R extends GridValidRowModel>({
@@ -151,6 +134,7 @@ export function DeviceTable<R extends GridValidRowModel>({
   isLoading,
   isLoadingColumns,
   totalRowCount,
+  getRowId,
 }: DeviceTableProps<R>) {
   const { platform } = usePlatform();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
@@ -251,7 +235,7 @@ export function DeviceTable<R extends GridValidRowModel>({
         onColumnVisibilityModelChange={onColumnVisibilityModelChange}
         rows={rows}
         columns={columns}
-        getRowId={getRowId(platform)}
+        getRowId={getRowId}
         loading={isLoading}
         onClipboardCopy={() => setShowCopySuccess(true)}
       />

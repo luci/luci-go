@@ -291,6 +291,9 @@ export const AndroidDevicesPage = () => {
           isLoading={devicesQuery.isPending || devicesQuery.isPlaceholderData}
           isLoadingColumns={dimensionsQuery.isPending}
           totalRowCount={countQuery?.data?.total}
+          getRowId={(row) =>
+            row.id + (row.omnilabSpec?.labels?.fc_machine_type?.values ?? '')
+          }
         />
       </div>
     </div>
