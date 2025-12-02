@@ -16,26 +16,28 @@ package check
 
 import orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
-// Kind is a shorthand equivalent to [orchestratorpb.CheckKind].
+// Kind is a shorthand equivalent to orchestratorpb.CheckKind.
 type Kind = orchestratorpb.CheckKind
 
-// These are shorthand equivalents to orchestratorpb.CheckKind_CHECK_KIND_*.
+// These are shorthand equivalents of their
+// orchestratorpb.CheckKind_CHECK_KIND_* counterparts.
 const (
 	KindUnknown  Kind = orchestratorpb.CheckKind_CHECK_KIND_UNKNOWN
-	KindAnalysis Kind = orchestratorpb.CheckKind_CHECK_KIND_ANALYSIS
-	KindBuild    Kind = orchestratorpb.CheckKind_CHECK_KIND_BUILD
 	KindSource   Kind = orchestratorpb.CheckKind_CHECK_KIND_SOURCE
+	KindBuild    Kind = orchestratorpb.CheckKind_CHECK_KIND_BUILD
 	KindTest     Kind = orchestratorpb.CheckKind_CHECK_KIND_TEST
+	KindAnalysis Kind = orchestratorpb.CheckKind_CHECK_KIND_ANALYSIS
 )
 
-// State is a shorthand equivalent to [orchestratorpb.CheckState].
+// State is a shorthand equivalent to orchestratorpb.CheckState.
 type State = orchestratorpb.CheckState
 
-// These are shorthand equivalents to orchestratorpb.CheckState_CHECK_STATE_*.
+// These are shorthand equivalents of their
+// orchestratorpb.CheckKind_CHECK_STATE_* counterparts.
 const (
 	StateUnknown  State = orchestratorpb.CheckState_CHECK_STATE_UNKNOWN
-	StatePlanned  State = orchestratorpb.CheckState_CHECK_STATE_PLANNED
 	StatePlanning State = orchestratorpb.CheckState_CHECK_STATE_PLANNING
+	StatePlanned  State = orchestratorpb.CheckState_CHECK_STATE_PLANNED
 	StateWaiting  State = orchestratorpb.CheckState_CHECK_STATE_WAITING
 	StateFinal    State = orchestratorpb.CheckState_CHECK_STATE_FINAL
 )

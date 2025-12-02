@@ -36,7 +36,6 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/delta"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -44,7 +43,6 @@ import (
 	"go.chromium.org/luci/turboci/data"
 	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write"
-	"go.chromium.org/luci/turboci/rpc/write/stage"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 	orchestratorgrpcpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1/grpcpb"
@@ -369,22 +367,26 @@ func adjustTurboCIRPCError(err error) error {
 //
 // This succeeds if the stage was submitted or it already exists.
 func (c *turboCIClient) writeStage(ctx context.Context, stageID string, req *pb.ScheduleBuildRequest, realm string, timeouts *orchestratorpb.StageAttemptExecutionPolicy_Timeout) error {
-	writeReq, _ := delta.Collect(
-		write.NewStage(
-			stageID,
-			req,
-			stage.Realm(realm),
-		),
-	)
-	writeReq.SetToken(c.token)
+	sid, err := id.StageErr(id.StageNotWorknode, stageID)
+	if err != nil {
+		return errors.Fmt("writeStage: stageID: %w", err)
+	}
+
+	writeReq := write.NewRequest()
+	writeReq.Msg.SetToken(c.token)
+	stg, err := writeReq.AddNewStage(sid, req)
+	if err != nil {
+		return errors.Fmt("writeStage: NewStage: %w", err)
+	}
+	stg.Msg.SetRealm(realm)
 	if timeouts != nil {
-		writeReq.GetStages()[0].SetRequestedStageExecutionPolicy(orchestratorpb.StageExecutionPolicy_builder{
+		stg.Msg.SetRequestedStageExecutionPolicy(orchestratorpb.StageExecutionPolicy_builder{
 			AttemptExecutionPolicyTemplate: orchestratorpb.StageAttemptExecutionPolicy_builder{
 				Timeout: timeouts,
 			}.Build(),
 		}.Build())
 	}
-	_, err := c.orch.WriteNodes(ctx, writeReq, grpc.PerRPCCredentials(c.creds))
+	_, err = c.orch.WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.creds))
 	return adjustTurboCIRPCError(err)
 }
 
