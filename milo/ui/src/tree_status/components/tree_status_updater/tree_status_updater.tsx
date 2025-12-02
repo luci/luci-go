@@ -24,6 +24,7 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
+import { usePermCheck } from '@/common/hooks/perm_check';
 import {
   CreateStatusRequest,
   GeneralState,
@@ -32,14 +33,22 @@ import { useTreeStatusClient } from '@/tree_status/hooks/prpc_clients';
 
 interface TreeStatusUpdaterProps {
   tree: string;
+  project: string;
 }
 
 // TreeStatusUpdater presents a simple form that allows creating a new status update for a tree.
-export const TreeStatusUpdater = ({ tree }: TreeStatusUpdaterProps) => {
+export const TreeStatusUpdater = ({
+  tree,
+  project,
+}: TreeStatusUpdaterProps) => {
   const [state, setState] = useState(GeneralState.OPEN);
   const [message, setMessage] = useState('');
   const queryClient = useQueryClient();
   const client = useTreeStatusClient();
+  const [hasPerm, isPermPending] = usePermCheck(
+    `${project}:@project`,
+    'treestatus.status.create',
+  );
   const updateMutation = useMutation({
     mutationFn: (request: CreateStatusRequest) => {
       return client.CreateStatus(request);
@@ -50,7 +59,7 @@ export const TreeStatusUpdater = ({ tree }: TreeStatusUpdaterProps) => {
       queryClient.invalidateQueries();
     },
   });
-  if (!tree) {
+  if (!tree || isPermPending || !hasPerm) {
     return null;
   }
 
