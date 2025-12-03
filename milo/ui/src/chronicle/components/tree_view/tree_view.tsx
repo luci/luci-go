@@ -36,6 +36,7 @@ import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
 
+import { CheckResultStatus } from '../../utils/check_utils';
 import { ChronicleContext } from '../chronicle_context';
 import { InspectorPanel } from '../inspector_panel/inspector_panel';
 
@@ -43,7 +44,6 @@ import {
   buildVisualGraph,
   FlatTreeItem,
   GraphNode,
-  NodeStatus,
   subtreeSize,
 } from './build_tree';
 import { useTree } from './use_tree';
@@ -68,13 +68,19 @@ const Icons = {
   Search: () => <SearchIcon sx={{ color: '#999' }} />,
 };
 
-const StatusIcon = ({ status }: { status: NodeStatus }) => {
+const StatusIcon = ({ node }: { node: GraphNode }) => {
+  const { status, resultStatus } = node;
+
   switch (status) {
-    // Note: FINAL does not mean passed
-    // TODO(phobbs): We need a way to read the status of the check / stage and
-    // convert to pass/fail/other.
     case 'FINAL':
-      return <Icons.Success />;
+      switch (resultStatus) {
+        case CheckResultStatus.SUCCESS:
+          return <Icons.Success />;
+        case CheckResultStatus.FAILURE:
+          return <Icons.Failure />;
+        default:
+          return <Icons.Unknown />;
+      }
     case 'ATTEMPTING':
       return <Icons.Running />;
     case 'AWAITING_GROUP':
@@ -256,7 +262,7 @@ const TreeRow = memo(
             justifyContent: 'center',
           }}
         >
-          <StatusIcon status={node.status} />
+          <StatusIcon node={node} />
         </Box>
         <Box sx={{ flex: 1, display: 'flex', alignItems: 'baseline' }}>
           <Box

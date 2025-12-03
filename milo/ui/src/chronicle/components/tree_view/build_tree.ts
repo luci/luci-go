@@ -17,6 +17,12 @@ import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { stageStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb';
 import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
 
+import {
+  CheckResultStatus,
+  getCheckLabel,
+  getCheckResultStatus,
+} from '../../utils/check_utils';
+
 // Note; this enum may be incomplete if stage state or check state gets updated with new values.
 // (that's ok for now)
 export type NodeStatus =
@@ -34,6 +40,7 @@ export interface GraphNode {
   type: NodeType;
   label: string;
   status: NodeStatus;
+  resultStatus?: CheckResultStatus;
   children: Set<string>;
   parents: Set<string>;
   raw?: CheckView | StageView;
@@ -93,7 +100,9 @@ export function buildVisualGraph(
       'CHECK',
       checkStateToStatus(cv.check?.state),
     );
+    checkNode.label = getCheckLabel(cv);
     checkNode.raw = cv;
+    checkNode.resultStatus = getCheckResultStatus(cv);
   });
 
   stages.forEach((sv) => {

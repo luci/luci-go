@@ -17,12 +17,16 @@ import { CSSProperties } from 'react';
 import { Edge, MarkerType, Node, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-import { Check } from '../../proto/turboci/graph/orchestrator/v1/check.pb';
-import { CheckKind } from '../../proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { CheckView } from '../../proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { Dependencies } from '../../proto/turboci/graph/orchestrator/v1/dependencies.pb';
 import { GraphView as TurboCIGraphView } from '../../proto/turboci/graph/orchestrator/v1/graph_view.pb';
 import { StageView } from '../../proto/turboci/graph/orchestrator/v1/stage_view.pb';
+
+import {
+  CheckResultStatus,
+  getCheckLabel,
+  getCheckResultStatus,
+} from './check_utils';
 
 const dagreGraph = new dagre.graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
@@ -30,22 +34,6 @@ dagreGraph.setDefaultEdgeLabel(() => ({}));
 // We must explicit set all top/right/bottom/left border properties here instead
 // of just setting "border" because React does not work well when mixing shorthand
 // and non-shorthand CSS properties.
-const CHECK_NODE_STYLE: CSSProperties = {
-  background: '#c3beffff',
-  color: '#333',
-  borderTop: '1px solid black',
-  borderRight: '1px solid black',
-  borderBottom: '1px solid black',
-  borderLeft: '1px solid black',
-};
-const STAGE_NODE_STYLE: CSSProperties = {
-  background: '#abffbdff',
-  color: '#333',
-  borderTop: '1px solid black',
-  borderRight: '1px solid black',
-  borderBottom: '1px solid black',
-  borderLeft: '1px solid black',
-};
 const COMMON_NODE_PROPERTIES: Partial<Node> & Pick<Node, 'position'> = {
   position: { x: 0, y: 0 }, // Position will be calculated by Dagre
   sourcePosition: Position.Right,
@@ -97,130 +85,145 @@ const BORDER_STYLE = `${GRAPH_CONFIG.borderWidth}px solid`;
 
 const COLORS = {
   check: {
-    bg: '#e3f2fd',
-    border: '#90caf9',
-    text: '#0d47a1',
+    bg: 'var(--light-background-color-1)',
+    border: 'var(--light-background-color-4)',
+    text: 'var(--default-text-color)',
+  },
+  checkSuccess: {
+    bg: 'var(--success-bg-color)',
+    border: 'var(--success-color)',
+    text: 'var(--default-text-color)',
+  },
+  checkFailure: {
+    bg: 'var(--failure-bg-color)',
+    border: 'var(--failure-color)',
+    text: 'var(--default-text-color)',
   },
   stage: {
-    bg: '#e8f5e9',
-    border: '#81c784',
-    text: '#1b5e20',
+    bg: 'var(--scheduled-bg-color)',
+    border: 'var(--scheduled-color)',
+    text: 'var(--default-text-color)',
   },
-  group: {
-    bg: '#EFEBE9',
-    border: '#8D6E63',
-    text: '#3E2723',
+  collapsedGroup: {
+    bg: 'var(--light-background-color-1)',
+    border: 'var(--light-background-color-4)',
+    text: 'var(--default-text-color)',
   },
 };
 
+type NodeColors = { bg: string; border: string; text: string };
+
 const NODE_STYLES = {
   // Standalone Check
-  check: {
+  check: (colors: NodeColors) => ({
     ...BASE_NODE_STYLE,
-    background: COLORS.check.bg,
-    color: COLORS.check.text,
-    borderTop: createCssBorder(COLORS.check.border),
-    borderRight: createCssBorder(COLORS.check.border),
-    borderBottom: createCssBorder(COLORS.check.border),
-    borderLeft: createCssBorder(COLORS.check.border),
+    background: colors.bg,
+    color: colors.text,
+    borderTop: createCssBorder(colors.border),
+    borderRight: createCssBorder(colors.border),
+    borderBottom: createCssBorder(colors.border),
+    borderLeft: createCssBorder(colors.border),
     borderRadius: '4px',
-  },
+  }),
   // Check attached below stage(s)
-  checkGrouped: {
+  checkGrouped: (colors: NodeColors) => ({
     ...BASE_NODE_STYLE,
-    background: COLORS.check.bg,
-    color: COLORS.check.text,
+    background: colors.bg,
+    color: colors.text,
     // Visual connector to stage above. Uses stage border color.
     borderTop: createCssBorder(COLORS.stage.border),
-    borderRight: createCssBorder(COLORS.check.border),
-    borderBottom: createCssBorder(COLORS.check.border),
-    borderLeft: createCssBorder(COLORS.check.border),
+    borderRight: createCssBorder(colors.border),
+    borderBottom: createCssBorder(colors.border),
+    borderLeft: createCssBorder(colors.border),
     borderRadius: '0 0 4px 4px', // Rounded bottom only
     // Ensure top border overlays stage bottom border area
     zIndex: 1,
     // Pull up by border width to overlap exactly
     marginTop: `-${GRAPH_CONFIG.borderWidth}px`,
-  },
+  }),
   // Standalone Stage
-  stage: {
+  stage: (colors: NodeColors) => ({
     ...BASE_NODE_STYLE,
-    background: COLORS.stage.bg,
-    color: COLORS.stage.text,
-    borderTop: createCssBorder(COLORS.stage.border),
-    borderRight: createCssBorder(COLORS.stage.border),
-    borderBottom: createCssBorder(COLORS.stage.border),
-    borderLeft: createCssBorder(COLORS.stage.border),
+    background: colors.bg,
+    color: colors.text,
+    borderTop: createCssBorder(colors.border),
+    borderRight: createCssBorder(colors.border),
+    borderBottom: createCssBorder(colors.border),
+    borderLeft: createCssBorder(colors.border),
     borderRadius: '4px',
     fontWeight: 'bold',
-  },
+  }),
   // Single Stage attached above a Check
-  stageGrouped: {
+  stageGrouped: (colors: NodeColors) => ({
     ...BASE_NODE_STYLE,
-    background: COLORS.stage.bg,
-    color: COLORS.stage.text,
-    borderTop: createCssBorder(COLORS.stage.border),
-    borderRight: createCssBorder(COLORS.stage.border),
+    background: colors.bg,
+    color: colors.text,
+    borderTop: createCssBorder(colors.border),
+    borderRight: createCssBorder(colors.border),
     borderBottom: 'none', // Overlapped by check
-    borderLeft: createCssBorder(COLORS.stage.border),
+    borderLeft: createCssBorder(colors.border),
     borderRadius: '4px 4px 0 0',
     fontWeight: 'bold',
-  },
+  }),
   // Top stage in a multi-stage stack
-  stageGroupedTop: {
+  stageGroupedTop: (colors: NodeColors) => ({
     ...BASE_NODE_STYLE,
-    background: COLORS.stage.bg,
-    color: COLORS.stage.text,
-    borderTop: createCssBorder(COLORS.stage.border),
-    borderRight: createCssBorder(COLORS.stage.border),
+    background: colors.bg,
+    color: colors.text,
+    borderTop: createCssBorder(colors.border),
+    borderRight: createCssBorder(colors.border),
     borderBottom: 'none', // Overlapped by next node
-    borderLeft: createCssBorder(COLORS.stage.border),
+    borderLeft: createCssBorder(colors.border),
     borderRadius: '4px 4px 0 0',
     fontWeight: 'bold',
     zIndex: 2, // On top of node below
-  },
+  }),
   // Middle stage in a multi-stage stack
-  stageGroupedMiddle: {
+  stageGroupedMiddle: (colors: NodeColors) => ({
     ...BASE_NODE_STYLE,
-    background: COLORS.stage.bg,
-    color: COLORS.stage.text,
-    borderLeft: createCssBorder(COLORS.stage.border),
-    borderRight: createCssBorder(COLORS.stage.border),
+    background: colors.bg,
+    color: colors.text,
+    borderLeft: createCssBorder(colors.border),
+    borderRight: createCssBorder(colors.border),
     borderTop: 'none', // Overlapped by node above
     borderBottom: 'none', // Overlapped by node below
     borderRadius: '0',
     fontWeight: 'bold',
     zIndex: 1,
-  },
+  }),
   // Bottom stage in a multi-stage stack (immediately above check)
-  stageGroupedBottom: {
+  stageGroupedBottom: (colors: NodeColors) => ({
     ...BASE_NODE_STYLE,
-    background: COLORS.stage.bg,
-    color: COLORS.stage.text,
-    borderLeft: createCssBorder(COLORS.stage.border),
-    borderRight: createCssBorder(COLORS.stage.border),
+    background: colors.bg,
+    color: colors.text,
+    borderLeft: createCssBorder(colors.border),
+    borderRight: createCssBorder(colors.border),
     borderTop: 'none', // Overlapped by node above
     borderBottom: 'none', // Overlapped by check border
     borderRadius: '0',
     fontWeight: 'bold',
-  },
+  }),
   // Style for a collapsed group of similar nodes
-  collapsedGroup: {
+  collapsedGroup: (colors: NodeColors) => ({
     ...BASE_NODE_STYLE,
-    background: COLORS.group.bg,
-    color: COLORS.group.text,
-    borderTop: createCssBorder(COLORS.group.border),
-    borderRight: createCssBorder(COLORS.group.border),
-    borderBottom: createCssBorder(COLORS.group.border),
-    borderLeft: createCssBorder(COLORS.group.border),
+    background: colors.bg,
+    color: colors.text,
+    borderTop: createCssBorder(colors.border),
+    borderRight: createCssBorder(colors.border),
+    borderBottom: createCssBorder(colors.border),
+    borderLeft: createCssBorder(colors.border),
     borderRadius: '4px',
     fontWeight: 'bold',
     justifyContent: 'center',
-  },
+  }),
 };
 
 // Effective height for stacking (height - 1px border overlap)
 // Assumes box-sizing: border-box in CSS.
 const EFFECTIVE_HEIGHT = GRAPH_CONFIG.nodeHeight - GRAPH_CONFIG.borderWidth;
+
+// The maximum length for a graph node label before it is truncated.
+const LABEL_TRUNCATE_MAX_LENGTH = 60;
 
 /**
  * A group consisting of a check and the stages assigned to them.
@@ -252,22 +255,14 @@ function createCssBorder(color: string) {
   return `${BORDER_STYLE} ${color}`;
 }
 
-// Helper function to get the human-readable label for a check node.
-function getCheckNodeLabel(check: Check): string {
-  const id = check.identifier!.id;
-  switch (check.kind) {
-    case CheckKind.CHECK_KIND_BUILD:
-      return `Build Check: ${id}`;
-    case CheckKind.CHECK_KIND_TEST:
-      return `Test Check: ${id}`;
-    case CheckKind.CHECK_KIND_SOURCE:
-      return `Source Check: ${id}`;
-    case CheckKind.CHECK_KIND_ANALYSIS:
-      return `Analysis Check: ${id}`;
-    case CheckKind.CHECK_KIND_UNKNOWN:
-    default:
-      return `Check: ${id}`;
+function getCheckColors(status: CheckResultStatus | undefined) {
+  if (status === CheckResultStatus.SUCCESS) {
+    return COLORS.checkSuccess;
   }
+  if (status === CheckResultStatus.FAILURE) {
+    return COLORS.checkFailure;
+  }
+  return COLORS.check;
 }
 
 function hashString(str: string): number {
@@ -280,16 +275,27 @@ function hashString(str: string): number {
   return hash;
 }
 
+function truncateLabel(
+  label: string,
+  maxLength = LABEL_TRUNCATE_MAX_LENGTH,
+): string {
+  if (label.length <= maxLength) return label;
+  return label.substring(0, maxLength) + '...';
+}
+
 function createCheckNode(checkView: CheckView, parentHash?: number): Node {
   const check = checkView.check!;
+  const resultStatus = getCheckResultStatus(checkView);
+  const colors = getCheckColors(resultStatus);
   return {
     id: check.identifier!.id!,
     data: {
-      label: getCheckNodeLabel(check),
+      label: truncateLabel(getCheckLabel(checkView)),
       view: checkView,
       parentHash,
+      resultStatus,
     },
-    style: CHECK_NODE_STYLE,
+    style: NODE_STYLES.check(colors),
     ...COMMON_NODE_PROPERTIES,
   };
 }
@@ -299,10 +305,10 @@ function createStageNode(stageView: StageView): Node {
   return {
     id: stage.identifier!.id!,
     data: {
-      label: `Stage: ${stage.identifier!.id}`,
+      label: truncateLabel(`Stage: ${stage.identifier!.id}`),
       view: stageView,
     },
-    style: STAGE_NODE_STYLE,
+    style: NODE_STYLES.stage(COLORS.stage),
     ...COMMON_NODE_PROPERTIES,
   };
 }
@@ -315,11 +321,11 @@ function createCollapsedGroupNode(
   return {
     id,
     data: {
-      label,
+      label: truncateLabel(label),
       isCollapsed: true,
       parentHash,
     },
-    style: NODE_STYLES.collapsedGroup,
+    style: NODE_STYLES.collapsedGroup(COLORS.collapsedGroup),
     ...COMMON_NODE_PROPERTIES,
   };
 }
@@ -680,9 +686,12 @@ export class TurboCIGraphBuilder {
 
     // Assuming ID conventions from FakeGraphGenerator: S_* are stages.
     // TODO - Make stage/check detection more robust
-    node.style = node.id.startsWith('S')
-      ? NODE_STYLES.stage
-      : NODE_STYLES.check;
+    if (node.id.startsWith('S')) {
+      node.style = NODE_STYLES.stage(COLORS.stage);
+    } else {
+      const colors = getCheckColors(node.data.resultStatus);
+      node.style = NODE_STYLES.check(colors);
+    }
   }
 
   private layoutGroupedNode(
@@ -698,11 +707,12 @@ export class TurboCIGraphBuilder {
     if (node.id === checkId) {
       // Check goes at the bottom of the stack
       // Y offset is N * EFFECTIVE_HEIGHT
+      const colors = getCheckColors(node.data.resultStatus);
       node.position = {
         x: baseX,
         y: baseY + numStages * EFFECTIVE_HEIGHT,
       };
-      node.style = NODE_STYLES.checkGrouped;
+      node.style = NODE_STYLES.checkGrouped(colors);
     } else {
       // It's a stage
       const stageIndex = stageIds.indexOf(node.id);
@@ -718,13 +728,13 @@ export class TurboCIGraphBuilder {
 
   private getGroupedStageStyle(index: number, totalStages: number) {
     if (totalStages === 1) {
-      return NODE_STYLES.stageGrouped;
+      return NODE_STYLES.stageGrouped(COLORS.stage);
     } else if (index === 0) {
-      return NODE_STYLES.stageGroupedTop;
+      return NODE_STYLES.stageGroupedTop(COLORS.stage);
     } else if (index === totalStages - 1) {
-      return NODE_STYLES.stageGroupedBottom;
+      return NODE_STYLES.stageGroupedBottom(COLORS.stage);
     } else {
-      return NODE_STYLES.stageGroupedMiddle;
+      return NODE_STYLES.stageGroupedMiddle(COLORS.stage);
     }
   }
 
