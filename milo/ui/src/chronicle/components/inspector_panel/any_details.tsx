@@ -25,6 +25,10 @@ import {
   GobSourceCheckResultsDetails,
 } from './gob_details';
 import { PiperSourceCheckOptionsDetails } from './piper_details';
+import {
+  TestCheckDescriptionOptionDetails,
+  TestCheckSummaryResultDetails,
+} from './test_details';
 
 // Define a generic renderer type that accepts unknown data.
 // Data must be unknown in order to support multiple different protos.
@@ -43,6 +47,10 @@ const KNOWN_TYPE_RENDERERS: Record<string, GenericRenderer> = {
     GobSourceCheckResultsDetails as unknown as GenericRenderer,
   'type.googleapis.com/turboci.data.piper.v1.PiperSourceCheckOptions':
     PiperSourceCheckOptionsDetails as unknown as GenericRenderer,
+  'type.googleapis.com/turboci.data.test.v1.TestCheckDescriptionOption':
+    TestCheckDescriptionOptionDetails as unknown as GenericRenderer,
+  'type.googleapis.com/turboci.data.test.v1.TestCheckSummaryResult':
+    TestCheckSummaryResultDetails as unknown as GenericRenderer,
 };
 
 export interface AnyDetailsProps {

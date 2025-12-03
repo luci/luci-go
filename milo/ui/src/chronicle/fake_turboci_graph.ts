@@ -30,6 +30,7 @@ import {
   Product,
 } from '../proto/turboci/data/build/v1/build_check_options.pb';
 import { BuildCheckResult } from '../proto/turboci/data/build/v1/build_check_results.pb';
+import { DisplayMessage_MessageFormat } from '../proto/turboci/data/common/v1/display_message.pb';
 import {
   AccountInfo,
   ChangeMessageInfo,
@@ -47,6 +48,8 @@ import {
   GobSourceCheckOptions_PinnedRepoMounts_GitCommit,
 } from '../proto/turboci/data/gerrit/v1/gob_source_check_options.pb';
 import { GobSourceCheckResults } from '../proto/turboci/data/gerrit/v1/gob_source_check_results.pb';
+import { TestCheckDescriptionOption } from '../proto/turboci/data/test/v1/test_check_description_option.pb';
+import { TestCheckSummaryResult } from '../proto/turboci/data/test/v1/test_check_summary_result.pb';
 import {
   Identifier,
   WorkPlan,
@@ -100,6 +103,10 @@ const TYPE_URL_BUILD_OPTIONS =
   'type.googleapis.com/turboci.data.build.v1.BuildCheckOptions';
 const TYPE_URL_BUILD_RESULTS =
   'type.googleapis.com/turboci.data.build.v1.BuildCheckResult';
+const TYPE_URL_TEST_OPTIONS =
+  'type.googleapis.com/turboci.data.test.v1.TestCheckDescriptionOption';
+const TYPE_URL_TEST_RESULTS =
+  'type.googleapis.com/turboci.data.test.v1.TestCheckSummaryResult';
 const TYPE_URL_GENERIC_DATA = 'type.googleapis.com/turboci.demo.GenericData';
 
 // Fake data pools used by Faker.js
@@ -444,10 +451,11 @@ export class FakeGraphGenerator {
     const finalizingStageId = stageIds[0];
 
     // Generate Data
-    const data = this.generateGenericCheckData(
+    const data = this.generateTestCheckData(
       checkId,
       realm,
       finalizingStageId,
+      success,
     );
 
     // Generate Views
@@ -1084,34 +1092,58 @@ export class FakeGraphGenerator {
     return this.assembleCheckData(optionDatum, resId, resultDatum, stageId);
   }
 
-  private generateGenericCheckData(
+  private generateTestCheckData(
     checkId: CheckId,
     realm: string,
     stageId: StageId,
+    isSuccess: boolean,
   ): CheckData {
-    const typeUrl = TYPE_URL_GENERIC_DATA;
     const testName = faker.helpers.arrayElement(FAKE_TEST_NAMES);
+
+    // --- Options ---
     const optId: CheckOptionId = { check: checkId, idx: 1 };
+    const testOptions: TestCheckDescriptionOption = {
+      title: testName,
+      displayMessage: {
+        message: `Running test suite: ${testName}`,
+        messageFormat: DisplayMessage_MessageFormat.MESSAGE_FORMAT_PLAIN_TEXT,
+      },
+    };
+
     const optionDatum = this.createDatum(
       { checkOption: optId },
       realm,
-      typeUrl,
-      {
-        description: `Generic options for ${testName}`,
-        value: faker.lorem.sentence(),
-      },
+      TYPE_URL_TEST_OPTIONS,
+      testOptions,
     );
 
+    // --- Results ---
     const resId: CheckResultId = { check: checkId, idx: 1 };
     const datumId: CheckResultDatumId = { result: resId, idx: 1 };
+
+    const total = faker.number.int({ min: 10, max: 1000 });
+    const failures = isSuccess ? 0 : faker.number.int({ min: 1, max: total });
+    const skips = faker.number.int({ min: 0, max: total * 0.1 });
+    const successes = total - failures - skips;
+
+    const testResult: TestCheckSummaryResult = {
+      success: isSuccess,
+      displayMessage: {
+        message: isSuccess ? 'All tests passed' : `${failures} tests failed`,
+        messageFormat: DisplayMessage_MessageFormat.MESSAGE_FORMAT_PLAIN_TEXT,
+      },
+      testCount: total,
+      successCount: successes,
+      failureCount: failures,
+      skipCount: skips,
+      viewUrl: faker.internet.url(),
+    };
+
     const resultDatum = this.createDatum(
       { checkResultDatum: datumId },
       realm,
-      typeUrl,
-      {
-        description: `Generic result for ${testName}`,
-        summary: faker.lorem.sentence(),
-      },
+      TYPE_URL_TEST_RESULTS,
+      testResult,
     );
 
     return this.assembleCheckData(optionDatum, resId, resultDatum, stageId);
