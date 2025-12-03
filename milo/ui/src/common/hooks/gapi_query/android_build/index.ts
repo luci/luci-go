@@ -13,3 +13,4 @@
 // limitations under the License.
 
 export * from './android_build';
+export * from './types';

@@ -18,10 +18,14 @@ import { WrapperQueryOptions } from '@/common/types/query_wrapper_options';
 
 import { useGapiQuery } from '../gapi_query';
 
-const API_BASE_PATH = 'https://androidbuildinternal.googleapis.com/';
+import {
+  GetInvocationParams,
+  InvocationResponse,
+  ListBuildsRequest,
+  ListBuildsResponse,
+} from './types';
 
-// Note that many of the types in this file can be auto-generated, but are not.
-// This is because this is a private API and we only define what we need for our code.
+const API_BASE_PATH = 'https://androidbuildinternal.googleapis.com/';
 
 /**
  * Gets the current state of a single component
@@ -41,21 +45,28 @@ export const useGetInvocation = (
   );
 };
 
-export interface GetInvocationParams {
-  /**
-   * The id of the invocation to get.
-   * E.g. "1234"
-   */
-  invocationId: string;
-}
-
-export interface InvocationResponse {
-  /**
-   * Unique ID. Assigned at creation time by the API backend.
-   */
-  resource: InvocationJson;
-}
-
-export interface InvocationJson {
-  invocationId: string;
-}
+export const useListBuilds = (
+  params: ListBuildsRequest,
+  queryOptions: WrapperQueryOptions<ListBuildsResponse>,
+): UseQueryResult<ListBuildsResponse> => {
+  const path = 'v4/builds';
+  return useGapiQuery<ListBuildsResponse>(
+    {
+      method: 'GET',
+      path: `${API_BASE_PATH}${path}`,
+      params: {
+        branches: params.branches,
+        targets: params.targets,
+        start_creation_timestamp: params.start_creation_timestamp,
+        end_creation_timestamp: params.end_creation_timestamp,
+        sorting_type: params.sorting_type,
+        page_token: params.page_token,
+        page_size: params.page_size,
+        fields:
+          params.fields ??
+          'next_page_token,previous_page_token,builds(build_id,branch,target,creation_timestamp)',
+      },
+    },
+    queryOptions,
+  );
+};
