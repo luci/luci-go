@@ -43,7 +43,7 @@ import { getArtifactType } from '../artifact_utils';
 
 import { FolderIcon } from './folder_icon';
 
-const LEVEL_INDENTATION_SIZE = 10;
+const LEVEL_INDENTATION_SIZE = 20;
 const CONTENT_INTERNAL_OFFSET_LEFT = 8;
 
 const DIRECT_ACTIVE_NODE_SELECTION_BACKGROUND_COLOR = deepOrange[300];

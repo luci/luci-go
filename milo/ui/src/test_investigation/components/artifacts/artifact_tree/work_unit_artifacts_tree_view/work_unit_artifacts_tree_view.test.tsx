@@ -50,15 +50,23 @@ jest.mock('@/test_investigation/context', () => ({
 describe('<WorkUnitArtifactsTreeView />', () => {
   const mockWorkUnits: WorkUnit[] = [
     WorkUnit.fromPartial({
-      name: 'invocations/inv/workUnits/wu1',
-      workUnitId: 'wu1',
+      name: 'invocations/inv/workUnits/wu0',
+      workUnitId: 'wu0',
     }),
   ];
 
   const mockArtifacts: Artifact[] = [
     Artifact.fromPartial({
-      name: 'invocations/inv/workUnits/wu1/artifacts/log.txt',
+      name: 'invocations/inv/workUnits/wu0/artifacts/log.txt',
       artifactId: 'log.txt',
+    }),
+  ];
+
+  const mockTargetArtifacts: Artifact[] = [
+    Artifact.fromPartial({
+      name: 'invocations/inv/workUnits/wu1/artifacts/result.txt',
+      artifactId: 'result.txt',
+      hasLines: true,
     }),
   ];
 
@@ -77,11 +85,30 @@ describe('<WorkUnitArtifactsTreeView />', () => {
       ListArtifacts: {
         query: jest.fn().mockReturnValue({}),
       },
+      GetWorkUnit: {
+        query: jest.fn().mockReturnValue({}),
+      },
     });
 
-    (useQuery as jest.Mock).mockReturnValue({
-      data: { workUnits: mockWorkUnits },
-      isLoading: false,
+    (useQuery as jest.Mock).mockImplementation((query) => {
+      if (query === undefined) {
+        return { data: undefined, isLoading: false };
+      }
+      // Mock GetWorkUnit response
+      if (query.name && query.name.includes('GetWorkUnit')) {
+        return {
+          data: WorkUnit.fromPartial({
+            name: 'invocations/inv/workUnits/wu1',
+            workUnitId: 'wu1',
+            kind: 'Test Result', // Mocked kind
+          }),
+          isLoading: false,
+        };
+      }
+      return {
+        data: { workUnits: mockWorkUnits },
+        isLoading: false,
+      };
     });
 
     (useQueries as jest.Mock).mockReturnValue([
@@ -89,10 +116,97 @@ describe('<WorkUnitArtifactsTreeView />', () => {
         data: { artifacts: mockArtifacts },
         isLoading: false,
       },
+      {
+        data: { artifacts: mockTargetArtifacts },
+        isLoading: false,
+      },
     ]);
   });
 
   it('should render work units and artifacts', async () => {
+    // Mock the GetWorkUnit query key to match what useQuery expects for the mock implementation above
+    const mockGetWorkUnitQuery = {
+      name: 'GetWorkUnit',
+    };
+    (useResultDbClient as jest.Mock).mockReturnValue({
+      QueryWorkUnits: {
+        query: jest
+          .fn()
+          .mockImplementation((req) => ({ ...req, _type: 'QueryWorkUnits' })),
+      },
+      ListArtifacts: {
+        query: jest
+          .fn()
+          .mockImplementation((req) => ({ ...req, _type: 'ListArtifacts' })),
+      },
+      GetWorkUnit: {
+        query: jest.fn().mockReturnValue(mockGetWorkUnitQuery),
+      },
+    });
+
+    (useQueries as jest.Mock).mockReturnValue([
+      {
+        data: { artifacts: mockArtifacts },
+        isLoading: false,
+      },
+      {
+        data: { artifacts: mockTargetArtifacts },
+        isLoading: false,
+      },
+    ]);
+
+    // Mock useQuery for ListArtifacts for Test Result artifacts
+    (useQuery as jest.Mock).mockImplementation((query) => {
+      if (query === undefined) {
+        return { data: undefined, isLoading: false };
+      }
+      if (query.name && query.name.includes('GetWorkUnit')) {
+        return {
+          data: WorkUnit.fromPartial({
+            name: 'invocations/inv/workUnits/wu1',
+            workUnitId: 'wu1',
+            kind: 'Test Result',
+          }),
+          isLoading: false,
+        };
+      }
+      // Mock ListArtifacts for currentResult (Test Result artifacts)
+      if (
+        query.parent &&
+        query.parent.includes('invocations/inv/tests/test-id/results/result-id')
+      ) {
+        return {
+          data: {
+            artifacts: [
+              Artifact.fromPartial({
+                name: 'invocations/inv/tests/test-id/results/result-id/artifacts/test_result_artifact.txt',
+                artifactId: 'test_result_artifact.txt',
+                hasLines: true,
+                artifactType: 'text',
+              }),
+            ],
+          },
+          isLoading: false,
+        };
+      }
+
+      // Default fallback
+      return {
+        data: { workUnits: mockWorkUnits },
+        isLoading: false,
+      };
+    });
+
+    (useArtifactsContext as jest.Mock).mockReturnValue({
+      selectedArtifact: null,
+      setSelectedArtifact: jest.fn(),
+      clusteredFailures: [],
+      hasRenderableResults: false,
+      currentResult: {
+        name: 'invocations/inv/tests/test-id/results/result-id',
+      },
+    });
+
     render(
       <VirtuosoMockContext.Provider
         value={{ viewportHeight: 300, itemHeight: 30 }}
@@ -108,7 +222,12 @@ describe('<WorkUnitArtifactsTreeView />', () => {
       </VirtuosoMockContext.Provider>,
     );
 
-    expect(await screen.findByText('wu1')).toBeInTheDocument();
+    await screen.findByText('wu0');
     expect(screen.getByText('log.txt')).toBeInTheDocument();
+
+    // Wait for Test Result artifacts to load
+    expect(await screen.findAllByText('Test Result')).toHaveLength(2);
+    expect(screen.getByText('test_result_artifact.txt')).toBeInTheDocument();
+    expect(screen.getByText('result.txt')).toBeInTheDocument();
   });
 });
