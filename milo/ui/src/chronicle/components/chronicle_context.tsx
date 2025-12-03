@@ -12,10 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContext, ReactNode, useMemo, useState } from 'react';
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useMemo,
+  useState,
+} from 'react';
 import { useParams } from 'react-router';
 
 import { useQueryNodes } from '@/common/hooks/grpc_query/turbo_ci/turbo_ci';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { GraphView } from '@/proto/turboci/graph/orchestrator/v1/graph_view.pb';
 
 import { FakeGraphGenerator, WorkflowType } from '../fake_turboci_graph';
@@ -29,6 +36,10 @@ interface ChronicleContextType {
   // Workflow type for fake data generation only.
   workflowType: WorkflowType;
   setWorkflowType: (type: WorkflowType) => void;
+
+  // Selected node ID from URL query param
+  selectedNodeId: string | undefined;
+  setSelectedNodeId: (id: string | undefined) => void;
 }
 
 export const ChronicleContext = createContext<ChronicleContextType>({
@@ -36,7 +47,37 @@ export const ChronicleContext = createContext<ChronicleContextType>({
   graph: undefined,
   workflowType: WorkflowType.ANDROID,
   setWorkflowType: () => {},
+  selectedNodeId: undefined,
+  setSelectedNodeId: () => {},
 });
+
+/**
+ * Hook to sync node selection with the URL query parameter `nodeId`.
+ */
+function useNodeSelection() {
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const selectedNodeId = searchParams.get('nodeId') || undefined;
+
+  const setSelectedNodeId = useCallback(
+    (id: string | undefined) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (id) {
+            next.set('nodeId', id);
+          } else {
+            next.delete('nodeId');
+          }
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  return { selectedNodeId, setSelectedNodeId };
+}
 
 export function ChronicleContextProvider({
   children,
@@ -47,6 +88,7 @@ export function ChronicleContextProvider({
   const [workflowType, setWorkflowType] = useState<WorkflowType>(
     WorkflowType.ANDROID,
   );
+  const { selectedNodeId, setSelectedNodeId } = useNodeSelection();
 
   if (!workplanId) {
     throw new Error('Invalid URL: Missing workplanId parameter.');
@@ -89,8 +131,17 @@ export function ChronicleContextProvider({
       graph,
       workflowType,
       setWorkflowType,
+      selectedNodeId,
+      setSelectedNodeId,
     }),
-    [workplanId, graph, workflowType, setWorkflowType],
+    [
+      workplanId,
+      graph,
+      workflowType,
+      setWorkflowType,
+      selectedNodeId,
+      setSelectedNodeId,
+    ],
   );
 
   return (

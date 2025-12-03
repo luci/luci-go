@@ -22,6 +22,8 @@ import {
   Paper,
   Select,
   Typography,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
@@ -66,7 +68,13 @@ const HIGHLIGHTED_EDGE_STYLE = {
 };
 
 function Graph() {
-  const { graph, workflowType, setWorkflowType } = useContext(ChronicleContext);
+  const {
+    graph,
+    workflowType,
+    setWorkflowType,
+    selectedNodeId,
+    setSelectedNodeId,
+  } = useContext(ChronicleContext);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { fitView } = useReactFlow();
@@ -74,15 +82,13 @@ function Graph() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [showAssignmentEdges, setShowAssignmentEdges] = useState(false);
   const [autoFitSelection, setAutoFitSelection] = useState(true);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | undefined>(
-    undefined,
-  );
   const [collapsedParentHashes, setCollapsedParentHashes] = useState<
     Set<number>
   >(new Set());
   const [contextMenuState, setContextMenuState] = useState<
     ContextMenuState | undefined
   >(undefined);
+  const [showNodeNotFound, setShowNodeNotFound] = useState(false);
 
   const { layoutedNodes, layoutedEdges } = useMemo(() => {
     if (!graph) return { layoutedNodes: [], layoutedEdges: [] };
@@ -192,10 +198,13 @@ function Graph() {
   // Use useCallback even with no dependencies to prevent React creating a new
   // function reference on every render.
   // https://reactflow.dev/learn/advanced-use/performance#memoize-functions
-  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
-    setSelectedNodeId(node.id);
-    setContextMenuState(undefined);
-  }, []);
+  const onNodeClick = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      setSelectedNodeId(node.id);
+      setContextMenuState(undefined);
+    },
+    [setSelectedNodeId],
+  );
 
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
@@ -216,11 +225,11 @@ function Graph() {
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(undefined);
     setContextMenuState(undefined);
-  }, []);
+  }, [setSelectedNodeId]);
 
   const onInspectorClose = useCallback(() => {
     setSelectedNodeId(undefined);
-  }, []);
+  }, [setSelectedNodeId]);
 
   const handleContextMenuClose = useCallback(() => {
     setContextMenuState(undefined);
@@ -243,7 +252,9 @@ function Graph() {
   }, []);
 
   const selectedNode = useMemo(() => {
-    return nodes.find((n) => n.id === selectedNodeId);
+    const n = nodes.find((n) => n.id === selectedNodeId);
+    setShowNodeNotFound(!n);
+    return n;
   }, [nodes, selectedNodeId]);
 
   return (
@@ -347,7 +358,7 @@ function Graph() {
           onExpandGroup={handleExpandGroup}
         />
       </Panel>
-      {selectedNodeId && (
+      {selectedNodeId && selectedNode && (
         <>
           <PanelResizeHandle>
             <Box
@@ -374,6 +385,19 @@ function Graph() {
           </Panel>
         </>
       )}
+      <Snackbar
+        open={showNodeNotFound}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          severity="error"
+          onClose={() => {
+            setShowNodeNotFound(false);
+          }}
+        >
+          Node {selectedNodeId} not found.
+        </Alert>
+      </Snackbar>
     </PanelGroup>
   );
 }
