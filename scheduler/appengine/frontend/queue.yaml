@@ -31,3 +31,6 @@ queue:
 
 - name: triggers
   rate: 500/s
+
+- name: aborts
+  rate: 500/s

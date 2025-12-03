@@ -144,14 +144,16 @@ type Engine interface {
 	// AbortJob aborts all currently pending or running invocations (if any).
 	AbortJob(c context.Context, job *Job) error
 
-	// AbortInvocation forcefully moves the invocation to a failed state.
+	// AbortInvocation marks the invocation as aborted.
 	//
-	// It opportunistically tries to send "abort" signal to a job runner if it
-	// supports cancellation, but it doesn't wait for reply (proceeds to
-	// modifying the local state in the scheduler service datastore immediately).
+	// It opportunistically tries to send "abort" signal to a job runner right
+	// away. If this fails, it marks the invocation as being aborted and enqueues
+	// an asynchronous operation to eventually abort the invocation (or give up
+	// trying to start it if it is stuck launching).
 	//
-	// AbortInvocation can be used to manually "unstuck" jobs that got stuck due
-	// to missing PubSub notifications or other kinds of unexpected conditions.
+	// AbortInvocation can also be used to manually "unstuck" jobs that got stuck
+	// due to missing PubSub notifications or other kinds of unexpected
+	// conditions.
 	//
 	// Does nothing if the invocation is already in some final state.
 	AbortInvocation(c context.Context, job *Job, invID int64) error
@@ -266,6 +268,7 @@ func (e *engineImpl) init() {
 	e.cfg.Dispatcher.RegisterTask(&internal.ScheduleTimersTask{}, e.execScheduleTimersTask, "timers", nil)
 	e.cfg.Dispatcher.RegisterTask(&internal.TimerTask{}, e.execTimerTask, "timers", nil)
 	e.cfg.Dispatcher.RegisterTask(&internal.CronTickTask{}, e.execCronTickTask, "crons", nil)
+	e.cfg.Dispatcher.RegisterTask(&internal.AbortInvocationTask{}, e.execAbortInvocationTask, "aborts", nil)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1194,24 +1197,84 @@ func (e *engineImpl) initInvocation(c context.Context, inv *Invocation, req *tas
 
 // abortInvocation marks some invocation as aborted.
 func (e *engineImpl) abortInvocation(c context.Context, jobID string, invID int64) error {
-	return e.withController(c, jobID, invID, "manual abort", func(c context.Context, ctl *taskController) error {
-		ctl.DebugLog("Invocation is manually aborted by %s", auth.CurrentIdentity(c))
-
-		switch err := ctl.manager.AbortTask(c, ctl); {
-		case transient.Tag.In(err):
-			return err // ask for retry on transient errors, don't touch Invocation
-		case err != nil:
-			ctl.DebugLog("Fatal error when aborting the invocation - %s", err)
+	// Attempt to abort the invocation right away. If this fails due to a conflict
+	// or for any other non-fatal reason, mark the invocation as being aborted
+	// (to asynchronously abort any retrying LaunchTask calls) and emit a TQ task
+	// to definitively finish the abort operation in the future, even if no other
+	// TQ tasks are being retried now.
+	err := e.withController(c, jobID, invID, "manual abort", func(c context.Context, ctl *taskController) error {
+		if ctl.saved.AsyncState.AbortedBy != "" {
+			return nil // the abort operation is already pending
 		}
-
-		// On success or on a fatal error mark the task as aborted (unless the
-		// manager already switched the state). We can't do anything about the
-		// failed abort attempt anyway.
-		if !ctl.State().Status.Final() {
-			ctl.State().Status = task.StatusAborted
-		}
-		return nil
+		return e.abortInvocationImpl(c, ctl, auth.CurrentIdentity(c))
 	})
+	if err == nil || !transient.Tag.In(err) {
+		return err
+	}
+
+	c = logging.SetField(c, "JobID", jobID)
+	c = logging.SetField(c, "InvID", invID)
+
+	logging.Warningf(c, "Enqueuing an asynchronous abort because the synchronous abort failed: %s", err)
+
+	return runTxn(c, func(c context.Context) error {
+		inv := Invocation{ID: invID}
+		switch err := ds.Get(c, &inv); {
+		case err == ds.ErrNoSuchEntity:
+			logging.Warningf(c, "The invocation is unexpectedly gone")
+			return nil
+		case err != nil:
+			return transient.Tag.Apply(err)
+		case inv.Status.Final():
+			logging.Infof(c, "The invocation is already in a final state: %s", inv.Status)
+			return nil
+		case inv.AsyncState.AbortedBy != "":
+			logging.Infof(c, "The invocation is already marked as pending abort")
+			return nil
+		}
+		inv.AsyncState.AbortedBy = auth.CurrentIdentity(c)
+		if err := ds.Put(c, &inv); err != nil {
+			return transient.Tag.Apply(err)
+		}
+		return e.cfg.Dispatcher.AddTask(c, &tq.Task{
+			Payload: &internal.AbortInvocationTask{
+				JobId: jobID,
+				InvId: invID,
+			},
+			Delay: time.Second, // give some time to land the transaction
+		})
+	})
+}
+
+// execAbortInvocationTask handles AbortInvocationTask enqueued by
+// abortInvocation.
+func (e *engineImpl) execAbortInvocationTask(c context.Context, tqTask proto.Message) error {
+	task := tqTask.(*internal.AbortInvocationTask)
+	return e.withController(c, task.JobId, task.InvId, "asynchronous abort", func(c context.Context, ctl *taskController) error {
+		return e.abortInvocationImpl(c, ctl, ctl.saved.AsyncState.AbortedBy)
+	})
+}
+
+// abortInvocationImpl calls task.Manager's AbortTask and moves the invocation
+// into aborted state.
+func (e *engineImpl) abortInvocationImpl(c context.Context, ctl *taskController, abortedBy identity.Identity) error {
+	ctl.DebugLog("Invocation was manually aborted by %s", abortedBy)
+
+	switch err := ctl.manager.AbortTask(c, ctl); {
+	case transient.Tag.In(err):
+		return err // ask for retry on transient errors, don't touch Invocation
+	case err != nil:
+		ctl.DebugLog("Fatal error when aborting the invocation - %s", err)
+	}
+
+	// On success or on a fatal error mark the task as aborted (unless the
+	// manager already switched the state). We can't do anything about the
+	// failed abort attempt anyway.
+	if !ctl.State().Status.Final() {
+		ctl.State().Status = task.StatusAborted
+	}
+
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1226,22 +1289,20 @@ const (
 var (
 	// errRetryingLaunch is returned by launchTask if the task failed to start and
 	// the launch attempt should be tried again.
-	errRetryingLaunch = transient.Tag.Apply(
-
-		// withController fetches the invocation, instantiates the task controller,
-		// calls the callback, and saves back the modified invocation state, initiating
-		// all necessary engine transitions along the way.
-		//
-		// Does nothing and returns nil if the invocation is already in a final state.
-		// The callback is not called in this case at all.
-		//
-		// Skips saving the invocation if the callback returns non-nil.
-		//
-		// 'action' is used exclusively for logging. It's a human readable cause of why
-		// the controller is instantiated.
-		errors.New("task failed to start, retrying"))
+	errRetryingLaunch = transient.Tag.Apply(errors.New("task failed to start, retrying"))
 )
 
+// withController fetches the invocation, instantiates the task controller,
+// calls the callback, and saves back the modified invocation state, initiating
+// all necessary engine transitions along the way.
+//
+// Does nothing and returns nil if the invocation is already in a final state.
+// The callback is not called in this case at all.
+//
+// Skips saving the invocation if the callback returns non-nil.
+//
+// 'action' is used exclusively for logging. It's a human readable cause of why
+// the controller is instantiated.
 func (e *engineImpl) withController(c context.Context, jobID string, invID int64, action string, cb func(context.Context, *taskController) error) error {
 	c = logging.SetField(c, "JobID", jobID)
 	c = logging.SetField(c, "InvID", invID)
@@ -1294,12 +1355,23 @@ func (e *engineImpl) launchTask(c context.Context, inv *Invocation) error {
 		return ctl.Save(c)
 	}
 
+	// If the invocation was asynchronously aborted, move it into the aborted
+	// state right away. We don't need to call manager.AbortTask, because we
+	// haven't actually launched anything yet (at most we attempted and failed
+	// and now retrying).
+	if abortedBy := ctl.saved.AsyncState.AbortedBy; abortedBy != "" {
+		ctl.DebugLog("Skipping the launch, the invocation was manually aborted by %s", abortedBy)
+		ctl.State().Status = task.StatusAborted
+		return ctl.Save(c)
+	}
+
 	// Ask the manager to start the task. If it returns no errors, it should also
 	// move the invocation out of an initial state (a failure to do so is a fatal
 	// error). If it returns an error, the invocation is forcefully moved to
 	// StatusRetrying or StatusFailed state (depending on whether the error is
 	// transient or not and how many retries are left). In either case, invocation
 	// never ends up in StatusStarting state.
+	logging.Infof(c, "Actually launching the task")
 	err = ctl.manager.LaunchTask(c, ctl)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to LaunchTask")
@@ -1566,7 +1638,6 @@ func (e *engineImpl) execLaunchInvocationTask(c context.Context, tqTask proto.Me
 		return nil
 	}
 
-	logging.Infof(c, "Actually launching the task")
 	return e.launchTask(c, &lastInvState)
 }
 
@@ -1726,6 +1797,11 @@ func (e *engineImpl) execTimerTask(c context.Context, tqTask proto.Message) erro
 	action := fmt.Sprintf("timer %q (%s)", timer.Title, timer.Id)
 
 	return e.withController(c, msg.JobId, msg.InvId, action, func(c context.Context, ctl *taskController) error {
+		// If the invocation was asynchronously aborted, actually abort it now.
+		if abortedBy := ctl.saved.AsyncState.AbortedBy; abortedBy != "" {
+			return e.abortInvocationImpl(c, ctl, abortedBy)
+		}
+
 		// Pop the timer from the pending set, if it is still there. Return a fatal
 		// error if it isn't to stop this task from being redelivered.
 		switch consumed, err := ctl.consumeTimer(timer.Id); {
@@ -1941,6 +2017,11 @@ func (e *engineImpl) handlePubSubMessage(c context.Context, manager string, msg 
 	// Hand the message to the controller.
 	action := fmt.Sprintf("pubsub message %q", msg.MessageId)
 	return e.withController(c, jobID, invID, action, func(c context.Context, ctl *taskController) error {
+		// If the invocation was asynchronously aborted, actually abort it now.
+		if abortedBy := ctl.saved.AsyncState.AbortedBy; abortedBy != "" {
+			return e.abortInvocationImpl(c, ctl, abortedBy)
+		}
+
 		err := ctl.manager.HandleNotification(c, ctl, msg)
 		switch {
 		case err == nil:
@@ -1948,6 +2029,7 @@ func (e *engineImpl) handlePubSubMessage(c context.Context, manager string, msg 
 		case transient.Tag.In(err) || tq.Retry.In(err):
 			return err // ask for redelivery on transient errors, don't touch the invocation
 		}
+
 		// On fatal errors, move the invocation to failed state (if not already).
 		if ctl.State().Status != task.StatusFailed {
 			ctl.DebugLog("Fatal error when handling PubSub notification, aborting invocation - %s", err)

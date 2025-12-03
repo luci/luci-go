@@ -344,6 +344,12 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 			return errUpdateConflict
 		}
 
+		// Make sure not to override AsyncState: the engine could have updated it
+		// while we were working on the invocation. Changes to AsyncState do not
+		// bump MutationsCount, which allows them to happen asynchronously with
+		// task.Manager long-running calls.
+		saving.AsyncState = mostRecent.AsyncState
+
 		// Notify the engine about the invocation state change and all timers and
 		// triggers. The engine may decide to update the corresponding job.
 		if err := ctl.eng.invChanging(c, &ctl.saved, &saving, ctl.timers, ctl.triggers); err != nil {

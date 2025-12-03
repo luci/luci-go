@@ -149,3 +149,14 @@ message CronTickTask {
   string job_id = 1;
   int64 tick_nonce = 2; // used to skip no longer interesting ticks
 }
+
+
+// AbortInvocationTask aborts a pending or running invocation.
+//
+// It is enqueued transactionally inside AbortInvocation handler.
+//
+// Queue: "aborts".
+message AbortInvocationTask {
+  string job_id = 1;
+  int64 inv_id = 2;
+}

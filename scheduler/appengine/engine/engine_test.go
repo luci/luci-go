@@ -1022,8 +1022,8 @@ func TestAbortJob(t *testing.T) {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
 
-		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
-		tq.CreateQueues()
+		tqt := tqtesting.GetTestable(c, e.cfg.Dispatcher)
+		tqt.CreateQueues()
 
 		assert.Loosely(t, e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
@@ -1061,7 +1061,7 @@ func TestAbortJob(t *testing.T) {
 				Status:         task.StatusAborted,
 				MutationsCount: 1,
 				DebugLog: "[22:42:00.000] New invocation is queued and will start shortly\n" +
-					"[22:42:00.000] Invocation is manually aborted by user:owner@example.com\n" +
+					"[22:42:00.000] Invocation was manually aborted by user:owner@example.com\n" +
 					"[22:42:00.000] Invocation finished in 0s with status ABORTED\n",
 			}))
 
@@ -1070,7 +1070,7 @@ func TestAbortJob(t *testing.T) {
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				panic("must not be called")
 			}
-			tasks, _, err := tq.RunSimulation(c, nil)
+			tasks, _, err := tqt.RunSimulation(c, nil)
 			assert.Loosely(t, err, should.BeNil)
 
 			// The sequence of tasks we've just performed.
@@ -1106,6 +1106,56 @@ func TestAbortJob(t *testing.T) {
 			assert.Loosely(t, invs, should.Resemble([]*Invocation{inv}))
 		})
 
+		t.Run("inv aborted asynchronously when LaunchTask is retrying", func(t *ftt.Test) {
+			// Do the first attempt at LaunchTask.
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+				return transient.Tag.Apply(errors.Fmt("boom"))
+			}
+			_, _, err := tqt.RunSimulation(c, nil)
+			assert.Loosely(t, err, should.ErrLike("task failed to start, retrying"))
+
+			// Enqueue LaunchTask TQ retry right away.
+			e.cfg.Dispatcher.AddTask(c, &tq.Task{
+				Payload: &internal.LaunchInvocationTask{
+					JobId: jobID, InvId: expectedInvID,
+				},
+			})
+
+			// A failed attempt to kill the invocation marks the invocation as
+			// aborting.
+			mgr.abortTask = func(ctx context.Context, ctl task.Controller) error {
+				return transient.Tag.Apply(errors.Fmt("boom"))
+			}
+			assert.Loosely(t, e.AbortJob(mockOwnerCtx(c, realmID), job), should.BeNil)
+
+			// Unpause TQ and verify it aborts the invocation without attempting to
+			// launch or abort it again.
+			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
+				panic("should not be called")
+			}
+			mgr.abortTask = func(ctx context.Context, ctl task.Controller) error {
+				panic("should not be called")
+			}
+			tasks, _, err := tqt.RunSimulation(c, nil)
+			assert.Loosely(t, err, should.BeNil)
+
+			// The sequence of tasks we've just performed.
+			assert.Loosely(t, tasks.Payloads(), should.Resemble([]protoiface.MessageV1{
+				// The delayed triage directly from AbortJob.
+				&internal.KickTriageTask{JobId: jobID},
+				// LaunchTask TQ retry.
+				&internal.LaunchInvocationTask{
+					JobId: jobID, InvId: expectedInvID,
+				},
+				// The invocation finalization from LaunchTask that gave up.
+				&internal.InvocationFinishedTask{JobId: jobID, InvId: expectedInvID},
+				// The asynchronous abort task that does nothing.
+				&internal.AbortInvocationTask{JobId: jobID, InvId: expectedInvID},
+				// The triage from KickTriageTask finally arrives.
+				&internal.TriageJobStateTask{JobId: jobID},
+			}))
+		})
+
 		t.Run("inv aborted while it is running", func(t *ftt.Test) {
 			// Let the invocation start and set a timer. Abort the simulation before
 			// the timer ticks.
@@ -1114,7 +1164,7 @@ func TestAbortJob(t *testing.T) {
 				ctl.AddTimer(ctx, time.Minute, "1 min", nil)
 				return nil
 			}
-			tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
+			tasks, _, err := tqt.RunSimulation(c, &tqtesting.SimulationParams{
 				ShouldStopBefore: func(t tqtesting.Task) bool {
 					_, ok := t.Payload.(*internal.TimerTask)
 					return ok
@@ -1132,52 +1182,116 @@ func TestAbortJob(t *testing.T) {
 				},
 			}))
 
-			// At this point the timer tick is scheduled to happen 1 min from now, but
-			// we abort the job.
-			mgr.abortTask = func(ctx context.Context, ctl task.Controller) error {
-				ctl.DebugLog("Really aborted!")
-				return nil
-			}
-			assert.Loosely(t, e.AbortJob(mockOwnerCtx(c, realmID), job), should.BeNil)
+			t.Run("synchronous abort", func(t *ftt.Test) {
+				// At this point the timer tick is scheduled to happen 1 min from now,
+				// but we abort the job and abortTask succeeds.
+				mgr.abortTask = func(ctx context.Context, ctl task.Controller) error {
+					ctl.DebugLog("Really aborted!")
+					return nil
+				}
+				assert.Loosely(t, e.AbortJob(mockOwnerCtx(c, realmID), job), should.BeNil)
 
-			// It is dead right away.
-			inv, err := e.getInvocation(c, jobID, invID)
-			assert.Loosely(t, inv.Status, should.Equal(task.StatusAborted))
+				// It is dead right away.
+				inv, err := e.getInvocation(c, jobID, invID)
+				assert.Loosely(t, inv.Status, should.Equal(task.StatusAborted))
 
-			// And AbortTask callback was really called.
-			assert.Loosely(t, inv.DebugLog, should.ContainSubstring("Really aborted!"))
+				// And AbortTask callback was really called.
+				assert.Loosely(t, inv.DebugLog, should.ContainSubstring("Really aborted!"))
 
-			// Run all processes to completion.
-			mgr.handleTimer = func(ctx context.Context, ctl task.Controller, name string, payload []byte) error {
-				panic("must not be called")
-			}
-			tasks, _, err = tq.RunSimulation(c, nil)
-			assert.Loosely(t, err, should.BeNil)
+				// Run all processes to completion.
+				mgr.handleTimer = func(ctx context.Context, ctl task.Controller, name string, payload []byte) error {
+					panic("must not be called")
+				}
+				tasks, _, err = tqt.RunSimulation(c, nil)
+				assert.Loosely(t, err, should.BeNil)
 
-			// The sequence of tasks we've just performed.
-			assert.Loosely(t, tasks.Payloads(), should.Resemble([]protoiface.MessageV1{
-				// The delayed triage directly from AbortJob.
-				&internal.KickTriageTask{JobId: jobID},
-				// The invocation finalization from AbortInvocation.
-				&internal.InvocationFinishedTask{JobId: jobID, InvId: expectedInvID},
+				// The sequence of tasks we've just performed.
+				assert.Loosely(t, tasks.Payloads(), should.Resemble([]protoiface.MessageV1{
+					// The delayed triage directly from AbortJob.
+					&internal.KickTriageTask{JobId: jobID},
+					// The invocation finalization from AbortInvocation.
+					&internal.InvocationFinishedTask{JobId: jobID, InvId: expectedInvID},
 
-				// The triage from KickTriageTask and from InvocationFinishedTask
-				// finally arrives.
-				&internal.TriageJobStateTask{JobId: jobID},
+					// The triage from KickTriageTask and from InvocationFinishedTask
+					// finally arrives.
+					&internal.TriageJobStateTask{JobId: jobID},
 
-				// And delayed TimerTask arrives and gets skipped, as confirmed by
-				// mgr.handleTimer.
-				&internal.TimerTask{
-					JobId: jobID,
-					InvId: expectedInvID,
-					Timer: &internal.Timer{
-						Id:      "project/job:9200093523825193008:1:0",
-						Created: timestamppb.New(epoch.Add(time.Second)),
-						Eta:     timestamppb.New(epoch.Add(time.Minute + time.Second)),
-						Title:   "1 min",
+					// And delayed TimerTask arrives and gets skipped, as confirmed by
+					// mgr.handleTimer.
+					&internal.TimerTask{
+						JobId: jobID,
+						InvId: expectedInvID,
+						Timer: &internal.Timer{
+							Id:      "project/job:9200093523825193008:1:0",
+							Created: timestamppb.New(epoch.Add(time.Second)),
+							Eta:     timestamppb.New(epoch.Add(time.Minute + time.Second)),
+							Title:   "1 min",
+						},
 					},
-				},
-			}))
+				}))
+			})
+
+			t.Run("asynchronous abort", func(t *ftt.Test) {
+				// At this point the timer tick is scheduled to happen 1 min from now,
+				// but we abort the job and abortTask fails transiently.
+				mgr.abortTask = func(ctx context.Context, ctl task.Controller) error {
+					return transient.Tag.Apply(errors.Fmt("boom"))
+				}
+				// The call succeeds nonetheless, since it scheduled an async abort.
+				assert.Loosely(t, e.AbortJob(mockOwnerCtx(c, realmID), job), should.BeNil)
+
+				// The invocation is still running, since abort attempt failed.
+				inv, err := e.getInvocation(c, jobID, invID)
+				assert.Loosely(t, inv.Status, should.Equal(task.StatusRunning))
+
+				// "Fix" the abort handler.
+				mgr.abortTask = func(ctx context.Context, ctl task.Controller) error {
+					ctl.DebugLog("Really aborted!")
+					return nil
+				}
+
+				// Run all processes to completion.
+				mgr.handleTimer = func(ctx context.Context, ctl task.Controller, name string, payload []byte) error {
+					panic("must not be called")
+				}
+				tasks, _, err = tqt.RunSimulation(c, nil)
+				assert.Loosely(t, err, should.BeNil)
+
+				// It is dead now.
+				inv, err = e.getInvocation(c, jobID, invID)
+				assert.Loosely(t, inv.Status, should.Equal(task.StatusAborted))
+
+				// And AbortTask callback was really called.
+				assert.Loosely(t, inv.DebugLog, should.ContainSubstring("Really aborted!"))
+
+				// The sequence of tasks we've just performed.
+				assert.Loosely(t, tasks.Payloads(), should.Resemble([]protoiface.MessageV1{
+					// The delayed triage directly from AbortJob.
+					&internal.KickTriageTask{JobId: jobID},
+					// The asynchronous abort task from AbortInvocation.
+					&internal.AbortInvocationTask{JobId: jobID, InvId: expectedInvID},
+					// The invocation finalization from AbortInvocationTask handler.
+					&internal.InvocationFinishedTask{JobId: jobID, InvId: expectedInvID},
+
+					// The delayed triage from KickTriageTask.
+					&internal.TriageJobStateTask{JobId: jobID},
+					// Another triage from InvocationFinishedTask (since it happened later).
+					&internal.TriageJobStateTask{JobId: jobID},
+
+					// And delayed TimerTask arrives and gets skipped, as confirmed by
+					// mgr.handleTimer.
+					&internal.TimerTask{
+						JobId: jobID,
+						InvId: expectedInvID,
+						Timer: &internal.Timer{
+							Id:      "project/job:9200093523825193008:1:0",
+							Created: timestamppb.New(epoch.Add(time.Second)),
+							Eta:     timestamppb.New(epoch.Add(time.Minute + time.Second)),
+							Title:   "1 min",
+						},
+					},
+				}))
+			})
 		})
 	})
 }

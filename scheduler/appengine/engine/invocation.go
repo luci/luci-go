@@ -235,10 +235,28 @@ type Invocation struct {
 	// between calls.
 	TaskData []byte `gae:",noindex"`
 
+	// AsyncState carries the part of the invocation state that the engine is
+	// allowed to change without disrupting concurrent task.Manager operations.
+	AsyncState InvocationAsyncState `gae:",noindex"`
+
 	// MutationsCount is used for simple compare-and-swap transaction control.
 	//
-	// It is incremented on each change to the entity.
+	// It is incremented on each change to the entity except changes to
+	// AsyncState.
 	MutationsCount int64 `gae:",noindex"`
+}
+
+// InvocationAsyncState carries the invocation state that the engine is allowed
+// to change without disrupting concurrent task.Manager operations.
+//
+// It is "asynchronous" in a sense that the task.Manager will notice changes
+// here only the next time it handles the invocation. Changes to this struct
+// will not interfere with any in-flight task.Manager operations since they
+// do not affect MutationsCount used to detect collisions between such
+// operations.
+type InvocationAsyncState struct {
+	// AbortedBy is set if the invocation was aborted.
+	AbortedBy identity.Identity
 }
 
 // isEqual returns true iff 'e' is equal to 'other'
@@ -263,7 +281,8 @@ func (e *Invocation) isEqual(other *Invocation) bool {
 		e.RetryCount == other.RetryCount &&
 		e.Status == other.Status &&
 		e.ViewURL == other.ViewURL &&
-		bytes.Equal(e.TaskData, other.TaskData))
+		bytes.Equal(e.TaskData, other.TaskData) &&
+		e.AsyncState == other.AsyncState)
 }
 
 // GetProjectID parses the ProjectID from the JobID and returns it.
