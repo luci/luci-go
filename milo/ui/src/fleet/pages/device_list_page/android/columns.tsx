@@ -56,19 +56,26 @@ export const ANDROID_COLUMN_OVERRIDES: Record<
     valueGetter: (_, device) => device.id,
 
     renderCell: (props) => {
-      const d = props.row;
+      return renderCellWithLink<AndroidDevice>((_, { row: d }) => {
+        const type = d.omnilabSpec?.labels['fc_machine_type']?.values?.[0];
+        const hostname = d.omnilabSpec?.labels['hostname']?.values?.[0];
+        const hostIp = d.omnilabSpec?.labels['host_ip']?.values?.[0];
 
-      const hostname = d.omnilabSpec?.labels['hostname']?.values?.[0];
-      const hostIp = d.omnilabSpec?.labels['host_ip']?.values?.[0];
+        if (type === 'host') {
+          if (hostname && hostIp)
+            return `https://mobileharness-fe.corp.google.com/labdetailview/${hostname}/${hostIp}`;
 
-      if (!(hostname && hostIp && d.id)) return undefined;
-
-      return renderCellWithLink((_, { row }) => {
-        if (row.fc_machine_type === 'device') {
-          return `https://mobileharness-fe.corp.google.com/devicedetailview/${row.hostname}/${row.host_ip}/${row.id}`;
-        } else {
-          return `https://mobileharness-fe.corp.google.com/labdetailview/${row.hostname}/${row.host_ip}`;
+          const params = new URLSearchParams();
+          params.append('filter', `"host_name":("${d.id}")`);
+          return `https://mobileharness-fe.corp.google.com/lablistview?${params.toString()}`;
         }
+
+        if (hostname && hostIp)
+          return `https://mobileharness-fe.corp.google.com/devicedetailview/${hostname}/${hostIp}/${d.id}`;
+
+        const params = new URLSearchParams();
+        params.append('filter', `"id":("${d.id}")`);
+        return `https://mobileharness-fe.corp.google.com/devicelistview?${params.toString()}`;
       })(props);
     },
   },

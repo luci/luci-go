@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridRenderCellParams } from '@mui/x-data-grid';
+import { GridRenderCellParams, GridValidRowModel } from '@mui/x-data-grid';
 import React from 'react';
 import { Link } from 'react-router';
 
@@ -30,8 +30,9 @@ const getPathnameWithParams = () => {
  * @returns A function that renders a <DeviceDataCell /> based on GridRenderCellParams
  */
 // TODO: b/394202288 - Add tests for this function.
-export function renderCellWithLink(
-  linkGenerator: (value: string, props: GridRenderCellParams) => string,
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function renderCellWithLink<R extends GridValidRowModel = any>(
+  linkGenerator: (value: string, props: GridRenderCellParams<R>) => string,
   newTab: boolean = true,
 ): (props: GridRenderCellParams) => React.ReactElement {
   const CellWithLink = (props: GridRenderCellParams) => {
