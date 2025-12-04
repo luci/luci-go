@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/errors/errtag"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
@@ -204,8 +205,11 @@ func (d *Dispatcher) InstallPubSubRoutes(r *router.Router, prefix string) {
 
 		if err := d.executeHandlerByID(c.Request.Context(), id, c); err != nil {
 			if transient.Tag.In(err) {
-				err = errors.Fmt("transient error in pubsub handler %q: %w", id, err)
-				errors.Log(c.Request.Context(), err)
+				// The error is transient, ask PubSub to retry by returning a 500.
+				// The original error is logged as a warning as it is expected to
+				// happen occasionally and should not trigger error-level alerts
+				// (e.g. if there is a brief network outage).
+				logging.Warningf(c.Request.Context(), "transient error in pubsub handler %q: %s", id, err)
 				http.Error(c.Writer, err.Error(), http.StatusInternalServerError /* 500 */)
 			} else if Ignore.In(err) {
 				http.Error(c.Writer, "", http.StatusNoContent /* 204 */)
