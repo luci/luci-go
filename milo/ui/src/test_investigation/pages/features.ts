@@ -32,3 +32,10 @@ export const SHOW_TEST_INVESTIGATION_PAGE_OPT_IN_BANNER_FLAG =
       'Shows an opt in banner to users to allow them to opt in to the new test investigation UI.',
     trackingBug: 'b:422604579',
   });
+export const USE_ROOT_INVOCATION_FLAG = createFeatureFlag({
+  namespace: 'test_investigation',
+  name: 'use_root_invocation',
+  description: 'Use RootInvocation to fetch invocation details.',
+  percentage: 0,
+  trackingBug: 'None',
+});

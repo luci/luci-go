@@ -22,6 +22,7 @@ import { RecoverableErrorFallback } from './recoverable_error_fallback';
 
 export interface RecoverableErrorBoundaryProps {
   readonly children: ReactNode;
+  readonly resetKeys?: Array<unknown>;
 }
 
 /**
@@ -30,12 +31,14 @@ export interface RecoverableErrorBoundaryProps {
 // See https://tanstack.com/query/latest/docs/react/reference/QueryErrorResetBoundary
 export function RecoverableErrorBoundary({
   children,
+  resetKeys,
 }: RecoverableErrorBoundaryProps) {
   return (
     <QueryErrorResetBoundary>
       {({ reset }) => (
         <ErrorBoundary
           onReset={() => reset()}
+          resetKeys={resetKeys}
           FallbackComponent={RecoverableErrorFallback}
           onError={(err, _) => {
             errorReporter.report(err);

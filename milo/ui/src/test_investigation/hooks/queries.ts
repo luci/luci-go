@@ -13,7 +13,9 @@
 // limitations under the License.
 
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 
+import { useFeatureFlag } from '@/common/feature_flags/context';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { GetInvocationRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
@@ -21,6 +23,7 @@ import { GetRootInvocationRequest } from '@/proto/go.chromium.org/luci/resultdb/
 import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 
 import { FetchedArtifactContent } from '../components/artifacts/types';
+import { USE_ROOT_INVOCATION_FLAG } from '../pages/features';
 
 /**
  * Type of the invocation result.
@@ -44,8 +47,15 @@ export function useInvocationQuery(
   enabled: boolean = true,
 ) {
   const resultDbClient = useResultDbClient();
+  const useRootInvocation = useFeatureFlag(USE_ROOT_INVOCATION_FLAG);
 
-  // 1. Try to fetch RootInvocation
+  const [useFallback, setUseFallback] = useState(false);
+
+  // Reset fallback if parameters change.
+  useEffect(() => {
+    setUseFallback(false);
+  }, [rawInvocationId, useRootInvocation, enabled]);
+
   const rootQueryName = `rootInvocations/${rawInvocationId}`;
   const {
     data: rootInvocation,
@@ -59,15 +69,16 @@ export function useInvocationQuery(
       }),
     ),
     staleTime: 5 * 60 * 1000,
-    enabled,
+
+    enabled: enabled && (useRootInvocation || useFallback),
     retry: false,
   });
 
-  // 2. Fallback to Legacy Invocation if RootInvocation failed
   const legacyQueryName = `invocations/${rawInvocationId}`;
   const {
     data: legacyInvocation,
     error: legacyError,
+    isError: isLegacyError,
     isPending: isLegacyPending,
   } = useQuery({
     ...resultDbClient.GetInvocation.query(
@@ -76,10 +87,27 @@ export function useInvocationQuery(
       }),
     ),
     staleTime: 5 * 60 * 1000,
-    enabled: enabled && isRootError && !rootInvocation,
+
+    enabled: enabled && (!useRootInvocation || useFallback),
     placeholderData: keepPreviousData,
     retry: false,
   });
+
+  // Trigger fallback if the primary fails.
+  useEffect(() => {
+    if (useRootInvocation && isRootError && !rootInvocation) {
+      setUseFallback(true);
+    }
+    if (!useRootInvocation && isLegacyError && !legacyInvocation) {
+      setUseFallback(true);
+    }
+  }, [
+    useRootInvocation,
+    isRootError,
+    rootInvocation,
+    isLegacyError,
+    legacyInvocation,
+  ]);
 
   const invocation: InvocationQueryData | undefined = rootInvocation
     ? {
@@ -93,14 +121,15 @@ export function useInvocationQuery(
         }
       : undefined;
 
-  // Return both errors in an array.
   const errors = [rootError, legacyError].filter(
     (e) => e !== undefined && e !== null,
   ) as Error[];
 
   return {
     invocation,
-    isLoading: isRootPending || (isRootError && isLegacyPending),
+    isLoading: useRootInvocation
+      ? isRootPending || (isRootError && isLegacyPending)
+      : isLegacyPending || (isLegacyError && isRootPending),
     errors,
   };
 }

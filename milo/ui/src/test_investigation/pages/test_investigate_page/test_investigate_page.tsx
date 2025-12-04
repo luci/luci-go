@@ -35,6 +35,7 @@ import {
   VERDICT_STATUS_OVERRIDE_DISPLAY_MAP,
 } from '@/common/constants/verdict';
 import { UiPage } from '@/common/constants/view';
+import { useFeatureFlag } from '@/common/feature_flags/context';
 import {
   useResultDbClient,
   useTestHistoryClient,
@@ -66,6 +67,7 @@ import {
   TestVariantProvider,
 } from '@/test_investigation/context';
 import { useInvocationQuery } from '@/test_investigation/hooks/queries';
+import { USE_ROOT_INVOCATION_FLAG } from '@/test_investigation/pages/features';
 import {
   isAnTSInvocation,
   isPresubmitRun,
@@ -253,7 +255,7 @@ export function TestInvestigatePage() {
     }
   }, [invocationErrors]);
 
-  if (isLoadingInvocation || isLoadingTestVariant) {
+  if (isLoadingInvocation || (invocation && isLoadingTestVariant)) {
     return (
       <Box
         sx={{
@@ -385,9 +387,14 @@ export function TestInvestigatePage() {
 }
 
 export function Component() {
+  const useRootInvocation = useFeatureFlag(USE_ROOT_INVOCATION_FLAG);
+
   return (
     <TrackLeafRoutePageView contentGroup="test-investigate">
-      <RecoverableErrorBoundary key="test-investigate">
+      <RecoverableErrorBoundary
+        key="test-investigate"
+        resetKeys={[useRootInvocation]}
+      >
         <TestInvestigatePage />
       </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>
