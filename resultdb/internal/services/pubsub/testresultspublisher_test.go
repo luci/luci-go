@@ -120,7 +120,7 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 	t.Run("HandlePublishTestResultsTask", func(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		rootInvID := rootinvocations.ID("test-root-inv")
-		rdbHost := "staging.results.api.cr.dev"
+		rdbHost := "results.api.cr.dev"
 
 		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
 		wuID2 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu2"}
@@ -286,7 +286,7 @@ func TestHandlePublishTestResultsTask_Batching(t *testing.T) {
 	t.Run("HandlePublishTestResultsTask_Batching", func(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		rootInvID := rootinvocations.ID("test-root-inv-batch")
-		rdbHost := "staging.results.api.cr.dev"
+		rdbHost := "results.api.cr.dev"
 
 		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
 		wuID2 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu2"}
@@ -393,7 +393,7 @@ func TestHandlePublishTestResultsTask_FlushPriorCollectedResultsIfNextPageTooLar
 	t.Run("HandlePublishTestResultsTask_Scenario1_Flush", func(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		rootInvID := rootinvocations.ID("test-root-inv-flush")
-		rdbHost := "staging.results.api.cr.dev"
+		rdbHost := "results.api.cr.dev"
 
 		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
 		wuID2 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu2"}
@@ -513,7 +513,7 @@ func TestHandlePublishTestResultsTask_Pagination(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		rootInvID := rootinvocations.ID("test-root-inv-page")
-		rdbHost := "staging.results.api.cr.dev"
+		rdbHost := "results.api.cr.dev"
 		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
 
 		testutil.MustApply(ctx, t, insert.Invocation(wuID1.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
@@ -589,7 +589,7 @@ func TestHandlePublishTestResultsTask_SingleResultTooLarge(t *testing.T) {
 	t.Run("HandlePublishTestResultsTask_SingleResultTooLarge", func(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		rootInvID := rootinvocations.ID("test-root-inv-large")
-		rdbHost := "staging.results.api.cr.dev"
+		rdbHost := "results.api.cr.dev"
 		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
 
 		testutil.MustApply(ctx, t, insert.Invocation(wuID1.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
@@ -638,7 +638,7 @@ func TestHandlePublishTestResultsTask_Checkpoints(t *testing.T) {
 	t.Run("HandlePublishTestResultsTask_Checkpoints", func(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		rootInvID := rootinvocations.ID("test-root-inv-checkpoints")
-		rdbHost := "staging.results.api.cr.dev"
+		rdbHost := "results.api.cr.dev"
 		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
 		testutil.MustApply(ctx, t, insert.Invocation(wuID1.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
 

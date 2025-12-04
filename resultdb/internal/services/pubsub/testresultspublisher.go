@@ -18,7 +18,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"strings"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -91,9 +90,6 @@ func (p *testResultsPublisher) handleTestResultsPublisher(ctx context.Context) (
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/pubsub.handleTestResultsPublisher")
 	defer func() { tracing.End(s, err) }()
 
-	if !strings.HasPrefix(p.resultDBHostname, "staging.") {
-		return nil
-	}
 
 	task := p.task
 	if task.CurrentWorkUnitIndex < 0 || int(task.CurrentWorkUnitIndex) >= len(task.WorkUnitIds) {
