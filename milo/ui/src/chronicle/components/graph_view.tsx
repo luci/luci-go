@@ -14,6 +14,7 @@
 
 import {
   Box,
+  Button,
   Checkbox,
   FormControl,
   FormControlLabel,
@@ -25,7 +26,14 @@ import {
   Snackbar,
   Alert,
 } from '@mui/material';
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useDebounce } from 'react-use';
 import {
@@ -45,7 +53,10 @@ import 'reactflow/dist/style.css';
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 
 import { WorkflowType } from '../fake_turboci_graph';
-import { TurboCIGraphBuilder } from '../utils/graph_builder';
+import {
+  TurboCIGraphBuilder,
+  getCollapsibleParentHashes,
+} from '../utils/graph_builder';
 
 import { ChronicleContext } from './chronicle_context';
 import { ContextMenu, ContextMenuState } from './context_menu';
@@ -89,6 +100,30 @@ function Graph() {
     ContextMenuState | undefined
   >(undefined);
   const [showNodeNotFound, setShowNodeNotFound] = useState(false);
+  // Track if we have applied the defaults for the current workflow.
+  // Used to prevent overriding the graph (eg. collapsed/expanded nodes) after
+  // interacted by the user.
+  const hasInitializedDefaults = useRef(false);
+
+  // While we're still using canned fake data, we need to re-initialize defaults
+  // when changing workflow type.
+  useEffect(() => {
+    hasInitializedDefaults.current = false;
+    setSelectedNodeId(undefined);
+  }, [workflowType, setSelectedNodeId]);
+
+  const defaultCollapsedHashes = useMemo(() => {
+    if (!graph) return new Set<number>();
+    return getCollapsibleParentHashes(graph);
+  }, [graph]);
+
+  // Collapse all collapsible nodes on initial graph load
+  useEffect(() => {
+    if (!hasInitializedDefaults.current) {
+      setCollapsedParentHashes(defaultCollapsedHashes);
+      hasInitializedDefaults.current = true;
+    }
+  }, [defaultCollapsedHashes]);
 
   const { layoutedNodes, layoutedEdges } = useMemo(() => {
     if (!graph) return { layoutedNodes: [], layoutedEdges: [] };
@@ -251,9 +286,17 @@ function Graph() {
     });
   }, []);
 
+  const handleCollapseAll = useCallback(() => {
+    setCollapsedParentHashes(defaultCollapsedHashes);
+  }, [defaultCollapsedHashes]);
+
+  const handleExpandAll = useCallback(() => {
+    setCollapsedParentHashes(new Set());
+  }, []);
+
   const selectedNode = useMemo(() => {
     const n = nodes.find((n) => n.id === selectedNodeId);
-    setShowNodeNotFound(!n);
+    setShowNodeNotFound(!n && !!selectedNodeId);
     return n;
   }, [nodes, selectedNodeId]);
 
@@ -348,6 +391,12 @@ function Graph() {
                   <Typography variant="body2">Fit View on Selection</Typography>
                 }
               />
+              <Button onClick={handleCollapseAll} sx={{ mt: 1 }} size="small">
+                Collapse All Successful
+              </Button>
+              <Button onClick={handleExpandAll} size="small">
+                Expand All
+              </Button>
             </Paper>
           </ReactFlowPanel>
         </ReactFlow>

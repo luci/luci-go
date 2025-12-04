@@ -330,6 +330,58 @@ function createCollapsedGroupNode(
   };
 }
 
+function groupChecksByParent(checks: Record<string, CheckView>): {
+  hashToGroup: Map<number, string[]>;
+  nodeToHash: Map<string, number>;
+} {
+  const hashToGroup = new Map<number, string[]>();
+  const nodeToHash = new Map<string, number>();
+
+  Object.entries(checks).forEach(([checkId, checkView]) => {
+    const deps = checkView.check?.dependencies?.edges || [];
+    // Create a unique signature based on sorted parent IDs
+    const parentIds = deps
+      .map((e) => e.check?.identifier?.id || e.stage?.identifier?.id)
+      .filter((id) => !!id)
+      .sort();
+
+    if (parentIds.length === 0) return;
+
+    const hash = hashString(parentIds.join('|'));
+    nodeToHash.set(checkId, hash);
+
+    if (!hashToGroup.has(hash)) {
+      hashToGroup.set(hash, []);
+    }
+
+    // We only collapse successful checks
+    if (getCheckResultStatus(checkView) === CheckResultStatus.SUCCESS) {
+      hashToGroup.get(hash)!.push(checkId);
+    }
+  });
+
+  return { hashToGroup, nodeToHash };
+}
+
+/**
+ * Returns all parent hashes for groups of nodes that can be collapsed.
+ * A group is collapsible if it has more than one successful check with the same parents.
+ */
+export function getCollapsibleParentHashes(
+  graphView: TurboCIGraphView,
+): Set<number> {
+  const { hashToGroup } = groupChecksByParent(graphView.checks);
+
+  const collapsibleHashes = new Set<number>();
+  hashToGroup.forEach((successfulCheckIds, hash) => {
+    if (successfulCheckIds.length > 1) {
+      collapsibleHashes.add(hash);
+    }
+  });
+
+  return collapsibleHashes;
+}
+
 /**
  * Builds the React Flow graph from the TurboCI GraphView.
  * Groups stages to their assigned checks and positions them together.
@@ -369,26 +421,9 @@ export class TurboCIGraphBuilder {
 
   private createBaseNodes(collapsedParentHashes: Set<number>) {
     // 1. Place checks into groups by hashing their parent dependencies.
-    const hashToGroup = new Map<number, string[]>();
-    const nodeToHash = new Map<string, number>();
-
-    Object.entries(this.graphView.checks).forEach(([checkId, checkView]) => {
-      const deps = checkView.check?.dependencies?.edges || [];
-      // Create a unique signature based on sorted parent IDs
-      const parentIds = deps
-        .map((e) => e.check?.identifier?.id || e.stage?.identifier?.id)
-        .filter((id) => !!id)
-        .sort();
-
-      if (parentIds.length === 0) return;
-
-      const hash = hashString(parentIds.join('|'));
-      if (!hashToGroup.has(hash)) {
-        hashToGroup.set(hash, []);
-      }
-      hashToGroup.get(hash)!.push(checkId);
-      nodeToHash.set(checkId, hash);
-    });
+    const { hashToGroup, nodeToHash } = groupChecksByParent(
+      this.graphView.checks,
+    );
 
     // 2. Process groupings to decide what to collapse
     hashToGroup.forEach((checkIds, hash) => {
@@ -410,7 +445,7 @@ export class TurboCIGraphBuilder {
         this.nodes.push(
           createCollapsedGroupNode(
             collapsedId,
-            `Collapsed (${checkIds.length} items)`,
+            `${checkIds.length} successful checks`,
             hash,
           ),
         );
@@ -427,10 +462,19 @@ export class TurboCIGraphBuilder {
       // Include the parent hash when creating the check to support collapsing
       // it (and its sibling nodes). However we only support this if it has > 1
       // siblings in its group, otherwise just use undefined to indicate that
-      // it's not collapsible.
+      // it's not collapsible. The check itself, and its siblings must also
+      // be successful.
       const hash = nodeToHash.get(checkId);
-      const groupSize = hash ? hashToGroup.get(hash)?.length || 0 : 0;
-      const parentHash = groupSize > 1 ? hash : undefined;
+      let parentHash = undefined;
+      if (hash) {
+        const successfulCheckIds = hashToGroup.get(hash) || [];
+        if (
+          successfulCheckIds.length > 1 &&
+          successfulCheckIds.includes(checkId)
+        ) {
+          parentHash = hash;
+        }
+      }
       this.nodes.push(createCheckNode(checkView, parentHash));
       this.allNodeIds.add(checkId);
     });

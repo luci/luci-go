@@ -26,7 +26,11 @@ import { Stage_Assignment } from '@/proto/turboci/graph/orchestrator/v1/stage.pb
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
 
-import { TurboCIGraphBuilder } from './graph_builder';
+import { TYPE_URL_BUILD_RESULT } from './check_utils';
+import {
+  TurboCIGraphBuilder,
+  getCollapsibleParentHashes,
+} from './graph_builder';
 
 const WORKPLAN: WorkPlan = { id: 'test-plan' };
 
@@ -46,6 +50,7 @@ function createCheckView(
   kind: CheckKind = CheckKind.CHECK_KIND_BUILD,
   checkDependencies: CheckId[] = [],
   stageDependencies: StageId[] = [],
+  isSuccess?: boolean,
 ): CheckView {
   const deps: Dependencies = {
     edges: [
@@ -57,13 +62,27 @@ function createCheckView(
 
   const checkId: CheckId = { workPlan: WORKPLAN, id };
 
+  const results = [];
+  if (isSuccess !== undefined) {
+    results.push({
+      data: [
+        {
+          value: {
+            value: { typeUrl: TYPE_URL_BUILD_RESULT, value: new Uint8Array() },
+            valueJson: JSON.stringify({ success: isSuccess }),
+          },
+        },
+      ],
+    });
+  }
+
   return {
     check: {
       identifier: checkId,
       kind: kind,
       dependencies: deps,
       options: [],
-      results: [],
+      results,
       stateHistory: [],
       // other fields like realm/version/state can be undefined
     } as Check,
@@ -439,13 +458,25 @@ describe('TurboCIGraphBuilder', () => {
   });
 
   describe('Node Collapsing', () => {
-    it('should assign parentHash to nodes with identical dependencies', () => {
+    it('should assign parentHash to successful nodes with identical dependencies', () => {
       const b1Ident = createCheckIdentifier('B1');
       const graph: TurboCIGraphView = {
         checks: {
           B1: createCheckView('B1', CheckKind.CHECK_KIND_BUILD),
-          T1: createCheckView('T1', CheckKind.CHECK_KIND_TEST, [b1Ident]),
-          T2: createCheckView('T2', CheckKind.CHECK_KIND_TEST, [b1Ident]),
+          T1: createCheckView(
+            'T1',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+          ),
+          T2: createCheckView(
+            'T2',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+          ),
         },
         stages: {},
       };
@@ -460,6 +491,83 @@ describe('TurboCIGraphBuilder', () => {
       expect(t1.data.parentHash).toBe(t2.data.parentHash);
     });
 
+    it('should not assign parentHash to unsuccessful nodes even with identical dependencies', () => {
+      const b1Ident = createCheckIdentifier('B1');
+      const graph: TurboCIGraphView = {
+        checks: {
+          B1: createCheckView('B1', CheckKind.CHECK_KIND_BUILD),
+          T1: createCheckView(
+            'T1',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            false,
+          ), // Failed
+          T2: createCheckView(
+            'T2',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            false,
+          ), // Failed
+        },
+        stages: {},
+      };
+
+      const { nodes } = new TurboCIGraphBuilder(graph).build();
+
+      const t1 = nodes.find((n) => n.id === 'T1')!;
+      const t2 = nodes.find((n) => n.id === 'T2')!;
+
+      expect(t1.data.parentHash).toBeUndefined();
+      expect(t2.data.parentHash).toBeUndefined();
+    });
+
+    it('should only assign parentHash to successful nodes', () => {
+      const b1Ident = createCheckIdentifier('B1');
+      const graph: TurboCIGraphView = {
+        checks: {
+          B1: createCheckView('B1', CheckKind.CHECK_KIND_BUILD),
+          T1: createCheckView(
+            'T1',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+          ), // Success
+          T2: createCheckView(
+            'T2',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+          ), // Success
+          T3: createCheckView(
+            'T3',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            false,
+          ), // Failed
+        },
+        stages: {},
+      };
+
+      const { nodes } = new TurboCIGraphBuilder(graph).build();
+
+      const t1 = nodes.find((n) => n.id === 'T1')!;
+      const t2 = nodes.find((n) => n.id === 'T2')!;
+      const t3 = nodes.find((n) => n.id === 'T3')!;
+
+      // T1 and T2 are successful and collapsible
+      expect(t1.data.parentHash).toBeDefined();
+      expect(t2.data.parentHash).toBeDefined();
+      expect(t1.data.parentHash).toBe(t2.data.parentHash);
+
+      // T3 is failed and should not be collapsible
+      expect(t3.data.parentHash).toBeUndefined();
+    });
+
     it('should leave parentHash undefined for unique dependency sets', () => {
       const b1Ident = createCheckIdentifier('B1');
       const b2Ident = createCheckIdentifier('B2');
@@ -468,8 +576,20 @@ describe('TurboCIGraphBuilder', () => {
         checks: {
           B1: createCheckView('B1'),
           B2: createCheckView('B2'),
-          T1: createCheckView('T1', CheckKind.CHECK_KIND_TEST, [b1Ident]),
-          T2: createCheckView('T2', CheckKind.CHECK_KIND_TEST, [b2Ident]),
+          T1: createCheckView(
+            'T1',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+          ),
+          T2: createCheckView(
+            'T2',
+            CheckKind.CHECK_KIND_TEST,
+            [b2Ident],
+            [],
+            true,
+          ),
         },
         stages: {},
       };
@@ -482,13 +602,25 @@ describe('TurboCIGraphBuilder', () => {
       expect(t2.data.parentHash).toBeUndefined();
     });
 
-    it('should collapse nodes when their hash is in collapsedParentHashes', () => {
+    it('should collapse successful nodes when their hash is in collapsedParentHashes', () => {
       const b1Ident = createCheckIdentifier('B1');
       const graph: TurboCIGraphView = {
         checks: {
           B1: createCheckView('B1'),
-          T1: createCheckView('T1', CheckKind.CHECK_KIND_TEST, [b1Ident]),
-          T2: createCheckView('T2', CheckKind.CHECK_KIND_TEST, [b1Ident]),
+          T1: createCheckView(
+            'T1',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+          ),
+          T2: createCheckView(
+            'T2',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+          ),
         },
         stages: {},
       };
@@ -533,8 +665,20 @@ describe('TurboCIGraphBuilder', () => {
       const graph: TurboCIGraphView = {
         checks: {
           B1: createCheckView('B1'),
-          T1: createCheckView('T1', CheckKind.CHECK_KIND_TEST, [b1Ident]),
-          T2: createCheckView('T2', CheckKind.CHECK_KIND_TEST, [b1Ident]),
+          T1: createCheckView(
+            'T1',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+          ),
+          T2: createCheckView(
+            'T2',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+          ),
         },
         stages: {
           S_Downstream: createStageView('S_Downstream', [], [t1Ident]),
@@ -556,6 +700,62 @@ describe('TurboCIGraphBuilder', () => {
         (e) => e.source === groupNodeId && e.target === 'S_Downstream',
       );
       expect(edge).toBeDefined();
+    });
+  });
+
+  describe('getCollapsibleParentHashes', () => {
+    it('should identify hashes for groups with multiple successful checks', () => {
+      const b1Ident = createCheckIdentifier('B1');
+      const graph: TurboCIGraphView = {
+        checks: {
+          B1: createCheckView('B1'),
+          T1: createCheckView(
+            'T1',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+          ),
+          T2: createCheckView(
+            'T2',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+          ),
+        },
+        stages: {},
+      };
+
+      const hashes = getCollapsibleParentHashes(graph);
+      expect(hashes.size).toBe(1);
+    });
+
+    it('should ignore groups with single successful check', () => {
+      const b1Ident = createCheckIdentifier('B1');
+      const graph: TurboCIGraphView = {
+        checks: {
+          B1: createCheckView('B1'),
+          T1: createCheckView(
+            'T1',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+          ),
+          T3: createCheckView(
+            'T3',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            false,
+          ),
+        },
+        stages: {},
+      };
+
+      const hashes = getCollapsibleParentHashes(graph);
+      expect(hashes.size).toBe(0);
     });
   });
 });

@@ -62,9 +62,9 @@ export function ContextMenu({
       }
     >
       {contextMenuState?.node.data.isCollapsed ? (
-        <MenuItem onClick={handleExpand}>Expand Group</MenuItem>
+        <MenuItem onClick={handleExpand}>Expand successful nodes</MenuItem>
       ) : (
-        <MenuItem onClick={handleCollapse}>Collapse Similar Nodes</MenuItem>
+        <MenuItem onClick={handleCollapse}>Collapse successful nodes</MenuItem>
       )}
     </Menu>
   );
