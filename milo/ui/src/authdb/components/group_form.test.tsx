@@ -43,9 +43,7 @@ describe('<GroupForm />', () => {
           initialEntries: ['/ui/auth/groups/123'],
         }}
       >
-        <List>
-          <GroupForm name="123" refetchList={() => {}} />
-        </List>
+        <GroupForm name="123" refetchList={() => {}} />
       </FakeContextProvider>,
     );
 
@@ -53,11 +51,14 @@ describe('<GroupForm />', () => {
 
     expect(screen.getByText(mockGroup.description)).toBeInTheDocument();
     expect(screen.getByText(mockGroup.owners)).toBeInTheDocument();
-    const editedMembers = mockGroup.members.map((member) =>
-      stripPrefix('user', member),
-    );
-    expect(screen.getByText(editedMembers[0])).toBeInTheDocument();
-    expect(screen.getByText(editedMembers[1])).toBeInTheDocument();
+    expect(screen.getByText('Members (2)')).toBeInTheDocument();
+    expect(
+      screen.getByTestId(`item-row-${mockGroup.members[0]}`),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId(`item-row-${mockGroup.members[1]}`),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Subgroups (2)')).toBeInTheDocument();
     expect(screen.getByText(mockGroup.nested[0])).toBeInTheDocument();
     expect(screen.getByText(mockGroup.nested[1])).toBeInTheDocument();
   });

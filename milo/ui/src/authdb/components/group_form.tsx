@@ -427,7 +427,7 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
               <>
                 {callerCanViewMembers ? (
                   <GroupsFormList
-                    name="Members"
+                    name={`Members (${members.length + numRedacted})`}
                     initialValues={members}
                     ref={membersRef}
                     submitValues={() => submitField('members')}
@@ -439,13 +439,13 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
                   </Typography>
                 )}
                 <GroupsFormList
-                  name="Globs"
+                  name={`Globs (${globs.length})`}
                   initialValues={globs}
                   ref={globsRef}
                   submitValues={() => submitField('globs')}
                 />
                 <GroupsFormList
-                  name="Subgroups"
+                  name={`Subgroups (${subgroups.length})`}
                   initialValues={subgroups}
                   ref={subgroupsRef}
                   submitValues={() => submitField('nested')}
