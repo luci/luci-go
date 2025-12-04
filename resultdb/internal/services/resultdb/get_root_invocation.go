@@ -21,6 +21,8 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
+	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -46,7 +48,13 @@ func (s *resultDBServer) GetRootInvocation(ctx context.Context, in *pb.GetRootIn
 		return nil, err
 	}
 
-	return row.ToProto(), nil
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		// Internal error.
+		return nil, errors.Fmt("get service config: %w", err)
+	}
+
+	return masking.RootInvocation(row, cfg), nil
 }
 
 // verifyGetRootInvocationPermissions verifies the user has access to the

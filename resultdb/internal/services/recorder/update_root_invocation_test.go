@@ -30,12 +30,16 @@ import (
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -300,9 +304,14 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 func TestUpdateRootInvocation(t *testing.T) {
 	ftt.Run("TestUpdateRootInvocation", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
 
-		recorder := newTestRecorderServer()
-		rootInvID := rootinvocations.ID("rootid")
+		// Set up a placeholder service config.
+		cfg := config.CreatePlaceholderServiceConfig()
+		err := config.SetServiceConfigForTesting(ctx, cfg)
+		assert.Loosely(t, err, should.BeNil)
+
 		now := testclock.TestRecentTimeUTC
 		ctx, _ = testclock.UseTime(ctx, now)
 		user := "user:someone@example.com"
@@ -313,7 +322,10 @@ func TestUpdateRootInvocation(t *testing.T) {
 			},
 		})
 
+		recorder := newTestRecorderServer()
+
 		// A simple valid request.
+		rootInvID := rootinvocations.ID("rootid")
 		req := &pb.UpdateRootInvocationRequest{
 			RootInvocation: &pb.RootInvocation{Name: rootInvID.Name(), StreamingExportState: pb.RootInvocation_METADATA_FINAL},
 			UpdateMask:     &field_mask.FieldMask{Paths: []string{"streaming_export_state"}},
@@ -326,7 +338,10 @@ func TestUpdateRootInvocation(t *testing.T) {
 			WithStreamingExportState(pb.RootInvocation_WAIT_FOR_METADATA).
 			Build()
 		testutil.MustApply(ctx, t, insert.RootInvocationOnly(expectedRootInvRow)...)
-		expectedRootInv := expectedRootInvRow.ToProto()
+
+		compiledCfg, err := config.NewCompiledServiceConfig(cfg, "revision")
+		assert.NoErr(t, err)
+		expectedRootInv := masking.RootInvocation(expectedRootInvRow, compiledCfg)
 
 		// Attach a valid update token for the root work unit.
 		rootWorkUnitID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: workunits.RootWorkUnitID}
@@ -457,7 +472,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 			})
 
 			t.Run("match etag", func(t *ftt.Test) {
-				req.RootInvocation.Etag = rootinvocations.Etag(expectedRootInvRow)
+				req.RootInvocation.Etag = masking.RootInvocationEtag(expectedRootInvRow)
 
 				_, err := recorder.UpdateRootInvocation(ctx, req)
 				assert.Loosely(t, err, should.BeNil)

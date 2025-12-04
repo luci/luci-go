@@ -862,3 +862,16 @@ func TruncateString(s string, length int) string {
 	}
 	return s[:lastIndex] + "..."
 }
+
+// RemoveProducerResourceOutputOnlyFields removes output-only fields from a producer resource.
+func RemoveProducerResourceOutputOnlyFields(pr *pb.ProducerResource) *pb.ProducerResource {
+	if pr == nil {
+		return nil
+	}
+	// The URL field is output only and should not be stored in Spanner.
+	// Rather, it should be computed based on the current service configuration
+	// whenever it is returned.
+	result := proto.Clone(pr).(*pb.ProducerResource)
+	result.Url = ""
+	return result
+}

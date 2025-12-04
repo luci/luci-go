@@ -22,9 +22,13 @@ import (
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/resultdb/internal/config"
+	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -35,25 +39,31 @@ import (
 func TestSweepWorkUnitsForFinalization(t *testing.T) {
 	ftt.Run("SweepWorkUnitsForFinalization", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+
+		// Set up a placeholder service config.
+		cfg := config.CreatePlaceholderServiceConfig()
+		err := config.SetServiceConfigForTesting(ctx, cfg)
+		assert.Loosely(t, err, should.BeNil)
+
 		ctx, sched := tq.TestingContext(ctx, nil)
 		rootInvID := rootinvocations.ID("test-root-inv")
 		const seq = int64(2)
 
 		// Base root invocation for most tests.
-		setupRootInv := func(streamingExportState pb.RootInvocation_StreamingExportState) {
-			rootInv := rootinvocations.NewBuilder(rootInvID).
-				WithFinalizationState(pb.RootInvocation_FINALIZING).
-				WithFinalizerPending(true).
-				WithFinalizerSequence(seq).
-				WithStreamingExportState(streamingExportState).
-				Build()
-			testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInv)...)
-		}
+		rootInv := rootinvocations.NewBuilder(rootInvID).
+			WithFinalizationState(pb.RootInvocation_FINALIZING).
+			WithFinalizerPending(true).
+			WithFinalizerSequence(seq).
+			WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).
+			Build()
+
+		testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInv)...)
 
 		opts := sweepWorkUnitsForFinalizationOptions{writeBatchSizeOverride: 3, readLimitOverride: 10, resultDBHostname: "rdb-host"}
 
 		t.Run("Stale task exits early", func(t *ftt.Test) {
-			setupRootInv(pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED)
 			// Execute the sweep with an older sequence number.
 			err := sweepWorkUnitsForFinalization(ctx, rootInvID, seq-1, opts)
 			assert.Loosely(t, err, should.BeNil)
@@ -117,7 +127,6 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 					assert.That(t, readWU.FinalizerCandidateTime.Valid, should.Equal(hasFinalizerCandidateTime), truth.LineContext())
 				}
 				t.Run("all root invocation and work units can be finalized", func(t *ftt.Test) {
-					setupRootInv(pb.RootInvocation_METADATA_FINAL)
 					testutil.MustApply(ctx, t, testutil.CombineMutations(
 						workunits.InsertForTesting(wuroot),
 						workunits.InsertForTesting(wu1),
@@ -151,10 +160,12 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 					notifyRootInvCount := 0
 					publishTRCount := 0
 					var trTasks []*taskspb.PublishTestResultsTask
+					var rootInvocationFinalizedNotification *pb.RootInvocationFinalizedNotification
 					for _, p := range payloads {
 						switch task := p.(type) {
 						case *taskspb.NotifyRootInvocationFinalized:
 							notifyRootInvCount++
+							rootInvocationFinalizedNotification = task.GetMessage()
 						case *taskspb.PublishTestResultsTask:
 							publishTRCount++
 							trTasks = append(trTasks, task)
@@ -167,10 +178,17 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 					taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, taskState.Pending, should.BeFalse)
+
+					compiledCfg, err := config.NewCompiledServiceConfig(cfg, "revision")
+					assert.NoErr(t, err)
+					expectedRootInvocationFinalizedNotification := &pb.RootInvocationFinalizedNotification{
+						RootInvocation: masking.RootInvocation(rootInv, compiledCfg),
+						ResultdbHost:   "rdb-host",
+					}
+					assert.Loosely(t, rootInvocationFinalizedNotification, should.Match(expectedRootInvocationFinalizedNotification))
 				})
 
 				t.Run("some work units can't be finalized", func(t *ftt.Test) {
-					setupRootInv(pb.RootInvocation_METADATA_FINAL)
 					testutil.MustApply(ctx, t, testutil.CombineMutations(
 						workunits.InsertForTesting(wuroot),
 						workunits.InsertForTesting(wu1),

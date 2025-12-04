@@ -59,7 +59,7 @@ func NewBuilder(id ID) *Builder {
 			ProducerResource: &pb.ProducerResource{
 				System:    "buildbucket",
 				DataRealm: "prod",
-				Name:      "builds/123",
+				Name:      "builds/654",
 			},
 			Definition: &pb.RootInvocationDefinition{
 				System:     "buildbucket",
@@ -326,7 +326,7 @@ func InsertForTesting(r *RootInvocationRow) []*spanner.Mutation {
 		"FinalizeTime":          r.FinalizeTime,
 		"UninterestingTestVerdictsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
 		"CreateRequestId":                         r.CreateRequestID,
-		"ProducerResource":                        spanutil.Compressed(pbutil.MustMarshal(r.ProducerResource)),
+		"ProducerResource":                        spanutil.Compressed(pbutil.MustMarshal(pbutil.RemoveProducerResourceOutputOnlyFields(r.ProducerResource))),
 		"Sources":                                 spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
 		"PrimaryBuild":                            spanutil.Compressed(pbutil.MustMarshal(r.PrimaryBuild)),
 		"ExtraBuilds":                             serializeExtraBuilds(r.ExtraBuilds),

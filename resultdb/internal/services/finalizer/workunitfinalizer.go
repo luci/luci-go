@@ -27,6 +27,8 @@ import (
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/resultdb/internal/config"
+	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
@@ -273,6 +275,12 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 	if opts.batchSizeOverride < 0 || opts.batchSizeOverride > defaultBatchSize {
 		return errors.New(fmt.Sprintf("batchSize must be between 0 and %d, got %d", defaultBatchSize, opts.batchSizeOverride))
 	}
+
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return errors.Fmt("read service config: %w", err)
+	}
+
 	batchSize := opts.batchSizeOverride
 	if batchSize == 0 {
 		batchSize = defaultBatchSize
@@ -331,7 +339,7 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 			if shouldFinalizeRootInvocation {
 				mutations = append(mutations, rootinvocations.MarkFinalized(rootInvID)...)
 				// Publish a finalized root invocation pubsub transactionally.
-				if err := publishFinalizedRootInvocation(ctx, rootInvID, opts.resultDBHostname); err != nil {
+				if err := publishFinalizedRootInvocation(ctx, rootInvID, opts.resultDBHostname, cfg); err != nil {
 					return errors.Fmt("publish finalized root invocation: %w", err)
 				}
 			}
@@ -347,18 +355,18 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 }
 
 // publishFinalizedRootInvocation publishes a pub/sub message for a finalized
-func publishFinalizedRootInvocation(ctx context.Context, rootInvID rootinvocations.ID, rdbHostName string) error {
+func publishFinalizedRootInvocation(ctx context.Context, rootInvID rootinvocations.ID, rdbHostName string, cfg *config.CompiledServiceConfig) error {
 	// Enqueue a notification to pub/sub listeners that the root invocation
 	// has been finalized.
 	row, err := rootinvocations.Read(ctx, rootInvID)
 	if err != nil {
-		return errors.Fmt("failed to read finalized root notification info: %w", err)
+		return errors.Fmt("read finalized root notification info: %w", err)
 	}
 
 	// Note that this submits the notification transactionally,
 	// i.e. conditionally on this transaction committing.
 	notification := &pb.RootInvocationFinalizedNotification{
-		RootInvocation: row.ToProto(),
+		RootInvocation: masking.RootInvocation(row, cfg),
 		ResultdbHost:   rdbHostName,
 	}
 	tasks.NotifyRootInvocationFinalized(ctx, notification)

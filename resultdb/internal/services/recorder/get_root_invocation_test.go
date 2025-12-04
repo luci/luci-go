@@ -23,8 +23,11 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+	"go.chromium.org/luci/server/caching"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -38,6 +41,13 @@ func TestGetRootInvocation(t *testing.T) {
 		const realm = "testproject:testrealm"
 
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+
+		// Set up a placeholder service config.
+		cfg := config.CreatePlaceholderServiceConfig()
+		err := config.SetServiceConfigForTesting(ctx, cfg)
+		assert.Loosely(t, err, should.BeNil)
 
 		rootInvID := rootinvocations.ID("root-inv-id")
 		rootWorkUnitID := workunits.ID{
@@ -64,18 +74,23 @@ func TestGetRootInvocation(t *testing.T) {
 			testutil.MustApply(ctx, t, insert.RootInvocationOnly(testData)...)
 
 			expectedRootInvocation := &pb.RootInvocation{
-				Name:                 "rootInvocations/root-inv-id",
-				RootInvocationId:     "root-inv-id",
-				Realm:                realm,
-				FinalizationState:    pb.RootInvocation_FINALIZED,
-				State:                pb.RootInvocation_FAILED,
-				SummaryMarkdown:      "The FooBar returned false when it was expected to return true.",
-				CreateTime:           pbutil.MustTimestampProto(testData.CreateTime),
-				Creator:              testData.CreatedBy,
-				LastUpdated:          pbutil.MustTimestampProto(testData.LastUpdated),
-				FinalizeTime:         pbutil.MustTimestampProto(testData.FinalizeTime.Time),
-				FinalizeStartTime:    pbutil.MustTimestampProto(testData.FinalizeStartTime.Time),
-				ProducerResource:     testData.ProducerResource,
+				Name:              "rootInvocations/root-inv-id",
+				RootInvocationId:  "root-inv-id",
+				Realm:             realm,
+				FinalizationState: pb.RootInvocation_FINALIZED,
+				State:             pb.RootInvocation_FAILED,
+				SummaryMarkdown:   "The FooBar returned false when it was expected to return true.",
+				CreateTime:        pbutil.MustTimestampProto(testData.CreateTime),
+				Creator:           testData.CreatedBy,
+				LastUpdated:       pbutil.MustTimestampProto(testData.LastUpdated),
+				FinalizeTime:      pbutil.MustTimestampProto(testData.FinalizeTime.Time),
+				FinalizeStartTime: pbutil.MustTimestampProto(testData.FinalizeStartTime.Time),
+				ProducerResource: &pb.ProducerResource{
+					System:    "buildbucket",
+					DataRealm: "prod",
+					Name:      "builds/654",
+					Url:       "https://milo-prod/ui/b/654",
+				},
 				Definition:           testData.Definition,
 				Sources:              testData.Sources,
 				PrimaryBuild:         testData.PrimaryBuild,

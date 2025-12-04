@@ -18,7 +18,6 @@ package rootinvocations
 import (
 	"fmt"
 	"maps"
-	"regexp"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -146,7 +145,7 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 		"LastUpdated":           spanner.CommitTimestamp,
 		"UninterestingTestVerdictsExpirationTime": r.UninterestingTestVerdictsExpirationTime,
 		"CreateRequestId":                         r.CreateRequestID,
-		"ProducerResource":                        spanutil.Compressed(pbutil.MustMarshal(r.ProducerResource)),
+		"ProducerResource":                        spanutil.Compressed(pbutil.MustMarshal(pbutil.RemoveProducerResourceOutputOnlyFields(r.ProducerResource))),
 		"Sources":                                 spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
 		"PrimaryBuild":                            spanutil.Compressed(pbutil.MustMarshal(r.PrimaryBuild)),
 		"ExtraBuilds":                             serializeExtraBuilds(r.ExtraBuilds),
@@ -259,37 +258,6 @@ func (r *RootInvocationRow) toShardsMutations() []*spanner.Mutation {
 	return mutations
 }
 
-func (r *RootInvocationRow) ToProto() *pb.RootInvocation {
-	result := &pb.RootInvocation{
-		Name:                 r.RootInvocationID.Name(),
-		RootInvocationId:     string(r.RootInvocationID),
-		FinalizationState:    r.FinalizationState,
-		State:                r.State,
-		SummaryMarkdown:      r.SummaryMarkdown,
-		Realm:                r.Realm,
-		CreateTime:           pbutil.MustTimestampProto(r.CreateTime),
-		Creator:              r.CreatedBy,
-		LastUpdated:          pbutil.MustTimestampProto(r.LastUpdated),
-		ProducerResource:     r.ProducerResource,
-		Definition:           r.Definition,
-		Sources:              r.Sources,
-		PrimaryBuild:         r.PrimaryBuild,
-		ExtraBuilds:          r.ExtraBuilds,
-		Tags:                 r.Tags,
-		Properties:           r.Properties,
-		BaselineId:           r.BaselineID,
-		Etag:                 Etag(r),
-		StreamingExportState: r.StreamingExportState,
-	}
-	if r.FinalizeStartTime.Valid {
-		result.FinalizeStartTime = pbutil.MustTimestampProto(r.FinalizeStartTime.Time)
-	}
-	if r.FinalizeTime.Valid {
-		result.FinalizeTime = pbutil.MustTimestampProto(r.FinalizeTime.Time)
-	}
-	return result
-}
-
 func toInvocationState(finalizationState pb.RootInvocation_FinalizationState) pb.Invocation_State {
 	switch finalizationState {
 	case pb.RootInvocation_ACTIVE:
@@ -332,34 +300,6 @@ func (r *RootInvocationRow) ToLegacyInvocationProto() *pb.Invocation {
 		result.FinalizeTime = pbutil.MustTimestampProto(r.FinalizeTime.Time)
 	}
 	return result
-}
-
-// Etag returns the HTTP ETag for the given root invocation.
-func Etag(r *RootInvocationRow) string {
-	// The ETag must be a function of the resource representation according to (AIP-154).
-	return fmt.Sprintf(`W/"%s"`, r.LastUpdated.UTC().Format(time.RFC3339Nano))
-}
-
-// etagRegexp extracts the root invocation's last updated timestamp from a root invocation ETag.
-var etagRegexp = regexp.MustCompile(`^W/"(.*)"$`)
-
-// ParseEtag validate the etag and returns the embedded lastUpdated time.
-func ParseEtag(etag string) (lastUpdated string, err error) {
-	m := etagRegexp.FindStringSubmatch(etag)
-	if len(m) < 2 {
-		return "", errors.Fmt("malformated etag")
-	}
-	return m[1], nil
-}
-
-// IsEtagMatch determines if the Etag is consistent with the specified
-// root invocation version.
-func IsEtagMatch(r *RootInvocationRow, etag string) (bool, error) {
-	lastUpdated, err := ParseEtag(etag)
-	if err != nil {
-		return false, err
-	}
-	return lastUpdated == r.LastUpdated.UTC().Format(time.RFC3339Nano), nil
 }
 
 // MarkFinalized creates a mutation to mark the given root invocation as finalized.

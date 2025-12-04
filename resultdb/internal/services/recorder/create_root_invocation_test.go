@@ -1133,6 +1133,7 @@ func TestCreateRootInvocation(t *testing.T) {
 				Creator: "user:someone@example.com",
 			})
 			pbutil.PopulateDefinitionHashes(expectedInv.Definition)
+			expectedInv.ProducerResource.Url = "https://milo-prod/ui/b/1"
 
 			wuID := workunits.ID{
 				RootInvocationID: "u-e2e-success",
@@ -1151,10 +1152,10 @@ func TestCreateRootInvocation(t *testing.T) {
 					System:    "buildbucket",
 					DataRealm: "prod",
 					Name:      "builds/1",
+					Url:       "https://milo-prod/ui/b/1",
 				},
 			})
 			expectedWU.Instructions = instructionutil.InstructionsWithNames(instructions, wuID.Name())
-			expectedWU.ProducerResource.Url = "https://milo-prod/ui/b/1"
 			pbutil.PopulateModuleIdentifierHashes(expectedWU.ModuleId)
 
 			rootInvocationID := rootinvocations.ID("u-e2e-success")

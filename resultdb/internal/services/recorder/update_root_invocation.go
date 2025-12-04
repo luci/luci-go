@@ -28,6 +28,8 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
+	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -78,7 +80,7 @@ func (s *recorderServer) UpdateRootInvocation(ctx context.Context, in *pb.Update
 		// - Etag match (if not empty).
 		// - Root invocation is active.
 		if in.RootInvocation.Etag != "" {
-			match, err := rootinvocations.IsEtagMatch(originalRootInvRow, in.RootInvocation.Etag)
+			match, err := masking.IsRootInvocationEtagMatch(originalRootInvRow, in.RootInvocation.Etag)
 			if err != nil {
 				// Impossible, etag has already been validated.
 				return err
@@ -114,7 +116,14 @@ func (s *recorderServer) UpdateRootInvocation(ctx context.Context, in *pb.Update
 	if updated {
 		updatedRootInvRow.LastUpdated = ct
 	}
-	return updatedRootInvRow.ToProto(), nil
+
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		// Internal error.
+		return nil, errors.Fmt("get service config: %w", err)
+	}
+
+	return masking.RootInvocation(updatedRootInvRow, cfg), nil
 }
 
 func updateRootInvocationInternal(in *pb.UpdateRootInvocationRequest, originalRootInvRow *rootinvocations.RootInvocationRow) (updateMutations []*spanner.Mutation, updatedRow *rootinvocations.RootInvocationRow, err error) {
@@ -248,7 +257,7 @@ func validateUpdateRootInvocationRequest(ctx context.Context, req *pb.UpdateRoot
 	// The root invocation name is already validated in verifyUpdateRootInvocationPermissions.
 
 	if req.RootInvocation.Etag != "" {
-		if _, err := rootinvocations.ParseEtag(req.RootInvocation.Etag); err != nil {
+		if _, err := masking.ParseRootInvocationEtag(req.RootInvocation.Etag); err != nil {
 			return errors.Fmt("root_invocation: etag: %w", err)
 		}
 	}
