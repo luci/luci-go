@@ -46,11 +46,13 @@ import {
   TestVariantsTable,
 } from '@/test_investigation/components/invocation_page';
 import { RedirectBackBanner } from '@/test_investigation/components/redirect_back_banner';
+import { RedirectATIBanner } from '@/test_investigation/components/redirect_back_banner/redirect_ati_banner';
 import { TestNavigationTreeNode } from '@/test_investigation/components/test_navigation_drawer/types';
 import { InvocationProvider } from '@/test_investigation/context/provider';
 import { useInvocationQuery } from '@/test_investigation/hooks/queries';
 import { buildHierarchyTree } from '@/test_investigation/utils/drawer_tree_utils';
 import { getDisplayInvocationId } from '@/test_investigation/utils/invocation_utils';
+import { isAnTSInvocation } from '@/test_investigation/utils/test_info_utils';
 import { getProjectFromRealm } from '@/test_investigation/utils/test_variant_utils';
 
 /**
@@ -334,12 +336,15 @@ export function InvocationPage() {
     >
       <ThemeProvider theme={gm3PageTheme}>
         <title>{`Invocation: ${getDisplayInvocationId(invocation)}`}</title>
-        <RedirectBackBanner
-          invocation={invocation}
-          parsedTestId={parsedTestId}
-          parsedVariantDef={parsedVariantDef}
-        />
-
+        {isAnTSInvocation(invocation) ? (
+          <RedirectATIBanner invocation={invocation} />
+        ) : (
+          <RedirectBackBanner
+            invocation={invocation}
+            parsedTestId={parsedTestId}
+            parsedVariantDef={parsedVariantDef}
+          />
+        )}
         <Box
           component="main"
           sx={{

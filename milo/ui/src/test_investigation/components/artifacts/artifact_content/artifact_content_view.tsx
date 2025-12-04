@@ -225,7 +225,7 @@ export function ArtifactContentView({ artifact }: ArtifactContentViewProps) {
             <Button
               variant="outlined"
               size="small"
-              href={getAndroidBugToolLink(artifact.artifactId, invocation.name)}
+              href={getAndroidBugToolLink(artifact.artifactId, invocation)}
               target="_blank"
               rel="noopener noreferrer"
               endIcon={<AdbIcon />}

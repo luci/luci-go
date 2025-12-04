@@ -18,6 +18,10 @@ import {
   Variant,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
+import {
+  AnyInvocation,
+  isRootInvocation,
+} from '@/test_investigation/utils/invocation_utils';
 
 const ANDROID_BUILD_HOST = 'https://android-build.googleplex.com';
 const BUG_TOOL_HOST = 'https://android-bug-tool.corp.google.com/bug_tool';
@@ -86,25 +90,31 @@ export function getRawArtifactURLPath(artifactName: string): string {
   return `/raw-artifact/${artifactName}`;
 }
 
+export function getAntsInvocationId(invocation: AnyInvocation): string {
+  // TODO(b/452474085): follow up when we get data from resultDB instead of ANTs.
+  let prefix = 'invocations/ants-i';
+  if (isRootInvocation(invocation)) {
+    prefix = 'rootInvocations/ants-i';
+  }
+  const invocationName = invocation.name;
+  if (invocationName.startsWith(prefix)) {
+    return 'I' + invocationName.substring(prefix.length);
+  } else {
+    return '';
+  }
+}
+
 export function getAndroidBugToolLink(
   artifactName: string,
-  invocationId: string,
+  invocation: AnyInvocation,
   params?: URLSearchParams,
 ): string {
   if (artifactName === null) return '';
 
-  if (invocationId !== null) {
+  if (invocation !== null) {
     const artifactPath = artifactName ? encodeURIComponent(artifactName) : '';
 
-    // TODO(b/452474085): follow up when we get data from resultDB instead of ANTs.
-    const prefix = 'invocations/ants-i';
-    let antsInvocationId = '';
-    if (invocationId.startsWith(prefix)) {
-      antsInvocationId = 'I' + invocationId.substring(prefix.length);
-    } else {
-      return '';
-    }
-
+    const antsInvocationId = getAntsInvocationId(invocation);
     const downloadUrl = `${ANDROID_BUILD_HOST}/builds/${antsInvocationId}/${artifactPath}`;
     const toolLinkParams = new URLSearchParams();
     toolLinkParams.append('url', downloadUrl);

@@ -311,7 +311,7 @@ export function ArtifactTreeNode({
                 aria-label={`Actions for ${row.name}`}
                 href={getAndroidBugToolLink(
                   row.data.artifact.artifactId,
-                  invocation.name,
+                  invocation,
                 )}
               >
                 <AdbIcon

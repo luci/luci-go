@@ -56,6 +56,7 @@ import { BatchGetTestVariantsRequest } from '@/proto/go.chromium.org/luci/result
 import { TestVerdict_StatusOverride } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { ArtifactsSection } from '@/test_investigation/components/artifacts/artifacts_section';
 import { RedirectBackBanner } from '@/test_investigation/components/redirect_back_banner';
+import { RedirectATIBanner } from '@/test_investigation/components/redirect_back_banner/redirect_ati_banner';
 import { TestInfo } from '@/test_investigation/components/test_info';
 import { TestNavigationDrawer } from '@/test_investigation/components/test_navigation_drawer';
 import { TestDrawerProvider } from '@/test_investigation/components/test_navigation_drawer/context';
@@ -65,7 +66,10 @@ import {
   TestVariantProvider,
 } from '@/test_investigation/context';
 import { useInvocationQuery } from '@/test_investigation/hooks/queries';
-import { isPresubmitRun } from '@/test_investigation/utils/test_info_utils';
+import {
+  isAnTSInvocation,
+  isPresubmitRun,
+} from '@/test_investigation/utils/test_info_utils';
 import { getProjectFromRealm } from '@/test_investigation/utils/test_variant_utils';
 
 // Define the shape of the URL parameters.
@@ -320,6 +324,7 @@ export function TestInvestigatePage() {
     );
   }
 
+  // TODO(b/463488897): ATI redirect banner should link directly to Android test result page instead of just invocation.
   return (
     <InvocationProvider
       invocation={invocation}
@@ -342,10 +347,14 @@ export function TestInvestigatePage() {
           error={recentPassesError}
         >
           <ThemeProvider theme={gm3PageTheme}>
-            <RedirectBackBanner
-              invocation={invocation}
-              testVariant={testVariant}
-            />
+            {isAnTSInvocation(invocation) ? (
+              <RedirectATIBanner invocation={invocation} />
+            ) : (
+              <RedirectBackBanner
+                invocation={invocation}
+                testVariant={testVariant}
+              />
+            )}
             <Box component="main" sx={{ height: '100%' }}>
               <Box
                 sx={{

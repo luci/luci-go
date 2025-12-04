@@ -101,14 +101,12 @@ From Link: ${self.location.href}`;
       action={
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
-            onClick={() =>
-              window.open(
-                genFeedbackUrl({
-                  bugComponent: '1838234',
-                  customComment: feedbackBugtemplateComment,
-                }),
-              )
-            }
+            component={Link}
+            target="_blank"
+            href={genFeedbackUrl({
+              bugComponent: '1838234',
+              customComment: feedbackBugtemplateComment,
+            })}
             color="primary"
             size="small"
             variant="contained"
