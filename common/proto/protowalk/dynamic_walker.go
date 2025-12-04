@@ -16,10 +16,10 @@ package protowalk
 
 import (
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protopath"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/reflectutil"
 )
 
 // DynamicWalker is a non-generic version of Walker.
@@ -91,7 +91,7 @@ func (l *DynamicWalker) Execute(msg proto.Message) (Results, error) {
 	//
 	// There's really no way to know ahead of time (since proto messages could
 	// have a recursive structure, allowing the expression of trees, etc.)
-	mappedRet := l.fieldsImpl(make(reflectutil.Path, 0, 32), msg.ProtoReflect())
+	mappedRet := l.fieldsImpl(make(protopath.Path, 0, 32), msg.ProtoReflect())
 	for i, proc := range l.procs {
 		ret[i] = mappedRet[proc]
 	}

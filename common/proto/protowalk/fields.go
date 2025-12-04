@@ -15,6 +15,7 @@
 package protowalk
 
 import (
+	"google.golang.org/protobuf/reflect/protopath"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go.chromium.org/luci/common/proto/reflectutil"
@@ -22,7 +23,7 @@ import (
 
 // fieldsImpl actually implements the Fields method, using `path` as context
 // for the overall path through the proto message.
-func (l DynamicWalker) fieldsImpl(path reflectutil.Path, msg protoreflect.Message) map[FieldProcessor][]Result {
+func (l DynamicWalker) fieldsImpl(path protopath.Path, msg protoreflect.Message) map[FieldProcessor][]Result {
 	plan := l.plans[msg.Descriptor()]
 	ret := make(map[FieldProcessor][]Result, plan.numProcs)
 	mergeResults := func(additional map[FieldProcessor][]Result) {
@@ -34,7 +35,7 @@ func (l DynamicWalker) fieldsImpl(path reflectutil.Path, msg protoreflect.Messag
 	plan.each(func(field protoreflect.FieldDescriptor, items []planItem) {
 		var toRecurse recurseAttr
 
-		var copiedFieldPath reflectutil.Path
+		var copiedFieldPath protopath.Path
 
 		for _, item := range items {
 			toRecurse.set(item.recurseAttr)
@@ -42,9 +43,9 @@ func (l DynamicWalker) fieldsImpl(path reflectutil.Path, msg protoreflect.Messag
 			if item.applies(msg.Has(field)) {
 				if data, applied := item.processor.Process(field, msg); applied {
 					if copiedFieldPath == nil {
-						copiedFieldPath = make(reflectutil.Path, len(path)+1)
+						copiedFieldPath = make(protopath.Path, len(path)+1)
 						copy(copiedFieldPath, path)
-						copiedFieldPath[len(path)] = reflectutil.MustMakePathItem(field)
+						copiedFieldPath[len(path)] = protopath.FieldAccess(field)
 					}
 					ret[item.processor] = append(ret[item.processor], Result{copiedFieldPath, data})
 				}
@@ -52,13 +53,13 @@ func (l DynamicWalker) fieldsImpl(path reflectutil.Path, msg protoreflect.Messag
 		}
 
 		if toRecurse != recurseNone {
-			recursePath := append(path, reflectutil.MustMakePathItem(field))
+			recursePath := append(path, protopath.FieldAccess(field))
 
 			switch toRecurse {
 			case recurseRepeated:
 				lst := msg.Get(field).List()
 				for i := range lst.Len() {
-					mergeResults(l.fieldsImpl(append(recursePath, reflectutil.MustMakePathItem(i)), lst.Get(i).Message()))
+					mergeResults(l.fieldsImpl(append(recursePath, protopath.ListIndex(i)), lst.Get(i).Message()))
 				}
 
 			case recurseOne:
@@ -72,7 +73,7 @@ func (l DynamicWalker) fieldsImpl(path reflectutil.Path, msg protoreflect.Messag
 				}
 
 				reflectutil.MapRangeSorted(msg.Get(field).Map(), toRecurse.mapKeyKind(), func(mk protoreflect.MapKey, v protoreflect.Value) bool {
-					mergeResults(l.fieldsImpl(append(recursePath, reflectutil.MustMakePathItem(mk)), v.Message()))
+					mergeResults(l.fieldsImpl(append(recursePath, protopath.MapIndex(mk)), v.Message()))
 					return true
 				})
 			}

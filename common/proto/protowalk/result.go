@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/reflectutil"
+	"google.golang.org/protobuf/reflect/protopath"
 )
 
 // ResultData is the data produced from the FieldProcessor.
@@ -40,7 +40,7 @@ func (d ResultData) String() string {
 // a message field.
 type Result struct {
 	// Path is the path to the field where the FieldProcessor acted.
-	Path reflectutil.Path
+	Path protopath.Path
 
 	Data ResultData
 }
