@@ -25,7 +25,6 @@ import {
   Chip,
   Theme,
   Tooltip,
-  Button,
   Link,
 } from '@mui/material';
 import { deepOrange, yellow, blue } from '@mui/material/colors';
@@ -304,7 +303,7 @@ export function ArtifactTreeNode({
             renderActions(row)
           ) : row.isLeafNode && isAnTS && row.data.artifact?.artifactId ? (
             <Tooltip title="Open in Android Bug Tool">
-              <Button
+              <IconButton
                 component={Link}
                 size="small"
                 target="_blank"
@@ -313,12 +312,14 @@ export function ArtifactTreeNode({
                   row.data.artifact.artifactId,
                   invocation,
                 )}
+                sx={{
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                  },
+                }}
               >
-                <AdbIcon
-                  sx={{ color: theme.palette.action.active }}
-                  titleAccess="adb-icon"
-                />
-              </Button>
+                <AdbIcon fontSize="small" titleAccess="adb-icon" />
+              </IconButton>
             </Tooltip>
           ) : (
             <Box sx={{ width: '24px', height: '24px' }} />
