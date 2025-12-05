@@ -46,16 +46,20 @@ import {
   isGlob,
   isMember,
   isSubgroup,
-  stripPrefix,
+  stripPrefixFromItems,
+  userPrefix,
 } from '@/authdb/common/helpers';
 import { GroupLink } from '@/authdb/components/group_link';
+import { AuthLookupLink } from '@/authdb/components/lookup_link';
 
 const expansionThreshold = 10;
 
-interface GroupsFormListProps {
-  // Sets the starting items array. Used on initial GetGroup call from groups_form.
+interface GroupFormListProps {
+  // Sets the starting items array. Used on initial GetGroup call from
+  // groups_form.
   initialValues: string[];
-  // This will be either members, subgroups or globs. Used for header in form and to check validity of added items.
+  // This will be either members, subgroups or globs. Used for header in form
+  // and to check validity of added items.
   name: string;
   // Used on UpdateGroup call to backend to update this field's values.
   submitValues: () => void;
@@ -92,16 +96,13 @@ const asString = (items: Item[]) => {
   return itemValues;
 };
 
-export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
+export const GroupFormList = forwardRef<FormListElement, GroupFormListProps>(
   ({ initialValues, name, submitValues }, ref) => {
-    const [addingItem, setAddingItem] = useState<boolean>(false);
-    const [newItems, setNewItems] = useState<string>('');
-    const [errorMessage, setErrorMessage] = useState<string>('');
-    if (name === 'Members') {
-      initialValues = initialValues.map((member) =>
-        stripPrefix('user', member),
-      );
-    }
+    const [addingItem, setAddingItem] = useState(false);
+    const [newItems, setNewItems] = useState('');
+    const [invalidValueError, setInvalidValueError] = useState('');
+    const [duplicateValueError, setDuplicateValueError] = useState('');
+
     // Display items alphabetically.
     initialValues.sort();
     // The initial form items which reflect the items currently in auth service backend.
@@ -136,11 +137,6 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
 
     useImperativeHandle(ref, () => ({
       getItems: () => {
-        // Re-add 'user' prefix in members before sending back to groups form.
-        if (name === 'Members') {
-          const editedMembers = addPrefixToItems('user', asString(items) || []);
-          return editedMembers;
-        }
         return asString(items);
       },
       changeItems: (newValues: string[]) => {
@@ -157,7 +153,8 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
     const resetTextfield = () => {
       setAddingItem(!addingItem);
       setNewItems('');
-      setErrorMessage('');
+      setInvalidValueError('');
+      setDuplicateValueError('');
     };
 
     const addToItems = () => {
@@ -166,7 +163,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
         let newItemsArray = newItems
           .split(/[\n ]+/)
           .filter((item) => item !== '');
-        if (name === 'Globs') {
+        if (name === 'Members' || name === 'Globs') {
           newItemsArray = addPrefixToItems('user', newItemsArray);
         }
         updatedItems.push(...asItems(newItemsArray));
@@ -180,9 +177,10 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       let newItemsArray = newItems
         .split(/[\n ]+/)
         .filter((item) => item !== '');
-      // Globs need prefix to be added before duplication validation.
-      // E.g. Otherwise user:*@email.com will not be detected as a duplicate to *@email.com
-      if (name === 'Globs') {
+      // Ensure members and globs have the user prefix added before duplicate
+      // validation, as it is implied if no prefix is specified.
+      // e.g. `user:*@example.com` is a duplicate of `*example.com`.
+      if (name === 'Members' || name === 'Globs') {
         newItemsArray = addPrefixToItems('user', newItemsArray);
       }
       const hasValues = (value: string) => {
@@ -217,16 +215,15 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
           };
       }
       const invalidValues = newItemsArray.filter((value) => !isValid(value));
-      // Check for errors and update state accordingly.
-      if (invalidValues.length > 0 || duplicateValues.length > 0) {
-        const allInvalidItems = duplicateValues.concat(invalidValues);
-        const errorMessage = `Invalid ${name}: ` + allInvalidItems.join(', ');
-        setErrorMessage(errorMessage);
-        return false;
-      } else {
-        setErrorMessage('');
-        return true;
-      }
+
+      // Set error messages.
+      setInvalidValueError(
+        stripPrefixFromItems(userPrefix, invalidValues).join(', '),
+      );
+      setDuplicateValueError(
+        stripPrefixFromItems(userPrefix, duplicateValues).join(', '),
+      );
+      return invalidValues.length === 0 && duplicateValues.length === 0;
     }, [items, name, newItems]);
 
     useEffect(() => {
@@ -290,6 +287,8 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       validateItems();
     }, [newItems, validateItems]);
 
+    const isValid = !invalidValueError && !duplicateValueError;
+
     return (
       <TableContainer data-testid="groups-form-list">
         <Table sx={{ width: '100%' }} data-testid="mouse-enter-table">
@@ -302,7 +301,9 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
                   minHeight: '40px',
                 }}
               >
-                <Typography variant="h6"> {name}</Typography>
+                <Typography variant="h6">
+                  {`${name} (${items.length})`}
+                </Typography>
                 {items.length > expansionThreshold && (
                   <IconButton
                     onClick={() => {
@@ -359,7 +360,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
                         {name === 'Subgroups' ? (
                           <GroupLink name={item.value} />
                         ) : (
-                          <Typography variant="body2">{item.value}</Typography>
+                          <AuthLookupLink principal={item.value} />
                         )}
                       </TableCell>
                     </TableRow>
@@ -378,14 +379,26 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
                       onChange={(e) => setNewItems(e.target.value)}
                       value={newItems}
                       data-testid="add-textfield"
-                      error={errorMessage !== ''}
-                      helperText={errorMessage}
+                      error={!isValid}
+                      helperText={
+                        <span>
+                          {invalidValueError !== '' && (
+                            <>
+                              {`Invalid ${name}: ${invalidValueError}`}
+                              {duplicateValueError !== '' && <br />}
+                            </>
+                          )}
+                          {duplicateValueError !== '' && (
+                            <>{`Duplicate ${name}: ${duplicateValueError}`}</>
+                          )}
+                        </span>
+                      }
                     ></TextField>
                   </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ pt: '8px', pb: '16px' }}>
-                    {errorMessage === '' && newItems !== '' && (
+                    {isValid && newItems !== '' && (
                       <Button
                         sx={{ mr: 1.5 }}
                         variant="contained"
@@ -460,4 +473,4 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
     );
   },
 );
-GroupsFormList.displayName = 'GroupsFormList';
+GroupFormList.displayName = 'GroupFormList';

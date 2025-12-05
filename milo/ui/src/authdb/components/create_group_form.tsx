@@ -69,11 +69,11 @@ const theme = createTheme({
   },
 });
 
-interface GroupsFormNewProps {
+interface CreateGroupFormProps {
   onCreate: () => void;
 }
 
-export function GroupsFormNew({ onCreate }: GroupsFormNewProps) {
+export function CreateGroupForm({ onCreate }: CreateGroupFormProps) {
   const navigate = useNavigate();
   const [name, setName] = useState<string>('');
   const [nameErrorMessage, setNameErrorMessage] = useState<string>('');

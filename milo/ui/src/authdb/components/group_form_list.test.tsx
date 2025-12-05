@@ -17,16 +17,16 @@ import userEvent from '@testing-library/user-event';
 import { act } from 'react';
 
 import { stripPrefix } from '@/authdb/common/helpers';
-import { GroupsFormList } from '@/authdb/components/groups_form_list';
+import { GroupFormList } from '@/authdb/components/group_form_list';
 import { createMockGroupIndividual } from '@/authdb/testing_tools/mocks/group_individual_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-describe('<GroupsFormList editable/>', () => {
+describe('<GroupFormList editable/>', () => {
   const mockGroup = createMockGroupIndividual('123', true, true);
   beforeEach(async () => {
     render(
       <FakeContextProvider>
-        <GroupsFormList
+        <GroupFormList
           name="Members"
           initialValues={mockGroup.members as string[]}
           submitValues={() => {}}
@@ -64,15 +64,12 @@ describe('<GroupsFormList editable/>', () => {
   });
 
   test('shows removed members confirm dialog', async () => {
-    const editedMembers = mockGroup.members.map((member) =>
-      stripPrefix('user', member),
-    );
     // Simulate mouse enter event each row.
     for (let i = 0; i < mockGroup.members.length; i++) {
-      const row = screen.getByTestId(`item-row-${editedMembers[i]}`);
+      const row = screen.getByTestId(`item-row-${mockGroup.members[i]}`);
       fireEvent.mouseEnter(row);
       const removeCheckbox = screen
-        .getByTestId(`checkbox-button-${editedMembers[i]}`)
+        .getByTestId(`checkbox-button-${mockGroup.members[i]}`)
         .querySelector('input');
       act(() => removeCheckbox!.click());
       const removeButton = screen.getByTestId('remove-button');
@@ -146,7 +143,7 @@ describe('<GroupsFormList editable/>', () => {
     ).toBeInTheDocument();
   });
 
-  test('shows error message on duplicate item added (case-insensitive)', async () => {
+  test('shows error message on duplicate member added (case-insensitive)', async () => {
     // Click add button.
     const addButton = screen.queryByTestId('add-button');
     expect(addButton).not.toBeNull();
@@ -162,7 +159,7 @@ describe('<GroupsFormList editable/>', () => {
     expect(confirmButton).toBeNull();
     // Check correct error message is shown.
     expect(
-      screen.getByText('Invalid Members: member1@Email.com'),
+      screen.getByText('Duplicate Members: member1@Email.com'),
     ).toBeInTheDocument();
   });
 
@@ -187,12 +184,12 @@ describe('<GroupsFormList editable/>', () => {
   });
 });
 
-describe('<GroupsFormList editable globs/>', () => {
+describe('<GroupFormList editable globs/>', () => {
   const mockGroup = createMockGroupIndividual('123', true, true);
   beforeEach(async () => {
     render(
       <FakeContextProvider>
-        <GroupsFormList
+        <GroupFormList
           name="Globs"
           initialValues={mockGroup.globs as string[]}
           submitValues={() => {}}
@@ -216,9 +213,9 @@ describe('<GroupsFormList editable globs/>', () => {
     const confirmButton = screen.queryByTestId('confirm-button');
     expect(confirmButton).toBeNull();
     // Check correct error message is shown.
-    expect(screen.getByText('Invalid Globs: user:.glob')).toBeInTheDocument();
+    expect(screen.getByText('Invalid Globs: .glob')).toBeInTheDocument();
   });
-  test('shows error message on duplicate item added, case-sensitive', async () => {
+  test('shows error message on duplicate glob added (case-sensitive)', async () => {
     // Click add button.
     const addButton = screen.queryByTestId('add-button');
     expect(addButton).not.toBeNull();
@@ -233,7 +230,7 @@ describe('<GroupsFormList editable globs/>', () => {
     expect(confirmButton).toBeNull();
     // Check correct error message is shown.
     expect(
-      screen.getByText('Invalid Globs: user:*@email.com'),
+      screen.getByText('Duplicate Globs: *@email.com'),
     ).toBeInTheDocument();
   });
   test('allows adding globs, case-sensitive', async () => {
@@ -249,16 +246,16 @@ describe('<GroupsFormList editable globs/>', () => {
     const confirmButton = screen.queryByTestId('confirm-button');
     act(() => confirmButton!.click());
     // Check new member shown in list?
-    expect(screen.getByText('user:*@Email.com')).toBeInTheDocument();
+    expect(screen.getByText('*@Email.com')).toBeInTheDocument();
   });
 });
 
-describe('<GroupsFormList editable subgroups/>', () => {
+describe('<GroupFormList editable subgroups/>', () => {
   const mockGroup = createMockGroupIndividual('123', true, true);
   beforeEach(async () => {
     render(
       <FakeContextProvider>
-        <GroupsFormList
+        <GroupFormList
           name="Subgroups"
           initialValues={mockGroup.nested as string[]}
           submitValues={() => {}}
@@ -299,7 +296,7 @@ describe('<GroupsFormList editable subgroups/>', () => {
     expect(confirmButton).toBeNull();
     // Check correct error message is shown.
     expect(
-      screen.getByText('Invalid Subgroups: subgroup1'),
+      screen.getByText('Duplicate Subgroups: subgroup1'),
     ).toBeInTheDocument();
   });
   test('subgroups link correctly', async () => {

@@ -36,13 +36,13 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useState, createRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 
-import { nameRe, stripPrefix } from '@/authdb/common/helpers';
+import { nameRe } from '@/authdb/common/helpers';
 import { AuthTableList } from '@/authdb/components/auth_table_list';
-import { GroupLink } from '@/authdb/components/group_link';
 import {
-  GroupsFormList,
+  GroupFormList,
   FormListElement,
-} from '@/authdb/components/groups_form_list';
+} from '@/authdb/components/group_form_list';
+import { GroupLink } from '@/authdb/components/group_link';
 import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
 import { getAuthGroupURLPath } from '@/common/tools/url_utils';
 import {
@@ -101,10 +101,7 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
       return client.UpdateGroup(request);
     },
     onSuccess: (response) => {
-      const members: string[] =
-        response?.members?.map((member) => stripPrefix('user', member)) ||
-        ([] as string[]);
-      membersRef.current?.changeItems(members);
+      membersRef.current?.changeItems(response?.members as string[]);
       globsRef.current?.changeItems(response?.globs as string[]);
       subgroupsRef.current?.changeItems(response?.nested as string[]);
       if (!descriptionMode) {
@@ -426,8 +423,8 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
             {callerCanModify ? (
               <>
                 {callerCanViewMembers ? (
-                  <GroupsFormList
-                    name={`Members (${members.length + numRedacted})`}
+                  <GroupFormList
+                    name={`Members`}
                     initialValues={members}
                     ref={membersRef}
                     submitValues={() => submitField('members')}
@@ -438,14 +435,14 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
                     {numRedacted} members redacted
                   </Typography>
                 )}
-                <GroupsFormList
-                  name={`Globs (${globs.length})`}
+                <GroupFormList
+                  name={`Globs`}
                   initialValues={globs}
                   ref={globsRef}
                   submitValues={() => submitField('globs')}
                 />
-                <GroupsFormList
-                  name={`Subgroups (${subgroups.length})`}
+                <GroupFormList
+                  name={`Subgroups`}
                   initialValues={subgroups}
                   ref={subgroupsRef}
                   submitValues={() => submitField('nested')}

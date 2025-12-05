@@ -22,8 +22,8 @@ import Paper from '@mui/material/Paper';
 import { createRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
+import { CreateGroupForm } from '@/authdb/components/create_group_form';
 import { GroupDetails } from '@/authdb/components/group_details';
-import { GroupsFormNew } from '@/authdb/components/groups_form_new';
 import { GroupsList, GroupsListElement } from '@/authdb/components/groups_list';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useDeclarePageId } from '@/common/components/page_meta';
@@ -101,7 +101,7 @@ export function GroupsPage() {
             {groupName === 'new!' ? (
               // The list of groups must be the latest, to ensure the group that
               // was just created is included.
-              <GroupsFormNew onCreate={() => refetchGroups(true)} />
+              <CreateGroupForm onCreate={() => refetchGroups(true)} />
             ) : (
               <>
                 <GroupDetails

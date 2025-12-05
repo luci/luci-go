@@ -16,16 +16,16 @@ import List from '@mui/material/List';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { act } from 'react';
 
-import { GroupsFormNew } from '@/authdb/components/groups_form_new';
+import { CreateGroupForm } from '@/authdb/components/create_group_form';
 import { mockErrorCreateGroup } from '@/authdb/testing_tools/mocks/create_group_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-describe('<GroupsFormNew />', () => {
+describe('<CreateGroupForm />', () => {
   test('if group name, description textarea is displayed', async () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsFormNew onCreate={() => {}} />
+          <CreateGroupForm onCreate={() => {}} />
         </List>
       </FakeContextProvider>,
     );
@@ -38,7 +38,7 @@ describe('<GroupsFormNew />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsFormNew onCreate={() => {}} />
+          <CreateGroupForm onCreate={() => {}} />
         </List>
       </FakeContextProvider>,
     );
@@ -92,7 +92,7 @@ describe('<GroupsFormNew />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsFormNew onCreate={() => {}} />
+          <CreateGroupForm onCreate={() => {}} />
         </List>
       </FakeContextProvider>,
     );
@@ -111,7 +111,7 @@ describe('<GroupsFormNew />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsFormNew onCreate={() => {}} />
+          <CreateGroupForm onCreate={() => {}} />
         </List>
       </FakeContextProvider>,
     );
@@ -126,7 +126,7 @@ describe('<GroupsFormNew />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsFormNew onCreate={() => {}} />
+          <CreateGroupForm onCreate={() => {}} />
         </List>
       </FakeContextProvider>,
     );
@@ -147,7 +147,7 @@ describe('<GroupsFormNew />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsFormNew onCreate={() => {}} />
+          <CreateGroupForm onCreate={() => {}} />
         </List>
       </FakeContextProvider>,
     );
@@ -168,7 +168,7 @@ describe('<GroupsFormNew />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsFormNew onCreate={() => {}} />
+          <CreateGroupForm onCreate={() => {}} />
         </List>
       </FakeContextProvider>,
     );
@@ -187,7 +187,7 @@ describe('<GroupsFormNew />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsFormNew onCreate={() => {}} />
+          <CreateGroupForm onCreate={() => {}} />
         </List>
       </FakeContextProvider>,
     );
@@ -207,7 +207,7 @@ describe('<GroupsFormNew />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsFormNew onCreate={() => {}} />
+          <CreateGroupForm onCreate={() => {}} />
         </List>
       </FakeContextProvider>,
     );
