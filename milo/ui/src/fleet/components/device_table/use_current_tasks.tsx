@@ -14,15 +14,15 @@
 
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import _ from 'lodash';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { extractDutId } from '@/fleet/utils/devices';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import {
+  BotInfo,
   BotsRequest,
   NullableBool,
-  BotInfo,
 } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 import { useBotsClient } from '@/swarming/hooks/prpc_clients';
 
@@ -45,16 +45,12 @@ export interface CurrentTasksResult {
 export const useCurrentTasks = (
   devices: readonly Device[],
   options?: {
-    enabled?: boolean;
     chunkSize?: number;
     swarmingHost?: string;
   },
 ): CurrentTasksResult => {
-  const {
-    chunkSize = 25,
-    swarmingHost = DEVICE_TASKS_SWARMING_HOST,
-    enabled = true,
-  } = options ?? {};
+  const { chunkSize = 25, swarmingHost = DEVICE_TASKS_SWARMING_HOST } =
+    options ?? {};
 
   const swarmingClient = useBotsClient(swarmingHost);
   const dutIds = useMemo(() => devices.map(extractDutId), [devices]);
@@ -83,16 +79,10 @@ export const useCurrentTasks = (
         },
         staleTime: 30000,
         refetchInterval: 60000,
-        enabled,
         Client: queryClient,
       };
     }),
   });
-
-  useEffect(() => {
-    // if the query gets disable we should reset the state
-    queryClient.resetQueries();
-  }, [queryClient, enabled]);
 
   // 3. Aggregate the results from all queries into a single map and state.
   const map = new Map<string, string>();
