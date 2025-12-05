@@ -32,7 +32,7 @@ export function TextBox({ lines, emphasized, tooltip }: TextBoxProps) {
         m: 0,
         fontSize: '0.8rem',
         lineHeight: '1.15rem',
-        color: emphasized ? '#cc0000' : 'text.primary',
+        color: emphasized ? 'error.main' : 'text.primary',
       }}
     >
       {lines.join('\n')}

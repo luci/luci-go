@@ -136,7 +136,7 @@ export function AthButton() {
             <MenuItem component={Link} href={urls.forTestUrl} target="_blank">
               <Typography
                 variant="body2"
-                sx={{ fontWeight: 'bold', color: '#1A73E8' }}
+                sx={{ fontWeight: 'bold', color: 'primary.main' }}
               >
                 View test case in ATH
               </Typography>
@@ -149,7 +149,7 @@ export function AthButton() {
               >
                 <Typography
                   variant="body2"
-                  sx={{ fontWeight: 'bold', color: '#1A73E8' }}
+                  sx={{ fontWeight: 'bold', color: 'primary.main' }}
                 >
                   View test for branch in ATH
                 </Typography>
@@ -163,7 +163,7 @@ export function AthButton() {
               >
                 <Typography
                   variant="body2"
-                  sx={{ fontWeight: 'bold', color: '#1A73E8' }}
+                  sx={{ fontWeight: 'bold', color: 'primary.main' }}
                 >
                   View test for target in ATH
                 </Typography>
@@ -177,7 +177,7 @@ export function AthButton() {
               >
                 <Typography
                   variant="body2"
-                  sx={{ fontWeight: 'bold', color: '#1A73E8' }}
+                  sx={{ fontWeight: 'bold', color: 'primary.main' }}
                 >
                   View test for branch and target in ATH
                 </Typography>

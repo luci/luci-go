@@ -27,8 +27,8 @@ export function Divider({
   onExpandStart,
 }: DividerProps) {
   const buttonSx: CSSProperties = {
-    backgroundColor: '#fff',
-    border: 'solid 1px #aaa',
+    backgroundColor: 'background.paper',
+    border: 'solid 1px var(--divider-color)',
     margin: 0,
     padding: '2px 12px',
     minWidth: '20px',

@@ -85,7 +85,9 @@ export function RecommendationsSection({
           p: 2,
           height: '100%',
           boxSizing: 'border-box',
-          backgroundColor: expanded ? '#FFF' : 'var(--blue-50, #E8F0FE)',
+          backgroundColor: expanded
+            ? 'paper.background'
+            : 'var(--blue-50, #E8F0FE)',
         }}
       >
         <Box

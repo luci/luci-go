@@ -194,7 +194,7 @@ export function RerunButton() {
               <MenuItem onClick={copyRerunTest}>
                 <Typography
                   variant="body2"
-                  sx={{ fontWeight: 'bold', color: '#1A73E8' }}
+                  sx={{ fontWeight: 'bold', color: 'primary.main' }}
                 >
                   Rerun test case with atest
                 </Typography>
@@ -203,7 +203,7 @@ export function RerunButton() {
                 <MenuItem onClick={copyRerunModule}>
                   <Typography
                     variant="body2"
-                    sx={{ fontWeight: 'bold', color: '#1A73E8' }}
+                    sx={{ fontWeight: 'bold', color: 'primary.main' }}
                   >
                     Rerun full module with atest
                   </Typography>
@@ -213,7 +213,7 @@ export function RerunButton() {
                 <MenuItem>
                   <Typography
                     variant="body2"
-                    sx={{ fontWeight: 'bold', color: '#1A73E8' }}
+                    sx={{ fontWeight: 'bold', color: 'primary.main' }}
                   >
                     Rerun test case with atest in acloud
                   </Typography>
@@ -240,13 +240,13 @@ export function RerunButton() {
               variant="outlined"
               sx={{
                 textDecoration: 'none',
-                color: '#bdbdbd',
+                color: 'text.disabled',
               }}
             >
               Rerun test case locally
               <HelpOutlineIcon
                 sx={{ m: 0, p: 0 }}
-                style={{ color: '#bdbdbd' }}
+                style={{ color: 'text.disabled' }}
               />
             </Button>
           </Box>

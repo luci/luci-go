@@ -292,7 +292,7 @@ export function OverviewStatusSection({
                       sx={{
                         padding: '2px 8px 2px 8px',
                         borderRadius: '4px',
-                        backgroundColor: '#E8F0FE',
+                        backgroundColor: 'action.selected',
                         width: '85px',
                         mb: 0.5,
                       }}
@@ -302,7 +302,7 @@ export function OverviewStatusSection({
                         target="_blank"
                         rel="noopener noreferrer"
                         variant="caption"
-                        color="#3C4043"
+                        color="text.primary"
                         sx={{ textDecoration: 'none' }}
                       >
                         {bug.linkText || `${bug.system}/${bug.id}`}
