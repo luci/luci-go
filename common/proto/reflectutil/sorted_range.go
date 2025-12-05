@@ -15,6 +15,7 @@
 package reflectutil
 
 import (
+	"iter"
 	"sort"
 
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -32,41 +33,44 @@ import (
 // Note that for the purposes of this function and proto reflection in general,
 // Int32Kind==Int64Kind and Uint32Kind==Uint64Kind; Providing Int32Kind for a
 // map with an int64 key is not an issue (and vice versa).
-func MapRangeSorted(m protoreflect.Map, keyKind protoreflect.Kind, cb func(protoreflect.MapKey, protoreflect.Value) bool) {
+func MapRangeSorted(m protoreflect.Map, keyKind protoreflect.Kind) iter.Seq2[protoreflect.MapKey, protoreflect.Value] {
 	if m.Len() == 0 {
-		return
+		return func(yield func(protoreflect.MapKey, protoreflect.Value) bool) {}
 	}
 
 	switch keyKind {
 	case protoreflect.BoolKind:
-		sortedRangeMapBool(m, cb)
+		return sortedRangeMapBool(m)
 	case protoreflect.Int32Kind, protoreflect.Int64Kind:
-		sortedRangeMapInt(m, cb)
+		return sortedRangeMapInt(m)
 	case protoreflect.Uint32Kind, protoreflect.Uint64Kind:
-		sortedRangeMapUint(m, cb)
+		return sortedRangeMapUint(m)
 	case protoreflect.StringKind:
-		sortedRangeMapString(m, cb)
+		return sortedRangeMapString(m)
 	default:
 		panic("impossible")
 	}
 }
 
-func sortedRangeMapBool(m protoreflect.Map, cb func(protoreflect.MapKey, protoreflect.Value) bool) {
-	falseKey := protoreflect.MapKey(protoreflect.ValueOfBool(false))
-	if falseVal := m.Get(falseKey); falseVal.IsValid() {
-		if !cb(falseKey, falseVal) {
-			return
+var falseKey = protoreflect.MapKey(protoreflect.ValueOfBool(false))
+var trueKey = protoreflect.MapKey(protoreflect.ValueOfBool(true))
+
+func sortedRangeMapBool(m protoreflect.Map) iter.Seq2[protoreflect.MapKey, protoreflect.Value] {
+	return func(yield func(protoreflect.MapKey, protoreflect.Value) bool) {
+		if falseVal := m.Get(falseKey); falseVal.IsValid() {
+			if !yield(falseKey, falseVal) {
+				return
+			}
 		}
-	}
-	trueKey := protoreflect.MapKey(protoreflect.ValueOfBool(true))
-	if trueVal := m.Get(trueKey); trueVal.IsValid() {
-		if !cb(trueKey, trueVal) {
-			return
+		if trueVal := m.Get(trueKey); trueVal.IsValid() {
+			if !yield(trueKey, trueVal) {
+				return
+			}
 		}
 	}
 }
 
-func sortedRangeMapInt(m protoreflect.Map, cb func(protoreflect.MapKey, protoreflect.Value) bool) {
+func sortedRangeMapInt(m protoreflect.Map) iter.Seq2[protoreflect.MapKey, protoreflect.Value] {
 	type itemT struct {
 		sk int64
 		mk protoreflect.MapKey
@@ -84,14 +88,16 @@ func sortedRangeMapInt(m protoreflect.Map, cb func(protoreflect.MapKey, protoref
 		return items[i].sk < items[j].sk
 	})
 
-	for _, item := range items {
-		if !cb(item.mk, item.v) {
-			return
+	return func(yield func(protoreflect.MapKey, protoreflect.Value) bool) {
+		for _, item := range items {
+			if !yield(item.mk, item.v) {
+				return
+			}
 		}
 	}
 }
 
-func sortedRangeMapUint(m protoreflect.Map, cb func(protoreflect.MapKey, protoreflect.Value) bool) {
+func sortedRangeMapUint(m protoreflect.Map) iter.Seq2[protoreflect.MapKey, protoreflect.Value] {
 	type itemT struct {
 		sk uint64
 		mk protoreflect.MapKey
@@ -109,14 +115,16 @@ func sortedRangeMapUint(m protoreflect.Map, cb func(protoreflect.MapKey, protore
 		return items[i].sk < items[j].sk
 	})
 
-	for _, item := range items {
-		if !cb(item.mk, item.v) {
-			return
+	return func(yield func(protoreflect.MapKey, protoreflect.Value) bool) {
+		for _, item := range items {
+			if !yield(item.mk, item.v) {
+				return
+			}
 		}
 	}
 }
 
-func sortedRangeMapString(m protoreflect.Map, cb func(protoreflect.MapKey, protoreflect.Value) bool) {
+func sortedRangeMapString(m protoreflect.Map) iter.Seq2[protoreflect.MapKey, protoreflect.Value] {
 	type itemT struct {
 		sk string
 		mk protoreflect.MapKey
@@ -134,9 +142,11 @@ func sortedRangeMapString(m protoreflect.Map, cb func(protoreflect.MapKey, proto
 		return items[i].sk < items[j].sk
 	})
 
-	for _, item := range items {
-		if !cb(item.mk, item.v) {
-			return
+	return func(yield func(protoreflect.MapKey, protoreflect.Value) bool) {
+		for _, item := range items {
+			if !yield(item.mk, item.v) {
+				return
+			}
 		}
 	}
 }

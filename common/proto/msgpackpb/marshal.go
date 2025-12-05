@@ -254,11 +254,9 @@ func (o *options) marshalMessage(enc *msgpack.Encoder, msg protoreflect.Message)
 			if err := enc.EncodeMapLen(m.Len()); err != nil {
 				return err
 			}
-			rangeFn := m.Range
+			mapIter := m.Range
 			if o.deterministic {
-				rangeFn = func(f func(protoreflect.MapKey, protoreflect.Value) bool) {
-					reflectutil.MapRangeSorted(m, fd.MapKey().Kind(), f)
-				}
+				mapIter = reflectutil.MapRangeSorted(m, fd.MapKey().Kind())
 			}
 			var encodeKey func(protoreflect.MapKey) error
 			if len(o.internMarshalTable) > 0 && fd.MapKey().Kind() == protoreflect.StringKind {
@@ -277,13 +275,14 @@ func (o *options) marshalMessage(enc *msgpack.Encoder, msg protoreflect.Message)
 					return enc.Encode(mk.Interface())
 				}
 			}
-			rangeFn(func(mk protoreflect.MapKey, v protoreflect.Value) bool {
+			for mk, v := range mapIter {
 				if err = encodeKey(mk); err == nil {
 					err = o.marshalValue(enc, fd, v)
 				}
-				err = errors.WrapIf(err, "%s[%s]", name, mk)
-				return err == nil
-			})
+				if err != errors.WrapIf(err, "%s[%s]", name, mk) {
+					break
+				}
+			}
 			if err != nil {
 				return err
 			}

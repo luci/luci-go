@@ -72,10 +72,9 @@ func (l DynamicWalker) fieldsImpl(path protopath.Path, msg protoreflect.Message)
 					panic("impossible")
 				}
 
-				reflectutil.MapRangeSorted(msg.Get(field).Map(), toRecurse.mapKeyKind(), func(mk protoreflect.MapKey, v protoreflect.Value) bool {
+				for mk, v := range reflectutil.MapRangeSorted(msg.Get(field).Map(), toRecurse.mapKeyKind()) {
 					mergeResults(l.fieldsImpl(append(recursePath, protopath.MapIndex(mk)), v.Message()))
-					return true
-				})
+				}
 			}
 		}
 	})
