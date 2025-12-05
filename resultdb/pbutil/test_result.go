@@ -48,6 +48,8 @@ const (
 	maxLenSkipTrace        = 4096
 	maxSizeErrors          = 16 * 1024
 	maxLenPropertiesSchema = 256
+	maxLenTestMetadataName = 16 * 1024
+	maxLenRepoName         = 256
 	// maxClockSkew is the maximum amount of time that clocks could have been out of sync for.
 	maxClockSkew = 10 * time.Minute
 )
@@ -308,6 +310,9 @@ func ValidateTestResultStatusV2(s pb.TestResult_Status) error {
 
 // ValidateTestMetadata returns a non-nil error if tmd is invalid.
 func ValidateTestMetadata(tmd *pb.TestMetadata) error {
+	if len(tmd.Name) > maxLenTestMetadataName {
+		return errors.Fmt("name: exceeds the maximum size of %d bytes", maxLenTestMetadataName)
+	}
 	if tmd.BugComponent != nil {
 		if err := ValidateBugComponent(tmd.BugComponent); err != nil {
 			return errors.Fmt("bug_component: %w", err)
@@ -383,6 +388,8 @@ func ValidateTestLocation(loc *pb.TestLocation) error {
 		return errors.New("repo: required")
 	case strings.HasSuffix(loc.Repo, ".git"):
 		return errors.New("repo: must not end with .git")
+	case len(loc.Repo) > maxLenRepoName:
+		return errors.Fmt("repo: exceeds the maximum size of %d bytes", maxLenRepoName)
 	case loc.FileName == "":
 		return errors.New("file_name: unspecified")
 	case loc.Line < 0:

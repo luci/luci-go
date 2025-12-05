@@ -60,6 +60,9 @@ func ReadAllForTesting(ctx context.Context) (rows []*TestResultRow, err error) {
 			RunDurationNanos,
 			Tags,
 			TestMetadata,
+			TestMetadataName,
+			TestMetadataLocationRepo,
+			TestMetadataLocationFileName,
 			FailureReason,
 			Properties,
 			SkipReason,
@@ -73,6 +76,7 @@ func ReadAllForTesting(ctx context.Context) (rows []*TestResultRow, err error) {
 	err = span.Query(ctx, stmt).Do(func(r *spanner.Row) error {
 		var row TestResultRow
 		var summaryHTML, testMetadata, failureReason, properties, skippedReason, frameworkExtensions spanutil.Compressed
+		var testMetadataName, testMetadataLocationRepo, testMetadataLocationFileName spanner.NullString
 		var skipReason int64
 		var statusV2 int64
 
@@ -95,6 +99,9 @@ func ReadAllForTesting(ctx context.Context) (rows []*TestResultRow, err error) {
 			&row.RunDurationNanos,
 			&row.Tags,
 			&testMetadata,
+			&testMetadataName,
+			&testMetadataLocationRepo,
+			&testMetadataLocationFileName,
 			&failureReason,
 			&properties,
 			&skipReason,
@@ -108,10 +115,23 @@ func ReadAllForTesting(ctx context.Context) (rows []*TestResultRow, err error) {
 		row.SkipReason = pb.SkipReason(skipReason)
 		row.SummaryHTML = string(summaryHTML)
 
-		if len(testMetadata) > 0 {
+		if len(testMetadata) > 0 || testMetadataName.Valid {
 			row.TestMetadata = &pb.TestMetadata{}
-			if err := proto.Unmarshal(testMetadata, row.TestMetadata); err != nil {
-				return errors.Fmt("unmarshal TestMetadata: %w", err)
+			if len(testMetadata) > 0 {
+				if err := proto.Unmarshal(testMetadata, row.TestMetadata); err != nil {
+					return errors.Fmt("unmarshal TestMetadata: %w", err)
+				}
+			}
+			if testMetadataName.Valid {
+				row.TestMetadata.Name = testMetadataName.StringVal
+			}
+			if row.TestMetadata.Location != nil {
+				if testMetadataLocationRepo.Valid {
+					row.TestMetadata.Location.Repo = testMetadataLocationRepo.StringVal
+				}
+				if testMetadataLocationFileName.Valid {
+					row.TestMetadata.Location.FileName = testMetadataLocationFileName.StringVal
+				}
 			}
 		}
 		if len(failureReason) > 0 {

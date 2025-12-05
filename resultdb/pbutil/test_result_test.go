@@ -489,6 +489,12 @@ func TestValidateTestResult(t *testing.T) {
 				msg.TestMetadata = &pb.TestMetadata{Name: "name"}
 				assert.Loosely(t, validateTR(msg), should.BeNil)
 			})
+			t.Run("name", func(t *ftt.Test) {
+				t.Run("too long", func(t *ftt.Test) {
+					msg.TestMetadata.Name = strings.Repeat("a", maxLenTestMetadataName+1)
+					assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: name: exceeds the maximum size"))
+				})
+			})
 			t.Run("Location", func(t *ftt.Test) {
 				msg.TestMetadata.Location = &pb.TestLocation{
 					Repo:     "https://git.example.com",
@@ -533,6 +539,10 @@ func TestValidateTestResult(t *testing.T) {
 					t.Run("unspecified", func(t *ftt.Test) {
 						msg.TestMetadata.Location.Repo = ""
 						assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: location: repo: required"))
+					})
+					t.Run("too long", func(t *ftt.Test) {
+						msg.TestMetadata.Location.Repo = strings.Repeat("a", maxLenRepoName+1)
+						assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: location: repo: exceeds the maximum size"))
 					})
 				})
 			})

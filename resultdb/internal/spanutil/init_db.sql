@@ -618,11 +618,26 @@ CREATE TABLE TestResultsV2 (
   -- status.
   Tags ARRAY<STRING(MAX)>,
 
-  -- Compressed metadata for the test case.
-  -- For example original test name, test location, etc.
+  -- Compressed metadata for the test case, including bug component,
+  -- properties, etc.
   -- See TestResult.test_metadata for details.
   -- See span.Compressed type for details of compression.
+  -- The fields `name` and `location.file_name` are not included in
+  -- this field, but broken out separately via the TestMetadataName and
+  -- TestMetadataLocationFileName fields below.
   TestMetadata BYTES(MAX),
+
+  -- The test_metadata.name field. Broken out separately here so that
+  -- that search can query on this directly.
+  TestMetadataName STRING(MAX),
+
+  -- The test_metadata.location.repo field. Broken out separately here so that
+  -- that search can query on this directly.
+  TestMetadataLocationRepo STRING(MAX),
+
+  -- The test_metadata.location.file_name field. Broken out separately here so
+  -- that search can query on this directly.
+  TestMetadataLocationFileName STRING(MAX),
 
   -- Compressed information on how the test failed.
   -- For example error messages, stack traces, etc.

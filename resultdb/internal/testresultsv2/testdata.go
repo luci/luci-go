@@ -60,6 +60,11 @@ func NewBuilder() *Builder {
 			Tags:             pbutil.StringPairs("tag", "value"),
 			TestMetadata: &pb.TestMetadata{
 				Name: "test-name",
+				Location: &pb.TestLocation{
+					Repo:     "https://chromium.googlesource.com/chromium/src",
+					FileName: "some/folder/to/file_name.java",
+					Line:     1,
+				},
 			},
 			FailureReason: &pb.FailureReason{
 				Kind: pb.FailureReason_CRASH,
@@ -85,6 +90,22 @@ func NewBuilder() *Builder {
 			},
 		},
 	}
+}
+
+// WithMinimalFields clears as many fields as possible on the test result while keeping
+// it a valid test result. This helps test code handles unset fields.
+func (b *Builder) WithMinimalFields() *Builder {
+	b.row = TestResultRow{
+		ID:            b.row.ID,
+		ModuleVariant: b.row.ModuleVariant,
+		CreateTime:    b.row.CreateTime,
+		Realm:         b.row.Realm,
+		StatusV2:      b.row.StatusV2,
+		// Prefer to use empty slice rather than nil (even though semantically identical)
+		// as this what we always report in reads.
+		Tags: []*pb.StringPair{},
+	}
+	return b
 }
 
 // WithRootInvocationShardID sets the RootInvocationShardID.
@@ -258,30 +279,36 @@ func (b *Builder) Build() *TestResultRow {
 
 // InsertForTesting inserts the test result row for testing purposes.
 func InsertForTesting(tr *TestResultRow) *spanner.Mutation {
+	// Clone the proto to avoid changes propagating back to the caller.
+	tmd := decomposeTestMetadataForWrite(tr.TestMetadata)
+
 	row := map[string]any{
-		"RootInvocationShardId": tr.ID.RootInvocationShardID.RowID(),
-		"ModuleName":            tr.ID.ModuleName,
-		"ModuleScheme":          tr.ID.ModuleScheme,
-		"ModuleVariantHash":     tr.ID.ModuleVariantHash,
-		"T1CoarseName":          tr.ID.CoarseName,
-		"T2FineName":            tr.ID.FineName,
-		"T3CaseName":            tr.ID.CaseName,
-		"WorkUnitID":            tr.ID.WorkUnitID,
-		"ResultId":              tr.ID.ResultID,
-		"ModuleVariant":         tr.ModuleVariant,
-		"CreateTime":            tr.CreateTime,
-		"Realm":                 tr.Realm,
-		"StatusV2":              int64(tr.StatusV2),
-		"SummaryHTML":           spanutil.Compressed(tr.SummaryHTML),
-		"StartTime":             tr.StartTime,
-		"RunDurationNanos":      tr.RunDurationNanos,
-		"Tags":                  tr.Tags,
-		"TestMetadata":          spanutil.Compressed(pbutil.MustMarshal(tr.TestMetadata)),
-		"FailureReason":         spanutil.Compressed(pbutil.MustMarshal(RemoveOutputOnlyFailureReasonFields(tr.FailureReason))),
-		"Properties":            spanutil.Compressed(pbutil.MustMarshal(tr.Properties)),
-		"SkipReason":            int64(tr.SkipReason),
-		"SkippedReason":         spanutil.Compressed(pbutil.MustMarshal(tr.SkippedReason)),
-		"FrameworkExtensions":   spanutil.Compressed(pbutil.MustMarshal(tr.FrameworkExtensions)),
+		"RootInvocationShardId":        tr.ID.RootInvocationShardID.RowID(),
+		"ModuleName":                   tr.ID.ModuleName,
+		"ModuleScheme":                 tr.ID.ModuleScheme,
+		"ModuleVariantHash":            tr.ID.ModuleVariantHash,
+		"T1CoarseName":                 tr.ID.CoarseName,
+		"T2FineName":                   tr.ID.FineName,
+		"T3CaseName":                   tr.ID.CaseName,
+		"WorkUnitID":                   tr.ID.WorkUnitID,
+		"ResultId":                     tr.ID.ResultID,
+		"ModuleVariant":                tr.ModuleVariant,
+		"CreateTime":                   tr.CreateTime,
+		"Realm":                        tr.Realm,
+		"StatusV2":                     int64(tr.StatusV2),
+		"SummaryHTML":                  spanutil.Compressed(tr.SummaryHTML),
+		"StartTime":                    tr.StartTime,
+		"RunDurationNanos":             tr.RunDurationNanos,
+		"Tags":                         tr.Tags,
+		"TestMetadata":                 spanutil.Compressed(pbutil.MustMarshal(tmd.Remainder)),
+		"TestMetadataName":             tmd.Name,
+		"TestMetadataLocationFileName": tmd.LocationFileName,
+		"TestMetadataLocationRepo":     tmd.LocationRepo,
+		"FailureReason":                spanutil.Compressed(pbutil.MustMarshal(RemoveOutputOnlyFailureReasonFields(tr.FailureReason))),
+		"Properties":                   spanutil.Compressed(pbutil.MustMarshal(tr.Properties)),
+		"SkipReason":                   int64(tr.SkipReason),
+		"SkippedReason":                spanutil.Compressed(pbutil.MustMarshal(tr.SkippedReason)),
+		"FrameworkExtensions":          spanutil.Compressed(pbutil.MustMarshal(tr.FrameworkExtensions)),
 	}
 	return spanutil.InsertMap("TestResultsV2", row)
 }

@@ -15,7 +15,6 @@
 package testresultsv2
 
 import (
-	"context"
 	"testing"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -26,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestCreate(t *testing.T) {
@@ -42,36 +42,45 @@ func TestCreate(t *testing.T) {
 			ShardIndex:       1,
 		}
 
-		// Create a test result.
-		tr1 := NewBuilder().
-			WithRootInvocationShardID(rootInvShard).
-			WithResultID("result-1").
-			Build()
-		tr2 := NewBuilder().
-			WithRootInvocationShardID(rootInvShard).
-			WithResultID("result-2").
-			Build()
+		testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(ri)...)
 
-		commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-			span.BufferWrite(ctx, rootinvocations.InsertForTesting(ri)...)
-			span.BufferWrite(ctx, Create(tr1))
-			span.BufferWrite(ctx, Create(tr2))
-			return nil
+		trBuilder := NewBuilder().
+			WithRootInvocationShardID(rootInvShard).
+			WithResultID("result-1")
+
+		verifyCreate := func(t *ftt.Test, tr *TestResultRow) {
+			commitTimestamp := testutil.MustApply(ctx, t, Create(tr))
+			// Build again to avoid any side effects of Create on `tr`.
+			expectedRow := trBuilder.Build()
+			expectedRow.CreateTime = commitTimestamp
+
+			// Read it back.
+			rows, err := ReadAllForTesting(span.Single(ctx))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rows, should.Match([]*TestResultRow{expectedRow}))
+		}
+
+		t.Run("Maximimal fields", func(t *ftt.Test) {
+			tr := trBuilder.Build()
+			verifyCreate(t, tr)
 		})
-		assert.Loosely(t, err, should.BeNil)
-
-		// Read it back.
-		rows, err := ReadAllForTesting(span.Single(ctx))
-		assert.Loosely(t, err, should.BeNil)
-
-		// Verify the rows match.
-		expectedRows := []*TestResultRow{
-			tr1,
-			tr2,
-		}
-		for _, row := range expectedRows {
-			row.CreateTime = commitTimestamp
-		}
-		assert.Loosely(t, rows, should.Match(expectedRows))
+		t.Run("Minimal fields", func(t *ftt.Test) {
+			tr := trBuilder.WithMinimalFields().Build()
+			verifyCreate(t, tr)
+		})
+		t.Run("Test metadata", func(t *ftt.Test) {
+			t.Run("Name only", func(t *ftt.Test) {
+				tr := trBuilder.WithTestMetadata(&pb.TestMetadata{Name: "test-name"}).Build()
+				verifyCreate(t, tr)
+			})
+			t.Run("Location only", func(t *ftt.Test) {
+				tr := trBuilder.WithTestMetadata(&pb.TestMetadata{Location: &pb.TestLocation{
+					Repo:     "https://chromium.googlesource.com/chromium/src",
+					FileName: "some/folder/to/file_name.java",
+					Line:     123,
+				}}).Build()
+				verifyCreate(t, tr)
+			})
+		})
 	})
 }

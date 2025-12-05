@@ -148,6 +148,8 @@ type TestMetadata struct {
 	// The original test name.
 	// This is useful for users who are familiar with the underlying test harness
 	// and want to re-run the test outside of the CI system.
+	//
+	// Size is limited to 16 KiB in UTF-8.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Where the test is defined, e.g. the file name.
 	// location.repo MUST be specified.
@@ -267,12 +269,13 @@ type TestLocation struct {
 	// Format for Gitiles URL: https://<host>/<project>
 	// For example "https://chromium.googlesource.com/chromium/src"
 	// Must not end with ".git".
-	// SHOULD be specified.
+	// Size is limited to 256 bytes in UTF-8.
+	// Required.
 	Repo string `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`
 	// Name of the file where the test is defined.
 	// For files in a repository, must start with "//"
 	// Example: "//components/payments/core/payment_request_data_util_unittest.cc"
-	// Max length: 512.
+	// Size is limited to 512 bytes in UTF-8.
 	// MUST not use backslashes.
 	// Required.
 	FileName string `protobuf:"bytes,2,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`

@@ -65,6 +65,9 @@ var testResultColumns = []string{
 	"RunDurationNanos",
 	"Tags",
 	"TestMetadata",
+	"TestMetadataName",
+	"TestMetadataLocationRepo",
+	"TestMetadataLocationFileName",
 	"FailureReason",
 	"Properties",
 	"SkipReason",
@@ -85,6 +88,7 @@ func Create(tr *TestResultRow) *spanner.Mutation {
 	}
 
 	fr := RemoveOutputOnlyFailureReasonFields(tr.FailureReason)
+	tmd := decomposeTestMetadataForWrite(tr.TestMetadata)
 
 	// Rather than use spanutil.InsertMap, use spanner.Insert with
 	// cols and vals. This is somewhat less readable but previous profiling
@@ -108,7 +112,10 @@ func Create(tr *TestResultRow) *spanner.Mutation {
 		tr.StartTime,
 		tr.RunDurationNanos,
 		pbutil.StringPairsToStrings(tr.Tags...),
-		spanutil.Compressed(pbutil.MustMarshal(tr.TestMetadata)).ToSpanner(),
+		spanutil.Compressed(pbutil.MustMarshal(tmd.Remainder)).ToSpanner(),
+		tmd.Name,
+		tmd.LocationRepo,
+		tmd.LocationFileName,
 		spanutil.Compressed(pbutil.MustMarshal(fr)).ToSpanner(),
 		spanutil.Compressed(pbutil.MustMarshal(tr.Properties)).ToSpanner(),
 		int64(tr.SkipReason),
@@ -128,4 +135,44 @@ func RemoveOutputOnlyFailureReasonFields(fr *pb.FailureReason) *pb.FailureReason
 	// Clear the PrimaryErrorMessage field, it is supposed to be output only.
 	result.PrimaryErrorMessage = ""
 	return result
+}
+
+type testMetadataFields struct {
+	// The Remainder proto with Name, Location.Repo and Location.FileName cleared.
+	Remainder *pb.TestMetadata
+	// The Name field of the TestMetadata proto.
+	Name spanner.NullString
+	// The Location.Repo field of the TestMetadata proto.
+	LocationRepo spanner.NullString
+	// The Location.FileName field of the TestMetadata proto.
+	LocationFileName spanner.NullString
+}
+
+// decomposeTestMetadataForWrite decomposes the TestMetadata proto into a set of
+// fields that can be stored in the TestResultsV2 table.
+func decomposeTestMetadataForWrite(tmd *pb.TestMetadata) testMetadataFields {
+	var testMetadataName spanner.NullString
+	var testMetadataLocationRepo spanner.NullString
+	var testMetadataLocationFileName spanner.NullString
+
+	// Clone the proto to avoid changes propagating back to the caller.
+	remainder := proto.Clone(tmd).(*pb.TestMetadata)
+	if remainder.GetName() != "" {
+		testMetadataName = spanner.NullString{Valid: true, StringVal: remainder.Name}
+		// For space efficiency, clear the value in the proto to avoid storing the same value twice.
+		remainder.Name = ""
+	}
+	if remainder.GetLocation() != nil {
+		testMetadataLocationRepo = spanner.NullString{Valid: true, StringVal: remainder.Location.Repo}
+		testMetadataLocationFileName = spanner.NullString{Valid: true, StringVal: remainder.Location.FileName}
+		// For space efficiency, clear the value in the proto to avoid storing the same value twice.
+		remainder.Location.Repo = ""
+		remainder.Location.FileName = ""
+	}
+	return testMetadataFields{
+		Remainder:        remainder,
+		Name:             testMetadataName,
+		LocationRepo:     testMetadataLocationRepo,
+		LocationFileName: testMetadataLocationFileName,
+	}
 }
