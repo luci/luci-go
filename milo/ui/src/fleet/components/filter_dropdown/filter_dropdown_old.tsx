@@ -36,6 +36,7 @@ import { SearchInput } from '../search_input';
 export type OptionComponentProps<T> = {
   searchQuery: string;
   optionComponentProps: T;
+  maxHeight?: number;
 };
 
 export type OptionComponent<T> = React.FC<OptionComponentProps<T>>;
@@ -179,6 +180,7 @@ export function FilterDropdownOld<T>({
             key={openCategoryData.value}
             searchQuery={searchQuery}
             optionComponentProps={openCategoryData.optionsComponentProps}
+            maxHeight={400}
           />
           <Footer
             onCancelClick={closeMenu}

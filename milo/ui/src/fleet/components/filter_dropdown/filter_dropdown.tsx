@@ -47,6 +47,7 @@ export interface OptionComponentHandle {
 export type OptionComponentProps<T> = {
   childrenSearchQuery: string;
   onNavigateUp?: (e: React.KeyboardEvent) => void;
+  maxHeight?: number;
   optionComponentProps: T;
 };
 
@@ -309,6 +310,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
             onNavigateUp={() => {
               onSearchBarFocus();
             }}
+            maxHeight={400}
           />
           <Footer
             onCancelClick={closeMenu}

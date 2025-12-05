@@ -160,6 +160,7 @@ const OptionComponent = forwardRef<
   {
     childrenSearchQuery,
     onNavigateUp,
+    maxHeight,
     optionComponentProps: {
       option,
       selectedOptions,
@@ -197,7 +198,7 @@ const OptionComponent = forwardRef<
       ref={menuListRef}
       variant="selectedMenu"
       sx={{
-        maxHeight: 400,
+        maxHeight: maxHeight,
         width: 300,
       }}
     >

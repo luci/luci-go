@@ -40,6 +40,7 @@ const Container = styled.div`
 export const MultiSelectFilter = ({
   optionComponentProps: { onFiltersChange, onClose, filters, option },
   searchQuery,
+  maxHeight,
 }: OptionComponentProps<ResourceRequestInsightsOptionComponentProps>) => {
   useEffect(() => () => onClose(), [onClose]);
 
@@ -114,7 +115,7 @@ export const MultiSelectFilter = ({
     <MenuList
       variant="selectedMenu"
       sx={{
-        maxHeight: 400,
+        maxHeight: maxHeight,
         width: 300,
       }}
     >

@@ -151,7 +151,7 @@ export function OptionsDropdown({
         <div
           css={{
             maxHeight: maxHeight,
-            overflow: 'hidden',
+            overflow: 'auto',
             maxWidth: 500,
           }}
           tabIndex={-1}
