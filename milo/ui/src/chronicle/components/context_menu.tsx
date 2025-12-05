@@ -24,8 +24,8 @@ export interface ContextMenuState {
 export interface ContextMenuProps {
   contextMenuState: ContextMenuState | undefined;
   onClose: () => void;
-  onCollapseSimilar: (parentHash: number) => void;
-  onExpandGroup: (parentHash: number) => void;
+  onCollapseSimilar: (dependencyHash: number) => void;
+  onExpandGroup: (dependencyHash: number) => void;
 }
 
 export function ContextMenu({
@@ -37,15 +37,15 @@ export function ContextMenu({
   const isOpen = !!contextMenuState;
 
   const handleCollapse = () => {
-    if (contextMenuState?.node.data?.parentHash) {
-      onCollapseSimilar(contextMenuState.node.data.parentHash);
+    if (contextMenuState?.node.data?.dependencyHash) {
+      onCollapseSimilar(contextMenuState.node.data.dependencyHash);
     }
     onClose();
   };
 
   const handleExpand = () => {
-    if (contextMenuState?.node.data?.parentHash) {
-      onExpandGroup(contextMenuState.node.data.parentHash);
+    if (contextMenuState?.node.data?.dependencyHash) {
+      onExpandGroup(contextMenuState.node.data.dependencyHash);
     }
     onClose();
   };

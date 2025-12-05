@@ -31,6 +31,17 @@ import {
 const dagreGraph = new dagre.graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
 
+const GRAPH_CONFIG = {
+  nodeWidth: 240,
+  nodeHeight: 32,
+  // Border width around nodes
+  borderWidth: 1,
+  // Horizontal spacing between nodes
+  rankSep: 250,
+  // Vertical spacing between nodes
+  nodeSep: 25,
+};
+
 // We must explicit set all top/right/bottom/left border properties here instead
 // of just setting "border" because React does not work well when mixing shorthand
 // and non-shorthand CSS properties.
@@ -39,6 +50,8 @@ const COMMON_NODE_PROPERTIES: Partial<Node> & Pick<Node, 'position'> = {
   sourcePosition: Position.Right,
   targetPosition: Position.Left,
   draggable: false,
+  width: GRAPH_CONFIG.nodeWidth,
+  height: GRAPH_CONFIG.nodeHeight,
 };
 
 const DEPENDENCY_EDGE_STYLE: Partial<Edge> = {
@@ -56,17 +69,6 @@ const ASSIGNMENT_EDGE_STYLE: Partial<Edge> = {
   },
   style: { strokeWidth: 1, stroke: '#abd3e7ff', strokeDasharray: '5 3' },
   zIndex: 0,
-};
-
-const GRAPH_CONFIG = {
-  nodeWidth: 240,
-  nodeHeight: 32,
-  // Border width around nodes
-  borderWidth: 1,
-  // Horizontal spacing between nodes
-  rankSep: 250,
-  // Vertical spacing between nodes
-  nodeSep: 25,
 };
 
 // Common base styles for all nodes
@@ -244,10 +246,10 @@ export interface GraphBuilderOptions {
   /** Whether to draw assignment edges for stages assigned to multiple checks. */
   showAssignmentEdges?: boolean;
   /**
-   * Set of parent hashes that should be collapsed into a single node.
-   * Nodes with the same dependencies/parents will have the same hash and will be collapsed together.
+   * Set of dependency hashes that should be collapsed into a single node.
+   * Nodes with the same children/parents will have the same hash and will be collapsed together.
    */
-  collapsedParentHashes?: Set<number>;
+  collapsedDependencyHashes?: Set<number>;
 }
 
 // Helper to generate full border string for a given color
@@ -283,7 +285,7 @@ function truncateLabel(
   return label.substring(0, maxLength) + '...';
 }
 
-function createCheckNode(checkView: CheckView, parentHash?: number): Node {
+function createCheckNode(checkView: CheckView, dependencyHash?: number): Node {
   const check = checkView.check!;
   const resultStatus = getCheckResultStatus(checkView);
   const colors = getCheckColors(resultStatus);
@@ -292,7 +294,7 @@ function createCheckNode(checkView: CheckView, parentHash?: number): Node {
     data: {
       label: truncateLabel(getCheckLabel(checkView)),
       view: checkView,
-      parentHash,
+      dependencyHash,
       resultStatus,
     },
     style: NODE_STYLES.check(colors),
@@ -316,28 +318,57 @@ function createStageNode(stageView: StageView): Node {
 function createCollapsedGroupNode(
   id: string,
   label: string,
-  parentHash: number,
+  dependencyHash: number,
 ): Node {
   return {
     id,
     data: {
       label: truncateLabel(label),
       isCollapsed: true,
-      parentHash,
+      dependencyHash,
     },
     style: NODE_STYLES.collapsedGroup(COLORS.collapsedGroup),
     ...COMMON_NODE_PROPERTIES,
   };
 }
 
-function groupChecksByParent(checks: Record<string, CheckView>): {
+/**
+ * Returns a map of group hash to its corresponding group of collapsible node IDs.
+ * A group is collapsible if it has more than one successful check with the same parents and children.
+ */
+export function getCollapsibleGroups(graphView: TurboCIGraphView): {
   hashToGroup: Map<number, string[]>;
   nodeToHash: Map<string, number>;
 } {
   const hashToGroup = new Map<number, string[]>();
   const nodeToHash = new Map<string, number>();
 
-  Object.entries(checks).forEach(([checkId, checkView]) => {
+  const parentToChildren = new Map<string, string[]>();
+
+  // Populate parentToChildren map
+  Object.values(graphView.checks).forEach((cv) => {
+    const childId = cv.check?.identifier?.id;
+    if (childId) {
+      cv.check?.dependencies?.edges?.forEach((edge) => {
+        const parentId =
+          edge.check?.identifier?.id || edge.stage?.identifier?.id;
+        if (parentId) {
+          if (!parentToChildren.has(parentId)) {
+            parentToChildren.set(parentId, []);
+          }
+          parentToChildren.get(parentId)!.push(childId);
+        }
+      });
+    }
+  });
+
+  // Group checks by their parents and children
+  Object.entries(graphView.checks).forEach(([checkId, checkView]) => {
+    // We only collapse successful checks
+    if (getCheckResultStatus(checkView) !== CheckResultStatus.SUCCESS) {
+      return;
+    }
+
     const deps = checkView.check?.dependencies?.edges || [];
     // Create a unique signature based on sorted parent IDs
     const parentIds = deps
@@ -345,41 +376,28 @@ function groupChecksByParent(checks: Record<string, CheckView>): {
       .filter((id) => !!id)
       .sort();
 
-    if (parentIds.length === 0) return;
+    const childIds = (parentToChildren.get(checkId) || []).sort();
 
-    const hash = hashString(parentIds.join('|'));
+    // Create a unique signature based on sorted parent and child IDs.
+    const signature = `P:${parentIds.join('|')};C:${childIds.join('|')}`;
+    const hash = hashString(signature);
+
     nodeToHash.set(checkId, hash);
 
     if (!hashToGroup.has(hash)) {
       hashToGroup.set(hash, []);
     }
-
-    // We only collapse successful checks
-    if (getCheckResultStatus(checkView) === CheckResultStatus.SUCCESS) {
-      hashToGroup.get(hash)!.push(checkId);
-    }
+    hashToGroup.get(hash)!.push(checkId);
   });
+
+  // Filter out groups with only one or zero items
+  for (const [hash, group] of hashToGroup.entries()) {
+    if (group.length <= 1) {
+      hashToGroup.delete(hash);
+    }
+  }
 
   return { hashToGroup, nodeToHash };
-}
-
-/**
- * Returns all parent hashes for groups of nodes that can be collapsed.
- * A group is collapsible if it has more than one successful check with the same parents.
- */
-export function getCollapsibleParentHashes(
-  graphView: TurboCIGraphView,
-): Set<number> {
-  const { hashToGroup } = groupChecksByParent(graphView.checks);
-
-  const collapsibleHashes = new Set<number>();
-  hashToGroup.forEach((successfulCheckIds, hash) => {
-    if (successfulCheckIds.length > 1) {
-      collapsibleHashes.add(hash);
-    }
-  });
-
-  return collapsibleHashes;
 }
 
 /**
@@ -411,7 +429,7 @@ export class TurboCIGraphBuilder {
     this.nodeToCollapsedIdMap.clear();
     this.allNodeIds.clear();
 
-    this.createBaseNodes(options.collapsedParentHashes || new Set());
+    this.createBaseNodes(options.collapsedDependencyHashes || new Set());
     this.identifyAssignmentGroups(options);
     this.createEdges();
     this.applyDagreLayout();
@@ -419,21 +437,14 @@ export class TurboCIGraphBuilder {
     return { nodes: this.nodes, edges: this.edges };
   }
 
-  private createBaseNodes(collapsedParentHashes: Set<number>) {
-    // 1. Place checks into groups by hashing their parent dependencies.
-    const { hashToGroup, nodeToHash } = groupChecksByParent(
-      this.graphView.checks,
-    );
+  private createBaseNodes(collapsedDependencyHashes: Set<number>) {
+    // 1. Place checks into groups by hashing their parent and child dependencies
+    const { hashToGroup, nodeToHash } = getCollapsibleGroups(this.graphView);
 
     // 2. Process groupings to decide what to collapse
     hashToGroup.forEach((checkIds, hash) => {
-      // We only form a collapsible group if there is more than one item.
-      if (checkIds.length <= 1) {
-        return;
-      }
-
       // If this hash is in the collapsed set, create a single group node
-      if (collapsedParentHashes.has(hash)) {
+      if (collapsedDependencyHashes.has(hash)) {
         const collapsedId = `collapsed-group-${hash}`;
 
         // Map all constituents to this group ID so edges can be redirected
@@ -459,23 +470,20 @@ export class TurboCIGraphBuilder {
         return;
       }
 
-      // Include the parent hash when creating the check to support collapsing
+      // Include the dependency hash when creating the check to support collapsing
       // it (and its sibling nodes). However we only support this if it has > 1
       // siblings in its group, otherwise just use undefined to indicate that
       // it's not collapsible. The check itself, and its siblings must also
       // be successful.
       const hash = nodeToHash.get(checkId);
-      let parentHash = undefined;
+      let dependencyHash = undefined;
       if (hash) {
-        const successfulCheckIds = hashToGroup.get(hash) || [];
-        if (
-          successfulCheckIds.length > 1 &&
-          successfulCheckIds.includes(checkId)
-        ) {
-          parentHash = hash;
+        const successfulCheckIds = hashToGroup.get(hash);
+        if (successfulCheckIds && successfulCheckIds.includes(checkId)) {
+          dependencyHash = hash;
         }
       }
-      this.nodes.push(createCheckNode(checkView, parentHash));
+      this.nodes.push(createCheckNode(checkView, dependencyHash));
       this.allNodeIds.add(checkId);
     });
 

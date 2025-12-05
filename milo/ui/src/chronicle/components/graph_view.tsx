@@ -55,7 +55,7 @@ import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 import { WorkflowType } from '../fake_turboci_graph';
 import {
   TurboCIGraphBuilder,
-  getCollapsibleParentHashes,
+  getCollapsibleGroups,
 } from '../utils/graph_builder';
 
 import { ChronicleContext } from './chronicle_context';
@@ -93,7 +93,7 @@ function Graph() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [showAssignmentEdges, setShowAssignmentEdges] = useState(false);
   const [autoFitSelection, setAutoFitSelection] = useState(true);
-  const [collapsedParentHashes, setCollapsedParentHashes] = useState<
+  const [collapsedDependencyHashes, setCollapsedDependencyHashes] = useState<
     Set<number>
   >(new Set());
   const [contextMenuState, setContextMenuState] = useState<
@@ -105,6 +105,11 @@ function Graph() {
   // interacted by the user.
   const hasInitializedDefaults = useRef(false);
 
+  // Ref for nodes that are intended to be focused. This is used to centralize
+  // the focusing of nodes on a single effect to avoid race conditions between
+  // multiple effects trying to focus different sets of nodes.
+  const pendingFocusNodes = useRef<string[] | undefined>(undefined);
+
   // While we're still using canned fake data, we need to re-initialize defaults
   // when changing workflow type.
   useEffect(() => {
@@ -112,18 +117,18 @@ function Graph() {
     setSelectedNodeId(undefined);
   }, [workflowType, setSelectedNodeId]);
 
-  const defaultCollapsedHashes = useMemo(() => {
-    if (!graph) return new Set<number>();
-    return getCollapsibleParentHashes(graph);
+  const collapsibleHashToGroup = useMemo(() => {
+    if (!graph) return new Map<number, string[]>();
+    return getCollapsibleGroups(graph).hashToGroup;
   }, [graph]);
 
   // Collapse all collapsible nodes on initial graph load
   useEffect(() => {
     if (!hasInitializedDefaults.current) {
-      setCollapsedParentHashes(defaultCollapsedHashes);
+      setCollapsedDependencyHashes(new Set(collapsibleHashToGroup.keys()));
       hasInitializedDefaults.current = true;
     }
-  }, [defaultCollapsedHashes]);
+  }, [collapsibleHashToGroup]);
 
   const { layoutedNodes, layoutedEdges } = useMemo(() => {
     if (!graph) return { layoutedNodes: [], layoutedEdges: [] };
@@ -131,10 +136,10 @@ function Graph() {
     // Convert TurboCI Graph to list of nodes and edges that React Flow understands.
     const { nodes, edges } = new TurboCIGraphBuilder(graph).build({
       showAssignmentEdges,
-      collapsedParentHashes,
+      collapsedDependencyHashes,
     });
     return { layoutedNodes: nodes, layoutedEdges: edges };
-  }, [graph, showAssignmentEdges, collapsedParentHashes]);
+  }, [graph, showAssignmentEdges, collapsedDependencyHashes]);
 
   useDebounce(
     () => {
@@ -150,6 +155,17 @@ function Graph() {
     let nextNodes = layoutedNodes;
     let nextEdges = layoutedEdges;
     let nodesToFit: string[] = [];
+
+    // Check if there is a pending focus request from an expand/collapse action.
+    if (pendingFocusNodes.current && !selectedNodeId) {
+      const targetsExist = pendingFocusNodes.current.every((id) =>
+        layoutedNodes.some((n) => n.id === id),
+      );
+      if (targetsExist) {
+        nodesToFit = pendingFocusNodes.current;
+        pendingFocusNodes.current = undefined;
+      }
+    }
 
     if (selectedNodeId) {
       const relatedNodeIds = new Set<string>([selectedNodeId]);
@@ -214,10 +230,16 @@ function Graph() {
     setEdges(nextEdges);
 
     if (nodesToFit.length > 0) {
-      fitView({
-        nodes: nodesToFit.map((id) => ({ id })),
-        duration: 500,
+      // Use requestAnimationFrame to make sure fitView runs after
+      // state update.
+      window.requestAnimationFrame(() => {
+        fitView({
+          nodes: nodesToFit.map((id) => ({ id })),
+          duration: 500,
+        });
       });
+    } else {
+      window.requestAnimationFrame(() => fitView({ duration: 500 }));
     }
   }, [
     layoutedNodes,
@@ -244,7 +266,7 @@ function Graph() {
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
       event.preventDefault();
-      if (node.data.parentHash) {
+      if (node.data.dependencyHash) {
         setContextMenuState({
           mouseX: event.clientX - 2,
           mouseY: event.clientY - 4,
@@ -270,29 +292,47 @@ function Graph() {
     setContextMenuState(undefined);
   }, []);
 
-  const handleCollapseSimilar = useCallback((parentHash: number) => {
-    setCollapsedParentHashes((prev) => {
-      const next = new Set(prev);
-      next.add(parentHash);
-      return next;
-    });
-  }, []);
+  const handleCollapseSimilar = useCallback(
+    (dependencyHash: number) => {
+      setCollapsedDependencyHashes((prev) => {
+        const next = new Set(prev);
+        next.add(dependencyHash);
+        return next;
+      });
 
-  const handleExpandGroup = useCallback((parentHash: number) => {
-    setCollapsedParentHashes((prev) => {
-      const next = new Set(prev);
-      next.delete(parentHash);
-      return next;
-    });
-  }, []);
+      setSelectedNodeId(undefined);
+      pendingFocusNodes.current = [`collapsed-group-${dependencyHash}`];
+    },
+    [setSelectedNodeId],
+  );
+
+  const handleExpandGroup = useCallback(
+    (dependencyHash: number) => {
+      setCollapsedDependencyHashes((prev) => {
+        const next = new Set(prev);
+        next.delete(dependencyHash);
+        return next;
+      });
+
+      setSelectedNodeId(undefined);
+
+      const nodeIds = collapsibleHashToGroup.get(dependencyHash);
+      if (nodeIds && nodeIds.length > 0) {
+        pendingFocusNodes.current = nodeIds;
+      }
+    },
+    [collapsibleHashToGroup, setSelectedNodeId],
+  );
 
   const handleCollapseAll = useCallback(() => {
-    setCollapsedParentHashes(defaultCollapsedHashes);
-  }, [defaultCollapsedHashes]);
+    setCollapsedDependencyHashes(new Set(collapsibleHashToGroup.keys()));
+    setSelectedNodeId(undefined);
+  }, [collapsibleHashToGroup, setSelectedNodeId]);
 
   const handleExpandAll = useCallback(() => {
-    setCollapsedParentHashes(new Set());
-  }, []);
+    setCollapsedDependencyHashes(new Set());
+    setSelectedNodeId(undefined);
+  }, [setSelectedNodeId]);
 
   const selectedNode = useMemo(() => {
     const n = nodes.find((n) => n.id === selectedNodeId);
@@ -407,33 +447,37 @@ function Graph() {
           onExpandGroup={handleExpandGroup}
         />
       </Panel>
-      {selectedNodeId && selectedNode && (
-        <>
-          <PanelResizeHandle>
-            <Box
-              sx={{
-                width: '8px',
-                height: '100%',
-                cursor: 'col-resize',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                bgcolor: 'action.hover',
-                '&:hover': { bgcolor: 'action.selected' },
-              }}
-            >
-              <Box sx={{ width: '2px', height: '24px', bgcolor: 'divider' }} />
-            </Box>
-          </PanelResizeHandle>
-          <Panel defaultSize={30} minSize={20}>
-            <InspectorPanel
-              nodeId={selectedNodeId}
-              viewData={selectedNode?.data?.view}
-              onClose={onInspectorClose}
-            />
-          </Panel>
-        </>
-      )}
+      {selectedNodeId &&
+        !selectedNodeId.startsWith('collapsed-group') &&
+        selectedNode && (
+          <>
+            <PanelResizeHandle>
+              <Box
+                sx={{
+                  width: '8px',
+                  height: '100%',
+                  cursor: 'col-resize',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: 'action.hover',
+                  '&:hover': { bgcolor: 'action.selected' },
+                }}
+              >
+                <Box
+                  sx={{ width: '2px', height: '24px', bgcolor: 'divider' }}
+                />
+              </Box>
+            </PanelResizeHandle>
+            <Panel defaultSize={30} minSize={20}>
+              <InspectorPanel
+                nodeId={selectedNodeId}
+                viewData={selectedNode?.data?.view}
+                onClose={onInspectorClose}
+              />
+            </Panel>
+          </>
+        )}
       <Snackbar
         open={showNodeNotFound}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
