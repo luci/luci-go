@@ -84,6 +84,11 @@ export const ANDROID_COLUMN_OVERRIDES: Record<
   },
   state: {
     orderByField: 'state',
+    renderCell: (props) => {
+      return renderCellWithLink<AndroidDevice>((_1, _2) => {
+        return 'https://g3doc.corp.google.com/company/teams/chrome/ops/fleet/flops/android/labtechs.md?cl=head#device-terminology';
+      })(props);
+    },
   },
   hostname: {
     orderByField: 'hostname',
