@@ -1,0 +1,36 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package pathutil_test;
+
+option go_package = "go.chromium.org/luci/common/proto/pathutil;pathutil_test";
+
+// Maps and Lists must not have more than 10 entries.
+// Maps must not contain ""
+// Int values must be betreen 0 and 100
+message TestMessage {
+	// messages
+	TestMessage msg = 1;
+	repeated TestMessage list_msg = 2;
+	map<string, TestMessage> map_msg = 3;
+
+	// scalars
+
+	// scalar will be constrained to start with "prefix:".
+	string scalar = 4;
+	repeated int64 list_scalar = 5;
+	map<string, int64> map_scalar = 6;
+}
