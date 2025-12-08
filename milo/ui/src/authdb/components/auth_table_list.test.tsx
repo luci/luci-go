@@ -31,7 +31,7 @@ describe('<AuthTableList />', () => {
   });
 
   test('shows field name', async () => {
-    expect(screen.getByText('Members')).toBeInTheDocument();
+    expect(screen.getByText('Members', { exact: false })).toBeInTheDocument();
   });
 
   test('shows members', async () => {

@@ -15,7 +15,7 @@
 import '@/authdb/components/groups.css';
 
 import AddCircleIcon from '@mui/icons-material/AddCircle';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import Button from '@mui/material/Button';
@@ -25,7 +25,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
-import IconButton from '@mui/material/IconButton';
+import Icon from '@mui/material/Icon';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -34,8 +34,8 @@ import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import {
-  useState,
   forwardRef,
+  useState,
   useImperativeHandle,
   useEffect,
   useCallback,
@@ -51,8 +51,6 @@ import {
 } from '@/authdb/common/helpers';
 import { GroupLink } from '@/authdb/components/group_link';
 import { AuthLookupLink } from '@/authdb/components/lookup_link';
-
-const expansionThreshold = 10;
 
 interface GroupFormListProps {
   // Sets the starting items array. Used on initial GetGroup call from
@@ -106,11 +104,11 @@ export const GroupFormList = forwardRef<FormListElement, GroupFormListProps>(
     // Display items alphabetically.
     initialValues.sort();
     // The initial form items which reflect the items currently in auth service backend.
-    const [savedValues, setSavedValues] = useState<string[]>(initialValues);
+    const [savedValues, setSavedValues] = useState(initialValues);
     // The current edited item list, including removed & added items.
-    const [items, setItems] = useState<Item[]>(asItems(initialValues));
-    const [removeDialogVisible, setRemoveDialogVisible] = useState<boolean>();
-    const [expanded, setExpanded] = useState<boolean>(true);
+    const [items, setItems] = useState(asItems(initialValues));
+    const [removeDialogVisible, setRemoveDialogVisible] = useState(false);
+    const [expanded, setExpanded] = useState(true);
 
     let placeHolderText: string;
     switch (name) {
@@ -293,33 +291,27 @@ export const GroupFormList = forwardRef<FormListElement, GroupFormListProps>(
       <TableContainer data-testid="groups-form-list">
         <Table sx={{ width: '100%' }} data-testid="mouse-enter-table">
           <TableBody>
-            <TableRow>
-              <TableCell
-                colSpan={2}
-                style={{
-                  alignItems: 'center',
-                  minHeight: '40px',
-                }}
-              >
+            <TableRow
+              style={{ cursor: 'pointer' }}
+              onClick={() => setExpanded(!expanded)}
+            >
+              <TableCell>
+                <Icon>
+                  {expanded ? <ExpandMoreIcon /> : <ChevronRightIcon />}
+                </Icon>
                 <Typography variant="h6">
                   {`${name} (${items.length})`}
                 </Typography>
-                {items.length > expansionThreshold && (
-                  <IconButton
-                    onClick={() => {
-                      setExpanded(!expanded);
-                    }}
-                  >
-                    {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                  </IconButton>
-                )}
                 {hasSelected() && (
                   <Button
                     variant="contained"
                     color="error"
                     sx={{ ml: 2 }}
                     startIcon={<RemoveCircleOutlineIcon />}
-                    onClick={() => setRemoveDialogVisible(true)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRemoveDialogVisible(true);
+                    }}
                     data-testid="remove-button"
                   >
                     Remove
@@ -327,44 +319,43 @@ export const GroupFormList = forwardRef<FormListElement, GroupFormListProps>(
                 )}
               </TableCell>
             </TableRow>
-            {(expanded || items.length <= expansionThreshold) && (
+            {expanded && (
               <>
-                {items &&
-                  items.map((item, index) => (
-                    <TableRow
-                      key={index}
-                      style={{ height: '34px' }}
-                      sx={{ borderBottom: '1px solid rgb(224, 224, 224)' }}
-                      className="item-row"
-                      data-testid={`item-row-${item.value}`}
-                      role="listitem"
+                {items.map((item, index) => (
+                  <TableRow
+                    key={index}
+                    style={{ height: '34px' }}
+                    sx={{ borderBottom: '1px solid rgb(224, 224, 224)' }}
+                    className="item-row"
+                    data-testid={`item-row-${item.value}`}
+                    role="listitem"
+                  >
+                    <TableCell
+                      sx={{ p: 0, pt: '1px' }}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        minHeight: '30px',
+                      }}
                     >
-                      <TableCell
-                        sx={{ p: 0, pt: '1px' }}
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          minHeight: '30px',
+                      <Checkbox
+                        sx={{ pt: 0, pb: 0 }}
+                        checked={item.checked}
+                        data-testid={`checkbox-button-${item.value}`}
+                        id={`${index}`}
+                        onChange={() => {
+                          handleChange(index);
                         }}
-                      >
-                        <Checkbox
-                          sx={{ pt: 0, pb: 0 }}
-                          checked={item.checked}
-                          data-testid={`checkbox-button-${item.value}`}
-                          id={`${index}`}
-                          onChange={() => {
-                            handleChange(index);
-                          }}
-                        />
-                        {name === 'Subgroups' ? (
-                          <GroupLink name={item.value} />
-                        ) : (
-                          <AuthLookupLink principal={item.value} />
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                      />
+                      {name === 'Subgroups' ? (
+                        <GroupLink name={item.value} />
+                      ) : (
+                        <AuthLookupLink principal={item.value} />
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
               </>
             )}
             {addingItem && (

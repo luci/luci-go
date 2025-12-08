@@ -14,12 +14,16 @@
 
 import '@/authdb/components/groups.css';
 
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import Icon from '@mui/material/Icon';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import { useState } from 'react';
 
 import { GroupLink } from '@/authdb/components/group_link';
 import { AuthLookupLink } from '@/authdb/components/lookup_link';
@@ -35,31 +39,51 @@ export function AuthTableList({
   name,
   renderAsGroupLinks,
 }: TableListProps) {
+  const [expanded, setExpanded] = useState(true);
+
+  // Display items alphabetically.
+  items.sort();
+
   return (
     <TableContainer data-testid="auth-table-list">
       <Table sx={{ p: 0, pt: '15px', width: '100%' }}>
         <TableBody>
-          <TableRow>
-            <TableCell colSpan={2} sx={{ pb: 0 }} style={{ minHeight: '45px' }}>
-              <Typography variant="h6">{name}</Typography>
+          <TableRow
+            style={{ cursor: 'pointer' }}
+            onClick={() => setExpanded(!expanded)}
+          >
+            <TableCell>
+              <Icon>
+                {expanded ? <ExpandMoreIcon /> : <ChevronRightIcon />}
+              </Icon>
+              <Typography variant="h6">
+                {`${name} (${items.length})`}
+              </Typography>
             </TableCell>
           </TableRow>
-          {items.map((item) => (
-            <TableRow
-              key={item}
-              style={{ height: '34px' }}
-              sx={{ borderBottom: '1px solid rgb(224, 224, 224)' }}
-              data-testid={`item-row-${item}`}
-            >
-              <TableCell sx={{ p: 0, pt: '1px' }} style={{ minHeight: '30px' }}>
-                {renderAsGroupLinks ? (
-                  <GroupLink name={item} />
-                ) : (
-                  <AuthLookupLink principal={item} />
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
+          {expanded && (
+            <>
+              {items.map((item) => (
+                <TableRow
+                  key={item}
+                  style={{ height: '34px' }}
+                  sx={{ borderBottom: '1px solid rgb(224, 224, 224)' }}
+                  data-testid={`item-row-${item}`}
+                >
+                  <TableCell
+                    sx={{ p: 0, pt: '1px' }}
+                    style={{ minHeight: '30px' }}
+                  >
+                    {renderAsGroupLinks ? (
+                      <GroupLink name={item} />
+                    ) : (
+                      <AuthLookupLink principal={item} />
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </>
+          )}
         </TableBody>
       </Table>
     </TableContainer>
