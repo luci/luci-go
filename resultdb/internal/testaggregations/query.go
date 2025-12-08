@@ -40,16 +40,16 @@ import (
 // SingleLevelQuery represents a query for a single level of test aggregations.
 type SingleLevelQuery struct {
 	// The root invocation.
-	rootInvocationID rootinvocations.ID
+	RootInvocationID rootinvocations.ID
 	// The level of test aggregation to query.
-	level pb.AggregationLevel
+	Level pb.AggregationLevel
 	// The prefix of test identifiers to filter by. Optional.
-	testPrefixFilter *pb.TestIdentifierPrefix
+	TestPrefixFilter *pb.TestIdentifierPrefix
 	// The number of test aggregations to return per page.
-	pageSize int
+	PageSize int
 	// Whether to use UI sort order, i.e. by ui_priority first, instead of by test ID.
 	// This incurs a performance penalty, as results are not returned in table order.
-	uiSortOrder bool
+	Order Ordering
 }
 
 // Fetch fetches a page of test aggregations.
@@ -85,7 +85,7 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 	query := span.Query(ctx, st)
 	err = query.Do(func(row *spanner.Row) error {
 		prefix := &pb.TestIdentifierPrefix{
-			Level: q.level,
+			Level: q.Level,
 			Id:    &pb.TestIdentifier{},
 		}
 		var uiPriority int64
@@ -94,7 +94,7 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 		var moduleStatusCounts moduleStatusCounts
 		var columns []interface{}
 
-		switch q.level {
+		switch q.Level {
 		case pb.AggregationLevel_INVOCATION:
 			columns = columnsForModuleCounts(&moduleStatusCounts)
 			columns = append(columns, columnsForVerdictCounts(&verdictCounts)...)
@@ -146,7 +146,7 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 				return err
 			}
 		default:
-			return fmt.Errorf("unknown aggregation level: %v", q.level)
+			return fmt.Errorf("unknown aggregation level: %v", q.Level)
 		}
 
 		agg := &pb.TestAggregation{
@@ -169,10 +169,10 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 				PrecludedBase:        int32(verdictCounts.Precluded + verdictCounts.PrecludedExonerated),
 			},
 		}
-		if q.level == pb.AggregationLevel_MODULE {
+		if q.Level == pb.AggregationLevel_MODULE {
 			agg.ModuleStatus = pb.TestAggregation_ModuleStatus(moduleStatus)
 		}
-		if q.level == pb.AggregationLevel_INVOCATION {
+		if q.Level == pb.AggregationLevel_INVOCATION {
 			agg.ModuleStatusCounts = &pb.TestAggregation_ModuleStatusCounts{
 				Failed:    int32(moduleStatusCounts.Failed),
 				Running:   int32(moduleStatusCounts.Running),
@@ -194,14 +194,14 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 		return "", err
 	}
 	// We had fewer rows than the page size and we didn't stop iteration early.
-	if rowsSeen < q.pageSize && err == nil {
+	if rowsSeen < q.PageSize && err == nil {
 		// There are no more groups to query.
 		return "", nil
 	}
 
 	var nextPageToken string
 	if lastResult != nil {
-		nextPageToken = makePageToken(q.uiSortOrder, lastResult, lastUIPriority)
+		nextPageToken = makePageToken(q.Order, lastResult, lastUIPriority)
 	} else {
 		// If there are no more groups, the page token is empty to signal end of iteration.
 		nextPageToken = ""
@@ -211,13 +211,13 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 
 func (q *SingleLevelQuery) buildQuery(pageToken string) (spanner.Statement, error) {
 	params := map[string]any{
-		"shards":   q.rootInvocationID.AllShardIDs(),
-		"pageSize": q.pageSize,
+		"shards":   q.RootInvocationID.AllShardIDs(),
+		"pageSize": q.PageSize,
 	}
 
 	whereClause := "TRUE"
-	if q.testPrefixFilter != nil {
-		clause, err := q.prefixWhereClause(q.testPrefixFilter, params)
+	if q.TestPrefixFilter != nil {
+		clause, err := q.prefixWhereClause(q.TestPrefixFilter, params)
 		if err != nil {
 			return spanner.Statement{}, errors.Fmt("test_prefix_filter: %w", err)
 		}
@@ -226,7 +226,7 @@ func (q *SingleLevelQuery) buildQuery(pageToken string) (spanner.Statement, erro
 
 	paginationClause := "TRUE"
 	if pageToken != "" {
-		clause, err := whereAfterPageToken(q.level, q.uiSortOrder, pageToken, params)
+		clause, err := whereAfterPageToken(q.Level, q.Order, pageToken, params)
 		if err != nil {
 			return spanner.Statement{}, appstatus.Attachf(err, codes.InvalidArgument, "page_token: invalid value")
 		}
@@ -237,8 +237,8 @@ func (q *SingleLevelQuery) buildQuery(pageToken string) (spanner.Statement, erro
 	}
 
 	templateParams := templateParameters{
-		AggregateColumns: groupingColumns(q.level),
-		OrderByColumns:   orderByColumns(q.uiSortOrder, q.level),
+		AggregateColumns: groupingColumns(q.Level),
+		OrderByColumns:   orderByColumns(q.Order, q.Level),
 		WhereClause:      whereClause,
 		PaginationClause: paginationClause,
 		ResultStatuses: testResultStatusDefinitions{
@@ -274,7 +274,7 @@ func (q *SingleLevelQuery) buildQuery(pageToken string) (spanner.Statement, erro
 		},
 	}
 	templateName := ""
-	switch q.level {
+	switch q.Level {
 	case pb.AggregationLevel_INVOCATION:
 		templateName = "invocation"
 	case pb.AggregationLevel_MODULE:
@@ -282,7 +282,7 @@ func (q *SingleLevelQuery) buildQuery(pageToken string) (spanner.Statement, erro
 	case pb.AggregationLevel_COARSE, pb.AggregationLevel_FINE:
 		templateName = "coarseOrFine"
 	default:
-		return spanner.Statement{}, errors.Fmt("unsupported aggregation level: %v", q.level)
+		return spanner.Statement{}, errors.Fmt("unsupported aggregation level: %v", q.Level)
 	}
 
 	stmt, err := genStatement(templateName, templateParams, params)
@@ -652,7 +652,7 @@ func genStatement(templateName string, templateParams templateParameters, params
 	return spanner.Statement{SQL: sql.String(), Params: spanutil.ToSpannerMap(params)}, nil
 }
 
-func makePageToken(uiSortOrder bool, lastResult *pb.TestAggregation, lastUIPriority int64) string {
+func makePageToken(order Ordering, lastResult *pb.TestAggregation, lastUIPriority int64) string {
 	var components []string
 	lastPrefix := lastResult.Id
 	if lastPrefix.Level == pb.AggregationLevel_INVOCATION {
@@ -660,7 +660,7 @@ func makePageToken(uiSortOrder bool, lastResult *pb.TestAggregation, lastUIPrior
 		// to signal end of iteration.
 		return ""
 	}
-	if uiSortOrder {
+	if order.ByUIPriority {
 		components = append(components, fmt.Sprintf("%d", lastUIPriority))
 	}
 	components = append(components, lastPrefix.Id.ModuleName)
@@ -682,7 +682,7 @@ func makePageToken(uiSortOrder bool, lastResult *pb.TestAggregation, lastUIPrior
 	panic(fmt.Sprintf("logic error: invalid aggregation level %v", lastPrefix.Level))
 }
 
-func whereAfterPageToken(level pb.AggregationLevel, uiSortOrder bool, token string, params map[string]any) (string, error) {
+func whereAfterPageToken(level pb.AggregationLevel, order Ordering, token string, params map[string]any) (string, error) {
 	if token == "" {
 		return "TRUE", nil
 	}
@@ -695,7 +695,7 @@ func whereAfterPageToken(level pb.AggregationLevel, uiSortOrder bool, token stri
 		return "", errors.Fmt("invalid page token: %w", err)
 	}
 	var otherSortColumns int
-	if uiSortOrder {
+	if order.ByUIPriority {
 		otherSortColumns = 1
 	}
 	switch level {
@@ -716,15 +716,15 @@ func whereAfterPageToken(level pb.AggregationLevel, uiSortOrder bool, token stri
 	}
 	var builder strings.Builder
 	var commonClause string
-	if uiSortOrder {
+	if order.ByUIPriority {
 		uiPriority, err := strconv.Atoi(components[0])
 		if err != nil {
 			return "", errors.Fmt("invalid page token, got non-integer UIPriority: %v", components[0])
 		}
 		// Once we have paged to the lowest UIPriority of zero, we can stop looking for lower values
 		// in the WHERE clause.
-		// This allows Spanner to push down the remaining pagination clause over ModuleName, ModuleScheme,
-		// ... to the underlying TestResultsV2 table, which can provide for a much enhanced query plan.
+		// This allows Spanner to push down the remaining pagination clause over ModuleName, ModuleScheme, ...
+		// to the underlying TestResultsV2 table scan, which can provide for a much enhanced query performance.
 		if uiPriority > 0 {
 			builder.WriteString(`UIPriority < @afterUIPriority OR `)
 		}
@@ -771,9 +771,9 @@ func groupingColumns(level pb.AggregationLevel) string {
 	}
 }
 
-func orderByColumns(uiSortOrder bool, level pb.AggregationLevel) string {
+func orderByColumns(order Ordering, level pb.AggregationLevel) string {
 	defaultOrder := groupingColumns(level)
-	if uiSortOrder && level != pb.AggregationLevel_INVOCATION {
+	if order.ByUIPriority && level != pb.AggregationLevel_INVOCATION {
 		return "UIPriority DESC, " + defaultOrder
 	}
 	return defaultOrder
@@ -787,8 +787,8 @@ func (q *SingleLevelQuery) prefixWhereClause(prefix *pb.TestIdentifierPrefix, pa
 		return "TRUE", nil
 	}
 	// A higher level value means a finer aggregation.
-	if prefix.Level > q.level {
-		return "", errors.Fmt("prefix filter: got %v, but must be equal to or coarser than the queried aggregation level %v", prefix.Level, q.level)
+	if prefix.Level > q.Level {
+		return "", errors.Fmt("prefix filter: got %v, but must be equal to or coarser than the queried aggregation level %v", prefix.Level, q.Level)
 	}
 
 	var predicateBuilder strings.Builder

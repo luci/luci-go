@@ -1308,6 +1308,21 @@ message QueryTestAggregationsRequest {
   // The predicate to filter test aggregations.
   TestAggregationPredicate predicate = 2;
 
+  // The order to sort test aggregations by.
+  //
+  // Refer to https://google.aip.dev/132#ordering for syntax.
+  //
+  // For performance reasons, the only allowed sort orders are:
+  // - `id.level, id.id` (default)
+  // - `id.level, ui_priority desc, id.id`
+  //
+  // Where `id.id` sorts by the lexicographical order of the test identifier prefix,
+  // i.e. (module_name, module_scheme, module_variant, coarse_name, fine_name).
+  //
+  // For queries that filter to one level of aggregations, the `id.level` is
+  // implicit and can be omitted.
+  string order_by = 3;
+
   // The maximum number of items to return. The service may return fewer than
   // this value.
   // If unspecified, at most 1000 items will be returned.
