@@ -541,6 +541,81 @@ func (x *WorkUnitPredicate) GetAncestorsOf() string {
 	return ""
 }
 
+// Represents a function TestAggregation -> bool.
+type TestAggregationPredicate struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The level of aggregate to return.
+	// All values except CASE are supported. For CASE-level aggregations,
+	// use QueryTestVerdicts instead.
+	// Required.
+	AggregationLevel AggregationLevel `protobuf:"varint,1,opt,name=aggregation_level,json=aggregationLevel,proto3,enum=luci.resultdb.v1.AggregationLevel" json:"aggregation_level,omitempty"`
+	// The test prefix for which to return aggregates.
+	//
+	// The test prefix must not be more precise than the requested aggregation_level.
+	// For example, if the requested aggregation_level is COARSE, you may not
+	// use a test_id_prefix with an aggregation_level of FINE.
+	//
+	// Example #1: To obtain coarse-level aggregates in a module:
+	// - set the requested aggregation_level to COARSE.
+	// - set the test_prefix_filter.aggregation_level to MODULE, and
+	// - test_prefix_filter.id to the Test ID prefix of that module.
+	//
+	// Example #2: To obtain the invocation-level aggregate:
+	//   - set the requested aggregation_level to INVOCATION.
+	//   - leave the test_prefix_filter unset, or set it to
+	//     test_id_prefix.aggregation_level to INVOCATION.
+	TestPrefixFilter *TestIdentifierPrefix `protobuf:"bytes,2,opt,name=test_prefix_filter,json=testPrefixFilter,proto3" json:"test_prefix_filter,omitempty"`
+}
+
+func (x *TestAggregationPredicate) Reset() {
+	*x = TestAggregationPredicate{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TestAggregationPredicate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestAggregationPredicate) ProtoMessage() {}
+
+func (x *TestAggregationPredicate) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestAggregationPredicate.ProtoReflect.Descriptor instead.
+func (*TestAggregationPredicate) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *TestAggregationPredicate) GetAggregationLevel() AggregationLevel {
+	if x != nil {
+		return x.AggregationLevel
+	}
+	return AggregationLevel_AGGREGATION_LEVEL_UNSPECIFIED
+}
+
+func (x *TestAggregationPredicate) GetTestPrefixFilter() *TestIdentifierPrefix {
+	if x != nil {
+		return x.TestPrefixFilter
+	}
+	return nil
+}
+
 // A set of Invocation's outgoing edge types.
 type ArtifactPredicate_EdgeTypeSet struct {
 	state         protoimpl.MessageState
@@ -556,7 +631,7 @@ type ArtifactPredicate_EdgeTypeSet struct {
 func (x *ArtifactPredicate_EdgeTypeSet) Reset() {
 	*x = ArtifactPredicate_EdgeTypeSet{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes[6]
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -569,7 +644,7 @@ func (x *ArtifactPredicate_EdgeTypeSet) String() string {
 func (*ArtifactPredicate_EdgeTypeSet) ProtoMessage() {}
 
 func (x *ArtifactPredicate_EdgeTypeSet) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -686,12 +761,25 @@ var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_rawDesc = []byte
 	0x0a, 0x11, 0x57, 0x6f, 0x72, 0x6b, 0x55, 0x6e, 0x69, 0x74, 0x50, 0x72, 0x65, 0x64, 0x69, 0x63,
 	0x61, 0x74, 0x65, 0x12, 0x21, 0x0a, 0x0c, 0x61, 0x6e, 0x63, 0x65, 0x73, 0x74, 0x6f, 0x72, 0x73,
 	0x5f, 0x6f, 0x66, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x61, 0x6e, 0x63, 0x65, 0x73,
-	0x74, 0x6f, 0x72, 0x73, 0x4f, 0x66, 0x42, 0x50, 0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x6f,
-	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
-	0x64, 0x62, 0x2e, 0x76, 0x31, 0x50, 0x01, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f,
-	0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65,
-	0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b,
-	0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x6f, 0x72, 0x73, 0x4f, 0x66, 0x22, 0xc1, 0x01, 0x0a, 0x18, 0x54, 0x65, 0x73, 0x74, 0x41,
+	0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x72, 0x65, 0x64, 0x69, 0x63,
+	0x61, 0x74, 0x65, 0x12, 0x4f, 0x0a, 0x11, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x5f, 0x6c, 0x65, 0x76, 0x65, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x22,
+	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76,
+	0x31, 0x2e, 0x41, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x65, 0x76,
+	0x65, 0x6c, 0x52, 0x10, 0x61, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4c,
+	0x65, 0x76, 0x65, 0x6c, 0x12, 0x54, 0x0a, 0x12, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x70, 0x72, 0x65,
+	0x66, 0x69, 0x78, 0x5f, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x26, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62,
+	0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x49, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x66, 0x69,
+	0x65, 0x72, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x52, 0x10, 0x74, 0x65, 0x73, 0x74, 0x50, 0x72,
+	0x65, 0x66, 0x69, 0x78, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x42, 0x50, 0x0a, 0x1b, 0x63, 0x6f,
+	0x6d, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65,
+	0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x50, 0x01, 0x5a, 0x2f, 0x67, 0x6f, 0x2e,
+	0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63,
+	0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -707,7 +795,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_rawDescGZIP() [
 }
 
 var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_goTypes = []interface{}{
 	(TestResultPredicate_Expectancy)(0),   // 0: luci.resultdb.v1.TestResultPredicate.Expectancy
 	(*TestResultPredicate)(nil),           // 1: luci.resultdb.v1.TestResultPredicate
@@ -716,22 +804,27 @@ var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_goTypes = []inte
 	(*ArtifactPredicate)(nil),             // 4: luci.resultdb.v1.ArtifactPredicate
 	(*TestMetadataPredicate)(nil),         // 5: luci.resultdb.v1.TestMetadataPredicate
 	(*WorkUnitPredicate)(nil),             // 6: luci.resultdb.v1.WorkUnitPredicate
-	(*ArtifactPredicate_EdgeTypeSet)(nil), // 7: luci.resultdb.v1.ArtifactPredicate.EdgeTypeSet
-	(*Variant)(nil),                       // 8: luci.resultdb.v1.Variant
+	(*TestAggregationPredicate)(nil),      // 7: luci.resultdb.v1.TestAggregationPredicate
+	(*ArtifactPredicate_EdgeTypeSet)(nil), // 8: luci.resultdb.v1.ArtifactPredicate.EdgeTypeSet
+	(*Variant)(nil),                       // 9: luci.resultdb.v1.Variant
+	(AggregationLevel)(0),                 // 10: luci.resultdb.v1.AggregationLevel
+	(*TestIdentifierPrefix)(nil),          // 11: luci.resultdb.v1.TestIdentifierPrefix
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_depIdxs = []int32{
-	3, // 0: luci.resultdb.v1.TestResultPredicate.variant:type_name -> luci.resultdb.v1.VariantPredicate
-	0, // 1: luci.resultdb.v1.TestResultPredicate.expectancy:type_name -> luci.resultdb.v1.TestResultPredicate.Expectancy
-	3, // 2: luci.resultdb.v1.TestExonerationPredicate.variant:type_name -> luci.resultdb.v1.VariantPredicate
-	8, // 3: luci.resultdb.v1.VariantPredicate.equals:type_name -> luci.resultdb.v1.Variant
-	8, // 4: luci.resultdb.v1.VariantPredicate.contains:type_name -> luci.resultdb.v1.Variant
-	7, // 5: luci.resultdb.v1.ArtifactPredicate.follow_edges:type_name -> luci.resultdb.v1.ArtifactPredicate.EdgeTypeSet
-	1, // 6: luci.resultdb.v1.ArtifactPredicate.test_result_predicate:type_name -> luci.resultdb.v1.TestResultPredicate
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	3,  // 0: luci.resultdb.v1.TestResultPredicate.variant:type_name -> luci.resultdb.v1.VariantPredicate
+	0,  // 1: luci.resultdb.v1.TestResultPredicate.expectancy:type_name -> luci.resultdb.v1.TestResultPredicate.Expectancy
+	3,  // 2: luci.resultdb.v1.TestExonerationPredicate.variant:type_name -> luci.resultdb.v1.VariantPredicate
+	9,  // 3: luci.resultdb.v1.VariantPredicate.equals:type_name -> luci.resultdb.v1.Variant
+	9,  // 4: luci.resultdb.v1.VariantPredicate.contains:type_name -> luci.resultdb.v1.Variant
+	8,  // 5: luci.resultdb.v1.ArtifactPredicate.follow_edges:type_name -> luci.resultdb.v1.ArtifactPredicate.EdgeTypeSet
+	1,  // 6: luci.resultdb.v1.ArtifactPredicate.test_result_predicate:type_name -> luci.resultdb.v1.TestResultPredicate
+	10, // 7: luci.resultdb.v1.TestAggregationPredicate.aggregation_level:type_name -> luci.resultdb.v1.AggregationLevel
+	11, // 8: luci.resultdb.v1.TestAggregationPredicate.test_prefix_filter:type_name -> luci.resultdb.v1.TestIdentifierPrefix
+	9,  // [9:9] is the sub-list for method output_type
+	9,  // [9:9] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_init() }
@@ -814,6 +907,18 @@ func file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TestAggregationPredicate); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ArtifactPredicate_EdgeTypeSet); i {
 			case 0:
 				return &v.state
@@ -836,7 +941,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

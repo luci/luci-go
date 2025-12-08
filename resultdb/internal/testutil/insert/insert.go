@@ -549,6 +549,8 @@ func RootInvocationWithRootWorkUnit(row *rootinvocations.RootInvocationRow) []*s
 		WithDeadline(row.CreateTime.Add(7 * 24 * time.Hour)).
 		WithProducerResource(row.ProducerResource).
 		WithFinalizationState(finalizationState).
+		WithModuleID(nil).
+		WithModuleInheritanceStatus(workunits.ModuleInheritanceStatusNoModuleSet).
 		Build()
 
 	ms := rootinvocations.InsertForTesting(row)

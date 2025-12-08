@@ -1302,33 +1302,11 @@ message IDMatcher {
 // A request message for QueryTestAggregations RPC.
 // Next ID: 6.
 message QueryTestAggregationsRequest {
-  // The root invocation to retrieve aggregates for.
-  // Format: invocations/{INVOCATION_ID}.
-  // N.B. Specifying an invocation that is not an export root will yield an
-  // INVALID_ARGUMENT error.
-  string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
+  // The name of the root invocation to retrieve test variants from, see RootInvocation.name.
+  string parent = 1 [ (google.api.field_behavior) = REQUIRED ];
 
-  // The level of aggregate to return.
-  // All values except CASE are supported. For CASE-level aggregations,
-  // see QueryTestVerdicts instead.
-  AggregationLevel aggregation_level = 2;
-
-  // The test prefix for which to return aggregates.
-  //
-  // The test prefix must not be more precise than the requested aggregation_level.
-  // For example, if the requested aggregation_level is COARSE, you may not
-  // use a test_id_prefix with an aggregation_level of FINE.
-  //
-  // Example #1: To obtain coarse-level aggregates in a module:
-  // - set the requested aggregation_level to COARSE.
-  // - set the test_prefix_filter.aggregation_level to MODULE, and
-  // - test_prefix_filter.id to the Test ID prefix of that module.
-  //
-  // Example #2: To obtain the invocation-level aggregate:
-  // - set the requested aggregation_level to INVOCATION.
-  // - leave the test_prefix_filter unset, or set it to
-  //   test_id_prefix.aggregation_level to INVOCATION.
-  TestIdentifierPrefix test_prefix_filter = 3;
+  // The predicate to filter test aggregations.
+  TestAggregationPredicate predicate = 2;
 
   // The maximum number of items to return. The service may return fewer than
   // this value.

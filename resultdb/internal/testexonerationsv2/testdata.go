@@ -73,6 +73,43 @@ func (b *Builder) WithTestIdentifier(id *pb.TestIdentifier) *Builder {
 	return b
 }
 
+// WithModuleName sets the ModuleName.
+func (b *Builder) WithModuleName(moduleName string) *Builder {
+	b.row.ID.ModuleName = moduleName
+	return b
+}
+
+// WithModuleScheme sets the ModuleScheme.
+func (b *Builder) WithModuleScheme(moduleScheme string) *Builder {
+	b.row.ID.ModuleScheme = moduleScheme
+	return b
+}
+
+// WithModuleVariantHash sets the ModuleVariantHash.
+func (b *Builder) WithModuleVariant(variant *pb.Variant) *Builder {
+	b.row.ModuleVariant = variant
+	b.row.ID.ModuleVariantHash = pbutil.VariantHash(variant)
+	return b
+}
+
+// WithCoarseName sets the CoarseName.
+func (b *Builder) WithCoarseName(coarseName string) *Builder {
+	b.row.ID.CoarseName = coarseName
+	return b
+}
+
+// WithFineName sets the FineName.
+func (b *Builder) WithFineName(fineName string) *Builder {
+	b.row.ID.FineName = fineName
+	return b
+}
+
+// WithCaseName sets the CaseName.
+func (b *Builder) WithCaseName(caseName string) *Builder {
+	b.row.ID.CaseName = caseName
+	return b
+}
+
 // WithWorkUnitID sets the work unit ID.
 func (b *Builder) WithWorkUnitID(id string) *Builder {
 	b.row.ID.WorkUnitID = id

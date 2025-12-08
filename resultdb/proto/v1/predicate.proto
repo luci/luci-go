@@ -153,3 +153,29 @@ message WorkUnitPredicate {
   // from closest parent to furthest parent.
   string ancestors_of = 1;
 }
+
+// Represents a function TestAggregation -> bool.
+message TestAggregationPredicate {
+  // The level of aggregate to return.
+  // All values except CASE are supported. For CASE-level aggregations,
+  // use QueryTestVerdicts instead.
+  // Required.
+  AggregationLevel aggregation_level = 1;
+
+  // The test prefix for which to return aggregates.
+  //
+  // The test prefix must not be more precise than the requested aggregation_level.
+  // For example, if the requested aggregation_level is COARSE, you may not
+  // use a test_id_prefix with an aggregation_level of FINE.
+  //
+  // Example #1: To obtain coarse-level aggregates in a module:
+  // - set the requested aggregation_level to COARSE.
+  // - set the test_prefix_filter.aggregation_level to MODULE, and
+  // - test_prefix_filter.id to the Test ID prefix of that module.
+  //
+  // Example #2: To obtain the invocation-level aggregate:
+  // - set the requested aggregation_level to INVOCATION.
+  // - leave the test_prefix_filter unset, or set it to
+  //   test_id_prefix.aggregation_level to INVOCATION.
+  TestIdentifierPrefix test_prefix_filter = 2;
+}

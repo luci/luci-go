@@ -126,9 +126,10 @@ func (b *Builder) WithModuleScheme(moduleScheme string) *Builder {
 	return b
 }
 
-// WithModuleVariantHash sets the ModuleVariantHash.
-func (b *Builder) WithModuleVariantHash(hash string) *Builder {
-	b.row.ID.ModuleVariantHash = hash
+// WithModuleVariant sets the ModuleVariant.
+func (b *Builder) WithModuleVariant(variant *pb.Variant) *Builder {
+	b.row.ModuleVariant = variant
+	b.row.ID.ModuleVariantHash = pbutil.VariantHash(variant)
 	return b
 }
 
@@ -159,12 +160,6 @@ func (b *Builder) WithWorkUnitID(workUnitID string) *Builder {
 // WithResultID sets the ResultID.
 func (b *Builder) WithResultID(resultID string) *Builder {
 	b.row.ID.ResultID = resultID
-	return b
-}
-
-// WithModuleVariant sets the ModuleVariant.
-func (b *Builder) WithModuleVariant(variant *pb.Variant) *Builder {
-	b.row.ModuleVariant = variant
 	return b
 }
 
