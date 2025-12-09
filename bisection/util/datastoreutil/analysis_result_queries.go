@@ -418,6 +418,27 @@ func GetTestNthSectionForAnalysis(ctx context.Context, tfa *model.TestFailureAna
 	return analyses[0], nil
 }
 
+// GetTestGenAIAnalysisForAnalysis gets test GenAI analysis for a test failure analysis.
+// This may return nil if the GenAI analysis has not been created yet.
+func GetTestGenAIAnalysisForAnalysis(ctx context.Context, tfa *model.TestFailureAnalysis) (ga *model.TestGenAIAnalysis, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/bisection/util/datastoreutil/analysis_result_queries.GetTestGenAIAnalysisForAnalysis")
+	defer func() { tracing.End(ts, err) }()
+
+	q := datastore.NewQuery("TestGenAIAnalysis").Eq("parent_analysis_key", datastore.KeyForObj(ctx, tfa))
+	analyses := []*model.TestGenAIAnalysis{}
+	err = datastore.GetAll(ctx, q, &analyses)
+	if err != nil {
+		return nil, errors.Fmt("get all: %w", err)
+	}
+	if len(analyses) == 0 {
+		return nil, nil
+	}
+	if len(analyses) > 1 {
+		return nil, errors.Fmt("found more than 1 GenAI analysis: %d", len(analyses))
+	}
+	return analyses[0], nil
+}
+
 // GetInProgressReruns returns the reruns which are in progress.
 func GetInProgressReruns(ctx context.Context, tfa *model.TestFailureAnalysis) ([]*model.TestSingleRerun, error) {
 	q := datastore.NewQuery("TestSingleRerun").
