@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GrpcError } from '@chopsui/prpc-client';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import {
   Box,
@@ -30,6 +31,7 @@ import {
   useDeclarePageId,
   useEstablishProjectCtx,
 } from '@/common/components/page_meta';
+import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants/rpc';
 import {
   VERDICT_STATUS_DISPLAY_MAP,
   VERDICT_STATUS_OVERRIDE_DISPLAY_MAP,
@@ -174,7 +176,11 @@ export function TestInvestigatePage() {
     fine,
   ]);
 
-  const { data: testVariantData, isPending: isLoadingTestVariant } = useQuery({
+  const {
+    data: testVariantData,
+    isPending: isLoadingTestVariant,
+    error: testVariantError,
+  } = useQuery({
     ...resultDbClient.BatchGetTestVariants.query(request),
     staleTime: Infinity,
     select: (
@@ -190,6 +196,13 @@ export function TestInvestigatePage() {
     enabled: !!request && !!invocation,
     placeholderData: keepPreviousData,
   });
+
+  if (
+    testVariantError instanceof GrpcError &&
+    POTENTIAL_PERM_ERROR_CODES.includes(testVariantError.code)
+  ) {
+    throw testVariantError;
+  }
 
   const testVariant = testVariantData?.testVariant;
   const sources = testVariantData?.sources;
@@ -275,6 +288,16 @@ export function TestInvestigatePage() {
   }
 
   if (!invocation) {
+    // Check if any error is a permission error and throw it directly to trigger the login prompt.
+    for (const error of invocationErrors) {
+      if (
+        error instanceof GrpcError &&
+        POTENTIAL_PERM_ERROR_CODES.includes(error.code)
+      ) {
+        throw error;
+      }
+    }
+
     const errorMessages = invocationErrors
       .map((e) => (e instanceof Error ? e.message : String(e)))
       .join('; ');

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GrpcError } from '@chopsui/prpc-client';
 import {
   Box,
   Button,
@@ -25,6 +26,7 @@ import { useNavigate, useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useEstablishProjectCtx } from '@/common/components/page_meta';
+import { POTENTIAL_PERM_ERROR_CODES } from '@/common/constants/rpc';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import {
   semanticStatusForTestVariant,
@@ -311,6 +313,16 @@ export function InvocationPage() {
 
   // 1. If invocation failed to load: log all invocation errors and throw a combined error.
   if (!invocation) {
+    // Check if any error is a permission error and throw it directly to trigger the login prompt.
+    for (const error of invocationErrors) {
+      if (
+        error instanceof GrpcError &&
+        POTENTIAL_PERM_ERROR_CODES.includes(error.code)
+      ) {
+        throw error;
+      }
+    }
+
     const errorMessages = invocationErrors
       .map((e) => (e instanceof Error ? e.message : String(e)))
       .join('; ');
