@@ -13,20 +13,22 @@
 // limitations under the License.
 
 import { Box, Button, Chip, Typography } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import copy from 'copy-to-clipboard';
 import { useMemo } from 'react';
 
 import { TestResultSummary } from '@/common/components/test_result_summary';
+import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { getStatusStyle } from '@/common/styles/status_styles';
 import {
   displayCompactDuration,
   parseProtoDuration,
 } from '@/common/tools/time_utils';
-import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import {
   FailureReason_Kind,
   failureReason_KindToJSON,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/failure_reason.pb';
+import { GetArtifactRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { useIsLegacyInvocation } from '@/test_investigation/context';
 
@@ -38,7 +40,6 @@ import { PropertiesSection } from './properties_section';
 
 interface ArtifactSummaryViewProps {
   currentResult: TestResult;
-  textDiffArtifact?: Artifact;
   selectedAttemptIndex: number;
 }
 
@@ -64,9 +65,20 @@ function getFailureReasonKindDisplayText(
 
 export function ArtifactSummaryView({
   currentResult,
-  textDiffArtifact,
   selectedAttemptIndex,
 }: ArtifactSummaryViewProps) {
+  const resultDbClient = useResultDbClient();
+  const { data: textDiffArtifact } = useQuery({
+    ...resultDbClient.GetArtifact.query(
+      GetArtifactRequest.fromPartial({
+        name: `${currentResult.name}/artifacts/text_diff`,
+      }),
+    ),
+    enabled: !!currentResult.name,
+    staleTime: Infinity,
+    retry: false,
+  });
+
   const isLegacyInvocation = useIsLegacyInvocation();
   const failureStatusStyle = useMemo(() => getStatusStyle('failed'), []);
   const neutralStatusStyle = useMemo(() => getStatusStyle('neutral'), []);

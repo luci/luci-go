@@ -13,14 +13,10 @@
 // limitations under the License.
 
 import { Box, Typography } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
-import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { parseWorkUnitTestResultName } from '@/common/tools/test_result_utils';
-import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
-import { GetArtifactRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { useTestVariant } from '@/test_investigation/context';
 
 import { ArtifactSummaryView } from './artifact_content';
@@ -34,13 +30,11 @@ import { ArtifactsProvider, useArtifactsContext } from './context';
 interface ArtifactsExplorerProps {
   rootInvocationId?: string;
   workUnitId?: string;
-  textDiffArtifact?: Artifact;
 }
 
 function ArtifactsExplorer({
   rootInvocationId,
   workUnitId,
-  textDiffArtifact,
 }: ArtifactsExplorerProps) {
   const { currentResult, selectedAttemptIndex, selectedArtifact } =
     useArtifactsContext();
@@ -104,7 +98,6 @@ function ArtifactsExplorer({
               selectedArtifact.isSummary ? (
                 <ArtifactSummaryView
                   currentResult={currentResult}
-                  textDiffArtifact={textDiffArtifact}
                   selectedAttemptIndex={selectedAttemptIndex}
                 />
               ) : selectedArtifact.artifact ? (
@@ -143,7 +136,6 @@ function ArtifactsExplorer({
 }
 
 function ArtifactsSectionContent() {
-  const resultDbClient = useResultDbClient();
   const { currentResult } = useArtifactsContext();
 
   const parsedWorkUnitName = useMemo(
@@ -153,17 +145,6 @@ function ArtifactsSectionContent() {
   );
   const rootInvocationId = parsedWorkUnitName?.rootInvocationId;
   const workUnitId = parsedWorkUnitName?.workUnitId;
-
-  const { data: textDiffArtifact } = useQuery({
-    ...resultDbClient.GetArtifact.query(
-      GetArtifactRequest.fromPartial({
-        name: `${currentResult?.name}/artifacts/text_diff`,
-      }),
-    ),
-    enabled: !!currentResult?.name,
-    staleTime: Infinity,
-    retry: false,
-  });
 
   return (
     <Box
@@ -177,7 +158,6 @@ function ArtifactsSectionContent() {
         <ArtifactsExplorer
           rootInvocationId={rootInvocationId}
           workUnitId={workUnitId}
-          textDiffArtifact={textDiffArtifact}
         />
       ) : (
         <Typography color="text.disabled">
