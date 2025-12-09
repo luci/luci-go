@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/tracing"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
+	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/nthsection"
 	"go.chromium.org/luci/bisection/util/changelogutil"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
@@ -203,7 +203,7 @@ func NthSectionAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis,
 	// Populate remaining range.
 	// remaining regression range should be returned as whole.
 	if nsaMask.MustIncludes("remaining_nth_section_range") == mask.IncludeEntirely && !nsa.HasEnded() {
-		snapshot, err := bisection.CreateSnapshot(ctx, nsa)
+		snapshot, err := nthsection.CreateSnapshot(ctx, nsa)
 		if err != nil {
 			return nil, errors.Fmt("couldn't create snapshot: %w", err)
 		}

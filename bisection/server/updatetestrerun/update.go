@@ -34,6 +34,7 @@ import (
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/testfailureanalysis"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
+	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/nthsection"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/projectbisector"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
@@ -224,7 +225,7 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 		logging.Infof(ctx, "Nthsection analysis has ended. Rerun result will be ignored.")
 		return nil
 	}
-	snapshot, err := bisection.CreateSnapshot(ctx, nsa)
+	snapshot, err := nthsection.CreateSnapshot(ctx, nsa)
 	if err != nil {
 		return errors.Fmt("create snapshot: %w", err)
 	}
@@ -234,7 +235,7 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 
 	// Found culprit -> Update the nthsection analysis
 	if ok {
-		err := bisection.SaveSuspectAndTriggerCulpritVerification(ctx, tfa, nsa, snapshot.BlameList.Commits[cul])
+		err := nthsection.SaveSuspectAndTriggerCulpritVerification(ctx, tfa, nsa, snapshot.BlameList.Commits[cul], bisection.IsEnabled)
 		if err != nil {
 			return errors.Fmt("save suspect and trigger culprit verification: %w", err)
 		}
@@ -266,7 +267,7 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 	if commit == "" || errors.As(err, &badRangeError) {
 		// We don't have more run to wait -> we've failed to find the suspect.
 		if snapshot.NumInProgress == 0 {
-			err = bisection.SaveNthSectionAnalysis(ctx, nsa, func(nsa *model.TestNthSectionAnalysis) {
+			err = nthsection.SaveNthSectionAnalysis(ctx, nsa, func(nsa *model.TestNthSectionAnalysis) {
 				nsa.Status = pb.AnalysisStatus_NOTFOUND
 				nsa.RunStatus = pb.AnalysisRunStatus_ENDED
 				nsa.EndTime = clock.Now(ctx)
