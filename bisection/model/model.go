@@ -415,6 +415,16 @@ type TestFailure struct {
 	StartHour time.Time `gae:"start_hour"`
 	// The time when we get last got the failure result, truncated into hours.
 	EndHour time.Time `gae:"end_hour"`
+	// Failure information for LLM analysis (from LUCI Analysis test_verdicts).
+	// These fields are only populated if the test failure group is selected to be bisected.
+	// Human-readable failure summary in HTML format (max 4KB).
+	SummaryHTML string `gae:"summary_html,noindex"`
+	// Kind of failure: ORDINARY, CRASH, or TIMEOUT.
+	FailureKind string `gae:"failure_kind"`
+	// Primary error message from the test failure (max 1024 bytes).
+	PrimaryErrorMessage string `gae:"primary_error_message,noindex"`
+	// Stack trace from the first error (max 4096 bytes).
+	FirstErrorTrace string `gae:"first_error_trace,noindex"`
 }
 
 // TestFailureAnalysis is the analysis for test failure.

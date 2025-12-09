@@ -265,6 +265,7 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 		}
 		groups = append(groups, row)
 	}
+
 	return groups, nil
 }
 
@@ -530,4 +531,80 @@ func validateTestVerdictKeys(keys []TestVerdictKey) error {
 		}
 	}
 	return nil
+}
+
+// TestFailure contains failure information for a test variant,
+// returned by ReadFailure.
+type TestFailure struct {
+	TestID              bigquery.NullString
+	VariantHash         bigquery.NullString
+	RefHash             bigquery.NullString
+	SummaryHTML         bigquery.NullString // Human-readable failure summary in HTML (max 4KB)
+	FailureKind         bigquery.NullString // ORDINARY, CRASH, TIMEOUT, or empty if not failed
+	PrimaryErrorMessage bigquery.NullString // Main error message (max 1024 bytes)
+	FirstErrorTrace     bigquery.NullString // Stack trace from first error (max 4096 bytes)
+}
+
+// ReadFailure queries LUCI Analysis for failure messages and error details.
+// It supports querying for multiple test variants at a time to save time and resources.
+// Returns a map of TestVerdictKey -> TestFailure with the latest failure information populated.
+func (c *Client) ReadFailure(ctx context.Context, project string, keys []TestVerdictKey) (map[TestVerdictKey]*TestFailure, error) {
+	if len(keys) == 0 {
+		return map[TestVerdictKey]*TestFailure{}, nil
+	}
+	err := validateTestVerdictKeys(keys)
+	if err != nil {
+		return nil, errors.Fmt("validate keys: %w", err)
+	}
+	clauses := make([]string, len(keys))
+	for i, key := range keys {
+		clauses[i] = fmt.Sprintf("(test_id = %q AND variant_hash = %q AND source_ref_hash = %q)", key.TestID, key.VariantHash, key.RefHash)
+	}
+	whereClause := fmt.Sprintf("(%s)", strings.Join(clauses, " OR "))
+
+	// Query the latest test verdicts with failure information.
+	// We look at partition_time in the last 3 days as we expect tests to run at least once every 3 days.
+	query := `
+		SELECT
+			test_id AS TestID,
+			variant_hash AS VariantHash,
+			source_ref_hash AS RefHash,
+			ANY_VALUE(results[0].summary_html HAVING MAX partition_time) AS SummaryHTML,
+			ANY_VALUE(CAST(results[0].failure_reason.kind AS STRING) HAVING MAX partition_time) AS FailureKind,
+			ANY_VALUE(results[0].failure_reason.primary_error_message HAVING MAX partition_time) AS PrimaryErrorMessage,
+			ANY_VALUE(results[0].failure_reason.errors[SAFE_OFFSET(0)].trace HAVING MAX partition_time) AS FirstErrorTrace
+		FROM test_verdicts
+		WHERE project = @project AND ` + whereClause + `
+		AND partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
+		GROUP BY test_id, variant_hash, source_ref_hash
+	`
+	logging.Infof(ctx, "Running ReadFailureMessages query for %d test variants", len(keys))
+	q := c.client.Query(query)
+	q.DefaultDatasetID = internalDatasetID
+	q.DefaultProjectID = c.luciAnalysisProjectFunc(project)
+	q.Parameters = []bigquery.QueryParameter{
+		{Name: "project", Value: project},
+	}
+	it, err := q.Read(ctx)
+	if err != nil {
+		return nil, errors.Fmt("querying failure messages: %w", err)
+	}
+	results := map[TestVerdictKey]*TestFailure{}
+	for {
+		row := &TestFailure{}
+		err := it.Next(row)
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, errors.Fmt("obtain next failure message row: %w", err)
+		}
+		key := TestVerdictKey{
+			TestID:      row.TestID.String(),
+			VariantHash: row.VariantHash.String(),
+			RefHash:     row.RefHash.String(),
+		}
+		results[key] = row
+	}
+	return results, nil
 }

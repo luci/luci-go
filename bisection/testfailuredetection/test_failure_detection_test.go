@@ -155,6 +155,19 @@ func TestFailureDetection(t *testing.T) {
 					EndCommitHash:   "endCommitHash",
 				},
 			},
+			failureByProject: map[string]map[lucianalysis.TestVerdictKey]*lucianalysis.TestFailure{
+				"testProject": {
+					// Failure info for primary test variant (testID, varianthash3)
+					{TestID: "testID", VariantHash: "varianthash3", RefHash: "testRefHash"}: {
+						TestID:              bqString("testID"),
+						VariantHash:         bqString("varianthash3"),
+						SummaryHTML:         bqString("<p>Test failed</p>"),
+						FailureKind:         bqString("ORDINARY"),
+						PrimaryErrorMessage: bqString("assertion failed: expected true"),
+						FirstErrorTrace:     bqString("at test.go:42\nat main.go:10"),
+					},
+				},
+			},
 		}
 		task := &tpb.TestFailureDetectionTask{
 			Project: "testProject",
@@ -176,6 +189,11 @@ func TestFailureDetection(t *testing.T) {
 					primaryFailureKey = datastore.KeyForObj(ctx, testFailureDB[0])
 					assert.Loosely(t, testFailureDB[0].IsPrimary, should.Equal(true))
 					assert.Loosely(t, testFailureDB[0].RedundancyScore, should.Equal(redundancyScore))
+					// Verify failure info is populated for the primary test variant.
+					assert.Loosely(t, testFailureDB[0].SummaryHTML, should.Equal("<p>Test failed</p>"))
+					assert.Loosely(t, testFailureDB[0].FailureKind, should.Equal("ORDINARY"))
+					assert.Loosely(t, testFailureDB[0].PrimaryErrorMessage, should.Equal("assertion failed: expected true"))
+					assert.Loosely(t, testFailureDB[0].FirstErrorTrace, should.Equal("at test.go:42\nat main.go:10"))
 				} else {
 					assert.Loosely(t, testFailureDB[0].IsPrimary, should.Equal(false))
 				}
@@ -333,6 +351,11 @@ func TestFailureDetection(t *testing.T) {
 				EndPositionFailureRate:  1,
 				StartHour:               time.Unix(1689343797, 0).UTC(),
 				EndHour:                 time.Unix(1689343798, 0).UTC(),
+				// Failure message fields - empty because no failure data is set up for this test ID
+				SummaryHTML:         "",
+				FailureKind:         "",
+				PrimaryErrorMessage: "",
+				FirstErrorTrace:     "",
 			}))
 		})
 	})
@@ -343,10 +366,28 @@ const insufficientDataTestID = "insufficientDataTestID"
 type fakeLUCIAnalysisClient struct {
 	testFailuresByProject map[string][]*lucianalysis.BuilderRegressionGroup
 	buildInfoByProject    map[string]lucianalysis.BuildInfo
+	failureByProject      map[string]map[lucianalysis.TestVerdictKey]*lucianalysis.TestFailure
 }
 
 func (f *fakeLUCIAnalysisClient) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, filter *configpb.FailureIngestionFilter) ([]*lucianalysis.BuilderRegressionGroup, error) {
 	return f.testFailuresByProject[task.Project], nil
+}
+
+func (f *fakeLUCIAnalysisClient) ReadFailure(ctx context.Context, project string, keys []lucianalysis.TestVerdictKey) (map[lucianalysis.TestVerdictKey]*lucianalysis.TestFailure, error) {
+	if f.failureByProject == nil {
+		return map[lucianalysis.TestVerdictKey]*lucianalysis.TestFailure{}, nil
+	}
+	projectFailures := f.failureByProject[project]
+	if projectFailures == nil {
+		return map[lucianalysis.TestVerdictKey]*lucianalysis.TestFailure{}, nil
+	}
+	result := map[lucianalysis.TestVerdictKey]*lucianalysis.TestFailure{}
+	for _, key := range keys {
+		if failure, ok := projectFailures[key]; ok {
+			result[key] = failure
+		}
+	}
+	return result, nil
 }
 
 func (f *fakeLUCIAnalysisClient) ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (lucianalysis.BuildInfo, error) {

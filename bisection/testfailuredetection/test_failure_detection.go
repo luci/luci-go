@@ -93,6 +93,7 @@ func Schedule(ctx context.Context, task *tpb.TestFailureDetectionTask) error {
 
 type analysisClient interface {
 	ReadTestFailures(ctx context.Context, task *tpb.TestFailureDetectionTask, filter *configpb.FailureIngestionFilter) ([]*lucianalysis.BuilderRegressionGroup, error)
+	ReadFailure(ctx context.Context, project string, keys []lucianalysis.TestVerdictKey) (map[lucianalysis.TestVerdictKey]*lucianalysis.TestFailure, error)
 	ReadBuildInfo(ctx context.Context, tf *model.TestFailure) (lucianalysis.BuildInfo, error)
 }
 
@@ -150,6 +151,38 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 	bestBundle := First(ctx, bundles)
 	logging.Infof(ctx, "Selected test failure bundle with primary failure ID %s, variantHash %s, refHash %s",
 		bestBundle.Primary().TestID, bestBundle.Primary().VariantHash, bestBundle.Primary().RefHash)
+
+	// Populate failure messages for the selected bundle only (for LLM analysis)
+	allTestFailures := bestBundle.All()
+	keys := make([]lucianalysis.TestVerdictKey, len(allTestFailures))
+	for i, tf := range allTestFailures {
+		keys[i] = lucianalysis.TestVerdictKey{
+			TestID:      tf.TestID,
+			VariantHash: tf.VariantHash,
+			RefHash:     tf.RefHash,
+		}
+	}
+	failureMessages, err := client.ReadFailure(ctx, task.Project, keys)
+	if err != nil {
+		// Log the error but don't fail - failure messages are supplemental
+		logging.Warningf(ctx, "Failed to read failure messages for selected bundle: %v", err)
+	} else {
+		// Populate the fields in each TestFailure
+		for _, tf := range allTestFailures {
+			key := lucianalysis.TestVerdictKey{
+				TestID:      tf.TestID,
+				VariantHash: tf.VariantHash,
+				RefHash:     tf.RefHash,
+			}
+			if failureMsg, ok := failureMessages[key]; ok {
+				tf.SummaryHTML = failureMsg.SummaryHTML.String()
+				tf.FailureKind = failureMsg.FailureKind.String()
+				tf.PrimaryErrorMessage = failureMsg.PrimaryErrorMessage.String()
+				tf.FirstErrorTrace = failureMsg.FirstErrorTrace.String()
+			}
+		}
+	}
+
 	testFailureAnalysis, err := prepareFailureAnalysis(ctx, client, bestBundle)
 	if err != nil {
 		// If there is a failure in preparing, in particular, in reading build info,
@@ -209,6 +242,7 @@ func newTestFailureBundle(project string, group *lucianalysis.BuilderRegressionG
 			RedundancyScore:          0,
 			StartHour:                group.StartHour.Timestamp.UTC(),
 			EndHour:                  group.EndHour.Timestamp.UTC(),
+			// Failure information fields will be populated later after bundle selection
 		}
 	}
 	bundle := &model.TestFailureBundle{}
