@@ -42,6 +42,10 @@ var (
 	ReadOnlyScopes = []string{gs.ScopeReadOnly}
 )
 
+// NoObjectFoundForPattern is returned when no object matches the given pattern
+// in FirstObject.
+var NoObjectFoundForPattern = errors.New("no object matches the given pattern")
+
 // Client abstracts functionality to connect with and use Google Storage from
 // the actual Google Storage client.
 //
@@ -55,6 +59,11 @@ type Client interface {
 
 	// Objects retrieves all object attributes for a given path.
 	Objects(p Path) ([]*gs.ObjectAttrs, error)
+
+	// FirstObject retrieves the first object that matches the given glob pattern
+	// in the bucket.
+	// Errors out with NoObjectFoundForPattern if no match is found.
+	FirstObject(bucket, pattern string) (*gs.ObjectAttrs, error)
 
 	// SignedURL generates a google storage signed url for a given path.
 	SignedURL(p Path, opts *gs.SignedURLOptions) (string, error)
@@ -86,7 +95,47 @@ type Client interface {
 	Rename(src, dst Path) error
 }
 
-// prodGSObject is an implementation of Client interface using the production
+// gcsClient is an interface that matches a subset of `gs.Client`'s methods.
+// It is used to allow mocking of the Google Storage client in tests.
+type gcsClient interface {
+	Bucket(name string) gcsBucketHandle
+	Close() error
+}
+
+// gcsBucketHandle is an interface that matches a subset of `gs.BucketHandle`'s
+// methods.
+type gcsBucketHandle interface {
+	Object(name string) *gs.ObjectHandle
+	Objects(ctx context.Context, q *gs.Query) gcsObjectIterator
+	SignedURL(name string, opts *gs.SignedURLOptions) (string, error)
+}
+
+// gcsObjectIterator is an interface that matches `gs.ObjectIterator`'s `Next`
+// method.
+type gcsObjectIterator interface {
+	Next() (*gs.ObjectAttrs, error)
+}
+
+// realGCSClient is a wrapper around `gs.Client` that implements `gcsClient`.
+type realGCSClient struct {
+	*gs.Client
+}
+
+func (c *realGCSClient) Bucket(name string) gcsBucketHandle {
+	return &realGCSBucketHandle{c.Client.Bucket(name)}
+}
+
+// realGCSBucketHandle is a wrapper around `gs.BucketHandle` that implements
+// `gcsBucketHandle`.
+type realGCSBucketHandle struct {
+	*gs.BucketHandle
+}
+
+func (b *realGCSBucketHandle) Objects(ctx context.Context, q *gs.Query) gcsObjectIterator {
+	return b.BucketHandle.Objects(ctx, q)
+}
+
+// prodClient is an implementation of Client interface using the production
 // Google Storage client.
 type prodClient struct {
 	// ctx is used for deadlines and logging. Also referenced by prodWriter.
@@ -95,7 +144,7 @@ type prodClient struct {
 	rt http.RoundTripper
 	// baseClient is a basic Google Storage client instance. It is used for
 	// operations that don't need custom header injections.
-	baseClient *gs.Client
+	baseClient gcsClient
 }
 
 // NewProdClient creates a new Client instance that uses production Cloud
@@ -111,11 +160,12 @@ func NewProdClient(ctx context.Context, rt http.RoundTripper) (Client, error) {
 		ctx: ctx,
 		rt:  rt,
 	}
-	var err error
-	c.baseClient, err = c.newClient()
+	baseClient, err := c.newClient()
 	if err != nil {
 		return nil, err
 	}
+	c.baseClient = &realGCSClient{Client: baseClient}
+
 	return &c, nil
 }
 
@@ -161,6 +211,30 @@ func (c *prodClient) Objects(p Path) ([]*gs.ObjectAttrs, error) {
 		attrs = append(attrs, attr)
 	}
 	return attrs, nil
+}
+
+// FirstObject retrieves the first object that matches the given glob pattern
+// in the bucket.
+// Errors out with NoObjectFoundForPattern if no match is found.
+func (c *prodClient) FirstObject(bucket, pattern string) (*gs.ObjectAttrs, error) {
+	bkt := c.baseClient.Bucket(bucket)
+	query := &gs.Query{MatchGlob: pattern}
+
+	it := bkt.Objects(c.ctx, query)
+	attr, err := it.Next()
+	if err != nil {
+		if err == iterator.Done {
+			return nil, NoObjectFoundForPattern
+		}
+
+		return nil, fmt.Errorf("failed to find first object in bucket: %q with pattern: %q due to: %v", bucket, pattern, err)
+	}
+
+	if attr != nil {
+		return attr, nil
+	}
+
+	return nil, NoObjectFoundForPattern
 }
 
 func (c *prodClient) SignedURL(p Path, opts *gs.SignedURLOptions) (string, error) {
