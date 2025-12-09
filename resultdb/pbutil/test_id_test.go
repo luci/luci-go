@@ -594,7 +594,7 @@ func TestValidateStructuredTestIdentifierForStorage(t *testing.T) {
 					},
 				}
 				id.ModuleVariantHash = "blah"
-				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.ErrLike("module_variant_hash: expected b1618cc2bf370a7c (to match module_variant) or for value to be unset"))
+				assert.Loosely(t, ValidateStructuredTestIdentifierForStorage(id), should.ErrLike(`module_variant_hash: expected "b1618cc2bf370a7c" (to match module_variant) or for value to be unset`))
 			})
 		})
 	})
@@ -685,7 +685,7 @@ func TestValidateStructuredTestIdentifierForQuery(t *testing.T) {
 			})
 			t.Run("Set and mismatches", func(t *ftt.Test) {
 				id.ModuleVariantHash = "0a0a0a0a0a0a0a0a"
-				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.ErrLike("module_variant_hash: expected b1618cc2bf370a7c (to match module_variant) or for value to be unset"))
+				assert.Loosely(t, ValidateStructuredTestIdentifierForQuery(id), should.ErrLike(`module_variant_hash: expected "b1618cc2bf370a7c" (to match module_variant) or for value to be unset`))
 			})
 		})
 	})
@@ -802,6 +802,195 @@ func TestParseTestCaseName(t *testing.T) {
 			t.Run("Unfinished escape sequence", func(t *ftt.Test) {
 				_, err := parseTestCaseName(`a\`)
 				assert.Loosely(t, err, should.ErrLike("unfinished escape sequence at byte 2, got end of string; expected one of \\ or :"))
+			})
+		})
+	})
+}
+
+func TestValidateTestIdentifierPrefixForQuery(t *testing.T) {
+	t.Parallel()
+	ftt.Run("ValidateTestIdentifierPrefixForQuery", t, func(t *ftt.Test) {
+		t.Run("Nil", func(t *ftt.Test) {
+			assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(nil), should.ErrLike("unspecified"))
+		})
+
+		// As this method shares significant implementation with
+		// TestValidateStructuredTestIdentifierForQuery and ValidateBaseTestIdentifier,
+		// which have their own test cases, it focuses mostly on the logic paths that are unique
+		// to partial test identifier validation.
+		t.Run("Invocation Level", func(t *ftt.Test) {
+			prefix := &pb.TestIdentifierPrefix{
+				Level: pb.AggregationLevel_INVOCATION,
+				Id:    &pb.TestIdentifier{},
+			}
+			t.Run("Valid", func(t *ftt.Test) {
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.BeNil)
+			})
+			t.Run("Invalid - Module Name set", func(t *ftt.Test) {
+				prefix.Id.ModuleName = "module"
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("module_name: must be empty for INVOCATION level prefix"))
+			})
+			t.Run("Invalid - Module Scheme set", func(t *ftt.Test) {
+				prefix.Id.ModuleScheme = "scheme"
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("module_scheme: must be empty for INVOCATION level prefix"))
+			})
+			t.Run("Invalid - Module Variant set", func(t *ftt.Test) {
+				prefix.Id.ModuleVariant = &pb.Variant{Def: map[string]string{"k": "v"}}
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("module_variant: must be empty for INVOCATION level prefix"))
+			})
+			t.Run("Invalid - Module Variant Hash set", func(t *ftt.Test) {
+				prefix.Id.ModuleVariantHash = "hash"
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("module_variant_hash: must be empty for INVOCATION level prefix"))
+			})
+			t.Run("Invalid - Coarse Name set", func(t *ftt.Test) {
+				prefix.Id.CoarseName = "coarse"
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("coarse_name: must be empty for INVOCATION level prefix"))
+			})
+			t.Run("Invalid - Fine Name set", func(t *ftt.Test) {
+				prefix.Id.FineName = "fine"
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("fine_name: must be empty for INVOCATION level prefix"))
+			})
+			t.Run("Invalid - Case Name set", func(t *ftt.Test) {
+				prefix.Id.CaseName = "case"
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("case_name: must be empty for INVOCATION level prefix"))
+			})
+		})
+
+		t.Run("Module Level", func(t *ftt.Test) {
+			prefix := &pb.TestIdentifierPrefix{
+				Level: pb.AggregationLevel_MODULE,
+				Id: &pb.TestIdentifier{
+					ModuleName:   "module",
+					ModuleScheme: "scheme",
+					ModuleVariant: &pb.Variant{
+						Def: map[string]string{"k": "v"},
+					},
+				},
+			}
+			t.Run("Valid", func(t *ftt.Test) {
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.BeNil)
+			})
+			t.Run("Valid - Variant Hash only", func(t *ftt.Test) {
+				prefix.Id.ModuleVariant = nil
+				prefix.Id.ModuleVariantHash = "deadbeefdeadbeef"
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.BeNil)
+			})
+			t.Run("Invalid - Non-printable module name", func(t *ftt.Test) {
+				prefix.Id.ModuleName = "\xff"
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("module_name: not a valid utf8 string"))
+			})
+			t.Run("Invalid - Missing Module Name", func(t *ftt.Test) {
+				prefix.Id.ModuleName = ""
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("module_name: unspecified"))
+			})
+			t.Run("Invalid - Missing Module Scheme", func(t *ftt.Test) {
+				prefix.Id.ModuleScheme = ""
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("module_scheme: unspecified"))
+			})
+			t.Run("Invalid - Missing Variant and Hash", func(t *ftt.Test) {
+				prefix.Id.ModuleVariant = nil
+				prefix.Id.ModuleVariantHash = ""
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("at least one of module_variant and module_variant_hash must be set"))
+			})
+			t.Run("Invalid - Coarse Name set", func(t *ftt.Test) {
+				prefix.Id.CoarseName = "coarse"
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("coarse_name: must be empty for MODULE level prefix"))
+			})
+			t.Run("Invalid - Fine Name set", func(t *ftt.Test) {
+				prefix.Id.FineName = "fine"
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("fine_name: must be empty for MODULE level prefix"))
+			})
+			t.Run("Invalid - Case Name set", func(t *ftt.Test) {
+				prefix.Id.CaseName = "case"
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("case_name: must be empty for MODULE level prefix"))
+			})
+		})
+
+		t.Run("Coarse Level", func(t *ftt.Test) {
+			prefix := &pb.TestIdentifierPrefix{
+				Level: pb.AggregationLevel_COARSE,
+				Id: &pb.TestIdentifier{
+					ModuleName:   "module",
+					ModuleScheme: "scheme",
+					ModuleVariant: &pb.Variant{
+						Def: map[string]string{"k": "v"},
+					},
+					CoarseName: "coarse",
+				},
+			}
+			t.Run("Valid", func(t *ftt.Test) {
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.BeNil)
+			})
+			t.Run("Valid - Empty coarse name", func(t *ftt.Test) {
+				prefix.Id.CoarseName = ""
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.BeNil)
+			})
+			t.Run("Invalid - Non-printable Coarse Name", func(t *ftt.Test) {
+				prefix.Id.CoarseName = "\x00"
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("coarse_name: non-printable rune"))
+			})
+			t.Run("Invalid - Fine Name set", func(t *ftt.Test) {
+				prefix.Id.FineName = "fine"
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("fine_name: must be empty for COARSE level prefix"))
+			})
+			t.Run("Invalid - Case Name set", func(t *ftt.Test) {
+				prefix.Id.CaseName = "case"
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("case_name: must be empty for COARSE level prefix"))
+			})
+		})
+
+		t.Run("Fine Level", func(t *ftt.Test) {
+			prefix := &pb.TestIdentifierPrefix{
+				Level: pb.AggregationLevel_FINE,
+				Id: &pb.TestIdentifier{
+					ModuleName:   "module",
+					ModuleScheme: "scheme",
+					ModuleVariant: &pb.Variant{
+						Def: map[string]string{"k": "v"},
+					},
+					CoarseName: "coarse",
+					FineName:   "fine",
+				},
+			}
+			t.Run("Valid", func(t *ftt.Test) {
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.BeNil)
+			})
+			t.Run("Valid - Empty fine name", func(t *ftt.Test) {
+				// Must also be empty as empty fine names are never allowed within non-empty coarse names.
+				prefix.Id.CoarseName = ""
+				prefix.Id.FineName = ""
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.BeNil)
+			})
+			t.Run("Invalid - Non-printable fine Name", func(t *ftt.Test) {
+				prefix.Id.FineName = "\x00"
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("fine_name: non-printable rune"))
+			})
+			t.Run("Invalid - Case Name set", func(t *ftt.Test) {
+				prefix.Id.CaseName = "case"
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("case_name: must be empty for FINE level prefix"))
+			})
+		})
+
+		t.Run("Case Level", func(t *ftt.Test) {
+			prefix := &pb.TestIdentifierPrefix{
+				Level: pb.AggregationLevel_CASE,
+				Id: &pb.TestIdentifier{
+					ModuleName:   "module",
+					ModuleScheme: "scheme",
+					ModuleVariant: &pb.Variant{
+						Def: map[string]string{"k": "v"},
+					},
+					CoarseName: "coarse",
+					FineName:   "fine",
+					CaseName:   "case",
+				},
+			}
+			t.Run("Valid", func(t *ftt.Test) {
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.BeNil)
+			})
+			t.Run("Invalid - Missing Case Name", func(t *ftt.Test) {
+				prefix.Id.CaseName = ""
+				assert.Loosely(t, ValidateTestIdentifierPrefixForQuery(prefix), should.ErrLike("case_name: unspecified"))
 			})
 		})
 	})

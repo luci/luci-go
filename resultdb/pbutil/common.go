@@ -160,6 +160,18 @@ func ValidateRequestID(requestID string) error {
 	return nil
 }
 
+// ValidateAggregationLevel validates an AggregationLevel is one
+// of the enum values and is not unspecified.
+func ValidateAggregationLevel(level pb.AggregationLevel) error {
+	if level == pb.AggregationLevel_AGGREGATION_LEVEL_UNSPECIFIED {
+		return validate.Unspecified()
+	}
+	if _, ok := pb.AggregationLevel_name[int32(level)]; !ok {
+		return errors.Fmt("unknown aggregation level %v", level)
+	}
+	return nil
+}
+
 // ValidateBatchRequestCount validates the number of requests in a batch
 // request.
 func ValidateBatchRequestCount(count int) error {

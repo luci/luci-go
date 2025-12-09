@@ -611,8 +611,13 @@ func (x *TestIdentifier) GetCaseName() string {
 // coarse_name: ""
 // (coarse name prefix)
 //
-// As the former represents a module-level aggregate and the latter a coarse-name
-// aggregate for coarse name "".
+// As the former represents a module-level portion of the test ID space and the latter
+// a coarse-name portion of the test ID space.
+//
+// In case of aggregates, while we generally avoid displaying aggregates for empty coarse
+// and fine names on the UI (proceeding instead to the next non-empty level), they exist
+// in the data model in the interest of uniformity and simplicity. This motivates needing
+// to semantically distinguish between the two cases.
 type TestIdentifierPrefix struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -622,14 +627,18 @@ type TestIdentifierPrefix struct {
 	Level AggregationLevel `protobuf:"varint,1,opt,name=level,proto3,enum=luci.resultdb.v1.AggregationLevel" json:"level,omitempty"`
 	// The test identifier. This may have only some fields set, based on the
 	// selected aggregation level.
-	// If an AggregationLevel of Invocation is set, identifier must be unset or all its fields must be empty.
-	// If an AggregationLevel of Module is set, all module fields must be set.
-	// If an AggregationLevel of Coarse is set, all module fields and the coarse_name field must be set.
-	// If an AggregationLevel of Fine is set, all module fields, and the coarse_name and fine_name fields must be set.
-	// If an AggregationLevel of Case is set, all fields must be set.
+	// If `level` is Invocation, all fields must be unset.
+	// If `level` is Module, only module fields should be set.
+	// If `level` is Coarse, only module fields and the coarse_name fields should be set.
+	// If `level` is Fine, only module fields, and the coarse_name and fine_name fields should be set.
+	// If `level` is Case, all fields should be set.
 	//
 	// In case of coarse_name and fine_name, as empty ("") is a valid value, the fields
 	// are taken to be set according to the set AggregationLevel.
+	//
+	// Where TestIdentifierPrefix is used to specify a filter for a query and the
+	// `level` is Module or finer, either module_variant or module_variant_hash may
+	// be set (it is not required to set both).
 	Id *TestIdentifier `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 }
 

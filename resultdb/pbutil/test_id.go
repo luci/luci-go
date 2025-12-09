@@ -442,7 +442,7 @@ func ValidateStructuredTestIdentifierForStorage(id *pb.TestIdentifier) error {
 		// if set, to be valid.
 		expectedVariantHash := VariantHash(id.ModuleVariant)
 		if id.ModuleVariantHash != expectedVariantHash {
-			return errors.Fmt("module_variant_hash: expected %s (to match module_variant) or for value to be unset", expectedVariantHash)
+			return errors.Fmt("module_variant_hash: expected %q (to match module_variant) or for value to be unset", expectedVariantHash)
 		}
 	}
 	return nil
@@ -454,34 +454,68 @@ func ValidateStructuredTestIdentifierForStorage(id *pb.TestIdentifier) error {
 // Unlike ValidateStructuredTestIdentifierForStorage, this method allows either
 // the ModuleVariant or ModuleVariantHash to be specified.
 func ValidateStructuredTestIdentifierForQuery(id *pb.TestIdentifier) error {
+	return validatePartialStructuredTestIdentifierForQuery(id, pb.AggregationLevel_CASE)
+}
+
+// ValidateTestIdentifierPrefixForQuery validates a test identifier prefix
+// is suitable as an input to a query RPC.
+func ValidateTestIdentifierPrefixForQuery(prefix *pb.TestIdentifierPrefix) error {
+	if prefix == nil {
+		return validate.Unspecified()
+	}
+	if err := ValidateAggregationLevel(prefix.Level); err != nil {
+		return errors.Fmt("level: %w", err)
+	}
+	if err := validatePartialStructuredTestIdentifierForQuery(prefix.Id, prefix.Level); err != nil {
+		return errors.Fmt("id: %w", err)
+	}
+	return nil
+}
+
+// validatePartialStructuredTestIdentifierForQuery validates a (possibly) partial
+// structured test identifier is suitable as an input to a query RPC.
+//
+// If level is `CASE`, the test identifier must be a full test identifier.
+func validatePartialStructuredTestIdentifierForQuery(id *pb.TestIdentifier, level pb.AggregationLevel) error {
 	if id == nil {
 		return validate.Unspecified()
 	}
-	if err := ValidateBaseTestIdentifier(ExtractBaseTestIdentifier(id)); err != nil {
+	if err := validatePartialBaseTestIdentifier(ExtractBaseTestIdentifier(id), level); err != nil {
 		return err
 	}
 
-	// Module variant.
-	if id.ModuleVariant == nil && id.ModuleVariantHash == "" {
-		return errors.New("at least one of module_variant and module_variant_hash must be set")
-	}
-	if id.ModuleVariant != nil {
-		if err := ValidateVariant(id.ModuleVariant); err != nil {
-			return errors.Fmt("module_variant: %w", err)
-		}
-	}
-	if id.ModuleVariantHash != "" {
-		if err := ValidateVariantHash(id.ModuleVariantHash); err != nil {
-			return errors.Fmt("module_variant_hash: %w", err)
+	if level != pb.AggregationLevel_INVOCATION {
+		// In query contexts, as opposed to storage contexts, is acceptable to
+		// specify module_variant_hash as an alternative to the full module_variant.
+
+		if id.ModuleVariant == nil && id.ModuleVariantHash == "" {
+			return errors.New("at least one of module_variant and module_variant_hash must be set")
 		}
 		if id.ModuleVariant != nil {
-			// If clients set both the hash and the variant, they should be consistent.
-			// Clients may commonly set both if they are passing back a structured test ID
-			// retrieved via another query.
-			expectedVariantHash := VariantHash(id.ModuleVariant)
-			if id.ModuleVariantHash != expectedVariantHash {
-				return errors.Fmt("module_variant_hash: expected %s (to match module_variant) or for value to be unset", expectedVariantHash)
+			if err := ValidateVariant(id.ModuleVariant); err != nil {
+				return errors.Fmt("module_variant: %w", err)
 			}
+		}
+		if id.ModuleVariantHash != "" {
+			if err := ValidateVariantHash(id.ModuleVariantHash); err != nil {
+				return errors.Fmt("module_variant_hash: %w", err)
+			}
+			if id.ModuleVariant != nil {
+				// If clients set both the hash and the variant, they should be consistent.
+				// Clients may commonly set both if they are passing back a structured test ID
+				// retrieved via another query.
+				expectedVariantHash := VariantHash(id.ModuleVariant)
+				if id.ModuleVariantHash != expectedVariantHash {
+					return errors.Fmt("module_variant_hash: expected %q (to match module_variant) or for value to be unset", expectedVariantHash)
+				}
+			}
+		}
+	} else {
+		if id.ModuleVariant != nil {
+			return errors.Fmt("module_variant: must be empty for %s level prefix", level)
+		}
+		if id.ModuleVariantHash != "" {
+			return errors.Fmt("module_variant_hash: must be empty for %s level prefix", level)
 		}
 	}
 	return nil
@@ -491,75 +525,123 @@ func ValidateStructuredTestIdentifierForQuery(id *pb.TestIdentifier) error {
 //
 // Errors are annotated using field names in snake_case.
 func ValidateBaseTestIdentifier(id BaseTestIdentifier) error {
-	// Module name
-	if err := ValidateModuleName(id.ModuleName); err != nil {
-		return errors.Fmt("module_name: %w", err)
-	}
+	return validatePartialBaseTestIdentifier(id, pb.AggregationLevel_CASE)
+}
 
-	// Module scheme
+// validatePartialBaseTestIdentifier validates a (possibly) partial base test identifier.
+//
+// Errors are annotated using field names in snake_case.
+func validatePartialBaseTestIdentifier(id BaseTestIdentifier, level pb.AggregationLevel) error {
+	// Set to true if the the module name is "legacy". Only use this variable
+	// if the test identifier is at least a module-level prefix.
 	isLegacyModule := id.ModuleName == LegacyModuleName
-	if err := ValidateModuleScheme(id.ModuleScheme, isLegacyModule); err != nil {
-		return errors.Fmt("module_scheme: %w", err)
-	}
 
-	// Coarse name and fine name
-	if err := ValidateUTF8PrintableStrict(id.CoarseName, 300); err != nil {
-		return errors.Fmt("coarse_name: %w", err)
-	}
-	if err := validateCoarseOrFineNameLeadingCharacter(id.CoarseName); err != nil {
-		return errors.Fmt("coarse_name: %w", err)
-	}
-	if err := ValidateUTF8PrintableStrict(id.FineName, 300); err != nil {
-		return errors.Fmt("fine_name: %w", err)
-	}
-	if err := validateCoarseOrFineNameLeadingCharacter(id.FineName); err != nil {
-		return errors.Fmt("fine_name: %w", err)
-	}
-	// If the scheme does not allow a fine name, it also does not allow a coarse
-	// name (fine name is always used before coarse name).
-	if id.FineName == "" && id.CoarseName != "" {
-		return errors.New("fine_name: unspecified when coarse_name is specified")
-	}
-
-	// Case name
-	if id.CaseName == "" {
-		return errors.New("case_name: unspecified")
-	}
-
-	// Additional validation for legacy test identifiers.
-	if isLegacyModule {
-		// Legacy test identifier represented in structured form.
-		if id.CoarseName != "" {
-			return errors.Fmt("coarse_name: must be empty for tests in the %q module", LegacyModuleName)
+	// Validate module for module, coarse, fine or case-level-prefix.
+	if level >= pb.AggregationLevel_MODULE {
+		// Module name
+		if err := ValidateModuleName(id.ModuleName); err != nil {
+			return errors.Fmt("module_name: %w", err)
 		}
-		if id.FineName != "" {
-			return errors.Fmt("fine_name: must be empty for tests in the %q module", LegacyModuleName)
-		}
-		if strings.HasPrefix(id.CaseName, ":") {
-			return errors.Fmt("case_name: must not start with ':' for tests in the %q module", LegacyModuleName)
-		}
-		if err := ValidateUTF8Printable(id.CaseName, 512, ValidationModeLoose); err != nil {
-			return errors.Fmt("case_name: %w", err)
-		}
-		// This is a lightweight version of validateCaseNameNotReserved for legacy tests
-		// that still backtests on already uploaded test results.
-		if strings.HasPrefix(id.CaseName, "*") {
-			return errors.Fmt("case_name: must not start with '*' for tests in the %q module", LegacyModuleName)
+		// Module scheme
+		if err := ValidateModuleScheme(id.ModuleScheme, isLegacyModule); err != nil {
+			return errors.Fmt("module_scheme: %w", err)
 		}
 	} else {
-		// Additional validation for natively structured test identifiers.
-		if err := ValidateUTF8PrintableStrict(id.CaseName, 512); err != nil {
-			return errors.Fmt("case_name: %w", err)
+		// Should be unset for invocation-level prefix.
+		if id.ModuleName != "" {
+			return errors.Fmt("module_name: must be empty for %s level prefix", level)
 		}
-		if err := validateCaseNameNonLegacy(id.CaseName); err != nil {
-			return errors.Fmt("case_name: %w", err)
+		if id.ModuleScheme != "" {
+			return errors.Fmt("module_scheme: must be empty for %s level prefix", level)
 		}
 	}
 
-	// Ensure that when we encode the structured test ID to a flat ID,
-	// it is less than 512 bytes.
-	if sizeEscapedTestID(id) > 512 {
-		return errors.New("test ID exceeds 512 bytes in encoded form")
+	// Validate coarse name for coarse, fine or case-level-prefix.
+	if level >= pb.AggregationLevel_COARSE {
+		// Coarse name
+		if err := ValidateUTF8PrintableStrict(id.CoarseName, 300); err != nil {
+			return errors.Fmt("coarse_name: %w", err)
+		}
+		if err := validateCoarseOrFineNameLeadingCharacter(id.CoarseName); err != nil {
+			return errors.Fmt("coarse_name: %w", err)
+		}
+
+		// If this is a legacy test identifier represented in structured form.
+		if isLegacyModule && id.CoarseName != "" {
+			return errors.Fmt("coarse_name: must be empty for tests in the %q module", LegacyModuleName)
+		}
+	} else {
+		// Should be unset for module or invocation-level prefix.
+		if id.CoarseName != "" {
+			return errors.Fmt("coarse_name: must be empty for %s level prefix", level)
+		}
+	}
+
+	// Validate fine name for fine or case-level-prefix.
+	if level >= pb.AggregationLevel_FINE {
+		// Fine name
+		if err := ValidateUTF8PrintableStrict(id.FineName, 300); err != nil {
+			return errors.Fmt("fine_name: %w", err)
+		}
+		if err := validateCoarseOrFineNameLeadingCharacter(id.FineName); err != nil {
+			return errors.Fmt("fine_name: %w", err)
+		}
+		// If the scheme does not allow a fine name, it also does not allow a coarse
+		// name (fine name is always used before coarse name).
+		if id.FineName == "" && id.CoarseName != "" {
+			return errors.New("fine_name: unspecified when coarse_name is specified")
+		}
+
+		// If this is a legacy test identifier represented in structured form.
+		if isLegacyModule && id.FineName != "" {
+			return errors.Fmt("fine_name: must be empty for tests in the %q module", LegacyModuleName)
+		}
+	} else {
+		// Should be unset for coarse, module or invocation-level prefix.
+		if id.FineName != "" {
+			return errors.Fmt("fine_name: must be empty for %s level prefix", level)
+		}
+	}
+
+	// Validate case name for case-level-prefix.
+	if level >= pb.AggregationLevel_CASE {
+		if id.CaseName == "" {
+			return errors.New("case_name: unspecified")
+		}
+
+		// Additional validation for legacy test identifiers.
+		if isLegacyModule {
+			if strings.HasPrefix(id.CaseName, ":") {
+				return errors.Fmt("case_name: must not start with ':' for tests in the %q module", LegacyModuleName)
+			}
+			if err := ValidateUTF8Printable(id.CaseName, 512, ValidationModeLoose); err != nil {
+				return errors.Fmt("case_name: %w", err)
+			}
+			// This is a lightweight version of validateCaseNameNotReserved for legacy tests
+			// that still backtests on already uploaded test results.
+			if strings.HasPrefix(id.CaseName, "*") {
+				return errors.Fmt("case_name: must not start with '*' for tests in the %q module", LegacyModuleName)
+			}
+		} else {
+			// Additional validation for natively structured test identifiers.
+			if err := ValidateUTF8PrintableStrict(id.CaseName, 512); err != nil {
+				return errors.Fmt("case_name: %w", err)
+			}
+			if err := validateCaseNameNonLegacy(id.CaseName); err != nil {
+				return errors.Fmt("case_name: %w", err)
+			}
+		}
+
+		// Ensure that when we encode the structured test ID to a flat ID,
+		// it is less than 512 bytes.
+		if sizeEscapedTestID(id) > 512 {
+			return errors.New("test ID exceeds 512 bytes in encoded form")
+		}
+	} else {
+		// Should be unset for fine, coarse, module or invocation-level prefix.
+		if id.CaseName != "" {
+			return errors.Fmt("case_name: must be empty for %s level prefix", level)
+		}
 	}
 	return nil
 }
