@@ -27,6 +27,42 @@ export const testInvestigationRoutes: RouteObject[] = [
   {
     path: 'invocations/:invocationId',
     lazy: () => import('@/test_investigation/pages/invocation_page'),
+    children: [
+      {
+        index: true,
+        loader: async () => {
+          const { redirect } = await import('react-router');
+          return redirect('tests');
+        },
+      },
+      {
+        path: 'tests',
+        lazy: async () => {
+          const { TestTab } = await import(
+            '@/test_investigation/components/invocation_page/tabs'
+          );
+          return { Component: TestTab };
+        },
+      },
+      {
+        path: 'summary',
+        lazy: async () => {
+          const { SummaryTab } = await import(
+            '@/test_investigation/components/invocation_page/tabs'
+          );
+          return { Component: SummaryTab };
+        },
+      },
+      {
+        path: 'properties',
+        lazy: async () => {
+          const { PropertiesTab } = await import(
+            '@/test_investigation/components/invocation_page/tabs'
+          );
+          return { Component: PropertiesTab };
+        },
+      },
+    ],
   },
 
   {
