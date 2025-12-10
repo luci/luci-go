@@ -248,10 +248,19 @@ func (t *Tracker) CurrentPath() protopath.Path {
 // This only contains errors emitted by [Tracker.Err], [Tracker.ListIndexErr],
 // or [Tracker.MapIndexErr].
 //
-// If the error is non-nil, the returned object is always [Errors].
-func (t *Tracker) Error() error {
+// If the error is non-nil, the type of the returned object is always [Errors].
+//
+// If rootNameOverride is given, this will clone the error set with
+// rootNameOverride. Use this to override the presentation of the root of
+// each error in the set (e.g. "request" would make the errors show
+// "request.field[1]: error" instead of
+// "(full.proto.package.name.Message).field[1]: error")
+func (t *Tracker) Error(rootNameOverride string) error {
 	if len(t.errs) == 0 {
 		return nil
+	}
+	if rootNameOverride != "" {
+		return t.errs.Clone(&rootNameOverride)
 	}
 	return t.errs
 }

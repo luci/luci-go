@@ -22,15 +22,6 @@ import (
 	"google.golang.org/protobuf/reflect/protopath"
 )
 
-// RootStepPresence indicates if the RootStep should be retained when
-// processing [Errors].
-type RootStepPresence bool
-
-const (
-	WithoutRoot RootStepPresence = false
-	WithRoot    RootStepPresence = true
-)
-
 // Errors is a sequence of accumulated errors.
 type Errors []*Error
 
@@ -60,16 +51,15 @@ func (e Errors) Unwrap() []error {
 
 // Clone returns a copy of `e` with cloned `Path` values.
 //
-// If rootPresence is WithoutRoot, then each Error will have the RootStep
-// stripped from its Path.
-func (e Errors) Clone(rootPresence RootStepPresence) Errors {
+// If not-nil, the given rootNameOverride will be set on each Error.
+func (e Errors) Clone(rootNameOverride *string) Errors {
 	ret := make(Errors, len(e))
 	for i, err := range e {
 		newErr := *err
 		newErr.Path = slices.Clone(err.Path)
 		newErrP := &newErr
-		if rootPresence == WithoutRoot {
-			newErrP = newErrP.StripRoot()
+		if rootNameOverride != nil {
+			newErrP.RootNameOverride = *rootNameOverride
 		}
 		ret[i] = newErrP
 	}
@@ -82,25 +72,20 @@ func (e Errors) Clone(rootPresence RootStepPresence) Errors {
 // It contains the path in the proto where the error was emitted, and the error
 // (rendered with fmt.Errorf).
 type Error struct {
-	Path    protopath.Path
-	Wrapped error
-}
-
-// StripRoot returns a copy of Error with the RootStep removed from Path.
-//
-// No-op if called on an Error whose Path does not start with a RootStep.
-func (e *Error) StripRoot() *Error {
-	if len(e.Path) > 0 && e.Path[0].Kind() == protopath.RootStep {
-		ret := *e
-		ret.Path = ret.Path[1:]
-		return &ret
-	}
-	return e
+	// If RootNameOverride is non-empty, this will take the place of the root of
+	// the path, which is normally rendered as "(package.namespace.Message)".
+	RootNameOverride string
+	Path             protopath.Path
+	Wrapped          error
 }
 
 // Error implements the `error` interface.
 func (e *Error) Error() string {
-	return fmt.Sprintf("%s: %s", e.Path, e.Wrapped)
+	if e.RootNameOverride == "" {
+		return fmt.Sprintf("%s: %s", e.Path, e.Wrapped)
+	} else {
+		return fmt.Sprintf("%s%s: %s", e.RootNameOverride, e.Path[1:], e.Wrapped)
+	}
 }
 
 // Unwrap implements the interface for `errors.Unwrap` and returns the wrapped

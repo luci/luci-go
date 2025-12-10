@@ -29,7 +29,7 @@ func TestTrackMsg(t *testing.T) {
 			trk.Err("should not reach")
 		}
 
-		assert.ErrIsLike(t, trk.Error(),
+		assert.ErrIsLike(t, trk.Error(""),
 			`(pathutil_test.TestMessage).msg: required`)
 	})
 
@@ -40,6 +40,6 @@ func TestTrackMsg(t *testing.T) {
 			trk.Err("should not reach")
 		}
 
-		assert.NoErr(t, trk.Error())
+		assert.NoErr(t, trk.Error("msg"))
 	})
 }

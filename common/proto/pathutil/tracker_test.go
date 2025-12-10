@@ -32,7 +32,7 @@ func shouldHaveErrors(errs ...string) comparison.Func[*pathutil.Tracker] {
 
 		sum := comparison.NewSummaryBuilder("shouldHaveErrors", t)
 
-		for _, err := range t.Error().(pathutil.Errors).Clone(pathutil.WithoutRoot) {
+		for _, err := range t.Error("root").(pathutil.Errors) {
 			errS := err.Error()
 			if !errsSet.Del(errS) {
 				sum.AddFindingf("unexpected", "%q", errS)
@@ -65,7 +65,7 @@ func TestDeepnessCheck(t *testing.T) {
 		}
 
 		assert.That(t, track, shouldHaveErrors(
-			".msg.msg: should see this",
+			"root.msg.msg: should see this",
 		))
 	})
 
@@ -84,7 +84,7 @@ func TestDeepnessCheck(t *testing.T) {
 		}
 
 		assert.That(t, track, shouldHaveErrors(
-			".msg: exceeds maximum depth 1",
+			"root.msg: exceeds maximum depth 1",
 		))
 	})
 }
@@ -99,12 +99,12 @@ func TestErr(t *testing.T) {
 	track.FieldErr("scalar", "scalar %s", "error")
 
 	assert.That(t, track, shouldHaveErrors(
-		": something",
-		": sentinel",
-		".scalar: scalar error",
+		"root: something",
+		"root: sentinel",
+		"root.scalar: scalar error",
 	))
 
-	assert.That(t, track.Error().(pathutil.Errors)[1].Wrapped,
+	assert.That(t, track.Error("msg").(pathutil.Errors)[1].Wrapped,
 		should.Equal(sentinel))
 }
 
@@ -115,5 +115,5 @@ func TestNoSuchField(t *testing.T) {
 	}, should.PanicLikeString(
 		`pathutil.Tracker: field "not real" in message (pathutil_test.TestMessage) does not exist`,
 	))
-	assert.Loosely(t, track.Error(), should.BeNil)
+	assert.Loosely(t, track.Error(""), should.BeNil)
 }

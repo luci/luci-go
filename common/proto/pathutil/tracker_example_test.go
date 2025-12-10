@@ -130,12 +130,12 @@ func ExampleTracker() {
 	})
 
 	// Now look at the accumulated errors.
-	fmt.Print(t.Error().(pathutil.Errors).Clone(pathutil.WithoutRoot))
+	fmt.Print(t.Error("msg"))
 
 	// Output:
-	// .map_msg["hi"].map_msg["deeper"].map_msg["danger!"]: exceeds maximum depth 3
-	// .map_msg["hi"].map_msg["deeper"].scalar: expected prefix "prefix:", got ""
-	// .map_msg["hi"].list_scalar: len(20) > 10
-	// .scalar: expected prefix "prefix:", got "bad:prefix"
-	// .list_scalar[4]: val 300 > 100
+	// msg.map_msg["hi"].map_msg["deeper"].map_msg["danger!"]: exceeds maximum depth 3
+	// msg.map_msg["hi"].map_msg["deeper"].scalar: expected prefix "prefix:", got ""
+	// msg.map_msg["hi"].list_scalar: len(20) > 10
+	// msg.scalar: expected prefix "prefix:", got "bad:prefix"
+	// msg.list_scalar[4]: val 300 > 100
 }
