@@ -30,7 +30,7 @@ export function InvocationTabs() {
         {hasSummary && (
           <RoutedTab label="Summary" value="summary" to="summary" />
         )}
-        <RoutedTab label="Properties" value="properties" to="properties" />
+        <RoutedTab label="Details" value="details" to="details" />
       </RoutedTabs>
     </Box>
   );

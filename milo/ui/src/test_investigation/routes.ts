@@ -54,12 +54,12 @@ export const testInvestigationRoutes: RouteObject[] = [
         },
       },
       {
-        path: 'properties',
+        path: 'details',
         lazy: async () => {
-          const { PropertiesTab } = await import(
+          const { DetailsTab } = await import(
             '@/test_investigation/components/invocation_page/tabs'
           );
-          return { Component: PropertiesTab };
+          return { Component: DetailsTab };
         },
       },
     ],

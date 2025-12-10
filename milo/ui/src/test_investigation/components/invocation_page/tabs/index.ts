@@ -13,6 +13,6 @@
 // limitations under the License.
 
 export * from './invocation_tabs';
-export * from './properties_tab';
+export * from './details_tab';
 export * from './summary_tab';
 export * from './test_tab';
