@@ -17,9 +17,14 @@ import { Box, Paper, Typography } from '@mui/material';
 export interface GenericJsonDetailsProps {
   json?: string;
   typeUrl?: string;
+  label?: string;
 }
 
-export function GenericJsonDetails({ json, typeUrl }: GenericJsonDetailsProps) {
+export function GenericJsonDetails({
+  json,
+  typeUrl,
+  label,
+}: GenericJsonDetailsProps) {
   if (!json) return null;
 
   const prettyPrintedJson = JSON.stringify(JSON.parse(json), null, 2);
@@ -28,6 +33,7 @@ export function GenericJsonDetails({ json, typeUrl }: GenericJsonDetailsProps) {
     <Box sx={{ mt: 1 }}>
       {typeUrl && (
         <Typography variant="caption" color="text.secondary">
+          {label ? `${label}: ` : ''}
           {typeUrl}
         </Typography>
       )}

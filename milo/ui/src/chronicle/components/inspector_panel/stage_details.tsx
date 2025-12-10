@@ -14,6 +14,7 @@
 
 import { Box, Chip, Divider, Typography } from '@mui/material';
 
+import { stageAttemptStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/stage_attempt_state.pb';
 import {
   StageState,
   stageStateToJSON,
@@ -44,6 +45,10 @@ export function StageDetails({ view }: StageDetailsProps) {
   const createTs = stage.stateHistory.find(
     (s) => s.state === StageState.STAGE_STATE_PLANNED,
   )?.version;
+
+  // Attempts are in ascending order by created time.
+  // Reverse that so we show the latest attempt first.
+  const attempts = [...stage.attempts].reverse();
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -81,6 +86,49 @@ export function StageDetails({ view }: StageDetailsProps) {
           <Divider />
           <Typography variant="subtitle2">Args</Typography>
           <AnyDetails json={stage.args.valueJson} />
+        </>
+      )}
+
+      {attempts.length > 0 && (
+        <>
+          <Divider />
+          <Typography variant="subtitle2">Attempts</Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {attempts.map((attempt, index) => (
+              <Box
+                key={index}
+                sx={{
+                  p: 1,
+                  border: '1px solid #eee',
+                  borderRadius: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 0.5,
+                }}
+              >
+                <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+                  Attempt {stage.attempts.length - index}
+                </Typography>
+                <DetailRow
+                  label="State"
+                  value={
+                    attempt.state
+                      ? stageAttemptStateToJSON(attempt.state)
+                      : 'UNKNOWN'
+                  }
+                />
+                <DetailRow label="Version" value={attempt.version?.ts} />
+                {attempt.details.map((detail, dIndex) => (
+                  <AnyDetails
+                    key={dIndex}
+                    typeUrl={detail.value?.typeUrl}
+                    json={detail.valueJson}
+                    label="Details"
+                  />
+                ))}
+              </Box>
+            ))}
+          </Box>
         </>
       )}
     </Box>

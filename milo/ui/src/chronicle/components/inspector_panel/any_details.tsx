@@ -58,13 +58,15 @@ export interface AnyDetailsProps {
   typeUrl?: string;
   /** The JSON string data. */
   json?: string;
+  /** An optional label to show above the field. */
+  label?: string;
 }
 
 /**
  * Renders details for a given JSON data blob, using a specialized component if available for the type,
  * otherwise falling back to a generic JSON view.
  */
-export function AnyDetails({ typeUrl, json }: AnyDetailsProps) {
+export function AnyDetails({ typeUrl, json, label }: AnyDetailsProps) {
   const data = useMemo(() => {
     if (!json) return <ParseError />;
     try {
@@ -82,6 +84,7 @@ export function AnyDetails({ typeUrl, json }: AnyDetailsProps) {
       <Box sx={{ mt: 1 }}>
         {typeUrl && (
           <Typography variant="caption" color="text.secondary">
+            {label ? `${label}: ` : ''}
             {typeUrl}
           </Typography>
         )}
@@ -92,7 +95,7 @@ export function AnyDetails({ typeUrl, json }: AnyDetailsProps) {
     );
   }
 
-  return <GenericJsonDetails typeUrl={typeUrl} json={json} />;
+  return <GenericJsonDetails label={label} typeUrl={typeUrl} json={json} />;
 }
 
 function ParseError() {

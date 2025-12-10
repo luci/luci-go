@@ -676,12 +676,6 @@ export class FakeGraphGenerator {
     // Timestamps
     const createRev = this.nextRevision();
     const attemptRev = this.nextRevision();
-    // Simulate execution time (5 to 30 minutes)
-    const executionMs = faker.number.int({
-      min: 5 * 60 * 1000,
-      max: 30 * 60 * 1000,
-    });
-    const finalRev = this.nextRevision(executionMs);
 
     // 1. Creation Edit (PLANNED)
     edits.push(
@@ -706,13 +700,11 @@ export class FakeGraphGenerator {
       ),
     );
 
-    // Generate attempt data based on final time
-    const attempts = this.generateStageAttempt(
-      idStr,
-      attemptRev,
-      finalRev,
-      success,
-    );
+    // Generate attempt data. This will advance the internal clock.
+    const attempts = this.generateStageAttempts(idStr, attemptRev, success);
+
+    // Capture the time after all attempts have run.
+    const finalRev = this.nextRevision(0);
 
     // 3. Final Edit
     edits.push(
@@ -1184,36 +1176,74 @@ export class FakeGraphGenerator {
   // Complex Sub-Object Generators
   // ==========================================
 
-  private generateStageAttempt(
+  private generateStageAttempts(
     stageIdStr: string,
-    startRev: Revision,
-    endRev: Revision,
-    success: boolean,
+    initialStartRev: Revision,
+    isStageSuccess: boolean,
   ): Stage_Attempt[] {
-    const state = success
-      ? StageAttemptState.STAGE_ATTEMPT_STATE_COMPLETE
-      : StageAttemptState.STAGE_ATTEMPT_STATE_INCOMPLETE;
-    const msg = success ? 'Complete' : 'Failed';
+    const attempts: Stage_Attempt[] = [];
+    // 50% chance of 1 attempt, 30% chance of 2, 20% chance of 3
+    // If successful, we allow retries before success.
+    // If failure, we allow retries before giving up.
+    const numAttempts = faker.helpers.weightedArrayElement([
+      { weight: 5, value: 1 },
+      { weight: 3, value: 2 },
+      { weight: 2, value: 3 },
+    ]);
 
-    const attempt: Stage_Attempt = {
-      state: state,
-      version: endRev,
-      processUid: `worker-pool-REGION-1:${stageIdStr}:attempt-2`,
-      details: [
-        this.createValueFromObj(TYPE_URL_GENERIC_DATA, {
-          url: faker.internet.url(),
-          label: 'Executor Logs',
-        }),
-      ],
-      progress: [
-        { msg: 'Scheduled', version: startRev, details: [] },
-        { msg: 'Running', version: startRev, details: [] },
-        { msg: msg, version: endRev, details: [] },
-      ],
-      stateHistory: [],
-    };
+    let currentStartRev = initialStartRev;
 
-    return [attempt];
+    for (let i = 0; i < numAttempts; i++) {
+      const isLast = i === numAttempts - 1;
+      // The attempt succeeds if it's the last one AND the stage is supposed to succeed.
+      const attemptSuccess = isLast && isStageSuccess;
+
+      const state = attemptSuccess
+        ? StageAttemptState.STAGE_ATTEMPT_STATE_COMPLETE
+        : StageAttemptState.STAGE_ATTEMPT_STATE_INCOMPLETE;
+
+      // Simulate execution duration (e.g., 2-15 minutes)
+      const duration = faker.number.int({
+        min: 2 * 60 * 1000,
+        max: 15 * 60 * 1000,
+      });
+      const endRev = this.nextRevision(duration);
+
+      const msg = attemptSuccess ? 'Complete' : 'Failed';
+
+      const attempt: Stage_Attempt = {
+        identifier: {
+          stage: { workPlan: this.workPlanId, id: stageIdStr },
+          idx: i + 1,
+        },
+        state: state,
+        version: endRev,
+        processUid: `worker-pool-REGION-1:${stageIdStr}:attempt-${i + 1}`,
+        details: [
+          this.createValueFromObj(TYPE_URL_GENERIC_DATA, {
+            url: faker.internet.url(),
+            label: `Executor Logs (Attempt ${i + 1})`,
+          }),
+        ],
+        progress: [
+          { msg: 'Scheduled', version: currentStartRev, details: [] },
+          { msg: 'Running', version: currentStartRev, details: [] },
+          { msg: msg, version: endRev, details: [] },
+        ],
+        stateHistory: [], // Simplified for fake data
+      };
+
+      attempts.push(attempt);
+
+      // If there is another attempt coming, we need to advance time for the retry delay/overhead
+      if (!isLast) {
+        // Simulate 30s - 1m delay before next attempt starts
+        const delay = faker.number.int({ min: 30 * 1000, max: 60 * 1000 });
+        currentStartRev = this.nextRevision(delay);
+      }
+    }
+
+    return attempts;
   }
 
   private createExecutionPolicyState(): Stage_ExecutionPolicyState {
