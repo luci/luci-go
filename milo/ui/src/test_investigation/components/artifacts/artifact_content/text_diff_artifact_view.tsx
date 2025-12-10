@@ -22,30 +22,33 @@ import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries
 
 interface TextDiffArtifactViewProps {
   artifact: Artifact;
+  content?: string | null;
 }
 
-export function TextDiffArtifactView({ artifact }: TextDiffArtifactViewProps) {
+export function TextDiffArtifactView({
+  artifact,
+  content,
+}: TextDiffArtifactViewProps) {
   const {
     data: artifactContentData,
     isPending: isLoadingArtifactContent,
     error,
   } = useFetchArtifactContentQuery({
     artifact,
+    enabled: !content,
   });
 
   const diffHtml = useMemo(() => {
-    if (
-      !artifactContentData?.data ||
-      typeof artifactContentData.data !== 'string'
-    ) {
+    const data = content || artifactContentData?.data;
+    if (!data || typeof data !== 'string') {
       return '';
     }
-    return Diff2Html.html(artifactContentData.data, {
+    return Diff2Html.html(data, {
       drawFileList: false,
       outputFormat: 'side-by-side',
       matching: 'lines',
     });
-  }, [artifactContentData]);
+  }, [artifactContentData, content]);
 
   if (isLoadingArtifactContent) {
     return (

@@ -138,11 +138,16 @@ interface Props {
   artifact?: Artifact;
 }
 
-export function useFetchArtifactContentQuery({ artifact }: Props) {
+export function useFetchArtifactContentQuery({
+  artifact,
+  limit,
+  enabled = true,
+}: Props & { limit?: number; enabled?: boolean }) {
   return useQuery<FetchedArtifactContent, Error>({
     queryKey: [
       'artifactContentForSection',
       artifact?.name || 'no-artifact-selected',
+      limit,
     ],
     queryFn: async () => {
       if (!artifact || !artifact.fetchUrl) {
@@ -157,7 +162,24 @@ export function useFetchArtifactContentQuery({ artifact }: Props) {
       const contentType = artifact.contentType || 'application/octet-stream';
       const isText = contentType.toLowerCase().startsWith('text/');
       try {
-        const response = await fetch(artifact.fetchUrl);
+        const url = new URL(artifact.fetchUrl);
+        const headers: HeadersInit = {};
+        if (limit) {
+          // If the URL is a GCS signed URL (which we can guess by the presence of X-Goog-Signature),
+          // we cannot add query parameters as it will invalidate the signature.
+          // Instead, we use the Range header.
+          // We also check for storage.googleapis.com to be safe, although signed URLs can be on other domains too.
+          const isGcsSignedUrl =
+            url.searchParams.has('X-Goog-Signature') ||
+            url.hostname === 'storage.googleapis.com';
+
+          if (isGcsSignedUrl) {
+            headers['Range'] = `bytes=0-${limit - 1}`;
+          } else {
+            url.searchParams.set('n', limit.toString());
+          }
+        }
+        const response = await fetch(url.toString(), { headers });
         if (!response.ok) {
           throw new Error(
             `Failed to fetch artifact content: ${response.status} ${response.statusText}`,
@@ -190,7 +212,7 @@ export function useFetchArtifactContentQuery({ artifact }: Props) {
         };
       }
     },
-    enabled: !!(artifact && artifact.fetchUrl),
+    enabled: !!(artifact && artifact.fetchUrl) && enabled,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
   });

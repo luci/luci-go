@@ -23,7 +23,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import HelpTooltip from '@/clusters/components/help_tooltip/help_tooltip';
 import { ErrorDisplay } from '@/common/components/error_handling/error_display';
@@ -32,6 +32,7 @@ import {
   getAndroidBugToolLink,
   getRawArtifactURLPath,
 } from '@/common/tools/url_utils';
+import { Sticky } from '@/generic_libs/components/queued_sticky';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { CompareArtifactLinesRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { useInvocation } from '@/test_investigation/context';
@@ -47,6 +48,8 @@ interface ArtifactContentViewProps {
   artifact: Artifact;
 }
 
+const INITIAL_CONTENT_LIMIT = 5000;
+
 export function ArtifactContentView({ artifact }: ArtifactContentViewProps) {
   const [showRawContentView, setShowRawContentView] = useState(false);
   const [showLogComparison, setShowLogComparison] = useState(false);
@@ -56,10 +59,30 @@ export function ArtifactContentView({ artifact }: ArtifactContentViewProps) {
   const invocation = useInvocation();
   const isAnTS = isAnTSInvocation(invocation);
 
-  const { data: artifactContentData, isLoading: isLoadingArtifactContent } =
+  const { data: initialContentData, isLoading: isInitialLoading } =
     useFetchArtifactContentQuery({
       artifact: artifact,
+      limit: INITIAL_CONTENT_LIMIT,
     });
+
+  const sizeBytes = artifact.sizeBytes ? Number(artifact.sizeBytes) : null;
+  const isLargeArtifact =
+    sizeBytes === null || sizeBytes > INITIAL_CONTENT_LIMIT;
+
+  const { data: fullContentData, isLoading: isFullLoading } =
+    useFetchArtifactContentQuery({
+      artifact: artifact,
+      enabled: isLargeArtifact,
+    });
+
+  const artifactContentData = useMemo(() => {
+    if (!isLargeArtifact) {
+      return initialContentData;
+    }
+    return fullContentData || initialContentData;
+  }, [isLargeArtifact, initialContentData, fullContentData]);
+
+  const isLoadingArtifactContent = isInitialLoading;
 
   const {
     data: lineComparison,
@@ -235,6 +258,30 @@ export function ArtifactContentView({ artifact }: ArtifactContentViewProps) {
           )}
         </Box>
       </Box>
+      {isLargeArtifact && isFullLoading && (
+        <Sticky
+          top
+          sx={{
+            zIndex: 100,
+            backgroundColor: 'warning.light',
+            color: 'warning.contrastText',
+            p: 1,
+            mb: 1,
+            borderRadius: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: 2,
+          }}
+        >
+          <CircularProgress size={20} color="inherit" sx={{ mr: 2 }} />
+          <Typography variant="body2">
+            Displaying preview. Still loading full{' '}
+            {sizeBytes ? (sizeBytes / 1024 / 1024).toFixed(2) : 'unknown size'}{' '}
+            MB log...
+          </Typography>
+        </Sticky>
+      )}
 
       {showLogComparison && isComparisonLoading ? (
         <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
@@ -257,6 +304,7 @@ export function ArtifactContentView({ artifact }: ArtifactContentViewProps) {
         <LogComparisonView
           logContent={artifactContentData.data || ''}
           failureOnlyRanges={lineComparison.failureOnlyRanges}
+          isFullLoading={isFullLoading}
         />
       ) : artifactContentData?.error ? (
         <Typography sx={{ mt: 1, color: 'error.main' }}>
@@ -266,7 +314,10 @@ export function ArtifactContentView({ artifact }: ArtifactContentViewProps) {
         !showRawContentView &&
         artifactContentData?.isText &&
         artifactContentData.data ? (
-        <TextDiffArtifactView artifact={artifact} />
+        <TextDiffArtifactView
+          artifact={artifact}
+          content={artifactContentData.data}
+        />
       ) : artifactContentData?.isText ? (
         artifactContentData.data !== null && artifactContentData.data !== '' ? (
           <Box

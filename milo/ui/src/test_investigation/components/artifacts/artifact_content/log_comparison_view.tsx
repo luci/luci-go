@@ -23,11 +23,13 @@ import { TextBox } from './text_box';
 interface LogComparisonViewProps {
   logContent: string;
   failureOnlyRanges: readonly CompareArtifactLinesResponse_FailureOnlyRange[];
+  isFullLoading?: boolean;
 }
 
 export function LogComparisonView({
   logContent,
   failureOnlyRanges,
+  isFullLoading,
 }: LogComparisonViewProps) {
   const tooltipContent = useMemo(() => {
     return (
@@ -46,32 +48,50 @@ export function LogComparisonView({
     const newSegments: React.ReactNode[] = [];
     let lastLineRendered = 0;
 
-    failureOnlyRanges.forEach((range, i) => {
+    for (let i = 0; i < failureOnlyRanges.length; i++) {
+      const range = failureOnlyRanges[i];
+
+      // Stop if we've exceeded the available content
+      if (lastLineRendered >= lines.length) {
+        break;
+      }
+
       // Add a collapsed segment for the lines between the last visible segment and this one.
       if (range.startLine > lastLineRendered) {
-        const collapsedLines = lines.slice(lastLineRendered, range.startLine);
-        newSegments.push(
-          <CollapsedLines
-            key={`c-${lastLineRendered}`}
-            lines={collapsedLines}
-            isStart={i === 0}
-            isEnd={false}
-          />,
-        );
+        const end = Math.min(range.startLine, lines.length);
+        const collapsedLines = lines.slice(lastLineRendered, end);
+        if (collapsedLines.length > 0) {
+          newSegments.push(
+            <CollapsedLines
+              key={`c-${lastLineRendered}`}
+              lines={collapsedLines}
+              isStart={i === 0}
+              isEnd={false}
+            />,
+          );
+        }
+      }
+
+      // If the failure range starts beyond our content, we can't show it yet.
+      if (range.startLine >= lines.length) {
+        break;
       }
 
       // Add the visible, failure-only segment.
-      const visibleLines = lines.slice(range.startLine, range.endLine);
-      newSegments.push(
-        <TextBox
-          key={`v-${range.startLine}`}
-          lines={visibleLines}
-          emphasized
-          tooltip={tooltipContent}
-        />,
-      );
+      const end = Math.min(range.endLine, lines.length);
+      const visibleLines = lines.slice(range.startLine, end);
+      if (visibleLines.length > 0) {
+        newSegments.push(
+          <TextBox
+            key={`v-${range.startLine}`}
+            lines={visibleLines}
+            emphasized
+            tooltip={tooltipContent}
+          />,
+        );
+      }
       lastLineRendered = range.endLine;
-    });
+    }
 
     // Add any remaining lines at the end as a final collapsed segment.
     if (lastLineRendered < lines.length) {
@@ -86,8 +106,25 @@ export function LogComparisonView({
       );
     }
 
+    if (isFullLoading) {
+      newSegments.push(
+        <Box
+          key="loading-more"
+          sx={{
+            p: 2,
+            display: 'flex',
+            justifyContent: 'center',
+            color: 'text.secondary',
+            fontStyle: 'italic',
+          }}
+        >
+          Loading more content...
+        </Box>,
+      );
+    }
+
     return newSegments;
-  }, [logContent, failureOnlyRanges, tooltipContent]);
+  }, [logContent, failureOnlyRanges, tooltipContent, isFullLoading]);
 
   return (
     <Box sx={{ border: 'solid 1px #aaa', borderRadius: '3px' }}>{segments}</Box>
