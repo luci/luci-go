@@ -392,17 +392,34 @@ func validateRootInvocationForCreate(inv *pb.RootInvocation, cfg *config.Compile
 	if err := pbutil.ValidateSources(inv.Sources); err != nil {
 		return errors.Fmt("sources: %w", err)
 	}
+	if submittedAndroidBuild := inv.Sources.GetSubmittedAndroidBuild(); submittedAndroidBuild != nil {
+		if err := cfg.AndroidBuild.ValidateSubmittedBuild(submittedAndroidBuild); err != nil {
+			return errors.Fmt("sources: submitted_android_build: %w", err)
+		}
+	}
 
 	// Validate primary build.
 	if inv.PrimaryBuild != nil {
 		if err := pbutil.ValidateBuildDescriptor(inv.PrimaryBuild); err != nil {
 			return errors.Fmt("primary_build: %w", err)
 		}
+		if androidBuild := inv.PrimaryBuild.GetAndroidBuild(); androidBuild != nil {
+			if err := cfg.AndroidBuild.ValidateBuildDescriptor(androidBuild); err != nil {
+				return errors.Fmt("primary_build: android_build: %w", err)
+			}
+		}
 	}
 
 	// Validate extra builds, including validating they don't duplicate the primary build or each other.
 	if err := pbutil.ValidateExtraBuildDescriptors(inv.ExtraBuilds); err != nil {
 		return errors.Fmt("extra_builds: %w", err)
+	}
+	for i, b := range inv.ExtraBuilds {
+		if androidBuild := b.GetAndroidBuild(); androidBuild != nil {
+			if err := cfg.AndroidBuild.ValidateBuildDescriptor(androidBuild); err != nil {
+				return errors.Fmt("extra_builds[%v]: android_build: %w", i, err)
+			}
+		}
 	}
 	if err := pbutil.ValidateBuildDescriptorsUniquenessAndOrder(inv.ExtraBuilds, inv.PrimaryBuild); err != nil {
 		return errors.Fmt("extra_builds: %w", err)

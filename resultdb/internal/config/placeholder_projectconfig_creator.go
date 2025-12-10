@@ -99,5 +99,8 @@ func CreatePlaceholderServiceConfig() *configpb.Config {
 				},
 			},
 		},
+		AndroidBuild: &configpb.AndroidBuild{
+			DataRealmPattern: "^(prod|qual-staging)$",
+		},
 	}
 }

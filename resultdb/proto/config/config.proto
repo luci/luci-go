@@ -40,6 +40,9 @@ message Config {
   // - it will only be subject to basic validation, and
   // - a URL to the producing system's UI will not be generated.
   repeated ProducerSystem producer_systems = 4;
+
+  // Configuration related to Android Build.
+  AndroidBuild android_build = 5;
 }
 
 // BqArtifactExportConfig contains the configuration to export
@@ -73,7 +76,7 @@ message ProducerSystem {
   // An RE2 regular expression matching allowed values of the ProducerResource.data_realm field
   // for this system.
   //
-  // E.g. "prod|test".
+  // E.g. "^(prod|test)$".
   string data_realm_pattern = 3;
 
   // If true, only allow the producer system to be used by trusted callers having the
@@ -98,4 +101,34 @@ message ProducerSystem {
   // As per above, but allows overriding the URL template for specific data realms.
   // For example, the hostname of the URL may be different for different data realms.
   map<string, string> url_template_by_data_realm = 6;
+}
+
+// Configuration related to Android Build.
+message AndroidBuild {
+  // An RE2 regular expression matching allowed values of the AndroidBuildDescriptor.data_realm
+  // and SubmittedAndroidBuild.data_realm fields.
+  //
+  // A data realm defines a unique deployment of Android Build with its own data store.
+  // By convention, "prod" refers to the production environment.
+  // Other environments typically start with a prefix from go/data-realms, e.g. "qual" or "test".
+  // E.g. "qual-staging" is a staging deployment. See go/android-build-qa for all environments.
+  //
+  // E.g. "^(prod|qual-staging)$"
+  string data_realm_pattern = 1;
+
+  message ByDataRealmConfig {
+    // Defines the URL template for a fully-specified Android build (branch, build_id, target)
+    // in each Android Build data realm, for UI linking purposes. If a data realm allowed by
+    // data_realm_pattern is not listed here, no URL will be generated for it.
+    //
+    // To use a variable, use the syntax `${variable_name}`.
+    // The defined variables are:
+    // - ${branch}: the Android build branch, e.g `git_main`.
+    // - ${build_target}: the build target, e.g. `cf_x86_phone-userdebug`.
+    // - ${build_id}: the build ID, e.g. `P81983588`.
+    string full_build_url_template = 1;
+  }
+
+  // Defines data-realm-specific configuration.
+  map<string, ByDataRealmConfig> data_realms = 2;
 }

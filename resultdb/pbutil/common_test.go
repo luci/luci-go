@@ -187,7 +187,7 @@ func TestValidate(t *testing.T) {
 			{
 				Definition: &pb.BuildDescriptor_AndroidBuild{
 					AndroidBuild: &pb.AndroidBuildDescriptor{
-						DataRealm:   "test",
+						DataRealm:   "qual-qa",
 						Branch:      "git_main",
 						BuildTarget: "aosp_arm64-userdebug",
 						BuildId:     "E1234567890",
@@ -202,14 +202,14 @@ func TestValidate(t *testing.T) {
 			builds[0] = &pb.BuildDescriptor{
 				Definition: &pb.BuildDescriptor_AndroidBuild{
 					AndroidBuild: &pb.AndroidBuildDescriptor{
-						DataRealm:   "invalid",
+						DataRealm:   "",
 						Branch:      "git_main",
 						BuildTarget: "aosp_arm64-userdebug",
 						BuildId:     "L1234567890",
 					},
 				},
 			}
-			assert.Loosely(t, ValidateExtraBuildDescriptors(builds), should.ErrLike(`[0]: android_build: data_realm: unknown data realm "invalid"`))
+			assert.Loosely(t, ValidateExtraBuildDescriptors(builds), should.ErrLike(`[0]: android_build: data_realm: unspecified`))
 		})
 		t.Run(`Too large`, func(t *ftt.Test) {
 			builds = make([]*pb.BuildDescriptor, 11)
@@ -303,7 +303,7 @@ func TestValidate(t *testing.T) {
 			})
 			t.Run(`AndroidBuild`, func(t *ftt.Test) {
 				ab := &pb.AndroidBuildDescriptor{
-					DataRealm:   "test",
+					DataRealm:   "qual-qa",
 					Branch:      "git_main",
 					BuildTarget: "aosp_arm64-userdebug",
 					BuildId:     "E1234567890",
@@ -315,8 +315,8 @@ func TestValidate(t *testing.T) {
 					assert.Loosely(t, ValidateBuildDescriptor(build), should.BeNil)
 				})
 				t.Run(`Invalid`, func(t *ftt.Test) {
-					ab.DataRealm = "invalid"
-					assert.Loosely(t, ValidateBuildDescriptor(build), should.ErrLike(`android_build: data_realm: unknown data realm "invalid"`))
+					ab.DataRealm = ""
+					assert.Loosely(t, ValidateBuildDescriptor(build), should.ErrLike(`android_build: data_realm: unspecified`))
 				})
 			})
 		})
@@ -340,8 +340,12 @@ func TestValidate(t *testing.T) {
 				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`data_realm: unspecified`))
 			})
 			t.Run(`Invalid`, func(t *ftt.Test) {
-				build.DataRealm = "invalid"
-				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`data_realm: unknown data realm "invalid"`))
+				build.DataRealm = "*invalid"
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`data_realm: does not match pattern`))
+			})
+			t.Run(`Too long`, func(t *ftt.Test) {
+				build.DataRealm = strings.Repeat("a", maxAndroidBuildDataRealmLength+1)
+				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`data_realm: must be at most 100 bytes`))
 			})
 		})
 		t.Run(`Branch`, func(t *ftt.Test) {
@@ -350,7 +354,7 @@ func TestValidate(t *testing.T) {
 				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`branch: unspecified`))
 			})
 			t.Run(`Too long`, func(t *ftt.Test) {
-				build.Branch = strings.Repeat("a", MaxAndroidBranchLength+1)
+				build.Branch = strings.Repeat("a", maxAndroidBranchLength+1)
 				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`branch: longer than 255 bytes`))
 			})
 			t.Run(`Non-Printable`, func(t *ftt.Test) {
@@ -376,7 +380,7 @@ func TestValidate(t *testing.T) {
 				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`build_target: unspecified`))
 			})
 			t.Run(`Too long`, func(t *ftt.Test) {
-				build.BuildTarget = strings.Repeat("a", MaxAndroidBuildTargetLength+1)
+				build.BuildTarget = strings.Repeat("a", maxAndroidBuildTargetLength+1)
 				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`build_target: longer than 255 bytes`))
 			})
 			t.Run(`Non-Printable`, func(t *ftt.Test) {
@@ -402,7 +406,7 @@ func TestValidate(t *testing.T) {
 				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`build_id: unspecified`))
 			})
 			t.Run(`Too long`, func(t *ftt.Test) {
-				build.BuildId = strings.Repeat("1", MaxAndroidBuildLength+1)
+				build.BuildId = strings.Repeat("1", maxAndroidBuildLength+1)
 				assert.Loosely(t, ValidateAndroidBuildDescriptor(build), should.ErrLike(`build_id: must be at most 32 bytes`))
 			})
 			t.Run(`Invalid format`, func(t *ftt.Test) {
@@ -423,14 +427,18 @@ func TestValidate(t *testing.T) {
 		t.Run("Nil", func(t *ftt.Test) {
 			assert.Loosely(t, ValidateSubmittedAndroidBuild(nil), should.ErrLike("unspecified"))
 		})
-		t.Run("Data Realm", func(t *ftt.Test) {
-			t.Run("Missing", func(t *ftt.Test) {
+		t.Run(`Data Realm`, func(t *ftt.Test) {
+			t.Run(`Missing`, func(t *ftt.Test) {
 				buildID.DataRealm = ""
-				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike("data_realm: unspecified"))
+				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike(`data_realm: unspecified`))
 			})
-			t.Run("Invalid", func(t *ftt.Test) {
-				buildID.DataRealm = "invalid"
-				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike(`data_realm: unknown data realm "invalid"`))
+			t.Run(`Invalid`, func(t *ftt.Test) {
+				buildID.DataRealm = "*invalid"
+				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike(`data_realm: does not match pattern`))
+			})
+			t.Run(`Too long`, func(t *ftt.Test) {
+				buildID.DataRealm = strings.Repeat("a", maxAndroidBuildDataRealmLength+1)
+				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike(`data_realm: must be at most 100 bytes`))
 			})
 		})
 		t.Run("Branch", func(t *ftt.Test) {
@@ -439,7 +447,7 @@ func TestValidate(t *testing.T) {
 				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike("branch: unspecified"))
 			})
 			t.Run("Too long", func(t *ftt.Test) {
-				buildID.Branch = strings.Repeat("a", MaxAndroidBranchLength+1)
+				buildID.Branch = strings.Repeat("a", maxAndroidBranchLength+1)
 				assert.Loosely(t, ValidateSubmittedAndroidBuild(buildID), should.ErrLike("branch: longer than 255 bytes"))
 			})
 			t.Run("Non-Printable", func(t *ftt.Test) {
@@ -683,8 +691,8 @@ func TestValidate(t *testing.T) {
 					assert.Loosely(t, ValidateSources(sources), should.BeNil)
 				})
 				t.Run(`Invalid`, func(t *ftt.Test) {
-					ab.DataRealm = "invalid"
-					assert.Loosely(t, ValidateSources(sources), should.ErrLike(`submitted_android_build: data_realm: unknown data realm "invalid"`))
+					ab.DataRealm = ""
+					assert.Loosely(t, ValidateSources(sources), should.ErrLike(`submitted_android_build: data_realm: unspecified`))
 				})
 			})
 		})

@@ -115,6 +115,7 @@ func validateServiceConfig(ctx *validation.Context, cfg *configpb.Config) {
 	validateBQArtifactExportConfig(ctx, cfg.BqArtifactExportConfig)
 	validateSchemes(ctx, cfg.Schemes)
 	validateProducerSystems(ctx, cfg.ProducerSystems)
+	validateAndroidBuild(ctx, cfg.AndroidBuild)
 }
 
 func validateBQArtifactExportConfig(ctx *validation.Context, cfg *configpb.BqArtifactExportConfig) {
@@ -326,4 +327,35 @@ func allowedVarsList(allowedVars map[string]struct{}) string {
 	}
 	sort.Strings(vars)
 	return fmt.Sprintf("[%s]", strings.Join(vars, ", "))
+}
+
+func validateAndroidBuild(ctx *validation.Context, cfg *configpb.AndroidBuild) {
+	if cfg == nil {
+		return
+	}
+	ctx.Enter("android_build")
+	defer ctx.Exit()
+
+	validatePattern(ctx, "data_realm_pattern", cfg.DataRealmPattern)
+
+	for realm, cfg := range cfg.DataRealms {
+		validateByDataRealmConfig(ctx, fmt.Sprintf("data_realms[%q]", realm), cfg)
+	}
+}
+
+func validateByDataRealmConfig(ctx *validation.Context, name string, cfg *configpb.AndroidBuild_ByDataRealmConfig) {
+	ctx.Enter("%s", name)
+	defer ctx.Exit()
+
+	if cfg == nil {
+		ctx.Errorf("unspecified")
+		return
+	}
+
+	allowedVars := map[string]struct{}{
+		"branch":       {},
+		"build_target": {},
+		"build_id":     {},
+	}
+	validateURLTemplate(ctx, "full_build_url_template", cfg.FullBuildUrlTemplate, allowedVars)
 }

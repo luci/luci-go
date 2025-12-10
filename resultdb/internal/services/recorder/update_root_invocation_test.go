@@ -65,19 +65,22 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 			RequestId:  "test-request-id",
 		}
 
+		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceholderServiceConfig(), "revision")
+		assert.NoErr(t, err)
+
 		t.Run("etag", func(t *ftt.Test) {
 			t.Run("empty", func(t *ftt.Test) {
 				// Empty is valid.
 				req.RootInvocation.Etag = ""
 
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
 			t.Run("invalid", func(t *ftt.Test) {
 				req.RootInvocation.Etag = "invalid"
 
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.That(t, err, should.ErrLike(`root_invocation: etag: malformated etag`))
 			})
 		})
@@ -85,12 +88,12 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 		t.Run("request_id", func(t *ftt.Test) {
 			t.Run("empty", func(t *ftt.Test) {
 				req.RequestId = ""
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("request_id: unspecified"))
 			})
 			t.Run("invalid", func(t *ftt.Test) {
 				req.RequestId = "😃"
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("request_id: does not match"))
 			})
 		})
@@ -98,25 +101,25 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 		t.Run("empty update mask", func(t *ftt.Test) {
 			req.UpdateMask.Paths = []string{}
 
-			err := validateUpdateRootInvocationRequest(ctx, req)
+			err := validateUpdateRootInvocationRequest(req, cfg)
 			assert.Loosely(t, err, should.ErrLike("update_mask: paths is empty"))
 		})
 
 		t.Run("non-exist update mask path", func(t *ftt.Test) {
 			req.UpdateMask.Paths = []string{"not_exist"}
-			err := validateUpdateRootInvocationRequest(ctx, req)
+			err := validateUpdateRootInvocationRequest(req, cfg)
 			assert.Loosely(t, err, should.ErrLike(`update_mask: field "not_exist" does not exist in message RootInvocation`))
 		})
 
 		t.Run("unsupported update mask path", func(t *ftt.Test) {
 			req.UpdateMask.Paths = []string{"name"}
-			err := validateUpdateRootInvocationRequest(ctx, req)
+			err := validateUpdateRootInvocationRequest(req, cfg)
 			assert.Loosely(t, err, should.ErrLike(`update_mask: unsupported path "name"`))
 		})
 
 		t.Run("submask in update mask", func(t *ftt.Test) {
 			req.UpdateMask.Paths = []string{"sources.gitiles_commit"}
-			err := validateUpdateRootInvocationRequest(ctx, req)
+			err := validateUpdateRootInvocationRequest(req, cfg)
 			assert.Loosely(t, err, should.ErrLike(`update_mask: "sources" should not have any submask`))
 		})
 
@@ -128,7 +131,7 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 					Name:       "project/bucket/builder",
 					Properties: pbutil.DefinitionProperties("key", "value"),
 				}
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
@@ -139,7 +142,7 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 					Name:       "project/bucket/builder",
 					Properties: pbutil.DefinitionProperties("key", "value"),
 				}
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_invocation: definition: system: unspecified"))
 			})
 		})
@@ -148,25 +151,70 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 			req.UpdateMask.Paths = []string{"sources"}
 			t.Run("valid", func(t *ftt.Test) {
 				req.RootInvocation.Sources = testutil.TestSources()
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
-			t.Run("invalid", func(t *ftt.Test) {
+			t.Run("invalid with respect to baseline validation", func(t *ftt.Test) {
 				req.RootInvocation.Sources = &pb.Sources{
 					BaseSources: &pb.Sources_GitilesCommit{
 						GitilesCommit: &pb.GitilesCommit{Host: "invalid host"},
 					},
 				}
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_invocation: sources: gitiles_commit: host: does not match"))
+			})
+
+			t.Run("invalid with respect to service configuration", func(t *ftt.Test) {
+				req.RootInvocation.Sources = &pb.Sources{
+					BaseSources: &pb.Sources_SubmittedAndroidBuild{
+						SubmittedAndroidBuild: &pb.SubmittedAndroidBuild{
+							DataRealm: "qual-invalid",
+							Branch:    "git_main",
+							BuildId:   12345678,
+						},
+					},
+				}
+				err := validateUpdateRootInvocationRequest(req, cfg)
+				assert.Loosely(t, err, should.ErrLike(`root_invocation: sources: submitted_android_build: data_realm: does not match pattern "^(prod|qual-staging)$"`))
 			})
 		})
 
 		t.Run("primary_build", func(t *ftt.Test) {
 			req.UpdateMask.Paths = []string{"primary_build"}
+			req.RootInvocation.PrimaryBuild = &pb.BuildDescriptor{
+				Definition: &pb.BuildDescriptor_AndroidBuild{
+					AndroidBuild: &pb.AndroidBuildDescriptor{
+						DataRealm:   "prod",
+						Branch:      "git_main",
+						BuildTarget: "aosp_arm64-userdebug",
+						BuildId:     "L1234567890",
+					},
+				},
+			}
+
 			t.Run("valid", func(t *ftt.Test) {
-				req.RootInvocation.PrimaryBuild = &pb.BuildDescriptor{
+				err := validateUpdateRootInvocationRequest(req, cfg)
+				assert.Loosely(t, err, should.BeNil)
+			})
+
+			t.Run("invalid with respect to baseline validation", func(t *ftt.Test) {
+				req.RootInvocation.PrimaryBuild.GetAndroidBuild().BuildId = ""
+				err := validateUpdateRootInvocationRequest(req, cfg)
+				assert.Loosely(t, err, should.ErrLike("root_invocation: primary_build: android_build: build_id: unspecified"))
+			})
+
+			t.Run("invalid with respect to service configuration", func(t *ftt.Test) {
+				req.RootInvocation.PrimaryBuild.GetAndroidBuild().DataRealm = "qual-invalid"
+				err := validateUpdateRootInvocationRequest(req, cfg)
+				assert.Loosely(t, err, should.ErrLike(`root_invocation: primary_build: android_build: data_realm: does not match pattern "^(prod|qual-staging)$"`))
+			})
+		})
+
+		t.Run("extra_builds", func(t *ftt.Test) {
+			req.UpdateMask.Paths = []string{"extra_builds"}
+			req.RootInvocation.ExtraBuilds = []*pb.BuildDescriptor{
+				{
 					Definition: &pb.BuildDescriptor_AndroidBuild{
 						AndroidBuild: &pb.AndroidBuildDescriptor{
 							DataRealm:   "prod",
@@ -175,61 +223,24 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 							BuildId:     "L1234567890",
 						},
 					},
-				}
-				err := validateUpdateRootInvocationRequest(ctx, req)
-				assert.Loosely(t, err, should.BeNil)
-			})
+				},
+			}
 
-			t.Run("invalid", func(t *ftt.Test) {
-				req.RootInvocation.PrimaryBuild = &pb.BuildDescriptor{
-					Definition: &pb.BuildDescriptor_AndroidBuild{
-						AndroidBuild: &pb.AndroidBuildDescriptor{
-							DataRealm:   "prod",
-							Branch:      "git_main",
-							BuildTarget: "aosp_arm64-userdebug",
-							BuildId:     "", // Omitted.
-						},
-					},
-				}
-				err := validateUpdateRootInvocationRequest(ctx, req)
-				assert.Loosely(t, err, should.ErrLike("root_invocation: primary_build: android_build: build_id: unspecified"))
-			})
-		})
-
-		t.Run("extra_builds", func(t *ftt.Test) {
-			req.UpdateMask.Paths = []string{"extra_builds"}
 			t.Run("valid", func(t *ftt.Test) {
-				req.RootInvocation.ExtraBuilds = []*pb.BuildDescriptor{
-					{
-						Definition: &pb.BuildDescriptor_AndroidBuild{
-							AndroidBuild: &pb.AndroidBuildDescriptor{
-								DataRealm:   "prod",
-								Branch:      "git_main",
-								BuildTarget: "aosp_arm64-userdebug",
-								BuildId:     "L1234567890",
-							},
-						},
-					},
-				}
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
-			t.Run("invalid", func(t *ftt.Test) {
-				req.RootInvocation.ExtraBuilds = []*pb.BuildDescriptor{
-					{
-						Definition: &pb.BuildDescriptor_AndroidBuild{
-							AndroidBuild: &pb.AndroidBuildDescriptor{
-								DataRealm:   "prod",
-								Branch:      "git_main",
-								BuildTarget: "aosp_arm64-userdebug",
-								BuildId:     "INVALID",
-							},
-						},
-					},
-				}
-				err := validateUpdateRootInvocationRequest(ctx, req)
-				assert.Loosely(t, err, should.ErrLike("extra_builds: [0]: android_build: build_id: does not match pattern"))
+			t.Run("invalid with respect to baseline validation", func(t *ftt.Test) {
+				req.RootInvocation.ExtraBuilds[0].GetAndroidBuild().BuildId = "INVALID"
+				err := validateUpdateRootInvocationRequest(req, cfg)
+				assert.Loosely(t, err, should.ErrLike("root_invocation: extra_builds: [0]: android_build: build_id: does not match pattern"))
+			})
+
+			t.Run("invalid with respect to service configuration", func(t *ftt.Test) {
+				req.RootInvocation.ExtraBuilds[0].GetAndroidBuild().DataRealm = "qual-invalid"
+				err := validateUpdateRootInvocationRequest(req, cfg)
+				assert.Loosely(t, err, should.ErrLike(`root_invocation: extra_builds[0]: android_build: data_realm: does not match pattern "^(prod|qual-staging)$"`))
 			})
 		})
 
@@ -237,13 +248,13 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 			req.UpdateMask.Paths = []string{"tags"}
 			t.Run("valid", func(t *ftt.Test) {
 				req.RootInvocation.Tags = []*pb.StringPair{{Key: "k", Value: "v"}}
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
 			t.Run("invalid", func(t *ftt.Test) {
 				req.RootInvocation.Tags = []*pb.StringPair{{Key: "k", Value: "a\n"}}
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike(`root_invocation: tags: "k":"a\n": value: non-printable rune '\n' at byte index 1`))
 			})
 		})
@@ -257,7 +268,7 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 						"key_1": structpb.NewStringValue("value_1"),
 					},
 				}
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
@@ -265,7 +276,7 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 				req.RootInvocation.Properties = &structpb.Struct{Fields: map[string]*structpb.Value{
 					"key": structpb.NewStringValue("1"),
 				}}
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike(`root_invocation: properties: must have a field "@type"`))
 			})
 		})
@@ -274,13 +285,13 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 			req.UpdateMask.Paths = []string{"baseline_id"}
 			t.Run("valid", func(t *ftt.Test) {
 				req.RootInvocation.BaselineId = "try:linux-rel"
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 
 			t.Run("invalid", func(t *ftt.Test) {
 				req.RootInvocation.BaselineId = "invalid-baseline"
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_invocation: baseline_id: does not match"))
 			})
 		})
@@ -289,12 +300,12 @@ func TestValidateUpdateRootInvocationRequest(t *testing.T) {
 			req.UpdateMask.Paths = []string{"streaming_export_state"}
 			t.Run("valid", func(t *ftt.Test) {
 				req.RootInvocation.StreamingExportState = pb.RootInvocation_WAIT_FOR_METADATA
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.BeNil)
 			})
 			t.Run("invalid", func(t *ftt.Test) {
 				req.RootInvocation.StreamingExportState = pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED
-				err := validateUpdateRootInvocationRequest(ctx, req)
+				err := validateUpdateRootInvocationRequest(req, cfg)
 				assert.Loosely(t, err, should.ErrLike("root_invocation: streaming_export_state: unspecified"))
 			})
 		})

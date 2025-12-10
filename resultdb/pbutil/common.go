@@ -66,21 +66,6 @@ const MaxDependencyStepTagValSize = 1024
 
 const MaxInstructionNameSize = 100
 
-const (
-	// The maximum length allowed for Android Branch names.
-	// Note: The upstream technically does not enforce a limit but we
-	// enforce a reasonable limit here so that we have a number we can design with.
-	MaxAndroidBranchLength = 255 // bytes
-
-	// The maximum length allowed for Android Build Target names.
-	// Note: The upstream technically does not enforce a limit but we
-	// enforce a reasonable limit here so that we have a number we can design with.
-	MaxAndroidBuildTargetLength = 255 // bytes
-
-	// The maximum length allowed for Android Build IDs.
-	MaxAndroidBuildLength = 32 // bytes
-)
-
 // The maximum size the requests collection in a batch request, in bytes.
 const MaxBatchRequestSize = 10 * 1024 * 1024 // 10 MiB
 
@@ -106,10 +91,36 @@ var propertyTypeNameRe = regexpf("^%s$", propertyTypeNamePattern)
 
 var sha1Regex = regexp.MustCompile(`^[a-f0-9]{40}$`)
 
-// androidBuildIDRe defines valid Android build identifiers.
-// P indicates a Pending build, E an external build, L a local build. If no
-// prefix is present, it indicates a submitted build.
-var androidBuildIDRe = regexp.MustCompile(`^[ELP]?[1-9][0-9]*$`)
+var (
+	// androidBuildIDRE defines valid Android build identifiers.
+	// P indicates a Pending build, E an external build, L a local build. If no
+	// prefix is present, it indicates a submitted build.
+	androidBuildIDRE = regexp.MustCompile(`^[ELP]?[1-9][0-9]*$`)
+	// androidBuildDataRealmRE defines the valid alphabet for android build
+	// data realm identifiers.
+	// Note that CreateRootInvocation applies additional validation
+	// on top of this, based on what is in the service configuration, so this
+	// is deliberately fairly permissive.
+	androidBuildDataRealmRE = regexp.MustCompile(`^[a-z0-9\-]+$`)
+)
+
+const (
+	// The maximum length allowed for Android Branch names.
+	// Note: The upstream technically does not enforce a limit but we
+	// enforce a reasonable limit here so that we have a number we can design with.
+	maxAndroidBranchLength = 255 // bytes
+
+	// The maximum length allowed for Android Build Target names.
+	// Note: The upstream technically does not enforce a limit but we
+	// enforce a reasonable limit here so that we have a number we can design with.
+	maxAndroidBuildTargetLength = 255 // bytes
+
+	// The maximum length allowed for Android Build IDs.
+	maxAndroidBuildLength = 32 // bytes
+
+	// The maximum length allowed for Android Build data realms.
+	maxAndroidBuildDataRealmLength = 100 // bytes
+)
 
 var (
 	// Validates enum values are specified in kebab-case as recommended by
@@ -117,7 +128,7 @@ var (
 	producerResourceSystemRE = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 	// Limit to a sensible alphabet. This will allow swarming deployment names like
 	// "chromium-swarm-dev" as well as known data realms like "prod", "test", "qual".
-	producerDataRealmRE = regexp.MustCompile(`^([a-z0-9\-_]+)*$`)
+	producerDataRealmRE = regexp.MustCompile(`^[a-z0-9\-]+$`)
 )
 
 const (
@@ -379,12 +390,8 @@ func ValidateSubmittedAndroidBuild(buildID *pb.SubmittedAndroidBuild) error {
 	if buildID == nil {
 		return errors.New("unspecified")
 	}
-	if buildID.DataRealm == "" {
-		return errors.New("data_realm: unspecified")
-	}
-	// Support a few common data realm values from go/data-realm.
-	if buildID.DataRealm != "prod" && buildID.DataRealm != "test" {
-		return errors.Fmt("data_realm: unknown data realm %q", buildID.DataRealm)
+	if err := validate.MatchReWithLength(androidBuildDataRealmRE, 1, maxAndroidBuildDataRealmLength, buildID.DataRealm); err != nil {
+		return errors.Fmt("data_realm: %w", err)
 	}
 	if buildID.Branch == "" {
 		return errors.New("branch: unspecified")
@@ -393,7 +400,7 @@ func ValidateSubmittedAndroidBuild(buildID *pb.SubmittedAndroidBuild) error {
 	// we are fairly liberal in the alphabet and length we allow here.
 	// We do impose some limits here to allow us to make some assumptions when
 	// implementing UIs and RPCs.
-	if err := ValidateUTF8PrintableStrict(buildID.Branch, MaxAndroidBranchLength); err != nil {
+	if err := ValidateUTF8PrintableStrict(buildID.Branch, maxAndroidBranchLength); err != nil {
 		return errors.Fmt("branch: %w", err)
 	}
 	if buildID.BuildId == 0 {
@@ -487,12 +494,8 @@ func ValidateAndroidBuildDescriptor(build *pb.AndroidBuildDescriptor) error {
 	if build == nil {
 		return validate.Unspecified()
 	}
-	if build.DataRealm == "" {
-		return errors.New("data_realm: unspecified")
-	}
-	// Support a few common data realm values from go/data-realm.
-	if build.DataRealm != "prod" && build.DataRealm != "test" {
-		return errors.Fmt("data_realm: unknown data realm %q", build.DataRealm)
+	if err := validate.MatchReWithLength(androidBuildDataRealmRE, 1, maxAndroidBuildDataRealmLength, build.DataRealm); err != nil {
+		return errors.Fmt("data_realm: %w", err)
 	}
 
 	if build.Branch == "" {
@@ -503,16 +506,16 @@ func ValidateAndroidBuildDescriptor(build *pb.AndroidBuildDescriptor) error {
 	// We do impose some limits here to allow us to make some assumptions when
 	// implementing UIs and RPCs, such as the branch will consist only of printables
 	// and is not kilobytes in size.
-	if err := ValidateUTF8PrintableStrict(build.Branch, MaxAndroidBranchLength); err != nil {
+	if err := ValidateUTF8PrintableStrict(build.Branch, maxAndroidBranchLength); err != nil {
 		return errors.Fmt("branch: %w", err)
 	}
 	if build.BuildTarget == "" {
 		return errors.New("build_target: unspecified")
 	}
-	if err := ValidateUTF8PrintableStrict(build.BuildTarget, MaxAndroidBuildTargetLength); err != nil {
+	if err := ValidateUTF8PrintableStrict(build.BuildTarget, maxAndroidBuildTargetLength); err != nil {
 		return errors.Fmt("build_target: %w", err)
 	}
-	if err := validate.MatchReWithLength(androidBuildIDRe, 1, MaxAndroidBuildLength, build.BuildId); err != nil {
+	if err := validate.MatchReWithLength(androidBuildIDRE, 1, maxAndroidBuildLength, build.BuildId); err != nil {
 		return errors.Fmt("build_id: %w", err)
 	}
 	return nil

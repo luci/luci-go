@@ -377,7 +377,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
-				t.Run("invalid", func(t *ftt.Test) {
+				t.Run("invalid with respect to baseline validation", func(t *ftt.Test) {
 					req.RootInvocation.Sources = &pb.Sources{
 						BaseSources: &pb.Sources_GitilesCommit{
 							GitilesCommit: &pb.GitilesCommit{},
@@ -385,6 +385,19 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					}
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: sources: gitiles_commit: host: unspecified"))
+				})
+				t.Run("invalid with respect to config", func(t *ftt.Test) {
+					req.RootInvocation.Sources = &pb.Sources{
+						BaseSources: &pb.Sources_SubmittedAndroidBuild{
+							SubmittedAndroidBuild: &pb.SubmittedAndroidBuild{
+								DataRealm: "qual-nonexistant",
+								Branch:    "git_main",
+								BuildId:   12345678,
+							},
+						},
+					}
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike(`root_invocation: sources: submitted_android_build: data_realm: does not match pattern "^(prod|qual-staging)$"`))
 				})
 			})
 			t.Run("primary_build", func(t *ftt.Test) {
@@ -407,7 +420,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
-				t.Run("invalid", func(t *ftt.Test) {
+				t.Run("invalid with respect to baseline validation", func(t *ftt.Test) {
 					req.RootInvocation.PrimaryBuild = &pb.BuildDescriptor{
 						Definition: &pb.BuildDescriptor_AndroidBuild{
 							AndroidBuild: &pb.AndroidBuildDescriptor{
@@ -419,6 +432,19 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					}
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: primary_build: android_build: build_target: unspecified"))
+				})
+				t.Run("invalid with respect to config", func(t *ftt.Test) {
+					req.RootInvocation.Sources = &pb.Sources{
+						BaseSources: &pb.Sources_SubmittedAndroidBuild{
+							SubmittedAndroidBuild: &pb.SubmittedAndroidBuild{
+								DataRealm: "qual-nonexistant",
+								Branch:    "git_main",
+								BuildId:   12345678,
+							},
+						},
+					}
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike(`root_invocation: sources: submitted_android_build: data_realm: does not match pattern "^(prod|qual-staging)$"`))
 				})
 			})
 			t.Run("extra_builds", func(t *ftt.Test) {
@@ -454,7 +480,7 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.BeNil)
 				})
-				t.Run("invalid", func(t *ftt.Test) {
+				t.Run("invalid with respect to baseline validation", func(t *ftt.Test) {
 					req.RootInvocation.ExtraBuilds = []*pb.BuildDescriptor{
 						{
 							Definition: &pb.BuildDescriptor_AndroidBuild{
@@ -468,6 +494,22 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					}
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike("root_invocation: extra_builds: [0]: android_build: build_target: unspecified"))
+				})
+				t.Run("invalid with respect to config", func(t *ftt.Test) {
+					req.RootInvocation.ExtraBuilds = []*pb.BuildDescriptor{
+						{
+							Definition: &pb.BuildDescriptor_AndroidBuild{
+								AndroidBuild: &pb.AndroidBuildDescriptor{
+									DataRealm:   "qual-nonexists",
+									Branch:      "git_main",
+									BuildTarget: "some-other-target",
+									BuildId:     "P987654321",
+								},
+							},
+						},
+					}
+					err := validateCreateRootInvocationRequest(req, cfg)
+					assert.Loosely(t, err, should.ErrLike(`root_invocation: extra_builds[0]: android_build: data_realm: does not match pattern "^(prod|qual-staging)$"`))
 				})
 				t.Run("duplicate primary build", func(t *ftt.Test) {
 					req.RootInvocation.ExtraBuilds = []*pb.BuildDescriptor{

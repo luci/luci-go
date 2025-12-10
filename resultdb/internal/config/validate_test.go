@@ -465,4 +465,62 @@ func TestServiceConfigValidator(t *testing.T) {
 			})
 		})
 	})
+
+	ftt.Run("android build", t, func(t *ftt.Test) {
+		cfg := CreatePlaceholderServiceConfig()
+		cfg.AndroidBuild = &configpb.AndroidBuild{
+			DataRealmPattern: "^(prod|qual-staging)$",
+			DataRealms: map[string]*configpb.AndroidBuild_ByDataRealmConfig{
+				"prod": {
+					FullBuildUrlTemplate: "https://android-build.googleplex.com/build_explorer/build_details/${build_id}/${build_target}/",
+				},
+			},
+		}
+
+		path := "android_build"
+		ab := cfg.AndroidBuild
+
+		t.Run("Valid", func(t *ftt.Test) {
+			assert.Loosely(t, validate(cfg), should.BeNil)
+		})
+		t.Run("Data Realm Pattern", func(t *ftt.Test) {
+			path := path + " / data_realm_pattern"
+			t.Run("Empty", func(t *ftt.Test) {
+				ab.DataRealmPattern = ""
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): unspecified`))
+			})
+			t.Run("Invalid", func(t *ftt.Test) {
+				ab.DataRealmPattern = "^[$"
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): could not compile pattern: error parsing regexp: missing closing ]: `))
+			})
+			t.Run("Invalid Start/End", func(t *ftt.Test) {
+				ab.DataRealmPattern = "blah"
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): pattern must start and end with ^ and $`))
+			})
+		})
+		t.Run("Data realms", func(t *ftt.Test) {
+			path := path + " / data_realms[\"prod\"]"
+
+			t.Run("Empty collection", func(t *ftt.Test) {
+				ab.DataRealms = nil
+				assert.Loosely(t, validate(cfg), should.BeNil)
+			})
+			t.Run("Nil", func(t *ftt.Test) {
+				ab.DataRealms["prod"] = nil
+				assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): unspecified`))
+			})
+			t.Run("Full Build URL Template By Data Realm", func(t *ftt.Test) {
+				path := path + " / full_build_url_template"
+				dr := ab.DataRealms["prod"]
+				t.Run("Empty", func(t *ftt.Test) {
+					dr.FullBuildUrlTemplate = ""
+					assert.Loosely(t, validate(cfg), should.BeNil)
+				})
+				t.Run("Invalid variable", func(t *ftt.Test) {
+					dr.FullBuildUrlTemplate = "https://example.com/${foo}"
+					assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): unknown variable "foo"; allowed variables are ["branch", "build_id", "build_target"]`))
+				})
+			})
+		})
+	})
 }

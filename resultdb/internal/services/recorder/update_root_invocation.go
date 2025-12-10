@@ -41,8 +41,11 @@ func (s *recorderServer) UpdateRootInvocation(ctx context.Context, in *pb.Update
 	if err := verifyUpdateRootInvocationPermissions(ctx, in); err != nil {
 		return nil, err
 	}
-
-	if err := validateUpdateRootInvocationRequest(ctx, in); err != nil {
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateUpdateRootInvocationRequest(in, cfg); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 	rootInvID := rootinvocations.MustParseName(in.RootInvocation.Name)
@@ -115,12 +118,6 @@ func (s *recorderServer) UpdateRootInvocation(ctx context.Context, in *pb.Update
 	// Populate output-only fields that are based on the commit timestamp.
 	if updated {
 		updatedRootInvRow.LastUpdated = ct
-	}
-
-	cfg, err := config.Service(ctx)
-	if err != nil {
-		// Internal error.
-		return nil, errors.Fmt("get service config: %w", err)
 	}
 
 	return masking.RootInvocation(updatedRootInvRow, cfg), nil
@@ -253,7 +250,7 @@ func extraBuildsEqual(a, b []*pb.BuildDescriptor) bool {
 }
 
 // validateUpdateRootInvocationRequest validates an UpdateRootInvocationRequest.
-func validateUpdateRootInvocationRequest(ctx context.Context, req *pb.UpdateRootInvocationRequest) error {
+func validateUpdateRootInvocationRequest(req *pb.UpdateRootInvocationRequest, cfg *config.CompiledServiceConfig) error {
 	// The root invocation name is already validated in verifyUpdateRootInvocationPermissions.
 
 	if req.RootInvocation.Etag != "" {
@@ -296,17 +293,34 @@ func validateUpdateRootInvocationRequest(ctx context.Context, req *pb.UpdateRoot
 			if err := pbutil.ValidateSources(req.RootInvocation.Sources); err != nil {
 				return errors.Fmt("root_invocation: sources: %w", err)
 			}
+			if submittedAndroidBuild := req.RootInvocation.Sources.GetSubmittedAndroidBuild(); submittedAndroidBuild != nil {
+				if err := cfg.AndroidBuild.ValidateSubmittedBuild(submittedAndroidBuild); err != nil {
+					return errors.Fmt("root_invocation: sources: submitted_android_build: %w", err)
+				}
+			}
 
 		case "primary_build":
 			if req.RootInvocation.PrimaryBuild != nil {
 				if err := pbutil.ValidateBuildDescriptor(req.RootInvocation.PrimaryBuild); err != nil {
 					return errors.Fmt("root_invocation: primary_build: %w", err)
 				}
+				if androidBuild := req.RootInvocation.PrimaryBuild.GetAndroidBuild(); androidBuild != nil {
+					if err := cfg.AndroidBuild.ValidateBuildDescriptor(androidBuild); err != nil {
+						return errors.Fmt("root_invocation: primary_build: android_build: %w", err)
+					}
+				}
 			}
 
 		case "extra_builds":
 			if err := pbutil.ValidateExtraBuildDescriptors(req.RootInvocation.ExtraBuilds); err != nil {
-				return errors.Fmt("extra_builds: %w", err)
+				return errors.Fmt("root_invocation: extra_builds: %w", err)
+			}
+			for i, b := range req.RootInvocation.ExtraBuilds {
+				if androidBuild := b.GetAndroidBuild(); androidBuild != nil {
+					if err := cfg.AndroidBuild.ValidateBuildDescriptor(androidBuild); err != nil {
+						return errors.Fmt("root_invocation: extra_builds[%v]: android_build: %w", i, err)
+					}
+				}
 			}
 			// Later, we need to validate the extra builds do not duplicate the existing or updated primary build.
 

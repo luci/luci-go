@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/server/caching"
 
+	"go.chromium.org/luci/resultdb/internal/androidbuild"
 	"go.chromium.org/luci/resultdb/internal/producersystems"
 	"go.chromium.org/luci/resultdb/internal/schemes"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -43,6 +44,8 @@ type CompiledServiceConfig struct {
 	Schemes map[string]*schemes.Scheme
 	// The compiled producer system configuration, by producer system name.
 	ProducerSystems map[string]*producersystems.ProducerSystem
+	// The compiled android build system configuration.
+	AndroidBuild *androidbuild.Config
 }
 
 // NewCompiledServiceConfig compiles the given raw service config
@@ -68,11 +71,17 @@ func NewCompiledServiceConfig(cfg *configpb.Config, revision string) (*CompiledS
 		compiledProducerSystems[ps.System] = compiledPS
 	}
 
+	androidBuild, err := androidbuild.NewConfig(cfg.AndroidBuild)
+	if err != nil {
+		return nil, err
+	}
+
 	return &CompiledServiceConfig{
 		Config:          cfg,
 		Revision:        revision,
 		Schemes:         compiledSchemes,
 		ProducerSystems: compiledProducerSystems,
+		AndroidBuild:    androidBuild,
 	}, nil
 }
 

@@ -53,8 +53,10 @@ type Config struct {
 	// - it will only be subject to basic validation, and
 	// - a URL to the producing system's UI will not be generated.
 	ProducerSystems []*ProducerSystem `protobuf:"bytes,4,rep,name=producer_systems,json=producerSystems,proto3" json:"producer_systems,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// Configuration related to Android Build.
+	AndroidBuild  *AndroidBuild `protobuf:"bytes,5,opt,name=android_build,json=androidBuild,proto3" json:"android_build,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Config) Reset() {
@@ -111,6 +113,13 @@ func (x *Config) GetSchemes() []*Scheme {
 func (x *Config) GetProducerSystems() []*ProducerSystem {
 	if x != nil {
 		return x.ProducerSystems
+	}
+	return nil
+}
+
+func (x *Config) GetAndroidBuild() *AndroidBuild {
+	if x != nil {
+		return x.AndroidBuild
 	}
 	return nil
 }
@@ -192,7 +201,7 @@ type ProducerSystem struct {
 	// An RE2 regular expression matching allowed values of the ProducerResource.data_realm field
 	// for this system.
 	//
-	// E.g. "prod|test".
+	// E.g. "^(prod|test)$".
 	DataRealmPattern string `protobuf:"bytes,3,opt,name=data_realm_pattern,json=dataRealmPattern,proto3" json:"data_realm_pattern,omitempty"`
 	// If true, only allow the producer system to be used by trusted callers having the
 	// `resultdb.workUnits.setProducerResource` or `resultdb.rootInvocations.setProducerResource`
@@ -290,16 +299,133 @@ func (x *ProducerSystem) GetUrlTemplateByDataRealm() map[string]string {
 	return nil
 }
 
+// Configuration related to Android Build.
+type AndroidBuild struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// An RE2 regular expression matching allowed values of the AndroidBuildDescriptor.data_realm
+	// and SubmittedAndroidBuild.data_realm fields.
+	//
+	// A data realm defines a unique deployment of Android Build with its own data store.
+	// By convention, "prod" refers to the production environment.
+	// Other environments typically start with a prefix from go/data-realms, e.g. "qual" or "test".
+	// E.g. "qual-staging" is a staging deployment. See go/android-build-qa for all environments.
+	//
+	// E.g. "^(prod|qual-staging)$"
+	DataRealmPattern string `protobuf:"bytes,1,opt,name=data_realm_pattern,json=dataRealmPattern,proto3" json:"data_realm_pattern,omitempty"`
+	// Defines data-realm-specific configuration.
+	DataRealms    map[string]*AndroidBuild_ByDataRealmConfig `protobuf:"bytes,2,rep,name=data_realms,json=dataRealms,proto3" json:"data_realms,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AndroidBuild) Reset() {
+	*x = AndroidBuild{}
+	mi := &file_go_chromium_org_luci_resultdb_proto_config_config_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AndroidBuild) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AndroidBuild) ProtoMessage() {}
+
+func (x *AndroidBuild) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_proto_config_config_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AndroidBuild.ProtoReflect.Descriptor instead.
+func (*AndroidBuild) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_config_config_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *AndroidBuild) GetDataRealmPattern() string {
+	if x != nil {
+		return x.DataRealmPattern
+	}
+	return ""
+}
+
+func (x *AndroidBuild) GetDataRealms() map[string]*AndroidBuild_ByDataRealmConfig {
+	if x != nil {
+		return x.DataRealms
+	}
+	return nil
+}
+
+type AndroidBuild_ByDataRealmConfig struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Defines the URL template for a fully-specified Android build (branch, build_id, target)
+	// in each Android Build data realm, for UI linking purposes. If a data realm allowed by
+	// data_realm_pattern is not listed here, no URL will be generated for it.
+	//
+	// To use a variable, use the syntax `${variable_name}`.
+	// The defined variables are:
+	// - ${branch}: the Android build branch, e.g `git_main`.
+	// - ${build_target}: the build target, e.g. `cf_x86_phone-userdebug`.
+	// - ${build_id}: the build ID, e.g. `P81983588`.
+	FullBuildUrlTemplate string `protobuf:"bytes,1,opt,name=full_build_url_template,json=fullBuildUrlTemplate,proto3" json:"full_build_url_template,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *AndroidBuild_ByDataRealmConfig) Reset() {
+	*x = AndroidBuild_ByDataRealmConfig{}
+	mi := &file_go_chromium_org_luci_resultdb_proto_config_config_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AndroidBuild_ByDataRealmConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AndroidBuild_ByDataRealmConfig) ProtoMessage() {}
+
+func (x *AndroidBuild_ByDataRealmConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_proto_config_config_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AndroidBuild_ByDataRealmConfig.ProtoReflect.Descriptor instead.
+func (*AndroidBuild_ByDataRealmConfig) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_config_config_proto_rawDescGZIP(), []int{3, 0}
+}
+
+func (x *AndroidBuild_ByDataRealmConfig) GetFullBuildUrlTemplate() string {
+	if x != nil {
+		return x.FullBuildUrlTemplate
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_resultdb_proto_config_config_proto protoreflect.FileDescriptor
 
 const file_go_chromium_org_luci_resultdb_proto_config_config_proto_rawDesc = "" +
 	"\n" +
-	"7go.chromium.org/luci/resultdb/proto/config/config.proto\x12\x14luci.resultdb.config\x1a7go.chromium.org/luci/resultdb/proto/config/scheme.proto\"\xf6\x02\n" +
+	"7go.chromium.org/luci/resultdb/proto/config/config.proto\x12\x14luci.resultdb.config\x1a7go.chromium.org/luci/resultdb/proto/config/scheme.proto\"\xbf\x03\n" +
 	"\x06Config\x12g\n" +
 	"\x19bq_artifact_export_config\x18\x01 \x01(\v2,.luci.resultdb.config.BqArtifactExportConfigR\x16bqArtifactExportConfig\x12z\n" +
 	"#bq_artifact_exporter_service_config\x18\x02 \x01(\v2,.luci.resultdb.config.BqArtifactExportConfigR\x1fbqArtifactExporterServiceConfig\x126\n" +
 	"\aschemes\x18\x03 \x03(\v2\x1c.luci.resultdb.config.SchemeR\aschemes\x12O\n" +
-	"\x10producer_systems\x18\x04 \x03(\v2$.luci.resultdb.config.ProducerSystemR\x0fproducerSystems\"Y\n" +
+	"\x10producer_systems\x18\x04 \x03(\v2$.luci.resultdb.config.ProducerSystemR\x0fproducerSystems\x12G\n" +
+	"\randroid_build\x18\x05 \x01(\v2\".luci.resultdb.config.AndroidBuildR\fandroidBuild\"Y\n" +
 	"\x16BqArtifactExportConfig\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12%\n" +
 	"\x0eexport_percent\x18\x02 \x01(\x03R\rexportPercent\"\x90\x03\n" +
@@ -312,7 +438,16 @@ const file_go_chromium_org_luci_resultdb_proto_config_config_proto_rawDesc = "" 
 	"\x1aurl_template_by_data_realm\x18\x06 \x03(\v2@.luci.resultdb.config.ProducerSystem.UrlTemplateByDataRealmEntryR\x16urlTemplateByDataRealm\x1aI\n" +
 	"\x1bUrlTemplateByDataRealmEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B5Z3go.chromium.org/luci/resultdb/proto/config;configpbb\x06proto3"
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd2\x02\n" +
+	"\fAndroidBuild\x12,\n" +
+	"\x12data_realm_pattern\x18\x01 \x01(\tR\x10dataRealmPattern\x12S\n" +
+	"\vdata_realms\x18\x02 \x03(\v22.luci.resultdb.config.AndroidBuild.DataRealmsEntryR\n" +
+	"dataRealms\x1aJ\n" +
+	"\x11ByDataRealmConfig\x125\n" +
+	"\x17full_build_url_template\x18\x01 \x01(\tR\x14fullBuildUrlTemplate\x1as\n" +
+	"\x0fDataRealmsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12J\n" +
+	"\x05value\x18\x02 \x01(\v24.luci.resultdb.config.AndroidBuild.ByDataRealmConfigR\x05value:\x028\x01B5Z3go.chromium.org/luci/resultdb/proto/config;configpbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_resultdb_proto_config_config_proto_rawDescOnce sync.Once
@@ -326,25 +461,31 @@ func file_go_chromium_org_luci_resultdb_proto_config_config_proto_rawDescGZIP() 
 	return file_go_chromium_org_luci_resultdb_proto_config_config_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_resultdb_proto_config_config_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_go_chromium_org_luci_resultdb_proto_config_config_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_go_chromium_org_luci_resultdb_proto_config_config_proto_goTypes = []any{
-	(*Config)(nil),                 // 0: luci.resultdb.config.Config
-	(*BqArtifactExportConfig)(nil), // 1: luci.resultdb.config.BqArtifactExportConfig
-	(*ProducerSystem)(nil),         // 2: luci.resultdb.config.ProducerSystem
-	nil,                            // 3: luci.resultdb.config.ProducerSystem.UrlTemplateByDataRealmEntry
-	(*Scheme)(nil),                 // 4: luci.resultdb.config.Scheme
+	(*Config)(nil),                         // 0: luci.resultdb.config.Config
+	(*BqArtifactExportConfig)(nil),         // 1: luci.resultdb.config.BqArtifactExportConfig
+	(*ProducerSystem)(nil),                 // 2: luci.resultdb.config.ProducerSystem
+	(*AndroidBuild)(nil),                   // 3: luci.resultdb.config.AndroidBuild
+	nil,                                    // 4: luci.resultdb.config.ProducerSystem.UrlTemplateByDataRealmEntry
+	(*AndroidBuild_ByDataRealmConfig)(nil), // 5: luci.resultdb.config.AndroidBuild.ByDataRealmConfig
+	nil,                                    // 6: luci.resultdb.config.AndroidBuild.DataRealmsEntry
+	(*Scheme)(nil),                         // 7: luci.resultdb.config.Scheme
 }
 var file_go_chromium_org_luci_resultdb_proto_config_config_proto_depIdxs = []int32{
 	1, // 0: luci.resultdb.config.Config.bq_artifact_export_config:type_name -> luci.resultdb.config.BqArtifactExportConfig
 	1, // 1: luci.resultdb.config.Config.bq_artifact_exporter_service_config:type_name -> luci.resultdb.config.BqArtifactExportConfig
-	4, // 2: luci.resultdb.config.Config.schemes:type_name -> luci.resultdb.config.Scheme
+	7, // 2: luci.resultdb.config.Config.schemes:type_name -> luci.resultdb.config.Scheme
 	2, // 3: luci.resultdb.config.Config.producer_systems:type_name -> luci.resultdb.config.ProducerSystem
-	3, // 4: luci.resultdb.config.ProducerSystem.url_template_by_data_realm:type_name -> luci.resultdb.config.ProducerSystem.UrlTemplateByDataRealmEntry
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	3, // 4: luci.resultdb.config.Config.android_build:type_name -> luci.resultdb.config.AndroidBuild
+	4, // 5: luci.resultdb.config.ProducerSystem.url_template_by_data_realm:type_name -> luci.resultdb.config.ProducerSystem.UrlTemplateByDataRealmEntry
+	6, // 6: luci.resultdb.config.AndroidBuild.data_realms:type_name -> luci.resultdb.config.AndroidBuild.DataRealmsEntry
+	5, // 7: luci.resultdb.config.AndroidBuild.DataRealmsEntry.value:type_name -> luci.resultdb.config.AndroidBuild.ByDataRealmConfig
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_resultdb_proto_config_config_proto_init() }
@@ -359,7 +500,7 @@ func file_go_chromium_org_luci_resultdb_proto_config_config_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_resultdb_proto_config_config_proto_rawDesc), len(file_go_chromium_org_luci_resultdb_proto_config_config_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
