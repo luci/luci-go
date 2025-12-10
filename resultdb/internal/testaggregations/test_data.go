@@ -20,7 +20,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testexonerationsv2"
 	"go.chromium.org/luci/resultdb/internal/testresultsv2"
-	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -28,9 +27,6 @@ import (
 
 // CreateTestData creates test data used for testing test aggregations.
 func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
-	// Prepare root Invocation
-	rootInvRow := rootinvocations.NewBuilder(rootInvID).Build()
-
 	moduleID := func(id string) *pb.ModuleIdentifier {
 		return &pb.ModuleIdentifier{
 			ModuleName:    id,
@@ -108,8 +104,8 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 		baseExonerationBuilder().WithFineName("f2").WithCaseName("exonerated_test").Build(),
 	}
 
-	// Insert data
-	ms := insert.RootInvocationWithRootWorkUnit(rootInvRow)
+	// Prepare mutations.
+	var ms []*spanner.Mutation
 	for _, r := range workUnits {
 		ms = append(ms, workunits.InsertForTesting(r)...)
 	}

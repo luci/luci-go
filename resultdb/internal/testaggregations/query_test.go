@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -34,7 +35,10 @@ func TestQuery(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		rootInvID := rootinvocations.ID("root-inv")
-		testutil.MustApply(ctx, t, CreateTestData(rootInvID)...)
+		rootInvRow := rootinvocations.NewBuilder(rootInvID).Build()
+		ms := insert.RootInvocationWithRootWorkUnit(rootInvRow)
+		ms = append(ms, CreateTestData(rootInvID)...)
+		testutil.MustApply(ctx, t, ms...)
 
 		query := &SingleLevelQuery{
 			RootInvocationID: rootInvID,

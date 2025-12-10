@@ -228,7 +228,7 @@ func (q *SingleLevelQuery) buildQuery(pageToken string) (spanner.Statement, erro
 	if pageToken != "" {
 		clause, err := whereAfterPageToken(q.Level, q.Order, pageToken, params)
 		if err != nil {
-			return spanner.Statement{}, appstatus.Attachf(err, codes.InvalidArgument, "page_token: invalid value")
+			return spanner.Statement{}, appstatus.Attachf(err, codes.InvalidArgument, "page_token: invalid page token")
 		}
 		paginationClause = "(" + clause + ")"
 		// In future, we can enhance this to push down a pagination clause to the underlying
@@ -692,7 +692,7 @@ func whereAfterPageToken(level pb.AggregationLevel, order Ordering, token string
 	}
 	components, err := pagination.ParseToken(token)
 	if err != nil {
-		return "", errors.Fmt("invalid page token: %w", err)
+		return "", errors.Fmt("invalid page token: %s", err)
 	}
 	var otherSortColumns int
 	if order.ByUIPriority {
