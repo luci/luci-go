@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
@@ -120,6 +121,11 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 		return nil, err
 	}
 
+	readMask, err := QueryMask(in.ReadMask)
+	if err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+
 	// Prepare the query.
 	q := artifacts.Query{
 		PageSize:       pagination.AdjustPageSize(in.PageSize),
@@ -128,6 +134,7 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 		ParentIDRegexp: parentIDRegexp,
 		WithGcsURI:     true,
 		WithRbeURI:     true,
+		Mask:           readMask,
 	}
 
 	// Read artifacts.
@@ -136,26 +143,31 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 		return nil, err
 	}
 
-	workUnitIDToProject := map[workunits.ID]string{}
-	invocationIDToProject := map[invocations.ID]string{}
-	if invID != "" {
-		realm, err := invocations.ReadRealm(ctx, invID)
-		if err != nil {
-			return nil, err
-		}
-		project, _ := realms.Split(realm)
-		invocationIDToProject[invID] = project
-	} else {
-		realm, err := workunits.ReadRealm(ctx, wuID)
-		if err != nil {
-			return nil, err
-		}
-		project, _ := realms.Split(realm)
-		workUnitIDToProject[wuID] = project
-	}
-
-	if err := s.populateFetchURLs(ctx, workUnitIDToProject, invocationIDToProject, arts...); err != nil {
+	includeFetchURL, err := readMask.Includes("fetch_url")
+	if err != nil {
 		return nil, err
+	}
+	if includeFetchURL == mask.IncludeEntirely {
+		workUnitIDToProject := map[workunits.ID]string{}
+		invocationIDToProject := map[invocations.ID]string{}
+		if invID != "" {
+			realm, err := invocations.ReadRealm(ctx, invID)
+			if err != nil {
+				return nil, err
+			}
+			project, _ := realms.Split(realm)
+			invocationIDToProject[invID] = project
+		} else {
+			realm, err := workunits.ReadRealm(ctx, wuID)
+			if err != nil {
+				return nil, err
+			}
+			project, _ := realms.Split(realm)
+			workUnitIDToProject[wuID] = project
+		}
+		if err := s.populateFetchURLs(ctx, workUnitIDToProject, invocationIDToProject, arts...); err != nil {
+			return nil, err
+		}
 	}
 
 	return &pb.ListArtifactsResponse{

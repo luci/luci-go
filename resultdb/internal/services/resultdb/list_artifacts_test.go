@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -197,6 +198,64 @@ func TestListArtifacts(t *testing.T) {
 				})
 			})
 		})
+
+		t.Run(`Read mask`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
+				insert.Artifact(wu.ID.LegacyInvocationID(), "", "a", map[string]any{"ContentType": "text/plain", "Size": 100}),
+				insert.Artifact(wu.ID.LegacyInvocationID(), "", "b", map[string]any{"GcsURI": "gs://bucket1/file1.txt"}),
+			)
+			req.Parent = "rootInvocations/root-inv1/workUnits/wu1"
+
+			t.Run(`Invalid mask`, func(t *ftt.Test) {
+				req.ReadMask = &field_mask.FieldMask{Paths: []string{"artifact_id", "bad_path"}}
+				_, err := srv.ListArtifacts(ctx, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`field "bad_path" does not exist in message Artifact`))
+			})
+
+			t.Run(`Exclude fetch url`, func(t *ftt.Test) {
+				req.ReadMask = &field_mask.FieldMask{Paths: []string{"name", "content_type"}}
+				actual, _ := mustFetch(req)
+				assert.Loosely(t, actual, should.HaveLength(2))
+				assert.Loosely(t, actual[0], should.Match(&pb.Artifact{
+					Name:        "rootInvocations/root-inv1/workUnits/wu1/artifacts/a",
+					ContentType: "text/plain",
+				}))
+				assert.Loosely(t, actual[1], should.Match(&pb.Artifact{
+					Name: "rootInvocations/root-inv1/workUnits/wu1/artifacts/b",
+				}))
+			})
+
+			t.Run(`Empty mask`, func(t *ftt.Test) {
+				req.ReadMask = nil
+				actual, _ := mustFetch(req)
+				assert.Loosely(t, actual, should.HaveLength(2))
+
+				expected0 := &pb.Artifact{
+					Name:        "rootInvocations/root-inv1/workUnits/wu1/artifacts/a",
+					ArtifactId:  "a",
+					ContentType: "text/plain",
+					HasLines:    true,
+					SizeBytes:   100,
+				}
+				expected0.FetchUrl = actual[0].FetchUrl
+				expected0.FetchUrlExpiration = actual[0].FetchUrlExpiration
+				assert.Loosely(t, actual[0], should.Match(expected0))
+				assert.Loosely(t, strings.HasPrefix(actual[0].FetchUrl, "https://signed-url.example.com/rootInvocations/root-inv1/workUnits/wu1/artifacts/a"), should.BeTrue)
+
+				expected1 := &pb.Artifact{
+					Name:       "rootInvocations/root-inv1/workUnits/wu1/artifacts/b",
+					ArtifactId: "b",
+					HasLines:   true,
+					GcsUri:     "gs://bucket1/file1.txt",
+				}
+				expected1.FetchUrl = actual[1].FetchUrl
+				expected1.FetchUrlExpiration = actual[1].FetchUrlExpiration
+				assert.Loosely(t, actual[1], should.Match(expected1))
+				assert.Loosely(t, actual[1].FetchUrl, should.Equal("https://fake-signed-url/bucket1/file1.txt?x-project=testproject"))
+			})
+		})
+
 		t.Run(`legacy invocations`, func(t *ftt.Test) {
 			req.Parent = "invocations/inv1"
 
@@ -251,6 +310,8 @@ func TestListArtifacts(t *testing.T) {
 				assert.Loosely(t, actual, should.HaveLength(1))
 				assert.Loosely(t, strings.HasPrefix(actual[0].FetchUrl, "https://signed-url.example.com/invocations/inv1/artifacts/a"), should.BeTrue)
 			})
+
+
 		})
 	})
 }
