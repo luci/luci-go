@@ -539,7 +539,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	// user input and is validated as part of the Where clause
 	// generation here.
 	const parameterPrefix = "w_"
-	whereClause, aip_parameters, err := TestVariantsVirtualTable.WhereClause(q.Filter, parameterPrefix)
+	whereClause, aip_parameters, err := TestVariantsVirtualTable.WhereClause(q.Filter, "", parameterPrefix)
 	if err != nil {
 		return InvalidArgumentTag.Apply(errors.Fmt("filter: %w", err))
 	}
@@ -761,7 +761,7 @@ func (q *Query) queryTestResults(ctx context.Context, limit int, f func(testId, 
 	// user input and is validated as part of the Where clause
 	// generation here.
 	const parameterPrefix = "w_"
-	whereClause, aip_parameters, err := TestVariantsVirtualTable.WhereClause(q.Filter, parameterPrefix)
+	whereClause, aip_parameters, err := TestVariantsVirtualTable.WhereClause(q.Filter, "", parameterPrefix)
 	if err != nil {
 		return InvalidArgumentTag.Apply(errors.Fmt("filter: %w", err))
 	}

@@ -1819,7 +1819,7 @@ func (f *fakeAnalysisClient) QueryClusterSummaries(ctx context.Context, project 
 		panic("realms passed to QueryClusterSummaries do not match expected")
 	}
 
-	_, _, err := analysis.ClusteredFailuresTable.WhereClause(options.FailureFilter, "w_")
+	_, _, err := analysis.ClusteredFailuresTable.WhereClause(options.FailureFilter, "", "w_")
 	if err != nil {
 		return nil, analysis.InvalidArgumentTag.Apply(errors.Fmt("failure_filter: %w", err))
 	}

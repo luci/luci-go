@@ -26,9 +26,14 @@ import (
 // whereClause constructs Standard SQL WHERE clause parts from
 // column definitions and a parsed AIP-160 filter.
 type whereClause struct {
-	table         *SqlTable
-	parameters    []SqlQueryParameter
-	namePrefix    string
+	table      *SqlTable
+	parameters []SqlQueryParameter
+	// The prefix to apply to generated SQL parameter names. Used to deconflict
+	// filter parameters from other parameters.
+	parameterPrefix string
+	// The table alias (if any) to use when generating SQL column names.
+	// Useful if the table has an alias (e.g. because there is a JOIN).
+	tableAlias    string
 	nextValueName int
 }
 
@@ -46,14 +51,15 @@ type SqlQueryParameter struct {
 //
 // All field names are replaced with the safe database column names from the specified table.
 // All user input strings are passed via query parameters, so the returned query is SQL injection safe.
-func (t *SqlTable) WhereClause(filter *Filter, parameterPrefix string) (string, []SqlQueryParameter, error) {
+func (t *SqlTable) WhereClause(filter *Filter, tableAlias, parameterPrefix string) (string, []SqlQueryParameter, error) {
 	if filter == nil || filter.Expression == nil {
 		return "(TRUE)", []SqlQueryParameter{}, nil
 	}
 
 	q := &whereClause{
-		table:      t,
-		namePrefix: parameterPrefix,
+		table:           t,
+		tableAlias:      tableAlias,
+		parameterPrefix: parameterPrefix,
 	}
 
 	clause, err := q.expressionQuery(filter.Expression)
@@ -159,7 +165,7 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		// marked for implicit matching.
 		for _, column := range w.table.columns {
 			if column.implicitFilter {
-				clauses = append(clauses, fmt.Sprintf("%s LIKE %s", column.databaseName, arg))
+				clauses = append(clauses, fmt.Sprintf("%s LIKE %s", w.columnDatabaseName(column), arg))
 			}
 		}
 		return "(" + strings.Join(clauses, " OR ") + ")", nil
@@ -168,6 +174,9 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 	if err != nil {
 		return "", err
 	}
+	// Fully-qualified column name, including the table alias prefix.
+	columnDatabaseName := w.columnDatabaseName(column)
+
 	if len(restriction.Comparable.Member.Fields) > 0 {
 		if !column.keyValue && !column.stringArrayKeyValue {
 			return "", fmt.Errorf("fields are only supported for key value columns.  Try removing the '.' from after your column named %q", column.fieldPath.String())
@@ -183,16 +192,16 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 				if err != nil {
 					return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
 				}
-				return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value LIKE %s))", column.databaseName, key, value), nil
+				return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value LIKE %s))", columnDatabaseName, key, value), nil
 			}
 			value, err := w.argValue(restriction.Arg, column)
 			if err != nil {
 				return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
 			}
 			if restriction.Comparator == "=" {
-				return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value = %s))", column.databaseName, key, value), nil
+				return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value = %s))", columnDatabaseName, key, value), nil
 			} else if restriction.Comparator == "!=" {
-				return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value <> %s))", column.databaseName, key, value), nil
+				return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value <> %s))", columnDatabaseName, key, value), nil
 			}
 			return "", fmt.Errorf("comparator operator not implemented for fields yet")
 		}
@@ -207,15 +216,15 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 
 			if restriction.Comparator == ":" {
 				boundVal := w.bind(key + ":" + "%" + quoteLike(valStrUnsafe) + "%")
-				return fmt.Sprintf("(EXISTS (SELECT 1 FROM UNNEST(%s) as v WHERE v LIKE %s))", column.databaseName, boundVal), nil
+				return fmt.Sprintf("(EXISTS (SELECT 1 FROM UNNEST(%s) as v WHERE v LIKE %s))", columnDatabaseName, boundVal), nil
 			}
 
 			boundVal := w.bind(key + ":" + valStrUnsafe)
 			if restriction.Comparator == "=" {
-				return fmt.Sprintf("(%s IN UNNEST(%s))", boundVal, column.databaseName), nil
+				return fmt.Sprintf("(%s IN UNNEST(%s))", boundVal, columnDatabaseName), nil
 			} else if restriction.Comparator == "!=" {
 				boundKey := w.bind(key + ":")
-				return fmt.Sprintf("(EXISTS (SELECT 1 FROM UNNEST(%s) as v WHERE STARTS_WITH(v, %s) AND NOT v = %s))", column.databaseName, boundKey, boundVal), nil
+				return fmt.Sprintf("(EXISTS (SELECT 1 FROM UNNEST(%s) as v WHERE STARTS_WITH(v, %s) AND NOT v = %s))", columnDatabaseName, boundKey, boundVal), nil
 			}
 			return "", fmt.Errorf("comparator operator %q not implemented for string array key value columns", restriction.Comparator)
 		}
@@ -232,7 +241,7 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 			if err != nil {
 				return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
 			}
-			return fmt.Sprintf("(EXISTS (SELECT value FROM UNNEST(%s) as value WHERE value LIKE %s))", column.databaseName, value), nil
+			return fmt.Sprintf("(EXISTS (SELECT value FROM UNNEST(%s) as value WHERE value LIKE %s))", columnDatabaseName, value), nil
 		}
 		return "", fmt.Errorf("comparator operator not implemented for arrays yet")
 	}
@@ -241,19 +250,19 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		if err != nil {
 			return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
 		}
-		return fmt.Sprintf("(%s = %s)", column.databaseName, arg), nil
+		return fmt.Sprintf("(%s = %s)", columnDatabaseName, arg), nil
 	} else if restriction.Comparator == "!=" {
 		arg, err := w.argValue(restriction.Arg, column)
 		if err != nil {
 			return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
 		}
-		return fmt.Sprintf("(%s <> %s)", column.databaseName, arg), nil
+		return fmt.Sprintf("(%s <> %s)", columnDatabaseName, arg), nil
 	} else if restriction.Comparator == ":" {
 		arg, err := w.likeArgValue(restriction.Arg, column)
 		if err != nil {
 			return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
 		}
-		return fmt.Sprintf("(%s LIKE %s)", column.databaseName, arg), nil
+		return fmt.Sprintf("(%s LIKE %s)", columnDatabaseName, arg), nil
 	} else {
 		return "", fmt.Errorf("comparator operator not implemented yet")
 	}
@@ -363,10 +372,18 @@ func (w *whereClause) likeComparableValue(comparable *Comparable) (string, error
 // the name of the parameter (including '@').
 // The returned string is an injection-safe SQL expression.
 func (w *whereClause) bind(value string) string {
-	name := w.namePrefix + strconv.Itoa(w.nextValueName)
+	name := w.parameterPrefix + strconv.Itoa(w.nextValueName)
 	w.nextValueName += 1
 	w.parameters = append(w.parameters, SqlQueryParameter{Name: name, Value: value})
 	return "@" + name
+}
+
+// columnName returns the fully-qualified name of the column in the database.
+func (w *whereClause) columnDatabaseName(column *SqlColumn) string {
+	if w.tableAlias != "" {
+		return w.tableAlias + "." + column.databaseName
+	}
+	return column.databaseName
 }
 
 // quoteLike turns a literal string into an escaped like expression.

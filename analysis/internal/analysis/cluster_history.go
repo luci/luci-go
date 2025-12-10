@@ -58,7 +58,7 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 	// user input and is validated as part of the Where/OrderBy clause
 	// generation here.
 	const parameterPrefix = "w_"
-	whereClause, parameters, err := ClusteredFailuresTable.WhereClause(options.FailureFilter, parameterPrefix)
+	whereClause, parameters, err := ClusteredFailuresTable.WhereClause(options.FailureFilter, "", parameterPrefix)
 	if err != nil {
 		return nil, InvalidArgumentTag.Apply(errors.Fmt("failure_filter: %w", err))
 	}

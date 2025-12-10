@@ -192,7 +192,7 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 	// user input and is validated as part of the Where/OrderBy clause
 	// generation here.
 	const parameterPrefix = "w_"
-	whereClause, parameters, err := ClusteredFailuresTable.WhereClause(options.FailureFilter, parameterPrefix)
+	whereClause, parameters, err := ClusteredFailuresTable.WhereClause(options.FailureFilter, "", parameterPrefix)
 	if err != nil {
 		return nil, InvalidArgumentTag.Apply(errors.Fmt("failure_filter: %w", err))
 	}
