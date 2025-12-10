@@ -87,11 +87,11 @@ type Tracker struct {
 
 type literalField string
 
-func (t *Tracker) pushField(field literalField, extra ...protopath.Step) (pop func()) {
+func (t *Tracker) goInto(field literalField, extra *protopath.Step, cb func()) {
 	step, ok := t.stack[len(t.stack)-1][field]
 	if !ok {
 		panic(fmt.Errorf(
-			"validate: field %q in message %q does not exist",
+			"pathutil.Tracker: field %q in message %s does not exist",
 			field, t.stack[len(t.stack)-1]))
 	}
 	fd := step.FieldDescriptor()
@@ -100,22 +100,28 @@ func (t *Tracker) pushField(field literalField, extra ...protopath.Step) (pop fu
 	}
 
 	msg := fd.Message()
-	if msg != nil && !t.canDeepen() {
-		return func() {}
+	if msg != nil {
+		if t.maxDepth > 0 && t.CurDepth() == t.maxDepth {
+			t.Err("exceeds maximum depth %d", t.maxDepth)
+			return
+		}
 	}
 
 	pathIdx := len(t.path)
 	stackIdx := len(t.stack)
 
-	t.path = slices.Grow(t.path, 1+len(extra))
-	t.path = append(t.path, step)
-	t.path = append(t.path, extra...)
+	if extra == nil {
+		t.path = append(t.path, step)
+	} else {
+		t.path = append(t.path, step, *extra)
+	}
 
 	t.stack = append(t.stack, t.cachedSteps[msg])
-	return func() {
+	defer func() {
 		t.path = t.path[:pathIdx]
 		t.stack = t.stack[:stackIdx]
-	}
+	}()
+	cb()
 }
 
 // Field updates the Tracker's path to add `field` for the duration of `cb`.
@@ -128,8 +134,7 @@ func (t *Tracker) pushField(field literalField, extra ...protopath.Step) (pop fu
 //	})
 //	// Path is `(MyMessage).a` again
 func (t *Tracker) Field(field literalField, cb func()) {
-	defer t.pushField(field)()
-	cb()
+	t.goInto(field, nil, cb)
 }
 
 // ListIndex updates the Tracker's path to add `field[idx]` for the duration of
@@ -147,8 +152,8 @@ func (t *Tracker) Field(field literalField, cb func()) {
 //	}
 //	// Path is `(MyMessage).a` again
 func (t *Tracker) ListIndex(field literalField, idx int, cb func()) {
-	defer t.pushField(field, protopath.ListIndex(idx))()
-	cb()
+	extra := protopath.ListIndex(idx)
+	t.goInto(field, &extra, cb)
 }
 
 // MapIndex updates the Tracker's path to add `field[key]` for the duration of
@@ -169,8 +174,8 @@ func (t *Tracker) ListIndex(field literalField, idx int, cb func()) {
 // `key` must be a valid map key type (which it will be, if it came from the
 // proto message) or this will panic.
 func (t *Tracker) MapIndex(field literalField, key any, cb func()) {
-	defer t.pushField(field, protopath.MapIndex(protoreflect.MapKey(protoreflect.ValueOf(key))))()
-	cb()
+	extra := protopath.MapIndex(protoreflect.MapKey(protoreflect.ValueOf(key)))
+	t.goInto(field, &extra, cb)
 }
 
 // CurDepth returns the number of fields traversed from the root message.
@@ -178,60 +183,59 @@ func (t *Tracker) CurDepth() int {
 	return len(t.stack) - 1
 }
 
-func (t *Tracker) canDeepen() bool {
-	if t.maxDepth > 0 && t.CurDepth() == t.maxDepth {
-		t.Err("reached maximum depth %d", t.maxDepth)
-		return false
-	}
-	return true
-}
-
 // Err records a new [Error] to this Tracker, capturing the current path,
 // and rendering the error with `fmt.Errorf`.
 func (t *Tracker) Err(format string, args ...any) {
+	var wrapped error
+	if format == "%w" && len(args) == 1 {
+		if err, ok := args[0].(error); ok {
+			wrapped = err
+		}
+	}
+	if wrapped == nil {
+		wrapped = fmt.Errorf(format, args...)
+	}
+
 	t.errs = append(t.errs, &Error{
 		Path:    slices.Clone(t.path),
-		Wrapped: fmt.Errorf(format, args...),
+		Wrapped: wrapped,
 	})
 }
 
 // FieldErr records a new [Error] to this Tracker, capturing the current path
 // plus a new Field.
 //
-// This is equivalent to, but more efficient/less verbose than:
+// This is equivalent to:
 //
 //	t.Field(field, func() {
-//	  t.Err(format, args)
+//	  t.Err(format, args...)
 //	})
 func (t *Tracker) FieldErr(field literalField, format string, args ...any) {
-	defer t.pushField(field)()
-	t.Err(format, args...)
+	t.Field(field, func() { t.Err(format, args...) })
 }
 
 // ListIndexErr records a new [Error] to this Tracker, capturing the current
 // path plus a new Field and list index.
 //
-// This is equivalent to, but more efficient/less verbose than:
+// This is equivalent to:
 //
 //	t.ListIndex(field, idx, func() {
-//	  t.Err(format, args)
+//	  t.Err(format, args...)
 //	})
 func (t *Tracker) ListIndexErr(field literalField, idx int, format string, args ...any) {
-	defer t.pushField(field, protopath.ListIndex(idx))()
-	t.Err(format, args...)
+	t.ListIndex(field, idx, func() { t.Err(format, args...) })
 }
 
 // MapIndexErr records a new [Error] to this Tracker, capturing the current
 // path plus a new Field and map index.
 //
-// This is equivalent to, but more efficient/less verbose than:
+// This is equivalent to:
 //
 //	t.MapIndex(field, idx, func() {
 //	  t.Err(format, args)
 //	})
 func (t *Tracker) MapIndexErr(field literalField, key any, format string, args ...any) {
-	defer t.pushField(field, protopath.MapIndex(protoreflect.MapKey(protoreflect.ValueOf(key))))()
-	t.Err(format, args...)
+	t.MapIndex(field, key, func() { t.Err(format, args...) })
 }
 
 // CurrentPath returns a copy of the current path.
@@ -239,12 +243,15 @@ func (t *Tracker) CurrentPath() protopath.Path {
 	return slices.Clone(t.path)
 }
 
-// Errors returns all accumulated errors on this tracker.
+// Error returns all accumulated errors on this tracker, or nil.
 //
 // This only contains errors emitted by [Tracker.Err], [Tracker.ListIndexErr],
 // or [Tracker.MapIndexErr].
 //
-// All errors in the returned slice are [*Error].
-func (t *Tracker) Errors() Errors {
+// If the error is non-nil, the returned object is always [Errors].
+func (t *Tracker) Error() error {
+	if len(t.errs) == 0 {
+		return nil
+	}
 	return t.errs
 }

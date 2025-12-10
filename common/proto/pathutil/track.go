@@ -20,12 +20,13 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// TrackMessage is a helper for [Tracker.Field] for message types to make the
-// message access and field name closer in your code, and to help make scope
-// issues easier (e.g. being able to use return to exit the outer function):
+// TrackOptionalMsg is a helper for [Tracker.Field] for message types to make
+// the message access and field name closer in your code, and to help make
+// scope issues easier (e.g. being able to use return to exit the outer
+// function):
 //
 //	// current path is `(MyMessage).a`
-//	for msg := range protoutil.TrackMessage(t, "deep_message", parent.GetDeepMessage()) {
+//	for msg := range protoutil.TrackOptionalMsg(t, "deep_message", parent.GetDeepMessage()) {
 //	  // current path is `(MyMessage).a.deep_message`
 //	}
 //	// Path is `(MyMessage).a` again
@@ -39,7 +40,7 @@ import (
 //
 // The full equivalent logic to return an error to the outer function is:
 //
-//	 for msg := range pathutil.TrackMessage(t, "deep_message", parent.GetDeepMessage()) {
+//	 for msg := range pathutil.TrackOptionalMsg(t, "deep_message", parent.GetDeepMessage()) {
 //	   if err := processDeepMessage(t, parent.GetDeepMessage()); err != nil {
 //			 return err
 //	   }
@@ -59,13 +60,32 @@ import (
 //
 // If `range` is too strange for you, just use [Tracker.Field] directly and
 // pretend this helper does not exist :).
-func TrackMessage[M interface {
+func TrackOptionalMsg[M interface {
 	comparable
 	proto.Message
 }](t *Tracker, field literalField, msg M) iter.Seq[M] {
 	var zero M
 	if msg == zero {
 		return func(yield func(M) bool) {}
+	}
+	return func(yield func(M) bool) {
+		t.Field(field, func() { yield(msg) })
+	}
+}
+
+// TrackRequiredMsg is a helper for [Tracker.Field] for message types.
+//
+// This behaves exactly the same as [TrackOptionalMsg], except if the message
+// is nil, this records an error "required".
+func TrackRequiredMsg[M interface {
+	comparable
+	proto.Message
+}](t *Tracker, field literalField, msg M) iter.Seq[M] {
+	var zero M
+	if msg == zero {
+		return func(yield func(M) bool) {
+			t.FieldErr(field, "required")
+		}
 	}
 	return func(yield func(M) bool) {
 		t.Field(field, func() { yield(msg) })

@@ -38,6 +38,11 @@ type Errors []*Error
 //
 // This returns the result of stringifying `errors.Join(e.Unwrap()...)`.
 func (e Errors) Error() string {
+	if len(e) == 0 {
+		// This is a bug; something returned an Errors instead of wrapping it in an
+		// `error` interface.
+		return "<bug: pathutil.Errors(nil) used as `error`>"
+	}
 	return errors.Join(e.Unwrap()...).Error()
 }
 

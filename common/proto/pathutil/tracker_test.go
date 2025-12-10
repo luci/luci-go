@@ -16,129 +16,104 @@ package pathutil_test
 
 import (
 	"fmt"
-	"strings"
+	"testing"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/proto/pathutil"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
-var testMessageTrackerFactory = pathutil.TrackerFactory[*TestMessage]{
-	AverageRecursiveMessageDepth: 2,
-}
+func shouldHaveErrors(errs ...string) comparison.Func[*pathutil.Tracker] {
+	return func(t *pathutil.Tracker) *failure.Summary {
+		errsSet := stringset.NewFromSlice(errs...)
 
-type validationContext struct {
-	// example external parameters to modify behavior of validation on a per
-	// instance basis.
-	singleFieldPrefix string
-}
+		sum := comparison.NewSummaryBuilder("shouldHaveErrors", t)
 
-func checkMapKey(t *pathutil.Tracker, key string) {
-	if key == "" {
-		t.Err("empty key not allowed")
-	}
-}
+		for _, err := range t.Error().(pathutil.Errors).Clone(pathutil.WithoutRoot) {
+			errS := err.Error()
+			if !errsSet.Del(errS) {
+				sum.AddFindingf("unexpected", "%q", errS)
+			}
+		}
+		for _, wanted := range errsSet.ToSortedSlice() {
+			sum.AddFindingf("missing", "%q", wanted)
+		}
 
-func checkIntRange(t *pathutil.Tracker, val int64) {
-	if val < 0 {
-		t.Err("val %d < 0", val)
-	}
-	if val > 100 {
-		t.Err("val %d > 100", val)
-	}
-}
-
-func validateTestMessage(ctx *validationContext, t *pathutil.Tracker, msg *TestMessage) {
-	if msg == nil {
-		return
-	}
-	// messages
-
-	// singular recursion. See doc on pathutil.TrackMessage for why this is a
-	// loop.
-	for msg := range pathutil.TrackMessage(t, "msg", msg.Msg) {
-		validateTestMessage(ctx, t, msg)
-	}
-
-	const listMsg = "list_msg"
-	if l := len(msg.ListMsg); l > 10 {
-		t.FieldErr(listMsg, "len(%d) > 10", l)
-	}
-	for _, val := range pathutil.TrackList(t, listMsg, msg.ListMsg) {
-		validateTestMessage(ctx, t, val)
-	}
-
-	const mapMsg = "map_msg"
-	if l := len(msg.MapMsg); l > 10 {
-		t.FieldErr(mapMsg, "len(%d) > 10", l)
-	}
-	for key, val := range pathutil.TrackMap(t, mapMsg, msg.MapMsg) {
-		checkMapKey(t, key)
-		validateTestMessage(ctx, t, val)
-	}
-
-	// scalars
-	if actual := msg.Scalar; !strings.HasPrefix(actual, ctx.singleFieldPrefix) {
-		t.FieldErr("scalar", "expected prefix %q, got %q", ctx.singleFieldPrefix, actual)
-	}
-
-	const listScalar = "list_scalar"
-	if l := len(msg.ListScalar); l > 10 {
-		t.FieldErr(listScalar, "len(%d) > 10", l)
-	}
-	for _, val := range pathutil.TrackList(t, listScalar, msg.ListScalar) {
-		checkIntRange(t, val)
-	}
-
-	const mapScalar = "map_scalar"
-	if l := len(msg.MapScalar); l > 10 {
-		t.FieldErr(mapScalar, "len(%d) > 10", l)
-	}
-	for key, val := range pathutil.TrackMap(t, mapScalar, msg.MapScalar) {
-		checkMapKey(t, key)
-		checkIntRange(t, val)
+		if len(sum.Findings) == 0 {
+			return nil
+		}
+		return sum.Summary
 	}
 }
 
-func ExampleTracker() {
-	// Make a new Tracker from our TrackerFactory[*TestMessage]
-	t := testMessageTrackerFactory.New(3)
-
-	// Our validation algorithm needs some ambient context
-	ctx := &validationContext{singleFieldPrefix: "prefix:"}
-
-	// validate
-	validateTestMessage(ctx, t, &TestMessage{
-		Scalar:     "bad:prefix",
-		ListScalar: []int64{1, 2, 3, 4, 300},
-		MapMsg: map[string]*TestMessage{
-			"hi": {
-				Scalar:     "prefix:OK",
-				ListScalar: make([]int64, 20),
-				MapMsg: map[string]*TestMessage{
-					"deeper": {
-						MapMsg: map[string]*TestMessage{
-							"danger!": {
-								Scalar: "prefix:stuff",
-								MapMsg: map[string]*TestMessage{
-									"oh no": {},
-								},
-							},
-						},
-					},
-				},
+func TestDeepnessCheck(t *testing.T) {
+	t.Run(`no depth check`, func(t *testing.T) {
+		sample := &TestMessage{
+			Msg: &TestMessage{
+				Msg: &TestMessage{},
 			},
-		},
+		}
+
+		track := testMessageTrackerFactory.New(0)
+		for range pathutil.TrackRequiredMsg(track, "msg", sample.GetMsg()) {
+			for range pathutil.TrackRequiredMsg(track, "msg", sample.GetMsg()) {
+				track.Err("should see this")
+			}
+		}
+
+		assert.That(t, track, shouldHaveErrors(
+			".msg.msg: should see this",
+		))
 	})
 
-	// Now look at the accumulated errors.
-	for _, err := range t.Errors() {
-		fmt.Println(err.StripRoot())
-	}
+	t.Run(`overrun`, func(t *testing.T) {
+		sample := &TestMessage{
+			Msg: &TestMessage{
+				Msg: &TestMessage{},
+			},
+		}
 
-	// Output:
-	// .map_msg["hi"].map_msg["deeper"].map_msg["danger!"]: reached maximum depth 3
-	// .map_msg["hi"].map_msg["deeper"].map_msg["danger!"].scalar: expected prefix "prefix:", got ""
-	// .map_msg["hi"].map_msg["deeper"].scalar: expected prefix "prefix:", got ""
-	// .map_msg["hi"].list_scalar: len(20) > 10
-	// .scalar: expected prefix "prefix:", got "bad:prefix"
-	// .list_scalar[4]: val 300 > 100
+		track := testMessageTrackerFactory.New(1)
+		for range pathutil.TrackRequiredMsg(track, "msg", sample.GetMsg()) {
+			for range pathutil.TrackRequiredMsg(track, "msg", sample.GetMsg()) {
+				track.Err("should not see this")
+			}
+		}
+
+		assert.That(t, track, shouldHaveErrors(
+			".msg: exceeds maximum depth 1",
+		))
+	})
+}
+
+func TestErr(t *testing.T) {
+	track := testMessageTrackerFactory.New(1)
+	track.Err("something")
+
+	sentinel := fmt.Errorf("sentinel")
+	track.Err("%w", sentinel)
+
+	track.FieldErr("scalar", "scalar %s", "error")
+
+	assert.That(t, track, shouldHaveErrors(
+		": something",
+		": sentinel",
+		".scalar: scalar error",
+	))
+
+	assert.That(t, track.Error().(pathutil.Errors)[1].Wrapped,
+		should.Equal(sentinel))
+}
+
+func TestNoSuchField(t *testing.T) {
+	track := testMessageTrackerFactory.New(10)
+	assert.That(t, func() {
+		track.FieldErr("not real", "this does not exist")
+	}, should.PanicLikeString(
+		`pathutil.Tracker: field "not real" in message (pathutil_test.TestMessage) does not exist`,
+	))
+	assert.Loosely(t, track.Error(), should.BeNil)
 }
