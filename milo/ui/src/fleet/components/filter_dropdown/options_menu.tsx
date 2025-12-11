@@ -69,23 +69,21 @@ export const OptionsMenu = ({
     <div
       ref={parentRef}
       css={{
-        overflowY: 'hidden',
         overflow: 'auto',
         maxHeight: 'inherit',
-        width: '100%',
+        width: 'max-content',
       }}
     >
       <div
         css={{
+          width: 'max-content',
           height: `${virtualizer.getTotalSize()}px`,
-          width: '100%',
         }}
       >
         <div
           style={{
-            width: '100%',
             transform: `translateY(${virtualRows[0]?.start ?? 0}px)`,
-            overflowY: 'hidden',
+            width: 'max-content',
           }}
         >
           {virtualRows.map((virtualRow) => {
@@ -120,8 +118,8 @@ export const OptionsMenu = ({
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
+                  minWidth: 'max-content',
                   padding: '6px 12px',
-                  textOverflow: 'ellipsis',
                   ...(item.el.label === BLANK_VALUE && {
                     color: colors.grey[500],
                   }),
@@ -143,9 +141,7 @@ export const OptionsMenu = ({
                   variant="body2"
                   highlightIndexes={item.matches}
                   css={{
-                    overflow: 'hidden',
                     textWrap: 'wrap',
-                    width: '100%',
                   }}
                 >
                   {item.el.label}

@@ -152,7 +152,7 @@ export function OptionsDropdown({
           css={{
             maxHeight: maxHeight,
             overflow: 'auto',
-            maxWidth: 500,
+            width: 500, //since some values are much longer than others we want to have a constant width to avoid flickering
           }}
           tabIndex={-1}
           key="options-menu-container"

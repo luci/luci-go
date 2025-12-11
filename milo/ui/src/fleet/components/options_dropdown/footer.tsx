@@ -31,8 +31,10 @@ export function Footer({
     <div>
       <Divider
         sx={{
-          paddingTop: '6px',
           backgroundColor: 'transparent',
+          paddingTop: 0,
+          marginTop: 0,
+          height: 1,
         }}
       />
       <div

@@ -24,7 +24,7 @@ import { OptionValue } from '@/fleet/types/option';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 
 import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';
-import { OptionsMenuOld } from '../filter_dropdown/options_menu_old';
+import { OptionsMenu } from '../filter_dropdown/options_menu';
 
 interface ColumnsButtonProps {
   isLoading?: boolean;
@@ -105,7 +105,7 @@ export function ColumnsManageDropDown({
 
         const sortedColumns = fuzzySort(searchQuery)(columns, (x) => x.label);
         return (
-          <OptionsMenuOld
+          <OptionsMenu
             elements={sortedColumns}
             selectedElements={new Set(selectedColumns)}
             flipOption={toggleColumn}
