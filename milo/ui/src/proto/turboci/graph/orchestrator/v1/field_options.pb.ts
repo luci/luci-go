@@ -27,7 +27,15 @@ export interface FieldOptions {
    * If this field is supplied and the target node already exists, its value
    * must match the target's value for this field.
    */
-  readonly creationOnly?: boolean | undefined;
+  readonly creationOnly?:
+    | boolean
+    | undefined;
+  /**
+   * If set on a `realm` field in WriteNodesRequest, it indicates that this
+   * realm, if left unset, will inherit the realm of the writer making the
+   * request (encoded in the `token` supplied in the WriteNodesRequest).
+   */
+  readonly realmInheritsWriter?: boolean | undefined;
 }
 
 /** CheckFieldOptions are field options which apply to Check messages. */
@@ -71,7 +79,7 @@ export interface FieldOptions_IdentifierOptions {
 }
 
 function createBaseFieldOptions(): FieldOptions {
-  return { check: undefined, id: undefined, creationOnly: undefined };
+  return { check: undefined, id: undefined, creationOnly: undefined, realmInheritsWriter: undefined };
 }
 
 export const FieldOptions: MessageFns<FieldOptions> = {
@@ -84,6 +92,9 @@ export const FieldOptions: MessageFns<FieldOptions> = {
     }
     if (message.creationOnly !== undefined) {
       writer.uint32(24).bool(message.creationOnly);
+    }
+    if (message.realmInheritsWriter !== undefined) {
+      writer.uint32(32).bool(message.realmInheritsWriter);
     }
     return writer;
   },
@@ -119,6 +130,14 @@ export const FieldOptions: MessageFns<FieldOptions> = {
           message.creationOnly = reader.bool();
           continue;
         }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.realmInheritsWriter = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -133,6 +152,9 @@ export const FieldOptions: MessageFns<FieldOptions> = {
       check: isSet(object.check) ? FieldOptions_CheckFieldOptions.fromJSON(object.check) : undefined,
       id: isSet(object.id) ? FieldOptions_IdentifierOptions.fromJSON(object.id) : undefined,
       creationOnly: isSet(object.creationOnly) ? globalThis.Boolean(object.creationOnly) : undefined,
+      realmInheritsWriter: isSet(object.realmInheritsWriter)
+        ? globalThis.Boolean(object.realmInheritsWriter)
+        : undefined,
     };
   },
 
@@ -146,6 +168,9 @@ export const FieldOptions: MessageFns<FieldOptions> = {
     }
     if (message.creationOnly !== undefined) {
       obj.creationOnly = message.creationOnly;
+    }
+    if (message.realmInheritsWriter !== undefined) {
+      obj.realmInheritsWriter = message.realmInheritsWriter;
     }
     return obj;
   },
@@ -162,6 +187,7 @@ export const FieldOptions: MessageFns<FieldOptions> = {
       ? FieldOptions_IdentifierOptions.fromPartial(object.id)
       : undefined;
     message.creationOnly = object.creationOnly ?? undefined;
+    message.realmInheritsWriter = object.realmInheritsWriter ?? undefined;
     return message;
   },
 };

@@ -6,7 +6,13 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { Variant } from "./common.pb";
+import {
+  AggregationLevel,
+  aggregationLevelFromJSON,
+  aggregationLevelToJSON,
+  TestIdentifierPrefix,
+  Variant,
+} from "./common.pb";
 
 export const protobufPackage = "luci.resultdb.v1";
 
@@ -199,6 +205,35 @@ export interface WorkUnitPredicate {
    * from closest parent to furthest parent.
    */
   readonly ancestorsOf: string;
+}
+
+/** Represents a function TestAggregation -> bool. */
+export interface TestAggregationPredicate {
+  /**
+   * The level of aggregate to return.
+   * All values except CASE are supported. For CASE-level aggregations,
+   * use QueryTestVerdicts instead.
+   * Required.
+   */
+  readonly aggregationLevel: AggregationLevel;
+  /**
+   * The test prefix for which to return aggregates.
+   *
+   * The test prefix must not be more precise than the requested aggregation_level.
+   * For example, if the requested aggregation_level is COARSE, you may not
+   * use a test_id_prefix with an aggregation_level of FINE.
+   *
+   * Example #1: To obtain coarse-level aggregates in a module:
+   * - set the requested aggregation_level to COARSE.
+   * - set the test_prefix_filter.aggregation_level to MODULE, and
+   * - test_prefix_filter.id to the Test ID prefix of that module.
+   *
+   * Example #2: To obtain the invocation-level aggregate:
+   * - set the requested aggregation_level to INVOCATION.
+   * - leave the test_prefix_filter unset, or set it to
+   *   test_id_prefix.aggregation_level to INVOCATION.
+   */
+  readonly testPrefixFilter: TestIdentifierPrefix | undefined;
 }
 
 function createBaseTestResultPredicate(): TestResultPredicate {
@@ -813,6 +848,86 @@ export const WorkUnitPredicate: MessageFns<WorkUnitPredicate> = {
   fromPartial(object: DeepPartial<WorkUnitPredicate>): WorkUnitPredicate {
     const message = createBaseWorkUnitPredicate() as any;
     message.ancestorsOf = object.ancestorsOf ?? "";
+    return message;
+  },
+};
+
+function createBaseTestAggregationPredicate(): TestAggregationPredicate {
+  return { aggregationLevel: 0, testPrefixFilter: undefined };
+}
+
+export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
+  encode(message: TestAggregationPredicate, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.aggregationLevel !== 0) {
+      writer.uint32(8).int32(message.aggregationLevel);
+    }
+    if (message.testPrefixFilter !== undefined) {
+      TestIdentifierPrefix.encode(message.testPrefixFilter, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TestAggregationPredicate {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestAggregationPredicate() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.aggregationLevel = reader.int32() as any;
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.testPrefixFilter = TestIdentifierPrefix.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestAggregationPredicate {
+    return {
+      aggregationLevel: isSet(object.aggregationLevel) ? aggregationLevelFromJSON(object.aggregationLevel) : 0,
+      testPrefixFilter: isSet(object.testPrefixFilter)
+        ? TestIdentifierPrefix.fromJSON(object.testPrefixFilter)
+        : undefined,
+    };
+  },
+
+  toJSON(message: TestAggregationPredicate): unknown {
+    const obj: any = {};
+    if (message.aggregationLevel !== 0) {
+      obj.aggregationLevel = aggregationLevelToJSON(message.aggregationLevel);
+    }
+    if (message.testPrefixFilter !== undefined) {
+      obj.testPrefixFilter = TestIdentifierPrefix.toJSON(message.testPrefixFilter);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TestAggregationPredicate>): TestAggregationPredicate {
+    return TestAggregationPredicate.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TestAggregationPredicate>): TestAggregationPredicate {
+    const message = createBaseTestAggregationPredicate() as any;
+    message.aggregationLevel = object.aggregationLevel ?? 0;
+    message.testPrefixFilter = (object.testPrefixFilter !== undefined && object.testPrefixFilter !== null)
+      ? TestIdentifierPrefix.fromPartial(object.testPrefixFilter)
+      : undefined;
     return message;
   },
 };

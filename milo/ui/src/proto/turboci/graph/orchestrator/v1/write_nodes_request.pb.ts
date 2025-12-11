@@ -10,6 +10,7 @@ import { Check, Identifier, Stage } from "../../ids/v1/identifier.pb";
 import { CheckKind, checkKindFromJSON, checkKindToJSON } from "./check_kind.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
 import { Edge } from "./edge.pb";
+import { ToRunning, ToScheduled } from "./failure.pb";
 import { Revision } from "./revision.pb";
 import { Stage_Assignment } from "./stage.pb";
 import { StageAttemptExecutionPolicy } from "./stage_attempt_execution_policy.pb";
@@ -85,13 +86,23 @@ export interface WriteNodesRequest {
    *
    * It is invalid to set this without also setting `token`.
    *
-   * All WriteNodes calls with a token act as a heartbeat for the current Stage
-   * Attempt indicated by the token. If you need to implement the 'simplest
-   * heartbeat', you can make a WriteNodes call with the token set and nothing
-   * else.
+   * A WriteNodes call with `current_stage` set (even when it is empty) acts as
+   * a heartbeat for the current Stage Attempt indicated by the token. If you
+   * need to implement the 'simplest heartbeat', you can make a WriteNodes call
+   * with just the token and an empty `current_stage {}`.
+   *
+   * WriteNodes calls that don't have `current_stage` set do not affect the
+   * heartbeat timer. This makes such calls less likely to hit transaction
+   * collisions (since they don't try to concurrently modify the heartbeat
+   * timer). This may be useful if you want to make concurrent WriteNodes calls
+   * from the same Stage Attempt, or even closely-sequential WriteNodes calls
+   * (to non-overlapping portions of the graph) from the same Stage Attempt.
+   *
+   * All else being equal, it's better to do fewer, larger, WriteNodes calls
+   * than many small WriteNodes calls.
    *
    * TBD: Document the SCHEDULED -> RUNNING state transition requirements (i.e.
-   * setting a unique worker_id and handling multiple logicall processes all
+   * setting a unique worker_id and handling multiple logical processes all
    * trying to transition to RUNNING at the same time).
    */
   readonly currentStage?: WriteNodesRequest_CurrentStageWrite | undefined;
@@ -108,6 +119,8 @@ export interface WriteNodesRequest_RealmValue {
    * it's unset/empty, it will inherit from the realm of the object containing
    * it (so, for Check options or result data, this would be the Check's
    * realm).
+   *
+   * If provided, must be the absolute form "<project>:<name>".
    *
    * If the value is being overwritten and `realm` is provided, it must match
    * the already-written value's realm.
@@ -164,11 +177,11 @@ export interface WriteNodesRequest_Reason {
   /**
    * The security realm for this reason.
    *
-   * If omitted, this will be the same as the parent node's realm.
+   * If provided, must be the absolute form "<project>:<name>".
    *
-   * This means that if you write to multiple Checks/Stages in the same
-   * WriteNodes call, this same Reason will be present in multiple Edits
-   * belonging to those different Checks and/or Stages' realms.
+   * If absent the written Stage will copy its realm from the implied realm
+   * of the `token`. For Stage Attempt tokens, this will be the Stage's
+   * realm, and for Creator tokens, this will be the WorkPlan's realm.
    */
   readonly realm?:
     | string
@@ -286,6 +299,8 @@ export interface WriteNodesRequest_CheckWrite {
     | undefined;
   /**
    * Realm to assign to this check.
+   *
+   * If provided, must be the absolute form "<project>:<name>".
    *
    * If this is set, and the Check DOES already exist, this MUST match the
    * existing realm.
@@ -406,6 +421,8 @@ export interface WriteNodesRequest_StageWrite {
     | undefined;
   /**
    * Realm to assign to this Stage.
+   *
+   * If provided, must be the absolute form "<project>:<name>".
    *
    * If the Stage already exists, this will only result in an error if it
    * doesn't match the existing realm.
@@ -554,6 +571,36 @@ export interface WriteNodesRequest_CurrentStageWrite {
    * it's possible to double-append them.
    */
   readonly progress: readonly WriteNodesRequest_StageAttemptProgress[];
+  /**
+   * Failure is for stage attempt execution failure information.
+   *
+   * This field must only be set when transition the StageAttempt to
+   * INCOMPLETE state. Omitting the state or setting the state to other
+   * values will result in an error.
+   */
+  readonly failure?: WriteNodesRequest_CurrentStageWrite_Failure | undefined;
+}
+
+/**
+ * Failure is for stage attempt execution failure information.
+ *
+ * Note: this message is not intended to be used for workflow-level failures.
+ * For example if a stage attempt finishes everything it is intended to do
+ * (i.e. to run a suite of tests), and it produces some failure
+ * results (i.e. some tests failed), those results should be reported to the
+ * corresponding check's result.Data, not here.
+ */
+export interface WriteNodesRequest_CurrentStageWrite_Failure {
+  /** Human-readable error message. */
+  readonly message?:
+    | string
+    | undefined;
+  /** Failure to transition a stage attempt to SCHEDULED state. */
+  readonly toScheduled?:
+    | ToScheduled
+    | undefined;
+  /** Failure to transition a stage attempt to RUNNING state. */
+  readonly toRunning?: ToRunning | undefined;
 }
 
 function createBaseWriteNodesRequest(): WriteNodesRequest {
@@ -1502,6 +1549,7 @@ function createBaseWriteNodesRequest_CurrentStageWrite(): WriteNodesRequest_Curr
     attemptExecutionPolicy: undefined,
     details: [],
     progress: [],
+    failure: undefined,
   };
 }
 
@@ -1524,6 +1572,9 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
     }
     for (const v of message.progress) {
       WriteNodesRequest_StageAttemptProgress.encode(v!, writer.uint32(50).fork()).join();
+    }
+    if (message.failure !== undefined) {
+      WriteNodesRequest_CurrentStageWrite_Failure.encode(message.failure, writer.uint32(58).fork()).join();
     }
     return writer;
   },
@@ -1583,6 +1634,14 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
           message.progress.push(WriteNodesRequest_StageAttemptProgress.decode(reader, reader.uint32()));
           continue;
         }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.failure = WriteNodesRequest_CurrentStageWrite_Failure.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1606,6 +1665,7 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
       progress: globalThis.Array.isArray(object?.progress)
         ? object.progress.map((e: any) => WriteNodesRequest_StageAttemptProgress.fromJSON(e))
         : [],
+      failure: isSet(object.failure) ? WriteNodesRequest_CurrentStageWrite_Failure.fromJSON(object.failure) : undefined,
     };
   },
 
@@ -1629,6 +1689,9 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
     if (message.progress?.length) {
       obj.progress = message.progress.map((e) => WriteNodesRequest_StageAttemptProgress.toJSON(e));
     }
+    if (message.failure !== undefined) {
+      obj.failure = WriteNodesRequest_CurrentStageWrite_Failure.toJSON(message.failure);
+    }
     return obj;
   },
 
@@ -1648,6 +1711,110 @@ export const WriteNodesRequest_CurrentStageWrite: MessageFns<WriteNodesRequest_C
         : undefined;
     message.details = object.details?.map((e) => Value.fromPartial(e)) || [];
     message.progress = object.progress?.map((e) => WriteNodesRequest_StageAttemptProgress.fromPartial(e)) || [];
+    message.failure = (object.failure !== undefined && object.failure !== null)
+      ? WriteNodesRequest_CurrentStageWrite_Failure.fromPartial(object.failure)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseWriteNodesRequest_CurrentStageWrite_Failure(): WriteNodesRequest_CurrentStageWrite_Failure {
+  return { message: undefined, toScheduled: undefined, toRunning: undefined };
+}
+
+export const WriteNodesRequest_CurrentStageWrite_Failure: MessageFns<WriteNodesRequest_CurrentStageWrite_Failure> = {
+  encode(
+    message: WriteNodesRequest_CurrentStageWrite_Failure,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.message !== undefined) {
+      writer.uint32(10).string(message.message);
+    }
+    if (message.toScheduled !== undefined) {
+      ToScheduled.encode(message.toScheduled, writer.uint32(18).fork()).join();
+    }
+    if (message.toRunning !== undefined) {
+      ToRunning.encode(message.toRunning, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): WriteNodesRequest_CurrentStageWrite_Failure {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseWriteNodesRequest_CurrentStageWrite_Failure() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.message = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.toScheduled = ToScheduled.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.toRunning = ToRunning.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): WriteNodesRequest_CurrentStageWrite_Failure {
+    return {
+      message: isSet(object.message) ? globalThis.String(object.message) : undefined,
+      toScheduled: isSet(object.toScheduled) ? ToScheduled.fromJSON(object.toScheduled) : undefined,
+      toRunning: isSet(object.toRunning) ? ToRunning.fromJSON(object.toRunning) : undefined,
+    };
+  },
+
+  toJSON(message: WriteNodesRequest_CurrentStageWrite_Failure): unknown {
+    const obj: any = {};
+    if (message.message !== undefined) {
+      obj.message = message.message;
+    }
+    if (message.toScheduled !== undefined) {
+      obj.toScheduled = ToScheduled.toJSON(message.toScheduled);
+    }
+    if (message.toRunning !== undefined) {
+      obj.toRunning = ToRunning.toJSON(message.toRunning);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<WriteNodesRequest_CurrentStageWrite_Failure>): WriteNodesRequest_CurrentStageWrite_Failure {
+    return WriteNodesRequest_CurrentStageWrite_Failure.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<WriteNodesRequest_CurrentStageWrite_Failure>,
+  ): WriteNodesRequest_CurrentStageWrite_Failure {
+    const message = createBaseWriteNodesRequest_CurrentStageWrite_Failure() as any;
+    message.message = object.message ?? undefined;
+    message.toScheduled = (object.toScheduled !== undefined && object.toScheduled !== null)
+      ? ToScheduled.fromPartial(object.toScheduled)
+      : undefined;
+    message.toRunning = (object.toRunning !== undefined && object.toRunning !== null)
+      ? ToRunning.fromPartial(object.toRunning)
+      : undefined;
     return message;
   },
 };

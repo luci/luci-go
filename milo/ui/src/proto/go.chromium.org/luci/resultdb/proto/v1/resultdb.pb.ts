@@ -9,19 +9,12 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { FieldMask } from "../../../../../google/protobuf/field_mask.pb";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
 import { Artifact, ArtifactLine } from "./artifact.pb";
-import {
-  AggregationLevel,
-  aggregationLevelFromJSON,
-  aggregationLevelToJSON,
-  Sources,
-  TestIdentifier,
-  TestIdentifierPrefix,
-  Variant,
-} from "./common.pb";
+import { Sources, TestIdentifier, TestIdentifierPrefix, Variant } from "./common.pb";
 import { Instruction, InstructionTarget, instructionTargetFromJSON, instructionTargetToJSON } from "./instruction.pb";
 import { Invocation } from "./invocation.pb";
 import {
   ArtifactPredicate,
+  TestAggregationPredicate,
   TestExonerationPredicate,
   TestMetadataPredicate,
   TestResultPredicate,
@@ -320,6 +313,14 @@ export interface ListArtifactsRequest {
    * match the call that provided the page token.
    */
   readonly pageToken: string;
+  /**
+   * Fields to include in the response.
+   * If not set, the default mask is used where all fields are included.
+   *
+   * In particular, the fetch_url field can slow down the request or in some cases introduce
+   * quota errors, so it is encouraged to not read the fetch_url field unless necessary.
+   */
+  readonly readMask: readonly string[] | undefined;
 }
 
 /** A response message for ListArtifacts RPC. */
@@ -1342,39 +1343,28 @@ export interface IDMatcher {
  * Next ID: 6.
  */
 export interface QueryTestAggregationsRequest {
-  /**
-   * The root invocation to retrieve aggregates for.
-   * Format: invocations/{INVOCATION_ID}.
-   * N.B. Specifying an invocation that is not an export root will yield an
-   * INVALID_ARGUMENT error.
-   */
-  readonly invocation: string;
-  /**
-   * The level of aggregate to return.
-   * All values except CASE are supported. For CASE-level aggregations,
-   * see QueryTestVerdicts instead.
-   */
-  readonly aggregationLevel: AggregationLevel;
-  /**
-   * The test prefix for which to return aggregates.
-   *
-   * The test prefix must not be more precise than the requested aggregation_level.
-   * For example, if the requested aggregation_level is COARSE, you may not
-   * use a test_id_prefix with an aggregation_level of FINE.
-   *
-   * Example #1: To obtain coarse-level aggregates in a module:
-   * - set the requested aggregation_level to COARSE.
-   * - set the test_prefix_filter.aggregation_level to MODULE, and
-   * - test_prefix_filter.id to the Test ID prefix of that module.
-   *
-   * Example #2: To obtain the invocation-level aggregate:
-   * - set the requested aggregation_level to INVOCATION.
-   * - leave the test_prefix_filter unset, or set it to
-   *   test_id_prefix.aggregation_level to INVOCATION.
-   */
-  readonly testPrefixFilter:
-    | TestIdentifierPrefix
+  /** The name of the root invocation to retrieve test variants from, see RootInvocation.name. */
+  readonly parent: string;
+  /** The predicate to filter test aggregations. */
+  readonly predicate:
+    | TestAggregationPredicate
     | undefined;
+  /**
+   * The order to sort test aggregations by.
+   *
+   * Refer to https://google.aip.dev/132#ordering for syntax.
+   *
+   * For performance reasons, the only allowed sort orders are:
+   * - `id.level, id.id` (default)
+   * - `id.level, ui_priority desc, id.id`
+   *
+   * Where `id.id` sorts by the lexicographical order of the test identifier prefix,
+   * i.e. (module_name, module_scheme, module_variant, coarse_name, fine_name).
+   *
+   * For queries that filter to one level of aggregations, the `id.level` is
+   * implicit and can be omitted.
+   */
+  readonly orderBy: string;
   /**
    * The maximum number of items to return. The service may return fewer than
    * this value.
@@ -2701,7 +2691,7 @@ export const GetArtifactRequest: MessageFns<GetArtifactRequest> = {
 };
 
 function createBaseListArtifactsRequest(): ListArtifactsRequest {
-  return { parent: "", pageSize: 0, pageToken: "" };
+  return { parent: "", pageSize: 0, pageToken: "", readMask: undefined };
 }
 
 export const ListArtifactsRequest: MessageFns<ListArtifactsRequest> = {
@@ -2714,6 +2704,9 @@ export const ListArtifactsRequest: MessageFns<ListArtifactsRequest> = {
     }
     if (message.pageToken !== "") {
       writer.uint32(26).string(message.pageToken);
+    }
+    if (message.readMask !== undefined) {
+      FieldMask.encode(FieldMask.wrap(message.readMask), writer.uint32(34).fork()).join();
     }
     return writer;
   },
@@ -2749,6 +2742,14 @@ export const ListArtifactsRequest: MessageFns<ListArtifactsRequest> = {
           message.pageToken = reader.string();
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.readMask = FieldMask.unwrap(FieldMask.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2763,6 +2764,7 @@ export const ListArtifactsRequest: MessageFns<ListArtifactsRequest> = {
       parent: isSet(object.parent) ? globalThis.String(object.parent) : "",
       pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
       pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+      readMask: isSet(object.readMask) ? FieldMask.unwrap(FieldMask.fromJSON(object.readMask)) : undefined,
     };
   },
 
@@ -2777,6 +2779,9 @@ export const ListArtifactsRequest: MessageFns<ListArtifactsRequest> = {
     if (message.pageToken !== "") {
       obj.pageToken = message.pageToken;
     }
+    if (message.readMask !== undefined) {
+      obj.readMask = FieldMask.toJSON(FieldMask.wrap(message.readMask));
+    }
     return obj;
   },
 
@@ -2788,6 +2793,7 @@ export const ListArtifactsRequest: MessageFns<ListArtifactsRequest> = {
     message.parent = object.parent ?? "";
     message.pageSize = object.pageSize ?? 0;
     message.pageToken = object.pageToken ?? "";
+    message.readMask = object.readMask ?? undefined;
     return message;
   },
 };
@@ -7069,19 +7075,19 @@ export const IDMatcher: MessageFns<IDMatcher> = {
 };
 
 function createBaseQueryTestAggregationsRequest(): QueryTestAggregationsRequest {
-  return { invocation: "", aggregationLevel: 0, testPrefixFilter: undefined, pageSize: 0, pageToken: "" };
+  return { parent: "", predicate: undefined, orderBy: "", pageSize: 0, pageToken: "" };
 }
 
 export const QueryTestAggregationsRequest: MessageFns<QueryTestAggregationsRequest> = {
   encode(message: QueryTestAggregationsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.invocation !== "") {
-      writer.uint32(10).string(message.invocation);
+    if (message.parent !== "") {
+      writer.uint32(10).string(message.parent);
     }
-    if (message.aggregationLevel !== 0) {
-      writer.uint32(16).int32(message.aggregationLevel);
+    if (message.predicate !== undefined) {
+      TestAggregationPredicate.encode(message.predicate, writer.uint32(18).fork()).join();
     }
-    if (message.testPrefixFilter !== undefined) {
-      TestIdentifierPrefix.encode(message.testPrefixFilter, writer.uint32(26).fork()).join();
+    if (message.orderBy !== "") {
+      writer.uint32(26).string(message.orderBy);
     }
     if (message.pageSize !== 0) {
       writer.uint32(32).int32(message.pageSize);
@@ -7104,15 +7110,15 @@ export const QueryTestAggregationsRequest: MessageFns<QueryTestAggregationsReque
             break;
           }
 
-          message.invocation = reader.string();
+          message.parent = reader.string();
           continue;
         }
         case 2: {
-          if (tag !== 16) {
+          if (tag !== 18) {
             break;
           }
 
-          message.aggregationLevel = reader.int32() as any;
+          message.predicate = TestAggregationPredicate.decode(reader, reader.uint32());
           continue;
         }
         case 3: {
@@ -7120,7 +7126,7 @@ export const QueryTestAggregationsRequest: MessageFns<QueryTestAggregationsReque
             break;
           }
 
-          message.testPrefixFilter = TestIdentifierPrefix.decode(reader, reader.uint32());
+          message.orderBy = reader.string();
           continue;
         }
         case 4: {
@@ -7150,11 +7156,9 @@ export const QueryTestAggregationsRequest: MessageFns<QueryTestAggregationsReque
 
   fromJSON(object: any): QueryTestAggregationsRequest {
     return {
-      invocation: isSet(object.invocation) ? globalThis.String(object.invocation) : "",
-      aggregationLevel: isSet(object.aggregationLevel) ? aggregationLevelFromJSON(object.aggregationLevel) : 0,
-      testPrefixFilter: isSet(object.testPrefixFilter)
-        ? TestIdentifierPrefix.fromJSON(object.testPrefixFilter)
-        : undefined,
+      parent: isSet(object.parent) ? globalThis.String(object.parent) : "",
+      predicate: isSet(object.predicate) ? TestAggregationPredicate.fromJSON(object.predicate) : undefined,
+      orderBy: isSet(object.orderBy) ? globalThis.String(object.orderBy) : "",
       pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
       pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
     };
@@ -7162,14 +7166,14 @@ export const QueryTestAggregationsRequest: MessageFns<QueryTestAggregationsReque
 
   toJSON(message: QueryTestAggregationsRequest): unknown {
     const obj: any = {};
-    if (message.invocation !== "") {
-      obj.invocation = message.invocation;
+    if (message.parent !== "") {
+      obj.parent = message.parent;
     }
-    if (message.aggregationLevel !== 0) {
-      obj.aggregationLevel = aggregationLevelToJSON(message.aggregationLevel);
+    if (message.predicate !== undefined) {
+      obj.predicate = TestAggregationPredicate.toJSON(message.predicate);
     }
-    if (message.testPrefixFilter !== undefined) {
-      obj.testPrefixFilter = TestIdentifierPrefix.toJSON(message.testPrefixFilter);
+    if (message.orderBy !== "") {
+      obj.orderBy = message.orderBy;
     }
     if (message.pageSize !== 0) {
       obj.pageSize = Math.round(message.pageSize);
@@ -7185,11 +7189,11 @@ export const QueryTestAggregationsRequest: MessageFns<QueryTestAggregationsReque
   },
   fromPartial(object: DeepPartial<QueryTestAggregationsRequest>): QueryTestAggregationsRequest {
     const message = createBaseQueryTestAggregationsRequest() as any;
-    message.invocation = object.invocation ?? "";
-    message.aggregationLevel = object.aggregationLevel ?? 0;
-    message.testPrefixFilter = (object.testPrefixFilter !== undefined && object.testPrefixFilter !== null)
-      ? TestIdentifierPrefix.fromPartial(object.testPrefixFilter)
+    message.parent = object.parent ?? "";
+    message.predicate = (object.predicate !== undefined && object.predicate !== null)
+      ? TestAggregationPredicate.fromPartial(object.predicate)
       : undefined;
+    message.orderBy = object.orderBy ?? "";
     message.pageSize = object.pageSize ?? 0;
     message.pageToken = object.pageToken ?? "";
     return message;

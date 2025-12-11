@@ -1941,7 +1941,7 @@ export function hardwareCapabilities_VideoAccelerationToJSON(object: HardwareCap
  *
  * Keep sorted by field names.
  *
- * NEXT TAG: 59
+ * NEXT TAG: 60
  */
 export interface Peripherals {
   readonly audioBoard?:
@@ -2122,6 +2122,8 @@ export interface Peripherals {
    * File bugs against buganizer component: 979102.
    */
   readonly simFeatures: readonly Peripherals_SIMFeature[];
+  /** The number of working BES boards in the testbed. */
+  readonly workingBesBoards?: number | undefined;
 }
 
 /** NEXT TAG: 12 */
@@ -5261,6 +5263,7 @@ function createBasePeripherals(): Peripherals {
     audioBeamforming: "",
     cameraState: 0,
     simFeatures: [],
+    workingBesBoards: 0,
   };
 }
 
@@ -5436,6 +5439,9 @@ export const Peripherals: MessageFns<Peripherals> = {
       writer.int32(v);
     }
     writer.join();
+    if (message.workingBesBoards !== undefined && message.workingBesBoards !== 0) {
+      writer.uint32(472).int32(message.workingBesBoards);
+    }
     return writer;
   },
 
@@ -5918,6 +5924,14 @@ export const Peripherals: MessageFns<Peripherals> = {
 
           break;
         }
+        case 59: {
+          if (tag !== 472) {
+            break;
+          }
+
+          message.workingBesBoards = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6007,6 +6021,7 @@ export const Peripherals: MessageFns<Peripherals> = {
       simFeatures: globalThis.Array.isArray(object?.simFeatures)
         ? object.simFeatures.map((e: any) => peripherals_SIMFeatureFromJSON(e))
         : [],
+      workingBesBoards: isSet(object.workingBesBoards) ? globalThis.Number(object.workingBesBoards) : 0,
     };
   },
 
@@ -6176,6 +6191,9 @@ export const Peripherals: MessageFns<Peripherals> = {
     if (message.simFeatures?.length) {
       obj.simFeatures = message.simFeatures.map((e) => peripherals_SIMFeatureToJSON(e));
     }
+    if (message.workingBesBoards !== undefined && message.workingBesBoards !== 0) {
+      obj.workingBesBoards = Math.round(message.workingBesBoards);
+    }
     return obj;
   },
 
@@ -6240,6 +6258,7 @@ export const Peripherals: MessageFns<Peripherals> = {
     message.audioBeamforming = object.audioBeamforming ?? "";
     message.cameraState = object.cameraState ?? 0;
     message.simFeatures = object.simFeatures?.map((e) => e) || [];
+    message.workingBesBoards = object.workingBesBoards ?? 0;
     return message;
   },
 };

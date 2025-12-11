@@ -356,7 +356,7 @@ export function hardwareStateToJSON(object: HardwareState): string {
 
 /**
  * This proto defines status labels in lab config of a DUT.
- * Next Tag: 38
+ * Next Tag: 39
  */
 export interface DutState {
   readonly id: ChromeOSDeviceID | undefined;
@@ -433,6 +433,7 @@ export interface DutState {
   /** The type of Fingerprint sensor on the DUT. */
   readonly fingerprintSensor: string;
   readonly gscChip: DutState_GscChip;
+  readonly workingBesBoards: number;
 }
 
 /**
@@ -700,6 +701,7 @@ function createBaseDutState(): DutState {
     fingerprintMcu: "",
     fingerprintSensor: "",
     gscChip: 0,
+    workingBesBoards: 0,
   };
 }
 
@@ -817,6 +819,9 @@ export const DutState: MessageFns<DutState> = {
     }
     if (message.gscChip !== 0) {
       writer.uint32(296).int32(message.gscChip);
+    }
+    if (message.workingBesBoards !== 0) {
+      writer.uint32(304).int32(message.workingBesBoards);
     }
     return writer;
   },
@@ -1134,6 +1139,14 @@ export const DutState: MessageFns<DutState> = {
           message.gscChip = reader.int32() as any;
           continue;
         }
+        case 38: {
+          if (tag !== 304) {
+            break;
+          }
+
+          message.workingBesBoards = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1190,6 +1203,7 @@ export const DutState: MessageFns<DutState> = {
       fingerprintMcu: isSet(object.fingerprintMcu) ? globalThis.String(object.fingerprintMcu) : "",
       fingerprintSensor: isSet(object.fingerprintSensor) ? globalThis.String(object.fingerprintSensor) : "",
       gscChip: isSet(object.gscChip) ? dutState_GscChipFromJSON(object.gscChip) : 0,
+      workingBesBoards: isSet(object.workingBesBoards) ? globalThis.Number(object.workingBesBoards) : 0,
     };
   },
 
@@ -1306,6 +1320,9 @@ export const DutState: MessageFns<DutState> = {
     if (message.gscChip !== 0) {
       obj.gscChip = dutState_GscChipToJSON(message.gscChip);
     }
+    if (message.workingBesBoards !== 0) {
+      obj.workingBesBoards = Math.round(message.workingBesBoards);
+    }
     return obj;
   },
 
@@ -1353,6 +1370,7 @@ export const DutState: MessageFns<DutState> = {
     message.fingerprintMcu = object.fingerprintMcu ?? "";
     message.fingerprintSensor = object.fingerprintSensor ?? "";
     message.gscChip = object.gscChip ?? 0;
+    message.workingBesBoards = object.workingBesBoards ?? 0;
     return message;
   },
 };

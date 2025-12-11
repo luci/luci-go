@@ -225,11 +225,7 @@ export interface WorkUnit {
    * Regex: ^[a-z0-9_\-]+$. Limited to 50 characters in length.
    */
   readonly moduleShardKey: string;
-  /**
-   * The resource that produced results in this work unit.
-   *
-   * Setting this field requires resultdb.workUnits.setProducerResource permission.
-   */
+  /** The resource that produced results in this work unit. */
   readonly producerResource:
     | ProducerResource
     | undefined;
@@ -469,23 +465,24 @@ export enum WorkUnit_FinalizationState {
   ACTIVE = 1,
   /**
    * FINALIZING - The work unit is in the process of moving to the FINALIZED state.
-   * This will happen automatically when `state` transitions to one
-   * of the final states.
    *
    * In this state, the work unit itself is immutable, but its
    * contained work units may still be mutable. When the work unit
    * is immutable, the work unit record may not be updated, and
    * no test results, exonerations or artifacts be created
    * inside it.
+   *
+   * The work unit automatically enters this state when the work unit
+   * `state` transitions to a final state (SUCCEEDED, SKIPPED, FAILED,
+   * CANCELLED).
    */
   FINALIZING = 2,
   /**
    * FINALIZED - The work unit is immutable and no longer accepts new results
    * directly or indirectly.
    *
-   * This will happen automatically soon after the work unit enters
-   * FINALIZING state, and all of its directly or indirectly included
-   * work units become inactive.
+   * This work unit automatically enters this state shortly after it is
+   * FINALIZING and all included work units become FINALIZED.
    */
   FINALIZED = 3,
 }

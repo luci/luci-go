@@ -10,6 +10,7 @@ import { Check, Stage as Stage1, StageAttempt } from "../../ids/v1/identifier.pb
 import { Actor } from "./actor.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
 import { Dependencies } from "./dependencies.pb";
+import { Failure } from "./failure.pb";
 import { Revision } from "./revision.pb";
 import { StageAttemptExecutionPolicy } from "./stage_attempt_execution_policy.pb";
 import { StageAttemptState, stageAttemptStateFromJSON, stageAttemptStateToJSON } from "./stage_attempt_state.pb";
@@ -295,7 +296,11 @@ export interface Stage_Attempt {
    * CurrentStageWrite when the executor advances the StageAttempt state
    * PENDING -> (SCHEDULED|RUNNING).
    */
-  readonly executionPolicy?: StageAttemptExecutionPolicy | undefined;
+  readonly executionPolicy?:
+    | StageAttemptExecutionPolicy
+    | undefined;
+  /** Execution failure information for the StageAttempt. */
+  readonly failure?: Failure | undefined;
 }
 
 /**
@@ -830,6 +835,7 @@ function createBaseStage_Attempt(): Stage_Attempt {
     details: [],
     progress: [],
     executionPolicy: undefined,
+    failure: undefined,
   };
 }
 
@@ -858,6 +864,9 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
     }
     if (message.executionPolicy !== undefined) {
       StageAttemptExecutionPolicy.encode(message.executionPolicy, writer.uint32(66).fork()).join();
+    }
+    if (message.failure !== undefined) {
+      Failure.encode(message.failure, writer.uint32(74).fork()).join();
     }
     return writer;
   },
@@ -933,6 +942,14 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
           message.executionPolicy = StageAttemptExecutionPolicy.decode(reader, reader.uint32());
           continue;
         }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.failure = Failure.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -958,6 +975,7 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
       executionPolicy: isSet(object.executionPolicy)
         ? StageAttemptExecutionPolicy.fromJSON(object.executionPolicy)
         : undefined,
+      failure: isSet(object.failure) ? Failure.fromJSON(object.failure) : undefined,
     };
   },
 
@@ -987,6 +1005,9 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
     if (message.executionPolicy !== undefined) {
       obj.executionPolicy = StageAttemptExecutionPolicy.toJSON(message.executionPolicy);
     }
+    if (message.failure !== undefined) {
+      obj.failure = Failure.toJSON(message.failure);
+    }
     return obj;
   },
 
@@ -1008,6 +1029,9 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
     message.progress = object.progress?.map((e) => Stage_Attempt_Progress.fromPartial(e)) || [];
     message.executionPolicy = (object.executionPolicy !== undefined && object.executionPolicy !== null)
       ? StageAttemptExecutionPolicy.fromPartial(object.executionPolicy)
+      : undefined;
+    message.failure = (object.failure !== undefined && object.failure !== null)
+      ? Failure.fromPartial(object.failure)
       : undefined;
     return message;
   },

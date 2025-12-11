@@ -1474,9 +1474,16 @@ export interface ChromeOsRecoveryData_WifiRouter {
   readonly deviceType: WifiRouterDeviceType;
 }
 
+export interface ChromeOsRecoveryData_BesBoard {
+  readonly serialPort: string;
+  readonly btAddress: string;
+  readonly state: PeripheralState;
+}
+
 export interface ChromeOsRecoveryData_BluetoothPeer {
   readonly hostname: string;
   readonly state: PeripheralState;
+  readonly besBoards: readonly ChromeOsRecoveryData_BesBoard[];
 }
 
 export interface ChromeOsRecoveryData_Dolos {
@@ -12345,8 +12352,100 @@ export const ChromeOsRecoveryData_WifiRouter: MessageFns<ChromeOsRecoveryData_Wi
   },
 };
 
+function createBaseChromeOsRecoveryData_BesBoard(): ChromeOsRecoveryData_BesBoard {
+  return { serialPort: "", btAddress: "", state: 0 };
+}
+
+export const ChromeOsRecoveryData_BesBoard: MessageFns<ChromeOsRecoveryData_BesBoard> = {
+  encode(message: ChromeOsRecoveryData_BesBoard, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.serialPort !== "") {
+      writer.uint32(10).string(message.serialPort);
+    }
+    if (message.btAddress !== "") {
+      writer.uint32(18).string(message.btAddress);
+    }
+    if (message.state !== 0) {
+      writer.uint32(24).int32(message.state);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ChromeOsRecoveryData_BesBoard {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseChromeOsRecoveryData_BesBoard() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.serialPort = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.btAddress = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.state = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ChromeOsRecoveryData_BesBoard {
+    return {
+      serialPort: isSet(object.serialPort) ? globalThis.String(object.serialPort) : "",
+      btAddress: isSet(object.btAddress) ? globalThis.String(object.btAddress) : "",
+      state: isSet(object.state) ? peripheralStateFromJSON(object.state) : 0,
+    };
+  },
+
+  toJSON(message: ChromeOsRecoveryData_BesBoard): unknown {
+    const obj: any = {};
+    if (message.serialPort !== "") {
+      obj.serialPort = message.serialPort;
+    }
+    if (message.btAddress !== "") {
+      obj.btAddress = message.btAddress;
+    }
+    if (message.state !== 0) {
+      obj.state = peripheralStateToJSON(message.state);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ChromeOsRecoveryData_BesBoard>): ChromeOsRecoveryData_BesBoard {
+    return ChromeOsRecoveryData_BesBoard.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ChromeOsRecoveryData_BesBoard>): ChromeOsRecoveryData_BesBoard {
+    const message = createBaseChromeOsRecoveryData_BesBoard() as any;
+    message.serialPort = object.serialPort ?? "";
+    message.btAddress = object.btAddress ?? "";
+    message.state = object.state ?? 0;
+    return message;
+  },
+};
+
 function createBaseChromeOsRecoveryData_BluetoothPeer(): ChromeOsRecoveryData_BluetoothPeer {
-  return { hostname: "", state: 0 };
+  return { hostname: "", state: 0, besBoards: [] };
 }
 
 export const ChromeOsRecoveryData_BluetoothPeer: MessageFns<ChromeOsRecoveryData_BluetoothPeer> = {
@@ -12356,6 +12455,9 @@ export const ChromeOsRecoveryData_BluetoothPeer: MessageFns<ChromeOsRecoveryData
     }
     if (message.state !== 0) {
       writer.uint32(16).int32(message.state);
+    }
+    for (const v of message.besBoards) {
+      ChromeOsRecoveryData_BesBoard.encode(v!, writer.uint32(26).fork()).join();
     }
     return writer;
   },
@@ -12383,6 +12485,14 @@ export const ChromeOsRecoveryData_BluetoothPeer: MessageFns<ChromeOsRecoveryData
           message.state = reader.int32() as any;
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.besBoards.push(ChromeOsRecoveryData_BesBoard.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -12396,6 +12506,9 @@ export const ChromeOsRecoveryData_BluetoothPeer: MessageFns<ChromeOsRecoveryData
     return {
       hostname: isSet(object.hostname) ? globalThis.String(object.hostname) : "",
       state: isSet(object.state) ? peripheralStateFromJSON(object.state) : 0,
+      besBoards: globalThis.Array.isArray(object?.besBoards)
+        ? object.besBoards.map((e: any) => ChromeOsRecoveryData_BesBoard.fromJSON(e))
+        : [],
     };
   },
 
@@ -12407,6 +12520,9 @@ export const ChromeOsRecoveryData_BluetoothPeer: MessageFns<ChromeOsRecoveryData
     if (message.state !== 0) {
       obj.state = peripheralStateToJSON(message.state);
     }
+    if (message.besBoards?.length) {
+      obj.besBoards = message.besBoards.map((e) => ChromeOsRecoveryData_BesBoard.toJSON(e));
+    }
     return obj;
   },
 
@@ -12417,6 +12533,7 @@ export const ChromeOsRecoveryData_BluetoothPeer: MessageFns<ChromeOsRecoveryData
     const message = createBaseChromeOsRecoveryData_BluetoothPeer() as any;
     message.hostname = object.hostname ?? "";
     message.state = object.state ?? 0;
+    message.besBoards = object.besBoards?.map((e) => ChromeOsRecoveryData_BesBoard.fromPartial(e)) || [];
     return message;
   },
 };

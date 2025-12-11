@@ -436,8 +436,13 @@ export interface TestIdentifier {
  * coarse_name: ""
  * (coarse name prefix)
  *
- * As the former represents a module-level aggregate and the latter a coarse-name
- * aggregate for coarse name "".
+ * As the former represents a module-level portion of the test ID space and the latter
+ * a coarse-name portion of the test ID space.
+ *
+ * In case of aggregates, while we generally avoid displaying aggregates for empty coarse
+ * and fine names on the UI (proceeding instead to the next non-empty level), they exist
+ * in the data model in the interest of uniformity and simplicity. This motivates needing
+ * to semantically distinguish between the two cases.
  */
 export interface TestIdentifierPrefix {
   /** The aggregation level represented by the prefix. */
@@ -445,14 +450,18 @@ export interface TestIdentifierPrefix {
   /**
    * The test identifier. This may have only some fields set, based on the
    * selected aggregation level.
-   * If an AggregationLevel of Invocation is set, identifier must be unset or all its fields must be empty.
-   * If an AggregationLevel of Module is set, all module fields must be set.
-   * If an AggregationLevel of Coarse is set, all module fields and the coarse_name field must be set.
-   * If an AggregationLevel of Fine is set, all module fields, and the coarse_name and fine_name fields must be set.
-   * If an AggregationLevel of Case is set, all fields must be set.
+   * If `level` is Invocation, all fields must be unset.
+   * If `level` is Module, only module fields should be set.
+   * If `level` is Coarse, only module fields and the coarse_name fields should be set.
+   * If `level` is Fine, only module fields, and the coarse_name and fine_name fields should be set.
+   * If `level` is Case, all fields should be set.
    *
    * In case of coarse_name and fine_name, as empty ("") is a valid value, the fields
    * are taken to be set according to the set AggregationLevel.
+   *
+   * Where TestIdentifierPrefix is used to specify a filter for a query and the
+   * `level` is Module or finer, either module_variant or module_variant_hash may
+   * be set (it is not required to set both).
    */
   readonly id: TestIdentifier | undefined;
 }
@@ -801,10 +810,6 @@ export interface AndroidBuildDescriptor {
  *   harder for downstream systems to understand the type of producer resource
  *   (and to e.g. filter to only ATP runs). API endpoints are also unstable
  *   and subject to change.
- * Rather than invent a new set of API service names, we use a short name that
- * cannot be confused with an endpoint. While use of DNS names is superior solution
- * in large systems to deconflict naming, we operate a relatively smaller scale
- * so believe a short name is workable.
  */
 export interface ProducerResource {
   /**
@@ -815,17 +820,30 @@ export interface ProducerResource {
    *
    * Values should use kebab-case as per https://google.aip.dev/126#alternatives.
    *
+   * Please contact ResultDB owners or update ResultDB config in
+   * https://chrome-internal.googlesource.com/infradata/config/+/refs/heads/main/configs/
+   * when adding a new system to specify:
+   * - the expected data realm and resource name formats, and
+   * - configure how URLs for backlinking should be generated.
+   *
+   * Producer systems can be configured to be "restricted" and not open to all callers.
+   * To use such a system, the caller will need resultdb.workUnits.setProducerResource
+   * or resultdb.rootInvocations.setProducerResource permission (depending on the context).
+   * This helps protect the integrity of backlinks for that system.
+   *
    * Total length limited to 50 bytes. Required.
    */
   readonly system: string;
   /**
    * The data realm of the producing resource.
    *
-   * This is used to identify the location of the producing resource, i.e. whether it is
-   * in the production data set, or a test data set, or another data set, for linking
-   * purposes.
+   * This is used to identify the data store the resource specified at `name` is stored in,
+   * for backlinking purposes. I.E. is it in the production deployments, or is it in one
+   * of the test deployments.
    *
-   * For Google3, prefer to use a value from go/data-realm in lower-case (e.g. "prod").
+   * For systems with only only a single prod and test instance, the names "prod" and
+   * "test" are preferred.
+   *
    * For buildbucket, use the value "prod" for production and "test" for development.
    * For swarming, use the swarming instance name (e.g. "chromeos-swarming" or "chromium-swarm-dev").
    *
@@ -841,7 +859,7 @@ export interface ProducerResource {
    * system does not follow AIP-122, an AIP-122-like format is invented for it.
    *
    * Examples:
-   * - atp: `runs/{RUN_ID}`
+   * - atp: `testRuns/{RUN_ID}`
    * - swarming: `tasks/deadbeef`
    * - buildbucket: 'builds/1234567890`
    *
@@ -849,6 +867,16 @@ export interface ProducerResource {
    * normalization form C. Required.
    */
   readonly name: string;
+  /**
+   * The URL at which the producer resource can be viewed.
+   *
+   * Generated from data_realm and name fields using producer system-specific configuration
+   * in the ResultDB service configuration. This field may be blank for producing systems
+   * that do not have a UI.
+   *
+   * Output only.
+   */
+  readonly url: string;
 }
 
 function createBaseVariant(): Variant {
@@ -2676,7 +2704,7 @@ export const AndroidBuildDescriptor: MessageFns<AndroidBuildDescriptor> = {
 };
 
 function createBaseProducerResource(): ProducerResource {
-  return { system: "", dataRealm: "", name: "" };
+  return { system: "", dataRealm: "", name: "", url: "" };
 }
 
 export const ProducerResource: MessageFns<ProducerResource> = {
@@ -2689,6 +2717,9 @@ export const ProducerResource: MessageFns<ProducerResource> = {
     }
     if (message.name !== "") {
       writer.uint32(26).string(message.name);
+    }
+    if (message.url !== "") {
+      writer.uint32(34).string(message.url);
     }
     return writer;
   },
@@ -2724,6 +2755,14 @@ export const ProducerResource: MessageFns<ProducerResource> = {
           message.name = reader.string();
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.url = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2738,6 +2777,7 @@ export const ProducerResource: MessageFns<ProducerResource> = {
       system: isSet(object.system) ? globalThis.String(object.system) : "",
       dataRealm: isSet(object.dataRealm) ? globalThis.String(object.dataRealm) : "",
       name: isSet(object.name) ? globalThis.String(object.name) : "",
+      url: isSet(object.url) ? globalThis.String(object.url) : "",
     };
   },
 
@@ -2752,6 +2792,9 @@ export const ProducerResource: MessageFns<ProducerResource> = {
     if (message.name !== "") {
       obj.name = message.name;
     }
+    if (message.url !== "") {
+      obj.url = message.url;
+    }
     return obj;
   },
 
@@ -2763,6 +2806,7 @@ export const ProducerResource: MessageFns<ProducerResource> = {
     message.system = object.system ?? "";
     message.dataRealm = object.dataRealm ?? "";
     message.name = object.name ?? "";
+    message.url = object.url ?? "";
     return message;
   },
 };

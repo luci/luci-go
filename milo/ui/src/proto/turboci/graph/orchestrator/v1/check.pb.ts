@@ -12,6 +12,7 @@ import { CheckKind, checkKindFromJSON, checkKindToJSON } from "./check_kind.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
 import { Datum } from "./datum.pb";
 import { Dependencies } from "./dependencies.pb";
+import { Failure } from "./failure.pb";
 import { Revision } from "./revision.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
@@ -219,7 +220,17 @@ export interface Check_Result {
    *   * The `owner` explicitly indicates that their results are final.
    *   * The Check advances to the FINAL state.
    */
-  readonly finalizedAt?: Revision | undefined;
+  readonly finalizedAt?:
+    | Revision
+    | undefined;
+  /**
+   * The failure information if the owner of this result failed.
+   *
+   * Most commonly, this will occur when a StageAttempt fails, but this could
+   * also be populated by the orchestrator itself if, for example, the workplan
+   * is ended without any result being created for this Check.
+   */
+  readonly failure?: Failure | undefined;
 }
 
 function createBaseCheck(): Check {
@@ -528,7 +539,14 @@ export const Check_StateHistoryEntry: MessageFns<Check_StateHistoryEntry> = {
 };
 
 function createBaseCheck_Result(): Check_Result {
-  return { identifier: undefined, owner: undefined, createdAt: undefined, data: [], finalizedAt: undefined };
+  return {
+    identifier: undefined,
+    owner: undefined,
+    createdAt: undefined,
+    data: [],
+    finalizedAt: undefined,
+    failure: undefined,
+  };
 }
 
 export const Check_Result: MessageFns<Check_Result> = {
@@ -547,6 +565,9 @@ export const Check_Result: MessageFns<Check_Result> = {
     }
     if (message.finalizedAt !== undefined) {
       Revision.encode(message.finalizedAt, writer.uint32(42).fork()).join();
+    }
+    if (message.failure !== undefined) {
+      Failure.encode(message.failure, writer.uint32(50).fork()).join();
     }
     return writer;
   },
@@ -598,6 +619,14 @@ export const Check_Result: MessageFns<Check_Result> = {
           message.finalizedAt = Revision.decode(reader, reader.uint32());
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.failure = Failure.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -614,6 +643,7 @@ export const Check_Result: MessageFns<Check_Result> = {
       createdAt: isSet(object.createdAt) ? Revision.fromJSON(object.createdAt) : undefined,
       data: globalThis.Array.isArray(object?.data) ? object.data.map((e: any) => Datum.fromJSON(e)) : [],
       finalizedAt: isSet(object.finalizedAt) ? Revision.fromJSON(object.finalizedAt) : undefined,
+      failure: isSet(object.failure) ? Failure.fromJSON(object.failure) : undefined,
     };
   },
 
@@ -634,6 +664,9 @@ export const Check_Result: MessageFns<Check_Result> = {
     if (message.finalizedAt !== undefined) {
       obj.finalizedAt = Revision.toJSON(message.finalizedAt);
     }
+    if (message.failure !== undefined) {
+      obj.failure = Failure.toJSON(message.failure);
+    }
     return obj;
   },
 
@@ -652,6 +685,9 @@ export const Check_Result: MessageFns<Check_Result> = {
     message.data = object.data?.map((e) => Datum.fromPartial(e)) || [];
     message.finalizedAt = (object.finalizedAt !== undefined && object.finalizedAt !== null)
       ? Revision.fromPartial(object.finalizedAt)
+      : undefined;
+    message.failure = (object.failure !== undefined && object.failure !== null)
+      ? Failure.fromPartial(object.failure)
       : undefined;
     return message;
   },

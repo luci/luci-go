@@ -10,6 +10,10 @@ import { AggregationLevel, aggregationLevelFromJSON, aggregationLevelToJSON, Tes
 
 export const protobufPackage = "luci.resultdb.v1";
 
+/**
+ * TestAggregation represents a summary of all test cases in a root invocation,
+ * module, coarse_name or fine_name.
+ */
 export interface TestAggregation {
   /** The test identifier prefix represented by the test aggregate. */
   readonly id:
@@ -25,42 +29,243 @@ export interface TestAggregation {
    */
   readonly nextFinerLevel: AggregationLevel;
   /** The counts of test verdict statuses rolling up to this aggregation. */
-  readonly verdictCounts: TestAggregation_VerdictCounts | undefined;
+  readonly verdictCounts:
+    | TestAggregation_VerdictCounts
+    | undefined;
+  /**
+   * The module status. Set only for module-level aggregations.
+   *
+   * This reflects the success running and uploading test results to ResultDB,
+   * not the success of the test cases themselves.
+   */
+  readonly moduleStatus: TestAggregation_ModuleStatus;
+  /** The module status counts. Set only for invocation-level aggregations. */
+  readonly moduleStatusCounts: TestAggregation_ModuleStatusCounts | undefined;
 }
 
-/** Counts of verdicts, by status v2. */
+/**
+ * Module status. This is based on the work unit status and reflects
+ * the success running and uploading test results to ResultDB, not the
+ * success of the test cases themselves.
+ *
+ * The module status is aggregated from the status of top-level work units
+ * associated with that module as follows:
+ * - When combining top-level work units within a module-shard, where
+ *   the shard can be retried multiple times and only one attempt needs
+ *   to succeed, the greatest status in the following order wins:
+ *   SUCCEEDED > RUNNING > PENDING > SKIPPED > FAILED > CANCELLED.
+ * - When combining module-shards into the overall module status,
+ *   where we need all shards must succeed for the whole to succeed, the
+ *   greatest status in the following order wins:
+ *   FAILED > RUNNING > PENDING > CANCELLED > SUCCEEDED > SKIPPED.
+ *
+ * The "RUNNING" and "PENDING" statuses were placed one behind the greatest
+ * status in each order, to propagate the known uncertainties about the final
+ * status of the module and preference alerting users about problems that
+ * look final over those that are known to have retries pending. Of course,
+ * until the root invocation is finalized, all module statuses are subject to
+ * revision as more shards/retries may still be created.
+ *
+ * In aggregated form, the FAILED work unit status is renamed "ERRORED" to
+ * avoid confusion with the FAILED verdict status and connect it to the
+ * "EXECUTION_ERRORED" verdict status, which is closer in meaning.
+ *
+ * In root invocations that are finalized, the status "RUNNING" and "PENDING"
+ * will never occur as all work units will be in final states.
+ */
+export enum TestAggregation_ModuleStatus {
+  MODULE_STATUS_UNSPECIFIED = 0,
+  /**
+   * SUCCEEDED - The module succeeded.
+   *
+   * When seen on a finalized root invocation, means that for every
+   * module-shard, there was a top-level work unit with a status of
+   * SUCCEEDED or SKIPPED
+   * ("no failed or cancelled module-shards").
+   *
+   * And moreover, there was at least one module-shard with a top-level
+   * work unit with a status of SUCCEEDED
+   * ("at least one succeeded module-shard").
+   */
+  SUCCEEDED = 1,
+  /**
+   * ERRORED - The module failed to run and/or upload all test cases.
+   *
+   * When seen on a finalized root invocation, means that there
+   * was at least one module-shard that:
+   * - consisted only of FAILED or CANCELLED top-level work units, and
+   * - one of these was a FAILED top-level work unit.
+   */
+  ERRORED = 2,
+  /**
+   * SKIPPED - The module was skipped.
+   *
+   * When seen on a finalized root invocation, means that for every
+   * module-shard, there was a top-level work unit with a status of SKIPPED.
+   *
+   * And moreover, there was no module-shard with a top-level work unit that
+   * had a status of SUCCEEDED ("no succeeded module-shards").
+   */
+  SKIPPED = 3,
+  /**
+   * CANCELLED - The module was cancelled.
+   *
+   * When seen on a finalized root invocation, means that there was at
+   * least one module-shard that consisted only of CANCELLED top-level work units.
+   *
+   * And moreover, there was no module-shard that had a FAILED
+   * top-level work unit, that did not also have a SKIPPED or SUCCEEDED
+   * top-level work unit.
+   */
+  CANCELLED = 4,
+  /** RUNNING - The module is running. */
+  RUNNING = 5,
+  /** PENDING - The module is pending. */
+  PENDING = 6,
+}
+
+export function testAggregation_ModuleStatusFromJSON(object: any): TestAggregation_ModuleStatus {
+  switch (object) {
+    case 0:
+    case "MODULE_STATUS_UNSPECIFIED":
+      return TestAggregation_ModuleStatus.MODULE_STATUS_UNSPECIFIED;
+    case 1:
+    case "SUCCEEDED":
+      return TestAggregation_ModuleStatus.SUCCEEDED;
+    case 2:
+    case "ERRORED":
+      return TestAggregation_ModuleStatus.ERRORED;
+    case 3:
+    case "SKIPPED":
+      return TestAggregation_ModuleStatus.SKIPPED;
+    case 4:
+    case "CANCELLED":
+      return TestAggregation_ModuleStatus.CANCELLED;
+    case 5:
+    case "RUNNING":
+      return TestAggregation_ModuleStatus.RUNNING;
+    case 6:
+    case "PENDING":
+      return TestAggregation_ModuleStatus.PENDING;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestAggregation_ModuleStatus");
+  }
+}
+
+export function testAggregation_ModuleStatusToJSON(object: TestAggregation_ModuleStatus): string {
+  switch (object) {
+    case TestAggregation_ModuleStatus.MODULE_STATUS_UNSPECIFIED:
+      return "MODULE_STATUS_UNSPECIFIED";
+    case TestAggregation_ModuleStatus.SUCCEEDED:
+      return "SUCCEEDED";
+    case TestAggregation_ModuleStatus.ERRORED:
+      return "ERRORED";
+    case TestAggregation_ModuleStatus.SKIPPED:
+      return "SKIPPED";
+    case TestAggregation_ModuleStatus.CANCELLED:
+      return "CANCELLED";
+    case TestAggregation_ModuleStatus.RUNNING:
+      return "RUNNING";
+    case TestAggregation_ModuleStatus.PENDING:
+      return "PENDING";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestAggregation_ModuleStatus");
+  }
+}
+
+/** Counts of test case verdicts, by status v2. */
 export interface TestAggregation_VerdictCounts {
   /**
-   * The number of failed verdicts.
-   * Count includes both exonerated and non-exonerated verdicts.
+   * The number of failed test cases.
+   * A test case is failed if it has a failed result and no passed results.
+   * Count includes only non-exonerated failed verdicts.
    */
   readonly failed: number;
-  /** The number of flaky verdicts. */
+  /**
+   * The number of flaky test cases.
+   * A flaky test case is any test case with both a passed and a failed result.
+   * Count includes only non-exonerated flaky verdicts.
+   */
   readonly flaky: number;
-  /** The number of passed verdicts. */
+  /**
+   * The number of passed test cases.
+   * A test case is passed if it has a passed result and no failed results.
+   */
   readonly passed: number;
-  /** The number of skipped verdicts. */
+  /**
+   * The number of skipped test cases.
+   * A test case is skipped if it has a skipped result and no passed or failed results.
+   */
   readonly skipped: number;
   /**
-   * The number of execution errored verdicts.
-   * Count includes both exonerated and non-exonerated verdicts.
+   * The number of execution errored test cases.
+   * A test case is execution errored if it has an execution errored result, and no
+   * passing, failing or skipped results.
+   * Count includes only non-exonerated execution errored verdicts.
    */
   readonly executionErrored: number;
   /**
-   * The number of precluded verdicts.
-   * Count includes both exonerated and non-exonerated verdicts.
+   * The number of precluded test cases.
+   * A test case is precluded if it only has precluded results.
+   * Count includes only non-exonerated precluded verdicts.
    */
   readonly precluded: number;
-  /** The number of failed verdicts with exonerations. */
-  readonly failedExonerated: number;
-  /** The number of execution errored verdicts with exonerations. */
-  readonly executionErroredExonerated: number;
-  /** The number of precluded verdicts with exonerations. */
-  readonly precludedExonerated: number;
+  /** The number of exonerated test cases. */
+  readonly exonerated: number;
+  /**
+   * A test case is failed if it has a failed result and no passed results.
+   * This differs from `failed` in that it includes exonerated failures.
+   */
+  readonly failedBase: number;
+  /**
+   * A flaky test case is any test case with both a passed and a failed result.
+   * This differs from `flaky` in that it includes exonerated flakes.
+   */
+  readonly flakyBase: number;
+  /**
+   * A test case is passed if it has a passed result and no failed results.
+   * This is currently always the same as `passed` but could diverge if additional
+   * status overrides are introduced.
+   */
+  readonly passedBase: number;
+  /**
+   * A test case is skipped if it has a skipped result and no passed or failed results.
+   * This is currently always the same as `skipped` but could diverge if additional
+   * status overrides are introduced.
+   */
+  readonly skippedBase: number;
+  /**
+   * A test case is execution errored if it has an execution errored result, and no
+   * passing, failing or skipped results.
+   * This differs from `execution_errored` in that it includes exonerated
+   * execution errored verdicts.
+   */
+  readonly executionErroredBase: number;
+  /**
+   * A test case is precluded if it only has precluded results.
+   * This differs from `precluded` in that it includes exonerated precluded verdicts.
+   */
+  readonly precludedBase: number;
+}
+
+/** Counts of module statuses. */
+export interface TestAggregation_ModuleStatusCounts {
+  /** The number of modules that succeeded. */
+  readonly succeeded: number;
+  /** The number of modules that failed. */
+  readonly failed: number;
+  /** The number of modules that skipped. */
+  readonly skipped: number;
+  /** The number of modules that were cancelled. */
+  readonly cancelled: number;
+  /** The number of modules that are running. */
+  readonly running: number;
+  /** The number of modules that are pending. */
+  readonly pending: number;
 }
 
 function createBaseTestAggregation(): TestAggregation {
-  return { id: undefined, nextFinerLevel: 0, verdictCounts: undefined };
+  return { id: undefined, nextFinerLevel: 0, verdictCounts: undefined, moduleStatus: 0, moduleStatusCounts: undefined };
 }
 
 export const TestAggregation: MessageFns<TestAggregation> = {
@@ -73,6 +278,12 @@ export const TestAggregation: MessageFns<TestAggregation> = {
     }
     if (message.verdictCounts !== undefined) {
       TestAggregation_VerdictCounts.encode(message.verdictCounts, writer.uint32(26).fork()).join();
+    }
+    if (message.moduleStatus !== 0) {
+      writer.uint32(32).int32(message.moduleStatus);
+    }
+    if (message.moduleStatusCounts !== undefined) {
+      TestAggregation_ModuleStatusCounts.encode(message.moduleStatusCounts, writer.uint32(42).fork()).join();
     }
     return writer;
   },
@@ -108,6 +319,22 @@ export const TestAggregation: MessageFns<TestAggregation> = {
           message.verdictCounts = TestAggregation_VerdictCounts.decode(reader, reader.uint32());
           continue;
         }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.moduleStatus = reader.int32() as any;
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.moduleStatusCounts = TestAggregation_ModuleStatusCounts.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -124,6 +351,10 @@ export const TestAggregation: MessageFns<TestAggregation> = {
       verdictCounts: isSet(object.verdictCounts)
         ? TestAggregation_VerdictCounts.fromJSON(object.verdictCounts)
         : undefined,
+      moduleStatus: isSet(object.moduleStatus) ? testAggregation_ModuleStatusFromJSON(object.moduleStatus) : 0,
+      moduleStatusCounts: isSet(object.moduleStatusCounts)
+        ? TestAggregation_ModuleStatusCounts.fromJSON(object.moduleStatusCounts)
+        : undefined,
     };
   },
 
@@ -137,6 +368,12 @@ export const TestAggregation: MessageFns<TestAggregation> = {
     }
     if (message.verdictCounts !== undefined) {
       obj.verdictCounts = TestAggregation_VerdictCounts.toJSON(message.verdictCounts);
+    }
+    if (message.moduleStatus !== 0) {
+      obj.moduleStatus = testAggregation_ModuleStatusToJSON(message.moduleStatus);
+    }
+    if (message.moduleStatusCounts !== undefined) {
+      obj.moduleStatusCounts = TestAggregation_ModuleStatusCounts.toJSON(message.moduleStatusCounts);
     }
     return obj;
   },
@@ -153,6 +390,10 @@ export const TestAggregation: MessageFns<TestAggregation> = {
     message.verdictCounts = (object.verdictCounts !== undefined && object.verdictCounts !== null)
       ? TestAggregation_VerdictCounts.fromPartial(object.verdictCounts)
       : undefined;
+    message.moduleStatus = object.moduleStatus ?? 0;
+    message.moduleStatusCounts = (object.moduleStatusCounts !== undefined && object.moduleStatusCounts !== null)
+      ? TestAggregation_ModuleStatusCounts.fromPartial(object.moduleStatusCounts)
+      : undefined;
     return message;
   },
 };
@@ -165,9 +406,13 @@ function createBaseTestAggregation_VerdictCounts(): TestAggregation_VerdictCount
     skipped: 0,
     executionErrored: 0,
     precluded: 0,
-    failedExonerated: 0,
-    executionErroredExonerated: 0,
-    precludedExonerated: 0,
+    exonerated: 0,
+    failedBase: 0,
+    flakyBase: 0,
+    passedBase: 0,
+    skippedBase: 0,
+    executionErroredBase: 0,
+    precludedBase: 0,
   };
 }
 
@@ -191,14 +436,26 @@ export const TestAggregation_VerdictCounts: MessageFns<TestAggregation_VerdictCo
     if (message.precluded !== 0) {
       writer.uint32(48).int32(message.precluded);
     }
-    if (message.failedExonerated !== 0) {
-      writer.uint32(56).int32(message.failedExonerated);
+    if (message.exonerated !== 0) {
+      writer.uint32(56).int32(message.exonerated);
     }
-    if (message.executionErroredExonerated !== 0) {
-      writer.uint32(64).int32(message.executionErroredExonerated);
+    if (message.failedBase !== 0) {
+      writer.uint32(64).int32(message.failedBase);
     }
-    if (message.precludedExonerated !== 0) {
-      writer.uint32(72).int32(message.precludedExonerated);
+    if (message.flakyBase !== 0) {
+      writer.uint32(72).int32(message.flakyBase);
+    }
+    if (message.passedBase !== 0) {
+      writer.uint32(80).int32(message.passedBase);
+    }
+    if (message.skippedBase !== 0) {
+      writer.uint32(88).int32(message.skippedBase);
+    }
+    if (message.executionErroredBase !== 0) {
+      writer.uint32(96).int32(message.executionErroredBase);
+    }
+    if (message.precludedBase !== 0) {
+      writer.uint32(104).int32(message.precludedBase);
     }
     return writer;
   },
@@ -263,7 +520,7 @@ export const TestAggregation_VerdictCounts: MessageFns<TestAggregation_VerdictCo
             break;
           }
 
-          message.failedExonerated = reader.int32();
+          message.exonerated = reader.int32();
           continue;
         }
         case 8: {
@@ -271,7 +528,7 @@ export const TestAggregation_VerdictCounts: MessageFns<TestAggregation_VerdictCo
             break;
           }
 
-          message.executionErroredExonerated = reader.int32();
+          message.failedBase = reader.int32();
           continue;
         }
         case 9: {
@@ -279,7 +536,39 @@ export const TestAggregation_VerdictCounts: MessageFns<TestAggregation_VerdictCo
             break;
           }
 
-          message.precludedExonerated = reader.int32();
+          message.flakyBase = reader.int32();
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.passedBase = reader.int32();
+          continue;
+        }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.skippedBase = reader.int32();
+          continue;
+        }
+        case 12: {
+          if (tag !== 96) {
+            break;
+          }
+
+          message.executionErroredBase = reader.int32();
+          continue;
+        }
+        case 13: {
+          if (tag !== 104) {
+            break;
+          }
+
+          message.precludedBase = reader.int32();
           continue;
         }
       }
@@ -299,11 +588,13 @@ export const TestAggregation_VerdictCounts: MessageFns<TestAggregation_VerdictCo
       skipped: isSet(object.skipped) ? globalThis.Number(object.skipped) : 0,
       executionErrored: isSet(object.executionErrored) ? globalThis.Number(object.executionErrored) : 0,
       precluded: isSet(object.precluded) ? globalThis.Number(object.precluded) : 0,
-      failedExonerated: isSet(object.failedExonerated) ? globalThis.Number(object.failedExonerated) : 0,
-      executionErroredExonerated: isSet(object.executionErroredExonerated)
-        ? globalThis.Number(object.executionErroredExonerated)
-        : 0,
-      precludedExonerated: isSet(object.precludedExonerated) ? globalThis.Number(object.precludedExonerated) : 0,
+      exonerated: isSet(object.exonerated) ? globalThis.Number(object.exonerated) : 0,
+      failedBase: isSet(object.failedBase) ? globalThis.Number(object.failedBase) : 0,
+      flakyBase: isSet(object.flakyBase) ? globalThis.Number(object.flakyBase) : 0,
+      passedBase: isSet(object.passedBase) ? globalThis.Number(object.passedBase) : 0,
+      skippedBase: isSet(object.skippedBase) ? globalThis.Number(object.skippedBase) : 0,
+      executionErroredBase: isSet(object.executionErroredBase) ? globalThis.Number(object.executionErroredBase) : 0,
+      precludedBase: isSet(object.precludedBase) ? globalThis.Number(object.precludedBase) : 0,
     };
   },
 
@@ -327,14 +618,26 @@ export const TestAggregation_VerdictCounts: MessageFns<TestAggregation_VerdictCo
     if (message.precluded !== 0) {
       obj.precluded = Math.round(message.precluded);
     }
-    if (message.failedExonerated !== 0) {
-      obj.failedExonerated = Math.round(message.failedExonerated);
+    if (message.exonerated !== 0) {
+      obj.exonerated = Math.round(message.exonerated);
     }
-    if (message.executionErroredExonerated !== 0) {
-      obj.executionErroredExonerated = Math.round(message.executionErroredExonerated);
+    if (message.failedBase !== 0) {
+      obj.failedBase = Math.round(message.failedBase);
     }
-    if (message.precludedExonerated !== 0) {
-      obj.precludedExonerated = Math.round(message.precludedExonerated);
+    if (message.flakyBase !== 0) {
+      obj.flakyBase = Math.round(message.flakyBase);
+    }
+    if (message.passedBase !== 0) {
+      obj.passedBase = Math.round(message.passedBase);
+    }
+    if (message.skippedBase !== 0) {
+      obj.skippedBase = Math.round(message.skippedBase);
+    }
+    if (message.executionErroredBase !== 0) {
+      obj.executionErroredBase = Math.round(message.executionErroredBase);
+    }
+    if (message.precludedBase !== 0) {
+      obj.precludedBase = Math.round(message.precludedBase);
     }
     return obj;
   },
@@ -350,9 +653,153 @@ export const TestAggregation_VerdictCounts: MessageFns<TestAggregation_VerdictCo
     message.skipped = object.skipped ?? 0;
     message.executionErrored = object.executionErrored ?? 0;
     message.precluded = object.precluded ?? 0;
-    message.failedExonerated = object.failedExonerated ?? 0;
-    message.executionErroredExonerated = object.executionErroredExonerated ?? 0;
-    message.precludedExonerated = object.precludedExonerated ?? 0;
+    message.exonerated = object.exonerated ?? 0;
+    message.failedBase = object.failedBase ?? 0;
+    message.flakyBase = object.flakyBase ?? 0;
+    message.passedBase = object.passedBase ?? 0;
+    message.skippedBase = object.skippedBase ?? 0;
+    message.executionErroredBase = object.executionErroredBase ?? 0;
+    message.precludedBase = object.precludedBase ?? 0;
+    return message;
+  },
+};
+
+function createBaseTestAggregation_ModuleStatusCounts(): TestAggregation_ModuleStatusCounts {
+  return { succeeded: 0, failed: 0, skipped: 0, cancelled: 0, running: 0, pending: 0 };
+}
+
+export const TestAggregation_ModuleStatusCounts: MessageFns<TestAggregation_ModuleStatusCounts> = {
+  encode(message: TestAggregation_ModuleStatusCounts, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.succeeded !== 0) {
+      writer.uint32(8).int32(message.succeeded);
+    }
+    if (message.failed !== 0) {
+      writer.uint32(16).int32(message.failed);
+    }
+    if (message.skipped !== 0) {
+      writer.uint32(24).int32(message.skipped);
+    }
+    if (message.cancelled !== 0) {
+      writer.uint32(32).int32(message.cancelled);
+    }
+    if (message.running !== 0) {
+      writer.uint32(40).int32(message.running);
+    }
+    if (message.pending !== 0) {
+      writer.uint32(48).int32(message.pending);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TestAggregation_ModuleStatusCounts {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestAggregation_ModuleStatusCounts() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.succeeded = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.failed = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.skipped = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.cancelled = reader.int32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.running = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.pending = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestAggregation_ModuleStatusCounts {
+    return {
+      succeeded: isSet(object.succeeded) ? globalThis.Number(object.succeeded) : 0,
+      failed: isSet(object.failed) ? globalThis.Number(object.failed) : 0,
+      skipped: isSet(object.skipped) ? globalThis.Number(object.skipped) : 0,
+      cancelled: isSet(object.cancelled) ? globalThis.Number(object.cancelled) : 0,
+      running: isSet(object.running) ? globalThis.Number(object.running) : 0,
+      pending: isSet(object.pending) ? globalThis.Number(object.pending) : 0,
+    };
+  },
+
+  toJSON(message: TestAggregation_ModuleStatusCounts): unknown {
+    const obj: any = {};
+    if (message.succeeded !== 0) {
+      obj.succeeded = Math.round(message.succeeded);
+    }
+    if (message.failed !== 0) {
+      obj.failed = Math.round(message.failed);
+    }
+    if (message.skipped !== 0) {
+      obj.skipped = Math.round(message.skipped);
+    }
+    if (message.cancelled !== 0) {
+      obj.cancelled = Math.round(message.cancelled);
+    }
+    if (message.running !== 0) {
+      obj.running = Math.round(message.running);
+    }
+    if (message.pending !== 0) {
+      obj.pending = Math.round(message.pending);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TestAggregation_ModuleStatusCounts>): TestAggregation_ModuleStatusCounts {
+    return TestAggregation_ModuleStatusCounts.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TestAggregation_ModuleStatusCounts>): TestAggregation_ModuleStatusCounts {
+    const message = createBaseTestAggregation_ModuleStatusCounts() as any;
+    message.succeeded = object.succeeded ?? 0;
+    message.failed = object.failed ?? 0;
+    message.skipped = object.skipped ?? 0;
+    message.cancelled = object.cancelled ?? 0;
+    message.running = object.running ?? 0;
+    message.pending = object.pending ?? 0;
     return message;
   },
 };

@@ -61,7 +61,58 @@ export interface Value {
    *
    * `value.type_url`, however will always be present as metadata.
    */
-  readonly omitted?: boolean | undefined;
+  readonly omitted?: Value_OmitReason | undefined;
+}
+
+/** OmitReason details why this Value's content is omitted. */
+export enum Value_OmitReason {
+  /** OMIT_REASON_UNKNOWN - Default invalid value. */
+  OMIT_REASON_UNKNOWN = 0,
+  /**
+   * OMIT_REASON_UNWANTED - This Value has a type_url which was not requested by the caller.
+   *
+   * In this case `value.type_url` will be present, but other metadata (like
+   * orchestrator-visible index values) may be present as well.
+   */
+  OMIT_REASON_UNWANTED = 1,
+  /**
+   * OMIT_REASON_NO_ACCESS - This Value has a type_url which WAS requested by the user, but the caller
+   * doesn't have access to it. See the surrounding Datum to see the realm to
+   * which this Value belongs.
+   *
+   * In this case ONLY `value.type_url` (and in the future any other
+   * 'disambiguator/key') will be present.
+   */
+  OMIT_REASON_NO_ACCESS = 2,
+}
+
+export function value_OmitReasonFromJSON(object: any): Value_OmitReason {
+  switch (object) {
+    case 0:
+    case "OMIT_REASON_UNKNOWN":
+      return Value_OmitReason.OMIT_REASON_UNKNOWN;
+    case 1:
+    case "OMIT_REASON_UNWANTED":
+      return Value_OmitReason.OMIT_REASON_UNWANTED;
+    case 2:
+    case "OMIT_REASON_NO_ACCESS":
+      return Value_OmitReason.OMIT_REASON_NO_ACCESS;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Value_OmitReason");
+  }
+}
+
+export function value_OmitReasonToJSON(object: Value_OmitReason): string {
+  switch (object) {
+    case Value_OmitReason.OMIT_REASON_UNKNOWN:
+      return "OMIT_REASON_UNKNOWN";
+    case Value_OmitReason.OMIT_REASON_UNWANTED:
+      return "OMIT_REASON_UNWANTED";
+    case Value_OmitReason.OMIT_REASON_NO_ACCESS:
+      return "OMIT_REASON_NO_ACCESS";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Value_OmitReason");
+  }
 }
 
 function createBaseValue(): Value {
@@ -80,7 +131,7 @@ export const Value: MessageFns<Value> = {
       writer.uint32(26).string(message.valueJson);
     }
     if (message.omitted !== undefined) {
-      writer.uint32(32).bool(message.omitted);
+      writer.uint32(32).int32(message.omitted);
     }
     return writer;
   },
@@ -121,7 +172,7 @@ export const Value: MessageFns<Value> = {
             break;
           }
 
-          message.omitted = reader.bool();
+          message.omitted = reader.int32() as any;
           continue;
         }
       }
@@ -138,7 +189,7 @@ export const Value: MessageFns<Value> = {
       value: isSet(object.value) ? Any.fromJSON(object.value) : undefined,
       hasUnknownFields: isSet(object.hasUnknownFields) ? globalThis.Boolean(object.hasUnknownFields) : undefined,
       valueJson: isSet(object.valueJson) ? globalThis.String(object.valueJson) : undefined,
-      omitted: isSet(object.omitted) ? globalThis.Boolean(object.omitted) : undefined,
+      omitted: isSet(object.omitted) ? value_OmitReasonFromJSON(object.omitted) : undefined,
     };
   },
 
@@ -154,7 +205,7 @@ export const Value: MessageFns<Value> = {
       obj.valueJson = message.valueJson;
     }
     if (message.omitted !== undefined) {
-      obj.omitted = message.omitted;
+      obj.omitted = value_OmitReasonToJSON(message.omitted);
     }
     return obj;
   },
