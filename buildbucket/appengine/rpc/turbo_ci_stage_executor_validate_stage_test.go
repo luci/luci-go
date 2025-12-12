@@ -170,10 +170,6 @@ func TestValidateStage(t *testing.T) {
 			// Use default values
 			expectedPolicy := orchestratorpb.StageExecutionPolicy_builder{
 				AttemptExecutionPolicyTemplate: orchestratorpb.StageAttemptExecutionPolicy_builder{
-					Heartbeat: orchestratorpb.StageAttemptExecutionPolicy_Heartbeat_builder{
-						Running: &durationpb.Duration{
-							Seconds: 30},
-					}.Build(),
 					// Service defaults with margin applied.
 					Timeout: orchestratorpb.StageAttemptExecutionPolicy_Timeout_builder{
 						Scheduled: &durationpb.Duration{
@@ -183,12 +179,12 @@ func TestValidateStage(t *testing.T) {
 							Seconds: 3*60*60 + 30,
 						},
 						TearingDown: &durationpb.Duration{
-							Seconds: 30 + 30,
+							Seconds: 30 + 30 + 30,
 						},
 					}.Build(),
 				}.Build(),
 				StageTimeout: &durationpb.Duration{
-					Seconds: 32520,
+					Seconds: 32550,
 				},
 			}.Build()
 			assert.That(t, policy, should.Match(expectedPolicy))
@@ -339,16 +335,13 @@ func TestValidateStage(t *testing.T) {
 			// timeouts filled from the builder config.
 			expectedPolicy := orchestratorpb.StageExecutionPolicy_builder{
 				AttemptExecutionPolicyTemplate: orchestratorpb.StageAttemptExecutionPolicy_builder{
-					Heartbeat: orchestratorpb.StageAttemptExecutionPolicy_Heartbeat_builder{
-						Running: &durationpb.Duration{Seconds: 30},
-					}.Build(),
 					Timeout: orchestratorpb.StageAttemptExecutionPolicy_Timeout_builder{
 						Scheduled:   durationpb.New(1830 * time.Second),
 						Running:     durationpb.New(200 * time.Second),
-						TearingDown: durationpb.New(150 * time.Second),
+						TearingDown: durationpb.New(180 * time.Second),
 					}.Build(),
 				}.Build(),
-				StageTimeout: durationpb.New(2180 * time.Second),
+				StageTimeout: durationpb.New(2210 * time.Second),
 			}.Build()
 			assert.That(t, updatedPolicy, should.Match(expectedPolicy))
 		})

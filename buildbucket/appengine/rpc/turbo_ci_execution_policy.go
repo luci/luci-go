@@ -99,27 +99,13 @@ func buildToStageExecutionPolicy(bld *pb.Build, requested *orchestratorpb.StageE
 
 func buildToStagetAttemptExecutionPolicy(bld *pb.Build) *orchestratorpb.StageAttemptExecutionPolicy {
 	return orchestratorpb.StageAttemptExecutionPolicy_builder{
-		Heartbeat: orchestratorpb.StageAttemptExecutionPolicy_Heartbeat_builder{
-			// TODO: b/449231057 - decide who (Buildbucket service or bbagent)
-			// sends the heartbeats to TurboCI.
-			// * If bbagent does it every time it calls UpdateBuild, then
-			//	 heartbeat.Running should be buildbucket.MinUpdateBuildInterval.
-			// * If Buildbucket service sends the heartbeats, it doesn't need to
-			// do it as frequently as UpdateBuild.
-			Running: durationpb.New(buildbucket.MinUpdateBuildInterval),
-		}.Build(),
+		// Buildbucket will handle heartbeats by itself, it will not send
+		// heartbeats to TurboCI.
 		Timeout: orchestratorpb.StageAttemptExecutionPolicy_Timeout_builder{
 			Scheduled: buildToPolicyTimeout(bld.GetSchedulingTimeout()),
 			Running:   buildToPolicyTimeout(bld.GetExecutionTimeout()),
-			// TODO: b/449231057 - decide where to change a StateAttempt
-			// to TEARDOWN in cancellation scenario.
-			// * If Buildbucket service does the update, we'll need to add
-			// buildbucket.MinUpdateBuildInterval to cover the time between the
-			// Buildbucket server decides to cancel a build and bbagent gets
-			// notified about it.
-			// * If bbagent does the update, then the tearing down timeout
-			// should be the same at the grace period.
-			TearingDown: buildToPolicyTimeout(bld.GetGracePeriod()),
+			TearingDown: buildToPolicyTimeout(durationpb.New(
+				bld.GetGracePeriod().AsDuration() + buildbucket.MinUpdateBuildInterval)),
 		}.Build(),
 	}.Build()
 }
