@@ -52,8 +52,9 @@ export const useAlertGroups = (): AlertGroupsData => {
   const tree = useTree();
   const queryClient = useQueryClient();
   const alertGroupsClient = useAlertGroupsClient();
+  const rotationName = tree?.name?.replace(/[^a-z0-9.-]+/g, '-');
   const listQuery = alertGroupsClient.ListAlertGroups.query({
-    parent: `rotations/${tree?.name}`,
+    parent: `rotations/${rotationName}`,
     pageSize: 1000,
     pageToken: '',
   });
@@ -68,7 +69,7 @@ export const useAlertGroups = (): AlertGroupsData => {
   const createGroup = useMutation({
     mutationFn: (group: AlertGroupCreateData) =>
       alertGroupsClient.CreateAlertGroup({
-        parent: `rotations/${tree?.name}`,
+        parent: `rotations/${rotationName}`,
         alertGroupId: new Date().getTime().toString(),
         alertGroup: { ...(group as Partial<AlertGroup>) } as AlertGroup, // Some fields are meant to be left empty on create.
       }),
