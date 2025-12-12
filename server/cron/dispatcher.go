@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
@@ -142,16 +143,13 @@ func (d *Dispatcher) InstallCronRoutes(r *router.Router, prefix string) {
 	r.GET(route, mw, func(c *router.Context) {
 		id := handlerID(c)
 		if err := d.executeHandlerByID(c.Request.Context(), id); err != nil {
-			status := 0
 			if transient.Tag.In(err) {
-				err = errors.Fmt("transient error in cron handler %q: %w", id, err)
-				status = 500
+				logging.Warningf(c.Request.Context(), "transient error in cron handler %q: %w", id, err)
+				http.Error(c.Writer, err.Error(), 500)
 			} else {
-				err = errors.Fmt("fatal error in cron handler %q: %w", id, err)
-				status = 202
+				errors.Log(c.Request.Context(), errors.Fmt("fatal error in cron handler %q: %w", id, err))
+				http.Error(c.Writer, err.Error(), 202)
 			}
-			errors.Log(c.Request.Context(), err)
-			http.Error(c.Writer, err.Error(), status)
 		} else {
 			c.Writer.Write([]byte("OK"))
 		}
