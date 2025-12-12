@@ -41,6 +41,7 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useDevices } from '@/fleet/hooks/use_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { SelectedOptions } from '@/fleet/types';
+import { extractDutId } from '@/fleet/utils/devices';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
 import {
@@ -214,6 +215,19 @@ export const ChromeOsDevicesPage = () => {
 
   const currentTasks = useCurrentTasks(devices);
 
+  const rows = useMemo(() => {
+    if (currentTasks.isPending) {
+      return devices.map((d) => ({
+        ...d,
+        current_task: undefined,
+      }));
+    }
+    return devices.map((d) => ({
+      ...d,
+      current_task: currentTasks.map.get(extractDutId(d)) || '',
+    }));
+  }, [devices, currentTasks.map, currentTasks.isPending]);
+
   return (
     <div
       css={{
@@ -272,7 +286,7 @@ export const ChromeOsDevicesPage = () => {
         <DeviceTable
           defaultColumnIds={CHROMEOS_DEFAULT_COLUMNS}
           localStorageKey={CHROMEOS_DEVICES_LOCAL_STORAGE_KEY}
-          rows={devices}
+          rows={rows}
           availableColumns={getColumns(columnIds)}
           nextPageToken={nextPageToken}
           pagerCtx={pagerCtx}

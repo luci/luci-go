@@ -26,6 +26,10 @@ import {
   DeviceType,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+// current_task is populated separated from ListDevices through direct calls to the Swarming
+// API, requiring device data to be merged with task data.
+type ChromeOSDevice = Device & { current_task?: string };
+
 export const getColumns = (
   columnIds: string[],
 ): DeviceTableGridColDef<Device>[] => {
@@ -86,7 +90,7 @@ export const CHROMEOS_COLUMN_OVERRIDES: Record<
   },
   state: {
     headerName: 'Lease state',
-    valueGetter: getDeviceStateString,
+    valueGetter: (_, device) => getDeviceStateString(device),
     orderByField: 'state',
   },
   host: {
@@ -102,7 +106,11 @@ export const CHROMEOS_COLUMN_OVERRIDES: Record<
   current_task: {
     headerName: 'Current Task',
     sortable: false,
+    valueGetter: (_, row) => (row as ChromeOSDevice).current_task,
     renderCell: (props) => {
+      if (props.value === undefined) {
+        return <></>;
+      }
       if (props.value === '') {
         return <CellWithTooltip {...props} value="idle"></CellWithTooltip>;
       }
