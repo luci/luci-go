@@ -20,13 +20,12 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/data/aip132"
-	"go.chromium.org/luci/common/errors"
 )
 
 // whereClause constructs Standard SQL WHERE clause parts from
 // column definitions and a parsed AIP-160 filter.
 type whereClause struct {
-	table      *SqlTable
+	table      *DatabaseTable
 	parameters []SqlQueryParameter
 	// The prefix to apply to generated SQL parameter names. Used to deconflict
 	// filter parameters from other parameters.
@@ -43,7 +42,7 @@ type SqlQueryParameter struct {
 	Value string
 }
 
-// WhereClause creates a Standard SQL WHERE clause fragment for the given filter.
+// WhereClause creates a Google Standard SQL WHERE clause fragment for the given filter.
 //
 // The fragment will be enclosed in parentheses and does not include the "WHERE" keyword.
 // For example: (column LIKE @param1)
@@ -51,9 +50,15 @@ type SqlQueryParameter struct {
 //
 // All field names are replaced with the safe database column names from the specified table.
 // All user input strings are passed via query parameters, so the returned query is SQL injection safe.
-func (t *SqlTable) WhereClause(filter *Filter, tableAlias, parameterPrefix string) (string, []SqlQueryParameter, error) {
+func (t *DatabaseTable) WhereClause(filter *Filter, tableAlias, parameterPrefix string) (string, []SqlQueryParameter, error) {
 	if filter == nil || filter.Expression == nil {
 		return "(TRUE)", []SqlQueryParameter{}, nil
+	}
+	if strings.HasPrefix(tableAlias, "_") {
+		// Generated SQL may use table aliases, e.g. for UNNEST clauses.
+		// We reserve table aliases starting with '_' for use within generated SQL,
+		// to avoid bugs.
+		return "", []SqlQueryParameter{}, fmt.Errorf("table aliases starting with '_' are reserved for use within generated SQL")
 	}
 
 	q := &whereClause{
@@ -156,234 +161,61 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 			fields := strings.Join(restriction.Comparable.Member.Fields, ".")
 			return "", fmt.Errorf("fields are not allowed without an operator, try wrapping %s.%s in double quotes: \"%s.%s\"", value, fields, value, fields)
 		}
-		arg, err := w.likeComparableValue(restriction.Comparable)
+		arg, err := coerceComparableToConstant(restriction.Comparable)
 		if err != nil {
 			return "", err
 		}
 		clauses := []string{}
+		context := ImplicitRestrictionContext{
+			ArgValueUnsafe: arg,
+		}
 		// This is a value that should be substring matched against columns
 		// marked for implicit matching.
-		for _, column := range w.table.columns {
+		for _, column := range w.table.fields {
 			if column.implicitFilter {
-				clauses = append(clauses, fmt.Sprintf("%s LIKE %s", w.columnDatabaseName(column), arg))
+				clause, err := column.backend.ImplicitRestrictionQuery(context, w)
+				if err != nil {
+					return "", fmt.Errorf("implicit restriction on field %s: %w", column.fieldPath.String(), err)
+				}
+				clauses = append(clauses, clause)
 			}
 		}
 		return "(" + strings.Join(clauses, " OR ") + ")", nil
 	}
-	column, err := w.table.FilterableColumnByFieldPath(aip132.NewFieldPath(restriction.Comparable.Member.Value))
+	column, err := w.table.FilterableFieldByFieldPath(aip132.NewFieldPath(restriction.Comparable.Member.Value))
 	if err != nil {
 		return "", err
 	}
-	// Fully-qualified column name, including the table alias prefix.
-	columnDatabaseName := w.columnDatabaseName(column)
-
-	if len(restriction.Comparable.Member.Fields) > 0 {
-		if !column.keyValue && !column.stringArrayKeyValue {
-			return "", fmt.Errorf("fields are only supported for key value columns.  Try removing the '.' from after your column named %q", column.fieldPath.String())
-		}
-		if len(restriction.Comparable.Member.Fields) > 1 {
-			return "", fmt.Errorf("expected only a single '.' in keyvalue column named %q", column.fieldPath.String())
-		}
-
-		if column.keyValue {
-			key := w.bind(restriction.Comparable.Member.Fields[0])
-			if restriction.Comparator == ":" {
-				value, err := w.likeArgValue(restriction.Arg, column)
-				if err != nil {
-					return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
-				}
-				return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value LIKE %s))", columnDatabaseName, key, value), nil
-			}
-			value, err := w.argValue(restriction.Arg, column)
-			if err != nil {
-				return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
-			}
-			if restriction.Comparator == "=" {
-				return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value = %s))", columnDatabaseName, key, value), nil
-			} else if restriction.Comparator == "!=" {
-				return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value <> %s))", columnDatabaseName, key, value), nil
-			}
-			return "", fmt.Errorf("comparator operator not implemented for fields yet")
-		}
-
-		if column.stringArrayKeyValue {
-			key := restriction.Comparable.Member.Fields[0]
-			// valStrUnsafe is user provided input and can only be used in bind parameters, never in the raw SQL string.
-			valStrUnsafe, err := w.argStringUnsafe(restriction.Arg, column)
-			if err != nil {
-				return "", err
-			}
-
-			if restriction.Comparator == ":" {
-				boundVal := w.bind(key + ":" + "%" + quoteLike(valStrUnsafe) + "%")
-				return fmt.Sprintf("(EXISTS (SELECT 1 FROM UNNEST(%s) as v WHERE v LIKE %s))", columnDatabaseName, boundVal), nil
-			}
-
-			boundVal := w.bind(key + ":" + valStrUnsafe)
-			if restriction.Comparator == "=" {
-				return fmt.Sprintf("(%s IN UNNEST(%s))", boundVal, columnDatabaseName), nil
-			} else if restriction.Comparator == "!=" {
-				boundKey := w.bind(key + ":")
-				return fmt.Sprintf("(EXISTS (SELECT 1 FROM UNNEST(%s) as v WHERE STARTS_WITH(v, %s) AND NOT v = %s))", columnDatabaseName, boundKey, boundVal), nil
-			}
-			return "", fmt.Errorf("comparator operator %q not implemented for string array key value columns", restriction.Comparator)
-		}
-		// Should be unreachable.
-		panic("unreachable")
-	} else if column.keyValue || column.stringArrayKeyValue {
-		// TODO: AIP-160 specifies the has operator on maps will check for the presence of a key.
-		return "", fmt.Errorf("key value columns must specify the key to search on.  Instead of '%s%s' try '%s.key%s'", column.fieldPath.String(), restriction.Comparator, column.fieldPath.String(), restriction.Comparator)
+	context := RestrictionContext{
+		FieldPath:    column.fieldPath,
+		NestedFields: restriction.Comparable.Member.Fields,
+		Comparator:   restriction.Comparator,
+		Arg:          restriction.Arg,
 	}
-	if column.array {
-		if restriction.Comparator == ":" {
-			// For array contains, we want to do a substring match on the elements.
-			value, err := w.likeArgValue(restriction.Arg, column)
-			if err != nil {
-				return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
-			}
-			return fmt.Sprintf("(EXISTS (SELECT value FROM UNNEST(%s) as value WHERE value LIKE %s))", columnDatabaseName, value), nil
-		}
-		return "", fmt.Errorf("comparator operator not implemented for arrays yet")
-	}
-	if restriction.Comparator == "=" {
-		arg, err := w.argValue(restriction.Arg, column)
-		if err != nil {
-			return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
-		}
-		return fmt.Sprintf("(%s = %s)", columnDatabaseName, arg), nil
-	} else if restriction.Comparator == "!=" {
-		arg, err := w.argValue(restriction.Arg, column)
-		if err != nil {
-			return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
-		}
-		return fmt.Sprintf("(%s <> %s)", columnDatabaseName, arg), nil
-	} else if restriction.Comparator == ":" {
-		arg, err := w.likeArgValue(restriction.Arg, column)
-		if err != nil {
-			return "", errors.Fmt("argument for field %s: %w", column.fieldPath.String(), err)
-		}
-		return fmt.Sprintf("(%s LIKE %s)", columnDatabaseName, arg), nil
-	} else {
-		return "", fmt.Errorf("comparator operator not implemented yet")
-	}
+	return column.backend.RestrictionQuery(context, w)
 }
 
-// argStringUnsafe returns the string value of an argument.
-// The return valus is user provided content and can only be used in bind parameters,
-// never directly in raw SQL strings.
-func (w *whereClause) argStringUnsafe(arg *Arg, column *SqlColumn) (string, error) {
+// CoarceArgToConstant attempts to return the constant value of an argument.
+// If the argument is a composite expression or reference to a field, it
+// will return an error.
+func CoarceArgToConstant(arg *Arg) (string, error) {
 	if arg.Composite != nil {
-		return "", fmt.Errorf("composite expressions in arguments not implemented yet")
+		return "", fmt.Errorf("composite expressions in arguments not supported yet")
 	}
 	if arg.Comparable == nil {
 		return "", fmt.Errorf("missing comparable in argument")
 	}
-	if arg.Comparable.Member == nil {
-		return "", fmt.Errorf("invalid comparable")
-	}
-	if len(arg.Comparable.Member.Fields) > 0 {
-		return "", fmt.Errorf("fields not implemented yet")
-	}
-	value := arg.Comparable.Member.Value
-	if column.argSubstitute != nil {
-		value = column.argSubstitute(value)
-	}
-	return value, nil
+	return coerceComparableToConstant(arg.Comparable)
 }
 
-// argValue returns a SQL expression representing the value of the specified
-// arg.
-// The returned string is an injection-safe SQL expression.
-func (w *whereClause) argValue(arg *Arg, column *SqlColumn) (string, error) {
-	if arg.Composite != nil {
-		return "", fmt.Errorf("composite expressions in arguments not implemented yet")
-	}
-	if arg.Comparable == nil {
-		return "", fmt.Errorf("missing comparable in argument")
-	}
-	return w.comparableValue(arg.Comparable, column)
-}
-
-// argValue returns a SQL expression representing the value of the specified
-// comparable.
-// The returned string is an injection-safe SQL expression.
-func (w *whereClause) comparableValue(comparable *Comparable, column *SqlColumn) (string, error) {
+func coerceComparableToConstant(comparable *Comparable) (string, error) {
 	if comparable.Member == nil {
 		return "", fmt.Errorf("invalid comparable")
 	}
 	if len(comparable.Member.Fields) > 0 {
-		return "", fmt.Errorf("fields not implemented yet")
+		return "", fmt.Errorf("fields (using '.') not implemented yet")
 	}
-	switch column.columnType {
-	case SqlColumnTypeString:
-		value := comparable.Member.Value
-		if column.argSubstitute != nil {
-			value = column.argSubstitute(value)
-		}
-		// Bind unsanitised user input to a parameter to protect against SQL injection.
-		return w.bind(value), nil
-	case SqlColumnTypeBool:
-		if strings.EqualFold(comparable.Member.Value, "true") {
-			return "TRUE", nil
-		} else if strings.EqualFold(comparable.Member.Value, "false") {
-			return "FALSE", nil
-		}
-		return "", fmt.Errorf("only TRUE or FALSE can be specified as the value for a boolean field")
-	}
-	return "", fmt.Errorf("unable to generate SQL value for unknown field type: %s", column.columnType.String())
-}
-
-// likeArgValue returns a SQL expression that, when passed to the
-// right hand side of a LIKE operator, performs substring matching against
-// the value of the argument.
-// The returned string is an injection-safe SQL expression.
-func (w *whereClause) likeArgValue(arg *Arg, column *SqlColumn) (string, error) {
-	if arg.Composite != nil {
-		return "", fmt.Errorf("composite expressions are not allowed as RHS to has (:) operator")
-	}
-	if arg.Comparable == nil {
-		return "", fmt.Errorf("missing comparable in argument")
-	}
-	if column.columnType != SqlColumnTypeString {
-		return "", fmt.Errorf("cannot use has (:) operator on a non-string field %q", column.columnType.String())
-	}
-	if column.argSubstitute != nil {
-		return "", fmt.Errorf("cannot use has (:) operator on a field that have argSubstitute function")
-	}
-	return w.likeComparableValue(arg.Comparable)
-}
-
-// likeComparableValue returns a SQL expression that, when passed to the
-// right hand side of a LIKE operator, performs substring matching against
-// the value of the comparable.
-// The returned string is an injection-safe SQL expression.
-func (w *whereClause) likeComparableValue(comparable *Comparable) (string, error) {
-	if comparable.Member == nil {
-		return "", fmt.Errorf("invalid comparable")
-	}
-	if len(comparable.Member.Fields) > 0 {
-		return "", fmt.Errorf("fields are not allowed on the RHS of has (:) operator")
-	}
-	// Bind unsanitised user input to a parameter to protect against SQL injection.
-	return w.bind("%" + quoteLike(comparable.Member.Value) + "%"), nil
-}
-
-// bind binds a new query parameter with the given value, and returns
-// the name of the parameter (including '@').
-// The returned string is an injection-safe SQL expression.
-func (w *whereClause) bind(value string) string {
-	name := w.parameterPrefix + strconv.Itoa(w.nextValueName)
-	w.nextValueName += 1
-	w.parameters = append(w.parameters, SqlQueryParameter{Name: name, Value: value})
-	return "@" + name
-}
-
-// columnName returns the fully-qualified name of the column in the database.
-func (w *whereClause) columnDatabaseName(column *SqlColumn) string {
-	if w.tableAlias != "" {
-		return w.tableAlias + "." + column.databaseName
-	}
-	return column.databaseName
+	return comparable.Member.Value, nil
 }
 
 // quoteLike turns a literal string into an escaped like expression.
@@ -394,4 +226,23 @@ func quoteLike(value string) string {
 	value = strings.ReplaceAll(value, "%", "\\%")
 	value = strings.ReplaceAll(value, "_", "\\_")
 	return value
+}
+
+// BindString binds a new query parameter with the given string value, and returns
+// the name of the parameter (including '@').
+// The returned string is an injection-safe SQL expression.
+func (w *whereClause) BindString(value string) string {
+	name := w.parameterPrefix + strconv.Itoa(w.nextValueName)
+	w.nextValueName += 1
+	w.parameters = append(w.parameters, SqlQueryParameter{Name: name, Value: value})
+	return "@" + name
+}
+
+// ColumnReference prepends the table alias (if any) to the given column name
+// to provide the fully-qualified column name.
+func (w *whereClause) ColumnReference(databaseName string) string {
+	if w.tableAlias != "" {
+		return w.tableAlias + "." + databaseName
+	}
+	return databaseName
 }

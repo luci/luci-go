@@ -980,7 +980,7 @@ func TestClusters(t *testing.T) {
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("failure_filter: comparator operator not implemented yet"))
+					assert.Loosely(t, err, should.ErrLike(`failure_filter: operator "<=" not implemented for field "test_id" of type STRING`))
 				})
 				t.Run("Metrics references non-existent metric", func(t *ftt.Test) {
 					request.Metrics = []string{"projects/testproject/metrics/not-exists"}

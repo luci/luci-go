@@ -38,20 +38,20 @@ import (
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-var ClusteredFailuresTable = aip160.NewSqlTable().WithColumns(
-	aip160.NewSqlColumn().WithFieldPath("test_id").WithDatabaseName("test_id").FilterableImplicitly().Build(),
-	aip160.NewSqlColumn().WithFieldPath("failure_reason").WithDatabaseName("failure_reason.primary_error_message").FilterableImplicitly().Build(),
-	aip160.NewSqlColumn().WithFieldPath("realm").WithDatabaseName("realm").Filterable().Build(),
-	aip160.NewSqlColumn().WithFieldPath("ingested_invocation_id").WithDatabaseName("ingested_invocation_id").Filterable().Build(),
-	aip160.NewSqlColumn().WithFieldPath("cluster_algorithm").WithDatabaseName("cluster_algorithm").Filterable().WithArgumentSubstitutor(resolveAlgorithm).Build(),
-	aip160.NewSqlColumn().WithFieldPath("cluster_id").WithDatabaseName("cluster_id").Filterable().Build(),
-	aip160.NewSqlColumn().WithFieldPath("variant_hash").WithDatabaseName("variant_hash").Filterable().Build(),
-	aip160.NewSqlColumn().WithFieldPath("test_run_id").WithDatabaseName("test_run_id").Filterable().Build(),
-	aip160.NewSqlColumn().WithFieldPath("variant").WithDatabaseName("variant").KeyValue().Filterable().Build(),
-	aip160.NewSqlColumn().WithFieldPath("tags").WithDatabaseName("tags").KeyValue().Filterable().Build(),
-	aip160.NewSqlColumn().WithFieldPath("is_test_run_blocked").WithDatabaseName("is_test_run_blocked").Bool().Filterable().Build(),
-	aip160.NewSqlColumn().WithFieldPath("is_ingested_invocation_blocked").WithDatabaseName("is_ingested_invocation_blocked").Bool().Filterable().Build(),
-	aip160.NewSqlColumn().WithFieldPath("build_gardener_rotations").WithDatabaseName("build_gardener_rotations").Array().Filterable().Build(),
+var ClusteredFailuresTable = aip160.NewDatabaseTable().WithFields(
+	aip160.NewField().WithFieldPath("test_id").WithBackend(aip160.NewStringColumn("test_id")).FilterableImplicitly().Build(),
+	aip160.NewField().WithFieldPath("failure_reason").WithBackend(aip160.NewStringColumn("failure_reason.primary_error_message")).FilterableImplicitly().Build(),
+	aip160.NewField().WithFieldPath("realm").WithBackend(aip160.NewStringColumn("realm")).Filterable().Build(),
+	aip160.NewField().WithFieldPath("ingested_invocation_id").WithBackend(aip160.NewStringColumn("ingested_invocation_id")).Filterable().Build(),
+	aip160.NewField().WithFieldPath("cluster_algorithm").WithBackend(aip160.NewOpaqueStringColumn("cluster_algorithm").WithEncodeFunction(resolveAlgorithm).Build()).Filterable().Build(),
+	aip160.NewField().WithFieldPath("cluster_id").WithBackend(aip160.NewStringColumn("cluster_id")).Filterable().Build(),
+	aip160.NewField().WithFieldPath("variant_hash").WithBackend(aip160.NewStringColumn("variant_hash")).Filterable().Build(),
+	aip160.NewField().WithFieldPath("test_run_id").WithBackend(aip160.NewStringColumn("test_run_id")).Filterable().Build(),
+	aip160.NewField().WithFieldPath("variant").WithBackend(aip160.NewKeyValueColumn("variant").WithRepeatedStruct().Build()).Filterable().Build(),
+	aip160.NewField().WithFieldPath("tags").WithBackend(aip160.NewKeyValueColumn("tags").WithRepeatedStruct().Build()).Filterable().Build(),
+	aip160.NewField().WithFieldPath("is_test_run_blocked").WithBackend(aip160.NewBoolColumn("is_test_run_blocked")).Filterable().Build(),
+	aip160.NewField().WithFieldPath("is_ingested_invocation_blocked").WithBackend(aip160.NewBoolColumn("is_ingested_invocation_blocked")).Filterable().Build(),
+	aip160.NewField().WithFieldPath("build_gardener_rotations").WithBackend(aip160.NewRepeatedStringColumn("build_gardener_rotations")).Filterable().Build(),
 ).Build()
 
 func resolveAlgorithm(algorithm string) string {
@@ -159,13 +159,13 @@ func defaultOrder(ms []metrics.Definition) []aip132.OrderBy {
 // ClusterSummariesTable returns the schema of the table returned by
 // the cluster summaries query. This can be used to generate and
 // validate the order by clause.
-func ClusterSummariesTable(queriedMetrics []metrics.Definition) *aip160.SqlTable {
-	var columns []*aip160.SqlColumn
+func ClusterSummariesTable(queriedMetrics []metrics.Definition) *aip160.DatabaseTable {
+	var columns []*aip160.Field
 	for _, metric := range queriedMetrics {
 		metricColumnName := metric.ColumnName(MetricValueColumnSuffix)
-		columns = append(columns, aip160.NewSqlColumn().WithFieldPath("metrics", string(metric.ID), "value").WithDatabaseName(metricColumnName).Sortable().Build())
+		columns = append(columns, aip160.NewField().WithFieldPath("metrics", string(metric.ID), "value").WithBackend(aip160.NewSimpleColumn(metricColumnName)).Sortable().Build())
 	}
-	return aip160.NewSqlTable().WithColumns(columns...).Build()
+	return aip160.NewDatabaseTable().WithFields(columns...).Build()
 }
 
 // QueryClusterSummaries queries a summary of clusters in the project.

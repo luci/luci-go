@@ -1,0 +1,69 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package aip160
+
+import (
+	"fmt"
+	"strings"
+)
+
+// boolColumn implements FieldBackend for boolean fields stored as a BOOL database column.
+type BoolColumn struct {
+	SimpleColumn
+}
+
+// RestrictionQuery implements FieldBackend.
+func (b *BoolColumn) RestrictionQuery(restriction RestrictionContext, g Generator) (string, error) {
+	if len(restriction.NestedFields) > 0 {
+		return "", FieldsUnsupportedError(restriction.FieldPath)
+	}
+	argValueUnsafe, err := CoarceArgToConstant(restriction.Arg)
+	if err != nil {
+		return "", fmt.Errorf("argument for field %q: %w", restriction.FieldPath.String(), err)
+	}
+
+	argValueSafe := ""
+	if strings.EqualFold(argValueUnsafe, "true") {
+		argValueSafe = "TRUE"
+	} else if strings.EqualFold(argValueUnsafe, "false") {
+		argValueSafe = "FALSE"
+	} else {
+		return "", fmt.Errorf("only TRUE or FALSE can be specified as the value for a boolean field")
+	}
+
+	switch restriction.Comparator {
+	case "=":
+		return fmt.Sprintf("(%s = %s)", g.ColumnReference(b.databaseName), argValueSafe), nil
+	case "!=":
+		return fmt.Sprintf("(%s <> %s)", g.ColumnReference(b.databaseName), argValueSafe), nil
+	default:
+		return "", OperatorNotImplementedError(restriction.Comparator, restriction.FieldPath, "BOOL")
+	}
+}
+
+// ImplicitRestrictionQuery implements FieldBackend.
+func (b *BoolColumn) ImplicitRestrictionQuery(ir ImplicitRestrictionContext, g Generator) (string, error) {
+	return "", ImplicitRestrictionUnsupportedError()
+}
+
+// NewBoolColumn returns a new BoolColumn.
+// databaseName MUST be a constant; it may not come from user input.
+func NewBoolColumn(databaseName string) *BoolColumn {
+	return &BoolColumn{
+		SimpleColumn: SimpleColumn{
+			databaseName: databaseName,
+		},
+	}
+}

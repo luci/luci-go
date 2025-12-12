@@ -47,7 +47,7 @@ func MergeWithDefaultOrder(defaultOrder []aip132.OrderBy, order []aip132.OrderBy
 //
 // The returned order clause is safe against SQL injection; only
 // strings appearing from Table appear in the output.
-func (t *SqlTable) OrderByClause(order []aip132.OrderBy) (string, error) {
+func (t *DatabaseTable) OrderByClause(order []aip132.OrderBy) (string, error) {
 	if len(order) == 0 {
 		return "", nil
 	}
@@ -58,18 +58,19 @@ func (t *SqlTable) OrderByClause(order []aip132.OrderBy) (string, error) {
 		if i > 0 {
 			result.WriteString(", ")
 		}
-		column, err := t.SortableColumnByFieldPath(o.FieldPath)
+		column, err := t.SortableFieldByFieldPath(o.FieldPath)
 		if err != nil {
 			return "", err
 		}
-		if _, ok := seenColumns[column.databaseName]; ok {
+		if _, ok := seenColumns[o.FieldPath.String()]; ok {
 			return "", fmt.Errorf("field appears in order_by multiple times: %q", o.FieldPath.String())
 		}
-		seenColumns[column.databaseName] = struct{}{}
-		result.WriteString(column.databaseName)
-		if o.Descending {
-			result.WriteString(" DESC")
+		seenColumns[o.FieldPath.String()] = struct{}{}
+		orderBy, err := column.backend.OrderBy(o.Descending)
+		if err != nil {
+			return "", fmt.Errorf("field %q: %w", o.FieldPath.String(), err)
 		}
+		result.WriteString(orderBy)
 	}
 	result.WriteString("\n")
 	return result.String(), nil

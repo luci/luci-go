@@ -71,10 +71,10 @@ var InvalidArgumentTag = errtag.Make("invalid argument", true)
 //
 // Because this is used for querying both test results and test variants, only fields that exist in
 // both can be added here.
-var TestVariantsVirtualTable = aip160.NewSqlTable().WithColumns(
-	aip160.NewSqlColumn().WithFieldPath("test_id").WithDatabaseName("TestId").FilterableImplicitly().Build(),
-	aip160.NewSqlColumn().WithFieldPath("variant_hash").WithDatabaseName("VariantHash").Filterable().Build(),
-	aip160.NewSqlColumn().WithFieldPath("variant").WithDatabaseName("Variant").StringArrayKeyValue().Filterable().Build(),
+var TestVariantsVirtualTable = aip160.NewDatabaseTable().WithFields(
+	aip160.NewField().WithFieldPath("test_id").WithBackend(aip160.NewStringColumn("TestId")).FilterableImplicitly().Build(),
+	aip160.NewField().WithFieldPath("variant_hash").WithBackend(aip160.NewStringColumn("VariantHash")).Filterable().Build(),
+	aip160.NewField().WithFieldPath("variant").WithBackend(aip160.NewKeyValueColumn("Variant").WithStringArray().Build()).Filterable().Build(),
 ).Build()
 
 // QueryMask returns mask.Mask converted from field_mask.FieldMask.
