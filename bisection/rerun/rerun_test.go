@@ -456,6 +456,215 @@ func TestUpdateRerunStatus(t *testing.T) {
 	})
 }
 
+func TestCreateTestRerunModel(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("CreateTestRerunModel", t, func(t *ftt.Test) {
+		c := memory.Use(context.Background())
+		testutil.UpdateIndices(c)
+		cl := testclock.New(testclock.TestTimeUTC)
+		c = clock.Set(c, cl)
+
+		// Setup mock for buildbucket
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(c, ctl)
+		c = mc.Ctx
+
+		res := &bbpb.Build{
+			Infra: &bbpb.BuildInfra{
+				Swarming: &bbpb.BuildInfra_Swarming{
+					TaskDimensions: []*bbpb.RequestedDimension{
+						{
+							Key:   "os",
+							Value: "Ubuntu-22.04",
+						},
+						{
+							Key:   "pool",
+							Value: "luci.chromium.findit",
+						},
+					},
+				},
+			},
+		}
+		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
+
+		build := &bbpb.Build{
+			Id:     123456,
+			Number: 100,
+			Builder: &bbpb.BuilderID{
+				Project: "chromium",
+				Bucket:  "findit",
+				Builder: "test-single-revision",
+			},
+			Input: &bbpb.Build_Input{
+				GitilesCommit: &bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "refs/heads/main",
+					Id:      "abc123def456",
+				},
+			},
+			Status:     bbpb.Status_SCHEDULED,
+			CreateTime: &timestamppb.Timestamp{Seconds: 1000},
+			StartTime:  &timestamppb.Timestamp{Seconds: 1100},
+		}
+
+		// Create test failure analysis
+		tfa := testutil.CreateTestFailureAnalysis(c, t, &testutil.TestFailureAnalysisCreationOption{
+			ID:       100,
+			Project:  "chromium",
+			Priority: 50,
+		})
+
+		// Create test failures
+		tf1 := testutil.CreateTestFailure(c, t, &testutil.TestFailureCreationOption{
+			ID:        200,
+			Analysis:  tfa,
+			IsPrimary: true,
+		})
+		tf2 := testutil.CreateTestFailure(c, t, &testutil.TestFailureCreationOption{
+			ID:        201,
+			Analysis:  tfa,
+			IsPrimary: false,
+		})
+
+		t.Run("NthSection rerun", func(t *ftt.Test) {
+			nsa := testutil.CreateTestNthSectionAnalysis(c, t, &testutil.TestNthSectionAnalysisCreationOption{
+				ID:                1000,
+				ParentAnalysisKey: datastore.KeyForObj(c, tfa),
+			})
+
+			options := CreateTestRerunModelOptions{
+				TestFailureAnalysis:   tfa,
+				NthSectionAnalysisKey: datastore.KeyForObj(c, nsa),
+				TestFailures:          []*model.TestFailure{tf1, tf2},
+				Build:                 build,
+				RerunType:             model.RerunBuildType_NthSection,
+			}
+
+			rerun, err := CreateTestRerunModel(c, options)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rerun, should.NotBeNil)
+
+			// Compare the entire struct using should.Match for better maintainability
+			expected := &model.TestSingleRerun{
+				ID: 123456,
+				LUCIBuild: model.LUCIBuild{
+					BuildID:     123456,
+					Project:     "chromium",
+					Bucket:      "findit",
+					Builder:     "test-single-revision",
+					BuildNumber: 100,
+					GitilesCommit: &bbpb.GitilesCommit{
+						Host:    "chromium.googlesource.com",
+						Project: "chromium/src",
+						Id:      "abc123def456",
+						Ref:     "refs/heads/main",
+					},
+					Status:     bbpb.Status_SCHEDULED,
+					CreateTime: time.Unix(1000, 0),
+					StartTime:  time.Unix(1100, 0),
+				},
+				Type:                  model.RerunBuildType_NthSection,
+				AnalysisKey:           datastore.KeyForObj(c, tfa),
+				NthSectionAnalysisKey: datastore.KeyForObj(c, nsa),
+				CulpritKey:            nil,
+				Status:                pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+				Priority:              int32(50),
+				TestResults: model.RerunTestResults{
+					Results: []model.RerunSingleTestResult{
+						{TestFailureKey: datastore.KeyForObj(c, tf1)},
+						{TestFailureKey: datastore.KeyForObj(c, tf2)},
+					},
+				},
+				Dimensions: &pb.Dimensions{
+					Dimensions: []*pb.Dimension{
+						{Key: "os", Value: "Ubuntu-22.04"},
+						{Key: "pool", Value: "luci.chromium.findit"},
+					},
+				},
+			}
+			assert.Loosely(t, rerun, should.Match(expected))
+		})
+
+		t.Run("Culprit verification rerun", func(t *ftt.Test) {
+			nsa := testutil.CreateTestNthSectionAnalysis(c, t, &testutil.TestNthSectionAnalysisCreationOption{
+				ID:                1001,
+				ParentAnalysisKey: datastore.KeyForObj(c, tfa),
+			})
+
+			suspect := &model.Suspect{
+				Type: model.SuspectType_NthSection,
+				GitilesCommit: bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "refs/heads/main",
+					Id:      "def456abc789",
+				},
+				ParentAnalysis:     datastore.KeyForObj(c, nsa),
+				VerificationStatus: model.SuspectVerificationStatus_Unverified,
+			}
+			assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			build.Id = 123457
+
+			options := CreateTestRerunModelOptions{
+				TestFailureAnalysis: tfa,
+				SuspectKey:          datastore.KeyForObj(c, suspect),
+				TestFailures:        []*model.TestFailure{tf1, tf2},
+				Build:               build,
+				RerunType:           model.RerunBuildType_CulpritVerification,
+			}
+
+			rerun, err := CreateTestRerunModel(c, options)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rerun, should.NotBeNil)
+
+			// Compare the entire struct using should.Match for better maintainability
+			expected := &model.TestSingleRerun{
+				ID: 123457,
+				LUCIBuild: model.LUCIBuild{
+					BuildID:     123457,
+					Project:     "chromium",
+					Bucket:      "findit",
+					Builder:     "test-single-revision",
+					BuildNumber: 100,
+					GitilesCommit: &bbpb.GitilesCommit{
+						Host:    "chromium.googlesource.com",
+						Project: "chromium/src",
+						Id:      "abc123def456",
+						Ref:     "refs/heads/main",
+					},
+					Status:     bbpb.Status_SCHEDULED,
+					CreateTime: time.Unix(1000, 0),
+					StartTime:  time.Unix(1100, 0),
+				},
+				Type:                  model.RerunBuildType_CulpritVerification,
+				AnalysisKey:           datastore.KeyForObj(c, tfa),
+				NthSectionAnalysisKey: nil,
+				CulpritKey:            datastore.KeyForObj(c, suspect),
+				Status:                pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+				Priority:              int32(50),
+				TestResults: model.RerunTestResults{
+					Results: []model.RerunSingleTestResult{
+						{TestFailureKey: datastore.KeyForObj(c, tf1)},
+						{TestFailureKey: datastore.KeyForObj(c, tf2)},
+					},
+				},
+				Dimensions: &pb.Dimensions{
+					Dimensions: []*pb.Dimension{
+						{Key: "os", Value: "Ubuntu-22.04"},
+						{Key: "pool", Value: "luci.chromium.findit"},
+					},
+				},
+			}
+			assert.Loosely(t, rerun, should.Match(expected))
+		})
+	})
+}
+
 func TestUpdateTestRerunStatus(t *testing.T) {
 	t.Parallel()
 

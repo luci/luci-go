@@ -28,10 +28,95 @@ import (
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/nthsectionsnapshot"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/rerun"
 	"go.chromium.org/luci/bisection/testfailureanalysis"
+	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/analysis"
+	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/chromium"
+	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/projectbisector"
 	"go.chromium.org/luci/bisection/util/changelogutil"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
+
+const (
+	// maxRerun controls how many reruns we can do at once.
+	// maxRerun = 1 means bisection, maxRerun = 2 means trisection, etc.
+	// For now, hard-coded to run trisection.
+	// TODO (nqmtuan): Tune this based on bot availability.
+	maxRerun = 2
+)
+
+// Analyze performs nthsection analysis on a test failure.
+// It creates the nthsection model, analyzes the blame list, and either:
+// - Returns nil with a found culprit (triggers verification)
+// - Returns nil after triggering reruns for further analysis
+// - Returns an error if something went wrong
+func Analyze(ctx context.Context, tfa *model.TestFailureAnalysis, luciAnalysis analysis.AnalysisClient) error {
+	// Get project-specific bisector for this analysis.
+	projectBisector, err := GetProjectBisector(ctx, tfa)
+	if err != nil {
+		return errors.Fmt("get project bisector: %w", err)
+	}
+
+	// Prepare data for bisection (populates test names and suite names).
+	err = projectBisector.Prepare(ctx, tfa, luciAnalysis)
+	if err != nil {
+		return errors.Fmt("prepare bisection: %w", err)
+	}
+
+	// Create nthsection model.
+	primaryFailure, err := datastoreutil.GetPrimaryTestFailure(ctx, tfa)
+	if err != nil {
+		return errors.Fmt("get primary test failure: %w", err)
+	}
+	nsa, err := CreateNthSectionModel(ctx, tfa, primaryFailure)
+	if err != nil {
+		return errors.Fmt("create nth section model: %w", err)
+	}
+
+	snapshot, err := CreateSnapshot(ctx, nsa)
+	if err != nil {
+		return errors.Fmt("create snapshot: %w", err)
+	}
+
+	// The culprit may be found without any bisection rerun, it is the case
+	// where we have only 1 commit in the blame list.
+	// In such cases, we should save the culprit and trigger culprit verification.
+	ok, cul := snapshot.GetCulprit()
+
+	// Found culprit -> Update the nthsection analysis
+	if ok {
+		err := SaveSuspectAndTriggerCulpritVerification(ctx, tfa, nsa, snapshot.BlameList.Commits[cul])
+		if err != nil {
+			return errors.Fmt("save suspect and trigger culprit verification: %w", err)
+		}
+		return nil
+	}
+
+	commitHashes, err := snapshot.FindNextCommitsToRun(maxRerun)
+	if err != nil {
+		var badRangeError *nthsectionsnapshot.BadRangeError
+		if !errors.As(err, &badRangeError) {
+			return errors.Fmt("find next commits to run: %w", err)
+		}
+		// BadRangeError suggests that the regression range is invalid.
+		// This is not really an error, but more of a indication of no suspect can be found
+		// in this regression range. So we end the analysis with NOTFOUND status here.
+		if err = testfailureanalysis.UpdateNthSectionAnalysisStatus(ctx, nsa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED); err != nil {
+			return errors.Fmt("update nthsection analysis: %w", err)
+		}
+		if err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED); err != nil {
+			return errors.Fmt("update analysis status: %w", err)
+		}
+		logging.Warningf(ctx, "find next single commit to run %s", err.Error())
+		return nil
+	}
+
+	option := projectbisector.RerunOption{}
+	if err = TriggerRerunBuildForCommits(ctx, tfa, nsa, projectBisector, commitHashes, option); err != nil {
+		return errors.Fmt("trigger rerun build for commits: %w", err)
+	}
+	return nil
+}
 
 // CreateNthSectionModel creates a new TestNthSectionAnalysis model.
 func CreateNthSectionModel(ctx context.Context, tfa *model.TestFailureAnalysis, primaryTestFailure *model.TestFailure) (*model.TestNthSectionAnalysis, error) {
@@ -139,24 +224,11 @@ func SaveNthSectionAnalysis(ctx context.Context, nsa *model.TestNthSectionAnalys
 }
 
 // SaveSuspectAndTriggerCulpritVerification saves the suspect and triggers culprit verification.
-func SaveSuspectAndTriggerCulpritVerification(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, commit *pb.BlameListSingleCommit, isEnabled func(ctx context.Context, project string) (bool, error)) error {
+func SaveSuspectAndTriggerCulpritVerification(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, commit *pb.BlameListSingleCommit) error {
 	// Save nthsection result to datastore.
 	_, err := saveSuspectAndUpdateNthSection(ctx, tfa, nsa, commit)
 	if err != nil {
 		return errors.Fmt("store nthsection culprit to datastore: %w", err)
-	}
-	enabled, err := isEnabled(ctx, tfa.Project)
-	if err != nil {
-		return errors.Fmt("is enabled: %w", err)
-	}
-	if !enabled {
-		logging.Infof(ctx, "Bisection not enabled")
-		// If not enabled, consider analysis ended.
-		err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
-		if err != nil {
-			return errors.Fmt("update analysis status: %w", err)
-		}
-		return nil
 	}
 	if err := task.ScheduleTestFailureTask(ctx, tfa.ID); err != nil {
 		// Non-critical, just log the error
@@ -209,4 +281,50 @@ func saveSuspectAndUpdateNthSection(ctx context.Context, tfa *model.TestFailureA
 	}
 
 	return suspect, nil
+}
+
+// GetProjectBisector returns the appropriate project-specific bisector.
+func GetProjectBisector(ctx context.Context, tfa *model.TestFailureAnalysis) (projectbisector.ProjectBisector, error) {
+	switch tfa.Project {
+	case "chromium":
+		return &chromium.Bisector{}, nil
+	default:
+		return nil, errors.Fmt("no bisector for project %s", tfa.Project)
+	}
+}
+
+// TriggerRerunBuildForCommits triggers rerun builds for the given commits.
+func TriggerRerunBuildForCommits(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, projectBisector projectbisector.ProjectBisector, commitHashes []string, option projectbisector.RerunOption) error {
+	// Get test failure bundle
+	bundle, err := datastoreutil.GetTestFailureBundle(ctx, tfa)
+	if err != nil {
+		return errors.Fmt("get test failure bundle: %w", err)
+	}
+	// Only rerun the non-diverged test failures.
+	// At first rerun, all test failures are non-diverged, so all will be run.
+	tfs := bundle.NonDiverged()
+	primaryFailure := bundle.Primary()
+	for _, commitHash := range commitHashes {
+		gitilesCommit := &bbpb.GitilesCommit{
+			Host:    primaryFailure.Ref.GetGitiles().GetHost(),
+			Project: primaryFailure.Ref.GetGitiles().GetProject(),
+			Ref:     primaryFailure.Ref.GetGitiles().GetRef(),
+			Id:      commitHash,
+		}
+		build, err := projectBisector.TriggerRerun(ctx, tfa, tfs, gitilesCommit, option)
+		if err != nil {
+			return errors.Fmt("trigger rerun for commit %s: %w", commitHash, err)
+		}
+		_, err = rerun.CreateTestRerunModel(ctx, rerun.CreateTestRerunModelOptions{
+			TestFailureAnalysis:   tfa,
+			NthSectionAnalysisKey: datastore.KeyForObj(ctx, nsa),
+			TestFailures:          tfs,
+			Build:                 build,
+			RerunType:             model.RerunBuildType_NthSection,
+		})
+		if err != nil {
+			return errors.Fmt("create test rerun model for build %d: %w", build.GetId(), err)
+		}
+	}
+	return nil
 }

@@ -235,7 +235,7 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 
 	// Found culprit -> Update the nthsection analysis
 	if ok {
-		err := nthsection.SaveSuspectAndTriggerCulpritVerification(ctx, tfa, nsa, snapshot.BlameList.Commits[cul], bisection.IsEnabled)
+		err := nthsection.SaveSuspectAndTriggerCulpritVerification(ctx, tfa, nsa, snapshot.BlameList.Commits[cul])
 		if err != nil {
 			return errors.Fmt("save suspect and trigger culprit verification: %w", err)
 		}
@@ -283,14 +283,14 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 		return nil
 	}
 
-	projectBisector, err := bisection.GetProjectBisector(ctx, tfa)
+	projectBisector, err := nthsection.GetProjectBisector(ctx, tfa)
 	if err != nil {
 		return errors.Fmt("get project bisector: %w", err)
 	}
 	option := projectbisector.RerunOption{
 		BotID: req.BotId,
 	}
-	err = bisection.TriggerRerunBuildForCommits(ctx, tfa, nsa, projectBisector, []string{commit}, option)
+	err = nthsection.TriggerRerunBuildForCommits(ctx, tfa, nsa, projectBisector, []string{commit}, option)
 	if err != nil {
 		return errors.Fmt("trigger rerun build for commits: %w", err)
 	}

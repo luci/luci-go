@@ -209,7 +209,7 @@ func TestRunBisector(t *testing.T) {
 	mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(scheduleBuildRes1, nil).Times(1)
 
 	ftt.Run("No analysis", t, func(t *ftt.Test) {
-		err := Run(ctx, 123, luciAnalysisClient, 1)
+		err := Run(ctx, 123, luciAnalysisClient)
 		assert.Loosely(t, err, should.NotBeNil)
 	})
 
@@ -217,7 +217,7 @@ func TestRunBisector(t *testing.T) {
 		tfa := testutil.CreateTestFailureAnalysis(ctx, t, nil)
 		enableBisection(ctx, t, false, tfa.Project)
 
-		err := Run(ctx, 1000, luciAnalysisClient, 1)
+		err := Run(ctx, 1000, luciAnalysisClient)
 		assert.Loosely(t, err, should.BeNil)
 		err = datastore.Get(ctx, tfa)
 		assert.Loosely(t, err, should.BeNil)
@@ -231,7 +231,7 @@ func TestRunBisector(t *testing.T) {
 		})
 		enableBisection(ctx, t, true, tfa.Project)
 
-		err := Run(ctx, 1001, luciAnalysisClient, 1)
+		err := Run(ctx, 1001, luciAnalysisClient)
 		assert.Loosely(t, err, should.NotBeNil)
 		err = datastore.Get(ctx, tfa)
 		assert.Loosely(t, err, should.BeNil)
@@ -246,7 +246,7 @@ func TestRunBisector(t *testing.T) {
 		})
 		enableBisection(ctx, t, true, tfa.Project)
 
-		err := Run(ctx, 1002, luciAnalysisClient, 1)
+		err := Run(ctx, 1002, luciAnalysisClient)
 		assert.Loosely(t, err, should.BeNil)
 		err = datastore.Get(ctx, tfa)
 		assert.Loosely(t, err, should.BeNil)
@@ -282,7 +282,7 @@ func TestRunBisector(t *testing.T) {
 		})
 		enableBisection(ctx, t, true, tfa.Project)
 
-		err := Run(ctx, 1002, luciAnalysisClient, 1)
+		err := Run(ctx, 1002, luciAnalysisClient)
 		assert.Loosely(t, err, should.NotBeNil)
 		err = datastore.Get(ctx, tfa)
 		assert.Loosely(t, err, should.BeNil)
@@ -323,7 +323,7 @@ func TestRunBisector(t *testing.T) {
 		assert.Loosely(t, datastore.Put(ctx, tf), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
-		err := Run(ctx, 1002, luciAnalysisClient, 2)
+		err := Run(ctx, 1002, luciAnalysisClient)
 		assert.Loosely(t, err, should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		err = datastore.Get(ctx, tfa)
@@ -497,7 +497,7 @@ func TestRunBisector(t *testing.T) {
 		assert.Loosely(t, datastore.Put(ctx, tf), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
-		err := Run(ctx, 1003, luciAnalysisClient, 2)
+		err := Run(ctx, 1003, luciAnalysisClient)
 		assert.Loosely(t, err, should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		err = datastore.Get(ctx, tfa)

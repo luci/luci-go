@@ -435,3 +435,61 @@ func toStructPB(s any) (*structpb.Struct, error) {
 	}
 	return structpb.NewStruct(m)
 }
+
+// CreateTestRerunModelOptions contains parameters for creating a test rerun model.
+type CreateTestRerunModelOptions struct {
+	TestFailureAnalysis   *model.TestFailureAnalysis
+	NthSectionAnalysisKey *datastore.Key
+	SuspectKey            *datastore.Key
+	TestFailures          []*model.TestFailure
+	Build                 *buildbucketpb.Build
+	RerunType             model.RerunBuildType
+}
+
+// CreateTestRerunModel creates a TestSingleRerun in datastore for test failure analysis.
+func CreateTestRerunModel(ctx context.Context, options CreateTestRerunModelOptions) (*model.TestSingleRerun, error) {
+	build := options.Build
+	dimensions, err := buildbucket.GetBuildTaskDimension(ctx, build.GetId())
+	if err != nil {
+		return nil, errors.Fmt("get build task dimension bbid %v: %w", build.GetId(), err)
+	}
+	testResults := model.RerunTestResults{}
+	for _, tf := range options.TestFailures {
+		testResults.Results = append(testResults.Results, model.RerunSingleTestResult{
+			TestFailureKey: datastore.KeyForObj(ctx, tf),
+		})
+	}
+
+	rerun := &model.TestSingleRerun{
+		ID: build.GetId(),
+		LUCIBuild: model.LUCIBuild{
+			BuildID:     build.GetId(),
+			Project:     build.Builder.Project,
+			Bucket:      build.Builder.Bucket,
+			Builder:     build.Builder.Builder,
+			BuildNumber: int(build.Number),
+			GitilesCommit: &buildbucketpb.GitilesCommit{
+				Host:    build.Input.GitilesCommit.Host,
+				Project: build.Input.GitilesCommit.Project,
+				Id:      build.Input.GitilesCommit.Id,
+				Ref:     build.Input.GitilesCommit.Ref,
+			},
+			Status:     build.Status,
+			CreateTime: build.CreateTime.AsTime(),
+			StartTime:  build.StartTime.AsTime(),
+		},
+		Type:                  options.RerunType,
+		AnalysisKey:           datastore.KeyForObj(ctx, options.TestFailureAnalysis),
+		CulpritKey:            options.SuspectKey,
+		NthSectionAnalysisKey: options.NthSectionAnalysisKey,
+		Status:                pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+		Priority:              options.TestFailureAnalysis.Priority,
+		TestResults:           testResults,
+		Dimensions:            dimensions,
+	}
+
+	if err = datastore.Put(ctx, rerun); err != nil {
+		return nil, errors.Fmt("save single rerun: %w", err)
+	}
+	return rerun, nil
+}
