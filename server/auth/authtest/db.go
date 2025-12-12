@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
@@ -261,35 +260,6 @@ func (db *FakeDB) AddMocks(mocks ...MockedDatum) {
 	defer db.m.Unlock()
 	for _, m := range mocks {
 		m.apply(db)
-	}
-}
-
-// Use installs the fake db into the context.
-//
-// Note that if you use auth.WithState(ctx, &authtest.FakeState{...}), you don't
-// need this method. Modify FakeDB in the FakeState instead. See its doc for
-// some examples.
-func (db *FakeDB) Use(ctx context.Context) context.Context {
-	return auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
-		cfg.DBProvider = func(context.Context) (authdb.DB, error) {
-			return db, nil
-		}
-		return cfg
-	})
-}
-
-// AsProvider returns the current database as an auth.DBProvider.
-//
-// Here is how you use it:
-//
-//	testServer, err := servertest.RunServer(ctx, &servertest.Settings{
-//		Options: &server.Options{
-//			AuthDBProvider: (&authtest.FakeDB{}).AsProvider(),
-//		},
-//	})
-func (db *FakeDB) AsProvider() auth.DBProvider {
-	return func(ctx context.Context) (authdb.DB, error) {
-		return db, nil
 	}
 }
 
