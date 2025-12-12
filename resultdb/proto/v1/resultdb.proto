@@ -490,13 +490,24 @@ message ListArtifactsResponse {
 }
 
 // A request message for QueryArtifacts RPC.
+// Next ID: 8
 message QueryArtifactsRequest {
   // Retrieve artifacts included in these invocations, directly or indirectly
   // (via Invocation.included_invocations and via contained test results).
   //
   // Specifying multiple invocations is equivalent to querying one invocation
   // that includes these.
+  //
+  // DEPRECATED: Use parent instead.
   repeated string invocations = 1;
+
+  // The name of the root invocation to retrieve artifacts from, see RootInvocation.name.
+  //
+  // If set, the RPC will query artifacts of work units and test results recursively
+  // under this root invocation.
+  //
+  // Either `parent` or `invocations` must be specified, not both.
+  string parent = 8;
 
   // An artifact in the response must satisfy this predicate.
   ArtifactPredicate predicate = 2;

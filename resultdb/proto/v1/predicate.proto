@@ -92,9 +92,12 @@ message VariantPredicate {
 }
 
 // Represents a function Artifact -> bool.
-// Next id: 6;
+// Next id: 9
 message ArtifactPredicate {
   // A set of Invocation's outgoing edge types.
+  //
+  // DEPRECATED: Use the ArtifactKind instead which is compatible with root
+  // invocations.
   message EdgeTypeSet {
     // The edges represented by Invocation.included_invocations field.
     bool included_invocations = 1;
@@ -110,7 +113,32 @@ message ArtifactPredicate {
   // - to retrieve only test-result-level artifacts, use {test_results: true}.
   //
   // By default, follows all edges.
-  EdgeTypeSet follow_edges = 1;  // defaults to All.
+  //
+  // DEPRECATED: Use the artifact_kind instead which is compatible with root
+  // invocations.
+  EdgeTypeSet follow_edges = 1 [ deprecated = true ];  // defaults to All.
+
+   // Filters artifacts based on the kind they belong to.
+   // Next id: 3
+  enum ArtifactKind {
+    // Artifacts from all data kinds including work units and test results are
+    // returned.
+    // Default value.
+    ARTIFACT_KIND_UNSPECIFIED = 0;
+
+    // Only work unit artifacts are returned.
+    WORK_UNIT = 1;
+  }
+
+  // Specifies which kind of artifacts are returned.
+  ArtifactKind artifact_kind = 7;
+
+  // The resource names of the work units to filter the response to.
+  // See WorkUnit.name. The work units must be from the same root invocation as
+  // the parent field.
+  //
+  // If set, only artifacts from the specified work units are returned.
+  repeated string work_units = 8;
 
   // If an Artifact belongs to a TestResult, then the test result must satisfy
   // this predicate.

@@ -88,12 +88,45 @@ func ValidateVariantPredicate(p *pb.VariantPredicate) error {
 
 // ValidateArtifactPredicate returns a non-nil error if p is determined to be
 // invalid.
-func ValidateArtifactPredicate(p *pb.ArtifactPredicate) error {
+//
+// isRootInvocationQuery indicates if the predicate is used for a root
+// invocation query.
+func ValidateArtifactPredicate(p *pb.ArtifactPredicate, isRootInvocationQuery bool) error {
+	if p == nil {
+		return nil
+	}
 	if err := ValidateTestResultPredicate(p.GetTestResultPredicate()); err != nil {
 		return errors.Fmt("text_result_predicate: %w", err)
 	}
 	if err := validate.RegexpFragment(p.GetContentTypeRegexp()); err != nil {
 		return errors.Fmt("content_type_regexp: %w", err)
+	}
+
+	if isRootInvocationQuery {
+		// Validates work unit names.
+		for _, name := range p.WorkUnits {
+			if err := ValidateWorkUnitName(name); err != nil {
+				return errors.Fmt("work_units: %q: %w", name, err)
+			}
+		}
+
+		// Validate the specified enum value.
+		if p.ArtifactKind != pb.ArtifactPredicate_ARTIFACT_KIND_UNSPECIFIED {
+			if _, ok := pb.ArtifactPredicate_ArtifactKind_name[int32(p.ArtifactKind)]; !ok {
+				return errors.Fmt("artifact_kind: invalid value %d", p.ArtifactKind)
+			}
+		}
+
+		if p.FollowEdges != nil {
+			return errors.New("follow_edges: not supported for root invocation queries")
+		}
+	} else {
+		if len(p.WorkUnits) > 0 {
+			return errors.New("work_units: not supported for invocation queries")
+		}
+		if p.ArtifactKind != pb.ArtifactPredicate_ARTIFACT_KIND_UNSPECIFIED {
+			return errors.New("artifact_kind: not supported for invocation queries")
+		}
 	}
 	return nil
 }

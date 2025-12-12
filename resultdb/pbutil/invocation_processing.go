@@ -37,7 +37,7 @@ func ValidateBigQueryExport(bqExport *pb.BigQueryExport) error {
 	case *pb.BigQueryExport_TestResults_:
 		return errors.WrapIf(ValidateTestResultPredicate(resultType.TestResults.GetPredicate()), "test_results: predicate")
 	case *pb.BigQueryExport_TextArtifacts_:
-		return errors.WrapIf(ValidateArtifactPredicate(resultType.TextArtifacts.GetPredicate()), "artifacts: predicate")
+		return errors.WrapIf(ValidateArtifactPredicate(resultType.TextArtifacts.GetPredicate(), false), "artifacts: predicate")
 	case nil:
 		return errors.Fmt("result_type: %w", validate.Unspecified())
 	default:

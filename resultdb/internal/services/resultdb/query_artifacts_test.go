@@ -34,8 +34,11 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/gsutil"
+	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 )
@@ -367,6 +370,94 @@ func TestQueryArtifacts(t *testing.T) {
 			embedded, err = artifactcontent.ValidateTokenForTesting(ctx, token, actual[2].Name)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, embedded["project"], should.Equal("testproject"))
+		})
+
+		t.Run(`WorkUnits`, func(t *ftt.Test) {
+			// Insert a work unit invocation.
+			// Work units are mapped to invocations with prefix "workunit:".
+			// Format: workunit:{RootInvocationID}:{WorkUnitID}
+			wuID := invocations.ID("workunit:inv1:wu1")
+
+			// We need to insert the RootInvocation and WorkUnit for WorkUnitInclusion
+			// to work.
+			testutil.MustApply(ctx, t,
+				insert.RootInvocationOnly(&rootinvocations.RootInvocationRow{
+					RootInvocationID:  "inv1",
+					Realm:             "testproject:testrealm",
+					FinalizationState: pb.RootInvocation_ACTIVE,
+				})...)
+			testutil.MustApply(ctx, t,
+				insert.WorkUnit(&workunits.WorkUnitRow{
+					ID: workunits.ID{
+						RootInvocationID: "inv1",
+						WorkUnitID:       "wu1",
+					},
+					FinalizationState: pb.WorkUnit_ACTIVE,
+					Realm:             "testproject:testrealm",
+				})...)
+
+			testutil.MustApply(ctx, t,
+				insert.Artifact(wuID, "", "wu_artifact", nil),
+				insert.Artifact(wuID, "tr/t t/r", "tr_artifact", nil),
+			)
+
+			t.Run(`Query by Parent (Root Invocation)`, func(t *ftt.Test) {
+				req.Invocations = nil
+				req.Parent = "rootInvocations/inv1"
+				actual := mustFetchNames(t, req)
+				assert.Loosely(t, actual, should.Match([]string{
+					"rootInvocations/inv1/workUnits/wu1/artifacts/wu_artifact",
+					"rootInvocations/inv1/workUnits/wu1/tests/t%20t/results/r/artifacts/tr_artifact",
+				}))
+			})
+
+			t.Run(`Query by Parent with WorkUnits filter`, func(t *ftt.Test) {
+				// Create a child work unit.
+				childWuID := invocations.ID("workunit:inv1:wu2")
+				wuIDParsed := workunits.MustParseLegacyInvocationID(wuID)
+				testutil.MustApply(ctx, t,
+					insert.Invocation(childWuID, pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
+					insert.Artifact(childWuID, "", "child_artifact", nil),
+				)
+				testutil.MustApply(ctx, t, insert.WorkUnitInclusion(wuIDParsed, childWuID)...)
+
+				req.Invocations = nil
+				req.Parent = "rootInvocations/inv1"
+				req.Predicate.WorkUnits = []string{"rootInvocations/inv1/workUnits/wu1"}
+
+				// Should only return artifacts from wu1.
+				// Recursion is disabled when WorkUnits is specified.
+				actual := mustFetchNames(t, req)
+				assert.Loosely(t, actual, should.Match([]string{
+					"rootInvocations/inv1/workUnits/wu1/artifacts/wu_artifact",
+					"rootInvocations/inv1/workUnits/wu1/tests/t%20t/results/r/artifacts/tr_artifact",
+				}))
+			})
+
+			t.Run(`Query by Parent with ArtifactKind=WORK_UNIT`, func(t *ftt.Test) {
+				req.Invocations = nil
+				req.Parent = "rootInvocations/inv1"
+				req.Predicate.ArtifactKind = pb.ArtifactPredicate_WORK_UNIT
+
+				// Should return only work unit artifacts (invocation-level).
+				// Should exclude test result artifacts.
+				actual := mustFetchNames(t, req)
+				assert.Loosely(t, actual, should.Match([]string{
+					"rootInvocations/inv1/workUnits/wu1/artifacts/wu_artifact",
+				}))
+			})
+
+			t.Run(`Invalid Work Unit Parent`, func(t *ftt.Test) {
+				req.Invocations = nil
+				req.Parent = "rootInvocations/inv1"
+				// wu3 belongs to inv2, not inv1.
+				req.Predicate.WorkUnits = []string{"rootInvocations/inv2/workUnits/wu3"}
+
+				ctx = context.WithValue(ctx, &gsutil.MockedGSClientKey, &gsutil.MockClient{})
+				_, err := srv.QueryArtifacts(ctx, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("is not in parent root invocation"))
+			})
 		})
 	})
 }

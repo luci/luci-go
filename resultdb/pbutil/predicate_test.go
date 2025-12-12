@@ -135,3 +135,84 @@ func TestValidateWorkUnitPredicate(t *testing.T) {
 		})
 	})
 }
+
+func TestValidateArtifactPredicate(t *testing.T) {
+	t.Parallel()
+	ftt.Run(`ValidateArtifactPredicate`, t, func(t *ftt.Test) {
+		type testCase struct {
+			name                  string
+			predicate             *pb.ArtifactPredicate
+			isRootInvocationQuery bool
+			errLike               string
+		}
+
+		testCases := []testCase{
+			{
+				name: "Root Invocation Query - Valid",
+				predicate: &pb.ArtifactPredicate{
+					WorkUnits:    []string{"rootInvocations/a/workUnits/b"},
+					ArtifactKind: pb.ArtifactPredicate_WORK_UNIT,
+				},
+				isRootInvocationQuery: true,
+			},
+			{
+				name: "Root Invocation Query - Invalid Work Unit Name",
+				predicate: &pb.ArtifactPredicate{
+					WorkUnits: []string{"invalid"},
+				},
+				isRootInvocationQuery: true,
+				errLike:               "work_units: \"invalid\": does not match",
+			},
+			{
+				name: "Root Invocation Query - Invalid Artifact Kind",
+				predicate: &pb.ArtifactPredicate{
+					ArtifactKind: pb.ArtifactPredicate_ArtifactKind(999),
+				},
+				isRootInvocationQuery: true,
+				errLike:               "artifact_kind: invalid value 999",
+			},
+			{
+				name: "Root Invocation Query - FollowEdges set",
+				predicate: &pb.ArtifactPredicate{
+					FollowEdges: &pb.ArtifactPredicate_EdgeTypeSet{},
+				},
+				isRootInvocationQuery: true,
+				errLike:               "follow_edges: not supported for root invocation queries",
+			},
+			{
+				name: "Legacy Invocation Query - Valid",
+				predicate: &pb.ArtifactPredicate{
+					FollowEdges: &pb.ArtifactPredicate_EdgeTypeSet{},
+				},
+				isRootInvocationQuery: false,
+			},
+			{
+				name: "Legacy Invocation Query - WorkUnits set",
+				predicate: &pb.ArtifactPredicate{
+					WorkUnits: []string{"rootInvocations/a/workUnits/b"},
+				},
+				isRootInvocationQuery: false,
+				errLike:               "work_units: not supported for invocation queries",
+			},
+			{
+				name: "Legacy Invocation Query - ArtifactKind set",
+				predicate: &pb.ArtifactPredicate{
+					ArtifactKind: pb.ArtifactPredicate_WORK_UNIT,
+				},
+				isRootInvocationQuery: false,
+				errLike:               "artifact_kind: not supported for invocation queries",
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *ftt.Test) {
+				err := ValidateArtifactPredicate(tc.predicate, tc.isRootInvocationQuery)
+				if tc.errLike != "" {
+					assert.Loosely(t, err, should.ErrLike(tc.errLike))
+				} else {
+					assert.Loosely(t, err, should.BeNil)
+				}
+			})
+		}
+	})
+}
