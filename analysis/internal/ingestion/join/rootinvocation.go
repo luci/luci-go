@@ -44,7 +44,7 @@ func JoinRootInvocation(ctx context.Context, notification *rdbpb.RootInvocationF
 
 	result := &controlpb.RootInvocationResult{
 		ResultdbHost:   rdbHost,
-		RootInvocation: rootInvocation,
+		RootInvocationId: rootInvocation.RootInvocationId,
 	}
 	// TODO: Implement the actual root invocation join functionality.
 	logging.Infof(ctx, "Successfully joined the root invocation: %v for project: %s", result, project)

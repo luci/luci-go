@@ -79,6 +79,7 @@ const invocationID = "build-87654321"
 const testInvocation = "invocations/build-87654321"
 const testRealm = "project:ci"
 const testBuildID = int64(87654321)
+const rootInvocationID = "test-root-invocation-id"
 
 func TestIngestTestVerdicts(t *testing.T) {
 	ftt.Run(`TestIngestTestVerdicts`, t, func(t *ftt.Test) {
@@ -129,6 +130,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 
 			bHost := "host"
 			partitionTime := clock.Now(ctx).Add(-1 * time.Hour)
+			invocationCreationTime := partitionTime.Add(-3 * time.Hour)
 
 			invRes := &rdbpb.Invocation{
 				Name:         testInvocation,
@@ -145,16 +147,39 @@ func TestIngestTestVerdicts(t *testing.T) {
 				}
 				mrc.GetInvocation(invReq, invRes)
 			}
-
-			setupQueryTestVariantsMock := func(modifiers ...func(*rdbpb.QueryTestVariantsResponse)) {
-				tvReq := &rdbpb.QueryTestVariantsRequest{
-					Invocations: []string{testInvocation},
-					PageSize:    10000,
-					ResultLimit: 100,
-					ReadMask:    testVariantReadMask,
-					PageToken:   "expected_token",
-					OrderBy:     "status_v2_effective",
+			rootInvRes := &rdbpb.RootInvocation{
+				Name:         fmt.Sprintf("rootInvocations/%s", rootInvocationID),
+				State:        rdbpb.RootInvocation_SUCCEEDED,
+				CreateTime:   timestamppb.New(invocationCreationTime),
+				FinalizeTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+			}
+			setupGetRootInvocationMock := func(modifiers ...func(*rdbpb.RootInvocation)) {
+				rootInvReq := &rdbpb.GetRootInvocationRequest{
+					Name: fmt.Sprintf("rootInvocations/%s", rootInvocationID),
 				}
+				for _, modifier := range modifiers {
+					modifier(rootInvRes)
+				}
+				mrc.GetRootInvocation(rootInvReq, rootInvRes)
+			}
+			tvReq := &rdbpb.QueryTestVariantsRequest{
+				PageSize:    10000,
+				ResultLimit: 100,
+				ReadMask:    testVariantReadMask,
+				PageToken:   "expected_token",
+				OrderBy:     "status_v2_effective",
+			}
+			setupQueryTestVariantsMock := func(modifiers ...func(*rdbpb.QueryTestVariantsResponse)) {
+				tvReq.Invocations = []string{testInvocation}
+				tvRsp := mockedQueryTestVariantsRsp()
+				tvRsp.NextPageToken = "continuation_token"
+				for _, modifier := range modifiers {
+					modifier(tvRsp)
+				}
+				mrc.QueryTestVariants(tvReq, tvRsp)
+			}
+			setupQueryTestVariantsMockForRootInv := func(modifiers ...func(*rdbpb.QueryTestVariantsResponse)) {
+				tvReq.Parent = fmt.Sprintf("rootInvocations/%s", rootInvocationID)
 				tvRsp := mockedQueryTestVariantsRsp()
 				tvRsp.NextPageToken = "continuation_token"
 				for _, modifier := range modifiers {
@@ -180,28 +205,9 @@ func TestIngestTestVerdicts(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 			}
 
-			invocationCreationTime := partitionTime.Add(-3 * time.Hour)
-
-			expectedCheckpoints := []checkpoints.Checkpoint{
-				{
-					Key: checkpoints.Key{
-						Project:    "project",
-						ResourceID: fmt.Sprintf("rdb-host/%v", invocationID),
-						ProcessID:  "verdict-ingestion/schedule-continuation",
-						Uniquifier: "1",
-					},
-					// Creation and expiry time are not verified.
-				},
-			}
-
 			payload := &taskspb.IngestTestVerdicts{
 				IngestionId: "ingestion-id",
 				Project:     "project",
-				Invocation: &ctrlpb.InvocationResult{
-					ResultdbHost: "rdb-host",
-					InvocationId: invocationID,
-					CreationTime: timestamppb.New(invocationCreationTime),
-				},
 				Build: &ctrlpb.BuildResult{
 					Host:         bHost,
 					Id:           testBuildID,
@@ -250,9 +256,6 @@ func TestIngestTestVerdicts(t *testing.T) {
 				TaskIndex:            1,
 				UseNewIngestionOrder: true,
 			}
-			expectedContinuation := proto.Clone(payload).(*taskspb.IngestTestVerdicts)
-			expectedContinuation.PageToken = "continuation_token"
-			expectedContinuation.TaskIndex = 2
 
 			sourcesByID := map[string]*pb.Sources{
 				"sources1": {
@@ -280,113 +283,231 @@ func TestIngestTestVerdicts(t *testing.T) {
 					IsDirty: true,
 				},
 			}
-			t.Run(`First task`, func(t *ftt.Test) {
-				setupGetInvocationMock()
-				setupQueryTestVariantsMock()
-				setupConfig(ctx, cfg)
 
-				// Act
-				err := o.run(ctx, payload)
-				assert.Loosely(t, err, should.BeNil)
-
-				// Verify
-				assert.That(t, testIngestor.called, should.BeTrue)
-				assert.That(t, testIngestor.gotInputs, should.Match(
-					Inputs{
-						Invocation:  invRes,
-						Verdicts:    mockedQueryTestVariantsRsp().TestVariants,
-						SourcesByID: sourcesByID,
-						Payload:     payload,
-						LastPage:    false,
-					},
-				))
-				// Expect a continuation task to be created.
-				verifyContinuationTask(t, skdr, expectedContinuation)
-				verifyCheckpoints(ctx, t, expectedCheckpoints)
-			})
-			t.Run(`Last task`, func(t *ftt.Test) {
-				payload.TaskIndex = 10
-				expectedCheckpoints = removeCheckpointForProcess(expectedCheckpoints, "verdict-ingestion/schedule-continuation")
-
-				setupGetInvocationMock()
-				setupQueryTestVariantsMock(func(rsp *rdbpb.QueryTestVariantsResponse) {
-					rsp.NextPageToken = ""
-				})
-				setupConfig(ctx, cfg)
-
-				// Act
-				err := o.run(ctx, payload)
-				assert.Loosely(t, err, should.BeNil)
-
-				// Verify
-				assert.That(t, testIngestor.called, should.BeTrue)
-				assert.That(t, testIngestor.gotInputs, should.Match(
-					Inputs{
-						Invocation:  invRes,
-						Verdicts:    mockedQueryTestVariantsRsp().TestVariants,
-						SourcesByID: sourcesByID,
-						Payload:     payload,
-						LastPage:    true,
-					},
-				))
-				// As this is the last task, do not expect a continuation
-				// task to be created.
-				verifyContinuationTask(t, skdr, nil)
-				verifyCheckpoints(ctx, t, expectedCheckpoints) // Expect no checkpoints to be created.
-			})
-
-			t.Run(`Retry task after continuation task already created`, func(t *ftt.Test) {
-				// Scenario: First task fails after it has already scheduled
-				// its continuation.
-				existingCheckpoint := checkpoints.Checkpoint{
-					Key: checkpoints.Key{
-						Project:    "project",
-						ResourceID: fmt.Sprintf("rdb-host/%v", invocationID),
-						ProcessID:  "verdict-ingestion/schedule-continuation",
-						Uniquifier: "1",
+			t.Run(`Root invocation`, func(t *ftt.Test) {
+				payload.RootInvocation = &ctrlpb.RootInvocationResult{
+					ResultdbHost:     "rdb-host",
+					RootInvocationId: rootInvocationID,
+				}
+				expectedCheckpoints := []checkpoints.Checkpoint{
+					{
+						Key: checkpoints.Key{
+							Project:    "project",
+							ResourceID: fmt.Sprintf("rootInvocation/rdb-host/%v", rootInvocationID),
+							ProcessID:  "verdict-ingestion/schedule-continuation",
+							Uniquifier: "1",
+						},
+						// Creation and expiry time are not verified.
 					},
 				}
-				err := checkpoints.SetForTesting(ctx, t, existingCheckpoint)
-				assert.Loosely(t, err, should.BeNil)
 
-				setupGetInvocationMock()
-				setupQueryTestVariantsMock()
-				setupConfig(ctx, cfg)
+				t.Run(`First task`, func(t *ftt.Test) {
+					setupGetRootInvocationMock()
+					setupQueryTestVariantsMockForRootInv()
+					setupConfig(ctx, cfg)
 
-				// Act
-				err = o.run(ctx, payload)
-				assert.Loosely(t, err, should.BeNil)
+					// Act
+					err := o.run(ctx, payload)
+					assert.Loosely(t, err, should.BeNil)
 
-				// Verify
-				assert.That(t, testIngestor.called, should.BeTrue)
-				assert.That(t, testIngestor.gotInputs, should.Match(
-					Inputs{
-						Invocation:  invRes,
-						Verdicts:    mockedQueryTestVariantsRsp().TestVariants,
-						SourcesByID: sourcesByID,
-						Payload:     payload,
-						LastPage:    false,
-					},
-				))
-				// Do not expect a continuation task to be created,
-				// as it was already scheduled.
-				verifyContinuationTask(t, skdr, nil)
-				verifyCheckpoints(ctx, t, expectedCheckpoints)
-			})
+					// Verify
+					assert.That(t, testIngestor.called, should.BeTrue)
 
-			t.Run(`Invocation is not an export root`, func(t *ftt.Test) {
-				setupGetInvocationMock(func(i *rdbpb.Invocation) {
-					i.IsExportRoot = false
+					assert.Loosely(t, testIngestor.gotInputs, should.Match(
+						Inputs{
+							RootInvocation: rootInvRes,
+							Verdicts:       mockedQueryTestVariantsRsp().TestVariants,
+							SourcesByID:    sourcesByID,
+							Payload:        payload,
+							LastPage:       false,
+						},
+					))
+
+					// Expect a continuation task to be created.
+					expectedContinuation := proto.Clone(payload).(*taskspb.IngestTestVerdicts)
+					expectedContinuation.PageToken = "continuation_token"
+					expectedContinuation.TaskIndex = 2
+					verifyContinuationTask(t, skdr, expectedContinuation)
+					verifyCheckpoints(ctx, t, expectedCheckpoints)
 				})
-				setupConfig(ctx, cfg)
+				t.Run(`Last task`, func(t *ftt.Test) {
+					payload.TaskIndex = 10
 
-				// Act
-				err := o.run(ctx, payload)
-				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, testIngestor.called, should.BeFalse)
+					setupGetRootInvocationMock()
+					setupQueryTestVariantsMockForRootInv(func(rsp *rdbpb.QueryTestVariantsResponse) {
+						rsp.NextPageToken = ""
+					})
+					setupConfig(ctx, cfg)
+
+					// Act
+					err := o.run(ctx, payload)
+					assert.Loosely(t, err, should.BeNil)
+
+					// Verify
+					assert.That(t, testIngestor.called, should.BeTrue)
+					assert.That(t, testIngestor.gotInputs.LastPage, should.BeTrue)
+
+					verifyContinuationTask(t, skdr, nil)
+					verifyCheckpoints(ctx, t, nil) // No checkpoints expected as no continuation.
+				})
+				t.Run(`Retry task after continuation task already created`, func(t *ftt.Test) {
+					existingCheckpoint := checkpoints.Checkpoint{
+						Key: checkpoints.Key{
+							Project:    "project",
+							ResourceID: fmt.Sprintf("rootInvocation/%s/%s", "rdb-host", rootInvocationID),
+							ProcessID:  "verdict-ingestion/schedule-continuation",
+							Uniquifier: "1",
+						},
+					}
+					err := checkpoints.SetForTesting(ctx, t, existingCheckpoint)
+					assert.Loosely(t, err, should.BeNil)
+
+					setupGetRootInvocationMock()
+					setupQueryTestVariantsMockForRootInv()
+					setupConfig(ctx, cfg)
+
+					// Act
+					err = o.run(ctx, payload)
+					assert.Loosely(t, err, should.BeNil)
+
+					// Verify
+					assert.That(t, testIngestor.called, should.BeTrue)
+					verifyContinuationTask(t, skdr, nil)
+					// existingCheckpoint should remain
+					verifyCheckpoints(ctx, t, []checkpoints.Checkpoint{existingCheckpoint})
+				})
 			})
-			t.Run(`no invocation`, func(t *ftt.Test) {
+			t.Run(`Legacy invocation`, func(t *ftt.Test) {
+				payload.Invocation = &ctrlpb.InvocationResult{
+					ResultdbHost: "rdb-host",
+					InvocationId: invocationID,
+					CreationTime: timestamppb.New(invocationCreationTime),
+				}
+				expectedCheckpoints := []checkpoints.Checkpoint{
+					{
+						Key: checkpoints.Key{
+							Project:    "project",
+							ResourceID: fmt.Sprintf("rdb-host/%v", invocationID),
+							ProcessID:  "verdict-ingestion/schedule-continuation",
+							Uniquifier: "1",
+						},
+						// Creation and expiry time are not verified.
+					},
+				}
+
+				t.Run(`First task`, func(t *ftt.Test) {
+					setupGetInvocationMock()
+					setupQueryTestVariantsMock()
+					setupConfig(ctx, cfg)
+
+					// Act
+					err := o.run(ctx, payload)
+					assert.Loosely(t, err, should.BeNil)
+
+					// Verify
+					assert.That(t, testIngestor.called, should.BeTrue)
+					assert.That(t, testIngestor.gotInputs, should.Match(
+						Inputs{
+							Invocation:  invRes,
+							Verdicts:    mockedQueryTestVariantsRsp().TestVariants,
+							SourcesByID: sourcesByID,
+							Payload:     payload,
+							LastPage:    false,
+						},
+					))
+					// Expect a continuation task to be created.
+					expectedContinuation := proto.Clone(payload).(*taskspb.IngestTestVerdicts)
+					expectedContinuation.PageToken = "continuation_token"
+					expectedContinuation.TaskIndex = 2
+					verifyContinuationTask(t, skdr, expectedContinuation)
+					verifyCheckpoints(ctx, t, expectedCheckpoints)
+				})
+
+				t.Run(`Last task`, func(t *ftt.Test) {
+					payload.TaskIndex = 10
+					expectedCheckpoints = removeCheckpointForProcess(expectedCheckpoints, "verdict-ingestion/schedule-continuation")
+
+					setupGetInvocationMock()
+					setupQueryTestVariantsMock(func(rsp *rdbpb.QueryTestVariantsResponse) {
+						rsp.NextPageToken = ""
+					})
+					setupConfig(ctx, cfg)
+
+					// Act
+					err := o.run(ctx, payload)
+					assert.Loosely(t, err, should.BeNil)
+
+					// Verify
+					assert.That(t, testIngestor.called, should.BeTrue)
+					assert.That(t, testIngestor.gotInputs, should.Match(
+						Inputs{
+							Invocation:  invRes,
+							Verdicts:    mockedQueryTestVariantsRsp().TestVariants,
+							SourcesByID: sourcesByID,
+							Payload:     payload,
+							LastPage:    true,
+						},
+					))
+					// As this is the last task, do not expect a continuation
+					// task to be created.
+					verifyContinuationTask(t, skdr, nil)
+					verifyCheckpoints(ctx, t, expectedCheckpoints) // Expect no checkpoints to be created.
+				})
+
+				t.Run(`Retry task after continuation task already created`, func(t *ftt.Test) {
+					// Scenario: First task fails after it has already scheduled
+					// its continuation.
+					existingCheckpoint := checkpoints.Checkpoint{
+						Key: checkpoints.Key{
+							Project:    "project",
+							ResourceID: fmt.Sprintf("rdb-host/%v", invocationID),
+							ProcessID:  "verdict-ingestion/schedule-continuation",
+							Uniquifier: "1",
+						},
+					}
+					err := checkpoints.SetForTesting(ctx, t, existingCheckpoint)
+					assert.Loosely(t, err, should.BeNil)
+
+					setupGetInvocationMock()
+					setupQueryTestVariantsMock()
+					setupConfig(ctx, cfg)
+
+					// Act
+					err = o.run(ctx, payload)
+					assert.Loosely(t, err, should.BeNil)
+
+					// Verify
+					assert.That(t, testIngestor.called, should.BeTrue)
+					assert.That(t, testIngestor.gotInputs, should.Match(
+						Inputs{
+							Invocation:  invRes,
+							Verdicts:    mockedQueryTestVariantsRsp().TestVariants,
+							SourcesByID: sourcesByID,
+							Payload:     payload,
+							LastPage:    false,
+						},
+					))
+					// Do not expect a continuation task to be created,
+					// as it was already scheduled.
+					verifyContinuationTask(t, skdr, nil)
+					verifyCheckpoints(ctx, t, expectedCheckpoints)
+				})
+
+				t.Run(`Invocation is not an export root`, func(t *ftt.Test) {
+					setupGetInvocationMock(func(i *rdbpb.Invocation) {
+						i.IsExportRoot = false
+					})
+					setupConfig(ctx, cfg)
+
+					// Act
+					err := o.run(ctx, payload)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, testIngestor.called, should.BeFalse)
+				})
+			})
+			t.Run(`no invocation or root invocation`, func(t *ftt.Test) {
 				payload.Invocation = nil
+				payload.RootInvocation = nil
 				setupConfig(ctx, cfg)
 
 				// Act

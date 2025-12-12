@@ -23,7 +23,7 @@ import "go.chromium.org/luci/resultdb/proto/v1/notification.proto";
 option go_package = "go.chromium.org/luci/analysis/internal/tasks/taskspb";
 
 // Payload of IngestTestVerdicts task.
-// Next ID: 9.
+// Next ID: 11.
 message IngestTestVerdicts {
   // The LUCI project of the invocation and build (if exists) in this ingestion task.
   string project = 6;
@@ -39,7 +39,14 @@ message IngestTestVerdicts {
 
   // The invocation that is being ingested. Only
   // populated if the ingestion has an invocation.
+  // Should be empty if root_invocation is set.
+  // Deprecated: we are migrating to use root_invocation.
   luci.analysis.internal.ingestion.control.InvocationResult invocation = 8;
+
+  // The root invocation that is being ingested. Only
+  // populated if the ingestion has an root invocation.
+  // Should be empty if invocation is set.
+  luci.analysis.internal.ingestion.control.RootInvocationResult root_invocation = 10;
 
   // The build that is being ingested. Only
   // populated if the ingestion has a build.

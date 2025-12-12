@@ -106,6 +106,12 @@ func (mc *MockedClient) GetInvocation(req *rdbpb.GetInvocationRequest, res *rdbp
 		gomock.Any()).Return(res, nil)
 }
 
+// GetRootInvocation mocks the GetRootInvocation RPC.
+func (mc *MockedClient) GetRootInvocation(req *rdbpb.GetRootInvocationRequest, res *rdbpb.RootInvocation) {
+	mc.Client.EXPECT().GetRootInvocation(gomock.Any(), proto.MatcherEqual(req),
+		gomock.Any()).Return(res, nil)
+}
+
 // GetRealm is a shortcut of GetInvocation to get realm of the invocation.
 func (mc *MockedClient) GetRealm(inv, realm string) {
 	req := &rdbpb.GetInvocationRequest{

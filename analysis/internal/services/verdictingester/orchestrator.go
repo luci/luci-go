@@ -241,7 +241,9 @@ func Schedule(ctx context.Context, task *taskspb.IngestTestVerdicts) {
 
 // Inputs captures all input into an analysis or export.
 type Inputs struct {
-	Invocation *rdbpb.Invocation
+	// Exactly one of Invocation or RootInvocation should be set.
+	Invocation     *rdbpb.Invocation
+	RootInvocation *rdbpb.RootInvocation
 	// The test Verdicts to ingest.
 	Verdicts    []*rdbpb.TestVariant
 	SourcesByID map[string]*pb.Sources
@@ -284,58 +286,64 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestVerdi
 		return nil
 	}
 
-	if payload.Invocation == nil {
+	if payload.Invocation == nil && payload.RootInvocation == nil {
 		if payload.Build != nil {
 			// Ingestion has a build that does not have a ResultDB invocation to ingest.
-			logging.Debugf(ctx, "Skipping ingestion of build %s-%d because it has no ResultDB invocation.",
+			logging.Debugf(ctx, "Skipping ingestion of build %s-%d because it has no ResultDB invocation or root invocation.",
 				payload.Build.Host, payload.Build.Id)
 			taskCounter.Add(ctx, 1, payload.Project, "ignored_no_invocation")
 			return nil
 		}
-		return errors.New("ingestion with no build and no invocation should not be scheduled")
+		return errors.New("ingestion with no build and no (root) invocation should not be scheduled")
 	}
 
-	rdbHost := payload.Invocation.ResultdbHost
-	invName := pbutil.InvocationName(payload.Invocation.InvocationId)
-	rc, err := resultdb.NewClient(ctx, rdbHost, payload.Project)
-	if err != nil {
-		return transient.Tag.Apply(err)
-	}
-	inv, err := rc.GetInvocation(ctx, invName)
-	code := status.Code(err)
-	if code == codes.NotFound {
-		// Invocation not found, end the task gracefully.
-		logging.Warningf(ctx, "Invocation %s for project %s not found.",
-			invName, payload.Project)
-		taskCounter.Add(ctx, 1, payload.Project, "ignored_invocation_not_found")
-		return nil
-	}
-	if code == codes.PermissionDenied {
-		// Invocation not found, end the task gracefully.
-		logging.Warningf(ctx, "Permission denied to read invocation %s for project %s.",
-			invName, payload.Project)
-		taskCounter.Add(ctx, 1, payload.Project, "ignored_resultdb_permission_denied")
-		return nil
-	}
-	if err != nil {
-		logging.Warningf(ctx, "GetInvocation has error code %s.", code)
-		return transient.Tag.Apply(errors.Fmt("get invocation: %w", err))
-	}
+	var rc *resultdb.Client
+	var inv *rdbpb.Invocation
+	var rootInv *rdbpb.RootInvocation
 
-	if !inv.IsExportRoot {
-		// Invocation is not an export root. Do not ingest.
-		logging.Debugf(ctx, "Skipping ingestion of invocation %s for project %s because it is not an export root.",
-			invName, payload.Project)
-		taskCounter.Add(ctx, 1, payload.Project, "ignored_not_export_root")
-		return nil
+	if payload.Invocation != nil {
+		rdbHost := payload.Invocation.ResultdbHost
+		rc, err = resultdb.NewClient(ctx, rdbHost, payload.Project)
+		if err != nil {
+			return transient.Tag.Apply(err)
+		}
+		var shouldSkip bool
+		inv, shouldSkip, err = getInvocationForExport(ctx, rc, payload.Project, payload.Invocation.InvocationId)
+		if err != nil {
+			return err
+		}
+		if shouldSkip {
+			return nil
+		}
+	} else if payload.RootInvocation != nil {
+		rdbHost := payload.RootInvocation.ResultdbHost
+		rc, err = resultdb.NewClient(ctx, rdbHost, payload.Project)
+		if err != nil {
+			return transient.Tag.Apply(err)
+		}
+		var shouldSkip bool
+		rootInv, shouldSkip, err = getRootInvocationForExport(ctx, rc, payload.Project, payload.RootInvocation.RootInvocationId)
+		if err != nil {
+			return err
+		}
+		if shouldSkip {
+			return nil
+		}
+	} else {
+		// Should never happen, this should be caught by validateRequest.
+		return errors.New("logic error: neither invocation nor root_invocation specified")
 	}
 	// Query test variants from ResultDB.
 	req := &rdbpb.QueryTestVariantsRequest{
-		Invocations: []string{inv.Name},
 		ResultLimit: 100,
 		PageSize:    10000,
 		ReadMask:    testVariantReadMask,
 		PageToken:   payload.PageToken,
+	}
+	if inv != nil {
+		req.Invocations = []string{inv.Name}
+	} else {
+		req.Parent = rootInv.Name
 	}
 	if payload.UseNewIngestionOrder {
 		req.OrderBy = `status_v2_effective`
@@ -365,11 +373,12 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestVerdi
 	nextPageToken := rsp.NextPageToken
 
 	input := Inputs{
-		Invocation:  inv,
-		Verdicts:    rsp.TestVariants,
-		SourcesByID: sources,
-		Payload:     payload,
-		LastPage:    nextPageToken == "",
+		Invocation:     inv,
+		RootInvocation: rootInv,
+		Verdicts:       rsp.TestVariants,
+		SourcesByID:    sources,
+		Payload:        payload,
+		LastPage:       nextPageToken == "",
 	}
 
 	for _, sink := range o.sinks {
@@ -426,13 +435,19 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestVerdicts, nex
 		// last page. We should not schedule a continuation task.
 		panic("next page token cannot be the empty page token")
 	}
-
+	var resourceID string
+	if task.Invocation != nil {
+		resourceID = fmt.Sprintf("%s/%s", task.Invocation.ResultdbHost, task.Invocation.InvocationId)
+	} else {
+		// Root invocation id and invocation id can collide, prefix the resourceID for root invocation task to differentiate.
+		resourceID = fmt.Sprintf("rootInvocation/%s/%s", task.RootInvocation.ResultdbHost, task.RootInvocation.RootInvocationId)
+	}
 	// Schedule the task transactionally, conditioned on it not having been
 	// scheduled before.
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		key := checkpoints.Key{
 			Project:    task.Project,
-			ResourceID: fmt.Sprintf("%s/%s", task.Invocation.ResultdbHost, task.Invocation.InvocationId),
+			ResourceID: resourceID,
 			ProcessID:  "verdict-ingestion/schedule-continuation",
 			Uniquifier: fmt.Sprintf("%v", task.TaskIndex),
 		}
@@ -459,6 +474,7 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestVerdicts, nex
 			IngestionId:          task.IngestionId,
 			Project:              task.Project,
 			Invocation:           task.Invocation,
+			RootInvocation:       task.RootInvocation,
 			Build:                task.Build,
 			PresubmitRun:         task.PresubmitRun,
 			PageToken:            nextPageToken,
@@ -494,10 +510,75 @@ func validateRequest(ctx context.Context, payload *taskspb.IngestTestVerdicts) e
 			return err
 		}
 	}
+	if payload.Invocation != nil && payload.RootInvocation != nil {
+		return errors.New("only one of invocation and root_invocation can be specified")
+	}
 	if payload.Invocation != nil {
 		if err := control.ValidateInvocationResult(payload.Invocation); err != nil {
 			return err
 		}
 	}
+	if payload.RootInvocation != nil {
+		if err := control.ValidateRootInvocationResult(payload.RootInvocation); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func getInvocationForExport(ctx context.Context, rc *resultdb.Client, project, invocationID string) (inv *rdbpb.Invocation, shouldSkip bool, err error) {
+	invName := pbutil.InvocationName(invocationID)
+	inv, err = rc.GetInvocation(ctx, invName)
+	code := status.Code(err)
+	if code == codes.NotFound {
+		// Invocation not found, end the task gracefully.
+		logging.Warningf(ctx, "Invocation %s for project %s not found.",
+			invName, project)
+		taskCounter.Add(ctx, 1, project, "ignored_invocation_not_found")
+		return nil, true, nil
+	}
+	if code == codes.PermissionDenied {
+		// Invocation not found, end the task gracefully.
+		logging.Warningf(ctx, "Permission denied to read invocation %s for project %s.",
+			invName, project)
+		taskCounter.Add(ctx, 1, project, "ignored_resultdb_permission_denied")
+		return nil, true, nil
+	}
+	if err != nil {
+		logging.Warningf(ctx, "GetInvocation has error code %s.", code)
+		return nil, false, transient.Tag.Apply(errors.Fmt("get invocation: %w", err))
+	}
+	if !inv.IsExportRoot {
+		// Invocation is not an export root. Do not ingest.
+		logging.Debugf(ctx, "Skipping ingestion of invocation %s for project %s because it is not an export root.",
+			invName, project)
+		taskCounter.Add(ctx, 1, project, "ignored_not_export_root")
+		return nil, true, nil
+	}
+	return inv, false, nil
+}
+
+func getRootInvocationForExport(ctx context.Context, rc *resultdb.Client, project, rootInvocationID string) (*rdbpb.RootInvocation, bool, error) {
+	rootInvName := pbutil.RootInvocationName(rootInvocationID)
+	rootInv, err := rc.GetRootInvocation(ctx, rootInvName)
+	code := status.Code(err)
+	if code == codes.NotFound {
+		// Root invocation not found, end the task gracefully.
+		logging.Warningf(ctx, "Root invocation %s for project %s not found.",
+			rootInvName, project)
+		taskCounter.Add(ctx, 1, project, "ignored_invocation_not_found")
+		return nil, true, nil
+	}
+	if code == codes.PermissionDenied {
+		// Root invocation not found, end the task gracefully.
+		logging.Warningf(ctx, "Permission denied to read root invocation %s for project %s.",
+			rootInvName, project)
+		taskCounter.Add(ctx, 1, project, "ignored_resultdb_permission_denied")
+		return nil, true, nil
+	}
+	if err != nil {
+		logging.Warningf(ctx, "GetRootInvocation has error code %s.", code)
+		return nil, false, transient.Tag.Apply(errors.Fmt("get root invocation: %w", err))
+	}
+	return rootInv, false, nil
 }

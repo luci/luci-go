@@ -141,3 +141,10 @@ func (c *Client) GetInvocation(ctx context.Context, invName string) (*rdbpb.Invo
 func (c *Client) QueryTestMetadata(ctx context.Context, req *rdbpb.QueryTestMetadataRequest) (*rdbpb.QueryTestMetadataResponse, error) {
 	return c.client.QueryTestMetadata(ctx, req)
 }
+
+// GetRootInvocation retrieves the root invocation.
+func (c *Client) GetRootInvocation(ctx context.Context, name string) (*rdbpb.RootInvocation, error) {
+	return c.client.GetRootInvocation(ctx, &rdbpb.GetRootInvocationRequest{
+		Name: name,
+	})
+}

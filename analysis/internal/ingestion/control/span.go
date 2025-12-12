@@ -550,3 +550,13 @@ func ValidatePresubmitResult(r *ctlpb.PresubmitResult) error {
 	}
 	return nil
 }
+
+func ValidateRootInvocationResult(r *ctlpb.RootInvocationResult) error {
+	switch {
+	case r.ResultdbHost == "":
+		return errors.New("resultdb_host must be specified")
+	case r.RootInvocationId == "":
+		return errors.New("root_invocation_id must be specified")
+	}
+	return nil
+}

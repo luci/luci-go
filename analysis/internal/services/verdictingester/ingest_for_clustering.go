@@ -51,6 +51,12 @@ func (e *ClusteringExporter) Ingest(ctx context.Context, input Inputs) (err erro
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.ClusteringExporter.Ingest")
 	defer func() { tracing.End(s, err) }()
 
+	if input.Invocation == nil {
+		// Ingestion is for a root invocation.
+		// Clustering export for root invocation is not supported.
+		return nil
+	}
+
 	// Exit early if no verdict needs to be ingested.
 	if len(input.Verdicts) == 0 {
 		return nil

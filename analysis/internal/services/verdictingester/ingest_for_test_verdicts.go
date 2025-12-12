@@ -47,6 +47,12 @@ func (e *VerdictExporter) Ingest(ctx context.Context, input Inputs) (err error) 
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.VerdictExporter.Ingest")
 	defer func() { tracing.End(s, err) }()
 
+	if input.Invocation == nil {
+		// Ingestion is for a root invocation.
+		// Verdict export for root invocation is not supported.
+		return nil
+	}
+
 	// Exit early if no verdict needs to be ingested.
 	if len(input.Verdicts) == 0 {
 		return nil

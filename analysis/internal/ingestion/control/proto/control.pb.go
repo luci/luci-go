@@ -23,7 +23,6 @@ package controlpb
 import (
 	v1 "go.chromium.org/luci/analysis/proto/v1"
 	proto "go.chromium.org/luci/buildbucket/proto"
-	v11 "go.chromium.org/luci/resultdb/proto/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -365,10 +364,12 @@ type RootInvocationResult struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The ResultDB host which contains this ResultDB root invocation.
 	ResultdbHost string `protobuf:"bytes,1,opt,name=resultdb_host,json=resultdbHost,proto3" json:"resultdb_host,omitempty"`
-	// The root invocation.
-	RootInvocation *v11.RootInvocation `protobuf:"bytes,2,opt,name=root_invocation,json=rootInvocation,proto3" json:"root_invocation,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// The id of this root invocation.
+	RootInvocationId string `protobuf:"bytes,2,opt,name=root_invocation_id,json=rootInvocationId,proto3" json:"root_invocation_id,omitempty"`
+	// The time the root invocation was created.
+	CreationTime  *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=creation_time,json=creationTime,proto3" json:"creation_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RootInvocationResult) Reset() {
@@ -408,9 +409,16 @@ func (x *RootInvocationResult) GetResultdbHost() string {
 	return ""
 }
 
-func (x *RootInvocationResult) GetRootInvocation() *v11.RootInvocation {
+func (x *RootInvocationResult) GetRootInvocationId() string {
 	if x != nil {
-		return x.RootInvocation
+		return x.RootInvocationId
+	}
+	return ""
+}
+
+func (x *RootInvocationResult) GetCreationTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreationTime
 	}
 	return nil
 }
@@ -419,7 +427,7 @@ var File_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_
 
 const file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_proto_rawDesc = "" +
 	"\n" +
-	"Lgo.chromium.org/luci/analysis/internal/ingestion/control/proto/control.proto\x12(luci.analysis.internal.ingestion.control\x1a\x1fgoogle/protobuf/timestamp.proto\x1a4go.chromium.org/luci/analysis/proto/v1/sources.proto\x1a3go.chromium.org/luci/analysis/proto/v1/common.proto\x1a3go.chromium.org/luci/buildbucket/proto/common.proto\x1a<go.chromium.org/luci/resultdb/proto/v1/root_invocation.proto\"\xe7\x03\n" +
+	"Lgo.chromium.org/luci/analysis/internal/ingestion/control/proto/control.proto\x12(luci.analysis.internal.ingestion.control\x1a\x1fgoogle/protobuf/timestamp.proto\x1a4go.chromium.org/luci/analysis/proto/v1/sources.proto\x1a3go.chromium.org/luci/analysis/proto/v1/common.proto\x1a3go.chromium.org/luci/buildbucket/proto/common.proto\"\xe7\x03\n" +
 	"\vBuildResult\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04host\x18\x02 \x01(\tR\x04host\x12?\n" +
@@ -444,10 +452,11 @@ const file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_contro
 	"\x10InvocationResult\x12#\n" +
 	"\rresultdb_host\x18\x01 \x01(\tR\fresultdbHost\x12#\n" +
 	"\rinvocation_id\x18\x02 \x01(\tR\finvocationId\x12?\n" +
-	"\rcreation_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\fcreationTime\"\x86\x01\n" +
+	"\rcreation_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\fcreationTime\"\xaa\x01\n" +
 	"\x14RootInvocationResult\x12#\n" +
-	"\rresultdb_host\x18\x01 \x01(\tR\fresultdbHost\x12I\n" +
-	"\x0froot_invocation\x18\x02 \x01(\v2 .luci.resultdb.v1.RootInvocationR\x0erootInvocationBJZHgo.chromium.org/luci/analysis/internal/ingestion/control/proto;controlpbb\x06proto3"
+	"\rresultdb_host\x18\x01 \x01(\tR\fresultdbHost\x12,\n" +
+	"\x12root_invocation_id\x18\x02 \x01(\tR\x10rootInvocationId\x12?\n" +
+	"\rcreation_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\fcreationTimeBJZHgo.chromium.org/luci/analysis/internal/ingestion/control/proto;controlpbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_proto_rawDescOnce sync.Once
@@ -474,7 +483,6 @@ var file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_
 	(*v1.PresubmitRunId)(nil),     // 8: luci.analysis.v1.PresubmitRunId
 	(v1.PresubmitRunStatus)(0),    // 9: luci.analysis.v1.PresubmitRunStatus
 	(v1.PresubmitRunMode)(0),      // 10: luci.analysis.v1.PresubmitRunMode
-	(*v11.RootInvocation)(nil),    // 11: luci.resultdb.v1.RootInvocation
 }
 var file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_proto_depIdxs = []int32{
 	4,  // 0: luci.analysis.internal.ingestion.control.BuildResult.creation_time:type_name -> google.protobuf.Timestamp
@@ -486,7 +494,7 @@ var file_go_chromium_org_luci_analysis_internal_ingestion_control_proto_control_
 	10, // 6: luci.analysis.internal.ingestion.control.PresubmitResult.mode:type_name -> luci.analysis.v1.PresubmitRunMode
 	4,  // 7: luci.analysis.internal.ingestion.control.PresubmitResult.creation_time:type_name -> google.protobuf.Timestamp
 	4,  // 8: luci.analysis.internal.ingestion.control.InvocationResult.creation_time:type_name -> google.protobuf.Timestamp
-	11, // 9: luci.analysis.internal.ingestion.control.RootInvocationResult.root_invocation:type_name -> luci.resultdb.v1.RootInvocation
+	4,  // 9: luci.analysis.internal.ingestion.control.RootInvocationResult.creation_time:type_name -> google.protobuf.Timestamp
 	10, // [10:10] is the sub-list for method output_type
 	10, // [10:10] is the sub-list for method input_type
 	10, // [10:10] is the sub-list for extension type_name
