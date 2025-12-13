@@ -44,7 +44,7 @@ type SetBuilderHealthChecker struct{}
 
 var _ protowalk.FieldProcessor = (*SetBuilderHealthChecker)(nil)
 
-func (SetBuilderHealthChecker) Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data protowalk.ResultData, applied bool) {
+func (SetBuilderHealthChecker) Process(_ protowalk.DataMap, field protoreflect.FieldDescriptor, msg protoreflect.Message) (data protowalk.ResultData, applied bool) {
 	return protowalk.ResultData{Message: "required", IsErr: true}, true
 }
 

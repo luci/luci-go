@@ -35,7 +35,7 @@ var _ FieldProcessor = (*OutputOnlyProcessor)(nil)
 // Process implements FieldProcessor.
 //
 // This will clear (zero) the field in `msg`.
-func (OutputOnlyProcessor) Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data ResultData, applied bool) {
+func (OutputOnlyProcessor) Process(_ DataMap, field protoreflect.FieldDescriptor, msg protoreflect.Message) (data ResultData, applied bool) {
 	msg.Clear(field)
 	return ResultData{Message: "cleared OUTPUT_ONLY field"}, true
 }

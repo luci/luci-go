@@ -23,7 +23,7 @@ import (
 
 // fieldsImpl actually implements the Fields method, using `path` as context
 // for the overall path through the proto message.
-func (l DynamicWalker) fieldsImpl(path protopath.Path, msg protoreflect.Message) map[FieldProcessor][]Result {
+func (l DynamicWalker) fieldsImpl(path protopath.Path, msg protoreflect.Message, dm DataMap) map[FieldProcessor][]Result {
 	plan := l.plans[msg.Descriptor()]
 	ret := make(map[FieldProcessor][]Result, plan.numProcs)
 	mergeResults := func(additional map[FieldProcessor][]Result) {
@@ -41,7 +41,7 @@ func (l DynamicWalker) fieldsImpl(path protopath.Path, msg protoreflect.Message)
 			toRecurse.set(item.recurseAttr)
 
 			if item.applies(msg.Has(field)) {
-				if data, applied := item.processor.Process(field, msg); applied {
+				if data, applied := item.processor.Process(dm, field, msg); applied {
 					if copiedFieldPath == nil {
 						copiedFieldPath = make(protopath.Path, len(path)+1)
 						copy(copiedFieldPath, path)
@@ -59,12 +59,12 @@ func (l DynamicWalker) fieldsImpl(path protopath.Path, msg protoreflect.Message)
 			case recurseRepeated:
 				lst := msg.Get(field).List()
 				for i := range lst.Len() {
-					mergeResults(l.fieldsImpl(append(recursePath, protopath.ListIndex(i)), lst.Get(i).Message()))
+					mergeResults(l.fieldsImpl(append(recursePath, protopath.ListIndex(i)), lst.Get(i).Message(), dm))
 				}
 
 			case recurseOne:
 				if msg.Has(field) {
-					mergeResults(l.fieldsImpl(recursePath, msg.Get(field).Message()))
+					mergeResults(l.fieldsImpl(recursePath, msg.Get(field).Message(), dm))
 				}
 
 			default:
@@ -73,7 +73,7 @@ func (l DynamicWalker) fieldsImpl(path protopath.Path, msg protoreflect.Message)
 				}
 
 				for mk, v := range reflectutil.MapRangeSorted(msg.Get(field).Map(), toRecurse.mapKeyKind()) {
-					mergeResults(l.fieldsImpl(append(recursePath, protopath.MapIndex(mk)), v.Message()))
+					mergeResults(l.fieldsImpl(append(recursePath, protopath.MapIndex(mk)), v.Message(), dm))
 				}
 			}
 		}

@@ -15,6 +15,8 @@
 package protowalk
 
 import (
+	"fmt"
+
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protopath"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -74,7 +76,9 @@ func NewDynamicWalker(msgD protoreflect.MessageDescriptor, processors ...FieldPr
 // passed to NewDynamicWalker. Use [Results.Empty] to check if this contains
 // any actionable data. It is not valid to mutate the return value (use
 // [Results.Clone] if you need to do this).
-func (l *DynamicWalker) Execute(msg proto.Message) (Results, error) {
+//
+// `data` will be composed into a DataMap to be passed to each Process method.
+func (l *DynamicWalker) Execute(msg proto.Message, data ...DataValue) (Results, error) {
 	if l == nil {
 		return nil, nil
 	}
@@ -87,11 +91,23 @@ func (l *DynamicWalker) Execute(msg proto.Message) (Results, error) {
 		return nil, errors.Fmt("mismatched message types, got %s, expected %s", msgD.FullName(), l.msgD.FullName())
 	}
 
+	dm := DataMap{}
+	if len(data) > 0 {
+		dm.dat = make(map[int64]any, len(data))
+		for _, val := range data {
+			if val.idx == 0 {
+				panic(fmt.Errorf(
+					"improperly obtained DataValue, use DataHandle[T].Value."))
+			}
+			dm.dat[val.idx] = val.val
+		}
+	}
+
 	// 32 is a guess at how deep the Path could get.
 	//
 	// There's really no way to know ahead of time (since proto messages could
 	// have a recursive structure, allowing the expression of trees, etc.)
-	mappedRet := l.fieldsImpl(make(protopath.Path, 0, 32), msg.ProtoReflect())
+	mappedRet := l.fieldsImpl(make(protopath.Path, 0, 32), msg.ProtoReflect(), dm)
 	for i, proc := range l.procs {
 		ret[i] = mappedRet[proc]
 	}
@@ -103,8 +119,8 @@ func (l *DynamicWalker) Execute(msg proto.Message) (Results, error) {
 //
 // If you do not statically know that `msg` is of the same type, use Execute and
 // handle the error.
-func (l *DynamicWalker) MustExecute(msg proto.Message) Results {
-	ret, err := l.Execute(msg)
+func (l *DynamicWalker) MustExecute(msg proto.Message, data ...DataValue) Results {
+	ret, err := l.Execute(msg, data...)
 	if err != nil {
 		panic(err)
 	}

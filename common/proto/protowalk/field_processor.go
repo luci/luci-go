@@ -15,8 +15,58 @@
 package protowalk
 
 import (
+	"sync/atomic"
+
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
+
+var (
+	handleNum atomic.Int64
+)
+
+// DataHandle is a process wide unique number which can be used as a key for
+// ExecuteWithData.
+type DataHandle[T any] struct{ idx int64 }
+
+// Value creates a new DataValue binding for use with [DynamicWalker.Execute]
+// or [Walker[M].Execute].
+func (d DataHandle[T]) Value(val T) DataValue {
+	if d.idx == 0 {
+		panic("DataHandle was improperly initialized - use NewDataHandle[T].")
+	}
+	return DataValue{d.idx, val}
+}
+
+// Get retrieves the value from DataMap, or T's zero value if the entry is
+// not present.
+func (d DataHandle[T]) Get(m DataMap) T {
+	retT, _ := m.dat[d.idx].(T)
+	return retT
+}
+
+// NewDataHandle returns a new DataHandle which can be used with
+// ExecuteWithData.
+//
+// Just like [NewWalker]/[NewDynamicWalker], this should be called at init()
+// time to get a handle which is used for the lifetime of the process.
+//
+// See the example for [DataMap].
+func NewDataHandle[T any]() DataHandle[T] {
+	idx := handleNum.Add(1)
+	return DataHandle[T]{idx + 1}
+}
+
+// DataValue is a value bound with a specific [DataHandle[T]].
+type DataValue struct {
+	idx int64
+	val any
+}
+
+// DataMap contains zero or more DataValue bindings from specific [DataHandles].
+//
+// Use a specific [DataHandle[T]] to retrieve a value from this map in
+// [FieldProcessor.Process].
+type DataMap struct{ dat map[int64]any }
 
 // FieldProcessor allows processing a set of proto message fields in conjunction
 // with [NewWalker].
@@ -64,5 +114,8 @@ type FieldProcessor interface {
 	// If two processors apply to the same field in a message, they'll be called
 	// in the order specified to Fields (i.e. NewWalker(..., A{}, B{}) would call A
 	// then B, and NewWalker(..., B{}, A{}) would call B then A).
-	Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data ResultData, applied bool)
+	//
+	// `data` is the same data as provided to ExecuteWithData. You can retrieve
+	// values form it using a [DataHandle[T]].
+	Process(data DataMap, field protoreflect.FieldDescriptor, msg protoreflect.Message) (result ResultData, applied bool)
 }

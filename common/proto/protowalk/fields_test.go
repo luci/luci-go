@@ -32,7 +32,7 @@ type CustomChecker struct{}
 
 var _ FieldProcessor = CustomChecker{}
 
-func (CustomChecker) Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data ResultData, applied bool) {
+func (CustomChecker) Process(_ DataMap, field protoreflect.FieldDescriptor, msg protoreflect.Message) (data ResultData, applied bool) {
 	chk := proto.GetExtension(field.Options().(*descriptorpb.FieldOptions), E_Custom).(*CustomExt)
 	s := msg.Get(field).String()
 	if applied = s != chk.MustEqual; applied {
@@ -246,7 +246,7 @@ type NoopChecker struct{}
 
 var _ FieldProcessor = NoopChecker{}
 
-func (NoopChecker) Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data ResultData, applied bool) {
+func (NoopChecker) Process(_ DataMap, field protoreflect.FieldDescriptor, msg protoreflect.Message) (data ResultData, applied bool) {
 	return
 }
 
@@ -315,7 +315,7 @@ type Custom2Checker struct{}
 
 var _ FieldProcessor = Custom2Checker{}
 
-func (Custom2Checker) Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data ResultData, applied bool) {
+func (Custom2Checker) Process(_ DataMap, field protoreflect.FieldDescriptor, msg protoreflect.Message) (data ResultData, applied bool) {
 	data = ResultData{Message: "found"}
 	applied = true
 	return

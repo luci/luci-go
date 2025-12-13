@@ -63,7 +63,7 @@ type CreateBuildChecker struct{}
 
 var _ protowalk.FieldProcessor = (*CreateBuildChecker)(nil)
 
-func (CreateBuildChecker) Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data protowalk.ResultData, applied bool) {
+func (CreateBuildChecker) Process(_ protowalk.DataMap, field protoreflect.FieldDescriptor, msg protoreflect.Message) (data protowalk.ResultData, applied bool) {
 	cbfb := proto.GetExtension(field.Options().(*descriptorpb.FieldOptions), pb.E_CreateBuildFieldOption).(*pb.CreateBuildFieldOption)
 	switch cbfb.FieldBehavior {
 	case annotations.FieldBehavior_OUTPUT_ONLY:

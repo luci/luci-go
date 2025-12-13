@@ -49,8 +49,8 @@ func NewWalker[M proto.Message](processors ...FieldProcessor) Walker[M] {
 // passed to NewWalker. Use [Results.Empty] to check if this contains any
 // actionable data. It is not valid to mutate the return value (use
 // [Results.Clone] if you need to do this).
-func (l Walker[M]) Execute(msg M) Results {
+func (l Walker[M]) Execute(msg M, data ...DataValue) Results {
 	// This cannot panic - we know that `M` matches the type of the contained
 	// DynamicWalker.
-	return l.dw.MustExecute(msg)
+	return l.dw.MustExecute(msg, data...)
 }

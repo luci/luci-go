@@ -24,12 +24,11 @@ import (
 //
 //	type name = <tag> [deprecated = true];
 //
-// You may also optionally clear the data in deprecated fields by setting
-// ClearField=true.
-type DeprecatedProcessor struct {
-	// If true, clear the data out of all deprecated fields.
-	ClearField bool
-}
+// You may also optionally clear the data in deprecated fields by providing
+// DeprecatedProcessorClearField.Value(true) to Execute.
+type DeprecatedProcessor struct{}
+
+var DeprecatedProcessorClearField = NewDataHandle[bool]()
 
 var _ FieldProcessor = DeprecatedProcessor{}
 
@@ -37,8 +36,8 @@ var _ FieldProcessor = DeprecatedProcessor{}
 //
 // This will optionally clear (zero) the field in `msg` to avoid accidental
 // usage of deprecated fields
-func (d DeprecatedProcessor) Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data ResultData, applied bool) {
-	if d.ClearField {
+func (d DeprecatedProcessor) Process(data DataMap, field protoreflect.FieldDescriptor, msg protoreflect.Message) (ResultData, bool) {
+	if DeprecatedProcessorClearField.Get(data) {
 		msg.Clear(field)
 	}
 	return ResultData{Message: "deprecated"}, true

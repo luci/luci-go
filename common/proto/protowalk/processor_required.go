@@ -35,7 +35,7 @@ type RequiredProcessor struct{}
 var _ FieldProcessor = RequiredProcessor{}
 
 // Process implements FieldProcessor.
-func (RequiredProcessor) Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data ResultData, applied bool) {
+func (RequiredProcessor) Process(_ DataMap, field protoreflect.FieldDescriptor, msg protoreflect.Message) (data ResultData, applied bool) {
 	return ResultData{Message: "required", IsErr: true}, true
 }
 
