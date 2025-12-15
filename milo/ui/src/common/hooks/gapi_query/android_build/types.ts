@@ -81,32 +81,32 @@ export interface Change {
   host?: string;
   project?: string;
   branch?: string;
-  change_number?: string; // int64
+  changeNumber?: string; // int64
   patchset?: number; // int32
   status?: string; // Enum
-  creation_time?: string; // int64
-  last_modification_time?: string; // int64
-  latest_revision?: string;
+  creationTime?: string; // int64
+  lastModificationTime?: string; // int64
+  latestRevision?: string;
   owner?: User;
-  change_id?: string;
+  changeId?: string;
   topic?: string;
-  submitted_time?: string; // int64
-  original_source?: string;
-  is_rapid_change?: boolean;
-  project_path?: string;
-  change_type?: string; // Enum
-  is_behind_blank_merge?: boolean;
+  submittedTime?: string; // int64
+  originalSource?: string;
+  isRapidChange?: boolean;
+  projectPath?: string;
+  changeType?: string; // Enum
+  isBehindBlankMerge?: boolean;
 }
 
 export interface User {
   name?: string;
   email?: string;
   username?: string;
-  account_id?: string; // int64
+  accountId?: string; // int64
 }
 
 export interface Build {
-  build_id: string;
+  buildId: string;
   target: Target;
   change?: Change[];
   revision?: string;
@@ -114,36 +114,36 @@ export interface Build {
   branch?: string;
   rank?: number; // int32
   signed?: boolean;
-  release_candidate_name?: string;
-  creation_timestamp?: string; // int64
-  build_attempt_status?: BuildStatus;
-  previous_build_id?: string;
-  reference_release_candidate_name?: string;
-  worknode_id?: string;
-  has_tests?: boolean;
-  reference_build_id?: string[];
-  machine_name?: string;
-  completion_timestamp?: string; // int64
-  base_build?: string;
-  external_disk_name?: string;
-  proof_build?: boolean;
-  fallback_internal?: boolean;
-  buildbot_available_space_gb?: string; // int64
+  releaseCandidateName?: string;
+  creationTimestamp?: string; // int64
+  buildAttemptStatus?: BuildStatus;
+  previousBuildId?: string;
+  referenceReleaseCandidateName?: string;
+  worknodeId?: string;
+  hasTests?: boolean;
+  referenceBuildId?: string[];
+  machineName?: string;
+  completionTimestamp?: string; // int64
+  baseBuild?: string;
+  externalDiskName?: string;
+  proofBuild?: boolean;
+  fallbackInternal?: boolean;
+  buildbotAvailableSpaceGb?: string; // int64
   archived?: boolean;
-  external_id?: string;
-  reset_image_build?: boolean;
-  buildbot_sw_version?: string;
-  last_updated_timestamp?: string; // int64
-  safe_level?: SafeLevel;
-  worknode_attempt_id?: string;
-  infra_error?: boolean;
-  changes_fetching_done?: boolean;
-  fallback_error_msg?: string;
-  trigger_type?: string; // Enum
+  externalId?: string;
+  resetImageBuild?: boolean;
+  buildbotSwVersion?: string;
+  lastUpdatedTimestamp?: string; // int64
+  safeLevel?: SafeLevel;
+  worknodeAttemptId?: string;
+  infraError?: boolean;
+  changesFetchingDone?: boolean;
+  fallbackErrorMsg?: string;
+  triggerType?: string; // Enum
   promoted?: boolean;
-  git_server_seconds?: string; // int64
-  git_lsremotes?: string; // int64
-  vm_image?: string;
+  gitServerSeconds?: string; // int64
+  gitLsremotes?: string; // int64
+  vmImage?: string;
 }
 
 export interface ListBuildsRequest {
@@ -159,6 +159,6 @@ export interface ListBuildsRequest {
 
 export interface ListBuildsResponse {
   builds?: Build[];
-  next_page_token?: string;
-  previous_page_token?: string;
+  nextPageToken?: string;
+  previousPageToken?: string;
 }

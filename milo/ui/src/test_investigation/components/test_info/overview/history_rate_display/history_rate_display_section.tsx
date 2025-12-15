@@ -23,7 +23,10 @@ import {
   useProject,
   useTestVariant,
 } from '@/test_investigation/context';
-import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
+import {
+  AnyInvocation,
+  isRootInvocation,
+} from '@/test_investigation/utils/invocation_utils';
 import {
   constructTestHistoryUrl,
   getSourcesFromInvocation,
@@ -31,6 +34,7 @@ import {
 
 import { useTestVariantBranch } from '../../context';
 
+import { AndroidTestTimeline } from './android_history';
 import { HistoryChangepoint } from './history_changepoint';
 import { HistorySegment } from './history_segment';
 import { TestAddedInfo } from './test_added_info';
@@ -69,6 +73,27 @@ interface HistoryRateDisplaySectionProps {
  * It determines which segments to display based on the current invocation's position.
  */
 export function HistoryRateDisplaySection({
+  currentTimeForAgo: currentTimeForAgoProp,
+}: HistoryRateDisplaySectionProps) {
+  const invocation = useInvocation();
+
+  // Check if this is an Android Root Invocation with primary build info
+  const isAndroid = useMemo(() => {
+    return (
+      isRootInvocation(invocation) && !!invocation.primaryBuild?.androidBuild
+    );
+  }, [invocation]);
+
+  if (isAndroid) {
+    return <AndroidTestTimeline />;
+  }
+
+  return (
+    <DefaultHistoryRateDisplay currentTimeForAgo={currentTimeForAgoProp} />
+  );
+}
+
+function DefaultHistoryRateDisplay({
   currentTimeForAgo: currentTimeForAgoProp,
 }: HistoryRateDisplaySectionProps) {
   const invocation = useInvocation();

@@ -55,7 +55,7 @@ describe('useListBuilds', () => {
           branches: ['git_main'],
           page_size: 10,
           fields:
-            'next_page_token,previous_page_token,builds(build_id,branch,target,creation_timestamp)',
+            'nextPageToken,previousPageToken,builds(buildId,branch,target,creationTimestamp)',
         }),
       }),
       expect.objectContaining({ enabled: true }),
@@ -68,7 +68,7 @@ describe('useListBuilds', () => {
         {
           branches: ['git_main'],
           page_size: 10,
-          fields: 'next_page_token,builds(build_id)',
+          fields: 'nextPageToken,builds(buildId)',
         },
         {
           enabled: true,
@@ -83,7 +83,7 @@ describe('useListBuilds', () => {
         params: expect.objectContaining({
           branches: ['git_main'],
           page_size: 10,
-          fields: 'next_page_token,builds(build_id)',
+          fields: 'nextPageToken,builds(buildId)',
         }),
       }),
       expect.objectContaining({ enabled: true }),

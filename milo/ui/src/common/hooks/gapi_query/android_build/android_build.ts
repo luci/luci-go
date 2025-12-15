@@ -49,7 +49,7 @@ export const useListBuilds = (
   params: ListBuildsRequest,
   queryOptions: WrapperQueryOptions<ListBuildsResponse>,
 ): UseQueryResult<ListBuildsResponse> => {
-  const path = 'v4/builds';
+  const path = 'android/internal/build/v3/builds';
   return useGapiQuery<ListBuildsResponse>(
     {
       method: 'GET',
@@ -57,6 +57,7 @@ export const useListBuilds = (
       params: {
         branches: params.branches,
         targets: params.targets,
+        buildType: 'SUBMITTED',
         start_creation_timestamp: params.start_creation_timestamp,
         end_creation_timestamp: params.end_creation_timestamp,
         sorting_type: params.sorting_type,
@@ -64,7 +65,7 @@ export const useListBuilds = (
         page_size: params.page_size,
         fields:
           params.fields ??
-          'next_page_token,previous_page_token,builds(build_id,branch,target,creation_timestamp)',
+          'nextPageToken,previousPageToken,builds(buildId,branch,target,creationTimestamp)',
       },
     },
     queryOptions,

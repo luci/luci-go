@@ -31,7 +31,6 @@ const BASE_SCOPES = [
 
 const ANDROID_SCOPES = [
   'https://www.googleapis.com/auth/androidbuild.internal',
-  'https://www.googleapis.com/auth/androidengprod',
 ];
 
 const execCLI = promisify(exec);
