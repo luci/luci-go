@@ -21,8 +21,11 @@ import (
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -33,6 +36,11 @@ import (
 func TestQuery(t *testing.T) {
 	ftt.Run("Query", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+
+		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceholderServiceConfig())
+		assert.NoErr(t, err)
 
 		rootInvID := rootinvocations.ID("root-inv")
 		rootInvRow := rootinvocations.NewBuilder(rootInvID).Build()
@@ -119,7 +127,7 @@ func TestQuery(t *testing.T) {
 					Level: pb.AggregationLevel_MODULE,
 					Id: &pb.TestIdentifier{
 						ModuleName:        "m2",
-						ModuleScheme:      "junit",
+						ModuleScheme:      "noconfig",
 						ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
 					},
 				}

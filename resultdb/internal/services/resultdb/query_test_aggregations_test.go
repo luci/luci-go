@@ -22,10 +22,13 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testaggregations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -37,6 +40,14 @@ import (
 
 func TestQueryTestAggregations(t *testing.T) {
 	ftt.Run(`QueryTestAggregations`, t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+
+		// Setup service config.
+		err := config.SetServiceConfigForTesting(ctx, config.CreatePlaceholderServiceConfig())
+		assert.NoErr(t, err)
+
 		authState := &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -45,7 +56,6 @@ func TestQueryTestAggregations(t *testing.T) {
 				{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestExonerations},
 			},
 		}
-		ctx := testutil.SpannerTestContext(t)
 		ctx = auth.WithState(ctx, authState)
 
 		srv := newTestResultDBService()

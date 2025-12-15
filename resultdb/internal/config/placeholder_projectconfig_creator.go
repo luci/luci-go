@@ -63,6 +63,13 @@ func CreatePlaceholderServiceConfig() *configpb.Config {
 		},
 		Schemes: []*configpb.Scheme{
 			{
+				Id:                "flat",
+				HumanReadableName: "Flat",
+				Case: &configpb.Scheme_Level{
+					HumanReadableName: "Test case",
+				},
+			},
+			{
 				Id:                "gtest",
 				HumanReadableName: "GTest",
 				Fine: &configpb.Scheme_Level{

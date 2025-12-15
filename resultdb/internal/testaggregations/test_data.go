@@ -27,11 +27,11 @@ import (
 
 // CreateTestData creates test data used for testing test aggregations.
 func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
-	moduleID := func(id string) *pb.ModuleIdentifier {
+	moduleID := func(id, scheme string) *pb.ModuleIdentifier {
 		return &pb.ModuleIdentifier{
 			ModuleName:    id,
 			ModuleVariant: pbutil.Variant("key", "value"),
-			ModuleScheme:  "junit",
+			ModuleScheme:  scheme,
 		}
 	}
 
@@ -39,32 +39,32 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 	workUnits := []*workunits.WorkUnitRow{
 		// M1: Should be marked succeeded since at least one attempt in the only shard succeeded.
 		// This is despite an earlier failure, skip, cancellation, and a pending and running attempt.
-		workunits.NewBuilder(rootInvID, "wu-m1-a1").WithModuleID(moduleID("m1")).WithState(pb.WorkUnit_FAILED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m1-a2").WithModuleID(moduleID("m1")).WithState(pb.WorkUnit_SUCCEEDED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m1-a3").WithModuleID(moduleID("m1")).WithState(pb.WorkUnit_SKIPPED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m1-a4").WithModuleID(moduleID("m1")).WithState(pb.WorkUnit_CANCELLED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m1-a5").WithModuleID(moduleID("m1")).WithState(pb.WorkUnit_PENDING).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m1-a6").WithModuleID(moduleID("m1")).WithState(pb.WorkUnit_RUNNING).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m1-a1").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_FAILED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m1-a2").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_SUCCEEDED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m1-a3").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_SKIPPED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m1-a4").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_CANCELLED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m1-a5").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_PENDING).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m1-a6").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_RUNNING).Build(),
 		// M2: Should be marked running since a retry is in progress.
-		workunits.NewBuilder(rootInvID, "wu-m2-a1").WithModuleID(moduleID("m2")).WithState(pb.WorkUnit_FAILED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m2-a2").WithModuleID(moduleID("m2")).WithState(pb.WorkUnit_RUNNING).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m2-a1").WithModuleID(moduleID("m2", "noconfig")).WithState(pb.WorkUnit_FAILED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m2-a2").WithModuleID(moduleID("m2", "noconfig")).WithState(pb.WorkUnit_RUNNING).Build(),
 		// M3: Should be marked failed since one shard failed. This is despite one succeeding,
 		// another still being in progress, one being cancelled, one being pending, and one
 		// being skipped.
-		workunits.NewBuilder(rootInvID, "wu-m3-s1").WithModuleID(moduleID("m3")).WithModuleShardKey("s1").WithState(pb.WorkUnit_FAILED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m3-s2").WithModuleID(moduleID("m3")).WithModuleShardKey("s2").WithState(pb.WorkUnit_RUNNING).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m3-s3").WithModuleID(moduleID("m3")).WithModuleShardKey("s3").WithState(pb.WorkUnit_SKIPPED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m3-s4").WithModuleID(moduleID("m3")).WithModuleShardKey("s4").WithState(pb.WorkUnit_SUCCEEDED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m3-s5").WithModuleID(moduleID("m3")).WithModuleShardKey("s5").WithState(pb.WorkUnit_CANCELLED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m3-s6").WithModuleID(moduleID("m3")).WithModuleShardKey("s6").WithState(pb.WorkUnit_PENDING).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m3-s1").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s1").WithState(pb.WorkUnit_FAILED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m3-s2").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s2").WithState(pb.WorkUnit_RUNNING).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m3-s3").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s3").WithState(pb.WorkUnit_SKIPPED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m3-s4").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s4").WithState(pb.WorkUnit_SUCCEEDED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m3-s5").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s5").WithState(pb.WorkUnit_CANCELLED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m3-s6").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s6").WithState(pb.WorkUnit_PENDING).Build(),
 		// M4: Should be marked pending, despite an earlier failure.
-		workunits.NewBuilder(rootInvID, "wu-m4-a1").WithModuleID(moduleID("m4")).WithState(pb.WorkUnit_PENDING).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m4-a2").WithModuleID(moduleID("m4")).WithState(pb.WorkUnit_FAILED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m4-a1").WithModuleID(moduleID("m4", "junit")).WithState(pb.WorkUnit_PENDING).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m4-a2").WithModuleID(moduleID("m4", "junit")).WithState(pb.WorkUnit_FAILED).Build(),
 		// M5: Should be marked skipped.
-		workunits.NewBuilder(rootInvID, "wu-m5").WithModuleID(moduleID("m5")).WithState(pb.WorkUnit_SKIPPED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m5").WithModuleID(moduleID("m5", "junit")).WithState(pb.WorkUnit_SKIPPED).Build(),
 		// M6: Should be marked cancelled, despite another shard succeeding.
-		workunits.NewBuilder(rootInvID, "wu-m6-s1").WithModuleID(moduleID("m6")).WithModuleShardKey("s1").WithState(pb.WorkUnit_CANCELLED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m6-s2").WithModuleID(moduleID("m6")).WithModuleShardKey("s2").WithState(pb.WorkUnit_SUCCEEDED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m6-s1").WithModuleID(moduleID("m6", "junit")).WithModuleShardKey("s1").WithState(pb.WorkUnit_CANCELLED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m6-s2").WithModuleID(moduleID("m6", "junit")).WithModuleShardKey("s2").WithState(pb.WorkUnit_SUCCEEDED).Build(),
 	}
 
 	// Prepare test results.
@@ -95,9 +95,9 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 		// Skipped
 		baseBuilder().WithCoarseName("c2").WithCaseName("skipped_test").WithStatusV2(pb.TestResult_SKIPPED).Build(),
 		// Execution Errored
-		baseBuilder().WithModuleName("m2").WithCaseName("execution_errored_test").WithStatusV2(pb.TestResult_EXECUTION_ERRORED).Build(),
+		baseBuilder().WithModuleName("m2").WithModuleScheme("noconfig").WithCaseName("execution_errored_test").WithStatusV2(pb.TestResult_EXECUTION_ERRORED).Build(),
 		// Precluded
-		baseBuilder().WithModuleName("m3").WithCaseName("precluded_test").WithStatusV2(pb.TestResult_PRECLUDED).Build(),
+		baseBuilder().WithModuleName("m3").WithModuleScheme("flat").WithCoarseName("").WithFineName("").WithCaseName("precluded_test").WithStatusV2(pb.TestResult_PRECLUDED).Build(),
 	}
 	exonerations := []*testexonerationsv2.TestExonerationRow{
 		// Exonerate one of the failed tests
@@ -124,6 +124,7 @@ func ExpectedRootInvocationAggregation() *pb.TestAggregation {
 			Level: pb.AggregationLevel_INVOCATION,
 			Id:    &pb.TestIdentifier{},
 		},
+		NextFinerLevel: pb.AggregationLevel_MODULE,
 		VerdictCounts: &pb.TestAggregation_VerdictCounts{
 			Failed:               1,
 			Flaky:                1,
@@ -162,6 +163,7 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
 				},
 			},
+			NextFinerLevel: pb.AggregationLevel_COARSE,
 			VerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Failed:      1,
 				Flaky:       1,
@@ -180,11 +182,12 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 				Level: pb.AggregationLevel_MODULE,
 				Id: &pb.TestIdentifier{
 					ModuleName:        "m2",
-					ModuleScheme:      "junit",
+					ModuleScheme:      "noconfig",
 					ModuleVariant:     pbutil.Variant("key", "value"),
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
 				},
 			},
+			NextFinerLevel: pb.AggregationLevel_COARSE,
 			VerdictCounts: &pb.TestAggregation_VerdictCounts{
 				ExecutionErrored:     1,
 				ExecutionErroredBase: 1,
@@ -196,11 +199,12 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 				Level: pb.AggregationLevel_MODULE,
 				Id: &pb.TestIdentifier{
 					ModuleName:        "m3",
-					ModuleScheme:      "junit",
+					ModuleScheme:      "flat",
 					ModuleVariant:     pbutil.Variant("key", "value"),
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
 				},
 			},
+			NextFinerLevel: pb.AggregationLevel_CASE,
 			VerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Precluded:     1,
 				PrecludedBase: 1,
@@ -217,8 +221,9 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
 				},
 			},
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{},
-			ModuleStatus:  pb.TestAggregation_PENDING,
+			NextFinerLevel: pb.AggregationLevel_COARSE,
+			VerdictCounts:  &pb.TestAggregation_VerdictCounts{},
+			ModuleStatus:   pb.TestAggregation_PENDING,
 		},
 		{
 			Id: &pb.TestIdentifierPrefix{
@@ -230,8 +235,9 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
 				},
 			},
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{},
-			ModuleStatus:  pb.TestAggregation_SKIPPED,
+			NextFinerLevel: pb.AggregationLevel_COARSE,
+			VerdictCounts:  &pb.TestAggregation_VerdictCounts{},
+			ModuleStatus:   pb.TestAggregation_SKIPPED,
 		},
 		{
 			Id: &pb.TestIdentifierPrefix{
@@ -243,8 +249,9 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
 				},
 			},
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{},
-			ModuleStatus:  pb.TestAggregation_CANCELLED,
+			NextFinerLevel: pb.AggregationLevel_COARSE,
+			VerdictCounts:  &pb.TestAggregation_VerdictCounts{},
+			ModuleStatus:   pb.TestAggregation_CANCELLED,
 		},
 	}
 }
@@ -269,6 +276,7 @@ func ExpectedCoarseAggregationsIDOrder() []*pb.TestAggregation {
 					CoarseName:        "c1",
 				},
 			},
+			NextFinerLevel: pb.AggregationLevel_FINE,
 			VerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Failed:     1,
 				Flaky:      1,
@@ -290,6 +298,7 @@ func ExpectedCoarseAggregationsIDOrder() []*pb.TestAggregation {
 					CoarseName:        "c2",
 				},
 			},
+			NextFinerLevel: pb.AggregationLevel_FINE,
 			VerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Skipped:     1,
 				SkippedBase: 1,
@@ -300,12 +309,13 @@ func ExpectedCoarseAggregationsIDOrder() []*pb.TestAggregation {
 				Level: pb.AggregationLevel_COARSE,
 				Id: &pb.TestIdentifier{
 					ModuleName:        "m2",
-					ModuleScheme:      "junit",
+					ModuleScheme:      "noconfig",
 					ModuleVariant:     pbutil.Variant("key", "value"),
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
 					CoarseName:        "c1",
 				},
 			},
+			NextFinerLevel: pb.AggregationLevel_FINE,
 			VerdictCounts: &pb.TestAggregation_VerdictCounts{
 				ExecutionErrored:     1,
 				ExecutionErroredBase: 1,
@@ -316,12 +326,13 @@ func ExpectedCoarseAggregationsIDOrder() []*pb.TestAggregation {
 				Level: pb.AggregationLevel_COARSE,
 				Id: &pb.TestIdentifier{
 					ModuleName:        "m3",
-					ModuleScheme:      "junit",
+					ModuleScheme:      "flat",
 					ModuleVariant:     pbutil.Variant("key", "value"),
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
-					CoarseName:        "c1",
+					CoarseName:        "",
 				},
 			},
+			NextFinerLevel: pb.AggregationLevel_CASE,
 			VerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Precluded:     1,
 				PrecludedBase: 1,
@@ -351,6 +362,7 @@ func ExpectedFineAggregationsIDOrder() []*pb.TestAggregation {
 					FineName:          "f1",
 				},
 			},
+			NextFinerLevel: pb.AggregationLevel_CASE,
 			VerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Failed:     1,
 				Passed:     1,
@@ -370,6 +382,7 @@ func ExpectedFineAggregationsIDOrder() []*pb.TestAggregation {
 					FineName:          "f2",
 				},
 			},
+			NextFinerLevel: pb.AggregationLevel_CASE,
 			VerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Exonerated: 1,
 				FailedBase: 1,
@@ -387,6 +400,7 @@ func ExpectedFineAggregationsIDOrder() []*pb.TestAggregation {
 					FineName:          "f3",
 				},
 			},
+			NextFinerLevel: pb.AggregationLevel_CASE,
 			VerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Flaky:     1,
 				FlakyBase: 1,
@@ -404,6 +418,7 @@ func ExpectedFineAggregationsIDOrder() []*pb.TestAggregation {
 					FineName:          "f1",
 				},
 			},
+			NextFinerLevel: pb.AggregationLevel_CASE,
 			VerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Skipped:     1,
 				SkippedBase: 1,
@@ -414,13 +429,14 @@ func ExpectedFineAggregationsIDOrder() []*pb.TestAggregation {
 				Level: pb.AggregationLevel_FINE,
 				Id: &pb.TestIdentifier{
 					ModuleName:        "m2",
-					ModuleScheme:      "junit",
+					ModuleScheme:      "noconfig",
 					ModuleVariant:     pbutil.Variant("key", "value"),
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
 					CoarseName:        "c1",
 					FineName:          "f1",
 				},
 			},
+			NextFinerLevel: pb.AggregationLevel_CASE,
 			VerdictCounts: &pb.TestAggregation_VerdictCounts{
 				ExecutionErrored:     1,
 				ExecutionErroredBase: 1,
@@ -431,13 +447,14 @@ func ExpectedFineAggregationsIDOrder() []*pb.TestAggregation {
 				Level: pb.AggregationLevel_FINE,
 				Id: &pb.TestIdentifier{
 					ModuleName:        "m3",
-					ModuleScheme:      "junit",
+					ModuleScheme:      "flat",
 					ModuleVariant:     pbutil.Variant("key", "value"),
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
-					CoarseName:        "c1",
-					FineName:          "f1",
+					CoarseName:        "",
+					FineName:          "",
 				},
 			},
+			NextFinerLevel: pb.AggregationLevel_CASE,
 			VerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Precluded:     1,
 				PrecludedBase: 1,

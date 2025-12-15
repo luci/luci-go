@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -73,6 +74,10 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 	if err != nil {
 		return "", err
 	}
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return "", err
+	}
 
 	// If you need to dump the query for debugging:
 	// fmt.Printf("Query: %s\n", st.SQL)
@@ -89,9 +94,10 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 			Id:    &pb.TestIdentifier{},
 		}
 		var uiPriority int64
-		var verdictCounts verdictCounts
 		var moduleStatus int64
 		var moduleStatusCounts moduleStatusCounts
+		var verdictCounts verdictCounts
+		var nextFinerLevel pb.AggregationLevel
 		var columns []interface{}
 
 		switch q.Level {
@@ -102,6 +108,7 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 			if err != nil {
 				return err
 			}
+			nextFinerLevel = pb.AggregationLevel_MODULE
 		case pb.AggregationLevel_MODULE:
 			columns = []interface{}{
 				&prefix.Id.ModuleName,
@@ -116,6 +123,7 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 			if err != nil {
 				return err
 			}
+			nextFinerLevel = findNextFinerLevel(cfg, prefix.Id.ModuleScheme, q.Level)
 		case pb.AggregationLevel_COARSE:
 			columns = []interface{}{
 				&prefix.Id.ModuleName,
@@ -130,6 +138,7 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 			if err != nil {
 				return err
 			}
+			nextFinerLevel = findNextFinerLevel(cfg, prefix.Id.ModuleScheme, q.Level)
 		case pb.AggregationLevel_FINE:
 			columns = []interface{}{
 				&prefix.Id.ModuleName,
@@ -145,12 +154,14 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 			if err != nil {
 				return err
 			}
+			nextFinerLevel = pb.AggregationLevel_CASE
 		default:
 			return fmt.Errorf("unknown aggregation level: %v", q.Level)
 		}
 
 		agg := &pb.TestAggregation{
-			Id: prefix,
+			Id:             prefix,
+			NextFinerLevel: nextFinerLevel,
 			VerdictCounts: &pb.TestAggregation_VerdictCounts{
 				// By status after overrides.
 				Failed:           int32(verdictCounts.Failed),
@@ -207,6 +218,35 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 		nextPageToken = ""
 	}
 	return nextPageToken, nil
+}
+
+// findNextFinerLevel finds the next finer aggregation level that would be
+// useful to query for the given aggregation level and scheme.
+// Because not all schemes use all levels of the test hierarchy, it makes sense
+// to skip some levels, especially when drilling-down into aggregations on the
+// UI.
+func findNextFinerLevel(cfg *config.CompiledServiceConfig, scheme string, currentLevel pb.AggregationLevel) pb.AggregationLevel {
+	// Try to lookup the config for the scheme.
+	// Note that this may be nil if the scheme is no longer configured;
+	// in that case we only want to go to the next finer level.
+	schemeConfig := cfg.Schemes[scheme]
+
+	// Go to the next finer level if we can.
+	nextLevel := currentLevel
+	if currentLevel <= pb.AggregationLevel_FINE {
+		nextLevel++
+	}
+	// If the scheme is configured, and the coarse-level is not used by the scheme,
+	// advance past it.
+	if nextLevel == pb.AggregationLevel_COARSE && (schemeConfig != nil && schemeConfig.Coarse == nil) {
+		nextLevel = pb.AggregationLevel_FINE
+	}
+	// If the scheme is configured, and the fine-level is not used by the scheme,
+	// advance past it.
+	if nextLevel == pb.AggregationLevel_FINE && (schemeConfig != nil && schemeConfig.Fine == nil) {
+		nextLevel = pb.AggregationLevel_CASE
+	}
+	return nextLevel
 }
 
 func (q *SingleLevelQuery) buildQuery(pageToken string) (spanner.Statement, error) {
