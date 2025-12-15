@@ -15,7 +15,6 @@
 import { Alert } from '@mui/material';
 import {
   GridColDef,
-  GridRowModel,
   GridRowSelectionModel,
   GridSortModel,
   GridValidRowModel,
@@ -55,12 +54,13 @@ declare module '@mui/x-data-grid' {
   interface ColumnMenuPropsOverrides extends ColumnMenuProps {}
 }
 
-const computeSelectedRows = (
+const computeSelectedRows = <R extends GridValidRowModel>(
   gridSelection: GridRowSelectionModel,
-  rows: readonly GridRowModel[],
-): GridRowModel[] => {
+  rows: readonly R[],
+  getRowId?: (row: R) => string,
+): R[] => {
   const selectedSet = new Set(gridSelection);
-  return rows.filter((r) => selectedSet.has(r.id));
+  return rows.filter((r) => selectedSet.has(getRowId ? getRowId(r) : r.id));
 };
 
 const getOrderByFromSortModel = <R extends GridValidRowModel>(
@@ -207,7 +207,11 @@ export function DeviceTable<R extends GridValidRowModel>({
             totalRowCount: totalRowCount,
           },
           toolbar: {
-            selectedRows: computeSelectedRows(rowSelectionModel, rows),
+            selectedRows: computeSelectedRows(
+              rowSelectionModel,
+              rows,
+              getRowId,
+            ),
             isLoadingColumns: isLoadingColumns,
             resetDefaultColumns: resetDefaultColumns,
             temporaryColumns: temporaryColumns,
