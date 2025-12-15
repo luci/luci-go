@@ -47,6 +47,7 @@ export interface RriGridRow {
   resource_details: string;
   resource_request_target_delivery_date: string;
   resource_request_actual_delivery_date: DateWithOverdueData;
+  slippage: number;
   fulfillment_status: string;
   material_sourcing_actual_delivery_date: DateWithOverdueData;
   build_actual_delivery_date: DateWithOverdueData;
@@ -91,12 +92,12 @@ const getDateWithOverdueData = (
   };
 };
 
+const getOverdueColor = (overdueDays: number) => {
+  return overdueDays < 30 ? 'orange' : 'red';
+};
+
 const renderDateCellWithOverdueIndicator = (date: DateWithOverdueData) => {
   const overdueDays = date.overdue.shiftTo('days').days;
-
-  const getOverdueColor = (overdueDays: number) => {
-    return overdueDays < 30 ? 'orange' : 'red';
-  };
 
   return (
     <>
@@ -109,6 +110,14 @@ const renderDateCellWithOverdueIndicator = (date: DateWithOverdueData) => {
         </span>
       )}
     </>
+  );
+};
+
+const renderSlippageCell = (slippage: number) => {
+  return (
+    <span css={slippage > 0 ? { color: getOverdueColor(slippage) } : undefined}>
+      {slippage}d
+    </span>
   );
 };
 
@@ -200,6 +209,28 @@ export const RRI_COLUMNS = [
         rr.resourceRequestActualDeliveryDate,
         rr.resourceRequestTargetDeliveryDate,
       )),
+    isDefault: true,
+  },
+  {
+    id: 'slippage',
+    gridColDef: {
+      field: 'slippage',
+      headerName: 'Slippage',
+      flex: 0.7,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+      renderCell: (params) =>
+        renderSlippageCell((params.row as RriGridRow).slippage),
+    },
+    assignValue: (rr, row) => {
+      const dateWithOverdueData = getDateWithOverdueData(
+        rr,
+        rr.resourceRequestActualDeliveryDate,
+        rr.resourceRequestTargetDeliveryDate,
+      );
+      row.slippage = dateWithOverdueData.overdue.shiftTo('days').days;
+    },
     isDefault: true,
   },
   {
@@ -425,7 +456,7 @@ export const RRI_COLUMNS = [
 export type ResourceRequestColumnKey = (typeof RRI_COLUMNS)[number]['id'];
 
 export const DEFAULT_SORT_COLUMN: RriColumnDescriptor =
-  RRI_COLUMNS.find((c) => c.id === 'resource_details') ?? RRI_COLUMNS[0];
+  RRI_COLUMNS.find((c) => c.id === 'slippage') ?? RRI_COLUMNS[0];
 
 export const getColumnByField = (
   field: string,

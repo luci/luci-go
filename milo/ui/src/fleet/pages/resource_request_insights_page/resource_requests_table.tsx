@@ -47,7 +47,12 @@ const getOrderByParamFromSortModel = (sortModel: GridSortModel) => {
 
 const getSortModelFromOrderByParam = (orderByParam: string): GridSortItem[] => {
   if (orderByParam === '') {
-    return [];
+    return [
+      {
+        field: DEFAULT_SORT_COLUMN.gridColDef.field,
+        sort: 'desc',
+      },
+    ];
   }
   const [field, sort] = orderByParam.split(' ');
   let actualSort: 'asc' | 'desc' = 'asc';
@@ -64,7 +69,7 @@ const getSortModelFromOrderByParam = (orderByParam: string): GridSortItem[] => {
 
 const getOrderByDto = (sortModel: GridSortModel) => {
   if (sortModel.length !== 1) {
-    return `${DEFAULT_SORT_COLUMN.id}`;
+    return `${DEFAULT_SORT_COLUMN.id} desc`;
   }
   const sortColumn = sortModel[0];
 
