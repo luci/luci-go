@@ -100,6 +100,7 @@ func TestBuild(buildID string) *pb.BuildDescriptor {
 				BuildId:     buildID,
 			},
 		},
+		Url: "https://android-build.googleplex.com/build_explorer/build_details/" + buildID + "/aosp_arm64-userdebug/",
 	}
 }
 

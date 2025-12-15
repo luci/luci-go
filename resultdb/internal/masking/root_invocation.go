@@ -44,8 +44,6 @@ func RootInvocation(r *rootinvocations.RootInvocationRow, cfg *config.CompiledSe
 		LastUpdated:          pbutil.MustTimestampProto(r.LastUpdated),
 		Definition:           r.Definition,
 		Sources:              r.Sources,
-		PrimaryBuild:         r.PrimaryBuild,
-		ExtraBuilds:          r.ExtraBuilds,
 		Tags:                 r.Tags,
 		Properties:           r.Properties,
 		BaselineId:           r.BaselineID,
@@ -57,11 +55,32 @@ func RootInvocation(r *rootinvocations.RootInvocationRow, cfg *config.CompiledSe
 		result.ProducerResource = proto.Clone(r.ProducerResource).(*pb.ProducerResource)
 		result.ProducerResource.Url = producerResourceURL(result.ProducerResource, cfg)
 	}
+	if r.PrimaryBuild != nil {
+		result.PrimaryBuild = buildDescriptorWithURL(r.PrimaryBuild, cfg)
+	}
+	if r.ExtraBuilds != nil {
+		// Clone to avoid modifying the original slice.
+		extraBuildsWithURLs := make([]*pb.BuildDescriptor, len(r.ExtraBuilds))
+		for i, b := range r.ExtraBuilds {
+			extraBuildsWithURLs[i] = buildDescriptorWithURL(b, cfg)
+		}
+		result.ExtraBuilds = extraBuildsWithURLs
+	}
 	if r.FinalizeStartTime.Valid {
 		result.FinalizeStartTime = pbutil.MustTimestampProto(r.FinalizeStartTime.Time)
 	}
 	if r.FinalizeTime.Valid {
 		result.FinalizeTime = pbutil.MustTimestampProto(r.FinalizeTime.Time)
+	}
+	return result
+}
+
+// buildDescriptorWithURL returns a new BuildDescriptor with the URL field set.
+func buildDescriptorWithURL(b *pb.BuildDescriptor, cfg *config.CompiledServiceConfig) *pb.BuildDescriptor {
+	// Clone to avoid modifying the original proto.
+	result := proto.Clone(b).(*pb.BuildDescriptor)
+	if ab := result.GetAndroidBuild(); ab != nil {
+		result.Url = cfg.AndroidBuild.GenerateBuildDescriptorURL(ab)
 	}
 	return result
 }

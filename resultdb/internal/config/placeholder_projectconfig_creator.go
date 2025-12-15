@@ -101,6 +101,11 @@ func CreatePlaceholderServiceConfig() *configpb.Config {
 		},
 		AndroidBuild: &configpb.AndroidBuild{
 			DataRealmPattern: "^(prod|qual-staging)$",
+			DataRealms: map[string]*configpb.AndroidBuild_ByDataRealmConfig{
+				"prod": {
+					FullBuildUrlTemplate: "https://android-build.googleplex.com/build_explorer/build_details/${build_id}/${build_target}/",
+				},
+			},
 		},
 	}
 }

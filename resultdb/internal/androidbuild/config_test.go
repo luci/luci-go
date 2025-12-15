@@ -84,24 +84,22 @@ func TestConfig(t *testing.T) {
 
 		t.Run("GenerateBuildDescriptorURL", func(t *ftt.Test) {
 			t.Run("Config not present", func(t *ftt.Test) {
-				url, err := c.GenerateBuildDescriptorURL(&pb.AndroidBuildDescriptor{
+				url := c.GenerateBuildDescriptorURL(&pb.AndroidBuildDescriptor{
 					DataRealm:   "test",
 					Branch:      "git_main",
 					BuildTarget: "cf_x86_phone-userdebug",
 					BuildId:     "P81983588",
 				})
-				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, url, should.Equal(""))
 			})
 
 			t.Run("Config present for data realm", func(t *ftt.Test) {
-				url, err := c.GenerateBuildDescriptorURL(&pb.AndroidBuildDescriptor{
+				url := c.GenerateBuildDescriptorURL(&pb.AndroidBuildDescriptor{
 					DataRealm:   "prod",
 					Branch:      "git_main",
 					BuildTarget: "cf_x86_phone-userdebug",
 					BuildId:     "P81983588",
 				})
-				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, url, should.Equal("https://android-build.googleplex.com/build_explorer/build_details/P81983588/cf_x86_phone-userdebug/"))
 			})
 		})

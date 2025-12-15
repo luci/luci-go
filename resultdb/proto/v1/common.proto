@@ -620,6 +620,17 @@ message BuildDescriptor {
     // In future, other build definitions, can be defined here,
     // such as those based on buildbucket builds or GCS folders.
   }
+
+  // The URL at which the build can be viewed.
+  //
+  // In case of AndroidBuildDescriptor, generated from data_realm, branch, build_target and build_id
+  // fields using configuration in the ResultDB service configuration.
+  // This field may be blank for builds that do not have a UI that allow viewing.
+  //
+  // Output only.
+  string url = 2 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
 }
 
 // Represents a build from Android Build (go/ab).

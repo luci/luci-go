@@ -71,18 +71,14 @@ func (c *Config) ValidateSubmittedBuild(resource *pb.SubmittedAndroidBuild) erro
 }
 
 // GenerateURL generates a URL for the build descriptor.
-func (c *Config) GenerateBuildDescriptorURL(resource *pb.AndroidBuildDescriptor) (string, error) {
-	if err := c.ValidateBuildDescriptor(resource); err != nil {
-		return "", err
-	}
-
+func (c *Config) GenerateBuildDescriptorURL(resource *pb.AndroidBuildDescriptor) string {
 	cfg := c.DataRealms[resource.DataRealm]
 	if cfg == nil {
-		return "", nil
+		return ""
 	}
 	template := cfg.FullBuildUrlTemplate
 	if template == "" {
-		return "", nil
+		return ""
 	}
 
 	variables := make(map[string]string)
@@ -95,5 +91,5 @@ func (c *Config) GenerateBuildDescriptorURL(resource *pb.AndroidBuildDescriptor)
 	for name, value := range variables {
 		url = strings.ReplaceAll(url, fmt.Sprintf("${%s}", name), value)
 	}
-	return url, nil
+	return url
 }

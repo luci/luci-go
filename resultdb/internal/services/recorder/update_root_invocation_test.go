@@ -492,22 +492,22 @@ func TestUpdateRootInvocation(t *testing.T) {
 		t.Run("e2e", func(t *ftt.Test) {
 			assertResponse := func(rootInv *pb.RootInvocation, expected *pb.RootInvocation) {
 				// Etag is must be different if updated.
-				assert.That(t, rootInv.Etag, should.NotEqual(expected.Etag), truth.LineContext())
-				assert.Loosely(t, rootInv.Etag, should.NotBeEmpty, truth.LineContext())
+				assert.That(t, rootInv.Etag, should.NotEqual(expected.Etag), truth.LineContext(1))
+				assert.Loosely(t, rootInv.Etag, should.NotBeEmpty, truth.LineContext(1))
 				// LastUpdated time must move forward.
-				assert.That(t, rootInv.LastUpdated.AsTime(), should.HappenAfter(expected.LastUpdated.AsTime()), truth.LineContext())
+				assert.That(t, rootInv.LastUpdated.AsTime(), should.HappenAfter(expected.LastUpdated.AsTime()), truth.LineContext(1))
 				// FinalizeStartTime must be set if state is updated.
 				if expected.FinalizationState != pb.RootInvocation_ACTIVE {
-					assert.Loosely(t, rootInv.FinalizeStartTime, should.Match(rootInv.LastUpdated), truth.LineContext())
+					assert.Loosely(t, rootInv.FinalizeStartTime, should.Match(rootInv.LastUpdated), truth.LineContext(1))
 				} else {
-					assert.Loosely(t, rootInv.FinalizeStartTime, should.BeNil, truth.LineContext())
+					assert.Loosely(t, rootInv.FinalizeStartTime, should.BeNil, truth.LineContext(1))
 				}
 				// Match lastUpdated, etag, finalizeStartTime before comparing the full proto.
 				expectedCopy := proto.Clone(expected).(*pb.RootInvocation)
 				expectedCopy.LastUpdated = rootInv.LastUpdated
 				expectedCopy.Etag = rootInv.Etag
 				expectedCopy.FinalizeStartTime = rootInv.FinalizeStartTime
-				assert.That(t, rootInv, should.Match(expectedCopy), truth.LineContext())
+				assert.That(t, rootInv, should.Match(expectedCopy), truth.LineContext(1))
 			}
 
 			assertSpannerRows := func(expectedRow *rootinvocations.RootInvocationRow) {
@@ -623,16 +623,18 @@ func TestUpdateRootInvocation(t *testing.T) {
 					t.Run("update primary_build", func(t *ftt.Test) {
 						t.Run("to non-nil", func(t *ftt.Test) {
 							newPrimaryBuild := testutil.TestBuild("123")
+							newPrimaryBuild.Url = "" // URL is OUTPUT_ONLY and is ordinarily not set in requests.
 							req.UpdateMask.Paths = []string{"primary_build"}
 							req.RootInvocation.PrimaryBuild = newPrimaryBuild
 
 							ri, err := recorder.UpdateRootInvocation(ctx, req)
 							assert.Loosely(t, err, should.BeNil)
-							expectedRootInv.PrimaryBuild = newPrimaryBuild
+							expectedRootInv.PrimaryBuild = testutil.TestBuild("123")
 							assertResponse(ri, expectedRootInv)
 
 							// Validate spanner records are updated.
-							expectedRootInvRow.PrimaryBuild = newPrimaryBuild
+							expectedRootInvRow.PrimaryBuild = testutil.TestBuild("123")
+							expectedRootInvRow.PrimaryBuild.Url = "" // URL is not stored in Spanner.
 							assertSpannerRows(expectedRootInvRow)
 						})
 						t.Run("to nil", func(t *ftt.Test) {
@@ -657,16 +659,18 @@ func TestUpdateRootInvocation(t *testing.T) {
 
 					t.Run("update extra_builds", func(t *ftt.Test) {
 						newExtraBuilds := []*pb.BuildDescriptor{testutil.TestBuild("456")}
+						newExtraBuilds[0].Url = "" // URL is OUTPUT_ONLY and is ordinarily not set in requests.
 						req.UpdateMask.Paths = []string{"extra_builds"}
 						req.RootInvocation.ExtraBuilds = newExtraBuilds
 
 						ri, err := recorder.UpdateRootInvocation(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
-						expectedRootInv.ExtraBuilds = newExtraBuilds
+						expectedRootInv.ExtraBuilds = []*pb.BuildDescriptor{testutil.TestBuild("456")}
 						assertResponse(ri, expectedRootInv)
 
 						// Validate spanner records are updated.
-						expectedRootInvRow.ExtraBuilds = newExtraBuilds
+						expectedRootInvRow.ExtraBuilds = []*pb.BuildDescriptor{testutil.TestBuild("456")}
+						expectedRootInvRow.ExtraBuilds[0].Url = "" // URL is not stored in Spanner.
 						assertSpannerRows(expectedRootInvRow)
 					})
 

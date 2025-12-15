@@ -1175,7 +1175,11 @@ func TestCreateRootInvocation(t *testing.T) {
 				Creator: "user:someone@example.com",
 			})
 			pbutil.PopulateDefinitionHashes(expectedInv.Definition)
+			// URLs are populated according to service configuration
 			expectedInv.ProducerResource.Url = "https://milo-prod/ui/b/1"
+			expectedInv.PrimaryBuild.Url = "https://android-build.googleplex.com/build_explorer/build_details/P1234567890/some-target/"
+			expectedInv.ExtraBuilds[0].Url = "https://android-build.googleplex.com/build_explorer/build_details/P987654321/some-other-target/"
+			expectedInv.ExtraBuilds[1].Url = "https://android-build.googleplex.com/build_explorer/build_details/1234567890/another-other-target/"
 
 			wuID := workunits.ID{
 				RootInvocationID: "u-e2e-success",

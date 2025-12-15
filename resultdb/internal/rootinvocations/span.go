@@ -147,7 +147,7 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 		"CreateRequestId":                         r.CreateRequestID,
 		"ProducerResource":                        spanutil.Compressed(pbutil.MustMarshal(pbutil.RemoveProducerResourceOutputOnlyFields(r.ProducerResource))),
 		"Sources":                                 spanutil.Compressed(pbutil.MustMarshal(r.Sources)),
-		"PrimaryBuild":                            spanutil.Compressed(pbutil.MustMarshal(r.PrimaryBuild)),
+		"PrimaryBuild":                            spanutil.Compressed(pbutil.MustMarshal(removeBuildDescriptorOutputOnlyFields(r.PrimaryBuild))),
 		"ExtraBuilds":                             serializeExtraBuilds(r.ExtraBuilds),
 		"Tags":                                    r.Tags,
 		"Properties":                              spanutil.Compressed(pbutil.MustMarshal(r.Properties)),
@@ -171,6 +171,18 @@ func (r *RootInvocationRow) toMutation() *spanner.Mutation {
 	return spanutil.InsertMap("RootInvocations", row)
 }
 
+func removeBuildDescriptorOutputOnlyFields(primaryBuild *pb.BuildDescriptor) *pb.BuildDescriptor {
+	if primaryBuild == nil {
+		return nil
+	}
+	// The URL field is output only and should not be stored in Spanner.
+	// Rather, it should be computed based on the current service configuration
+	// whenever it is returned.
+	result := proto.Clone(primaryBuild).(*pb.BuildDescriptor)
+	result.Url = ""
+	return result
+}
+
 // serializeExtraBuilds serializes a slice of `*pb.BuildDescriptor`s into
 // a slice of compressed bytes.
 func serializeExtraBuilds(extraBuilds []*pb.BuildDescriptor) [][]byte {
@@ -181,7 +193,7 @@ func serializeExtraBuilds(extraBuilds []*pb.BuildDescriptor) [][]byte {
 
 	result := make([][]byte, len(extraBuilds))
 	for i, b := range extraBuilds {
-		result[i] = spanutil.Compress(pbutil.MustMarshal(b))
+		result[i] = spanutil.Compress(pbutil.MustMarshal(removeBuildDescriptorOutputOnlyFields(b)))
 	}
 	return result
 }
@@ -441,7 +453,7 @@ func (b *MutationBuilder) UpdateSources(sources *pb.Sources) {
 
 // UpdatePrimaryBuild updates the primary build of the root invocation.
 func (b *MutationBuilder) UpdatePrimaryBuild(primaryBuild *pb.BuildDescriptor) {
-	b.values["PrimaryBuild"] = spanutil.Compressed(pbutil.MustMarshal(primaryBuild))
+	b.values["PrimaryBuild"] = spanutil.Compressed(pbutil.MustMarshal(removeBuildDescriptorOutputOnlyFields(primaryBuild)))
 }
 
 // UpdateExtraBuilds updates the extra builds of the root invocation.

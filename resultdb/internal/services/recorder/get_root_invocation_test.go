@@ -74,23 +74,18 @@ func TestGetRootInvocation(t *testing.T) {
 			testutil.MustApply(ctx, t, insert.RootInvocationOnly(testData)...)
 
 			expectedRootInvocation := &pb.RootInvocation{
-				Name:              "rootInvocations/root-inv-id",
-				RootInvocationId:  "root-inv-id",
-				Realm:             realm,
-				FinalizationState: pb.RootInvocation_FINALIZED,
-				State:             pb.RootInvocation_FAILED,
-				SummaryMarkdown:   "The FooBar returned false when it was expected to return true.",
-				CreateTime:        pbutil.MustTimestampProto(testData.CreateTime),
-				Creator:           testData.CreatedBy,
-				LastUpdated:       pbutil.MustTimestampProto(testData.LastUpdated),
-				FinalizeTime:      pbutil.MustTimestampProto(testData.FinalizeTime.Time),
-				FinalizeStartTime: pbutil.MustTimestampProto(testData.FinalizeStartTime.Time),
-				ProducerResource: &pb.ProducerResource{
-					System:    "buildbucket",
-					DataRealm: "prod",
-					Name:      "builds/654",
-					Url:       "https://milo-prod/ui/b/654",
-				},
+				Name:                 "rootInvocations/root-inv-id",
+				RootInvocationId:     "root-inv-id",
+				Realm:                realm,
+				FinalizationState:    pb.RootInvocation_FINALIZED,
+				State:                pb.RootInvocation_FAILED,
+				SummaryMarkdown:      "The FooBar returned false when it was expected to return true.",
+				CreateTime:           pbutil.MustTimestampProto(testData.CreateTime),
+				Creator:              testData.CreatedBy,
+				LastUpdated:          pbutil.MustTimestampProto(testData.LastUpdated),
+				FinalizeTime:         pbutil.MustTimestampProto(testData.FinalizeTime.Time),
+				FinalizeStartTime:    pbutil.MustTimestampProto(testData.FinalizeStartTime.Time),
+				ProducerResource:     testData.ProducerResource,
 				Definition:           testData.Definition,
 				Sources:              testData.Sources,
 				PrimaryBuild:         testData.PrimaryBuild,
@@ -101,6 +96,10 @@ func TestGetRootInvocation(t *testing.T) {
 				StreamingExportState: testData.StreamingExportState,
 				Etag:                 `W/"2025-04-26T01:02:03.000004Z"`,
 			}
+			// URLs are populated according to service configuration.
+			testData.ProducerResource.Url = "https://milo-prod/ui/b/654"
+			testData.PrimaryBuild.Url = "https://android-build.googleplex.com/build_explorer/build_details/P1234567890/some-target/"
+			testData.ExtraBuilds[0].Url = "https://android-build.googleplex.com/build_explorer/build_details/9876543210/second-target/"
 
 			rsp, err := recorder.GetRootInvocation(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
