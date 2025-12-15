@@ -16,6 +16,7 @@ package aip160
 
 import (
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -64,6 +65,51 @@ func TestArgParsers(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 					arg := filter.Expression.Sequences[0].Factors[0].Terms[0].Simple.Restriction.Arg
 					val, err := CoerceArgToBoolConstant(arg)
+					if tc.errString != "" {
+						assert.Loosely(t, err, should.ErrLike(tc.errString))
+					} else {
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, val, should.Equal(tc.expected))
+					}
+				})
+			}
+		})
+
+		t.Run("CoerceArgToDurationConstant", func(t *ftt.Test) {
+			cases := []struct {
+				name      string
+				filter    string
+				expected  time.Duration
+				errString string
+			}{
+				{
+					name:     "valid duration",
+					filter:   "foo = 1s",
+					expected: time.Second,
+				},
+				{
+					name:     "valid duration with decimals",
+					filter:   "foo = 1.5s",
+					expected: 1500 * time.Millisecond,
+				},
+				{
+					name:      "quoted duration",
+					filter:    `foo = "1s"`,
+					errString: `durations must be an unquoted number with 's' suffix like 1.2s but got a quoted string "1s"`,
+				},
+				{
+					name:      "invalid duration format",
+					filter:    "foo = 1",
+					errString: `"1" is not a valid duration, expected a number followed by 's'`,
+				},
+			}
+
+			for _, tc := range cases {
+				t.Run(tc.name, func(t *ftt.Test) {
+					filter, err := ParseFilter(tc.filter)
+					assert.Loosely(t, err, should.BeNil)
+					arg := filter.Expression.Sequences[0].Factors[0].Terms[0].Simple.Restriction.Arg
+					val, err := CoerceArgToDurationConstant(arg)
 					if tc.errString != "" {
 						assert.Loosely(t, err, should.ErrLike(tc.errString))
 					} else {

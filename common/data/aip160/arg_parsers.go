@@ -16,8 +16,10 @@ package aip160
 
 import (
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
+	"time"
 )
 
 // coerceComparableToImplicitFilter attempts to return the implicit filter
@@ -65,6 +67,51 @@ func CoerceArgToBoolConstant(arg *Arg) (bool, error) {
 		return false, nil
 	}
 	return false, fmt.Errorf("expected the unquoted literal 'true' or 'false' (case-sensitive) but found %q", cmp.Member.Value.Value)
+}
+
+// CoerceArgToDurationConstant attempts to extract a duration constant from
+// an Arg AST node. The AST node must be the unquoted duration value, like
+// `1.2s`.
+func CoerceArgToDurationConstant(arg *Arg) (time.Duration, error) {
+	comparable, err := coerceArgToComparable(arg)
+	if err != nil {
+		return 0, err
+	}
+	if comparable.Member == nil {
+		return 0, fmt.Errorf("invalid comparable")
+	}
+	// As per go/ccfe-aip-160#literals, durations should be unquoted.
+	if comparable.Member.Value.Quoted {
+		return 0, fmt.Errorf(`durations must be an unquoted number with 's' suffix like 1.2s but got a quoted string %q`, comparable.Member.Value.Value)
+	}
+	input := comparable.Member.Value.Value
+	if len(comparable.Member.Fields) > 0 {
+		if len(comparable.Member.Fields) > 1 || comparable.Member.Fields[0].Quoted {
+			return 0, fmt.Errorf(`expected a duration like 1.2s, but got %q`, comparable.Member.Input())
+		}
+		input += "." + comparable.Member.Fields[0].Value
+	}
+	return parseDuration(input)
+}
+
+var durationRE = regexp.MustCompile(`^[0-9]+(\.[0-9]{1,9})?s$`)
+
+func parseDuration(value string) (time.Duration, error) {
+	// Parse duration.
+	if !durationRE.MatchString(value) {
+		return 0, fmt.Errorf("%q is not a valid duration, expected a number followed by 's' (e.g. \"20.1s\"), allowed pattern %q", value, durationRE)
+	}
+	// Golang durations support a superset of the allowed AIP-160 duration syntax.
+	// Moreover, Golang durations are represented as INT64 nanoseconds which gives
+	// the required nanosecond precision of go/ccfe-aip-160#literals.
+	duration, err := time.ParseDuration(value)
+	if err != nil {
+		return 0, fmt.Errorf("%q is not a valid duration", value)
+	}
+	if duration < 0 {
+		return 0, fmt.Errorf("%q is not a valid duration, duration cannot be negative", value)
+	}
+	return duration, nil
 }
 
 type EnumDefinition struct {
