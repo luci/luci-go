@@ -15,12 +15,10 @@
 package rpc
 
 import (
-	"context"
 	"math/rand"
 	"testing"
 
 	"golang.org/x/oauth2"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -38,6 +36,7 @@ import (
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -74,10 +73,10 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 	t.Run("ok", func(t *testing.T) {
 		const planID = "1234"
 
-		orch := &fakeOrchestratorClient{
-			planID: planID,
-			token:  "creator-token",
-			queryNodesResponse: mockQueryNodesResponse(
+		orch := &turboci.FakeOrchestratorClient{
+			PlanID: planID,
+			Token:  "creator-token",
+			QueryNodesResponse: mockQueryNodesResponse(
 				planID,
 				rootBuildStageID,
 				orchestratorpb.StageState_STAGE_STATE_ATTEMPTING,
@@ -98,13 +97,13 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 		err := launchTurboCIRoot(ctx, req, build, orch)
 		assert.NoErr(t, err)
 
-		assert.That(t, orch.lastCreateCall, should.Match(orchestratorpb.CreateWorkPlanRequest_builder{
+		assert.That(t, orch.LastCreateCall, should.Match(orchestratorpb.CreateWorkPlanRequest_builder{
 			Realm:          proto.String("project:bucket"),
 			IdempotencyKey: proto.String("QHLI8/5YpFrfwDcIkQ4gFBZmltK8ttPTZS0tCdfdIrY="),
 		}.Build()))
 
-		assert.That(t, orch.lastWriteNodesCall, should.Match(orchestratorpb.WriteNodesRequest_builder{
-			Token: proto.String(orch.token),
+		assert.That(t, orch.LastWriteNodesCall, should.Match(orchestratorpb.WriteNodesRequest_builder{
+			Token: proto.String(orch.Token),
 			Stages: []*orchestratorpb.WriteNodesRequest_StageWrite{
 				orchestratorpb.WriteNodesRequest_StageWrite_builder{
 					Identifier: idspb.Stage_builder{
@@ -120,8 +119,8 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 			},
 		}.Build()))
 
-		assert.That(t, orch.lastQueryNodesRequest, should.Match(orchestratorpb.QueryNodesRequest_builder{
-			Token: proto.String(orch.token),
+		assert.That(t, orch.LastQueryNodesRequest, should.Match(orchestratorpb.QueryNodesRequest_builder{
+			Token: proto.String(orch.Token),
 			TypeInfo: orchestratorpb.QueryNodesRequest_TypeInfo_builder{
 				Wanted: []string{"type.googleapis.com/buildbucket.v2.BuildStageDetails"},
 			}.Build(),
@@ -226,36 +225,4 @@ func buildStageDetails(buildID int64, buildErr error) *orchestratorpb.Value {
 		}
 	}
 	return data.Value(msg)
-}
-
-type fakeOrchestratorClient struct {
-	lastCreateCall        *orchestratorpb.CreateWorkPlanRequest
-	lastWriteNodesCall    *orchestratorpb.WriteNodesRequest
-	lastQueryNodesRequest *orchestratorpb.QueryNodesRequest
-
-	planID string
-	token  string
-
-	queryNodesResponse *orchestratorpb.QueryNodesResponse
-	err                error
-}
-
-func (o *fakeOrchestratorClient) CreateWorkPlan(ctx context.Context, in *orchestratorpb.CreateWorkPlanRequest, opts ...grpc.CallOption) (*orchestratorpb.CreateWorkPlanResponse, error) {
-	o.lastCreateCall = proto.Clone(in).(*orchestratorpb.CreateWorkPlanRequest)
-	return orchestratorpb.CreateWorkPlanResponse_builder{
-		Identifier: idspb.WorkPlan_builder{
-			Id: proto.String(o.planID),
-		}.Build(),
-		CreatorToken: proto.String(o.token),
-	}.Build(), nil
-}
-
-func (o *fakeOrchestratorClient) WriteNodes(ctx context.Context, in *orchestratorpb.WriteNodesRequest, opts ...grpc.CallOption) (*orchestratorpb.WriteNodesResponse, error) {
-	o.lastWriteNodesCall = proto.Clone(in).(*orchestratorpb.WriteNodesRequest)
-	return &orchestratorpb.WriteNodesResponse{}, nil
-}
-
-func (o *fakeOrchestratorClient) QueryNodes(ctx context.Context, in *orchestratorpb.QueryNodesRequest, opts ...grpc.CallOption) (*orchestratorpb.QueryNodesResponse, error) {
-	o.lastQueryNodesRequest = proto.Clone(in).(*orchestratorpb.QueryNodesRequest)
-	return o.queryNodesResponse, o.err
 }
