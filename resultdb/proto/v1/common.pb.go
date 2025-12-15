@@ -965,10 +965,13 @@ type SubmittedAndroidBuild struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The Android Build API data realm.
-	// This is usually `prod`.
+	// This is usually `prod`. For a list of available data realms, see
+	// https://chrome-internal.googlesource.com/infradata/config/+/HEAD/configs/luci-resultdb/config.cfg.
+	// Required.
 	DataRealm string `protobuf:"bytes,1,opt,name=data_realm,json=dataRealm,proto3" json:"data_realm,omitempty"`
 	// The Android Build branch.
 	// E.g. `git_main`.
+	// Required.
 	Branch string `protobuf:"bytes,2,opt,name=branch,proto3" json:"branch,omitempty"`
 	// The build ID of the *submitted* build.
 	//
@@ -979,6 +982,7 @@ type SubmittedAndroidBuild struct {
 	// - A higher number means a newer version of sources were used in a build.
 	// - An equal number means the same version of sources used in a build.
 	// - A smaller number means an earlier version of sources were used in a build.
+	// Required.
 	BuildId int64 `protobuf:"varint,3,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
 }
 
@@ -1403,7 +1407,8 @@ type AndroidBuildBranch struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The Android Build API data realm.
-	// This is usually `prod`.
+	// This is usually `prod`. For a list of available data realms, see
+	// https://chrome-internal.googlesource.com/infradata/config/+/HEAD/configs/luci-resultdb/config.cfg.
 	DataRealm string `protobuf:"bytes,1,opt,name=data_realm,json=dataRealm,proto3" json:"data_realm,omitempty"`
 	// The Android Build branch.
 	// E.g. `git_main`.
@@ -1641,7 +1646,9 @@ type AndroidBuildDescriptor struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The Android Build API data realm.
-	// This is usually `prod`.
+	//
+	// This is usually `prod`. For a list of available data realms, see
+	// https://chrome-internal.googlesource.com/infradata/config/+/HEAD/configs/luci-resultdb/config.cfg.
 	// Required.
 	DataRealm string `protobuf:"bytes,1,opt,name=data_realm,json=dataRealm,proto3" json:"data_realm,omitempty"`
 	// The branch. For example, `git_main`.
@@ -1744,7 +1751,7 @@ type ProducerResource struct {
 	// Values should use kebab-case as per https://google.aip.dev/126#alternatives.
 	//
 	// Please contact ResultDB owners or update ResultDB config in
-	// https://chrome-internal.googlesource.com/infradata/config/+/refs/heads/main/configs/
+	// https://chrome-internal.googlesource.com/infradata/config/+/HEAD/configs/luci-resultdb/config.cfg
 	// when adding a new system to specify:
 	// - the expected data realm and resource name formats, and
 	// - configure how URLs for backlinking should be generated.
@@ -1782,6 +1789,9 @@ type ProducerResource struct {
 	// - swarming: `tasks/deadbeef`
 	// - buildbucket: 'builds/1234567890`
 	//
+	// Producing systems can register their expected formats via a `producer_systems` entry in
+	// https://chrome-internal.googlesource.com/infradata/config/+/HEAD/configs/luci-resultdb/config.cfg
+	//
 	// Total length limited to 1000 bytes. Resource names must be in Unicode
 	// normalization form C. Required.
 	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
@@ -1790,6 +1800,10 @@ type ProducerResource struct {
 	// Generated from data_realm and name fields using producer system-specific configuration
 	// in the ResultDB service configuration. This field may be blank for producing systems
 	// that do not have a UI.
+	//
+	// Producing systems can specify how URLs for backlinking should be generated via a
+	// `producer_systems` entry in
+	// https://chrome-internal.googlesource.com/infradata/config/+/HEAD/configs/luci-resultdb/config.cfg
 	//
 	// Output only.
 	Url string `protobuf:"bytes,4,opt,name=url,proto3" json:"url,omitempty"`

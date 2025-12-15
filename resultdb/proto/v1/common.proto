@@ -409,11 +409,14 @@ message GerritChange {
 // build that uses only changes that have been submitted to a branch.
 message SubmittedAndroidBuild {
   // The Android Build API data realm.
-  // This is usually `prod`.
+  // This is usually `prod`. For a list of available data realms, see
+  // https://chrome-internal.googlesource.com/infradata/config/+/HEAD/configs/luci-resultdb/config.cfg.
+  // Required.
   string data_realm = 1;
 
   // The Android Build branch.
   // E.g. `git_main`.
+  // Required.
   string branch = 2;
 
   // The build ID of the *submitted* build.
@@ -425,6 +428,7 @@ message SubmittedAndroidBuild {
   // - A higher number means a newer version of sources were used in a build.
   // - An equal number means the same version of sources used in a build.
   // - A smaller number means an earlier version of sources were used in a build.
+  // Required.
   int64 build_id = 3;
 }
 
@@ -513,7 +517,8 @@ message GitilesRef {
 // Represents a branch in Android Build API.
 message AndroidBuildBranch {
   // The Android Build API data realm.
-  // This is usually `prod`.
+  // This is usually `prod`. For a list of available data realms, see
+  // https://chrome-internal.googlesource.com/infradata/config/+/HEAD/configs/luci-resultdb/config.cfg.
   string data_realm = 1;
 
   // The Android Build branch.
@@ -633,7 +638,9 @@ message BuildDescriptor {
 //   otherwise leave it blank.
 message AndroidBuildDescriptor {
   // The Android Build API data realm.
-  // This is usually `prod`.
+  //
+  // This is usually `prod`. For a list of available data realms, see
+  // https://chrome-internal.googlesource.com/infradata/config/+/HEAD/configs/luci-resultdb/config.cfg.
   // Required.
   string data_realm = 1;
 
@@ -675,7 +682,7 @@ message ProducerResource {
   // Values should use kebab-case as per https://google.aip.dev/126#alternatives.
   //
   // Please contact ResultDB owners or update ResultDB config in
-  // https://chrome-internal.googlesource.com/infradata/config/+/refs/heads/main/configs/
+  // https://chrome-internal.googlesource.com/infradata/config/+/HEAD/configs/luci-resultdb/config.cfg
   // when adding a new system to specify:
   // - the expected data realm and resource name formats, and
   // - configure how URLs for backlinking should be generated.
@@ -715,6 +722,9 @@ message ProducerResource {
   // - swarming: `tasks/deadbeef`
   // - buildbucket: 'builds/1234567890`
   //
+  // Producing systems can register their expected formats via a `producer_systems` entry in
+  // https://chrome-internal.googlesource.com/infradata/config/+/HEAD/configs/luci-resultdb/config.cfg
+  //
   // Total length limited to 1000 bytes. Resource names must be in Unicode
   // normalization form C. Required.
   string name = 3;
@@ -724,6 +734,10 @@ message ProducerResource {
   // Generated from data_realm and name fields using producer system-specific configuration
   // in the ResultDB service configuration. This field may be blank for producing systems
   // that do not have a UI.
+  //
+  // Producing systems can specify how URLs for backlinking should be generated via a
+  // `producer_systems` entry in
+  // https://chrome-internal.googlesource.com/infradata/config/+/HEAD/configs/luci-resultdb/config.cfg
   //
   // Output only.
   string url = 4 [
