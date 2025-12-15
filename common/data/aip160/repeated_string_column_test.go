@@ -43,15 +43,15 @@ func TestRepeatedStringColumn(t *testing.T) {
 		})
 
 		t.Run("argument is invalid", func(t *ftt.Test) {
-			filter, err := ParseFilter("array:a.b")
+			filter, err := ParseFilter(`array:somevalue`)
 			assert.Loosely(t, err, should.BeNil)
 
 			_, _, err = table.WhereClause(filter, "T", "p_")
-			assert.Loosely(t, err, should.ErrLike(`argument for field "array": fields (using '.') not implemented yet`))
+			assert.Loosely(t, err, should.ErrLike(`argument for field "array": expected a quoted ("") string literal but got possible field reference "somevalue", did you mean to wrap the value in quotes?`))
 		})
 
 		t.Run("operator not implemented", func(t *ftt.Test) {
-			filter, err := ParseFilter("array = 1")
+			filter, err := ParseFilter(`array = "somevalue"`)
 			assert.Loosely(t, err, should.BeNil)
 
 			_, _, err = table.WhereClause(filter, "T", "p_")

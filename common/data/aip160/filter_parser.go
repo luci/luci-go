@@ -395,14 +395,14 @@ func (v *Comparable) String() string {
 //
 // Example: `expr.type_map.1.type`
 type Member struct {
-	Value  string
-	Fields []string
+	Value  *Value
+	Fields []*Value
 }
 
 func (v *Member) String() string {
 	var s strings.Builder
 	s.WriteString("member{")
-	s.Write([]byte(strconv.Quote(v.Value)))
+	s.WriteString(v.Value.String())
 	if len(v.Fields) > 0 {
 		s.WriteString(", {")
 	}
@@ -410,10 +410,62 @@ func (v *Member) String() string {
 		if i > 0 {
 			s.WriteString(",")
 		}
-		s.WriteString(strconv.Quote(c))
+		s.WriteString(c.String())
 	}
-	s.WriteString("}}")
+	if len(v.Fields) > 0 {
+		s.WriteString("}")
+	}
+	s.WriteString("}")
 	return s.String()
+}
+
+// Input returns the input text used to produce the value, for used in errors.
+func (v Member) Input() string {
+	var s strings.Builder
+	if v.Value != nil {
+		s.WriteString(v.Value.Input())
+	}
+	for _, f := range v.Fields {
+		s.WriteString(".")
+		s.WriteString(f.Input())
+	}
+	return s.String()
+}
+
+// Value may either be a TEXT or STRING.
+//
+// TEXT is a free-form set of characters without whitespace (WS)
+// or . (DOT) within it. The text may represent a variable, string,
+// number, boolean, or alternative literal value and must be handled
+// in a manner consistent with the service's intention.
+//
+// STRING is a quoted string which may or may not contain a special
+// wildcard `*` character at the beginning or end of the string to
+// indicate a prefix or suffix-based search within a restriction.
+type Value struct {
+	Quoted bool
+	Value  string
+}
+
+func (v Value) String() string {
+	var s strings.Builder
+	s.WriteString("value{")
+	if v.Quoted {
+		s.WriteString("quoted,")
+	}
+	s.WriteString(strconv.Quote(v.Value))
+	s.WriteString("}")
+	return s.String()
+}
+
+// Input returns the input text used to produce the value, for used in errors.
+func (v Value) Input() string {
+	if v.Quoted {
+		// Note this is currently not identical as it may not reproduce the
+		// exact set of escape sequences but it is close enough.
+		return strconv.Quote(v.Value)
+	}
+	return v.Value
 }
 
 // Parse an AIP-160 filter string into an AST.
@@ -618,6 +670,40 @@ func (p *parser) comparable() (*Comparable, error) {
 }
 
 func (p *parser) member() (*Member, error) {
+	v, err := p.value()
+	if err != nil {
+		return nil, err
+	}
+	if v == nil {
+		return nil, nil
+	}
+
+	m := &Member{Value: v}
+	for {
+		dot, err := p.accept(kindDot)
+		if err != nil {
+			return nil, err
+		}
+		if dot == nil {
+			break
+		}
+
+		v, err := p.value()
+		if err != nil {
+			return nil, err
+		}
+		if v == nil {
+			return nil, fmt.Errorf("expected value after '.'")
+		}
+
+		m.Fields = append(m.Fields, v)
+	}
+	return m, nil
+}
+
+// value attempts to consume a Value from the input tokens.
+// If no value can be read, returns nil.
+func (p *parser) value() (*Value, error) {
 	v, err := p.accept(kindString)
 	if err != nil {
 		return nil, err
@@ -627,7 +713,7 @@ func (p *parser) member() (*Member, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error unquoting string: %w", err)
 		}
-		return &Member{Value: v.value}, nil
+		return &Value{Quoted: true, Value: v.value}, nil
 	}
 
 	v, err = p.accept(kindText)
@@ -637,36 +723,7 @@ func (p *parser) member() (*Member, error) {
 	if v == nil {
 		return nil, nil
 	}
-	m := &Member{Value: v.value}
-	for {
-		dot, err := p.accept(kindDot)
-		if err != nil {
-			return nil, err
-		}
-		if dot == nil {
-			break
-		}
-		f, err := p.accept(kindText)
-		if err != nil {
-			return nil, err
-		}
-		if f == nil {
-			f, err = p.accept(kindString)
-			if err != nil {
-				return nil, err
-			}
-			if f == nil {
-				return nil, fmt.Errorf("expected field name after '.'")
-			}
-
-			f.value, err = strconv.Unquote(f.value)
-			if err != nil {
-				return nil, err
-			}
-		}
-		m.Fields = append(m.Fields, f.value)
-	}
-	return m, nil
+	return &Value{Value: v.value}, nil
 }
 
 func (p *parser) composite() (*Expression, error) {

@@ -156,12 +156,7 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		return "", fmt.Errorf("invalid comparable")
 	}
 	if restriction.Comparator == "" {
-		if len(restriction.Comparable.Member.Fields) > 0 {
-			value := restriction.Comparable.Member.Value
-			fields := strings.Join(restriction.Comparable.Member.Fields, ".")
-			return "", fmt.Errorf("fields are not allowed without an operator, try wrapping %s.%s in double quotes: \"%s.%s\"", value, fields, value, fields)
-		}
-		arg, err := coerceComparableToConstant(restriction.Comparable)
+		arg, err := coerceComparableToImplicitFilter(restriction.Comparable)
 		if err != nil {
 			return "", err
 		}
@@ -182,40 +177,25 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		}
 		return "(" + strings.Join(clauses, " OR ") + ")", nil
 	}
-	column, err := w.table.FilterableFieldByFieldPath(aip132.NewFieldPath(restriction.Comparable.Member.Value))
+	if restriction.Comparable.Member.Value.Quoted {
+		return "", fmt.Errorf("expected a field name on the left hand side of a restriction, got the string literal %q", restriction.Comparable.Member.Value)
+	}
+	column, err := w.table.FilterableFieldByFieldPath(aip132.NewFieldPath(restriction.Comparable.Member.Value.Value))
 	if err != nil {
 		return "", err
 	}
+	var nestedFields []string
+	for _, fld := range restriction.Comparable.Member.Fields {
+		nestedFields = append(nestedFields, fld.Value)
+	}
+
 	context := RestrictionContext{
 		FieldPath:    column.fieldPath,
-		NestedFields: restriction.Comparable.Member.Fields,
+		NestedFields: nestedFields,
 		Comparator:   restriction.Comparator,
 		Arg:          restriction.Arg,
 	}
 	return column.backend.RestrictionQuery(context, w)
-}
-
-// CoarceArgToConstant attempts to return the constant value of an argument.
-// If the argument is a composite expression or reference to a field, it
-// will return an error.
-func CoarceArgToConstant(arg *Arg) (string, error) {
-	if arg.Composite != nil {
-		return "", fmt.Errorf("composite expressions in arguments not supported yet")
-	}
-	if arg.Comparable == nil {
-		return "", fmt.Errorf("missing comparable in argument")
-	}
-	return coerceComparableToConstant(arg.Comparable)
-}
-
-func coerceComparableToConstant(comparable *Comparable) (string, error) {
-	if comparable.Member == nil {
-		return "", fmt.Errorf("invalid comparable")
-	}
-	if len(comparable.Member.Fields) > 0 {
-		return "", fmt.Errorf("fields (using '.') not implemented yet")
-	}
-	return comparable.Member.Value, nil
 }
 
 // quoteLike turns a literal string into an escaped like expression.

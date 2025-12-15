@@ -16,7 +16,6 @@ package aip160
 
 import (
 	"fmt"
-	"strings"
 )
 
 // boolColumn implements FieldBackend for boolean fields stored as a BOOL database column.
@@ -29,25 +28,20 @@ func (b *BoolColumn) RestrictionQuery(restriction RestrictionContext, g Generato
 	if len(restriction.NestedFields) > 0 {
 		return "", FieldsUnsupportedError(restriction.FieldPath)
 	}
-	argValueUnsafe, err := CoarceArgToConstant(restriction.Arg)
+	argValue, err := CoerceArgToBoolConstant(restriction.Arg)
 	if err != nil {
 		return "", fmt.Errorf("argument for field %q: %w", restriction.FieldPath.String(), err)
 	}
-
-	argValueSafe := ""
-	if strings.EqualFold(argValueUnsafe, "true") {
-		argValueSafe = "TRUE"
-	} else if strings.EqualFold(argValueUnsafe, "false") {
-		argValueSafe = "FALSE"
-	} else {
-		return "", fmt.Errorf("only TRUE or FALSE can be specified as the value for a boolean field")
+	dbValue := "FALSE"
+	if argValue {
+		dbValue = "TRUE"
 	}
 
 	switch restriction.Comparator {
 	case "=":
-		return fmt.Sprintf("(%s = %s)", g.ColumnReference(b.databaseName), argValueSafe), nil
+		return fmt.Sprintf("(%s = %s)", g.ColumnReference(b.databaseName), dbValue), nil
 	case "!=":
-		return fmt.Sprintf("(%s <> %s)", g.ColumnReference(b.databaseName), argValueSafe), nil
+		return fmt.Sprintf("(%s <> %s)", g.ColumnReference(b.databaseName), dbValue), nil
 	default:
 		return "", OperatorNotImplementedError(restriction.Comparator, restriction.FieldPath, "BOOL")
 	}

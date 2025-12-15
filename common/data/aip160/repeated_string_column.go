@@ -27,7 +27,7 @@ func (r *RepeatedStringColumn) RestrictionQuery(restriction RestrictionContext, 
 	if len(restriction.NestedFields) > 0 {
 		return "", FieldsUnsupportedError(restriction.FieldPath)
 	}
-	argValueUnsafe, err := CoarceArgToConstant(restriction.Arg)
+	argValueUnsafe, err := CoerceArgToStringConstant(restriction.Arg)
 	if err != nil {
 		return "", fmt.Errorf("argument for field %q: %w", restriction.FieldPath.String(), err)
 	}

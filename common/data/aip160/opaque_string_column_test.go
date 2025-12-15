@@ -35,7 +35,7 @@ func TestOpaqueStringColumn(t *testing.T) {
 		).Build()
 
 		t.Run("WithEncodeFunction filter substituted", func(t *ftt.Test) {
-			filter, err := ParseFilter("qux=somevalue")
+			filter, err := ParseFilter(`qux="somevalue"`)
 			assert.Loosely(t, err, should.BeNil)
 
 			result, pars, err := table.WhereClause(filter, "T", "p_")
@@ -54,7 +54,7 @@ func TestOpaqueStringColumn(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			_, _, err = table.WhereClause(filter, "T", "p_")
-			assert.Loosely(t, err, should.ErrLike(`operator ":" not implemented for field "qux" of type OPAQUE STRING`))
+			assert.Loosely(t, err, should.ErrLike(`argument for field "qux": expected a quoted ("") string literal but got possible field reference "some", did you mean to wrap the value in quotes?`))
 		})
 	})
 }

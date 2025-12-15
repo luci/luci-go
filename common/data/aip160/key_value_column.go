@@ -44,7 +44,7 @@ func (k *KeyValueColumn) RestrictionQuery(restriction RestrictionContext, g Gene
 	columnDatabaseName := g.ColumnReference(k.databaseName)
 	keyUnsafe := restriction.NestedFields[0]
 	// argValueUnsafe is user provided input and can only be used in bind parameters, never in the raw SQL string.
-	argValueUnsafe, err := CoarceArgToConstant(restriction.Arg)
+	argValueUnsafe, err := CoerceArgToStringConstant(restriction.Arg)
 	if err != nil {
 		segments := append([]string{}, restriction.FieldPath.GetSegments()...)
 		segments = append(segments, keyUnsafe)

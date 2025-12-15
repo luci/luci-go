@@ -68,6 +68,13 @@ type RestrictionContext struct {
 type ImplicitRestrictionContext struct {
 	// The raw string value from the filter, it should not be used directly in the
 	// generated SQL.
+	//
+	// We follow the convention that implicit filters are only ever be interpreted
+	// as a string, not a bool (see https://google.aip.dev/160#comparison-operators
+	// "The identifiers true, false ... shall only carry intrinsic meaning in the context
+	// of a type field reference"), integer, enum or duration. If we want to change
+	// this, we should communicate here whether the value here was quoted (which
+	// precludes its interpretation as a number, bool or duration).
 	ArgValueUnsafe string
 }
 

@@ -38,7 +38,7 @@ func TestWhereClause(t *testing.T) {
 		})
 
 		t.Run("Complex filter", func(t *ftt.Test) {
-			filter, err := ParseFilter("implicit (foo=explicitone) OR -bar=explicittwo AND foo!=explicitthree OR baz:explicitfour")
+			filter, err := ParseFilter("implicit (foo=\"explicitone\") OR -bar=\"explicittwo\" AND foo!=\"explicitthree\" OR baz:\"explicitfour\"")
 			assert.Loosely(t, err, should.BeNil)
 
 			result, pars, err := table.WhereClause(filter, "T", "p_")

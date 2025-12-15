@@ -30,7 +30,7 @@ func TestStringColumn(t *testing.T) {
 		).Build()
 
 		t.Run("has operator", func(t *ftt.Test) {
-			filter, err := ParseFilter("foo:somevalue")
+			filter, err := ParseFilter(`foo:"somevalue"`)
 			assert.Loosely(t, err, should.BeNil)
 
 			result, pars, err := table.WhereClause(filter, "T", "p_")
@@ -45,7 +45,7 @@ func TestStringColumn(t *testing.T) {
 		})
 
 		t.Run("equals operator", func(t *ftt.Test) {
-			filter, err := ParseFilter("foo = somevalue")
+			filter, err := ParseFilter(`foo = "somevalue"`)
 			assert.Loosely(t, err, should.BeNil)
 
 			result, pars, err := table.WhereClause(filter, "T", "p_")
@@ -60,7 +60,7 @@ func TestStringColumn(t *testing.T) {
 		})
 
 		t.Run("not equals operator", func(t *ftt.Test) {
-			filter, err := ParseFilter("foo != somevalue")
+			filter, err := ParseFilter(`foo != "somevalue"`)
 			assert.Loosely(t, err, should.BeNil)
 
 			result, pars, err := table.WhereClause(filter, "T", "p_")
@@ -75,7 +75,7 @@ func TestStringColumn(t *testing.T) {
 		})
 
 		t.Run("implicit match operator", func(t *ftt.Test) {
-			filter, err := ParseFilter("somevalue")
+			filter, err := ParseFilter(`somevalue`)
 			assert.Loosely(t, err, should.BeNil)
 
 			result, pars, err := table.WhereClause(filter, "T", "p_")
@@ -94,7 +94,7 @@ func TestStringColumn(t *testing.T) {
 		})
 
 		t.Run("unsupported composite to LIKE", func(t *ftt.Test) {
-			filter, err := ParseFilter("foo:(somevalue)")
+			filter, err := ParseFilter(`foo:("somevalue")`)
 			assert.Loosely(t, err, should.BeNil)
 
 			_, _, err = table.WhereClause(filter, "T", "p_")

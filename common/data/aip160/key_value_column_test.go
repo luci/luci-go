@@ -31,7 +31,7 @@ func TestKeyValueColumn(t *testing.T) {
 		).Build()
 
 		t.Run("key value contains operator", func(t *ftt.Test) {
-			filter, err := ParseFilter("kv.key:somevalue")
+			filter, err := ParseFilter(`kv.key:"somevalue"`)
 			assert.Loosely(t, err, should.BeNil)
 
 			result, pars, err := table.WhereClause(filter, "T", "p_")
@@ -50,7 +50,7 @@ func TestKeyValueColumn(t *testing.T) {
 		})
 
 		t.Run("key value equal operator", func(t *ftt.Test) {
-			filter, err := ParseFilter("kv.key=somevalue")
+			filter, err := ParseFilter(`kv.key="somevalue"`)
 			assert.Loosely(t, err, should.BeNil)
 
 			result, pars, err := table.WhereClause(filter, "T", "p_")
@@ -69,7 +69,7 @@ func TestKeyValueColumn(t *testing.T) {
 		})
 
 		t.Run("key value not equal operator", func(t *ftt.Test) {
-			filter, err := ParseFilter("kv.key!=somevalue")
+			filter, err := ParseFilter(`kv.key!="somevalue"`)
 			assert.Loosely(t, err, should.BeNil)
 
 			result, pars, err := table.WhereClause(filter, "T", "p_")
@@ -88,7 +88,7 @@ func TestKeyValueColumn(t *testing.T) {
 		})
 
 		t.Run("key value missing key contains operator", func(t *ftt.Test) {
-			filter, err := ParseFilter("kv:somevalue")
+			filter, err := ParseFilter(`kv:"somevalue"`)
 			assert.Loosely(t, err, should.BeNil)
 
 			_, _, err = table.WhereClause(filter, "T", "p_")
@@ -96,7 +96,7 @@ func TestKeyValueColumn(t *testing.T) {
 		})
 
 		t.Run("string array key value contains operator", func(t *ftt.Test) {
-			filter, err := ParseFilter("sakv.key:somevalue")
+			filter, err := ParseFilter(`sakv.key:"somevalue"`)
 			assert.Loosely(t, err, should.BeNil)
 
 			result, pars, err := table.WhereClause(filter, "T", "p_")
@@ -111,7 +111,7 @@ func TestKeyValueColumn(t *testing.T) {
 		})
 
 		t.Run("string array key value equal operator", func(t *ftt.Test) {
-			filter, err := ParseFilter("sakv.key=somevalue")
+			filter, err := ParseFilter(`sakv.key="somevalue"`)
 			assert.Loosely(t, err, should.BeNil)
 
 			result, pars, err := table.WhereClause(filter, "T", "p_")
@@ -126,7 +126,7 @@ func TestKeyValueColumn(t *testing.T) {
 		})
 
 		t.Run("string array key value not equal operator", func(t *ftt.Test) {
-			filter, err := ParseFilter("sakv.key!=somevalue")
+			filter, err := ParseFilter(`sakv.key!="somevalue"`)
 			assert.Loosely(t, err, should.BeNil)
 
 			result, pars, err := table.WhereClause(filter, "T", "p_")
@@ -165,15 +165,7 @@ func TestKeyValueColumn(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			_, _, err = table.WhereClause(filter, "T", "p_")
-			assert.Loosely(t, err, should.ErrLike(`argument for field "foo": fields (using '.') not implemented yet`))
-		})
-
-		t.Run("field on RHS of has", func(t *ftt.Test) {
-			filter, err := ParseFilter("foo:blah.baz")
-			assert.Loosely(t, err, should.BeNil)
-
-			_, _, err = table.WhereClause(filter, "T", "p_")
-			assert.Loosely(t, err, should.ErrLike(`argument for field "foo": fields (using '.') not implemented yet`))
+			assert.Loosely(t, err, should.ErrLike(`argument for field "foo": expected a quoted ("") string literal but got possible field reference "blah.baz", did you mean to wrap the value in quotes?`))
 		})
 	})
 }

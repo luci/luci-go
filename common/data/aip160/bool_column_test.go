@@ -53,7 +53,7 @@ func TestBoolColumn(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			_, _, err = table.WhereClause(filter, "T", "p_")
-			assert.Loosely(t, err, should.ErrLike(`argument for field "bool": fields (using '.') not implemented yet`))
+			assert.Loosely(t, err, should.ErrLike(`argument for field "bool": field navigation (using '.') is not supported`))
 		})
 
 		t.Run("operator not implemented", func(t *ftt.Test) {
