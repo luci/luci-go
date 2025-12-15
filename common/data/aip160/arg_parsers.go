@@ -16,6 +16,8 @@ package aip160
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 )
 
 // coerceComparableToImplicitFilter attempts to return the implicit filter
@@ -63,6 +65,88 @@ func CoerceArgToBoolConstant(arg *Arg) (bool, error) {
 		return false, nil
 	}
 	return false, fmt.Errorf("expected the unquoted literal 'true' or 'false' (case-sensitive) but found %q", cmp.Member.Value.Value)
+}
+
+type EnumDefinition struct {
+	// The name of the enum type represented by this column.
+	typeName string
+
+	// The enum values. This is usually the enum's _name map.
+	values map[string]int32
+
+	// The values from `values` that are disallowed. E.g. the unspecified value.
+	// Use of disallowed values results in slightly different error than using
+	// a value that is not in `values`.
+	disallowedValues map[int32]struct{}
+}
+
+// NewEnumDefinition defines a new enumeration.
+//
+// The `values` map is usually the enum's _name map.
+// `disallowedValues` often includes the enum's UNSPECIFIED value and any
+// other values that are not allowed on the underlying record.
+func NewEnumDefinition(typeName string, values map[string]int32, disallowedValues ...int32) *EnumDefinition {
+	def := &EnumDefinition{
+		typeName:         typeName,
+		values:           values,
+		disallowedValues: map[int32]struct{}{},
+	}
+	for _, v := range disallowedValues {
+		def.disallowedValues[v] = struct{}{}
+	}
+	return def
+}
+
+// allowedValues returns a string representation of the allowed values for this
+// enum definition.
+func (e *EnumDefinition) allowedValues() string {
+	var values []string
+	for k, v := range e.values {
+		if _, ok := e.disallowedValues[v]; ok {
+			continue
+		}
+		values = append(values, k)
+	}
+	slices.SortFunc(values, func(a, b string) int {
+		if e.values[a] == e.values[b] {
+			// Normally enums do not have two values which map to the same value, but
+			// if they do, compare by name.
+			return strings.Compare(a, b)
+		}
+		if e.values[a] > e.values[b] {
+			return 1
+		}
+		return -1
+	})
+	return strings.Join(values, ", ")
+}
+
+// CoarceArgToEnumConstant attempts to extract an enum constant from
+// an Arg AST node. The AST node must be the unquoted enum value.
+func CoarceArgToEnumConstant(arg *Arg, def *EnumDefinition) (int32, error) {
+	cmp, err := coerceArgToComparable(arg)
+	if err != nil {
+		return 0, err
+	}
+	if cmp.Member == nil {
+		return 0, fmt.Errorf("invalid comparable")
+	}
+	// As per go/ccfe-aip-160#literals, we expect emum values to be unquoted.
+	if cmp.Member.Value.Quoted {
+		return 0, fmt.Errorf("expected an unquoted enum value but found double-quoted string %q", cmp.Member.Value.Value)
+	}
+	if len(cmp.Member.Fields) > 0 {
+		return 0, fmt.Errorf("field navigation (using '.') is not supported")
+	}
+	valueToParse := cmp.Member.Value.Value
+	argValue, ok := def.values[valueToParse]
+	if !ok {
+		return 0, fmt.Errorf("%q is not one of the valid enum values, expected one of [%s]", valueToParse, def.allowedValues())
+	}
+	if _, ok := def.disallowedValues[argValue]; ok {
+		return 0, fmt.Errorf("%q is not allowed for this enum, expected one of [%s]", valueToParse, def.allowedValues())
+	}
+	return argValue, nil
 }
 
 // CoerceArgToStringConstant attempts to extract a string constant from
