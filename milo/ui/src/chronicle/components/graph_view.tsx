@@ -37,6 +37,7 @@ import {
   useReactFlow,
   Panel as ReactFlowPanel,
   Node,
+  FitViewOptions,
   Edge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -112,11 +113,17 @@ function Graph() {
   // multiple effects trying to focus different sets of nodes.
   const pendingFocusNodes = useRef<string[] | undefined>(undefined);
 
+  // Ref to store a pending fitView request
+  const pendingFitViewOptions = useRef<FitViewOptions | undefined>(undefined);
+
   // While we're still using canned fake data, we need to re-initialize defaults
   // when changing workflow type.
   useEffect(() => {
-    hasInitializedDefaults.current = false;
-    setSelectedNodeId(undefined);
+    // Only reset if we have already initialized once to avoid reset on initial page load.
+    if (hasInitializedDefaults.current) {
+      hasInitializedDefaults.current = false;
+      setSelectedNodeId(undefined);
+    }
   }, [workflowType, setSelectedNodeId]);
 
   const collapsibleHashToGroup = useMemo(() => {
@@ -231,17 +238,16 @@ function Graph() {
     setNodes(nextNodes);
     setEdges(nextEdges);
 
+    // Queue a fitView request.
     if (nodesToFit.length > 0) {
-      // Use requestAnimationFrame to make sure fitView runs after
-      // state update.
-      window.requestAnimationFrame(() => {
-        fitView({
-          nodes: nodesToFit.map((id) => ({ id })),
-          duration: 500,
-        });
-      });
+      pendingFitViewOptions.current = {
+        nodes: nodesToFit.map((id) => ({ id })),
+        duration: 500,
+      };
     } else {
-      window.requestAnimationFrame(() => fitView({ duration: 500 }));
+      pendingFitViewOptions.current = {
+        duration: 500,
+      };
     }
   }, [
     layoutedNodes,
@@ -250,9 +256,33 @@ function Graph() {
     debouncedSearchQuery,
     setNodes,
     setEdges,
-    fitView,
     autoFitSelection,
   ]);
+
+  // Effect to process pending fitView requests.
+  // It attempts to call fitView() repeatedly until it returns success.
+  useEffect(() => {
+    if (pendingFitViewOptions.current) {
+      const options = pendingFitViewOptions.current;
+      let attempts = 0;
+      const maxAttempts = 50;
+
+      const tryFitView = async () => {
+        // fitView returns true if it successfully calculated the view
+        const success = await fitView(options);
+        if (success) {
+          pendingFitViewOptions.current = undefined;
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          window.requestAnimationFrame(tryFitView);
+        } else {
+          pendingFitViewOptions.current = undefined;
+        }
+      };
+
+      window.requestAnimationFrame(tryFitView);
+    }
+  }, [nodes, fitView]);
 
   // Use useCallback even with no dependencies to prevent React creating a new
   // function reference on every render.
