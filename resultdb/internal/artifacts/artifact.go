@@ -161,7 +161,7 @@ func Read(ctx context.Context, name string) (*Artifact, error) {
 
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
-		return nil, appstatus.Attachf(err, codes.NotFound, "%s not found", name)
+		return nil, appstatus.Attachf(err, codes.NotFound, "%q not found", name)
 
 	case err != nil:
 		return nil, errors.Fmt("failed to fetch %q: %w", name, err)
@@ -209,10 +209,28 @@ func TrimHashPrefix(hash string) string {
 
 // VerifyReadArtifactPermission verifies if the caller has enough permissions to read the artifact.
 func VerifyReadArtifactPermission(ctx context.Context, name string) error {
-	invIDStr, _, _, _, inputErr := pbutil.ParseLegacyArtifactName(name)
-	if inputErr != nil {
-		return appstatus.BadRequest(inputErr)
+	if pbutil.IsLegacyArtifactName(name) {
+		invIDStr, _, _, _, inputErr := pbutil.ParseLegacyArtifactName(name)
+		if inputErr != nil {
+			return appstatus.BadRequest(inputErr)
+		}
+		return permissions.VerifyInvocation(ctx, invocations.ID(invIDStr), rdbperms.PermGetArtifact)
+	} else {
+		parts, err := pbutil.ParseArtifactName(name)
+		if err != nil {
+			return appstatus.BadRequest(errors.Fmt("invalid artifact name: %w", err))
+		}
+		wuID := workunits.ID{RootInvocationID: rootinvocations.ID(parts.RootInvocationID), WorkUnitID: parts.WorkUnitID}
+		accessLevel, err := permissions.QueryWorkUnitAccess(ctx, wuID, permissions.GetArtifactsAccessModel)
+		if err != nil {
+			return err
+		}
+		if accessLevel == permissions.NoAccess {
+			return appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %s or %s in realm of %q", rdbperms.PermGetArtifact, rdbperms.PermListLimitedArtifacts, wuID.RootInvocationID.Name())
+		}
+		if accessLevel != permissions.FullAccess {
+			return appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %s in the realm of %q (trying to upgrade limited artifact access to full access)", rdbperms.PermGetArtifact, wuID.Name())
+		}
+		return nil
 	}
-
-	return permissions.VerifyInvocation(ctx, invocations.ID(invIDStr), rdbperms.PermGetArtifact)
 }

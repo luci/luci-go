@@ -119,7 +119,7 @@ func TestListArtifactLines(t *testing.T) {
 			req := &pb.ListArtifactLinesRequest{Parent: "invocations/inv/artifacts/b"}
 			_, err := srv.ListArtifactLines(ctx, req)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
-			assert.Loosely(t, err, should.ErrLike("invocations/inv/artifacts/b not found"))
+			assert.Loosely(t, err, should.ErrLike("\"invocations/inv/artifacts/b\" not found"))
 		})
 
 		t.Run("given a non-existent invocation, then should return not found error", func(t *ftt.Test) {

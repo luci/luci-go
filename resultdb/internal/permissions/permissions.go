@@ -128,6 +128,16 @@ var GetWorkUnitsAccessModel = QueryWorkUnitAccessOptions{
 	UpgradeLimitedToFull: rdbperms.PermGetWorkUnit,          // At work unit level
 }
 
+// GetArtifactsAccessModel defines the permissions used to authorize access
+// when getting artifacts (e.g. GetArtifact).
+var GetArtifactsAccessModel = QueryWorkUnitAccessOptions{
+	Full:                 rdbperms.PermGetArtifact,          // At root invocation level
+	Limited:              rdbperms.PermListLimitedArtifacts, // At root invocation level
+	UpgradeLimitedToFull: rdbperms.PermGetArtifact,          // At work unit level
+}
+
+// ListArtifactsAccessModel defines the permissions used to authorize access
+// when listing artifacts (e.g. ListArtifacts).
 var ListArtifactsAccessModel = QueryWorkUnitAccessOptions{
 	Full:                 rdbperms.PermListArtifacts,        // At root invocation level
 	Limited:              rdbperms.PermListLimitedArtifacts, // At root invocation level

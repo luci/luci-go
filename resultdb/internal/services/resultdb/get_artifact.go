@@ -35,8 +35,15 @@ import (
 )
 
 func validateGetArtifactRequest(req *pb.GetArtifactRequest) error {
-	if err := pbutil.ValidateLegacyArtifactName(req.Name); err != nil {
-		return errors.Fmt("name: %w", err)
+	// An artifact name must be either a valid legacy name OR a valid V2 name.
+	if pbutil.IsLegacyArtifactName(req.Name) {
+		if err := pbutil.ValidateLegacyArtifactName(req.Name); err != nil {
+			return errors.Fmt("name: invalid legacy artifact name %q: %w", req.Name, err)
+		}
+	} else {
+		if _, err := pbutil.ParseArtifactName(req.Name); err != nil {
+			return errors.Fmt("name: invalid artifact name %q: %w", req.Name, err)
+		}
 	}
 
 	return nil
@@ -47,12 +54,12 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
-	if err := artifacts.VerifyReadArtifactPermission(ctx, in.Name); err != nil {
-		return nil, err
-	}
-
 	if err := validateGetArtifactRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
+	}
+
+	if err := artifacts.VerifyReadArtifactPermission(ctx, in.Name); err != nil {
+		return nil, err
 	}
 
 	artData, err := artifacts.Read(ctx, in.Name)
@@ -61,16 +68,22 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 	}
 
 	art := artData.Artifact
-
-	invIDStr, _, _, _ := artifacts.MustParseLegacyName(in.Name)
-	realm, err := invocations.ReadRealm(ctx, invocations.ID(invIDStr))
-	if err != nil {
-		return nil, err
-	}
-	project, _ := realms.Split(realm)
 	workUnitIDToProject := map[workunits.ID]string{}
-	invocationIDToProject := map[invocations.ID]string{
-		invocations.ID(invIDStr): project,
+	invocationIDToProject := map[invocations.ID]string{}
+	if pbutil.IsLegacyArtifactName(in.Name) {
+		invIDStr, _, _, _ := artifacts.MustParseLegacyName(in.Name)
+		realm, err := invocations.ReadRealm(ctx, invocations.ID(invIDStr))
+		if err != nil {
+			return nil, err
+		}
+		invocationIDToProject[invocations.ID(invIDStr)], _ = realms.Split(realm)
+	} else {
+		wuID, _, _, _ := artifacts.MustParseName(in.Name)
+		realm, err := workunits.ReadRealm(ctx, wuID)
+		if err != nil {
+			return nil, err
+		}
+		workUnitIDToProject[wuID], _ = realms.Split(realm)
 	}
 	if err := s.populateFetchURLs(ctx, workUnitIDToProject, invocationIDToProject, art); err != nil {
 		return nil, err

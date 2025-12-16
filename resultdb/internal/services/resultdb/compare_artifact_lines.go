@@ -89,7 +89,8 @@ func (s *resultDBServer) CompareArtifactLines(ctx context.Context, request *pb.C
 	var failingArt *artifacts.Artifact
 	var failingStream bytestream.ByteStream_ReadClient
 	passingHashes := make(map[int64]struct{})
-	var passingHashesMutex sync.Mutex
+	var usedPassingArtifacts []string
+	var mu sync.Mutex
 
 	err := parallel.FanOutIn(func(c chan<- func() error) {
 		c <- func() error {
@@ -117,15 +118,33 @@ func (s *resultDBServer) CompareArtifactLines(ctx context.Context, request *pb.C
 				for _, pResultName := range request.PassingResults {
 					passingResultName := pResultName
 					passArtifacts <- func() error {
-						hashes, err := s.hashPassingArtifact(ctx, passingResultName, artifactID, isInvocationLevelArtifact)
+						passingArtifactName, err := constructPassingArtifactName(passingResultName, isInvocationLevelArtifact, artifactID)
 						if err != nil {
 							return err
 						}
-						passingHashesMutex.Lock()
+
+						if err := artifacts.VerifyReadArtifactPermission(ctx, passingArtifactName); err != nil {
+							code := appstatus.Code(err)
+							if code == codes.PermissionDenied || code == codes.Unauthenticated || code == codes.NotFound {
+								return nil
+							}
+							return err
+						}
+
+						hashes, err := s.hashPassingArtifact(ctx, passingArtifactName)
+						if err != nil {
+							code := appstatus.Code(err)
+							if code == codes.PermissionDenied || code == codes.Unauthenticated || code == codes.NotFound {
+								return nil
+							}
+							return err
+						}
+						mu.Lock()
 						for h := range hashes {
 							passingHashes[h] = struct{}{}
 						}
-						passingHashesMutex.Unlock()
+						usedPassingArtifacts = append(usedPassingArtifacts, passingArtifactName)
+						mu.Unlock()
 						return nil
 					}
 				}
@@ -140,28 +159,17 @@ func (s *resultDBServer) CompareArtifactLines(ctx context.Context, request *pb.C
 	if pageSize <= 0 {
 		pageSize = defaultFailurePageSize
 	}
-	return artifacts.ProcessFailingStream(ctx, failingStream, passingHashes, request.GetView(), pageSize, startByte, startLine)
+
+	resp, err := artifacts.ProcessFailingStream(ctx, failingStream, passingHashes, request.GetView(), pageSize, startByte, startLine)
+	if err != nil {
+		return nil, err
+	}
+
+	resp.UsedPassingArtifacts = usedPassingArtifacts
+	return resp, nil
 }
 
-func (s *resultDBServer) hashPassingArtifact(ctx context.Context, passingResultName, artifactID string, isInvocationLevelArtifact bool) (map[int64]struct{}, error) {
-	var passingArtifactName string
-	if isInvocationLevelArtifact {
-		if pbutil.IsLegacyTestResultName(passingResultName) {
-			passInvID, _, _, err := pbutil.ParseLegacyTestResultName(passingResultName)
-			if err != nil {
-				return nil, appstatus.BadRequest(errors.Fmt("invalid legacy passing_result_name: %s: %w", passingResultName, err))
-			}
-			passingArtifactName = pbutil.LegacyInvocationArtifactName(passInvID, artifactID)
-		} else {
-			parts, err := pbutil.ParseTestResultName(passingResultName)
-			if err != nil {
-				return nil, appstatus.BadRequest(errors.Fmt("invalid passing_result_name: %s: %w", passingResultName, err))
-			}
-			passingArtifactName = pbutil.WorkUnitArtifactName(parts.RootInvocationID, parts.WorkUnitID, artifactID)
-		}
-	} else {
-		passingArtifactName = fmt.Sprintf("%s/artifacts/%s", passingResultName, url.PathEscape(artifactID))
-	}
+func (s *resultDBServer) hashPassingArtifact(ctx context.Context, passingArtifactName string) (map[int64]struct{}, error) {
 	art, err := artifacts.Read(ctx, passingArtifactName)
 	if err != nil {
 		return nil, errors.Fmt("reading passing artifact %s: %w", passingArtifactName, err)
@@ -226,4 +234,22 @@ func decodePageToken(tok string) (*pageToken, error) {
 		return nil, err
 	}
 	return pt, nil
+}
+
+func constructPassingArtifactName(passingResultName string, isInvocationLevelArtifact bool, artifactID string) (string, error) {
+	if isInvocationLevelArtifact {
+		if pbutil.IsLegacyTestResultName(passingResultName) {
+			passInvID, _, _, err := pbutil.ParseLegacyTestResultName(passingResultName)
+			if err != nil {
+				return "", appstatus.BadRequest(errors.Fmt("invalid legacy passing_result_name: %s: %w", passingResultName, err))
+			}
+			return pbutil.LegacyInvocationArtifactName(passInvID, artifactID), nil
+		}
+		parts, err := pbutil.ParseTestResultName(passingResultName)
+		if err != nil {
+			return "", appstatus.BadRequest(errors.Fmt("invalid passing_result_name: %s: %w", passingResultName, err))
+		}
+		return pbutil.WorkUnitArtifactName(parts.RootInvocationID, parts.WorkUnitID, artifactID), nil
+	}
+	return fmt.Sprintf("%s/artifacts/%s", passingResultName, url.PathEscape(artifactID)), nil
 }

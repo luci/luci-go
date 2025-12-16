@@ -18,6 +18,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -35,8 +36,10 @@ import (
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	artifactcontenttest "go.chromium.org/luci/resultdb/internal/artifactcontent/testutil"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
@@ -151,6 +154,7 @@ func TestCompareArtifactLines(t *testing.T) {
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
 				{Realm: "testproject:testrealm", Permission: rdbperms.PermGetArtifact},
+				{Realm: "testproject:testrealm", Permission: rdbperms.PermListArtifacts},
 			},
 		})
 
@@ -230,6 +234,81 @@ func TestCompareArtifactLines(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res, should.NotBeNil)
 			assert.Loosely(t, len(res.FailureOnlyRanges), should.Equal(1))
+		})
+
+		t.Run("Happy path - V2 passing artifact", func(t *ftt.Test) {
+			muts := []*spanner.Mutation{
+				insert.Invocation("inv-fail", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+				insert.Artifact("inv-fail", "tr/t/r-fail", "a", map[string]any{"RBECASHash": "rbscas-hash-fail"}),
+			}
+			muts = append(muts, insertTestResultLegacy(t, "inv-fail", "t", "r-fail", pb.TestStatus_FAIL)...)
+
+			// Insert V2 passing artifact
+			ri := &rootinvocations.RootInvocationRow{
+				RootInvocationID:  "inv-pass",
+				Realm:             "testproject:testrealm",
+				FinalizationState: pb.RootInvocation_ACTIVE,
+				CreateTime:        time.Now(),
+			}
+			muts = append(muts, insert.RootInvocationWithRootWorkUnit(ri)...)
+			wuID := workunits.ID{RootInvocationID: "inv-pass", WorkUnitID: "root"}
+			shadowInvID := wuID.LegacyInvocationID()
+			muts = append(muts, insert.Artifact(shadowInvID, "tr/t/r-pass", "a", map[string]any{"RBECASHash": "rbscas-hash-pass"}))
+
+			testutil.MustApply(ctx, t, muts...)
+
+			req := &pb.CompareArtifactLinesRequest{
+				Name:           "invocations/inv-fail/tests/t/results/r-fail/artifacts/a",
+				PassingResults: []string{"rootInvocations/inv-pass/workUnits/root/tests/t/results/r-pass"},
+			}
+			res, err := srv.CompareArtifactLines(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.NotBeNil)
+			assert.Loosely(t, len(res.FailureOnlyRanges), should.Equal(1))
+			assert.Loosely(t, res.UsedPassingArtifacts, should.Match([]string{"rootInvocations/inv-pass/workUnits/root/tests/t/results/r-pass/artifacts/a"}))
+		})
+
+		t.Run("Passing artifact not found", func(t *ftt.Test) {
+			muts := []*spanner.Mutation{
+				insert.Invocation("inv-fail", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+				insert.Artifact("inv-fail", "tr/t/r-fail", "a", map[string]any{"RBECASHash": "rbscas-hash-fail"}),
+			}
+			muts = append(muts, insertTestResultLegacy(t, "inv-fail", "t", "r-fail", pb.TestStatus_FAIL)...)
+			testutil.MustApply(ctx, t, muts...)
+
+			req := &pb.CompareArtifactLinesRequest{
+				Name:           "invocations/inv-fail/tests/t/results/r-fail/artifacts/a",
+				PassingResults: []string{"invocations/inv-pass/tests/t/results/r-pass"},
+			}
+			res, err := srv.CompareArtifactLines(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.NotBeNil)
+			// Should treat as if there are no passing artifacts, so everything is failure-only.
+			// Since we have one line "failing line", it should be failure-only.
+			assert.Loosely(t, len(res.FailureOnlyRanges), should.Equal(1))
+			assert.Loosely(t, res.UsedPassingArtifacts, should.BeEmpty)
+		})
+
+		t.Run("Passing artifact permission denied", func(t *ftt.Test) {
+			muts := []*spanner.Mutation{
+				insert.Invocation("inv-fail", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+				insert.Artifact("inv-fail", "tr/t/r-fail", "a", map[string]any{"RBECASHash": "rbscas-hash-fail"}),
+				insert.Invocation("inv-pass", pb.Invocation_FINALIZED, map[string]any{"Realm": "secretproject:testrealm"}),
+				insert.Artifact("inv-pass", "tr/t/r-pass", "a", map[string]any{"RBECASHash": "rbscas-hash-pass"}),
+			}
+			muts = append(muts, insertTestResultLegacy(t, "inv-fail", "t", "r-fail", pb.TestStatus_FAIL)...)
+			muts = append(muts, insertTestResultLegacy(t, "inv-pass", "t", "r-pass", pb.TestStatus_PASS)...)
+			testutil.MustApply(ctx, t, muts...)
+
+			req := &pb.CompareArtifactLinesRequest{
+				Name:           "invocations/inv-fail/tests/t/results/r-fail/artifacts/a",
+				PassingResults: []string{"invocations/inv-pass/tests/t/results/r-pass"},
+			}
+			res, err := srv.CompareArtifactLines(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.NotBeNil)
+			assert.Loosely(t, len(res.FailureOnlyRanges), should.Equal(1))
+			assert.Loosely(t, res.UsedPassingArtifacts, should.BeEmpty)
 		})
 	})
 }

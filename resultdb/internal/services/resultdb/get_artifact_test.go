@@ -35,8 +35,10 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/gsutil"
+	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
@@ -58,6 +60,11 @@ func TestValidateGetArtifactRequest(t *testing.T) {
 			req := &pb.GetArtifactRequest{}
 			assert.Loosely(t, validateGetArtifactRequest(req), should.ErrLike("unspecified"))
 		})
+
+		t.Run(`Invalid V2 name`, func(t *ftt.Test) {
+			req := &pb.GetArtifactRequest{Name: "rootInvocations/inv/workUnits/wu/artifacts/"}
+			assert.Loosely(t, validateGetArtifactRequest(req), should.ErrLike("name: invalid artifact name"))
+		})
 	})
 }
 
@@ -78,6 +85,8 @@ func TestGetArtifact(t *testing.T) {
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
 				{Realm: "testproject:testrealm", Permission: rdbperms.PermGetArtifact},
+				{Realm: "testproject:testrealm", Permission: rdbperms.PermListArtifacts},
+				{Realm: "testproject:testrealm", Permission: rdbperms.PermListLimitedArtifacts},
 			},
 		})
 		srv := newTestResultDBService()
@@ -153,13 +162,101 @@ func TestGetArtifact(t *testing.T) {
 			assert.Loosely(t, strings.HasPrefix(art.FetchUrl, "https://signed-url.example.com/invocations/inv/artifacts/a?token="), should.BeTrue)
 		})
 
+		t.Run(`Valid V2 artifact`, func(t *ftt.Test) {
+			ri := &rootinvocations.RootInvocationRow{
+				RootInvocationID:  "inv-v2",
+				Realm:             "testproject:testrealm",
+				FinalizationState: pb.RootInvocation_ACTIVE,
+				CreateTime:        time.Now(),
+			}
+			testutil.MustApply(ctx, t,
+				insert.RootInvocationWithRootWorkUnit(ri)...,
+			)
+			wuID := workunits.ID{RootInvocationID: "inv-v2", WorkUnitID: "root"}
+			shadowInvID := wuID.LegacyInvocationID()
+			testutil.MustApply(ctx, t,
+				insert.Artifact(shadowInvID, "", "a", nil),
+			)
+
+			const name = "rootInvocations/inv-v2/workUnits/root/artifacts/a"
+			req := &pb.GetArtifactRequest{Name: name}
+			art, err := srv.GetArtifact(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, art.Name, should.Equal(name))
+			assert.Loosely(t, art.ArtifactId, should.Equal("a"))
+			assert.Loosely(t, strings.HasPrefix(art.FetchUrl, "https://signed-url.example.com/rootInvocations/inv-v2/workUnits/root/artifacts/a"), should.BeTrue)
+		})
+
+		t.Run(`Valid V2 test artifact`, func(t *ftt.Test) {
+			ri := &rootinvocations.RootInvocationRow{
+				RootInvocationID:  "inv-v2-test",
+				Realm:             "testproject:testrealm",
+				FinalizationState: pb.RootInvocation_ACTIVE,
+				CreateTime:        time.Now(),
+			}
+			testutil.MustApply(ctx, t,
+				insert.RootInvocationWithRootWorkUnit(ri)...,
+			)
+			wuID := workunits.ID{RootInvocationID: "inv-v2-test", WorkUnitID: "root"}
+			shadowInvID := wuID.LegacyInvocationID()
+			testutil.MustApply(ctx, t,
+				insert.Artifact(shadowInvID, "tr/t/r", "a", nil),
+			)
+
+			const name = "rootInvocations/inv-v2-test/workUnits/root/tests/t/results/r/artifacts/a"
+			req := &pb.GetArtifactRequest{Name: name}
+			art, err := srv.GetArtifact(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, art.Name, should.Equal(name))
+			assert.Loosely(t, art.ArtifactId, should.Equal("a"))
+			assert.Loosely(t, strings.HasPrefix(art.FetchUrl, "https://signed-url.example.com/rootInvocations/inv-v2-test/workUnits/root/tests/t/results/r/artifacts/a"), should.BeTrue)
+		})
+
+		t.Run(`Permission denied V2`, func(t *ftt.Test) {
+			ri := &rootinvocations.RootInvocationRow{
+				RootInvocationID:  "inv-v2-secret",
+				Realm:             "secretproject:testrealm",
+				FinalizationState: pb.RootInvocation_ACTIVE,
+				CreateTime:        time.Now(),
+			}
+			testutil.MustApply(ctx, t,
+				insert.RootInvocationWithRootWorkUnit(ri)...,
+			)
+			wuID := workunits.ID{RootInvocationID: "inv-v2-secret", WorkUnitID: "root"}
+			shadowInvID := wuID.LegacyInvocationID()
+			testutil.MustApply(ctx, t,
+				insert.Artifact(shadowInvID, "", "a", nil),
+			)
+
+			req := &pb.GetArtifactRequest{Name: "rootInvocations/inv-v2-secret/workUnits/root/artifacts/a"}
+			_, err := srv.GetArtifact(ctx, req)
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.artifacts.get or resultdb.artifacts.listLimited"))
+		})
+
+		t.Run(`Not found V2`, func(t *ftt.Test) {
+			ri := &rootinvocations.RootInvocationRow{
+				RootInvocationID:  "inv-v2-nf",
+				Realm:             "testproject:testrealm",
+				FinalizationState: pb.RootInvocation_ACTIVE,
+				CreateTime:        time.Now(),
+			}
+			testutil.MustApply(ctx, t,
+				insert.RootInvocationWithRootWorkUnit(ri)...,
+			)
+			req := &pb.GetArtifactRequest{Name: "rootInvocations/inv-v2-nf/workUnits/root/artifacts/a"}
+			_, err := srv.GetArtifact(ctx, req)
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("\"rootInvocations/inv-v2-nf/workUnits/root/artifacts/a\" not found"))
+		})
+
 		t.Run(`Does not exist`, func(t *ftt.Test) {
 			testutil.MustApply(ctx, t,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}))
 			req := &pb.GetArtifactRequest{Name: "invocations/inv/artifacts/a"}
 			_, err := srv.GetArtifact(ctx, req)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
-			assert.Loosely(t, err, should.ErrLike("invocations/inv/artifacts/a not found"))
+			assert.Loosely(t, err, should.ErrLike("\"invocations/inv/artifacts/a\" not found"))
 		})
 		t.Run(`Invocation does not exist`, func(t *ftt.Test) {
 			req := &pb.GetArtifactRequest{Name: "invocations/inv/artifacts/a"}

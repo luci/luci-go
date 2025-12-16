@@ -91,7 +91,7 @@ func TestRead(t *testing.T) {
 			as, ok := appstatus.Get(err)
 			assert.That(t, ok, should.BeTrue)
 			assert.That(t, as.Code(), should.Equal(codes.NotFound))
-			assert.That(t, as.Message(), should.ContainSubstring("rootInvocations/i/workUnits/wu1/artifacts/a not found"))
+			assert.That(t, as.Message(), should.ContainSubstring("\"rootInvocations/i/workUnits/wu1/artifacts/a\" not found"))
 		})
 
 		t.Run(`Does not exist (legacy name)`, func(t *ftt.Test) {
@@ -99,7 +99,7 @@ func TestRead(t *testing.T) {
 			as, ok := appstatus.Get(err)
 			assert.That(t, ok, should.BeTrue)
 			assert.That(t, as.Code(), should.Equal(codes.NotFound))
-			assert.That(t, as.Message(), should.ContainSubstring("invocations/i/artifacts/a not found"))
+			assert.That(t, as.Message(), should.ContainSubstring("\"invocations/i/artifacts/a\" not found"))
 		})
 
 		t.Run(`Exists`, func(t *ftt.Test) {
