@@ -19,6 +19,7 @@ import {
   BuildCheckOptionsDetails,
   BuildCheckResultDetails,
 } from './build_details';
+import { CommonStageAttemptDetails } from './common_stage_attempt_details';
 import { GenericJsonDetails } from './generic_json_details';
 import {
   GobSourceCheckOptionsDetails,
@@ -47,6 +48,8 @@ const KNOWN_TYPE_RENDERERS: Record<string, GenericRenderer> = {
     GobSourceCheckResultsDetails as unknown as GenericRenderer,
   'type.googleapis.com/turboci.data.piper.v1.PiperSourceCheckOptions':
     PiperSourceCheckOptionsDetails as unknown as GenericRenderer,
+  'type.googleapis.com/turboci.data.stage.v1.CommonStageAttemptDetails':
+    CommonStageAttemptDetails as unknown as GenericRenderer,
   'type.googleapis.com/turboci.data.test.v1.TestCheckDescriptionOption':
     TestCheckDescriptionOptionDetails as unknown as GenericRenderer,
   'type.googleapis.com/turboci.data.test.v1.TestCheckSummaryResult':

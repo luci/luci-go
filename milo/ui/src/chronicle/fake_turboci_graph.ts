@@ -48,6 +48,7 @@ import {
   GobSourceCheckOptions_PinnedRepoMounts_GitCommit,
 } from '../proto/turboci/data/gerrit/v1/gob_source_check_options.pb';
 import { GobSourceCheckResults } from '../proto/turboci/data/gerrit/v1/gob_source_check_results.pb';
+import { CommonStageAttemptDetails } from '../proto/turboci/data/stage/v1/common_stage_attempt_details.pb';
 import { TestCheckDescriptionOption } from '../proto/turboci/data/test/v1/test_check_description_option.pb';
 import { TestCheckSummaryResult } from '../proto/turboci/data/test/v1/test_check_summary_result.pb';
 import {
@@ -107,6 +108,8 @@ const TYPE_URL_TEST_OPTIONS =
   'type.googleapis.com/turboci.data.test.v1.TestCheckDescriptionOption';
 const TYPE_URL_TEST_RESULTS =
   'type.googleapis.com/turboci.data.test.v1.TestCheckSummaryResult';
+const TYPE_URL_COMMON_STAGE_ATTEMPT_DETAILS =
+  'type.googleapis.com/turboci.data.stage.v1.CommonStageAttemptDetails';
 const TYPE_URL_GENERIC_DATA = 'type.googleapis.com/turboci.demo.GenericData';
 
 // Fake data pools used by Faker.js
@@ -1211,6 +1214,14 @@ export class FakeGraphGenerator {
 
       const msg = attemptSuccess ? 'Complete' : 'Failed';
 
+      const attemptDetails: CommonStageAttemptDetails = {
+        viewUrls: {
+          ['Executor Logs']: {
+            url: faker.internet.url(),
+          },
+        },
+      };
+
       const attempt: Stage_Attempt = {
         identifier: {
           stage: { workPlan: this.workPlanId, id: stageIdStr },
@@ -1220,10 +1231,10 @@ export class FakeGraphGenerator {
         version: endRev,
         processUid: `worker-pool-REGION-1:${stageIdStr}:attempt-${i + 1}`,
         details: [
-          this.createValueFromObj(TYPE_URL_GENERIC_DATA, {
-            url: faker.internet.url(),
-            label: `Executor Logs (Attempt ${i + 1})`,
-          }),
+          this.createValueFromObj(
+            TYPE_URL_COMMON_STAGE_ATTEMPT_DETAILS,
+            attemptDetails,
+          ),
         ],
         progress: [
           { msg: 'Scheduled', version: currentStartRev, details: [] },
