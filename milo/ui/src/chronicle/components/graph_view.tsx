@@ -27,16 +27,6 @@ import {
   Alert,
 } from '@mui/material';
 import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { useDebounce } from 'react-use';
-import {
   ReactFlow,
   Background,
   Controls,
@@ -47,8 +37,19 @@ import {
   useReactFlow,
   Panel as ReactFlowPanel,
   Node,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+  Edge,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { useDebounce } from 'react-use';
 
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 
@@ -56,6 +57,7 @@ import { WorkflowType } from '../fake_turboci_graph';
 import {
   TurboCIGraphBuilder,
   getCollapsibleGroups,
+  ChronicleNode,
 } from '../utils/graph_builder';
 
 import { ChronicleContext } from './chronicle_context';
@@ -86,8 +88,8 @@ function Graph() {
     selectedNodeId,
     setSelectedNodeId,
   } = useContext(ChronicleContext);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<ChronicleNode>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const { fitView } = useReactFlow();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
@@ -264,7 +266,7 @@ function Graph() {
   );
 
   const onNodeContextMenu = useCallback(
-    (event: React.MouseEvent, node: Node) => {
+    (event: React.MouseEvent, node: ChronicleNode) => {
       event.preventDefault();
       if (node.data.dependencyHash) {
         setContextMenuState({

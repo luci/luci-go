@@ -335,9 +335,9 @@ describe('TurboCIGraphBuilder', () => {
 
       expect(edges).toHaveLength(2);
       expect(edges[0].id).toBe('assignment-S_Multi-C1');
-      expect(edges[0].data.isAssignment).toBeTruthy();
+      expect(edges[0].data?.isAssignment).toBeTruthy();
       expect(edges[1].id).toBe('assignment-S_Multi-C2');
-      expect(edges[1].data.isAssignment).toBeTruthy();
+      expect(edges[1].data?.isAssignment).toBeTruthy();
     });
 
     it('does not draw assignment edges when showAssignmentEdges is false', () => {
@@ -632,7 +632,7 @@ describe('TurboCIGraphBuilder', () => {
       // Second build with collapse enabled
       const builder2 = new TurboCIGraphBuilder(graph);
       const { nodes, edges } = builder2.build({
-        collapsedDependencyHashes: new Set([hash]),
+        collapsedDependencyHashes: new Set([hash!]),
       });
 
       // T1 and T2 should be gone
@@ -689,7 +689,7 @@ describe('TurboCIGraphBuilder', () => {
       const groupNodeId = `collapsed-group-${hash}`;
 
       const { edges } = new TurboCIGraphBuilder(graph).build({
-        collapsedDependencyHashes: new Set([hash]),
+        collapsedDependencyHashes: new Set([hash!]),
       });
 
       // Expect edge Group -> S_Downstream

@@ -13,12 +13,13 @@
 // limitations under the License.
 
 import { Menu, MenuItem } from '@mui/material';
-import { Node } from 'reactflow';
+
+import { ChronicleNode } from '../utils/graph_builder';
 
 export interface ContextMenuState {
   mouseX: number;
   mouseY: number;
-  node: Node;
+  node: ChronicleNode;
 }
 
 export interface ContextMenuProps {

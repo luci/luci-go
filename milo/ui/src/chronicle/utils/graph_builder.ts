@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import dagre from '@dagrejs/dagre';
+import { Edge, MarkerType, Node, Position } from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import { CSSProperties } from 'react';
-import { Edge, MarkerType, Node, Position } from 'reactflow';
-import 'reactflow/dist/style.css';
 
 import { CheckView } from '../../proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { Dependencies } from '../../proto/turboci/graph/orchestrator/v1/dependencies.pb';
@@ -31,6 +31,17 @@ import {
 const dagreGraph = new dagre.graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
 
+export type ChronicleNodeData = {
+  label: string;
+  view?: CheckView | StageView;
+  dependencyHash?: number;
+  resultStatus?: CheckResultStatus;
+  isCollapsed?: boolean;
+  isGrouped?: boolean;
+};
+
+export type ChronicleNode = Node<ChronicleNodeData>;
+
 const GRAPH_CONFIG = {
   nodeWidth: 240,
   nodeHeight: 32,
@@ -45,13 +56,14 @@ const GRAPH_CONFIG = {
 // We must explicit set all top/right/bottom/left border properties here instead
 // of just setting "border" because React does not work well when mixing shorthand
 // and non-shorthand CSS properties.
-const COMMON_NODE_PROPERTIES: Partial<Node> & Pick<Node, 'position'> = {
+const COMMON_NODE_PROPERTIES: Partial<ChronicleNode> &
+  Pick<ChronicleNode, 'position'> = {
   position: { x: 0, y: 0 }, // Position will be calculated by Dagre
   sourcePosition: Position.Right,
   targetPosition: Position.Left,
   draggable: false,
-  width: GRAPH_CONFIG.nodeWidth,
-  height: GRAPH_CONFIG.nodeHeight,
+  initialWidth: GRAPH_CONFIG.nodeWidth,
+  initialHeight: GRAPH_CONFIG.nodeHeight,
 };
 
 const DEPENDENCY_EDGE_STYLE: Partial<Edge> = {
@@ -285,7 +297,10 @@ function truncateLabel(
   return label.substring(0, maxLength) + '...';
 }
 
-function createCheckNode(checkView: CheckView, dependencyHash?: number): Node {
+function createCheckNode(
+  checkView: CheckView,
+  dependencyHash?: number,
+): ChronicleNode {
   const check = checkView.check!;
   const resultStatus = getCheckResultStatus(checkView);
   const colors = getCheckColors(resultStatus);
@@ -302,7 +317,7 @@ function createCheckNode(checkView: CheckView, dependencyHash?: number): Node {
   };
 }
 
-function createStageNode(stageView: StageView): Node {
+function createStageNode(stageView: StageView): ChronicleNode {
   const stage = stageView.stage!;
   return {
     id: stage.identifier!.id!,
@@ -319,7 +334,7 @@ function createCollapsedGroupNode(
   id: string,
   label: string,
   dependencyHash: number,
-): Node {
+): ChronicleNode {
   return {
     id,
     data: {
@@ -405,7 +420,7 @@ export function getCollapsibleGroups(graphView: TurboCIGraphView): {
  * Groups stages to their assigned checks and positions them together.
  */
 export class TurboCIGraphBuilder {
-  private nodes: Node[] = [];
+  private nodes: ChronicleNode[] = [];
   private edges: Edge[] = [];
   private assignmentGroups: CheckAssignmentGroup[] = [];
   // Maps a Node ID (Stage or Check) to the ID of the group it belongs to.
@@ -419,7 +434,7 @@ export class TurboCIGraphBuilder {
   constructor(private readonly graphView: TurboCIGraphView) {}
 
   public build(options: GraphBuilderOptions = {}): {
-    nodes: Node[];
+    nodes: ChronicleNode[];
     edges: Edge[];
   } {
     this.nodes = [];
@@ -727,7 +742,7 @@ export class TurboCIGraphBuilder {
     });
   }
 
-  private layoutStandaloneNode(node: Node, x: number, y: number) {
+  private layoutStandaloneNode(node: ChronicleNode, x: number, y: number) {
     node.data = { ...node.data, isGrouped: false };
     node.position = { x, y };
 
@@ -747,7 +762,7 @@ export class TurboCIGraphBuilder {
   }
 
   private layoutGroupedNode(
-    node: Node,
+    node: ChronicleNode,
     baseX: number,
     baseY: number,
     group: CheckAssignmentGroup,
