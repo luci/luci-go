@@ -151,8 +151,8 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
       select: (data) => {
         return (
           data.testIds
-            // Use JSON.stringify to quote the string so special characters does
-            // not break the filter.
+            // Use JSON.stringify to quote string literals, as required by the
+            // AIP-160 filter syntax.
             .map((text) => ({
               text: JSON.stringify(text),
               display: <HighlightedText text={text} highlight={unquoted} />,
@@ -176,11 +176,13 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
         ingested_invocation_id: {},
         cluster_algorithm: {
           getValues: (partial) => {
-            const lowerPartial = partial.toLowerCase();
+            const lowerPartial = tryUnquoteStr(partial.toLowerCase());
             return ['rules', 'rules-v3', 'reason-v6', 'testname-v4']
               .filter((text) => text.includes(lowerPartial))
               .map((text) => ({
-                text,
+                // Use JSON.stringify to quote string literals, as required by
+                // the AIP-160 filter syntax.
+                text: JSON.stringify(text),
                 display: <HighlightedText text={text} highlight={partial} />,
               }));
           },
@@ -225,7 +227,8 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
               {
                 text: '[tag-value]',
                 unselectable: true,
-                explanation: 'Any tag value (e.g. tags.team_email:device-dev)',
+                explanation:
+                  'Any tag value (e.g. tags.team_email:"device-dev")',
               },
             ],
           },
@@ -243,7 +246,7 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
               {
                 text: '[variant-value]',
                 unselectable: true,
-                explanation: 'Any variant value (e.g. variant.os:ubuntu)',
+                explanation: 'Any variant value (e.g. variant.os:"ubuntu")',
               },
             ],
           },
