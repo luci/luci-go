@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Table, TableRow } from '@mui/material';
+import { Table, TableRow, TableRowProps } from '@mui/material';
 import { ReactNode } from 'react';
 
 import { useTableRowProps, useTableSx } from './context';
@@ -44,9 +44,10 @@ export function StyledTable({ children, ...props }: StyledTableProps) {
 
 export interface StyledTableRowProps {
   readonly children?: ReactNode;
+  readonly sx?: TableRowProps['sx'];
 }
 
-export function StyledTableRow({ children }: StyledTableRowProps) {
+export function StyledTableRow({ children, sx }: StyledTableRowProps) {
   const props = useTableRowProps();
 
   return (
@@ -58,6 +59,7 @@ export function StyledTableRow({ children }: StyledTableRowProps) {
         // The actual height of the row will expand to contain the
         // children.
         height: '1px',
+        ...sx,
       }}
     >
       {children}

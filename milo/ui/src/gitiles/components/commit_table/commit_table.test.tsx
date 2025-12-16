@@ -206,6 +206,23 @@ describe('<CommitTable />', () => {
     expect(contentCell).toHaveStyle({ display: 'none' });
   });
 
+  it('should have special style when isReverted is true', async () => {
+    render(
+      <FakeContextProvider>
+        <CommitTable repoUrl="https://repo.url">
+          <CommitTableBody>
+            <CommitTableRow commit={commit} isReverted>
+              <td>Content</td>
+            </CommitTableRow>
+          </CommitTableBody>
+        </CommitTable>
+      </FakeContextProvider>,
+    );
+
+    const row = screen.getByText('Content').closest('tr')!;
+    expect(row).not.toHaveStyle('text-decoration: line-through');
+  });
+
   it('should notify default state update correctly', async () => {
     const onExpandSpy = jest.fn((_expanded: boolean) => {});
     render(

@@ -39,7 +39,10 @@ export function getGitilesHostURL(commit: Pick<GitilesCommit, 'host'>) {
 export function getGitilesRepoURL(
   commit: Pick<GitilesCommit, 'host' | 'project'>,
 ) {
-  return `${getGitilesHostURL(commit)}/${commit.project}`;
+  if (commit.project) {
+    return `${getGitilesHostURL(commit)}/${commit.project}`;
+  }
+  return getGitilesHostURL(commit);
 }
 
 export function getGitilesCommitURL(
@@ -47,6 +50,9 @@ export function getGitilesCommitURL(
     | Pick<GitilesCommit, 'host' | 'project' | 'ref'>
     | Pick<GitilesCommit, 'host' | 'project' | 'id'>,
 ): string {
+  if (typeof commit !== 'object' || commit === null) {
+    return '';
+  }
   const commitish =
     ('id' in commit && commit.id) || ('ref' in commit && commit.ref);
   return `${getGitilesRepoURL(commit)}/+/${commitish}`;

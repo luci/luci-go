@@ -12,19 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { act } from 'react';
 import { MemoryRouter } from 'react-router';
 import { VirtuosoMockContext } from 'react-virtuoso';
 
 import { Analysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { Commit } from '@/proto/go.chromium.org/luci/common/proto/git/commit.pb';
 import { QueryBlamelistResponse } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 
 import { BlamelistTable } from './blamelist_table';
 import { OutputQueryBlamelistResponse } from './types';
 
-function makeCommit(id: string): Commit {
+function makeCommit(
+  id: string,
+  message = 'this is a commit\ndescription\n',
+): Commit {
   return {
     id,
     tree: '1234567890abcdef',
@@ -39,7 +43,7 @@ function makeCommit(id: string): Commit {
       email: 'committer@email.com',
       time: '2022-02-02T23:22:22Z',
     },
-    message: 'this is a commit\ndescription\n',
+    message,
     treeDiff: [],
   };
 }
@@ -75,6 +79,7 @@ describe('<BlamelistTable />', () => {
               commits: [makeCommit('commit6')],
             }) as OutputQueryBlamelistResponse,
           ]}
+          revertedCommitsMap={new Map()}
         />
       </VirtuosoMockContext.Provider>,
     );
@@ -87,6 +92,76 @@ describe('<BlamelistTable />', () => {
     expect(screen.getByText('commit5').closest('tr')).toHaveTextContent('5.');
     expect(screen.getByText('commit6').closest('tr')).toHaveTextContent('6.');
     expect(screen.queryByText('Culprit Analysis')).not.toBeInTheDocument();
+  });
+
+  it('should show reverted by column', async () => {
+    const revertCommit = makeCommit(
+      'revert-commit-id',
+      'Revert "the commit title"\n\nThis reverts commit reverted-commit-id-long.',
+    );
+    const revertedCommit = makeCommit(
+      'reverted-commit-id-long',
+      'reverted title',
+    );
+    const anotherCommit = makeCommit('another-commit');
+    render(
+      <VirtuosoMockContext.Provider
+        value={{ viewportHeight: 300, itemHeight: 10 }}
+      >
+        <BlamelistTable
+          repoUrl="https://repo.url"
+          pages={[
+            QueryBlamelistResponse.fromPartial({
+              commits: [revertedCommit, revertCommit, anotherCommit],
+            }) as OutputQueryBlamelistResponse,
+          ]}
+          revertedCommitsMap={
+            new Map([
+              [
+                'reverted-commit-id-long',
+                {
+                  host: 'repo.url',
+                  project: '',
+                  id: 'revert-commit-id',
+                } as GitilesCommit,
+              ],
+            ])
+          }
+        />
+      </VirtuosoMockContext.Provider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    expect(screen.getByText('Reverted By')).toBeInTheDocument();
+
+    const revertedRow = screen
+      .getByRole('link', { name: 'reverted' })
+      .closest('tr')!;
+    const revertingLink = within(revertedRow).getByRole('link', {
+      name: 'revert-',
+    });
+    expect(revertingLink).toHaveAttribute(
+      'href',
+      'https://repo.url/+/revert-commit-id',
+    );
+    const titleCell = within(revertedRow).getByText('reverted title');
+    expect(titleCell).toHaveStyle('text-decoration: line-through');
+    expect(revertedRow).not.toHaveStyle('text-decoration: line-through');
+
+    const revertRow = screen
+      .getByText('Revert "the commit title"')
+      .closest('tr')!;
+    // It should have only one link, which is the commit ID link.
+    expect(within(revertRow).getAllByRole('link')).toHaveLength(1);
+    expect(revertRow).not.toHaveStyle('text-decoration: line-through');
+
+    const anotherRow = screen
+      .getByRole('link', { name: 'another-' })
+      .closest('tr')!;
+    // It should have only one link, which is the commit ID link.
+    expect(within(anotherRow).getAllByRole('link')).toHaveLength(1);
+    expect(anotherRow).not.toHaveStyle('text-decoration: line-through');
   });
 
   it('displays the Culprit Analysis column', async () => {
@@ -120,6 +195,7 @@ describe('<BlamelistTable />', () => {
                 },
               },
             })}
+            revertedCommitsMap={new Map()}
           />
         </VirtuosoMockContext.Provider>
       </MemoryRouter>,

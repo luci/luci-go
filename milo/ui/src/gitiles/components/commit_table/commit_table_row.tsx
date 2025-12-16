@@ -18,7 +18,6 @@ import { ReactNode, useEffect, useRef, useState } from 'react';
 import { OutputCommit } from '@/gitiles/types';
 
 import { CommitContent } from './commit_content';
-import { StyledTableRow } from './common';
 import {
   CommitProvider,
   ExpandedProvider,
@@ -46,6 +45,7 @@ export interface CommitTableRowProps {
    * If true, this row will be expanded by default, overriding the global default.
    */
   readonly defaultExpandedOverride?: boolean;
+  readonly isReverted?: boolean;
 }
 
 export function CommitTableRow({
@@ -104,7 +104,7 @@ export function CommitTableRow({
         {/* Pass commit to cells via context so composing a row require less
          ** boilerplate. */}
         <CommitProvider value={commit}>
-          <StyledTableRow>{children}</StyledTableRow>
+          <TableRow>{children}</TableRow>
           {/* Always render the content row to DOM to ensure a stable DOM
            ** structure.
            **/}

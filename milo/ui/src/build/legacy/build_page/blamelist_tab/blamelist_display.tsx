@@ -25,6 +25,7 @@ import { QueryBlamelistRequest } from '@/proto/go.chromium.org/luci/milo/proto/v
 import { BlamelistTable } from './blamelist_table';
 import { RevisionRange } from './revision_range';
 import { OutputQueryBlamelistResponse } from './types';
+import { useRevertedCommits } from './use_reverted_commits';
 
 export interface BlamelistDisplayProps {
   readonly blamelistPin: GitilesCommit;
@@ -57,17 +58,22 @@ export function BlamelistDisplay({
     refetchOnWindowFocus: false,
     select: (data) => data as InfiniteData<OutputQueryBlamelistResponse>,
   });
+  const pages = data?.pages || [];
+  const { revertedCommitsMap } = useRevertedCommits(blamelistPin);
 
   if (isError) {
     throw error;
   }
 
-  const pages = data?.pages || [];
   const isLoadingPage = isPending || isFetchingNextPage;
   const commitCount = pages.reduce(
     (prev, page) => prev + page.commits.length,
     0,
   );
+
+  if (isPending) {
+    return <CircularProgress sx={{ margin: '10px' }} />;
+  }
 
   return (
     <>
@@ -86,6 +92,7 @@ export function BlamelistDisplay({
         repoUrl={getGitilesRepoURL(blamelistPin)}
         pages={pages}
         analysis={analysis}
+        revertedCommitsMap={revertedCommitsMap || new Map()}
       />
       <div css={{ padding: '5px 10px' }}>
         <Button

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { CircularProgress, Link, TableCell } from '@mui/material';
 import { memo } from 'react';
 import { useLocalStorage } from 'react-use';
 
@@ -31,22 +32,43 @@ import {
   NumHeadCell,
   TimeContentCell,
   TimeHeadCell,
-  TitleContentCell,
   TitleHeadCell,
   ToggleContentCell,
   ToggleHeadCell,
 } from '@/gitiles/components/commit_table';
+import { useCommit } from '@/gitiles/components/commit_table/context';
+import { getGitilesCommitURL } from '@/gitiles/tools/utils';
 import { Analysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { GitilesCommit } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { OutputQueryBlamelistResponse } from './types';
 
 const BLAMELIST_TABLE_DEFAULT_EXPANDED_KEY = 'blamelist-table-default-expanded';
+
+function StyledTitleContentCell({ isReverted }: { isReverted: boolean }) {
+  const commit = useCommit();
+  const title = commit?.message.split('\n', 1)[0] || '';
+  return (
+    <TableCell
+      sx={{
+        textDecoration: isReverted ? 'line-through' : 'none',
+        whiteSpace: 'break-spaces',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }}
+    >
+      {title}
+    </TableCell>
+  );
+}
 
 interface CommitTablePageProps {
   readonly prevCommitCount: number;
   readonly page: OutputQueryBlamelistResponse;
   readonly suspect?: GenericSuspect;
   readonly bbid?: string;
+  readonly revertedCommitsMap: ReadonlyMap<string, GitilesCommit>;
+  readonly isLoadingReverts?: boolean;
 }
 
 // The table body can be large and expensive to render.
@@ -60,13 +82,17 @@ const CommitTablePage = memo(function CommitTablePage({
   page,
   suspect,
   bbid,
+  revertedCommitsMap,
+  isLoadingReverts,
 }: CommitTablePageProps) {
   return (
     <>
       {page.commits.map((commit, i) => {
         const isSuspect = suspect?.commit?.id === commit.id;
+        const revertingCommit = revertedCommitsMap.get(commit.id);
+        const isReverted = Boolean(revertingCommit);
         return (
-          <CommitTableRow key={i} commit={commit}>
+          <CommitTableRow key={i} commit={commit} isReverted={isReverted}>
             <ToggleContentCell />
             <NumContentCell num={prevCommitCount + i + 1} />
             {suspect && (
@@ -78,7 +104,22 @@ const CommitTablePage = memo(function CommitTablePage({
             <IdContentCell />
             <AuthorContentCell />
             <TimeContentCell />
-            <TitleContentCell />
+            <StyledTitleContentCell isReverted={isReverted} />
+            <TableCell sx={{ textDecoration: 'none' }}>
+              {isLoadingReverts ? (
+                <CircularProgress size={16} />
+              ) : (
+                revertingCommit && (
+                  <Link
+                    href={getGitilesCommitURL(revertingCommit)}
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    {revertingCommit.id.slice(0, 7)}
+                  </Link>
+                )
+              )}
+            </TableCell>
           </CommitTableRow>
         );
       })}
@@ -90,12 +131,16 @@ export interface BlamelistTableProps {
   readonly repoUrl: string;
   readonly pages: readonly OutputQueryBlamelistResponse[];
   readonly analysis?: Analysis;
+  readonly revertedCommitsMap: ReadonlyMap<string, GitilesCommit>;
+  readonly isLoadingReverts?: boolean;
 }
 
 export function BlamelistTable({
   repoUrl,
   pages,
   analysis,
+  revertedCommitsMap,
+  isLoadingReverts,
 }: BlamelistTableProps) {
   const [defaultExpanded = false, setDefaultExpanded] =
     useLocalStorage<boolean>(BLAMELIST_TABLE_DEFAULT_EXPANDED_KEY);
@@ -138,6 +183,7 @@ export function BlamelistTable({
         <AuthorHeadCell />
         <TimeHeadCell />
         <TitleHeadCell />
+        <TableCell>Reverted By</TableCell>
       </CommitTableHead>
       <CommitTableBody>
         {pages.map((page, i) => {
@@ -150,6 +196,8 @@ export function BlamelistTable({
               prevCommitCount={prevCount}
               suspect={suspect}
               bbid={analysis?.firstFailedBbid}
+              revertedCommitsMap={revertedCommitsMap}
+              isLoadingReverts={isLoadingReverts}
             />
           );
         })}
