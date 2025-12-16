@@ -52,12 +52,14 @@ func RegisterTaskClass(compileHandler, testHandler func(ctx context.Context, pay
 	}
 }
 
-// ScheduleTestFailureTask schedules a task for test failure culprit verification.
-func ScheduleTestFailureTask(ctx context.Context, analysisID int64) error {
+// ScheduleTestFailureTask schedules a verification task for a specific suspect.
+func ScheduleTestFailureTask(ctx context.Context, analysisID int64, suspectID int64, parentKey string) error {
 	return tq.AddTask(ctx, &tq.Task{
 		Payload: &tpb.TestFailureCulpritVerificationTask{
 			AnalysisId: analysisID,
+			SuspectId:  suspectID,
+			ParentKey:  parentKey,
 		},
-		Title: fmt.Sprintf("test_failure_culprit_verification_%d", analysisID),
+		Title: fmt.Sprintf("test_failure_culprit_verification_%d_suspect_%d", analysisID, suspectID),
 	})
 }

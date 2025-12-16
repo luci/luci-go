@@ -155,28 +155,6 @@ func FetchSuspectsForAnalysis(c context.Context, cfa *model.CompileFailureAnalys
 	return suspects, nil
 }
 
-// GetSuspectForTestAnalysis returns suspect for test analysis.
-func GetSuspectForTestAnalysis(ctx context.Context, tfa *model.TestFailureAnalysis) (*model.Suspect, error) {
-	nsa, err := GetTestNthSectionForAnalysis(ctx, tfa)
-	if err != nil {
-		return nil, errors.Fmt("get test nthsection for analysis: %w", err)
-	}
-	if nsa == nil {
-		return nil, nil
-	}
-	suspects, err := fetchSuspectsForParentKey(ctx, datastore.KeyForObj(ctx, nsa))
-	if err != nil {
-		return nil, errors.Fmt("fetch suspects for parent key: %w", err)
-	}
-	if len(suspects) == 0 {
-		return nil, nil
-	}
-	if len(suspects) > 1 {
-		return nil, errors.Fmt("more than 1 suspect found: %d", len(suspects))
-	}
-	return suspects[0], nil
-}
-
 func fetchSuspectsForParentKey(c context.Context, parentKey *datastore.Key) ([]*model.Suspect, error) {
 	suspects := []*model.Suspect{}
 	q := datastore.NewQuery("Suspect").Ancestor(parentKey)

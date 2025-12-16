@@ -325,28 +325,6 @@ func TestFetchSuspectsForAnalysis(t *testing.T) {
 	})
 }
 
-func TestGetSuspectForTestAnalysis(t *testing.T) {
-	ctx := memory.Use(context.Background())
-
-	ftt.Run("GetSuspectForTestAnalysis", t, func(t *ftt.Test) {
-		tfa := testutil.CreateTestFailureAnalysis(ctx, t, nil)
-		nsa := testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
-			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
-		})
-		s, err := GetSuspectForTestAnalysis(ctx, tfa)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, s, should.BeNil)
-
-		testutil.CreateSuspect(ctx, t, &testutil.SuspectCreationOption{
-			ID:        300,
-			ParentKey: datastore.KeyForObj(ctx, nsa),
-		})
-		s, err = GetSuspectForTestAnalysis(ctx, tfa)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, s.Id, should.Equal(300))
-	})
-}
-
 func TestFetchTestFailuresForSuspect(t *testing.T) {
 	ctx := memory.Use(context.Background())
 

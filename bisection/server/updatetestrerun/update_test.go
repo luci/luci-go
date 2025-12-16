@@ -713,6 +713,8 @@ func TestScheduleNewRerun(t *testing.T) {
 		resultsTask := skdr.Tasks().Payloads()[0].(*tpb.TestFailureCulpritVerificationTask)
 		assert.Loosely(t, resultsTask, should.Match(&tpb.TestFailureCulpritVerificationTask{
 			AnalysisId: tfa.ID,
+			SuspectId:  suspects[0].Id,
+			ParentKey:  datastore.KeyForObj(ctx, nsa).Encode(),
 		}))
 	})
 

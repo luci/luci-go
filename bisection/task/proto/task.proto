@@ -72,6 +72,10 @@ message TestFailureBisectionTask {
 message TestFailureCulpritVerificationTask {
   // The analysis ID
   int64 analysis_id = 1;
+  // The suspect ID to verify
+  int64 suspect_id = 2;
+  // The encoded datastore key of suspect parent
+  string parent_key = 3;
 }
 
 // Payload for test failure culprit action.

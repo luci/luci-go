@@ -226,11 +226,11 @@ func SaveNthSectionAnalysis(ctx context.Context, nsa *model.TestNthSectionAnalys
 // SaveSuspectAndTriggerCulpritVerification saves the suspect and triggers culprit verification.
 func SaveSuspectAndTriggerCulpritVerification(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, commit *pb.BlameListSingleCommit) error {
 	// Save nthsection result to datastore.
-	_, err := saveSuspectAndUpdateNthSection(ctx, tfa, nsa, commit)
+	suspect, err := saveSuspectAndUpdateNthSection(ctx, tfa, nsa, commit)
 	if err != nil {
 		return errors.Fmt("store nthsection culprit to datastore: %w", err)
 	}
-	if err := task.ScheduleTestFailureTask(ctx, tfa.ID); err != nil {
+	if err := task.ScheduleTestFailureTask(ctx, tfa.ID, suspect.Id, suspect.ParentAnalysis.Encode()); err != nil {
 		// Non-critical, just log the error
 		err := errors.Fmt("schedule culprit verification task %d: %w", tfa.ID, err)
 		logging.Errorf(ctx, err.Error())

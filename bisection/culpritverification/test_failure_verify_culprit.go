@@ -33,8 +33,10 @@ import (
 
 func processTestFailureTask(ctx context.Context, task *tpb.TestFailureCulpritVerificationTask) error {
 	analysisID := task.AnalysisId
+	suspectID := task.SuspectId
+	parentKeyStr := task.ParentKey
 	ctx = loggingutil.SetAnalysisID(ctx, analysisID)
-	logging.Infof(ctx, "Processing culprit verification for test failure bisection task")
+	logging.Infof(ctx, "Processing culprit verification for test failure bisection task, suspect ID: %d", suspectID)
 	// TODO(beining@): set analysis status on error.
 	// Retrieves analysis from datastore.
 	tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, analysisID)
@@ -42,8 +44,12 @@ func processTestFailureTask(ctx context.Context, task *tpb.TestFailureCulpritVer
 		return errors.Fmt("get test failure analysis: %w", err)
 	}
 
-	// Retrieves suspect.
-	suspect, err := datastoreutil.GetSuspectForTestAnalysis(ctx, tfa)
+	// Decode parent key and retrieve suspect directly.
+	parentKey, err := datastore.NewKeyEncoded(parentKeyStr)
+	if err != nil {
+		return errors.Fmt("failed to decode parent key: %w", err)
+	}
+	suspect, err := datastoreutil.GetSuspect(ctx, suspectID, parentKey)
 	if err != nil {
 		return errors.Fmt("couldn't get suspect: %w", err)
 	}

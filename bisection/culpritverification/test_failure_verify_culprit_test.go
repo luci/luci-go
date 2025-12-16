@@ -90,6 +90,8 @@ func TestProcessTestFailureTask(t *testing.T) {
 	})
 	task := &tpb.TestFailureCulpritVerificationTask{
 		AnalysisId: tfa.ID,
+		SuspectId:  suspect.Id,
+		ParentKey:  datastore.KeyForObj(c, nsa).Encode(),
 	}
 
 	err := processTestFailureTask(c, task)
