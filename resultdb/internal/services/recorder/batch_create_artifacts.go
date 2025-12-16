@@ -602,6 +602,8 @@ func validateBatchCreateArtifactsRequestForSystemState(ctx context.Context, work
 			}
 			bucket, _ := gsutil.Split(a.gcsURI)
 			if _, ok := allowedBucketsByProject[project][bucket]; !ok {
+				// For debugging, log the allowed buckets.
+				logging.Errorf(ctx, "Permission denied for bucket %q in project %q. Allowed buckets: %v", bucket, project, allowedBucketsByProject[project])
 				return appstatus.Errorf(codes.PermissionDenied, "requests[%d]: the user does not have permission to reference GCS objects in bucket %q in project %q", i, bucket, project)
 			}
 		}
