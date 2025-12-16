@@ -84,6 +84,7 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 				nil,
 			),
 		}
+		ctx = turboci.WithTurboCIOrchestratorClient(ctx, orch)
 
 		req := &pb.ScheduleBuildRequest{
 			Builder:   builder,
@@ -94,7 +95,7 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 				Builder: builder,
 			},
 		}
-		err := launchTurboCIRoot(ctx, req, build, orch)
+		err := launchTurboCIRoot(ctx, req, build)
 		assert.NoErr(t, err)
 
 		assert.That(t, orch.LastCreateCall, should.Match(orchestratorpb.CreateWorkPlanRequest_builder{

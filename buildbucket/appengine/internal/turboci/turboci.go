@@ -31,6 +31,8 @@ import (
 	orchestratorgrpcpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1/grpcpb"
 )
 
+var orchestratorClientKey = "holds the global turboci orchestrator client"
+
 // How many gRPC clients to use to avoid hitting HTTP2 concurrent stream limits.
 const connPoolSize = 4
 
@@ -76,6 +78,35 @@ func Dial(ctx context.Context, apiEndpoint string) (orchestratorgrpcpb.TurboCIOr
 		}
 	}
 	return pool, nil
+}
+
+// WithTurboCIOrchestratorClient returns a new context with the given orchestrator client.
+func WithTurboCIOrchestratorClient(ctx context.Context, client orchestratorgrpcpb.TurboCIOrchestratorClient) context.Context {
+	return context.WithValue(ctx, &orchestratorClientKey, client)
+}
+
+// TurboCIOrchestratorClient returns the orchestrator client installed in the current context.
+// Panics if there isn't one.
+func TurboCIOrchestratorClient(ctx context.Context) orchestratorgrpcpb.TurboCIOrchestratorClient {
+	return ctx.Value(&orchestratorClientKey).(orchestratorgrpcpb.TurboCIOrchestratorClient)
+}
+
+// CreateWorkPlan is a helper function to get the installed orchestrator client
+// and call CreateWorkPlan with it.
+func CreateWorkPlan(ctx context.Context, in *orchestratorpb.CreateWorkPlanRequest, opts ...grpc.CallOption) (*orchestratorpb.CreateWorkPlanResponse, error) {
+	return TurboCIOrchestratorClient(ctx).CreateWorkPlan(ctx, in, opts...)
+}
+
+// WriteNodes is a helper function to get the installed orchestrator client
+// and call WriteNodes with it.
+func WriteNodes(ctx context.Context, in *orchestratorpb.WriteNodesRequest, opts ...grpc.CallOption) (*orchestratorpb.WriteNodesResponse, error) {
+	return TurboCIOrchestratorClient(ctx).WriteNodes(ctx, in, opts...)
+}
+
+// QueryNodes is a helper function to get the installed orchestrator client
+// and call QueryNodes with it.
+func QueryNodes(ctx context.Context, in *orchestratorpb.QueryNodesRequest, opts ...grpc.CallOption) (*orchestratorpb.QueryNodesResponse, error) {
+	return TurboCIOrchestratorClient(ctx).QueryNodes(ctx, in, opts...)
 }
 
 type clientPool []grpc.ClientConnInterface

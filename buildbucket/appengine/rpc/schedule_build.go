@@ -43,7 +43,6 @@ import (
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/caching"
-	orchestratorgrpcpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1/grpcpb"
 
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/common"
@@ -1438,9 +1437,7 @@ func validateScheduleBuild(ctx context.Context, op *scheduleBuildOp, req *pb.Sch
 //
 // Implements pb.BuildsServer.
 func (b *Builds) ScheduleBuild(ctx context.Context, req *pb.ScheduleBuildRequest) (*pb.Build, error) {
-	builds, merr := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, &scheduleBuildsParams{
-		Orchestrator: b.Orchestrator,
-	})
+	builds, merr := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, &scheduleBuildsParams{})
 	return builds[0], merr[0]
 }
 
@@ -1452,12 +1449,6 @@ func totalBatchFailure(err error, count int) ([]*pb.Build, errors.MultiError) {
 
 // scheduleBuildsParams holds parameters for scheduleBuilds call.
 type scheduleBuildsParams struct {
-	// Orchestrator is the connection to the TurboCI Orchestrator to use.
-	//
-	// Used when launching builds through Turbo CI. If nil, Turbo CI builds are
-	// not supported.
-	Orchestrator orchestratorgrpcpb.TurboCIOrchestratorClient
-
 	// LaunchAsNative, if true, indicates to launch all builds as native builds,
 	// regardless of how their ExperimentRunInTurboCI experiment evaluates.
 	//
@@ -1553,7 +1544,7 @@ func scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest, params
 	eg.SetLimit(64)
 	for _, batch := range batches {
 		eg.Go(func() error {
-			merr := batch.launch(ctx, bldrsMCB, params.Orchestrator)
+			merr := batch.launch(ctx, bldrsMCB)
 			for idx, req := range batch.reqs {
 				if merr[idx] != nil {
 					op.Fail(req, merr[idx])

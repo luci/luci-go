@@ -40,7 +40,6 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
-	orchestratorgrpcpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1/grpcpb"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -71,7 +70,7 @@ func checkTurboCIOAuthScope(ctx context.Context) {
 // launchTurboCIRoot launches a root build via a new Turbo CI workplan.
 //
 // Updates `build` in-place. Returns appstatus errors.
-func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build *model.Build, orch orchestratorgrpcpb.TurboCIOrchestratorClient) error {
+func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build *model.Build) error {
 	logging.Infof(ctx, "turbo-ci: launching new workplan with %s", protoutil.FormatBuilderID(req.Builder))
 
 	creds, err := turboCICreds(ctx)
@@ -92,7 +91,8 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 		digest := sha256.Sum256([]byte(idempotencyKey))
 		idempotencyKey = base64.StdEncoding.EncodeToString(digest[:])
 	}
-	plan, err := orch.CreateWorkPlan(ctx, orchestratorpb.CreateWorkPlanRequest_builder{
+
+	plan, err := turboci.CreateWorkPlan(ctx, orchestratorpb.CreateWorkPlanRequest_builder{
 		Realm:          proto.String(build.Realm()),
 		IdempotencyKey: proto.String(idempotencyKey),
 	}.Build(), grpc.PerRPCCredentials(creds))
@@ -105,7 +105,6 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 
 	// The client configured to work with the created plan.
 	client := &turboci.Client{
-		Orch:   orch,
 		Creds:  creds,
 		PlanID: planID,
 		Token:  plan.GetCreatorToken(),
@@ -150,7 +149,7 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 // workplan.
 //
 // Updates `builds` in-place, returns exactly len(builds) appstatus errors.
-func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.ScheduleBuildRequest, builds []*model.Build, orch orchestratorgrpcpb.TurboCIOrchestratorClient) errors.MultiError {
+func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.ScheduleBuildRequest, builds []*model.Build) errors.MultiError {
 	return slices.Repeat(errors.MultiError{
 		appstatus.Errorf(codes.Unimplemented, "Turbo CI child builds are not implemented yet"),
 	}, len(reqs))

@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/turboci/rpc/write"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
-	orchestratorgrpcpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1/grpcpb"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -39,8 +38,6 @@ import (
 // Client is a short-lived TurboCIOrchestratorClient scoped to a
 // particular caller and plan.
 type Client struct {
-	// Orch is the connection to the TurboCI Orchestrator to use.
-	Orch orchestratorgrpcpb.TurboCIOrchestratorClient
 	// Creads is the credential to use to call TurboCI Orchestrator.
 	Creds credentials.PerRPCCredentials
 	// PlanID is the workplan ID.
@@ -88,7 +85,8 @@ func (c *Client) WriteStage(ctx context.Context, stageID string, req *pb.Schedul
 			}.Build(),
 		}.Build())
 	}
-	_, err = c.Orch.WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
+
+	_, err = WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
 	return AdjustTurboCIRPCError(err)
 }
 
@@ -118,7 +116,7 @@ func (c *Client) QueryStage(ctx context.Context, stageID string) (*pb.BuildStage
 		},
 	}.Build()
 
-	resp, err := c.Orch.QueryNodes(ctx, queryReq, grpc.PerRPCCredentials(c.Creds))
+	resp, err := QueryNodes(ctx, queryReq, grpc.PerRPCCredentials(c.Creds))
 	if err != nil {
 		return nil, AdjustTurboCIRPCError(err)
 	}

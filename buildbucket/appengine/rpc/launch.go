@@ -21,7 +21,6 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	orchestratorgrpcpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1/grpcpb"
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/resultdb"
@@ -63,17 +62,17 @@ type batchToLaunch struct {
 //
 // Updates *model.Build in-place on success. Returns exactly len(b.reqs) number
 // of errors.
-func (b *batchToLaunch) launch(ctx context.Context, bldrsMCB stringset.Set, orch orchestratorgrpcpb.TurboCIOrchestratorClient) errors.MultiError {
+func (b *batchToLaunch) launch(ctx context.Context, bldrsMCB stringset.Set) errors.MultiError {
 	switch b.kind {
 	case batchKindNative:
 		return launchNative(ctx, b.reqs, b.builds, bldrsMCB)
 
 	case batchKindTurboCIRoot:
-		err := launchTurboCIRoot(ctx, b.reqs[0], b.builds[0], orch)
+		err := launchTurboCIRoot(ctx, b.reqs[0], b.builds[0])
 		return errors.MultiError{err}
 
 	case batchKindTurboCIChildren:
-		return launchTurboCIChildren(ctx, b.parent, b.reqs, b.builds, orch)
+		return launchTurboCIChildren(ctx, b.parent, b.reqs, b.builds)
 
 	default:
 		panic("impossible")

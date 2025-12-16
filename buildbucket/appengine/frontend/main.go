@@ -250,10 +250,11 @@ func main() {
 		if err != nil {
 			return err
 		}
+		srv.Context = turboci.WithTurboCIOrchestratorClient(srv.Context, orchestrator)
 
-		grpcpb.RegisterBuildsServer(srv, &rpc.Builds{Orchestrator: orchestrator})
+		grpcpb.RegisterBuildsServer(srv, &rpc.Builds{})
 		grpcpb.RegisterBuildersServer(srv, &rpc.Builders{})
-		executorgrpcpb.RegisterTurboCIStageExecutorServer(srv, &rpc.TurboCIStageExecutor{Orchestrator: orchestrator})
+		executorgrpcpb.RegisterTurboCIStageExecutorServer(srv, &rpc.TurboCIStageExecutor{})
 
 		// Expose Turbo CI Executor service in the RPC Explorer. Turbo CI protos are
 		// compiled with more standard protoc tooling and they need to be registered
