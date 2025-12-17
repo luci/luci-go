@@ -15,7 +15,9 @@
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import { Breadcrumbs, Typography } from '@mui/material';
 import Link from '@mui/material/Link';
+import { useQuery } from '@tanstack/react-query';
 
+import { useSchemaClient } from '@/common/hooks/prpc_clients';
 import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
 import { TestIdentifier } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import { useIsLegacyInvocation } from '@/test_investigation/context';
@@ -32,8 +34,16 @@ export function TestInfoBreadcrumbs({
   const coarseName = testIdStructured?.coarseName || undefined;
   const fineName = testIdStructured?.fineName || undefined;
   const module = testIdStructured?.moduleName || undefined;
+  const schemeId = testIdStructured?.moduleScheme;
   const invID = invocation.split('/')[1] || '';
   const isLegacyInvocation = useIsLegacyInvocation();
+
+  const schemaClient = useSchemaClient();
+  const { data } = useQuery({
+    ...schemaClient.GetScheme.query({ name: `schema/schemes/${schemeId}` }),
+  });
+  const coarseLabel = data?.coarse?.humanReadableName || 'Coarse Name';
+  const fineLabel = data?.fine?.humanReadableName || 'Fine Name';
 
   return (
     <Breadcrumbs
@@ -70,7 +80,7 @@ export function TestInfoBreadcrumbs({
       )}
       {coarseName && (
         <Typography variant="caption">
-          Coarse Name: {coarseName}
+          {coarseLabel}: {coarseName}
           <CopyToClipboard
             textToCopy={coarseName}
             aria-label="Copy module name."
@@ -80,7 +90,7 @@ export function TestInfoBreadcrumbs({
       )}
       {fineName && (
         <Typography variant="caption">
-          Suite: {fineName}
+          {fineLabel}: {fineName}
           <CopyToClipboard
             textToCopy={fineName}
             aria-label="Copy suite name."
