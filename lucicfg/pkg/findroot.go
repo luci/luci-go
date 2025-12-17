@@ -21,8 +21,16 @@ import (
 	"sync"
 )
 
+type repoProbe struct {
+	// sentinel is the name of the file to look for
+	sentinel string
+	// locatedInRepoParent indicates that the sentinel file will actually be present in the
+	// directory containing the repo rather than the root of the repo
+	locatedInRepoParent bool
+}
+
 // Used to discover boundaries of repositories.
-var repoSentinel = []string{".git", ".citc"}
+var repoProbes = []repoProbe{{".git", false}, {".citc", true}}
 
 // findRoot, given a directory path on disk, finds the closest repository or
 // volume root directory and returns it as an absolute path.
@@ -47,21 +55,29 @@ func findRoot(dir, markerFile, stopDir string, cache *statCache) (string, bool, 
 		cache = unsyncStatCache()
 	}
 
-	var probes []string
+	var probes []repoProbe
 	if markerFile == "" {
-		probes = repoSentinel
+		probes = repoProbes
 	} else {
 		// Note the order is important: need to probe for the marker file before
 		// probing .git in case the marker file is at the repo root.
-		probes = append(make([]string, 0, 3), markerFile)
-		probes = append(probes, repoSentinel...)
+		probe := repoProbe{markerFile, false}
+		probes = append(make([]repoProbe, 0, 3), probe)
+		probes = append(probes, repoProbes...)
 	}
 
 	for {
 		for _, probe := range probes {
-			switch err := cache.stat(filepath.Join(dir, probe)); {
+			probeDir := dir
+			if probe.locatedInRepoParent {
+				probeDir = filepath.Dir(probeDir)
+				if probeDir == dir {
+					continue // at the volume root, this probe won't match
+				}
+			}
+			switch err := cache.stat(filepath.Join(probeDir, probe.sentinel)); {
 			case err == nil:
-				return dir, probe == markerFile, nil // found the repository root or the marker file
+				return dir, probe.sentinel == markerFile, nil // found the repository root or the marker file
 			case errors.Is(err, os.ErrNotExist):
 				// Carry on searching
 			default:

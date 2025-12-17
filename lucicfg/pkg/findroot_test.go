@@ -40,6 +40,20 @@ func TestFindRoot(t *testing.T) {
 		assert.That(t, absFromCwd, should.Equal(absFromRoot))
 	})
 
+	t.Run("Finds citc", func(t *testing.T) {
+		tmp := t.TempDir()
+		repoRoot := filepath.Join(tmp, "parent/repo-root")
+		deep := filepath.Join(repoRoot, "deep")
+		citc := filepath.Join(tmp, "parent/.citc")
+		assert.NoErr(t, os.MkdirAll(repoRoot, 0750))
+		assert.NoErr(t, os.MkdirAll(citc, 0750))
+
+		root, foundMarker, err := findRoot(deep, "", "", nil)
+		assert.NoErr(t, err)
+		assert.That(t, foundMarker, should.BeFalse)
+		assert.That(t, root, should.Equal(repoRoot))
+	})
+
 	t.Run("Finds volume root", func(t *testing.T) {
 		// Assume the temp dir is outside of any repositories.
 		volumeRoot, foundMarker, err := findRoot(os.TempDir(), "", "", nil)
