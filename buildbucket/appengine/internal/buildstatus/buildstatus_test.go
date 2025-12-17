@@ -190,9 +190,9 @@ func TestUpdate(t *testing.T) {
 			updatedStatusDetails := b.Proto.StatusDetails
 			u := &Updater{
 				Build: b,
-				PostProcess: func(c context.Context, bld *model.Build, inf *model.BuildInfra) error {
-					updatedStatus = bld.Proto.Status
-					updatedStatusDetails = bld.Proto.StatusDetails
+				PostProcess: func(c context.Context, params *PostProcessParams) error {
+					updatedStatus = params.Build.Proto.Status
+					updatedStatusDetails = params.Build.Proto.StatusDetails
 					return nil
 				},
 			}

@@ -38,6 +38,12 @@ func (sd *StatusWithDetails) isSet() bool {
 	return sd != nil && sd.Status != pb.Status_STATUS_UNSPECIFIED
 }
 
+type PostProcessParams struct {
+	Build     *model.Build
+	Infra     *model.BuildInfra
+	OldStatus pb.Status
+}
+
 type Updater struct {
 	Build *model.Build
 	Infra *model.BuildInfra
@@ -50,7 +56,7 @@ type Updater struct {
 
 	UpdateTime time.Time
 
-	PostProcess func(c context.Context, bld *model.Build, inf *model.BuildInfra) error
+	PostProcess func(c context.Context, prams *PostProcessParams) error
 }
 
 // buildEndStatus calculates the final status of a build based on its output
@@ -141,6 +147,7 @@ func (u *Updater) Do(ctx context.Context) (*model.BuildStatus, error) {
 	}
 
 	newBuildStatus := u.BuildStatus
+	oldBuildStatus := u.Build.Proto.Status
 	if !newBuildStatus.isSet() {
 		newBuildStatus = u.calculateBuildStatus()
 	}
@@ -176,7 +183,12 @@ func (u *Updater) Do(ctx context.Context) (*model.BuildStatus, error) {
 	bs.Status = newBuildStatus.Status
 
 	// post process after build status change.
-	if err := u.PostProcess(ctx, u.Build, u.Infra); err != nil {
+	params := &PostProcessParams{
+		Build:     u.Build,
+		Infra:     u.Infra,
+		OldStatus: oldBuildStatus,
+	}
+	if err := u.PostProcess(ctx, params); err != nil {
 		return nil, errors.Fmt("failed to run post process when updating build %d to %s: %w", u.Build.ID, newBuildStatus.Status, err)
 	}
 
