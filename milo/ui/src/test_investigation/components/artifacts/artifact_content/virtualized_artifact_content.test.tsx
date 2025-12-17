@@ -14,11 +14,40 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { CompareArtifactLinesResponse_FailureOnlyRange } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 
-import { LogComparisonView } from './log_comparison_view';
+import { VirtualizedArtifactContent } from './virtualized_artifact_content';
 
-describe('<LogComparisonView />', () => {
+// Mock @tanstack/react-virtual
+jest.mock('@tanstack/react-virtual', () => ({
+  useWindowVirtualizer: jest.fn(({ count }) => ({
+    getVirtualItems: () =>
+      Array.from({ length: count }).map((_, i) => ({
+        index: i,
+        start: i * 20,
+        size: 20,
+        measureElement: jest.fn(),
+        key: i,
+      })),
+    getTotalSize: () => count * 20,
+    measureElement: jest.fn(),
+    options: { scrollMargin: 0 },
+  })),
+}));
+
+jest.mock('./artifact_content_header', () => ({
+  ArtifactContentHeader: jest.fn(() => <div>ArtifactContentHeader</div>),
+}));
+
+jest.mock('@/test_investigation/context', () => ({
+  useInvocation: jest.fn(() => ({
+    name: 'invocations/inv-1',
+    realm: 'project:realm',
+  })),
+}));
+
+describe('<VirtualizedArtifactContent />', () => {
   it('handles partial content with out-of-bounds ranges gracefully', () => {
     const partialContent = 'line 1\nline 2\nline 3';
     const failureOnlyRanges = [
@@ -33,10 +62,21 @@ describe('<LogComparisonView />', () => {
     ];
 
     render(
-      <LogComparisonView
-        logContent={partialContent}
+      <VirtualizedArtifactContent
+        content={partialContent}
         failureOnlyRanges={failureOnlyRanges}
         isFullLoading={true}
+        artifact={
+          {
+            name: 'invocations/inv-1/artifacts/log.txt',
+            artifactId: 'log.txt',
+            fetchUrl: 'http://example.com',
+          } as Artifact
+        }
+        hasPassingResults={true}
+        isLogComparisonPossible={true}
+        showLogComparison={false}
+        onToggleLogComparison={jest.fn()}
       />,
     );
 

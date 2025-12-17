@@ -12,67 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import * as Diff2Html from 'diff2html';
 import { useMemo } from 'react';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';
-import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
-import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries';
 
 interface TextDiffArtifactViewProps {
-  artifact: Artifact;
-  content?: string | null;
+  content: string;
 }
 
-export function TextDiffArtifactView({
-  artifact,
-  content,
-}: TextDiffArtifactViewProps) {
-  const {
-    data: artifactContentData,
-    isPending: isLoadingArtifactContent,
-    error,
-  } = useFetchArtifactContentQuery({
-    artifact,
-    enabled: !content,
-  });
-
+export function TextDiffArtifactView({ content }: TextDiffArtifactViewProps) {
   const diffHtml = useMemo(() => {
-    const data = content || artifactContentData?.data;
-    if (!data || typeof data !== 'string') {
+    if (!content) {
       return '';
     }
-    return Diff2Html.html(data, {
+    return Diff2Html.html(content, {
       drawFileList: false,
       outputFormat: 'side-by-side',
       matching: 'lines',
     });
-  }, [artifactContentData, content]);
-
-  if (isLoadingArtifactContent) {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          p: 1,
-        }}
-      >
-        <CircularProgress size={24} />
-        <Typography sx={{ ml: 1 }}>Loading Text Diff...</Typography>
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Typography sx={{ mt: 1, color: 'error.main' }}>
-        Error loading text diff: {error.message}
-      </Typography>
-    );
-  }
+  }, [content]);
 
   if (!diffHtml) {
     return (
@@ -84,11 +44,18 @@ export function TextDiffArtifactView({
 
   return (
     <>
-      <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
-        precedence="default"
-      />
+      {/*
+        In test environment (JSDOM), fetching external stylesheets can cause
+        React to suspend indefinitely or fail the commit phase, leaving the
+        component in a loading state. We skip this link tag during tests.
+      */}
+      {process.env.NODE_ENV !== 'test' && (
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
+          precedence="default"
+        />
+      )}
       <Box sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
         <SanitizedHtml html={diffHtml} />
       </Box>

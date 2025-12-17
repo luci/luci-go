@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Button, Chip, Typography } from '@mui/material';
+import { Box, Button, Chip, CircularProgress, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import copy from 'copy-to-clipboard';
 import { useMemo } from 'react';
@@ -31,6 +31,7 @@ import {
 import { GetArtifactRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { useIsLegacyInvocation } from '@/test_investigation/context';
+import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries';
 
 import { TextDiffArtifactView } from '../artifact_content/text_diff_artifact_view';
 
@@ -78,6 +79,12 @@ export function ArtifactSummaryView({
     staleTime: Infinity,
     retry: false,
   });
+
+  const { data: textDiffContentData, isLoading: isLoadingTextDiffContent } =
+    useFetchArtifactContentQuery({
+      artifact: textDiffArtifact,
+      enabled: !!textDiffArtifact,
+    });
 
   const isLegacyInvocation = useIsLegacyInvocation();
   const failureStatusStyle = useMemo(() => getStatusStyle('failed'), []);
@@ -229,7 +236,21 @@ export function ArtifactSummaryView({
           helpText="A diff of the expected and actual text output of the test. Most often used with browser WPT tests."
         >
           <Box sx={{ pl: 1, pr: 1, pb: 1 }}>
-            <TextDiffArtifactView artifact={textDiffArtifact} />
+            {isLoadingTextDiffContent ? (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  p: 1,
+                }}
+              >
+                <CircularProgress size={24} />
+                <Typography sx={{ ml: 1 }}>Loading Text Diff...</Typography>
+              </Box>
+            ) : (
+              <TextDiffArtifactView content={textDiffContentData?.data || ''} />
+            )}
           </Box>
         </CollapsibleArtifactSummarySection>
       )}

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import fetchMock from 'fetch-mock-jest';
 
 import { QueuedStickyScrollingBase } from '@/generic_libs/components/queued_sticky';
@@ -27,6 +27,9 @@ import { ArtifactContentView } from './artifact_content_view';
 
 const MOCK_RAW_INVOCATION_ID = 'inv-id-123';
 const MOCK_PROJECT_ID = 'test-project';
+
+// Mock scroll to to avoid errors in virtualized list.
+window.scrollTo = jest.fn();
 
 describe('<ArtifactContentView />', () => {
   afterEach(() => {
@@ -73,6 +76,9 @@ describe('<ArtifactContentView />', () => {
         </InvocationProvider>
       </FakeContextProvider>,
     );
+    // Should show filename
+    await waitFor(() => expect(screen.getByText('test')).toBeInTheDocument());
+
     await waitFor(() =>
       expect(screen.getByText(MOCK_ARTIFACT_CONTENT)).toBeInTheDocument(),
     );
@@ -216,5 +222,120 @@ describe('<ArtifactContentView />', () => {
     await waitFor(() =>
       expect(screen.getByText(FULL_CONTENT)).toBeInTheDocument(),
     );
+  });
+
+  it('given a text diff artifact, then should display Open Raw option in formatted view', async () => {
+    const MOCK_ARTIFACT_URL =
+      'http://mock.results.api.luci.app/artifact-content/text_diff2';
+    const MOCK_CONTENT = `diff --git a/file b/file
+index 1..2
+--- a/file
++++ b/file
+@@ -1 +1 @@
+-original
++modified`;
+    const mockInvocation = Invocation.fromPartial({
+      name: 'invocations/inv-123',
+    });
+
+    // Use exact match to avoid issues with function matcher
+    // mockFetchArtifactContent uses getOnce, using get here to be safe against refetches
+    fetchMock.get(MOCK_ARTIFACT_URL + '?n=5000', {
+      body: MOCK_CONTENT,
+      headers: { 'Content-Type': 'text/plain' },
+    });
+    render(
+      <FakeContextProvider>
+        <InvocationProvider
+          project="test-project"
+          invocation={mockInvocation}
+          rawInvocationId={MOCK_RAW_INVOCATION_ID}
+          isLegacyInvocation={true}
+        >
+          <RecentPassesProvider passingResults={[]} error={null}>
+            <ArtifactContentView
+              artifact={Artifact.fromPartial({
+                artifactId: 'text_diff',
+                name: 'text_diff',
+                contentType: 'text/x-diff',
+                fetchUrl: MOCK_ARTIFACT_URL,
+                sizeBytes: '100',
+              })}
+            />
+          </RecentPassesProvider>
+        </InvocationProvider>
+      </FakeContextProvider>,
+    );
+
+    // Should show content
+    await waitFor(
+      () => expect(screen.getByText('modified')).toBeInTheDocument(),
+      { timeout: 3000 },
+    );
+
+    // Should have the menu button
+    const menuButton = screen.getByRole('button', { name: 'Options' });
+    fireEvent.click(menuButton);
+
+    // Should show Open Raw option
+    expect(screen.getByText('Open Raw')).toBeInTheDocument();
+  });
+
+  it('given a binary artifact, then should display details and open raw link', async () => {
+    const MOCK_ARTIFACT_URL =
+      'http://mock.results.api.luci.app/artifact-content/binary';
+    const MOCK_CONTENT = 'some binary content';
+    const mockInvocation = Invocation.fromPartial({
+      name: 'invocations/inv-123',
+    });
+
+    mockFetchArtifactContent(MOCK_ARTIFACT_URL + '?n=5000', MOCK_CONTENT);
+
+    render(
+      <FakeContextProvider>
+        <InvocationProvider
+          project="test-project"
+          invocation={mockInvocation}
+          rawInvocationId={MOCK_RAW_INVOCATION_ID}
+          isLegacyInvocation={true}
+        >
+          <RecentPassesProvider passingResults={[]} error={null}>
+            <ArtifactContentView
+              artifact={Artifact.fromPartial({
+                artifactId: 'binary.bin',
+                name: 'binary.bin',
+                contentType: 'application/octet-stream',
+                fetchUrl: MOCK_ARTIFACT_URL,
+                sizeBytes: '2048', // 2 KB
+              })}
+            />
+          </RecentPassesProvider>
+        </InvocationProvider>
+      </FakeContextProvider>,
+    );
+
+    // Should show filename in header (using getAllByText because it appears in header and table)
+    await waitFor(() =>
+      expect(screen.getAllByText('binary.bin')[0]).toBeInTheDocument(),
+    );
+
+    // Should show "Preview not available" message
+    expect(
+      screen.getByText(
+        'Preview not available for content type: application/octet-stream.',
+      ),
+    ).toBeInTheDocument();
+
+    // Should show details table
+    expect(screen.getByText('Name')).toBeInTheDocument();
+    expect(screen.getByText('Size')).toBeInTheDocument();
+    expect(screen.getByText('2.00 KB')).toBeInTheDocument(); // 2048 bytes
+    expect(screen.getByText('Content Type')).toBeInTheDocument();
+    expect(screen.getByText('application/octet-stream')).toBeInTheDocument();
+
+    // Should show Open Raw link
+    const link = screen.getByRole('link', { name: 'Open Raw Artifact' });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute('href', MOCK_ARTIFACT_URL);
   });
 });

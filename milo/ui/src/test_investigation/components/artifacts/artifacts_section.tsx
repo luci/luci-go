@@ -51,11 +51,18 @@ function ArtifactsExplorer({
       <PanelGroup
         direction="horizontal"
         // overflow: visible here and below is required to enable sticky headers within the panels.
-        style={{ height: '100%', minHeight: '600px', overflow: 'visible' }}
+        style={{
+          overflowY: 'visible',
+          overflowX: 'clip',
+        }}
         // This will make the panel size stored in local storage.
         autoSaveId="artifacts-panel-group-size"
       >
-        <Panel defaultSize={30} minSize={20} style={{ overflow: 'visible' }}>
+        <Panel
+          defaultSize={30}
+          minSize={20}
+          style={{ overflowY: 'visible', overflowX: 'clip' }}
+        >
           <ArtifactsTreeLayout
             viewMode={viewMode}
             onViewModeChange={setViewMode}
@@ -86,11 +93,15 @@ function ArtifactsExplorer({
             <Box sx={{ width: '2px', height: '24px', bgcolor: 'divider' }} />
           </Box>
         </PanelResizeHandle>
-        <Panel defaultSize={70} minSize={30} style={{ overflow: 'visible' }}>
+        <Panel
+          defaultSize={70}
+          minSize={30}
+          style={{ overflowY: 'visible', overflowX: 'clip', minWidth: 0 }}
+        >
           <Box
             sx={{
               p: 2,
-              wordBreak: 'break-all',
+              width: '100%',
             }}
           >
             {selectedArtifact ? (
