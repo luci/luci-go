@@ -68,6 +68,15 @@ var TestResultsPublisher = tq.RegisterTaskClass(tq.TaskClass{
 	RoutingPrefix: "/internal/tasks/pubsub", // for routing to "pubsub" service
 })
 
+// WorkUnitPublisher defines the task to publish work units.
+var WorkUnitPublisher = tq.RegisterTaskClass(tq.TaskClass{
+	ID:            "publish-work-units",
+	Prototype:     &taskspb.PublishWorkUnitsTask{},
+	Queue:         "workunitpublisher",
+	Kind:          tq.Transactional,
+	RoutingPrefix: "/internal/tasks/pubsub", // for routing to "pubsub" service
+})
+
 // StartInvocationFinalization enqueues a TryFinalizeInvocation task.
 //
 // The caller is responsible for ensuring that the invocation was

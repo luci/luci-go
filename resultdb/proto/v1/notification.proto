@@ -145,7 +145,7 @@ message TestResultsNotification {
     // Next id: 3
     message TestResultsByWorkUnit {
         // The name of the work unit that the test results belong to.
-        // Format: rootInvocations/{Root_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}.
+        // Format: rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}.
         string work_unit_name = 1;
 
         // A batch of test results in the same parent work units.
@@ -168,4 +168,31 @@ message TestResultsNotification {
     // A deduplication key identifying this batch of test results within the
     // same root invocation.
     string deduplication_key = 4;
+}
+
+// A message notifying that work units have been finalized.
+//
+// The message is sent over the `v1.work_units` Cloud Pub/Sub topic in
+// JSON-serialized form.
+//
+// Next id: 4
+message WorkUnitsNotification {
+    // A message representing the work unit details.
+    // Next id: 3
+    message WorkUnitDetails {
+        // The name of the work unit.
+        // Format: rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}.
+        string work_unit_name = 1;
+
+        // Whether the work unit or its contained test results have any
+        // artifacts.
+        bool has_artifacts = 2;
+    }
+
+    // A list of work units that have been finalized.
+    repeated WorkUnitDetails work_units = 1;
+
+    // The hostname of the luci.resultdb.v1.ResultDB service which can be used
+    // to query more information about the work units notified in this message.
+    string resultdb_host = 2;
 }

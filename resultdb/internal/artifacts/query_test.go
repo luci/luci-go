@@ -578,3 +578,40 @@ func TestQuery(t *testing.T) {
 		})
 	})
 }
+
+func TestFilterHasArtifacts(t *testing.T) {
+	ftt.Run(`FilterHasArtifacts`, t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+		invID1 := invocations.ID("inv1")
+		invID2 := invocations.ID("inv2")
+		invID3 := invocations.ID("inv3")
+
+		testutil.MustApply(ctx, t,
+			insert.Invocation("inv1", pb.Invocation_ACTIVE, nil),
+			insert.Artifact("inv1", "", "a", nil),
+			insert.Invocation("inv2", pb.Invocation_ACTIVE, nil),
+			insert.Invocation("inv3", pb.Invocation_ACTIVE, nil),
+			insert.Artifact("inv3", "", "a", nil),
+		)
+
+		t.Run(`Returns subset of invocations with artifacts`, func(t *ftt.Test) {
+			invIDs := invocations.NewIDSet(invID1, invID2, invID3)
+			hasArtifacts, err := FilterHasArtifacts(span.Single(ctx), invIDs)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, hasArtifacts, should.Match(invocations.NewIDSet(invID1, invID3)))
+		})
+
+		t.Run(`Returns empty set if no artifacts exist`, func(t *ftt.Test) {
+			invIDs := invocations.NewIDSet(invID2)
+			hasArtifacts, err := FilterHasArtifacts(span.Single(ctx), invIDs)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, hasArtifacts, should.BeEmpty)
+		})
+
+		t.Run(`Returns empty set if input is empty`, func(t *ftt.Test) {
+			hasArtifacts, err := FilterHasArtifacts(span.Single(ctx), invocations.NewIDSet())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, hasArtifacts, should.BeEmpty)
+		})
+	})
+}

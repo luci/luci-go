@@ -425,6 +425,70 @@ func (x *TestResultsNotification) GetDeduplicationKey() string {
 	return ""
 }
 
+// A message notifying that work units have been finalized.
+//
+// The message is sent over the `v1.work_units` Cloud Pub/Sub topic in
+// JSON-serialized form.
+//
+// Next id: 4
+type WorkUnitsNotification struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// A list of work units that have been finalized.
+	WorkUnits []*WorkUnitsNotification_WorkUnitDetails `protobuf:"bytes,1,rep,name=work_units,json=workUnits,proto3" json:"work_units,omitempty"`
+	// The hostname of the luci.resultdb.v1.ResultDB service which can be used
+	// to query more information about the work units notified in this message.
+	ResultdbHost string `protobuf:"bytes,2,opt,name=resultdb_host,json=resultdbHost,proto3" json:"resultdb_host,omitempty"`
+}
+
+func (x *WorkUnitsNotification) Reset() {
+	*x = WorkUnitsNotification{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *WorkUnitsNotification) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkUnitsNotification) ProtoMessage() {}
+
+func (x *WorkUnitsNotification) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkUnitsNotification.ProtoReflect.Descriptor instead.
+func (*WorkUnitsNotification) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *WorkUnitsNotification) GetWorkUnits() []*WorkUnitsNotification_WorkUnitDetails {
+	if x != nil {
+		return x.WorkUnits
+	}
+	return nil
+}
+
+func (x *WorkUnitsNotification) GetResultdbHost() string {
+	if x != nil {
+		return x.ResultdbHost
+	}
+	return ""
+}
+
 // A message representing the batch of test results grouped by work unit.
 // Next id: 3
 type TestResultsNotification_TestResultsByWorkUnit struct {
@@ -433,7 +497,7 @@ type TestResultsNotification_TestResultsByWorkUnit struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The name of the work unit that the test results belong to.
-	// Format: rootInvocations/{Root_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}.
+	// Format: rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}.
 	WorkUnitName string `protobuf:"bytes,1,opt,name=work_unit_name,json=workUnitName,proto3" json:"work_unit_name,omitempty"`
 	// A batch of test results in the same parent work units.
 	TestResults []*TestResult `protobuf:"bytes,2,rep,name=test_results,json=testResults,proto3" json:"test_results,omitempty"`
@@ -442,7 +506,7 @@ type TestResultsNotification_TestResultsByWorkUnit struct {
 func (x *TestResultsNotification_TestResultsByWorkUnit) Reset() {
 	*x = TestResultsNotification_TestResultsByWorkUnit{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_msgTypes[4]
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -455,7 +519,7 @@ func (x *TestResultsNotification_TestResultsByWorkUnit) String() string {
 func (*TestResultsNotification_TestResultsByWorkUnit) ProtoMessage() {}
 
 func (x *TestResultsNotification_TestResultsByWorkUnit) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -483,6 +547,67 @@ func (x *TestResultsNotification_TestResultsByWorkUnit) GetTestResults() []*Test
 		return x.TestResults
 	}
 	return nil
+}
+
+// A message representing the work unit details.
+// Next id: 3
+type WorkUnitsNotification_WorkUnitDetails struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The name of the work unit.
+	// Format: rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}.
+	WorkUnitName string `protobuf:"bytes,1,opt,name=work_unit_name,json=workUnitName,proto3" json:"work_unit_name,omitempty"`
+	// Whether the work unit or its contained test results have any
+	// artifacts.
+	HasArtifacts bool `protobuf:"varint,2,opt,name=has_artifacts,json=hasArtifacts,proto3" json:"has_artifacts,omitempty"`
+}
+
+func (x *WorkUnitsNotification_WorkUnitDetails) Reset() {
+	*x = WorkUnitsNotification_WorkUnitDetails{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *WorkUnitsNotification_WorkUnitDetails) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkUnitsNotification_WorkUnitDetails) ProtoMessage() {}
+
+func (x *WorkUnitsNotification_WorkUnitDetails) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkUnitsNotification_WorkUnitDetails.ProtoReflect.Descriptor instead.
+func (*WorkUnitsNotification_WorkUnitDetails) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_rawDescGZIP(), []int{4, 0}
+}
+
+func (x *WorkUnitsNotification_WorkUnitDetails) GetWorkUnitName() string {
+	if x != nil {
+		return x.WorkUnitName
+	}
+	return ""
+}
+
+func (x *WorkUnitsNotification_WorkUnitDetails) GetHasArtifacts() bool {
+	if x != nil {
+		return x.HasArtifacts
+	}
+	return false
 }
 
 var File_go_chromium_org_luci_resultdb_proto_v1_notification_proto protoreflect.FileDescriptor
@@ -578,12 +703,28 @@ var file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_rawDesc = []b
 	0x6c, 0x74, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x6c, 0x75, 0x63, 0x69,
 	0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73,
 	0x74, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x52, 0x0b, 0x74, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73,
-	0x75, 0x6c, 0x74, 0x73, 0x42, 0x50, 0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x6f, 0x6f, 0x67,
-	0x6c, 0x65, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62,
-	0x2e, 0x76, 0x31, 0x50, 0x01, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69,
-	0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75,
-	0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65,
-	0x73, 0x75, 0x6c, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x75, 0x6c, 0x74, 0x73, 0x22, 0xf2, 0x01, 0x0a, 0x15, 0x57, 0x6f, 0x72, 0x6b, 0x55, 0x6e, 0x69,
+	0x74, 0x73, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x56,
+	0x0a, 0x0a, 0x77, 0x6f, 0x72, 0x6b, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x37, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
+	0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x6f, 0x72, 0x6b, 0x55, 0x6e, 0x69, 0x74, 0x73, 0x4e,
+	0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x57, 0x6f, 0x72, 0x6b,
+	0x55, 0x6e, 0x69, 0x74, 0x44, 0x65, 0x74, 0x61, 0x69, 0x6c, 0x73, 0x52, 0x09, 0x77, 0x6f, 0x72,
+	0x6b, 0x55, 0x6e, 0x69, 0x74, 0x73, 0x12, 0x23, 0x0a, 0x0d, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
+	0x64, 0x62, 0x5f, 0x68, 0x6f, 0x73, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x72,
+	0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x48, 0x6f, 0x73, 0x74, 0x1a, 0x5c, 0x0a, 0x0f, 0x57,
+	0x6f, 0x72, 0x6b, 0x55, 0x6e, 0x69, 0x74, 0x44, 0x65, 0x74, 0x61, 0x69, 0x6c, 0x73, 0x12, 0x24,
+	0x0a, 0x0e, 0x77, 0x6f, 0x72, 0x6b, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x5f, 0x6e, 0x61, 0x6d, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x77, 0x6f, 0x72, 0x6b, 0x55, 0x6e, 0x69, 0x74,
+	0x4e, 0x61, 0x6d, 0x65, 0x12, 0x23, 0x0a, 0x0d, 0x68, 0x61, 0x73, 0x5f, 0x61, 0x72, 0x74, 0x69,
+	0x66, 0x61, 0x63, 0x74, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0c, 0x68, 0x61, 0x73,
+	0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x73, 0x42, 0x50, 0x0a, 0x1b, 0x63, 0x6f, 0x6d,
+	0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73,
+	0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x50, 0x01, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63,
+	0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69,
+	0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f,
+	0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -598,31 +739,34 @@ func file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_rawDescGZIP(
 	return file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_goTypes = []interface{}{
 	(*InvocationFinalizedNotification)(nil),               // 0: luci.resultdb.v1.InvocationFinalizedNotification
 	(*RootInvocationFinalizedNotification)(nil),           // 1: luci.resultdb.v1.RootInvocationFinalizedNotification
 	(*InvocationReadyForExportNotification)(nil),          // 2: luci.resultdb.v1.InvocationReadyForExportNotification
 	(*TestResultsNotification)(nil),                       // 3: luci.resultdb.v1.TestResultsNotification
-	(*TestResultsNotification_TestResultsByWorkUnit)(nil), // 4: luci.resultdb.v1.TestResultsNotification.TestResultsByWorkUnit
-	(*timestamppb.Timestamp)(nil),                         // 5: google.protobuf.Timestamp
-	(*RootInvocation)(nil),                                // 6: luci.resultdb.v1.RootInvocation
-	(*Sources)(nil),                                       // 7: luci.resultdb.v1.Sources
-	(*TestResult)(nil),                                    // 8: luci.resultdb.v1.TestResult
+	(*WorkUnitsNotification)(nil),                         // 4: luci.resultdb.v1.WorkUnitsNotification
+	(*TestResultsNotification_TestResultsByWorkUnit)(nil), // 5: luci.resultdb.v1.TestResultsNotification.TestResultsByWorkUnit
+	(*WorkUnitsNotification_WorkUnitDetails)(nil),         // 6: luci.resultdb.v1.WorkUnitsNotification.WorkUnitDetails
+	(*timestamppb.Timestamp)(nil),                         // 7: google.protobuf.Timestamp
+	(*RootInvocation)(nil),                                // 8: luci.resultdb.v1.RootInvocation
+	(*Sources)(nil),                                       // 9: luci.resultdb.v1.Sources
+	(*TestResult)(nil),                                    // 10: luci.resultdb.v1.TestResult
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_depIdxs = []int32{
-	5, // 0: luci.resultdb.v1.InvocationFinalizedNotification.create_time:type_name -> google.protobuf.Timestamp
-	6, // 1: luci.resultdb.v1.RootInvocationFinalizedNotification.root_invocation:type_name -> luci.resultdb.v1.RootInvocation
-	5, // 2: luci.resultdb.v1.InvocationReadyForExportNotification.root_create_time:type_name -> google.protobuf.Timestamp
-	7, // 3: luci.resultdb.v1.InvocationReadyForExportNotification.sources:type_name -> luci.resultdb.v1.Sources
-	4, // 4: luci.resultdb.v1.TestResultsNotification.test_results_by_work_unit:type_name -> luci.resultdb.v1.TestResultsNotification.TestResultsByWorkUnit
-	7, // 5: luci.resultdb.v1.TestResultsNotification.sources:type_name -> luci.resultdb.v1.Sources
-	8, // 6: luci.resultdb.v1.TestResultsNotification.TestResultsByWorkUnit.test_results:type_name -> luci.resultdb.v1.TestResult
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	7,  // 0: luci.resultdb.v1.InvocationFinalizedNotification.create_time:type_name -> google.protobuf.Timestamp
+	8,  // 1: luci.resultdb.v1.RootInvocationFinalizedNotification.root_invocation:type_name -> luci.resultdb.v1.RootInvocation
+	7,  // 2: luci.resultdb.v1.InvocationReadyForExportNotification.root_create_time:type_name -> google.protobuf.Timestamp
+	9,  // 3: luci.resultdb.v1.InvocationReadyForExportNotification.sources:type_name -> luci.resultdb.v1.Sources
+	5,  // 4: luci.resultdb.v1.TestResultsNotification.test_results_by_work_unit:type_name -> luci.resultdb.v1.TestResultsNotification.TestResultsByWorkUnit
+	9,  // 5: luci.resultdb.v1.TestResultsNotification.sources:type_name -> luci.resultdb.v1.Sources
+	6,  // 6: luci.resultdb.v1.WorkUnitsNotification.work_units:type_name -> luci.resultdb.v1.WorkUnitsNotification.WorkUnitDetails
+	10, // 7: luci.resultdb.v1.TestResultsNotification.TestResultsByWorkUnit.test_results:type_name -> luci.resultdb.v1.TestResult
+	8,  // [8:8] is the sub-list for method output_type
+	8,  // [8:8] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_init() }
@@ -683,7 +827,31 @@ func file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*WorkUnitsNotification); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*TestResultsNotification_TestResultsByWorkUnit); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*WorkUnitsNotification_WorkUnitDetails); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -701,7 +869,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_resultdb_proto_v1_notification_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

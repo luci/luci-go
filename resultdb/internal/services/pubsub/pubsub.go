@@ -42,4 +42,11 @@ func InitServer(srv *server.Server, opts Options) {
 		}
 		return p.handleTestResultsPublisher(ctx)
 	})
+	tasks.WorkUnitPublisher.AttachHandler(func(ctx context.Context, msg proto.Message) error {
+		p := &workUnitPublisher{
+			resultDBHostname: opts.ResultDBHostname,
+			task:             msg.(*taskspb.PublishWorkUnitsTask),
+		}
+		return p.handleWorkUnitPublisher(ctx)
+	})
 }

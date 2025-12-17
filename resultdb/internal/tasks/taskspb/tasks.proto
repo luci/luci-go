@@ -74,6 +74,24 @@ message PublishTestResultsTask {
   int32 current_work_unit_index = 4;
 }
 
+// PublishWorkUnits defines a task to publish a batch of work units to
+// the Cloud Pub/Sub.
+// Next id: 3
+message PublishWorkUnits {
+  // The message to publish to Cloud Pub/Sub.
+  luci.resultdb.v1.WorkUnitsNotification message = 1;
+
+  // The attributes to set on the Pub/Sub message.
+  map<string, string> attributes = 2;
+}
+
+// PublishWorkUnitsTask defines a task to query and publish work units for
+// a set of work units.
+message PublishWorkUnitsTask {
+  string root_invocation_id = 1;
+  repeated string work_unit_ids = 2;
+}
+
 message ExportInvocationTestResultsToBQ {
   string invocation_id = 1;
   luci.resultdb.v1.BigQueryExport bq_export = 2;

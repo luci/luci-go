@@ -90,7 +90,6 @@ func (p *testResultsPublisher) handleTestResultsPublisher(ctx context.Context) (
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/pubsub.handleTestResultsPublisher")
 	defer func() { tracing.End(s, err) }()
 
-
 	task := p.task
 	if task.CurrentWorkUnitIndex < 0 || int(task.CurrentWorkUnitIndex) >= len(task.WorkUnitIds) {
 		return errors.Fmt("CurrentWorkUnitIndex %d is out of bounds for WorkUnitIds list of size %d", task.CurrentWorkUnitIndex, len(task.WorkUnitIds))

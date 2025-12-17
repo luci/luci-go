@@ -332,7 +332,14 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 						RootInvocationId: string(rootInvID),
 						WorkUnitIds:      wuIDs,
 					},
-					Title: fmt.Sprintf("%s-%d", rootInvID.Name(), time.Now().UnixNano()),
+					Title: fmt.Sprintf("tr-pubsub-%s-%d", rootInvID.Name(), time.Now().UnixNano()),
+				})
+				tq.MustAddTask(ctx, &tq.Task{
+					Payload: &taskspb.PublishWorkUnitsTask{
+						RootInvocationId: string(rootInvID),
+						WorkUnitIds:      wuIDs,
+					},
+					Title: fmt.Sprintf("wu-pubsub-%s-%d", rootInvID.Name(), time.Now().UnixNano()),
 				})
 			}
 

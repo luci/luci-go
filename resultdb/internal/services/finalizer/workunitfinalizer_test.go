@@ -156,10 +156,12 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 
 					// Enqueued tasks.
 					payloads := sched.Tasks().Payloads()
-					assert.Loosely(t, payloads, should.HaveLength(4)) // 1 NotifyRootInvocationFinalized + 3 PublishTestResultsTask
+					assert.Loosely(t, payloads, should.HaveLength(7)) // 1 NotifyRootInvocationFinalized + 3 PublishTestResultsTask + 3 PublishWorkUnitsTask
 					notifyRootInvCount := 0
 					publishTRCount := 0
+					publishWUCount := 0
 					var trTasks []*taskspb.PublishTestResultsTask
+					var wuTasks []*taskspb.PublishWorkUnitsTask
 					var rootInvocationFinalizedNotification *pb.RootInvocationFinalizedNotification
 					for _, p := range payloads {
 						switch task := p.(type) {
@@ -169,10 +171,14 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 						case *taskspb.PublishTestResultsTask:
 							publishTRCount++
 							trTasks = append(trTasks, task)
+						case *taskspb.PublishWorkUnitsTask:
+							publishWUCount++
+							wuTasks = append(wuTasks, task)
 						}
 					}
 					assert.Loosely(t, notifyRootInvCount, should.Equal(1))
 					assert.Loosely(t, publishTRCount, should.Equal(3))
+					assert.Loosely(t, publishWUCount, should.Equal(3))
 
 					// Assert root invocation sweep state was reset
 					taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
@@ -234,7 +240,7 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 						readRootInv, err := rootinvocations.Read(span.Single(ctx), rootInvID)
 						assert.Loosely(t, err, should.BeNil)
 						assert.That(t, readRootInv.FinalizationState, should.Equal(pb.RootInvocation_FINALIZING))
-						assert.Loosely(t, sched.Tasks().Payloads(), should.HaveLength(2)) // 2 PublishTestResultsTask
+						assert.Loosely(t, sched.Tasks().Payloads(), should.HaveLength(4)) // 2 PublishTestResultsTask + 2 PublishWorkUnitsTask
 						// Assert root invocation sweep state was reset
 						taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
 						assert.Loosely(t, err, should.BeNil)
@@ -262,7 +268,7 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 						readRootInv, err := rootinvocations.Read(span.Single(ctx), rootInvID)
 						assert.Loosely(t, err, should.BeNil)
 						assert.That(t, readRootInv.FinalizationState, should.Equal(pb.RootInvocation_FINALIZING))
-						assert.Loosely(t, sched.Tasks().Payloads(), should.HaveLength(3)) // 3 PublishTestResultsTask
+						assert.Loosely(t, sched.Tasks().Payloads(), should.HaveLength(6)) // 3 PublishTestResultsTask + 3 PublishWorkUnitsTask
 						// Assert root invocation sweep state was reset
 						taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
 						assert.Loosely(t, err, should.BeNil)

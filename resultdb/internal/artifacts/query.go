@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
+	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
@@ -360,4 +361,48 @@ func addREParamMaybe(params map[string]any, name, re string) {
 	if re != "" && re != ".*" {
 		params[name] = fmt.Sprintf("^%s$", re)
 	}
+}
+
+// FilterHasArtifacts returns the subset of invIDs that have at least one
+// artifact.
+func FilterHasArtifacts(ctx context.Context, invIDs invocations.IDSet) (invocations.IDSet, error) {
+	if len(invIDs) == 0 {
+		return nil, nil
+	}
+
+	rowIDToInvID := make(map[string]invocations.ID, len(invIDs))
+	ids := make([]string, 0, len(invIDs))
+	for id := range invIDs {
+		rid := id.RowID()
+		ids = append(ids, rid)
+		rowIDToInvID[rid] = id
+	}
+
+	st := spanner.NewStatement(`
+		SELECT DISTINCT InvocationId
+		FROM Artifacts
+		WHERE InvocationId IN UNNEST(@invIDs)
+	`)
+	st.Params = map[string]any{
+		"invIDs": ids,
+	}
+
+	iter := span.Query(ctx, st)
+	defer iter.Stop()
+
+	hasArtifacts := make(invocations.IDSet)
+	err := iter.Do(func(row *spanner.Row) error {
+		var rid string
+		if err := row.Columns(&rid); err != nil {
+			return err
+		}
+		if invID, ok := rowIDToInvID[rid]; ok {
+			hasArtifacts.Add(invID)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return hasArtifacts, nil
 }

@@ -111,6 +111,29 @@ var NotifyRootInvocationFinalizedPublisher = tq.RegisterTaskClass(tq.TaskClass{
 	},
 })
 
+// NotifyWorkUnitsPublisher describes how to publish to cloud pub/sub
+// notifications for work units.
+var NotifyWorkUnitsPublisher = tq.RegisterTaskClass(tq.TaskClass{
+	ID:        "notify-work-units",
+	Topic:     "v1.work_units",
+	Prototype: &taskspb.PublishWorkUnits{},
+	Kind:      tq.NonTransactional,
+	Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
+		// Custom serialisation handler needed to control how the message is
+		// sent, as the backend is Cloud Pub/Sub and not Cloud Tasks.
+		t := m.(*taskspb.PublishWorkUnits)
+		notification := t.GetMessage()
+		blob, err := proto.Marshal(notification)
+		if err != nil {
+			return nil, err
+		}
+		return &tq.CustomPayload{
+			Body: blob,
+			Meta: t.GetAttributes(),
+		}, nil
+	},
+})
+
 // NotifyTestResultsPublisher describes how to publish to cloud pub/sub
 // notifications for test results.
 var NotifyTestResultsPublisher = tq.RegisterTaskClass(tq.TaskClass{
@@ -176,6 +199,13 @@ func NotifyInvocationFinalized(ctx context.Context, message *pb.InvocationFinali
 func NotifyRootInvocationFinalized(ctx context.Context, message *pb.RootInvocationFinalizedNotification) {
 	tq.MustAddTask(ctx, &tq.Task{
 		Payload: &taskspb.NotifyRootInvocationFinalized{Message: message},
+	})
+}
+
+// NotifyWorkUnits transactionally enqueues a task to publish work units.
+func NotifyWorkUnits(ctx context.Context, message *pb.WorkUnitsNotification, attrs map[string]string) {
+	tq.MustAddTask(ctx, &tq.Task{
+		Payload: &taskspb.PublishWorkUnits{Message: message, Attributes: attrs},
 	})
 }
 
