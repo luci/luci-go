@@ -46,12 +46,6 @@ func (e *AnTSTestResultExporter) Ingest(ctx context.Context, input Inputs) (err 
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.AnTSTestResultExporter.Ingest")
 	defer func() { tracing.End(s, err) }()
 
-	if input.Invocation == nil {
-		// Ingestion is for a root invocation.
-		// AnTS test result export for root invocation is not supported.
-		return nil
-	}
-
 	// Exit early if no verdict needs to be ingested.
 	if len(input.Verdicts) == 0 {
 		return nil
@@ -61,10 +55,17 @@ func (e *AnTSTestResultExporter) Ingest(ctx context.Context, input Inputs) (err 
 		return nil
 	}
 	payload := input.Payload
+	var resourceID string
+	if payload.Invocation != nil {
+		resourceID = fmt.Sprintf("%s/%s", payload.Invocation.ResultdbHost, payload.Invocation.InvocationId)
+	} else {
+		// Root invocation id and invocation id can collide, prefix the resourceID for root invocation task to differentiate.
+		resourceID = fmt.Sprintf("rootInvocation/%s/%s", payload.RootInvocation.ResultdbHost, payload.RootInvocation.RootInvocationId)
+	}
 	key := checkpoints.Key{
 		Project:    input.Payload.Project,
-		ResourceID: fmt.Sprintf("%s/%s", payload.Invocation.ResultdbHost, payload.Invocation.InvocationId),
-		ProcessID:  fmt.Sprintf("verdict-ingestion/export-ants-test-results"),
+		ResourceID: resourceID,
+		ProcessID:  "verdict-ingestion/export-ants-test-results",
 		Uniquifier: fmt.Sprintf("%v", payload.TaskIndex),
 	}
 	exists, err := checkpoints.Exists(span.Single(ctx), key)
@@ -78,7 +79,8 @@ func (e *AnTSTestResultExporter) Ingest(ctx context.Context, input Inputs) (err 
 	}
 
 	exportOptions := antstestresultexporter.ExportOptions{
-		Invocation: input.Invocation,
+		Invocation:     input.Invocation,
+		RootInvocation: input.RootInvocation,
 	}
 	err = e.exporter.Export(ctx, input.Verdicts, exportOptions)
 	if err != nil {
