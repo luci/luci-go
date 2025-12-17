@@ -20,6 +20,7 @@ import { AnalysesClientImpl } from '@/proto/go.chromium.org/luci/bisection/proto
 import { BuildsClientImpl } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { MiloInternalClientImpl } from '@/proto/go.chromium.org/luci/milo/proto/v1/rpc.pb';
 import { ResultDBClientImpl } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
+import { SchemasClientImpl } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/schema.pb';
 import { TreesClientImpl } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/trees.pb';
 import { BatchedClustersClientImpl } from '@/proto_utils/batched_clients/clusters_client';
 import { BatchedMiloInternalClientImpl } from '@/proto_utils/batched_clients/milo_internal_client';
@@ -51,6 +52,13 @@ export function useResultDbClient() {
   return usePrpcServiceClient({
     host: SETTINGS.resultdb.host,
     ClientImpl: ResultDBClientImpl,
+  });
+}
+
+export function useSchemaClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.resultdb.host,
+    ClientImpl: SchemasClientImpl,
   });
 }
 
