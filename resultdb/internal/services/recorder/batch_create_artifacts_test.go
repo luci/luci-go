@@ -50,6 +50,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
+	configpb "go.chromium.org/luci/resultdb/proto/config"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -586,6 +587,38 @@ func TestBatchCreateArtifacts(t *testing.T) {
 					_, err := recorder.BatchCreateArtifacts(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 					assert.That(t, err, should.ErrLike(`requests[1]: the user does not have permission to reference GCS objects in bucket "testbucket" in project "testproject"`))
+				})
+				t.Run(`multiple allow list entries for same user`, func(t *ftt.Test) {
+					// This reproduces the bug where allowedGCSBucketsForUser returns
+					// early. We add two allow list entries for the same user, but with
+					// different buckets. The user needs access to "testbucket", which is
+					// in the second entry.
+					pCfg := &configpb.ProjectConfig{
+						GcsAllowList: []*configpb.GcsAllowList{
+							{
+								Users:   []string{"user:test@test.com"},
+								Buckets: []string{"otherbucket"},
+							},
+							{
+								Users:   []string{"user:test@test.com"},
+								Buckets: []string{"testbucket"},
+							},
+						},
+					}
+					err := config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{
+						"testproject": pCfg,
+					})
+					assert.NoErr(t, err)
+
+					// Create a request with only the GCS artifact to avoid RBE permission
+					// errors since we are only setting up GCS allow list.
+					gcsReq := &pb.BatchCreateArtifactsRequest{
+						Requests:  []*pb.CreateArtifactRequest{reqItem2GCS},
+						RequestId: "request-id-gcs-only",
+					}
+
+					_, err = recorder.BatchCreateArtifacts(ctx, gcsReq)
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
 			t.Run(`RBE artifact references`, func(t *ftt.Test) {

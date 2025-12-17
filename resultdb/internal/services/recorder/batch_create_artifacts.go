@@ -810,7 +810,9 @@ func allowedGCSBucketsForUser(ctx context.Context, project, user string) (allowe
 				for _, bucket := range list.Buckets {
 					allowedBuckets[bucket] = true
 				}
-				return allowedBuckets, nil
+				// Continue to check other lists in case the user is listed multiple
+				// times.
+				break
 			}
 		}
 	}
