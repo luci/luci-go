@@ -69,8 +69,8 @@ func generateRowSchema() (schema bigquery.Schema, err error) {
 	fd, _ := descriptor.MessageDescriptorProto(&bqpb.AntsInvocationRow{})
 	// We also need to get FileDescriptorProto for other referenced protos
 	// because they are defined in different files.
-	fdats, _ := descriptor.MessageDescriptorProto(&bqpb.AntsTestResultRow{})
-	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdats}}
+	fdcommon, _ := descriptor.MessageDescriptorProto(&bqpb.Test{})
+	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdcommon}}
 	return bq.GenerateSchema(fdset, rowMessage)
 }
 

@@ -283,7 +283,6 @@ func TestIngestTestVerdicts(t *testing.T) {
 					IsDirty: true,
 				},
 			}
-
 			t.Run(`Root invocation`, func(t *ftt.Test) {
 				payload.RootInvocation = &ctrlpb.RootInvocationResult{
 					ResultdbHost:     "rdb-host",
@@ -377,6 +376,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 					verifyCheckpoints(ctx, t, []checkpoints.Checkpoint{existingCheckpoint})
 				})
 			})
+
 			t.Run(`Legacy invocation`, func(t *ftt.Test) {
 				payload.Invocation = &ctrlpb.InvocationResult{
 					ResultdbHost: "rdb-host",
@@ -505,6 +505,7 @@ func TestIngestTestVerdicts(t *testing.T) {
 					assert.That(t, testIngestor.called, should.BeFalse)
 				})
 			})
+
 			t.Run(`no invocation or root invocation`, func(t *ftt.Test) {
 				payload.Invocation = nil
 				payload.RootInvocation = nil

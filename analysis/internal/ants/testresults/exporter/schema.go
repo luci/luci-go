@@ -70,7 +70,8 @@ func init() {
 
 func generateRowSchema() (schema bigquery.Schema, err error) {
 	fd, _ := descriptor.MessageDescriptorProto(&bqpb.AntsTestResultRow{})
-	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd}}
+	fdcommon, _ := descriptor.MessageDescriptorProto(&bqpb.Test{})
+	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdcommon}}
 	return bq.GenerateSchema(fdset, rowMessage)
 }
 

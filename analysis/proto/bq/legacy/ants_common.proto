@@ -1,0 +1,158 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.analysis.bq.legacy;
+
+option go_package = "go.chromium.org/luci/analysis/proto/bq/legacy;bqpb";
+
+// Enum that defines the type of the Android build.
+enum BuildType {
+  BUILD_TYPE_UNSPECIFIED = 0;
+  SUBMITTED = 1;
+  PENDING = 2;
+  EXTERNAL = 3;
+  // For Mainline train build.
+  TRAIN = 4;
+  // For local build.
+  LOCAL = 5;
+}
+
+// The possible states an Invocation or WorkUnit can be in. `COMPLETED`, `ERROR`,
+// and `CANCELLED` states are considered final states.
+enum SchedulerState {
+  SCHEDULER_STATE_UNSPECIFIED = 0;
+  QUEUED = 1;
+  // Invocation or WorkUnit is currently running tests.
+  RUNNING = 2;
+  // Invocation or WorkUnit finished running tests and reported an error. This is
+  // considered a final state.
+  ERROR = 3;
+  // Invocation or WorkUnit finished running tests without an error. This is
+  // considered a final state.
+  COMPLETED = 4;
+  // Invocation or WorkUnit was cancelled before it could finish. This could be
+  // due to a user cancelling a test or due to a timeout. This is considered a
+  // final state.
+  CANCELLED = 5;
+  // Invocation is pending to be picked up.
+  SCHEDULER_STATE_PENDING = 6;
+  // The work unit was skipped. When the work unit is skipped the reason should
+  // be available in the skipped_reason field. This is considered a final state.
+  SKIPPED = 7;
+}
+
+// Error type, to better distinguish different causes of errors.
+enum ErrorType {
+  ERROR_TYPE_UNSPECIFIED = 0;
+  // The test in progress was the reason for the failure.
+  TEST_FAILURE = 1;
+  // A timeout condition on the operation in progress occurred.
+  TIMEOUT = 2;
+  // The test in progress was cancelled.
+  TEST_CANCELLED = 3;
+  // A failure attributed to something not functioning properly.
+  INFRA_ERROR = 4;
+  // System under test crashed and caused the test to fail.
+  SYSTEM_UNDER_TEST_CRASHED = 5;
+  // The test was expected to run but did not.
+  NOT_EXECUTED = 6;
+  // System under test became unavailable and never came back available again.
+  LOST_SYSTEM_UNDER_TEST = 7;
+  // Represent an error caused by an unmet dependency that the current infra depends on. For example: Unfound resources,
+  // Device error, Hardware issue (lab host, device wear), Underlying tools
+  DEPENDENCY_ISSUE = 8;
+  // Represent an error caused by the input from the end user. For example: Unexpected option combination, Configuration error, Bad flags
+  CUSTOMER_ISSUE = 9;
+}
+
+// Possible reasons why a test result was skipped and did not run.
+// Next ID: 2
+enum ReasonType {
+  REASON_UNSPECIFIED = 0;
+  REASON_DEMOTION = 1;
+}
+
+// A generic key-value property definition.
+// Next ID: 3
+message StringPair {
+  // The name of the key-value pair.
+  string name = 1;
+  // The value of the key-value pair.
+  string value = 2;
+}
+
+// The timing of a particular Invocation, WorkUnit, or TestResult.
+// Next ID: 4
+message Timing {
+  // The time the resource started running. This is in UTC Epoch time in milliseconds.
+  int64 creation_timestamp = 1;
+  // Indicates the time when the operation finished. This is in UTC Epoch time in milliseconds.
+  int64 complete_timestamp = 2;
+  // The corresponding month in yyyy-MM of creation_timestamp, used for ST-Spanner indexing in the AnTS database.
+  string creation_month = 3;
+}
+
+// The debug information for a WorkUnit or TestResult.
+// Next ID: 8
+message DebugInfo {
+  // The error message.
+  string error_message = 1;
+
+  // The stack trace.
+  string trace = 2;
+
+  // Error type, to better distinguish different causes of errors.
+  ErrorType error_type = 3;
+
+  // Describing the current phase of the tests lifecycle.
+  string phase_in_progress = 4;
+
+  // Identifier of the error (error code style. For example: OUT_OF_QUOTA)
+  string error_name = 5;
+
+  // The error code associated with the error name. (Where error code groupings are defined by leading numbers,
+  // similar to HTTP's error code) TODO(b/160875067): Link the official documentation of error code categories
+  // See go/invocation-error-classification-v2 for more details
+  int64 error_code = 6;
+
+  // Class that generated the error (origin of the error). For example: the fully qualified java class name that created and threw the exception.
+  string error_origin = 7;
+}
+
+// Message explaining why a test was skipped. Next ID: 5
+message SkippedReason {
+  // Possible reasons why a test result was skipped and did not run.
+  ReasonType reason_type = 1;
+
+  // Should describe what condition caused the test to be skipped.
+  string trigger = 2;
+
+  // A message providing any other details about why a test was skipped.
+  string reason_message = 3;
+
+  // Buganizer id for the issue that caused the tests to be skipped, if available.
+  string bug_id = 4;
+}
+
+// A TestDefinition describes how to identify an Invocation. Next ID: 3
+message Test {
+  // The name used to identify the set of tests being executed.
+  string name = 1;
+
+  // A list of properties the scheduler uses to differentiate between configurations with the same name.
+  // For example 'cluster_id' and 'run_target' for ATP (http://go/consistent-test-identifiers).
+  repeated StringPair properties = 2;
+}

@@ -71,7 +71,7 @@ func TestExportAntsInvocation(t *testing.T) {
 			assert.NoErr(t, err)
 			expectedRow := &bqpblegacy.AntsInvocationRow{
 				InvocationId: "build-87654321",
-				Timing: &bqpblegacy.AntsInvocationRow_Timing{
+				Timing: &bqpblegacy.Timing{
 					CreationTimestamp: 0,
 					CompleteTimestamp: 1744070400000,
 				},

@@ -52,8 +52,8 @@ func (e *Exporter) Export(ctx context.Context, inv *rdbpb.Invocation) error {
 	// TODO(beining): populate more fields.
 	exportRow := &bqpb.AntsInvocationRow{
 		InvocationId:   invID,
-		SchedulerState: bqpb.AntsInvocationRow_SCHEDULER_STATE_UNSPECIFIED,
-		Timing: &bqpb.AntsInvocationRow_Timing{
+		SchedulerState: bqpb.SchedulerState_SCHEDULER_STATE_UNSPECIFIED,
+		Timing: &bqpb.Timing{
 			CreationTimestamp: inv.CreateTime.AsTime().UnixMilli(),
 			CompleteTimestamp: inv.FinalizeTime.AsTime().UnixMilli(),
 		},

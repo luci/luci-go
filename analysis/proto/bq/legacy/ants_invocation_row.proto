@@ -18,34 +18,13 @@ package luci.analysis.bq.legacy;
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/common/bq/pb/options.proto";
-import "go.chromium.org/luci/analysis/proto/bq/legacy/ants_test_result_row.proto";
+import "go.chromium.org/luci/analysis/proto/bq/legacy/ants_common.proto";
 
 option go_package = "go.chromium.org/luci/analysis/proto/bq/legacy;bqpb";
 
 // AntsInvocationRow represents a row in a BigQuery table for an AnTS invocation.
 // Next ID: 18.
 message AntsInvocationRow {
-
-  // The possible states an Invocation or WorkUnit can be in. `COMPLETED`, `ERROR`,
-  // and `CANCELLED` states are considered final states.
-  enum SchedulerState {
-    SCHEDULER_STATE_UNSPECIFIED = 0;
-    QUEUED = 1;
-    // Invocation or WorkUnit is currently running tests.
-    RUNNING = 2;
-    // Invocation or WorkUnit finished running tests and reported an error. This is
-    // considered a final state.
-    ERROR = 3;
-    // Invocation or WorkUnit finished running tests without an error. This is
-    // considered a final state.
-    COMPLETED = 4;
-    // Invocation or WorkUnit was cancelled before it could finish. This could be
-    // due to a user cancelling a test or due to a timeout. This is considered a
-    // final state.
-    CANCELLED = 5;
-    // Invocation is pending to be picked up.
-    PENDING = 6;
-  }
 
   // Describes an Android Build that is being tested.
   // Next ID: 5
@@ -58,15 +37,6 @@ message AntsInvocationRow {
     string build_target = 3;
     // The build ID.
     string build_id = 4;
-  }
-
-  // The timing of a particular Invocation.
-  // Next ID: 3
-  message Timing {
-    // The time the resource started running. This is in UTC Epoch time in milliseconds.
-    int64 creation_timestamp = 1;
-    // Indicates the time when the operation finished. This is in UTC Epoch time in milliseconds.
-    int64 complete_timestamp = 2;
   }
 
   // The build ID associated with this invocation.

@@ -161,7 +161,7 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqp
 		for _, trb := range tv.Results {
 			tr := trb.Result
 			// Find AnTS timing.
-			timing := &bqpb.AntsTestResultRow_Timing{
+			timing := &bqpb.Timing{
 				CreationTimestamp: tr.StartTime.AsTime().UnixMilli(),
 				CompleteTimestamp: tr.StartTime.AsTime().Add(tr.Duration.AsDuration()).UnixMilli(),
 				CreationMonth:     tr.StartTime.AsTime().Format("2006-01"),
@@ -170,7 +170,7 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqp
 			testStatus := convertToAnTSStatusV2(tr.StatusV2, tr.FailureReason, tr.SkippedReason)
 
 			// Find AnTS debug Info from ResultDB's failure reason.
-			var debugInfo *bqpb.AntsTestResultRow_DebugInfo
+			var debugInfo *bqpb.DebugInfo
 			if tr.FailureReason != nil {
 				errorCode, err := strconv.Atoi(findKeyFromTags(PrimaryErrorCodeTagKey, tr.Tags))
 				if err != nil {
@@ -178,28 +178,28 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqp
 					errorCode = 0
 				}
 				errorType := findKeyFromTags(PrimaryErrorTypeTagKey, tr.Tags)
-				debugInfo = &bqpb.AntsTestResultRow_DebugInfo{
+				debugInfo = &bqpb.DebugInfo{
 					ErrorMessage: tr.FailureReason.PrimaryErrorMessage,
 					Trace:        tr.FailureReason.Errors[0].Trace,
-					ErrorType:    bqpb.AntsTestResultRow_ErrorType(bqpb.AntsTestResultRow_ErrorType_value[errorType]),
+					ErrorType:    bqpb.ErrorType(bqpb.ErrorType_value[errorType]),
 					ErrorName:    findKeyFromTags(PrimaryErrorNameTagKey, tr.Tags),
 					ErrorCode:    int64(errorCode),
-					ErrorOrigin:  findKeyFromTags(PrimaryErrorOriginTagKey , tr.Tags),
+					ErrorOrigin:  findKeyFromTags(PrimaryErrorOriginTagKey, tr.Tags),
 				}
 			}
 
 			// Find AnTS skip reason or debug_info from ResultDB's skipped reason.
-			var skippedReason *bqpb.AntsTestResultRow_SkippedReason
+			var skippedReason *bqpb.SkippedReason
 			if tr.SkippedReason != nil {
 				if testStatus != bqpb.AntsTestResultRow_TEST_SKIPPED {
 					// AnTS status is not skipped, ResultDB skipped reason maps to debug info.
-					debugInfo = &bqpb.AntsTestResultRow_DebugInfo{
+					debugInfo = &bqpb.DebugInfo{
 						ErrorMessage: tr.SkippedReason.ReasonMessage,
 						Trace:        tr.SkippedReason.Trace,
 					}
 				} else {
-					skippedReason = &bqpb.AntsTestResultRow_SkippedReason{
-						ReasonType:    bqpb.AntsTestResultRow_REASON_DEMOTION,
+					skippedReason = &bqpb.SkippedReason{
+						ReasonType:    bqpb.ReasonType_REASON_DEMOTION,
 						ReasonMessage: tr.SkippedReason.ReasonMessage,
 						Trigger:       findKeyFromTags(SkipTriggerTagKey, tr.Tags),
 						BugId:         findKeyFromTags(SkipBugTagKey, tr.Tags),

@@ -133,7 +133,7 @@ func TestExportAntsTestResults(t *testing.T) {
 				},
 				TestIdentifierHash: "95bfcb5e4dda87194eaf93c613a695fca27ba5575217f40a6877e51fc698e5a4",
 				TestStatus:         bqpblegacy.AntsTestResultRow_PASS,
-				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+				Timing: &bqpblegacy.Timing{
 					CreationTimestamp: 1735693200000, // 2025-01-01 01:00:00 UTC
 					CompleteTimestamp: 1735693201000,
 					CreationMonth:     "2025-01",
@@ -153,11 +153,11 @@ func TestExportAntsTestResults(t *testing.T) {
 				},
 				TestIdentifierHash: "5ad34566c36f69110005474feea4ed5d58c3c85240265eede054cdac45216751",
 				TestStatus:         bqpblegacy.AntsTestResultRow_ASSUMPTION_FAILURE,
-				DebugInfo: &bqpblegacy.AntsTestResultRow_DebugInfo{
+				DebugInfo: &bqpblegacy.DebugInfo{
 					ErrorMessage: "assumption failure message",
 					Trace:        "assumption failure trace",
 				},
-				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+				Timing: &bqpblegacy.Timing{
 					CreationTimestamp: 1735696800000, // 2025-01-01 02:00:00 UTC
 					CompleteTimestamp: 1735696801000,
 					CreationMonth:     "2025-01",
@@ -177,15 +177,15 @@ func TestExportAntsTestResults(t *testing.T) {
 				},
 				TestIdentifierHash: "5ad34566c36f69110005474feea4ed5d58c3c85240265eede054cdac45216751",
 				TestStatus:         bqpblegacy.AntsTestResultRow_FAIL,
-				DebugInfo: &bqpblegacy.AntsTestResultRow_DebugInfo{
+				DebugInfo: &bqpblegacy.DebugInfo{
 					ErrorMessage: "failure message",
 					Trace:        "failure trace",
-					ErrorType:    bqpblegacy.AntsTestResultRow_INFRA_ERROR,
+					ErrorType:    bqpblegacy.ErrorType_INFRA_ERROR,
 					ErrorCode:    123,
 					ErrorName:    "test error name",
 					ErrorOrigin:  "test error origin",
 				},
-				Timing: &bqpblegacy.AntsTestResultRow_Timing{
+				Timing: &bqpblegacy.Timing{
 					CreationTimestamp: 1735700400000, // 2025-01-01 03:00:00 UTC
 					CompleteTimestamp: 1735700401000,
 					CreationMonth:     "2025-01",

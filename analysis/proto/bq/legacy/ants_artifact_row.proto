@@ -19,7 +19,7 @@ package luci.analysis.bq.legacy;
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/common/bq/pb/options.proto";
-import "go.chromium.org/luci/analysis/proto/bq/legacy/ants_test_result_row.proto";
+import "go.chromium.org/luci/analysis/proto/bq/legacy/ants_common.proto";
 
 option go_package = "go.chromium.org/luci/analysis/proto/bq/legacy;bqpb";
 
