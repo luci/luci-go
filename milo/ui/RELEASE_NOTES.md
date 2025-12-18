@@ -45,6 +45,26 @@ release tag numbers.
 -->
 
 <!-- Add new changes here. See the instruction above for more details. -->
+<!-- __RELEASE__: 8 -->
+## 2025-12-18
+
+### Test Investigation & Artifacts
+*   Significant improvements to the Test Investigation page, including a new **Virtualized Artifacts View** for better performance with large logs.
+*   Added **Log Comparison** and **Text Diff** artifact viewers.
+*   Improved **Test History** with better handling of test ID changes.
+*   Added **Search** functionality for artifact content and filenames.
+
+### Monitoring & Bisection
+*   **Monitoring**: Moved out of labs (General Availability).
+*   **Gen AI Analysis**: Added Gen AI suspect identification for bisection and builder alerts.
+
+### Auth Service
+*   Improved **Group Management** with better member listing, search, and "useful links" for non-owners.
+
+### Other Improvements
+*   Removed Service Workers for better stability.
+*   Various UI polish and Material 3 updates.
+
 <!-- __RELEASE__: 7 -->
 ## 2025-05-20
 Test result and test verdict statuses have been updated. The new statuses should
