@@ -11,12 +11,14 @@ option go_package = "go.chromium.org/luci/bisection/proto/v1;bisectionpb";
 message GenAiAnalysisResult{
   // The status of the gen AI analysis.
   luci.bisection.v1.AnalysisStatus status = 1;
-  // Suspects found by the gen AI analysis.
+  // Suspect found by the gen AI analysis for compile analysis.
   GenAiSuspect suspect = 2;
   // Start time of gen AI analysis.
   google.protobuf.Timestamp start_time = 3;
   // End time of gen AI analysis.
   google.protobuf.Timestamp end_time = 4;
+  // Suspects found by the gen AI analysis for test analysis (up to 3).
+  repeated GenAiSuspect test_suspects = 5;
 }
 
 message GenAiSuspect {
@@ -32,4 +34,6 @@ message GenAiSuspect {
   luci.bisection.v1.SuspectVerificationDetails verification_details = 5;
   // Justification for why the commit was chosen as a suspect.
   string justification = 6;
+  // Confidence score for this suspect (0-10).
+  int32 confidence_score = 7;
 }
