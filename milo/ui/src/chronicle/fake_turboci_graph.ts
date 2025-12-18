@@ -199,7 +199,6 @@ export class FakeGraphGenerator {
   private workPlanId: WorkPlan;
   private sourcePlanningStageId: StageId;
   private buildPlanningStageId: StageId;
-  private testPlanningStageId: StageId;
 
   // Simulated time to ensure Revisions allow logical ordering (createdAt < finalizedAt)
   private currentSimulatedTimeMs = Date.UTC(2024, 0, 1, 12, 0, 0);
@@ -211,7 +210,6 @@ export class FakeGraphGenerator {
   // Accumulators for planning stage assignments
   private sourceCheckIds: CheckId[] = [];
   private buildCheckIds: CheckId[] = [];
-  private testCheckIds: CheckId[] = [];
 
   constructor(private config: GraphGenerationConfig) {
     // Initialize faker seed for reproducible graphs based on workplan ID
@@ -225,7 +223,6 @@ export class FakeGraphGenerator {
     this.workPlanId = { id: config.workPlanIdStr };
     this.sourcePlanningStageId = this.createStageId('S_Planning_Source');
     this.buildPlanningStageId = this.createStageId('S_Planning_Build');
-    this.testPlanningStageId = this.createStageId('S_Planning_Test');
   }
 
   /**
@@ -264,14 +261,12 @@ export class FakeGraphGenerator {
     this.stageViews = {};
     this.sourceCheckIds = [];
     this.buildCheckIds = [];
-    this.testCheckIds = [];
     this.currentSimulatedTimeMs = Date.UTC(2024, 0, 1, 12, 0, 0);
   }
 
   private finalizeGraph() {
     this.createPlanningStage(this.sourcePlanningStageId, this.sourceCheckIds);
     this.createPlanningStage(this.buildPlanningStageId, this.buildCheckIds);
-    this.createPlanningStage(this.testPlanningStageId, this.testCheckIds);
   }
 
   // ==========================================
@@ -303,17 +298,26 @@ export class FakeGraphGenerator {
       const tot = this.createBuildPair(`Build_${i}_TOT`, [{ check: sourceId }]);
       this.buildCheckIds.push(lkgb, tot);
 
+      const testsForThisBuild: CheckId[] = [];
+      const testPlanningStage = this.createStageId(
+        `S_Planning_Test_Build_${i}`,
+      );
       for (let j = 0; j < testsPerBuild; j++) {
         // Each test node depends on BOTH the LKGB and TOT
-        this.testCheckIds.push(
-          this.createTestPair(`D${i}_T${j}`, [
-            { check: commonLkgb },
-            { check: commonTot },
-            { check: lkgb },
-            { check: tot },
-          ]),
+        testsForThisBuild.push(
+          this.createTestPair(
+            `D${i}_T${j}`,
+            [
+              { check: commonLkgb },
+              { check: commonTot },
+              { check: lkgb },
+              { check: tot },
+            ],
+            testPlanningStage,
+          ),
         );
       }
+      this.createPlanningStage(testPlanningStage, testsForThisBuild);
     }
   }
 
@@ -356,26 +360,38 @@ export class FakeGraphGenerator {
     const b1 = this.createBuildPair(`${platformName}_Build_Patch`, startDeps);
     this.buildCheckIds.push(b1);
     const t1s: CheckId[] = [];
+    const testPlanningStage1 = this.createStageId(
+      `S_Planning_Test_${platformName}_Build_Patch`,
+    );
     for (let i = 0; i < numTests; i++) {
       t1s.push(
-        this.createTestPair(`${platformName}_Test_Patch_${i}`, [{ check: b1 }]),
+        this.createTestPair(
+          `${platformName}_Test_Patch_${i}`,
+          [{ check: b1 }],
+          testPlanningStage1,
+        ),
       );
     }
-    this.testCheckIds.push(...t1s);
+    this.createPlanningStage(testPlanningStage1, t1s);
 
     // Phase 2: Build w/o Patch -> Tests
     const b2Deps = t1s.map((t) => ({ check: t }));
     const b2 = this.createBuildPair(`${platformName}_Build_NoPatch`, b2Deps);
     this.buildCheckIds.push(b2);
     const t2s: CheckId[] = [];
+    const testPlanningStage2 = this.createStageId(
+      `S_Planning_Test_${platformName}_Build_NoPatch`,
+    );
     for (let i = 0; i < numTests; i++) {
       t2s.push(
-        this.createTestPair(`${platformName}_Test_NoPatch_${i}`, [
-          { check: b2 },
-        ]),
+        this.createTestPair(
+          `${platformName}_Test_NoPatch_${i}`,
+          [{ check: b2 }],
+          testPlanningStage2,
+        ),
       );
     }
-    this.testCheckIds.push(...t2s);
+    this.createPlanningStage(testPlanningStage2, t2s);
   }
 
   // ==========================================
@@ -399,6 +415,7 @@ export class FakeGraphGenerator {
       [], // No dependencies
       stageId,
       data,
+      this.sourcePlanningStageId,
     );
     // Source stages always succeed in this simulation
     this.generateStageView(stageId, realm, [], true, [checkId]);
@@ -425,12 +442,17 @@ export class FakeGraphGenerator {
       dependencies,
       stageId,
       data,
+      this.buildPlanningStageId,
     );
     this.generateStageView(stageId, realm, dependencies, success, [checkId]);
     return checkId;
   }
 
-  private createTestPair(idStr: string, dependencies: Identifier[]): CheckId {
+  private createTestPair(
+    idStr: string,
+    dependencies: Identifier[],
+    planningStageId: StageId,
+  ): CheckId {
     const checkId = this.createCheckId(`C_${idStr}`);
     const realm = `${idStr}-realm`;
 
@@ -469,6 +491,7 @@ export class FakeGraphGenerator {
       dependencies,
       finalizingStageId,
       data,
+      planningStageId,
     );
 
     return checkId;
@@ -510,24 +533,8 @@ export class FakeGraphGenerator {
     dependencies: Identifier[],
     executingStageId: StageId,
     data: CheckData,
+    planningStageId: StageId,
   ): void {
-    // Determine the specific planning stage based on kind.
-    let planningStageId: StageId;
-    switch (kind) {
-      case CheckKind.CHECK_KIND_SOURCE:
-        planningStageId = this.sourcePlanningStageId;
-        break;
-      case CheckKind.CHECK_KIND_BUILD:
-        planningStageId = this.buildPlanningStageId;
-        break;
-      case CheckKind.CHECK_KIND_TEST:
-        planningStageId = this.testPlanningStageId;
-        break;
-      default:
-        // Fallback, should not happen in this fake generator
-        planningStageId = this.sourcePlanningStageId;
-    }
-
     const edits: Edit[] = [];
     const actor: Actor = {
       stageAttempt: { stage: executingStageId },

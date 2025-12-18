@@ -336,11 +336,13 @@ describe('TurboCIGraphBuilder', () => {
       expect(edges).toHaveLength(2);
       expect(edges[0].id).toBe('assignment-S_Multi-C1');
       expect(edges[0].data?.isAssignment).toBeTruthy();
+      expect(edges[0].style?.strokeWidth).toBe(1);
       expect(edges[1].id).toBe('assignment-S_Multi-C2');
       expect(edges[1].data?.isAssignment).toBeTruthy();
+      expect(edges[1].style?.strokeWidth).toBe(1);
     });
 
-    it('does not draw assignment edges when showAssignmentEdges is false', () => {
+    it('draws invisible assignment edges when showAssignmentEdges is false', () => {
       // Builder logic filters out stages with assignments.length !== 1 from groups.
       const graph: TurboCIGraphView = {
         checks: {
@@ -359,7 +361,13 @@ describe('TurboCIGraphBuilder', () => {
       expect(sMulti.data.isGrouped).toBeFalsy();
       expect(c1.data.isGrouped).toBeFalsy();
 
-      expect(edges).toHaveLength(0);
+      expect(edges).toHaveLength(2);
+      expect(edges[0].id).toBe('assignment-S_Multi-C1');
+      expect(edges[0].data?.isAssignment).toBeTruthy();
+      expect(edges[0].style?.strokeWidth).toBe(0);
+      expect(edges[1].id).toBe('assignment-S_Multi-C2');
+      expect(edges[1].data?.isAssignment).toBeTruthy();
+      expect(edges[1].style?.strokeWidth).toBe(0);
     });
 
     it('should treat stages assigned to zero checks as standalone', () => {
@@ -798,6 +806,55 @@ describe('TurboCIGraphBuilder', () => {
 
       const { hashToGroup } = getCollapsibleGroups(graph);
       expect(hashToGroup.size).toBe(1);
+    });
+
+    it('should draw a stage if it is assigned to a mix of collapsed and non-collapsed checks', () => {
+      // T1 and T2 are collapsible.
+      // S1 is assigned to T1 (collapsible) and T3 (not collapsible).
+      // S1 should still be created.
+      const b1Ident = createCheckIdentifier('B1');
+      const graph: TurboCIGraphView = {
+        checks: {
+          B1: createCheckView('B1'),
+          T1: createCheckView(
+            'T1',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+          ),
+          T2: createCheckView(
+            'T2',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+          ),
+          T3: createCheckView('T3', CheckKind.CHECK_KIND_TEST, [], [], true),
+        },
+        stages: {
+          S1: createStageView('S1', ['T1', 'T3']),
+        },
+      };
+
+      const hash = new TurboCIGraphBuilder(graph)
+        .build()
+        .nodes.find((n) => n.id === 'T1')!.data.dependencyHash;
+
+      const { nodes } = new TurboCIGraphBuilder(graph).build({
+        collapsedDependencyHashes: new Set([hash!]),
+      });
+
+      // T1 is collapsed, so it shouldn't exist as a node
+      expect(nodes.find((n) => n.id === 'T1')).toBeUndefined();
+      // The group node should exist
+      expect(
+        nodes.find((n) => n.id === `collapsed-group-${hash}`),
+      ).toBeDefined();
+      // T3 should exist
+      expect(nodes.find((n) => n.id === 'T3')).toBeDefined();
+      // S1 should exist because T3 is not collapsed
+      expect(nodes.find((n) => n.id === 'S1')).toBeDefined();
     });
   });
 });

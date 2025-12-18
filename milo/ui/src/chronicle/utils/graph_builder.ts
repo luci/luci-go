@@ -83,6 +83,10 @@ const ASSIGNMENT_EDGE_STYLE: Partial<Edge> = {
   zIndex: 0,
 };
 
+const ASSIGNMENT_EDGE_STYLE_INVISIBLE: Partial<Edge> = {
+  style: { strokeWidth: 0, pointerEvents: 'none' },
+};
+
 // Common base styles for all nodes
 const BASE_NODE_STYLE: CSSProperties = {
   fontSize: '12px',
@@ -422,6 +426,7 @@ export function getCollapsibleGroups(graphView: TurboCIGraphView): {
 export class TurboCIGraphBuilder {
   private nodes: ChronicleNode[] = [];
   private edges: Edge[] = [];
+  private edgeIds: Set<string> = new Set();
   private assignmentGroups: CheckAssignmentGroup[] = [];
   // Maps a Node ID (Stage or Check) to the ID of the group it belongs to.
   // We use the check ID as the ID of the group.
@@ -439,6 +444,7 @@ export class TurboCIGraphBuilder {
   } {
     this.nodes = [];
     this.edges = [];
+    this.edgeIds.clear();
     this.assignmentGroups = [];
     this.nodeToGroupIdMap.clear();
     this.nodeToCollapsedIdMap.clear();
@@ -526,12 +532,13 @@ export class TurboCIGraphBuilder {
         .map((a) => a.target?.id)
         .filter((a) => a !== undefined);
       if (stageAssignedChecks.length !== 1) {
-        if (options.showAssignmentEdges) {
-          this.addAssignmentEdges(stageId, stageAssignedChecks);
-        }
+        this.addAssignmentEdges(
+          stageId,
+          stageAssignedChecks,
+          !!options.showAssignmentEdges,
+        );
         return;
       }
-
       // At this point we know there is only a singular check assigned to this stage.
       const checkId = stageAssignedChecks[0];
       // If the check is collapsed, we skip creating assignment groups for it,
@@ -565,21 +572,37 @@ export class TurboCIGraphBuilder {
    * as a stacked group. But for stages with multiple assigned checks, we create
    * an edge.
    */
-  private addAssignmentEdges(sourceNodeId: string, assignments: string[]) {
-    // Filter out assignments to collapsed nodes to prevent edges pointing to nowhere.
+  private addAssignmentEdges(
+    sourceNodeId: string,
+    assignments: string[],
+    isVisible: boolean,
+  ) {
     assignments.forEach((assignment) => {
-      if (this.nodeToCollapsedIdMap.has(assignment)) return;
-      if (!this.allNodeIds.has(assignment)) return;
+      let targetId = assignment;
+      // Remap target to collapsed group if applicable
+      if (this.nodeToCollapsedIdMap.has(assignment)) {
+        targetId = this.nodeToCollapsedIdMap.get(assignment)!;
+      }
+
+      if (!this.allNodeIds.has(targetId)) return;
+
+      const edgeId = `assignment-${sourceNodeId}-${targetId}`;
+      if (this.edgeIds.has(edgeId)) return;
+
+      this.edgeIds.add(edgeId);
+
+      // Make the edge invisible but still present for layout.
+      const style = isVisible
+        ? ASSIGNMENT_EDGE_STYLE
+        : ASSIGNMENT_EDGE_STYLE_INVISIBLE;
 
       this.edges.push({
-        id: `assignment-${sourceNodeId}-${assignment}`,
+        id: edgeId,
         source: sourceNodeId,
-        target: assignment,
+        target: targetId,
         zIndex: 1,
-        // We don't want assignment edges to affect the Dagre layout
-        // so mark the edge accordingly.
         data: { isAssignment: true },
-        ...ASSIGNMENT_EDGE_STYLE,
+        ...style,
       });
     });
   }
@@ -618,7 +641,9 @@ export class TurboCIGraphBuilder {
 
         const edgeId = `dep-${targetId}-${actualSourceId}`;
         // Check if we already added this edge (deduplication for collapsed nodes)
-        if (this.edges.some((e) => e.id === edgeId)) return;
+        if (this.edgeIds.has(edgeId)) return;
+
+        this.edgeIds.add(edgeId);
 
         // Edge goes from Dependency (target) -> Dependent (source)
         this.edges.push({
@@ -702,9 +727,6 @@ export class TurboCIGraphBuilder {
 
     // 3. Add edges to Dagre (mapping original node IDs to group IDs if necessary)
     this.edges.forEach((edge) => {
-      // Skip assignment edges during layout calculation so they don't affect node positioning.
-      if (edge.data?.isAssignment) return;
-
       const dagreSource = nodesByGroupId.get(edge.source);
       const dagreTarget = nodesByGroupId.get(edge.target);
 
@@ -811,6 +833,9 @@ export class TurboCIGraphBuilder {
         ?.map((a) => a.target?.id)
         .filter((id): id is string => !!id) || [];
 
-    return assignedCheckIds.some((cid) => this.nodeToCollapsedIdMap.has(cid));
+    return (
+      assignedCheckIds.length > 0 &&
+      assignedCheckIds.every((cid) => this.nodeToCollapsedIdMap.has(cid))
+    );
   }
 }
