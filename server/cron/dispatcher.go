@@ -144,10 +144,10 @@ func (d *Dispatcher) InstallCronRoutes(r *router.Router, prefix string) {
 		id := handlerID(c)
 		if err := d.executeHandlerByID(c.Request.Context(), id); err != nil {
 			if transient.Tag.In(err) {
-				logging.Warningf(c.Request.Context(), "transient error in cron handler %q: %w", id, err)
+				logging.Warningf(c.Request.Context(), "transient error in cron handler %q: %v", id, err)
 				http.Error(c.Writer, err.Error(), 500)
 			} else {
-				errors.Log(c.Request.Context(), errors.Fmt("fatal error in cron handler %q: %w", id, err))
+				logging.Errorf(c.Request.Context(), "fatal error in cron handler %q: %v", id, err)
 				http.Error(c.Writer, err.Error(), 202)
 			}
 		} else {
